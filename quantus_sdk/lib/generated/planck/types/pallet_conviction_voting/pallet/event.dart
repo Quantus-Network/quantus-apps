@@ -35,24 +35,60 @@ abstract class Event {
 class $Event {
   const $Event();
 
-  Delegated delegated(_i3.AccountId32 value0, _i3.AccountId32 value1, int value2) {
-    return Delegated(value0, value1, value2);
+  Delegated delegated(
+    _i3.AccountId32 value0,
+    _i3.AccountId32 value1,
+    int value2,
+  ) {
+    return Delegated(
+      value0,
+      value1,
+      value2,
+    );
   }
 
-  Undelegated undelegated(_i3.AccountId32 value0, int value1) {
-    return Undelegated(value0, value1);
+  Undelegated undelegated(
+    _i3.AccountId32 value0,
+    int value1,
+  ) {
+    return Undelegated(
+      value0,
+      value1,
+    );
   }
 
-  Voted voted({required _i3.AccountId32 who, required _i4.AccountVote vote, required int pollIndex}) {
-    return Voted(who: who, vote: vote, pollIndex: pollIndex);
+  Voted voted({
+    required _i3.AccountId32 who,
+    required _i4.AccountVote vote,
+    required int pollIndex,
+  }) {
+    return Voted(
+      who: who,
+      vote: vote,
+      pollIndex: pollIndex,
+    );
   }
 
-  VoteRemoved voteRemoved({required _i3.AccountId32 who, required _i4.AccountVote vote, required int pollIndex}) {
-    return VoteRemoved(who: who, vote: vote, pollIndex: pollIndex);
+  VoteRemoved voteRemoved({
+    required _i3.AccountId32 who,
+    required _i4.AccountVote vote,
+    required int pollIndex,
+  }) {
+    return VoteRemoved(
+      who: who,
+      vote: vote,
+      pollIndex: pollIndex,
+    );
   }
 
-  VoteUnlocked voteUnlocked({required _i3.AccountId32 who, required int class_}) {
-    return VoteUnlocked(who: who, class_: class_);
+  VoteUnlocked voteUnlocked({
+    required _i3.AccountId32 who,
+    required int class_,
+  }) {
+    return VoteUnlocked(
+      who: who,
+      class_: class_,
+    );
   }
 }
 
@@ -79,7 +115,10 @@ class $EventCodec with _i1.Codec<Event> {
   }
 
   @override
-  void encodeTo(Event value, _i1.Output output) {
+  void encodeTo(
+    Event value,
+    _i1.Output output,
+  ) {
     switch (value.runtimeType) {
       case Delegated:
         (value as Delegated).encodeTo(output);
@@ -97,7 +136,8 @@ class $EventCodec with _i1.Codec<Event> {
         (value as VoteUnlocked).encodeTo(output);
         break;
       default:
-        throw Exception('Event: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception(
+            'Event: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 
@@ -115,14 +155,19 @@ class $EventCodec with _i1.Codec<Event> {
       case VoteUnlocked:
         return (value as VoteUnlocked)._sizeHint();
       default:
-        throw Exception('Event: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception(
+            'Event: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 }
 
 /// An account has delegated their vote to another account. \[who, target\]
 class Delegated extends Event {
-  const Delegated(this.value0, this.value1, this.value2);
+  const Delegated(
+    this.value0,
+    this.value1,
+    this.value2,
+  );
 
   factory Delegated._decode(_i1.Input input) {
     return Delegated(
@@ -143,8 +188,12 @@ class Delegated extends Event {
 
   @override
   Map<String, List<dynamic>> toJson() => {
-    'Delegated': [value0.toList(), value1.toList(), value2],
-  };
+        'Delegated': [
+          value0.toList(),
+          value1.toList(),
+          value2,
+        ]
+      };
 
   int _sizeHint() {
     int size = 1;
@@ -155,30 +204,61 @@ class Delegated extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(0, output);
-    const _i1.U8ArrayCodec(32).encodeTo(value0, output);
-    const _i1.U8ArrayCodec(32).encodeTo(value1, output);
-    _i1.U16Codec.codec.encodeTo(value2, output);
+    _i1.U8Codec.codec.encodeTo(
+      0,
+      output,
+    );
+    const _i1.U8ArrayCodec(32).encodeTo(
+      value0,
+      output,
+    );
+    const _i1.U8ArrayCodec(32).encodeTo(
+      value1,
+      output,
+    );
+    _i1.U16Codec.codec.encodeTo(
+      value2,
+      output,
+    );
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(this, other) ||
+      identical(
+        this,
+        other,
+      ) ||
       other is Delegated &&
-          _i5.listsEqual(other.value0, value0) &&
-          _i5.listsEqual(other.value1, value1) &&
+          _i5.listsEqual(
+            other.value0,
+            value0,
+          ) &&
+          _i5.listsEqual(
+            other.value1,
+            value1,
+          ) &&
           other.value2 == value2;
 
   @override
-  int get hashCode => Object.hash(value0, value1, value2);
+  int get hashCode => Object.hash(
+        value0,
+        value1,
+        value2,
+      );
 }
 
 /// An \[account\] has cancelled a previous delegation operation.
 class Undelegated extends Event {
-  const Undelegated(this.value0, this.value1);
+  const Undelegated(
+    this.value0,
+    this.value1,
+  );
 
   factory Undelegated._decode(_i1.Input input) {
-    return Undelegated(const _i1.U8ArrayCodec(32).decode(input), _i1.U16Codec.codec.decode(input));
+    return Undelegated(
+      const _i1.U8ArrayCodec(32).decode(input),
+      _i1.U16Codec.codec.decode(input),
+    );
   }
 
   /// T::AccountId
@@ -189,8 +269,11 @@ class Undelegated extends Event {
 
   @override
   Map<String, List<dynamic>> toJson() => {
-    'Undelegated': [value0.toList(), value1],
-  };
+        'Undelegated': [
+          value0.toList(),
+          value1,
+        ]
+      };
 
   int _sizeHint() {
     int size = 1;
@@ -200,22 +283,47 @@ class Undelegated extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(1, output);
-    const _i1.U8ArrayCodec(32).encodeTo(value0, output);
-    _i1.U16Codec.codec.encodeTo(value1, output);
+    _i1.U8Codec.codec.encodeTo(
+      1,
+      output,
+    );
+    const _i1.U8ArrayCodec(32).encodeTo(
+      value0,
+      output,
+    );
+    _i1.U16Codec.codec.encodeTo(
+      value1,
+      output,
+    );
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(this, other) || other is Undelegated && _i5.listsEqual(other.value0, value0) && other.value1 == value1;
+      identical(
+        this,
+        other,
+      ) ||
+      other is Undelegated &&
+          _i5.listsEqual(
+            other.value0,
+            value0,
+          ) &&
+          other.value1 == value1;
 
   @override
-  int get hashCode => Object.hash(value0, value1);
+  int get hashCode => Object.hash(
+        value0,
+        value1,
+      );
 }
 
 /// An account has voted
 class Voted extends Event {
-  const Voted({required this.who, required this.vote, required this.pollIndex});
+  const Voted({
+    required this.who,
+    required this.vote,
+    required this.pollIndex,
+  });
 
   factory Voted._decode(_i1.Input input) {
     return Voted(
@@ -236,8 +344,12 @@ class Voted extends Event {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-    'Voted': {'who': who.toList(), 'vote': vote.toJson(), 'pollIndex': pollIndex},
-  };
+        'Voted': {
+          'who': who.toList(),
+          'vote': vote.toJson(),
+          'pollIndex': pollIndex,
+        }
+      };
 
   int _sizeHint() {
     int size = 1;
@@ -248,24 +360,53 @@ class Voted extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(2, output);
-    const _i1.U8ArrayCodec(32).encodeTo(who, output);
-    _i4.AccountVote.codec.encodeTo(vote, output);
-    _i1.U32Codec.codec.encodeTo(pollIndex, output);
+    _i1.U8Codec.codec.encodeTo(
+      2,
+      output,
+    );
+    const _i1.U8ArrayCodec(32).encodeTo(
+      who,
+      output,
+    );
+    _i4.AccountVote.codec.encodeTo(
+      vote,
+      output,
+    );
+    _i1.U32Codec.codec.encodeTo(
+      pollIndex,
+      output,
+    );
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is Voted && _i5.listsEqual(other.who, who) && other.vote == vote && other.pollIndex == pollIndex;
+      identical(
+        this,
+        other,
+      ) ||
+      other is Voted &&
+          _i5.listsEqual(
+            other.who,
+            who,
+          ) &&
+          other.vote == vote &&
+          other.pollIndex == pollIndex;
 
   @override
-  int get hashCode => Object.hash(who, vote, pollIndex);
+  int get hashCode => Object.hash(
+        who,
+        vote,
+        pollIndex,
+      );
 }
 
 /// A vote has been removed
 class VoteRemoved extends Event {
-  const VoteRemoved({required this.who, required this.vote, required this.pollIndex});
+  const VoteRemoved({
+    required this.who,
+    required this.vote,
+    required this.pollIndex,
+  });
 
   factory VoteRemoved._decode(_i1.Input input) {
     return VoteRemoved(
@@ -286,8 +427,12 @@ class VoteRemoved extends Event {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-    'VoteRemoved': {'who': who.toList(), 'vote': vote.toJson(), 'pollIndex': pollIndex},
-  };
+        'VoteRemoved': {
+          'who': who.toList(),
+          'vote': vote.toJson(),
+          'pollIndex': pollIndex,
+        }
+      };
 
   int _sizeHint() {
     int size = 1;
@@ -298,27 +443,58 @@ class VoteRemoved extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(3, output);
-    const _i1.U8ArrayCodec(32).encodeTo(who, output);
-    _i4.AccountVote.codec.encodeTo(vote, output);
-    _i1.U32Codec.codec.encodeTo(pollIndex, output);
+    _i1.U8Codec.codec.encodeTo(
+      3,
+      output,
+    );
+    const _i1.U8ArrayCodec(32).encodeTo(
+      who,
+      output,
+    );
+    _i4.AccountVote.codec.encodeTo(
+      vote,
+      output,
+    );
+    _i1.U32Codec.codec.encodeTo(
+      pollIndex,
+      output,
+    );
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is VoteRemoved && _i5.listsEqual(other.who, who) && other.vote == vote && other.pollIndex == pollIndex;
+      identical(
+        this,
+        other,
+      ) ||
+      other is VoteRemoved &&
+          _i5.listsEqual(
+            other.who,
+            who,
+          ) &&
+          other.vote == vote &&
+          other.pollIndex == pollIndex;
 
   @override
-  int get hashCode => Object.hash(who, vote, pollIndex);
+  int get hashCode => Object.hash(
+        who,
+        vote,
+        pollIndex,
+      );
 }
 
 /// The lockup period of a conviction vote expired, and the funds have been unlocked.
 class VoteUnlocked extends Event {
-  const VoteUnlocked({required this.who, required this.class_});
+  const VoteUnlocked({
+    required this.who,
+    required this.class_,
+  });
 
   factory VoteUnlocked._decode(_i1.Input input) {
-    return VoteUnlocked(who: const _i1.U8ArrayCodec(32).decode(input), class_: _i1.U16Codec.codec.decode(input));
+    return VoteUnlocked(
+      who: const _i1.U8ArrayCodec(32).decode(input),
+      class_: _i1.U16Codec.codec.decode(input),
+    );
   }
 
   /// T::AccountId
@@ -329,8 +505,11 @@ class VoteUnlocked extends Event {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-    'VoteUnlocked': {'who': who.toList(), 'class': class_},
-  };
+        'VoteUnlocked': {
+          'who': who.toList(),
+          'class': class_,
+        }
+      };
 
   int _sizeHint() {
     int size = 1;
@@ -340,15 +519,36 @@ class VoteUnlocked extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(4, output);
-    const _i1.U8ArrayCodec(32).encodeTo(who, output);
-    _i1.U16Codec.codec.encodeTo(class_, output);
+    _i1.U8Codec.codec.encodeTo(
+      4,
+      output,
+    );
+    const _i1.U8ArrayCodec(32).encodeTo(
+      who,
+      output,
+    );
+    _i1.U16Codec.codec.encodeTo(
+      class_,
+      output,
+    );
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(this, other) || other is VoteUnlocked && _i5.listsEqual(other.who, who) && other.class_ == class_;
+      identical(
+        this,
+        other,
+      ) ||
+      other is VoteUnlocked &&
+          _i5.listsEqual(
+            other.who,
+            who,
+          ) &&
+          other.class_ == class_;
 
   @override
-  int get hashCode => Object.hash(who, class_);
+  int get hashCode => Object.hash(
+        who,
+        class_,
+      );
 }

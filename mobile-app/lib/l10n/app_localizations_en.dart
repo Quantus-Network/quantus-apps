@@ -238,7 +238,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get multisigCreateAlreadyExists => 'A multisig with this address already exists on-chain.';
 
   @override
-  String get multisigCreateInsufficientBalance => 'Insufficient balance to cover multisig creation fees and deposit.';
+  String get multisigCreateInsufficientBalance => 'Insufficient balance to cover multisig creation fees.';
 
   @override
   String get multisigCreateTimeoutToast =>

@@ -13,19 +13,22 @@ class Queries {
 
   final _i1.StateApi __api;
 
-  final _i1.StorageValue<_i2.FixedU128> _nextFeeMultiplier = const _i1.StorageValue<_i2.FixedU128>(
+  final _i1.StorageValue<_i2.FixedU128> _nextFeeMultiplier =
+      const _i1.StorageValue<_i2.FixedU128>(
     prefix: 'TransactionPayment',
     storage: 'NextFeeMultiplier',
     valueCodec: _i2.FixedU128Codec(),
   );
 
-  final _i1.StorageValue<_i3.Releases> _storageVersion = const _i1.StorageValue<_i3.Releases>(
+  final _i1.StorageValue<_i3.Releases> _storageVersion =
+      const _i1.StorageValue<_i3.Releases>(
     prefix: 'TransactionPayment',
     storage: 'StorageVersion',
     valueCodec: _i3.Releases.codec,
   );
 
-  final _i1.StorageValue<_i4.NoDrop> _txPaymentCredit = const _i1.StorageValue<_i4.NoDrop>(
+  final _i1.StorageValue<_i4.NoDrop> _txPaymentCredit =
+      const _i1.StorageValue<_i4.NoDrop>(
     prefix: 'TransactionPayment',
     storage: 'TxPaymentCredit',
     valueCodec: _i4.NoDropCodec(),
@@ -33,16 +36,25 @@ class Queries {
 
   _i5.Future<_i2.FixedU128> nextFeeMultiplier({_i1.BlockHash? at}) async {
     final hashedKey = _nextFeeMultiplier.hashedKey();
-    final bytes = await __api.getStorage(hashedKey, at: at);
+    final bytes = await __api.getStorage(
+      hashedKey,
+      at: at,
+    );
     if (bytes != null) {
       return _nextFeeMultiplier.decodeValue(bytes);
     }
-    return BigInt.parse('1000000000000000000', radix: 10); /* Default */
+    return BigInt.parse(
+      '1000000000000000000',
+      radix: 10,
+    ); /* Default */
   }
 
   _i5.Future<_i3.Releases> storageVersion({_i1.BlockHash? at}) async {
     final hashedKey = _storageVersion.hashedKey();
-    final bytes = await __api.getStorage(hashedKey, at: at);
+    final bytes = await __api.getStorage(
+      hashedKey,
+      at: at,
+    );
     if (bytes != null) {
       return _storageVersion.decodeValue(bytes);
     }
@@ -54,7 +66,10 @@ class Queries {
   /// Use `withdraw_txfee` and `remaining_txfee` to access from outside the crate.
   _i5.Future<_i4.NoDrop?> txPaymentCredit({_i1.BlockHash? at}) async {
     final hashedKey = _txPaymentCredit.hashedKey();
-    final bytes = await __api.getStorage(hashedKey, at: at);
+    final bytes = await __api.getStorage(
+      hashedKey,
+      at: at,
+    );
     if (bytes != null) {
       return _txPaymentCredit.decodeValue(bytes);
     }

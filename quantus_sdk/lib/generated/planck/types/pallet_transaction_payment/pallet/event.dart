@@ -39,7 +39,11 @@ class $Event {
     required BigInt actualFee,
     required BigInt tip,
   }) {
-    return TransactionFeePaid(who: who, actualFee: actualFee, tip: tip);
+    return TransactionFeePaid(
+      who: who,
+      actualFee: actualFee,
+      tip: tip,
+    );
   }
 }
 
@@ -58,13 +62,17 @@ class $EventCodec with _i1.Codec<Event> {
   }
 
   @override
-  void encodeTo(Event value, _i1.Output output) {
+  void encodeTo(
+    Event value,
+    _i1.Output output,
+  ) {
     switch (value.runtimeType) {
       case TransactionFeePaid:
         (value as TransactionFeePaid).encodeTo(output);
         break;
       default:
-        throw Exception('Event: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception(
+            'Event: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 
@@ -74,7 +82,8 @@ class $EventCodec with _i1.Codec<Event> {
       case TransactionFeePaid:
         return (value as TransactionFeePaid)._sizeHint();
       default:
-        throw Exception('Event: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception(
+            'Event: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 }
@@ -82,7 +91,11 @@ class $EventCodec with _i1.Codec<Event> {
 /// A transaction fee `actual_fee`, of which `tip` was added to the minimum inclusion fee,
 /// has been paid by `who`.
 class TransactionFeePaid extends Event {
-  const TransactionFeePaid({required this.who, required this.actualFee, required this.tip});
+  const TransactionFeePaid({
+    required this.who,
+    required this.actualFee,
+    required this.tip,
+  });
 
   factory TransactionFeePaid._decode(_i1.Input input) {
     return TransactionFeePaid(
@@ -103,8 +116,12 @@ class TransactionFeePaid extends Event {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-    'TransactionFeePaid': {'who': who.toList(), 'actualFee': actualFee, 'tip': tip},
-  };
+        'TransactionFeePaid': {
+          'who': who.toList(),
+          'actualFee': actualFee,
+          'tip': tip,
+        }
+      };
 
   int _sizeHint() {
     int size = 1;
@@ -115,17 +132,42 @@ class TransactionFeePaid extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(0, output);
-    const _i1.U8ArrayCodec(32).encodeTo(who, output);
-    _i1.U128Codec.codec.encodeTo(actualFee, output);
-    _i1.U128Codec.codec.encodeTo(tip, output);
+    _i1.U8Codec.codec.encodeTo(
+      0,
+      output,
+    );
+    const _i1.U8ArrayCodec(32).encodeTo(
+      who,
+      output,
+    );
+    _i1.U128Codec.codec.encodeTo(
+      actualFee,
+      output,
+    );
+    _i1.U128Codec.codec.encodeTo(
+      tip,
+      output,
+    );
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is TransactionFeePaid && _i4.listsEqual(other.who, who) && other.actualFee == actualFee && other.tip == tip;
+      identical(
+        this,
+        other,
+      ) ||
+      other is TransactionFeePaid &&
+          _i4.listsEqual(
+            other.who,
+            who,
+          ) &&
+          other.actualFee == actualFee &&
+          other.tip == tip;
 
   @override
-  int get hashCode => Object.hash(who, actualFee, tip);
+  int get hashCode => Object.hash(
+        who,
+        actualFee,
+        tip,
+      );
 }

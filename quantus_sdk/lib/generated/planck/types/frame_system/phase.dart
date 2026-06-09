@@ -62,7 +62,10 @@ class $PhaseCodec with _i1.Codec<Phase> {
   }
 
   @override
-  void encodeTo(Phase value, _i1.Output output) {
+  void encodeTo(
+    Phase value,
+    _i1.Output output,
+  ) {
     switch (value.runtimeType) {
       case ApplyExtrinsic:
         (value as ApplyExtrinsic).encodeTo(output);
@@ -74,7 +77,8 @@ class $PhaseCodec with _i1.Codec<Phase> {
         (value as Initialization).encodeTo(output);
         break;
       default:
-        throw Exception('Phase: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception(
+            'Phase: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 
@@ -88,7 +92,8 @@ class $PhaseCodec with _i1.Codec<Phase> {
       case Initialization:
         return 1;
       default:
-        throw Exception('Phase: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception(
+            'Phase: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 }
@@ -113,12 +118,23 @@ class ApplyExtrinsic extends Phase {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(0, output);
-    _i1.U32Codec.codec.encodeTo(value0, output);
+    _i1.U8Codec.codec.encodeTo(
+      0,
+      output,
+    );
+    _i1.U32Codec.codec.encodeTo(
+      value0,
+      output,
+    );
   }
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is ApplyExtrinsic && other.value0 == value0;
+  bool operator ==(Object other) =>
+      identical(
+        this,
+        other,
+      ) ||
+      other is ApplyExtrinsic && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -131,7 +147,10 @@ class Finalization extends Phase {
   Map<String, dynamic> toJson() => {'Finalization': null};
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(1, output);
+    _i1.U8Codec.codec.encodeTo(
+      1,
+      output,
+    );
   }
 
   @override
@@ -148,7 +167,10 @@ class Initialization extends Phase {
   Map<String, dynamic> toJson() => {'Initialization': null};
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(2, output);
+    _i1.U8Codec.codec.encodeTo(
+      2,
+      output,
+    );
   }
 
   @override

@@ -13,7 +13,6 @@ class MultisigCreatedEvent extends MultisigCreationEvent {
     required super.signers,
     required super.palletFee,
     required super.networkFee,
-    required super.deposit,
     required super.timestamp,
     required super.blockNumber,
     required super.blockHash,
@@ -40,7 +39,6 @@ class MultisigCreatedEvent extends MultisigCreationEvent {
       signers: fields.signers,
       palletFee: fields.palletFee,
       networkFee: fields.networkFee,
-      deposit: fields.deposit,
       blockHash: blockHash,
       timestamp: timestamp ?? DateTime.now(),
       blockNumber: 0,
@@ -78,7 +76,6 @@ class MultisigCreatedEvent extends MultisigCreationEvent {
       signers: signers,
       palletFee: MultisigCreationEvent.palletConstants.multisigFee,
       networkFee: _networkFeeFromGraphql(multisig),
-      deposit: MultisigCreationEvent.palletConstants.multisigDeposit,
       timestamp: accountEventTimestamp ?? dateTimeFromJson(multisig['timestamp']),
       blockNumber: blockHeightFromJsonMap(block),
       blockHash: blockHashFromJsonMap(block),
@@ -101,6 +98,6 @@ class MultisigCreatedEvent extends MultisigCreationEvent {
   @override
   String toString() {
     return 'MultisigCreated{id: $id, creator: $creatorId, address: $multisigAddress, '
-        'threshold: $threshold, palletFee: $palletFee, networkFee: $networkFee, deposit: $deposit}';
+        'threshold: $threshold, palletFee: $palletFee, networkFee: $networkFee}';
   }
 }

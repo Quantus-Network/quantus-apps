@@ -78,7 +78,10 @@ class $CallCodec with _i1.Codec<Call> {
   }
 
   @override
-  void encodeTo(Call value, _i1.Output output) {
+  void encodeTo(
+    Call value,
+    _i1.Output output,
+  ) {
     switch (value.runtimeType) {
       case NotePreimage:
         (value as NotePreimage).encodeTo(output);
@@ -96,7 +99,8 @@ class $CallCodec with _i1.Codec<Call> {
         (value as EnsureUpdated).encodeTo(output);
         break;
       default:
-        throw Exception('Call: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception(
+            'Call: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 
@@ -114,7 +118,8 @@ class $CallCodec with _i1.Codec<Call> {
       case EnsureUpdated:
         return (value as EnsureUpdated)._sizeHint();
       default:
-        throw Exception('Call: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception(
+            'Call: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 }
@@ -135,8 +140,8 @@ class NotePreimage extends Call {
 
   @override
   Map<String, Map<String, List<int>>> toJson() => {
-    'note_preimage': {'bytes': bytes},
-  };
+        'note_preimage': {'bytes': bytes}
+      };
 
   int _sizeHint() {
     int size = 1;
@@ -145,13 +150,27 @@ class NotePreimage extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(0, output);
-    _i1.U8SequenceCodec.codec.encodeTo(bytes, output);
+    _i1.U8Codec.codec.encodeTo(
+      0,
+      output,
+    );
+    _i1.U8SequenceCodec.codec.encodeTo(
+      bytes,
+      output,
+    );
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(this, other) || other is NotePreimage && _i4.listsEqual(other.bytes, bytes);
+      identical(
+        this,
+        other,
+      ) ||
+      other is NotePreimage &&
+          _i4.listsEqual(
+            other.bytes,
+            bytes,
+          );
 
   @override
   int get hashCode => bytes.hashCode;
@@ -175,8 +194,8 @@ class UnnotePreimage extends Call {
 
   @override
   Map<String, Map<String, List<int>>> toJson() => {
-    'unnote_preimage': {'hash': hash.toList()},
-  };
+        'unnote_preimage': {'hash': hash.toList()}
+      };
 
   int _sizeHint() {
     int size = 1;
@@ -185,13 +204,27 @@ class UnnotePreimage extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(1, output);
-    const _i1.U8ArrayCodec(32).encodeTo(hash, output);
+    _i1.U8Codec.codec.encodeTo(
+      1,
+      output,
+    );
+    const _i1.U8ArrayCodec(32).encodeTo(
+      hash,
+      output,
+    );
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(this, other) || other is UnnotePreimage && _i4.listsEqual(other.hash, hash);
+      identical(
+        this,
+        other,
+      ) ||
+      other is UnnotePreimage &&
+          _i4.listsEqual(
+            other.hash,
+            hash,
+          );
 
   @override
   int get hashCode => hash.hashCode;
@@ -213,8 +246,8 @@ class RequestPreimage extends Call {
 
   @override
   Map<String, Map<String, List<int>>> toJson() => {
-    'request_preimage': {'hash': hash.toList()},
-  };
+        'request_preimage': {'hash': hash.toList()}
+      };
 
   int _sizeHint() {
     int size = 1;
@@ -223,13 +256,27 @@ class RequestPreimage extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(2, output);
-    const _i1.U8ArrayCodec(32).encodeTo(hash, output);
+    _i1.U8Codec.codec.encodeTo(
+      2,
+      output,
+    );
+    const _i1.U8ArrayCodec(32).encodeTo(
+      hash,
+      output,
+    );
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(this, other) || other is RequestPreimage && _i4.listsEqual(other.hash, hash);
+      identical(
+        this,
+        other,
+      ) ||
+      other is RequestPreimage &&
+          _i4.listsEqual(
+            other.hash,
+            hash,
+          );
 
   @override
   int get hashCode => hash.hashCode;
@@ -250,8 +297,8 @@ class UnrequestPreimage extends Call {
 
   @override
   Map<String, Map<String, List<int>>> toJson() => {
-    'unrequest_preimage': {'hash': hash.toList()},
-  };
+        'unrequest_preimage': {'hash': hash.toList()}
+      };
 
   int _sizeHint() {
     int size = 1;
@@ -260,13 +307,27 @@ class UnrequestPreimage extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(3, output);
-    const _i1.U8ArrayCodec(32).encodeTo(hash, output);
+    _i1.U8Codec.codec.encodeTo(
+      3,
+      output,
+    );
+    const _i1.U8ArrayCodec(32).encodeTo(
+      hash,
+      output,
+    );
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(this, other) || other is UnrequestPreimage && _i4.listsEqual(other.hash, hash);
+      identical(
+        this,
+        other,
+      ) ||
+      other is UnrequestPreimage &&
+          _i4.listsEqual(
+            other.hash,
+            hash,
+          );
 
   @override
   int get hashCode => hash.hashCode;
@@ -279,7 +340,9 @@ class EnsureUpdated extends Call {
   const EnsureUpdated({required this.hashes});
 
   factory EnsureUpdated._decode(_i1.Input input) {
-    return EnsureUpdated(hashes: const _i1.SequenceCodec<_i3.H256>(_i3.H256Codec()).decode(input));
+    return EnsureUpdated(
+        hashes:
+            const _i1.SequenceCodec<_i3.H256>(_i3.H256Codec()).decode(input));
   }
 
   /// Vec<T::Hash>
@@ -287,23 +350,40 @@ class EnsureUpdated extends Call {
 
   @override
   Map<String, Map<String, List<List<int>>>> toJson() => {
-    'ensure_updated': {'hashes': hashes.map((value) => value.toList()).toList()},
-  };
+        'ensure_updated': {
+          'hashes': hashes.map((value) => value.toList()).toList()
+        }
+      };
 
   int _sizeHint() {
     int size = 1;
-    size = size + const _i1.SequenceCodec<_i3.H256>(_i3.H256Codec()).sizeHint(hashes);
+    size = size +
+        const _i1.SequenceCodec<_i3.H256>(_i3.H256Codec()).sizeHint(hashes);
     return size;
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(4, output);
-    const _i1.SequenceCodec<_i3.H256>(_i3.H256Codec()).encodeTo(hashes, output);
+    _i1.U8Codec.codec.encodeTo(
+      4,
+      output,
+    );
+    const _i1.SequenceCodec<_i3.H256>(_i3.H256Codec()).encodeTo(
+      hashes,
+      output,
+    );
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(this, other) || other is EnsureUpdated && _i4.listsEqual(other.hashes, hashes);
+      identical(
+        this,
+        other,
+      ) ||
+      other is EnsureUpdated &&
+          _i4.listsEqual(
+            other.hashes,
+            hashes,
+          );
 
   @override
   int get hashCode => hashes.hashCode;

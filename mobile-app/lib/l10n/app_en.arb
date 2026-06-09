@@ -326,7 +326,7 @@
     "@multisigCreateAlreadyExists": {
       "description": "Toast when predicted multisig address is already registered"
     },
-    "multisigCreateInsufficientBalance": "Insufficient balance to cover multisig creation fees and deposit.",
+    "multisigCreateInsufficientBalance": "Insufficient balance to cover multisig creation fees.",
     "@multisigCreateInsufficientBalance": {
       "description": "Toast when creator balance is below pallet fee + network fee + deposit"
     },

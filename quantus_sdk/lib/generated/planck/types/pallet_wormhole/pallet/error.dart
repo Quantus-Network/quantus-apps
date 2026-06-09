@@ -9,7 +9,8 @@ enum Error {
   nullifierAlreadyUsed('NullifierAlreadyUsed', 1),
   blockNotFound('BlockNotFound', 2),
   aggregatedVerifierNotAvailable('AggregatedVerifierNotAvailable', 3),
-  aggregatedProofDeserializationFailed('AggregatedProofDeserializationFailed', 4),
+  aggregatedProofDeserializationFailed(
+      'AggregatedProofDeserializationFailed', 4),
   aggregatedVerificationFailed('AggregatedVerificationFailed', 5),
   invalidAggregatedPublicInputs('InvalidAggregatedPublicInputs', 6),
 
@@ -22,7 +23,10 @@ enum Error {
   /// Only native asset (asset_id = 0) is supported in this version
   nonNativeAssetNotSupported('NonNativeAssetNotSupported', 9);
 
-  const Error(this.variantName, this.codecIndex);
+  const Error(
+    this.variantName,
+    this.codecIndex,
+  );
 
   factory Error.decode(_i1.Input input) {
     return codec.decode(input);
@@ -74,7 +78,13 @@ class $ErrorCodec with _i1.Codec<Error> {
   }
 
   @override
-  void encodeTo(Error value, _i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(value.codecIndex, output);
+  void encodeTo(
+    Error value,
+    _i1.Output output,
+  ) {
+    _i1.U8Codec.codec.encodeTo(
+      value.codecIndex,
+      output,
+    );
   }
 }

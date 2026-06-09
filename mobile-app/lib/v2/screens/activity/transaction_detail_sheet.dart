@@ -346,7 +346,6 @@ class _DetailsSection extends ConsumerWidget {
       signers: event.signers,
       palletFee: event.palletFee,
       networkFee: event.networkFee,
-      deposit: event.deposit,
       timestamp: event.timestamp,
     );
   }
@@ -369,7 +368,6 @@ class _DetailsSection extends ConsumerWidget {
       signers: event.signers,
       palletFee: event.palletFee,
       networkFee: event.networkFee,
-      deposit: event.deposit,
       timestamp: event.timestamp,
       txHash: txHash,
     );
@@ -384,7 +382,6 @@ class _DetailsSection extends ConsumerWidget {
     required List<String> signers,
     required BigInt palletFee,
     required BigInt networkFee,
-    required BigInt deposit,
     required DateTime timestamp,
     String? txHash,
   }) {
@@ -393,7 +390,6 @@ class _DetailsSection extends ConsumerWidget {
     final dateTime = DatetimeFormattingService.formatTxDateTime(timestamp);
     final palletFeeValue = _formatBalance(l10n, formattingService, palletFee);
     final networkFeeValue = _formatBalance(l10n, formattingService, networkFee);
-    final depositValue = _formatBalance(l10n, formattingService, deposit);
 
     return Column(
       children: [
@@ -407,7 +403,6 @@ class _DetailsSection extends ConsumerWidget {
         _DetailRow(label: l10n.activityDetailMultisigCreator, value: creatorAddress, colors: colors),
         _DetailRow(label: l10n.activityDetailMultisigCreationFee, value: palletFeeValue, colors: colors),
         _DetailRow(label: l10n.activityDetailNetworkFee, value: networkFeeValue, colors: colors),
-        _DetailRow(label: l10n.activityDetailMultisigDeposit, value: depositValue, colors: colors),
         _DetailRow(label: l10n.activityDetailDate, value: dateTime, colors: colors),
         if (txHash != null) _DetailRow(label: l10n.activityDetailTxHash, value: txHash, colors: colors),
       ],

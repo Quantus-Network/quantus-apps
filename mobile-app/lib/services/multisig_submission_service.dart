@@ -20,7 +20,7 @@ class MultisigSubmissionService {
   ///
   /// Throws [MultisigAlreadyExistsException] if the predicted address already
   /// exists, or [MultisigInsufficientBalanceException] if the creator cannot
-  /// afford pallet fee + network fee + deposit.
+  /// afford pallet fee + network fee.
   Future<void> preflightMultisigCreation({
     required List<String> signers,
     required int threshold,

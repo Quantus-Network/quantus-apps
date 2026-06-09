@@ -34,12 +34,28 @@ abstract class Event {
 class $Event {
   const $Event();
 
-  Created created({required int assetId, required _i3.AccountId32 creator, required _i3.AccountId32 owner}) {
-    return Created(assetId: assetId, creator: creator, owner: owner);
+  Created created({
+    required int assetId,
+    required _i3.AccountId32 creator,
+    required _i3.AccountId32 owner,
+  }) {
+    return Created(
+      assetId: assetId,
+      creator: creator,
+      owner: owner,
+    );
   }
 
-  Issued issued({required int assetId, required _i3.AccountId32 owner, required BigInt amount}) {
-    return Issued(assetId: assetId, owner: owner, amount: amount);
+  Issued issued({
+    required int assetId,
+    required _i3.AccountId32 owner,
+    required BigInt amount,
+  }) {
+    return Issued(
+      assetId: assetId,
+      owner: owner,
+      amount: amount,
+    );
   }
 
   Transferred transferred({
@@ -48,11 +64,24 @@ class $Event {
     required _i3.AccountId32 to,
     required BigInt amount,
   }) {
-    return Transferred(assetId: assetId, from: from, to: to, amount: amount);
+    return Transferred(
+      assetId: assetId,
+      from: from,
+      to: to,
+      amount: amount,
+    );
   }
 
-  Burned burned({required int assetId, required _i3.AccountId32 owner, required BigInt balance}) {
-    return Burned(assetId: assetId, owner: owner, balance: balance);
+  Burned burned({
+    required int assetId,
+    required _i3.AccountId32 owner,
+    required BigInt balance,
+  }) {
+    return Burned(
+      assetId: assetId,
+      owner: owner,
+      balance: balance,
+    );
   }
 
   TeamChanged teamChanged({
@@ -61,19 +90,42 @@ class $Event {
     required _i3.AccountId32 admin,
     required _i3.AccountId32 freezer,
   }) {
-    return TeamChanged(assetId: assetId, issuer: issuer, admin: admin, freezer: freezer);
+    return TeamChanged(
+      assetId: assetId,
+      issuer: issuer,
+      admin: admin,
+      freezer: freezer,
+    );
   }
 
-  OwnerChanged ownerChanged({required int assetId, required _i3.AccountId32 owner}) {
-    return OwnerChanged(assetId: assetId, owner: owner);
+  OwnerChanged ownerChanged({
+    required int assetId,
+    required _i3.AccountId32 owner,
+  }) {
+    return OwnerChanged(
+      assetId: assetId,
+      owner: owner,
+    );
   }
 
-  Frozen frozen({required int assetId, required _i3.AccountId32 who}) {
-    return Frozen(assetId: assetId, who: who);
+  Frozen frozen({
+    required int assetId,
+    required _i3.AccountId32 who,
+  }) {
+    return Frozen(
+      assetId: assetId,
+      who: who,
+    );
   }
 
-  Thawed thawed({required int assetId, required _i3.AccountId32 who}) {
-    return Thawed(assetId: assetId, who: who);
+  Thawed thawed({
+    required int assetId,
+    required _i3.AccountId32 who,
+  }) {
+    return Thawed(
+      assetId: assetId,
+      who: who,
+    );
   }
 
   AssetFrozen assetFrozen({required int assetId}) {
@@ -116,8 +168,14 @@ class $Event {
     return Destroyed(assetId: assetId);
   }
 
-  ForceCreated forceCreated({required int assetId, required _i3.AccountId32 owner}) {
-    return ForceCreated(assetId: assetId, owner: owner);
+  ForceCreated forceCreated({
+    required int assetId,
+    required _i3.AccountId32 owner,
+  }) {
+    return ForceCreated(
+      assetId: assetId,
+      owner: owner,
+    );
   }
 
   MetadataSet metadataSet({
@@ -127,7 +185,13 @@ class $Event {
     required int decimals,
     required bool isFrozen,
   }) {
-    return MetadataSet(assetId: assetId, name: name, symbol: symbol, decimals: decimals, isFrozen: isFrozen);
+    return MetadataSet(
+      assetId: assetId,
+      name: name,
+      symbol: symbol,
+      decimals: decimals,
+      isFrozen: isFrozen,
+    );
   }
 
   MetadataCleared metadataCleared({required int assetId}) {
@@ -140,7 +204,12 @@ class $Event {
     required _i3.AccountId32 delegate,
     required BigInt amount,
   }) {
-    return ApprovedTransfer(assetId: assetId, source: source, delegate: delegate, amount: amount);
+    return ApprovedTransfer(
+      assetId: assetId,
+      source: source,
+      delegate: delegate,
+      amount: amount,
+    );
   }
 
   ApprovalCancelled approvalCancelled({
@@ -148,7 +217,11 @@ class $Event {
     required _i3.AccountId32 owner,
     required _i3.AccountId32 delegate,
   }) {
-    return ApprovalCancelled(assetId: assetId, owner: owner, delegate: delegate);
+    return ApprovalCancelled(
+      assetId: assetId,
+      owner: owner,
+      delegate: delegate,
+    );
   }
 
   TransferredApproved transferredApproved({
@@ -171,28 +244,70 @@ class $Event {
     return AssetStatusChanged(assetId: assetId);
   }
 
-  AssetMinBalanceChanged assetMinBalanceChanged({required int assetId, required BigInt newMinBalance}) {
-    return AssetMinBalanceChanged(assetId: assetId, newMinBalance: newMinBalance);
+  AssetMinBalanceChanged assetMinBalanceChanged({
+    required int assetId,
+    required BigInt newMinBalance,
+  }) {
+    return AssetMinBalanceChanged(
+      assetId: assetId,
+      newMinBalance: newMinBalance,
+    );
   }
 
-  Touched touched({required int assetId, required _i3.AccountId32 who, required _i3.AccountId32 depositor}) {
-    return Touched(assetId: assetId, who: who, depositor: depositor);
+  Touched touched({
+    required int assetId,
+    required _i3.AccountId32 who,
+    required _i3.AccountId32 depositor,
+  }) {
+    return Touched(
+      assetId: assetId,
+      who: who,
+      depositor: depositor,
+    );
   }
 
-  Blocked blocked({required int assetId, required _i3.AccountId32 who}) {
-    return Blocked(assetId: assetId, who: who);
+  Blocked blocked({
+    required int assetId,
+    required _i3.AccountId32 who,
+  }) {
+    return Blocked(
+      assetId: assetId,
+      who: who,
+    );
   }
 
-  Deposited deposited({required int assetId, required _i3.AccountId32 who, required BigInt amount}) {
-    return Deposited(assetId: assetId, who: who, amount: amount);
+  Deposited deposited({
+    required int assetId,
+    required _i3.AccountId32 who,
+    required BigInt amount,
+  }) {
+    return Deposited(
+      assetId: assetId,
+      who: who,
+      amount: amount,
+    );
   }
 
-  Withdrawn withdrawn({required int assetId, required _i3.AccountId32 who, required BigInt amount}) {
-    return Withdrawn(assetId: assetId, who: who, amount: amount);
+  Withdrawn withdrawn({
+    required int assetId,
+    required _i3.AccountId32 who,
+    required BigInt amount,
+  }) {
+    return Withdrawn(
+      assetId: assetId,
+      who: who,
+      amount: amount,
+    );
   }
 
-  ReservesUpdated reservesUpdated({required int assetId, required List<dynamic> reserves}) {
-    return ReservesUpdated(assetId: assetId, reserves: reserves);
+  ReservesUpdated reservesUpdated({
+    required int assetId,
+    required List<dynamic> reserves,
+  }) {
+    return ReservesUpdated(
+      assetId: assetId,
+      reserves: reserves,
+    );
   }
 
   ReservesRemoved reservesRemoved({required int assetId}) {
@@ -269,7 +384,10 @@ class $EventCodec with _i1.Codec<Event> {
   }
 
   @override
-  void encodeTo(Event value, _i1.Output output) {
+  void encodeTo(
+    Event value,
+    _i1.Output output,
+  ) {
     switch (value.runtimeType) {
       case Created:
         (value as Created).encodeTo(output);
@@ -356,7 +474,8 @@ class $EventCodec with _i1.Codec<Event> {
         (value as ReservesRemoved).encodeTo(output);
         break;
       default:
-        throw Exception('Event: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception(
+            'Event: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 
@@ -420,14 +539,19 @@ class $EventCodec with _i1.Codec<Event> {
       case ReservesRemoved:
         return (value as ReservesRemoved)._sizeHint();
       default:
-        throw Exception('Event: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception(
+            'Event: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 }
 
 /// Some asset class was created.
 class Created extends Event {
-  const Created({required this.assetId, required this.creator, required this.owner});
+  const Created({
+    required this.assetId,
+    required this.creator,
+    required this.owner,
+  });
 
   factory Created._decode(_i1.Input input) {
     return Created(
@@ -448,8 +572,12 @@ class Created extends Event {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-    'Created': {'assetId': assetId, 'creator': creator.toList(), 'owner': owner.toList()},
-  };
+        'Created': {
+          'assetId': assetId,
+          'creator': creator.toList(),
+          'owner': owner.toList(),
+        }
+      };
 
   int _sizeHint() {
     int size = 1;
@@ -460,27 +588,56 @@ class Created extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(0, output);
-    _i1.U32Codec.codec.encodeTo(assetId, output);
-    const _i1.U8ArrayCodec(32).encodeTo(creator, output);
-    const _i1.U8ArrayCodec(32).encodeTo(owner, output);
+    _i1.U8Codec.codec.encodeTo(
+      0,
+      output,
+    );
+    _i1.U32Codec.codec.encodeTo(
+      assetId,
+      output,
+    );
+    const _i1.U8ArrayCodec(32).encodeTo(
+      creator,
+      output,
+    );
+    const _i1.U8ArrayCodec(32).encodeTo(
+      owner,
+      output,
+    );
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(this, other) ||
+      identical(
+        this,
+        other,
+      ) ||
       other is Created &&
           other.assetId == assetId &&
-          _i4.listsEqual(other.creator, creator) &&
-          _i4.listsEqual(other.owner, owner);
+          _i4.listsEqual(
+            other.creator,
+            creator,
+          ) &&
+          _i4.listsEqual(
+            other.owner,
+            owner,
+          );
 
   @override
-  int get hashCode => Object.hash(assetId, creator, owner);
+  int get hashCode => Object.hash(
+        assetId,
+        creator,
+        owner,
+      );
 }
 
 /// Some assets were issued.
 class Issued extends Event {
-  const Issued({required this.assetId, required this.owner, required this.amount});
+  const Issued({
+    required this.assetId,
+    required this.owner,
+    required this.amount,
+  });
 
   factory Issued._decode(_i1.Input input) {
     return Issued(
@@ -501,8 +658,12 @@ class Issued extends Event {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-    'Issued': {'assetId': assetId, 'owner': owner.toList(), 'amount': amount},
-  };
+        'Issued': {
+          'assetId': assetId,
+          'owner': owner.toList(),
+          'amount': amount,
+        }
+      };
 
   int _sizeHint() {
     int size = 1;
@@ -513,24 +674,54 @@ class Issued extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(1, output);
-    _i1.U32Codec.codec.encodeTo(assetId, output);
-    const _i1.U8ArrayCodec(32).encodeTo(owner, output);
-    _i1.U128Codec.codec.encodeTo(amount, output);
+    _i1.U8Codec.codec.encodeTo(
+      1,
+      output,
+    );
+    _i1.U32Codec.codec.encodeTo(
+      assetId,
+      output,
+    );
+    const _i1.U8ArrayCodec(32).encodeTo(
+      owner,
+      output,
+    );
+    _i1.U128Codec.codec.encodeTo(
+      amount,
+      output,
+    );
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is Issued && other.assetId == assetId && _i4.listsEqual(other.owner, owner) && other.amount == amount;
+      identical(
+        this,
+        other,
+      ) ||
+      other is Issued &&
+          other.assetId == assetId &&
+          _i4.listsEqual(
+            other.owner,
+            owner,
+          ) &&
+          other.amount == amount;
 
   @override
-  int get hashCode => Object.hash(assetId, owner, amount);
+  int get hashCode => Object.hash(
+        assetId,
+        owner,
+        amount,
+      );
 }
 
 /// Some assets were transferred.
 class Transferred extends Event {
-  const Transferred({required this.assetId, required this.from, required this.to, required this.amount});
+  const Transferred({
+    required this.assetId,
+    required this.from,
+    required this.to,
+    required this.amount,
+  });
 
   factory Transferred._decode(_i1.Input input) {
     return Transferred(
@@ -555,8 +746,13 @@ class Transferred extends Event {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-    'Transferred': {'assetId': assetId, 'from': from.toList(), 'to': to.toList(), 'amount': amount},
-  };
+        'Transferred': {
+          'assetId': assetId,
+          'from': from.toList(),
+          'to': to.toList(),
+          'amount': amount,
+        }
+      };
 
   int _sizeHint() {
     int size = 1;
@@ -568,29 +764,62 @@ class Transferred extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(2, output);
-    _i1.U32Codec.codec.encodeTo(assetId, output);
-    const _i1.U8ArrayCodec(32).encodeTo(from, output);
-    const _i1.U8ArrayCodec(32).encodeTo(to, output);
-    _i1.U128Codec.codec.encodeTo(amount, output);
+    _i1.U8Codec.codec.encodeTo(
+      2,
+      output,
+    );
+    _i1.U32Codec.codec.encodeTo(
+      assetId,
+      output,
+    );
+    const _i1.U8ArrayCodec(32).encodeTo(
+      from,
+      output,
+    );
+    const _i1.U8ArrayCodec(32).encodeTo(
+      to,
+      output,
+    );
+    _i1.U128Codec.codec.encodeTo(
+      amount,
+      output,
+    );
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(this, other) ||
+      identical(
+        this,
+        other,
+      ) ||
       other is Transferred &&
           other.assetId == assetId &&
-          _i4.listsEqual(other.from, from) &&
-          _i4.listsEqual(other.to, to) &&
+          _i4.listsEqual(
+            other.from,
+            from,
+          ) &&
+          _i4.listsEqual(
+            other.to,
+            to,
+          ) &&
           other.amount == amount;
 
   @override
-  int get hashCode => Object.hash(assetId, from, to, amount);
+  int get hashCode => Object.hash(
+        assetId,
+        from,
+        to,
+        amount,
+      );
 }
 
 /// Some assets were destroyed.
 class Burned extends Event {
-  const Burned({required this.assetId, required this.owner, required this.balance});
+  const Burned({
+    required this.assetId,
+    required this.owner,
+    required this.balance,
+  });
 
   factory Burned._decode(_i1.Input input) {
     return Burned(
@@ -611,8 +840,12 @@ class Burned extends Event {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-    'Burned': {'assetId': assetId, 'owner': owner.toList(), 'balance': balance},
-  };
+        'Burned': {
+          'assetId': assetId,
+          'owner': owner.toList(),
+          'balance': balance,
+        }
+      };
 
   int _sizeHint() {
     int size = 1;
@@ -623,24 +856,54 @@ class Burned extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(3, output);
-    _i1.U32Codec.codec.encodeTo(assetId, output);
-    const _i1.U8ArrayCodec(32).encodeTo(owner, output);
-    _i1.U128Codec.codec.encodeTo(balance, output);
+    _i1.U8Codec.codec.encodeTo(
+      3,
+      output,
+    );
+    _i1.U32Codec.codec.encodeTo(
+      assetId,
+      output,
+    );
+    const _i1.U8ArrayCodec(32).encodeTo(
+      owner,
+      output,
+    );
+    _i1.U128Codec.codec.encodeTo(
+      balance,
+      output,
+    );
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is Burned && other.assetId == assetId && _i4.listsEqual(other.owner, owner) && other.balance == balance;
+      identical(
+        this,
+        other,
+      ) ||
+      other is Burned &&
+          other.assetId == assetId &&
+          _i4.listsEqual(
+            other.owner,
+            owner,
+          ) &&
+          other.balance == balance;
 
   @override
-  int get hashCode => Object.hash(assetId, owner, balance);
+  int get hashCode => Object.hash(
+        assetId,
+        owner,
+        balance,
+      );
 }
 
 /// The management team changed.
 class TeamChanged extends Event {
-  const TeamChanged({required this.assetId, required this.issuer, required this.admin, required this.freezer});
+  const TeamChanged({
+    required this.assetId,
+    required this.issuer,
+    required this.admin,
+    required this.freezer,
+  });
 
   factory TeamChanged._decode(_i1.Input input) {
     return TeamChanged(
@@ -665,13 +928,13 @@ class TeamChanged extends Event {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-    'TeamChanged': {
-      'assetId': assetId,
-      'issuer': issuer.toList(),
-      'admin': admin.toList(),
-      'freezer': freezer.toList(),
-    },
-  };
+        'TeamChanged': {
+          'assetId': assetId,
+          'issuer': issuer.toList(),
+          'admin': admin.toList(),
+          'freezer': freezer.toList(),
+        }
+      };
 
   int _sizeHint() {
     int size = 1;
@@ -683,32 +946,70 @@ class TeamChanged extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(4, output);
-    _i1.U32Codec.codec.encodeTo(assetId, output);
-    const _i1.U8ArrayCodec(32).encodeTo(issuer, output);
-    const _i1.U8ArrayCodec(32).encodeTo(admin, output);
-    const _i1.U8ArrayCodec(32).encodeTo(freezer, output);
+    _i1.U8Codec.codec.encodeTo(
+      4,
+      output,
+    );
+    _i1.U32Codec.codec.encodeTo(
+      assetId,
+      output,
+    );
+    const _i1.U8ArrayCodec(32).encodeTo(
+      issuer,
+      output,
+    );
+    const _i1.U8ArrayCodec(32).encodeTo(
+      admin,
+      output,
+    );
+    const _i1.U8ArrayCodec(32).encodeTo(
+      freezer,
+      output,
+    );
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(this, other) ||
+      identical(
+        this,
+        other,
+      ) ||
       other is TeamChanged &&
           other.assetId == assetId &&
-          _i4.listsEqual(other.issuer, issuer) &&
-          _i4.listsEqual(other.admin, admin) &&
-          _i4.listsEqual(other.freezer, freezer);
+          _i4.listsEqual(
+            other.issuer,
+            issuer,
+          ) &&
+          _i4.listsEqual(
+            other.admin,
+            admin,
+          ) &&
+          _i4.listsEqual(
+            other.freezer,
+            freezer,
+          );
 
   @override
-  int get hashCode => Object.hash(assetId, issuer, admin, freezer);
+  int get hashCode => Object.hash(
+        assetId,
+        issuer,
+        admin,
+        freezer,
+      );
 }
 
 /// The owner changed.
 class OwnerChanged extends Event {
-  const OwnerChanged({required this.assetId, required this.owner});
+  const OwnerChanged({
+    required this.assetId,
+    required this.owner,
+  });
 
   factory OwnerChanged._decode(_i1.Input input) {
-    return OwnerChanged(assetId: _i1.U32Codec.codec.decode(input), owner: const _i1.U8ArrayCodec(32).decode(input));
+    return OwnerChanged(
+      assetId: _i1.U32Codec.codec.decode(input),
+      owner: const _i1.U8ArrayCodec(32).decode(input),
+    );
   }
 
   /// T::AssetId
@@ -719,8 +1020,11 @@ class OwnerChanged extends Event {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-    'OwnerChanged': {'assetId': assetId, 'owner': owner.toList()},
-  };
+        'OwnerChanged': {
+          'assetId': assetId,
+          'owner': owner.toList(),
+        }
+      };
 
   int _sizeHint() {
     int size = 1;
@@ -730,25 +1034,52 @@ class OwnerChanged extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(5, output);
-    _i1.U32Codec.codec.encodeTo(assetId, output);
-    const _i1.U8ArrayCodec(32).encodeTo(owner, output);
+    _i1.U8Codec.codec.encodeTo(
+      5,
+      output,
+    );
+    _i1.U32Codec.codec.encodeTo(
+      assetId,
+      output,
+    );
+    const _i1.U8ArrayCodec(32).encodeTo(
+      owner,
+      output,
+    );
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(this, other) || other is OwnerChanged && other.assetId == assetId && _i4.listsEqual(other.owner, owner);
+      identical(
+        this,
+        other,
+      ) ||
+      other is OwnerChanged &&
+          other.assetId == assetId &&
+          _i4.listsEqual(
+            other.owner,
+            owner,
+          );
 
   @override
-  int get hashCode => Object.hash(assetId, owner);
+  int get hashCode => Object.hash(
+        assetId,
+        owner,
+      );
 }
 
 /// Some account `who` was frozen.
 class Frozen extends Event {
-  const Frozen({required this.assetId, required this.who});
+  const Frozen({
+    required this.assetId,
+    required this.who,
+  });
 
   factory Frozen._decode(_i1.Input input) {
-    return Frozen(assetId: _i1.U32Codec.codec.decode(input), who: const _i1.U8ArrayCodec(32).decode(input));
+    return Frozen(
+      assetId: _i1.U32Codec.codec.decode(input),
+      who: const _i1.U8ArrayCodec(32).decode(input),
+    );
   }
 
   /// T::AssetId
@@ -759,8 +1090,11 @@ class Frozen extends Event {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-    'Frozen': {'assetId': assetId, 'who': who.toList()},
-  };
+        'Frozen': {
+          'assetId': assetId,
+          'who': who.toList(),
+        }
+      };
 
   int _sizeHint() {
     int size = 1;
@@ -770,25 +1104,52 @@ class Frozen extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(6, output);
-    _i1.U32Codec.codec.encodeTo(assetId, output);
-    const _i1.U8ArrayCodec(32).encodeTo(who, output);
+    _i1.U8Codec.codec.encodeTo(
+      6,
+      output,
+    );
+    _i1.U32Codec.codec.encodeTo(
+      assetId,
+      output,
+    );
+    const _i1.U8ArrayCodec(32).encodeTo(
+      who,
+      output,
+    );
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(this, other) || other is Frozen && other.assetId == assetId && _i4.listsEqual(other.who, who);
+      identical(
+        this,
+        other,
+      ) ||
+      other is Frozen &&
+          other.assetId == assetId &&
+          _i4.listsEqual(
+            other.who,
+            who,
+          );
 
   @override
-  int get hashCode => Object.hash(assetId, who);
+  int get hashCode => Object.hash(
+        assetId,
+        who,
+      );
 }
 
 /// Some account `who` was thawed.
 class Thawed extends Event {
-  const Thawed({required this.assetId, required this.who});
+  const Thawed({
+    required this.assetId,
+    required this.who,
+  });
 
   factory Thawed._decode(_i1.Input input) {
-    return Thawed(assetId: _i1.U32Codec.codec.decode(input), who: const _i1.U8ArrayCodec(32).decode(input));
+    return Thawed(
+      assetId: _i1.U32Codec.codec.decode(input),
+      who: const _i1.U8ArrayCodec(32).decode(input),
+    );
   }
 
   /// T::AssetId
@@ -799,8 +1160,11 @@ class Thawed extends Event {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-    'Thawed': {'assetId': assetId, 'who': who.toList()},
-  };
+        'Thawed': {
+          'assetId': assetId,
+          'who': who.toList(),
+        }
+      };
 
   int _sizeHint() {
     int size = 1;
@@ -810,17 +1174,38 @@ class Thawed extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(7, output);
-    _i1.U32Codec.codec.encodeTo(assetId, output);
-    const _i1.U8ArrayCodec(32).encodeTo(who, output);
+    _i1.U8Codec.codec.encodeTo(
+      7,
+      output,
+    );
+    _i1.U32Codec.codec.encodeTo(
+      assetId,
+      output,
+    );
+    const _i1.U8ArrayCodec(32).encodeTo(
+      who,
+      output,
+    );
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(this, other) || other is Thawed && other.assetId == assetId && _i4.listsEqual(other.who, who);
+      identical(
+        this,
+        other,
+      ) ||
+      other is Thawed &&
+          other.assetId == assetId &&
+          _i4.listsEqual(
+            other.who,
+            who,
+          );
 
   @override
-  int get hashCode => Object.hash(assetId, who);
+  int get hashCode => Object.hash(
+        assetId,
+        who,
+      );
 }
 
 /// Some asset `asset_id` was frozen.
@@ -836,8 +1221,8 @@ class AssetFrozen extends Event {
 
   @override
   Map<String, Map<String, int>> toJson() => {
-    'AssetFrozen': {'assetId': assetId},
-  };
+        'AssetFrozen': {'assetId': assetId}
+      };
 
   int _sizeHint() {
     int size = 1;
@@ -846,12 +1231,23 @@ class AssetFrozen extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(8, output);
-    _i1.U32Codec.codec.encodeTo(assetId, output);
+    _i1.U8Codec.codec.encodeTo(
+      8,
+      output,
+    );
+    _i1.U32Codec.codec.encodeTo(
+      assetId,
+      output,
+    );
   }
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is AssetFrozen && other.assetId == assetId;
+  bool operator ==(Object other) =>
+      identical(
+        this,
+        other,
+      ) ||
+      other is AssetFrozen && other.assetId == assetId;
 
   @override
   int get hashCode => assetId.hashCode;
@@ -870,8 +1266,8 @@ class AssetThawed extends Event {
 
   @override
   Map<String, Map<String, int>> toJson() => {
-    'AssetThawed': {'assetId': assetId},
-  };
+        'AssetThawed': {'assetId': assetId}
+      };
 
   int _sizeHint() {
     int size = 1;
@@ -880,12 +1276,23 @@ class AssetThawed extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(9, output);
-    _i1.U32Codec.codec.encodeTo(assetId, output);
+    _i1.U8Codec.codec.encodeTo(
+      9,
+      output,
+    );
+    _i1.U32Codec.codec.encodeTo(
+      assetId,
+      output,
+    );
   }
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is AssetThawed && other.assetId == assetId;
+  bool operator ==(Object other) =>
+      identical(
+        this,
+        other,
+      ) ||
+      other is AssetThawed && other.assetId == assetId;
 
   @override
   int get hashCode => assetId.hashCode;
@@ -893,7 +1300,11 @@ class AssetThawed extends Event {
 
 /// Accounts were destroyed for given asset.
 class AccountsDestroyed extends Event {
-  const AccountsDestroyed({required this.assetId, required this.accountsDestroyed, required this.accountsRemaining});
+  const AccountsDestroyed({
+    required this.assetId,
+    required this.accountsDestroyed,
+    required this.accountsRemaining,
+  });
 
   factory AccountsDestroyed._decode(_i1.Input input) {
     return AccountsDestroyed(
@@ -914,12 +1325,12 @@ class AccountsDestroyed extends Event {
 
   @override
   Map<String, Map<String, int>> toJson() => {
-    'AccountsDestroyed': {
-      'assetId': assetId,
-      'accountsDestroyed': accountsDestroyed,
-      'accountsRemaining': accountsRemaining,
-    },
-  };
+        'AccountsDestroyed': {
+          'assetId': assetId,
+          'accountsDestroyed': accountsDestroyed,
+          'accountsRemaining': accountsRemaining,
+        }
+      };
 
   int _sizeHint() {
     int size = 1;
@@ -930,27 +1341,50 @@ class AccountsDestroyed extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(10, output);
-    _i1.U32Codec.codec.encodeTo(assetId, output);
-    _i1.U32Codec.codec.encodeTo(accountsDestroyed, output);
-    _i1.U32Codec.codec.encodeTo(accountsRemaining, output);
+    _i1.U8Codec.codec.encodeTo(
+      10,
+      output,
+    );
+    _i1.U32Codec.codec.encodeTo(
+      assetId,
+      output,
+    );
+    _i1.U32Codec.codec.encodeTo(
+      accountsDestroyed,
+      output,
+    );
+    _i1.U32Codec.codec.encodeTo(
+      accountsRemaining,
+      output,
+    );
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(this, other) ||
+      identical(
+        this,
+        other,
+      ) ||
       other is AccountsDestroyed &&
           other.assetId == assetId &&
           other.accountsDestroyed == accountsDestroyed &&
           other.accountsRemaining == accountsRemaining;
 
   @override
-  int get hashCode => Object.hash(assetId, accountsDestroyed, accountsRemaining);
+  int get hashCode => Object.hash(
+        assetId,
+        accountsDestroyed,
+        accountsRemaining,
+      );
 }
 
 /// Approvals were destroyed for given asset.
 class ApprovalsDestroyed extends Event {
-  const ApprovalsDestroyed({required this.assetId, required this.approvalsDestroyed, required this.approvalsRemaining});
+  const ApprovalsDestroyed({
+    required this.assetId,
+    required this.approvalsDestroyed,
+    required this.approvalsRemaining,
+  });
 
   factory ApprovalsDestroyed._decode(_i1.Input input) {
     return ApprovalsDestroyed(
@@ -971,12 +1405,12 @@ class ApprovalsDestroyed extends Event {
 
   @override
   Map<String, Map<String, int>> toJson() => {
-    'ApprovalsDestroyed': {
-      'assetId': assetId,
-      'approvalsDestroyed': approvalsDestroyed,
-      'approvalsRemaining': approvalsRemaining,
-    },
-  };
+        'ApprovalsDestroyed': {
+          'assetId': assetId,
+          'approvalsDestroyed': approvalsDestroyed,
+          'approvalsRemaining': approvalsRemaining,
+        }
+      };
 
   int _sizeHint() {
     int size = 1;
@@ -987,22 +1421,41 @@ class ApprovalsDestroyed extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(11, output);
-    _i1.U32Codec.codec.encodeTo(assetId, output);
-    _i1.U32Codec.codec.encodeTo(approvalsDestroyed, output);
-    _i1.U32Codec.codec.encodeTo(approvalsRemaining, output);
+    _i1.U8Codec.codec.encodeTo(
+      11,
+      output,
+    );
+    _i1.U32Codec.codec.encodeTo(
+      assetId,
+      output,
+    );
+    _i1.U32Codec.codec.encodeTo(
+      approvalsDestroyed,
+      output,
+    );
+    _i1.U32Codec.codec.encodeTo(
+      approvalsRemaining,
+      output,
+    );
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(this, other) ||
+      identical(
+        this,
+        other,
+      ) ||
       other is ApprovalsDestroyed &&
           other.assetId == assetId &&
           other.approvalsDestroyed == approvalsDestroyed &&
           other.approvalsRemaining == approvalsRemaining;
 
   @override
-  int get hashCode => Object.hash(assetId, approvalsDestroyed, approvalsRemaining);
+  int get hashCode => Object.hash(
+        assetId,
+        approvalsDestroyed,
+        approvalsRemaining,
+      );
 }
 
 /// An asset class is in the process of being destroyed.
@@ -1018,8 +1471,8 @@ class DestructionStarted extends Event {
 
   @override
   Map<String, Map<String, int>> toJson() => {
-    'DestructionStarted': {'assetId': assetId},
-  };
+        'DestructionStarted': {'assetId': assetId}
+      };
 
   int _sizeHint() {
     int size = 1;
@@ -1028,12 +1481,23 @@ class DestructionStarted extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(12, output);
-    _i1.U32Codec.codec.encodeTo(assetId, output);
+    _i1.U8Codec.codec.encodeTo(
+      12,
+      output,
+    );
+    _i1.U32Codec.codec.encodeTo(
+      assetId,
+      output,
+    );
   }
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is DestructionStarted && other.assetId == assetId;
+  bool operator ==(Object other) =>
+      identical(
+        this,
+        other,
+      ) ||
+      other is DestructionStarted && other.assetId == assetId;
 
   @override
   int get hashCode => assetId.hashCode;
@@ -1052,8 +1516,8 @@ class Destroyed extends Event {
 
   @override
   Map<String, Map<String, int>> toJson() => {
-    'Destroyed': {'assetId': assetId},
-  };
+        'Destroyed': {'assetId': assetId}
+      };
 
   int _sizeHint() {
     int size = 1;
@@ -1062,12 +1526,23 @@ class Destroyed extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(13, output);
-    _i1.U32Codec.codec.encodeTo(assetId, output);
+    _i1.U8Codec.codec.encodeTo(
+      13,
+      output,
+    );
+    _i1.U32Codec.codec.encodeTo(
+      assetId,
+      output,
+    );
   }
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is Destroyed && other.assetId == assetId;
+  bool operator ==(Object other) =>
+      identical(
+        this,
+        other,
+      ) ||
+      other is Destroyed && other.assetId == assetId;
 
   @override
   int get hashCode => assetId.hashCode;
@@ -1075,10 +1550,16 @@ class Destroyed extends Event {
 
 /// Some asset class was force-created.
 class ForceCreated extends Event {
-  const ForceCreated({required this.assetId, required this.owner});
+  const ForceCreated({
+    required this.assetId,
+    required this.owner,
+  });
 
   factory ForceCreated._decode(_i1.Input input) {
-    return ForceCreated(assetId: _i1.U32Codec.codec.decode(input), owner: const _i1.U8ArrayCodec(32).decode(input));
+    return ForceCreated(
+      assetId: _i1.U32Codec.codec.decode(input),
+      owner: const _i1.U8ArrayCodec(32).decode(input),
+    );
   }
 
   /// T::AssetId
@@ -1089,8 +1570,11 @@ class ForceCreated extends Event {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-    'ForceCreated': {'assetId': assetId, 'owner': owner.toList()},
-  };
+        'ForceCreated': {
+          'assetId': assetId,
+          'owner': owner.toList(),
+        }
+      };
 
   int _sizeHint() {
     int size = 1;
@@ -1100,17 +1584,38 @@ class ForceCreated extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(14, output);
-    _i1.U32Codec.codec.encodeTo(assetId, output);
-    const _i1.U8ArrayCodec(32).encodeTo(owner, output);
+    _i1.U8Codec.codec.encodeTo(
+      14,
+      output,
+    );
+    _i1.U32Codec.codec.encodeTo(
+      assetId,
+      output,
+    );
+    const _i1.U8ArrayCodec(32).encodeTo(
+      owner,
+      output,
+    );
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(this, other) || other is ForceCreated && other.assetId == assetId && _i4.listsEqual(other.owner, owner);
+      identical(
+        this,
+        other,
+      ) ||
+      other is ForceCreated &&
+          other.assetId == assetId &&
+          _i4.listsEqual(
+            other.owner,
+            owner,
+          );
 
   @override
-  int get hashCode => Object.hash(assetId, owner);
+  int get hashCode => Object.hash(
+        assetId,
+        owner,
+      );
 }
 
 /// New metadata has been set for an asset.
@@ -1150,8 +1655,14 @@ class MetadataSet extends Event {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-    'MetadataSet': {'assetId': assetId, 'name': name, 'symbol': symbol, 'decimals': decimals, 'isFrozen': isFrozen},
-  };
+        'MetadataSet': {
+          'assetId': assetId,
+          'name': name,
+          'symbol': symbol,
+          'decimals': decimals,
+          'isFrozen': isFrozen,
+        }
+      };
 
   int _sizeHint() {
     int size = 1;
@@ -1164,26 +1675,59 @@ class MetadataSet extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(15, output);
-    _i1.U32Codec.codec.encodeTo(assetId, output);
-    _i1.U8SequenceCodec.codec.encodeTo(name, output);
-    _i1.U8SequenceCodec.codec.encodeTo(symbol, output);
-    _i1.U8Codec.codec.encodeTo(decimals, output);
-    _i1.BoolCodec.codec.encodeTo(isFrozen, output);
+    _i1.U8Codec.codec.encodeTo(
+      15,
+      output,
+    );
+    _i1.U32Codec.codec.encodeTo(
+      assetId,
+      output,
+    );
+    _i1.U8SequenceCodec.codec.encodeTo(
+      name,
+      output,
+    );
+    _i1.U8SequenceCodec.codec.encodeTo(
+      symbol,
+      output,
+    );
+    _i1.U8Codec.codec.encodeTo(
+      decimals,
+      output,
+    );
+    _i1.BoolCodec.codec.encodeTo(
+      isFrozen,
+      output,
+    );
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(this, other) ||
+      identical(
+        this,
+        other,
+      ) ||
       other is MetadataSet &&
           other.assetId == assetId &&
-          _i4.listsEqual(other.name, name) &&
-          _i4.listsEqual(other.symbol, symbol) &&
+          _i4.listsEqual(
+            other.name,
+            name,
+          ) &&
+          _i4.listsEqual(
+            other.symbol,
+            symbol,
+          ) &&
           other.decimals == decimals &&
           other.isFrozen == isFrozen;
 
   @override
-  int get hashCode => Object.hash(assetId, name, symbol, decimals, isFrozen);
+  int get hashCode => Object.hash(
+        assetId,
+        name,
+        symbol,
+        decimals,
+        isFrozen,
+      );
 }
 
 /// Metadata has been cleared for an asset.
@@ -1199,8 +1743,8 @@ class MetadataCleared extends Event {
 
   @override
   Map<String, Map<String, int>> toJson() => {
-    'MetadataCleared': {'assetId': assetId},
-  };
+        'MetadataCleared': {'assetId': assetId}
+      };
 
   int _sizeHint() {
     int size = 1;
@@ -1209,12 +1753,23 @@ class MetadataCleared extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(16, output);
-    _i1.U32Codec.codec.encodeTo(assetId, output);
+    _i1.U8Codec.codec.encodeTo(
+      16,
+      output,
+    );
+    _i1.U32Codec.codec.encodeTo(
+      assetId,
+      output,
+    );
   }
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is MetadataCleared && other.assetId == assetId;
+  bool operator ==(Object other) =>
+      identical(
+        this,
+        other,
+      ) ||
+      other is MetadataCleared && other.assetId == assetId;
 
   @override
   int get hashCode => assetId.hashCode;
@@ -1222,7 +1777,12 @@ class MetadataCleared extends Event {
 
 /// (Additional) funds have been approved for transfer to a destination account.
 class ApprovedTransfer extends Event {
-  const ApprovedTransfer({required this.assetId, required this.source, required this.delegate, required this.amount});
+  const ApprovedTransfer({
+    required this.assetId,
+    required this.source,
+    required this.delegate,
+    required this.amount,
+  });
 
   factory ApprovedTransfer._decode(_i1.Input input) {
     return ApprovedTransfer(
@@ -1247,13 +1807,13 @@ class ApprovedTransfer extends Event {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-    'ApprovedTransfer': {
-      'assetId': assetId,
-      'source': source.toList(),
-      'delegate': delegate.toList(),
-      'amount': amount,
-    },
-  };
+        'ApprovedTransfer': {
+          'assetId': assetId,
+          'source': source.toList(),
+          'delegate': delegate.toList(),
+          'amount': amount,
+        }
+      };
 
   int _sizeHint() {
     int size = 1;
@@ -1265,29 +1825,62 @@ class ApprovedTransfer extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(17, output);
-    _i1.U32Codec.codec.encodeTo(assetId, output);
-    const _i1.U8ArrayCodec(32).encodeTo(source, output);
-    const _i1.U8ArrayCodec(32).encodeTo(delegate, output);
-    _i1.U128Codec.codec.encodeTo(amount, output);
+    _i1.U8Codec.codec.encodeTo(
+      17,
+      output,
+    );
+    _i1.U32Codec.codec.encodeTo(
+      assetId,
+      output,
+    );
+    const _i1.U8ArrayCodec(32).encodeTo(
+      source,
+      output,
+    );
+    const _i1.U8ArrayCodec(32).encodeTo(
+      delegate,
+      output,
+    );
+    _i1.U128Codec.codec.encodeTo(
+      amount,
+      output,
+    );
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(this, other) ||
+      identical(
+        this,
+        other,
+      ) ||
       other is ApprovedTransfer &&
           other.assetId == assetId &&
-          _i4.listsEqual(other.source, source) &&
-          _i4.listsEqual(other.delegate, delegate) &&
+          _i4.listsEqual(
+            other.source,
+            source,
+          ) &&
+          _i4.listsEqual(
+            other.delegate,
+            delegate,
+          ) &&
           other.amount == amount;
 
   @override
-  int get hashCode => Object.hash(assetId, source, delegate, amount);
+  int get hashCode => Object.hash(
+        assetId,
+        source,
+        delegate,
+        amount,
+      );
 }
 
 /// An approval for account `delegate` was cancelled by `owner`.
 class ApprovalCancelled extends Event {
-  const ApprovalCancelled({required this.assetId, required this.owner, required this.delegate});
+  const ApprovalCancelled({
+    required this.assetId,
+    required this.owner,
+    required this.delegate,
+  });
 
   factory ApprovalCancelled._decode(_i1.Input input) {
     return ApprovalCancelled(
@@ -1308,8 +1901,12 @@ class ApprovalCancelled extends Event {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-    'ApprovalCancelled': {'assetId': assetId, 'owner': owner.toList(), 'delegate': delegate.toList()},
-  };
+        'ApprovalCancelled': {
+          'assetId': assetId,
+          'owner': owner.toList(),
+          'delegate': delegate.toList(),
+        }
+      };
 
   int _sizeHint() {
     int size = 1;
@@ -1320,22 +1917,47 @@ class ApprovalCancelled extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(18, output);
-    _i1.U32Codec.codec.encodeTo(assetId, output);
-    const _i1.U8ArrayCodec(32).encodeTo(owner, output);
-    const _i1.U8ArrayCodec(32).encodeTo(delegate, output);
+    _i1.U8Codec.codec.encodeTo(
+      18,
+      output,
+    );
+    _i1.U32Codec.codec.encodeTo(
+      assetId,
+      output,
+    );
+    const _i1.U8ArrayCodec(32).encodeTo(
+      owner,
+      output,
+    );
+    const _i1.U8ArrayCodec(32).encodeTo(
+      delegate,
+      output,
+    );
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(this, other) ||
+      identical(
+        this,
+        other,
+      ) ||
       other is ApprovalCancelled &&
           other.assetId == assetId &&
-          _i4.listsEqual(other.owner, owner) &&
-          _i4.listsEqual(other.delegate, delegate);
+          _i4.listsEqual(
+            other.owner,
+            owner,
+          ) &&
+          _i4.listsEqual(
+            other.delegate,
+            delegate,
+          );
 
   @override
-  int get hashCode => Object.hash(assetId, owner, delegate);
+  int get hashCode => Object.hash(
+        assetId,
+        owner,
+        delegate,
+      );
 }
 
 /// An `amount` was transferred in its entirety from `owner` to `destination` by
@@ -1376,14 +1998,14 @@ class TransferredApproved extends Event {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-    'TransferredApproved': {
-      'assetId': assetId,
-      'owner': owner.toList(),
-      'delegate': delegate.toList(),
-      'destination': destination.toList(),
-      'amount': amount,
-    },
-  };
+        'TransferredApproved': {
+          'assetId': assetId,
+          'owner': owner.toList(),
+          'delegate': delegate.toList(),
+          'destination': destination.toList(),
+          'amount': amount,
+        }
+      };
 
   int _sizeHint() {
     int size = 1;
@@ -1396,26 +2018,62 @@ class TransferredApproved extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(19, output);
-    _i1.U32Codec.codec.encodeTo(assetId, output);
-    const _i1.U8ArrayCodec(32).encodeTo(owner, output);
-    const _i1.U8ArrayCodec(32).encodeTo(delegate, output);
-    const _i1.U8ArrayCodec(32).encodeTo(destination, output);
-    _i1.U128Codec.codec.encodeTo(amount, output);
+    _i1.U8Codec.codec.encodeTo(
+      19,
+      output,
+    );
+    _i1.U32Codec.codec.encodeTo(
+      assetId,
+      output,
+    );
+    const _i1.U8ArrayCodec(32).encodeTo(
+      owner,
+      output,
+    );
+    const _i1.U8ArrayCodec(32).encodeTo(
+      delegate,
+      output,
+    );
+    const _i1.U8ArrayCodec(32).encodeTo(
+      destination,
+      output,
+    );
+    _i1.U128Codec.codec.encodeTo(
+      amount,
+      output,
+    );
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(this, other) ||
+      identical(
+        this,
+        other,
+      ) ||
       other is TransferredApproved &&
           other.assetId == assetId &&
-          _i4.listsEqual(other.owner, owner) &&
-          _i4.listsEqual(other.delegate, delegate) &&
-          _i4.listsEqual(other.destination, destination) &&
+          _i4.listsEqual(
+            other.owner,
+            owner,
+          ) &&
+          _i4.listsEqual(
+            other.delegate,
+            delegate,
+          ) &&
+          _i4.listsEqual(
+            other.destination,
+            destination,
+          ) &&
           other.amount == amount;
 
   @override
-  int get hashCode => Object.hash(assetId, owner, delegate, destination, amount);
+  int get hashCode => Object.hash(
+        assetId,
+        owner,
+        delegate,
+        destination,
+        amount,
+      );
 }
 
 /// An asset has had its attributes changed by the `Force` origin.
@@ -1431,8 +2089,8 @@ class AssetStatusChanged extends Event {
 
   @override
   Map<String, Map<String, int>> toJson() => {
-    'AssetStatusChanged': {'assetId': assetId},
-  };
+        'AssetStatusChanged': {'assetId': assetId}
+      };
 
   int _sizeHint() {
     int size = 1;
@@ -1441,12 +2099,23 @@ class AssetStatusChanged extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(20, output);
-    _i1.U32Codec.codec.encodeTo(assetId, output);
+    _i1.U8Codec.codec.encodeTo(
+      20,
+      output,
+    );
+    _i1.U32Codec.codec.encodeTo(
+      assetId,
+      output,
+    );
   }
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is AssetStatusChanged && other.assetId == assetId;
+  bool operator ==(Object other) =>
+      identical(
+        this,
+        other,
+      ) ||
+      other is AssetStatusChanged && other.assetId == assetId;
 
   @override
   int get hashCode => assetId.hashCode;
@@ -1454,7 +2123,10 @@ class AssetStatusChanged extends Event {
 
 /// The min_balance of an asset has been updated by the asset owner.
 class AssetMinBalanceChanged extends Event {
-  const AssetMinBalanceChanged({required this.assetId, required this.newMinBalance});
+  const AssetMinBalanceChanged({
+    required this.assetId,
+    required this.newMinBalance,
+  });
 
   factory AssetMinBalanceChanged._decode(_i1.Input input) {
     return AssetMinBalanceChanged(
@@ -1471,8 +2143,11 @@ class AssetMinBalanceChanged extends Event {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-    'AssetMinBalanceChanged': {'assetId': assetId, 'newMinBalance': newMinBalance},
-  };
+        'AssetMinBalanceChanged': {
+          'assetId': assetId,
+          'newMinBalance': newMinBalance,
+        }
+      };
 
   int _sizeHint() {
     int size = 1;
@@ -1482,23 +2157,44 @@ class AssetMinBalanceChanged extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(21, output);
-    _i1.U32Codec.codec.encodeTo(assetId, output);
-    _i1.U128Codec.codec.encodeTo(newMinBalance, output);
+    _i1.U8Codec.codec.encodeTo(
+      21,
+      output,
+    );
+    _i1.U32Codec.codec.encodeTo(
+      assetId,
+      output,
+    );
+    _i1.U128Codec.codec.encodeTo(
+      newMinBalance,
+      output,
+    );
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is AssetMinBalanceChanged && other.assetId == assetId && other.newMinBalance == newMinBalance;
+      identical(
+        this,
+        other,
+      ) ||
+      other is AssetMinBalanceChanged &&
+          other.assetId == assetId &&
+          other.newMinBalance == newMinBalance;
 
   @override
-  int get hashCode => Object.hash(assetId, newMinBalance);
+  int get hashCode => Object.hash(
+        assetId,
+        newMinBalance,
+      );
 }
 
 /// Some account `who` was created with a deposit from `depositor`.
 class Touched extends Event {
-  const Touched({required this.assetId, required this.who, required this.depositor});
+  const Touched({
+    required this.assetId,
+    required this.who,
+    required this.depositor,
+  });
 
   factory Touched._decode(_i1.Input input) {
     return Touched(
@@ -1519,8 +2215,12 @@ class Touched extends Event {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-    'Touched': {'assetId': assetId, 'who': who.toList(), 'depositor': depositor.toList()},
-  };
+        'Touched': {
+          'assetId': assetId,
+          'who': who.toList(),
+          'depositor': depositor.toList(),
+        }
+      };
 
   int _sizeHint() {
     int size = 1;
@@ -1531,30 +2231,61 @@ class Touched extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(22, output);
-    _i1.U32Codec.codec.encodeTo(assetId, output);
-    const _i1.U8ArrayCodec(32).encodeTo(who, output);
-    const _i1.U8ArrayCodec(32).encodeTo(depositor, output);
+    _i1.U8Codec.codec.encodeTo(
+      22,
+      output,
+    );
+    _i1.U32Codec.codec.encodeTo(
+      assetId,
+      output,
+    );
+    const _i1.U8ArrayCodec(32).encodeTo(
+      who,
+      output,
+    );
+    const _i1.U8ArrayCodec(32).encodeTo(
+      depositor,
+      output,
+    );
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(this, other) ||
+      identical(
+        this,
+        other,
+      ) ||
       other is Touched &&
           other.assetId == assetId &&
-          _i4.listsEqual(other.who, who) &&
-          _i4.listsEqual(other.depositor, depositor);
+          _i4.listsEqual(
+            other.who,
+            who,
+          ) &&
+          _i4.listsEqual(
+            other.depositor,
+            depositor,
+          );
 
   @override
-  int get hashCode => Object.hash(assetId, who, depositor);
+  int get hashCode => Object.hash(
+        assetId,
+        who,
+        depositor,
+      );
 }
 
 /// Some account `who` was blocked.
 class Blocked extends Event {
-  const Blocked({required this.assetId, required this.who});
+  const Blocked({
+    required this.assetId,
+    required this.who,
+  });
 
   factory Blocked._decode(_i1.Input input) {
-    return Blocked(assetId: _i1.U32Codec.codec.decode(input), who: const _i1.U8ArrayCodec(32).decode(input));
+    return Blocked(
+      assetId: _i1.U32Codec.codec.decode(input),
+      who: const _i1.U8ArrayCodec(32).decode(input),
+    );
   }
 
   /// T::AssetId
@@ -1565,8 +2296,11 @@ class Blocked extends Event {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-    'Blocked': {'assetId': assetId, 'who': who.toList()},
-  };
+        'Blocked': {
+          'assetId': assetId,
+          'who': who.toList(),
+        }
+      };
 
   int _sizeHint() {
     int size = 1;
@@ -1576,22 +2310,47 @@ class Blocked extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(23, output);
-    _i1.U32Codec.codec.encodeTo(assetId, output);
-    const _i1.U8ArrayCodec(32).encodeTo(who, output);
+    _i1.U8Codec.codec.encodeTo(
+      23,
+      output,
+    );
+    _i1.U32Codec.codec.encodeTo(
+      assetId,
+      output,
+    );
+    const _i1.U8ArrayCodec(32).encodeTo(
+      who,
+      output,
+    );
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(this, other) || other is Blocked && other.assetId == assetId && _i4.listsEqual(other.who, who);
+      identical(
+        this,
+        other,
+      ) ||
+      other is Blocked &&
+          other.assetId == assetId &&
+          _i4.listsEqual(
+            other.who,
+            who,
+          );
 
   @override
-  int get hashCode => Object.hash(assetId, who);
+  int get hashCode => Object.hash(
+        assetId,
+        who,
+      );
 }
 
 /// Some assets were deposited (e.g. for transaction fees).
 class Deposited extends Event {
-  const Deposited({required this.assetId, required this.who, required this.amount});
+  const Deposited({
+    required this.assetId,
+    required this.who,
+    required this.amount,
+  });
 
   factory Deposited._decode(_i1.Input input) {
     return Deposited(
@@ -1612,8 +2371,12 @@ class Deposited extends Event {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-    'Deposited': {'assetId': assetId, 'who': who.toList(), 'amount': amount},
-  };
+        'Deposited': {
+          'assetId': assetId,
+          'who': who.toList(),
+          'amount': amount,
+        }
+      };
 
   int _sizeHint() {
     int size = 1;
@@ -1624,24 +2387,53 @@ class Deposited extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(24, output);
-    _i1.U32Codec.codec.encodeTo(assetId, output);
-    const _i1.U8ArrayCodec(32).encodeTo(who, output);
-    _i1.U128Codec.codec.encodeTo(amount, output);
+    _i1.U8Codec.codec.encodeTo(
+      24,
+      output,
+    );
+    _i1.U32Codec.codec.encodeTo(
+      assetId,
+      output,
+    );
+    const _i1.U8ArrayCodec(32).encodeTo(
+      who,
+      output,
+    );
+    _i1.U128Codec.codec.encodeTo(
+      amount,
+      output,
+    );
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is Deposited && other.assetId == assetId && _i4.listsEqual(other.who, who) && other.amount == amount;
+      identical(
+        this,
+        other,
+      ) ||
+      other is Deposited &&
+          other.assetId == assetId &&
+          _i4.listsEqual(
+            other.who,
+            who,
+          ) &&
+          other.amount == amount;
 
   @override
-  int get hashCode => Object.hash(assetId, who, amount);
+  int get hashCode => Object.hash(
+        assetId,
+        who,
+        amount,
+      );
 }
 
 /// Some assets were withdrawn from the account (e.g. for transaction fees).
 class Withdrawn extends Event {
-  const Withdrawn({required this.assetId, required this.who, required this.amount});
+  const Withdrawn({
+    required this.assetId,
+    required this.who,
+    required this.amount,
+  });
 
   factory Withdrawn._decode(_i1.Input input) {
     return Withdrawn(
@@ -1662,8 +2454,12 @@ class Withdrawn extends Event {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-    'Withdrawn': {'assetId': assetId, 'who': who.toList(), 'amount': amount},
-  };
+        'Withdrawn': {
+          'assetId': assetId,
+          'who': who.toList(),
+          'amount': amount,
+        }
+      };
 
   int _sizeHint() {
     int size = 1;
@@ -1674,29 +2470,58 @@ class Withdrawn extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(25, output);
-    _i1.U32Codec.codec.encodeTo(assetId, output);
-    const _i1.U8ArrayCodec(32).encodeTo(who, output);
-    _i1.U128Codec.codec.encodeTo(amount, output);
+    _i1.U8Codec.codec.encodeTo(
+      25,
+      output,
+    );
+    _i1.U32Codec.codec.encodeTo(
+      assetId,
+      output,
+    );
+    const _i1.U8ArrayCodec(32).encodeTo(
+      who,
+      output,
+    );
+    _i1.U128Codec.codec.encodeTo(
+      amount,
+      output,
+    );
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is Withdrawn && other.assetId == assetId && _i4.listsEqual(other.who, who) && other.amount == amount;
+      identical(
+        this,
+        other,
+      ) ||
+      other is Withdrawn &&
+          other.assetId == assetId &&
+          _i4.listsEqual(
+            other.who,
+            who,
+          ) &&
+          other.amount == amount;
 
   @override
-  int get hashCode => Object.hash(assetId, who, amount);
+  int get hashCode => Object.hash(
+        assetId,
+        who,
+        amount,
+      );
 }
 
 /// Reserve information was set or updated for `asset_id`.
 class ReservesUpdated extends Event {
-  const ReservesUpdated({required this.assetId, required this.reserves});
+  const ReservesUpdated({
+    required this.assetId,
+    required this.reserves,
+  });
 
   factory ReservesUpdated._decode(_i1.Input input) {
     return ReservesUpdated(
       assetId: _i1.U32Codec.codec.decode(input),
-      reserves: const _i1.SequenceCodec<dynamic>(_i1.NullCodec.codec).decode(input),
+      reserves:
+          const _i1.SequenceCodec<dynamic>(_i1.NullCodec.codec).decode(input),
     );
   }
 
@@ -1708,29 +2533,54 @@ class ReservesUpdated extends Event {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-    'ReservesUpdated': {'assetId': assetId, 'reserves': reserves.map((value) => null).toList()},
-  };
+        'ReservesUpdated': {
+          'assetId': assetId,
+          'reserves': reserves.map((value) => null).toList(),
+        }
+      };
 
   int _sizeHint() {
     int size = 1;
     size = size + _i1.U32Codec.codec.sizeHint(assetId);
-    size = size + const _i1.SequenceCodec<dynamic>(_i1.NullCodec.codec).sizeHint(reserves);
+    size = size +
+        const _i1.SequenceCodec<dynamic>(_i1.NullCodec.codec)
+            .sizeHint(reserves);
     return size;
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(26, output);
-    _i1.U32Codec.codec.encodeTo(assetId, output);
-    const _i1.SequenceCodec<dynamic>(_i1.NullCodec.codec).encodeTo(reserves, output);
+    _i1.U8Codec.codec.encodeTo(
+      26,
+      output,
+    );
+    _i1.U32Codec.codec.encodeTo(
+      assetId,
+      output,
+    );
+    const _i1.SequenceCodec<dynamic>(_i1.NullCodec.codec).encodeTo(
+      reserves,
+      output,
+    );
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is ReservesUpdated && other.assetId == assetId && _i4.listsEqual(other.reserves, reserves);
+      identical(
+        this,
+        other,
+      ) ||
+      other is ReservesUpdated &&
+          other.assetId == assetId &&
+          _i4.listsEqual(
+            other.reserves,
+            reserves,
+          );
 
   @override
-  int get hashCode => Object.hash(assetId, reserves);
+  int get hashCode => Object.hash(
+        assetId,
+        reserves,
+      );
 }
 
 /// Reserve information was removed for `asset_id`.
@@ -1746,8 +2596,8 @@ class ReservesRemoved extends Event {
 
   @override
   Map<String, Map<String, int>> toJson() => {
-    'ReservesRemoved': {'assetId': assetId},
-  };
+        'ReservesRemoved': {'assetId': assetId}
+      };
 
   int _sizeHint() {
     int size = 1;
@@ -1756,12 +2606,23 @@ class ReservesRemoved extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(27, output);
-    _i1.U32Codec.codec.encodeTo(assetId, output);
+    _i1.U8Codec.codec.encodeTo(
+      27,
+      output,
+    );
+    _i1.U32Codec.codec.encodeTo(
+      assetId,
+      output,
+    );
   }
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is ReservesRemoved && other.assetId == assetId;
+  bool operator ==(Object other) =>
+      identical(
+        this,
+        other,
+      ) ||
+      other is ReservesRemoved && other.assetId == assetId;
 
   @override
   int get hashCode => assetId.hashCode;

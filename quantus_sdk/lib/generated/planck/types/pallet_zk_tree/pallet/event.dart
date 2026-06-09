@@ -32,8 +32,16 @@ abstract class Event {
 class $Event {
   const $Event();
 
-  LeafInserted leafInserted({required BigInt index, required List<int> leafHash, required List<int> newRoot}) {
-    return LeafInserted(index: index, leafHash: leafHash, newRoot: newRoot);
+  LeafInserted leafInserted({
+    required BigInt index,
+    required List<int> leafHash,
+    required List<int> newRoot,
+  }) {
+    return LeafInserted(
+      index: index,
+      leafHash: leafHash,
+      newRoot: newRoot,
+    );
   }
 
   TreeGrew treeGrew({required int newDepth}) {
@@ -58,7 +66,10 @@ class $EventCodec with _i1.Codec<Event> {
   }
 
   @override
-  void encodeTo(Event value, _i1.Output output) {
+  void encodeTo(
+    Event value,
+    _i1.Output output,
+  ) {
     switch (value.runtimeType) {
       case LeafInserted:
         (value as LeafInserted).encodeTo(output);
@@ -67,7 +78,8 @@ class $EventCodec with _i1.Codec<Event> {
         (value as TreeGrew).encodeTo(output);
         break;
       default:
-        throw Exception('Event: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception(
+            'Event: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 
@@ -79,14 +91,19 @@ class $EventCodec with _i1.Codec<Event> {
       case TreeGrew:
         return (value as TreeGrew)._sizeHint();
       default:
-        throw Exception('Event: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception(
+            'Event: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 }
 
 /// A new leaf was inserted into the tree.
 class LeafInserted extends Event {
-  const LeafInserted({required this.index, required this.leafHash, required this.newRoot});
+  const LeafInserted({
+    required this.index,
+    required this.leafHash,
+    required this.newRoot,
+  });
 
   factory LeafInserted._decode(_i1.Input input) {
     return LeafInserted(
@@ -107,8 +124,12 @@ class LeafInserted extends Event {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-    'LeafInserted': {'index': index, 'leafHash': leafHash.toList(), 'newRoot': newRoot.toList()},
-  };
+        'LeafInserted': {
+          'index': index,
+          'leafHash': leafHash.toList(),
+          'newRoot': newRoot.toList(),
+        }
+      };
 
   int _sizeHint() {
     int size = 1;
@@ -119,22 +140,47 @@ class LeafInserted extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(0, output);
-    _i1.U64Codec.codec.encodeTo(index, output);
-    const _i1.U8ArrayCodec(32).encodeTo(leafHash, output);
-    const _i1.U8ArrayCodec(32).encodeTo(newRoot, output);
+    _i1.U8Codec.codec.encodeTo(
+      0,
+      output,
+    );
+    _i1.U64Codec.codec.encodeTo(
+      index,
+      output,
+    );
+    const _i1.U8ArrayCodec(32).encodeTo(
+      leafHash,
+      output,
+    );
+    const _i1.U8ArrayCodec(32).encodeTo(
+      newRoot,
+      output,
+    );
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(this, other) ||
+      identical(
+        this,
+        other,
+      ) ||
       other is LeafInserted &&
           other.index == index &&
-          _i3.listsEqual(other.leafHash, leafHash) &&
-          _i3.listsEqual(other.newRoot, newRoot);
+          _i3.listsEqual(
+            other.leafHash,
+            leafHash,
+          ) &&
+          _i3.listsEqual(
+            other.newRoot,
+            newRoot,
+          );
 
   @override
-  int get hashCode => Object.hash(index, leafHash, newRoot);
+  int get hashCode => Object.hash(
+        index,
+        leafHash,
+        newRoot,
+      );
 }
 
 /// Tree depth increased.
@@ -150,8 +196,8 @@ class TreeGrew extends Event {
 
   @override
   Map<String, Map<String, int>> toJson() => {
-    'TreeGrew': {'newDepth': newDepth},
-  };
+        'TreeGrew': {'newDepth': newDepth}
+      };
 
   int _sizeHint() {
     int size = 1;
@@ -160,12 +206,23 @@ class TreeGrew extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(1, output);
-    _i1.U8Codec.codec.encodeTo(newDepth, output);
+    _i1.U8Codec.codec.encodeTo(
+      1,
+      output,
+    );
+    _i1.U8Codec.codec.encodeTo(
+      newDepth,
+      output,
+    );
   }
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is TreeGrew && other.newDepth == newDepth;
+  bool operator ==(Object other) =>
+      identical(
+        this,
+        other,
+      ) ||
+      other is TreeGrew && other.newDepth == newDepth;
 
   @override
   int get hashCode => newDepth.hashCode;

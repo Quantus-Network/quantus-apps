@@ -22,7 +22,12 @@ class PreimageDeposit {
   Map<String, BigInt> toJson() => {'amount': amount};
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is PreimageDeposit && other.amount == amount;
+  bool operator ==(Object other) =>
+      identical(
+        this,
+        other,
+      ) ||
+      other is PreimageDeposit && other.amount == amount;
 
   @override
   int get hashCode => amount.hashCode;
@@ -32,8 +37,14 @@ class $PreimageDepositCodec with _i1.Codec<PreimageDeposit> {
   const $PreimageDepositCodec();
 
   @override
-  void encodeTo(PreimageDeposit obj, _i1.Output output) {
-    _i1.U128Codec.codec.encodeTo(obj.amount, output);
+  void encodeTo(
+    PreimageDeposit obj,
+    _i1.Output output,
+  ) {
+    _i1.U128Codec.codec.encodeTo(
+      obj.amount,
+      output,
+    );
   }
 
   @override

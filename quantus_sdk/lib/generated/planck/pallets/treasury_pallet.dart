@@ -14,13 +14,15 @@ class Queries {
 
   final _i1.StateApi __api;
 
-  final _i1.StorageValue<_i2.AccountId32> _treasuryAccount = const _i1.StorageValue<_i2.AccountId32>(
+  final _i1.StorageValue<_i2.AccountId32> _treasuryAccount =
+      const _i1.StorageValue<_i2.AccountId32>(
     prefix: 'TreasuryPallet',
     storage: 'TreasuryAccount',
     valueCodec: _i2.AccountId32Codec(),
   );
 
-  final _i1.StorageValue<_i3.Permill> _treasuryPortion = const _i1.StorageValue<_i3.Permill>(
+  final _i1.StorageValue<_i3.Permill> _treasuryPortion =
+      const _i1.StorageValue<_i3.Permill>(
     prefix: 'TreasuryPallet',
     storage: 'TreasuryPortion',
     valueCodec: _i3.PermillCodec(),
@@ -29,7 +31,10 @@ class Queries {
   /// The treasury account that receives mining rewards.
   _i4.Future<_i2.AccountId32?> treasuryAccount({_i1.BlockHash? at}) async {
     final hashedKey = _treasuryAccount.hashedKey();
-    final bytes = await __api.getStorage(hashedKey, at: at);
+    final bytes = await __api.getStorage(
+      hashedKey,
+      at: at,
+    );
     if (bytes != null) {
       return _treasuryAccount.decodeValue(bytes);
     }
@@ -40,7 +45,10 @@ class Queries {
   /// Uses OptionQuery so genesis is required. Permill allows fine granularity (e.g. 33.3%).
   _i4.Future<_i3.Permill?> treasuryPortion({_i1.BlockHash? at}) async {
     final hashedKey = _treasuryPortion.hashedKey();
-    final bytes = await __api.getStorage(hashedKey, at: at);
+    final bytes = await __api.getStorage(
+      hashedKey,
+      at: at,
+    );
     if (bytes != null) {
       return _treasuryPortion.decodeValue(bytes);
     }
@@ -64,6 +72,11 @@ class Txs {
   const Txs();
 
   /// Set the treasury account. Root only. Zero address is rejected (funds would be locked).
+  ///
+  /// **Important**: This only changes where *future* mining rewards are sent. Any balance
+  /// that has already accumulated in the current treasury account is NOT automatically
+  /// migrated to the new account. If you need to move existing funds, perform a separate
+  /// balance transfer (e.g., via governance proposal) after updating the account.
   _i6.TreasuryPallet setTreasuryAccount({required _i2.AccountId32 account}) {
     return _i6.TreasuryPallet(_i7.SetTreasuryAccount(account: account));
   }

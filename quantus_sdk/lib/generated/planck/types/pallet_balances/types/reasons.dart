@@ -8,7 +8,10 @@ enum Reasons {
   misc('Misc', 1),
   all('All', 2);
 
-  const Reasons(this.variantName, this.codecIndex);
+  const Reasons(
+    this.variantName,
+    this.codecIndex,
+  );
 
   factory Reasons.decode(_i1.Input input) {
     return codec.decode(input);
@@ -46,7 +49,13 @@ class $ReasonsCodec with _i1.Codec<Reasons> {
   }
 
   @override
-  void encodeTo(Reasons value, _i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(value.codecIndex, output);
+  void encodeTo(
+    Reasons value,
+    _i1.Output output,
+  ) {
+    _i1.U8Codec.codec.encodeTo(
+      value.codecIndex,
+      output,
+    );
   }
 }

@@ -210,7 +210,6 @@ void main() {
       expect(event.signers, hasLength(3));
       expect(event.palletFee, multisig_pallet.Constants().multisigFee);
       expect(event.networkFee, BigInt.parse('8120809264'));
-      expect(event.deposit, multisig_pallet.Constants().multisigDeposit);
       expect(event.extrinsicHash, '0xea4400ec3247fc75b7187b6f6d83a89905017d1136c894e625a3c43a688606b9');
     });
   });
@@ -260,7 +259,7 @@ void main() {
 
       expect(withFee.palletFee, multisig_pallet.Constants().multisigFee);
       expect(withFee.networkFee, BigInt.parse('8120809264'));
-      expect(withFee.totalCost, withFee.palletFee + withFee.networkFee + withFee.deposit);
+      expect(withFee.totalCost, withFee.palletFee + withFee.networkFee);
     });
   });
 }

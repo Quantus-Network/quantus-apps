@@ -527,7 +527,7 @@ abstract class AppLocalizations {
   /// Toast when creator balance is below pallet fee + network fee + deposit
   ///
   /// In en, this message translates to:
-  /// **'Insufficient balance to cover multisig creation fees and deposit.'**
+  /// **'Insufficient balance to cover multisig creation fees.'**
   String get multisigCreateInsufficientBalance;
 
   /// Toast when on-chain confirmation polling times out

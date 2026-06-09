@@ -26,7 +26,6 @@ class PendingMultisigCreationRecord {
       signers: fields.signers,
       palletFee: fields.palletFee,
       networkFee: fields.networkFee,
-      deposit: fields.deposit,
       timestamp: submittedAt,
       extrinsicHash: extrinsicHash,
     );

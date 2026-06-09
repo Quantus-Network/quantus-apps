@@ -50,6 +50,8 @@ class _MultisigExecuteConfirmSheetState extends ConsumerState<_MultisigExecuteCo
   }
 
   Future<void> _loadNetworkFee() async {
+    print('loading network fee proposal id: ${widget.proposal.id}');
+
     try {
       final signer = ref
           .read(accountsProvider)
@@ -101,6 +103,10 @@ class _MultisigExecuteConfirmSheetState extends ConsumerState<_MultisigExecuteCo
             orElse: () => throw Exception('Member account not found in local wallet'),
           );
       if (signer == null) throw Exception('No signer account available');
+
+      print('executing proposal id: ${widget.proposal.id}');
+      print('msig: ${widget.msig.accountId}');
+      print('signer: ${signer.accountId}');
 
       await ref
           .read(transactionSubmissionServiceProvider)

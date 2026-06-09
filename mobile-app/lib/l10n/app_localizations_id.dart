@@ -240,7 +240,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get multisigCreateAlreadyExists => 'Multisig dengan alamat ini sudah ada on-chain.';
 
   @override
-  String get multisigCreateInsufficientBalance => 'Saldo tidak cukup untuk biaya dan deposit pembuatan multisig.';
+  String get multisigCreateInsufficientBalance => 'Saldo tidak cukup untuk biaya pembuatan multisig.';
 
   @override
   String get multisigCreateTimeoutToast =>

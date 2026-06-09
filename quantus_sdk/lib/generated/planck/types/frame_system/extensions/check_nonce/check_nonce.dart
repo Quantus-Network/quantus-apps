@@ -12,8 +12,14 @@ class CheckNonceCodec with _i1.Codec<CheckNonce> {
   }
 
   @override
-  void encodeTo(CheckNonce value, _i1.Output output) {
-    _i1.CompactBigIntCodec.codec.encodeTo(value, output);
+  void encodeTo(
+    CheckNonce value,
+    _i1.Output output,
+  ) {
+    _i1.CompactBigIntCodec.codec.encodeTo(
+      value,
+      output,
+    );
   }
 
   @override

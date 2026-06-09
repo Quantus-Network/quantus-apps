@@ -140,7 +140,10 @@ class $DispatchErrorCodec with _i1.Codec<DispatchError> {
   }
 
   @override
-  void encodeTo(DispatchError value, _i1.Output output) {
+  void encodeTo(
+    DispatchError value,
+    _i1.Output output,
+  ) {
     switch (value.runtimeType) {
       case Other:
         (value as Other).encodeTo(output);
@@ -188,7 +191,8 @@ class $DispatchErrorCodec with _i1.Codec<DispatchError> {
         (value as Trie).encodeTo(output);
         break;
       default:
-        throw Exception('DispatchError: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception(
+            'DispatchError: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 
@@ -226,7 +230,8 @@ class $DispatchErrorCodec with _i1.Codec<DispatchError> {
       case Trie:
         return (value as Trie)._sizeHint();
       default:
-        throw Exception('DispatchError: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception(
+            'DispatchError: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 }
@@ -238,7 +243,10 @@ class Other extends DispatchError {
   Map<String, dynamic> toJson() => {'Other': null};
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(0, output);
+    _i1.U8Codec.codec.encodeTo(
+      0,
+      output,
+    );
   }
 
   @override
@@ -255,7 +263,10 @@ class CannotLookup extends DispatchError {
   Map<String, dynamic> toJson() => {'CannotLookup': null};
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(1, output);
+    _i1.U8Codec.codec.encodeTo(
+      1,
+      output,
+    );
   }
 
   @override
@@ -272,7 +283,10 @@ class BadOrigin extends DispatchError {
   Map<String, dynamic> toJson() => {'BadOrigin': null};
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(2, output);
+    _i1.U8Codec.codec.encodeTo(
+      2,
+      output,
+    );
   }
 
   @override
@@ -302,12 +316,23 @@ class Module extends DispatchError {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(3, output);
-    _i3.ModuleError.codec.encodeTo(value0, output);
+    _i1.U8Codec.codec.encodeTo(
+      3,
+      output,
+    );
+    _i3.ModuleError.codec.encodeTo(
+      value0,
+      output,
+    );
   }
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is Module && other.value0 == value0;
+  bool operator ==(Object other) =>
+      identical(
+        this,
+        other,
+      ) ||
+      other is Module && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -320,7 +345,10 @@ class ConsumerRemaining extends DispatchError {
   Map<String, dynamic> toJson() => {'ConsumerRemaining': null};
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(4, output);
+    _i1.U8Codec.codec.encodeTo(
+      4,
+      output,
+    );
   }
 
   @override
@@ -337,7 +365,10 @@ class NoProviders extends DispatchError {
   Map<String, dynamic> toJson() => {'NoProviders': null};
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(5, output);
+    _i1.U8Codec.codec.encodeTo(
+      5,
+      output,
+    );
   }
 
   @override
@@ -354,7 +385,10 @@ class TooManyConsumers extends DispatchError {
   Map<String, dynamic> toJson() => {'TooManyConsumers': null};
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(6, output);
+    _i1.U8Codec.codec.encodeTo(
+      6,
+      output,
+    );
   }
 
   @override
@@ -384,12 +418,23 @@ class Token extends DispatchError {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(7, output);
-    _i4.TokenError.codec.encodeTo(value0, output);
+    _i1.U8Codec.codec.encodeTo(
+      7,
+      output,
+    );
+    _i4.TokenError.codec.encodeTo(
+      value0,
+      output,
+    );
   }
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is Token && other.value0 == value0;
+  bool operator ==(Object other) =>
+      identical(
+        this,
+        other,
+      ) ||
+      other is Token && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -415,12 +460,23 @@ class Arithmetic extends DispatchError {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(8, output);
-    _i5.ArithmeticError.codec.encodeTo(value0, output);
+    _i1.U8Codec.codec.encodeTo(
+      8,
+      output,
+    );
+    _i5.ArithmeticError.codec.encodeTo(
+      value0,
+      output,
+    );
   }
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is Arithmetic && other.value0 == value0;
+  bool operator ==(Object other) =>
+      identical(
+        this,
+        other,
+      ) ||
+      other is Arithmetic && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -446,12 +502,23 @@ class Transactional extends DispatchError {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(9, output);
-    _i6.TransactionalError.codec.encodeTo(value0, output);
+    _i1.U8Codec.codec.encodeTo(
+      9,
+      output,
+    );
+    _i6.TransactionalError.codec.encodeTo(
+      value0,
+      output,
+    );
   }
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is Transactional && other.value0 == value0;
+  bool operator ==(Object other) =>
+      identical(
+        this,
+        other,
+      ) ||
+      other is Transactional && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -464,7 +531,10 @@ class Exhausted extends DispatchError {
   Map<String, dynamic> toJson() => {'Exhausted': null};
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(10, output);
+    _i1.U8Codec.codec.encodeTo(
+      10,
+      output,
+    );
   }
 
   @override
@@ -481,7 +551,10 @@ class Corruption extends DispatchError {
   Map<String, dynamic> toJson() => {'Corruption': null};
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(11, output);
+    _i1.U8Codec.codec.encodeTo(
+      11,
+      output,
+    );
   }
 
   @override
@@ -498,7 +571,10 @@ class Unavailable extends DispatchError {
   Map<String, dynamic> toJson() => {'Unavailable': null};
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(12, output);
+    _i1.U8Codec.codec.encodeTo(
+      12,
+      output,
+    );
   }
 
   @override
@@ -515,7 +591,10 @@ class RootNotAllowed extends DispatchError {
   Map<String, dynamic> toJson() => {'RootNotAllowed': null};
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(13, output);
+    _i1.U8Codec.codec.encodeTo(
+      13,
+      output,
+    );
   }
 
   @override
@@ -545,12 +624,23 @@ class Trie extends DispatchError {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(14, output);
-    _i7.TrieError.codec.encodeTo(value0, output);
+    _i1.U8Codec.codec.encodeTo(
+      14,
+      output,
+    );
+    _i7.TrieError.codec.encodeTo(
+      value0,
+      output,
+    );
   }
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is Trie && other.value0 == value0;
+  bool operator ==(Object other) =>
+      identical(
+        this,
+        other,
+      ) ||
+      other is Trie && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;

@@ -12,8 +12,14 @@ class BlakeTwo256Codec with _i1.Codec<BlakeTwo256> {
   }
 
   @override
-  void encodeTo(BlakeTwo256 value, _i1.Output output) {
-    _i1.NullCodec.codec.encodeTo(value, output);
+  void encodeTo(
+    BlakeTwo256 value,
+    _i1.Output output,
+  ) {
+    _i1.NullCodec.codec.encodeTo(
+      value,
+      output,
+    );
   }
 
   @override

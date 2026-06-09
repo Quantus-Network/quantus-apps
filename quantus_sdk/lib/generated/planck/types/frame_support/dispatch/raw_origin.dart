@@ -71,7 +71,10 @@ class $RawOriginCodec with _i1.Codec<RawOrigin> {
   }
 
   @override
-  void encodeTo(RawOrigin value, _i1.Output output) {
+  void encodeTo(
+    RawOrigin value,
+    _i1.Output output,
+  ) {
     switch (value.runtimeType) {
       case Root:
         (value as Root).encodeTo(output);
@@ -86,7 +89,8 @@ class $RawOriginCodec with _i1.Codec<RawOrigin> {
         (value as Authorized).encodeTo(output);
         break;
       default:
-        throw Exception('RawOrigin: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception(
+            'RawOrigin: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 
@@ -102,7 +106,8 @@ class $RawOriginCodec with _i1.Codec<RawOrigin> {
       case Authorized:
         return 1;
       default:
-        throw Exception('RawOrigin: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception(
+            'RawOrigin: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 }
@@ -114,7 +119,10 @@ class Root extends RawOrigin {
   Map<String, dynamic> toJson() => {'Root': null};
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(0, output);
+    _i1.U8Codec.codec.encodeTo(
+      0,
+      output,
+    );
   }
 
   @override
@@ -144,12 +152,27 @@ class Signed extends RawOrigin {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(1, output);
-    const _i1.U8ArrayCodec(32).encodeTo(value0, output);
+    _i1.U8Codec.codec.encodeTo(
+      1,
+      output,
+    );
+    const _i1.U8ArrayCodec(32).encodeTo(
+      value0,
+      output,
+    );
   }
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is Signed && _i4.listsEqual(other.value0, value0);
+  bool operator ==(Object other) =>
+      identical(
+        this,
+        other,
+      ) ||
+      other is Signed &&
+          _i4.listsEqual(
+            other.value0,
+            value0,
+          );
 
   @override
   int get hashCode => value0.hashCode;
@@ -162,7 +185,10 @@ class None extends RawOrigin {
   Map<String, dynamic> toJson() => {'None': null};
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(2, output);
+    _i1.U8Codec.codec.encodeTo(
+      2,
+      output,
+    );
   }
 
   @override
@@ -179,7 +205,10 @@ class Authorized extends RawOrigin {
   Map<String, dynamic> toJson() => {'Authorized': null};
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(3, output);
+    _i1.U8Codec.codec.encodeTo(
+      3,
+      output,
+    );
   }
 
   @override
