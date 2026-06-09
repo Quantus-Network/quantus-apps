@@ -1,13 +1,18 @@
 import 'dart:convert';
 
+import 'dart:typed_data';
+
 import 'package:flutter/foundation.dart';
-import 'package:quantus_sdk/generated/planck/pallets/multisig.dart' show Txs;
+import 'package:quantus_sdk/generated/planck/pallets/multisig.dart' show Constants, Txs;
 import 'package:quantus_sdk/generated/planck/types/quantus_runtime/runtime_call.dart';
 import 'package:quantus_sdk/src/models/account.dart';
+import 'package:quantus_sdk/src/models/json_dynamic_parse.dart';
 import 'package:quantus_sdk/src/models/multisig_account.dart';
 import 'package:quantus_sdk/src/models/multisig_create_submission.dart';
 import 'package:quantus_sdk/src/models/multisig_proposal.dart';
+import 'package:quantus_sdk/src/models/propose_fee_breakdown.dart';
 import 'package:quantus_sdk/src/rust/api/multisig.dart' as multisig_rust;
+import 'package:quantus_sdk/src/services/balances_service.dart';
 import 'package:quantus_sdk/src/services/multisig_graphql.dart';
 import 'package:quantus_sdk/src/services/network/redundant_endpoint.dart';
 import 'package:quantus_sdk/src/services/substrate_service.dart';
@@ -19,10 +24,17 @@ class MultisigService {
 
   final GraphQlEndpointService _graphQlEndpointService = GraphQlEndpointService();
   final SubstrateService _substrateService = SubstrateService();
+  static final Constants palletConstants = Constants();
 
   static const int _avgBlockTimeSeconds = 12;
-  static const int _dummyCurrentBlock = 1500000;
+  static const Duration defaultProposalExpiry = Duration(days: 2);
   static final BigInt defaultMultisigNonce = BigInt.zero;
+
+  /// Non-refundable fee burned when creating a proposal.
+  BigInt get proposalFee => palletConstants.proposalFee;
+
+  /// Refundable deposit reserved while a proposal is open.
+  BigInt get proposalDeposit => palletConstants.proposalDeposit;
 
   /// Suggested approval threshold at roughly 70% of [signerCount].
   static int defaultThreshold(int signerCount) {
@@ -33,33 +45,29 @@ class MultisigService {
   }
 
   Future<List<MultisigAccount>> discoverForUser(List<String> myAccountIds) async {
-    debugPrint('[MultisigService] discoverForUser stub, my accounts: ${myAccountIds.length}');
-    await Future<void>.delayed(const Duration(milliseconds: 600));
     if (myAccountIds.isEmpty) return [];
-    final me = myAccountIds.first;
-    return _dummyMultisigs(me);
-  }
 
-  Future<MultisigAccount?> lookupByAddress(String address, List<String> myAccountIds) async {
-    debugPrint('[MultisigService] lookupByAddress stub: $address');
-    await Future<void>.delayed(const Duration(milliseconds: 400));
-    if (myAccountIds.isEmpty) {
-      throw Exception('No local accounts; cannot determine member account');
+    final data = await _postGraphQl({
+      'query': MultisigGraphql.discoverQuery,
+      'variables': MultisigGraphql.buildDiscoverVariables(myAccountIds),
+    });
+    final records = parseMultisigDiscoverData(data);
+    final seen = <String>{};
+    final results = <MultisigAccount>[];
+    var index = 0;
+
+    for (final record in records) {
+      final address = stringFromJson(record['id']);
+      if (!seen.add(address)) continue;
+
+      final myMember = resolveMyMemberAccountId(record, myAccountIds);
+      if (myMember == null) continue;
+
+      index++;
+      results.add(multisigAccountFromIndexerRecord(record, myMemberAccountId: myMember, name: 'Multisig $index'));
     }
-    final me = myAccountIds.first;
-    return MultisigAccount(
-      name: 'Multisig',
-      accountId: address,
-      signers: [
-        me,
-        _dummySigner('5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY'),
-        _dummySigner('5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty'),
-      ],
-      threshold: 2,
-      nonce: BigInt.from(42),
-      myMemberAccountId: me,
-      creator: me,
-    );
+
+    return results;
   }
 
   /// Predicts the on-chain multisig address for the given signers and threshold.
@@ -122,23 +130,10 @@ class MultisigService {
 
   /// Fetches multisig metadata from the indexer by primary key ([address]).
   Future<Map<String, dynamic>?> fetchMultisigFromIndexer(String address) async {
-    final requestBody = {
+    final data = await _postGraphQl({
       'query': MultisigGraphql.byPkQuery,
       'variables': {'id': address},
-    };
-
-    final response = await _graphQlEndpointService.post(body: jsonEncode(requestBody));
-
-    if (response.statusCode != 200) {
-      throw Exception('GraphQL request failed with status: ${response.statusCode}. Body: ${response.body}');
-    }
-
-    final responseBody = jsonDecode(response.body) as Map<String, dynamic>;
-    if (responseBody['errors'] != null) {
-      throw Exception('GraphQL errors: ${responseBody['errors']}');
-    }
-
-    final data = responseBody['data'] as Map<String, dynamic>?;
+    });
     return parseMultisigByPkData(data);
   }
 
@@ -161,6 +156,61 @@ class MultisigService {
     return record;
   }
 
+  /// Parses `multisig` list from a discover-query `data` payload.
+  static List<Map<String, dynamic>> parseMultisigDiscoverData(Map<String, dynamic>? data) {
+    final raw = data?['multisig'];
+    if (raw is! List) return [];
+    return raw.whereType<Map<String, dynamic>>().toList();
+  }
+
+  /// Maps an indexer multisig record to a local [MultisigAccount].
+  static MultisigAccount multisigAccountFromIndexerRecord(
+    Map<String, dynamic> record, {
+    required String myMemberAccountId,
+    required String name,
+  }) {
+    final address = stringFromJson(record['id']);
+    final creator = nestedAccountId(record['creator']);
+    final signers = nonEmptyStringListFromJson(record['signers'], 'signers');
+    final threshold = multisigThresholdFromJson(record['threshold'], signerCount: signers.length);
+
+    return MultisigAccount(
+      name: name,
+      accountId: address,
+      signers: signers,
+      threshold: threshold,
+      nonce: bigIntFromJson(record['nonce']),
+      myMemberAccountId: myMemberAccountId,
+      creator: creator.isEmpty ? null : creator,
+    );
+  }
+
+  /// First [myAccountIds] entry that appears in indexer [record] signers.
+  static String? resolveMyMemberAccountId(Map<String, dynamic> record, List<String> myAccountIds) {
+    final signersRaw = record['signers'];
+    if (signersRaw is! List) return null;
+    final signers = signersRaw.map((e) => e.toString()).toSet();
+    for (final id in myAccountIds) {
+      if (signers.contains(id)) return id;
+    }
+    return null;
+  }
+
+  Future<Map<String, dynamic>?> _postGraphQl(Map<String, dynamic> requestBody) async {
+    final response = await _graphQlEndpointService.post(body: jsonEncode(requestBody));
+
+    if (response.statusCode != 200) {
+      throw Exception('GraphQL request failed with status: ${response.statusCode}. Body: ${response.body}');
+    }
+
+    final responseBody = jsonDecode(response.body) as Map<String, dynamic>;
+    if (responseBody['errors'] != null) {
+      throw Exception('GraphQL errors: ${responseBody['errors']}');
+    }
+
+    return responseBody['data'] as Map<String, dynamic>?;
+  }
+
   /// Validates [signers] and [threshold] for multisig operations.
   ///
   /// [minSigners] is the minimum signer count for the operation: prediction
@@ -175,202 +225,148 @@ class MultisigService {
     }
   }
 
-  Future<List<MultisigProposal>> getOpenProposals(MultisigAccount msig) async {
-    debugPrint('[MultisigService] getOpenProposals stub: ${msig.accountId}');
-    await Future<void>.delayed(const Duration(milliseconds: 300));
-    return _dummyOpenProposals(msig);
+  /// Proposals with active or approved status.
+  Future<List<MultisigProposal>> getOpenProposals(MultisigAccount msig) {
+    return _fetchProposals(
+      msig,
+      query: MultisigProposalGraphql.openProposalsQuery,
+      variables: MultisigProposalGraphql.buildOpenProposalsVariables(msig.accountId),
+    );
   }
 
-  Future<List<MultisigProposal>> getPastProposals(MultisigAccount msig) async {
-    debugPrint('[MultisigService] getPastProposals stub: ${msig.accountId}');
-    await Future<void>.delayed(const Duration(milliseconds: 300));
-    return _dummyPastProposals(msig);
+  /// Proposals with executed, cancelled, or removed status.
+  Future<List<MultisigProposal>> getPastProposals(MultisigAccount msig) {
+    return _fetchProposals(
+      msig,
+      query: MultisigProposalGraphql.pastProposalsQuery,
+      variables: MultisigProposalGraphql.buildPastProposalsVariables(msig.accountId),
+    );
+  }
+
+  Future<List<MultisigProposal>> _fetchProposals(
+    MultisigAccount msig, {
+    required String query,
+    required Map<String, dynamic> variables,
+  }) async {
+    final requestBody = {'query': query, 'variables': variables};
+    final response = await _graphQlEndpointService.post(body: jsonEncode(requestBody));
+
+    if (response.statusCode != 200) {
+      throw Exception('GraphQL request failed with status: ${response.statusCode}. Body: ${response.body}');
+    }
+
+    final responseBody = jsonDecode(response.body) as Map<String, dynamic>;
+    if (responseBody['errors'] != null) {
+      throw Exception('GraphQL errors: ${responseBody['errors']}');
+    }
+
+    final rows = (responseBody['data'] as Map<String, dynamic>?)?['multisig_proposal'];
+    if (rows is! List) return [];
+    return rows
+        .whereType<Map<String, dynamic>>()
+        .map((row) => MultisigProposal.fromIndexerJson(row, msig: msig))
+        .toList();
   }
 
   Future<MultisigProposal?> getProposal(MultisigAccount msig, int id) async {
-    debugPrint('[MultisigService] getProposal stub: ${msig.accountId} #$id');
-    final open = await getOpenProposals(msig);
-    for (final p in open) {
-      if (p.id == id) return p;
+    final requestBody = {
+      'query': MultisigProposalGraphql.proposalQuery,
+      'variables': MultisigProposalGraphql.buildProposalVariables(msig.accountId, id),
+    };
+    final response = await _graphQlEndpointService.post(body: jsonEncode(requestBody));
+
+    if (response.statusCode != 200) {
+      throw Exception('GraphQL request failed with status: ${response.statusCode}. Body: ${response.body}');
     }
-    final past = await getPastProposals(msig);
-    for (final p in past) {
-      if (p.id == id) return p;
+
+    final responseBody = jsonDecode(response.body) as Map<String, dynamic>;
+    if (responseBody['errors'] != null) {
+      throw Exception('GraphQL errors: ${responseBody['errors']}');
     }
-    return null;
+
+    final rows = (responseBody['data'] as Map<String, dynamic>?)?['multisig_proposal'];
+    if (rows is! List || rows.isEmpty) return null;
+    final first = rows.first;
+    if (first is! Map<String, dynamic>) return null;
+    return MultisigProposal.fromIndexerJson(first, msig: msig);
   }
 
-  Future<int> currentBlockNumber() async {
-    return _dummyCurrentBlock;
+  Future<int> currentBlockNumber() => _substrateService.getCurrentBlockNumber();
+
+  BigInt proposalCreationFee(int signerCount) => MultisigProposal.proposalCreationFeeFor(signerCount);
+
+  /// Estimates all fee components for creating a transfer proposal.
+  Future<ProposeFeeBreakdown> estimateProposeFeeBreakdown({
+    required MultisigAccount msig,
+    required Account signer,
+    required String recipient,
+    required BigInt amount,
+  }) async {
+    final currentBlock = await currentBlockNumber();
+    final expiryBlock = currentBlock + blocksForDuration(defaultProposalExpiry);
+    final call = buildProposeTransferCall(msig: msig, recipient: recipient, amount: amount, expiryBlock: expiryBlock);
+    final feeData = await _substrateService.getFeeForCall(signer, call);
+    return ProposeFeeBreakdown(
+      networkFee: feeData.fee,
+      deposit: proposalDeposit,
+      creationFee: proposalCreationFee(msig.signers.length),
+      expiryBlock: expiryBlock,
+    );
   }
 
-  Future<BigInt> estimateProposeFee(MultisigAccount msig, String recipient, BigInt amount) async {
-    debugPrint('[MultisigService] estimateProposeFee stub');
-    await Future<void>.delayed(const Duration(milliseconds: 150));
-    return BigInt.parse('1500000000000');
+  /// Estimates the total member cost of creating a transfer proposal.
+  Future<BigInt> estimateProposeFee({
+    required MultisigAccount msig,
+    required Account signer,
+    required String recipient,
+    required BigInt amount,
+  }) async {
+    final breakdown = await estimateProposeFeeBreakdown(
+      msig: msig,
+      signer: signer,
+      recipient: recipient,
+      amount: amount,
+    );
+    return breakdown.memberCost;
   }
 
-  Future<BigInt> estimateApproveFee(MultisigAccount msig, int proposalId) async {
-    debugPrint('[MultisigService] estimateApproveFee stub');
-    await Future<void>.delayed(const Duration(milliseconds: 150));
-    return BigInt.parse('250000000000');
+  /// Builds the `multisig.propose` runtime call wrapping a
+  /// `balances.transfer_allow_death` from [msig] to [recipient].
+  RuntimeCall buildProposeTransferCall({
+    required MultisigAccount msig,
+    required String recipient,
+    required BigInt amount,
+    required int expiryBlock,
+  }) {
+    final innerCall = BalancesService().getBalanceTransferCall(recipient, amount);
+    final callBytes = innerCall.encode();
+    return const Txs().propose(multisigAddress: getAccountId32(msig.accountId), call: callBytes, expiry: expiryBlock);
   }
 
-  Future<int> propose({
+  /// Submits a transfer proposal signed by [signer] (a member of [msig]).
+  ///
+  /// Returns the extrinsic hash bytes. The on-chain proposal id is not known
+  /// until the proposal is indexed.
+  Future<Uint8List> propose({
     required MultisigAccount msig,
     required Account signer,
     required String recipient,
     required BigInt amount,
     required int expiryBlock,
   }) async {
-    debugPrint('[MultisigService] propose stub: ${msig.accountId} -> $recipient amount=$amount');
-    await Future<void>.delayed(const Duration(milliseconds: 600));
-    return 99;
+    final call = buildProposeTransferCall(msig: msig, recipient: recipient, amount: amount, expiryBlock: expiryBlock);
+    return _substrateService.submitExtrinsic(signer, call);
   }
 
-  Future<void> approve({required MultisigAccount msig, required Account signer, required int proposalId}) async {
-    debugPrint('[MultisigService] approve stub: ${msig.accountId} #$proposalId');
-    await Future<void>.delayed(const Duration(milliseconds: 600));
+  /// Number of blocks that approximately span [duration] at average block time.
+  int blocksForDuration(Duration duration) {
+    return (duration.inSeconds / _avgBlockTimeSeconds).round();
   }
 
-  Future<void> cancel({required MultisigAccount msig, required Account signer, required int proposalId}) async {
-    debugPrint('[MultisigService] cancel stub: ${msig.accountId} #$proposalId');
-    await Future<void>.delayed(const Duration(milliseconds: 600));
-  }
-
-  DateTime blockToTime(int blockNumber) {
-    final deltaBlocks = blockNumber - _dummyCurrentBlock;
+  /// Approximate wall-clock time at which [targetBlock] is reached, given the
+  /// known [currentBlock].
+  DateTime blockToTime(int targetBlock, int currentBlock) {
+    final deltaBlocks = targetBlock - currentBlock;
     return DateTime.now().add(Duration(seconds: deltaBlocks * _avgBlockTimeSeconds));
-  }
-
-  int timeToBlock(DateTime when) {
-    final deltaSeconds = when.difference(DateTime.now()).inSeconds;
-    return _dummyCurrentBlock + (deltaSeconds ~/ _avgBlockTimeSeconds);
-  }
-
-  String _dummySigner(String fallback) => fallback;
-
-  List<MultisigAccount> _dummyMultisigs(String me) {
-    return [
-      MultisigAccount(
-        name: 'Treasury Multisig',
-        accountId: '5MultisigTreasury000000000000000000000000000000000',
-        signers: [
-          me,
-          '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',
-          '5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty',
-          '5DAAnrj7VHTznn2AWBemMuyBwZWs6FNFjdyVXUeYum3PTXFy',
-          '5HGjWAeFDfFCWPsjFQdVV2Msvz2XtMktvgocEZcCj68kUMaw',
-        ],
-        threshold: 3,
-        nonce: BigInt.from(1),
-        myMemberAccountId: me,
-        creator: me,
-      ),
-      MultisigAccount(
-        name: 'Ops 2-of-3',
-        accountId: '5MultisigOpsTeam0000000000000000000000000000000000',
-        signers: [
-          me,
-          '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',
-          '5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty',
-        ],
-        threshold: 2,
-        nonce: BigInt.from(2),
-        myMemberAccountId: me,
-        creator: '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',
-      ),
-    ];
-  }
-
-  List<MultisigProposal> _dummyOpenProposals(MultisigAccount msig) {
-    final now = DateTime.now();
-    final mePending = msig.myMemberAccountId;
-    final other = msig.signers.firstWhere((s) => s != mePending, orElse: () => mePending);
-    return [
-      MultisigProposal(
-        id: 12,
-        multisigAddress: msig.accountId,
-        proposer: other,
-        amount: BigInt.parse('10000000000000000'),
-        recipient: '5DfhGyQdFobKM8NsWvEeAKk5EQQgYe9AydgJ7rMB6E1EqRzV',
-        expiryBlock: _dummyCurrentBlock + 7200,
-        expiryAt: now.add(const Duration(days: 1)),
-        approvals: [other],
-        deposit: BigInt.parse('1000000000000'),
-        fee: BigInt.parse('1500000000000'),
-        status: MultisigProposalStatus.active,
-        threshold: msig.threshold,
-        signerCount: msig.signers.length,
-      ),
-      MultisigProposal(
-        id: 13,
-        multisigAddress: msig.accountId,
-        proposer: mePending,
-        amount: BigInt.parse('500000000000000'),
-        recipient: '5HGjWAeFDfFCWPsjFQdVV2Msvz2XtMktvgocEZcCj68kUMaw',
-        expiryBlock: _dummyCurrentBlock + 14400,
-        expiryAt: now.add(const Duration(days: 2)),
-        approvals: [mePending],
-        deposit: BigInt.parse('1000000000000'),
-        fee: BigInt.parse('1500000000000'),
-        status: MultisigProposalStatus.active,
-        threshold: msig.threshold,
-        signerCount: msig.signers.length,
-      ),
-    ];
-  }
-
-  List<MultisigProposal> _dummyPastProposals(MultisigAccount msig) {
-    final now = DateTime.now();
-    final me = msig.myMemberAccountId;
-    final other = msig.signers.firstWhere((s) => s != me, orElse: () => me);
-    return [
-      MultisigProposal(
-        id: 11,
-        multisigAddress: msig.accountId,
-        proposer: me,
-        amount: BigInt.parse('25000000000000000'),
-        recipient: '5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty',
-        expiryBlock: _dummyCurrentBlock - 100,
-        expiryAt: now.subtract(const Duration(days: 1)),
-        approvals: msig.signers.take(msig.threshold).toList(),
-        deposit: BigInt.parse('1000000000000'),
-        fee: BigInt.parse('1500000000000'),
-        status: MultisigProposalStatus.executed,
-        threshold: msig.threshold,
-        signerCount: msig.signers.length,
-      ),
-      MultisigProposal(
-        id: 10,
-        multisigAddress: msig.accountId,
-        proposer: other,
-        amount: BigInt.parse('1500000000000000'),
-        recipient: '5DAAnrj7VHTznn2AWBemMuyBwZWs6FNFjdyVXUeYum3PTXFy',
-        expiryBlock: _dummyCurrentBlock - 5000,
-        expiryAt: now.subtract(const Duration(days: 5)),
-        approvals: [other],
-        deposit: BigInt.parse('1000000000000'),
-        fee: BigInt.parse('1500000000000'),
-        status: MultisigProposalStatus.expired,
-        threshold: msig.threshold,
-        signerCount: msig.signers.length,
-      ),
-      MultisigProposal(
-        id: 9,
-        multisigAddress: msig.accountId,
-        proposer: me,
-        amount: BigInt.parse('800000000000000'),
-        recipient: '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',
-        expiryBlock: _dummyCurrentBlock - 7000,
-        expiryAt: now.subtract(const Duration(days: 7)),
-        approvals: [me],
-        deposit: BigInt.parse('1000000000000'),
-        fee: BigInt.parse('1500000000000'),
-        status: MultisigProposalStatus.cancelled,
-        threshold: msig.threshold,
-        signerCount: msig.signers.length,
-      ),
-    ];
   }
 }

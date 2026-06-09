@@ -197,6 +197,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get addAccountMenuMultisigSubtitle => 'Set up a shared address with multiple signers';
 
   @override
+  String get addAccountMenuDiscoverMultisigTitle => 'Discover Multisig';
+
+  @override
+  String get addAccountMenuDiscoverMultisigSubtitle => 'Find multisigs where your accounts are signers';
+
+  @override
   String get multisigTag => 'MULTISIG';
 
   @override
@@ -204,6 +210,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get multisigAddTitle => 'Create Multisig';
+
+  @override
+  String get multisigDiscoverTitle => 'Discover Multisig';
 
   @override
   String get multisigCreateSubtitle => 'Give this multisig a name you\'ll recognize. You can change it anytime.';
@@ -274,19 +283,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get multisigDone => 'Done';
 
   @override
-  String get multisigAddPasteAddressSection => 'Paste Multisig Address';
-
-  @override
   String get multisigAddDiscoveredTitle => 'Discovered for you';
 
   @override
   String get multisigAddDiscoveredSubtitle => 'Multisigs on chain where one of your accounts is a signer';
-
-  @override
-  String get multisigAddAddressHint => 'Multisig SS58 address';
-
-  @override
-  String get multisigAddFromAddressButton => 'Add From Address';
 
   @override
   String get multisigAddButton => 'Add';
@@ -339,27 +339,39 @@ class AppLocalizationsEn extends AppLocalizations {
   String get multisigStatusCancelled => 'CANCELLED';
 
   @override
-  String get multisigProposeSelectRecipientTo => 'Propose To';
+  String get multisigProposeSelectRecipientTo => 'Transfer to';
 
   @override
   String multisigProposeSearchHint(String symbol) {
-    return 'Search $symbol Address';
+    return 'Enter $symbol Address';
   }
 
   @override
-  String get multisigProposeAmountToLabel => 'PROPOSE TO';
+  String get multisigProposeAmountToLabel => 'TRANSFER TO';
 
   @override
-  String get multisigProposeBalanceLabel => 'Multisig Balance:';
+  String get multisigProposeDepositLabel => 'Deposit:';
+
+  @override
+  String get multisigProposeCreationFeeLabel => 'Proposal Fee:';
+
+  @override
+  String get multisigProposeDepositRefundableNote => 'refundable';
+
+  @override
+  String get multisigProposeMemberTotalLabel => 'TOTAL FROM YOUR ACCOUNT';
 
   @override
   String get multisigProposeFeeLabel => 'Proposal Fee:';
 
   @override
-  String get multisigProposeReviewButton => 'Review Proposal';
+  String get multisigProposeFeeFetchFailed => 'Unable to estimate fee';
 
   @override
-  String get multisigProposeReviewProposing => 'PROPOSING';
+  String get multisigProposeReviewButton => 'Review transfer';
+
+  @override
+  String get multisigProposeReviewProposing => 'PROPOSED TRANSFER';
 
   @override
   String multisigProposeReviewFromName(String name) {
@@ -373,10 +385,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get multisigProposeExpiresLabel => 'EXPIRES';
 
   @override
+  String multisigExpiresBlockOnly(int block) {
+    return 'Block $block';
+  }
+
+  @override
   String get multisigProposeFeeRowLabel => 'PROPOSAL FEE';
 
   @override
-  String get multisigProposeCreateButton => 'Create Proposal';
+  String get multisigProposeCreateButton => 'Submit proposal';
 
   @override
   String get multisigProposeAuthReason => 'Authenticate to propose transaction';
@@ -388,10 +405,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get multisigProposeSubmitFailed => 'Failed to create proposal';
 
   @override
-  String get multisigProposeDoneHeadline => 'Proposal created';
+  String get multisigProposeTimeoutToast =>
+      'Proposal confirmation is taking longer than expected. Check the chain or try again.';
 
   @override
-  String get multisigProposeDoneSubline => 'Awaiting approvals from your co-signers.';
+  String get multisigProposeDoneHeadline => 'Transfer proposal submitted';
+
+  @override
+  String get multisigProposeDoneSubline => 'Co-signers must approve before the transfer can execute.';
 
   @override
   String multisigProposeDoneToChecksum(String checksum) {
@@ -413,6 +434,45 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get multisigProposalNotFound => 'Proposal not found.';
+
+  @override
+  String get multisigProposalSignButton => 'Sign';
+
+  @override
+  String get multisigProposalSigningSoonNote => 'Signing will be available soon.';
+
+  @override
+  String get multisigProposalAlreadySignedNote => 'You\'ve already signed this proposal.';
+
+  @override
+  String get multisigProposalProposerLabel => 'PROPOSER';
+
+  @override
+  String get multisigProposalStatusLabel => 'STATUS';
+
+  @override
+  String get multisigProposalDepositLabel => 'DEPOSIT';
+
+  @override
+  String get multisigStatusActive => 'ACTIVE';
+
+  @override
+  String get multisigStatusExecuted => 'EXECUTED';
+
+  @override
+  String get multisigStatusRemoved => 'REMOVED';
+
+  @override
+  String get multisigStatusUnknown => 'UNKNOWN';
+
+  @override
+  String get activityTxProposal => 'Proposal';
+
+  @override
+  String get activityTxProposing => 'Proposing';
+
+  @override
+  String get activityTxProposalCreated => 'Proposal created';
 
   @override
   String get multisigApproveButton => 'Approve';
@@ -816,6 +876,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get activityDetailTitleMultisigCreating => 'Creating multisig';
+
+  @override
+  String get activityDetailTitleProposalCreated => 'Proposal created';
+
+  @override
+  String get activityDetailTitleProposing => 'Proposing';
+
+  @override
+  String get activityDetailProposalTransferAmount => 'TRANSFER AMOUNT';
 
   @override
   String get activityDetailStatusInProcess => 'In Process';

@@ -26,9 +26,9 @@ class MultisigAccountsNotifier extends StateNotifier<AsyncValue<List<MultisigAcc
 
   Future<void> add(MultisigAccount account) async {
     await _settingsService.addMultisigAccount(account);
-    state.whenData((current) {
-      state = AsyncValue.data([...current, account]);
-    });
+
+    final current = state.value ?? [];
+    state = AsyncValue.data([...current, account]);
   }
 
   Future<void> updateName(MultisigAccount account, String name) async {
@@ -37,16 +37,16 @@ class MultisigAccountsNotifier extends StateNotifier<AsyncValue<List<MultisigAcc
     }
     final updated = account.copyWith(name: name);
     await _settingsService.updateMultisigAccount(updated);
-    state.whenData((current) {
-      state = AsyncValue.data(current.map((a) => a.accountId == updated.accountId ? updated : a).toList());
-    });
+
+    final current = state.value ?? [];
+    state = AsyncValue.data(current.map((a) => a.accountId == updated.accountId ? updated : a).toList());
   }
 
   Future<void> remove(String accountId) async {
     await _settingsService.removeMultisigAccount(accountId);
-    state.whenData((current) {
-      state = AsyncValue.data(current.where((a) => a.accountId != accountId).toList());
-    });
+
+    final current = state.value ?? [];
+    state = AsyncValue.data(current.where((a) => a.accountId != accountId).toList());
   }
 
   MultisigAccount? byAccountId(String accountId) {
@@ -54,6 +54,10 @@ class MultisigAccountsNotifier extends StateNotifier<AsyncValue<List<MultisigAcc
       (a) => a.accountId == accountId,
       orElse: () => throw Exception('Multisig $accountId not found'),
     );
+  }
+
+  void reset() {
+    state = const AsyncValue.data([]);
   }
 }
 
@@ -67,18 +71,22 @@ final multisigAccountsProvider = StateNotifierProvider<MultisigAccountsNotifier,
 final discoveredMultisigsProvider = FutureProvider.autoDispose<List<MultisigAccount>>((ref) async {
   final service = ref.watch(multisigServiceProvider);
   final accountsAsync = ref.watch(accountsProvider);
-  final accounts = accountsAsync.value ?? [];
+
+  final List<Account> accounts;
+  switch (accountsAsync) {
+    case AsyncData(:final value):
+      accounts = value;
+    case AsyncError(:final error, :final stackTrace):
+      Error.throwWithStackTrace(error, stackTrace);
+    case AsyncLoading():
+      accounts = await ref.read(accountsServiceProvider).getAccounts();
+  }
+
   final ids = accounts.map((a) => a.accountId).toList();
   return service.discoverForUser(ids);
 });
 
-final multisigLookupProvider = FutureProvider.autoDispose.family<MultisigAccount?, String>((ref, address) async {
-  final service = ref.watch(multisigServiceProvider);
-  final accountsAsync = ref.watch(accountsProvider);
-  final ids = (accountsAsync.value ?? []).map((a) => a.accountId).toList();
-  return service.lookupByAddress(address, ids);
-});
-
+/// Open proposals for a multisig, filtered server-side by status.
 final multisigOpenProposalsProvider = FutureProvider.autoDispose.family<List<MultisigProposal>, MultisigAccount>((
   ref,
   msig,
@@ -87,6 +95,7 @@ final multisigOpenProposalsProvider = FutureProvider.autoDispose.family<List<Mul
   return service.getOpenProposals(msig);
 });
 
+/// Past proposals for a multisig activity feed, filtered server-side by status.
 final multisigPastProposalsProvider = FutureProvider.autoDispose.family<List<MultisigProposal>, MultisigAccount>((
   ref,
   msig,
@@ -95,19 +104,15 @@ final multisigPastProposalsProvider = FutureProvider.autoDispose.family<List<Mul
   return service.getPastProposals(msig);
 });
 
-class ProposalKey {
-  final MultisigAccount msig;
-  final int id;
-  const ProposalKey(this.msig, this.id);
-
-  @override
-  bool operator ==(Object other) => other is ProposalKey && other.msig.accountId == msig.accountId && other.id == id;
-
-  @override
-  int get hashCode => Object.hash(msig.accountId, id);
+/// Invalidates open, past, and block providers after a proposal state change.
+void invalidateMultisigProposals(Ref ref, MultisigAccount msig) {
+  ref.invalidate(multisigOpenProposalsProvider(msig));
+  ref.invalidate(multisigPastProposalsProvider(msig));
+  ref.invalidate(multisigCurrentBlockProvider);
 }
 
-final multisigProposalProvider = FutureProvider.autoDispose.family<MultisigProposal?, ProposalKey>((ref, key) async {
+/// Current best block number, used to derive proposal expiry.
+final multisigCurrentBlockProvider = FutureProvider.autoDispose<int>((ref) async {
   final service = ref.watch(multisigServiceProvider);
-  return service.getProposal(key.msig, key.id);
+  return service.currentBlockNumber();
 });

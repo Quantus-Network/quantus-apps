@@ -446,6 +446,18 @@ abstract class AppLocalizations {
   /// **'Set up a shared address with multiple signers'**
   String get addAccountMenuMultisigSubtitle;
 
+  /// Discover multisig menu row title
+  ///
+  /// In en, this message translates to:
+  /// **'Discover Multisig'**
+  String get addAccountMenuDiscoverMultisigTitle;
+
+  /// Discover multisig menu row subtitle
+  ///
+  /// In en, this message translates to:
+  /// **'Find multisigs where your accounts are signers'**
+  String get addAccountMenuDiscoverMultisigSubtitle;
+
   /// Badge label for multisig accounts
   ///
   /// In en, this message translates to:
@@ -463,6 +475,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Create Multisig'**
   String get multisigAddTitle;
+
+  /// Discover multisig screen app bar title
+  ///
+  /// In en, this message translates to:
+  /// **'Discover Multisig'**
+  String get multisigDiscoverTitle;
 
   /// Subtitle under multisig name field
   ///
@@ -590,12 +608,6 @@ abstract class AppLocalizations {
   /// **'Done'**
   String get multisigDone;
 
-  /// Section label for manual multisig address entry
-  ///
-  /// In en, this message translates to:
-  /// **'Paste Multisig Address'**
-  String get multisigAddPasteAddressSection;
-
   /// Section title for on-chain discovered multisigs
   ///
   /// In en, this message translates to:
@@ -607,18 +619,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Multisigs on chain where one of your accounts is a signer'**
   String get multisigAddDiscoveredSubtitle;
-
-  /// Hint for multisig address text field
-  ///
-  /// In en, this message translates to:
-  /// **'Multisig SS58 address'**
-  String get multisigAddAddressHint;
-
-  /// Primary button to add multisig from pasted address
-  ///
-  /// In en, this message translates to:
-  /// **'Add From Address'**
-  String get multisigAddFromAddressButton;
 
   /// Add button on discovered multisig row
   ///
@@ -704,46 +704,70 @@ abstract class AppLocalizations {
   /// **'CANCELLED'**
   String get multisigStatusCancelled;
 
-  /// Section label on propose recipient screen
+  /// Section label on propose recipient screen — transfer destination
   ///
   /// In en, this message translates to:
-  /// **'Propose To'**
+  /// **'Transfer to'**
   String get multisigProposeSelectRecipientTo;
 
   /// Hint for recipient search field on propose flow
   ///
   /// In en, this message translates to:
-  /// **'Search {symbol} Address'**
+  /// **'Enter {symbol} Address'**
   String multisigProposeSearchHint(String symbol);
 
   /// Recipient card label on propose amount screen
   ///
   /// In en, this message translates to:
-  /// **'PROPOSE TO'**
+  /// **'TRANSFER TO'**
   String get multisigProposeAmountToLabel;
 
-  /// Multisig balance label on propose amount screen
+  /// Refundable proposal deposit label on propose amount screen
   ///
   /// In en, this message translates to:
-  /// **'Multisig Balance:'**
-  String get multisigProposeBalanceLabel;
+  /// **'Deposit:'**
+  String get multisigProposeDepositLabel;
 
-  /// Proposal fee label on propose amount screen
+  /// Non-refundable burned proposal fee label (scales with signers)
+  ///
+  /// In en, this message translates to:
+  /// **'Proposal Fee:'**
+  String get multisigProposeCreationFeeLabel;
+
+  /// Short note that proposal deposit is returned on execute/cancel
+  ///
+  /// In en, this message translates to:
+  /// **'refundable'**
+  String get multisigProposeDepositRefundableNote;
+
+  /// Review row for total member cost at proposal submit
+  ///
+  /// In en, this message translates to:
+  /// **'TOTAL FROM YOUR ACCOUNT'**
+  String get multisigProposeMemberTotalLabel;
+
+  /// Deprecated single fee label; prefer fee breakdown labels
   ///
   /// In en, this message translates to:
   /// **'Proposal Fee:'**
   String get multisigProposeFeeLabel;
 
+  /// Shown when proposal fee estimation fails on the amount screen
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to estimate fee'**
+  String get multisigProposeFeeFetchFailed;
+
   /// Button to open propose review screen
   ///
   /// In en, this message translates to:
-  /// **'Review Proposal'**
+  /// **'Review transfer'**
   String get multisigProposeReviewButton;
 
   /// Hero label on propose review screen
   ///
   /// In en, this message translates to:
-  /// **'PROPOSING'**
+  /// **'PROPOSED TRANSFER'**
   String get multisigProposeReviewProposing;
 
   /// Multisig name on propose review hero card
@@ -764,7 +788,13 @@ abstract class AppLocalizations {
   /// **'EXPIRES'**
   String get multisigProposeExpiresLabel;
 
-  /// Proposal fee row label on propose review
+  /// On-chain expiry block when current block is unavailable
+  ///
+  /// In en, this message translates to:
+  /// **'Block {block}'**
+  String multisigExpiresBlockOnly(int block);
+
+  /// Non-refundable burned proposal fee row on propose review
   ///
   /// In en, this message translates to:
   /// **'PROPOSAL FEE'**
@@ -773,7 +803,7 @@ abstract class AppLocalizations {
   /// Submit button on propose review screen
   ///
   /// In en, this message translates to:
-  /// **'Create Proposal'**
+  /// **'Submit proposal'**
   String get multisigProposeCreateButton;
 
   /// Biometric auth prompt when creating a proposal
@@ -794,16 +824,22 @@ abstract class AppLocalizations {
   /// **'Failed to create proposal'**
   String get multisigProposeSubmitFailed;
 
+  /// Toast when proposal indexing polling times out
+  ///
+  /// In en, this message translates to:
+  /// **'Proposal confirmation is taking longer than expected. Check the chain or try again.'**
+  String get multisigProposeTimeoutToast;
+
   /// Success headline on propose done screen
   ///
   /// In en, this message translates to:
-  /// **'Proposal created'**
+  /// **'Transfer proposal submitted'**
   String get multisigProposeDoneHeadline;
 
   /// Success subline on propose done screen
   ///
   /// In en, this message translates to:
-  /// **'Awaiting approvals from your co-signers.'**
+  /// **'Co-signers must approve before the transfer can execute.'**
   String get multisigProposeDoneSubline;
 
   /// Recipient checksum line on propose done screen
@@ -835,6 +871,84 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Proposal not found.'**
   String get multisigProposalNotFound;
+
+  /// Sign button on the read-only proposal detail sheet
+  ///
+  /// In en, this message translates to:
+  /// **'Sign'**
+  String get multisigProposalSignButton;
+
+  /// Note shown under the disabled sign button
+  ///
+  /// In en, this message translates to:
+  /// **'Signing will be available soon.'**
+  String get multisigProposalSigningSoonNote;
+
+  /// Note shown when the current member already approved
+  ///
+  /// In en, this message translates to:
+  /// **'You\'ve already signed this proposal.'**
+  String get multisigProposalAlreadySignedNote;
+
+  /// Proposer row label on proposal detail
+  ///
+  /// In en, this message translates to:
+  /// **'PROPOSER'**
+  String get multisigProposalProposerLabel;
+
+  /// Status row label on proposal detail
+  ///
+  /// In en, this message translates to:
+  /// **'STATUS'**
+  String get multisigProposalStatusLabel;
+
+  /// Deposit row label on proposal detail
+  ///
+  /// In en, this message translates to:
+  /// **'DEPOSIT'**
+  String get multisigProposalDepositLabel;
+
+  /// Active proposal status label
+  ///
+  /// In en, this message translates to:
+  /// **'ACTIVE'**
+  String get multisigStatusActive;
+
+  /// Executed proposal status label
+  ///
+  /// In en, this message translates to:
+  /// **'EXECUTED'**
+  String get multisigStatusExecuted;
+
+  /// Removed proposal status label
+  ///
+  /// In en, this message translates to:
+  /// **'REMOVED'**
+  String get multisigStatusRemoved;
+
+  /// Unknown proposal status label when indexer returns an unrecognized value
+  ///
+  /// In en, this message translates to:
+  /// **'UNKNOWN'**
+  String get multisigStatusUnknown;
+
+  /// Activity row label for an indexed multisig proposal
+  ///
+  /// In en, this message translates to:
+  /// **'Proposal'**
+  String get activityTxProposal;
+
+  /// Activity row label for a pending multisig proposal
+  ///
+  /// In en, this message translates to:
+  /// **'Proposing'**
+  String get activityTxProposing;
+
+  /// Activity row label for a confirmed multisig proposal creation on the proposer account
+  ///
+  /// In en, this message translates to:
+  /// **'Proposal created'**
+  String get activityTxProposalCreated;
 
   /// Approve button on proposal detail
   ///
@@ -1585,6 +1699,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Creating multisig'**
   String get activityDetailTitleMultisigCreating;
+
+  /// Detail sheet title for a confirmed multisig proposal creation
+  ///
+  /// In en, this message translates to:
+  /// **'Proposal created'**
+  String get activityDetailTitleProposalCreated;
+
+  /// Detail sheet title while a multisig proposal is confirming on-chain
+  ///
+  /// In en, this message translates to:
+  /// **'Proposing'**
+  String get activityDetailTitleProposing;
+
+  /// Proposed transfer amount row label on proposal creation detail sheet
+  ///
+  /// In en, this message translates to:
+  /// **'TRANSFER AMOUNT'**
+  String get activityDetailProposalTransferAmount;
 
   /// Status label for in-process transaction
   ///

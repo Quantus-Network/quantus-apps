@@ -77,4 +77,118 @@ void main() {
       expect(transfer.extrinsicHash, '0xc399a24c2cd9b3a85f2b10cdb6a0bb98ff8f02eb8185c23959f9b7e7d943a9b7');
     });
   });
+
+  group('TransactionService.combineAndDeduplicateTransactions', () {
+    PendingMultisigProposalEvent pendingProposal({
+      String id = 'pending_proposal_1',
+      String proposerId = 'proposer',
+      String multisigAddress = 'multisig',
+      String recipient = 'recipient',
+      BigInt? amount,
+    }) {
+      final transferAmount = amount ?? BigInt.from(2000);
+      return PendingMultisigProposalEvent(
+        tempId: id,
+        multisigAddress: multisigAddress,
+        proposerId: proposerId,
+        recipient: recipient,
+        amount: transferAmount,
+        deposit: BigInt.from(100),
+        expiryBlock: 999,
+        palletFee: BigInt.from(50),
+      );
+    }
+
+    MultisigProposalCreatedEvent indexedProposal({
+      String proposerId = 'proposer',
+      String multisigAddress = 'multisig',
+      String recipient = 'recipient',
+      BigInt? amount,
+      String? extrinsicHash,
+    }) {
+      final transferAmount = amount ?? BigInt.from(2000);
+      return MultisigProposalCreatedEvent(
+        id: 'ae-ms-proposal-created-1',
+        proposerId: proposerId,
+        multisigAddress: multisigAddress,
+        recipient: recipient,
+        amount: transferAmount,
+        palletFee: BigInt.from(50),
+        deposit: BigInt.from(100),
+        fee: BigInt.from(5),
+        timestamp: DateTime.utc(2026, 6, 3),
+        blockNumber: 1,
+        blockHash: '0xabc',
+        extrinsicHash: extrinsicHash,
+      );
+    }
+
+    test('includes pending proposal for proposer feed', () {
+      final service = container.read(transactionServiceProvider);
+      final pending = pendingProposal();
+
+      final result = service.combineAndDeduplicateTransactions(
+        pendingCancellationIds: {},
+        pendingTransactions: [],
+        pendingMultisigCreations: [],
+        pendingMultisigProposals: [pending],
+        scheduledReversibleTransfers: [],
+        otherTransfers: [],
+      );
+
+      expect(result, hasLength(1));
+      expect(result.first, same(pending));
+    });
+
+    test('replaces pending proposal with indexed event for same activity key', () {
+      final service = container.read(transactionServiceProvider);
+      const hash = '0xshared-hash';
+      final pending = pendingProposal().copyWith(extrinsicHash: hash);
+      final indexed = indexedProposal(extrinsicHash: hash);
+
+      final result = service.combineAndDeduplicateTransactions(
+        pendingCancellationIds: {},
+        pendingTransactions: [],
+        pendingMultisigCreations: [],
+        pendingMultisigProposals: [pending],
+        scheduledReversibleTransfers: [],
+        otherTransfers: [indexed],
+      );
+
+      expect(result, hasLength(1));
+      expect(result.first, isA<MultisigProposalCreatedEvent>());
+    });
+
+    test('replaces pending proposal when extrinsic hash matches indexed event', () {
+      final service = container.read(transactionServiceProvider);
+      const hash = '0xabc123';
+      final pending = pendingProposal().copyWith(extrinsicHash: hash);
+      final indexedWithHash = MultisigProposalCreatedEvent(
+        id: 'ae-ms-proposal-created-2',
+        proposerId: 'proposer',
+        multisigAddress: 'multisig',
+        recipient: 'other-recipient',
+        amount: BigInt.from(9999),
+        palletFee: BigInt.from(50),
+        deposit: BigInt.from(100),
+        fee: BigInt.from(5),
+        timestamp: DateTime.utc(2026, 6, 4),
+        blockNumber: 2,
+        blockHash: '0xdef',
+        extrinsicHash: hash,
+      );
+
+      final result = service.combineAndDeduplicateTransactions(
+        pendingCancellationIds: {},
+        pendingTransactions: [],
+        pendingMultisigCreations: [],
+        pendingMultisigProposals: [pending],
+        scheduledReversibleTransfers: [],
+        otherTransfers: [indexedWithHash],
+      );
+
+      expect(result, hasLength(1));
+      expect(result.first, same(indexedWithHash));
+    });
+  });
 }

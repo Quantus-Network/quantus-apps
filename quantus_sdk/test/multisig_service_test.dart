@@ -1,6 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_sdk/src/models/multisig_account.dart';
 import 'package:quantus_sdk/src/models/multisig_create_submission.dart';
+import 'package:quantus_sdk/src/models/multisig_proposal.dart';
+import 'package:quantus_sdk/src/models/propose_fee_breakdown.dart';
+import 'package:quantus_sdk/src/services/multisig_graphql.dart';
 import 'package:quantus_sdk/src/services/multisig_service.dart';
 
 void main() {
@@ -147,9 +150,306 @@ void main() {
   });
 
   group('MultisigService discover mapping', () {
+    const signerA = '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY';
+    const signerB = '5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty';
+    const multisigAddress = '5TestMultisig';
+
+    const indexerRecord = {
+      'id': multisigAddress,
+      'threshold': 2,
+      'nonce': '3',
+      'signers': [signerA, signerB],
+      'creator': {'id': signerA},
+    };
+
     test('discoverForUser returns empty list for no accounts', () async {
       final result = await MultisigService().discoverForUser([]);
       expect(result, isEmpty);
+    });
+
+    test('parseMultisigDiscoverData returns empty list when data is null', () {
+      expect(MultisigService.parseMultisigDiscoverData(null), isEmpty);
+    });
+
+    test('parseMultisigDiscoverData parses multisig list', () {
+      final parsed = MultisigService.parseMultisigDiscoverData({
+        'multisig': [indexerRecord],
+      });
+      expect(parsed, hasLength(1));
+      expect(parsed.first['id'], multisigAddress);
+    });
+
+    test('multisigAccountFromIndexerRecord maps fields', () {
+      final account = MultisigService.multisigAccountFromIndexerRecord(
+        indexerRecord,
+        myMemberAccountId: signerB,
+        name: 'Team Multisig',
+      );
+
+      expect(account.name, 'Team Multisig');
+      expect(account.accountId, multisigAddress);
+      expect(account.signers, [signerA, signerB]);
+      expect(account.threshold, 2);
+      expect(account.nonce, BigInt.from(3));
+      expect(account.myMemberAccountId, signerB);
+      expect(account.creator, signerA);
+    });
+
+    test('multisigAccountFromIndexerRecord throws on malformed indexer data', () {
+      expect(
+        () => MultisigService.multisigAccountFromIndexerRecord(
+          Map<String, dynamic>.from(indexerRecord)..remove('signers'),
+          myMemberAccountId: signerB,
+          name: 'Bad',
+        ),
+        throwsFormatException,
+      );
+
+      expect(
+        () => MultisigService.multisigAccountFromIndexerRecord(
+          Map<String, dynamic>.from(indexerRecord)..['signers'] = [],
+          myMemberAccountId: signerB,
+          name: 'Bad',
+        ),
+        throwsFormatException,
+      );
+
+      expect(
+        () => MultisigService.multisigAccountFromIndexerRecord(
+          Map<String, dynamic>.from(indexerRecord)..remove('threshold'),
+          myMemberAccountId: signerB,
+          name: 'Bad',
+        ),
+        throwsFormatException,
+      );
+    });
+
+    test('multisigAccountFromIndexerRecord parses string threshold', () {
+      final account = MultisigService.multisigAccountFromIndexerRecord(
+        Map<String, dynamic>.from(indexerRecord)..['threshold'] = '2',
+        myMemberAccountId: signerB,
+        name: 'Team Multisig',
+      );
+      expect(account.threshold, 2);
+    });
+
+    test('resolveMyMemberAccountId prefers first matching local account', () {
+      expect(MultisigService.resolveMyMemberAccountId(indexerRecord, [signerB, signerA]), signerB);
+    });
+
+    test('resolveMyMemberAccountId returns null when user is not a signer', () {
+      expect(MultisigService.resolveMyMemberAccountId(indexerRecord, ['5ExternalSigner']), isNull);
+    });
+  });
+
+  group('MultisigGraphql.discoverQuery', () {
+    test('uses where variable', () {
+      expect(MultisigGraphql.discoverQuery, contains(r'$where: multisig_bool_exp!'));
+      expect(MultisigGraphql.discoverQuery, contains(r'multisig(where: $where)'));
+    });
+  });
+
+  group('MultisigGraphql.buildDiscoverVariables', () {
+    const addrA = '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY';
+    const addrB = '5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty';
+
+    test('throws when accountIds is empty', () {
+      expect(() => MultisigGraphql.buildDiscoverVariables([]), throwsArgumentError);
+    });
+
+    test('uses single _contains clause for one account', () {
+      final variables = MultisigGraphql.buildDiscoverVariables([addrA]);
+      expect(variables['where'], {
+        'signers': {
+          '_contains': [addrA],
+        },
+      });
+    });
+
+    test('uses _or of _contains clauses for multiple accounts', () {
+      final variables = MultisigGraphql.buildDiscoverVariables([addrA, addrB]);
+      expect(variables['where'], {
+        '_or': [
+          {
+            'signers': {
+              '_contains': [addrA],
+            },
+          },
+          {
+            'signers': {
+              '_contains': [addrB],
+            },
+          },
+        ],
+      });
+    });
+  });
+
+  group('MultisigProposalGraphql', () {
+    const multisigAddress = '5TestMultisig';
+
+    test('openProposalsQuery uses multisigId variable and open statuses', () {
+      expect(MultisigProposalGraphql.openProposalsQuery, contains(r'$multisigId: String!'));
+      expect(MultisigProposalGraphql.openProposalsQuery, contains(r'multisig_id: {_eq: $multisigId}'));
+      expect(MultisigProposalGraphql.openProposalsQuery, contains('status: {_in: [ACTIVE, APPROVED]}'));
+      expect(MultisigProposalGraphql.openProposalsQuery, contains('order_by: {created_at: desc}'));
+      expect(MultisigProposalGraphql.buildOpenProposalsVariables(multisigAddress), {'multisigId': multisigAddress});
+    });
+
+    test('pastProposalsQuery uses multisigId variable and terminal statuses', () {
+      expect(MultisigProposalGraphql.pastProposalsQuery, contains(r'$multisigId: String!'));
+      expect(MultisigProposalGraphql.pastProposalsQuery, contains(r'multisig_id: {_eq: $multisigId}'));
+      expect(MultisigProposalGraphql.pastProposalsQuery, contains('status: {_in: [EXECUTED, CANCELLED, REMOVED]}'));
+      expect(MultisigProposalGraphql.pastProposalsQuery, contains('order_by: {created_at: desc}'));
+      expect(MultisigProposalGraphql.buildPastProposalsVariables(multisigAddress), {'multisigId': multisigAddress});
+    });
+
+    test('proposalQuery uses multisigId and proposalId variables', () {
+      expect(MultisigProposalGraphql.proposalQuery, contains(r'$multisigId: String!'));
+      expect(MultisigProposalGraphql.proposalQuery, contains(r'$proposalId: Int!'));
+      expect(MultisigProposalGraphql.proposalQuery, contains(r'multisig_id: {_eq: $multisigId}'));
+      expect(MultisigProposalGraphql.proposalQuery, contains(r'proposal_id: {_eq: $proposalId}'));
+      expect(MultisigProposalGraphql.buildProposalVariables(multisigAddress, 7), {
+        'multisigId': multisigAddress,
+        'proposalId': 7,
+      });
+    });
+  });
+
+  group('MultisigProposal.fromIndexerJson', () {
+    final msig = MultisigAccount(
+      name: 'Team',
+      accountId: '5Multisig',
+      signers: ['5Proposer', '5Other'],
+      threshold: 2,
+      nonce: BigInt.zero,
+      myMemberAccountId: '5Proposer',
+    );
+
+    test('maps snake_case indexer fields', () {
+      final proposal = MultisigProposal.fromIndexerJson({
+        'id': '5Multisig-1',
+        'proposal_id': 1,
+        'created_at': '2026-06-04T10:00:00.000Z',
+        'pallet': 'Balances',
+        'call': 'transfer_allow_death',
+        'call_raw': '0x0500',
+        'transfer_amount': '1000000000000',
+        'status': 'ACTIVE',
+        'expiry_block': 12345,
+        'deposit': '500000000000',
+        'approvals': ['5Proposer'],
+        'decode_error': null,
+        'proposer': {'id': '5Proposer'},
+        'transferTo': {'id': '5Recipient'},
+      }, msig: msig);
+
+      expect(proposal.entityId, '5Multisig-1');
+      expect(proposal.explorerProposalId, '5Multisig-1');
+      expect(proposal.id, 1);
+      expect(proposal.recipient, '5Recipient');
+      expect(proposal.amount, BigInt.parse('1000000000000'));
+      expect(proposal.status, MultisigProposalStatus.active);
+      expect(proposal.approvalCount, 1);
+      expect(proposal.palletFee, MultisigProposal.proposalCreationFeeFor(msig.signers.length));
+    });
+
+    test('maps unrecognized indexer status to unknown', () {
+      final proposal = MultisigProposal.fromIndexerJson({
+        'id': '5Multisig-9',
+        'proposal_id': 9,
+        'created_at': '2026-06-04T10:00:00.000Z',
+        'pallet': 'Balances',
+        'call': 'transfer_allow_death',
+        'call_raw': '0x0500',
+        'transfer_amount': '1000000000000',
+        'status': 'MYSTERY',
+        'expiry_block': 12345,
+        'deposit': '500000000000',
+        'approvals': [],
+        'proposer': {'id': '5Proposer'},
+        'transferTo': {'id': '5Recipient'},
+      }, msig: msig);
+
+      expect(proposal.status, MultisigProposalStatus.unknown);
+      expect(proposal.isOpen, isFalse);
+    });
+
+    test('reads burned_pallet_fee from indexer when present', () {
+      final proposal = MultisigProposal.fromIndexerJson({
+        'id': '5Multisig-3',
+        'proposal_id': 3,
+        'created_at': '2026-06-04T10:00:00.000Z',
+        'pallet': 'Balances',
+        'call': 'transfer_allow_death',
+        'call_raw': '0x0500',
+        'transfer_amount': '1000000000000',
+        'status': 'ACTIVE',
+        'expiry_block': 12345,
+        'deposit': '500000000000',
+        'burned_pallet_fee': '1020000000000',
+        'approvals': [],
+        'proposer': {'id': '5Proposer'},
+        'transferTo': {'id': '5Recipient'},
+      }, msig: msig);
+
+      expect(proposal.palletFee, BigInt.parse('1020000000000'));
+    });
+
+    test('maps creation network fee when present', () {
+      final proposal = MultisigProposal.fromIndexerJson({
+        'id': '5Multisig-2',
+        'proposal_id': 2,
+        'created_at': '2026-06-04T10:00:00.000Z',
+        'pallet': 'Balances',
+        'call': 'transfer_allow_death',
+        'call_raw': '0x0500',
+        'transfer_amount': '1000000000000',
+        'status': 'ACTIVE',
+        'expiry_block': 12345,
+        'deposit': '500000000000',
+        'creation_network_fee': '25000000000',
+        'approvals': [],
+        'proposer': {'id': '5Proposer'},
+        'transferTo': {'id': '5Recipient'},
+      }, msig: msig);
+
+      expect(proposal.networkFee, BigInt.parse('25000000000'));
+    });
+  });
+
+  group('MultisigService.proposalCreationFee', () {
+    final service = MultisigService();
+    final base = service.proposalFee;
+    final signerStepFactor = BigInt.from(MultisigService.palletConstants.signerStepFactor);
+
+    test('scales with signer count per pallet formula', () {
+      BigInt expected(int signerCount) {
+        final extra = base * BigInt.from(signerCount) * signerStepFactor ~/ BigInt.from(1000000);
+        return base + extra;
+      }
+
+      expect(service.proposalCreationFee(1), expected(1));
+      expect(service.proposalCreationFee(5), expected(5));
+      expect(service.proposalCreationFee(10), expected(10));
+    });
+
+    test('matches pallet example: 5 signers adds 5% to base', () {
+      final extra = base * BigInt.from(5) * signerStepFactor ~/ BigInt.from(1000000);
+      expect(extra, base ~/ BigInt.from(20));
+      expect(service.proposalCreationFee(5), base + extra);
+    });
+  });
+
+  group('ProposeFeeBreakdown', () {
+    test('memberCost sums network, deposit, and creation fees', () {
+      final breakdown = ProposeFeeBreakdown(
+        networkFee: BigInt.from(100),
+        deposit: BigInt.from(200),
+        creationFee: BigInt.from(300),
+        expiryBlock: 14400,
+      );
+      expect(breakdown.memberCost, BigInt.from(600));
     });
   });
 
