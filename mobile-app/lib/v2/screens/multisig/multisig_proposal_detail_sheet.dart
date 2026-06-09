@@ -8,6 +8,7 @@ import 'package:resonance_network_wallet/providers/currency_display_provider.dar
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/multisig_providers.dart';
 import 'package:resonance_network_wallet/providers/pending_multisig_approvals_provider.dart';
+import 'package:resonance_network_wallet/providers/pending_multisig_executions_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/v2/components/multisig_expiry_value.dart';
 import 'package:resonance_network_wallet/routes.dart';
@@ -18,10 +19,11 @@ import 'package:resonance_network_wallet/v2/components/bottom_sheet_container.da
 import 'package:resonance_network_wallet/v2/components/detail_summary_row.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/screens/multisig/multisig_approve_confirm_sheet.dart';
+import 'package:resonance_network_wallet/v2/screens/multisig/multisig_execute_confirm_sheet.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 
-/// Shows proposal detail with approve action for eligible co-signers.
+/// Shows proposal detail with approve or execute actions for eligible signers.
 void showMultisigProposalDetailSheet(
   BuildContext context, {
   required MultisigAccount msig,
@@ -76,6 +78,13 @@ class _MultisigProposalDetailSheet extends ConsumerWidget {
       liveProposal.id,
       msig.myMemberAccountId,
     );
+    final pendingExecutions = ref.watch(pendingMultisigExecutionsProvider);
+    final pendingExecution = findPendingExecutionForProposal(
+      pendingExecutions,
+      msig.accountId,
+      liveProposal.id,
+      msig.myMemberAccountId,
+    );
     final didApprove = liveProposal.didApprove(msig.myMemberAccountId);
     final hasLocalSigner = _hasLocalSigner(ref);
     final isActionable = currentBlock != null && liveProposal.isActionable(currentBlock);
@@ -105,7 +114,7 @@ class _MultisigProposalDetailSheet extends ConsumerWidget {
           const SizedBox(height: 24),
           _signers(l10n, colors, text, liveProposal),
           const SizedBox(height: 24),
-          _signSection(
+          _actionSection(
             context,
             l10n,
             colors,
@@ -113,6 +122,7 @@ class _MultisigProposalDetailSheet extends ConsumerWidget {
             liveProposal: liveProposal,
             didApprove: didApprove,
             pendingApproval: pendingApproval,
+            pendingExecution: pendingExecution,
             hasLocalSigner: hasLocalSigner,
             isActionable: isActionable,
           ),
@@ -249,7 +259,45 @@ class _MultisigProposalDetailSheet extends ConsumerWidget {
     );
   }
 
-  Widget _signSection(
+  Widget _actionSection(
+    BuildContext context,
+    AppLocalizations l10n,
+    AppColorsV2 colors,
+    AppTextTheme text, {
+    required MultisigProposal liveProposal,
+    required bool didApprove,
+    required PendingMultisigApprovalEvent? pendingApproval,
+    required PendingMultisigExecutionEvent? pendingExecution,
+    required bool hasLocalSigner,
+    required bool isActionable,
+  }) {
+    if (liveProposal.isReadyToExecute) {
+      return _executeSection(
+        context,
+        l10n,
+        colors,
+        text,
+        liveProposal: liveProposal,
+        pendingExecution: pendingExecution,
+        hasLocalSigner: hasLocalSigner,
+        isActionable: isActionable,
+      );
+    }
+
+    return _approveSection(
+      context,
+      l10n,
+      colors,
+      text,
+      liveProposal: liveProposal,
+      didApprove: didApprove,
+      pendingApproval: pendingApproval,
+      hasLocalSigner: hasLocalSigner,
+      isActionable: isActionable,
+    );
+  }
+
+  Widget _approveSection(
     BuildContext context,
     AppLocalizations l10n,
     AppColorsV2 colors,
@@ -282,6 +330,51 @@ class _MultisigProposalDetailSheet extends ConsumerWidget {
       _ => '',
     };
 
+    return _actionButtonColumn(l10n, colors, text, label: label, isDisabled: isDisabled, onTap: onTap, note: note);
+  }
+
+  Widget _executeSection(
+    BuildContext context,
+    AppLocalizations l10n,
+    AppColorsV2 colors,
+    AppTextTheme text, {
+    required MultisigProposal liveProposal,
+    required PendingMultisigExecutionEvent? pendingExecution,
+    required bool hasLocalSigner,
+    required bool isActionable,
+  }) {
+    final isPending = pendingExecution != null;
+    final canExecute = isActionable && !isPending && hasLocalSigner;
+
+    final (label, isDisabled, onTap) = switch ((isPending, canExecute)) {
+      (true, _) => (l10n.multisigProposalExecutingLabel, true, null),
+      (_, true) => (
+        l10n.multisigExecuteButton,
+        false,
+        () => showMultisigExecuteConfirmSheet(context, msig: msig, proposal: liveProposal),
+      ),
+      _ => (l10n.multisigExecuteButton, true, null),
+    };
+
+    final note = switch ((isPending, isActionable, hasLocalSigner)) {
+      (true, _, _) => l10n.multisigProposalExecutingNote,
+      (_, false, _) => l10n.multisigExecuteUnavailableNote,
+      (_, _, false) => l10n.multisigExecuteUnavailableNote,
+      _ => '',
+    };
+
+    return _actionButtonColumn(l10n, colors, text, label: label, isDisabled: isDisabled, onTap: onTap, note: note);
+  }
+
+  Widget _actionButtonColumn(
+    AppLocalizations l10n,
+    AppColorsV2 colors,
+    AppTextTheme text, {
+    required String label,
+    required bool isDisabled,
+    required VoidCallback? onTap,
+    required String note,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [

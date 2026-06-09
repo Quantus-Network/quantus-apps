@@ -438,6 +438,26 @@ void main() {
     });
   });
 
+  group('MultisigService.buildExecuteCall', () {
+    const signerA = '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY';
+    const signerB = '5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty';
+    const multisigAddress = '5DAAnrj7VHTznn2AWBemMuyBwZWs6FNFjdyVXUeYum3PTXFy';
+
+    final msig = MultisigAccount(
+      name: 'Team',
+      accountId: multisigAddress,
+      signers: [signerA, signerB],
+      threshold: 2,
+      nonce: BigInt.zero,
+      myMemberAccountId: signerB,
+    );
+
+    test('returns a Multisig runtime call for valid params', () {
+      final call = MultisigService().buildExecuteCall(msig: msig, proposalId: 3);
+      expect(call.encode().isNotEmpty, isTrue);
+    });
+  });
+
   group('MultisigService.proposalCreationFee', () {
     final service = MultisigService();
     final base = service.proposalFee;

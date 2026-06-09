@@ -166,6 +166,9 @@ class MultisigProposal {
   /// Whether this proposal should appear in the pinned "open" section.
   bool isActionable(int currentBlock) => isOpen && !expired(currentBlock);
 
+  /// Whether threshold is met and the proposal awaits execution.
+  bool get isReadyToExecute => status == MultisigProposalStatus.approved;
+
   MultisigProposal copyWith({MultisigProposalStatus? status, List<String>? approvals, BigInt? burnedPalletFee}) {
     return MultisigProposal(
       entityId: entityId,

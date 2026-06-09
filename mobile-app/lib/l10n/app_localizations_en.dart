@@ -573,6 +573,40 @@ class AppLocalizationsEn extends AppLocalizations {
   String get multisigApproveFailed => 'Failed to approve';
 
   @override
+  String get multisigExecuteButton => 'Execute';
+
+  @override
+  String get multisigExecuteConfirmTitle => 'Are you sure?';
+
+  @override
+  String get multisigExecuteConfirmBody => 'You are about to execute a transfer of';
+
+  @override
+  String get multisigExecuteConfirmYes => 'Yes, Execute';
+
+  @override
+  String get multisigExecuteAuthReason => 'Authenticate to execute';
+
+  @override
+  String get multisigExecuteFailed => 'Failed to execute';
+
+  @override
+  String get multisigExecuteUnavailableNote => 'This proposal can no longer be executed.';
+
+  @override
+  String get multisigProposalExecutingLabel => 'Executing…';
+
+  @override
+  String get multisigProposalExecutingNote => 'Your execution is being confirmed on-chain.';
+
+  @override
+  String get activityTxExecuting => 'Executing…';
+
+  @override
+  String get multisigExecutionTimeoutToast =>
+      'Execution confirmation is taking longer than expected. Check the chain or try again.';
+
+  @override
   String get multisigCancelConfirmTitle => 'Cancel Proposal?';
 
   @override

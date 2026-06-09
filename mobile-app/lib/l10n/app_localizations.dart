@@ -1130,6 +1130,72 @@ abstract class AppLocalizations {
   /// **'Failed to approve'**
   String get multisigApproveFailed;
 
+  /// Button to execute an approved multisig proposal
+  ///
+  /// In en, this message translates to:
+  /// **'Execute'**
+  String get multisigExecuteButton;
+
+  /// Title on execute confirmation sheet
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure?'**
+  String get multisigExecuteConfirmTitle;
+
+  /// Body text on execute confirmation sheet
+  ///
+  /// In en, this message translates to:
+  /// **'You are about to execute a transfer of'**
+  String get multisigExecuteConfirmBody;
+
+  /// Confirm button on execute sheet
+  ///
+  /// In en, this message translates to:
+  /// **'Yes, Execute'**
+  String get multisigExecuteConfirmYes;
+
+  /// Biometric auth prompt when executing
+  ///
+  /// In en, this message translates to:
+  /// **'Authenticate to execute'**
+  String get multisigExecuteAuthReason;
+
+  /// Error when execute submission fails
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to execute'**
+  String get multisigExecuteFailed;
+
+  /// Note when execute action is unavailable
+  ///
+  /// In en, this message translates to:
+  /// **'This proposal can no longer be executed.'**
+  String get multisigExecuteUnavailableNote;
+
+  /// Disabled execute button while pending
+  ///
+  /// In en, this message translates to:
+  /// **'Executing…'**
+  String get multisigProposalExecutingLabel;
+
+  /// Note while execution is pending indexer confirmation
+  ///
+  /// In en, this message translates to:
+  /// **'Your execution is being confirmed on-chain.'**
+  String get multisigProposalExecutingNote;
+
+  /// Status label on proposal row while execution is pending
+  ///
+  /// In en, this message translates to:
+  /// **'Executing…'**
+  String get activityTxExecuting;
+
+  /// Toast when execution indexer polling times out
+  ///
+  /// In en, this message translates to:
+  /// **'Execution confirmation is taking longer than expected. Check the chain or try again.'**
+  String get multisigExecutionTimeoutToast;
+
   /// Title on cancel confirmation sheet
   ///
   /// In en, this message translates to:

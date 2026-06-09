@@ -812,6 +812,50 @@
     "@multisigApproveFailed": {
       "description": "Error when approve submission fails"
     },
+    "multisigExecuteButton": "Execute",
+    "@multisigExecuteButton": {
+      "description": "Button to execute an approved multisig proposal"
+    },
+    "multisigExecuteConfirmTitle": "Are you sure?",
+    "@multisigExecuteConfirmTitle": {
+      "description": "Title on execute confirmation sheet"
+    },
+    "multisigExecuteConfirmBody": "You are about to execute a transfer of",
+    "@multisigExecuteConfirmBody": {
+      "description": "Body text on execute confirmation sheet"
+    },
+    "multisigExecuteConfirmYes": "Yes, Execute",
+    "@multisigExecuteConfirmYes": {
+      "description": "Confirm button on execute sheet"
+    },
+    "multisigExecuteAuthReason": "Authenticate to execute",
+    "@multisigExecuteAuthReason": {
+      "description": "Biometric auth prompt when executing"
+    },
+    "multisigExecuteFailed": "Failed to execute",
+    "@multisigExecuteFailed": {
+      "description": "Error when execute submission fails"
+    },
+    "multisigExecuteUnavailableNote": "This proposal can no longer be executed.",
+    "@multisigExecuteUnavailableNote": {
+      "description": "Note when execute action is unavailable"
+    },
+    "multisigProposalExecutingLabel": "Executing…",
+    "@multisigProposalExecutingLabel": {
+      "description": "Disabled execute button while pending"
+    },
+    "multisigProposalExecutingNote": "Your execution is being confirmed on-chain.",
+    "@multisigProposalExecutingNote": {
+      "description": "Note while execution is pending indexer confirmation"
+    },
+    "activityTxExecuting": "Executing…",
+    "@activityTxExecuting": {
+      "description": "Status label on proposal row while execution is pending"
+    },
+    "multisigExecutionTimeoutToast": "Execution confirmation is taking longer than expected. Check the chain or try again.",
+    "@multisigExecutionTimeoutToast": {
+      "description": "Toast when execution indexer polling times out"
+    },
     "multisigCancelConfirmTitle": "Cancel Proposal?",
     "@multisigCancelConfirmTitle": {
       "description": "Title on cancel confirmation sheet"

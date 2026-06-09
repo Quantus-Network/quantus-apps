@@ -575,6 +575,40 @@ class AppLocalizationsId extends AppLocalizations {
   String get multisigApproveFailed => 'Gagal menyetujui';
 
   @override
+  String get multisigExecuteButton => 'Eksekusi';
+
+  @override
+  String get multisigExecuteConfirmTitle => 'Apakah Anda yakin?';
+
+  @override
+  String get multisigExecuteConfirmBody => 'Anda akan mengeksekusi transfer sebesar';
+
+  @override
+  String get multisigExecuteConfirmYes => 'Ya, Eksekusi';
+
+  @override
+  String get multisigExecuteAuthReason => 'Autentikasi untuk mengeksekusi';
+
+  @override
+  String get multisigExecuteFailed => 'Gagal mengeksekusi';
+
+  @override
+  String get multisigExecuteUnavailableNote => 'Proposal ini tidak dapat dieksekusi lagi.';
+
+  @override
+  String get multisigProposalExecutingLabel => 'Mengeksekusi…';
+
+  @override
+  String get multisigProposalExecutingNote => 'Eksekusi Anda sedang dikonfirmasi di chain.';
+
+  @override
+  String get activityTxExecuting => 'Mengeksekusi…';
+
+  @override
+  String get multisigExecutionTimeoutToast =>
+      'Konfirmasi eksekusi membutuhkan waktu lebih lama. Periksa chain atau coba lagi.';
+
+  @override
   String get multisigCancelConfirmTitle => 'Batalkan Proposal?';
 
   @override
