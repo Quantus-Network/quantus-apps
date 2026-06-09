@@ -70,7 +70,8 @@ class MultisigActivitySection extends ConsumerWidget {
       );
     }
 
-    final openProposals = openProposalsAsync.value ?? const <MultisigProposal>[];
+    final openProposals = [...(openProposalsAsync.value ?? const <MultisigProposal>[])]
+      ..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
     if (pending.isEmpty && openProposals.isEmpty) {
       return Text(l10n.multisigNoOpenProposals, style: text.smallParagraph?.copyWith(color: colors.textTertiary));
     }

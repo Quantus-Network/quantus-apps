@@ -514,6 +514,9 @@ class AppLocalizationsId extends AppLocalizations {
   String get multisigProposalExpiresLabel => 'KEDALUWARSA';
 
   @override
+  String get multisigProposalAtLabel => 'PADA';
+
+  @override
   String get multisigProposalThresholdLabel => 'AMBANG';
 
   @override

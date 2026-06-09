@@ -512,6 +512,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get multisigProposalExpiresLabel => 'EXPIRES';
 
   @override
+  String get multisigProposalAtLabel => 'AT';
+
+  @override
   String get multisigProposalThresholdLabel => 'THRESHOLD';
 
   @override

@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_sdk/src/models/multisig_account.dart';
 import 'package:quantus_sdk/src/models/multisig_create_submission.dart';
 import 'package:quantus_sdk/src/models/multisig_proposal.dart';
+import 'package:quantus_sdk/src/models/multisig_proposal_event.dart';
 import 'package:quantus_sdk/src/models/propose_fee_breakdown.dart';
 import 'package:quantus_sdk/src/services/multisig_graphql.dart';
 import 'package:quantus_sdk/src/services/multisig_service.dart';
@@ -292,7 +293,7 @@ void main() {
       expect(MultisigProposalGraphql.openProposalsQuery, contains(r'$multisigId: String!'));
       expect(MultisigProposalGraphql.openProposalsQuery, contains(r'multisig_id: {_eq: $multisigId}'));
       expect(MultisigProposalGraphql.openProposalsQuery, contains('status: {_in: [ACTIVE, APPROVED]}'));
-      expect(MultisigProposalGraphql.openProposalsQuery, contains('order_by: {created_at: desc}'));
+      expect(MultisigProposalGraphql.openProposalsQuery, contains('order_by: {updated_at: desc}'));
       expect(MultisigProposalGraphql.buildOpenProposalsVariables(multisigAddress), {'multisigId': multisigAddress});
     });
 
@@ -300,7 +301,7 @@ void main() {
       expect(MultisigProposalGraphql.pastProposalsQuery, contains(r'$multisigId: String!'));
       expect(MultisigProposalGraphql.pastProposalsQuery, contains(r'multisig_id: {_eq: $multisigId}'));
       expect(MultisigProposalGraphql.pastProposalsQuery, contains('status: {_in: [EXECUTED, CANCELLED, REMOVED]}'));
-      expect(MultisigProposalGraphql.pastProposalsQuery, contains('order_by: {created_at: desc}'));
+      expect(MultisigProposalGraphql.pastProposalsQuery, contains('order_by: {updated_at: desc}'));
       expect(MultisigProposalGraphql.buildPastProposalsVariables(multisigAddress), {'multisigId': multisigAddress});
     });
 
@@ -415,6 +416,62 @@ void main() {
       }, msig: msig);
 
       expect(proposal.networkFee, BigInt.parse('25000000000'));
+    });
+
+    test('maps updated_at from indexer', () {
+      final proposal = MultisigProposal.fromIndexerJson({
+        'id': '5Multisig-4',
+        'proposal_id': 4,
+        'created_at': '2026-06-04T10:00:00.000Z',
+        'updated_at': '2026-06-05T14:30:00.000Z',
+        'pallet': 'Balances',
+        'call': 'transfer_allow_death',
+        'call_raw': '0x0500',
+        'transfer_amount': '1000000000000',
+        'status': 'EXECUTED',
+        'expiry_block': 12345,
+        'deposit': '500000000000',
+        'approvals': ['5Proposer', '5Other'],
+        'proposer': {'id': '5Proposer'},
+        'transferTo': {'id': '5Recipient'},
+      }, msig: msig);
+
+      expect(proposal.updatedAt, DateTime.parse('2026-06-05T14:30:00.000Z'));
+      expect(proposal.isTerminal, isTrue);
+    });
+  });
+
+  group('MultisigProposalEvent', () {
+    test('uses proposal updatedAt for activity sort timestamp', () {
+      final msig = MultisigAccount(
+        name: 'Team',
+        accountId: '5Multisig',
+        signers: ['5Proposer', '5Other'],
+        threshold: 2,
+        nonce: BigInt.zero,
+        myMemberAccountId: '5Proposer',
+      );
+      final proposal = MultisigProposal.fromIndexerJson({
+        'id': '5Multisig-6',
+        'proposal_id': 6,
+        'created_at': '2026-06-04T10:00:00.000Z',
+        'updated_at': '2026-06-06T08:15:00.000Z',
+        'pallet': 'Balances',
+        'call': 'transfer_allow_death',
+        'call_raw': '0x0500',
+        'transfer_amount': '1000000000000',
+        'status': 'EXECUTED',
+        'expiry_block': 12345,
+        'deposit': '500000000000',
+        'approvals': ['5Proposer', '5Other'],
+        'proposer': {'id': '5Proposer'},
+        'transferTo': {'id': '5Recipient'},
+      }, msig: msig);
+
+      final event = MultisigProposalEvent(proposal: proposal);
+
+      expect(event.timestamp, proposal.updatedAt);
+      expect(event.timestamp, isNot(proposal.createdAt));
     });
   });
 

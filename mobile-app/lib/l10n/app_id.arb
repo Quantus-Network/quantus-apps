@@ -165,6 +165,7 @@
   "multisigAlreadyApproved": "Sudah Disetujui",
   "multisigCancelProposalButton": "Batalkan Proposal",
   "multisigProposalExpiresLabel": "KEDALUWARSA",
+  "multisigProposalAtLabel": "PADA",
   "multisigProposalThresholdLabel": "AMBANG",
   "multisigProposalApprovalsLabel": "PERSETUJUAN",
   "multisigProposalFeeRowLabel": "BIAYA PROPOSAL",

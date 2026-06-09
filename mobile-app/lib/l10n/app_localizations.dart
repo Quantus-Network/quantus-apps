@@ -1022,6 +1022,12 @@ abstract class AppLocalizations {
   /// **'EXPIRES'**
   String get multisigProposalExpiresLabel;
 
+  /// Timestamp row label on past proposal detail
+  ///
+  /// In en, this message translates to:
+  /// **'AT'**
+  String get multisigProposalAtLabel;
+
   /// Threshold row label on proposal detail
   ///
   /// In en, this message translates to:

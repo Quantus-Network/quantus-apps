@@ -173,18 +173,25 @@ class _MultisigProposalDetailSheet extends ConsumerWidget {
       multisigService: multisigService,
       currentBlock: currentBlock,
     );
+    final isTerminal = liveProposal.isTerminal;
 
     return Column(
       children: [
         DetailSummaryRow(label: l10n.activityDetailTo, value: recipient),
-        DetailSummaryRow(
-          label: l10n.multisigProposalExpiresLabel,
-          valueWidget: MultisigExpiryValue(
-            parts: expiryParts,
-            style: text.transactionDetailRowValue?.copyWith(color: Colors.white.withValues(alpha: 0.8)),
+        if (isTerminal)
+          DetailSummaryRow(
+            label: l10n.multisigProposalAtLabel,
+            value: DatetimeFormattingService.formatTxDateTime(liveProposal.updatedAt),
+          )
+        else
+          DetailSummaryRow(
+            label: l10n.multisigProposalExpiresLabel,
+            valueWidget: MultisigExpiryValue(
+              parts: expiryParts,
+              style: text.transactionDetailRowValue?.copyWith(color: Colors.white.withValues(alpha: 0.8)),
+            ),
+            valueFlex: 4,
           ),
-          valueFlex: 4,
-        ),
         DetailSummaryRow(
           label: l10n.multisigProposalProposerLabel,
           value: AddressFormattingService.formatActivityDetailAddress(liveProposal.proposer),

@@ -719,6 +719,10 @@
     "@multisigProposalExpiresLabel": {
       "description": "Expires row label on proposal detail"
     },
+    "multisigProposalAtLabel": "AT",
+    "@multisigProposalAtLabel": {
+      "description": "Timestamp row label on past proposal detail"
+    },
     "multisigProposalThresholdLabel": "THRESHOLD",
     "@multisigProposalThresholdLabel": {
       "description": "Threshold row label on proposal detail"
