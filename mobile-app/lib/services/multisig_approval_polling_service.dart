@@ -9,14 +9,9 @@ import 'package:resonance_network_wallet/services/multisig_approval_reconciliati
 import 'package:resonance_network_wallet/shared/utils/polling_refresh_scope.dart';
 import 'package:resonance_network_wallet/shared/utils/print.dart';
 
-typedef MultisigApprovalPollingService =
-    ExtrinsicIndexerPollingService<PendingMultisigApprovalEvent, MultisigAccount>;
+typedef MultisigApprovalPollingService = ExtrinsicIndexerPollingService<PendingMultisigApprovalEvent, MultisigAccount>;
 
-Future<bool> _confirmIndexedApproval(
-  Ref ref,
-  MultisigAccount msig,
-  PendingMultisigApprovalEvent pending,
-) async {
+Future<bool> _confirmIndexedApproval(Ref ref, MultisigAccount msig, PendingMultisigApprovalEvent pending) async {
   final hash = pending.extrinsicHash;
   if (hash == null) return false;
 
@@ -35,11 +30,7 @@ Future<bool> _confirmIndexedApproval(
 
 /// When the indexer account event lags but the proposal already reflects the
 /// approval, clear pending state and refresh without a timeout toast.
-Future<bool> _tryResolveApprovalTimeout(
-  Ref ref,
-  MultisigAccount msig,
-  PendingMultisigApprovalEvent pending,
-) async {
+Future<bool> _tryResolveApprovalTimeout(Ref ref, MultisigAccount msig, PendingMultisigApprovalEvent pending) async {
   final multisigService = ref.read(multisigServiceProvider);
   final proposal = await multisigService.getProposal(msig, pending.proposalId);
   if (proposal == null || !proposal.didApprove(pending.approverId)) {

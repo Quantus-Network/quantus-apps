@@ -173,8 +173,14 @@ class _MultisigProposalDetailSheet extends ConsumerWidget {
           label: l10n.multisigProposalApprovalsLabel,
           value: l10n.multisigApprovalsOf(liveProposal.approvalCount, liveProposal.threshold),
         ),
-        DetailSummaryRow(label: l10n.multisigProposalFeeRowLabel, value: _formatBalance(l10n, fmt, liveProposal.palletFee)),
-        DetailSummaryRow(label: l10n.multisigProposalDepositLabel, value: _formatBalance(l10n, fmt, liveProposal.deposit)),
+        DetailSummaryRow(
+          label: l10n.multisigProposalFeeRowLabel,
+          value: _formatBalance(l10n, fmt, liveProposal.palletFee),
+        ),
+        DetailSummaryRow(
+          label: l10n.multisigProposalDepositLabel,
+          value: _formatBalance(l10n, fmt, liveProposal.deposit),
+        ),
         if (liveProposal.networkFee != null && liveProposal.networkFee != BigInt.zero)
           DetailSummaryRow(
             label: l10n.activityDetailNetworkFee,
@@ -279,11 +285,7 @@ class _MultisigProposalDetailSheet extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        QuantusButton.simple(
-          label: label,
-          isDisabled: isDisabled,
-          onTap: onTap,
-        ),
+        QuantusButton.simple(label: label, isDisabled: isDisabled, onTap: onTap),
         if (note.isNotEmpty) ...[
           const SizedBox(height: 12),
           Text(

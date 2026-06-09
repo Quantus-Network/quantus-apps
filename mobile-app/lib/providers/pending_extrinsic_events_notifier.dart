@@ -29,11 +29,7 @@ abstract class PendingExtrinsicEventsNotifier<T> extends Notifier<List<T>> {
   }
 }
 
-T? findPendingExtrinsicEventById<T>(
-  List<T> events,
-  String id,
-  String Function(T event) idOf,
-) {
+T? findPendingExtrinsicEventById<T>(List<T> events, String id, String Function(T event) idOf) {
   for (final event in events) {
     if (idOf(event) == id) return event;
   }

@@ -263,8 +263,7 @@ class _DetailsSection extends ConsumerWidget {
     final txHash = event.extrinsicHash != null
         ? AddressFormattingService.formatActivityDetailExtrinsicHash(event.extrinsicHash!)
         : null;
-    final approvalsLabel =
-        event.approvalsOfSignersLabel(l10n.multisigApprovalsOf) ?? event.approvalsCount.toString();
+    final approvalsLabel = event.approvalsOfSignersLabel(l10n.multisigApprovalsOf) ?? event.approvalsCount.toString();
 
     return Column(
       children: [

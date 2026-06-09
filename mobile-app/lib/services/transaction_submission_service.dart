@@ -188,14 +188,7 @@ class TransactionSubmissionService {
 
     TelemetryService().sendEvent('multisig_approve');
 
-    unawaited(
-      _submitApproveBackground(
-        msig: msig,
-        signer: signer,
-        proposalId: proposal.id,
-        pending: pending,
-      ),
-    );
+    unawaited(_submitApproveBackground(msig: msig, signer: signer, proposalId: proposal.id, pending: pending));
   }
 
   Future<void> _submitApproveBackground({
@@ -206,11 +199,7 @@ class TransactionSubmissionService {
   }) async {
     try {
       final service = _ref.read(multisigServiceProvider);
-      final hashBytes = await service.submitApproveExtrinsic(
-        msig: msig,
-        signer: signer,
-        proposalId: proposalId,
-      );
+      final hashBytes = await service.submitApproveExtrinsic(msig: msig, signer: signer, proposalId: proposalId);
       final extrinsicHash = '0x${hex.encode(hashBytes)}';
       quantusDebugPrint('[Approve] submitted: $extrinsicHash');
 

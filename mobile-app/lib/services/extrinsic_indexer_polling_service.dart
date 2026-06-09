@@ -50,9 +50,7 @@ class ExtrinsicIndexerPollingService<TPending, TContext> {
       return;
     }
 
-    quantusDebugPrint(
-      '${_config.logPrefix} startPolling $key hash=${_config.getExtrinsicHash(pending)}',
-    );
+    quantusDebugPrint('${_config.logPrefix} startPolling $key hash=${_config.getExtrinsicHash(pending)}');
 
     stopPolling(key);
     final startTime = DateTime.now();

@@ -7,14 +7,9 @@ import 'package:resonance_network_wallet/services/extrinsic_indexer_polling_serv
 import 'package:resonance_network_wallet/services/multisig_proposal_reconciliation.dart';
 import 'package:resonance_network_wallet/shared/utils/polling_refresh_scope.dart';
 
-typedef MultisigProposalPollingService =
-    ExtrinsicIndexerPollingService<PendingMultisigProposalEvent, MultisigAccount>;
+typedef MultisigProposalPollingService = ExtrinsicIndexerPollingService<PendingMultisigProposalEvent, MultisigAccount>;
 
-Future<bool> _confirmIndexedProposal(
-  Ref ref,
-  MultisigAccount msig,
-  PendingMultisigProposalEvent pending,
-) async {
+Future<bool> _confirmIndexedProposal(Ref ref, MultisigAccount msig, PendingMultisigProposalEvent pending) async {
   final hash = pending.extrinsicHash;
   if (hash == null) return false;
 

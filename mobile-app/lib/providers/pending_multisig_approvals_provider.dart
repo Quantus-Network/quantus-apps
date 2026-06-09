@@ -8,10 +8,7 @@ class PendingMultisigApprovalsNotifier extends PendingExtrinsicEventsNotifier<Pe
   String idOf(PendingMultisigApprovalEvent event) => event.id;
 
   @override
-  PendingMultisigApprovalEvent withExtrinsicHash(
-    PendingMultisigApprovalEvent event,
-    String? extrinsicHash,
-  ) {
+  PendingMultisigApprovalEvent withExtrinsicHash(PendingMultisigApprovalEvent event, String? extrinsicHash) {
     return event.copyWith(extrinsicHash: extrinsicHash);
   }
 }
@@ -28,9 +25,7 @@ PendingMultisigApprovalEvent? findPendingApprovalForProposal(
   String approverId,
 ) {
   for (final event in all) {
-    if (event.multisigAddress == multisigAddress &&
-        event.proposalId == proposalId &&
-        event.approverId == approverId) {
+    if (event.multisigAddress == multisigAddress && event.proposalId == proposalId && event.approverId == approverId) {
       return event;
     }
   }
@@ -50,9 +45,5 @@ void removePendingMultisigApproval(Ref ref, String id) {
 }
 
 PendingMultisigApprovalEvent? findPendingMultisigApproval(Ref ref, String id) {
-  return findPendingExtrinsicEventById(
-    ref.read(pendingMultisigApprovalsProvider),
-    id,
-    (event) => event.id,
-  );
+  return findPendingExtrinsicEventById(ref.read(pendingMultisigApprovalsProvider), id, (event) => event.id);
 }

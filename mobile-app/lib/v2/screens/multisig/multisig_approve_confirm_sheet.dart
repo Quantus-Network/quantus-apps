@@ -60,11 +60,9 @@ class _MultisigApproveConfirmSheetState extends ConsumerState<_MultisigApproveCo
           );
       if (signer == null) throw Exception('No signer account available');
 
-      final fee = await ref.read(multisigServiceProvider).estimateApproveFee(
-            msig: widget.msig,
-            signer: signer,
-            proposalId: widget.proposal.id,
-          );
+      final fee = await ref
+          .read(multisigServiceProvider)
+          .estimateApproveFee(msig: widget.msig, signer: signer, proposalId: widget.proposal.id);
 
       if (!mounted) return;
       setState(() {
@@ -104,11 +102,9 @@ class _MultisigApproveConfirmSheetState extends ConsumerState<_MultisigApproveCo
           );
       if (signer == null) throw Exception('No signer account available');
 
-      await ref.read(transactionSubmissionServiceProvider).approveProposal(
-            msig: widget.msig,
-            signer: signer,
-            proposal: widget.proposal,
-          );
+      await ref
+          .read(transactionSubmissionServiceProvider)
+          .approveProposal(msig: widget.msig, signer: signer, proposal: widget.proposal);
 
       if (!mounted) return;
       ref.invalidate(multisigOpenProposalsProvider(widget.msig));
@@ -154,10 +150,7 @@ class _MultisigApproveConfirmSheetState extends ConsumerState<_MultisigApproveCo
         mainAxisSize: MainAxisSize.min,
         children: [
           const SizedBox(height: 16),
-          Text(
-            l10n.multisigApproveConfirmBody,
-            style: text.paragraph?.copyWith(color: colors.textPrimary),
-          ),
+          Text(l10n.multisigApproveConfirmBody, style: text.paragraph?.copyWith(color: colors.textPrimary)),
           const SizedBox(height: 8),
           Text(amountText, style: text.smallTitle?.copyWith(color: colors.textPrimary)),
           const SizedBox(height: 8),
@@ -167,18 +160,11 @@ class _MultisigApproveConfirmSheetState extends ConsumerState<_MultisigApproveCo
           ),
           if (networkFeeLabel != null) ...[
             const SizedBox(height: 16),
-            DetailSummaryRow.review(
-              label: l10n.sendReviewNetworkFee,
-              value: networkFeeLabel,
-              valueStyle: valueStyle,
-            ),
+            DetailSummaryRow.review(label: l10n.sendReviewNetworkFee, value: networkFeeLabel, valueStyle: valueStyle),
           ],
           if (_errorMessage != null) ...[
             const SizedBox(height: 16),
-            Text(
-              _errorMessage!,
-              style: text.detail?.copyWith(color: colors.textError),
-            ),
+            Text(_errorMessage!, style: text.detail?.copyWith(color: colors.textError)),
           ],
           const SizedBox(height: 24),
           QuantusButton.simple(

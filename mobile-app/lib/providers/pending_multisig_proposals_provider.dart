@@ -8,10 +8,7 @@ class PendingMultisigProposalsNotifier extends PendingExtrinsicEventsNotifier<Pe
   String idOf(PendingMultisigProposalEvent event) => event.id;
 
   @override
-  PendingMultisigProposalEvent withExtrinsicHash(
-    PendingMultisigProposalEvent event,
-    String? extrinsicHash,
-  ) {
+  PendingMultisigProposalEvent withExtrinsicHash(PendingMultisigProposalEvent event, String? extrinsicHash) {
     return event.copyWith(extrinsicHash: extrinsicHash);
   }
 }
@@ -54,9 +51,5 @@ void clearPendingMultisigProposals(Ref ref) {
 }
 
 PendingMultisigProposalEvent? findPendingMultisigProposal(Ref ref, String id) {
-  return findPendingExtrinsicEventById(
-    ref.read(pendingMultisigProposalsProvider),
-    id,
-    (event) => event.id,
-  );
+  return findPendingExtrinsicEventById(ref.read(pendingMultisigProposalsProvider), id, (event) => event.id);
 }

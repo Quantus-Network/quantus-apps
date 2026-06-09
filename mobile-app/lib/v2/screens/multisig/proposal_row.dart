@@ -47,10 +47,7 @@ class ProposalRow extends ConsumerWidget {
             _statusChip(l10n, colors, text),
           if (proposal.isOpen && !isApproving) ...[
             const SizedBox(height: 6),
-            if (didApprove)
-              _approvedPill(l10n, colors, text)
-            else
-              _proposedPill(l10n, colors, text),
+            if (didApprove) _approvedPill(l10n, colors, text) else _proposedPill(l10n, colors, text),
           ],
         ],
       ),
@@ -121,12 +118,7 @@ class ProposalRow extends ConsumerWidget {
       decoration: BoxDecoration(color: background, borderRadius: BorderRadius.circular(4)),
       child: Text(
         label,
-        style: text.detail?.copyWith(
-          color: foreground,
-          fontSize: 10,
-          fontWeight: FontWeight.w700,
-          letterSpacing: 0.8,
-        ),
+        style: text.detail?.copyWith(color: foreground, fontSize: 10, fontWeight: FontWeight.w700, letterSpacing: 0.8),
       ),
     );
   }

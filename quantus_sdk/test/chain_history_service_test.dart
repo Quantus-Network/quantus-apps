@@ -161,9 +161,7 @@ void main() {
 
     test('parses signer approved with sparse multisig without wrong threshold', () {
       final sparse = Map<String, dynamic>.from(signerApprovedAccountEventFixture);
-      final approved = Map<String, dynamic>.from(
-        sparse['multisigSignerApproved'] as Map<String, dynamic>,
-      );
+      final approved = Map<String, dynamic>.from(sparse['multisigSignerApproved'] as Map<String, dynamic>);
       final proposal = Map<String, dynamic>.from(approved['proposal'] as Map<String, dynamic>);
       proposal['multisig'] = {'id': 'qzo4qS1Lw6J66JuXcxLEWgzBLX2sBe3Ak3kmN1oA17pXLKCFH'};
       approved['proposal'] = proposal;

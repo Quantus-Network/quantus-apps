@@ -110,10 +110,7 @@ class MultisigProposalApprovedEvent extends TransactionEvent {
     );
   }
 
-  static MultisigAccount _minimalMultisigFromProposalJson(
-    Map<String, dynamic> proposalJson,
-    String myMemberAccountId,
-  ) {
+  static MultisigAccount _minimalMultisigFromProposalJson(Map<String, dynamic> proposalJson, String myMemberAccountId) {
     final multisigJson = jsonMapOrNull(proposalJson['multisig']);
     final address = nestedAccountId(multisigJson ?? proposalJson['multisig_id']);
     final signersRaw = multisigJson?['signers'];
