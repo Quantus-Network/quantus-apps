@@ -333,6 +333,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get multisigStatusApproved => 'APPROVED';
 
   @override
+  String get multisigStatusProposed => 'PROPOSED';
+
+  @override
   String get multisigStatusExpired => 'EXPIRED';
 
   @override
@@ -442,7 +445,23 @@ class AppLocalizationsEn extends AppLocalizations {
   String get multisigProposalSigningSoonNote => 'Signing will be available soon.';
 
   @override
-  String get multisigProposalAlreadySignedNote => 'You\'ve already signed this proposal.';
+  String get multisigProposalApprovingLabel => 'Approving…';
+
+  @override
+  String get multisigProposalApprovingNote => 'Your approval is being confirmed on-chain.';
+
+  @override
+  String get multisigApproveUnavailableNote => 'This proposal can no longer be approved.';
+
+  @override
+  String get activityTxApproving => 'Approving…';
+
+  @override
+  String get multisigApprovalTimeoutToast =>
+      'Approval confirmation is taking longer than expected. Check the chain or try again.';
+
+  @override
+  String get multisigProposalAlreadySignedNote => 'You\'ve already approved this proposal.';
 
   @override
   String get multisigProposalProposerLabel => 'PROPOSER';

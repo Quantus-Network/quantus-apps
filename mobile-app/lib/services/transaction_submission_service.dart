@@ -8,10 +8,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/notification_provider.dart';
+import 'package:resonance_network_wallet/providers/multisig_approval_toast_provider.dart';
 import 'package:resonance_network_wallet/providers/multisig_proposal_toast_provider.dart';
 import 'package:resonance_network_wallet/providers/multisig_providers.dart';
+import 'package:resonance_network_wallet/providers/pending_multisig_approvals_provider.dart';
 import 'package:resonance_network_wallet/providers/pending_multisig_proposals_provider.dart';
 import 'package:resonance_network_wallet/providers/pending_transactions_provider.dart';
+import 'package:resonance_network_wallet/services/multisig_approval_polling_service.dart';
 import 'package:resonance_network_wallet/services/multisig_proposal_polling_service.dart';
 import 'package:resonance_network_wallet/services/pending_transaction_polling_service.dart';
 import 'package:resonance_network_wallet/services/telemetry_service.dart';
@@ -166,6 +169,59 @@ class TransactionSubmissionService {
         pending: pending,
       ),
     );
+  }
+
+  /// Submits a multisig proposal approval, tracks it optimistically, and polls
+  /// the indexer until the approval appears on the proposal.
+  Future<void> approveProposal({
+    required MultisigAccount msig,
+    required Account signer,
+    required MultisigProposal proposal,
+  }) async {
+    final pending = PendingMultisigApprovalEvent.create(
+      multisigAddress: msig.accountId,
+      proposalId: proposal.id,
+      approverId: signer.accountId,
+    );
+
+    addPendingMultisigApproval(_ref, pending);
+
+    TelemetryService().sendEvent('multisig_approve');
+
+    unawaited(
+      _submitApproveBackground(
+        msig: msig,
+        signer: signer,
+        proposalId: proposal.id,
+        pending: pending,
+      ),
+    );
+  }
+
+  Future<void> _submitApproveBackground({
+    required MultisigAccount msig,
+    required Account signer,
+    required int proposalId,
+    required PendingMultisigApprovalEvent pending,
+  }) async {
+    try {
+      final service = _ref.read(multisigServiceProvider);
+      final hashBytes = await service.submitApproveExtrinsic(
+        msig: msig,
+        signer: signer,
+        proposalId: proposalId,
+      );
+      final extrinsicHash = '0x${hex.encode(hashBytes)}';
+      quantusDebugPrint('[Approve] submitted: $extrinsicHash');
+
+      updatePendingMultisigApproval(_ref, pending.id, extrinsicHash: extrinsicHash);
+      final updated = findPendingMultisigApproval(_ref, pending.id) ?? pending.copyWith(extrinsicHash: extrinsicHash);
+      _ref.read(multisigApprovalPollingServiceProvider).startPolling(msig, updated);
+    } catch (e, stackTrace) {
+      quantusDebugPrint('[Approve] submit failed: $e\n$stackTrace');
+      removePendingMultisigApproval(_ref, pending.id);
+      _ref.read(multisigApprovalToastProvider.notifier).show(MultisigApprovalToastKind.submitFailed);
+    }
   }
 
   Future<void> _submitProposalBackground({

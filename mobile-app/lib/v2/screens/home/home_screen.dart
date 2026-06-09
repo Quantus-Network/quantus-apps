@@ -37,6 +37,7 @@ import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
+import 'package:resonance_network_wallet/v2/components/multisig_approval_toast_listener.dart';
 import 'package:resonance_network_wallet/v2/components/multisig_creation_toast_listener.dart';
 import 'package:resonance_network_wallet/v2/components/multisig_proposal_toast_listener.dart';
 import 'package:resonance_network_wallet/v2/screens/home/activity_section.dart';
@@ -140,8 +141,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final text = context.themeText;
 
     return MultisigCreationToastListener(
-      child: MultisigProposalToastListener(
-        child: accountAsync.when(
+      child: MultisigApprovalToastListener(
+        child: MultisigProposalToastListener(
+          child: accountAsync.when(
           loading: () => const ScaffoldBase(mainContent: Center(child: Loader())),
           error: (e, _) => ScaffoldBase(
             mainContent: Center(
@@ -165,6 +167,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               bottomContent: _buildBottomContent(l10n),
             );
           },
+        ),
         ),
       ),
     );

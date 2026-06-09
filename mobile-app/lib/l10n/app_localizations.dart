@@ -686,11 +686,17 @@ abstract class AppLocalizations {
   /// **'to {address}'**
   String multisigProposalToAddress(String address);
 
-  /// Proposal status chip when approved or executed
+  /// Proposal status chip when the current signer has approved
   ///
   /// In en, this message translates to:
   /// **'APPROVED'**
   String get multisigStatusApproved;
+
+  /// Proposal status chip when the current signer has not approved yet
+  ///
+  /// In en, this message translates to:
+  /// **'PROPOSED'**
+  String get multisigStatusProposed;
 
   /// Proposal status chip when expired
   ///
@@ -878,16 +884,46 @@ abstract class AppLocalizations {
   /// **'Sign'**
   String get multisigProposalSignButton;
 
-  /// Note shown under the disabled sign button
+  /// Deprecated; kept for generated l10n compatibility
   ///
   /// In en, this message translates to:
   /// **'Signing will be available soon.'**
   String get multisigProposalSigningSoonNote;
 
+  /// Disabled approve button while approval is pending indexer confirmation
+  ///
+  /// In en, this message translates to:
+  /// **'Approving…'**
+  String get multisigProposalApprovingLabel;
+
+  /// Note under the button while approval is pending
+  ///
+  /// In en, this message translates to:
+  /// **'Your approval is being confirmed on-chain.'**
+  String get multisigProposalApprovingNote;
+
+  /// Note when approve is unavailable (expired or closed)
+  ///
+  /// In en, this message translates to:
+  /// **'This proposal can no longer be approved.'**
+  String get multisigApproveUnavailableNote;
+
+  /// Trailing label on proposal row while approval is pending
+  ///
+  /// In en, this message translates to:
+  /// **'Approving…'**
+  String get activityTxApproving;
+
+  /// Toast when approval indexer polling times out
+  ///
+  /// In en, this message translates to:
+  /// **'Approval confirmation is taking longer than expected. Check the chain or try again.'**
+  String get multisigApprovalTimeoutToast;
+
   /// Note shown when the current member already approved
   ///
   /// In en, this message translates to:
-  /// **'You\'ve already signed this proposal.'**
+  /// **'You\'ve already approved this proposal.'**
   String get multisigProposalAlreadySignedNote;
 
   /// Proposer row label on proposal detail
