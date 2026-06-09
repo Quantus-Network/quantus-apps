@@ -32,16 +32,8 @@ class MultisigProposalApprovedEvent extends TransactionEvent {
     super.extrinsicHash,
   }) : super(from: approverId, to: recipient);
 
-  bool isApprover(String accountId) => approverId == accountId;
-
   /// Network fee paid by the approver; zero when indexer did not record one.
   BigInt get networkFee => fee ?? BigInt.zero;
-
-  /// Stable key for deduplicating this approval in activity history.
-  String get activityDedupKey {
-    if (extrinsicHash != null) return 'hash:$extrinsicHash';
-    return 'approval:$multisigAddress|$proposalId|$approverId';
-  }
 
   /// Whether [other] describes the same approval as this event.
   bool isSameApprovalAs(MultisigProposalApprovedEvent other) {
