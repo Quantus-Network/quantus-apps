@@ -29,6 +29,8 @@ extension TransactionEventExtension on TransactionEvent {
 
   bool get isMultisigProposalCreated => this is MultisigProposalCreatedEvent;
 
+  bool get isMultisigProposalApproved => this is MultisigProposalApprovedEvent;
+
   bool get isPendingMultisigProposal => this is PendingMultisigProposalEvent;
 
   bool get isProposalCreation => this is MultisigProposalCreatedEvent || this is PendingMultisigProposalEvent;

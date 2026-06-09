@@ -494,6 +494,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get activityTxProposalCreated => 'Proposal created';
 
   @override
+  String get activityTxProposalApproved => 'Proposal approved';
+
+  @override
   String get multisigApproveButton => 'Approve';
 
   @override
@@ -898,6 +901,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get activityDetailTitleProposalCreated => 'Proposal created';
+
+  @override
+  String get activityDetailTitleProposalApproved => 'Proposal approved';
 
   @override
   String get activityDetailTitleProposing => 'Proposing';

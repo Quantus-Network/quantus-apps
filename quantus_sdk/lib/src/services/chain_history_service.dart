@@ -121,9 +121,10 @@ query ScheduledReversibleTransfersByAccounts(\$accounts: [String!]!, \$limit: In
 
     final String multisigField = MultisigGraphql.accountEventSelection;
     final String proposalCreatedField = MultisigGraphql.proposalCreatedAccountEventSelection;
+    final String signerApprovedField = MultisigGraphql.signerApprovedAccountEventSelection;
 
     const String multisigSendClause =
-        ', {multisig_id: {_is_null: false}}, {multisig_proposal_created_id: {_is_null: false}}';
+        ', {multisig_id: {_is_null: false}}, {multisig_proposal_created_id: {_is_null: false}}, {multisig_signer_approved_id: {_is_null: false}}';
 
     final String whereClause;
 
@@ -208,7 +209,7 @@ query AccountEvents(\$accounts: [String!]!, \$limit: Int!, \$offset: Int!) {
         }
         scheduledAt: scheduled_at
       }
-    }$minerRewardField$multisigField$proposalCreatedField
+    }$minerRewardField$multisigField$proposalCreatedField$signerApprovedField
   }
 }
 ''';
@@ -398,6 +399,21 @@ ${MultisigGraphql.proposalCreatedAccountEventSelection}
 }
 ''';
 
+  final String _searchSignerApprovedByExtrinsicHashQuery =
+      '''
+query SearchSignerApprovedByExtrinsicHash(\$extrinsicHash: String!) {
+  accountEvents: account_event(
+    limit: 1
+    where: {multisigSignerApproved: {extrinsic: {id: {_eq: \$extrinsicHash}}}}
+    order_by: {timestamp: desc}
+  ) {
+    id
+    timestamp
+${MultisigGraphql.signerApprovedAccountEventSelection}
+  }
+}
+''';
+
   void printTiming(String label, int milliseconds) {
     if (AppConstants.debugQueryTiming) {
       _log('[TIMING] $label: $milliseconds ms');
@@ -467,6 +483,18 @@ ${MultisigGraphql.proposalCreatedAccountEventSelection}
         return null;
       }
     }
+    if (eventMap['multisigSignerApproved'] != null) {
+      try {
+        return MultisigProposalApprovedEvent.fromAccountEvent(eventMap);
+      } catch (e, stackTrace) {
+        _log(
+          'WARNING: failed to parse multisigSignerApproved, id: ${eventMap['id']}, error: $e',
+          error: e,
+          stackTrace: stackTrace,
+        );
+        return null;
+      }
+    }
     final id = eventMap['id'] as String?;
     if (id != null && _isSkippedMultisigAccountEventId(id)) {
       // Known multisig-related rows we don't render in activity yet.
@@ -482,6 +510,7 @@ ${MultisigGraphql.proposalCreatedAccountEventSelection}
   /// are not shown in activity yet.
   static bool _isSkippedMultisigAccountEventId(String id) {
     if (id.startsWith('ae-ms-proposal-created-')) return false;
+    if (id.startsWith('ae-ms-signer-approved-')) return false;
     return id.startsWith('ae-multisig-') || id.startsWith('ae-ms-');
   }
 
@@ -681,6 +710,48 @@ ${MultisigGraphql.proposalCreatedAccountEventSelection}
       variables: {'extrinsicHash': extrinsicHash},
       isReversible: isReversible,
     );
+  }
+
+  /// Searches for a confirmed multisig proposal approval by extrinsic hash.
+  Future<MultisigProposalApprovedEvent?> searchSignerApprovedByExtrinsicHash({required String extrinsicHash}) async {
+    _log('Searching signer approved by extrinsic hash: $extrinsicHash');
+    final Map<String, dynamic> requestBody = {
+      'query': _searchSignerApprovedByExtrinsicHashQuery,
+      'variables': {'extrinsicHash': extrinsicHash},
+    };
+
+    try {
+      final http.Response response = await _graphQlEndpointService.post(body: jsonEncode(requestBody));
+
+      if (response.statusCode != 200) {
+        throw Exception('GraphQL request failed with status: ${response.statusCode}. Body: ${response.body}');
+      }
+
+      final Map<String, dynamic> responseBody = jsonDecode(response.body);
+
+      if (responseBody['errors'] != null) {
+        _log('GraphQL errors in response: ${responseBody['errors']}');
+        throw Exception('GraphQL errors: ${responseBody['errors'].toString()}');
+      }
+
+      final List<dynamic>? events = responseBody['data']?['accountEvents'];
+      if (events == null || events.isEmpty) {
+        _log('No matching signer approval found for hash $extrinsicHash');
+        return null;
+      }
+
+      final parsed = tryParseOtherTransferEvent(events.first);
+      if (parsed is MultisigProposalApprovedEvent) {
+        _log('Found signer approval at block ${parsed.blockNumber}');
+        return parsed;
+      }
+
+      _log('Extrinsic hash matched account_event but payload was not MultisigProposalApprovedEvent');
+      return null;
+    } catch (e, stackTrace) {
+      _log('Error searching signer approved by hash: $e', error: e, stackTrace: stackTrace);
+      rethrow;
+    }
   }
 
   /// Searches for a confirmed multisig proposal creation by extrinsic hash.

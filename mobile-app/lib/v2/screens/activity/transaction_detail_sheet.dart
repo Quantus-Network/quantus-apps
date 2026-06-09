@@ -32,7 +32,10 @@ class _TransactionDetailSheet extends ConsumerWidget {
   const _TransactionDetailSheet({required this.tx, required this.activeAccountId});
 
   bool get _isSend {
-    if (_isPendingMultisigProposal || _isMultisigProposalCreated || tx is MultisigProposalEvent) {
+    if (_isPendingMultisigProposal ||
+        _isMultisigProposalCreated ||
+        tx.isMultisigProposalApproved ||
+        tx is MultisigProposalEvent) {
       return true;
     }
     return tx.from == activeAccountId;
@@ -42,11 +45,13 @@ class _TransactionDetailSheet extends ConsumerWidget {
   bool get _isMultisigCreated => tx.isMultisigCreated;
   bool get _isPendingMultisigCreation => tx.isPendingMultisigCreation;
   bool get _isMultisigProposalCreated => tx.isMultisigProposalCreated;
+  bool get _isMultisigProposalApproved => tx.isMultisigProposalApproved;
   bool get _isPendingMultisigProposal => tx.isPendingMultisigProposal;
 
   String _title(AppLocalizations l10n) {
     if (_isPendingMultisigProposal) return l10n.activityDetailTitleProposing;
     if (_isMultisigProposalCreated) return l10n.activityDetailTitleProposalCreated;
+    if (_isMultisigProposalApproved) return l10n.activityDetailTitleProposalApproved;
     if (_isPendingMultisigCreation) return l10n.activityDetailTitleMultisigCreating;
     if (_isMultisigCreated) return l10n.activityDetailTitleMultisigCreated;
     if (_isPending) return l10n.activityDetailTitleSending;
@@ -132,6 +137,8 @@ class _AmountSection extends ConsumerWidget {
       PendingMultisigCreationEvent(:final totalCost) => (totalCost, colors.checksum),
       MultisigCreatedEvent(:final totalCost, :final creatorId) when creatorId != activeAccountId => (null, null),
       MultisigCreatedEvent(:final totalCost) => (totalCost, colors.textPrimary),
+      MultisigProposalApprovedEvent(:final fee) when fee == null || fee == BigInt.zero => (null, null),
+      MultisigProposalApprovedEvent(:final fee) => (fee!, colors.textPrimary),
       _ => (tx.amount, isSend ? colors.textPrimary : colors.success),
     };
 
@@ -181,6 +188,10 @@ class _DetailsSection extends ConsumerWidget {
 
     if (tx is MultisigProposalCreatedEvent) {
       return _proposalCreatedDetails(tx as MultisigProposalCreatedEvent, l10n, formattingService);
+    }
+
+    if (tx is MultisigProposalApprovedEvent) {
+      return _proposalApprovedDetails(tx as MultisigProposalApprovedEvent, l10n, formattingService);
     }
 
     if (pendingMultisig is PendingMultisigCreationEvent) {
@@ -234,6 +245,38 @@ class _DetailsSection extends ConsumerWidget {
       extrinsicHash: event.extrinsicHash,
       l10n: l10n,
       formattingService: formattingService,
+    );
+  }
+
+  Widget _proposalApprovedDetails(
+    MultisigProposalApprovedEvent event,
+    AppLocalizations l10n,
+    NumberFormattingService formattingService,
+  ) {
+    final multisig = AddressFormattingService.formatActivityDetailAddress(event.multisigAddress);
+    final recipientAddress = AddressFormattingService.formatActivityDetailAddress(event.recipient);
+    final dateTime = DatetimeFormattingService.formatTxDateTime(event.timestamp);
+    final transferAmount = _formatBalance(l10n, formattingService, event.amount);
+    final networkFeeValue = event.networkFee != BigInt.zero
+        ? _formatBalance(l10n, formattingService, event.networkFee)
+        : null;
+    final txHash = event.extrinsicHash != null
+        ? AddressFormattingService.formatActivityDetailExtrinsicHash(event.extrinsicHash!)
+        : null;
+    final approvalsLabel =
+        event.approvalsOfSignersLabel(l10n.multisigApprovalsOf) ?? event.approvalsCount.toString();
+
+    return Column(
+      children: [
+        _DetailRow(label: l10n.activityDetailMultisigAddress, value: multisig, colors: colors),
+        _DetailRow(label: l10n.activityDetailTo, value: recipientAddress, colors: colors),
+        _DetailRow(label: l10n.activityDetailProposalTransferAmount, value: transferAmount, colors: colors),
+        _DetailRow(label: l10n.multisigProposalApprovalsLabel, value: approvalsLabel, colors: colors),
+        if (networkFeeValue != null)
+          _DetailRow(label: l10n.activityDetailNetworkFee, value: networkFeeValue, colors: colors),
+        _DetailRow(label: l10n.activityDetailDate, value: dateTime, colors: colors),
+        if (txHash != null) _DetailRow(label: l10n.activityDetailTxHash, value: txHash, colors: colors),
+      ],
     );
   }
 
@@ -434,9 +477,12 @@ class _ExplorerLink extends ConsumerWidget {
     final isMinerReward = tx.isMinerReward;
     final isMultisigCreated = tx.isMultisigCreated;
     final isProposalCreated = tx.isProposalCreation;
+    final isProposalApproved = tx.isMultisigProposalApproved;
 
     String transactionType;
-    if (isProposalCreated) {
+    if (isProposalApproved) {
+      transactionType = 'multisig-signer-approved';
+    } else if (isProposalCreated) {
       transactionType = 'multisig-proposal-created';
     } else if (isMultisigCreated) {
       transactionType = 'multisig-created';

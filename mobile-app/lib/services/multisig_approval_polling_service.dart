@@ -5,6 +5,7 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/multisig_approval_toast_provider.dart';
 import 'package:resonance_network_wallet/providers/multisig_providers.dart';
 import 'package:resonance_network_wallet/providers/pending_multisig_approvals_provider.dart';
+import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/services/multisig_approval_reconciliation.dart';
 import 'package:resonance_network_wallet/shared/utils/print.dart';
 
@@ -88,14 +89,21 @@ class MultisigApprovalPollingService {
 
   Future<bool> _confirmIfIndexed(MultisigAccount msig, PendingMultisigApprovalEvent pending) async {
     final key = pending.id;
-    final service = _ref.read(multisigServiceProvider);
-    final proposal = await service.getProposal(msig, pending.proposalId);
+    final hash = pending.extrinsicHash;
+    if (hash == null) return false;
+
+    final multisigService = _ref.read(multisigServiceProvider);
+    final proposal = await multisigService.getProposal(msig, pending.proposalId);
     if (proposal == null || !proposal.didApprove(pending.approverId)) return false;
+
+    final historyService = _ref.read(chainHistoryServiceProvider);
+    final indexed = await historyService.searchSignerApprovedByExtrinsicHash(extrinsicHash: hash);
+    if (indexed == null) return false;
 
     quantusDebugPrint('[MultisigApprovalPoller] confirmed $key proposal ${pending.proposalId}');
     stopPolling(key);
     removePendingMultisigApproval(_ref, key);
-    await reconcileIndexedApproval(_ref, msig, pending.approverId);
+    await reconcileIndexedApproval(_ref, msig, indexed);
     return true;
   }
 

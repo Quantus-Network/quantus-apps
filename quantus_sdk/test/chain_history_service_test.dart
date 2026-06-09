@@ -94,9 +94,85 @@ void main() {
     },
   };
 
+  const signerApprovedAccountEventFixture = {
+    'id': 'ae-ms-signer-approved-0000000256-c9dc5-000005-qzk2',
+    'timestamp': '2026-06-03T11:00:00.000+00:00',
+    'multisigSignerApproved': {
+      'id': 'ms-signer-approved-256',
+      'fee': '25000000000',
+      'approvals_count': 2,
+      'timestamp': '2026-06-03T11:00:00.000+00:00',
+      'block': {'height': 257, 'hash': '0xdef'},
+      'extrinsic': {'id': '0xapprovehash'},
+      'approver': {'id': 'qzkYEQv8tQsmniZYdame3Cku18RL5g9bGK9Pdydq5TMPdpE3y'},
+      'proposal': {
+        'id': 'proposal-entity-1',
+        'proposal_id': 5,
+        'created_at': '2026-06-03T10:00:00.000+00:00',
+        'pallet': 'Balances',
+        'call': 'transfer_allow_death',
+        'call_raw': '0x',
+        'transfer_amount': '2000000000000',
+        'status': 'ACTIVE',
+        'expiry_block': 1000,
+        'deposit': '10000000000000',
+        'approvals': [
+          'qzk1Nxai3dZD9Cn5kwGcgL6mKxsfxwqdis7kDQJ52aJS2vSn7',
+          'qzkYEQv8tQsmniZYdame3Cku18RL5g9bGK9Pdydq5TMPdpE3y',
+        ],
+        'proposer': {'id': 'qzk1Nxai3dZD9Cn5kwGcgL6mKxsfxwqdis7kDQJ52aJS2vSn7'},
+        'transferTo': {'id': 'qzpyxSr48YN9EQe2ito734iCReTXjnungmNCSY4Yph1YznEda'},
+        'multisig': {
+          'id': 'qzo4qS1Lw6J66JuXcxLEWgzBLX2sBe3Ak3kmN1oA17pXLKCFH',
+          'threshold': 2,
+          'nonce': '0',
+          'signers': [
+            'qzk1Nxai3dZD9Cn5kwGcgL6mKxsfxwqdis7kDQJ52aJS2vSn7',
+            'qzkYEQv8tQsmniZYdame3Cku18RL5g9bGK9Pdydq5TMPdpE3y',
+          ],
+        },
+      },
+    },
+  };
+
   group('ChainHistoryService.tryParseOtherTransferEvent', () {
     test('returns null for unhandled multisig indexer account events', () {
-      expect(service.tryParseOtherTransferEvent({'id': 'ae-ms-signer-approved-0000000256-qzk1'}), isNull);
+      expect(service.tryParseOtherTransferEvent({'id': 'ae-ms-proposal-ready-0000000256-qzk1'}), isNull);
+    });
+
+    test('parses multisig signer approved account events', () {
+      final result = service.tryParseOtherTransferEvent(signerApprovedAccountEventFixture);
+      expect(result, isA<MultisigProposalApprovedEvent>());
+
+      final event = result! as MultisigProposalApprovedEvent;
+      expect(event.approverId, 'qzkYEQv8tQsmniZYdame3Cku18RL5g9bGK9Pdydq5TMPdpE3y');
+      expect(event.multisigAddress, 'qzo4qS1Lw6J66JuXcxLEWgzBLX2sBe3Ak3kmN1oA17pXLKCFH');
+      expect(event.recipient, 'qzpyxSr48YN9EQe2ito734iCReTXjnungmNCSY4Yph1YznEda');
+      expect(event.amount, BigInt.parse('2000000000000'));
+      expect(event.fee, BigInt.parse('25000000000'));
+      expect(event.proposalId, 5);
+      expect(event.approvalsCount, 2);
+      expect(event.extrinsicHash, '0xapprovehash');
+      expect(event.proposal, isNotNull);
+      expect(event.proposal!.signerCount, 2);
+      expect(event.proposal!.threshold, 2);
+      expect(event.approvalsOfSignersLabel((c, t) => '$c of $t'), '2 of 2');
+    });
+
+    test('parses signer approved with sparse multisig without wrong threshold', () {
+      final sparse = Map<String, dynamic>.from(signerApprovedAccountEventFixture);
+      final approved = Map<String, dynamic>.from(
+        sparse['multisigSignerApproved'] as Map<String, dynamic>,
+      );
+      final proposal = Map<String, dynamic>.from(approved['proposal'] as Map<String, dynamic>);
+      proposal['multisig'] = {'id': 'qzo4qS1Lw6J66JuXcxLEWgzBLX2sBe3Ak3kmN1oA17pXLKCFH'};
+      approved['proposal'] = proposal;
+      sparse['multisigSignerApproved'] = approved;
+
+      final result = service.tryParseOtherTransferEvent(sparse);
+      final event = result! as MultisigProposalApprovedEvent;
+      expect(event.proposal!.signerCount, 0);
+      expect(event.approvalsOfSignersLabel((c, t) => '$c of $t'), isNull);
     });
 
     test('parses live indexer proposal created shape with sparse multisig', () {
