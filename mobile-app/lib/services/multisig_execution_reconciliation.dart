@@ -5,11 +5,7 @@ import 'package:resonance_network_wallet/services/account_activity_reconciliatio
 import 'package:resonance_network_wallet/shared/utils/polling_refresh_scope.dart';
 
 /// Refreshes proposal state and appends the execution to the executor's activity.
-Future<void> reconcileIndexedExecution(
-  Ref ref,
-  MultisigAccount msig,
-  MultisigProposalExecutedEvent indexed,
-) async {
+Future<void> reconcileIndexedExecution(Ref ref, MultisigAccount msig, MultisigProposalExecutedEvent indexed) async {
   invalidateMultisigProposals(ref, msig);
 
   await appendConfirmedEventToHistory(

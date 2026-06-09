@@ -108,12 +108,9 @@ class _MultisigExecuteConfirmSheetState extends ConsumerState<_MultisigExecuteCo
       print('msig: ${widget.msig.accountId}');
       print('signer: ${signer.accountId}');
 
-      await ref.read(transactionSubmissionServiceProvider).executeProposal(
-        msig: widget.msig,
-        signer: signer,
-        proposal: widget.proposal,
-        fee: _networkFee,
-      );
+      await ref
+          .read(transactionSubmissionServiceProvider)
+          .executeProposal(msig: widget.msig, signer: signer, proposal: widget.proposal, fee: _networkFee);
 
       if (!mounted) return;
       ref.invalidate(multisigOpenProposalsProvider(widget.msig));

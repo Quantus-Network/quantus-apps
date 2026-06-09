@@ -20,13 +20,7 @@ class PendingMultisigExecutionEvent extends TransactionEvent {
     this.fee,
     super.extrinsicHash,
     DateTime? timestamp,
-  }) : super(
-         id: tempId,
-         from: executorId,
-         to: recipient,
-         timestamp: timestamp ?? DateTime.now(),
-         blockNumber: 0,
-       );
+  }) : super(id: tempId, from: executorId, to: recipient, timestamp: timestamp ?? DateTime.now(), blockNumber: 0);
 
   DateTime get submittedAt => timestamp;
 
