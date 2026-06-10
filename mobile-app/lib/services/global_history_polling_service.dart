@@ -78,6 +78,7 @@ class GlobalHistoryPollingService {
 
       invalidateActiveAccountBalance(_ref);
       await silentRefreshActiveAccount(_ref);
+      invalidateActiveMultisigProposals(_ref);
 
       // Reconcile pending transactions with confirmed transactions
       await _ref.read(pendingTransactionReconciliationServiceProvider).reconcilePendingTransactions();
@@ -113,6 +114,8 @@ class GlobalHistoryPollingService {
       );
       invalidateActiveAccountBalance(_ref);
     }
+
+    await refreshActiveMultisigProposals(_ref);
 
     // Also reconcile pending transactions during manual refresh
     await _ref.read(pendingTransactionReconciliationServiceProvider).reconcilePendingTransactions();

@@ -8,6 +8,7 @@ import 'package:resonance_network_wallet/features/components/shared_address_acti
 import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
 import 'package:resonance_network_wallet/routes.dart';
 import 'package:resonance_network_wallet/shared/extensions/current_route_extensions.dart';
+import 'package:resonance_network_wallet/shared/utils/polling_refresh_scope.dart';
 import 'package:resonance_network_wallet/shared/utils/url_utils.dart';
 import 'package:resonance_network_wallet/v2/components/amount_display_with_conversion.dart';
 import 'package:resonance_network_wallet/v2/components/loader.dart';
@@ -121,6 +122,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           )
           .loadingRefresh();
     }
+    await refreshActiveMultisigProposals(ref as Ref);
   }
 
   Future<void> _toggleBalanceHidden() async {

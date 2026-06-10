@@ -60,6 +60,7 @@ class HistoryPollingManager {
 
     _refreshBalance(showLoading: false);
     await silentRefreshActiveAccount(_ref);
+    invalidateActiveMultisigProposals(_ref);
   }
 
   /// Helper method to refresh balance with or without loading indicators
