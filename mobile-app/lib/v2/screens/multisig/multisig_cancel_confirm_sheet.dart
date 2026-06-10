@@ -104,7 +104,7 @@ class _MultisigCancelConfirmSheetState extends ConsumerState<_MultisigCancelConf
 
       await ref
           .read(transactionSubmissionServiceProvider)
-          .cancelProposal(msig: widget.msig, proposer: proposer, proposal: widget.proposal);
+          .cancelProposal(msig: widget.msig, proposer: proposer, proposal: widget.proposal, fee: _networkFee);
 
       if (!mounted) return;
       ref.invalidate(multisigOpenProposalsProvider(widget.msig));

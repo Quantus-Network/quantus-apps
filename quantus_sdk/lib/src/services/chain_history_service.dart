@@ -123,9 +123,10 @@ query ScheduledReversibleTransfersByAccounts(\$accounts: [String!]!, \$limit: In
     final String proposalCreatedField = MultisigGraphql.proposalCreatedAccountEventSelection;
     final String signerApprovedField = MultisigGraphql.signerApprovedAccountEventSelection;
     final String executedProposalField = MultisigGraphql.executedMultisigProposalAccountEventSelection;
+    final String cancelledProposalField = MultisigGraphql.cancelledMultisigProposalAccountEventSelection;
 
     const String multisigSendClause =
-        ', {multisig_id: {_is_null: false}}, {multisig_proposal_created_id: {_is_null: false}}, {multisig_signer_approved_id: {_is_null: false}}, {executed_multisig_proposal_id: {_is_null: false}}';
+        ', {multisig_id: {_is_null: false}}, {multisig_proposal_created_id: {_is_null: false}}, {multisig_signer_approved_id: {_is_null: false}}, {executed_multisig_proposal_id: {_is_null: false}}, {cancelled_multisig_proposal_id: {_is_null: false}}';
 
     final String whereClause;
 
@@ -210,7 +211,7 @@ query AccountEvents(\$accounts: [String!]!, \$limit: Int!, \$offset: Int!) {
         }
         scheduledAt: scheduled_at
       }
-    }$minerRewardField$multisigField$proposalCreatedField$signerApprovedField$executedProposalField
+    }$minerRewardField$multisigField$proposalCreatedField$signerApprovedField$executedProposalField$cancelledProposalField
   }
 }
 ''';
@@ -567,6 +568,7 @@ ${MultisigGraphql.cancelledMultisigProposalAccountEventSelection}
     if (id.startsWith('ae-ms-proposal-created-')) return false;
     if (id.startsWith('ae-ms-signer-approved-')) return false;
     if (id.startsWith('ae-ms-exec-')) return false;
+    if (id.startsWith('ae-ms-cancel')) return false;
     return id.startsWith('ae-multisig-') || id.startsWith('ae-ms-');
   }
 

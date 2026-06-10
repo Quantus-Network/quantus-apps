@@ -1016,6 +1016,12 @@ abstract class AppLocalizations {
   /// **'Proposal executed'**
   String get activityTxProposalExecuted;
 
+  /// Activity row label for a confirmed multisig proposal cancellation on the proposer account
+  ///
+  /// In en, this message translates to:
+  /// **'Proposal cancelled'**
+  String get activityTxProposalCancelled;
+
   /// Approve button on proposal detail
   ///
   /// In en, this message translates to:
@@ -1873,6 +1879,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Proposal executed'**
   String get activityDetailTitleProposalExecuted;
+
+  /// Detail sheet title for a confirmed multisig proposal cancellation
+  ///
+  /// In en, this message translates to:
+  /// **'Proposal cancelled'**
+  String get activityDetailTitleProposalCancelled;
+
+  /// Detail sheet title while a multisig proposal cancellation is confirming on-chain
+  ///
+  /// In en, this message translates to:
+  /// **'Cancelling proposal'**
+  String get activityDetailTitleCancelling;
 
   /// Detail sheet title while a multisig proposal execution is confirming on-chain
   ///

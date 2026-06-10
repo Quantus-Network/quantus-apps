@@ -269,11 +269,13 @@ class TransactionSubmissionService {
     required MultisigAccount msig,
     required Account proposer,
     required MultisigProposal proposal,
+    BigInt? fee,
   }) async {
-    final pending = PendingMultisigCancellationEvent.create(
-      multisigAddress: msig.accountId,
-      proposalId: proposal.id,
+    final pending = PendingMultisigCancellationEvent.fromProposal(
+      msig: msig,
+      proposal: proposal,
       proposerId: proposer.accountId,
+      fee: fee,
     );
 
     addPendingMultisigCancellation(_ref, pending);

@@ -33,6 +33,16 @@ class MultisigProposalCancelledEvent extends TransactionEvent {
   /// Network fee paid by the proposer; zero when indexer did not record one.
   BigInt get networkFee => fee ?? BigInt.zero;
 
+  /// Stable key for swapping a pending cancellation row with this indexed event.
+  String get activityDedupKey {
+    if (extrinsicHash != null) return 'hash:$extrinsicHash';
+    final indexed = proposal;
+    if (indexed != null) {
+      return 'proposal:${indexed.multisigAddress}|${indexed.id}';
+    }
+    return 'event:$id';
+  }
+
   /// Whether [other] describes the same cancellation as this event.
   bool isSameCancellationAs(MultisigProposalCancelledEvent other) {
     if (extrinsicHash != null && other.extrinsicHash != null && extrinsicHash == other.extrinsicHash) {

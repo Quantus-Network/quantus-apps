@@ -18,6 +18,14 @@ final pendingMultisigCancellationsProvider =
       PendingMultisigCancellationsNotifier.new,
     );
 
+/// Pending cancellations excluded from the multisig activity feed below.
+List<PendingMultisigCancellationEvent> pendingCancellationsExcludingMultisig(
+  List<PendingMultisigCancellationEvent> all,
+  String multisigAddress,
+) {
+  return all.where((e) => e.multisigAddress != multisigAddress).toList();
+}
+
 PendingMultisigCancellationEvent? findPendingCancellationForProposal(
   List<PendingMultisigCancellationEvent> all,
   String multisigAddress,
