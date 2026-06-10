@@ -52,6 +52,8 @@ class _ReviewSendScreenState extends ConsumerState<ReviewSendScreen> {
   }
 
   Future<void> _confirmSend() async {
+    if (_submitting) return;
+
     setState(() {
       _submitting = true;
       _errorMessage = null;

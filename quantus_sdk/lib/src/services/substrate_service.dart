@@ -7,6 +7,7 @@ import 'package:polkadart/polkadart.dart';
 import 'package:quantus_sdk/generated/planck/planck.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:quantus_sdk/src/resonance_extrinsic_payload.dart';
+import 'package:quantus_sdk/src/services/extrinsic_submission_utils.dart';
 import 'package:quantus_sdk/src/rust/api/crypto.dart' as crypto;
 import 'package:ss58/ss58.dart';
 import 'package:quantus_sdk/src/extensions/address_extension.dart';
@@ -170,28 +171,30 @@ class SubstrateService {
   }
 
   Future<Uint8List> submitExtrinsic(Account account, RuntimeCall call, {int maxRetries = 3}) async {
-    int retryCount = 0;
-    while (retryCount < maxRetries) {
+    final extrinsicData = await getExtrinsicPayload(account, call);
+    final extrinsic = extrinsicData.payload;
+
+    for (var attempt = 0; attempt < maxRetries; attempt++) {
       try {
-        final extrinsicData = await getExtrinsicPayload(account, call);
-        Uint8List extrinsic = extrinsicData.payload;
-
-        // final result = await _authorApi!.submitExtrinsic(extrinsic);
         final result = await _submitExtrinsic(extrinsic);
-
         print('result: $result');
-
         return result;
       } catch (e) {
-        retryCount++;
-        if (retryCount >= maxRetries) {
+        if (isAlreadyImportedError(e)) {
+          print('Extrinsic already in pool, returning local hash');
+          return localExtrinsicHash(extrinsic);
+        }
+
+        if (attempt >= maxRetries - 1) {
           print('Failed to submit extrinsic after $maxRetries retries: $e');
           rethrow;
         }
-        print('Failed to submit extrinsic, retrying... $retryCount error: $e');
-        await Future.delayed(Duration(milliseconds: 500 * retryCount));
+
+        print('Failed to submit extrinsic, retrying... ${attempt + 1} error: $e');
+        await Future.delayed(Duration(milliseconds: 500 * (attempt + 1)));
       }
     }
+
     throw Exception('Failed to submit extrinsic after $maxRetries retries.');
   }
 
