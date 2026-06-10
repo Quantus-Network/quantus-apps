@@ -73,12 +73,7 @@ void main() {
 
     test('returns null for RegularAccount', () {
       const active = RegularAccount(
-        Account(
-          walletIndex: 0,
-          index: 0,
-          name: 'Main',
-          accountId: '5GrwvaEF5zXb26Fz9rcQpDWS57CtEGASjEi3Uf1Y7K',
-        ),
+        Account(walletIndex: 0, index: 0, name: 'Main', accountId: '5GrwvaEF5zXb26Fz9rcQpDWS57CtEGASjEi3Uf1Y7K'),
       );
 
       expect(multisigAccountFromActive(active), isNull);
