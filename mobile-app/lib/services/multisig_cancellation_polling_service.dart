@@ -12,7 +12,11 @@ import 'package:resonance_network_wallet/shared/utils/print.dart';
 typedef MultisigCancellationPollingService =
     ExtrinsicIndexerPollingService<PendingMultisigCancellationEvent, MultisigAccount>;
 
-Future<bool> _confirmIndexedCancellation(Ref ref, MultisigAccount msig, PendingMultisigCancellationEvent pending) async {
+Future<bool> _confirmIndexedCancellation(
+  Ref ref,
+  MultisigAccount msig,
+  PendingMultisigCancellationEvent pending,
+) async {
   final hash = pending.extrinsicHash;
   if (hash == null) return false;
 
@@ -31,7 +35,11 @@ Future<bool> _confirmIndexedCancellation(Ref ref, MultisigAccount msig, PendingM
 
 /// When the indexer account event lags but the proposal already reflects the
 /// cancellation, clear pending state and refresh without a timeout toast.
-Future<bool> _tryResolveCancellationTimeout(Ref ref, MultisigAccount msig, PendingMultisigCancellationEvent pending) async {
+Future<bool> _tryResolveCancellationTimeout(
+  Ref ref,
+  MultisigAccount msig,
+  PendingMultisigCancellationEvent pending,
+) async {
   final multisigService = ref.read(multisigServiceProvider);
   final proposal = await multisigService.getProposal(msig, pending.proposalId);
   if (proposal == null || proposal.status != MultisigProposalStatus.cancelled) {

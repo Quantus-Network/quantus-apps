@@ -348,11 +348,7 @@ class _MultisigProposalDetailSheet extends ConsumerWidget {
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        primary,
-        const SizedBox(height: 12),
-        cancelButton,
-      ],
+      children: [primary, const SizedBox(height: 12), cancelButton],
     );
   }
 
@@ -382,12 +378,7 @@ class _MultisigProposalDetailSheet extends ConsumerWidget {
       _ => (l10n.multisigCancelProposalButton, true, null),
     };
 
-    return QuantusButton.simple(
-      label: label,
-      variant: ButtonVariant.danger,
-      isDisabled: isDisabled,
-      onTap: onTap,
-    );
+    return QuantusButton.simple(label: label, variant: ButtonVariant.danger, isDisabled: isDisabled, onTap: onTap);
   }
 
   Widget _approveButton(

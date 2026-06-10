@@ -298,7 +298,8 @@ class TransactionSubmissionService {
       quantusDebugPrint('[Cancel] submitted: $extrinsicHash');
 
       updatePendingMultisigCancellation(_ref, pending.id, extrinsicHash: extrinsicHash);
-      final updated = findPendingMultisigCancellation(_ref, pending.id) ?? pending.copyWith(extrinsicHash: extrinsicHash);
+      final updated =
+          findPendingMultisigCancellation(_ref, pending.id) ?? pending.copyWith(extrinsicHash: extrinsicHash);
       _ref.read(multisigCancellationPollingServiceProvider).startPolling(msig, updated);
     } catch (e, stackTrace) {
       quantusDebugPrint('[Cancel] submit failed: $e\n$stackTrace');
