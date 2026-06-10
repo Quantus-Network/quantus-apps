@@ -914,6 +914,12 @@ abstract class AppLocalizations {
   /// **'Approving…'**
   String get activityTxApproving;
 
+  /// Trailing label on proposal row while cancellation is pending
+  ///
+  /// In en, this message translates to:
+  /// **'Cancelling…'**
+  String get activityTxCancelling;
+
   /// Toast when approval indexer polling times out
   ///
   /// In en, this message translates to:
@@ -931,6 +937,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This proposal is already executed.'**
   String get multisigProposalAlreadyExecutedNote;
+
+  /// Note shown on proposal detail when the proposal is cancelled
+  ///
+  /// In en, this message translates to:
+  /// **'This proposal is already cancelled.'**
+  String get multisigProposalAlreadyCancelledNote;
 
   /// Proposer row label on proposal detail
   ///
@@ -1249,6 +1261,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Failed to cancel'**
   String get multisigCancelFailed;
+
+  /// Cancel button label while cancellation is pending
+  ///
+  /// In en, this message translates to:
+  /// **'Cancelling…'**
+  String get multisigProposalCancellingLabel;
+
+  /// Note under the button while cancellation is pending
+  ///
+  /// In en, this message translates to:
+  /// **'Your cancellation is being confirmed on-chain.'**
+  String get multisigProposalCancellingNote;
+
+  /// Toast when cancellation indexer polling times out
+  ///
+  /// In en, this message translates to:
+  /// **'Cancellation confirmation is taking longer than expected. Check the chain or try again.'**
+  String get multisigCancelTimeoutToast;
 
   /// App bar title on approve done screen
   ///

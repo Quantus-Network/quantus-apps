@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/multisig_approval_toast_provider.dart';
+import 'package:resonance_network_wallet/providers/multisig_cancellation_toast_provider.dart';
 import 'package:resonance_network_wallet/providers/multisig_execution_toast_provider.dart';
 import 'package:resonance_network_wallet/shared/extensions/toaster_extensions.dart';
 
-/// Shows toasts for background multisig approval and execution events.
+/// Shows toasts for background multisig approval, execution, and cancellation events.
 class MultisigApprovalToastListener extends ConsumerWidget {
   const MultisigApprovalToastListener({super.key, required this.child});
 
@@ -33,6 +34,17 @@ class MultisigApprovalToastListener extends ConsumerWidget {
       };
       context.showErrorToaster(message: message);
       ref.read(multisigExecutionToastProvider.notifier).clear();
+    });
+
+    ref.listen<MultisigCancellationToastEvent?>(multisigCancellationToastProvider, (previous, next) {
+      if (next == null) return;
+      final l10n = ref.read(l10nProvider);
+      final message = switch (next.kind) {
+        MultisigCancellationToastKind.timeout => l10n.multisigCancelTimeoutToast,
+        MultisigCancellationToastKind.submitFailed => l10n.multisigCancelFailed,
+      };
+      context.showErrorToaster(message: message);
+      ref.read(multisigCancellationToastProvider.notifier).clear();
     });
 
     return child;

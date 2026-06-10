@@ -430,6 +430,21 @@ ${MultisigGraphql.executedMultisigProposalAccountEventSelection}
 }
 ''';
 
+  final String _searchCancelledByExtrinsicHashQuery =
+      '''
+query SearchCancelledByExtrinsicHash(\$extrinsicHash: String!) {
+  accountEvents: account_event(
+    limit: 1
+    where: {cancelledMultisigProposal: {extrinsic: {id: {_eq: \$extrinsicHash}}}}
+    order_by: {timestamp: desc}
+  ) {
+    id
+    timestamp
+${MultisigGraphql.cancelledMultisigProposalAccountEventSelection}
+  }
+}
+''';
+
   void printTiming(String label, int milliseconds) {
     if (AppConstants.debugQueryTiming) {
       _log('[TIMING] $label: $milliseconds ms');
@@ -517,6 +532,18 @@ ${MultisigGraphql.executedMultisigProposalAccountEventSelection}
       } catch (e, stackTrace) {
         _log(
           'WARNING: failed to parse executedMultisigProposal, id: ${eventMap['id']}, error: $e',
+          error: e,
+          stackTrace: stackTrace,
+        );
+        return null;
+      }
+    }
+    if (eventMap['cancelledMultisigProposal'] != null) {
+      try {
+        return MultisigProposalCancelledEvent.fromAccountEvent(eventMap);
+      } catch (e, stackTrace) {
+        _log(
+          'WARNING: failed to parse cancelledMultisigProposal, id: ${eventMap['id']}, error: $e',
           error: e,
           stackTrace: stackTrace,
         );
@@ -821,6 +848,48 @@ ${MultisigGraphql.executedMultisigProposalAccountEventSelection}
       return null;
     } catch (e, stackTrace) {
       _log('Error searching proposal executed by hash: $e', error: e, stackTrace: stackTrace);
+      rethrow;
+    }
+  }
+
+  /// Searches for a confirmed multisig proposal cancellation by extrinsic hash.
+  Future<MultisigProposalCancelledEvent?> searchCancelledByExtrinsicHash({required String extrinsicHash}) async {
+    _log('Searching proposal cancelled by extrinsic hash: $extrinsicHash');
+    final Map<String, dynamic> requestBody = {
+      'query': _searchCancelledByExtrinsicHashQuery,
+      'variables': {'extrinsicHash': extrinsicHash},
+    };
+
+    try {
+      final http.Response response = await _graphQlEndpointService.post(body: jsonEncode(requestBody));
+
+      if (response.statusCode != 200) {
+        throw Exception('GraphQL request failed with status: ${response.statusCode}. Body: ${response.body}');
+      }
+
+      final Map<String, dynamic> responseBody = jsonDecode(response.body);
+
+      if (responseBody['errors'] != null) {
+        _log('GraphQL errors in response: ${responseBody['errors']}');
+        throw Exception('GraphQL errors: ${responseBody['errors'].toString()}');
+      }
+
+      final List<dynamic>? events = responseBody['data']?['accountEvents'];
+      if (events == null || events.isEmpty) {
+        _log('No matching proposal cancellation found for hash $extrinsicHash');
+        return null;
+      }
+
+      final parsed = tryParseOtherTransferEvent(events.first);
+      if (parsed is MultisigProposalCancelledEvent) {
+        _log('Found proposal cancellation at block ${parsed.blockNumber}');
+        return parsed;
+      }
+
+      _log('Extrinsic hash matched account_event but payload was not MultisigProposalCancelledEvent');
+      return null;
+    } catch (e, stackTrace) {
+      _log('Error searching proposal cancelled by hash: $e', error: e, stackTrace: stackTrace);
       rethrow;
     }
   }

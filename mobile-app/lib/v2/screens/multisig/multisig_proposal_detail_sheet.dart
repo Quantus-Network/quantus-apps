@@ -8,6 +8,7 @@ import 'package:resonance_network_wallet/providers/currency_display_provider.dar
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/multisig_providers.dart';
 import 'package:resonance_network_wallet/providers/pending_multisig_approvals_provider.dart';
+import 'package:resonance_network_wallet/providers/pending_multisig_cancellations_provider.dart';
 import 'package:resonance_network_wallet/providers/pending_multisig_executions_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/v2/components/multisig_expiry_value.dart';
@@ -19,6 +20,7 @@ import 'package:resonance_network_wallet/v2/components/bottom_sheet_container.da
 import 'package:resonance_network_wallet/v2/components/detail_summary_row.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/screens/multisig/multisig_approve_confirm_sheet.dart';
+import 'package:resonance_network_wallet/v2/screens/multisig/multisig_cancel_confirm_sheet.dart';
 import 'package:resonance_network_wallet/v2/screens/multisig/multisig_execute_confirm_sheet.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
@@ -99,6 +101,13 @@ class _MultisigProposalDetailSheet extends ConsumerWidget {
       liveProposal.id,
       msig.myMemberAccountId,
     );
+    final pendingCancellations = ref.watch(pendingMultisigCancellationsProvider);
+    final pendingCancellation = findPendingCancellationForProposal(
+      pendingCancellations,
+      msig.accountId,
+      liveProposal.id,
+      msig.myMemberAccountId,
+    );
     final didApprove = liveProposal.didApprove(msig.myMemberAccountId);
     final hasLocalSigner = _hasLocalSigner(ref);
     final isActionable = currentBlock != null && liveProposal.isActionable(currentBlock);
@@ -128,8 +137,19 @@ class _MultisigProposalDetailSheet extends ConsumerWidget {
           const SizedBox(height: 24),
           _signers(l10n, colors, text, liveProposal),
           const SizedBox(height: 24),
-          _actionSection(
+          _actionButtons(
             context,
+            l10n,
+            liveProposal: liveProposal,
+            didApprove: didApprove,
+            pendingApproval: pendingApproval,
+            pendingExecution: pendingExecution,
+            pendingCancellation: pendingCancellation,
+            hasLocalSigner: hasLocalSigner,
+            isActionable: isActionable,
+          ),
+          const SizedBox(height: 24),
+          _actionNote(
             l10n,
             colors,
             text,
@@ -137,10 +157,10 @@ class _MultisigProposalDetailSheet extends ConsumerWidget {
             didApprove: didApprove,
             pendingApproval: pendingApproval,
             pendingExecution: pendingExecution,
+            pendingCancellation: pendingCancellation,
             hasLocalSigner: hasLocalSigner,
             isActionable: isActionable,
           ),
-          const SizedBox(height: 24),
           Center(
             child: _ExplorerLink(proposal: liveProposal, colors: colors, text: text),
           ),
@@ -280,53 +300,99 @@ class _MultisigProposalDetailSheet extends ConsumerWidget {
     );
   }
 
-  Widget _actionSection(
+  Widget _actionButtons(
     BuildContext context,
-    AppLocalizations l10n,
-    AppColorsV2 colors,
-    AppTextTheme text, {
+    AppLocalizations l10n, {
     required MultisigProposal liveProposal,
     required bool didApprove,
     required PendingMultisigApprovalEvent? pendingApproval,
     required PendingMultisigExecutionEvent? pendingExecution,
+    required PendingMultisigCancellationEvent? pendingCancellation,
     required bool hasLocalSigner,
     required bool isActionable,
   }) {
-    if (liveProposal.status == MultisigProposalStatus.executed) {
-      return _noteOnlySection(colors, text, l10n.multisigProposalAlreadyExecutedNote);
+    if (liveProposal.status == MultisigProposalStatus.executed ||
+        liveProposal.status == MultisigProposalStatus.cancelled) {
+      return const SizedBox.shrink();
     }
 
-    if (liveProposal.isReadyToExecute) {
-      return _executeSection(
-        context,
-        l10n,
-        colors,
-        text,
-        liveProposal: liveProposal,
-        pendingExecution: pendingExecution,
-        hasLocalSigner: hasLocalSigner,
-        isActionable: isActionable,
-      );
-    }
+    final Widget primary = liveProposal.isReadyToExecute
+        ? _executeButton(
+            context,
+            l10n,
+            liveProposal: liveProposal,
+            pendingExecution: pendingExecution,
+            hasLocalSigner: hasLocalSigner,
+            isActionable: isActionable,
+          )
+        : _approveButton(
+            context,
+            l10n,
+            liveProposal: liveProposal,
+            didApprove: didApprove,
+            pendingApproval: pendingApproval,
+            hasLocalSigner: hasLocalSigner,
+            isActionable: isActionable,
+          );
 
-    return _approveSection(
+    final cancelButton = _cancelButton(
       context,
       l10n,
-      colors,
-      text,
       liveProposal: liveProposal,
-      didApprove: didApprove,
-      pendingApproval: pendingApproval,
+      pendingCancellation: pendingCancellation,
       hasLocalSigner: hasLocalSigner,
       isActionable: isActionable,
     );
+
+    if (cancelButton == null) return primary;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        primary,
+        const SizedBox(height: 12),
+        cancelButton,
+      ],
+    );
   }
 
-  Widget _approveSection(
+  Widget? _cancelButton(
     BuildContext context,
-    AppLocalizations l10n,
-    AppColorsV2 colors,
-    AppTextTheme text, {
+    AppLocalizations l10n, {
+    required MultisigProposal liveProposal,
+    required PendingMultisigCancellationEvent? pendingCancellation,
+    required bool hasLocalSigner,
+    required bool isActionable,
+  }) {
+    if (liveProposal.isTerminal) return null;
+
+    final isProposer = liveProposal.proposer == msig.myMemberAccountId;
+    if (!isProposer) return null;
+
+    final isPending = pendingCancellation != null;
+    final canCancel = isActionable && !isPending && hasLocalSigner;
+
+    final (label, isDisabled, onTap) = switch ((isPending, canCancel)) {
+      (true, _) => (l10n.multisigProposalCancellingLabel, true, null),
+      (_, true) => (
+        l10n.multisigCancelProposalButton,
+        false,
+        () => showMultisigCancelConfirmSheet(context, msig: msig, proposal: liveProposal),
+      ),
+      _ => (l10n.multisigCancelProposalButton, true, null),
+    };
+
+    return QuantusButton.simple(
+      label: label,
+      variant: ButtonVariant.danger,
+      isDisabled: isDisabled,
+      onTap: onTap,
+    );
+  }
+
+  Widget _approveButton(
+    BuildContext context,
+    AppLocalizations l10n, {
     required MultisigProposal liveProposal,
     required bool didApprove,
     required PendingMultisigApprovalEvent? pendingApproval,
@@ -347,22 +413,12 @@ class _MultisigProposalDetailSheet extends ConsumerWidget {
       _ => (l10n.multisigApproveButton, true, null),
     };
 
-    final note = switch ((didApprove, isPending, isActionable, hasLocalSigner)) {
-      (true, _, _, _) => l10n.multisigProposalAlreadySignedNote,
-      (_, true, _, _) => l10n.multisigProposalApprovingNote,
-      (_, _, false, _) => l10n.multisigApproveUnavailableNote,
-      (_, _, _, false) => l10n.multisigApproveUnavailableNote,
-      _ => '',
-    };
-
-    return _actionButtonColumn(l10n, colors, text, label: label, isDisabled: isDisabled, onTap: onTap, note: note);
+    return QuantusButton.simple(label: label, isDisabled: isDisabled, onTap: onTap);
   }
 
-  Widget _executeSection(
+  Widget _executeButton(
     BuildContext context,
-    AppLocalizations l10n,
-    AppColorsV2 colors,
-    AppTextTheme text, {
+    AppLocalizations l10n, {
     required MultisigProposal liveProposal,
     required PendingMultisigExecutionEvent? pendingExecution,
     required bool hasLocalSigner,
@@ -381,47 +437,79 @@ class _MultisigProposalDetailSheet extends ConsumerWidget {
       _ => (l10n.multisigExecuteButton, true, null),
     };
 
-    final note = switch ((isPending, isActionable, hasLocalSigner)) {
-      (true, _, _) => l10n.multisigProposalExecutingNote,
-      (_, false, _) => l10n.multisigExecuteUnavailableNote,
-      (_, _, false) => l10n.multisigExecuteUnavailableNote,
-      _ => '',
-    };
-
-    return _actionButtonColumn(l10n, colors, text, label: label, isDisabled: isDisabled, onTap: onTap, note: note);
+    return QuantusButton.simple(label: label, isDisabled: isDisabled, onTap: onTap);
   }
 
-  Widget _noteOnlySection(AppColorsV2 colors, AppTextTheme text, String note) {
-    return Text(
-      note,
-      textAlign: TextAlign.center,
-      style: text.detail?.copyWith(color: colors.textTertiary),
-    );
-  }
-
-  Widget _actionButtonColumn(
+  Widget _actionNote(
     AppLocalizations l10n,
     AppColorsV2 colors,
     AppTextTheme text, {
-    required String label,
-    required bool isDisabled,
-    required VoidCallback? onTap,
-    required String note,
+    required MultisigProposal liveProposal,
+    required bool didApprove,
+    required PendingMultisigApprovalEvent? pendingApproval,
+    required PendingMultisigExecutionEvent? pendingExecution,
+    required PendingMultisigCancellationEvent? pendingCancellation,
+    required bool hasLocalSigner,
+    required bool isActionable,
   }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        QuantusButton.simple(label: label, isDisabled: isDisabled, onTap: onTap),
-        if (note.isNotEmpty) ...[
-          const SizedBox(height: 12),
-          Text(
-            note,
-            textAlign: TextAlign.center,
-            style: text.detail?.copyWith(color: colors.textTertiary),
-          ),
-        ],
-      ],
+    final note = _resolveActionNote(
+      l10n,
+      liveProposal: liveProposal,
+      didApprove: didApprove,
+      pendingApproval: pendingApproval,
+      pendingExecution: pendingExecution,
+      pendingCancellation: pendingCancellation,
+      hasLocalSigner: hasLocalSigner,
+      isActionable: isActionable,
     );
+
+    if (note.isEmpty) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Text(
+        note,
+        textAlign: TextAlign.center,
+        style: text.detail?.copyWith(color: colors.textTertiary),
+      ),
+    );
+  }
+
+  String _resolveActionNote(
+    AppLocalizations l10n, {
+    required MultisigProposal liveProposal,
+    required bool didApprove,
+    required PendingMultisigApprovalEvent? pendingApproval,
+    required PendingMultisigExecutionEvent? pendingExecution,
+    required PendingMultisigCancellationEvent? pendingCancellation,
+    required bool hasLocalSigner,
+    required bool isActionable,
+  }) {
+    if (liveProposal.status == MultisigProposalStatus.cancelled) {
+      return l10n.multisigProposalAlreadyCancelledNote;
+    }
+    if (liveProposal.status == MultisigProposalStatus.executed) {
+      return l10n.multisigProposalAlreadyExecutedNote;
+    }
+
+    if (pendingCancellation != null) return l10n.multisigProposalCancellingNote;
+    if (pendingExecution != null) return l10n.multisigProposalExecutingNote;
+    if (pendingApproval != null) return l10n.multisigProposalApprovingNote;
+
+    if (liveProposal.isReadyToExecute) {
+      return switch ((isActionable, hasLocalSigner)) {
+        (false, _) => l10n.multisigExecuteUnavailableNote,
+        (_, false) => l10n.multisigExecuteUnavailableNote,
+        _ => '',
+      };
+    }
+
+    return switch ((didApprove, isActionable, hasLocalSigner)) {
+      (true, _, _) => l10n.multisigProposalAlreadySignedNote,
+      (_, false, _) => l10n.multisigApproveUnavailableNote,
+      (_, _, false) => l10n.multisigApproveUnavailableNote,
+      _ => '',
+    };
   }
 
   Widget _statusChip(

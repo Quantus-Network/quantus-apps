@@ -104,6 +104,26 @@ ${MultisigProposalGraphql.fields}      }
 ${MultisigProposalGraphql.fields}      }
     }''';
 
+  /// Nested selection for `account_event.cancelledMultisigProposal`.
+  static const String cancelledMultisigProposalAccountEventSelection =
+      '''    cancelledMultisigProposal {
+      id
+      fee
+      timestamp
+      block {
+        height
+        hash
+      }
+      extrinsic {
+        id
+      }
+      cancelledBy {
+        id
+      }
+      proposal {
+${MultisigProposalGraphql.fields}      }
+    }''';
+
   static const String byPkQuery =
       r'''
     query MultisigByPk($id: String!) {

@@ -459,6 +459,9 @@ class AppLocalizationsId extends AppLocalizations {
   String get activityTxApproving => 'Menyetujui…';
 
   @override
+  String get activityTxCancelling => 'Membatalkan…';
+
+  @override
   String get multisigApprovalTimeoutToast =>
       'Konfirmasi persetujuan membutuhkan waktu lebih lama. Periksa chain atau coba lagi.';
 
@@ -467,6 +470,9 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get multisigProposalAlreadyExecutedNote => 'Proposal ini sudah dieksekusi.';
+
+  @override
+  String get multisigProposalAlreadyCancelledNote => 'Proposal ini sudah dibatalkan.';
 
   @override
   String get multisigProposalProposerLabel => 'PENGAJU';
@@ -635,6 +641,16 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get multisigCancelFailed => 'Gagal membatalkan';
+
+  @override
+  String get multisigProposalCancellingLabel => 'Membatalkan…';
+
+  @override
+  String get multisigProposalCancellingNote => 'Pembatalan Anda sedang dikonfirmasi di chain.';
+
+  @override
+  String get multisigCancelTimeoutToast =>
+      'Konfirmasi pembatalan membutuhkan waktu lebih lama. Periksa chain atau coba lagi.';
 
   @override
   String get multisigApproveTitle => 'Setujui';

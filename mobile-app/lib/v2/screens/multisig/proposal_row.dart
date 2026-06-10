@@ -4,6 +4,7 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/pending_multisig_approvals_provider.dart';
+import 'package:resonance_network_wallet/providers/pending_multisig_cancellations_provider.dart';
 import 'package:resonance_network_wallet/providers/pending_multisig_executions_provider.dart';
 import 'package:resonance_network_wallet/v2/components/proposal_list_tile.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
@@ -36,9 +37,17 @@ class ProposalRow extends ConsumerWidget {
       proposal.id,
       myAccountId,
     );
+    final pendingCancellations = ref.watch(pendingMultisigCancellationsProvider);
+    final pendingCancellation = findPendingCancellationForProposal(
+      pendingCancellations,
+      proposal.multisigAddress,
+      proposal.id,
+      myAccountId,
+    );
     final isApproving = pendingApproval != null;
     final isExecuting = pendingExecution != null;
-    final isPending = isApproving || isExecuting;
+    final isCancelling = pendingCancellation != null;
+    final isPending = isApproving || isExecuting || isCancelling;
 
     return ProposalListTile(
       amount: proposal.amount,
@@ -56,6 +65,11 @@ class ProposalRow extends ConsumerWidget {
           else if (isApproving)
             Text(
               l10n.activityTxApproving,
+              style: text.detail?.copyWith(color: colors.checksum, fontWeight: FontWeight.w600, letterSpacing: 0.4),
+            )
+          else if (isCancelling)
+            Text(
+              l10n.activityTxCancelling,
               style: text.detail?.copyWith(color: colors.checksum, fontWeight: FontWeight.w600, letterSpacing: 0.4),
             )
           else
