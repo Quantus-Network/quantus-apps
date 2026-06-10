@@ -2944,7 +2944,6 @@ dependencies = [
  "anyhow",
  "blake3",
  "flutter_rust_bridge",
- "getrandom 0.2.17",
  "hex",
  "nam-tiny-hderive",
  "qp-plonky2",
