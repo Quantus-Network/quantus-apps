@@ -187,11 +187,7 @@ class TransactionSubmissionService {
 
       _ref
           .read(pendingTransactionsProvider.notifier)
-          .updateState(
-            pendingTx.id,
-            TransactionState.failed,
-            error: 'Failed to submit transaction: $e',
-          );
+          .updateState(pendingTx.id, TransactionState.failed, error: 'Failed to submit transaction: $e');
       _ref.read(pendingTransactionsProvider.notifier).remove(pendingTx.id);
     }
   }

@@ -6,35 +6,20 @@ import 'package:quantus_sdk/src/services/extrinsic_submission_utils.dart';
 void main() {
   group('isAlreadyImportedError', () {
     test('returns true for Substrate error code 1013', () {
-      expect(
-        isAlreadyImportedError(Exception('RPC Error: 1013: Transaction Already Imported')),
-        isTrue,
-      );
+      expect(isAlreadyImportedError(Exception('RPC Error: 1013: Transaction Already Imported')), isTrue);
     });
 
     test('returns true for already imported message', () {
-      expect(
-        isAlreadyImportedError(Exception('Already Imported')),
-        isTrue,
-      );
+      expect(isAlreadyImportedError(Exception('Already Imported')), isTrue);
     });
 
     test('returns true for already in pool message', () {
-      expect(
-        isAlreadyImportedError(Exception('Transaction is already in pool')),
-        isTrue,
-      );
+      expect(isAlreadyImportedError(Exception('Transaction is already in pool')), isTrue);
     });
 
     test('returns false for unrelated errors', () {
-      expect(
-        isAlreadyImportedError(Exception('Connection refused')),
-        isFalse,
-      );
-      expect(
-        isAlreadyImportedError(Exception('Invalid Transaction')),
-        isFalse,
-      );
+      expect(isAlreadyImportedError(Exception('Connection refused')), isFalse);
+      expect(isAlreadyImportedError(Exception('Invalid Transaction')), isFalse);
     });
   });
 

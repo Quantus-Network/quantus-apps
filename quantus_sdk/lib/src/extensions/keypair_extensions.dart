@@ -8,9 +8,7 @@ extension KeypairExtensions on crypto.Keypair {
   Uint8List get addressBytes => Address.decode(ss58Address).pubkey;
 
   /// Hedged (randomized) ML-DSA signature. Fresh entropy is generated per call.
-  Uint8List sign(List<int> message) =>
-      crypto.signMessage(keypair: this, message: message, entropy: _hedgeEntropy());
-
+  Uint8List sign(List<int> message) => crypto.signMessage(keypair: this, message: message, entropy: _hedgeEntropy());
 }
 
 crypto.U8Array32 _hedgeEntropy() {

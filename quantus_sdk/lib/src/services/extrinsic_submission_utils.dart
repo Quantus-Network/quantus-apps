@@ -13,7 +13,5 @@ Uint8List localExtrinsicHash(Uint8List extrinsic) {
 /// extrinsic is submitted again.
 bool isAlreadyImportedError(Object error) {
   final message = error.toString().toLowerCase();
-  return message.contains('1013') ||
-      message.contains('already imported') ||
-      message.contains('already in pool');
+  return message.contains('1013') || message.contains('already imported') || message.contains('already in pool');
 }

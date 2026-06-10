@@ -177,20 +177,20 @@ class SubstrateService {
     for (var attempt = 0; attempt < maxRetries; attempt++) {
       try {
         final result = await _submitExtrinsic(extrinsic);
-        print('result: $result');
+        debugPrint('result: $result');
         return result;
       } catch (e) {
         if (isAlreadyImportedError(e)) {
-          print('Extrinsic already in pool, returning local hash');
+          debugPrint('Extrinsic already in pool, returning local hash');
           return localExtrinsicHash(extrinsic);
         }
 
         if (attempt >= maxRetries - 1) {
-          print('Failed to submit extrinsic after $maxRetries retries: $e');
+          debugPrint('Failed to submit extrinsic after $maxRetries retries: $e');
           rethrow;
         }
 
-        print('Failed to submit extrinsic, retrying... ${attempt + 1} error: $e');
+        debugPrint('Failed to submit extrinsic, retrying... ${attempt + 1} error: $e');
         await Future.delayed(Duration(milliseconds: 500 * (attempt + 1)));
       }
     }
