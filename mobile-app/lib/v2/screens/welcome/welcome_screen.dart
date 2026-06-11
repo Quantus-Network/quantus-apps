@@ -29,9 +29,7 @@ class _WelcomeScreenV2State extends ConsumerState<WelcomeScreenV2> {
 
     try {
       final accounts = ref.read(accountsProvider).value ?? <Account>[];
-      final wallet = await _walletCreationService.createWalletWithGeneratedMnemonic(
-        existingAccounts: accounts,
-      );
+      final wallet = await _walletCreationService.createWalletWithGeneratedMnemonic(existingAccounts: accounts);
 
       if (!mounted) return;
       await completeWalletOnboarding(ref: ref, context: context, wallet: wallet);

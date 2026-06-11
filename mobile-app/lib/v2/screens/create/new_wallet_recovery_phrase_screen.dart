@@ -57,10 +57,7 @@ class _NewWalletRecoveryPhraseScreenState extends ConsumerState<NewWalletRecover
     setState(() => _isSubmitting = true);
     try {
       final accounts = ref.read(accountsProvider).value ?? <Account>[];
-      final wallet = await _walletCreationService.persistWalletPreview(
-        preview: preview,
-        existingAccounts: accounts,
-      );
+      final wallet = await _walletCreationService.persistWalletPreview(preview: preview, existingAccounts: accounts);
 
       if (!mounted) return;
       await completeWalletOnboarding(ref: ref, context: context, wallet: wallet);

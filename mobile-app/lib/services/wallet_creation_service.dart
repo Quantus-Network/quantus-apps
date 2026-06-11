@@ -4,11 +4,7 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/services/referral_service.dart';
 
 class CreatedWalletDetails {
-  const CreatedWalletDetails({
-    required this.accountId,
-    required this.accountName,
-    required this.checksumPhrase,
-  });
+  const CreatedWalletDetails({required this.accountId, required this.accountName, required this.checksumPhrase});
 
   final String accountId;
   final String accountName;
@@ -28,11 +24,8 @@ class GeneratedWalletPreview {
   final String accountName;
   final String checksumPhrase;
 
-  CreatedWalletDetails toCreatedWalletDetails() => CreatedWalletDetails(
-    accountId: accountId,
-    accountName: accountName,
-    checksumPhrase: checksumPhrase,
-  );
+  CreatedWalletDetails toCreatedWalletDetails() =>
+      CreatedWalletDetails(accountId: accountId, accountName: accountName, checksumPhrase: checksumPhrase);
 }
 
 class WalletCreationService {
@@ -59,9 +52,7 @@ class WalletCreationService {
   final HumanReadableChecksumService _checksum;
 
   /// Generates a mnemonic and display metadata without persisting.
-  Future<GeneratedWalletPreview> generateWalletPreview({
-    String accountName = 'Account 1',
-  }) async {
+  Future<GeneratedWalletPreview> generateWalletPreview({String accountName = 'Account 1'}) async {
     final mnemonic = await _substrate.generateMnemonic();
     if (mnemonic.isEmpty) {
       throw Exception('Mnemonic generation returned empty.');
@@ -102,11 +93,7 @@ class WalletCreationService {
     int walletIndex = 0,
   }) async {
     final preview = await generateWalletPreview(accountName: accountName);
-    return persistWalletPreview(
-      preview: preview,
-      existingAccounts: existingAccounts,
-      walletIndex: walletIndex,
-    );
+    return persistWalletPreview(preview: preview, existingAccounts: existingAccounts, walletIndex: walletIndex);
   }
 
   /// Saves [mnemonic] for [walletIndex], adds the root account when missing,
