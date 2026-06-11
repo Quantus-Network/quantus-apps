@@ -4,7 +4,6 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
-import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/services/firebase_messaging_service.dart';
 import 'package:resonance_network_wallet/services/telemetry_service.dart';
 import 'package:resonance_network_wallet/shared/utils/print.dart';
@@ -25,15 +24,31 @@ class ImportWalletScreenV2 extends ConsumerStatefulWidget {
   ConsumerState<ImportWalletScreenV2> createState() => _ImportWalletScreenV2State();
 }
 
+/// Renders the seed phrase as `x` characters while keeping the real text
+/// intact, since [TextField.obscureText] is unsupported for multiline fields.
+///
+/// The mask must keep the same character count as the real text so the caret
+/// and selection positions stay accurate while typing.
+class _ObscuringMnemonicController extends TextEditingController {
+  bool obscured = true;
+
+  @override
+  TextSpan buildTextSpan({required BuildContext context, TextStyle? style, required bool withComposing}) {
+    if (!obscured) {
+      return super.buildTextSpan(context: context, style: style, withComposing: withComposing);
+    }
+    return TextSpan(style: style, text: 'x' * text.length);
+  }
+}
+
 class _ImportWalletScreenV2State extends ConsumerState<ImportWalletScreenV2> {
-  final _controller = TextEditingController();
+  final _controller = _ObscuringMnemonicController();
   final _focusNode = FocusNode();
   final _buttonKey = GlobalKey();
   final _settingsService = SettingsService();
   final _accountsService = AccountsService();
   final _discoveryService = AccountDiscoveryService(HdWalletService(), SubstrateService());
   bool _isLoading = false;
-  bool _obscured = true;
   String? _error;
 
   @override
@@ -91,8 +106,6 @@ class _ImportWalletScreenV2State extends ConsumerState<ImportWalletScreenV2> {
       ref.invalidate(activeAccountProvider);
       _settingsService.setReferralCheckCompleted();
       _settingsService.setExistingUserSeenPromoVideo();
-      _settingsService.setRecoveryPhraseViewed(widget.walletIndex);
-      ref.invalidate(recoveryPhraseViewedProvider(widget.walletIndex));
 
       if (ref.read(remoteConfigProvider).enableRemoteNotifications && widget.walletIndex == 0) {
         ref.read(firebaseMessagingServiceProvider).registerDeviceIfPossible();
@@ -154,7 +167,7 @@ class _ImportWalletScreenV2State extends ConsumerState<ImportWalletScreenV2> {
                 child: Stack(
                   children: [
                     Padding(
-                      padding: const EdgeInsets.only(right: 32),
+                      padding: const EdgeInsets.only(right: 36),
                       child: TextField(
                         controller: _controller,
                         focusNode: _focusNode,
@@ -164,21 +177,23 @@ class _ImportWalletScreenV2State extends ConsumerState<ImportWalletScreenV2> {
                           hintText: l10n.importWalletHint,
                           hintStyle: fieldTextStyle?.copyWith(color: colors.textSecondary),
                         ),
-                        obscureText: _obscured,
-                        maxLines: _obscured ? 1 : null,
-                        keyboardType: _obscured ? TextInputType.text : TextInputType.multiline,
+                        maxLines: null,
+                        keyboardType: TextInputType.multiline,
                         textInputAction: TextInputAction.done,
+                        autocorrect: false,
+                        enableSuggestions: false,
                       ),
                     ),
                     Positioned(
                       top: 0,
                       right: 0,
                       child: GestureDetector(
-                        onTap: () => setState(() => _obscured = !_obscured),
+                        onTap: () => setState(() => _controller.obscured = !_controller.obscured),
+                        behavior: HitTestBehavior.opaque,
                         child: Icon(
-                          _obscured ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                          _controller.obscured ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                          size: 22,
                           color: colors.textSecondary,
-                          size: 20,
                         ),
                       ),
                     ),
