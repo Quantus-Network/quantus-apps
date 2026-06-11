@@ -170,29 +170,37 @@ class SubstrateService {
   }
 
   Future<Uint8List> submitExtrinsic(Account account, RuntimeCall call, {int maxRetries = 3}) async {
-    int retryCount = 0;
-    while (retryCount < maxRetries) {
+    // Sign once and resubmit the exact same bytes on retry. Re-signing with a
+    // fresh nonce can double spend when an earlier attempt already reached the
+    // network despite a client-side error.
+    final extrinsic = (await getExtrinsicPayload(account, call)).payload;
+    final txHash = Hasher.blake2b256.hash(extrinsic);
+
+    for (int attempt = 1; ; attempt++) {
       try {
-        final extrinsicData = await getExtrinsicPayload(account, call);
-        Uint8List extrinsic = extrinsicData.payload;
-
-        // final result = await _authorApi!.submitExtrinsic(extrinsic);
-        final result = await _submitExtrinsic(extrinsic);
-
-        print('result: $result');
-
-        return result;
+        return await _submitExtrinsic(extrinsic);
       } catch (e) {
-        retryCount++;
-        if (retryCount >= maxRetries) {
-          print('Failed to submit extrinsic after $maxRetries retries: $e');
+        if (_isAlreadySubmittedError(e, isRetry: attempt > 1)) {
+          print('Extrinsic 0x${hex.encode(txHash)} already known by network: $e');
+          return txHash;
+        }
+        if (attempt >= maxRetries) {
+          print('Failed to submit extrinsic after $maxRetries attempts: $e');
           rethrow;
         }
-        print('Failed to submit extrinsic, retrying... $retryCount error: $e');
-        await Future.delayed(Duration(milliseconds: 500 * retryCount));
+        print('Failed to submit extrinsic, retrying... attempt $attempt error: $e');
+        await Future.delayed(Duration(milliseconds: 500 * attempt));
       }
     }
-    throw Exception('Failed to submit extrinsic after $maxRetries retries.');
+  }
+
+  // 'Already Imported' is hash-specific: a pool already holds this exact
+  // transaction. 'outdated'/'stale' on a retry of identical bytes means an
+  // earlier attempt was already included in a block.
+  bool _isAlreadySubmittedError(Object e, {required bool isRetry}) {
+    final message = e.toString().toLowerCase();
+    if (message.contains('already imported')) return true;
+    return isRetry && (message.contains('outdated') || message.contains('stale'));
   }
 
   Future<ExtrinsicData> getExtrinsicPayload(Account account, RuntimeCall call, {bool isSigned = true}) async {

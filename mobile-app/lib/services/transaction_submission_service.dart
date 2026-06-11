@@ -41,16 +41,10 @@ class TransactionSubmissionService {
     // B. Immediately add it to the state so the UI can update
     _ref.read(pendingTransactionsProvider.notifier).add(pendingTx);
 
-    // C. Define the builder function that creates fresh submissions on each
-    // retry
-
-    // ignore: prefer_function_declarations_over_variables
-    final submissionBuilder = () => BalancesService().balanceTransfer(account, targetAddress, amount);
-
     TelemetryService().sendEvent('send_transfer');
 
-    // D. Submit and track the transaction
-    await submitAndTrackTransaction(submissionBuilder, pendingTx);
+    // C. Submit and track the transaction
+    await submitAndTrackTransaction(() => BalancesService().balanceTransfer(account, targetAddress, amount), pendingTx);
   }
 
   Future<void> scheduleReversibleTransferWithDelaySeconds({
@@ -59,7 +53,6 @@ class TransactionSubmissionService {
     required BigInt amount,
     required int delaySeconds,
     required BigInt feeEstimate,
-    int maxRetries = 3,
     required int blockHeight,
   }) async {
     final pending = createPendingTransaction(
@@ -75,19 +68,17 @@ class TransactionSubmissionService {
     // Add to pending transactions so UI can show it immediately
     _ref.read(pendingTransactionsProvider.notifier).add(pending);
 
-    // Define the builder function that creates fresh submissions on each retry
-
-    // ignore: prefer_function_declarations_over_variables
-    final submissionBuilder = () => ReversibleTransfersService().scheduleReversibleTransferWithDelaySeconds(
-      account: account,
-      recipientAddress: recipientAddress,
-      amount: amount,
-      delaySeconds: delaySeconds,
-    );
-
     TelemetryService().sendEvent('send_reversible');
 
-    await submitAndTrackTransaction(submissionBuilder, pending, maxRetries: maxRetries);
+    await submitAndTrackTransaction(
+      () => ReversibleTransfersService().scheduleReversibleTransferWithDelaySeconds(
+        account: account,
+        recipientAddress: recipientAddress,
+        amount: amount,
+        delaySeconds: delaySeconds,
+      ),
+      pending,
+    );
   }
 
   Future<void> scheduleTransfer({
@@ -113,18 +104,16 @@ class TransactionSubmissionService {
     // B. Immediately add it to the state so the UI can update
     _ref.read(pendingTransactionsProvider.notifier).add(pendingTx);
 
-    // C. Define the builder function that creates fresh submissions on each retry
-    Future<Uint8List> submissionBuilder() async {
-      return ReversibleTransfersService().scheduleReversibleTransfer(
+    TelemetryService().sendEvent('send_high_security_reversible');
+
+    await submitAndTrackTransaction(
+      () => ReversibleTransfersService().scheduleReversibleTransfer(
         account: account,
         recipientAddress: recipientAddress,
         amount: amount,
-      );
-    }
-
-    TelemetryService().sendEvent('send_high_security_reversible');
-
-    await submitAndTrackTransaction(submissionBuilder, pendingTx);
+      ),
+      pendingTx,
+    );
   }
 
   PendingTransactionEvent createPendingTransaction({
@@ -152,32 +141,21 @@ class TransactionSubmissionService {
     return pending;
   }
 
-  // This is the generic tracking logic, extracted from WalletStateManager
-  /// Submits a transaction and tracks its status. Returns immediately without
-  /// waiting.
-  /// Handles retries in the background for 'invalid' status.
-  /// submissionBuilder: Function that creates fresh submission on each retry
-  Future<void> submitAndTrackTransaction(
-    Future<Uint8List> Function() submissionBuilder,
-    PendingTransactionEvent pendingTx, {
-    int maxRetries = 3,
-  }) async {
-    // Start the submission process in the background
-    // This allows the UI to continue immediately
-    unawaited(_submitAndTrackBackground(submissionBuilder, pendingTx, maxRetries: maxRetries));
+  /// Submits a transaction in the background and tracks its status. Returns
+  /// immediately without waiting.
+  ///
+  /// Retries live in SubstrateService.submitExtrinsic, which resubmits the
+  /// same signed bytes. Outer retries would re-sign with a fresh nonce and can
+  /// double spend if a prior submit already reached the network.
+  Future<void> submitAndTrackTransaction(Future<Uint8List> Function() submit, PendingTransactionEvent pendingTx) async {
+    unawaited(_submitAndTrackBackground(submit, pendingTx));
   }
 
-  /// Background submission with retry logic - runs asynchronously
-  Future<void> _submitAndTrackBackground(
-    Future<Uint8List> Function() submissionBuilder,
-    PendingTransactionEvent pendingTx, {
-    required int maxRetries,
-    int attempt = 1,
-  }) async {
+  Future<void> _submitAndTrackBackground(Future<Uint8List> Function() submit, PendingTransactionEvent pendingTx) async {
     try {
-      quantusDebugPrint('Submitting transaction attempt $attempt/$maxRetries: ${pendingTx.id}');
+      quantusDebugPrint('Submitting transaction: ${pendingTx.id}');
 
-      final extrinsicHashBytes = await submissionBuilder();
+      final extrinsicHashBytes = await submit();
       final extrinsicHash = '0x${hex.encode(extrinsicHashBytes)}';
       quantusDebugPrint('submission hash: $extrinsicHash');
 
@@ -189,27 +167,13 @@ class TransactionSubmissionService {
 
       _startPollingForTransaction(pendingTx.copyWith(extrinsicHash: extrinsicHash));
     } catch (e, stackTrace) {
-      quantusDebugPrint('Failed submitting transaction attempt $attempt: $e');
+      quantusDebugPrint('Failed to submit transaction ${pendingTx.id}: $e');
+      quantusDebugPrint('Stack trace: $stackTrace');
 
-      if (attempt < maxRetries) {
-        quantusDebugPrint('Retrying due to submission error, attempt ${attempt + 1}/$maxRetries');
-        // Brief delay before retry
-        await Future.delayed(const Duration(seconds: 2));
-        await _submitAndTrackBackground(submissionBuilder, pendingTx, maxRetries: maxRetries, attempt: attempt + 1);
-      } else {
-        quantusDebugPrint('Failed to submit transaction after $maxRetries attempts: $e');
-        quantusDebugPrint('Stack trace: $stackTrace');
-
-        // Mark as permanently failed
-        _ref
-            .read(pendingTransactionsProvider.notifier)
-            .updateState(
-              pendingTx.id,
-              TransactionState.failed,
-              error: 'Failed to submit after $maxRetries attempts: $e',
-            );
-        _ref.read(pendingTransactionsProvider.notifier).remove(pendingTx.id);
-      }
+      _ref
+          .read(pendingTransactionsProvider.notifier)
+          .updateState(pendingTx.id, TransactionState.failed, error: 'Failed to submit: $e');
+      _ref.read(pendingTransactionsProvider.notifier).remove(pendingTx.id);
     }
   }
 
