@@ -186,7 +186,7 @@
   "multisigApproveConfirmYes": "Ya, Setujui",
   "multisigApproveConfirmNo": "Tidak, Kembali",
   "multisigApproveAuthReason": "Autentikasi untuk menyetujui",
-  "multisigApproveAuthRequired": "Autentikasi diperlukan",
+  "multisigAuthRequired": "Autentikasi diperlukan",
   "multisigApproveFailed": "Gagal menyetujui",
   "multisigExecuteButton": "Eksekusi",
   "multisigExecuteConfirmTitle": "Apakah Anda yakin?",

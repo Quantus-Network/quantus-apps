@@ -322,6 +322,7 @@ class _MultisigProposalDetailSheet extends ConsumerWidget {
             l10n,
             liveProposal: liveProposal,
             pendingExecution: pendingExecution,
+            pendingCancellation: pendingCancellation,
             hasLocalSigner: hasLocalSigner,
             isActionable: isActionable,
           )
@@ -331,6 +332,7 @@ class _MultisigProposalDetailSheet extends ConsumerWidget {
             liveProposal: liveProposal,
             didApprove: didApprove,
             pendingApproval: pendingApproval,
+            pendingCancellation: pendingCancellation,
             hasLocalSigner: hasLocalSigner,
             isActionable: isActionable,
           );
@@ -340,6 +342,7 @@ class _MultisigProposalDetailSheet extends ConsumerWidget {
       l10n,
       liveProposal: liveProposal,
       pendingCancellation: pendingCancellation,
+      hasOtherPendingAction: pendingApproval != null || pendingExecution != null,
       hasLocalSigner: hasLocalSigner,
       isActionable: isActionable,
     );
@@ -357,6 +360,7 @@ class _MultisigProposalDetailSheet extends ConsumerWidget {
     AppLocalizations l10n, {
     required MultisigProposal liveProposal,
     required PendingMultisigCancellationEvent? pendingCancellation,
+    required bool hasOtherPendingAction,
     required bool hasLocalSigner,
     required bool isActionable,
   }) {
@@ -366,7 +370,7 @@ class _MultisigProposalDetailSheet extends ConsumerWidget {
     if (!isProposer) return null;
 
     final isPending = pendingCancellation != null;
-    final canCancel = isActionable && !isPending && hasLocalSigner;
+    final canCancel = isActionable && !isPending && !hasOtherPendingAction && hasLocalSigner;
 
     final (label, isDisabled, onTap) = switch ((isPending, canCancel)) {
       (true, _) => (l10n.multisigProposalCancellingLabel, true, null),
@@ -387,11 +391,14 @@ class _MultisigProposalDetailSheet extends ConsumerWidget {
     required MultisigProposal liveProposal,
     required bool didApprove,
     required PendingMultisigApprovalEvent? pendingApproval,
+    required PendingMultisigCancellationEvent? pendingCancellation,
     required bool hasLocalSigner,
     required bool isActionable,
   }) {
     final isPending = pendingApproval != null;
-    final canApprove = isActionable && !didApprove && !isPending && hasLocalSigner;
+    // A pending cancellation from this device blocks approving, otherwise the
+    // two extrinsics race on-chain and one fails with a wasted fee.
+    final canApprove = isActionable && !didApprove && !isPending && pendingCancellation == null && hasLocalSigner;
 
     final (label, isDisabled, onTap) = switch ((didApprove, isPending, canApprove)) {
       (true, _, _) => (l10n.multisigAlreadyApproved, true, null),
@@ -412,11 +419,14 @@ class _MultisigProposalDetailSheet extends ConsumerWidget {
     AppLocalizations l10n, {
     required MultisigProposal liveProposal,
     required PendingMultisigExecutionEvent? pendingExecution,
+    required PendingMultisigCancellationEvent? pendingCancellation,
     required bool hasLocalSigner,
     required bool isActionable,
   }) {
     final isPending = pendingExecution != null;
-    final canExecute = isActionable && !isPending && hasLocalSigner;
+    // A pending cancellation from this device blocks executing, otherwise the
+    // two extrinsics race on-chain and one fails with a wasted fee.
+    final canExecute = isActionable && !isPending && pendingCancellation == null && hasLocalSigner;
 
     final (label, isDisabled, onTap) = switch ((isPending, canExecute)) {
       (true, _) => (l10n.multisigProposalExecutingLabel, true, null),

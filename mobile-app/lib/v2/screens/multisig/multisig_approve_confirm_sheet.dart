@@ -21,6 +21,7 @@ void showMultisigApproveConfirmSheet(
         title: (l10n) => l10n.multisigApproveConfirmTitle,
         body: (l10n) => l10n.multisigApproveConfirmBody,
         confirmLabel: (l10n) => l10n.multisigApproveConfirmYes,
+        dismissLabel: (l10n) => l10n.multisigApproveConfirmNo,
         authReason: (l10n) => l10n.multisigApproveAuthReason,
         failedMessage: (l10n) => l10n.multisigApproveFailed,
       ),

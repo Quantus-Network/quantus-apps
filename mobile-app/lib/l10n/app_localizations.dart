@@ -1148,11 +1148,11 @@ abstract class AppLocalizations {
   /// **'Authenticate to approve'**
   String get multisigApproveAuthReason;
 
-  /// Error when auth fails on approve
+  /// Error when auth fails on a multisig action
   ///
   /// In en, this message translates to:
   /// **'Authentication required'**
-  String get multisigApproveAuthRequired;
+  String get multisigAuthRequired;
 
   /// Error when approve submission fails
   ///

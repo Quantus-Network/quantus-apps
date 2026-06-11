@@ -581,7 +581,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get multisigApproveAuthReason => 'Autentikasi untuk menyetujui';
 
   @override
-  String get multisigApproveAuthRequired => 'Autentikasi diperlukan';
+  String get multisigAuthRequired => 'Autentikasi diperlukan';
 
   @override
   String get multisigApproveFailed => 'Gagal menyetujui';

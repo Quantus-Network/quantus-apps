@@ -579,7 +579,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get multisigApproveAuthReason => 'Authenticate to approve';
 
   @override
-  String get multisigApproveAuthRequired => 'Authentication required';
+  String get multisigAuthRequired => 'Authentication required';
 
   @override
   String get multisigApproveFailed => 'Failed to approve';

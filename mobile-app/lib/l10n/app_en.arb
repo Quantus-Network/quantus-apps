@@ -819,9 +819,9 @@
     "@multisigApproveAuthReason": {
       "description": "Biometric auth prompt when approving"
     },
-    "multisigApproveAuthRequired": "Authentication required",
-    "@multisigApproveAuthRequired": {
-      "description": "Error when auth fails on approve"
+    "multisigAuthRequired": "Authentication required",
+    "@multisigAuthRequired": {
+      "description": "Error when auth fails on a multisig action"
     },
     "multisigApproveFailed": "Failed to approve",
     "@multisigApproveFailed": {

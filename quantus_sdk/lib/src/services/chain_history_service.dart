@@ -563,6 +563,8 @@ ${MultisigGraphql.cancelledMultisigProposalAccountEventSelection}
     if (id.startsWith('ae-ms-proposal-created-')) return false;
     if (id.startsWith('ae-ms-signer-approved-')) return false;
     if (id.startsWith('ae-ms-exec-')) return false;
+    // No trailing dash on purpose: covers both 'ae-ms-cancel-' and
+    // 'ae-ms-cancelled-' id variants.
     if (id.startsWith('ae-ms-cancel')) return false;
     return id.startsWith('ae-multisig-') || id.startsWith('ae-ms-');
   }
@@ -766,136 +768,54 @@ ${MultisigGraphql.cancelledMultisigProposalAccountEventSelection}
   }
 
   /// Searches for a confirmed multisig proposal approval by extrinsic hash.
-  Future<MultisigProposalApprovedEvent?> searchSignerApprovedByExtrinsicHash({required String extrinsicHash}) async {
-    _log('Searching signer approved by extrinsic hash: $extrinsicHash');
-    final Map<String, dynamic> requestBody = {
-      'query': _searchSignerApprovedByExtrinsicHashQuery,
-      'variables': {'extrinsicHash': extrinsicHash},
-    };
-
-    try {
-      final http.Response response = await _graphQlEndpointService.post(body: jsonEncode(requestBody));
-
-      if (response.statusCode != 200) {
-        throw Exception('GraphQL request failed with status: ${response.statusCode}. Body: ${response.body}');
-      }
-
-      final Map<String, dynamic> responseBody = jsonDecode(response.body);
-
-      if (responseBody['errors'] != null) {
-        _log('GraphQL errors in response: ${responseBody['errors']}');
-        throw Exception('GraphQL errors: ${responseBody['errors'].toString()}');
-      }
-
-      final List<dynamic>? events = responseBody['data']?['accountEvents'];
-      if (events == null || events.isEmpty) {
-        _log('No matching signer approval found for hash $extrinsicHash');
-        return null;
-      }
-
-      final parsed = tryParseOtherTransferEvent(events.first);
-      if (parsed is MultisigProposalApprovedEvent) {
-        _log('Found signer approval at block ${parsed.blockNumber}');
-        return parsed;
-      }
-
-      _log('Extrinsic hash matched account_event but payload was not MultisigProposalApprovedEvent');
-      return null;
-    } catch (e, stackTrace) {
-      _log('Error searching signer approved by hash: $e', error: e, stackTrace: stackTrace);
-      rethrow;
-    }
+  Future<MultisigProposalApprovedEvent?> searchSignerApprovedByExtrinsicHash({required String extrinsicHash}) {
+    return _searchAccountEventByExtrinsicHash<MultisigProposalApprovedEvent>(
+      query: _searchSignerApprovedByExtrinsicHashQuery,
+      extrinsicHash: extrinsicHash,
+      description: 'signer approval',
+    );
   }
 
   /// Searches for a confirmed multisig proposal execution by extrinsic hash.
-  Future<MultisigProposalExecutedEvent?> searchExecutedByExtrinsicHash({required String extrinsicHash}) async {
-    _log('Searching proposal executed by extrinsic hash: $extrinsicHash');
-    final Map<String, dynamic> requestBody = {
-      'query': _searchExecutedByExtrinsicHashQuery,
-      'variables': {'extrinsicHash': extrinsicHash},
-    };
-
-    try {
-      final http.Response response = await _graphQlEndpointService.post(body: jsonEncode(requestBody));
-
-      if (response.statusCode != 200) {
-        throw Exception('GraphQL request failed with status: ${response.statusCode}. Body: ${response.body}');
-      }
-
-      final Map<String, dynamic> responseBody = jsonDecode(response.body);
-
-      if (responseBody['errors'] != null) {
-        _log('GraphQL errors in response: ${responseBody['errors']}');
-        throw Exception('GraphQL errors: ${responseBody['errors'].toString()}');
-      }
-
-      final List<dynamic>? events = responseBody['data']?['accountEvents'];
-      if (events == null || events.isEmpty) {
-        _log('No matching proposal execution found for hash $extrinsicHash');
-        return null;
-      }
-
-      final parsed = tryParseOtherTransferEvent(events.first);
-      if (parsed is MultisigProposalExecutedEvent) {
-        _log('Found proposal execution at block ${parsed.blockNumber}');
-        return parsed;
-      }
-
-      _log('Extrinsic hash matched account_event but payload was not MultisigProposalExecutedEvent');
-      return null;
-    } catch (e, stackTrace) {
-      _log('Error searching proposal executed by hash: $e', error: e, stackTrace: stackTrace);
-      rethrow;
-    }
+  Future<MultisigProposalExecutedEvent?> searchExecutedByExtrinsicHash({required String extrinsicHash}) {
+    return _searchAccountEventByExtrinsicHash<MultisigProposalExecutedEvent>(
+      query: _searchExecutedByExtrinsicHashQuery,
+      extrinsicHash: extrinsicHash,
+      description: 'proposal execution',
+    );
   }
 
   /// Searches for a confirmed multisig proposal cancellation by extrinsic hash.
-  Future<MultisigProposalCancelledEvent?> searchCancelledByExtrinsicHash({required String extrinsicHash}) async {
-    _log('Searching proposal cancelled by extrinsic hash: $extrinsicHash');
-    final Map<String, dynamic> requestBody = {
-      'query': _searchCancelledByExtrinsicHashQuery,
-      'variables': {'extrinsicHash': extrinsicHash},
-    };
-
-    try {
-      final http.Response response = await _graphQlEndpointService.post(body: jsonEncode(requestBody));
-
-      if (response.statusCode != 200) {
-        throw Exception('GraphQL request failed with status: ${response.statusCode}. Body: ${response.body}');
-      }
-
-      final Map<String, dynamic> responseBody = jsonDecode(response.body);
-
-      if (responseBody['errors'] != null) {
-        _log('GraphQL errors in response: ${responseBody['errors']}');
-        throw Exception('GraphQL errors: ${responseBody['errors'].toString()}');
-      }
-
-      final List<dynamic>? events = responseBody['data']?['accountEvents'];
-      if (events == null || events.isEmpty) {
-        _log('No matching proposal cancellation found for hash $extrinsicHash');
-        return null;
-      }
-
-      final parsed = tryParseOtherTransferEvent(events.first);
-      if (parsed is MultisigProposalCancelledEvent) {
-        _log('Found proposal cancellation at block ${parsed.blockNumber}');
-        return parsed;
-      }
-
-      _log('Extrinsic hash matched account_event but payload was not MultisigProposalCancelledEvent');
-      return null;
-    } catch (e, stackTrace) {
-      _log('Error searching proposal cancelled by hash: $e', error: e, stackTrace: stackTrace);
-      rethrow;
-    }
+  Future<MultisigProposalCancelledEvent?> searchCancelledByExtrinsicHash({required String extrinsicHash}) {
+    return _searchAccountEventByExtrinsicHash<MultisigProposalCancelledEvent>(
+      query: _searchCancelledByExtrinsicHashQuery,
+      extrinsicHash: extrinsicHash,
+      description: 'proposal cancellation',
+    );
   }
 
   /// Searches for a confirmed multisig proposal creation by extrinsic hash.
-  Future<MultisigProposalCreatedEvent?> searchProposalCreatedByExtrinsicHash({required String extrinsicHash}) async {
-    _log('Searching proposal created by extrinsic hash: $extrinsicHash');
+  Future<MultisigProposalCreatedEvent?> searchProposalCreatedByExtrinsicHash({required String extrinsicHash}) {
+    return _searchAccountEventByExtrinsicHash<MultisigProposalCreatedEvent>(
+      query: _searchProposalCreatedByExtrinsicHashQuery,
+      extrinsicHash: extrinsicHash,
+      description: 'proposal creation',
+    );
+  }
+
+  /// Runs [query] against `account_event` filtered by extrinsic hash and
+  /// returns the parsed event when it is a [T].
+  ///
+  /// [description] is a human-readable name for log messages, e.g.
+  /// `'proposal cancellation'`.
+  Future<T?> _searchAccountEventByExtrinsicHash<T extends TransactionEvent>({
+    required String query,
+    required String extrinsicHash,
+    required String description,
+  }) async {
+    _log('Searching $description by extrinsic hash: $extrinsicHash');
     final Map<String, dynamic> requestBody = {
-      'query': _searchProposalCreatedByExtrinsicHashQuery,
+      'query': query,
       'variables': {'extrinsicHash': extrinsicHash},
     };
 
@@ -915,20 +835,20 @@ ${MultisigGraphql.cancelledMultisigProposalAccountEventSelection}
 
       final List<dynamic>? events = responseBody['data']?['accountEvents'];
       if (events == null || events.isEmpty) {
-        _log('No matching proposal creation found for hash $extrinsicHash');
+        _log('No matching $description found for hash $extrinsicHash');
         return null;
       }
 
       final parsed = tryParseOtherTransferEvent(events.first);
-      if (parsed is MultisigProposalCreatedEvent) {
-        _log('Found proposal creation at block ${parsed.blockNumber}');
+      if (parsed is T) {
+        _log('Found $description at block ${parsed.blockNumber}');
         return parsed;
       }
 
-      _log('Extrinsic hash matched account_event but payload was not MultisigProposalCreatedEvent');
+      _log('Extrinsic hash matched account_event but payload was not $T');
       return null;
     } catch (e, stackTrace) {
-      _log('Error searching proposal created by hash: $e', error: e, stackTrace: stackTrace);
+      _log('Error searching $description by hash: $e', error: e, stackTrace: stackTrace);
       rethrow;
     }
   }
