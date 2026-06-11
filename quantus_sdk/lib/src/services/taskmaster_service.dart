@@ -5,7 +5,6 @@ import 'package:http/http.dart' as http;
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:quantus_sdk/src/models/exchange_rates_result.dart';
 import 'package:quantus_sdk/src/models/oauth_link.dart';
-import 'package:quantus_sdk/src/rust/api/crypto.dart' as crypto;
 
 class TokenInfo {
   final String accessToken;
@@ -202,7 +201,7 @@ class TaskmasterService {
     final publicKeyHex = convert_hex.hex.encode(keypair.publicKey);
 
     Future<String> signHex(List<int> messageBytes) async {
-      final sig = crypto.signMessage(keypair: keypair, message: messageBytes);
+      final sig = keypair.sign(messageBytes);
       return convert_hex.hex.encode(sig);
     }
 

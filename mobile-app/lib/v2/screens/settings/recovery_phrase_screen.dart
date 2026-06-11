@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
+import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/v2/components/recovery_phrase_body.dart';
 
 class RecoveryPhraseScreen extends ConsumerStatefulWidget {
@@ -26,6 +27,11 @@ class _RecoveryPhraseScreenState extends ConsumerState<RecoveryPhraseScreen> {
     }
   }
 
+  void _onPhraseExposed() {
+    _settingsService.setRecoveryPhraseViewed(widget.walletIndex);
+    ref.invalidate(recoveryPhraseViewedProvider(widget.walletIndex));
+  }
+
   @override
   void initState() {
     super.initState();
@@ -41,6 +47,7 @@ class _RecoveryPhraseScreenState extends ConsumerState<RecoveryPhraseScreen> {
       words: _words,
       primaryButtonLabel: l10n.settingsRecoveryPhraseDone,
       onPrimary: () => Navigator.of(context).pop(),
+      onPhraseExposed: _onPhraseExposed,
     );
   }
 }

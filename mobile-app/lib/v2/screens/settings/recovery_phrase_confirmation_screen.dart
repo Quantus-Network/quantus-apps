@@ -16,8 +16,6 @@ class RecoveryPhraseConfirmationScreen extends ConsumerStatefulWidget {
 }
 
 class _RecoveryPhraseConfirmationScreenState extends ConsumerState<RecoveryPhraseConfirmationScreen> {
-  bool _acknowledged = false;
-
   Future<void> _onContinue() async {
     final l10n = ref.read(l10nProvider);
     final authed = await LocalAuthService().authenticate(localizedReason: l10n.settingsRecoveryConfirmAuthReason);
@@ -41,8 +39,6 @@ class _RecoveryPhraseConfirmationScreenState extends ConsumerState<RecoveryPhras
       appBarTitle: l10n.settingsRecoveryPhraseTitle,
       data: SettingsCautionScaffoldData.recoveryPhrase(l10n),
       continueLabel: l10n.commonContinue,
-      checkboxChecked: _acknowledged,
-      onCheckboxChanged: () => setState(() => _acknowledged = !_acknowledged),
       onContinue: _onContinue,
     );
   }
