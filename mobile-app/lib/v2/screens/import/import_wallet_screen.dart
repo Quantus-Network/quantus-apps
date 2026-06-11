@@ -25,7 +25,7 @@ class ImportWalletScreenV2 extends ConsumerStatefulWidget {
 }
 
 class _ImportWalletScreenV2State extends ConsumerState<ImportWalletScreenV2> {
-  final _controller = TextEditingController();
+  final _controller = _SeedPhraseController();
   final _focusNode = FocusNode();
   final _buttonKey = GlobalKey();
   final _settingsService = SettingsService();
@@ -53,6 +53,10 @@ class _ImportWalletScreenV2State extends ConsumerState<ImportWalletScreenV2> {
   }
 
   bool get _hasInput => _controller.text.trim().isNotEmpty;
+
+  void _toggleSeedPhraseVisibility() {
+    setState(() => _controller.obscure = !_controller.obscure);
+  }
 
   Future<void> _import() async {
     final accounts = ref.read(accountsProvider).value ?? <Account>[];
@@ -147,18 +151,42 @@ class _ImportWalletScreenV2State extends ConsumerState<ImportWalletScreenV2> {
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(color: colors.borderButton, width: 1),
                 ),
-                child: TextField(
-                  controller: _controller,
-                  focusNode: _focusNode,
-                  onChanged: (_) => setState(() {}),
-                  style: fieldTextStyle,
-                  decoration: InputDecoration.collapsed(
-                    hintText: l10n.importWalletHint,
-                    hintStyle: fieldTextStyle?.copyWith(color: colors.textSecondary),
-                  ),
-                  maxLines: null,
-                  keyboardType: TextInputType.multiline,
-                  textInputAction: TextInputAction.done,
+                child: Stack(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(right: 32),
+                      child: TextField(
+                        controller: _controller,
+                        focusNode: _focusNode,
+                        onChanged: (_) => setState(() {}),
+                        style: fieldTextStyle,
+                        cursorColor: colors.checksum,
+                        enableSuggestions: false,
+                        autocorrect: false,
+                        decoration: InputDecoration.collapsed(
+                          hintText: l10n.importWalletHint,
+                          hintStyle: fieldTextStyle?.copyWith(color: colors.textSecondary),
+                        ),
+                        maxLines: null,
+                        keyboardType: TextInputType.multiline,
+                        textInputAction: TextInputAction.done,
+                      ),
+                    ),
+                    Positioned(
+                      top: 0,
+                      right: 0,
+                      child: IconButton(
+                        icon: Icon(
+                          _controller.obscure ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                          color: colors.textSecondary,
+                          size: 20,
+                        ),
+                        onPressed: _toggleSeedPhraseVisibility,
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                      ),
+                    ),
+                  ],
                 ),
               ),
               if (_error != null) ...[
@@ -191,5 +219,36 @@ class _ImportWalletScreenV2State extends ConsumerState<ImportWalletScreenV2> {
     _focusNode.dispose();
     _controller.dispose();
     super.dispose();
+  }
+}
+
+class _SeedPhraseController extends TextEditingController {
+  bool obscure = true;
+
+  static String _mask(String text) => text.replaceAllMapped(RegExp(r'\S'), (_) => '*');
+
+  @override
+  TextSpan buildTextSpan({required BuildContext context, TextStyle? style, required bool withComposing}) {
+    final text = value.text;
+    final display = obscure ? _mask(text) : text;
+
+    if (!withComposing || !value.composing.isValid) {
+      return TextSpan(style: style, text: display);
+    }
+
+    final composingStart = value.composing.start;
+    final composingEnd = value.composing.end;
+
+    return TextSpan(
+      style: style,
+      children: [
+        TextSpan(text: display.substring(0, composingStart)),
+        TextSpan(
+          style: style?.copyWith(decoration: TextDecoration.underline, decorationColor: style.color),
+          text: display.substring(composingStart, composingEnd),
+        ),
+        TextSpan(text: display.substring(composingEnd)),
+      ],
+    );
   }
 }
