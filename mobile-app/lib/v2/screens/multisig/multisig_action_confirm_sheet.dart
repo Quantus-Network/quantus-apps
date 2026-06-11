@@ -30,6 +30,7 @@ class MultisigConfirmSheetLabels {
   final String Function(AppLocalizations) title;
   final String Function(AppLocalizations) body;
   final String Function(AppLocalizations) confirmLabel;
+  final String Function(AppLocalizations) dismissLabel;
   final String Function(AppLocalizations) authReason;
   final String Function(AppLocalizations) failedMessage;
 
@@ -37,12 +38,14 @@ class MultisigConfirmSheetLabels {
     required this.title,
     required this.body,
     required this.confirmLabel,
+    required this.dismissLabel,
     required this.authReason,
     required this.failedMessage,
   });
 }
 
-/// Shared confirmation sheet for multisig proposal actions (approve, execute).
+/// Shared confirmation sheet for multisig proposal actions (approve, execute,
+/// cancel).
 ///
 /// Handles signer lookup, fee estimation, local authentication, and submission;
 /// callers supply only labels and the action-specific callbacks.
@@ -52,6 +55,7 @@ class MultisigActionConfirmSheet extends ConsumerStatefulWidget {
   final MultisigConfirmSheetLabels labels;
   final MultisigConfirmFeeEstimator estimateFee;
   final MultisigConfirmSubmitter submit;
+  final ButtonVariant confirmVariant;
 
   /// Prefix for debug log messages, e.g. `[MultisigApprove]`.
   final String logPrefix;
@@ -64,6 +68,7 @@ class MultisigActionConfirmSheet extends ConsumerStatefulWidget {
     required this.estimateFee,
     required this.submit,
     required this.logPrefix,
+    this.confirmVariant = ButtonVariant.primary,
   });
 
   @override
@@ -126,7 +131,7 @@ class _MultisigActionConfirmSheetState extends ConsumerState<MultisigActionConfi
     if (!authed) {
       setState(() {
         _submitting = false;
-        _errorMessage = l10n.multisigApproveAuthRequired;
+        _errorMessage = l10n.multisigAuthRequired;
       });
       return;
     }
@@ -201,12 +206,13 @@ class _MultisigActionConfirmSheetState extends ConsumerState<MultisigActionConfi
           const SizedBox(height: 24),
           QuantusButton.simple(
             label: widget.labels.confirmLabel(l10n),
+            variant: widget.confirmVariant,
             isDisabled: _submitting,
             onTap: _submitting ? null : _confirm,
           ),
           const SizedBox(height: 12),
           QuantusButton.simple(
-            label: l10n.multisigApproveConfirmNo,
+            label: widget.labels.dismissLabel(l10n),
             variant: ButtonVariant.secondary,
             isDisabled: _submitting,
             onTap: _submitting ? null : () => Navigator.pop(context),
