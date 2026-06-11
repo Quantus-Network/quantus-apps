@@ -65,8 +65,8 @@ class AppConstants {
   // hardware wallet flow without using a hardware wallet.
   static const debugHardwareWallet = false;
 
-  // Debug the timing of subsquid queries
-  static const bool debugQueryTiming = false;
+  // Debug the timing of subsquid and rpc queries
+  static const bool debugQueryTiming = true;
 
   // Always show the home backup nudge regardless of viewed state and balance
   static const bool debugAlwaysShowBackupNudge = false;

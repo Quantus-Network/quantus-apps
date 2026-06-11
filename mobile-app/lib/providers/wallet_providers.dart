@@ -41,6 +41,10 @@ final humanReadableChecksumServiceProvider = Provider<HumanReadableChecksumServi
   return HumanReadableChecksumService();
 });
 
+final checksumNameProvider = FutureProvider.family<String, String>((ref, address) {
+  return ref.watch(humanReadableChecksumServiceProvider).getHumanReadableName(address);
+});
+
 final reversibleTransfersServiceProvider = Provider<ReversibleTransfersService>((ref) {
   return ReversibleTransfersService();
 });
@@ -163,6 +167,9 @@ final recoveryPhraseViewedProvider = Provider.family<bool, int>((ref, walletInde
   return ref.watch(settingsServiceProvider).recoveryPhraseViewed(walletIndex);
 });
 
+/// 0.0001 QUAN in raw units; dust below this doesn't warrant a backup nudge.
+final _backupNudgeBalanceThreshold = BigInt.from(10).pow(AppConstants.decimals - 4);
+
 /// Wallet index needing a recovery phrase backup reminder, or null when none.
 final backupReminderWalletIndexProvider = Provider<int?>((ref) {
   final active = ref.watch(activeAccountProvider).value;
@@ -174,7 +181,7 @@ final backupReminderWalletIndexProvider = Provider<int?>((ref) {
   if (ref.watch(recoveryPhraseViewedProvider(walletIndex))) return null;
 
   final balance = ref.watch(balanceProvider).value ?? BigInt.zero;
-  return balance > BigInt.zero ? walletIndex : null;
+  return balance > _backupNudgeBalanceThreshold ? walletIndex : null;
 });
 
 final isBalanceHiddenProvider = StateNotifierProvider<IsBalanceHiddenNotifier, bool>((ref) {

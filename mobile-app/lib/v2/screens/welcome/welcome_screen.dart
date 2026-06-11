@@ -36,7 +36,6 @@ class _WelcomeScreenV2State extends ConsumerState<WelcomeScreenV2> {
       if (mnemonic.isEmpty) throw Exception('Mnemonic generation returned empty.');
 
       final address = HdWalletService().keyPairAtIndex(mnemonic, 0).ss58Address;
-      final checksum = await HumanReadableChecksumService().getHumanReadableName(address);
 
       final accounts = ref.read(accountsProvider).value ?? <Account>[];
       await _walletCreationService.createNewWallet(
@@ -61,7 +60,6 @@ class _WelcomeScreenV2State extends ConsumerState<WelcomeScreenV2> {
           builder: (_) => AccountReadyScreen(
             accountId: address,
             accountName: _accountName,
-            checksumPhrase: checksum,
             origin: AccountReadyOverviewOrigin.walletCreated,
           ),
         ),

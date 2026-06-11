@@ -8,6 +8,7 @@ import 'package:quantus_sdk/generated/planck/planck.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:quantus_sdk/src/resonance_extrinsic_payload.dart';
 import 'package:quantus_sdk/src/rust/api/crypto.dart' as crypto;
+import 'package:quantus_sdk/src/utils/timing.dart';
 import 'package:ss58/ss58.dart';
 import 'package:quantus_sdk/src/extensions/address_extension.dart';
 
@@ -68,13 +69,21 @@ class SubstrateService {
   Future<BigInt> queryBalance(String address) async {
     try {
       final accountID = crypto.ss58ToAccountId(s: address);
+      final totalSw = Stopwatch()..start();
 
       final accountInfo = await _rpcEndpointService.rpcTask((uri) async {
+        final setupSw = Stopwatch()..start();
         final provider = Provider.fromUri(uri);
         final quantusApi = Planck(provider);
-        return await quantusApi.query.system.account(accountID);
+        printTiming('queryBalance setup $uri', setupSw.elapsedMilliseconds);
+
+        final callSw = Stopwatch()..start();
+        final result = await quantusApi.query.system.account(accountID);
+        printTiming('queryBalance call $uri', callSw.elapsedMilliseconds);
+        return result;
       });
 
+      printTiming('queryBalance total', totalSw.elapsedMilliseconds);
       print('user balance $address: ${accountInfo.data.free}');
       return accountInfo.data.free;
     } catch (e, st) {
