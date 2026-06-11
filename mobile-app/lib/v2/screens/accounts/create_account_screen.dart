@@ -24,7 +24,6 @@ class CreateAccountScreen extends ConsumerStatefulWidget {
 class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
   final _accountName = TextEditingController();
   final _accountsService = AccountsService();
-  final _checksumService = HumanReadableChecksumService();
 
   List<Account> _accounts = [];
   int _walletIndex = 0;
@@ -65,8 +64,6 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
         }
       } else {
         final draft = await _accountsService.createNewAccount(walletIndex: _walletIndex);
-        final checksum = await _checksumService.getHumanReadableName(draft.accountId);
-
         final accountToSave = draft.copyWith(name: _accountName.text.trim());
         await _accountsService.addAccount(accountToSave);
 
@@ -81,7 +78,6 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
               builder: (context) => AccountReadyScreen(
                 origin: AccountReadyOverviewOrigin.accountCreated,
                 accountName: accountToSave.name,
-                checksumPhrase: checksum,
                 accountId: accountToSave.accountId,
               ),
             ),

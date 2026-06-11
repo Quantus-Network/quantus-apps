@@ -55,4 +55,4 @@ dev_dependencies:
 polkadart:
   output_dir: lib/generated
   chains:
-    planck: ws://127.0.0.1:9944
+    planck: wss://a1-planck.quantus.cat

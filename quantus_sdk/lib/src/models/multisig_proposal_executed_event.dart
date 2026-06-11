@@ -72,7 +72,7 @@ class MultisigProposalExecutedEvent extends TransactionEvent {
   }) {
     final proposalJson = jsonMapOrNull(executed['proposal']);
     MultisigProposal? proposal;
-    String executorId = nestedAccountId(executed['executedBy'] ?? executed['executed_by']);
+    String executorId = jsonMapOrNull(executed['extrinsic'])?['signer']?['id'];
     String multisigAddress = '';
     String recipient = '';
     BigInt amount = BigInt.zero;

@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:http/http.dart' as http;
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:quantus_sdk/src/utils/timing.dart';
 
 // This set of classes implements redundant endpoints using a strategy to select the best endpoints and to retry failed requests
 // on different endpoints.
@@ -75,13 +76,16 @@ class RedundantEndpointService {
       try {
         final result = await task(endpoint.url);
 
-        endpoint.latency ??= DateTime.now().difference(startTime);
+        final elapsed = DateTime.now().difference(startTime);
+        printTiming('endpoint task ${endpoint.url}', elapsed.inMilliseconds);
+        endpoint.latency ??= elapsed;
         endpoint.lastSuccess = DateTime.now();
 
         _sortServers();
         return result;
       } catch (e) {
         lastError = e;
+        printTiming('endpoint task FAILED ${endpoint.url}', DateTime.now().difference(startTime).inMilliseconds);
         logEndpointFailure(endpoint, e);
       }
     }
