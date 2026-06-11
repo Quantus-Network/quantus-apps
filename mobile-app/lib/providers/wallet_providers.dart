@@ -163,17 +163,13 @@ final recoveryPhraseViewedProvider = Provider.family<bool, int>((ref, walletInde
   return ref.watch(settingsServiceProvider).recoveryPhraseViewed(walletIndex);
 });
 
-/// Debug override: forces the backup nudge to show regardless of viewed state
-/// and balance. Must be false in production.
-const bool debugAlwaysShowBackupNudge = true;
-
 /// Wallet index needing a recovery phrase backup reminder, or null when none.
 final backupReminderWalletIndexProvider = Provider<int?>((ref) {
   final active = ref.watch(activeAccountProvider).value;
   if (active is! RegularAccount) return null;
 
   final walletIndex = active.account.walletIndex;
-  if (debugAlwaysShowBackupNudge) return walletIndex;
+  if (AppConstants.debugAlwaysShowBackupNudge) return walletIndex;
 
   if (ref.watch(recoveryPhraseViewedProvider(walletIndex))) return null;
 

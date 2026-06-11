@@ -68,6 +68,9 @@ class AppConstants {
   // Debug the timing of subsquid queries
   static const bool debugQueryTiming = false;
 
+  // Always show the home backup nudge regardless of viewed state and balance
+  static const bool debugAlwaysShowBackupNudge = false;
+
   static const String accountSettingsRouteName = 'account-settings';
   static const int highSecurityStepsCount = 3;
 }
