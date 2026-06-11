@@ -26,8 +26,9 @@ void showMultisigApproveConfirmSheet(
       ),
       estimateFee: (ref, signer) =>
           ref.read(multisigServiceProvider).estimateApproveFee(msig: msig, signer: signer, proposalId: proposal.id),
-      submit: (ref, signer, fee) =>
-          ref.read(transactionSubmissionServiceProvider).approveProposal(msig: msig, signer: signer, proposal: proposal),
+      submit: (ref, signer, fee) => ref
+          .read(transactionSubmissionServiceProvider)
+          .approveProposal(msig: msig, signer: signer, proposal: proposal),
     ),
   );
 }
