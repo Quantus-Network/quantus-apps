@@ -1,0 +1,92 @@
+name: quantus_cold_wallet
+description: "Quantus Cold Wallet - air-gapped ML-DSA transaction signer"
+publish_to: "none"
+
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.8.0 <4.0.0"
+
+# Convention: see dependency placement section in ../melos.yaml.
+# Shared dep versions must match the canonical list there.
+dependencies:
+  flutter:
+    sdk: flutter
+
+  quantus_sdk:
+
+  # Blockchain infra (canonical versions in melos.yaml)
+  # DO NOT UPDATE polkadart - pinned to match quantus_sdk's ML-DSA override.
+  polkadart: ^0.7.3
+  convert: ^3.1.2
+
+  # State management
+  flutter_riverpod: ^3.3.1
+
+  # UI
+  qr_flutter: ^4.1.0
+  mobile_scanner: ^7.2.0
+  flutter_svg: ^2.3.0
+
+  # Security: biometric unlock + secure-element storage + password KDF/AEAD
+  local_auth: ^3.0.1
+  flutter_secure_storage: ^10.1.0
+  cryptography: ^2.7.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.4
+  flutter_native_splash: ^2.4.7
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/v2/
+    - assets/text/
+
+  fonts:
+    - family: Geist
+      fonts:
+        - asset: assets/fonts/Geist-Light.ttf
+          weight: 300
+        - asset: assets/fonts/Geist-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/Geist-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Geist-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Geist-Bold.ttf
+          weight: 700
+    - family: Geist Mono
+      fonts:
+        - asset: assets/fonts/GeistMono-Light.ttf
+          weight: 300
+        - asset: assets/fonts/GeistMono-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/GeistMono-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/GeistMono-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/GeistMono-Bold.ttf
+          weight: 700
+
+flutter_native_splash:
+  background_image: assets/v2/splash_background.jpg
+  color: "#0E0E0E"
+  image: assets/v2/uppercase_q.png
+  android: true
+  ios: true
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  remove_alpha_ios: true
+  # Frozen "deep freeze" Quantus Q marks this as the cold (air-gapped) wallet.
+  # iOS / legacy Android use the full square; Android adaptive layers the frosted
+  # Q glow (transparent foreground) over a glacial navy gradient so the inset
+  # foreground blends seamlessly with no visible card seam.
+  image_path: assets/cold_icon_1024.png
+  adaptive_icon_background: assets/cold_icon_bg.png
+  adaptive_icon_foreground: assets/cold_icon_fg.png

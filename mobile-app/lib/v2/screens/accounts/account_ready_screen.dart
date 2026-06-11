@@ -3,7 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
-import 'package:resonance_network_wallet/v2/components/back_button.dart';
+import 'package:resonance_network_wallet/providers/wallet_providers.dart';
+import 'package:resonance_network_wallet/v2/components/loader.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base_bottom_content.dart';
@@ -15,17 +16,10 @@ import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 enum AccountReadyOverviewOrigin { accountCreated, walletCreated, walletImported }
 
 class AccountReadyScreen extends ConsumerWidget {
-  const AccountReadyScreen({
-    super.key,
-    required this.origin,
-    required this.accountName,
-    required this.checksumPhrase,
-    required this.accountId,
-  });
+  const AccountReadyScreen({super.key, required this.origin, required this.accountName, required this.accountId});
 
   final AccountReadyOverviewOrigin origin;
   final String accountName;
-  final String checksumPhrase;
   final String accountId;
 
   static const _successRingSize = 78.0;
@@ -67,10 +61,7 @@ class AccountReadyScreen extends ConsumerWidget {
         }
       },
       child: ScaffoldBase(
-        appBar: V2AppBar(
-          title: appBarTitle,
-          leading: AppBackButton(onTap: () => _goHome(context)),
-        ),
+        appBar: V2AppBar(title: appBarTitle, showBackButton: false),
         mainContent: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -113,11 +104,20 @@ class AccountReadyScreen extends ConsumerWidget {
                         padding: const EdgeInsets.symmetric(horizontal: 4),
                         child: Column(
                           children: [
-                            Text(
-                              checksumPhrase,
-                              textAlign: TextAlign.center,
-                              style: text.smallParagraph?.copyWith(color: colors.checksum, fontWeight: FontWeight.w400),
-                            ),
+                            ref
+                                .watch(checksumNameProvider(accountId))
+                                .when(
+                                  data: (checksum) => Text(
+                                    checksum,
+                                    textAlign: TextAlign.center,
+                                    style: text.smallParagraph?.copyWith(
+                                      color: colors.checksum,
+                                      fontWeight: FontWeight.w400,
+                                    ),
+                                  ),
+                                  loading: () => const Loader(size: 14),
+                                  error: (_, _) => const SizedBox.shrink(),
+                                ),
                             const SizedBox(height: 4),
                             Text(
                               formattedAddress.toLowerCase(),
