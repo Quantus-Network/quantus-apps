@@ -42,10 +42,6 @@
       "description": "Button to import an existing wallet on the welcome screen"
     },
 
-    "createWalletAppBarTitle": "Create Wallet",
-    "@createWalletAppBarTitle": {
-      "description": "App bar title for the create wallet flow"
-    },
     "createWalletCautionHeadline": "Keep your Recovery Phrase Secret",
     "@createWalletCautionHeadline": {
       "description": "Headline on the recovery phrase caution screen during wallet creation"

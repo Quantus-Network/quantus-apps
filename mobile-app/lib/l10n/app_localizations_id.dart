@@ -39,9 +39,6 @@ class AppLocalizationsId extends AppLocalizations {
   String get welcomeImportWallet => 'Impor Wallet';
 
   @override
-  String get createWalletAppBarTitle => 'Buat Wallet';
-
-  @override
   String get createWalletCautionHeadline => 'Jaga Kerahasiaan Recovery Phrase Anda';
 
   @override

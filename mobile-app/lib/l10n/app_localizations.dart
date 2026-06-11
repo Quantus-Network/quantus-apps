@@ -152,12 +152,6 @@ abstract class AppLocalizations {
   /// **'Import Wallet'**
   String get welcomeImportWallet;
 
-  /// App bar title for the create wallet flow
-  ///
-  /// In en, this message translates to:
-  /// **'Create Wallet'**
-  String get createWalletAppBarTitle;
-
   /// Headline on the recovery phrase caution screen during wallet creation
   ///
   /// In en, this message translates to:

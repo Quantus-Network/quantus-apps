@@ -39,9 +39,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get welcomeImportWallet => 'Import Wallet';
 
   @override
-  String get createWalletAppBarTitle => 'Create Wallet';
-
-  @override
   String get createWalletCautionHeadline => 'Keep your Recovery Phrase Secret';
 
   @override

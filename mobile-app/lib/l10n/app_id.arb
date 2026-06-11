@@ -12,7 +12,6 @@
   "welcomeCreateNewWallet": "Buat Wallet Baru",
   "welcomeImportWallet": "Impor Wallet",
 
-  "createWalletAppBarTitle": "Buat Wallet",
   "createWalletCautionHeadline": "Jaga Kerahasiaan Recovery Phrase Anda",
   "createWalletCautionBullet1": "Jika Anda kehilangan perangkat ini, recovery phrase adalah satu-satunya cara kembali",
   "createWalletCautionBullet2": "Siapa pun yang mendapatkannya akan memiliki kendali penuh atas dana Anda, secara permanen",
