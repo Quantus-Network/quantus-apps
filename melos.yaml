@@ -2,6 +2,7 @@ name: quantus_workspace
 packages:
   - mobile-app
   - miner-app
+  - cold-wallet-app
   - quantus_sdk
 
 ide:

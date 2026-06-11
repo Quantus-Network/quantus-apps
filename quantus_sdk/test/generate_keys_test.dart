@@ -37,7 +37,7 @@ void main() {
 
       // Test signing and verification
       final message = [1, 2, 3, 4, 5];
-      final signature = signMessage(keypair: keypair, message: message);
+      final signature = keypair.sign(message);
 
       // Verify signature
       expect(signature, isNotEmpty);
@@ -111,7 +111,7 @@ void main() {
       const hexPayload =
           '0200007416854906f03a9dff66e3270a736c44e15970ac03a638471523a03069f276ca0700e876481755010000007400000002000000826beefbe2be72645ff376f18de745ac196dc77637436090de4174180706118e5a77ae1c95817ee664cf733fafa7baa8e6244b396a54e57a5bc414b24c52800600';
       final payload = hex.decode(hexPayload);
-      final signature = signMessage(keypair: keypair, message: payload);
+      final signature = keypair.sign(payload);
       final isValid = verifyMessage(keypair: keypair, message: payload, signature: signature);
       expect(isValid, true);
       print('signature: ${hex.encode(signature)}');
