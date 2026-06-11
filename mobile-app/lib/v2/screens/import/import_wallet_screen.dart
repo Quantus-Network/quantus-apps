@@ -24,8 +24,25 @@ class ImportWalletScreenV2 extends ConsumerStatefulWidget {
   ConsumerState<ImportWalletScreenV2> createState() => _ImportWalletScreenV2State();
 }
 
+/// Renders the seed phrase as `x` characters while keeping the real text
+/// intact, since [TextField.obscureText] is unsupported for multiline fields.
+///
+/// The mask must keep the same character count as the real text so the caret
+/// and selection positions stay accurate while typing.
+class _ObscuringMnemonicController extends TextEditingController {
+  bool obscured = true;
+
+  @override
+  TextSpan buildTextSpan({required BuildContext context, TextStyle? style, required bool withComposing}) {
+    if (!obscured) {
+      return super.buildTextSpan(context: context, style: style, withComposing: withComposing);
+    }
+    return TextSpan(style: style, text: 'x' * text.length);
+  }
+}
+
 class _ImportWalletScreenV2State extends ConsumerState<ImportWalletScreenV2> {
-  final _controller = TextEditingController();
+  final _controller = _ObscuringMnemonicController();
   final _focusNode = FocusNode();
   final _buttonKey = GlobalKey();
   final _settingsService = SettingsService();
@@ -147,18 +164,40 @@ class _ImportWalletScreenV2State extends ConsumerState<ImportWalletScreenV2> {
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(color: colors.borderButton, width: 1),
                 ),
-                child: TextField(
-                  controller: _controller,
-                  focusNode: _focusNode,
-                  onChanged: (_) => setState(() {}),
-                  style: fieldTextStyle,
-                  decoration: InputDecoration.collapsed(
-                    hintText: l10n.importWalletHint,
-                    hintStyle: fieldTextStyle?.copyWith(color: colors.textSecondary),
-                  ),
-                  maxLines: null,
-                  keyboardType: TextInputType.multiline,
-                  textInputAction: TextInputAction.done,
+                child: Stack(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(right: 36),
+                      child: TextField(
+                        controller: _controller,
+                        focusNode: _focusNode,
+                        onChanged: (_) => setState(() {}),
+                        style: fieldTextStyle,
+                        decoration: InputDecoration.collapsed(
+                          hintText: l10n.importWalletHint,
+                          hintStyle: fieldTextStyle?.copyWith(color: colors.textSecondary),
+                        ),
+                        maxLines: null,
+                        keyboardType: TextInputType.multiline,
+                        textInputAction: TextInputAction.done,
+                        autocorrect: false,
+                        enableSuggestions: false,
+                      ),
+                    ),
+                    Positioned(
+                      top: 0,
+                      right: 0,
+                      child: GestureDetector(
+                        onTap: () => setState(() => _controller.obscured = !_controller.obscured),
+                        behavior: HitTestBehavior.opaque,
+                        child: Icon(
+                          _controller.obscured ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                          size: 22,
+                          color: colors.textSecondary,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
               if (_error != null) ...[
