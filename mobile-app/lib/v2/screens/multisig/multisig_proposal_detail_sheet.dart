@@ -350,8 +350,7 @@ class _MultisigProposalDetailSheet extends ConsumerWidget {
     final note = switch ((didApprove, isPending, isActionable, hasLocalSigner)) {
       (true, _, _, _) => l10n.multisigProposalAlreadySignedNote,
       (_, true, _, _) => l10n.multisigProposalApprovingNote,
-      (_, _, false, _) => l10n.multisigApproveUnavailableNote,
-      (_, _, _, false) => l10n.multisigApproveUnavailableNote,
+      (_, _, false, _) || (_, _, _, false) => l10n.multisigApproveUnavailableNote,
       _ => '',
     };
 
@@ -383,8 +382,7 @@ class _MultisigProposalDetailSheet extends ConsumerWidget {
 
     final note = switch ((isPending, isActionable, hasLocalSigner)) {
       (true, _, _) => l10n.multisigProposalExecutingNote,
-      (_, false, _) => l10n.multisigExecuteUnavailableNote,
-      (_, _, false) => l10n.multisigExecuteUnavailableNote,
+      (_, false, _) || (_, _, false) => l10n.multisigExecuteUnavailableNote,
       _ => '',
     };
 

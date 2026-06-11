@@ -332,6 +332,7 @@ void main() {
         'id': '5Multisig-1',
         'proposal_id': 1,
         'created_at': '2026-06-04T10:00:00.000Z',
+        'updated_at': '2026-06-04T10:00:00.000Z',
         'pallet': 'Balances',
         'call': 'transfer_allow_death',
         'call_raw': '0x0500',
@@ -360,6 +361,7 @@ void main() {
         'id': '5Multisig-9',
         'proposal_id': 9,
         'created_at': '2026-06-04T10:00:00.000Z',
+        'updated_at': '2026-06-04T10:00:00.000Z',
         'pallet': 'Balances',
         'call': 'transfer_allow_death',
         'call_raw': '0x0500',
@@ -381,6 +383,7 @@ void main() {
         'id': '5Multisig-3',
         'proposal_id': 3,
         'created_at': '2026-06-04T10:00:00.000Z',
+        'updated_at': '2026-06-04T10:00:00.000Z',
         'pallet': 'Balances',
         'call': 'transfer_allow_death',
         'call_raw': '0x0500',
@@ -402,6 +405,7 @@ void main() {
         'id': '5Multisig-2',
         'proposal_id': 2,
         'created_at': '2026-06-04T10:00:00.000Z',
+        'updated_at': '2026-06-04T10:00:00.000Z',
         'pallet': 'Balances',
         'call': 'transfer_allow_death',
         'call_raw': '0x0500',
@@ -476,61 +480,15 @@ void main() {
   });
 
   group('MultisigService.buildApproveCall', () {
-    const signerA = '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY';
-    const signerB = '5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty';
-    const multisigAddress = '5DAAnrj7VHTznn2AWBemMuyBwZWs6FNFjdyVXUeYum3PTXFy';
-
-    final msig = MultisigAccount(
-      name: 'Team',
-      accountId: multisigAddress,
-      signers: [signerA, signerB],
-      threshold: 2,
-      nonce: BigInt.zero,
-      myMemberAccountId: signerB,
-    );
-
     test('returns a Multisig runtime call for valid params', () {
-      final call = MultisigService().buildApproveCall(msig: msig, proposalId: 3);
+      final call = MultisigService().buildApproveCall(msig: _buildTestMsig(), proposalId: 3);
       expect(call.encode().isNotEmpty, isTrue);
     });
   });
 
   group('MultisigService.buildExecuteCall', () {
-    const signerA = '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY';
-    const signerB = '5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty';
-    const multisigAddress = '5DAAnrj7VHTznn2AWBemMuyBwZWs6FNFjdyVXUeYum3PTXFy';
-
-    final msig = MultisigAccount(
-      name: 'Team',
-      accountId: multisigAddress,
-      signers: [signerA, signerB],
-      threshold: 2,
-      nonce: BigInt.zero,
-      myMemberAccountId: signerB,
-    );
-
     test('returns a Multisig runtime call for valid params', () {
-      final call = MultisigService().buildExecuteCall(msig: msig, proposalId: 3);
-      expect(call.encode().isNotEmpty, isTrue);
-    });
-  });
-
-  group('MultisigService.buildApproveCall', () {
-    const signerA = '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY';
-    const signerB = '5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty';
-    const multisigAddress = '5DAAnrj7VHTznn2AWBemMuyBwZWs6FNFjdyVXUeYum3PTXFy';
-
-    final msig = MultisigAccount(
-      name: 'Team',
-      accountId: multisigAddress,
-      signers: [signerA, signerB],
-      threshold: 2,
-      nonce: BigInt.zero,
-      myMemberAccountId: signerB,
-    );
-
-    test('returns a Multisig runtime call for valid params', () {
-      final call = MultisigService().buildApproveCall(msig: msig, proposalId: 3);
+      final call = MultisigService().buildExecuteCall(msig: _buildTestMsig(), proposalId: 3);
       expect(call.encode().isNotEmpty, isTrue);
     });
   });
@@ -590,4 +548,20 @@ void main() {
       expect(restored.creator, account.creator);
     });
   });
+}
+
+/// Two-signer multisig fixture shared by the call-building test groups.
+MultisigAccount _buildTestMsig() {
+  const signerA = '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY';
+  const signerB = '5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty';
+  const multisigAddress = '5DAAnrj7VHTznn2AWBemMuyBwZWs6FNFjdyVXUeYum3PTXFy';
+
+  return MultisigAccount(
+    name: 'Team',
+    accountId: multisigAddress,
+    signers: [signerA, signerB],
+    threshold: 2,
+    nonce: BigInt.zero,
+    myMemberAccountId: signerB,
+  );
 }

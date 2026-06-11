@@ -1208,6 +1208,18 @@ abstract class AppLocalizations {
   /// **'Execution confirmation is taking longer than expected. Check the chain or try again.'**
   String get multisigExecutionTimeoutToast;
 
+  /// Toast when a proposal is executed but not by this user's extrinsic
+  ///
+  /// In en, this message translates to:
+  /// **'Proposal was executed by another signer.'**
+  String get multisigExecutedByOtherToast;
+
+  /// Inline note on confirm sheet when fee estimation fails
+  ///
+  /// In en, this message translates to:
+  /// **'Network fee estimate is unavailable.'**
+  String get multisigFeeEstimateUnavailable;
+
   /// Title on cancel confirmation sheet
   ///
   /// In en, this message translates to:

@@ -612,6 +612,12 @@ class AppLocalizationsId extends AppLocalizations {
       'Konfirmasi eksekusi membutuhkan waktu lebih lama. Periksa chain atau coba lagi.';
 
   @override
+  String get multisigExecutedByOtherToast => 'Proposal telah dieksekusi oleh penandatangan lain.';
+
+  @override
+  String get multisigFeeEstimateUnavailable => 'Estimasi biaya jaringan tidak tersedia.';
+
+  @override
   String get multisigCancelConfirmTitle => 'Batalkan Proposal?';
 
   @override

@@ -610,6 +610,12 @@ class AppLocalizationsEn extends AppLocalizations {
       'Execution confirmation is taking longer than expected. Check the chain or try again.';
 
   @override
+  String get multisigExecutedByOtherToast => 'Proposal was executed by another signer.';
+
+  @override
+  String get multisigFeeEstimateUnavailable => 'Network fee estimate is unavailable.';
+
+  @override
   String get multisigCancelConfirmTitle => 'Cancel Proposal?';
 
   @override

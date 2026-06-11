@@ -859,6 +859,14 @@
     "@multisigExecutionTimeoutToast": {
       "description": "Toast when execution indexer polling times out"
     },
+    "multisigExecutedByOtherToast": "Proposal was executed by another signer.",
+    "@multisigExecutedByOtherToast": {
+      "description": "Toast when a proposal is executed but not by this user's extrinsic"
+    },
+    "multisigFeeEstimateUnavailable": "Network fee estimate is unavailable.",
+    "@multisigFeeEstimateUnavailable": {
+      "description": "Inline note on confirm sheet when fee estimation fails"
+    },
     "multisigCancelConfirmTitle": "Cancel Proposal?",
     "@multisigCancelConfirmTitle": {
       "description": "Title on cancel confirmation sheet"

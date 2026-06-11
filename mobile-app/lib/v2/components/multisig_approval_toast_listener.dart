@@ -27,11 +27,14 @@ class MultisigApprovalToastListener extends ConsumerWidget {
     ref.listen<MultisigExecutionToastEvent?>(multisigExecutionToastProvider, (previous, next) {
       if (next == null) return;
       final l10n = ref.read(l10nProvider);
-      final message = switch (next.kind) {
-        MultisigExecutionToastKind.timeout => l10n.multisigExecutionTimeoutToast,
-        MultisigExecutionToastKind.submitFailed => l10n.multisigExecuteFailed,
-      };
-      context.showErrorToaster(message: message);
+      switch (next.kind) {
+        case MultisigExecutionToastKind.timeout:
+          context.showErrorToaster(message: l10n.multisigExecutionTimeoutToast);
+        case MultisigExecutionToastKind.submitFailed:
+          context.showErrorToaster(message: l10n.multisigExecuteFailed);
+        case MultisigExecutionToastKind.executedByOther:
+          context.showInfoToaster(message: l10n.multisigExecutedByOtherToast);
+      }
       ref.read(multisigExecutionToastProvider.notifier).clear();
     });
 
