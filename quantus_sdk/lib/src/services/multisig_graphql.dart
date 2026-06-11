@@ -96,9 +96,9 @@ ${MultisigProposalGraphql.fields}      }
       }
       extrinsic {
         id
-      }
-      executedBy {
-        id
+        signer {
+          id
+        }
       }
       proposal {
 ${MultisigProposalGraphql.fields}      }

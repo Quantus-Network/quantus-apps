@@ -148,8 +148,10 @@ void main() {
       ],
       'timestamp': '2026-06-03T12:00:00.000+00:00',
       'block': {'height': 258, 'hash': '0xexec'},
-      'extrinsic': {'id': '0xexecutehash'},
-      'executedBy': {'id': 'qzkYEQv8tQsmniZYdame3Cku18RL5g9bGK9Pdydq5TMPdpE3y'},
+      'extrinsic': {
+        'id': '0xexecutehash',
+        'signer': {'id': 'qzkYEQv8tQsmniZYdame3Cku18RL5g9bGK9Pdydq5TMPdpE3y'},
+      },
       'proposal': {
         'id': 'proposal-entity-1',
         'proposal_id': 5,
