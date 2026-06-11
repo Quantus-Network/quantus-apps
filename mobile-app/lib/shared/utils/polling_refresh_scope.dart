@@ -85,19 +85,22 @@ Future<void> refreshAccountsPagination(
 }
 
 /// Invalidates open, past, and block providers for the active multisig account.
-void invalidateActiveMultisigProposals(Ref ref) {
+///
+/// Returns the active multisig account, or null if the active account is not
+/// a multisig (in which case nothing is invalidated).
+MultisigAccount? invalidateActiveMultisigProposals(Ref ref) {
   final msig = multisigAccountFromActive(ref.read(activeAccountProvider).value);
-  if (msig == null) return;
+  if (msig == null) return null;
 
   invalidateMultisigProposals(ref, msig);
+  return msig;
 }
 
 /// Refreshes proposal providers for the active multisig account and waits for data.
 Future<void> refreshActiveMultisigProposals(Ref ref) async {
-  final msig = multisigAccountFromActive(ref.read(activeAccountProvider).value);
+  final msig = invalidateActiveMultisigProposals(ref);
   if (msig == null) return;
 
-  invalidateMultisigProposals(ref, msig);
   await Future.wait([
     ref.read(multisigOpenProposalsProvider(msig).future),
     ref.read(multisigPastProposalsProvider(msig).future),
