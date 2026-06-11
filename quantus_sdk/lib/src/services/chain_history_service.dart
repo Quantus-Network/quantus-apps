@@ -4,6 +4,7 @@ import 'dart:developer' as developer;
 import 'package:http/http.dart' as http;
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:quantus_sdk/src/services/multisig_graphql.dart';
+import 'package:quantus_sdk/src/utils/timing.dart';
 
 class OtherTransfersResult {
   final List<TransactionEvent> transfers;
@@ -413,12 +414,6 @@ ${MultisigGraphql.signerApprovedAccountEventSelection}
   }
 }
 ''';
-
-  void printTiming(String label, int milliseconds) {
-    if (AppConstants.debugQueryTiming) {
-      _log('[TIMING] $label: $milliseconds ms');
-    }
-  }
 
   int _lookaheadLimit(int limit) => limit + 1;
 

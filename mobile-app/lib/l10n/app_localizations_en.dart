@@ -39,9 +39,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get welcomeImportWallet => 'Import Wallet';
 
   @override
-  String get createWalletAppBarTitle => 'Create Wallet';
-
-  @override
   String get createWalletCautionHeadline => 'Keep your Recovery Phrase Secret';
 
   @override
@@ -55,18 +52,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get createWalletCautionBullet3 => 'Write it down and keep it somewhere safe. Do not save it digitally';
 
   @override
-  String get createWalletCautionCheckboxLabel =>
-      'I understand that anyone with my recovery phrase can access my wallet. I will store it safely.';
-
-  @override
-  String get createWalletRecoveryPhraseNext => 'Next';
-
-  @override
-  String createWalletRecoveryPhraseFailedGenerate(String error) {
-    return 'Failed to generate: $error';
-  }
-
-  @override
   String createWalletRecoveryPhraseSaveError(String error) {
     return 'Error saving wallet: $error';
   }
@@ -77,6 +62,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get recoveryPhraseBodyCopy => 'Copy';
+
+  @override
+  String get recoveryPhraseBodyTapToReveal => 'Tap to reveal';
+
+  @override
+  String get recoveryPhraseBodyTapToHide => 'Tap to hide';
 
   @override
   String get recoveryPhraseBodyCopiedMessage => 'Recovery phrase copied to clipboard';
@@ -124,6 +115,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get homeErrorLoadingBalance => 'Error loading balance';
+
+  @override
+  String get homeBackupReminder => 'Back up your recovery phrase';
 
   @override
   String get homeReceive => 'Receive';

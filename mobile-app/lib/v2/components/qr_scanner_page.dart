@@ -87,7 +87,18 @@ class _QrScannerPageState extends ConsumerState<QrScannerPage> {
               ],
             ),
           ),
-          Positioned(top: 20, left: 24, right: 24, child: V2AppBar(title: l10n.componentQrScannerTitle)),
+          Positioned(
+            top: 0,
+            left: 24,
+            right: 24,
+            child: SafeArea(
+              bottom: false,
+              child: Padding(
+                padding: const EdgeInsets.only(top: 20),
+                child: V2AppBar(title: l10n.componentQrScannerTitle),
+              ),
+            ),
+          ),
         ],
       ),
     );

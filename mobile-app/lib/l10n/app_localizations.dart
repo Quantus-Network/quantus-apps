@@ -152,12 +152,6 @@ abstract class AppLocalizations {
   /// **'Import Wallet'**
   String get welcomeImportWallet;
 
-  /// App bar title for the create wallet flow
-  ///
-  /// In en, this message translates to:
-  /// **'Create Wallet'**
-  String get createWalletAppBarTitle;
-
   /// Headline on the recovery phrase caution screen during wallet creation
   ///
   /// In en, this message translates to:
@@ -182,24 +176,6 @@ abstract class AppLocalizations {
   /// **'Write it down and keep it somewhere safe. Do not save it digitally'**
   String get createWalletCautionBullet3;
 
-  /// Checkbox label on the recovery phrase caution screen
-  ///
-  /// In en, this message translates to:
-  /// **'I understand that anyone with my recovery phrase can access my wallet. I will store it safely.'**
-  String get createWalletCautionCheckboxLabel;
-
-  /// Primary button on the new wallet recovery phrase screen
-  ///
-  /// In en, this message translates to:
-  /// **'Next'**
-  String get createWalletRecoveryPhraseNext;
-
-  /// Error when mnemonic generation fails
-  ///
-  /// In en, this message translates to:
-  /// **'Failed to generate: {error}'**
-  String createWalletRecoveryPhraseFailedGenerate(String error);
-
   /// Error when saving a new wallet fails
   ///
   /// In en, this message translates to:
@@ -217,6 +193,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Copy'**
   String get recoveryPhraseBodyCopy;
+
+  /// Overlay on the blurred recovery phrase grid
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to reveal'**
+  String get recoveryPhraseBodyTapToReveal;
+
+  /// Hint below the revealed recovery phrase grid
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to hide'**
+  String get recoveryPhraseBodyTapToHide;
 
   /// Toast when recovery phrase is copied
   ///
@@ -307,6 +295,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Error loading balance'**
   String get homeErrorLoadingBalance;
+
+  /// Home banner prompting the user to back up their recovery phrase
+  ///
+  /// In en, this message translates to:
+  /// **'Back up your recovery phrase'**
+  String get homeBackupReminder;
 
   /// Receive action button on the home screen
   ///

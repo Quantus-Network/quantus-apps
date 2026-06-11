@@ -12,18 +12,16 @@
   "welcomeCreateNewWallet": "Buat Wallet Baru",
   "welcomeImportWallet": "Impor Wallet",
 
-  "createWalletAppBarTitle": "Buat Wallet",
   "createWalletCautionHeadline": "Jaga Kerahasiaan Recovery Phrase Anda",
   "createWalletCautionBullet1": "Jika Anda kehilangan perangkat ini, recovery phrase adalah satu-satunya cara kembali",
   "createWalletCautionBullet2": "Siapa pun yang mendapatkannya akan memiliki kendali penuh atas dana Anda, secara permanen",
   "createWalletCautionBullet3": "Tuliskan dan simpan di tempat yang aman. Jangan simpan secara digital",
-  "createWalletCautionCheckboxLabel": "Saya memahami bahwa siapa pun yang memiliki recovery phrase saya dapat mengakses wallet saya. Saya akan menyimpannya dengan aman.",
-  "createWalletRecoveryPhraseNext": "Berikutnya",
-  "createWalletRecoveryPhraseFailedGenerate": "Gagal membuat: {error}",
   "createWalletRecoveryPhraseSaveError": "Gagal menyimpan wallet: {error}",
 
   "recoveryPhraseBodyInstructions": "Tuliskan kata-kata ini secara berurutan dan simpan di tempat yang hanya Anda yang bisa akses. Jangan screenshot atau salin ke aplikasi catatan.",
   "recoveryPhraseBodyCopy": "Salin",
+  "recoveryPhraseBodyTapToReveal": "Ketuk untuk menampilkan",
+  "recoveryPhraseBodyTapToHide": "Ketuk untuk menyembunyikan",
   "recoveryPhraseBodyCopiedMessage": "Recovery phrase disalin ke clipboard",
 
   "accountReadyAccountCreated": "Akun Dibuat",
@@ -42,6 +40,7 @@
   "homeCharge": "Tagih",
   "homeGetTestnetTokens": "Dapatkan Token Testnet ↗",
   "homeErrorLoadingBalance": "Gagal memuat saldo",
+  "homeBackupReminder": "Cadangkan recovery phrase Anda",
   "homeReceive": "Terima",
   "homeSend": "Kirim",
   "homeSwap": "Tukar",

@@ -46,8 +46,9 @@ class MnemonicGrid extends StatelessWidget {
 
   Widget _buildMnemonicWord(int index, String word, bool isRevealed, BuildContext context) {
     final padding = const EdgeInsets.symmetric(horizontal: 10);
+    // Fixed placeholder so word lengths can't be guessed through the blur.
     final double blur = isRevealed ? 0 : 5;
-    final effectiveWord = isRevealed ? word : 'x' * word.length;
+    final effectiveWord = isRevealed ? word : 'blurred';
 
     return Container(
       padding: padding,

@@ -13,15 +13,14 @@ import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 class SettingsCautionScaffoldData {
   final String headline;
   final List<String> bulletItems;
-  final String checkboxLabel;
+  final String? checkboxLabel;
 
-  const SettingsCautionScaffoldData({required this.headline, required this.bulletItems, required this.checkboxLabel});
+  const SettingsCautionScaffoldData({required this.headline, required this.bulletItems, this.checkboxLabel});
 
   factory SettingsCautionScaffoldData.recoveryPhrase(AppLocalizations l10n) {
     return SettingsCautionScaffoldData(
       headline: l10n.createWalletCautionHeadline,
       bulletItems: [l10n.createWalletCautionBullet1, l10n.createWalletCautionBullet2, l10n.createWalletCautionBullet3],
-      checkboxLabel: l10n.createWalletCautionCheckboxLabel,
     );
   }
 
@@ -42,7 +41,7 @@ class SettingsCautionScaffold extends StatelessWidget {
   final String appBarTitle;
   final String continueLabel;
   final bool checkboxChecked;
-  final VoidCallback onCheckboxChanged;
+  final VoidCallback? onCheckboxChanged;
   final VoidCallback onContinue;
   final SettingsCautionScaffoldData data;
   final SettingsDividerStyle betweenBulletsStyle;
@@ -51,11 +50,11 @@ class SettingsCautionScaffold extends StatelessWidget {
   const SettingsCautionScaffold({
     super.key,
     required this.appBarTitle,
-    required this.checkboxChecked,
-    required this.onCheckboxChanged,
     required this.onContinue,
     required this.data,
     required this.continueLabel,
+    this.checkboxChecked = false,
+    this.onCheckboxChanged,
     this.betweenBulletsStyle = SettingsDividerStyle.list,
     this.continueButtonLoading = false,
   });
@@ -106,10 +105,10 @@ class _SettingsCautionBottom extends StatelessWidget {
     required this.continueButtonLoading,
   });
 
-  final String checkboxLabel;
+  final String? checkboxLabel;
   final String continueLabel;
   final bool checked;
-  final VoidCallback onCheckboxChanged;
+  final VoidCallback? onCheckboxChanged;
   final VoidCallback onContinue;
   final bool continueButtonLoading;
 
@@ -119,13 +118,15 @@ class _SettingsCautionBottom extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          SettingsCheckbox(checked: checked, label: checkboxLabel, onTap: onCheckboxChanged),
-          const SizedBox(height: 32),
+          if (checkboxLabel != null) ...[
+            SettingsCheckbox(checked: checked, label: checkboxLabel!, onTap: onCheckboxChanged!),
+            const SizedBox(height: 32),
+          ],
           QuantusButton.simple(
             label: continueLabel,
             onTap: onContinue,
             variant: ButtonVariant.primary,
-            isDisabled: !checked,
+            isDisabled: checkboxLabel != null && !checked,
             isLoading: continueButtonLoading,
           ),
         ],
