@@ -56,18 +56,6 @@ class AppLocalizationsId extends AppLocalizations {
   String get createWalletCautionBullet3 => 'Tuliskan dan simpan di tempat yang aman. Jangan simpan secara digital';
 
   @override
-  String get createWalletCautionCheckboxLabel =>
-      'Saya memahami bahwa siapa pun yang memiliki recovery phrase saya dapat mengakses wallet saya. Saya akan menyimpannya dengan aman.';
-
-  @override
-  String get createWalletRecoveryPhraseNext => 'Berikutnya';
-
-  @override
-  String createWalletRecoveryPhraseFailedGenerate(String error) {
-    return 'Gagal membuat: $error';
-  }
-
-  @override
   String createWalletRecoveryPhraseSaveError(String error) {
     return 'Gagal menyimpan wallet: $error';
   }
@@ -78,6 +66,12 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get recoveryPhraseBodyCopy => 'Salin';
+
+  @override
+  String get recoveryPhraseBodyTapToReveal => 'Ketuk untuk menampilkan';
+
+  @override
+  String get recoveryPhraseBodyTapToHide => 'Ketuk untuk menyembunyikan';
 
   @override
   String get recoveryPhraseBodyCopiedMessage => 'Recovery phrase disalin ke clipboard';
@@ -125,6 +119,9 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get homeErrorLoadingBalance => 'Gagal memuat saldo';
+
+  @override
+  String get homeBackupReminder => 'Cadangkan recovery phrase Anda';
 
   @override
   String get homeReceive => 'Terima';

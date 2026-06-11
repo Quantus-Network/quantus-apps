@@ -62,23 +62,6 @@
     "@createWalletCautionBullet3": {
       "description": "Third bullet on the recovery phrase caution screen"
     },
-    "createWalletCautionCheckboxLabel": "I understand that anyone with my recovery phrase can access my wallet. I will store it safely.",
-    "@createWalletCautionCheckboxLabel": {
-      "description": "Checkbox label on the recovery phrase caution screen"
-    },
-    "createWalletRecoveryPhraseNext": "Next",
-    "@createWalletRecoveryPhraseNext": {
-      "description": "Primary button on the new wallet recovery phrase screen"
-    },
-    "createWalletRecoveryPhraseFailedGenerate": "Failed to generate: {error}",
-    "@createWalletRecoveryPhraseFailedGenerate": {
-      "description": "Error when mnemonic generation fails",
-      "placeholders": {
-        "error": {
-          "type": "String"
-        }
-      }
-    },
     "createWalletRecoveryPhraseSaveError": "Error saving wallet: {error}",
     "@createWalletRecoveryPhraseSaveError": {
       "description": "Error when saving a new wallet fails",
@@ -96,6 +79,14 @@
     "recoveryPhraseBodyCopy": "Copy",
     "@recoveryPhraseBodyCopy": {
       "description": "Copy button on the recovery phrase screen"
+    },
+    "recoveryPhraseBodyTapToReveal": "Tap to reveal",
+    "@recoveryPhraseBodyTapToReveal": {
+      "description": "Overlay on the blurred recovery phrase grid"
+    },
+    "recoveryPhraseBodyTapToHide": "Tap to hide",
+    "@recoveryPhraseBodyTapToHide": {
+      "description": "Hint below the revealed recovery phrase grid"
     },
     "recoveryPhraseBodyCopiedMessage": "Recovery phrase copied to clipboard",
     "@recoveryPhraseBodyCopiedMessage": {
@@ -164,6 +155,10 @@
     "homeErrorLoadingBalance": "Error loading balance",
     "@homeErrorLoadingBalance": {
       "description": "Error when balance fails to load on the home screen"
+    },
+    "homeBackupReminder": "Back up your recovery phrase",
+    "@homeBackupReminder": {
+      "description": "Home banner prompting the user to back up their recovery phrase"
     },
     "homeReceive": "Receive",
     "@homeReceive": {

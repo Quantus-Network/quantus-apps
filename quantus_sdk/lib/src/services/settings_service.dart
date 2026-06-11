@@ -471,6 +471,16 @@ class SettingsService {
     _prefs.remove(hasWatchedQuestsPromoKey);
   }
 
+  String _recoveryPhraseViewedKey(int walletIndex) => 'recovery_phrase_viewed_$walletIndex';
+
+  bool recoveryPhraseViewed(int walletIndex) {
+    return _prefs.getBool(_recoveryPhraseViewedKey(walletIndex)) ?? false;
+  }
+
+  void setRecoveryPhraseViewed(int walletIndex) {
+    _prefs.setBool(_recoveryPhraseViewedKey(walletIndex), true);
+  }
+
   bool existingUserSeenPromoVideo() {
     return _prefs.getBool(existingUserSeenPromoVideoKey) ?? false;
   }

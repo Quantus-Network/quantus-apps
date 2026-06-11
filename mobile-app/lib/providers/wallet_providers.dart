@@ -159,6 +159,28 @@ final highSecurityEstimatedFeeProvider = FutureProvider.family<BigInt, Account>(
   return feeData.fee;
 });
 
+final recoveryPhraseViewedProvider = Provider.family<bool, int>((ref, walletIndex) {
+  return ref.watch(settingsServiceProvider).recoveryPhraseViewed(walletIndex);
+});
+
+/// Debug override: forces the backup nudge to show regardless of viewed state
+/// and balance. Must be false in production.
+const bool debugAlwaysShowBackupNudge = true;
+
+/// Wallet index needing a recovery phrase backup reminder, or null when none.
+final backupReminderWalletIndexProvider = Provider<int?>((ref) {
+  final active = ref.watch(activeAccountProvider).value;
+  if (active is! RegularAccount) return null;
+
+  final walletIndex = active.account.walletIndex;
+  if (debugAlwaysShowBackupNudge) return walletIndex;
+
+  if (ref.watch(recoveryPhraseViewedProvider(walletIndex))) return null;
+
+  final balance = ref.watch(balanceProvider).value ?? BigInt.zero;
+  return balance > BigInt.zero ? walletIndex : null;
+});
+
 final isBalanceHiddenProvider = StateNotifierProvider<IsBalanceHiddenNotifier, bool>((ref) {
   final settingsService = ref.watch(settingsServiceProvider);
   return IsBalanceHiddenNotifier(settingsService);

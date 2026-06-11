@@ -4,6 +4,7 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
+import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/services/firebase_messaging_service.dart';
 import 'package:resonance_network_wallet/services/telemetry_service.dart';
 import 'package:resonance_network_wallet/shared/utils/print.dart';
@@ -32,6 +33,7 @@ class _ImportWalletScreenV2State extends ConsumerState<ImportWalletScreenV2> {
   final _accountsService = AccountsService();
   final _discoveryService = AccountDiscoveryService(HdWalletService(), SubstrateService());
   bool _isLoading = false;
+  bool _obscured = true;
   String? _error;
 
   @override
@@ -89,6 +91,8 @@ class _ImportWalletScreenV2State extends ConsumerState<ImportWalletScreenV2> {
       ref.invalidate(activeAccountProvider);
       _settingsService.setReferralCheckCompleted();
       _settingsService.setExistingUserSeenPromoVideo();
+      _settingsService.setRecoveryPhraseViewed(widget.walletIndex);
+      ref.invalidate(recoveryPhraseViewedProvider(widget.walletIndex));
 
       if (ref.read(remoteConfigProvider).enableRemoteNotifications && widget.walletIndex == 0) {
         ref.read(firebaseMessagingServiceProvider).registerDeviceIfPossible();
@@ -147,18 +151,38 @@ class _ImportWalletScreenV2State extends ConsumerState<ImportWalletScreenV2> {
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(color: colors.borderButton, width: 1),
                 ),
-                child: TextField(
-                  controller: _controller,
-                  focusNode: _focusNode,
-                  onChanged: (_) => setState(() {}),
-                  style: fieldTextStyle,
-                  decoration: InputDecoration.collapsed(
-                    hintText: l10n.importWalletHint,
-                    hintStyle: fieldTextStyle?.copyWith(color: colors.textSecondary),
-                  ),
-                  maxLines: null,
-                  keyboardType: TextInputType.multiline,
-                  textInputAction: TextInputAction.done,
+                child: Stack(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(right: 32),
+                      child: TextField(
+                        controller: _controller,
+                        focusNode: _focusNode,
+                        onChanged: (_) => setState(() {}),
+                        style: fieldTextStyle,
+                        decoration: InputDecoration.collapsed(
+                          hintText: l10n.importWalletHint,
+                          hintStyle: fieldTextStyle?.copyWith(color: colors.textSecondary),
+                        ),
+                        obscureText: _obscured,
+                        maxLines: _obscured ? 1 : null,
+                        keyboardType: _obscured ? TextInputType.text : TextInputType.multiline,
+                        textInputAction: TextInputAction.done,
+                      ),
+                    ),
+                    Positioned(
+                      top: 0,
+                      right: 0,
+                      child: GestureDetector(
+                        onTap: () => setState(() => _obscured = !_obscured),
+                        child: Icon(
+                          _obscured ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                          color: colors.textSecondary,
+                          size: 20,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
               if (_error != null) ...[

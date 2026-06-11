@@ -36,6 +36,7 @@ import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 import 'package:resonance_network_wallet/v2/screens/home/activity_section.dart';
+import 'package:resonance_network_wallet/v2/screens/home/backup_reminder_banner.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -160,6 +161,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _buildContent(DisplayAccount active, AppColorsV2 colors, AppTextTheme text, AppLocalizations l10n) {
+    final backupWalletIndex = ref.watch(backupReminderWalletIndexProvider);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -169,6 +172,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         _buildBalance(colors, text, l10n),
         const SizedBox(height: 40),
         if (active is RegularAccount) ...[_buildActionButtons(l10n), const SizedBox(height: 40)],
+        if (backupWalletIndex != null) ...[
+          BackupReminderBanner(walletIndex: backupWalletIndex),
+          const SizedBox(height: 40),
+        ],
         DottedBorder(
           dashLength: 3,
           gapLength: 5,
