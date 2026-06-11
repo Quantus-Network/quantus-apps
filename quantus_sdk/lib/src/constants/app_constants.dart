@@ -66,7 +66,7 @@ class AppConstants {
   static const debugHardwareWallet = false;
 
   // Debug the timing of subsquid and rpc queries
-  static const bool debugQueryTiming = true;
+  static const bool debugQueryTiming = false;
 
   // Always show the home backup nudge regardless of viewed state and balance
   static const bool debugAlwaysShowBackupNudge = false;
