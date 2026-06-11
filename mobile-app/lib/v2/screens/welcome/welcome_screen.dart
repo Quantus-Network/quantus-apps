@@ -3,13 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
-import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
-import 'package:resonance_network_wallet/services/firebase_messaging_service.dart';
 import 'package:resonance_network_wallet/services/wallet_creation_service.dart';
 import 'package:resonance_network_wallet/shared/extensions/toaster_extensions.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
-import 'package:resonance_network_wallet/v2/screens/accounts/account_ready_screen.dart';
+import 'package:resonance_network_wallet/v2/screens/accounts/wallet_onboarding_flow.dart';
 import 'package:resonance_network_wallet/v2/screens/import/import_wallet_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/welcome/onboarding_background.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
@@ -26,6 +24,7 @@ class _WelcomeScreenV2State extends ConsumerState<WelcomeScreenV2> {
   bool _isCreatingWallet = false;
 
   Future<void> _createWallet() async {
+    if (_isCreatingWallet) return;
     setState(() => _isCreatingWallet = true);
 
     try {
@@ -34,26 +33,8 @@ class _WelcomeScreenV2State extends ConsumerState<WelcomeScreenV2> {
         existingAccounts: accounts,
       );
 
-      ref.invalidate(accountsProvider);
-      ref.invalidate(activeAccountProvider);
-
-      if (ref.read(remoteConfigProvider).enableRemoteNotifications) {
-        ref.read(firebaseMessagingServiceProvider).registerDeviceIfPossible();
-      }
-
       if (!mounted) return;
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(
-          builder: (_) => AccountReadyScreen(
-            accountId: wallet.accountId,
-            accountName: wallet.accountName,
-            checksumPhrase: wallet.checksumPhrase,
-            origin: AccountReadyOverviewOrigin.walletCreated,
-          ),
-        ),
-        (route) => false,
-      );
+      await completeWalletOnboarding(ref: ref, context: context, wallet: wallet);
     } catch (e) {
       if (mounted) {
         final l10n = ref.read(l10nProvider);

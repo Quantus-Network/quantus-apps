@@ -8,6 +8,7 @@ import 'package:resonance_network_wallet/services/firebase_messaging_service.dar
 import 'package:resonance_network_wallet/services/telemetry_service.dart';
 import 'package:resonance_network_wallet/shared/utils/print.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
+import 'package:resonance_network_wallet/v2/components/seed_phrase_controller.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base_bottom_content.dart';
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
@@ -25,7 +26,7 @@ class ImportWalletScreenV2 extends ConsumerStatefulWidget {
 }
 
 class _ImportWalletScreenV2State extends ConsumerState<ImportWalletScreenV2> {
-  final _controller = _SeedPhraseController();
+  final _controller = SeedPhraseController();
   final _focusNode = FocusNode();
   final _buttonKey = GlobalKey();
   final _settingsService = SettingsService();
@@ -219,36 +220,5 @@ class _ImportWalletScreenV2State extends ConsumerState<ImportWalletScreenV2> {
     _focusNode.dispose();
     _controller.dispose();
     super.dispose();
-  }
-}
-
-class _SeedPhraseController extends TextEditingController {
-  bool obscure = true;
-
-  static String _mask(String text) => text.replaceAllMapped(RegExp(r'\S'), (_) => '*');
-
-  @override
-  TextSpan buildTextSpan({required BuildContext context, TextStyle? style, required bool withComposing}) {
-    final text = value.text;
-    final display = obscure ? _mask(text) : text;
-
-    if (!withComposing || !value.composing.isValid) {
-      return TextSpan(style: style, text: display);
-    }
-
-    final composingStart = value.composing.start;
-    final composingEnd = value.composing.end;
-
-    return TextSpan(
-      style: style,
-      children: [
-        TextSpan(text: display.substring(0, composingStart)),
-        TextSpan(
-          style: style?.copyWith(decoration: TextDecoration.underline, decorationColor: style.color),
-          text: display.substring(composingStart, composingEnd),
-        ),
-        TextSpan(text: display.substring(composingEnd)),
-      ],
-    );
   }
 }
