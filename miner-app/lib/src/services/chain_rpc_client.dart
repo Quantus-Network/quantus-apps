@@ -48,28 +48,25 @@ class ChainRpcClient {
 
       // Execute multiple RPC calls in parallel for efficiency
       final futures = await Future.wait([
-        rpcCall('peer_getBasicInfo'),
+        rpcCall('system_health'),
         rpcCall('chain_getHeader'),
         rpcCall('system_chain'),
         rpcCall('system_version'),
         rpcCall('system_syncState'),
       ]);
 
-      // print('DEBUG: RPC calls completed');
-
-      final peerResult = futures[0];
+      final healthResult = futures[0];
       final headerResult = futures[1];
       final chainResult = futures[2];
       final versionResult = futures[3];
       final syncStateResult = futures[4];
 
-      // Extract peer count from custom peer_getBasicInfo
+      // Peer count from system_health (the node's custom peer_getBasicInfo
+      // reports peer_count: 0 since q-day-2)
       int peerCount = 0;
-      // print('DEBUG: peer_getBasicInfo result: $peerResult');
-      if (peerResult != null && peerResult['peer_count'] != null) {
-        peerCount = peerResult['peer_count'] as int;
+      if (healthResult != null && healthResult['peers'] != null) {
+        peerCount = healthResult['peers'] as int;
       }
-      // print('DEBUG: Extracted peer count: $peerCount');
 
       // Extract current block from chain_getHeader
       int currentBlock = 0;
@@ -140,9 +137,9 @@ class ChainRpcClient {
   /// Get just the peer count (lightweight call)
   Future<int?> getPeerCount() async {
     try {
-      final result = await rpcCall('peer_getBasicInfo');
-      if (result != null && result['peer_count'] != null) {
-        return result['peer_count'] as int;
+      final result = await rpcCall('system_health');
+      if (result != null && result['peers'] != null) {
+        return result['peers'] as int;
       }
       return null;
     } catch (e) {
@@ -441,8 +438,7 @@ class ChainRpcClient {
   /// Test if RPC endpoint is reachable
   Future<bool> isReachable() async {
     try {
-      // Try the custom peer endpoint since it's definitely available
-      final result = await rpcCall('peer_getBasicInfo');
+      final result = await rpcCall('system_health');
       return result != null;
     } catch (e) {
       return false;
