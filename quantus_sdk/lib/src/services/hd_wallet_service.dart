@@ -75,7 +75,9 @@ class HdWalletService {
     final hexMatch = RegExp(r'^(0x)?([0-9a-fA-F]{64})$').firstMatch(trimmed);
     if (hexMatch != null) return '0x${hexMatch.group(2)!.toLowerCase()}';
     try {
-      return '0x${hex.encode(Address.decode(trimmed).pubkey)}';
+      final pubkey = Address.decode(trimmed).pubkey;
+      if (pubkey.length != 32) return null;
+      return '0x${hex.encode(pubkey)}';
     } catch (_) {
       return null;
     }

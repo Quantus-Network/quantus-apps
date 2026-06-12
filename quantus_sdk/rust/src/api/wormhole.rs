@@ -23,7 +23,6 @@ pub const NATIVE_ASSET_ID: u32 = 0;
 pub const VOLUME_FEE_BPS: u32 = 10;
 pub const SCALE_DOWN_FACTOR: u128 = 10_000_000_000;
 // Must match the chain's aggregation batch size (num_n=7 since v0.7.1-q-day-2).
-pub const MAX_PROOFS_PER_BATCH: u32 = 7;
 pub const DEFAULT_NUM_LEAF_PROOFS: usize = 7;
 
 #[flutter_rust_bridge::frb(sync)]
