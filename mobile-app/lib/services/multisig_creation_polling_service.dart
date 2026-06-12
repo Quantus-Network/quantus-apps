@@ -7,6 +7,7 @@ import 'package:resonance_network_wallet/providers/multisig_creation_toast_provi
 import 'package:resonance_network_wallet/providers/multisig_providers.dart';
 import 'package:resonance_network_wallet/providers/pending_multisig_creations_provider.dart';
 import 'package:resonance_network_wallet/services/multisig_creation_reconciliation.dart';
+import 'package:resonance_network_wallet/services/telemetry_service.dart';
 import 'package:resonance_network_wallet/shared/utils/print.dart';
 
 class MultisigCreationPollingService {
@@ -68,14 +69,18 @@ class MultisigCreationPollingService {
 
     try {
       final service = _ref.read(multisigServiceProvider);
-      final exists = await service.isMultisigOnChain(key);
+      final exists = await service.isMultisigIndexed(key);
       if (exists) {
         await _confirmCreation(record.draft, key, record.networkFee);
       } else {
         removePendingMultisigCreation(_ref, key);
+        _ref.read(multisigCreationToastProvider.notifier).state = const MultisigCreationToastEvent(
+          MultisigCreationToastKind.timeout,
+        );
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
       quantusDebugPrint('[MultisigCreationPoller] recovery error for $key: $e');
+      TelemetryService().sendError('multisig_creation_recovery_failed', error: e, stackTrace: stackTrace);
     } finally {
       _inFlight.remove(key);
     }
@@ -90,7 +95,7 @@ class MultisigCreationPollingService {
 
     try {
       final service = _ref.read(multisigServiceProvider);
-      final exists = await service.isMultisigOnChain(draft.accountId);
+      final exists = await service.isMultisigIndexed(draft.accountId);
       if (!exists) {
         quantusDebugPrint('[MultisigCreationPoller] not on-chain yet: ${draft.accountId}');
         return;
@@ -132,12 +137,15 @@ class MultisigCreationPollingService {
     );
   }
 
-  void dispose() {
+  /// Cancels all active polling timers (e.g. on logout).
+  void stopAll() {
     for (final timer in _timers.values) {
       timer.cancel();
     }
     _timers.clear();
   }
+
+  void dispose() => stopAll();
 }
 
 final multisigCreationPollingServiceProvider = Provider<MultisigCreationPollingService>((ref) {

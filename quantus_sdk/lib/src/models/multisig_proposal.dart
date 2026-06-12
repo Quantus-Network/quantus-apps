@@ -100,7 +100,8 @@ class MultisigProposal {
       multisigAddress: msig.accountId,
       proposer: nestedAccountId(record['proposer']),
       createdAt: dateTimeFromJson(record['created_at']),
-      updatedAt: dateTimeFromJson(record['updated_at']),
+      // The indexer omits updated_at on rows that have never been updated.
+      updatedAt: dateTimeFromJson(record['updated_at'] ?? record['created_at']),
       pallet: _stringOrEmpty(record['pallet']),
       call: _stringOrEmpty(record['call']),
       callRaw: _stringOrEmpty(record['call_raw'] ?? record['callRaw']),

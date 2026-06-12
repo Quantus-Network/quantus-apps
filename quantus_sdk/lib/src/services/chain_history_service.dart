@@ -496,55 +496,27 @@ ${MultisigGraphql.cancelledMultisigProposalAccountEventSelection}
       return MinerRewardEvent.fromJson(eventMap['minerReward']);
     }
     if (eventMap['multisig'] != null) {
-      return MultisigCreatedEvent.fromAccountEvent(eventMap);
+      return _tryParseMultisigEvent(eventMap, 'multisig', MultisigCreatedEvent.fromAccountEvent);
     }
     if (eventMap['multisigProposalCreated'] != null) {
-      try {
-        return MultisigProposalCreatedEvent.fromAccountEvent(eventMap);
-      } catch (e, stackTrace) {
-        _log(
-          'WARNING: failed to parse multisigProposalCreated, id: ${eventMap['id']}, error: $e',
-          error: e,
-          stackTrace: stackTrace,
-        );
-        return null;
-      }
+      return _tryParseMultisigEvent(eventMap, 'multisigProposalCreated', MultisigProposalCreatedEvent.fromAccountEvent);
     }
     if (eventMap['multisigSignerApproved'] != null) {
-      try {
-        return MultisigProposalApprovedEvent.fromAccountEvent(eventMap);
-      } catch (e, stackTrace) {
-        _log(
-          'WARNING: failed to parse multisigSignerApproved, id: ${eventMap['id']}, error: $e',
-          error: e,
-          stackTrace: stackTrace,
-        );
-        return null;
-      }
+      return _tryParseMultisigEvent(eventMap, 'multisigSignerApproved', MultisigProposalApprovedEvent.fromAccountEvent);
     }
     if (eventMap['executedMultisigProposal'] != null) {
-      try {
-        return MultisigProposalExecutedEvent.fromAccountEvent(eventMap);
-      } catch (e, stackTrace) {
-        _log(
-          'WARNING: failed to parse executedMultisigProposal, id: ${eventMap['id']}, error: $e',
-          error: e,
-          stackTrace: stackTrace,
-        );
-        return null;
-      }
+      return _tryParseMultisigEvent(
+        eventMap,
+        'executedMultisigProposal',
+        MultisigProposalExecutedEvent.fromAccountEvent,
+      );
     }
     if (eventMap['cancelledMultisigProposal'] != null) {
-      try {
-        return MultisigProposalCancelledEvent.fromAccountEvent(eventMap);
-      } catch (e, stackTrace) {
-        _log(
-          'WARNING: failed to parse cancelledMultisigProposal, id: ${eventMap['id']}, error: $e',
-          error: e,
-          stackTrace: stackTrace,
-        );
-        return null;
-      }
+      return _tryParseMultisigEvent(
+        eventMap,
+        'cancelledMultisigProposal',
+        MultisigProposalCancelledEvent.fromAccountEvent,
+      );
     }
     final id = eventMap['id'] as String?;
     if (id != null && _isSkippedMultisigAccountEventId(id)) {
@@ -555,6 +527,21 @@ ${MultisigGraphql.cancelledMultisigProposalAccountEventSelection}
     // flag it loudly rather than dropping it silently.
     _log('WARNING: unsupported account event payload, id: $id');
     return null;
+  }
+
+  /// Parses a multisig account event, degrading a malformed row to a logged
+  /// skip so one bad record cannot fail the whole history page.
+  TransactionEvent? _tryParseMultisigEvent(
+    Map<String, dynamic> eventMap,
+    String label,
+    TransactionEvent Function(Map<String, dynamic>) parse,
+  ) {
+    try {
+      return parse(eventMap);
+    } catch (e, stackTrace) {
+      _log('WARNING: failed to parse $label, id: ${eventMap['id']}, error: $e', error: e, stackTrace: stackTrace);
+      return null;
+    }
   }
 
   /// Other multisig-related indexer rows (approvals, deposits claimed, etc.)

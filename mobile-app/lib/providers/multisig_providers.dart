@@ -49,13 +49,6 @@ class MultisigAccountsNotifier extends StateNotifier<AsyncValue<List<MultisigAcc
     state = AsyncValue.data(current.where((a) => a.accountId != accountId).toList());
   }
 
-  MultisigAccount? byAccountId(String accountId) {
-    return state.value?.firstWhere(
-      (a) => a.accountId == accountId,
-      orElse: () => throw Exception('Multisig $accountId not found'),
-    );
-  }
-
   void reset() {
     state = const AsyncValue.data([]);
   }

@@ -101,12 +101,15 @@ class PendingTransactionPollingService {
     }
   }
 
-  void dispose() {
+  /// Cancels all active polling timers (e.g. on logout).
+  void stopAll() {
     for (final timer in _timers.values) {
       timer.cancel();
     }
     _timers.clear();
   }
+
+  void dispose() => stopAll();
 }
 
 final pendingTransactionPollingServiceProvider = Provider<PendingTransactionPollingService>((ref) {

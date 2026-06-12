@@ -42,7 +42,6 @@ class MultisigSubmissionService {
     required int threshold,
     required Account creator,
     BigInt? nonce,
-    int maxRetries = 3,
   }) async {
     final preflight = await _runCreationPreflight(
       name: name,
@@ -67,7 +66,6 @@ class MultisigSubmissionService {
         threshold: threshold,
         nonce: draft.nonce,
         draft: draft,
-        maxRetries: maxRetries,
       ),
     );
   }
@@ -78,12 +76,10 @@ class MultisigSubmissionService {
     required int threshold,
     required BigInt nonce,
     required MultisigAccount draft,
-    required int maxRetries,
-    int attempt = 1,
   }) async {
     final service = _ref.read(multisigServiceProvider);
     try {
-      quantusDebugPrint('[MultisigSubmission] submit attempt $attempt/$maxRetries for ${draft.accountId}');
+      quantusDebugPrint('[MultisigSubmission] submitting creation for ${draft.accountId}');
 
       final hashBytes = await service.submitCreateMultisigExtrinsic(
         creator: creator,
@@ -101,24 +97,12 @@ class MultisigSubmissionService {
       final submittedAt = _ref.read(pendingMultisigCreationsProvider.notifier).recordFor(draft.accountId)?.submittedAt;
       _ref.read(multisigCreationPollingServiceProvider).startPolling(draft, submittedAt: submittedAt);
     } catch (e, stackTrace) {
-      quantusDebugPrint('[MultisigSubmission] submit failed attempt $attempt: $e');
-
-      if (attempt < maxRetries) {
-        await Future<void>.delayed(const Duration(seconds: 2));
-        await _submitAndTrackBackground(
-          creator: creator,
-          signers: signers,
-          threshold: threshold,
-          nonce: nonce,
-          draft: draft,
-          maxRetries: maxRetries,
-          attempt: attempt + 1,
-        );
-        return;
-      }
-
-      quantusDebugPrint('[MultisigSubmission] failed after $maxRetries attempts: $e');
+      // Retries live in SubstrateService.submitExtrinsic (same signed bytes);
+      // avoid outer retries here because each attempt re-signs with a fresh
+      // nonce and can double-submit if a prior submit already landed.
+      quantusDebugPrint('[MultisigSubmission] submit failed: $e');
       quantusDebugPrint('Stack trace: $stackTrace');
+      TelemetryService().sendError('multisig_create_submit_failed', error: e, stackTrace: stackTrace);
       removePendingMultisigCreation(_ref, draft.accountId);
       _ref.read(multisigCreationToastProvider.notifier).state = const MultisigCreationToastEvent(
         MultisigCreationToastKind.submitFailed,
@@ -142,7 +126,7 @@ class MultisigSubmissionService {
       nonce: effectiveNonce,
     );
 
-    if (await service.isMultisigOnChain(predictedAddress)) {
+    if (await service.isMultisigIndexed(predictedAddress)) {
       throw MultisigAlreadyExistsException(predictedAddress);
     }
 

@@ -1,3 +1,6 @@
+@Tags(['native'])
+library;
+
 import 'dart:typed_data';
 
 import 'package:convert/convert.dart';

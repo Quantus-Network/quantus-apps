@@ -86,7 +86,7 @@ class MultisigService {
   /// Finds the lowest [nonce] whose predicted address is not taken.
   ///
   /// An address is taken when it appears in [reservedAddresses] or
-  /// [isAddressTaken] returns true (defaults to [isMultisigOnChain]).
+  /// [isAddressTaken] returns true (defaults to [isMultisigIndexed]).
   Future<MultisigCreationParams> resolveMultisigCreationParams({
     required List<String> signers,
     required int threshold,
@@ -101,7 +101,7 @@ class MultisigService {
         predictAddress ??
         (({required signers, required threshold, required nonce}) =>
             predictMultisigAddress(signers: signers, threshold: threshold, nonce: nonce));
-    final taken = isAddressTaken ?? isMultisigOnChain;
+    final taken = isAddressTaken ?? isMultisigIndexed;
     var nonce = startNonce ?? defaultMultisigNonce;
 
     for (var attempt = 0; attempt < maxAttempts; attempt++) {
@@ -123,7 +123,7 @@ class MultisigService {
   }
 
   /// Returns whether a multisig at [address] is present in the GraphQL indexer.
-  Future<bool> isMultisigOnChain(String address) async {
+  Future<bool> isMultisigIndexed(String address) async {
     final record = await fetchMultisigFromIndexer(address);
     return record != null;
   }
