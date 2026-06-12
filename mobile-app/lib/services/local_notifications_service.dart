@@ -48,12 +48,13 @@ class LocalNotificationsService {
       final currentTimeZone = await FlutterTimezone.getLocalTimezone();
       tz.setLocalLocation(tz.getLocation(currentTimeZone.identifier));
     } catch (e) {
-      debugPrint('Failed to set device timezone "$e". Falling back to UTC for notifications.');
+      debugPrint('Failed to set device timezone: "$e". Falling back to UTC for notifications.');
       try {
         tz_data.initializeTimeZones();
         tz.setLocalLocation(tz.UTC);
-      } catch (_) {
+      } catch (err) {
         // Last resort: proceed without proper tz; scheduled notifs may not work but app continues.
+        debugPrint('Last resort failed to set device timezone to UTC: "$err".');
       }
     }
 
