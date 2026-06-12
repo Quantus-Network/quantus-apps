@@ -521,7 +521,7 @@ abstract class AppLocalizations {
   /// Toast when creator balance is below pallet fee + network fee + deposit
   ///
   /// In en, this message translates to:
-  /// **'Insufficient balance to cover multisig creation fees and deposit.'**
+  /// **'Insufficient balance to cover multisig creation fees.'**
   String get multisigCreateInsufficientBalance;
 
   /// Toast when on-chain confirmation polling times out
@@ -920,6 +920,12 @@ abstract class AppLocalizations {
   /// **'You\'ve already approved this proposal.'**
   String get multisigProposalAlreadySignedNote;
 
+  /// Note shown on proposal detail when the proposal is executed
+  ///
+  /// In en, this message translates to:
+  /// **'This proposal is already executed.'**
+  String get multisigProposalAlreadyExecutedNote;
+
   /// Proposer row label on proposal detail
   ///
   /// In en, this message translates to:
@@ -986,6 +992,12 @@ abstract class AppLocalizations {
   /// **'Proposal approved'**
   String get activityTxProposalApproved;
 
+  /// Activity row label for a confirmed multisig proposal execution on the executor account
+  ///
+  /// In en, this message translates to:
+  /// **'Proposal executed'**
+  String get activityTxProposalExecuted;
+
   /// Approve button on proposal detail
   ///
   /// In en, this message translates to:
@@ -1009,6 +1021,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'EXPIRES'**
   String get multisigProposalExpiresLabel;
+
+  /// Timestamp row label on past proposal detail
+  ///
+  /// In en, this message translates to:
+  /// **'AT'**
+  String get multisigProposalAtLabel;
 
   /// Threshold row label on proposal detail
   ///
@@ -1123,6 +1141,84 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Failed to approve'**
   String get multisigApproveFailed;
+
+  /// Button to execute an approved multisig proposal
+  ///
+  /// In en, this message translates to:
+  /// **'Execute'**
+  String get multisigExecuteButton;
+
+  /// Title on execute confirmation sheet
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure?'**
+  String get multisigExecuteConfirmTitle;
+
+  /// Body text on execute confirmation sheet
+  ///
+  /// In en, this message translates to:
+  /// **'You are about to execute a transfer of'**
+  String get multisigExecuteConfirmBody;
+
+  /// Confirm button on execute sheet
+  ///
+  /// In en, this message translates to:
+  /// **'Yes, Execute'**
+  String get multisigExecuteConfirmYes;
+
+  /// Biometric auth prompt when executing
+  ///
+  /// In en, this message translates to:
+  /// **'Authenticate to execute'**
+  String get multisigExecuteAuthReason;
+
+  /// Error when execute submission fails
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to execute'**
+  String get multisigExecuteFailed;
+
+  /// Note when execute action is unavailable
+  ///
+  /// In en, this message translates to:
+  /// **'This proposal can no longer be executed.'**
+  String get multisigExecuteUnavailableNote;
+
+  /// Disabled execute button while pending
+  ///
+  /// In en, this message translates to:
+  /// **'Executing…'**
+  String get multisigProposalExecutingLabel;
+
+  /// Note while execution is pending indexer confirmation
+  ///
+  /// In en, this message translates to:
+  /// **'Your execution is being confirmed on-chain.'**
+  String get multisigProposalExecutingNote;
+
+  /// Status label on proposal row while execution is pending
+  ///
+  /// In en, this message translates to:
+  /// **'Executing…'**
+  String get activityTxExecuting;
+
+  /// Toast when execution indexer polling times out
+  ///
+  /// In en, this message translates to:
+  /// **'Execution confirmation is taking longer than expected. Check the chain or try again.'**
+  String get multisigExecutionTimeoutToast;
+
+  /// Toast when a proposal is executed but not by this user's extrinsic
+  ///
+  /// In en, this message translates to:
+  /// **'Proposal was executed by another signer.'**
+  String get multisigExecutedByOtherToast;
+
+  /// Inline note on confirm sheet when fee estimation fails
+  ///
+  /// In en, this message translates to:
+  /// **'Network fee estimate is unavailable.'**
+  String get multisigFeeEstimateUnavailable;
 
   /// Title on cancel confirmation sheet
   ///
@@ -1747,6 +1843,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Proposal approved'**
   String get activityDetailTitleProposalApproved;
+
+  /// Detail sheet title for a confirmed multisig proposal execution
+  ///
+  /// In en, this message translates to:
+  /// **'Proposal executed'**
+  String get activityDetailTitleProposalExecuted;
+
+  /// Detail sheet title while a multisig proposal execution is confirming on-chain
+  ///
+  /// In en, this message translates to:
+  /// **'Executing proposal'**
+  String get activityDetailTitleExecuting;
 
   /// Detail sheet title while a multisig proposal is confirming on-chain
   ///

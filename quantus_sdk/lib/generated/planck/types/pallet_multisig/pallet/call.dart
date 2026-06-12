@@ -65,10 +65,6 @@ class $Call {
   Execute execute({required _i3.AccountId32 multisigAddress, required int proposalId}) {
     return Execute(multisigAddress: multisigAddress, proposalId: proposalId);
   }
-
-  ApproveDissolve approveDissolve({required _i3.AccountId32 multisigAddress}) {
-    return ApproveDissolve(multisigAddress: multisigAddress);
-  }
 }
 
 class $CallCodec with _i1.Codec<Call> {
@@ -90,10 +86,8 @@ class $CallCodec with _i1.Codec<Call> {
         return RemoveExpired._decode(input);
       case 5:
         return ClaimDeposits._decode(input);
-      case 7:
-        return Execute._decode(input);
       case 6:
-        return ApproveDissolve._decode(input);
+        return Execute._decode(input);
       default:
         throw Exception('Call: Invalid variant index: "$index"');
     }
@@ -123,9 +117,6 @@ class $CallCodec with _i1.Codec<Call> {
       case Execute:
         (value as Execute).encodeTo(output);
         break;
-      case ApproveDissolve:
-        (value as ApproveDissolve).encodeTo(output);
-        break;
       default:
         throw Exception('Call: Unsupported "$value" of type "${value.runtimeType}"');
     }
@@ -148,8 +139,6 @@ class $CallCodec with _i1.Codec<Call> {
         return (value as ClaimDeposits)._sizeHint();
       case Execute:
         return (value as Execute)._sizeHint();
-      case ApproveDissolve:
-        return (value as ApproveDissolve)._sizeHint();
       default:
         throw Exception('Call: Unsupported "$value" of type "${value.runtimeType}"');
     }
@@ -170,7 +159,6 @@ class $CallCodec with _i1.Codec<Call> {
 ///
 /// Economic costs:
 /// - MultisigFee: burned immediately (spam prevention)
-/// - MultisigDeposit: reserved until dissolution, then returned to creator (storage bond)
 class CreateMultisig extends Call {
   const CreateMultisig({required this.signers, required this.threshold, required this.nonce});
 
@@ -257,7 +245,7 @@ class Propose extends Call {
   /// T::AccountId
   final _i3.AccountId32 multisigAddress;
 
-  /// Vec<u8>
+  /// BoundedCallOf<T>
   final List<int> call;
 
   /// BlockNumberFor<T>
@@ -509,6 +497,10 @@ class ClaimDeposits extends Call {
 /// Parameters:
 /// - `multisig_address`: The multisig account
 /// - `proposal_id`: ID (nonce) of the proposal to execute
+///
+/// Note: The weight charged includes both multisig bookkeeping and MaxInnerCallWeight.
+/// Actual weight is refunded based on the inner call's post-dispatch info.
+/// The inner call's weight is validated against MaxInnerCallWeight at propose time.
 class Execute extends Call {
   const Execute({required this.multisigAddress, required this.proposalId});
 
@@ -538,7 +530,7 @@ class Execute extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(7, output);
+    _i1.U8Codec.codec.encodeTo(6, output);
     const _i1.U8ArrayCodec(32).encodeTo(multisigAddress, output);
     _i1.U32Codec.codec.encodeTo(proposalId, output);
   }
@@ -550,51 +542,4 @@ class Execute extends Call {
 
   @override
   int get hashCode => Object.hash(multisigAddress, proposalId);
-}
-
-/// Approve dissolving a multisig account
-///
-/// Signers call this to approve dissolving the multisig.
-/// When threshold is reached, the multisig is automatically dissolved.
-///
-/// Requirements:
-/// - Caller must be a signer
-/// - No proposals exist (active, executed, or cancelled) - must be fully cleaned up
-/// - Multisig account balance must be zero
-///
-/// When threshold is reached:
-/// - Deposit is returned to creator
-/// - Multisig storage is removed
-class ApproveDissolve extends Call {
-  const ApproveDissolve({required this.multisigAddress});
-
-  factory ApproveDissolve._decode(_i1.Input input) {
-    return ApproveDissolve(multisigAddress: const _i1.U8ArrayCodec(32).decode(input));
-  }
-
-  /// T::AccountId
-  final _i3.AccountId32 multisigAddress;
-
-  @override
-  Map<String, Map<String, List<int>>> toJson() => {
-    'approve_dissolve': {'multisigAddress': multisigAddress.toList()},
-  };
-
-  int _sizeHint() {
-    int size = 1;
-    size = size + const _i3.AccountId32Codec().sizeHint(multisigAddress);
-    return size;
-  }
-
-  void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(6, output);
-    const _i1.U8ArrayCodec(32).encodeTo(multisigAddress, output);
-  }
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) || other is ApproveDissolve && _i4.listsEqual(other.multisigAddress, multisigAddress);
-
-  @override
-  int get hashCode => multisigAddress.hashCode;
 }

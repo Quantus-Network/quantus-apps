@@ -24,6 +24,9 @@ class MultisigProposal {
   final String proposer;
   final DateTime createdAt;
 
+  /// Last on-chain update (approval, execution, cancellation, etc.).
+  final DateTime updatedAt;
+
   /// Decoded pallet name (e.g. `Balances`). Empty when undecodable.
   final String pallet;
 
@@ -62,6 +65,7 @@ class MultisigProposal {
     required this.multisigAddress,
     required this.proposer,
     required this.createdAt,
+    required this.updatedAt,
     required this.pallet,
     required this.call,
     required this.callRaw,
@@ -95,7 +99,8 @@ class MultisigProposal {
       id: _intFromJson(record['proposal_id'] ?? record['proposalId']),
       multisigAddress: msig.accountId,
       proposer: nestedAccountId(record['proposer']),
-      createdAt: dateTimeFromJson(record['created_at'] ?? record['createdAt']),
+      createdAt: dateTimeFromJson(record['created_at']),
+      updatedAt: dateTimeFromJson(record['updated_at']),
       pallet: _stringOrEmpty(record['pallet']),
       call: _stringOrEmpty(record['call']),
       callRaw: _stringOrEmpty(record['call_raw'] ?? record['callRaw']),
@@ -166,6 +171,9 @@ class MultisigProposal {
   /// Whether this proposal should appear in the pinned "open" section.
   bool isActionable(int currentBlock) => isOpen && !expired(currentBlock);
 
+  /// Whether threshold is met and the proposal awaits execution.
+  bool get isReadyToExecute => status == MultisigProposalStatus.approved;
+
   MultisigProposal copyWith({MultisigProposalStatus? status, List<String>? approvals, BigInt? burnedPalletFee}) {
     return MultisigProposal(
       entityId: entityId,
@@ -173,6 +181,7 @@ class MultisigProposal {
       multisigAddress: multisigAddress,
       proposer: proposer,
       createdAt: createdAt,
+      updatedAt: updatedAt,
       pallet: pallet,
       call: call,
       callRaw: callRaw,

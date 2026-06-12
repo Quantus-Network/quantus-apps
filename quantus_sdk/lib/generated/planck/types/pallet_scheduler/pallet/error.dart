@@ -24,7 +24,13 @@ enum Error {
   named('Named', 5),
 
   /// Periodic scheduling is not supported.
-  periodicNotSupported('PeriodicNotSupported', 6);
+  periodicNotSupported('PeriodicNotSupported', 6),
+
+  /// Retry period type does not match task scheduling type.
+  ///
+  /// Block-scheduled tasks require a block-number retry period,
+  /// and timestamp-scheduled tasks require a timestamp retry period.
+  retryPeriodMismatch('RetryPeriodMismatch', 7);
 
   const Error(this.variantName, this.codecIndex);
 
@@ -66,6 +72,8 @@ class $ErrorCodec with _i1.Codec<Error> {
         return Error.named;
       case 6:
         return Error.periodicNotSupported;
+      case 7:
+        return Error.retryPeriodMismatch;
       default:
         throw Exception('Error: Invalid variant index: "$index"');
     }

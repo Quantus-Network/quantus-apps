@@ -59,13 +59,13 @@ class $Event {
     return ProposalCreated(multisigAddress: multisigAddress, proposer: proposer, proposalId: proposalId);
   }
 
-  ProposalApproved proposalApproved({
+  SignerApproved signerApproved({
     required _i3.AccountId32 multisigAddress,
     required _i3.AccountId32 approver,
     required int proposalId,
     required int approvalsCount,
   }) {
-    return ProposalApproved(
+    return SignerApproved(
       multisigAddress: multisigAddress,
       approver: approver,
       proposalId: proposalId,
@@ -130,31 +130,13 @@ class $Event {
     required _i3.AccountId32 claimer,
     required BigInt totalReturned,
     required int proposalsRemoved,
-    required bool multisigRemoved,
   }) {
     return DepositsClaimed(
       multisigAddress: multisigAddress,
       claimer: claimer,
       totalReturned: totalReturned,
       proposalsRemoved: proposalsRemoved,
-      multisigRemoved: multisigRemoved,
     );
-  }
-
-  DissolveApproved dissolveApproved({
-    required _i3.AccountId32 multisigAddress,
-    required _i3.AccountId32 approver,
-    required int approvalsCount,
-  }) {
-    return DissolveApproved(multisigAddress: multisigAddress, approver: approver, approvalsCount: approvalsCount);
-  }
-
-  MultisigDissolved multisigDissolved({
-    required _i3.AccountId32 multisigAddress,
-    required _i3.AccountId32 depositReturned,
-    required List<_i3.AccountId32> approvers,
-  }) {
-    return MultisigDissolved(multisigAddress: multisigAddress, depositReturned: depositReturned, approvers: approvers);
   }
 }
 
@@ -170,7 +152,7 @@ class $EventCodec with _i1.Codec<Event> {
       case 1:
         return ProposalCreated._decode(input);
       case 2:
-        return ProposalApproved._decode(input);
+        return SignerApproved._decode(input);
       case 3:
         return ProposalReadyToExecute._decode(input);
       case 4:
@@ -181,10 +163,6 @@ class $EventCodec with _i1.Codec<Event> {
         return ProposalRemoved._decode(input);
       case 7:
         return DepositsClaimed._decode(input);
-      case 8:
-        return DissolveApproved._decode(input);
-      case 9:
-        return MultisigDissolved._decode(input);
       default:
         throw Exception('Event: Invalid variant index: "$index"');
     }
@@ -199,8 +177,8 @@ class $EventCodec with _i1.Codec<Event> {
       case ProposalCreated:
         (value as ProposalCreated).encodeTo(output);
         break;
-      case ProposalApproved:
-        (value as ProposalApproved).encodeTo(output);
+      case SignerApproved:
+        (value as SignerApproved).encodeTo(output);
         break;
       case ProposalReadyToExecute:
         (value as ProposalReadyToExecute).encodeTo(output);
@@ -217,12 +195,6 @@ class $EventCodec with _i1.Codec<Event> {
       case DepositsClaimed:
         (value as DepositsClaimed).encodeTo(output);
         break;
-      case DissolveApproved:
-        (value as DissolveApproved).encodeTo(output);
-        break;
-      case MultisigDissolved:
-        (value as MultisigDissolved).encodeTo(output);
-        break;
       default:
         throw Exception('Event: Unsupported "$value" of type "${value.runtimeType}"');
     }
@@ -235,8 +207,8 @@ class $EventCodec with _i1.Codec<Event> {
         return (value as MultisigCreated)._sizeHint();
       case ProposalCreated:
         return (value as ProposalCreated)._sizeHint();
-      case ProposalApproved:
-        return (value as ProposalApproved)._sizeHint();
+      case SignerApproved:
+        return (value as SignerApproved)._sizeHint();
       case ProposalReadyToExecute:
         return (value as ProposalReadyToExecute)._sizeHint();
       case ProposalExecuted:
@@ -247,10 +219,6 @@ class $EventCodec with _i1.Codec<Event> {
         return (value as ProposalRemoved)._sizeHint();
       case DepositsClaimed:
         return (value as DepositsClaimed)._sizeHint();
-      case DissolveApproved:
-        return (value as DissolveApproved)._sizeHint();
-      case MultisigDissolved:
-        return (value as MultisigDissolved)._sizeHint();
       default:
         throw Exception('Event: Unsupported "$value" of type "${value.runtimeType}"');
     }
@@ -394,17 +362,17 @@ class ProposalCreated extends Event {
   int get hashCode => Object.hash(multisigAddress, proposer, proposalId);
 }
 
-/// A proposal has been approved by a signer
-class ProposalApproved extends Event {
-  const ProposalApproved({
+/// A signer has approved a proposal (does not imply threshold reached)
+class SignerApproved extends Event {
+  const SignerApproved({
     required this.multisigAddress,
     required this.approver,
     required this.proposalId,
     required this.approvalsCount,
   });
 
-  factory ProposalApproved._decode(_i1.Input input) {
-    return ProposalApproved(
+  factory SignerApproved._decode(_i1.Input input) {
+    return SignerApproved(
       multisigAddress: const _i1.U8ArrayCodec(32).decode(input),
       approver: const _i1.U8ArrayCodec(32).decode(input),
       proposalId: _i1.U32Codec.codec.decode(input),
@@ -426,7 +394,7 @@ class ProposalApproved extends Event {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-    'ProposalApproved': {
+    'SignerApproved': {
       'multisigAddress': multisigAddress.toList(),
       'approver': approver.toList(),
       'proposalId': proposalId,
@@ -454,7 +422,7 @@ class ProposalApproved extends Event {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is ProposalApproved &&
+      other is SignerApproved &&
           _i5.listsEqual(other.multisigAddress, multisigAddress) &&
           _i5.listsEqual(other.approver, approver) &&
           other.proposalId == proposalId &&
@@ -755,7 +723,6 @@ class DepositsClaimed extends Event {
     required this.claimer,
     required this.totalReturned,
     required this.proposalsRemoved,
-    required this.multisigRemoved,
   });
 
   factory DepositsClaimed._decode(_i1.Input input) {
@@ -764,7 +731,6 @@ class DepositsClaimed extends Event {
       claimer: const _i1.U8ArrayCodec(32).decode(input),
       totalReturned: _i1.U128Codec.codec.decode(input),
       proposalsRemoved: _i1.U32Codec.codec.decode(input),
-      multisigRemoved: _i1.BoolCodec.codec.decode(input),
     );
   }
 
@@ -780,9 +746,6 @@ class DepositsClaimed extends Event {
   /// u32
   final int proposalsRemoved;
 
-  /// bool
-  final bool multisigRemoved;
-
   @override
   Map<String, Map<String, dynamic>> toJson() => {
     'DepositsClaimed': {
@@ -790,7 +753,6 @@ class DepositsClaimed extends Event {
       'claimer': claimer.toList(),
       'totalReturned': totalReturned,
       'proposalsRemoved': proposalsRemoved,
-      'multisigRemoved': multisigRemoved,
     },
   };
 
@@ -800,7 +762,6 @@ class DepositsClaimed extends Event {
     size = size + const _i3.AccountId32Codec().sizeHint(claimer);
     size = size + _i1.U128Codec.codec.sizeHint(totalReturned);
     size = size + _i1.U32Codec.codec.sizeHint(proposalsRemoved);
-    size = size + _i1.BoolCodec.codec.sizeHint(multisigRemoved);
     return size;
   }
 
@@ -810,7 +771,6 @@ class DepositsClaimed extends Event {
     const _i1.U8ArrayCodec(32).encodeTo(claimer, output);
     _i1.U128Codec.codec.encodeTo(totalReturned, output);
     _i1.U32Codec.codec.encodeTo(proposalsRemoved, output);
-    _i1.BoolCodec.codec.encodeTo(multisigRemoved, output);
   }
 
   @override
@@ -820,123 +780,8 @@ class DepositsClaimed extends Event {
           _i5.listsEqual(other.multisigAddress, multisigAddress) &&
           _i5.listsEqual(other.claimer, claimer) &&
           other.totalReturned == totalReturned &&
-          other.proposalsRemoved == proposalsRemoved &&
-          other.multisigRemoved == multisigRemoved;
+          other.proposalsRemoved == proposalsRemoved;
 
   @override
-  int get hashCode => Object.hash(multisigAddress, claimer, totalReturned, proposalsRemoved, multisigRemoved);
-}
-
-/// A signer approved dissolving the multisig
-class DissolveApproved extends Event {
-  const DissolveApproved({required this.multisigAddress, required this.approver, required this.approvalsCount});
-
-  factory DissolveApproved._decode(_i1.Input input) {
-    return DissolveApproved(
-      multisigAddress: const _i1.U8ArrayCodec(32).decode(input),
-      approver: const _i1.U8ArrayCodec(32).decode(input),
-      approvalsCount: _i1.U32Codec.codec.decode(input),
-    );
-  }
-
-  /// T::AccountId
-  final _i3.AccountId32 multisigAddress;
-
-  /// T::AccountId
-  final _i3.AccountId32 approver;
-
-  /// u32
-  final int approvalsCount;
-
-  @override
-  Map<String, Map<String, dynamic>> toJson() => {
-    'DissolveApproved': {
-      'multisigAddress': multisigAddress.toList(),
-      'approver': approver.toList(),
-      'approvalsCount': approvalsCount,
-    },
-  };
-
-  int _sizeHint() {
-    int size = 1;
-    size = size + const _i3.AccountId32Codec().sizeHint(multisigAddress);
-    size = size + const _i3.AccountId32Codec().sizeHint(approver);
-    size = size + _i1.U32Codec.codec.sizeHint(approvalsCount);
-    return size;
-  }
-
-  void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(8, output);
-    const _i1.U8ArrayCodec(32).encodeTo(multisigAddress, output);
-    const _i1.U8ArrayCodec(32).encodeTo(approver, output);
-    _i1.U32Codec.codec.encodeTo(approvalsCount, output);
-  }
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is DissolveApproved &&
-          _i5.listsEqual(other.multisigAddress, multisigAddress) &&
-          _i5.listsEqual(other.approver, approver) &&
-          other.approvalsCount == approvalsCount;
-
-  @override
-  int get hashCode => Object.hash(multisigAddress, approver, approvalsCount);
-}
-
-/// A multisig account was dissolved (threshold reached)
-class MultisigDissolved extends Event {
-  const MultisigDissolved({required this.multisigAddress, required this.depositReturned, required this.approvers});
-
-  factory MultisigDissolved._decode(_i1.Input input) {
-    return MultisigDissolved(
-      multisigAddress: const _i1.U8ArrayCodec(32).decode(input),
-      depositReturned: const _i1.U8ArrayCodec(32).decode(input),
-      approvers: const _i1.SequenceCodec<_i3.AccountId32>(_i3.AccountId32Codec()).decode(input),
-    );
-  }
-
-  /// T::AccountId
-  final _i3.AccountId32 multisigAddress;
-
-  /// T::AccountId
-  final _i3.AccountId32 depositReturned;
-
-  /// Vec<T::AccountId>
-  final List<_i3.AccountId32> approvers;
-
-  @override
-  Map<String, Map<String, List<dynamic>>> toJson() => {
-    'MultisigDissolved': {
-      'multisigAddress': multisigAddress.toList(),
-      'depositReturned': depositReturned.toList(),
-      'approvers': approvers.map((value) => value.toList()).toList(),
-    },
-  };
-
-  int _sizeHint() {
-    int size = 1;
-    size = size + const _i3.AccountId32Codec().sizeHint(multisigAddress);
-    size = size + const _i3.AccountId32Codec().sizeHint(depositReturned);
-    size = size + const _i1.SequenceCodec<_i3.AccountId32>(_i3.AccountId32Codec()).sizeHint(approvers);
-    return size;
-  }
-
-  void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(9, output);
-    const _i1.U8ArrayCodec(32).encodeTo(multisigAddress, output);
-    const _i1.U8ArrayCodec(32).encodeTo(depositReturned, output);
-    const _i1.SequenceCodec<_i3.AccountId32>(_i3.AccountId32Codec()).encodeTo(approvers, output);
-  }
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is MultisigDissolved &&
-          _i5.listsEqual(other.multisigAddress, multisigAddress) &&
-          _i5.listsEqual(other.depositReturned, depositReturned) &&
-          _i5.listsEqual(other.approvers, approvers);
-
-  @override
-  int get hashCode => Object.hash(multisigAddress, depositReturned, approvers);
+  int get hashCode => Object.hash(multisigAddress, claimer, totalReturned, proposalsRemoved);
 }

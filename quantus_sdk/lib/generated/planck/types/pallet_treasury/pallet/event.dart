@@ -35,8 +35,8 @@ abstract class Event {
 class $Event {
   const $Event();
 
-  TreasuryAccountUpdated treasuryAccountUpdated({required _i3.AccountId32 newAccount}) {
-    return TreasuryAccountUpdated(newAccount: newAccount);
+  TreasuryAccountUpdated treasuryAccountUpdated({_i3.AccountId32? oldAccount, required _i3.AccountId32 newAccount}) {
+    return TreasuryAccountUpdated(oldAccount: oldAccount, newAccount: newAccount);
   }
 
   TreasuryPortionUpdated treasuryPortionUpdated({required _i4.Permill newPortion}) {
@@ -87,40 +87,57 @@ class $EventCodec with _i1.Codec<Event> {
   }
 }
 
+/// The treasury account was updated.
+///
+/// Note: This only redirects where future mining rewards are sent. Any balance
+/// accumulated in the old account remains there and is NOT automatically migrated.
+/// Use a separate balance transfer if funds need to be moved.
 class TreasuryAccountUpdated extends Event {
-  const TreasuryAccountUpdated({required this.newAccount});
+  const TreasuryAccountUpdated({this.oldAccount, required this.newAccount});
 
   factory TreasuryAccountUpdated._decode(_i1.Input input) {
-    return TreasuryAccountUpdated(newAccount: const _i1.U8ArrayCodec(32).decode(input));
+    return TreasuryAccountUpdated(
+      oldAccount: const _i1.OptionCodec<_i3.AccountId32>(_i3.AccountId32Codec()).decode(input),
+      newAccount: const _i1.U8ArrayCodec(32).decode(input),
+    );
   }
 
+  /// Option<T::AccountId>
+  /// The previous treasury account (None if this is the first time setting it).
+  final _i3.AccountId32? oldAccount;
+
   /// T::AccountId
+  /// The new treasury account that will receive future rewards.
   final _i3.AccountId32 newAccount;
 
   @override
-  Map<String, Map<String, List<int>>> toJson() => {
-    'TreasuryAccountUpdated': {'newAccount': newAccount.toList()},
+  Map<String, Map<String, List<int>?>> toJson() => {
+    'TreasuryAccountUpdated': {'oldAccount': oldAccount?.toList(), 'newAccount': newAccount.toList()},
   };
 
   int _sizeHint() {
     int size = 1;
+    size = size + const _i1.OptionCodec<_i3.AccountId32>(_i3.AccountId32Codec()).sizeHint(oldAccount);
     size = size + const _i3.AccountId32Codec().sizeHint(newAccount);
     return size;
   }
 
   void encodeTo(_i1.Output output) {
     _i1.U8Codec.codec.encodeTo(0, output);
+    const _i1.OptionCodec<_i3.AccountId32>(_i3.AccountId32Codec()).encodeTo(oldAccount, output);
     const _i1.U8ArrayCodec(32).encodeTo(newAccount, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(this, other) || other is TreasuryAccountUpdated && _i5.listsEqual(other.newAccount, newAccount);
+      identical(this, other) ||
+      other is TreasuryAccountUpdated && other.oldAccount == oldAccount && _i5.listsEqual(other.newAccount, newAccount);
 
   @override
-  int get hashCode => newAccount.hashCode;
+  int get hashCode => Object.hash(oldAccount, newAccount);
 }
 
+/// The treasury portion (share of mining rewards) was updated.
 class TreasuryPortionUpdated extends Event {
   const TreasuryPortionUpdated({required this.newPortion});
 

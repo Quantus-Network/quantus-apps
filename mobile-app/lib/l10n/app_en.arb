@@ -317,7 +317,7 @@
     "@multisigCreateAlreadyExists": {
       "description": "Toast when predicted multisig address is already registered"
     },
-    "multisigCreateInsufficientBalance": "Insufficient balance to cover multisig creation fees and deposit.",
+    "multisigCreateInsufficientBalance": "Insufficient balance to cover multisig creation fees.",
     "@multisigCreateInsufficientBalance": {
       "description": "Toast when creator balance is below pallet fee + network fee + deposit"
     },
@@ -646,6 +646,10 @@
     "@multisigProposalAlreadySignedNote": {
       "description": "Note shown when the current member already approved"
     },
+    "multisigProposalAlreadyExecutedNote": "This proposal is already executed.",
+    "@multisigProposalAlreadyExecutedNote": {
+      "description": "Note shown on proposal detail when the proposal is executed"
+    },
     "multisigProposalProposerLabel": "PROPOSER",
     "@multisigProposalProposerLabel": {
       "description": "Proposer row label on proposal detail"
@@ -690,6 +694,10 @@
     "@activityTxProposalApproved": {
       "description": "Activity row label for a confirmed multisig proposal approval on the approver account"
     },
+    "activityTxProposalExecuted": "Proposal executed",
+    "@activityTxProposalExecuted": {
+      "description": "Activity row label for a confirmed multisig proposal execution on the executor account"
+    },
     "multisigApproveButton": "Approve",
     "@multisigApproveButton": {
       "description": "Approve button on proposal detail"
@@ -705,6 +713,10 @@
     "multisigProposalExpiresLabel": "EXPIRES",
     "@multisigProposalExpiresLabel": {
       "description": "Expires row label on proposal detail"
+    },
+    "multisigProposalAtLabel": "AT",
+    "@multisigProposalAtLabel": {
+      "description": "Timestamp row label on past proposal detail"
     },
     "multisigProposalThresholdLabel": "THRESHOLD",
     "@multisigProposalThresholdLabel": {
@@ -802,6 +814,58 @@
     "multisigApproveFailed": "Failed to approve",
     "@multisigApproveFailed": {
       "description": "Error when approve submission fails"
+    },
+    "multisigExecuteButton": "Execute",
+    "@multisigExecuteButton": {
+      "description": "Button to execute an approved multisig proposal"
+    },
+    "multisigExecuteConfirmTitle": "Are you sure?",
+    "@multisigExecuteConfirmTitle": {
+      "description": "Title on execute confirmation sheet"
+    },
+    "multisigExecuteConfirmBody": "You are about to execute a transfer of",
+    "@multisigExecuteConfirmBody": {
+      "description": "Body text on execute confirmation sheet"
+    },
+    "multisigExecuteConfirmYes": "Yes, Execute",
+    "@multisigExecuteConfirmYes": {
+      "description": "Confirm button on execute sheet"
+    },
+    "multisigExecuteAuthReason": "Authenticate to execute",
+    "@multisigExecuteAuthReason": {
+      "description": "Biometric auth prompt when executing"
+    },
+    "multisigExecuteFailed": "Failed to execute",
+    "@multisigExecuteFailed": {
+      "description": "Error when execute submission fails"
+    },
+    "multisigExecuteUnavailableNote": "This proposal can no longer be executed.",
+    "@multisigExecuteUnavailableNote": {
+      "description": "Note when execute action is unavailable"
+    },
+    "multisigProposalExecutingLabel": "Executing…",
+    "@multisigProposalExecutingLabel": {
+      "description": "Disabled execute button while pending"
+    },
+    "multisigProposalExecutingNote": "Your execution is being confirmed on-chain.",
+    "@multisigProposalExecutingNote": {
+      "description": "Note while execution is pending indexer confirmation"
+    },
+    "activityTxExecuting": "Executing…",
+    "@activityTxExecuting": {
+      "description": "Status label on proposal row while execution is pending"
+    },
+    "multisigExecutionTimeoutToast": "Execution confirmation is taking longer than expected. Check the chain or try again.",
+    "@multisigExecutionTimeoutToast": {
+      "description": "Toast when execution indexer polling times out"
+    },
+    "multisigExecutedByOtherToast": "Proposal was executed by another signer.",
+    "@multisigExecutedByOtherToast": {
+      "description": "Toast when a proposal is executed but not by this user's extrinsic"
+    },
+    "multisigFeeEstimateUnavailable": "Network fee estimate is unavailable.",
+    "@multisigFeeEstimateUnavailable": {
+      "description": "Inline note on confirm sheet when fee estimation fails"
     },
     "multisigCancelConfirmTitle": "Cancel Proposal?",
     "@multisigCancelConfirmTitle": {
@@ -1294,6 +1358,14 @@
     "activityDetailTitleProposalApproved": "Proposal approved",
     "@activityDetailTitleProposalApproved": {
       "description": "Detail sheet title for a confirmed multisig proposal approval"
+    },
+    "activityDetailTitleProposalExecuted": "Proposal executed",
+    "@activityDetailTitleProposalExecuted": {
+      "description": "Detail sheet title for a confirmed multisig proposal execution"
+    },
+    "activityDetailTitleExecuting": "Executing proposal",
+    "@activityDetailTitleExecuting": {
+      "description": "Detail sheet title while a multisig proposal execution is confirming on-chain"
     },
     "activityDetailTitleProposing": "Proposing",
     "@activityDetailTitleProposing": {

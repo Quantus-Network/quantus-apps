@@ -215,7 +215,7 @@ class ReversibleTransfersService {
       // Create the call
       ReversibleTransfers call = quantusApi.tx.reversibleTransfers.setHighSecurity(
         delay: delay,
-        interceptor: guardianAccountId32,
+        guardian: guardianAccountId32,
       );
       print('Encoded Call: ${call.encode()}');
       print('Encoded Call Hex: ${hex.encode(call.encode())}');
@@ -258,7 +258,7 @@ class ReversibleTransfersService {
     try {
       final quantusApi = Planck(_substrateService.provider!);
       final accountId = crypto.ss58ToAccountId(s: guardianAddress);
-      final interceptedAccounts = await quantusApi.query.reversibleTransfers.interceptorIndex(accountId);
+      final interceptedAccounts = await quantusApi.query.reversibleTransfers.guardianIndex(accountId);
 
       List<String> result = interceptedAccounts.map((id) {
         final address = AddressExtension.ss58AddressFromBytes(Uint8List.fromList(id));
@@ -285,7 +285,7 @@ class ReversibleTransfersService {
     final quantusApi = Planck(_substrateService.provider!);
     final call = quantusApi.tx.reversibleTransfers.setHighSecurity(
       delay: delay,
-      interceptor: crypto.ss58ToAccountId(s: guardianAccountId),
+      guardian: crypto.ss58ToAccountId(s: guardianAccountId),
     );
     return _substrateService.getFeeForCall(account, call);
   }

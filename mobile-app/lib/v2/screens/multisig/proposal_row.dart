@@ -4,6 +4,7 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/pending_multisig_approvals_provider.dart';
+import 'package:resonance_network_wallet/providers/pending_multisig_executions_provider.dart';
 import 'package:resonance_network_wallet/v2/components/proposal_list_tile.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
@@ -28,24 +29,38 @@ class ProposalRow extends ConsumerWidget {
       proposal.id,
       myAccountId,
     );
+    final pendingExecutions = ref.watch(pendingMultisigExecutionsProvider);
+    final pendingExecution = findPendingExecutionForProposal(
+      pendingExecutions,
+      proposal.multisigAddress,
+      proposal.id,
+      myAccountId,
+    );
     final isApproving = pendingApproval != null;
+    final isExecuting = pendingExecution != null;
+    final isPending = isApproving || isExecuting;
 
     return ProposalListTile(
       amount: proposal.amount,
       recipientAddress: proposal.recipient,
-      highlighted: isApproving,
+      highlighted: isPending,
       onTap: onTap,
       trailing: Column(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          if (isApproving)
+          if (isExecuting)
+            Text(
+              l10n.activityTxExecuting,
+              style: text.detail?.copyWith(color: colors.checksum, fontWeight: FontWeight.w600, letterSpacing: 0.4),
+            )
+          else if (isApproving)
             Text(
               l10n.activityTxApproving,
               style: text.detail?.copyWith(color: colors.checksum, fontWeight: FontWeight.w600, letterSpacing: 0.4),
             )
           else
             _statusChip(l10n, colors, text),
-          if (proposal.isOpen && !isApproving) ...[
+          if (proposal.isOpen && !isPending) ...[
             const SizedBox(height: 6),
             if (didApprove) _approvedPill(l10n, colors, text) else _proposedPill(l10n, colors, text),
           ],

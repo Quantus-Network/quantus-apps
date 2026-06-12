@@ -82,6 +82,28 @@ ${MultisigProposalGraphql.fields}      }
 ${MultisigProposalGraphql.fields}      }
     }''';
 
+  /// Nested selection for `account_event.executedMultisigProposal`.
+  static const String executedMultisigProposalAccountEventSelection =
+      '''    executedMultisigProposal {
+      id
+      fee
+      result
+      approvers
+      timestamp
+      block {
+        height
+        hash
+      }
+      extrinsic {
+        id
+        signer {
+          id
+        }
+      }
+      proposal {
+${MultisigProposalGraphql.fields}      }
+    }''';
+
   static const String byPkQuery =
       r'''
     query MultisigByPk($id: String!) {
@@ -153,6 +175,7 @@ class MultisigProposalGraphql {
       id
       proposal_id
       created_at
+      updated_at
       pallet
       call
       call_raw
@@ -193,7 +216,7 @@ class MultisigProposalGraphql {
           {multisig_id: {_eq: $multisigId}},
           {status: {_in: [ACTIVE, APPROVED]}}
         ]},
-        order_by: {created_at: desc}
+        order_by: {updated_at: desc}
       ) {
 ''' +
       fields +
@@ -215,7 +238,7 @@ class MultisigProposalGraphql {
           {multisig_id: {_eq: $multisigId}},
           {status: {_in: [EXECUTED, CANCELLED, REMOVED]}}
         ]},
-        order_by: {created_at: desc}
+        order_by: {updated_at: desc}
       ) {
 ''' +
       fields +

@@ -135,9 +135,74 @@ void main() {
     },
   };
 
+  const executedMultisigProposalAccountEventFixture = {
+    'id': 'ae-ms-exec-0000000256-c9dc5-000005-qzk2',
+    'timestamp': '2026-06-03T12:00:00.000+00:00',
+    'executedMultisigProposal': {
+      'id': 'ms-exec-256',
+      'fee': '18000000000',
+      'result': 'Ok',
+      'approvers': [
+        'qzk1Nxai3dZD9Cn5kwGcgL6mKxsfxwqdis7kDQJ52aJS2vSn7',
+        'qzkYEQv8tQsmniZYdame3Cku18RL5g9bGK9Pdydq5TMPdpE3y',
+      ],
+      'timestamp': '2026-06-03T12:00:00.000+00:00',
+      'block': {'height': 258, 'hash': '0xexec'},
+      'extrinsic': {
+        'id': '0xexecutehash',
+        'signer': {'id': 'qzkYEQv8tQsmniZYdame3Cku18RL5g9bGK9Pdydq5TMPdpE3y'},
+      },
+      'proposal': {
+        'id': 'proposal-entity-1',
+        'proposal_id': 5,
+        'created_at': '2026-06-03T10:00:00.000+00:00',
+        'updated_at': '2026-06-03T12:00:00.000+00:00',
+        'pallet': 'Balances',
+        'call': 'transfer_allow_death',
+        'call_raw': '0x',
+        'transfer_amount': '2000000000000',
+        'status': 'EXECUTED',
+        'expiry_block': 1000,
+        'deposit': '10000000000000',
+        'approvals': [
+          'qzk1Nxai3dZD9Cn5kwGcgL6mKxsfxwqdis7kDQJ52aJS2vSn7',
+          'qzkYEQv8tQsmniZYdame3Cku18RL5g9bGK9Pdydq5TMPdpE3y',
+        ],
+        'proposer': {'id': 'qzk1Nxai3dZD9Cn5kwGcgL6mKxsfxwqdis7kDQJ52aJS2vSn7'},
+        'transferTo': {'id': 'qzpyxSr48YN9EQe2ito734iCReTXjnungmNCSY4Yph1YznEda'},
+        'multisig': {
+          'id': 'qzo4qS1Lw6J66JuXcxLEWgzBLX2sBe3Ak3kmN1oA17pXLKCFH',
+          'threshold': 2,
+          'nonce': '0',
+          'signers': [
+            'qzk1Nxai3dZD9Cn5kwGcgL6mKxsfxwqdis7kDQJ52aJS2vSn7',
+            'qzkYEQv8tQsmniZYdame3Cku18RL5g9bGK9Pdydq5TMPdpE3y',
+          ],
+        },
+      },
+    },
+  };
+
   group('ChainHistoryService.tryParseOtherTransferEvent', () {
     test('returns null for unhandled multisig indexer account events', () {
       expect(service.tryParseOtherTransferEvent({'id': 'ae-ms-proposal-ready-0000000256-qzk1'}), isNull);
+    });
+
+    test('parses multisig proposal executed account events', () {
+      final result = service.tryParseOtherTransferEvent(executedMultisigProposalAccountEventFixture);
+      expect(result, isA<MultisigProposalExecutedEvent>());
+
+      final event = result! as MultisigProposalExecutedEvent;
+      expect(event.executorId, 'qzkYEQv8tQsmniZYdame3Cku18RL5g9bGK9Pdydq5TMPdpE3y');
+      expect(event.multisigAddress, 'qzo4qS1Lw6J66JuXcxLEWgzBLX2sBe3Ak3kmN1oA17pXLKCFH');
+      expect(event.recipient, 'qzpyxSr48YN9EQe2ito734iCReTXjnungmNCSY4Yph1YznEda');
+      expect(event.amount, BigInt.parse('2000000000000'));
+      expect(event.fee, BigInt.parse('18000000000'));
+      expect(event.proposalId, 5);
+      expect(event.approvers, hasLength(2));
+      expect(event.result, 'Ok');
+      expect(event.extrinsicHash, '0xexecutehash');
+      expect(event.proposal, isNotNull);
     });
 
     test('parses multisig signer approved account events', () {
@@ -210,7 +275,6 @@ void main() {
       expect(event.signers, hasLength(3));
       expect(event.palletFee, multisig_pallet.Constants().multisigFee);
       expect(event.networkFee, BigInt.parse('8120809264'));
-      expect(event.deposit, multisig_pallet.Constants().multisigDeposit);
       expect(event.extrinsicHash, '0xea4400ec3247fc75b7187b6f6d83a89905017d1136c894e625a3c43a688606b9');
     });
   });
@@ -260,7 +324,7 @@ void main() {
 
       expect(withFee.palletFee, multisig_pallet.Constants().multisigFee);
       expect(withFee.networkFee, BigInt.parse('8120809264'));
-      expect(withFee.totalCost, withFee.palletFee + withFee.networkFee + withFee.deposit);
+      expect(withFee.totalCost, withFee.palletFee + withFee.networkFee);
     });
   });
 }

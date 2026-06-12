@@ -12,9 +12,8 @@ abstract class MultisigCreationEvent extends TransactionEvent {
   final List<String> signers;
   final BigInt palletFee;
   final BigInt networkFee;
-  final BigInt deposit;
 
-  BigInt get totalCost => palletFee + networkFee + deposit;
+  BigInt get totalCost => palletFee + networkFee;
 
   MultisigCreationEvent({
     required super.id,
@@ -25,12 +24,11 @@ abstract class MultisigCreationEvent extends TransactionEvent {
     required this.signers,
     required this.palletFee,
     required this.networkFee,
-    required this.deposit,
     required super.timestamp,
     required super.blockNumber,
     super.blockHash,
     super.extrinsicHash,
-  }) : super(from: creatorId, to: multisigAddress, amount: palletFee + networkFee + deposit);
+  }) : super(from: creatorId, to: multisigAddress, amount: palletFee + networkFee);
 
   bool isCreator(String accountId) => creatorId == accountId;
 }
@@ -45,7 +43,6 @@ class MultisigCreationDraftFields {
     required this.signers,
     required this.palletFee,
     required this.networkFee,
-    required this.deposit,
   });
 
   final String creatorId;
@@ -55,9 +52,8 @@ class MultisigCreationDraftFields {
   final List<String> signers;
   final BigInt palletFee;
   final BigInt networkFee;
-  final BigInt deposit;
 
-  BigInt get totalCost => palletFee + networkFee + deposit;
+  BigInt get totalCost => palletFee + networkFee;
 
   factory MultisigCreationDraftFields.fromDraft(MultisigAccount draft, {required BigInt networkFee}) {
     return MultisigCreationDraftFields(
@@ -68,7 +64,6 @@ class MultisigCreationDraftFields {
       signers: List<String>.from(draft.signers),
       palletFee: MultisigCreationEvent.palletConstants.multisigFee,
       networkFee: networkFee,
-      deposit: MultisigCreationEvent.palletConstants.multisigDeposit,
     );
   }
 }

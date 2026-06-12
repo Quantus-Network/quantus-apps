@@ -13,7 +13,7 @@ class MultisigProposalEvent extends TransactionEvent {
         from: proposal.multisigAddress,
         to: proposal.recipient,
         amount: proposal.amount,
-        timestamp: proposal.createdAt,
+        timestamp: proposal.updatedAt,
       );
 
   String get multisigAddress => proposal.multisigAddress;

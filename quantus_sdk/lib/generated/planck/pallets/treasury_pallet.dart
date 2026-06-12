@@ -64,6 +64,11 @@ class Txs {
   const Txs();
 
   /// Set the treasury account. Root only. Zero address is rejected (funds would be locked).
+  ///
+  /// **Important**: This only changes where *future* mining rewards are sent. Any balance
+  /// that has already accumulated in the current treasury account is NOT automatically
+  /// migrated to the new account. If you need to move existing funds, perform a separate
+  /// balance transfer (e.g., via governance proposal) after updating the account.
   _i6.TreasuryPallet setTreasuryAccount({required _i2.AccountId32 account}) {
     return _i6.TreasuryPallet(_i7.SetTreasuryAccount(account: account));
   }

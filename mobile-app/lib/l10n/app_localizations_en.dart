@@ -232,7 +232,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get multisigCreateAlreadyExists => 'A multisig with this address already exists on-chain.';
 
   @override
-  String get multisigCreateInsufficientBalance => 'Insufficient balance to cover multisig creation fees and deposit.';
+  String get multisigCreateInsufficientBalance => 'Insufficient balance to cover multisig creation fees.';
 
   @override
   String get multisigCreateTimeoutToast =>
@@ -458,6 +458,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get multisigProposalAlreadySignedNote => 'You\'ve already approved this proposal.';
 
   @override
+  String get multisigProposalAlreadyExecutedNote => 'This proposal is already executed.';
+
+  @override
   String get multisigProposalProposerLabel => 'PROPOSER';
 
   @override
@@ -491,6 +494,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get activityTxProposalApproved => 'Proposal approved';
 
   @override
+  String get activityTxProposalExecuted => 'Proposal executed';
+
+  @override
   String get multisigApproveButton => 'Approve';
 
   @override
@@ -501,6 +507,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get multisigProposalExpiresLabel => 'EXPIRES';
+
+  @override
+  String get multisigProposalAtLabel => 'AT';
 
   @override
   String get multisigProposalThresholdLabel => 'THRESHOLD';
@@ -565,6 +574,46 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get multisigApproveFailed => 'Failed to approve';
+
+  @override
+  String get multisigExecuteButton => 'Execute';
+
+  @override
+  String get multisigExecuteConfirmTitle => 'Are you sure?';
+
+  @override
+  String get multisigExecuteConfirmBody => 'You are about to execute a transfer of';
+
+  @override
+  String get multisigExecuteConfirmYes => 'Yes, Execute';
+
+  @override
+  String get multisigExecuteAuthReason => 'Authenticate to execute';
+
+  @override
+  String get multisigExecuteFailed => 'Failed to execute';
+
+  @override
+  String get multisigExecuteUnavailableNote => 'This proposal can no longer be executed.';
+
+  @override
+  String get multisigProposalExecutingLabel => 'Executing…';
+
+  @override
+  String get multisigProposalExecutingNote => 'Your execution is being confirmed on-chain.';
+
+  @override
+  String get activityTxExecuting => 'Executing…';
+
+  @override
+  String get multisigExecutionTimeoutToast =>
+      'Execution confirmation is taking longer than expected. Check the chain or try again.';
+
+  @override
+  String get multisigExecutedByOtherToast => 'Proposal was executed by another signer.';
+
+  @override
+  String get multisigFeeEstimateUnavailable => 'Network fee estimate is unavailable.';
 
   @override
   String get multisigCancelConfirmTitle => 'Cancel Proposal?';
@@ -898,6 +947,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get activityDetailTitleProposalApproved => 'Proposal approved';
+
+  @override
+  String get activityDetailTitleProposalExecuted => 'Proposal executed';
+
+  @override
+  String get activityDetailTitleExecuting => 'Executing proposal';
 
   @override
   String get activityDetailTitleProposing => 'Proposing';

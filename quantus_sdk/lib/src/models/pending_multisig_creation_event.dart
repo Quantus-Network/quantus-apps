@@ -11,7 +11,6 @@ class PendingMultisigCreationEvent extends MultisigCreationEvent {
     required super.signers,
     required super.palletFee,
     required super.networkFee,
-    required super.deposit,
     required super.timestamp,
     super.extrinsicHash,
   }) : super(id: tempId, blockNumber: 0);
@@ -28,7 +27,6 @@ class PendingMultisigCreationEvent extends MultisigCreationEvent {
       signers: fields.signers,
       palletFee: fields.palletFee,
       networkFee: fields.networkFee,
-      deposit: fields.deposit,
       timestamp: DateTime.now(),
     );
   }

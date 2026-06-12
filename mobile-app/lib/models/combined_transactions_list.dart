@@ -5,6 +5,7 @@ class CombinedTransactionsList {
   final List<PendingTransactionEvent> pendingTransactions;
   final List<PendingMultisigCreationEvent> pendingMultisigCreations;
   final List<PendingMultisigProposalEvent> pendingMultisigProposals;
+  final List<PendingMultisigExecutionEvent> pendingMultisigExecutions;
   final List<ReversibleTransferEvent> scheduledReversibleTransfers;
   final List<TransactionEvent> otherTransfers;
 
@@ -13,6 +14,7 @@ class CombinedTransactionsList {
     required this.pendingTransactions,
     required this.pendingMultisigCreations,
     required this.pendingMultisigProposals,
+    required this.pendingMultisigExecutions,
     required this.scheduledReversibleTransfers,
     required this.otherTransfers,
   });
@@ -22,6 +24,7 @@ class CombinedTransactionsList {
     List<PendingTransactionEvent>? pendingTransactions,
     List<PendingMultisigCreationEvent>? pendingMultisigCreations,
     List<PendingMultisigProposalEvent>? pendingMultisigProposals,
+    List<PendingMultisigExecutionEvent>? pendingMultisigExecutions,
     List<ReversibleTransferEvent>? scheduledReversibleTransfers,
     List<TransactionEvent>? otherTransfers,
   }) {
@@ -30,6 +33,7 @@ class CombinedTransactionsList {
       pendingTransactions: pendingTransactions ?? this.pendingTransactions,
       pendingMultisigCreations: pendingMultisigCreations ?? this.pendingMultisigCreations,
       pendingMultisigProposals: pendingMultisigProposals ?? this.pendingMultisigProposals,
+      pendingMultisigExecutions: pendingMultisigExecutions ?? this.pendingMultisigExecutions,
       scheduledReversibleTransfers: scheduledReversibleTransfers ?? this.scheduledReversibleTransfers,
       otherTransfers: otherTransfers ?? this.otherTransfers,
     );
@@ -40,6 +44,7 @@ class CombinedTransactionsList {
     pendingTransactions: [],
     pendingMultisigCreations: [],
     pendingMultisigProposals: [],
+    pendingMultisigExecutions: [],
     scheduledReversibleTransfers: [],
     otherTransfers: [],
   );

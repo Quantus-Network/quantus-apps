@@ -5,8 +5,8 @@ import 'package:resonance_network_wallet/services/transaction_submission_service
 import 'package:resonance_network_wallet/v2/components/bottom_sheet_container.dart';
 import 'package:resonance_network_wallet/v2/screens/multisig/multisig_action_confirm_sheet.dart';
 
-/// Shows the confirmation sheet for approving a multisig proposal.
-void showMultisigApproveConfirmSheet(
+/// Shows the confirmation sheet for executing an approved multisig proposal.
+void showMultisigExecuteConfirmSheet(
   BuildContext context, {
   required MultisigAccount msig,
   required MultisigProposal proposal,
@@ -16,19 +16,19 @@ void showMultisigApproveConfirmSheet(
     builder: (_) => MultisigActionConfirmSheet(
       msig: msig,
       proposal: proposal,
-      logPrefix: '[MultisigApprove]',
+      logPrefix: '[MultisigExecute]',
       labels: MultisigConfirmSheetLabels(
-        title: (l10n) => l10n.multisigApproveConfirmTitle,
-        body: (l10n) => l10n.multisigApproveConfirmBody,
-        confirmLabel: (l10n) => l10n.multisigApproveConfirmYes,
-        authReason: (l10n) => l10n.multisigApproveAuthReason,
-        failedMessage: (l10n) => l10n.multisigApproveFailed,
+        title: (l10n) => l10n.multisigExecuteConfirmTitle,
+        body: (l10n) => l10n.multisigExecuteConfirmBody,
+        confirmLabel: (l10n) => l10n.multisigExecuteConfirmYes,
+        authReason: (l10n) => l10n.multisigExecuteAuthReason,
+        failedMessage: (l10n) => l10n.multisigExecuteFailed,
       ),
       estimateFee: (ref, signer) =>
-          ref.read(multisigServiceProvider).estimateApproveFee(msig: msig, signer: signer, proposalId: proposal.id),
+          ref.read(multisigServiceProvider).estimateExecuteFee(msig: msig, signer: signer, proposalId: proposal.id),
       submit: (ref, signer, fee) => ref
           .read(transactionSubmissionServiceProvider)
-          .approveProposal(msig: msig, signer: signer, proposal: proposal),
+          .executeProposal(msig: msig, signer: signer, proposal: proposal, fee: fee),
     ),
   );
 }

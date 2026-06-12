@@ -384,6 +384,32 @@ class MultisigService {
     return _substrateService.submitExtrinsic(signer, call);
   }
 
+  /// Builds the `multisig.execute` runtime call for [proposalId].
+  Multisig buildExecuteCall({required MultisigAccount msig, required int proposalId}) {
+    return const Txs().execute(multisigAddress: getAccountId32(msig.accountId), proposalId: proposalId);
+  }
+
+  /// Estimates the network fee for executing [proposalId].
+  Future<BigInt> estimateExecuteFee({
+    required MultisigAccount msig,
+    required Account signer,
+    required int proposalId,
+  }) async {
+    final call = buildExecuteCall(msig: msig, proposalId: proposalId);
+    final feeData = await _substrateService.getFeeForCall(signer, call);
+    return feeData.fee;
+  }
+
+  /// Submits `multisig.execute` signed by [signer]. Returns extrinsic hash bytes.
+  Future<Uint8List> submitExecuteExtrinsic({
+    required MultisigAccount msig,
+    required Account signer,
+    required int proposalId,
+  }) async {
+    final call = buildExecuteCall(msig: msig, proposalId: proposalId);
+    return _substrateService.submitExtrinsic(signer, call);
+  }
+
   /// Number of blocks that approximately span [duration] at average block time.
   int blocksForDuration(Duration duration) {
     return (duration.inSeconds / _avgBlockTimeSeconds).round();
