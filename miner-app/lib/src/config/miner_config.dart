@@ -21,9 +21,6 @@ class MinerConfig {
   /// Prometheus metrics port for the node
   static const int defaultNodePrometheusPort = 9616;
 
-  /// P2P port for node networking
-  static const int defaultNodeP2pPort = 30333;
-
   // ============================================================
   // Timeouts & Retry Configuration
   // ============================================================

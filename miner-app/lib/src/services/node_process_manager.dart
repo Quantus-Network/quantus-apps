@@ -36,7 +36,10 @@ class NodeConfig {
   /// Port for Prometheus metrics.
   final int prometheusPort;
 
-  /// Port for P2P networking.
+  /// Port for P2P networking. 0 = OS-assigned, fresh each start: litep2p
+  /// (validator mode) reuses the listen port as the source port for outbound
+  /// dials, so a fixed port collides with stale TIME_WAIT / half-open tuples
+  /// from a previous session and the node silently finds no peers.
   final int p2pPort;
 
   NodeConfig({
@@ -47,7 +50,7 @@ class NodeConfig {
     this.minerListenPort = 9833,
     this.rpcPort = 9933,
     this.prometheusPort = 9616,
-    this.p2pPort = 30333,
+    this.p2pPort = 0,
   });
 }
 
