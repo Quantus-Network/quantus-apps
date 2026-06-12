@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/connectivity_provider.dart';
+import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/services/pending_transaction_reconciliation_service.dart';
 import 'package:resonance_network_wallet/services/telemetry_service.dart';
 import 'package:resonance_network_wallet/shared/utils/polling_refresh_scope.dart';
@@ -78,6 +79,7 @@ class GlobalHistoryPollingService {
 
       invalidateActiveAccountBalance(_ref);
       await silentRefreshActiveAccount(_ref);
+      invalidateActiveMultisigProposals(_ref);
 
       // Reconcile pending transactions with confirmed transactions
       await _ref.read(pendingTransactionReconciliationServiceProvider).reconcilePendingTransactions();
@@ -106,13 +108,18 @@ class GlobalHistoryPollingService {
 
     final active = _ref.read(activeAccountProvider).value;
     if (active != null) {
-      await refreshAccountsPagination(
-        _ref,
-        accountIds: [active.account.accountId],
-        action: (notifier) => notifier.loadingRefresh(),
-      );
       invalidateActiveAccountBalance(_ref);
+      await Future.wait([
+        _ref.read(balanceProviderFamily(active.account.accountId).future),
+        refreshAccountsPagination(
+          _ref,
+          accountIds: [active.account.accountId],
+          action: (notifier) => notifier.loadingRefresh(),
+        ),
+      ]);
     }
+
+    await refreshActiveMultisigProposals(_ref);
 
     // Also reconcile pending transactions during manual refresh
     await _ref.read(pendingTransactionReconciliationServiceProvider).reconcilePendingTransactions();

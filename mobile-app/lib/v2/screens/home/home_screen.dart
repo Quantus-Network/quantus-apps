@@ -7,6 +7,7 @@ import 'package:resonance_network_wallet/features/components/skeleton.dart';
 import 'package:resonance_network_wallet/features/components/shared_address_action_sheet.dart';
 import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
 import 'package:resonance_network_wallet/routes.dart';
+import 'package:resonance_network_wallet/services/global_history_polling_service.dart';
 import 'package:resonance_network_wallet/services/telemetry_service.dart';
 import 'package:resonance_network_wallet/shared/extensions/current_route_extensions.dart';
 import 'package:resonance_network_wallet/shared/utils/print.dart';
@@ -19,24 +20,26 @@ import 'package:resonance_network_wallet/v2/components/scaffold_base_bottom_cont
 import 'package:resonance_network_wallet/v2/screens/accounts/open_accounts_management_button.dart';
 import 'package:resonance_network_wallet/v2/screens/activity/transaction_detail_sheet.dart';
 import 'package:resonance_network_wallet/v2/screens/receive/receive_screen.dart';
+import 'package:resonance_network_wallet/v2/screens/multisig/multisig_activity_section.dart';
+import 'package:resonance_network_wallet/v2/screens/multisig/propose/propose_recipient_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/send/input_amount_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/send/select_recipient_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/settings_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/pos/pos_amount_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/swap_screen.dart';
-import 'package:resonance_network_wallet/models/filtered_transactions_params.dart';
-import 'package:resonance_network_wallet/providers/account_id_list_cache.dart';
 import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/active_account_transactions_provider.dart';
-import 'package:resonance_network_wallet/providers/filtered_all_transactions_provider.dart';
 import 'package:resonance_network_wallet/providers/route_intent_providers.dart';
 import 'package:resonance_network_wallet/providers/currency_display_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
+import 'package:resonance_network_wallet/v2/components/multisig_approval_toast_listener.dart';
+import 'package:resonance_network_wallet/v2/components/multisig_creation_toast_listener.dart';
+import 'package:resonance_network_wallet/v2/components/multisig_proposal_toast_listener.dart';
 import 'package:resonance_network_wallet/v2/screens/home/activity_section.dart';
 import 'package:resonance_network_wallet/v2/screens/home/backup_reminder_banner.dart';
 
@@ -103,27 +106,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Future<void> _refresh() async {
-    final active = ref.read(activeAccountProvider).value;
-    ref.invalidate(balanceProviderFamily);
-    ref.invalidate(balanceProviderRaw);
-    ref.invalidate(activeAccountTransactionsProvider);
-    if (active != null) {
-      final historyRefresh = ref
-          .read(
-            filteredPaginationControllerProviderFamily(
-              FilteredTransactionsParams(
-                accountIds: AccountIdListCache.get([active.account.accountId]),
-                filter: TransactionFilter.all,
-              ),
-            ).notifier,
-          )
-          .loadingRefresh();
-      try {
-        await Future.wait([ref.read(balanceProviderFamily(active.account.accountId).future), historyRefresh]);
-      } catch (e, st) {
-        quantusDebugPrint('home refresh error: $e');
-        TelemetryService().sendError('Home refresh failed', error: e, stackTrace: st);
-      }
+    try {
+      await ref.read(globalHistoryPollingServiceProvider).triggerManualRefresh();
+    } catch (e, st) {
+      quantusDebugPrint('home refresh error: $e');
+      TelemetryService().sendError('Home refresh failed', error: e, stackTrace: st);
     }
   }
 
@@ -144,27 +131,36 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final colors = context.colors;
     final text = context.themeText;
 
-    return accountAsync.when(
-      loading: () => const ScaffoldBase(mainContent: Center(child: Loader())),
-      error: (e, _) => ScaffoldBase(
-        mainContent: Center(
-          child: Text(l10n.homeError(e.toString()), style: text.detail?.copyWith(color: colors.textError)),
+    return MultisigCreationToastListener(
+      child: MultisigApprovalToastListener(
+        child: MultisigProposalToastListener(
+          child: accountAsync.when(
+            loading: () => const ScaffoldBase(mainContent: Center(child: Loader())),
+            error: (e, _) => ScaffoldBase(
+              mainContent: Center(
+                child: Text(l10n.homeError(e.toString()), style: text.detail?.copyWith(color: colors.textError)),
+              ),
+            ),
+            data: (active) {
+              if (active == null) {
+                return ScaffoldBase(mainContent: Center(child: Text(l10n.homeNoActiveAccount)));
+              }
+              return ScaffoldBase.refreshable(
+                onRefresh: _refresh,
+                slivers: [
+                  _buildContent(active, colors, text, l10n),
+                  if (active is MultisigDisplayAccount)
+                    MultisigActivitySection(msig: active.account, txAsync: txAsync, onRetry: _refresh)
+                  else
+                    ActivitySection(txAsync: txAsync, activeAccount: active.account, onRetry: _refresh),
+                  const SizedBox(height: 58),
+                ],
+                bottomContent: _buildBottomContent(l10n),
+              );
+            },
+          ),
         ),
       ),
-      data: (active) {
-        if (active == null) {
-          return ScaffoldBase(mainContent: Center(child: Text(l10n.homeNoActiveAccount)));
-        }
-        return ScaffoldBase.refreshable(
-          onRefresh: _refresh,
-          slivers: [
-            _buildContent(active, colors, text, l10n),
-            ActivitySection(txAsync: txAsync, activeAccount: active.account, onRetry: _refresh),
-            const SizedBox(height: 58),
-          ],
-          bottomContent: _buildBottomContent(l10n),
-        );
-      },
     );
   }
 
@@ -179,6 +175,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         const SizedBox(height: 40),
         _buildBalance(colors, text, l10n),
         const SizedBox(height: 40),
+        if (active is MultisigDisplayAccount) ...[
+          _buildMultisigActionButtons(l10n, active.account),
+          const SizedBox(height: 40),
+        ],
         if (active is RegularAccount) ...[_buildActionButtons(l10n), const SizedBox(height: 40)],
         if (backupWalletIndex != null) ...[
           BackupReminderBanner(walletIndex: backupWalletIndex),
@@ -313,6 +313,24 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     }
 
     return Row(children: children);
+  }
+
+  Widget _buildMultisigActionButtons(AppLocalizations l10n, MultisigAccount msig) {
+    return Row(
+      children: [
+        _actionCard(
+          iconAsset: 'assets/v2/action_receive.svg',
+          label: l10n.homeReceive,
+          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ReceiveScreen())),
+        ),
+        const SizedBox(width: 15),
+        _actionCard(
+          iconAsset: 'assets/v2/action_send.svg',
+          label: l10n.multisigProposeTitle,
+          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ProposeRecipientScreen(msig: msig))),
+        ),
+      ],
+    );
   }
 
   Widget _actionCard({required String iconAsset, required String label, required VoidCallback onTap}) {

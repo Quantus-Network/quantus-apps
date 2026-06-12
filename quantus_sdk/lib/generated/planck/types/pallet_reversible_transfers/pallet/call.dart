@@ -37,8 +37,8 @@ abstract class Call {
 class $Call {
   const $Call();
 
-  SetHighSecurity setHighSecurity({required _i3.BlockNumberOrTimestamp delay, required _i4.AccountId32 interceptor}) {
-    return SetHighSecurity(delay: delay, interceptor: interceptor);
+  SetHighSecurity setHighSecurity({required _i3.BlockNumberOrTimestamp delay, required _i4.AccountId32 guardian}) {
+    return SetHighSecurity(delay: delay, guardian: guardian);
   }
 
   Cancel cancel({required _i5.H256 txId}) {
@@ -171,23 +171,42 @@ class $CallCodec with _i1.Codec<Call> {
 /// Enable high-security for the calling account with a specified
 /// reversibility delay.
 ///
-/// Recoverer and interceptor (aka guardian) could be the same account or
-/// different accounts.
-///
 /// Once an account is set as high security it can only make reversible
 /// transfers. It is not allowed any other calls.
 ///
-/// - `delay`: The reversibility time for any transfer made by the high
-/// security account.
-/// - interceptor: The account that can intercept transctions from the
-/// high security account.
+/// # Warning: Permanent and Irreversible
+///
+/// **Enabling high security mode is a one-way operation that cannot be undone.**
+///
+/// Once this function is called successfully, the account is permanently restricted
+/// to only the following operations:
+/// - [`schedule_transfer`](Self::schedule_transfer) - Schedule delayed native token
+///  transfers
+/// - [`schedule_asset_transfer`](Self::schedule_asset_transfer) - Schedule delayed asset
+///  transfers
+/// - [`cancel`](Self::cancel) - Cancel pending transfers
+/// - [`recover_funds`](Self::recover_funds) - Guardian-initiated emergency fund recovery
+///
+/// There is no mechanism to disable high security mode or restore normal account
+/// functionality. This design is intentional to provide maximum security guarantees:
+/// an attacker who gains access to the account cannot simply disable the protections.
+///
+/// Users who no longer wish to use high-security features can simply transfer their
+/// funds to a different account using [`schedule_transfer`](Self::schedule_transfer)
+/// or [`schedule_asset_transfer`](Self::schedule_asset_transfer).
+///
+/// # Parameters
+///
+/// - `delay`: The reversibility time for any transfer made by the high-security account.
+/// - `guardian`: The guardian account that can cancel pending transfers and recover funds
+///  from this high-security account.
 class SetHighSecurity extends Call {
-  const SetHighSecurity({required this.delay, required this.interceptor});
+  const SetHighSecurity({required this.delay, required this.guardian});
 
   factory SetHighSecurity._decode(_i1.Input input) {
     return SetHighSecurity(
       delay: _i3.BlockNumberOrTimestamp.codec.decode(input),
-      interceptor: const _i1.U8ArrayCodec(32).decode(input),
+      guardian: const _i1.U8ArrayCodec(32).decode(input),
     );
   }
 
@@ -195,33 +214,33 @@ class SetHighSecurity extends Call {
   final _i3.BlockNumberOrTimestamp delay;
 
   /// T::AccountId
-  final _i4.AccountId32 interceptor;
+  final _i4.AccountId32 guardian;
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-    'set_high_security': {'delay': delay.toJson(), 'interceptor': interceptor.toList()},
+    'set_high_security': {'delay': delay.toJson(), 'guardian': guardian.toList()},
   };
 
   int _sizeHint() {
     int size = 1;
     size = size + _i3.BlockNumberOrTimestamp.codec.sizeHint(delay);
-    size = size + const _i4.AccountId32Codec().sizeHint(interceptor);
+    size = size + const _i4.AccountId32Codec().sizeHint(guardian);
     return size;
   }
 
   void encodeTo(_i1.Output output) {
     _i1.U8Codec.codec.encodeTo(0, output);
     _i3.BlockNumberOrTimestamp.codec.encodeTo(delay, output);
-    const _i1.U8ArrayCodec(32).encodeTo(interceptor, output);
+    const _i1.U8ArrayCodec(32).encodeTo(guardian, output);
   }
 
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is SetHighSecurity && other.delay == delay && _i7.listsEqual(other.interceptor, interceptor);
+      other is SetHighSecurity && other.delay == delay && _i7.listsEqual(other.guardian, guardian);
 
   @override
-  int get hashCode => Object.hash(delay, interceptor);
+  int get hashCode => Object.hash(delay, guardian);
 }
 
 /// Cancel a pending reversible transaction scheduled by the caller.
@@ -260,9 +279,22 @@ class Cancel extends Call {
   int get hashCode => txId.hashCode;
 }
 
-/// Called by the Scheduler to finalize the scheduled task/call
+/// Executes a previously scheduled transfer after the delay period has elapsed.
 ///
-/// - `tx_id`: The unique id of the transaction to finalize and dispatch.
+/// This extrinsic is called automatically by the Scheduler pallet when the
+/// delay period expires. It must be signed by this pallet's account (not a user).
+/// The pallet account is set as the origin when scheduling via
+/// [`do_schedule_transfer_inner`](Self::do_schedule_transfer_inner).
+///
+/// # Parameters
+///
+/// - `tx_id`: The unique identifier of the pending transfer to execute.
+///
+/// # Errors
+///
+/// - [`InvalidSchedulerOrigin`](Error::InvalidSchedulerOrigin): Called by an account other
+///  than this pallet's account.
+/// - [`PendingTxNotFound`](Error::PendingTxNotFound): No pending transfer with this ID.
 class ExecuteTransfer extends Call {
   const ExecuteTransfer({required this.txId});
 
@@ -513,12 +545,16 @@ class ScheduleAssetTransferWithDelay extends Call {
   int get hashCode => Object.hash(assetId, dest, amount, delay);
 }
 
-/// Allows the guardian (interceptor) to recover all funds from a high security
-/// account by transferring the entire balance to themselves.
+/// Allows the guardian to recover all funds from a high-security account
+/// by transferring the entire balance to themselves.
 ///
-/// This is an emergency function for when the high security account may be compromised.
+/// This is an emergency function for when the high-security account may be compromised.
 /// It cancels all pending transfers first (applying volume fees), then transfers
 /// the remaining free balance to the guardian.
+///
+/// If releasing held funds fails for any transfer, that transfer is skipped (metadata
+/// preserved for manual retry via `cancel`) and a `TransferRecoveryFailed` event is
+/// emitted. Other transfers continue to be processed.
 class RecoverFunds extends Call {
   const RecoverFunds({required this.account});
 

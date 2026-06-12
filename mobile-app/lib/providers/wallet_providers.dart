@@ -3,6 +3,10 @@ import 'package:flutter_riverpod/legacy.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
+import 'package:resonance_network_wallet/providers/pending_multisig_cancellations_provider.dart';
+import 'package:resonance_network_wallet/providers/pending_multisig_creations_provider.dart';
+import 'package:resonance_network_wallet/providers/pending_multisig_executions_provider.dart';
+import 'package:resonance_network_wallet/providers/pending_multisig_proposals_provider.dart';
 import 'package:resonance_network_wallet/providers/pending_transactions_provider.dart';
 import 'package:resonance_network_wallet/shared/utils/print.dart';
 
@@ -76,6 +80,34 @@ final balanceProviderFamily = FutureProvider.family<BigInt, String>((ref, accoun
   return await substrateService.queryBalance(accountId);
 });
 
+/// Chain balance minus pending outgoing for any [accountId].
+final effectiveBalanceProviderFamily = Provider.family<AsyncValue<BigInt>, String>((ref, accountId) {
+  final balanceAsync = ref.watch(balanceProviderFamily(accountId));
+  final pendingTransactions = ref.watch(pendingTransactionsProvider);
+  final pendingMultisigProposals = ref.watch(pendingMultisigProposalsProvider);
+  final pendingMultisigExecutions = ref.watch(pendingMultisigExecutionsProvider);
+  final pendingMultisigCancellations = ref.watch(pendingMultisigCancellationsProvider);
+  final pendingMultisigCreations = ref.watch(pendingMultisigCreationsProvider);
+
+  return balanceAsync.when(
+    data: (blockchainBalance) {
+      final pendingOutgoing = _calculatePendingOutgoing(
+        pendingTransactions,
+        pendingMultisigProposals,
+        pendingMultisigExecutions,
+        pendingMultisigCancellations,
+        pendingMultisigCreations,
+        accountId,
+      );
+      final effectiveBalance = blockchainBalance - pendingOutgoing;
+      final result = effectiveBalance >= BigInt.zero ? effectiveBalance : BigInt.zero;
+      return AsyncValue.data(result);
+    },
+    loading: () => const AsyncValue.loading(),
+    error: (err, stack) => AsyncValue.error(err, stack),
+  );
+});
+
 // Raw blockchain balance (without pending transaction adjustments)
 final balanceProviderRaw = Provider<AsyncValue<BigInt>>((ref) {
   final activeAccountAsyncValue = ref.watch(activeAccountProvider);
@@ -99,6 +131,10 @@ BigInt _cachedBalance = BigInt.zero;
 final balanceProvider = Provider<AsyncValue<BigInt>>((ref) {
   final balanceAsync = ref.watch(balanceProviderRaw);
   final pendingTransactions = ref.watch(pendingTransactionsProvider);
+  final pendingMultisigProposals = ref.watch(pendingMultisigProposalsProvider);
+  final pendingMultisigExecutions = ref.watch(pendingMultisigExecutionsProvider);
+  final pendingMultisigCancellations = ref.watch(pendingMultisigCancellationsProvider);
+  final pendingMultisigCreations = ref.watch(pendingMultisigCreationsProvider);
   final activeAccountAsync = ref.watch(activeAccountProvider);
 
   return balanceAsync.when(
@@ -109,7 +145,14 @@ final balanceProvider = Provider<AsyncValue<BigInt>>((ref) {
         return AsyncValue.data(BigInt.zero);
       }
 
-      final pendingOutgoing = _calculatePendingOutgoing(pendingTransactions, activeAccount.account.accountId);
+      final pendingOutgoing = _calculatePendingOutgoing(
+        pendingTransactions,
+        pendingMultisigProposals,
+        pendingMultisigExecutions,
+        pendingMultisigCancellations,
+        pendingMultisigCreations,
+        activeAccount.account.accountId,
+      );
       final effectiveBalance = blockchainBalance - pendingOutgoing;
       final result = effectiveBalance >= BigInt.zero ? effectiveBalance : BigInt.zero;
       _cachedBalance = result;
@@ -125,7 +168,14 @@ final balanceProvider = Provider<AsyncValue<BigInt>>((ref) {
 
 /// Calculates the total amount of pending outgoing transactions for a
 /// specific account
-BigInt _calculatePendingOutgoing(List<PendingTransactionEvent> pendingTransactions, String accountId) {
+BigInt _calculatePendingOutgoing(
+  List<PendingTransactionEvent> pendingTransactions,
+  List<PendingMultisigProposalEvent> pendingMultisigProposals,
+  List<PendingMultisigExecutionEvent> pendingMultisigExecutions,
+  List<PendingMultisigCancellationEvent> pendingMultisigCancellations,
+  List<PendingMultisigCreationEvent> pendingMultisigCreations,
+  String accountId,
+) {
   BigInt totalOutgoing = BigInt.zero;
 
   for (final transaction in pendingTransactions) {
@@ -137,6 +187,30 @@ BigInt _calculatePendingOutgoing(List<PendingTransactionEvent> pendingTransactio
       if (transaction.fee != null) {
         totalOutgoing += transaction.fee!;
       }
+    }
+  }
+
+  for (final proposal in pendingMultisigProposals) {
+    if (proposal.proposerId == accountId) {
+      totalOutgoing += proposal.memberCost;
+    }
+  }
+
+  for (final execution in pendingMultisigExecutions) {
+    if (execution.executorId == accountId) {
+      totalOutgoing += execution.memberCost;
+    }
+  }
+
+  for (final cancellation in pendingMultisigCancellations) {
+    if (cancellation.proposerId == accountId) {
+      totalOutgoing += cancellation.memberCost;
+    }
+  }
+
+  for (final creation in pendingMultisigCreations) {
+    if (creation.creatorId == accountId) {
+      totalOutgoing += creation.totalCost;
     }
   }
 

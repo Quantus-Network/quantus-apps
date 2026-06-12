@@ -2,8 +2,10 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/providers/multisig_providers.dart';
 import 'package:resonance_network_wallet/v2/components/account_badge.dart';
 import 'package:resonance_network_wallet/v2/components/loader.dart';
+import 'package:resonance_network_wallet/v2/components/multisig_tag.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_icon_button.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
@@ -13,6 +15,7 @@ import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/v2/components/bottom_sheet_container.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/account_menu_screen.dart';
+import 'package:resonance_network_wallet/v2/screens/accounts/multisig_account_menu_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/add_account_menu_screen.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 
@@ -28,7 +31,7 @@ class AccountsSheet extends ConsumerStatefulWidget {
 }
 
 class _AccountsScreenState extends ConsumerState<AccountsSheet> {
-  List<Account> _displayAccounts(List<Account> accounts) {
+  List<Account> _sortedRegular(List<Account> accounts) {
     final sorted = [...accounts];
     sorted.sort((a, b) {
       final walletCmp = a.walletIndex.compareTo(b.walletIndex);
@@ -45,8 +48,8 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
     ).push<void>(MaterialPageRoute<void>(builder: (_) => const AddAccountMenuScreen()));
   }
 
-  Future<void> _switchAccount(Account account) async {
-    await ref.read(activeAccountProvider.notifier).setActiveAccount(RegularAccount(account));
+  Future<void> _switchAccount(DisplayAccount display) async {
+    await ref.read(activeAccountProvider.notifier).setActiveAccount(display);
     if (mounted) {
       Navigator.of(context).pop();
     }
@@ -56,15 +59,20 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
     Navigator.of(context).push<void>(MaterialPageRoute(builder: (_) => AccountMenuScreen(initialAccount: account)));
   }
 
+  void _openMultisigAccountMenu(MultisigAccount account) {
+    Navigator.of(
+      context,
+    ).push<void>(MaterialPageRoute(builder: (_) => MultisigAccountMenuScreen(initialAccount: account)));
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = ref.watch(l10nProvider);
     final accountsAsync = ref.watch(accountsProvider);
+    final multisigAsync = ref.watch(multisigAccountsProvider);
     final activeDisplayAccountAsync = ref.watch(activeAccountProvider);
 
-    final accounts = accountsAsync.value ?? <Account>[];
     final activeDisplayAccount = activeDisplayAccountAsync.value;
-    final displayAccounts = _displayAccounts(accounts);
     final activeAccountId = activeDisplayAccount?.account.accountId;
 
     final media = MediaQuery.of(context);
@@ -77,8 +85,8 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
       child: _buildContent(
         l10n: l10n,
         accountsAsync: accountsAsync,
+        multisigAsync: multisigAsync,
         activeDisplayAccountAsync: activeDisplayAccountAsync,
-        displayAccounts: displayAccounts,
         activeAccountId: activeAccountId,
       ),
     );
@@ -87,15 +95,15 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
   Widget _buildContent({
     required AppLocalizations l10n,
     required AsyncValue<List<Account>> accountsAsync,
+    required AsyncValue<List<MultisigAccount>> multisigAsync,
     required AsyncValue<DisplayAccount?> activeDisplayAccountAsync,
-    required List<Account> displayAccounts,
     required String? activeAccountId,
   }) {
-    if (accountsAsync.isLoading || activeDisplayAccountAsync.isLoading) {
+    if (accountsAsync.isLoading || activeDisplayAccountAsync.isLoading || multisigAsync.isLoading) {
       return const Center(child: Loader());
     }
 
-    if (accountsAsync.hasError) {
+    if (accountsAsync.hasError || multisigAsync.hasError) {
       return Center(
         child: Text(
           l10n.accountsSheetFailedLoadAccounts,
@@ -113,15 +121,19 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
       );
     }
 
-    return _buildAccountsListView(l10n, displayAccounts, activeAccountId);
+    final regulars = _sortedRegular(accountsAsync.value ?? []);
+    final multisigs = multisigAsync.value ?? [];
+    final items = <BaseAccount>[...regulars, ...multisigs];
+
+    return _buildAccountsListView(l10n, items, activeAccountId);
   }
 
-  Widget _buildAccountsListView(AppLocalizations l10n, List<Account> displayAccounts, String? activeAccountId) {
+  Widget _buildAccountsListView(AppLocalizations l10n, List<BaseAccount> items, String? activeAccountId) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Expanded(
-          child: displayAccounts.isEmpty
+          child: items.isEmpty
               ? Center(
                   child: Text(
                     l10n.accountsSheetNoAccountsFound,
@@ -129,13 +141,14 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
                   ),
                 )
               : ListView.separated(
-                  itemCount: displayAccounts.length,
+                  itemCount: items.length,
                   separatorBuilder: (_, _) => const SizedBox(height: 14),
                   itemBuilder: (_, index) {
-                    final account = displayAccounts[index];
-                    final isActive = account.accountId == activeAccountId;
-
-                    return _buildAccountRow(l10n, account, isActive);
+                    final item = items[index];
+                    final isActive = item.accountId == activeAccountId;
+                    if (item is Account) return _buildRegularRow(l10n, item, isActive);
+                    if (item is MultisigAccount) return _buildMultisigRow(l10n, item, isActive);
+                    return const SizedBox.shrink();
                   },
                 ),
         ),
@@ -149,7 +162,7 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
     );
   }
 
-  Widget _buildAccountRow(AppLocalizations l10n, Account account, bool isActive) {
+  Widget _buildRegularRow(AppLocalizations l10n, Account account, bool isActive) {
     final balanceAsync = ref.watch(balanceProviderFamily(account.accountId));
     final formattingService = ref.watch(numberFormattingServiceProvider);
     final balanceText = balanceAsync.when(
@@ -157,10 +170,70 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
       error: (_, _) => l10n.accountsSheetBalanceUnavailable,
       data: (balance) => l10n.accountsSheetBalance(formattingService.formatBalance(balance), AppConstants.tokenSymbol),
     );
-    final colors = context.colors;
 
+    return _AccountRowShell(
+      isActive: isActive,
+      onTap: () => _switchAccount(RegularAccount(account)),
+      leading: AccountBadge.account(account: account, isActive: isActive),
+      title: account.name,
+      subtitle: balanceText,
+      trailing: QuantusIconButton.circular(
+        icon: Icons.edit_outlined,
+        onTap: () => _openAccountMenu(account),
+        size: IconButtonSize.medium,
+      ),
+    );
+  }
+
+  Widget _buildMultisigRow(AppLocalizations l10n, MultisigAccount account, bool isActive) {
+    final balanceAsync = ref.watch(balanceProviderFamily(account.accountId));
+    final formattingService = ref.watch(numberFormattingServiceProvider);
+    final balanceText = balanceAsync.when(
+      loading: () => l10n.commonLoading,
+      error: (_, _) => l10n.accountsSheetBalanceUnavailable,
+      data: (balance) => l10n.accountsSheetBalance(formattingService.formatBalance(balance), AppConstants.tokenSymbol),
+    );
+
+    return _AccountRowShell(
+      isActive: isActive,
+      onTap: () => _switchAccount(MultisigDisplayAccount(account)),
+      leading: AccountBadge(name: account.name, isActive: isActive),
+      title: account.name,
+      subtitle: balanceText,
+      tag: MultisigTag(label: l10n.multisigTag),
+      trailing: QuantusIconButton.circular(
+        icon: Icons.edit_outlined,
+        onTap: () => _openMultisigAccountMenu(account),
+        size: IconButtonSize.medium,
+      ),
+    );
+  }
+}
+
+class _AccountRowShell extends StatelessWidget {
+  final bool isActive;
+  final VoidCallback onTap;
+  final Widget leading;
+  final String title;
+  final String subtitle;
+  final Widget? trailing;
+  final Widget? tag;
+
+  const _AccountRowShell({
+    required this.isActive,
+    required this.onTap,
+    required this.leading,
+    required this.title,
+    required this.subtitle,
+    this.trailing,
+    this.tag,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
     return GestureDetector(
-      onTap: () => _switchAccount(account),
+      onTap: onTap,
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
@@ -175,24 +248,33 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  AccountBadge(account: account, isActive: isActive),
+                  leading,
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          account.name,
-                          style: context.themeText.paragraph!.copyWith(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w400,
-                            color: colors.textPrimary,
-                            height: 1,
-                          ),
+                        Row(
+                          children: [
+                            Flexible(
+                              child: Text(
+                                title,
+                                style: context.themeText.paragraph!.copyWith(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w400,
+                                  color: colors.textPrimary,
+                                  height: 1,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            if (tag != null) ...[const SizedBox(width: 8), tag!],
+                          ],
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          balanceText,
+                          subtitle,
                           style: context.themeText.smallParagraph!.copyWith(
                             fontSize: 14,
                             color: colors.textTertiary,
@@ -205,12 +287,7 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
                 ],
               ),
             ),
-            const SizedBox(width: 8),
-            QuantusIconButton.circular(
-              icon: Icons.edit_outlined,
-              onTap: () => _openAccountMenu(account),
-              size: IconButtonSize.medium,
-            ),
+            if (trailing != null) ...[const SizedBox(width: 8), trailing!],
           ],
         ),
       ),

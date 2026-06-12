@@ -271,6 +271,10 @@ class Txs {
   /// clones of the original task. Their retry configuration will be derived from the
   /// original task's configuration, but will have a lower value for `remaining` than the
   /// original `total_retries`.
+  ///
+  /// The `period` type must match the task's scheduling type: block-scheduled tasks
+  /// require a block-number period, and timestamp-scheduled tasks require a timestamp
+  /// period. Mismatched types will return [`Error::RetryPeriodMismatch`].
   _i9.Scheduler setRetry({
     required _i5.Tuple2<_i3.BlockNumberOrTimestamp, int> task,
     required int retries,
@@ -290,6 +294,10 @@ class Txs {
   /// clones of the original task. Their retry configuration will be derived from the
   /// original task's configuration, but will have a lower value for `remaining` than the
   /// original `total_retries`.
+  ///
+  /// The `period` type must match the task's scheduling type: block-scheduled tasks
+  /// require a block-number period, and timestamp-scheduled tasks require a timestamp
+  /// period. Mismatched types will return [`Error::RetryPeriodMismatch`].
   _i9.Scheduler setRetryNamed({
     required List<int> id,
     required int retries,

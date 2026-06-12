@@ -18,6 +18,7 @@ linter:
 
 analyzer:
   exclude:
+    - build/**
     - "**/*.g.dart"
     - "**/*.freezed.dart"
     - "lib/generated/**"

@@ -7,6 +7,10 @@ import 'package:resonance_network_wallet/models/pagination_state.dart';
 import 'package:resonance_network_wallet/providers/account_id_list_cache.dart';
 import 'package:resonance_network_wallet/providers/controllers/unified_pagination_controller.dart';
 import 'package:resonance_network_wallet/providers/pending_cancellations_provider.dart';
+import 'package:resonance_network_wallet/providers/pending_multisig_creations_provider.dart';
+import 'package:resonance_network_wallet/providers/pending_multisig_cancellations_provider.dart';
+import 'package:resonance_network_wallet/providers/pending_multisig_executions_provider.dart';
+import 'package:resonance_network_wallet/providers/pending_multisig_proposals_provider.dart';
 import 'package:resonance_network_wallet/providers/pending_transactions_provider.dart';
 import 'package:resonance_network_wallet/shared/utils/print.dart';
 
@@ -30,6 +34,10 @@ final filteredTransactionsProviderFamily =
 
       final pendingCancellationIds = ref.watch(pendingCancellationsProvider);
       final pending = ref.watch(pendingTransactionsProvider);
+      final pendingMultisigCreations = ref.watch(pendingMultisigCreationsProvider);
+      final pendingMultisigProposals = ref.watch(pendingMultisigProposalsProvider);
+      final pendingMultisigExecutions = ref.watch(pendingMultisigExecutionsProvider);
+      final pendingMultisigCancellations = ref.watch(pendingMultisigCancellationsProvider);
       final pagination = ref.watch(filteredPaginationControllerProviderFamily(normalizedParams));
 
       if (pagination.error != null && !pagination.hasLoadedChainData) {
@@ -51,11 +59,27 @@ final filteredTransactionsProviderFamily =
                 (accountIds.contains(tx.from) || accountIds.contains(tx.to)),
           )
           .toList();
+      final filteredPendingMultisig = pendingMultisigCreations
+          .where((tx) => normalizedParams.filter != TransactionFilter.receive && accountIds.contains(tx.creatorId))
+          .toList();
+      final filteredPendingProposals = pendingMultisigProposals
+          .where((tx) => normalizedParams.filter != TransactionFilter.receive && accountIds.contains(tx.proposerId))
+          .toList();
+      final filteredPendingExecutions = pendingMultisigExecutions
+          .where((tx) => normalizedParams.filter != TransactionFilter.receive && accountIds.contains(tx.executorId))
+          .toList();
+      final filteredPendingCancellations = pendingMultisigCancellations
+          .where((tx) => normalizedParams.filter != TransactionFilter.receive && accountIds.contains(tx.proposerId))
+          .toList();
 
       return AsyncValue.data(
         CombinedTransactionsList(
           pendingCancellationIds: pendingCancellationIds,
           pendingTransactions: filteredPending,
+          pendingMultisigCreations: filteredPendingMultisig,
+          pendingMultisigProposals: filteredPendingProposals,
+          pendingMultisigExecutions: filteredPendingExecutions,
+          pendingMultisigCancellations: filteredPendingCancellations,
           scheduledReversibleTransfers: pagination.scheduledReversibleTransfers,
           otherTransfers: pagination.otherTransfers,
         ),

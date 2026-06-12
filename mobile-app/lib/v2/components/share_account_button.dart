@@ -15,6 +15,7 @@ class ShareAccountButton extends ConsumerWidget {
     final l10n = ref.watch(l10nProvider);
 
     return QuantusButton.simple(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
       label: l10n.componentShare,
       onTap: onTap,
       icon: Icon(Icons.shortcut_rounded, size: 20, color: context.colors.background),

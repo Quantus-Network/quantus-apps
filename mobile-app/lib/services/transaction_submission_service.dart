@@ -8,7 +8,20 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/notification_provider.dart';
+import 'package:resonance_network_wallet/providers/multisig_approval_toast_provider.dart';
+import 'package:resonance_network_wallet/providers/multisig_cancellation_toast_provider.dart';
+import 'package:resonance_network_wallet/providers/multisig_execution_toast_provider.dart';
+import 'package:resonance_network_wallet/providers/multisig_proposal_toast_provider.dart';
+import 'package:resonance_network_wallet/providers/multisig_providers.dart';
+import 'package:resonance_network_wallet/providers/pending_multisig_approvals_provider.dart';
+import 'package:resonance_network_wallet/providers/pending_multisig_cancellations_provider.dart';
+import 'package:resonance_network_wallet/providers/pending_multisig_executions_provider.dart';
+import 'package:resonance_network_wallet/providers/pending_multisig_proposals_provider.dart';
 import 'package:resonance_network_wallet/providers/pending_transactions_provider.dart';
+import 'package:resonance_network_wallet/services/multisig_approval_polling_service.dart';
+import 'package:resonance_network_wallet/services/multisig_cancellation_polling_service.dart';
+import 'package:resonance_network_wallet/services/multisig_execution_polling_service.dart';
+import 'package:resonance_network_wallet/services/multisig_proposal_polling_service.dart';
 import 'package:resonance_network_wallet/services/pending_transaction_polling_service.dart';
 import 'package:resonance_network_wallet/services/telemetry_service.dart';
 import 'package:resonance_network_wallet/shared/utils/print.dart';
@@ -114,6 +127,207 @@ class TransactionSubmissionService {
       ),
       pendingTx,
     );
+  }
+
+  /// Submits a multisig transfer proposal, tracks it optimistically, and polls
+  /// the indexer until the proposal is visible.
+  Future<void> proposeTransfer({
+    required MultisigAccount msig,
+    required Account signer,
+    required String recipient,
+    required BigInt amount,
+    required int expiryBlock,
+    required ProposeFeeBreakdown feeBreakdown,
+  }) async {
+    final pending = PendingMultisigProposalEvent.create(
+      msig: msig,
+      proposerId: signer.accountId,
+      recipient: recipient,
+      amount: amount,
+      expiryBlock: expiryBlock,
+      fee: feeBreakdown.networkFee,
+      deposit: feeBreakdown.deposit,
+      palletFee: feeBreakdown.creationFee,
+    );
+
+    addPendingMultisigProposal(_ref, pending);
+
+    TelemetryService().sendEvent('multisig_propose');
+
+    unawaited(
+      _submitProposalBackground(
+        msig: msig,
+        signer: signer,
+        recipient: recipient,
+        amount: amount,
+        expiryBlock: expiryBlock,
+        pending: pending,
+      ),
+    );
+  }
+
+  /// Submits a multisig proposal approval, tracks it optimistically, and polls
+  /// the indexer until the approval appears on the proposal.
+  Future<void> approveProposal({
+    required MultisigAccount msig,
+    required Account signer,
+    required MultisigProposal proposal,
+  }) async {
+    final pending = PendingMultisigApprovalEvent.create(
+      multisigAddress: msig.accountId,
+      proposalId: proposal.id,
+      approverId: signer.accountId,
+    );
+
+    addPendingMultisigApproval(_ref, pending);
+
+    TelemetryService().sendEvent('multisig_approve');
+
+    unawaited(_submitApproveBackground(msig: msig, signer: signer, proposalId: proposal.id, pending: pending));
+  }
+
+  Future<void> _submitApproveBackground({
+    required MultisigAccount msig,
+    required Account signer,
+    required int proposalId,
+    required PendingMultisigApprovalEvent pending,
+  }) async {
+    try {
+      final service = _ref.read(multisigServiceProvider);
+      final hashBytes = await service.submitApproveExtrinsic(msig: msig, signer: signer, proposalId: proposalId);
+      final extrinsicHash = '0x${hex.encode(hashBytes)}';
+      quantusDebugPrint('[Approve] submitted: $extrinsicHash');
+
+      updatePendingMultisigApproval(_ref, pending.id, extrinsicHash: extrinsicHash);
+      final updated = findPendingMultisigApproval(_ref, pending.id) ?? pending.copyWith(extrinsicHash: extrinsicHash);
+      _ref.read(multisigApprovalPollingServiceProvider).startPolling(msig, updated);
+    } catch (e, stackTrace) {
+      quantusDebugPrint('[Approve] submit failed: $e\n$stackTrace');
+      removePendingMultisigApproval(_ref, pending.id);
+      _ref.read(multisigApprovalToastProvider.notifier).show(MultisigApprovalToastKind.submitFailed);
+    }
+  }
+
+  /// Submits a multisig proposal execution, tracks it optimistically, and polls
+  /// the indexer until the proposal status becomes executed.
+  Future<void> executeProposal({
+    required MultisigAccount msig,
+    required Account signer,
+    required MultisigProposal proposal,
+    BigInt? fee,
+  }) async {
+    final pending = PendingMultisigExecutionEvent.fromProposal(
+      msig: msig,
+      proposal: proposal,
+      executorId: signer.accountId,
+      fee: fee,
+    );
+
+    addPendingMultisigExecution(_ref, pending);
+
+    TelemetryService().sendEvent('multisig_execute');
+
+    unawaited(_submitExecuteBackground(msig: msig, signer: signer, proposalId: proposal.id, pending: pending));
+  }
+
+  Future<void> _submitExecuteBackground({
+    required MultisigAccount msig,
+    required Account signer,
+    required int proposalId,
+    required PendingMultisigExecutionEvent pending,
+  }) async {
+    try {
+      final service = _ref.read(multisigServiceProvider);
+      final hashBytes = await service.submitExecuteExtrinsic(msig: msig, signer: signer, proposalId: proposalId);
+      final extrinsicHash = '0x${hex.encode(hashBytes)}';
+      quantusDebugPrint('[Execute] submitted: $extrinsicHash');
+
+      updatePendingMultisigExecution(_ref, pending.id, extrinsicHash: extrinsicHash);
+      final updated = findPendingMultisigExecution(_ref, pending.id) ?? pending.copyWith(extrinsicHash: extrinsicHash);
+      _ref.read(multisigExecutionPollingServiceProvider).startPolling(msig, updated);
+    } catch (e, stackTrace) {
+      quantusDebugPrint('[Execute] submit failed: $e\n$stackTrace');
+      removePendingMultisigExecution(_ref, pending.id);
+      _ref.read(multisigExecutionToastProvider.notifier).show(MultisigExecutionToastKind.submitFailed);
+    }
+  }
+
+  /// Submits a multisig proposal cancellation, tracks it optimistically, and polls
+  /// the indexer until the proposal status becomes cancelled.
+  Future<void> cancelProposal({
+    required MultisigAccount msig,
+    required Account proposer,
+    required MultisigProposal proposal,
+    BigInt? fee,
+  }) async {
+    final pending = PendingMultisigCancellationEvent.fromProposal(
+      msig: msig,
+      proposal: proposal,
+      proposerId: proposer.accountId,
+      fee: fee,
+    );
+
+    addPendingMultisigCancellation(_ref, pending);
+
+    TelemetryService().sendEvent('multisig_cancel');
+
+    unawaited(_submitCancelBackground(msig: msig, proposer: proposer, proposalId: proposal.id, pending: pending));
+  }
+
+  Future<void> _submitCancelBackground({
+    required MultisigAccount msig,
+    required Account proposer,
+    required int proposalId,
+    required PendingMultisigCancellationEvent pending,
+  }) async {
+    try {
+      final service = _ref.read(multisigServiceProvider);
+      final hashBytes = await service.submitCancelExtrinsic(msig: msig, signer: proposer, proposalId: proposalId);
+      final extrinsicHash = '0x${hex.encode(hashBytes)}';
+      quantusDebugPrint('[Cancel] submitted: $extrinsicHash');
+
+      updatePendingMultisigCancellation(_ref, pending.id, extrinsicHash: extrinsicHash);
+      final updated =
+          findPendingMultisigCancellation(_ref, pending.id) ?? pending.copyWith(extrinsicHash: extrinsicHash);
+      _ref.read(multisigCancellationPollingServiceProvider).startPolling(msig, updated);
+    } catch (e, stackTrace) {
+      quantusDebugPrint('[Cancel] submit failed: $e\n$stackTrace');
+      removePendingMultisigCancellation(_ref, pending.id);
+      _ref.read(multisigCancellationToastProvider.notifier).show(MultisigCancellationToastKind.submitFailed);
+    }
+  }
+
+  Future<void> _submitProposalBackground({
+    required MultisigAccount msig,
+    required Account signer,
+    required String recipient,
+    required BigInt amount,
+    required int expiryBlock,
+    required PendingMultisigProposalEvent pending,
+  }) async {
+    try {
+      final service = _ref.read(multisigServiceProvider);
+      final hashBytes = await service.propose(
+        msig: msig,
+        signer: signer,
+        recipient: recipient,
+        amount: amount,
+        expiryBlock: expiryBlock,
+      );
+      final extrinsicHash = '0x${hex.encode(hashBytes)}';
+      quantusDebugPrint('[Propose] submitted: $extrinsicHash');
+
+      updatePendingMultisigProposal(_ref, pending.id, extrinsicHash: extrinsicHash);
+      final updated = findPendingMultisigProposal(_ref, pending.id) ?? pending.copyWith(extrinsicHash: extrinsicHash);
+      _ref.read(multisigProposalPollingServiceProvider).startPolling(msig, updated);
+    } catch (e, stackTrace) {
+      // Retries live in SubstrateService.submitExtrinsic; avoid outer retries
+      // here because each attempt fetches a fresh nonce and can duplicate
+      // deposit-reserving proposals if a prior submit already landed.
+      quantusDebugPrint('[Propose] submit failed: $e\n$stackTrace');
+      removePendingMultisigProposal(_ref, pending.id);
+      _ref.read(multisigProposalToastProvider.notifier).show(MultisigProposalToastKind.submitFailed);
+    }
   }
 
   PendingTransactionEvent createPendingTransaction({

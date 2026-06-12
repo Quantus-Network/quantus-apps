@@ -185,6 +185,490 @@ class AppLocalizationsEn extends AppLocalizations {
   String get addAccountMenuImportSubtitle => 'Use a recovery phrase to import';
 
   @override
+  String get addAccountMenuMultisigTitle => 'Create Multisig';
+
+  @override
+  String get addAccountMenuMultisigSubtitle => 'Set up a shared address with multiple signers';
+
+  @override
+  String get addAccountMenuDiscoverMultisigTitle => 'Discover Multisig';
+
+  @override
+  String get addAccountMenuDiscoverMultisigSubtitle => 'Find multisigs where your accounts are signers';
+
+  @override
+  String get multisigTag => 'MULTISIG';
+
+  @override
+  String get multisigProposeTitle => 'Propose';
+
+  @override
+  String get multisigAddTitle => 'Create Multisig';
+
+  @override
+  String get multisigDiscoverTitle => 'Discover Multisig';
+
+  @override
+  String get multisigCreateSubtitle => 'Give this multisig a name you\'ll recognize. You can change it anytime.';
+
+  @override
+  String get multisigCreateButton => 'Create';
+
+  @override
+  String get multisigCreateCreatingButton => 'Creating';
+
+  @override
+  String multisigCreateDefaultName(int number) {
+    return 'Multisig $number';
+  }
+
+  @override
+  String get multisigCreateErrorCouldNotCreate => 'Could not create multisig.';
+
+  @override
+  String get multisigCreateReadyToast => 'Multisig added to your accounts.';
+
+  @override
+  String get multisigCreateAlreadyExists => 'A multisig with this address already exists on-chain.';
+
+  @override
+  String get multisigCreateInsufficientBalance => 'Insufficient balance to cover multisig creation fees.';
+
+  @override
+  String get multisigCreateTimeoutToast =>
+      'Multisig creation is taking longer than expected. Check the chain or try again.';
+
+  @override
+  String get multisigCreateAuthReason => 'Authenticate to create this multisig';
+
+  @override
+  String get multisigCreateSignersLabel => 'SIGNERS';
+
+  @override
+  String get multisigCreateSignersSubtitle => 'Add at least one other signer besides yourself.';
+
+  @override
+  String get multisigCreateAddSignerHint => 'Signer SS58 address';
+
+  @override
+  String get multisigCreateAddSignerButton => 'Add Signer';
+
+  @override
+  String get multisigCreateDuplicateSigner => 'This signer is already in the list.';
+
+  @override
+  String get multisigCreateInvalidSigner => 'Enter a valid SS58 address.';
+
+  @override
+  String get multisigCreateThresholdLabel => 'THRESHOLD';
+
+  @override
+  String multisigCreateThresholdValue(int count, int total) {
+    return '$count of $total';
+  }
+
+  @override
+  String get multisigCreatePredictedAddressLabel => 'MULTISIG ADDRESS';
+
+  @override
+  String get multisigCreatePredictedAddressPlaceholder => 'Add signers to preview address';
+
+  @override
+  String get multisigDone => 'Done';
+
+  @override
+  String get multisigAddDiscoveredTitle => 'Discovered for you';
+
+  @override
+  String get multisigAddDiscoveredSubtitle => 'Multisigs on chain where one of your accounts is a signer';
+
+  @override
+  String get multisigAddButton => 'Add';
+
+  @override
+  String get multisigAddedButton => 'Added';
+
+  @override
+  String get multisigAddNoneFound => 'No multisigs found.';
+
+  @override
+  String multisigAddDiscoverFailed(String error) {
+    return 'Could not discover multisigs: $error';
+  }
+
+  @override
+  String multisigAddFailed(String error) {
+    return 'Could not add multisig: $error';
+  }
+
+  @override
+  String get multisigOpenProposals => 'Open Proposals';
+
+  @override
+  String get multisigPastProposals => 'Past Proposals';
+
+  @override
+  String get multisigNoOpenProposals => 'No open proposals.';
+
+  @override
+  String get multisigNoPastProposals => 'No past proposals.';
+
+  @override
+  String multisigLoadFailed(String error) {
+    return 'Failed to load: $error';
+  }
+
+  @override
+  String multisigProposalToAddress(String address) {
+    return 'to $address';
+  }
+
+  @override
+  String get multisigStatusApproved => 'APPROVED';
+
+  @override
+  String get multisigStatusProposed => 'PROPOSED';
+
+  @override
+  String get multisigStatusExpired => 'EXPIRED';
+
+  @override
+  String get multisigStatusCancelled => 'CANCELLED';
+
+  @override
+  String get multisigProposeSelectRecipientTo => 'Transfer to';
+
+  @override
+  String multisigProposeSearchHint(String symbol) {
+    return 'Enter $symbol Address';
+  }
+
+  @override
+  String get multisigProposeAmountToLabel => 'TRANSFER TO';
+
+  @override
+  String get multisigProposeDepositLabel => 'Deposit:';
+
+  @override
+  String get multisigProposeCreationFeeLabel => 'Proposal Fee:';
+
+  @override
+  String get multisigProposeDepositRefundableNote => 'refundable';
+
+  @override
+  String get multisigProposeMemberTotalLabel => 'TOTAL FROM YOUR ACCOUNT';
+
+  @override
+  String get multisigProposeFeeLabel => 'Proposal Fee:';
+
+  @override
+  String get multisigProposeFeeFetchFailed => 'Unable to estimate fee';
+
+  @override
+  String get multisigProposeReviewButton => 'Review transfer';
+
+  @override
+  String get multisigProposeReviewProposing => 'PROPOSED TRANSFER';
+
+  @override
+  String multisigProposeReviewFromName(String name) {
+    return 'from $name';
+  }
+
+  @override
+  String get multisigProposeThresholdLabel => 'THRESHOLD';
+
+  @override
+  String get multisigProposeExpiresLabel => 'EXPIRES';
+
+  @override
+  String multisigExpiresBlockOnly(int block) {
+    return 'Block $block';
+  }
+
+  @override
+  String get multisigProposeFeeRowLabel => 'PROPOSAL FEE';
+
+  @override
+  String get multisigProposeCreateButton => 'Submit proposal';
+
+  @override
+  String get multisigProposeAuthReason => 'Authenticate to propose transaction';
+
+  @override
+  String get multisigProposeAuthRequired => 'Authentication required';
+
+  @override
+  String get multisigProposeSubmitFailed => 'Failed to create proposal';
+
+  @override
+  String get multisigProposeTimeoutToast =>
+      'Proposal confirmation is taking longer than expected. Check the chain or try again.';
+
+  @override
+  String get multisigProposeDoneHeadline => 'Transfer proposal submitted';
+
+  @override
+  String get multisigProposeDoneSubline => 'Co-signers must approve before the transfer can execute.';
+
+  @override
+  String multisigProposeDoneToChecksum(String checksum) {
+    return 'to $checksum';
+  }
+
+  @override
+  String multisigSignaturesCount(int current, int threshold) {
+    return 'Signatures: $current/$threshold';
+  }
+
+  @override
+  String get multisigProposalTitle => 'Proposal';
+
+  @override
+  String multisigProposalLoadFailed(String error) {
+    return 'Failed: $error';
+  }
+
+  @override
+  String get multisigProposalNotFound => 'Proposal not found.';
+
+  @override
+  String get multisigProposalSignButton => 'Sign';
+
+  @override
+  String get multisigProposalSigningSoonNote => 'Signing will be available soon.';
+
+  @override
+  String get multisigProposalApprovingLabel => 'Approving…';
+
+  @override
+  String get multisigProposalApprovingNote => 'Your approval is being confirmed on-chain.';
+
+  @override
+  String get multisigApproveUnavailableNote => 'This proposal can no longer be approved.';
+
+  @override
+  String get activityTxApproving => 'Approving…';
+
+  @override
+  String get activityTxCancelling => 'Cancelling…';
+
+  @override
+  String get multisigApprovalTimeoutToast =>
+      'Approval confirmation is taking longer than expected. Check the chain or try again.';
+
+  @override
+  String get multisigProposalAlreadySignedNote => 'You\'ve already approved this proposal.';
+
+  @override
+  String get multisigProposalAlreadyExecutedNote => 'This proposal is already executed.';
+
+  @override
+  String get multisigProposalAlreadyCancelledNote => 'This proposal is already cancelled.';
+
+  @override
+  String get multisigProposalProposerLabel => 'PROPOSER';
+
+  @override
+  String get multisigProposalStatusLabel => 'STATUS';
+
+  @override
+  String get multisigProposalDepositLabel => 'DEPOSIT';
+
+  @override
+  String get multisigStatusActive => 'ACTIVE';
+
+  @override
+  String get multisigStatusExecuted => 'EXECUTED';
+
+  @override
+  String get multisigStatusRemoved => 'REMOVED';
+
+  @override
+  String get multisigStatusUnknown => 'UNKNOWN';
+
+  @override
+  String get activityTxProposal => 'Proposal';
+
+  @override
+  String get activityTxProposing => 'Proposing';
+
+  @override
+  String get activityTxProposalCreated => 'Proposal created';
+
+  @override
+  String get activityTxProposalApproved => 'Proposal approved';
+
+  @override
+  String get activityTxProposalExecuted => 'Proposal executed';
+
+  @override
+  String get activityTxProposalCancelled => 'Proposal cancelled';
+
+  @override
+  String get multisigApproveButton => 'Approve';
+
+  @override
+  String get multisigAlreadyApproved => 'Already Approved';
+
+  @override
+  String get multisigCancelProposalButton => 'Cancel Proposal';
+
+  @override
+  String get multisigProposalExpiresLabel => 'EXPIRES';
+
+  @override
+  String get multisigProposalAtLabel => 'AT';
+
+  @override
+  String get multisigProposalThresholdLabel => 'THRESHOLD';
+
+  @override
+  String get multisigProposalApprovalsLabel => 'APPROVALS';
+
+  @override
+  String get multisigProposalFeeRowLabel => 'PROPOSAL FEE';
+
+  @override
+  String get multisigProposalSignersLabel => 'SIGNERS';
+
+  @override
+  String get multisigYouLabel => 'YOU';
+
+  @override
+  String get multisigSignerCreatorLabel => 'CREATOR';
+
+  @override
+  String get multisigAccountMenuDetails => 'Multisig details';
+
+  @override
+  String get multisigAccountMenuDetailsTitle => 'Multisig details';
+
+  @override
+  String get multisigAccountMenuDetailsThresholdHint =>
+      'This many signer approvals are required to execute a proposal.';
+
+  @override
+  String multisigThresholdOf(int count, int total) {
+    return '$count of $total';
+  }
+
+  @override
+  String multisigApprovalsOf(int count, int threshold) {
+    return '$count of $threshold';
+  }
+
+  @override
+  String get multisigApproveConfirmTitle => 'Are you sure?';
+
+  @override
+  String get multisigApproveConfirmBody => 'You are about to approve a transfer of';
+
+  @override
+  String multisigApproveConfirmTo(String address) {
+    return 'to $address';
+  }
+
+  @override
+  String get multisigApproveConfirmYes => 'Yes, Approve';
+
+  @override
+  String get multisigApproveConfirmNo => 'No, Go Back';
+
+  @override
+  String get multisigApproveAuthReason => 'Authenticate to approve';
+
+  @override
+  String get multisigAuthRequired => 'Authentication required';
+
+  @override
+  String get multisigApproveFailed => 'Failed to approve';
+
+  @override
+  String get multisigExecuteButton => 'Execute';
+
+  @override
+  String get multisigExecuteConfirmTitle => 'Are you sure?';
+
+  @override
+  String get multisigExecuteConfirmBody => 'You are about to execute a transfer of';
+
+  @override
+  String get multisigExecuteConfirmYes => 'Yes, Execute';
+
+  @override
+  String get multisigExecuteAuthReason => 'Authenticate to execute';
+
+  @override
+  String get multisigExecuteFailed => 'Failed to execute';
+
+  @override
+  String get multisigExecuteUnavailableNote => 'This proposal can no longer be executed.';
+
+  @override
+  String get multisigProposalExecutingLabel => 'Executing…';
+
+  @override
+  String get multisigProposalExecutingNote => 'Your execution is being confirmed on-chain.';
+
+  @override
+  String get activityTxExecuting => 'Executing…';
+
+  @override
+  String get multisigExecutionTimeoutToast =>
+      'Execution confirmation is taking longer than expected. Check the chain or try again.';
+
+  @override
+  String get multisigExecutedByOtherToast => 'Proposal was executed by another signer.';
+
+  @override
+  String get multisigFeeEstimateUnavailable => 'Network fee estimate is unavailable.';
+
+  @override
+  String get multisigCancelConfirmTitle => 'Cancel Proposal?';
+
+  @override
+  String get multisigCancelConfirmBody =>
+      'Cancelling refunds your proposal deposit. Other signers will no longer be able to approve.';
+
+  @override
+  String get multisigCancelConfirmYes => 'Yes, Cancel Proposal';
+
+  @override
+  String get multisigCancelConfirmKeep => 'Keep Proposal';
+
+  @override
+  String get multisigCancelAuthReason => 'Authenticate to cancel';
+
+  @override
+  String get multisigCancelFailed => 'Failed to cancel';
+
+  @override
+  String get multisigProposalCancellingLabel => 'Cancelling…';
+
+  @override
+  String get multisigProposalCancellingNote => 'Your cancellation is being confirmed on-chain.';
+
+  @override
+  String get multisigCancelTimeoutToast =>
+      'Cancellation confirmation is taking longer than expected. Check the chain or try again.';
+
+  @override
+  String get multisigApproveTitle => 'Approve';
+
+  @override
+  String get multisigApproveDoneExecuted => 'Proposal executed';
+
+  @override
+  String get multisigApproveDoneRecorded => 'Approval recorded';
+
+  @override
+  String get multisigApproveDoneExecutedSubline => 'Threshold reached — transfer dispatched.';
+
+  @override
+  String get multisigApproveDoneRecordedSubline => 'Awaiting more co-signers.';
+
+  @override
   String get createAccountAppBarTitle => 'Account Name';
 
   @override
@@ -419,6 +903,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get activityTxReceived => 'Received';
 
   @override
+  String get activityTxMultisigCreated => 'Multisig created';
+
+  @override
+  String get activityTxMultisigCreating => 'Creating multisig';
+
+  @override
+  String get activityTxMultisigLabel => 'Multisig';
+
+  @override
   String get activityTxTo => 'To';
 
   @override
@@ -463,6 +956,36 @@ class AppLocalizationsEn extends AppLocalizations {
   String get activityDetailTitleReceived => 'Received';
 
   @override
+  String get activityDetailTitleMultisigCreated => 'Multisig created';
+
+  @override
+  String get activityDetailTitleMultisigCreating => 'Creating multisig';
+
+  @override
+  String get activityDetailTitleProposalCreated => 'Proposal created';
+
+  @override
+  String get activityDetailTitleProposalApproved => 'Proposal approved';
+
+  @override
+  String get activityDetailTitleProposalExecuted => 'Proposal executed';
+
+  @override
+  String get activityDetailTitleProposalCancelled => 'Proposal cancelled';
+
+  @override
+  String get activityDetailTitleCancelling => 'Cancelling proposal';
+
+  @override
+  String get activityDetailTitleExecuting => 'Executing proposal';
+
+  @override
+  String get activityDetailTitleProposing => 'Proposing';
+
+  @override
+  String get activityDetailProposalTransferAmount => 'TRANSFER AMOUNT';
+
+  @override
   String get activityDetailStatusInProcess => 'In Process';
 
   @override
@@ -491,6 +1014,32 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get activityDetailViewExplorer => 'View in Explorer ↗';
+
+  @override
+  String get activityDetailMultisigAddress => 'MULTISIG ADDRESS';
+
+  @override
+  String get activityDetailMultisigThreshold => 'THRESHOLD';
+
+  @override
+  String activityDetailMultisigThresholdValue(int threshold, int total) {
+    return '$threshold of $total';
+  }
+
+  @override
+  String get activityDetailMultisigSignerCount => 'SIGNERS';
+
+  @override
+  String get activityDetailMultisigCreator => 'CREATOR';
+
+  @override
+  String get activityDetailMultisigCreationFee => 'PALLET FEE';
+
+  @override
+  String get activityDetailMultisigDeposit => 'RESERVED DEPOSIT';
+
+  @override
+  String get activityDetailMultisigFeePaidByCreator => 'Paid by creator';
 
   @override
   String get receiveTitle => 'Receive';

@@ -108,6 +108,10 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
               final all = txService.combineAndDeduplicateTransactions(
                 pendingCancellationIds: data.pendingCancellationIds,
                 pendingTransactions: data.pendingTransactions,
+                pendingMultisigCreations: data.pendingMultisigCreations,
+                pendingMultisigProposals: data.pendingMultisigProposals,
+                pendingMultisigExecutions: data.pendingMultisigExecutions,
+                pendingMultisigCancellations: data.pendingMultisigCancellations,
                 scheduledReversibleTransfers: data.scheduledReversibleTransfers,
                 otherTransfers: data.otherTransfers,
               );
@@ -164,7 +168,9 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                             colors,
                             text,
                             l10n,
-                            formattedAmount: formatTxAmount(itemData.amount, isSend: itemData.isSend).primaryAmount,
+                            formattedAmount: itemData.hideAmount
+                                ? '—'
+                                : formatTxAmount(itemData.amount, isSend: itemData.isSend).primaryAmount,
                             isLastItem: isLastItem,
                             onTap: () {
                               showTransactionDetailSheet(context, tx, active.account.accountId);

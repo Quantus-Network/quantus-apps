@@ -380,6 +380,9 @@ class SubstrateService {
     return int.parse(blockHeader.result['number']);
   }
 
+  /// Returns the current best block number from the chain header.
+  Future<int> getCurrentBlockNumber() => _getBlockNumber();
+
   Provider? get provider {
     try {
       return Provider.fromUri(Uri.parse(_rpcEndpointService.bestEndpointUrl));

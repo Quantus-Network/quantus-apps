@@ -499,6 +499,10 @@ class ScheduleNamedAfter extends Call {
 /// clones of the original task. Their retry configuration will be derived from the
 /// original task's configuration, but will have a lower value for `remaining` than the
 /// original `total_retries`.
+///
+/// The `period` type must match the task's scheduling type: block-scheduled tasks
+/// require a block-number period, and timestamp-scheduled tasks require a timestamp
+/// period. Mismatched types will return [`Error::RetryPeriodMismatch`].
 class SetRetry extends Call {
   const SetRetry({required this.task, required this.retries, required this.period});
 
@@ -574,6 +578,10 @@ class SetRetry extends Call {
 /// clones of the original task. Their retry configuration will be derived from the
 /// original task's configuration, but will have a lower value for `remaining` than the
 /// original `total_retries`.
+///
+/// The `period` type must match the task's scheduling type: block-scheduled tasks
+/// require a block-number period, and timestamp-scheduled tasks require a timestamp
+/// period. Mismatched types will return [`Error::RetryPeriodMismatch`].
 class SetRetryNamed extends Call {
   const SetRetryNamed({required this.id, required this.retries, required this.period});
 

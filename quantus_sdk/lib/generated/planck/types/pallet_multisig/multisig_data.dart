@@ -14,8 +14,6 @@ class MultisigData {
     required this.signers,
     required this.threshold,
     required this.proposalNonce,
-    required this.deposit,
-    required this.activeProposals,
     required this.proposalsPerSigner,
   });
 
@@ -35,12 +33,6 @@ class MultisigData {
   /// u32
   final int proposalNonce;
 
-  /// Balance
-  final BigInt deposit;
-
-  /// u32
-  final int activeProposals;
-
   /// BoundedProposalsPerSigner
   final _i3.BoundedBTreeMap proposalsPerSigner;
 
@@ -55,8 +47,6 @@ class MultisigData {
     'signers': signers.map((value) => value.toList()).toList(),
     'threshold': threshold,
     'proposalNonce': proposalNonce,
-    'deposit': deposit,
-    'activeProposals': activeProposals,
     'proposalsPerSigner': proposalsPerSigner.map((value) => [value.value0.toList(), value.value1]).toList(),
   };
 
@@ -68,13 +58,10 @@ class MultisigData {
           _i5.listsEqual(other.signers, signers) &&
           other.threshold == threshold &&
           other.proposalNonce == proposalNonce &&
-          other.deposit == deposit &&
-          other.activeProposals == activeProposals &&
           other.proposalsPerSigner == proposalsPerSigner;
 
   @override
-  int get hashCode =>
-      Object.hash(creator, signers, threshold, proposalNonce, deposit, activeProposals, proposalsPerSigner);
+  int get hashCode => Object.hash(creator, signers, threshold, proposalNonce, proposalsPerSigner);
 }
 
 class $MultisigDataCodec with _i1.Codec<MultisigData> {
@@ -86,8 +73,6 @@ class $MultisigDataCodec with _i1.Codec<MultisigData> {
     const _i1.SequenceCodec<_i2.AccountId32>(_i2.AccountId32Codec()).encodeTo(obj.signers, output);
     _i1.U32Codec.codec.encodeTo(obj.threshold, output);
     _i1.U32Codec.codec.encodeTo(obj.proposalNonce, output);
-    _i1.U128Codec.codec.encodeTo(obj.deposit, output);
-    _i1.U32Codec.codec.encodeTo(obj.activeProposals, output);
     const _i1.SequenceCodec<_i6.Tuple2<_i2.AccountId32, int>>(
       _i6.Tuple2Codec<_i2.AccountId32, int>(_i2.AccountId32Codec(), _i1.U32Codec.codec),
     ).encodeTo(obj.proposalsPerSigner, output);
@@ -100,8 +85,6 @@ class $MultisigDataCodec with _i1.Codec<MultisigData> {
       signers: const _i1.SequenceCodec<_i2.AccountId32>(_i2.AccountId32Codec()).decode(input),
       threshold: _i1.U32Codec.codec.decode(input),
       proposalNonce: _i1.U32Codec.codec.decode(input),
-      deposit: _i1.U128Codec.codec.decode(input),
-      activeProposals: _i1.U32Codec.codec.decode(input),
       proposalsPerSigner: const _i1.SequenceCodec<_i6.Tuple2<_i2.AccountId32, int>>(
         _i6.Tuple2Codec<_i2.AccountId32, int>(_i2.AccountId32Codec(), _i1.U32Codec.codec),
       ).decode(input),
@@ -115,8 +98,6 @@ class $MultisigDataCodec with _i1.Codec<MultisigData> {
     size = size + const _i1.SequenceCodec<_i2.AccountId32>(_i2.AccountId32Codec()).sizeHint(obj.signers);
     size = size + _i1.U32Codec.codec.sizeHint(obj.threshold);
     size = size + _i1.U32Codec.codec.sizeHint(obj.proposalNonce);
-    size = size + _i1.U128Codec.codec.sizeHint(obj.deposit);
-    size = size + _i1.U32Codec.codec.sizeHint(obj.activeProposals);
     size = size + const _i3.BoundedBTreeMapCodec().sizeHint(obj.proposalsPerSigner);
     return size;
   }

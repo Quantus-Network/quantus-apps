@@ -21,7 +21,16 @@ enum Error {
   rescheduleNoChange('RescheduleNoChange', 4),
 
   /// Attempt to use a non-named function on a named task.
-  named('Named', 5);
+  named('Named', 5),
+
+  /// Periodic scheduling is not supported.
+  periodicNotSupported('PeriodicNotSupported', 6),
+
+  /// Retry period type does not match task scheduling type.
+  ///
+  /// Block-scheduled tasks require a block-number retry period,
+  /// and timestamp-scheduled tasks require a timestamp retry period.
+  retryPeriodMismatch('RetryPeriodMismatch', 7);
 
   const Error(this.variantName, this.codecIndex);
 
@@ -61,6 +70,10 @@ class $ErrorCodec with _i1.Codec<Error> {
         return Error.rescheduleNoChange;
       case 5:
         return Error.named;
+      case 6:
+        return Error.periodicNotSupported;
+      case 7:
+        return Error.retryPeriodMismatch;
       default:
         throw Exception('Error: Invalid variant index: "$index"');
     }

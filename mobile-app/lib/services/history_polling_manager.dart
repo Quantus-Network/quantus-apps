@@ -1,5 +1,4 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/services/global_history_polling_service.dart';
 import 'package:resonance_network_wallet/services/reversible_transfer_monitoring_service.dart';
 import 'package:resonance_network_wallet/shared/utils/polling_refresh_scope.dart';
@@ -44,32 +43,13 @@ class HistoryPollingManager {
     _globalPoller.stopPolling();
   }
 
-  /// Trigger a manual refresh of all data // This is not called from anywhere!
-  Future<void> triggerManualRefresh() async {
-    quantusDebugPrint('History polling manager: Manual Refresh!');
-
-    // Refresh balance (with loading indicators)
-    _refreshBalance(showLoading: true);
-
-    await _globalPoller.triggerManualRefresh();
-  }
-
   /// Trigger a silent refresh of all data (no loading indicators)
   Future<void> triggerSilentRefresh() async {
     quantusDebugPrint('History polling manager: Silent Refresh!');
 
-    _refreshBalance(showLoading: false);
+    invalidateActiveAccountBalance(_ref);
     await silentRefreshActiveAccount(_ref);
-  }
-
-  /// Helper method to refresh balance with or without loading indicators
-  void _refreshBalance({required bool showLoading}) {
-    if (showLoading) {
-      invalidateActiveAccountBalance(_ref);
-      _ref.invalidate(balanceProviderRaw);
-    } else {
-      invalidateActiveAccountBalance(_ref);
-    }
+    invalidateActiveMultisigProposals(_ref);
   }
 
   void dispose() {

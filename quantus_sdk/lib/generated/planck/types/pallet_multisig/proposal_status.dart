@@ -5,9 +5,7 @@ import 'package:polkadart/scale_codec.dart' as _i1;
 
 enum ProposalStatus {
   active('Active', 0),
-  approved('Approved', 1),
-  executed('Executed', 2),
-  cancelled('Cancelled', 3);
+  approved('Approved', 1);
 
   const ProposalStatus(this.variantName, this.codecIndex);
 
@@ -39,10 +37,6 @@ class $ProposalStatusCodec with _i1.Codec<ProposalStatus> {
         return ProposalStatus.active;
       case 1:
         return ProposalStatus.approved;
-      case 2:
-        return ProposalStatus.executed;
-      case 3:
-        return ProposalStatus.cancelled;
       default:
         throw Exception('ProposalStatus: Invalid variant index: "$index"');
     }

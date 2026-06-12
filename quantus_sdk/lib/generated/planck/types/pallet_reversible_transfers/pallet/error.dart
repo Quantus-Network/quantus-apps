@@ -11,8 +11,8 @@ enum Error {
   /// The account attempting the action is not marked as high security.
   accountNotHighSecurity('AccountNotHighSecurity', 1),
 
-  /// Interceptor can not be the account itself, because it is redundant.
-  interceptorCannotBeSelf('InterceptorCannotBeSelf', 2),
+  /// Guardian cannot be the account itself, because it is redundant.
+  guardianCannotBeSelf('GuardianCannotBeSelf', 2),
 
   /// Recoverer cannot be the account itself, because it is redundant.
   recovererCannotBeSelf('RecovererCannotBeSelf', 3),
@@ -51,8 +51,8 @@ enum Error {
   /// deterrence)
   accountAlreadyReversibleCannotScheduleOneTime('AccountAlreadyReversibleCannotScheduleOneTime', 14),
 
-  /// The interceptor has reached the maximum number of accounts they can intercept for.
-  tooManyInterceptorAccounts('TooManyInterceptorAccounts', 15);
+  /// The guardian has reached the maximum number of accounts they can protect.
+  tooManyGuardianAccounts('TooManyGuardianAccounts', 15);
 
   const Error(this.variantName, this.codecIndex);
 
@@ -85,7 +85,7 @@ class $ErrorCodec with _i1.Codec<Error> {
       case 1:
         return Error.accountNotHighSecurity;
       case 2:
-        return Error.interceptorCannotBeSelf;
+        return Error.guardianCannotBeSelf;
       case 3:
         return Error.recovererCannotBeSelf;
       case 4:
@@ -111,7 +111,7 @@ class $ErrorCodec with _i1.Codec<Error> {
       case 14:
         return Error.accountAlreadyReversibleCannotScheduleOneTime;
       case 15:
-        return Error.tooManyInterceptorAccounts;
+        return Error.tooManyGuardianAccounts;
       default:
         throw Exception('Error: Invalid variant index: "$index"');
     }

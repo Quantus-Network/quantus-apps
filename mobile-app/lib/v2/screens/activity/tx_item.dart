@@ -16,6 +16,9 @@ class TxItemData {
   final bool isSend;
   final BigInt amount;
   final String counterpartyAddr;
+  final bool hideAmount;
+  final IconData? customIcon;
+  final String? counterpartyDirectionLabel;
 
   const TxItemData({
     required this.label,
@@ -28,9 +31,193 @@ class TxItemData {
     required this.isSend,
     required this.amount,
     required this.counterpartyAddr,
+    this.hideAmount = false,
+    this.customIcon,
+    this.counterpartyDirectionLabel,
   });
 
   factory TxItemData.from(TransactionEvent tx, String accountId, AppColorsV2 colors, AppLocalizations l10n) {
+    if (tx is PendingMultisigProposalEvent) {
+      final recipient = AddressFormattingService.formatAddress(tx.recipient, prefix: 5, postFix: 3);
+      return TxItemData(
+        label: l10n.activityTxProposing,
+        timeLabel: l10n.activityTxTimeNow,
+        iconBg: colors.txItemOutgoingHighlightBg,
+        iconColor: colors.checksum,
+        labelColor: colors.checksum,
+        amountColor: colors.checksum,
+        borderColor: colors.txItemOutgoingHighlightBorder,
+        isSend: true,
+        amount: tx.amount,
+        counterpartyAddr: recipient,
+        customIcon: Icons.how_to_vote_outlined,
+      );
+    }
+
+    if (tx is MultisigProposalCreatedEvent) {
+      final recipient = AddressFormattingService.formatAddress(tx.recipient, prefix: 5, postFix: 3);
+      return TxItemData(
+        label: l10n.activityTxProposalCreated,
+        timeLabel: _timeAgo(tx.timestamp, l10n),
+        iconBg: Colors.transparent,
+        iconColor: colors.txItemIconDefault,
+        labelColor: colors.textPrimary,
+        amountColor: colors.textPrimary,
+        borderColor: colors.txItemBorderDefault,
+        isSend: true,
+        amount: tx.amount,
+        counterpartyAddr: recipient,
+        customIcon: Icons.how_to_vote_outlined,
+      );
+    }
+
+    if (tx is MultisigProposalApprovedEvent) {
+      final recipient = AddressFormattingService.formatAddress(tx.recipient, prefix: 5, postFix: 3);
+      final fee = tx.networkFee;
+      return TxItemData(
+        label: l10n.activityTxProposalApproved,
+        timeLabel: _timeAgo(tx.timestamp, l10n),
+        iconBg: Colors.transparent,
+        iconColor: colors.txItemIconDefault,
+        labelColor: colors.textPrimary,
+        amountColor: colors.textPrimary,
+        borderColor: colors.txItemBorderDefault,
+        isSend: true,
+        amount: fee,
+        hideAmount: fee == BigInt.zero,
+        counterpartyAddr: recipient,
+        customIcon: Icons.how_to_vote_outlined,
+      );
+    }
+
+    if (tx is PendingMultisigExecutionEvent) {
+      final recipient = AddressFormattingService.formatAddress(tx.recipient, prefix: 5, postFix: 3);
+      final fee = tx.memberCost;
+      return TxItemData(
+        label: l10n.activityTxExecuting,
+        timeLabel: l10n.activityTxTimeNow,
+        iconBg: colors.txItemOutgoingHighlightBg,
+        iconColor: colors.checksum,
+        labelColor: colors.checksum,
+        amountColor: colors.checksum,
+        borderColor: colors.txItemOutgoingHighlightBorder,
+        isSend: true,
+        amount: fee,
+        hideAmount: fee == BigInt.zero,
+        counterpartyAddr: recipient,
+        customIcon: Icons.how_to_vote_outlined,
+      );
+    }
+
+    if (tx is MultisigProposalExecutedEvent) {
+      final recipient = AddressFormattingService.formatAddress(tx.recipient, prefix: 5, postFix: 3);
+      final fee = tx.networkFee;
+      return TxItemData(
+        label: l10n.activityTxProposalExecuted,
+        timeLabel: _timeAgo(tx.timestamp, l10n),
+        iconBg: Colors.transparent,
+        iconColor: colors.txItemIconDefault,
+        labelColor: colors.textPrimary,
+        amountColor: colors.textPrimary,
+        borderColor: colors.txItemBorderDefault,
+        isSend: true,
+        amount: fee,
+        hideAmount: fee == BigInt.zero,
+        counterpartyAddr: recipient,
+        customIcon: Icons.how_to_vote_outlined,
+      );
+    }
+
+    if (tx is PendingMultisigCancellationEvent) {
+      final recipient = AddressFormattingService.formatAddress(tx.recipient, prefix: 5, postFix: 3);
+      final fee = tx.memberCost;
+      return TxItemData(
+        label: l10n.activityTxCancelling,
+        timeLabel: l10n.activityTxTimeNow,
+        iconBg: colors.txItemOutgoingHighlightBg,
+        iconColor: colors.checksum,
+        labelColor: colors.checksum,
+        amountColor: colors.checksum,
+        borderColor: colors.txItemOutgoingHighlightBorder,
+        isSend: true,
+        amount: fee,
+        hideAmount: fee == BigInt.zero,
+        counterpartyAddr: recipient,
+        customIcon: Icons.how_to_vote_outlined,
+      );
+    }
+
+    if (tx is MultisigProposalCancelledEvent) {
+      final recipient = AddressFormattingService.formatAddress(tx.recipient, prefix: 5, postFix: 3);
+      final fee = tx.networkFee;
+      return TxItemData(
+        label: l10n.activityTxProposalCancelled,
+        timeLabel: _timeAgo(tx.timestamp, l10n),
+        iconBg: Colors.transparent,
+        iconColor: colors.txItemIconDefault,
+        labelColor: colors.textPrimary,
+        amountColor: colors.textPrimary,
+        borderColor: colors.txItemBorderDefault,
+        isSend: true,
+        amount: fee,
+        hideAmount: fee == BigInt.zero,
+        counterpartyAddr: recipient,
+        customIcon: Icons.how_to_vote_outlined,
+      );
+    }
+
+    if (tx is MultisigProposalEvent) {
+      return TxItemData(
+        label: l10n.activityTxProposal,
+        timeLabel: _timeAgo(tx.timestamp, l10n),
+        iconBg: Colors.transparent,
+        iconColor: colors.txItemIconDefault,
+        labelColor: colors.textPrimary,
+        amountColor: colors.textPrimary,
+        borderColor: colors.txItemBorderDefault,
+        isSend: true,
+        amount: tx.amount,
+        counterpartyAddr: AddressFormattingService.formatAddress(tx.to, prefix: 5, postFix: 3),
+        customIcon: Icons.how_to_vote_outlined,
+      );
+    }
+
+    if (tx is PendingMultisigCreationEvent) {
+      final address = AddressFormattingService.formatAddress(tx.multisigAddress, prefix: 5, postFix: 3);
+      return TxItemData(
+        label: l10n.activityTxMultisigCreating,
+        timeLabel: l10n.activityTxTimeNow,
+        iconBg: colors.txItemOutgoingHighlightBg,
+        iconColor: colors.checksum,
+        labelColor: colors.checksum,
+        amountColor: colors.checksum,
+        borderColor: colors.txItemOutgoingHighlightBorder,
+        isSend: true,
+        amount: tx.totalCost,
+        counterpartyAddr: address,
+        customIcon: Icons.groups_outlined,
+        counterpartyDirectionLabel: l10n.activityTxMultisigLabel,
+      );
+    }
+
+    if (tx is MultisigCreatedEvent) {
+      final address = AddressFormattingService.formatAddress(tx.multisigAddress, prefix: 5, postFix: 3);
+      return TxItemData(
+        label: l10n.activityTxMultisigCreated,
+        timeLabel: _timeAgo(tx.timestamp, l10n),
+        iconBg: Colors.transparent,
+        iconColor: colors.txItemIconDefault,
+        labelColor: colors.textPrimary,
+        amountColor: colors.textPrimary,
+        borderColor: colors.txItemBorderDefault,
+        isSend: true,
+        amount: tx.totalCost,
+        counterpartyAddr: address,
+        customIcon: Icons.groups_outlined,
+        counterpartyDirectionLabel: l10n.activityTxMultisigLabel,
+      );
+    }
+
     final isSend = tx.from == accountId;
     final isPending = tx is PendingTransactionEvent;
     final isScheduled = tx.isReversibleScheduled;
@@ -144,7 +331,7 @@ Widget buildTxItem(
   required bool isLastItem,
   VoidCallback? onTap,
 }) {
-  final directionLabel = data.isSend ? l10n.activityTxTo : l10n.activityTxFrom;
+  final directionLabel = data.counterpartyDirectionLabel ?? (data.isSend ? l10n.activityTxTo : l10n.activityTxFrom);
 
   return GestureDetector(
     onTap: onTap,
@@ -163,10 +350,12 @@ Widget buildTxItem(
                   borderRadius: BorderRadius.circular(6),
                   border: Border.all(color: data.borderColor, width: 1.5),
                 ),
-                child: Transform.rotate(
-                  angle: data.isSend ? 3.14159 : 0,
-                  child: Icon(Icons.arrow_downward_rounded, size: 16, color: data.iconColor),
-                ),
+                child: data.customIcon != null
+                    ? Icon(data.customIcon, size: 16, color: data.iconColor)
+                    : Transform.rotate(
+                        angle: data.isSend ? 3.14159 : 0,
+                        child: Icon(Icons.arrow_downward_rounded, size: 16, color: data.iconColor),
+                      ),
               ),
               const SizedBox(width: 12),
               Expanded(

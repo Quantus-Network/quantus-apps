@@ -103,6 +103,10 @@ class PendingTransactionReconciliationService {
       final combined = txService.combineAndDeduplicateTransactions(
         pendingCancellationIds: pendingCancellationIds,
         pendingTransactions: [],
+        pendingMultisigCreations: [],
+        pendingMultisigProposals: const [],
+        pendingMultisigExecutions: const [],
+        pendingMultisigCancellations: const [],
         scheduledReversibleTransfers: pagination.scheduledReversibleTransfers,
         otherTransfers: pagination.otherTransfers,
       );

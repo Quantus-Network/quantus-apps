@@ -1,0 +1,4 @@
+tags:
+  # Tests that require the Rust dynamic library (see test/build_library.sh).
+  # Excluded in CI via `flutter test --exclude-tags=native`.
+  native:

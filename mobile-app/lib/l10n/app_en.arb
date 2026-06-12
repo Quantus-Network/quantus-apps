@@ -251,6 +251,690 @@
     "@addAccountMenuImportSubtitle": {
       "description": "Import wallet menu row subtitle"
     },
+    "addAccountMenuMultisigTitle": "Create Multisig",
+    "@addAccountMenuMultisigTitle": {
+      "description": "Add multisig menu row title"
+    },
+    "addAccountMenuMultisigSubtitle": "Set up a shared address with multiple signers",
+    "@addAccountMenuMultisigSubtitle": {
+      "description": "Add multisig menu row subtitle"
+    },
+    "addAccountMenuDiscoverMultisigTitle": "Discover Multisig",
+    "@addAccountMenuDiscoverMultisigTitle": {
+      "description": "Discover multisig menu row title"
+    },
+    "addAccountMenuDiscoverMultisigSubtitle": "Find multisigs where your accounts are signers",
+    "@addAccountMenuDiscoverMultisigSubtitle": {
+      "description": "Discover multisig menu row subtitle"
+    },
+
+    "multisigTag": "MULTISIG",
+    "@multisigTag": {
+      "description": "Badge label for multisig accounts"
+    },
+    "multisigProposeTitle": "Propose",
+    "@multisigProposeTitle": {
+      "description": "Propose flow app bar title and home CTA"
+    },
+    "multisigAddTitle": "Create Multisig",
+    "@multisigAddTitle": {
+      "description": "Create multisig screen app bar title"
+    },
+    "multisigDiscoverTitle": "Discover Multisig",
+    "@multisigDiscoverTitle": {
+      "description": "Discover multisig screen app bar title"
+    },
+    "multisigCreateSubtitle": "Give this multisig a name you'll recognize. You can change it anytime.",
+    "@multisigCreateSubtitle": {
+      "description": "Subtitle under multisig name field"
+    },
+    "multisigCreateButton": "Create",
+    "@multisigCreateButton": {
+      "description": "Primary button to create multisig"
+    },
+    "multisigCreateCreatingButton": "Creating",
+    "@multisigCreateCreatingButton": {
+      "description": "Create button label while multisig creation is confirming on-chain"
+    },
+    "multisigCreateDefaultName": "Multisig {number}",
+    "@multisigCreateDefaultName": {
+      "description": "Default name for a new multisig",
+      "placeholders": {
+        "number": {
+          "type": "int"
+        }
+      }
+    },
+    "multisigCreateErrorCouldNotCreate": "Could not create multisig.",
+    "@multisigCreateErrorCouldNotCreate": {
+      "description": "Error toast when multisig creation fails"
+    },
+    "multisigCreateReadyToast": "Multisig added to your accounts.",
+    "@multisigCreateReadyToast": {
+      "description": "Toast when multisig creation is confirmed on-chain"
+    },
+    "multisigCreateAlreadyExists": "A multisig with this address already exists on-chain.",
+    "@multisigCreateAlreadyExists": {
+      "description": "Toast when predicted multisig address is already registered"
+    },
+    "multisigCreateInsufficientBalance": "Insufficient balance to cover multisig creation fees.",
+    "@multisigCreateInsufficientBalance": {
+      "description": "Toast when creator balance is below pallet fee + network fee + deposit"
+    },
+    "multisigCreateTimeoutToast": "Multisig creation is taking longer than expected. Check the chain or try again.",
+    "@multisigCreateTimeoutToast": {
+      "description": "Toast when on-chain confirmation polling times out"
+    },
+    "multisigCreateAuthReason": "Authenticate to create this multisig",
+    "@multisigCreateAuthReason": {
+      "description": "Local auth prompt when submitting create multisig"
+    },
+    "multisigCreateSignersLabel": "SIGNERS",
+    "@multisigCreateSignersLabel": {
+      "description": "Section label for signer list on create multisig"
+    },
+    "multisigCreateSignersSubtitle": "Add at least one other signer besides yourself.",
+    "@multisigCreateSignersSubtitle": {
+      "description": "Helper text under signers section on create multisig"
+    },
+    "multisigCreateAddSignerHint": "Signer SS58 address",
+    "@multisigCreateAddSignerHint": {
+      "description": "Hint for adding a signer address"
+    },
+    "multisigCreateAddSignerButton": "Add Signer",
+    "@multisigCreateAddSignerButton": {
+      "description": "Button to add a signer from address field"
+    },
+    "multisigCreateDuplicateSigner": "This signer is already in the list.",
+    "@multisigCreateDuplicateSigner": {
+      "description": "Error when signer address is duplicate"
+    },
+    "multisigCreateInvalidSigner": "Enter a valid SS58 address.",
+    "@multisigCreateInvalidSigner": {
+      "description": "Error when signer address is invalid"
+    },
+    "multisigCreateThresholdLabel": "THRESHOLD",
+    "@multisigCreateThresholdLabel": {
+      "description": "Threshold slider section label on create multisig"
+    },
+    "multisigCreateThresholdValue": "{count} of {total}",
+    "@multisigCreateThresholdValue": {
+      "description": "Threshold slider value label",
+      "placeholders": {
+        "count": {
+          "type": "int"
+        },
+        "total": {
+          "type": "int"
+        }
+      }
+    },
+    "multisigCreatePredictedAddressLabel": "MULTISIG ADDRESS",
+    "@multisigCreatePredictedAddressLabel": {
+      "description": "Label for predicted multisig address preview"
+    },
+    "multisigCreatePredictedAddressPlaceholder": "Add signers to preview address",
+    "@multisigCreatePredictedAddressPlaceholder": {
+      "description": "Placeholder when predicted address is not yet available"
+    },
+    "multisigDone": "Done",
+    "@multisigDone": {
+      "description": "Done button on multisig flow completion screens"
+    },
+    "multisigAddDiscoveredTitle": "Discovered for you",
+    "@multisigAddDiscoveredTitle": {
+      "description": "Section title for on-chain discovered multisigs"
+    },
+    "multisigAddDiscoveredSubtitle": "Multisigs on chain where one of your accounts is a signer",
+    "@multisigAddDiscoveredSubtitle": {
+      "description": "Helper text under discovered multisigs section"
+    },
+    "multisigAddButton": "Add",
+    "@multisigAddButton": {
+      "description": "Add button on discovered multisig row"
+    },
+    "multisigAddedButton": "Added",
+    "@multisigAddedButton": {
+      "description": "Disabled state when multisig is already added"
+    },
+    "multisigAddNoneFound": "No multisigs found.",
+    "@multisigAddNoneFound": {
+      "description": "Empty state when no multisigs are discovered"
+    },
+    "multisigAddDiscoverFailed": "Could not discover multisigs: {error}",
+    "@multisigAddDiscoverFailed": {
+      "description": "Error when multisig discovery fails",
+      "placeholders": {
+        "error": {
+          "type": "String"
+        }
+      }
+    },
+    "multisigAddFailed": "Could not add multisig: {error}",
+    "@multisigAddFailed": {
+      "description": "Error when adding a multisig fails",
+      "placeholders": {
+        "error": {
+          "type": "String"
+        }
+      }
+    },
+    "multisigOpenProposals": "Open Proposals",
+    "@multisigOpenProposals": {
+      "description": "Section title for open multisig proposals"
+    },
+    "multisigPastProposals": "Past Proposals",
+    "@multisigPastProposals": {
+      "description": "Section title for past multisig proposals"
+    },
+    "multisigNoOpenProposals": "No open proposals.",
+    "@multisigNoOpenProposals": {
+      "description": "Empty state for open proposals list"
+    },
+    "multisigNoPastProposals": "No past proposals.",
+    "@multisigNoPastProposals": {
+      "description": "Empty state for past proposals list"
+    },
+    "multisigLoadFailed": "Failed to load: {error}",
+    "@multisigLoadFailed": {
+      "description": "Error when proposal list fails to load",
+      "placeholders": {
+        "error": {
+          "type": "String"
+        }
+      }
+    },
+    "multisigProposalToAddress": "to {address}",
+    "@multisigProposalToAddress": {
+      "description": "Proposal row recipient line",
+      "placeholders": {
+        "address": {
+          "type": "String"
+        }
+      }
+    },
+    "multisigStatusApproved": "APPROVED",
+    "@multisigStatusApproved": {
+      "description": "Proposal status chip when the current signer has approved"
+    },
+    "multisigStatusProposed": "PROPOSED",
+    "@multisigStatusProposed": {
+      "description": "Proposal status chip when the current signer has not approved yet"
+    },
+    "multisigStatusExpired": "EXPIRED",
+    "@multisigStatusExpired": {
+      "description": "Proposal status chip when expired"
+    },
+    "multisigStatusCancelled": "CANCELLED",
+    "@multisigStatusCancelled": {
+      "description": "Proposal status chip when cancelled"
+    },
+    "multisigProposeSelectRecipientTo": "Transfer to",
+    "@multisigProposeSelectRecipientTo": {
+      "description": "Section label on propose recipient screen — transfer destination"
+    },
+    "multisigProposeSearchHint": "Enter {symbol} Address",
+    "@multisigProposeSearchHint": {
+      "description": "Hint for recipient search field on propose flow",
+      "placeholders": {
+        "symbol": {
+          "type": "String"
+        }
+      }
+    },
+    "multisigProposeAmountToLabel": "TRANSFER TO",
+    "@multisigProposeAmountToLabel": {
+      "description": "Recipient card label on propose amount screen"
+    },
+    "multisigProposeDepositLabel": "Deposit:",
+    "@multisigProposeDepositLabel": {
+      "description": "Refundable proposal deposit label on propose amount screen"
+    },
+    "multisigProposeCreationFeeLabel": "Proposal Fee:",
+    "@multisigProposeCreationFeeLabel": {
+      "description": "Non-refundable burned proposal fee label (scales with signers)"
+    },
+    "multisigProposeDepositRefundableNote": "refundable",
+    "@multisigProposeDepositRefundableNote": {
+      "description": "Short note that proposal deposit is returned on execute/cancel"
+    },
+    "multisigProposeMemberTotalLabel": "TOTAL FROM YOUR ACCOUNT",
+    "@multisigProposeMemberTotalLabel": {
+      "description": "Review row for total member cost at proposal submit"
+    },
+    "multisigProposeFeeLabel": "Proposal Fee:",
+    "@multisigProposeFeeLabel": {
+      "description": "Deprecated single fee label; prefer fee breakdown labels"
+    },
+    "multisigProposeFeeFetchFailed": "Unable to estimate fee",
+    "@multisigProposeFeeFetchFailed": {
+      "description": "Shown when proposal fee estimation fails on the amount screen"
+    },
+    "multisigProposeReviewButton": "Review transfer",
+    "@multisigProposeReviewButton": {
+      "description": "Button to open propose review screen"
+    },
+    "multisigProposeReviewProposing": "PROPOSED TRANSFER",
+    "@multisigProposeReviewProposing": {
+      "description": "Hero label on propose review screen"
+    },
+    "multisigProposeReviewFromName": "from {name}",
+    "@multisigProposeReviewFromName": {
+      "description": "Multisig name on propose review hero card",
+      "placeholders": {
+        "name": {
+          "type": "String"
+        }
+      }
+    },
+    "multisigProposeThresholdLabel": "THRESHOLD",
+    "@multisigProposeThresholdLabel": {
+      "description": "Threshold row label on propose review"
+    },
+    "multisigProposeExpiresLabel": "EXPIRES",
+    "@multisigProposeExpiresLabel": {
+      "description": "Expiry row label on propose review"
+    },
+    "multisigExpiresBlockOnly": "Block {block}",
+    "@multisigExpiresBlockOnly": {
+      "description": "On-chain expiry block when current block is unavailable",
+      "placeholders": {
+        "block": {
+          "type": "int"
+        }
+      }
+    },
+    "multisigProposeFeeRowLabel": "PROPOSAL FEE",
+    "@multisigProposeFeeRowLabel": {
+      "description": "Non-refundable burned proposal fee row on propose review"
+    },
+    "multisigProposeCreateButton": "Submit proposal",
+    "@multisigProposeCreateButton": {
+      "description": "Submit button on propose review screen"
+    },
+    "multisigProposeAuthReason": "Authenticate to propose transaction",
+    "@multisigProposeAuthReason": {
+      "description": "Biometric auth prompt when creating a proposal"
+    },
+    "multisigProposeAuthRequired": "Authentication required",
+    "@multisigProposeAuthRequired": {
+      "description": "Error when auth fails on propose review"
+    },
+    "multisigProposeSubmitFailed": "Failed to create proposal",
+    "@multisigProposeSubmitFailed": {
+      "description": "Error when proposal creation fails"
+    },
+    "multisigProposeTimeoutToast": "Proposal confirmation is taking longer than expected. Check the chain or try again.",
+    "@multisigProposeTimeoutToast": {
+      "description": "Toast when proposal indexing polling times out"
+    },
+    "multisigProposeDoneHeadline": "Transfer proposal submitted",
+    "@multisigProposeDoneHeadline": {
+      "description": "Success headline on propose done screen"
+    },
+    "multisigProposeDoneSubline": "Co-signers must approve before the transfer can execute.",
+    "@multisigProposeDoneSubline": {
+      "description": "Success subline on propose done screen"
+    },
+    "multisigProposeDoneToChecksum": "to {checksum}",
+    "@multisigProposeDoneToChecksum": {
+      "description": "Recipient checksum line on propose done screen",
+      "placeholders": {
+        "checksum": {
+          "type": "String"
+        }
+      }
+    },
+    "multisigSignaturesCount": "Signatures: {current}/{threshold}",
+    "@multisigSignaturesCount": {
+      "description": "Approval count on propose or approve done screen",
+      "placeholders": {
+        "current": {
+          "type": "int"
+        },
+        "threshold": {
+          "type": "int"
+        }
+      }
+    },
+    "multisigProposalTitle": "Proposal",
+    "@multisigProposalTitle": {
+      "description": "App bar title on proposal detail screen"
+    },
+    "multisigProposalLoadFailed": "Failed: {error}",
+    "@multisigProposalLoadFailed": {
+      "description": "Error when proposal detail fails to load",
+      "placeholders": {
+        "error": {
+          "type": "String"
+        }
+      }
+    },
+    "multisigProposalNotFound": "Proposal not found.",
+    "@multisigProposalNotFound": {
+      "description": "Empty state when proposal id is missing"
+    },
+    "multisigProposalSignButton": "Sign",
+    "@multisigProposalSignButton": {
+      "description": "Sign button on the read-only proposal detail sheet"
+    },
+    "multisigProposalSigningSoonNote": "Signing will be available soon.",
+    "@multisigProposalSigningSoonNote": {
+      "description": "Deprecated; kept for generated l10n compatibility"
+    },
+    "multisigProposalApprovingLabel": "Approving…",
+    "@multisigProposalApprovingLabel": {
+      "description": "Disabled approve button while approval is pending indexer confirmation"
+    },
+    "multisigProposalApprovingNote": "Your approval is being confirmed on-chain.",
+    "@multisigProposalApprovingNote": {
+      "description": "Note under the button while approval is pending"
+    },
+    "multisigApproveUnavailableNote": "This proposal can no longer be approved.",
+    "@multisigApproveUnavailableNote": {
+      "description": "Note when approve is unavailable (expired or closed)"
+    },
+    "activityTxApproving": "Approving…",
+    "@activityTxApproving": {
+      "description": "Trailing label on proposal row while approval is pending"
+    },
+    "activityTxCancelling": "Cancelling…",
+    "@activityTxCancelling": {
+      "description": "Trailing label on proposal row while cancellation is pending"
+    },
+    "multisigApprovalTimeoutToast": "Approval confirmation is taking longer than expected. Check the chain or try again.",
+    "@multisigApprovalTimeoutToast": {
+      "description": "Toast when approval indexer polling times out"
+    },
+    "multisigProposalAlreadySignedNote": "You've already approved this proposal.",
+    "@multisigProposalAlreadySignedNote": {
+      "description": "Note shown when the current member already approved"
+    },
+    "multisigProposalAlreadyExecutedNote": "This proposal is already executed.",
+    "@multisigProposalAlreadyExecutedNote": {
+      "description": "Note shown on proposal detail when the proposal is executed"
+    },
+    "multisigProposalAlreadyCancelledNote": "This proposal is already cancelled.",
+    "@multisigProposalAlreadyCancelledNote": {
+      "description": "Note shown on proposal detail when the proposal is cancelled"
+    },
+    "multisigProposalProposerLabel": "PROPOSER",
+    "@multisigProposalProposerLabel": {
+      "description": "Proposer row label on proposal detail"
+    },
+    "multisigProposalStatusLabel": "STATUS",
+    "@multisigProposalStatusLabel": {
+      "description": "Status row label on proposal detail"
+    },
+    "multisigProposalDepositLabel": "DEPOSIT",
+    "@multisigProposalDepositLabel": {
+      "description": "Deposit row label on proposal detail"
+    },
+    "multisigStatusActive": "ACTIVE",
+    "@multisigStatusActive": {
+      "description": "Active proposal status label"
+    },
+    "multisigStatusExecuted": "EXECUTED",
+    "@multisigStatusExecuted": {
+      "description": "Executed proposal status label"
+    },
+    "multisigStatusRemoved": "REMOVED",
+    "@multisigStatusRemoved": {
+      "description": "Removed proposal status label"
+    },
+    "multisigStatusUnknown": "UNKNOWN",
+    "@multisigStatusUnknown": {
+      "description": "Unknown proposal status label when indexer returns an unrecognized value"
+    },
+    "activityTxProposal": "Proposal",
+    "@activityTxProposal": {
+      "description": "Activity row label for an indexed multisig proposal"
+    },
+    "activityTxProposing": "Proposing",
+    "@activityTxProposing": {
+      "description": "Activity row label for a pending multisig proposal"
+    },
+    "activityTxProposalCreated": "Proposal created",
+    "@activityTxProposalCreated": {
+      "description": "Activity row label for a confirmed multisig proposal creation on the proposer account"
+    },
+    "activityTxProposalApproved": "Proposal approved",
+    "@activityTxProposalApproved": {
+      "description": "Activity row label for a confirmed multisig proposal approval on the approver account"
+    },
+    "activityTxProposalExecuted": "Proposal executed",
+    "@activityTxProposalExecuted": {
+      "description": "Activity row label for a confirmed multisig proposal execution on the executor account"
+    },
+    "activityTxProposalCancelled": "Proposal cancelled",
+    "@activityTxProposalCancelled": {
+      "description": "Activity row label for a confirmed multisig proposal cancellation on the proposer account"
+    },
+    "multisigApproveButton": "Approve",
+    "@multisigApproveButton": {
+      "description": "Approve button on proposal detail"
+    },
+    "multisigAlreadyApproved": "Already Approved",
+    "@multisigAlreadyApproved": {
+      "description": "Disabled approve button when user already approved"
+    },
+    "multisigCancelProposalButton": "Cancel Proposal",
+    "@multisigCancelProposalButton": {
+      "description": "Cancel proposal button on detail screen"
+    },
+    "multisigProposalExpiresLabel": "EXPIRES",
+    "@multisigProposalExpiresLabel": {
+      "description": "Expires row label on proposal detail"
+    },
+    "multisigProposalAtLabel": "AT",
+    "@multisigProposalAtLabel": {
+      "description": "Timestamp row label on past proposal detail"
+    },
+    "multisigProposalThresholdLabel": "THRESHOLD",
+    "@multisigProposalThresholdLabel": {
+      "description": "Threshold row label on proposal detail"
+    },
+    "multisigProposalApprovalsLabel": "APPROVALS",
+    "@multisigProposalApprovalsLabel": {
+      "description": "Approvals row label on proposal detail"
+    },
+    "multisigProposalFeeRowLabel": "PROPOSAL FEE",
+    "@multisigProposalFeeRowLabel": {
+      "description": "Proposal fee row label on proposal detail"
+    },
+    "multisigProposalSignersLabel": "SIGNERS",
+    "@multisigProposalSignersLabel": {
+      "description": "Signers section label on proposal detail"
+    },
+    "multisigYouLabel": "YOU",
+    "@multisigYouLabel": {
+      "description": "Badge on current user in signers list"
+    },
+    "multisigSignerCreatorLabel": "CREATOR",
+    "@multisigSignerCreatorLabel": {
+      "description": "Badge on multisig creator in signers list"
+    },
+    "multisigAccountMenuDetails": "Multisig details",
+    "@multisigAccountMenuDetails": {
+      "description": "Menu row to view multisig threshold and signers"
+    },
+    "multisigAccountMenuDetailsTitle": "Multisig details",
+    "@multisigAccountMenuDetailsTitle": {
+      "description": "App bar title on multisig details screen"
+    },
+    "multisigAccountMenuDetailsThresholdHint": "This many signer approvals are required to execute a proposal.",
+    "@multisigAccountMenuDetailsThresholdHint": {
+      "description": "Helper text under threshold on multisig details screen"
+    },
+    "multisigThresholdOf": "{count} of {total}",
+    "@multisigThresholdOf": {
+      "description": "Threshold value on proposal detail",
+      "placeholders": {
+        "count": {
+          "type": "int"
+        },
+        "total": {
+          "type": "int"
+        }
+      }
+    },
+    "multisigApprovalsOf": "{count} of {threshold}",
+    "@multisigApprovalsOf": {
+      "description": "Approvals value on proposal detail",
+      "placeholders": {
+        "count": {
+          "type": "int"
+        },
+        "threshold": {
+          "type": "int"
+        }
+      }
+    },
+    "multisigApproveConfirmTitle": "Are you sure?",
+    "@multisigApproveConfirmTitle": {
+      "description": "Title on approve confirmation sheet"
+    },
+    "multisigApproveConfirmBody": "You are about to approve a transfer of",
+    "@multisigApproveConfirmBody": {
+      "description": "Body text on approve confirmation sheet"
+    },
+    "multisigApproveConfirmTo": "to {address}",
+    "@multisigApproveConfirmTo": {
+      "description": "Recipient line on approve confirmation sheet",
+      "placeholders": {
+        "address": {
+          "type": "String"
+        }
+      }
+    },
+    "multisigApproveConfirmYes": "Yes, Approve",
+    "@multisigApproveConfirmYes": {
+      "description": "Confirm button on approve sheet"
+    },
+    "multisigApproveConfirmNo": "No, Go Back",
+    "@multisigApproveConfirmNo": {
+      "description": "Dismiss button on approve sheet"
+    },
+    "multisigApproveAuthReason": "Authenticate to approve",
+    "@multisigApproveAuthReason": {
+      "description": "Biometric auth prompt when approving"
+    },
+    "multisigAuthRequired": "Authentication required",
+    "@multisigAuthRequired": {
+      "description": "Error when auth fails on a multisig action"
+    },
+    "multisigApproveFailed": "Failed to approve",
+    "@multisigApproveFailed": {
+      "description": "Error when approve submission fails"
+    },
+    "multisigExecuteButton": "Execute",
+    "@multisigExecuteButton": {
+      "description": "Button to execute an approved multisig proposal"
+    },
+    "multisigExecuteConfirmTitle": "Are you sure?",
+    "@multisigExecuteConfirmTitle": {
+      "description": "Title on execute confirmation sheet"
+    },
+    "multisigExecuteConfirmBody": "You are about to execute a transfer of",
+    "@multisigExecuteConfirmBody": {
+      "description": "Body text on execute confirmation sheet"
+    },
+    "multisigExecuteConfirmYes": "Yes, Execute",
+    "@multisigExecuteConfirmYes": {
+      "description": "Confirm button on execute sheet"
+    },
+    "multisigExecuteAuthReason": "Authenticate to execute",
+    "@multisigExecuteAuthReason": {
+      "description": "Biometric auth prompt when executing"
+    },
+    "multisigExecuteFailed": "Failed to execute",
+    "@multisigExecuteFailed": {
+      "description": "Error when execute submission fails"
+    },
+    "multisigExecuteUnavailableNote": "This proposal can no longer be executed.",
+    "@multisigExecuteUnavailableNote": {
+      "description": "Note when execute action is unavailable"
+    },
+    "multisigProposalExecutingLabel": "Executing…",
+    "@multisigProposalExecutingLabel": {
+      "description": "Disabled execute button while pending"
+    },
+    "multisigProposalExecutingNote": "Your execution is being confirmed on-chain.",
+    "@multisigProposalExecutingNote": {
+      "description": "Note while execution is pending indexer confirmation"
+    },
+    "activityTxExecuting": "Executing…",
+    "@activityTxExecuting": {
+      "description": "Status label on proposal row while execution is pending"
+    },
+    "multisigExecutionTimeoutToast": "Execution confirmation is taking longer than expected. Check the chain or try again.",
+    "@multisigExecutionTimeoutToast": {
+      "description": "Toast when execution indexer polling times out"
+    },
+    "multisigExecutedByOtherToast": "Proposal was executed by another signer.",
+    "@multisigExecutedByOtherToast": {
+      "description": "Toast when a proposal is executed but not by this user's extrinsic"
+    },
+    "multisigFeeEstimateUnavailable": "Network fee estimate is unavailable.",
+    "@multisigFeeEstimateUnavailable": {
+      "description": "Inline note on confirm sheet when fee estimation fails"
+    },
+    "multisigCancelConfirmTitle": "Cancel Proposal?",
+    "@multisigCancelConfirmTitle": {
+      "description": "Title on cancel confirmation sheet"
+    },
+    "multisigCancelConfirmBody": "Cancelling refunds your proposal deposit. Other signers will no longer be able to approve.",
+    "@multisigCancelConfirmBody": {
+      "description": "Explanation on cancel confirmation sheet"
+    },
+    "multisigCancelConfirmYes": "Yes, Cancel Proposal",
+    "@multisigCancelConfirmYes": {
+      "description": "Confirm cancel button"
+    },
+    "multisigCancelConfirmKeep": "Keep Proposal",
+    "@multisigCancelConfirmKeep": {
+      "description": "Dismiss cancel button"
+    },
+    "multisigCancelAuthReason": "Authenticate to cancel",
+    "@multisigCancelAuthReason": {
+      "description": "Biometric auth prompt when cancelling"
+    },
+    "multisigCancelFailed": "Failed to cancel",
+    "@multisigCancelFailed": {
+      "description": "Error when cancel submission fails"
+    },
+    "multisigProposalCancellingLabel": "Cancelling…",
+    "@multisigProposalCancellingLabel": {
+      "description": "Cancel button label while cancellation is pending"
+    },
+    "multisigProposalCancellingNote": "Your cancellation is being confirmed on-chain.",
+    "@multisigProposalCancellingNote": {
+      "description": "Note under the button while cancellation is pending"
+    },
+    "multisigCancelTimeoutToast": "Cancellation confirmation is taking longer than expected. Check the chain or try again.",
+    "@multisigCancelTimeoutToast": {
+      "description": "Toast when cancellation indexer polling times out"
+    },
+    "multisigApproveTitle": "Approve",
+    "@multisigApproveTitle": {
+      "description": "App bar title on approve done screen"
+    },
+    "multisigApproveDoneExecuted": "Proposal executed",
+    "@multisigApproveDoneExecuted": {
+      "description": "Headline when threshold reached after approve"
+    },
+    "multisigApproveDoneRecorded": "Approval recorded",
+    "@multisigApproveDoneRecorded": {
+      "description": "Headline when approval recorded but threshold not met"
+    },
+    "multisigApproveDoneExecutedSubline": "Threshold reached — transfer dispatched.",
+    "@multisigApproveDoneExecutedSubline": {
+      "description": "Subline when proposal executed"
+    },
+    "multisigApproveDoneRecordedSubline": "Awaiting more co-signers.",
+    "@multisigApproveDoneRecordedSubline": {
+      "description": "Subline when awaiting more approvals"
+    },
 
     "createAccountAppBarTitle": "Account Name",
     "@createAccountAppBarTitle": {
@@ -596,6 +1280,18 @@
     "@activityTxReceived": {
       "description": "Transaction row label for completed receive"
     },
+    "activityTxMultisigCreated": "Multisig created",
+    "@activityTxMultisigCreated": {
+      "description": "Transaction row label for multisig account creation"
+    },
+    "activityTxMultisigCreating": "Creating multisig",
+    "@activityTxMultisigCreating": {
+      "description": "Activity row label while multisig creation is confirming on-chain"
+    },
+    "activityTxMultisigLabel": "Multisig",
+    "@activityTxMultisigLabel": {
+      "description": "Counterparty label for multisig creation row"
+    },
     "activityTxTo": "To",
     "@activityTxTo": {
       "description": "Counterparty direction label for send"
@@ -671,6 +1367,46 @@
     "@activityDetailTitleReceived": {
       "description": "Detail sheet title for completed receive"
     },
+    "activityDetailTitleMultisigCreated": "Multisig created",
+    "@activityDetailTitleMultisigCreated": {
+      "description": "Detail sheet title for multisig creation"
+    },
+    "activityDetailTitleMultisigCreating": "Creating multisig",
+    "@activityDetailTitleMultisigCreating": {
+      "description": "Detail sheet title while multisig creation is in progress"
+    },
+    "activityDetailTitleProposalCreated": "Proposal created",
+    "@activityDetailTitleProposalCreated": {
+      "description": "Detail sheet title for a confirmed multisig proposal creation"
+    },
+    "activityDetailTitleProposalApproved": "Proposal approved",
+    "@activityDetailTitleProposalApproved": {
+      "description": "Detail sheet title for a confirmed multisig proposal approval"
+    },
+    "activityDetailTitleProposalExecuted": "Proposal executed",
+    "@activityDetailTitleProposalExecuted": {
+      "description": "Detail sheet title for a confirmed multisig proposal execution"
+    },
+    "activityDetailTitleProposalCancelled": "Proposal cancelled",
+    "@activityDetailTitleProposalCancelled": {
+      "description": "Detail sheet title for a confirmed multisig proposal cancellation"
+    },
+    "activityDetailTitleCancelling": "Cancelling proposal",
+    "@activityDetailTitleCancelling": {
+      "description": "Detail sheet title while a multisig proposal cancellation is confirming on-chain"
+    },
+    "activityDetailTitleExecuting": "Executing proposal",
+    "@activityDetailTitleExecuting": {
+      "description": "Detail sheet title while a multisig proposal execution is confirming on-chain"
+    },
+    "activityDetailTitleProposing": "Proposing",
+    "@activityDetailTitleProposing": {
+      "description": "Detail sheet title while a multisig proposal is confirming on-chain"
+    },
+    "activityDetailProposalTransferAmount": "TRANSFER AMOUNT",
+    "@activityDetailProposalTransferAmount": {
+      "description": "Proposed transfer amount row label on proposal creation detail sheet"
+    },
     "activityDetailStatusInProcess": "In Process",
     "@activityDetailStatusInProcess": {
       "description": "Status label for in-process transaction"
@@ -710,6 +1446,46 @@
     "activityDetailViewExplorer": "View in Explorer ↗",
     "@activityDetailViewExplorer": {
       "description": "Link to view transaction in explorer"
+    },
+    "activityDetailMultisigAddress": "MULTISIG ADDRESS",
+    "@activityDetailMultisigAddress": {
+      "description": "Multisig address row label on detail sheet"
+    },
+    "activityDetailMultisigThreshold": "THRESHOLD",
+    "@activityDetailMultisigThreshold": {
+      "description": "Approval threshold row label on multisig detail sheet"
+    },
+    "activityDetailMultisigThresholdValue": "{threshold} of {total}",
+    "@activityDetailMultisigThresholdValue": {
+      "description": "Approval threshold value on multisig detail sheet",
+      "placeholders": {
+        "threshold": {
+          "type": "int"
+        },
+        "total": {
+          "type": "int"
+        }
+      }
+    },
+    "activityDetailMultisigSignerCount": "SIGNERS",
+    "@activityDetailMultisigSignerCount": {
+      "description": "Signer count row label on multisig detail sheet"
+    },
+    "activityDetailMultisigCreator": "CREATOR",
+    "@activityDetailMultisigCreator": {
+      "description": "Creator account row label on multisig detail sheet"
+    },
+    "activityDetailMultisigCreationFee": "PALLET FEE",
+    "@activityDetailMultisigCreationFee": {
+      "description": "Multisig pallet fee row label on detail sheet"
+    },
+    "activityDetailMultisigDeposit": "RESERVED DEPOSIT",
+    "@activityDetailMultisigDeposit": {
+      "description": "Multisig reserved deposit row label on detail sheet"
+    },
+    "activityDetailMultisigFeePaidByCreator": "Paid by creator",
+    "@activityDetailMultisigFeePaidByCreator": {
+      "description": "Note when creation fee was paid by another account"
     },
 
     "receiveTitle": "Receive",

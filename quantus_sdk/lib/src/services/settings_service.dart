@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:quantus_sdk/src/models/account.dart';
 import 'package:quantus_sdk/src/models/display_account.dart';
+import 'package:quantus_sdk/src/models/multisig_account.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SettingsService {
@@ -15,6 +16,7 @@ class SettingsService {
 
   // New keys for multi-account support
   static const String _accountsKey = 'accounts_v5';
+  static const String _multisigAccountsKey = 'multisig_accounts_v1';
   static const String _accountsToMigrateKey = 'accounts_to_migrate';
   static const String _addressBookKey = 'address_book';
 
@@ -206,6 +208,54 @@ class SettingsService {
     if (walletAccounts.isEmpty) return 0;
     final maxIndex = walletAccounts.map((a) => a.index).reduce((a, b) => a > b ? a : b);
     return maxIndex + 1;
+  }
+
+  // --- Multisig Accounts ---
+
+  Future<List<MultisigAccount>> getMultisigAccounts() async {
+    final jsonStr = _prefs.getString(_multisigAccountsKey);
+    if (jsonStr == null) return [];
+    final decoded = jsonDecode(jsonStr) as List<dynamic>;
+    return decoded.map((e) => MultisigAccount.fromJson(e as Map<String, dynamic>)).toList();
+  }
+
+  Future<void> _saveMultisigAccounts(List<MultisigAccount> accounts) async {
+    final jsonData = accounts.map((a) => a.toJson()).toList();
+    await _prefs.setString(_multisigAccountsKey, jsonEncode(jsonData));
+  }
+
+  Future<void> addMultisigAccount(MultisigAccount account) async {
+    final accounts = await getMultisigAccounts();
+    if (accounts.any((a) => a.accountId == account.accountId)) {
+      throw Exception('Multisig already added');
+    }
+    accounts.add(account);
+    await _saveMultisigAccounts(accounts);
+  }
+
+  Future<void> updateMultisigAccount(MultisigAccount account) async {
+    final accounts = await getMultisigAccounts();
+    final index = accounts.indexWhere((a) => a.accountId == account.accountId);
+    if (index != -1) {
+      accounts[index] = account;
+      await _saveMultisigAccounts(accounts);
+    }
+  }
+
+  Future<void> removeMultisigAccount(String accountId) async {
+    final accounts = await getMultisigAccounts();
+    final filtered = accounts.where((a) => a.accountId != accountId).toList();
+    if (filtered.length == accounts.length) {
+      throw Exception('Multisig not found');
+    }
+    await _saveMultisigAccounts(filtered);
+    final active = await getActiveAccount();
+    if (active is MultisigDisplayAccount && active.account.accountId == accountId) {
+      final regulars = await getAccounts();
+      if (regulars.isNotEmpty) {
+        await setActiveAccount(RegularAccount(regulars.first));
+      }
+    }
   }
 
   // --- Address Book Methods ---

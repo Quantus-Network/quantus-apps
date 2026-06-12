@@ -54,4 +54,46 @@ void main() {
       expect(ids.contains('unrelated-account'), isFalse);
     });
   });
+
+  group('multisigAccountFromActive', () {
+    final msig = MultisigAccount(
+      name: 'Team Wallet',
+      accountId: '5GrwvaEF5zXb26Fz9rcQpDWS57CtEGASjEi3Uf1Y7K',
+      signers: const ['5GrwvaEF5zXb26Fz9rcQpDWS57CtEGASjEi3Uf1Y7K'],
+      threshold: 1,
+      nonce: BigInt.zero,
+      myMemberAccountId: '5GrwvaEF5zXb26Fz9rcQpDWS57CtEGASjEi3Uf1Y7K',
+    );
+
+    test('returns multisig account for MultisigDisplayAccount', () {
+      final active = MultisigDisplayAccount(msig);
+
+      expect(multisigAccountFromActive(active), same(msig));
+    });
+
+    test('returns null for RegularAccount', () {
+      const active = RegularAccount(
+        Account(walletIndex: 0, index: 0, name: 'Main', accountId: '5GrwvaEF5zXb26Fz9rcQpDWS57CtEGASjEi3Uf1Y7K'),
+      );
+
+      expect(multisigAccountFromActive(active), isNull);
+    });
+
+    test('returns null for EntrustedDisplayAccount', () {
+      const active = EntrustedDisplayAccount(
+        EntrustedAccount(
+          parentAccountId: 'parent',
+          index: 0,
+          name: 'Entrusted',
+          accountId: '5GrwvaEF5zXb26Fz9rcQpDWS57CtEGASjEi3Uf1Y7K',
+        ),
+      );
+
+      expect(multisigAccountFromActive(active), isNull);
+    });
+
+    test('returns null when active account is null', () {
+      expect(multisigAccountFromActive(null), isNull);
+    });
+  });
 }

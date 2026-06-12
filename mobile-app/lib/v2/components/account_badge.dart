@@ -5,17 +5,20 @@ import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 
 class AccountBadge extends StatelessWidget {
-  final Account account;
+  final String name;
   final bool isActive;
   final double size;
   final TextStyle? textStyle;
 
-  const AccountBadge({super.key, required this.account, this.isActive = false, this.size = 40, this.textStyle});
+  const AccountBadge({super.key, required this.name, this.isActive = false, this.size = 40, this.textStyle});
+
+  AccountBadge.account({super.key, required Account account, this.isActive = false, this.size = 40, this.textStyle})
+    : name = account.name;
 
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
-    final label = getAccountBadgeInitials(account.name, separator: ' ');
+    final label = getAccountBadgeInitials(name, separator: ' ');
     final effectiveTextStyle = textStyle ?? context.themeText.transactionDetailRowValue?.copyWith(letterSpacing: -0.25);
 
     return Container(

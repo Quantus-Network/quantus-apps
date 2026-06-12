@@ -125,6 +125,8 @@ class _ImportWalletScreenV2State extends ConsumerState<ImportWalletScreenV2> {
     }
   }
 
+  /// Discovers on-chain HD accounts only. Multisigs are added manually via
+  /// Add Account → Discover Multisig.
   Future<void> _discoverAccounts(String mnemonic) async {
     try {
       final discovered = await _discoveryService.discoverAccounts(mnemonic: mnemonic, walletIndex: widget.walletIndex);

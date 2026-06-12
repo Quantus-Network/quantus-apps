@@ -77,7 +77,7 @@ class HighSecurityService {
     final hsData = await _reversibleTransfersService.getHighSecurityConfig(address);
     print('getHighSecurityConfig: $address -> $hsData');
     if (hsData != null) {
-      final accountId = AddressExtension.ss58AddressFromBytes(Uint8List.fromList(hsData.interceptor));
+      final accountId = AddressExtension.ss58AddressFromBytes(Uint8List.fromList(hsData.guardian));
       if (hsData.delay is! qp.Timestamp) {
         throw ArgumentError('Expected timestamp delay, got block number');
       }

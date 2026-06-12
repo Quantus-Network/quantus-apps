@@ -44,17 +44,17 @@ class Queries {
         hasher: _i1.StorageHasher.blake2b128Concat(_i2.AccountId32Codec()),
       );
 
-  final _i1.StorageMap<_i2.AccountId32, List<_i2.AccountId32>> _interceptorIndex =
+  final _i1.StorageMap<_i2.AccountId32, List<_i2.AccountId32>> _guardianIndex =
       const _i1.StorageMap<_i2.AccountId32, List<_i2.AccountId32>>(
         prefix: 'ReversibleTransfers',
-        storage: 'InterceptorIndex',
+        storage: 'GuardianIndex',
         valueCodec: _i6.SequenceCodec<_i2.AccountId32>(_i2.AccountId32Codec()),
         hasher: _i1.StorageHasher.blake2b128Concat(_i2.AccountId32Codec()),
       );
 
-  final _i1.StorageValue<BigInt> _globalNonce = const _i1.StorageValue<BigInt>(
+  final _i1.StorageValue<BigInt> _nextTransactionId = const _i1.StorageValue<BigInt>(
     prefix: 'ReversibleTransfers',
-    storage: 'GlobalNonce',
+    storage: 'NextTransactionId',
     valueCodec: _i6.U64Codec.codec,
   );
 
@@ -90,24 +90,26 @@ class Queries {
     return []; /* Default */
   }
 
-  /// Maps interceptor accounts to the list of accounts they can intercept for.
-  /// This allows the UI to efficiently query all accounts for which a given account is an
-  /// interceptor.
-  _i7.Future<List<_i2.AccountId32>> interceptorIndex(_i2.AccountId32 key1, {_i1.BlockHash? at}) async {
-    final hashedKey = _interceptorIndex.hashedKeyFor(key1);
+  /// Maps guardian accounts to the list of accounts they protect.
+  /// This allows the UI to efficiently query all accounts for which a given account is a
+  /// guardian.
+  _i7.Future<List<_i2.AccountId32>> guardianIndex(_i2.AccountId32 key1, {_i1.BlockHash? at}) async {
+    final hashedKey = _guardianIndex.hashedKeyFor(key1);
     final bytes = await __api.getStorage(hashedKey, at: at);
     if (bytes != null) {
-      return _interceptorIndex.decodeValue(bytes);
+      return _guardianIndex.decodeValue(bytes);
     }
     return []; /* Default */
   }
 
-  /// Global nonce for generating unique transaction IDs.
-  _i7.Future<BigInt> globalNonce({_i1.BlockHash? at}) async {
-    final hashedKey = _globalNonce.hashedKey();
+  /// Monotonically increasing counter used to generate unique transaction IDs.
+  /// Each scheduled transfer increments this value to ensure no two transfers
+  /// produce the same `tx_id`, even if they have identical parameters.
+  _i7.Future<BigInt> nextTransactionId({_i1.BlockHash? at}) async {
+    final hashedKey = _nextTransactionId.hashedKey();
     final bytes = await __api.getStorage(hashedKey, at: at);
     if (bytes != null) {
-      return _globalNonce.decodeValue(bytes);
+      return _nextTransactionId.decodeValue(bytes);
     }
     return BigInt.zero; /* Default */
   }
@@ -150,14 +152,14 @@ class Queries {
     return (keys.map((key) => []).toList() as List<List<_i4.H256>>); /* Default */
   }
 
-  /// Maps interceptor accounts to the list of accounts they can intercept for.
-  /// This allows the UI to efficiently query all accounts for which a given account is an
-  /// interceptor.
-  _i7.Future<List<List<_i2.AccountId32>>> multiInterceptorIndex(List<_i2.AccountId32> keys, {_i1.BlockHash? at}) async {
-    final hashedKeys = keys.map((key) => _interceptorIndex.hashedKeyFor(key)).toList();
+  /// Maps guardian accounts to the list of accounts they protect.
+  /// This allows the UI to efficiently query all accounts for which a given account is a
+  /// guardian.
+  _i7.Future<List<List<_i2.AccountId32>>> multiGuardianIndex(List<_i2.AccountId32> keys, {_i1.BlockHash? at}) async {
+    final hashedKeys = keys.map((key) => _guardianIndex.hashedKeyFor(key)).toList();
     final bytes = await __api.queryStorageAt(hashedKeys, at: at);
     if (bytes.isNotEmpty) {
-      return bytes.first.changes.map((v) => _interceptorIndex.decodeValue(v.key)).toList();
+      return bytes.first.changes.map((v) => _guardianIndex.decodeValue(v.key)).toList();
     }
     return (keys.map((key) => []).toList() as List<List<_i2.AccountId32>>); /* Default */
   }
@@ -180,15 +182,15 @@ class Queries {
     return hashedKey;
   }
 
-  /// Returns the storage key for `interceptorIndex`.
-  _i8.Uint8List interceptorIndexKey(_i2.AccountId32 key1) {
-    final hashedKey = _interceptorIndex.hashedKeyFor(key1);
+  /// Returns the storage key for `guardianIndex`.
+  _i8.Uint8List guardianIndexKey(_i2.AccountId32 key1) {
+    final hashedKey = _guardianIndex.hashedKeyFor(key1);
     return hashedKey;
   }
 
-  /// Returns the storage key for `globalNonce`.
-  _i8.Uint8List globalNonceKey() {
-    final hashedKey = _globalNonce.hashedKey();
+  /// Returns the storage key for `nextTransactionId`.
+  _i8.Uint8List nextTransactionIdKey() {
+    final hashedKey = _nextTransactionId.hashedKey();
     return hashedKey;
   }
 
@@ -210,9 +212,9 @@ class Queries {
     return hashedKey;
   }
 
-  /// Returns the storage map key prefix for `interceptorIndex`.
-  _i8.Uint8List interceptorIndexMapPrefix() {
-    final hashedKey = _interceptorIndex.mapPrefix();
+  /// Returns the storage map key prefix for `guardianIndex`.
+  _i8.Uint8List guardianIndexMapPrefix() {
+    final hashedKey = _guardianIndex.mapPrefix();
     return hashedKey;
   }
 }
@@ -223,21 +225,40 @@ class Txs {
   /// Enable high-security for the calling account with a specified
   /// reversibility delay.
   ///
-  /// Recoverer and interceptor (aka guardian) could be the same account or
-  /// different accounts.
-  ///
   /// Once an account is set as high security it can only make reversible
   /// transfers. It is not allowed any other calls.
   ///
-  /// - `delay`: The reversibility time for any transfer made by the high
-  /// security account.
-  /// - interceptor: The account that can intercept transctions from the
-  /// high security account.
+  /// # Warning: Permanent and Irreversible
+  ///
+  /// **Enabling high security mode is a one-way operation that cannot be undone.**
+  ///
+  /// Once this function is called successfully, the account is permanently restricted
+  /// to only the following operations:
+  /// - [`schedule_transfer`](Self::schedule_transfer) - Schedule delayed native token
+  ///  transfers
+  /// - [`schedule_asset_transfer`](Self::schedule_asset_transfer) - Schedule delayed asset
+  ///  transfers
+  /// - [`cancel`](Self::cancel) - Cancel pending transfers
+  /// - [`recover_funds`](Self::recover_funds) - Guardian-initiated emergency fund recovery
+  ///
+  /// There is no mechanism to disable high security mode or restore normal account
+  /// functionality. This design is intentional to provide maximum security guarantees:
+  /// an attacker who gains access to the account cannot simply disable the protections.
+  ///
+  /// Users who no longer wish to use high-security features can simply transfer their
+  /// funds to a different account using [`schedule_transfer`](Self::schedule_transfer)
+  /// or [`schedule_asset_transfer`](Self::schedule_asset_transfer).
+  ///
+  /// # Parameters
+  ///
+  /// - `delay`: The reversibility time for any transfer made by the high-security account.
+  /// - `guardian`: The guardian account that can cancel pending transfers and recover funds
+  ///  from this high-security account.
   _i9.ReversibleTransfers setHighSecurity({
     required _i10.BlockNumberOrTimestamp delay,
-    required _i2.AccountId32 interceptor,
+    required _i2.AccountId32 guardian,
   }) {
-    return _i9.ReversibleTransfers(_i11.SetHighSecurity(delay: delay, interceptor: interceptor));
+    return _i9.ReversibleTransfers(_i11.SetHighSecurity(delay: delay, guardian: guardian));
   }
 
   /// Cancel a pending reversible transaction scheduled by the caller.
@@ -247,9 +268,22 @@ class Txs {
     return _i9.ReversibleTransfers(_i11.Cancel(txId: txId));
   }
 
-  /// Called by the Scheduler to finalize the scheduled task/call
+  /// Executes a previously scheduled transfer after the delay period has elapsed.
   ///
-  /// - `tx_id`: The unique id of the transaction to finalize and dispatch.
+  /// This extrinsic is called automatically by the Scheduler pallet when the
+  /// delay period expires. It must be signed by this pallet's account (not a user).
+  /// The pallet account is set as the origin when scheduling via
+  /// [`do_schedule_transfer_inner`](Self::do_schedule_transfer_inner).
+  ///
+  /// # Parameters
+  ///
+  /// - `tx_id`: The unique identifier of the pending transfer to execute.
+  ///
+  /// # Errors
+  ///
+  /// - [`InvalidSchedulerOrigin`](Error::InvalidSchedulerOrigin): Called by an account other
+  ///  than this pallet's account.
+  /// - [`PendingTxNotFound`](Error::PendingTxNotFound): No pending transfer with this ID.
   _i9.ReversibleTransfers executeTransfer({required _i4.H256 txId}) {
     return _i9.ReversibleTransfers(_i11.ExecuteTransfer(txId: txId));
   }
@@ -295,12 +329,16 @@ class Txs {
     );
   }
 
-  /// Allows the guardian (interceptor) to recover all funds from a high security
-  /// account by transferring the entire balance to themselves.
+  /// Allows the guardian to recover all funds from a high-security account
+  /// by transferring the entire balance to themselves.
   ///
-  /// This is an emergency function for when the high security account may be compromised.
+  /// This is an emergency function for when the high-security account may be compromised.
   /// It cancels all pending transfers first (applying volume fees), then transfers
   /// the remaining free balance to the guardian.
+  ///
+  /// If releasing held funds fails for any transfer, that transfer is skipped (metadata
+  /// preserved for manual retry via `cancel`) and a `TransferRecoveryFailed` event is
+  /// emitted. Other transfers continue to be processed.
   _i9.ReversibleTransfers recoverFunds({required _i2.AccountId32 account}) {
     return _i9.ReversibleTransfers(_i11.RecoverFunds(account: account));
   }
@@ -309,8 +347,8 @@ class Txs {
 class Constants {
   Constants();
 
-  /// Maximum number of accounts an interceptor can intercept for. Used for BoundedVec.
-  final int maxInterceptorAccounts = 32;
+  /// Maximum number of accounts a single guardian can protect. Used for BoundedVec.
+  final int maxGuardianAccounts = 32;
 
   /// Maximum pending reversible transactions allowed per account.
   final int maxPendingPerAccount = 16;

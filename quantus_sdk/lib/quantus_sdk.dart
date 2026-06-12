@@ -25,6 +25,9 @@ export 'src/models/extrinsic_fee_data.dart';
 export 'src/models/unsigned_transaction_data.dart';
 export 'src/models/remote_config_model.dart';
 export 'src/models/miner_reward_event.dart';
+export 'src/models/multisig_creation_event.dart';
+export 'src/models/multisig_created_event.dart';
+export 'src/models/pending_multisig_creation_event.dart';
 export 'src/models/miner_stats.dart';
 export 'src/models/opted_in_position.dart';
 export 'src/models/pending_transfer_event.dart';
@@ -72,6 +75,20 @@ export 'src/quantus_signing_payload.dart';
 export 'src/quantus_payload_parser.dart';
 export 'src/models/entrusted_account.dart';
 export 'src/models/display_account.dart';
+export 'src/models/multisig_account.dart';
+export 'src/models/multisig_create_submission.dart';
+export 'src/models/multisig_proposal.dart';
+export 'src/models/multisig_proposal_event.dart';
+export 'src/models/multisig_proposal_created_event.dart';
+export 'src/models/multisig_proposal_approved_event.dart';
+export 'src/models/multisig_proposal_executed_event.dart';
+export 'src/models/multisig_proposal_cancelled_event.dart';
+export 'src/models/pending_multisig_approval_event.dart';
+export 'src/models/pending_multisig_execution_event.dart';
+export 'src/models/pending_multisig_cancellation_event.dart';
+export 'src/models/propose_fee_breakdown.dart';
+export 'src/models/multisig_signer.dart';
+export 'src/services/multisig_service.dart';
 
 // Blockchain-infrastructure third-party re-exports. Apps consume these via
 // the SDK rather than depending on polkadart / bip39_mnemonic directly.
