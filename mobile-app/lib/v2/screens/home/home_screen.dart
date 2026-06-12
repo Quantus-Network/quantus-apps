@@ -7,6 +7,7 @@ import 'package:resonance_network_wallet/features/components/skeleton.dart';
 import 'package:resonance_network_wallet/features/components/shared_address_action_sheet.dart';
 import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
 import 'package:resonance_network_wallet/routes.dart';
+import 'package:resonance_network_wallet/services/global_history_polling_service.dart';
 import 'package:resonance_network_wallet/services/telemetry_service.dart';
 import 'package:resonance_network_wallet/shared/extensions/current_route_extensions.dart';
 import 'package:resonance_network_wallet/shared/utils/print.dart';
@@ -26,13 +27,10 @@ import 'package:resonance_network_wallet/v2/screens/send/select_recipient_screen
 import 'package:resonance_network_wallet/v2/screens/settings/settings_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/pos/pos_amount_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/swap_screen.dart';
-import 'package:resonance_network_wallet/models/filtered_transactions_params.dart';
-import 'package:resonance_network_wallet/providers/account_id_list_cache.dart';
 import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/active_account_transactions_provider.dart';
-import 'package:resonance_network_wallet/providers/filtered_all_transactions_provider.dart';
 import 'package:resonance_network_wallet/providers/route_intent_providers.dart';
 import 'package:resonance_network_wallet/providers/currency_display_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
@@ -108,27 +106,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Future<void> _refresh() async {
-    final active = ref.read(activeAccountProvider).value;
-    ref.invalidate(balanceProviderFamily);
-    ref.invalidate(balanceProviderRaw);
-    ref.invalidate(activeAccountTransactionsProvider);
-    if (active != null) {
-      final historyRefresh = ref
-          .read(
-            filteredPaginationControllerProviderFamily(
-              FilteredTransactionsParams(
-                accountIds: AccountIdListCache.get([active.account.accountId]),
-                filter: TransactionFilter.all,
-              ),
-            ).notifier,
-          )
-          .loadingRefresh();
-      try {
-        await Future.wait([ref.read(balanceProviderFamily(active.account.accountId).future), historyRefresh]);
-      } catch (e, st) {
-        quantusDebugPrint('home refresh error: $e');
-        TelemetryService().sendError('Home refresh failed', error: e, stackTrace: st);
-      }
+    try {
+      await ref.read(globalHistoryPollingServiceProvider).triggerManualRefresh();
+    } catch (e, st) {
+      quantusDebugPrint('home refresh error: $e');
+      TelemetryService().sendError('Home refresh failed', error: e, stackTrace: st);
     }
   }
 

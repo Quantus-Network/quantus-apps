@@ -31,11 +31,13 @@ class _AppInitializerState extends ConsumerState<AppInitializer> {
     try {
       ref.read(remoteConfigProvider.notifier).registerRemoteRefreshListener(ref);
 
-      final notificationService = ref.read(localNotificationsServiceProvider);
-      await notificationService.init();
-
+      // Register polling services early so their listeners are attached before/while accounts load.
+      // This must happen even if later steps (e.g. notifications) fail.
       ref.read(historyPollingManagerProvider);
       ref.read(multisigCreationPollingServiceProvider);
+
+      final notificationService = ref.read(localNotificationsServiceProvider);
+      await notificationService.init();
     } catch (e, stackTrace) {
       debugPrint('Initialization error: $e\n$stackTrace');
     }

@@ -8,7 +8,7 @@ import 'package:resonance_network_wallet/models/notification_models.dart';
 import 'package:resonance_network_wallet/services/telemetry_service.dart';
 import 'package:resonance_network_wallet/services/transaction_service.dart';
 import 'package:timezone/timezone.dart' as tz;
-import 'package:timezone/data/latest.dart' as tz;
+import 'package:timezone/data/latest_all.dart' as tz_data;
 import 'package:flutter_timezone/flutter_timezone.dart';
 
 class LocalNotificationsService {
@@ -41,9 +41,22 @@ class LocalNotificationsService {
   Future<void> init() async {
     if (_isInitialized) return;
 
-    tz.initializeTimeZones();
-    final currentTimeZone = await FlutterTimezone.getLocalTimezone();
-    tz.setLocalLocation(tz.getLocation(currentTimeZone.identifier));
+    // Set up timezone database for scheduled notifications. Failures here (e.g. unrecognized
+    // device timezone identifier) must not prevent notifications or the rest of app startup.
+    try {
+      tz_data.initializeTimeZones();
+      final currentTimeZone = await FlutterTimezone.getLocalTimezone();
+      tz.setLocalLocation(tz.getLocation(currentTimeZone.identifier));
+    } catch (e) {
+      debugPrint('Failed to set device timezone: "$e". Falling back to UTC for notifications.');
+      try {
+        tz_data.initializeTimeZones();
+        tz.setLocalLocation(tz.UTC);
+      } catch (err) {
+        // Last resort: proceed without proper tz; scheduled notifs may not work but app continues.
+        debugPrint('Last resort failed to set device timezone to UTC: "$err".');
+      }
+    }
 
     const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
     const iosSettings = DarwinInitializationSettings(

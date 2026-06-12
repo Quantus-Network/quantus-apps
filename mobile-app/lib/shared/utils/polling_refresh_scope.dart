@@ -5,12 +5,19 @@ import 'package:resonance_network_wallet/providers/account_id_list_cache.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/controllers/unified_pagination_controller.dart';
 import 'package:resonance_network_wallet/providers/filtered_all_transactions_provider.dart';
+import 'package:resonance_network_wallet/providers/multisig_providers.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 
 const _backgroundPollFilters = [TransactionFilter.all];
 
 /// Returns the currently selected wallet account ID, if any.
 String? activeAccountId(Ref ref) => ref.read(activeAccountProvider).value?.account.accountId;
+
+/// Returns the active multisig account, if the selected account is multisig.
+MultisigAccount? multisigAccountFromActive(DisplayAccount? active) {
+  if (active is MultisigDisplayAccount) return active.account;
+  return null;
+}
 
 /// Builds deduplicated single-account refresh targets for event-driven updates.
 List<List<String>> accountRefreshTargets({required Set<String> affectedAccountIds, String? activeId}) {
@@ -77,6 +84,30 @@ Future<void> refreshAccountsPagination(
   }
 }
 
+/// Invalidates open, past, and block providers for the active multisig account.
+///
+/// Returns the active multisig account, or null if the active account is not
+/// a multisig (in which case nothing is invalidated).
+MultisigAccount? invalidateActiveMultisigProposals(Ref ref) {
+  final msig = multisigAccountFromActive(ref.read(activeAccountProvider).value);
+  if (msig == null) return null;
+
+  invalidateMultisigProposals(ref, msig);
+  return msig;
+}
+
+/// Refreshes proposal providers for the active multisig account and waits for data.
+Future<void> refreshActiveMultisigProposals(Ref ref) async {
+  final msig = invalidateActiveMultisigProposals(ref);
+  if (msig == null) return;
+
+  await Future.wait([
+    ref.read(multisigOpenProposalsProvider(msig).future),
+    ref.read(multisigPastProposalsProvider(msig).future),
+    ref.read(multisigCurrentBlockProvider.future),
+  ]);
+}
+
 /// Silently refreshes pagination for the active account (background poll scope).
 Future<void> silentRefreshActiveAccount(Ref ref) async {
   final accountId = activeAccountId(ref);
@@ -105,4 +136,5 @@ Future<void> refreshActiveAccountOnSwitch(Ref ref) async {
   }
 
   invalidateActiveAccountBalance(ref);
+  invalidateActiveMultisigProposals(ref);
 }
