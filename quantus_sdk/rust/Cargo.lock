@@ -147,9 +147,9 @@ dependencies = [
 
 [[package]]
 name = "anyhow"
-version = "1.0.102"
+version = "1.0.100"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7f202df86484c868dbad7eaa557ef785d5c66295e41b460ef922eca0723b842c"
+checksum = "a23eb6b1614318a8071c9b2521f36b424b2c83db5eb3a0fead4a6c0809af6e61"
 
 [[package]]
 name = "ark-bls12-377"
@@ -705,6 +705,17 @@ name = "cfg-if"
 version = "1.0.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9330f8b2ff13f34540b44e946ef35111825727b38d33286ef986142615121801"
+
+[[package]]
+name = "chacha20"
+version = "0.10.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6f8d983286843e49675a4b7a2d174efe136dc93a18d69130dd18198a6c167601"
+dependencies = [
+ "cfg-if",
+ "cpufeatures 0.3.0",
+ "rand_core 0.10.1",
+]
 
 [[package]]
 name = "clap"
@@ -1427,6 +1438,7 @@ dependencies = [
  "cfg-if",
  "libc",
  "r-efi",
+ "rand_core 0.10.1",
  "wasip2",
  "wasip3",
 ]
@@ -1868,9 +1880,9 @@ dependencies = [
 
 [[package]]
 name = "log"
-version = "0.4.29"
+version = "0.4.28"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5e5032e24019045c762d3c0f28f5b6b8bbf38563a65908389bf7978758920897"
+checksum = "34080505efa8e45a4b816c349525ebe327ceaa8559756f0356cba97ef3bf7432"
 
 [[package]]
 name = "md-5"
@@ -1970,7 +1982,6 @@ checksum = "a5e44f723f1133c9deac646763579fdb3ac745e418f2a7af9cd0c431da1f20b9"
 dependencies = [
  "num-integer",
  "num-traits",
- "rand 0.8.5",
 ]
 
 [[package]]
@@ -1980,7 +1991,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "73f88a1307638156682bada9d7604135552957b7818057dcef22705b4d509495"
 dependencies = [
  "num-traits",
- "rand 0.8.5",
 ]
 
 [[package]]
@@ -2054,9 +2064,9 @@ dependencies = [
 
 [[package]]
 name = "once_cell"
-version = "1.21.4"
+version = "1.21.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9f7c3e4beb33f85d45ae3e3a1792185706c8e16d043238c593331cc7cd313b50"
+checksum = "42f5e15c9953c5e4ccceeb2e7382a716482c34515315f7b03532b8b4e8393d2d"
 dependencies = [
  "critical-section",
  "portable-atomic",
@@ -2504,32 +2514,26 @@ dependencies = [
 
 [[package]]
 name = "qp-plonky2"
-version = "1.4.1"
+version = "1.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a1d18516ef5ecd81ddcccb6beacdfe1578f44e4f05ccb0890998afcd3b87d01f"
+checksum = "f6db010db2fabb546251fa4c317e90a91a6a58bc96966d6685ba430228846479"
 dependencies = [
  "ahash",
  "anyhow",
  "critical-section",
- "getrandom 0.2.17",
  "hashbrown 0.14.5",
  "itertools 0.11.0",
  "keccak-hash",
  "log",
  "num",
  "once_cell",
- "p3-field",
- "p3-goldilocks",
- "p3-poseidon2",
- "p3-symmetric",
  "plonky2_maybe_rayon",
  "plonky2_util",
  "qp-plonky2-core",
  "qp-plonky2-field",
  "qp-plonky2-verifier",
- "qp-poseidon-constants",
- "rand 0.8.5",
- "rand_chacha 0.3.1",
+ "qp-poseidon-core",
+ "rand 0.10.1",
  "serde",
  "static_assertions",
  "unroll",
@@ -2538,9 +2542,9 @@ dependencies = [
 
 [[package]]
 name = "qp-plonky2-core"
-version = "1.4.1"
+version = "1.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0ad9961c2e2f6aca563eefd902697b0d21e9807c2c3b719ba1d4488bb03383c4"
+checksum = "80dfd857190a8b36568a8be6c7cdcbd74e155993d23e610ef31e0b068ab744cf"
 dependencies = [
  "ahash",
  "anyhow",
@@ -2549,14 +2553,9 @@ dependencies = [
  "keccak-hash",
  "log",
  "num",
- "p3-field",
- "p3-goldilocks",
- "p3-poseidon2",
- "p3-symmetric",
  "plonky2_util",
  "qp-plonky2-field",
- "qp-poseidon-constants",
- "rand 0.8.5",
+ "rand 0.10.1",
  "serde",
  "static_assertions",
  "unroll",
@@ -2564,15 +2563,15 @@ dependencies = [
 
 [[package]]
 name = "qp-plonky2-field"
-version = "1.4.1"
+version = "1.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ecc7089b7ae09ef8fe4889353d2f2be7dffe6d87edfb5b03f9553ca0a1ca55da"
+checksum = "aff3d551265f30da9325df10a0ed242e9051a9d860d033c6a1b1129171f725f1"
 dependencies = [
  "anyhow",
  "itertools 0.11.0",
  "num",
  "plonky2_util",
- "rand 0.8.5",
+ "rand 0.10.1",
  "rustc_version",
  "serde",
  "static_assertions",
@@ -2581,9 +2580,9 @@ dependencies = [
 
 [[package]]
 name = "qp-plonky2-verifier"
-version = "1.4.1"
+version = "1.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "eb155f950f3df3c0cf5fce846290f19c6b7a059fbefd9bdf9011fd6f01f84e79"
+checksum = "85ec868e56479bb8859275d0c300f06e7e8426a69829a31108ed0dde8471e7c1"
 dependencies = [
  "ahash",
  "anyhow",
@@ -2594,14 +2593,10 @@ dependencies = [
  "log",
  "num",
  "once_cell",
- "p3-field",
- "p3-goldilocks",
- "p3-poseidon2",
- "p3-symmetric",
  "plonky2_util",
  "qp-plonky2-core",
  "qp-plonky2-field",
- "qp-poseidon-constants",
+ "qp-poseidon-core",
  "serde",
  "static_assertions",
  "unroll",
@@ -2622,32 +2617,24 @@ dependencies = [
 
 [[package]]
 name = "qp-poseidon-core"
-version = "1.4.0"
+version = "2.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c51774769a44a1c65f9ad3959ff1497a9c315a16f5718151873721b3c5631413"
-dependencies = [
- "p3-field",
- "p3-goldilocks",
- "p3-poseidon2",
- "p3-symmetric",
- "qp-poseidon-constants",
- "rand_chacha 0.9.0",
-]
+checksum = "78172860cd960773c72e97fba07ead9e5a1c13086c5746283744933e2e4a577b"
 
 [[package]]
 name = "qp-rusty-crystals-dilithium"
-version = "2.4.0"
+version = "2.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e223f0218cd3d55a04d96cc9a82415d2edd5e37b5ebd0f466d44a22bf8b34532"
+checksum = "a6c16ed4031406f6d8ff14a4822a35f766b62617324c75931db7df8c3631a701"
 dependencies = [
  "zeroize",
 ]
 
 [[package]]
 name = "qp-rusty-crystals-hdwallet"
-version = "2.3.1"
+version = "2.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ddbfc888856ab9d7b729d94ada8ddd4916cd3abbe67c1fc6af80c0ed32d17d3d"
+checksum = "e2e068be8021f2bebbabeab77ee9107a359d6e537397323ae92aae8178922fab"
 dependencies = [
  "bip39",
  "getrandom 0.2.17",
@@ -2665,9 +2652,9 @@ dependencies = [
 
 [[package]]
 name = "qp-wormhole-aggregator"
-version = "2.0.1"
+version = "3.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ba5a23eea8e17c97632f5056d1fecdb83d2e997f79d823fb97c514823fce8580"
+checksum = "c9cd1dd3efde4e405a1d7c44852cee799fce30d82f0741c0b5c2b3ec024e3ae9"
 dependencies = [
  "anyhow",
  "hex",
@@ -2683,9 +2670,9 @@ dependencies = [
 
 [[package]]
 name = "qp-wormhole-circuit"
-version = "2.0.1"
+version = "3.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b72abd3357e1c486621431109d83a259076ed941fcc7f035353a629940c443d9"
+checksum = "f8c616ca2d392b3701fdd97982c3b894e272245b751e4e669fac7bf6aa4cd977"
 dependencies = [
  "anyhow",
  "hex",
@@ -2696,9 +2683,9 @@ dependencies = [
 
 [[package]]
 name = "qp-wormhole-circuit-builder"
-version = "2.0.1"
+version = "3.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9d27c981d34a35cb10ee96e16c1fb44fbb4c52f3e58a787ce089c21bf5469514"
+checksum = "dedb083e6b1567354837930881e7bead77c84973422707c0604ed1234f12b1fd"
 dependencies = [
  "anyhow",
  "clap",
@@ -2710,34 +2697,32 @@ dependencies = [
 
 [[package]]
 name = "qp-wormhole-inputs"
-version = "2.0.1"
+version = "3.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f69e54a0f450d349cb1169bbb743a7a846475a1210760308e38f55841e5aa5c0"
+checksum = "6416e8b025382d5bc00d1418ca28a25c15f1fdfe351f793e83f6aae16b8ad2bf"
 dependencies = [
  "anyhow",
 ]
 
 [[package]]
 name = "qp-wormhole-prover"
-version = "2.0.1"
+version = "3.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "68cee4d6a0317f89d1ec7a6c40a9592e5525c75b9cb21bd7d5d3b408301068bd"
+checksum = "167337f6e3d65e6b67cace22f72537a86ee061b9880dc7fe6e5b617d33ad279b"
 dependencies = [
  "anyhow",
  "qp-plonky2",
  "qp-wormhole-circuit",
- "qp-wormhole-inputs",
  "qp-zk-circuits-common",
 ]
 
 [[package]]
 name = "qp-zk-circuits-common"
-version = "2.0.1"
+version = "3.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f6d5e1d764560fd797f71defbf75a1618596945c53e33033ac42cc7c2e4689f6"
+checksum = "39bb72c67529758341ab094f7b6576379c5d704992df254d09282e9a99eec856"
 dependencies = [
  "anyhow",
- "hex",
  "qp-plonky2",
  "qp-poseidon-constants",
  "qp-poseidon-core",
@@ -2800,6 +2785,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "rand"
+version = "0.10.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d2e8e8bcc7961af1fdac401278c6a831614941f6164ee3bf4ce61b7edb162207"
+dependencies = [
+ "chacha20",
+ "getrandom 0.4.2",
+ "rand_core 0.10.1",
+]
+
+[[package]]
 name = "rand_chacha"
 version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2833,6 +2829,12 @@ name = "rand_core"
 version = "0.9.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "76afc826de14238e6e8c374ddcc1fa19e374fd8dd986b0d2af0d02377261d83c"
+
+[[package]]
+name = "rand_core"
+version = "0.10.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "63b8176103e19a2643978565ca18b50549f6101881c443590420e4dc998a3c69"
 
 [[package]]
 name = "rand_xoshiro"

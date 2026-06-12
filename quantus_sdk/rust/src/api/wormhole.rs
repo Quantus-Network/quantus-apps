@@ -22,8 +22,9 @@ pub fn compute_address_hash_hex(raw_address: Vec<u8>) -> Result<String, String> 
 pub const NATIVE_ASSET_ID: u32 = 0;
 pub const VOLUME_FEE_BPS: u32 = 10;
 pub const SCALE_DOWN_FACTOR: u128 = 10_000_000_000;
-pub const MAX_PROOFS_PER_BATCH: u32 = 16;
-pub const DEFAULT_NUM_LEAF_PROOFS: usize = 16;
+// Must match the chain's aggregation batch size (num_n=7 since v0.7.1-q-day-2).
+pub const MAX_PROOFS_PER_BATCH: u32 = 7;
+pub const DEFAULT_NUM_LEAF_PROOFS: usize = 7;
 
 #[flutter_rust_bridge::frb(sync)]
 pub struct ProofInput {
@@ -206,10 +207,16 @@ pub fn ensure_circuit_binaries(bins_dir: String) -> Result<String, String> {
         .map_err(|e| format!("Failed to create bins directory {}: {}", bins_dir, e))?;
 
     let config_path = dir.join("config.json");
-    if config_path.exists() && all_required_files_exist(dir) {
-        let config_str = std::fs::read_to_string(&config_path)
-            .map_err(|e| format!("Failed to read config.json: {}", e))?;
-        return Ok(config_str);
+    if all_required_files_exist(dir) {
+        // Reuse existing binaries only if they were generated with the current
+        // batch size; otherwise regenerate (e.g. after the chain's 16 -> 7 change).
+        match qp_wormhole_circuit_builder::CircuitBinsConfig::load(dir) {
+            Ok(config) if config.num_leaf_proofs == DEFAULT_NUM_LEAF_PROOFS => {
+                return std::fs::read_to_string(&config_path)
+                    .map_err(|e| format!("Failed to read config.json: {}", e));
+            }
+            _ => {}
+        }
     }
 
     qp_wormhole_circuit_builder::generate_all_circuit_binaries(

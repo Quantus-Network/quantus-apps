@@ -47,6 +47,22 @@ class _ClaimRewardsDialogState extends State<_ClaimRewardsDialog> {
   static final _balanceFormatter = NumberFormattingService();
 
   @override
+  void initState() {
+    super.initState();
+    _prefillDefaultAddress();
+  }
+
+  Future<void> _prefillDefaultAddress() async {
+    try {
+      final address = await _walletService.getDefaultAccountAddress();
+      if (!mounted || address == null || _addressController.text.isNotEmpty) return;
+      setState(() => _addressController.text = address);
+    } catch (e) {
+      _log.e('Failed to derive default destination address', error: e);
+    }
+  }
+
+  @override
   void dispose() {
     _addressController.dispose();
     super.dispose();
@@ -499,14 +515,27 @@ class _ClaimRewardsDialogState extends State<_ClaimRewardsDialog> {
     );
   }
 
-  Widget _buildStepRow(int step, String title) {
-    // Cancellation is a neutral terminal state: only the steps the flow actually
-    // finished should be marked green. Done-without-cancel = fully complete →
-    // every step is green.
-    final isCompleted = _done ? true : _currentStep > step;
-    final isActive = !_done && !_cancelledTerminal && _currentStep == step && _errorMessage == null;
-    final isError = !_done && _currentStep == step && _errorMessage != null;
+  // Cancellation is a neutral terminal state: only the steps the flow actually
+  // finished should be marked green. Done-without-cancel = fully complete →
+  // every step is green. Steps with a known total (proof generation and batch
+  // submission interleave per batch) complete by count, not step order.
+  bool _isStepCompleted(int step) {
+    if (_done) return true;
     final progress = _stepProgress[step];
+    if (progress?.total != null) return progress!.completed >= progress.total!;
+    return _currentStep > step;
+  }
+
+  Widget _buildStepRow(int step, String title) {
+    final progress = _stepProgress[step];
+    final isCompleted = _isStepCompleted(step);
+    final isActive =
+        !_done &&
+        !_cancelledTerminal &&
+        !isCompleted &&
+        _errorMessage == null &&
+        (_currentStep == step || (progress?.completed ?? 0) > 0);
+    final isError = !_done && _currentStep == step && _errorMessage != null;
 
     Widget icon;
     if (isCompleted) {
@@ -630,7 +659,7 @@ class _ClaimRewardsDialogState extends State<_ClaimRewardsDialog> {
   }
 
   Widget _buildStepConnector(int afterStep) {
-    final isCompleted = _done ? true : _currentStep > afterStep;
+    final isCompleted = _isStepCompleted(afterStep);
     return Padding(
       padding: const EdgeInsets.only(left: 13),
       child: Align(

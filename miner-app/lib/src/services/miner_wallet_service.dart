@@ -115,6 +115,13 @@ class MinerWalletService {
   /// SS58 wormhole address where rewards are sent.
   Future<String?> getRewardsAddress() async => (await getWormholeKeyPair())?.address;
 
+  /// SS58 address at the default derivation path of the stored mnemonic.
+  Future<String?> getDefaultAccountAddress() async {
+    final mnemonic = await getMnemonic();
+    if (mnemonic == null || mnemonic.isEmpty) return null;
+    return _hdWallet.keyPairAtIndex(mnemonic, _minerWalletIndex).ss58Address;
+  }
+
   Future<bool> hasRewardsPreimageFile() async {
     try {
       return await (await _preimageFile()).exists();

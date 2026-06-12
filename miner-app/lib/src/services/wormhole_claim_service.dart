@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:convert/convert.dart';
@@ -41,8 +42,6 @@ class ClaimCancelled implements Exception {
 }
 
 class WormholeClaimService {
-  static const int _maxProofsPerBatch = 16;
-  static const int _proofConcurrency = 16;
   static const int _volumeFeeBps = 10;
 
   /// Scaled-down → planck multiplier; matches `SCALE_DOWN_FACTOR` in the Rust
@@ -129,8 +128,10 @@ class WormholeClaimService {
 
     _reportProgress(onProgress, 1, 0);
     _log.i('Ensuring circuit binaries at: $circuitBinsDir');
-    await ensureCircuitBinaries(binsDir: circuitBinsDir);
-    _log.i('Circuit binaries ready');
+    final circuitConfig = jsonDecode(await ensureCircuitBinaries(binsDir: circuitBinsDir)) as Map<String, dynamic>;
+    // Batch size must match the circuits' aggregation arity (chain expects 7).
+    final maxProofsPerBatch = circuitConfig['num_leaf_proofs'] as int;
+    _log.i('Circuit binaries ready (num_leaf_proofs=$maxProofsPerBatch)');
     _reportProgress(onProgress, 1, 1);
     _checkCancelled();
 
@@ -151,39 +152,45 @@ class WormholeClaimService {
     _log.i('Found ${unspent.length} unspent transfers');
     _checkCancelled();
 
-    _reportProgress(onProgress, 5, 0, total: unspent.length);
-
-    // Use the current head (not finalized) as the proof block: the user is
-    // claiming up to the chain tip, and the merkle tree at the finalized head
-    // would not contain transfers in the last `reorgDepth` blocks. A reorg
-    // before the claim batch lands will cause on-chain verification to fail
-    // and the user can simply retry.
-    final blockHash = await rpc.getBestBlockHash();
-    final header = await rpc.getBlockHeader(blockHash: blockHash);
-    final blockNumber = _hexToInt(header['number'] as String);
-    final parentHash = _hexBytes(header['parentHash'] as String);
-    final stateRoot = _hexBytes(header['stateRoot'] as String);
-    final extrinsicsRoot = _hexBytes(header['extrinsicsRoot'] as String);
-    final digest = _encodeDigest(header['digest'] as Map<String, dynamic>);
-    _log.i('Proof block: #$blockNumber ($blockHash)');
-    _checkCancelled();
-
     final numTransfers = unspent.length;
-    final proofBytesList = List<Uint8List?>.filled(numTransfers, null);
+    final totalBatches = (numTransfers + maxProofsPerBatch - 1) ~/ maxProofsPerBatch;
     final secretBytes = Uint8List.fromList(hex.decode(secretHex.replaceFirst('0x', '')));
     final destinationBytes = Uint8List.fromList(getAccountId32(destinationAddress));
-    final blockHashBytes = Uint8List.fromList(_hexBytes(blockHash));
 
+    _reportProgress(onProgress, 5, 0, total: numTransfers);
+
+    final txHashes = <String>[];
     BigInt netTotal = BigInt.zero;
-    int completed = 0;
+    int proofsCompleted = 0;
     final genSw = Stopwatch()..start();
 
-    for (int chunk = 0; chunk < numTransfers; chunk += _proofConcurrency) {
+    // Process one aggregation batch at a time: generate its leaf proofs, then
+    // aggregate and submit before moving on. Each submitted batch pays out
+    // immediately instead of waiting for the whole queue to be proven.
+    for (int batchStart = 0; batchStart < numTransfers; batchStart += maxProofsPerBatch) {
       _checkCancelled();
-      final end = (chunk + _proofConcurrency).clamp(0, numTransfers);
-      final futures = <Future<BigInt>>[];
+      final batchEnd = (batchStart + maxProofsPerBatch).clamp(0, numTransfers);
+      final batchNum = batchStart ~/ maxProofsPerBatch + 1;
 
-      for (int i = chunk; i < end; i++) {
+      // Use the current head (not finalized) as the proof block: the user is
+      // claiming up to the chain tip, and the merkle tree at the finalized head
+      // would not contain transfers in the last `reorgDepth` blocks. Fetched
+      // per batch so long claims don't reference an increasingly stale block.
+      // A reorg before a batch lands will cause on-chain verification to fail
+      // and the user can simply retry.
+      final blockHash = await rpc.getBestBlockHash();
+      final header = await rpc.getBlockHeader(blockHash: blockHash);
+      final blockNumber = _hexToInt(header['number'] as String);
+      final parentHash = _hexBytes(header['parentHash'] as String);
+      final stateRoot = _hexBytes(header['stateRoot'] as String);
+      final extrinsicsRoot = _hexBytes(header['extrinsicsRoot'] as String);
+      final digest = _encodeDigest(header['digest'] as Map<String, dynamic>);
+      final blockHashBytes = Uint8List.fromList(_hexBytes(blockHash));
+      _log.i('Batch $batchNum/$totalBatches proof block: #$blockNumber ($blockHash)');
+
+      final proofBytesList = List<Uint8List?>.filled(batchEnd - batchStart, null);
+      final futures = <Future<BigInt>>[];
+      for (int i = batchStart; i < batchEnd; i++) {
         final transfer = unspent[i];
         futures.add(
           _generateLeafProof(
@@ -200,17 +207,17 @@ class WormholeClaimService {
             destinationBytes: destinationBytes,
             circuitBinsDir: circuitBinsDir,
             outputBuffer: proofBytesList,
-            outputIndex: i,
+            outputIndex: i - batchStart,
             onComplete: () {
-              completed++;
+              proofsCompleted++;
               // Plain stdout print (not debugPrint) so it survives in release
               // builds and is visible from the launching terminal.
               // ignore: avoid_print
               print(
-                '[WormholeClaim] Proof $completed/$numTransfers '
+                '[WormholeClaim] Proof $proofsCompleted/$numTransfers '
                 'leaf=${transfer.leafIndex} (${genSw.elapsedMilliseconds}ms elapsed)',
               );
-              _reportProgress(onProgress, 5, completed, total: numTransfers);
+              _reportProgress(onProgress, 5, proofsCompleted, total: numTransfers);
             },
           ),
         );
@@ -221,34 +228,25 @@ class WormholeClaimService {
         netTotal += out;
       }
       _checkCancelled();
-    }
 
-    final finalProofs = proofBytesList.cast<Uint8List>();
-    final batches = <List<Uint8List>>[];
-    for (int i = 0; i < finalProofs.length; i += _maxProofsPerBatch) {
-      final end = (i + _maxProofsPerBatch).clamp(0, finalProofs.length);
-      batches.add(finalProofs.sublist(i, end));
-    }
-
-    final txHashes = <String>[];
-    _reportProgress(onProgress, 6, 0, total: batches.length);
-    for (int b = 0; b < batches.length; b++) {
-      _checkCancelled();
-      _log.i('Aggregating batch ${b + 1}/${batches.length}');
-      final aggregated = await aggregateProofs(proofBytesList: batches[b], binsDir: circuitBinsDir);
-      _log.i('Batch ${b + 1} aggregated (${aggregated.length} bytes)');
+      _log.i('Aggregating batch $batchNum/$totalBatches');
+      final aggregated = await aggregateProofs(
+        proofBytesList: proofBytesList.cast<Uint8List>(),
+        binsDir: circuitBinsDir,
+      );
+      _log.i('Batch $batchNum aggregated (${aggregated.length} bytes)');
       _checkCancelled();
 
       final txHash = await _submitExtrinsic(rpc, aggregated);
       txHashes.add(txHash);
-      _log.i('Batch ${b + 1} accepted by pool: $txHash');
-      _reportProgress(onProgress, 6, b + 1, total: batches.length);
+      _log.i('Batch $batchNum accepted by pool: $txHash');
+      _reportProgress(onProgress, 6, batchNum, total: totalBatches);
     }
 
     return ClaimResult(
       totalWithdrawn: netTotal,
       transfersProcessed: numTransfers,
-      batchesSubmitted: batches.length,
+      batchesSubmitted: txHashes.length,
       txHashes: txHashes,
     );
   }
