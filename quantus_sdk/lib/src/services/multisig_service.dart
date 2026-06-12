@@ -410,6 +410,32 @@ class MultisigService {
     return _substrateService.submitExtrinsic(signer, call);
   }
 
+  /// Builds the `multisig.cancel` runtime call for [proposalId].
+  Multisig buildCancelCall({required MultisigAccount msig, required int proposalId}) {
+    return const Txs().cancel(multisigAddress: getAccountId32(msig.accountId), proposalId: proposalId);
+  }
+
+  /// Estimates the network fee for cancelling [proposalId].
+  Future<BigInt> estimateCancelFee({
+    required MultisigAccount msig,
+    required Account signer,
+    required int proposalId,
+  }) async {
+    final call = buildCancelCall(msig: msig, proposalId: proposalId);
+    final feeData = await _substrateService.getFeeForCall(signer, call);
+    return feeData.fee;
+  }
+
+  /// Submits `multisig.cancel` signed by [signer]. Returns extrinsic hash bytes.
+  Future<Uint8List> submitCancelExtrinsic({
+    required MultisigAccount msig,
+    required Account signer,
+    required int proposalId,
+  }) async {
+    final call = buildCancelCall(msig: msig, proposalId: proposalId);
+    return _substrateService.submitExtrinsic(signer, call);
+  }
+
   /// Number of blocks that approximately span [duration] at average block time.
   int blocksForDuration(Duration duration) {
     return (duration.inSeconds / _avgBlockTimeSeconds).round();

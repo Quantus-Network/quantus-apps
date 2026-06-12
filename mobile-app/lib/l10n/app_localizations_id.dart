@@ -453,6 +453,9 @@ class AppLocalizationsId extends AppLocalizations {
   String get activityTxApproving => 'Menyetujui…';
 
   @override
+  String get activityTxCancelling => 'Membatalkan…';
+
+  @override
   String get multisigApprovalTimeoutToast =>
       'Konfirmasi persetujuan membutuhkan waktu lebih lama. Periksa chain atau coba lagi.';
 
@@ -461,6 +464,9 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get multisigProposalAlreadyExecutedNote => 'Proposal ini sudah dieksekusi.';
+
+  @override
+  String get multisigProposalAlreadyCancelledNote => 'Proposal ini sudah dibatalkan.';
 
   @override
   String get multisigProposalProposerLabel => 'PENGAJU';
@@ -497,6 +503,9 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get activityTxProposalExecuted => 'Proposal dieksekusi';
+
+  @override
+  String get activityTxProposalCancelled => 'Proposal dibatalkan';
 
   @override
   String get multisigApproveButton => 'Setujui';
@@ -572,7 +581,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get multisigApproveAuthReason => 'Autentikasi untuk menyetujui';
 
   @override
-  String get multisigApproveAuthRequired => 'Autentikasi diperlukan';
+  String get multisigAuthRequired => 'Autentikasi diperlukan';
 
   @override
   String get multisigApproveFailed => 'Gagal menyetujui';
@@ -635,6 +644,16 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get multisigCancelFailed => 'Gagal membatalkan';
+
+  @override
+  String get multisigProposalCancellingLabel => 'Membatalkan…';
+
+  @override
+  String get multisigProposalCancellingNote => 'Pembatalan Anda sedang dikonfirmasi di chain.';
+
+  @override
+  String get multisigCancelTimeoutToast =>
+      'Konfirmasi pembatalan membutuhkan waktu lebih lama. Periksa chain atau coba lagi.';
 
   @override
   String get multisigApproveTitle => 'Setujui';
@@ -952,6 +971,12 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get activityDetailTitleProposalExecuted => 'Proposal dieksekusi';
+
+  @override
+  String get activityDetailTitleProposalCancelled => 'Proposal dibatalkan';
+
+  @override
+  String get activityDetailTitleCancelling => 'Membatalkan proposal';
 
   @override
   String get activityDetailTitleExecuting => 'Mengeksekusi proposal';

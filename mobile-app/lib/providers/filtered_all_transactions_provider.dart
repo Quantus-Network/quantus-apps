@@ -8,6 +8,7 @@ import 'package:resonance_network_wallet/providers/account_id_list_cache.dart';
 import 'package:resonance_network_wallet/providers/controllers/unified_pagination_controller.dart';
 import 'package:resonance_network_wallet/providers/pending_cancellations_provider.dart';
 import 'package:resonance_network_wallet/providers/pending_multisig_creations_provider.dart';
+import 'package:resonance_network_wallet/providers/pending_multisig_cancellations_provider.dart';
 import 'package:resonance_network_wallet/providers/pending_multisig_executions_provider.dart';
 import 'package:resonance_network_wallet/providers/pending_multisig_proposals_provider.dart';
 import 'package:resonance_network_wallet/providers/pending_transactions_provider.dart';
@@ -36,6 +37,7 @@ final filteredTransactionsProviderFamily =
       final pendingMultisigCreations = ref.watch(pendingMultisigCreationsProvider);
       final pendingMultisigProposals = ref.watch(pendingMultisigProposalsProvider);
       final pendingMultisigExecutions = ref.watch(pendingMultisigExecutionsProvider);
+      final pendingMultisigCancellations = ref.watch(pendingMultisigCancellationsProvider);
       final pagination = ref.watch(filteredPaginationControllerProviderFamily(normalizedParams));
 
       if (pagination.error != null && !pagination.hasLoadedChainData) {
@@ -66,6 +68,9 @@ final filteredTransactionsProviderFamily =
       final filteredPendingExecutions = pendingMultisigExecutions
           .where((tx) => normalizedParams.filter != TransactionFilter.receive && accountIds.contains(tx.executorId))
           .toList();
+      final filteredPendingCancellations = pendingMultisigCancellations
+          .where((tx) => normalizedParams.filter != TransactionFilter.receive && accountIds.contains(tx.proposerId))
+          .toList();
 
       return AsyncValue.data(
         CombinedTransactionsList(
@@ -74,6 +79,7 @@ final filteredTransactionsProviderFamily =
           pendingMultisigCreations: filteredPendingMultisig,
           pendingMultisigProposals: filteredPendingProposals,
           pendingMultisigExecutions: filteredPendingExecutions,
+          pendingMultisigCancellations: filteredPendingCancellations,
           scheduledReversibleTransfers: pagination.scheduledReversibleTransfers,
           otherTransfers: pagination.otherTransfers,
         ),

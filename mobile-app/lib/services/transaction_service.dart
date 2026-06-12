@@ -35,12 +35,14 @@ class TransactionService {
     required List<PendingMultisigCreationEvent> pendingMultisigCreations,
     required List<PendingMultisigProposalEvent> pendingMultisigProposals,
     required List<PendingMultisigExecutionEvent> pendingMultisigExecutions,
+    required List<PendingMultisigCancellationEvent> pendingMultisigCancellations,
     required List<ReversibleTransferEvent> scheduledReversibleTransfers,
     required List<TransactionEvent> otherTransfers,
   }) {
     final seenIds = <String>{};
     final seenProposalKeys = <String>{};
     final seenExecutionKeys = <String>{};
+    final seenCancellationKeys = <String>{};
     final List<TransactionEvent> result = [];
 
     for (final creation in pendingMultisigCreations) {
@@ -60,6 +62,13 @@ class TransactionService {
       final key = execution.activityDedupKey;
       if (seenExecutionKeys.add(key) && seenIds.add(execution.id)) {
         result.add(execution);
+      }
+    }
+
+    for (final cancellation in pendingMultisigCancellations) {
+      final key = cancellation.activityDedupKey;
+      if (seenCancellationKeys.add(key) && seenIds.add(cancellation.id)) {
+        result.add(cancellation);
       }
     }
 
@@ -105,6 +114,13 @@ class TransactionService {
           result.removeWhere((e) => e is PendingMultisigExecutionEvent && e.activityDedupKey == key);
         }
         seenExecutionKeys.add(key);
+      }
+      if (transaction is MultisigProposalCancelledEvent) {
+        final key = transaction.activityDedupKey;
+        if (seenCancellationKeys.contains(key)) {
+          result.removeWhere((e) => e is PendingMultisigCancellationEvent && e.activityDedupKey == key);
+        }
+        seenCancellationKeys.add(key);
       }
       if (seenIds.add(transaction.id)) {
         result.add(transaction);

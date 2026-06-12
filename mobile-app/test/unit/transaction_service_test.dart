@@ -133,6 +133,7 @@ void main() {
         pendingMultisigCreations: [],
         pendingMultisigProposals: [pending],
         pendingMultisigExecutions: [],
+        pendingMultisigCancellations: [],
         scheduledReversibleTransfers: [],
         otherTransfers: [],
       );
@@ -153,6 +154,7 @@ void main() {
         pendingMultisigCreations: [],
         pendingMultisigProposals: [pending],
         pendingMultisigExecutions: [],
+        pendingMultisigCancellations: [],
         scheduledReversibleTransfers: [],
         otherTransfers: [indexed],
       );
@@ -186,6 +188,7 @@ void main() {
         pendingMultisigCreations: [],
         pendingMultisigProposals: [pending],
         pendingMultisigExecutions: [],
+        pendingMultisigCancellations: [],
         scheduledReversibleTransfers: [],
         otherTransfers: [indexedWithHash],
       );
@@ -249,6 +252,7 @@ void main() {
         pendingMultisigCreations: [],
         pendingMultisigProposals: [],
         pendingMultisigExecutions: [pending],
+        pendingMultisigCancellations: [],
         scheduledReversibleTransfers: [],
         otherTransfers: [],
       );
@@ -269,6 +273,7 @@ void main() {
         pendingMultisigCreations: [],
         pendingMultisigProposals: [],
         pendingMultisigExecutions: [pending],
+        pendingMultisigCancellations: [],
         scheduledReversibleTransfers: [],
         otherTransfers: [indexed],
       );

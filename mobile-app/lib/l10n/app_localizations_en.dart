@@ -451,6 +451,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get activityTxApproving => 'Approving…';
 
   @override
+  String get activityTxCancelling => 'Cancelling…';
+
+  @override
   String get multisigApprovalTimeoutToast =>
       'Approval confirmation is taking longer than expected. Check the chain or try again.';
 
@@ -459,6 +462,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get multisigProposalAlreadyExecutedNote => 'This proposal is already executed.';
+
+  @override
+  String get multisigProposalAlreadyCancelledNote => 'This proposal is already cancelled.';
 
   @override
   String get multisigProposalProposerLabel => 'PROPOSER';
@@ -495,6 +501,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get activityTxProposalExecuted => 'Proposal executed';
+
+  @override
+  String get activityTxProposalCancelled => 'Proposal cancelled';
 
   @override
   String get multisigApproveButton => 'Approve';
@@ -570,7 +579,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get multisigApproveAuthReason => 'Authenticate to approve';
 
   @override
-  String get multisigApproveAuthRequired => 'Authentication required';
+  String get multisigAuthRequired => 'Authentication required';
 
   @override
   String get multisigApproveFailed => 'Failed to approve';
@@ -633,6 +642,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get multisigCancelFailed => 'Failed to cancel';
+
+  @override
+  String get multisigProposalCancellingLabel => 'Cancelling…';
+
+  @override
+  String get multisigProposalCancellingNote => 'Your cancellation is being confirmed on-chain.';
+
+  @override
+  String get multisigCancelTimeoutToast =>
+      'Cancellation confirmation is taking longer than expected. Check the chain or try again.';
 
   @override
   String get multisigApproveTitle => 'Approve';
@@ -950,6 +969,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get activityDetailTitleProposalExecuted => 'Proposal executed';
+
+  @override
+  String get activityDetailTitleProposalCancelled => 'Proposal cancelled';
+
+  @override
+  String get activityDetailTitleCancelling => 'Cancelling proposal';
 
   @override
   String get activityDetailTitleExecuting => 'Executing proposal';

@@ -638,6 +638,10 @@
     "@activityTxApproving": {
       "description": "Trailing label on proposal row while approval is pending"
     },
+    "activityTxCancelling": "Cancelling…",
+    "@activityTxCancelling": {
+      "description": "Trailing label on proposal row while cancellation is pending"
+    },
     "multisigApprovalTimeoutToast": "Approval confirmation is taking longer than expected. Check the chain or try again.",
     "@multisigApprovalTimeoutToast": {
       "description": "Toast when approval indexer polling times out"
@@ -649,6 +653,10 @@
     "multisigProposalAlreadyExecutedNote": "This proposal is already executed.",
     "@multisigProposalAlreadyExecutedNote": {
       "description": "Note shown on proposal detail when the proposal is executed"
+    },
+    "multisigProposalAlreadyCancelledNote": "This proposal is already cancelled.",
+    "@multisigProposalAlreadyCancelledNote": {
+      "description": "Note shown on proposal detail when the proposal is cancelled"
     },
     "multisigProposalProposerLabel": "PROPOSER",
     "@multisigProposalProposerLabel": {
@@ -697,6 +705,10 @@
     "activityTxProposalExecuted": "Proposal executed",
     "@activityTxProposalExecuted": {
       "description": "Activity row label for a confirmed multisig proposal execution on the executor account"
+    },
+    "activityTxProposalCancelled": "Proposal cancelled",
+    "@activityTxProposalCancelled": {
+      "description": "Activity row label for a confirmed multisig proposal cancellation on the proposer account"
     },
     "multisigApproveButton": "Approve",
     "@multisigApproveButton": {
@@ -807,9 +819,9 @@
     "@multisigApproveAuthReason": {
       "description": "Biometric auth prompt when approving"
     },
-    "multisigApproveAuthRequired": "Authentication required",
-    "@multisigApproveAuthRequired": {
-      "description": "Error when auth fails on approve"
+    "multisigAuthRequired": "Authentication required",
+    "@multisigAuthRequired": {
+      "description": "Error when auth fails on a multisig action"
     },
     "multisigApproveFailed": "Failed to approve",
     "@multisigApproveFailed": {
@@ -890,6 +902,18 @@
     "multisigCancelFailed": "Failed to cancel",
     "@multisigCancelFailed": {
       "description": "Error when cancel submission fails"
+    },
+    "multisigProposalCancellingLabel": "Cancelling…",
+    "@multisigProposalCancellingLabel": {
+      "description": "Cancel button label while cancellation is pending"
+    },
+    "multisigProposalCancellingNote": "Your cancellation is being confirmed on-chain.",
+    "@multisigProposalCancellingNote": {
+      "description": "Note under the button while cancellation is pending"
+    },
+    "multisigCancelTimeoutToast": "Cancellation confirmation is taking longer than expected. Check the chain or try again.",
+    "@multisigCancelTimeoutToast": {
+      "description": "Toast when cancellation indexer polling times out"
     },
     "multisigApproveTitle": "Approve",
     "@multisigApproveTitle": {
@@ -1362,6 +1386,14 @@
     "activityDetailTitleProposalExecuted": "Proposal executed",
     "@activityDetailTitleProposalExecuted": {
       "description": "Detail sheet title for a confirmed multisig proposal execution"
+    },
+    "activityDetailTitleProposalCancelled": "Proposal cancelled",
+    "@activityDetailTitleProposalCancelled": {
+      "description": "Detail sheet title for a confirmed multisig proposal cancellation"
+    },
+    "activityDetailTitleCancelling": "Cancelling proposal",
+    "@activityDetailTitleCancelling": {
+      "description": "Detail sheet title while a multisig proposal cancellation is confirming on-chain"
     },
     "activityDetailTitleExecuting": "Executing proposal",
     "@activityDetailTitleExecuting": {

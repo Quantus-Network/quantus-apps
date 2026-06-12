@@ -9,14 +9,17 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/notification_provider.dart';
 import 'package:resonance_network_wallet/providers/multisig_approval_toast_provider.dart';
+import 'package:resonance_network_wallet/providers/multisig_cancellation_toast_provider.dart';
 import 'package:resonance_network_wallet/providers/multisig_execution_toast_provider.dart';
 import 'package:resonance_network_wallet/providers/multisig_proposal_toast_provider.dart';
 import 'package:resonance_network_wallet/providers/multisig_providers.dart';
 import 'package:resonance_network_wallet/providers/pending_multisig_approvals_provider.dart';
+import 'package:resonance_network_wallet/providers/pending_multisig_cancellations_provider.dart';
 import 'package:resonance_network_wallet/providers/pending_multisig_executions_provider.dart';
 import 'package:resonance_network_wallet/providers/pending_multisig_proposals_provider.dart';
 import 'package:resonance_network_wallet/providers/pending_transactions_provider.dart';
 import 'package:resonance_network_wallet/services/multisig_approval_polling_service.dart';
+import 'package:resonance_network_wallet/services/multisig_cancellation_polling_service.dart';
 import 'package:resonance_network_wallet/services/multisig_execution_polling_service.dart';
 import 'package:resonance_network_wallet/services/multisig_proposal_polling_service.dart';
 import 'package:resonance_network_wallet/services/pending_transaction_polling_service.dart';
@@ -246,6 +249,51 @@ class TransactionSubmissionService {
       quantusDebugPrint('[Execute] submit failed: $e\n$stackTrace');
       removePendingMultisigExecution(_ref, pending.id);
       _ref.read(multisigExecutionToastProvider.notifier).show(MultisigExecutionToastKind.submitFailed);
+    }
+  }
+
+  /// Submits a multisig proposal cancellation, tracks it optimistically, and polls
+  /// the indexer until the proposal status becomes cancelled.
+  Future<void> cancelProposal({
+    required MultisigAccount msig,
+    required Account proposer,
+    required MultisigProposal proposal,
+    BigInt? fee,
+  }) async {
+    final pending = PendingMultisigCancellationEvent.fromProposal(
+      msig: msig,
+      proposal: proposal,
+      proposerId: proposer.accountId,
+      fee: fee,
+    );
+
+    addPendingMultisigCancellation(_ref, pending);
+
+    TelemetryService().sendEvent('multisig_cancel');
+
+    unawaited(_submitCancelBackground(msig: msig, proposer: proposer, proposalId: proposal.id, pending: pending));
+  }
+
+  Future<void> _submitCancelBackground({
+    required MultisigAccount msig,
+    required Account proposer,
+    required int proposalId,
+    required PendingMultisigCancellationEvent pending,
+  }) async {
+    try {
+      final service = _ref.read(multisigServiceProvider);
+      final hashBytes = await service.submitCancelExtrinsic(msig: msig, signer: proposer, proposalId: proposalId);
+      final extrinsicHash = '0x${hex.encode(hashBytes)}';
+      quantusDebugPrint('[Cancel] submitted: $extrinsicHash');
+
+      updatePendingMultisigCancellation(_ref, pending.id, extrinsicHash: extrinsicHash);
+      final updated =
+          findPendingMultisigCancellation(_ref, pending.id) ?? pending.copyWith(extrinsicHash: extrinsicHash);
+      _ref.read(multisigCancellationPollingServiceProvider).startPolling(msig, updated);
+    } catch (e, stackTrace) {
+      quantusDebugPrint('[Cancel] submit failed: $e\n$stackTrace');
+      removePendingMultisigCancellation(_ref, pending.id);
+      _ref.read(multisigCancellationToastProvider.notifier).show(MultisigCancellationToastKind.submitFailed);
     }
   }
 

@@ -6,6 +6,7 @@ class CombinedTransactionsList {
   final List<PendingMultisigCreationEvent> pendingMultisigCreations;
   final List<PendingMultisigProposalEvent> pendingMultisigProposals;
   final List<PendingMultisigExecutionEvent> pendingMultisigExecutions;
+  final List<PendingMultisigCancellationEvent> pendingMultisigCancellations;
   final List<ReversibleTransferEvent> scheduledReversibleTransfers;
   final List<TransactionEvent> otherTransfers;
 
@@ -15,6 +16,7 @@ class CombinedTransactionsList {
     required this.pendingMultisigCreations,
     required this.pendingMultisigProposals,
     required this.pendingMultisigExecutions,
+    required this.pendingMultisigCancellations,
     required this.scheduledReversibleTransfers,
     required this.otherTransfers,
   });
@@ -25,6 +27,7 @@ class CombinedTransactionsList {
     List<PendingMultisigCreationEvent>? pendingMultisigCreations,
     List<PendingMultisigProposalEvent>? pendingMultisigProposals,
     List<PendingMultisigExecutionEvent>? pendingMultisigExecutions,
+    List<PendingMultisigCancellationEvent>? pendingMultisigCancellations,
     List<ReversibleTransferEvent>? scheduledReversibleTransfers,
     List<TransactionEvent>? otherTransfers,
   }) {
@@ -34,6 +37,7 @@ class CombinedTransactionsList {
       pendingMultisigCreations: pendingMultisigCreations ?? this.pendingMultisigCreations,
       pendingMultisigProposals: pendingMultisigProposals ?? this.pendingMultisigProposals,
       pendingMultisigExecutions: pendingMultisigExecutions ?? this.pendingMultisigExecutions,
+      pendingMultisigCancellations: pendingMultisigCancellations ?? this.pendingMultisigCancellations,
       scheduledReversibleTransfers: scheduledReversibleTransfers ?? this.scheduledReversibleTransfers,
       otherTransfers: otherTransfers ?? this.otherTransfers,
     );
@@ -45,6 +49,7 @@ class CombinedTransactionsList {
     pendingMultisigCreations: [],
     pendingMultisigProposals: [],
     pendingMultisigExecutions: [],
+    pendingMultisigCancellations: [],
     scheduledReversibleTransfers: [],
     otherTransfers: [],
   );
