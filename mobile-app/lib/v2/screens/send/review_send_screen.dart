@@ -192,14 +192,13 @@ class _ReviewSendScreenState extends ConsumerState<ReviewSendScreen> {
 
   Widget _summarySection(AppLocalizations l10n, String addr, BigInt totalRaw) {
     final shownDecimals = AppConstants.decimals;
-    final shortAddr = AddressFormattingService.formatAddress(addr);
     final formattingService = ref.watch(numberFormattingServiceProvider);
 
     return Column(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         const SizedBox(height: 7),
-        _summaryRow(label: l10n.sendReviewTo, value: shortAddr),
+        _summaryRow(label: l10n.sendReviewTo, value: addr),
         const SizedBox(height: 7),
         _summaryRow(
           label: l10n.sendReviewAmount,

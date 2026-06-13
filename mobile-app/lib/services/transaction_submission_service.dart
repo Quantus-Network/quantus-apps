@@ -355,17 +355,15 @@ class TransactionSubmissionService {
     return pending;
   }
 
-  /// Submits a transaction in the background and tracks its status. Returns
-  /// immediately without waiting.
+  /// Submits a transaction, awaiting the network's acceptance and the returned
+  /// extrinsic hash before completing. Tracking/polling then continues in the
+  /// background. Rethrows on submission failure so callers can surface the
+  /// error instead of optimistically navigating away.
   ///
   /// Retries live in SubstrateService.submitExtrinsic, which resubmits the
   /// same signed bytes. Outer retries would re-sign with a fresh nonce and can
   /// double spend if a prior submit already reached the network.
   Future<void> submitAndTrackTransaction(Future<Uint8List> Function() submit, PendingTransactionEvent pendingTx) async {
-    unawaited(_submitAndTrackBackground(submit, pendingTx));
-  }
-
-  Future<void> _submitAndTrackBackground(Future<Uint8List> Function() submit, PendingTransactionEvent pendingTx) async {
     try {
       quantusDebugPrint('Submitting transaction: ${pendingTx.id}');
 
@@ -373,21 +371,17 @@ class TransactionSubmissionService {
       final extrinsicHash = '0x${hex.encode(extrinsicHashBytes)}';
       quantusDebugPrint('submission hash: $extrinsicHash');
 
-      final newState = TransactionState.pending;
-      quantusDebugPrint('updating tx ${pendingTx.amount} to $newState');
       _ref
           .read(pendingTransactionsProvider.notifier)
-          .updateState(pendingTx.id, newState, error: pendingTx.error, extrinsicHash: extrinsicHash);
+          .updateState(pendingTx.id, TransactionState.pending, error: pendingTx.error, extrinsicHash: extrinsicHash);
 
       _startPollingForTransaction(pendingTx.copyWith(extrinsicHash: extrinsicHash));
     } catch (e, stackTrace) {
       quantusDebugPrint('Failed to submit transaction ${pendingTx.id}: $e');
       quantusDebugPrint('Stack trace: $stackTrace');
 
-      _ref
-          .read(pendingTransactionsProvider.notifier)
-          .updateState(pendingTx.id, TransactionState.failed, error: 'Failed to submit: $e');
       _ref.read(pendingTransactionsProvider.notifier).remove(pendingTx.id);
+      rethrow;
     }
   }
 
