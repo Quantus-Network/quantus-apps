@@ -83,24 +83,23 @@ class _ReviewSendScreenState extends ConsumerState<ReviewSendScreen> {
             .addAddress(widget.recipientAddress.trim())
             .catchError((Object e) => debugPrint('Failed to save recent address: $e')),
       );
+      if (!mounted) return;
       setState(() {
         _submitting = false;
         _errorMessage = null;
       });
 
-      if (mounted) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => TxSubmittedScreen(
-              amount: widget.amount,
-              recipientAddress: widget.recipientAddress,
-              recipientChecksum: widget.recipientChecksum,
-              isPayMode: widget.isPayMode,
-            ),
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => TxSubmittedScreen(
+            amount: widget.amount,
+            recipientAddress: widget.recipientAddress,
+            recipientChecksum: widget.recipientChecksum,
+            isPayMode: widget.isPayMode,
           ),
-        );
-      }
+        ),
+      );
     } catch (e) {
       debugPrint('Transfer failed: $e');
 
