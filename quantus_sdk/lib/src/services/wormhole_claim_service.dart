@@ -138,7 +138,8 @@ class WormholeClaimService {
 
     _reportProgress(onProgress, 1, 0);
     _log('Ensuring circuit binaries at: $circuitBinsDir');
-    final circuitConfig = jsonDecode(await wormhole_ffi.ensureCircuitBinaries(binsDir: circuitBinsDir)) as Map<String, dynamic>;
+    final circuitConfig =
+        jsonDecode(await wormhole_ffi.ensureCircuitBinaries(binsDir: circuitBinsDir)) as Map<String, dynamic>;
     // Batch size must match the circuits' aggregation arity (chain expects 7).
     final maxProofsPerBatch = circuitConfig['num_leaf_proofs'] as int;
     _log('Circuit binaries ready (num_leaf_proofs=$maxProofsPerBatch)');
