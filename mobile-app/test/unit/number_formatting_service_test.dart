@@ -17,6 +17,11 @@ void main() {
         expect(service.formatBalance(balance, smartDecimals: 1), '0.5');
       });
 
+      test('smart decimals test', () {
+        final balance = BigInt.parse('1000010000000'); // 1.00001
+        expect(service.formatBalance(balance, smartDecimals: 4, maxDecimals: 12), '1');
+      });
+
       test('formats balance with exactly max decimals', () {
         final balance = BigInt.parse('1234500000000'); // 1.2345
         expect(service.formatBalance(balance, smartDecimals: 4), '1.2345');
