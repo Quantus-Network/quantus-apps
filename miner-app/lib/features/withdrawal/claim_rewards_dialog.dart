@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:quantus_miner/src/services/binary_manager.dart';
 import 'package:quantus_miner/src/services/miner_settings_service.dart';
 import 'package:quantus_miner/src/services/miner_wallet_service.dart';
-import 'package:quantus_miner/src/services/wormhole_claim_service.dart';
 import 'package:quantus_miner/src/utils/app_logger.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 
