@@ -450,22 +450,22 @@ void main() {
     group('formatBalance with locale', () {
       test('US locale: formats with dot decimal and comma thousands', () {
         final balance = BigInt.parse('1234500000000000'); // 1234.5
-        expect(usService.formatBalance(balance, maxDecimals: 2), '1,234.5');
+        expect(usService.formatBalance(balance, smartDecimals: 2), '1,234.5');
       });
 
       test('Indonesian locale: formats with comma decimal and dot thousands', () {
         final balance = BigInt.parse('1234500000000000'); // 1234.5
-        expect(idService.formatBalance(balance, maxDecimals: 2), '1.234,5');
+        expect(idService.formatBalance(balance, smartDecimals: 2), '1.234,5');
       });
 
       test('US locale: no thousands separators', () {
         final balance = BigInt.parse('1234500000000000');
-        expect(usService.formatBalance(balance, maxDecimals: 4, addThousandsSeparators: false), '1234.5');
+        expect(usService.formatBalance(balance, smartDecimals: 4, addThousandsSeparators: false), '1234.5');
       });
 
       test('Indonesian locale: no thousands separators', () {
         final balance = BigInt.parse('1234500000000000');
-        expect(idService.formatBalance(balance, maxDecimals: 4, addThousandsSeparators: false), '1234,5');
+        expect(idService.formatBalance(balance, smartDecimals: 4, addThousandsSeparators: false), '1234,5');
       });
 
       test('zero balance is always 0', () {
@@ -474,7 +474,7 @@ void main() {
 
       test('Indonesian locale: large balance', () {
         final balance = BigInt.parse('1234567890123000000000'); // 1,234,567,890.123
-        expect(idService.formatBalance(balance, maxDecimals: 3), '1.234.567.890,123');
+        expect(idService.formatBalance(balance, smartDecimals: 3), '1.234.567.890,123');
       });
     });
 
@@ -520,14 +520,14 @@ void main() {
       test('US locale roundtrip', () {
         final parsed = usService.parseAmount('1,234.56');
         expect(parsed, isNotNull);
-        final formatted = usService.formatBalance(parsed!, maxDecimals: 2);
+        final formatted = usService.formatBalance(parsed!, smartDecimals: 2);
         expect(formatted, '1,234.56');
       });
 
       test('Indonesian locale roundtrip', () {
         final parsed = idService.parseAmount('1.234,56');
         expect(parsed, isNotNull);
-        final formatted = idService.formatBalance(parsed!, maxDecimals: 2);
+        final formatted = idService.formatBalance(parsed!, smartDecimals: 2);
         expect(formatted, '1.234,56');
       });
     });

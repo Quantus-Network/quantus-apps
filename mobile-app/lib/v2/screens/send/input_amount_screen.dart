@@ -475,7 +475,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
                         if (_hasFee)
                           Text(
                             l10n.commonAmountBalance(
-                              formattingService.formatBalance(_networkFee, maxDecimals: 5),
+                              formattingService.formatBalance(_networkFee, smartDecimals: 5),
                               AppConstants.tokenSymbol,
                             ),
                             style: text.smallParagraph?.copyWith(color: colors.textTertiary),

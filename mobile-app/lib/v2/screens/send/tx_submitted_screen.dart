@@ -33,7 +33,7 @@ class TxSubmittedScreen extends ConsumerWidget {
 
   String _headline(WidgetRef ref, AppLocalizations l10n) {
     final formattingService = ref.watch(numberFormattingServiceProvider);
-    final n = formattingService.formatBalance(amount, maxDecimals: 4);
+    final n = formattingService.formatBalance(amount, smartDecimals: 4);
     return isPayMode
         ? l10n.sendTxSubmittedHeadlinePaid(n, AppConstants.tokenSymbol)
         : l10n.sendTxSubmittedHeadlineSent(n, AppConstants.tokenSymbol);

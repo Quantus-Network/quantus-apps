@@ -547,7 +547,7 @@ class _ProposeAmountScreenState extends ConsumerState<ProposeAmountScreen> {
                         else if (_hasFee && _feeBreakdown != null)
                           Text(
                             l10n.commonAmountBalance(
-                              formattingService.formatBalance(_feeBreakdown!.memberCost, maxDecimals: 5),
+                              formattingService.formatBalance(_feeBreakdown!.memberCost, smartDecimals: 5),
                               AppConstants.tokenSymbol,
                             ),
                             style: text.smallParagraph?.copyWith(color: colors.textTertiary),

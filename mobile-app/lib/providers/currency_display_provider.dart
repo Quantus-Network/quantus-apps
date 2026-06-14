@@ -361,7 +361,7 @@ CurrencyDisplayState _toFiatDisplayState(
   required bool withQuanSymbol,
   required LocaleNumberConfig localeConfig,
 }) {
-  final quanFormatted = fmt.formatBalance(amount, maxDecimals: quanDecimals, addSymbol: withQuanSymbol);
+  final quanFormatted = fmt.formatBalance(amount, smartDecimals: quanDecimals, addSymbol: withQuanSymbol);
   final fiatFormatted = selectedFiat.format(_toFiatNumeric(amount, selectedFiat, xRate, localeConfig: localeConfig));
 
   CurrencyDisplayState data = CurrencyDisplayState(

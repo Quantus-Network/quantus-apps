@@ -203,7 +203,7 @@ class _ReviewSendScreenState extends ConsumerState<ReviewSendScreen> {
         _summaryRow(
           label: l10n.sendReviewAmount,
           value: l10n.commonAmountBalance(
-            formattingService.formatBalance(widget.amount, maxDecimals: shownDecimals),
+            formattingService.formatBalance(widget.amount, smartDecimals: shownDecimals),
             AppConstants.tokenSymbol,
           ),
         ),
@@ -211,7 +211,7 @@ class _ReviewSendScreenState extends ConsumerState<ReviewSendScreen> {
         _summaryRow(
           label: l10n.sendReviewNetworkFee,
           value: l10n.commonAmountBalance(
-            formattingService.formatBalance(widget.networkFee, maxDecimals: shownDecimals),
+            formattingService.formatBalance(widget.networkFee, smartDecimals: shownDecimals),
             AppConstants.tokenSymbol,
           ),
         ),
@@ -219,7 +219,7 @@ class _ReviewSendScreenState extends ConsumerState<ReviewSendScreen> {
         _summaryRow(
           label: l10n.sendReviewYouPay,
           value: l10n.commonAmountBalance(
-            formattingService.formatBalance(totalRaw, maxDecimals: shownDecimals),
+            formattingService.formatBalance(totalRaw, smartDecimals: shownDecimals),
             AppConstants.tokenSymbol,
           ),
         ),

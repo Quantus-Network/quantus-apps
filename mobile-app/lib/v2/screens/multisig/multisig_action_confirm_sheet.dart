@@ -157,7 +157,7 @@ class _MultisigActionConfirmSheetState extends ConsumerState<MultisigActionConfi
     if (_loadingFee) return '…';
     if (_networkFee == null) return null;
     return l10n.commonAmountBalance(
-      fmt.formatBalance(_networkFee!, maxDecimals: AppConstants.decimals),
+      fmt.formatBalance(_networkFee!, smartDecimals: AppConstants.decimals),
       AppConstants.tokenSymbol,
     );
   }
@@ -170,7 +170,7 @@ class _MultisigActionConfirmSheetState extends ConsumerState<MultisigActionConfi
     final fmt = ref.watch(numberFormattingServiceProvider);
     final valueStyle = text.transactionDetailRowLabel;
     final amountText = l10n.commonAmountBalance(
-      fmt.formatBalance(widget.proposal.amount, maxDecimals: AppConstants.decimals),
+      fmt.formatBalance(widget.proposal.amount, smartDecimals: AppConstants.decimals),
       AppConstants.tokenSymbol,
     );
     final recipient = AddressFormattingService.formatActivityDetailAddress(widget.proposal.recipient);

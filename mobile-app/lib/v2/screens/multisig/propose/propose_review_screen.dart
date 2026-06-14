@@ -204,7 +204,7 @@ class _ProposeReviewScreenState extends ConsumerState<ProposeReviewScreen> {
     final valueStyle = context.themeText.transactionDetailRowLabel;
 
     String formatAmount(BigInt value) =>
-        l10n.commonAmountBalance(fmt.formatBalance(value, maxDecimals: shownDecimals), AppConstants.tokenSymbol);
+        l10n.commonAmountBalance(fmt.formatBalance(value, smartDecimals: shownDecimals), AppConstants.tokenSymbol);
 
     return Column(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,

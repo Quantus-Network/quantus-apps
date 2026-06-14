@@ -56,9 +56,9 @@ class _WithRewards extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = ref.watch(l10nProvider);
     final numberFmt = ref.watch(numberFormattingServiceProvider);
-    final quanEarned = numberFmt.formatBalance(data.planckRewards, maxDecimals: 2, addSymbol: true);
-    final redeemedRewards = numberFmt.formatBalance(data.redeemedRewards, maxDecimals: 2, addSymbol: true);
-    final redeemableRewards = numberFmt.formatBalance(data.redeemableRewards, maxDecimals: 2, addSymbol: true);
+    final quanEarned = numberFmt.formatBalance(data.planckRewards, smartDecimals: 2, addSymbol: true);
+    final redeemedRewards = numberFmt.formatBalance(data.redeemedRewards, smartDecimals: 2, addSymbol: true);
+    final redeemableRewards = numberFmt.formatBalance(data.redeemableRewards, smartDecimals: 2, addSymbol: true);
 
     final colors = context.colors;
     final text = context.themeText;

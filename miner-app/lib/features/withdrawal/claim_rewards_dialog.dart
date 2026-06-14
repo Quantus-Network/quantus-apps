@@ -69,7 +69,7 @@ class _ClaimRewardsDialogState extends State<_ClaimRewardsDialog> {
   }
 
   String _formatBalance(BigInt planck) =>
-      _balanceFormatter.formatBalance(planck, maxDecimals: 4, addThousandsSeparators: false);
+      _balanceFormatter.formatBalance(planck, smartDecimals: 4, addThousandsSeparators: false);
 
   bool _validateAddress(String address) {
     final trimmed = address.trim();

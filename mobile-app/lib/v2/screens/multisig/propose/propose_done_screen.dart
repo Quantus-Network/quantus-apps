@@ -36,7 +36,7 @@ class ProposeDoneScreen extends ConsumerWidget {
     final colors = context.colors;
     final text = context.themeText;
     final fmt = ref.watch(numberFormattingServiceProvider);
-    final amountText = l10n.commonAmountBalance(fmt.formatBalance(amount, maxDecimals: 4), AppConstants.tokenSymbol);
+    final amountText = l10n.commonAmountBalance(fmt.formatBalance(amount, smartDecimals: 4), AppConstants.tokenSymbol);
     final shortAddr = AddressFormattingService.formatAddress(recipientAddress.trim());
 
     return PopScope(

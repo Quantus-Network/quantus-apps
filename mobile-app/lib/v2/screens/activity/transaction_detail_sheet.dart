@@ -200,7 +200,7 @@ class _DetailsSection extends ConsumerWidget {
 
   String _formatBalance(AppLocalizations l10n, NumberFormattingService formattingService, BigInt value) {
     return l10n.commonAmountBalance(
-      formattingService.formatBalance(value, maxDecimals: AppConstants.decimals),
+      formattingService.formatBalance(value, smartDecimals: AppConstants.decimals),
       AppConstants.tokenSymbol,
     );
   }
@@ -256,7 +256,7 @@ class _DetailsSection extends ConsumerWidget {
     if (tx is PendingTransactionEvent) fee = (tx as PendingTransactionEvent).fee;
     final feeStr = (fee != null && fee != BigInt.zero)
         ? l10n.commonAmountBalance(
-            formattingService.formatBalance(fee, maxDecimals: AppConstants.decimals),
+            formattingService.formatBalance(fee, smartDecimals: AppConstants.decimals),
             AppConstants.tokenSymbol,
           )
         : null;

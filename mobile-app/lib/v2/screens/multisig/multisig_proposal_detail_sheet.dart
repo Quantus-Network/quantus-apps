@@ -172,7 +172,7 @@ class _MultisigProposalDetailSheet extends ConsumerWidget {
 
   String _formatBalance(AppLocalizations l10n, NumberFormattingService fmt, BigInt value) {
     return l10n.commonAmountBalance(
-      fmt.formatBalance(value, maxDecimals: AppConstants.decimals),
+      fmt.formatBalance(value, smartDecimals: AppConstants.decimals),
       AppConstants.tokenSymbol,
     );
   }
