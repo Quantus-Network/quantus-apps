@@ -11,6 +11,7 @@ import 'package:resonance_network_wallet/providers/route_intent_providers.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/routes.dart';
 import 'package:resonance_network_wallet/v2/components/address_checkphrase_with_initial.dart';
+import 'package:resonance_network_wallet/v2/components/address_input_field.dart';
 import 'package:resonance_network_wallet/v2/components/loader.dart';
 import 'package:resonance_network_wallet/v2/components/qr_scanner_page.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base_bottom_content.dart';
@@ -207,7 +208,7 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
             children: [
               Text(l10n.sendSelectRecipientSendTo, style: text.sendSectionLabel?.copyWith(color: colors.textPrimary)),
               const SizedBox(height: 12),
-              _buildRecipientField(colors, text, l10n),
+              _buildRecipientField(colors, l10n),
               const SizedBox(height: 28),
               _buildScanRow(colors, text, l10n),
               const SizedBox(height: 28),
@@ -263,87 +264,23 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
     );
   }
 
-  Widget _buildRecipientField(AppColorsV2 colors, AppTextTheme text, AppLocalizations l10n) {
+  Widget _buildRecipientField(AppColorsV2 colors, AppLocalizations l10n) {
     final hasValid = _recipientController.text.trim().isNotEmpty && !_hasAddressError;
 
-    return SizedBox(
-      height: 48,
-      child: Stack(
-        children: [
-          Positioned.fill(
-            child: IgnorePointer(
-              ignoring: hasValid,
-              child: Opacity(
-                opacity: hasValid ? 0 : 1,
-                child: Container(
-                  padding: const EdgeInsets.only(left: 12, right: 8),
-                  decoration: BoxDecoration(color: colors.sheetBackground, borderRadius: BorderRadius.circular(8)),
-                  child: Row(
-                    children: [
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: TextField(
-                          controller: _recipientController,
-                          focusNode: _recipientFocus,
-                          keyboardType: TextInputType.text,
-                          textInputAction: TextInputAction.done,
-                          autocorrect: false,
-                          enableSuggestions: false,
-                          textCapitalization: TextCapitalization.none,
-                          scrollPadding: const EdgeInsets.only(bottom: 120),
-                          style: text.smallParagraph?.copyWith(color: colors.textPrimary),
-                          decoration: InputDecoration(
-                            hintText: l10n.sendSelectRecipientSearchHint(AppConstants.tokenSymbol),
-                          ),
-                        ),
-                      ),
-                      IconButton(
-                        onPressed: _pasteRecipient,
-                        icon: const Icon(Icons.paste),
-                        iconSize: 20,
-                        color: colors.textPrimary,
-                        padding: EdgeInsets.zero,
-                        visualDensity: VisualDensity.compact,
-                        constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-          if (hasValid)
-            Positioned.fill(
-              child: GestureDetector(
-                onTap: () {
-                  _recipientController.clear();
-                  _recipientFocus.requestFocus();
-                },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  decoration: BoxDecoration(color: colors.toasterBackground, borderRadius: BorderRadius.circular(8)),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        AddressFormattingService.formatAddress(
-                          prefix: 16,
-                          postFix: 16,
-                          _recipientController.text.trim(),
-                        ),
-                        style: text.smallParagraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      if (_recipientChecksum != null)
-                        Text(_recipientChecksum!, style: text.detail?.copyWith(color: colors.checksum)),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-        ],
+    return AddressInputField(
+      controller: _recipientController,
+      focusNode: _recipientFocus,
+      hasValid: hasValid,
+      recipientChecksum: _recipientChecksum,
+      hintText: l10n.sendSelectRecipientSearchHint(AppConstants.tokenSymbol),
+      trailing: IconButton(
+        onPressed: _pasteRecipient,
+        icon: const Icon(Icons.paste),
+        iconSize: 20,
+        color: colors.textPrimary,
+        padding: EdgeInsets.zero,
+        visualDensity: VisualDensity.compact,
+        constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
       ),
     );
   }

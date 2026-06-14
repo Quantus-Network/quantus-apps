@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/l10n/app_localizations.dart';
+import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/v2/components/address_input_field.dart';
 import 'package:resonance_network_wallet/v2/components/bottom_sheet_container.dart';
@@ -82,10 +84,11 @@ class _RedeemAddressScreenState extends ConsumerState<RedeemAddressScreen> {
     final destination = _recipientController.text.trim();
     final fmt = ref.read(numberFormattingServiceProvider);
     final formatted = fmt.formatBalance(widget.redeemableRewards, maxDecimals: 2, addSymbol: true);
+    final l10n = ref.read(l10nProvider);
 
     final confirmed = await BottomSheetContainer.show<bool>(
       context,
-      builder: (_) => _RedeemConfirmSheet(formatted: formatted, destination: destination),
+      builder: (_) => _RedeemConfirmSheet(formatted: formatted, destination: destination, l10n: l10n),
     );
     if (confirmed != true || !mounted) return;
 
@@ -102,32 +105,32 @@ class _RedeemAddressScreenState extends ConsumerState<RedeemAddressScreen> {
     final colors = context.colors;
     final text = context.themeText;
     final fmt = ref.watch(numberFormattingServiceProvider);
+    final l10n = ref.watch(l10nProvider);
 
     final hasValid = _recipientController.text.trim().isNotEmpty && !_hasAddressError;
     final amountLabel = fmt.formatBalance(widget.redeemableRewards, maxDecimals: 2, addSymbol: true);
 
     return ScaffoldBase(
-      appBar: const V2AppBar(title: 'Redeem'),
+      appBar: V2AppBar(title: l10n.settingsMiningRedeem),
       mainContent: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _AmountSummary(amountLabel: amountLabel, colors: colors, text: text),
+          _AmountSummary(amountLabel: amountLabel, colors: colors, text: text, l10n: l10n),
           const SizedBox(height: 28),
-          Text('Redeem To', style: text.sendSectionLabel?.copyWith(color: colors.textPrimary)),
+          Text(l10n.redeemToLabel, style: text.sendSectionLabel?.copyWith(color: colors.textPrimary)),
           const SizedBox(height: 12),
           AddressInputField(
             controller: _recipientController,
             focusNode: _recipientFocus,
             hasValid: hasValid,
             recipientChecksum: _recipientChecksum,
-            hintText: 'Paste a ${AppConstants.tokenSymbol} Address',
-            showSearchIcon: false,
+            hintText: l10n.redeemAddressHint(AppConstants.tokenSymbol),
           ),
         ],
       ),
       bottomContent: ScaffoldBaseBottomContent(
         child: QuantusButton.simple(
-          label: _canRedeem ? 'Redeem $amountLabel' : 'Enter Address',
+          label: _canRedeem ? l10n.redeemAmountCta(amountLabel) : l10n.sendEnterAddress,
           variant: ButtonVariant.primary,
           isDisabled: !_canRedeem,
           onTap: _redeem,
@@ -141,8 +144,9 @@ class _AmountSummary extends StatelessWidget {
   final String amountLabel;
   final AppColorsV2 colors;
   final AppTextTheme text;
+  final AppLocalizations l10n;
 
-  const _AmountSummary({required this.amountLabel, required this.colors, required this.text});
+  const _AmountSummary({required this.amountLabel, required this.colors, required this.text, required this.l10n});
 
   @override
   Widget build(BuildContext context) {
@@ -152,7 +156,7 @@ class _AmountSummary extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text('REDEEMABLE', style: text.receiveLabel?.copyWith(color: colors.textLabel)),
+          Text(l10n.settingsMiningStatRedeemable, style: text.receiveLabel?.copyWith(color: colors.textLabel)),
           FittedBox(
             fit: BoxFit.scaleDown,
             alignment: Alignment.centerRight,
@@ -172,8 +176,9 @@ class _AmountSummary extends StatelessWidget {
 class _RedeemConfirmSheet extends StatelessWidget {
   final String formatted;
   final String destination;
+  final AppLocalizations l10n;
 
-  const _RedeemConfirmSheet({required this.formatted, required this.destination});
+  const _RedeemConfirmSheet({required this.formatted, required this.destination, required this.l10n});
 
   @override
   Widget build(BuildContext context) {
@@ -181,18 +186,18 @@ class _RedeemConfirmSheet extends StatelessWidget {
     final text = context.themeText;
 
     return BottomSheetContainer(
-      title: 'Confirm Redeem',
+      title: l10n.redeemConfirmTitle,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _row('Amount', formatted, colors, text),
+          _row(l10n.redeemConfirmAmount, formatted, colors, text),
           Divider(color: colors.separator, height: 32),
-          _row('To', AddressFormattingService.formatAddress(destination), colors, text),
+          _row(l10n.redeemConfirmTo, AddressFormattingService.formatAddress(destination), colors, text),
           Divider(color: colors.separator, height: 32),
-          _row('Fee', '0.1% volume fee', colors, text),
+          _row(l10n.redeemConfirmFee, l10n.redeemFeeValue, colors, text),
           const SizedBox(height: 32),
-          QuantusButton.simple(label: 'Redeem $formatted', onTap: () => Navigator.of(context).pop(true)),
+          QuantusButton.simple(label: l10n.redeemAmountCta(formatted), onTap: () => Navigator.of(context).pop(true)),
         ],
       ),
     );

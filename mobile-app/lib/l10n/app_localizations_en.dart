@@ -1596,4 +1596,84 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get commonContinue => 'Continue';
+
+  @override
+  String get redeemToLabel => 'Redeem To';
+
+  @override
+  String redeemAddressHint(String symbol) {
+    return 'Paste a $symbol Address';
+  }
+
+  @override
+  String redeemAmountCta(String amount) {
+    return 'Redeem $amount';
+  }
+
+  @override
+  String get redeemConfirmTitle => 'Confirm Redeem';
+
+  @override
+  String get redeemConfirmAmount => 'Amount';
+
+  @override
+  String get redeemConfirmTo => 'To';
+
+  @override
+  String get redeemConfirmFee => 'Fee';
+
+  @override
+  String get redeemFeeValue => '0.1% volume fee';
+
+  @override
+  String get redeemProgressTitle => 'Redeeming...';
+
+  @override
+  String get redeemCompleteTitle => 'Redeem Complete';
+
+  @override
+  String get redeemFailedTitle => 'Redeem Failed';
+
+  @override
+  String get redeemingLabel => 'REDEEMING';
+
+  @override
+  String get redeemStepCircuits => 'Preparing circuits';
+
+  @override
+  String get redeemStepTransfers => 'Fetching transfers';
+
+  @override
+  String get redeemStepNullifiers => 'Computing nullifiers';
+
+  @override
+  String get redeemStepCheckNullifiers => 'Checking nullifiers';
+
+  @override
+  String get redeemStepProofs => 'Generating ZK proofs';
+
+  @override
+  String get redeemStepAggregate => 'Aggregating & submitting';
+
+  @override
+  String redeemFetchedCount(int count) {
+    return '$count fetched';
+  }
+
+  @override
+  String get redeemCancel => 'Cancel';
+
+  @override
+  String get redeemRetry => 'Retry';
+
+  @override
+  String get redeemClose => 'Close';
+
+  @override
+  String get redeemDone => 'Done';
+
+  @override
+  String redeemSuccessBanner(String amount, int count) {
+    return '$amount redeemed in $count batch(es)';
+  }
 }

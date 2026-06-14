@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/l10n/app_localizations.dart';
+import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/mining_rewards_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
@@ -110,35 +112,36 @@ class _RedeemProgressScreenState extends ConsumerState<RedeemProgressScreen> {
   Widget build(BuildContext context) {
     final colors = context.colors;
     final text = context.themeText;
+    final l10n = ref.watch(l10nProvider);
 
     return PopScope(
       canPop: !_running,
       child: ScaffoldBase(
         appBar: V2AppBar(
           title: _done
-              ? 'Redeem Complete'
+              ? l10n.redeemCompleteTitle
               : _errorMessage != null
-              ? 'Redeem Failed'
-              : 'Redeeming...',
+              ? l10n.redeemFailedTitle
+              : l10n.redeemProgressTitle,
           showBackButton: !_running,
         ),
         mainContent: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const SizedBox(height: 24),
-            _buildStatusHeader(colors, text),
+            _buildStatusHeader(colors, text, l10n),
             const SizedBox(height: 32),
-            _buildSteps(colors, text),
+            _buildSteps(colors, text, l10n),
             if (_errorMessage != null) ...[const SizedBox(height: 24), _buildErrorBanner(colors, text)],
-            if (_done && _result != null) ...[const SizedBox(height: 24), _buildSuccessBanner(colors, text)],
+            if (_done && _result != null) ...[const SizedBox(height: 24), _buildSuccessBanner(colors, text, l10n)],
           ],
         ),
-        bottomContent: _buildBottomContent(colors),
+        bottomContent: _buildBottomContent(colors, l10n),
       ),
     );
   }
 
-  Widget _buildStatusHeader(AppColorsV2 colors, AppTextTheme text) {
+  Widget _buildStatusHeader(AppColorsV2 colors, AppTextTheme text, AppLocalizations l10n) {
     final fmt = ref.watch(numberFormattingServiceProvider);
     final amountLabel = fmt.formatBalance(widget.redeemableRewards, maxDecimals: 2, addSymbol: true);
 
@@ -148,21 +151,21 @@ class _RedeemProgressScreenState extends ConsumerState<RedeemProgressScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text('REDEEMING', style: text.receiveLabel?.copyWith(color: colors.textLabel)),
+          Text(l10n.redeemingLabel, style: text.receiveLabel?.copyWith(color: colors.textLabel)),
           Text(amountLabel, style: text.sendSectionLabel?.copyWith(color: colors.success)),
         ],
       ),
     );
   }
 
-  Widget _buildSteps(AppColorsV2 colors, AppTextTheme text) {
-    const steps = [
-      (1, 'Preparing circuits'),
-      (2, 'Fetching transfers'),
-      (3, 'Computing nullifiers'),
-      (4, 'Checking nullifiers'),
-      (5, 'Generating ZK proofs'),
-      (6, 'Aggregating & submitting'),
+  Widget _buildSteps(AppColorsV2 colors, AppTextTheme text, AppLocalizations l10n) {
+    final steps = [
+      (1, l10n.redeemStepCircuits),
+      (2, l10n.redeemStepTransfers),
+      (3, l10n.redeemStepNullifiers),
+      (4, l10n.redeemStepCheckNullifiers),
+      (5, l10n.redeemStepProofs),
+      (6, l10n.redeemStepAggregate),
     ];
 
     return Container(
@@ -171,7 +174,7 @@ class _RedeemProgressScreenState extends ConsumerState<RedeemProgressScreen> {
       child: Column(
         children: [
           for (int i = 0; i < steps.length; i++) ...[
-            _buildStepRow(steps[i].$1, steps[i].$2, colors, text),
+            _buildStepRow(steps[i].$1, steps[i].$2, colors, text, l10n),
             if (i < steps.length - 1) _buildConnector(steps[i].$1, colors),
           ],
         ],
@@ -179,7 +182,7 @@ class _RedeemProgressScreenState extends ConsumerState<RedeemProgressScreen> {
     );
   }
 
-  Widget _buildStepRow(int step, String title, AppColorsV2 colors, AppTextTheme text) {
+  Widget _buildStepRow(int step, String title, AppColorsV2 colors, AppTextTheme text, AppLocalizations l10n) {
     final progress = _stepProgress[step];
     final hasError = _errorMessage != null;
     final isError = !_done && hasError && _currentStep == step;
@@ -262,7 +265,7 @@ class _RedeemProgressScreenState extends ConsumerState<RedeemProgressScreen> {
     String progressText = '';
     if (progress != null && (isActive || isCompleted)) {
       if (step == 2) {
-        progressText = '${progress.completed} fetched';
+        progressText = l10n.redeemFetchedCount(progress.completed);
       } else if (progress.total != null) {
         progressText = '${progress.completed} / ${progress.total}';
       }
@@ -349,7 +352,7 @@ class _RedeemProgressScreenState extends ConsumerState<RedeemProgressScreen> {
     );
   }
 
-  Widget _buildSuccessBanner(AppColorsV2 colors, AppTextTheme text) {
+  Widget _buildSuccessBanner(AppColorsV2 colors, AppTextTheme text, AppLocalizations l10n) {
     final fmt = ref.watch(numberFormattingServiceProvider);
     final withdrawn = fmt.formatBalance(_result!.totalWithdrawn, maxDecimals: 4, addSymbol: true);
 
@@ -366,7 +369,7 @@ class _RedeemProgressScreenState extends ConsumerState<RedeemProgressScreen> {
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              '$withdrawn redeemed in ${_result!.batchesSubmitted} batch(es)',
+              l10n.redeemSuccessBanner(withdrawn, _result!.batchesSubmitted),
               style: text.detail?.copyWith(color: colors.success),
             ),
           ),
@@ -375,10 +378,10 @@ class _RedeemProgressScreenState extends ConsumerState<RedeemProgressScreen> {
     );
   }
 
-  Widget? _buildBottomContent(AppColorsV2 colors) {
+  Widget? _buildBottomContent(AppColorsV2 colors, AppLocalizations l10n) {
     if (_running) {
       return ScaffoldBaseBottomContent(
-        child: QuantusButton.simple(label: 'Cancel', variant: ButtonVariant.secondary, onTap: _cancel),
+        child: QuantusButton.simple(label: l10n.redeemCancel, variant: ButtonVariant.secondary, onTap: _cancel),
       );
     }
 
@@ -387,12 +390,12 @@ class _RedeemProgressScreenState extends ConsumerState<RedeemProgressScreen> {
         child: Row(
           children: [
             Expanded(
-              child: QuantusButton.simple(label: 'Retry', onTap: _retry),
+              child: QuantusButton.simple(label: l10n.redeemRetry, onTap: _retry),
             ),
             const SizedBox(width: 12),
             Expanded(
               child: QuantusButton.simple(
-                label: 'Close',
+                label: l10n.redeemClose,
                 variant: ButtonVariant.secondary,
                 onTap: () => Navigator.of(context).pop(),
               ),
@@ -403,7 +406,10 @@ class _RedeemProgressScreenState extends ConsumerState<RedeemProgressScreen> {
     }
 
     return ScaffoldBaseBottomContent(
-      child: QuantusButton.simple(label: 'Done', onTap: () => Navigator.of(context).popUntil((route) => route.isFirst)),
+      child: QuantusButton.simple(
+        label: l10n.redeemDone,
+        onTap: () => Navigator.of(context).popUntil((route) => route.isFirst),
+      ),
     );
   }
 }

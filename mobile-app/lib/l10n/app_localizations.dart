@@ -3037,6 +3037,150 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Continue'**
   String get commonContinue;
+
+  /// Section label above the destination address field on redeem
+  ///
+  /// In en, this message translates to:
+  /// **'Redeem To'**
+  String get redeemToLabel;
+
+  /// Hint on the redeem destination address field
+  ///
+  /// In en, this message translates to:
+  /// **'Paste a {symbol} Address'**
+  String redeemAddressHint(String symbol);
+
+  /// Primary redeem button showing the amount
+  ///
+  /// In en, this message translates to:
+  /// **'Redeem {amount}'**
+  String redeemAmountCta(String amount);
+
+  /// Title of the redeem confirmation sheet
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm Redeem'**
+  String get redeemConfirmTitle;
+
+  /// Amount row label on redeem confirmation
+  ///
+  /// In en, this message translates to:
+  /// **'Amount'**
+  String get redeemConfirmAmount;
+
+  /// Destination row label on redeem confirmation
+  ///
+  /// In en, this message translates to:
+  /// **'To'**
+  String get redeemConfirmTo;
+
+  /// Fee row label on redeem confirmation
+  ///
+  /// In en, this message translates to:
+  /// **'Fee'**
+  String get redeemConfirmFee;
+
+  /// Volume fee value on redeem confirmation
+  ///
+  /// In en, this message translates to:
+  /// **'0.1% volume fee'**
+  String get redeemFeeValue;
+
+  /// App bar title while a redeem is in progress
+  ///
+  /// In en, this message translates to:
+  /// **'Redeeming...'**
+  String get redeemProgressTitle;
+
+  /// App bar title when a redeem finished
+  ///
+  /// In en, this message translates to:
+  /// **'Redeem Complete'**
+  String get redeemCompleteTitle;
+
+  /// App bar title when a redeem failed
+  ///
+  /// In en, this message translates to:
+  /// **'Redeem Failed'**
+  String get redeemFailedTitle;
+
+  /// Status header label on redeem progress
+  ///
+  /// In en, this message translates to:
+  /// **'REDEEMING'**
+  String get redeemingLabel;
+
+  /// Redeem progress step: preparing circuits
+  ///
+  /// In en, this message translates to:
+  /// **'Preparing circuits'**
+  String get redeemStepCircuits;
+
+  /// Redeem progress step: fetching transfers
+  ///
+  /// In en, this message translates to:
+  /// **'Fetching transfers'**
+  String get redeemStepTransfers;
+
+  /// Redeem progress step: computing nullifiers
+  ///
+  /// In en, this message translates to:
+  /// **'Computing nullifiers'**
+  String get redeemStepNullifiers;
+
+  /// Redeem progress step: checking nullifiers
+  ///
+  /// In en, this message translates to:
+  /// **'Checking nullifiers'**
+  String get redeemStepCheckNullifiers;
+
+  /// Redeem progress step: generating ZK proofs
+  ///
+  /// In en, this message translates to:
+  /// **'Generating ZK proofs'**
+  String get redeemStepProofs;
+
+  /// Redeem progress step: aggregating and submitting
+  ///
+  /// In en, this message translates to:
+  /// **'Aggregating & submitting'**
+  String get redeemStepAggregate;
+
+  /// Per-step fetched counter on redeem progress
+  ///
+  /// In en, this message translates to:
+  /// **'{count} fetched'**
+  String redeemFetchedCount(int count);
+
+  /// Cancel button on redeem progress
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get redeemCancel;
+
+  /// Retry button on redeem progress
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get redeemRetry;
+
+  /// Close button on redeem progress
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get redeemClose;
+
+  /// Done button on redeem progress
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get redeemDone;
+
+  /// Success banner on redeem progress
+  ///
+  /// In en, this message translates to:
+  /// **'{amount} redeemed in {count} batch(es)'**
+  String redeemSuccessBanner(String amount, int count);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

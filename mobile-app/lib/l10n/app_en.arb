@@ -2328,5 +2328,125 @@
     "commonContinue": "Continue",
     "@commonContinue": {
       "description": "Continue button on various screens"
+    },
+
+    "redeemToLabel": "Redeem To",
+    "@redeemToLabel": {
+      "description": "Section label above the destination address field on redeem"
+    },
+    "redeemAddressHint": "Paste a {symbol} Address",
+    "@redeemAddressHint": {
+      "description": "Hint on the redeem destination address field",
+      "placeholders": {
+        "symbol": {
+          "type": "String"
+        }
+      }
+    },
+    "redeemAmountCta": "Redeem {amount}",
+    "@redeemAmountCta": {
+      "description": "Primary redeem button showing the amount",
+      "placeholders": {
+        "amount": {
+          "type": "String"
+        }
+      }
+    },
+    "redeemConfirmTitle": "Confirm Redeem",
+    "@redeemConfirmTitle": {
+      "description": "Title of the redeem confirmation sheet"
+    },
+    "redeemConfirmAmount": "Amount",
+    "@redeemConfirmAmount": {
+      "description": "Amount row label on redeem confirmation"
+    },
+    "redeemConfirmTo": "To",
+    "@redeemConfirmTo": {
+      "description": "Destination row label on redeem confirmation"
+    },
+    "redeemConfirmFee": "Fee",
+    "@redeemConfirmFee": {
+      "description": "Fee row label on redeem confirmation"
+    },
+    "redeemFeeValue": "0.1% volume fee",
+    "@redeemFeeValue": {
+      "description": "Volume fee value on redeem confirmation"
+    },
+    "redeemProgressTitle": "Redeeming...",
+    "@redeemProgressTitle": {
+      "description": "App bar title while a redeem is in progress"
+    },
+    "redeemCompleteTitle": "Redeem Complete",
+    "@redeemCompleteTitle": {
+      "description": "App bar title when a redeem finished"
+    },
+    "redeemFailedTitle": "Redeem Failed",
+    "@redeemFailedTitle": {
+      "description": "App bar title when a redeem failed"
+    },
+    "redeemingLabel": "REDEEMING",
+    "@redeemingLabel": {
+      "description": "Status header label on redeem progress"
+    },
+    "redeemStepCircuits": "Preparing circuits",
+    "@redeemStepCircuits": {
+      "description": "Redeem progress step: preparing circuits"
+    },
+    "redeemStepTransfers": "Fetching transfers",
+    "@redeemStepTransfers": {
+      "description": "Redeem progress step: fetching transfers"
+    },
+    "redeemStepNullifiers": "Computing nullifiers",
+    "@redeemStepNullifiers": {
+      "description": "Redeem progress step: computing nullifiers"
+    },
+    "redeemStepCheckNullifiers": "Checking nullifiers",
+    "@redeemStepCheckNullifiers": {
+      "description": "Redeem progress step: checking nullifiers"
+    },
+    "redeemStepProofs": "Generating ZK proofs",
+    "@redeemStepProofs": {
+      "description": "Redeem progress step: generating ZK proofs"
+    },
+    "redeemStepAggregate": "Aggregating & submitting",
+    "@redeemStepAggregate": {
+      "description": "Redeem progress step: aggregating and submitting"
+    },
+    "redeemFetchedCount": "{count} fetched",
+    "@redeemFetchedCount": {
+      "description": "Per-step fetched counter on redeem progress",
+      "placeholders": {
+        "count": {
+          "type": "int"
+        }
+      }
+    },
+    "redeemCancel": "Cancel",
+    "@redeemCancel": {
+      "description": "Cancel button on redeem progress"
+    },
+    "redeemRetry": "Retry",
+    "@redeemRetry": {
+      "description": "Retry button on redeem progress"
+    },
+    "redeemClose": "Close",
+    "@redeemClose": {
+      "description": "Close button on redeem progress"
+    },
+    "redeemDone": "Done",
+    "@redeemDone": {
+      "description": "Done button on redeem progress"
+    },
+    "redeemSuccessBanner": "{amount} redeemed in {count} batch(es)",
+    "@redeemSuccessBanner": {
+      "description": "Success banner on redeem progress",
+      "placeholders": {
+        "amount": {
+          "type": "String"
+        },
+        "count": {
+          "type": "int"
+        }
+      }
     }
   }
