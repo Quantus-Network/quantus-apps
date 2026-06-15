@@ -1,9 +1,6 @@
-import 'dart:async';
-
 import 'package:convert/convert.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/providers/multisig_creation_toast_provider.dart';
 import 'package:resonance_network_wallet/providers/multisig_providers.dart';
 import 'package:resonance_network_wallet/providers/pending_multisig_creations_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
@@ -30,12 +27,18 @@ class MultisigSubmissionService {
     await _runCreationPreflight(name: '', signers: signers, threshold: threshold, creator: creator, nonce: nonce);
   }
 
-  /// Preflight on-chain state, then submit and track creation in the background.
+  /// Preflight on-chain state, then submit the creation extrinsic, awaiting the
+  /// network's acceptance and returned extrinsic hash before completing.
+  /// Finalization tracking/polling then continues in the background.
   ///
-  /// Returns when preflight passes and background work is scheduled. Throws
-  /// [MultisigAlreadyExistsException] if the predicted address already exists,
-  /// or [MultisigInsufficientBalanceException] if the creator cannot afford
-  /// the total creation cost.
+  /// Throws [MultisigAlreadyExistsException] if the predicted address already
+  /// exists, or [MultisigInsufficientBalanceException] if the creator cannot
+  /// afford the total creation cost. Rethrows on submission failure so callers
+  /// can surface the error instead of optimistically navigating away.
+  ///
+  /// Retries live in SubstrateService.submitExtrinsic, which resubmits the same
+  /// signed bytes. Outer retries would re-sign with a fresh nonce and can
+  /// double-submit if a prior submit already reached the network.
   Future<void> startMultisigCreation({
     required String name,
     required List<String> signers,
@@ -59,24 +62,6 @@ class MultisigSubmissionService {
         .read(pendingMultisigCreationsProvider.notifier)
         .add(PendingMultisigCreationEvent.fromDraft(draft, networkFee: networkFee), draft);
 
-    unawaited(
-      _submitAndTrackBackground(
-        creator: creator,
-        signers: signers,
-        threshold: threshold,
-        nonce: draft.nonce,
-        draft: draft,
-      ),
-    );
-  }
-
-  Future<void> _submitAndTrackBackground({
-    required Account creator,
-    required List<String> signers,
-    required int threshold,
-    required BigInt nonce,
-    required MultisigAccount draft,
-  }) async {
     final service = _ref.read(multisigServiceProvider);
     try {
       quantusDebugPrint('[MultisigSubmission] submitting creation for ${draft.accountId}');
@@ -85,28 +70,21 @@ class MultisigSubmissionService {
         creator: creator,
         signers: signers,
         threshold: threshold,
-        nonce: nonce,
+        nonce: draft.nonce,
       );
       final extrinsicHash = '0x${hex.encode(hashBytes)}';
       quantusDebugPrint('[MultisigSubmission] submitted $extrinsicHash');
 
-      unawaited(
-        _ref.read(pendingMultisigCreationsProvider.notifier).updateExtrinsicHash(draft.accountId, extrinsicHash),
-      );
+      await _ref.read(pendingMultisigCreationsProvider.notifier).updateExtrinsicHash(draft.accountId, extrinsicHash);
 
       final submittedAt = _ref.read(pendingMultisigCreationsProvider.notifier).recordFor(draft.accountId)?.submittedAt;
       _ref.read(multisigCreationPollingServiceProvider).startPolling(draft, submittedAt: submittedAt);
     } catch (e, stackTrace) {
-      // Retries live in SubstrateService.submitExtrinsic (same signed bytes);
-      // avoid outer retries here because each attempt re-signs with a fresh
-      // nonce and can double-submit if a prior submit already landed.
       quantusDebugPrint('[MultisigSubmission] submit failed: $e');
       quantusDebugPrint('Stack trace: $stackTrace');
       TelemetryService().sendError('multisig_create_submit_failed', error: e, stackTrace: stackTrace);
       removePendingMultisigCreation(_ref, draft.accountId);
-      _ref.read(multisigCreationToastProvider.notifier).state = const MultisigCreationToastEvent(
-        MultisigCreationToastKind.submitFailed,
-      );
+      rethrow;
     }
   }
 
