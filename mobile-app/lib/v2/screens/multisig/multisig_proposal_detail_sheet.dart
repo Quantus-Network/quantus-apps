@@ -18,6 +18,7 @@ import 'package:resonance_network_wallet/shared/utils/open_external_url.dart';
 import 'package:resonance_network_wallet/v2/components/amount_display_with_conversion.dart';
 import 'package:resonance_network_wallet/v2/components/bottom_sheet_container.dart';
 import 'package:resonance_network_wallet/v2/components/detail_summary_row.dart';
+import 'package:resonance_network_wallet/v2/components/loader.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/screens/multisig/multisig_approve_confirm_sheet.dart';
 import 'package:resonance_network_wallet/v2/screens/multisig/multisig_cancel_confirm_sheet.dart';
@@ -40,6 +41,72 @@ void showMultisigProposalDetailSheet(
     routeSettings: multisigProposalDetailSheetRouteSettings,
     builder: (_) => _MultisigProposalDetailSheet(msig: msig, proposal: proposal),
   );
+}
+
+/// Opens the proposal detail sheet immediately and resolves the proposal by id.
+///
+/// Shows a loader inside the sheet while the proposal is fetched, so taps from
+/// push notifications (which only carry the multisig and proposal id) land on
+/// the detail UI right away instead of waiting for the network round-trip.
+void showMultisigProposalDetailSheetById(
+  BuildContext context, {
+  required MultisigAccount msig,
+  required int proposalId,
+}) {
+  if (context.peekTopRouteName == multisigProposalDetailSheetRouteSettings.name) {
+    Navigator.pop(context);
+  }
+
+  BottomSheetContainer.show(
+    context,
+    routeSettings: multisigProposalDetailSheetRouteSettings,
+    builder: (_) => _MultisigProposalDetailSheetById(msig: msig, proposalId: proposalId),
+  );
+}
+
+/// Resolves a proposal by id, showing a loader/error state until it is fetched,
+/// then delegates to [_MultisigProposalDetailSheet] for the full detail UI.
+class _MultisigProposalDetailSheetById extends ConsumerWidget {
+  final MultisigAccount msig;
+  final int proposalId;
+
+  const _MultisigProposalDetailSheetById({required this.msig, required this.proposalId});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = ref.watch(l10nProvider);
+    final proposalAsync = ref.watch(multisigProposalByIdProvider((msig: msig, id: proposalId)));
+
+    return proposalAsync.when(
+      data: (proposal) => proposal == null
+          ? BottomSheetContainer(
+              title: l10n.multisigProposalTitle,
+              child: _message(context, l10n.multisigProposalNotFound),
+            )
+          : _MultisigProposalDetailSheet(msig: msig, proposal: proposal),
+      loading: () => BottomSheetContainer(
+        title: l10n.multisigProposalTitle,
+        child: const Padding(padding: EdgeInsets.symmetric(vertical: 48), child: Center(child: Loader())),
+      ),
+      error: (e, _) => BottomSheetContainer(
+        title: l10n.multisigProposalTitle,
+        child: _message(context, l10n.multisigLoadFailed(e.toString())),
+      ),
+    );
+  }
+
+  Widget _message(BuildContext context, String text) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 32),
+      child: Center(
+        child: Text(
+          text,
+          textAlign: TextAlign.center,
+          style: context.themeText.smallParagraph?.copyWith(color: context.colors.textTertiary),
+        ),
+      ),
+    );
+  }
 }
 
 class _MultisigProposalDetailSheet extends ConsumerWidget {

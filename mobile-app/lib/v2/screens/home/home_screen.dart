@@ -1,3 +1,4 @@
+import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -21,6 +22,7 @@ import 'package:resonance_network_wallet/v2/screens/accounts/open_accounts_manag
 import 'package:resonance_network_wallet/v2/screens/activity/transaction_detail_sheet.dart';
 import 'package:resonance_network_wallet/v2/screens/receive/receive_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/multisig/multisig_activity_section.dart';
+import 'package:resonance_network_wallet/v2/screens/multisig/multisig_proposal_detail_sheet.dart';
 import 'package:resonance_network_wallet/v2/screens/multisig/propose/propose_recipient_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/send/input_amount_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/send/select_recipient_screen.dart';
@@ -31,6 +33,7 @@ import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/active_account_transactions_provider.dart';
+import 'package:resonance_network_wallet/providers/multisig_providers.dart';
 import 'package:resonance_network_wallet/providers/route_intent_providers.dart';
 import 'package:resonance_network_wallet/providers/currency_display_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
@@ -58,9 +61,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     ref.listenManual<TransactionEvent?>(transactionIntentProvider, _onTransactionIntent);
     ref.listenManual<PaymentIntent?>(paymentIntentProvider, _onPaymentIntent);
     ref.listenManual<String?>(sharedAccountIntentProvider, _onSharedIntent);
+    ref.listenManual<ProposalIntent?>(proposalIntentProvider, _onProposalIntent);
     ref.listenManual<AsyncValue<DisplayAccount?>>(activeAccountProvider, (_, async) {
       if (async.value == null) return;
       _onTransactionIntent(null, ref.read(transactionIntentProvider));
+    });
+    // Multisig accounts may still be loading when a proposal intent arrives on a
+    // cold start; retry once they are available.
+    ref.listenManual<AsyncValue<List<MultisigAccount>>>(multisigAccountsProvider, (_, async) {
+      if (async.value == null) return;
+      _onProposalIntent(null, ref.read(proposalIntentProvider));
     });
 
     Future.microtask(_drainPendingIntents);
@@ -71,6 +81,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     _onTransactionIntent(null, ref.read(transactionIntentProvider));
     _onPaymentIntent(null, ref.read(paymentIntentProvider));
     _onSharedIntent(null, ref.read(sharedAccountIntentProvider));
+    _onProposalIntent(null, ref.read(proposalIntentProvider));
   }
 
   void _onTransactionIntent(TransactionEvent? _, TransactionEvent? transaction) {
@@ -103,6 +114,31 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     ref.read(sharedAccountIntentProvider.notifier).state = null;
 
     showSharedAddressActionSheet(context, shared);
+  }
+
+  /// Handles a proposal push notification tap: selects the owning multisig as
+  /// the active account, then opens the detail sheet immediately. The sheet
+  /// shows a loader while it resolves the proposal by id.
+  Future<void> _onProposalIntent(ProposalIntent? _, ProposalIntent? intent) async {
+    if (intent == null || !mounted) return;
+
+    final multisigAccounts = ref.read(multisigAccountsProvider).value;
+    // Still loading — the multisigAccountsProvider listener will retry.
+    if (multisigAccounts == null) return;
+
+    final msig = multisigAccounts.firstWhereOrNull((m) => m.accountId == intent.multisigAddress);
+    // The intent is consumed regardless: a missing multisig is not recoverable
+    // by waiting, and we don't want to retry a malformed payload.
+    ref.read(proposalIntentProvider.notifier).state = null;
+    if (msig == null) {
+      quantusDebugPrint('proposal intent: no local multisig for ${intent.multisigAddress}');
+      return;
+    }
+
+    await ref.read(activeAccountProvider.notifier).setActiveAccount(MultisigDisplayAccount(msig));
+    if (!mounted) return;
+
+    showMultisigProposalDetailSheetById(context, msig: msig, proposalId: intent.proposalId);
   }
 
   Future<void> _refresh() async {

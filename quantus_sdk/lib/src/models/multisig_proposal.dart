@@ -33,9 +33,6 @@ class MultisigProposal {
   /// Decoded call name (e.g. `transfer_allow_death`). Empty when undecodable.
   final String call;
 
-  /// Raw encoded call bytes as hex.
-  final String callRaw;
-
   /// Balances transfer recipient, or empty when not a transfer.
   final String recipient;
 
@@ -68,7 +65,6 @@ class MultisigProposal {
     required this.updatedAt,
     required this.pallet,
     required this.call,
-    required this.callRaw,
     required this.recipient,
     required this.amount,
     required this.expiryBlock,
@@ -104,7 +100,6 @@ class MultisigProposal {
       updatedAt: dateTimeFromJson(record['updated_at'] ?? record['created_at']),
       pallet: _stringOrEmpty(record['pallet']),
       call: _stringOrEmpty(record['call']),
-      callRaw: _stringOrEmpty(record['call_raw'] ?? record['callRaw']),
       recipient: nestedAccountId(record['transferTo'] ?? record['transfer_to']),
       amount: transferAmountRaw != null ? bigIntFromJson(transferAmountRaw) : BigInt.zero,
       expiryBlock: _intFromJson(record['expiry_block'] ?? record['expiryBlock']),
@@ -185,7 +180,6 @@ class MultisigProposal {
       updatedAt: updatedAt,
       pallet: pallet,
       call: call,
-      callRaw: callRaw,
       recipient: recipient,
       amount: amount,
       expiryBlock: expiryBlock,

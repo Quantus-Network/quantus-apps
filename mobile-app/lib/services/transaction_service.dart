@@ -153,6 +153,22 @@ class TransactionService {
     }
   }
 
+  /// Routes a multisig proposal push payload to the proposal intent provider.
+  ///
+  /// Recognizes the payload by the presence of its `multisig`/`proposalId`
+  /// identifiers, so it works whether or not the backend includes a `type`
+  /// field. Returns true when the payload was a proposal notification so callers
+  /// can skip the transaction deserialization path. Actual navigation (selecting
+  /// the multisig and opening the detail sheet) happens in the UI layer that
+  /// listens to [proposalIntentProvider].
+  bool navigateToProposalFromPayloadIfPossible(Map<String, dynamic> json) {
+    final intent = ProposalIntent.tryParse(json);
+    if (intent == null) return false;
+
+    _ref.read(proposalIntentProvider.notifier).state = intent;
+    return true;
+  }
+
   TransactionEvent? deserializeTxEventFromJsonIfPossible(dynamic json) {
     final txType = json['type'];
     TransactionEvent? event;

@@ -1,19 +1,19 @@
 import 'dart:io';
 
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/models/notification_models.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/notification_provider.dart';
 import 'package:resonance_network_wallet/services/transaction_service.dart';
+import 'package:resonance_network_wallet/shared/utils/print.dart';
 
 /// Top-level handler for background/terminated FCM messages.
 /// Must be a top-level function (not a class method) for Firebase.
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  debugPrint('FCM background message: ${message.messageId}');
+  quantusDebugPrint('FCM background message: ${message.messageId}');
 }
 
 class FirebaseMessagingService {
@@ -32,7 +32,7 @@ class FirebaseMessagingService {
   /// Returns the cached FCM device token, fetching from Firebase if not yet available.
   Future<String?> getDeviceToken() async {
     _cachedToken ??= await _messaging.getToken();
-    debugPrint('FCM token: $_cachedToken');
+    quantusDebugPrint('FCM token: $_cachedToken');
 
     return _cachedToken;
   }
@@ -43,7 +43,7 @@ class FirebaseMessagingService {
 
     final authorizationStatus = await _requestPermission();
     if (authorizationStatus != AuthorizationStatus.authorized) {
-      debugPrint('FCM permission not authorized');
+      quantusDebugPrint('FCM permission not authorized');
       return;
     }
 
@@ -61,7 +61,7 @@ class FirebaseMessagingService {
   Future<AuthorizationStatus> _requestPermission() async {
     final settings = await _messaging.requestPermission(alert: true, badge: true, sound: true, provisional: false);
 
-    debugPrint('FCM permission status: ${settings.authorizationStatus}');
+    quantusDebugPrint('FCM permission status: ${settings.authorizationStatus}');
 
     if (Platform.isIOS) {
       await _messaging.setForegroundNotificationPresentationOptions(alert: false, badge: true, sound: false);
@@ -74,7 +74,7 @@ class FirebaseMessagingService {
     try {
       await _senotiService.registerDevice(token, _platform);
     } catch (e) {
-      debugPrint('Failed to register device: $e');
+      quantusDebugPrint('Failed to register device: $e');
     }
   }
 
@@ -83,7 +83,7 @@ class FirebaseMessagingService {
   Future<void> registerDeviceIfPossible() async {
     final token = await getDeviceToken();
     if (token == null) {
-      debugPrint('No FCM token available — skipping device registration');
+      quantusDebugPrint('No FCM token available — skipping device registration');
       return;
     }
     await _tryRegisterDevice(token);
@@ -91,7 +91,7 @@ class FirebaseMessagingService {
 
   void _setupTokenRefreshListener() {
     _messaging.onTokenRefresh.listen((newToken) async {
-      debugPrint('FCM token refreshed: $newToken');
+      quantusDebugPrint('FCM token refreshed: $newToken');
       _cachedToken = newToken;
       await _tryRegisterDevice(newToken);
     });
@@ -101,14 +101,14 @@ class FirebaseMessagingService {
   Future<void> unregisterDevice() async {
     final token = await getDeviceToken();
     if (token == null) {
-      debugPrint('No FCM token available — skipping unregister');
+      quantusDebugPrint('No FCM token available — skipping unregister');
       return;
     }
     try {
       await _senotiService.unregisterDevice(token, _platform);
       _cachedToken = null;
     } catch (e) {
-      debugPrint('Failed to unregister device: $e');
+      quantusDebugPrint('Failed to unregister device: $e');
     }
   }
 
@@ -116,14 +116,14 @@ class FirebaseMessagingService {
   Future<void> insertNewAddress(String newAddress) async {
     final token = await getDeviceToken();
     if (token == null) {
-      debugPrint('No FCM token available — skipping insertNewAddress');
+      quantusDebugPrint('No FCM token available — skipping insertNewAddress');
       return;
     }
 
     try {
       await _senotiService.insertNewAddress(newAddress: newAddress, deviceToken: token);
     } catch (e) {
-      debugPrint('Failed to insert new address: $e');
+      quantusDebugPrint('Failed to insert new address: $e');
     }
   }
 
@@ -132,7 +132,7 @@ class FirebaseMessagingService {
   /// the message to a NotificationData and show it via local notifications.
   void _setupForegroundMessageListener() {
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-      debugPrint('FCM foreground message: ${message.messageId}');
+      quantusDebugPrint('FCM foreground message: ${message.messageId}');
 
       final notification = _remoteMessageToNotificationData(message);
       if (notification == null) return;
@@ -152,7 +152,7 @@ class FirebaseMessagingService {
     _hasRegisteredHandlers = true;
 
     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-      debugPrint('FCM notification tapped (background): ${message.messageId}');
+      quantusDebugPrint('FCM notification tapped (background): ${message.messageId}');
       _handleNotificationTap(message);
     });
 
@@ -162,7 +162,7 @@ class FirebaseMessagingService {
   Future<void> _handleInitialMessage() async {
     final initialMessage = await _messaging.getInitialMessage();
     if (initialMessage != null) {
-      debugPrint('FCM initial message (terminated): ${initialMessage.messageId}');
+      quantusDebugPrint('FCM initial message (terminated): ${initialMessage.messageId}');
       _handleNotificationTap(initialMessage);
     }
   }
@@ -170,9 +170,13 @@ class FirebaseMessagingService {
   void _handleNotificationTap(RemoteMessage message) {
     final data = message.data;
 
+    quantusDebugPrint('FCM tap payload: $data');
+
     if (data.isEmpty) return;
 
     final txService = _ref.read(transactionServiceProvider);
+
+    if (txService.navigateToProposalFromPayloadIfPossible(data)) return;
     txService.navigateToTransactionFromPayloadIfPossible(data);
   }
 
