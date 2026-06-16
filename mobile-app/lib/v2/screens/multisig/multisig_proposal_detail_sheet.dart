@@ -86,7 +86,10 @@ class _MultisigProposalDetailSheetById extends ConsumerWidget {
           : _MultisigProposalDetailSheet(msig: msig, proposal: proposal),
       loading: () => BottomSheetContainer(
         title: l10n.multisigProposalTitle,
-        child: const Padding(padding: EdgeInsets.symmetric(vertical: 48), child: Center(child: Loader())),
+        child: const Padding(
+          padding: EdgeInsets.symmetric(vertical: 48),
+          child: Center(child: Loader()),
+        ),
       ),
       error: (e, _) => BottomSheetContainer(
         title: l10n.multisigProposalTitle,
