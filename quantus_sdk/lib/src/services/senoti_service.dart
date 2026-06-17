@@ -63,7 +63,7 @@ class SenotiService {
     final regularAddresses = (await _settingsService.getAccounts()).map((a) => a.accountId).toList();
     final multisigAddresses = (await _settingsService.getMultisigAccounts()).map((a) => a.accountId).toList();
     final allAddresses = [...regularAddresses, ...multisigAddresses];
-    
+
     if (allAddresses.isEmpty) return;
 
     await _client.registerDevice(addresses: allAddresses, deviceToken: token, platform: platform);
