@@ -56,12 +56,14 @@ class SenotiService {
   factory SenotiService() => _instance;
   SenotiService._internal();
 
-  final AccountsService _accountsService = AccountsService();
-
+  final SettingsService _settingsService = SettingsService();
   SenotiAuthClient get _client => SenotiAuthClient(AppConstants.senotiEndpoint);
 
   Future<void> registerDevice(String token, String platform) async {
-    final allAddresses = (await _accountsService.getAccounts()).map((a) => a.accountId).toList();
+    final regularAddresses = (await _settingsService.getAccounts()).map((a) => a.accountId).toList();
+    final multisigAddresses = (await _settingsService.getMultisigAccounts()).map((a) => a.accountId).toList();
+    final allAddresses = [...regularAddresses, ...multisigAddresses];
+    
     if (allAddresses.isEmpty) return;
 
     await _client.registerDevice(addresses: allAddresses, deviceToken: token, platform: platform);
