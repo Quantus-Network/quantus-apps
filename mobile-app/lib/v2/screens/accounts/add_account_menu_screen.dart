@@ -4,6 +4,7 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/multisig_providers.dart';
+import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
 import 'package:resonance_network_wallet/shared/utils/account_utils.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
@@ -46,6 +47,14 @@ class _AddAccountMenuScreenState extends ConsumerState<AddAccountMenuScreen> {
   Widget build(BuildContext context) {
     final l10n = ref.watch(l10nProvider);
     final colors = context.colors;
+    final text = context.themeText;
+    final enableMultisig = ref.watch(remoteConfigProvider).enableMultisig;
+
+    List<Widget> separator() => [
+      const SizedBox(height: 16),
+      Divider(color: colors.toasterBackground, height: 1),
+      const SizedBox(height: 24),
+    ];
 
     return ScaffoldBase(
       appBar: V2AppBar(title: l10n.addAccountMenuTitle),
@@ -58,40 +67,36 @@ class _AddAccountMenuScreenState extends ConsumerState<AddAccountMenuScreen> {
             subtitle: l10n.addAccountMenuCreateSubtitle,
             onTap: _onCreateNewAccount,
             colors: colors,
-            text: context.themeText,
+            text: text,
           ),
-          const SizedBox(height: 16),
-          Divider(color: colors.toasterBackground, height: 1),
-          const SizedBox(height: 24),
-          _AddMenuRow(
-            icon: Icons.group_outlined,
-            title: l10n.addAccountMenuMultisigTitle,
-            subtitle: l10n.addAccountMenuMultisigSubtitle,
-            onTap: _onAddMultisig,
-            colors: colors,
-            text: context.themeText,
-          ),
-          const SizedBox(height: 16),
-          Divider(color: colors.toasterBackground, height: 1),
-          const SizedBox(height: 24),
-          _AddMenuRow(
-            icon: Icons.radar_outlined,
-            title: l10n.addAccountMenuDiscoverMultisigTitle,
-            subtitle: l10n.addAccountMenuDiscoverMultisigSubtitle,
-            onTap: _onDiscoverMultisig,
-            colors: colors,
-            text: context.themeText,
-          ),
-          const SizedBox(height: 16),
-          Divider(color: colors.toasterBackground, height: 1),
-          const SizedBox(height: 24),
+          if (enableMultisig) ...[
+            ...separator(),
+            _AddMenuRow(
+              icon: Icons.group_outlined,
+              title: l10n.addAccountMenuMultisigTitle,
+              subtitle: l10n.addAccountMenuMultisigSubtitle,
+              onTap: _onAddMultisig,
+              colors: colors,
+              text: text,
+            ),
+            ...separator(),
+            _AddMenuRow(
+              icon: Icons.radar_outlined,
+              title: l10n.addAccountMenuDiscoverMultisigTitle,
+              subtitle: l10n.addAccountMenuDiscoverMultisigSubtitle,
+              onTap: _onDiscoverMultisig,
+              colors: colors,
+              text: text,
+            ),
+          ],
+          ...separator(),
           _AddMenuRow(
             icon: Icons.save_alt,
             title: l10n.addAccountMenuImportTitle,
             subtitle: l10n.addAccountMenuImportSubtitle,
             onTap: _onImportWallet,
             colors: colors,
-            text: context.themeText,
+            text: text,
           ),
         ],
       ),

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
+import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
 import 'package:resonance_network_wallet/services/firebase_messaging_service.dart';
 import 'package:resonance_network_wallet/shared/extensions/toaster_extensions.dart';
 import 'package:resonance_network_wallet/v2/components/name_field.dart';
@@ -51,8 +52,9 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
 
     try {
       final selectedWalletAccounts = _accounts.where((a) => a.walletIndex == _walletIndex).toList();
+      final enableHardwareWallet = ref.read(remoteConfigProvider).enableKeystoneHardwareWallet;
 
-      if (_isHardwareWallet(selectedWalletAccounts)) {
+      if (enableHardwareWallet && _isHardwareWallet(selectedWalletAccounts)) {
         final created = await Navigator.push<bool?>(
           context,
           MaterialPageRoute(builder: (context) => AddHardwareAccountScreen(walletIndex: _walletIndex)),
