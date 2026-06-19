@@ -18,7 +18,11 @@ class AccountDiscoveryService {
   /// Discovers on-chain HD accounts using the BIP-44 gap-limit algorithm:
   /// scan HD indices in batches and keep going as long as accounts exist,
   /// stopping once [gapLimit] consecutive indices have no on-chain account.
-  Future<List<Account>> discoverAccounts({required String mnemonic, required int walletIndex, int gapLimit = 20}) async {
+  Future<List<Account>> discoverAccounts({
+    required String mnemonic,
+    required int walletIndex,
+    int gapLimit = 20,
+  }) async {
     final discovered = <Account>[];
 
     var consecutiveMissing = 0;
@@ -28,12 +32,7 @@ class AccountDiscoveryService {
       for (var i = index; i < index + gapLimit; i++) {
         final keyPair = _hdWalletService.keyPairAtIndex(mnemonic, i);
         batch.add(
-          Account(
-            walletIndex: walletIndex,
-            index: i,
-            name: 'Account ${i + 1}',
-            accountId: keyPair.ss58Address,
-          ),
+          Account(walletIndex: walletIndex, index: i, name: 'Account ${i + 1}', accountId: keyPair.ss58Address),
         );
       }
 
