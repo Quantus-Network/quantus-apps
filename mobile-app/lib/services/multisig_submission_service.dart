@@ -61,13 +61,7 @@ class MultisigSubmissionService {
         .read(pendingMultisigCreationsProvider.notifier)
         .add(PendingMultisigCreationEvent.fromDraft(draft, networkFee: networkFee), draft);
 
-    await _submitAndTrack(
-      creator: creator,
-      signers: signers,
-      threshold: threshold,
-      nonce: draft.nonce,
-      draft: draft,
-    );
+    await _submitAndTrack(creator: creator, signers: signers, threshold: threshold, nonce: draft.nonce, draft: draft);
   }
 
   Future<void> _submitAndTrack({
