@@ -13,6 +13,7 @@ class HistoryPollingManager {
   late final GlobalHistoryPollingService _globalPoller;
   late final ReversibleTransferMonitoringService _reversibleMonitor;
   bool _initialized = false;
+  bool _isRefreshing = false;
 
   HistoryPollingManager(this._ref) {
     _globalPoller = _ref.read(globalHistoryPollingServiceProvider);
@@ -43,13 +44,30 @@ class HistoryPollingManager {
     _globalPoller.stopPolling();
   }
 
-  /// Trigger a silent refresh of all data (no loading indicators)
+  /// Trigger a silent refresh of all data (no loading indicators).
+  ///
+  /// Invalidating providers only schedules a reload; it does not wait for it.
+  /// To avoid flipping [_isRefreshing] back to false while balance, history, and
+  /// multisig providers are still re-fetching, this awaits each reload to
+  /// completion so concurrent triggers are correctly suppressed.
   Future<void> triggerSilentRefresh() async {
-    quantusDebugPrint('History polling manager: Silent Refresh!');
+    if (_isRefreshing) {
+      quantusDebugPrint('History polling manager: refresh in progress, skipping');
+      return;
+    }
 
-    invalidateActiveAccountBalance(_ref);
-    await silentRefreshActiveAccount(_ref);
-    invalidateActiveMultisigProposals(_ref);
+    _isRefreshing = true;
+    try {
+      quantusDebugPrint('History polling manager: Silent Refresh!');
+
+      await Future.wait([
+        refreshActiveAccountBalance(_ref),
+        silentRefreshActiveAccount(_ref),
+        refreshActiveMultisigProposals(_ref),
+      ]);
+    } finally {
+      _isRefreshing = false;
+    }
   }
 
   void dispose() {
