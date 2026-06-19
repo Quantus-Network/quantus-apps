@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/providers/multisig_cancellation_toast_provider.dart';
+import 'package:resonance_network_wallet/providers/global_toast_provider.dart';
+import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/multisig_providers.dart';
 import 'package:resonance_network_wallet/providers/pending_multisig_cancellations_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
@@ -76,7 +77,7 @@ final multisigCancellationPollingServiceProvider = Provider<MultisigCancellation
       isStillPending: (ref, id) => findPendingMultisigCancellation(ref, id) != null,
       removePending: removePendingMultisigCancellation,
       showTimeoutToast: (ref) {
-        ref.read(multisigCancellationToastProvider.notifier).show(MultisigCancellationToastKind.timeout);
+        ref.read(globalToastProvider.notifier).showError(ref.read(l10nProvider).multisigCancelTimeoutToast);
       },
       confirmIfIndexed: _confirmIndexedCancellation,
       tryResolveTimeout: _tryResolveCancellationTimeout,

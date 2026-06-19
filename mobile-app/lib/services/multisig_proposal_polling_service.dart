@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/providers/multisig_proposal_toast_provider.dart';
+import 'package:resonance_network_wallet/providers/global_toast_provider.dart';
+import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/pending_multisig_proposals_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/services/extrinsic_indexer_polling_service.dart';
@@ -33,7 +34,7 @@ final multisigProposalPollingServiceProvider = Provider<MultisigProposalPollingS
       isStillPending: (ref, id) => findPendingMultisigProposal(ref, id) != null,
       removePending: removePendingMultisigProposal,
       showTimeoutToast: (ref) {
-        ref.read(multisigProposalToastProvider.notifier).show(MultisigProposalToastKind.timeout);
+        ref.read(globalToastProvider.notifier).showError(ref.read(l10nProvider).multisigProposeTimeoutToast);
       },
       confirmIfIndexed: _confirmIndexedProposal,
     ),

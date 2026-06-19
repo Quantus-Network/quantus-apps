@@ -7,10 +7,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/notification_provider.dart';
-import 'package:resonance_network_wallet/providers/multisig_approval_toast_provider.dart';
-import 'package:resonance_network_wallet/providers/multisig_cancellation_toast_provider.dart';
-import 'package:resonance_network_wallet/providers/multisig_execution_toast_provider.dart';
-import 'package:resonance_network_wallet/providers/multisig_proposal_toast_provider.dart';
+import 'package:resonance_network_wallet/providers/global_toast_provider.dart';
+import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/multisig_providers.dart';
 import 'package:resonance_network_wallet/providers/pending_multisig_approvals_provider.dart';
 import 'package:resonance_network_wallet/providers/pending_multisig_cancellations_provider.dart';
@@ -208,7 +206,7 @@ class TransactionSubmissionService {
     } catch (e, stackTrace) {
       quantusDebugPrint('[Approve] submit failed: $e\n$stackTrace');
       removePendingMultisigApproval(_ref, pending.id);
-      _ref.read(multisigApprovalToastProvider.notifier).show(MultisigApprovalToastKind.submitFailed);
+      _ref.read(globalToastProvider.notifier).showError(_ref.read(l10nProvider).multisigApproveFailed);
       rethrow;
     }
   }
@@ -256,7 +254,7 @@ class TransactionSubmissionService {
     } catch (e, stackTrace) {
       quantusDebugPrint('[Execute] submit failed: $e\n$stackTrace');
       removePendingMultisigExecution(_ref, pending.id);
-      _ref.read(multisigExecutionToastProvider.notifier).show(MultisigExecutionToastKind.submitFailed);
+      _ref.read(globalToastProvider.notifier).showError(_ref.read(l10nProvider).multisigExecuteFailed);
       rethrow;
     }
   }
@@ -305,7 +303,7 @@ class TransactionSubmissionService {
     } catch (e, stackTrace) {
       quantusDebugPrint('[Cancel] submit failed: $e\n$stackTrace');
       removePendingMultisigCancellation(_ref, pending.id);
-      _ref.read(multisigCancellationToastProvider.notifier).show(MultisigCancellationToastKind.submitFailed);
+      _ref.read(globalToastProvider.notifier).showError(_ref.read(l10nProvider).multisigCancelFailed);
       rethrow;
     }
   }
@@ -339,7 +337,7 @@ class TransactionSubmissionService {
       // deposit-reserving proposals if a prior submit already landed.
       quantusDebugPrint('[Propose] submit failed: $e\n$stackTrace');
       removePendingMultisigProposal(_ref, pending.id);
-      _ref.read(multisigProposalToastProvider.notifier).show(MultisigProposalToastKind.submitFailed);
+      _ref.read(globalToastProvider.notifier).showError(_ref.read(l10nProvider).multisigProposeSubmitFailed);
       rethrow;
     }
   }

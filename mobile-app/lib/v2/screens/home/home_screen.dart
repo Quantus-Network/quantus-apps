@@ -40,9 +40,7 @@ import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
-import 'package:resonance_network_wallet/v2/components/multisig_approval_toast_listener.dart';
-import 'package:resonance_network_wallet/v2/components/multisig_creation_toast_listener.dart';
-import 'package:resonance_network_wallet/v2/components/multisig_proposal_toast_listener.dart';
+import 'package:resonance_network_wallet/v2/components/global_toast_listener.dart';
 import 'package:resonance_network_wallet/v2/screens/home/activity_section.dart';
 import 'package:resonance_network_wallet/v2/screens/home/backup_reminder_banner.dart';
 
@@ -167,35 +165,31 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final colors = context.colors;
     final text = context.themeText;
 
-    return MultisigCreationToastListener(
-      child: MultisigApprovalToastListener(
-        child: MultisigProposalToastListener(
-          child: accountAsync.when(
-            loading: () => const ScaffoldBase(mainContent: Center(child: Loader())),
-            error: (e, _) => ScaffoldBase(
-              mainContent: Center(
-                child: Text(l10n.homeError(e.toString()), style: text.detail?.copyWith(color: colors.textError)),
-              ),
-            ),
-            data: (active) {
-              if (active == null) {
-                return ScaffoldBase(mainContent: Center(child: Text(l10n.homeNoActiveAccount)));
-              }
-              return ScaffoldBase.refreshable(
-                onRefresh: _refresh,
-                slivers: [
-                  _buildContent(active, colors, text, l10n),
-                  if (active is MultisigDisplayAccount)
-                    MultisigActivitySection(msig: active.account, txAsync: txAsync, onRetry: _refresh)
-                  else
-                    ActivitySection(txAsync: txAsync, activeAccount: active.account, onRetry: _refresh),
-                  const SizedBox(height: 58),
-                ],
-                bottomContent: _buildBottomContent(l10n),
-              );
-            },
+    return GlobalToastListener(
+      child: accountAsync.when(
+        loading: () => const ScaffoldBase(mainContent: Center(child: Loader())),
+        error: (e, _) => ScaffoldBase(
+          mainContent: Center(
+            child: Text(l10n.homeError(e.toString()), style: text.detail?.copyWith(color: colors.textError)),
           ),
         ),
+        data: (active) {
+          if (active == null) {
+            return ScaffoldBase(mainContent: Center(child: Text(l10n.homeNoActiveAccount)));
+          }
+          return ScaffoldBase.refreshable(
+            onRefresh: _refresh,
+            slivers: [
+              _buildContent(active, colors, text, l10n),
+              if (active is MultisigDisplayAccount)
+                MultisigActivitySection(msig: active.account, txAsync: txAsync, onRetry: _refresh)
+              else
+                ActivitySection(txAsync: txAsync, activeAccount: active.account, onRetry: _refresh),
+              const SizedBox(height: 58),
+            ],
+            bottomContent: _buildBottomContent(l10n),
+          );
+        },
       ),
     );
   }
