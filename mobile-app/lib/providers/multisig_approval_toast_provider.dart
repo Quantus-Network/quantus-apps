@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-enum MultisigApprovalToastKind { timeout, submitFailed }
+enum MultisigApprovalToastKind { timeout }
 
 class MultisigApprovalToastEvent {
   const MultisigApprovalToastEvent(this.kind);

@@ -17,7 +17,6 @@ class MultisigProposalToastListener extends ConsumerWidget {
       final l10n = ref.read(l10nProvider);
       final message = switch (next.kind) {
         MultisigProposalToastKind.timeout => l10n.multisigProposeTimeoutToast,
-        MultisigProposalToastKind.submitFailed => l10n.multisigProposeSubmitFailed,
       };
       context.showErrorToaster(message: message);
       ref.read(multisigProposalToastProvider.notifier).clear();

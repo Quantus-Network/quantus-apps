@@ -18,7 +18,6 @@ class MultisigCreationToastListener extends ConsumerWidget {
       final message = switch (next.kind) {
         MultisigCreationToastKind.ready => l10n.multisigCreateReadyToast,
         MultisigCreationToastKind.timeout => l10n.multisigCreateTimeoutToast,
-        MultisigCreationToastKind.submitFailed => l10n.multisigCreateErrorCouldNotCreate,
       };
       if (next.kind == MultisigCreationToastKind.ready) {
         context.showSuccessToaster(message: message);

@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-enum MultisigCancellationToastKind { timeout, submitFailed }
+enum MultisigCancellationToastKind { timeout }
 
 class MultisigCancellationToastEvent {
   const MultisigCancellationToastEvent(this.kind);

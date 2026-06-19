@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-enum MultisigExecutionToastKind { timeout, submitFailed, executedByOther }
+enum MultisigExecutionToastKind { timeout, executedByOther }
 
 class MultisigExecutionToastEvent {
   const MultisigExecutionToastEvent(this.kind);

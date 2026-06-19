@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-enum MultisigProposalToastKind { timeout, submitFailed }
+enum MultisigProposalToastKind { timeout }
 
 class MultisigProposalToastEvent {
   const MultisigProposalToastEvent(this.kind);
