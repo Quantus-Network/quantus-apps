@@ -1,6 +1,5 @@
 // mobile-app/lib/services/transaction_submission_service.dart
 
-import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:convert/convert.dart';
@@ -129,8 +128,12 @@ class TransactionSubmissionService {
     );
   }
 
-  /// Submits a multisig transfer proposal, tracks it optimistically, and polls
-  /// the indexer until the proposal is visible.
+  /// Submits a multisig transfer proposal and tracks it optimistically.
+  ///
+  /// Awaits acceptance of the extrinsic by the chain before completing;
+  /// indexer polling then continues in the background. Rethrows on submission
+  /// failure so callers can surface the error instead of optimistically
+  /// navigating away.
   Future<void> proposeTransfer({
     required MultisigAccount msig,
     required Account signer,
@@ -154,20 +157,21 @@ class TransactionSubmissionService {
 
     TelemetryService().sendEvent('multisig_propose');
 
-    unawaited(
-      _submitProposalBackground(
-        msig: msig,
-        signer: signer,
-        recipient: recipient,
-        amount: amount,
-        expiryBlock: expiryBlock,
-        pending: pending,
-      ),
+    await _submitProposal(
+      msig: msig,
+      signer: signer,
+      recipient: recipient,
+      amount: amount,
+      expiryBlock: expiryBlock,
+      pending: pending,
     );
   }
 
-  /// Submits a multisig proposal approval, tracks it optimistically, and polls
-  /// the indexer until the approval appears on the proposal.
+  /// Submits a multisig proposal approval and tracks it optimistically.
+  ///
+  /// Awaits acceptance of the extrinsic by the chain before completing;
+  /// indexer polling then continues in the background. Rethrows on submission
+  /// failure so callers can surface the error.
   Future<void> approveProposal({
     required MultisigAccount msig,
     required Account signer,
@@ -183,10 +187,10 @@ class TransactionSubmissionService {
 
     TelemetryService().sendEvent('multisig_approve');
 
-    unawaited(_submitApproveBackground(msig: msig, signer: signer, proposalId: proposal.id, pending: pending));
+    await _submitApprove(msig: msig, signer: signer, proposalId: proposal.id, pending: pending);
   }
 
-  Future<void> _submitApproveBackground({
+  Future<void> _submitApprove({
     required MultisigAccount msig,
     required Account signer,
     required int proposalId,
@@ -205,11 +209,15 @@ class TransactionSubmissionService {
       quantusDebugPrint('[Approve] submit failed: $e\n$stackTrace');
       removePendingMultisigApproval(_ref, pending.id);
       _ref.read(multisigApprovalToastProvider.notifier).show(MultisigApprovalToastKind.submitFailed);
+      rethrow;
     }
   }
 
-  /// Submits a multisig proposal execution, tracks it optimistically, and polls
-  /// the indexer until the proposal status becomes executed.
+  /// Submits a multisig proposal execution and tracks it optimistically.
+  ///
+  /// Awaits acceptance of the extrinsic by the chain before completing;
+  /// indexer polling then continues in the background. Rethrows on submission
+  /// failure so callers can surface the error.
   Future<void> executeProposal({
     required MultisigAccount msig,
     required Account signer,
@@ -227,10 +235,10 @@ class TransactionSubmissionService {
 
     TelemetryService().sendEvent('multisig_execute');
 
-    unawaited(_submitExecuteBackground(msig: msig, signer: signer, proposalId: proposal.id, pending: pending));
+    await _submitExecute(msig: msig, signer: signer, proposalId: proposal.id, pending: pending);
   }
 
-  Future<void> _submitExecuteBackground({
+  Future<void> _submitExecute({
     required MultisigAccount msig,
     required Account signer,
     required int proposalId,
@@ -249,11 +257,15 @@ class TransactionSubmissionService {
       quantusDebugPrint('[Execute] submit failed: $e\n$stackTrace');
       removePendingMultisigExecution(_ref, pending.id);
       _ref.read(multisigExecutionToastProvider.notifier).show(MultisigExecutionToastKind.submitFailed);
+      rethrow;
     }
   }
 
-  /// Submits a multisig proposal cancellation, tracks it optimistically, and polls
-  /// the indexer until the proposal status becomes cancelled.
+  /// Submits a multisig proposal cancellation and tracks it optimistically.
+  ///
+  /// Awaits acceptance of the extrinsic by the chain before completing;
+  /// indexer polling then continues in the background. Rethrows on submission
+  /// failure so callers can surface the error.
   Future<void> cancelProposal({
     required MultisigAccount msig,
     required Account proposer,
@@ -271,10 +283,10 @@ class TransactionSubmissionService {
 
     TelemetryService().sendEvent('multisig_cancel');
 
-    unawaited(_submitCancelBackground(msig: msig, proposer: proposer, proposalId: proposal.id, pending: pending));
+    await _submitCancel(msig: msig, proposer: proposer, proposalId: proposal.id, pending: pending);
   }
 
-  Future<void> _submitCancelBackground({
+  Future<void> _submitCancel({
     required MultisigAccount msig,
     required Account proposer,
     required int proposalId,
@@ -294,10 +306,11 @@ class TransactionSubmissionService {
       quantusDebugPrint('[Cancel] submit failed: $e\n$stackTrace');
       removePendingMultisigCancellation(_ref, pending.id);
       _ref.read(multisigCancellationToastProvider.notifier).show(MultisigCancellationToastKind.submitFailed);
+      rethrow;
     }
   }
 
-  Future<void> _submitProposalBackground({
+  Future<void> _submitProposal({
     required MultisigAccount msig,
     required Account signer,
     required String recipient,
@@ -327,6 +340,7 @@ class TransactionSubmissionService {
       quantusDebugPrint('[Propose] submit failed: $e\n$stackTrace');
       removePendingMultisigProposal(_ref, pending.id);
       _ref.read(multisigProposalToastProvider.notifier).show(MultisigProposalToastKind.submitFailed);
+      rethrow;
     }
   }
 

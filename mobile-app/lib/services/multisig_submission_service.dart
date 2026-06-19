@@ -30,12 +30,14 @@ class MultisigSubmissionService {
     await _runCreationPreflight(name: '', signers: signers, threshold: threshold, creator: creator, nonce: nonce);
   }
 
-  /// Preflight on-chain state, then submit and track creation in the background.
+  /// Preflight on-chain state, then submit and track creation.
   ///
-  /// Returns when preflight passes and background work is scheduled. Throws
+  /// Awaits acceptance of the creation extrinsic by the chain before
+  /// completing; indexer polling then continues in the background. Throws
   /// [MultisigAlreadyExistsException] if the predicted address already exists,
   /// or [MultisigInsufficientBalanceException] if the creator cannot afford
-  /// the total creation cost.
+  /// the total creation cost. Rethrows on submission failure so callers can
+  /// surface the error instead of optimistically navigating away.
   Future<void> startMultisigCreation({
     required String name,
     required List<String> signers,
@@ -59,18 +61,16 @@ class MultisigSubmissionService {
         .read(pendingMultisigCreationsProvider.notifier)
         .add(PendingMultisigCreationEvent.fromDraft(draft, networkFee: networkFee), draft);
 
-    unawaited(
-      _submitAndTrackBackground(
-        creator: creator,
-        signers: signers,
-        threshold: threshold,
-        nonce: draft.nonce,
-        draft: draft,
-      ),
+    await _submitAndTrack(
+      creator: creator,
+      signers: signers,
+      threshold: threshold,
+      nonce: draft.nonce,
+      draft: draft,
     );
   }
 
-  Future<void> _submitAndTrackBackground({
+  Future<void> _submitAndTrack({
     required Account creator,
     required List<String> signers,
     required int threshold,
@@ -107,6 +107,7 @@ class MultisigSubmissionService {
       _ref.read(multisigCreationToastProvider.notifier).state = const MultisigCreationToastEvent(
         MultisigCreationToastKind.submitFailed,
       );
+      rethrow;
     }
   }
 
