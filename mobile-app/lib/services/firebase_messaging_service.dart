@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -6,6 +7,7 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/models/notification_models.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/notification_provider.dart';
+import 'package:resonance_network_wallet/services/history_polling_manager.dart';
 import 'package:resonance_network_wallet/services/transaction_service.dart';
 import 'package:resonance_network_wallet/shared/utils/print.dart';
 
@@ -130,9 +132,15 @@ class FirebaseMessagingService {
   /// Listen for messages when the app is in the foreground.
   /// FCM does NOT show a system notification in this case, so we convert
   /// the message to a NotificationData and show it via local notifications.
+  ///
+  /// Background/terminated resume is already covered by the app lifecycle
+  /// manager (silent refresh on resume), so here we only refresh historical
+  /// data (balance, activity, proposals) for the foreground case.
   void _setupForegroundMessageListener() {
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
       quantusDebugPrint('FCM foreground message: ${message.messageId}');
+
+      unawaited(_ref.read(historyPollingManagerProvider).triggerSilentRefresh());
 
       final notification = _remoteMessageToNotificationData(message);
       if (notification == null) return;
