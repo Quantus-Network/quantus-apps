@@ -538,5 +538,30 @@
 
   "commonLoading": "Memuat...",
   "commonAmountBalance": "{balance} {symbol}",
-  "commonContinue": "Lanjutkan"
+  "commonContinue": "Lanjutkan",
+
+  "redeemToLabel": "Tukar Ke",
+  "redeemAddressHint": "Tempel Alamat {symbol}",
+  "redeemAmountCta": "Tukar {amount}",
+  "redeemConfirmTitle": "Konfirmasi Penukaran",
+  "redeemConfirmAmount": "Jumlah",
+  "redeemConfirmTo": "Ke",
+  "redeemConfirmFee": "Biaya",
+  "redeemFeeValue": "Biaya volume 0,1%",
+  "redeemProgressTitle": "Menukar...",
+  "redeemCompleteTitle": "Penukaran Selesai",
+  "redeemFailedTitle": "Penukaran Gagal",
+  "redeemingLabel": "MENUKAR",
+  "redeemStepCircuits": "Menyiapkan sirkuit",
+  "redeemStepTransfers": "Mengambil transfer",
+  "redeemStepNullifiers": "Menghitung nullifier",
+  "redeemStepCheckNullifiers": "Memeriksa nullifier",
+  "redeemStepProofs": "Membuat bukti ZK",
+  "redeemStepAggregate": "Mengagregasi & mengirim",
+  "redeemFetchedCount": "{count} diambil",
+  "redeemCancel": "Batal",
+  "redeemRetry": "Coba Lagi",
+  "redeemClose": "Tutup",
+  "redeemDone": "Selesai",
+  "redeemSuccessBanner": "{amount} ditukar dalam {count} batch"
 }

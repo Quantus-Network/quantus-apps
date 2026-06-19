@@ -1600,82 +1600,82 @@ class AppLocalizationsId extends AppLocalizations {
   String get commonContinue => 'Lanjutkan';
 
   @override
-  String get redeemToLabel => 'Redeem To';
+  String get redeemToLabel => 'Tukar Ke';
 
   @override
   String redeemAddressHint(String symbol) {
-    return 'Paste a $symbol Address';
+    return 'Tempel Alamat $symbol';
   }
 
   @override
   String redeemAmountCta(String amount) {
-    return 'Redeem $amount';
+    return 'Tukar $amount';
   }
 
   @override
-  String get redeemConfirmTitle => 'Confirm Redeem';
+  String get redeemConfirmTitle => 'Konfirmasi Penukaran';
 
   @override
-  String get redeemConfirmAmount => 'Amount';
+  String get redeemConfirmAmount => 'Jumlah';
 
   @override
-  String get redeemConfirmTo => 'To';
+  String get redeemConfirmTo => 'Ke';
 
   @override
-  String get redeemConfirmFee => 'Fee';
+  String get redeemConfirmFee => 'Biaya';
 
   @override
-  String get redeemFeeValue => '0.1% volume fee';
+  String get redeemFeeValue => 'Biaya volume 0,1%';
 
   @override
-  String get redeemProgressTitle => 'Redeeming...';
+  String get redeemProgressTitle => 'Menukar...';
 
   @override
-  String get redeemCompleteTitle => 'Redeem Complete';
+  String get redeemCompleteTitle => 'Penukaran Selesai';
 
   @override
-  String get redeemFailedTitle => 'Redeem Failed';
+  String get redeemFailedTitle => 'Penukaran Gagal';
 
   @override
-  String get redeemingLabel => 'REDEEMING';
+  String get redeemingLabel => 'MENUKAR';
 
   @override
-  String get redeemStepCircuits => 'Preparing circuits';
+  String get redeemStepCircuits => 'Menyiapkan sirkuit';
 
   @override
-  String get redeemStepTransfers => 'Fetching transfers';
+  String get redeemStepTransfers => 'Mengambil transfer';
 
   @override
-  String get redeemStepNullifiers => 'Computing nullifiers';
+  String get redeemStepNullifiers => 'Menghitung nullifier';
 
   @override
-  String get redeemStepCheckNullifiers => 'Checking nullifiers';
+  String get redeemStepCheckNullifiers => 'Memeriksa nullifier';
 
   @override
-  String get redeemStepProofs => 'Generating ZK proofs';
+  String get redeemStepProofs => 'Membuat bukti ZK';
 
   @override
-  String get redeemStepAggregate => 'Aggregating & submitting';
+  String get redeemStepAggregate => 'Mengagregasi & mengirim';
 
   @override
   String redeemFetchedCount(int count) {
-    return '$count fetched';
+    return '$count diambil';
   }
 
   @override
-  String get redeemCancel => 'Cancel';
+  String get redeemCancel => 'Batal';
 
   @override
-  String get redeemRetry => 'Retry';
+  String get redeemRetry => 'Coba Lagi';
 
   @override
-  String get redeemClose => 'Close';
+  String get redeemClose => 'Tutup';
 
   @override
-  String get redeemDone => 'Done';
+  String get redeemDone => 'Selesai';
 
   @override
   String redeemSuccessBanner(String amount, int count) {
-    return '$amount redeemed in $count batch(es)';
+    return '$amount ditukar dalam $count batch';
   }
 }
