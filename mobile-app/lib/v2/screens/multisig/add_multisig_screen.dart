@@ -269,9 +269,6 @@ class _AddMultisigScreenState extends ConsumerState<AddMultisigScreen> {
         context.showErrorToaster(message: l10n.multisigCreateInsufficientBalance);
       }
     } catch (e) {
-      // The submission service rethrows without surfacing UI; the caller owns
-      // user feedback. Show a single error toast for any failure (submission or
-      // otherwise) and skip navigation.
       quantusDebugPrint('[AddMultisigScreen] createMultisig error: $e');
       if (mounted) {
         context.showErrorToaster(message: l10n.multisigCreateErrorCouldNotCreate);
