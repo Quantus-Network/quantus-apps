@@ -123,7 +123,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
 
   void _onAmountChanged(String _) {
     HapticFeedback.mediumImpact();
-    
+
     final isFlipped = widget.isPayMode ? false : ref.read(isCurrencyFlippedProvider);
     try {
       setState(() => _amount = _amountInputLogic.onAmountChanged(value: _amountController.text, isFlipped: isFlipped));
