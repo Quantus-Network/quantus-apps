@@ -84,7 +84,7 @@
     "@recoveryPhraseBodyTapToHide": {
       "description": "Hint below the revealed recovery phrase grid"
     },
-    "recoveryPhraseBodyCopiedMessage": "Recovery phrase copied to clipboard",
+    "recoveryPhraseBodyCopiedMessage": "Recovery phrase copied — clears in 30s",
     "@recoveryPhraseBodyCopiedMessage": {
       "description": "Toast when recovery phrase is copied"
     },

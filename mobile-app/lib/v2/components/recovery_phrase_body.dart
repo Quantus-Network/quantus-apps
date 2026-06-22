@@ -57,7 +57,7 @@ class _RecoveryPhraseBodyState extends ConsumerState<RecoveryPhraseBody> {
 
   void _copyToClipboard() {
     final l10n = ref.read(l10nProvider);
-    context.copyTextWithToaster(widget.words.join(' '), message: l10n.recoveryPhraseBodyCopiedMessage);
+    context.copySensitiveTextWithToaster(widget.words.join(' '), message: l10n.recoveryPhraseBodyCopiedMessage);
     _markExposed();
   }
 

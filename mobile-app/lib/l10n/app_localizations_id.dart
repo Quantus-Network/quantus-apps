@@ -71,7 +71,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get recoveryPhraseBodyTapToHide => 'Ketuk untuk menyembunyikan';
 
   @override
-  String get recoveryPhraseBodyCopiedMessage => 'Recovery phrase disalin ke clipboard';
+  String get recoveryPhraseBodyCopiedMessage => 'Frasa pemulihan disalin — terhapus dalam 30 detik';
 
   @override
   String get accountReadyAccountCreated => 'Akun Dibuat';
