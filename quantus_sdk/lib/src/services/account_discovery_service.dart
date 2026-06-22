@@ -4,9 +4,8 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 
 class AccountDiscoveryService {
   final HdWalletService _hdWalletService;
-  final SubstrateService _substrateService;
 
-  AccountDiscoveryService(this._hdWalletService, this._substrateService);
+  AccountDiscoveryService(this._hdWalletService);
 
   static const String _accountsQuery = r'''
     query AccountsQuery($ids: [String!]) {
@@ -16,68 +15,71 @@ class AccountDiscoveryService {
     }
   ''';
 
-  Future<List<Account>> discoverAccounts({required String mnemonic, required int walletIndex, int count = 20}) async {
-    final allPossibleAccounts = <Account>[];
+  /// Discovers on-chain HD accounts using the BIP-44 gap-limit algorithm:
+  /// scan HD indices in batches and keep going as long as accounts exist,
+  /// stopping once [gapLimit] consecutive indices have no on-chain account.
+  Future<List<Account>> discoverAccounts({
+    required String mnemonic,
+    required int walletIndex,
+    int gapLimit = 20,
+  }) async {
+    final discovered = <Account>[];
 
-    // Add raw account
-    final rawKeyPair = _substrateService.nonHDdilithiumKeypairFromMnemonic(mnemonic);
-    final rawAccount = Account(
-      walletIndex: walletIndex,
-      index: -1, //  indicator for a raw account
-      name: 'Primary Account',
-      accountId: rawKeyPair.ss58Address,
-    );
-    allPossibleAccounts.add(rawAccount);
+    var consecutiveMissing = 0;
+    var index = 0;
+    while (consecutiveMissing < gapLimit) {
+      final batch = <Account>[];
+      for (var i = index; i < index + gapLimit; i++) {
+        final keyPair = _hdWalletService.keyPairAtIndex(mnemonic, i);
+        batch.add(
+          Account(walletIndex: walletIndex, index: i, name: 'Account ${i + 1}', accountId: keyPair.ss58Address),
+        );
+      }
 
-    // Add HD accounts
-    for (var i = 0; i < count; i++) {
-      final keyPair = _hdWalletService.keyPairAtIndex(mnemonic, i);
-      final account = Account(
-        walletIndex: walletIndex,
-        index: i,
-        name: 'Account ${i + 1}',
-        accountId: keyPair.ss58Address,
-      );
-      allPossibleAccounts.add(account);
+      final existingIds = await _findExistingAccountIds(batch.map((a) => a.accountId).toList());
+
+      for (final account in batch) {
+        if (existingIds.contains(account.accountId)) {
+          discovered.add(account);
+          consecutiveMissing = 0;
+        } else {
+          consecutiveMissing++;
+          if (consecutiveMissing >= gapLimit) break;
+        }
+      }
+
+      index += gapLimit;
     }
 
-    final accountIds = allPossibleAccounts.map((a) => a.accountId).toList();
+    return discovered;
+  }
+
+  Future<Set<String>> _findExistingAccountIds(List<String> accountIds) async {
+    if (accountIds.isEmpty) return {};
 
     final graphQlEndpoint = GraphQlEndpointService();
-
     final Map<String, dynamic> requestBody = {
       'query': _accountsQuery,
       'variables': {'ids': accountIds},
     };
 
-    try {
-      final response = await graphQlEndpoint.post(
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(requestBody),
-      );
+    final response = await graphQlEndpoint.post(
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode(requestBody),
+    );
 
-      if (response.statusCode != 200) {
-        throw Exception('GraphQL request failed with status: ${response.statusCode}. Body: ${response.body}');
-      }
-
-      final Map<String, dynamic> responseBody = jsonDecode(response.body);
-      if (responseBody['errors'] != null) {
-        throw Exception('GraphQL errors: ${responseBody['errors']}');
-      }
-
-      final List<dynamic>? foundAccountsData = responseBody['data']?['accounts'];
-
-      if (foundAccountsData == null) {
-        return [];
-      }
-
-      final foundAccountIds = foundAccountsData.map((a) => a['id'] as String).toSet();
-
-      return allPossibleAccounts.where((account) => foundAccountIds.contains(account.accountId)).toList();
-    } catch (e, stackTrace) {
-      print('Error discovering accounts: $e');
-      print(stackTrace);
-      rethrow;
+    if (response.statusCode != 200) {
+      throw Exception('GraphQL request failed with status: ${response.statusCode}. Body: ${response.body}');
     }
+
+    final Map<String, dynamic> responseBody = jsonDecode(response.body);
+    if (responseBody['errors'] != null) {
+      throw Exception('GraphQL errors: ${responseBody['errors']}');
+    }
+
+    final List<dynamic>? foundAccountsData = responseBody['data']?['accounts'];
+    if (foundAccountsData == null) return {};
+
+    return foundAccountsData.map((a) => a['id'] as String).toSet();
   }
 }

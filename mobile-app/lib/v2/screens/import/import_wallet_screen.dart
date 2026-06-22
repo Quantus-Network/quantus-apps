@@ -48,7 +48,7 @@ class _ImportWalletScreenV2State extends ConsumerState<ImportWalletScreenV2> {
   final _buttonKey = GlobalKey();
   final _settingsService = SettingsService();
   final _accountsService = AccountsService();
-  final _discoveryService = AccountDiscoveryService(HdWalletService(), SubstrateService());
+  final _discoveryService = AccountDiscoveryService(HdWalletService());
   bool _isLoading = false;
   String? _error;
 

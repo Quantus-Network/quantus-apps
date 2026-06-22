@@ -55,6 +55,15 @@ void invalidateActiveAccountBalance(Ref ref) {
   ref.invalidate(balanceProviderFamily(accountId));
 }
 
+/// Invalidates the active account balance and waits for it to reload.
+Future<void> refreshActiveAccountBalance(Ref ref) async {
+  final accountId = activeAccountId(ref);
+  if (accountId == null) return;
+
+  ref.invalidate(balanceProviderFamily(accountId));
+  await ref.read(balanceProviderFamily(accountId).future);
+}
+
 /// Invalidates balance for the given account IDs.
 void invalidateAccountBalances(Ref ref, Iterable<String> accountIds) {
   for (final accountId in accountIds) {
