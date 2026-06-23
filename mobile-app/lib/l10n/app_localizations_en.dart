@@ -70,7 +70,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get recoveryPhraseBodyTapToHide => 'Tap to hide';
 
   @override
-  String get recoveryPhraseBodyCopiedMessage => 'Recovery phrase copied — clears in 30s';
+  String get recoveryPhraseBodyCopiedMessage => 'Recovery phrase copied to clipboard';
 
   @override
   String get accountReadyAccountCreated => 'Account Created';

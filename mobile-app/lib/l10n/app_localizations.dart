@@ -209,7 +209,7 @@ abstract class AppLocalizations {
   /// Toast when recovery phrase is copied
   ///
   /// In en, this message translates to:
-  /// **'Recovery phrase copied — clears in 30s'**
+  /// **'Recovery phrase copied to clipboard'**
   String get recoveryPhraseBodyCopiedMessage;
 
   /// Title when a new account is created

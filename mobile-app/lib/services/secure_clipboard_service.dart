@@ -25,7 +25,7 @@ class SecureClipboardService {
   static const MethodChannel _channel = MethodChannel('app.quantus/secure_clipboard');
 
   /// Default lifetime of a sensitive clipboard entry before it is wiped.
-  static const Duration defaultTtl = Duration(seconds: 30);
+  static const Duration defaultTtl = Duration(minutes: 3);
 
   Timer? _clearTimer;
 
