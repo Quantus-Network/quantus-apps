@@ -108,7 +108,7 @@ class RegularSendStrategy extends SendStrategy {
     final regularFee = fee as RegularFee;
     final recipient = recipientAddress.trim();
     final account = (await SettingsService().getActiveRegularAccount())!;
-    final terminal = _terminal(
+    final terminal = buildSentTerminalContent(
       l10n,
       fmt,
       recipient: recipient,
@@ -145,27 +145,5 @@ class RegularSendStrategy extends SendStrategy {
       debugPrint('Transfer failed: $e');
       return SendFailed(l10n.sendReviewSubmitFailed);
     }
-  }
-
-  SendTerminalContent _terminal(
-    AppLocalizations l10n,
-    NumberFormattingService fmt, {
-    required String recipient,
-    required String checksum,
-    required BigInt amount,
-    required bool isPayMode,
-  }) {
-    final n = fmt.formatBalance(amount, smartDecimals: 4);
-    return SendTerminalContent(
-      title: isPayMode ? l10n.sendPayTitle : l10n.sendTitle,
-      headline: isPayMode
-          ? l10n.sendTxSubmittedHeadlinePaid(n, AppConstants.tokenSymbol)
-          : l10n.sendTxSubmittedHeadlineSent(n, AppConstants.tokenSymbol),
-      subline: l10n.sendTxSubmittedOnItsWay,
-      recipientAddress: recipient,
-      recipientChecksum: checksum,
-      doneLabel: l10n.sendTxSubmittedDone,
-      topSpacing: 70,
-    );
   }
 }

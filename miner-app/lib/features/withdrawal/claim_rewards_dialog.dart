@@ -29,7 +29,7 @@ enum _Screen { input, confirm, progress }
 
 class _ClaimRewardsDialogState extends State<_ClaimRewardsDialog> {
   final _addressController = TextEditingController();
-  final _claimService = WormholeClaimService();
+  final _claimService = WormholeSendService();
   final _walletService = MinerWalletService();
   final _settingsService = MinerSettingsService();
 

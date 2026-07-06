@@ -23,24 +23,35 @@ class AccountDiscoveryService {
     required int walletIndex,
     int gapLimit = 20,
   }) async {
-    final discovered = <Account>[];
+    final addressByIndex = <int, String>{};
+    final used = await discoverUsedIndices(
+      addressAt: (i) => addressByIndex[i] ??= _hdWalletService.keyPairAtIndex(mnemonic, i).ss58Address,
+      gapLimit: gapLimit,
+    );
+    return [
+      for (final i in used.toList()..sort())
+        Account(walletIndex: walletIndex, index: i, name: 'Account ${i + 1}', accountId: addressByIndex[i]!),
+    ];
+  }
+
+  /// Gap-limit scan over an arbitrary address sequence: derives addresses via
+  /// [addressAt] in batches and returns the indices that exist on-chain,
+  /// stopping once [gapLimit] consecutive indices are unused.
+  Future<Set<int>> discoverUsedIndices({
+    required String Function(int index) addressAt,
+    int gapLimit = 20,
+  }) async {
+    final used = <int>{};
 
     var consecutiveMissing = 0;
     var index = 0;
     while (consecutiveMissing < gapLimit) {
-      final batch = <Account>[];
-      for (var i = index; i < index + gapLimit; i++) {
-        final keyPair = _hdWalletService.keyPairAtIndex(mnemonic, i);
-        batch.add(
-          Account(walletIndex: walletIndex, index: i, name: 'Account ${i + 1}', accountId: keyPair.ss58Address),
-        );
-      }
+      final batch = {for (var i = index; i < index + gapLimit; i++) i: addressAt(i)};
+      final existingIds = await _findExistingAccountIds(batch.values.toList());
 
-      final existingIds = await _findExistingAccountIds(batch.map((a) => a.accountId).toList());
-
-      for (final account in batch) {
-        if (existingIds.contains(account.accountId)) {
-          discovered.add(account);
+      for (final entry in batch.entries) {
+        if (existingIds.contains(entry.value)) {
+          used.add(entry.key);
           consecutiveMissing = 0;
         } else {
           consecutiveMissing++;
@@ -51,7 +62,7 @@ class AccountDiscoveryService {
       index += gapLimit;
     }
 
-    return discovered;
+    return used;
   }
 
   Future<Set<String>> _findExistingAccountIds(List<String> accountIds) async {

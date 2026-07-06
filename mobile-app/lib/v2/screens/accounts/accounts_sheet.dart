@@ -13,7 +13,6 @@ import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
-import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
 import 'package:resonance_network_wallet/providers/route_intent_providers.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/shared/utils/print.dart';
@@ -54,10 +53,8 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
   /// wallet so it shows alongside transparent accounts. Gated by the feature
   /// flag; persists once, then no-ops on subsequent opens.
   Future<void> _ensureEncryptedAccounts() async {
-    if (!ref.read(remoteConfigProvider).enableEncryptedAccount) return;
     try {
-      final name = ref.read(l10nProvider).createAccountEncryptedDefaultName;
-      final created = await ref.read(accountsServiceProvider).ensureEncryptedAccountsForSoftwareWallets(name: name);
+      final created = await ensureEncryptedAccounts(ref);
       if (created && mounted) ref.invalidate(accountsProvider);
     } catch (e, st) {
       quantusDebugPrint('[AccountsSheet] ensure encrypted accounts failed: $e\n$st');
@@ -266,8 +263,10 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
     return const SizedBox.shrink();
   }
 
-  String _balanceText(AppLocalizations l10n, String accountId) {
-    final balanceAsync = ref.watch(balanceProviderFamily(accountId));
+  String _balanceText(AppLocalizations l10n, BaseAccount account) {
+    final balanceAsync = isEncryptedAccount(account)
+        ? ref.watch(encryptedBalanceProvider((account as Account).walletIndex))
+        : ref.watch(balanceProviderFamily(account.accountId));
     final formattingService = ref.watch(numberFormattingServiceProvider);
     return balanceAsync.when(
       loading: () => l10n.commonLoading,
@@ -284,7 +283,7 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
       onTap: () => _switchAccount(RegularAccount(account)),
       leading: AccountBadge.account(account: account, isActive: isActive),
       title: account.name,
-      subtitle: _balanceText(l10n, account.accountId),
+      subtitle: _balanceText(l10n, account),
       trailing: QuantusIconButton.circular(
         icon: Icons.edit_outlined,
         onTap: () => _openAccountMenu(account),
@@ -300,7 +299,7 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
       isHighlighted: isHighlighted,
       onTap: () => _switchAccount(RegularAccount(account)),
       leading: AccountBadge.icon(icon: Icons.lock_outline, isActive: isActive),
-      subtitle: _balanceText(l10n, account.accountId),
+      subtitle: _balanceText(l10n, account),
     );
   }
 
@@ -318,7 +317,7 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
       onTap: () => _switchAccount(MultisigDisplayAccount(account)),
       leading: AccountBadge(name: account.name, isActive: isActive),
       title: account.name,
-      subtitle: _balanceText(l10n, account.accountId),
+      subtitle: _balanceText(l10n, account),
       tag: MultisigTag(label: l10n.multisigTag),
       trailing: QuantusIconButton.circular(
         icon: Icons.edit_outlined,

@@ -2693,5 +2693,33 @@
           "type": "int"
         }
       }
+    },
+    "encryptedSendFeeLabel": "Privacy fee",
+    "@encryptedSendFeeLabel": {
+      "description": "Fee label for encrypted sends (wormhole volume fee)"
+    },
+    "encryptedSendAmountStep": "Use steps of 0.01 QUAN",
+    "@encryptedSendAmountStep": {
+      "description": "Shown when an encrypted send amount is not a multiple of 0.01 QUAN"
+    },
+    "encryptedSendMinimum": "Encrypted sends must move at least 0.1 QUAN",
+    "@encryptedSendMinimum": {
+      "description": "Shown when an encrypted send falls below the chain's minimum exit amount"
+    },
+    "encryptedSendProgressTitle": "Sending Privately...",
+    "@encryptedSendProgressTitle": {
+      "description": "App bar title while an encrypted send is proving/submitting"
+    },
+    "encryptedSendFailedTitle": "Send Failed",
+    "@encryptedSendFailedTitle": {
+      "description": "App bar title when an encrypted send failed"
+    },
+    "encryptedSendCancelledTitle": "Send Cancelled",
+    "@encryptedSendCancelledTitle": {
+      "description": "App bar title when an encrypted send was cancelled"
+    },
+    "encryptedSendingLabel": "SENDING",
+    "@encryptedSendingLabel": {
+      "description": "Status header label on encrypted send progress"
     }
   }

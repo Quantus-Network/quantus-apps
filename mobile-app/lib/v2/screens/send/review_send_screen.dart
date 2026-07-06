@@ -11,6 +11,7 @@ import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base_bottom_content.dart';
 import 'package:resonance_network_wallet/v2/components/split_card.dart';
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
+import 'package:resonance_network_wallet/v2/screens/send/encrypted_send_progress_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/send/keystone_sign_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/send/send_strategy.dart';
 import 'package:resonance_network_wallet/v2/screens/send/send_terminal_screen.dart';
@@ -83,6 +84,19 @@ class _ReviewSendScreenState extends ConsumerState<ReviewSendScreen> {
               blockHeight: blockHeight,
               recipientChecksum: widget.recipientChecksum,
               isPayMode: widget.isPayMode,
+              terminal: terminal,
+            ),
+          ),
+        );
+      case SendNeedsProving(:final account, :final plan, :final terminal):
+        setState(() => _submitting = false);
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => EncryptedSendProgressScreen(
+              account: account,
+              plan: plan,
+              recipientAddress: widget.recipientAddress.trim(),
               terminal: terminal,
             ),
           ),

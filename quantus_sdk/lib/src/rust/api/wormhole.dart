@@ -89,6 +89,8 @@ class ProofInput {
   final Uint8List positions;
   final Uint8List exitAccount1;
   final int outputAmount1;
+  final Uint8List exitAccount2;
+  final int outputAmount2;
   final int volumeFeeBps;
   final int assetId;
 
@@ -108,6 +110,8 @@ class ProofInput {
     required this.positions,
     required this.exitAccount1,
     required this.outputAmount1,
+    required this.exitAccount2,
+    required this.outputAmount2,
     required this.volumeFeeBps,
     required this.assetId,
   });
@@ -129,6 +133,8 @@ class ProofInput {
       positions.hashCode ^
       exitAccount1.hashCode ^
       outputAmount1.hashCode ^
+      exitAccount2.hashCode ^
+      outputAmount2.hashCode ^
       volumeFeeBps.hashCode ^
       assetId.hashCode;
 
@@ -152,6 +158,8 @@ class ProofInput {
           positions == other.positions &&
           exitAccount1 == other.exitAccount1 &&
           outputAmount1 == other.outputAmount1 &&
+          exitAccount2 == other.exitAccount2 &&
+          outputAmount2 == other.outputAmount2 &&
           volumeFeeBps == other.volumeFeeBps &&
           assetId == other.assetId;
 }

@@ -3451,6 +3451,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{amount} redeemed in {count} batch(es)'**
   String redeemSuccessBanner(String amount, int count);
+
+  /// Fee label for encrypted sends (wormhole volume fee)
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy fee'**
+  String get encryptedSendFeeLabel;
+
+  /// Shown when an encrypted send amount is not a multiple of 0.01 QUAN
+  ///
+  /// In en, this message translates to:
+  /// **'Use steps of 0.01 QUAN'**
+  String get encryptedSendAmountStep;
+
+  /// Shown when an encrypted send falls below the chain's minimum exit amount
+  ///
+  /// In en, this message translates to:
+  /// **'Encrypted sends must move at least 0.1 QUAN'**
+  String get encryptedSendMinimum;
+
+  /// App bar title while an encrypted send is proving/submitting
+  ///
+  /// In en, this message translates to:
+  /// **'Sending Privately...'**
+  String get encryptedSendProgressTitle;
+
+  /// App bar title when an encrypted send failed
+  ///
+  /// In en, this message translates to:
+  /// **'Send Failed'**
+  String get encryptedSendFailedTitle;
+
+  /// App bar title when an encrypted send was cancelled
+  ///
+  /// In en, this message translates to:
+  /// **'Send Cancelled'**
+  String get encryptedSendCancelledTitle;
+
+  /// Status header label on encrypted send progress
+  ///
+  /// In en, this message translates to:
+  /// **'SENDING'**
+  String get encryptedSendingLabel;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/legacy.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
+import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
 import 'package:resonance_network_wallet/providers/pending_multisig_cancellations_provider.dart';
 import 'package:resonance_network_wallet/providers/pending_multisig_creations_provider.dart';
 import 'package:resonance_network_wallet/providers/pending_multisig_executions_provider.dart';
@@ -69,6 +70,40 @@ final wormholeUtxoServiceProvider = Provider<WormholeUtxoService>((ref) {
   return WormholeUtxoService();
 });
 
+/// One encrypted-account service per wallet: caches derived wormhole key pairs
+/// and owns the persisted next-index / pending-spend state.
+final encryptedAccountServiceProvider = Provider.family<EncryptedAccountService, int>((ref, walletIndex) {
+  return EncryptedAccountService(
+    walletIndex: walletIndex,
+    getMnemonic: () => ref.read(settingsServiceProvider).getMnemonic(walletIndex),
+  );
+});
+
+/// Discovered UTXO set + pending change for a wallet's encrypted account.
+final encryptedStateProvider = FutureProvider.family<EncryptedAccountState, int>((ref, walletIndex) {
+  return ref.watch(encryptedAccountServiceProvider(walletIndex)).load();
+});
+
+final encryptedBalanceProvider = Provider.family<AsyncValue<BigInt>, int>((ref, walletIndex) {
+  return ref.watch(encryptedStateProvider(walletIndex)).whenData((s) => s.balance);
+});
+
+/// Exact max sendable (inputs net of the wormhole volume fee).
+final encryptedSpendableProvider = Provider.family<AsyncValue<BigInt>, int>((ref, walletIndex) {
+  return ref.watch(encryptedStateProvider(walletIndex)).whenData((s) => s.maxSendable);
+});
+
+bool isEncryptedAccount(BaseAccount? account) => account is Account && account.accountType == AccountType.encrypted;
+
+/// Backfills the per-wallet encrypted (wormhole) account for every software
+/// wallet, gated by the feature flag. Idempotent; returns true if any were
+/// added (callers invalidate [accountsProvider] then).
+Future<bool> ensureEncryptedAccounts(WidgetRef ref) async {
+  if (!ref.read(remoteConfigProvider).enableEncryptedAccount) return false;
+  final name = ref.read(l10nProvider).createAccountEncryptedDefaultName;
+  return ref.read(accountsServiceProvider).ensureEncryptedAccountsForSoftwareWallets(name: name);
+}
+
 final isHighSecurityProvider = FutureProvider.family<bool, Account>((ref, account) async {
   final highSecurityService = ref.watch(highSecurityServiceProvider);
   return await highSecurityService.isHighSecurity(account);
@@ -117,7 +152,11 @@ final balanceProviderRaw = Provider<AsyncValue<BigInt>>((ref) {
       if (activeAccount == null) {
         return AsyncValue.data(BigInt.zero);
       }
-      return ref.watch(balanceProviderFamily(activeAccount.account.accountId));
+      final account = activeAccount.account;
+      if (isEncryptedAccount(account)) {
+        return ref.watch(encryptedBalanceProvider((account as Account).walletIndex));
+      }
+      return ref.watch(balanceProviderFamily(account.accountId));
     },
     loading: () => const AsyncValue.loading(),
     error: (err, stack) => AsyncValue.error(err, stack),

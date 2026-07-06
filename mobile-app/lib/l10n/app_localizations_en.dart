@@ -1860,4 +1860,25 @@ class AppLocalizationsEn extends AppLocalizations {
   String redeemSuccessBanner(String amount, int count) {
     return '$amount redeemed in $count batch(es)';
   }
+
+  @override
+  String get encryptedSendFeeLabel => 'Privacy fee';
+
+  @override
+  String get encryptedSendAmountStep => 'Use steps of 0.01 QUAN';
+
+  @override
+  String get encryptedSendMinimum => 'Encrypted sends must move at least 0.1 QUAN';
+
+  @override
+  String get encryptedSendProgressTitle => 'Sending Privately...';
+
+  @override
+  String get encryptedSendFailedTitle => 'Send Failed';
+
+  @override
+  String get encryptedSendCancelledTitle => 'Send Cancelled';
+
+  @override
+  String get encryptedSendingLabel => 'SENDING';
 }

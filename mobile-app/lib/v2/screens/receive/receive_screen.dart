@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
@@ -46,9 +47,18 @@ class _ReceiveScreenState extends ConsumerState<ReceiveScreen> {
 
     try {
       final account = (await settingsService.getActiveAccount())!;
-      final checksum = await checksumService.getHumanReadableName(account.account.accountId);
+      var accountId = account.account.accountId;
+      // Encrypted accounts rotate deposits to the next unused wormhole address
+      // (shared linearly with change addresses) so deposits aren't linkable.
+      final base = account.account;
+      if (isEncryptedAccount(base)) {
+        final service = ref.read(encryptedAccountServiceProvider((base as Account).walletIndex));
+        accountId = (await service.receiveKeyPair()).address;
+      }
+      final checksum = await checksumService.getHumanReadableName(accountId);
+      if (!mounted) return;
       setState(() {
-        _accountId = account.account.accountId;
+        _accountId = accountId;
         _checksum = checksum;
       });
     } catch (e) {

@@ -1857,4 +1857,25 @@ class AppLocalizationsId extends AppLocalizations {
   String redeemSuccessBanner(String amount, int count) {
     return '$amount ditukar dalam $count batch';
   }
+
+  @override
+  String get encryptedSendFeeLabel => 'Biaya privasi';
+
+  @override
+  String get encryptedSendAmountStep => 'Gunakan kelipatan 0,01 QUAN';
+
+  @override
+  String get encryptedSendMinimum => 'Pengiriman terenkripsi minimal 0,1 QUAN';
+
+  @override
+  String get encryptedSendProgressTitle => 'Mengirim Secara Privat...';
+
+  @override
+  String get encryptedSendFailedTitle => 'Pengiriman Gagal';
+
+  @override
+  String get encryptedSendCancelledTitle => 'Pengiriman Dibatalkan';
+
+  @override
+  String get encryptedSendingLabel => 'MENGIRIM';
 }

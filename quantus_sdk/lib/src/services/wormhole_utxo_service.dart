@@ -60,6 +60,27 @@ class WormholeTransfer {
       'leafIndex: $leafIndex, transferCount: $transferCount}';
 }
 
+/// One HD-derived wormhole address (index in the wormhole derivation sequence)
+/// together with the secret needed to compute nullifiers and spend proofs.
+class WormholeAddressInfo {
+  final int index;
+  final String address;
+  final String secretHex;
+
+  const WormholeAddressInfo({required this.index, required this.address, required this.secretHex});
+}
+
+/// An unspent wormhole transfer together with the address that owns it.
+class WormholeUtxo {
+  final WormholeTransfer transfer;
+  final WormholeAddressInfo owner;
+  final String nullifierHex;
+
+  const WormholeUtxo({required this.transfer, required this.owner, required this.nullifierHex});
+
+  BigInt get amount => transfer.amount;
+}
+
 typedef WormholeProgressCallback = void Function(int phase, int completed, {int? total});
 
 /// Returns true if the caller wants the in-progress operation to abort.
@@ -83,6 +104,9 @@ class WormholeUtxoService {
   static void _log(String msg) => print('[WormholeUtxo] $msg');
 
   static String _addressHash(Uint8List raw32) => wormhole_ffi.computeAddressHashHex(rawAddress: raw32);
+
+  static String _addressHashOf(String ss58Address) =>
+      _addressHash(Uint8List.fromList(getAccountId32(ss58Address)));
 
   static void _throwIfCancelled(IsCancelledCallback? isCancelled) {
     if (isCancelled?.call() == true) throw const WormholeOperationCancelled();
@@ -189,15 +213,15 @@ class WormholeUtxoService {
   // --- GraphQL queries ---
 
   Future<List<WormholeTransfer>> _queryTransfers({
-    required String toAddress,
+    required List<String> toAddresses,
     int limit = _transferPageSize,
     int offset = 0,
     int? afterBlock,
   }) async {
     const query = r'''
-query TransfersToAddress($to: String!, $limit: Int!, $offset: Int!, $afterBlock: Int) {
+query TransfersToAddresses($tos: [String!]!, $limit: Int!, $offset: Int!, $afterBlock: Int) {
   transfers: transfer(
-    where: { to: { id: {_eq: $to } }, block: { height: {_gt: $afterBlock } } }
+    where: { to: { id: {_in: $tos } }, block: { height: {_gt: $afterBlock } } }
     order_by: {block: {height: asc}}
     limit: $limit
     offset: $offset
@@ -214,7 +238,7 @@ query TransfersToAddress($to: String!, $limit: Int!, $offset: Int!, $afterBlock:
 }''';
 
     final variables = <String, dynamic>{
-      'to': toAddress,
+      'tos': toAddresses,
       'limit': limit,
       'offset': offset,
       'afterBlock': afterBlock ?? 0,
@@ -224,7 +248,7 @@ query TransfersToAddress($to: String!, $limit: Int!, $offset: Int!, $afterBlock:
 
     _log(
       '=== TRANSFERS QUERY ===\n'
-      'to=$toAddress limit=$limit offset=$offset afterBlock=${afterBlock ?? 0}',
+      'to=${toAddresses.length} addresses limit=$limit offset=$offset afterBlock=${afterBlock ?? 0}',
     );
 
     final sw = Stopwatch()..start();
@@ -265,9 +289,9 @@ query TransfersToAddress($to: String!, $limit: Int!, $offset: Int!, $afterBlock:
   }
 
   Future<List<WormholeTransfer>> _fetchAllTransfers({
-    required String toAddress,
+    required List<String> toAddresses,
     int? afterBlock,
-    WormholeProgressCallback? onProgress,
+    void Function(int fetched)? onFetched,
     IsCancelledCallback? isCancelled,
   }) async {
     final totalSw = Stopwatch()..start();
@@ -278,13 +302,13 @@ query TransfersToAddress($to: String!, $limit: Int!, $offset: Int!, $afterBlock:
       _throwIfCancelled(isCancelled);
       pageNum++;
       final page = await _queryTransfers(
-        toAddress: toAddress,
+        toAddresses: toAddresses,
         limit: _transferPageSize,
         offset: offset,
         afterBlock: afterBlock,
       );
       all.addAll(page);
-      onProgress?.call(1, all.length);
+      onFetched?.call(all.length);
       _log(
         'Page $pageNum: got ${page.length} transfers, total so far: ${all.length} (${totalSw.elapsedMilliseconds}ms elapsed)',
       );
@@ -346,7 +370,7 @@ query SpentNullifiers($hashes: [String!]!) {
 
   /// Returns a map from nullifier hex to the block height where it was spent.
   /// Callers are responsible for deciding which entries are reorg-safe to
-  /// persist (see `getUnspentTransfers`).
+  /// persist (see `getUnspentUtxos`).
   Future<Map<String, int>> _checkNullifiersSpent(
     List<(String nullifierHex, String nullifierHash)> nullifiers, {
     WormholeProgressCallback? onProgress,
@@ -386,110 +410,150 @@ query SpentNullifiers($hashes: [String!]!) {
 
   // --- Public API ---
 
-  /// Fetches every wormhole transfer ever sent to [wormholeAddress] and
-  /// returns them along with the reorg-safe block cutoff used for caching.
+  /// Fetches every wormhole transfer ever sent to any of [addresses] and
+  /// returns them grouped by address, along with the reorg-safe block cutoff
+  /// used for caching.
   ///
-  /// `transfers` includes everything up to the current chain head. The on-disk
-  /// cache only advances to `safeCutoff = currentHeight - reorgDepth` so we
-  /// never have to rewrite already-persisted entries on a reorg; callers above
-  /// `safeCutoff` simply aren't cached and are re-queried next time.
-  Future<({List<WormholeTransfer> transfers, int safeCutoff})> getTransfersTo(
-    String wormholeAddress, {
+  /// Each address keeps its own on-disk cache; addresses with the same cache
+  /// height are fetched together in one paginated `_in` query. The cache only
+  /// advances to `safeCutoff = currentHeight - reorgDepth` so we never have to
+  /// rewrite already-persisted entries on a reorg; transfers above `safeCutoff`
+  /// simply aren't cached and are re-queried next time.
+  Future<({Map<String, List<WormholeTransfer>> byAddress, int safeCutoff})> getTransfersToMany(
+    List<String> addresses, {
     WormholeProgressCallback? onProgress,
     IsCancelledCallback? isCancelled,
   }) async {
     final sw = Stopwatch()..start();
-    _log('getTransfersTo START ($wormholeAddress)');
-
-    final raw = Uint8List.fromList(getAccountId32(wormholeAddress));
-    final fullHash = _addressHash(raw);
+    _log('getTransfersToMany START (${addresses.length} addresses)');
 
     final chainHeight = await _getChainHeight();
     final safeCutoff = (chainHeight - _reorgDepth).clamp(0, chainHeight);
     _log('chainHeight=$chainHeight safeCutoff=$safeCutoff');
 
-    final cache = await _loadTransferCache(fullHash);
-    _log('Cache: ${cache.transfers.length} transfers up to block ${cache.cachedUpToBlock}');
-    if (cache.transfers.isNotEmpty) onProgress?.call(1, cache.transfers.length);
+    final caches = <String, _TransferCache>{};
+    var cachedCount = 0;
+    for (final address in addresses) {
+      final cache = await _loadTransferCache(_addressHashOf(address));
+      caches[address] = cache;
+      cachedCount += cache.transfers.length;
+    }
+    _log('Caches: $cachedCount transfers across ${addresses.length} addresses');
+    if (cachedCount > 0) onProgress?.call(1, cachedCount);
 
     _throwIfCancelled(isCancelled);
 
     // Cache invariant: every entry has blockHeight <= cachedUpToBlock, so a
     // GraphQL filter of `height_gt: cachedUpToBlock` correctly fetches only
-    // what we don't already have. Previous code added +1 here, which combined
-    // with `height_gt` skipped block `cachedUpToBlock + 1` entirely.
-    final List<WormholeTransfer> newTransfers;
-    if (cache.cachedUpToBlock >= chainHeight) {
-      _log('Cache is current, no new blocks to query');
-      newTransfers = const [];
-    } else {
-      _log('Querying transfers after block ${cache.cachedUpToBlock}');
-      newTransfers = await _fetchAllTransfers(
-        toAddress: wormholeAddress,
-        afterBlock: cache.cachedUpToBlock,
-        onProgress: onProgress != null
-            ? (phase, completed, {int? total}) => onProgress(phase, cache.transfers.length + completed, total: total)
-            : null,
-        isCancelled: isCancelled,
-      );
-      _log('New transfers: ${newTransfers.length}');
+    // what we don't already have. Addresses sharing a cache height are batched
+    // into one query.
+    final groups = <int, List<String>>{};
+    for (final address in addresses) {
+      final upTo = caches[address]!.cachedUpToBlock;
+      if (upTo >= chainHeight) continue;
+      groups.putIfAbsent(upTo, () => []).add(address);
     }
 
-    final allTransfers = [...cache.transfers, ...newTransfers];
-    onProgress?.call(1, allTransfers.length);
-    _log('Total transfers: ${allTransfers.length} (${cache.transfers.length} cached + ${newTransfers.length} new)');
+    final newByAddress = <String, List<WormholeTransfer>>{for (final a in addresses) a: []};
+    var fetchedCount = 0;
+    for (final entry in groups.entries) {
+      _throwIfCancelled(isCancelled);
+      _log('Querying ${entry.value.length} addresses after block ${entry.key}');
+      final groupBase = fetchedCount;
+      final fetched = await _fetchAllTransfers(
+        toAddresses: entry.value,
+        afterBlock: entry.key,
+        onFetched: (n) => onProgress?.call(1, cachedCount + groupBase + n),
+        isCancelled: isCancelled,
+      );
+      fetchedCount += fetched.length;
+      for (final t in fetched) {
+        final list = newByAddress[t.toId];
+        if (list == null) {
+          throw StateError('Indexer returned transfer to unrequested address ${t.toId}');
+        }
+        list.add(t);
+      }
+    }
 
-    // Cache only the reorg-safe slice; the caller still sees recent (above-cutoff)
-    // transfers so balances / claims include them.
-    final safeTransfers = allTransfers.where((t) => t.blockHeight <= safeCutoff).toList();
-    await _saveTransferCache(fullHash, _TransferCache(cachedUpToBlock: safeCutoff, transfers: safeTransfers));
+    final byAddress = <String, List<WormholeTransfer>>{};
+    for (final address in addresses) {
+      final all = [...caches[address]!.transfers, ...newByAddress[address]!];
+      byAddress[address] = all;
+      // Cache only the reorg-safe slice; the caller still sees recent
+      // (above-cutoff) transfers so balances / claims include them.
+      final safe = all.where((t) => t.blockHeight <= safeCutoff).toList();
+      await _saveTransferCache(
+        _addressHashOf(address),
+        _TransferCache(cachedUpToBlock: safeCutoff, transfers: safe),
+      );
+    }
+    onProgress?.call(1, cachedCount + fetchedCount);
 
-    _log('getTransfersTo DONE: ${allTransfers.length} transfers (${sw.elapsedMilliseconds}ms)');
-    return (transfers: allTransfers, safeCutoff: safeCutoff);
+    _log('getTransfersToMany DONE: ${cachedCount + fetchedCount} transfers (${sw.elapsedMilliseconds}ms)');
+    return (byAddress: byAddress, safeCutoff: safeCutoff);
   }
 
-  Future<List<WormholeTransfer>> getUnspentTransfers({
-    required String wormholeAddress,
-    required String secretHex,
+  Future<({List<WormholeTransfer> transfers, int safeCutoff})> getTransfersTo(
+    String wormholeAddress, {
     WormholeProgressCallback? onProgress,
     IsCancelledCallback? isCancelled,
   }) async {
-    _log('getUnspentTransfers($wormholeAddress)');
-    final fetched = await getTransfersTo(wormholeAddress, onProgress: onProgress, isCancelled: isCancelled);
-    final transfers = fetched.transfers;
+    final fetched = await getTransfersToMany([wormholeAddress], onProgress: onProgress, isCancelled: isCancelled);
+    return (transfers: fetched.byAddress[wormholeAddress]!, safeCutoff: fetched.safeCutoff);
+  }
+
+  /// Returns the unspent transfers across all [addresses], each attributed to
+  /// its owning address (whose secret is needed to spend it).
+  Future<List<WormholeUtxo>> getUnspentUtxos({
+    required List<WormholeAddressInfo> addresses,
+    WormholeProgressCallback? onProgress,
+    IsCancelledCallback? isCancelled,
+  }) async {
+    _log('getUnspentUtxos(${addresses.length} addresses)');
+    final fetched = await getTransfersToMany(
+      addresses.map((a) => a.address).toList(),
+      onProgress: onProgress,
+      isCancelled: isCancelled,
+    );
     final safeCutoff = fetched.safeCutoff;
-    if (transfers.isEmpty) {
-      _log('getUnspentTransfers: no transfers found');
+    final totalTransfers = fetched.byAddress.values.fold<int>(0, (sum, l) => sum + l.length);
+    if (totalTransfers == 0) {
+      _log('getUnspentUtxos: no transfers found');
       return [];
     }
 
-    final raw = Uint8List.fromList(getAccountId32(wormholeAddress));
-    final fullHash = _addressHash(raw);
-    final cachedSpent = await _loadSpentNullifiers(fullHash);
-    _log('Nullifier cache: ${cachedSpent.length} known spent');
-
     final hdWalletService = HdWalletService();
     final uncheckedPairs = <(String, String)>[];
-    final nullifierToTransfer = <String, WormholeTransfer>{};
-    final allSpent = <String>{...cachedSpent};
+    final nullifierToUtxo = <String, WormholeUtxo>{};
+    final cachedSpentByOwner = <String, Set<String>>{};
+    final allSpent = <String>{};
+    int processed = 0;
     int skipped = 0;
 
-    for (int i = 0; i < transfers.length; i++) {
-      _throwIfCancelled(isCancelled);
-      final transfer = transfers[i];
-      final nullifierHex = hdWalletService.computeNullifier(
-        secretHex: secretHex,
-        transferCount: transfer.transferCount,
-      );
-      nullifierToTransfer[nullifierHex] = transfer;
-      if (cachedSpent.contains(nullifierHex)) {
-        skipped++;
-      } else {
-        final nullifierBytes = hex.decode(nullifierHex.replaceFirst('0x', ''));
-        final nullifierHash = _addressHash(Uint8List.fromList(nullifierBytes));
-        uncheckedPairs.add((nullifierHex, nullifierHash));
+    for (final owner in addresses) {
+      final ownerHash = _addressHashOf(owner.address);
+      final cachedSpent = await _loadSpentNullifiers(ownerHash);
+      cachedSpentByOwner[ownerHash] = cachedSpent;
+      allSpent.addAll(cachedSpent);
+
+      for (final transfer in fetched.byAddress[owner.address]!) {
+        _throwIfCancelled(isCancelled);
+        final nullifierHex = hdWalletService.computeNullifier(
+          secretHex: owner.secretHex,
+          transferCount: transfer.transferCount,
+        );
+        nullifierToUtxo[nullifierHex] = WormholeUtxo(transfer: transfer, owner: owner, nullifierHex: nullifierHex);
+        if (cachedSpent.contains(nullifierHex)) {
+          skipped++;
+        } else {
+          final nullifierBytes = hex.decode(nullifierHex.replaceFirst('0x', ''));
+          final nullifierHash = _addressHash(Uint8List.fromList(nullifierBytes));
+          uncheckedPairs.add((nullifierHex, nullifierHash));
+        }
+        processed++;
+        onProgress?.call(2, processed, total: totalTransfers);
       }
-      onProgress?.call(2, i + 1, total: transfers.length);
     }
     _log('Computed nullifiers: $skipped cached-spent, ${uncheckedPairs.length} to check');
 
@@ -498,21 +562,46 @@ query SpentNullifiers($hashes: [String!]!) {
       // In-memory: every spent nullifier we've seen, including ones in
       // unfinalized blocks — must not be re-claimed in this call.
       allSpent.addAll(newSpent.keys);
-      // Persist: only entries from finalized blocks (height <= safeCutoff).
-      // Unfinalized ones get re-queried next call so a reorg can correct them.
-      final newSafe = newSpent.entries.where((e) => e.value <= safeCutoff).map((e) => e.key);
-      final unfinalizedCount = newSpent.length - newSafe.length;
-      final toPersist = <String>{...cachedSpent, ...newSafe};
-      await _saveSpentNullifiers(fullHash, toPersist);
-      _log(
-        'Nullifier persistence: kept ${toPersist.length} finalized '
-        '(skipped $unfinalizedCount above cutoff $safeCutoff)',
-      );
+      // Persist: only entries from finalized blocks (height <= safeCutoff),
+      // each in its owning address's cache. Unfinalized ones get re-queried
+      // next call so a reorg can correct them.
+      var unfinalizedCount = 0;
+      final toPersistByOwner = <String, Set<String>>{
+        for (final e in cachedSpentByOwner.entries) e.key: {...e.value},
+      };
+      for (final entry in newSpent.entries) {
+        if (entry.value > safeCutoff) {
+          unfinalizedCount++;
+          continue;
+        }
+        final ownerHash = _addressHashOf(nullifierToUtxo[entry.key]!.owner.address);
+        toPersistByOwner[ownerHash]!.add(entry.key);
+      }
+      for (final entry in toPersistByOwner.entries) {
+        if (entry.value.length != cachedSpentByOwner[entry.key]!.length) {
+          await _saveSpentNullifiers(entry.key, entry.value);
+        }
+      }
+      _log('Nullifier persistence: skipped $unfinalizedCount above cutoff $safeCutoff');
     }
 
-    final unspent = nullifierToTransfer.entries.where((e) => !allSpent.contains(e.key)).map((e) => e.value).toList();
-    _log('getUnspentTransfers: ${unspent.length} unspent out of ${transfers.length} total');
+    final unspent = nullifierToUtxo.entries.where((e) => !allSpent.contains(e.key)).map((e) => e.value).toList();
+    _log('getUnspentUtxos: ${unspent.length} unspent out of $totalTransfers total');
     return unspent;
+  }
+
+  Future<List<WormholeTransfer>> getUnspentTransfers({
+    required String wormholeAddress,
+    required String secretHex,
+    WormholeProgressCallback? onProgress,
+    IsCancelledCallback? isCancelled,
+  }) async {
+    final utxos = await getUnspentUtxos(
+      addresses: [WormholeAddressInfo(index: 0, address: wormholeAddress, secretHex: secretHex)],
+      onProgress: onProgress,
+      isCancelled: isCancelled,
+    );
+    return utxos.map((u) => u.transfer).toList();
   }
 
   Future<BigInt> getUnspentBalance({

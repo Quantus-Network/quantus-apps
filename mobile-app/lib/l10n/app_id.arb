@@ -610,5 +610,12 @@
   "redeemRetry": "Coba Lagi",
   "redeemClose": "Tutup",
   "redeemDone": "Selesai",
-  "redeemSuccessBanner": "{amount} ditukar dalam {count} batch"
+  "redeemSuccessBanner": "{amount} ditukar dalam {count} batch",
+  "encryptedSendFeeLabel": "Biaya privasi",
+  "encryptedSendAmountStep": "Gunakan kelipatan 0,01 QUAN",
+  "encryptedSendMinimum": "Pengiriman terenkripsi minimal 0,1 QUAN",
+  "encryptedSendProgressTitle": "Mengirim Secara Privat...",
+  "encryptedSendFailedTitle": "Pengiriman Gagal",
+  "encryptedSendCancelledTitle": "Pengiriman Dibatalkan",
+  "encryptedSendingLabel": "MENGIRIM"
 }

@@ -56,6 +56,22 @@ class ProposeFee extends SendFee {
   BigInt get displayFee => breakdown.memberCost;
 }
 
+/// Why an encrypted send can't be built for the entered amount.
+enum EncryptedSendBlocker { notQuantized, insufficient, belowBatchMinimum }
+
+/// Fee for an encrypted (wormhole) send: the in-circuit volume fee plus
+/// quantization dust, carried with the coin-selection [plan] that produced it.
+/// When the amount can't be planned, [blocker] says why.
+class EncryptedFee extends SendFee {
+  final WormholeSpendPlan? plan;
+  final EncryptedSendBlocker? blocker;
+
+  const EncryptedFee({this.plan, this.blocker});
+
+  @override
+  BigInt get displayFee => plan?.feePlanck ?? BigInt.zero;
+}
+
 /// Content for the shared terminal (success) screen. All strings are resolved
 /// up front so it can be built without a [BuildContext].
 class SendTerminalContent {
@@ -128,11 +144,45 @@ class SendNeedsHardwareSignature extends SendOutcome {
   });
 }
 
+/// Encrypted send authenticated and planned: hand off to the proving progress
+/// screen, which generates the ZK proofs, submits and then shows [terminal].
+class SendNeedsProving extends SendOutcome {
+  final Account account;
+  final WormholeSpendPlan plan;
+  final SendTerminalContent terminal;
+
+  const SendNeedsProving({required this.account, required this.plan, required this.terminal});
+}
+
 /// Submission failed or was not authenticated; show [message] inline.
 class SendFailed extends SendOutcome {
   final String message;
 
   const SendFailed(this.message);
+}
+
+/// Terminal content for a completed transfer, shared by the flows that send a
+/// fixed amount to one recipient (regular and encrypted sends).
+SendTerminalContent buildSentTerminalContent(
+  AppLocalizations l10n,
+  NumberFormattingService fmt, {
+  required String recipient,
+  required String checksum,
+  required BigInt amount,
+  required bool isPayMode,
+}) {
+  final n = fmt.formatBalance(amount, smartDecimals: 4);
+  return SendTerminalContent(
+    title: isPayMode ? l10n.sendPayTitle : l10n.sendTitle,
+    headline: isPayMode
+        ? l10n.sendTxSubmittedHeadlinePaid(n, AppConstants.tokenSymbol)
+        : l10n.sendTxSubmittedHeadlineSent(n, AppConstants.tokenSymbol),
+    subline: l10n.sendTxSubmittedOnItsWay,
+    recipientAddress: recipient,
+    recipientChecksum: checksum,
+    doneLabel: l10n.sendTxSubmittedDone,
+    topSpacing: 70,
+  );
 }
 
 /// Encapsulates everything that differs between the send and multisig-propose

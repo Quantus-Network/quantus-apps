@@ -147,10 +147,28 @@ class _ImportWalletScreenV2State extends ConsumerState<ImportWalletScreenV2> {
       }
       ref.invalidate(accountsProvider);
       ref.invalidate(activeAccountProvider);
+      await _discoverEncryptedAccount();
     } catch (e, st) {
       quantusDebugPrint('error discovering accounts: $e');
       TelemetryService().sendError('Error discovering accounts', error: e, stackTrace: st);
     }
+  }
+
+  /// Restores the wallet's encrypted account and warms its wormhole address
+  /// discovery in the background so UTXOs across receive/change addresses are
+  /// already found when the user first opens it.
+  Future<void> _discoverEncryptedAccount() async {
+    final created = await ensureEncryptedAccounts(ref);
+    if (!created) return;
+    ref.invalidate(accountsProvider);
+    unawaited(() async {
+      try {
+        await ref.read(encryptedStateProvider(widget.walletIndex).future);
+      } catch (e, st) {
+        quantusDebugPrint('encrypted discovery after import failed: $e');
+        TelemetryService().sendError('Encrypted discovery after import failed', error: e, stackTrace: st);
+      }
+    }());
   }
 
   @override

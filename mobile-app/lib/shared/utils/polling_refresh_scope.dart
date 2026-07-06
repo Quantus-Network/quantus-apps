@@ -49,19 +49,29 @@ Set<String> reconciliationAccountIds({
 
 /// Invalidates balance for the active account only.
 void invalidateActiveAccountBalance(Ref ref) {
-  final accountId = activeAccountId(ref);
-  if (accountId == null) return;
+  final account = ref.read(activeAccountProvider).value?.account;
+  if (account == null) return;
 
-  ref.invalidate(balanceProviderFamily(accountId));
+  if (isEncryptedAccount(account)) {
+    ref.invalidate(encryptedStateProvider((account as Account).walletIndex));
+    return;
+  }
+  ref.invalidate(balanceProviderFamily(account.accountId));
 }
 
 /// Invalidates the active account balance and waits for it to reload.
 Future<void> refreshActiveAccountBalance(Ref ref) async {
-  final accountId = activeAccountId(ref);
-  if (accountId == null) return;
+  final account = ref.read(activeAccountProvider).value?.account;
+  if (account == null) return;
 
-  ref.invalidate(balanceProviderFamily(accountId));
-  await ref.read(balanceProviderFamily(accountId).future);
+  if (isEncryptedAccount(account)) {
+    final provider = encryptedStateProvider((account as Account).walletIndex);
+    ref.invalidate(provider);
+    await ref.read(provider.future);
+    return;
+  }
+  ref.invalidate(balanceProviderFamily(account.accountId));
+  await ref.read(balanceProviderFamily(account.accountId).future);
 }
 
 /// Invalidates balance for the given account IDs.

@@ -24,11 +24,13 @@ import 'package:resonance_network_wallet/v2/screens/activity/transaction_detail_
 import 'package:resonance_network_wallet/v2/screens/receive/receive_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/multisig/multisig_activity_section.dart';
 import 'package:resonance_network_wallet/v2/screens/multisig/multisig_proposal_detail_sheet.dart';
+import 'package:resonance_network_wallet/v2/screens/send/encrypted_send_strategy.dart';
 import 'package:resonance_network_wallet/v2/screens/send/input_amount_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/send/keystone_sign_cache.dart';
 import 'package:resonance_network_wallet/v2/screens/send/multisig_propose_strategy.dart';
 import 'package:resonance_network_wallet/v2/screens/send/regular_send_strategy.dart';
 import 'package:resonance_network_wallet/v2/screens/send/select_recipient_screen.dart';
+import 'package:resonance_network_wallet/v2/screens/send/send_strategy.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/settings_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/pos/pos_amount_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/swap_screen.dart';
@@ -219,7 +221,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           _buildMultisigActionButtons(l10n, active.account),
           const SizedBox(height: 40),
         ],
-        if (active is RegularAccount) ...[_buildActionButtons(l10n), const SizedBox(height: 40)],
+        if (active is RegularAccount) ...[_buildActionButtons(l10n, active.account), const SizedBox(height: 40)],
         if (backupWalletIndex != null) ...[
           BackupReminderBanner(walletIndex: backupWalletIndex),
           const SizedBox(height: 40),
@@ -321,8 +323,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Widget _buildActionButtons(AppLocalizations l10n) {
-    final enableSwap = ref.watch(remoteConfigProvider).enableSwap;
+  Widget _buildActionButtons(AppLocalizations l10n, Account account) {
+    final isEncrypted = isEncryptedAccount(account);
+    final enableSwap = !isEncrypted && ref.watch(remoteConfigProvider).enableSwap;
+    final SendStrategy sendStrategy = isEncrypted
+        ? EncryptedSendStrategy(account: account)
+        : const RegularSendStrategy();
 
     final receiveCard = _actionCard(
       iconAsset: 'assets/v2/action_receive.svg',
@@ -336,10 +342,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       label: l10n.homeSend,
       onTap: () {
         ref.read(keystoneSignCacheProvider.notifier).startNewSendSession();
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const SelectRecipientScreen(strategy: RegularSendStrategy())),
-        );
+        Navigator.push(context, MaterialPageRoute(builder: (_) => SelectRecipientScreen(strategy: sendStrategy)));
       },
     );
 
