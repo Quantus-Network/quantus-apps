@@ -555,7 +555,7 @@
         }
       }
     },
-    "multisigStatusApproved": "APPROVED",
+    "multisigStatusApproved": "SIGNED",
     "@multisigStatusApproved": {
       "description": "Proposal status chip when the current signer has approved"
     },

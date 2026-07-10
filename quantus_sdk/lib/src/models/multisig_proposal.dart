@@ -1,7 +1,13 @@
 import 'dart:developer' as developer;
 
+import 'package:convert/convert.dart';
 import 'package:flutter/foundation.dart';
+import 'package:polkadart/scale_codec.dart' as scale;
 import 'package:quantus_sdk/generated/planck/pallets/multisig.dart';
+import 'package:quantus_sdk/generated/planck/types/pallet_balances/pallet/call.dart' as balances_call;
+import 'package:quantus_sdk/generated/planck/types/quantus_runtime/runtime_call.dart' as runtime;
+import 'package:quantus_sdk/generated/planck/types/sp_runtime/multiaddress/multi_address.dart' as multi_address;
+import 'package:quantus_sdk/src/extensions/address_extension.dart';
 import 'package:quantus_sdk/src/models/json_dynamic_parse.dart';
 import 'package:quantus_sdk/src/models/multisig_account.dart';
 
@@ -90,20 +96,32 @@ class MultisigProposal {
   }) {
     final transferAmountRaw = record['transfer_amount'] ?? record['transferAmount'];
     final burnedRaw = record['burned_pallet_fee'] ?? record['burnedPalletFee'];
+    final parsedApprovals = _stringList(record['approvals']);
+
+    BigInt parsedAmount = transferAmountRaw != null ? bigIntFromJson(transferAmountRaw) : BigInt.zero;
+    String recipient = nestedAccountId(record['transferTo'] ?? record['transfer_to']);
+
+    if (parsedAmount == BigInt.zero && recipient.isEmpty) {
+      final decoded = _decodeCallRaw(record['call_raw'] as String?);
+      if (decoded != null) {
+        parsedAmount = decoded.amount;
+        recipient = decoded.recipient;
+      }
+    }
+
     return MultisigProposal(
       entityId: stringFromJson(record['id']),
       id: _intFromJson(record['proposal_id'] ?? record['proposalId']),
       multisigAddress: msig.accountId,
       proposer: nestedAccountId(record['proposer']),
       createdAt: dateTimeFromJson(record['created_at']),
-      // The indexer omits updated_at on rows that have never been updated.
       updatedAt: dateTimeFromJson(record['updated_at'] ?? record['created_at']),
       pallet: _stringOrEmpty(record['pallet']),
       call: _stringOrEmpty(record['call']),
-      recipient: nestedAccountId(record['transferTo'] ?? record['transfer_to']),
-      amount: transferAmountRaw != null ? bigIntFromJson(transferAmountRaw) : BigInt.zero,
+      recipient: recipient,
+      amount: parsedAmount,
       expiryBlock: _intFromJson(record['expiry_block'] ?? record['expiryBlock']),
-      approvals: _stringList(record['approvals']),
+      approvals: parsedApprovals,
       deposit: bigIntFromJson(record['deposit']),
       burnedPalletFee: burnedRaw != null ? bigIntFromJson(burnedRaw) : burnedPalletFeeOverride,
       networkFee: _optionalBigInt(record['creation_network_fee'] ?? record['creationNetworkFee']),
@@ -211,5 +229,25 @@ class MultisigProposal {
   static BigInt? _optionalBigInt(dynamic value) {
     if (value == null) return null;
     return bigIntFromJson(value);
+  }
+
+  static ({BigInt amount, String recipient})? _decodeCallRaw(String? callRawHex) {
+    if (callRawHex == null || callRawHex.isEmpty) return null;
+    try {
+      final bytes = Uint8List.fromList(hex.decode(callRawHex.startsWith('0x') ? callRawHex.substring(2) : callRawHex));
+      final input = scale.ByteInput(bytes);
+      final call = runtime.RuntimeCall.decode(input);
+      if (call is runtime.Balances && call.value0 is balances_call.TransferAllowDeath) {
+        final transfer = call.value0 as balances_call.TransferAllowDeath;
+        final dest = transfer.dest;
+        if (dest is multi_address.Id) {
+          final recipientAddress = AddressExtension.ss58AddressFromBytes(Uint8List.fromList(dest.value0));
+          return (amount: transfer.value, recipient: recipientAddress);
+        }
+      }
+    } catch (e) {
+      debugPrint('[MultisigProposal] Failed to decode call_raw: $e');
+    }
+    return null;
   }
 }

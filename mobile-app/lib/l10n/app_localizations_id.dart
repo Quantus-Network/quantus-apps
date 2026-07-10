@@ -412,7 +412,7 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
-  String get multisigStatusApproved => 'DISETUJUI';
+  String get multisigStatusApproved => 'DITANDATANGANI';
 
   @override
   String get multisigStatusProposed => 'DIAJUKAN';

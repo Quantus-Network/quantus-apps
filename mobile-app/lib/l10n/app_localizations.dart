@@ -797,7 +797,7 @@ abstract class AppLocalizations {
   /// Proposal status chip when the current signer has approved
   ///
   /// In en, this message translates to:
-  /// **'APPROVED'**
+  /// **'SIGNED'**
   String get multisigStatusApproved;
 
   /// Proposal status chip when the current signer has not approved yet
