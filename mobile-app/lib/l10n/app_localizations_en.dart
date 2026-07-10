@@ -340,7 +340,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get multisigCreateSignersSubtitle => 'Add at least one other signer besides yourself.';
 
   @override
-  String get multisigCreateAddSignerHint => 'Signer SS58 address';
+  String get multisigCreateAddSignerHint => 'Signer address';
 
   @override
   String get multisigCreateAddSignerButton => 'Add Signer';
@@ -349,7 +349,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get multisigCreateDuplicateSigner => 'This signer is already in the list.';
 
   @override
-  String get multisigCreateInvalidSigner => 'Enter a valid SS58 address.';
+  String get multisigCreateInvalidSigner => 'Enter a valid signer address.';
 
   @override
   String get multisigCreateThresholdLabel => 'THRESHOLD';
@@ -559,7 +559,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Approval confirmation is taking longer than expected. Check the chain or try again.';
 
   @override
-  String get multisigProposalAlreadySignedNote => 'You\'ve already approved this proposal.';
+  String get multisigProposalAlreadySignedNote => 'You\'ve already signed this proposal.';
 
   @override
   String get multisigProposalAlreadyExecutedNote => 'This proposal is already executed.';
@@ -610,7 +610,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get multisigApproveButton => 'Approve';
 
   @override
-  String get multisigAlreadyApproved => 'Already Approved';
+  String get multisigAlreadyApproved => 'Already Signed';
 
   @override
   String get multisigCancelProposalButton => 'Cancel Proposal';
@@ -895,7 +895,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get addHardwareAccountAddressLabel => 'ADDRESS';
 
   @override
-  String get addHardwareAccountAddressHint => 'SS58 address';
+  String get addHardwareAccountAddressHint => 'Signer address';
 
   @override
   String get addHardwareAccountDebugFill => 'Debug Fill';
