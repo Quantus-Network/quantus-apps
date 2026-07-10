@@ -143,6 +143,7 @@
   "multisigProposeFeeFetchFailed": "Tidak dapat memperkirakan biaya",
   "multisigProposeFeePayerBalanceLabel": "Saldo Anda:",
   "multisigProposeFeePayerInsufficient": "Saldo Tidak Cukup untuk Biaya",
+  "multisigProposeProposerLabel": "PENGUSUL",
   "multisigProposeReviewButton": "Tinjau transfer",
   "multisigProposeReviewProposing": "TRANSFER YANG DIAJUKAN",
   "multisigProposeReviewFromName": "dari {name}",

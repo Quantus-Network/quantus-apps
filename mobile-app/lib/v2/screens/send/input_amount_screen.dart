@@ -554,9 +554,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
                 const SizedBox(height: 8),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    _feePayerBalance(colors, text, l10n, feePayerLabel, feePayerProvider, formattingService),
-                  ],
+                  children: [_feePayerBalance(colors, text, l10n, feePayerLabel, feePayerProvider, formattingService)],
                 ),
               ],
               const SizedBox(height: 4),

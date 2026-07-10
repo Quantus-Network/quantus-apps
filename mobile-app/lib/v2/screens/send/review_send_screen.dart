@@ -194,6 +194,7 @@ class _ReviewSendScreenState extends ConsumerState<ReviewSendScreen> {
           AddressCheckphraseWithInitial(
             recipientChecksum: widget.recipientChecksum,
             recipientAddress: widget.recipientAddress,
+            showFullAddress: true,
           ),
         ],
       ),

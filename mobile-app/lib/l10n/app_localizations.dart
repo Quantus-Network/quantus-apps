@@ -884,6 +884,12 @@ abstract class AppLocalizations {
   /// **'Insufficient Balance for Fee'**
   String get multisigProposeFeePayerInsufficient;
 
+  /// Row label for the proposer address on the propose review screen
+  ///
+  /// In en, this message translates to:
+  /// **'PROPOSER'**
+  String get multisigProposeProposerLabel;
+
   /// Button to open propose review screen
   ///
   /// In en, this message translates to:
