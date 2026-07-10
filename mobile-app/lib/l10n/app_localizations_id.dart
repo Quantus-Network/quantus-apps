@@ -453,6 +453,12 @@ class AppLocalizationsId extends AppLocalizations {
   String get multisigProposeFeeFetchFailed => 'Tidak dapat memperkirakan biaya';
 
   @override
+  String get multisigProposeFeePayerBalanceLabel => 'Saldo Anda:';
+
+  @override
+  String get multisigProposeFeePayerInsufficient => 'Saldo Tidak Cukup untuk Biaya';
+
+  @override
   String get multisigProposeReviewButton => 'Tinjau transfer';
 
   @override

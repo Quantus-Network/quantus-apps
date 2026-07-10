@@ -457,6 +457,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get multisigProposeFeeFetchFailed => 'Unable to estimate fee';
 
   @override
+  String get multisigProposeFeePayerBalanceLabel => 'Your Balance:';
+
+  @override
+  String get multisigProposeFeePayerInsufficient => 'Insufficient Balance for Fee';
+
+  @override
   String get multisigProposeReviewButton => 'Review transfer';
 
   @override
