@@ -416,7 +416,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get multisigStatusApproved => 'APPROVED';
+  String get multisigStatusApproved => 'SIGNED';
 
   @override
   String get multisigStatusProposed => 'PROPOSED';

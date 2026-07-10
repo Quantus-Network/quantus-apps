@@ -128,7 +128,7 @@
   "multisigNoPastProposals": "Tidak ada proposal sebelumnya.",
   "multisigLoadFailed": "Gagal memuat: {error}",
   "multisigProposalToAddress": "ke {address}",
-  "multisigStatusApproved": "DISETUJUI",
+  "multisigStatusApproved": "DITANDATANGANI",
   "multisigStatusProposed": "DIAJUKAN",
   "multisigStatusExpired": "KEDALUWARSA",
   "multisigStatusCancelled": "DIBATALKAN",
