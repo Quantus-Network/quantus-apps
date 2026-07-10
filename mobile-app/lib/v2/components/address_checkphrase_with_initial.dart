@@ -7,8 +7,14 @@ import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 class AddressCheckphraseWithInitial extends StatelessWidget {
   final String recipientChecksum;
   final String recipientAddress;
+  final bool showFullAddress;
 
-  const AddressCheckphraseWithInitial({super.key, required this.recipientChecksum, required this.recipientAddress});
+  const AddressCheckphraseWithInitial({
+    super.key,
+    required this.recipientChecksum,
+    required this.recipientAddress,
+    this.showFullAddress = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -16,6 +22,9 @@ class AddressCheckphraseWithInitial extends StatelessWidget {
     final text = context.themeText;
 
     final avatarSize = 40.0;
+    final displayAddress = showFullAddress
+        ? recipientAddress.trim()
+        : AddressFormattingService.formatAddress(recipientAddress.trim());
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
@@ -42,10 +51,7 @@ class AddressCheckphraseWithInitial extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
               ),
               const SizedBox(height: 4),
-              Text(
-                AddressFormattingService.formatAddress(recipientAddress.trim()),
-                style: text.transactionDetailRowValue?.copyWith(fontSize: 14),
-              ),
+              Text(displayAddress, style: text.transactionDetailRowValue?.copyWith(fontSize: 14), softWrap: true),
             ],
           ),
         ),

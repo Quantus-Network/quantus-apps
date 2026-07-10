@@ -459,6 +459,9 @@ class AppLocalizationsId extends AppLocalizations {
   String get multisigProposeFeePayerInsufficient => 'Saldo Tidak Cukup untuk Biaya';
 
   @override
+  String get multisigProposeProposerLabel => 'PENGUSUL';
+
+  @override
   String get multisigProposeReviewButton => 'Tinjau transfer';
 
   @override

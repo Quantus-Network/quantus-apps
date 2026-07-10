@@ -620,6 +620,10 @@
     "@multisigProposeFeePayerInsufficient": {
       "description": "Button text when proposer cannot afford the proposal fee"
     },
+    "multisigProposeProposerLabel": "PROPOSER",
+    "@multisigProposeProposerLabel": {
+      "description": "Row label for the proposer address on the propose review screen"
+    },
     "multisigProposeReviewButton": "Review transfer",
     "@multisigProposeReviewButton": {
       "description": "Button to open propose review screen"

@@ -463,6 +463,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get multisigProposeFeePayerInsufficient => 'Insufficient Balance for Fee';
 
   @override
+  String get multisigProposeProposerLabel => 'PROPOSER';
+
+  @override
   String get multisigProposeReviewButton => 'Review transfer';
 
   @override
