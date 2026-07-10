@@ -105,8 +105,7 @@ class WormholeUtxoService {
 
   static String _addressHash(Uint8List raw32) => wormhole_ffi.computeAddressHashHex(rawAddress: raw32);
 
-  static String _addressHashOf(String ss58Address) =>
-      _addressHash(Uint8List.fromList(getAccountId32(ss58Address)));
+  static String _addressHashOf(String ss58Address) => _addressHash(Uint8List.fromList(getAccountId32(ss58Address)));
 
   static void _throwIfCancelled(IsCancelledCallback? isCancelled) {
     if (isCancelled?.call() == true) throw const WormholeOperationCancelled();
@@ -483,10 +482,7 @@ query SpentNullifiers($hashes: [String!]!) {
       // Cache only the reorg-safe slice; the caller still sees recent
       // (above-cutoff) transfers so balances / claims include them.
       final safe = all.where((t) => t.blockHeight <= safeCutoff).toList();
-      await _saveTransferCache(
-        _addressHashOf(address),
-        _TransferCache(cachedUpToBlock: safeCutoff, transfers: safe),
-      );
+      await _saveTransferCache(_addressHashOf(address), _TransferCache(cachedUpToBlock: safeCutoff, transfers: safe));
     }
     onProgress?.call(1, cachedCount + fetchedCount);
 

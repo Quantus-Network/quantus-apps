@@ -53,7 +53,9 @@ class EncryptedSendStrategy extends SendStrategy {
     }
     final state = await ref.read(encryptedStateProvider(account.walletIndex).future);
     try {
-      return EncryptedFee(plan: selectWormholeInputs(utxos: state.utxos, amountPlanck: amount));
+      return EncryptedFee(
+        plan: selectWormholeInputs(utxos: state.utxos, amountPlanck: amount),
+      );
     } on InsufficientEncryptedFunds {
       return const EncryptedFee(blocker: EncryptedSendBlocker.insufficient);
     } on BatchBelowMinimumExit {

@@ -22,10 +22,7 @@ BigInt quan(String v) => wormholePlanckFromScaled((double.parse(v) * 100).round(
 void main() {
   group('selectWormholeInputs', () {
     test('plan worked example: 10 QUAN from 1.1 + 5.8 + 4.0', () {
-      final plan = selectWormholeInputs(
-        utxos: [utxo(110), utxo(580), utxo(400)],
-        amountPlanck: quan('10'),
-      );
+      final plan = selectWormholeInputs(utxos: [utxo(110), utxo(580), utxo(400)], amountPlanck: quan('10'));
 
       expect(plan.inputCount, 3);
       expect(plan.batches.length, 1);
@@ -43,10 +40,7 @@ void main() {
     });
 
     test('splits across batches beyond 7 inputs, change appears once', () {
-      final plan = selectWormholeInputs(
-        utxos: List.generate(9, (_) => utxo(200)),
-        amountPlanck: quan('16'),
-      );
+      final plan = selectWormholeInputs(utxos: List.generate(9, (_) => utxo(200)), amountPlanck: quan('16'));
 
       // 200 nets 199; 9 inputs net 17.91 total, 8 inputs net 15.92 < 16.
       expect(plan.inputCount, 9);

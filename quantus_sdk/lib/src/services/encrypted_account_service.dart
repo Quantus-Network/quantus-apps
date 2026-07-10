@@ -129,10 +129,7 @@ class EncryptedAccountService {
           kept.add(record);
         }
       }
-      return _FileState(
-        nextIndex: s.nextIndex > discoveredNext ? s.nextIndex : discoveredNext,
-        pendingSpends: kept,
-      );
+      return _FileState(nextIndex: s.nextIndex > discoveredNext ? s.nextIndex : discoveredNext, pendingSpends: kept);
     });
 
     final pendingNullifiers = state.pendingSpends.expand((r) => r.nullifiers).toSet();
@@ -143,11 +140,7 @@ class EncryptedAccountService {
       'load DONE: ${spendable.length} spendable UTXOs, pendingChange=$pendingChange, '
       'nextIndex=${state.nextIndex} (${sw.elapsedMilliseconds}ms)',
     );
-    return EncryptedAccountState(
-      utxos: spendable,
-      pendingChangePlanck: pendingChange,
-      nextIndex: state.nextIndex,
-    );
+    return EncryptedAccountState(utxos: spendable, pendingChangePlanck: pendingChange, nextIndex: state.nextIndex);
   }
 
   /// Proves and submits a [plan] (from [selectWormholeInputs]) paying
