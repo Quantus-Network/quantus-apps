@@ -60,12 +60,12 @@ class MultisigActivitySection extends ConsumerWidget {
     AsyncValue<List<MultisigProposal>> openProposalsAsync,
     List<PendingMultisigProposalEvent> pending,
   ) {
-    if (openProposalsAsync.isLoading) {
+    if (openProposalsAsync.isLoading && !openProposalsAsync.hasValue) {
       return const Center(
         child: Padding(padding: EdgeInsets.all(24), child: Loader()),
       );
     }
-    if (openProposalsAsync.hasError && pending.isEmpty) {
+    if (openProposalsAsync.hasError && !openProposalsAsync.hasValue && pending.isEmpty) {
       return Text(
         l10n.multisigLoadFailed(openProposalsAsync.error.toString()),
         style: text.detail?.copyWith(color: colors.textError),

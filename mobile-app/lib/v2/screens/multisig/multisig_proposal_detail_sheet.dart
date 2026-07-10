@@ -384,9 +384,12 @@ class _MultisigProposalDetailSheet extends ConsumerWidget {
     required bool hasLocalSigner,
     required bool isActionable,
   }) {
-    if (liveProposal.status == MultisigProposalStatus.executed ||
-        liveProposal.status == MultisigProposalStatus.cancelled) {
-      return const SizedBox.shrink();
+    if (liveProposal.isTerminal || (didApprove && !liveProposal.isReadyToExecute)) {
+      return QuantusButton.simple(
+        label: l10n.multisigDone,
+        variant: ButtonVariant.secondary,
+        onTap: () => Navigator.of(context).pop(),
+      );
     }
 
     final Widget primary = liveProposal.isReadyToExecute

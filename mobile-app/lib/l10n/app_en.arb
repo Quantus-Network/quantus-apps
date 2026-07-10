@@ -439,7 +439,7 @@
     "@multisigCreateSignersSubtitle": {
       "description": "Helper text under signers section on create multisig"
     },
-    "multisigCreateAddSignerHint": "Signer SS58 address",
+    "multisigCreateAddSignerHint": "Signer address",
     "@multisigCreateAddSignerHint": {
       "description": "Hint for adding a signer address"
     },
@@ -451,7 +451,7 @@
     "@multisigCreateDuplicateSigner": {
       "description": "Error when signer address is duplicate"
     },
-    "multisigCreateInvalidSigner": "Enter a valid SS58 address.",
+    "multisigCreateInvalidSigner": "Enter a valid signer address.",
     "@multisigCreateInvalidSigner": {
       "description": "Error when signer address is invalid"
     },
@@ -555,7 +555,7 @@
         }
       }
     },
-    "multisigStatusApproved": "APPROVED",
+    "multisigStatusApproved": "SIGNED",
     "@multisigStatusApproved": {
       "description": "Proposal status chip when the current signer has approved"
     },
@@ -611,6 +611,18 @@
     "multisigProposeFeeFetchFailed": "Unable to estimate fee",
     "@multisigProposeFeeFetchFailed": {
       "description": "Shown when proposal fee estimation fails on the amount screen"
+    },
+    "multisigProposeFeePayerBalanceLabel": "Your Balance:",
+    "@multisigProposeFeePayerBalanceLabel": {
+      "description": "Label for the proposing member's balance on the amount screen"
+    },
+    "multisigProposeFeePayerInsufficient": "Insufficient Balance for Fee",
+    "@multisigProposeFeePayerInsufficient": {
+      "description": "Button text when proposer cannot afford the proposal fee"
+    },
+    "multisigProposeProposerLabel": "PROPOSER",
+    "@multisigProposeProposerLabel": {
+      "description": "Row label for the proposer address on the propose review screen"
     },
     "multisigProposeReviewButton": "Review transfer",
     "@multisigProposeReviewButton": {
@@ -748,7 +760,7 @@
     "@multisigApprovalTimeoutToast": {
       "description": "Toast when approval indexer polling times out"
     },
-    "multisigProposalAlreadySignedNote": "You've already approved this proposal.",
+    "multisigProposalAlreadySignedNote": "You've already signed this proposal.",
     "@multisigProposalAlreadySignedNote": {
       "description": "Note shown when the current member already approved"
     },
@@ -816,9 +828,9 @@
     "@multisigApproveButton": {
       "description": "Approve button on proposal detail"
     },
-    "multisigAlreadyApproved": "Already Approved",
+    "multisigAlreadyApproved": "Already Signed",
     "@multisigAlreadyApproved": {
-      "description": "Disabled approve button when user already approved"
+      "description": "Disabled approve button when user already signed"
     },
     "multisigCancelProposalButton": "Cancel Proposal",
     "@multisigCancelProposalButton": {
@@ -1228,7 +1240,7 @@
     "@addHardwareAccountAddressLabel": {
       "description": "Address field label"
     },
-    "addHardwareAccountAddressHint": "SS58 address",
+    "addHardwareAccountAddressHint": "Signer address",
     "@addHardwareAccountAddressHint": {
       "description": "Address field hint"
     },
