@@ -336,7 +336,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get multisigCreateSignersSubtitle => 'Tambahkan setidaknya satu penandatangan selain diri Anda.';
 
   @override
-  String get multisigCreateAddSignerHint => 'Alamat SS58 penandatangan';
+  String get multisigCreateAddSignerHint => 'Alamat penandatangan';
 
   @override
   String get multisigCreateAddSignerButton => 'Tambah Penandatangan';
@@ -345,7 +345,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get multisigCreateDuplicateSigner => 'Penandatangan ini sudah ada dalam daftar.';
 
   @override
-  String get multisigCreateInvalidSigner => 'Masukkan alamat SS58 yang valid.';
+  String get multisigCreateInvalidSigner => 'Masukkan alamat penandatangan yang valid.';
 
   @override
   String get multisigCreateThresholdLabel => 'AMBANG BATAS';
@@ -555,7 +555,7 @@ class AppLocalizationsId extends AppLocalizations {
       'Konfirmasi persetujuan membutuhkan waktu lebih lama. Periksa chain atau coba lagi.';
 
   @override
-  String get multisigProposalAlreadySignedNote => 'Anda sudah menyetujui proposal ini.';
+  String get multisigProposalAlreadySignedNote => 'Anda sudah menandatangani proposal ini.';
 
   @override
   String get multisigProposalAlreadyExecutedNote => 'Proposal ini sudah dieksekusi.';
@@ -606,7 +606,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get multisigApproveButton => 'Setujui';
 
   @override
-  String get multisigAlreadyApproved => 'Sudah Disetujui';
+  String get multisigAlreadyApproved => 'Sudah Ditandatangani';
 
   @override
   String get multisigCancelProposalButton => 'Batalkan Proposal';
@@ -891,7 +891,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get addHardwareAccountAddressLabel => 'ALAMAT';
 
   @override
-  String get addHardwareAccountAddressHint => 'Alamat SS58';
+  String get addHardwareAccountAddressHint => 'Alamat penandatangan';
 
   @override
   String get addHardwareAccountDebugFill => 'Isi Debug';

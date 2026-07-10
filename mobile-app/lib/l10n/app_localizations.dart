@@ -665,7 +665,7 @@ abstract class AppLocalizations {
   /// Hint for adding a signer address
   ///
   /// In en, this message translates to:
-  /// **'Signer SS58 address'**
+  /// **'Signer address'**
   String get multisigCreateAddSignerHint;
 
   /// Button to add a signer from address field
@@ -683,7 +683,7 @@ abstract class AppLocalizations {
   /// Error when signer address is invalid
   ///
   /// In en, this message translates to:
-  /// **'Enter a valid SS58 address.'**
+  /// **'Enter a valid signer address.'**
   String get multisigCreateInvalidSigner;
 
   /// Threshold slider section label on create multisig
@@ -1055,7 +1055,7 @@ abstract class AppLocalizations {
   /// Note shown when the current member already approved
   ///
   /// In en, this message translates to:
-  /// **'You\'ve already approved this proposal.'**
+  /// **'You\'ve already signed this proposal.'**
   String get multisigProposalAlreadySignedNote;
 
   /// Note shown on proposal detail when the proposal is executed
@@ -1154,10 +1154,10 @@ abstract class AppLocalizations {
   /// **'Approve'**
   String get multisigApproveButton;
 
-  /// Disabled approve button when user already approved
+  /// Disabled approve button when user already signed
   ///
   /// In en, this message translates to:
-  /// **'Already Approved'**
+  /// **'Already Signed'**
   String get multisigAlreadyApproved;
 
   /// Cancel proposal button on detail screen
@@ -1679,7 +1679,7 @@ abstract class AppLocalizations {
   /// Address field hint
   ///
   /// In en, this message translates to:
-  /// **'SS58 address'**
+  /// **'Signer address'**
   String get addHardwareAccountAddressHint;
 
   /// Debug fill button
