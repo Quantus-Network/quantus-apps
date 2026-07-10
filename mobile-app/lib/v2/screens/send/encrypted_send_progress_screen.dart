@@ -77,7 +77,10 @@ class _EncryptedSendProgressScreenState extends ConsumerState<EncryptedSendProgr
             .catchError((Object e) => debugPrint('Failed to save recent address: $e')),
       );
       if (!mounted) return;
-      Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => SendTerminalScreen(content: widget.terminal)));
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => SendTerminalScreen(content: widget.terminal)),
+      );
     } on ClaimCancelled {
       ref.invalidate(encryptedStateProvider(widget.account.walletIndex));
       if (!mounted) return;
@@ -125,11 +128,7 @@ class _EncryptedSendProgressScreenState extends ConsumerState<EncryptedSendProgr
             _buildStatusHeader(colors, text, l10n),
             const SizedBox(height: 32),
             WormholeProgressSteps(
-              steps: [
-                (1, l10n.redeemStepCircuits),
-                (5, l10n.redeemStepProofs),
-                (6, l10n.redeemStepAggregate),
-              ],
+              steps: [(1, l10n.redeemStepCircuits), (5, l10n.redeemStepProofs), (6, l10n.redeemStepAggregate)],
               stepProgress: _stepProgress,
               currentStep: _currentStep,
               done: false,

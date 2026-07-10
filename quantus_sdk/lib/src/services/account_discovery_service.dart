@@ -37,10 +37,7 @@ class AccountDiscoveryService {
   /// Gap-limit scan over an arbitrary address sequence: derives addresses via
   /// [addressAt] in batches and returns the indices that exist on-chain,
   /// stopping once [gapLimit] consecutive indices are unused.
-  Future<Set<int>> discoverUsedIndices({
-    required String Function(int index) addressAt,
-    int gapLimit = 20,
-  }) async {
+  Future<Set<int>> discoverUsedIndices({required String Function(int index) addressAt, int gapLimit = 20}) async {
     final used = <int>{};
 
     var consecutiveMissing = 0;
