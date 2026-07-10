@@ -208,6 +208,13 @@ abstract class SendStrategy {
   /// flows where the fee is paid by a different account (e.g. multisig).
   BigInt feeChargedToBalance(SendFee? fee);
 
+  /// Balance of the account that pays the fee, when different from the source.
+  /// Returns null for flows where the fee payer is the same as the sender.
+  ProviderListenable<AsyncValue<BigInt>>? get feePayerBalanceProvider => null;
+
+  /// Label for the fee payer balance line (e.g. "Your Balance:").
+  String? feePayerBalanceLabel(AppLocalizations l10n) => null;
+
   /// Estimates the fee for [amount] to [recipient]. Uses `ref.read`. Handles
   /// the zero/invalid-amount estimate internally.
   Future<SendFee> estimateFee(WidgetRef ref, {required String recipient, required BigInt amount});

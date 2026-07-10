@@ -52,6 +52,13 @@ class MultisigProposeStrategy extends SendStrategy {
   BigInt feeChargedToBalance(SendFee? fee) => BigInt.zero;
 
   @override
+  ProviderListenable<AsyncValue<BigInt>>? get feePayerBalanceProvider =>
+      effectiveBalanceProviderFamily(msig.myMemberAccountId);
+
+  @override
+  String? feePayerBalanceLabel(AppLocalizations l10n) => l10n.multisigProposeFeePayerBalanceLabel;
+
+  @override
   Future<SendFee> estimateFee(WidgetRef ref, {required String recipient, required BigInt amount}) async {
     final service = ref.read(multisigServiceProvider);
     final useReal = amount > BigInt.zero && ref.read(substrateServiceProvider).isValidSS58Address(recipient);
@@ -92,7 +99,7 @@ class MultisigProposeStrategy extends SendStrategy {
   String? affordabilityError(WidgetRef ref, SendFee fee, AppLocalizations l10n) {
     final memberBalance = ref.watch(effectiveBalanceProviderFamily(msig.myMemberAccountId)).value;
     if (memberBalance == null) return null;
-    return memberBalance < fee.displayFee ? l10n.sendLogicInsufficientBalance : null;
+    return memberBalance < fee.displayFee ? l10n.multisigProposeFeePayerInsufficient : null;
   }
 
   @override

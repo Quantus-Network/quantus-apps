@@ -872,6 +872,18 @@ abstract class AppLocalizations {
   /// **'Unable to estimate fee'**
   String get multisigProposeFeeFetchFailed;
 
+  /// Label for the proposing member's balance on the amount screen
+  ///
+  /// In en, this message translates to:
+  /// **'Your Balance:'**
+  String get multisigProposeFeePayerBalanceLabel;
+
+  /// Button text when proposer cannot afford the proposal fee
+  ///
+  /// In en, this message translates to:
+  /// **'Insufficient Balance for Fee'**
+  String get multisigProposeFeePayerInsufficient;
+
   /// Button to open propose review screen
   ///
   /// In en, this message translates to:

@@ -612,6 +612,14 @@
     "@multisigProposeFeeFetchFailed": {
       "description": "Shown when proposal fee estimation fails on the amount screen"
     },
+    "multisigProposeFeePayerBalanceLabel": "Your Balance:",
+    "@multisigProposeFeePayerBalanceLabel": {
+      "description": "Label for the proposing member's balance on the amount screen"
+    },
+    "multisigProposeFeePayerInsufficient": "Insufficient Balance for Fee",
+    "@multisigProposeFeePayerInsufficient": {
+      "description": "Button text when proposer cannot afford the proposal fee"
+    },
     "multisigProposeReviewButton": "Review transfer",
     "@multisigProposeReviewButton": {
       "description": "Button to open propose review screen"

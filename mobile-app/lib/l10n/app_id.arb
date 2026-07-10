@@ -141,6 +141,8 @@
   "multisigProposeMemberTotalLabel": "TOTAL DARI AKUN ANDA",
   "multisigProposeFeeLabel": "Biaya Proposal:",
   "multisigProposeFeeFetchFailed": "Tidak dapat memperkirakan biaya",
+  "multisigProposeFeePayerBalanceLabel": "Saldo Anda:",
+  "multisigProposeFeePayerInsufficient": "Saldo Tidak Cukup untuk Biaya",
   "multisigProposeReviewButton": "Tinjau transfer",
   "multisigProposeReviewProposing": "TRANSFER YANG DIAJUKAN",
   "multisigProposeReviewFromName": "dari {name}",
