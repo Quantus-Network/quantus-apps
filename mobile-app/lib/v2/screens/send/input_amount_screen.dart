@@ -595,17 +595,15 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
     NumberFormattingService fmt,
   ) {
     final balanceAsync = ref.watch(provider);
+    final style = text.smallParagraph?.copyWith(color: colors.textTertiary);
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text('$label ', style: text.smallParagraph?.copyWith(color: colors.textTertiary)),
+        Text('$label ', style: style),
         balanceAsync.when(
-          data: (b) => Text(
-            l10n.commonAmountBalance(fmt.formatBalance(b), AppConstants.tokenSymbol),
-            style: text.smallParagraph?.copyWith(color: colors.textTertiary),
-          ),
-          loading: () => Text('...', style: text.smallParagraph?.copyWith(color: colors.textTertiary)),
-          error: (_, _) => Text('—', style: text.smallParagraph?.copyWith(color: colors.textTertiary)),
+          data: (b) => Text(l10n.commonAmountBalance(fmt.formatBalance(b), AppConstants.tokenSymbol), style: style),
+          loading: () => Text('...', style: style),
+          error: (_, _) => Text('—', style: style),
         ),
       ],
     );
