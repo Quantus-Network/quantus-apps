@@ -237,9 +237,9 @@ class _MultisigActionConfirmSheetState extends ConsumerState<MultisigActionConfi
 
     setState(() => _submitting = false);
 
-    final ok = await Navigator.of(context).push<bool>(
-      MaterialPageRoute(builder: (_) => KeystoneSignExtrinsicScreen(session: session)),
-    );
+    final ok = await Navigator.of(
+      context,
+    ).push<bool>(MaterialPageRoute(builder: (_) => KeystoneSignExtrinsicScreen(session: session)));
 
     if (!mounted) return;
     if (ok == true) {

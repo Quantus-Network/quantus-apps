@@ -53,18 +53,9 @@ void main() {
     });
 
     test('forExtrinsic keys distinguish by identity', () {
-      final approve = KeystoneSignCacheKey.forExtrinsic(
-        accountId: 'account-a',
-        identity: 'approve|msig|1',
-      );
-      final execute = KeystoneSignCacheKey.forExtrinsic(
-        accountId: 'account-a',
-        identity: 'execute|msig|1',
-      );
-      final approveAgain = KeystoneSignCacheKey.forExtrinsic(
-        accountId: 'account-a',
-        identity: 'approve|msig|1',
-      );
+      final approve = KeystoneSignCacheKey.forExtrinsic(accountId: 'account-a', identity: 'approve|msig|1');
+      final execute = KeystoneSignCacheKey.forExtrinsic(accountId: 'account-a', identity: 'execute|msig|1');
+      final approveAgain = KeystoneSignCacheKey.forExtrinsic(accountId: 'account-a', identity: 'approve|msig|1');
 
       expect(approve, approveAgain);
       expect(approve, isNot(execute));

@@ -38,15 +38,17 @@ void showMultisigCancelConfirmSheet(
           .read(transactionSubmissionServiceProvider)
           .cancelProposal(msig: msig, proposer: signer, proposal: proposal, fee: fee),
       submitExternal: (ref, {required signer, required unsignedData, required signature, required publicKey, fee}) =>
-          ref.read(transactionSubmissionServiceProvider).cancelProposalWithExternalSignature(
-            msig: msig,
-            proposer: signer,
-            proposal: proposal,
-            unsignedData: unsignedData,
-            signature: signature,
-            publicKey: publicKey,
-            fee: fee,
-          ),
+          ref
+              .read(transactionSubmissionServiceProvider)
+              .cancelProposalWithExternalSignature(
+                msig: msig,
+                proposer: signer,
+                proposal: proposal,
+                unsignedData: unsignedData,
+                signature: signature,
+                publicKey: publicKey,
+                fee: fee,
+              ),
     ),
   );
 }

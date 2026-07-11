@@ -20,9 +20,10 @@ List<Account> eligibleApproversForProposal(
   List<Account> accounts, {
   Set<String> pendingApproverIds = const {},
 }) {
-  return localSignersForMultisig(msig, accounts)
-      .where((a) => !proposal.didApprove(a.accountId) && !pendingApproverIds.contains(a.accountId))
-      .toList();
+  return localSignersForMultisig(
+    msig,
+    accounts,
+  ).where((a) => !proposal.didApprove(a.accountId) && !pendingApproverIds.contains(a.accountId)).toList();
 }
 
 /// Approver ids among [localSignerIds] that already have a pending approval

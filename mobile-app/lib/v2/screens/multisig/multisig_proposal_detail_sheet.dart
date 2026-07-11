@@ -190,8 +190,7 @@ class _MultisigProposalDetailSheet extends ConsumerWidget {
     );
     // True only when every local signer has already approved — another local
     // member may still need to sign even if myMemberAccountId already has.
-    final allLocalApproved =
-        localSigners.isNotEmpty && localSigners.every((a) => liveProposal.didApprove(a.accountId));
+    final allLocalApproved = localSigners.isNotEmpty && localSigners.every((a) => liveProposal.didApprove(a.accountId));
     final hasPendingApproval = pendingApproverIds.isNotEmpty;
     final hasLocalSigner = localSigners.isNotEmpty;
     final isActionable = currentBlock != null && liveProposal.isActionable(currentBlock);

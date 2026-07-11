@@ -38,10 +38,7 @@ class _KeystoneSignExtrinsicScreenState extends ConsumerState<KeystoneSignExtrin
   KeystoneSignCacheKey? get _cacheKey {
     final identity = widget.session.cacheIdentity;
     if (identity == null) return null;
-    return KeystoneSignCacheKey.forExtrinsic(
-      accountId: widget.session.account.accountId,
-      identity: identity,
-    );
+    return KeystoneSignCacheKey.forExtrinsic(accountId: widget.session.account.accountId, identity: identity);
   }
 
   @override
@@ -93,10 +90,7 @@ class _KeystoneSignExtrinsicScreenState extends ConsumerState<KeystoneSignExtrin
     final ok = await Navigator.push<bool>(
       context,
       MaterialPageRoute(
-        builder: (_) => KeystoneScanExtrinsicSignatureScreen(
-          session: widget.session,
-          unsignedData: unsignedData,
-        ),
+        builder: (_) => KeystoneScanExtrinsicSignatureScreen(session: widget.session, unsignedData: unsignedData),
       ),
     );
     if (ok == true && mounted) {

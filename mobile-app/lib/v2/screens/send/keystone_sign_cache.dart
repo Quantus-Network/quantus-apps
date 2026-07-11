@@ -49,16 +49,8 @@ class KeystoneSignCacheKey {
   }
 
   /// Cache key for non-transfer extrinsics (multisig approve/execute/cancel, …).
-  factory KeystoneSignCacheKey.forExtrinsic({
-    required String accountId,
-    required String identity,
-  }) {
-    return KeystoneSignCacheKey(
-      accountId: accountId,
-      recipientAddress: '',
-      amount: BigInt.zero,
-      identity: identity,
-    );
+  factory KeystoneSignCacheKey.forExtrinsic({required String accountId, required String identity}) {
+    return KeystoneSignCacheKey(accountId: accountId, recipientAddress: '', amount: BigInt.zero, identity: identity);
   }
 
   @override

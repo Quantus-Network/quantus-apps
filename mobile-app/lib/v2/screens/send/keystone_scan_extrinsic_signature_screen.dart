@@ -23,19 +23,13 @@ class KeystoneScanExtrinsicSignatureScreen extends ConsumerStatefulWidget {
   final KeystoneExtrinsicSession session;
   final UnsignedTransactionData unsignedData;
 
-  const KeystoneScanExtrinsicSignatureScreen({
-    super.key,
-    required this.session,
-    required this.unsignedData,
-  });
+  const KeystoneScanExtrinsicSignatureScreen({super.key, required this.session, required this.unsignedData});
 
   @override
-  ConsumerState<KeystoneScanExtrinsicSignatureScreen> createState() =>
-      _KeystoneScanExtrinsicSignatureScreenState();
+  ConsumerState<KeystoneScanExtrinsicSignatureScreen> createState() => _KeystoneScanExtrinsicSignatureScreenState();
 }
 
-class _KeystoneScanExtrinsicSignatureScreenState
-    extends ConsumerState<KeystoneScanExtrinsicSignatureScreen> {
+class _KeystoneScanExtrinsicSignatureScreenState extends ConsumerState<KeystoneScanExtrinsicSignatureScreen> {
   final MobileScannerController _controller = MobileScannerController();
   final Set<String> _parts = {};
   final Set<int> _seenSeq = {};
@@ -102,11 +96,7 @@ class _KeystoneScanExtrinsicSignatureScreenState
       Navigator.pop(context, true);
     } catch (e, st) {
       quantusDebugPrint('Keystone extrinsic signature processing failed: $e');
-      TelemetryService().sendError(
-        'Keystone extrinsic signature processing failed',
-        error: e,
-        stackTrace: st,
-      );
+      TelemetryService().sendError('Keystone extrinsic signature processing failed', error: e, stackTrace: st);
       ref.read(keystoneSignCacheProvider.notifier).reset();
       if (!mounted) return;
       setState(() {
@@ -131,11 +121,7 @@ class _KeystoneScanExtrinsicSignatureScreenState
       await _submit(encodeUr(data: signed));
     } catch (e, st) {
       quantusDebugPrint('Keystone extrinsic signature simulation failed: $e');
-      TelemetryService().sendError(
-        'Keystone extrinsic signature simulation failed',
-        error: e,
-        stackTrace: st,
-      );
+      TelemetryService().sendError('Keystone extrinsic signature simulation failed', error: e, stackTrace: st);
       ref.read(keystoneSignCacheProvider.notifier).reset();
       if (!mounted) return;
       setState(() {

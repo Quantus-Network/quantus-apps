@@ -10,15 +10,9 @@ import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 /// Picks which local signer account should approve a multisig proposal.
 ///
 /// Returns the selected [Account], or `null` if the sheet is dismissed.
-Future<Account?> showMultisigSignerPickerSheet(
-  BuildContext context, {
-  required List<Account> accounts,
-}) {
+Future<Account?> showMultisigSignerPickerSheet(BuildContext context, {required List<Account> accounts}) {
   assert(accounts.isNotEmpty, 'Signer picker requires at least one account');
-  return BottomSheetContainer.show<Account>(
-    context,
-    builder: (_) => _MultisigSignerPickerSheet(accounts: accounts),
-  );
+  return BottomSheetContainer.show<Account>(context, builder: (_) => _MultisigSignerPickerSheet(accounts: accounts));
 }
 
 class _MultisigSignerPickerSheet extends ConsumerWidget {
@@ -38,10 +32,7 @@ class _MultisigSignerPickerSheet extends ConsumerWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
-            l10n.multisigSignerPickerBody,
-            style: text.paragraph?.copyWith(color: colors.textPrimary),
-          ),
+          Text(l10n.multisigSignerPickerBody, style: text.paragraph?.copyWith(color: colors.textPrimary)),
           const SizedBox(height: 16),
           ConstrainedBox(
             constraints: const BoxConstraints(maxHeight: 360),

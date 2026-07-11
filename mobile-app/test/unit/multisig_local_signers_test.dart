@@ -2,8 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/shared/utils/multisig_local_signers.dart';
 
-Account _account(String id, {String name = 'A'}) =>
-    Account(walletIndex: 0, index: 0, name: name, accountId: id);
+Account _account(String id, {String name = 'A'}) => Account(walletIndex: 0, index: 0, name: name, accountId: id);
 
 MultisigAccount _msig({required List<String> signers, String myMember = 'signer-a'}) => MultisigAccount(
   name: 'Msig',
@@ -66,12 +65,7 @@ void main() {
       final accounts = [_account('signer-a'), _account('signer-b')];
       final proposal = _proposal(approvals: const []);
 
-      final eligible = eligibleApproversForProposal(
-        msig,
-        proposal,
-        accounts,
-        pendingApproverIds: {'signer-a'},
-      );
+      final eligible = eligibleApproversForProposal(msig, proposal, accounts, pendingApproverIds: {'signer-a'});
 
       expect(eligible.map((a) => a.accountId), ['signer-b']);
     });
@@ -88,21 +82,9 @@ void main() {
   group('pendingApproverIdsForProposal', () {
     test('collects pending approvers for the proposal among local signers', () {
       final pending = [
-        PendingMultisigApprovalEvent.create(
-          multisigAddress: 'msig-1',
-          proposalId: 1,
-          approverId: 'signer-a',
-        ),
-        PendingMultisigApprovalEvent.create(
-          multisigAddress: 'msig-1',
-          proposalId: 1,
-          approverId: 'other',
-        ),
-        PendingMultisigApprovalEvent.create(
-          multisigAddress: 'msig-1',
-          proposalId: 2,
-          approverId: 'signer-b',
-        ),
+        PendingMultisigApprovalEvent.create(multisigAddress: 'msig-1', proposalId: 1, approverId: 'signer-a'),
+        PendingMultisigApprovalEvent.create(multisigAddress: 'msig-1', proposalId: 1, approverId: 'other'),
+        PendingMultisigApprovalEvent.create(multisigAddress: 'msig-1', proposalId: 2, approverId: 'signer-b'),
       ];
 
       final ids = pendingApproverIdsForProposal(pending, 'msig-1', 1, const ['signer-a', 'signer-b']);

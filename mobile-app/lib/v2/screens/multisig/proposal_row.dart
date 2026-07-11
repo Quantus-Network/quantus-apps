@@ -40,12 +40,7 @@ class ProposalRow extends ConsumerWidget {
     final pendingExecutions = ref.watch(pendingMultisigExecutionsProvider);
     PendingMultisigExecutionEvent? pendingExecution;
     for (final id in ids) {
-      pendingExecution = findPendingExecutionForProposal(
-        pendingExecutions,
-        proposal.multisigAddress,
-        proposal.id,
-        id,
-      );
+      pendingExecution = findPendingExecutionForProposal(pendingExecutions, proposal.multisigAddress, proposal.id, id);
       if (pendingExecution != null) break;
     }
     final pendingCancellations = ref.watch(pendingMultisigCancellationsProvider);
@@ -61,9 +56,12 @@ class ProposalRow extends ConsumerWidget {
     }
     // Show "Approving" only when every remaining local signer is already in-flight.
     final hasUnsignedLocal = ids.any((id) => !proposal.didApprove(id));
-    final isApproving = hasUnsignedLocal && pendingApproverIds.isNotEmpty && ids.every((id) {
-      return proposal.didApprove(id) || pendingApproverIds.contains(id);
-    });
+    final isApproving =
+        hasUnsignedLocal &&
+        pendingApproverIds.isNotEmpty &&
+        ids.every((id) {
+          return proposal.didApprove(id) || pendingApproverIds.contains(id);
+        });
     final isExecuting = pendingExecution != null;
     final isCancelling = pendingCancellation != null;
     final isPending = isApproving || isExecuting || isCancelling;

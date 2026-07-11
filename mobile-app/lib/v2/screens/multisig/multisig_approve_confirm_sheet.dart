@@ -38,20 +38,21 @@ void showMultisigApproveConfirmSheet(
       estimateFee: (ref, resolvedSigner) => ref
           .read(multisigServiceProvider)
           .estimateApproveFee(msig: msig, signer: resolvedSigner, proposalId: proposal.id),
-      buildCall: (resolvedSigner) =>
-          MultisigService().buildApproveCall(msig: msig, proposalId: proposal.id),
+      buildCall: (resolvedSigner) => MultisigService().buildApproveCall(msig: msig, proposalId: proposal.id),
       submit: (ref, resolvedSigner, fee) => ref
           .read(transactionSubmissionServiceProvider)
           .approveProposal(msig: msig, signer: resolvedSigner, proposal: proposal),
       submitExternal: (ref, {required signer, required unsignedData, required signature, required publicKey, fee}) =>
-          ref.read(transactionSubmissionServiceProvider).approveProposalWithExternalSignature(
-            msig: msig,
-            signer: signer,
-            proposal: proposal,
-            unsignedData: unsignedData,
-            signature: signature,
-            publicKey: publicKey,
-          ),
+          ref
+              .read(transactionSubmissionServiceProvider)
+              .approveProposalWithExternalSignature(
+                msig: msig,
+                signer: signer,
+                proposal: proposal,
+                unsignedData: unsignedData,
+                signature: signature,
+                publicKey: publicKey,
+              ),
     ),
   );
 }
