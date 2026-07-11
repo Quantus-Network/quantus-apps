@@ -39,12 +39,64 @@
     .error { color: #dc2626; font-size: 14px; margin-top: 10px; white-space: pre-wrap; }
     .spinner { color: var(--muted); font-size: 14px; margin-top: 12px; }
     .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    .claim-list { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
+    .claim-card {
+      border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px;
+      background: #fafafa;
+    }
+    .claim-card h4 { margin: 0 0 6px; font-size: 13px; color: #344054; }
+    .claim-card .steelman { font-size: 14px; white-space: pre-wrap; }
+    .claim-card .actions { margin-top: 8px; display: flex; gap: 8px; flex-wrap: wrap; }
+    .claim-card .actions button { margin-top: 0; font-size: 13px; padding: 6px 12px; }
+    .hint { font-size: 13px; color: var(--muted); margin-top: 8px; }
+
+    /* tree view */
+    #tree-panel h2 { font-size: 15px; margin: 0 0 4px; }
+    #tree-panel .q { color: var(--muted); font-size: 13px; margin-bottom: 12px; }
+    .tree, .tree ul { list-style: none; margin: 0; padding: 0; }
+    .tree ul { margin-left: 18px; border-left: 2px solid var(--border); padding-left: 14px; }
+    .node { margin-top: 10px; }
+    .node-body {
+      border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; background: #fff;
+    }
+    .node-body.pro { border-left: 4px solid var(--green); }
+    .node-body.con { border-left: 4px solid #dc2626; }
+    .node-body.answer { border-left: 4px solid var(--accent); background: #f8faff; }
+    .node .meta { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+    .kind-badge {
+      font-size: 11px; text-transform: uppercase; letter-spacing: .04em; font-weight: 700;
+      padding: 1px 8px; border-radius: 99px;
+    }
+    .kind-badge.pro { color: var(--green); background: #e7f8ee; }
+    .kind-badge.con { color: #dc2626; background: #fdeaea; }
+    .kind-badge.answer { color: var(--accent); background: #e8effe; }
+    .node .who { font-size: 12px; color: var(--muted); }
+    .node .ptext { white-space: pre-wrap; }
+    .node .node-actions { display: flex; gap: 6px; align-items: center; margin-top: 8px; }
+    .node .node-actions button { margin-top: 0; font-size: 12px; padding: 4px 10px; }
+    .vote { display: inline-flex; align-items: center; gap: 4px; }
+    .vote button { background: #fff; color: #344054; border: 1px solid #d0d5dd; padding: 2px 9px; }
+    .vote .score { font-weight: 700; min-width: 18px; text-align: center; }
+    .empty { color: var(--muted); font-size: 14px; }
+    .replying-to {
+      margin-top: 8px; padding: 8px 12px; background: #eff6ff; border: 1px solid #bfdbfe;
+      border-radius: 8px; font-size: 13px; display: none;
+    }
+    .replying-to.show { display: flex; gap: 10px; align-items: center; justify-content: space-between; }
+    .replying-to button { margin-top: 0; font-size: 12px; padding: 3px 9px; }
   </style>
 </head>
 <body>
-  <h1>Steelman negotiation spike <small>— the AI moderator write-path, isolated</small></h1>
+  <h1>Debate Tree <small>— AI-moderated argument map (spike)</small></h1>
+
+  <div class="card" id="tree-panel">
+    <h2>The tree</h2>
+    <div class="q" id="tree-question"></div>
+    <div id="tree-body"><div class="empty">Loading…</div></div>
+  </div>
 
   <div class="card" id="setup">
+    <div class="replying-to" id="replying-to"></div>
     <div class="seeds" id="seeds">
       <label>Try a real contentious argument:</label>
     </div>
@@ -103,8 +155,103 @@
       seeds.appendChild(b);
     });
 
-    const state = { question: "", parent: "", stance: "", original: "", rounds: [], draft: null };
+    const state = {
+      question: "", parent: "", stance: "", original: "",
+      rounds: [], draft: null, selectedClaim: null,
+      parentId: null, parentLabel: "",
+    };
     const loop = document.getElementById("loop");
+
+    // ---- tree view -------------------------------------------------------
+    async function loadTree() {
+      const q = document.getElementById("question").value.trim();
+      const res = await fetch("/api/tree?question=" + encodeURIComponent(q));
+      const { space, nodes } = await res.json();
+      document.getElementById("tree-question").textContent = space.question;
+      renderTree(nodes);
+    }
+
+    function renderTree(nodes) {
+      const body = document.getElementById("tree-body");
+      if (!nodes.length) {
+        body.innerHTML = '<div class="empty">No arguments yet — steelman one below to plant the first node.</div>';
+        return;
+      }
+      const byParent = new Map();
+      nodes.forEach((n) => {
+        const k = n.parent_id || "root";
+        if (!byParent.has(k)) byParent.set(k, []);
+        byParent.get(k).push(n);
+      });
+
+      const build = (parentKey) => {
+        const kids = byParent.get(parentKey) || [];
+        if (!kids.length) return "";
+        return "<ul>" + kids.map((n) => `
+          <li class="node">
+            <div class="node-body ${n.kind}">
+              <div class="meta">
+                <span class="kind-badge ${n.kind}">${n.kind}</span>
+                <span class="who">${escapeHtml(n.author_account)}</span>
+              </div>
+              <div class="ptext">${escapeHtml(n.published_text)}</div>
+              <div class="node-actions">
+                <span class="vote">
+                  <button data-vote="1" data-node="${n.id}">▲</button>
+                  <span class="score">${n.score}</span>
+                  <button data-vote="-1" data-node="${n.id}">▼</button>
+                </span>
+                <button class="secondary" data-reply="${n.id}" data-kind="${n.kind}">Reply</button>
+                <button class="secondary" data-orig="${n.id}">Original</button>
+              </div>
+              <div class="ptext" id="orig-${n.id}" style="display:none;margin-top:8px;color:var(--muted);font-size:13px">${escapeHtml(n.original_text)}</div>
+            </div>
+            ${build(n.id)}
+          </li>`).join("") + "</ul>";
+      };
+
+      body.innerHTML = '<ul class="tree">' + build("root").slice(4);
+      body.querySelectorAll("[data-vote]").forEach((btn) => {
+        btn.onclick = async () => {
+          await fetch("/api/vote", {
+            method: "POST", headers: { "content-type": "application/json" },
+            body: JSON.stringify({ nodeId: btn.dataset.node, value: Number(btn.dataset.vote) }),
+          });
+          loadTree();
+        };
+      });
+      body.querySelectorAll("[data-orig]").forEach((btn) => {
+        btn.onclick = () => {
+          const el = document.getElementById("orig-" + btn.dataset.orig);
+          el.style.display = el.style.display === "none" ? "block" : "none";
+        };
+      });
+      body.querySelectorAll("[data-reply]").forEach((btn) => {
+        btn.onclick = () => setReplyTarget(btn.dataset.reply, btn.dataset.kind);
+      });
+    }
+
+    function setReplyTarget(nodeId, kind) {
+      const node = document.querySelector(`[data-orig="${nodeId}"]`)
+        ?.closest(".node-body")?.querySelector(".ptext")?.textContent || "";
+      state.parentId = nodeId;
+      state.parentLabel = node.slice(0, 80);
+      const banner = document.getElementById("replying-to");
+      banner.className = "replying-to show";
+      banner.innerHTML = `<span>Replying to <em>${escapeHtml(state.parentLabel)}</em></span>
+        <button class="secondary" id="clear-reply">Reply to question instead</button>`;
+      document.getElementById("clear-reply").onclick = clearReplyTarget;
+      document.getElementById("original").focus();
+      document.getElementById("setup").scrollIntoView({ behavior: "smooth" });
+    }
+
+    function clearReplyTarget() {
+      state.parentId = null;
+      state.parentLabel = "";
+      document.getElementById("replying-to").className = "replying-to";
+    }
+
+    loadTree();
 
     document.getElementById("start").onclick = async () => {
       state.question = document.getElementById("question").value.trim();
@@ -117,6 +264,7 @@
         return;
       }
       state.rounds = [];
+      state.selectedClaim = null;
       await requestSteelman();
     };
 
@@ -135,14 +283,103 @@
         const body = await res.json();
         if (!res.ok) throw new Error(body.error || res.status);
         state.draft = body;
-        renderRound();
+        if (state.selectedClaim) {
+          const updated = body.claims.find((c) => c.id === state.selectedClaim.id) || body.claims[0];
+          state.selectedClaim = updated;
+        } else if (body.claims.length === 1) {
+          state.selectedClaim = body.claims[0];
+          renderRound();
+        } else {
+          renderClaimPicker();
+        }
       } catch (err) {
         renderError(String(err.message || err));
       }
     }
 
     function renderLoading() {
-      loop.innerHTML = '<div class="card"><div class="spinner">Moderator is drafting the strongest version of your point…</div></div>';
+      loop.innerHTML = '<div class="card"><div class="spinner">Moderator is disentangling and drafting…</div></div>';
+    }
+
+    function renderClaimPicker() {
+      const d = state.draft;
+      const claimsHtml = d.claims.map((c) => `
+        <div class="claim-card">
+          <h4>${escapeHtml(c.label)}</h4>
+          <div class="steelman">${escapeHtml(c.steelman)}</div>
+          <div class="actions">
+            <button class="accept" data-accept="${escapeHtml(c.id)}">Accept this one</button>
+            <button class="secondary" data-negotiate="${escapeHtml(c.id)}">Negotiate this one</button>
+          </div>
+        </div>`).join("");
+
+      loop.innerHTML = `
+        <div class="card">
+          <strong>${d.claims.length} separate claims found</strong>
+          <p class="hint">Each becomes its own tree node. Accept one as-is, or negotiate wording on one claim at a time.</p>
+          <div class="claim-list">${claimsHtml}</div>
+          ${d.notes ? `<div class="notes">${escapeHtml(d.notes)}</div>` : ""}
+          ${d.question ? `<div class="question">Moderator asks: ${escapeHtml(d.question)}</div>` : ""}
+        </div>`;
+
+      d.claims.forEach((c) => {
+        loop.querySelector(`[data-accept="${CSS.escape(c.id)}"]`).onclick = () => renderPublished(c.steelman, c);
+        loop.querySelector(`[data-negotiate="${CSS.escape(c.id)}"]`).onclick = () => {
+          state.selectedClaim = c;
+          state.rounds = [];
+          renderRound();
+        };
+      });
+    }
+
+    function renderRound() {
+      const roundNo = state.rounds.length + 1;
+      const isLast = roundNo >= MAX_ROUNDS;
+      const d = state.draft;
+      const claim = state.selectedClaim;
+
+      loop.innerHTML = `
+        <div class="card">
+          <div class="row">
+            <strong>Does this say what you mean?</strong>
+            <span class="roundtag">${escapeHtml(claim.label)} · round ${roundNo} of ${MAX_ROUNDS}</span>
+          </div>
+          <div class="cols" style="margin-top:12px">
+            <div class="pane"><h3>You wrote (full post)</h3><div class="text">${escapeHtml(state.original)}</div></div>
+            <div class="pane draft"><h3>This claim</h3><div class="text">${escapeHtml(claim.steelman)}</div></div>
+          </div>
+          ${d.notes ? `<div class="notes">${escapeHtml(d.notes)}</div>` : ""}
+          ${d.question ? `<div class="question">Moderator asks: ${escapeHtml(d.question)}</div>` : ""}
+
+          <label for="feedback">What did it get wrong on this claim?</label>
+          <textarea id="feedback" rows="3" placeholder="e.g. 'too soft on the SIKE point' or 'split the NSA jab into its own claim'"></textarea>
+
+          <div class="row">
+            <button class="accept" id="accept">Accept &amp; publish this claim</button>
+            <button class="secondary" id="pushback" ${isLast ? "disabled" : ""}>
+              ${isLast ? "No rounds left" : "Push back (revise)"}
+            </button>
+            <button class="secondary" id="back">Pick a different claim</button>
+          </div>
+        </div>`;
+
+      document.getElementById("accept").onclick = () => renderPublished(claim.steelman, claim);
+      document.getElementById("back").onclick = () => {
+        state.selectedClaim = null;
+        state.rounds = [];
+        renderClaimPicker();
+      };
+      document.getElementById("pushback").onclick = async () => {
+        const feedback = document.getElementById("feedback").value.trim();
+        if (!feedback) { document.getElementById("feedback").focus(); return; }
+        state.rounds.push({
+          claimId: claim.id,
+          claimLabel: claim.label,
+          draft: claim.steelman,
+          feedback,
+        });
+        await requestSteelman();
+      };
     }
 
     function renderError(message) {
@@ -150,65 +387,58 @@
         '</div><button class="secondary" onclick="location.reload()">Start over</button></div>';
     }
 
-    function renderRound() {
-      const roundNo = state.rounds.length + 1;
-      const isLast = roundNo >= MAX_ROUNDS;
-      const d = state.draft;
-
-      loop.innerHTML = `
-        <div class="card">
-          <div class="row">
-            <strong>Does this say what you mean?</strong>
-            <span class="roundtag">round ${roundNo} of ${MAX_ROUNDS}</span>
-          </div>
-          <div class="cols" style="margin-top:12px">
-            <div class="pane"><h3>You wrote</h3><div class="text">${escapeHtml(state.original)}</div></div>
-            <div class="pane draft"><h3>Moderator's draft</h3><div class="text">${escapeHtml(d.steelman)}</div></div>
-          </div>
-          ${d.notes ? `<div class="notes">${escapeHtml(d.notes)}</div>` : ""}
-          ${d.question ? `<div class="question">Moderator asks: ${escapeHtml(d.question)}</div>` : ""}
-
-          <label for="feedback">What did it get wrong? (feedback = another round)</label>
-          <textarea id="feedback" rows="3" placeholder="e.g. 'too polite — I really do mean the process is captured' or answer the moderator's question"></textarea>
-
-          <div class="row">
-            <button class="accept" id="accept">Accept &amp; publish this version</button>
-            <button class="secondary" id="pushback" ${isLast ? "disabled" : ""}>
-              ${isLast ? "No rounds left" : "Push back (revise)"}
-            </button>
-            <button class="secondary" id="as-is">Publish my original as-is</button>
-          </div>
-        </div>`;
-
-      document.getElementById("accept").onclick = () => renderPublished(d.steelman, false);
-      document.getElementById("as-is").onclick = () => renderPublished(state.original, true);
-      document.getElementById("pushback").onclick = async () => {
-        const feedback = document.getElementById("feedback").value.trim();
-        if (!feedback) { document.getElementById("feedback").focus(); return; }
-        state.rounds.push({ draft: d.steelman, feedback });
-        await requestSteelman();
+    async function renderPublished(text, claim) {
+      const claimLine = claim ? ` <span class="roundtag">${escapeHtml(claim.label)}</span>` : "";
+      const transcript = {
+        allClaims: state.draft?.claims, selectedClaim: claim || null, rounds: state.rounds,
       };
-    }
+      loop.innerHTML = '<div class="card"><div class="spinner">Saving to the tree…</div></div>';
 
-    function renderPublished(text, asIs) {
+      let saveError = "";
+      try {
+        const res = await fetch("/api/publish", {
+          method: "POST", headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            question: state.question, stance: state.stance,
+            parentId: state.parentId, publishedText: text,
+            originalText: state.original, transcript,
+          }),
+        });
+        const b = await res.json();
+        if (!res.ok) throw new Error(b.error || res.status);
+      } catch (err) {
+        saveError = String(err.message || err);
+      }
+
+      clearReplyTarget();
+      await loadTree();
+
       loop.innerHTML = `
         <div class="card published">
-          <strong>Published to the tree ${asIs ? "(as-is, flagged unrefined)" : "(steelmanned, author-approved)"}</strong>
+          <strong>${saveError ? "Steelmanned — but save failed" : "Published to the tree (steelmanned, author-approved)"}${claimLine}</strong>
+          ${saveError ? `<div class="error">${escapeHtml(saveError)}</div>` : ""}
           <div class="pane" style="margin-top:12px; background:#fff"><div class="text">${escapeHtml(text)}</div></div>
           <details><summary>Original text (always attached)</summary>
             <div class="text" style="margin-top:8px">${escapeHtml(state.original)}</div>
           </details>
           <div class="row">
             <button class="secondary" id="export">Copy transcript JSON</button>
-            <button class="secondary" onclick="location.reload()">New argument</button>
+            <button class="secondary" id="another">Add another argument</button>
           </div>
         </div>`;
       document.getElementById("export").onclick = () => {
         navigator.clipboard.writeText(JSON.stringify({
           question: state.question, parent: state.parent, stance: state.stance,
-          original: state.original, rounds: state.rounds,
-          published: text, publishedAsIs: asIs,
+          original: state.original, allClaims: state.draft?.claims,
+          selectedClaim: claim || null, rounds: state.rounds,
+          published: text,
         }, null, 2));
+      };
+      document.getElementById("another").onclick = () => {
+        state.rounds = []; state.selectedClaim = null; state.draft = null;
+        document.getElementById("original").value = "";
+        loop.innerHTML = "";
+        document.getElementById("tree-panel").scrollIntoView({ behavior: "smooth" });
       };
     }
 

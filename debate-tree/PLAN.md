@@ -28,11 +28,15 @@ differentiators are the AI moderator and the chain-native spam economics.)
 - **Deduplication** — before a new node is accepted, embeddings + a cheap LLM
   pass check whether the point already exists in the tree; near-duplicates are
   redirected to the existing node ("upvote / extend this instead?").
-- **Steelmanning loop** — a contributor drafts a point; the AI reflects back
-  the strongest version of it; the contributor revises or accepts; capped at
-  ~3 rounds, with a "publish as-is (flagged unrefined)" escape hatch. Only
-  the version the *contributor* approves is published. The original text
-  stays attached (visible on click) — nobody's voice is erased.
+- **Disentangle + steelman loop** — a contributor drafts a post; the AI first
+  splits bundled points into separate claims (one tree node = one claim), then
+  offers a succinct steelman of each. The contributor picks a claim, revises or
+  accepts (capped at ~3 rounds per claim). Only AI-generated versions are
+  publishable — there is no "publish my raw original" path; the contributor's
+  control is exercised through accept/revise, not through bypassing the
+  moderator. The original text stays attached (visible on click) so the
+  author's own words are never lost, but the tree node itself is always a
+  steelman the author approved.
 - **The AI never rewrites imported/seeded content.** Seeded arguments cite
   their sources verbatim.
 
@@ -138,14 +142,26 @@ published version). Wallet auth via ML-DSA signature verification —
 `quantus_sdk`'s Rust bridge and `rust-transaction-parser` are references;
 server-side verification can link the same Rust crates.
 
-**Data model (sketch)**:
-- `space` — a debate context (e.g. "QIPs", "PQ-migration"), holds config:
-  question threshold N QUAN, share target, model tier.
-- `node` — id, space, parent, kind (`question | answer | pro | con`),
-  published text, original text, author account, source citations (for
-  seeded nodes), content hash (for optional on-chain anchoring), status.
-- `steelman_session` — node draft, transcript, round count, state.
-- `share_token` / `balance_attestation` — consumed gate proofs.
+**Data model** (implemented in `spike/schema.sql` — pure adjacency tree,
+plain Postgres so it ports from the spike's PGlite to hosted PG verbatim):
+- `space` — a debate context (e.g. "QIPs", "PQ-migration"), holds `config`
+  jsonb: question threshold N QUAN, share target, model tier.
+- `node` — id, space, `parent_id` (null = direct answer to the question),
+  kind (`answer | pro | con`), `published_text` (author-approved steelman =
+  the node), `original_text` (verbatim, always attached), `transcript` jsonb
+  (negotiation provenance, inlined — no separate session table needed for
+  durable state), `content_hash` (optional on-chain anchoring), `embedding`
+  (dedup search). Walked with a recursive CTE / adjacency list; no `ltree`,
+  no `status`/redirect, no `node_edge` — dupes are simply not inserted.
+- `vote` — (node, account, value ±1), one row per account per node.
+- **Dropped for now**: `gate_proof` (consumed share-token / balance-attestation
+  ledger + replay guard) lands with the captcha write-path integration.
+  Ephemeral steelman-negotiation state lives in server memory, not the DB.
+
+Spike DB is **PGlite** (Postgres compiled to WASM, in-process, persisted to
+`spike/pgdata/`): zero external server, same SQL as prod. `pgvector` is an
+optional add-on there; when absent, `embedding` falls back to jsonb and dedup
+is disabled (deferred anyway). Reset the dev tree by deleting `spike/pgdata/`.
 
 **Write path**:
 1. Client requests action → backend issues nonce challenge.
@@ -171,9 +187,11 @@ server-side verification can link the same Rust crates.
   current venue).
 
 **Deliverables**:
-- [ ] Steelman-loop spike (see §5 — build first, throwaway UI)
-- [ ] Tree UI (read): collapsible tree, node detail w/ original text +
-      citations, shareable node links
+- [x] Steelman-loop spike (see §5) — disentangle + succinct steelman loop
+- [x] DB-backed tree: PGlite schema, publish/tree/vote endpoints, seeded space
+- [x] Tree UI (read + write): nested pro/con/answer nodes, votes, reply-to-node,
+      original text on click — served from the DB
+- [ ] Node detail: source citations, shareable per-node links
 - [ ] Wallet auth + balance gate; captcha gate integration
 - [ ] Dedup + steelman write path with round caps and spend caps
 - [ ] Seeded djb tree + QIP space
@@ -215,7 +233,7 @@ regardless of how Debate Tree evolves.
 | Cryptojacking stigma / AV & adblock flagging | Consent + bounded work + first-party loader + open source; never ambient mining |
 | Share revenue ≈ dust as hashrate grows | Market as non-wasteful + host-paid, not get-rich; pool aggregation for variance |
 | Native-GPU spammers vs. phone users (PoW asymmetry) | Share target tuned low (rate limiter framing); balance gate for high-value actions |
-| AI steelman feels condescending / voice laundering | Spike first; contributor approval required; original text always attached |
+| AI steelman feels condescending / voice laundering | Spike first; contributor approval required (accept/revise, no raw-publish bypass); original text always attached |
 | Moderator bias becomes tree bias | Publish steelman prompts; show diff original→published |
 | Quantus not neutral on the seed debate | Prominent disclosure; verbatim citations; invite corrections |
 | djb reacts badly to AI paraphrase | Never AI-rewrite imported content |

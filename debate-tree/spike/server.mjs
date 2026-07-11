@@ -1,8 +1,9 @@
 // Steelman-loop spike server. Throwaway code; the prompts are the artifact.
 //
-//   node server.mjs            # stub model (offline, tests the flow)
+//   node server.mjs                         # stub model (offline, tests the flow)
 //   ANTHROPIC_API_KEY=... node server.mjs
 //   OPENAI_API_KEY=...    node server.mjs
+//   OPENROUTER_API_KEY=... OPENROUTER_MODEL=anthropic/claude-sonnet-4 node server.mjs
 //
 // Zero dependencies; serves index.html and POST /api/steelman.
 
@@ -11,17 +12,35 @@ import { readFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { SYSTEM_PROMPT, buildFirstRoundPrompt, buildRevisionPrompt } from "./prompts.mjs";
+import {
+  initDb,
+  getOrCreateSpace,
+  listSpaces,
+  insertNode,
+  getTree,
+  castVote,
+} from "./db.mjs";
 
 const PORT = process.env.PORT || 8788;
 const DIR = dirname(fileURLToPath(import.meta.url));
 
 const ANTHROPIC_KEY = process.env.ANTHROPIC_API_KEY;
 const OPENAI_KEY = process.env.OPENAI_API_KEY;
+const OPENROUTER_KEY = process.env.OPENROUTER_API_KEY;
 const ANTHROPIC_MODEL = process.env.ANTHROPIC_MODEL || "claude-sonnet-4-5";
 const OPENAI_MODEL = process.env.OPENAI_MODEL || "gpt-5.2";
+const OPENROUTER_MODEL = process.env.OPENROUTER_MODEL || "anthropic/claude-sonnet-4";
+const OPENROUTER_REFERER = process.env.OPENROUTER_REFERER || "http://localhost:8788";
+const OPENROUTER_TITLE = process.env.OPENROUTER_TITLE || "Debate Tree steelman spike";
 
-const provider = ANTHROPIC_KEY ? "anthropic" : OPENAI_KEY ? "openai" : "stub";
-console.log(`model provider: ${provider}`);
+const provider = ANTHROPIC_KEY
+  ? "anthropic"
+  : OPENAI_KEY
+    ? "openai"
+    : OPENROUTER_KEY
+      ? "openrouter"
+      : "stub";
+console.log(`model provider: ${provider}${provider === "openrouter" ? ` (${OPENROUTER_MODEL})` : ""}`);
 
 async function callAnthropic(messages) {
   const res = await fetch("https://api.anthropic.com/v1/messages", {
@@ -60,37 +79,117 @@ async function callOpenAI(messages) {
   return body.choices[0].message.content;
 }
 
-// Offline stand-in so the interaction flow is testable without a key: it
-// performs a crude mechanical "steelman" and echoes feedback acknowledgment.
+// OpenRouter exposes an OpenAI-compatible chat API; handy for swapping models
+// without changing provider code.
+async function callOpenRouter(messages) {
+  const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      authorization: `Bearer ${OPENROUTER_KEY}`,
+      "HTTP-Referer": OPENROUTER_REFERER,
+      "X-Title": OPENROUTER_TITLE,
+    },
+    body: JSON.stringify({
+      model: OPENROUTER_MODEL,
+      messages: [{ role: "system", content: SYSTEM_PROMPT }, ...messages],
+    }),
+  });
+  if (!res.ok) throw new Error(`openrouter ${res.status}: ${await res.text()}`);
+  const body = await res.json();
+  return body.choices[0].message.content;
+}
+
+// Offline stand-in: crude split on sentence boundaries + short prefix.
 function callStub(messages) {
   const last = messages[messages.length - 1].content;
-  const original = (last.match(/---\n([\s\S]*?)\n---/) || [, last])[1].trim();
   const isRevision = /revision round/.test(last);
-  const cleaned = original
-    .replace(/\b(stupid|idiotic|insane|moronic|garbage|bullshit)\b/gi, "deeply flawed")
-    .replace(/!+/g, ".")
-    .trim();
-  const steelman = isRevision
-    ? cleaned + " (revised per your feedback)"
-    : "The core of my position: " + cleaned;
+
+  if (isRevision) {
+    const draft = (last.match(/Your previous draft[^]*?---\n([\s\S]*?)\n---/) || [, ""])[1].trim();
+    return Promise.resolve(
+      JSON.stringify({
+        claims: [{ id: "1", label: "Revised", steelman: draft + " (revised per your feedback)" }],
+        notes: "- [stub model] echoed feedback",
+        question: null,
+      })
+    );
+  }
+
+  const original = (last.match(/---\n([\s\S]*?)\n---/) || [, last])[1].trim();
+  const sentences = original
+    .split(/(?<=[.!?])\s+/)
+    .map((s) =>
+      s
+        .replace(/\b(stupid|idiotic|insane|moronic|garbage|bullshit)\b/gi, "deeply flawed")
+        .replace(/!+/g, ".")
+        .trim()
+    )
+    .filter((s) => s.length > 20);
+
+  const chunks = sentences.length >= 2 ? sentences.slice(0, 4) : [original];
+  const claims = chunks.map((chunk, i) => ({
+    id: String(i + 1),
+    label: `Point ${i + 1}`,
+    steelman: chunk.length > 120 ? chunk.slice(0, 117) + "…" : chunk,
+  }));
+
   return Promise.resolve(
     JSON.stringify({
-      steelman,
-      notes: "- [stub model] softened insults, kept your position\n- set an API key for real steelmanning",
+      claims,
+      notes:
+        claims.length > 1
+          ? `- [stub model] split into ${claims.length} claims\n- set an API key for real disentangling`
+          : "- [stub model] single claim\n- set an API key for real steelmanning",
       question: null,
     })
   );
 }
 
-const callModel = provider === "anthropic" ? callAnthropic : provider === "openai" ? callOpenAI : callStub;
+const callModel =
+  provider === "anthropic"
+    ? callAnthropic
+    : provider === "openai"
+      ? callOpenAI
+      : provider === "openrouter"
+        ? callOpenRouter
+        : callStub;
 
 function parseModelJson(text) {
-  // Models occasionally wrap JSON in fences despite instructions.
   const cleaned = text.replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/, "").trim();
   const parsed = JSON.parse(cleaned);
-  if (typeof parsed.steelman !== "string") throw new Error("model reply missing steelman");
+
+  let claims = parsed.claims;
+  // Tolerate shapes a model tends to drift into, especially on revision:
+  //   { steelman: "..." }        (old single-claim shape)
+  //   { claim: { steelman } }    (singular key)
+  //   { revised: "..." } | { text: "..." }
+  if (!Array.isArray(claims)) {
+    const single =
+      (parsed.claim && typeof parsed.claim === "object" && parsed.claim) ||
+      (typeof parsed.steelman === "string" && { steelman: parsed.steelman }) ||
+      (typeof parsed.revised === "string" && { steelman: parsed.revised }) ||
+      (typeof parsed.text === "string" && { steelman: parsed.text });
+    if (single) {
+      claims = [{ id: single.id ?? "1", label: single.label ?? "Main point", steelman: single.steelman }];
+    }
+  }
+  if (!Array.isArray(claims) || claims.length === 0) {
+    throw new Error("model reply missing claims");
+  }
+  claims = claims.map((c, i) => {
+    if (typeof c.steelman !== "string" || !c.steelman.trim()) {
+      throw new Error(`claim ${i + 1} missing steelman`);
+    }
+    return {
+      id: String(c.id ?? i + 1),
+      label: typeof c.label === "string" && c.label.trim() ? c.label.trim() : `Point ${i + 1}`,
+      steelman: c.steelman.trim(),
+    };
+  });
+
   return {
-    steelman: parsed.steelman,
+    claims,
     notes: typeof parsed.notes === "string" ? parsed.notes : "",
     question: typeof parsed.question === "string" ? parsed.question : null,
   };
@@ -107,11 +206,17 @@ async function handleSteelman(req, res) {
     { role: "user", content: buildFirstRoundPrompt(body) },
   ];
   (body.rounds || []).forEach((r, i) => {
-    messages.push({ role: "assistant", content: JSON.stringify({ steelman: r.draft }) });
+    messages.push({
+      role: "assistant",
+      content: JSON.stringify({
+        claims: [{ id: r.claimId, label: r.claimLabel, steelman: r.draft }],
+      }),
+    });
     messages.push({
       role: "user",
       content: buildRevisionPrompt({
         original: body.original,
+        claim: { id: r.claimId, label: r.claimLabel, steelman: r.draft },
         draft: r.draft,
         feedback: r.feedback,
         round: i + 1,
@@ -125,12 +230,83 @@ async function handleSteelman(req, res) {
   res.end(JSON.stringify(parsed));
 }
 
+async function readBody(req) {
+  let raw = "";
+  for await (const chunk of req) raw += chunk;
+  return raw ? JSON.parse(raw) : {};
+}
+
+function sendJson(res, status, obj) {
+  res.writeHead(status, { "content-type": "application/json" });
+  res.end(JSON.stringify(obj));
+}
+
+// GET /api/tree?space=<slug or question> — space row + flat node list.
+async function handleTree(req, res, url) {
+  const key = url.searchParams.get("space") || "";
+  const question = url.searchParams.get("question") || key;
+  const space = await getOrCreateSpace(question, /\s/.test(key) ? undefined : key);
+  const nodes = await getTree(space.id);
+  sendJson(res, 200, { space, nodes });
+}
+
+async function handleSpaces(_req, res) {
+  sendJson(res, 200, { spaces: await listSpaces() });
+}
+
+// POST /api/publish — persist an author-approved steelman as a tree node.
+// parent_id null => 'answer' (direct to the question); otherwise pro/con by stance.
+async function handlePublish(req, res) {
+  const b = await readBody(req);
+  if (!b.publishedText || !b.originalText || !b.question) {
+    return sendJson(res, 400, { error: "question, publishedText, originalText required" });
+  }
+  const space = await getOrCreateSpace(b.question, b.spaceSlug);
+  const kind = !b.parentId
+    ? "answer"
+    : /oppos|con/i.test(b.stance || "")
+      ? "con"
+      : "pro";
+  const node = await insertNode({
+    spaceId: space.id,
+    parentId: b.parentId,
+    kind,
+    authorAccount: b.authorAccount,
+    publishedText: b.publishedText,
+    originalText: b.originalText,
+    transcript: b.transcript,
+  });
+  sendJson(res, 200, { node, space });
+}
+
+async function handleVote(req, res) {
+  const b = await readBody(req);
+  if (!b.nodeId || ![1, -1].includes(b.value)) {
+    return sendJson(res, 400, { error: "nodeId and value (1|-1) required" });
+  }
+  await castVote(b.nodeId, b.account || "anon", b.value);
+  sendJson(res, 200, { ok: true });
+}
+
 const server = createServer(async (req, res) => {
   try {
-    if (req.method === "POST" && req.url === "/api/steelman") {
+    const url = new URL(req.url, `http://${req.headers.host}`);
+    if (req.method === "POST" && url.pathname === "/api/steelman") {
       return await handleSteelman(req, res);
     }
-    if (req.method === "GET" && (req.url === "/" || req.url === "/index.html")) {
+    if (req.method === "POST" && url.pathname === "/api/publish") {
+      return await handlePublish(req, res);
+    }
+    if (req.method === "POST" && url.pathname === "/api/vote") {
+      return await handleVote(req, res);
+    }
+    if (req.method === "GET" && url.pathname === "/api/tree") {
+      return await handleTree(req, res, url);
+    }
+    if (req.method === "GET" && url.pathname === "/api/spaces") {
+      return await handleSpaces(req, res);
+    }
+    if (req.method === "GET" && (url.pathname === "/" || url.pathname === "/index.html")) {
       const html = await readFile(join(DIR, "index.html"));
       res.writeHead(200, { "content-type": "text/html; charset=utf-8" });
       return res.end(html);
@@ -144,4 +320,5 @@ const server = createServer(async (req, res) => {
   }
 });
 
+await initDb();
 server.listen(PORT, () => console.log(`steelman spike: http://127.0.0.1:${PORT}/`));
