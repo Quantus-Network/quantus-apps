@@ -613,6 +613,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get multisigAlreadyApproved => 'Already Signed';
 
   @override
+  String get multisigSignerPickerTitle => 'Choose account';
+
+  @override
+  String get multisigSignerPickerBody => 'Multiple accounts on this device can sign. Choose which one to approve with.';
+
+  @override
   String get multisigCancelProposalButton => 'Cancel Proposal';
 
   @override

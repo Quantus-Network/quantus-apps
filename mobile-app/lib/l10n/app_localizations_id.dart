@@ -609,6 +609,13 @@ class AppLocalizationsId extends AppLocalizations {
   String get multisigAlreadyApproved => 'Sudah Ditandatangani';
 
   @override
+  String get multisigSignerPickerTitle => 'Pilih akun';
+
+  @override
+  String get multisigSignerPickerBody =>
+      'Beberapa akun di perangkat ini dapat menandatangani. Pilih akun mana yang akan digunakan untuk menyetujui.';
+
+  @override
   String get multisigCancelProposalButton => 'Batalkan Proposal';
 
   @override

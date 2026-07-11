@@ -49,6 +49,10 @@ class MultisigConfirmSheetLabels {
 ///
 /// Handles signer lookup, fee estimation, local authentication, and submission;
 /// callers supply only labels and the action-specific callbacks.
+///
+/// When multiple local accounts are members of the multisig, pass [signer]
+/// explicitly (e.g. after a picker). Otherwise the sheet falls back to
+/// [MultisigAccount.myMemberAccountId].
 class MultisigActionConfirmSheet extends ConsumerStatefulWidget {
   final MultisigAccount msig;
   final MultisigProposal proposal;
@@ -56,6 +60,9 @@ class MultisigActionConfirmSheet extends ConsumerStatefulWidget {
   final MultisigConfirmFeeEstimator estimateFee;
   final MultisigConfirmSubmitter submit;
   final ButtonVariant confirmVariant;
+
+  /// Explicit signer when the caller already resolved which local account acts.
+  final Account? signer;
 
   /// Prefix for debug log messages, e.g. `[MultisigApprove]`.
   final String logPrefix;
@@ -68,6 +75,7 @@ class MultisigActionConfirmSheet extends ConsumerStatefulWidget {
     required this.estimateFee,
     required this.submit,
     required this.logPrefix,
+    this.signer,
     this.confirmVariant = ButtonVariant.primary,
   });
 
@@ -89,6 +97,8 @@ class _MultisigActionConfirmSheetState extends ConsumerState<MultisigActionConfi
   }
 
   Account _requireSigner() {
+    if (widget.signer != null) return widget.signer!;
+
     final signer = ref
         .read(accountsProvider)
         .value
