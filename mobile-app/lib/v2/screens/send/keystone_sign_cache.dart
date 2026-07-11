@@ -19,15 +19,26 @@ bool isKeystoneSignCacheEntryExpired(KeystoneSignCacheEntry entry, DateTime now)
   return now.difference(entry.storedAt) >= keystoneSignCacheMaxAge(entry.unsignedData.payloadToSign);
 }
 
-/// Identifies a Keystone signing payload by the transfer parameters that define
-/// the extrinsic call. Block height and nonce are excluded so chain drift does
-/// not invalidate the cached QR within a send session.
+/// Identifies a Keystone signing payload by the parameters that define the
+/// extrinsic call. Block height and nonce are excluded so chain drift does not
+/// invalidate the cached QR within a session.
+///
+/// Transfer payloads use [fromSendParams]; arbitrary extrinsics (e.g. multisig
+/// approve) use [forExtrinsic] with an opaque [identity].
 class KeystoneSignCacheKey {
   final String accountId;
   final String recipientAddress;
   final BigInt amount;
 
-  const KeystoneSignCacheKey({required this.accountId, required this.recipientAddress, required this.amount});
+  /// Opaque call identity for non-transfer extrinsics. Empty for send payloads.
+  final String identity;
+
+  const KeystoneSignCacheKey({
+    required this.accountId,
+    required this.recipientAddress,
+    required this.amount,
+    this.identity = '',
+  });
 
   factory KeystoneSignCacheKey.fromSendParams({
     required String accountId,
@@ -37,16 +48,30 @@ class KeystoneSignCacheKey {
     return KeystoneSignCacheKey(accountId: accountId, recipientAddress: recipientAddress.trim(), amount: amount);
   }
 
+  /// Cache key for non-transfer extrinsics (multisig approve/execute/cancel, …).
+  factory KeystoneSignCacheKey.forExtrinsic({
+    required String accountId,
+    required String identity,
+  }) {
+    return KeystoneSignCacheKey(
+      accountId: accountId,
+      recipientAddress: '',
+      amount: BigInt.zero,
+      identity: identity,
+    );
+  }
+
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       other is KeystoneSignCacheKey &&
           accountId == other.accountId &&
           recipientAddress == other.recipientAddress &&
-          amount == other.amount;
+          amount == other.amount &&
+          identity == other.identity;
 
   @override
-  int get hashCode => Object.hash(accountId, recipientAddress, amount);
+  int get hashCode => Object.hash(accountId, recipientAddress, amount, identity);
 }
 
 class KeystoneSignCacheEntry {
