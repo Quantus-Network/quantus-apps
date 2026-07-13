@@ -14,8 +14,9 @@ import 'package:resonance_network_wallet/shared/utils/print.dart';
 import 'package:resonance_network_wallet/v2/components/bottom_sheet_container.dart';
 import 'package:resonance_network_wallet/v2/components/detail_summary_row.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
-import 'package:resonance_network_wallet/v2/screens/send/keystone_extrinsic_session.dart';
-import 'package:resonance_network_wallet/v2/screens/send/keystone_sign_extrinsic_screen.dart';
+import 'package:resonance_network_wallet/v2/screens/send/keystone_sign_cache.dart';
+import 'package:resonance_network_wallet/v2/screens/send/keystone_sign_screen.dart';
+import 'package:resonance_network_wallet/v2/screens/send/keystone_signing_session.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 
@@ -215,13 +216,13 @@ class _MultisigActionConfirmSheetState extends ConsumerState<MultisigActionConfi
     );
     final recipient = widget.proposal.recipient;
 
-    final session = KeystoneExtrinsicSession(
+    final session = KeystoneSigningSession(
       account: signer,
       buildCall: () => widget.buildCall(signer),
       title: widget.labels.title(l10n),
       primaryDetail: amountText,
       secondaryDetail: recipient.isEmpty ? null : recipient,
-      cacheIdentity: widget.hardwareCacheIdentity,
+      cacheKey: KeystoneSignCacheKey.forExtrinsic(accountId: signer.accountId, identity: widget.hardwareCacheIdentity),
       telemetryPrefix: widget.hardwareTelemetryPrefix,
       submitSigned: (ref, {required unsignedData, required signature, required publicKey}) {
         return widget.submitExternal(
@@ -237,12 +238,12 @@ class _MultisigActionConfirmSheetState extends ConsumerState<MultisigActionConfi
 
     setState(() => _submitting = false);
 
-    final ok = await Navigator.of(
+    final hash = await Navigator.of(
       context,
-    ).push<bool>(MaterialPageRoute(builder: (_) => KeystoneSignExtrinsicScreen(session: session)));
+    ).push<String>(MaterialPageRoute(builder: (_) => KeystoneSignScreen(session: session)));
 
     if (!mounted) return;
-    if (ok == true) {
+    if (hash != null) {
       ref.invalidate(multisigOpenProposalsProvider(widget.msig));
       ref.invalidate(multisigCurrentBlockProvider);
       Navigator.pop(context);

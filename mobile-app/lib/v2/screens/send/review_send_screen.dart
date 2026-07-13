@@ -4,6 +4,7 @@ import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/currency_display_provider.dart';
 import 'package:resonance_network_wallet/shared/constants/e2e_keys.dart';
+import 'package:resonance_network_wallet/shared/utils/url_utils.dart';
 import 'package:resonance_network_wallet/v2/components/address_checkphrase_with_initial.dart';
 import 'package:resonance_network_wallet/v2/components/amount_display_with_conversion.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
@@ -70,21 +71,18 @@ class _ReviewSendScreenState extends ConsumerState<ReviewSendScreen> {
           _errorMessage = null;
         });
         Navigator.push(context, MaterialPageRoute(builder: (_) => SendTerminalScreen(content: terminal)));
-      case SendNeedsHardwareSignature(:final account, :final networkFee, :final blockHeight, :final terminal):
+      case SendNeedsHardwareSignature(:final session, :final terminal):
         setState(() => _submitting = false);
+        final hash = await Navigator.push<String>(
+          context,
+          MaterialPageRoute(builder: (_) => KeystoneSignScreen(session: session)),
+        );
+        if (!mounted || hash == null) return;
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => KeystoneSignScreen(
-              account: account,
-              recipientAddress: widget.recipientAddress.trim(),
-              amount: widget.amount,
-              networkFee: networkFee,
-              blockHeight: blockHeight,
-              recipientChecksum: widget.recipientChecksum,
-              isPayMode: widget.isPayMode,
-              terminal: terminal,
-            ),
+            builder: (_) =>
+                SendTerminalScreen(content: terminal.copyWith(explorerUrl: explorerImmediateTransactionUrl(hash))),
           ),
         );
       case SendFailed(:final message):
