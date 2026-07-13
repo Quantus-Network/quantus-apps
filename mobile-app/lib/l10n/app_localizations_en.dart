@@ -140,6 +140,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get accountReadyDone => 'Done';
 
   @override
+  String get accountReadyTwoAccountsCreated => 'Two accounts were created for you.';
+
+  @override
+  String get accountReadyMainAccountDescription => 'Your main account. Fast, visible on chain.';
+
+  @override
+  String get accountReadyEncryptedAccountDescription => 'For private transactions. Shielded, slower.';
+
+  @override
+  String get accountReadyGoToWallet => 'Go to Wallet';
+
+  @override
   String get importWalletAppBarTitle => 'Import Wallet';
 
   @override
@@ -1086,6 +1098,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get activityTxReceived => 'Received';
 
   @override
+  String get activityTxPrivatelySending => 'Privately Sending';
+
+  @override
+  String get activityTxPrivatelyReceiving => 'Privately Receiving';
+
+  @override
+  String get activityTxPrivateSent => 'Private Sent';
+
+  @override
+  String get activityTxPrivateReceived => 'Private Received';
+
+  @override
   String get activityTxMultisigCreated => 'Multisig created';
 
   @override
@@ -1137,6 +1161,18 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get activityDetailTitleReceived => 'Received';
+
+  @override
+  String get activityDetailTitlePrivatelySending => 'Privately Sending';
+
+  @override
+  String get activityDetailTitlePrivatelyReceiving => 'Privately Receiving';
+
+  @override
+  String get activityDetailTitlePrivateSent => 'Private Sent';
+
+  @override
+  String get activityDetailTitlePrivateReceived => 'Private Received';
 
   @override
   String get activityDetailTitleMultisigCreated => 'Multisig created';
@@ -1881,4 +1917,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get encryptedSendingLabel => 'SENDING';
+
+  @override
+  String get privateSendTitle => 'Private Send';
+
+  @override
+  String get privateSendSubtitle => 'Activity not visible on chain';
 }

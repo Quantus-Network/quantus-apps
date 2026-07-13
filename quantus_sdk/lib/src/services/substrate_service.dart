@@ -394,6 +394,10 @@ class SubstrateService {
   Future<void> logout() async {
     print('Log out!');
     await _settingsService.clearAll();
+    // Wormhole / encrypted-account files live outside SettingsService storage
+    // and would otherwise leak balances into the next wallet session.
+    await WormholeUtxoService.clearAllCaches();
+    await EncryptedAccountService.clearAllPersistedState();
     TaskmasterService().logout();
   }
 

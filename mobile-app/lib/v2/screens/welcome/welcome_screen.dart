@@ -49,6 +49,9 @@ class _WelcomeScreenV2State extends ConsumerState<WelcomeScreenV2> {
         existingAccounts: accounts,
       );
 
+      // Software wallets always get a companion encrypted (wormhole) account.
+      await ensureEncryptedAccounts(ref);
+
       ref.invalidate(accountsProvider);
       ref.invalidate(activeAccountProvider);
       ref.invalidate(walletOriginProvider(_walletIndex));

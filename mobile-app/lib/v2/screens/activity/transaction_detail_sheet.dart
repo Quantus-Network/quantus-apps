@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/dotted_border.dart';
 import 'package:resonance_network_wallet/l10n/app_localizations.dart';
+import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/currency_display_provider.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
@@ -56,7 +57,7 @@ class _TransactionDetailSheet extends ConsumerWidget {
   bool get _isPendingMultisigExecution => tx.isPendingMultisigExecution;
   bool get _isPendingMultisigCancellation => tx.isPendingMultisigCancellation;
 
-  String _title(AppLocalizations l10n) {
+  String _title(AppLocalizations l10n, {required bool isPrivate}) {
     if (_isPendingMultisigProposal) return l10n.activityDetailTitleProposing;
     if (_isPendingMultisigExecution) return l10n.activityDetailTitleExecuting;
     if (_isPendingMultisigCancellation) return l10n.activityDetailTitleCancelling;
@@ -66,11 +67,15 @@ class _TransactionDetailSheet extends ConsumerWidget {
     if (_isMultisigProposalCancelled) return l10n.activityDetailTitleProposalCancelled;
     if (_isPendingMultisigCreation) return l10n.activityDetailTitleMultisigCreating;
     if (_isMultisigCreated) return l10n.activityDetailTitleMultisigCreated;
-    if (_isPending) return l10n.activityDetailTitleSending;
-    if (tx.isReversibleScheduled) {
-      return _isSend ? l10n.activityDetailTitleScheduled : l10n.activityDetailTitleReceiving;
+    if (_isPending) {
+      return isPrivate ? l10n.activityDetailTitlePrivatelySending : l10n.activityDetailTitleSending;
     }
-    return _isSend ? l10n.activityDetailTitleSent : l10n.activityDetailTitleReceived;
+    if (tx.isReversibleScheduled) {
+      if (_isSend) return l10n.activityDetailTitleScheduled;
+      return isPrivate ? l10n.activityDetailTitlePrivatelyReceiving : l10n.activityDetailTitleReceiving;
+    }
+    if (_isSend) return isPrivate ? l10n.activityDetailTitlePrivateSent : l10n.activityDetailTitleSent;
+    return isPrivate ? l10n.activityDetailTitlePrivateReceived : l10n.activityDetailTitleReceived;
   }
 
   String _statusLabel(AppLocalizations l10n) {
@@ -101,9 +106,10 @@ class _TransactionDetailSheet extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = ref.watch(l10nProvider);
     final colors = context.colors;
+    final isPrivate = isEncryptedAccount(ref.watch(activeAccountProvider).value?.account);
 
     return BottomSheetContainer(
-      title: _title(l10n),
+      title: _title(l10n, isPrivate: isPrivate),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,

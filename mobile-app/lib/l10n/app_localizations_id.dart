@@ -135,6 +135,18 @@ class AppLocalizationsId extends AppLocalizations {
   String get accountReadyDone => 'Selesai';
 
   @override
+  String get accountReadyTwoAccountsCreated => 'Dua akun telah dibuat untuk Anda.';
+
+  @override
+  String get accountReadyMainAccountDescription => 'Akun utama Anda. Cepat, terlihat di chain.';
+
+  @override
+  String get accountReadyEncryptedAccountDescription => 'Untuk transaksi privat. Tershield, lebih lambat.';
+
+  @override
+  String get accountReadyGoToWallet => 'Buka Wallet';
+
+  @override
   String get importWalletAppBarTitle => 'Impor Wallet';
 
   @override
@@ -1083,6 +1095,18 @@ class AppLocalizationsId extends AppLocalizations {
   String get activityTxReceived => 'Diterima';
 
   @override
+  String get activityTxPrivatelySending => 'Mengirim Secara Privat';
+
+  @override
+  String get activityTxPrivatelyReceiving => 'Menerima Secara Privat';
+
+  @override
+  String get activityTxPrivateSent => 'Terkirim Privat';
+
+  @override
+  String get activityTxPrivateReceived => 'Diterima Privat';
+
+  @override
   String get activityTxMultisigCreated => 'Multisig dibuat';
 
   @override
@@ -1134,6 +1158,18 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get activityDetailTitleReceived => 'Diterima';
+
+  @override
+  String get activityDetailTitlePrivatelySending => 'Mengirim Secara Privat';
+
+  @override
+  String get activityDetailTitlePrivatelyReceiving => 'Menerima Secara Privat';
+
+  @override
+  String get activityDetailTitlePrivateSent => 'Terkirim Privat';
+
+  @override
+  String get activityDetailTitlePrivateReceived => 'Diterima Privat';
 
   @override
   String get activityDetailTitleMultisigCreated => 'Multisig dibuat';
@@ -1878,4 +1914,10 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get encryptedSendingLabel => 'MENGIRIM';
+
+  @override
+  String get privateSendTitle => 'Kirim Privat';
+
+  @override
+  String get privateSendSubtitle => 'Aktivitas tidak terlihat di chain';
 }

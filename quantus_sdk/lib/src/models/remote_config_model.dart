@@ -46,7 +46,7 @@ class RemoteConfigModel {
     enableHighSecurity: false,
     enableRemoteNotifications: true,
     enableSwap: false,
-    enableEncryptedAccount: false,
+    enableEncryptedAccount: true,
     enableMultisig: true,
   );
 

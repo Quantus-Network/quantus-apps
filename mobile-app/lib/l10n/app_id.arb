@@ -39,6 +39,10 @@
   "accountReadyWalletCreated": "Wallet Dibuat",
   "accountReadyWalletImported": "Wallet Diimpor",
   "accountReadyDone": "Selesai",
+  "accountReadyTwoAccountsCreated": "Dua akun telah dibuat untuk Anda.",
+  "accountReadyMainAccountDescription": "Akun utama Anda. Cepat, terlihat di chain.",
+  "accountReadyEncryptedAccountDescription": "Untuk transaksi privat. Tershield, lebih lambat.",
+  "accountReadyGoToWallet": "Buka Wallet",
 
   "importWalletAppBarTitle": "Impor Wallet",
   "importWalletDescription": "Pulihkan wallet yang ada dengan recovery phrase 12 atau 24 kata Anda",
@@ -348,6 +352,10 @@
   "activityTxPending": "Tertunda",
   "activityTxSent": "Terkirim",
   "activityTxReceived": "Diterima",
+  "activityTxPrivatelySending": "Mengirim Secara Privat",
+  "activityTxPrivatelyReceiving": "Menerima Secara Privat",
+  "activityTxPrivateSent": "Terkirim Privat",
+  "activityTxPrivateReceived": "Diterima Privat",
   "activityTxMultisigCreated": "Multisig dibuat",
   "activityTxMultisigCreating": "Membuat multisig",
   "activityTxMultisigLabel": "Multisig",
@@ -364,6 +372,10 @@
   "activityDetailTitleReceiving": "Menerima",
   "activityDetailTitleSent": "Terkirim",
   "activityDetailTitleReceived": "Diterima",
+  "activityDetailTitlePrivatelySending": "Mengirim Secara Privat",
+  "activityDetailTitlePrivatelyReceiving": "Menerima Secara Privat",
+  "activityDetailTitlePrivateSent": "Terkirim Privat",
+  "activityDetailTitlePrivateReceived": "Diterima Privat",
   "activityDetailTitleMultisigCreated": "Multisig dibuat",
   "activityDetailTitleMultisigCreating": "Membuat multisig",
   "activityDetailTitleProposalCreated": "Proposal dibuat",
@@ -617,5 +629,7 @@
   "encryptedSendProgressTitle": "Mengirim Secara Privat...",
   "encryptedSendFailedTitle": "Pengiriman Gagal",
   "encryptedSendCancelledTitle": "Pengiriman Dibatalkan",
-  "encryptedSendingLabel": "MENGIRIM"
+  "encryptedSendingLabel": "MENGIRIM",
+  "privateSendTitle": "Kirim Privat",
+  "privateSendSubtitle": "Aktivitas tidak terlihat di chain"
 }

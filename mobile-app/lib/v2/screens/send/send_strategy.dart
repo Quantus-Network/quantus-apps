@@ -190,6 +190,10 @@ SendTerminalContent buildSentTerminalContent(
 abstract class SendStrategy {
   const SendStrategy();
 
+  /// Whether the recipient screen shows the "Private Send" notice above the
+  /// continue button. Only encrypted (wormhole) sends enable this.
+  bool get showPrivateSendNotice => false;
+
   /// Account the funds leave from; the recipient must differ (self-guard) and
   /// it is excluded from the recents list. Resolved via `ref.read`.
   String? sourceAccountId(WidgetRef ref);

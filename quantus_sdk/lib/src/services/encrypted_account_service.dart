@@ -84,6 +84,31 @@ class EncryptedAccountService {
   /// last persisted state (cheap — no network). [load] keeps it current.
   Future<WormholeKeyPair> receiveKeyPair() async => keyPairAt((await _readState()).nextIndex);
 
+  /// Drops every on-disk cache that can affect this wallet's balance so the
+  /// next [load] re-runs discovery + UTXO/nullifier checks from chain only.
+  ///
+  /// Used by pull-to-refresh. Clears wormhole transfer/nullifier caches and
+  /// this wallet's pending-spend / next-index file.
+  Future<void> discardCachedState() async {
+    _log('discardCachedState: wallet $walletIndex');
+    await WormholeUtxoService.clearAllCaches();
+    final file = await _stateFile();
+    if (await file.exists()) {
+      await file.delete();
+      _log('discardCachedState: deleted ${file.path}');
+    }
+    _keyPairs.clear();
+  }
+
+  /// [discardCachedState] then a full [load] — pull-to-refresh entry point.
+  Future<EncryptedAccountState> forceReload({
+    WormholeProgressCallback? onProgress,
+    IsCancelledCallback? isCancelled,
+  }) async {
+    await discardCachedState();
+    return load(onProgress: onProgress, isCancelled: isCancelled);
+  }
+
   /// Discovers used addresses, fetches their unspent UTXOs, reconciles
   /// pending-spend records and persists the refreshed state.
   Future<EncryptedAccountState> load({WormholeProgressCallback? onProgress, IsCancelledCallback? isCancelled}) async {
@@ -213,6 +238,28 @@ class EncryptedAccountService {
   Future<File> _stateFile() async {
     final dir = await getApplicationSupportDirectory();
     return File('${dir.path}/encrypted_account_w$walletIndex.json');
+  }
+
+  /// Deletes every wallet's encrypted-account state file (next-index / pending
+  /// spends). Call on logout; otherwise a new wallet at the same index inherits
+  /// pending-change balance from the previous session.
+  static Future<void> clearAllPersistedState() async {
+    try {
+      final dir = await getApplicationSupportDirectory();
+      if (!await dir.exists()) return;
+      var deleted = 0;
+      await for (final entity in dir.list()) {
+        if (entity is! File) continue;
+        final name = entity.uri.pathSegments.isEmpty ? entity.path : entity.uri.pathSegments.last;
+        if (name.startsWith('encrypted_account_w') && name.endsWith('.json')) {
+          await entity.delete();
+          deleted++;
+        }
+      }
+      _log('clearAllPersistedState: deleted $deleted file(s)');
+    } catch (e) {
+      _log('clearAllPersistedState failed (non-fatal): $e');
+    }
   }
 
   Future<_FileState> _readState() async {

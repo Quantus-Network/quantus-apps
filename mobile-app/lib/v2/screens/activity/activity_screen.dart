@@ -8,6 +8,7 @@ import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/active_account_transactions_provider.dart';
 import 'package:resonance_network_wallet/providers/currency_display_provider.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
+import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/services/transaction_service.dart';
 import 'package:resonance_network_wallet/v2/components/loader.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
@@ -160,7 +161,13 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                         if (i > 0) const SizedBox(height: 32),
                         Text(group.label, style: text.receiveLabel?.copyWith(color: colors.textTertiary)),
                         ...group.transactions.mapIndexed((index, tx) {
-                          final itemData = TxItemData.from(tx, active.account.accountId, colors, l10n);
+                          final itemData = TxItemData.from(
+                            tx,
+                            active.account.accountId,
+                            colors,
+                            l10n,
+                            isPrivate: isEncryptedAccount(active.account),
+                          );
                           final isLastItem = index == group.transactions.length - 1;
                           return buildTxItem(
                             tx,

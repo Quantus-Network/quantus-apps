@@ -186,6 +186,27 @@ class WormholeUtxoService {
     }
   }
 
+  /// Deletes every on-disk wormhole transfer / nullifier cache. Call on logout
+  /// so a new wallet never reuses another wallet's UTXO discovery state.
+  static Future<void> clearAllCaches() async {
+    try {
+      final dir = await getApplicationSupportDirectory();
+      if (!await dir.exists()) return;
+      var deleted = 0;
+      await for (final entity in dir.list()) {
+        if (entity is! File) continue;
+        final name = entity.uri.pathSegments.isEmpty ? entity.path : entity.uri.pathSegments.last;
+        if (name.startsWith('wormhole_cache_') || name.startsWith('wormhole_nullifiers')) {
+          await entity.delete();
+          deleted++;
+        }
+      }
+      _log('clearAllCaches: deleted $deleted file(s)');
+    } catch (e) {
+      _log('clearAllCaches failed (non-fatal): $e');
+    }
+  }
+
   // --- Block height ---
 
   /// Current chain head (best block) height. Throws if RPC fails — callers must

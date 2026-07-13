@@ -19,6 +19,9 @@ class EncryptedSendStrategy extends SendStrategy {
   const EncryptedSendStrategy({required this.account});
 
   @override
+  bool get showPrivateSendNotice => true;
+
+  @override
   String? sourceAccountId(WidgetRef ref) => account.accountId;
 
   @override

@@ -296,6 +296,30 @@ abstract class AppLocalizations {
   /// **'Done'**
   String get accountReadyDone;
 
+  /// Subtitle on wallet created ready screen explaining the two accounts
+  ///
+  /// In en, this message translates to:
+  /// **'Two accounts were created for you.'**
+  String get accountReadyTwoAccountsCreated;
+
+  /// Description under the transparent main account card after wallet creation
+  ///
+  /// In en, this message translates to:
+  /// **'Your main account. Fast, visible on chain.'**
+  String get accountReadyMainAccountDescription;
+
+  /// Description under the encrypted account card after wallet creation
+  ///
+  /// In en, this message translates to:
+  /// **'For private transactions. Shielded, slower.'**
+  String get accountReadyEncryptedAccountDescription;
+
+  /// Primary CTA on the wallet created ready screen
+  ///
+  /// In en, this message translates to:
+  /// **'Go to Wallet'**
+  String get accountReadyGoToWallet;
+
   /// App bar title on the import wallet screen
   ///
   /// In en, this message translates to:
@@ -2030,6 +2054,30 @@ abstract class AppLocalizations {
   /// **'Received'**
   String get activityTxReceived;
 
+  /// Transaction row label for pending encrypted send
+  ///
+  /// In en, this message translates to:
+  /// **'Privately Sending'**
+  String get activityTxPrivatelySending;
+
+  /// Transaction row label for pending encrypted receive
+  ///
+  /// In en, this message translates to:
+  /// **'Privately Receiving'**
+  String get activityTxPrivatelyReceiving;
+
+  /// Transaction row label for completed encrypted send
+  ///
+  /// In en, this message translates to:
+  /// **'Private Sent'**
+  String get activityTxPrivateSent;
+
+  /// Transaction row label for completed encrypted receive
+  ///
+  /// In en, this message translates to:
+  /// **'Private Received'**
+  String get activityTxPrivateReceived;
+
   /// Transaction row label for multisig account creation
   ///
   /// In en, this message translates to:
@@ -2119,6 +2167,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Received'**
   String get activityDetailTitleReceived;
+
+  /// Detail sheet title for pending encrypted send
+  ///
+  /// In en, this message translates to:
+  /// **'Privately Sending'**
+  String get activityDetailTitlePrivatelySending;
+
+  /// Detail sheet title for pending encrypted receive
+  ///
+  /// In en, this message translates to:
+  /// **'Privately Receiving'**
+  String get activityDetailTitlePrivatelyReceiving;
+
+  /// Detail sheet title for completed encrypted send
+  ///
+  /// In en, this message translates to:
+  /// **'Private Sent'**
+  String get activityDetailTitlePrivateSent;
+
+  /// Detail sheet title for completed encrypted receive
+  ///
+  /// In en, this message translates to:
+  /// **'Private Received'**
+  String get activityDetailTitlePrivateReceived;
 
   /// Detail sheet title for multisig creation
   ///
@@ -3493,6 +3565,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'SENDING'**
   String get encryptedSendingLabel;
+
+  /// Title of the private-send notice on encrypted send recipient screen
+  ///
+  /// In en, this message translates to:
+  /// **'Private Send'**
+  String get privateSendTitle;
+
+  /// Subtitle of the private-send notice on encrypted send recipient screen
+  ///
+  /// In en, this message translates to:
+  /// **'Activity not visible on chain'**
+  String get privateSendSubtitle;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

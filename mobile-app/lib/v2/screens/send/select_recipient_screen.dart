@@ -14,6 +14,7 @@ import 'package:resonance_network_wallet/shared/extensions/toaster_extensions.da
 import 'package:resonance_network_wallet/v2/components/address_checkphrase_with_initial.dart';
 import 'package:resonance_network_wallet/v2/components/address_input_field.dart';
 import 'package:resonance_network_wallet/v2/components/loader.dart';
+import 'package:resonance_network_wallet/v2/components/private_activity_notice.dart';
 import 'package:resonance_network_wallet/v2/components/qr_scanner_page.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base_bottom_content.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
@@ -355,13 +356,27 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
         ? l10n.sendLogicCantSelfTransfer
         : l10n.sendEnterAddress;
 
+    final button = QuantusButton.simple(
+      key: const Key(E2EKeys.sendContinueButton),
+      label: btnText,
+      variant: ButtonVariant.primary,
+      isDisabled: !_canContinue,
+      onTap: _continue,
+    );
+
+    if (!widget.strategy.showPrivateSendNotice) {
+      return ScaffoldBaseBottomContent(child: button);
+    }
+
     return ScaffoldBaseBottomContent(
-      child: QuantusButton.simple(
-        key: const Key(E2EKeys.sendContinueButton),
-        label: btnText,
-        variant: ButtonVariant.primary,
-        isDisabled: !_canContinue,
-        onTap: _continue,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          PrivateActivityNotice(title: l10n.privateSendTitle, subtitle: l10n.privateSendSubtitle),
+          const SizedBox(height: 32),
+          button,
+        ],
       ),
     );
   }

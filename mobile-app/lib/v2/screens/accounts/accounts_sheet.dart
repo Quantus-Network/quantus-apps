@@ -6,6 +6,7 @@ import 'package:resonance_network_wallet/providers/multisig_providers.dart';
 import 'package:resonance_network_wallet/shared/utils/accounts_grouping.dart';
 import 'package:resonance_network_wallet/v2/components/account_badge.dart';
 import 'package:resonance_network_wallet/v2/components/loader.dart';
+import 'package:resonance_network_wallet/v2/components/private_activity_notice.dart';
 import 'package:resonance_network_wallet/v2/components/multisig_tag.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_icon_button.dart';
@@ -298,7 +299,8 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
       isActive: isActive,
       isHighlighted: isHighlighted,
       onTap: () => _switchAccount(RegularAccount(account)),
-      leading: AccountBadge.icon(icon: Icons.lock_outline, isActive: isActive),
+      leading: const EncryptedLockBadge(),
+      title: account.name,
       subtitle: _balanceText(l10n, account),
     );
   }

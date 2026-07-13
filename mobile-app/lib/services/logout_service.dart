@@ -50,6 +50,12 @@ class LogoutService {
     _ref.read(activeAccountProvider.notifier).reset();
     _ref.invalidate(recoveryPhraseViewedProvider);
     _ref.invalidate(walletOriginProvider);
+    // Drop encrypted-account Riverpod state so the next session doesn't show
+    // the previous wallet's balance while disk caches are already wiped above.
+    _ref.invalidate(encryptedAccountServiceProvider);
+    _ref.invalidate(encryptedStateProvider);
+    _ref.invalidate(encryptedBalanceProvider);
+    _ref.invalidate(encryptedSpendableProvider);
     _ref.read(multisigAccountsProvider.notifier).reset();
     _ref.invalidate(discoveredMultisigsProvider);
     _ref.read(accountAssociationsProvider.notifier).reset();

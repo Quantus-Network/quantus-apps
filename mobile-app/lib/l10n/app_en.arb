@@ -161,6 +161,22 @@
     "@accountReadyDone": {
       "description": "Done button on the account ready screen"
     },
+    "accountReadyTwoAccountsCreated": "Two accounts were created for you.",
+    "@accountReadyTwoAccountsCreated": {
+      "description": "Subtitle on wallet created ready screen explaining the two accounts"
+    },
+    "accountReadyMainAccountDescription": "Your main account. Fast, visible on chain.",
+    "@accountReadyMainAccountDescription": {
+      "description": "Description under the transparent main account card after wallet creation"
+    },
+    "accountReadyEncryptedAccountDescription": "For private transactions. Shielded, slower.",
+    "@accountReadyEncryptedAccountDescription": {
+      "description": "Description under the encrypted account card after wallet creation"
+    },
+    "accountReadyGoToWallet": "Go to Wallet",
+    "@accountReadyGoToWallet": {
+      "description": "Primary CTA on the wallet created ready screen"
+    },
 
     "importWalletAppBarTitle": "Import Wallet",
     "@importWalletAppBarTitle": {
@@ -1529,6 +1545,22 @@
     "@activityTxReceived": {
       "description": "Transaction row label for completed receive"
     },
+    "activityTxPrivatelySending": "Privately Sending",
+    "@activityTxPrivatelySending": {
+      "description": "Transaction row label for pending encrypted send"
+    },
+    "activityTxPrivatelyReceiving": "Privately Receiving",
+    "@activityTxPrivatelyReceiving": {
+      "description": "Transaction row label for pending encrypted receive"
+    },
+    "activityTxPrivateSent": "Private Sent",
+    "@activityTxPrivateSent": {
+      "description": "Transaction row label for completed encrypted send"
+    },
+    "activityTxPrivateReceived": "Private Received",
+    "@activityTxPrivateReceived": {
+      "description": "Transaction row label for completed encrypted receive"
+    },
     "activityTxMultisigCreated": "Multisig created",
     "@activityTxMultisigCreated": {
       "description": "Transaction row label for multisig account creation"
@@ -1615,6 +1647,22 @@
     "activityDetailTitleReceived": "Received",
     "@activityDetailTitleReceived": {
       "description": "Detail sheet title for completed receive"
+    },
+    "activityDetailTitlePrivatelySending": "Privately Sending",
+    "@activityDetailTitlePrivatelySending": {
+      "description": "Detail sheet title for pending encrypted send"
+    },
+    "activityDetailTitlePrivatelyReceiving": "Privately Receiving",
+    "@activityDetailTitlePrivatelyReceiving": {
+      "description": "Detail sheet title for pending encrypted receive"
+    },
+    "activityDetailTitlePrivateSent": "Private Sent",
+    "@activityDetailTitlePrivateSent": {
+      "description": "Detail sheet title for completed encrypted send"
+    },
+    "activityDetailTitlePrivateReceived": "Private Received",
+    "@activityDetailTitlePrivateReceived": {
+      "description": "Detail sheet title for completed encrypted receive"
     },
     "activityDetailTitleMultisigCreated": "Multisig created",
     "@activityDetailTitleMultisigCreated": {
@@ -2721,5 +2769,13 @@
     "encryptedSendingLabel": "SENDING",
     "@encryptedSendingLabel": {
       "description": "Status header label on encrypted send progress"
+    },
+    "privateSendTitle": "Private Send",
+    "@privateSendTitle": {
+      "description": "Title of the private-send notice on encrypted send recipient screen"
+    },
+    "privateSendSubtitle": "Activity not visible on chain",
+    "@privateSendSubtitle": {
+      "description": "Subtitle of the private-send notice on encrypted send recipient screen"
     }
   }
