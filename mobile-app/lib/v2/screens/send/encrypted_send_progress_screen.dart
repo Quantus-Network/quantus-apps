@@ -128,7 +128,12 @@ class _EncryptedSendProgressScreenState extends ConsumerState<EncryptedSendProgr
             _buildStatusHeader(colors, text, l10n),
             const SizedBox(height: 32),
             WormholeProgressSteps(
-              steps: [(1, l10n.redeemStepCircuits), (5, l10n.redeemStepProofs), (6, l10n.redeemStepAggregate)],
+              steps: [
+                (1, l10n.encryptedSendStepPreparing),
+                (7, l10n.encryptedSendStepGathering),
+                (5, l10n.encryptedSendStepProving),
+                (6, l10n.encryptedSendStepSubmitting),
+              ],
               stepProgress: _stepProgress,
               currentStep: _currentStep,
               done: false,

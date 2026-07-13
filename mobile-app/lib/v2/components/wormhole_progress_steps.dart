@@ -52,7 +52,7 @@ class WormholeProgressSteps extends StatelessWidget {
         children: [
           for (int i = 0; i < steps.length; i++) ...[
             _buildStepRow(steps[i].$1, steps[i].$2, colors, text),
-            if (i < steps.length - 1) _buildConnector(steps[i].$1, colors),
+            if (i < steps.length - 1) _buildConnector(i, colors),
           ],
         ],
       ),
@@ -111,15 +111,18 @@ class WormholeProgressSteps extends StatelessWidget {
         ),
       );
     } else {
-      icon = Container(
+      icon = SizedBox(
         width: 28,
         height: 28,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          border: Border.all(color: colors.borderButton.withValues(alpha: 0.3), width: 1.5),
-        ),
         child: Center(
-          child: Text('$step', style: text.detail?.copyWith(color: colors.textTertiary)),
+          child: Container(
+            width: 5,
+            height: 5,
+            decoration: BoxDecoration(
+              color: colors.borderButton.withValues(alpha: 0.3),
+              borderRadius: BorderRadius.circular(2.5),
+            ),
+          ),
         ),
       );
     }
@@ -182,8 +185,9 @@ class WormholeProgressSteps extends StatelessWidget {
     );
   }
 
-  Widget _buildConnector(int afterStep, AppColorsV2 colors) {
-    final isCompleted = done ? true : currentStep > afterStep;
+  Widget _buildConnector(int displayIndex, AppColorsV2 colors) {
+    final nextStarted =
+        done || (displayIndex + 1 < steps.length && stepProgress.containsKey(steps[displayIndex + 1].$1));
     return Padding(
       padding: const EdgeInsets.only(left: 13),
       child: Align(
@@ -192,7 +196,7 @@ class WormholeProgressSteps extends StatelessWidget {
           width: 2,
           height: 20,
           decoration: BoxDecoration(
-            color: isCompleted ? colors.success.withValues(alpha: 0.4) : colors.borderButton.withValues(alpha: 0.15),
+            color: nextStarted ? colors.success.withValues(alpha: 0.4) : colors.borderButton.withValues(alpha: 0.15),
             borderRadius: BorderRadius.circular(1),
           ),
         ),

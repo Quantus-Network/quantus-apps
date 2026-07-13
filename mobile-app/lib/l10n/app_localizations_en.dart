@@ -1919,6 +1919,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get encryptedSendingLabel => 'SENDING';
 
   @override
+  String get encryptedSendStepPreparing => 'Preparing';
+
+  @override
+  String get encryptedSendStepGathering => 'Gathering funds';
+
+  @override
+  String get encryptedSendStepProving => 'Building privacy proof';
+
+  @override
+  String get encryptedSendStepSubmitting => 'Submitting to network';
+
+  @override
   String get privateSendTitle => 'Private Send';
 
   @override

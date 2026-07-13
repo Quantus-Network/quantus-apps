@@ -82,8 +82,9 @@ class WormholeSendService {
     2: 'Fetching transfers',
     3: 'Computing nullifiers',
     4: 'Checking nullifiers',
-    5: 'Generating ZK proofs',
-    6: 'Submitting to chain',
+    5: 'Building privacy proof',
+    6: 'Submitting to network',
+    7: 'Gathering funds',
   };
 
   final WormholeUtxoService _utxoService = WormholeUtxoService();
@@ -249,28 +250,19 @@ class WormholeSendService {
   }) async {
     final numTransfers = batches.fold<int>(0, (sum, b) => sum + b.length);
     final totalBatches = batches.length;
-    _reportProgress(onProgress, 5, 0, total: numTransfers);
+    _reportProgress(onProgress, 7, 0, total: totalBatches);
 
     final txHashes = <String>[];
     BigInt recipientTotal = BigInt.zero;
     int proofsCompleted = 0;
     final genSw = Stopwatch()..start();
 
-    // Process one aggregation batch at a time: generate its leaf proofs, then
-    // aggregate and submit before moving on. Each submitted batch pays out
-    // immediately instead of waiting for the whole queue to be proven.
     try {
       for (int batchIndex = 0; batchIndex < totalBatches; batchIndex++) {
         _checkCancelled();
         final batch = batches[batchIndex];
         final batchNum = batchIndex + 1;
 
-        // Use the current head (not finalized) as the proof block: the user is
-        // claiming up to the chain tip, and the merkle tree at the finalized head
-        // would not contain transfers in the last `reorgDepth` blocks. Fetched
-        // per batch so long claims don't reference an increasingly stale block.
-        // A reorg before a batch lands will cause on-chain verification to fail
-        // and the user can simply retry.
         final blockHash = await _getBestBlockHash();
         final header = await _getBlockHeader(blockHash);
         final blockNumber = _hexToInt(header['number'] as String);
@@ -280,6 +272,11 @@ class WormholeSendService {
         final digest = _encodeDigest(header['digest'] as Map<String, dynamic>);
         final blockHashBytes = Uint8List.fromList(_hexBytes(blockHash));
         _log('Batch $batchNum/$totalBatches proof block: #$blockNumber ($blockHash)');
+        _reportProgress(onProgress, 7, batchNum, total: totalBatches);
+
+        if (batchIndex == 0) {
+          _reportProgress(onProgress, 5, 0, total: numTransfers);
+        }
 
         final proofBytesList = List<Uint8List?>.filled(batch.length, null);
         final nullifierHexes = List<String?>.filled(batch.length, null);

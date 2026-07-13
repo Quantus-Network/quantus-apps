@@ -3566,6 +3566,30 @@ abstract class AppLocalizations {
   /// **'SENDING'**
   String get encryptedSendingLabel;
 
+  /// Encrypted send progress step: preparing circuits
+  ///
+  /// In en, this message translates to:
+  /// **'Preparing'**
+  String get encryptedSendStepPreparing;
+
+  /// Encrypted send progress step: fetching on-chain state for the batch
+  ///
+  /// In en, this message translates to:
+  /// **'Gathering funds'**
+  String get encryptedSendStepGathering;
+
+  /// Encrypted send progress step: generating ZK proofs
+  ///
+  /// In en, this message translates to:
+  /// **'Building privacy proof'**
+  String get encryptedSendStepProving;
+
+  /// Encrypted send progress step: aggregating and submitting proofs
+  ///
+  /// In en, this message translates to:
+  /// **'Submitting to network'**
+  String get encryptedSendStepSubmitting;
+
   /// Title of the private-send notice on encrypted send recipient screen
   ///
   /// In en, this message translates to:

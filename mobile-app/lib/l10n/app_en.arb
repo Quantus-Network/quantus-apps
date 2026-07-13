@@ -2770,6 +2770,22 @@
     "@encryptedSendingLabel": {
       "description": "Status header label on encrypted send progress"
     },
+    "encryptedSendStepPreparing": "Preparing",
+    "@encryptedSendStepPreparing": {
+      "description": "Encrypted send progress step: preparing circuits"
+    },
+    "encryptedSendStepGathering": "Gathering funds",
+    "@encryptedSendStepGathering": {
+      "description": "Encrypted send progress step: fetching on-chain state for the batch"
+    },
+    "encryptedSendStepProving": "Building privacy proof",
+    "@encryptedSendStepProving": {
+      "description": "Encrypted send progress step: generating ZK proofs"
+    },
+    "encryptedSendStepSubmitting": "Submitting to network",
+    "@encryptedSendStepSubmitting": {
+      "description": "Encrypted send progress step: aggregating and submitting proofs"
+    },
     "privateSendTitle": "Private Send",
     "@privateSendTitle": {
       "description": "Title of the private-send notice on encrypted send recipient screen"
