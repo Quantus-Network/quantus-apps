@@ -1873,6 +1873,9 @@ class AppLocalizationsId extends AppLocalizations {
   String get redeemStepAggregate => 'Mengagregasi & mengirim';
 
   @override
+  String get redeemStepSubmit => 'Submitting to chain';
+
+  @override
   String redeemFetchedCount(int count) {
     return '$count diambil';
   }
@@ -1922,10 +1925,20 @@ class AppLocalizationsId extends AppLocalizations {
   String get encryptedSendStepGathering => 'Gathering funds';
 
   @override
+  String get encryptedSendStepSecuring => 'Securing transaction';
+
+  @override
+  String get encryptedSendStepGenerating => 'Generate proofs';
+
+  @override
   String get encryptedSendStepProving => 'Building privacy proof';
 
   @override
-  String get encryptedSendStepSubmitting => 'Submitting to network';
+  String get encryptedSendStepSubmitting => 'Submitting to chain';
+
+  @override
+  String get encryptedSendProgressFooter =>
+      'Privacy takes a moment. You can leave the app, we\'ll notify you when it\'s sent.';
 
   @override
   String get privateSendTitle => 'Kirim Privat';

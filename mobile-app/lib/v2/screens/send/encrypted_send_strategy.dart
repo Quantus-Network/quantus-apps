@@ -41,10 +41,12 @@ class EncryptedSendStrategy extends SendStrategy {
       encryptedSpendableProvider(account.walletIndex);
 
   @override
+  ProviderListenable<AsyncValue<BigInt>> get displayBalanceProvider =>
+      encryptedBalanceProvider(account.walletIndex);
+
+  @override
   bool extraBalancesLoading(WidgetRef ref) => false;
 
-  /// The volume fee comes out of the consumed inputs, not on top of the
-  /// spendable amount ([spendableBalanceProvider] is already net of it).
   @override
   BigInt feeChargedToBalance(SendFee? fee) => BigInt.zero;
 

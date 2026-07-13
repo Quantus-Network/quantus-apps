@@ -3482,11 +3482,17 @@ abstract class AppLocalizations {
   /// **'Generating ZK proofs'**
   String get redeemStepProofs;
 
-  /// Redeem progress step: aggregating and submitting
+  /// Redeem progress step: aggregating ZK proofs
   ///
   /// In en, this message translates to:
-  /// **'Aggregating & submitting'**
+  /// **'Aggregating proofs'**
   String get redeemStepAggregate;
+
+  /// Redeem progress step: submitting the transaction
+  ///
+  /// In en, this message translates to:
+  /// **'Submitting to chain'**
+  String get redeemStepSubmit;
 
   /// Per-step fetched counter on redeem progress
   ///
@@ -3545,7 +3551,7 @@ abstract class AppLocalizations {
   /// App bar title while an encrypted send is proving/submitting
   ///
   /// In en, this message translates to:
-  /// **'Sending Privately...'**
+  /// **'Private Send'**
   String get encryptedSendProgressTitle;
 
   /// App bar title when an encrypted send failed
@@ -3563,7 +3569,7 @@ abstract class AppLocalizations {
   /// Status header label on encrypted send progress
   ///
   /// In en, this message translates to:
-  /// **'SENDING'**
+  /// **'SENDING PRIVATELY'**
   String get encryptedSendingLabel;
 
   /// Encrypted send progress step: preparing circuits
@@ -3578,17 +3584,35 @@ abstract class AppLocalizations {
   /// **'Gathering funds'**
   String get encryptedSendStepGathering;
 
-  /// Encrypted send progress step: generating ZK proofs
+  /// Encrypted send progress step: computing and checking nullifiers
+  ///
+  /// In en, this message translates to:
+  /// **'Securing transaction'**
+  String get encryptedSendStepSecuring;
+
+  /// Encrypted send progress step: generating individual ZK proofs
+  ///
+  /// In en, this message translates to:
+  /// **'Generate proofs'**
+  String get encryptedSendStepGenerating;
+
+  /// Encrypted send progress step: aggregating ZK proofs
   ///
   /// In en, this message translates to:
   /// **'Building privacy proof'**
   String get encryptedSendStepProving;
 
-  /// Encrypted send progress step: aggregating and submitting proofs
+  /// Encrypted send progress step: submitting the transaction
   ///
   /// In en, this message translates to:
-  /// **'Submitting to network'**
+  /// **'Submitting to chain'**
   String get encryptedSendStepSubmitting;
+
+  /// Footer text on encrypted send progress screen
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy takes a moment. You can leave the app, we\'ll notify you when it\'s sent.'**
+  String get encryptedSendProgressFooter;
 
   /// Title of the private-send notice on encrypted send recipient screen
   ///

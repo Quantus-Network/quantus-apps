@@ -152,11 +152,7 @@ final balanceProviderRaw = Provider<AsyncValue<BigInt>>((ref) {
       if (activeAccount == null) {
         return AsyncValue.data(BigInt.zero);
       }
-      final account = activeAccount.account;
-      if (isEncryptedAccount(account)) {
-        return ref.watch(encryptedBalanceProvider((account as Account).walletIndex));
-      }
-      return ref.watch(balanceProviderFamily(account.accountId));
+      return ref.watch(balanceProviderFamily(activeAccount.account.accountId));
     },
     loading: () => const AsyncValue.loading(),
     error: (err, stack) => AsyncValue.error(err, stack),
@@ -166,19 +162,17 @@ final balanceProviderRaw = Provider<AsyncValue<BigInt>>((ref) {
 // Store for cached balance to return on error
 BigInt _cachedBalance = BigInt.zero;
 
-// Effective balance (blockchain balance minus pending outgoing transactions)
 final balanceProvider = Provider<AsyncValue<BigInt>>((ref) {
+  final activeAccount = ref.watch(activeAccountProvider).value;
   final balanceAsync = ref.watch(balanceProviderRaw);
   final pendingTransactions = ref.watch(pendingTransactionsProvider);
   final pendingMultisigProposals = ref.watch(pendingMultisigProposalsProvider);
   final pendingMultisigExecutions = ref.watch(pendingMultisigExecutionsProvider);
   final pendingMultisigCancellations = ref.watch(pendingMultisigCancellationsProvider);
   final pendingMultisigCreations = ref.watch(pendingMultisigCreationsProvider);
-  final activeAccountAsync = ref.watch(activeAccountProvider);
 
   return balanceAsync.when(
     data: (blockchainBalance) {
-      final activeAccount = activeAccountAsync.value;
       if (activeAccount == null) {
         _cachedBalance = BigInt.zero;
         return AsyncValue.data(BigInt.zero);
@@ -199,7 +193,6 @@ final balanceProvider = Provider<AsyncValue<BigInt>>((ref) {
     },
     loading: () => const AsyncValue.loading(),
     error: (err, stack) {
-      // On error, return last cached balance
       return AsyncValue.data(_cachedBalance);
     },
   );

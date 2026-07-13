@@ -124,13 +124,15 @@ class _EncryptedSendProgressScreenState extends ConsumerState<EncryptedSendProgr
         mainContent: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
             _buildStatusHeader(colors, text, l10n),
-            const SizedBox(height: 32),
+            const SizedBox(height: 24),
             WormholeProgressSteps(
               steps: [
                 (1, l10n.encryptedSendStepPreparing),
-                (7, l10n.encryptedSendStepGathering),
+                (2, l10n.encryptedSendStepGathering),
+                (3, l10n.encryptedSendStepSecuring),
+                (4, l10n.encryptedSendStepGenerating),
                 (5, l10n.encryptedSendStepProving),
                 (6, l10n.encryptedSendStepSubmitting),
               ],
@@ -143,7 +145,7 @@ class _EncryptedSendProgressScreenState extends ConsumerState<EncryptedSendProgr
             if (_errorMessage != null) ...[const SizedBox(height: 24), _buildErrorBanner(colors, text)],
           ],
         ),
-        bottomContent: _buildBottomContent(l10n),
+        bottomContent: _buildBottomContent(colors, l10n),
       ),
     );
   }
@@ -151,15 +153,48 @@ class _EncryptedSendProgressScreenState extends ConsumerState<EncryptedSendProgr
   Widget _buildStatusHeader(AppColorsV2 colors, AppTextTheme text, AppLocalizations l10n) {
     final fmt = ref.watch(numberFormattingServiceProvider);
     final amountLabel = fmt.formatBalance(widget.plan.amountPlanck, maxDecimals: 2, addSymbol: true);
+    final shortAddr = AddressFormattingService.formatAddress(widget.recipientAddress.trim());
 
     return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: colors.sheetBackground, borderRadius: BorderRadius.circular(12)),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+      decoration: BoxDecoration(color: colors.sheetBackground, borderRadius: BorderRadius.circular(14)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(l10n.encryptedSendingLabel, style: text.receiveLabel?.copyWith(color: colors.textLabel)),
-          Text(amountLabel, style: text.sendSectionLabel?.copyWith(color: colors.success)),
+          Text(
+            l10n.encryptedSendingLabel,
+            style: TextStyle(
+              fontFamily: AppTextTheme.fontFamilySecondary,
+              fontWeight: FontWeight.w500,
+              fontSize: 14,
+              color: const Color(0xFF787878),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            amountLabel,
+            style: TextStyle(
+              fontFamily: AppTextTheme.fontFamilySecondary,
+              fontSize: 32,
+              color: colors.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 16),
+          if (widget.terminal.recipientChecksum != null) ...[
+            Text(
+              widget.terminal.recipientChecksum!,
+              style: TextStyle(fontSize: 12, color: colors.checksum),
+            ),
+            const SizedBox(height: 4),
+          ],
+          Text(
+            shortAddr,
+            style: TextStyle(
+              fontFamily: AppTextTheme.fontFamilySecondary,
+              fontSize: 12,
+              color: const Color(0xFF8C8C8C),
+            ),
+          ),
         ],
       ),
     );
@@ -185,10 +220,45 @@ class _EncryptedSendProgressScreenState extends ConsumerState<EncryptedSendProgr
     );
   }
 
-  Widget _buildBottomContent(AppLocalizations l10n) {
+  double get _overallProgress {
+    const displaySteps = [1, 2, 3, 4, 5, 6];
+    int completed = 0;
+    for (final id in displaySteps) {
+      final p = _stepProgress[id];
+      if (p != null && p.total != null && p.completed >= p.total!) {
+        completed++;
+      } else if (p != null && _currentStep > id) {
+        completed++;
+      }
+    }
+    return (completed / displaySteps.length).clamp(0.0, 1.0);
+  }
+
+  Widget _buildBottomContent(AppColorsV2 colors, AppLocalizations l10n) {
     if (_running) {
       return ScaffoldBaseBottomContent(
-        child: QuantusButton.simple(label: l10n.redeemCancel, variant: ButtonVariant.secondary, onTap: _cancel),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(2),
+              child: LinearProgressIndicator(
+                value: _overallProgress,
+                backgroundColor: const Color(0xFF222222),
+                valueColor: AlwaysStoppedAnimation(colors.accentOrange),
+                minHeight: 4,
+              ),
+            ),
+            const SizedBox(height: 32),
+            Text(
+              l10n.encryptedSendProgressFooter,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 14, color: Color(0xFF3D3D3D)),
+            ),
+            const SizedBox(height: 32),
+            QuantusButton.simple(label: l10n.redeemCancel, variant: ButtonVariant.secondary, onTap: _cancel),
+          ],
+        ),
       );
     }
     return ScaffoldBaseBottomContent(

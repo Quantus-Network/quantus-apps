@@ -79,12 +79,11 @@ class WormholeLeafSpend {
 class WormholeSendService {
   static const _stepTitles = {
     1: 'Preparing circuits',
-    2: 'Fetching transfers',
-    3: 'Computing nullifiers',
-    4: 'Checking nullifiers',
-    5: 'Building privacy proof',
-    6: 'Submitting to network',
-    7: 'Gathering funds',
+    2: 'Gathering funds',
+    3: 'Securing transaction',
+    4: 'Generating ZK proofs',
+    5: 'Aggregating proofs',
+    6: 'Submitting to chain',
   };
 
   final WormholeUtxoService _utxoService = WormholeUtxoService();
@@ -211,7 +210,8 @@ class WormholeSendService {
       secretHex: secretHex,
       isCancelled: () => _cancelled,
       onProgress: (phase, completed, {int? total}) {
-        _reportProgress(onProgress, phase + 1, completed, total: total);
+        final step = phase <= 1 ? 2 : 3;
+        _reportProgress(onProgress, step, completed, total: total);
       },
     );
 
@@ -250,7 +250,7 @@ class WormholeSendService {
   }) async {
     final numTransfers = batches.fold<int>(0, (sum, b) => sum + b.length);
     final totalBatches = batches.length;
-    _reportProgress(onProgress, 7, 0, total: totalBatches);
+    _reportProgress(onProgress, 4, 0, total: numTransfers);
 
     final txHashes = <String>[];
     BigInt recipientTotal = BigInt.zero;
@@ -272,11 +272,6 @@ class WormholeSendService {
         final digest = _encodeDigest(header['digest'] as Map<String, dynamic>);
         final blockHashBytes = Uint8List.fromList(_hexBytes(blockHash));
         _log('Batch $batchNum/$totalBatches proof block: #$blockNumber ($blockHash)');
-        _reportProgress(onProgress, 7, batchNum, total: totalBatches);
-
-        if (batchIndex == 0) {
-          _reportProgress(onProgress, 5, 0, total: numTransfers);
-        }
 
         final proofBytesList = List<Uint8List?>.filled(batch.length, null);
         final nullifierHexes = List<String?>.filled(batch.length, null);
@@ -299,14 +294,12 @@ class WormholeSendService {
               outputIndex: i,
               onComplete: () {
                 proofsCompleted++;
-                // Plain stdout print (not debugPrint) so it survives in release
-                // builds and is visible from the launching terminal.
                 // ignore: avoid_print
                 print(
                   '[WormholeSend] Proof $proofsCompleted/$numTransfers '
                   'leaf=${spend.transfer.leafIndex} (${genSw.elapsedMilliseconds}ms elapsed)',
                 );
-                _reportProgress(onProgress, 5, proofsCompleted, total: numTransfers);
+                _reportProgress(onProgress, 4, proofsCompleted, total: numTransfers);
               },
             ),
           );
@@ -318,18 +311,17 @@ class WormholeSendService {
         }
         _checkCancelled();
 
-        // Mark the aggregate/submit step active as soon as this batch's proofs
-        // are ready (0-based count of batches already submitted): the UI shows
-        // it at 0/N for the first aggregation, then 1/N, 2/N as batches land.
-        _reportProgress(onProgress, 6, batchNum - 1, total: totalBatches);
+        _reportProgress(onProgress, 5, batchNum - 1, total: totalBatches);
         _log('Aggregating batch $batchNum/$totalBatches');
         final aggregated = await wormhole_ffi.aggregateProofs(
           proofBytesList: proofBytesList.cast<Uint8List>(),
           binsDir: circuitBinsDir,
         );
         _log('Batch $batchNum aggregated (${aggregated.length} bytes)');
+        _reportProgress(onProgress, 5, batchNum, total: totalBatches);
         _checkCancelled();
 
+        _reportProgress(onProgress, 6, batchNum - 1, total: totalBatches);
         final txHash = await _submitExtrinsic(aggregated);
         txHashes.add(txHash);
         _log('Batch $batchNum accepted by pool: $txHash');

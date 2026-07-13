@@ -200,9 +200,14 @@ abstract class SendStrategy {
 
   SendStrings strings(AppLocalizations l10n);
 
-  /// Balance the amount is drawn from. Exposed as a provider so the amount
-  /// screen can watch it in `build` and read it in event handlers.
+  /// Balance the amount is drawn from. Used for validation and the Max button.
   ProviderListenable<AsyncValue<BigInt>> get spendableBalanceProvider;
+
+  /// Balance shown as "Available Balance" on the amount screen. Defaults to
+  /// [spendableBalanceProvider]; encrypted sends override this to show the
+  /// total wormhole balance (matching the home screen) while keeping
+  /// [spendableBalanceProvider] for validation and Max.
+  ProviderListenable<AsyncValue<BigInt>> get displayBalanceProvider => spendableBalanceProvider;
 
   /// Whether a secondary balance used for gating is still loading. Watched.
   bool extraBalancesLoading(WidgetRef ref);

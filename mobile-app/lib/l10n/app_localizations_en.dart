@@ -1873,7 +1873,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get redeemStepProofs => 'Generating ZK proofs';
 
   @override
-  String get redeemStepAggregate => 'Aggregating & submitting';
+  String get redeemStepAggregate => 'Aggregating proofs';
+
+  @override
+  String get redeemStepSubmit => 'Submitting to chain';
 
   @override
   String redeemFetchedCount(int count) {
@@ -1907,7 +1910,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get encryptedSendMinimum => 'Encrypted sends must move at least 0.1 QUAN';
 
   @override
-  String get encryptedSendProgressTitle => 'Sending Privately...';
+  String get encryptedSendProgressTitle => 'Private Send';
 
   @override
   String get encryptedSendFailedTitle => 'Send Failed';
@@ -1916,7 +1919,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get encryptedSendCancelledTitle => 'Send Cancelled';
 
   @override
-  String get encryptedSendingLabel => 'SENDING';
+  String get encryptedSendingLabel => 'SENDING PRIVATELY';
 
   @override
   String get encryptedSendStepPreparing => 'Preparing';
@@ -1925,10 +1928,20 @@ class AppLocalizationsEn extends AppLocalizations {
   String get encryptedSendStepGathering => 'Gathering funds';
 
   @override
+  String get encryptedSendStepSecuring => 'Securing transaction';
+
+  @override
+  String get encryptedSendStepGenerating => 'Generate proofs';
+
+  @override
   String get encryptedSendStepProving => 'Building privacy proof';
 
   @override
-  String get encryptedSendStepSubmitting => 'Submitting to network';
+  String get encryptedSendStepSubmitting => 'Submitting to chain';
+
+  @override
+  String get encryptedSendProgressFooter =>
+      'Privacy takes a moment. You can leave the app, we\'ll notify you when it\'s sent.';
 
   @override
   String get privateSendTitle => 'Private Send';

@@ -2701,9 +2701,13 @@
     "@redeemStepProofs": {
       "description": "Redeem progress step: generating ZK proofs"
     },
-    "redeemStepAggregate": "Aggregating & submitting",
+    "redeemStepAggregate": "Aggregating proofs",
     "@redeemStepAggregate": {
-      "description": "Redeem progress step: aggregating and submitting"
+      "description": "Redeem progress step: aggregating ZK proofs"
+    },
+    "redeemStepSubmit": "Submitting to chain",
+    "@redeemStepSubmit": {
+      "description": "Redeem progress step: submitting the transaction"
     },
     "redeemFetchedCount": "{count} fetched",
     "@redeemFetchedCount": {
@@ -2754,7 +2758,7 @@
     "@encryptedSendMinimum": {
       "description": "Shown when an encrypted send falls below the chain's minimum exit amount"
     },
-    "encryptedSendProgressTitle": "Sending Privately...",
+    "encryptedSendProgressTitle": "Private Send",
     "@encryptedSendProgressTitle": {
       "description": "App bar title while an encrypted send is proving/submitting"
     },
@@ -2766,7 +2770,7 @@
     "@encryptedSendCancelledTitle": {
       "description": "App bar title when an encrypted send was cancelled"
     },
-    "encryptedSendingLabel": "SENDING",
+    "encryptedSendingLabel": "SENDING PRIVATELY",
     "@encryptedSendingLabel": {
       "description": "Status header label on encrypted send progress"
     },
@@ -2778,13 +2782,25 @@
     "@encryptedSendStepGathering": {
       "description": "Encrypted send progress step: fetching on-chain state for the batch"
     },
+    "encryptedSendStepSecuring": "Securing transaction",
+    "@encryptedSendStepSecuring": {
+      "description": "Encrypted send progress step: computing and checking nullifiers"
+    },
+    "encryptedSendStepGenerating": "Generate proofs",
+    "@encryptedSendStepGenerating": {
+      "description": "Encrypted send progress step: generating individual ZK proofs"
+    },
     "encryptedSendStepProving": "Building privacy proof",
     "@encryptedSendStepProving": {
-      "description": "Encrypted send progress step: generating ZK proofs"
+      "description": "Encrypted send progress step: aggregating ZK proofs"
     },
-    "encryptedSendStepSubmitting": "Submitting to network",
+    "encryptedSendStepSubmitting": "Submitting to chain",
     "@encryptedSendStepSubmitting": {
-      "description": "Encrypted send progress step: aggregating and submitting proofs"
+      "description": "Encrypted send progress step: submitting the transaction"
+    },
+    "encryptedSendProgressFooter": "Privacy takes a moment. You can leave the app, we'll notify you when it's sent.",
+    "@encryptedSendProgressFooter": {
+      "description": "Footer text on encrypted send progress screen"
     },
     "privateSendTitle": "Private Send",
     "@privateSendTitle": {

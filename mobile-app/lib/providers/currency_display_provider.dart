@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/models/fiat_currency.dart';
+import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/services/exchange_rate_service.dart';
 
@@ -243,7 +244,10 @@ final _hiddenAmountText = '-----';
 /// Combines balance, hidden state, flip state, selected fiat, and exchange
 /// rate into [CurrencyDisplayState] ready for widgets to render.
 final balanceDisplayProvider = Provider<AsyncValue<CurrencyDisplayState>>((ref) {
-  final balanceAsync = ref.watch(balanceProvider);
+  final active = ref.watch(activeAccountProvider).value;
+  final balanceAsync = active != null && isEncryptedAccount(active.account)
+      ? ref.watch(encryptedBalanceProvider((active.account as Account).walletIndex))
+      : ref.watch(balanceProvider);
   final isHidden = ref.watch(isBalanceHiddenProvider);
   final isFlipped = ref.watch(isCurrencyFlippedProvider);
   final selectedFiat = ref.watch(selectedFiatCurrencyProvider);
