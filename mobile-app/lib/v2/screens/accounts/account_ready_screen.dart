@@ -230,10 +230,7 @@ class _AccountPreviewCard extends StatelessWidget {
               children: [
                 Text(title, style: text.paragraph?.copyWith(fontSize: 18, height: 1.0)),
                 const SizedBox(height: 4),
-                Text(
-                  description,
-                  style: text.detail?.copyWith(color: colors.textMuted, fontSize: 12, height: 1.0),
-                ),
+                Text(description, style: text.detail?.copyWith(color: colors.textMuted, fontSize: 12, height: 1.0)),
               ],
             ),
           ),
