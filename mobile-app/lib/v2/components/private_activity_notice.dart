@@ -50,7 +50,7 @@ class PrivateActivityNotice extends StatelessWidget {
             children: [
               Text(title, style: text.paragraph?.copyWith(color: colors.textMuted, height: 1.0)),
               const SizedBox(height: 4),
-              Text(subtitle, style: text.detail?.copyWith(color: const Color(0xFF666666), height: 1.0)),
+              Text(subtitle, style: text.detail?.copyWith(color: colors.textTertiary, height: 1.0)),
             ],
           ),
         ),
