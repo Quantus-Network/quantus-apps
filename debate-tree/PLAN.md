@@ -3,6 +3,8 @@
 AI-moderated structured debate for the Quantus ecosystem, spam-protected by
 Quantus-native primitives (mining-share proof-of-work and QUAN balance gates).
 
+**Runnable prototype:** `spike/` — see [`spike/README.md`](spike/README.md).
+
 This plan covers three deliverables across two repos:
 
 | # | Component | Location | What it is |
@@ -25,9 +27,14 @@ differentiators are the AI moderator and the chain-native spam economics.)
 
 **The AI is a moderator on the write path, not a participant:**
 
-- **Deduplication** — before a new node is accepted, embeddings + a cheap LLM
-  pass check whether the point already exists in the tree; near-duplicates are
-  redirected to the existing node ("upvote / extend this instead?").
+- **Deduplication** — before a new node is accepted, check whether the point
+  already exists in the tree; near-duplicates are redirected to the existing
+  node ("upvote / extend this instead?"). The spike does this in the steelman
+  prompt (sibling list + LLM judgment); production will add embedding similarity
+  for borderline cases.
+- **Relevance** — each claim must engage its reply target (parent claim or the
+  debate question). Off-target drafts are steelmanned but blocked from publish;
+  the author can negotiate to re-aim.
 - **Disentangle + steelman loop** — a contributor drafts a post; the AI first
   splits bundled points into separate claims (one tree node = one claim), then
   offers a succinct steelman of each. The contributor picks a claim, revises or
@@ -135,10 +142,10 @@ Coinhive's death defines our guardrails:
 
 ## 4. Component 3 — Debate Tree webapp (`quantus-apps/debate-tree`)
 
-**Stack** (proposed): TypeScript web frontend + backend (framework TBD at
-kickoff), Postgres + pgvector (tree + embeddings), LLM API for
-steelman/dedup (cheap model for loop turns, stronger model for final
-published version). Wallet auth via ML-DSA signature verification —
+**Stack** (spike): vanilla HTML/JS frontend + Node `server.mjs`, PGlite
+(in-process Postgres), LLM via Anthropic / OpenAI / OpenRouter (stub offline
+fallback). Production framework TBD; Postgres + pgvector for embeddings.
+Wallet auth via ML-DSA signature verification —
 `quantus_sdk`'s Rust bridge and `rust-transaction-parser` are references;
 server-side verification can link the same Rust crates.
 
@@ -159,9 +166,11 @@ plain Postgres so it ports from the spike's PGlite to hosted PG verbatim):
   Ephemeral steelman-negotiation state lives in server memory, not the DB.
 
 Spike DB is **PGlite** (Postgres compiled to WASM, in-process, persisted to
-`spike/pgdata/`): zero external server, same SQL as prod. `pgvector` is an
-optional add-on there; when absent, `embedding` falls back to jsonb and dedup
-is disabled (deferred anyway). Reset the dev tree by deleting `spike/pgdata/`.
+`spike/pgdata*/`): zero external server, same SQL as prod. Use
+`PGDATA_DIR=pgdata-demo` for the seeded djb tree; default `pgdata/` is for
+local experiments. `pgvector` is an optional add-on; when absent, `embedding`
+falls back to jsonb and embedding dedup is disabled. Reset by deleting the
+directory while the server is stopped. Run instructions: `spike/README.md`.
 
 **Write path**:
 1. Client requests action → backend issues nonce challenge.
@@ -172,8 +181,10 @@ is disabled (deferred anyway). Reset the dev tree by deleting `spike/pgdata/`.
 4. Steelman loop (≤ 3 rounds) → contributor approves → publish.
 
 **Seed content — the djb hybrid-vs-pure-PQ debate**:
-- Question: *"Should TLS 1.3 standardize pure ML-KEM key agreement, or
-  require hybrid (ECC+PQ)?"*
+- Question: *"How should TLS 1.3 handle post-quantum key agreement?"* —
+  framed open (not either/or) so the tree admits more than two positions;
+  "standardize solo ML-KEM" and "require hybrid ECC+PQ" are seeded as the
+  first two answer nodes.
 - Curated from the public record with per-node citations: IETF TLS WG
   mailing list, djb's IESG appeals (Oct/Dec 2025), blog.cr.yp.to, LWN
   coverage. **No AI paraphrasing of imported arguments** — verbatim quotes
@@ -187,14 +198,20 @@ is disabled (deferred anyway). Reset the dev tree by deleting `spike/pgdata/`.
   current venue).
 
 **Deliverables**:
-- [x] Steelman-loop spike (see §5) — disentangle + succinct steelman loop
+- [x] Steelman-loop spike (see §5) — disentangle, relevance check, duplicate
+      check, succinct steelman loop; OpenRouter/Anthropic/OpenAI + stub fallback
 - [x] DB-backed tree: PGlite schema, publish/tree/vote endpoints, seeded space
-- [x] Tree UI (read + write): nested pro/con/answer nodes, votes, reply-to-node,
-      original text on click — served from the DB
-- [ ] Node detail: source citations, shareable per-node links
+- [x] Tree UI (read + write): nested pro/con/answer nodes, collapsible branches,
+      per-answer pro/con tallies, inline composer (click node to reply),
+      votes, original/source text on click — served from the DB
+- [x] Seeded djb tree: 36 nodes curated from the debate-structure chart
+      (blog.cr.yp.to/20260221-structure.html), technical branches only —
+      process/consensus-legitimacy arguments omitted; verbatim wording +
+      citation behind each node's "Source" toggle (`spike/seed.mjs`)
+- [ ] Node detail: shareable per-node links
 - [ ] Wallet auth + balance gate; captcha gate integration
-- [ ] Dedup + steelman write path with round caps and spend caps
-- [ ] Seeded djb tree + QIP space
+- [ ] Embedding dedup (pgvector) + production write-path spend caps
+- [ ] QIP space (second seeded space)
 - [ ] Optional: per-node hash anchoring via `system.remark` (defer)
 
 ---
@@ -207,24 +224,20 @@ client proves nothing, a widget with no verifier is a mock. Milestone:
 demo page on a laptop solves a share against `quantus-node --dev`, verify
 endpoint accepts the token, dashboard shows accrued shares.
 
-**Track B (parallel, cheap): steelman-loop spike.**
-The single highest product risk is whether the steelman negotiation feels
-respectful rather than condescending — no chain deps, just an LLM chat
-loop + prompt iteration on real contentious arguments. A weekend spike;
-throwaway code, keep the prompts.
+**Track B (done): steelman-loop spike + DB-backed tree UI.**
+Validated the negotiation UX (disentangle, relevance, duplicates, succinct
+steelman) and the read/write tree against PGlite. Prompts live in
+`spike/prompts.mjs`; run guide in `spike/README.md`.
 
-**Then: Debate Tree webapp** consuming both tracks, launching with the
-seeded djb tree + QIP space. Rationale for not building the webapp first:
-its write path *is* the gates + the steelman loop; building it first means
-building it twice. The captcha is also independently shippable/marketable
-regardless of how Debate Tree evolves.
+**Next: production write path** — captcha share-token gate, wallet balance
+gate for new questions, embedding dedup, spend caps. The captcha is also
+independently shippable regardless of how Debate Tree evolves.
 
 **Sequencing summary**:
-1. Track A slice (pool + widget + demo) — Track B spike in parallel
-2. Debate Tree read UI + seeded djb/QIP content (valuable even before
-   writes open — "the map" is the marketing artifact)
-3. Debate Tree write path (gates + moderator)
-4. Payouts polish, on-chain anchoring, additional spaces
+1. ~~Track A slice (pool + widget + demo)~~ — done
+2. ~~Debate Tree spike (steelman + read/write tree + seeded djb content)~~ — done
+3. **Now:** gates on the write path (captcha + wallet) + embedding dedup
+4. QIP space, shareable node links, payouts polish, on-chain anchoring
 
 ## 6. Risks
 

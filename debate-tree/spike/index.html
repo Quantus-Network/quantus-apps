@@ -3,151 +3,324 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Steelman spike</title>
+  <title>Debate Tree</title>
   <style>
-    :root { --border: #e4e7ec; --muted: #667085; --accent: #2563eb; --green: #16a34a; }
+    :root {
+      --bg: #0b0e14;
+      --bg-card: #11151f;
+      --bg-raise: #171c29;
+      --border: #232a3a;
+      --border-lit: #2f3850;
+      --text: #e6e9f0;
+      --muted: #8b93a7;
+      --faint: #5c657c;
+      --accent: #6d8dff;
+      --accent-soft: rgba(109, 141, 255, .12);
+      --pro: #34d399;
+      --pro-soft: rgba(52, 211, 153, .10);
+      --con: #f87171;
+      --con-soft: rgba(248, 113, 113, .10);
+      --answer: #a78bfa;
+      --answer-soft: rgba(167, 139, 250, .10);
+      --gold: #fbbf24;
+      --radius: 14px;
+    }
+    * { box-sizing: border-box; }
     body {
-      font: 15px/1.55 system-ui, -apple-system, sans-serif; color: #1f2937;
-      max-width: 880px; margin: 40px auto; padding: 0 20px;
+      font: 15px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background:
+        radial-gradient(1200px 500px at 20% -10%, rgba(109,141,255,.10), transparent 60%),
+        radial-gradient(900px 400px at 90% 0%, rgba(167,139,250,.08), transparent 60%),
+        var(--bg);
+      color: var(--text);
+      margin: 0; padding: 0 20px 120px;
+      -webkit-font-smoothing: antialiased;
     }
-    h1 { font-size: 20px; } h1 small { font-weight: 400; color: var(--muted); font-size: 13px; }
-    .card { border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-top: 16px; }
-    label { display: block; font-size: 13px; font-weight: 600; margin: 12px 0 4px; }
-    input[type=text], textarea, select {
-      width: 100%; box-sizing: border-box; border: 1px solid #d0d5dd; border-radius: 8px;
-      padding: 8px 11px; font: inherit; background: #fff;
-    }
-    textarea { resize: vertical; }
-    button {
-      background: var(--accent); color: #fff; border: 0; border-radius: 8px;
-      padding: 9px 16px; font: inherit; cursor: pointer; margin-top: 12px;
-    }
-    button.secondary { background: #fff; color: #344054; border: 1px solid #d0d5dd; }
-    button.accept { background: var(--green); }
-    button:disabled { background: #98a2b3; cursor: not-allowed; }
-    .seeds button { margin: 4px 6px 0 0; font-size: 12px; padding: 5px 10px; }
-    .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-    .pane { border: 1px solid var(--border); border-radius: 10px; padding: 14px; }
-    .pane h3 { margin: 0 0 8px; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
-    .pane .text { white-space: pre-wrap; }
-    .pane.draft { border-color: var(--accent); }
-    .notes { font-size: 13px; color: var(--muted); white-space: pre-wrap; margin-top: 10px; }
-    .question { margin-top: 10px; padding: 10px 12px; background: #fffaeb; border: 1px solid #fedf89; border-radius: 8px; font-size: 14px; }
-    .roundtag { display: inline-block; font-size: 12px; color: var(--muted); border: 1px solid var(--border); border-radius: 99px; padding: 2px 10px; margin-left: 8px; vertical-align: middle; }
-    .published { border-color: var(--green); background: #f6fef9; }
-    details { margin-top: 10px; } summary { cursor: pointer; font-size: 13px; color: var(--muted); }
-    .error { color: #dc2626; font-size: 14px; margin-top: 10px; white-space: pre-wrap; }
-    .spinner { color: var(--muted); font-size: 14px; margin-top: 12px; }
-    .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-    .claim-list { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
-    .claim-card {
-      border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px;
-      background: #fafafa;
-    }
-    .claim-card h4 { margin: 0 0 6px; font-size: 13px; color: #344054; }
-    .claim-card .steelman { font-size: 14px; white-space: pre-wrap; }
-    .claim-card .actions { margin-top: 8px; display: flex; gap: 8px; flex-wrap: wrap; }
-    .claim-card .actions button { margin-top: 0; font-size: 13px; padding: 6px 12px; }
-    .hint { font-size: 13px; color: var(--muted); margin-top: 8px; }
+    .wrap { max-width: 960px; margin: 0 auto; }
 
-    /* tree view */
-    #tree-panel h2 { font-size: 15px; margin: 0 0 4px; }
-    #tree-panel .q { color: var(--muted); font-size: 13px; margin-bottom: 12px; }
-    .tree, .tree ul { list-style: none; margin: 0; padding: 0; }
-    .tree ul { margin-left: 18px; border-left: 2px solid var(--border); padding-left: 14px; }
-    .node { margin-top: 10px; }
-    .node-body {
-      border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; background: #fff;
+    /* ---- hero ---- */
+    header { padding: 48px 0 8px; }
+    .brand {
+      display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap;
     }
-    .node-body.pro { border-left: 4px solid var(--green); }
-    .node-body.con { border-left: 4px solid #dc2626; }
-    .node-body.answer { border-left: 4px solid var(--accent); background: #f8faff; }
-    .node .meta { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
-    .kind-badge {
-      font-size: 11px; text-transform: uppercase; letter-spacing: .04em; font-weight: 700;
-      padding: 1px 8px; border-radius: 99px;
+    .brand h1 {
+      margin: 0; font-size: 34px; letter-spacing: -.02em; font-weight: 800;
+      background: linear-gradient(90deg, #e6e9f0 30%, var(--accent) 70%, var(--answer));
+      -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
     }
-    .kind-badge.pro { color: var(--green); background: #e7f8ee; }
-    .kind-badge.con { color: #dc2626; background: #fdeaea; }
-    .kind-badge.answer { color: var(--accent); background: #e8effe; }
-    .node .who { font-size: 12px; color: var(--muted); }
-    .node .ptext { white-space: pre-wrap; }
-    .node .node-actions { display: flex; gap: 6px; align-items: center; margin-top: 8px; }
-    .node .node-actions button { margin-top: 0; font-size: 12px; padding: 4px 10px; }
-    .vote { display: inline-flex; align-items: center; gap: 4px; }
-    .vote button { background: #fff; color: #344054; border: 1px solid #d0d5dd; padding: 2px 9px; }
-    .vote .score { font-weight: 700; min-width: 18px; text-align: center; }
-    .empty { color: var(--muted); font-size: 14px; }
-    .replying-to {
-      margin-top: 8px; padding: 8px 12px; background: #eff6ff; border: 1px solid #bfdbfe;
-      border-radius: 8px; font-size: 13px; display: none;
+    .brand .tag {
+      font-size: 12px; color: var(--muted); border: 1px solid var(--border);
+      border-radius: 99px; padding: 3px 12px; letter-spacing: .05em; text-transform: uppercase;
     }
-    .replying-to.show { display: flex; gap: 10px; align-items: center; justify-content: space-between; }
-    .replying-to button { margin-top: 0; font-size: 12px; padding: 3px 9px; }
+    .subtitle { color: var(--muted); margin: 6px 0 0; font-size: 15px; }
+
+    .question-card {
+      margin-top: 28px; padding: 22px 26px;
+      background: linear-gradient(180deg, var(--bg-raise), var(--bg-card));
+      border: 1px solid var(--border-lit); border-radius: var(--radius);
+      box-shadow: 0 12px 40px rgba(0,0,0,.35);
+    }
+    .question-card .label {
+      font-size: 11px; letter-spacing: .12em; text-transform: uppercase;
+      color: var(--accent); font-weight: 700; margin-bottom: 6px;
+    }
+    .question-card .q { font-size: 20px; font-weight: 650; letter-spacing: -.01em; }
+    .question-card .provenance { margin-top: 10px; font-size: 13px; color: var(--muted); }
+    .question-card .provenance a { color: var(--accent); text-decoration: none; }
+    .question-card .provenance a:hover { text-decoration: underline; }
+    .stats { display: flex; gap: 18px; margin-top: 14px; font-size: 13px; color: var(--muted); flex-wrap: wrap; }
+    .stats b { color: var(--text); font-weight: 700; }
+    .stats .dot-pro { color: var(--pro); }
+    .stats .dot-con { color: var(--con); }
+    .stats .dot-ans { color: var(--answer); }
+    .tree-controls { display: flex; gap: 8px; margin-top: 14px; }
+    .tree-controls button {
+      background: transparent; color: var(--muted); border: 1px solid var(--border);
+      border-radius: 8px; padding: 4px 13px; font: inherit; font-size: 12.5px; cursor: pointer;
+    }
+    .tree-controls button:hover { color: var(--text); border-color: var(--border-lit); background: var(--bg-raise); }
+
+    /* ---- tree ---- */
+    #tree-body { margin-top: 26px; }
+    .tree-root { display: flex; flex-direction: column; gap: 16px; }
+    .children {
+      margin: 10px 0 2px 20px; padding-left: 18px;
+      border-left: 1px solid var(--border);
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .node-card {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 14px 16px 12px;
+      position: relative; transition: border-color .15s ease;
+    }
+    .node-card:hover { border-color: var(--border-lit); }
+    .node-card > .node-head,
+    .node-card > .node-text { cursor: pointer; }
+    .node-card > .node-text:hover { color: #fff; }
+    .node-card::before {
+      content: ""; position: absolute; left: 0; top: 10px; bottom: 10px;
+      width: 3px; border-radius: 3px;
+    }
+    .node-card.answer::before { background: var(--answer); }
+    .node-card.pro::before { background: var(--pro); }
+    .node-card.con::before { background: var(--con); }
+    .node-card.answer { background: linear-gradient(180deg, var(--answer-soft), var(--bg-card) 70%); }
+
+    .node-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .badge {
+      font-size: 10.5px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase;
+      padding: 2px 10px; border-radius: 99px;
+    }
+    .badge.answer { color: var(--answer); background: var(--answer-soft); border: 1px solid rgba(167,139,250,.3); }
+    .badge.pro { color: var(--pro); background: var(--pro-soft); border: 1px solid rgba(52,211,153,.3); }
+    .badge.con { color: var(--con); background: var(--con-soft); border: 1px solid rgba(248,113,113,.3); }
+    .who { font-size: 12px; color: var(--faint); }
+    .who.seeded { color: var(--gold); }
+    .tally {
+      margin-left: auto; font-size: 12px; color: var(--muted);
+      border: 1px solid var(--border); border-radius: 99px; padding: 2px 11px; white-space: nowrap;
+    }
+    .tally .t-pro { color: var(--pro); font-weight: 700; }
+    .tally .t-con { color: var(--con); font-weight: 700; }
+
+    .node-text { margin-top: 8px; white-space: pre-wrap; font-size: 15px; }
+    .node-card.answer > .node-text { font-size: 16.5px; font-weight: 600; letter-spacing: -.01em; }
+
+    .node-foot { display: flex; align-items: center; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
+    .node-foot button, .toggle-kids {
+      background: transparent; color: var(--muted); border: 1px solid var(--border);
+      border-radius: 8px; padding: 3px 11px; font: inherit; font-size: 12.5px;
+      cursor: pointer; transition: all .12s ease;
+    }
+    .node-foot button:hover, .toggle-kids:hover { color: var(--text); border-color: var(--border-lit); background: var(--bg-raise); }
+    .vote { display: inline-flex; align-items: center; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+    .vote button { border: 0 !important; border-radius: 0; padding: 3px 9px; }
+    .vote .score { font-size: 12.5px; font-weight: 700; padding: 0 6px; min-width: 20px; text-align: center; }
+    .vote .score.pos { color: var(--pro); } .vote .score.neg { color: var(--con); }
+    .toggle-kids { margin-left: auto; }
+    .toggle-kids .count { font-weight: 700; color: var(--text); }
+    .source-box {
+      display: none; margin-top: 10px; padding: 10px 14px; font-size: 13px;
+      color: var(--muted); background: var(--bg-raise); border: 1px solid var(--border);
+      border-radius: 10px; white-space: pre-wrap;
+    }
+    .source-box.show { display: block; }
+    .source-box a { color: var(--accent); }
+    .empty { color: var(--muted); padding: 30px; text-align: center; }
+    .collapsed > .children { display: none; }
+
+    /* ---- composer / steelman loop ---- */
+    .section-title {
+      margin: 44px 0 0; font-size: 13px; letter-spacing: .12em; text-transform: uppercase;
+      color: var(--faint); font-weight: 700;
+    }
+    .card {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 22px 24px; margin-top: 14px;
+    }
+    label { display: block; font-size: 12.5px; font-weight: 650; margin: 14px 0 5px; color: var(--muted); }
+    input[type=text], textarea, select {
+      width: 100%; border: 1px solid var(--border); border-radius: 10px;
+      padding: 10px 13px; font: inherit; background: var(--bg-raise); color: var(--text);
+      outline: none; transition: border-color .12s ease;
+    }
+    input[type=text]:focus, textarea:focus, select:focus { border-color: var(--accent); }
+    textarea { resize: vertical; }
+    button.primary, button.accept, button.ghost {
+      border: 0; border-radius: 10px; padding: 10px 18px; font: inherit; font-weight: 650;
+      cursor: pointer; margin-top: 14px; transition: filter .12s ease;
+    }
+    button.primary { background: linear-gradient(135deg, var(--accent), #8b6dff); color: #fff; }
+    button.accept { background: linear-gradient(135deg, #10b981, #34d399); color: #05261b; }
+    button.ghost { background: var(--bg-raise); color: var(--text); border: 1px solid var(--border); }
+    button.primary:hover, button.accept:hover { filter: brightness(1.1); }
+    button.ghost:hover { border-color: var(--border-lit); }
+    button:disabled { filter: grayscale(.8) brightness(.6); cursor: not-allowed; }
+    .seeds { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+    .seeds button { margin-top: 8px; font-size: 12px; padding: 5px 12px; }
+    .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+
+    /* movable composer: lives at the bottom by default, docks under the node
+       being replied to */
+    .composer-slot { margin: 12px 0 4px; }
+    .composer-slot:empty { display: none; }
+    .composer-slot #setup { border-color: rgba(109,141,255,.5); box-shadow: 0 8px 30px rgba(0,0,0,.35); }
+    .composer-slot #composer .seeds { display: none; }
+    .composer-context {
+      display: flex; gap: 12px; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; font-size: 13.5px; color: var(--muted);
+    }
+    .composer-context em { color: var(--accent); font-style: normal; font-weight: 600; }
+    .composer-context strong { color: var(--text); font-size: 14.5px; }
+    .composer-context button { margin-top: 0; font-size: 12px; padding: 4px 12px; }
+
+    .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 14px; }
+    @media (max-width: 720px) { .cols { grid-template-columns: 1fr; } }
+    .pane { border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; background: var(--bg-raise); }
+    .pane h3 { margin: 0 0 8px; font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--faint); }
+    .pane .text { white-space: pre-wrap; font-size: 14.5px; }
+    .pane.draft { border-color: rgba(109,141,255,.45); background: linear-gradient(180deg, var(--accent-soft), var(--bg-raise) 60%); }
+    .notes { font-size: 13px; color: var(--muted); white-space: pre-wrap; margin-top: 12px; }
+    .question-box { margin-top: 12px; padding: 10px 14px; background: rgba(251,191,36,.08); border: 1px solid rgba(251,191,36,.35); border-radius: 10px; font-size: 13.5px; }
+    .roundtag { font-size: 12px; color: var(--muted); border: 1px solid var(--border); border-radius: 99px; padding: 2px 11px; }
+    .published-card { border-color: rgba(52,211,153,.4); background: linear-gradient(180deg, var(--pro-soft), var(--bg-card) 60%); }
+    details { margin-top: 12px; } summary { cursor: pointer; font-size: 13px; color: var(--muted); }
+    .error { color: var(--con); font-size: 14px; margin-top: 10px; white-space: pre-wrap; }
+    .spinner { color: var(--muted); font-size: 14px; display: flex; align-items: center; gap: 10px; }
+    .spinner::before {
+      content: ""; width: 14px; height: 14px; border-radius: 50%;
+      border: 2px solid var(--border); border-top-color: var(--accent);
+      animation: spin .7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .claim-list { display: flex; flex-direction: column; gap: 10px; margin-top: 14px; }
+    .claim-card { border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; background: var(--bg-raise); }
+    .claim-card h4 { margin: 0 0 6px; font-size: 13px; color: var(--accent); }
+    .claim-card .steelman { font-size: 14.5px; white-space: pre-wrap; }
+    .relevance-flag {
+      margin-top: 10px; padding: 8px 12px; font-size: 13px; border-radius: 8px;
+      background: rgba(251,191,36,.08); border: 1px solid rgba(251,191,36,.35); color: #fcd34d;
+    }
+    .relevance-flag::before { content: "⚠ off-target? "; font-weight: 700; }
+    .dup-flag {
+      margin-top: 10px; padding: 8px 12px; font-size: 13px; border-radius: 8px;
+      background: rgba(248,113,113,.08); border: 1px solid rgba(248,113,113,.4); color: #fca5a5;
+    }
+    .dup-flag::before { content: "⧉ already in the tree — "; font-weight: 700; }
+    .dup-flag .existing { display: block; margin-top: 6px; color: var(--text); font-style: italic; }
+    .claim-card .actions { margin-top: 10px; display: flex; gap: 8px; flex-wrap: wrap; }
+    .claim-card .actions button { margin-top: 0; font-size: 13px; padding: 6px 14px; }
+    .hint { font-size: 13px; color: var(--muted); margin-top: 8px; }
+    footer { margin-top: 60px; font-size: 12.5px; color: var(--faint); text-align: center; }
+    footer a { color: var(--muted); }
   </style>
 </head>
 <body>
-  <h1>Debate Tree <small>— AI-moderated argument map (spike)</small></h1>
+  <div class="wrap">
+    <header>
+      <div class="brand">
+        <h1>Debate Tree</h1>
+        <span class="tag">AI-moderated argument map</span>
+      </div>
+      <p class="subtitle">Every node is a steelman its author approved. The AI disentangles, sharpens, and de-duplicates — it never speaks for you.</p>
+    </header>
 
-  <div class="card" id="tree-panel">
-    <h2>The tree</h2>
-    <div class="q" id="tree-question"></div>
-    <div id="tree-body"><div class="empty">Loading…</div></div>
-  </div>
-
-  <div class="card" id="setup">
-    <div class="replying-to" id="replying-to"></div>
-    <div class="seeds" id="seeds">
-      <label>Try a real contentious argument:</label>
+    <div class="question-card">
+      <div class="label">The question</div>
+      <div class="q" id="tree-question">Loading…</div>
+      <div class="provenance">
+        Seeded from the public record —
+        <a href="https://blog.cr.yp.to/20260221-structure.html" target="_blank" rel="noopener">djb, “NSA and IETF, part 6: The structure of the debate”</a>.
+        Technical arguments only; click <b>Source</b> on any seeded node for the verbatim wording.
+      </div>
+      <div class="stats" id="stats"></div>
+      <div class="tree-controls">
+        <button id="expand-all">⊞ Expand all</button>
+        <button id="collapse-all">⊟ Collapse all</button>
+      </div>
     </div>
 
-    <label for="question">Debate question</label>
-    <input type="text" id="question"
-      value="Should TLS 1.3 standardize pure ML-KEM key agreement, or require hybrid (ECC+PQ)?">
+    <div id="tree-body"><div class="empty">Loading the tree…</div></div>
 
-    <label for="parent">Claim being responded to (optional)</label>
-    <input type="text" id="parent" placeholder="e.g. a pro/con this argument replies to">
+    <div id="composer-home"></div>
+    <div id="composer">
+      <div class="card" id="setup">
+        <div class="relevance-flag" id="stub-warning" style="display:none; margin: 0 0 12px">
+          running the offline stub model — it echoes text back instead of steelmanning.
+          Restart with <code>OPENROUTER_API_KEY=…</code> for the real moderator.
+        </div>
+        <div class="composer-context" id="composer-context"></div>
 
-    <label for="stance">Stance</label>
-    <select id="stance">
-      <option value="supporting (pro)">supporting (pro)</option>
-      <option value="opposing (con)">opposing (con)</option>
-    </select>
+        <div class="seeds" id="seeds">
+        </div>
 
-    <label for="original">Your argument, in your own words</label>
-    <textarea id="original" rows="6" placeholder="Type it the way you'd actually say it — heat and all."></textarea>
+        <input type="hidden" id="question"
+          value="How should TLS 1.3 handle post-quantum key agreement?">
 
-    <button id="start">Steelman it</button>
-    <div class="error" id="setup-error"></div>
+        <div id="stance-row">
+          <label for="stance">Your stance on the argument you're replying to</label>
+          <select id="stance">
+            <option value="supporting (pro)">supporting (pro)</option>
+            <option value="opposing (con)">opposing (con)</option>
+          </select>
+        </div>
+
+        <label for="original">Your argument, in your own words</label>
+        <textarea id="original" rows="5" placeholder="Type it the way you'd actually say it — heat and all. The moderator will offer a steelman; nothing is published until you approve it."></textarea>
+
+        <button class="primary" id="start">Steelman it</button>
+        <div class="error" id="setup-error"></div>
+      </div>
+
+      <div id="loop"></div>
+    </div>
+
+    <footer>
+      Debate Tree spike — powered by the Quantus stack ·
+      seed content curated from <a href="https://blog.cr.yp.to/20260221-structure.html" target="_blank" rel="noopener">blog.cr.yp.to</a> (process-based arguments omitted)
+    </footer>
   </div>
-
-  <div id="loop"></div>
 
   <script>
     const MAX_ROUNDS = 3;
 
     const SEEDS = [
       {
-        label: "anti pure-PQ (heated)",
+        label: "Try: anti solo-PQ (heated)",
         stance: "opposing (con)",
         text: "Rolling out pure ML-KEM without a hybrid is absolutely insane. We have DECADES of cryptanalysis on ECC and like five minutes on lattices. SIKE got destroyed by a laptop over a weekend! Anyone pushing PQ-only either doesn't understand risk or is carrying water for the NSA. Hybrid costs basically nothing, refusing it is pure ideology.",
       },
       {
-        label: "pro pure-PQ (compliance)",
+        label: "Try: pro solo-PQ (compliance)",
         stance: "supporting (pro)",
         text: "People act like pure ML-KEM is reckless but the reality is CNSA 2.0 timelines require pure PQ by 2033 and vendors selling to the US government need a standards-track way to do it. If IETF refuses, those deployments happen anyway, just without any RFC quality control. Publishing the option with a 'hybrids preferred' note is strictly better than pretending the demand doesn't exist.",
-      },
-      {
-        label: "emotionally loaded (moderation stress test)",
-        stance: "opposing (con)",
-        text: "The chairs just rammed this through, full stop. Two dozen people objected and they declared 'consensus' anyway because the big vendors wanted it. Why do we even pretend the process means anything?? This org is captured and everyone knows it, the mailing list is just theater.",
       },
     ];
 
     const seeds = document.getElementById("seeds");
     SEEDS.forEach((s) => {
       const b = document.createElement("button");
-      b.type = "button"; b.className = "secondary"; b.textContent = s.label;
+      b.type = "button"; b.className = "ghost"; b.textContent = s.label;
       b.onclick = () => {
         document.getElementById("original").value = s.text;
         document.getElementById("stance").value = s.stance;
@@ -161,20 +334,47 @@
       parentId: null, parentLabel: "",
     };
     const loop = document.getElementById("loop");
+    // Collapsed by default: readers drill down branch by branch.
+    const expandedIds = new Set();
+    let lastNodes = [];
 
     // ---- tree view -------------------------------------------------------
     async function loadTree() {
       const q = document.getElementById("question").value.trim();
       const res = await fetch("/api/tree?question=" + encodeURIComponent(q));
-      const { space, nodes } = await res.json();
+      const { space, nodes, provider } = await res.json();
       document.getElementById("tree-question").textContent = space.question;
+      lastNodes = nodes;
+      renderStats(nodes);
       renderTree(nodes);
+      document.getElementById("stub-warning").style.display =
+        provider === "stub" ? "" : "none";
     }
+
+    document.getElementById("expand-all").onclick = () => {
+      lastNodes.forEach((n) => expandedIds.add(n.id));
+      renderTree(lastNodes);
+    };
+    document.getElementById("collapse-all").onclick = () => {
+      expandedIds.clear();
+      renderTree(lastNodes);
+    };
+
+    function renderStats(nodes) {
+      const answers = nodes.filter((n) => n.kind === "answer").length;
+      document.getElementById("stats").innerHTML =
+        `<span class="dot-ans">● <b>${answers}</b> ${answers === 1 ? "position" : "positions"}</span>` +
+        `<span><b>${nodes.length}</b> arguments</span>`;
+    }
+
+    function isSeed(n) { return n.author_account.startsWith("seed:"); }
 
     function renderTree(nodes) {
       const body = document.getElementById("tree-body");
       if (!nodes.length) {
+        parkComposer();
         body.innerHTML = '<div class="empty">No arguments yet — steelman one below to plant the first node.</div>';
+        clearReplyTarget();
         return;
       }
       const byParent = new Map();
@@ -183,34 +383,62 @@
         if (!byParent.has(k)) byParent.set(k, []);
         byParent.get(k).push(n);
       });
+      // Positions first by score, then children by score within each level.
+      byParent.forEach((list) => list.sort((a, b) => b.score - a.score));
 
-      const build = (parentKey) => {
-        const kids = byParent.get(parentKey) || [];
-        if (!kids.length) return "";
-        return "<ul>" + kids.map((n) => `
-          <li class="node">
-            <div class="node-body ${n.kind}">
-              <div class="meta">
-                <span class="kind-badge ${n.kind}">${n.kind}</span>
-                <span class="who">${escapeHtml(n.author_account)}</span>
-              </div>
-              <div class="ptext">${escapeHtml(n.published_text)}</div>
-              <div class="node-actions">
-                <span class="vote">
-                  <button data-vote="1" data-node="${n.id}">▲</button>
-                  <span class="score">${n.score}</span>
-                  <button data-vote="-1" data-node="${n.id}">▼</button>
-                </span>
-                <button class="secondary" data-reply="${n.id}" data-kind="${n.kind}">Reply</button>
-                <button class="secondary" data-orig="${n.id}">Original</button>
-              </div>
-              <div class="ptext" id="orig-${n.id}" style="display:none;margin-top:8px;color:var(--muted);font-size:13px">${escapeHtml(n.original_text)}</div>
-            </div>
-            ${build(n.id)}
-          </li>`).join("") + "</ul>";
+      // Tally an answer's whole subtree so each position wears its own
+      // pro/con counts (the debate about THAT answer, not the whole space).
+      const subtreeCounts = (id) => {
+        const c = { pro: 0, con: 0 };
+        (byParent.get(id) || []).forEach((k) => {
+          if (c[k.kind] !== undefined) c[k.kind]++;
+          const sub = subtreeCounts(k.id);
+          c.pro += sub.pro; c.con += sub.con;
+        });
+        return c;
       };
 
-      body.innerHTML = '<ul class="tree">' + build("root").slice(4);
+      const renderNode = (n) => {
+        const kids = byParent.get(n.id) || [];
+        const expanded = expandedIds.has(n.id);
+        const who = isSeed(n)
+          ? '<span class="who seeded">✦ curated from the public record</span>'
+          : `<span class="who">${escapeHtml(n.author_account)}</span>`;
+        let tally = "";
+        if (n.kind === "answer") {
+          const c = subtreeCounts(n.id);
+          tally = `<span class="tally"><span class="t-pro">${c.pro} pro</span> · <span class="t-con">${c.con} con</span></span>`;
+        }
+        return `
+          <div class="node-card ${n.kind} ${kids.length ? "has-kids" : ""}" data-id="${n.id}">
+            <div class="node-head">
+              <span class="badge ${n.kind}">${n.kind}</span>
+              ${who}
+              ${tally}
+            </div>
+            <div class="node-text">${escapeHtml(n.published_text)}</div>
+            <div class="node-foot">
+              <span class="vote">
+                <button data-vote="1" data-node="${n.id}" title="agree">▲</button>
+                <span class="score ${n.score > 0 ? "pos" : n.score < 0 ? "neg" : ""}">${n.score}</span>
+                <button data-vote="-1" data-node="${n.id}" title="disagree">▼</button>
+              </span>
+              <button data-reply="${n.id}">↩ Reply</button>
+              <button data-orig="${n.id}">${isSeed(n) ? "Source" : "Original"}</button>
+              ${kids.length ? `<button class="toggle-kids" data-toggle="${n.id}">${expanded ? "▾ hide" : "▸"} <span class="count">${kids.length}</span> ${kids.length === 1 ? "reply" : "replies"}</button>` : ""}
+            </div>
+            <div class="source-box" id="orig-${n.id}">${linkify(escapeHtml(n.original_text))}</div>
+            <div class="composer-slot" data-slot="${n.id}"></div>
+            ${kids.length && expanded ? `<div class="children">${kids.map(renderNode).join("")}</div>` : ""}
+          </div>`;
+      };
+
+      // The composer may be docked inside the tree; move it to safety before
+      // wiping innerHTML, then re-dock after render.
+      parkComposer();
+      const roots = byParent.get("root") || [];
+      body.innerHTML = '<div class="tree-root">' + roots.map(renderNode).join("") + "</div>";
+
       body.querySelectorAll("[data-vote]").forEach((btn) => {
         btn.onclick = async () => {
           await fetch("/api/vote", {
@@ -221,41 +449,110 @@
         };
       });
       body.querySelectorAll("[data-orig]").forEach((btn) => {
-        btn.onclick = () => {
-          const el = document.getElementById("orig-" + btn.dataset.orig);
-          el.style.display = el.style.display === "none" ? "block" : "none";
-        };
+        btn.onclick = () => document.getElementById("orig-" + btn.dataset.orig).classList.toggle("show");
+      });
+      const toggleBranch = (id) => {
+        expandedIds.has(id) ? expandedIds.delete(id) : expandedIds.add(id);
+        renderTree(nodes);
+      };
+      body.querySelectorAll("[data-toggle]").forEach((btn) => {
+        btn.onclick = () => toggleBranch(btn.dataset.toggle);
+      });
+      // Clicking the argument itself (header or text) unpacks its branch AND
+      // docks the composer beneath it — no separate Reply click needed.
+      // Handlers sit on the leaf elements, so clicks on a child card never
+      // toggle its ancestors.
+      body.querySelectorAll(".node-card").forEach((card) => {
+        const id = card.dataset.id;
+        const node = nodes.find((x) => x.id === id);
+        [":scope > .node-head", ":scope > .node-text"].forEach((sel) => {
+          const el = card.querySelector(sel);
+          if (!el) return;
+          el.onclick = () => {
+            // Don't react to text-selection clicks.
+            if (String(window.getSelection())) return;
+            if (state.parentId !== id) resetLoop();
+            state.parentId = id;
+            state.parentLabel = node.published_text.length > 90
+              ? node.published_text.slice(0, 87) + "…"
+              : node.published_text;
+            if (card.classList.contains("has-kids")) {
+              toggleBranch(id);          // re-renders; placeComposer runs after
+            } else {
+              placeComposer();
+            }
+            document.getElementById("original").focus({ preventScroll: true });
+          };
+        });
       });
       body.querySelectorAll("[data-reply]").forEach((btn) => {
-        btn.onclick = () => setReplyTarget(btn.dataset.reply, btn.dataset.kind);
+        btn.onclick = () => {
+          const card = btn.closest(".node-card");
+          setReplyTarget(btn.dataset.reply, card.querySelector(".node-text").textContent);
+        };
       });
+
+      placeComposer();
     }
 
-    function setReplyTarget(nodeId, kind) {
-      const node = document.querySelector(`[data-orig="${nodeId}"]`)
-        ?.closest(".node-body")?.querySelector(".ptext")?.textContent || "";
+    // ---- movable composer --------------------------------------------------
+    const composer = document.getElementById("composer");
+
+    function parkComposer() {
+      document.getElementById("composer-home").appendChild(composer);
+    }
+
+    // Dock the composer under the reply target (or at the bottom, answering
+    // the question directly) and refresh its context line.
+    function placeComposer() {
+      const slot = state.parentId
+        ? document.querySelector(`.composer-slot[data-slot="${state.parentId}"]`)
+        : null;
+      (slot || document.getElementById("composer-home")).appendChild(composer);
+
+      document.getElementById("stance-row").style.display = state.parentId ? "" : "none";
+      const ctx = document.getElementById("composer-context");
+      if (state.parentId) {
+        ctx.innerHTML = `<span><strong>Reply to this argument</strong></span>
+          <button class="ghost" id="clear-reply">✕ Cancel — answer the question instead</button>`;
+        document.getElementById("clear-reply").onclick = clearReplyTarget;
+      } else {
+        ctx.innerHTML = `<span><strong>Add your position</strong> — answers the question directly. Or hit <em>↩ Reply</em> on any argument above.</span>`;
+      }
+    }
+
+    // Abandon any in-flight negotiation (drafts, feedback rounds, the rendered
+    // panel). Retargeting the composer means starting a fresh submission —
+    // stale rounds must not leak into the next steelman request.
+    function resetLoop() {
+      state.rounds = [];
+      state.draft = null;
+      state.selectedClaim = null;
+      loop.innerHTML = "";
+    }
+
+    function setReplyTarget(nodeId, text) {
+      if (state.parentId !== nodeId) resetLoop();
       state.parentId = nodeId;
-      state.parentLabel = node.slice(0, 80);
-      const banner = document.getElementById("replying-to");
-      banner.className = "replying-to show";
-      banner.innerHTML = `<span>Replying to <em>${escapeHtml(state.parentLabel)}</em></span>
-        <button class="secondary" id="clear-reply">Reply to question instead</button>`;
-      document.getElementById("clear-reply").onclick = clearReplyTarget;
+      state.parentLabel = text.length > 90 ? text.slice(0, 87) + "…" : text;
+      placeComposer();
+      composer.scrollIntoView({ behavior: "smooth", block: "center" });
       document.getElementById("original").focus();
-      document.getElementById("setup").scrollIntoView({ behavior: "smooth" });
     }
 
     function clearReplyTarget() {
+      if (state.parentId !== null) resetLoop();
       state.parentId = null;
       state.parentLabel = "";
-      document.getElementById("replying-to").className = "replying-to";
+      placeComposer();
     }
 
     loadTree();
 
+    // ---- steelman loop ---------------------------------------------------
     document.getElementById("start").onclick = async () => {
       state.question = document.getElementById("question").value.trim();
-      state.parent = document.getElementById("parent").value.trim();
+      state.parent = state.parentLabel;
       state.stance = document.getElementById("stance").value;
       state.original = document.getElementById("original").value.trim();
       document.getElementById("setup-error").textContent = "";
@@ -266,6 +563,7 @@
       state.rounds = [];
       state.selectedClaim = null;
       await requestSteelman();
+      loop.scrollIntoView({ behavior: "smooth" });
     };
 
     async function requestSteelman() {
@@ -276,6 +574,7 @@
           headers: { "content-type": "application/json" },
           body: JSON.stringify({
             question: state.question, parent: state.parent,
+            parentId: state.parentId,
             stance: state.stance, original: state.original,
             rounds: state.rounds,
           }),
@@ -286,6 +585,7 @@
         if (state.selectedClaim) {
           const updated = body.claims.find((c) => c.id === state.selectedClaim.id) || body.claims[0];
           state.selectedClaim = updated;
+          renderRound();
         } else if (body.claims.length === 1) {
           state.selectedClaim = body.claims[0];
           renderRound();
@@ -301,15 +601,35 @@
       loop.innerHTML = '<div class="card"><div class="spinner">Moderator is disentangling and drafting…</div></div>';
     }
 
+    function nodeText(id) {
+      const n = lastNodes.find((x) => x.id === id);
+      return n ? n.published_text : null;
+    }
+
+    function dupFlagHtml(c) {
+      if (!c.duplicate_of) return "";
+      const existing = nodeText(c.duplicate_of);
+      return `<div class="dup-flag">this claim makes the same point as an existing argument.
+        ${existing ? `<span class="existing">“${escapeHtml(existing)}”</span>` : ""}</div>`;
+    }
+
     function renderClaimPicker() {
       const d = state.draft;
       const claimsHtml = d.claims.map((c) => `
         <div class="claim-card">
           <h4>${escapeHtml(c.label)}</h4>
           <div class="steelman">${escapeHtml(c.steelman)}</div>
+          ${c.relevance ? `<div class="relevance-flag">${escapeHtml(c.relevance)}</div>` : ""}
+          ${dupFlagHtml(c)}
           <div class="actions">
-            <button class="accept" data-accept="${escapeHtml(c.id)}">Accept this one</button>
-            <button class="secondary" data-negotiate="${escapeHtml(c.id)}">Negotiate this one</button>
+            ${c.duplicate_of
+              ? `<button class="accept" data-upvote="${escapeHtml(c.duplicate_of)}">▲ Upvote the existing argument instead</button>
+                 <button class="ghost" data-negotiate="${escapeHtml(c.id)}">Negotiate (differentiate it)</button>`
+              : c.relevance
+                ? `<button class="accept" disabled title="Off-target claims can't be published — revise it to engage the target">Off-target — can't publish</button>
+                   <button class="ghost" data-negotiate="${escapeHtml(c.id)}">Negotiate (re-aim it)</button>`
+                : `<button class="accept" data-accept="${escapeHtml(c.id)}">Accept this one</button>
+                   <button class="ghost" data-negotiate="${escapeHtml(c.id)}">Negotiate this one</button>`}
           </div>
         </div>`).join("");
 
@@ -319,17 +639,42 @@
           <p class="hint">Each becomes its own tree node. Accept one as-is, or negotiate wording on one claim at a time.</p>
           <div class="claim-list">${claimsHtml}</div>
           ${d.notes ? `<div class="notes">${escapeHtml(d.notes)}</div>` : ""}
-          ${d.question ? `<div class="question">Moderator asks: ${escapeHtml(d.question)}</div>` : ""}
+          ${d.question ? `<div class="question-box">Moderator asks: ${escapeHtml(d.question)}</div>` : ""}
         </div>`;
 
       d.claims.forEach((c) => {
-        loop.querySelector(`[data-accept="${CSS.escape(c.id)}"]`).onclick = () => renderPublished(c.steelman, c);
+        const acceptBtn = loop.querySelector(`[data-accept="${CSS.escape(c.id)}"]`);
+        if (acceptBtn) acceptBtn.onclick = () => renderPublished(c.steelman, c);
         loop.querySelector(`[data-negotiate="${CSS.escape(c.id)}"]`).onclick = () => {
           state.selectedClaim = c;
           state.rounds = [];
           renderRound();
         };
       });
+      loop.querySelectorAll("[data-upvote]").forEach((btn) => {
+        btn.onclick = () => upvoteExisting(btn.dataset.upvote);
+      });
+    }
+
+    async function upvoteExisting(nodeId) {
+      await fetch("/api/vote", {
+        method: "POST", headers: { "content-type": "application/json" },
+        body: JSON.stringify({ nodeId, value: 1 }),
+      });
+      await loadTree();
+      loop.innerHTML = `
+        <div class="card published-card">
+          <strong>Vote cast on the existing argument — no duplicate added</strong>
+          <div class="pane" style="margin-top:14px"><div class="text">${escapeHtml(nodeText(nodeId) || "")}</div></div>
+          <div class="row">
+            <button class="ghost" id="another">Write something else</button>
+          </div>
+        </div>`;
+      document.getElementById("another").onclick = () => {
+        loop.innerHTML = "";
+        document.getElementById("original").value = "";
+        composer.scrollIntoView({ behavior: "smooth", block: "center" });
+      };
     }
 
     function renderRound() {
@@ -344,26 +689,35 @@
             <strong>Does this say what you mean?</strong>
             <span class="roundtag">${escapeHtml(claim.label)} · round ${roundNo} of ${MAX_ROUNDS}</span>
           </div>
-          <div class="cols" style="margin-top:12px">
+          <div class="cols">
             <div class="pane"><h3>You wrote (full post)</h3><div class="text">${escapeHtml(state.original)}</div></div>
-            <div class="pane draft"><h3>This claim</h3><div class="text">${escapeHtml(claim.steelman)}</div></div>
+            <div class="pane draft"><h3>This claim, steelmanned</h3><div class="text">${escapeHtml(claim.steelman)}</div></div>
           </div>
+          ${claim.relevance ? `<div class="relevance-flag">${escapeHtml(claim.relevance)}</div>` : ""}
+          ${dupFlagHtml(claim)}
           ${d.notes ? `<div class="notes">${escapeHtml(d.notes)}</div>` : ""}
-          ${d.question ? `<div class="question">Moderator asks: ${escapeHtml(d.question)}</div>` : ""}
+          ${d.question ? `<div class="question-box">Moderator asks: ${escapeHtml(d.question)}</div>` : ""}
 
           <label for="feedback">What did it get wrong on this claim?</label>
           <textarea id="feedback" rows="3" placeholder="e.g. 'too soft on the SIKE point' or 'split the NSA jab into its own claim'"></textarea>
 
           <div class="row">
-            <button class="accept" id="accept">Accept &amp; publish this claim</button>
-            <button class="secondary" id="pushback" ${isLast ? "disabled" : ""}>
+            ${claim.duplicate_of
+              ? `<button class="accept" id="upvote-dup">▲ Upvote the existing argument instead</button>`
+              : claim.relevance
+                ? `<button class="accept" disabled title="Off-target claims can't be published — revise it to engage the target">Off-target — can't publish</button>`
+                : `<button class="accept" id="accept">Accept &amp; publish this claim</button>`}
+            <button class="ghost" id="pushback" ${isLast ? "disabled" : ""}>
               ${isLast ? "No rounds left" : "Push back (revise)"}
             </button>
-            <button class="secondary" id="back">Pick a different claim</button>
+            <button class="ghost" id="back">Pick a different claim</button>
           </div>
         </div>`;
 
-      document.getElementById("accept").onclick = () => renderPublished(claim.steelman, claim);
+      const acceptBtn = document.getElementById("accept");
+      if (acceptBtn) acceptBtn.onclick = () => renderPublished(claim.steelman, claim);
+      const upvoteBtn = document.getElementById("upvote-dup");
+      if (upvoteBtn) upvoteBtn.onclick = () => upvoteExisting(claim.duplicate_of);
       document.getElementById("back").onclick = () => {
         state.selectedClaim = null;
         state.rounds = [];
@@ -384,7 +738,7 @@
 
     function renderError(message) {
       loop.innerHTML = '<div class="card"><div class="error">' + escapeHtml(message) +
-        '</div><button class="secondary" onclick="location.reload()">Start over</button></div>';
+        '</div><button class="ghost" onclick="location.reload()">Start over</button></div>';
     }
 
     async function renderPublished(text, claim) {
@@ -410,41 +764,45 @@
         saveError = String(err.message || err);
       }
 
+      // Expand the branch the new node landed in so it's visible immediately.
+      if (!saveError && state.parentId) expandedIds.add(state.parentId);
+      if (!saveError) {
+        // The draft is published; don't let it haunt the next composition.
+        document.getElementById("original").value = "";
+        document.getElementById("setup-error").textContent = "";
+      }
       clearReplyTarget();
       await loadTree();
 
       loop.innerHTML = `
-        <div class="card published">
+        <div class="card ${saveError ? "" : "published-card"}">
           <strong>${saveError ? "Steelmanned — but save failed" : "Published to the tree (steelmanned, author-approved)"}${claimLine}</strong>
           ${saveError ? `<div class="error">${escapeHtml(saveError)}</div>` : ""}
-          <div class="pane" style="margin-top:12px; background:#fff"><div class="text">${escapeHtml(text)}</div></div>
+          <div class="pane" style="margin-top:14px"><div class="text">${escapeHtml(text)}</div></div>
           <details><summary>Original text (always attached)</summary>
-            <div class="text" style="margin-top:8px">${escapeHtml(state.original)}</div>
+            <div class="text" style="margin-top:8px; font-size:14px; color:var(--muted)">${escapeHtml(state.original)}</div>
           </details>
           <div class="row">
-            <button class="secondary" id="export">Copy transcript JSON</button>
-            <button class="secondary" id="another">Add another argument</button>
+            <button class="ghost" id="see-tree">See it in the tree ↑</button>
+            <button class="ghost" id="another">Add another argument</button>
           </div>
         </div>`;
-      document.getElementById("export").onclick = () => {
-        navigator.clipboard.writeText(JSON.stringify({
-          question: state.question, parent: state.parent, stance: state.stance,
-          original: state.original, allClaims: state.draft?.claims,
-          selectedClaim: claim || null, rounds: state.rounds,
-          published: text,
-        }, null, 2));
-      };
+      document.getElementById("see-tree").onclick = () =>
+        document.getElementById("tree-body").scrollIntoView({ behavior: "smooth" });
       document.getElementById("another").onclick = () => {
         state.rounds = []; state.selectedClaim = null; state.draft = null;
         document.getElementById("original").value = "";
         loop.innerHTML = "";
-        document.getElementById("tree-panel").scrollIntoView({ behavior: "smooth" });
+        composer.scrollIntoView({ behavior: "smooth", block: "center" });
       };
     }
 
     function escapeHtml(s) {
       return String(s).replace(/[&<>"']/g, (c) =>
         ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+    }
+    function linkify(s) {
+      return s.replace(/https?:\/\/[^\s"<]+/g, (u) => `<a href="${u}" target="_blank" rel="noopener">${u}</a>`);
     }
   </script>
 </body>

@@ -5,6 +5,7 @@ import { PGlite } from "@electric-sql/pglite";
 import { readFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { SEED_TREE, SEED_AUTHOR } from "./seed.mjs";
 
 const DIR = dirname(fileURLToPath(import.meta.url));
 
@@ -21,11 +22,12 @@ function slugify(s) {
   );
 }
 
-// Default seed: djb's hybrid-vs-pure-PQ TLS question, so the tree isn't empty.
+// Default seed: djb's hybrid-vs-pure-PQ TLS debate, so the tree isn't empty.
+// Framed as an open question — positions are top-level answer nodes, so the
+// question must admit more than two of them.
 const DEFAULT_SPACE = {
   slug: "tls-pq-hybrid",
-  question:
-    "Should TLS 1.3 standardize pure ML-KEM key agreement, or require hybrid (ECC+PQ)?",
+  question: "How should TLS 1.3 handle post-quantum key agreement?",
 };
 
 export async function initDb() {
@@ -60,11 +62,47 @@ export async function initDb() {
   );
   await db.exec(schema);
 
-  await getOrCreateSpace(DEFAULT_SPACE.question, DEFAULT_SPACE.slug);
+  const space = await getOrCreateSpace(DEFAULT_SPACE.question, DEFAULT_SPACE.slug);
+  // Migrate existing DBs if the seed question's wording changed.
+  if (space.question !== DEFAULT_SPACE.question) {
+    await db.query("update space set question = $1 where id = $2", [
+      DEFAULT_SPACE.question,
+      space.id,
+    ]);
+    space.question = DEFAULT_SPACE.question;
+  }
+  await seedSpace(space);
   console.log(
     `db ready (pgvector: ${hasVector ? "on" : "off — dedup disabled"})`
   );
   return db;
+}
+
+// Plant the curated djb debate chart if the default space is empty.
+// published_text = neutral summary; original_text = verbatim quote + citation
+// (surfaced by the UI's "source" toggle). Idempotent across restarts.
+async function seedSpace(space) {
+  const count = await db.query(
+    "select count(*)::int as n from node where space_id = $1",
+    [space.id]
+  );
+  if (count.rows[0].n > 0) return;
+
+  const insertBranch = async (entry, parentId) => {
+    const row = await insertNode({
+      spaceId: space.id,
+      parentId,
+      kind: entry.kind,
+      authorAccount: SEED_AUTHOR,
+      publishedText: entry.text,
+      originalText: entry.source,
+    });
+    for (const child of entry.children || []) {
+      await insertBranch(child, row.id);
+    }
+  };
+  for (const top of SEED_TREE) await insertBranch(top, null);
+  console.log(`seeded '${space.slug}' from the djb debate chart`);
 }
 
 export async function getOrCreateSpace(question, slug) {
@@ -114,6 +152,19 @@ export async function insertNode({
     ]
   );
   return r.rows[0];
+}
+
+// Existing arguments at one position in the tree (children of parentId, or
+// top-level answers when parentId is null) — the dedup candidates for a new
+// submission aimed at that position.
+export async function getChildren(spaceId, parentId) {
+  const r = await db.query(
+    parentId
+      ? "select id, published_text from node where space_id = $1 and parent_id = $2"
+      : "select id, published_text from node where space_id = $1 and parent_id is null",
+    parentId ? [spaceId, parentId] : [spaceId]
+  );
+  return r.rows;
 }
 
 // Whole tree for a space as flat rows with vote tallies. The client nests them.

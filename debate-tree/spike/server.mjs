@@ -18,6 +18,7 @@ import {
   listSpaces,
   insertNode,
   getTree,
+  getChildren,
   castVote,
 } from "./db.mjs";
 
@@ -109,7 +110,7 @@ function callStub(messages) {
     const draft = (last.match(/Your previous draft[^]*?---\n([\s\S]*?)\n---/) || [, ""])[1].trim();
     return Promise.resolve(
       JSON.stringify({
-        claims: [{ id: "1", label: "Revised", steelman: draft + " (revised per your feedback)" }],
+        claims: [{ id: "1", label: "Revised", steelman: draft + " (revised per your feedback)", relevance: null }],
         notes: "- [stub model] echoed feedback",
         question: null,
       })
@@ -127,11 +128,43 @@ function callStub(messages) {
     )
     .filter((s) => s.length > 20);
 
+  // Crude relevance check: flag a claim that shares no substantive words with
+  // the reply target (real models do this semantically; this tests the UI).
+  const parentQuote = (last.match(/responding to this claim: "([\s\S]*?)"/) || [, ""])[1];
+  // Stemmed word set: lowercase, letters only, first 6 chars — so that
+  // "standardized" and "standardize" collide.
+  const words = (t) =>
+    new Set((t.toLowerCase().match(/[a-z][a-z-]{3,}/g) || []).map((w) => w.slice(0, 6)));
+  const parentWords = words(parentQuote);
+  const overlaps = (text) =>
+    [...words(text)].some((w) => parentWords.has(w));
+
+  // Crude duplicate check against the sibling list embedded in the prompt:
+  // Jaccard similarity on stemmed words (real models judge this semantically).
+  const siblings = [...last.matchAll(/^- \(id: ([0-9a-f-]+)\) (.+)$/gm)].map((m) => ({
+    id: m[1],
+    words: words(m[2]),
+  }));
+  const duplicateOf = (text) => {
+    const w = words(text);
+    for (const s of siblings) {
+      const inter = [...w].filter((x) => s.words.has(x)).length;
+      const union = new Set([...w, ...s.words]).size;
+      if (union && inter / union > 0.4) return s.id;
+    }
+    return null;
+  };
+
   const chunks = sentences.length >= 2 ? sentences.slice(0, 4) : [original];
   const claims = chunks.map((chunk, i) => ({
     id: String(i + 1),
     label: `Point ${i + 1}`,
     steelman: chunk.length > 120 ? chunk.slice(0, 117) + "…" : chunk,
+    relevance:
+      parentQuote && !overlaps(chunk)
+        ? "This claim doesn't appear to engage the claim you're replying to — it may belong elsewhere in the tree."
+        : null,
+    duplicate_of: duplicateOf(chunk),
   }));
 
   return Promise.resolve(
@@ -181,10 +214,16 @@ function parseModelJson(text) {
     if (typeof c.steelman !== "string" || !c.steelman.trim()) {
       throw new Error(`claim ${i + 1} missing steelman`);
     }
+    const optionalStr = (v) =>
+      typeof v === "string" && v.trim() && v.trim().toLowerCase() !== "null"
+        ? v.trim()
+        : null;
     return {
       id: String(c.id ?? i + 1),
       label: typeof c.label === "string" && c.label.trim() ? c.label.trim() : `Point ${i + 1}`,
       steelman: c.steelman.trim(),
+      relevance: optionalStr(c.relevance),
+      duplicate_of: optionalStr(c.duplicate_of),
     };
   });
 
@@ -200,10 +239,18 @@ async function handleSteelman(req, res) {
   for await (const chunk of req) raw += chunk;
   const body = JSON.parse(raw);
 
+  // Existing arguments at the target position, so the model can flag
+  // duplicates before anything is published.
+  let siblings = [];
+  if (body.question) {
+    const space = await getOrCreateSpace(body.question, body.spaceSlug);
+    siblings = await getChildren(space.id, body.parentId || null);
+  }
+
   // Rebuild the conversation from the client-held transcript. rounds is
   // [{draft, feedback}, ...] for completed rounds.
   const messages = [
-    { role: "user", content: buildFirstRoundPrompt(body) },
+    { role: "user", content: buildFirstRoundPrompt({ ...body, siblings }) },
   ];
   (body.rounds || []).forEach((r, i) => {
     messages.push({
@@ -247,7 +294,7 @@ async function handleTree(req, res, url) {
   const question = url.searchParams.get("question") || key;
   const space = await getOrCreateSpace(question, /\s/.test(key) ? undefined : key);
   const nodes = await getTree(space.id);
-  sendJson(res, 200, { space, nodes });
+  sendJson(res, 200, { space, nodes, provider });
 }
 
 async function handleSpaces(_req, res) {
