@@ -207,39 +207,16 @@ class TransactionSubmissionService {
     required Account signer,
     required MultisigProposal proposal,
   }) async {
-    final pending = PendingMultisigApprovalEvent.create(
-      multisigAddress: msig.accountId,
-      proposalId: proposal.id,
+    await _submitAndTrackApproval(
+      msig: msig,
+      proposal: proposal,
       approverId: signer.accountId,
+      telemetryEvent: 'multisig_approve',
+      submit: () {
+        final service = _ref.read(multisigServiceProvider);
+        return service.submitApproveExtrinsic(msig: msig, signer: signer, proposalId: proposal.id);
+      },
     );
-
-    addPendingMultisigApproval(_ref, pending);
-
-    TelemetryService().sendEvent('multisig_approve');
-
-    await _submitApprove(msig: msig, signer: signer, proposalId: proposal.id, pending: pending);
-  }
-
-  Future<void> _submitApprove({
-    required MultisigAccount msig,
-    required Account signer,
-    required int proposalId,
-    required PendingMultisigApprovalEvent pending,
-  }) async {
-    try {
-      final service = _ref.read(multisigServiceProvider);
-      final hashBytes = await service.submitApproveExtrinsic(msig: msig, signer: signer, proposalId: proposalId);
-      final extrinsicHash = '0x${hex.encode(hashBytes)}';
-      quantusDebugPrint('[Approve] submitted: $extrinsicHash');
-
-      updatePendingMultisigApproval(_ref, pending.id, extrinsicHash: extrinsicHash);
-      final updated = findPendingMultisigApproval(_ref, pending.id) ?? pending.copyWith(extrinsicHash: extrinsicHash);
-      _ref.read(multisigApprovalPollingServiceProvider).startPolling(msig, updated);
-    } catch (e, stackTrace) {
-      quantusDebugPrint('[Approve] submit failed: $e\n$stackTrace');
-      removePendingMultisigApproval(_ref, pending.id);
-      rethrow;
-    }
   }
 
   /// Approves a proposal using a signature produced off-device (Keystone).
@@ -251,30 +228,42 @@ class TransactionSubmissionService {
     required Uint8List signature,
     required Uint8List publicKey,
   }) async {
+    return _submitAndTrackApproval(
+      msig: msig,
+      proposal: proposal,
+      approverId: signer.accountId,
+      telemetryEvent: 'multisig_approve_hardware',
+      submit: () => SubstrateService().submitExtrinsicWithExternalSignature(unsignedData, signature, publicKey),
+    );
+  }
+
+  Future<String> _submitAndTrackApproval({
+    required MultisigAccount msig,
+    required MultisigProposal proposal,
+    required String approverId,
+    required String telemetryEvent,
+    required Future<Uint8List> Function() submit,
+  }) async {
     final pending = PendingMultisigApprovalEvent.create(
       multisigAddress: msig.accountId,
       proposalId: proposal.id,
-      approverId: signer.accountId,
+      approverId: approverId,
     );
 
     addPendingMultisigApproval(_ref, pending);
-    TelemetryService().sendEvent('multisig_approve_hardware');
+    TelemetryService().sendEvent(telemetryEvent);
 
     try {
-      final hashBytes = await SubstrateService().submitExtrinsicWithExternalSignature(
-        unsignedData,
-        signature,
-        publicKey,
-      );
+      final hashBytes = await submit();
       final extrinsicHash = '0x${hex.encode(hashBytes)}';
-      quantusDebugPrint('[Approve] hardware submitted: $extrinsicHash');
+      quantusDebugPrint('[Approve] submitted: $extrinsicHash');
 
       updatePendingMultisigApproval(_ref, pending.id, extrinsicHash: extrinsicHash);
       final updated = findPendingMultisigApproval(_ref, pending.id) ?? pending.copyWith(extrinsicHash: extrinsicHash);
       _ref.read(multisigApprovalPollingServiceProvider).startPolling(msig, updated);
       return extrinsicHash;
     } catch (e, stackTrace) {
-      quantusDebugPrint('[Approve] hardware submit failed: $e\n$stackTrace');
+      quantusDebugPrint('[Approve] submit failed: $e\n$stackTrace');
       removePendingMultisigApproval(_ref, pending.id);
       rethrow;
     }
