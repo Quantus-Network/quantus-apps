@@ -43,9 +43,9 @@ class _AddAccountMenuScreenState extends ConsumerState<AddAccountMenuScreen> {
   void _onImportKeystone() {
     final accounts = ref.read(accountsProvider).value ?? <Account>[];
     final walletIndex = nextWalletIndex(accounts);
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => AddHardwareAccountScreen(walletIndex: walletIndex, isNewWallet: true)),
-    );
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => AddHardwareAccountScreen(walletIndex: walletIndex, isNewWallet: true)));
   }
 
   void _onDiscoverMultisig() {
