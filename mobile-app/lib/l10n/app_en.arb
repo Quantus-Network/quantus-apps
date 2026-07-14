@@ -325,7 +325,7 @@
     "@addAccountMenuTitle": {
       "description": "App bar title on add account menu"
     },
-    "addAccountMenuCreateTitle": "Add Account",
+    "addAccountMenuCreateTitle": "Add Transparent Account",
     "@addAccountMenuCreateTitle": {
       "description": "Add transparent account menu row title"
     },
@@ -337,25 +337,25 @@
     "@addAccountMenuMoreTitle": {
       "description": "Title of the add account more options action sheet"
     },
-    "addAccountMenuImportKeystoneTitle": "Add Keystone Hardware Account",
+    "addAccountMenuImportKeystoneTitle": "Add Keystone Account",
     "@addAccountMenuImportKeystoneTitle": {
       "description": "Add keystone hardware account menu row title"
     },
-    "addAccountMenuImportKeystoneSubtitle": "Scan the address QR from your Keystone device",
+    "addAccountMenuImportKeystoneSubtitle": "Air-gapped signing via QR code",
     "@addAccountMenuImportKeystoneSubtitle": {
       "description": "Add keystone hardware account menu row subtitle"
     },
-    "addAccountMenuImportTitle": "Import Another Wallet",
+    "addAccountMenuImportTitle": "Import Account",
     "@addAccountMenuImportTitle": {
-      "description": "Import another wallet menu row title"
+      "description": "Import account menu row title"
     },
-    "addAccountMenuImportSubtitle": "Use a recovery phrase to import",
+    "addAccountMenuImportSubtitle": "Restore from recovery phrase",
     "@addAccountMenuImportSubtitle": {
-      "description": "Import wallet menu row subtitle"
+      "description": "Import account menu row subtitle"
     },
-    "addAccountMenuMultisigTitle": "Create New Multisig",
+    "addAccountMenuMultisigTitle": "Create Multisig Account",
     "@addAccountMenuMultisigTitle": {
-      "description": "Create new multisig menu row title"
+      "description": "Create multisig account menu row title"
     },
     "addAccountMenuMultisigSubtitle": "Set up a shared address with multiple signers",
     "@addAccountMenuMultisigSubtitle": {
@@ -1919,13 +1919,13 @@
     "@settingsMiningRewardsError": {
       "description": "Mining rewards row subtitle on error"
     },
-    "settingsAccountTypeTitle": "Account Type",
+    "settingsAccountTypeTitle": "Add Account",
     "@settingsAccountTypeTitle": {
-      "description": "Account type row title on settings hub"
+      "description": "Add account row title on settings hub"
     },
-    "settingsAccountTypeSubtitle": "Advanced Account Features",
+    "settingsAccountTypeSubtitle": "Manage your accounts",
     "@settingsAccountTypeSubtitle": {
-      "description": "Account type row subtitle on settings hub"
+      "description": "Add account row subtitle on settings hub"
     },
     "settingsHelpTitle": "Help & Support",
     "@settingsHelpTitle": {
@@ -2314,51 +2314,6 @@
       }
     },
 
-    "settingsAccountTypeScreenTitle": "Account Type",
-    "@settingsAccountTypeScreenTitle": {
-      "description": "App bar on account type settings"
-    },
-    "settingsAccountTypeIntro": "Advanced account features are coming soon. These will give you greater control over how transactions are authorised and secured.",
-    "@settingsAccountTypeIntro": {
-      "description": "Intro on account type settings"
-    },
-    "settingsAccountTypeReversibleTitle": "Reversible Transactions",
-    "@settingsAccountTypeReversibleTitle": {
-      "description": "Reversible transactions feature title"
-    },
-    "settingsAccountTypeReversibleSubtitle": "Reverse your sends within a time window",
-    "@settingsAccountTypeReversibleSubtitle": {
-      "description": "Reversible transactions feature subtitle"
-    },
-    "settingsAccountTypeHighSecurityTitle": "High Security Account",
-    "@settingsAccountTypeHighSecurityTitle": {
-      "description": "High security account feature title"
-    },
-    "settingsAccountTypeHighSecuritySubtitle": "Guardian approval required",
-    "@settingsAccountTypeHighSecuritySubtitle": {
-      "description": "High security account feature subtitle"
-    },
-    "settingsAccountTypeMultiSigTitle": "Multi-Signature",
-    "@settingsAccountTypeMultiSigTitle": {
-      "description": "Multi-signature feature title"
-    },
-    "settingsAccountTypeMultiSigSubtitle": "Multiple approvals required",
-    "@settingsAccountTypeMultiSigSubtitle": {
-      "description": "Multi-signature feature subtitle"
-    },
-    "settingsAccountTypeHardwareTitle": "Hardware Wallet",
-    "@settingsAccountTypeHardwareTitle": {
-      "description": "Hardware wallet feature title"
-    },
-    "settingsAccountTypeHardwareSubtitle": "Pair a hardware device",
-    "@settingsAccountTypeHardwareSubtitle": {
-      "description": "Hardware wallet feature subtitle"
-    },
-    "settingsAccountTypeComingSoon": "Coming Soon",
-    "@settingsAccountTypeComingSoon": {
-      "description": "Coming soon badge on account type features"
-    },
-
     "swapTitle": "Swap",
     "@swapTitle": {
       "description": "App bar title on swap screens"
@@ -2594,6 +2549,10 @@
     "commonContinue": "Continue",
     "@commonContinue": {
       "description": "Continue button on various screens"
+    },
+    "commonDone": "Done",
+    "@commonDone": {
+      "description": "Done button on various screens"
     },
 
     "redeemToLabel": "Redeem To",

@@ -21,7 +21,7 @@ import 'package:resonance_network_wallet/v2/components/bottom_sheet_container.da
 import 'package:resonance_network_wallet/v2/screens/accounts/account_menu_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/accounts_navigation.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/multisig_account_menu_screen.dart';
-import 'package:resonance_network_wallet/v2/screens/accounts/add_account_menu_screen.dart';
+import 'package:resonance_network_wallet/v2/screens/settings/add_account_menu_screen.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 
 Future<T?> showAccountsSheet<T>(BuildContext context) async {

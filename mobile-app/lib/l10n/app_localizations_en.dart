@@ -256,7 +256,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get addAccountMenuTitle => 'Add Account';
 
   @override
-  String get addAccountMenuCreateTitle => 'Add Account';
+  String get addAccountMenuCreateTitle => 'Add Transparent Account';
 
   @override
   String get addAccountMenuCreateSubtitle => 'Add another public account';
@@ -265,19 +265,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get addAccountMenuMoreTitle => 'Advanced';
 
   @override
-  String get addAccountMenuImportKeystoneTitle => 'Add Keystone Hardware Account';
+  String get addAccountMenuImportKeystoneTitle => 'Add Keystone Account';
 
   @override
-  String get addAccountMenuImportKeystoneSubtitle => 'Scan the address QR from your Keystone device';
+  String get addAccountMenuImportKeystoneSubtitle => 'Air-gapped signing via QR code';
 
   @override
-  String get addAccountMenuImportTitle => 'Import Another Wallet';
+  String get addAccountMenuImportTitle => 'Import Account';
 
   @override
-  String get addAccountMenuImportSubtitle => 'Use a recovery phrase to import';
+  String get addAccountMenuImportSubtitle => 'Restore from recovery phrase';
 
   @override
-  String get addAccountMenuMultisigTitle => 'Create New Multisig';
+  String get addAccountMenuMultisigTitle => 'Create Multisig Account';
 
   @override
   String get addAccountMenuMultisigSubtitle => 'Set up a shared address with multiple signers';
@@ -1348,10 +1348,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsMiningRewardsError => 'Error getting mining rewards';
 
   @override
-  String get settingsAccountTypeTitle => 'Account Type';
+  String get settingsAccountTypeTitle => 'Add Account';
 
   @override
-  String get settingsAccountTypeSubtitle => 'Advanced Account Features';
+  String get settingsAccountTypeSubtitle => 'Manage your accounts';
 
   @override
   String get settingsHelpTitle => 'Help & Support';
@@ -1618,40 +1618,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get settingsAccountTypeScreenTitle => 'Account Type';
-
-  @override
-  String get settingsAccountTypeIntro =>
-      'Advanced account features are coming soon. These will give you greater control over how transactions are authorised and secured.';
-
-  @override
-  String get settingsAccountTypeReversibleTitle => 'Reversible Transactions';
-
-  @override
-  String get settingsAccountTypeReversibleSubtitle => 'Reverse your sends within a time window';
-
-  @override
-  String get settingsAccountTypeHighSecurityTitle => 'High Security Account';
-
-  @override
-  String get settingsAccountTypeHighSecuritySubtitle => 'Guardian approval required';
-
-  @override
-  String get settingsAccountTypeMultiSigTitle => 'Multi-Signature';
-
-  @override
-  String get settingsAccountTypeMultiSigSubtitle => 'Multiple approvals required';
-
-  @override
-  String get settingsAccountTypeHardwareTitle => 'Hardware Wallet';
-
-  @override
-  String get settingsAccountTypeHardwareSubtitle => 'Pair a hardware device';
-
-  @override
-  String get settingsAccountTypeComingSoon => 'Coming Soon';
-
-  @override
   String get swapTitle => 'Swap';
 
   @override
@@ -1795,6 +1761,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get commonContinue => 'Continue';
+
+  @override
+  String get commonDone => 'Done';
 
   @override
   String get redeemToLabel => 'Redeem To';
