@@ -251,7 +251,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get addAccountMenuTitle => 'Tambah Akun';
 
   @override
-  String get addAccountMenuCreateTitle => 'Tambah Akun';
+  String get addAccountMenuCreateTitle => 'Tambah Akun Transparan';
 
   @override
   String get addAccountMenuCreateSubtitle => 'Tambahkan akun publik lainnya';
@@ -260,19 +260,19 @@ class AppLocalizationsId extends AppLocalizations {
   String get addAccountMenuMoreTitle => 'Lanjutan';
 
   @override
-  String get addAccountMenuImportKeystoneTitle => 'Tambah Akun Perangkat Keras Keystone';
+  String get addAccountMenuImportKeystoneTitle => 'Tambah Akun Keystone';
 
   @override
-  String get addAccountMenuImportKeystoneSubtitle => 'Pindai QR alamat dari perangkat Keystone Anda';
+  String get addAccountMenuImportKeystoneSubtitle => 'Penandatanganan air-gap melalui kode QR';
 
   @override
-  String get addAccountMenuImportTitle => 'Impor Wallet Lain';
+  String get addAccountMenuImportTitle => 'Impor Akun';
 
   @override
-  String get addAccountMenuImportSubtitle => 'Gunakan recovery phrase untuk mengimpor';
+  String get addAccountMenuImportSubtitle => 'Pulihkan dari recovery phrase';
 
   @override
-  String get addAccountMenuMultisigTitle => 'Buat Multisig Baru';
+  String get addAccountMenuMultisigTitle => 'Buat Akun Multisig';
 
   @override
   String get addAccountMenuMultisigSubtitle => 'Siapkan alamat bersama dengan beberapa penandatangan';
@@ -1346,10 +1346,10 @@ class AppLocalizationsId extends AppLocalizations {
   String get settingsMiningRewardsError => 'Gagal memuat hadiah mining';
 
   @override
-  String get settingsAccountTypeTitle => 'Jenis Akun';
+  String get settingsAccountTypeTitle => 'Tambah Akun';
 
   @override
-  String get settingsAccountTypeSubtitle => 'Fitur Akun Lanjutan';
+  String get settingsAccountTypeSubtitle => 'Kelola akun Anda';
 
   @override
   String get settingsHelpTitle => 'Bantuan & Dukungan';
@@ -1614,40 +1614,6 @@ class AppLocalizationsId extends AppLocalizations {
   String settingsAboutVersion(String version, String build) {
     return 'Versi $version ($build)';
   }
-
-  @override
-  String get settingsAccountTypeScreenTitle => 'Jenis Akun';
-
-  @override
-  String get settingsAccountTypeIntro =>
-      'Fitur akun lanjutan akan segera hadir. Fitur ini memberi Anda kontrol lebih besar atas cara transaksi diotorisasi dan diamankan.';
-
-  @override
-  String get settingsAccountTypeReversibleTitle => 'Transaksi Reversible';
-
-  @override
-  String get settingsAccountTypeReversibleSubtitle => 'Batalkan pengiriman dalam jangka waktu tertentu';
-
-  @override
-  String get settingsAccountTypeHighSecurityTitle => 'Akun Keamanan Tinggi';
-
-  @override
-  String get settingsAccountTypeHighSecuritySubtitle => 'Persetujuan guardian diperlukan';
-
-  @override
-  String get settingsAccountTypeMultiSigTitle => 'Multi-Tanda Tangan';
-
-  @override
-  String get settingsAccountTypeMultiSigSubtitle => 'Beberapa persetujuan diperlukan';
-
-  @override
-  String get settingsAccountTypeHardwareTitle => 'Dompet Hardware';
-
-  @override
-  String get settingsAccountTypeHardwareSubtitle => 'Pasangkan perangkat hardware';
-
-  @override
-  String get settingsAccountTypeComingSoon => 'Segera Hadir';
 
   @override
   String get swapTitle => 'Tukar';

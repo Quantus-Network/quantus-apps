@@ -503,7 +503,7 @@ abstract class AppLocalizations {
   /// Add transparent account menu row title
   ///
   /// In en, this message translates to:
-  /// **'Add Account'**
+  /// **'Add Transparent Account'**
   String get addAccountMenuCreateTitle;
 
   /// Add transparent account menu row subtitle
@@ -521,31 +521,31 @@ abstract class AppLocalizations {
   /// Add keystone hardware account menu row title
   ///
   /// In en, this message translates to:
-  /// **'Add Keystone Hardware Account'**
+  /// **'Add Keystone Account'**
   String get addAccountMenuImportKeystoneTitle;
 
   /// Add keystone hardware account menu row subtitle
   ///
   /// In en, this message translates to:
-  /// **'Scan the address QR from your Keystone device'**
+  /// **'Air-gapped signing via QR code'**
   String get addAccountMenuImportKeystoneSubtitle;
 
-  /// Import another wallet menu row title
+  /// Import account menu row title
   ///
   /// In en, this message translates to:
-  /// **'Import Another Wallet'**
+  /// **'Import Account'**
   String get addAccountMenuImportTitle;
 
-  /// Import wallet menu row subtitle
+  /// Import account menu row subtitle
   ///
   /// In en, this message translates to:
-  /// **'Use a recovery phrase to import'**
+  /// **'Restore from recovery phrase'**
   String get addAccountMenuImportSubtitle;
 
-  /// Create new multisig menu row title
+  /// Create multisig account menu row title
   ///
   /// In en, this message translates to:
-  /// **'Create New Multisig'**
+  /// **'Create Multisig Account'**
   String get addAccountMenuMultisigTitle;
 
   /// Add multisig menu row subtitle
@@ -2510,16 +2510,16 @@ abstract class AppLocalizations {
   /// **'Error getting mining rewards'**
   String get settingsMiningRewardsError;
 
-  /// Account type row title on settings hub
+  /// Add account row title on settings hub
   ///
   /// In en, this message translates to:
-  /// **'Account Type'**
+  /// **'Add Account'**
   String get settingsAccountTypeTitle;
 
-  /// Account type row subtitle on settings hub
+  /// Add account row subtitle on settings hub
   ///
   /// In en, this message translates to:
-  /// **'Advanced Account Features'**
+  /// **'Manage your accounts'**
   String get settingsAccountTypeSubtitle;
 
   /// Help row title on settings hub
@@ -3013,72 +3013,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Version {version} ({build})'**
   String settingsAboutVersion(String version, String build);
-
-  /// App bar on account type settings
-  ///
-  /// In en, this message translates to:
-  /// **'Account Type'**
-  String get settingsAccountTypeScreenTitle;
-
-  /// Intro on account type settings
-  ///
-  /// In en, this message translates to:
-  /// **'Advanced account features are coming soon. These will give you greater control over how transactions are authorised and secured.'**
-  String get settingsAccountTypeIntro;
-
-  /// Reversible transactions feature title
-  ///
-  /// In en, this message translates to:
-  /// **'Reversible Transactions'**
-  String get settingsAccountTypeReversibleTitle;
-
-  /// Reversible transactions feature subtitle
-  ///
-  /// In en, this message translates to:
-  /// **'Reverse your sends within a time window'**
-  String get settingsAccountTypeReversibleSubtitle;
-
-  /// High security account feature title
-  ///
-  /// In en, this message translates to:
-  /// **'High Security Account'**
-  String get settingsAccountTypeHighSecurityTitle;
-
-  /// High security account feature subtitle
-  ///
-  /// In en, this message translates to:
-  /// **'Guardian approval required'**
-  String get settingsAccountTypeHighSecuritySubtitle;
-
-  /// Multi-signature feature title
-  ///
-  /// In en, this message translates to:
-  /// **'Multi-Signature'**
-  String get settingsAccountTypeMultiSigTitle;
-
-  /// Multi-signature feature subtitle
-  ///
-  /// In en, this message translates to:
-  /// **'Multiple approvals required'**
-  String get settingsAccountTypeMultiSigSubtitle;
-
-  /// Hardware wallet feature title
-  ///
-  /// In en, this message translates to:
-  /// **'Hardware Wallet'**
-  String get settingsAccountTypeHardwareTitle;
-
-  /// Hardware wallet feature subtitle
-  ///
-  /// In en, this message translates to:
-  /// **'Pair a hardware device'**
-  String get settingsAccountTypeHardwareSubtitle;
-
-  /// Coming soon badge on account type features
-  ///
-  /// In en, this message translates to:
-  /// **'Coming Soon'**
-  String get settingsAccountTypeComingSoon;
 
   /// App bar title on swap screens
   ///
