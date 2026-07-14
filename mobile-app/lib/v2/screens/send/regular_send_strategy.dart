@@ -12,6 +12,8 @@ import 'package:resonance_network_wallet/services/local_auth_service.dart';
 import 'package:resonance_network_wallet/services/transaction_submission_service.dart';
 import 'package:resonance_network_wallet/shared/utils/url_utils.dart';
 import 'package:resonance_network_wallet/v2/components/detail_summary_row.dart';
+import 'package:resonance_network_wallet/v2/screens/send/keystone_sign_cache.dart';
+import 'package:resonance_network_wallet/v2/screens/send/keystone_signing_session.dart';
 import 'package:resonance_network_wallet/v2/screens/send/send_providers.dart';
 import 'package:resonance_network_wallet/v2/screens/send/send_strategy.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
@@ -121,9 +123,43 @@ class RegularSendStrategy extends SendStrategy {
     // instead of signing locally. The debug flag forces this path for testing.
     if (account.accountType == AccountType.keystone || AppConstants.debugHardwareWallet) {
       return SendNeedsHardwareSignature(
-        account: account,
-        networkFee: regularFee.networkFee,
-        blockHeight: regularFee.blockHeight,
+        session: KeystoneSigningSession(
+          account: account,
+          buildCall: () => ref.read(balancesServiceProvider).getBalanceTransferCall(recipient, amount),
+          title: isPayMode ? l10n.sendPayTitle : l10n.sendTitle,
+          primaryDetail: l10n.commonAmountBalance(
+            fmt.formatBalance(amount, smartDecimals: 4),
+            AppConstants.tokenSymbol,
+          ),
+          secondaryDetail: recipient,
+          tertiaryDetail: recipientChecksum,
+          cacheKey: KeystoneSignCacheKey.fromSendParams(
+            accountId: account.accountId,
+            recipientAddress: recipient,
+            amount: amount,
+          ),
+          telemetryPrefix: 'send_transfer_hardware',
+          submitSigned: (ref, {required unsignedData, required signature, required publicKey}) async {
+            final hash = await ref
+                .read(transactionSubmissionServiceProvider)
+                .submitExternallySignedTransfer(
+                  account: account,
+                  targetAddress: recipient,
+                  amount: amount,
+                  fee: regularFee.networkFee,
+                  blockHeight: unsignedData.payloadToSign.blockNumber,
+                  unsignedData: unsignedData,
+                  signature: signature,
+                  publicKey: publicKey,
+                );
+            unawaited(
+              RecentAddressesService()
+                  .addAddress(recipient)
+                  .catchError((Object error) => debugPrint('Failed to save recent address: $error')),
+            );
+            return hash;
+          },
+        ),
         terminal: terminal,
       );
     }

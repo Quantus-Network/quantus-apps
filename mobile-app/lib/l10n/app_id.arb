@@ -189,6 +189,9 @@
   "activityTxProposalCancelled": "Proposal dibatalkan",
   "multisigApproveButton": "Setujui",
   "multisigAlreadyApproved": "Sudah Ditandatangani",
+  "multisigSignerPickerTitle": "Pilih akun",
+  "multisigSignerPickerBody": "Beberapa akun di perangkat ini dapat menandatangani. Pilih akun mana yang akan digunakan untuk menyetujui.",
+
   "multisigCancelProposalButton": "Batalkan Proposal",
   "multisigProposalExpiresLabel": "KEDALUWARSA",
   "multisigProposalAtLabel": "PADA",

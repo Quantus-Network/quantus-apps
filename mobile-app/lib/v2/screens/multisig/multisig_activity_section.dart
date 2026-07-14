@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/models/combined_transactions_list.dart';
+import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/currency_display_provider.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/multisig_providers.dart';
@@ -11,6 +12,7 @@ import 'package:resonance_network_wallet/providers/pending_multisig_cancellation
 import 'package:resonance_network_wallet/providers/pending_multisig_executions_provider.dart';
 import 'package:resonance_network_wallet/providers/pending_multisig_proposals_provider.dart';
 import 'package:resonance_network_wallet/services/transaction_service.dart';
+import 'package:resonance_network_wallet/shared/utils/multisig_local_signers.dart';
 import 'package:resonance_network_wallet/v2/components/loader.dart';
 import 'package:resonance_network_wallet/v2/components/proposal_list_tile.dart';
 import 'package:resonance_network_wallet/v2/screens/activity/transaction_detail_sheet.dart';
@@ -38,6 +40,10 @@ class MultisigActivitySection extends ConsumerWidget {
     final openProposalsAsync = ref.watch(multisigOpenProposalsProvider(msig));
     final pastProposalsAsync = ref.watch(multisigPastProposalsProvider(msig));
     final pending = pendingProposalsForMultisig(ref.watch(pendingMultisigProposalsProvider), msig.accountId);
+    final accounts = ref.watch(accountsProvider).value ?? const <Account>[];
+    final localSignerIds = localSignersForMultisig(msig, accounts).map((a) => a.accountId).toList();
+    // Fall back to the stored member id when accounts have not loaded yet.
+    final effectiveLocalSignerIds = localSignerIds.isEmpty ? [msig.myMemberAccountId] : localSignerIds;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -45,7 +51,7 @@ class MultisigActivitySection extends ConsumerWidget {
         const SizedBox(height: 24),
         Text(l10n.multisigOpenProposals, style: text.smallTitle?.copyWith(color: colors.textPrimary)),
         const SizedBox(height: 16),
-        _openProposals(context, l10n, colors, text, openProposalsAsync, pending),
+        _openProposals(context, l10n, colors, text, openProposalsAsync, pending, effectiveLocalSignerIds),
         const SizedBox(height: 8),
         _activity(context, ref, l10n, colors, text, pastProposalsAsync),
       ],
@@ -59,6 +65,7 @@ class MultisigActivitySection extends ConsumerWidget {
     AppTextTheme text,
     AsyncValue<List<MultisigProposal>> openProposalsAsync,
     List<PendingMultisigProposalEvent> pending,
+    List<String> localSignerIds,
   ) {
     if (openProposalsAsync.isLoading && !openProposalsAsync.hasValue) {
       return const Center(
@@ -91,7 +98,7 @@ class MultisigActivitySection extends ConsumerWidget {
             padding: EdgeInsets.only(top: (i == 0 && pending.isEmpty) ? 0 : 12),
             child: ProposalRow(
               proposal: p,
-              myAccountId: msig.myMemberAccountId,
+              localSignerIds: localSignerIds,
               onTap: () => showMultisigProposalDetailSheet(context, msig: msig, proposal: p),
             ),
           ),

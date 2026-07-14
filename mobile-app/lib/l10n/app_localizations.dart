@@ -1160,6 +1160,18 @@ abstract class AppLocalizations {
   /// **'Already Signed'**
   String get multisigAlreadyApproved;
 
+  /// Title on sheet for picking which local signer approves a proposal
+  ///
+  /// In en, this message translates to:
+  /// **'Choose account'**
+  String get multisigSignerPickerTitle;
+
+  /// Body text on multi-local-signer approve picker sheet
+  ///
+  /// In en, this message translates to:
+  /// **'Multiple accounts on this device can sign. Choose which one to approve with.'**
+  String get multisigSignerPickerBody;
+
   /// Cancel proposal button on detail screen
   ///
   /// In en, this message translates to:

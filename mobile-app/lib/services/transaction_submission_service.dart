@@ -207,34 +207,61 @@ class TransactionSubmissionService {
     required Account signer,
     required MultisigProposal proposal,
   }) async {
+    await _submitAndTrackApproval(
+      msig: msig,
+      proposal: proposal,
+      approverId: signer.accountId,
+      telemetryEvent: 'multisig_approve',
+      submit: () {
+        final service = _ref.read(multisigServiceProvider);
+        return service.submitApproveExtrinsic(msig: msig, signer: signer, proposalId: proposal.id);
+      },
+    );
+  }
+
+  /// Approves a proposal using a signature produced off-device (Keystone).
+  Future<String> approveProposalWithExternalSignature({
+    required MultisigAccount msig,
+    required Account signer,
+    required MultisigProposal proposal,
+    required UnsignedTransactionData unsignedData,
+    required Uint8List signature,
+    required Uint8List publicKey,
+  }) async {
+    return _submitAndTrackApproval(
+      msig: msig,
+      proposal: proposal,
+      approverId: signer.accountId,
+      telemetryEvent: 'multisig_approve_hardware',
+      submit: () => SubstrateService().submitExtrinsicWithExternalSignature(unsignedData, signature, publicKey),
+    );
+  }
+
+  Future<String> _submitAndTrackApproval({
+    required MultisigAccount msig,
+    required MultisigProposal proposal,
+    required String approverId,
+    required String telemetryEvent,
+    required Future<Uint8List> Function() submit,
+  }) async {
     final pending = PendingMultisigApprovalEvent.create(
       multisigAddress: msig.accountId,
       proposalId: proposal.id,
-      approverId: signer.accountId,
+      approverId: approverId,
     );
 
     addPendingMultisigApproval(_ref, pending);
+    TelemetryService().sendEvent(telemetryEvent);
 
-    TelemetryService().sendEvent('multisig_approve');
-
-    await _submitApprove(msig: msig, signer: signer, proposalId: proposal.id, pending: pending);
-  }
-
-  Future<void> _submitApprove({
-    required MultisigAccount msig,
-    required Account signer,
-    required int proposalId,
-    required PendingMultisigApprovalEvent pending,
-  }) async {
     try {
-      final service = _ref.read(multisigServiceProvider);
-      final hashBytes = await service.submitApproveExtrinsic(msig: msig, signer: signer, proposalId: proposalId);
+      final hashBytes = await submit();
       final extrinsicHash = '0x${hex.encode(hashBytes)}';
       quantusDebugPrint('[Approve] submitted: $extrinsicHash');
 
       updatePendingMultisigApproval(_ref, pending.id, extrinsicHash: extrinsicHash);
       final updated = findPendingMultisigApproval(_ref, pending.id) ?? pending.copyWith(extrinsicHash: extrinsicHash);
       _ref.read(multisigApprovalPollingServiceProvider).startPolling(msig, updated);
+      return extrinsicHash;
     } catch (e, stackTrace) {
       quantusDebugPrint('[Approve] submit failed: $e\n$stackTrace');
       removePendingMultisigApproval(_ref, pending.id);
@@ -289,6 +316,46 @@ class TransactionSubmissionService {
     }
   }
 
+  /// Executes a proposal using a signature produced off-device (Keystone).
+  Future<String> executeProposalWithExternalSignature({
+    required MultisigAccount msig,
+    required Account signer,
+    required MultisigProposal proposal,
+    required UnsignedTransactionData unsignedData,
+    required Uint8List signature,
+    required Uint8List publicKey,
+    BigInt? fee,
+  }) async {
+    final pending = PendingMultisigExecutionEvent.fromProposal(
+      msig: msig,
+      proposal: proposal,
+      executorId: signer.accountId,
+      fee: fee,
+    );
+
+    addPendingMultisigExecution(_ref, pending);
+    TelemetryService().sendEvent('multisig_execute_hardware');
+
+    try {
+      final hashBytes = await SubstrateService().submitExtrinsicWithExternalSignature(
+        unsignedData,
+        signature,
+        publicKey,
+      );
+      final extrinsicHash = '0x${hex.encode(hashBytes)}';
+      quantusDebugPrint('[Execute] hardware submitted: $extrinsicHash');
+
+      updatePendingMultisigExecution(_ref, pending.id, extrinsicHash: extrinsicHash);
+      final updated = findPendingMultisigExecution(_ref, pending.id) ?? pending.copyWith(extrinsicHash: extrinsicHash);
+      _ref.read(multisigExecutionPollingServiceProvider).startPolling(msig, updated);
+      return extrinsicHash;
+    } catch (e, stackTrace) {
+      quantusDebugPrint('[Execute] hardware submit failed: $e\n$stackTrace');
+      removePendingMultisigExecution(_ref, pending.id);
+      rethrow;
+    }
+  }
+
   /// Submits a multisig proposal cancellation and tracks it optimistically.
   ///
   /// Awaits acceptance of the extrinsic by the chain before completing;
@@ -332,6 +399,47 @@ class TransactionSubmissionService {
       _ref.read(multisigCancellationPollingServiceProvider).startPolling(msig, updated);
     } catch (e, stackTrace) {
       quantusDebugPrint('[Cancel] submit failed: $e\n$stackTrace');
+      removePendingMultisigCancellation(_ref, pending.id);
+      rethrow;
+    }
+  }
+
+  /// Cancels a proposal using a signature produced off-device (Keystone).
+  Future<String> cancelProposalWithExternalSignature({
+    required MultisigAccount msig,
+    required Account proposer,
+    required MultisigProposal proposal,
+    required UnsignedTransactionData unsignedData,
+    required Uint8List signature,
+    required Uint8List publicKey,
+    BigInt? fee,
+  }) async {
+    final pending = PendingMultisigCancellationEvent.fromProposal(
+      msig: msig,
+      proposal: proposal,
+      proposerId: proposer.accountId,
+      fee: fee,
+    );
+
+    addPendingMultisigCancellation(_ref, pending);
+    TelemetryService().sendEvent('multisig_cancel_hardware');
+
+    try {
+      final hashBytes = await SubstrateService().submitExtrinsicWithExternalSignature(
+        unsignedData,
+        signature,
+        publicKey,
+      );
+      final extrinsicHash = '0x${hex.encode(hashBytes)}';
+      quantusDebugPrint('[Cancel] hardware submitted: $extrinsicHash');
+
+      updatePendingMultisigCancellation(_ref, pending.id, extrinsicHash: extrinsicHash);
+      final updated =
+          findPendingMultisigCancellation(_ref, pending.id) ?? pending.copyWith(extrinsicHash: extrinsicHash);
+      _ref.read(multisigCancellationPollingServiceProvider).startPolling(msig, updated);
+      return extrinsicHash;
+    } catch (e, stackTrace) {
+      quantusDebugPrint('[Cancel] hardware submit failed: $e\n$stackTrace');
       removePendingMultisigCancellation(_ref, pending.id);
       rethrow;
     }

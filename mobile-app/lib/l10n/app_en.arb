@@ -832,6 +832,15 @@
     "@multisigAlreadyApproved": {
       "description": "Disabled approve button when user already signed"
     },
+    "multisigSignerPickerTitle": "Choose account",
+    "@multisigSignerPickerTitle": {
+      "description": "Title on sheet for picking which local signer approves a proposal"
+    },
+    "multisigSignerPickerBody": "Multiple accounts on this device can sign. Choose which one to approve with.",
+    "@multisigSignerPickerBody": {
+      "description": "Body text on multi-local-signer approve picker sheet"
+    },
+
     "multisigCancelProposalButton": "Cancel Proposal",
     "@multisigCancelProposalButton": {
       "description": "Cancel proposal button on detail screen"

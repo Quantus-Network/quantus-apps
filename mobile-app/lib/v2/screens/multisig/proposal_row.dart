@@ -6,45 +6,62 @@ import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/pending_multisig_approvals_provider.dart';
 import 'package:resonance_network_wallet/providers/pending_multisig_cancellations_provider.dart';
 import 'package:resonance_network_wallet/providers/pending_multisig_executions_provider.dart';
+import 'package:resonance_network_wallet/shared/utils/multisig_local_signers.dart';
 import 'package:resonance_network_wallet/v2/components/proposal_list_tile.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 
 class ProposalRow extends ConsumerWidget {
   final MultisigProposal proposal;
-  final String myAccountId;
+
+  /// Local accounts that are members of this multisig.
+  ///
+  /// Used so the row reflects multi-signer devices correctly (e.g. still
+  /// "Proposed" when only one of two local signers has approved).
+  final List<String> localSignerIds;
   final VoidCallback? onTap;
 
-  const ProposalRow({super.key, required this.proposal, required this.myAccountId, this.onTap});
+  const ProposalRow({super.key, required this.proposal, required this.localSignerIds, this.onTap});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = ref.watch(l10nProvider);
     final colors = context.colors;
     final text = context.themeText;
-    final didApprove = proposal.didApprove(myAccountId);
+    final ids = localSignerIds.isEmpty ? const <String>[] : localSignerIds;
+    final allLocalApproved = ids.isNotEmpty && ids.every(proposal.didApprove);
     final pendingApprovals = ref.watch(pendingMultisigApprovalsProvider);
-    final pendingApproval = findPendingApprovalForProposal(
+    final pendingApproverIds = pendingApproverIdsForProposal(
       pendingApprovals,
       proposal.multisigAddress,
       proposal.id,
-      myAccountId,
+      ids,
     );
     final pendingExecutions = ref.watch(pendingMultisigExecutionsProvider);
-    final pendingExecution = findPendingExecutionForProposal(
-      pendingExecutions,
-      proposal.multisigAddress,
-      proposal.id,
-      myAccountId,
-    );
+    PendingMultisigExecutionEvent? pendingExecution;
+    for (final id in ids) {
+      pendingExecution = findPendingExecutionForProposal(pendingExecutions, proposal.multisigAddress, proposal.id, id);
+      if (pendingExecution != null) break;
+    }
     final pendingCancellations = ref.watch(pendingMultisigCancellationsProvider);
-    final pendingCancellation = findPendingCancellationForProposal(
-      pendingCancellations,
-      proposal.multisigAddress,
-      proposal.id,
-      myAccountId,
-    );
-    final isApproving = pendingApproval != null;
+    PendingMultisigCancellationEvent? pendingCancellation;
+    for (final id in ids) {
+      pendingCancellation = findPendingCancellationForProposal(
+        pendingCancellations,
+        proposal.multisigAddress,
+        proposal.id,
+        id,
+      );
+      if (pendingCancellation != null) break;
+    }
+    // Show "Approving" only when every remaining local signer is already in-flight.
+    final hasUnsignedLocal = ids.any((id) => !proposal.didApprove(id));
+    final isApproving =
+        hasUnsignedLocal &&
+        pendingApproverIds.isNotEmpty &&
+        ids.every((id) {
+          return proposal.didApprove(id) || pendingApproverIds.contains(id);
+        });
     final isExecuting = pendingExecution != null;
     final isCancelling = pendingCancellation != null;
     final isPending = isApproving || isExecuting || isCancelling;
@@ -76,7 +93,7 @@ class ProposalRow extends ConsumerWidget {
             _statusChip(l10n, colors, text),
           if (proposal.isOpen && !isPending) ...[
             const SizedBox(height: 6),
-            if (didApprove) _approvedPill(l10n, colors, text) else _proposedPill(l10n, colors, text),
+            if (allLocalApproved) _approvedPill(l10n, colors, text) else _proposedPill(l10n, colors, text),
           ],
         ],
       ),
