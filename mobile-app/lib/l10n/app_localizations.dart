@@ -3272,6 +3272,12 @@ abstract class AppLocalizations {
   /// **'Continue'**
   String get commonContinue;
 
+  /// Done button on various screens
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get commonDone;
+
   /// Section label above the destination address field on redeem
   ///
   /// In en, this message translates to:

@@ -1761,6 +1761,9 @@ class AppLocalizationsId extends AppLocalizations {
   String get commonContinue => 'Lanjutkan';
 
   @override
+  String get commonDone => 'Selesai';
+
+  @override
   String get redeemToLabel => 'Tukar Ke';
 
   @override

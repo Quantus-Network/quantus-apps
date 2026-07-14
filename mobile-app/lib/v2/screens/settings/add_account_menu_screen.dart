@@ -68,7 +68,7 @@ class _AddAccountMenuScreenState extends ConsumerState<AddAccountMenuScreen> {
     return ScaffoldBase(
       appBar: V2AppBar(title: l10n.addAccountMenuTitle),
       bottomContent: ScaffoldBaseBottomContent(
-        child: QuantusButton.simple(label: l10n.accountReadyDone, onTap: () => Navigator.pop(context)),
+        child: QuantusButton.simple(label: l10n.commonDone, onTap: () => Navigator.pop(context)),
       ),
       mainContent: ListView(
         children: [
@@ -107,47 +107,43 @@ class _AddAccountMenuScreenState extends ConsumerState<AddAccountMenuScreen> {
               child: Divider(color: colors.separator, height: 1),
             ),
             _AdvancedSection(
+              title: l10n.addAccountMenuMoreTitle,
               expanded: _advancedExpanded,
               onToggle: () => setState(() => _advancedExpanded = !_advancedExpanded),
               colors: colors,
               text: text,
               children: [
-                _buildAdvancedRow(
-                  icon: Icons.radar_outlined,
-                  title: l10n.addAccountMenuDiscoverMultisigTitle,
-                  subtitle: l10n.addAccountMenuDiscoverMultisigSubtitle,
+                GestureDetector(
                   onTap: _onDiscoverMultisig,
+                  behavior: HitTestBehavior.opaque,
+                  child: _AccountOptionRowContent(
+                    icon: Icons.radar_outlined,
+                    title: l10n.addAccountMenuDiscoverMultisigTitle,
+                    subtitle: l10n.addAccountMenuDiscoverMultisigSubtitle,
+                    colors: colors,
+                    text: text,
+                  ),
                 ),
                 Padding(
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   child: Divider(color: colors.separator, height: 1),
                 ),
-                _buildAdvancedRow(
-                  icon: Icons.group_outlined,
-                  title: l10n.addAccountMenuMultisigTitle,
-                  subtitle: l10n.addAccountMenuMultisigSubtitle,
+                GestureDetector(
                   onTap: _onCreateMultisig,
+                  behavior: HitTestBehavior.opaque,
+                  child: _AccountOptionRowContent(
+                    icon: Icons.group_outlined,
+                    title: l10n.addAccountMenuMultisigTitle,
+                    subtitle: l10n.addAccountMenuMultisigSubtitle,
+                    colors: colors,
+                    text: text,
+                  ),
                 ),
               ],
             ),
           ],
         ],
       ),
-    );
-  }
-
-  Widget _buildAdvancedRow({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required VoidCallback onTap,
-  }) {
-    final colors = context.colors;
-    final text = context.themeText;
-    return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: _AccountOptionRowContent(icon: icon, title: title, subtitle: subtitle, colors: colors, text: text),
     );
   }
 }
@@ -230,6 +226,7 @@ class _AccountOptionRowContent extends StatelessWidget {
 
 class _AdvancedSection extends StatelessWidget {
   const _AdvancedSection({
+    required this.title,
     required this.expanded,
     required this.onToggle,
     required this.colors,
@@ -237,6 +234,7 @@ class _AdvancedSection extends StatelessWidget {
     required this.children,
   });
 
+  final String title;
   final bool expanded;
   final VoidCallback onToggle;
   final AppColorsV2 colors;
@@ -256,7 +254,7 @@ class _AdvancedSection extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Advanced', style: text.paragraph?.copyWith(fontSize: 18, color: colors.textPrimary)),
+                Text(title, style: text.paragraph?.copyWith(fontSize: 18, color: colors.textPrimary)),
                 AnimatedRotation(
                   turns: expanded ? 0.5 : 0,
                   duration: const Duration(milliseconds: 200),
@@ -265,14 +263,23 @@ class _AdvancedSection extends StatelessWidget {
               ],
             ),
           ),
-          if (expanded) ...[
-            Padding(
-              padding: const EdgeInsets.only(top: 16),
-              child: Divider(color: colors.separator, height: 1),
-            ),
-            const SizedBox(height: 16),
-            ...children,
-          ],
+          AnimatedSize(
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeInOut,
+            alignment: Alignment.topCenter,
+            child: expanded
+                ? Column(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.only(top: 16),
+                        child: Divider(color: colors.separator, height: 1),
+                      ),
+                      const SizedBox(height: 16),
+                      ...children,
+                    ],
+                  )
+                : const SizedBox.shrink(),
+          ),
         ],
       ),
     );

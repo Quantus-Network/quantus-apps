@@ -1763,6 +1763,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get commonContinue => 'Continue';
 
   @override
+  String get commonDone => 'Done';
+
+  @override
   String get redeemToLabel => 'Redeem To';
 
   @override

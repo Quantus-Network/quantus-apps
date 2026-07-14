@@ -2550,6 +2550,10 @@
     "@commonContinue": {
       "description": "Continue button on various screens"
     },
+    "commonDone": "Done",
+    "@commonDone": {
+      "description": "Done button on various screens"
+    },
 
     "redeemToLabel": "Redeem To",
     "@redeemToLabel": {

@@ -580,6 +580,7 @@
   "commonCancel": "Batal",
   "commonAmountBalance": "{balance} {symbol}",
   "commonContinue": "Lanjutkan",
+  "commonDone": "Selesai",
 
   "redeemToLabel": "Tukar Ke",
   "redeemAddressHint": "Tempel Alamat {symbol}",
