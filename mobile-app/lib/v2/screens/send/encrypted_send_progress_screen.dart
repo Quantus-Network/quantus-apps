@@ -84,11 +84,6 @@ class _EncryptedSendProgressScreenState extends ConsumerState<EncryptedSendProgr
       );
     } on ClaimCancelled {
       ref.invalidate(encryptedStateProvider(widget.account.walletIndex));
-      if (!mounted) return;
-      setState(() {
-        _running = false;
-        _cancelled = true;
-      });
     } catch (e) {
       // ignore: avoid_print
       print('[EncryptedSend] Send failed: $e');
@@ -105,6 +100,11 @@ class _EncryptedSendProgressScreenState extends ConsumerState<EncryptedSendProgr
     if (_canceling) return;
     setState(() => _canceling = true);
     await ref.read(encryptedAccountServiceProvider(widget.account.walletIndex)).cancel();
+    if (!mounted) return;
+    setState(() {
+      _running = false;
+      _cancelled = true;
+    });
   }
 
   @override
