@@ -41,8 +41,7 @@ class EncryptedSendStrategy extends SendStrategy {
       encryptedSpendableProvider(account.walletIndex);
 
   @override
-  ProviderListenable<AsyncValue<BigInt>> get displayBalanceProvider =>
-      encryptedBalanceProvider(account.walletIndex);
+  ProviderListenable<AsyncValue<BigInt>> get displayBalanceProvider => encryptedBalanceProvider(account.walletIndex);
 
   @override
   bool extraBalancesLoading(WidgetRef ref) => false;

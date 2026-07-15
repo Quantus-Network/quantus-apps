@@ -570,11 +570,7 @@ query SpentNullifiers($hashes: [String!]!) {
     final totalTransfers = fetched.byAddress.values.fold<int>(0, (sum, l) => sum + l.length);
     if (totalTransfers == 0) {
       _log('getUnspentUtxos: no transfers found');
-      return WormholeUtxoResult(
-        utxos: const [],
-        totalReceivedPlanck: BigInt.zero,
-        totalSpentPlanck: BigInt.zero,
-      );
+      return WormholeUtxoResult(utxos: const [], totalReceivedPlanck: BigInt.zero, totalSpentPlanck: BigInt.zero);
     }
 
     BigInt totalReceivedPlanck = BigInt.zero;

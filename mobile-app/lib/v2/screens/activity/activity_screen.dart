@@ -204,10 +204,8 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
     final received = ref.watch(encryptedTotalReceivedProvider(account.walletIndex));
     final spent = ref.watch(encryptedTotalSpentProvider(account.walletIndex));
 
-    String formatAmount(AsyncValue<BigInt> value) => value.whenOrNull(
-          data: (v) => fmt.formatBalance(v, maxDecimals: 2, addSymbol: true),
-        ) ??
-        '—';
+    String formatAmount(AsyncValue<BigInt> value) =>
+        value.whenOrNull(data: (v) => fmt.formatBalance(v, maxDecimals: 2, addSymbol: true)) ?? '—';
 
     return Padding(
       padding: const EdgeInsets.only(top: 16),

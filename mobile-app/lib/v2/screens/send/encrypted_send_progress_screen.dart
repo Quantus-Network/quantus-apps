@@ -174,18 +174,11 @@ class _EncryptedSendProgressScreenState extends ConsumerState<EncryptedSendProgr
           const SizedBox(height: 16),
           Text(
             amountLabel,
-            style: TextStyle(
-              fontFamily: AppTextTheme.fontFamilySecondary,
-              fontSize: 32,
-              color: colors.textPrimary,
-            ),
+            style: TextStyle(fontFamily: AppTextTheme.fontFamilySecondary, fontSize: 32, color: colors.textPrimary),
           ),
           const SizedBox(height: 16),
           if (widget.terminal.recipientChecksum != null) ...[
-            Text(
-              widget.terminal.recipientChecksum!,
-              style: TextStyle(fontSize: 12, color: colors.checksum),
-            ),
+            Text(widget.terminal.recipientChecksum!, style: TextStyle(fontSize: 12, color: colors.checksum)),
             const SizedBox(height: 4),
           ],
           Text(

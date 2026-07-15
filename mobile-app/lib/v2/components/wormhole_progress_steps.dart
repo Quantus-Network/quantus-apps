@@ -31,10 +31,7 @@ class WormholeProgressSteps extends StatelessWidget {
     final text = context.themeText;
 
     return Column(
-      children: [
-        for (int i = 0; i < steps.length; i++)
-          _buildStepRow(steps[i].$1, steps[i].$2, colors, text),
-      ],
+      children: [for (int i = 0; i < steps.length; i++) _buildStepRow(steps[i].$1, steps[i].$2, colors, text)],
     );
   }
 
@@ -92,10 +89,7 @@ class WormholeProgressSteps extends StatelessWidget {
           child: Container(
             width: 5,
             height: 5,
-            decoration: BoxDecoration(
-              color: const Color(0xFF222222),
-              borderRadius: BorderRadius.circular(2.5),
-            ),
+            decoration: BoxDecoration(color: const Color(0xFF222222), borderRadius: BorderRadius.circular(2.5)),
           ),
         ),
       );
@@ -105,10 +99,10 @@ class WormholeProgressSteps extends StatelessWidget {
     final titleColor = isCompleted
         ? colors.textPrimary
         : isActive
-            ? colors.textPrimary
-            : isError
-                ? colors.textError
-                : pendingColor;
+        ? colors.textPrimary
+        : isError
+        ? colors.textError
+        : pendingColor;
 
     String progressText = '';
     if (progress != null && isActive) {
@@ -129,10 +123,7 @@ class WormholeProgressSteps extends StatelessWidget {
           if (progressText.isNotEmpty)
             Text(
               progressText,
-              style: text.detail?.copyWith(
-                color: pendingColor,
-                fontFamily: AppTextTheme.fontFamilySecondary,
-              ),
+              style: text.detail?.copyWith(color: pendingColor, fontFamily: AppTextTheme.fontFamilySecondary),
             ),
         ],
       ),
