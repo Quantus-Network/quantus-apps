@@ -94,17 +94,21 @@ class WormholeSendService {
   String? _rpcUrl;
   int _requestId = 1;
 
-  /// Completes when the user cancels. Polled by [_checkCancelled] for cheap
-  /// chain-level checks and raced against the whole flow in [_withCancellation]
-  /// so cancellation is instantaneous even mid-FFI (in-flight proofs are simply
-  /// orphaned — they'll finish in the background and their results discarded).
+  /// Per-operation cancellation token. Incremented on every new operation so
+  /// orphaned flows from a previous (cancelled) call cannot accidentally pass
+  /// `_checkCancelled` when a new operation reuses this service instance.
+  int _opId = 0;
   Completer<void>? _cancelCompleter;
+  Completer<void>? _operationDone;
 
   bool get _cancelled => _cancelCompleter?.isCompleted ?? false;
 
-  void cancel() {
+  /// Signals cancellation and returns a future that completes when the
+  /// in-flight operation has actually stopped (success, error, or cancelled).
+  Future<void> cancel() async {
     final c = _cancelCompleter;
     if (c != null && !c.isCompleted) c.complete();
+    await _operationDone?.future;
   }
 
   Future<ClaimResult> claimRewards({
@@ -156,18 +160,26 @@ class WormholeSendService {
     });
   }
 
-  /// Races [flow] against cancellation. Future.any returns the first to
-  /// complete; the loser's later completion (success or error) is silently
-  /// ignored by Future.any, so abandoned in-flight FFI work won't surface as
-  /// an unhandled async error.
+  /// Races [flow] against cancellation. Each call gets its own operation ID;
+  /// a cancelled flow stays cancelled even if a new operation starts later.
   Future<ClaimResult> _withCancellation(Future<ClaimResult> Function() flow) async {
+    final myOpId = ++_opId;
     final cancelCompleter = Completer<void>();
     _cancelCompleter = cancelCompleter;
+    final done = Completer<void>();
+    _operationDone = done;
     try {
       final cancelGuard = cancelCompleter.future.then<ClaimResult>((_) => throw const ClaimCancelled());
-      return await Future.any([flow(), cancelGuard]);
+      final result = await Future.any([flow(), cancelGuard]);
+      return result;
     } on WormholeOperationCancelled {
       throw const ClaimCancelled();
+    } finally {
+      if (_opId == myOpId) {
+        _cancelCompleter = null;
+        _operationDone = null;
+      }
+      done.complete();
     }
   }
 

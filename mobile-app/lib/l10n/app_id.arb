@@ -596,6 +596,7 @@
 
   "commonLoading": "Memuat...",
   "commonCancel": "Batal",
+  "commonCanceling": "Membatalkan...",
   "commonAmountBalance": "{balance} {symbol}",
   "commonContinue": "Lanjutkan",
 
@@ -616,7 +617,8 @@
   "redeemStepNullifiers": "Menghitung nullifier",
   "redeemStepCheckNullifiers": "Memeriksa nullifier",
   "redeemStepProofs": "Membuat bukti ZK",
-  "redeemStepAggregate": "Mengagregasi & mengirim",
+  "redeemStepAggregate": "Mengagregasi bukti",
+  "redeemStepSubmit": "Mengirim ke chain",
   "redeemFetchedCount": "{count} diambil",
   "redeemCancel": "Batal",
   "redeemRetry": "Coba Lagi",
@@ -630,6 +632,13 @@
   "encryptedSendFailedTitle": "Pengiriman Gagal",
   "encryptedSendCancelledTitle": "Pengiriman Dibatalkan",
   "encryptedSendingLabel": "MENGIRIM",
+  "encryptedSendStepPreparing": "Mempersiapkan",
+  "encryptedSendStepGathering": "Mengumpulkan dana",
+  "encryptedSendStepSecuring": "Mengamankan transaksi",
+  "encryptedSendStepGenerating": "Membuat bukti",
+  "encryptedSendStepProving": "Membangun bukti privasi",
+  "encryptedSendStepSubmitting": "Mengirim ke chain",
+  "encryptedSendProgressFooter": "Privasi membutuhkan waktu. Anda bisa keluar dari aplikasi, kami akan memberi tahu saat terkirim.",
   "privateSendTitle": "Kirim Privat",
   "privateSendSubtitle": "Aktivitas tidak terlihat di chain"
 }

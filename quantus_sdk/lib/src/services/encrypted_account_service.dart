@@ -84,20 +84,16 @@ class EncryptedAccountService {
   /// last persisted state (cheap — no network). [load] keeps it current.
   Future<WormholeKeyPair> receiveKeyPair() async => keyPairAt((await _readState()).nextIndex);
 
-  /// Drops every on-disk cache that can affect this wallet's balance so the
-  /// next [load] re-runs discovery + UTXO/nullifier checks from chain only.
-  ///
-  /// Used by pull-to-refresh. Clears wormhole transfer/nullifier caches and
-  /// this wallet's pending-spend / next-index file.
+  /// Drops on-disk transfer/nullifier caches for this wallet's known addresses
+  /// so the next [load] re-queries from chain. Preserves pending-spend records
+  /// and nextIndex — those are only pruned by [load]'s reconciliation or by
+  /// the 1-hour expiry, never by a refresh.
   Future<void> discardCachedState() async {
     _log('discardCachedState: wallet $walletIndex');
-    await WormholeUtxoService.clearAllCaches();
-    final file = await _stateFile();
-    if (await file.exists()) {
-      await file.delete();
-      _log('discardCachedState: deleted ${file.path}');
+    final addresses = _keyPairs.values.map((kp) => kp.address).toList();
+    if (addresses.isNotEmpty) {
+      await WormholeUtxoService.clearCachesForAddresses(addresses);
     }
-    _keyPairs.clear();
   }
 
   /// [discardCachedState] then a full [load] — pull-to-refresh entry point.
@@ -231,7 +227,7 @@ class EncryptedAccountService {
     );
   }
 
-  void cancel() => _sendService.cancel();
+  Future<void> cancel() => _sendService.cancel();
 
   // --- Persistent state ---
 

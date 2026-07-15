@@ -1810,6 +1810,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get commonCancel => 'Cancel';
 
   @override
+  String get commonCanceling => 'Canceling...';
+
+  @override
   String commonAmountBalance(String balance, String symbol) {
     return '$balance $symbol';
   }

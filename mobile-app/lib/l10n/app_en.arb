@@ -2606,6 +2606,10 @@
     "@commonCancel": {
       "description": "Generic cancel button label"
     },
+    "commonCanceling": "Canceling...",
+    "@commonCanceling": {
+      "description": "Text shown while a cancellation is in progress"
+    },
     "commonAmountBalance": "{balance} {symbol}",
     "@commonAmountBalance": {
       "description": "Formatted balance with token symbol",

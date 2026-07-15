@@ -1807,6 +1807,9 @@ class AppLocalizationsId extends AppLocalizations {
   String get commonCancel => 'Batal';
 
   @override
+  String get commonCanceling => 'Membatalkan...';
+
+  @override
   String commonAmountBalance(String balance, String symbol) {
     return '$balance $symbol';
   }
@@ -1870,10 +1873,10 @@ class AppLocalizationsId extends AppLocalizations {
   String get redeemStepProofs => 'Membuat bukti ZK';
 
   @override
-  String get redeemStepAggregate => 'Mengagregasi & mengirim';
+  String get redeemStepAggregate => 'Mengagregasi bukti';
 
   @override
-  String get redeemStepSubmit => 'Submitting to chain';
+  String get redeemStepSubmit => 'Mengirim ke chain';
 
   @override
   String redeemFetchedCount(int count) {
@@ -1919,26 +1922,26 @@ class AppLocalizationsId extends AppLocalizations {
   String get encryptedSendingLabel => 'MENGIRIM';
 
   @override
-  String get encryptedSendStepPreparing => 'Preparing';
+  String get encryptedSendStepPreparing => 'Mempersiapkan';
 
   @override
-  String get encryptedSendStepGathering => 'Gathering funds';
+  String get encryptedSendStepGathering => 'Mengumpulkan dana';
 
   @override
-  String get encryptedSendStepSecuring => 'Securing transaction';
+  String get encryptedSendStepSecuring => 'Mengamankan transaksi';
 
   @override
-  String get encryptedSendStepGenerating => 'Generate proofs';
+  String get encryptedSendStepGenerating => 'Membuat bukti';
 
   @override
-  String get encryptedSendStepProving => 'Building privacy proof';
+  String get encryptedSendStepProving => 'Membangun bukti privasi';
 
   @override
-  String get encryptedSendStepSubmitting => 'Submitting to chain';
+  String get encryptedSendStepSubmitting => 'Mengirim ke chain';
 
   @override
   String get encryptedSendProgressFooter =>
-      'Privacy takes a moment. You can leave the app, we\'ll notify you when it\'s sent.';
+      'Privasi membutuhkan waktu. Anda bisa keluar dari aplikasi, kami akan memberi tahu saat terkirim.';
 
   @override
   String get privateSendTitle => 'Kirim Privat';

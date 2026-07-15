@@ -42,6 +42,7 @@ class EncryptedSendProgressScreen extends ConsumerStatefulWidget {
 
 class _EncryptedSendProgressScreenState extends ConsumerState<EncryptedSendProgressScreen> {
   bool _running = true;
+  bool _canceling = false;
   bool _cancelled = false;
   String? _errorMessage;
   int _currentStep = 0;
@@ -100,8 +101,10 @@ class _EncryptedSendProgressScreenState extends ConsumerState<EncryptedSendProgr
     }
   }
 
-  void _cancel() {
-    ref.read(encryptedAccountServiceProvider(widget.account.walletIndex)).cancel();
+  Future<void> _cancel() async {
+    if (_canceling) return;
+    setState(() => _canceling = true);
+    await ref.read(encryptedAccountServiceProvider(widget.account.walletIndex)).cancel();
   }
 
   @override
@@ -251,12 +254,17 @@ class _EncryptedSendProgressScreenState extends ConsumerState<EncryptedSendProgr
             ),
             const SizedBox(height: 32),
             Text(
-              l10n.encryptedSendProgressFooter,
+              _canceling ? l10n.commonCanceling : l10n.encryptedSendProgressFooter,
               textAlign: TextAlign.center,
               style: const TextStyle(fontSize: 14, color: Color(0xFF3D3D3D)),
             ),
             const SizedBox(height: 32),
-            QuantusButton.simple(label: l10n.redeemCancel, variant: ButtonVariant.secondary, onTap: _cancel),
+            QuantusButton.simple(
+              label: l10n.redeemCancel,
+              variant: ButtonVariant.secondary,
+              onTap: _cancel,
+              isDisabled: _canceling,
+            ),
           ],
         ),
       );

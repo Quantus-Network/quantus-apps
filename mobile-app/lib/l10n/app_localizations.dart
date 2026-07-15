@@ -3368,6 +3368,12 @@ abstract class AppLocalizations {
   /// **'Cancel'**
   String get commonCancel;
 
+  /// Text shown while a cancellation is in progress
+  ///
+  /// In en, this message translates to:
+  /// **'Canceling...'**
+  String get commonCanceling;
+
   /// Formatted balance with token symbol
   ///
   /// In en, this message translates to:

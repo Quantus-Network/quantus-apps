@@ -186,6 +186,30 @@ class WormholeUtxoService {
     }
   }
 
+  /// Deletes transfer / nullifier caches only for the given [addresses].
+  static Future<void> clearCachesForAddresses(List<String> addresses) async {
+    try {
+      final prefixes = addresses.map((a) => _cachePrefix(_addressHashOf(a))).toSet();
+      final dir = await getApplicationSupportDirectory();
+      if (!await dir.exists()) return;
+      var deleted = 0;
+      await for (final entity in dir.list()) {
+        if (entity is! File) continue;
+        final name = entity.uri.pathSegments.isEmpty ? entity.path : entity.uri.pathSegments.last;
+        final matchesPrefix = prefixes.any(
+          (p) => name == 'wormhole_cache_$p.json' || name == 'wormhole_nullifiers_v2_$p.json',
+        );
+        if (matchesPrefix) {
+          await entity.delete();
+          deleted++;
+        }
+      }
+      _log('clearCachesForAddresses: deleted $deleted file(s) for ${addresses.length} addresses');
+    } catch (e) {
+      _log('clearCachesForAddresses failed (non-fatal): $e');
+    }
+  }
+
   /// Deletes every on-disk wormhole transfer / nullifier cache. Call on logout
   /// so a new wallet never reuses another wallet's UTXO discovery state.
   static Future<void> clearAllCaches() async {

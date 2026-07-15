@@ -61,9 +61,9 @@ void invalidateActiveAccountBalance(Ref ref) {
 
 /// Invalidates the active account balance and waits for it to reload.
 ///
-/// Encrypted accounts discard all on-disk wormhole / pending-spend caches and
-/// recalculate balance from chain (pull-to-refresh). Transparent accounts only
-/// re-query the balance provider.
+/// Encrypted accounts clear their address-specific GraphQL caches and re-run
+/// discovery from chain. Pending-spend records are preserved and reconciled
+/// by [EncryptedAccountService.load].
 Future<void> refreshActiveAccountBalance(Ref ref) async {
   final account = ref.read(activeAccountProvider).value?.account;
   if (account == null) return;
@@ -71,7 +71,6 @@ Future<void> refreshActiveAccountBalance(Ref ref) async {
   if (isEncryptedAccount(account)) {
     final walletIndex = (account as Account).walletIndex;
     final service = ref.read(encryptedAccountServiceProvider(walletIndex));
-    // Wipe caches first so the provider's load() cannot reuse stale disk state.
     await service.discardCachedState();
     final provider = encryptedStateProvider(walletIndex);
     ref.invalidate(provider);
