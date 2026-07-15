@@ -85,6 +85,9 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
           if (active == null) {
             return Center(child: Text(l10n.activityNoAccount));
           }
+          if (isEncryptedAccount(active.account)) {
+            return _buildEncryptedActivitySummary(active.account as Account, colors, text, l10n);
+          }
           return txAsync.when(
             loading: () => ListView.builder(
               itemCount: 3,
@@ -192,6 +195,41 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
             },
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildEncryptedActivitySummary(Account account, AppColorsV2 colors, AppTextTheme text, AppLocalizations l10n) {
+    final fmt = ref.watch(numberFormattingServiceProvider);
+    final received = ref.watch(encryptedTotalReceivedProvider(account.walletIndex));
+    final spent = ref.watch(encryptedTotalSpentProvider(account.walletIndex));
+
+    String formatAmount(AsyncValue<BigInt> value) => value.whenOrNull(
+          data: (v) => fmt.formatBalance(v, maxDecimals: 2, addSymbol: true),
+        ) ??
+        '—';
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 16),
+      child: Column(
+        children: [
+          _encryptedSummaryRow(l10n.activityPrivateTotalReceived, formatAmount(received), colors, text),
+          Divider(color: colors.txItemSeparator, height: 24),
+          _encryptedSummaryRow(l10n.activityPrivateTotalSent, formatAmount(spent), colors, text),
+        ],
+      ),
+    );
+  }
+
+  Widget _encryptedSummaryRow(String label, String amount, AppColorsV2 colors, AppTextTheme text) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: text.smallParagraph?.copyWith(color: colors.textSecondary)),
+          Text(amount, style: text.smallParagraph?.copyWith(color: colors.textPrimary)),
+        ],
       ),
     );
   }

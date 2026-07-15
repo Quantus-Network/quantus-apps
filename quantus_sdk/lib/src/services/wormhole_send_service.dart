@@ -162,24 +162,31 @@ class WormholeSendService {
 
   /// Races [flow] against cancellation. Each call gets its own operation ID;
   /// a cancelled flow stays cancelled even if a new operation starts later.
+  ///
+  /// [_operationDone] only completes when the flow *actually* finishes (not
+  /// when `Future.any` picks the cancel guard), so [cancel] blocks until the
+  /// in-flight FFI work reaches a [_checkCancelled] checkpoint and exits.
   Future<ClaimResult> _withCancellation(Future<ClaimResult> Function() flow) async {
     final myOpId = ++_opId;
     final cancelCompleter = Completer<void>();
     _cancelCompleter = cancelCompleter;
     final done = Completer<void>();
     _operationDone = done;
-    try {
-      final cancelGuard = cancelCompleter.future.then<ClaimResult>((_) => throw const ClaimCancelled());
-      final result = await Future.any([flow(), cancelGuard]);
-      return result;
-    } on WormholeOperationCancelled {
-      throw const ClaimCancelled();
-    } finally {
+
+    final flowFuture = flow();
+    flowFuture.whenComplete(() {
       if (_opId == myOpId) {
         _cancelCompleter = null;
         _operationDone = null;
       }
-      done.complete();
+      if (!done.isCompleted) done.complete();
+    });
+
+    try {
+      final cancelGuard = cancelCompleter.future.then<ClaimResult>((_) => throw const ClaimCancelled());
+      return await Future.any([flowFuture, cancelGuard]);
+    } on WormholeOperationCancelled {
+      throw const ClaimCancelled();
     }
   }
 
@@ -334,6 +341,7 @@ class WormholeSendService {
         _checkCancelled();
 
         _reportProgress(onProgress, 6, batchNum - 1, total: totalBatches);
+        _checkCancelled();
         final txHash = await _submitExtrinsic(aggregated);
         txHashes.add(txHash);
         _log('Batch $batchNum accepted by pool: $txHash');

@@ -81,6 +81,14 @@ class WormholeUtxo {
   BigInt get amount => transfer.amount;
 }
 
+class WormholeUtxoResult {
+  final List<WormholeUtxo> utxos;
+  final BigInt totalReceivedPlanck;
+  final BigInt totalSpentPlanck;
+
+  const WormholeUtxoResult({required this.utxos, required this.totalReceivedPlanck, required this.totalSpentPlanck});
+}
+
 typedef WormholeProgressCallback = void Function(int phase, int completed, {int? total});
 
 /// Returns true if the caller wants the in-progress operation to abort.
@@ -545,8 +553,9 @@ query SpentNullifiers($hashes: [String!]!) {
   }
 
   /// Returns the unspent transfers across all [addresses], each attributed to
-  /// its owning address (whose secret is needed to spend it).
-  Future<List<WormholeUtxo>> getUnspentUtxos({
+  /// its owning address (whose secret is needed to spend it), along with total
+  /// received and spent amounts across all addresses.
+  Future<WormholeUtxoResult> getUnspentUtxos({
     required List<WormholeAddressInfo> addresses,
     WormholeProgressCallback? onProgress,
     IsCancelledCallback? isCancelled,
@@ -561,7 +570,18 @@ query SpentNullifiers($hashes: [String!]!) {
     final totalTransfers = fetched.byAddress.values.fold<int>(0, (sum, l) => sum + l.length);
     if (totalTransfers == 0) {
       _log('getUnspentUtxos: no transfers found');
-      return [];
+      return WormholeUtxoResult(
+        utxos: const [],
+        totalReceivedPlanck: BigInt.zero,
+        totalSpentPlanck: BigInt.zero,
+      );
+    }
+
+    BigInt totalReceivedPlanck = BigInt.zero;
+    for (final transfers in fetched.byAddress.values) {
+      for (final t in transfers) {
+        totalReceivedPlanck += t.amount;
+      }
     }
 
     final hdWalletService = HdWalletService();
@@ -627,8 +647,15 @@ query SpentNullifiers($hashes: [String!]!) {
     }
 
     final unspent = nullifierToUtxo.entries.where((e) => !allSpent.contains(e.key)).map((e) => e.value).toList();
+    final totalSpentPlanck = nullifierToUtxo.entries
+        .where((e) => allSpent.contains(e.key))
+        .fold(BigInt.zero, (sum, e) => sum + e.value.amount);
     _log('getUnspentUtxos: ${unspent.length} unspent out of $totalTransfers total');
-    return unspent;
+    return WormholeUtxoResult(
+      utxos: unspent,
+      totalReceivedPlanck: totalReceivedPlanck,
+      totalSpentPlanck: totalSpentPlanck,
+    );
   }
 
   Future<List<WormholeTransfer>> getUnspentTransfers({
@@ -637,12 +664,12 @@ query SpentNullifiers($hashes: [String!]!) {
     WormholeProgressCallback? onProgress,
     IsCancelledCallback? isCancelled,
   }) async {
-    final utxos = await getUnspentUtxos(
+    final result = await getUnspentUtxos(
       addresses: [WormholeAddressInfo(index: 0, address: wormholeAddress, secretHex: secretHex)],
       onProgress: onProgress,
       isCancelled: isCancelled,
     );
-    return utxos.map((u) => u.transfer).toList();
+    return result.utxos.map((u) => u.transfer).toList();
   }
 
   Future<BigInt> getUnspentBalance({

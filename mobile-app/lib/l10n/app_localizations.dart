@@ -1994,6 +1994,18 @@ abstract class AppLocalizations {
   /// **'No transactions yet'**
   String get activityEmpty;
 
+  /// Label for total received in encrypted account activity summary
+  ///
+  /// In en, this message translates to:
+  /// **'Total Received'**
+  String get activityPrivateTotalReceived;
+
+  /// Label for total sent in encrypted account activity summary
+  ///
+  /// In en, this message translates to:
+  /// **'Total Sent'**
+  String get activityPrivateTotalSent;
+
   /// Filter button for all transactions
   ///
   /// In en, this message translates to:
@@ -3617,7 +3629,7 @@ abstract class AppLocalizations {
   /// Footer text on encrypted send progress screen
   ///
   /// In en, this message translates to:
-  /// **'Privacy takes a moment. You can leave the app, we\'ll notify you when it\'s sent.'**
+  /// **'Privacy takes a moment. Please keep the app open until the transaction completes.'**
   String get encryptedSendProgressFooter;
 
   /// Title of the private-send notice on encrypted send recipient screen

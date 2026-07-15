@@ -18,12 +18,20 @@ import 'package:quantus_sdk/src/services/wormhole_utxo_service.dart';
 class EncryptedAccountState {
   final List<WormholeUtxo> utxos;
   final BigInt pendingChangePlanck;
+  final BigInt totalReceivedPlanck;
+  final BigInt totalSpentPlanck;
 
   /// Next unused address index — shown as the receive address and allocated
   /// as the change address of the next send.
   final int nextIndex;
 
-  const EncryptedAccountState({required this.utxos, required this.pendingChangePlanck, required this.nextIndex});
+  const EncryptedAccountState({
+    required this.utxos,
+    required this.pendingChangePlanck,
+    required this.totalReceivedPlanck,
+    required this.totalSpentPlanck,
+    required this.nextIndex,
+  });
 
   BigInt get balance => utxos.fold(BigInt.zero, (sum, u) => sum + u.amount) + pendingChangePlanck;
 
@@ -90,6 +98,15 @@ class EncryptedAccountService {
   /// the 1-hour expiry, never by a refresh.
   Future<void> discardCachedState() async {
     _log('discardCachedState: wallet $walletIndex');
+    if (_keyPairs.isEmpty) {
+      final state = await _readState();
+      if (state.nextIndex > 0) {
+        final mnemonic = await _mnemonic();
+        for (int i = 0; i < state.nextIndex; i++) {
+          _keyPairAtSync(mnemonic, i);
+        }
+      }
+    }
     final addresses = _keyPairs.values.map((kp) => kp.address).toList();
     if (addresses.isNotEmpty) {
       await WormholeUtxoService.clearCachesForAddresses(addresses);
@@ -126,13 +143,13 @@ class EncryptedAccountService {
         ),
     ];
 
-    final utxos = await _utxoService.getUnspentUtxos(
+    final utxoResult = await _utxoService.getUnspentUtxos(
       addresses: addresses,
       onProgress: onProgress,
       isCancelled: isCancelled,
     );
 
-    final unspentNullifiers = utxos.map((u) => u.nullifierHex).toSet();
+    final unspentNullifiers = utxoResult.utxos.map((u) => u.nullifierHex).toSet();
     final usedAddresses = {for (final i in usedIndices) _keyPairAtSync(mnemonic, i).address};
 
     final discoveredNext = usedIndices.isEmpty ? 0 : (usedIndices.reduce((a, b) => a > b ? a : b) + 1);
@@ -154,14 +171,20 @@ class EncryptedAccountService {
     });
 
     final pendingNullifiers = state.pendingSpends.expand((r) => r.nullifiers).toSet();
-    final spendable = utxos.where((u) => !pendingNullifiers.contains(u.nullifierHex)).toList();
+    final spendable = utxoResult.utxos.where((u) => !pendingNullifiers.contains(u.nullifierHex)).toList();
     final pendingChange = state.pendingSpends.fold(BigInt.zero, (sum, r) => sum + r.changeAmountPlanck);
 
     _log(
       'load DONE: ${spendable.length} spendable UTXOs, pendingChange=$pendingChange, '
       'nextIndex=${state.nextIndex} (${sw.elapsedMilliseconds}ms)',
     );
-    return EncryptedAccountState(utxos: spendable, pendingChangePlanck: pendingChange, nextIndex: state.nextIndex);
+    return EncryptedAccountState(
+      utxos: spendable,
+      pendingChangePlanck: pendingChange,
+      totalReceivedPlanck: utxoResult.totalReceivedPlanck,
+      totalSpentPlanck: utxoResult.totalSpentPlanck,
+      nextIndex: state.nextIndex,
+    );
   }
 
   /// Proves and submits a [plan] (from [selectWormholeInputs]) paying

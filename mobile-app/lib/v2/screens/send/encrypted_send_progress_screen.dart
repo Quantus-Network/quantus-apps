@@ -133,8 +133,6 @@ class _EncryptedSendProgressScreenState extends ConsumerState<EncryptedSendProgr
             WormholeProgressSteps(
               steps: [
                 (1, l10n.encryptedSendStepPreparing),
-                (2, l10n.encryptedSendStepGathering),
-                (3, l10n.encryptedSendStepSecuring),
                 (4, l10n.encryptedSendStepGenerating),
                 (5, l10n.encryptedSendStepProving),
                 (6, l10n.encryptedSendStepSubmitting),
@@ -224,7 +222,7 @@ class _EncryptedSendProgressScreenState extends ConsumerState<EncryptedSendProgr
   }
 
   double get _overallProgress {
-    const displaySteps = [1, 2, 3, 4, 5, 6];
+    const displaySteps = [1, 4, 5, 6];
     int completed = 0;
     for (final id in displaySteps) {
       final p = _stepProgress[id];

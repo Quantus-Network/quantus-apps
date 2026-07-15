@@ -1068,6 +1068,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get activityEmpty => 'No transactions yet';
 
   @override
+  String get activityPrivateTotalReceived => 'Total Received';
+
+  @override
+  String get activityPrivateTotalSent => 'Total Sent';
+
+  @override
   String get activityFilterAll => 'All';
 
   @override
@@ -1944,7 +1950,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get encryptedSendProgressFooter =>
-      'Privacy takes a moment. You can leave the app, we\'ll notify you when it\'s sent.';
+      'Privacy takes a moment. Please keep the app open until the transaction completes.';
 
   @override
   String get privateSendTitle => 'Private Send';

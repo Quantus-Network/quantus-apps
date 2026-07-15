@@ -1065,6 +1065,12 @@ class AppLocalizationsId extends AppLocalizations {
   String get activityEmpty => 'Belum ada transaksi';
 
   @override
+  String get activityPrivateTotalReceived => 'Total Diterima';
+
+  @override
+  String get activityPrivateTotalSent => 'Total Terkirim';
+
+  @override
   String get activityFilterAll => 'Semua';
 
   @override
@@ -1941,7 +1947,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get encryptedSendProgressFooter =>
-      'Privasi membutuhkan waktu. Anda bisa keluar dari aplikasi, kami akan memberi tahu saat terkirim.';
+      'Privasi membutuhkan waktu. Harap biarkan aplikasi tetap terbuka sampai transaksi selesai.';
 
   @override
   String get privateSendTitle => 'Kirim Privat';

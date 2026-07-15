@@ -78,5 +78,24 @@ void main() {
     test('wormholeMaxSendable sums per-input nets', () {
       expect(wormholeMaxSendable([utxo(110), utxo(580), utxo(400)]), quan('10.87'));
     });
+
+    test('exactly 7 inputs fit in a single batch', () {
+      final plan = selectWormholeInputs(utxos: List.generate(7, (_) => utxo(200)), amountPlanck: quan('12'));
+      expect(plan.inputCount, 7);
+      expect(plan.batches.length, 1);
+      expect(plan.batches[0].length, 7);
+      final recipientTotal = plan.batches[0].fold<int>(0, (s, a) => s + a.recipientScaled);
+      expect(wormholePlanckFromScaled(recipientTotal), quan('12'));
+    });
+
+    test('send max: all input nets consumed with zero change', () {
+      final inputs = [utxo(110), utxo(580), utxo(400)];
+      final maxSendable = wormholeMaxSendable(inputs);
+      final plan = selectWormholeInputs(utxos: inputs, amountPlanck: maxSendable);
+      expect(plan.amountPlanck, maxSendable);
+      expect(plan.changePlanck, BigInt.zero);
+      final totalChange = plan.batches.expand((b) => b).fold<int>(0, (s, a) => s + a.changeScaled);
+      expect(totalChange, 0);
+    });
   });
 }

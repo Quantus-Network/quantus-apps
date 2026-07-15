@@ -93,6 +93,14 @@ final encryptedSpendableProvider = Provider.family<AsyncValue<BigInt>, int>((ref
   return ref.watch(encryptedStateProvider(walletIndex)).whenData((s) => s.maxSendable);
 });
 
+final encryptedTotalReceivedProvider = Provider.family<AsyncValue<BigInt>, int>((ref, walletIndex) {
+  return ref.watch(encryptedStateProvider(walletIndex)).whenData((s) => s.totalReceivedPlanck);
+});
+
+final encryptedTotalSpentProvider = Provider.family<AsyncValue<BigInt>, int>((ref, walletIndex) {
+  return ref.watch(encryptedStateProvider(walletIndex)).whenData((s) => s.totalSpentPlanck);
+});
+
 bool isEncryptedAccount(BaseAccount? account) => account is Account && account.accountType == AccountType.encrypted;
 
 /// Backfills the per-wallet encrypted (wormhole) account for every software

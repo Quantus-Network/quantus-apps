@@ -1504,6 +1504,14 @@
     "@activityEmpty": {
       "description": "Empty state on activity screen"
     },
+    "activityPrivateTotalReceived": "Total Received",
+    "@activityPrivateTotalReceived": {
+      "description": "Label for total received in encrypted account activity summary"
+    },
+    "activityPrivateTotalSent": "Total Sent",
+    "@activityPrivateTotalSent": {
+      "description": "Label for total sent in encrypted account activity summary"
+    },
     "activityFilterAll": "All",
     "@activityFilterAll": {
       "description": "Filter button for all transactions"
@@ -2802,7 +2810,7 @@
     "@encryptedSendStepSubmitting": {
       "description": "Encrypted send progress step: submitting the transaction"
     },
-    "encryptedSendProgressFooter": "Privacy takes a moment. You can leave the app, we'll notify you when it's sent.",
+    "encryptedSendProgressFooter": "Privacy takes a moment. Please keep the app open until the transaction completes.",
     "@encryptedSendProgressFooter": {
       "description": "Footer text on encrypted send progress screen"
     },
