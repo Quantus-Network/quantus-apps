@@ -164,11 +164,11 @@ class _EncryptedSendProgressScreenState extends ConsumerState<EncryptedSendProgr
         children: [
           Text(
             l10n.encryptedSendingLabel,
-            style: TextStyle(
+            style: const TextStyle(
               fontFamily: AppTextTheme.fontFamilySecondary,
               fontWeight: FontWeight.w500,
               fontSize: 14,
-              color: const Color(0xFF787878),
+              color: Color(0xFF787878),
             ),
           ),
           const SizedBox(height: 16),
@@ -183,10 +183,10 @@ class _EncryptedSendProgressScreenState extends ConsumerState<EncryptedSendProgr
           ],
           Text(
             shortAddr,
-            style: TextStyle(
+            style: const TextStyle(
               fontFamily: AppTextTheme.fontFamilySecondary,
               fontSize: 12,
-              color: const Color(0xFF8C8C8C),
+              color: Color(0xFF8C8C8C),
             ),
           ),
         ],
