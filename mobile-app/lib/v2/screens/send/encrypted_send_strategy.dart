@@ -24,6 +24,14 @@ class EncryptedSendStrategy extends SendStrategy {
   @override
   String? sourceAccountId(WidgetRef ref) => account.accountId;
 
+  /// All derived wormhole addresses (receive and change rotate through the HD
+  /// sequence) are this account — not just the index-0 [Account.accountId].
+  @override
+  Future<bool> isSelfRecipient(WidgetRef ref, String address) async {
+    if (address == account.accountId) return true;
+    return ref.read(encryptedAccountServiceProvider(account.walletIndex)).ownsAddress(address);
+  }
+
   @override
   SendStrings strings(AppLocalizations l10n) => SendStrings(
     flowTitle: l10n.sendTitle,

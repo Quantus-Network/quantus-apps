@@ -1953,6 +1953,11 @@ class AppLocalizationsEn extends AppLocalizations {
       'Privacy takes a moment. Please keep the app open until the transaction completes.';
 
   @override
+  String encryptedSendCancelledPartial(String amount) {
+    return '$amount was already sent before cancelling. The rest remains in your account.';
+  }
+
+  @override
   String get privateSendTitle => 'Private Send';
 
   @override

@@ -1950,6 +1950,11 @@ class AppLocalizationsId extends AppLocalizations {
       'Privasi membutuhkan waktu. Harap biarkan aplikasi tetap terbuka sampai transaksi selesai.';
 
   @override
+  String encryptedSendCancelledPartial(String amount) {
+    return '$amount sudah terkirim sebelum dibatalkan. Sisanya tetap berada di akun Anda.';
+  }
+
+  @override
   String get privateSendTitle => 'Kirim Privat';
 
   @override

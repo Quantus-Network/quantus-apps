@@ -6,6 +6,7 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
+import 'package:resonance_network_wallet/v2/components/back_button.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base_bottom_content.dart';
@@ -107,6 +108,20 @@ class _EncryptedSendProgressScreenState extends ConsumerState<EncryptedSendProgr
     });
   }
 
+  void _goHome() => Navigator.of(context).popUntil((route) => route.isFirst);
+
+  /// Amount already paid to the recipient by batches submitted before a
+  /// cancellation. Batches submit in order, so the step-6 progress count
+  /// identifies exactly which of the plan's batches have landed.
+  BigInt get _submittedRecipientPlanck {
+    final submitted = _stepProgress[6]?.completed ?? 0;
+    var scaled = 0;
+    for (final batch in widget.plan.batches.take(submitted)) {
+      scaled += batch.fold<int>(0, (sum, a) => sum + a.recipientScaled);
+    }
+    return wormholePlanckFromScaled(scaled);
+  }
+
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
@@ -114,7 +129,14 @@ class _EncryptedSendProgressScreenState extends ConsumerState<EncryptedSendProgr
     final l10n = ref.watch(l10nProvider);
 
     return PopScope(
-      canPop: !_running,
+      // After an error or cancel the spend plan is stale (inputs may already
+      // be spent), so leaving always returns Home — never back to the review
+      // screen, whose Confirm would resubmit the same plan.
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop || _running) return;
+        _goHome();
+      },
       child: ScaffoldBase(
         appBar: V2AppBar(
           title: _errorMessage != null
@@ -122,7 +144,8 @@ class _EncryptedSendProgressScreenState extends ConsumerState<EncryptedSendProgr
               : _cancelled
               ? l10n.encryptedSendCancelledTitle
               : l10n.encryptedSendProgressTitle,
-          showBackButton: !_running,
+          showBackButton: false,
+          leading: _running ? null : AppBackButton(onTap: _goHome),
         ),
         mainContent: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -144,6 +167,10 @@ class _EncryptedSendProgressScreenState extends ConsumerState<EncryptedSendProgr
               hasError: _errorMessage != null,
             ),
             if (_errorMessage != null) ...[const SizedBox(height: 24), _buildErrorBanner(colors, text)],
+            if (_cancelled && _submittedRecipientPlanck > BigInt.zero) ...[
+              const SizedBox(height: 24),
+              _buildPartialCancelNotice(colors, text, l10n),
+            ],
           ],
         ),
         bottomContent: _buildBottomContent(colors, l10n),
@@ -208,6 +235,27 @@ class _EncryptedSendProgressScreenState extends ConsumerState<EncryptedSendProgr
           const SizedBox(width: 8),
           Expanded(
             child: Text(_errorMessage!, style: text.detail?.copyWith(color: colors.textError)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPartialCancelNotice(AppColorsV2 colors, AppTextTheme text, AppLocalizations l10n) {
+    final fmt = ref.watch(numberFormattingServiceProvider);
+    final amount = fmt.formatBalance(_submittedRecipientPlanck, maxDecimals: 2, addSymbol: true);
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(color: colors.sheetBackground, borderRadius: BorderRadius.circular(12)),
+      child: Row(
+        children: [
+          Icon(Icons.info_outline, color: colors.textSecondary, size: 16),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              l10n.encryptedSendCancelledPartial(amount),
+              style: text.detail?.copyWith(color: colors.textSecondary),
+            ),
           ),
         ],
       ),

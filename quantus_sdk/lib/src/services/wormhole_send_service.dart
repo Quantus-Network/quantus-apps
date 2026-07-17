@@ -174,13 +174,18 @@ class WormholeSendService {
     _operationDone = done;
 
     final flowFuture = flow();
-    flowFuture.whenComplete(() {
-      if (_opId == myOpId) {
-        _cancelCompleter = null;
-        _operationDone = null;
-      }
-      if (!done.isCompleted) done.complete();
-    });
+    // The bookkeeping chain re-raises the flow's error into a future nobody
+    // awaits (the caller observes it via Future.any below), so swallow it —
+    // otherwise every failed or cancelled flow reports an unhandled exception.
+    flowFuture
+        .whenComplete(() {
+          if (_opId == myOpId) {
+            _cancelCompleter = null;
+            _operationDone = null;
+          }
+          if (!done.isCompleted) done.complete();
+        })
+        .then((_) {}, onError: (_) {});
 
     try {
       final cancelGuard = cancelCompleter.future.then<ClaimResult>((_) => throw const ClaimCancelled());

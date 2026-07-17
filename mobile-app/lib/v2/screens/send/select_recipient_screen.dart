@@ -108,23 +108,35 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
     final checksumService = ref.read(humanReadableChecksumServiceProvider);
     final substrate = ref.read(substrateServiceProvider);
     final isValid = substrate.isValidSS58Address(address);
-    final sourceId = widget.strategy.sourceAccountId(ref);
-    final isSelfSend = isValid && address == sourceId;
-    final showSelfSendWarning = isSelfSend && !_isSelfSend;
+    final wasSelfSend = _isSelfSend;
     setState(() {
       _hasAddressError = !isValid;
-      _isSelfSend = isSelfSend;
+      _isSelfSend = false;
       _recipientChecksum = null;
-      _canContinue = isValid && !isSelfSend;
+      _canContinue = false;
     });
-    if (showSelfSendWarning) {
-      context.showWarningToaster(message: ref.read(l10nProvider).sendLogicCantSelfTransfer);
-    }
-    if (isValid) {
-      checksumService.getHumanReadableName(address).then((checksum) {
-        if (mounted) setState(() => _recipientChecksum = checksum);
-      });
-    }
+    if (!isValid) return;
+    // Async: encrypted sends check the address against every derived wormhole
+    // address, not just the account id. Continue stays disabled until resolved.
+    widget.strategy
+        .isSelfRecipient(ref, address)
+        .then((isSelf) {
+          if (!mounted || _recipientController.text.trim() != address) return;
+          setState(() {
+            _isSelfSend = isSelf;
+            _canContinue = !isSelf;
+          });
+          if (isSelf && !wasSelfSend) {
+            context.showWarningToaster(message: ref.read(l10nProvider).sendLogicCantSelfTransfer);
+          }
+        })
+        .catchError((Object e) {
+          // Fail closed: without a verdict the send can't proceed anyway.
+          debugPrint('SelectRecipientScreen self-send check: $e');
+        });
+    checksumService.getHumanReadableName(address).then((checksum) {
+      if (mounted) setState(() => _recipientChecksum = checksum);
+    });
   }
 
   /// Single entry point for every way a recipient is supplied (scan, paste,

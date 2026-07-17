@@ -2814,6 +2814,15 @@
     "@encryptedSendProgressFooter": {
       "description": "Footer text on encrypted send progress screen"
     },
+    "encryptedSendCancelledPartial": "{amount} was already sent before cancelling. The rest remains in your account.",
+    "@encryptedSendCancelledPartial": {
+      "description": "Notice on the cancelled encrypted-send screen when some batches were already submitted",
+      "placeholders": {
+        "amount": {
+          "type": "String"
+        }
+      }
+    },
     "privateSendTitle": "Private Send",
     "@privateSendTitle": {
       "description": "Title of the private-send notice on encrypted send recipient screen"

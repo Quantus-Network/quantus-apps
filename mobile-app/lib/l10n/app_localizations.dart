@@ -3632,6 +3632,12 @@ abstract class AppLocalizations {
   /// **'Privacy takes a moment. Please keep the app open until the transaction completes.'**
   String get encryptedSendProgressFooter;
 
+  /// Notice on the cancelled encrypted-send screen when some batches were already submitted
+  ///
+  /// In en, this message translates to:
+  /// **'{amount} was already sent before cancelling. The rest remains in your account.'**
+  String encryptedSendCancelledPartial(String amount);
+
   /// Title of the private-send notice on encrypted send recipient screen
   ///
   /// In en, this message translates to:

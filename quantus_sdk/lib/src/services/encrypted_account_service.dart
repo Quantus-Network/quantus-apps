@@ -92,20 +92,32 @@ class EncryptedAccountService {
   /// last persisted state (cheap — no network). [load] keeps it current.
   Future<WormholeKeyPair> receiveKeyPair() async => keyPairAt((await _readState()).nextIndex);
 
+  /// Whether [address] is one of this wallet's derived wormhole addresses —
+  /// indices `0..nextIndex` cover every address ever shown for receiving or
+  /// allocated for change. Used to block self-sends from the encrypted account.
+  Future<bool> ownsAddress(String address) async {
+    if (_keyPairs.values.any((kp) => kp.address == address)) return true;
+    final nextIndex = (await _readState()).nextIndex;
+    final mnemonic = await _mnemonic();
+    for (int i = 0; i <= nextIndex; i++) {
+      if (_keyPairAtSync(mnemonic, i).address == address) return true;
+    }
+    return false;
+  }
+
   /// Drops on-disk transfer/nullifier caches for this wallet's known addresses
   /// so the next [load] re-queries from chain. Preserves pending-spend records
   /// and nextIndex — those are only pruned by [load]'s reconciliation or by
   /// the 1-hour expiry, never by a refresh.
   Future<void> discardCachedState() async {
     _log('discardCachedState: wallet $walletIndex');
-    if (_keyPairs.isEmpty) {
-      final state = await _readState();
-      if (state.nextIndex > 0) {
-        final mnemonic = await _mnemonic();
-        for (int i = 0; i < state.nextIndex; i++) {
-          _keyPairAtSync(mnemonic, i);
-        }
-      }
+    // Ensure every index that can have an on-disk cache is derived, even when
+    // only some key pairs are in memory (e.g. just the receive index after a
+    // restart) — a partial map must not turn this into a partial clear.
+    final state = await _readState();
+    final mnemonic = await _mnemonic();
+    for (int i = 0; i <= state.nextIndex; i++) {
+      _keyPairAtSync(mnemonic, i);
     }
     final addresses = _keyPairs.values.map((kp) => kp.address).toList();
     if (addresses.isNotEmpty) {

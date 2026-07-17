@@ -198,6 +198,11 @@ abstract class SendStrategy {
   /// it is excluded from the recents list. Resolved via `ref.read`.
   String? sourceAccountId(WidgetRef ref);
 
+  /// Self-send guard: whether [address] belongs to the sending account itself.
+  /// Defaults to comparing against [sourceAccountId]; encrypted sends also
+  /// treat every derived wormhole address of the wallet as self.
+  Future<bool> isSelfRecipient(WidgetRef ref, String address) async => address == sourceAccountId(ref);
+
   SendStrings strings(AppLocalizations l10n);
 
   /// Balance the amount is drawn from. Used for validation and the Max button.

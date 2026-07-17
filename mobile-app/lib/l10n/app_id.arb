@@ -641,6 +641,7 @@
   "encryptedSendStepProving": "Membangun bukti privasi",
   "encryptedSendStepSubmitting": "Mengirim ke chain",
   "encryptedSendProgressFooter": "Privasi membutuhkan waktu. Harap biarkan aplikasi tetap terbuka sampai transaksi selesai.",
+  "encryptedSendCancelledPartial": "{amount} sudah terkirim sebelum dibatalkan. Sisanya tetap berada di akun Anda.",
   "privateSendTitle": "Kirim Privat",
   "privateSendSubtitle": "Aktivitas tidak terlihat di chain"
 }
