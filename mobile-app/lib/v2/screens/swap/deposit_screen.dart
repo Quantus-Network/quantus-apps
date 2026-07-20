@@ -188,9 +188,11 @@ class _DepositScreenState extends ConsumerState<DepositScreen> {
             Expanded(
               child: QuantusButton.simple(
                 label: l10n.receiveCopy,
-                variant: ButtonVariant.transparent,
+                variant: ButtonVariant.outline,
                 onTap: () => _copyAddress(l10n),
                 icon: Icon(Icons.copy, color: colors.textPrimary, size: 20),
+                iconPlacement: IconPlacement.leading,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
               ),
             ),
             const SizedBox(width: 16),
@@ -198,7 +200,9 @@ class _DepositScreenState extends ConsumerState<DepositScreen> {
               child: QuantusButton.simple(
                 label: l10n.swapDepositShareQr,
                 icon: Icon(Icons.qr_code, color: colors.textPrimary, size: 20),
-                variant: ButtonVariant.transparent,
+                iconPlacement: IconPlacement.leading,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                variant: ButtonVariant.outline,
                 onTap: () {
                   shareText(
                     context,
