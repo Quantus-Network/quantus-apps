@@ -147,7 +147,7 @@ class _ImportWalletScreenV2State extends ConsumerState<ImportWalletScreenV2> {
       }
       ref.invalidate(accountsProvider);
       ref.invalidate(activeAccountProvider);
-      await _discoverEncryptedAccount();
+      unawaited(_discoverEncryptedAccount());
     } catch (e, st) {
       quantusDebugPrint('error discovering accounts: $e');
       TelemetryService().sendError('Error discovering accounts', error: e, stackTrace: st);
@@ -155,20 +155,20 @@ class _ImportWalletScreenV2State extends ConsumerState<ImportWalletScreenV2> {
   }
 
   /// Restores the wallet's encrypted account and warms its wormhole address
-  /// discovery in the background so UTXOs across receive/change addresses are
-  /// already found when the user first opens it.
+  /// discovery so UTXOs across receive/change addresses are already found when
+  /// the user first opens it. Runs fire-and-forget so import completion never
+  /// waits on it; if this screen is disposed first, the accounts sheet
+  /// backfills through its own [ensureEncryptedAccounts] pass.
   Future<void> _discoverEncryptedAccount() async {
-    final created = await ensureEncryptedAccounts(ref);
-    if (!created) return;
-    ref.invalidate(accountsProvider);
-    unawaited(() async {
-      try {
-        await ref.read(encryptedStateProvider(widget.walletIndex).future);
-      } catch (e, st) {
-        quantusDebugPrint('encrypted discovery after import failed: $e');
-        TelemetryService().sendError('Encrypted discovery after import failed', error: e, stackTrace: st);
-      }
-    }());
+    try {
+      final created = await ensureEncryptedAccounts(ref);
+      if (!created || !mounted) return;
+      ref.invalidate(accountsProvider);
+      await ref.read(encryptedStateProvider(widget.walletIndex).future);
+    } catch (e, st) {
+      quantusDebugPrint('encrypted discovery after import failed: $e');
+      TelemetryService().sendError('Encrypted discovery after import failed', error: e, stackTrace: st);
+    }
   }
 
   @override

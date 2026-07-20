@@ -1,5 +1,4 @@
 import 'package:collection/collection.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -340,9 +339,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   Widget _buildActionButtons(AppLocalizations l10n, Account account) {
     final isEncrypted = isEncryptedAccount(account);
-    // In debug builds ignore the remote kill-switch so the demo flow is testable
-    // even while the server config still ships enableSwap=false.
-    final enableSwap = kDebugMode || ref.watch(remoteConfigProvider).enableSwap;
+    final enableSwap = !isEncrypted && ref.watch(remoteConfigProvider).enableSwap;
     final SendStrategy sendStrategy = isEncrypted
         ? EncryptedSendStrategy(account: account)
         : const RegularSendStrategy();
