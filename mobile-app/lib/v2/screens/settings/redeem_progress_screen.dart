@@ -66,7 +66,10 @@ class _RedeemProgressScreenState extends ConsumerState<RedeemProgressScreen> {
 
       if (!mounted) return;
       setState(() {
-        _done = true;
+        // A cancel that landed after some batches were submitted comes back
+        // as a partial result — show it as cancelled, with the real totals.
+        _done = !result.cancelled;
+        _cancelled = result.cancelled;
         _running = false;
         _result = result;
       });

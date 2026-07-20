@@ -73,10 +73,14 @@ final wormholeUtxoServiceProvider = Provider<WormholeUtxoService>((ref) {
 /// One encrypted-account service per wallet: caches derived wormhole key pairs
 /// and owns the persisted next-index / pending-spend state.
 final encryptedAccountServiceProvider = Provider.family<EncryptedAccountService, int>((ref, walletIndex) {
-  return EncryptedAccountService(
+  final service = EncryptedAccountService(
     walletIndex: walletIndex,
     getMnemonic: () => ref.read(settingsServiceProvider).getMnemonic(walletIndex),
   );
+  // Invalidation (e.g. logout) must quiesce in-flight loads/sends so they
+  // cannot write stale state after the session is torn down.
+  ref.onDispose(service.dispose);
+  return service;
 });
 
 /// Discovered UTXO set + pending change for a wallet's encrypted account.

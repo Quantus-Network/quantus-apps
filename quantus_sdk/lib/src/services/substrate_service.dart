@@ -390,6 +390,10 @@ class SubstrateService {
 
   Future<void> logout() async {
     print('Log out!');
+    // Quiesce in-flight encrypted-account work (loads, sends) before wiping
+    // anything: an operation still holding the old mnemonic-derived material
+    // must not keep running — or persist state — past this point.
+    await EncryptedAccountService.disposeAll();
     await _settingsService.clearAll();
     // Wormhole / encrypted-account files live outside SettingsService storage
     // and would otherwise leak balances into the next wallet session.

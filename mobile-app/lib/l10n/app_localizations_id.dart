@@ -1943,5 +1943,9 @@ class AppLocalizationsId extends AppLocalizations {
   String get privateSendTitle => 'Kirim Privat';
 
   @override
-  String get privateSendSubtitle => 'Aktivitas tidak terlihat di chain';
+  String get privateSendSubtitle => 'Menyembunyikan kaitan antara akun Anda dan penerima';
+
+  @override
+  String get encryptedSendPlanStale =>
+      'Saldo terenkripsi Anda berubah saat meninjau. Silakan kembali dan masukkan jumlahnya lagi.';
 }

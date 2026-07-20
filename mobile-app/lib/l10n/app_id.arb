@@ -638,5 +638,6 @@
   "encryptedSendProgressFooter": "Privasi membutuhkan waktu. Harap biarkan aplikasi tetap terbuka sampai transaksi selesai.",
   "encryptedSendCancelledPartial": "{amount} sudah terkirim sebelum dibatalkan. Sisanya tetap berada di akun Anda.",
   "privateSendTitle": "Kirim Privat",
-  "privateSendSubtitle": "Aktivitas tidak terlihat di chain"
+  "privateSendSubtitle": "Menyembunyikan kaitan antara akun Anda dan penerima",
+  "encryptedSendPlanStale": "Saldo terenkripsi Anda berubah saat meninjau. Silakan kembali dan masukkan jumlahnya lagi."
 }
