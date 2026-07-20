@@ -1758,6 +1758,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get swapDepositTestnetBanner => 'DEMO ONLY - WE ARE STILL ON TESTNET';
 
   @override
+  String get swapDemoOnly => 'Demo Only';
+
+  @override
+  String get swapDemoOnlyBody => 'No real swap was performed.';
+
+  @override
   String get swapDepositSentFunds => 'I\'ve sent the funds';
 
   @override

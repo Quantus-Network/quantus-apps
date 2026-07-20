@@ -363,14 +363,7 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Container(
-                      width: 25,
-                      height: 25,
-                      decoration: BoxDecoration(
-                        color: colors.accentGreen.withValues(alpha: 0.3),
-                        shape: BoxShape.circle,
-                      ),
-                    ),
+                    TokenIcon(token: _swapService.getQuToken(), size: 25, networkBadgeSize: 10),
                     const SizedBox(width: 8),
                     Text(
                       'QUAN',

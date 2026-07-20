@@ -3266,6 +3266,18 @@ abstract class AppLocalizations {
   /// **'DEMO ONLY - WE ARE STILL ON TESTNET'**
   String get swapDepositTestnetBanner;
 
+  /// Large banner making clear the swap flow is a demo and nothing is swapped
+  ///
+  /// In en, this message translates to:
+  /// **'Demo Only'**
+  String get swapDemoOnly;
+
+  /// Subtitle under the Demo Only banner
+  ///
+  /// In en, this message translates to:
+  /// **'No real swap was performed.'**
+  String get swapDemoOnlyBody;
+
   /// Button to confirm funds sent
   ///
   /// In en, this message translates to:
