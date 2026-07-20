@@ -45,7 +45,7 @@ class RemoteConfigModel {
     enableKeystoneHardwareWallet: true,
     enableHighSecurity: false,
     enableRemoteNotifications: true,
-    enableSwap: false,
+    enableSwap: true,
     enableEncryptedAccount: true,
     enableMultisig: true,
   );
