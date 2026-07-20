@@ -576,6 +576,8 @@
   "swapDepositCompleteTitle": "Swap Selesai",
   "swapDepositCompleteBody": "Swap Anda untuk {amount} QUAN telah selesai.",
   "swapDepositTestnetBanner": "HANYA DEMO - KAMI MASIH DI TESTNET",
+  "swapDemoOnly": "Hanya Demo",
+  "swapDemoOnlyBody": "Tidak ada swap sungguhan yang dilakukan.",
   "swapDepositSentFunds": "Saya sudah mengirim dana",
   "swapDepositDone": "Selesai",
 

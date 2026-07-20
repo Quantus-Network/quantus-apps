@@ -196,6 +196,7 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
               height: 56,
               child: QuantusButton(
                 centered: false,
+                variant: ButtonVariant.glass,
                 onTap: _pickToken,
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                 borderRadius: 8,
@@ -314,6 +315,7 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
       height: 40,
       child: QuantusButton(
         onTap: onTap,
+        variant: ButtonVariant.glass,
         padding: EdgeInsets.zero,
         borderRadius: 8,
         child: Center(
@@ -357,20 +359,14 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
               height: 56,
               child: QuantusButton(
                 centered: false,
+                variant: ButtonVariant.glass,
                 onTap: () {},
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                 borderRadius: 8,
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Container(
-                      width: 25,
-                      height: 25,
-                      decoration: BoxDecoration(
-                        color: colors.accentGreen.withValues(alpha: 0.3),
-                        shape: BoxShape.circle,
-                      ),
-                    ),
+                    TokenIcon(token: _swapService.getQuToken(), size: 25, networkBadgeSize: 10),
                     const SizedBox(width: 8),
                     Text(
                       'QUAN',

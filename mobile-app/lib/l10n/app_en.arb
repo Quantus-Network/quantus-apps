@@ -2535,6 +2535,14 @@
     "@swapDepositTestnetBanner": {
       "description": "Testnet demo banner on deposit screen"
     },
+    "swapDemoOnly": "Demo Only",
+    "@swapDemoOnly": {
+      "description": "Large banner making clear the swap flow is a demo and nothing is swapped"
+    },
+    "swapDemoOnlyBody": "No real swap was performed.",
+    "@swapDemoOnlyBody": {
+      "description": "Subtitle under the Demo Only banner"
+    },
     "swapDepositSentFunds": "I've sent the funds",
     "@swapDepositSentFunds": {
       "description": "Button to confirm funds sent"

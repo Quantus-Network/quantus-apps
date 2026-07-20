@@ -1756,6 +1756,12 @@ class AppLocalizationsId extends AppLocalizations {
   String get swapDepositTestnetBanner => 'HANYA DEMO - KAMI MASIH DI TESTNET';
 
   @override
+  String get swapDemoOnly => 'Hanya Demo';
+
+  @override
+  String get swapDemoOnlyBody => 'Tidak ada swap sungguhan yang dilakukan.';
+
+  @override
   String get swapDepositSentFunds => 'Saya sudah mengirim dana';
 
   @override

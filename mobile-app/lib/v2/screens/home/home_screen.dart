@@ -363,6 +363,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final swapCard = _actionCard(
       iconAsset: 'assets/v2/action_swap.svg',
       label: l10n.homeSwap,
+      // Swap is not available for encrypted accounts; keep the button visible
+      // but disabled so the layout doesn't change between account types.
+      isDisabled: isEncrypted,
       onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SwapScreen())),
     );
 
@@ -406,12 +409,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Widget _actionCard({Key? key, required String iconAsset, required String label, required VoidCallback onTap}) {
+  Widget _actionCard({
+    Key? key,
+    required String iconAsset,
+    required String label,
+    required VoidCallback onTap,
+    bool isDisabled = false,
+  }) {
     return Expanded(
       child: QuantusButton.simple(
         key: key,
         label: label,
         onTap: onTap,
+        isDisabled: isDisabled,
         icon: SvgPicture.asset(iconAsset, width: 24, height: 24),
         iconPlacement: IconPlacement.top,
         padding: const EdgeInsets.all(14),

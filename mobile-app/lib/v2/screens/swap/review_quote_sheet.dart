@@ -140,6 +140,7 @@ class _ReviewQuoteContent extends ConsumerWidget {
   Widget _confirmButton(BuildContext context, AppLocalizations l10n, AppColorsV2 colors, AppTextTheme text) {
     return QuantusButton.simple(
       label: l10n.swapReviewConfirm,
+      variant: ButtonVariant.secondary,
       onTap: () async {
         final swapService = SwapService();
         final order = await swapService.createSwap(quote);
