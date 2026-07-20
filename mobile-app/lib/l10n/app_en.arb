@@ -2815,8 +2815,12 @@
     "@privateSendTitle": {
       "description": "Title of the private-send notice on encrypted send recipient screen"
     },
-    "privateSendSubtitle": "Activity not visible on chain",
+    "privateSendSubtitle": "Hides the link between your account and the recipient",
     "@privateSendSubtitle": {
-      "description": "Subtitle of the private-send notice on encrypted send recipient screen"
+      "description": "Subtitle of the private-send notice on encrypted send recipient screen. Must not overstate the guarantee: the recipient and amount are still visible on chain, only the source linkage is hidden."
+    },
+    "encryptedSendPlanStale": "Your encrypted balance changed while reviewing. Please go back and enter the amount again.",
+    "@encryptedSendPlanStale": {
+      "description": "Error shown when the planned inputs of an encrypted send were spent between review and confirm"
     }
   }

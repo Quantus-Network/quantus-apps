@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:convert/convert.dart';
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:http/http.dart' as http;
 import 'package:polkadart/scale_codec.dart' show ByteOutput, CompactCodec;
 import 'package:quantus_sdk/generated/planck/pallets/wormhole.dart' as wormhole_pallet;
@@ -29,11 +30,18 @@ class ClaimResult {
   final int batchesSubmitted;
   final List<String> txHashes;
 
+  /// True when the operation was cancelled after one or more batches had
+  /// already been submitted: the listed [txHashes] have paid out, the
+  /// remaining batches were not attempted. A cancel before any submission
+  /// surfaces as [ClaimCancelled] instead.
+  final bool cancelled;
+
   const ClaimResult({
     required this.totalWithdrawn,
     required this.transfersProcessed,
     required this.batchesSubmitted,
     required this.txHashes,
+    this.cancelled = false,
   });
 }
 
@@ -41,6 +49,30 @@ class ClaimCancelled implements Exception {
   const ClaimCancelled();
   @override
   String toString() => 'Claim cancelled by user';
+}
+
+/// Immutable context for one claim/send operation: the cancellation token and
+/// RPC target belong to the operation, not to the service. A flow only ever
+/// consults its own context, so starting a new operation on the same service
+/// can neither un-cancel nor resurrect an older flow.
+class WormholeOperation {
+  /// Explicit RPC node URL; null uses the redundant remote endpoints.
+  final String? rpcUrl;
+
+  final Completer<void> _cancelRequested = Completer<void>();
+  final Completer<void> _done = Completer<void>();
+
+  WormholeOperation._(this.rpcUrl);
+
+  bool get isCancelled => _cancelRequested.isCompleted;
+
+  void _requestCancel() {
+    if (!_cancelRequested.isCompleted) _cancelRequested.complete();
+  }
+
+  void checkCancelled() {
+    if (isCancelled) throw const ClaimCancelled();
+  }
 }
 
 /// One leaf proof to generate: consumes [transfer] (owned by [secret]) and
@@ -89,26 +121,22 @@ class WormholeSendService {
   final WormholeUtxoService _utxoService = WormholeUtxoService();
   final RpcEndpointService _rpcEndpoint = RpcEndpointService();
 
-  /// Explicit RPC node URL. When null, RPC calls use the redundant remote
-  /// endpoints ([RpcEndpointService]). Set per operation.
-  String? _rpcUrl;
   int _requestId = 1;
 
-  /// Per-operation cancellation token. Incremented on every new operation so
-  /// orphaned flows from a previous (cancelled) call cannot accidentally pass
-  /// `_checkCancelled` when a new operation reuses this service instance.
-  int _opId = 0;
-  Completer<void>? _cancelCompleter;
-  Completer<void>? _operationDone;
+  /// The operation currently running on this service — only so [cancel] can
+  /// find it. Flows never read this field; they use their own context.
+  WormholeOperation? _currentOp;
 
-  bool get _cancelled => _cancelCompleter?.isCompleted ?? false;
-
-  /// Signals cancellation and returns a future that completes when the
-  /// in-flight operation has actually stopped (success, error, or cancelled).
+  /// Signals cancellation of the in-flight operation and waits for that same
+  /// operation to actually stop (success, partial result, error, or clean
+  /// cancel). Because the token is captured here, a new operation started
+  /// while we wait is unaffected and does not detach the old flow from its
+  /// cancellation.
   Future<void> cancel() async {
-    final c = _cancelCompleter;
-    if (c != null && !c.isCompleted) c.complete();
-    await _operationDone?.future;
+    final op = _currentOp;
+    if (op == null) return;
+    op._requestCancel();
+    await op._done.future;
   }
 
   Future<ClaimResult> claimRewards({
@@ -119,9 +147,10 @@ class WormholeSendService {
     required ClaimProgressCallback onProgress,
     String? rpcUrl,
   }) {
-    _rpcUrl = rpcUrl;
-    return _withCancellation(
-      () => _runClaimFlow(
+    return _runOperation(
+      rpcUrl,
+      (op) => _runClaimFlow(
+        op: op,
         wormholeAddress: wormholeAddress,
         secretHex: secretHex,
         destinationAddress: destinationAddress,
@@ -143,15 +172,15 @@ class WormholeSendService {
     Future<void> Function(int batchIndex, List<String> nullifierHexes)? onBatchSubmitted,
     String? rpcUrl,
   }) {
-    _rpcUrl = rpcUrl;
-    return _withCancellation(() async {
-      final maxProofsPerBatch = await _ensureCircuits(circuitBinsDir, onProgress);
+    return _runOperation(rpcUrl, (op) async {
+      final maxProofsPerBatch = await _ensureCircuits(op, circuitBinsDir, onProgress);
       for (final batch in batches) {
         if (batch.isEmpty || batch.length > maxProofsPerBatch) {
           throw StateError('Batch of ${batch.length} spends violates aggregation arity $maxProofsPerBatch');
         }
       }
       return _proveAndSubmitBatches(
+        op: op,
         batches: batches,
         circuitBinsDir: circuitBinsDir,
         onProgress: onProgress,
@@ -160,38 +189,26 @@ class WormholeSendService {
     });
   }
 
-  /// Races [flow] against cancellation. Each call gets its own operation ID;
-  /// a cancelled flow stays cancelled even if a new operation starts later.
-  ///
-  /// [_operationDone] only completes when the flow *actually* finishes (not
-  /// when `Future.any` picks the cancel guard), so [cancel] blocks until the
-  /// in-flight FFI work reaches a [_checkCancelled] checkpoint and exits.
-  Future<ClaimResult> _withCancellation(Future<ClaimResult> Function() flow) async {
-    final myOpId = ++_opId;
-    final cancelCompleter = Completer<void>();
-    _cancelCompleter = cancelCompleter;
-    final done = Completer<void>();
-    _operationDone = done;
+  /// Runs [flow] with its own [WormholeOperation] context. The caller always
+  /// receives the flow's true outcome: cancellation is observed by the flow
+  /// itself at its checkpoints (never by racing the flow against the cancel
+  /// signal), so "cancelled" can never be reported while proving or submission
+  /// is still running — and a cancel that lands after batches were submitted
+  /// surfaces as a partial [ClaimResult], not as [ClaimCancelled].
+  @visibleForTesting
+  Future<ClaimResult> runOperation(String? rpcUrl, Future<ClaimResult> Function(WormholeOperation op) flow) =>
+      _runOperation(rpcUrl, flow);
 
-    final flowFuture = flow();
-    // The bookkeeping chain re-raises the flow's error into a future nobody
-    // awaits (the caller observes it via Future.any below), so swallow it —
-    // otherwise every failed or cancelled flow reports an unhandled exception.
-    flowFuture
-        .whenComplete(() {
-          if (_opId == myOpId) {
-            _cancelCompleter = null;
-            _operationDone = null;
-          }
-          if (!done.isCompleted) done.complete();
-        })
-        .then((_) {}, onError: (_) {});
-
+  Future<ClaimResult> _runOperation(String? rpcUrl, Future<ClaimResult> Function(WormholeOperation op) flow) async {
+    final op = WormholeOperation._(rpcUrl);
+    _currentOp = op;
     try {
-      final cancelGuard = cancelCompleter.future.then<ClaimResult>((_) => throw const ClaimCancelled());
-      return await Future.any([flowFuture, cancelGuard]);
+      return await flow(op);
     } on WormholeOperationCancelled {
       throw const ClaimCancelled();
+    } finally {
+      if (identical(_currentOp, op)) _currentOp = null;
+      op._done.complete();
     }
   }
 
@@ -200,13 +217,9 @@ class WormholeSendService {
     onProgress(ClaimProgressItem(step: step, title: _stepTitles[step]!, completed: completed, total: total));
   }
 
-  void _checkCancelled() {
-    if (_cancelled) throw const ClaimCancelled();
-  }
-
   /// Step 1: ensures circuit binaries exist and returns the aggregation arity.
-  Future<int> _ensureCircuits(String circuitBinsDir, ClaimProgressCallback onProgress) async {
-    _checkCancelled();
+  Future<int> _ensureCircuits(WormholeOperation op, String circuitBinsDir, ClaimProgressCallback onProgress) async {
+    op.checkCancelled();
     _reportProgress(onProgress, 1, 0);
     _log('Ensuring circuit binaries at: $circuitBinsDir');
     final circuitConfig =
@@ -215,24 +228,25 @@ class WormholeSendService {
     final maxProofsPerBatch = circuitConfig['num_leaf_proofs'] as int;
     _log('Circuit binaries ready (num_leaf_proofs=$maxProofsPerBatch)');
     _reportProgress(onProgress, 1, 1);
-    _checkCancelled();
+    op.checkCancelled();
     return maxProofsPerBatch;
   }
 
   Future<ClaimResult> _runClaimFlow({
+    required WormholeOperation op,
     required String wormholeAddress,
     required String secretHex,
     required String destinationAddress,
     required String circuitBinsDir,
     required ClaimProgressCallback onProgress,
   }) async {
-    final maxProofsPerBatch = await _ensureCircuits(circuitBinsDir, onProgress);
+    final maxProofsPerBatch = await _ensureCircuits(op, circuitBinsDir, onProgress);
 
     _reportProgress(onProgress, 2, 0);
     final unspent = await _utxoService.getUnspentTransfers(
       wormholeAddress: wormholeAddress,
       secretHex: secretHex,
-      isCancelled: () => _cancelled,
+      isCancelled: () => op.isCancelled,
       onProgress: (phase, completed, {int? total}) {
         final step = phase <= 1 ? 2 : 3;
         _reportProgress(onProgress, step, completed, total: total);
@@ -244,7 +258,7 @@ class WormholeSendService {
     }
     unspent.sort((a, b) => b.amount.compareTo(a.amount));
     _log('Found ${unspent.length} unspent transfers');
-    _checkCancelled();
+    op.checkCancelled();
 
     // A claim pays each leaf's full net (post-fee) amount to the destination.
     final secretBytes = Uint8List.fromList(hex.decode(secretHex.replaceFirst('0x', '')));
@@ -263,10 +277,11 @@ class WormholeSendService {
         spends.sublist(i, (i + maxProofsPerBatch).clamp(0, spends.length)),
     ];
 
-    return _proveAndSubmitBatches(batches: batches, circuitBinsDir: circuitBinsDir, onProgress: onProgress);
+    return _proveAndSubmitBatches(op: op, batches: batches, circuitBinsDir: circuitBinsDir, onProgress: onProgress);
   }
 
   Future<ClaimResult> _proveAndSubmitBatches({
+    required WormholeOperation op,
     required List<List<WormholeLeafSpend>> batches,
     required String circuitBinsDir,
     required ClaimProgressCallback onProgress,
@@ -283,12 +298,12 @@ class WormholeSendService {
 
     try {
       for (int batchIndex = 0; batchIndex < totalBatches; batchIndex++) {
-        _checkCancelled();
+        op.checkCancelled();
         final batch = batches[batchIndex];
         final batchNum = batchIndex + 1;
 
-        final blockHash = await _getBestBlockHash();
-        final header = await _getBlockHeader(blockHash);
+        final blockHash = await _getBestBlockHash(op);
+        final header = await _getBlockHeader(op, blockHash);
         final blockNumber = _hexToInt(header['number'] as String);
         final parentHash = _hexBytes(header['parentHash'] as String);
         final stateRoot = _hexBytes(header['stateRoot'] as String);
@@ -304,6 +319,7 @@ class WormholeSendService {
           final spend = batch[i];
           futures.add(
             _generateLeafProof(
+              op: op,
               spend: spend,
               blockHash: blockHash,
               blockNumber: blockNumber,
@@ -333,7 +349,7 @@ class WormholeSendService {
         for (final out in outputs) {
           recipientTotal += out;
         }
-        _checkCancelled();
+        op.checkCancelled();
 
         _reportProgress(onProgress, 5, batchNum - 1, total: totalBatches);
         _log('Aggregating batch $batchNum/$totalBatches');
@@ -343,18 +359,36 @@ class WormholeSendService {
         );
         _log('Batch $batchNum aggregated (${aggregated.length} bytes)');
         _reportProgress(onProgress, 5, batchNum, total: totalBatches);
-        _checkCancelled();
 
         _reportProgress(onProgress, 6, batchNum - 1, total: totalBatches);
-        _checkCancelled();
-        final txHash = await _submitExtrinsic(aggregated);
+        // Last checkpoint before the point of no return: once the extrinsic
+        // is handed to the node it cannot be aborted, so a cancel arriving
+        // during submission is only honored before the *next* batch.
+        op.checkCancelled();
+        final txHash = await _submitExtrinsic(op, aggregated);
         txHashes.add(txHash);
         _log('Batch $batchNum accepted by pool: $txHash');
         await onBatchSubmitted?.call(batchIndex, nullifierHexes.cast<String>());
         _reportProgress(onProgress, 6, batchNum, total: totalBatches);
       }
     } on ClaimCancelled {
-      rethrow;
+      // A cancel that lands after one or more batches were already submitted
+      // is not a clean cancellation — those batches have paid out. Return the
+      // partial result so callers report what actually happened instead of
+      // "cancelled".
+      if (txHashes.isEmpty) rethrow;
+      final submitted = batches.take(txHashes.length);
+      _log('Cancelled after ${txHashes.length}/$totalBatches batches were submitted');
+      return ClaimResult(
+        totalWithdrawn: submitted.fold(
+          BigInt.zero,
+          (sum, b) => sum + b.fold(BigInt.zero, (s, spend) => s + wormholePlanckFromScaled(spend.outputAmount1)),
+        ),
+        transfersProcessed: submitted.fold(0, (sum, b) => sum + b.length),
+        batchesSubmitted: txHashes.length,
+        txHashes: txHashes,
+        cancelled: true,
+      );
     } catch (e) {
       // Batches submitted before the failure have already paid out; surface
       // that instead of presenting the operation as a total failure. The
@@ -379,6 +413,7 @@ class WormholeSendService {
   /// [onComplete] fires once the proof is written so callers can update
   /// progress per-leaf.
   Future<BigInt> _generateLeafProof({
+    required WormholeOperation op,
     required WormholeLeafSpend spend,
     required String blockHash,
     required int blockNumber,
@@ -393,8 +428,9 @@ class WormholeSendService {
     required int outputIndex,
     void Function()? onComplete,
   }) async {
+    op.checkCancelled();
     final transfer = spend.transfer;
-    final zkProof = await _getZkMerkleProof(transfer.leafIndex, blockHash);
+    final zkProof = await _getZkMerkleProof(op, transfer.leafIndex, blockHash);
 
     final leafData = _toBytes(zkProof['leaf_data']);
     final leafHash = _toBytes(zkProof['leaf_hash']);
@@ -419,6 +455,9 @@ class WormholeSendService {
     }
     final wormholeAddressBytes = wormhole_ffi.decodeLeafToAccount(leafData: leafData);
 
+    // The FFI proof itself cannot be interrupted, so check one last time
+    // before starting the expensive part.
+    op.checkCancelled();
     final proof = await wormhole_ffi.generateProof(
       input: wormhole_ffi.ProofInput(
         secret: spend.secret,
@@ -457,12 +496,12 @@ class WormholeSendService {
   /// well-formed unsigned extrinsic is a strong signal it will land, and any
   /// rejection (validation, insufficient priority, etc.) surfaces here as a
   /// JSON-RPC error from [_rpcCall].
-  Future<String> _submitExtrinsic(Uint8List aggregatedProofBytes) async {
+  Future<String> _submitExtrinsic(WormholeOperation op, Uint8List aggregatedProofBytes) async {
     final fullExtrinsic = _wrapUnsignedExtrinsic(aggregatedProofBytes);
     final hexExtrinsic = '0x${hex.encode(fullExtrinsic)}';
     _log('Submitting unsigned extrinsic (${fullExtrinsic.length} bytes)');
 
-    final result = await _rpcCall('author_submitExtrinsic', [hexExtrinsic]);
+    final result = await _rpcCall(op, 'author_submitExtrinsic', [hexExtrinsic]);
     if (result is! String) {
       throw StateError('author_submitExtrinsic returned ${result.runtimeType}: $result');
     }
@@ -488,35 +527,35 @@ class WormholeSendService {
 
   // --- RPC ---
 
-  Future<String> _getBestBlockHash() async {
-    final result = await _rpcCall('chain_getBlockHash');
+  Future<String> _getBestBlockHash(WormholeOperation op) async {
+    final result = await _rpcCall(op, 'chain_getBlockHash');
     if (result is! String) {
       throw StateError('chain_getBlockHash returned ${result.runtimeType}: $result');
     }
     return result;
   }
 
-  Future<Map<String, dynamic>> _getBlockHeader(String blockHash) async {
-    final result = await _rpcCall('chain_getHeader', [blockHash]);
+  Future<Map<String, dynamic>> _getBlockHeader(WormholeOperation op, String blockHash) async {
+    final result = await _rpcCall(op, 'chain_getHeader', [blockHash]);
     if (result is! Map<String, dynamic>) {
       throw StateError('chain_getHeader returned ${result.runtimeType}: $result');
     }
     return result;
   }
 
-  Future<Map<String, dynamic>> _getZkMerkleProof(BigInt leafIndex, String blockHash) async {
-    final result = await _rpcCall('zkTree_getMerkleProof', [leafIndex.toInt(), blockHash]);
+  Future<Map<String, dynamic>> _getZkMerkleProof(WormholeOperation op, BigInt leafIndex, String blockHash) async {
+    final result = await _rpcCall(op, 'zkTree_getMerkleProof', [leafIndex.toInt(), blockHash]);
     if (result is! Map<String, dynamic>) {
       throw StateError('zkTree_getMerkleProof for leaf $leafIndex returned ${result.runtimeType}: $result');
     }
     return result;
   }
 
-  Future<dynamic> _rpcCall(String method, [List<dynamic>? params]) async {
+  Future<dynamic> _rpcCall(WormholeOperation op, String method, [List<dynamic>? params]) async {
     final body = jsonEncode({'jsonrpc': '2.0', 'id': _requestId++, 'method': method, 'params': params ?? []});
 
     final http.Response response;
-    final url = _rpcUrl;
+    final url = op.rpcUrl;
     if (url != null) {
       response = await http.post(Uri.parse(url), headers: {'Content-Type': 'application/json'}, body: body);
     } else {

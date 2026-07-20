@@ -1951,5 +1951,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get privateSendTitle => 'Private Send';
 
   @override
-  String get privateSendSubtitle => 'Activity not visible on chain';
+  String get privateSendSubtitle => 'Hides the link between your account and the recipient';
+
+  @override
+  String get encryptedSendPlanStale =>
+      'Your encrypted balance changed while reviewing. Please go back and enter the amount again.';
 }

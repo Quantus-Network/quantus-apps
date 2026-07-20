@@ -61,6 +61,17 @@ class EncryptedAccountService {
   final Map<int, WormholeKeyPair> _keyPairs = {};
   Future<void> _stateLock = Future.value();
 
+  /// Change indices claimed by in-flight sends, so two overlapping sends can
+  /// never allocate the same change address. Released when the send finishes
+  /// (by then a change-bearing batch has bumped the persisted nextIndex).
+  final Set<int> _reservedChangeIndices = {};
+
+  /// Every not-yet-disposed instance, so logout can quiesce all in-flight
+  /// encrypted work ([disposeAll]) before session state is wiped.
+  static final Set<EncryptedAccountService> _live = {};
+
+  bool _disposed = false;
+
   EncryptedAccountService({
     required this.walletIndex,
     required MnemonicGetter getMnemonic,
@@ -72,10 +83,46 @@ class EncryptedAccountService {
        _hdWalletService = hdWalletService ?? HdWalletService(),
        _utxoService = utxoService ?? WormholeUtxoService(),
        _discoveryService = discoveryService ?? AccountDiscoveryService(hdWalletService ?? HdWalletService()),
-       _sendService = sendService ?? WormholeSendService();
+       _sendService = sendService ?? WormholeSendService() {
+    _live.add(this);
+  }
 
   // ignore: avoid_print
   static void _log(String msg) => print('[EncryptedAccount] $msg');
+
+  void _checkNotDisposed() {
+    if (_disposed) throw StateError('EncryptedAccountService for wallet $walletIndex was disposed (logout)');
+  }
+
+  /// Quiesces this instance: refuses new work, cancels and awaits any
+  /// in-flight send, and drains queued state mutations. After this returns,
+  /// no code path of this instance can touch the persisted state file again
+  /// (the disposed gate inside [_mutateState] makes late callbacks fail
+  /// instead of resurrecting cleared state).
+  Future<void> dispose() async {
+    _live.remove(this);
+    if (_disposed) {
+      await _stateLock;
+      return;
+    }
+    _disposed = true;
+    try {
+      await _sendService.cancel();
+    } catch (e) {
+      _log('dispose: cancelling in-flight send failed (non-fatal): $e');
+    }
+    await _stateLock;
+  }
+
+  /// Cancels and awaits every live encrypted-account operation. Must be
+  /// called on logout *before* mnemonics, settings or persisted state are
+  /// cleared, so no delayed load/send can outlive the session.
+  static Future<void> disposeAll() async {
+    final live = List.of(_live);
+    if (live.isEmpty) return;
+    _log('disposeAll: quiescing ${live.length} live instance(s)');
+    await Future.wait(live.map((s) => s.dispose()));
+  }
 
   Future<String> _mnemonic() async {
     final mnemonic = await _getMnemonic();
@@ -90,14 +137,14 @@ class EncryptedAccountService {
 
   /// The address to show on the Receive screen: next unused index from the
   /// last persisted state (cheap — no network). [load] keeps it current.
-  Future<WormholeKeyPair> receiveKeyPair() async => keyPairAt((await _readState()).nextIndex);
+  Future<WormholeKeyPair> receiveKeyPair() async => keyPairAt((await _readStateLocked()).nextIndex);
 
   /// Whether [address] is one of this wallet's derived wormhole addresses —
   /// indices `0..nextIndex` cover every address ever shown for receiving or
   /// allocated for change. Used to block self-sends from the encrypted account.
   Future<bool> ownsAddress(String address) async {
     if (_keyPairs.values.any((kp) => kp.address == address)) return true;
-    final nextIndex = (await _readState()).nextIndex;
+    final nextIndex = (await _readStateLocked()).nextIndex;
     final mnemonic = await _mnemonic();
     for (int i = 0; i <= nextIndex; i++) {
       if (_keyPairAtSync(mnemonic, i).address == address) return true;
@@ -114,7 +161,7 @@ class EncryptedAccountService {
     // Ensure every index that can have an on-disk cache is derived, even when
     // only some key pairs are in memory (e.g. just the receive index after a
     // restart) — a partial map must not turn this into a partial clear.
-    final state = await _readState();
+    final state = await _readStateLocked();
     final mnemonic = await _mnemonic();
     for (int i = 0; i <= state.nextIndex; i++) {
       _keyPairAtSync(mnemonic, i);
@@ -137,6 +184,7 @@ class EncryptedAccountService {
   /// Discovers used addresses, fetches their unspent UTXOs, reconciles
   /// pending-spend records and persists the refreshed state.
   Future<EncryptedAccountState> load({WormholeProgressCallback? onProgress, IsCancelledCallback? isCancelled}) async {
+    _checkNotDisposed();
     final sw = Stopwatch()..start();
     final mnemonic = await _mnemonic();
 
@@ -211,55 +259,62 @@ class EncryptedAccountService {
     required ClaimProgressCallback onProgress,
     String? rpcUrl,
   }) async {
-    final changeIndex = (await _readState()).nextIndex;
-    final changeKeyPair = await keyPairAt(changeIndex);
-    final recipientBytes = Uint8List.fromList(getAccountId32(recipientAddress));
-    final changeBytes = Uint8List.fromList(getAccountId32(changeKeyPair.address));
-    _log(
-      'send: ${plan.inputCount} inputs in ${plan.batches.length} batches, '
-      'amount=${plan.amountPlanck}, change=${plan.changePlanck} -> index $changeIndex',
-    );
+    _checkNotDisposed();
+    final changeIndex = await _reserveChangeIndex();
+    try {
+      final changeKeyPair = await keyPairAt(changeIndex);
+      final recipientBytes = Uint8List.fromList(getAccountId32(recipientAddress));
+      final changeBytes = Uint8List.fromList(getAccountId32(changeKeyPair.address));
+      _log(
+        'send: ${plan.inputCount} inputs in ${plan.batches.length} batches, '
+        'amount=${plan.amountPlanck}, change=${plan.changePlanck} -> index $changeIndex',
+      );
 
-    final batches = [
-      for (final batch in plan.batches)
-        [
-          for (final a in batch)
-            WormholeLeafSpend(
-              transfer: a.utxo.transfer,
-              secret: Uint8List.fromList(hex.decode(a.utxo.owner.secretHex.replaceFirst('0x', ''))),
-              exitAccount1: recipientBytes,
-              outputAmount1: a.recipientScaled,
-              exitAccount2: a.changeScaled > 0 ? changeBytes : null,
-              outputAmount2: a.changeScaled,
-            ),
-        ],
-    ];
-
-    return _sendService.sendSpends(
-      batches: batches,
-      circuitBinsDir: circuitBinsDir,
-      onProgress: onProgress,
-      rpcUrl: rpcUrl,
-      onBatchSubmitted: (batchIndex, nullifiers) async {
-        final changeScaled = plan.batches[batchIndex].fold<int>(0, (sum, a) => sum + a.changeScaled);
-        final hasChange = changeScaled > 0;
-        await _mutateState(
-          (s) => _FileState(
-            nextIndex: hasChange && changeIndex >= s.nextIndex ? changeIndex + 1 : s.nextIndex,
-            pendingSpends: [
-              ...s.pendingSpends,
-              PendingSpend(
-                nullifiers: nullifiers,
-                changeAddress: hasChange ? changeKeyPair.address : null,
-                changeAmountPlanck: wormholePlanckFromScaled(changeScaled),
-                createdAtMs: DateTime.now().millisecondsSinceEpoch,
+      final batches = [
+        for (final batch in plan.batches)
+          [
+            for (final a in batch)
+              WormholeLeafSpend(
+                transfer: a.utxo.transfer,
+                secret: Uint8List.fromList(hex.decode(a.utxo.owner.secretHex.replaceFirst('0x', ''))),
+                exitAccount1: recipientBytes,
+                outputAmount1: a.recipientScaled,
+                exitAccount2: a.changeScaled > 0 ? changeBytes : null,
+                outputAmount2: a.changeScaled,
               ),
-            ],
-          ),
-        );
-        _log('Batch $batchIndex recorded: ${nullifiers.length} nullifiers spent, change=$hasChange');
-      },
-    );
+          ],
+      ];
+
+      return await _sendService.sendSpends(
+        batches: batches,
+        circuitBinsDir: circuitBinsDir,
+        onProgress: onProgress,
+        rpcUrl: rpcUrl,
+        onBatchSubmitted: (batchIndex, nullifiers) async {
+          final changeScaled = plan.batches[batchIndex].fold<int>(0, (sum, a) => sum + a.changeScaled);
+          final hasChange = changeScaled > 0;
+          await _mutateState(
+            (s) => _FileState(
+              nextIndex: hasChange && changeIndex >= s.nextIndex ? changeIndex + 1 : s.nextIndex,
+              pendingSpends: [
+                ...s.pendingSpends,
+                PendingSpend(
+                  nullifiers: nullifiers,
+                  changeAddress: hasChange ? changeKeyPair.address : null,
+                  changeAmountPlanck: wormholePlanckFromScaled(changeScaled),
+                  createdAtMs: DateTime.now().millisecondsSinceEpoch,
+                ),
+              ],
+            ),
+          );
+          _log('Batch $batchIndex recorded: ${nullifiers.length} nullifiers spent, change=$hasChange');
+        },
+      );
+    } finally {
+      // By now either a change-bearing batch bumped the persisted nextIndex
+      // past the reservation, or the send failed and the index is free again.
+      _reservedChangeIndices.remove(changeIndex);
+    }
   }
 
   Future<void> cancel() => _sendService.cancel();
@@ -275,6 +330,10 @@ class EncryptedAccountService {
   /// spends). Call on logout; otherwise a new wallet at the same index inherits
   /// pending-change balance from the previous session.
   static Future<void> clearAllPersistedState() async {
+    // Quiesce in-flight loads/sends first: without this, a delayed
+    // onBatchSubmitted or load() reconciliation could recreate the state file
+    // right after it is deleted below.
+    await disposeAll();
     try {
       final dir = await getApplicationSupportDirectory();
       if (!await dir.exists()) return;
@@ -282,7 +341,7 @@ class EncryptedAccountService {
       await for (final entity in dir.list()) {
         if (entity is! File) continue;
         final name = entity.uri.pathSegments.isEmpty ? entity.path : entity.uri.pathSegments.last;
-        if (name.startsWith('encrypted_account_w') && name.endsWith('.json')) {
+        if (name.startsWith('encrypted_account_w') && (name.endsWith('.json') || name.endsWith('.json.tmp'))) {
           await entity.delete();
           deleted++;
         }
@@ -299,16 +358,41 @@ class EncryptedAccountService {
     return _FileState.fromJson(jsonDecode(await file.readAsString()) as Map<String, dynamic>);
   }
 
-  Future<_FileState> _mutateState(_FileState Function(_FileState) fn) {
-    final result = _stateLock.then((_) async {
-      final next = fn(await _readState());
-      final file = await _stateFile();
-      await file.writeAsString(jsonEncode(next.toJson()));
-      return next;
-    });
+  /// Serializes [action] behind every queued state mutation. All reads that
+  /// inform writes (and all writes) go through this, so nothing can observe
+  /// state mid-mutation.
+  Future<T> _withStateLock<T>(Future<T> Function() action) {
+    final result = _stateLock.then((_) => action());
     _stateLock = result.then((_) {}, onError: (_) {});
     return result;
   }
+
+  Future<_FileState> _readStateLocked() => _withStateLock(_readState);
+
+  /// Claims the change index for a new send: the persisted next unused index,
+  /// skipping indices already reserved by other in-flight sends.
+  Future<int> _reserveChangeIndex() => _withStateLock(() async {
+    var index = (await _readState()).nextIndex;
+    while (_reservedChangeIndices.contains(index)) {
+      index++;
+    }
+    _reservedChangeIndices.add(index);
+    return index;
+  });
+
+  Future<_FileState> _mutateState(_FileState Function(_FileState) fn) => _withStateLock(() async {
+    // Re-checked under the lock: after logout ([dispose]) a delayed callback
+    // from an old load()/send() must fail here rather than resurrect the
+    // previous session's state on disk.
+    _checkNotDisposed();
+    final next = fn(await _readState());
+    final file = await _stateFile();
+    // Write-then-rename so a concurrent reader can never observe a torn file.
+    final tmp = File('${file.path}.tmp');
+    await tmp.writeAsString(jsonEncode(next.toJson()), flush: true);
+    await tmp.rename(file.path);
+    return next;
+  });
 }
 
 /// A submitted-but-not-yet-indexed spend: its input nullifiers are excluded

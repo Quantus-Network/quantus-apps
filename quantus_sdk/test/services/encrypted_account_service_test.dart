@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -59,17 +60,30 @@ class _FakeUtxoService extends WormholeUtxoService {
     totalSpentPlanck: BigInt.zero,
   );
 
+  /// When set, [getUnspentUtxos] blocks until the completer resolves — lets
+  /// tests race a slow load() against logout.
+  Completer<void>? gate;
+
   @override
   Future<WormholeUtxoResult> getUnspentUtxos({
     required List<WormholeAddressInfo> addresses,
     WormholeProgressCallback? onProgress,
     IsCancelledCallback? isCancelled,
-  }) async => result;
+  }) async {
+    final g = gate;
+    if (g != null) await g.future;
+    return result;
+  }
 }
 
 /// Immediately "submits" every batch, reporting one fake nullifier per leaf.
+/// When [gate] is set, submission blocks until it resolves — lets tests race
+/// a slow send() against logout or another send.
 class _FakeSendService extends WormholeSendService {
-  List<List<WormholeLeafSpend>>? capturedBatches;
+  final capturedBatchesList = <List<List<WormholeLeafSpend>>>[];
+  Completer<void>? gate;
+
+  List<List<WormholeLeafSpend>>? get capturedBatches => capturedBatchesList.isEmpty ? null : capturedBatchesList.last;
 
   @override
   Future<ClaimResult> sendSpends({
@@ -79,7 +93,9 @@ class _FakeSendService extends WormholeSendService {
     Future<void> Function(int batchIndex, List<String> nullifierHexes)? onBatchSubmitted,
     String? rpcUrl,
   }) async {
-    capturedBatches = batches;
+    capturedBatchesList.add(batches);
+    final g = gate;
+    if (g != null) await g.future;
     for (var i = 0; i < batches.length; i++) {
       await onBatchSubmitted?.call(i, [for (final s in batches[i]) '0xsubmitted_${i}_${s.outputAmount1}']);
     }
@@ -121,6 +137,8 @@ void main() {
   });
 
   tearDown(() async {
+    // Keep the static live-instance registry clean between tests.
+    await service.dispose();
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
       const MethodChannel('plugins.flutter.io/path_provider'),
       null,
@@ -280,6 +298,78 @@ void main() {
       expect(pending[0]['changeAddress'], isNull);
       expect(BigInt.parse(pending[0]['changeAmountPlanck'] as String), BigInt.zero);
       expect(sendService.capturedBatches![0][0].exitAccount2, isNull);
+    });
+  });
+
+  group('logout / dispose races', () {
+    final recipient = Address(prefix: 189, pubkey: Uint8List.fromList(List.filled(32, 0x22))).encode();
+    File stateFile() => File('${tempDir.path}/encrypted_account_w0.json');
+
+    test('a batch submitted after logout cannot recreate cleared state', () async {
+      await seedState(nextIndex: 1);
+      final plan = selectWormholeInputs(utxos: [_utxo(1000)], amountPlanck: wormholePlanckFromScaled(400));
+      sendService.gate = Completer<void>();
+      final sendFuture = service.send(
+        plan: plan,
+        recipientAddress: recipient,
+        circuitBinsDir: '/unused',
+        onProgress: (_) {},
+      );
+      await Future<void>.delayed(Duration.zero); // let the send reach the gate
+
+      // Logout: quiesces every live instance, then wipes the state files.
+      await EncryptedAccountService.clearAllPersistedState();
+      expect(stateFile().existsSync(), isFalse);
+
+      // The delayed batch submission now completes — its persistence callback
+      // must fail on the disposed gate instead of resurrecting the file.
+      sendService.gate!.complete();
+      await expectLater(sendFuture, throwsA(isA<StateError>()));
+      expect(stateFile().existsSync(), isFalse);
+    });
+
+    test('a load finishing after dispose cannot write state', () async {
+      discovery.used = {0, 1};
+      utxoService.gate = Completer<void>();
+      final loadFuture = service.load();
+      await Future<void>.delayed(Duration.zero); // let the load reach the gate
+
+      await service.dispose();
+      utxoService.gate!.complete();
+      await expectLater(loadFuture, throwsA(isA<StateError>()));
+      expect(stateFile().existsSync(), isFalse);
+    });
+
+    test('load and send refuse to start after dispose', () async {
+      await seedState(nextIndex: 1);
+      final plan = selectWormholeInputs(utxos: [_utxo(1000)], amountPlanck: wormholePlanckFromScaled(400));
+      await service.dispose();
+      await expectLater(service.load(), throwsA(isA<StateError>()));
+      await expectLater(
+        service.send(plan: plan, recipientAddress: recipient, circuitBinsDir: '/unused', onProgress: (_) {}),
+        throwsA(isA<StateError>()),
+      );
+    });
+
+    test('two overlapping sends allocate distinct change indices', () async {
+      await seedState(nextIndex: 1);
+      final plan1 = selectWormholeInputs(utxos: [_utxo(1000)], amountPlanck: wormholePlanckFromScaled(400));
+      final plan2 = selectWormholeInputs(utxos: [_utxo(900)], amountPlanck: wormholePlanckFromScaled(300));
+      expect(plan1.changePlanck, greaterThan(BigInt.zero));
+      expect(plan2.changePlanck, greaterThan(BigInt.zero));
+
+      sendService.gate = Completer<void>();
+      final f1 = service.send(plan: plan1, recipientAddress: recipient, circuitBinsDir: '/unused', onProgress: (_) {});
+      final f2 = service.send(plan: plan2, recipientAddress: recipient, circuitBinsDir: '/unused', onProgress: (_) {});
+      await Future<void>.delayed(Duration.zero);
+      sendService.gate!.complete();
+      await Future.wait([f1, f2]);
+
+      expect(sendService.capturedBatchesList.length, 2);
+      final change1 = sendService.capturedBatchesList[0][0][0].exitAccount2;
+      final change2 = sendService.capturedBatchesList[1][0][0].exitAccount2;
+      expect(change1, Address.decode(addressAt(1)).pubkey);
+      expect(change2, Address.decode(addressAt(2)).pubkey);
     });
   });
 

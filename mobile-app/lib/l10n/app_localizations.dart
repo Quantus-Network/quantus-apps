@@ -3626,11 +3626,17 @@ abstract class AppLocalizations {
   /// **'Private Send'**
   String get privateSendTitle;
 
-  /// Subtitle of the private-send notice on encrypted send recipient screen
+  /// Subtitle of the private-send notice on encrypted send recipient screen. Must not overstate the guarantee: the recipient and amount are still visible on chain, only the source linkage is hidden.
   ///
   /// In en, this message translates to:
-  /// **'Activity not visible on chain'**
+  /// **'Hides the link between your account and the recipient'**
   String get privateSendSubtitle;
+
+  /// Error shown when the planned inputs of an encrypted send were spent between review and confirm
+  ///
+  /// In en, this message translates to:
+  /// **'Your encrypted balance changed while reviewing. Please go back and enter the amount again.'**
+  String get encryptedSendPlanStale;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

@@ -140,9 +140,15 @@ class _ClaimRewardsDialogState extends State<_ClaimRewardsDialog> {
 
       if (!mounted) return;
       setState(() {
-        _done = true;
+        _done = !result.cancelled;
+        _cancelledTerminal = result.cancelled;
         _running = false;
-        _resultMessage = '${result.transfersProcessed} transfers claimed in ${result.batchesSubmitted} batch(es)';
+        // On a late cancel the totals reflect only the batches that were
+        // actually submitted before the operation stopped.
+        _resultMessage = result.cancelled
+            ? 'Cancelled: ${result.transfersProcessed} transfers were already claimed in '
+                  '${result.batchesSubmitted} batch(es)'
+            : '${result.transfersProcessed} transfers claimed in ${result.batchesSubmitted} batch(es)';
       });
     } on ClaimCancelled {
       if (!mounted) return;
