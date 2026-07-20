@@ -29,7 +29,7 @@ enum _Screen { input, confirm, progress }
 
 class _ClaimRewardsDialogState extends State<_ClaimRewardsDialog> {
   final _addressController = TextEditingController();
-  final _claimService = WormholeSendService();
+  final _wormholeSendService = WormholeSendService();
   final _walletService = MinerWalletService();
   final _settingsService = MinerSettingsService();
 
@@ -123,7 +123,7 @@ class _ClaimRewardsDialogState extends State<_ClaimRewardsDialog> {
       final rpcUrl = chainConfig.rpcUrl;
       _log.i('Starting claim for ${keyPair.address} to ${_addressController.text.trim()}');
 
-      final result = await _claimService.claimRewards(
+      final result = await _wormholeSendService.claimRewards(
         wormholeAddress: keyPair.address,
         secretHex: keyPair.secretHex,
         destinationAddress: _addressController.text.trim(),
@@ -168,7 +168,7 @@ class _ClaimRewardsDialogState extends State<_ClaimRewardsDialog> {
   }
 
   void _cancelClaim() {
-    _claimService.cancel();
+    _wormholeSendService.cancel();
   }
 
   @override
