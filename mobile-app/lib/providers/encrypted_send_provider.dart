@@ -134,10 +134,7 @@ class EncryptedSendController extends Notifier<EncryptedSendState> {
       if (result.cancelled) {
         // Cancelled after some batches had already paid out: report the
         // partial outcome, never a clean "cancelled".
-        state = state.copyWith(
-          phase: EncryptedSendPhase.cancelled,
-          submittedRecipientPlanck: result.totalWithdrawn,
-        );
+        state = state.copyWith(phase: EncryptedSendPhase.cancelled, submittedRecipientPlanck: result.totalWithdrawn);
         return;
       }
 

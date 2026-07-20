@@ -4,12 +4,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_sdk/src/services/wormhole_send_service.dart';
 import 'package:quantus_sdk/src/services/wormhole_utxo_service.dart';
 
-ClaimResult _emptyResult() => ClaimResult(
-  totalWithdrawn: BigInt.zero,
-  transfersProcessed: 0,
-  batchesSubmitted: 0,
-  txHashes: const [],
-);
+ClaimResult _emptyResult() =>
+    ClaimResult(totalWithdrawn: BigInt.zero, transfersProcessed: 0, batchesSubmitted: 0, txHashes: const []);
 
 /// Regression tests for operation-local cancellation: a cancel must stick to
 /// the operation it targeted (even when a second operation starts on the same

@@ -148,10 +148,7 @@ class _EncryptedSendProgressScreenState extends ConsumerState<EncryptedSendProgr
         children: [
           Text(l10n.encryptedSendingLabel, style: text.receiveLabel?.copyWith(color: colors.textLabel)),
           const SizedBox(height: 16),
-          Text(
-            amountLabel,
-            style: text.conversionAmountPrimary?.copyWith(fontSize: 32, color: colors.textPrimary),
-          ),
+          Text(amountLabel, style: text.conversionAmountPrimary?.copyWith(fontSize: 32, color: colors.textPrimary)),
           const SizedBox(height: 16),
           if (widget.terminal.recipientChecksum != null) ...[
             Text(
