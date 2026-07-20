@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Quantus Captcha — demo</title>
+  <style>
+    body {
+      font: 16px/1.6 system-ui, -apple-system, sans-serif; color: #1f2937;
+      max-width: 640px; margin: 48px auto; padding: 0 20px;
+    }
+    h1 { font-size: 22px; }
+    .card {
+      border: 1px solid #e4e7ec; border-radius: 12px; padding: 24px;
+      margin-top: 24px; box-shadow: 0 1px 3px rgba(16, 24, 40, .06);
+    }
+    label { display: block; font-size: 14px; font-weight: 600; margin: 14px 0 4px; }
+    input[type=text], textarea {
+      width: 100%; box-sizing: border-box; border: 1px solid #d0d5dd;
+      border-radius: 8px; padding: 9px 12px; font: inherit;
+    }
+    button {
+      margin-top: 18px; background: #2563eb; color: #fff; border: 0;
+      border-radius: 8px; padding: 10px 18px; font: inherit; cursor: pointer;
+    }
+    button:disabled { background: #98a2b3; cursor: not-allowed; }
+    .note { font-size: 13px; color: #667085; margin-top: 24px; }
+    #result { margin-top: 14px; font-size: 14px; white-space: pre-wrap; font-family: ui-monospace, monospace; }
+  </style>
+</head>
+<body>
+  <h1>Quantus Captcha demo</h1>
+  <p>
+    The checkbox below does ~1 second of real Poseidon2 proof-of-work over the
+    current Quantus block header. The work is a genuine mining share: if it
+    ever meets full network difficulty, the pool submits it as a block.
+    No tracking, no image puzzles, no data labeling.
+  </p>
+
+  <div class="card">
+    <form id="demo-form">
+      <label for="msg">Post a comment (spam-protected)</label>
+      <textarea id="msg" rows="3" placeholder="Write something…"></textarea>
+
+      <div style="margin-top:16px">
+        <div class="quan-captcha" data-endpoint=""></div>
+      </div>
+
+      <button type="submit" id="submit" disabled>Submit</button>
+      <div id="result"></div>
+    </form>
+  </div>
+
+  <p class="note">
+    After solving, the widget puts a single-use token in the form. A real
+    backend would redeem it server-side via <code>POST /siteverify</code>
+    with its secret. This demo calls it from the page for illustration only —
+    never expose your secret in production.
+  </p>
+
+  <script src="/widget/quan-captcha.js" defer></script>
+  <script>
+    const form = document.getElementById("demo-form");
+    const submit = document.getElementById("submit");
+    const result = document.getElementById("result");
+
+    form.addEventListener("quan-captcha-solved", (e) => {
+      submit.disabled = false;
+      if (e.detail.blockFound) {
+        result.textContent = "You just mined a real block while proving you're not a bot.";
+      }
+    });
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const token = form.querySelector('input[name="quan-captcha-token"]').value;
+      // Demo-only: siteverify belongs on the backend with a private secret.
+      const res = await fetch("/siteverify", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ secret: "dev-secret", response: token }),
+      });
+      const body = await res.json();
+      result.textContent = "siteverify response:\n" + JSON.stringify(body, null, 2) +
+        (body.success ? "\n\nComment accepted." : "\n\nRejected (token reuse or expiry).");
+      submit.disabled = true;
+    });
+  </script>
+</body>
+</html>

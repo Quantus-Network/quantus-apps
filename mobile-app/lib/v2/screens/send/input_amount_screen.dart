@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/models/fiat_currency.dart';
 import 'package:resonance_network_wallet/l10n/app_localizations.dart';
@@ -503,6 +504,8 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
     bool btnDisabled,
   ) {
     final formattingService = ref.read(numberFormattingServiceProvider);
+    final feePayerProvider = widget.strategy.feePayerBalanceProvider;
+    final feePayerLabel = widget.strategy.feePayerBalanceLabel(l10n);
 
     return ScaffoldBaseBottomContent(
       child: Column(
@@ -548,6 +551,13 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
                   ),
                 ],
               ),
+              if (feePayerProvider != null && feePayerLabel != null) ...[
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [_feePayerBalance(colors, text, l10n, feePayerLabel, feePayerProvider, formattingService)],
+                ),
+              ],
               const SizedBox(height: 4),
               IntrinsicWidth(
                 child: QuantusButton.simple(
@@ -574,6 +584,29 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _feePayerBalance(
+    AppColorsV2 colors,
+    AppTextTheme text,
+    AppLocalizations l10n,
+    String label,
+    ProviderListenable<AsyncValue<BigInt>> provider,
+    NumberFormattingService fmt,
+  ) {
+    final balanceAsync = ref.watch(provider);
+    final style = text.smallParagraph?.copyWith(color: colors.textTertiary);
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text('$label ', style: style),
+        balanceAsync.when(
+          data: (b) => Text(l10n.commonAmountBalance(fmt.formatBalance(b), AppConstants.tokenSymbol), style: style),
+          loading: () => Text('...', style: style),
+          error: (_, _) => Text('—', style: style),
+        ),
+      ],
     );
   }
 }

@@ -263,7 +263,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get addAccountMenuTitle => 'Tambah Akun';
 
   @override
-  String get addAccountMenuCreateTitle => 'Tambah Akun';
+  String get addAccountMenuCreateTitle => 'Tambah Akun Transparan';
 
   @override
   String get addAccountMenuCreateSubtitle => 'Tambahkan akun publik lainnya';
@@ -272,19 +272,19 @@ class AppLocalizationsId extends AppLocalizations {
   String get addAccountMenuMoreTitle => 'Lanjutan';
 
   @override
-  String get addAccountMenuImportKeystoneTitle => 'Tambah Akun Perangkat Keras Keystone';
+  String get addAccountMenuImportKeystoneTitle => 'Tambah Akun Keystone';
 
   @override
-  String get addAccountMenuImportKeystoneSubtitle => 'Pindai QR alamat dari perangkat Keystone Anda';
+  String get addAccountMenuImportKeystoneSubtitle => 'Penandatanganan air-gap melalui kode QR';
 
   @override
-  String get addAccountMenuImportTitle => 'Impor Wallet Lain';
+  String get addAccountMenuImportTitle => 'Impor Akun';
 
   @override
-  String get addAccountMenuImportSubtitle => 'Gunakan recovery phrase untuk mengimpor';
+  String get addAccountMenuImportSubtitle => 'Pulihkan dari recovery phrase';
 
   @override
-  String get addAccountMenuMultisigTitle => 'Buat Multisig Baru';
+  String get addAccountMenuMultisigTitle => 'Buat Akun Multisig';
 
   @override
   String get addAccountMenuMultisigSubtitle => 'Siapkan alamat bersama dengan beberapa penandatangan';
@@ -348,7 +348,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get multisigCreateSignersSubtitle => 'Tambahkan setidaknya satu penandatangan selain diri Anda.';
 
   @override
-  String get multisigCreateAddSignerHint => 'Alamat SS58 penandatangan';
+  String get multisigCreateAddSignerHint => 'Alamat penandatangan';
 
   @override
   String get multisigCreateAddSignerButton => 'Tambah Penandatangan';
@@ -357,7 +357,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get multisigCreateDuplicateSigner => 'Penandatangan ini sudah ada dalam daftar.';
 
   @override
-  String get multisigCreateInvalidSigner => 'Masukkan alamat SS58 yang valid.';
+  String get multisigCreateInvalidSigner => 'Masukkan alamat penandatangan yang valid.';
 
   @override
   String get multisigCreateThresholdLabel => 'AMBANG BATAS';
@@ -424,7 +424,7 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
-  String get multisigStatusApproved => 'DISETUJUI';
+  String get multisigStatusApproved => 'DITANDATANGANI';
 
   @override
   String get multisigStatusProposed => 'DIAJUKAN';
@@ -463,6 +463,15 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get multisigProposeFeeFetchFailed => 'Tidak dapat memperkirakan biaya';
+
+  @override
+  String get multisigProposeFeePayerBalanceLabel => 'Saldo Anda:';
+
+  @override
+  String get multisigProposeFeePayerInsufficient => 'Saldo Tidak Cukup untuk Biaya';
+
+  @override
+  String get multisigProposeProposerLabel => 'PENGUSUL';
 
   @override
   String get multisigProposeReviewButton => 'Tinjau transfer';
@@ -558,7 +567,7 @@ class AppLocalizationsId extends AppLocalizations {
       'Konfirmasi persetujuan membutuhkan waktu lebih lama. Periksa chain atau coba lagi.';
 
   @override
-  String get multisigProposalAlreadySignedNote => 'Anda sudah menyetujui proposal ini.';
+  String get multisigProposalAlreadySignedNote => 'Anda sudah menandatangani proposal ini.';
 
   @override
   String get multisigProposalAlreadyExecutedNote => 'Proposal ini sudah dieksekusi.';
@@ -609,7 +618,14 @@ class AppLocalizationsId extends AppLocalizations {
   String get multisigApproveButton => 'Setujui';
 
   @override
-  String get multisigAlreadyApproved => 'Sudah Disetujui';
+  String get multisigAlreadyApproved => 'Sudah Ditandatangani';
+
+  @override
+  String get multisigSignerPickerTitle => 'Pilih akun';
+
+  @override
+  String get multisigSignerPickerBody =>
+      'Beberapa akun di perangkat ini dapat menandatangani. Pilih akun mana yang akan digunakan untuk menyetujui.';
 
   @override
   String get multisigCancelProposalButton => 'Batalkan Proposal';
@@ -894,7 +910,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get addHardwareAccountAddressLabel => 'ALAMAT';
 
   @override
-  String get addHardwareAccountAddressHint => 'Alamat SS58';
+  String get addHardwareAccountAddressHint => 'Alamat penandatangan';
 
   @override
   String get addHardwareAccountDebugFill => 'Isi Debug';
@@ -1372,10 +1388,10 @@ class AppLocalizationsId extends AppLocalizations {
   String get settingsMiningRewardsError => 'Gagal memuat hadiah mining';
 
   @override
-  String get settingsAccountTypeTitle => 'Jenis Akun';
+  String get settingsAccountTypeTitle => 'Tambah Akun';
 
   @override
-  String get settingsAccountTypeSubtitle => 'Fitur Akun Lanjutan';
+  String get settingsAccountTypeSubtitle => 'Kelola akun Anda';
 
   @override
   String get settingsHelpTitle => 'Bantuan & Dukungan';
@@ -1642,40 +1658,6 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
-  String get settingsAccountTypeScreenTitle => 'Jenis Akun';
-
-  @override
-  String get settingsAccountTypeIntro =>
-      'Fitur akun lanjutan akan segera hadir. Fitur ini memberi Anda kontrol lebih besar atas cara transaksi diotorisasi dan diamankan.';
-
-  @override
-  String get settingsAccountTypeReversibleTitle => 'Transaksi Reversible';
-
-  @override
-  String get settingsAccountTypeReversibleSubtitle => 'Batalkan pengiriman dalam jangka waktu tertentu';
-
-  @override
-  String get settingsAccountTypeHighSecurityTitle => 'Akun Keamanan Tinggi';
-
-  @override
-  String get settingsAccountTypeHighSecuritySubtitle => 'Persetujuan guardian diperlukan';
-
-  @override
-  String get settingsAccountTypeMultiSigTitle => 'Multi-Tanda Tangan';
-
-  @override
-  String get settingsAccountTypeMultiSigSubtitle => 'Beberapa persetujuan diperlukan';
-
-  @override
-  String get settingsAccountTypeHardwareTitle => 'Dompet Hardware';
-
-  @override
-  String get settingsAccountTypeHardwareSubtitle => 'Pasangkan perangkat hardware';
-
-  @override
-  String get settingsAccountTypeComingSoon => 'Segera Hadir';
-
-  @override
   String get swapTitle => 'Tukar';
 
   @override
@@ -1822,6 +1804,9 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get commonContinue => 'Lanjutkan';
+
+  @override
+  String get commonDone => 'Selesai';
 
   @override
   String get redeemToLabel => 'Tukar Ke';

@@ -38,16 +38,13 @@ class SubstrateService {
         return await provider.send('payment_queryInfo', [hexEncodedSignedExtrinsic, null]);
       });
 
-      print('getFee: $result');
       if (result.error != null) {
         throw Exception('RPC Error: ${result.error}');
       }
       final partialFeeString = result.result['partialFee'] as String;
-      final partialFee = BigInt.parse(partialFeeString);
-      print('partialFee: $partialFee');
-      return partialFee;
+      return BigInt.parse(partialFeeString);
     } catch (e, s) {
-      print('Error estimating fee: $e $s');
+      debugPrint('Error estimating fee: $e $s');
       throw Exception('Failed to estimate network fee: $e');
     }
   }

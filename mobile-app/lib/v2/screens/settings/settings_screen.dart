@@ -9,7 +9,7 @@ import 'package:resonance_network_wallet/shared/constants/e2e_keys.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/about_quantus_screen.dart';
-import 'package:resonance_network_wallet/v2/screens/settings/account_type_settings_screen.dart';
+import 'package:resonance_network_wallet/v2/screens/settings/add_account_menu_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/help_and_support_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/preferences_settings_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/settings_divider.dart';
@@ -116,10 +116,10 @@ List<_SettingsHubItem> _settingsHubItems(AppColorsV2 colors, AppLocalizations l1
       isMiningRewards: true,
     ),
     _SettingsHubItem(
-      leading: _settingsHubIcon(colors, icon: Icons.shield_outlined),
+      leading: _settingsHubIcon(colors, icon: Icons.person_add_outlined),
       title: l10n.settingsAccountTypeTitle,
       subtitle: l10n.settingsAccountTypeSubtitle,
-      page: const AccountTypeSettingsScreenV2(),
+      page: const AddAccountMenuScreen(),
     ),
     _SettingsHubItem(
       leading: _settingsHubIcon(colors, icon: Icons.help_outline),

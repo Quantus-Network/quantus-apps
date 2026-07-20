@@ -268,7 +268,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get addAccountMenuTitle => 'Add Account';
 
   @override
-  String get addAccountMenuCreateTitle => 'Add Account';
+  String get addAccountMenuCreateTitle => 'Add Transparent Account';
 
   @override
   String get addAccountMenuCreateSubtitle => 'Add another public account';
@@ -277,19 +277,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get addAccountMenuMoreTitle => 'Advanced';
 
   @override
-  String get addAccountMenuImportKeystoneTitle => 'Add Keystone Hardware Account';
+  String get addAccountMenuImportKeystoneTitle => 'Add Keystone Account';
 
   @override
-  String get addAccountMenuImportKeystoneSubtitle => 'Scan the address QR from your Keystone device';
+  String get addAccountMenuImportKeystoneSubtitle => 'Air-gapped signing via QR code';
 
   @override
-  String get addAccountMenuImportTitle => 'Import Another Wallet';
+  String get addAccountMenuImportTitle => 'Import Account';
 
   @override
-  String get addAccountMenuImportSubtitle => 'Use a recovery phrase to import';
+  String get addAccountMenuImportSubtitle => 'Restore from recovery phrase';
 
   @override
-  String get addAccountMenuMultisigTitle => 'Create New Multisig';
+  String get addAccountMenuMultisigTitle => 'Create Multisig Account';
 
   @override
   String get addAccountMenuMultisigSubtitle => 'Set up a shared address with multiple signers';
@@ -352,7 +352,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get multisigCreateSignersSubtitle => 'Add at least one other signer besides yourself.';
 
   @override
-  String get multisigCreateAddSignerHint => 'Signer SS58 address';
+  String get multisigCreateAddSignerHint => 'Signer address';
 
   @override
   String get multisigCreateAddSignerButton => 'Add Signer';
@@ -361,7 +361,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get multisigCreateDuplicateSigner => 'This signer is already in the list.';
 
   @override
-  String get multisigCreateInvalidSigner => 'Enter a valid SS58 address.';
+  String get multisigCreateInvalidSigner => 'Enter a valid signer address.';
 
   @override
   String get multisigCreateThresholdLabel => 'THRESHOLD';
@@ -428,7 +428,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get multisigStatusApproved => 'APPROVED';
+  String get multisigStatusApproved => 'SIGNED';
 
   @override
   String get multisigStatusProposed => 'PROPOSED';
@@ -467,6 +467,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get multisigProposeFeeFetchFailed => 'Unable to estimate fee';
+
+  @override
+  String get multisigProposeFeePayerBalanceLabel => 'Your Balance:';
+
+  @override
+  String get multisigProposeFeePayerInsufficient => 'Insufficient Balance for Fee';
+
+  @override
+  String get multisigProposeProposerLabel => 'PROPOSER';
 
   @override
   String get multisigProposeReviewButton => 'Review transfer';
@@ -562,7 +571,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Approval confirmation is taking longer than expected. Check the chain or try again.';
 
   @override
-  String get multisigProposalAlreadySignedNote => 'You\'ve already approved this proposal.';
+  String get multisigProposalAlreadySignedNote => 'You\'ve already signed this proposal.';
 
   @override
   String get multisigProposalAlreadyExecutedNote => 'This proposal is already executed.';
@@ -613,7 +622,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get multisigApproveButton => 'Approve';
 
   @override
-  String get multisigAlreadyApproved => 'Already Approved';
+  String get multisigAlreadyApproved => 'Already Signed';
+
+  @override
+  String get multisigSignerPickerTitle => 'Choose account';
+
+  @override
+  String get multisigSignerPickerBody => 'Multiple accounts on this device can sign. Choose which one to approve with.';
 
   @override
   String get multisigCancelProposalButton => 'Cancel Proposal';
@@ -898,7 +913,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get addHardwareAccountAddressLabel => 'ADDRESS';
 
   @override
-  String get addHardwareAccountAddressHint => 'SS58 address';
+  String get addHardwareAccountAddressHint => 'Signer address';
 
   @override
   String get addHardwareAccountDebugFill => 'Debug Fill';
@@ -1375,10 +1390,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsMiningRewardsError => 'Error getting mining rewards';
 
   @override
-  String get settingsAccountTypeTitle => 'Account Type';
+  String get settingsAccountTypeTitle => 'Add Account';
 
   @override
-  String get settingsAccountTypeSubtitle => 'Advanced Account Features';
+  String get settingsAccountTypeSubtitle => 'Manage your accounts';
 
   @override
   String get settingsHelpTitle => 'Help & Support';
@@ -1645,40 +1660,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get settingsAccountTypeScreenTitle => 'Account Type';
-
-  @override
-  String get settingsAccountTypeIntro =>
-      'Advanced account features are coming soon. These will give you greater control over how transactions are authorised and secured.';
-
-  @override
-  String get settingsAccountTypeReversibleTitle => 'Reversible Transactions';
-
-  @override
-  String get settingsAccountTypeReversibleSubtitle => 'Reverse your sends within a time window';
-
-  @override
-  String get settingsAccountTypeHighSecurityTitle => 'High Security Account';
-
-  @override
-  String get settingsAccountTypeHighSecuritySubtitle => 'Guardian approval required';
-
-  @override
-  String get settingsAccountTypeMultiSigTitle => 'Multi-Signature';
-
-  @override
-  String get settingsAccountTypeMultiSigSubtitle => 'Multiple approvals required';
-
-  @override
-  String get settingsAccountTypeHardwareTitle => 'Hardware Wallet';
-
-  @override
-  String get settingsAccountTypeHardwareSubtitle => 'Pair a hardware device';
-
-  @override
-  String get settingsAccountTypeComingSoon => 'Coming Soon';
-
-  @override
   String get swapTitle => 'Swap';
 
   @override
@@ -1825,6 +1806,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get commonContinue => 'Continue';
+
+  @override
+  String get commonDone => 'Done';
 
   @override
   String get redeemToLabel => 'Redeem To';

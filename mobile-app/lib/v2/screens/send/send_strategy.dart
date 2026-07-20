@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/l10n/app_localizations.dart';
+import 'package:resonance_network_wallet/v2/screens/send/keystone_signing_session.dart';
 
 /// Per-step labels that differ between the send flows (regular transfer vs
 /// multisig proposal). Built once from [AppLocalizations] by each strategy so
@@ -131,17 +132,10 @@ class SendSubmitted extends SendOutcome {
 /// The source account signs off-device (Keystone): hand off to the hardware QR
 /// flow, which broadcasts and then shows [terminal].
 class SendNeedsHardwareSignature extends SendOutcome {
-  final Account account;
-  final BigInt networkFee;
-  final int blockHeight;
+  final KeystoneSigningSession session;
   final SendTerminalContent terminal;
 
-  const SendNeedsHardwareSignature({
-    required this.account,
-    required this.networkFee,
-    required this.blockHeight,
-    required this.terminal,
-  });
+  const SendNeedsHardwareSignature({required this.session, required this.terminal});
 }
 
 /// Encrypted send authenticated and planned: hand off to the proving progress
@@ -221,6 +215,13 @@ abstract class SendStrategy {
   /// max-sendable calculation and the insufficient-balance check). Zero for
   /// flows where the fee is paid by a different account (e.g. multisig).
   BigInt feeChargedToBalance(SendFee? fee);
+
+  /// Balance of the account that pays the fee, when different from the source.
+  /// Returns null for flows where the fee payer is the same as the sender.
+  ProviderListenable<AsyncValue<BigInt>>? get feePayerBalanceProvider => null;
+
+  /// Label for the fee payer balance line (e.g. "Your Balance:").
+  String? feePayerBalanceLabel(AppLocalizations l10n) => null;
 
   /// Estimates the fee for [amount] to [recipient]. Uses `ref.read`. Handles
   /// the zero/invalid-amount estimate internally.

@@ -341,7 +341,7 @@
     "@addAccountMenuTitle": {
       "description": "App bar title on add account menu"
     },
-    "addAccountMenuCreateTitle": "Add Account",
+    "addAccountMenuCreateTitle": "Add Transparent Account",
     "@addAccountMenuCreateTitle": {
       "description": "Add transparent account menu row title"
     },
@@ -353,25 +353,25 @@
     "@addAccountMenuMoreTitle": {
       "description": "Title of the add account more options action sheet"
     },
-    "addAccountMenuImportKeystoneTitle": "Add Keystone Hardware Account",
+    "addAccountMenuImportKeystoneTitle": "Add Keystone Account",
     "@addAccountMenuImportKeystoneTitle": {
       "description": "Add keystone hardware account menu row title"
     },
-    "addAccountMenuImportKeystoneSubtitle": "Scan the address QR from your Keystone device",
+    "addAccountMenuImportKeystoneSubtitle": "Air-gapped signing via QR code",
     "@addAccountMenuImportKeystoneSubtitle": {
       "description": "Add keystone hardware account menu row subtitle"
     },
-    "addAccountMenuImportTitle": "Import Another Wallet",
+    "addAccountMenuImportTitle": "Import Account",
     "@addAccountMenuImportTitle": {
-      "description": "Import another wallet menu row title"
+      "description": "Import account menu row title"
     },
-    "addAccountMenuImportSubtitle": "Use a recovery phrase to import",
+    "addAccountMenuImportSubtitle": "Restore from recovery phrase",
     "@addAccountMenuImportSubtitle": {
-      "description": "Import wallet menu row subtitle"
+      "description": "Import account menu row subtitle"
     },
-    "addAccountMenuMultisigTitle": "Create New Multisig",
+    "addAccountMenuMultisigTitle": "Create Multisig Account",
     "@addAccountMenuMultisigTitle": {
-      "description": "Create new multisig menu row title"
+      "description": "Create multisig account menu row title"
     },
     "addAccountMenuMultisigSubtitle": "Set up a shared address with multiple signers",
     "@addAccountMenuMultisigSubtitle": {
@@ -455,7 +455,7 @@
     "@multisigCreateSignersSubtitle": {
       "description": "Helper text under signers section on create multisig"
     },
-    "multisigCreateAddSignerHint": "Signer SS58 address",
+    "multisigCreateAddSignerHint": "Signer address",
     "@multisigCreateAddSignerHint": {
       "description": "Hint for adding a signer address"
     },
@@ -467,7 +467,7 @@
     "@multisigCreateDuplicateSigner": {
       "description": "Error when signer address is duplicate"
     },
-    "multisigCreateInvalidSigner": "Enter a valid SS58 address.",
+    "multisigCreateInvalidSigner": "Enter a valid signer address.",
     "@multisigCreateInvalidSigner": {
       "description": "Error when signer address is invalid"
     },
@@ -571,7 +571,7 @@
         }
       }
     },
-    "multisigStatusApproved": "APPROVED",
+    "multisigStatusApproved": "SIGNED",
     "@multisigStatusApproved": {
       "description": "Proposal status chip when the current signer has approved"
     },
@@ -627,6 +627,18 @@
     "multisigProposeFeeFetchFailed": "Unable to estimate fee",
     "@multisigProposeFeeFetchFailed": {
       "description": "Shown when proposal fee estimation fails on the amount screen"
+    },
+    "multisigProposeFeePayerBalanceLabel": "Your Balance:",
+    "@multisigProposeFeePayerBalanceLabel": {
+      "description": "Label for the proposing member's balance on the amount screen"
+    },
+    "multisigProposeFeePayerInsufficient": "Insufficient Balance for Fee",
+    "@multisigProposeFeePayerInsufficient": {
+      "description": "Button text when proposer cannot afford the proposal fee"
+    },
+    "multisigProposeProposerLabel": "PROPOSER",
+    "@multisigProposeProposerLabel": {
+      "description": "Row label for the proposer address on the propose review screen"
     },
     "multisigProposeReviewButton": "Review transfer",
     "@multisigProposeReviewButton": {
@@ -764,7 +776,7 @@
     "@multisigApprovalTimeoutToast": {
       "description": "Toast when approval indexer polling times out"
     },
-    "multisigProposalAlreadySignedNote": "You've already approved this proposal.",
+    "multisigProposalAlreadySignedNote": "You've already signed this proposal.",
     "@multisigProposalAlreadySignedNote": {
       "description": "Note shown when the current member already approved"
     },
@@ -832,10 +844,19 @@
     "@multisigApproveButton": {
       "description": "Approve button on proposal detail"
     },
-    "multisigAlreadyApproved": "Already Approved",
+    "multisigAlreadyApproved": "Already Signed",
     "@multisigAlreadyApproved": {
-      "description": "Disabled approve button when user already approved"
+      "description": "Disabled approve button when user already signed"
     },
+    "multisigSignerPickerTitle": "Choose account",
+    "@multisigSignerPickerTitle": {
+      "description": "Title on sheet for picking which local signer approves a proposal"
+    },
+    "multisigSignerPickerBody": "Multiple accounts on this device can sign. Choose which one to approve with.",
+    "@multisigSignerPickerBody": {
+      "description": "Body text on multi-local-signer approve picker sheet"
+    },
+
     "multisigCancelProposalButton": "Cancel Proposal",
     "@multisigCancelProposalButton": {
       "description": "Cancel proposal button on detail screen"
@@ -1244,7 +1265,7 @@
     "@addHardwareAccountAddressLabel": {
       "description": "Address field label"
     },
-    "addHardwareAccountAddressHint": "SS58 address",
+    "addHardwareAccountAddressHint": "Signer address",
     "@addHardwareAccountAddressHint": {
       "description": "Address field hint"
     },
@@ -1954,13 +1975,13 @@
     "@settingsMiningRewardsError": {
       "description": "Mining rewards row subtitle on error"
     },
-    "settingsAccountTypeTitle": "Account Type",
+    "settingsAccountTypeTitle": "Add Account",
     "@settingsAccountTypeTitle": {
-      "description": "Account type row title on settings hub"
+      "description": "Add account row title on settings hub"
     },
-    "settingsAccountTypeSubtitle": "Advanced Account Features",
+    "settingsAccountTypeSubtitle": "Manage your accounts",
     "@settingsAccountTypeSubtitle": {
-      "description": "Account type row subtitle on settings hub"
+      "description": "Add account row subtitle on settings hub"
     },
     "settingsHelpTitle": "Help & Support",
     "@settingsHelpTitle": {
@@ -2349,51 +2370,6 @@
       }
     },
 
-    "settingsAccountTypeScreenTitle": "Account Type",
-    "@settingsAccountTypeScreenTitle": {
-      "description": "App bar on account type settings"
-    },
-    "settingsAccountTypeIntro": "Advanced account features are coming soon. These will give you greater control over how transactions are authorised and secured.",
-    "@settingsAccountTypeIntro": {
-      "description": "Intro on account type settings"
-    },
-    "settingsAccountTypeReversibleTitle": "Reversible Transactions",
-    "@settingsAccountTypeReversibleTitle": {
-      "description": "Reversible transactions feature title"
-    },
-    "settingsAccountTypeReversibleSubtitle": "Reverse your sends within a time window",
-    "@settingsAccountTypeReversibleSubtitle": {
-      "description": "Reversible transactions feature subtitle"
-    },
-    "settingsAccountTypeHighSecurityTitle": "High Security Account",
-    "@settingsAccountTypeHighSecurityTitle": {
-      "description": "High security account feature title"
-    },
-    "settingsAccountTypeHighSecuritySubtitle": "Guardian approval required",
-    "@settingsAccountTypeHighSecuritySubtitle": {
-      "description": "High security account feature subtitle"
-    },
-    "settingsAccountTypeMultiSigTitle": "Multi-Signature",
-    "@settingsAccountTypeMultiSigTitle": {
-      "description": "Multi-signature feature title"
-    },
-    "settingsAccountTypeMultiSigSubtitle": "Multiple approvals required",
-    "@settingsAccountTypeMultiSigSubtitle": {
-      "description": "Multi-signature feature subtitle"
-    },
-    "settingsAccountTypeHardwareTitle": "Hardware Wallet",
-    "@settingsAccountTypeHardwareTitle": {
-      "description": "Hardware wallet feature title"
-    },
-    "settingsAccountTypeHardwareSubtitle": "Pair a hardware device",
-    "@settingsAccountTypeHardwareSubtitle": {
-      "description": "Hardware wallet feature subtitle"
-    },
-    "settingsAccountTypeComingSoon": "Coming Soon",
-    "@settingsAccountTypeComingSoon": {
-      "description": "Coming soon badge on account type features"
-    },
-
     "swapTitle": "Swap",
     "@swapTitle": {
       "description": "App bar title on swap screens"
@@ -2633,6 +2609,10 @@
     "commonContinue": "Continue",
     "@commonContinue": {
       "description": "Continue button on various screens"
+    },
+    "commonDone": "Done",
+    "@commonDone": {
+      "description": "Done button on various screens"
     },
 
     "redeemToLabel": "Redeem To",

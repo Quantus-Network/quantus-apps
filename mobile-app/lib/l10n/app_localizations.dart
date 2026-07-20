@@ -527,7 +527,7 @@ abstract class AppLocalizations {
   /// Add transparent account menu row title
   ///
   /// In en, this message translates to:
-  /// **'Add Account'**
+  /// **'Add Transparent Account'**
   String get addAccountMenuCreateTitle;
 
   /// Add transparent account menu row subtitle
@@ -545,31 +545,31 @@ abstract class AppLocalizations {
   /// Add keystone hardware account menu row title
   ///
   /// In en, this message translates to:
-  /// **'Add Keystone Hardware Account'**
+  /// **'Add Keystone Account'**
   String get addAccountMenuImportKeystoneTitle;
 
   /// Add keystone hardware account menu row subtitle
   ///
   /// In en, this message translates to:
-  /// **'Scan the address QR from your Keystone device'**
+  /// **'Air-gapped signing via QR code'**
   String get addAccountMenuImportKeystoneSubtitle;
 
-  /// Import another wallet menu row title
+  /// Import account menu row title
   ///
   /// In en, this message translates to:
-  /// **'Import Another Wallet'**
+  /// **'Import Account'**
   String get addAccountMenuImportTitle;
 
-  /// Import wallet menu row subtitle
+  /// Import account menu row subtitle
   ///
   /// In en, this message translates to:
-  /// **'Use a recovery phrase to import'**
+  /// **'Restore from recovery phrase'**
   String get addAccountMenuImportSubtitle;
 
-  /// Create new multisig menu row title
+  /// Create multisig account menu row title
   ///
   /// In en, this message translates to:
-  /// **'Create New Multisig'**
+  /// **'Create Multisig Account'**
   String get addAccountMenuMultisigTitle;
 
   /// Add multisig menu row subtitle
@@ -689,7 +689,7 @@ abstract class AppLocalizations {
   /// Hint for adding a signer address
   ///
   /// In en, this message translates to:
-  /// **'Signer SS58 address'**
+  /// **'Signer address'**
   String get multisigCreateAddSignerHint;
 
   /// Button to add a signer from address field
@@ -707,7 +707,7 @@ abstract class AppLocalizations {
   /// Error when signer address is invalid
   ///
   /// In en, this message translates to:
-  /// **'Enter a valid SS58 address.'**
+  /// **'Enter a valid signer address.'**
   String get multisigCreateInvalidSigner;
 
   /// Threshold slider section label on create multisig
@@ -821,7 +821,7 @@ abstract class AppLocalizations {
   /// Proposal status chip when the current signer has approved
   ///
   /// In en, this message translates to:
-  /// **'APPROVED'**
+  /// **'SIGNED'**
   String get multisigStatusApproved;
 
   /// Proposal status chip when the current signer has not approved yet
@@ -895,6 +895,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Unable to estimate fee'**
   String get multisigProposeFeeFetchFailed;
+
+  /// Label for the proposing member's balance on the amount screen
+  ///
+  /// In en, this message translates to:
+  /// **'Your Balance:'**
+  String get multisigProposeFeePayerBalanceLabel;
+
+  /// Button text when proposer cannot afford the proposal fee
+  ///
+  /// In en, this message translates to:
+  /// **'Insufficient Balance for Fee'**
+  String get multisigProposeFeePayerInsufficient;
+
+  /// Row label for the proposer address on the propose review screen
+  ///
+  /// In en, this message translates to:
+  /// **'PROPOSER'**
+  String get multisigProposeProposerLabel;
 
   /// Button to open propose review screen
   ///
@@ -1061,7 +1079,7 @@ abstract class AppLocalizations {
   /// Note shown when the current member already approved
   ///
   /// In en, this message translates to:
-  /// **'You\'ve already approved this proposal.'**
+  /// **'You\'ve already signed this proposal.'**
   String get multisigProposalAlreadySignedNote;
 
   /// Note shown on proposal detail when the proposal is executed
@@ -1160,11 +1178,23 @@ abstract class AppLocalizations {
   /// **'Approve'**
   String get multisigApproveButton;
 
-  /// Disabled approve button when user already approved
+  /// Disabled approve button when user already signed
   ///
   /// In en, this message translates to:
-  /// **'Already Approved'**
+  /// **'Already Signed'**
   String get multisigAlreadyApproved;
+
+  /// Title on sheet for picking which local signer approves a proposal
+  ///
+  /// In en, this message translates to:
+  /// **'Choose account'**
+  String get multisigSignerPickerTitle;
+
+  /// Body text on multi-local-signer approve picker sheet
+  ///
+  /// In en, this message translates to:
+  /// **'Multiple accounts on this device can sign. Choose which one to approve with.'**
+  String get multisigSignerPickerBody;
 
   /// Cancel proposal button on detail screen
   ///
@@ -1685,7 +1715,7 @@ abstract class AppLocalizations {
   /// Address field hint
   ///
   /// In en, this message translates to:
-  /// **'SS58 address'**
+  /// **'Signer address'**
   String get addHardwareAccountAddressHint;
 
   /// Debug fill button
@@ -2564,16 +2594,16 @@ abstract class AppLocalizations {
   /// **'Error getting mining rewards'**
   String get settingsMiningRewardsError;
 
-  /// Account type row title on settings hub
+  /// Add account row title on settings hub
   ///
   /// In en, this message translates to:
-  /// **'Account Type'**
+  /// **'Add Account'**
   String get settingsAccountTypeTitle;
 
-  /// Account type row subtitle on settings hub
+  /// Add account row subtitle on settings hub
   ///
   /// In en, this message translates to:
-  /// **'Advanced Account Features'**
+  /// **'Manage your accounts'**
   String get settingsAccountTypeSubtitle;
 
   /// Help row title on settings hub
@@ -3068,72 +3098,6 @@ abstract class AppLocalizations {
   /// **'Version {version} ({build})'**
   String settingsAboutVersion(String version, String build);
 
-  /// App bar on account type settings
-  ///
-  /// In en, this message translates to:
-  /// **'Account Type'**
-  String get settingsAccountTypeScreenTitle;
-
-  /// Intro on account type settings
-  ///
-  /// In en, this message translates to:
-  /// **'Advanced account features are coming soon. These will give you greater control over how transactions are authorised and secured.'**
-  String get settingsAccountTypeIntro;
-
-  /// Reversible transactions feature title
-  ///
-  /// In en, this message translates to:
-  /// **'Reversible Transactions'**
-  String get settingsAccountTypeReversibleTitle;
-
-  /// Reversible transactions feature subtitle
-  ///
-  /// In en, this message translates to:
-  /// **'Reverse your sends within a time window'**
-  String get settingsAccountTypeReversibleSubtitle;
-
-  /// High security account feature title
-  ///
-  /// In en, this message translates to:
-  /// **'High Security Account'**
-  String get settingsAccountTypeHighSecurityTitle;
-
-  /// High security account feature subtitle
-  ///
-  /// In en, this message translates to:
-  /// **'Guardian approval required'**
-  String get settingsAccountTypeHighSecuritySubtitle;
-
-  /// Multi-signature feature title
-  ///
-  /// In en, this message translates to:
-  /// **'Multi-Signature'**
-  String get settingsAccountTypeMultiSigTitle;
-
-  /// Multi-signature feature subtitle
-  ///
-  /// In en, this message translates to:
-  /// **'Multiple approvals required'**
-  String get settingsAccountTypeMultiSigSubtitle;
-
-  /// Hardware wallet feature title
-  ///
-  /// In en, this message translates to:
-  /// **'Hardware Wallet'**
-  String get settingsAccountTypeHardwareTitle;
-
-  /// Hardware wallet feature subtitle
-  ///
-  /// In en, this message translates to:
-  /// **'Pair a hardware device'**
-  String get settingsAccountTypeHardwareSubtitle;
-
-  /// Coming soon badge on account type features
-  ///
-  /// In en, this message translates to:
-  /// **'Coming Soon'**
-  String get settingsAccountTypeComingSoon;
-
   /// App bar title on swap screens
   ///
   /// In en, this message translates to:
@@ -3397,6 +3361,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Continue'**
   String get commonContinue;
+
+  /// Done button on various screens
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get commonDone;
 
   /// Section label above the destination address field on redeem
   ///
