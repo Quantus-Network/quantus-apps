@@ -57,6 +57,22 @@ class ProposeFee extends SendFee {
   BigInt get displayFee => breakdown.memberCost;
 }
 
+/// Why an encrypted send can't be built for the entered amount.
+enum EncryptedSendBlocker { notQuantized, insufficient, belowBatchMinimum }
+
+/// Fee for an encrypted (wormhole) send: the in-circuit volume fee plus
+/// quantization dust, carried with the coin-selection [plan] that produced it.
+/// When the amount can't be planned, [blocker] says why.
+class EncryptedFee extends SendFee {
+  final WormholeSpendPlan? plan;
+  final EncryptedSendBlocker? blocker;
+
+  const EncryptedFee({this.plan, this.blocker});
+
+  @override
+  BigInt get displayFee => plan?.feePlanck ?? BigInt.zero;
+}
+
 /// Content for the shared terminal (success) screen. All strings are resolved
 /// up front so it can be built without a [BuildContext].
 class SendTerminalContent {
@@ -122,6 +138,16 @@ class SendNeedsHardwareSignature extends SendOutcome {
   const SendNeedsHardwareSignature({required this.session, required this.terminal});
 }
 
+/// Encrypted send authenticated and planned: hand off to the proving progress
+/// screen, which generates the ZK proofs, submits and then shows [terminal].
+class SendNeedsProving extends SendOutcome {
+  final Account account;
+  final WormholeSpendPlan plan;
+  final SendTerminalContent terminal;
+
+  const SendNeedsProving({required this.account, required this.plan, required this.terminal});
+}
+
 /// Submission failed or was not authenticated; show [message] inline.
 class SendFailed extends SendOutcome {
   final String message;
@@ -129,20 +155,58 @@ class SendFailed extends SendOutcome {
   const SendFailed(this.message);
 }
 
+/// Terminal content for a completed transfer, shared by the flows that send a
+/// fixed amount to one recipient (regular and encrypted sends).
+SendTerminalContent buildSentTerminalContent(
+  AppLocalizations l10n,
+  NumberFormattingService fmt, {
+  required String recipient,
+  required String checksum,
+  required BigInt amount,
+  required bool isPayMode,
+}) {
+  final n = fmt.formatBalance(amount, smartDecimals: 4);
+  return SendTerminalContent(
+    title: isPayMode ? l10n.sendPayTitle : l10n.sendTitle,
+    headline: isPayMode
+        ? l10n.sendTxSubmittedHeadlinePaid(n, AppConstants.tokenSymbol)
+        : l10n.sendTxSubmittedHeadlineSent(n, AppConstants.tokenSymbol),
+    subline: l10n.sendTxSubmittedOnItsWay,
+    recipientAddress: recipient,
+    recipientChecksum: checksum,
+    doneLabel: l10n.sendTxSubmittedDone,
+    topSpacing: 70,
+  );
+}
+
 /// Encapsulates everything that differs between the send and multisig-propose
 /// flows so the recipient, amount, review and terminal screens can be shared.
 abstract class SendStrategy {
   const SendStrategy();
 
+  /// Whether the recipient screen shows the "Private Send" notice above the
+  /// continue button. Only encrypted (wormhole) sends enable this.
+  bool get showPrivateSendNotice => false;
+
   /// Account the funds leave from; the recipient must differ (self-guard) and
   /// it is excluded from the recents list. Resolved via `ref.read`.
   String? sourceAccountId(WidgetRef ref);
 
+  /// Self-send guard: whether [address] belongs to the sending account itself.
+  /// Defaults to comparing against [sourceAccountId]; encrypted sends also
+  /// treat every derived wormhole address of the wallet as self.
+  Future<bool> isSelfRecipient(WidgetRef ref, String address) async => address == sourceAccountId(ref);
+
   SendStrings strings(AppLocalizations l10n);
 
-  /// Balance the amount is drawn from. Exposed as a provider so the amount
-  /// screen can watch it in `build` and read it in event handlers.
+  /// Balance the amount is drawn from. Used for validation and the Max button.
   ProviderListenable<AsyncValue<BigInt>> get spendableBalanceProvider;
+
+  /// Balance shown as "Available Balance" on the amount screen. Defaults to
+  /// [spendableBalanceProvider]; encrypted sends override this to show the
+  /// total wormhole balance (matching the home screen) while keeping
+  /// [spendableBalanceProvider] for validation and Max.
+  ProviderListenable<AsyncValue<BigInt>> get displayBalanceProvider => spendableBalanceProvider;
 
   /// Whether a secondary balance used for gating is still loading. Watched.
   bool extraBalancesLoading(WidgetRef ref);

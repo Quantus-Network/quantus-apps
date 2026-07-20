@@ -8,6 +8,7 @@ import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/active_account_transactions_provider.dart';
 import 'package:resonance_network_wallet/providers/currency_display_provider.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
+import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/services/transaction_service.dart';
 import 'package:resonance_network_wallet/v2/components/loader.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
@@ -83,6 +84,9 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
         data: (active) {
           if (active == null) {
             return Center(child: Text(l10n.activityNoAccount));
+          }
+          if (isEncryptedAccount(active.account)) {
+            return _buildEncryptedActivitySummary(active.account as Account, colors, text, l10n);
           }
           return txAsync.when(
             loading: () => ListView.builder(
@@ -160,7 +164,13 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                         if (i > 0) const SizedBox(height: 32),
                         Text(group.label, style: text.receiveLabel?.copyWith(color: colors.textTertiary)),
                         ...group.transactions.mapIndexed((index, tx) {
-                          final itemData = TxItemData.from(tx, active.account.accountId, colors, l10n);
+                          final itemData = TxItemData.from(
+                            tx,
+                            active.account.accountId,
+                            colors,
+                            l10n,
+                            isPrivate: isEncryptedAccount(active.account),
+                          );
                           final isLastItem = index == group.transactions.length - 1;
                           return buildTxItem(
                             tx,
@@ -185,6 +195,39 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
             },
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildEncryptedActivitySummary(Account account, AppColorsV2 colors, AppTextTheme text, AppLocalizations l10n) {
+    final fmt = ref.watch(numberFormattingServiceProvider);
+    final received = ref.watch(encryptedTotalReceivedProvider(account.walletIndex));
+    final spent = ref.watch(encryptedTotalSpentProvider(account.walletIndex));
+
+    String formatAmount(AsyncValue<BigInt> value) =>
+        value.whenOrNull(data: (v) => fmt.formatBalance(v, maxDecimals: 2, addSymbol: true)) ?? '—';
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 16),
+      child: Column(
+        children: [
+          _encryptedSummaryRow(l10n.activityPrivateTotalReceived, formatAmount(received), colors, text),
+          Divider(color: colors.txItemSeparator, height: 24),
+          _encryptedSummaryRow(l10n.activityPrivateTotalSent, formatAmount(spent), colors, text),
+        ],
+      ),
+    );
+  }
+
+  Widget _encryptedSummaryRow(String label, String amount, AppColorsV2 colors, AppTextTheme text) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: text.smallParagraph?.copyWith(color: colors.textSecondary)),
+          Text(amount, style: text.smallParagraph?.copyWith(color: colors.textPrimary)),
+        ],
       ),
     );
   }

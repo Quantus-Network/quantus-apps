@@ -68,6 +68,10 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
   final Color tagEntrusted;
   final Color tagHighSecurity;
 
+  // Progress steps
+  final Color progressStepPendingText;
+  final Color progressStepPendingDot;
+
   const AppColorsV2({
     required this.background,
     required this.toasterBackground,
@@ -115,6 +119,8 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
     required this.tagGuardian,
     required this.tagEntrusted,
     required this.tagHighSecurity,
+    required this.progressStepPendingText,
+    required this.progressStepPendingDot,
   });
 
   const AppColorsV2.dark()
@@ -165,6 +171,8 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
         tagGuardian: const Color(0xFF9747FF),
         tagEntrusted: const Color(0xFFFFD541),
         tagHighSecurity: const Color(0xFF4CEDE7),
+        progressStepPendingText: const Color(0xFF666666),
+        progressStepPendingDot: const Color(0xFF222222),
       );
 
   @override
@@ -215,6 +223,8 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
     Color? tagGuardian,
     Color? tagEntrusted,
     Color? tagHighSecurity,
+    Color? progressStepPendingText,
+    Color? progressStepPendingDot,
   }) {
     return AppColorsV2(
       background: background ?? this.background,
@@ -263,6 +273,8 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
       tagGuardian: tagGuardian ?? this.tagGuardian,
       tagEntrusted: tagEntrusted ?? this.tagEntrusted,
       tagHighSecurity: tagHighSecurity ?? this.tagHighSecurity,
+      progressStepPendingText: progressStepPendingText ?? this.progressStepPendingText,
+      progressStepPendingDot: progressStepPendingDot ?? this.progressStepPendingDot,
     );
   }
 
@@ -323,6 +335,10 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
       tagGuardian: Color.lerp(tagGuardian, other.tagGuardian, t) ?? tagGuardian,
       tagEntrusted: Color.lerp(tagEntrusted, other.tagEntrusted, t) ?? tagEntrusted,
       tagHighSecurity: Color.lerp(tagHighSecurity, other.tagHighSecurity, t) ?? tagHighSecurity,
+      progressStepPendingText:
+          Color.lerp(progressStepPendingText, other.progressStepPendingText, t) ?? progressStepPendingText,
+      progressStepPendingDot:
+          Color.lerp(progressStepPendingDot, other.progressStepPendingDot, t) ?? progressStepPendingDot,
     );
   }
 }

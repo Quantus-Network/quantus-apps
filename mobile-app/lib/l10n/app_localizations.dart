@@ -296,6 +296,30 @@ abstract class AppLocalizations {
   /// **'Done'**
   String get accountReadyDone;
 
+  /// Subtitle on wallet created ready screen explaining the two accounts
+  ///
+  /// In en, this message translates to:
+  /// **'Two accounts were created for you.'**
+  String get accountReadyTwoAccountsCreated;
+
+  /// Description under the transparent main account card after wallet creation
+  ///
+  /// In en, this message translates to:
+  /// **'Your main account. Fast, visible on chain.'**
+  String get accountReadyMainAccountDescription;
+
+  /// Description under the encrypted account card after wallet creation
+  ///
+  /// In en, this message translates to:
+  /// **'For private transactions. Shielded, slower.'**
+  String get accountReadyEncryptedAccountDescription;
+
+  /// Primary CTA on the wallet created ready screen
+  ///
+  /// In en, this message translates to:
+  /// **'Go to Wallet'**
+  String get accountReadyGoToWallet;
+
   /// App bar title on the import wallet screen
   ///
   /// In en, this message translates to:
@@ -2000,6 +2024,18 @@ abstract class AppLocalizations {
   /// **'No transactions yet'**
   String get activityEmpty;
 
+  /// Label for total received in encrypted account activity summary
+  ///
+  /// In en, this message translates to:
+  /// **'Total Received'**
+  String get activityPrivateTotalReceived;
+
+  /// Label for total sent in encrypted account activity summary
+  ///
+  /// In en, this message translates to:
+  /// **'Total Sent'**
+  String get activityPrivateTotalSent;
+
   /// Filter button for all transactions
   ///
   /// In en, this message translates to:
@@ -2059,6 +2095,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Received'**
   String get activityTxReceived;
+
+  /// Transaction row label for pending encrypted send
+  ///
+  /// In en, this message translates to:
+  /// **'Privately Sending'**
+  String get activityTxPrivatelySending;
+
+  /// Transaction row label for pending encrypted receive
+  ///
+  /// In en, this message translates to:
+  /// **'Privately Receiving'**
+  String get activityTxPrivatelyReceiving;
+
+  /// Transaction row label for completed encrypted send
+  ///
+  /// In en, this message translates to:
+  /// **'Private Sent'**
+  String get activityTxPrivateSent;
+
+  /// Transaction row label for completed encrypted receive
+  ///
+  /// In en, this message translates to:
+  /// **'Private Received'**
+  String get activityTxPrivateReceived;
 
   /// Transaction row label for multisig account creation
   ///
@@ -2149,6 +2209,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Received'**
   String get activityDetailTitleReceived;
+
+  /// Detail sheet title for pending encrypted send
+  ///
+  /// In en, this message translates to:
+  /// **'Privately Sending'**
+  String get activityDetailTitlePrivatelySending;
+
+  /// Detail sheet title for pending encrypted receive
+  ///
+  /// In en, this message translates to:
+  /// **'Privately Receiving'**
+  String get activityDetailTitlePrivatelyReceiving;
+
+  /// Detail sheet title for completed encrypted send
+  ///
+  /// In en, this message translates to:
+  /// **'Private Sent'**
+  String get activityDetailTitlePrivateSent;
+
+  /// Detail sheet title for completed encrypted receive
+  ///
+  /// In en, this message translates to:
+  /// **'Private Received'**
+  String get activityDetailTitlePrivateReceived;
 
   /// Detail sheet title for multisig creation
   ///
@@ -3260,6 +3344,12 @@ abstract class AppLocalizations {
   /// **'Cancel'**
   String get commonCancel;
 
+  /// Text shown while a cancellation is in progress
+  ///
+  /// In en, this message translates to:
+  /// **'Canceling...'**
+  String get commonCanceling;
+
   /// Formatted balance with token symbol
   ///
   /// In en, this message translates to:
@@ -3380,11 +3470,17 @@ abstract class AppLocalizations {
   /// **'Generating ZK proofs'**
   String get redeemStepProofs;
 
-  /// Redeem progress step: aggregating and submitting
+  /// Redeem progress step: aggregating ZK proofs
   ///
   /// In en, this message translates to:
-  /// **'Aggregating & submitting'**
+  /// **'Aggregating proofs'**
   String get redeemStepAggregate;
+
+  /// Redeem progress step: submitting the transaction
+  ///
+  /// In en, this message translates to:
+  /// **'Submitting to chain'**
+  String get redeemStepSubmit;
 
   /// Per-step fetched counter on redeem progress
   ///
@@ -3421,6 +3517,114 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{amount} redeemed in {count} batch(es)'**
   String redeemSuccessBanner(String amount, int count);
+
+  /// Fee label for encrypted sends (wormhole volume fee)
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy fee'**
+  String get encryptedSendFeeLabel;
+
+  /// Shown when an encrypted send amount is not a multiple of 0.01 QUAN
+  ///
+  /// In en, this message translates to:
+  /// **'Use steps of 0.01 QUAN'**
+  String get encryptedSendAmountStep;
+
+  /// Shown when an encrypted send falls below the chain's minimum exit amount
+  ///
+  /// In en, this message translates to:
+  /// **'Encrypted sends must move at least 0.1 QUAN'**
+  String get encryptedSendMinimum;
+
+  /// App bar title while an encrypted send is proving/submitting
+  ///
+  /// In en, this message translates to:
+  /// **'Private Send'**
+  String get encryptedSendProgressTitle;
+
+  /// App bar title when an encrypted send failed
+  ///
+  /// In en, this message translates to:
+  /// **'Send Failed'**
+  String get encryptedSendFailedTitle;
+
+  /// App bar title when an encrypted send was cancelled
+  ///
+  /// In en, this message translates to:
+  /// **'Send Cancelled'**
+  String get encryptedSendCancelledTitle;
+
+  /// Status header label on encrypted send progress
+  ///
+  /// In en, this message translates to:
+  /// **'SENDING PRIVATELY'**
+  String get encryptedSendingLabel;
+
+  /// Encrypted send progress step: preparing circuits
+  ///
+  /// In en, this message translates to:
+  /// **'Preparing'**
+  String get encryptedSendStepPreparing;
+
+  /// Encrypted send progress step: fetching on-chain state for the batch
+  ///
+  /// In en, this message translates to:
+  /// **'Gathering funds'**
+  String get encryptedSendStepGathering;
+
+  /// Encrypted send progress step: computing and checking nullifiers
+  ///
+  /// In en, this message translates to:
+  /// **'Securing transaction'**
+  String get encryptedSendStepSecuring;
+
+  /// Encrypted send progress step: generating individual ZK proofs
+  ///
+  /// In en, this message translates to:
+  /// **'Generate proofs'**
+  String get encryptedSendStepGenerating;
+
+  /// Encrypted send progress step: aggregating ZK proofs
+  ///
+  /// In en, this message translates to:
+  /// **'Building privacy proof'**
+  String get encryptedSendStepProving;
+
+  /// Encrypted send progress step: submitting the transaction
+  ///
+  /// In en, this message translates to:
+  /// **'Submitting to chain'**
+  String get encryptedSendStepSubmitting;
+
+  /// Footer text on encrypted send progress screen
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy takes a moment. Please keep the app open until the transaction completes.'**
+  String get encryptedSendProgressFooter;
+
+  /// Notice on the cancelled encrypted-send screen when some batches were already submitted
+  ///
+  /// In en, this message translates to:
+  /// **'{amount} was already sent before cancelling. The rest remains in your account.'**
+  String encryptedSendCancelledPartial(String amount);
+
+  /// Title of the private-send notice on encrypted send recipient screen
+  ///
+  /// In en, this message translates to:
+  /// **'Private Send'**
+  String get privateSendTitle;
+
+  /// Subtitle of the private-send notice on encrypted send recipient screen. Must not overstate the guarantee: the recipient and amount are still visible on chain, only the source linkage is hidden.
+  ///
+  /// In en, this message translates to:
+  /// **'Hides the link between your account and the recipient'**
+  String get privateSendSubtitle;
+
+  /// Error shown when the planned inputs of an encrypted send were spent between review and confirm
+  ///
+  /// In en, this message translates to:
+  /// **'Your encrypted balance changed while reviewing. Please go back and enter the amount again.'**
+  String get encryptedSendPlanStale;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

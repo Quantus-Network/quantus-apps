@@ -161,6 +161,22 @@
     "@accountReadyDone": {
       "description": "Done button on the account ready screen"
     },
+    "accountReadyTwoAccountsCreated": "Two accounts were created for you.",
+    "@accountReadyTwoAccountsCreated": {
+      "description": "Subtitle on wallet created ready screen explaining the two accounts"
+    },
+    "accountReadyMainAccountDescription": "Your main account. Fast, visible on chain.",
+    "@accountReadyMainAccountDescription": {
+      "description": "Description under the transparent main account card after wallet creation"
+    },
+    "accountReadyEncryptedAccountDescription": "For private transactions. Shielded, slower.",
+    "@accountReadyEncryptedAccountDescription": {
+      "description": "Description under the encrypted account card after wallet creation"
+    },
+    "accountReadyGoToWallet": "Go to Wallet",
+    "@accountReadyGoToWallet": {
+      "description": "Primary CTA on the wallet created ready screen"
+    },
 
     "importWalletAppBarTitle": "Import Wallet",
     "@importWalletAppBarTitle": {
@@ -1509,6 +1525,14 @@
     "@activityEmpty": {
       "description": "Empty state on activity screen"
     },
+    "activityPrivateTotalReceived": "Total Received",
+    "@activityPrivateTotalReceived": {
+      "description": "Label for total received in encrypted account activity summary"
+    },
+    "activityPrivateTotalSent": "Total Sent",
+    "@activityPrivateTotalSent": {
+      "description": "Label for total sent in encrypted account activity summary"
+    },
     "activityFilterAll": "All",
     "@activityFilterAll": {
       "description": "Filter button for all transactions"
@@ -1549,6 +1573,22 @@
     "activityTxReceived": "Received",
     "@activityTxReceived": {
       "description": "Transaction row label for completed receive"
+    },
+    "activityTxPrivatelySending": "Privately Sending",
+    "@activityTxPrivatelySending": {
+      "description": "Transaction row label for pending encrypted send"
+    },
+    "activityTxPrivatelyReceiving": "Privately Receiving",
+    "@activityTxPrivatelyReceiving": {
+      "description": "Transaction row label for pending encrypted receive"
+    },
+    "activityTxPrivateSent": "Private Sent",
+    "@activityTxPrivateSent": {
+      "description": "Transaction row label for completed encrypted send"
+    },
+    "activityTxPrivateReceived": "Private Received",
+    "@activityTxPrivateReceived": {
+      "description": "Transaction row label for completed encrypted receive"
     },
     "activityTxMultisigCreated": "Multisig created",
     "@activityTxMultisigCreated": {
@@ -1636,6 +1676,22 @@
     "activityDetailTitleReceived": "Received",
     "@activityDetailTitleReceived": {
       "description": "Detail sheet title for completed receive"
+    },
+    "activityDetailTitlePrivatelySending": "Privately Sending",
+    "@activityDetailTitlePrivatelySending": {
+      "description": "Detail sheet title for pending encrypted send"
+    },
+    "activityDetailTitlePrivatelyReceiving": "Privately Receiving",
+    "@activityDetailTitlePrivatelyReceiving": {
+      "description": "Detail sheet title for pending encrypted receive"
+    },
+    "activityDetailTitlePrivateSent": "Private Sent",
+    "@activityDetailTitlePrivateSent": {
+      "description": "Detail sheet title for completed encrypted send"
+    },
+    "activityDetailTitlePrivateReceived": "Private Received",
+    "@activityDetailTitlePrivateReceived": {
+      "description": "Detail sheet title for completed encrypted receive"
     },
     "activityDetailTitleMultisigCreated": "Multisig created",
     "@activityDetailTitleMultisigCreated": {
@@ -2534,6 +2590,10 @@
     "@commonCancel": {
       "description": "Generic cancel button label"
     },
+    "commonCanceling": "Canceling...",
+    "@commonCanceling": {
+      "description": "Text shown while a cancellation is in progress"
+    },
     "commonAmountBalance": "{balance} {symbol}",
     "@commonAmountBalance": {
       "description": "Formatted balance with token symbol",
@@ -2633,9 +2693,13 @@
     "@redeemStepProofs": {
       "description": "Redeem progress step: generating ZK proofs"
     },
-    "redeemStepAggregate": "Aggregating & submitting",
+    "redeemStepAggregate": "Aggregating proofs",
     "@redeemStepAggregate": {
-      "description": "Redeem progress step: aggregating and submitting"
+      "description": "Redeem progress step: aggregating ZK proofs"
+    },
+    "redeemStepSubmit": "Submitting to chain",
+    "@redeemStepSubmit": {
+      "description": "Redeem progress step: submitting the transaction"
     },
     "redeemFetchedCount": "{count} fetched",
     "@redeemFetchedCount": {
@@ -2673,5 +2737,82 @@
           "type": "int"
         }
       }
+    },
+    "encryptedSendFeeLabel": "Privacy fee",
+    "@encryptedSendFeeLabel": {
+      "description": "Fee label for encrypted sends (wormhole volume fee)"
+    },
+    "encryptedSendAmountStep": "Use steps of 0.01 QUAN",
+    "@encryptedSendAmountStep": {
+      "description": "Shown when an encrypted send amount is not a multiple of 0.01 QUAN"
+    },
+    "encryptedSendMinimum": "Encrypted sends must move at least 0.1 QUAN",
+    "@encryptedSendMinimum": {
+      "description": "Shown when an encrypted send falls below the chain's minimum exit amount"
+    },
+    "encryptedSendProgressTitle": "Private Send",
+    "@encryptedSendProgressTitle": {
+      "description": "App bar title while an encrypted send is proving/submitting"
+    },
+    "encryptedSendFailedTitle": "Send Failed",
+    "@encryptedSendFailedTitle": {
+      "description": "App bar title when an encrypted send failed"
+    },
+    "encryptedSendCancelledTitle": "Send Cancelled",
+    "@encryptedSendCancelledTitle": {
+      "description": "App bar title when an encrypted send was cancelled"
+    },
+    "encryptedSendingLabel": "SENDING PRIVATELY",
+    "@encryptedSendingLabel": {
+      "description": "Status header label on encrypted send progress"
+    },
+    "encryptedSendStepPreparing": "Preparing",
+    "@encryptedSendStepPreparing": {
+      "description": "Encrypted send progress step: preparing circuits"
+    },
+    "encryptedSendStepGathering": "Gathering funds",
+    "@encryptedSendStepGathering": {
+      "description": "Encrypted send progress step: fetching on-chain state for the batch"
+    },
+    "encryptedSendStepSecuring": "Securing transaction",
+    "@encryptedSendStepSecuring": {
+      "description": "Encrypted send progress step: computing and checking nullifiers"
+    },
+    "encryptedSendStepGenerating": "Generate proofs",
+    "@encryptedSendStepGenerating": {
+      "description": "Encrypted send progress step: generating individual ZK proofs"
+    },
+    "encryptedSendStepProving": "Building privacy proof",
+    "@encryptedSendStepProving": {
+      "description": "Encrypted send progress step: aggregating ZK proofs"
+    },
+    "encryptedSendStepSubmitting": "Submitting to chain",
+    "@encryptedSendStepSubmitting": {
+      "description": "Encrypted send progress step: submitting the transaction"
+    },
+    "encryptedSendProgressFooter": "Privacy takes a moment. Please keep the app open until the transaction completes.",
+    "@encryptedSendProgressFooter": {
+      "description": "Footer text on encrypted send progress screen"
+    },
+    "encryptedSendCancelledPartial": "{amount} was already sent before cancelling. The rest remains in your account.",
+    "@encryptedSendCancelledPartial": {
+      "description": "Notice on the cancelled encrypted-send screen when some batches were already submitted",
+      "placeholders": {
+        "amount": {
+          "type": "String"
+        }
+      }
+    },
+    "privateSendTitle": "Private Send",
+    "@privateSendTitle": {
+      "description": "Title of the private-send notice on encrypted send recipient screen"
+    },
+    "privateSendSubtitle": "Hides the link between your account and the recipient",
+    "@privateSendSubtitle": {
+      "description": "Subtitle of the private-send notice on encrypted send recipient screen. Must not overstate the guarantee: the recipient and amount are still visible on chain, only the source linkage is hidden."
+    },
+    "encryptedSendPlanStale": "Your encrypted balance changed while reviewing. Please go back and enter the amount again.",
+    "@encryptedSendPlanStale": {
+      "description": "Error shown when the planned inputs of an encrypted send were spent between review and confirm"
     }
   }

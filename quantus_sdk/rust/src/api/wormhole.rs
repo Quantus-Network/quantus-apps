@@ -42,6 +42,8 @@ pub struct ProofInput {
     pub positions: Vec<u8>,
     pub exit_account_1: Vec<u8>,
     pub output_amount_1: u32,
+    pub exit_account_2: Vec<u8>,
+    pub output_amount_2: u32,
     pub volume_fee_bps: u32,
     pub asset_id: u32,
 }
@@ -311,11 +313,11 @@ pub fn generate_proof(
     let public = PublicCircuitInputs {
         asset_id: input.asset_id,
         output_amount_1: input.output_amount_1,
-        output_amount_2: 0,
+        output_amount_2: input.output_amount_2,
         volume_fee_bps: input.volume_fee_bps,
         nullifier: nullifier_bytes,
         exit_account_1: vec_to_digest(&input.exit_account_1, "exit_account_1")?,
-        exit_account_2: vec_to_digest(&[0u8; 32], "exit_account_2")?,
+        exit_account_2: vec_to_digest(&input.exit_account_2, "exit_account_2")?,
         block_hash: vec_to_digest(&input.block_hash, "block_hash")?,
         block_number: input.block_number,
     };

@@ -140,6 +140,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get accountReadyDone => 'Done';
 
   @override
+  String get accountReadyTwoAccountsCreated => 'Two accounts were created for you.';
+
+  @override
+  String get accountReadyMainAccountDescription => 'Your main account. Fast, visible on chain.';
+
+  @override
+  String get accountReadyEncryptedAccountDescription => 'For private transactions. Shielded, slower.';
+
+  @override
+  String get accountReadyGoToWallet => 'Go to Wallet';
+
+  @override
   String get importWalletAppBarTitle => 'Import Wallet';
 
   @override
@@ -1071,6 +1083,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get activityEmpty => 'No transactions yet';
 
   @override
+  String get activityPrivateTotalReceived => 'Total Received';
+
+  @override
+  String get activityPrivateTotalSent => 'Total Sent';
+
+  @override
   String get activityFilterAll => 'All';
 
   @override
@@ -1099,6 +1117,18 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get activityTxReceived => 'Received';
+
+  @override
+  String get activityTxPrivatelySending => 'Privately Sending';
+
+  @override
+  String get activityTxPrivatelyReceiving => 'Privately Receiving';
+
+  @override
+  String get activityTxPrivateSent => 'Private Sent';
+
+  @override
+  String get activityTxPrivateReceived => 'Private Received';
 
   @override
   String get activityTxMultisigCreated => 'Multisig created';
@@ -1152,6 +1182,18 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get activityDetailTitleReceived => 'Received';
+
+  @override
+  String get activityDetailTitlePrivatelySending => 'Privately Sending';
+
+  @override
+  String get activityDetailTitlePrivatelyReceiving => 'Privately Receiving';
+
+  @override
+  String get activityDetailTitlePrivateSent => 'Private Sent';
+
+  @override
+  String get activityDetailTitlePrivateReceived => 'Private Received';
 
   @override
   String get activityDetailTitleMultisigCreated => 'Multisig created';
@@ -1755,6 +1797,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get commonCancel => 'Cancel';
 
   @override
+  String get commonCanceling => 'Canceling...';
+
+  @override
   String commonAmountBalance(String balance, String symbol) {
     return '$balance $symbol';
   }
@@ -1821,7 +1866,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get redeemStepProofs => 'Generating ZK proofs';
 
   @override
-  String get redeemStepAggregate => 'Aggregating & submitting';
+  String get redeemStepAggregate => 'Aggregating proofs';
+
+  @override
+  String get redeemStepSubmit => 'Submitting to chain';
 
   @override
   String redeemFetchedCount(int count) {
@@ -1844,4 +1892,62 @@ class AppLocalizationsEn extends AppLocalizations {
   String redeemSuccessBanner(String amount, int count) {
     return '$amount redeemed in $count batch(es)';
   }
+
+  @override
+  String get encryptedSendFeeLabel => 'Privacy fee';
+
+  @override
+  String get encryptedSendAmountStep => 'Use steps of 0.01 QUAN';
+
+  @override
+  String get encryptedSendMinimum => 'Encrypted sends must move at least 0.1 QUAN';
+
+  @override
+  String get encryptedSendProgressTitle => 'Private Send';
+
+  @override
+  String get encryptedSendFailedTitle => 'Send Failed';
+
+  @override
+  String get encryptedSendCancelledTitle => 'Send Cancelled';
+
+  @override
+  String get encryptedSendingLabel => 'SENDING PRIVATELY';
+
+  @override
+  String get encryptedSendStepPreparing => 'Preparing';
+
+  @override
+  String get encryptedSendStepGathering => 'Gathering funds';
+
+  @override
+  String get encryptedSendStepSecuring => 'Securing transaction';
+
+  @override
+  String get encryptedSendStepGenerating => 'Generate proofs';
+
+  @override
+  String get encryptedSendStepProving => 'Building privacy proof';
+
+  @override
+  String get encryptedSendStepSubmitting => 'Submitting to chain';
+
+  @override
+  String get encryptedSendProgressFooter =>
+      'Privacy takes a moment. Please keep the app open until the transaction completes.';
+
+  @override
+  String encryptedSendCancelledPartial(String amount) {
+    return '$amount was already sent before cancelling. The rest remains in your account.';
+  }
+
+  @override
+  String get privateSendTitle => 'Private Send';
+
+  @override
+  String get privateSendSubtitle => 'Hides the link between your account and the recipient';
+
+  @override
+  String get encryptedSendPlanStale =>
+      'Your encrypted balance changed while reviewing. Please go back and enter the amount again.';
 }

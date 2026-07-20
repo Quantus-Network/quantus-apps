@@ -234,6 +234,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
     final colors = context.colors;
     final text = context.themeText;
     final balance = ref.watch(widget.strategy.spendableBalanceProvider);
+    final displayBalance = ref.watch(widget.strategy.displayBalanceProvider);
     final sourceId = widget.strategy.sourceAccountId(ref) ?? '';
     final recipient = widget.recipientAddress.trim();
     final formattingService = ref.read(numberFormattingServiceProvider);
@@ -294,7 +295,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
           ),
         ),
       ),
-      bottomContent: _bottomSection(colors, text, l10n, strings, btnText, balance, btnDisabled),
+      bottomContent: _bottomSection(colors, text, l10n, strings, btnText, displayBalance, btnDisabled),
     );
   }
 

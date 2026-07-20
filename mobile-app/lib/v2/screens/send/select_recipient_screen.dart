@@ -14,6 +14,7 @@ import 'package:resonance_network_wallet/shared/extensions/toaster_extensions.da
 import 'package:resonance_network_wallet/v2/components/address_checkphrase_with_initial.dart';
 import 'package:resonance_network_wallet/v2/components/address_input_field.dart';
 import 'package:resonance_network_wallet/v2/components/loader.dart';
+import 'package:resonance_network_wallet/v2/components/private_activity_notice.dart';
 import 'package:resonance_network_wallet/v2/components/qr_scanner_page.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base_bottom_content.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
@@ -107,23 +108,35 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
     final checksumService = ref.read(humanReadableChecksumServiceProvider);
     final substrate = ref.read(substrateServiceProvider);
     final isValid = substrate.isValidSS58Address(address);
-    final sourceId = widget.strategy.sourceAccountId(ref);
-    final isSelfSend = isValid && address == sourceId;
-    final showSelfSendWarning = isSelfSend && !_isSelfSend;
+    final wasSelfSend = _isSelfSend;
     setState(() {
       _hasAddressError = !isValid;
-      _isSelfSend = isSelfSend;
+      _isSelfSend = false;
       _recipientChecksum = null;
-      _canContinue = isValid && !isSelfSend;
+      _canContinue = false;
     });
-    if (showSelfSendWarning) {
-      context.showWarningToaster(message: ref.read(l10nProvider).sendLogicCantSelfTransfer);
-    }
-    if (isValid) {
-      checksumService.getHumanReadableName(address).then((checksum) {
-        if (mounted) setState(() => _recipientChecksum = checksum);
-      });
-    }
+    if (!isValid) return;
+    // Async: encrypted sends check the address against every derived wormhole
+    // address, not just the account id. Continue stays disabled until resolved.
+    widget.strategy
+        .isSelfRecipient(ref, address)
+        .then((isSelf) {
+          if (!mounted || _recipientController.text.trim() != address) return;
+          setState(() {
+            _isSelfSend = isSelf;
+            _canContinue = !isSelf;
+          });
+          if (isSelf && !wasSelfSend) {
+            context.showWarningToaster(message: ref.read(l10nProvider).sendLogicCantSelfTransfer);
+          }
+        })
+        .catchError((Object e) {
+          // Fail closed: without a verdict the send can't proceed anyway.
+          debugPrint('SelectRecipientScreen self-send check: $e');
+        });
+    checksumService.getHumanReadableName(address).then((checksum) {
+      if (mounted) setState(() => _recipientChecksum = checksum);
+    });
   }
 
   /// Single entry point for every way a recipient is supplied (scan, paste,
@@ -355,13 +368,27 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
         ? l10n.sendLogicCantSelfTransfer
         : l10n.sendEnterAddress;
 
+    final button = QuantusButton.simple(
+      key: const Key(E2EKeys.sendContinueButton),
+      label: btnText,
+      variant: ButtonVariant.primary,
+      isDisabled: !_canContinue,
+      onTap: _continue,
+    );
+
+    if (!widget.strategy.showPrivateSendNotice) {
+      return ScaffoldBaseBottomContent(child: button);
+    }
+
     return ScaffoldBaseBottomContent(
-      child: QuantusButton.simple(
-        key: const Key(E2EKeys.sendContinueButton),
-        label: btnText,
-        variant: ButtonVariant.primary,
-        isDisabled: !_canContinue,
-        onTap: _continue,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          PrivateActivityNotice(title: l10n.privateSendTitle, subtitle: l10n.privateSendSubtitle),
+          const SizedBox(height: 32),
+          button,
+        ],
       ),
     );
   }

@@ -135,6 +135,18 @@ class AppLocalizationsId extends AppLocalizations {
   String get accountReadyDone => 'Selesai';
 
   @override
+  String get accountReadyTwoAccountsCreated => 'Dua akun telah dibuat untuk Anda.';
+
+  @override
+  String get accountReadyMainAccountDescription => 'Akun utama Anda. Cepat, terlihat di chain.';
+
+  @override
+  String get accountReadyEncryptedAccountDescription => 'Untuk transaksi privat. Tershield, lebih lambat.';
+
+  @override
+  String get accountReadyGoToWallet => 'Buka Wallet';
+
+  @override
   String get importWalletAppBarTitle => 'Impor Wallet';
 
   @override
@@ -1069,6 +1081,12 @@ class AppLocalizationsId extends AppLocalizations {
   String get activityEmpty => 'Belum ada transaksi';
 
   @override
+  String get activityPrivateTotalReceived => 'Total Diterima';
+
+  @override
+  String get activityPrivateTotalSent => 'Total Terkirim';
+
+  @override
   String get activityFilterAll => 'Semua';
 
   @override
@@ -1097,6 +1115,18 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get activityTxReceived => 'Diterima';
+
+  @override
+  String get activityTxPrivatelySending => 'Mengirim Secara Privat';
+
+  @override
+  String get activityTxPrivatelyReceiving => 'Menerima Secara Privat';
+
+  @override
+  String get activityTxPrivateSent => 'Terkirim Privat';
+
+  @override
+  String get activityTxPrivateReceived => 'Diterima Privat';
 
   @override
   String get activityTxMultisigCreated => 'Multisig dibuat';
@@ -1150,6 +1180,18 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get activityDetailTitleReceived => 'Diterima';
+
+  @override
+  String get activityDetailTitlePrivatelySending => 'Mengirim Secara Privat';
+
+  @override
+  String get activityDetailTitlePrivatelyReceiving => 'Menerima Secara Privat';
+
+  @override
+  String get activityDetailTitlePrivateSent => 'Terkirim Privat';
+
+  @override
+  String get activityDetailTitlePrivateReceived => 'Diterima Privat';
 
   @override
   String get activityDetailTitleMultisigCreated => 'Multisig dibuat';
@@ -1753,6 +1795,9 @@ class AppLocalizationsId extends AppLocalizations {
   String get commonCancel => 'Batal';
 
   @override
+  String get commonCanceling => 'Membatalkan...';
+
+  @override
   String commonAmountBalance(String balance, String symbol) {
     return '$balance $symbol';
   }
@@ -1819,7 +1864,10 @@ class AppLocalizationsId extends AppLocalizations {
   String get redeemStepProofs => 'Membuat bukti ZK';
 
   @override
-  String get redeemStepAggregate => 'Mengagregasi & mengirim';
+  String get redeemStepAggregate => 'Mengagregasi bukti';
+
+  @override
+  String get redeemStepSubmit => 'Mengirim ke chain';
 
   @override
   String redeemFetchedCount(int count) {
@@ -1842,4 +1890,62 @@ class AppLocalizationsId extends AppLocalizations {
   String redeemSuccessBanner(String amount, int count) {
     return '$amount ditukar dalam $count batch';
   }
+
+  @override
+  String get encryptedSendFeeLabel => 'Biaya privasi';
+
+  @override
+  String get encryptedSendAmountStep => 'Gunakan kelipatan 0,01 QUAN';
+
+  @override
+  String get encryptedSendMinimum => 'Pengiriman terenkripsi minimal 0,1 QUAN';
+
+  @override
+  String get encryptedSendProgressTitle => 'Mengirim Secara Privat...';
+
+  @override
+  String get encryptedSendFailedTitle => 'Pengiriman Gagal';
+
+  @override
+  String get encryptedSendCancelledTitle => 'Pengiriman Dibatalkan';
+
+  @override
+  String get encryptedSendingLabel => 'MENGIRIM';
+
+  @override
+  String get encryptedSendStepPreparing => 'Mempersiapkan';
+
+  @override
+  String get encryptedSendStepGathering => 'Mengumpulkan dana';
+
+  @override
+  String get encryptedSendStepSecuring => 'Mengamankan transaksi';
+
+  @override
+  String get encryptedSendStepGenerating => 'Membuat bukti';
+
+  @override
+  String get encryptedSendStepProving => 'Membangun bukti privasi';
+
+  @override
+  String get encryptedSendStepSubmitting => 'Mengirim ke chain';
+
+  @override
+  String get encryptedSendProgressFooter =>
+      'Privasi membutuhkan waktu. Harap biarkan aplikasi tetap terbuka sampai transaksi selesai.';
+
+  @override
+  String encryptedSendCancelledPartial(String amount) {
+    return '$amount sudah terkirim sebelum dibatalkan. Sisanya tetap berada di akun Anda.';
+  }
+
+  @override
+  String get privateSendTitle => 'Kirim Privat';
+
+  @override
+  String get privateSendSubtitle => 'Menyembunyikan kaitan antara akun Anda dan penerima';
+
+  @override
+  String get encryptedSendPlanStale =>
+      'Saldo terenkripsi Anda berubah saat meninjau. Silakan kembali dan masukkan jumlahnya lagi.';
 }
