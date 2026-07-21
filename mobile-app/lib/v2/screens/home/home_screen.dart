@@ -6,7 +6,6 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/dotted_border.dart';
 import 'package:resonance_network_wallet/features/components/skeleton.dart';
 import 'package:resonance_network_wallet/features/components/shared_address_action_sheet.dart';
-import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
 import 'package:resonance_network_wallet/routes.dart';
 import 'package:resonance_network_wallet/services/global_history_polling_service.dart';
 import 'package:resonance_network_wallet/services/telemetry_service.dart';
@@ -339,7 +338,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   Widget _buildActionButtons(AppLocalizations l10n, Account account) {
     final isEncrypted = isEncryptedAccount(account);
-    final enableSwap = !isEncrypted && ref.watch(remoteConfigProvider).enableSwap;
+    const enableSwap = true; // ref.watch(remoteConfigProvider).enableSwap; Override enable swap config for now
     final SendStrategy sendStrategy = isEncrypted
         ? EncryptedSendStrategy(account: account)
         : const RegularSendStrategy();
