@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
@@ -89,7 +90,7 @@ class _ImportWalletScreenV2State extends ConsumerState<ImportWalletScreenV2> {
     });
 
     try {
-      if (!mnemonic.startsWith('//')) {
+      if (!(kDebugMode && mnemonic.startsWith('//'))) {
         final words = mnemonic.split(' ').where((w) => w.isNotEmpty).toList();
         if (words.length != 12 && words.length != 24) {
           throw Exception(ref.read(l10nProvider).importWalletValidationError);
