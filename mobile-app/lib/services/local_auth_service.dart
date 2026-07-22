@@ -6,12 +6,29 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 class LocalAuthService {
   static final LocalAuthService _instance = LocalAuthService._internal();
   factory LocalAuthService() => _instance;
-  LocalAuthService._internal();
 
-  final LocalAuthentication _localAuth = LocalAuthentication();
-  final SettingsService _settingsService = SettingsService();
+  final LocalAuthentication _localAuth;
+  final SettingsService _settingsService;
+
+  LocalAuthService._internal() : _localAuth = LocalAuthentication(), _settingsService = SettingsService();
+
+  @visibleForTesting
+  LocalAuthService.withDependencies({required LocalAuthentication localAuth, required SettingsService settingsService})
+    : _localAuth = localAuth,
+      _settingsService = settingsService;
 
   static const _authTimeout = Duration(seconds: 10);
+
+  /// Whether the device has any lock-screen security enrolled: biometrics
+  /// or a device credential (PIN/pattern/password).
+  Future<bool> isDeviceSecure() async {
+    try {
+      return await _localAuth.isDeviceSupported();
+    } catch (e) {
+      debugPrint('Error checking device security: $e');
+      return false;
+    }
+  }
 
   Future<bool> isBiometricAvailable() async {
     try {
@@ -42,8 +59,12 @@ class LocalAuthService {
     try {
       if (!await _settingsService.getHasWallet()) return true;
 
-      final isAvailable = await isBiometricAvailable();
-      if (!isAvailable) return true;
+      // Require whatever device security is enrolled: biometrics or the
+      // device credential (PIN/pattern/password). biometricOnly: false lets
+      // the plugin fall back to the device credential, so PIN-only devices
+      // are prompted for their PIN. A device with no security at all fails
+      // closed: gated actions stay blocked until the device is secured.
+      if (!await isDeviceSecure()) return false;
 
       final didAuthenticate = await _localAuth.authenticate(
         localizedReason: localizedReason,
