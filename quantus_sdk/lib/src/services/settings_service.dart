@@ -32,8 +32,6 @@ class SettingsService {
   static const String _selectedFiatCurrencyKey = 'selected_fiat_currency';
   static const String _selectedAppLocaleKey = 'selected_app_locale';
 
-  static const String _lastPausedTimeKey = 'last_paused_time';
-
   // referral status
   static const String hasCheckedReferralKey = 'referral_check';
   static const String referralCodeKey = 'referral_code';
@@ -457,22 +455,6 @@ class SettingsService {
   /// Set a string value from SharedPreferences
   Future<void> setString(String key, String value) async {
     await _prefs.setString(key, value);
-  }
-
-  DateTime? getLastPausedTime() {
-    final String? lastPausedString = _prefs.getString(_lastPausedTimeKey);
-    if (lastPausedString == null) return null;
-
-    final DateTime lastPaused = DateTime.parse(lastPausedString);
-    return lastPaused;
-  }
-
-  void setLastPausedTime(DateTime time) {
-    _prefs.setString(_lastPausedTimeKey, time.toIso8601String());
-  }
-
-  void cleanLastPausedTime() {
-    _prefs.remove(_lastPausedTimeKey);
   }
 
   // --- Migration Methods ---

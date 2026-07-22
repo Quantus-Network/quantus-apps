@@ -378,14 +378,6 @@ class MockSettingsService extends _i1.Mock implements _i4.SettingsService {
           as _i5.Future<void>);
 
   @override
-  void setLastPausedTime(DateTime? time) =>
-      super.noSuchMethod(Invocation.method(#setLastPausedTime, [time]), returnValueForMissingStub: null);
-
-  @override
-  void cleanLastPausedTime() =>
-      super.noSuchMethod(Invocation.method(#cleanLastPausedTime, []), returnValueForMissingStub: null);
-
-  @override
   bool hasOldAccounts() =>
       (super.noSuchMethod(Invocation.method(#hasOldAccounts, []), returnValue: false, returnValueForMissingStub: false)
           as bool);
