@@ -9,15 +9,26 @@ class LocalAuthService {
 
   final LocalAuthentication _localAuth;
   final SettingsService _settingsService;
+  final Duration _authTimeout;
 
-  LocalAuthService._internal() : _localAuth = LocalAuthentication(), _settingsService = SettingsService();
+  /// In-memory only: the background grace window must never survive
+  /// process death. A null value with an existing wallet therefore means
+  /// "this process has not recorded a backgrounding" — i.e. locked.
+  DateTime? _lastPausedTime;
+
+  LocalAuthService._internal()
+    : _localAuth = LocalAuthentication(),
+      _settingsService = SettingsService(),
+      _authTimeout = const Duration(seconds: 10);
 
   @visibleForTesting
-  LocalAuthService.withDependencies({required LocalAuthentication localAuth, required SettingsService settingsService})
-    : _localAuth = localAuth,
-      _settingsService = settingsService;
-
-  static const _authTimeout = Duration(seconds: 10);
+  LocalAuthService.withDependencies({
+    required LocalAuthentication localAuth,
+    required SettingsService settingsService,
+    Duration authTimeout = const Duration(seconds: 10),
+  }) : _localAuth = localAuth,
+       _settingsService = settingsService,
+       _authTimeout = authTimeout;
 
   /// Whether the device has any lock-screen security enrolled: biometrics
   /// or a device credential (PIN/pattern/password).
@@ -87,8 +98,10 @@ class LocalAuthService {
   Future<bool> shouldRequireAuthentication() async {
     try {
       if (!await _settingsService.getHasWallet()) return false;
-      final lastPausedTime = _settingsService.getLastPausedTime();
-      if (lastPausedTime == null) return false;
+      // Fail closed: a wallet with no in-memory pause record means the
+      // process started (or was killed) since the last unlock.
+      final lastPausedTime = _lastPausedTime;
+      if (lastPausedTime == null) return true;
       return DateTime.now().difference(lastPausedTime) > _authTimeout;
     } catch (e) {
       debugPrint('Error checking if authentication is required: $e');
@@ -98,12 +111,12 @@ class LocalAuthService {
 
   Future<bool> updateLastPausedTime() async {
     if (!await _settingsService.getHasWallet()) return false;
-    _settingsService.setLastPausedTime(DateTime.now());
+    _lastPausedTime = DateTime.now();
     return true;
   }
 
   void cleanLastPausedTime() {
-    _settingsService.cleanLastPausedTime();
+    _lastPausedTime = null;
   }
 
   Future<void> stopAuthentication() async {

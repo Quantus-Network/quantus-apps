@@ -9,7 +9,10 @@ class LocalAuthState {
   final bool isAuthenticating;
   final bool isVisuallyLocked;
 
-  LocalAuthState({this.isAuthenticated = true, this.isAuthenticating = false, this.isVisuallyLocked = false});
+  // Locked by default: nothing renders as unlocked until an explicit
+  // check/auth proves otherwise (cold start, crash, or force-stop must
+  // never come back unlocked).
+  LocalAuthState({this.isAuthenticated = false, this.isAuthenticating = false, this.isVisuallyLocked = false});
 
   LocalAuthState copyWith({bool? isAuthenticated, bool? isAuthenticating, bool? isVisuallyLocked}) {
     return LocalAuthState(
@@ -54,14 +57,18 @@ class LocalAuthController extends StateNotifier<LocalAuthState> {
 
   Future<void> checkAuthentication() async {
     _cancelVisualLockTimer();
-    if (await _localAuthService.shouldRequireAuthentication()) {
-      final alreadyAuthenticating = state.isAuthenticating;
-      state = state.copyWith(isAuthenticated: false);
-      if (!alreadyAuthenticating) {
-        authenticate();
-      }
-    } else {
-      state = state.copyWith(isAuthenticated: true, isAuthenticating: false, isVisuallyLocked: false);
+    // The background grace window only applies to a session that was
+    // actually unlocked in this process. A locked session must always
+    // authenticate — otherwise backgrounding and resuming within the
+    // grace window would unlock the app without a prompt.
+    if (state.isAuthenticated && !await _localAuthService.shouldRequireAuthentication()) {
+      state = state.copyWith(isAuthenticating: false, isVisuallyLocked: false);
+      return;
+    }
+    final alreadyAuthenticating = state.isAuthenticating;
+    state = state.copyWith(isAuthenticated: false);
+    if (!alreadyAuthenticating) {
+      authenticate();
     }
   }
 
