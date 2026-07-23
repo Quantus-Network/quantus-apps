@@ -28,7 +28,9 @@ import FirebaseMessaging
   /// Bridges `SecureClipboardService.copyWithExpiry` to `UIPasteboard`'s
   /// `expirationDate`, which the OS enforces even while the app is suspended
   /// or terminated — so sensitive values (e.g. recovery phrases) never outlive
-  /// their TTL on the system pasteboard.
+  /// their TTL on the system pasteboard. `localOnly` keeps the copy from
+  /// propagating to other iCloud devices via Universal Clipboard, where the
+  /// expiry would not be enforced.
   private func setupSecureClipboardChannel(messenger: FlutterBinaryMessenger) {
     let channel = FlutterMethodChannel(
       name: "app.quantus/secure_clipboard",
@@ -61,7 +63,9 @@ import FirebaseMessaging
       let items: [[String: Any]] = [["public.utf8-plain-text": text]]
       UIPasteboard.general.setItems(
         items,
-        options: [.expirationDate: expiration]
+        // .localOnly keeps the value off Universal Clipboard, since the
+        // expiry is only enforced on the local device.
+        options: [.expirationDate: expiration, .localOnly: true]
       )
       result(true)
     }
