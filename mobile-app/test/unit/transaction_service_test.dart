@@ -123,23 +123,26 @@ void main() {
       blockHash: '0x4f5d2',
     );
 
-    test('re-fetches TRANSFER by extrinsic hash and returns the indexed event, ignoring payload display data', () async {
-      final service = container.read(transactionServiceProvider);
-      final indexed = indexedTransfer();
-      fakeHistoryService.result = indexed;
+    test(
+      're-fetches TRANSFER by extrinsic hash and returns the indexed event, ignoring payload display data',
+      () async {
+        final service = container.read(transactionServiceProvider);
+        final indexed = indexedTransfer();
+        fakeHistoryService.result = indexed;
 
-      final event = await service.resolveTransactionFromPushPayload({
-        'type': 'TRANSFER',
-        'extrinsicHash': hash,
-        // Spoofed display data — must never reach the caller.
-        'amount': '999999999999',
-        'sender': '{"id":"attacker"}',
-      });
+        final event = await service.resolveTransactionFromPushPayload({
+          'type': 'TRANSFER',
+          'extrinsicHash': hash,
+          // Spoofed display data — must never reach the caller.
+          'amount': '999999999999',
+          'sender': '{"id":"attacker"}',
+        });
 
-      expect(event, same(indexed));
-      expect(fakeHistoryService.lastExtrinsicHash, hash);
-      expect(fakeHistoryService.lastIsReversible, isFalse);
-    });
+        expect(event, same(indexed));
+        expect(fakeHistoryService.lastExtrinsicHash, hash);
+        expect(fakeHistoryService.lastIsReversible, isFalse);
+      },
+    );
 
     test('searches as reversible for REVERSIBLE_TRANSFER payloads', () async {
       final service = container.read(transactionServiceProvider);
