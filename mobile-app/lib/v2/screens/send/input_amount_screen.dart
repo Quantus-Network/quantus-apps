@@ -13,6 +13,7 @@ import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
 import 'package:resonance_network_wallet/v2/screens/send/review_send_screen.dart';
+import 'package:resonance_network_wallet/v2/screens/send/send_providers.dart';
 import 'package:resonance_network_wallet/v2/screens/send/send_screen_logic.dart';
 import 'package:resonance_network_wallet/v2/screens/send/send_strategy.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base_bottom_content.dart';
@@ -62,6 +63,9 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
   // Each request has a counter value, so old responses can be ignored
   int _fetchFeeCounter = 0;
 
+  // Cached in initState so dispose can decrement without touching ref.
+  late final _sendFlowActive = ref.read(sendFlowActiveProvider.notifier);
+
   AmountInputLogic get _amountInputLogic => AmountInputLogic(
     exchangeRateService: ref.read(exchangeRateServiceProvider),
     selectedFiat: ref.read(selectedFiatCurrencyProvider),
@@ -73,6 +77,9 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
   void initState() {
     super.initState();
     assert(widget.recipientAddress.trim().isNotEmpty, 'InputAmountScreen requires a recipient');
+    // Mark a send flow as in flight so incoming intents can't interrupt it;
+    // decremented symmetrically in dispose.
+    _sendFlowActive.state++;
     _amountFocus.addListener(_onAmountFocusChanged);
     if (widget.initialAmount != null && widget.initialAmount!.isNotEmpty) {
       final formattingService = ref.read(numberFormattingServiceProvider);
@@ -97,6 +104,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
 
   @override
   void dispose() {
+    _sendFlowActive.state--;
     _feeDebouncer.cancel();
     _amountController.dispose();
     _amountFocus.removeListener(_onAmountFocusChanged);

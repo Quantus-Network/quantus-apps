@@ -5,7 +5,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/l10n/app_localizations.dart';
-import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/services/local_auth_service.dart';
@@ -20,13 +19,19 @@ import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 
 /// Standard single-signer transfer from the active account. Signs locally, or
 /// hands off to the Keystone QR flow for hardware accounts.
+///
+/// The source [account] is captured when the flow starts and used for the whole
+/// flow (fee estimation, balance validation, submission), so a mid-flow account
+/// switch can never change the account being signed from.
 class RegularSendStrategy extends SendStrategy {
-  const RegularSendStrategy();
+  final Account account;
+
+  const RegularSendStrategy({required this.account});
 
   static final BigInt _estimateFeeAmount = BigInt.from(1000) * NumberFormattingService.scaleFactorBigInt;
 
   @override
-  String? sourceAccountId(WidgetRef ref) => ref.read(activeAccountProvider).value?.account.accountId;
+  String? sourceAccountId(WidgetRef ref) => account.accountId;
 
   @override
   SendStrings strings(AppLocalizations l10n) => SendStrings(
@@ -41,7 +46,8 @@ class RegularSendStrategy extends SendStrategy {
   );
 
   @override
-  ProviderListenable<AsyncValue<BigInt>> get spendableBalanceProvider => effectiveMaxBalanceProvider;
+  ProviderListenable<AsyncValue<BigInt>> get spendableBalanceProvider =>
+      effectiveMaxBalanceProviderFamily(account.accountId);
 
   @override
   bool extraBalancesLoading(WidgetRef ref) => false;
@@ -51,11 +57,6 @@ class RegularSendStrategy extends SendStrategy {
 
   @override
   Future<SendFee> estimateFee(WidgetRef ref, {required String recipient, required BigInt amount}) async {
-    final displayAccount = ref.read(activeAccountProvider).value;
-    if (displayAccount is! RegularAccount) {
-      throw StateError('Regular send requires an active regular account');
-    }
-    final account = displayAccount.account;
     final useReal = amount > BigInt.zero && ref.read(substrateServiceProvider).isValidSS58Address(recipient);
     final feeAmount = useReal ? amount : _estimateFeeAmount;
     final toAddress = useReal ? recipient : account.accountId;
@@ -109,7 +110,9 @@ class RegularSendStrategy extends SendStrategy {
     final fmt = ref.read(numberFormattingServiceProvider);
     final regularFee = fee as RegularFee;
     final recipient = recipientAddress.trim();
-    final account = (await SettingsService().getActiveRegularAccount())!;
+    // Sign from the account captured when the flow started, not whichever
+    // account happens to be active at submit time.
+    final account = this.account;
     final terminal = buildSentTerminalContent(
       l10n,
       fmt,

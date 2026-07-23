@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
+import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/routes.dart';
 import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
 import 'package:resonance_network_wallet/shared/extensions/current_route_extensions.dart';
@@ -60,12 +61,19 @@ class _SharedAddressActionSheetState extends State<SharedAddressActionSheet> {
   }
 
   void _sendToAddress() {
-    ProviderScope.containerOf(context).read(keystoneSignCacheProvider.notifier).startNewSendSession();
+    final container = ProviderScope.containerOf(context);
+    final active = container.read(activeAccountProvider).value;
+    if (active is! RegularAccount) {
+      debugPrint('shared address send: active account cannot send regular transfers');
+      return;
+    }
+    container.read(keystoneSignCacheProvider.notifier).startNewSendSession();
     Navigator.of(context).pop();
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => InputAmountScreen(strategy: const RegularSendStrategy(), recipientAddress: widget.address),
+        builder: (_) =>
+            InputAmountScreen(strategy: RegularSendStrategy(account: active.account), recipientAddress: widget.address),
       ),
     );
   }

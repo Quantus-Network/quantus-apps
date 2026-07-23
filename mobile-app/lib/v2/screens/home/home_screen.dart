@@ -38,11 +38,13 @@ import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/active_account_transactions_provider.dart';
+import 'package:resonance_network_wallet/providers/local_auth_provider.dart';
 import 'package:resonance_network_wallet/providers/multisig_providers.dart';
 import 'package:resonance_network_wallet/providers/route_intent_providers.dart';
 import 'package:resonance_network_wallet/providers/currency_display_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
+import 'package:resonance_network_wallet/v2/screens/send/send_providers.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 import 'package:resonance_network_wallet/v2/components/global_toast_listener.dart';
@@ -67,7 +69,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     ref.listenManual<ProposalIntent?>(proposalIntentProvider, _onProposalIntent);
     ref.listenManual<AsyncValue<DisplayAccount?>>(activeAccountProvider, (_, async) {
       if (async.value == null) return;
-      _onTransactionIntent(null, ref.read(transactionIntentProvider));
+      // Accounts may still be loading when an intent arrives on a cold start;
+      // retry once they are available.
+      _drainPendingIntents();
     });
     // Multisig accounts may still be loading when a proposal intent arrives on a
     // cold start; retry once they are available.
@@ -75,9 +79,27 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       if (async.value == null) return;
       _onProposalIntent(null, ref.read(proposalIntentProvider));
     });
+    // Intents are only consumed while unlocked: anything arriving beneath the
+    // lock overlay stays queued in its provider and is drained after unlock.
+    ref.listenManual<LocalAuthState>(localAuthProvider, (prev, next) {
+      if (next.isAuthenticated && !(prev?.isAuthenticated ?? false)) _drainPendingIntents();
+    });
+    // Intents deferred while a send flow was in flight become consumable again
+    // once the last send screen leaves the navigation stack.
+    ref.listenManual<int>(sendFlowActiveProvider, (prev, next) {
+      if ((prev ?? 0) > 0 && next == 0) _drainPendingIntents();
+    });
 
     Future.microtask(_drainPendingIntents);
   }
+
+  /// Deep-link and notification intents must never be acted on while the lock
+  /// overlay is up; the Navigator underneath it is still alive.
+  bool get _isUnlocked => ref.read(localAuthProvider).isAuthenticated;
+
+  /// While a send flow is on the stack, intents that navigate or switch the
+  /// active account are deferred so they can't hijack the in-flight send.
+  bool get _sendInFlight => ref.read(sendFlowActiveProvider) > 0;
 
   void _drainPendingIntents() {
     if (!mounted) return;
@@ -88,7 +110,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   void _onTransactionIntent(TransactionEvent? _, TransactionEvent? transaction) {
-    if (transaction == null || !mounted) return;
+    if (transaction == null || !mounted || !_isUnlocked) return;
     final active = ref.read(activeAccountProvider).value;
     if (active == null) return;
     ref.read(transactionIntentProvider.notifier).state = null;
@@ -97,13 +119,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   void _onPaymentIntent(PaymentIntent? _, PaymentIntent? payment) {
-    if (payment == null || !mounted) return;
+    if (payment == null || !mounted || !_isUnlocked || _sendInFlight) return;
+    final active = ref.read(activeAccountProvider).value;
+    // Still loading — the activeAccountProvider listener will retry.
+    if (active == null) return;
     ref.read(paymentIntentProvider.notifier).state = null;
+    if (active is! RegularAccount) {
+      quantusDebugPrint('payment intent: active account cannot send regular transfers');
+      return;
+    }
     ref.read(keystoneSignCacheProvider.notifier).startNewSendSession();
 
     final pageRoute = MaterialPageRoute(
       builder: (_) => InputAmountScreen(
-        strategy: const RegularSendStrategy(),
+        strategy: RegularSendStrategy(account: active.account),
         recipientAddress: payment.to,
         initialAmount: payment.amount,
         isPayMode: true,
@@ -119,7 +148,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   void _onSharedIntent(String? _, String? shared) {
-    if (shared == null || !mounted) return;
+    if (shared == null || !mounted || !_isUnlocked || _sendInFlight) return;
     ref.read(sharedAccountIntentProvider.notifier).state = null;
 
     showSharedAddressActionSheet(context, shared);
@@ -129,7 +158,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   /// the active account, then opens the detail sheet immediately. The sheet
   /// shows a loader while it resolves the proposal by id.
   Future<void> _onProposalIntent(ProposalIntent? _, ProposalIntent? intent) async {
-    if (intent == null || !mounted) return;
+    if (intent == null || !mounted || !_isUnlocked || _sendInFlight) return;
 
     final multisigAccounts = ref.read(multisigAccountsProvider).value;
     // Still loading — the multisigAccountsProvider listener will retry.
@@ -341,7 +370,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     const enableSwap = true; // ref.watch(remoteConfigProvider).enableSwap; Override enable swap config for now
     final SendStrategy sendStrategy = isEncrypted
         ? EncryptedSendStrategy(account: account)
-        : const RegularSendStrategy();
+        : RegularSendStrategy(account: account);
 
     final receiveCard = _actionCard(
       iconAsset: 'assets/v2/action_receive.svg',
