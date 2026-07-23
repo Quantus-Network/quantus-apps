@@ -136,7 +136,19 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
       context.showErrorToaster(message: l10n.sendInputAmountInvalidAmount);
       return;
     }
+    _invalidateFee();
     _feeDebouncer.run(_refreshFee);
+  }
+
+  /// For encrypted sends the fee estimate *is* the spend plan, frozen for the
+  /// amount it was computed with — a stale fee must never stay valid for a new
+  /// amount. Drop it so Review stays blocked until the refetch lands.
+  void _invalidateFee() {
+    setState(() {
+      _fee = null;
+      _hasFee = false;
+      _feeFetchFailed = false;
+    });
   }
 
   void _refreshFee() {
@@ -189,6 +201,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
         ? _amountInputLogic.quanToFiatString(max)
         : _amountInputLogic.formatQuanAmount(max);
     setState(() => _amount = max);
+    _invalidateFee();
     _refreshFee();
   }
 
@@ -202,6 +215,10 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
       _amountController.text = result.text;
       _amount = result.amount;
     });
+    // The flip can change the planck amount (fiat rounding), so the plan must
+    // be re-estimated for the new amount.
+    _invalidateFee();
+    _refreshFee();
   }
 
   void _openReview() {
@@ -249,6 +266,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
     final btnDisabled =
         !_hasFee ||
         _feeFetchFailed ||
+        _feeDebouncer.isPending ||
         _recipientChecksum == null ||
         balance.isLoading ||
         widget.strategy.extraBalancesLoading(ref) ||

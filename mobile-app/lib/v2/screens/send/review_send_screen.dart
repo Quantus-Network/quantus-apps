@@ -86,7 +86,7 @@ class _ReviewSendScreenState extends ConsumerState<ReviewSendScreen> {
                 SendTerminalScreen(content: terminal.copyWith(explorerUrl: explorerImmediateTransactionUrl(hash))),
           ),
         );
-      case SendNeedsProving(:final account, :final plan, :final terminal):
+      case SendNeedsProving(:final account, :final plan, :final amount, :final terminal):
         setState(() => _submitting = false);
         Navigator.push(
           context,
@@ -94,6 +94,7 @@ class _ReviewSendScreenState extends ConsumerState<ReviewSendScreen> {
             builder: (_) => EncryptedSendProgressScreen(
               account: account,
               plan: plan,
+              amount: amount,
               recipientAddress: widget.recipientAddress.trim(),
               terminal: terminal,
             ),
