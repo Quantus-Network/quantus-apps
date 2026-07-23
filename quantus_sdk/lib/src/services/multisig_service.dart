@@ -1,7 +1,5 @@
 import 'dart:convert';
 
-import 'dart:typed_data';
-
 import 'package:flutter/foundation.dart';
 import 'package:polkadart/polkadart.dart' show Provider;
 import 'package:polkadart/scale_codec.dart' as scale;
