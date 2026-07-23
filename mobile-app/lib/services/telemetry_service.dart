@@ -22,10 +22,7 @@ class TelemetryService {
   /// Raw exception text and stack traces are deliberately never sent — they can
   /// embed addresses, amounts, call data, or future secret-bearing messages.
   void sendError(String errorName, {required Object error}) {
-    Telemetrydecksdk.send(
-      'Error',
-      additionalPayload: {'errorName': errorName, 'error': error.runtimeType.toString()},
-    );
+    Telemetrydecksdk.send('Error', additionalPayload: {'errorName': errorName, 'error': error.runtimeType.toString()});
   }
 
   /// Tracks that a screen has been viewed.
