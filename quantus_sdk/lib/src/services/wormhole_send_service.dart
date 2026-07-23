@@ -280,7 +280,12 @@ class WormholeSendService {
     ];
 
     try {
-      return await _proveAndSubmitBatches(op: op, batches: batches, circuitBinsDir: circuitBinsDir, onProgress: onProgress);
+      return await _proveAndSubmitBatches(
+        op: op,
+        batches: batches,
+        circuitBinsDir: circuitBinsDir,
+        onProgress: onProgress,
+      );
     } finally {
       secretBytes.fillRange(0, secretBytes.length, 0);
     }

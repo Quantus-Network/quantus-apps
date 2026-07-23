@@ -608,7 +608,11 @@ query SpentNullifiers($hashes: [String!]!) {
         // The secret is used only for the nullifier above — the returned UTXO
         // carries a blanked owner so no secret is retained in app state (M11).
         final redactedOwner = WormholeAddressInfo(index: owner.index, address: owner.address, secretHex: '');
-        nullifierToUtxo[nullifierHex] = WormholeUtxo(transfer: transfer, owner: redactedOwner, nullifierHex: nullifierHex);
+        nullifierToUtxo[nullifierHex] = WormholeUtxo(
+          transfer: transfer,
+          owner: redactedOwner,
+          nullifierHex: nullifierHex,
+        );
         if (cachedSpent.contains(nullifierHex)) {
           skipped++;
         } else {
