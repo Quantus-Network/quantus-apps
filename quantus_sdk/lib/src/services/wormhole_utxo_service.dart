@@ -62,6 +62,11 @@ class WormholeTransfer {
 
 /// One HD-derived wormhole address (index in the wormhole derivation sequence)
 /// together with the secret needed to compute nullifiers and spend proofs.
+///
+/// [secretHex] is required on input to [WormholeUtxoService.getUnspentUtxos]
+/// (nullifier computation) but is always blanked on the [WormholeUtxo.owner]
+/// of returned UTXOs: UTXOs are kept in long-lived app state, and secrets are
+/// never cached — spenders re-derive from [index] when needed (M11).
 class WormholeAddressInfo {
   final int index;
   final String address;
@@ -600,7 +605,10 @@ query SpentNullifiers($hashes: [String!]!) {
           secretHex: owner.secretHex,
           transferCount: transfer.transferCount,
         );
-        nullifierToUtxo[nullifierHex] = WormholeUtxo(transfer: transfer, owner: owner, nullifierHex: nullifierHex);
+        // The secret is used only for the nullifier above — the returned UTXO
+        // carries a blanked owner so no secret is retained in app state (M11).
+        final redactedOwner = WormholeAddressInfo(index: owner.index, address: owner.address, secretHex: '');
+        nullifierToUtxo[nullifierHex] = WormholeUtxo(transfer: transfer, owner: redactedOwner, nullifierHex: nullifierHex);
         if (cachedSpent.contains(nullifierHex)) {
           skipped++;
         } else {

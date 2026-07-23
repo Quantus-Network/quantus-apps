@@ -10,6 +10,10 @@ import '../rust/api/wormhole.dart' as wormhole_ffi;
 /// Funds are claimed either by revealing [rewardsPreimageHex] (miner rewards) or by
 /// producing a ZK proof that knows [secretHex] (withdrawals). [secretHex] is empty
 /// when the pair was reconstructed from a raw preimage.
+///
+/// [secretHex] is spendable key material held as an immutable Dart String, so
+/// it cannot be zeroized — never cache key pairs; derive, use immediately, and
+/// let them go out of scope (M11).
 class WormholeKeyPair {
   final String address;
   final String addressHex;

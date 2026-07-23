@@ -261,6 +261,8 @@ class WormholeSendService {
     op.checkCancelled();
 
     // A claim pays each leaf's full net (post-fee) amount to the destination.
+    // The secret lives only in this buffer and is zeroized as soon as the
+    // proofs are done (M11).
     final secretBytes = Uint8List.fromList(hex.decode(secretHex.replaceFirst('0x', '')));
     final destinationBytes = Uint8List.fromList(getAccountId32(destinationAddress));
     final spends = [
@@ -277,7 +279,11 @@ class WormholeSendService {
         spends.sublist(i, (i + maxProofsPerBatch).clamp(0, spends.length)),
     ];
 
-    return _proveAndSubmitBatches(op: op, batches: batches, circuitBinsDir: circuitBinsDir, onProgress: onProgress);
+    try {
+      return await _proveAndSubmitBatches(op: op, batches: batches, circuitBinsDir: circuitBinsDir, onProgress: onProgress);
+    } finally {
+      secretBytes.fillRange(0, secretBytes.length, 0);
+    }
   }
 
   Future<ClaimResult> _proveAndSubmitBatches({
