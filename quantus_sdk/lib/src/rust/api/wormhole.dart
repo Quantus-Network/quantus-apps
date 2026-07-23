@@ -8,42 +8,26 @@ import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
 // These functions are ignored because they are not marked as `pub`: `all_required_files_exist`, `vec_to_32`, `vec_to_digest`
 
-String computeAddressHashHex({required List<int> rawAddress}) => RustLib
-    .instance
-    .api
-    .crateApiWormholeComputeAddressHashHex(rawAddress: rawAddress);
+String computeAddressHashHex({required List<int> rawAddress}) =>
+    RustLib.instance.api.crateApiWormholeComputeAddressHashHex(rawAddress: rawAddress);
 
-Uint8List computeNullifier({
-  required List<int> secret,
-  required BigInt transferCount,
-}) => RustLib.instance.api.crateApiWormholeComputeNullifier(
-  secret: secret,
-  transferCount: transferCount,
-);
+Uint8List computeNullifier({required List<int> secret, required BigInt transferCount}) =>
+    RustLib.instance.api.crateApiWormholeComputeNullifier(secret: secret, transferCount: transferCount);
 
 Uint8List computeWormholeAddress({required List<int> secret}) =>
     RustLib.instance.api.crateApiWormholeComputeWormholeAddress(secret: secret);
 
-int wormholeComputeOutputAmount({
-  required int inputAmount,
-  required int feeBps,
-}) => RustLib.instance.api.crateApiWormholeWormholeComputeOutputAmount(
-  inputAmount: inputAmount,
-  feeBps: feeBps,
-);
+int wormholeComputeOutputAmount({required int inputAmount, required int feeBps}) =>
+    RustLib.instance.api.crateApiWormholeWormholeComputeOutputAmount(inputAmount: inputAmount, feeBps: feeBps);
 
 int decodeLeafAmount({required List<int> leafData}) =>
     RustLib.instance.api.crateApiWormholeDecodeLeafAmount(leafData: leafData);
 
-BigInt decodeLeafTransferCount({required List<int> leafData}) => RustLib
-    .instance
-    .api
-    .crateApiWormholeDecodeLeafTransferCount(leafData: leafData);
+BigInt decodeLeafTransferCount({required List<int> leafData}) =>
+    RustLib.instance.api.crateApiWormholeDecodeLeafTransferCount(leafData: leafData);
 
-Uint8List decodeLeafToAccount({required List<int> leafData}) => RustLib
-    .instance
-    .api
-    .crateApiWormholeDecodeLeafToAccount(leafData: leafData);
+Uint8List decodeLeafToAccount({required List<int> leafData}) =>
+    RustLib.instance.api.crateApiWormholeDecodeLeafToAccount(leafData: leafData);
 
 MerkleProcessed computeMerklePositions({
   required List<int> unsortedSiblingsFlat,
@@ -55,10 +39,8 @@ MerkleProcessed computeMerklePositions({
   depth: depth,
 );
 
-Future<String> ensureCircuitBinaries({required String binsDir}) => RustLib
-    .instance
-    .api
-    .crateApiWormholeEnsureCircuitBinaries(binsDir: binsDir);
+Future<String> ensureCircuitBinaries({required String binsDir}) =>
+    RustLib.instance.api.crateApiWormholeEnsureCircuitBinaries(binsDir: binsDir);
 
 Future<ProofOutput> generateProof({
   required ProofInput input,
@@ -70,22 +52,14 @@ Future<ProofOutput> generateProof({
   commonBinPath: commonBinPath,
 );
 
-Future<Uint8List> aggregateProofs({
-  required List<Uint8List> proofBytesList,
-  required String binsDir,
-}) => RustLib.instance.api.crateApiWormholeAggregateProofs(
-  proofBytesList: proofBytesList,
-  binsDir: binsDir,
-);
+Future<Uint8List> aggregateProofs({required List<Uint8List> proofBytesList, required String binsDir}) =>
+    RustLib.instance.api.crateApiWormholeAggregateProofs(proofBytesList: proofBytesList, binsDir: binsDir);
 
 class MerkleProcessed {
   final Uint8List sortedSiblingsFlat;
   final Uint8List positions;
 
-  const MerkleProcessed({
-    required this.sortedSiblingsFlat,
-    required this.positions,
-  });
+  const MerkleProcessed({required this.sortedSiblingsFlat, required this.positions});
 
   @override
   int get hashCode => sortedSiblingsFlat.hashCode ^ positions.hashCode;
