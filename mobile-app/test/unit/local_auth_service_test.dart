@@ -70,10 +70,10 @@ void main() {
       expect(await service.authenticate(), isFalse);
     });
 
-    test('fails closed without prompting when the device has no security at all', () async {
+    test('grants access without prompting when the device has no security at all', () async {
       localAuth.deviceSupported = false;
 
-      expect(await service.authenticate(), isFalse);
+      expect(await service.authenticate(), isTrue);
       expect(localAuth.authenticateCalls, 0);
     });
 
@@ -97,6 +97,12 @@ void main() {
   group('shouldRequireAuthentication', () {
     test('returns false when no wallet exists', () async {
       settingsService.hasWallet = false;
+
+      expect(await service.shouldRequireAuthentication(), isFalse);
+    });
+
+    test('returns false on a device with no security enrolled (nothing to enforce)', () async {
+      localAuth.deviceSupported = false;
 
       expect(await service.shouldRequireAuthentication(), isFalse);
     });
@@ -147,6 +153,17 @@ void main() {
       await flushAsync();
 
       expect(localAuth.authenticateCalls, 1);
+      expect(controller.state.isAuthenticated, isTrue);
+    });
+
+    test('unlocks without prompting at cold start when the device has no security', () async {
+      localAuth.deviceSupported = false;
+      final controller = LocalAuthController(service);
+
+      await controller.checkAuthentication();
+      await flushAsync();
+
+      expect(localAuth.authenticateCalls, 0);
       expect(controller.state.isAuthenticated, isTrue);
     });
 

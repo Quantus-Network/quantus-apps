@@ -73,9 +73,10 @@ class LocalAuthService {
       // Require whatever device security is enrolled: biometrics or the
       // device credential (PIN/pattern/password). biometricOnly: false lets
       // the plugin fall back to the device credential, so PIN-only devices
-      // are prompted for their PIN. A device with no security at all fails
-      // closed: gated actions stay blocked until the device is secured.
-      if (!await isDeviceSecure()) return false;
+      // are prompted for their PIN. A device with no lock-screen security at
+      // all has nothing to enforce: skip the prompt and grant access —
+      // failing closed here would just dead-end the app on the lock screen.
+      if (!await isDeviceSecure()) return true;
 
       final didAuthenticate = await _localAuth.authenticate(
         localizedReason: localizedReason,
@@ -98,6 +99,10 @@ class LocalAuthService {
   Future<bool> shouldRequireAuthentication() async {
     try {
       if (!await _settingsService.getHasWallet()) return false;
+      // No device lock enrolled → there is nothing to gate with, so don't
+      // require auth (otherwise every resume would flash a lock screen that
+      // can only auto-dismiss).
+      if (!await isDeviceSecure()) return false;
       // Fail closed: a wallet with no in-memory pause record means the
       // process started (or was killed) since the last unlock.
       final lastPausedTime = _lastPausedTime;
