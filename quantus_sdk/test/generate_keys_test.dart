@@ -98,8 +98,16 @@ void main() {
       expect(hex.encode(result.firstHash), expectedPreimage);
 
       final addressBytes = ss58ToAccountId(s: result.address);
-      final expectedAddressBytes = ss58ToAccountId(s: '5H8AGzwKPtKMfKKuKYCoAFApCoy4EVewCqc9k6GrSgqHoaXm');
+      // Same account bytes as '5H8AGzwKPtKMfKKuKYCoAFApCoy4EVewCqc9k6GrSgqHoaXm'
+      // (generic Substrate prefix 42), encoded with the Quantus prefix (189).
+      final expectedAddressBytes = ss58ToAccountId(s: 'qzpWh4AEtsgCyEbv4WBgFWnB9bcdF2L2jVDuyjXP9mSTyBaeU');
       expect(addressBytes, expectedAddressBytes);
+    });
+
+    test('ss58ToAccountId rejects foreign ss58 prefixes and invalid input', () {
+      // Generic Substrate (42) encoding of the wormhole test account above.
+      expect(() => ss58ToAccountId(s: '5H8AGzwKPtKMfKKuKYCoAFApCoy4EVewCqc9k6GrSgqHoaXm'), throwsA(anything));
+      expect(() => ss58ToAccountId(s: 'not an ss58 address'), throwsA(anything));
     });
 
     test('test for keystone hardware wallet', () {
