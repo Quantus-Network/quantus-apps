@@ -9,15 +9,26 @@ class LocalAuthService {
 
   final LocalAuthentication _localAuth;
   final SettingsService _settingsService;
+  final Duration _authTimeout;
 
-  LocalAuthService._internal() : _localAuth = LocalAuthentication(), _settingsService = SettingsService();
+  /// In-memory only: the background grace window must never survive
+  /// process death. A null value with an existing wallet therefore means
+  /// "this process has not recorded a backgrounding" — i.e. locked.
+  DateTime? _lastPausedTime;
+
+  LocalAuthService._internal()
+    : _localAuth = LocalAuthentication(),
+      _settingsService = SettingsService(),
+      _authTimeout = const Duration(seconds: 10);
 
   @visibleForTesting
-  LocalAuthService.withDependencies({required LocalAuthentication localAuth, required SettingsService settingsService})
-    : _localAuth = localAuth,
-      _settingsService = settingsService;
-
-  static const _authTimeout = Duration(seconds: 10);
+  LocalAuthService.withDependencies({
+    required LocalAuthentication localAuth,
+    required SettingsService settingsService,
+    Duration authTimeout = const Duration(seconds: 10),
+  }) : _localAuth = localAuth,
+       _settingsService = settingsService,
+       _authTimeout = authTimeout;
 
   /// Whether the device has any lock-screen security enrolled: biometrics
   /// or a device credential (PIN/pattern/password).
@@ -62,9 +73,10 @@ class LocalAuthService {
       // Require whatever device security is enrolled: biometrics or the
       // device credential (PIN/pattern/password). biometricOnly: false lets
       // the plugin fall back to the device credential, so PIN-only devices
-      // are prompted for their PIN. A device with no security at all fails
-      // closed: gated actions stay blocked until the device is secured.
-      if (!await isDeviceSecure()) return false;
+      // are prompted for their PIN. A device with no lock-screen security at
+      // all has nothing to enforce: skip the prompt and grant access —
+      // failing closed here would just dead-end the app on the lock screen.
+      if (!await isDeviceSecure()) return true;
 
       final didAuthenticate = await _localAuth.authenticate(
         localizedReason: localizedReason,
@@ -87,8 +99,14 @@ class LocalAuthService {
   Future<bool> shouldRequireAuthentication() async {
     try {
       if (!await _settingsService.getHasWallet()) return false;
-      final lastPausedTime = _settingsService.getLastPausedTime();
-      if (lastPausedTime == null) return false;
+      // No device lock enrolled → there is nothing to gate with, so don't
+      // require auth (otherwise every resume would flash a lock screen that
+      // can only auto-dismiss).
+      if (!await isDeviceSecure()) return false;
+      // Fail closed: a wallet with no in-memory pause record means the
+      // process started (or was killed) since the last unlock.
+      final lastPausedTime = _lastPausedTime;
+      if (lastPausedTime == null) return true;
       return DateTime.now().difference(lastPausedTime) > _authTimeout;
     } catch (e) {
       debugPrint('Error checking if authentication is required: $e');
@@ -98,12 +116,12 @@ class LocalAuthService {
 
   Future<bool> updateLastPausedTime() async {
     if (!await _settingsService.getHasWallet()) return false;
-    _settingsService.setLastPausedTime(DateTime.now());
+    _lastPausedTime = DateTime.now();
     return true;
   }
 
   void cleanLastPausedTime() {
-    _settingsService.cleanLastPausedTime();
+    _lastPausedTime = null;
   }
 
   Future<void> stopAuthentication() async {
