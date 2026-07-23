@@ -12,6 +12,7 @@ import 'package:quantus_sdk/src/services/wormhole_address_manager.dart' show Mne
 import 'package:quantus_sdk/src/services/wormhole_coin_selection.dart';
 import 'package:quantus_sdk/src/services/wormhole_send_service.dart';
 import 'package:quantus_sdk/src/services/wormhole_utxo_service.dart';
+import 'package:quantus_sdk/src/utils/print.dart';
 
 /// Snapshot of an encrypted account: spendable UTXOs across all discovered
 /// wormhole addresses, plus change that has been submitted but not yet indexed.
@@ -87,8 +88,7 @@ class EncryptedAccountService {
     _live.add(this);
   }
 
-  // ignore: avoid_print
-  static void _log(String msg) => print('[EncryptedAccount] $msg');
+  static void _log(String msg) => quantusDebugPrint('[EncryptedAccount] $msg');
 
   void _checkNotDisposed() {
     if (_disposed) throw StateError('EncryptedAccountService for wallet $walletIndex was disposed (logout)');

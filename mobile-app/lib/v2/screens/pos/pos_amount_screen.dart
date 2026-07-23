@@ -9,6 +9,7 @@ import 'package:resonance_network_wallet/providers/currency_display_provider.dar
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/shared/utils/amount_input_logic.dart';
 import 'package:resonance_network_wallet/shared/extensions/toaster_extensions.dart';
+import 'package:resonance_network_wallet/shared/utils/print.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_icon_button.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
@@ -51,7 +52,7 @@ class _PosAmountScreenState extends ConsumerState<PosAmountScreen> {
     try {
       setState(() => _amount = _amountInputLogic.onAmountChanged(value: _amountController.text, isFlipped: isFlipped));
     } on InvalidNumberInputException catch (e, stack) {
-      debugPrint('Amount parse failed: $e\n$stack');
+      quantusDebugPrint('Amount parse failed: $e\n$stack');
       context.showErrorToaster(message: ref.read(l10nProvider).sendInputAmountInvalidAmount);
       return;
     }

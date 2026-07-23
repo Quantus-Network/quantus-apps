@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'dart:isolate';
 import 'package:flutter/services.dart';
-import 'package:flutter/foundation.dart';
 import 'package:human_checksum/human_checksum.dart';
+import 'package:quantus_sdk/src/utils/print.dart';
 
 class HumanReadableChecksumService {
   static final HumanReadableChecksumService _instance = HumanReadableChecksumService._internal();
@@ -46,8 +46,8 @@ class HumanReadableChecksumService {
 
       _isolateReadyCompleter!.complete();
     } catch (e, s) {
-      debugPrint('Error during checksum isolate initialization: $e');
-      debugPrint('Initialization error stack: $s');
+      quantusDebugPrint('Error during checksum isolate initialization: $e');
+      quantusDebugPrint('Initialization error stack: $s');
       if (!(_isolateReadyCompleter?.isCompleted ?? false)) {
         _isolateReadyCompleter!.completeError(e);
       }
@@ -71,7 +71,7 @@ class HumanReadableChecksumService {
       }
 
       if (_isolateSendPort == null) {
-        debugPrint('Error: _isolateSendPort is null after successful initialization wait.');
+        quantusDebugPrint('Error: _isolateSendPort is null after successful initialization wait.');
         return '';
       }
 
@@ -92,15 +92,15 @@ class HumanReadableChecksumService {
       _checkPhraseCache[key] = finalResult;
       return finalResult;
     } catch (e, s) {
-      debugPrint('Error in getHumanReadableName for address $address: $e');
-      debugPrint('Lookup error stack: $s');
+      quantusDebugPrint('Error in getHumanReadableName for address $address: $e');
+      quantusDebugPrint('Lookup error stack: $s');
       _checkPhraseCache.remove(address);
       return '';
     }
   }
 
   void dispose() {
-    debugPrint('Disposing HumanReadableChecksumService...');
+    quantusDebugPrint('Disposing HumanReadableChecksumService...');
     _isolate?.kill(priority: Isolate.immediate);
     _isolate = null;
     _isolateSendPort = null;
@@ -110,7 +110,7 @@ class HumanReadableChecksumService {
       _isolateReadyCompleter?.completeError('HumanReadableChecksumService disposed');
     }
     _isolateReadyCompleter = null;
-    debugPrint('HumanReadableChecksumService disposed.');
+    quantusDebugPrint('HumanReadableChecksumService disposed.');
   }
 }
 
@@ -130,10 +130,10 @@ void _isolateEntry(List<dynamic> args) async {
       final result = humanChecksum.addressToChecksum(address).join('-');
       replyTo.send(result);
     } catch (e, s) {
-      debugPrint('Error in checksum isolate processing address $address: $e');
-      debugPrint('Isolate error stack: $s');
+      quantusDebugPrint('Error in checksum isolate processing address $address: $e');
+      quantusDebugPrint('Isolate error stack: $s');
       replyTo.send('');
     }
   }
-  debugPrint('Checksum isolate message stream closed.');
+  quantusDebugPrint('Checksum isolate message stream closed.');
 }

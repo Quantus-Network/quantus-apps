@@ -8,6 +8,7 @@ import 'package:quantus_sdk/src/rust/api/wormhole.dart' as wormhole_ffi;
 import 'package:quantus_sdk/src/services/hd_wallet_service.dart';
 import 'package:quantus_sdk/src/services/network/redundant_endpoint.dart';
 import 'package:quantus_sdk/src/services/substrate_service.dart';
+import 'package:quantus_sdk/src/utils/print.dart';
 
 class WormholeTransfer {
   final String id;
@@ -109,7 +110,7 @@ class WormholeUtxoService {
   final GraphQlEndpointService _graphQlEndpoint = GraphQlEndpointService();
   final RpcEndpointService _rpcEndpoint = RpcEndpointService();
 
-  static void _log(String msg) => print('[WormholeUtxo] $msg');
+  static void _log(String msg) => quantusDebugPrint('[WormholeUtxo] $msg');
 
   static String _addressHash(Uint8List raw32) => wormhole_ffi.computeAddressHashHex(rawAddress: raw32);
 

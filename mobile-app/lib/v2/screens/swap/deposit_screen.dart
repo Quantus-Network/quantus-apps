@@ -14,6 +14,7 @@ import 'package:resonance_network_wallet/v2/components/success_check.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 import 'package:resonance_network_wallet/l10n/app_localizations.dart';
+import 'package:resonance_network_wallet/shared/utils/print.dart';
 
 class DepositScreen extends ConsumerStatefulWidget {
   final SwapOrder order;
@@ -45,7 +46,7 @@ class _DepositScreenState extends ConsumerState<DepositScreen> {
       });
       _pollStatus();
     } catch (e) {
-      debugPrint('Confirm funds sent failed: $e');
+      quantusDebugPrint('Confirm funds sent failed: $e');
       setState(() => _confirming = false);
     }
   }
@@ -59,7 +60,7 @@ class _DepositScreenState extends ConsumerState<DepositScreen> {
         if (!mounted) return;
         setState(() => _order = updated);
       } catch (e) {
-        debugPrint('Swap status poll failed: $e');
+        quantusDebugPrint('Swap status poll failed: $e');
       }
     }
   }

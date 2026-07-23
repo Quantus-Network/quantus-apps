@@ -5,6 +5,7 @@ import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/mining_rewards_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
+import 'package:resonance_network_wallet/shared/utils/print.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base_bottom_content.dart';
@@ -81,8 +82,7 @@ class _RedeemProgressScreenState extends ConsumerState<RedeemProgressScreen> {
         _cancelled = true;
       });
     } catch (e) {
-      // ignore: avoid_print
-      print('[Redeem] Claim failed: $e');
+      quantusDebugPrint('[Redeem] Claim failed: $e');
       if (!mounted) return;
       setState(() {
         _running = false;

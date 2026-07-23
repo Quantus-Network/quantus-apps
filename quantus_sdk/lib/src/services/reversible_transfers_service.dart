@@ -15,6 +15,7 @@ import 'package:quantus_sdk/src/extensions/duration_extension.dart';
 import 'package:quantus_sdk/src/models/account.dart';
 import 'package:quantus_sdk/src/models/extrinsic_fee_data.dart';
 import 'package:quantus_sdk/src/rust/api/crypto.dart' as crypto;
+import 'package:quantus_sdk/src/utils/print.dart';
 
 import 'substrate_service.dart';
 
@@ -125,7 +126,7 @@ class ReversibleTransfersService {
 
   /// Query account's reversibility configuration
   Future<HighSecurityAccountData?> getHighSecurityConfig(String address) async {
-    print('getHighSecurityConfig: $address');
+    quantusDebugPrint('getHighSecurityConfig: $address');
     try {
       final quantusApi = Planck(_substrateService.provider!);
       final accountId = crypto.ss58ToAccountId(s: address);
@@ -207,7 +208,7 @@ class ReversibleTransfersService {
         : delay is qp.Timestamp
         ? '${(delay).value0} ms'
         : delay.toJson().toString();
-    print('setHighSecurity: ${account.accountId}, $guardianAccountId, $delayValue');
+    quantusDebugPrint('setHighSecurity: ${account.accountId}, $guardianAccountId, $delayValue');
     try {
       final quantusApi = Planck(_substrateService.provider!);
       final guardianAccountId32 = crypto.ss58ToAccountId(s: guardianAccountId);
@@ -217,22 +218,22 @@ class ReversibleTransfersService {
         delay: delay,
         guardian: guardianAccountId32,
       );
-      print('Encoded Call: ${call.encode()}');
-      print('Encoded Call Hex: ${hex.encode(call.encode())}');
+      quantusDebugPrint('Encoded Call: ${call.encode()}');
+      quantusDebugPrint('Encoded Call Hex: ${hex.encode(call.encode())}');
 
       // Submit the transaction using substrate service
       final res = await _substrateService.submitExtrinsic(account, call);
 
-      print('setHighSecurity done with result: $res');
+      quantusDebugPrint('setHighSecurity done with result: $res');
       return res;
     } catch (e) {
-      print('Failed to enable high security: $e');
+      quantusDebugPrint('Failed to enable high security: $e');
       throw Exception('Failed to enable high security: $e');
     }
   }
 
   Future<bool> isHighSecurity(String address) async {
-    print('isHighSecurity: $address');
+    quantusDebugPrint('isHighSecurity: $address');
     try {
       final config = await getHighSecurityConfig(address);
       return config != null;
@@ -247,13 +248,13 @@ class ReversibleTransfersService {
 
   /// Check if account is a guardian (interceptor) for any accounts
   Future<bool> isGuardian(String address) async {
-    print('isGuardian: $address');
+    quantusDebugPrint('isGuardian: $address');
     return (await getInterceptedAccounts(address)).isNotEmpty;
   }
 
   /// Get list of accounts that the given account is a guardian (interceptor) for
   Future<List<String>> getInterceptedAccounts(String guardianAddress) async {
-    print('getInterceptedAccounts: $guardianAddress');
+    quantusDebugPrint('getInterceptedAccounts: $guardianAddress');
 
     try {
       final quantusApi = Planck(_substrateService.provider!);
@@ -262,7 +263,7 @@ class ReversibleTransfersService {
 
       List<String> result = interceptedAccounts.map((id) {
         final address = AddressExtension.ss58AddressFromBytes(Uint8List.fromList(id));
-        print('intercepted account: $address');
+        quantusDebugPrint('intercepted account: $address');
         return address;
       }).toList();
 

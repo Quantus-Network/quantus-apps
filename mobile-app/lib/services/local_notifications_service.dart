@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:resonance_network_wallet/models/notification_models.dart';
@@ -10,6 +9,7 @@ import 'package:resonance_network_wallet/services/transaction_service.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest_all.dart' as tz_data;
 import 'package:flutter_timezone/flutter_timezone.dart';
+import 'package:resonance_network_wallet/shared/utils/print.dart';
 
 class LocalNotificationsService {
   final Ref _ref;
@@ -48,13 +48,13 @@ class LocalNotificationsService {
       final currentTimeZone = await FlutterTimezone.getLocalTimezone();
       tz.setLocalLocation(tz.getLocation(currentTimeZone.identifier));
     } catch (e) {
-      debugPrint('Failed to set device timezone: "$e". Falling back to UTC for notifications.');
+      quantusDebugPrint('Failed to set device timezone: "$e". Falling back to UTC for notifications.');
       try {
         tz_data.initializeTimeZones();
         tz.setLocalLocation(tz.UTC);
       } catch (err) {
         // Last resort: proceed without proper tz; scheduled notifs may not work but app continues.
-        debugPrint('Last resort failed to set device timezone to UTC: "$err".');
+        quantusDebugPrint('Last resort failed to set device timezone to UTC: "$err".');
       }
     }
 
@@ -95,7 +95,7 @@ class LocalNotificationsService {
       final json = jsonDecode(payload);
       txService.navigateToTransactionFromPayloadIfPossible(json);
     } catch (e) {
-      debugPrint('Error decoding payload handle launch by notification: $e');
+      quantusDebugPrint('Error decoding payload handle launch by notification: $e');
       TelemetryService().sendError(
         'Error decoding notification launch payload',
         error: e.runtimeType.toString(),
@@ -157,7 +157,7 @@ class LocalNotificationsService {
         final json = jsonDecode(payload);
         txService.navigateToTransactionFromPayloadIfPossible(json);
       } catch (e) {
-        debugPrint('Error decoding payload setup notifications click listener: $e');
+        quantusDebugPrint('Error decoding payload setup notifications click listener: $e');
         TelemetryService().sendError(
           'Error decoding notification click payload',
           error: e.runtimeType.toString(),

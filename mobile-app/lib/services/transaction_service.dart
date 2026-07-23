@@ -1,10 +1,10 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/models/transaction_role.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/route_intent_providers.dart';
 import 'package:resonance_network_wallet/services/telemetry_service.dart';
+import 'package:resonance_network_wallet/shared/utils/print.dart';
 
 final transactionServiceProvider = Provider<TransactionService>((ref) {
   return TransactionService(ref);
@@ -182,7 +182,7 @@ class TransactionService {
         event = PendingTransactionEvent.fromJson(json);
       }
     } catch (e) {
-      debugPrint('Failed deserializing $txType event: $e');
+      quantusDebugPrint('Failed deserializing $txType event: $e');
       TelemetryService().sendError(
         'Failed deserializing $txType event',
         error: e.runtimeType.toString(),

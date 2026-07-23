@@ -11,6 +11,7 @@ import 'package:quantus_sdk/src/rust/api/crypto.dart' as crypto;
 import 'package:quantus_sdk/src/utils/timing.dart';
 import 'package:ss58/ss58.dart';
 import 'package:quantus_sdk/src/extensions/address_extension.dart';
+import 'package:quantus_sdk/src/utils/print.dart';
 
 const crystalAlice = '//Crystal Alice';
 const crystalBob = '//Crystal Bob';
@@ -44,7 +45,7 @@ class SubstrateService {
       final partialFeeString = result.result['partialFee'] as String;
       return BigInt.parse(partialFeeString);
     } catch (e, s) {
-      debugPrint('Error estimating fee: $e $s');
+      quantusDebugPrint('Error estimating fee: $e $s');
       throw Exception('Failed to estimate network fee: $e');
     }
   }
@@ -59,7 +60,7 @@ class SubstrateService {
   Future<BigInt> queryUserBalance() async {
     final keyPair = await _getUserWallet();
     final balance = await queryBalance(keyPair.ss58Address);
-    print('user balance: $balance');
+    quantusDebugPrint('user balance: $balance');
     return balance;
   }
 
@@ -81,10 +82,10 @@ class SubstrateService {
       });
 
       printTiming('queryBalance total', totalSw.elapsedMilliseconds);
-      print('user balance $address: ${accountInfo.data.free}');
+      quantusDebugPrint('user balance $address: ${accountInfo.data.free}');
       return accountInfo.data.free;
     } catch (e, st) {
-      print('Error querying balance: $e, $st');
+      quantusDebugPrint('Error querying balance: $e, $st');
       throw Exception('Failed to query balance: $e');
     }
   }
@@ -117,12 +118,12 @@ class SubstrateService {
     final params = ['0x${hex.encode(extrinsic)}'];
 
     final response = await _rpcEndpointService.rpcTask((uri) async {
-      print('submitExtrinsic to $uri');
+      quantusDebugPrint('submitExtrinsic to $uri');
       final provider = Provider.fromUri(uri);
       return await provider.send('author_submitExtrinsic', params);
     });
 
-    print('submitExtrinsic response: ${response.result}');
+    quantusDebugPrint('submitExtrinsic response: ${response.result}');
     if (response.error != null) {
       throw Exception(response.error.toString());
     }
@@ -140,32 +141,32 @@ class SubstrateService {
     // For debugging: calculate the hash locally since submitAndWatch returns a sub ID
     final txHash = Hasher.blake2b256.hash(extrinsic);
     final txHashHex = '0x${hex.encode(txHash)}';
-    print('Calculated Tx Hash: $txHashHex');
+    quantusDebugPrint('Calculated Tx Hash: $txHashHex');
 
     // We don't await this because we want to return the hash immediately
     // but keep the listener running
     _rpcEndpointService.rpcTask((uri) async {
       final wsUri = uri.replace(scheme: uri.scheme == 'https' ? 'wss' : 'ws');
-      print('submitExtrinsic (Watch) to $wsUri');
+      quantusDebugPrint('submitExtrinsic (Watch) to $wsUri');
 
       final provider = Provider.fromUri(wsUri);
 
       try {
         final subscription = await provider.subscribe('author_submitAndWatchExtrinsic', params);
-        print('Subscribed to extrinsic updates: ${subscription.id}');
+        quantusDebugPrint('Subscribed to extrinsic updates: ${subscription.id}');
 
         subscription.stream.listen((message) {
-          print('Extrinsic Status Update [${message.subscription}]: ${message.result}');
+          quantusDebugPrint('Extrinsic Status Update [${message.subscription}]: ${message.result}');
 
           // Check for error/invalid
           final result = message.result;
           if (result is Map &&
               (result.containsKey('invalid') || result.containsKey('dropped') || result.containsKey('error'))) {
-            print('Extrinsic FAILED/DROPPED: $result');
+            quantusDebugPrint('Extrinsic FAILED/DROPPED: $result');
           }
         });
       } catch (e) {
-        print('Error watching extrinsic: $e');
+        quantusDebugPrint('Error watching extrinsic: $e');
       }
 
       // Keep alive for logs
@@ -187,14 +188,14 @@ class SubstrateService {
         return await _submitExtrinsic(extrinsic);
       } catch (e) {
         if (_isAlreadySubmittedError(e, isRetry: attempt > 1)) {
-          print('Extrinsic 0x${hex.encode(txHash)} already known by network: $e');
+          quantusDebugPrint('Extrinsic 0x${hex.encode(txHash)} already known by network: $e');
           return txHash;
         }
         if (attempt >= maxRetries) {
-          print('Failed to submit extrinsic after $maxRetries attempts: $e');
+          quantusDebugPrint('Failed to submit extrinsic after $maxRetries attempts: $e');
           rethrow;
         }
-        print('Failed to submit extrinsic, retrying... attempt $attempt error: $e');
+        quantusDebugPrint('Failed to submit extrinsic, retrying... attempt $attempt error: $e');
         await Future.delayed(Duration(milliseconds: 500 * attempt));
       }
     }
@@ -389,7 +390,7 @@ class SubstrateService {
   }
 
   Future<void> logout() async {
-    print('Log out!');
+    quantusDebugPrint('Log out!');
     // Quiesce in-flight encrypted-account work (loads, sends) before wiping
     // anything: an operation still holding the old mnemonic-derived material
     // must not keep running — or persist state — past this point.

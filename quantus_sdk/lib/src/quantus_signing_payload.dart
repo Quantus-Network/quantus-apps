@@ -4,6 +4,7 @@ import 'package:convert/convert.dart';
 import 'package:polkadart/extrinsic/signed_extensions/signed_extensions_abstract.dart';
 import 'package:polkadart/polkadart.dart';
 import 'package:polkadart/scale_codec.dart';
+import 'package:quantus_sdk/src/utils/print.dart';
 
 class QuantusSigningPayload extends SigningPayload {
   ///
@@ -86,7 +87,7 @@ class QuantusSigningPayload extends SigningPayload {
         // Most probably, it is a custom signed extension.
         // check if this signed extension is NullCodec or not!
         final signedExtensionMap = registry.getSignedExtensionTypes();
-        print(signedExtensionMap);
+        quantusDebugPrint('$signedExtensionMap');
         if (signedExtensionMap[extension] != null &&
             signedExtensionMap[extension] is! NullCodec &&
             signedExtensionMap[extension].hashCode != NullCodec.codec.hashCode) {

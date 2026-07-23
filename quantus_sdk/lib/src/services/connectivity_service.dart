@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:quantus_sdk/src/utils/print.dart';
 
 enum NetworkStatus { online, offline }
 
@@ -28,12 +29,12 @@ class ConnectivityService {
   }
 
   void _onConnectivityChanged(List<ConnectivityResult> results) {
-    print('Connectivity changed: $results');
+    quantusDebugPrint('Connectivity changed: $results');
     _updateStatus(results);
   }
 
   void _onError(dynamic error) {
-    print('Connectivity error: $error');
+    quantusDebugPrint('Connectivity error: $error');
   }
 
   void _updateStatus(List<ConnectivityResult> results, {bool emitInitial = false}) {
@@ -42,7 +43,7 @@ class ConnectivityService {
     if (emitInitial || newStatus != _currentStatus) {
       _currentStatus = newStatus;
       _statusController.add(newStatus);
-      print('Network status: $newStatus');
+      quantusDebugPrint('Network status: $newStatus');
     }
   }
 

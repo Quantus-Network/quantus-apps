@@ -6,6 +6,7 @@ import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/mining_rewards_provider.dart';
 import 'package:resonance_network_wallet/shared/constants/e2e_keys.dart';
+import 'package:resonance_network_wallet/shared/utils/print.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/about_quantus_screen.dart';
@@ -50,8 +51,8 @@ class _SettingsScreenV2State extends ConsumerState<SettingsScreenV2> {
                 ),
                 loading: () => _buildTappableRow(e.value, subtitle: l10n.commonLoading, trailing: trailing),
                 error: (err, st) {
-                  debugPrint('Error getting mining rewards: ${err.toString()}');
-                  debugPrint('Stack trace: ${st.toString()}');
+                  quantusDebugPrint('Error getting mining rewards: ${err.toString()}');
+                  quantusDebugPrint('Stack trace: ${st.toString()}');
 
                   return _buildTappableRow(e.value, subtitle: l10n.settingsMiningRewardsError, trailing: trailing);
                 },

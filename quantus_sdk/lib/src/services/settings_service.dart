@@ -4,6 +4,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:quantus_sdk/src/models/account.dart';
 import 'package:quantus_sdk/src/models/display_account.dart';
 import 'package:quantus_sdk/src/models/multisig_account.dart';
+import 'package:quantus_sdk/src/utils/print.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SettingsService {
@@ -493,9 +494,9 @@ class SettingsService {
 
   /// Set old accounts data (for debugging/testing)
   Future<void> setOldAccountsData(String jsonData) async {
-    print('removing accounts data');
+    quantusDebugPrint('removing accounts data');
     await _prefs.remove(_accountsKey);
-    print('setting old accounts data - reload app after this');
+    quantusDebugPrint('setting old accounts data - reload app after this');
     await _prefs.setString(_oldAccountsKeyV4, jsonData);
   }
 

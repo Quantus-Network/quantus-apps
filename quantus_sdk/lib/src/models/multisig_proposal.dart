@@ -10,6 +10,7 @@ import 'package:quantus_sdk/generated/planck/types/sp_runtime/multiaddress/multi
 import 'package:quantus_sdk/src/extensions/address_extension.dart';
 import 'package:quantus_sdk/src/models/json_dynamic_parse.dart';
 import 'package:quantus_sdk/src/models/multisig_account.dart';
+import 'package:quantus_sdk/src/utils/print.dart';
 
 /// On-chain lifecycle status of a multisig proposal.
 ///
@@ -246,7 +247,7 @@ class MultisigProposal {
         }
       }
     } catch (e) {
-      debugPrint('[MultisigProposal] Failed to decode call_raw: $e');
+      quantusDebugPrint('[MultisigProposal] Failed to decode call_raw: $e');
     }
     return null;
   }
