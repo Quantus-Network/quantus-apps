@@ -33,6 +33,6 @@ Future<void> appendConfirmedEventToHistory({
   } catch (e, stackTrace) {
     quantusDebugPrint('[AccountActivityReconcile] Error: $e');
     quantusDebugPrint('Stack trace: $stackTrace');
-    TelemetryService().sendError('account_activity_reconcile_failed', error: e, stackTrace: stackTrace);
+    TelemetryService().sendError('account_activity_reconcile_failed', error: e);
   }
 }

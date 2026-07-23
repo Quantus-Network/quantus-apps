@@ -198,7 +198,7 @@ class WalletInitializerState extends ConsumerState<WalletInitializer> {
       } catch (e, stackTrace) {
         quantusDebugPrint('error in tryLater: $e');
         quantusDebugPrint('stack trace: $stackTrace');
-        TelemetryService().sendError('Error-Migration-TryLater', error: e, stackTrace: stackTrace);
+        TelemetryService().sendError('Error-Migration-TryLater', error: e);
         rethrow;
       }
     }

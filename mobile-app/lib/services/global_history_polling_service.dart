@@ -150,7 +150,6 @@ final globalHistoryPollingServiceProvider = Provider<GlobalHistoryPollingService
         TelemetryService().sendError(
           'GlobalHistoryPollingService Error in accountsProvider: stopping polling',
           error: e,
-          stackTrace: st,
         );
         service.stopPolling();
       },
