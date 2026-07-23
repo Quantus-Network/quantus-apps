@@ -46,8 +46,9 @@ final humanReadableChecksumServiceProvider = Provider<HumanReadableChecksumServi
   return HumanReadableChecksumService();
 });
 
-final checksumNameProvider = FutureProvider.family<String, String>((ref, address) {
-  return ref.watch(humanReadableChecksumServiceProvider).getHumanReadableName(address);
+final checksumNameProvider = FutureProvider.family<String, String>((ref, address) async {
+  final name = await ref.watch(humanReadableChecksumServiceProvider).getHumanReadableName(address);
+  return name ?? '';
 });
 
 final reversibleTransfersServiceProvider = Provider<ReversibleTransfersService>((ref) {

@@ -79,7 +79,7 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
       });
       for (final addr in addresses) {
         checksumService.getHumanReadableName(addr).then((name) {
-          if (mounted) setState(() => _checksums[addr] = name);
+          if (mounted && name != null) setState(() => _checksums[addr] = name);
         });
       }
     } catch (e) {
