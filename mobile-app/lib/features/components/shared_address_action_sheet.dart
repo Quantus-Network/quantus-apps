@@ -72,8 +72,10 @@ class _SharedAddressActionSheetState extends State<SharedAddressActionSheet> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) =>
-            InputAmountScreen(strategy: RegularSendStrategy(account: active.account), recipientAddress: widget.address),
+        builder: (_) => InputAmountScreen(
+          strategy: RegularSendStrategy(account: active.account),
+          recipientAddress: widget.address,
+        ),
       ),
     );
   }
