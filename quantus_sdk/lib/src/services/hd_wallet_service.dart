@@ -1,4 +1,5 @@
 import 'package:convert/convert.dart';
+import 'package:flutter/foundation.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:ss58/ss58.dart';
 
@@ -35,13 +36,15 @@ class WormholeKeyPair {
 }
 
 class HdWalletService {
+  // Dev accounts (//Crystal Alice etc.) derive from publicly known seeds, so
+  // they are only importable in debug builds (M8).
   static const _devAccounts = {
     AppConstants.crystalAlice: crypto.crystalAlice,
     AppConstants.crystalBob: crypto.crystalBob,
     AppConstants.crystalCharlie: crypto.crystalCharlie,
   };
 
-  static bool isDevAccount(String mnemonic) => _devAccounts.containsKey(mnemonic);
+  static bool isDevAccount(String mnemonic) => kDebugMode && _devAccounts.containsKey(mnemonic);
 
   Keypair _deriveHDWallet({required String mnemonic, int account = 0, int change = 0, int addressIndex = 0}) {
     final derivationPath = "m/44'/189189'/$account'/$change'/$addressIndex'";
@@ -49,8 +52,10 @@ class HdWalletService {
   }
 
   Keypair keyPairAtIndex(String mnemonic, int index) {
-    final devKeypair = _devAccounts[mnemonic];
-    if (devKeypair != null) return devKeypair();
+    if (kDebugMode) {
+      final devKeypair = _devAccounts[mnemonic];
+      if (devKeypair != null) return devKeypair();
+    }
     if (index == -1) return crypto.generateKeypair(mnemonicStr: mnemonic);
     return _deriveHDWallet(mnemonic: mnemonic, account: index);
   }
