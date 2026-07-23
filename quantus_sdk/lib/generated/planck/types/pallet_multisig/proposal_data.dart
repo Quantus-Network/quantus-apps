@@ -1,18 +1,16 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'dart:typed_data' as _i5;
+import 'dart:typed_data' as _i4;
 
 import 'package:polkadart/scale_codec.dart' as _i1;
-import 'package:quiver/collection.dart' as _i6;
+import 'package:quiver/collection.dart' as _i5;
 
 import '../sp_core/crypto/account_id32.dart' as _i2;
-import '../sp_weights/weight_v2/weight.dart' as _i3;
-import 'proposal_status.dart' as _i4;
+import 'proposal_status.dart' as _i3;
 
 class ProposalData {
   const ProposalData({
     required this.proposer,
     required this.call,
-    required this.callWeight,
     required this.expiry,
     required this.approvals,
     required this.deposit,
@@ -29,9 +27,6 @@ class ProposalData {
   /// BoundedCall
   final List<int> call;
 
-  /// Weight
-  final _i3.Weight callWeight;
-
   /// BlockNumber
   final int expiry;
 
@@ -42,52 +37,89 @@ class ProposalData {
   final BigInt deposit;
 
   /// ProposalStatus
-  final _i4.ProposalStatus status;
+  final _i3.ProposalStatus status;
 
   static const $ProposalDataCodec codec = $ProposalDataCodec();
 
-  _i5.Uint8List encode() {
+  _i4.Uint8List encode() {
     return codec.encode(this);
   }
 
   Map<String, dynamic> toJson() => {
-    'proposer': proposer.toList(),
-    'call': call,
-    'callWeight': callWeight.toJson(),
-    'expiry': expiry,
-    'approvals': approvals.map((value) => value.toList()).toList(),
-    'deposit': deposit,
-    'status': status.toJson(),
-  };
+        'proposer': proposer.toList(),
+        'call': call,
+        'expiry': expiry,
+        'approvals': approvals.map((value) => value.toList()).toList(),
+        'deposit': deposit,
+        'status': status.toJson(),
+      };
 
   @override
   bool operator ==(Object other) =>
-      identical(this, other) ||
+      identical(
+        this,
+        other,
+      ) ||
       other is ProposalData &&
-          _i6.listsEqual(other.proposer, proposer) &&
-          _i6.listsEqual(other.call, call) &&
-          other.callWeight == callWeight &&
+          _i5.listsEqual(
+            other.proposer,
+            proposer,
+          ) &&
+          _i5.listsEqual(
+            other.call,
+            call,
+          ) &&
           other.expiry == expiry &&
-          _i6.listsEqual(other.approvals, approvals) &&
+          _i5.listsEqual(
+            other.approvals,
+            approvals,
+          ) &&
           other.deposit == deposit &&
           other.status == status;
 
   @override
-  int get hashCode => Object.hash(proposer, call, callWeight, expiry, approvals, deposit, status);
+  int get hashCode => Object.hash(
+        proposer,
+        call,
+        expiry,
+        approvals,
+        deposit,
+        status,
+      );
 }
 
 class $ProposalDataCodec with _i1.Codec<ProposalData> {
   const $ProposalDataCodec();
 
   @override
-  void encodeTo(ProposalData obj, _i1.Output output) {
-    const _i1.U8ArrayCodec(32).encodeTo(obj.proposer, output);
-    _i1.U8SequenceCodec.codec.encodeTo(obj.call, output);
-    _i3.Weight.codec.encodeTo(obj.callWeight, output);
-    _i1.U32Codec.codec.encodeTo(obj.expiry, output);
-    const _i1.SequenceCodec<_i2.AccountId32>(_i2.AccountId32Codec()).encodeTo(obj.approvals, output);
-    _i1.U128Codec.codec.encodeTo(obj.deposit, output);
-    _i4.ProposalStatus.codec.encodeTo(obj.status, output);
+  void encodeTo(
+    ProposalData obj,
+    _i1.Output output,
+  ) {
+    const _i1.U8ArrayCodec(32).encodeTo(
+      obj.proposer,
+      output,
+    );
+    _i1.U8SequenceCodec.codec.encodeTo(
+      obj.call,
+      output,
+    );
+    _i1.U32Codec.codec.encodeTo(
+      obj.expiry,
+      output,
+    );
+    const _i1.SequenceCodec<_i2.AccountId32>(_i2.AccountId32Codec()).encodeTo(
+      obj.approvals,
+      output,
+    );
+    _i1.U128Codec.codec.encodeTo(
+      obj.deposit,
+      output,
+    );
+    _i3.ProposalStatus.codec.encodeTo(
+      obj.status,
+      output,
+    );
   }
 
   @override
@@ -95,11 +127,12 @@ class $ProposalDataCodec with _i1.Codec<ProposalData> {
     return ProposalData(
       proposer: const _i1.U8ArrayCodec(32).decode(input),
       call: _i1.U8SequenceCodec.codec.decode(input),
-      callWeight: _i3.Weight.codec.decode(input),
       expiry: _i1.U32Codec.codec.decode(input),
-      approvals: const _i1.SequenceCodec<_i2.AccountId32>(_i2.AccountId32Codec()).decode(input),
+      approvals:
+          const _i1.SequenceCodec<_i2.AccountId32>(_i2.AccountId32Codec())
+              .decode(input),
       deposit: _i1.U128Codec.codec.decode(input),
-      status: _i4.ProposalStatus.codec.decode(input),
+      status: _i3.ProposalStatus.codec.decode(input),
     );
   }
 
@@ -108,11 +141,12 @@ class $ProposalDataCodec with _i1.Codec<ProposalData> {
     int size = 0;
     size = size + const _i2.AccountId32Codec().sizeHint(obj.proposer);
     size = size + _i1.U8SequenceCodec.codec.sizeHint(obj.call);
-    size = size + _i3.Weight.codec.sizeHint(obj.callWeight);
     size = size + _i1.U32Codec.codec.sizeHint(obj.expiry);
-    size = size + const _i1.SequenceCodec<_i2.AccountId32>(_i2.AccountId32Codec()).sizeHint(obj.approvals);
+    size = size +
+        const _i1.SequenceCodec<_i2.AccountId32>(_i2.AccountId32Codec())
+            .sizeHint(obj.approvals);
     size = size + _i1.U128Codec.codec.sizeHint(obj.deposit);
-    size = size + _i4.ProposalStatus.codec.sizeHint(obj.status);
+    size = size + _i3.ProposalStatus.codec.sizeHint(obj.status);
     return size;
   }
 }

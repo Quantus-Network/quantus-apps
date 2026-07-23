@@ -485,7 +485,7 @@ void main() {
 
   group('MultisigService.buildApproveCall', () {
     test('returns a Multisig runtime call for valid params', () {
-      final call = MultisigService().buildApproveCall(msig: _buildTestMsig(), proposalId: 3);
+      final call = MultisigService().buildApproveCall(msig: _buildTestMsig(), proposalId: 3, call: const [1, 2, 3]);
       expect(call.encode().isNotEmpty, isTrue);
     });
   });

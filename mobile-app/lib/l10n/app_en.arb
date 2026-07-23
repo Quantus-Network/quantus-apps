@@ -1018,6 +1018,14 @@
     "@multisigFeeEstimateUnavailable": {
       "description": "Inline note on confirm sheet when fee estimation fails"
     },
+    "multisigOnChainProposalUnavailable": "Could not load this proposal from the chain. It may have been executed or cancelled.",
+    "@multisigOnChainProposalUnavailable": {
+      "description": "Error on confirm sheet when the on-chain proposal call cannot be loaded"
+    },
+    "multisigProposalCallData": "Raw call data (verified on-chain)",
+    "@multisigProposalCallData": {
+      "description": "Label on confirm sheet when the proposal call is not a transfer and raw bytes are shown"
+    },
     "multisigCancelConfirmTitle": "Cancel Proposal?",
     "@multisigCancelConfirmTitle": {
       "description": "Title on cancel confirmation sheet"

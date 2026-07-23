@@ -202,10 +202,15 @@ class TransactionSubmissionService {
   /// Awaits acceptance of the extrinsic by the chain before completing;
   /// indexer polling then continues in the background. Rethrows on submission
   /// failure so callers can surface the error.
+  ///
+  /// [proposalCall] must be the proposal's inner call bytes as stored
+  /// on-chain; the pallet rejects approvals that do not match the stored
+  /// payload (`CallMismatch`).
   Future<void> approveProposal({
     required MultisigAccount msig,
     required Account signer,
     required MultisigProposal proposal,
+    required Uint8List proposalCall,
   }) async {
     await _submitAndTrackApproval(
       msig: msig,
@@ -214,7 +219,7 @@ class TransactionSubmissionService {
       telemetryEvent: 'multisig_approve',
       submit: () {
         final service = _ref.read(multisigServiceProvider);
-        return service.submitApproveExtrinsic(msig: msig, signer: signer, proposalId: proposal.id);
+        return service.submitApproveExtrinsic(msig: msig, signer: signer, proposalId: proposal.id, call: proposalCall);
       },
     );
   }

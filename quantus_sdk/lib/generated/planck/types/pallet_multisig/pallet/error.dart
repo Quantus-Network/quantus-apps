@@ -73,15 +73,22 @@ enum Error {
   proposalNotApproved('ProposalNotApproved', 21),
 
   /// Call is not allowed for high-security multisig
-  callNotAllowedForHighSecurityMultisig('CallNotAllowedForHighSecurityMultisig', 22),
+  callNotAllowedForHighSecurityMultisig(
+      'CallNotAllowedForHighSecurityMultisig', 22),
 
   /// Proposal nonce exhausted (u32::MAX reached)
   proposalNonceExhausted('ProposalNonceExhausted', 23),
 
   /// Call weight exceeds MaxInnerCallWeight limit
-  callWeightExceedsLimit('CallWeightExceedsLimit', 24);
+  callWeightExceedsLimit('CallWeightExceedsLimit', 24),
 
-  const Error(this.variantName, this.codecIndex);
+  /// Provided call does not match the stored proposal payload
+  callMismatch('CallMismatch', 25);
+
+  const Error(
+    this.variantName,
+    this.codecIndex,
+  );
 
   factory Error.decode(_i1.Input input) {
     return codec.decode(input);
@@ -157,13 +164,21 @@ class $ErrorCodec with _i1.Codec<Error> {
         return Error.proposalNonceExhausted;
       case 24:
         return Error.callWeightExceedsLimit;
+      case 25:
+        return Error.callMismatch;
       default:
         throw Exception('Error: Invalid variant index: "$index"');
     }
   }
 
   @override
-  void encodeTo(Error value, _i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(value.codecIndex, output);
+  void encodeTo(
+    Error value,
+    _i1.Output output,
+  ) {
+    _i1.U8Codec.codec.encodeTo(
+      value.codecIndex,
+      output,
+    );
   }
 }

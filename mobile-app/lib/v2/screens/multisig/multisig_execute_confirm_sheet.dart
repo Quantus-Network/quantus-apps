@@ -29,10 +29,10 @@ void showMultisigExecuteConfirmSheet(
         authReason: (l10n) => l10n.multisigExecuteAuthReason,
         failedMessage: (l10n) => l10n.multisigExecuteFailed,
       ),
-      estimateFee: (ref, signer) =>
+      estimateFee: (ref, signer, proposalCall) =>
           ref.read(multisigServiceProvider).estimateExecuteFee(msig: msig, signer: signer, proposalId: proposal.id),
-      buildCall: (signer) => MultisigService().buildExecuteCall(msig: msig, proposalId: proposal.id),
-      submit: (ref, signer, fee) => ref
+      buildCall: (signer, proposalCall) => MultisigService().buildExecuteCall(msig: msig, proposalId: proposal.id),
+      submit: (ref, signer, fee, proposalCall) => ref
           .read(transactionSubmissionServiceProvider)
           .executeProposal(msig: msig, signer: signer, proposal: proposal, fee: fee),
       submitExternal: (ref, {required signer, required unsignedData, required signature, required publicKey, fee}) =>

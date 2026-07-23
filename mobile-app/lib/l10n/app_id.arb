@@ -231,6 +231,8 @@
   "multisigExecutionTimeoutToast": "Konfirmasi eksekusi membutuhkan waktu lebih lama. Periksa chain atau coba lagi.",
   "multisigExecutedByOtherToast": "Proposal telah dieksekusi oleh penandatangan lain.",
   "multisigFeeEstimateUnavailable": "Estimasi biaya jaringan tidak tersedia.",
+  "multisigOnChainProposalUnavailable": "Tidak dapat memuat proposal ini dari chain. Mungkin sudah dieksekusi atau dibatalkan.",
+  "multisigProposalCallData": "Data call mentah (terverifikasi on-chain)",
   "multisigCancelConfirmTitle": "Batalkan Proposal?",
   "multisigCancelConfirmBody": "Pembatalan mengembalikan deposit proposal Anda. Penandatangan lain tidak dapat lagi menyetujui.",
   "multisigCancelConfirmYes": "Ya, Batalkan Proposal",

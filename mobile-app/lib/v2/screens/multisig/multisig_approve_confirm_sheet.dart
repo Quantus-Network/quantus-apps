@@ -35,13 +35,14 @@ void showMultisigApproveConfirmSheet(
         authReason: (l10n) => l10n.multisigApproveAuthReason,
         failedMessage: (l10n) => l10n.multisigApproveFailed,
       ),
-      estimateFee: (ref, resolvedSigner) => ref
+      estimateFee: (ref, resolvedSigner, proposalCall) => ref
           .read(multisigServiceProvider)
-          .estimateApproveFee(msig: msig, signer: resolvedSigner, proposalId: proposal.id),
-      buildCall: (resolvedSigner) => MultisigService().buildApproveCall(msig: msig, proposalId: proposal.id),
-      submit: (ref, resolvedSigner, fee) => ref
+          .estimateApproveFee(msig: msig, signer: resolvedSigner, proposalId: proposal.id, call: proposalCall),
+      buildCall: (resolvedSigner, proposalCall) =>
+          MultisigService().buildApproveCall(msig: msig, proposalId: proposal.id, call: proposalCall),
+      submit: (ref, resolvedSigner, fee, proposalCall) => ref
           .read(transactionSubmissionServiceProvider)
-          .approveProposal(msig: msig, signer: resolvedSigner, proposal: proposal),
+          .approveProposal(msig: msig, signer: resolvedSigner, proposal: proposal, proposalCall: proposalCall),
       submitExternal: (ref, {required signer, required unsignedData, required signature, required publicKey, fee}) =>
           ref
               .read(transactionSubmissionServiceProvider)

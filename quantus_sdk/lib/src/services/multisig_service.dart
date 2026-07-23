@@ -3,9 +3,16 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
+import 'package:polkadart/polkadart.dart' show Provider;
+import 'package:polkadart/scale_codec.dart' as scale;
 import 'package:quantus_sdk/generated/planck/pallets/multisig.dart' show Constants, Txs;
+import 'package:quantus_sdk/generated/planck/planck.dart' show Planck;
+import 'package:quantus_sdk/generated/planck/types/pallet_balances/pallet/call.dart' as balances_call;
+import 'package:quantus_sdk/generated/planck/types/pallet_reversible_transfers/pallet/call.dart' as reversible_call;
 import 'package:quantus_sdk/generated/planck/types/quantus_runtime/runtime_call.dart';
+import 'package:quantus_sdk/generated/planck/types/sp_runtime/multiaddress/multi_address.dart' as multi_address;
 import 'package:quantus_sdk/src/constants/app_constants.dart';
+import 'package:quantus_sdk/src/extensions/address_extension.dart';
 import 'package:quantus_sdk/src/models/account.dart';
 import 'package:quantus_sdk/src/models/json_dynamic_parse.dart';
 import 'package:quantus_sdk/src/models/multisig_account.dart';
@@ -24,6 +31,7 @@ class MultisigService {
   MultisigService._internal();
 
   final GraphQlEndpointService _graphQlEndpointService = GraphQlEndpointService();
+  final RpcEndpointService _rpcEndpointService = RpcEndpointService();
   final SubstrateService _substrateService = SubstrateService();
   static final Constants palletConstants = Constants();
 
@@ -356,9 +364,71 @@ class MultisigService {
     return _substrateService.submitExtrinsic(signer, call);
   }
 
+  /// Loads the authoritative proposal call bytes from on-chain
+  /// `Multisig.Proposals(multisig, proposalId)` storage.
+  ///
+  /// The indexer only describes proposals; this is the source of truth the
+  /// chain executes. Returns null when the proposal is not in storage
+  /// (executed, cancelled, or never proposed).
+  Future<Uint8List?> getOnChainProposalCall({required MultisigAccount msig, required int proposalId}) async {
+    return _rpcEndpointService.rpcTask((uri) async {
+      final provider = Provider.fromUri(uri);
+      final api = Planck(provider);
+      final proposal = await api.query.multisig.proposals(getAccountId32(msig.accountId), proposalId);
+      if (proposal == null) return null;
+      return Uint8List.fromList(proposal.call);
+    });
+  }
+
+  /// Decodes [callBytes] as a balance send (balances transfer or reversible
+  /// schedule transfer), returning the recipient and amount.
+  ///
+  /// Returns null when the call is not a recognized send; callers should fall
+  /// back to displaying the raw call bytes.
+  static ({String recipient, BigInt amount})? decodeTransferCall(List<int> callBytes) {
+    try {
+      final input = scale.ByteInput(Uint8List.fromList(callBytes));
+      final call = RuntimeCall.decode(input);
+
+      multi_address.MultiAddress? dest;
+      BigInt? amount;
+      if (call is Balances) {
+        final inner = call.value0;
+        if (inner is balances_call.TransferAllowDeath) {
+          dest = inner.dest;
+          amount = inner.value;
+        } else if (inner is balances_call.TransferKeepAlive) {
+          dest = inner.dest;
+          amount = inner.value;
+        }
+      } else if (call is ReversibleTransfers) {
+        final inner = call.value0;
+        if (inner is reversible_call.ScheduleTransfer) {
+          dest = inner.dest;
+          amount = inner.amount;
+        } else if (inner is reversible_call.ScheduleTransferWithDelay) {
+          dest = inner.dest;
+          amount = inner.amount;
+        }
+      }
+
+      if (dest is multi_address.Id && amount != null) {
+        final recipient = AddressExtension.ss58AddressFromBytes(Uint8List.fromList(dest.value0));
+        return (recipient: recipient, amount: amount);
+      }
+    } catch (e) {
+      debugPrint('[MultisigService] Failed to decode on-chain proposal call: $e');
+    }
+    return null;
+  }
+
   /// Builds the `multisig.approve` runtime call for [proposalId].
-  Multisig buildApproveCall({required MultisigAccount msig, required int proposalId}) {
-    return const Txs().approve(multisigAddress: getAccountId32(msig.accountId), proposalId: proposalId);
+  ///
+  /// [call] must be the proposal's inner call bytes as stored on-chain (see
+  /// [getOnChainProposalCall]); the pallet rejects approvals whose call is not
+  /// byte-equal to the stored payload (`CallMismatch`).
+  Multisig buildApproveCall({required MultisigAccount msig, required int proposalId, required List<int> call}) {
+    return const Txs().approve(multisigAddress: getAccountId32(msig.accountId), proposalId: proposalId, call: call);
   }
 
   /// Estimates the network fee for approving [proposalId].
@@ -366,9 +436,10 @@ class MultisigService {
     required MultisigAccount msig,
     required Account signer,
     required int proposalId,
+    required List<int> call,
   }) async {
-    final call = buildApproveCall(msig: msig, proposalId: proposalId);
-    final feeData = await _substrateService.getFeeForCall(signer, call);
+    final runtimeCall = buildApproveCall(msig: msig, proposalId: proposalId, call: call);
+    final feeData = await _substrateService.getFeeForCall(signer, runtimeCall);
     return feeData.fee;
   }
 
@@ -377,9 +448,10 @@ class MultisigService {
     required MultisigAccount msig,
     required Account signer,
     required int proposalId,
+    required List<int> call,
   }) async {
-    final call = buildApproveCall(msig: msig, proposalId: proposalId);
-    return _substrateService.submitExtrinsic(signer, call);
+    final runtimeCall = buildApproveCall(msig: msig, proposalId: proposalId, call: call);
+    return _substrateService.submitExtrinsic(signer, runtimeCall);
   }
 
   /// Builds the `multisig.execute` runtime call for [proposalId].
