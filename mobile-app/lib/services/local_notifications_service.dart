@@ -33,6 +33,9 @@ class LocalNotificationsService {
         channelDescription: 'Wallet notification channel',
         importance: Importance.high,
         priority: Priority.high,
+        // Notifications can disclose transaction amounts and addresses; keep the
+        // content off the lock screen (shows "sensitive content hidden" instead).
+        visibility: NotificationVisibility.private,
       ),
       iOS: DarwinNotificationDetails(),
     );
