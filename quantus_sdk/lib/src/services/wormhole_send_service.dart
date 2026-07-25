@@ -509,7 +509,7 @@ class WormholeSendService {
   }
 
   Uint8List _wrapUnsignedExtrinsic(Uint8List callBytes) {
-    final runtimeCall = const wormhole_pallet.Txs().verifyAggregatedProof(proofBytes: callBytes);
+    final runtimeCall = const wormhole_pallet.Txs().verifyPrivateBatch(proofBytes: callBytes);
     final callEncoded = runtimeCall.encode();
 
     // Unsigned extrinsic body: [version_byte=0x04][call_data]
