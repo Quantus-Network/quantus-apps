@@ -1,3 +1,4 @@
+import 'package:collection/collection.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
@@ -45,7 +46,7 @@ class AccountsNotifier extends StateNotifier<AsyncValue<List<Account>>> {
   }
 
   Account? getAccountWithId(String accountId) {
-    return state.value?.firstWhere((account) => account.accountId == accountId);
+    return state.value?.firstWhereOrNull((account) => account.accountId == accountId);
   }
 
   void reset() {
