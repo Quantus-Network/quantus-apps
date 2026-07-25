@@ -93,7 +93,7 @@ pub fn derive_wormhole(mnemonic_str: String, path: &str) -> Result<WormholeResul
     Ok(WormholeResult {
         address: account.to_ss58check(),
         first_hash: pair.first_hash.to_vec(),
-        secret: pair.secret.to_vec(),
+        secret: pair.secret.as_bytes().to_vec(),
     })
 }
 
@@ -110,7 +110,8 @@ pub fn first_hash_to_address(first_hash_hex: String) -> Result<String, String> {
         .try_into()
         .map_err(|_| "First hash must be exactly 32 bytes".to_string())?;
 
-    let first_hash_felts: [_; 4] = bytes_to_digest(&first_hash_bytes);
+    let first_hash_felts: [_; 4] = bytes_to_digest(&first_hash_bytes)
+        .map_err(|e| format!("Failed to convert first_hash to digest: {:?}", e))?;
     let address_bytes = hash_to_bytes(&first_hash_felts);
 
     let account = AccountId32::from(address_bytes);

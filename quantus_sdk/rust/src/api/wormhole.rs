@@ -2,10 +2,9 @@ use qp_wormhole_circuit::{
     inputs::{CircuitInputs, PrivateCircuitInputs},
     nullifier::Nullifier,
 };
-use qp_wormhole_inputs::PublicCircuitInputs;
-use qp_wormhole_prover::WormholeProver;
+use qp_wormhole_inputs::{BytesDigest, PublicCircuitInputs};
 use qp_zk_circuits_common::{
-    utils::{digest_to_bytes, BytesDigest},
+    utils::digest_to_bytes,
     zk_merkle::{hash_node_presorted, SIBLINGS_PER_LEVEL},
 };
 use std::path::Path;
@@ -243,14 +242,21 @@ pub fn ensure_circuit_binaries(bins_dir: String) -> Result<String, String> {
 }
 
 fn all_required_files_exist(dir: &Path) -> bool {
+    // Must match the artifacts produced by `generate_all_circuit_binaries` and
+    // consumed by `PrivateBatchProver::new_from_binaries_dir` in qp-wormhole-*
+    // 3.1.x. Two things changed vs 3.0.x: the leaf circuit no longer emits a
+    // `prover.bin` (the leaf prover is always built from source), and the
+    // aggregation artifacts were renamed `aggregated_*` -> `private_batch_*`.
+    // If this list still names the old files, a stale 3.0.x circuits directory
+    // satisfies the check, generation is skipped, and proving later fails with
+    // "Failed to read aggregated prover file .../private_batch_prover.bin".
     const REQUIRED: &[&str] = &[
-        "prover.bin",
-        "verifier.bin",
         "common.bin",
-        "aggregated_prover.bin",
-        "aggregated_verifier.bin",
-        "aggregated_common.bin",
+        "verifier.bin",
         "dummy_proof.bin",
+        "private_batch_common.bin",
+        "private_batch_verifier.bin",
+        "private_batch_prover.bin",
         "config.json",
     ];
     REQUIRED.iter().all(|f| dir.join(f).exists())
@@ -258,8 +264,8 @@ fn all_required_files_exist(dir: &Path) -> bool {
 
 pub fn generate_proof(
     input: ProofInput,
-    prover_bin_path: String,
-    common_bin_path: String,
+    _prover_bin_path: String,
+    _common_bin_path: String,
 ) -> Result<ProofOutput, String> {
     let secret_digest = vec_to_digest(&input.secret, "secret")?;
     let wormhole_address = vec_to_32(&input.wormhole_address, "wormhole_address")?;
@@ -333,9 +339,7 @@ pub fn generate_proof(
 
     let circuit_inputs = CircuitInputs { public, private };
 
-    let prover =
-        WormholeProver::new_from_files(Path::new(&prover_bin_path), Path::new(&common_bin_path))
-            .map_err(|e| format!("Failed to load prover: {}", e))?;
+    let prover = qp_wormhole_prover::build_fresh();
 
     let prover_with_inputs = prover
         .commit(&circuit_inputs)
@@ -353,30 +357,28 @@ pub fn generate_proof(
 
 pub fn aggregate_proofs(proof_bytes_list: Vec<Vec<u8>>, bins_dir: String) -> Result<Vec<u8>, String> {
     use plonky2::plonk::proof::ProofWithPublicInputs;
-    use qp_wormhole_aggregator::{
-        aggregator::{AggregationBackend, CircuitType, Layer0Aggregator},
-    };
+    use qp_wormhole_aggregator::private_batch::prover::PrivateBatchProver;
     use qp_zk_circuits_common::circuit::{C, D, F};
 
     let bins_path = Path::new(&bins_dir);
 
-    let mut aggregator = Layer0Aggregator::new(bins_path)
-        .map_err(|e| format!("Failed to load aggregator: {}", e))?;
+    let leaf_prover = qp_wormhole_prover::build_fresh();
+    let common_data = &leaf_prover.circuit_data.common;
 
-    let common_data = aggregator
-        .load_common_data(CircuitType::Leaf)
-        .map_err(|e| format!("Failed to load leaf circuit data: {}", e))?;
+    let leaf_proofs: Vec<_> = proof_bytes_list
+        .iter()
+        .enumerate()
+        .map(|(i, bytes)| {
+            ProofWithPublicInputs::<F, C, D>::from_bytes(bytes.clone(), common_data)
+                .map_err(|e| format!("Failed to deserialize proof {}: {:?}", i, e))
+        })
+        .collect::<Result<_, _>>()?;
 
-    for (i, proof_bytes) in proof_bytes_list.iter().enumerate() {
-        let proof = ProofWithPublicInputs::<F, C, D>::from_bytes(proof_bytes.clone(), &common_data)
-            .map_err(|e| format!("Failed to deserialize proof {}: {:?}", i, e))?;
-        aggregator
-            .push_proof(proof)
-            .map_err(|e| format!("Failed to push proof {}: {}", i, e))?;
-    }
+    let prover = PrivateBatchProver::new_from_binaries_dir(bins_path)
+        .map_err(|e| format!("Failed to create private-batch prover: {}", e))?;
 
-    let aggregated = aggregator
-        .aggregate()
+    let aggregated = prover
+        .aggregate(leaf_proofs)
         .map_err(|e| format!("Aggregation failed: {}", e))?;
 
     Ok(aggregated.to_bytes())
