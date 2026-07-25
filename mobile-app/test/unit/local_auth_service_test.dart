@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
@@ -8,6 +9,11 @@ class FakeLocalAuthentication extends Fake implements LocalAuthentication {
   bool deviceSupported = true;
   bool authenticateResult = true;
   int authenticateCalls = 0;
+
+  /// Invoked from inside [authenticate], i.e. while the "prompt" is on screen.
+  /// Lets a test observe transient state (e.g. isAuthenticating) mid-call, or
+  /// throw to simulate a platform failure.
+  void Function()? onAuthenticate;
 
   @override
   Future<bool> isDeviceSupported() async => deviceSupported;
@@ -21,6 +27,7 @@ class FakeLocalAuthentication extends Fake implements LocalAuthentication {
     bool persistAcrossBackgrounding = false,
   }) async {
     authenticateCalls++;
+    onAuthenticate?.call();
     return authenticateResult;
   }
 }
@@ -91,6 +98,45 @@ void main() {
       await service.updateLastPausedTime();
       expect(await service.authenticate(), isFalse);
       expect(await service.shouldRequireAuthentication(), isFalse);
+    });
+  });
+
+  // The system auth dialog backgrounds the app; AppLifecycleManager consults
+  // this flag to avoid re-triggering auth on resume (a double prompt). It must
+  // be true only while the prompt is on screen, for every caller — including
+  // the send/multisig/settings flows that call the service directly.
+  group('isAuthenticating', () {
+    test('is false before and after a successful prompt', () async {
+      expect(service.isAuthenticating, isFalse);
+
+      expect(await service.authenticate(), isTrue);
+
+      expect(service.isAuthenticating, isFalse);
+    });
+
+    test('is true while the device prompt is on screen', () async {
+      bool? duringPrompt;
+      localAuth.onAuthenticate = () => duringPrompt = service.isAuthenticating;
+
+      await service.authenticate();
+
+      expect(duringPrompt, isTrue);
+    });
+
+    test('resets to false when the prompt throws', () async {
+      localAuth.onAuthenticate = () => throw PlatformException(code: 'boom');
+
+      expect(await service.authenticate(), isFalse);
+      expect(service.isAuthenticating, isFalse);
+    });
+
+    test('stays false when the prompt is skipped (no device security)', () async {
+      localAuth.deviceSupported = false;
+
+      await service.authenticate();
+
+      expect(localAuth.authenticateCalls, 0);
+      expect(service.isAuthenticating, isFalse);
     });
   });
 
