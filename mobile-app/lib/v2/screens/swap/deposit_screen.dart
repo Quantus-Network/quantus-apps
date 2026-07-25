@@ -155,35 +155,35 @@ class _DepositScreenState extends ConsumerState<DepositScreen> {
           ),
         ),
         const SizedBox(height: 16),
-        SizedBox(
-          width: 264,
-          child: Stack(
-            children: [
-              Text(
-                _demoWarningPayload,
-                style: text.smallParagraph?.copyWith(
-                  color: colors.textPrimary,
-                  fontWeight: FontWeight.w500,
-                  height: 1.35,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              Positioned(
-                right: 0,
-                top: 19,
-                child: GestureDetector(
-                  onTap: () => _copyAddress(l10n),
-                  child: Container(
-                    width: 20,
-                    height: 20,
-                    decoration: BoxDecoration(color: colors.surfaceGlass, borderRadius: BorderRadius.circular(4)),
-                    child: Center(child: Icon(Icons.copy, color: colors.textPrimary, size: 12)),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
+        // SizedBox(
+        //   width: 264,
+        //   child: Stack(
+        //     children: [
+        //       Text(
+        //         _demoWarningPayload,
+        //         style: text.smallParagraph?.copyWith(
+        //           color: colors.textPrimary,
+        //           fontWeight: FontWeight.w500,
+        //           height: 1.35,
+        //         ),
+        //         textAlign: TextAlign.center,
+        //       ),
+        //       Positioned(
+        //         right: 0,
+        //         top: 19,
+        //         child: GestureDetector(
+        //           onTap: () => _copyAddress(l10n),
+        //           child: Container(
+        //             width: 20,
+        //             height: 20,
+        //             decoration: BoxDecoration(color: colors.surfaceGlass, borderRadius: BorderRadius.circular(4)),
+        //             child: Center(child: Icon(Icons.copy, color: colors.textPrimary, size: 12)),
+        //           ),
+        //         ),
+        //       ),
+        //     ],
+        //   ),
+        // ),
         const SizedBox(height: 16),
         Text(
           l10n.swapDepositDemoWarning,
