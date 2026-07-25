@@ -126,13 +126,12 @@ class Queries {
 class Txs {
   const Txs();
 
-  /// Verify an aggregated wormhole proof and process all transfers in the batch.
-  ///
-  /// Returns `DispatchResultWithPostInfo` to allow weight correction on early failures.
-  /// If validation fails before ZK verification, we return minimal weight.
-  /// If ZK verification fails, we return full weight since the work was done.
-  _i7.Wormhole verifyAggregatedProof({required List<int> proofBytes}) {
-    return _i7.Wormhole(_i8.VerifyAggregatedProof(proofBytes: proofBytes));
+  _i7.Wormhole verifyPrivateBatch({required List<int> proofBytes}) {
+    return _i7.Wormhole(_i8.VerifyPrivateBatch(proofBytes: proofBytes));
+  }
+
+  _i7.Wormhole verifyPublicBatch({required List<int> proofBytes}) {
+    return _i7.Wormhole(_i8.VerifyPublicBatch(proofBytes: proofBytes));
   }
 }
 
@@ -186,4 +185,8 @@ class Constants {
   /// Proportion of volume fees to burn (not mint). The remainder goes to the block author.
   /// Example: Permill::from_percent(50) means 50% burned, 50% to miner.
   final _i9.Permill volumeFeesBurnRate = 500000;
+
+  /// For public-batch proofs, the proportion of the burn bucket redirected to the
+  /// aggregator instead of being destroyed. The miner's share is unchanged.
+  final _i9.Permill volumeFeesAggregatorRate = 500000;
 }
