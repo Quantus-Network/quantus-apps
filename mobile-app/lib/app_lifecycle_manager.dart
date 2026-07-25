@@ -112,9 +112,15 @@ class _AppLifecycleManagerState extends ConsumerState<AppLifecycleManager> with 
       }
     } else {
       // Handle background states (inactive, paused, hidden, detached)
-      // Skip if the biometric dialog caused this lifecycle change — on some
-      // Android devices the prompt triggers inactive→resumed oscillation.
-      if (!_isBackgrounded && !ref.read(localAuthProvider).isAuthenticating) {
+      // Skip if an auth dialog caused this lifecycle change — the system prompt
+      // pushes the app into inactive/paused, and treating that as a real
+      // backgrounding re-triggers auth on resume (a double prompt). Check the
+      // service flag too, not just the controller: the send, multisig and
+      // settings flows authenticate through LocalAuthService directly and never
+      // set the controller's isAuthenticating.
+      final authInProgress =
+          ref.read(localAuthProvider).isAuthenticating || ref.read(localAuthServiceProvider).isAuthenticating;
+      if (!_isBackgrounded && !authInProgress) {
         quantusDebugPrint('AppLifecycleState.$state - pausing (update pause time only)');
         _isBackgrounded = true;
 
