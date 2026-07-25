@@ -188,15 +188,7 @@ class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> {
         const SizedBox(height: 8),
         switch (call) {
           TransactionInfo t => _amountText(context, t.amount),
-          MultisigInfo m => Column(
-            children: [
-              Text(_actionLabel(m), style: text.transactionDetailAmountPrimary?.copyWith(color: colors.textPrimary)),
-              if (m.innerCall is TransactionInfo) ...[
-                const SizedBox(height: 8),
-                _amountText(context, (m.innerCall as TransactionInfo).amount),
-              ],
-            ],
-          ),
+          MultisigInfo m => Text(_actionLabel(m), style: text.smallTitle?.copyWith(color: colors.textPrimary)),
         },
       ],
     );
@@ -255,7 +247,10 @@ class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> {
         _detailRow(context, 'Checkphrase', _toCheckphrase!, valueColor: colors.checksum),
       if (info.proposalId != null) _detailRow(context, 'Proposal ID', '${info.proposalId}'),
       if (info.expiry != null) _detailRow(context, 'Expiry', 'Block ${info.expiry}'),
-      if (inner is TransactionInfo) ..._transferRows(context, inner),
+      if (inner is TransactionInfo) ...[
+        _detailRow(context, 'Amount', '${_formatAmount(inner.amount)} ${AppConstants.tokenSymbol}'),
+        ..._transferRows(context, inner),
+      ],
       if (inner is MultisigInfo) _detailRow(context, 'Inner call', _actionLabel(inner)),
     ];
   }
