@@ -54,9 +54,17 @@ class AppConstants {
   // Reversible time settings
   static const int defaultReversibleTimeSeconds = 600; // 10 minutes
 
+  /// Average Quantus block time in seconds (~12s). Used for mortal-era TTL and block↔time estimates.
+  static const int avgBlockTimeSeconds = 12;
+
   // Digits of precision
   static const int decimals = 12;
   static const int ss58prefix = 189;
+
+  // Reserved account index for the per-wallet encrypted (wormhole) account.
+  // Kept high so it never collides with sequential transparent (BIP44) indices;
+  // the wormhole keypair derives independently of this value.
+  static const int encryptedAccountIndex = 1024;
 
   // Default sheet height in percentage of screen height
   static const double sendingSheetHeightFraction = 0.72;
@@ -70,6 +78,11 @@ class AppConstants {
 
   // Always show the home backup nudge regardless of viewed state and balance
   static const bool debugAlwaysShowBackupNudge = false;
+
+  // Valid SS58 address returned/filled by debug buttons so address-entry flows
+  // (send, swap, add hardware account) can be exercised in the simulator where
+  // the camera is unavailable.
+  static const String debugTestAddress = 'qznQKhufTDfU3szAzfgCny7wMhxUN3qjEqneiRUNgC7MjSDyG';
 
   static const String accountSettingsRouteName = 'account-settings';
   static const int highSecurityStepsCount = 3;

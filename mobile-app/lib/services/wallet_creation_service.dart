@@ -32,6 +32,7 @@ class WalletCreationService {
 
     final hasRoot = existingAccounts.any((a) => a.walletIndex == walletIndex && a.index == 0);
     if (!hasRoot) {
+      _settings.setWalletOrigin(walletIndex, WalletOrigin.created);
       final account = Account(walletIndex: walletIndex, index: 0, name: name, accountId: accountId);
       await _accounts.addAccount(account);
       unawaited(_referral.submitAddressToBackend());

@@ -281,7 +281,7 @@ class _MinerBalanceCardState extends State<MinerBalanceCard> {
     if (bal == null) return const SizedBox.shrink();
 
     return Text(
-      _formatter.formatBalance(bal, maxDecimals: 2, addSymbol: true),
+      _formatter.formatBalance(bal, smartDecimals: 2, addSymbol: true),
       style: TextStyle(
         fontSize: 18,
         fontWeight: FontWeight.w700,

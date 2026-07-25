@@ -25,7 +25,7 @@ MultisigExpiryParts resolveMultisigExpiryParts({
   final estimatedAt = multisigService.blockToTime(expiryBlock, currentBlock);
   return MultisigExpiryParts(
     blockLabel: blockLabel,
-    estimatedDateTime: DatetimeFormattingService.formatTxDateTime(estimatedAt),
+    estimatedDateTime: '~${DatetimeFormattingService.formatTxDateTime(estimatedAt)}',
   );
 }
 

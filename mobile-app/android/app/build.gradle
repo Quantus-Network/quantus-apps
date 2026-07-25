@@ -53,6 +53,16 @@ android {
         versionName = flutter.versionName
 
         multiDexEnabled true
+
+        // Patrol native automation: run integration tests through Patrol's JUnit
+        // runner. `clearPackageData` wipes app data between test runs so each
+        // Dart test starts from a clean state (mirrors iOS --full-isolation).
+        testInstrumentationRunner "pl.leancode.patrol.PatrolJUnitRunner"
+        testInstrumentationRunnerArguments clearPackageData: "true"
+    }
+
+    testOptions {
+        execution "ANDROIDX_TEST_ORCHESTRATOR"
     }
 
     buildTypes {
@@ -84,6 +94,10 @@ flutter {
 
 dependencies {
     coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.4'
+
+    // Patrol native automation: AndroidX Test Orchestrator runs each Dart test
+    // in its own instrumentation invocation (required by ANDROIDX_TEST_ORCHESTRATOR).
+    androidTestUtil 'androidx.test:orchestrator:1.5.1'
 }
 
 // Apply cargokit directly to the main app

@@ -1,12 +1,21 @@
+import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/multisig_providers.dart';
+import 'package:resonance_network_wallet/shared/extensions/toaster_extensions.dart';
+import 'package:resonance_network_wallet/shared/utils/print.dart';
 import 'package:resonance_network_wallet/v2/components/account_badge.dart';
+import 'package:resonance_network_wallet/v2/components/confirm_action_sheet.dart';
+import 'package:resonance_network_wallet/v2/components/menu_divider.dart';
+import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
+import 'package:resonance_network_wallet/v2/components/scaffold_base_bottom_content.dart';
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/account_details_screen.dart';
+import 'package:resonance_network_wallet/v2/screens/accounts/accounts_navigation.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/edit_account_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/multisig_details_screen.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
@@ -24,34 +33,61 @@ class MultisigAccountMenuScreen extends ConsumerWidget {
     final text = context.themeText;
 
     final accounts = ref.watch(multisigAccountsProvider);
-    final account = accounts.value?.where((a) => a.accountId == initialAccount.accountId).firstOrNull;
+    final account = accounts.value?.firstWhereOrNull((a) => a.accountId == initialAccount.accountId) ?? initialAccount;
 
     return ScaffoldBase(
       appBar: V2AppBar(title: l10n.accountMenuTitle),
-      mainContent: account != null
-          ? Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const SizedBox(height: 8),
-                _ProfileHeader(account: account, colors: colors, text: text),
-                const SizedBox(height: 80),
-                _MenuRow(
-                  label: l10n.accountMenuAccountName,
-                  value: account.name,
-                  onTap: () => _openNameEditor(context, ref, account),
-                ),
-                Divider(color: colors.toasterBackground, height: 1),
-                _MenuRow(label: l10n.accountMenuAddressDetails, onTap: () => _openAddressDetails(context, account)),
-                Divider(color: colors.toasterBackground, height: 1),
-                _MenuRow(
-                  label: l10n.multisigAccountMenuDetails,
-                  value: l10n.multisigThresholdOf(account.threshold, account.signers.length),
-                  onTap: () => _openMultisigDetails(context, account),
-                ),
-              ],
-            )
-          : Center(child: Text(l10n.accountMenuNotFound)),
+      mainContent: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const SizedBox(height: 8),
+          _ProfileHeader(account: account, colors: colors, text: text),
+          const SizedBox(height: 80),
+          _MenuRow(
+            label: l10n.accountMenuAccountName,
+            value: account.name,
+            onTap: () => _openNameEditor(context, ref, account),
+          ),
+          const MenuDivider(),
+          _MenuRow(label: l10n.accountMenuAddressDetails, onTap: () => _openAddressDetails(context, account)),
+          const MenuDivider(),
+          _MenuRow(
+            label: l10n.multisigAccountMenuDetails,
+            value: l10n.multisigThresholdOf(account.threshold, account.signers.length),
+            onTap: () => _openMultisigDetails(context, account),
+          ),
+        ],
+      ),
+      bottomContent: ScaffoldBaseBottomContent(
+        child: QuantusButton.simple(
+          label: l10n.accountMenuDisconnect,
+          variant: ButtonVariant.danger,
+          onTap: () => _onDisconnect(context, ref, account),
+        ),
+      ),
     );
+  }
+
+  Future<void> _onDisconnect(BuildContext context, WidgetRef ref, MultisigAccount account) async {
+    final l10n = ref.read(l10nProvider);
+    final confirmed = await showConfirmActionSheet(
+      context,
+      title: l10n.accountMenuDisconnectMultisigTitle,
+      message: l10n.accountMenuDisconnectMultisigMessage(account.name),
+      confirmLabel: l10n.accountMenuDisconnect,
+      cancelLabel: l10n.commonCancel,
+      isDestructive: true,
+    );
+    if (!confirmed || !context.mounted) return;
+
+    try {
+      await ref.read(multisigAccountsProvider.notifier).remove(account.accountId);
+      ref.invalidate(activeAccountProvider);
+      if (context.mounted) returnToAccountsSheet(context, ref);
+    } catch (e, st) {
+      quantusDebugPrint('[MultisigAccountMenu] disconnect error: $e\n$st');
+      if (context.mounted) context.showErrorToaster(message: l10n.accountMenuDisconnectError);
+    }
   }
 
   Future<void> _openNameEditor(BuildContext context, WidgetRef ref, MultisigAccount current) async {

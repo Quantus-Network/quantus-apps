@@ -1,0 +1,5 @@
+{
+  "defaultOptions" : {
+    "diagnosticCollectionPolicy" : "Never"
+  }
+}

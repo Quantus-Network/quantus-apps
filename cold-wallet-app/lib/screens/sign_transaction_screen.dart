@@ -21,8 +21,8 @@ class SignTransactionScreen extends ConsumerStatefulWidget {
 }
 
 class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> {
-  TransactionInfo? _txInfo;
-  bool _parseFailed = false;
+  ParsedPayload? _parsed;
+  String? _parseError;
   String? _toCheckphrase;
   List<String>? _signatureUr;
   bool _signing = false;
@@ -31,13 +31,14 @@ class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> {
   @override
   void initState() {
     super.initState();
-    final info = QuantusPayloadParser.parsePayload(widget.payload);
-    if (info == null) {
-      _parseFailed = true;
-      return;
+    try {
+      final parsed = QuantusPayloadParser.parsePayload(widget.payload);
+      _parsed = parsed;
+      _loadCheckphrase(parsed.call.toAddress);
+    } catch (e) {
+      debugPrint('Rejected signing payload: $e');
+      _parseError = e is FormatException ? e.message : e.toString();
     }
-    _txInfo = info;
-    _loadCheckphrase(info.toAddress);
   }
 
   Future<void> _loadCheckphrase(String address) async {
@@ -86,12 +87,12 @@ class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (_parseFailed) return _errorView(context);
+    if (_parseError != null) return _errorView(context, _parseError!);
     if (_signatureUr != null) return _signatureView(context, _signatureUr!);
-    return _reviewView(context, _txInfo!);
+    return _reviewView(context, _parsed!);
   }
 
-  Widget _errorView(BuildContext context) {
+  Widget _errorView(BuildContext context, String reason) {
     final colors = context.colors;
     final text = context.themeText;
     return ScaffoldBase(
@@ -108,6 +109,12 @@ class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> {
             style: text.smallParagraph?.copyWith(color: colors.textSecondary),
             textAlign: TextAlign.center,
           ),
+          const SizedBox(height: 12),
+          Text(
+            reason,
+            style: text.detail?.copyWith(color: colors.textMuted),
+            textAlign: TextAlign.center,
+          ),
         ],
       ),
       bottomContent: ScaffoldBaseBottomContent(
@@ -116,9 +123,11 @@ class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> {
     );
   }
 
-  Widget _reviewView(BuildContext context, TransactionInfo info) {
+  Widget _reviewView(BuildContext context, ParsedPayload parsed) {
     final colors = context.colors;
     final text = context.themeText;
+    final info = parsed.call;
+    final ext = parsed.extensions;
 
     return ScaffoldBase(
       appBar: const V2AppBar(title: 'Review & Sign'),
@@ -153,9 +162,17 @@ class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> {
             _detailRow(context, 'To', info.toAddress, monospace: true),
             if (_toCheckphrase != null && _toCheckphrase!.isNotEmpty)
               _detailRow(context, 'Checkphrase', _toCheckphrase!, valueColor: colors.checksum),
+            _detailRow(context, 'Network', parsed.network),
             _detailRow(context, 'Reversible', info.isReversible ? 'Yes' : 'No'),
             if (info.isReversible && info.reversibleTimeframe != null)
-              _detailRow(context, 'Reversible window', '${info.reversibleTimeframe} blocks'),
+              _detailRow(
+                context,
+                'Reversible window',
+                DatetimeFormattingService.formatDuration(Duration(milliseconds: info.reversibleTimeframe!)).formatted,
+              ),
+            _detailRow(context, 'Tip', '${_formatAmount(ext.tip)} ${AppConstants.tokenSymbol}'),
+            _detailRow(context, 'Nonce', '${ext.nonce}'),
+            _detailRow(context, 'Era', '${ext.era}'),
             if (_error != null) ...[
               const SizedBox(height: 16),
               Text(

@@ -28,6 +28,13 @@ class _DepositScreenState extends ConsumerState<DepositScreen> {
   late SwapOrder _order;
   bool _confirming = false;
 
+  /// This swap flow is demo-only — no real deposit is ever expected. To make it
+  /// impossible to accidentally send funds, the QR code, the on-screen address,
+  /// and the copy/share actions all surface this warning instead of the real
+  /// deposit address. Scanning the QR decodes to this plain text, not an
+  /// address, so no wallet can act on it.
+  static const String _demoWarningPayload = 'demo only - do not send funds';
+
   @override
   void initState() {
     super.initState();
@@ -64,14 +71,9 @@ class _DepositScreenState extends ConsumerState<DepositScreen> {
     }
   }
 
-  // Currently this is only for demo purposes
-  // We just return the demo warning for now
-  String _getDepositAddress(AppLocalizations l10n) {
-    return l10n.swapDepositDemoWarning;
-  }
-
   void _copyAddress(AppLocalizations l10n) {
-    context.copyTextWithToaster(_getDepositAddress(l10n));
+    // Demo-only: never expose the real deposit address (see _demoWarningPayload).
+    context.copyTextWithToaster(_demoWarningPayload);
   }
 
   @override
@@ -105,8 +107,6 @@ class _DepositScreenState extends ConsumerState<DepositScreen> {
   }
 
   Widget _depositBody(AppLocalizations l10n, AppColorsV2 colors, AppTextTheme text, SwapQuote quote, double usd) {
-    final demoWarning = l10n.swapDepositDemoWarning;
-
     return Column(
       children: [
         Row(
@@ -151,48 +151,56 @@ class _DepositScreenState extends ConsumerState<DepositScreen> {
           child: Container(
             color: Colors.white,
             padding: const EdgeInsets.all(8),
-            child: QrImageView(data: 'Quantum secure bitcoin - quantus!', version: QrVersions.auto, size: 184),
+            child: QrImageView(data: _demoWarningPayload, version: QrVersions.auto, size: 184),
           ),
         ),
         const SizedBox(height: 16),
-        SizedBox(
-          width: 264,
-          child: Stack(
-            children: [
-              Text(
-                demoWarning,
-                style: text.smallParagraph?.copyWith(
-                  color: colors.textPrimary,
-                  fontWeight: FontWeight.w500,
-                  height: 1.35,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              Positioned(
-                right: 0,
-                top: 19,
-                child: GestureDetector(
-                  onTap: () => _copyAddress(l10n),
-                  child: Container(
-                    width: 20,
-                    height: 20,
-                    decoration: BoxDecoration(color: colors.surfaceGlass, borderRadius: BorderRadius.circular(4)),
-                    child: Center(child: Icon(Icons.copy, color: colors.textPrimary, size: 12)),
-                  ),
-                ),
-              ),
-            ],
-          ),
+        // SizedBox(
+        //   width: 264,
+        //   child: Stack(
+        //     children: [
+        //       Text(
+        //         _demoWarningPayload,
+        //         style: text.smallParagraph?.copyWith(
+        //           color: colors.textPrimary,
+        //           fontWeight: FontWeight.w500,
+        //           height: 1.35,
+        //         ),
+        //         textAlign: TextAlign.center,
+        //       ),
+        //       Positioned(
+        //         right: 0,
+        //         top: 19,
+        //         child: GestureDetector(
+        //           onTap: () => _copyAddress(l10n),
+        //           child: Container(
+        //             width: 20,
+        //             height: 20,
+        //             decoration: BoxDecoration(color: colors.surfaceGlass, borderRadius: BorderRadius.circular(4)),
+        //             child: Center(child: Icon(Icons.copy, color: colors.textPrimary, size: 12)),
+        //           ),
+        //         ),
+        //       ),
+        //     ],
+        //   ),
+        // ),
+        const SizedBox(height: 16),
+        Text(
+          l10n.swapDepositDemoWarning,
+          style: text.smallParagraph?.copyWith(color: colors.accentOrange, fontWeight: FontWeight.w600),
+          textAlign: TextAlign.center,
         ),
-        const SizedBox(height: 40),
+        const SizedBox(height: 24),
         Row(
           children: [
             Expanded(
               child: QuantusButton.simple(
                 label: l10n.receiveCopy,
-                variant: ButtonVariant.transparent,
+                variant: ButtonVariant.outline,
                 onTap: () => _copyAddress(l10n),
                 icon: Icon(Icons.copy, color: colors.textPrimary, size: 20),
+                iconPlacement: IconPlacement.leading,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
               ),
             ),
             const SizedBox(width: 16),
@@ -200,14 +208,16 @@ class _DepositScreenState extends ConsumerState<DepositScreen> {
               child: QuantusButton.simple(
                 label: l10n.swapDepositShareQr,
                 icon: Icon(Icons.qr_code, color: colors.textPrimary, size: 20),
-                variant: ButtonVariant.transparent,
+                iconPlacement: IconPlacement.leading,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                variant: ButtonVariant.outline,
                 onTap: () {
                   shareText(
                     context,
                     l10n.swapDepositShareContent(
                       _order.quote.fromToken.network,
                       _order.quote.fromToken.symbol,
-                      _getDepositAddress(l10n),
+                      _demoWarningPayload,
                     ),
                   );
                 },
@@ -257,12 +267,17 @@ class _DepositScreenState extends ConsumerState<DepositScreen> {
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 40),
-        if (AppConstants.stillOnTestnet)
-          Text(
-            l10n.swapDepositTestnetBanner,
-            style: text.paragraph?.copyWith(color: Colors.yellow),
-            textAlign: TextAlign.center,
-          ),
+        Text(
+          l10n.swapDemoOnly,
+          style: text.largeTitle?.copyWith(color: colors.accentOrange, fontWeight: FontWeight.w700),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 8),
+        Text(
+          l10n.swapDemoOnlyBody,
+          style: text.paragraph?.copyWith(color: colors.textSecondary),
+          textAlign: TextAlign.center,
+        ),
       ],
     );
   }

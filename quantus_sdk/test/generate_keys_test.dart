@@ -123,5 +123,34 @@ void main() {
       print('hashedSignature: ${hex.encode(hashedSignature)}');
       print('hashedPayload: ${hex.encode(hashedPayload)}');
     });
+
+    test('keystone signature UR round-trips and splits into signature + pubkey', () {
+      const mnemonic = 'human snow truck virus now jaguar wall brisk shoe craft gravity diesel';
+      final keypair = HdWalletService().keyPairAtIndex(mnemonic, 0);
+
+      const hexPayload =
+          '0200007416854906f03a9dff66e3270a736c44e15970ac03a638471523a03069f276ca0700e876481755010000007400000002000000826beefbe2be72645ff376f18de745ac196dc77637436090de4174180706118e5a77ae1c95817ee664cf733fafa7baa8e6244b396a54e57a5bc414b24c52800600';
+      final payload = Uint8List.fromList(hex.decode(hexPayload));
+      final signable = QuantusSigningPayload.signablePayload(payload);
+
+      // Cold wallet (Keystone) signs the signable payload and emits signature ++ pubkey.
+      final signed = signMessageWithPubkey(keypair: keypair, message: signable);
+
+      // The signature QR is a multi-part animated UR (the "5 / 81 frames" case).
+      final parts = encodeUr(data: signed);
+      expect(parts.length, greaterThan(1));
+      expect(isCompleteUr(urParts: parts), isTrue);
+
+      // Hot wallet decodes and splits exactly like KeystoneScanSignatureScreen.
+      final bytes = decodeUr(urParts: parts);
+      final sigSize = signatureBytes().toInt();
+      expect(bytes.length, sigSize + publicKeyBytes().toInt());
+
+      final signature = bytes.sublist(0, sigSize);
+      final publicKey = bytes.sublist(sigSize);
+
+      expect(publicKey, equals(keypair.publicKey));
+      expect(verifyMessage(keypair: keypair, message: signable, signature: signature), isTrue);
+    });
   });
 }

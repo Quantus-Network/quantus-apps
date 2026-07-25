@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/connectivity_provider.dart';
-import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/services/pending_transaction_reconciliation_service.dart';
 import 'package:resonance_network_wallet/services/telemetry_service.dart';
 import 'package:resonance_network_wallet/shared/utils/polling_refresh_scope.dart';
@@ -108,9 +107,10 @@ class GlobalHistoryPollingService {
 
     final active = _ref.read(activeAccountProvider).value;
     if (active != null) {
-      invalidateActiveAccountBalance(_ref);
+      // Use the shared helper so encrypted accounts reload wormhole UTXO state
+      // (not the transparent balanceProviderFamily, which is irrelevant for them).
       await Future.wait([
-        _ref.read(balanceProviderFamily(active.account.accountId).future),
+        refreshActiveAccountBalance(_ref),
         refreshAccountsPagination(
           _ref,
           accountIds: [active.account.accountId],

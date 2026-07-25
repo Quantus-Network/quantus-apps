@@ -1,25 +1,32 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
-import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/services/firebase_messaging_service.dart';
 import 'package:resonance_network_wallet/services/telemetry_service.dart';
+import 'package:resonance_network_wallet/shared/constants/e2e_keys.dart';
 import 'package:resonance_network_wallet/shared/utils/print.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base_bottom_content.dart';
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
+import 'package:resonance_network_wallet/v2/screens/accounts/accounts_navigation.dart';
 import 'package:resonance_network_wallet/v2/screens/home/home_screen.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 
 class ImportWalletScreenV2 extends ConsumerStatefulWidget {
-  const ImportWalletScreenV2({super.key, this.walletIndex = 0});
+  const ImportWalletScreenV2({super.key, this.walletIndex = 0, this.openAccountsOnComplete = false});
 
   final int walletIndex;
+
+  /// When true (in-app add), returns to the Accounts popup with the imported
+  /// account pre-selected. Onboarding leaves this false and goes to Home.
+  final bool openAccountsOnComplete;
 
   @override
   ConsumerState<ImportWalletScreenV2> createState() => _ImportWalletScreenV2State();
@@ -48,7 +55,7 @@ class _ImportWalletScreenV2State extends ConsumerState<ImportWalletScreenV2> {
   final _buttonKey = GlobalKey();
   final _settingsService = SettingsService();
   final _accountsService = AccountsService();
-  final _discoveryService = AccountDiscoveryService(HdWalletService(), SubstrateService());
+  final _discoveryService = AccountDiscoveryService(HdWalletService());
   bool _isLoading = false;
   String? _error;
 
@@ -107,17 +114,19 @@ class _ImportWalletScreenV2State extends ConsumerState<ImportWalletScreenV2> {
       ref.invalidate(activeAccountProvider);
       _settingsService.setReferralCheckCompleted();
       _settingsService.setExistingUserSeenPromoVideo();
-      _settingsService.setRecoveryPhraseViewed(widget.walletIndex);
-      ref.invalidate(recoveryPhraseViewedProvider(widget.walletIndex));
+      _settingsService.setWalletOrigin(widget.walletIndex, WalletOrigin.imported);
+      ref.invalidate(walletOriginProvider(widget.walletIndex));
 
-      if (ref.read(remoteConfigProvider).enableRemoteNotifications && widget.walletIndex == 0) {
-        ref.read(firebaseMessagingServiceProvider).registerDeviceIfPossible();
-      } else if (ref.read(remoteConfigProvider).enableRemoteNotifications && widget.walletIndex > 0) {
-        ref.read(firebaseMessagingServiceProvider).insertNewAddress(key.ss58Address);
-      }
+      unawaited(
+        registerForRemoteNotificationsBestEffort(ref, insertAddress: widget.walletIndex > 0 ? key.ss58Address : null),
+      );
 
       if (!mounted) return;
-      Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const HomeScreen()), (route) => false);
+      if (widget.openAccountsOnComplete) {
+        returnToAccountsSheet(context, ref, highlightAccountId: key.ss58Address);
+      } else {
+        Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const HomeScreen()), (route) => false);
+      }
     } catch (e) {
       if (mounted) setState(() => _error = e.toString());
     } finally {
@@ -138,9 +147,27 @@ class _ImportWalletScreenV2State extends ConsumerState<ImportWalletScreenV2> {
       }
       ref.invalidate(accountsProvider);
       ref.invalidate(activeAccountProvider);
+      unawaited(_discoverEncryptedAccount());
     } catch (e, st) {
       quantusDebugPrint('error discovering accounts: $e');
       TelemetryService().sendError('Error discovering accounts', error: e, stackTrace: st);
+    }
+  }
+
+  /// Restores the wallet's encrypted account and warms its wormhole address
+  /// discovery so UTXOs across receive/change addresses are already found when
+  /// the user first opens it. Runs fire-and-forget so import completion never
+  /// waits on it; if this screen is disposed first, the accounts sheet
+  /// backfills through its own [ensureEncryptedAccounts] pass.
+  Future<void> _discoverEncryptedAccount() async {
+    try {
+      final created = await ensureEncryptedAccounts(ref);
+      if (!created || !mounted) return;
+      ref.invalidate(accountsProvider);
+      await ref.read(encryptedStateProvider(widget.walletIndex).future);
+    } catch (e, st) {
+      quantusDebugPrint('encrypted discovery after import failed: $e');
+      TelemetryService().sendError('Encrypted discovery after import failed', error: e, stackTrace: st);
     }
   }
 
@@ -152,6 +179,7 @@ class _ImportWalletScreenV2State extends ConsumerState<ImportWalletScreenV2> {
     final fieldTextStyle = text.smallTitle?.copyWith(color: colors.checksum, fontWeight: FontWeight.w400);
 
     return ScaffoldBase(
+      key: const Key(E2EKeys.importWalletScreen),
       appBar: V2AppBar(title: l10n.importWalletAppBarTitle),
       mainContent: GestureDetector(
         onTap: () => FocusScope.of(context).unfocus(),
@@ -174,6 +202,7 @@ class _ImportWalletScreenV2State extends ConsumerState<ImportWalletScreenV2> {
                     Padding(
                       padding: const EdgeInsets.only(right: 36),
                       child: TextField(
+                        key: const Key(E2EKeys.importWalletSeedPhraseField),
                         controller: _controller,
                         focusNode: _focusNode,
                         onChanged: (_) => setState(() {}),
@@ -218,12 +247,15 @@ class _ImportWalletScreenV2State extends ConsumerState<ImportWalletScreenV2> {
         ),
       ),
       bottomContent: ScaffoldBaseBottomContent(
-        child: QuantusButton.simple(
-          key: _buttonKey,
-          label: l10n.importWalletButton,
-          onTap: _import,
-          isLoading: _isLoading,
-          isDisabled: !_hasInput,
+        child: KeyedSubtree(
+          key: const Key(E2EKeys.importWalletButton),
+          child: QuantusButton.simple(
+            key: _buttonKey,
+            label: l10n.importWalletButton,
+            onTap: _import,
+            isLoading: _isLoading,
+            isDisabled: !_hasInput,
+          ),
         ),
       ),
     );

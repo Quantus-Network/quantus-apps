@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:resonance_network_wallet/features/components/mnemonic_grid.dart';
 import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
+import 'package:resonance_network_wallet/shared/constants/e2e_keys.dart';
 import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
 import 'package:resonance_network_wallet/v2/components/loader.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
@@ -57,7 +58,7 @@ class _RecoveryPhraseBodyState extends ConsumerState<RecoveryPhraseBody> {
 
   void _copyToClipboard() {
     final l10n = ref.read(l10nProvider);
-    context.copyTextWithToaster(widget.words.join(' '), message: l10n.recoveryPhraseBodyCopiedMessage);
+    context.copySensitiveTextWithToaster(widget.words.join(' '), message: l10n.recoveryPhraseBodyCopiedMessage);
     _markExposed();
   }
 
@@ -87,6 +88,7 @@ class _RecoveryPhraseBodyState extends ConsumerState<RecoveryPhraseBody> {
 
   Widget _grid(AppLocalizations l10n, AppColorsV2 colors, AppTextTheme text) {
     return GestureDetector(
+      key: const Key(E2EKeys.recoveryPhraseRevealArea),
       onTap: _toggleRevealed,
       behavior: HitTestBehavior.opaque,
       child: Column(
@@ -101,15 +103,22 @@ class _RecoveryPhraseBodyState extends ConsumerState<RecoveryPhraseBody> {
           ),
           if (_isRevealed) ...[
             const SizedBox(height: 16),
-            _tapHint(Icons.visibility_off_outlined, l10n.recoveryPhraseBodyTapToHide, colors.textSecondary, text),
+            _tapHint(
+              Icons.visibility_off_outlined,
+              l10n.recoveryPhraseBodyTapToHide,
+              colors.textSecondary,
+              text,
+              key: const Key(E2EKeys.recoveryPhraseRevealed),
+            ),
           ],
         ],
       ),
     );
   }
 
-  Widget _tapHint(IconData icon, String label, Color color, AppTextTheme text) {
+  Widget _tapHint(IconData icon, String label, Color color, AppTextTheme text, {Key? key}) {
     return Row(
+      key: key,
       mainAxisSize: MainAxisSize.min,
       children: [
         Icon(icon, size: 18, color: color),

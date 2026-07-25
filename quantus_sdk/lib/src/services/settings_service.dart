@@ -32,8 +32,6 @@ class SettingsService {
   static const String _selectedFiatCurrencyKey = 'selected_fiat_currency';
   static const String _selectedAppLocaleKey = 'selected_app_locale';
 
-  static const String _lastPausedTimeKey = 'last_paused_time';
-
   // referral status
   static const String hasCheckedReferralKey = 'referral_check';
   static const String referralCodeKey = 'referral_code';
@@ -132,10 +130,42 @@ class SettingsService {
       throw Exception('Cant remove last account!');
     }
     if (account.accountId == await _getActiveAccountId()) {
-      await setActiveAccount(RegularAccount(accounts[0]));
+      final replacement = _preferNonEncrypted(accounts.where((a) => a.accountId != account.accountId));
+      await setActiveAccount(RegularAccount(replacement));
     }
     accounts.removeWhere((a) => a.accountId == account.accountId);
     await saveAccounts(accounts);
+  }
+
+  /// Picks a replacement active account, avoiding encrypted (wormhole)
+  /// accounts unless they are the only option.
+  Account _preferNonEncrypted(Iterable<Account> candidates) =>
+      candidates.firstWhere((a) => a.accountType != AccountType.encrypted, orElse: () => candidates.first);
+
+  /// Removes an entire wallet: drops all of its accounts and deletes its
+  /// mnemonic from secure storage. The primary wallet (index 0) cannot be
+  /// removed.
+  Future<void> removeWallet(int walletIndex) async {
+    if (walletIndex == 0) {
+      throw Exception('Cant remove the primary wallet!');
+    }
+    final accounts = await getAccounts();
+    final remaining = accounts.where((a) => a.walletIndex != walletIndex).toList();
+    if (remaining.length == accounts.length) {
+      throw Exception('Wallet $walletIndex not found');
+    }
+    if (remaining.isEmpty) {
+      throw Exception('Cant remove last wallet!');
+    }
+    final activeId = await _getActiveAccountId();
+    final activeRemoved = accounts.any((a) => a.walletIndex == walletIndex && a.accountId == activeId);
+    if (activeRemoved) {
+      await setActiveAccount(RegularAccount(_preferNonEncrypted(remaining)));
+    }
+    await saveAccounts(remaining);
+    await deleteMnemonic(walletIndex);
+    await _prefs.remove(_walletOriginKey(walletIndex));
+    await _prefs.remove(_recoveryPhraseViewedKey(walletIndex));
   }
 
   Future<void> setActiveAccount(DisplayAccount account) async {
@@ -202,12 +232,22 @@ class SettingsService {
     return ix != -1 ? accounts[ix] : null;
   }
 
+  /// Returns the lowest non-negative derivation index not currently used by a
+  /// (non-encrypted) account in [walletIndex]. Filling the lowest gap first
+  /// keeps a wallet's accounts contiguous and deterministic: removing then
+  /// re-adding accounts always reproduces the same indices (and therefore the
+  /// same addresses) in the same order.
   Future<int> getNextFreeAccountIndex(int walletIndex) async {
     final accounts = await getAccounts();
-    final walletAccounts = accounts.where((a) => a.walletIndex == walletIndex && a.index >= 0).toList();
-    if (walletAccounts.isEmpty) return 0;
-    final maxIndex = walletAccounts.map((a) => a.index).reduce((a, b) => a > b ? a : b);
-    return maxIndex + 1;
+    final used = accounts
+        .where((a) => a.walletIndex == walletIndex && a.index >= 0 && a.accountType != AccountType.encrypted)
+        .map((a) => a.index)
+        .toSet();
+    var index = 0;
+    while (used.contains(index)) {
+      index++;
+    }
+    return index;
   }
 
   // --- Multisig Accounts ---
@@ -417,22 +457,6 @@ class SettingsService {
     await _prefs.setString(key, value);
   }
 
-  DateTime? getLastPausedTime() {
-    final String? lastPausedString = _prefs.getString(_lastPausedTimeKey);
-    if (lastPausedString == null) return null;
-
-    final DateTime lastPaused = DateTime.parse(lastPausedString);
-    return lastPaused;
-  }
-
-  void setLastPausedTime(DateTime time) {
-    _prefs.setString(_lastPausedTimeKey, time.toIso8601String());
-  }
-
-  void cleanLastPausedTime() {
-    _prefs.remove(_lastPausedTimeKey);
-  }
-
   // --- Migration Methods ---
 
   /// Check if old accounts exist in legacy storage
@@ -529,6 +553,17 @@ class SettingsService {
 
   void setRecoveryPhraseViewed(int walletIndex) {
     _prefs.setBool(_recoveryPhraseViewedKey(walletIndex), true);
+  }
+
+  String _walletOriginKey(int walletIndex) => 'wallet_origin_$walletIndex';
+
+  WalletOrigin? getWalletOrigin(int walletIndex) {
+    final value = _prefs.getString(_walletOriginKey(walletIndex));
+    return value == null ? null : WalletOrigin.values.asNameMap()[value];
+  }
+
+  void setWalletOrigin(int walletIndex, WalletOrigin origin) {
+    _prefs.setString(_walletOriginKey(walletIndex), origin.name);
   }
 
   bool existingUserSeenPromoVideo() {

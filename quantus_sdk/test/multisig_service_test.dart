@@ -9,20 +9,24 @@ import 'package:quantus_sdk/src/services/multisig_service.dart';
 
 void main() {
   group('MultisigService.defaultThreshold', () {
-    test('returns 1 for a single signer', () {
-      expect(MultisigService.defaultThreshold(1), 1);
+    test('follows the two-thirds rounded mapping', () {
+      const expected = {1: 1, 2: 1, 3: 2, 4: 3, 5: 3, 6: 4, 7: 5, 8: 5, 9: 6, 10: 7};
+      expected.forEach((signers, threshold) {
+        expect(MultisigService.defaultThreshold(signers), threshold, reason: '$signers signers');
+      });
     });
 
-    test('returns roughly 70% rounded for multisigs', () {
-      expect(MultisigService.defaultThreshold(2), 2);
-      expect(MultisigService.defaultThreshold(3), 2);
-      expect(MultisigService.defaultThreshold(4), 3);
-      expect(MultisigService.defaultThreshold(5), 4);
-      expect(MultisigService.defaultThreshold(10), 7);
-    });
-
-    test('never exceeds signer count', () {
+    test('defaults to 1 for zero or negative signer counts', () {
       expect(MultisigService.defaultThreshold(0), 1);
+      expect(MultisigService.defaultThreshold(-3), 1);
+    });
+
+    test('never falls below 1 or exceeds the signer count', () {
+      for (var signers = 1; signers <= 50; signers++) {
+        final threshold = MultisigService.defaultThreshold(signers);
+        expect(threshold, greaterThanOrEqualTo(1), reason: '$signers signers');
+        expect(threshold, lessThanOrEqualTo(signers), reason: '$signers signers');
+      }
     });
   });
 

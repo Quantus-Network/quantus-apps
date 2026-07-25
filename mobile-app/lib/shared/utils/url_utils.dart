@@ -1,4 +1,9 @@
+import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:url_launcher/url_launcher.dart';
+
+/// Block-explorer URL for an immediate (single-signer) transfer extrinsic.
+String explorerImmediateTransactionUrl(String extrinsicHash) =>
+    '${AppConstants.explorerEndpoint}/immediate-transactions/$extrinsicHash';
 
 Future<void> launchXPost(String xUrl) async {
   final match = RegExp(r'/status/(\d+)').firstMatch(xUrl);

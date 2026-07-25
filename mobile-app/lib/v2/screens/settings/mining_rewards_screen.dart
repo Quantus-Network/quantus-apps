@@ -8,9 +8,12 @@ import 'package:resonance_network_wallet/providers/mining_rewards_provider.dart'
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/services/mining_rewards_service.dart';
 import 'package:resonance_network_wallet/shared/utils/open_external_url.dart';
+import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
+import 'package:resonance_network_wallet/v2/components/scaffold_base_bottom_content.dart';
 import 'package:resonance_network_wallet/v2/components/split_card.dart';
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
+import 'package:resonance_network_wallet/v2/screens/settings/redeem_address_screen.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 
@@ -35,14 +38,25 @@ class MiningRewardsScreen extends ConsumerWidget {
               _ErrorState(colors: colors, text: text, l10n: l10n, onRetry: () => ref.invalidate(miningRewardsProvider)),
         ),
       ],
-      // TODO: Enable redeem button when it is implemented
-      // bottomContent: miningAsync.when(
-      //   data: (data) => data.totalBlocks > 0
-      //       ? ScaffoldBaseBottomContent(child: QuantusButton.simple(label: l10n.settingsMiningRedeem, onTap: null))
-      //       : null,
-      //   loading: () => null,
-      //   error: (err, _) => null,
-      // ),
+      bottomContent: miningAsync.when(
+        data: (data) {
+          if (data.totalBlocks == 0) return null;
+          final canRedeem = data.redeemableRewards > BigInt.zero;
+          return ScaffoldBaseBottomContent(
+            child: QuantusButton.simple(
+              label: l10n.settingsMiningRedeem,
+              isDisabled: !canRedeem,
+              onTap: canRedeem
+                  ? () => Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => RedeemAddressScreen(redeemableRewards: data.redeemableRewards)),
+                    )
+                  : null,
+            ),
+          );
+        },
+        loading: () => null,
+        error: (err, _) => null,
+      ),
     );
   }
 }
@@ -56,9 +70,9 @@ class _WithRewards extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = ref.watch(l10nProvider);
     final numberFmt = ref.watch(numberFormattingServiceProvider);
-    final quanEarned = numberFmt.formatBalance(data.planckRewards, maxDecimals: 2, addSymbol: true);
-    final redeemedRewards = numberFmt.formatBalance(data.redeemedRewards, maxDecimals: 2, addSymbol: true);
-    final redeemableRewards = numberFmt.formatBalance(data.redeemableRewards, maxDecimals: 2, addSymbol: true);
+    final quanEarned = numberFmt.formatBalance(data.planckRewards, smartDecimals: 2, addSymbol: true);
+    final redeemedRewards = numberFmt.formatBalance(data.redeemedRewards, smartDecimals: 2, addSymbol: true);
+    final redeemableRewards = numberFmt.formatBalance(data.redeemableRewards, smartDecimals: 2, addSymbol: true);
 
     final colors = context.colors;
     final text = context.themeText;

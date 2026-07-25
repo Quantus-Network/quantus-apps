@@ -5,7 +5,7 @@ import 'package:resonance_network_wallet/v2/components/loader.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 
-enum ButtonVariant { transparent, primary, secondary, danger, success, outline }
+enum ButtonVariant { transparent, primary, secondary, danger, success, outline, glass }
 
 enum IconPlacement { leading, trailing, top }
 
@@ -106,6 +106,10 @@ class QuantusButton extends StatelessWidget {
         buttonDecorationColor = Colors.transparent;
         borderSide = basicBorder;
         break;
+
+      case ButtonVariant.glass:
+        buttonDecorationColor = context.colors.surfaceGlass;
+        break;
     }
 
     return InkWell(
@@ -134,6 +138,7 @@ class QuantusButton extends StatelessWidget {
       ButtonVariant.transparent => context.colors.textPrimary,
       ButtonVariant.success => context.colors.textPrimary,
       ButtonVariant.outline => context.colors.textLabel,
+      ButtonVariant.glass => context.colors.textPrimary,
     };
 
     if (isLoading) {

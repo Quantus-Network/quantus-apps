@@ -3,7 +3,8 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/models/pending_multisig_creation_record.dart';
-import 'package:resonance_network_wallet/providers/multisig_creation_toast_provider.dart';
+import 'package:resonance_network_wallet/providers/global_toast_provider.dart';
+import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/multisig_providers.dart';
 import 'package:resonance_network_wallet/providers/pending_multisig_creations_provider.dart';
 import 'package:resonance_network_wallet/services/multisig_creation_reconciliation.dart';
@@ -51,9 +52,7 @@ class MultisigCreationPollingService {
         quantusDebugPrint('[MultisigCreationPoller] timeout for ${draft.accountId}');
         stopPolling(key);
         removePendingMultisigCreation(_ref, key);
-        _ref.read(multisigCreationToastProvider.notifier).state = const MultisigCreationToastEvent(
-          MultisigCreationToastKind.timeout,
-        );
+        _ref.read(globalToastProvider.notifier).showError(_ref.read(l10nProvider).multisigCreateTimeoutToast);
         return;
       }
       unawaited(_search(draft, key));
@@ -74,9 +73,7 @@ class MultisigCreationPollingService {
         await _confirmCreation(record.draft, key, record.networkFee);
       } else {
         removePendingMultisigCreation(_ref, key);
-        _ref.read(multisigCreationToastProvider.notifier).state = const MultisigCreationToastEvent(
-          MultisigCreationToastKind.timeout,
-        );
+        _ref.read(globalToastProvider.notifier).showError(_ref.read(l10nProvider).multisigCreateTimeoutToast);
       }
     } catch (e, stackTrace) {
       quantusDebugPrint('[MultisigCreationPoller] recovery error for $key: $e');
@@ -132,9 +129,7 @@ class MultisigCreationPollingService {
 
     await reconcileConfirmedMultisigCreation(_ref, draft, networkFee: networkFee);
 
-    _ref.read(multisigCreationToastProvider.notifier).state = const MultisigCreationToastEvent(
-      MultisigCreationToastKind.ready,
-    );
+    _ref.read(globalToastProvider.notifier).showSuccess(_ref.read(l10nProvider).multisigCreateReadyToast);
   }
 
   /// Cancels all active polling timers (e.g. on logout).

@@ -14,6 +14,7 @@ import 'package:resonance_network_wallet/providers/pending_multisig_executions_p
 import 'package:resonance_network_wallet/providers/pending_multisig_proposals_provider.dart';
 import 'package:resonance_network_wallet/providers/pending_transactions_provider.dart';
 import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
+import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/services/firebase_messaging_service.dart';
 import 'package:resonance_network_wallet/services/multisig_approval_polling_service.dart';
 import 'package:resonance_network_wallet/services/multisig_cancellation_polling_service.dart';
@@ -21,6 +22,7 @@ import 'package:resonance_network_wallet/services/multisig_creation_polling_serv
 import 'package:resonance_network_wallet/services/multisig_execution_polling_service.dart';
 import 'package:resonance_network_wallet/services/multisig_proposal_polling_service.dart';
 import 'package:resonance_network_wallet/services/pending_transaction_polling_service.dart';
+import 'package:resonance_network_wallet/v2/screens/send/keystone_sign_cache.dart';
 import 'package:resonance_network_wallet/v2/screens/welcome/welcome_screen.dart';
 
 final logoutServiceProvider = Provider<LogoutService>((ref) => LogoutService(ref));
@@ -46,9 +48,19 @@ class LogoutService {
     _ref.invalidate(miningRewardsProvider);
     _ref.read(accountsProvider.notifier).reset();
     _ref.read(activeAccountProvider.notifier).reset();
+    _ref.invalidate(recoveryPhraseViewedProvider);
+    _ref.invalidate(walletOriginProvider);
+    // Drop encrypted-account Riverpod state so the next session doesn't show
+    // the previous wallet's balance while disk caches are already wiped above.
+    _ref.invalidate(encryptedAccountServiceProvider);
+    _ref.invalidate(encryptedStateProvider);
+    _ref.invalidate(encryptedBalanceProvider);
+    _ref.invalidate(encryptedSpendableProvider);
+    _ref.invalidate(encryptedTotalSpentProvider);
     _ref.read(multisigAccountsProvider.notifier).reset();
     _ref.invalidate(discoveredMultisigsProvider);
     _ref.read(accountAssociationsProvider.notifier).reset();
+    _ref.read(keystoneSignCacheProvider.notifier).reset();
     await _ref.read(selectedAppLocaleProvider.notifier).reset();
     await _ref.read(selectedFiatCurrencyProvider.notifier).reset();
 

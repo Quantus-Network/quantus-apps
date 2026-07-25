@@ -1,6 +1,7 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
@@ -10,6 +11,8 @@ import 'package:resonance_network_wallet/shared/extensions/current_route_extensi
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/screens/send/input_amount_screen.dart';
+import 'package:resonance_network_wallet/v2/screens/send/keystone_sign_cache.dart';
+import 'package:resonance_network_wallet/v2/screens/send/regular_send_strategy.dart';
 
 class SharedAddressActionSheet extends StatefulWidget {
   final String address;
@@ -57,8 +60,14 @@ class _SharedAddressActionSheetState extends State<SharedAddressActionSheet> {
   }
 
   void _sendToAddress() {
+    ProviderScope.containerOf(context).read(keystoneSignCacheProvider.notifier).startNewSendSession();
     Navigator.of(context).pop();
-    Navigator.push(context, MaterialPageRoute(builder: (_) => InputAmountScreen(recipientAddress: widget.address)));
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => InputAmountScreen(strategy: const RegularSendStrategy(), recipientAddress: widget.address),
+      ),
+    );
   }
 
   void _closeSheet() {

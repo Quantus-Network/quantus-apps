@@ -7,13 +7,13 @@ import 'package:quantus_sdk/generated/planck/types/qp_scheduler/block_number_or_
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:quantus_sdk/src/extensions/address_extension.dart';
 import 'package:quantus_sdk/src/extensions/duration_extension.dart';
+import 'package:quantus_sdk/src/rust/api/crypto.dart' as crypto;
 
 class HighSecurityService {
   static final HighSecurityService _instance = HighSecurityService._internal();
   factory HighSecurityService() => _instance;
   HighSecurityService._internal();
 
-  // ignore: unused_field
   final SubstrateService _substrateService = SubstrateService();
   final ReversibleTransfersService _reversibleTransfersService = ReversibleTransfersService();
 
@@ -30,18 +30,7 @@ class HighSecurityService {
     String guardianAccountId,
     Duration safeguardDuration,
   ) async {
-    final transactionFee = await _reversibleTransfersService.getHighSecuritySetupFee(
-      account,
-      guardianAccountId,
-      safeguardDuration,
-    );
-    final recoveryPalletFee = RecoveryService().configDepositBase + RecoveryService().friendDepositFactor;
-
-    return ExtrinsicFeeData(
-      fee: transactionFee.fee + recoveryPalletFee,
-      blockHash: transactionFee.blockHash,
-      blockNumber: transactionFee.blockNumber,
-    );
+    return await _reversibleTransfersService.getHighSecuritySetupFee(account, guardianAccountId, safeguardDuration);
   }
 
   Future<bool> isHighSecurity(Account account) async {
@@ -89,53 +78,27 @@ class HighSecurityService {
     }
   }
 
+  /// Guardian-initiated emergency fund recovery for a high-security account.
+  ///
+  /// Uses `reversibleTransfers.recoverFunds`, which atomically cancels all
+  /// pending transfers and moves the remaining balance to the guardian. The
+  /// previous implementation batched recovery-pallet calls, but that pallet
+  /// was never configured for accounts, so the rescue path could not work.
   Future<Uint8List> pullAllFunds(String lostAccountAddress, Account guardianAccount) async {
-    print('pullAllFunds: $lostAccountAddress, $guardianAccount');
-    // 1. Initiate recovery (rescuer = guardian)
-    Utility batchCall = _getPullAllFundsCall(lostAccountAddress, guardianAccount);
-    // Submit batch signed by guardian
-    return await _substrateService.submitExtrinsic(guardianAccount, batchCall);
+    print('pullAllFunds: $lostAccountAddress, guardian: ${guardianAccount.accountId}');
+    final call = _getRecoverFundsCall(lostAccountAddress);
+    return await _substrateService.submitExtrinsic(guardianAccount, call);
   }
 
   Future<ExtrinsicFeeData> getPullAllFundsFee(String lostAccountAddress, Account guardianAccount) async {
-    // Batch all calls
-    final batchCall = _getPullAllFundsCall(lostAccountAddress, guardianAccount);
-
-    // Get transaction fee
-    final transactionFee = await _substrateService.getFeeForCall(guardianAccount, batchCall);
-
-    // Add recovery deposit
-    final recoveryDeposit = RecoveryService().recoveryDeposit;
-
-    return ExtrinsicFeeData(
-      fee: transactionFee.fee + recoveryDeposit,
-      blockHash: transactionFee.blockHash,
-      blockNumber: transactionFee.blockNumber,
-    );
+    final call = _getRecoverFundsCall(lostAccountAddress);
+    return await _substrateService.getFeeForCall(guardianAccount, call);
   }
 
-  Utility _getPullAllFundsCall(String lostAccountAddress, Account guardianAccount) {
-    final calls = <RuntimeCall>[];
-
-    final recoveryService = RecoveryService();
-    final balancesService = BalancesService();
+  ReversibleTransfers _getRecoverFundsCall(String lostAccountAddress) {
     final quantusApi = Planck(_substrateService.provider!);
+    final lostAccountId = crypto.ss58ToAccountId(s: lostAccountAddress);
 
-    // 1. Initiate recovery (rescuer = guardian)
-    calls.add(recoveryService.getInitiateRecoveryCall(lostAccountAddress));
-
-    // 2. Vouch for recovery (friend = guardian)
-    calls.add(recoveryService.getVouchRecoveryCall(lostAccountAddress, guardianAccount.accountId));
-
-    // 3. Claim recovery (rescuer = guardian)
-    calls.add(recoveryService.getClaimRecoveryCall(lostAccountAddress));
-
-    // 4. Transfer all funds to guardian (as recovered)
-    final transferAllCall = balancesService.getTransferAllCall(guardianAccount.accountId, keepAlive: false);
-    calls.add(recoveryService.getAsRecoveredCall(lostAccountAddress, transferAllCall));
-
-    // Batch all calls
-    final batchCall = quantusApi.tx.utility.batch(calls: calls);
-    return batchCall;
+    return quantusApi.tx.reversibleTransfers.recoverFunds(account: lostAccountId);
   }
 }

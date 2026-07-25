@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/providers/multisig_execution_toast_provider.dart';
+import 'package:resonance_network_wallet/providers/global_toast_provider.dart';
+import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/multisig_providers.dart';
 import 'package:resonance_network_wallet/providers/pending_multisig_executions_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
@@ -61,7 +62,7 @@ Future<bool> _tryResolveExecutionTimeout(Ref ref, MultisigAccount msig, PendingM
     '[MultisigExecutionPoller] proposal ${pending.proposalId} executed but extrinsic '
     '${hash ?? '(no hash)'} not indexed; likely executed by another signer',
   );
-  ref.read(multisigExecutionToastProvider.notifier).show(MultisigExecutionToastKind.executedByOther);
+  ref.read(globalToastProvider.notifier).showInfo(ref.read(l10nProvider).multisigExecutedByOtherToast);
 
   invalidateAccountBalances(ref, {pending.executorId, msig.accountId});
   return true;
@@ -77,7 +78,7 @@ final multisigExecutionPollingServiceProvider = Provider<MultisigExecutionPollin
       isStillPending: (ref, id) => findPendingMultisigExecution(ref, id) != null,
       removePending: removePendingMultisigExecution,
       showTimeoutToast: (ref) {
-        ref.read(multisigExecutionToastProvider.notifier).show(MultisigExecutionToastKind.timeout);
+        ref.read(globalToastProvider.notifier).showError(ref.read(l10nProvider).multisigExecutionTimeoutToast);
       },
       confirmIfIndexed: _confirmIndexedExecution,
       tryResolveTimeout: _tryResolveExecutionTimeout,

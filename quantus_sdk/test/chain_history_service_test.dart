@@ -5,6 +5,40 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 void main() {
   final service = ChainHistoryService();
 
+  group('OtherTransfersResult', () {
+    test('includes rawRowsConsumed for cursor advancement', () {
+      const result = OtherTransfersResult(transfers: [], hasMore: true, rawRowsConsumed: 10);
+
+      expect(result.rawRowsConsumed, 10);
+      expect(result.transfers.length, 0);
+      expect(result.hasMore, true);
+    });
+
+    test('rawRowsConsumed can differ from transfers.length', () {
+      // Simulates when some rows are skipped during parsing
+      final result = OtherTransfersResult(
+        transfers: [
+          TransferEvent(
+            id: 'test',
+            from: 'from',
+            to: 'to',
+            amount: BigInt.one,
+            fee: BigInt.one,
+            timestamp: DateTime.now(),
+            blockNumber: 1,
+            blockHash: '0xabc',
+          ),
+        ],
+        hasMore: true,
+        rawRowsConsumed: 5, // 5 rows consumed, only 1 parsed successfully
+      );
+
+      expect(result.transfers.length, 1);
+      expect(result.rawRowsConsumed, 5);
+      expect(result.rawRowsConsumed, greaterThan(result.transfers.length));
+    });
+  });
+
   const accountEventFixture = {
     'id':
         'ae-multisig-qzo4qS1Lw6J66JuXcxLEWgzBLX2sBe3Ak3kmN1oA17pXLKCFH-qzk1Nxai3dZD9Cn5kwGcgL6mKxsfxwqdis7kDQJ52aJS2vSn7',

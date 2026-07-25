@@ -58,7 +58,7 @@ class AmountInputLogic {
   /// Formats a QUAN amount for display in an input field.
   String formatQuanAmount(BigInt amount) {
     if (amount == BigInt.zero) return '';
-    return formattingService.formatBalance(amount, maxDecimals: AppConstants.decimals, addThousandsSeparators: false);
+    return formattingService.formatBalance(amount, smartDecimals: AppConstants.decimals, addThousandsSeparators: false);
   }
 
   /// Returns the new input string and amount when toggling between QUAN and Fiat.

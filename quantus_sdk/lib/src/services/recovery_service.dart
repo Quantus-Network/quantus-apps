@@ -6,6 +6,7 @@ import 'package:quantus_sdk/generated/planck/types/pallet_recovery/active_recove
 import 'package:quantus_sdk/generated/planck/types/pallet_recovery/recovery_config.dart';
 import 'package:quantus_sdk/generated/planck/types/sp_runtime/multiaddress/multi_address.dart' as multi_address;
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:quantus_sdk/src/extensions/address_extension.dart';
 import 'package:quantus_sdk/src/rust/api/crypto.dart' as crypto;
 
 /// Service for managing account recovery functionality
@@ -210,10 +211,11 @@ class RecoveryService {
       final proxyId = crypto.ss58ToAccountId(s: proxyAddress);
 
       final recoveredAccountId = await quantusApi.query.recovery.proxy(proxyId);
+      // The storage map returns the final AccountId32, so encode it directly to
+      // SS58. crypto.toAccountId would incorrectly Poseidon-hash the
+      // already-derived account ID.
       return recoveredAccountId != null
-          ? crypto.toAccountId(
-              obj: crypto.Keypair(publicKey: Uint8List.fromList(recoveredAccountId), secretKey: Uint8List(0)),
-            )
+          ? AddressExtension.ss58AddressFromBytes(Uint8List.fromList(recoveredAccountId))
           : null;
     } catch (e) {
       throw Exception('Failed to get proxy recovered account: $e');

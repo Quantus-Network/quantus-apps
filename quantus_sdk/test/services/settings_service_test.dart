@@ -168,16 +168,90 @@ void main() {
       expect(activeAccount.account.accountId, account1.accountId);
     });
 
-    test('getNextFreeAccountIndex should return correct next index', () async {
-      // Arrange
+    test('getNextFreeAccountIndex returns 0 for an empty wallet', () async {
       await settingsService.initialize();
-      await settingsService.saveAccounts([account1, account3]); // Indices 0 and 2
+      expect(await settingsService.getNextFreeAccountIndex(0), 0);
+    });
+
+    test('getNextFreeAccountIndex returns max+1 when indices are contiguous', () async {
+      await settingsService.initialize();
+      await settingsService.saveAccounts([account1, account2, account3]); // 0, 1, 2
+      expect(await settingsService.getNextFreeAccountIndex(0), 3);
+    });
+
+    test('getNextFreeAccountIndex fills the lowest gap first', () async {
+      await settingsService.initialize();
+      await settingsService.saveAccounts([account1, account3]); // indices 0 and 2
+      expect(await settingsService.getNextFreeAccountIndex(0), 1);
+    });
+
+    test('getNextFreeAccountIndex is computed per-wallet', () async {
+      await settingsService.initialize();
+      await settingsService.saveAccounts([
+        const Account(walletIndex: 0, index: 0, name: 'A', accountId: 'w0_0'),
+        const Account(walletIndex: 1, index: 0, name: 'B', accountId: 'w1_0'),
+        const Account(walletIndex: 1, index: 1, name: 'C', accountId: 'w1_1'),
+      ]);
+      expect(await settingsService.getNextFreeAccountIndex(0), 1);
+      expect(await settingsService.getNextFreeAccountIndex(1), 2);
+    });
+
+    test('re-adding accounts reproduces the same indices in order (keep index 0 and 6)', () async {
+      await settingsService.initialize();
+
+      // Wallet with accounts at indices 0..6 (Account 1..7).
+      final full = [
+        for (var i = 0; i < 7; i++) Account(walletIndex: 0, index: i, name: 'Account ${i + 1}', accountId: 'id_$i'),
+      ];
+      await settingsService.saveAccounts(full);
+
+      // Keep only index 0 (first) and index 6 (Account 7, which holds balance).
+      await settingsService.saveAccounts([full[0], full[6]]);
+
+      // New accounts fill 1,2,3,4,5 (skipping the used 6), then 7.
+      for (final expectedIndex in [1, 2, 3, 4, 5, 7]) {
+        final next = await settingsService.getNextFreeAccountIndex(0);
+        expect(next, expectedIndex);
+        await settingsService.addAccount(
+          Account(walletIndex: 0, index: next, name: 'Account ${next + 1}', accountId: 'new_id_$next'),
+        );
+      }
+    });
+
+    test('re-adding accounts fills gaps when only index 0 and 5 remain', () async {
+      await settingsService.initialize();
+      await settingsService.saveAccounts([
+        const Account(walletIndex: 0, index: 0, name: 'Account 1', accountId: 'gap_id_0'),
+        const Account(walletIndex: 0, index: 5, name: 'Account 6', accountId: 'gap_id_5'),
+      ]);
+
+      // Fill 1,2,3,4, skip the used 5, then 6.
+      for (final expectedIndex in [1, 2, 3, 4, 6]) {
+        final next = await settingsService.getNextFreeAccountIndex(0);
+        expect(next, expectedIndex);
+        await settingsService.addAccount(
+          Account(walletIndex: 0, index: next, name: 'Account ${next + 1}', accountId: 'gap_new_$next'),
+        );
+      }
+    });
+
+    test('getNextFreeAccountIndex ignores the reserved encrypted account index', () async {
+      // Arrange: a transparent account plus the high-index encrypted account.
+      const encrypted = Account(
+        walletIndex: 0,
+        index: AppConstants.encryptedAccountIndex,
+        name: 'Encrypted Account',
+        accountId: 'id_encrypted',
+        accountType: AccountType.encrypted,
+      );
+      await settingsService.initialize();
+      await settingsService.saveAccounts([account1, encrypted]);
 
       // Act
       final nextIndex = await settingsService.getNextFreeAccountIndex(0);
 
-      // Assert
-      expect(nextIndex, 3);
+      // Assert: transparent indices stay contiguous (1), not 1025.
+      expect(nextIndex, 1);
     });
   });
 }

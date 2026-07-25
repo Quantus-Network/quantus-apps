@@ -5,6 +5,7 @@ import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:quantus_sdk/generated/planck/pallets/multisig.dart' show Constants, Txs;
 import 'package:quantus_sdk/generated/planck/types/quantus_runtime/runtime_call.dart';
+import 'package:quantus_sdk/src/constants/app_constants.dart';
 import 'package:quantus_sdk/src/models/account.dart';
 import 'package:quantus_sdk/src/models/json_dynamic_parse.dart';
 import 'package:quantus_sdk/src/models/multisig_account.dart';
@@ -26,7 +27,6 @@ class MultisigService {
   final SubstrateService _substrateService = SubstrateService();
   static final Constants palletConstants = Constants();
 
-  static const int _avgBlockTimeSeconds = 12;
   static const Duration defaultProposalExpiry = Duration(days: 2);
   static final BigInt defaultMultisigNonce = BigInt.zero;
 
@@ -39,9 +39,7 @@ class MultisigService {
   /// Suggested approval threshold at roughly 70% of [signerCount].
   static int defaultThreshold(int signerCount) {
     if (signerCount <= 0) return 1;
-    final threshold = (signerCount * 0.7).round();
-    final minThreshold = signerCount >= 2 ? 2 : 1;
-    return threshold.clamp(minThreshold, signerCount);
+    return (signerCount * 2 / 3).round().clamp(1, signerCount);
   }
 
   Future<List<MultisigAccount>> discoverForUser(List<String> myAccountIds) async {
@@ -438,13 +436,13 @@ class MultisigService {
 
   /// Number of blocks that approximately span [duration] at average block time.
   int blocksForDuration(Duration duration) {
-    return (duration.inSeconds / _avgBlockTimeSeconds).round();
+    return (duration.inSeconds / AppConstants.avgBlockTimeSeconds).round();
   }
 
   /// Approximate wall-clock time at which [targetBlock] is reached, given the
   /// known [currentBlock].
   DateTime blockToTime(int targetBlock, int currentBlock) {
     final deltaBlocks = targetBlock - currentBlock;
-    return DateTime.now().add(Duration(seconds: deltaBlocks * _avgBlockTimeSeconds));
+    return DateTime.now().add(Duration(seconds: deltaBlocks * AppConstants.avgBlockTimeSeconds));
   }
 }

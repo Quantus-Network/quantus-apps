@@ -1,19 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 
-class MigrationDialog extends StatefulWidget {
-  final List<MigrationAccountData> migrationData;
+class MigrationDialog extends ConsumerStatefulWidget {
+  final List<MigrationResult> migrationResults;
   final Future<void> Function() onMigrate;
   final Future<void> Function()? onTryLater;
 
-  const MigrationDialog({super.key, required this.migrationData, required this.onMigrate, this.onTryLater});
+  const MigrationDialog({super.key, required this.migrationResults, required this.onMigrate, this.onTryLater});
 
   static Future<void> show({
     required BuildContext context,
-    required List<MigrationAccountData> migrationData,
+    required List<MigrationResult> migrationResults,
     required Future<void> Function() onMigrate,
     Future<void> Function()? onTryLater,
   }) {
@@ -24,21 +26,24 @@ class MigrationDialog extends StatefulWidget {
       isDismissible: false,
       enableDrag: false,
       constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width),
-      builder: (ctx) => MigrationDialog(migrationData: migrationData, onMigrate: onMigrate, onTryLater: onTryLater),
+      builder: (ctx) =>
+          MigrationDialog(migrationResults: migrationResults, onMigrate: onMigrate, onTryLater: onTryLater),
     );
   }
 
   @override
-  State<MigrationDialog> createState() => _MigrationDialogState();
+  ConsumerState<MigrationDialog> createState() => _MigrationDialogState();
 }
 
-class _MigrationDialogState extends State<MigrationDialog> {
+class _MigrationDialogState extends ConsumerState<MigrationDialog> {
   bool _isMigrating = false;
   String? _errorMessage;
 
   @override
   Widget build(BuildContext context) {
-    final accountCount = widget.migrationData.length;
+    final successCount = widget.migrationResults.whereType<MigrationSuccess>().length;
+    final failureCount = widget.migrationResults.whereType<MigrationFailure>().length;
+    final l10n = ref.watch(l10nProvider);
     final colors = context.colors;
     final text = context.themeText;
 
@@ -53,20 +58,21 @@ class _MigrationDialogState extends State<MigrationDialog> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Migrate your accounts', style: text.smallTitle?.copyWith(color: colors.textPrimary, fontSize: 20)),
+          Text(l10n.migrationDialogTitle, style: text.smallTitle?.copyWith(color: colors.textPrimary, fontSize: 20)),
+          const SizedBox(height: 24),
+          Text(l10n.migrationDialogBody, style: text.smallParagraph?.copyWith(color: colors.textSecondary)),
           const SizedBox(height: 24),
           Text(
-            'We\'ll record your old\u2011chain testnet rewards and actions to determine '
-            'rewards on the new Quantus Testnet.\n\n'
-            'Balances do not migrate.\n\n'
-            'Use the new testnet faucet for funds.',
-            style: text.smallParagraph?.copyWith(color: colors.textSecondary),
-          ),
-          const SizedBox(height: 24),
-          Text(
-            '$accountCount ${accountCount > 1 ? 'Accounts' : 'Account'} to migrate.',
+            l10n.migrationDialogAccountsToMigrate(successCount),
             style: text.paragraph?.copyWith(fontWeight: FontWeight.w600, color: colors.accentGreen),
           ),
+          if (failureCount > 0) ...[
+            const SizedBox(height: 8),
+            Text(
+              l10n.migrationDialogAccountsCannotMigrate(failureCount),
+              style: text.smallParagraph?.copyWith(color: colors.accentOrange),
+            ),
+          ],
           const SizedBox(height: 40),
           if (_errorMessage != null)
             Container(
@@ -77,27 +83,32 @@ class _MigrationDialogState extends State<MigrationDialog> {
               child: Text(_errorMessage!, style: text.smallParagraph?.copyWith(color: colors.textError)),
             ),
           QuantusButton.simple(
-            label: _errorMessage != null ? 'Retry' : 'Migrate Accounts',
+            label: _errorMessage != null ? l10n.migrationDialogRetry : l10n.migrationDialogMigrate,
             isLoading: _isMigrating,
-            onTap: () async {
-              setState(() => _isMigrating = true);
-              try {
-                await widget.onMigrate();
-                // ignore: use_build_context_synchronously
-                if (mounted) Navigator.of(context).pop();
-              } catch (e) {
-                if (mounted) {
-                  setState(() => _errorMessage = 'We couldn\'t upload migration data. Please retry or try later.');
-                }
-              } finally {
-                if (mounted) setState(() => _isMigrating = false);
-              }
-            },
+            onTap: successCount == 0
+                ? null
+                : () async {
+                    setState(() => _isMigrating = true);
+                    try {
+                      await widget.onMigrate();
+                      // ignore: use_build_context_synchronously
+                      if (mounted) Navigator.of(context).pop();
+                    } catch (e) {
+                      if (mounted) {
+                        setState(() => _errorMessage = ref.read(l10nProvider).migrationDialogUploadError);
+                      }
+                    } finally {
+                      if (mounted) setState(() => _isMigrating = false);
+                    }
+                  },
           ),
-          if (_errorMessage != null) ...[
+          // Show "Try later" when there's an error OR when there are no migratable accounts
+          if (_errorMessage != null || successCount == 0) ...[
             const SizedBox(height: 12),
             QuantusButton.simple(
-              label: 'Try later',
+              label: successCount == 0 && _errorMessage == null
+                  ? l10n.migrationDialogSkip
+                  : l10n.migrationDialogTryLater,
               variant: ButtonVariant.transparent,
               onTap: () async {
                 if (widget.onTryLater != null) await widget.onTryLater!();

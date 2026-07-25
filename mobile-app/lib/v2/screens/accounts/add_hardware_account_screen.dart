@@ -11,6 +11,7 @@ import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
+import 'package:resonance_network_wallet/v2/screens/accounts/account_menu_screen.dart';
 
 class AddHardwareAccountScreen extends ConsumerStatefulWidget {
   const AddHardwareAccountScreen({super.key, required this.walletIndex, this.isNewWallet = false});
@@ -45,7 +46,7 @@ class _AddHardwareAccountScreenState extends ConsumerState<AddHardwareAccountScr
   }
 
   void _fillDebugAddress() {
-    _address.text = 'qzn5St24cMsjE4JKYdXLBctusWj5zom67dnrW22SweAahLGeG';
+    _address.text = AppConstants.debugTestAddress;
     if (_error != null) setState(() => _error = null);
   }
 
@@ -80,7 +81,11 @@ class _AddHardwareAccountScreenState extends ConsumerState<AddHardwareAccountScr
       await _accountsService.addAccount(account);
       ref.invalidate(accountsProvider);
       ref.invalidate(activeAccountProvider);
-      if (mounted) Navigator.of(context).pop(true);
+      if (mounted) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => AccountMenuScreen(initialAccount: account, isPostCreation: true)),
+        );
+      }
     } catch (e) {
       if (mounted) setState(() => _error = e.toString());
     } finally {
@@ -128,27 +133,19 @@ class _AddHardwareAccountScreenState extends ConsumerState<AddHardwareAccountScr
             },
           ),
           const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: QuantusButton.simple(
-                  label: l10n.componentQrScannerTitle,
-                  variant: ButtonVariant.secondary,
-                  onTap: _scanQRCode,
-                ),
-              ),
-              if (kDebugMode) ...[
-                const SizedBox(width: 12),
-                Expanded(
-                  child: QuantusButton.simple(
-                    label: l10n.addHardwareAccountDebugFill,
-                    variant: ButtonVariant.secondary,
-                    onTap: _fillDebugAddress,
-                  ),
-                ),
-              ],
-            ],
+          QuantusButton.simple(
+            label: l10n.componentQrScannerTitle,
+            variant: ButtonVariant.secondary,
+            onTap: _scanQRCode,
           ),
+          if (kDebugMode) ...[
+            const SizedBox(height: 12),
+            QuantusButton.simple(
+              label: l10n.addHardwareAccountDebugFill,
+              variant: ButtonVariant.secondary,
+              onTap: _fillDebugAddress,
+            ),
+          ],
           if (_error != null) ...[
             const SizedBox(height: 10),
             Text(_error!, style: context.themeText.tiny?.copyWith(color: Colors.red)),

@@ -5,10 +5,11 @@ import 'package:resonance_network_wallet/generated/version.g.dart';
 import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/mining_rewards_provider.dart';
+import 'package:resonance_network_wallet/shared/constants/e2e_keys.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/about_quantus_screen.dart';
-import 'package:resonance_network_wallet/v2/screens/settings/account_type_settings_screen.dart';
+import 'package:resonance_network_wallet/v2/screens/settings/add_account_menu_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/help_and_support_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/preferences_settings_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/settings_divider.dart';
@@ -35,6 +36,7 @@ class _SettingsScreenV2State extends ConsumerState<SettingsScreenV2> {
     final entries = _settingsHubItems(colors, l10n);
 
     return ScaffoldBase(
+      key: const Key(E2EKeys.settingsScreen),
       appBar: V2AppBar(title: l10n.settingsTitle),
       mainContent: ListView(
         children: [
@@ -64,6 +66,7 @@ class _SettingsScreenV2State extends ConsumerState<SettingsScreenV2> {
   }
 
   Widget _buildTappableRow(_SettingsHubItem item, {required Widget trailing, String? subtitle}) => SettingsTappableRow(
+    key: item.rowKey,
     leading: item.leading,
     title: item.title,
     subtitle: subtitle ?? item.subtitle,
@@ -79,6 +82,7 @@ class _SettingsHubItem {
     required this.subtitle,
     required this.page,
     this.isMiningRewards = false,
+    this.rowKey,
   });
 
   final Widget leading;
@@ -86,6 +90,7 @@ class _SettingsHubItem {
   final String subtitle;
   final Widget page;
   final bool isMiningRewards;
+  final Key? rowKey;
 }
 
 List<_SettingsHubItem> _settingsHubItems(AppColorsV2 colors, AppLocalizations l10n) {
@@ -95,6 +100,7 @@ List<_SettingsHubItem> _settingsHubItems(AppColorsV2 colors, AppLocalizations l1
       title: l10n.settingsWalletTitle,
       subtitle: l10n.settingsWalletSubtitle,
       page: const WalletSettingsScreenV2(),
+      rowKey: const Key(E2EKeys.settingsWalletMenuRow),
     ),
     _SettingsHubItem(
       leading: _settingsHubIcon(colors, icon: Icons.tune),
@@ -110,10 +116,10 @@ List<_SettingsHubItem> _settingsHubItems(AppColorsV2 colors, AppLocalizations l1
       isMiningRewards: true,
     ),
     _SettingsHubItem(
-      leading: _settingsHubIcon(colors, icon: Icons.shield_outlined),
+      leading: _settingsHubIcon(colors, icon: Icons.person_add_outlined),
       title: l10n.settingsAccountTypeTitle,
       subtitle: l10n.settingsAccountTypeSubtitle,
-      page: const AccountTypeSettingsScreenV2(),
+      page: const AddAccountMenuScreen(),
     ),
     _SettingsHubItem(
       leading: _settingsHubIcon(colors, icon: Icons.help_outline),

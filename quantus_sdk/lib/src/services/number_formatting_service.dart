@@ -13,13 +13,20 @@ class NumberFormattingService {
     : _localeConfig = localeConfig ?? LocaleNumberConfig.fromDefaultLocale();
 
   /// Formats a raw BigInt balance (representing the smallest unit) into a
-  /// user-readable string with a specified number of decimal places.
+  /// user-readable string.
   ///
-  /// Example: 1234500000000 -> "1.2345" (with maxDecimals = 4, US locale)
-  /// Example: 1234500000000 -> "1,2345" (with maxDecimals = 4, Indonesian locale)
+  /// [smartDecimals] is the preferred number of fractional digits. For sub-unit
+  /// amounts whose first [smartDecimals] digits are all zero, precision is
+  /// extended to reveal the first significant digits so a tiny non-zero amount
+  /// never renders as "0" — but never beyond [maxDecimals], the absolute cap
+  /// (which is treated as at least [smartDecimals]).
+  ///
+  /// Example: 1234500000000 -> "1.2345" (smartDecimals = 4, US locale)
+  /// Example: 100000000      -> "0.0001" (smartDecimals = 2, extended)
   String formatBalance(
     BigInt balance, {
-    int maxDecimals = 4,
+    int smartDecimals = 4,
+    int maxDecimals = 6,
     bool addThousandsSeparators = true,
     bool addSymbol = false,
   }) {
@@ -30,15 +37,18 @@ class NumberFormattingService {
     }
 
     final decimalBalance = (Decimal.fromBigInt(balance) / scaleFactorDecimal).toDecimal(
-      scaleOnInfinitePrecision: maxDecimals * 3,
+      scaleOnInfinitePrecision: decimals,
     );
 
     String asString = decimalBalance.toString();
 
     final dotIndex = asString.indexOf('.');
     if (dotIndex != -1) {
-      if (asString.length > dotIndex + maxDecimals + 1) {
-        asString = asString.substring(0, dotIndex + maxDecimals + 1);
+      final integerPart = asString.substring(0, dotIndex);
+      final fraction = asString.substring(dotIndex + 1);
+      final effectiveDecimals = _effectiveDecimals(integerPart, fraction, smartDecimals, maxDecimals);
+      if (asString.length > dotIndex + effectiveDecimals + 1) {
+        asString = asString.substring(0, dotIndex + effectiveDecimals + 1);
       }
     }
 
@@ -58,13 +68,27 @@ class NumberFormattingService {
     return resultString;
   }
 
+  /// Resolves how many fractional digits to display: [smartDecimals] normally,
+  /// extended toward the first significant digits for tiny sub-unit amounts,
+  /// capped at [maxDecimals] (never below [smartDecimals]).
+  int _effectiveDecimals(String integerPart, String fraction, int smartDecimals, int maxDecimals) {
+    if (smartDecimals < 1 || integerPart != '0') return smartDecimals;
+    final shown = fraction.length > smartDecimals ? fraction.substring(0, smartDecimals) : fraction;
+    if (shown.contains(RegExp(r'[1-9]'))) return smartDecimals;
+    final firstSignificant = fraction.indexOf(RegExp(r'[1-9]'));
+    if (firstSignificant == -1) return smartDecimals;
+    final cap = maxDecimals < smartDecimals ? smartDecimals : maxDecimals;
+    final extended = firstSignificant + smartDecimals;
+    return extended > cap ? cap : extended;
+  }
+
   /// Formats a balance for payment URL wire transport: dot decimal, no grouping.
   ///
   /// Wire amounts are locale-neutral and must be parsed with [parseWireAmount].
   String formatWireAmount(BigInt balance) {
     return NumberFormattingService(
       localeConfig: LocaleNumberConfig.dotDecimal,
-    ).formatBalance(balance, maxDecimals: decimals, addThousandsSeparators: false);
+    ).formatBalance(balance, smartDecimals: decimals, addThousandsSeparators: false);
   }
 
   /// Parses a payment URL amount without assuming the payer's locale.

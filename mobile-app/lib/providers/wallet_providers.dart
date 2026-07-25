@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/legacy.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
+import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
 import 'package:resonance_network_wallet/providers/pending_multisig_cancellations_provider.dart';
 import 'package:resonance_network_wallet/providers/pending_multisig_creations_provider.dart';
 import 'package:resonance_network_wallet/providers/pending_multisig_executions_provider.dart';
@@ -69,6 +70,52 @@ final wormholeUtxoServiceProvider = Provider<WormholeUtxoService>((ref) {
   return WormholeUtxoService();
 });
 
+/// One encrypted-account service per wallet: caches derived wormhole key pairs
+/// and owns the persisted next-index / pending-spend state.
+final encryptedAccountServiceProvider = Provider.family<EncryptedAccountService, int>((ref, walletIndex) {
+  final service = EncryptedAccountService(
+    walletIndex: walletIndex,
+    getMnemonic: () => ref.read(settingsServiceProvider).getMnemonic(walletIndex),
+  );
+  // Invalidation (e.g. logout) must quiesce in-flight loads/sends so they
+  // cannot write stale state after the session is torn down.
+  ref.onDispose(service.dispose);
+  return service;
+});
+
+/// Discovered UTXO set + pending change for a wallet's encrypted account.
+final encryptedStateProvider = FutureProvider.family<EncryptedAccountState, int>((ref, walletIndex) {
+  return ref.watch(encryptedAccountServiceProvider(walletIndex)).load();
+});
+
+final encryptedBalanceProvider = Provider.family<AsyncValue<BigInt>, int>((ref, walletIndex) {
+  return ref.watch(encryptedStateProvider(walletIndex)).whenData((s) => s.balance);
+});
+
+/// Exact max sendable (inputs net of the wormhole volume fee).
+final encryptedSpendableProvider = Provider.family<AsyncValue<BigInt>, int>((ref, walletIndex) {
+  return ref.watch(encryptedStateProvider(walletIndex)).whenData((s) => s.maxSendable);
+});
+
+final encryptedTotalReceivedProvider = Provider.family<AsyncValue<BigInt>, int>((ref, walletIndex) {
+  return ref.watch(encryptedStateProvider(walletIndex)).whenData((s) => s.totalReceivedPlanck);
+});
+
+final encryptedTotalSpentProvider = Provider.family<AsyncValue<BigInt>, int>((ref, walletIndex) {
+  return ref.watch(encryptedStateProvider(walletIndex)).whenData((s) => s.totalSpentPlanck);
+});
+
+bool isEncryptedAccount(BaseAccount? account) => account is Account && account.accountType == AccountType.encrypted;
+
+/// Backfills the per-wallet encrypted (wormhole) account for every software
+/// wallet, gated by the feature flag. Idempotent; returns true if any were
+/// added (callers invalidate [accountsProvider] then).
+Future<bool> ensureEncryptedAccounts(WidgetRef ref) async {
+  if (!ref.read(remoteConfigProvider).enableEncryptedAccount) return false;
+  final name = ref.read(l10nProvider).createAccountEncryptedDefaultName;
+  return ref.read(accountsServiceProvider).ensureEncryptedAccountsForSoftwareWallets(name: name);
+}
+
 final isHighSecurityProvider = FutureProvider.family<bool, Account>((ref, account) async {
   final highSecurityService = ref.watch(highSecurityServiceProvider);
   return await highSecurityService.isHighSecurity(account);
@@ -127,19 +174,17 @@ final balanceProviderRaw = Provider<AsyncValue<BigInt>>((ref) {
 // Store for cached balance to return on error
 BigInt _cachedBalance = BigInt.zero;
 
-// Effective balance (blockchain balance minus pending outgoing transactions)
 final balanceProvider = Provider<AsyncValue<BigInt>>((ref) {
+  final activeAccount = ref.watch(activeAccountProvider).value;
   final balanceAsync = ref.watch(balanceProviderRaw);
   final pendingTransactions = ref.watch(pendingTransactionsProvider);
   final pendingMultisigProposals = ref.watch(pendingMultisigProposalsProvider);
   final pendingMultisigExecutions = ref.watch(pendingMultisigExecutionsProvider);
   final pendingMultisigCancellations = ref.watch(pendingMultisigCancellationsProvider);
   final pendingMultisigCreations = ref.watch(pendingMultisigCreationsProvider);
-  final activeAccountAsync = ref.watch(activeAccountProvider);
 
   return balanceAsync.when(
     data: (blockchainBalance) {
-      final activeAccount = activeAccountAsync.value;
       if (activeAccount == null) {
         _cachedBalance = BigInt.zero;
         return AsyncValue.data(BigInt.zero);
@@ -160,7 +205,6 @@ final balanceProvider = Provider<AsyncValue<BigInt>>((ref) {
     },
     loading: () => const AsyncValue.loading(),
     error: (err, stack) {
-      // On error, return last cached balance
       return AsyncValue.data(_cachedBalance);
     },
   );
@@ -241,17 +285,26 @@ final recoveryPhraseViewedProvider = Provider.family<bool, int>((ref, walletInde
   return ref.watch(settingsServiceProvider).recoveryPhraseViewed(walletIndex);
 });
 
+final walletOriginProvider = Provider.family<WalletOrigin?, int>((ref, walletIndex) {
+  return ref.watch(settingsServiceProvider).getWalletOrigin(walletIndex);
+});
+
 /// 0.0001 QUAN in raw units; dust below this doesn't warrant a backup nudge.
 final _backupNudgeBalanceThreshold = BigInt.from(10).pow(AppConstants.decimals - 4);
 
 /// Wallet index needing a recovery phrase backup reminder, or null when none.
+/// Only nudges mnemonic-backed wallets created on this device (or legacy wallets
+/// of unknown origin). Never nudges multisig/entrusted accounts (not
+/// [RegularAccount]), hardware (keystone) wallets, or imported wallets.
 final backupReminderWalletIndexProvider = Provider<int?>((ref) {
   final active = ref.watch(activeAccountProvider).value;
   if (active is! RegularAccount) return null;
+  if (active.account.accountType != AccountType.local) return null;
 
   final walletIndex = active.account.walletIndex;
   if (AppConstants.debugAlwaysShowBackupNudge) return walletIndex;
 
+  if (ref.watch(walletOriginProvider(walletIndex)) == WalletOrigin.imported) return null;
   if (ref.watch(recoveryPhraseViewedProvider(walletIndex))) return null;
 
   final balance = ref.watch(balanceProvider).value ?? BigInt.zero;

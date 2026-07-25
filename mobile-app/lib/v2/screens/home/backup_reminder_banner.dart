@@ -19,7 +19,9 @@ class BackupReminderBanner extends ConsumerWidget {
     return GestureDetector(
       onTap: () => Navigator.push(
         context,
-        MaterialPageRoute(builder: (_) => RecoveryPhraseConfirmationScreen(walletIndex: walletIndex)),
+        MaterialPageRoute(
+          builder: (_) => RecoveryPhraseConfirmationScreen(walletIndex: walletIndex, showAlreadyBackedUp: true),
+        ),
       ),
       child: Container(
         padding: const EdgeInsets.all(16),

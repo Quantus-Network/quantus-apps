@@ -52,7 +52,7 @@ dependency_overrides:
 #   flutter_svg          ^2.3.0
 #   flash                ^3.1.1
 #   collection           ^1.19.1
-#   telemetrydecksdk     ^3.0.0
+#   telemetrydecksdk     ^4.0.0
 #   flutter_lints        ^6.0.0
 
 scripts:

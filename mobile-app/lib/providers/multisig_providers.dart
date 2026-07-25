@@ -4,13 +4,15 @@ import 'package:flutter_riverpod/legacy.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
+import 'package:resonance_network_wallet/services/firebase_messaging_service.dart';
 
 final multisigServiceProvider = Provider<MultisigService>((ref) => MultisigService());
 
 class MultisigAccountsNotifier extends StateNotifier<AsyncValue<List<MultisigAccount>>> {
+  final Ref _ref;
   final SettingsService _settingsService;
 
-  MultisigAccountsNotifier(this._settingsService) : super(const AsyncValue.loading()) {
+  MultisigAccountsNotifier(this._ref, this._settingsService) : super(const AsyncValue.loading()) {
     _load();
   }
 
@@ -26,6 +28,7 @@ class MultisigAccountsNotifier extends StateNotifier<AsyncValue<List<MultisigAcc
 
   Future<void> add(MultisigAccount account) async {
     await _settingsService.addMultisigAccount(account);
+    await _ref.read(firebaseMessagingServiceProvider).insertNewAddress(account.accountId);
 
     final current = state.value ?? [];
     state = AsyncValue.data([...current, account]);
@@ -58,7 +61,7 @@ final multisigAccountsProvider = StateNotifierProvider<MultisigAccountsNotifier,
   ref,
 ) {
   final settings = ref.watch(settingsServiceProvider);
-  return MultisigAccountsNotifier(settings);
+  return MultisigAccountsNotifier(ref, settings);
 });
 
 final discoveredMultisigsProvider = FutureProvider.autoDispose<List<MultisigAccount>>((ref) async {
@@ -96,6 +99,16 @@ final multisigPastProposalsProvider = FutureProvider.autoDispose.family<List<Mul
   final service = ref.watch(multisigServiceProvider);
   return service.getPastProposals(msig);
 });
+
+/// A single proposal resolved by its on-chain id within [msig].
+///
+/// Used when only the multisig and proposal id are known (e.g. a push
+/// notification tap), so the detail sheet can show a loader while fetching.
+final multisigProposalByIdProvider = FutureProvider.autoDispose
+    .family<MultisigProposal?, ({MultisigAccount msig, int id})>((ref, args) async {
+      final service = ref.watch(multisigServiceProvider);
+      return service.getProposal(args.msig, args.id);
+    });
 
 /// Invalidates open, past, and block providers after a proposal state change.
 void invalidateMultisigProposals(Ref ref, MultisigAccount msig) {

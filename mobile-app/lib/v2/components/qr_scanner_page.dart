@@ -1,7 +1,9 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_icon_button.dart';
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
@@ -26,9 +28,13 @@ class _QrScannerPageState extends ConsumerState<QrScannerPage> {
   }
 
   void _onDetect(BarcodeCapture capture) {
-    if (_scanned) return;
     final code = capture.barcodes.firstOrNull?.rawValue;
     if (code == null || code.isEmpty) return;
+    _handleCode(code);
+  }
+
+  void _handleCode(String code) {
+    if (_scanned) return;
     if (widget.validator != null && !widget.validator!(code)) return;
     _scanned = true;
     Navigator.pop(context, code);
@@ -84,6 +90,14 @@ class _QrScannerPageState extends ConsumerState<QrScannerPage> {
                 ),
                 const SizedBox(width: 8),
                 _actionButton(icon: Icons.image_outlined, onTap: _pickImage, colors: colors),
+                if (kDebugMode) ...[
+                  const SizedBox(width: 8),
+                  _actionButton(
+                    icon: Icons.bug_report,
+                    onTap: () => _handleCode(AppConstants.debugTestAddress),
+                    colors: colors,
+                  ),
+                ],
               ],
             ),
           ),

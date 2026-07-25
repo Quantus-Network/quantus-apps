@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/shared/utils/print.dart';
 
@@ -20,6 +21,13 @@ class RemoteConfigService {
   }
 
   RemoteConfigModel readLocalConfig() {
+    // In debug builds never trust the persisted cache: stale flags from an
+    // earlier run can poison local state. Always reset to in-code defaults.
+    if (kDebugMode) {
+      cacheConfig(RemoteConfigModel.defaults.toCacheJson());
+      return RemoteConfigModel.defaults;
+    }
+
     final jsonString = _settingsService.getString(remoteConfigCacheKey);
 
     if (jsonString == null || jsonString.isEmpty) {

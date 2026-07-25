@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
+import 'package:resonance_network_wallet/shared/constants/e2e_keys.dart';
 import 'package:resonance_network_wallet/shared/extensions/toaster_extensions.dart';
 import 'package:resonance_network_wallet/shared/utils/account_utils.dart';
 import 'package:resonance_network_wallet/v2/components/loader.dart';
@@ -57,6 +58,7 @@ class _WalletSettingsScreenV2State extends ConsumerState<WalletSettingsScreenV2>
     final accountsAsync = ref.watch(accountsProvider);
 
     return ScaffoldBase(
+      key: const Key(E2EKeys.walletSettingsScreen),
       appBar: V2AppBar(title: l10n.settingsWalletTitle),
       mainContent: accountsAsync.when(
         loading: () => const Center(child: Loader()),
@@ -66,6 +68,7 @@ class _WalletSettingsScreenV2State extends ConsumerState<WalletSettingsScreenV2>
         data: (accounts) => ListView(
           children: [
             SettingsTappableRow(
+              key: const Key(E2EKeys.walletSettingsRecoveryPhraseRow),
               title: l10n.settingsWalletRecoveryPhrase,
               subtitle: l10n.settingsWalletRecoveryPhraseSubtitle,
               onTap: () => _navigateToRecoveryPhrase(accounts),

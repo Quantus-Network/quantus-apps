@@ -34,6 +34,43 @@ class AccountsService {
     return newAccount;
   }
 
+  Future<Account> createEncryptedAccount({required int walletIndex, required String name}) async {
+    final mnemonic = await _settingsService.getMnemonic(walletIndex);
+    if (mnemonic == null) {
+      throw Exception('Mnemonic not found. Cannot create encrypted account.');
+    }
+    final keyPair = HdWalletService().deriveWormholeKeyPair(mnemonic: mnemonic);
+    return Account(
+      walletIndex: walletIndex,
+      index: AppConstants.encryptedAccountIndex,
+      name: name,
+      accountId: keyPair.address,
+      accountType: AccountType.encrypted,
+    );
+  }
+
+  /// Ensures every software (non-hardware) wallet has its single encrypted
+  /// (wormhole) account persisted. Idempotent; returns true if any were added.
+  Future<bool> ensureEncryptedAccountsForSoftwareWallets({required String name}) async {
+    final accounts = await getAccounts();
+    final byWallet = <int, List<Account>>{};
+    for (final a in accounts) {
+      byWallet.putIfAbsent(a.walletIndex, () => []).add(a);
+    }
+
+    var created = false;
+    for (final entry in byWallet.entries) {
+      final group = entry.value;
+      final isHardware = group.every((a) => a.accountType == AccountType.keystone);
+      final hasEncrypted = group.any((a) => a.accountType == AccountType.encrypted);
+      if (isHardware || hasEncrypted) continue;
+      final account = await createEncryptedAccount(walletIndex: entry.key, name: name);
+      await addAccount(account);
+      created = true;
+    }
+    return created;
+  }
+
   Future<void> updateAccountName(Account account, String name) async {
     if (name.isEmpty) {
       throw Exception("Account name can't be empty");
@@ -54,6 +91,13 @@ class AccountsService {
 
   Future<void> removeAccount(Account account) async {
     await _settingsService.removeAccount(account);
+    onAccountsChanged?.call();
+  }
+
+  /// Removes an entire wallet (all its accounts plus its stored mnemonic). The
+  /// primary wallet (index 0) cannot be removed.
+  Future<void> removeWallet(int walletIndex) async {
+    await _settingsService.removeWallet(walletIndex);
     onAccountsChanged?.call();
   }
 }

@@ -10,14 +10,22 @@ class OtherTransfersResult {
   final List<TransactionEvent> transfers;
   final bool hasMore;
 
-  const OtherTransfersResult({required this.transfers, required this.hasMore});
+  /// The number of raw rows consumed from the query result, including skipped
+  /// rows. Use this to advance pagination cursors, not [transfers.length].
+  final int rawRowsConsumed;
+
+  const OtherTransfersResult({required this.transfers, required this.hasMore, required this.rawRowsConsumed});
 }
 
 class _Page<T> {
   final List<T> items;
   final bool hasMore;
 
-  const _Page({required this.items, required this.hasMore});
+  /// The number of raw rows consumed from the query result, including rows
+  /// that parsed to null. Use this to advance pagination cursors.
+  final int rawRowsConsumed;
+
+  const _Page({required this.items, required this.hasMore, required this.rawRowsConsumed});
 }
 
 class ChainHistoryService {
@@ -451,17 +459,21 @@ ${MultisigGraphql.cancelledMultisigProposalAccountEventSelection}
 
   _Page<T> _pageFromEvents<T>(List<dynamic>? events, int limit, T? Function(dynamic event) parseEvent) {
     if (events == null || events.isEmpty) {
-      return _Page(items: <T>[], hasMore: false);
+      return _Page(items: <T>[], hasMore: false, rawRowsConsumed: 0);
     }
 
+    // hasMore is true if the query returned more rows than requested (lookahead).
     final hasMore = events.length > limit;
     final items = <T>[];
+    var rawRowsConsumed = 0;
     for (final event in events) {
+      // Stop once we have enough parsed items, but track all consumed rows.
       if (items.length >= limit) break;
+      rawRowsConsumed++;
       final parsed = parseEvent(event);
       if (parsed != null) items.add(parsed);
     }
-    return _Page(items: items, hasMore: hasMore);
+    return _Page(items: items, hasMore: hasMore, rawRowsConsumed: rawRowsConsumed);
   }
 
   ReversibleTransferEvent _parseScheduledTransferEvent(dynamic event) {
@@ -673,7 +685,7 @@ ${MultisigGraphql.cancelledMultisigProposalAccountEventSelection}
 
       final List<dynamic>? events = responseBody['data']?['accountEvents'];
       final page = _pageFromEvents(events, limit, tryParseOtherTransferEvent);
-      return OtherTransfersResult(transfers: page.items, hasMore: page.hasMore);
+      return OtherTransfersResult(transfers: page.items, hasMore: page.hasMore, rawRowsConsumed: page.rawRowsConsumed);
     } catch (e, stackTrace) {
       sw.stop();
       printTiming('fetchOtherTransfers FAILED', sw.elapsedMilliseconds);
@@ -703,8 +715,10 @@ ${MultisigGraphql.cancelledMultisigProposalAccountEventSelection}
       final scheduledReversibleTransfers = results[0] as _Page<ReversibleTransferEvent>;
       final otherTransfers = results[1] as OtherTransfersResult;
 
-      final nextOtherOffset = otherOffset + otherTransfers.transfers.length;
-      final nextScheduledOffset = scheduledOffset + scheduledReversibleTransfers.items.length;
+      // Advance offsets by raw rows consumed, not parsed item count, so the
+      // cursor doesn't drift when rows are skipped (null-parsed).
+      final nextOtherOffset = otherOffset + otherTransfers.rawRowsConsumed;
+      final nextScheduledOffset = scheduledOffset + scheduledReversibleTransfers.rawRowsConsumed;
 
       return SortedTransactionsList(
         scheduledReversibleTransfers: scheduledReversibleTransfers.items,

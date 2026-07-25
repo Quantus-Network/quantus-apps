@@ -18,6 +18,55 @@ class AppLocalizationsId extends AppLocalizations {
   String get walletInitErrorButtonLabel => 'OK';
 
   @override
+  String get migrationDialogTitle => 'Migrasikan akun Anda';
+
+  @override
+  String get migrationDialogBody =>
+      'Kami akan mencatat hadiah dan aktivitas testnet chain lama Anda untuk menentukan hadiah di Quantus Testnet yang baru.\n\nSaldo tidak ikut dimigrasikan.\n\nGunakan faucet testnet baru untuk mendapatkan dana.';
+
+  @override
+  String migrationDialogAccountsToMigrate(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count Akun akan dimigrasikan.');
+    return '$_temp0';
+  }
+
+  @override
+  String migrationDialogAccountsCannotMigrate(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count akun tidak dapat dimigrasikan (data wallet hilang).',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get migrationDialogUploadError =>
+      'Kami tidak dapat mengunggah data migrasi. Silakan coba lagi atau coba nanti.';
+
+  @override
+  String get migrationDialogMigrate => 'Migrasikan Akun';
+
+  @override
+  String get migrationDialogRetry => 'Coba Lagi';
+
+  @override
+  String get migrationDialogTryLater => 'Coba nanti';
+
+  @override
+  String get migrationDialogSkip => 'Lewati';
+
+  @override
+  String migrationPartialFailureToast(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count akun tidak dapat dimigrasikan. Migrasi akan diulang saat aplikasi dibuka berikutnya.',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get authUseDeviceBiometricsToUnlock => 'Gunakan biometrik untuk mengakses wallet';
 
   @override
@@ -84,6 +133,18 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get accountReadyDone => 'Selesai';
+
+  @override
+  String get accountReadyTwoAccountsCreated => 'Dua akun telah dibuat untuk Anda.';
+
+  @override
+  String get accountReadyMainAccountDescription => 'Akun utama Anda. Cepat, terlihat di chain.';
+
+  @override
+  String get accountReadyEncryptedAccountDescription => 'Untuk transaksi privat. Tershield, lebih lambat.';
+
+  @override
+  String get accountReadyGoToWallet => 'Buka Wallet';
 
   @override
   String get importWalletAppBarTitle => 'Impor Wallet';
@@ -171,28 +232,65 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
+  String accountsSheetWallet(int number) {
+    return 'Wallet $number';
+  }
+
+  @override
+  String accountsSheetKeystoneWallet(int number) {
+    String _temp0 = intl.Intl.pluralLogic(
+      number,
+      locale: localeName,
+      other: 'Wallet Perangkat Keras Keystone $number',
+      one: 'Wallet Perangkat Keras Keystone',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get accountsSheetSubheaderTransparent => 'Akun Transparan';
+
+  @override
+  String get accountsSheetSubheaderEncrypted => 'Akun Terenkripsi';
+
+  @override
+  String get accountsSheetSubheaderKeystone => 'Akun Keystone';
+
+  @override
+  String get accountsSheetSubheaderMultisig => 'Akun Multisig';
+
+  @override
   String get addAccountMenuTitle => 'Tambah Akun';
 
   @override
-  String get addAccountMenuCreateTitle => 'Buat Akun Baru';
+  String get addAccountMenuCreateTitle => 'Tambah Akun Transparan';
 
   @override
-  String get addAccountMenuCreateSubtitle => 'Buat alamat wallet baru';
+  String get addAccountMenuCreateSubtitle => 'Tambahkan akun publik lainnya';
 
   @override
-  String get addAccountMenuImportTitle => 'Impor Wallet';
+  String get addAccountMenuMoreTitle => 'Lanjutan';
 
   @override
-  String get addAccountMenuImportSubtitle => 'Gunakan recovery phrase untuk mengimpor';
+  String get addAccountMenuImportKeystoneTitle => 'Tambah Akun Keystone';
 
   @override
-  String get addAccountMenuMultisigTitle => 'Buat Multisig';
+  String get addAccountMenuImportKeystoneSubtitle => 'Penandatanganan air-gap melalui kode QR';
+
+  @override
+  String get addAccountMenuImportTitle => 'Impor Akun';
+
+  @override
+  String get addAccountMenuImportSubtitle => 'Pulihkan dari recovery phrase';
+
+  @override
+  String get addAccountMenuMultisigTitle => 'Buat Akun Multisig';
 
   @override
   String get addAccountMenuMultisigSubtitle => 'Siapkan alamat bersama dengan beberapa penandatangan';
 
   @override
-  String get addAccountMenuDiscoverMultisigTitle => 'Temukan Multisig';
+  String get addAccountMenuDiscoverMultisigTitle => 'Tambah Akun Multisig';
 
   @override
   String get addAccountMenuDiscoverMultisigSubtitle => 'Cari multisig di mana akun Anda adalah penandatangan';
@@ -250,7 +348,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get multisigCreateSignersSubtitle => 'Tambahkan setidaknya satu penandatangan selain diri Anda.';
 
   @override
-  String get multisigCreateAddSignerHint => 'Alamat SS58 penandatangan';
+  String get multisigCreateAddSignerHint => 'Alamat penandatangan';
 
   @override
   String get multisigCreateAddSignerButton => 'Tambah Penandatangan';
@@ -259,7 +357,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get multisigCreateDuplicateSigner => 'Penandatangan ini sudah ada dalam daftar.';
 
   @override
-  String get multisigCreateInvalidSigner => 'Masukkan alamat SS58 yang valid.';
+  String get multisigCreateInvalidSigner => 'Masukkan alamat penandatangan yang valid.';
 
   @override
   String get multisigCreateThresholdLabel => 'AMBANG BATAS';
@@ -326,7 +424,7 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
-  String get multisigStatusApproved => 'DISETUJUI';
+  String get multisigStatusApproved => 'DITANDATANGANI';
 
   @override
   String get multisigStatusProposed => 'DIAJUKAN';
@@ -365,6 +463,15 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get multisigProposeFeeFetchFailed => 'Tidak dapat memperkirakan biaya';
+
+  @override
+  String get multisigProposeFeePayerBalanceLabel => 'Saldo Anda:';
+
+  @override
+  String get multisigProposeFeePayerInsufficient => 'Saldo Tidak Cukup untuk Biaya';
+
+  @override
+  String get multisigProposeProposerLabel => 'PENGUSUL';
 
   @override
   String get multisigProposeReviewButton => 'Tinjau transfer';
@@ -460,7 +567,7 @@ class AppLocalizationsId extends AppLocalizations {
       'Konfirmasi persetujuan membutuhkan waktu lebih lama. Periksa chain atau coba lagi.';
 
   @override
-  String get multisigProposalAlreadySignedNote => 'Anda sudah menyetujui proposal ini.';
+  String get multisigProposalAlreadySignedNote => 'Anda sudah menandatangani proposal ini.';
 
   @override
   String get multisigProposalAlreadyExecutedNote => 'Proposal ini sudah dieksekusi.';
@@ -511,7 +618,14 @@ class AppLocalizationsId extends AppLocalizations {
   String get multisigApproveButton => 'Setujui';
 
   @override
-  String get multisigAlreadyApproved => 'Sudah Disetujui';
+  String get multisigAlreadyApproved => 'Sudah Ditandatangani';
+
+  @override
+  String get multisigSignerPickerTitle => 'Pilih akun';
+
+  @override
+  String get multisigSignerPickerBody =>
+      'Beberapa akun di perangkat ini dapat menandatangani. Pilih akun mana yang akan digunakan untuk menyetujui.';
 
   @override
   String get multisigCancelProposalButton => 'Batalkan Proposal';
@@ -683,6 +797,9 @@ class AppLocalizationsId extends AppLocalizations {
   String get createAccountErrorCouldNotAdd => 'Gagal menambahkan akun.';
 
   @override
+  String get createAccountEncryptedDefaultName => 'Akun Terenkripsi';
+
+  @override
   String createAccountDefaultName(int number) {
     return 'Akun $number';
   }
@@ -715,6 +832,63 @@ class AppLocalizationsId extends AppLocalizations {
   String get accountMenuNotFound => 'Akun tidak ditemukan';
 
   @override
+  String get accountMenuDone => 'Selesai';
+
+  @override
+  String get accountMenuDisconnect => 'Putuskan';
+
+  @override
+  String get accountMenuDisconnectHardwareTitle => 'Putuskan dompet perangkat keras?';
+
+  @override
+  String accountMenuDisconnectHardwareMessage(String name) {
+    return 'Ini menghentikan pelacakan \"$name\" di perangkat ini. Dompet perangkat keras Anda tetap menyimpan akun, jadi Anda dapat menghubungkannya kembali kapan saja.';
+  }
+
+  @override
+  String get accountMenuDisconnectMultisigTitle => 'Putuskan multisig?';
+
+  @override
+  String accountMenuDisconnectMultisigMessage(String name) {
+    return 'Ini menghentikan pelacakan \"$name\" di perangkat ini. Multisig tetap ada di on-chain, jadi Anda dapat menambahkannya kembali kapan saja.';
+  }
+
+  @override
+  String get accountMenuDisconnectError => 'Tidak dapat memutuskan. Silakan coba lagi.';
+
+  @override
+  String get accountMenuDisconnectAccountTitle => 'Putuskan akun?';
+
+  @override
+  String accountMenuDisconnectAccountMessage(String name) {
+    return 'Ini menghentikan pelacakan \"$name\" di perangkat ini. Frasa pemulihan Anda tetap tersimpan, jadi Anda dapat memulihkannya nanti.';
+  }
+
+  @override
+  String accountMenuDisconnectWalletTitle(int number) {
+    return 'Putuskan Dompet $number?';
+  }
+
+  @override
+  String accountMenuDisconnectWalletMessage(String name, int number) {
+    return '\"$name\" adalah akun terakhir di Dompet $number. Memutuskannya akan menghapus seluruh dompet dari perangkat ini.';
+  }
+
+  @override
+  String get accountMenuDisconnectWalletConfirm => 'Putuskan Dompet';
+
+  @override
+  String get accountMenuDeleteWalletTitle => 'Apakah Anda yakin?';
+
+  @override
+  String accountMenuDeleteWalletMessage(int number) {
+    return 'Frasa pemulihan Dompet $number akan dihapus permanen dari perangkat ini. Pastikan sudah dicadangkan — ini tidak dapat dibatalkan.';
+  }
+
+  @override
+  String get accountMenuDeleteWalletConfirm => 'Hapus Dompet';
+
+  @override
   String get accountDetailsTitle => 'Detail Alamat';
 
   @override
@@ -736,7 +910,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get addHardwareAccountAddressLabel => 'ALAMAT';
 
   @override
-  String get addHardwareAccountAddressHint => 'Alamat SS58';
+  String get addHardwareAccountAddressHint => 'Alamat penandatangan';
 
   @override
   String get addHardwareAccountDebugFill => 'Isi Debug';
@@ -843,6 +1017,38 @@ class AppLocalizationsId extends AppLocalizations {
   String get sendTxSubmittedDone => 'Selesai';
 
   @override
+  String get keystoneSignTitle => 'Pindai dengan Keystone Anda';
+
+  @override
+  String get keystoneSignInstruction =>
+      'Tunjukkan kode QR ini ke dompet perangkat keras Keystone Anda untuk menandatangani transaksi.';
+
+  @override
+  String get keystoneSignNext => 'Pindai tanda tangan';
+
+  @override
+  String get keystoneSignError => 'Gagal menyiapkan transaksi. Silakan coba lagi.';
+
+  @override
+  String get keystoneScanInstruction => 'Pindai QR tanda tangan dari Keystone Anda';
+
+  @override
+  String keystoneScanProgress(int scanned, int total) {
+    return '$scanned / $total bingkai';
+  }
+
+  @override
+  String keystoneScanScanning(int count) {
+    return '$count bingkai dipindai';
+  }
+
+  @override
+  String get keystoneScanSubmitting => 'Mengirim transaksi...';
+
+  @override
+  String get keystoneScanError => 'Tidak dapat membaca tanda tangan. Silakan coba lagi.';
+
+  @override
   String get sendLogicCantSelfTransfer => 'Tidak Bisa Transfer ke Diri Sendiri';
 
   @override
@@ -875,6 +1081,12 @@ class AppLocalizationsId extends AppLocalizations {
   String get activityEmpty => 'Belum ada transaksi';
 
   @override
+  String get activityPrivateTotalReceived => 'Total Diterima';
+
+  @override
+  String get activityPrivateTotalSent => 'Total Terkirim';
+
+  @override
   String get activityFilterAll => 'Semua';
 
   @override
@@ -903,6 +1115,18 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get activityTxReceived => 'Diterima';
+
+  @override
+  String get activityTxPrivatelySending => 'Mengirim Secara Privat';
+
+  @override
+  String get activityTxPrivatelyReceiving => 'Menerima Secara Privat';
+
+  @override
+  String get activityTxPrivateSent => 'Terkirim Privat';
+
+  @override
+  String get activityTxPrivateReceived => 'Diterima Privat';
 
   @override
   String get activityTxMultisigCreated => 'Multisig dibuat';
@@ -956,6 +1180,18 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get activityDetailTitleReceived => 'Diterima';
+
+  @override
+  String get activityDetailTitlePrivatelySending => 'Mengirim Secara Privat';
+
+  @override
+  String get activityDetailTitlePrivatelyReceiving => 'Menerima Secara Privat';
+
+  @override
+  String get activityDetailTitlePrivateSent => 'Terkirim Privat';
+
+  @override
+  String get activityDetailTitlePrivateReceived => 'Diterima Privat';
 
   @override
   String get activityDetailTitleMultisigCreated => 'Multisig dibuat';
@@ -1061,12 +1297,7 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
-  String receiveClipboardContent(String accountId, String checksum) {
-    return 'ID Akun:\n$accountId\n\nCheckphrase:\n$checksum';
-  }
-
-  @override
-  String get receiveCopiedMessage => 'Detail akun disalin ke clipboard';
+  String get receiveCopiedMessage => 'Alamat disalin ke clipboard';
 
   @override
   String get posAmountTitle => 'Tagihan Baru';
@@ -1157,10 +1388,10 @@ class AppLocalizationsId extends AppLocalizations {
   String get settingsMiningRewardsError => 'Gagal memuat hadiah mining';
 
   @override
-  String get settingsAccountTypeTitle => 'Jenis Akun';
+  String get settingsAccountTypeTitle => 'Tambah Akun';
 
   @override
-  String get settingsAccountTypeSubtitle => 'Fitur Akun Lanjutan';
+  String get settingsAccountTypeSubtitle => 'Kelola akun Anda';
 
   @override
   String get settingsHelpTitle => 'Bantuan & Dukungan';
@@ -1216,6 +1447,9 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get settingsRecoveryPhraseDone => 'Selesai';
+
+  @override
+  String get settingsRecoveryAlreadyBackedUp => 'Saya sudah mencadangkan dompet saya';
 
   @override
   String get settingsResetTitle => 'Reset Dompet';
@@ -1424,40 +1658,6 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
-  String get settingsAccountTypeScreenTitle => 'Jenis Akun';
-
-  @override
-  String get settingsAccountTypeIntro =>
-      'Fitur akun lanjutan akan segera hadir. Fitur ini memberi Anda kontrol lebih besar atas cara transaksi diotorisasi dan diamankan.';
-
-  @override
-  String get settingsAccountTypeReversibleTitle => 'Transaksi Reversible';
-
-  @override
-  String get settingsAccountTypeReversibleSubtitle => 'Batalkan pengiriman dalam jangka waktu tertentu';
-
-  @override
-  String get settingsAccountTypeHighSecurityTitle => 'Akun Keamanan Tinggi';
-
-  @override
-  String get settingsAccountTypeHighSecuritySubtitle => 'Persetujuan guardian diperlukan';
-
-  @override
-  String get settingsAccountTypeMultiSigTitle => 'Multi-Tanda Tangan';
-
-  @override
-  String get settingsAccountTypeMultiSigSubtitle => 'Beberapa persetujuan diperlukan';
-
-  @override
-  String get settingsAccountTypeHardwareTitle => 'Dompet Hardware';
-
-  @override
-  String get settingsAccountTypeHardwareSubtitle => 'Pasangkan perangkat hardware';
-
-  @override
-  String get settingsAccountTypeComingSoon => 'Segera Hadir';
-
-  @override
   String get swapTitle => 'Tukar';
 
   @override
@@ -1556,6 +1756,12 @@ class AppLocalizationsId extends AppLocalizations {
   String get swapDepositTestnetBanner => 'HANYA DEMO - KAMI MASIH DI TESTNET';
 
   @override
+  String get swapDemoOnly => 'Hanya Demo';
+
+  @override
+  String get swapDemoOnlyBody => 'Tidak ada swap sungguhan yang dilakukan.';
+
+  @override
   String get swapDepositSentFunds => 'Saya sudah mengirim dana';
 
   @override
@@ -1592,10 +1798,160 @@ class AppLocalizationsId extends AppLocalizations {
   String get commonLoading => 'Memuat...';
 
   @override
+  String get commonCancel => 'Batal';
+
+  @override
+  String get commonCanceling => 'Membatalkan...';
+
+  @override
   String commonAmountBalance(String balance, String symbol) {
     return '$balance $symbol';
   }
 
   @override
   String get commonContinue => 'Lanjutkan';
+
+  @override
+  String get commonDone => 'Selesai';
+
+  @override
+  String get redeemToLabel => 'Tukar Ke';
+
+  @override
+  String redeemAddressHint(String symbol) {
+    return 'Tempel Alamat $symbol';
+  }
+
+  @override
+  String redeemAmountCta(String amount) {
+    return 'Tukar $amount';
+  }
+
+  @override
+  String get redeemConfirmTitle => 'Konfirmasi Penukaran';
+
+  @override
+  String get redeemConfirmAmount => 'Jumlah';
+
+  @override
+  String get redeemConfirmTo => 'Ke';
+
+  @override
+  String get redeemConfirmFee => 'Biaya';
+
+  @override
+  String get redeemFeeValue => 'Biaya volume 0,1%';
+
+  @override
+  String get redeemProgressTitle => 'Menukar...';
+
+  @override
+  String get redeemCompleteTitle => 'Penukaran Selesai';
+
+  @override
+  String get redeemFailedTitle => 'Penukaran Gagal';
+
+  @override
+  String get redeemingLabel => 'MENUKAR';
+
+  @override
+  String get redeemStepCircuits => 'Menyiapkan sirkuit';
+
+  @override
+  String get redeemStepTransfers => 'Mengambil transfer';
+
+  @override
+  String get redeemStepNullifiers => 'Menghitung nullifier';
+
+  @override
+  String get redeemStepCheckNullifiers => 'Memeriksa nullifier';
+
+  @override
+  String get redeemStepProofs => 'Membuat bukti ZK';
+
+  @override
+  String get redeemStepAggregate => 'Mengagregasi bukti';
+
+  @override
+  String get redeemStepSubmit => 'Mengirim ke chain';
+
+  @override
+  String redeemFetchedCount(int count) {
+    return '$count diambil';
+  }
+
+  @override
+  String get redeemCancel => 'Batal';
+
+  @override
+  String get redeemRetry => 'Coba Lagi';
+
+  @override
+  String get redeemClose => 'Tutup';
+
+  @override
+  String get redeemDone => 'Selesai';
+
+  @override
+  String redeemSuccessBanner(String amount, int count) {
+    return '$amount ditukar dalam $count batch';
+  }
+
+  @override
+  String get encryptedSendFeeLabel => 'Biaya privasi';
+
+  @override
+  String get encryptedSendAmountStep => 'Gunakan kelipatan 0,01 QUAN';
+
+  @override
+  String get encryptedSendMinimum => 'Pengiriman terenkripsi minimal 0,1 QUAN';
+
+  @override
+  String get encryptedSendProgressTitle => 'Mengirim Secara Privat...';
+
+  @override
+  String get encryptedSendFailedTitle => 'Pengiriman Gagal';
+
+  @override
+  String get encryptedSendCancelledTitle => 'Pengiriman Dibatalkan';
+
+  @override
+  String get encryptedSendingLabel => 'MENGIRIM';
+
+  @override
+  String get encryptedSendStepPreparing => 'Mempersiapkan';
+
+  @override
+  String get encryptedSendStepGathering => 'Mengumpulkan dana';
+
+  @override
+  String get encryptedSendStepSecuring => 'Mengamankan transaksi';
+
+  @override
+  String get encryptedSendStepGenerating => 'Membuat bukti';
+
+  @override
+  String get encryptedSendStepProving => 'Membangun bukti privasi';
+
+  @override
+  String get encryptedSendStepSubmitting => 'Mengirim ke chain';
+
+  @override
+  String get encryptedSendProgressFooter =>
+      'Privasi membutuhkan waktu. Harap biarkan aplikasi tetap terbuka sampai transaksi selesai.';
+
+  @override
+  String encryptedSendCancelledPartial(String amount) {
+    return '$amount sudah terkirim sebelum dibatalkan. Sisanya tetap berada di akun Anda.';
+  }
+
+  @override
+  String get privateSendTitle => 'Kirim Privat';
+
+  @override
+  String get privateSendSubtitle => 'Menyembunyikan kaitan antara akun Anda dan penerima';
+
+  @override
+  String get encryptedSendPlanStale =>
+      'Saldo terenkripsi Anda berubah saat meninjau. Silakan kembali dan masukkan jumlahnya lagi.';
 }

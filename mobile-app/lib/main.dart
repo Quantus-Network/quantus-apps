@@ -1,36 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/app_initializer.dart';
-import 'package:resonance_network_wallet/app_lifecycle_manager.dart';
-import 'package:resonance_network_wallet/app.dart';
-import 'package:resonance_network_wallet/shared/utils/env_utils.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:telemetrydecksdk/telemetrydecksdk.dart';
+import 'package:resonance_network_wallet/bootstrap/app_bootstrap.dart';
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-
-  await dotenv.load();
-
-  // Initialize Supabase
-  await Supabase.initialize(url: EnvUtils.supabaseUrl, anonKey: EnvUtils.supabaseKey);
-  await QuantusSdk.init();
-
-  Telemetrydecksdk.start(
-    const TelemetryManagerConfiguration(
-      appID: '098B4397-8426-4054-B379-0E4C53D2CA63',
-      salt: 'QDay',
-      // debug: true,
-    ),
-  );
-
-  runApp(
-    const ProviderScope(
-      child: AppInitializer(child: AppLifecycleManager(child: ResonanceWalletApp())),
-    ),
-  );
+  await bootstrap();
+  // buildApp() wraps the tree in a ProviderScope; the lint can't see through it.
+  // ignore: riverpod_lint/missing_provider_scope
+  runApp(buildApp());
 }

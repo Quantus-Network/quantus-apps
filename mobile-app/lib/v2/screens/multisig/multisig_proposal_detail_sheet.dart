@@ -14,14 +14,17 @@ import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/v2/components/multisig_expiry_value.dart';
 import 'package:resonance_network_wallet/routes.dart';
 import 'package:resonance_network_wallet/shared/extensions/current_route_extensions.dart';
-import 'package:resonance_network_wallet/shared/utils/open_external_url.dart';
+import 'package:resonance_network_wallet/shared/utils/multisig_local_signers.dart';
 import 'package:resonance_network_wallet/v2/components/amount_display_with_conversion.dart';
 import 'package:resonance_network_wallet/v2/components/bottom_sheet_container.dart';
 import 'package:resonance_network_wallet/v2/components/detail_summary_row.dart';
+import 'package:resonance_network_wallet/v2/components/explorer_link.dart';
+import 'package:resonance_network_wallet/v2/components/loader.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/screens/multisig/multisig_approve_confirm_sheet.dart';
 import 'package:resonance_network_wallet/v2/screens/multisig/multisig_cancel_confirm_sheet.dart';
 import 'package:resonance_network_wallet/v2/screens/multisig/multisig_execute_confirm_sheet.dart';
+import 'package:resonance_network_wallet/v2/screens/multisig/multisig_signer_picker_sheet.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 
@@ -40,6 +43,75 @@ void showMultisigProposalDetailSheet(
     routeSettings: multisigProposalDetailSheetRouteSettings,
     builder: (_) => _MultisigProposalDetailSheet(msig: msig, proposal: proposal),
   );
+}
+
+/// Opens the proposal detail sheet immediately and resolves the proposal by id.
+///
+/// Shows a loader inside the sheet while the proposal is fetched, so taps from
+/// push notifications (which only carry the multisig and proposal id) land on
+/// the detail UI right away instead of waiting for the network round-trip.
+void showMultisigProposalDetailSheetById(
+  BuildContext context, {
+  required MultisigAccount msig,
+  required int proposalId,
+}) {
+  if (context.peekTopRouteName == multisigProposalDetailSheetRouteSettings.name) {
+    Navigator.pop(context);
+  }
+
+  BottomSheetContainer.show(
+    context,
+    routeSettings: multisigProposalDetailSheetRouteSettings,
+    builder: (_) => _MultisigProposalDetailSheetById(msig: msig, proposalId: proposalId),
+  );
+}
+
+/// Resolves a proposal by id, showing a loader/error state until it is fetched,
+/// then delegates to [_MultisigProposalDetailSheet] for the full detail UI.
+class _MultisigProposalDetailSheetById extends ConsumerWidget {
+  final MultisigAccount msig;
+  final int proposalId;
+
+  const _MultisigProposalDetailSheetById({required this.msig, required this.proposalId});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = ref.watch(l10nProvider);
+    final proposalAsync = ref.watch(multisigProposalByIdProvider((msig: msig, id: proposalId)));
+
+    return proposalAsync.when(
+      data: (proposal) => proposal == null
+          ? BottomSheetContainer(
+              title: l10n.multisigProposalTitle,
+              child: _message(context, l10n.multisigProposalNotFound),
+            )
+          : _MultisigProposalDetailSheet(msig: msig, proposal: proposal),
+      loading: () => BottomSheetContainer(
+        title: l10n.multisigProposalTitle,
+        child: const Padding(
+          padding: EdgeInsets.symmetric(vertical: 48),
+          child: Center(child: Loader()),
+        ),
+      ),
+      error: (e, _) => BottomSheetContainer(
+        title: l10n.multisigProposalTitle,
+        child: _message(context, l10n.multisigLoadFailed(e.toString())),
+      ),
+    );
+  }
+
+  Widget _message(BuildContext context, String text) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 32),
+      child: Center(
+        child: Text(
+          text,
+          textAlign: TextAlign.center,
+          style: context.themeText.smallParagraph?.copyWith(color: context.colors.textTertiary),
+        ),
+      ),
+    );
+  }
 }
 
 class _MultisigProposalDetailSheet extends ConsumerWidget {
@@ -73,9 +145,9 @@ class _MultisigProposalDetailSheet extends ConsumerWidget {
     return proposal;
   }
 
-  bool _hasLocalSigner(WidgetRef ref) {
+  List<Account> _localSigners(WidgetRef ref) {
     final accounts = ref.watch(accountsProvider).value ?? const <Account>[];
-    return accounts.any((a) => a.accountId == msig.myMemberAccountId);
+    return localSignersForMultisig(msig, accounts);
   }
 
   @override
@@ -87,12 +159,20 @@ class _MultisigProposalDetailSheet extends ConsumerWidget {
     final currentBlock = ref.watch(multisigCurrentBlockProvider).value;
     final multisigService = ref.watch(multisigServiceProvider);
     final liveProposal = _resolveLiveProposal(ref);
+    final localSigners = _localSigners(ref);
+    final localSignerIds = localSigners.map((a) => a.accountId).toSet();
     final pendingApprovals = ref.watch(pendingMultisigApprovalsProvider);
-    final pendingApproval = findPendingApprovalForProposal(
+    final pendingApproverIds = pendingApproverIdsForProposal(
       pendingApprovals,
       msig.accountId,
       liveProposal.id,
-      msig.myMemberAccountId,
+      localSignerIds,
+    );
+    final eligibleApprovers = eligibleApproversForProposal(
+      msig,
+      liveProposal,
+      localSigners,
+      pendingApproverIds: pendingApproverIds,
     );
     final pendingExecutions = ref.watch(pendingMultisigExecutionsProvider);
     final pendingExecution = findPendingExecutionForProposal(
@@ -108,8 +188,11 @@ class _MultisigProposalDetailSheet extends ConsumerWidget {
       liveProposal.id,
       msig.myMemberAccountId,
     );
-    final didApprove = liveProposal.didApprove(msig.myMemberAccountId);
-    final hasLocalSigner = _hasLocalSigner(ref);
+    // True only when every local signer has already approved — another local
+    // member may still need to sign even if myMemberAccountId already has.
+    final allLocalApproved = localSigners.isNotEmpty && localSigners.every((a) => liveProposal.didApprove(a.accountId));
+    final hasPendingApproval = pendingApproverIds.isNotEmpty;
+    final hasLocalSigner = localSigners.isNotEmpty;
     final isActionable = currentBlock != null && liveProposal.isActionable(currentBlock);
 
     return BottomSheetContainer(
@@ -135,14 +218,15 @@ class _MultisigProposalDetailSheet extends ConsumerWidget {
           const SizedBox(height: 8),
           _summary(l10n, colors, text, fmt, multisigService, currentBlock, liveProposal),
           const SizedBox(height: 24),
-          _signers(l10n, colors, text, liveProposal),
+          _signers(l10n, colors, text, liveProposal, localSignerIds),
           const SizedBox(height: 24),
           _actionButtons(
             context,
             l10n,
             liveProposal: liveProposal,
-            didApprove: didApprove,
-            pendingApproval: pendingApproval,
+            allLocalApproved: allLocalApproved,
+            eligibleApprovers: eligibleApprovers,
+            hasPendingApproval: hasPendingApproval,
             pendingExecution: pendingExecution,
             pendingCancellation: pendingCancellation,
             hasLocalSigner: hasLocalSigner,
@@ -154,15 +238,19 @@ class _MultisigProposalDetailSheet extends ConsumerWidget {
             colors,
             text,
             liveProposal: liveProposal,
-            didApprove: didApprove,
-            pendingApproval: pendingApproval,
+            allLocalApproved: allLocalApproved,
+            eligibleApprovers: eligibleApprovers,
+            hasPendingApproval: hasPendingApproval,
             pendingExecution: pendingExecution,
             pendingCancellation: pendingCancellation,
             hasLocalSigner: hasLocalSigner,
             isActionable: isActionable,
           ),
           Center(
-            child: _ExplorerLink(proposal: liveProposal, colors: colors, text: text),
+            child: ExplorerLink(
+              url: '${AppConstants.explorerEndpoint}/multisig-proposals/${liveProposal.explorerProposalId}',
+              color: colors.accentOrange,
+            ),
           ),
           const SizedBox(height: 8),
         ],
@@ -172,7 +260,7 @@ class _MultisigProposalDetailSheet extends ConsumerWidget {
 
   String _formatBalance(AppLocalizations l10n, NumberFormattingService fmt, BigInt value) {
     return l10n.commonAmountBalance(
-      fmt.formatBalance(value, maxDecimals: AppConstants.decimals),
+      fmt.formatBalance(value, smartDecimals: AppConstants.decimals),
       AppConstants.tokenSymbol,
     );
   }
@@ -241,7 +329,13 @@ class _MultisigProposalDetailSheet extends ConsumerWidget {
     );
   }
 
-  Widget _signers(AppLocalizations l10n, AppColorsV2 colors, AppTextTheme text, MultisigProposal liveProposal) {
+  Widget _signers(
+    AppLocalizations l10n,
+    AppColorsV2 colors,
+    AppTextTheme text,
+    MultisigProposal liveProposal,
+    Set<String> localSignerIds,
+  ) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(color: colors.surfaceDeep, borderRadius: BorderRadius.circular(14)),
@@ -252,7 +346,7 @@ class _MultisigProposalDetailSheet extends ConsumerWidget {
           const SizedBox(height: 12),
           ...msig.signers.map((s) {
             final approved = liveProposal.approvals.contains(s);
-            final isYou = s == msig.myMemberAccountId;
+            final isYou = localSignerIds.contains(s);
             return Padding(
               padding: const EdgeInsets.symmetric(vertical: 6),
               child: Row(
@@ -304,16 +398,20 @@ class _MultisigProposalDetailSheet extends ConsumerWidget {
     BuildContext context,
     AppLocalizations l10n, {
     required MultisigProposal liveProposal,
-    required bool didApprove,
-    required PendingMultisigApprovalEvent? pendingApproval,
+    required bool allLocalApproved,
+    required List<Account> eligibleApprovers,
+    required bool hasPendingApproval,
     required PendingMultisigExecutionEvent? pendingExecution,
     required PendingMultisigCancellationEvent? pendingCancellation,
     required bool hasLocalSigner,
     required bool isActionable,
   }) {
-    if (liveProposal.status == MultisigProposalStatus.executed ||
-        liveProposal.status == MultisigProposalStatus.cancelled) {
-      return const SizedBox.shrink();
+    if (liveProposal.isTerminal || (allLocalApproved && !liveProposal.isReadyToExecute)) {
+      return QuantusButton.simple(
+        label: l10n.multisigDone,
+        variant: ButtonVariant.secondary,
+        onTap: () => Navigator.of(context).pop(),
+      );
     }
 
     final Widget primary = liveProposal.isReadyToExecute
@@ -321,7 +419,7 @@ class _MultisigProposalDetailSheet extends ConsumerWidget {
             context,
             l10n,
             liveProposal: liveProposal,
-            pendingApproval: pendingApproval,
+            hasPendingApproval: hasPendingApproval,
             pendingExecution: pendingExecution,
             pendingCancellation: pendingCancellation,
             hasLocalSigner: hasLocalSigner,
@@ -331,10 +429,10 @@ class _MultisigProposalDetailSheet extends ConsumerWidget {
             context,
             l10n,
             liveProposal: liveProposal,
-            didApprove: didApprove,
-            pendingApproval: pendingApproval,
+            allLocalApproved: allLocalApproved,
+            eligibleApprovers: eligibleApprovers,
+            hasPendingApproval: hasPendingApproval,
             pendingCancellation: pendingCancellation,
-            hasLocalSigner: hasLocalSigner,
             isActionable: isActionable,
           );
 
@@ -343,7 +441,7 @@ class _MultisigProposalDetailSheet extends ConsumerWidget {
       l10n,
       liveProposal: liveProposal,
       pendingCancellation: pendingCancellation,
-      hasOtherPendingAction: pendingApproval != null || pendingExecution != null,
+      hasOtherPendingAction: hasPendingApproval || pendingExecution != null,
       hasLocalSigner: hasLocalSigner,
       isActionable: isActionable,
     );
@@ -390,24 +488,25 @@ class _MultisigProposalDetailSheet extends ConsumerWidget {
     BuildContext context,
     AppLocalizations l10n, {
     required MultisigProposal liveProposal,
-    required bool didApprove,
-    required PendingMultisigApprovalEvent? pendingApproval,
+    required bool allLocalApproved,
+    required List<Account> eligibleApprovers,
+    required bool hasPendingApproval,
     required PendingMultisigCancellationEvent? pendingCancellation,
-    required bool hasLocalSigner,
     required bool isActionable,
   }) {
-    final isPending = pendingApproval != null;
     // A pending cancellation from this device blocks approving, otherwise the
     // two extrinsics race on-chain and one fails with a wasted fee.
-    final canApprove = isActionable && !didApprove && !isPending && pendingCancellation == null && hasLocalSigner;
+    final canApprove = isActionable && eligibleApprovers.isNotEmpty && pendingCancellation == null;
+    // Only show the global "Approving…" state when nothing else can still sign.
+    final isApprovingOnly = !canApprove && hasPendingApproval && !allLocalApproved;
 
-    final (label, isDisabled, onTap) = switch ((didApprove, isPending, canApprove)) {
+    final (label, isDisabled, onTap) = switch ((allLocalApproved, isApprovingOnly, canApprove)) {
       (true, _, _) => (l10n.multisigAlreadyApproved, true, null),
       (_, true, _) => (l10n.multisigProposalApprovingLabel, true, null),
       (_, _, true) => (
         l10n.multisigApproveButton,
         false,
-        () => showMultisigApproveConfirmSheet(context, msig: msig, proposal: liveProposal),
+        () => _startApprove(context, liveProposal: liveProposal, eligibleApprovers: eligibleApprovers),
       ),
       _ => (l10n.multisigApproveButton, true, null),
     };
@@ -415,11 +514,28 @@ class _MultisigProposalDetailSheet extends ConsumerWidget {
     return QuantusButton.simple(label: label, isDisabled: isDisabled, onTap: onTap);
   }
 
+  Future<void> _startApprove(
+    BuildContext context, {
+    required MultisigProposal liveProposal,
+    required List<Account> eligibleApprovers,
+  }) async {
+    if (eligibleApprovers.isEmpty) return;
+
+    Account? signer = eligibleApprovers.first;
+    if (eligibleApprovers.length > 1) {
+      signer = await showMultisigSignerPickerSheet(context, accounts: eligibleApprovers);
+      if (signer == null || !context.mounted) return;
+    }
+
+    if (!context.mounted) return;
+    showMultisigApproveConfirmSheet(context, msig: msig, proposal: liveProposal, signer: signer);
+  }
+
   Widget _executeButton(
     BuildContext context,
     AppLocalizations l10n, {
     required MultisigProposal liveProposal,
-    required PendingMultisigApprovalEvent? pendingApproval,
+    required bool hasPendingApproval,
     required PendingMultisigExecutionEvent? pendingExecution,
     required PendingMultisigCancellationEvent? pendingCancellation,
     required bool hasLocalSigner,
@@ -429,7 +545,7 @@ class _MultisigProposalDetailSheet extends ConsumerWidget {
     // A pending approval or cancellation from this device blocks executing,
     // otherwise the two extrinsics race on-chain and one fails with a wasted fee.
     final canExecute =
-        isActionable && !isPending && pendingApproval == null && pendingCancellation == null && hasLocalSigner;
+        isActionable && !isPending && !hasPendingApproval && pendingCancellation == null && hasLocalSigner;
 
     final (label, isDisabled, onTap) = switch ((isPending, canExecute)) {
       (true, _) => (l10n.multisigProposalExecutingLabel, true, null),
@@ -449,8 +565,9 @@ class _MultisigProposalDetailSheet extends ConsumerWidget {
     AppColorsV2 colors,
     AppTextTheme text, {
     required MultisigProposal liveProposal,
-    required bool didApprove,
-    required PendingMultisigApprovalEvent? pendingApproval,
+    required bool allLocalApproved,
+    required List<Account> eligibleApprovers,
+    required bool hasPendingApproval,
     required PendingMultisigExecutionEvent? pendingExecution,
     required PendingMultisigCancellationEvent? pendingCancellation,
     required bool hasLocalSigner,
@@ -459,8 +576,9 @@ class _MultisigProposalDetailSheet extends ConsumerWidget {
     final note = _resolveActionNote(
       l10n,
       liveProposal: liveProposal,
-      didApprove: didApprove,
-      pendingApproval: pendingApproval,
+      allLocalApproved: allLocalApproved,
+      eligibleApprovers: eligibleApprovers,
+      hasPendingApproval: hasPendingApproval,
       pendingExecution: pendingExecution,
       pendingCancellation: pendingCancellation,
       hasLocalSigner: hasLocalSigner,
@@ -482,8 +600,9 @@ class _MultisigProposalDetailSheet extends ConsumerWidget {
   String _resolveActionNote(
     AppLocalizations l10n, {
     required MultisigProposal liveProposal,
-    required bool didApprove,
-    required PendingMultisigApprovalEvent? pendingApproval,
+    required bool allLocalApproved,
+    required List<Account> eligibleApprovers,
+    required bool hasPendingApproval,
     required PendingMultisigExecutionEvent? pendingExecution,
     required PendingMultisigCancellationEvent? pendingCancellation,
     required bool hasLocalSigner,
@@ -498,7 +617,8 @@ class _MultisigProposalDetailSheet extends ConsumerWidget {
 
     if (pendingCancellation != null) return l10n.multisigProposalCancellingNote;
     if (pendingExecution != null) return l10n.multisigProposalExecutingNote;
-    if (pendingApproval != null) return l10n.multisigProposalApprovingNote;
+    // Only surface the approving note when no other local account can still sign.
+    if (hasPendingApproval && eligibleApprovers.isEmpty) return l10n.multisigProposalApprovingNote;
 
     if (liveProposal.isReadyToExecute) {
       return switch ((isActionable, hasLocalSigner)) {
@@ -508,7 +628,7 @@ class _MultisigProposalDetailSheet extends ConsumerWidget {
       };
     }
 
-    return switch ((didApprove, isActionable, hasLocalSigner)) {
+    return switch ((allLocalApproved, isActionable, hasLocalSigner)) {
       (true, _, _) => l10n.multisigProposalAlreadySignedNote,
       (_, false, _) => l10n.multisigApproveUnavailableNote,
       (_, _, false) => l10n.multisigApproveUnavailableNote,
@@ -555,32 +675,5 @@ class _AmountSection extends ConsumerWidget {
     final amount = ref.watch(txAmountDisplayProvider)(proposal.amount, isSend: true, withQuanSymbol: false);
 
     return AmountDisplayWithConversion(amountDisplay: amount);
-  }
-}
-
-class _ExplorerLink extends ConsumerWidget {
-  final MultisigProposal proposal;
-  final AppColorsV2 colors;
-  final AppTextTheme text;
-
-  const _ExplorerLink({required this.proposal, required this.colors, required this.text});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final l10n = ref.watch(l10nProvider);
-
-    return GestureDetector(
-      onTap: () => openUrl('${AppConstants.explorerEndpoint}/multisig-proposals/${proposal.explorerProposalId}'),
-      child: Container(
-        padding: const EdgeInsets.only(bottom: 2),
-        decoration: BoxDecoration(
-          border: Border(bottom: BorderSide(color: colors.accentOrange, width: 1)),
-        ),
-        child: Text(
-          l10n.activityDetailViewExplorer,
-          style: text.smallParagraph?.copyWith(color: colors.accentOrange, fontWeight: FontWeight.w400),
-        ),
-      ),
-    );
   }
 }

@@ -1262,6 +1262,8 @@ impl SseDecode for crate::api::wormhole::ProofInput {
         let mut var_positions = <Vec<u8>>::sse_decode(deserializer);
         let mut var_exitAccount1 = <Vec<u8>>::sse_decode(deserializer);
         let mut var_outputAmount1 = <u32>::sse_decode(deserializer);
+        let mut var_exitAccount2 = <Vec<u8>>::sse_decode(deserializer);
+        let mut var_outputAmount2 = <u32>::sse_decode(deserializer);
         let mut var_volumeFeeBps = <u32>::sse_decode(deserializer);
         let mut var_assetId = <u32>::sse_decode(deserializer);
         return crate::api::wormhole::ProofInput {
@@ -1280,6 +1282,8 @@ impl SseDecode for crate::api::wormhole::ProofInput {
             positions: var_positions,
             exit_account_1: var_exitAccount1,
             output_amount_1: var_outputAmount1,
+            exit_account_2: var_exitAccount2,
+            output_amount_2: var_outputAmount2,
             volume_fee_bps: var_volumeFeeBps,
             asset_id: var_assetId,
         };
@@ -1516,6 +1520,8 @@ impl flutter_rust_bridge::IntoDart for crate::api::wormhole::ProofInput {
             self.positions.into_into_dart().into_dart(),
             self.exit_account_1.into_into_dart().into_dart(),
             self.output_amount_1.into_into_dart().into_dart(),
+            self.exit_account_2.into_into_dart().into_dart(),
+            self.output_amount_2.into_into_dart().into_dart(),
             self.volume_fee_bps.into_into_dart().into_dart(),
             self.asset_id.into_into_dart().into_dart(),
         ]
@@ -1683,6 +1689,8 @@ impl SseEncode for crate::api::wormhole::ProofInput {
         <Vec<u8>>::sse_encode(self.positions, serializer);
         <Vec<u8>>::sse_encode(self.exit_account_1, serializer);
         <u32>::sse_encode(self.output_amount_1, serializer);
+        <Vec<u8>>::sse_encode(self.exit_account_2, serializer);
+        <u32>::sse_encode(self.output_amount_2, serializer);
         <u32>::sse_encode(self.volume_fee_bps, serializer);
         <u32>::sse_encode(self.asset_id, serializer);
     }

@@ -8,7 +8,9 @@ import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/providers/active_account_transactions_provider.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/currency_display_provider.dart';
+import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/services/transaction_service.dart';
+import 'package:resonance_network_wallet/shared/constants/e2e_keys.dart';
 import 'package:resonance_network_wallet/v2/screens/activity/activity_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/activity/transaction_detail_sheet.dart';
 import 'package:resonance_network_wallet/v2/screens/activity/tx_item.dart';
@@ -48,6 +50,7 @@ class _ActivitySectionState extends ConsumerState<ActivitySection> {
           otherTransfers: data.otherTransfers,
         );
         final recentTransactions = all.take(5).toList();
+        var pendingSendKeyAssigned = false;
 
         if (all.isEmpty) {
           return Column(
@@ -59,6 +62,8 @@ class _ActivitySectionState extends ConsumerState<ActivitySection> {
           );
         }
 
+        final isPrivate = isEncryptedAccount(widget.activeAccount);
+
         return Column(
           children: [
             const SizedBox(height: 40),
@@ -66,8 +71,15 @@ class _ActivitySectionState extends ConsumerState<ActivitySection> {
             const SizedBox(height: 28),
 
             ...recentTransactions.mapIndexed((index, tx) {
-              final data = TxItemData.from(tx, widget.activeAccount.accountId, colors, l10n);
+              final data = TxItemData.from(tx, widget.activeAccount.accountId, colors, l10n, isPrivate: isPrivate);
               final isLastItem = index == recentTransactions.length - 1;
+              Key? itemKey;
+              if (!pendingSendKeyAssigned &&
+                  tx is PendingTransactionEvent &&
+                  tx.from == widget.activeAccount.accountId) {
+                itemKey = const Key(E2EKeys.homePendingSendActivityItem);
+                pendingSendKeyAssigned = true;
+              }
 
               return buildTxItem(
                 tx,
@@ -77,6 +89,7 @@ class _ActivitySectionState extends ConsumerState<ActivitySection> {
                 l10n,
                 formattedAmount: data.hideAmount ? '—' : formatTxAmount(data.amount, isSend: data.isSend).primaryAmount,
                 isLastItem: isLastItem,
+                itemKey: itemKey,
                 onTap: () {
                   showTransactionDetailSheet(context, tx, widget.activeAccount.accountId);
                 },

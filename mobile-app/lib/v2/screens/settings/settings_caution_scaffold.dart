@@ -46,6 +46,9 @@ class SettingsCautionScaffold extends StatelessWidget {
   final SettingsCautionScaffoldData data;
   final SettingsDividerStyle betweenBulletsStyle;
   final bool continueButtonLoading;
+  final String? secondaryLabel;
+  final VoidCallback? onSecondary;
+  final Key? continueButtonKey;
 
   const SettingsCautionScaffold({
     super.key,
@@ -57,6 +60,9 @@ class SettingsCautionScaffold extends StatelessWidget {
     this.onCheckboxChanged,
     this.betweenBulletsStyle = SettingsDividerStyle.list,
     this.continueButtonLoading = false,
+    this.secondaryLabel,
+    this.onSecondary,
+    this.continueButtonKey,
   });
 
   @override
@@ -90,6 +96,9 @@ class SettingsCautionScaffold extends StatelessWidget {
         onCheckboxChanged: onCheckboxChanged,
         onContinue: onContinue,
         continueButtonLoading: continueButtonLoading,
+        secondaryLabel: secondaryLabel,
+        onSecondary: onSecondary,
+        continueButtonKey: continueButtonKey,
       ),
     );
   }
@@ -103,6 +112,9 @@ class _SettingsCautionBottom extends StatelessWidget {
     required this.onCheckboxChanged,
     required this.onContinue,
     required this.continueButtonLoading,
+    required this.secondaryLabel,
+    required this.onSecondary,
+    this.continueButtonKey,
   });
 
   final String? checkboxLabel;
@@ -111,6 +123,9 @@ class _SettingsCautionBottom extends StatelessWidget {
   final VoidCallback? onCheckboxChanged;
   final VoidCallback onContinue;
   final bool continueButtonLoading;
+  final String? secondaryLabel;
+  final VoidCallback? onSecondary;
+  final Key? continueButtonKey;
 
   @override
   Widget build(BuildContext context) {
@@ -123,12 +138,17 @@ class _SettingsCautionBottom extends StatelessWidget {
             const SizedBox(height: 32),
           ],
           QuantusButton.simple(
+            key: continueButtonKey,
             label: continueLabel,
             onTap: onContinue,
             variant: ButtonVariant.primary,
             isDisabled: checkboxLabel != null && !checked,
             isLoading: continueButtonLoading,
           ),
+          if (secondaryLabel != null) ...[
+            const SizedBox(height: 12),
+            QuantusButton.simple(label: secondaryLabel!, onTap: onSecondary, variant: ButtonVariant.transparent),
+          ],
         ],
       ),
     );

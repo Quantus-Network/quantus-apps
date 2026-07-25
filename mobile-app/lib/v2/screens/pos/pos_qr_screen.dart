@@ -11,8 +11,9 @@ import 'package:resonance_network_wallet/providers/pending_transactions_provider
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/services/pending_transaction_polling_service.dart';
 import 'package:resonance_network_wallet/services/pos_service.dart';
-import 'package:resonance_network_wallet/shared/utils/open_external_url.dart';
 import 'package:resonance_network_wallet/shared/utils/print.dart';
+import 'package:resonance_network_wallet/shared/utils/url_utils.dart';
+import 'package:resonance_network_wallet/v2/components/explorer_link.dart';
 import 'package:resonance_network_wallet/v2/components/loader.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_icon_button.dart';
@@ -153,12 +154,6 @@ class _PosQrScreenState extends ConsumerState<PosQrScreen> {
     Navigator.of(context).push(MaterialPageRoute(builder: (_) => const PosAmountScreen()));
   }
 
-  void _openExplorer() {
-    final txHash = _paidTransfer?.txHash;
-    if (txHash == null) return;
-    openUrl('${AppConstants.explorerEndpoint}/immediate-transactions/$txHash');
-  }
-
   @override
   Widget build(BuildContext context) {
     final l10n = ref.watch(l10nProvider);
@@ -255,7 +250,9 @@ class _PosQrScreenState extends ConsumerState<PosQrScreen> {
         const SizedBox(height: 32),
         _buildFromSection(l10n, colors, text, formattedAddress),
         const Spacer(),
-        _buildExplorerLink(l10n, colors, text),
+        ExplorerLink(
+          url: _paidTransfer?.txHash == null ? null : explorerImmediateTransactionUrl(_paidTransfer!.txHash),
+        ),
         const SizedBox(height: 16),
       ],
     );
@@ -307,19 +304,6 @@ class _PosQrScreenState extends ConsumerState<PosQrScreen> {
           textAlign: TextAlign.center,
         ),
       ],
-    );
-  }
-
-  Widget _buildExplorerLink(AppLocalizations l10n, AppColorsV2 colors, AppTextTheme text) {
-    return GestureDetector(
-      onTap: _openExplorer,
-      child: Container(
-        decoration: BoxDecoration(
-          border: Border(bottom: BorderSide(color: colors.textTertiary, width: 1)),
-        ),
-        padding: const EdgeInsets.only(bottom: 3),
-        child: Text(l10n.activityDetailViewExplorer, style: text.smallParagraph?.copyWith(color: colors.textTertiary)),
-      ),
     );
   }
 

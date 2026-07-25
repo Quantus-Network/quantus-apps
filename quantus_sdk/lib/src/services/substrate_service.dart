@@ -38,16 +38,13 @@ class SubstrateService {
         return await provider.send('payment_queryInfo', [hexEncodedSignedExtrinsic, null]);
       });
 
-      print('getFee: $result');
       if (result.error != null) {
         throw Exception('RPC Error: ${result.error}');
       }
       final partialFeeString = result.result['partialFee'] as String;
-      final partialFee = BigInt.parse(partialFeeString);
-      print('partialFee: $partialFee');
-      return partialFee;
+      return BigInt.parse(partialFeeString);
     } catch (e, s) {
-      print('Error estimating fee: $e $s');
+      debugPrint('Error estimating fee: $e $s');
       throw Exception('Failed to estimate network fee: $e');
     }
   }
@@ -393,7 +390,15 @@ class SubstrateService {
 
   Future<void> logout() async {
     print('Log out!');
+    // Quiesce in-flight encrypted-account work (loads, sends) before wiping
+    // anything: an operation still holding the old mnemonic-derived material
+    // must not keep running — or persist state — past this point.
+    await EncryptedAccountService.disposeAll();
     await _settingsService.clearAll();
+    // Wormhole / encrypted-account files live outside SettingsService storage
+    // and would otherwise leak balances into the next wallet session.
+    await WormholeUtxoService.clearAllCaches();
+    await EncryptedAccountService.clearAllPersistedState();
     TaskmasterService().logout();
   }
 

@@ -32,8 +32,12 @@ abstract class Call {
 class $Call {
   const $Call();
 
-  VerifyAggregatedProof verifyAggregatedProof({required List<int> proofBytes}) {
-    return VerifyAggregatedProof(proofBytes: proofBytes);
+  VerifyPrivateBatch verifyPrivateBatch({required List<int> proofBytes}) {
+    return VerifyPrivateBatch(proofBytes: proofBytes);
+  }
+
+  VerifyPublicBatch verifyPublicBatch({required List<int> proofBytes}) {
+    return VerifyPublicBatch(proofBytes: proofBytes);
   }
 }
 
@@ -45,7 +49,9 @@ class $CallCodec with _i1.Codec<Call> {
     final index = _i1.U8Codec.codec.decode(input);
     switch (index) {
       case 2:
-        return VerifyAggregatedProof._decode(input);
+        return VerifyPrivateBatch._decode(input);
+      case 3:
+        return VerifyPublicBatch._decode(input);
       default:
         throw Exception('Call: Invalid variant index: "$index"');
     }
@@ -54,8 +60,11 @@ class $CallCodec with _i1.Codec<Call> {
   @override
   void encodeTo(Call value, _i1.Output output) {
     switch (value.runtimeType) {
-      case VerifyAggregatedProof:
-        (value as VerifyAggregatedProof).encodeTo(output);
+      case VerifyPrivateBatch:
+        (value as VerifyPrivateBatch).encodeTo(output);
+        break;
+      case VerifyPublicBatch:
+        (value as VerifyPublicBatch).encodeTo(output);
         break;
       default:
         throw Exception('Call: Unsupported "$value" of type "${value.runtimeType}"');
@@ -65,32 +74,28 @@ class $CallCodec with _i1.Codec<Call> {
   @override
   int sizeHint(Call value) {
     switch (value.runtimeType) {
-      case VerifyAggregatedProof:
-        return (value as VerifyAggregatedProof)._sizeHint();
+      case VerifyPrivateBatch:
+        return (value as VerifyPrivateBatch)._sizeHint();
+      case VerifyPublicBatch:
+        return (value as VerifyPublicBatch)._sizeHint();
       default:
         throw Exception('Call: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 }
 
-/// Verify an aggregated wormhole proof and process all transfers in the batch.
-///
-/// Returns `DispatchResultWithPostInfo` to allow weight correction on early failures.
-/// If validation fails before ZK verification, we return minimal weight.
-/// If ZK verification fails, we return full weight since the work was done.
-class VerifyAggregatedProof extends Call {
-  const VerifyAggregatedProof({required this.proofBytes});
+class VerifyPrivateBatch extends Call {
+  const VerifyPrivateBatch({required this.proofBytes});
 
-  factory VerifyAggregatedProof._decode(_i1.Input input) {
-    return VerifyAggregatedProof(proofBytes: _i1.U8SequenceCodec.codec.decode(input));
+  factory VerifyPrivateBatch._decode(_i1.Input input) {
+    return VerifyPrivateBatch(proofBytes: _i1.U8SequenceCodec.codec.decode(input));
   }
 
-  /// Vec<u8>
   final List<int> proofBytes;
 
   @override
   Map<String, Map<String, List<int>>> toJson() => {
-    'verify_aggregated_proof': {'proofBytes': proofBytes},
+    'verify_private_batch': {'proofBytes': proofBytes},
   };
 
   int _sizeHint() {
@@ -106,7 +111,40 @@ class VerifyAggregatedProof extends Call {
 
   @override
   bool operator ==(Object other) =>
-      identical(this, other) || other is VerifyAggregatedProof && _i3.listsEqual(other.proofBytes, proofBytes);
+      identical(this, other) || other is VerifyPrivateBatch && _i3.listsEqual(other.proofBytes, proofBytes);
+
+  @override
+  int get hashCode => proofBytes.hashCode;
+}
+
+class VerifyPublicBatch extends Call {
+  const VerifyPublicBatch({required this.proofBytes});
+
+  factory VerifyPublicBatch._decode(_i1.Input input) {
+    return VerifyPublicBatch(proofBytes: _i1.U8SequenceCodec.codec.decode(input));
+  }
+
+  final List<int> proofBytes;
+
+  @override
+  Map<String, Map<String, List<int>>> toJson() => {
+    'verify_public_batch': {'proofBytes': proofBytes},
+  };
+
+  int _sizeHint() {
+    int size = 1;
+    size = size + _i1.U8SequenceCodec.codec.sizeHint(proofBytes);
+    return size;
+  }
+
+  void encodeTo(_i1.Output output) {
+    _i1.U8Codec.codec.encodeTo(3, output);
+    _i1.U8SequenceCodec.codec.encodeTo(proofBytes, output);
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) || other is VerifyPublicBatch && _i3.listsEqual(other.proofBytes, proofBytes);
 
   @override
   int get hashCode => proofBytes.hashCode;

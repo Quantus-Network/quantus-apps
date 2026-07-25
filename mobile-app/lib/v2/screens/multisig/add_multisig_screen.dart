@@ -19,7 +19,7 @@ import 'package:resonance_network_wallet/v2/components/scaffold_base_bottom_cont
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
 import 'package:resonance_network_wallet/services/local_auth_service.dart';
 import 'package:resonance_network_wallet/services/multisig_submission_service.dart';
-import 'package:resonance_network_wallet/v2/screens/home/home_screen.dart';
+import 'package:resonance_network_wallet/v2/screens/accounts/accounts_navigation.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 
@@ -255,11 +255,7 @@ class _AddMultisigScreenState extends ConsumerState<AddMultisigScreen> {
       );
 
       if (!mounted) return;
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute<void>(builder: (_) => const HomeScreen()),
-        (route) => false,
-      );
+      returnToAccountsSheet(context, ref, highlightAccountId: _predictedAddress!);
     } on MultisigAlreadyExistsException {
       if (mounted) {
         context.showErrorToaster(message: l10n.multisigCreateAlreadyExists);
@@ -270,7 +266,6 @@ class _AddMultisigScreenState extends ConsumerState<AddMultisigScreen> {
       }
     } catch (e) {
       quantusDebugPrint('[AddMultisigScreen] createMultisig error: $e');
-
       if (mounted) {
         context.showErrorToaster(message: l10n.multisigCreateErrorCouldNotCreate);
       }

@@ -266,10 +266,6 @@ class ReversibleTransfersService {
         return address;
       }).toList();
 
-      // for testing , add random valid address...
-      if (result.isNotEmpty) {
-        result.add('qzkaf6wMjRqXzWyBuxc6VwfYtUmjUF5tqJXsFs47PXspR67wh');
-      }
       return result;
     } catch (e) {
       throw Exception('Failed to get intercepted accounts: $e');

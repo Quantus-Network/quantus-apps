@@ -3,15 +3,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/dotted_border.dart';
 import 'package:resonance_network_wallet/l10n/app_localizations.dart';
+import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/currency_display_provider.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/routes.dart';
 import 'package:resonance_network_wallet/shared/extensions/current_route_extensions.dart';
 import 'package:resonance_network_wallet/shared/extensions/transaction_event_extension.dart';
-import 'package:resonance_network_wallet/shared/utils/open_external_url.dart';
 import 'package:resonance_network_wallet/v2/components/amount_display_with_conversion.dart';
 import 'package:resonance_network_wallet/v2/components/bottom_sheet_container.dart';
+import 'package:resonance_network_wallet/v2/components/explorer_link.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 
@@ -56,7 +57,7 @@ class _TransactionDetailSheet extends ConsumerWidget {
   bool get _isPendingMultisigExecution => tx.isPendingMultisigExecution;
   bool get _isPendingMultisigCancellation => tx.isPendingMultisigCancellation;
 
-  String _title(AppLocalizations l10n) {
+  String _title(AppLocalizations l10n, {required bool isPrivate}) {
     if (_isPendingMultisigProposal) return l10n.activityDetailTitleProposing;
     if (_isPendingMultisigExecution) return l10n.activityDetailTitleExecuting;
     if (_isPendingMultisigCancellation) return l10n.activityDetailTitleCancelling;
@@ -66,11 +67,15 @@ class _TransactionDetailSheet extends ConsumerWidget {
     if (_isMultisigProposalCancelled) return l10n.activityDetailTitleProposalCancelled;
     if (_isPendingMultisigCreation) return l10n.activityDetailTitleMultisigCreating;
     if (_isMultisigCreated) return l10n.activityDetailTitleMultisigCreated;
-    if (_isPending) return l10n.activityDetailTitleSending;
-    if (tx.isReversibleScheduled) {
-      return _isSend ? l10n.activityDetailTitleScheduled : l10n.activityDetailTitleReceiving;
+    if (_isPending) {
+      return isPrivate ? l10n.activityDetailTitlePrivatelySending : l10n.activityDetailTitleSending;
     }
-    return _isSend ? l10n.activityDetailTitleSent : l10n.activityDetailTitleReceived;
+    if (tx.isReversibleScheduled) {
+      if (_isSend) return l10n.activityDetailTitleScheduled;
+      return isPrivate ? l10n.activityDetailTitlePrivatelyReceiving : l10n.activityDetailTitleReceiving;
+    }
+    if (_isSend) return isPrivate ? l10n.activityDetailTitlePrivateSent : l10n.activityDetailTitleSent;
+    return isPrivate ? l10n.activityDetailTitlePrivateReceived : l10n.activityDetailTitleReceived;
   }
 
   String _statusLabel(AppLocalizations l10n) {
@@ -101,10 +106,10 @@ class _TransactionDetailSheet extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = ref.watch(l10nProvider);
     final colors = context.colors;
-    final text = context.themeText;
+    final isPrivate = isEncryptedAccount(ref.watch(activeAccountProvider).value?.account);
 
     return BottomSheetContainer(
-      title: _title(l10n),
+      title: _title(l10n, isPrivate: isPrivate),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -129,7 +134,7 @@ class _TransactionDetailSheet extends ConsumerWidget {
           _DetailsSection(tx: tx, isSend: _isSend, activeAccountId: activeAccountId, colors: colors),
           const SizedBox(height: 24),
           Center(
-            child: _ExplorerLink(tx: tx, colors: colors, text: text),
+            child: _ExplorerLink(tx: tx, colors: colors),
           ),
           const SizedBox(height: 8),
         ],
@@ -200,7 +205,7 @@ class _DetailsSection extends ConsumerWidget {
 
   String _formatBalance(AppLocalizations l10n, NumberFormattingService formattingService, BigInt value) {
     return l10n.commonAmountBalance(
-      formattingService.formatBalance(value, maxDecimals: AppConstants.decimals),
+      formattingService.formatBalance(value, smartDecimals: AppConstants.decimals),
       AppConstants.tokenSymbol,
     );
   }
@@ -256,7 +261,7 @@ class _DetailsSection extends ConsumerWidget {
     if (tx is PendingTransactionEvent) fee = (tx as PendingTransactionEvent).fee;
     final feeStr = (fee != null && fee != BigInt.zero)
         ? l10n.commonAmountBalance(
-            formattingService.formatBalance(fee, maxDecimals: AppConstants.decimals),
+            formattingService.formatBalance(fee, smartDecimals: AppConstants.decimals),
             AppConstants.tokenSymbol,
           )
         : null;
@@ -598,13 +603,11 @@ class _DetailRow extends StatelessWidget {
 class _ExplorerLink extends ConsumerWidget {
   final TransactionEvent tx;
   final AppColorsV2 colors;
-  final AppTextTheme text;
 
-  const _ExplorerLink({required this.tx, required this.colors, required this.text});
+  const _ExplorerLink({required this.tx, required this.colors});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final l10n = ref.watch(l10nProvider);
     final isPending =
         tx is PendingTransactionEvent ||
         tx is PendingMultisigCreationEvent ||
@@ -613,22 +616,10 @@ class _ExplorerLink extends ConsumerWidget {
         tx is PendingMultisigCancellationEvent;
     final color = isPending ? colors.accentOrange.withValues(alpha: 0.3) : colors.accentOrange;
 
-    return GestureDetector(
-      onTap: isPending ? null : () => _openExplorer(),
-      child: Container(
-        padding: const EdgeInsets.only(bottom: 2),
-        decoration: BoxDecoration(
-          border: Border(bottom: BorderSide(color: color, width: 1)),
-        ),
-        child: Text(
-          l10n.activityDetailViewExplorer,
-          style: text.smallParagraph?.copyWith(color: color, fontWeight: FontWeight.w400),
-        ),
-      ),
-    );
+    return ExplorerLink(url: _explorerUrl(), color: color, enabled: !isPending);
   }
 
-  void _openExplorer() {
+  String? _explorerUrl() {
     final isMinerReward = tx.isMinerReward;
     final isMultisigCreated = tx.isMultisigCreated;
     final isProposalCreated = tx.isProposalCreation;
@@ -666,6 +657,6 @@ class _ExplorerLink extends ConsumerWidget {
       path = '$transactionType/${tx.blockHash}';
     }
 
-    if (path != null) openUrl('${AppConstants.explorerEndpoint}/$path');
+    return path == null ? null : '${AppConstants.explorerEndpoint}/$path';
   }
 }

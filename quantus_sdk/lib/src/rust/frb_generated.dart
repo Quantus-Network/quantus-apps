@@ -999,7 +999,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   ProofInput dco_decode_proof_input(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
-    if (arr.length != 17) throw Exception('unexpected arr length: expect 17 but see ${arr.length}');
+    if (arr.length != 19) throw Exception('unexpected arr length: expect 19 but see ${arr.length}');
     return ProofInput(
       secret: dco_decode_list_prim_u_8_strict(arr[0]),
       transferCount: dco_decode_u_64(arr[1]),
@@ -1016,8 +1016,10 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       positions: dco_decode_list_prim_u_8_strict(arr[12]),
       exitAccount1: dco_decode_list_prim_u_8_strict(arr[13]),
       outputAmount1: dco_decode_u_32(arr[14]),
-      volumeFeeBps: dco_decode_u_32(arr[15]),
-      assetId: dco_decode_u_32(arr[16]),
+      exitAccount2: dco_decode_list_prim_u_8_strict(arr[15]),
+      outputAmount2: dco_decode_u_32(arr[16]),
+      volumeFeeBps: dco_decode_u_32(arr[17]),
+      assetId: dco_decode_u_32(arr[18]),
     );
   }
 
@@ -1210,6 +1212,8 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     var var_positions = sse_decode_list_prim_u_8_strict(deserializer);
     var var_exitAccount1 = sse_decode_list_prim_u_8_strict(deserializer);
     var var_outputAmount1 = sse_decode_u_32(deserializer);
+    var var_exitAccount2 = sse_decode_list_prim_u_8_strict(deserializer);
+    var var_outputAmount2 = sse_decode_u_32(deserializer);
     var var_volumeFeeBps = sse_decode_u_32(deserializer);
     var var_assetId = sse_decode_u_32(deserializer);
     return ProofInput(
@@ -1228,6 +1232,8 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       positions: var_positions,
       exitAccount1: var_exitAccount1,
       outputAmount1: var_outputAmount1,
+      exitAccount2: var_exitAccount2,
+      outputAmount2: var_outputAmount2,
       volumeFeeBps: var_volumeFeeBps,
       assetId: var_assetId,
     );
@@ -1414,6 +1420,8 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     sse_encode_list_prim_u_8_strict(self.positions, serializer);
     sse_encode_list_prim_u_8_strict(self.exitAccount1, serializer);
     sse_encode_u_32(self.outputAmount1, serializer);
+    sse_encode_list_prim_u_8_strict(self.exitAccount2, serializer);
+    sse_encode_u_32(self.outputAmount2, serializer);
     sse_encode_u_32(self.volumeFeeBps, serializer);
     sse_encode_u_32(self.assetId, serializer);
   }

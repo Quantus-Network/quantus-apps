@@ -1,7 +1,11 @@
 import 'package:flutter/foundation.dart';
 import 'package:quantus_sdk/src/models/base_account.dart';
 
-enum AccountType { local, keystone, external }
+enum AccountType { local, keystone, external, encrypted }
+
+/// How the mnemonic-backed wallet at a given walletIndex came to exist.
+/// Absent (legacy wallets) is treated as unknown.
+enum WalletOrigin { created, imported }
 
 @immutable
 class Account implements BaseAccount {
