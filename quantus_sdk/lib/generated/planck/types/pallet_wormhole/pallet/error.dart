@@ -7,20 +7,16 @@ import 'package:polkadart/scale_codec.dart' as _i1;
 enum Error {
   invalidPublicInputs('InvalidPublicInputs', 0),
   nullifierAlreadyUsed('NullifierAlreadyUsed', 1),
-  blockNotFound('BlockNotFound', 2),
-  aggregatedVerifierNotAvailable('AggregatedVerifierNotAvailable', 3),
-  aggregatedProofDeserializationFailed('AggregatedProofDeserializationFailed', 4),
-  aggregatedVerificationFailed('AggregatedVerificationFailed', 5),
-  invalidAggregatedPublicInputs('InvalidAggregatedPublicInputs', 6),
-
-  /// The volume fee rate in the proof doesn't match the configured rate
-  invalidVolumeFeeRate('InvalidVolumeFeeRate', 7),
-
-  /// Transfer amount is below the minimum required
-  transferAmountBelowMinimum('TransferAmountBelowMinimum', 8),
-
-  /// Only native asset (asset_id = 0) is supported in this version
-  nonNativeAssetNotSupported('NonNativeAssetNotSupported', 9);
+  noValidSegments('NoValidSegments', 2),
+  blockNotFound('BlockNotFound', 3),
+  verifierNotAvailable('VerifierNotAvailable', 4),
+  proofDeserializationFailed('ProofDeserializationFailed', 5),
+  proofVerificationFailed('ProofVerificationFailed', 6),
+  invalidProofPublicInputs('InvalidProofPublicInputs', 7),
+  invalidVolumeFeeRate('InvalidVolumeFeeRate', 8),
+  transferAmountBelowMinimum('TransferAmountBelowMinimum', 9),
+  nonNativeAssetNotSupported('NonNativeAssetNotSupported', 10),
+  soundnessInvariantViolation('SoundnessInvariantViolation', 11);
 
   const Error(this.variantName, this.codecIndex);
 
@@ -53,21 +49,25 @@ class $ErrorCodec with _i1.Codec<Error> {
       case 1:
         return Error.nullifierAlreadyUsed;
       case 2:
-        return Error.blockNotFound;
+        return Error.noValidSegments;
       case 3:
-        return Error.aggregatedVerifierNotAvailable;
+        return Error.blockNotFound;
       case 4:
-        return Error.aggregatedProofDeserializationFailed;
+        return Error.verifierNotAvailable;
       case 5:
-        return Error.aggregatedVerificationFailed;
+        return Error.proofDeserializationFailed;
       case 6:
-        return Error.invalidAggregatedPublicInputs;
+        return Error.proofVerificationFailed;
       case 7:
-        return Error.invalidVolumeFeeRate;
+        return Error.invalidProofPublicInputs;
       case 8:
-        return Error.transferAmountBelowMinimum;
+        return Error.invalidVolumeFeeRate;
       case 9:
+        return Error.transferAmountBelowMinimum;
+      case 10:
         return Error.nonNativeAssetNotSupported;
+      case 11:
+        return Error.soundnessInvariantViolation;
       default:
         throw Exception('Error: Invalid variant index: "$index"');
     }

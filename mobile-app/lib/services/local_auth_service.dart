@@ -16,6 +16,15 @@ class LocalAuthService {
   /// "this process has not recorded a backgrounding" — i.e. locked.
   DateTime? _lastPausedTime;
 
+  /// True while a system auth dialog is on screen. The dialog pushes the app
+  /// into inactive/paused, which AppLifecycleManager would otherwise treat as
+  /// a real backgrounding and, on resume, re-trigger auth — a double prompt.
+  /// Every caller authenticates through this singleton, so the flag covers the
+  /// flows that call [authenticate] directly (send, multisig, settings) as well
+  /// as [LocalAuthController].
+  bool _isAuthenticating = false;
+  bool get isAuthenticating => _isAuthenticating;
+
   LocalAuthService._internal()
     : _localAuth = LocalAuthentication(),
       _settingsService = SettingsService(),
@@ -78,12 +87,18 @@ class LocalAuthService {
       // failing closed here would just dead-end the app on the lock screen.
       if (!await isDeviceSecure()) return true;
 
-      final didAuthenticate = await _localAuth.authenticate(
-        localizedReason: localizedReason,
-        biometricOnly: false,
-        persistAcrossBackgrounding: true,
-        sensitiveTransaction: true,
-      );
+      _isAuthenticating = true;
+      final bool didAuthenticate;
+      try {
+        didAuthenticate = await _localAuth.authenticate(
+          localizedReason: localizedReason,
+          biometricOnly: false,
+          persistAcrossBackgrounding: true,
+          sensitiveTransaction: true,
+        );
+      } finally {
+        _isAuthenticating = false;
+      }
 
       if (didAuthenticate) cleanLastPausedTime();
       return didAuthenticate;
