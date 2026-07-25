@@ -233,14 +233,21 @@ pub fn ensure_circuit_binaries(bins_dir: String) -> Result<String, String> {
 }
 
 fn all_required_files_exist(dir: &Path) -> bool {
+    // Must match the artifacts produced by `generate_all_circuit_binaries` and
+    // consumed by `PrivateBatchProver::new_from_binaries_dir` in qp-wormhole-*
+    // 3.1.x. Two things changed vs 3.0.x: the leaf circuit no longer emits a
+    // `prover.bin` (the leaf prover is always built from source), and the
+    // aggregation artifacts were renamed `aggregated_*` -> `private_batch_*`.
+    // If this list still names the old files, a stale 3.0.x circuits directory
+    // satisfies the check, generation is skipped, and proving later fails with
+    // "Failed to read aggregated prover file .../private_batch_prover.bin".
     const REQUIRED: &[&str] = &[
-        "prover.bin",
-        "verifier.bin",
         "common.bin",
-        "aggregated_prover.bin",
-        "aggregated_verifier.bin",
-        "aggregated_common.bin",
+        "verifier.bin",
         "dummy_proof.bin",
+        "private_batch_common.bin",
+        "private_batch_verifier.bin",
+        "private_batch_prover.bin",
         "config.json",
     ];
     REQUIRED.iter().all(|f| dir.join(f).exists())
