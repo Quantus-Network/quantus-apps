@@ -14,6 +14,7 @@ dependencies:
     sdk: flutter
 
   quantus_sdk:
+    path: ../quantus_sdk
 
   # Blockchain infra (canonical versions in melos.yaml)
   # DO NOT UPDATE polkadart - pinned to match quantus_sdk's ML-DSA override.
