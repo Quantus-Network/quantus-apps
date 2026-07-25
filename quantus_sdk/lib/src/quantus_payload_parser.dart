@@ -1,15 +1,20 @@
 /// A parser for Quantus blockchain signing payloads.
 ///
-/// Mirrors the Keystone firmware parser (rust/apps/quantus/src/parser.rs): the
-/// full signed payload — call plus every signed-extension field — is decoded
-/// with nothing left over, so what the signer displays is exactly what it
-/// signs. Any pallet, call, address type, or network not declared here
-/// hard-fails with a [FormatException]; nothing is silently ignored.
+/// Originally mirrored the Keystone firmware parser (rust/apps/quantus/src/parser.rs),
+/// but diverges on Multisig (pallet 19), which the firmware rejects: propose and
+/// approve carry the inner call bytes on purpose so an offline signer can decode
+/// and display what it is approving. The full signed payload — call plus every
+/// signed-extension field — is decoded with nothing left over, so what the signer
+/// displays is exactly what it signs. Any pallet, call, address type, or network
+/// not declared here hard-fails with a [FormatException]; nothing is silently
+/// ignored.
 ///
 /// Supported calls (runtime pallet/call indices, chain `main`, spec >= 133):
 /// - Balances (pallet 2): transfer_allow_death (0), transfer_keep_alive (3)
 /// - ReversibleTransfers (pallet 11): schedule_transfer (3),
 ///   schedule_transfer_with_delay (4)
+/// - Multisig (pallet 19): propose (1), approve (2), cancel (3), execute (6) —
+///   propose/approve inner calls are decoded recursively (bounded depth)
 ///
 /// Usage:
 /// ```dart
@@ -24,6 +29,11 @@ import 'dart:typed_data';
 
 import 'package:convert/convert.dart';
 import 'package:polkadart/scale_codec.dart';
+import 'package:quantus_sdk/generated/planck/types/pallet_balances/pallet/call.dart' as balances_call;
+import 'package:quantus_sdk/generated/planck/types/pallet_multisig/pallet/call.dart' as multisig_call;
+import 'package:quantus_sdk/generated/planck/types/pallet_reversible_transfers/pallet/call.dart' as reversible_call;
+import 'package:quantus_sdk/generated/planck/types/qp_scheduler/block_number_or_timestamp.dart' as qp_scheduler;
+import 'package:quantus_sdk/generated/planck/types/sp_runtime/multiaddress/multi_address.dart' as sp_multi_address;
 import 'package:quantus_sdk/src/constants/app_constants.dart';
 import 'package:ss58/ss58.dart';
 
@@ -86,7 +96,14 @@ class SignedExtensions {
   });
 }
 
-class TransactionInfo {
+/// A decoded runtime call. Every supported call is either a [TransactionInfo]
+/// (a transfer) or a [MultisigInfo] (a multisig action, possibly wrapping an
+/// inner [CallInfo]).
+sealed class CallInfo {
+  const CallInfo();
+}
+
+class TransactionInfo extends CallInfo {
   final String toAddress;
   final BigInt amount;
   final bool isReversible;
@@ -112,10 +129,33 @@ Transaction Details:
   }
 }
 
+/// Multisig pallet calls that can appear in a Keystone signing session.
+enum MultisigAction { propose, approve, cancel, execute }
+
+/// A decoded Multisig (pallet 19) call. Propose and approve carry the inner
+/// call bytes, decoded recursively so the signer sees the real effect being
+/// approved; cancel and execute carry only the proposal id — the inner call
+/// never leaves chain storage for those.
+class MultisigInfo extends CallInfo {
+  final MultisigAction action;
+  final String multisigAddress;
+  final int? proposalId;
+  final int? expiry; // propose only, block number
+  final CallInfo? innerCall; // propose/approve only
+
+  const MultisigInfo({
+    required this.action,
+    required this.multisigAddress,
+    this.proposalId,
+    this.expiry,
+    this.innerCall,
+  });
+}
+
 /// A fully decoded signing payload: the call plus every signed-extension field, with no
 /// bytes left over. Everything that gets signed is either displayed or validated.
 class ParsedPayload {
-  final TransactionInfo call;
+  final CallInfo call;
   final SignedExtensions extensions;
   final String network;
 
@@ -172,75 +212,113 @@ class QuantusPayloadParser {
     }
   }
 
-  // Mirror of the runtime call enums; indices must match the runtime pallet/call
-  // declarations and compact encoding must match `#[pallet::compact]` usage.
-  static TransactionInfo _decodeCall(Input input) {
+  // The pallet whitelist is enforced here by hand; the whitelisted pallets decode
+  // through the metadata-generated codecs, so field layouts track the runtime.
+  static const int _maxInnerCallDepth = 4;
+
+  static CallInfo _decodeCall(Input input, [int depth = 0]) {
     final palletIndex = U8Codec.codec.decode(input);
     switch (palletIndex) {
       case 2:
-        return _decodeBalancesCall(input);
+        return _mapBalancesCall(balances_call.Call.codec.decode(input));
       case 11:
-        return _decodeReversibleTransfersCall(input);
+        return _mapReversibleTransfersCall(reversible_call.Call.codec.decode(input));
+      case 19:
+        return _mapMultisigCall(multisig_call.Call.codec.decode(input), depth);
       default:
         throw FormatException('Unknown pallet index: $palletIndex');
     }
   }
 
-  static TransactionInfo _decodeBalancesCall(Input input) {
-    final callIndex = U8Codec.codec.decode(input);
-    switch (callIndex) {
-      case 0: // transfer_allow_death
-      case 3: // transfer_keep_alive
-        final dest = _decodeMultiAddress(input);
-        final amount = CompactBigIntCodec.codec.decode(input); // #[pallet::compact] value
-        return TransactionInfo(toAddress: dest, amount: amount, isReversible: false);
-      default:
-        throw FormatException('Balances: unsupported call index $callIndex');
-    }
+  static TransactionInfo _mapBalancesCall(balances_call.Call call) {
+    return switch (call) {
+      balances_call.TransferAllowDeath(:final dest, :final value) => TransactionInfo(
+        toAddress: _mapAddress(dest),
+        amount: value,
+        isReversible: false,
+      ),
+      balances_call.TransferKeepAlive(:final dest, :final value) => TransactionInfo(
+        toAddress: _mapAddress(dest),
+        amount: value,
+        isReversible: false,
+      ),
+      _ => throw FormatException('Balances: unsupported call ${call.runtimeType}'),
+    };
   }
 
-  static TransactionInfo _decodeReversibleTransfersCall(Input input) {
-    final callIndex = U8Codec.codec.decode(input);
-    switch (callIndex) {
-      case 3: // schedule_transfer
-        final dest = _decodeMultiAddress(input);
-        final amount = U128Codec.codec.decode(input); // fixed u128, not compact
-        return TransactionInfo(
-          toAddress: dest,
-          amount: amount,
-          isReversible: true,
-          reversibleTimeframe: null, // Uses configured delay
-        );
-      case 4: // schedule_transfer_with_delay
-        final dest = _decodeMultiAddress(input);
-        final amount = U128Codec.codec.decode(input);
-        final delay = _decodeTimestampDelay(input);
-        return TransactionInfo(toAddress: dest, amount: amount, isReversible: true, reversibleTimeframe: delay);
-      default:
-        throw FormatException('ReversibleTransfers: unsupported call index $callIndex');
-    }
+  static TransactionInfo _mapReversibleTransfersCall(reversible_call.Call call) {
+    return switch (call) {
+      reversible_call.ScheduleTransfer(:final dest, :final amount) => TransactionInfo(
+        toAddress: _mapAddress(dest),
+        amount: amount,
+        isReversible: true,
+      ),
+      reversible_call.ScheduleTransferWithDelay(:final dest, :final amount, :final delay) => TransactionInfo(
+        toAddress: _mapAddress(dest),
+        amount: amount,
+        isReversible: true,
+        reversibleTimeframe: _mapDelay(delay),
+      ),
+      _ => throw FormatException('ReversibleTransfers: unsupported call ${call.runtimeType}'),
+    };
   }
 
-  static String _decodeMultiAddress(Input input) {
-    final addressType = U8Codec.codec.decode(input);
-    if (addressType != 0) {
-      throw FormatException('Unsupported MultiAddress type: $addressType (only Id is accepted)');
+  static MultisigInfo _mapMultisigCall(multisig_call.Call call, int depth) {
+    if (depth >= _maxInnerCallDepth) {
+      throw const FormatException('Multisig: inner calls nested too deeply');
     }
-    return bytesToSs58(input.readBytes(32));
+    return switch (call) {
+      multisig_call.Propose(:final multisigAddress, :final call, :final expiry) => MultisigInfo(
+        action: MultisigAction.propose,
+        multisigAddress: bytesToSs58(Uint8List.fromList(multisigAddress)),
+        expiry: expiry,
+        innerCall: _decodeInnerCall(call, depth),
+      ),
+      multisig_call.Approve(:final multisigAddress, :final proposalId, :final call) => MultisigInfo(
+        action: MultisigAction.approve,
+        multisigAddress: bytesToSs58(Uint8List.fromList(multisigAddress)),
+        proposalId: proposalId,
+        innerCall: _decodeInnerCall(call, depth),
+      ),
+      multisig_call.Cancel(:final multisigAddress, :final proposalId) => MultisigInfo(
+        action: MultisigAction.cancel,
+        multisigAddress: bytesToSs58(Uint8List.fromList(multisigAddress)),
+        proposalId: proposalId,
+      ),
+      multisig_call.Execute(:final multisigAddress, :final proposalId) => MultisigInfo(
+        action: MultisigAction.execute,
+        multisigAddress: bytesToSs58(Uint8List.fromList(multisigAddress)),
+        proposalId: proposalId,
+      ),
+      _ => throw FormatException('Multisig: unsupported call ${call.runtimeType}'),
+    };
   }
 
-  // qp_scheduler::BlockNumberOrTimestamp<u32, u64>
-  static int _decodeTimestampDelay(Input input) {
-    final variant = U8Codec.codec.decode(input);
-    switch (variant) {
-      case 0:
-        final block = U32Codec.codec.decode(input);
-        throw FormatException('Block-number delays are not supported (got block $block)');
-      case 1:
-        return U64Codec.codec.decode(input).toInt();
-      default:
-        throw FormatException('Unknown BlockNumberOrTimestamp variant: $variant');
+  static CallInfo _decodeInnerCall(List<int> bytes, int depth) {
+    final innerInput = Input.fromBytes(Uint8List.fromList(bytes));
+    final call = _decodeCall(innerInput, depth + 1);
+    final remaining = innerInput.remainingLength ?? 0;
+    if (remaining != 0) {
+      throw FormatException('$remaining trailing bytes in inner call');
     }
+    return call;
+  }
+
+  static String _mapAddress(sp_multi_address.MultiAddress address) {
+    return switch (address) {
+      sp_multi_address.Id(:final value0) => bytesToSs58(Uint8List.fromList(value0)),
+      _ => throw FormatException('Unsupported MultiAddress type: ${address.runtimeType} (only Id is accepted)'),
+    };
+  }
+
+  static int _mapDelay(qp_scheduler.BlockNumberOrTimestamp delay) {
+    return switch (delay) {
+      qp_scheduler.Timestamp(:final value0) => value0.toInt(),
+      qp_scheduler.BlockNumber(:final value0) => throw FormatException(
+        'Block-number delays are not supported (got block $value0)',
+      ),
+      _ => throw FormatException('Unknown BlockNumberOrTimestamp variant: ${delay.runtimeType}'),
+    };
   }
 
   static Era _decodeEra(Input input) {

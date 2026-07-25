@@ -38,11 +38,12 @@ void main() {
     test('keystone transfer payload decodes to a displayable transaction', () {
       final payload = Uint8List.fromList(hex.decode(planckHex));
       final parsed = QuantusPayloadParser.parsePayload(payload);
+      final call = parsed.call as TransactionInfo;
 
-      expect(parsed.call.isReversible, isFalse);
-      expect(parsed.call.reversibleTimeframe, isNull);
-      expect(parsed.call.toAddress, startsWith('qz'));
-      expect(parsed.call.amount, BigInt.parse('100000000000')); // 0.1 QUAN at 12 decimals
+      expect(call.isReversible, isFalse);
+      expect(call.reversibleTimeframe, isNull);
+      expect(call.toAddress, startsWith('qz'));
+      expect(call.amount, BigInt.parse('100000000000')); // 0.1 QUAN at 12 decimals
       expect(parsed.network, 'Planck');
       expect(parsed.extensions.era.toString(), '64 blocks');
       expect(parsed.extensions.nonce, 0);

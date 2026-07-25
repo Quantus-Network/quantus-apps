@@ -49,11 +49,12 @@ void main() {
       // Mortal era bytes 8501 = period 64 phase 24; compact nonce 10.
       final payload = payloadWithSuffix(transferCall1, era: const [0x85, 0x01], nonce: 10);
       final parsed = QuantusPayloadParser.parsePayload(payload);
+      final call = parsed.call as TransactionInfo;
 
-      expect(parsed.call.toAddress, 'qzps6MnSixszZAWiwcpjtw6uXBjWg2aEyrXBdp9thijzY1g86');
-      expect(parsed.call.amount, BigInt.from(900000000000));
-      expect(parsed.call.isReversible, false);
-      expect(parsed.call.reversibleTimeframe, null);
+      expect(call.toAddress, 'qzps6MnSixszZAWiwcpjtw6uXBjWg2aEyrXBdp9thijzY1g86');
+      expect(call.amount, BigInt.from(900000000000));
+      expect(call.isReversible, false);
+      expect(call.reversibleTimeframe, null);
       expect(parsed.extensions.era, const Era.mortal(64, 24));
       expect(parsed.extensions.era.toString(), '64 blocks');
       expect(parsed.extensions.nonce, 10);
@@ -67,9 +68,10 @@ void main() {
       final tip = BigInt.from(1500000000000);
       final payload = payloadWithSuffix(transferCall2, tip: tip);
       final parsed = QuantusPayloadParser.parsePayload(payload);
+      final call = parsed.call as TransactionInfo;
 
-      expect(parsed.call.toAddress, 'qzn5St24cMsjE4JKYdXLBctusWj5zom67dnrW22SweAahLGeG');
-      expect(parsed.call.amount, BigInt.from(100000000000));
+      expect(call.toAddress, 'qzn5St24cMsjE4JKYdXLBctusWj5zom67dnrW22SweAahLGeG');
+      expect(call.amount, BigInt.from(100000000000));
       expect(parsed.extensions.era, const Era.immortal());
       expect(parsed.extensions.era.toString(), 'Immortal');
       expect(parsed.extensions.tip, tip);
@@ -78,11 +80,12 @@ void main() {
     test('parses reversible transfer with delay', () {
       final payload = payloadWithSuffix(reversibleCall, nonce: 3);
       final parsed = QuantusPayloadParser.parsePayload(payload);
+      final call = parsed.call as TransactionInfo;
 
-      expect(parsed.call.toAddress, 'qzn5St24cMsjE4JKYdXLBctusWj5zom67dnrW22SweAahLGeG');
-      expect(parsed.call.amount, BigInt.from(1440000000000));
-      expect(parsed.call.isReversible, true);
-      expect(parsed.call.reversibleTimeframe, 300000); // 5 minutes in milliseconds
+      expect(call.toAddress, 'qzn5St24cMsjE4JKYdXLBctusWj5zom67dnrW22SweAahLGeG');
+      expect(call.amount, BigInt.from(1440000000000));
+      expect(call.isReversible, true);
+      expect(call.reversibleTimeframe, 300000); // 5 minutes in milliseconds
       expect(parsed.extensions.nonce, 3);
     });
 
@@ -127,9 +130,108 @@ void main() {
       expect(() => QuantusPayloadParser.parsePayload(payloadWithSuffix('0202')), throwsRejection('call'));
     });
 
-    test('rejects multisig payloads (pallet 19 not displayable here)', () {
-      final payload = payloadWithSuffix('1300');
-      expect(() => QuantusPayloadParser.parsePayload(payload), throwsRejection('Unknown pallet index: 19'));
+    group('multisig (pallet 19)', () {
+      const multisigAddressHex = 'ef5f320156894f0fde742921c6990bf446e82c89fae5a23e701900abcd92dfb4';
+
+      Uint8List multisigCall(int callIndex, List<int> Function(ByteOutput out) encodeBody) {
+        final out = ByteOutput();
+        out.pushByte(19);
+        out.pushByte(callIndex);
+        encodeBody(out);
+        return out.toBytes();
+      }
+
+      Uint8List proposeCall(List<int> innerCall, {int expiry = 1000}) {
+        return multisigCall(1, (out) {
+          out.write(hex.decode(multisigAddressHex));
+          U8SequenceCodec.codec.encodeTo(innerCall, out);
+          U32Codec.codec.encodeTo(expiry, out);
+          return out.toBytes();
+        });
+      }
+
+      Uint8List approveCall(List<int> innerCall, {int proposalId = 3}) {
+        return multisigCall(2, (out) {
+          out.write(hex.decode(multisigAddressHex));
+          U32Codec.codec.encodeTo(proposalId, out);
+          U8SequenceCodec.codec.encodeTo(innerCall, out);
+          return out.toBytes();
+        });
+      }
+
+      Uint8List idOnlyCall(int callIndex, {int proposalId = 7}) {
+        return multisigCall(callIndex, (out) {
+          out.write(hex.decode(multisigAddressHex));
+          U32Codec.codec.encodeTo(proposalId, out);
+          return out.toBytes();
+        });
+      }
+
+      test('parses approve with an inner transfer', () {
+        final payload = payloadWithSuffix(hex.encode(approveCall(hex.decode(transferCall1))));
+        final parsed = QuantusPayloadParser.parsePayload(payload);
+
+        final call = parsed.call as MultisigInfo;
+        expect(call.action, MultisigAction.approve);
+        expect(call.proposalId, 3);
+        expect(call.multisigAddress, 'qzps6MnSixszZAWiwcpjtw6uXBjWg2aEyrXBdp9thijzY1g86');
+        final inner = call.innerCall as TransactionInfo;
+        expect(inner.toAddress, call.multisigAddress);
+        expect(inner.amount, BigInt.from(900000000000));
+        expect(inner.isReversible, false);
+      });
+
+      test('parses propose with expiry', () {
+        final payload = payloadWithSuffix(hex.encode(proposeCall(hex.decode(transferCall2), expiry: 43200)));
+        final parsed = QuantusPayloadParser.parsePayload(payload);
+
+        final call = parsed.call as MultisigInfo;
+        expect(call.action, MultisigAction.propose);
+        expect(call.expiry, 43200);
+        expect(call.proposalId, isNull);
+        expect((call.innerCall as TransactionInfo).amount, BigInt.from(100000000000));
+      });
+
+      test('parses execute and cancel without inner call', () {
+        final executed = QuantusPayloadParser.parsePayload(payloadWithSuffix(hex.encode(idOnlyCall(6))));
+        final executeCall = executed.call as MultisigInfo;
+        expect(executeCall.action, MultisigAction.execute);
+        expect(executeCall.proposalId, 7);
+        expect(executeCall.innerCall, isNull);
+
+        final cancelled = QuantusPayloadParser.parsePayload(payloadWithSuffix(hex.encode(idOnlyCall(3))));
+        expect((cancelled.call as MultisigInfo).action, MultisigAction.cancel);
+      });
+
+      test('parses a nested multisig inner call', () {
+        final nested = approveCall(hex.decode(transferCall1));
+        final payload = payloadWithSuffix(hex.encode(proposeCall(nested)));
+        final parsed = QuantusPayloadParser.parsePayload(payload);
+
+        final call = parsed.call as MultisigInfo;
+        expect(call.action, MultisigAction.propose);
+        final inner = call.innerCall as MultisigInfo;
+        expect(inner.action, MultisigAction.approve);
+        expect((inner.innerCall as TransactionInfo).amount, BigInt.from(900000000000));
+      });
+
+      test('rejects unsupported multisig call variants', () {
+        expect(() => QuantusPayloadParser.parsePayload(payloadWithSuffix('1300')), throwsRejection('unsupported call'));
+        expect(() => QuantusPayloadParser.parsePayload(payloadWithSuffix('1305')), throwsRejection('unsupported call'));
+      });
+
+      test('rejects an inner call that does not decode cleanly', () {
+        expect(
+          () => QuantusPayloadParser.parsePayload(payloadWithSuffix(hex.encode(approveCall(hex.decode('0500'))))),
+          throwsRejection('Unknown pallet'),
+        );
+        expect(
+          () => QuantusPayloadParser.parsePayload(
+            payloadWithSuffix(hex.encode(approveCall([...hex.decode(transferCall1), 0xde, 0xad]))),
+          ),
+          throwsRejection('trailing bytes in inner call'),
+        );
+      });
     });
 
     test('TransactionInfo toString formats with 12 decimals', () {

@@ -34,7 +34,11 @@ class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> {
     try {
       final parsed = QuantusPayloadParser.parsePayload(widget.payload);
       _parsed = parsed;
-      _loadCheckphrase(parsed.call.toAddress);
+      _loadCheckphrase(switch (parsed.call) {
+        TransactionInfo t => t.toAddress,
+        MultisigInfo m =>
+          m.innerCall is TransactionInfo ? (m.innerCall as TransactionInfo).toAddress : m.multisigAddress,
+      });
     } catch (e) {
       debugPrint('Rejected signing payload: $e');
       _parseError = e is FormatException ? e.message : e.toString();
@@ -126,8 +130,8 @@ class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> {
   Widget _reviewView(BuildContext context, ParsedPayload parsed) {
     final colors = context.colors;
     final text = context.themeText;
-    final info = parsed.call;
     final ext = parsed.extensions;
+    final call = parsed.call;
 
     return ScaffoldBase(
       appBar: const V2AppBar(title: 'Review & Sign'),
@@ -136,40 +140,11 @@ class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const SizedBox(height: 8),
-            Center(
-              child: Column(
-                children: [
-                  Text('You are signing', style: text.smallParagraph?.copyWith(color: colors.textSecondary)),
-                  const SizedBox(height: 8),
-                  RichText(
-                    text: TextSpan(
-                      children: [
-                        TextSpan(
-                          text: _formatAmount(info.amount),
-                          style: text.transactionDetailAmountPrimary?.copyWith(color: colors.textPrimary),
-                        ),
-                        TextSpan(
-                          text: ' ${AppConstants.tokenSymbol}',
-                          style: text.transactionDetailAmountSymbol?.copyWith(color: colors.textSecondary),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            Center(child: _header(context, call)),
             const SizedBox(height: 32),
-            _detailRow(context, 'To', info.toAddress, monospace: true),
-            if (_toCheckphrase != null && _toCheckphrase!.isNotEmpty)
-              _detailRow(context, 'Checkphrase', _toCheckphrase!, valueColor: colors.checksum),
+            if (call is TransactionInfo) ..._transferRows(context, call),
+            if (call is MultisigInfo) ..._multisigRows(context, call),
             _detailRow(context, 'Network', parsed.network),
-            _detailRow(context, 'Reversible', info.isReversible ? 'Yes' : 'No'),
-            if (info.isReversible && info.reversibleTimeframe != null)
-              _detailRow(
-                context,
-                'Reversible window',
-                DatetimeFormattingService.formatDuration(Duration(milliseconds: info.reversibleTimeframe!)).formatted,
-              ),
             _detailRow(context, 'Tip', '${_formatAmount(ext.tip)} ${AppConstants.tokenSymbol}'),
             _detailRow(context, 'Nonce', '${ext.nonce}'),
             _detailRow(context, 'Era', '${ext.era}'),
@@ -202,6 +177,87 @@ class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> {
         ),
       ),
     );
+  }
+
+  Widget _header(BuildContext context, CallInfo call) {
+    final colors = context.colors;
+    final text = context.themeText;
+    return Column(
+      children: [
+        Text('You are signing', style: text.smallParagraph?.copyWith(color: colors.textSecondary)),
+        const SizedBox(height: 8),
+        switch (call) {
+          TransactionInfo t => _amountText(context, t.amount),
+          MultisigInfo m => Column(
+            children: [
+              Text(_actionLabel(m), style: text.transactionDetailAmountPrimary?.copyWith(color: colors.textPrimary)),
+              if (m.innerCall is TransactionInfo) ...[
+                const SizedBox(height: 8),
+                _amountText(context, (m.innerCall as TransactionInfo).amount),
+              ],
+            ],
+          ),
+        },
+      ],
+    );
+  }
+
+  Widget _amountText(BuildContext context, BigInt amount) {
+    final colors = context.colors;
+    final text = context.themeText;
+    return RichText(
+      text: TextSpan(
+        children: [
+          TextSpan(
+            text: _formatAmount(amount),
+            style: text.transactionDetailAmountPrimary?.copyWith(color: colors.textPrimary),
+          ),
+          TextSpan(
+            text: ' ${AppConstants.tokenSymbol}',
+            style: text.transactionDetailAmountSymbol?.copyWith(color: colors.textSecondary),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _actionLabel(MultisigInfo info) {
+    return switch (info.action) {
+      MultisigAction.propose => 'Propose transaction',
+      MultisigAction.approve => 'Approve proposal #${info.proposalId}',
+      MultisigAction.cancel => 'Cancel proposal #${info.proposalId}',
+      MultisigAction.execute => 'Execute proposal #${info.proposalId}',
+    };
+  }
+
+  List<Widget> _transferRows(BuildContext context, TransactionInfo info) {
+    final colors = context.colors;
+    return [
+      _detailRow(context, 'To', info.toAddress, monospace: true),
+      if (_toCheckphrase != null && _toCheckphrase!.isNotEmpty)
+        _detailRow(context, 'Checkphrase', _toCheckphrase!, valueColor: colors.checksum),
+      _detailRow(context, 'Reversible', info.isReversible ? 'Yes' : 'No'),
+      if (info.isReversible && info.reversibleTimeframe != null)
+        _detailRow(
+          context,
+          'Reversible window',
+          DatetimeFormattingService.formatDuration(Duration(milliseconds: info.reversibleTimeframe!)).formatted,
+        ),
+    ];
+  }
+
+  List<Widget> _multisigRows(BuildContext context, MultisigInfo info) {
+    final colors = context.colors;
+    final inner = info.innerCall;
+    return [
+      _detailRow(context, 'Multisig', info.multisigAddress, monospace: true),
+      if (inner == null && _toCheckphrase != null && _toCheckphrase!.isNotEmpty)
+        _detailRow(context, 'Checkphrase', _toCheckphrase!, valueColor: colors.checksum),
+      if (info.proposalId != null) _detailRow(context, 'Proposal ID', '${info.proposalId}'),
+      if (info.expiry != null) _detailRow(context, 'Expiry', 'Block ${info.expiry}'),
+      if (inner is TransactionInfo) ..._transferRows(context, inner),
+      if (inner is MultisigInfo) _detailRow(context, 'Inner call', _actionLabel(inner)),
+    ];
   }
 
   Widget _signatureView(BuildContext context, List<String> parts) {
