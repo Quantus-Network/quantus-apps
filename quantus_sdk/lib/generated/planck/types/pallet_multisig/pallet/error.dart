@@ -79,7 +79,10 @@ enum Error {
   proposalNonceExhausted('ProposalNonceExhausted', 23),
 
   /// Call weight exceeds MaxInnerCallWeight limit
-  callWeightExceedsLimit('CallWeightExceedsLimit', 24);
+  callWeightExceedsLimit('CallWeightExceedsLimit', 24),
+
+  /// Provided call does not match the stored proposal payload
+  callMismatch('CallMismatch', 25);
 
   const Error(this.variantName, this.codecIndex);
 
@@ -157,6 +160,8 @@ class $ErrorCodec with _i1.Codec<Error> {
         return Error.proposalNonceExhausted;
       case 24:
         return Error.callWeightExceedsLimit;
+      case 25:
+        return Error.callMismatch;
       default:
         throw Exception('Error: Invalid variant index: "$index"');
     }
