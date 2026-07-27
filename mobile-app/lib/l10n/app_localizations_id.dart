@@ -424,6 +424,13 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
+  String get multisigProposalCallLoading => 'Membaca usulan dari rantai…';
+
+  @override
+  String get multisigProposalCallUnavailable =>
+      'Tidak dapat membaca usulan ini dari rantai, jadi tidak ada yang bisa disetujui. Coba lagi setelah Anda kembali online.';
+
+  @override
   String get multisigStatusApproved => 'DITANDATANGANI';
 
   @override

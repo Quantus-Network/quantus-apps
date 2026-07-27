@@ -72,5 +72,8 @@
 		</array>
 		<key>UIStatusBarHidden</key>
 		<false/>
+		<!-- Export compliance: only standard exempt algorithms (AES-GCM, Argon2id, TLS, ML-DSA) -->
+		<key>ITSAppUsesNonExemptEncryption</key>
+		<false/>
 	</dict>
 </plist>

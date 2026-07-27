@@ -41,7 +41,7 @@ class Constants {
   final BigInt maxSupply = BigInt.parse('21000000000000000000', radix: 10);
 
   /// The divisor used to calculate block rewards from remaining supply
-  final BigInt emissionDivisor = BigInt.from(26280000);
+  final BigInt emissionDivisor = BigInt.from(15163560);
 
   /// The base unit for token amounts (e.g., 1e12 for 12 decimals)
   final BigInt unit = BigInt.from(1000000000000);

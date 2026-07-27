@@ -6,7 +6,10 @@ import 'package:polkadart/scale_codec.dart' as _i1;
 /// The `Error` enum of this pallet.
 enum Error {
   /// Too many calls batched.
-  tooManyCalls('TooManyCalls', 0);
+  tooManyCalls('TooManyCalls', 0),
+
+  /// Call is not allowed for a high-security account.
+  callNotAllowedForHighSecurity('CallNotAllowedForHighSecurity', 1);
 
   const Error(this.variantName, this.codecIndex);
 
@@ -36,6 +39,8 @@ class $ErrorCodec with _i1.Codec<Error> {
     switch (index) {
       case 0:
         return Error.tooManyCalls;
+      case 1:
+        return Error.callNotAllowedForHighSecurity;
       default:
         throw Exception('Error: Invalid variant index: "$index"');
     }

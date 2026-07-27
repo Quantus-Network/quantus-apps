@@ -1,8 +1,62 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import '../types/pallet_utility/pallet/call.dart' as _i2;
-import '../types/quantus_runtime/origin_caller.dart' as _i3;
-import '../types/quantus_runtime/runtime_call.dart' as _i1;
-import '../types/sp_weights/weight_v2/weight.dart' as _i4;
+import 'dart:async' as _i4;
+import 'dart:typed_data' as _i5;
+
+import 'package:polkadart/polkadart.dart' as _i1;
+import 'package:polkadart/scale_codec.dart' as _i3;
+
+import '../types/pallet_utility/pallet/call.dart' as _i7;
+import '../types/quantus_runtime/origin_caller.dart' as _i8;
+import '../types/quantus_runtime/runtime_call.dart' as _i6;
+import '../types/sp_core/crypto/account_id32.dart' as _i2;
+import '../types/sp_weights/weight_v2/weight.dart' as _i9;
+
+class Queries {
+  const Queries(this.__api);
+
+  final _i1.StateApi __api;
+
+  final _i1.StorageMap<_i2.AccountId32, dynamic> _knownDerivatives = const _i1.StorageMap<_i2.AccountId32, dynamic>(
+    prefix: 'Utility',
+    storage: 'KnownDerivatives',
+    valueCodec: _i3.NullCodec.codec,
+    hasher: _i1.StorageHasher.blake2b128Concat(_i2.AccountId32Codec()),
+  );
+
+  /// Derivative pseudonym accounts that have been used with [`Pallet::as_derivative`] at least
+  /// once and have therefore been revealed to the wormhole soundness counter.
+  _i4.Future<dynamic> knownDerivatives(_i2.AccountId32 key1, {_i1.BlockHash? at}) async {
+    final hashedKey = _knownDerivatives.hashedKeyFor(key1);
+    final bytes = await __api.getStorage(hashedKey, at: at);
+    if (bytes != null) {
+      return _knownDerivatives.decodeValue(bytes);
+    }
+    return null; /* Nullable */
+  }
+
+  /// Derivative pseudonym accounts that have been used with [`Pallet::as_derivative`] at least
+  /// once and have therefore been revealed to the wormhole soundness counter.
+  _i4.Future<List<dynamic>> multiKnownDerivatives(List<_i2.AccountId32> keys, {_i1.BlockHash? at}) async {
+    final hashedKeys = keys.map((key) => _knownDerivatives.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(hashedKeys, at: at);
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes.map((v) => _knownDerivatives.decodeValue(v.key)).toList();
+    }
+    return []; /* Nullable */
+  }
+
+  /// Returns the storage key for `knownDerivatives`.
+  _i5.Uint8List knownDerivativesKey(_i2.AccountId32 key1) {
+    final hashedKey = _knownDerivatives.hashedKeyFor(key1);
+    return hashedKey;
+  }
+
+  /// Returns the storage map key prefix for `knownDerivatives`.
+  _i5.Uint8List knownDerivativesMapPrefix() {
+    final hashedKey = _knownDerivatives.mapPrefix();
+    return hashedKey;
+  }
+}
 
 class Txs {
   const Txs();
@@ -25,8 +79,8 @@ class Txs {
   /// `BatchInterrupted` event is deposited, along with the number of successful calls made
   /// and the error of the failed call. If all were successful, then the `BatchCompleted`
   /// event is deposited.
-  _i1.Utility batch({required List<_i1.RuntimeCall> calls}) {
-    return _i1.Utility(_i2.Batch(calls: calls));
+  _i6.Utility batch({required List<_i6.RuntimeCall> calls}) {
+    return _i6.Utility(_i7.Batch(calls: calls));
   }
 
   /// Send a call through an indexed pseudonym of the sender.
@@ -42,8 +96,8 @@ class Txs {
   /// NOTE: Prior to version *12, this was called `as_limited_sub`.
   ///
   /// The dispatch origin for this call must be _Signed_.
-  _i1.Utility asDerivative({required int index, required _i1.RuntimeCall call}) {
-    return _i1.Utility(_i2.AsDerivative(index: index, call: call));
+  _i6.Utility asDerivative({required int index, required _i6.RuntimeCall call}) {
+    return _i6.Utility(_i7.AsDerivative(index: index, call: call));
   }
 
   /// Send a batch of dispatch calls and atomically execute them.
@@ -59,8 +113,8 @@ class Txs {
   ///
   /// ## Complexity
   /// - O(C) where C is the number of calls to be batched.
-  _i1.Utility batchAll({required List<_i1.RuntimeCall> calls}) {
-    return _i1.Utility(_i2.BatchAll(calls: calls));
+  _i6.Utility batchAll({required List<_i6.RuntimeCall> calls}) {
+    return _i6.Utility(_i7.BatchAll(calls: calls));
   }
 
   /// Dispatches a function call with a provided origin.
@@ -69,8 +123,8 @@ class Txs {
   ///
   /// ## Complexity
   /// - O(1).
-  _i1.Utility dispatchAs({required _i3.OriginCaller asOrigin, required _i1.RuntimeCall call}) {
-    return _i1.Utility(_i2.DispatchAs(asOrigin: asOrigin, call: call));
+  _i6.Utility dispatchAs({required _i8.OriginCaller asOrigin, required _i6.RuntimeCall call}) {
+    return _i6.Utility(_i7.DispatchAs(asOrigin: asOrigin, call: call));
   }
 
   /// Send a batch of dispatch calls.
@@ -86,8 +140,8 @@ class Txs {
   ///
   /// ## Complexity
   /// - O(C) where C is the number of calls to be batched.
-  _i1.Utility forceBatch({required List<_i1.RuntimeCall> calls}) {
-    return _i1.Utility(_i2.ForceBatch(calls: calls));
+  _i6.Utility forceBatch({required List<_i6.RuntimeCall> calls}) {
+    return _i6.Utility(_i7.ForceBatch(calls: calls));
   }
 
   /// Dispatch a function call with a specified weight.
@@ -96,8 +150,8 @@ class Txs {
   /// Root origin to specify the weight of the call.
   ///
   /// The dispatch origin for this call must be _Root_.
-  _i1.Utility withWeight({required _i1.RuntimeCall call, required _i4.Weight weight}) {
-    return _i1.Utility(_i2.WithWeight(call: call, weight: weight));
+  _i6.Utility withWeight({required _i6.RuntimeCall call, required _i9.Weight weight}) {
+    return _i6.Utility(_i7.WithWeight(call: call, weight: weight));
   }
 
   /// Dispatch a fallback call in the event the main call fails to execute.
@@ -123,8 +177,8 @@ class Txs {
   /// ## Use Case
   /// - Some use cases might involve submitting a `batch` type call in either main, fallback
   ///  or both.
-  _i1.Utility ifElse({required _i1.RuntimeCall main, required _i1.RuntimeCall fallback}) {
-    return _i1.Utility(_i2.IfElse(main: main, fallback: fallback));
+  _i6.Utility ifElse({required _i6.RuntimeCall main, required _i6.RuntimeCall fallback}) {
+    return _i6.Utility(_i7.IfElse(main: main, fallback: fallback));
   }
 
   /// Dispatches a function call with a provided origin.
@@ -132,8 +186,8 @@ class Txs {
   /// Almost the same as [`Pallet::dispatch_as`] but forwards any error of the inner call.
   ///
   /// The dispatch origin for this call must be _Root_.
-  _i1.Utility dispatchAsFallible({required _i3.OriginCaller asOrigin, required _i1.RuntimeCall call}) {
-    return _i1.Utility(_i2.DispatchAsFallible(asOrigin: asOrigin, call: call));
+  _i6.Utility dispatchAsFallible({required _i8.OriginCaller asOrigin, required _i6.RuntimeCall call}) {
+    return _i6.Utility(_i7.DispatchAsFallible(asOrigin: asOrigin, call: call));
   }
 }
 

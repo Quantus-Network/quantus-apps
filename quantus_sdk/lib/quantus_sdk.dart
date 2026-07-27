@@ -7,6 +7,8 @@ import 'src/rust/frb_generated.dart';
 
 export 'generated/planck/pallets/balances.dart';
 export 'generated/planck/types/quantus_runtime/runtime_call.dart';
+export 'src/chain/call_decoder.dart';
+export 'src/chain/decoded_call.dart';
 export 'src/constants/app_constants.dart';
 export 'src/extensions/color_extensions.dart';
 export 'src/extensions/context_extension.dart';
