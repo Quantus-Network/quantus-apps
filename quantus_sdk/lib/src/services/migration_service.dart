@@ -23,11 +23,18 @@ class MigrationSuccess extends MigrationResult {
     : super(oldAccount);
 }
 
+/// Whitelisted failure category, safe to transmit in telemetry.
+enum MigrationFailureReason { noMnemonic, derivationError }
+
 /// Account that cannot be migrated due to missing mnemonic or other error.
+///
+/// [reason] is free-form detail for local logging only and may embed raw
+/// exception text; telemetry must send [code] instead.
 class MigrationFailure extends MigrationResult {
+  final MigrationFailureReason code;
   final String reason;
 
-  const MigrationFailure({required Account oldAccount, required this.reason}) : super(oldAccount);
+  const MigrationFailure({required Account oldAccount, required this.code, required this.reason}) : super(oldAccount);
 }
 
 class MigrationService {
@@ -69,7 +76,11 @@ class MigrationService {
 
         if (mnemonic == null) {
           migrationResults.add(
-            MigrationFailure(oldAccount: account, reason: 'No mnemonic found for wallet $walletIndex'),
+            MigrationFailure(
+              oldAccount: account,
+              code: MigrationFailureReason.noMnemonic,
+              reason: 'No mnemonic found for wallet $walletIndex',
+            ),
           );
           continue;
         }
@@ -91,7 +102,13 @@ class MigrationService {
           MigrationSuccess(oldAccount: account, publicKeyHex: publicKeyHex, newAccountId: newAccountId),
         );
       } catch (e) {
-        migrationResults.add(MigrationFailure(oldAccount: account, reason: 'Derivation error: $e'));
+        migrationResults.add(
+          MigrationFailure(
+            oldAccount: account,
+            code: MigrationFailureReason.derivationError,
+            reason: 'Derivation error: $e',
+          ),
+        );
       }
     }
 

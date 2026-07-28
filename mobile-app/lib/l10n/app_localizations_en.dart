@@ -428,6 +428,13 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get multisigProposalCallLoading => 'Reading the proposal from the chain…';
+
+  @override
+  String get multisigProposalCallUnavailable =>
+      'Could not read this proposal from the chain, so there is nothing to approve. Try again when you are back online.';
+
+  @override
   String get multisigStatusApproved => 'SIGNED';
 
   @override
@@ -742,13 +749,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get multisigFeeEstimateUnavailable => 'Network fee estimate is unavailable.';
-
-  @override
-  String get multisigOnChainProposalUnavailable =>
-      'Could not load this proposal from the chain. It may have been executed or cancelled.';
-
-  @override
-  String get multisigProposalCallData => 'Raw call data (verified on-chain)';
 
   @override
   String get multisigCancelConfirmTitle => 'Cancel Proposal?';

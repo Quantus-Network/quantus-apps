@@ -14,7 +14,11 @@ void main() {
   const oldB = Account(walletIndex: 1, index: 0, name: 'B', accountId: 'old_b');
 
   const successA = MigrationSuccess(oldAccount: oldA, publicKeyHex: 'hex_a', newAccountId: 'new_a');
-  const failureB = MigrationFailure(oldAccount: oldB, reason: 'No mnemonic found for wallet 1');
+  const failureB = MigrationFailure(
+    oldAccount: oldB,
+    code: MigrationFailureReason.noMnemonic,
+    reason: 'No mnemonic found for wallet 1',
+  );
 
   Future<void> seedOldAccounts(List<Account> accounts) async {
     await settings.setOldAccountsData(jsonEncode(accounts.map((a) => a.toJson()).toList()));

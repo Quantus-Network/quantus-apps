@@ -12,6 +12,7 @@ import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/services/local_auth_service.dart';
 import 'package:resonance_network_wallet/shared/utils/print.dart';
 import 'package:resonance_network_wallet/v2/components/bottom_sheet_container.dart';
+import 'package:resonance_network_wallet/v2/components/decoded_call_view.dart';
 import 'package:resonance_network_wallet/v2/components/detail_summary_row.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/screens/send/keystone_sign_cache.dart';
@@ -22,16 +23,25 @@ import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 
 /// Estimates the network fee for the action being confirmed.
 ///
-/// [proposalCall] is the proposal's inner call bytes loaded from on-chain
-/// storage (required by `multisig.approve`).
-typedef MultisigConfirmFeeEstimator = Future<BigInt> Function(WidgetRef ref, Account signer, Uint8List proposalCall);
+/// [callBytes] carries the proposal's inner call for actions that must resubmit
+/// it (approve), since the fee scales with its size; null for actions that do
+/// not.
+typedef MultisigConfirmFeeEstimator = Future<BigInt> Function(WidgetRef ref, Account signer, List<int>? callBytes);
 
 /// Submits the action being confirmed (software / local mnemonic path).
 typedef MultisigConfirmSubmitter =
-    Future<void> Function(WidgetRef ref, Account signer, BigInt? fee, Uint8List proposalCall);
+    Future<void> Function(WidgetRef ref, Account signer, BigInt? fee, List<int>? callBytes);
 
 /// Builds the runtime call for the action (used for Keystone unsigned payloads).
-typedef MultisigConfirmCallBuilder = RuntimeCall Function(Account signer, Uint8List proposalCall);
+typedef MultisigConfirmCallBuilder = RuntimeCall Function(Account signer, List<int>? callBytes);
+
+/// Loads the proposal's inner call bytes from chain storage.
+///
+/// `multisig.approve` only counts an approval whose bytes are byte-equal to the
+/// stored proposal, so actions that resubmit the call must read it from the chain
+/// rather than reconstruct it. Actions that carry only a proposal reference leave
+/// this null.
+typedef MultisigConfirmCallBytesLoader = Future<List<int>> Function(WidgetRef ref);
 
 /// Submits a hardware-signed extrinsic for the action.
 typedef MultisigConfirmExternalSubmitter =
@@ -88,6 +98,10 @@ class MultisigActionConfirmSheet extends ConsumerStatefulWidget {
   final MultisigConfirmExternalSubmitter submitExternal;
   final ButtonVariant confirmVariant;
 
+  /// Set for actions that must resubmit the proposal's inner call. Confirming is
+  /// blocked until the bytes load, so an approval is never built from a guess.
+  final MultisigConfirmCallBytesLoader? loadCallBytes;
+
   /// Explicit signer when the caller already resolved which local account acts.
   final Account? signer;
 
@@ -114,6 +128,7 @@ class MultisigActionConfirmSheet extends ConsumerStatefulWidget {
     required this.hardwareCacheIdentity,
     this.signer,
     this.confirmVariant = ButtonVariant.primary,
+    this.loadCallBytes,
   });
 
   @override
@@ -127,50 +142,71 @@ class _MultisigActionConfirmSheetState extends ConsumerState<MultisigActionConfi
   bool _loadingFee = true;
   bool _feeEstimateFailed = false;
 
-  /// Authoritative proposal call bytes from `Multisig.Proposals` storage.
-  /// Everything the user reviews and signs is derived from these, never from
-  /// indexer JSON. Null while loading (or when loading failed).
-  Uint8List? _onChainCall;
-  bool _onChainCallFailed = false;
-
-  /// Transfer details decoded from [_onChainCall] when it is a balance send.
-  ({String recipient, BigInt amount})? _onChainTransfer;
+  /// The proposal's inner call as stored on chain, for actions that resubmit it.
+  List<int>? _callBytes;
+  bool _loadingCallBytes = false;
+  bool _callBytesFailed = false;
 
   @override
   void initState() {
     super.initState();
-    unawaited(_loadProposalCallThenFee());
+    unawaited(_prepare());
   }
 
-  Future<void> _loadProposalCallThenFee() async {
-    await _loadOnChainProposalCall();
-    if (!mounted || _onChainCall == null) {
-      if (mounted) {
+  /// Loads the call bytes before estimating the fee, since the approve fee scales
+  /// with the inner call's size.
+  Future<void> _prepare() async {
+    final loader = widget.loadCallBytes;
+    if (loader != null) {
+      setState(() => _loadingCallBytes = true);
+      try {
+        final bytes = await loader(ref);
+        if (!mounted) return;
         setState(() {
+          _callBytes = bytes;
+          _loadingCallBytes = false;
+        });
+      } catch (e, st) {
+        quantusDebugPrint('${widget.logPrefix} proposal call load error: $e $st');
+        if (!mounted) return;
+        setState(() {
+          _loadingCallBytes = false;
+          _callBytesFailed = true;
           _loadingFee = false;
         });
+        return;
       }
-      return;
     }
     await _loadNetworkFee();
   }
 
-  Future<void> _loadOnChainProposalCall() async {
-    try {
-      final call = await MultisigService().getOnChainProposalCall(msig: widget.msig, proposalId: widget.proposal.id);
-      if (!mounted) return;
-      setState(() {
-        _onChainCall = call;
-        _onChainCallFailed = call == null;
-        if (call != null) {
-          _onChainTransfer = MultisigProposal.decodeTransferCall(call);
-        }
-      });
-    } catch (e, st) {
-      quantusDebugPrint('${widget.logPrefix} on-chain proposal load error: $e $st');
-      if (!mounted) return;
-      setState(() => _onChainCallFailed = true);
+  /// The proposal's call as a display tree: from the authoritative chain bytes
+  /// when loaded, otherwise from the indexer's copy.
+  DecodedCall? get _decodedProposalCall {
+    final bytes = _callBytes;
+    if (bytes != null) {
+      try {
+        return CallDecoder.decodeBytes(bytes);
+      } catch (e) {
+        quantusDebugPrint('${widget.logPrefix} could not decode stored proposal call: $e');
+      }
     }
+    return widget.proposal.decodedCall;
+  }
+
+  /// Last resort when no call bytes are available at all: the indexer's own
+  /// pallet/call names and transfer fields, with no invented parameters.
+  DecodedCall get _fallbackTransferCall {
+    final proposal = widget.proposal;
+    final hasTransfer = proposal.amount != BigInt.zero || proposal.recipient.isNotEmpty;
+    return DecodedCall(
+      pallet: proposal.pallet,
+      call: proposal.call,
+      fields: const [],
+      summary: hasTransfer
+          ? TransferSummary(amount: proposal.amount, recipient: proposal.recipient.isEmpty ? null : proposal.recipient)
+          : null,
+    );
   }
 
   Account _requireSigner() {
@@ -192,10 +228,8 @@ class _MultisigActionConfirmSheetState extends ConsumerState<MultisigActionConfi
   }
 
   Future<void> _loadNetworkFee() async {
-    final proposalCall = _onChainCall;
-    if (proposalCall == null) return;
     try {
-      final fee = await widget.estimateFee(ref, _requireSigner(), proposalCall);
+      final fee = await widget.estimateFee(ref, _requireSigner(), _callBytes);
 
       if (!mounted) return;
       setState(() {
@@ -213,11 +247,6 @@ class _MultisigActionConfirmSheetState extends ConsumerState<MultisigActionConfi
   }
 
   Future<void> _confirm() async {
-    // Fail closed: without the on-chain call bytes there is nothing
-    // trustworthy to display or sign.
-    final proposalCall = _onChainCall;
-    if (proposalCall == null) return;
-
     setState(() {
       _submitting = true;
       _errorMessage = null;
@@ -228,7 +257,7 @@ class _MultisigActionConfirmSheetState extends ConsumerState<MultisigActionConfi
 
     // Hardware accounts sign off-device via QR — same path as regular transfers.
     if (_isHardwareSigner(signer)) {
-      await _confirmWithHardware(signer, l10n, proposalCall);
+      await _confirmWithHardware(signer, l10n);
       return;
     }
 
@@ -243,7 +272,7 @@ class _MultisigActionConfirmSheetState extends ConsumerState<MultisigActionConfi
     }
 
     try {
-      await widget.submit(ref, signer, _networkFee, proposalCall);
+      await widget.submit(ref, signer, _networkFee, _callBytes);
 
       if (!mounted) return;
       ref.invalidate(multisigOpenProposalsProvider(widget.msig));
@@ -259,30 +288,24 @@ class _MultisigActionConfirmSheetState extends ConsumerState<MultisigActionConfi
     }
   }
 
-  Future<void> _confirmWithHardware(Account signer, AppLocalizations l10n, Uint8List proposalCall) async {
+  Future<void> _confirmWithHardware(Account signer, AppLocalizations l10n) async {
     final fmt = ref.read(numberFormattingServiceProvider);
-    final transfer = _onChainTransfer;
-    final String primaryDetail;
-    final String? secondaryDetail;
-    if (transfer != null) {
-      primaryDetail = l10n.commonAmountBalance(
-        fmt.formatBalance(transfer.amount, smartDecimals: AppConstants.decimals),
+    // Take the QR screen's headline from the decoded call, so it agrees with what
+    // this sheet showed — and does not claim "0 QUAN" for a non-transfer proposal.
+    final headline = DecodedCallHeadline.of(
+      _decodedProposalCall ?? _fallbackTransferCall,
+      amountText: (planck) => l10n.commonAmountBalance(
+        fmt.formatBalance(planck, smartDecimals: AppConstants.decimals),
         AppConstants.tokenSymbol,
-      );
-      secondaryDetail = transfer.recipient;
-    } else {
-      // Not a balance send — review the raw on-chain call bytes instead. The
-      // full payload is verified on the hardware device itself.
-      primaryDetail = l10n.multisigProposalCallData;
-      secondaryDetail = _truncatedCallHex(proposalCall);
-    }
+      ),
+    );
 
     final session = KeystoneSigningSession(
       account: signer,
-      buildCall: () => widget.buildCall(signer, proposalCall),
+      buildCall: () => widget.buildCall(signer, _callBytes),
       title: widget.labels.title(l10n),
-      primaryDetail: primaryDetail,
-      secondaryDetail: secondaryDetail,
+      primaryDetail: headline.primary,
+      secondaryDetail: headline.secondary,
       cacheKey: KeystoneSignCacheKey.forExtrinsic(accountId: signer.accountId, identity: widget.hardwareCacheIdentity),
       telemetryPrefix: widget.hardwareTelemetryPrefix,
       submitSigned: (ref, {required unsignedData, required signature, required publicKey}) {
@@ -311,29 +334,6 @@ class _MultisigActionConfirmSheetState extends ConsumerState<MultisigActionConfi
     }
   }
 
-  String _rawCallHex(Uint8List call) {
-    return '0x${call.map((b) => b.toRadixString(16).padLeft(2, '0')).join()}';
-  }
-
-  String _truncatedCallHex(Uint8List call) {
-    final full = _rawCallHex(call);
-    if (full.length <= 66) return full;
-    return '${full.substring(0, 34)}…${full.substring(full.length - 32)}';
-  }
-
-  /// Scrolls internally so a large call payload cannot blow up the sheet.
-  Widget _rawCallDataView(AppColorsV2 colors, AppTextTheme text, Uint8List call) {
-    return ConstrainedBox(
-      constraints: const BoxConstraints(maxHeight: 96),
-      child: SingleChildScrollView(
-        child: SelectableText(
-          _rawCallHex(call),
-          style: text.detail?.copyWith(color: colors.textTertiary, fontFamily: AppTextTheme.fontFamilySecondary),
-        ),
-      ),
-    );
-  }
-
   String? _networkFeeLabel(AppLocalizations l10n, NumberFormattingService fmt) {
     if (_loadingFee) return '…';
     if (_networkFee == null) return null;
@@ -351,29 +351,16 @@ class _MultisigActionConfirmSheetState extends ConsumerState<MultisigActionConfi
     final fmt = ref.watch(numberFormattingServiceProvider);
     final valueStyle = text.transactionDetailRowLabel;
     final networkFeeLabel = _networkFeeLabel(l10n, fmt);
-
-    // Review content comes from the on-chain proposal call, not the indexer.
-    final onChainCall = _onChainCall;
-    final transfer = _onChainTransfer;
-    final loadingCall = onChainCall == null && !_onChainCallFailed;
-    final String primaryText;
-    final Widget? secondary;
-    if (transfer != null) {
-      primaryText = l10n.commonAmountBalance(
-        fmt.formatBalance(transfer.amount, smartDecimals: AppConstants.decimals),
+    final decoded = _decodedProposalCall;
+    final headline = DecodedCallHeadline.of(
+      decoded ?? _fallbackTransferCall,
+      amountText: (planck) => l10n.commonAmountBalance(
+        fmt.formatBalance(planck, smartDecimals: AppConstants.decimals),
         AppConstants.tokenSymbol,
-      );
-      secondary = Text(
-        l10n.multisigApproveConfirmTo(AddressFormattingService.formatActivityDetailAddress(transfer.recipient)),
-        style: text.smallParagraph?.copyWith(color: colors.textTertiary),
-      );
-    } else if (onChainCall != null) {
-      primaryText = l10n.multisigProposalCallData;
-      secondary = _rawCallDataView(colors, text, onChainCall);
-    } else {
-      primaryText = '…';
-      secondary = null;
-    }
+      ),
+    );
+    // Never confirm an action whose call bytes were meant to load but did not.
+    final blocked = _submitting || _loadingCallBytes || _callBytesFailed;
 
     return BottomSheetContainer(
       title: widget.labels.title(l10n),
@@ -384,11 +371,22 @@ class _MultisigActionConfirmSheetState extends ConsumerState<MultisigActionConfi
           const SizedBox(height: 16),
           Text(widget.labels.body(l10n), style: text.paragraph?.copyWith(color: colors.textPrimary)),
           const SizedBox(height: 8),
-          Text(primaryText, style: text.smallTitle?.copyWith(color: colors.textPrimary)),
-          if (secondary != null) ...[const SizedBox(height: 8), secondary],
-          if (_onChainCallFailed) ...[
+          Text(headline.primary, style: text.smallTitle?.copyWith(color: colors.textPrimary)),
+          if (headline.secondary != null) ...[
+            const SizedBox(height: 8),
+            Text(headline.secondary!, style: text.smallParagraph?.copyWith(color: colors.textTertiary)),
+          ],
+          if (_loadingCallBytes) ...[
             const SizedBox(height: 16),
-            Text(l10n.multisigOnChainProposalUnavailable, style: text.detail?.copyWith(color: colors.textError)),
+            Text(l10n.multisigProposalCallLoading, style: text.detail?.copyWith(color: colors.textTertiary)),
+          ],
+          if (_callBytesFailed) ...[
+            const SizedBox(height: 16),
+            Text(l10n.multisigProposalCallUnavailable, style: text.detail?.copyWith(color: colors.textError)),
+          ],
+          if (decoded != null && decoded.fields.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            DecodedCallView(call: decoded),
           ],
           if (networkFeeLabel != null) ...[
             const SizedBox(height: 16),
@@ -406,8 +404,8 @@ class _MultisigActionConfirmSheetState extends ConsumerState<MultisigActionConfi
           QuantusButton.simple(
             label: widget.labels.confirmLabel(l10n),
             variant: widget.confirmVariant,
-            isDisabled: _submitting || loadingCall || _onChainCallFailed,
-            onTap: _submitting || loadingCall || _onChainCallFailed ? null : _confirm,
+            isDisabled: blocked,
+            onTap: blocked ? null : _confirm,
           ),
           const SizedBox(height: 12),
           QuantusButton.simple(

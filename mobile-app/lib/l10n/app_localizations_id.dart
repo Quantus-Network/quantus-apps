@@ -424,6 +424,13 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
+  String get multisigProposalCallLoading => 'Membaca usulan dari rantai…';
+
+  @override
+  String get multisigProposalCallUnavailable =>
+      'Tidak dapat membaca usulan ini dari rantai, jadi tidak ada yang bisa disetujui. Coba lagi setelah Anda kembali online.';
+
+  @override
   String get multisigStatusApproved => 'DITANDATANGANI';
 
   @override
@@ -739,13 +746,6 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get multisigFeeEstimateUnavailable => 'Estimasi biaya jaringan tidak tersedia.';
-
-  @override
-  String get multisigOnChainProposalUnavailable =>
-      'Tidak dapat memuat proposal ini dari chain. Mungkin sudah dieksekusi atau dibatalkan.';
-
-  @override
-  String get multisigProposalCallData => 'Data call mentah (terverifikasi on-chain)';
 
   @override
   String get multisigCancelConfirmTitle => 'Batalkan Proposal?';

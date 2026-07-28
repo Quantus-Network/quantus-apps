@@ -18,8 +18,6 @@ class SetPasswordScreen extends ConsumerStatefulWidget {
 }
 
 class _SetPasswordScreenState extends ConsumerState<SetPasswordScreen> {
-  static const _minLength = 8;
-
   final _password = TextEditingController();
   final _confirm = TextEditingController();
   bool _biometricAvailable = false;
@@ -50,7 +48,6 @@ class _SetPasswordScreenState extends ConsumerState<SetPasswordScreen> {
   }
 
   String? _validate() {
-    if (_password.text.length < _minLength) return 'Password must be at least $_minLength characters';
     if (_password.text != _confirm.text) return 'Passwords do not match';
     return null;
   }

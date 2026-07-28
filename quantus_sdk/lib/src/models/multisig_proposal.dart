@@ -2,13 +2,9 @@ import 'dart:developer' as developer;
 
 import 'package:convert/convert.dart';
 import 'package:flutter/foundation.dart';
-import 'package:polkadart/scale_codec.dart' as scale;
 import 'package:quantus_sdk/generated/planck/pallets/multisig.dart';
-import 'package:quantus_sdk/generated/planck/types/pallet_balances/pallet/call.dart' as balances_call;
-import 'package:quantus_sdk/generated/planck/types/pallet_reversible_transfers/pallet/call.dart' as reversible_call;
-import 'package:quantus_sdk/generated/planck/types/quantus_runtime/runtime_call.dart' as runtime;
-import 'package:quantus_sdk/generated/planck/types/sp_runtime/multiaddress/multi_address.dart' as multi_address;
-import 'package:quantus_sdk/src/extensions/address_extension.dart';
+import 'package:quantus_sdk/src/chain/call_decoder.dart';
+import 'package:quantus_sdk/src/chain/decoded_call.dart';
 import 'package:quantus_sdk/src/models/json_dynamic_parse.dart';
 import 'package:quantus_sdk/src/models/multisig_account.dart';
 
@@ -45,6 +41,12 @@ class MultisigProposal {
 
   /// Balances transfer amount in planck, or zero when not a transfer.
   final BigInt amount;
+
+  /// SCALE-encoded inner call as indexed, when available.
+  ///
+  /// Display only: an approval must resubmit the bytes held in chain storage
+  /// (see `MultisigService.fetchProposalCallBytes`), never these.
+  final Uint8List? callRaw;
   final int expiryBlock;
   final List<String> approvals;
   final BigInt deposit;
@@ -74,6 +76,7 @@ class MultisigProposal {
     required this.call,
     required this.recipient,
     required this.amount,
+    this.callRaw,
     required this.expiryBlock,
     required this.approvals,
     required this.deposit,
@@ -101,12 +104,13 @@ class MultisigProposal {
 
     BigInt parsedAmount = transferAmountRaw != null ? bigIntFromJson(transferAmountRaw) : BigInt.zero;
     String recipient = nestedAccountId(record['transferTo'] ?? record['transfer_to']);
+    final callRaw = _callRawBytes(record['call_raw'] as String?);
 
-    if (parsedAmount == BigInt.zero && recipient.isEmpty) {
-      final decoded = _decodeCallRaw(record['call_raw'] as String?);
-      if (decoded != null) {
-        parsedAmount = decoded.amount;
-        recipient = decoded.recipient;
+    if (parsedAmount == BigInt.zero && recipient.isEmpty && callRaw != null) {
+      final summary = _decodeCall(callRaw)?.summary;
+      if (summary != null) {
+        parsedAmount = summary.amount;
+        recipient = summary.recipient ?? '';
       }
     }
 
@@ -121,6 +125,7 @@ class MultisigProposal {
       call: _stringOrEmpty(record['call']),
       recipient: recipient,
       amount: parsedAmount,
+      callRaw: callRaw,
       expiryBlock: _intFromJson(record['expiry_block'] ?? record['expiryBlock']),
       approvals: parsedApprovals,
       deposit: bigIntFromJson(record['deposit']),
@@ -131,6 +136,15 @@ class MultisigProposal {
       signerCount: msig.signers.length,
       decodeError: (record['decode_error'] ?? record['decodeError']) as String?,
     );
+  }
+
+  /// The proposal's inner call as a display tree, or null when the indexer did
+  /// not supply bytes (or supplied bytes this runtime cannot decode).
+  ///
+  /// Display only — an approval must resubmit the bytes from chain storage.
+  DecodedCall? get decodedCall {
+    final bytes = callRaw;
+    return bytes == null ? null : _decodeCall(bytes);
   }
 
   /// Parses a (possibly upper-cased) indexer status string.
@@ -195,6 +209,7 @@ class MultisigProposal {
     BigInt? burnedPalletFee,
     String? recipient,
     BigInt? amount,
+    Uint8List? callRaw,
   }) {
     return MultisigProposal(
       entityId: entityId,
@@ -207,6 +222,7 @@ class MultisigProposal {
       call: call,
       recipient: recipient ?? this.recipient,
       amount: amount ?? this.amount,
+      callRaw: callRaw ?? this.callRaw,
       expiryBlock: expiryBlock,
       approvals: approvals ?? this.approvals,
       deposit: deposit,
@@ -238,58 +254,22 @@ class MultisigProposal {
     return bigIntFromJson(value);
   }
 
-  static ({BigInt amount, String recipient})? _decodeCallRaw(String? callRawHex) {
+  static Uint8List? _callRawBytes(String? callRawHex) {
     if (callRawHex == null || callRawHex.isEmpty) return null;
     try {
-      final bytes = Uint8List.fromList(hex.decode(callRawHex.startsWith('0x') ? callRawHex.substring(2) : callRawHex));
-      return decodeTransferCall(bytes);
+      return Uint8List.fromList(hex.decode(callRawHex.startsWith('0x') ? callRawHex.substring(2) : callRawHex));
     } catch (e) {
-      debugPrint('[MultisigProposal] Failed to decode call_raw: $e');
+      debugPrint('[MultisigProposal] Malformed call_raw hex: $e');
       return null;
     }
   }
 
-  /// Decodes [callBytes] as a balance send (balances transfer or reversible
-  /// schedule transfer), returning the recipient and amount.
-  ///
-  /// Returns null when the call is not a recognized send, decodes to a
-  /// non-[multi_address.Id] destination, or leaves trailing bytes; callers
-  /// should fall back to displaying the raw call bytes.
-  static ({String recipient, BigInt amount})? decodeTransferCall(List<int> callBytes) {
+  static DecodedCall? _decodeCall(Uint8List bytes) {
     try {
-      final input = scale.ByteInput(Uint8List.fromList(callBytes));
-      final call = runtime.RuntimeCall.decode(input);
-      if (input.remainingLength != 0) return null;
-
-      multi_address.MultiAddress? dest;
-      BigInt? amount;
-      if (call is runtime.Balances) {
-        final inner = call.value0;
-        if (inner is balances_call.TransferAllowDeath) {
-          dest = inner.dest;
-          amount = inner.value;
-        } else if (inner is balances_call.TransferKeepAlive) {
-          dest = inner.dest;
-          amount = inner.value;
-        }
-      } else if (call is runtime.ReversibleTransfers) {
-        final inner = call.value0;
-        if (inner is reversible_call.ScheduleTransfer) {
-          dest = inner.dest;
-          amount = inner.amount;
-        } else if (inner is reversible_call.ScheduleTransferWithDelay) {
-          dest = inner.dest;
-          amount = inner.amount;
-        }
-      }
-
-      if (dest is multi_address.Id && amount != null) {
-        final recipient = AddressExtension.ss58AddressFromBytes(Uint8List.fromList(dest.value0));
-        return (recipient: recipient, amount: amount);
-      }
+      return CallDecoder.decodeBytes(bytes);
     } catch (e) {
-      debugPrint('[MultisigProposal] Failed to decode proposal call: $e');
+      debugPrint('[MultisigProposal] Failed to decode call_raw: $e');
+      return null;
     }
-    return null;
   }
 }

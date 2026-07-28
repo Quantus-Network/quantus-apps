@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:convert/convert.dart';
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:path_provider/path_provider.dart';
 import 'package:quantus_sdk/src/rust/api/wormhole.dart' as wormhole_ffi;
 import 'package:quantus_sdk/src/services/hd_wallet_service.dart';
@@ -62,6 +63,11 @@ class WormholeTransfer {
 
 /// One HD-derived wormhole address (index in the wormhole derivation sequence)
 /// together with the secret needed to compute nullifiers and spend proofs.
+///
+/// [secretHex] is required on input to [WormholeUtxoService.getUnspentUtxos]
+/// (nullifier computation) but is always blanked on the [WormholeUtxo.owner]
+/// of returned UTXOs: UTXOs are kept in long-lived app state, and secrets are
+/// never cached — spenders re-derive from [index] when needed (M11).
 class WormholeAddressInfo {
   final int index;
   final String address;
@@ -423,7 +429,8 @@ query SpentNullifiers($hashes: [String!]!) {
   /// Returns a map from nullifier hex to the block height where it was spent.
   /// Callers are responsible for deciding which entries are reorg-safe to
   /// persist (see `getUnspentUtxos`).
-  Future<Map<String, int>> _checkNullifiersSpent(
+  @visibleForTesting
+  Future<Map<String, int>> checkNullifiersSpent(
     List<(String nullifierHex, String nullifierHash)> nullifiers, {
     WormholeProgressCallback? onProgress,
     IsCancelledCallback? isCancelled,
@@ -600,7 +607,14 @@ query SpentNullifiers($hashes: [String!]!) {
           secretHex: owner.secretHex,
           transferCount: transfer.transferCount,
         );
-        nullifierToUtxo[nullifierHex] = WormholeUtxo(transfer: transfer, owner: owner, nullifierHex: nullifierHex);
+        // The secret is used only for the nullifier above — the returned UTXO
+        // carries a blanked owner so no secret is retained in app state (M11).
+        final redactedOwner = WormholeAddressInfo(index: owner.index, address: owner.address, secretHex: '');
+        nullifierToUtxo[nullifierHex] = WormholeUtxo(
+          transfer: transfer,
+          owner: redactedOwner,
+          nullifierHex: nullifierHex,
+        );
         if (cachedSpent.contains(nullifierHex)) {
           skipped++;
         } else {
@@ -615,7 +629,7 @@ query SpentNullifiers($hashes: [String!]!) {
     _log('Computed nullifiers: $skipped cached-spent, ${uncheckedPairs.length} to check');
 
     if (uncheckedPairs.isNotEmpty) {
-      final newSpent = await _checkNullifiersSpent(uncheckedPairs, onProgress: onProgress, isCancelled: isCancelled);
+      final newSpent = await checkNullifiersSpent(uncheckedPairs, onProgress: onProgress, isCancelled: isCancelled);
       // In-memory: every spent nullifier we've seen, including ones in
       // unfinalized blocks — must not be re-claimed in this call.
       allSpent.addAll(newSpent.keys);

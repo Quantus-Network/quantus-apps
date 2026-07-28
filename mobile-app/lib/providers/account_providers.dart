@@ -1,3 +1,4 @@
+import 'package:collection/collection.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
@@ -7,8 +8,9 @@ import 'package:resonance_network_wallet/shared/utils/print.dart';
 class AccountsNotifier extends StateNotifier<AsyncValue<List<Account>>> {
   final AccountsService _accountsService;
 
-  AccountsNotifier(this._accountsService) : super(const AsyncValue.loading()) {
-    _loadAccounts();
+  AccountsNotifier(this._accountsService, {List<Account>? initialAccounts})
+    : super(initialAccounts != null ? AsyncValue.data(initialAccounts) : const AsyncValue.loading()) {
+    if (initialAccounts == null) _loadAccounts();
   }
 
   Future<void> _loadAccounts() async {
@@ -45,7 +47,7 @@ class AccountsNotifier extends StateNotifier<AsyncValue<List<Account>>> {
   }
 
   Account? getAccountWithId(String accountId) {
-    return state.value?.firstWhere((account) => account.accountId == accountId);
+    return state.value?.firstWhereOrNull((account) => account.accountId == accountId);
   }
 
   void reset() {

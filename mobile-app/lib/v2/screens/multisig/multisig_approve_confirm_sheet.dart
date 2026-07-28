@@ -35,14 +35,22 @@ void showMultisigApproveConfirmSheet(
         authReason: (l10n) => l10n.multisigApproveAuthReason,
         failedMessage: (l10n) => l10n.multisigApproveFailed,
       ),
-      estimateFee: (ref, resolvedSigner, proposalCall) => ref
+      // Approving resubmits the proposal's inner call, which the chain compares
+      // byte-for-byte against what it stored — so the bytes come from the chain,
+      // and the sheet shows the caller exactly which call they are approving.
+      loadCallBytes: (ref) =>
+          ref.read(multisigServiceProvider).fetchProposalCallBytes(msig: msig, proposalId: proposal.id),
+      estimateFee: (ref, resolvedSigner, callBytes) => ref
           .read(multisigServiceProvider)
-          .estimateApproveFee(msig: msig, signer: resolvedSigner, proposalId: proposal.id, call: proposalCall),
-      buildCall: (resolvedSigner, proposalCall) =>
-          MultisigService().buildApproveCall(msig: msig, proposalId: proposal.id, call: proposalCall),
-      submit: (ref, resolvedSigner, fee, proposalCall) => ref
+          .estimateApproveFee(msig: msig, signer: resolvedSigner, proposalId: proposal.id, callBytes: callBytes),
+      buildCall: (resolvedSigner, callBytes) => MultisigService().buildApproveCall(
+        msig: msig,
+        proposalId: proposal.id,
+        call: callBytes ?? (throw StateError('Approve requires the proposal call bytes')),
+      ),
+      submit: (ref, resolvedSigner, fee, callBytes) => ref
           .read(transactionSubmissionServiceProvider)
-          .approveProposal(msig: msig, signer: resolvedSigner, proposal: proposal, proposalCall: proposalCall),
+          .approveProposal(msig: msig, signer: resolvedSigner, proposal: proposal, callBytes: callBytes),
       submitExternal: (ref, {required signer, required unsignedData, required signature, required publicKey, fee}) =>
           ref
               .read(transactionSubmissionServiceProvider)

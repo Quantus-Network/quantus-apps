@@ -121,11 +121,7 @@ class ExtrinsicIndexerPollingService<TPending, TContext> {
     if (!_config.isStillPending(_ref, key)) return;
 
     quantusDebugPrint('${_config.logPrefix} giving up on $key');
-    TelemetryService().sendError(
-      'extrinsic_indexer_polling_timeout',
-      error: '${_config.logPrefix} gave up on $key',
-      stackTrace: StackTrace.current,
-    );
+    TelemetryService().sendEvent('extrinsic_indexer_polling_timeout');
     _config.removePending(_ref, key);
     _config.showTimeoutToast(_ref);
   }

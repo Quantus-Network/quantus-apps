@@ -571,6 +571,14 @@
         }
       }
     },
+    "multisigProposalCallLoading": "Reading the proposal from the chain…",
+    "@multisigProposalCallLoading": {
+      "description": "Shown while the proposal's stored call bytes are being fetched before approving"
+    },
+    "multisigProposalCallUnavailable": "Could not read this proposal from the chain, so there is nothing to approve. Try again when you are back online.",
+    "@multisigProposalCallUnavailable": {
+      "description": "Shown when the proposal's stored call bytes could not be fetched, blocking approval"
+    },
     "multisigStatusApproved": "SIGNED",
     "@multisigStatusApproved": {
       "description": "Proposal status chip when the current signer has approved"
@@ -1017,14 +1025,6 @@
     "multisigFeeEstimateUnavailable": "Network fee estimate is unavailable.",
     "@multisigFeeEstimateUnavailable": {
       "description": "Inline note on confirm sheet when fee estimation fails"
-    },
-    "multisigOnChainProposalUnavailable": "Could not load this proposal from the chain. It may have been executed or cancelled.",
-    "@multisigOnChainProposalUnavailable": {
-      "description": "Error on confirm sheet when the on-chain proposal call cannot be loaded"
-    },
-    "multisigProposalCallData": "Raw call data (verified on-chain)",
-    "@multisigProposalCallData": {
-      "description": "Label on confirm sheet when the proposal call is not a transfer and raw bytes are shown"
     },
     "multisigCancelConfirmTitle": "Cancel Proposal?",
     "@multisigCancelConfirmTitle": {

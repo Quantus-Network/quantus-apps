@@ -357,6 +357,10 @@ class ProofVerified extends Event {
   int get hashCode => Object.hash(exitAmount, nullifiers);
 }
 
+/// The block author's share of the wormhole exit volume fee was minted.
+///
+/// NOTE: keep this as the last variant — indexers decode events by their
+/// position in this enum, so existing variants must never be reordered.
 class MinerVolumeFeePaid extends Event {
   const MinerVolumeFeePaid({required this.miner, required this.amount});
 
@@ -367,7 +371,10 @@ class MinerVolumeFeePaid extends Event {
     );
   }
 
+  /// <T as frame_system::Config>::AccountId
   final _i3.AccountId32 miner;
+
+  /// BalanceOf<T>
   final BigInt amount;
 
   @override
@@ -397,6 +404,9 @@ class MinerVolumeFeePaid extends Event {
   int get hashCode => Object.hash(miner, amount);
 }
 
+/// Some segments of an exit bundle were denied (their nullifiers were already
+/// used, e.g. because the underlying private batch landed on-chain separately).
+/// The remaining segments were processed normally.
 class SegmentsDenied extends Event {
   const SegmentsDenied({required this.indices});
 
@@ -404,10 +414,11 @@ class SegmentsDenied extends Event {
     return SegmentsDenied(indices: _i1.U32SequenceCodec.codec.decode(input));
   }
 
+  /// Vec<u32>
   final List<int> indices;
 
   @override
-  Map<String, Map<String, dynamic>> toJson() => {
+  Map<String, Map<String, List<int>>> toJson() => {
     'SegmentsDenied': {'indices': indices},
   };
 

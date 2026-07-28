@@ -8,10 +8,11 @@ import 'package:path_provider/path_provider.dart';
 import 'package:quantus_sdk/src/services/account_discovery_service.dart';
 import 'package:quantus_sdk/src/services/hd_wallet_service.dart';
 import 'package:quantus_sdk/src/services/substrate_service.dart' show getAccountId32;
-import 'package:quantus_sdk/src/services/wormhole_address_manager.dart' show MnemonicGetter;
 import 'package:quantus_sdk/src/services/wormhole_coin_selection.dart';
 import 'package:quantus_sdk/src/services/wormhole_send_service.dart';
 import 'package:quantus_sdk/src/services/wormhole_utxo_service.dart';
+
+typedef MnemonicGetter = Future<String?> Function();
 
 /// Snapshot of an encrypted account: spendable UTXOs across all discovered
 /// wormhole addresses, plus change that has been submitted but not yet indexed.
@@ -48,6 +49,14 @@ class EncryptedAccountState {
 /// funds from the mnemonic alone. Spent inputs are excluded via on-chain
 /// nullifiers; in-flight sends are bridged by locally persisted pending-spend
 /// records until the indexer catches up.
+///
+/// Secret hygiene (M11): wormhole key pairs are never cached — every use
+/// re-derives from the mnemonic and the result is dropped as soon as the
+/// operation completes. Secrets held in [Uint8List] form (spend proofs) are
+/// zeroized immediately after use; the FRB API hands secrets back as
+/// immutable Dart Strings, which cannot be overwritten in place, so their
+/// lifetime is kept function-local (no fields, no caches) — that is the best
+/// Dart allows.
 class EncryptedAccountService {
   static const Duration _pendingSpendExpiry = Duration(hours: 1);
 
@@ -58,7 +67,6 @@ class EncryptedAccountService {
   final AccountDiscoveryService _discoveryService;
   final WormholeSendService _sendService;
 
-  final Map<int, WormholeKeyPair> _keyPairs = {};
   Future<void> _stateLock = Future.value();
 
   /// Change indices claimed by in-flight sends, so two overlapping sends can
@@ -130,10 +138,13 @@ class EncryptedAccountService {
     return mnemonic;
   }
 
-  WormholeKeyPair _keyPairAtSync(String mnemonic, int index) =>
-      _keyPairs[index] ??= _hdWalletService.deriveWormholeKeyPair(mnemonic: mnemonic, index: index);
+  /// Derives the key pair at [index] on demand. Never cached (M11): the
+  /// returned pair carries the spendable secret as an immutable String, so
+  /// callers must use it immediately and let it go out of scope.
+  WormholeKeyPair _deriveKeyPair(String mnemonic, int index) =>
+      _hdWalletService.deriveWormholeKeyPair(mnemonic: mnemonic, index: index);
 
-  Future<WormholeKeyPair> keyPairAt(int index) async => _keyPairAtSync(await _mnemonic(), index);
+  Future<WormholeKeyPair> keyPairAt(int index) async => _deriveKeyPair(await _mnemonic(), index);
 
   /// The address to show on the Receive screen: next unused index from the
   /// last persisted state (cheap — no network). [load] keeps it current.
@@ -143,11 +154,10 @@ class EncryptedAccountService {
   /// indices `0..nextIndex` cover every address ever shown for receiving or
   /// allocated for change. Used to block self-sends from the encrypted account.
   Future<bool> ownsAddress(String address) async {
-    if (_keyPairs.values.any((kp) => kp.address == address)) return true;
     final nextIndex = (await _readStateLocked()).nextIndex;
     final mnemonic = await _mnemonic();
     for (int i = 0; i <= nextIndex; i++) {
-      if (_keyPairAtSync(mnemonic, i).address == address) return true;
+      if (_deriveKeyPair(mnemonic, i).address == address) return true;
     }
     return false;
   }
@@ -158,15 +168,11 @@ class EncryptedAccountService {
   /// the 1-hour expiry, never by a refresh.
   Future<void> discardCachedState() async {
     _log('discardCachedState: wallet $walletIndex');
-    // Ensure every index that can have an on-disk cache is derived, even when
-    // only some key pairs are in memory (e.g. just the receive index after a
-    // restart) — a partial map must not turn this into a partial clear.
+    // Derive every index that can have an on-disk cache (addresses only —
+    // the secret half of each pair is discarded immediately).
     final state = await _readStateLocked();
     final mnemonic = await _mnemonic();
-    for (int i = 0; i <= state.nextIndex; i++) {
-      _keyPairAtSync(mnemonic, i);
-    }
-    final addresses = _keyPairs.values.map((kp) => kp.address).toList();
+    final addresses = [for (int i = 0; i <= state.nextIndex; i++) _deriveKeyPair(mnemonic, i).address];
     if (addresses.isNotEmpty) {
       await WormholeUtxoService.clearCachesForAddresses(addresses);
     }
@@ -189,19 +195,18 @@ class EncryptedAccountService {
     final mnemonic = await _mnemonic();
 
     final usedIndices = await _discoveryService.discoverUsedIndices(
-      addressAt: (i) => _keyPairAtSync(mnemonic, i).address,
+      addressAt: (i) => _deriveKeyPair(mnemonic, i).address,
     );
     _log('Discovery: used indices $usedIndices');
 
     final scanIndices = {0, ...usedIndices}.toList()..sort();
-    final addresses = [
-      for (final i in scanIndices)
-        WormholeAddressInfo(
-          index: i,
-          address: _keyPairAtSync(mnemonic, i).address,
-          secretHex: _keyPairAtSync(mnemonic, i).secretHex,
-        ),
-    ];
+    // Secrets live only inside this list for the duration of the UTXO fetch
+    // (needed there for nullifier computation); the returned UTXOs carry no
+    // secrets and this list is dropped when load() returns.
+    final addresses = scanIndices.map((i) {
+      final keyPair = _deriveKeyPair(mnemonic, i);
+      return WormholeAddressInfo(index: i, address: keyPair.address, secretHex: keyPair.secretHex);
+    }).toList();
 
     final utxoResult = await _utxoService.getUnspentUtxos(
       addresses: addresses,
@@ -210,7 +215,7 @@ class EncryptedAccountService {
     );
 
     final unspentNullifiers = utxoResult.utxos.map((u) => u.nullifierHex).toSet();
-    final usedAddresses = {for (final i in usedIndices) _keyPairAtSync(mnemonic, i).address};
+    final usedAddresses = {for (final i in usedIndices) _deriveKeyPair(mnemonic, i).address};
 
     final discoveredNext = usedIndices.isEmpty ? 0 : (usedIndices.reduce((a, b) => a > b ? a : b) + 1);
     final state = await _mutateState((s) {
@@ -261,8 +266,14 @@ class EncryptedAccountService {
   }) async {
     _checkNotDisposed();
     final changeIndex = await _reserveChangeIndex();
+    // Every secret byte buffer held by this send, zeroized in the `finally`
+    // below once the proofs are done (success or failure). Dart Strings
+    // (secretHex) cannot be overwritten, so secrets are re-derived straight
+    // into these buffers and never cached (M11).
+    final secretBuffers = <Uint8List>[];
     try {
-      final changeKeyPair = await keyPairAt(changeIndex);
+      final mnemonic = await _mnemonic();
+      final changeKeyPair = _deriveKeyPair(mnemonic, changeIndex);
       final recipientBytes = Uint8List.fromList(getAccountId32(recipientAddress));
       final changeBytes = Uint8List.fromList(getAccountId32(changeKeyPair.address));
       _log(
@@ -270,13 +281,22 @@ class EncryptedAccountService {
         'amount=${plan.amountPlanck}, change=${plan.changePlanck} -> index $changeIndex',
       );
 
+      // UTXOs carry no secrets (see WormholeUtxoService.getUnspentUtxos), so
+      // each input's secret is re-derived from its owner's HD index.
+      Uint8List secretAt(int ownerIndex) {
+        final keyPair = _deriveKeyPair(mnemonic, ownerIndex);
+        final secret = Uint8List.fromList(hex.decode(keyPair.secretHex.replaceFirst('0x', '')));
+        secretBuffers.add(secret);
+        return secret;
+      }
+
       final batches = [
         for (final batch in plan.batches)
           [
             for (final a in batch)
               WormholeLeafSpend(
                 transfer: a.utxo.transfer,
-                secret: Uint8List.fromList(hex.decode(a.utxo.owner.secretHex.replaceFirst('0x', ''))),
+                secret: secretAt(a.utxo.owner.index),
                 exitAccount1: recipientBytes,
                 outputAmount1: a.recipientScaled,
                 exitAccount2: a.changeScaled > 0 ? changeBytes : null,
@@ -311,6 +331,9 @@ class EncryptedAccountService {
         },
       );
     } finally {
+      for (final secret in secretBuffers) {
+        secret.fillRange(0, secret.length, 0);
+      }
       // By now either a change-bearing batch bumped the persisted nextIndex
       // past the reservation, or the send failed and the index is free again.
       _reservedChangeIndices.remove(changeIndex);

@@ -818,6 +818,18 @@ abstract class AppLocalizations {
   /// **'to {address}'**
   String multisigProposalToAddress(String address);
 
+  /// Shown while the proposal's stored call bytes are being fetched before approving
+  ///
+  /// In en, this message translates to:
+  /// **'Reading the proposal from the chain…'**
+  String get multisigProposalCallLoading;
+
+  /// Shown when the proposal's stored call bytes could not be fetched, blocking approval
+  ///
+  /// In en, this message translates to:
+  /// **'Could not read this proposal from the chain, so there is nothing to approve. Try again when you are back online.'**
+  String get multisigProposalCallUnavailable;
+
   /// Proposal status chip when the current signer has approved
   ///
   /// In en, this message translates to:
@@ -1405,18 +1417,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Network fee estimate is unavailable.'**
   String get multisigFeeEstimateUnavailable;
-
-  /// Error on confirm sheet when the on-chain proposal call cannot be loaded
-  ///
-  /// In en, this message translates to:
-  /// **'Could not load this proposal from the chain. It may have been executed or cancelled.'**
-  String get multisigOnChainProposalUnavailable;
-
-  /// Label on confirm sheet when the proposal call is not a transfer and raw bytes are shown
-  ///
-  /// In en, this message translates to:
-  /// **'Raw call data (verified on-chain)'**
-  String get multisigProposalCallData;
 
   /// Title on cancel confirmation sheet
   ///
