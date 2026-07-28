@@ -69,6 +69,7 @@ class ProposalRow extends ConsumerWidget {
     return ProposalListTile(
       amount: proposal.amount,
       recipientAddress: proposal.recipient,
+      call: proposal.decodedCall,
       highlighted: isPending,
       onTap: onTap,
       trailing: Column(

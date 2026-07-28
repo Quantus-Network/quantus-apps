@@ -30,26 +30,26 @@ class MultisigCreationPollingService {
 
       final elapsed = DateTime.now().difference(record.submittedAt);
       if (elapsed > _timeout) {
-        quantusDebugPrint('[MultisigCreationPoller] expired pending creation, attempting recovery for $key');
+        quantusPrint('[MultisigCreationPoller] expired pending creation, attempting recovery for $key');
         unawaited(_recoverExpired(record));
         continue;
       }
 
-      quantusDebugPrint('[MultisigCreationPoller] resuming polling for $key');
+      quantusPrint('[MultisigCreationPoller] resuming polling for $key');
       startPolling(record.draft, submittedAt: record.submittedAt);
     }
   }
 
   void startPolling(MultisigAccount draft, {DateTime? submittedAt}) {
     final key = draft.accountId;
-    quantusDebugPrint('[MultisigCreationPoller] startPolling ${draft.accountId}');
+    quantusPrint('[MultisigCreationPoller] startPolling ${draft.accountId}');
 
     stopPolling(key);
     final startTime = submittedAt ?? DateTime.now();
 
     final timer = Timer.periodic(_searchInterval, (_) {
       if (DateTime.now().difference(startTime) > _timeout) {
-        quantusDebugPrint('[MultisigCreationPoller] timeout for ${draft.accountId}');
+        quantusPrint('[MultisigCreationPoller] timeout for ${draft.accountId}');
         stopPolling(key);
         removePendingMultisigCreation(_ref, key);
         _ref.read(globalToastProvider.notifier).showError(_ref.read(l10nProvider).multisigCreateTimeoutToast);
@@ -75,9 +75,9 @@ class MultisigCreationPollingService {
         removePendingMultisigCreation(_ref, key);
         _ref.read(globalToastProvider.notifier).showError(_ref.read(l10nProvider).multisigCreateTimeoutToast);
       }
-    } catch (e, stackTrace) {
-      quantusDebugPrint('[MultisigCreationPoller] recovery error for $key: $e');
-      TelemetryService().sendError('multisig_creation_recovery_failed', error: e, stackTrace: stackTrace);
+    } catch (e) {
+      quantusPrint('[MultisigCreationPoller] recovery error for $key: $e');
+      TelemetryService().sendError('multisig_creation_recovery_failed', error: e);
     } finally {
       _inFlight.remove(key);
     }
@@ -94,15 +94,15 @@ class MultisigCreationPollingService {
       final service = _ref.read(multisigServiceProvider);
       final exists = await service.isMultisigIndexed(draft.accountId);
       if (!exists) {
-        quantusDebugPrint('[MultisigCreationPoller] not on-chain yet: ${draft.accountId}');
+        quantusPrint('[MultisigCreationPoller] not on-chain yet: ${draft.accountId}');
         return;
       }
 
-      quantusDebugPrint('[MultisigCreationPoller] confirmed ${draft.accountId}');
+      quantusPrint('[MultisigCreationPoller] confirmed ${draft.accountId}');
 
       final record = _ref.read(pendingMultisigCreationsProvider.notifier).recordFor(draft.accountId);
       if (record == null) {
-        quantusDebugPrint(
+        quantusPrint(
           '[MultisigCreationPoller] missing pending creation for ${draft.accountId}; skipping history reconcile',
         );
         stopPolling(key);
@@ -111,7 +111,7 @@ class MultisigCreationPollingService {
 
       await _confirmCreation(draft, key, record.networkFee);
     } catch (e) {
-      quantusDebugPrint('[MultisigCreationPoller] search error for ${draft.accountId}: $e');
+      quantusPrint('[MultisigCreationPoller] search error for ${draft.accountId}: $e');
     } finally {
       _inFlight.remove(key);
     }

@@ -23,8 +23,8 @@ class RaiderSubmissionsNotifier extends StateNotifier<AsyncValue<RaiderSubmissio
         state = AsyncValue.data(submissions);
       }
     } catch (e, st) {
-      quantusDebugPrint('Error fetching raider submissions: $e');
-      quantusDebugPrint('Stack trace: $st');
+      quantusPrint('Error fetching raider submissions: $e');
+      quantusPrint('Stack trace: $st');
 
       if (mounted) {
         state = AsyncValue.error(e, st);

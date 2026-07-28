@@ -16,6 +16,7 @@ import 'package:resonance_network_wallet/routes.dart';
 import 'package:resonance_network_wallet/shared/extensions/current_route_extensions.dart';
 import 'package:resonance_network_wallet/shared/utils/multisig_local_signers.dart';
 import 'package:resonance_network_wallet/v2/components/amount_display_with_conversion.dart';
+import 'package:resonance_network_wallet/v2/components/decoded_call_view.dart';
 import 'package:resonance_network_wallet/v2/components/bottom_sheet_container.dart';
 import 'package:resonance_network_wallet/v2/components/detail_summary_row.dart';
 import 'package:resonance_network_wallet/v2/components/explorer_link.dart';
@@ -283,9 +284,19 @@ class _MultisigProposalDetailSheet extends ConsumerWidget {
     );
     final isTerminal = liveProposal.isTerminal;
 
+    // A proposal is not necessarily a transfer, so show its decoded call when the
+    // indexer gave us the bytes and fall back to the recipient row otherwise.
+    final decoded = liveProposal.decodedCall;
+
     return Column(
       children: [
-        DetailSummaryRow(label: l10n.activityDetailTo, value: recipient),
+        if (decoded != null && decoded.summary == null)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: DecodedCallView(call: decoded),
+          )
+        else
+          DetailSummaryRow(label: l10n.activityDetailTo, value: recipient),
         if (isTerminal)
           DetailSummaryRow(
             label: l10n.multisigProposalAtLabel,
@@ -672,6 +683,19 @@ class _AmountSection extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Only a value-moving proposal has an amount hero; a governance vote or a
+    // runtime-upgrade authorisation is named instead of shown as zero.
+    final decoded = proposal.decodedCall;
+    if (decoded != null && decoded.summary == null) {
+      final text = context.themeText;
+      final colors = context.colors;
+      return Text(
+        decoded.displayTitle,
+        textAlign: TextAlign.center,
+        style: text.smallTitle?.copyWith(color: colors.textPrimary),
+      );
+    }
+
     final amount = ref.watch(txAmountDisplayProvider)(proposal.amount, isSend: true, withQuanSymbol: false);
 
     return AmountDisplayWithConversion(amountDisplay: amount);

@@ -24,14 +24,14 @@ class DeepLinkService {
   Future<void> init() async {
     // Handle links when the app is already open (warm state)
     _linkSubscription = _appLinks.uriLinkStream.listen((uri) {
-      quantusDebugPrint('Received link while app is open: $uri');
+      quantusPrint('Received link while app is open: $uri');
       handleLink(uri);
     });
 
     // Handle the link that opened the app (cold state)
     final initialUri = await _appLinks.getInitialLink();
     if (initialUri != null) {
-      quantusDebugPrint('Received initial link: $initialUri');
+      quantusPrint('Received initial link: $initialUri');
       handleLink(initialUri);
     }
   }
@@ -53,7 +53,7 @@ class DeepLinkService {
       if (accountId != null && accountId.isNotEmpty) {
         _ref.read(sharedAccountIntentProvider.notifier).state = accountId;
       } else {
-        quantusDebugPrint('Missing or empty account id');
+        quantusPrint('Missing or empty account id');
       }
     }
 
@@ -64,7 +64,7 @@ class DeepLinkService {
       if (payment != null && _ref.read(substrateServiceProvider).isValidSS58Address(payment.to)) {
         _ref.read(paymentIntentProvider.notifier).state = payment;
       } else {
-        quantusDebugPrint('Missing payment parameters or invalid recipient address');
+        quantusPrint('Missing payment parameters or invalid recipient address');
       }
     }
 

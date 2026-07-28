@@ -8,6 +8,7 @@ import 'package:resonance_network_wallet/v2/components/token_icon.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 import 'package:resonance_network_wallet/l10n/app_localizations.dart';
+import 'package:resonance_network_wallet/shared/utils/print.dart';
 
 typedef SwapTokenLoader = Future<List<SwapToken>> Function({bool forceRefresh});
 
@@ -62,7 +63,7 @@ class _TokenPickerContentState extends ConsumerState<_TokenPickerContent> {
         _loading = false;
       });
     } catch (e) {
-      debugPrint('Token picker load failed: $e');
+      quantusPrint('Token picker load failed: $e');
       if (!mounted) return;
       setState(() {
         _loading = false;

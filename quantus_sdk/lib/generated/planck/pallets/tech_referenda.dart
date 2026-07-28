@@ -7,9 +7,9 @@ import 'package:polkadart/scale_codec.dart' as _i2;
 
 import '../types/frame_support/traits/preimages/bounded.dart' as _i10;
 import '../types/frame_support/traits/schedule/dispatch_time.dart' as _i11;
-import '../types/pallet_referenda/pallet/call_2.dart' as _i12;
+import '../types/pallet_referenda/pallet/call.dart' as _i12;
 import '../types/pallet_referenda/types/curve.dart' as _i14;
-import '../types/pallet_referenda/types/referendum_info_2.dart' as _i3;
+import '../types/pallet_referenda/types/referendum_info.dart' as _i3;
 import '../types/pallet_referenda/types/track_details.dart' as _i13;
 import '../types/primitive_types/h256.dart' as _i5;
 import '../types/quantus_runtime/origin_caller.dart' as _i9;
@@ -356,12 +356,12 @@ class Constants {
         name: 'tech_collective_members',
         maxDeciding: 1,
         decisionDeposit: BigInt.from(1000000000000000),
-        preparePeriod: 20,
+        preparePeriod: 600,
         decisionPeriod: 7200,
-        confirmPeriod: 20,
-        minEnactmentPeriod: 20,
-        minApproval: const _i14.LinearDecreasing(length: 1000000000, floor: 500000000, ceil: 1000000000),
-        minSupport: const _i14.LinearDecreasing(length: 1000000000, floor: 0, ceil: 0),
+        confirmPeriod: 7200,
+        minEnactmentPeriod: 7200,
+        minApproval: const _i14.LinearDecreasing(length: 1000000000, floor: 610000000, ceil: 610000000),
+        minSupport: const _i14.LinearDecreasing(length: 1000000000, floor: 600000000, ceil: 600000000),
       ),
     ),
   ];

@@ -14,45 +14,39 @@ enum Error {
   /// Guardian cannot be the account itself, because it is redundant.
   guardianCannotBeSelf('GuardianCannotBeSelf', 2),
 
-  /// Recoverer cannot be the account itself, because it is redundant.
-  recovererCannotBeSelf('RecovererCannotBeSelf', 3),
-
   /// The specified pending transaction ID was not found.
-  pendingTxNotFound('PendingTxNotFound', 4),
+  pendingTxNotFound('PendingTxNotFound', 3),
 
   /// The caller is not the original submitter of the transaction they are trying to cancel.
-  notOwner('NotOwner', 5),
+  notOwner('NotOwner', 4),
 
   /// The account has reached the maximum number of pending reversible transactions.
-  tooManyPendingTransactions('TooManyPendingTransactions', 6),
+  tooManyPendingTransactions('TooManyPendingTransactions', 5),
 
   /// The specified delay period is below the configured minimum.
-  delayTooShort('DelayTooShort', 7),
+  delayTooShort('DelayTooShort', 6),
 
   /// Failed to schedule the transaction execution with the scheduler pallet.
-  schedulingFailed('SchedulingFailed', 8),
+  schedulingFailed('SchedulingFailed', 7),
 
   /// Failed to cancel the scheduled task with the scheduler pallet.
-  cancellationFailed('CancellationFailed', 9),
-
-  /// Failed to decode the OpaqueCall back into a RuntimeCall.
-  callDecodingFailed('CallDecodingFailed', 10),
+  cancellationFailed('CancellationFailed', 8),
 
   /// Call is invalid.
-  invalidCall('InvalidCall', 11),
+  invalidCall('InvalidCall', 9),
 
   /// Invalid scheduler origin
-  invalidSchedulerOrigin('InvalidSchedulerOrigin', 12),
+  invalidSchedulerOrigin('InvalidSchedulerOrigin', 10),
 
   /// Reverser is invalid
-  invalidReverser('InvalidReverser', 13),
+  invalidReverser('InvalidReverser', 11),
 
   /// Cannot schedule one time reversible transaction when account is reversible (theft
   /// deterrence)
-  accountAlreadyReversibleCannotScheduleOneTime('AccountAlreadyReversibleCannotScheduleOneTime', 14),
+  accountAlreadyReversibleCannotScheduleOneTime('AccountAlreadyReversibleCannotScheduleOneTime', 12),
 
   /// The guardian has reached the maximum number of accounts they can protect.
-  tooManyGuardianAccounts('TooManyGuardianAccounts', 15);
+  tooManyGuardianAccounts('TooManyGuardianAccounts', 13);
 
   const Error(this.variantName, this.codecIndex);
 
@@ -87,30 +81,26 @@ class $ErrorCodec with _i1.Codec<Error> {
       case 2:
         return Error.guardianCannotBeSelf;
       case 3:
-        return Error.recovererCannotBeSelf;
-      case 4:
         return Error.pendingTxNotFound;
-      case 5:
+      case 4:
         return Error.notOwner;
-      case 6:
+      case 5:
         return Error.tooManyPendingTransactions;
-      case 7:
+      case 6:
         return Error.delayTooShort;
-      case 8:
+      case 7:
         return Error.schedulingFailed;
-      case 9:
+      case 8:
         return Error.cancellationFailed;
-      case 10:
-        return Error.callDecodingFailed;
-      case 11:
+      case 9:
         return Error.invalidCall;
-      case 12:
+      case 10:
         return Error.invalidSchedulerOrigin;
-      case 13:
+      case 11:
         return Error.invalidReverser;
-      case 14:
+      case 12:
         return Error.accountAlreadyReversibleCannotScheduleOneTime;
-      case 15:
+      case 13:
         return Error.tooManyGuardianAccounts;
       default:
         throw Exception('Error: Invalid variant index: "$index"');

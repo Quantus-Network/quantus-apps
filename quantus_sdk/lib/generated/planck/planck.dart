@@ -1,29 +1,27 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'dart:async' as _i23;
+import 'dart:async' as _i21;
 
 import 'package:polkadart/polkadart.dart' as _i1;
 
-import 'pallets/assets.dart' as _i17;
-import 'pallets/assets_holder.dart' as _i18;
+import 'pallets/assets.dart' as _i16;
+import 'pallets/assets_holder.dart' as _i17;
 import 'pallets/balances.dart' as _i4;
-import 'pallets/conviction_voting.dart' as _i12;
 import 'pallets/mining_rewards.dart' as _i7;
-import 'pallets/multisig.dart' as _i19;
+import 'pallets/multisig.dart' as _i18;
 import 'pallets/preimage.dart' as _i8;
 import 'pallets/q_po_w.dart' as _i6;
-import 'pallets/recovery.dart' as _i16;
-import 'pallets/referenda.dart' as _i10;
+import 'pallets/recovery.dart' as _i15;
 import 'pallets/reversible_transfers.dart' as _i11;
 import 'pallets/scheduler.dart' as _i9;
 import 'pallets/system.dart' as _i2;
-import 'pallets/tech_collective.dart' as _i13;
-import 'pallets/tech_referenda.dart' as _i14;
+import 'pallets/tech_collective.dart' as _i12;
+import 'pallets/tech_referenda.dart' as _i13;
 import 'pallets/timestamp.dart' as _i3;
 import 'pallets/transaction_payment.dart' as _i5;
-import 'pallets/treasury_pallet.dart' as _i15;
-import 'pallets/utility.dart' as _i22;
-import 'pallets/wormhole.dart' as _i20;
-import 'pallets/zk_tree.dart' as _i21;
+import 'pallets/treasury_pallet.dart' as _i14;
+import 'pallets/utility.dart' as _i10;
+import 'pallets/wormhole.dart' as _i19;
+import 'pallets/zk_tree.dart' as _i20;
 
 class Queries {
   Queries(_i1.StateApi api)
@@ -35,18 +33,17 @@ class Queries {
       miningRewards = _i7.Queries(api),
       preimage = _i8.Queries(api),
       scheduler = _i9.Queries(api),
-      referenda = _i10.Queries(api),
+      utility = _i10.Queries(api),
       reversibleTransfers = _i11.Queries(api),
-      convictionVoting = _i12.Queries(api),
-      techCollective = _i13.Queries(api),
-      techReferenda = _i14.Queries(api),
-      treasuryPallet = _i15.Queries(api),
-      recovery = _i16.Queries(api),
-      assets = _i17.Queries(api),
-      assetsHolder = _i18.Queries(api),
-      multisig = _i19.Queries(api),
-      wormhole = _i20.Queries(api),
-      zkTree = _i21.Queries(api);
+      techCollective = _i12.Queries(api),
+      techReferenda = _i13.Queries(api),
+      treasuryPallet = _i14.Queries(api),
+      recovery = _i15.Queries(api),
+      assets = _i16.Queries(api),
+      assetsHolder = _i17.Queries(api),
+      multisig = _i18.Queries(api),
+      wormhole = _i19.Queries(api),
+      zkTree = _i20.Queries(api);
 
   final _i2.Queries system;
 
@@ -64,29 +61,27 @@ class Queries {
 
   final _i9.Queries scheduler;
 
-  final _i10.Queries referenda;
+  final _i10.Queries utility;
 
   final _i11.Queries reversibleTransfers;
 
-  final _i12.Queries convictionVoting;
+  final _i12.Queries techCollective;
 
-  final _i13.Queries techCollective;
+  final _i13.Queries techReferenda;
 
-  final _i14.Queries techReferenda;
+  final _i14.Queries treasuryPallet;
 
-  final _i15.Queries treasuryPallet;
+  final _i15.Queries recovery;
 
-  final _i16.Queries recovery;
+  final _i16.Queries assets;
 
-  final _i17.Queries assets;
+  final _i17.Queries assetsHolder;
 
-  final _i18.Queries assetsHolder;
+  final _i18.Queries multisig;
 
-  final _i19.Queries multisig;
+  final _i19.Queries wormhole;
 
-  final _i20.Queries wormhole;
-
-  final _i21.Queries zkTree;
+  final _i20.Queries zkTree;
 }
 
 class Extrinsics {
@@ -100,29 +95,23 @@ class Extrinsics {
 
   final _i8.Txs preimage = _i8.Txs();
 
-  final _i9.Txs scheduler = _i9.Txs();
-
-  final _i22.Txs utility = _i22.Txs();
-
-  final _i10.Txs referenda = _i10.Txs();
+  final _i10.Txs utility = _i10.Txs();
 
   final _i11.Txs reversibleTransfers = _i11.Txs();
 
-  final _i12.Txs convictionVoting = _i12.Txs();
+  final _i12.Txs techCollective = _i12.Txs();
 
-  final _i13.Txs techCollective = _i13.Txs();
+  final _i13.Txs techReferenda = _i13.Txs();
 
-  final _i14.Txs techReferenda = _i14.Txs();
+  final _i14.Txs treasuryPallet = _i14.Txs();
 
-  final _i15.Txs treasuryPallet = _i15.Txs();
+  final _i15.Txs recovery = _i15.Txs();
 
-  final _i16.Txs recovery = _i16.Txs();
+  final _i16.Txs assets = _i16.Txs();
 
-  final _i17.Txs assets = _i17.Txs();
+  final _i18.Txs multisig = _i18.Txs();
 
-  final _i19.Txs multisig = _i19.Txs();
-
-  final _i20.Txs wormhole = _i20.Txs();
+  final _i19.Txs wormhole = _i19.Txs();
 }
 
 class Constants {
@@ -142,23 +131,19 @@ class Constants {
 
   final _i9.Constants scheduler = _i9.Constants();
 
-  final _i22.Constants utility = _i22.Constants();
-
-  final _i10.Constants referenda = _i10.Constants();
+  final _i10.Constants utility = _i10.Constants();
 
   final _i11.Constants reversibleTransfers = _i11.Constants();
 
-  final _i12.Constants convictionVoting = _i12.Constants();
+  final _i13.Constants techReferenda = _i13.Constants();
 
-  final _i14.Constants techReferenda = _i14.Constants();
+  final _i15.Constants recovery = _i15.Constants();
 
-  final _i16.Constants recovery = _i16.Constants();
+  final _i16.Constants assets = _i16.Constants();
 
-  final _i17.Constants assets = _i17.Constants();
+  final _i18.Constants multisig = _i18.Constants();
 
-  final _i19.Constants multisig = _i19.Constants();
-
-  final _i20.Constants wormhole = _i20.Constants();
+  final _i19.Constants wormhole = _i19.Constants();
 }
 
 class Rpc {
@@ -212,11 +197,11 @@ class Planck {
 
   final Registry registry;
 
-  _i23.Future connect() async {
+  _i21.Future connect() async {
     return await _provider.connect();
   }
 
-  _i23.Future disconnect() async {
+  _i21.Future disconnect() async {
     return await _provider.disconnect();
   }
 }

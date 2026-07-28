@@ -41,7 +41,7 @@ class RemoteConfigNotifier extends StateNotifier<RemoteConfigModel> {
           state = remote;
         }
       } catch (e) {
-        quantusDebugPrint('Remote config remote refresh failed: $e');
+        quantusPrint('Remote config remote refresh failed: $e');
       } finally {
         _isRefreshingRemote = false;
       }
@@ -71,9 +71,9 @@ class RemoteConfigNotifier extends StateNotifier<RemoteConfigModel> {
       final fcmService = ref.read(firebaseMessagingServiceProvider);
       await fcmService.init(); // This requests notification permission.
       fcmService.setupNotificationTapHandlers();
-    } catch (e, st) {
-      quantusDebugPrint('Failed to enable remote notifications: $e');
-      TelemetryService().sendError('fcm_enable_remote_notifications_failed', error: e, stackTrace: st);
+    } catch (e) {
+      quantusPrint('Failed to enable remote notifications: $e');
+      TelemetryService().sendError('fcm_enable_remote_notifications_failed', error: e);
     } finally {
       _isEnablingRemoteNotifications = false;
     }

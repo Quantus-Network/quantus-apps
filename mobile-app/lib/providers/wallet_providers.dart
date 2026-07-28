@@ -71,8 +71,9 @@ final wormholeUtxoServiceProvider = Provider<WormholeUtxoService>((ref) {
   return WormholeUtxoService();
 });
 
-/// One encrypted-account service per wallet: caches derived wormhole key pairs
-/// and owns the persisted next-index / pending-spend state.
+/// One encrypted-account service per wallet: derives wormhole key pairs on
+/// demand (never cached — M11) and owns the persisted next-index /
+/// pending-spend state.
 final encryptedAccountServiceProvider = Provider.family<EncryptedAccountService, int>((ref, walletIndex) {
   final service = EncryptedAccountService(
     walletIndex: walletIndex,
@@ -124,7 +125,7 @@ final isHighSecurityProvider = FutureProvider.family<bool, Account>((ref, accoun
 
 final balanceProviderFamily = FutureProvider.family<BigInt, String>((ref, accountId) async {
   final substrateService = ref.watch(substrateServiceProvider);
-  quantusDebugPrint('query balance for $accountId');
+  quantusPrint('query balance for $accountId');
   return await substrateService.queryBalance(accountId);
 });
 

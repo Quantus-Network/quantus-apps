@@ -6,16 +6,34 @@ import 'package:polkadart/scale_codec.dart' as _i1;
 /// The `Error` enum of this pallet.
 enum Error {
   invalidPublicInputs('InvalidPublicInputs', 0),
+
+  /// No segment of the bundle is spendable: every non-dummy segment contains a
+  /// nullifier that is already used (or the single segment of a private-batch
+  /// proof does).
   nullifierAlreadyUsed('NullifierAlreadyUsed', 1),
+
+  /// The bundle contains only dummy (all-zero) padding segments, so there is
+  /// nothing to exit. Distinct from [`Error::NullifierAlreadyUsed`], which is a
+  /// replay of real segments.
   noValidSegments('NoValidSegments', 2),
   blockNotFound('BlockNotFound', 3),
   verifierNotAvailable('VerifierNotAvailable', 4),
   proofDeserializationFailed('ProofDeserializationFailed', 5),
   proofVerificationFailed('ProofVerificationFailed', 6),
   invalidProofPublicInputs('InvalidProofPublicInputs', 7),
+
+  /// The volume fee rate in the proof doesn't match the configured rate
   invalidVolumeFeeRate('InvalidVolumeFeeRate', 8),
+
+  /// Transfer amount is below the minimum required
   transferAmountBelowMinimum('TransferAmountBelowMinimum', 9),
+
+  /// Only native asset (asset_id = 0) is supported in this version
   nonNativeAssetNotSupported('NonNativeAssetNotSupported', 10),
+
+  /// Soundness invariant violated: total wormhole exits would exceed the value that could
+  /// possibly have been deposited into wormhole addresses. This indicates a potential
+  /// soundness bug in the ZK proof system, so the exit is rejected.
   soundnessInvariantViolation('SoundnessInvariantViolation', 11);
 
   const Error(this.variantName, this.codecIndex);

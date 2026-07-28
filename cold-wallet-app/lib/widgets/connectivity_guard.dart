@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
@@ -15,6 +16,8 @@ class ConnectivityGuard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    if (kDebugMode) return const SizedBox.shrink();
+
     final status = ref.watch(networkStatusProvider);
     final isOnline = status.maybeWhen(data: (s) => s == NetworkStatus.online, orElse: () => true);
     if (!isOnline) return const SizedBox.shrink();

@@ -15,7 +15,7 @@ class RemoteConfigService {
       final remoteData = await _taskmasterService.getRemoteConfig();
       return remoteData;
     } catch (error) {
-      quantusDebugPrint('Remote config remote read failed: $error');
+      quantusPrint('Remote config remote read failed: $error');
       return null;
     }
   }
@@ -43,7 +43,7 @@ class RemoteConfigService {
     try {
       await _settingsService.setString(remoteConfigCacheKey, jsonEncode(json));
     } catch (error) {
-      quantusDebugPrint('Remote config local save failed: $error');
+      quantusPrint('Remote config local save failed: $error');
     }
   }
 }

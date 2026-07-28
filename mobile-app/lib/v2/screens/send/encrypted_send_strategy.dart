@@ -128,6 +128,11 @@ class EncryptedSendStrategy extends SendStrategy {
     if (plan == null) {
       throw StateError('Encrypted send reached submit without a spend plan');
     }
+    // The plan is frozen at estimate time and its amountPlanck is what the
+    // recipient is provably paid — it must match the confirmed amount.
+    if (plan.amountPlanck != amount) {
+      throw StateError('Encrypted send plan amount ${plan.amountPlanck} does not match confirmed amount $amount');
+    }
 
     final authed = await LocalAuthService().authenticate(localizedReason: l10n.sendReviewAuthReason);
     if (!authed) return SendFailed(l10n.sendReviewAuthRequired);
@@ -135,6 +140,7 @@ class EncryptedSendStrategy extends SendStrategy {
     return SendNeedsProving(
       account: account,
       plan: plan,
+      amount: amount,
       terminal: buildSentTerminalContent(
         l10n,
         ref.read(numberFormattingServiceProvider),

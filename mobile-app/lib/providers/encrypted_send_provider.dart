@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
+import 'package:resonance_network_wallet/shared/utils/print.dart';
 
 /// Where an encrypted send operation currently stands.
 enum EncryptedSendPhase {
@@ -92,6 +93,7 @@ class EncryptedSendController extends Notifier<EncryptedSendState> {
   Future<void> start({
     required Account account,
     required WormholeSpendPlan plan,
+    required BigInt amount,
     required String recipientAddress,
   }) async {
     if (state.phase != EncryptedSendPhase.idle) return;
@@ -102,6 +104,12 @@ class EncryptedSendController extends Notifier<EncryptedSendState> {
     _service = service;
 
     try {
+      // The plan pays exactly its own amountPlanck — refuse to prove a plan
+      // that doesn't match the amount the user confirmed at review.
+      if (plan.amountPlanck != amount) {
+        throw StateError('Encrypted send plan amount ${plan.amountPlanck} does not match confirmed amount $amount');
+      }
+
       // The plan was frozen at fee-estimate time; UTXO spendability can have
       // changed while the user dwelled on review. Re-load and verify every
       // planned input is still unspent so a stale plan fails fast here
@@ -141,7 +149,7 @@ class EncryptedSendController extends Notifier<EncryptedSendState> {
       unawaited(
         RecentAddressesService()
             .addAddress(recipientAddress)
-            .catchError((Object e) => debugPrint('Failed to save recent address: $e')),
+            .catchError((Object e) => quantusPrint('Failed to save recent address: $e')),
       );
       state = state.copyWith(phase: EncryptedSendPhase.succeeded);
     } on ClaimCancelled {
@@ -150,7 +158,7 @@ class EncryptedSendController extends Notifier<EncryptedSendState> {
       ref.invalidate(encryptedStateProvider(walletIndex));
       state = state.copyWith(phase: EncryptedSendPhase.cancelled);
     } catch (e) {
-      debugPrint('[EncryptedSend] Send failed: $e');
+      quantusPrint('[EncryptedSend] Send failed: $e');
       if (!ref.mounted) return;
       ref.invalidate(encryptedStateProvider(walletIndex));
       state = state.copyWith(phase: EncryptedSendPhase.failed, errorMessage: e.toString());

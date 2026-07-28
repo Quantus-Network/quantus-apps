@@ -43,14 +43,14 @@ class MiningRewardsService {
   }
 
   Future<MiningRewardsData> getMiningRewards(Ref ref, WormholeKeyPair keyPair, List<String> currentAccountIds) async {
-    quantusDebugPrint('[MiningRewards] Current account IDs: $currentAccountIds');
+    quantusPrint('[MiningRewards] Current account IDs: $currentAccountIds');
     final wormholeUtxoService = ref.read(wormholeUtxoServiceProvider);
 
     final miners = <String, List<_MinerEntry>>{};
     for (final entry in _assets.entries) {
       final jsonStr = await rootBundle.loadString(entry.value);
       miners[entry.key] = _parseMiners(jsonStr);
-      quantusDebugPrint('[MiningRewards] ${entry.key}: loaded ${miners[entry.key]!.length} miners');
+      quantusPrint('[MiningRewards] ${entry.key}: loaded ${miners[entry.key]!.length} miners');
     }
 
     _cachedAccountIds ??= await _resolveAllAccountIds(currentAccountIds);
@@ -99,19 +99,19 @@ class MiningRewardsService {
       for (final id in toCheck) {
         final oldId = newToOld[id];
         if (oldId != null && allIds.add(oldId)) {
-          quantusDebugPrint('[MiningRewards] Chain depth $depth: $id -> $oldId');
+          quantusPrint('[MiningRewards] Chain depth $depth: $id -> $oldId');
           next.add(oldId);
         }
       }
       toCheck = next;
     }
 
-    quantusDebugPrint('[MiningRewards] Final account ID set (${allIds.length}): $allIds');
+    quantusPrint('[MiningRewards] Final account ID set (${allIds.length}): $allIds');
     return allIds;
   }
 
   Future<List<Map<String, dynamic>>> _fetchAccountMappings() async {
-    quantusDebugPrint('[MiningRewards] Fetching account_id_mappings from Supabase...');
+    quantusPrint('[MiningRewards] Fetching account_id_mappings from Supabase...');
     final data = await EnvUtils.supabaseClient.from('account_id_mappings').select();
     return List<Map<String, dynamic>>.from(data);
   }

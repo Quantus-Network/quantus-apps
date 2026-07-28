@@ -52,7 +52,7 @@ Future<bool> _tryResolveApprovalTimeout(Ref ref, MultisigAccount msig, PendingMu
         return true;
       }
     } catch (e) {
-      quantusDebugPrint('[MultisigApprovalPoller] soft timeout reconcile error: $e');
+      quantusPrint('[MultisigApprovalPoller] soft timeout reconcile error: $e');
     }
   }
 

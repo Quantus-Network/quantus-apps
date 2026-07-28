@@ -11,6 +11,7 @@ import 'package:resonance_network_wallet/providers/multisig_providers.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/services/local_auth_service.dart';
 import 'package:resonance_network_wallet/services/transaction_submission_service.dart';
+import 'package:resonance_network_wallet/shared/utils/print.dart';
 import 'package:resonance_network_wallet/v2/components/detail_summary_row.dart';
 import 'package:resonance_network_wallet/v2/components/multisig_expiry_value.dart';
 import 'package:resonance_network_wallet/v2/screens/send/send_strategy.dart';
@@ -221,7 +222,7 @@ class MultisigProposeStrategy extends SendStrategy {
       unawaited(
         RecentAddressesService()
             .addAddress(recipientAddress.trim())
-            .catchError((Object e) => debugPrint('Failed to save recent address: $e')),
+            .catchError((Object e) => quantusPrint('Failed to save recent address: $e')),
       );
 
       ref.invalidate(multisigOpenProposalsProvider(msig));
@@ -232,7 +233,7 @@ class MultisigProposeStrategy extends SendStrategy {
         _terminal(l10n, fmt, recipient: recipientAddress, checksum: recipientChecksum, amount: amount),
       );
     } catch (e, st) {
-      debugPrint('Propose submit error: $e $st');
+      quantusPrint('Propose submit error: $e $st');
       return SendFailed(l10n.multisigProposeSubmitFailed);
     }
   }

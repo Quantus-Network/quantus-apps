@@ -92,5 +92,5 @@ class Constants {
 
   final BigInt targetBlockTime = BigInt.from(12000);
 
-  final int maxReorgDepth = 180;
+  final int maxReorgDepth = 100;
 }

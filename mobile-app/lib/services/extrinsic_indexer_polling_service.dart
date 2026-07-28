@@ -44,21 +44,21 @@ class ExtrinsicIndexerPollingService<TPending, TContext> {
   void startPolling(TContext context, TPending pending) {
     final key = _config.getId(pending);
     if (_config.getExtrinsicHash(pending) == null) {
-      quantusDebugPrint(
+      quantusPrint(
         '${_config.logPrefix} ERROR: cannot poll $key — no extrinsicHash. '
         'Waiting for submission to complete.',
       );
       return;
     }
 
-    quantusDebugPrint('${_config.logPrefix} startPolling $key hash=${_config.getExtrinsicHash(pending)}');
+    quantusPrint('${_config.logPrefix} startPolling $key hash=${_config.getExtrinsicHash(pending)}');
 
     stopPolling(key);
     final startTime = DateTime.now();
 
     final timer = Timer.periodic(_searchInterval, (_) {
       if (DateTime.now().difference(startTime) > _timeout) {
-        quantusDebugPrint('${_config.logPrefix} timeout for $key');
+        quantusPrint('${_config.logPrefix} timeout for $key');
         stopPolling(key);
         unawaited(_handleTimeout(context, pending));
         return;
@@ -85,9 +85,9 @@ class ExtrinsicIndexerPollingService<TPending, TContext> {
         stopPolling(key);
         return;
       }
-      quantusDebugPrint('${_config.logPrefix} not indexed yet: $key');
+      quantusPrint('${_config.logPrefix} not indexed yet: $key');
     } catch (e) {
-      quantusDebugPrint('${_config.logPrefix} search error for $key: $e');
+      quantusPrint('${_config.logPrefix} search error for $key: $e');
     } finally {
       _inFlight.remove(key);
     }
@@ -96,11 +96,11 @@ class ExtrinsicIndexerPollingService<TPending, TContext> {
   Future<void> _handleTimeout(TContext context, TPending pending) async {
     final key = _config.getId(pending);
     try {
-      quantusDebugPrint('${_config.logPrefix} final indexer check before timeout for $key');
+      quantusPrint('${_config.logPrefix} final indexer check before timeout for $key');
       final confirmed = await _config.confirmIfIndexed(_ref, context, pending);
       if (confirmed) return;
     } catch (e) {
-      quantusDebugPrint('${_config.logPrefix} final check error for $key: $e');
+      quantusPrint('${_config.logPrefix} final check error for $key: $e');
     }
 
     if (!_config.isStillPending(_ref, key)) return;
@@ -110,22 +110,18 @@ class ExtrinsicIndexerPollingService<TPending, TContext> {
       try {
         final resolved = await tryResolveTimeout(_ref, context, pending);
         if (resolved) {
-          quantusDebugPrint('${_config.logPrefix} timeout resolved on-chain for $key');
+          quantusPrint('${_config.logPrefix} timeout resolved on-chain for $key');
           return;
         }
       } catch (e) {
-        quantusDebugPrint('${_config.logPrefix} timeout resolve error for $key: $e');
+        quantusPrint('${_config.logPrefix} timeout resolve error for $key: $e');
       }
     }
 
     if (!_config.isStillPending(_ref, key)) return;
 
-    quantusDebugPrint('${_config.logPrefix} giving up on $key');
-    TelemetryService().sendError(
-      'extrinsic_indexer_polling_timeout',
-      error: '${_config.logPrefix} gave up on $key',
-      stackTrace: StackTrace.current,
-    );
+    quantusPrint('${_config.logPrefix} giving up on $key');
+    TelemetryService().sendEvent('extrinsic_indexer_polling_timeout');
     _config.removePending(_ref, key);
     _config.showTimeoutToast(_ref);
   }
