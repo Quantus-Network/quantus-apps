@@ -67,7 +67,7 @@ class _SharedAddressActionSheetState extends State<SharedAddressActionSheet> {
     // Fail closed: never pre-fill the send flow with an invalid address,
     // same as address entry in the send flow itself.
     if (!container.read(substrateServiceProvider).isValidSS58Address(widget.address)) {
-      context.showErrorToaster(message: container.read(l10nProvider).addHardwareAccountInvalidAddress);
+      context.showErrorToaster(message: container.read(l10nProvider).invalidAddress);
       return;
     }
     container.read(keystoneSignCacheProvider.notifier).startNewSendSession();

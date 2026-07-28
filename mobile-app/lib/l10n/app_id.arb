@@ -292,6 +292,8 @@
   "addHardwareAccountNameRequired": "Nama wajib diisi",
   "addHardwareAccountInvalidAddress": "Alamat tidak valid",
 
+  "invalidAddress": "Alamat tidak valid",
+
   "sendTitle": "Kirim",
   "sendPayTitle": "Bayar",
   "sendEnterAddress": "Masukkan Alamat",

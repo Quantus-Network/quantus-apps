@@ -55,7 +55,9 @@ class _ReceiveScreenState extends ConsumerState<ReceiveScreen> {
         final service = ref.read(encryptedAccountServiceProvider((base as Account).walletIndex));
         accountId = (await service.receiveKeyPair()).address;
       }
-      final checksum = await checksumService.getHumanReadableName(accountId);
+      // Degrade to a blank checkphrase on lookup failure so the address/QR
+      // still renders instead of an unbounded loader.
+      final checksum = await checksumService.getHumanReadableName(accountId) ?? '';
       if (!mounted) return;
       setState(() {
         _accountId = accountId;

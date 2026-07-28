@@ -50,6 +50,10 @@ class HumanReadableChecksumService {
       debugPrint('Initialization error stack: $s');
       if (!(_isolateReadyCompleter?.isCompleted ?? false)) {
         _isolateReadyCompleter!.completeError(e);
+        // The error is already logged and rethrown; keep the completer's
+        // future from surfacing as an unhandled async error when no
+        // concurrent caller is awaiting it.
+        _isolateReadyCompleter!.future.ignore();
       }
       _isolate?.kill();
       _isolate = null;

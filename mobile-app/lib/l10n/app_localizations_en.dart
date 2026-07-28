@@ -925,6 +925,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get addHardwareAccountInvalidAddress => 'Invalid address';
 
   @override
+  String get invalidAddress => 'Invalid address';
+
+  @override
   String get sendTitle => 'Send';
 
   @override

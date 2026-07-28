@@ -1282,6 +1282,11 @@
       "description": "Validation when address is invalid"
     },
 
+    "invalidAddress": "Invalid address",
+    "@invalidAddress": {
+      "description": "Shown when an address fails SS58 validation"
+    },
+
     "sendTitle": "Send",
     "@sendTitle": {
       "description": "Send flow app bar title"

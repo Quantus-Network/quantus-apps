@@ -1736,6 +1736,12 @@ abstract class AppLocalizations {
   /// **'Invalid address'**
   String get addHardwareAccountInvalidAddress;
 
+  /// Shown when an address fails SS58 validation
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid address'**
+  String get invalidAddress;
+
   /// Send flow app bar title
   ///
   /// In en, this message translates to:
