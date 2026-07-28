@@ -180,7 +180,7 @@ class _AddMultisigScreenState extends ConsumerState<AddMultisigScreen> {
         _isPredictingAddress = false;
       });
     } on MultisigNonceExhaustedException {
-      quantusDebugPrint('[AddMultisigScreen] refreshPredictedAddress: MultisigNonceExhaustedException');
+      quantusPrint('[AddMultisigScreen] refreshPredictedAddress: MultisigNonceExhaustedException');
 
       if (!mounted || seq != _predictSeq) return;
       setState(() {
@@ -189,7 +189,7 @@ class _AddMultisigScreenState extends ConsumerState<AddMultisigScreen> {
         _isPredictingAddress = false;
       });
     } catch (e) {
-      quantusDebugPrint('[AddMultisigScreen] refreshPredictedAddress: unknown error: $e');
+      quantusPrint('[AddMultisigScreen] refreshPredictedAddress: unknown error: $e');
 
       if (!mounted || seq != _predictSeq) return;
       setState(() {
@@ -230,7 +230,7 @@ class _AddMultisigScreenState extends ConsumerState<AddMultisigScreen> {
       if (mounted) setState(() => _isLoading = false);
       return;
     } catch (e) {
-      quantusDebugPrint('[AddMultisigScreen] preflight error: $e');
+      quantusPrint('[AddMultisigScreen] preflight error: $e');
 
       if (mounted) {
         context.showErrorToaster(message: l10n.multisigCreateErrorCouldNotCreate);
@@ -265,7 +265,7 @@ class _AddMultisigScreenState extends ConsumerState<AddMultisigScreen> {
         context.showErrorToaster(message: l10n.multisigCreateInsufficientBalance);
       }
     } catch (e) {
-      quantusDebugPrint('[AddMultisigScreen] createMultisig error: $e');
+      quantusPrint('[AddMultisigScreen] createMultisig error: $e');
       if (mounted) {
         context.showErrorToaster(message: l10n.multisigCreateErrorCouldNotCreate);
       }
@@ -482,9 +482,9 @@ class _PredictedAddressSectionState extends ConsumerState<_PredictedAddressSecti
     _loadChecksum();
     final isReady = widget.address != null && _checksum != null;
 
-    quantusDebugPrint('[PredictedAddressSection] address: ${widget.address}');
-    quantusDebugPrint('[PredictedAddressSection] checksum: $_checksum');
-    quantusDebugPrint('[PredictedAddressSection] isReady: $isReady');
+    quantusPrint('[PredictedAddressSection] address: ${widget.address}');
+    quantusPrint('[PredictedAddressSection] checksum: $_checksum');
+    quantusPrint('[PredictedAddressSection] isReady: $isReady');
 
     return Container(
       padding: const EdgeInsets.all(16),

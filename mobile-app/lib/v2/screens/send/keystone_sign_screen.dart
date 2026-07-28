@@ -73,9 +73,9 @@ class _KeystoneSignScreenState extends ConsumerState<KeystoneSignScreen> {
         _unsignedData = unsigned;
         _urParts = parts;
       });
-    } catch (error, stackTrace) {
-      quantusDebugPrint('Keystone payload preparation failed: $error');
-      TelemetryService().sendError('Keystone payload preparation failed', error: error, stackTrace: stackTrace);
+    } catch (error) {
+      quantusPrint('Keystone payload preparation failed: $error');
+      TelemetryService().sendError('Keystone payload preparation failed', error: error);
       if (!mounted) return;
       setState(() => _error = ref.read(l10nProvider).keystoneSignError);
     }

@@ -65,7 +65,7 @@ class HighSecurityService {
 
   Future<HighSecurityData?> getHighSecurityConfig(String address) async {
     final hsData = await _reversibleTransfersService.getHighSecurityConfig(address);
-    quantusDebugPrint('getHighSecurityConfig: $address -> $hsData');
+    quantusPrint('getHighSecurityConfig: $address -> $hsData');
     if (hsData != null) {
       final accountId = AddressExtension.ss58AddressFromBytes(Uint8List.fromList(hsData.guardian));
       if (hsData.delay is! qp.Timestamp) {
@@ -86,7 +86,7 @@ class HighSecurityService {
   /// previous implementation batched recovery-pallet calls, but that pallet
   /// was never configured for accounts, so the rescue path could not work.
   Future<Uint8List> pullAllFunds(String lostAccountAddress, Account guardianAccount) async {
-    quantusDebugPrint('pullAllFunds: $lostAccountAddress, guardian: ${guardianAccount.accountId}');
+    quantusPrint('pullAllFunds: $lostAccountAddress, guardian: ${guardianAccount.accountId}');
     final call = _getRecoverFundsCall(lostAccountAddress);
     return await _substrateService.submitExtrinsic(guardianAccount, call);
   }

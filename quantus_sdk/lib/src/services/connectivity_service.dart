@@ -29,12 +29,12 @@ class ConnectivityService {
   }
 
   void _onConnectivityChanged(List<ConnectivityResult> results) {
-    quantusDebugPrint('Connectivity changed: $results');
+    quantusPrint('Connectivity changed: $results');
     _updateStatus(results);
   }
 
   void _onError(dynamic error) {
-    quantusDebugPrint('Connectivity error: $error');
+    quantusPrint('Connectivity error: $error');
   }
 
   void _updateStatus(List<ConnectivityResult> results, {bool emitInitial = false}) {
@@ -43,7 +43,7 @@ class ConnectivityService {
     if (emitInitial || newStatus != _currentStatus) {
       _currentStatus = newStatus;
       _statusController.add(newStatus);
-      quantusDebugPrint('Network status: $newStatus');
+      quantusPrint('Network status: $newStatus');
     }
   }
 

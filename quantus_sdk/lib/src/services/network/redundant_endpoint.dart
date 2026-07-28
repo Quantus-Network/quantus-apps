@@ -97,9 +97,9 @@ class RedundantEndpointService {
 
   void logEndpointFailure(Endpoint endpoint, dynamic error) {
     if (!_connectivityIsOffline) {
-      quantusDebugPrint('endpoint failure: ${endpoint.url}: $error');
+      quantusPrint('endpoint failure: ${endpoint.url}: $error');
       if (_isReachabilityError(error)) {
-        quantusDebugPrint('Reachability error on endpoint: ${endpoint.url}: $error');
+        quantusPrint('Reachability error on endpoint: ${endpoint.url}: $error');
       }
       endpoint.lastFailure = DateTime.now();
       endpoint.latency = const Duration(days: 365);

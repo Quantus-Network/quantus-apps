@@ -84,7 +84,7 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
         });
       }
     } catch (e) {
-      quantusDebugPrint('SelectRecipientScreen recents: $e');
+      quantusPrint('SelectRecipientScreen recents: $e');
       if (mounted) setState(() => _loadingRecents = false);
     }
   }
@@ -133,7 +133,7 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
         })
         .catchError((Object e) {
           // Fail closed: without a verdict the send can't proceed anyway.
-          quantusDebugPrint('SelectRecipientScreen self-send check: $e');
+          quantusPrint('SelectRecipientScreen self-send check: $e');
         });
     checksumService.getHumanReadableName(address).then((checksum) {
       if (mounted) setState(() => _recipientChecksum = checksum);

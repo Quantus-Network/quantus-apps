@@ -38,7 +38,7 @@ class NotificationConfigNotifier extends StateNotifier<NotificationConfig> {
         state = NotificationConfig.fromJson(Map<String, dynamic>.from(jsonDecode(configJson)));
       }
     } catch (e) {
-      quantusDebugPrint('Error loading notification config: $e');
+      quantusPrint('Error loading notification config: $e');
     }
   }
 
@@ -47,7 +47,7 @@ class NotificationConfigNotifier extends StateNotifier<NotificationConfig> {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(notificationConfigKey, jsonEncode(state.toJson()));
     } catch (e) {
-      quantusDebugPrint('Error saving notification config: $e');
+      quantusPrint('Error saving notification config: $e');
     }
   }
 

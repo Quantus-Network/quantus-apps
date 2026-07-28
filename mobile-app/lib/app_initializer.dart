@@ -40,7 +40,7 @@ class _AppInitializerState extends ConsumerState<AppInitializer> {
       final notificationService = ref.read(localNotificationsServiceProvider);
       await notificationService.init();
     } catch (e, stackTrace) {
-      quantusDebugPrint('Initialization error: $e\n$stackTrace');
+      quantusPrint('Initialization error: $e\n$stackTrace');
     }
   }
 

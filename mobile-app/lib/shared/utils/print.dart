@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 
-void quantusDebugPrint(String message) {
+void quantusPrint(String message) {
   if (kDebugMode) {
-    debugPrint(message);
+    print(message);
   }
 }

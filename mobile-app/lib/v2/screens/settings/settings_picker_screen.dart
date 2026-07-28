@@ -115,7 +115,7 @@ class _SettingsPickerScreenState<T> extends State<SettingsPickerScreen<T>> {
                                   Navigator.pop(context);
                                 }
                               } catch (e) {
-                                quantusDebugPrint('[SettingsPickerScreen] error selecting item: $e');
+                                quantusPrint('[SettingsPickerScreen] error selecting item: $e');
                                 if (context.mounted) {
                                   context.showErrorToaster(message: widget.errorMessageBuilder(e.toString()));
                                 }

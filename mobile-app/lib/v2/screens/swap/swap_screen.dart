@@ -95,7 +95,7 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
       _swapService.addRefundAddress(_fromToken.network, _addressController.text.trim());
       showReviewQuoteSheet(context, quote, _addressController.text);
     } catch (e) {
-      quantusDebugPrint('Swap quote failed: $e');
+      quantusPrint('Swap quote failed: $e');
       setState(() => _loading = false);
     }
   }

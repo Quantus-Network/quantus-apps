@@ -85,7 +85,7 @@ class MultisigAccountMenuScreen extends ConsumerWidget {
       ref.invalidate(activeAccountProvider);
       if (context.mounted) returnToAccountsSheet(context, ref);
     } catch (e, st) {
-      quantusDebugPrint('[MultisigAccountMenu] disconnect error: $e\n$st');
+      quantusPrint('[MultisigAccountMenu] disconnect error: $e\n$st');
       if (context.mounted) context.showErrorToaster(message: l10n.accountMenuDisconnectError);
     }
   }

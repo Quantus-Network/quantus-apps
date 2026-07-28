@@ -494,9 +494,9 @@ class SettingsService {
 
   /// Set old accounts data (for debugging/testing)
   Future<void> setOldAccountsData(String jsonData) async {
-    quantusDebugPrint('removing accounts data');
+    quantusPrint('removing accounts data');
     await _prefs.remove(_accountsKey);
-    quantusDebugPrint('setting old accounts data - reload app after this');
+    quantusPrint('setting old accounts data - reload app after this');
     await _prefs.setString(_oldAccountsKeyV4, jsonData);
   }
 

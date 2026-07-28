@@ -222,7 +222,7 @@ class MultisigProposeStrategy extends SendStrategy {
       unawaited(
         RecentAddressesService()
             .addAddress(recipientAddress.trim())
-            .catchError((Object e) => quantusDebugPrint('Failed to save recent address: $e')),
+            .catchError((Object e) => quantusPrint('Failed to save recent address: $e')),
       );
 
       ref.invalidate(multisigOpenProposalsProvider(msig));
@@ -233,7 +233,7 @@ class MultisigProposeStrategy extends SendStrategy {
         _terminal(l10n, fmt, recipient: recipientAddress, checksum: recipientChecksum, amount: amount),
       );
     } catch (e, st) {
-      quantusDebugPrint('Propose submit error: $e $st');
+      quantusPrint('Propose submit error: $e $st');
       return SendFailed(l10n.multisigProposeSubmitFailed);
     }
   }

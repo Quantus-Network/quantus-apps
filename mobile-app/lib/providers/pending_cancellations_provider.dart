@@ -38,7 +38,7 @@ class PendingCancellationsNotifier extends StateNotifier<Set<String>> {
         if (isNotExpired) {
           validCancellations.add(cancellation);
         } else {
-          quantusDebugPrint('Removing expired pending cancellation: ${cancellation.transactionId}');
+          quantusPrint('Removing expired pending cancellation: ${cancellation.transactionId}');
         }
       } catch (e) {
         throw FormatException('Error parsing pending cancellation: $e');
@@ -77,7 +77,7 @@ class PendingCancellationsNotifier extends StateNotifier<Set<String>> {
           existingCancellations.add(cancellation);
         }
       } catch (e) {
-        quantusDebugPrint('Error parsing existing cancellation: $e');
+        quantusPrint('Error parsing existing cancellation: $e');
       }
     }
 
@@ -108,7 +108,7 @@ class PendingCancellationsNotifier extends StateNotifier<Set<String>> {
           remainingCancellations.add(cancellation);
         }
       } catch (e) {
-        quantusDebugPrint('Error parsing cancellation during removal: $e');
+        quantusPrint('Error parsing cancellation during removal: $e');
       }
     }
 

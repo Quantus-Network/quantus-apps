@@ -87,7 +87,7 @@ class QuantusSigningPayload extends SigningPayload {
         // Most probably, it is a custom signed extension.
         // check if this signed extension is NullCodec or not!
         final signedExtensionMap = registry.getSignedExtensionTypes();
-        quantusDebugPrint('$signedExtensionMap');
+        quantusPrint('$signedExtensionMap');
         if (signedExtensionMap[extension] != null &&
             signedExtensionMap[extension] is! NullCodec &&
             signedExtensionMap[extension].hashCode != NullCodec.codec.hashCode) {

@@ -4,6 +4,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
 import 'package:quantus_sdk/generated/planck/pallets/multisig.dart' show Constants, Txs;
+import 'package:quantus_sdk/generated/planck/planck.dart' show Planck;
 import 'package:quantus_sdk/generated/planck/types/quantus_runtime/runtime_call.dart';
 import 'package:quantus_sdk/src/constants/app_constants.dart';
 import 'package:quantus_sdk/src/models/account.dart';
@@ -356,18 +357,46 @@ class MultisigService {
     return _substrateService.submitExtrinsic(signer, call);
   }
 
+  /// Reads the stored inner call of [proposalId] from chain storage.
+  ///
+  /// `multisig.approve` only counts an approval whose resubmitted call bytes are
+  /// byte-equal to the stored payload, which is what lets an offline signer read
+  /// what it is approving instead of trusting a proposal id. Chain storage is
+  /// therefore the only source we approve from; [MultisigProposal.callRaw] (from
+  /// the indexer) is a display fallback, never a signing input.
+  ///
+  /// Throws if the proposal is unknown — never approve with guessed bytes.
+  Future<List<int>> fetchProposalCallBytes({required MultisigAccount msig, required int proposalId}) async {
+    final provider = _substrateService.provider;
+    if (provider == null) throw Exception('No RPC endpoint available to read multisig proposal $proposalId');
+
+    final stored = await Planck(provider).query.multisig.proposals(getAccountId32(msig.accountId), proposalId);
+    if (stored == null) {
+      throw Exception('Multisig proposal $proposalId not found on chain for ${msig.accountId}');
+    }
+    return stored.call;
+  }
+
   /// Builds the `multisig.approve` runtime call for [proposalId].
-  Multisig buildApproveCall({required MultisigAccount msig, required int proposalId}) {
-    return const Txs().approve(multisigAddress: getAccountId32(msig.accountId), proposalId: proposalId);
+  ///
+  /// [call] must be the proposal's stored inner call bytes — see
+  /// [fetchProposalCallBytes]. The chain rejects an approval whose bytes differ.
+  Multisig buildApproveCall({required MultisigAccount msig, required int proposalId, required List<int> call}) {
+    return const Txs().approve(multisigAddress: getAccountId32(msig.accountId), proposalId: proposalId, call: call);
   }
 
   /// Estimates the network fee for approving [proposalId].
+  ///
+  /// Fee scales with the inner call size, so [callBytes] is fetched when not
+  /// supplied by the caller.
   Future<BigInt> estimateApproveFee({
     required MultisigAccount msig,
     required Account signer,
     required int proposalId,
+    List<int>? callBytes,
   }) async {
-    final call = buildApproveCall(msig: msig, proposalId: proposalId);
+    final inner = callBytes ?? await fetchProposalCallBytes(msig: msig, proposalId: proposalId);
+    final call = buildApproveCall(msig: msig, proposalId: proposalId, call: inner);
     final feeData = await _substrateService.getFeeForCall(signer, call);
     return feeData.fee;
   }
@@ -377,8 +406,10 @@ class MultisigService {
     required MultisigAccount msig,
     required Account signer,
     required int proposalId,
+    List<int>? callBytes,
   }) async {
-    final call = buildApproveCall(msig: msig, proposalId: proposalId);
+    final inner = callBytes ?? await fetchProposalCallBytes(msig: msig, proposalId: proposalId);
+    final call = buildApproveCall(msig: msig, proposalId: proposalId, call: inner);
     return _substrateService.submitExtrinsic(signer, call);
   }
 

@@ -1,6 +1,8 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:quantus_cold_wallet/debug/debug_payloads.dart';
 import 'package:quantus_cold_wallet/screens/sign_transaction_screen.dart';
 import 'package:quantus_cold_wallet/theme/app_colors.dart';
 import 'package:quantus_cold_wallet/theme/app_text_styles.dart';
@@ -59,6 +61,49 @@ class _ScanTransactionScreenState extends State<ScanTransactionScreen> {
       _done = false;
       setState(() => _error = 'Failed to decode QR: $e');
     }
+  }
+
+  /// Simulators have no camera, so debug builds can inject a payload directly and
+  /// exercise the same review → sign path a scan would reach.
+  void _loadDebugPayload(Uint8List payload) {
+    _controller.stop();
+    Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => SignTransactionScreen(payload: payload)));
+  }
+
+  Widget _debugPayloadButtons(BuildContext context) {
+    final text = context.themeText;
+
+    Widget button(String label, Uint8List Function() build) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4),
+        child: ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.white24,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            visualDensity: VisualDensity.compact,
+          ),
+          onPressed: () => _loadDebugPayload(build()),
+          child: Text(label, style: text.detail?.copyWith(color: Colors.white)),
+        ),
+      );
+    }
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text('DEBUG PAYLOADS', style: text.detail?.copyWith(color: Colors.white38, letterSpacing: 1.2)),
+        const SizedBox(height: 8),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            button('Send', DebugPayloads.transfer),
+            button('Msig approve', DebugPayloads.multisigApproveTransfer),
+            button('Vote aye', DebugPayloads.governanceVoteAye),
+          ],
+        ),
+        const SizedBox(height: 20),
+      ],
+    );
   }
 
   Widget _cameraError(BuildContext context, MobileScannerException error) {
@@ -141,6 +186,7 @@ class _ScanTransactionScreenState extends State<ScanTransactionScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
+                if (kDebugMode) _debugPayloadButtons(context),
                 Text(
                   _error ?? 'Scan the transaction QR from your hot wallet',
                   style: text.paragraph?.copyWith(color: _error != null ? colors.error : Colors.white),

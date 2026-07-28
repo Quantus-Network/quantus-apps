@@ -58,7 +58,7 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
       final created = await ensureEncryptedAccounts(ref);
       if (created && mounted) ref.invalidate(accountsProvider);
     } catch (e, st) {
-      quantusDebugPrint('[AccountsSheet] ensure encrypted accounts failed: $e\n$st');
+      quantusPrint('[AccountsSheet] ensure encrypted accounts failed: $e\n$st');
     }
   }
 

@@ -57,7 +57,7 @@ class TaskMasterAuthClient {
   TaskMasterAuthClient(this.taskMasterEndpointUrl, {http.Client? client}) : _client = client ?? http.Client();
 
   Future<Map<String, String>> requestChallenge() async {
-    quantusDebugPrint('request challenge');
+    quantusPrint('request challenge');
     final r = await _client.post(
       Uri.parse('$taskMasterEndpointUrl/auth/request-challenge'),
       headers: {'content-type': 'application/json'},
@@ -76,7 +76,7 @@ class TaskMasterAuthClient {
     required String publicKeyHex,
     required String signatureHex,
   }) async {
-    quantusDebugPrint('verify $tempSessionId $taskMasterEndpointUrl');
+    quantusPrint('verify $tempSessionId $taskMasterEndpointUrl');
     final r = await _client.post(
       Uri.parse('$taskMasterEndpointUrl/auth/verify'),
       headers: {'content-type': 'application/json'},
@@ -91,7 +91,7 @@ class TaskMasterAuthClient {
       throw Exception('verify failed: ${r.statusCode}');
     }
     final j = jsonDecode(r.body) as Map<String, dynamic>;
-    quantusDebugPrint('verify response: ${r.body}');
+    quantusPrint('verify response: ${r.body}');
     return j['access_token'] as String;
   }
 
@@ -109,9 +109,9 @@ class TaskMasterAuthClient {
     required Future<String> Function(List<int> messageBytes) signHex,
   }) async {
     final ch = await requestChallenge();
-    quantusDebugPrint('challenge: $ch');
+    quantusPrint('challenge: $ch');
     final msg = 'taskmaster:login:1|challenge=${ch['challenge']}|address=$ss58Address';
-    quantusDebugPrint('msg: $msg');
+    quantusPrint('msg: $msg');
     final sigHex = await signHex(utf8.encode(msg));
     return verify(
       tempSessionId: ch['temp_session_id']!,
@@ -223,7 +223,7 @@ class TaskmasterService {
   }
 
   Future<bool> ensureIsLoggedIn() async {
-    quantusDebugPrint('ensureIsLoggedIn');
+    quantusPrint('ensureIsLoggedIn');
 
     if (_tokenInfo != null && !_tokenInfo!.isExpired) {
       if (_tokenInfo!.isNearExpiry) {
@@ -231,11 +231,11 @@ class TaskmasterService {
           _tokenInfo = await loginWithAccount1();
           return true;
         } catch (error) {
-          quantusDebugPrint('Token refresh failed: $error');
+          quantusPrint('Token refresh failed: $error');
           _clearToken();
         }
       } else {
-        quantusDebugPrint('is logged in by token expiry');
+        quantusPrint('is logged in by token expiry');
         return true;
       }
     }
@@ -244,14 +244,14 @@ class TaskmasterService {
       _tokenInfo = await loginWithAccount1();
       return true;
     } catch (error) {
-      quantusDebugPrint('Login failed: $error');
+      quantusPrint('Login failed: $error');
       return false;
     }
   }
 
   // Submit a referral code
   Future<void> submitReferral(String referralCode) async {
-    quantusDebugPrint('submitReferral $referralCode');
+    quantusPrint('submitReferral $referralCode');
     final Map<String, dynamic> requestBody = {'referral_code': referralCode.toLowerCase()};
 
     final http.Response response = await _authenticatedHttpClient.post(
@@ -265,7 +265,7 @@ class TaskmasterService {
   }
 
   Future<void> addRaidSubmission(String replyTweetLink) async {
-    quantusDebugPrint('add raid submission $replyTweetLink');
+    quantusPrint('add raid submission $replyTweetLink');
 
     final raiderSubmissionsEndpoint = Uri.parse('${AppConstants.taskMasterEndpoint}/raid-quests/submissions');
     final Map<String, dynamic> requestBody = {'tweet_reply_link': replyTweetLink};
@@ -281,7 +281,7 @@ class TaskmasterService {
   }
 
   Future<void> removeRaidSubmission(String id) async {
-    quantusDebugPrint('Remove raid submission $id');
+    quantusPrint('Remove raid submission $id');
 
     final raiderSubmissionsEndpoint = Uri.parse('${AppConstants.taskMasterEndpoint}/raid-quests/submissions/$id');
     final Map<String, dynamic> requestBody = {};
@@ -298,7 +298,7 @@ class TaskmasterService {
 
   Future<RaiderSubmissionsState> getActiveRaidRaiderSubmissions() async {
     final activeAccount = await getMainAccount();
-    quantusDebugPrint('getActiveRaidRaiderSubmissions ${activeAccount.accountId}');
+    quantusPrint('getActiveRaidRaiderSubmissions ${activeAccount.accountId}');
     final raiderSubmissionsEndpoint = Uri.parse('${AppConstants.taskMasterEndpoint}/raid-quests/submissions/me');
 
     final http.Response response = await _authenticatedHttpClient.get(
@@ -333,7 +333,7 @@ class TaskmasterService {
   }
 
   Future<void> associateEthAddress(String ethAddress) async {
-    quantusDebugPrint('associateEthAddress $ethAddress');
+    quantusPrint('associateEthAddress $ethAddress');
 
     final http.Response response = await _authenticatedHttpClient.post(
       _ethAssociationsEndpoint,
@@ -346,7 +346,7 @@ class TaskmasterService {
   }
 
   Future<void> updateAssociatedEthAddress(String ethAddress) async {
-    quantusDebugPrint('updateAssociatedEthAddress $ethAddress');
+    quantusPrint('updateAssociatedEthAddress $ethAddress');
 
     final http.Response response = await _authenticatedHttpClient.put(
       _ethAssociationsEndpoint,
@@ -359,7 +359,7 @@ class TaskmasterService {
   }
 
   Future<void> dissociateEthAddress() async {
-    quantusDebugPrint('dissociateEthAddress');
+    quantusPrint('dissociateEthAddress');
 
     final http.Response response = await _authenticatedHttpClient.delete(_ethAssociationsEndpoint);
 
@@ -369,7 +369,7 @@ class TaskmasterService {
   }
 
   Future<OAuthLink> generateAssociateXLink() async {
-    quantusDebugPrint('generateAssociateXLink');
+    quantusPrint('generateAssociateXLink');
     final xAssociationsEndpoint = Uri.parse('${AppConstants.taskMasterEndpoint}/auth/x/link');
 
     final http.Response response = await _authenticatedHttpClient.get(xAssociationsEndpoint);
@@ -385,7 +385,7 @@ class TaskmasterService {
   }
 
   Future<void> associateXHandle(String username) async {
-    quantusDebugPrint('associateXHandle $username');
+    quantusPrint('associateXHandle $username');
 
     final http.Response response = await _authenticatedHttpClient.post(
       _xAssociationsEndpoint,
@@ -398,7 +398,7 @@ class TaskmasterService {
   }
 
   Future<void> dissociateXAccount() async {
-    quantusDebugPrint('dissociateXAccount');
+    quantusPrint('dissociateXAccount');
 
     final http.Response response = await _authenticatedHttpClient.delete(_xAssociationsEndpoint);
 
@@ -413,7 +413,7 @@ class TaskmasterService {
       '${AppConstants.taskMasterEndpoint}/addresses/${activeAccount.accountId}/reward-program',
     );
 
-    quantusDebugPrint('opt in reward program for ${activeAccount.name} ${activeAccount.accountId}');
+    quantusPrint('opt in reward program for ${activeAccount.name} ${activeAccount.accountId}');
     final Map<String, dynamic> requestBody = {'new_status': true};
 
     final http.Response response = await _authenticatedHttpClient.put(
@@ -436,7 +436,7 @@ class TaskmasterService {
 
   Future<bool> getRewardProgramParticipation() async {
     final activeAccount = await getMainAccount();
-    quantusDebugPrint('getRewardProgramParticipation ${activeAccount.accountId}');
+    quantusPrint('getRewardProgramParticipation ${activeAccount.accountId}');
     final rewardProgramEndpoint = Uri.parse(
       '${AppConstants.taskMasterEndpoint}/addresses/${activeAccount.accountId}/reward-program',
     );
@@ -450,7 +450,7 @@ class TaskmasterService {
       if (response.statusCode == 404) {
         final Map<String, dynamic> responseBody = jsonDecode(response.body);
         if (responseBody['error']?.toLowerCase() == 'address not found') {
-          quantusDebugPrint('user not enrolled in reward program');
+          quantusPrint('user not enrolled in reward program');
           return false;
         }
       }
@@ -470,8 +470,8 @@ class TaskmasterService {
 
       return data;
     } catch (e, stackTrace) {
-      quantusDebugPrint('Error fetching miner stats: $e');
-      quantusDebugPrint('$stackTrace');
+      quantusPrint('Error fetching miner stats: $e');
+      quantusPrint('$stackTrace');
 
       return false;
     }
@@ -488,15 +488,15 @@ class TaskmasterService {
       final json = jsonDecode(response.body) as Map<String, dynamic>;
       return fromJson(json);
     } catch (e, stackTrace) {
-      quantusDebugPrint('Error fetching data from $uri: $e');
-      quantusDebugPrint('$stackTrace');
+      quantusPrint('Error fetching data from $uri: $e');
+      quantusPrint('$stackTrace');
       rethrow;
     }
   }
 
   Future<AccountAssociations> getAccountAssociations() async {
     final activeAccount = await getMainAccount();
-    quantusDebugPrint('getAccountAssociations ${activeAccount.accountId}');
+    quantusPrint('getAccountAssociations ${activeAccount.accountId}');
     final accountAssociationsEndpoint = Uri.parse('${AppConstants.taskMasterEndpoint}/addresses/associations');
     return _authenticatedGet(accountAssociationsEndpoint, AccountAssociations.fromJson);
   }
@@ -582,8 +582,8 @@ class TaskmasterService {
 
       return MinerStats(totalMinedBlocks: totalMinedBlocks, totalRewards: totalRewards);
     } catch (e, stackTrace) {
-      quantusDebugPrint('Error fetching miner stats: $e');
-      quantusDebugPrint('$stackTrace');
+      quantusPrint('Error fetching miner stats: $e');
+      quantusPrint('$stackTrace');
       rethrow;
     }
   }
@@ -602,8 +602,8 @@ class TaskmasterService {
       final json = jsonDecode(response.body) as Map<String, dynamic>;
       return AccountStats.fromJson(json);
     } catch (e, stackTrace) {
-      quantusDebugPrint('Error fetching address stats: $e');
-      quantusDebugPrint('$stackTrace');
+      quantusPrint('Error fetching address stats: $e');
+      quantusPrint('$stackTrace');
       rethrow;
     }
   }

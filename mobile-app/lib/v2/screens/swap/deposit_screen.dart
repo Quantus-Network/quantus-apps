@@ -53,7 +53,7 @@ class _DepositScreenState extends ConsumerState<DepositScreen> {
       });
       _pollStatus();
     } catch (e) {
-      quantusDebugPrint('Confirm funds sent failed: $e');
+      quantusPrint('Confirm funds sent failed: $e');
       setState(() => _confirming = false);
     }
   }
@@ -67,7 +67,7 @@ class _DepositScreenState extends ConsumerState<DepositScreen> {
         if (!mounted) return;
         setState(() => _order = updated);
       } catch (e) {
-        quantusDebugPrint('Swap status poll failed: $e');
+        quantusPrint('Swap status poll failed: $e');
       }
     }
   }

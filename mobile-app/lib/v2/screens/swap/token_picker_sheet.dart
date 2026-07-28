@@ -63,7 +63,7 @@ class _TokenPickerContentState extends ConsumerState<_TokenPickerContent> {
         _loading = false;
       });
     } catch (e) {
-      quantusDebugPrint('Token picker load failed: $e');
+      quantusPrint('Token picker load failed: $e');
       if (!mounted) return;
       setState(() {
         _loading = false;

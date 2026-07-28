@@ -82,7 +82,7 @@ class _RedeemProgressScreenState extends ConsumerState<RedeemProgressScreen> {
         _cancelled = true;
       });
     } catch (e) {
-      quantusDebugPrint('[Redeem] Claim failed: $e');
+      quantusPrint('[Redeem] Claim failed: $e');
       if (!mounted) return;
       setState(() {
         _running = false;

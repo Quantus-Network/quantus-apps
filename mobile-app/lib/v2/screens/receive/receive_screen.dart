@@ -63,7 +63,7 @@ class _ReceiveScreenState extends ConsumerState<ReceiveScreen> {
         _checksum = checksum;
       });
     } catch (e) {
-      quantusDebugPrint('Error loading account data: $e');
+      quantusPrint('Error loading account data: $e');
 
       if (mounted) {
         final l10n = ref.read(l10nProvider);

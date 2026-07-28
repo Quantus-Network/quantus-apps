@@ -33,6 +33,9 @@ class LocalNotificationsService {
         channelDescription: 'Wallet notification channel',
         importance: Importance.high,
         priority: Priority.high,
+        // Do not reveal any part of the notification on a secure lock screen: titles/bodies
+        // contain transaction amounts and addresses (security audit finding L14).
+        visibility: NotificationVisibility.secret,
       ),
       iOS: DarwinNotificationDetails(),
     );
@@ -48,13 +51,13 @@ class LocalNotificationsService {
       final currentTimeZone = await FlutterTimezone.getLocalTimezone();
       tz.setLocalLocation(tz.getLocation(currentTimeZone.identifier));
     } catch (e) {
-      quantusDebugPrint('Failed to set device timezone: "$e". Falling back to UTC for notifications.');
+      quantusPrint('Failed to set device timezone: "$e". Falling back to UTC for notifications.');
       try {
         tz_data.initializeTimeZones();
         tz.setLocalLocation(tz.UTC);
       } catch (err) {
         // Last resort: proceed without proper tz; scheduled notifs may not work but app continues.
-        quantusDebugPrint('Last resort failed to set device timezone to UTC: "$err".');
+        quantusPrint('Last resort failed to set device timezone to UTC: "$err".');
       }
     }
 
@@ -95,12 +98,8 @@ class LocalNotificationsService {
       final json = jsonDecode(payload);
       txService.navigateToTransactionFromPayloadIfPossible(json);
     } catch (e) {
-      quantusDebugPrint('Error decoding payload handle launch by notification: $e');
-      TelemetryService().sendError(
-        'Error decoding notification launch payload',
-        error: e.runtimeType.toString(),
-        stackTrace: StackTrace.current,
-      );
+      quantusPrint('Error decoding payload handle launch by notification: $e');
+      TelemetryService().sendError('Error decoding notification launch payload', error: e);
     }
   }
 
@@ -157,12 +156,8 @@ class LocalNotificationsService {
         final json = jsonDecode(payload);
         txService.navigateToTransactionFromPayloadIfPossible(json);
       } catch (e) {
-        quantusDebugPrint('Error decoding payload setup notifications click listener: $e');
-        TelemetryService().sendError(
-          'Error decoding notification click payload',
-          error: e.runtimeType.toString(),
-          stackTrace: StackTrace.current,
-        );
+        quantusPrint('Error decoding payload setup notifications click listener: $e');
+        TelemetryService().sendError('Error decoding notification click payload', error: e);
       }
     });
   }

@@ -133,12 +133,12 @@ class NumberFormattingService {
     try {
       final decimalAmount = _localeConfig.parseDecimal(formattedAmount);
       if (decimalAmount.scale > decimals) {
-        quantusDebugPrint('Warning: Input amount $formattedAmount exceeds $decimals decimals, will be truncated.');
+        quantusPrint('Warning: Input amount $formattedAmount exceeds $decimals decimals, will be truncated.');
       }
       final rawDecimalAmount = decimalAmount * scaleFactorDecimal;
       return rawDecimalAmount.toBigInt();
     } catch (e) {
-      quantusDebugPrint('Error parsing amount $formattedAmount: $e');
+      quantusPrint('Error parsing amount $formattedAmount: $e');
       return null;
     }
   }

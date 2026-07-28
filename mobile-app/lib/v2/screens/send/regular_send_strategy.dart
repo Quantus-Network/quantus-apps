@@ -156,7 +156,7 @@ class RegularSendStrategy extends SendStrategy {
             unawaited(
               RecentAddressesService()
                   .addAddress(recipient)
-                  .catchError((Object error) => quantusDebugPrint('Failed to save recent address: $error')),
+                  .catchError((Object error) => quantusPrint('Failed to save recent address: $error')),
             );
             return hash;
           },
@@ -175,11 +175,11 @@ class RegularSendStrategy extends SendStrategy {
       unawaited(
         RecentAddressesService()
             .addAddress(recipient)
-            .catchError((Object e) => quantusDebugPrint('Failed to save recent address: $e')),
+            .catchError((Object e) => quantusPrint('Failed to save recent address: $e')),
       );
       return SendSubmitted(terminal.copyWith(explorerUrl: explorerImmediateTransactionUrl(hash)));
     } catch (e) {
-      quantusDebugPrint('Transfer failed: $e');
+      quantusPrint('Transfer failed: $e');
       return SendFailed(l10n.sendReviewSubmitFailed);
     }
   }

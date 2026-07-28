@@ -24,7 +24,7 @@ class AnimatedQrScanner extends StatefulWidget {
   final bool Function(String part) acceptsPart;
   final bool Function(List<String> parts) isComplete;
   final Future<void> Function(List<String> parts) onComplete;
-  final FutureOr<void> Function(Object error, StackTrace stackTrace)? onError;
+  final FutureOr<void> Function(Object error)? onError;
   final AnimatedQrSequence? Function(String part)? sequenceForPart;
   final String instruction;
   final String submittingLabel;
@@ -98,9 +98,9 @@ class _AnimatedQrScannerState extends State<AnimatedQrScanner> {
     try {
       await _controller.stop();
       await widget.onComplete(parts);
-    } catch (error, stackTrace) {
+    } catch (error) {
       try {
-        await widget.onError?.call(error, stackTrace);
+        await widget.onError?.call(error);
       } finally {
         if (mounted) {
           setState(() {
@@ -121,8 +121,8 @@ class _AnimatedQrScannerState extends State<AnimatedQrScanner> {
     if (builder == null || _done) return;
     try {
       await _complete(await builder());
-    } catch (error, stackTrace) {
-      await widget.onError?.call(error, stackTrace);
+    } catch (error) {
+      await widget.onError?.call(error);
     }
   }
 

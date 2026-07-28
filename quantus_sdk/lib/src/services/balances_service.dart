@@ -20,8 +20,8 @@ class BalancesService {
       // Submit the extrinsic and return its result
       return await _substrateService.submitExtrinsic(account, runtimeCall);
     } catch (e, stackTrace) {
-      quantusDebugPrint('Failed to transfer balance: $e');
-      quantusDebugPrint('Failed to transfer balance: $stackTrace');
+      quantusPrint('Failed to transfer balance: $e');
+      quantusPrint('Failed to transfer balance: $stackTrace');
       throw Exception('Failed to transfer balance: $e');
     }
   }
@@ -32,8 +32,8 @@ class BalancesService {
       // Submit the extrinsic and return its result
       return await _substrateService.getFeeForCall(account, runtimeCall);
     } catch (e, stackTrace) {
-      quantusDebugPrint('Failed to transfer balance: $e');
-      quantusDebugPrint('Failed to transfer balance: $stackTrace');
+      quantusPrint('Failed to transfer balance: $e');
+      quantusPrint('Failed to transfer balance: $stackTrace');
       throw Exception('Failed to transfer balance: $e');
     }
   }

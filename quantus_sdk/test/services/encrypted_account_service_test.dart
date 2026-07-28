@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:convert/convert.dart' show hex;
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_sdk/src/services/account_discovery_service.dart';
@@ -29,18 +30,26 @@ WormholeUtxo _utxo(int scaled, {int index = 0, String? nullifierHex}) => Wormhol
     leafIndex: BigInt.from(scaled),
     transferCount: BigInt.one,
   ),
-  owner: WormholeAddressInfo(index: index, address: addressAt(index), secretHex: secretAt(index)),
+  // secretHex blank like production getUnspentUtxos (M11): spenders re-derive.
+  owner: WormholeAddressInfo(index: index, address: addressAt(index), secretHex: ''),
   nullifierHex: nullifierHex ?? '0xn$scaled',
 );
 
 class _FakeHdWallet extends HdWalletService {
+  /// Counts derivations so tests can assert key pairs are re-derived on
+  /// demand instead of served from a session cache (M11).
+  int derivations = 0;
+
   @override
-  WormholeKeyPair deriveWormholeKeyPair({required String mnemonic, int index = 0}) => WormholeKeyPair(
-    address: addressAt(index),
-    addressHex: '0x${'00' * 31}${(index).toRadixString(16).padLeft(2, '0')}',
-    rewardsPreimageHex: '0x',
-    secretHex: secretAt(index),
-  );
+  WormholeKeyPair deriveWormholeKeyPair({required String mnemonic, int index = 0}) {
+    derivations++;
+    return WormholeKeyPair(
+      address: addressAt(index),
+      addressHex: '0x${'00' * 31}${(index).toRadixString(16).padLeft(2, '0')}',
+      rewardsPreimageHex: '0x',
+      secretHex: secretAt(index),
+    );
+  }
 }
 
 class _FakeDiscovery extends AccountDiscoveryService {
@@ -78,10 +87,16 @@ class _FakeUtxoService extends WormholeUtxoService {
 
 /// Immediately "submits" every batch, reporting one fake nullifier per leaf.
 /// When [gate] is set, submission blocks until it resolves — lets tests race
-/// a slow send() against logout or another send.
+/// a slow send() against logout or another send. When [error] is set,
+/// submission throws it — lets tests exercise the failure path of send().
 class _FakeSendService extends WormholeSendService {
   final capturedBatchesList = <List<List<WormholeLeafSpend>>>[];
+
+  /// Copies of each leaf's secret taken at submission time — the live buffers
+  /// are zeroized by EncryptedAccountService.send once the send finishes.
+  final capturedSecretCopies = <Uint8List>[];
   Completer<void>? gate;
+  Object? error;
 
   List<List<WormholeLeafSpend>>? get capturedBatches => capturedBatchesList.isEmpty ? null : capturedBatchesList.last;
 
@@ -94,8 +109,15 @@ class _FakeSendService extends WormholeSendService {
     String? rpcUrl,
   }) async {
     capturedBatchesList.add(batches);
+    for (final batch in batches) {
+      for (final spend in batch) {
+        capturedSecretCopies.add(Uint8List.fromList(spend.secret));
+      }
+    }
     final g = gate;
     if (g != null) await g.future;
+    final err = error;
+    if (err != null) throw err;
     for (var i = 0; i < batches.length; i++) {
       await onBatchSubmitted?.call(i, [for (final s in batches[i]) '0xsubmitted_${i}_${s.outputAmount1}']);
     }
@@ -112,6 +134,7 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   late Directory tempDir;
+  late _FakeHdWallet hdWallet;
   late _FakeDiscovery discovery;
   late _FakeUtxoService utxoService;
   late _FakeSendService sendService;
@@ -123,13 +146,14 @@ void main() {
       const MethodChannel('plugins.flutter.io/path_provider'),
       (call) async => tempDir.path,
     );
+    hdWallet = _FakeHdWallet();
     discovery = _FakeDiscovery({});
     utxoService = _FakeUtxoService();
     sendService = _FakeSendService();
     service = EncryptedAccountService(
       walletIndex: 0,
       getMnemonic: () async => 'test mnemonic',
-      hdWalletService: _FakeHdWallet(),
+      hdWalletService: hdWallet,
       utxoService: utxoService,
       discoveryService: discovery,
       sendService: sendService,
@@ -298,6 +322,45 @@ void main() {
       expect(pending[0]['changeAddress'], isNull);
       expect(BigInt.parse(pending[0]['changeAmountPlanck'] as String), BigInt.zero);
       expect(sendService.capturedBatches![0][0].exitAccount2, isNull);
+    });
+  });
+
+  group('secret hygiene (M11)', () {
+    final recipient = Address(prefix: 189, pubkey: Uint8List.fromList(List.filled(32, 0x22))).encode();
+
+    test('key pairs are re-derived on every call, never cached', () async {
+      await seedState(nextIndex: 2);
+      final before = hdWallet.derivations;
+      await service.keyPairAt(0);
+      await service.keyPairAt(0);
+      await service.receiveKeyPair();
+      expect(hdWallet.derivations, before + 3);
+    });
+
+    test('send re-derives input secrets from the owner index and zeroizes them afterwards', () async {
+      await seedState(nextIndex: 1);
+      final plan = selectWormholeInputs(utxos: [_utxo(1000)], amountPlanck: wormholePlanckFromScaled(400));
+
+      await service.send(plan: plan, recipientAddress: recipient, circuitBinsDir: '/unused', onProgress: (_) {});
+
+      // The prover received the correct secret for the UTXO's owner index…
+      expect(sendService.capturedSecretCopies.single, hex.decode(secretAt(0).replaceFirst('0x', '')));
+      // …and the live buffer was zeroized once the send completed.
+      final liveSecret = sendService.capturedBatches![0][0].secret;
+      expect(liveSecret.every((b) => b == 0), isTrue);
+    });
+
+    test('send zeroizes secrets even when the send fails', () async {
+      await seedState(nextIndex: 1);
+      final plan = selectWormholeInputs(utxos: [_utxo(1000)], amountPlanck: wormholePlanckFromScaled(400));
+      sendService.error = StateError('boom');
+
+      await expectLater(
+        service.send(plan: plan, recipientAddress: recipient, circuitBinsDir: '/unused', onProgress: (_) {}),
+        throwsA(isA<StateError>()),
+      );
+      final liveSecret = sendService.capturedBatches![0][0].secret;
+      expect(liveSecret.every((b) => b == 0), isTrue);
     });
   });
 

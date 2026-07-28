@@ -52,7 +52,7 @@ class _PosAmountScreenState extends ConsumerState<PosAmountScreen> {
     try {
       setState(() => _amount = _amountInputLogic.onAmountChanged(value: _amountController.text, isFlipped: isFlipped));
     } on InvalidNumberInputException catch (e, stack) {
-      quantusDebugPrint('Amount parse failed: $e\n$stack');
+      quantusPrint('Amount parse failed: $e\n$stack');
       context.showErrorToaster(message: ref.read(l10nProvider).sendInputAmountInvalidAmount);
       return;
     }

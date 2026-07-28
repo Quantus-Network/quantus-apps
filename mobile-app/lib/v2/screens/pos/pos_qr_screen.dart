@@ -59,7 +59,7 @@ class _PosQrScreenState extends ConsumerState<PosQrScreen> {
     if (active == null) return;
 
     if (widget.amountPlanck <= BigInt.zero) {
-      quantusDebugPrint('[PosQr] ERROR: invalid amount planck ${widget.amountPlanck}');
+      quantusPrint('[PosQr] ERROR: invalid amount planck ${widget.amountPlanck}');
       if (mounted) setState(() => _watchError = l10n.posQrInvalidAmount);
       return;
     }
@@ -69,15 +69,15 @@ class _PosQrScreenState extends ConsumerState<PosQrScreen> {
       _watchError = null;
     });
 
-    quantusDebugPrint('[PosQr] watching address=${active.account.accountId} expected=${widget.amountPlanck} planck');
+    quantusPrint('[PosQr] watching address=${active.account.accountId} expected=${widget.amountPlanck} planck');
     _txWatch.watch(
       address: active.account.accountId,
       onTransfer: (tx) {
-        quantusDebugPrint('[PosQr] onTransfer from=${tx.from} amount=${tx.amount} hash=${tx.txHash}');
+        quantusPrint('[PosQr] onTransfer from=${tx.from} amount=${tx.amount} hash=${tx.txHash}');
         if (_isPaid) return;
         final received = BigInt.tryParse(tx.amount);
         if (received != widget.amountPlanck) {
-          quantusDebugPrint('[PosQr] amount mismatch (received=$received expected=${widget.amountPlanck}), ignoring');
+          quantusPrint('[PosQr] amount mismatch (received=$received expected=${widget.amountPlanck}), ignoring');
           return;
         }
 
@@ -104,7 +104,7 @@ class _PosQrScreenState extends ConsumerState<PosQrScreen> {
         }
       },
       onError: (e) {
-        quantusDebugPrint('[PosQr] watch error: $e');
+        quantusPrint('[PosQr] watch error: $e');
         _txWatch.dispose();
         _timeoutTimer?.cancel();
         if (mounted) {

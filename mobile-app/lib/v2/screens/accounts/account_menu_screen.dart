@@ -175,7 +175,7 @@ class AccountMenuScreen extends ConsumerWidget {
       ref.invalidate(activeAccountProvider);
       if (context.mounted) returnToAccountsSheet(context, ref);
     } catch (e, st) {
-      quantusDebugPrint('[AccountMenu] disconnect account error: $e\n$st');
+      quantusPrint('[AccountMenu] disconnect account error: $e\n$st');
       if (context.mounted) context.showErrorToaster(message: l10n.accountMenuDisconnectError);
     }
   }
@@ -188,7 +188,7 @@ class AccountMenuScreen extends ConsumerWidget {
       ref.invalidate(activeAccountProvider);
       if (context.mounted) returnToAccountsSheet(context, ref);
     } catch (e, st) {
-      quantusDebugPrint('[AccountMenu] disconnect wallet error: $e\n$st');
+      quantusPrint('[AccountMenu] disconnect wallet error: $e\n$st');
       if (context.mounted) context.showErrorToaster(message: l10n.accountMenuDisconnectError);
     }
   }

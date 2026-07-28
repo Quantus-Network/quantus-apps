@@ -61,6 +61,13 @@ class AppConstants {
   static const int decimals = 12;
   static const int ss58prefix = 189;
 
+  // Runtime the bundled polkadart metadata (lib/generated/planck) was generated
+  // from. A signing payload declaring a different spec version may decode
+  // against shifted pallet/call indices, so signers warn loudly rather than
+  // present a decode they cannot vouch for. Bump both when regenerating.
+  static const int bundledSpecVersion = 136;
+  static const int bundledTransactionVersion = 3;
+
   // Reserved account index for the per-wallet encrypted (wormhole) account.
   // Kept high so it never collides with sequential transparent (BIP44) indices;
   // the wormhole keypair derives independently of this value.

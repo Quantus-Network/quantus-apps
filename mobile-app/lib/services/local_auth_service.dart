@@ -46,7 +46,7 @@ class LocalAuthService {
     try {
       return await _localAuth.isDeviceSupported();
     } catch (e) {
-      quantusDebugPrint('Error checking device security: $e');
+      quantusPrint('Error checking device security: $e');
       return false;
     }
   }
@@ -62,7 +62,7 @@ class LocalAuthService {
       final available = await getAvailableBiometrics();
       return available.isNotEmpty;
     } catch (e) {
-      quantusDebugPrint('Error checking biometric availability: $e');
+      quantusPrint('Error checking biometric availability: $e');
       return false;
     }
   }
@@ -71,7 +71,7 @@ class LocalAuthService {
     try {
       return await _localAuth.getAvailableBiometrics();
     } catch (e) {
-      quantusDebugPrint('Error getting available biometrics: $e');
+      quantusPrint('Error getting available biometrics: $e');
       return [];
     }
   }
@@ -104,10 +104,10 @@ class LocalAuthService {
       if (didAuthenticate) cleanLastPausedTime();
       return didAuthenticate;
     } on PlatformException catch (e) {
-      quantusDebugPrint('Platform exception during authentication: $e');
+      quantusPrint('Platform exception during authentication: $e');
       return false;
     } catch (e) {
-      quantusDebugPrint('Error during authentication: $e');
+      quantusPrint('Error during authentication: $e');
       return false;
     }
   }
@@ -125,7 +125,7 @@ class LocalAuthService {
       if (lastPausedTime == null) return true;
       return DateTime.now().difference(lastPausedTime) > _authTimeout;
     } catch (e) {
-      quantusDebugPrint('Error checking if authentication is required: $e');
+      quantusPrint('Error checking if authentication is required: $e');
       return true;
     }
   }
@@ -144,7 +144,7 @@ class LocalAuthService {
     try {
       await _localAuth.stopAuthentication();
     } catch (e) {
-      quantusDebugPrint('Error stopping authentication: $e');
+      quantusPrint('Error stopping authentication: $e');
     }
   }
 }

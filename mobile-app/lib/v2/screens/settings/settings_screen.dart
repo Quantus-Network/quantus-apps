@@ -51,8 +51,8 @@ class _SettingsScreenV2State extends ConsumerState<SettingsScreenV2> {
                 ),
                 loading: () => _buildTappableRow(e.value, subtitle: l10n.commonLoading, trailing: trailing),
                 error: (err, st) {
-                  quantusDebugPrint('Error getting mining rewards: ${err.toString()}');
-                  quantusDebugPrint('Stack trace: ${st.toString()}');
+                  quantusPrint('Error getting mining rewards: ${err.toString()}');
+                  quantusPrint('Stack trace: ${st.toString()}');
 
                   return _buildTappableRow(e.value, subtitle: l10n.settingsMiningRewardsError, trailing: trailing);
                 },

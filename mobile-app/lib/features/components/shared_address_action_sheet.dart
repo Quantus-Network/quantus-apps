@@ -43,7 +43,7 @@ class _SharedAddressActionSheetState extends State<SharedAddressActionSheet> {
         _splittedAddress = AddressFormattingService.splitIntoChunks(widget.address);
       });
     } catch (e) {
-      quantusDebugPrint('Error loading account data: $e');
+      quantusPrint('Error loading account data: $e');
       if (mounted) {
         setState(() {});
       }
@@ -142,7 +142,7 @@ class _SharedAddressActionSheetState extends State<SharedAddressActionSheet> {
                             !snapshot.hasData ||
                             snapshot.data == null ||
                             snapshot.data!.isEmpty) {
-                          quantusDebugPrint(
+                          quantusPrint(
                             'Error loading checksum name for ${widget.address}: '
                             '${snapshot.error}',
                           );

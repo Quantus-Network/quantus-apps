@@ -32,7 +32,7 @@ class ReferralService {
       ReferrerDetails referrerDetails = await PlayInstallReferrer.installReferrer;
       String? referrerString = referrerDetails.installReferrer;
 
-      quantusDebugPrint('Raw Install Referrer: $referrerString');
+      quantusPrint('Raw Install Referrer: $referrerString');
 
       if (referrerString != null && referrerString.isNotEmpty) {
         Map<String, String> params = _parseReferrer(referrerString);
@@ -42,13 +42,13 @@ class ReferralService {
         if (referralCode != null && referralCode.isNotEmpty) {
           SettingsService().setReferralCode(referralCode);
           SettingsService().setReferralCheckCompleted();
-          quantusDebugPrint('Referral Code Found: $referralCode');
+          quantusPrint('Referral Code Found: $referralCode');
         }
       }
 
-      quantusDebugPrint('No referral code found');
+      quantusPrint('No referral code found');
     } catch (e) {
-      quantusDebugPrint('Error checking install referrer: $e');
+      quantusPrint('Error checking install referrer: $e');
     }
   }
 
@@ -80,7 +80,7 @@ class ReferralService {
         headers: {'Content-Type': 'application/json'},
       );
 
-      quantusDebugPrint('getReferralData response: ${response.body}');
+      quantusPrint('getReferralData response: ${response.body}');
 
       // If account doesn't have referrer, it will return 404 code.
       // Therefore we can confidently say it has been checked successfully.

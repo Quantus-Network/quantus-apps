@@ -21,7 +21,7 @@ class MultisigAccountsNotifier extends StateNotifier<AsyncValue<List<MultisigAcc
       final accounts = await _settingsService.getMultisigAccounts();
       state = AsyncValue.data(accounts);
     } catch (e, st) {
-      quantusDebugPrint('multisig accounts load error: $e $st');
+      quantusPrint('multisig accounts load error: $e $st');
       state = AsyncValue.error(e, st);
     }
   }

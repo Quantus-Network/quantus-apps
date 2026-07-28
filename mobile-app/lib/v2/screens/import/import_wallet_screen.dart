@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
@@ -89,7 +90,9 @@ class _ImportWalletScreenV2State extends ConsumerState<ImportWalletScreenV2> {
     });
 
     try {
-      if (!mnemonic.startsWith('//')) {
+      // Dev seeds (//Crystal Alice etc.) skip word-count validation, but only
+      // in debug builds; in release they fail normal mnemonic validation (M8).
+      if (!(kDebugMode && mnemonic.startsWith('//'))) {
         final words = mnemonic.split(' ').where((w) => w.isNotEmpty).toList();
         if (words.length != 12 && words.length != 24) {
           throw Exception(ref.read(l10nProvider).importWalletValidationError);
@@ -148,9 +151,9 @@ class _ImportWalletScreenV2State extends ConsumerState<ImportWalletScreenV2> {
       ref.invalidate(accountsProvider);
       ref.invalidate(activeAccountProvider);
       unawaited(_discoverEncryptedAccount());
-    } catch (e, st) {
-      quantusDebugPrint('error discovering accounts: $e');
-      TelemetryService().sendError('Error discovering accounts', error: e, stackTrace: st);
+    } catch (e) {
+      quantusPrint('error discovering accounts: $e');
+      TelemetryService().sendError('Error discovering accounts', error: e);
     }
   }
 
@@ -165,9 +168,9 @@ class _ImportWalletScreenV2State extends ConsumerState<ImportWalletScreenV2> {
       if (!created || !mounted) return;
       ref.invalidate(accountsProvider);
       await ref.read(encryptedStateProvider(widget.walletIndex).future);
-    } catch (e, st) {
-      quantusDebugPrint('encrypted discovery after import failed: $e');
-      TelemetryService().sendError('Encrypted discovery after import failed', error: e, stackTrace: st);
+    } catch (e) {
+      quantusPrint('encrypted discovery after import failed: $e');
+      TelemetryService().sendError('Encrypted discovery after import failed', error: e);
     }
   }
 

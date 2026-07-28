@@ -40,7 +40,7 @@ class TxWatchService {
     try {
       _ws = await WebSocket.connect(wsUrl);
     } catch (e) {
-      quantusDebugPrint('[TxWatch] WebSocket connect failed: $e');
+      quantusPrint('[TxWatch] WebSocket connect failed: $e');
       onError(e);
       return;
     }
@@ -65,7 +65,7 @@ class TxWatchService {
       }
       if (data.containsKey('error')) {
         final msg = (data['error'] as Map<String, dynamic>)['message'];
-        quantusDebugPrint('[TxWatch] RPC error: $msg');
+        quantusPrint('[TxWatch] RPC error: $msg');
         onError(Exception(msg));
       }
     }, onError: (e) => onError(e as Object));
