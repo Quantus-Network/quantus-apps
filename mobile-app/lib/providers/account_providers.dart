@@ -8,8 +8,9 @@ import 'package:resonance_network_wallet/shared/utils/print.dart';
 class AccountsNotifier extends StateNotifier<AsyncValue<List<Account>>> {
   final AccountsService _accountsService;
 
-  AccountsNotifier(this._accountsService) : super(const AsyncValue.loading()) {
-    _loadAccounts();
+  AccountsNotifier(this._accountsService, {List<Account>? initialAccounts})
+    : super(initialAccounts != null ? AsyncValue.data(initialAccounts) : const AsyncValue.loading()) {
+    if (initialAccounts == null) _loadAccounts();
   }
 
   Future<void> _loadAccounts() async {

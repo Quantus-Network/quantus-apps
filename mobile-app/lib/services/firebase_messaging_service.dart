@@ -150,13 +150,17 @@ class FirebaseMessagingService {
       quantusDebugPrint('FCM foreground message: ${message.messageId}');
 
       unawaited(_ref.read(historyPollingManagerProvider).triggerSilentRefresh());
-
-      final notification = _remoteMessageToNotificationData(message);
-      if (notification == null) return;
-
-      final notifier = _ref.read(notificationProvider.notifier);
-      notifier.addNotification(notification);
+      unawaited(_showForegroundNotification(message));
     });
+  }
+
+  /// Builds an in-app notification from a foreground FCM message and shows it.
+  Future<void> _showForegroundNotification(RemoteMessage message) async {
+    final notification = await _remoteMessageToNotificationData(message);
+    if (notification == null) return;
+
+    final notifier = _ref.read(notificationProvider.notifier);
+    notifier.addNotification(notification);
   }
 
   void _setupBackgroundMessageListener() {
@@ -194,14 +198,22 @@ class FirebaseMessagingService {
     final txService = _ref.read(transactionServiceProvider);
 
     if (txService.navigateToProposalFromPayloadIfPossible(data)) return;
-    txService.navigateToTransactionFromPayloadIfPossible(data);
+    unawaited(txService.navigateToTransactionFromPushPayloadIfPossible(data));
   }
 
-  NotificationData? _remoteMessageToNotificationData(RemoteMessage message) {
+  /// Converts a transfer push payload into an in-app notification.
+  ///
+  /// The payload is treated as an untrusted hint: the transaction is
+  /// re-fetched from the indexer (see
+  /// [TransactionService.resolveTransactionFromPushPayload]), which also
+  /// requires it to involve one of the local accounts, and only the verified
+  /// result is rendered. When the transaction cannot be verified, no
+  /// notification is shown (fail closed).
+  Future<NotificationData?> _remoteMessageToNotificationData(RemoteMessage message) async {
     final data = message.data;
 
     final txService = _ref.read(transactionServiceProvider);
-    final event = txService.deserializeTxEventFromJsonIfPossible(data);
+    final event = await txService.resolveTransactionFromPushPayload(data);
     if (event == null) return null;
 
     if (event is TransferEvent) {
