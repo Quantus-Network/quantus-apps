@@ -55,14 +55,21 @@ class _ReviewSendScreenState extends ConsumerState<ReviewSendScreen> {
       _errorMessage = null;
     });
 
-    final outcome = await widget.strategy.submit(
-      ref,
-      recipientAddress: widget.recipientAddress.trim(),
-      recipientChecksum: widget.recipientChecksum,
-      amount: widget.amount,
-      fee: widget.fee,
-      isPayMode: widget.isPayMode,
-    );
+    SendOutcome outcome;
+    try {
+      outcome = await widget.strategy.submit(
+        ref,
+        recipientAddress: widget.recipientAddress.trim(),
+        recipientChecksum: widget.recipientChecksum,
+        amount: widget.amount,
+        fee: widget.fee,
+        isPayMode: widget.isPayMode,
+      );
+    } catch (e, st) {
+      debugPrint('Send submit error: $e\n$st');
+      if (!mounted) return;
+      outcome = SendFailed(ref.read(l10nProvider).sendReviewSubmitFailed);
+    }
     if (!mounted) return;
 
     switch (outcome) {

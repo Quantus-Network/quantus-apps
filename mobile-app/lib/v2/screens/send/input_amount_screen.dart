@@ -142,8 +142,10 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
 
   /// For encrypted sends the fee estimate *is* the spend plan, frozen for the
   /// amount it was computed with — a stale fee must never stay valid for a new
-  /// amount. Drop it so Review stays blocked until the refetch lands.
+  /// amount. Drop it and orphan any in-flight fetch so Review stays blocked
+  /// until a refetch for the current amount lands.
   void _invalidateFee() {
+    _fetchFeeCounter++;
     setState(() {
       _fee = null;
       _hasFee = false;
@@ -152,6 +154,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
   }
 
   void _refreshFee() {
+    _feeDebouncer.cancel();
     final counter = ++_fetchFeeCounter;
     final showLoader = !_hasFee || _feeFetchFailed;
     setState(() {
@@ -181,11 +184,6 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
         _isFetchingFee = false;
       });
     }
-  }
-
-  void _retryFeeFetch() {
-    _feeDebouncer.cancel();
-    _refreshFee();
   }
 
   /// Converts a raw QUAN [BigInt] to a fiat input string using the current
@@ -223,8 +221,13 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
 
   void _openReview() {
     final fee = _fee;
-    if (_recipientChecksum == null || fee == null) {
-      context.showErrorToaster(message: ref.read(l10nProvider).sendInputAmountChecksumRequired);
+    final l10n = ref.read(l10nProvider);
+    if (_recipientChecksum == null) {
+      context.showErrorToaster(message: l10n.sendInputAmountChecksumRequired);
+      return;
+    }
+    if (fee == null) {
+      context.showErrorToaster(message: widget.strategy.strings(l10n).feeFetchFailedMessage);
       return;
     }
 
@@ -489,7 +492,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
           IntrinsicWidth(
             child: QuantusButton.simple(
               label: l10n.homeActivityRetry,
-              onTap: _retryFeeFetch,
+              onTap: _refreshFee,
               padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 0),
               variant: ButtonVariant.transparent,
               textStyle: text.smallParagraph?.copyWith(
