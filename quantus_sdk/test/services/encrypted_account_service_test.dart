@@ -30,7 +30,8 @@ WormholeUtxo _utxo(int scaled, {int index = 0, String? nullifierHex}) => Wormhol
     leafIndex: BigInt.from(scaled),
     transferCount: BigInt.one,
   ),
-  owner: WormholeAddressInfo(index: index, address: addressAt(index), secretHex: secretAt(index)),
+  // secretHex blank like production getUnspentUtxos (M11): spenders re-derive.
+  owner: WormholeAddressInfo(index: index, address: addressAt(index), secretHex: ''),
   nullifierHex: nullifierHex ?? '0xn$scaled',
 );
 

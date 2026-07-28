@@ -8,10 +8,11 @@ import 'package:path_provider/path_provider.dart';
 import 'package:quantus_sdk/src/services/account_discovery_service.dart';
 import 'package:quantus_sdk/src/services/hd_wallet_service.dart';
 import 'package:quantus_sdk/src/services/substrate_service.dart' show getAccountId32;
-import 'package:quantus_sdk/src/services/wormhole_address_manager.dart' show MnemonicGetter;
 import 'package:quantus_sdk/src/services/wormhole_coin_selection.dart';
 import 'package:quantus_sdk/src/services/wormhole_send_service.dart';
 import 'package:quantus_sdk/src/services/wormhole_utxo_service.dart';
+
+typedef MnemonicGetter = Future<String?> Function();
 
 /// Snapshot of an encrypted account: spendable UTXOs across all discovered
 /// wormhole addresses, plus change that has been submitted but not yet indexed.
@@ -202,14 +203,10 @@ class EncryptedAccountService {
     // Secrets live only inside this list for the duration of the UTXO fetch
     // (needed there for nullifier computation); the returned UTXOs carry no
     // secrets and this list is dropped when load() returns.
-    final addresses = [
-      for (final i in scanIndices)
-        WormholeAddressInfo(
-          index: i,
-          address: _deriveKeyPair(mnemonic, i).address,
-          secretHex: _deriveKeyPair(mnemonic, i).secretHex,
-        ),
-    ];
+    final addresses = scanIndices.map((i) {
+      final keyPair = _deriveKeyPair(mnemonic, i);
+      return WormholeAddressInfo(index: i, address: keyPair.address, secretHex: keyPair.secretHex);
+    }).toList();
 
     final utxoResult = await _utxoService.getUnspentUtxos(
       addresses: addresses,

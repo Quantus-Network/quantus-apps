@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:convert/convert.dart';
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:path_provider/path_provider.dart';
 import 'package:quantus_sdk/src/rust/api/wormhole.dart' as wormhole_ffi;
 import 'package:quantus_sdk/src/services/hd_wallet_service.dart';
@@ -428,7 +429,8 @@ query SpentNullifiers($hashes: [String!]!) {
   /// Returns a map from nullifier hex to the block height where it was spent.
   /// Callers are responsible for deciding which entries are reorg-safe to
   /// persist (see `getUnspentUtxos`).
-  Future<Map<String, int>> _checkNullifiersSpent(
+  @visibleForTesting
+  Future<Map<String, int>> checkNullifiersSpent(
     List<(String nullifierHex, String nullifierHash)> nullifiers, {
     WormholeProgressCallback? onProgress,
     IsCancelledCallback? isCancelled,
@@ -627,7 +629,7 @@ query SpentNullifiers($hashes: [String!]!) {
     _log('Computed nullifiers: $skipped cached-spent, ${uncheckedPairs.length} to check');
 
     if (uncheckedPairs.isNotEmpty) {
-      final newSpent = await _checkNullifiersSpent(uncheckedPairs, onProgress: onProgress, isCancelled: isCancelled);
+      final newSpent = await checkNullifiersSpent(uncheckedPairs, onProgress: onProgress, isCancelled: isCancelled);
       // In-memory: every spent nullifier we've seen, including ones in
       // unfinalized blocks — must not be re-claimed in this call.
       allSpent.addAll(newSpent.keys);
