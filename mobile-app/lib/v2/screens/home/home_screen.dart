@@ -153,9 +153,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Future<void> _refresh() async {
     try {
       await ref.read(globalHistoryPollingServiceProvider).triggerManualRefresh();
-    } catch (e, st) {
+    } catch (e) {
       quantusDebugPrint('home refresh error: $e');
-      TelemetryService().sendError('Home refresh failed', error: e, stackTrace: st);
+      TelemetryService().sendError('Home refresh failed', error: e);
     }
   }
 

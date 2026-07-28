@@ -571,6 +571,14 @@
         }
       }
     },
+    "multisigProposalCallLoading": "Reading the proposal from the chain…",
+    "@multisigProposalCallLoading": {
+      "description": "Shown while the proposal's stored call bytes are being fetched before approving"
+    },
+    "multisigProposalCallUnavailable": "Could not read this proposal from the chain, so there is nothing to approve. Try again when you are back online.",
+    "@multisigProposalCallUnavailable": {
+      "description": "Shown when the proposal's stored call bytes could not be fetched, blocking approval"
+    },
     "multisigStatusApproved": "SIGNED",
     "@multisigStatusApproved": {
       "description": "Proposal status chip when the current signer has approved"

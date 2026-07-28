@@ -46,8 +46,8 @@ class $Call {
     return Propose(multisigAddress: multisigAddress, call: call, expiry: expiry);
   }
 
-  Approve approve({required _i3.AccountId32 multisigAddress, required int proposalId}) {
-    return Approve(multisigAddress: multisigAddress, proposalId: proposalId);
+  Approve approve({required _i3.AccountId32 multisigAddress, required int proposalId, required List<int> call}) {
+    return Approve(multisigAddress: multisigAddress, proposalId: proposalId, call: call);
   }
 
   Cancel cancel({required _i3.AccountId32 multisigAddress, required int proposalId}) {
@@ -229,8 +229,11 @@ class CreateMultisig extends Call {
 /// **For threshold=1:** The proposal is created with `Approved` status immediately
 /// and can be executed via `execute()` without additional approvals.
 ///
-/// **Weight:** Charged upfront for worst-case (high-security path with decode).
-/// Refunded to actual cost on success based on whether HS path was taken.
+/// **Weight:** Charged upfront includes bookkeeping + MaxInnerCallWeight to cover
+/// the cost of decoding arbitrary RuntimeCall structures and calling get_dispatch_info().
+/// On success, refunds based on actual inner call weight. On rejection after decode
+/// (e.g., CallWeightExceedsLimit, CallNotAllowedForHighSecurityMultisig), the full
+/// reserved weight is burned to prevent griefing with complex calls that get rejected.
 class Propose extends Call {
   const Propose({required this.multisigAddress, required this.call, required this.expiry});
 
@@ -285,21 +288,29 @@ class Propose extends Call {
 
 /// Approve a proposed transaction
 ///
+/// The approver must resubmit the proposal's inner call bytes; the approval is
+/// only valid if they are byte-equal to the payload stored at `proposal_id`.
+/// This binds the approver's signature to the actual call being approved, so
+/// offline/cold-wallet signers can decode and inspect what they are signing
+/// instead of trusting an opaque proposal id.
+///
 /// If this approval brings the total approvals to or above the threshold,
 /// the proposal status changes to `Approved` and can be executed via `execute()`.
 ///
 /// Parameters:
 /// - `multisig_address`: The multisig account
 /// - `proposal_id`: ID (nonce) of the proposal to approve
+/// - `call`: The encoded inner call of the proposal (must match the stored payload)
 ///
 /// Weight: Charges for MAX call size, refunds based on actual
 class Approve extends Call {
-  const Approve({required this.multisigAddress, required this.proposalId});
+  const Approve({required this.multisigAddress, required this.proposalId, required this.call});
 
   factory Approve._decode(_i1.Input input) {
     return Approve(
       multisigAddress: const _i1.U8ArrayCodec(32).decode(input),
       proposalId: _i1.U32Codec.codec.decode(input),
+      call: _i1.U8SequenceCodec.codec.decode(input),
     );
   }
 
@@ -309,15 +320,19 @@ class Approve extends Call {
   /// u32
   final int proposalId;
 
+  /// BoundedCallOf<T>
+  final List<int> call;
+
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-    'approve': {'multisigAddress': multisigAddress.toList(), 'proposalId': proposalId},
+    'approve': {'multisigAddress': multisigAddress.toList(), 'proposalId': proposalId, 'call': call},
   };
 
   int _sizeHint() {
     int size = 1;
     size = size + const _i3.AccountId32Codec().sizeHint(multisigAddress);
     size = size + _i1.U32Codec.codec.sizeHint(proposalId);
+    size = size + _i1.U8SequenceCodec.codec.sizeHint(call);
     return size;
   }
 
@@ -325,15 +340,19 @@ class Approve extends Call {
     _i1.U8Codec.codec.encodeTo(2, output);
     const _i1.U8ArrayCodec(32).encodeTo(multisigAddress, output);
     _i1.U32Codec.codec.encodeTo(proposalId, output);
+    _i1.U8SequenceCodec.codec.encodeTo(call, output);
   }
 
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is Approve && _i4.listsEqual(other.multisigAddress, multisigAddress) && other.proposalId == proposalId;
+      other is Approve &&
+          _i4.listsEqual(other.multisigAddress, multisigAddress) &&
+          other.proposalId == proposalId &&
+          _i4.listsEqual(other.call, call);
 
   @override
-  int get hashCode => Object.hash(multisigAddress, proposalId);
+  int get hashCode => Object.hash(multisigAddress, proposalId, call);
 }
 
 /// Cancel a proposed transaction (only by proposer)

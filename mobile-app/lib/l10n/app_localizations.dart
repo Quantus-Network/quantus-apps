@@ -818,6 +818,18 @@ abstract class AppLocalizations {
   /// **'to {address}'**
   String multisigProposalToAddress(String address);
 
+  /// Shown while the proposal's stored call bytes are being fetched before approving
+  ///
+  /// In en, this message translates to:
+  /// **'Reading the proposal from the chain…'**
+  String get multisigProposalCallLoading;
+
+  /// Shown when the proposal's stored call bytes could not be fetched, blocking approval
+  ///
+  /// In en, this message translates to:
+  /// **'Could not read this proposal from the chain, so there is nothing to approve. Try again when you are back online.'**
+  String get multisigProposalCallUnavailable;
+
   /// Proposal status chip when the current signer has approved
   ///
   /// In en, this message translates to:

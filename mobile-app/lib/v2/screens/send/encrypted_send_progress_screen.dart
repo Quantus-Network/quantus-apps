@@ -29,6 +29,10 @@ import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 class EncryptedSendProgressScreen extends ConsumerStatefulWidget {
   final Account account;
   final WormholeSpendPlan plan;
+
+  /// The amount the user confirmed at review; the controller refuses to prove
+  /// a plan whose amountPlanck differs.
+  final BigInt amount;
   final String recipientAddress;
   final SendTerminalContent terminal;
 
@@ -36,6 +40,7 @@ class EncryptedSendProgressScreen extends ConsumerStatefulWidget {
     super.key,
     required this.account,
     required this.plan,
+    required this.amount,
     required this.recipientAddress,
     required this.terminal,
   });
@@ -54,7 +59,12 @@ class _EncryptedSendProgressScreenState extends ConsumerState<EncryptedSendProgr
       unawaited(
         ref
             .read(encryptedSendControllerProvider.notifier)
-            .start(account: widget.account, plan: widget.plan, recipientAddress: widget.recipientAddress),
+            .start(
+              account: widget.account,
+              plan: widget.plan,
+              amount: widget.amount,
+              recipientAddress: widget.recipientAddress,
+            ),
       );
     });
   }

@@ -204,9 +204,9 @@ class TransactionService {
       event = await _ref
           .read(chainHistoryServiceProvider)
           .searchByExtrinsicHash(extrinsicHash: extrinsicHash, isReversible: isReversible);
-    } catch (e, st) {
+    } catch (e) {
       debugPrint('Failed resolving push payload transaction $extrinsicHash: $e');
-      TelemetryService().sendError('Failed resolving push payload transaction', error: e, stackTrace: st);
+      TelemetryService().sendError('Failed resolving push payload transaction', error: e);
       return null;
     }
     if (event == null) return null;
@@ -254,11 +254,7 @@ class TransactionService {
       }
     } catch (e) {
       debugPrint('Failed deserializing $txType event: $e');
-      TelemetryService().sendError(
-        'Failed deserializing $txType event',
-        error: e.runtimeType.toString(),
-        stackTrace: StackTrace.current,
-      );
+      TelemetryService().sendError('Failed deserializing transaction event', error: e);
     }
 
     return event;

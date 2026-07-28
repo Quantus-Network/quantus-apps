@@ -8,50 +8,53 @@ enum Error {
   /// User is not allowed to make a call on behalf of this account
   notAllowed('NotAllowed', 0),
 
+  /// Call is not allowed for a high-security account
+  callNotAllowedForHighSecurity('CallNotAllowedForHighSecurity', 1),
+
   /// Threshold must be greater than zero
-  zeroThreshold('ZeroThreshold', 1),
+  zeroThreshold('ZeroThreshold', 2),
 
   /// Friends list must be greater than zero and threshold
-  notEnoughFriends('NotEnoughFriends', 2),
+  notEnoughFriends('NotEnoughFriends', 3),
 
   /// Friends list must be less than max friends
-  maxFriends('MaxFriends', 3),
+  maxFriends('MaxFriends', 4),
 
   /// Friends list must be sorted and free of duplicates
-  notSorted('NotSorted', 4),
+  notSorted('NotSorted', 5),
 
   /// This account is not set up for recovery
-  notRecoverable('NotRecoverable', 5),
+  notRecoverable('NotRecoverable', 6),
 
   /// This account is already set up for recovery
-  alreadyRecoverable('AlreadyRecoverable', 6),
+  alreadyRecoverable('AlreadyRecoverable', 7),
 
   /// A recovery process has already started for this account
-  alreadyStarted('AlreadyStarted', 7),
+  alreadyStarted('AlreadyStarted', 8),
 
   /// A recovery process has not started for this rescuer
-  notStarted('NotStarted', 8),
+  notStarted('NotStarted', 9),
 
   /// This account is not a friend who can vouch
-  notFriend('NotFriend', 9),
+  notFriend('NotFriend', 10),
 
   /// The friend must wait until the delay period to vouch for this recovery
-  delayPeriod('DelayPeriod', 10),
+  delayPeriod('DelayPeriod', 11),
 
   /// This user has already vouched for this recovery
-  alreadyVouched('AlreadyVouched', 11),
+  alreadyVouched('AlreadyVouched', 12),
 
   /// The threshold for recovering this account has not been met
-  threshold('Threshold', 12),
+  threshold('Threshold', 13),
 
   /// There are still active recovery attempts that need to be closed
-  stillActive('StillActive', 13),
+  stillActive('StillActive', 14),
 
   /// This account is already set up for recovery
-  alreadyProxy('AlreadyProxy', 14),
+  alreadyProxy('AlreadyProxy', 15),
 
   /// Some internal state is broken.
-  badState('BadState', 15);
+  badState('BadState', 16);
 
   const Error(this.variantName, this.codecIndex);
 
@@ -82,34 +85,36 @@ class $ErrorCodec with _i1.Codec<Error> {
       case 0:
         return Error.notAllowed;
       case 1:
-        return Error.zeroThreshold;
+        return Error.callNotAllowedForHighSecurity;
       case 2:
-        return Error.notEnoughFriends;
+        return Error.zeroThreshold;
       case 3:
-        return Error.maxFriends;
+        return Error.notEnoughFriends;
       case 4:
-        return Error.notSorted;
+        return Error.maxFriends;
       case 5:
-        return Error.notRecoverable;
+        return Error.notSorted;
       case 6:
-        return Error.alreadyRecoverable;
+        return Error.notRecoverable;
       case 7:
-        return Error.alreadyStarted;
+        return Error.alreadyRecoverable;
       case 8:
-        return Error.notStarted;
+        return Error.alreadyStarted;
       case 9:
-        return Error.notFriend;
+        return Error.notStarted;
       case 10:
-        return Error.delayPeriod;
+        return Error.notFriend;
       case 11:
-        return Error.alreadyVouched;
+        return Error.delayPeriod;
       case 12:
-        return Error.threshold;
+        return Error.alreadyVouched;
       case 13:
-        return Error.stillActive;
+        return Error.threshold;
       case 14:
-        return Error.alreadyProxy;
+        return Error.stillActive;
       case 15:
+        return Error.alreadyProxy;
+      case 16:
         return Error.badState;
       default:
         throw Exception('Error: Invalid variant index: "$index"');

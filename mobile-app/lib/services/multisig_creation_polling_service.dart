@@ -75,9 +75,9 @@ class MultisigCreationPollingService {
         removePendingMultisigCreation(_ref, key);
         _ref.read(globalToastProvider.notifier).showError(_ref.read(l10nProvider).multisigCreateTimeoutToast);
       }
-    } catch (e, stackTrace) {
+    } catch (e) {
       quantusDebugPrint('[MultisigCreationPoller] recovery error for $key: $e');
-      TelemetryService().sendError('multisig_creation_recovery_failed', error: e, stackTrace: stackTrace);
+      TelemetryService().sendError('multisig_creation_recovery_failed', error: e);
     } finally {
       _inFlight.remove(key);
     }

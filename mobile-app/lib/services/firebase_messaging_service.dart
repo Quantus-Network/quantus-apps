@@ -40,9 +40,9 @@ class FirebaseMessagingService {
     try {
       _cachedToken = await _messaging.getToken();
       quantusDebugPrint('FCM token: $_cachedToken');
-    } catch (e, st) {
+    } catch (e) {
       quantusDebugPrint('Failed to get FCM device token: $e');
-      TelemetryService().sendError('fcm_get_device_token_failed', error: e, stackTrace: st);
+      TelemetryService().sendError('fcm_get_device_token_failed', error: e);
     }
 
     return _cachedToken;
@@ -256,6 +256,6 @@ Future<void> registerForRemoteNotificationsBestEffort(WidgetRef ref, {String? in
     }
   } catch (e) {
     quantusDebugPrint('Failed to register for remote notifications: $e');
-    TelemetryService().sendError('registerForRemoteNotifications', error: e, stackTrace: StackTrace.current);
+    TelemetryService().sendError('registerForRemoteNotifications', error: e);
   }
 }

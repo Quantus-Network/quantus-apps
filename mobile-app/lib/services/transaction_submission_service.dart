@@ -202,10 +202,16 @@ class TransactionSubmissionService {
   /// Awaits acceptance of the extrinsic by the chain before completing;
   /// indexer polling then continues in the background. Rethrows on submission
   /// failure so callers can surface the error.
+  /// Approves a proposal, resubmitting its stored inner call.
+  ///
+  /// [callBytes] should be the bytes the confirmation sheet already read from
+  /// chain storage, so the fee estimate and the submitted extrinsic cover the
+  /// same call; omitting them makes the service fetch them itself.
   Future<void> approveProposal({
     required MultisigAccount msig,
     required Account signer,
     required MultisigProposal proposal,
+    List<int>? callBytes,
   }) async {
     await _submitAndTrackApproval(
       msig: msig,
@@ -214,7 +220,12 @@ class TransactionSubmissionService {
       telemetryEvent: 'multisig_approve',
       submit: () {
         final service = _ref.read(multisigServiceProvider);
-        return service.submitApproveExtrinsic(msig: msig, signer: signer, proposalId: proposal.id);
+        return service.submitApproveExtrinsic(
+          msig: msig,
+          signer: signer,
+          proposalId: proposal.id,
+          callBytes: callBytes,
+        );
       },
     );
   }
