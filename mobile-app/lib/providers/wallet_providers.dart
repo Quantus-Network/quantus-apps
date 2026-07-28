@@ -70,8 +70,9 @@ final wormholeUtxoServiceProvider = Provider<WormholeUtxoService>((ref) {
   return WormholeUtxoService();
 });
 
-/// One encrypted-account service per wallet: caches derived wormhole key pairs
-/// and owns the persisted next-index / pending-spend state.
+/// One encrypted-account service per wallet: derives wormhole key pairs on
+/// demand (never cached — M11) and owns the persisted next-index /
+/// pending-spend state.
 final encryptedAccountServiceProvider = Provider.family<EncryptedAccountService, int>((ref, walletIndex) {
   final service = EncryptedAccountService(
     walletIndex: walletIndex,
