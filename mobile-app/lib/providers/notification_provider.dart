@@ -65,13 +65,13 @@ class NotificationNotifier extends StateNotifier<List<NotificationData>> {
   Future<bool> canShowNotification(NotificationIntent type) async {
     // Check app-level master setting
     if (!_config.enabled) {
-      quantusDebugPrint('Notifications disabled at app level');
+      quantusPrint('Notifications disabled at app level');
       return false;
     }
 
     // Check specific notification type setting
     if (!_config.isIntentEnabled(type)) {
-      quantusDebugPrint('Notification type ${type.name} is disabled');
+      quantusPrint('Notification type ${type.name} is disabled');
       return false;
     }
 
@@ -81,7 +81,7 @@ class NotificationNotifier extends StateNotifier<List<NotificationData>> {
   /// Check if any notifications can be shown (master check)
   Future<bool> canShowNotifications() async {
     if (!_config.enabled) {
-      quantusDebugPrint('Notifications disabled at app level');
+      quantusPrint('Notifications disabled at app level');
       return false;
     }
 
@@ -133,7 +133,7 @@ class NotificationNotifier extends StateNotifier<List<NotificationData>> {
     final scheduledDate = notification.scheduledTime!;
     final duration = scheduledDate.difference(DateTime.now());
 
-    quantusDebugPrint('DURATION ${scheduledDate.toString()}');
+    quantusPrint('DURATION ${scheduledDate.toString()}');
 
     // Schedule timer to show notification at the right time
     final timer = Timer(duration, () {
@@ -163,7 +163,7 @@ class NotificationNotifier extends StateNotifier<List<NotificationData>> {
 
     // Check if this specific notification intent can be shown
     if (!await canShowNotification(notification.intent)) {
-      quantusDebugPrint('Cannot show ${notification.intent.name} notification: disabled or permission not granted');
+      quantusPrint('Cannot show ${notification.intent.name} notification: disabled or permission not granted');
       return;
     }
 
@@ -187,7 +187,7 @@ class NotificationNotifier extends StateNotifier<List<NotificationData>> {
   Future<void> cancelNotification(String notificationId) async {
     final timer = _scheduledTimers.remove(notificationId);
     timer?.cancel();
-    quantusDebugPrint('Cancelled scheduled notification: $notificationId');
+    quantusPrint('Cancelled scheduled notification: $notificationId');
   }
 
   Future<void> cancelAllNotifications() async {
@@ -195,7 +195,7 @@ class NotificationNotifier extends StateNotifier<List<NotificationData>> {
       timer.cancel();
     }
     _scheduledTimers.clear();
-    quantusDebugPrint('Cancelled all scheduled notifications');
+    quantusPrint('Cancelled all scheduled notifications');
   }
 
   List<String> getScheduledNotificationIds() {

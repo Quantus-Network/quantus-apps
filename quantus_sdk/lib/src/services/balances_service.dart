@@ -5,6 +5,7 @@ import 'package:quantus_sdk/generated/planck/planck.dart';
 import 'package:quantus_sdk/generated/planck/types/sp_runtime/multiaddress/multi_address.dart' as multi_address;
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:quantus_sdk/src/rust/api/crypto.dart' as crypto;
+import 'package:quantus_sdk/src/utils/print.dart';
 
 class BalancesService {
   static final BalancesService _instance = BalancesService._internal();
@@ -19,8 +20,8 @@ class BalancesService {
       // Submit the extrinsic and return its result
       return await _substrateService.submitExtrinsic(account, runtimeCall);
     } catch (e, stackTrace) {
-      print('Failed to transfer balance: $e');
-      print('Failed to transfer balance: $stackTrace');
+      quantusPrint('Failed to transfer balance: $e');
+      quantusPrint('Failed to transfer balance: $stackTrace');
       throw Exception('Failed to transfer balance: $e');
     }
   }
@@ -31,8 +32,8 @@ class BalancesService {
       // Submit the extrinsic and return its result
       return await _substrateService.getFeeForCall(account, runtimeCall);
     } catch (e, stackTrace) {
-      print('Failed to transfer balance: $e');
-      print('Failed to transfer balance: $stackTrace');
+      quantusPrint('Failed to transfer balance: $e');
+      quantusPrint('Failed to transfer balance: $stackTrace');
       throw Exception('Failed to transfer balance: $e');
     }
   }

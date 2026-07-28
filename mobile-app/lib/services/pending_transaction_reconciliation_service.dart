@@ -27,7 +27,7 @@ class PendingTransactionReconciliationService {
 
   /// Immediately triggers reconciliation (useful for testing or manual cleanup)
   Future<void> forceReconciliation() async {
-    quantusDebugPrint('PendingReconciliation: Force reconciliation triggered');
+    quantusPrint('PendingReconciliation: Force reconciliation triggered');
     await reconcilePendingTransactions();
   }
 
@@ -42,7 +42,7 @@ class PendingTransactionReconciliationService {
 
       if (pendingTxs.isEmpty) return;
 
-      quantusDebugPrint(
+      quantusPrint(
         'PendingReconciliation: Checking ${pendingTxs.length} '
         'pending transactions',
       );
@@ -61,7 +61,7 @@ class PendingTransactionReconciliationService {
       final confirmedTransactions = _loadConfirmedTransactions(txService, accountIds);
 
       if (confirmedTransactions.isEmpty) {
-        quantusDebugPrint('PendingReconciliation: No confirmed transactions to match against');
+        quantusPrint('PendingReconciliation: No confirmed transactions to match against');
         return;
       }
 
@@ -69,11 +69,11 @@ class PendingTransactionReconciliationService {
       final stalePendingTxs = pendingTxs.where((tx) => _isStalePendingTransaction(tx, now)).toList();
 
       if (stalePendingTxs.isEmpty) {
-        quantusDebugPrint('PendingReconciliation: No stale pending transactions found');
+        quantusPrint('PendingReconciliation: No stale pending transactions found');
         return;
       }
 
-      quantusDebugPrint(
+      quantusPrint(
         'PendingReconciliation: Found ${stalePendingTxs.length} stale '
         'pending transactions',
       );
@@ -83,8 +83,8 @@ class PendingTransactionReconciliationService {
         await _reconcilePendingTransaction(pendingTx, confirmedTransactions, now);
       }
     } catch (e, stackTrace) {
-      quantusDebugPrint('PendingReconciliation: Error during reconciliation: $e');
-      quantusDebugPrint('Stack trace: $stackTrace');
+      quantusPrint('PendingReconciliation: Error during reconciliation: $e');
+      quantusPrint('Stack trace: $stackTrace');
     }
   }
 
@@ -124,14 +124,14 @@ class PendingTransactionReconciliationService {
   bool _isStalePendingTransaction(PendingTransactionEvent pendingTx, DateTime now) {
     final age = now.difference(pendingTx.timestamp);
 
-    quantusDebugPrint(
+    quantusPrint(
       'PendingReconciliation: Checking tx ${pendingTx.id}: '
       'age=${age.inMinutes}min, state=${pendingTx.transactionState}',
     );
 
     // Check if transaction has been pending for too long
     if (age > _maxPendingAge) {
-      quantusDebugPrint(
+      quantusPrint(
         'PendingReconciliation: Transaction ${pendingTx.id} is too '
         'old (${age.inMinutes} minutes), will be removed',
       );
@@ -142,7 +142,7 @@ class PendingTransactionReconciliationService {
     if (age > _stalePendingThreshold &&
         (pendingTx.transactionState == TransactionState.pending ||
             pendingTx.transactionState == TransactionState.inBlock)) {
-      quantusDebugPrint(
+      quantusPrint(
         'PendingReconciliation: Transaction ${pendingTx.id} is'
         ' stale (${age.inMinutes} minutes in ${pendingTx.transactionState} '
         'state)',
@@ -150,7 +150,7 @@ class PendingTransactionReconciliationService {
       return true;
     }
 
-    quantusDebugPrint(
+    quantusPrint(
       'PendingReconciliation: Transaction ${pendingTx.id} not '
       'considered stale yet',
     );
@@ -168,7 +168,7 @@ class PendingTransactionReconciliationService {
 
       // If transaction is extremely old, just remove it
       if (age > _maxPendingAge) {
-        quantusDebugPrint(
+        quantusPrint(
           'PendingReconciliation: Removing expired transaction'
           ' ${pendingTx.id} (age: ${age.inMinutes} minutes)',
         );
@@ -180,12 +180,12 @@ class PendingTransactionReconciliationService {
       final matchingTransaction = _findMatchingConfirmedTransaction(pendingTx, confirmedTransactions);
 
       if (matchingTransaction != null) {
-        quantusDebugPrint(
+        quantusPrint(
           'PendingReconciliation: Found matching confirmed transaction for'
           ' ${pendingTx.id}',
         );
-        quantusDebugPrint('  Pending: ${pendingTx.from} → ${pendingTx.to}, amount: ${pendingTx.amount}');
-        quantusDebugPrint(
+        quantusPrint('  Pending: ${pendingTx.from} → ${pendingTx.to}, amount: ${pendingTx.amount}');
+        quantusPrint(
           '  Confirmed: ${matchingTransaction.from} → ${matchingTransaction.to}, amount: ${matchingTransaction.amount}',
         );
 
@@ -193,17 +193,17 @@ class PendingTransactionReconciliationService {
 
         invalidateAccountBalances(_ref, {pendingTx.from, pendingTx.to});
       } else {
-        quantusDebugPrint('PendingReconciliation: No matching confirmed transaction found for ${pendingTx.id}');
+        quantusPrint('PendingReconciliation: No matching confirmed transaction found for ${pendingTx.id}');
 
         // If it's been stale for a very long time, consider it failed
         if (age > const Duration(minutes: 30)) {
-          quantusDebugPrint('PendingReconciliation: Marking long-stale transaction ${pendingTx.id} as failed');
+          quantusPrint('PendingReconciliation: Marking long-stale transaction ${pendingTx.id} as failed');
           await _markFailedAndRemove(pendingTx, 'Transaction not found in blockchain after ${age.inMinutes} minutes');
         }
       }
     } catch (e, stackTrace) {
-      quantusDebugPrint('PendingReconciliation: Error reconciling transaction ${pendingTx.id}: $e');
-      quantusDebugPrint('Stack trace: $stackTrace');
+      quantusPrint('PendingReconciliation: Error reconciling transaction ${pendingTx.id}: $e');
+      quantusPrint('Stack trace: $stackTrace');
     }
   }
 
@@ -257,7 +257,7 @@ class PendingTransactionReconciliationService {
 
   /// Removes a pending transaction with logging
   Future<void> _removePendingTransaction(PendingTransactionEvent pendingTx, String reason) async {
-    quantusDebugPrint('PendingReconciliation: Removing pending transaction ${pendingTx.id} - $reason');
+    quantusPrint('PendingReconciliation: Removing pending transaction ${pendingTx.id} - $reason');
 
     // Update to inHistory state first to show completion
     _ref.read(pendingTransactionsProvider.notifier).updateState(pendingTx.id, TransactionState.inHistory);
@@ -265,20 +265,20 @@ class PendingTransactionReconciliationService {
     // Remove after a short delay to let UI show the completion
     Timer(const Duration(seconds: 1), () {
       _ref.read(pendingTransactionsProvider.notifier).remove(pendingTx.id);
-      quantusDebugPrint('PendingReconciliation: Removed pending transaction ${pendingTx.id}');
+      quantusPrint('PendingReconciliation: Removed pending transaction ${pendingTx.id}');
     });
   }
 
   /// Marks a pending transaction as failed
   Future<void> _markFailedAndRemove(PendingTransactionEvent pendingTx, String reason) async {
-    quantusDebugPrint('PendingReconciliation: Marking transaction ${pendingTx.id} as failed - $reason');
+    quantusPrint('PendingReconciliation: Marking transaction ${pendingTx.id} as failed - $reason');
 
     _ref.read(pendingTransactionsProvider.notifier).updateState(pendingTx.id, TransactionState.failed, error: reason);
 
     // Remove failed transaction after a delay to let user see the failure
     Timer(const Duration(seconds: 5), () {
       _ref.read(pendingTransactionsProvider.notifier).remove(pendingTx.id);
-      quantusDebugPrint('PendingReconciliation: Removed failed transaction ${pendingTx.id}');
+      quantusPrint('PendingReconciliation: Removed failed transaction ${pendingTx.id}');
     });
   }
 }

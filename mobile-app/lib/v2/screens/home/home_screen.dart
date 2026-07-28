@@ -140,7 +140,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     // by waiting, and we don't want to retry a malformed payload.
     ref.read(proposalIntentProvider.notifier).state = null;
     if (msig == null) {
-      quantusDebugPrint('proposal intent: no local multisig for ${intent.multisigAddress}');
+      quantusPrint('proposal intent: no local multisig for ${intent.multisigAddress}');
       return;
     }
 
@@ -154,7 +154,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     try {
       await ref.read(globalHistoryPollingServiceProvider).triggerManualRefresh();
     } catch (e) {
-      quantusDebugPrint('home refresh error: $e');
+      quantusPrint('home refresh error: $e');
       TelemetryService().sendError('Home refresh failed', error: e);
     }
   }

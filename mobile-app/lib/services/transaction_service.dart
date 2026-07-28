@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/models/transaction_role.dart';
@@ -6,6 +5,7 @@ import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/route_intent_providers.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/services/telemetry_service.dart';
+import 'package:resonance_network_wallet/shared/utils/print.dart';
 
 final transactionServiceProvider = Provider<TransactionService>((ref) {
   return TransactionService(ref);
@@ -205,7 +205,7 @@ class TransactionService {
           .read(chainHistoryServiceProvider)
           .searchByExtrinsicHash(extrinsicHash: extrinsicHash, isReversible: isReversible);
     } catch (e) {
-      debugPrint('Failed resolving push payload transaction $extrinsicHash: $e');
+      quantusPrint('Failed resolving push payload transaction $extrinsicHash: $e');
       TelemetryService().sendError('Failed resolving push payload transaction', error: e);
       return null;
     }
@@ -213,7 +213,7 @@ class TransactionService {
 
     final localAccountIds = _localAccountIds();
     if (!localAccountIds.contains(event.from) && !localAccountIds.contains(event.to)) {
-      debugPrint('Push payload transaction $extrinsicHash involves no local account; ignoring');
+      quantusPrint('Push payload transaction $extrinsicHash involves no local account; ignoring');
       TelemetryService().sendEvent('push_payload_transaction_not_local');
       return null;
     }
@@ -253,7 +253,7 @@ class TransactionService {
         event = PendingTransactionEvent.fromJson(json);
       }
     } catch (e) {
-      debugPrint('Failed deserializing $txType event: $e');
+      quantusPrint('Failed deserializing $txType event: $e');
       TelemetryService().sendError('Failed deserializing transaction event', error: e);
     }
 

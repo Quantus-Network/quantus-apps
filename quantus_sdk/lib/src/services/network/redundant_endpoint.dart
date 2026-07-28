@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:http/http.dart' as http;
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:quantus_sdk/src/utils/print.dart';
 import 'package:quantus_sdk/src/utils/timing.dart';
 
 // This set of classes implements redundant endpoints using a strategy to select the best endpoints and to retry failed requests
@@ -96,9 +97,9 @@ class RedundantEndpointService {
 
   void logEndpointFailure(Endpoint endpoint, dynamic error) {
     if (!_connectivityIsOffline) {
-      print('endpoint failure: ${endpoint.url}: $error');
+      quantusPrint('endpoint failure: ${endpoint.url}: $error');
       if (_isReachabilityError(error)) {
-        print('Reachability error on endpoint: ${endpoint.url}: $error');
+        quantusPrint('Reachability error on endpoint: ${endpoint.url}: $error');
       }
       endpoint.lastFailure = DateTime.now();
       endpoint.latency = const Duration(days: 365);

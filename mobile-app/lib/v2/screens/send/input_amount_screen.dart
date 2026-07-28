@@ -21,6 +21,7 @@ import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 import 'package:resonance_network_wallet/shared/extensions/toaster_extensions.dart';
 import 'package:resonance_network_wallet/shared/utils/amount_input_logic.dart';
 import 'package:resonance_network_wallet/shared/utils/debouncer.dart';
+import 'package:resonance_network_wallet/shared/utils/print.dart';
 import 'package:resonance_network_wallet/v2/components/loader.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_icon_button.dart';
 
@@ -131,7 +132,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
     try {
       setState(() => _amount = _amountInputLogic.onAmountChanged(value: _amountController.text, isFlipped: isFlipped));
     } on InvalidNumberInputException catch (e, stack) {
-      debugPrint('Amount parse failed: $e\n$stack');
+      quantusPrint('Amount parse failed: $e\n$stack');
       final l10n = ref.read(l10nProvider);
       context.showErrorToaster(message: l10n.sendInputAmountInvalidAmount);
       return;
@@ -175,7 +176,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
         _isFetchingFee = false;
       });
     } catch (e, st) {
-      debugPrint('Fee fetch error: $e\n$st');
+      quantusPrint('Fee fetch error: $e\n$st');
       if (!mounted || counter != _fetchFeeCounter) return;
       setState(() {
         _fee = null;

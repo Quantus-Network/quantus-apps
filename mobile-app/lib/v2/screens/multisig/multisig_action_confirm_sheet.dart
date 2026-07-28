@@ -167,7 +167,7 @@ class _MultisigActionConfirmSheetState extends ConsumerState<MultisigActionConfi
           _loadingCallBytes = false;
         });
       } catch (e, st) {
-        quantusDebugPrint('${widget.logPrefix} proposal call load error: $e $st');
+        quantusPrint('${widget.logPrefix} proposal call load error: $e $st');
         if (!mounted) return;
         setState(() {
           _loadingCallBytes = false;
@@ -188,7 +188,7 @@ class _MultisigActionConfirmSheetState extends ConsumerState<MultisigActionConfi
       try {
         return CallDecoder.decodeBytes(bytes);
       } catch (e) {
-        quantusDebugPrint('${widget.logPrefix} could not decode stored proposal call: $e');
+        quantusPrint('${widget.logPrefix} could not decode stored proposal call: $e');
       }
     }
     return widget.proposal.decodedCall;
@@ -237,7 +237,7 @@ class _MultisigActionConfirmSheetState extends ConsumerState<MultisigActionConfi
         _loadingFee = false;
       });
     } catch (e, st) {
-      quantusDebugPrint('${widget.logPrefix} fee estimate error: $e $st');
+      quantusPrint('${widget.logPrefix} fee estimate error: $e $st');
       if (!mounted) return;
       setState(() {
         _loadingFee = false;
@@ -279,7 +279,7 @@ class _MultisigActionConfirmSheetState extends ConsumerState<MultisigActionConfi
       ref.invalidate(multisigCurrentBlockProvider);
       Navigator.pop(context);
     } catch (e, st) {
-      quantusDebugPrint('${widget.logPrefix} submit error: $e $st');
+      quantusPrint('${widget.logPrefix} submit error: $e $st');
       if (!mounted) return;
       setState(() {
         _submitting = false;

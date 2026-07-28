@@ -55,7 +55,7 @@ class _KeystoneSignatureScanScreenState extends ConsumerState<KeystoneSignatureS
   }
 
   Future<void> _handleError(Object error) async {
-    quantusDebugPrint('Keystone signature processing failed: $error');
+    quantusPrint('Keystone signature processing failed: $error');
     TelemetryService().sendError('Keystone signature processing failed', error: error);
     ref.read(keystoneSignCacheProvider.notifier).reset();
     if (!mounted) return;

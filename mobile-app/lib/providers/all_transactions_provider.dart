@@ -26,11 +26,11 @@ final allTransactionsProvider = Provider<AsyncValue<CombinedTransactionsList>>((
   final pagination = ref.watch(paginationControllerProvider);
 
   if (pagination.error != null && !pagination.hasLoadedChainData) {
-    quantusDebugPrint('AllTransactionsProvider: Error: ${pagination.error}');
+    quantusPrint('AllTransactionsProvider: Error: ${pagination.error}');
     return AsyncValue.error(pagination.error!, pagination.stackTrace!);
   }
   if (pagination.error != null) {
-    quantusDebugPrint('AllTransactionsProvider: Load-more error: ${pagination.error}');
+    quantusPrint('AllTransactionsProvider: Load-more error: ${pagination.error}');
   }
   if (pagination.isLoading && !pagination.hasLoadedChainData) {
     return const AsyncValue.loading();

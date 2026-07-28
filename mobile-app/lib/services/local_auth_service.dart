@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/shared/utils/print.dart';
 
 class LocalAuthService {
   static final LocalAuthService _instance = LocalAuthService._internal();
@@ -45,7 +46,7 @@ class LocalAuthService {
     try {
       return await _localAuth.isDeviceSupported();
     } catch (e) {
-      debugPrint('Error checking device security: $e');
+      quantusPrint('Error checking device security: $e');
       return false;
     }
   }
@@ -61,7 +62,7 @@ class LocalAuthService {
       final available = await getAvailableBiometrics();
       return available.isNotEmpty;
     } catch (e) {
-      debugPrint('Error checking biometric availability: $e');
+      quantusPrint('Error checking biometric availability: $e');
       return false;
     }
   }
@@ -70,7 +71,7 @@ class LocalAuthService {
     try {
       return await _localAuth.getAvailableBiometrics();
     } catch (e) {
-      debugPrint('Error getting available biometrics: $e');
+      quantusPrint('Error getting available biometrics: $e');
       return [];
     }
   }
@@ -103,10 +104,10 @@ class LocalAuthService {
       if (didAuthenticate) cleanLastPausedTime();
       return didAuthenticate;
     } on PlatformException catch (e) {
-      debugPrint('Platform exception during authentication: $e');
+      quantusPrint('Platform exception during authentication: $e');
       return false;
     } catch (e) {
-      debugPrint('Error during authentication: $e');
+      quantusPrint('Error during authentication: $e');
       return false;
     }
   }
@@ -124,7 +125,7 @@ class LocalAuthService {
       if (lastPausedTime == null) return true;
       return DateTime.now().difference(lastPausedTime) > _authTimeout;
     } catch (e) {
-      debugPrint('Error checking if authentication is required: $e');
+      quantusPrint('Error checking if authentication is required: $e');
       return true;
     }
   }
@@ -143,7 +144,7 @@ class LocalAuthService {
     try {
       await _localAuth.stopAuthentication();
     } catch (e) {
-      debugPrint('Error stopping authentication: $e');
+      quantusPrint('Error stopping authentication: $e');
     }
   }
 }

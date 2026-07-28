@@ -11,6 +11,7 @@ import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/routes.dart';
 import 'package:resonance_network_wallet/shared/constants/e2e_keys.dart';
 import 'package:resonance_network_wallet/shared/extensions/toaster_extensions.dart';
+import 'package:resonance_network_wallet/shared/utils/print.dart';
 import 'package:resonance_network_wallet/v2/components/address_checkphrase_with_initial.dart';
 import 'package:resonance_network_wallet/v2/components/address_input_field.dart';
 import 'package:resonance_network_wallet/v2/components/loader.dart';
@@ -83,7 +84,7 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
         });
       }
     } catch (e) {
-      debugPrint('SelectRecipientScreen recents: $e');
+      quantusPrint('SelectRecipientScreen recents: $e');
       if (mounted) setState(() => _loadingRecents = false);
     }
   }
@@ -132,7 +133,7 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
         })
         .catchError((Object e) {
           // Fail closed: without a verdict the send can't proceed anyway.
-          debugPrint('SelectRecipientScreen self-send check: $e');
+          quantusPrint('SelectRecipientScreen self-send check: $e');
         });
     checksumService.getHumanReadableName(address).then((checksum) {
       if (mounted) setState(() => _recipientChecksum = checksum);

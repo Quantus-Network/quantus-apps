@@ -1,6 +1,6 @@
 import 'package:decimal/decimal.dart';
-import 'package:flutter/foundation.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:quantus_sdk/src/utils/print.dart';
 
 class NumberFormattingService {
   static const int decimals = AppConstants.decimals;
@@ -133,12 +133,12 @@ class NumberFormattingService {
     try {
       final decimalAmount = _localeConfig.parseDecimal(formattedAmount);
       if (decimalAmount.scale > decimals) {
-        debugPrint('Warning: Input amount $formattedAmount exceeds $decimals decimals, will be truncated.');
+        quantusPrint('Warning: Input amount $formattedAmount exceeds $decimals decimals, will be truncated.');
       }
       final rawDecimalAmount = decimalAmount * scaleFactorDecimal;
       return rawDecimalAmount.toBigInt();
     } catch (e) {
-      debugPrint('Error parsing amount $formattedAmount: $e');
+      quantusPrint('Error parsing amount $formattedAmount: $e');
       return null;
     }
   }

@@ -152,7 +152,7 @@ class _ImportWalletScreenV2State extends ConsumerState<ImportWalletScreenV2> {
       ref.invalidate(activeAccountProvider);
       unawaited(_discoverEncryptedAccount());
     } catch (e) {
-      quantusDebugPrint('error discovering accounts: $e');
+      quantusPrint('error discovering accounts: $e');
       TelemetryService().sendError('Error discovering accounts', error: e);
     }
   }
@@ -169,7 +169,7 @@ class _ImportWalletScreenV2State extends ConsumerState<ImportWalletScreenV2> {
       ref.invalidate(accountsProvider);
       await ref.read(encryptedStateProvider(widget.walletIndex).future);
     } catch (e) {
-      quantusDebugPrint('encrypted discovery after import failed: $e');
+      quantusPrint('encrypted discovery after import failed: $e');
       TelemetryService().sendError('Encrypted discovery after import failed', error: e);
     }
   }

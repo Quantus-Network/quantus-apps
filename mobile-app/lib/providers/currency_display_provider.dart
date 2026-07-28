@@ -1,7 +1,6 @@
 import 'dart:convert';
 
 import 'package:decimal/decimal.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
@@ -9,6 +8,7 @@ import 'package:resonance_network_wallet/models/fiat_currency.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/services/exchange_rate_service.dart';
+import 'package:resonance_network_wallet/shared/utils/print.dart';
 
 // ---------------------------------------------------------------------------
 // Exchange rate caching helpers
@@ -33,7 +33,7 @@ Map<String, Decimal>? _readRatesCache(SettingsService settings) {
     if (nowUnix >= expiryUnix) return null;
     return _parseRatesMap(decoded['rates'] as Map<String, dynamic>);
   } catch (e) {
-    debugPrint('Failed parsing exchange rates: $e');
+    quantusPrint('Failed parsing exchange rates: $e');
     return null;
   }
 }
@@ -52,7 +52,7 @@ Map<String, Decimal> _readRatesCacheAnyAge(SettingsService settings) {
     final decoded = jsonDecode(raw) as Map<String, dynamic>;
     return _parseRatesMap(decoded['rates'] as Map<String, dynamic>);
   } catch (e) {
-    debugPrint('Failed parsing exchange rates cache: $e');
+    quantusPrint('Failed parsing exchange rates cache: $e');
 
     return ExchangeRateService.fallbackRates;
   }
@@ -66,7 +66,7 @@ const _kMinCacheTtlSeconds = 60;
 Future<void> _writeRatesCache(SettingsService settings, Map<String, Decimal> rates, int timeNextUpdateUnix) async {
   final nowUnix = DateTime.now().millisecondsSinceEpoch ~/ 1000;
   if (timeNextUpdateUnix <= nowUnix + _kMinCacheTtlSeconds) {
-    debugPrint(
+    quantusPrint(
       'Skipping exchange rates cache write: timeNextUpdateUnix=$timeNextUpdateUnix '
       'is not at least ${_kMinCacheTtlSeconds}s in the future (now=$nowUnix).',
     );
@@ -103,7 +103,7 @@ final exchangeRatesProvider = FutureProvider<Map<String, Decimal>>((ref) async {
 
     return rates;
   } catch (e) {
-    debugPrint('Failed fetching exchange rates: $e');
+    quantusPrint('Failed fetching exchange rates: $e');
 
     return _readRatesCacheAnyAge(settings);
   }

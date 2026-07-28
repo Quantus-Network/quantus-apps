@@ -59,7 +59,7 @@ class WalletInitializerState extends ConsumerState<WalletInitializer> {
         for (final result in migrationResults) {
           switch (result) {
             case MigrationSuccess(:final oldAccount, :final newAccountId):
-              quantusDebugPrint(
+              quantusPrint(
                 'MIGRATION SUCCESS: \n'
                 '  walletIndex: ${oldAccount.walletIndex} \n'
                 '  old index: ${oldAccount.index} \n'
@@ -68,7 +68,7 @@ class WalletInitializerState extends ConsumerState<WalletInitializer> {
                 '  new accountId: $newAccountId',
               );
             case MigrationFailure(:final oldAccount, :final reason):
-              quantusDebugPrint(
+              quantusPrint(
                 'MIGRATION FAILURE: \n'
                 '  walletIndex: ${oldAccount.walletIndex} \n'
                 '  old index: ${oldAccount.index} \n'
@@ -157,7 +157,7 @@ class WalletInitializerState extends ConsumerState<WalletInitializer> {
       final failures = await _migrationService.performMigration(_migrationResults!);
 
       if (failures.isNotEmpty) {
-        quantusDebugPrint('Migration completed with ${failures.length} failures');
+        quantusPrint('Migration completed with ${failures.length} failures');
         for (final failure in failures) {
           TelemetryService().sendEvent(
             'migration_account_failure',
@@ -181,7 +181,7 @@ class WalletInitializerState extends ConsumerState<WalletInitializer> {
         context.showErrorToaster(message: ref.read(l10nProvider).migrationPartialFailureToast(failures.length));
       }
     } catch (e) {
-      quantusDebugPrint('migration error: $e');
+      quantusPrint('migration error: $e');
       rethrow;
     }
   }
@@ -196,8 +196,8 @@ class WalletInitializerState extends ConsumerState<WalletInitializer> {
       try {
         await _migrationService.performMigration(_migrationResults!);
       } catch (e, stackTrace) {
-        quantusDebugPrint('error in tryLater: $e');
-        quantusDebugPrint('stack trace: $stackTrace');
+        quantusPrint('error in tryLater: $e');
+        quantusPrint('stack trace: $stackTrace');
         TelemetryService().sendError('Error-Migration-TryLater', error: e);
         rethrow;
       }
@@ -214,7 +214,7 @@ class WalletInitializerState extends ConsumerState<WalletInitializer> {
   }
 
   Future<void> _uploadMigrationDataToSupabase(List<MigrationSuccess> migrationSuccesses) async {
-    quantusDebugPrint('_uploadMigrationDataToSupabase');
+    quantusPrint('_uploadMigrationDataToSupabase');
     final supabase = EnvUtils.supabaseClient;
 
     try {
@@ -229,14 +229,14 @@ class WalletInitializerState extends ConsumerState<WalletInitializer> {
           )
           .toList();
 
-      quantusDebugPrint('uploading data to supabase: $dataToInsert');
+      quantusPrint('uploading data to supabase: $dataToInsert');
 
       // Insert all records at once
       await supabase.from('account_id_mappings').insert(dataToInsert);
 
-      quantusDebugPrint('Successfully uploaded ${migrationSuccesses.length} migration records to Supabase');
+      quantusPrint('Successfully uploaded ${migrationSuccesses.length} migration records to Supabase');
     } catch (e) {
-      quantusDebugPrint('Failed to upload migration data to Supabase: $e');
+      quantusPrint('Failed to upload migration data to Supabase: $e');
       // Re-throw the error so it gets caught by the caller
       rethrow;
     }

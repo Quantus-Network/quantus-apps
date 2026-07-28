@@ -9,6 +9,7 @@ import 'package:resonance_network_wallet/routes.dart';
 import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
 import 'package:resonance_network_wallet/shared/extensions/current_route_extensions.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
+import 'package:resonance_network_wallet/shared/utils/print.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/screens/send/input_amount_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/send/keystone_sign_cache.dart';
@@ -42,7 +43,7 @@ class _SharedAddressActionSheetState extends State<SharedAddressActionSheet> {
         _splittedAddress = AddressFormattingService.splitIntoChunks(widget.address);
       });
     } catch (e) {
-      debugPrint('Error loading account data: $e');
+      quantusPrint('Error loading account data: $e');
       if (mounted) {
         setState(() {});
       }
@@ -141,7 +142,7 @@ class _SharedAddressActionSheetState extends State<SharedAddressActionSheet> {
                             !snapshot.hasData ||
                             snapshot.data == null ||
                             snapshot.data!.isEmpty) {
-                          debugPrint(
+                          quantusPrint(
                             'Error loading checksum name for ${widget.address}: '
                             '${snapshot.error}',
                           );

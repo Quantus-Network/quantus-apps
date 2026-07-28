@@ -7,6 +7,7 @@ import 'package:quantus_sdk/src/chain/call_decoder.dart';
 import 'package:quantus_sdk/src/chain/decoded_call.dart';
 import 'package:quantus_sdk/src/models/json_dynamic_parse.dart';
 import 'package:quantus_sdk/src/models/multisig_account.dart';
+import 'package:quantus_sdk/src/utils/print.dart';
 
 /// On-chain lifecycle status of a multisig proposal.
 ///
@@ -251,7 +252,7 @@ class MultisigProposal {
     try {
       return Uint8List.fromList(hex.decode(callRawHex.startsWith('0x') ? callRawHex.substring(2) : callRawHex));
     } catch (e) {
-      debugPrint('[MultisigProposal] Malformed call_raw hex: $e');
+      quantusPrint('[MultisigProposal] Malformed call_raw hex: $e');
       return null;
     }
   }
@@ -260,7 +261,7 @@ class MultisigProposal {
     try {
       return CallDecoder.decodeBytes(bytes);
     } catch (e) {
-      debugPrint('[MultisigProposal] Failed to decode call_raw: $e');
+      quantusPrint('[MultisigProposal] Failed to decode call_raw: $e');
       return null;
     }
   }

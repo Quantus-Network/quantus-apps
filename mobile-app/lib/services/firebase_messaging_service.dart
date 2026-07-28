@@ -17,7 +17,7 @@ import 'package:resonance_network_wallet/shared/utils/print.dart';
 /// Must be a top-level function (not a class method) for Firebase.
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  quantusDebugPrint('FCM background message: ${message.messageId}');
+  quantusPrint('FCM background message: ${message.messageId}');
 }
 
 class FirebaseMessagingService {
@@ -39,9 +39,9 @@ class FirebaseMessagingService {
 
     try {
       _cachedToken = await _messaging.getToken();
-      quantusDebugPrint('FCM token: $_cachedToken');
+      quantusPrint('FCM token: $_cachedToken');
     } catch (e) {
-      quantusDebugPrint('Failed to get FCM device token: $e');
+      quantusPrint('Failed to get FCM device token: $e');
       TelemetryService().sendError('fcm_get_device_token_failed', error: e);
     }
 
@@ -54,7 +54,7 @@ class FirebaseMessagingService {
 
     final authorizationStatus = await _requestPermission();
     if (authorizationStatus != AuthorizationStatus.authorized) {
-      quantusDebugPrint('FCM permission not authorized');
+      quantusPrint('FCM permission not authorized');
       return;
     }
 
@@ -72,7 +72,7 @@ class FirebaseMessagingService {
   Future<AuthorizationStatus> _requestPermission() async {
     final settings = await _messaging.requestPermission(alert: true, badge: true, sound: true, provisional: false);
 
-    quantusDebugPrint('FCM permission status: ${settings.authorizationStatus}');
+    quantusPrint('FCM permission status: ${settings.authorizationStatus}');
 
     if (Platform.isIOS) {
       await _messaging.setForegroundNotificationPresentationOptions(alert: false, badge: true, sound: false);
@@ -85,7 +85,7 @@ class FirebaseMessagingService {
     try {
       await _senotiService.registerDevice(token, _platform);
     } catch (e) {
-      quantusDebugPrint('Failed to register device: $e');
+      quantusPrint('Failed to register device: $e');
     }
   }
 
@@ -94,7 +94,7 @@ class FirebaseMessagingService {
   Future<void> registerDeviceIfPossible() async {
     final token = await getDeviceToken();
     if (token == null) {
-      quantusDebugPrint('No FCM token available — skipping device registration');
+      quantusPrint('No FCM token available — skipping device registration');
       return;
     }
     await _tryRegisterDevice(token);
@@ -102,7 +102,7 @@ class FirebaseMessagingService {
 
   void _setupTokenRefreshListener() {
     _messaging.onTokenRefresh.listen((newToken) async {
-      quantusDebugPrint('FCM token refreshed: $newToken');
+      quantusPrint('FCM token refreshed: $newToken');
       _cachedToken = newToken;
       await _tryRegisterDevice(newToken);
     });
@@ -112,14 +112,14 @@ class FirebaseMessagingService {
   Future<void> unregisterDevice() async {
     final token = await getDeviceToken();
     if (token == null) {
-      quantusDebugPrint('No FCM token available — skipping unregister');
+      quantusPrint('No FCM token available — skipping unregister');
       return;
     }
     try {
       await _senotiService.unregisterDevice(token, _platform);
       _cachedToken = null;
     } catch (e) {
-      quantusDebugPrint('Failed to unregister device: $e');
+      quantusPrint('Failed to unregister device: $e');
     }
   }
 
@@ -127,14 +127,14 @@ class FirebaseMessagingService {
   Future<void> insertNewAddress(String newAddress) async {
     final token = await getDeviceToken();
     if (token == null) {
-      quantusDebugPrint('No FCM token available — skipping insertNewAddress');
+      quantusPrint('No FCM token available — skipping insertNewAddress');
       return;
     }
 
     try {
       await _senotiService.insertNewAddress(newAddress: newAddress, deviceToken: token);
     } catch (e) {
-      quantusDebugPrint('Failed to insert new address: $e');
+      quantusPrint('Failed to insert new address: $e');
     }
   }
 
@@ -147,7 +147,7 @@ class FirebaseMessagingService {
   /// data (balance, activity, proposals) for the foreground case.
   void _setupForegroundMessageListener() {
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-      quantusDebugPrint('FCM foreground message: ${message.messageId}');
+      quantusPrint('FCM foreground message: ${message.messageId}');
 
       unawaited(_ref.read(historyPollingManagerProvider).triggerSilentRefresh());
       unawaited(_showForegroundNotification(message));
@@ -173,7 +173,7 @@ class FirebaseMessagingService {
     _hasRegisteredHandlers = true;
 
     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-      quantusDebugPrint('FCM notification tapped (background): ${message.messageId}');
+      quantusPrint('FCM notification tapped (background): ${message.messageId}');
       _handleNotificationTap(message);
     });
 
@@ -183,7 +183,7 @@ class FirebaseMessagingService {
   Future<void> _handleInitialMessage() async {
     final initialMessage = await _messaging.getInitialMessage();
     if (initialMessage != null) {
-      quantusDebugPrint('FCM initial message (terminated): ${initialMessage.messageId}');
+      quantusPrint('FCM initial message (terminated): ${initialMessage.messageId}');
       _handleNotificationTap(initialMessage);
     }
   }
@@ -191,7 +191,7 @@ class FirebaseMessagingService {
   void _handleNotificationTap(RemoteMessage message) {
     final data = message.data;
 
-    quantusDebugPrint('FCM tap payload: $data');
+    quantusPrint('FCM tap payload: $data');
 
     if (data.isEmpty) return;
 
@@ -255,7 +255,7 @@ Future<void> registerForRemoteNotificationsBestEffort(WidgetRef ref, {String? in
       await service.registerDeviceIfPossible();
     }
   } catch (e) {
-    quantusDebugPrint('Failed to register for remote notifications: $e');
+    quantusPrint('Failed to register for remote notifications: $e');
     TelemetryService().sendError('registerForRemoteNotifications', error: e);
   }
 }

@@ -28,7 +28,7 @@ class AccountsNotifier extends StateNotifier<AsyncValue<List<Account>>> {
         await _accountsService.addAccount(account);
         state = AsyncValue.data([...accounts, account]);
       } catch (e, st) {
-        quantusDebugPrint('error adding account $e $st');
+        quantusPrint('error adding account $e $st');
         // Handle error, maybe revert state or show a message
       }
     });
@@ -41,7 +41,7 @@ class AccountsNotifier extends StateNotifier<AsyncValue<List<Account>>> {
         final newAccounts = accounts.where((a) => a.accountId != account.accountId).toList();
         state = AsyncValue.data(newAccounts);
       } catch (e, st) {
-        quantusDebugPrint('remove account error $e $st');
+        quantusPrint('remove account error $e $st');
       }
     });
   }
@@ -70,10 +70,10 @@ class ActiveAccountNotifier extends StateNotifier<AsyncValue<DisplayAccount?>> {
   Future<void> _loadActiveAccount() async {
     try {
       final account = await _settingsService.getActiveAccount();
-      quantusDebugPrint('loaded active account: ${account?.account.name}');
+      quantusPrint('loaded active account: ${account?.account.name}');
       state = AsyncValue.data(account);
     } catch (e, st) {
-      quantusDebugPrint('error loading active account: $e $st');
+      quantusPrint('error loading active account: $e $st');
       state = AsyncValue.error(e, st);
     }
   }
@@ -83,7 +83,7 @@ class ActiveAccountNotifier extends StateNotifier<AsyncValue<DisplayAccount?>> {
       await _settingsService.setActiveAccount(account);
       state = AsyncValue.data(account);
     } catch (e, st) {
-      quantusDebugPrint('setActiveAccount error $e $st');
+      quantusPrint('setActiveAccount error $e $st');
     }
   }
 

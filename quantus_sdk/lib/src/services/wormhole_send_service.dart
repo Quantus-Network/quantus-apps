@@ -12,6 +12,7 @@ import 'package:quantus_sdk/src/services/network/redundant_endpoint.dart';
 import 'package:quantus_sdk/src/services/substrate_service.dart' show getAccountId32;
 import 'package:quantus_sdk/src/services/wormhole_coin_selection.dart';
 import 'package:quantus_sdk/src/services/wormhole_utxo_service.dart';
+import 'package:quantus_sdk/src/utils/print.dart';
 
 class ClaimProgressItem {
   final int step;
@@ -349,8 +350,7 @@ class WormholeSendService {
               outputIndex: i,
               onComplete: () {
                 proofsCompleted++;
-                // ignore: avoid_print
-                print(
+                quantusPrint(
                   '[WormholeSend] Proof $proofsCompleted/$numTransfers '
                   'leaf=${spend.transfer.leafIndex} (${genSw.elapsedMilliseconds}ms elapsed)',
                 );
@@ -589,8 +589,7 @@ class WormholeSendService {
 
   // --- Utilities ---
 
-  // ignore: avoid_print
-  static void _log(String msg) => print('[WormholeSend] $msg');
+  static void _log(String msg) => quantusPrint('[WormholeSend] $msg');
 
   static int _hexToInt(String hexStr) => int.parse(hexStr.replaceFirst('0x', ''), radix: 16);
 

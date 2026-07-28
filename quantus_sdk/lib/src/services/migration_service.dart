@@ -7,6 +7,7 @@ import 'package:quantus_sdk/src/models/display_account.dart';
 import 'package:quantus_sdk/src/rust/api/crypto.dart' as crypto;
 import 'package:quantus_sdk/src/services/hd_wallet_service.dart';
 import 'package:quantus_sdk/src/services/settings_service.dart';
+import 'package:quantus_sdk/src/utils/print.dart';
 
 /// Result of attempting to migrate an account.
 sealed class MigrationResult {
@@ -128,7 +129,7 @@ class MigrationService {
     for (final result in migrationResults) {
       switch (result) {
         case MigrationSuccess(:final oldAccount, :final newAccountId):
-          print(
+          quantusPrint(
             'performMigration: \n'
             '  walletIndex: ${oldAccount.walletIndex} \n'
             '  old index: ${oldAccount.index} \n'
@@ -149,7 +150,7 @@ class MigrationService {
           );
 
         case MigrationFailure(:final oldAccount, :final reason):
-          print(
+          quantusPrint(
             'performMigration SKIPPED: \n'
             '  walletIndex: ${oldAccount.walletIndex} \n'
             '  index: ${oldAccount.index} \n'
@@ -178,7 +179,7 @@ class MigrationService {
     if (failures.isEmpty) {
       await _settingsService.clearOldAccounts();
     } else {
-      print(
+      quantusPrint(
         'WARNING: ${failures.length} account(s) failed to migrate. '
         'Old accounts NOT cleared to prevent data loss.',
       );

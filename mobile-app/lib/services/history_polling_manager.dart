@@ -23,11 +23,11 @@ class HistoryPollingManager {
   /// Initialize all polling services.
   /// This should be called early in the app lifecycle.
   void initialize() {
-    quantusDebugPrint('Initializing history polling manager...');
+    quantusPrint('Initializing history polling manager...');
     if (_initialized) return;
     _globalPoller;
     _reversibleMonitor;
-    quantusDebugPrint('History polling manager initialized');
+    quantusPrint('History polling manager initialized');
     _initialized = true;
   }
 
@@ -52,13 +52,13 @@ class HistoryPollingManager {
   /// completion so concurrent triggers are correctly suppressed.
   Future<void> triggerSilentRefresh() async {
     if (_isRefreshing) {
-      quantusDebugPrint('History polling manager: refresh in progress, skipping');
+      quantusPrint('History polling manager: refresh in progress, skipping');
       return;
     }
 
     _isRefreshing = true;
     try {
-      quantusDebugPrint('History polling manager: Silent Refresh!');
+      quantusPrint('History polling manager: Silent Refresh!');
 
       await Future.wait([
         refreshActiveAccountBalance(_ref),
