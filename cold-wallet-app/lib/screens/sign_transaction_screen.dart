@@ -177,8 +177,6 @@ class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> {
             _hero(context, parsed),
             const SizedBox(height: 24),
 
-            // Which key signs is part of what is happening, and the payload does
-            // not name it — so show it.
             if (signerAddress != null) DetailRow(label: 'Signing as', value: signerAddress, monospace: true),
             signerCheckphrase.maybeWhen(
               data: (phrase) => phrase.isEmpty
@@ -264,8 +262,6 @@ class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> {
     );
   }
 
-  /// The call decoded, but possibly against shifted pallet or call indices — the
-  /// labels below may belong to a different call than the one that will execute.
   Widget _specDriftBanner(BuildContext context, SignedExtensions ext) {
     final colors = context.colors;
     final text = context.themeText;
@@ -308,8 +304,6 @@ class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> {
     );
   }
 
-  /// Amount hero for value transfers — including one wrapped in a multisig
-  /// proposal or approval — and the call's identity for everything else.
   Widget _hero(BuildContext context, ParsedPayload parsed) {
     final colors = context.colors;
     final text = context.themeText;
@@ -358,8 +352,6 @@ class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> {
     );
   }
 
-  /// The exact bytes being signed, for anyone who wants to check the decode by
-  /// hand or against another tool.
   Widget _rawPayloadSection(BuildContext context, ParsedPayload parsed) {
     final colors = context.colors;
     final text = context.themeText;

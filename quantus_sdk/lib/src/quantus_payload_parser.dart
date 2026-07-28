@@ -155,11 +155,6 @@ class QuantusPayloadParser {
     }
   }
 
-  /// Decodes the call through the generated runtime codecs.
-  ///
-  /// The codec consumes exactly the call's bytes and leaves the extensions for
-  /// [_decodeExtensions], so an over- or under-read surfaces as a malformed
-  /// extension or trailing bytes rather than passing silently.
   static DecodedCall _decodeCall(Input input) {
     return CallDecoder.describe(RuntimeCall.codec.decode(input));
   }

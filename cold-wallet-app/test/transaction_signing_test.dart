@@ -50,7 +50,6 @@ void main() {
     test('keystone transfer payload decodes to a displayable transaction', () {
       final payload = Uint8List.fromList(hex.decode(planckHex));
       final parsed = QuantusPayloadParser.parsePayload(payload);
-
       expect(parsed.call.pallet, 'Balances');
       expect(parsed.call.call, 'transfer_allow_death');
       final destination = parsed.call.fields.whereType<ValueField>().firstWhere((f) => f.label == 'Destination');
