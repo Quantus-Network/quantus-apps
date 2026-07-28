@@ -183,7 +183,7 @@ class TransactionService {
       }
     } catch (e) {
       debugPrint('Failed deserializing $txType event: $e');
-      TelemetryService().sendError('Failed deserializing $txType event', error: e);
+      TelemetryService().sendError('Failed deserializing transaction event', error: e);
     }
 
     return event;
