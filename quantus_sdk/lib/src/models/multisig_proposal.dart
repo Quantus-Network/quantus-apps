@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:polkadart/scale_codec.dart' as scale;
 import 'package:quantus_sdk/generated/planck/pallets/multisig.dart';
 import 'package:quantus_sdk/generated/planck/types/pallet_balances/pallet/call.dart' as balances_call;
+import 'package:quantus_sdk/generated/planck/types/pallet_reversible_transfers/pallet/call.dart' as reversible_call;
 import 'package:quantus_sdk/generated/planck/types/quantus_runtime/runtime_call.dart' as runtime;
 import 'package:quantus_sdk/generated/planck/types/sp_runtime/multiaddress/multi_address.dart' as multi_address;
 import 'package:quantus_sdk/src/extensions/address_extension.dart';
@@ -188,7 +189,13 @@ class MultisigProposal {
   /// Whether threshold is met and the proposal awaits execution.
   bool get isReadyToExecute => status == MultisigProposalStatus.approved;
 
-  MultisigProposal copyWith({MultisigProposalStatus? status, List<String>? approvals, BigInt? burnedPalletFee}) {
+  MultisigProposal copyWith({
+    MultisigProposalStatus? status,
+    List<String>? approvals,
+    BigInt? burnedPalletFee,
+    String? recipient,
+    BigInt? amount,
+  }) {
     return MultisigProposal(
       entityId: entityId,
       id: id,
@@ -198,8 +205,8 @@ class MultisigProposal {
       updatedAt: updatedAt,
       pallet: pallet,
       call: call,
-      recipient: recipient,
-      amount: amount,
+      recipient: recipient ?? this.recipient,
+      amount: amount ?? this.amount,
       expiryBlock: expiryBlock,
       approvals: approvals ?? this.approvals,
       deposit: deposit,
@@ -235,18 +242,53 @@ class MultisigProposal {
     if (callRawHex == null || callRawHex.isEmpty) return null;
     try {
       final bytes = Uint8List.fromList(hex.decode(callRawHex.startsWith('0x') ? callRawHex.substring(2) : callRawHex));
-      final input = scale.ByteInput(bytes);
-      final call = runtime.RuntimeCall.decode(input);
-      if (call is runtime.Balances && call.value0 is balances_call.TransferAllowDeath) {
-        final transfer = call.value0 as balances_call.TransferAllowDeath;
-        final dest = transfer.dest;
-        if (dest is multi_address.Id) {
-          final recipientAddress = AddressExtension.ss58AddressFromBytes(Uint8List.fromList(dest.value0));
-          return (amount: transfer.value, recipient: recipientAddress);
-        }
-      }
+      return decodeTransferCall(bytes);
     } catch (e) {
       debugPrint('[MultisigProposal] Failed to decode call_raw: $e');
+      return null;
+    }
+  }
+
+  /// Decodes [callBytes] as a balance send (balances transfer or reversible
+  /// schedule transfer), returning the recipient and amount.
+  ///
+  /// Returns null when the call is not a recognized send, decodes to a
+  /// non-[multi_address.Id] destination, or leaves trailing bytes; callers
+  /// should fall back to displaying the raw call bytes.
+  static ({String recipient, BigInt amount})? decodeTransferCall(List<int> callBytes) {
+    try {
+      final input = scale.ByteInput(Uint8List.fromList(callBytes));
+      final call = runtime.RuntimeCall.decode(input);
+      if (input.remainingLength != 0) return null;
+
+      multi_address.MultiAddress? dest;
+      BigInt? amount;
+      if (call is runtime.Balances) {
+        final inner = call.value0;
+        if (inner is balances_call.TransferAllowDeath) {
+          dest = inner.dest;
+          amount = inner.value;
+        } else if (inner is balances_call.TransferKeepAlive) {
+          dest = inner.dest;
+          amount = inner.value;
+        }
+      } else if (call is runtime.ReversibleTransfers) {
+        final inner = call.value0;
+        if (inner is reversible_call.ScheduleTransfer) {
+          dest = inner.dest;
+          amount = inner.amount;
+        } else if (inner is reversible_call.ScheduleTransferWithDelay) {
+          dest = inner.dest;
+          amount = inner.amount;
+        }
+      }
+
+      if (dest is multi_address.Id && amount != null) {
+        final recipient = AddressExtension.ss58AddressFromBytes(Uint8List.fromList(dest.value0));
+        return (recipient: recipient, amount: amount);
+      }
+    } catch (e) {
+      debugPrint('[MultisigProposal] Failed to decode proposal call: $e');
     }
     return null;
   }

@@ -1,4 +1,12 @@
+import 'dart:typed_data';
+
 import 'package:flutter_test/flutter_test.dart';
+import 'package:quantus_sdk/generated/planck/types/pallet_balances/pallet/call.dart' as balances_call;
+import 'package:quantus_sdk/generated/planck/types/pallet_reversible_transfers/pallet/call.dart' as reversible_call;
+import 'package:quantus_sdk/generated/planck/types/qp_scheduler/block_number_or_timestamp.dart' as scheduler;
+import 'package:quantus_sdk/generated/planck/types/quantus_runtime/runtime_call.dart' as runtime;
+import 'package:quantus_sdk/generated/planck/types/sp_runtime/multiaddress/multi_address.dart' as multi_address;
+import 'package:quantus_sdk/src/extensions/address_extension.dart';
 import 'package:quantus_sdk/src/models/multisig_account.dart';
 import 'package:quantus_sdk/src/models/multisig_create_submission.dart';
 import 'package:quantus_sdk/src/models/multisig_proposal.dart';
@@ -514,6 +522,66 @@ void main() {
     test('returns a Multisig runtime call for valid params', () {
       final call = MultisigService().buildCancelCall(msig: msig, proposalId: 3);
       expect(call.encode().isNotEmpty, isTrue);
+    });
+  });
+
+  group('MultisigProposal.decodeTransferCall', () {
+    final destBytes = List<int>.generate(32, (i) => i + 1);
+    final dest = multi_address.Id(destBytes);
+    final expectedRecipient = AddressExtension.ss58AddressFromBytes(Uint8List.fromList(destBytes));
+    final amount = BigInt.parse('123456789012345678');
+
+    void expectTransfer(runtime.RuntimeCall call) {
+      final decoded = MultisigProposal.decodeTransferCall(call.encode());
+      expect(decoded, isNotNull);
+      expect(decoded!.recipient, expectedRecipient);
+      expect(decoded.amount, amount);
+    }
+
+    test('decodes balances.transfer_allow_death', () {
+      expectTransfer(runtime.Balances(balances_call.TransferAllowDeath(dest: dest, value: amount)));
+    });
+
+    test('decodes balances.transfer_keep_alive', () {
+      expectTransfer(runtime.Balances(balances_call.TransferKeepAlive(dest: dest, value: amount)));
+    });
+
+    test('decodes reversible_transfers.schedule_transfer', () {
+      expectTransfer(runtime.ReversibleTransfers(reversible_call.ScheduleTransfer(dest: dest, amount: amount)));
+    });
+
+    test('decodes reversible_transfers.schedule_transfer_with_delay', () {
+      expectTransfer(
+        runtime.ReversibleTransfers(
+          reversible_call.ScheduleTransferWithDelay(
+            dest: dest,
+            amount: amount,
+            delay: const scheduler.BlockNumber(100),
+          ),
+        ),
+      );
+    });
+
+    test('returns null for a non-transfer call', () {
+      final call = runtime.Balances(balances_call.TransferAll(dest: dest, keepAlive: true));
+      expect(MultisigProposal.decodeTransferCall(call.encode()), isNull);
+    });
+
+    test('returns null for a non-Id destination', () {
+      final call = runtime.Balances(
+        balances_call.TransferAllowDeath(dest: multi_address.Index(BigInt.one), value: amount),
+      );
+      expect(MultisigProposal.decodeTransferCall(call.encode()), isNull);
+    });
+
+    test('returns null for malformed bytes', () {
+      expect(MultisigProposal.decodeTransferCall(const [0xff, 0xff, 0xff]), isNull);
+      expect(MultisigProposal.decodeTransferCall(const []), isNull);
+    });
+
+    test('returns null when trailing bytes remain after a valid transfer', () {
+      final bytes = runtime.Balances(balances_call.TransferAllowDeath(dest: dest, value: amount)).encode();
+      expect(MultisigProposal.decodeTransferCall([...bytes, 0x00]), isNull);
     });
   });
 

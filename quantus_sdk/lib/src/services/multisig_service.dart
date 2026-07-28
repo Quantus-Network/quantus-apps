@@ -2,15 +2,10 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:polkadart/polkadart.dart' show Provider;
-import 'package:polkadart/scale_codec.dart' as scale;
 import 'package:quantus_sdk/generated/planck/pallets/multisig.dart' show Constants, Txs;
 import 'package:quantus_sdk/generated/planck/planck.dart' show Planck;
-import 'package:quantus_sdk/generated/planck/types/pallet_balances/pallet/call.dart' as balances_call;
-import 'package:quantus_sdk/generated/planck/types/pallet_reversible_transfers/pallet/call.dart' as reversible_call;
 import 'package:quantus_sdk/generated/planck/types/quantus_runtime/runtime_call.dart';
-import 'package:quantus_sdk/generated/planck/types/sp_runtime/multiaddress/multi_address.dart' as multi_address;
 import 'package:quantus_sdk/src/constants/app_constants.dart';
-import 'package:quantus_sdk/src/extensions/address_extension.dart';
 import 'package:quantus_sdk/src/models/account.dart';
 import 'package:quantus_sdk/src/models/json_dynamic_parse.dart';
 import 'package:quantus_sdk/src/models/multisig_account.dart';
@@ -230,12 +225,13 @@ class MultisigService {
   }
 
   /// Proposals with active or approved status.
-  Future<List<MultisigProposal>> getOpenProposals(MultisigAccount msig) {
-    return _fetchProposals(
+  Future<List<MultisigProposal>> getOpenProposals(MultisigAccount msig) async {
+    final proposals = await _fetchProposals(
       msig,
       query: MultisigProposalGraphql.openProposalsQuery,
       variables: MultisigProposalGraphql.buildOpenProposalsVariables(msig.accountId),
     );
+    return _withOnChainCallData(msig, proposals);
   }
 
   /// Proposals with executed, cancelled, or removed status.
@@ -292,7 +288,8 @@ class MultisigService {
     if (rows is! List || rows.isEmpty) return null;
     final first = rows.first;
     if (first is! Map<String, dynamic>) return null;
-    return MultisigProposal.fromIndexerJson(first, msig: msig);
+    final proposal = MultisigProposal.fromIndexerJson(first, msig: msig);
+    return (await _withOnChainCallData(msig, [proposal])).first;
   }
 
   Future<int> currentBlockNumber() => _substrateService.getCurrentBlockNumber();
@@ -371,53 +368,55 @@ class MultisigService {
   Future<Uint8List?> getOnChainProposalCall({required MultisigAccount msig, required int proposalId}) async {
     return _rpcEndpointService.rpcTask((uri) async {
       final provider = Provider.fromUri(uri);
-      final api = Planck(provider);
-      final proposal = await api.query.multisig.proposals(getAccountId32(msig.accountId), proposalId);
-      if (proposal == null) return null;
-      return Uint8List.fromList(proposal.call);
+      try {
+        final api = Planck(provider);
+        final proposal = await api.query.multisig.proposals(getAccountId32(msig.accountId), proposalId);
+        if (proposal == null) return null;
+        return Uint8List.fromList(proposal.call);
+      } finally {
+        await provider.disconnect();
+      }
     });
   }
 
-  /// Decodes [callBytes] as a balance send (balances transfer or reversible
-  /// schedule transfer), returning the recipient and amount.
+  /// Replaces indexer-supplied transfer details of open proposals with details
+  /// decoded from the authoritative on-chain call bytes, so browsing surfaces
+  /// match what the confirm sheets display and sign.
   ///
-  /// Returns null when the call is not a recognized send; callers should fall
-  /// back to displaying the raw call bytes.
-  static ({String recipient, BigInt amount})? decodeTransferCall(List<int> callBytes) {
+  /// A stored call that is not a recognized transfer clears the indexer
+  /// details rather than showing unverified ones. Falls back to indexer data
+  /// when the chain query fails; the approve/execute confirm sheets remain
+  /// gated on the on-chain call regardless.
+  Future<List<MultisigProposal>> _withOnChainCallData(MultisigAccount msig, List<MultisigProposal> proposals) async {
+    final open = proposals.where((p) => p.isOpen).toList();
+    if (open.isEmpty) return proposals;
+
     try {
-      final input = scale.ByteInput(Uint8List.fromList(callBytes));
-      final call = RuntimeCall.decode(input);
-
-      multi_address.MultiAddress? dest;
-      BigInt? amount;
-      if (call is Balances) {
-        final inner = call.value0;
-        if (inner is balances_call.TransferAllowDeath) {
-          dest = inner.dest;
-          amount = inner.value;
-        } else if (inner is balances_call.TransferKeepAlive) {
-          dest = inner.dest;
-          amount = inner.value;
+      final calls = await _rpcEndpointService.rpcTask((uri) async {
+        final provider = Provider.fromUri(uri);
+        try {
+          final api = Planck(provider);
+          final multisigId = getAccountId32(msig.accountId);
+          return await Future.wait(open.map((p) => api.query.multisig.proposals(multisigId, p.id)));
+        } finally {
+          await provider.disconnect();
         }
-      } else if (call is ReversibleTransfers) {
-        final inner = call.value0;
-        if (inner is reversible_call.ScheduleTransfer) {
-          dest = inner.dest;
-          amount = inner.amount;
-        } else if (inner is reversible_call.ScheduleTransferWithDelay) {
-          dest = inner.dest;
-          amount = inner.amount;
-        }
-      }
+      });
 
-      if (dest is multi_address.Id && amount != null) {
-        final recipient = AddressExtension.ss58AddressFromBytes(Uint8List.fromList(dest.value0));
-        return (recipient: recipient, amount: amount);
-      }
+      final callById = <int, List<int>>{
+        for (var i = 0; i < open.length; i++)
+          if (calls[i] != null) open[i].id: calls[i]!.call,
+      };
+      return proposals.map((p) {
+        final call = callById[p.id];
+        if (call == null || !p.isOpen) return p;
+        final transfer = MultisigProposal.decodeTransferCall(call);
+        return p.copyWith(recipient: transfer?.recipient ?? '', amount: transfer?.amount ?? BigInt.zero);
+      }).toList();
     } catch (e) {
-      debugPrint('[MultisigService] Failed to decode on-chain proposal call: $e');
+      debugPrint('[MultisigService] Failed to load on-chain proposal calls: $e');
+      return proposals;
     }
-    return null;
   }
 
   /// Builds the `multisig.approve` runtime call for [proposalId].

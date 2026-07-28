@@ -163,7 +163,7 @@ class _MultisigActionConfirmSheetState extends ConsumerState<MultisigActionConfi
         _onChainCall = call;
         _onChainCallFailed = call == null;
         if (call != null) {
-          _onChainTransfer = MultisigService.decodeTransferCall(call);
+          _onChainTransfer = MultisigProposal.decodeTransferCall(call);
         }
       });
     } catch (e, st) {
@@ -271,9 +271,10 @@ class _MultisigActionConfirmSheetState extends ConsumerState<MultisigActionConfi
       );
       secondaryDetail = transfer.recipient;
     } else {
-      // Not a balance send — review the raw on-chain call bytes instead.
+      // Not a balance send — review the raw on-chain call bytes instead. The
+      // full payload is verified on the hardware device itself.
       primaryDetail = l10n.multisigProposalCallData;
-      secondaryDetail = _rawCallHex(proposalCall);
+      secondaryDetail = _truncatedCallHex(proposalCall);
     }
 
     final session = KeystoneSigningSession(
@@ -314,6 +315,25 @@ class _MultisigActionConfirmSheetState extends ConsumerState<MultisigActionConfi
     return '0x${call.map((b) => b.toRadixString(16).padLeft(2, '0')).join()}';
   }
 
+  String _truncatedCallHex(Uint8List call) {
+    final full = _rawCallHex(call);
+    if (full.length <= 66) return full;
+    return '${full.substring(0, 34)}…${full.substring(full.length - 32)}';
+  }
+
+  /// Scrolls internally so a large call payload cannot blow up the sheet.
+  Widget _rawCallDataView(AppColorsV2 colors, AppTextTheme text, Uint8List call) {
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxHeight: 96),
+      child: SingleChildScrollView(
+        child: SelectableText(
+          _rawCallHex(call),
+          style: text.detail?.copyWith(color: colors.textTertiary, fontFamily: AppTextTheme.fontFamilySecondary),
+        ),
+      ),
+    );
+  }
+
   String? _networkFeeLabel(AppLocalizations l10n, NumberFormattingService fmt) {
     if (_loadingFee) return '…';
     if (_networkFee == null) return null;
@@ -337,21 +357,22 @@ class _MultisigActionConfirmSheetState extends ConsumerState<MultisigActionConfi
     final transfer = _onChainTransfer;
     final loadingCall = onChainCall == null && !_onChainCallFailed;
     final String primaryText;
-    final String? secondaryText;
+    final Widget? secondary;
     if (transfer != null) {
       primaryText = l10n.commonAmountBalance(
         fmt.formatBalance(transfer.amount, smartDecimals: AppConstants.decimals),
         AppConstants.tokenSymbol,
       );
-      secondaryText = l10n.multisigApproveConfirmTo(
-        AddressFormattingService.formatActivityDetailAddress(transfer.recipient),
+      secondary = Text(
+        l10n.multisigApproveConfirmTo(AddressFormattingService.formatActivityDetailAddress(transfer.recipient)),
+        style: text.smallParagraph?.copyWith(color: colors.textTertiary),
       );
     } else if (onChainCall != null) {
       primaryText = l10n.multisigProposalCallData;
-      secondaryText = _rawCallHex(onChainCall);
+      secondary = _rawCallDataView(colors, text, onChainCall);
     } else {
       primaryText = '…';
-      secondaryText = null;
+      secondary = null;
     }
 
     return BottomSheetContainer(
@@ -364,10 +385,7 @@ class _MultisigActionConfirmSheetState extends ConsumerState<MultisigActionConfi
           Text(widget.labels.body(l10n), style: text.paragraph?.copyWith(color: colors.textPrimary)),
           const SizedBox(height: 8),
           Text(primaryText, style: text.smallTitle?.copyWith(color: colors.textPrimary)),
-          if (secondaryText != null) ...[
-            const SizedBox(height: 8),
-            Text(secondaryText, style: text.smallParagraph?.copyWith(color: colors.textTertiary)),
-          ],
+          if (secondary != null) ...[const SizedBox(height: 8), secondary],
           if (_onChainCallFailed) ...[
             const SizedBox(height: 16),
             Text(l10n.multisigOnChainProposalUnavailable, style: text.detail?.copyWith(color: colors.textError)),
