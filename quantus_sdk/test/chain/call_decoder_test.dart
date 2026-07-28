@@ -60,6 +60,34 @@ void main() {
       expect(decoded.summary?.assetId, isNull);
     });
 
+    test('balances.transfer_keep_alive carries the same summary as allow_death', () {
+      final decoded = roundTrip(const balances_pallet.Txs().transferKeepAlive(dest: dest(bobId), value: oneQuan));
+
+      expect(decoded.call, 'transfer_keep_alive');
+      expect(decoded.summary?.amount, oneQuan);
+      expect(decoded.summary?.recipient, valueField(decoded, 'Destination').value);
+    });
+
+    test('reversible schedule_transfer decodes destination, amount and summary', () {
+      final decoded = roundTrip(const reversible_pallet.Txs().scheduleTransfer(dest: dest(bobId), amount: oneQuan));
+
+      expect(decoded.call, 'schedule_transfer');
+      expect(decoded.summary?.amount, oneQuan);
+      expect(decoded.summary?.recipient, valueField(decoded, 'Destination').value);
+    });
+
+    test('a non-account destination yields a summary without a recipient', () {
+      final decoded = roundTrip(
+        const balances_pallet.Txs().transferAllowDeath(
+          dest: multi_address.MultiAddress.values.index(BigInt.one),
+          value: oneQuan,
+        ),
+      );
+
+      expect(decoded.summary?.amount, oneQuan);
+      expect(decoded.summary?.recipient, isNull);
+    });
+
     test('reversible schedule_transfer_with_delay renders the delay as a duration', () {
       final decoded = roundTrip(
         const reversible_pallet.Txs().scheduleTransferWithDelay(

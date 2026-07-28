@@ -29,6 +29,11 @@ void showMultisigExecuteConfirmSheet(
         authReason: (l10n) => l10n.multisigExecuteAuthReason,
         failedMessage: (l10n) => l10n.multisigExecuteFailed,
       ),
+      // Executing dispatches the stored call, so what the signer reviews comes
+      // from chain storage, not the indexer; a proposal no longer in storage
+      // could not execute anyway.
+      loadCallBytes: (ref) =>
+          ref.read(multisigServiceProvider).fetchProposalCallBytes(msig: msig, proposalId: proposal.id),
       estimateFee: (ref, signer, callBytes) =>
           ref.read(multisigServiceProvider).estimateExecuteFee(msig: msig, signer: signer, proposalId: proposal.id),
       buildCall: (signer, callBytes) => MultisigService().buildExecuteCall(msig: msig, proposalId: proposal.id),

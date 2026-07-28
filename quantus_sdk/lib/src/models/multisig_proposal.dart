@@ -204,7 +204,14 @@ class MultisigProposal {
   /// Whether threshold is met and the proposal awaits execution.
   bool get isReadyToExecute => status == MultisigProposalStatus.approved;
 
-  MultisigProposal copyWith({MultisigProposalStatus? status, List<String>? approvals, BigInt? burnedPalletFee}) {
+  MultisigProposal copyWith({
+    MultisigProposalStatus? status,
+    List<String>? approvals,
+    BigInt? burnedPalletFee,
+    String? recipient,
+    BigInt? amount,
+    Uint8List? callRaw,
+  }) {
     return MultisigProposal(
       entityId: entityId,
       id: id,
@@ -214,8 +221,9 @@ class MultisigProposal {
       updatedAt: updatedAt,
       pallet: pallet,
       call: call,
-      recipient: recipient,
-      amount: amount,
+      recipient: recipient ?? this.recipient,
+      amount: amount ?? this.amount,
+      callRaw: callRaw ?? this.callRaw,
       expiryBlock: expiryBlock,
       approvals: approvals ?? this.approvals,
       deposit: deposit,

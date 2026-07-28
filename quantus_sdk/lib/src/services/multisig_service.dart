@@ -1,7 +1,5 @@
 import 'dart:convert';
 
-import 'dart:typed_data';
-
 import 'package:flutter/foundation.dart';
 import 'package:quantus_sdk/generated/planck/pallets/multisig.dart' show Constants, Txs;
 import 'package:quantus_sdk/generated/planck/planck.dart' show Planck;
@@ -225,12 +223,13 @@ class MultisigService {
   }
 
   /// Proposals with active or approved status.
-  Future<List<MultisigProposal>> getOpenProposals(MultisigAccount msig) {
-    return _fetchProposals(
+  Future<List<MultisigProposal>> getOpenProposals(MultisigAccount msig) async {
+    final proposals = await _fetchProposals(
       msig,
       query: MultisigProposalGraphql.openProposalsQuery,
       variables: MultisigProposalGraphql.buildOpenProposalsVariables(msig.accountId),
     );
+    return _withOnChainCallData(msig, proposals);
   }
 
   /// Proposals with executed, cancelled, or removed status.
@@ -287,7 +286,43 @@ class MultisigService {
     if (rows is! List || rows.isEmpty) return null;
     final first = rows.first;
     if (first is! Map<String, dynamic>) return null;
-    return MultisigProposal.fromIndexerJson(first, msig: msig);
+    final proposal = MultisigProposal.fromIndexerJson(first, msig: msig);
+    return (await _withOnChainCallData(msig, [proposal])).first;
+  }
+
+  /// Replaces indexer-supplied call data of open proposals with the
+  /// authoritative bytes from `Multisig.Proposals` storage, so browsing
+  /// surfaces (proposal rows, detail sheet) show what the chain will execute.
+  ///
+  /// A stored call that is not a plain transfer clears the indexer transfer
+  /// details instead of showing unverified ones; [MultisigProposal.callRaw]
+  /// still carries the bytes for the decoded-call view. Falls back to indexer
+  /// data when the chain query fails — approving stays gated on
+  /// [fetchProposalCallBytes] regardless.
+  Future<List<MultisigProposal>> _withOnChainCallData(MultisigAccount msig, List<MultisigProposal> proposals) async {
+    final open = proposals.where((p) => p.isOpen).toList();
+    final provider = _substrateService.provider;
+    if (open.isEmpty || provider == null) return proposals;
+
+    try {
+      final queries = Planck(provider).query.multisig;
+      final multisigId = getAccountId32(msig.accountId);
+      final stored = await Future.wait(open.map((p) => queries.proposals(multisigId, p.id)));
+      final callById = <int, Uint8List>{
+        for (var i = 0; i < open.length; i++)
+          if (stored[i] != null) open[i].id: Uint8List.fromList(stored[i]!.call),
+      };
+      return proposals.map((p) {
+        final call = callById[p.id];
+        if (call == null) return p;
+        final withBytes = p.copyWith(callRaw: call);
+        final summary = withBytes.decodedCall?.summary;
+        return withBytes.copyWith(recipient: summary?.recipient ?? '', amount: summary?.amount ?? BigInt.zero);
+      }).toList();
+    } catch (e) {
+      debugPrint('[MultisigService] Failed to load on-chain proposal calls: $e');
+      return proposals;
+    }
   }
 
   Future<int> currentBlockNumber() => _substrateService.getCurrentBlockNumber();

@@ -31,6 +31,11 @@ void showMultisigCancelConfirmSheet(
         authReason: (l10n) => l10n.multisigCancelAuthReason,
         failedMessage: (l10n) => l10n.multisigCancelFailed,
       ),
+      // Shows the signer the stored call being cancelled rather than the
+      // indexer's description; a proposal no longer in storage could not be
+      // cancelled anyway.
+      loadCallBytes: (ref) =>
+          ref.read(multisigServiceProvider).fetchProposalCallBytes(msig: msig, proposalId: proposal.id),
       estimateFee: (ref, signer, callBytes) =>
           ref.read(multisigServiceProvider).estimateCancelFee(msig: msig, signer: signer, proposalId: proposal.id),
       buildCall: (signer, callBytes) => MultisigService().buildCancelCall(msig: msig, proposalId: proposal.id),
