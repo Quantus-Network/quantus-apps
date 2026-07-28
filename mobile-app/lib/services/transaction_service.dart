@@ -131,8 +131,10 @@ class TransactionService {
     return result;
   }
 
+  List<String> _localAccountIds() => _ref.read(accountsProvider).value?.map((acc) => acc.accountId).toList() ?? [];
+
   TransactionRole getTransactionRole(TransactionEvent transaction, {List<String>? accountIds}) {
-    final accounts = accountIds ?? (_ref.read(accountsProvider).value?.map((acc) => acc.accountId).toList() ?? []);
+    final accounts = accountIds ?? _localAccountIds();
 
     final isFrom = accounts.contains(transaction.from);
     final isTo = accounts.contains(transaction.to);
@@ -177,9 +179,12 @@ class TransactionService {
   /// token can fabricate sender/amount fields — so the payload is treated as
   /// a mere hint: only its extrinsic hash is used to re-fetch the transaction
   /// from the indexer, and nothing else from the payload is ever rendered.
+  /// The re-fetched transaction must also involve one of the local wallet
+  /// accounts — otherwise the hash of a real but unrelated third-party
+  /// transfer could be replayed to open a misleading detail sheet.
   /// Fails closed (returns null) when the payload carries no usable hash, the
-  /// type is unsupported, the lookup errors, or the indexer has no matching
-  /// transaction.
+  /// type is unsupported, the lookup errors, the indexer has no matching
+  /// transaction, or the transaction involves none of the local accounts.
   Future<TransactionEvent?> resolveTransactionFromPushPayload(Map<String, dynamic> json) async {
     final txType = json['type'];
     final bool isReversible;
@@ -194,8 +199,9 @@ class TransactionService {
     final extrinsicHash = json['extrinsicHash'];
     if (extrinsicHash is! String || extrinsicHash.isEmpty) return null;
 
+    final TransactionEvent? event;
     try {
-      return await _ref
+      event = await _ref
           .read(chainHistoryServiceProvider)
           .searchByExtrinsicHash(extrinsicHash: extrinsicHash, isReversible: isReversible);
     } catch (e, st) {
@@ -203,6 +209,15 @@ class TransactionService {
       TelemetryService().sendError('Failed resolving push payload transaction', error: e, stackTrace: st);
       return null;
     }
+    if (event == null) return null;
+
+    final localAccountIds = _localAccountIds();
+    if (!localAccountIds.contains(event.from) && !localAccountIds.contains(event.to)) {
+      debugPrint('Push payload transaction $extrinsicHash involves no local account; ignoring');
+      TelemetryService().sendEvent('push_payload_transaction_not_local');
+      return null;
+    }
+    return event;
   }
 
   /// Routes a multisig proposal push payload to the proposal intent provider.

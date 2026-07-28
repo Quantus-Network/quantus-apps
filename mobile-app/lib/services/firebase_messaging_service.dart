@@ -205,9 +205,10 @@ class FirebaseMessagingService {
   ///
   /// The payload is treated as an untrusted hint: the transaction is
   /// re-fetched from the indexer (see
-  /// [TransactionService.resolveTransactionFromPushPayload]) and only the
-  /// verified result is rendered. When the transaction cannot be verified,
-  /// no notification is shown (fail closed).
+  /// [TransactionService.resolveTransactionFromPushPayload]), which also
+  /// requires it to involve one of the local accounts, and only the verified
+  /// result is rendered. When the transaction cannot be verified, no
+  /// notification is shown (fail closed).
   Future<NotificationData?> _remoteMessageToNotificationData(RemoteMessage message) async {
     final data = message.data;
 

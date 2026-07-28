@@ -2,6 +2,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/route_intent_providers.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/services/transaction_service.dart';
@@ -24,8 +25,22 @@ class _FakeChainHistoryService extends ChainHistoryService {
 }
 
 void main() {
+  const localSender = 'qzjij4Tiow9jtse9d7L1T3NEZuxgFW8JdUbaTLsfgubF7ZQAC';
+  const localReceiver = 'qzpyxSr48YN9EQe2ito734iCReTXjnungmNCSY4Yph1YznEda';
+
   late ProviderContainer container;
   late _FakeChainHistoryService fakeHistoryService;
+
+  ProviderContainer containerWithAccounts(List<Account> accounts) {
+    final accountsContainer = ProviderContainer(
+      overrides: [
+        chainHistoryServiceProvider.overrideWithValue(fakeHistoryService),
+        accountsProvider.overrideWith((ref) => AccountsNotifier(AccountsService(), initialAccounts: accounts)),
+      ],
+    );
+    addTearDown(accountsContainer.dispose);
+    return accountsContainer;
+  }
 
   setUp(() {
     // TelemetryService talks to a platform channel that does not exist in
@@ -37,7 +52,17 @@ void main() {
     );
 
     fakeHistoryService = _FakeChainHistoryService();
-    container = ProviderContainer(overrides: [chainHistoryServiceProvider.overrideWithValue(fakeHistoryService)]);
+    container = ProviderContainer(
+      overrides: [
+        chainHistoryServiceProvider.overrideWithValue(fakeHistoryService),
+        accountsProvider.overrideWith(
+          (ref) => AccountsNotifier(
+            AccountsService(),
+            initialAccounts: const [Account(walletIndex: 0, index: 0, name: 'Local', accountId: localReceiver)],
+          ),
+        ),
+      ],
+    );
   });
 
   tearDown(() {
@@ -113,8 +138,8 @@ void main() {
 
     TransferEvent indexedTransfer() => TransferEvent(
       id: '0000197378-4f5d2-000002',
-      from: 'qzjij4Tiow9jtse9d7L1T3NEZuxgFW8JdUbaTLsfgubF7ZQAC',
-      to: 'qzpyxSr48YN9EQe2ito734iCReTXjnungmNCSY4Yph1YznEda',
+      from: localSender,
+      to: localReceiver,
       amount: BigInt.from(500),
       timestamp: DateTime.utc(2026, 5, 12),
       fee: BigInt.zero,
@@ -159,6 +184,50 @@ void main() {
 
       expect(event, isNull);
       expect(fakeHistoryService.callCount, 0);
+    });
+
+    test('returns null without querying when extrinsicHash is empty', () async {
+      final service = container.read(transactionServiceProvider);
+
+      final event = await service.resolveTransactionFromPushPayload({'type': 'TRANSFER', 'extrinsicHash': ''});
+
+      expect(event, isNull);
+      expect(fakeHistoryService.callCount, 0);
+    });
+
+    test('returns null without querying when extrinsicHash is not a String', () async {
+      final service = container.read(transactionServiceProvider);
+
+      final event = await service.resolveTransactionFromPushPayload({'type': 'TRANSFER', 'extrinsicHash': 123});
+
+      expect(event, isNull);
+      expect(fakeHistoryService.callCount, 0);
+    });
+
+    test('returns null when the resolved transaction involves no local account', () async {
+      final unrelated = containerWithAccounts(const [
+        Account(walletIndex: 0, index: 0, name: 'Other', accountId: 'qzsomeoneelse'),
+      ]);
+      final service = unrelated.read(transactionServiceProvider);
+      fakeHistoryService.result = indexedTransfer();
+
+      final event = await service.resolveTransactionFromPushPayload({'type': 'TRANSFER', 'extrinsicHash': hash});
+
+      expect(event, isNull);
+      expect(fakeHistoryService.callCount, 1);
+    });
+
+    test('returns the transaction when the local account is the sender', () async {
+      final senderOnly = containerWithAccounts(const [
+        Account(walletIndex: 0, index: 0, name: 'Sender', accountId: localSender),
+      ]);
+      final service = senderOnly.read(transactionServiceProvider);
+      final indexed = indexedTransfer();
+      fakeHistoryService.result = indexed;
+
+      final event = await service.resolveTransactionFromPushPayload({'type': 'TRANSFER', 'extrinsicHash': hash});
+
+      expect(event, same(indexed));
     });
 
     test('returns null without querying for unsupported types', () async {
