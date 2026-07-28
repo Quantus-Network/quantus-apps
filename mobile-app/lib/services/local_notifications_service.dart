@@ -96,11 +96,7 @@ class LocalNotificationsService {
       txService.navigateToTransactionFromPayloadIfPossible(json);
     } catch (e) {
       debugPrint('Error decoding payload handle launch by notification: $e');
-      TelemetryService().sendError(
-        'Error decoding notification launch payload',
-        error: e.runtimeType.toString(),
-        stackTrace: StackTrace.current,
-      );
+      TelemetryService().sendError('Error decoding notification launch payload', error: e);
     }
   }
 
@@ -158,11 +154,7 @@ class LocalNotificationsService {
         txService.navigateToTransactionFromPayloadIfPossible(json);
       } catch (e) {
         debugPrint('Error decoding payload setup notifications click listener: $e');
-        TelemetryService().sendError(
-          'Error decoding notification click payload',
-          error: e.runtimeType.toString(),
-          stackTrace: StackTrace.current,
-        );
+        TelemetryService().sendError('Error decoding notification click payload', error: e);
       }
     });
   }

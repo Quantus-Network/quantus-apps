@@ -95,7 +95,7 @@ class MultisigSubmissionService {
       // nonce and can double-submit if a prior submit already landed.
       quantusDebugPrint('[MultisigSubmission] submit failed: $e');
       quantusDebugPrint('Stack trace: $stackTrace');
-      TelemetryService().sendError('multisig_create_submit_failed', error: e, stackTrace: stackTrace);
+      TelemetryService().sendError('multisig_create_submit_failed', error: e);
       removePendingMultisigCreation(_ref, draft.accountId);
       rethrow;
     }
