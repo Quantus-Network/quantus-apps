@@ -57,7 +57,7 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
 
       if (mounted) returnToAccountsSheet(context, ref, highlightAccountId: accountToSave.accountId);
     } catch (e, st) {
-      quantusDebugPrint('[CreateAccount] create account error: $e\n$st');
+      quantusPrint('[CreateAccount] create account error: $e\n$st');
       if (mounted) {
         final l10n = ref.read(l10nProvider);
         context.showErrorToaster(message: l10n.createAccountErrorCouldNotAdd);

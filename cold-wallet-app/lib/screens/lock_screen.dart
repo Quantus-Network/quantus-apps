@@ -26,7 +26,6 @@ class _LockScreenState extends ConsumerState<LockScreen> {
   }
 
   Future<void> _unlockWithPassword() async {
-    if (_passwordController.text.isEmpty) return;
     setState(() {
       _busy = true;
       _error = null;

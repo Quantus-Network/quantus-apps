@@ -23,8 +23,8 @@ class AccountAssociationsNotifier extends StateNotifier<AsyncValue<AccountAssoci
         state = AsyncValue.data(associations);
       }
     } catch (e, st) {
-      quantusDebugPrint('Error fetching account associations: $e');
-      quantusDebugPrint('Stack trace: $st');
+      quantusPrint('Error fetching account associations: $e');
+      quantusPrint('Stack trace: $st');
 
       if (mounted) {
         state = AsyncValue.error(e, st);

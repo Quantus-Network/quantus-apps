@@ -1,4 +1,3 @@
-use nam_tiny_hderive::bip32::ExtendedPrivKey;
 use qp_poseidon_core::{hash_bytes, hash_to_bytes, serialization::bytes_to_digest};
 use qp_rusty_crystals_dilithium::ml_dsa_87;
 use qp_rusty_crystals_hdwallet::{derive_key_from_mnemonic, derive_wormhole_from_mnemonic, mnemonic_to_seed, SensitiveBytes32, SensitiveBytes64};
@@ -7,6 +6,10 @@ use sp_core::crypto::{AccountId32, Ss58Codec};
 use std::convert::AsRef;
 
 type MlDsaKeypair = ml_dsa_87::Keypair;
+
+/// SS58 network prefix of the Quantus chain. Must match the chain runtime
+/// (`Ss58AddressFormat::custom(189)`) and `AppConstants.ss58prefix` in Dart.
+const QUANTUS_SS58_PREFIX: u16 = 189;
 
 #[flutter_rust_bridge::frb(sync)]
 pub fn set_default_ss58_prefix(prefix: u16) {
@@ -46,20 +49,29 @@ pub fn to_account_id(obj: &Keypair) -> String {
 }
 /// Convert key in ss58check format to accountId32
 #[flutter_rust_bridge::frb(sync)]
-pub fn ss58_to_account_id(s: &str) -> Vec<u8> {
-    // from_ss58check returns a Result, we unwrap it to panic on invalid input.
-    // We then convert the AccountId32 struct to a Vec<u8> to be compatible with Polkadart's typedef.
-    AsRef::<[u8]>::as_ref(&AccountId32::from_ss58check(s).unwrap()).to_vec()
+pub fn ss58_to_account_id(s: &str) -> Result<Vec<u8>, String> {
+    // Only accept Quantus addresses: a foreign-chain prefix would decode to an
+    // uncontrolled AccountId32 on Quantus and burn any funds sent to it.
+    let (account, version) = AccountId32::from_ss58check_with_version(s)
+        .map_err(|e| format!("Invalid ss58 address: {:?}", e))?;
+    let prefix = u16::from(version);
+    if prefix != QUANTUS_SS58_PREFIX {
+        return Err(format!(
+            "Wrong ss58 network prefix: expected {} (Quantus), got {}",
+            QUANTUS_SS58_PREFIX, prefix
+        ));
+    }
+    Ok(AsRef::<[u8]>::as_ref(&account).to_vec())
 }
 
 #[flutter_rust_bridge::frb(sync)]
-pub fn generate_keypair(mnemonic_str: String) -> Keypair {
-    let mut seed64 = mnemonic_to_seed(mnemonic_str, None).expect("Failed to convert mnemonic to seed");
+pub fn generate_keypair(mnemonic_str: String) -> Result<Keypair, HDLatticeError> {
+    let mut seed64 = mnemonic_to_seed(mnemonic_str, None)?;
     let mut seed_for_pair = [0u8; 32];
     seed_for_pair.copy_from_slice(&seed64[..32]);
     let _ = SensitiveBytes64::from(&mut seed64);
     let ml_dsa_keypair = MlDsaKeypair::generate(SensitiveBytes32::new(&mut seed_for_pair));
-    Keypair::from_ml_dsa(ml_dsa_keypair)
+    Ok(Keypair::from_ml_dsa(ml_dsa_keypair))
 }
 
 #[flutter_rust_bridge::frb(sync)]
@@ -149,14 +161,6 @@ pub fn crystal_bob() -> Keypair {
 #[flutter_rust_bridge::frb(sync)]
 pub fn crystal_charlie() -> Keypair {
     generate_keypair_from_seed(vec![2; 32])
-}
-
-#[flutter_rust_bridge::frb(sync)]
-pub fn derive_hd_path(seed: Vec<u8>, path: String) -> Vec<u8> {
-    let seed = seed.as_slice();
-    let path = path.as_str();
-    let ext = ExtendedPrivKey::derive(seed, path).expect("Failed to derive HD path");
-    return ext.secret().to_vec();
 }
 
 #[flutter_rust_bridge::frb(sync)]

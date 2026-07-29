@@ -86,8 +86,15 @@ pub fn compute_wormhole_address(secret: Vec<u8>) -> Result<Vec<u8>, String> {
 }
 
 #[flutter_rust_bridge::frb(sync)]
-pub fn wormhole_compute_output_amount(input_amount: u32, fee_bps: u32) -> u32 {
-    ((input_amount as u64) * (10000 - fee_bps as u64) / 10000) as u32
+pub fn wormhole_compute_output_amount(input_amount: u32, fee_bps: u32) -> Result<u32, String> {
+    let factor = 10_000u64
+        .checked_sub(fee_bps as u64)
+        .ok_or_else(|| format!("fee_bps must be <= 10000, got {}", fee_bps))?;
+    let output = (input_amount as u64)
+        .checked_mul(factor)
+        .ok_or_else(|| "Output amount overflow".to_string())?
+        / 10_000;
+    u32::try_from(output).map_err(|_| "Output amount exceeds u32 range".to_string())
 }
 
 #[flutter_rust_bridge::frb(sync)]
@@ -102,7 +109,9 @@ pub fn decode_leaf_amount(leaf_data: Vec<u8>) -> Result<u32, String> {
         .try_into()
         .map_err(|_| "Failed to extract amount bytes".to_string())?;
     let raw_amount = u128::from_le_bytes(amount_bytes);
-    Ok((raw_amount / SCALE_DOWN_FACTOR) as u32)
+    let scaled = raw_amount / SCALE_DOWN_FACTOR;
+    u32::try_from(scaled)
+        .map_err(|_| format!("Leaf amount {} exceeds u32 range after scaling", scaled))
 }
 
 #[flutter_rust_bridge::frb(sync)]

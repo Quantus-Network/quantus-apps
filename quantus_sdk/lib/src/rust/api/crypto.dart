@@ -53,9 +53,6 @@ Keypair crystalBob() => RustLib.instance.api.crateApiCryptoCrystalBob();
 
 Keypair crystalCharlie() => RustLib.instance.api.crateApiCryptoCrystalCharlie();
 
-Uint8List deriveHdPath({required List<int> seed, required String path}) =>
-    RustLib.instance.api.crateApiCryptoDeriveHdPath(seed: seed, path: path);
-
 BigInt publicKeyBytes() => RustLib.instance.api.crateApiCryptoPublicKeyBytes();
 
 BigInt secretKeyBytes() => RustLib.instance.api.crateApiCryptoSecretKeyBytes();

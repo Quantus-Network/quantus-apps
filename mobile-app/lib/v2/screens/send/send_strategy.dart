@@ -140,12 +140,15 @@ class SendNeedsHardwareSignature extends SendOutcome {
 
 /// Encrypted send authenticated and planned: hand off to the proving progress
 /// screen, which generates the ZK proofs, submits and then shows [terminal].
+/// [amount] is the confirmed amount; the controller re-checks it against
+/// [plan] before proving, since the plan pays exactly its own amountPlanck.
 class SendNeedsProving extends SendOutcome {
   final Account account;
   final WormholeSpendPlan plan;
+  final BigInt amount;
   final SendTerminalContent terminal;
 
-  const SendNeedsProving({required this.account, required this.plan, required this.terminal});
+  const SendNeedsProving({required this.account, required this.plan, required this.amount, required this.terminal});
 }
 
 /// Submission failed or was not authenticated; show [message] inline.

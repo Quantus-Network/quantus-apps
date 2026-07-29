@@ -71,7 +71,7 @@ class PendingMultisigCreationsNotifier extends StateNotifier<List<PendingMultisi
         final json = jsonDecode(jsonString) as Map<String, dynamic>;
         loadedRecords.add(PendingMultisigCreationRecord.fromJson(json));
       } catch (e) {
-        quantusDebugPrint('Error parsing pending multisig creation: $e');
+        quantusPrint('Error parsing pending multisig creation: $e');
       }
     }
 

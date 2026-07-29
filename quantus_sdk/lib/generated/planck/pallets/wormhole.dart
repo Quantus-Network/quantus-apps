@@ -39,6 +39,18 @@ class Queries {
         ),
       );
 
+  final _i1.StorageValue<BigInt> _potentialWormholeBalance = const _i1.StorageValue<BigInt>(
+    prefix: 'Wormhole',
+    storage: 'PotentialWormholeBalance',
+    valueCodec: _i2.U128Codec.codec,
+  );
+
+  final _i1.StorageValue<BigInt> _totalWormholeExits = const _i1.StorageValue<BigInt>(
+    prefix: 'Wormhole',
+    storage: 'TotalWormholeExits',
+    valueCodec: _i2.U128Codec.codec,
+  );
+
   _i5.Future<bool> usedNullifiers(List<int> key1, {_i1.BlockHash? at}) async {
     final hashedKey = _usedNullifiers.hashedKeyFor(key1);
     final bytes = await __api.getStorage(hashedKey, at: at);
@@ -71,6 +83,37 @@ class Queries {
       return _genesisEndowmentsPending.decodeValue(bytes);
     }
     return []; /* Default */
+  }
+
+  /// Sum of balances held by "ambiguous" addresses (accounts that have never signed a
+  /// dilithium transaction, i.e. `nonce == 0`). These addresses are indistinguishable from
+  /// wormhole deposit addresses, so this is the maximum value that could legitimately be
+  /// exited via the wormhole.
+  ///
+  /// Maintained incrementally: transfers to ambiguous addresses add to it (see
+  /// `record_transfer`), and an address revealing itself by signing its first transaction
+  /// subtracts its balance (see `WormholeProofRecorderExtension::validate` in the runtime).
+  _i5.Future<BigInt> potentialWormholeBalance({_i1.BlockHash? at}) async {
+    final hashedKey = _potentialWormholeBalance.hashedKey();
+    final bytes = await __api.getStorage(hashedKey, at: at);
+    if (bytes != null) {
+      return _potentialWormholeBalance.decodeValue(bytes);
+    }
+    return BigInt.zero; /* Default */
+  }
+
+  /// Total value of all successful wormhole exits (tokens minted to exit accounts).
+  ///
+  /// The core soundness invariant enforced on every exit is
+  /// `TotalWormholeExits <= PotentialWormholeBalance`. A violation indicates that more value
+  /// is being exited than could possibly have been deposited — i.e. a ZK soundness bug.
+  _i5.Future<BigInt> totalWormholeExits({_i1.BlockHash? at}) async {
+    final hashedKey = _totalWormholeExits.hashedKey();
+    final bytes = await __api.getStorage(hashedKey, at: at);
+    if (bytes != null) {
+      return _totalWormholeExits.decodeValue(bytes);
+    }
+    return BigInt.zero; /* Default */
   }
 
   _i5.Future<List<bool>> multiUsedNullifiers(List<List<int>> keys, {_i1.BlockHash? at}) async {
@@ -110,6 +153,18 @@ class Queries {
     return hashedKey;
   }
 
+  /// Returns the storage key for `potentialWormholeBalance`.
+  _i6.Uint8List potentialWormholeBalanceKey() {
+    final hashedKey = _potentialWormholeBalance.hashedKey();
+    return hashedKey;
+  }
+
+  /// Returns the storage key for `totalWormholeExits`.
+  _i6.Uint8List totalWormholeExitsKey() {
+    final hashedKey = _totalWormholeExits.hashedKey();
+    return hashedKey;
+  }
+
   /// Returns the storage map key prefix for `usedNullifiers`.
   _i6.Uint8List usedNullifiersMapPrefix() {
     final hashedKey = _usedNullifiers.mapPrefix();
@@ -126,10 +181,22 @@ class Queries {
 class Txs {
   const Txs();
 
+  /// Verify a private-batch wormhole proof and process all exits in the batch.
+  ///
+  /// Returns `DispatchResultWithPostInfo` to allow weight correction on early failures.
+  /// If validation fails before ZK verification, we return minimal weight.
+  /// If ZK verification fails, we return full weight since the work was done.
   _i7.Wormhole verifyPrivateBatch({required List<int> proofBytes}) {
     return _i7.Wormhole(_i8.VerifyPrivateBatch(proofBytes: proofBytes));
   }
 
+  /// Verify a public-batch wormhole proof and process all valid exit segments.
+  ///
+  /// Invalid segments (already-spent nullifiers) are denied individually; dummy-padded
+  /// segments (all-zero nullifiers) are skipped silently. A portion of the burn bucket
+  /// is minted to the proof's `aggregator_address`; if that mint fails (e.g. the
+  /// account doesn't exist and the rebate is below the existential deposit) the
+  /// rebate is burned instead of failing the users' exits.
   _i7.Wormhole verifyPublicBatch({required List<int> proofBytes}) {
     return _i7.Wormhole(_i8.VerifyPublicBatch(proofBytes: proofBytes));
   }
@@ -188,5 +255,6 @@ class Constants {
 
   /// For public-batch proofs, the proportion of the burn bucket redirected to the
   /// aggregator instead of being destroyed. The miner's share is unchanged.
+  /// Example: Permill::from_percent(50) means half the burn portion goes to the aggregator.
   final _i9.Permill volumeFeesAggregatorRate = 500000;
 }

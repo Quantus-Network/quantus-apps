@@ -100,7 +100,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   bool _consumeIfSendInFlight<T>(StateProvider<T?> provider, String label) {
     if (!ref.read(sendFlowActiveProvider)) return false;
     ref.read(provider.notifier).state = null;
-    quantusDebugPrint('$label intent ignored: send flow active');
+    quantusPrint('$label intent ignored: send flow active');
     return true;
   }
 
@@ -129,7 +129,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     if (active == null) return;
     ref.read(paymentIntentProvider.notifier).state = null;
     if (active is! RegularAccount) {
-      quantusDebugPrint('payment intent: active account cannot send regular transfers');
+      quantusPrint('payment intent: active account cannot send regular transfers');
       context.showWarningToaster(message: ref.read(l10nProvider).sendRegularAccountRequired);
       return;
     }
@@ -169,7 +169,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     // by waiting, and we don't want to retry a malformed payload.
     ref.read(proposalIntentProvider.notifier).state = null;
     if (msig == null) {
-      quantusDebugPrint('proposal intent: no local multisig for ${intent.multisigAddress}');
+      quantusPrint('proposal intent: no local multisig for ${intent.multisigAddress}');
       return;
     }
 
@@ -182,9 +182,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Future<void> _refresh() async {
     try {
       await ref.read(globalHistoryPollingServiceProvider).triggerManualRefresh();
-    } catch (e, st) {
-      quantusDebugPrint('home refresh error: $e');
-      TelemetryService().sendError('Home refresh failed', error: e, stackTrace: st);
+    } catch (e) {
+      quantusPrint('home refresh error: $e');
+      TelemetryService().sendError('Home refresh failed', error: e);
     }
   }
 

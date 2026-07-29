@@ -4,6 +4,7 @@ import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/currency_display_provider.dart';
 import 'package:resonance_network_wallet/shared/constants/e2e_keys.dart';
+import 'package:resonance_network_wallet/shared/utils/print.dart';
 import 'package:resonance_network_wallet/shared/utils/url_utils.dart';
 import 'package:resonance_network_wallet/v2/components/address_checkphrase_with_initial.dart';
 import 'package:resonance_network_wallet/v2/components/amount_display_with_conversion.dart';
@@ -55,14 +56,21 @@ class _ReviewSendScreenState extends ConsumerState<ReviewSendScreen> {
       _errorMessage = null;
     });
 
-    final outcome = await widget.strategy.submit(
-      ref,
-      recipientAddress: widget.recipientAddress.trim(),
-      recipientChecksum: widget.recipientChecksum,
-      amount: widget.amount,
-      fee: widget.fee,
-      isPayMode: widget.isPayMode,
-    );
+    SendOutcome outcome;
+    try {
+      outcome = await widget.strategy.submit(
+        ref,
+        recipientAddress: widget.recipientAddress.trim(),
+        recipientChecksum: widget.recipientChecksum,
+        amount: widget.amount,
+        fee: widget.fee,
+        isPayMode: widget.isPayMode,
+      );
+    } catch (e, st) {
+      quantusPrint('Send submit error: $e\n$st');
+      if (!mounted) return;
+      outcome = SendFailed(ref.read(l10nProvider).sendReviewSubmitFailed);
+    }
     if (!mounted) return;
 
     switch (outcome) {
@@ -86,7 +94,7 @@ class _ReviewSendScreenState extends ConsumerState<ReviewSendScreen> {
                 SendTerminalScreen(content: terminal.copyWith(explorerUrl: explorerImmediateTransactionUrl(hash))),
           ),
         );
-      case SendNeedsProving(:final account, :final plan, :final terminal):
+      case SendNeedsProving(:final account, :final plan, :final amount, :final terminal):
         setState(() => _submitting = false);
         Navigator.push(
           context,
@@ -94,6 +102,7 @@ class _ReviewSendScreenState extends ConsumerState<ReviewSendScreen> {
             builder: (_) => EncryptedSendProgressScreen(
               account: account,
               plan: plan,
+              amount: amount,
               recipientAddress: widget.recipientAddress.trim(),
               terminal: terminal,
             ),

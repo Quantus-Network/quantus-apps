@@ -7,6 +7,8 @@ import 'src/rust/frb_generated.dart';
 
 export 'generated/planck/pallets/balances.dart';
 export 'generated/planck/types/quantus_runtime/runtime_call.dart';
+export 'src/chain/call_decoder.dart';
+export 'src/chain/decoded_call.dart';
 export 'src/constants/app_constants.dart';
 export 'src/extensions/color_extensions.dart';
 export 'src/extensions/context_extension.dart';
@@ -68,7 +70,6 @@ export 'src/services/swap_service.dart';
 export 'src/services/taskmaster_service.dart';
 export 'src/services/senoti_service.dart';
 export 'src/services/circuit_manager.dart';
-export 'src/services/wormhole_address_manager.dart';
 export 'src/services/encrypted_account_service.dart';
 export 'src/services/wormhole_coin_selection.dart';
 export 'src/services/wormhole_send_service.dart';

@@ -132,6 +132,8 @@
   "multisigNoPastProposals": "Tidak ada proposal sebelumnya.",
   "multisigLoadFailed": "Gagal memuat: {error}",
   "multisigProposalToAddress": "ke {address}",
+  "multisigProposalCallLoading": "Membaca usulan dari rantai…",
+  "multisigProposalCallUnavailable": "Tidak dapat membaca usulan ini dari rantai, jadi tidak ada yang bisa disetujui. Coba lagi setelah Anda kembali online.",
   "multisigStatusApproved": "DITANDATANGANI",
   "multisigStatusProposed": "DIAJUKAN",
   "multisigStatusExpired": "KEDALUWARSA",
@@ -291,6 +293,8 @@
   "addHardwareAccountDebugFill": "Isi Debug",
   "addHardwareAccountNameRequired": "Nama wajib diisi",
   "addHardwareAccountInvalidAddress": "Alamat tidak valid",
+
+  "invalidAddress": "Alamat tidak valid",
 
   "sendTitle": "Kirim",
   "sendPayTitle": "Bayar",

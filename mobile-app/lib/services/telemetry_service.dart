@@ -16,11 +16,13 @@ class TelemetryService {
     Telemetrydecksdk.send(eventName, additionalPayload: parameters);
   }
 
-  void sendError(String errorName, {required Object error, required StackTrace stackTrace}) {
-    Telemetrydecksdk.send(
-      'Error',
-      additionalPayload: {'errorName': errorName, 'error': error, 'stackTrace': stackTrace},
-    );
+  /// Sends an error signal with a whitelisted payload only: the caller-supplied
+  /// [errorName] context tag and the exception's runtime type.
+  ///
+  /// Raw exception text and stack traces are deliberately never sent — they can
+  /// embed addresses, amounts, call data, or future secret-bearing messages.
+  void sendError(String errorName, {required Object error}) {
+    Telemetrydecksdk.send('Error', additionalPayload: {'errorName': errorName, 'error': error.runtimeType.toString()});
   }
 
   /// Tracks that a screen has been viewed.

@@ -8,6 +8,7 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:quantus_sdk/src/extensions/address_extension.dart';
 import 'package:quantus_sdk/src/extensions/duration_extension.dart';
 import 'package:quantus_sdk/src/rust/api/crypto.dart' as crypto;
+import 'package:quantus_sdk/src/utils/print.dart';
 
 class HighSecurityService {
   static final HighSecurityService _instance = HighSecurityService._internal();
@@ -64,7 +65,7 @@ class HighSecurityService {
 
   Future<HighSecurityData?> getHighSecurityConfig(String address) async {
     final hsData = await _reversibleTransfersService.getHighSecurityConfig(address);
-    print('getHighSecurityConfig: $address -> $hsData');
+    quantusPrint('getHighSecurityConfig: $address -> $hsData');
     if (hsData != null) {
       final accountId = AddressExtension.ss58AddressFromBytes(Uint8List.fromList(hsData.guardian));
       if (hsData.delay is! qp.Timestamp) {
@@ -85,7 +86,7 @@ class HighSecurityService {
   /// previous implementation batched recovery-pallet calls, but that pallet
   /// was never configured for accounts, so the rescue path could not work.
   Future<Uint8List> pullAllFunds(String lostAccountAddress, Account guardianAccount) async {
-    print('pullAllFunds: $lostAccountAddress, guardian: ${guardianAccount.accountId}');
+    quantusPrint('pullAllFunds: $lostAccountAddress, guardian: ${guardianAccount.accountId}');
     final call = _getRecoverFundsCall(lostAccountAddress);
     return await _substrateService.submitExtrinsic(guardianAccount, call);
   }

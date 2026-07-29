@@ -7,6 +7,7 @@ import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
+import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/routes.dart';
 import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
 import 'package:resonance_network_wallet/shared/extensions/current_route_extensions.dart';
@@ -28,7 +29,7 @@ class SharedAddressActionSheet extends StatefulWidget {
 
 class _SharedAddressActionSheetState extends State<SharedAddressActionSheet> {
   String? _checksum;
-  Future<String>? _checksumFuture;
+  Future<String?>? _checksumFuture;
   List<String>? _splittedAddress;
 
   final HumanReadableChecksumService _checksumService = HumanReadableChecksumService();
@@ -46,7 +47,7 @@ class _SharedAddressActionSheetState extends State<SharedAddressActionSheet> {
         _splittedAddress = AddressFormattingService.splitIntoChunks(widget.address);
       });
     } catch (e) {
-      debugPrint('Error loading account data: $e');
+      quantusPrint('Error loading account data: $e');
       if (mounted) {
         setState(() {});
       }
@@ -65,9 +66,15 @@ class _SharedAddressActionSheetState extends State<SharedAddressActionSheet> {
 
   void _sendToAddress() {
     final container = ProviderScope.containerOf(context);
+    // Fail closed: never pre-fill the send flow with an invalid address,
+    // same as address entry in the send flow itself.
+    if (!container.read(substrateServiceProvider).isValidSS58Address(widget.address)) {
+      context.showErrorToaster(message: container.read(l10nProvider).invalidAddress);
+      return;
+    }
     final active = container.read(activeAccountProvider).value;
     if (active is! RegularAccount) {
-      quantusDebugPrint('shared address send: active account cannot send regular transfers');
+      quantusPrint('shared address send: active account cannot send regular transfers');
       context.showWarningToaster(message: container.read(l10nProvider).sendRegularAccountRequired);
       return;
     }
@@ -149,7 +156,7 @@ class _SharedAddressActionSheetState extends State<SharedAddressActionSheet> {
                             !snapshot.hasData ||
                             snapshot.data == null ||
                             snapshot.data!.isEmpty) {
-                          debugPrint(
+                          quantusPrint(
                             'Error loading checksum name for ${widget.address}: '
                             '${snapshot.error}',
                           );

@@ -1,9 +1,12 @@
 import 'dart:typed_data';
 
+import 'package:convert/convert.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:quantus_cold_wallet/components/animated_ur_qr.dart';
+import 'package:quantus_cold_wallet/components/call_detail_view.dart';
+import 'package:quantus_cold_wallet/components/detail_row.dart';
 import 'package:quantus_cold_wallet/components/quantus_button.dart';
 import 'package:quantus_cold_wallet/components/scaffold_base.dart';
 import 'package:quantus_cold_wallet/components/scaffold_base_bottom_content.dart';
@@ -12,6 +15,13 @@ import 'package:quantus_cold_wallet/providers/wallet_providers.dart';
 import 'package:quantus_cold_wallet/theme/app_colors.dart';
 import 'package:quantus_cold_wallet/theme/app_text_styles.dart';
 
+/// Reviews a scanned signing payload and, on approval, produces the signature QR.
+///
+/// Every parameter of the call — nested calls included — is on screen before the
+/// Sign button becomes usable. There is no summarised or collapsed view: if a
+/// byte is being signed, it is displayed. The Sign button stays disabled until
+/// the parameter list has been scrolled to the end, so "I read it" is an action
+/// rather than an assumption.
 class SignTransactionScreen extends ConsumerStatefulWidget {
   final Uint8List payload;
   const SignTransactionScreen({super.key, required this.payload});
@@ -21,30 +31,56 @@ class SignTransactionScreen extends ConsumerStatefulWidget {
 }
 
 class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> {
+  final ScrollController _scrollController = ScrollController();
+
   ParsedPayload? _parsed;
   String? _parseError;
-  String? _toCheckphrase;
   List<String>? _signatureUr;
   bool _signing = false;
+  bool _reviewedToEnd = false;
+  bool _showRawPayload = false;
   String? _error;
 
   @override
   void initState() {
     super.initState();
     try {
-      final parsed = QuantusPayloadParser.parsePayload(widget.payload);
-      _parsed = parsed;
-      _loadCheckphrase(parsed.call.toAddress);
+      _parsed = QuantusPayloadParser.parsePayload(widget.payload);
     } catch (e) {
       debugPrint('Rejected signing payload: $e');
       _parseError = e is FormatException ? e.message : e.toString();
     }
+    _scrollController.addListener(_onScroll);
   }
 
-  Future<void> _loadCheckphrase(String address) async {
-    final phrase = await HumanReadableChecksumService().getHumanReadableName(address);
-    if (!mounted) return;
-    setState(() => _toCheckphrase = phrase);
+  @override
+  void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (_reviewedToEnd || !_scrollController.hasClients) return;
+    final position = _scrollController.position;
+    if (!position.hasContentDimensions) return;
+    if (position.pixels >= position.maxScrollExtent - 16) {
+      setState(() => _reviewedToEnd = true);
+    }
+  }
+
+  /// A payload short enough to fit on one screen has nothing to scroll, so the
+  /// gate would never open — release it once layout confirms there is no overflow.
+  ///
+  /// Runs after the frame: during build the scroll position exists but has no
+  /// content dimensions yet, and asking for its extent then throws.
+  void _scheduleReviewGateCheck() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _reviewedToEnd || !_scrollController.hasClients) return;
+      final position = _scrollController.position;
+      if (!position.hasContentDimensions) return;
+      if (position.maxScrollExtent <= 0) setState(() => _reviewedToEnd = true);
+    });
   }
 
   void _sign() {
@@ -78,12 +114,8 @@ class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> {
     }
   }
 
-  String _formatAmount(BigInt planck) {
-    final divisor = BigInt.from(10).pow(AppConstants.decimals);
-    final whole = planck ~/ divisor;
-    final frac = (planck % divisor).toString().padLeft(AppConstants.decimals, '0').substring(0, 4);
-    return '$whole.$frac';
-  }
+  String _formatAmount(BigInt planck) =>
+      NumberFormattingService().formatBalance(planck, smartDecimals: 4, maxDecimals: AppConstants.decimals);
 
   @override
   Widget build(BuildContext context) {
@@ -105,7 +137,8 @@ class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> {
           Text('Could not read transaction', style: text.mediumTitle?.copyWith(color: colors.textPrimary)),
           const SizedBox(height: 12),
           Text(
-            'This QR code is not a transaction this wallet can sign. Nothing was signed.',
+            'This QR code is not a transaction this wallet can read in full, so it will not be signed. '
+            'Nothing was signed.',
             style: text.smallParagraph?.copyWith(color: colors.textSecondary),
             textAlign: TextAlign.center,
           ),
@@ -126,53 +159,59 @@ class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> {
   Widget _reviewView(BuildContext context, ParsedPayload parsed) {
     final colors = context.colors;
     final text = context.themeText;
-    final info = parsed.call;
     final ext = parsed.extensions;
+    final signerAddress = ref.watch(addressProvider);
+    final signerCheckphrase = ref.watch(checkphraseProvider);
+
+    _scheduleReviewGateCheck();
 
     return ScaffoldBase(
       appBar: const V2AppBar(title: 'Review & Sign'),
       mainContent: SingleChildScrollView(
+        controller: _scrollController,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const SizedBox(height: 8),
-            Center(
-              child: Column(
-                children: [
-                  Text('You are signing', style: text.smallParagraph?.copyWith(color: colors.textSecondary)),
-                  const SizedBox(height: 8),
-                  RichText(
-                    text: TextSpan(
-                      children: [
-                        TextSpan(
-                          text: _formatAmount(info.amount),
-                          style: text.transactionDetailAmountPrimary?.copyWith(color: colors.textPrimary),
-                        ),
-                        TextSpan(
-                          text: ' ${AppConstants.tokenSymbol}',
-                          style: text.transactionDetailAmountSymbol?.copyWith(color: colors.textSecondary),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
+            if (!parsed.specMatchesBundled) _specDriftBanner(context, ext),
+            _hero(context, parsed),
+            const SizedBox(height: 24),
+
+            if (signerAddress != null) DetailRow(label: 'Signing as', value: signerAddress, monospace: true),
+            signerCheckphrase.maybeWhen(
+              data: (phrase) => phrase.isEmpty
+                  ? const SizedBox.shrink()
+                  : DetailRow(label: 'Signing as checkphrase', value: phrase, valueColor: colors.checksum),
+              orElse: () => const SizedBox.shrink(),
             ),
-            const SizedBox(height: 32),
-            _detailRow(context, 'To', info.toAddress, monospace: true),
-            if (_toCheckphrase != null && _toCheckphrase!.isNotEmpty)
-              _detailRow(context, 'Checkphrase', _toCheckphrase!, valueColor: colors.checksum),
-            _detailRow(context, 'Network', parsed.network),
-            _detailRow(context, 'Reversible', info.isReversible ? 'Yes' : 'No'),
-            if (info.isReversible && info.reversibleTimeframe != null)
-              _detailRow(
-                context,
-                'Reversible window',
-                DatetimeFormattingService.formatDuration(Duration(milliseconds: info.reversibleTimeframe!)).formatted,
-              ),
-            _detailRow(context, 'Tip', '${_formatAmount(ext.tip)} ${AppConstants.tokenSymbol}'),
-            _detailRow(context, 'Nonce', '${ext.nonce}'),
-            _detailRow(context, 'Era', '${ext.era}'),
+
+            const SizedBox(height: 8),
+            Divider(color: colors.borderButton),
+            const SizedBox(height: 8),
+            Text('CALL', style: text.transactionDetailRowLabel?.copyWith(color: colors.textLabel)),
+            const SizedBox(height: 8),
+            CallDetailView(call: parsed.call),
+
+            const SizedBox(height: 16),
+            Divider(color: colors.borderButton),
+            const SizedBox(height: 8),
+            Text('SIGNED EXTENSIONS', style: text.transactionDetailRowLabel?.copyWith(color: colors.textLabel)),
+            DetailRow(label: 'Network', value: parsed.network),
+            DetailRow(label: 'Runtime', value: 'spec ${ext.specVersion}, tx version ${ext.transactionVersion}'),
+            DetailRow(label: 'Nonce', value: '${ext.nonce}'),
+            DetailRow(label: 'Era', value: '${ext.era}'),
+            DetailRow(label: 'Tip', value: '${_formatAmount(ext.tip)} ${AppConstants.tokenSymbol}'),
+            DetailRow(label: 'Genesis hash', value: '0x${hex.encode(ext.genesisHash)}', monospace: true),
+            DetailRow(label: 'Block hash', value: '0x${hex.encode(ext.blockHash)}', monospace: true),
+            DetailRow(
+              label: 'Metadata hash',
+              value: ext.metadataHash == null ? 'None (check disabled)' : '0x${hex.encode(ext.metadataHash!)}',
+              monospace: ext.metadataHash != null,
+            ),
+
+            const SizedBox(height: 16),
+            _rawPayloadSection(context, parsed),
+
             if (_error != null) ...[
               const SizedBox(height: 16),
               Text(
@@ -181,26 +220,166 @@ class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> {
                 textAlign: TextAlign.center,
               ),
             ],
+            const SizedBox(height: 8),
           ],
         ),
       ),
       bottomContent: ScaffoldBaseBottomContent(
-        child: Row(
+        child: Column(
           children: [
-            Expanded(
-              child: QuantusButton.simple(
-                label: 'Cancel',
-                variant: ButtonVariant.secondary,
-                onTap: () => Navigator.popUntil(context, (r) => r.isFirst),
+            if (!_reviewedToEnd)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Text(
+                  'Scroll through every parameter to enable signing.',
+                  style: text.detail?.copyWith(color: colors.textMuted),
+                  textAlign: TextAlign.center,
+                ),
               ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: QuantusButton.simple(label: 'Sign', isLoading: _signing, onTap: _signing ? null : _sign),
+            Row(
+              children: [
+                Expanded(
+                  child: QuantusButton.simple(
+                    label: 'Cancel',
+                    variant: ButtonVariant.secondary,
+                    onTap: () => Navigator.popUntil(context, (r) => r.isFirst),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: QuantusButton.simple(
+                    label: 'Sign',
+                    isLoading: _signing,
+                    isDisabled: !_reviewedToEnd,
+                    onTap: (_signing || !_reviewedToEnd) ? null : _sign,
+                  ),
+                ),
+              ],
             ),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _specDriftBanner(BuildContext context, SignedExtensions ext) {
+    final colors = context.colors;
+    final text = context.themeText;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 20),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: colors.error.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: colors.error),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.warning_amber_rounded, color: colors.error, size: 22),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Built for a different runtime',
+                  style: text.smallParagraph?.copyWith(color: colors.error, fontWeight: FontWeight.w700),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'This payload targets spec ${ext.specVersion} / tx version ${ext.transactionVersion}, but this '
+                  'wallet decodes spec ${AppConstants.bundledSpecVersion} / tx version '
+                  '${AppConstants.bundledTransactionVersion}. Across runtime versions the same index can mean a '
+                  'different call, so the parameters below may be mislabelled. Update the cold wallet before signing '
+                  'anything you cannot verify another way.',
+                  style: text.detail?.copyWith(color: colors.textSecondary),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _hero(BuildContext context, ParsedPayload parsed) {
+    final colors = context.colors;
+    final text = context.themeText;
+    final summary = parsed.call.summary;
+
+    return Center(
+      child: Column(
+        children: [
+          Text('You are signing', style: text.smallParagraph?.copyWith(color: colors.textSecondary)),
+          const SizedBox(height: 8),
+          if (summary != null && summary.assetId == null)
+            RichText(
+              text: TextSpan(
+                children: [
+                  TextSpan(
+                    text: _formatAmount(summary.amount),
+                    style: text.transactionDetailAmountPrimary?.copyWith(color: colors.textPrimary),
+                  ),
+                  TextSpan(
+                    text: ' ${AppConstants.tokenSymbol}',
+                    style: text.transactionDetailAmountSymbol?.copyWith(color: colors.textSecondary),
+                  ),
+                ],
+              ),
+            )
+          else if (summary != null)
+            Text(
+              '${summary.amount} of asset #${summary.assetId}',
+              style: text.mediumTitle?.copyWith(color: colors.textPrimary),
+              textAlign: TextAlign.center,
+            )
+          else
+            Text(
+              parsed.call.humanCall,
+              style: text.mediumTitle?.copyWith(color: colors.textPrimary),
+              textAlign: TextAlign.center,
+            ),
+          const SizedBox(height: 6),
+          Text(
+            parsed.call.displayTitle,
+            style: text.detail?.copyWith(color: colors.textMuted),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _rawPayloadSection(BuildContext context, ParsedPayload parsed) {
+    final colors = context.colors;
+    final text = context.themeText;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        GestureDetector(
+          onTap: () => setState(() => _showRawPayload = !_showRawPayload),
+          child: Row(
+            children: [
+              Text(
+                'RAW PAYLOAD (${parsed.raw.length} BYTES)',
+                style: text.transactionDetailRowLabel?.copyWith(color: colors.textLabel),
+              ),
+              const SizedBox(width: 6),
+              Icon(_showRawPayload ? Icons.expand_less : Icons.expand_more, size: 18, color: colors.textLabel),
+            ],
+          ),
+        ),
+        if (_showRawPayload) ...[
+          const SizedBox(height: 8),
+          Text(
+            '0x${hex.encode(parsed.raw)}',
+            style: text.detail?.copyWith(color: colors.textMuted, fontFamily: AppTextTheme.fontFamilySecondary),
+          ),
+        ],
+      ],
     );
   }
 
@@ -234,27 +413,6 @@ class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> {
       ),
       bottomContent: ScaffoldBaseBottomContent(
         child: QuantusButton.simple(label: 'Done', onTap: () => Navigator.popUntil(context, (r) => r.isFirst)),
-      ),
-    );
-  }
-
-  Widget _detailRow(BuildContext context, String label, String value, {bool monospace = false, Color? valueColor}) {
-    final colors = context.colors;
-    final text = context.themeText;
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(label.toUpperCase(), style: text.transactionDetailRowLabel?.copyWith(color: colors.textLabel)),
-          const SizedBox(height: 6),
-          Text(
-            value,
-            style: monospace
-                ? text.transactionDetailRowValue?.copyWith(color: valueColor ?? colors.textPrimary)
-                : text.smallParagraph?.copyWith(color: valueColor ?? colors.textPrimary),
-          ),
-        ],
       ),
     );
   }

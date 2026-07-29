@@ -59,7 +59,7 @@ Future<bool> _tryResolveCancellationTimeout(
         return true;
       }
     } catch (e) {
-      quantusDebugPrint('[MultisigCancellationPoller] soft timeout reconcile error: $e');
+      quantusPrint('[MultisigCancellationPoller] soft timeout reconcile error: $e');
     }
   }
 

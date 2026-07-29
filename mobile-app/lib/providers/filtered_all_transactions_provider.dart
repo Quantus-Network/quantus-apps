@@ -41,11 +41,11 @@ final filteredTransactionsProviderFamily =
       final pagination = ref.watch(filteredPaginationControllerProviderFamily(normalizedParams));
 
       if (pagination.error != null && !pagination.hasLoadedChainData) {
-        quantusDebugPrint('FilteredTransactionsProvider: Error: ${pagination.error}');
+        quantusPrint('FilteredTransactionsProvider: Error: ${pagination.error}');
         return AsyncValue.error(pagination.error!, pagination.stackTrace!);
       }
       if (pagination.error != null) {
-        quantusDebugPrint('FilteredTransactionsProvider: Load-more error: ${pagination.error}');
+        quantusPrint('FilteredTransactionsProvider: Load-more error: ${pagination.error}');
       }
       if (pagination.isLoading && !pagination.hasLoadedChainData) {
         return const AsyncValue.loading();

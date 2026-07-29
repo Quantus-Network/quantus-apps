@@ -126,13 +126,22 @@ class Txs {
   /// **For threshold=1:** The proposal is created with `Approved` status immediately
   /// and can be executed via `execute()` without additional approvals.
   ///
-  /// **Weight:** Charged upfront for worst-case (high-security path with decode).
-  /// Refunded to actual cost on success based on whether HS path was taken.
+  /// **Weight:** Charged upfront includes bookkeeping + MaxInnerCallWeight to cover
+  /// the cost of decoding arbitrary RuntimeCall structures and calling get_dispatch_info().
+  /// On success, refunds based on actual inner call weight. On rejection after decode
+  /// (e.g., CallWeightExceedsLimit, CallNotAllowedForHighSecurityMultisig), the full
+  /// reserved weight is burned to prevent griefing with complex calls that get rejected.
   _i8.Multisig propose({required _i2.AccountId32 multisigAddress, required List<int> call, required int expiry}) {
     return _i8.Multisig(_i9.Propose(multisigAddress: multisigAddress, call: call, expiry: expiry));
   }
 
   /// Approve a proposed transaction
+  ///
+  /// The approver must resubmit the proposal's inner call bytes; the approval is
+  /// only valid if they are byte-equal to the payload stored at `proposal_id`.
+  /// This binds the approver's signature to the actual call being approved, so
+  /// offline/cold-wallet signers can decode and inspect what they are signing
+  /// instead of trusting an opaque proposal id.
   ///
   /// If this approval brings the total approvals to or above the threshold,
   /// the proposal status changes to `Approved` and can be executed via `execute()`.
@@ -140,10 +149,11 @@ class Txs {
   /// Parameters:
   /// - `multisig_address`: The multisig account
   /// - `proposal_id`: ID (nonce) of the proposal to approve
+  /// - `call`: The encoded inner call of the proposal (must match the stored payload)
   ///
   /// Weight: Charges for MAX call size, refunds based on actual
-  _i8.Multisig approve({required _i2.AccountId32 multisigAddress, required int proposalId}) {
-    return _i8.Multisig(_i9.Approve(multisigAddress: multisigAddress, proposalId: proposalId));
+  _i8.Multisig approve({required _i2.AccountId32 multisigAddress, required int proposalId, required List<int> call}) {
+    return _i8.Multisig(_i9.Approve(multisigAddress: multisigAddress, proposalId: proposalId, call: call));
   }
 
   /// Cancel a proposed transaction (only by proposer)

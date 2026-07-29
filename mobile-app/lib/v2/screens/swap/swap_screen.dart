@@ -6,6 +6,7 @@ import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/components/qr_scanner_page.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/shared/utils/print.dart';
 import 'package:resonance_network_wallet/v2/components/token_icon.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
@@ -94,7 +95,7 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
       _swapService.addRefundAddress(_fromToken.network, _addressController.text.trim());
       showReviewQuoteSheet(context, quote, _addressController.text);
     } catch (e) {
-      debugPrint('Swap quote failed: $e');
+      quantusPrint('Swap quote failed: $e');
       setState(() => _loading = false);
     }
   }

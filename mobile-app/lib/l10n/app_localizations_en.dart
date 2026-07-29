@@ -428,6 +428,13 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get multisigProposalCallLoading => 'Reading the proposal from the chain…';
+
+  @override
+  String get multisigProposalCallUnavailable =>
+      'Could not read this proposal from the chain, so there is nothing to approve. Try again when you are back online.';
+
+  @override
   String get multisigStatusApproved => 'SIGNED';
 
   @override
@@ -923,6 +930,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get addHardwareAccountInvalidAddress => 'Invalid address';
+
+  @override
+  String get invalidAddress => 'Invalid address';
 
   @override
   String get sendTitle => 'Send';

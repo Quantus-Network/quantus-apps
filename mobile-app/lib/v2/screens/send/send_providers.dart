@@ -22,7 +22,7 @@ Future<void> startSendFlow(BuildContext context, {required Widget screen}) async
   final container = ProviderScope.containerOf(context);
   final sendFlow = container.read(sendFlowActiveProvider.notifier);
   if (sendFlow.state) {
-    quantusDebugPrint('startSendFlow ignored: a send flow is already active');
+    quantusPrint('startSendFlow ignored: a send flow is already active');
     return;
   }
   container.read(keystoneSignCacheProvider.notifier).startNewSendSession();
