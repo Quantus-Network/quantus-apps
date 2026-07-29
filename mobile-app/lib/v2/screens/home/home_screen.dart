@@ -1,16 +1,16 @@
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/dotted_border.dart';
 import 'package:resonance_network_wallet/features/components/skeleton.dart';
 import 'package:resonance_network_wallet/features/components/shared_address_action_sheet.dart';
-import 'package:resonance_network_wallet/routes.dart';
 import 'package:resonance_network_wallet/services/global_history_polling_service.dart';
 import 'package:resonance_network_wallet/services/telemetry_service.dart';
 import 'package:resonance_network_wallet/shared/constants/e2e_keys.dart';
-import 'package:resonance_network_wallet/shared/extensions/current_route_extensions.dart';
+import 'package:resonance_network_wallet/shared/extensions/toaster_extensions.dart';
 import 'package:resonance_network_wallet/shared/utils/print.dart';
 import 'package:resonance_network_wallet/shared/utils/url_utils.dart';
 import 'package:resonance_network_wallet/v2/components/amount_display_with_conversion.dart';
@@ -26,7 +26,6 @@ import 'package:resonance_network_wallet/v2/screens/multisig/multisig_activity_s
 import 'package:resonance_network_wallet/v2/screens/multisig/multisig_proposal_detail_sheet.dart';
 import 'package:resonance_network_wallet/v2/screens/send/encrypted_send_strategy.dart';
 import 'package:resonance_network_wallet/v2/screens/send/input_amount_screen.dart';
-import 'package:resonance_network_wallet/v2/screens/send/keystone_sign_cache.dart';
 import 'package:resonance_network_wallet/v2/screens/send/multisig_propose_strategy.dart';
 import 'package:resonance_network_wallet/v2/screens/send/regular_send_strategy.dart';
 import 'package:resonance_network_wallet/v2/screens/send/select_recipient_screen.dart';
@@ -38,11 +37,13 @@ import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/active_account_transactions_provider.dart';
+import 'package:resonance_network_wallet/providers/local_auth_provider.dart';
 import 'package:resonance_network_wallet/providers/multisig_providers.dart';
 import 'package:resonance_network_wallet/providers/route_intent_providers.dart';
 import 'package:resonance_network_wallet/providers/currency_display_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
+import 'package:resonance_network_wallet/v2/screens/send/send_providers.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 import 'package:resonance_network_wallet/v2/components/global_toast_listener.dart';
@@ -67,7 +68,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     ref.listenManual<ProposalIntent?>(proposalIntentProvider, _onProposalIntent);
     ref.listenManual<AsyncValue<DisplayAccount?>>(activeAccountProvider, (_, async) {
       if (async.value == null) return;
-      _onTransactionIntent(null, ref.read(transactionIntentProvider));
+      // Accounts may still be loading when an intent arrives on a cold start;
+      // retry once they are available.
+      _drainPendingIntents();
     });
     // Multisig accounts may still be loading when a proposal intent arrives on a
     // cold start; retry once they are available.
@@ -75,8 +78,28 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       if (async.value == null) return;
       _onProposalIntent(null, ref.read(proposalIntentProvider));
     });
+    // Intents are only consumed while unlocked: anything arriving beneath the
+    // lock overlay stays queued in its provider and is drained after unlock.
+    ref.listenManual<LocalAuthState>(localAuthProvider, (prev, next) {
+      if (_isAuthStateUnlocked(next) && (prev == null || !_isAuthStateUnlocked(prev))) {
+        _drainPendingIntents();
+      }
+    });
 
     Future.microtask(_drainPendingIntents);
+  }
+
+  bool _isAuthStateUnlocked(LocalAuthState auth) => auth.isAuthenticated && !auth.isVisuallyLocked;
+
+  bool get _isUnlocked => _isAuthStateUnlocked(ref.read(localAuthProvider));
+
+  /// A send in flight must never be interrupted: intents that would start
+  /// another flow or switch the active account are dropped, not queued.
+  bool _consumeIfSendInFlight<T>(StateProvider<T?> provider, String label) {
+    if (!ref.read(sendFlowActiveProvider)) return false;
+    ref.read(provider.notifier).state = null;
+    quantusPrint('$label intent ignored: send flow active');
+    return true;
   }
 
   void _drainPendingIntents() {
@@ -88,7 +111,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   void _onTransactionIntent(TransactionEvent? _, TransactionEvent? transaction) {
-    if (transaction == null || !mounted) return;
+    if (transaction == null || !mounted || !_isUnlocked) return;
     final active = ref.read(activeAccountProvider).value;
     if (active == null) return;
     ref.read(transactionIntentProvider.notifier).state = null;
@@ -97,29 +120,32 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   void _onPaymentIntent(PaymentIntent? _, PaymentIntent? payment) {
-    if (payment == null || !mounted) return;
+    if (payment == null || !mounted || !_isUnlocked) return;
+    if (_consumeIfSendInFlight(paymentIntentProvider, 'payment')) return;
+    final active = ref.read(activeAccountProvider).value;
+    // Still loading — the activeAccountProvider listener will retry.
+    if (active == null) return;
     ref.read(paymentIntentProvider.notifier).state = null;
-    ref.read(keystoneSignCacheProvider.notifier).startNewSendSession();
+    if (active is! RegularAccount) {
+      quantusPrint('payment intent: active account cannot send regular transfers');
+      context.showWarningToaster(message: ref.read(l10nProvider).sendRegularAccountRequired);
+      return;
+    }
 
-    final pageRoute = MaterialPageRoute(
-      builder: (_) => InputAmountScreen(
-        strategy: const RegularSendStrategy(),
+    startSendFlow(
+      context,
+      screen: InputAmountScreen(
+        strategy: RegularSendStrategy(account: active.account),
         recipientAddress: payment.to,
         initialAmount: payment.amount,
         isPayMode: true,
       ),
-      settings: inputAmountScreenRouteSettings,
     );
-
-    if (context.peekTopRouteName == inputAmountScreenRouteSettings.name) {
-      Navigator.pushReplacement(context, pageRoute);
-    } else {
-      Navigator.push(context, pageRoute);
-    }
   }
 
   void _onSharedIntent(String? _, String? shared) {
-    if (shared == null || !mounted) return;
+    if (shared == null || !mounted || !_isUnlocked) return;
+    if (_consumeIfSendInFlight(sharedAccountIntentProvider, 'shared account')) return;
     ref.read(sharedAccountIntentProvider.notifier).state = null;
 
     showSharedAddressActionSheet(context, shared);
@@ -129,7 +155,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   /// the active account, then opens the detail sheet immediately. The sheet
   /// shows a loader while it resolves the proposal by id.
   Future<void> _onProposalIntent(ProposalIntent? _, ProposalIntent? intent) async {
-    if (intent == null || !mounted) return;
+    if (intent == null || !mounted || !_isUnlocked) return;
+    if (_consumeIfSendInFlight(proposalIntentProvider, 'proposal')) return;
 
     final multisigAccounts = ref.read(multisigAccountsProvider).value;
     // Still loading — the multisigAccountsProvider listener will retry.
@@ -341,7 +368,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     const enableSwap = true; // ref.watch(remoteConfigProvider).enableSwap; Override enable swap config for now
     final SendStrategy sendStrategy = isEncrypted
         ? EncryptedSendStrategy(account: account)
-        : const RegularSendStrategy();
+        : RegularSendStrategy(account: account);
 
     final receiveCard = _actionCard(
       iconAsset: 'assets/v2/action_receive.svg',
@@ -353,10 +380,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       key: const Key(E2EKeys.homeSendButton),
       iconAsset: 'assets/v2/action_send.svg',
       label: l10n.homeSend,
-      onTap: () {
-        ref.read(keystoneSignCacheProvider.notifier).startNewSendSession();
-        Navigator.push(context, MaterialPageRoute(builder: (_) => SelectRecipientScreen(strategy: sendStrategy)));
-      },
+      onTap: () => startSendFlow(context, screen: SelectRecipientScreen(strategy: sendStrategy)),
     );
 
     final swapCard = _actionCard(
@@ -394,15 +418,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         _actionCard(
           iconAsset: 'assets/v2/action_send.svg',
           label: l10n.multisigProposeTitle,
-          onTap: () {
-            ref.read(keystoneSignCacheProvider.notifier).startNewSendSession();
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => SelectRecipientScreen(strategy: MultisigProposeStrategy(msig: msig)),
-              ),
-            );
-          },
+          onTap: () => startSendFlow(
+            context,
+            screen: SelectRecipientScreen(strategy: MultisigProposeStrategy(msig: msig)),
+          ),
         ),
       ],
     );

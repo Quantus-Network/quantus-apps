@@ -1404,6 +1404,10 @@
     "@sendReviewSubmitFailed": {
       "description": "Error when transaction submission fails"
     },
+    "sendRegularAccountRequired": "Switch to a regular account to send",
+    "@sendRegularAccountRequired": {
+      "description": "Toast when a send is requested while the active account cannot make regular transfers"
+    },
 
     "sendTxSubmittedHeadlinePaid": "{amount} {symbol} paid",
     "@sendTxSubmittedHeadlinePaid": {

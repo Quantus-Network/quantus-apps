@@ -1898,6 +1898,12 @@ abstract class AppLocalizations {
   /// **'Failed submitting transaction'**
   String get sendReviewSubmitFailed;
 
+  /// Toast when a send is requested while the active account cannot make regular transfers
+  ///
+  /// In en, this message translates to:
+  /// **'Switch to a regular account to send'**
+  String get sendRegularAccountRequired;
+
   /// Success headline when payment completed
   ///
   /// In en, this message translates to:
