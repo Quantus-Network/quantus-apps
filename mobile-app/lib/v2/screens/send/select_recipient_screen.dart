@@ -49,22 +49,15 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
   bool _isSelfSend = false;
   String? _recipientChecksum;
 
-  // Cached in initState so dispose can decrement without touching ref.
-  late final _sendFlowActive = ref.read(sendFlowActiveProvider.notifier);
-
   @override
   void initState() {
     super.initState();
-    // Mark a send flow as in flight so incoming intents can't interrupt it;
-    // decremented symmetrically in dispose.
-    _sendFlowActive.state++;
     _recipientController.addListener(_onRecipientChanged);
     _loadRecents();
   }
 
   @override
   void dispose() {
-    _sendFlowActive.state--;
     _recipientController.removeListener(_onRecipientChanged);
     _recipientController.dispose();
     _amountController.dispose();

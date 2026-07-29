@@ -998,6 +998,9 @@ class AppLocalizationsId extends AppLocalizations {
   String get sendReviewSubmitFailed => 'Gagal mengirim transaksi';
 
   @override
+  String get sendRegularAccountRequired => 'Beralih ke akun reguler untuk mengirim';
+
+  @override
   String sendTxSubmittedHeadlinePaid(String amount, String symbol) {
     return '$amount $symbol dibayar';
   }

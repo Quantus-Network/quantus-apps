@@ -1001,6 +1001,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sendReviewSubmitFailed => 'Failed submitting transaction';
 
   @override
+  String get sendRegularAccountRequired => 'Switch to a regular account to send';
+
+  @override
   String sendTxSubmittedHeadlinePaid(String amount, String symbol) {
     return '$amount $symbol paid';
   }

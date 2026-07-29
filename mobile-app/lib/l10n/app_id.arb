@@ -319,6 +319,7 @@
   "sendReviewAuthReason": "Autentikasi untuk mengonfirmasi transaksi",
   "sendReviewAuthRequired": "Autentikasi diperlukan untuk mengirim",
   "sendReviewSubmitFailed": "Gagal mengirim transaksi",
+  "sendRegularAccountRequired": "Beralih ke akun reguler untuk mengirim",
 
   "sendTxSubmittedHeadlinePaid": "{amount} {symbol} dibayar",
   "sendTxSubmittedHeadlineSent": "{amount} {symbol} terkirim",

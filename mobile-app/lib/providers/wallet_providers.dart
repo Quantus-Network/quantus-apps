@@ -136,23 +136,23 @@ final effectiveBalanceProviderFamily = Provider.family<AsyncValue<BigInt>, Strin
   final pendingMultisigCancellations = ref.watch(pendingMultisigCancellationsProvider);
   final pendingMultisigCreations = ref.watch(pendingMultisigCreationsProvider);
 
-  return balanceAsync.when(
-    data: (blockchainBalance) {
-      final pendingOutgoing = _calculatePendingOutgoing(
-        pendingTransactions,
-        pendingMultisigProposals,
-        pendingMultisigExecutions,
-        pendingMultisigCancellations,
-        pendingMultisigCreations,
-        accountId,
-      );
-      final effectiveBalance = blockchainBalance - pendingOutgoing;
-      final result = effectiveBalance >= BigInt.zero ? effectiveBalance : BigInt.zero;
-      return AsyncValue.data(result);
-    },
-    loading: () => const AsyncValue.loading(),
-    error: (err, stack) => AsyncValue.error(err, stack),
+  // AsyncError/AsyncLoading preserve the previously fetched balance; keep
+  // using it so a transient refresh error can't zero out spendable-balance
+  // checks mid-send. Errors before any successful fetch still propagate.
+  final blockchainBalance = balanceAsync.value;
+  if (blockchainBalance == null) {
+    return balanceAsync.isLoading ? const AsyncValue.loading() : AsyncValue.error(balanceAsync.error!, balanceAsync.stackTrace!);
+  }
+  final pendingOutgoing = _calculatePendingOutgoing(
+    pendingTransactions,
+    pendingMultisigProposals,
+    pendingMultisigExecutions,
+    pendingMultisigCancellations,
+    pendingMultisigCreations,
+    accountId,
   );
+  final effectiveBalance = blockchainBalance - pendingOutgoing;
+  return AsyncValue.data(effectiveBalance >= BigInt.zero ? effectiveBalance : BigInt.zero);
 });
 
 // Raw blockchain balance (without pending transaction adjustments)

@@ -6,14 +6,17 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
+import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/routes.dart';
 import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
 import 'package:resonance_network_wallet/shared/extensions/current_route_extensions.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
+import 'package:resonance_network_wallet/shared/extensions/toaster_extensions.dart';
+import 'package:resonance_network_wallet/shared/utils/print.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/screens/send/input_amount_screen.dart';
-import 'package:resonance_network_wallet/v2/screens/send/keystone_sign_cache.dart';
 import 'package:resonance_network_wallet/v2/screens/send/regular_send_strategy.dart';
+import 'package:resonance_network_wallet/v2/screens/send/send_providers.dart';
 
 class SharedAddressActionSheet extends StatefulWidget {
   final String address;
@@ -64,19 +67,14 @@ class _SharedAddressActionSheetState extends State<SharedAddressActionSheet> {
     final container = ProviderScope.containerOf(context);
     final active = container.read(activeAccountProvider).value;
     if (active is! RegularAccount) {
-      debugPrint('shared address send: active account cannot send regular transfers');
+      quantusDebugPrint('shared address send: active account cannot send regular transfers');
+      context.showWarningToaster(message: container.read(l10nProvider).sendRegularAccountRequired);
       return;
     }
-    container.read(keystoneSignCacheProvider.notifier).startNewSendSession();
     Navigator.of(context).pop();
-    Navigator.push(
+    startSendFlow(
       context,
-      MaterialPageRoute(
-        builder: (_) => InputAmountScreen(
-          strategy: RegularSendStrategy(account: active.account),
-          recipientAddress: widget.address,
-        ),
-      ),
+      screen: InputAmountScreen(strategy: RegularSendStrategy(account: active.account), recipientAddress: widget.address),
     );
   }
 
