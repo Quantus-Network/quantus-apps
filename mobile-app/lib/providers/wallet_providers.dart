@@ -143,7 +143,9 @@ final effectiveBalanceProviderFamily = Provider.family<AsyncValue<BigInt>, Strin
   // checks mid-send. Errors before any successful fetch still propagate.
   final blockchainBalance = balanceAsync.value;
   if (blockchainBalance == null) {
-    return balanceAsync.isLoading ? const AsyncValue.loading() : AsyncValue.error(balanceAsync.error!, balanceAsync.stackTrace!);
+    return balanceAsync.isLoading
+        ? const AsyncValue.loading()
+        : AsyncValue.error(balanceAsync.error!, balanceAsync.stackTrace!);
   }
   final pendingOutgoing = _calculatePendingOutgoing(
     pendingTransactions,

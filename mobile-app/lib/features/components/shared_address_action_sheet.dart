@@ -81,7 +81,10 @@ class _SharedAddressActionSheetState extends State<SharedAddressActionSheet> {
     Navigator.of(context).pop();
     startSendFlow(
       context,
-      screen: InputAmountScreen(strategy: RegularSendStrategy(account: active.account), recipientAddress: widget.address),
+      screen: InputAmountScreen(
+        strategy: RegularSendStrategy(account: active.account),
+        recipientAddress: widget.address,
+      ),
     );
   }
 

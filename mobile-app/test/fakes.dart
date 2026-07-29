@@ -45,6 +45,10 @@ class TestLocalAuthController extends LocalAuthController {
   void setAuthenticated(bool value) {
     state = state.copyWith(isAuthenticated: value);
   }
+
+  void setVisuallyLocked(bool value) {
+    state = state.copyWith(isVisuallyLocked: value);
+  }
 }
 
 class FakeSubstrateService extends Fake implements SubstrateService {

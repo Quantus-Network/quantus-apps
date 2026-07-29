@@ -81,17 +81,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     // Intents are only consumed while unlocked: anything arriving beneath the
     // lock overlay stays queued in its provider and is drained after unlock.
     ref.listenManual<LocalAuthState>(localAuthProvider, (prev, next) {
-      if (next.isAuthenticated && !(prev?.isAuthenticated ?? false)) _drainPendingIntents();
+      if (_isAuthStateUnlocked(next) && (prev == null || !_isAuthStateUnlocked(prev))) {
+        _drainPendingIntents();
+      }
     });
 
     Future.microtask(_drainPendingIntents);
   }
 
-  /// Deep-link and notification intents must never be acted on while the lock
-  /// overlay is up; the Navigator underneath it is still alive. Deliberately
-  /// gates on authentication only, not the visual privacy overlay: resume
-  /// either clears that overlay or forces re-auth before anything is tappable.
-  bool get _isUnlocked => ref.read(localAuthProvider).isAuthenticated;
+  bool _isAuthStateUnlocked(LocalAuthState auth) => auth.isAuthenticated && !auth.isVisuallyLocked;
+
+  bool get _isUnlocked => _isAuthStateUnlocked(ref.read(localAuthProvider));
 
   /// A send in flight must never be interrupted: intents that would start
   /// another flow or switch the active account are dropped, not queued.
@@ -418,8 +418,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         _actionCard(
           iconAsset: 'assets/v2/action_send.svg',
           label: l10n.multisigProposeTitle,
-          onTap: () =>
-              startSendFlow(context, screen: SelectRecipientScreen(strategy: MultisigProposeStrategy(msig: msig))),
+          onTap: () => startSendFlow(
+            context,
+            screen: SelectRecipientScreen(strategy: MultisigProposeStrategy(msig: msig)),
+          ),
         ),
       ],
     );

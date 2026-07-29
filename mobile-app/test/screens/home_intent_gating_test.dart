@@ -30,12 +30,19 @@ void main() {
       overrides: [
         settingsServiceProvider.overrideWithValue(settings),
         localAuthProvider.overrideWith((ref) => auth),
-        activeAccountTransactionsProvider.overrideWith((ref, filter) => AsyncValue.data(CombinedTransactionsList.empty)),
+        activeAccountTransactionsProvider.overrideWith(
+          (ref, filter) => AsyncValue.data(CombinedTransactionsList.empty),
+        ),
         balanceProvider.overrideWithValue(AsyncValue.data(BigInt.from(10).pow(15))),
         balanceProviderFamily.overrideWith((ref, accountId) async => BigInt.from(10).pow(15)),
         balanceDisplayProvider.overrideWithValue(
           const AsyncValue.data(
-            CurrencyDisplayState(primaryAmount: '10', secondaryAmount: '10', isFlipped: false, selectedFiat: FiatCurrency.usd),
+            CurrencyDisplayState(
+              primaryAmount: '10',
+              secondaryAmount: '10',
+              isFlipped: false,
+              selectedFiat: FiatCurrency.usd,
+            ),
           ),
         ),
         backupReminderWalletIndexProvider.overrideWithValue(null),
@@ -74,15 +81,17 @@ void main() {
     final container = await pumpHome(tester, settings: settings, auth: auth);
 
     // A cached QR from an earlier flow must not survive into the new session.
-    container.read(keystoneSignCacheProvider.notifier).store(
-      key: KeystoneSignCacheKey.fromSendParams(
-        accountId: active.accountId,
-        recipientAddress: makeAccount(9).accountId,
-        amount: BigInt.one,
-      ),
-      unsignedData: makeUnsignedTransactionData(),
-      urParts: const ['ur:part'],
-    );
+    container
+        .read(keystoneSignCacheProvider.notifier)
+        .store(
+          key: KeystoneSignCacheKey.fromSendParams(
+            accountId: active.accountId,
+            recipientAddress: makeAccount(9).accountId,
+            amount: BigInt.one,
+          ),
+          unsignedData: makeUnsignedTransactionData(),
+          urParts: const ['ur:part'],
+        );
 
     container.read(paymentIntentProvider.notifier).state = PaymentIntent(
       to: makeAccount(9).accountId,
@@ -102,6 +111,30 @@ void main() {
     expect((screen.strategy as RegularSendStrategy).account.accountId, active.accountId);
     expect(container.read(sendFlowActiveProvider), isTrue);
     expect(container.read(keystoneSignCacheProvider), isNull);
+  });
+
+  testWidgets('payment intent stays queued until the visual lock clears', (tester) async {
+    final active = makeAccount(1);
+    final settings = FakeSettingsService(activeAccount: RegularAccount(active));
+    final auth = TestLocalAuthController(authenticated: true)..setVisuallyLocked(true);
+    final container = await pumpHome(tester, settings: settings, auth: auth);
+
+    container.read(paymentIntentProvider.notifier).state = PaymentIntent(
+      to: makeAccount(9).accountId,
+      amount: '1000000000000',
+    );
+    await tester.pump();
+
+    expect(container.read(paymentIntentProvider), isNotNull);
+    expect(find.byType(InputAmountScreen), findsNothing);
+
+    auth.setVisuallyLocked(false);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+
+    expect(container.read(paymentIntentProvider), isNull);
+    expect(find.byType(InputAmountScreen), findsOneWidget);
+    expect(container.read(sendFlowActiveProvider), isTrue);
   });
 
   testWidgets('intent arriving during a send flow is dropped', (tester) async {
