@@ -114,5 +114,6 @@ final addressProvider = Provider<String?>((ref) => ref.watch(keypairProvider)?.s
 final checkphraseProvider = FutureProvider<String>((ref) async {
   final address = ref.watch(addressProvider);
   if (address == null) return '';
-  return HumanReadableChecksumService().getHumanReadableName(address);
+  final name = await HumanReadableChecksumService().getHumanReadableName(address);
+  return name ?? '';
 });

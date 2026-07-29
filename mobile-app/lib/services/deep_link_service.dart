@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'package:app_links/app_links.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:resonance_network_wallet/providers/account_associations_providers.dart';
 import 'package:resonance_network_wallet/providers/route_intent_providers.dart';
+import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/shared/utils/print.dart';
 
 final deepLinkServiceProvider = Provider<DeepLinkService>((ref) {
@@ -23,18 +25,19 @@ class DeepLinkService {
     // Handle links when the app is already open (warm state)
     _linkSubscription = _appLinks.uriLinkStream.listen((uri) {
       quantusPrint('Received link while app is open: $uri');
-      _handleLink(uri);
+      handleLink(uri);
     });
 
     // Handle the link that opened the app (cold state)
     final initialUri = await _appLinks.getInitialLink();
     if (initialUri != null) {
       quantusPrint('Received initial link: $initialUri');
-      _handleLink(initialUri);
+      handleLink(initialUri);
     }
   }
 
-  void _handleLink(Uri uri) {
+  @visibleForTesting
+  void handleLink(Uri uri) {
     if (uri.pathSegments.isNotEmpty && uri.pathSegments.first == 'account') {
       String? accountId;
 
@@ -56,10 +59,12 @@ class DeepLinkService {
 
     if (uri.pathSegments.isNotEmpty && uri.pathSegments.first == 'pay') {
       final payment = PaymentIntent.tryParseUrl(uri.toString());
-      if (payment != null) {
+      // Fail closed: a /pay link with an invalid recipient must not pre-fill
+      // the send flow, same as address entry in the send flow itself.
+      if (payment != null && _ref.read(substrateServiceProvider).isValidSS58Address(payment.to)) {
         _ref.read(paymentIntentProvider.notifier).state = payment;
       } else {
-        quantusPrint('Missing payment parameters');
+        quantusPrint('Missing payment parameters or invalid recipient address');
       }
     }
 

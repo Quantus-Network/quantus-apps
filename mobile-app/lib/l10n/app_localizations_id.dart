@@ -929,6 +929,9 @@ class AppLocalizationsId extends AppLocalizations {
   String get addHardwareAccountInvalidAddress => 'Alamat tidak valid';
 
   @override
+  String get invalidAddress => 'Alamat tidak valid';
+
+  @override
   String get sendTitle => 'Kirim';
 
   @override

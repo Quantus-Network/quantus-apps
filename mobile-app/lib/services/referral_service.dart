@@ -144,7 +144,7 @@ class ReferralService {
     final account = await getMainAccount();
     final referralCode = await _checksumService.getHumanReadableName(account.accountId);
 
-    return referralCode;
+    return referralCode ?? '';
   }
 
   Future<ShareParams> getShareLinkParameters(Rect? positionOrigin) async {

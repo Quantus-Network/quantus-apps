@@ -50,6 +50,10 @@ class HumanReadableChecksumService {
       quantusPrint('Initialization error stack: $s');
       if (!(_isolateReadyCompleter?.isCompleted ?? false)) {
         _isolateReadyCompleter!.completeError(e);
+        // The error is already logged and rethrown; keep the completer's
+        // future from surfacing as an unhandled async error when no
+        // concurrent caller is awaiting it.
+        _isolateReadyCompleter!.future.ignore();
       }
       _isolate?.kill();
       _isolate = null;
@@ -59,9 +63,9 @@ class HumanReadableChecksumService {
     }
   }
 
-  Future<String> getHumanReadableName(String address, {upperCase = true}) async {
+  Future<String?> getHumanReadableName(String address, {upperCase = true}) async {
+    final key = address + (upperCase ? '#U' : '');
     try {
-      final key = address + (upperCase ? '#U' : '');
       if (_checkPhraseCache.containsKey(key)) {
         return _checkPhraseCache[key]!;
       }
@@ -72,7 +76,7 @@ class HumanReadableChecksumService {
 
       if (_isolateSendPort == null) {
         quantusPrint('Error: _isolateSendPort is null after successful initialization wait.');
-        return '';
+        return null;
       }
 
       final responsePort = ReceivePort();
@@ -80,7 +84,9 @@ class HumanReadableChecksumService {
       final result = await responsePort.first as String?;
       responsePort.close();
 
-      var finalResult = result ?? '';
+      if (result == null || result.isEmpty) return null;
+
+      var finalResult = result;
 
       if (upperCase) {
         finalResult = finalResult
@@ -94,8 +100,8 @@ class HumanReadableChecksumService {
     } catch (e, s) {
       quantusPrint('Error in getHumanReadableName for address $address: $e');
       quantusPrint('Lookup error stack: $s');
-      _checkPhraseCache.remove(address);
-      return '';
+      _checkPhraseCache.remove(key);
+      return null;
     }
   }
 
