@@ -128,6 +128,7 @@ void main() {
     tester.state<NavigatorState>(find.byType(Navigator).first).pop();
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
+    await tester.pump(const Duration(milliseconds: 400));
 
     expect(find.byType(InputAmountScreen), findsNothing);
     expect(container.read(sendFlowActiveProvider), isFalse);

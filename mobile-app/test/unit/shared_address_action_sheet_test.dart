@@ -2,10 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:flutter_riverpod/misc.dart';
 import 'package:resonance_network_wallet/features/components/shared_address_action_sheet.dart';
+import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/v2/screens/send/input_amount_screen.dart';
 import 'package:resonance_network_wallet/v2/theme/app_theme.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import '../fakes.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -15,9 +19,10 @@ void main() {
     await SettingsService().initialize();
   });
 
-  Future<void> pumpSheet(WidgetTester tester, String address) async {
+  Future<void> pumpSheet(WidgetTester tester, String address, {List<Override> overrides = const []}) async {
     await tester.pumpWidget(
       ProviderScope(
+        overrides: overrides,
         child: MediaQuery(
           data: const MediaQueryData(size: Size(800, 600)),
           child: Builder(
@@ -46,7 +51,11 @@ void main() {
   });
 
   testWidgets('Send To This Account warns and keeps the sheet open without a regular account', (tester) async {
-    await pumpSheet(tester, 'qzpyxSr48YN9EQe2ito734iCReTXjnungmNCSY4Yph1YznEdX');
+    await pumpSheet(
+      tester,
+      'qzpyxSr48YN9EQe2ito734iCReTXjnungmNCSY4Yph1YznEdX',
+      overrides: [substrateServiceProvider.overrideWithValue(FakeSubstrateService())],
+    );
 
     await tester.tap(find.text('Send To This Account'));
     await tester.pump();

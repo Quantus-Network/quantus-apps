@@ -47,6 +47,11 @@ class TestLocalAuthController extends LocalAuthController {
   }
 }
 
+class FakeSubstrateService extends Fake implements SubstrateService {
+  @override
+  bool isValidSS58Address(String address) => true;
+}
+
 class FakeBalancesService extends Fake implements BalancesService {
   Account? lastFeeAccount;
 
