@@ -9,7 +9,7 @@ import 'package:quantus_cold_wallet/theme/app_text_styles.dart';
 /// destination — an approval or a governance call can name several accounts, and
 /// each one needs to be verifiable by eye.
 final _checkphraseProvider = FutureProvider.family<String, String>((ref, address) async {
-  return HumanReadableChecksumService().getHumanReadableName(address);
+  return (await HumanReadableChecksumService().getHumanReadableName(address)) ?? '';
 });
 
 /// Renders every parameter of a decoded call, recursing into nested calls.
