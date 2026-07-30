@@ -483,7 +483,9 @@ class PendingSpend {
   factory PendingSpend.fromJson(Map<String, dynamic> json) => PendingSpend(
     nullifiers: (json['nullifiers'] as List<dynamic>).cast<String>(),
     changeAddress: json['changeAddress'] as String?,
-    changeAmountToken: BigInt.parse(json['changeAmountToken'] as String),
+    // 'changeAmountPlanck' is the key used by files written before the
+    // planck -> token rename; fall back so old pending spends still load.
+    changeAmountToken: BigInt.parse((json['changeAmountToken'] ?? json['changeAmountPlanck']) as String),
     createdAtMs: json['createdAtMs'] as int,
   );
 

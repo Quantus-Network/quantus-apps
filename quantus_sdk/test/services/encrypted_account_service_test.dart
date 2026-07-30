@@ -555,6 +555,17 @@ void main() {
       expect(restored.changeAddress, isNull);
       expect(restored.changeAmountToken, BigInt.zero);
     });
+
+    test('loads a legacy file written with the changeAmountPlanck key', () {
+      final restored = PendingSpend.fromJson({
+        'nullifiers': ['0x01'],
+        'changeAddress': 'addr_1',
+        'changeAmountPlanck': '123456',
+        'createdAtMs': 1700000000000,
+      });
+
+      expect(restored.changeAmountToken, BigInt.from(123456));
+    });
   });
 
   group('EncryptedAccountState', () {
