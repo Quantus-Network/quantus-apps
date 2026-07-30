@@ -97,18 +97,18 @@ class WormholeUtxo {
 
 class WormholeUtxoResult {
   final List<WormholeUtxo> utxos;
-  final BigInt totalReceivedRaw;
+  final BigInt totalReceivedToken;
 
-  /// Slice of [totalReceivedRaw] received on change-branch addresses, so
+  /// Slice of [totalReceivedToken] received on change-branch addresses, so
   /// callers can report externally received funds separately from change.
-  final BigInt changeReceivedRaw;
-  final BigInt totalSpentRaw;
+  final BigInt changeReceivedToken;
+  final BigInt totalSpentToken;
 
   const WormholeUtxoResult({
     required this.utxos,
-    required this.totalReceivedRaw,
-    required this.changeReceivedRaw,
-    required this.totalSpentRaw,
+    required this.totalReceivedToken,
+    required this.changeReceivedToken,
+    required this.totalSpentToken,
   });
 }
 
@@ -596,18 +596,18 @@ query SpentNullifiers($hashes: [String!]!) {
       _log('getUnspentUtxos: no transfers found');
       return WormholeUtxoResult(
         utxos: const [],
-        totalReceivedRaw: BigInt.zero,
-        changeReceivedRaw: BigInt.zero,
-        totalSpentRaw: BigInt.zero,
+        totalReceivedToken: BigInt.zero,
+        changeReceivedToken: BigInt.zero,
+        totalSpentToken: BigInt.zero,
       );
     }
 
-    BigInt totalReceivedRaw = BigInt.zero;
-    BigInt changeReceivedRaw = BigInt.zero;
+    BigInt totalReceivedToken = BigInt.zero;
+    BigInt changeReceivedToken = BigInt.zero;
     for (final owner in addresses) {
       for (final t in fetched.byAddress[owner.address]!) {
-        totalReceivedRaw += t.amount;
-        if (owner.isChange) changeReceivedRaw += t.amount;
+        totalReceivedToken += t.amount;
+        if (owner.isChange) changeReceivedToken += t.amount;
       }
     }
 
@@ -686,15 +686,15 @@ query SpentNullifiers($hashes: [String!]!) {
     }
 
     final unspent = nullifierToUtxo.entries.where((e) => !allSpent.contains(e.key)).map((e) => e.value).toList();
-    final totalSpentRaw = nullifierToUtxo.entries
+    final totalSpentToken = nullifierToUtxo.entries
         .where((e) => allSpent.contains(e.key))
         .fold(BigInt.zero, (sum, e) => sum + e.value.amount);
     _log('getUnspentUtxos: ${unspent.length} unspent out of $totalTransfers total');
     return WormholeUtxoResult(
       utxos: unspent,
-      totalReceivedRaw: totalReceivedRaw,
-      changeReceivedRaw: changeReceivedRaw,
-      totalSpentRaw: totalSpentRaw,
+      totalReceivedToken: totalReceivedToken,
+      changeReceivedToken: changeReceivedToken,
+      totalSpentToken: totalSpentToken,
     );
   }
 
@@ -724,7 +724,7 @@ query SpentNullifiers($hashes: [String!]!) {
       isCancelled: isCancelled,
     );
     final balance = unspent.fold<BigInt>(BigInt.zero, (sum, t) => sum + t.amount);
-    _log('getUnspentBalance: $balance raw (${unspent.length} unspent transfers)');
+    _log('getUnspentBalance: $balance token units (${unspent.length} unspent transfers)');
     return balance;
   }
 }

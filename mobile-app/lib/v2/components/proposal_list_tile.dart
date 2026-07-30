@@ -40,7 +40,7 @@ class ProposalListTile extends ConsumerWidget {
     final decoded = call;
     final headline = decoded == null
         ? null
-        : DecodedCallHeadline.of(decoded, amountText: (raw) => formatAmount(raw, isSend: true).primaryAmount);
+        : DecodedCallHeadline.of(decoded, amountText: (token) => formatAmount(token, isSend: true).primaryAmount);
     final amountText = headline?.primary ?? formatAmount(amount, isSend: true).primaryAmount;
     final recipient = headline == null
         ? (recipientAddress.isEmpty ? null : AddressFormattingService.formatAddress(recipientAddress))

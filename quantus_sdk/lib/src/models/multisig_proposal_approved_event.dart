@@ -83,7 +83,7 @@ class MultisigProposalApprovedEvent extends TransactionEvent {
         : int.tryParse(approvalsCountRaw?.toString() ?? '') ?? proposal?.approvalCount ?? 0;
 
     final block = jsonMapOrNull(approved['block']);
-    final feeRaw = approved['fee'];
+    final feeToken = approved['fee'];
 
     return MultisigProposalApprovedEvent(
       id: accountEventId ?? stringFromJson(approved['id']),
@@ -93,7 +93,7 @@ class MultisigProposalApprovedEvent extends TransactionEvent {
       amount: amount,
       proposalId: proposalId,
       approvalsCount: approvalsCount,
-      fee: feeRaw != null ? bigIntFromJson(feeRaw) : null,
+      fee: feeToken != null ? bigIntFromJson(feeToken) : null,
       timestamp: accountEventTimestamp ?? dateTimeFromJson(approved['timestamp']),
       blockNumber: blockHeightFromJsonMap(block),
       blockHash: blockHashFromJsonMap(block),

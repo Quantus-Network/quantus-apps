@@ -66,7 +66,7 @@ class EncryptedSendStrategy extends SendStrategy {
     final state = await ref.read(encryptedStateProvider(account.walletIndex).future);
     try {
       return EncryptedFee(
-        plan: selectWormholeInputs(utxos: state.utxos, amountRaw: amount),
+        plan: selectWormholeInputs(utxos: state.utxos, amountToken: amount),
       );
     } on InsufficientEncryptedFunds {
       return const EncryptedFee(blocker: EncryptedSendBlocker.insufficient);
@@ -128,10 +128,10 @@ class EncryptedSendStrategy extends SendStrategy {
     if (plan == null) {
       throw StateError('Encrypted send reached submit without a spend plan');
     }
-    // The plan is frozen at estimate time and its amountRaw is what the
+    // The plan is frozen at estimate time and its amountToken is what the
     // recipient is provably paid — it must match the confirmed amount.
-    if (plan.amountRaw != amount) {
-      throw StateError('Encrypted send plan amount ${plan.amountRaw} does not match confirmed amount $amount');
+    if (plan.amountToken != amount) {
+      throw StateError('Encrypted send plan amount ${plan.amountToken} does not match confirmed amount $amount');
     }
 
     final authed = await LocalAuthService().authenticate(localizedReason: l10n.sendReviewAuthReason);

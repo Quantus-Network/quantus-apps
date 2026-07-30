@@ -48,9 +48,9 @@ class ExchangeRateService {
   ///
   /// Centralises the scale-factor arithmetic so both display providers and the
   /// send screen share a single, testable conversion path.
-  Decimal tokenRawToFiat(BigInt rawToken, FiatCurrency fiat, int tokenDecimals) {
+  Decimal tokenToFiat(BigInt tokenAmount, FiatCurrency fiat, int tokenDecimals) {
     final scaleFactor = BigInt.from(10).pow(tokenDecimals);
-    final tokenDecimal = (Decimal.fromBigInt(rawToken) / Decimal.fromBigInt(scaleFactor)).toDecimal();
+    final tokenDecimal = (Decimal.fromBigInt(tokenAmount) / Decimal.fromBigInt(scaleFactor)).toDecimal();
     return convert(tokenDecimal, fiat);
   }
 
@@ -58,7 +58,7 @@ class ExchangeRateService {
   ///
   /// Uses the inverse of [convert]: fiat / (tokenToUsdRate × rate).
   /// Returns [BigInt.zero] when the effective rate is zero.
-  BigInt fiatToTokenRaw(Decimal fiatAmount, FiatCurrency fiat, int tokenDecimals) {
+  BigInt fiatToToken(Decimal fiatAmount, FiatCurrency fiat, int tokenDecimals) {
     final effectiveRate = tokenToUsdRate * getRate(fiat);
     if (effectiveRate == Decimal.zero) return BigInt.zero;
     final scaleFactor = Decimal.fromBigInt(BigInt.from(10).pow(tokenDecimals));

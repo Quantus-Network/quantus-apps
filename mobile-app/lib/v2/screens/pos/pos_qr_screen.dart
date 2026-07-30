@@ -27,8 +27,8 @@ import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 
 class PosQrScreen extends ConsumerStatefulWidget {
-  final BigInt amountRaw;
-  const PosQrScreen({super.key, required this.amountRaw});
+  final BigInt amountToken;
+  const PosQrScreen({super.key, required this.amountToken});
 
   @override
   ConsumerState<PosQrScreen> createState() => _PosQrScreenState();
@@ -58,8 +58,8 @@ class _PosQrScreenState extends ConsumerState<PosQrScreen> {
     final active = ref.read(activeAccountProvider).value;
     if (active == null) return;
 
-    if (widget.amountRaw <= BigInt.zero) {
-      quantusPrint('[PosQr] ERROR: invalid raw amount ${widget.amountRaw}');
+    if (widget.amountToken <= BigInt.zero) {
+      quantusPrint('[PosQr] ERROR: invalid token amount ${widget.amountToken}');
       if (mounted) setState(() => _watchError = l10n.posQrInvalidAmount);
       return;
     }
@@ -69,15 +69,15 @@ class _PosQrScreenState extends ConsumerState<PosQrScreen> {
       _watchError = null;
     });
 
-    quantusPrint('[PosQr] watching address=${active.account.accountId} expected=${widget.amountRaw} raw');
+    quantusPrint('[PosQr] watching address=${active.account.accountId} expected=${widget.amountToken} token units');
     _txWatch.watch(
       address: active.account.accountId,
       onTransfer: (tx) {
         quantusPrint('[PosQr] onTransfer from=${tx.from} amount=${tx.amount} hash=${tx.txHash}');
         if (_isPaid) return;
         final received = BigInt.tryParse(tx.amount);
-        if (received != widget.amountRaw) {
-          quantusPrint('[PosQr] amount mismatch (received=$received expected=${widget.amountRaw}), ignoring');
+        if (received != widget.amountToken) {
+          quantusPrint('[PosQr] amount mismatch (received=$received expected=${widget.amountToken}), ignoring');
           return;
         }
 
@@ -86,7 +86,7 @@ class _PosQrScreenState extends ConsumerState<PosQrScreen> {
           tempId: 'pending_recv_${DateTime.now().millisecondsSinceEpoch}',
           from: tx.from,
           to: active.account.accountId,
-          amount: widget.amountRaw,
+          amount: widget.amountToken,
           timestamp: DateTime.now(),
           transactionState: TransactionState.pending,
           isReversible: false,
@@ -163,7 +163,7 @@ class _PosQrScreenState extends ConsumerState<PosQrScreen> {
     final accountAsync = ref.watch(activeAccountProvider);
     final formattingService = ref.watch(numberFormattingServiceProvider);
     final display = ref.watch(txAmountDisplayProvider)(
-      widget.amountRaw,
+      widget.amountToken,
       withSignPrefix: false,
       isSend: false,
       tokenDecimals: 4,
@@ -180,7 +180,7 @@ class _PosQrScreenState extends ConsumerState<PosQrScreen> {
           if (active == null) return Center(child: Text(l10n.posQrNoActiveAccount));
           _request ??= PosService(
             formattingService: formattingService,
-          ).createPaymentRequest(accountId: active.account.accountId, amountRaw: widget.amountRaw);
+          ).createPaymentRequest(accountId: active.account.accountId, amountToken: widget.amountToken);
           if (_isPaid) _buildPaidContent(l10n, appLocale.numberFormatLocale, colors, text, display.primaryAmount);
           return _buildQrContent(l10n, _request!, colors, text, display);
         },

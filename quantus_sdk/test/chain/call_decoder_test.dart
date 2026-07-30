@@ -54,7 +54,7 @@ void main() {
       expect(decoded.call, 'transfer_allow_death');
       expect(valueField(decoded, 'Destination').kind, ValueKind.address);
       expect(valueField(decoded, 'Destination').value, startsWith('qz'));
-      expect(amountField(decoded, 'Amount').raw, oneToken);
+      expect(amountField(decoded, 'Amount').token, oneToken);
       expect(decoded.summary?.amount, oneToken);
       expect(decoded.summary?.recipient, valueField(decoded, 'Destination').value);
       expect(decoded.summary?.assetId, isNull);
@@ -131,7 +131,7 @@ void main() {
 
       final approved = nestedField(decoded, 'Call being approved').call;
       expect(approved.call, 'transfer_allow_death');
-      expect(amountField(approved, 'Amount').raw, oneToken);
+      expect(amountField(approved, 'Amount').token, oneToken);
 
       // The hero amount for an approval comes from the call it authorises.
       expect(decoded.summary?.amount, oneToken);

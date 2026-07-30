@@ -30,23 +30,23 @@ class AmountInputLogic {
     required this.formattingService,
   });
 
-  /// Converts a raw token [BigInt] to a fiat input string using the current
+  /// Converts a token amount [BigInt] to a fiat input string using the current
   /// exchange rate and selected fiat currency, formatted for the user's locale.
   String tokenToFiatString(BigInt tokenAmount) {
     if (tokenAmount == BigInt.zero) return '';
-    final fiatValue = exchangeRateService.tokenRawToFiat(tokenAmount, selectedFiat, AppConstants.decimals);
+    final fiatValue = exchangeRateService.tokenToFiat(tokenAmount, selectedFiat, AppConstants.decimals);
     final canonical = fiatValue.toStringAsFixed(selectedFiat.decimals);
     return localeConfig.localize(canonical, addGroupingSeparators: false);
   }
 
   /// Parses a locale-formatted fiat input string and returns the equivalent
-  /// raw token [BigInt] scaled by [AppConstants.decimals].
+  /// token amount [BigInt] scaled by [AppConstants.decimals].
   ///
   /// Throws [InvalidNumberInputException] when [fiatText] cannot be parsed.
   BigInt fiatStringToToken(String fiatText) {
     if (fiatText.isEmpty) return BigInt.zero;
     final fiatDecimal = localeConfig.parseDecimal(fiatText);
-    return exchangeRateService.fiatToTokenRaw(fiatDecimal, selectedFiat, AppConstants.decimals);
+    return exchangeRateService.fiatToToken(fiatDecimal, selectedFiat, AppConstants.decimals);
   }
 
   /// Parses a token amount string.

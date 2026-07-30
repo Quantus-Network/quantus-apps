@@ -63,10 +63,10 @@ class DecodedCallView extends ConsumerWidget {
           ),
         );
 
-      case AmountField(:final label, :final raw, :final assetId, :final note):
+      case AmountField(:final label, :final token, :final assetId, :final note):
         final value = assetId == null
-            ? ref.watch(txAmountDisplayProvider)(raw, isSend: true).primaryAmount
-            : '$raw (asset #$assetId, raw units)';
+            ? ref.watch(txAmountDisplayProvider)(token, isSend: true).primaryAmount
+            : '$token (asset #$assetId, raw units)';
         return Padding(
           padding: const EdgeInsets.only(top: 6),
           child: Column(
@@ -148,9 +148,9 @@ class DecodedCallHeadline {
   /// Either the recipient or the pallet, whichever this call has.
   String? get secondary => recipient ?? palletSubtitle;
 
-  /// [amountText] formats a native raw amount for the current locale and
+  /// [amountText] formats a native token amount for the current locale and
   /// currency display; injected so this stays independent of Riverpod.
-  static DecodedCallHeadline of(DecodedCall call, {required String Function(BigInt raw) amountText}) {
+  static DecodedCallHeadline of(DecodedCall call, {required String Function(BigInt token) amountText}) {
     final summary = call.summary;
     if (summary == null) {
       return DecodedCallHeadline(

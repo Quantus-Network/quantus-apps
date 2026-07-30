@@ -84,7 +84,7 @@ class MultisigProposalCancelledEvent extends TransactionEvent {
     }
 
     final block = jsonMapOrNull(cancelled['block']);
-    final feeRaw = cancelled['fee'];
+    final feeToken = cancelled['fee'];
 
     return MultisigProposalCancelledEvent(
       id: accountEventId ?? stringFromJson(cancelled['id']),
@@ -93,7 +93,7 @@ class MultisigProposalCancelledEvent extends TransactionEvent {
       recipient: recipient,
       amount: amount,
       proposalId: proposalId,
-      fee: feeRaw != null ? bigIntFromJson(feeRaw) : null,
+      fee: feeToken != null ? bigIntFromJson(feeToken) : null,
       timestamp: accountEventTimestamp ?? dateTimeFromJson(cancelled['timestamp']),
       blockNumber: blockHeightFromJsonMap(block),
       blockHash: blockHashFromJsonMap(block),

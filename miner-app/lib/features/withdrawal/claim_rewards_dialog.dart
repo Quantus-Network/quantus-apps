@@ -67,8 +67,8 @@ class _ClaimRewardsDialogState extends State<_ClaimRewardsDialog> {
     super.dispose();
   }
 
-  String _formatBalance(BigInt raw) =>
-      _balanceFormatter.formatBalance(raw, smartDecimals: 4, addThousandsSeparators: false);
+  String _formatBalance(BigInt amount) =>
+      _balanceFormatter.formatBalance(amount, smartDecimals: 4, addThousandsSeparators: false);
 
   bool _validateAddress(String address) {
     final trimmed = address.trim();

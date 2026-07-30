@@ -294,8 +294,8 @@ class _MultisigActionConfirmSheetState extends ConsumerState<MultisigActionConfi
     // this sheet showed — and does not claim "0 tokens" for a non-transfer proposal.
     final headline = DecodedCallHeadline.of(
       _decodedProposalCall ?? _fallbackTransferCall,
-      amountText: (raw) => l10n.commonAmountBalance(
-        fmt.formatBalance(raw, smartDecimals: AppConstants.decimals),
+      amountText: (token) => l10n.commonAmountBalance(
+        fmt.formatBalance(token, smartDecimals: AppConstants.decimals),
         AppConstants.tokenSymbol,
       ),
     );
@@ -354,8 +354,8 @@ class _MultisigActionConfirmSheetState extends ConsumerState<MultisigActionConfi
     final decoded = _decodedProposalCall;
     final headline = DecodedCallHeadline.of(
       decoded ?? _fallbackTransferCall,
-      amountText: (raw) => l10n.commonAmountBalance(
-        fmt.formatBalance(raw, smartDecimals: AppConstants.decimals),
+      amountText: (token) => l10n.commonAmountBalance(
+        fmt.formatBalance(token, smartDecimals: AppConstants.decimals),
         AppConstants.tokenSymbol,
       ),
     );

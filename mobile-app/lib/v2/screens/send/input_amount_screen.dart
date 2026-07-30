@@ -77,12 +77,12 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
     _amountFocus.addListener(_onAmountFocusChanged);
     if (widget.initialAmount != null && widget.initialAmount!.isNotEmpty) {
       final formattingService = ref.read(numberFormattingServiceProvider);
-      final raw = widget.isPayMode
+      final token = widget.isPayMode
           ? formattingService.parseWireAmount(widget.initialAmount!) ?? BigInt.zero
           : _amountInputLogic.parseTokenAmount(widget.initialAmount!);
-      if (raw > BigInt.zero) {
-        _amount = raw;
-        _amountController.text = _amountInputLogic.formatTokenAmount(raw);
+      if (token > BigInt.zero) {
+        _amount = token;
+        _amountController.text = _amountInputLogic.formatTokenAmount(token);
       }
     }
     if (widget.recipientChecksum != null) {
@@ -187,7 +187,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
     }
   }
 
-  /// Converts a raw token [BigInt] to a fiat input string using the current
+  /// Converts a token amount [BigInt] to a fiat input string using the current
   /// exchange rate and selected fiat currency, formatted for the user's locale.
   void _setMax() {
     final spendable = ref.read(widget.strategy.spendableBalanceProvider).value ?? BigInt.zero;
@@ -214,7 +214,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
       _amountController.text = result.text;
       _amount = result.amount;
     });
-    // The flip can change the raw amount (fiat rounding), so the plan must
+    // The flip can change the token amount (fiat rounding), so the plan must
     // be re-estimated for the new amount.
     _invalidateFee();
     _refreshFee();

@@ -60,7 +60,7 @@ class _PosAmountScreenState extends ConsumerState<PosAmountScreen> {
 
   void _onCharge() {
     if (_amount <= BigInt.zero) return;
-    Navigator.push(context, MaterialPageRoute(builder: (_) => PosQrScreen(amountRaw: _amount)));
+    Navigator.push(context, MaterialPageRoute(builder: (_) => PosQrScreen(amountToken: _amount)));
   }
 
   Future<void> _toggleFlip() async {

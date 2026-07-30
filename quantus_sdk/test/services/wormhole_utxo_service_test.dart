@@ -96,7 +96,7 @@ void main() {
     expect(changeUtxo.owner.isChange, isTrue);
     expect(changeUtxo.owner.index, 0);
     // Change-branch receipts are totalled separately from external receipts.
-    expect(result.changeReceivedRaw, changeUtxo.amount);
-    expect(result.totalReceivedRaw, result.utxos.fold(BigInt.zero, (sum, u) => sum + u.amount));
+    expect(result.changeReceivedToken, changeUtxo.amount);
+    expect(result.totalReceivedToken, result.utxos.fold(BigInt.zero, (sum, u) => sum + u.amount));
   });
 }

@@ -347,7 +347,7 @@ String _toFiatNumeric(
   ExchangeRateService xRate, {
   required LocaleNumberConfig localeConfig,
 }) {
-  final fiatValue = xRate.tokenRawToFiat(rawBalance, fiat, AppConstants.decimals);
+  final fiatValue = xRate.tokenToFiat(rawBalance, fiat, AppConstants.decimals);
   final canonical = fiatValue.toStringAsFixed(fiat.decimals);
 
   return localeConfig.localize(canonical);

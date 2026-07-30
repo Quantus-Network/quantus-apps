@@ -56,7 +56,7 @@ void main() {
       expect(destination.kind, ValueKind.address);
       expect(destination.value, startsWith('qz'));
       final amount = parsed.call.fields.whereType<AmountField>().firstWhere((f) => f.label == 'Amount');
-      expect(amount.raw, BigInt.parse('100000000000')); // 0.1 token at 12 decimals
+      expect(amount.token, BigInt.parse('100000000000')); // 0.1 token at 12 decimals
       expect(parsed.call.summary?.amount, BigInt.parse('100000000000'));
       expect(parsed.network, 'Planck');
       expect(parsed.extensions.era.toString(), '64 blocks');
@@ -93,7 +93,7 @@ void main() {
           .call;
       expect(approved.call, 'transfer_allow_death');
       expect(
-        approved.fields.whereType<AmountField>().firstWhere((f) => f.label == 'Amount').raw,
+        approved.fields.whereType<AmountField>().firstWhere((f) => f.label == 'Amount').token,
         BigInt.from(4200000000000),
       );
       // Hero amount comes from the authorised transfer.
