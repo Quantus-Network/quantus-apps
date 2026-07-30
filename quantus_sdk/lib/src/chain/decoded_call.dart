@@ -1,7 +1,7 @@
 /// Display model for a decoded runtime call.
 ///
 /// Deliberately UI-agnostic and free of locale/formatting concerns: amounts stay
-/// as raw planck [BigInt]s and addresses as ss58 strings, so the same tree can be
+/// as raw [BigInt]s and addresses as ss58 strings, so the same tree can be
 /// rendered by the hot wallet's proposal sheets and by the air-gapped cold
 /// wallet's signing screen.
 ///
@@ -52,16 +52,16 @@ class ValueField extends CallField {
   const ValueField(super.label, this.value, {this.kind = ValueKind.text, this.note});
 }
 
-/// A balance parameter. Kept as raw planck so the renderer owns formatting.
+/// A balance parameter. Kept as a raw [BigInt] so the renderer owns formatting.
 class AmountField extends CallField {
-  final BigInt planck;
+  final BigInt raw;
 
   /// Asset id for non-native balances; null means the native token.
   final int? assetId;
 
   final String? note;
 
-  const AmountField(super.label, this.planck, {this.assetId, this.note});
+  const AmountField(super.label, this.raw, {this.assetId, this.note});
 }
 
 /// A call nested inside this one: a multisig proposal's inner call, a batch

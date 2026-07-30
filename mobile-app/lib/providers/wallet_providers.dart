@@ -100,11 +100,11 @@ final encryptedSpendableProvider = Provider.family<AsyncValue<BigInt>, int>((ref
 });
 
 final encryptedTotalReceivedProvider = Provider.family<AsyncValue<BigInt>, int>((ref, walletIndex) {
-  return ref.watch(encryptedStateProvider(walletIndex)).whenData((s) => s.totalReceivedPlanck);
+  return ref.watch(encryptedStateProvider(walletIndex)).whenData((s) => s.totalReceivedRaw);
 });
 
 final encryptedTotalSpentProvider = Provider.family<AsyncValue<BigInt>, int>((ref, walletIndex) {
-  return ref.watch(encryptedStateProvider(walletIndex)).whenData((s) => s.totalSpentPlanck);
+  return ref.watch(encryptedStateProvider(walletIndex)).whenData((s) => s.totalSpentRaw);
 });
 
 bool isEncryptedAccount(BaseAccount? account) => account is Account && account.accountType == AccountType.encrypted;
@@ -293,7 +293,7 @@ final walletOriginProvider = Provider.family<WalletOrigin?, int>((ref, walletInd
   return ref.watch(settingsServiceProvider).getWalletOrigin(walletIndex);
 });
 
-/// 0.0001 QUAN in raw units; dust below this doesn't warrant a backup nudge.
+/// 0.0001 tokens in raw units; dust below this doesn't warrant a backup nudge.
 final _backupNudgeBalanceThreshold = BigInt.from(10).pow(AppConstants.decimals - 4);
 
 /// Wallet index needing a recovery phrase backup reminder, or null when none.

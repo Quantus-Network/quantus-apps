@@ -114,8 +114,8 @@ class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> {
     }
   }
 
-  String _formatAmount(BigInt planck) =>
-      NumberFormattingService().formatBalance(planck, smartDecimals: 4, maxDecimals: AppConstants.decimals);
+  String _formatAmount(BigInt raw) =>
+      NumberFormattingService().formatBalance(raw, smartDecimals: 4, maxDecimals: AppConstants.decimals);
 
   @override
   Widget build(BuildContext context) {

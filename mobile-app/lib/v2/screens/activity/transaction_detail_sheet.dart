@@ -183,7 +183,7 @@ class _AmountSection extends ConsumerWidget {
     final amount = ref.watch(txAmountDisplayProvider)(
       displayAmount,
       isSend: true,
-      withQuanSymbol: false,
+      withTokenSymbol: false,
       customHiddenText: '-----',
     );
 

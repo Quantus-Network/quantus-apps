@@ -183,7 +183,7 @@ class ChainRpcClient {
   ///
   /// [address] should be an SS58-encoded address.
   /// [accountIdHex] can be provided if already known (32 bytes as hex without 0x prefix).
-  /// Returns the free balance in planck (smallest unit), or null if the query fails.
+  /// Returns the free balance in raw units (smallest unit), or null if the query fails.
   Future<BigInt?> getAccountBalance(String address, {String? accountIdHex}) async {
     try {
       // Build the storage key for System::Account(address)

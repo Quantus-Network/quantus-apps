@@ -7,9 +7,9 @@ void main() {
     test('createPaymentRequest embeds canonical dot-decimal wire amount', () {
       final formattingService = NumberFormattingService(localeConfig: LocaleNumberConfig.commaDecimal);
       final service = PosService(formattingService: formattingService);
-      final amountPlanck = BigInt.parse('1500000000000');
+      final amountRaw = BigInt.parse('1500000000000');
 
-      final request = service.createPaymentRequest(accountId: 'account123', amountPlanck: amountPlanck);
+      final request = service.createPaymentRequest(accountId: 'account123', amountRaw: amountRaw);
 
       expect(request.amount, '1.5');
       expect(request.paymentUrl, contains('amount=1.5'));

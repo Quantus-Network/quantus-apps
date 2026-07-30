@@ -206,7 +206,9 @@ class AppLocalizationsId extends AppLocalizations {
   String get homeActivityEmptyTitle => 'Belum Ada Transaksi';
 
   @override
-  String get homeActivityEmptyMessage => 'Aktivitas Anda akan muncul di sini setelah Anda mengirim atau menerima QUAN.';
+  String homeActivityEmptyMessage(String tokenSymbol) {
+    return 'Aktivitas Anda akan muncul di sini setelah Anda mengirim atau menerima $tokenSymbol.';
+  }
 
   @override
   String get accountsSheetTitle => 'Akun';
@@ -1577,7 +1579,9 @@ class AppLocalizationsId extends AppLocalizations {
   String get settingsMiningStatRedeemable => 'DAPAT DITUKAR';
 
   @override
-  String get settingsMiningQuanEarned => 'QUAN DIHASILKAN';
+  String settingsMiningTokenEarned(String tokenSymbol) {
+    return '$tokenSymbol DIHASILKAN';
+  }
 
   @override
   String get settingsMiningViewTelemetry => 'Lihat Telemetri ↗';
@@ -1697,13 +1701,13 @@ class AppLocalizationsId extends AppLocalizations {
   String get swapGetQuote => 'Dapatkan Penawaran';
 
   @override
-  String swapRateLabel(String amount, String symbol) {
-    return '1 QUAN = $amount $symbol';
+  String swapRateLabel(String amount, String symbol, String tokenSymbol) {
+    return '1 $tokenSymbol = $amount $symbol';
   }
 
   @override
-  String swapRateZero(String symbol) {
-    return '1 QUAN = 0 $symbol';
+  String swapRateZero(String symbol, String tokenSymbol) {
+    return '1 $tokenSymbol = 0 $symbol';
   }
 
   @override
@@ -1761,8 +1765,8 @@ class AppLocalizationsId extends AppLocalizations {
   String get swapDepositCompleteTitle => 'Swap Selesai';
 
   @override
-  String swapDepositCompleteBody(String amount) {
-    return 'Swap Anda untuk $amount QUAN telah selesai.';
+  String swapDepositCompleteBody(String amount, String tokenSymbol) {
+    return 'Swap Anda untuk $amount $tokenSymbol telah selesai.';
   }
 
   @override
@@ -1914,10 +1918,14 @@ class AppLocalizationsId extends AppLocalizations {
   String get encryptedSendFeeLabel => 'Biaya privasi';
 
   @override
-  String get encryptedSendAmountStep => 'Gunakan kelipatan 0,01 QUAN';
+  String encryptedSendAmountStep(String tokenSymbol) {
+    return 'Gunakan kelipatan 0,01 $tokenSymbol';
+  }
 
   @override
-  String get encryptedSendMinimum => 'Pengiriman terenkripsi minimal 0,1 QUAN';
+  String encryptedSendMinimum(String tokenSymbol) {
+    return 'Pengiriman terenkripsi minimal 0,1 $tokenSymbol';
+  }
 
   @override
   String get encryptedSendProgressTitle => 'Mengirim Secara Privat...';

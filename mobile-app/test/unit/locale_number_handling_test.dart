@@ -538,12 +538,12 @@ void main() {
     final idService = NumberFormattingService(localeConfig: LocaleNumberConfig.commaDecimal);
     final scaleFactor = BigInt.from(10).pow(NumberFormattingService.decimals);
 
-    test('Indonesian user inputs 1.000 intending Rp 1000 (not 1.000 QUAN)', () {
+    test('Indonesian user inputs 1.000 intending Rp 1000 (not 1.000 tokens)', () {
       final parsed = idService.parseAmount('1.000');
       expect(parsed, scaleFactor * BigInt.from(1000));
     });
 
-    test('US user inputs 1.000 intending 1 QUAN with trailing zeros', () {
+    test('US user inputs 1.000 intending 1 token with trailing zeros', () {
       final parsed = usService.parseAmount('1.000');
       expect(parsed, scaleFactor * BigInt.one);
     });

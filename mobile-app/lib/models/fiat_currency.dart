@@ -1,6 +1,6 @@
-/// Fiat currencies the app can convert QUAN amounts into.
+/// Fiat currencies the app can convert token amounts into.
 ///
-/// QUAN itself is not listed here — it is always the native side.
+/// The token itself is not listed here — it is always the native side.
 /// Adding a new currency only requires a new enum case here and a matching
 /// rate in [ExchangeRateService]. No widget or provider changes are needed.
 enum FiatCurrency {

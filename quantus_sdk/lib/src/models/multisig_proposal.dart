@@ -40,7 +40,7 @@ class MultisigProposal {
   /// Balances transfer recipient, or empty when not a transfer.
   final String recipient;
 
-  /// Balances transfer amount in planck, or zero when not a transfer.
+  /// Balances transfer amount in raw units, or zero when not a transfer.
   final BigInt amount;
 
   /// SCALE-encoded inner call as indexed, when available.

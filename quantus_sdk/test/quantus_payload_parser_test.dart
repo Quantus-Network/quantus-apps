@@ -96,7 +96,7 @@ void main() {
       expect(parsed.call.pallet, 'Balances');
       expect(parsed.call.call, 'transfer_allow_death');
       expect(valueField(parsed.call, 'Destination').value, 'qzps6MnSixszZAWiwcpjtw6uXBjWg2aEyrXBdp9thijzY1g86');
-      expect(amountField(parsed.call, 'Amount').planck, BigInt.from(900000000000));
+      expect(amountField(parsed.call, 'Amount').raw, BigInt.from(900000000000));
       expect(parsed.call.summary?.amount, BigInt.from(900000000000));
       expect(parsed.extensions.era, const Era.mortal(64, 24));
       expect(parsed.extensions.era.toString(), '64 blocks');
@@ -114,7 +114,7 @@ void main() {
       final parsed = QuantusPayloadParser.parsePayload(payload);
 
       expect(valueField(parsed.call, 'Destination').value, 'qzn5St24cMsjE4JKYdXLBctusWj5zom67dnrW22SweAahLGeG');
-      expect(amountField(parsed.call, 'Amount').planck, BigInt.from(100000000000));
+      expect(amountField(parsed.call, 'Amount').raw, BigInt.from(100000000000));
       expect(parsed.extensions.era, const Era.immortal());
       expect(parsed.extensions.era.toString(), 'Immortal');
       expect(parsed.extensions.tip, tip);
@@ -127,7 +127,7 @@ void main() {
       expect(parsed.call.pallet, 'ReversibleTransfers');
       expect(parsed.call.call, 'schedule_transfer_with_delay');
       expect(valueField(parsed.call, 'Destination').value, 'qzn5St24cMsjE4JKYdXLBctusWj5zom67dnrW22SweAahLGeG');
-      expect(amountField(parsed.call, 'Amount').planck, BigInt.from(1440000000000));
+      expect(amountField(parsed.call, 'Amount').raw, BigInt.from(1440000000000));
       expect(valueField(parsed.call, 'Delay').value, contains('300000 ms')); // 5 minutes
       expect(parsed.extensions.nonce, 3);
     });
@@ -150,7 +150,7 @@ void main() {
 
         final approved = nestedField(parsed.call, 'Call being approved').call;
         expect(approved.call, 'transfer_allow_death');
-        expect(amountField(approved, 'Amount').planck, BigInt.from(2500000000000));
+        expect(amountField(approved, 'Amount').raw, BigInt.from(2500000000000));
         expect(parsed.call.summary?.amount, BigInt.from(2500000000000));
       });
 

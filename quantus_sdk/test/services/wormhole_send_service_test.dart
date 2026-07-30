@@ -135,7 +135,7 @@ void main() {
       blockHeight: 1,
       fromId: 'from',
       toId: 'wormhole_addr',
-      amount: wormholePlanckFromScaled(1000),
+      amount: wormholeRawFromScaled(1000),
       toHash: '0x00',
       leafIndex: BigInt.one,
       transferCount: BigInt.one,

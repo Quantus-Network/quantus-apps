@@ -17,7 +17,7 @@ enum EncryptedSendPhase {
   /// Cancel requested; waiting for the operation to reach a safe stop.
   canceling,
 
-  /// Stopped before completion. [EncryptedSendState.submittedRecipientPlanck]
+  /// Stopped before completion. [EncryptedSendState.submittedRecipientRaw]
   /// is non-zero when some batches had already paid out.
   cancelled,
 
@@ -42,15 +42,15 @@ class EncryptedSendState {
 
   /// Amount already paid to the recipient by batches submitted before a
   /// cancellation (zero for a clean cancel).
-  final BigInt submittedRecipientPlanck;
+  final BigInt submittedRecipientRaw;
 
   EncryptedSendState({
     required this.phase,
     this.currentStep = 0,
     this.stepProgress = const {},
     this.errorMessage,
-    BigInt? submittedRecipientPlanck,
-  }) : submittedRecipientPlanck = submittedRecipientPlanck ?? BigInt.zero;
+    BigInt? submittedRecipientRaw,
+  }) : submittedRecipientRaw = submittedRecipientRaw ?? BigInt.zero;
 
   bool get isRunning => phase == EncryptedSendPhase.running || phase == EncryptedSendPhase.canceling;
 
@@ -59,13 +59,13 @@ class EncryptedSendState {
     int? currentStep,
     Map<int, ClaimProgressItem>? stepProgress,
     String? errorMessage,
-    BigInt? submittedRecipientPlanck,
+    BigInt? submittedRecipientRaw,
   }) => EncryptedSendState(
     phase: phase ?? this.phase,
     currentStep: currentStep ?? this.currentStep,
     stepProgress: stepProgress ?? this.stepProgress,
     errorMessage: errorMessage ?? this.errorMessage,
-    submittedRecipientPlanck: submittedRecipientPlanck ?? this.submittedRecipientPlanck,
+    submittedRecipientRaw: submittedRecipientRaw ?? this.submittedRecipientRaw,
   );
 }
 
@@ -104,10 +104,10 @@ class EncryptedSendController extends Notifier<EncryptedSendState> {
     _service = service;
 
     try {
-      // The plan pays exactly its own amountPlanck — refuse to prove a plan
+      // The plan pays exactly its own amountRaw — refuse to prove a plan
       // that doesn't match the amount the user confirmed at review.
-      if (plan.amountPlanck != amount) {
-        throw StateError('Encrypted send plan amount ${plan.amountPlanck} does not match confirmed amount $amount');
+      if (plan.amountRaw != amount) {
+        throw StateError('Encrypted send plan amount ${plan.amountRaw} does not match confirmed amount $amount');
       }
 
       // The plan was frozen at fee-estimate time; UTXO spendability can have
@@ -142,7 +142,7 @@ class EncryptedSendController extends Notifier<EncryptedSendState> {
       if (result.cancelled) {
         // Cancelled after some batches had already paid out: report the
         // partial outcome, never a clean "cancelled".
-        state = state.copyWith(phase: EncryptedSendPhase.cancelled, submittedRecipientPlanck: result.totalWithdrawn);
+        state = state.copyWith(phase: EncryptedSendPhase.cancelled, submittedRecipientRaw: result.totalWithdrawn);
         return;
       }
 

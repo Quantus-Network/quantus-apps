@@ -345,7 +345,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               amountDisplay: display,
               onFlip: _toggleFlip,
               alignment: CrossAxisAlignment.center,
-              useQuanLogo: true,
+              useTokenLogo: true,
             );
           },
           loading: () => const Column(

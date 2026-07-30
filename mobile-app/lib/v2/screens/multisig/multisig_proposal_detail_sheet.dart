@@ -696,7 +696,7 @@ class _AmountSection extends ConsumerWidget {
       );
     }
 
-    final amount = ref.watch(txAmountDisplayProvider)(proposal.amount, isSend: true, withQuanSymbol: false);
+    final amount = ref.watch(txAmountDisplayProvider)(proposal.amount, isSend: true, withTokenSymbol: false);
 
     return AmountDisplayWithConversion(amountDisplay: amount);
   }

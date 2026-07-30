@@ -18,7 +18,7 @@ class ProposalListTile extends ConsumerWidget {
   /// The proposal's decoded call, when the indexer supplied its bytes.
   ///
   /// Proposals are not always transfers, so when this is present the row names
-  /// the actual call instead of rendering a non-transfer as "0 QUAN to ''".
+  /// the actual call instead of rendering a non-transfer as "0 tokens to ''".
   final DecodedCall? call;
 
   const ProposalListTile({
@@ -40,7 +40,7 @@ class ProposalListTile extends ConsumerWidget {
     final decoded = call;
     final headline = decoded == null
         ? null
-        : DecodedCallHeadline.of(decoded, amountText: (planck) => formatAmount(planck, isSend: true).primaryAmount);
+        : DecodedCallHeadline.of(decoded, amountText: (raw) => formatAmount(raw, isSend: true).primaryAmount);
     final amountText = headline?.primary ?? formatAmount(amount, isSend: true).primaryAmount;
     final recipient = headline == null
         ? (recipientAddress.isEmpty ? null : AddressFormattingService.formatAddress(recipientAddress))

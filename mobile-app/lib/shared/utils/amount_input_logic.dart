@@ -30,49 +30,49 @@ class AmountInputLogic {
     required this.formattingService,
   });
 
-  /// Converts a raw QUAN [BigInt] to a fiat input string using the current
+  /// Converts a raw token [BigInt] to a fiat input string using the current
   /// exchange rate and selected fiat currency, formatted for the user's locale.
-  String quanToFiatString(BigInt quanAmount) {
-    if (quanAmount == BigInt.zero) return '';
-    final fiatValue = exchangeRateService.quanRawToFiat(quanAmount, selectedFiat, AppConstants.decimals);
+  String tokenToFiatString(BigInt tokenAmount) {
+    if (tokenAmount == BigInt.zero) return '';
+    final fiatValue = exchangeRateService.tokenRawToFiat(tokenAmount, selectedFiat, AppConstants.decimals);
     final canonical = fiatValue.toStringAsFixed(selectedFiat.decimals);
     return localeConfig.localize(canonical, addGroupingSeparators: false);
   }
 
   /// Parses a locale-formatted fiat input string and returns the equivalent
-  /// raw QUAN [BigInt] scaled by [AppConstants.decimals].
+  /// raw token [BigInt] scaled by [AppConstants.decimals].
   ///
   /// Throws [InvalidNumberInputException] when [fiatText] cannot be parsed.
-  BigInt fiatStringToQuan(String fiatText) {
+  BigInt fiatStringToToken(String fiatText) {
     if (fiatText.isEmpty) return BigInt.zero;
     final fiatDecimal = localeConfig.parseDecimal(fiatText);
-    return exchangeRateService.fiatToQuanRaw(fiatDecimal, selectedFiat, AppConstants.decimals);
+    return exchangeRateService.fiatToTokenRaw(fiatDecimal, selectedFiat, AppConstants.decimals);
   }
 
-  /// Parses a QUAN amount string.
-  BigInt parseQuanAmount(String text) {
+  /// Parses a token amount string.
+  BigInt parseTokenAmount(String text) {
     if (text.isEmpty) return BigInt.zero;
     return formattingService.parseAmount(text) ?? BigInt.zero;
   }
 
-  /// Formats a QUAN amount for display in an input field.
-  String formatQuanAmount(BigInt amount) {
+  /// Formats a token amount for display in an input field.
+  String formatTokenAmount(BigInt amount) {
     if (amount == BigInt.zero) return '';
     return formattingService.formatBalance(amount, smartDecimals: AppConstants.decimals, addThousandsSeparators: false);
   }
 
-  /// Returns the new input string and amount when toggling between QUAN and Fiat.
+  /// Returns the new input string and amount when toggling between tokens and Fiat.
   ToggledInputResult getToggledInput({required bool wasFlipped, required BigInt currentAmount}) {
     if (wasFlipped) {
-      // Fiat -> QUAN: The user was looking at a fiat amount.
+      // Fiat -> tokens: The user was looking at a fiat amount.
       // We already have currentAmount which was calculated from that fiat amount.
-      final text = formatQuanAmount(currentAmount);
+      final text = formatTokenAmount(currentAmount);
       return ToggledInputResult(text: text, amount: currentAmount);
     } else {
-      // QUAN -> Fiat: re-parse amount from the rounded fiat string so
+      // tokens -> Fiat: re-parse amount from the rounded fiat string so
       // the displayed value and amount stay in sync.
-      final text = quanToFiatString(currentAmount);
-      final newAmount = currentAmount == BigInt.zero ? BigInt.zero : fiatStringToQuan(text);
+      final text = tokenToFiatString(currentAmount);
+      final newAmount = currentAmount == BigInt.zero ? BigInt.zero : fiatStringToToken(text);
       return ToggledInputResult(text: text, amount: newAmount);
     }
   }
@@ -80,9 +80,9 @@ class AmountInputLogic {
   /// Handles amount change and returns the updated BigInt amount.
   BigInt onAmountChanged({required String value, required bool isFlipped}) {
     if (isFlipped) {
-      return fiatStringToQuan(value);
+      return fiatStringToToken(value);
     } else {
-      return parseQuanAmount(value);
+      return parseTokenAmount(value);
     }
   }
 }

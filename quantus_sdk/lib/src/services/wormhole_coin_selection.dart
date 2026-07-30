@@ -4,18 +4,18 @@ import 'package:quantus_sdk/src/services/wormhole_utxo_service.dart';
 /// Values must match the chain runtime and the Rust wormhole API.
 const int wormholeVolumeFeeBps = 10;
 
-/// Scaled-down → planck multiplier; matches `SCALE_DOWN_FACTOR` in the Rust
-/// wormhole API. Proofs commit to amounts in scaled-down units (0.01 QUAN) and
-/// the chain dispatches `outputAmount * scaleFactor` planck.
+/// Scaled-down → raw multiplier; matches `SCALE_DOWN_FACTOR` in the Rust
+/// wormhole API. Proofs commit to amounts in scaled-down units (0.01 tokens) and
+/// the chain dispatches `outputAmount * scaleFactor` raw units.
 final BigInt wormholeScaleFactor = BigInt.from(10000000000);
 
-/// Chain's `MinimumTransferAmount` (0.1 QUAN) in scaled units, enforced per
+/// Chain's `MinimumTransferAmount` (0.1 token) in scaled units, enforced per
 /// aggregated batch on the total exit amount.
 const int wormholeMinBatchExitScaled = 10;
 
-int wormholeScaledFromPlanck(BigInt planck) => (planck ~/ wormholeScaleFactor).toInt();
+int wormholeScaledFromRaw(BigInt raw) => (raw ~/ wormholeScaleFactor).toInt();
 
-BigInt wormholePlanckFromScaled(int scaled) => BigInt.from(scaled) * wormholeScaleFactor;
+BigInt wormholeRawFromScaled(int scaled) => BigInt.from(scaled) * wormholeScaleFactor;
 
 /// Max total output the circuit allows for a consumed input:
 /// `(out1 + out2) * 10000 <= input * (10000 - feeBps)`.
@@ -37,18 +37,18 @@ class WormholeLeafAssignment {
 class WormholeSpendPlan {
   /// Leaf assignments grouped into aggregation batches (each one extrinsic).
   final List<List<WormholeLeafAssignment>> batches;
-  final BigInt amountPlanck;
-  final BigInt changePlanck;
+  final BigInt amountRaw;
+  final BigInt changeRaw;
 
   /// Everything consumed that neither the recipient nor the change receives:
-  /// the 10 bps volume fee plus sub-0.01-QUAN quantization dust.
-  final BigInt feePlanck;
+  /// the 10 bps volume fee plus sub-0.01-tokens quantization dust.
+  final BigInt feeRaw;
 
   const WormholeSpendPlan({
     required this.batches,
-    required this.amountPlanck,
-    required this.changePlanck,
-    required this.feePlanck,
+    required this.amountRaw,
+    required this.changeRaw,
+    required this.feeRaw,
   });
 
   int get inputCount => batches.fold(0, (sum, b) => sum + b.length);
@@ -62,58 +62,58 @@ sealed class WormholeSelectionException implements Exception {
 }
 
 class InsufficientEncryptedFunds extends WormholeSelectionException {
-  final BigInt maxSendablePlanck;
-  InsufficientEncryptedFunds(this.maxSendablePlanck)
-    : super('Insufficient encrypted funds: max sendable is $maxSendablePlanck planck');
+  final BigInt maxSendableRaw;
+  InsufficientEncryptedFunds(this.maxSendableRaw)
+    : super('Insufficient encrypted funds: max sendable is $maxSendableRaw raw');
 }
 
 /// An aggregation batch's total exit would fall below the chain's minimum
-/// (0.1 QUAN); the amounts are too fragmented to send this way.
+/// (0.1 token); the amounts are too fragmented to send this way.
 class BatchBelowMinimumExit extends WormholeSelectionException {
   BatchBelowMinimumExit(int totalScaled)
-    : super('Batch exit total $totalScaled is below the chain minimum of $wormholeMinBatchExitScaled (0.1 QUAN)');
+    : super('Batch exit total $totalScaled is below the chain minimum of $wormholeMinBatchExitScaled (0.1 token)');
 }
 
 /// Maximum amount spendable from [utxos] (sum of per-input nets after the
-/// volume fee), in planck.
+/// volume fee), in raw units.
 BigInt wormholeMaxSendable(List<WormholeUtxo> utxos) {
-  final totalScaled = utxos.fold<int>(0, (sum, u) => sum + wormholeNetScaled(wormholeScaledFromPlanck(u.amount)));
-  return wormholePlanckFromScaled(totalScaled);
+  final totalScaled = utxos.fold<int>(0, (sum, u) => sum + wormholeNetScaled(wormholeScaledFromRaw(u.amount)));
+  return wormholeRawFromScaled(totalScaled);
 }
 
-/// Selects inputs to send exactly [amountPlanck] (a multiple of 0.01 QUAN) to
+/// Selects inputs to send exactly [amountRaw] (a multiple of 0.01 tokens) to
 /// the recipient, largest-first. Every leaf pays its full net to the recipient
 /// except the last, which splits between the recipient remainder and change.
 /// Leaves are distributed round-robin (largest exits first) across the minimum
 /// number of 7-proof batches so each batch clears the chain's minimum exit.
 WormholeSpendPlan selectWormholeInputs({
   required List<WormholeUtxo> utxos,
-  required BigInt amountPlanck,
+  required BigInt amountRaw,
   int maxProofsPerBatch = 7,
 }) {
-  if (amountPlanck <= BigInt.zero) {
-    throw ArgumentError('amountPlanck must be positive, got $amountPlanck');
+  if (amountRaw <= BigInt.zero) {
+    throw ArgumentError('amountRaw must be positive, got $amountRaw');
   }
-  if (amountPlanck % wormholeScaleFactor != BigInt.zero) {
-    throw ArgumentError('amountPlanck must be a multiple of 0.01 QUAN, got $amountPlanck');
+  if (amountRaw % wormholeScaleFactor != BigInt.zero) {
+    throw ArgumentError('amountRaw must be a multiple of 0.01 tokens, got $amountRaw');
   }
-  final targetScaled = wormholeScaledFromPlanck(amountPlanck);
+  final targetScaled = wormholeScaledFromRaw(amountRaw);
 
-  final candidates = utxos.where((u) => wormholeNetScaled(wormholeScaledFromPlanck(u.amount)) > 0).toList()
+  final candidates = utxos.where((u) => wormholeNetScaled(wormholeScaledFromRaw(u.amount)) > 0).toList()
     ..sort((a, b) => b.amount.compareTo(a.amount));
   final maxSendable = wormholeMaxSendable(candidates);
-  if (wormholePlanckFromScaled(targetScaled) > maxSendable) {
+  if (wormholeRawFromScaled(targetScaled) > maxSendable) {
     throw InsufficientEncryptedFunds(maxSendable);
   }
 
   final assignments = <WormholeLeafAssignment>[];
   var remaining = targetScaled;
-  var consumedPlanck = BigInt.zero;
+  var consumedRaw = BigInt.zero;
   for (final utxo in candidates) {
-    final net = wormholeNetScaled(wormholeScaledFromPlanck(utxo.amount));
+    final net = wormholeNetScaled(wormholeScaledFromRaw(utxo.amount));
     final pay = net < remaining ? net : remaining;
     assignments.add(WormholeLeafAssignment(utxo: utxo, recipientScaled: pay, changeScaled: net - pay));
-    consumedPlanck += utxo.amount;
+    consumedRaw += utxo.amount;
     remaining -= pay;
     if (remaining == 0) break;
   }
@@ -130,11 +130,11 @@ WormholeSpendPlan selectWormholeInputs({
   }
 
   final changeScaled = assignments.fold<int>(0, (sum, a) => sum + a.changeScaled);
-  final changePlanck = wormholePlanckFromScaled(changeScaled);
+  final changeRaw = wormholeRawFromScaled(changeScaled);
   return WormholeSpendPlan(
     batches: batches,
-    amountPlanck: amountPlanck,
-    changePlanck: changePlanck,
-    feePlanck: consumedPlanck - amountPlanck - changePlanck,
+    amountRaw: amountRaw,
+    changeRaw: changeRaw,
+    feeRaw: consumedRaw - amountRaw - changeRaw,
   );
 }

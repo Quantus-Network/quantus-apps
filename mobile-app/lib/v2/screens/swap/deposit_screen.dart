@@ -263,7 +263,7 @@ class _DepositScreenState extends ConsumerState<DepositScreen> {
         Text(l10n.swapDepositCompleteTitle, style: text.smallTitle?.copyWith(color: colors.textPrimary, fontSize: 20)),
         const SizedBox(height: 12),
         Text(
-          l10n.swapDepositCompleteBody(amount),
+          l10n.swapDepositCompleteBody(amount, AppConstants.tokenSymbol),
           style: text.paragraph?.copyWith(color: colors.textSecondary),
           textAlign: TextAlign.center,
         ),

@@ -437,8 +437,8 @@ abstract class AppLocalizations {
   /// Empty state message in home activity section
   ///
   /// In en, this message translates to:
-  /// **'Your activity will appear here once you send or receive QUAN.'**
-  String get homeActivityEmptyMessage;
+  /// **'Your activity will appear here once you send or receive {tokenSymbol}.'**
+  String homeActivityEmptyMessage(String tokenSymbol);
 
   /// Title of the accounts bottom sheet
   ///
@@ -2948,11 +2948,11 @@ abstract class AppLocalizations {
   /// **'REDEEMABLE'**
   String get settingsMiningStatRedeemable;
 
-  /// QUAN earned stat label
+  /// Token earned stat label
   ///
   /// In en, this message translates to:
-  /// **'QUAN EARNED'**
-  String get settingsMiningQuanEarned;
+  /// **'{tokenSymbol} EARNED'**
+  String settingsMiningTokenEarned(String tokenSymbol);
 
   /// Link to mining telemetry
   ///
@@ -3173,14 +3173,14 @@ abstract class AppLocalizations {
   /// Exchange rate display
   ///
   /// In en, this message translates to:
-  /// **'1 QUAN = {amount} {symbol}'**
-  String swapRateLabel(String amount, String symbol);
+  /// **'1 {tokenSymbol} = {amount} {symbol}'**
+  String swapRateLabel(String amount, String symbol, String tokenSymbol);
 
   /// Exchange rate when amount is zero
   ///
   /// In en, this message translates to:
-  /// **'1 QUAN = 0 {symbol}'**
-  String swapRateZero(String symbol);
+  /// **'1 {tokenSymbol} = 0 {symbol}'**
+  String swapRateZero(String symbol, String tokenSymbol);
 
   /// Title on token picker sheet
   ///
@@ -3281,8 +3281,8 @@ abstract class AppLocalizations {
   /// Body when swap is complete
   ///
   /// In en, this message translates to:
-  /// **'Your swap for {amount} QUAN is complete.'**
-  String swapDepositCompleteBody(String amount);
+  /// **'Your swap for {amount} {tokenSymbol} is complete.'**
+  String swapDepositCompleteBody(String amount, String tokenSymbol);
 
   /// Testnet demo banner on deposit screen
   ///
@@ -3560,17 +3560,17 @@ abstract class AppLocalizations {
   /// **'Privacy fee'**
   String get encryptedSendFeeLabel;
 
-  /// Shown when an encrypted send amount is not a multiple of 0.01 QUAN
+  /// Shown when an encrypted send amount is not a multiple of 0.01 token
   ///
   /// In en, this message translates to:
-  /// **'Use steps of 0.01 QUAN'**
-  String get encryptedSendAmountStep;
+  /// **'Use steps of 0.01 {tokenSymbol}'**
+  String encryptedSendAmountStep(String tokenSymbol);
 
   /// Shown when an encrypted send falls below the chain's minimum exit amount
   ///
   /// In en, this message translates to:
-  /// **'Encrypted sends must move at least 0.1 QUAN'**
-  String get encryptedSendMinimum;
+  /// **'Encrypted sends must move at least 0.1 {tokenSymbol}'**
+  String encryptedSendMinimum(String tokenSymbol);
 
   /// App bar title while an encrypted send is proving/submitting
   ///

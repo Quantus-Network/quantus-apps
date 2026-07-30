@@ -19,12 +19,12 @@ typedef MnemonicGetter = Future<String?> Function();
 /// wormhole addresses, plus change that has been submitted but not yet indexed.
 class EncryptedAccountState {
   final List<WormholeUtxo> utxos;
-  final BigInt pendingChangePlanck;
-  final BigInt totalReceivedPlanck;
+  final BigInt pendingChangeRaw;
+  final BigInt totalReceivedRaw;
 
-  /// Slice of [totalReceivedPlanck] that arrived on change-branch addresses.
-  final BigInt changeReceivedPlanck;
-  final BigInt totalSpentPlanck;
+  /// Slice of [totalReceivedRaw] that arrived on change-branch addresses.
+  final BigInt changeReceivedRaw;
+  final BigInt totalSpentRaw;
 
   /// Next unused external index — shown as the receive address.
   final int nextIndex;
@@ -35,20 +35,20 @@ class EncryptedAccountState {
 
   const EncryptedAccountState({
     required this.utxos,
-    required this.pendingChangePlanck,
-    required this.totalReceivedPlanck,
-    required this.changeReceivedPlanck,
-    required this.totalSpentPlanck,
+    required this.pendingChangeRaw,
+    required this.totalReceivedRaw,
+    required this.changeReceivedRaw,
+    required this.totalSpentRaw,
     required this.nextIndex,
     required this.nextChangeIndex,
   });
 
-  BigInt get balance => utxos.fold(BigInt.zero, (sum, u) => sum + u.amount) + pendingChangePlanck;
+  BigInt get balance => utxos.fold(BigInt.zero, (sum, u) => sum + u.amount) + pendingChangeRaw;
 
   /// Externally received funds only: change outputs return to the change
   /// branch and are excluded, so the indexed (non-pending) balance equals
-  /// `incomingPlanck + changeReceivedPlanck - totalSpentPlanck`.
-  BigInt get incomingPlanck => totalReceivedPlanck - changeReceivedPlanck;
+  /// `incomingRaw + changeReceivedRaw - totalSpentRaw`.
+  BigInt get incomingRaw => totalReceivedRaw - changeReceivedRaw;
 
   /// Max amount sendable right now (post volume fee, excluding pending change).
   BigInt get maxSendable => wormholeMaxSendable(utxos);
@@ -279,7 +279,7 @@ class EncryptedAccountService {
 
     final pendingNullifiers = state.pendingSpends.expand((r) => r.nullifiers).toSet();
     final spendable = utxoResult.utxos.where((u) => !pendingNullifiers.contains(u.nullifierHex)).toList();
-    final pendingChange = state.pendingSpends.fold(BigInt.zero, (sum, r) => sum + r.changeAmountPlanck);
+    final pendingChange = state.pendingSpends.fold(BigInt.zero, (sum, r) => sum + r.changeAmountRaw);
 
     _log(
       'load DONE: ${spendable.length} spendable UTXOs, pendingChange=$pendingChange, '
@@ -287,10 +287,10 @@ class EncryptedAccountService {
     );
     return EncryptedAccountState(
       utxos: spendable,
-      pendingChangePlanck: pendingChange,
-      totalReceivedPlanck: utxoResult.totalReceivedPlanck,
-      changeReceivedPlanck: utxoResult.changeReceivedPlanck,
-      totalSpentPlanck: utxoResult.totalSpentPlanck,
+      pendingChangeRaw: pendingChange,
+      totalReceivedRaw: utxoResult.totalReceivedRaw,
+      changeReceivedRaw: utxoResult.changeReceivedRaw,
+      totalSpentRaw: utxoResult.totalSpentRaw,
       nextIndex: state.nextIndex,
       nextChangeIndex: state.nextChangeIndex,
     );
@@ -322,7 +322,7 @@ class EncryptedAccountService {
       final changeBytes = Uint8List.fromList(getAccountId32(changeKeyPair.address));
       _log(
         'send: ${plan.inputCount} inputs in ${plan.batches.length} batches, '
-        'amount=${plan.amountPlanck}, change=${plan.changePlanck} -> change index $changeIndex',
+        'amount=${plan.amountRaw}, change=${plan.changeRaw} -> change index $changeIndex',
       );
 
       // UTXOs carry no secrets (see WormholeUtxoService.getUnspentUtxos), so
@@ -366,7 +366,7 @@ class EncryptedAccountService {
                 PendingSpend(
                   nullifiers: nullifiers,
                   changeAddress: hasChange ? changeKeyPair.address : null,
-                  changeAmountPlanck: wormholePlanckFromScaled(changeScaled),
+                  changeAmountRaw: wormholeRawFromScaled(changeScaled),
                   createdAtMs: DateTime.now().millisecondsSinceEpoch,
                 ),
               ],
@@ -470,27 +470,27 @@ class EncryptedAccountService {
 class PendingSpend {
   final List<String> nullifiers;
   final String? changeAddress;
-  final BigInt changeAmountPlanck;
+  final BigInt changeAmountRaw;
   final int createdAtMs;
 
   const PendingSpend({
     required this.nullifiers,
     required this.changeAddress,
-    required this.changeAmountPlanck,
+    required this.changeAmountRaw,
     required this.createdAtMs,
   });
 
   factory PendingSpend.fromJson(Map<String, dynamic> json) => PendingSpend(
     nullifiers: (json['nullifiers'] as List<dynamic>).cast<String>(),
     changeAddress: json['changeAddress'] as String?,
-    changeAmountPlanck: BigInt.parse(json['changeAmountPlanck'] as String),
+    changeAmountRaw: BigInt.parse(json['changeAmountRaw'] as String),
     createdAtMs: json['createdAtMs'] as int,
   );
 
   Map<String, dynamic> toJson() => {
     'nullifiers': nullifiers,
     'changeAddress': changeAddress,
-    'changeAmountPlanck': changeAmountPlanck.toString(),
+    'changeAmountRaw': changeAmountRaw.toString(),
     'createdAtMs': createdAtMs,
   };
 }
