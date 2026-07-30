@@ -25,8 +25,7 @@ class NumberFormattingService {
   /// Example: 100000000      -> "0.0001" (smartDecimals = 2, extended)
   /// Standard token-amount display: 4 smart decimals, extending to the
   /// chain's full precision for smaller amounts.
-  String formatAmount(BigInt amount) =>
-      formatBalance(amount, smartDecimals: 4, maxDecimals: AppConstants.decimals);
+  String formatAmount(BigInt amount) => formatBalance(amount, smartDecimals: 4, maxDecimals: AppConstants.decimals);
 
   String formatBalance(
     BigInt balance, {

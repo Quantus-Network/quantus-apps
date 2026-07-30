@@ -197,7 +197,10 @@ class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> {
             DetailRow(label: 'Runtime', value: 'spec ${ext.specVersion}, tx version ${ext.transactionVersion}'),
             DetailRow(label: 'Nonce', value: '${ext.nonce}'),
             DetailRow(label: 'Era', value: '${ext.era}'),
-            DetailRow(label: 'Tip', value: '${NumberFormattingService().formatAmount(ext.tip)} ${AppConstants.tokenSymbol}'),
+            DetailRow(
+              label: 'Tip',
+              value: '${NumberFormattingService().formatAmount(ext.tip)} ${AppConstants.tokenSymbol}',
+            ),
             DetailRow(label: 'Genesis hash', value: '0x${hex.encode(ext.genesisHash)}', monospace: true),
             DetailRow(label: 'Block hash', value: '0x${hex.encode(ext.blockHash)}', monospace: true),
             DetailRow(

@@ -127,7 +127,6 @@ class _CallFieldView extends ConsumerWidget {
         );
     }
   }
-
 }
 
 /// An address plus its checkphrase, so the signer can verify it out loud rather
