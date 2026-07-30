@@ -178,7 +178,7 @@ class TaskmasterService {
     if (mnemonic == null) {
       throw Exception('Mnemonic not found.');
     }
-    final address = HdWalletService().deriveWormhole(mnemonic).address;
+    final address = _hd.deriveWormholeKeyPair(mnemonic: mnemonic).address;
     return address;
   }
 

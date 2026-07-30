@@ -70,25 +70,33 @@ void main() {
   test('getUnspentUtxos blanks owner secretHex on every returned UTXO (M11)', () async {
     final hd = HdWalletService();
     final pairs = [for (var i = 0; i < 2; i++) hd.deriveWormholeKeyPair(mnemonic: _mnemonic, index: i)];
+    final changePair = hd.deriveWormholeChangeAddressKeyPair(mnemonic: _mnemonic);
     final service = _OfflineUtxoService()
       ..transfersByAddress = {
         pairs[0].address: [_transfer(toId: pairs[0].address, count: 1)],
         pairs[1].address: [_transfer(toId: pairs[1].address, count: 2)],
+        changePair.address: [_transfer(toId: changePair.address, count: 3)],
       };
 
     final result = await service.getUnspentUtxos(
       addresses: [
         for (var i = 0; i < 2; i++)
           WormholeAddressInfo(index: i, address: pairs[i].address, secretHex: pairs[i].secretHex),
+        WormholeAddressInfo(index: 0, isChange: true, address: changePair.address, secretHex: changePair.secretHex),
       ],
     );
 
-    expect(result.utxos, hasLength(2));
+    expect(result.utxos, hasLength(3));
     for (final utxo in result.utxos) {
       expect(utxo.owner.secretHex, isEmpty);
     }
-    // Index and address survive the redaction so spenders can re-derive.
-    expect(result.utxos.map((u) => u.owner.index).toSet(), {0, 1});
-    expect(result.utxos.map((u) => u.owner.address).toSet(), {pairs[0].address, pairs[1].address});
+    // Index, branch and address survive the redaction so spenders can re-derive.
+    expect(result.utxos.map((u) => u.owner.address).toSet(), {pairs[0].address, pairs[1].address, changePair.address});
+    final changeUtxo = result.utxos.singleWhere((u) => u.owner.address == changePair.address);
+    expect(changeUtxo.owner.isChange, isTrue);
+    expect(changeUtxo.owner.index, 0);
+    // Change-branch receipts are totalled separately from external receipts.
+    expect(result.changeReceivedPlanck, changeUtxo.amount);
+    expect(result.totalReceivedPlanck, result.utxos.fold(BigInt.zero, (sum, u) => sum + u.amount));
   });
 }
