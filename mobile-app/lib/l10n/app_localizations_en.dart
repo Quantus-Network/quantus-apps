@@ -211,7 +211,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get homeActivityEmptyTitle => 'No Transactions Yet';
 
   @override
-  String get homeActivityEmptyMessage => 'Your activity will appear here once you send or receive QUAN.';
+  String homeActivityEmptyMessage(String tokenSymbol) {
+    return 'Your activity will appear here once you send or receive $tokenSymbol.';
+  }
 
   @override
   String get accountsSheetTitle => 'Accounts';
@@ -1579,7 +1581,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsMiningStatRedeemable => 'REDEEMABLE';
 
   @override
-  String get settingsMiningQuanEarned => 'QUAN EARNED';
+  String settingsMiningTokenEarned(String tokenSymbol) {
+    return '$tokenSymbol EARNED';
+  }
 
   @override
   String get settingsMiningViewTelemetry => 'View Telemetry ↗';
@@ -1699,13 +1703,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get swapGetQuote => 'Get a Quote';
 
   @override
-  String swapRateLabel(String amount, String symbol) {
-    return '1 QUAN = $amount $symbol';
+  String swapRateLabel(String amount, String symbol, String tokenSymbol) {
+    return '1 $tokenSymbol = $amount $symbol';
   }
 
   @override
-  String swapRateZero(String symbol) {
-    return '1 QUAN = 0 $symbol';
+  String swapRateZero(String symbol, String tokenSymbol) {
+    return '1 $tokenSymbol = 0 $symbol';
   }
 
   @override
@@ -1763,8 +1767,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get swapDepositCompleteTitle => 'Swap Complete';
 
   @override
-  String swapDepositCompleteBody(String amount) {
-    return 'Your swap for $amount QUAN is complete.';
+  String swapDepositCompleteBody(String amount, String tokenSymbol) {
+    return 'Your swap for $amount $tokenSymbol is complete.';
   }
 
   @override
@@ -1916,10 +1920,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get encryptedSendFeeLabel => 'Privacy fee';
 
   @override
-  String get encryptedSendAmountStep => 'Use steps of 0.01 QUAN';
+  String encryptedSendAmountStep(String tokenSymbol) {
+    return 'Use steps of 0.01 $tokenSymbol';
+  }
 
   @override
-  String get encryptedSendMinimum => 'Encrypted sends must move at least 0.1 QUAN';
+  String encryptedSendMinimum(String tokenSymbol) {
+    return 'Encrypted sends must move at least 0.1 $tokenSymbol';
+  }
 
   @override
   String get encryptedSendProgressTitle => 'Private Send';

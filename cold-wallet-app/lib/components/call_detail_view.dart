@@ -69,12 +69,12 @@ class _CallFieldView extends ConsumerWidget {
           note: note,
         );
 
-      case AmountField(:final label, :final planck, :final assetId, :final note):
+      case AmountField(:final label, :final token, :final assetId, :final note):
         return DetailRow(
           label: label,
           value: assetId == null
-              ? '${_formatPlanck(planck)} ${AppConstants.tokenSymbol}'
-              : '$planck raw units of asset #$assetId',
+              ? '${NumberFormattingService().formatAmount(token)} ${AppConstants.tokenSymbol}'
+              : '$token raw units of asset #$assetId',
           note: assetId == null
               ? note
               : [
@@ -127,9 +127,6 @@ class _CallFieldView extends ConsumerWidget {
         );
     }
   }
-
-  String _formatPlanck(BigInt planck) =>
-      NumberFormattingService().formatBalance(planck, smartDecimals: 4, maxDecimals: AppConstants.decimals);
 }
 
 /// An address plus its checkphrase, so the signer can verify it out loud rather

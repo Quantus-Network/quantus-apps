@@ -114,9 +114,6 @@ class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> {
     }
   }
 
-  String _formatAmount(BigInt planck) =>
-      NumberFormattingService().formatBalance(planck, smartDecimals: 4, maxDecimals: AppConstants.decimals);
-
   @override
   Widget build(BuildContext context) {
     if (_parseError != null) return _errorView(context, _parseError!);
@@ -200,7 +197,10 @@ class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> {
             DetailRow(label: 'Runtime', value: 'spec ${ext.specVersion}, tx version ${ext.transactionVersion}'),
             DetailRow(label: 'Nonce', value: '${ext.nonce}'),
             DetailRow(label: 'Era', value: '${ext.era}'),
-            DetailRow(label: 'Tip', value: '${_formatAmount(ext.tip)} ${AppConstants.tokenSymbol}'),
+            DetailRow(
+              label: 'Tip',
+              value: '${NumberFormattingService().formatAmount(ext.tip)} ${AppConstants.tokenSymbol}',
+            ),
             DetailRow(label: 'Genesis hash', value: '0x${hex.encode(ext.genesisHash)}', monospace: true),
             DetailRow(label: 'Block hash', value: '0x${hex.encode(ext.blockHash)}', monospace: true),
             DetailRow(
@@ -319,7 +319,7 @@ class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> {
               text: TextSpan(
                 children: [
                   TextSpan(
-                    text: _formatAmount(summary.amount),
+                    text: NumberFormattingService().formatAmount(summary.amount),
                     style: text.transactionDetailAmountPrimary?.copyWith(color: colors.textPrimary),
                   ),
                   TextSpan(

@@ -291,11 +291,11 @@ class _MultisigActionConfirmSheetState extends ConsumerState<MultisigActionConfi
   Future<void> _confirmWithHardware(Account signer, AppLocalizations l10n) async {
     final fmt = ref.read(numberFormattingServiceProvider);
     // Take the QR screen's headline from the decoded call, so it agrees with what
-    // this sheet showed — and does not claim "0 QUAN" for a non-transfer proposal.
+    // this sheet showed — and does not claim "0 tokens" for a non-transfer proposal.
     final headline = DecodedCallHeadline.of(
       _decodedProposalCall ?? _fallbackTransferCall,
-      amountText: (planck) => l10n.commonAmountBalance(
-        fmt.formatBalance(planck, smartDecimals: AppConstants.decimals),
+      amountText: (token) => l10n.commonAmountBalance(
+        fmt.formatBalance(token, smartDecimals: AppConstants.decimals),
         AppConstants.tokenSymbol,
       ),
     );
@@ -354,8 +354,8 @@ class _MultisigActionConfirmSheetState extends ConsumerState<MultisigActionConfi
     final decoded = _decodedProposalCall;
     final headline = DecodedCallHeadline.of(
       decoded ?? _fallbackTransferCall,
-      amountText: (planck) => l10n.commonAmountBalance(
-        fmt.formatBalance(planck, smartDecimals: AppConstants.decimals),
+      amountText: (token) => l10n.commonAmountBalance(
+        fmt.formatBalance(token, smartDecimals: AppConstants.decimals),
         AppConstants.tokenSymbol,
       ),
     );

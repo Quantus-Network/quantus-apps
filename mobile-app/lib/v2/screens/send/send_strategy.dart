@@ -70,7 +70,7 @@ class EncryptedFee extends SendFee {
   const EncryptedFee({this.plan, this.blocker});
 
   @override
-  BigInt get displayFee => plan?.feePlanck ?? BigInt.zero;
+  BigInt get displayFee => plan?.feeToken ?? BigInt.zero;
 }
 
 /// Content for the shared terminal (success) screen. All strings are resolved
@@ -141,7 +141,7 @@ class SendNeedsHardwareSignature extends SendOutcome {
 /// Encrypted send authenticated and planned: hand off to the proving progress
 /// screen, which generates the ZK proofs, submits and then shows [terminal].
 /// [amount] is the confirmed amount; the controller re-checks it against
-/// [plan] before proving, since the plan pays exactly its own amountPlanck.
+/// [plan] before proving, since the plan pays exactly its own amountToken.
 class SendNeedsProving extends SendOutcome {
   final Account account;
   final WormholeSpendPlan plan;

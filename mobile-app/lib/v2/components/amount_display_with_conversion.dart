@@ -12,7 +12,7 @@ class AmountDisplayWithConversion extends StatelessWidget {
   final CrossAxisAlignment alignment;
   final bool colorizeAmount;
   final Color? amountColor;
-  final bool useQuanLogo;
+  final bool useTokenLogo;
 
   const AmountDisplayWithConversion({
     super.key,
@@ -21,7 +21,7 @@ class AmountDisplayWithConversion extends StatelessWidget {
     this.alignment = CrossAxisAlignment.center,
     this.colorizeAmount = false,
     this.amountColor,
-    this.useQuanLogo = false,
+    this.useTokenLogo = false,
   });
 
   @override
@@ -30,14 +30,14 @@ class AmountDisplayWithConversion extends StatelessWidget {
     final colors = context.colors;
 
     final primaryAmountColor = amountColor ?? (colorizeAmount ? colors.success : colors.textPrimary);
-    final quanLogoPrimarySize = 32.0;
+    final tokenLogoPrimarySize = 32.0;
 
     final secondaryAmountColor = colors.textTertiary;
     final secondaryAmountBaseStyle = text.paragraph?.copyWith(
       color: secondaryAmountColor,
       fontFamily: AppTextTheme.fontFamilySecondary,
     );
-    final quanLogoSecondarySize = 12.0;
+    final tokenLogoSecondarySize = 12.0;
 
     final MainAxisAlignment mainAxisAlignment = switch (alignment) {
       CrossAxisAlignment.center => MainAxisAlignment.center,
@@ -50,11 +50,11 @@ class AmountDisplayWithConversion extends StatelessWidget {
         Row(
           mainAxisAlignment: mainAxisAlignment,
           children: [
-            if (useQuanLogo && !amountDisplay.isFlipped) ...[
+            if (useTokenLogo && !amountDisplay.isFlipped) ...[
               SvgPicture.asset(
                 'assets/v2/uppercase_q.svg',
-                width: quanLogoPrimarySize,
-                height: quanLogoPrimarySize,
+                width: tokenLogoPrimarySize,
+                height: tokenLogoPrimarySize,
                 colorFilter: ColorFilter.mode(context.colors.textPrimary, BlendMode.srcIn),
               ),
               const SizedBox(width: 4),
@@ -66,7 +66,7 @@ class AmountDisplayWithConversion extends StatelessWidget {
                     text: amountDisplay.primaryAmount,
                     style: text.conversionAmountPrimary?.copyWith(color: primaryAmountColor),
                   ),
-                  if (!useQuanLogo && !amountDisplay.isFlipped) ...[
+                  if (!useTokenLogo && !amountDisplay.isFlipped) ...[
                     const TextSpan(text: '     '),
                     TextSpan(
                       text: AppConstants.tokenSymbol,
@@ -85,12 +85,12 @@ class AmountDisplayWithConversion extends StatelessWidget {
         Row(
           mainAxisAlignment: mainAxisAlignment,
           children: [
-            if (useQuanLogo && amountDisplay.isFlipped) ...[
+            if (useTokenLogo && amountDisplay.isFlipped) ...[
               Text('≈ ', style: secondaryAmountBaseStyle),
               SvgPicture.asset(
                 'assets/v2/uppercase_q.svg',
-                width: quanLogoSecondarySize,
-                height: quanLogoSecondarySize,
+                width: tokenLogoSecondarySize,
+                height: tokenLogoSecondarySize,
                 colorFilter: ColorFilter.mode(secondaryAmountColor, BlendMode.srcIn),
               ),
               const SizedBox(width: 2),

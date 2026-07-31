@@ -64,14 +64,17 @@ class HdWalletService {
     return _deriveHDWallet(mnemonic: mnemonic, account: index);
   }
 
-  crypto.WormholeResult deriveWormhole(String mnemonic, {int account = 0, int change = 0, int addressIndex = 0}) {
+  crypto.WormholeResult _deriveWormhole(String mnemonic, {int account = 0, int change = 0, int addressIndex = 0}) {
     final path = "m/44'/189189189'/$account'/$change'/$addressIndex'";
     return crypto.deriveWormhole(mnemonicStr: mnemonic, path: path);
   }
 
   /// Derive the wormhole key pair at HD index `index` (account=0, change=0).
   WormholeKeyPair deriveWormholeKeyPair({required String mnemonic, int index = 0}) =>
-      WormholeKeyPair.fromResult(deriveWormhole(mnemonic, addressIndex: index));
+      WormholeKeyPair.fromResult(_deriveWormhole(mnemonic, addressIndex: index));
+
+  WormholeKeyPair deriveWormholeChangeAddressKeyPair({required String mnemonic, int index = 0}) =>
+      WormholeKeyPair.fromResult(_deriveWormhole(mnemonic, change: 1, addressIndex: index));
 
   /// Compute the on-chain wormhole address for a rewards preimage (first_hash hex).
   String preimageToAddress(String preimageHex) => crypto.firstHashToAddress(firstHashHex: preimageHex);

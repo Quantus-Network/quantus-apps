@@ -77,12 +77,12 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
     _amountFocus.addListener(_onAmountFocusChanged);
     if (widget.initialAmount != null && widget.initialAmount!.isNotEmpty) {
       final formattingService = ref.read(numberFormattingServiceProvider);
-      final planck = widget.isPayMode
+      final token = widget.isPayMode
           ? formattingService.parseWireAmount(widget.initialAmount!) ?? BigInt.zero
-          : _amountInputLogic.parseQuanAmount(widget.initialAmount!);
-      if (planck > BigInt.zero) {
-        _amount = planck;
-        _amountController.text = _amountInputLogic.formatQuanAmount(planck);
+          : _amountInputLogic.parseTokenAmount(widget.initialAmount!);
+      if (token > BigInt.zero) {
+        _amount = token;
+        _amountController.text = _amountInputLogic.formatTokenAmount(token);
       }
     }
     if (widget.recipientChecksum != null) {
@@ -187,7 +187,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
     }
   }
 
-  /// Converts a raw QUAN [BigInt] to a fiat input string using the current
+  /// Converts a token amount [BigInt] to a fiat input string using the current
   /// exchange rate and selected fiat currency, formatted for the user's locale.
   void _setMax() {
     final spendable = ref.read(widget.strategy.spendableBalanceProvider).value ?? BigInt.zero;
@@ -197,8 +197,8 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
     );
     final isFlipped = ref.read(isCurrencyFlippedProvider);
     _amountController.text = isFlipped
-        ? _amountInputLogic.quanToFiatString(max)
-        : _amountInputLogic.formatQuanAmount(max);
+        ? _amountInputLogic.tokenToFiatString(max)
+        : _amountInputLogic.formatTokenAmount(max);
     setState(() => _amount = max);
     _invalidateFee();
     _refreshFee();
@@ -214,7 +214,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
       _amountController.text = result.text;
       _amount = result.amount;
     });
-    // The flip can change the planck amount (fiat rounding), so the plan must
+    // The flip can change the token amount (fiat rounding), so the plan must
     // be re-estimated for the new amount.
     _invalidateFee();
     _refreshFee();
@@ -392,9 +392,9 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
     final display = ref.watch(txAmountDisplayProvider)(
       _amount,
       withSignPrefix: false,
-      quanDecimals: 4,
+      tokenDecimals: 4,
       isSend: true,
-      withQuanSymbol: false,
+      withTokenSymbol: false,
     );
 
     final symbolStyle = text.transactionDetailAmountSymbol?.copyWith(color: colors.textPrimary);
@@ -424,7 +424,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
     final symbolWidget = Text(isFlipped ? selectedFiat.symbol : AppConstants.tokenSymbol, style: symbolStyle);
 
     // For prefix fiat currencies (e.g. $, Rp) place symbol before the field;
-    // for suffix currencies and QUAN keep it after.
+    // for suffix currencies and the token symbol keep it after.
     final List<Widget> primaryRowChildren = isPrefixFiat
         ? [symbolWidget, const SizedBox(width: 8), inputField]
         : [inputField, const SizedBox(width: 8), symbolWidget];

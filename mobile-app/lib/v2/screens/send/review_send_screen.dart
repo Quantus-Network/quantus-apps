@@ -126,8 +126,8 @@ class _ReviewSendScreenState extends ConsumerState<ReviewSendScreen> {
       widget.amount,
       isSend: true,
       withSignPrefix: false,
-      withQuanSymbol: false,
-      quanDecimals: 4,
+      withTokenSymbol: false,
+      tokenDecimals: 4,
     );
 
     return ScaffoldBase(

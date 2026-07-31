@@ -60,7 +60,7 @@ class _PosAmountScreenState extends ConsumerState<PosAmountScreen> {
 
   void _onCharge() {
     if (_amount <= BigInt.zero) return;
-    Navigator.push(context, MaterialPageRoute(builder: (_) => PosQrScreen(amountPlanck: _amount)));
+    Navigator.push(context, MaterialPageRoute(builder: (_) => PosQrScreen(amountToken: _amount)));
   }
 
   Future<void> _toggleFlip() async {
@@ -99,9 +99,9 @@ class _PosAmountScreenState extends ConsumerState<PosAmountScreen> {
     final display = ref.watch(txAmountDisplayProvider)(
       _amount,
       withSignPrefix: false,
-      quanDecimals: 4,
+      tokenDecimals: 4,
       isSend: true,
-      withQuanSymbol: false,
+      withTokenSymbol: false,
     );
 
     final symbolStyle = text.transactionDetailAmountSymbol?.copyWith(color: colors.textPrimary);

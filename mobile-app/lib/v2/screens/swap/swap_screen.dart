@@ -41,7 +41,7 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
 
   String _rateLabel(AppLocalizations l10n) {
     final val = 1 / _rate;
-    if (val == 0) return l10n.swapRateZero(_fromToken.symbol);
+    if (val == 0) return l10n.swapRateZero(_fromToken.symbol, AppConstants.tokenSymbol);
     final decimals = val >= 100
         ? 2
         : val >= 1
@@ -53,7 +53,7 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
         : 10;
     var formatted = val.toStringAsFixed(decimals).replaceAll(RegExp(r'0+$'), '');
     if (formatted.endsWith('.')) formatted = formatted.substring(0, formatted.length - 1);
-    return l10n.swapRateLabel(formatted, _fromToken.symbol);
+    return l10n.swapRateLabel(formatted, _fromToken.symbol, AppConstants.tokenSymbol);
   }
 
   @override
@@ -370,7 +370,7 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
                     TokenIcon(token: _swapService.getQuToken(), size: 25, networkBadgeSize: 10),
                     const SizedBox(width: 8),
                     Text(
-                      'QUAN',
+                      AppConstants.tokenSymbol,
                       style: text.smallParagraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w600),
                     ),
                   ],

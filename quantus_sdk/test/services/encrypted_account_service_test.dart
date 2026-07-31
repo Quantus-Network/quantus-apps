@@ -17,21 +17,36 @@ import 'package:ss58/ss58.dart';
 /// `getAccountId32` can decode it inside `send`).
 String addressAt(int index) => Address(prefix: 189, pubkey: Uint8List(32)..[31] = index).encode();
 
+/// Change-branch counterpart of [addressAt], distinct at every index.
+String changeAddressAt(int index) {
+  final pubkey = Uint8List(32)
+    ..[30] = 1
+    ..[31] = index;
+  return Address(prefix: 189, pubkey: pubkey).encode();
+}
+
 String secretAt(int index) => '0x${(index + 1).toRadixString(16).padLeft(2, '0') * 32}';
 
-WormholeUtxo _utxo(int scaled, {int index = 0, String? nullifierHex}) => WormholeUtxo(
+String changeSecretAt(int index) => '0x${(index + 0x81).toRadixString(16).padLeft(2, '0') * 32}';
+
+WormholeUtxo _utxo(int scaled, {int index = 0, bool isChange = false, String? nullifierHex}) => WormholeUtxo(
   transfer: WormholeTransfer(
     id: 't$scaled',
     blockHeight: 1,
     fromId: 'from',
-    toId: addressAt(index),
-    amount: wormholePlanckFromScaled(scaled),
+    toId: isChange ? changeAddressAt(index) : addressAt(index),
+    amount: wormholeTokenFromScaled(scaled),
     toHash: '0x00',
     leafIndex: BigInt.from(scaled),
     transferCount: BigInt.one,
   ),
   // secretHex blank like production getUnspentUtxos (M11): spenders re-derive.
-  owner: WormholeAddressInfo(index: index, address: addressAt(index), secretHex: ''),
+  owner: WormholeAddressInfo(
+    index: index,
+    isChange: isChange,
+    address: isChange ? changeAddressAt(index) : addressAt(index),
+    secretHex: '',
+  ),
   nullifierHex: nullifierHex ?? '0xn$scaled',
 );
 
@@ -50,23 +65,36 @@ class _FakeHdWallet extends HdWalletService {
       secretHex: secretAt(index),
     );
   }
+
+  @override
+  WormholeKeyPair deriveWormholeChangeAddressKeyPair({required String mnemonic, int index = 0}) {
+    derivations++;
+    return WormholeKeyPair(
+      address: changeAddressAt(index),
+      addressHex: '0x${'00' * 30}01${(index).toRadixString(16).padLeft(2, '0')}',
+      rewardsPreimageHex: '0x',
+      secretHex: changeSecretAt(index),
+    );
+  }
 }
 
 class _FakeDiscovery extends AccountDiscoveryService {
   Set<int> used;
+  Set<int> usedChange = const {};
 
   _FakeDiscovery(this.used) : super(_FakeHdWallet());
 
   @override
   Future<Set<int>> discoverUsedIndices({required String Function(int index) addressAt, int gapLimit = 20}) async =>
-      used;
+      addressAt(0) == changeAddressAt(0) ? usedChange : used;
 }
 
 class _FakeUtxoService extends WormholeUtxoService {
   WormholeUtxoResult result = WormholeUtxoResult(
     utxos: const [],
-    totalReceivedPlanck: BigInt.zero,
-    totalSpentPlanck: BigInt.zero,
+    totalReceivedToken: BigInt.zero,
+    changeReceivedToken: BigInt.zero,
+    totalSpentToken: BigInt.zero,
   );
 
   /// When set, [getUnspentUtxos] blocks until the completer resolves — lets
@@ -170,10 +198,18 @@ void main() {
     await tempDir.delete(recursive: true);
   });
 
-  Future<void> seedState({required int nextIndex, List<PendingSpend> pendingSpends = const []}) async {
+  Future<void> seedState({
+    required int nextIndex,
+    int? nextChangeIndex,
+    List<PendingSpend> pendingSpends = const [],
+  }) async {
     final file = File('${tempDir.path}/encrypted_account_w0.json');
     await file.writeAsString(
-      jsonEncode({'nextIndex': nextIndex, 'pendingSpends': pendingSpends.map((e) => e.toJson()).toList()}),
+      jsonEncode({
+        'nextIndex': nextIndex,
+        'nextChangeIndex': ?nextChangeIndex,
+        'pendingSpends': pendingSpends.map((e) => e.toJson()).toList(),
+      }),
     );
   }
 
@@ -188,43 +224,64 @@ void main() {
       expect((await readStateFile())['nextIndex'], 3);
     });
 
+    test('bumps nextChangeIndex to one past the highest discovered change index', () async {
+      discovery.used = {0};
+      discovery.usedChange = {0, 1};
+      final state = await service.load();
+      expect(state.nextIndex, 1);
+      expect(state.nextChangeIndex, 2);
+      expect((await readStateFile())['nextChangeIndex'], 2);
+    });
+
     test('keeps a persisted nextIndex that is ahead of discovery', () async {
-      await seedState(nextIndex: 5);
+      await seedState(nextIndex: 5, nextChangeIndex: 3);
       discovery.used = {0, 1};
+      discovery.usedChange = {0};
       final state = await service.load();
       expect(state.nextIndex, 5);
+      expect(state.nextChangeIndex, 3);
+    });
+
+    test('a legacy state file without nextChangeIndex loads with change index 0', () async {
+      await seedState(nextIndex: 4);
+      final state = await service.load();
+      expect(state.nextIndex, 4);
+      expect(state.nextChangeIndex, 0);
     });
 
     test('prunes a pending spend once nullifiers are spent and change arrived', () async {
-      discovery.used = {0, 1};
+      discovery.used = {0};
+      discovery.usedChange = {0};
       utxoService.result = WormholeUtxoResult(
         utxos: [_utxo(500, nullifierHex: '0xc')],
-        totalReceivedPlanck: wormholePlanckFromScaled(500),
-        totalSpentPlanck: BigInt.zero,
+        totalReceivedToken: wormholeTokenFromScaled(500),
+        changeReceivedToken: BigInt.zero,
+        totalSpentToken: BigInt.zero,
       );
       await seedState(
-        nextIndex: 2,
+        nextIndex: 1,
+        nextChangeIndex: 1,
         pendingSpends: [
           PendingSpend(
             // '0xa' is absent from the unspent set (spent on-chain) and the
-            // change address (index 1) is discovered: fully confirmed.
+            // change address (change index 0) is discovered: fully confirmed.
             nullifiers: ['0xa'],
-            changeAddress: addressAt(1),
-            changeAmountPlanck: wormholePlanckFromScaled(100),
+            changeAddress: changeAddressAt(0),
+            changeAmountToken: wormholeTokenFromScaled(100),
             createdAtMs: DateTime.now().millisecondsSinceEpoch,
           ),
         ],
       );
 
       final state = await service.load();
-      expect(state.pendingChangePlanck, BigInt.zero);
+      expect(state.pendingChangeToken, BigInt.zero);
       expect(state.utxos.map((u) => u.nullifierHex), ['0xc']);
       expect((await readStateFile())['pendingSpends'], isEmpty);
     });
 
     test('keeps an unconfirmed pending spend, hides its inputs and counts its change', () async {
       discovery.used = {0};
-      final pendingChange = wormholePlanckFromScaled(70);
+      final pendingChange = wormholeTokenFromScaled(70);
       utxoService.result = WormholeUtxoResult(
         // '0xb' is still reported unspent by the indexer (the spend hasn't
         // been indexed yet) so the record must be kept and '0xb' hidden.
@@ -232,16 +289,17 @@ void main() {
           _utxo(300, nullifierHex: '0xb'),
           _utxo(500, nullifierHex: '0xc'),
         ],
-        totalReceivedPlanck: wormholePlanckFromScaled(800),
-        totalSpentPlanck: BigInt.zero,
+        totalReceivedToken: wormholeTokenFromScaled(800),
+        changeReceivedToken: BigInt.zero,
+        totalSpentToken: BigInt.zero,
       );
       await seedState(
         nextIndex: 1,
         pendingSpends: [
           PendingSpend(
             nullifiers: ['0xb'],
-            changeAddress: addressAt(1),
-            changeAmountPlanck: pendingChange,
+            changeAddress: changeAddressAt(0),
+            changeAmountToken: pendingChange,
             createdAtMs: DateTime.now().millisecondsSinceEpoch,
           ),
         ],
@@ -249,8 +307,8 @@ void main() {
 
       final state = await service.load();
       expect(state.utxos.map((u) => u.nullifierHex), ['0xc']);
-      expect(state.pendingChangePlanck, pendingChange);
-      expect(state.balance, wormholePlanckFromScaled(500) + pendingChange);
+      expect(state.pendingChangeToken, pendingChange);
+      expect(state.balance, wormholeTokenFromScaled(500) + pendingChange);
       expect(((await readStateFile())['pendingSpends'] as List).length, 1);
     });
 
@@ -258,16 +316,17 @@ void main() {
       discovery.used = {0};
       utxoService.result = WormholeUtxoResult(
         utxos: [_utxo(300, nullifierHex: '0xb')],
-        totalReceivedPlanck: wormholePlanckFromScaled(300),
-        totalSpentPlanck: BigInt.zero,
+        totalReceivedToken: wormholeTokenFromScaled(300),
+        changeReceivedToken: BigInt.zero,
+        totalSpentToken: BigInt.zero,
       );
       await seedState(
         nextIndex: 1,
         pendingSpends: [
           PendingSpend(
             nullifiers: ['0xb'],
-            changeAddress: addressAt(1),
-            changeAmountPlanck: wormholePlanckFromScaled(10),
+            changeAddress: changeAddressAt(0),
+            changeAmountToken: wormholeTokenFromScaled(10),
             createdAtMs: DateTime.now().subtract(const Duration(hours: 2)).millisecondsSinceEpoch,
           ),
         ],
@@ -276,7 +335,7 @@ void main() {
       final state = await service.load();
       // Record dropped: input spendable again, change no longer counted.
       expect(state.utxos.map((u) => u.nullifierHex), ['0xb']);
-      expect(state.pendingChangePlanck, BigInt.zero);
+      expect(state.pendingChangeToken, BigInt.zero);
       expect((await readStateFile())['pendingSpends'], isEmpty);
     });
   });
@@ -284,43 +343,46 @@ void main() {
   group('send bookkeeping', () {
     final recipient = Address(prefix: 189, pubkey: Uint8List.fromList(List.filled(32, 0x22))).encode();
 
-    test('records nullifiers and change, and bumps nextIndex, per submitted batch', () async {
+    test('records nullifiers and change, and bumps nextChangeIndex, per submitted batch', () async {
       await seedState(nextIndex: 1);
-      final plan = selectWormholeInputs(utxos: [_utxo(1000)], amountPlanck: wormholePlanckFromScaled(400));
-      expect(plan.changePlanck, greaterThan(BigInt.zero));
+      final plan = selectWormholeInputs(utxos: [_utxo(1000)], amountToken: wormholeTokenFromScaled(400));
+      expect(plan.changeToken, greaterThan(BigInt.zero));
 
       await service.send(plan: plan, recipientAddress: recipient, circuitBinsDir: '/unused', onProgress: (_) {});
 
       final json = await readStateFile();
-      expect(json['nextIndex'], 2);
+      // The receive sequence is untouched; change consumed change index 0.
+      expect(json['nextIndex'], 1);
+      expect(json['nextChangeIndex'], 1);
       final pending = (json['pendingSpends'] as List).cast<Map<String, dynamic>>();
       expect(pending.length, 1);
       expect(pending[0]['nullifiers'], ['0xsubmitted_0_400']);
-      expect(pending[0]['changeAddress'], addressAt(1));
-      expect(BigInt.parse(pending[0]['changeAmountPlanck'] as String), plan.changePlanck);
+      expect(pending[0]['changeAddress'], changeAddressAt(0));
+      expect(BigInt.parse(pending[0]['changeAmountToken'] as String), plan.changeToken);
 
       // Leaf spend wiring: full net split between recipient and change address.
       final spend = sendService.capturedBatches![0][0];
       expect(spend.exitAccount1, Address.decode(recipient).pubkey);
       expect(spend.outputAmount1, 400);
-      expect(spend.exitAccount2, Address.decode(addressAt(1)).pubkey);
-      expect(spend.outputAmount2, wormholeScaledFromPlanck(plan.changePlanck));
+      expect(spend.exitAccount2, Address.decode(changeAddressAt(0)).pubkey);
+      expect(spend.outputAmount2, wormholeScaledFromToken(plan.changeToken));
     });
 
     test('does not allocate a change address for an exact-max send', () async {
       await seedState(nextIndex: 1);
       final utxos = [_utxo(1000)];
-      final plan = selectWormholeInputs(utxos: utxos, amountPlanck: wormholeMaxSendable(utxos));
-      expect(plan.changePlanck, BigInt.zero);
+      final plan = selectWormholeInputs(utxos: utxos, amountToken: wormholeMaxSendable(utxos));
+      expect(plan.changeToken, BigInt.zero);
 
       await service.send(plan: plan, recipientAddress: recipient, circuitBinsDir: '/unused', onProgress: (_) {});
 
       final json = await readStateFile();
       expect(json['nextIndex'], 1);
+      expect(json['nextChangeIndex'], 0);
       final pending = (json['pendingSpends'] as List).cast<Map<String, dynamic>>();
       expect(pending.length, 1);
       expect(pending[0]['changeAddress'], isNull);
-      expect(BigInt.parse(pending[0]['changeAmountPlanck'] as String), BigInt.zero);
+      expect(BigInt.parse(pending[0]['changeAmountToken'] as String), BigInt.zero);
       expect(sendService.capturedBatches![0][0].exitAccount2, isNull);
     });
   });
@@ -339,7 +401,7 @@ void main() {
 
     test('send re-derives input secrets from the owner index and zeroizes them afterwards', () async {
       await seedState(nextIndex: 1);
-      final plan = selectWormholeInputs(utxos: [_utxo(1000)], amountPlanck: wormholePlanckFromScaled(400));
+      final plan = selectWormholeInputs(utxos: [_utxo(1000)], amountToken: wormholeTokenFromScaled(400));
 
       await service.send(plan: plan, recipientAddress: recipient, circuitBinsDir: '/unused', onProgress: (_) {});
 
@@ -350,9 +412,21 @@ void main() {
       expect(liveSecret.every((b) => b == 0), isTrue);
     });
 
+    test('send re-derives change-branch secrets for change-owned inputs', () async {
+      await seedState(nextIndex: 1);
+      final plan = selectWormholeInputs(
+        utxos: [_utxo(1000, isChange: true)],
+        amountToken: wormholeTokenFromScaled(400),
+      );
+
+      await service.send(plan: plan, recipientAddress: recipient, circuitBinsDir: '/unused', onProgress: (_) {});
+
+      expect(sendService.capturedSecretCopies.single, hex.decode(changeSecretAt(0).replaceFirst('0x', '')));
+    });
+
     test('send zeroizes secrets even when the send fails', () async {
       await seedState(nextIndex: 1);
-      final plan = selectWormholeInputs(utxos: [_utxo(1000)], amountPlanck: wormholePlanckFromScaled(400));
+      final plan = selectWormholeInputs(utxos: [_utxo(1000)], amountToken: wormholeTokenFromScaled(400));
       sendService.error = StateError('boom');
 
       await expectLater(
@@ -370,7 +444,7 @@ void main() {
 
     test('a batch submitted after logout cannot recreate cleared state', () async {
       await seedState(nextIndex: 1);
-      final plan = selectWormholeInputs(utxos: [_utxo(1000)], amountPlanck: wormholePlanckFromScaled(400));
+      final plan = selectWormholeInputs(utxos: [_utxo(1000)], amountToken: wormholeTokenFromScaled(400));
       sendService.gate = Completer<void>();
       final sendFuture = service.send(
         plan: plan,
@@ -405,7 +479,7 @@ void main() {
 
     test('load and send refuse to start after dispose', () async {
       await seedState(nextIndex: 1);
-      final plan = selectWormholeInputs(utxos: [_utxo(1000)], amountPlanck: wormholePlanckFromScaled(400));
+      final plan = selectWormholeInputs(utxos: [_utxo(1000)], amountToken: wormholeTokenFromScaled(400));
       await service.dispose();
       await expectLater(service.load(), throwsA(isA<StateError>()));
       await expectLater(
@@ -416,10 +490,10 @@ void main() {
 
     test('two overlapping sends allocate distinct change indices', () async {
       await seedState(nextIndex: 1);
-      final plan1 = selectWormholeInputs(utxos: [_utxo(1000)], amountPlanck: wormholePlanckFromScaled(400));
-      final plan2 = selectWormholeInputs(utxos: [_utxo(900)], amountPlanck: wormholePlanckFromScaled(300));
-      expect(plan1.changePlanck, greaterThan(BigInt.zero));
-      expect(plan2.changePlanck, greaterThan(BigInt.zero));
+      final plan1 = selectWormholeInputs(utxos: [_utxo(1000)], amountToken: wormholeTokenFromScaled(400));
+      final plan2 = selectWormholeInputs(utxos: [_utxo(900)], amountToken: wormholeTokenFromScaled(300));
+      expect(plan1.changeToken, greaterThan(BigInt.zero));
+      expect(plan2.changeToken, greaterThan(BigInt.zero));
 
       sendService.gate = Completer<void>();
       final f1 = service.send(plan: plan1, recipientAddress: recipient, circuitBinsDir: '/unused', onProgress: (_) {});
@@ -431,18 +505,21 @@ void main() {
       expect(sendService.capturedBatchesList.length, 2);
       final change1 = sendService.capturedBatchesList[0][0][0].exitAccount2;
       final change2 = sendService.capturedBatchesList[1][0][0].exitAccount2;
-      expect(change1, Address.decode(addressAt(1)).pubkey);
-      expect(change2, Address.decode(addressAt(2)).pubkey);
+      expect(change1, Address.decode(changeAddressAt(0)).pubkey);
+      expect(change2, Address.decode(changeAddressAt(1)).pubkey);
     });
   });
 
   group('ownsAddress', () {
-    test('recognizes every derived index up to and including nextIndex', () async {
-      await seedState(nextIndex: 2);
+    test('recognizes both branches up to and including their next indices', () async {
+      await seedState(nextIndex: 2, nextChangeIndex: 1);
       expect(await service.ownsAddress(addressAt(0)), isTrue);
       expect(await service.ownsAddress(addressAt(1)), isTrue);
       expect(await service.ownsAddress(addressAt(2)), isTrue);
       expect(await service.ownsAddress(addressAt(9)), isFalse);
+      expect(await service.ownsAddress(changeAddressAt(0)), isTrue);
+      expect(await service.ownsAddress(changeAddressAt(1)), isTrue);
+      expect(await service.ownsAddress(changeAddressAt(9)), isFalse);
       final other = Address(prefix: 189, pubkey: Uint8List.fromList(List.filled(32, 0x33))).encode();
       expect(await service.ownsAddress(other), isFalse);
     });
@@ -453,7 +530,7 @@ void main() {
       final original = PendingSpend(
         nullifiers: ['0xabc', '0xdef'],
         changeAddress: 'addr_3',
-        changeAmountPlanck: BigInt.from(123456),
+        changeAmountToken: BigInt.from(123456),
         createdAtMs: 1700000000000,
       );
       final json = original.toJson();
@@ -461,7 +538,7 @@ void main() {
 
       expect(restored.nullifiers, original.nullifiers);
       expect(restored.changeAddress, original.changeAddress);
-      expect(restored.changeAmountPlanck, original.changeAmountPlanck);
+      expect(restored.changeAmountToken, original.changeAmountToken);
       expect(restored.createdAtMs, original.createdAtMs);
     });
 
@@ -469,54 +546,68 @@ void main() {
       final original = PendingSpend(
         nullifiers: ['0x01'],
         changeAddress: null,
-        changeAmountPlanck: BigInt.zero,
+        changeAmountToken: BigInt.zero,
         createdAtMs: 1700000000000,
       );
       final json = original.toJson();
       final restored = PendingSpend.fromJson(json);
 
       expect(restored.changeAddress, isNull);
-      expect(restored.changeAmountPlanck, BigInt.zero);
+      expect(restored.changeAmountToken, BigInt.zero);
+    });
+
+    test('loads a legacy file written with the changeAmountPlanck key', () {
+      final restored = PendingSpend.fromJson({
+        'nullifiers': ['0x01'],
+        'changeAddress': 'addr_1',
+        'changeAmountPlanck': '123456',
+        'createdAtMs': 1700000000000,
+      });
+
+      expect(restored.changeAmountToken, BigInt.from(123456));
     });
   });
 
   group('EncryptedAccountState', () {
+    EncryptedAccountState stateWith({
+      List<WormholeUtxo> utxos = const [],
+      BigInt? pendingChangeToken,
+      BigInt? totalReceivedToken,
+      BigInt? changeReceivedToken,
+      BigInt? totalSpentToken,
+    }) => EncryptedAccountState(
+      utxos: utxos,
+      pendingChangeToken: pendingChangeToken ?? BigInt.zero,
+      totalReceivedToken: totalReceivedToken ?? BigInt.zero,
+      changeReceivedToken: changeReceivedToken ?? BigInt.zero,
+      totalSpentToken: totalSpentToken ?? BigInt.zero,
+      nextIndex: 2,
+      nextChangeIndex: 1,
+    );
+
     test('balance includes pending change', () {
-      final state = EncryptedAccountState(
-        utxos: [_utxo(100), _utxo(200)],
-        pendingChangePlanck: wormholePlanckFromScaled(50),
-        totalReceivedPlanck: wormholePlanckFromScaled(500),
-        totalSpentPlanck: wormholePlanckFromScaled(150),
-        nextIndex: 2,
-      );
-      final utxoSum = wormholePlanckFromScaled(100) + wormholePlanckFromScaled(200);
-      expect(state.balance, utxoSum + wormholePlanckFromScaled(50));
+      final state = stateWith(utxos: [_utxo(100), _utxo(200)], pendingChangeToken: wormholeTokenFromScaled(50));
+      final utxoSum = wormholeTokenFromScaled(100) + wormholeTokenFromScaled(200);
+      expect(state.balance, utxoSum + wormholeTokenFromScaled(50));
     });
 
     test('maxSendable excludes pending change', () {
       final utxos = [_utxo(100), _utxo(200)];
-      final state = EncryptedAccountState(
-        utxos: utxos,
-        pendingChangePlanck: wormholePlanckFromScaled(50),
-        totalReceivedPlanck: wormholePlanckFromScaled(500),
-        totalSpentPlanck: wormholePlanckFromScaled(150),
-        nextIndex: 2,
-      );
+      final state = stateWith(utxos: utxos, pendingChangeToken: wormholeTokenFromScaled(50));
       expect(state.maxSendable, wormholeMaxSendable(utxos));
     });
 
-    test('totalReceivedPlanck and totalSpentPlanck are stored', () {
-      final received = wormholePlanckFromScaled(1000);
-      final spent = wormholePlanckFromScaled(300);
-      final state = EncryptedAccountState(
-        utxos: [],
-        pendingChangePlanck: BigInt.zero,
-        totalReceivedPlanck: received,
-        totalSpentPlanck: spent,
-        nextIndex: 5,
+    test('incomingToken excludes change received and balances against spent', () {
+      // Received 1000 externally + 300 as returning change, 400 nullified:
+      // the indexed balance identity is incoming + change - spent.
+      final state = stateWith(
+        utxos: [_utxo(900)],
+        totalReceivedToken: wormholeTokenFromScaled(1300),
+        changeReceivedToken: wormholeTokenFromScaled(300),
+        totalSpentToken: wormholeTokenFromScaled(400),
       );
-      expect(state.totalReceivedPlanck, received);
-      expect(state.totalSpentPlanck, spent);
+      expect(state.incomingToken, wormholeTokenFromScaled(1000));
+      expect(state.incomingToken + state.changeReceivedToken - state.totalSpentToken, state.balance);
     });
   });
 
@@ -525,12 +616,14 @@ void main() {
       final utxos = [_utxo(100), _utxo(200)];
       final result = WormholeUtxoResult(
         utxos: utxos,
-        totalReceivedPlanck: wormholePlanckFromScaled(500),
-        totalSpentPlanck: wormholePlanckFromScaled(200),
+        totalReceivedToken: wormholeTokenFromScaled(500),
+        changeReceivedToken: wormholeTokenFromScaled(120),
+        totalSpentToken: wormholeTokenFromScaled(200),
       );
       expect(result.utxos.length, 2);
-      expect(result.totalReceivedPlanck, wormholePlanckFromScaled(500));
-      expect(result.totalSpentPlanck, wormholePlanckFromScaled(200));
+      expect(result.totalReceivedToken, wormholeTokenFromScaled(500));
+      expect(result.changeReceivedToken, wormholeTokenFromScaled(120));
+      expect(result.totalSpentToken, wormholeTokenFromScaled(200));
     });
   });
 }

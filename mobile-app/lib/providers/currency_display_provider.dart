@@ -172,10 +172,10 @@ class SelectedFiatCurrencyNotifier extends StateNotifier<FiatCurrency> {
 // Currency flip provider
 // ---------------------------------------------------------------------------
 
-/// Whether fiat is shown as the primary (large) display and QUAN secondary.
+/// Whether fiat is shown as the primary (large) display and the token secondary.
 ///
-/// false → primary = QUAN,  secondary = fiat  (default)
-/// true  → primary = fiat,  secondary = QUAN
+/// false → primary = token,  secondary = fiat  (default)
+/// true  → primary = fiat,  secondary = token
 ///
 /// To toggle from the swap button:
 ///   ref.read(isCurrencyFlippedProvider.notifier).toggle();
@@ -265,10 +265,10 @@ final balanceDisplayProvider = Provider<AsyncValue<CurrencyDisplayState>>((ref) 
         xRate,
         fmt,
         _hiddenAmountText,
-        quanDecimals: 3,
+        tokenDecimals: 3,
         isFlipped: isFlipped,
         isHidden: isHidden,
-        withQuanSymbol: false,
+        withTokenSymbol: false,
         localeConfig: localeConfig,
       );
       return AsyncValue.data(data);
@@ -285,8 +285,8 @@ final txAmountDisplayProvider =
       CurrencyDisplayState Function(
         BigInt, {
         required bool isSend,
-        int quanDecimals,
-        bool withQuanSymbol,
+        int tokenDecimals,
+        bool withTokenSymbol,
         bool withSignPrefix,
         String? customHiddenText,
       })
@@ -301,9 +301,9 @@ final txAmountDisplayProvider =
       return (
         BigInt amount, {
         required bool isSend,
-        bool withQuanSymbol = true,
+        bool withTokenSymbol = true,
         bool withSignPrefix = true,
-        int quanDecimals = 2,
+        int tokenDecimals = 2,
         String? customHiddenText,
       }) {
         final hiddenText = customHiddenText ?? _hiddenAmountText;
@@ -315,9 +315,9 @@ final txAmountDisplayProvider =
           xRate,
           fmt,
           hiddenText,
-          quanDecimals: quanDecimals,
+          tokenDecimals: tokenDecimals,
           isHidden: isHidden,
-          withQuanSymbol: withQuanSymbol,
+          withTokenSymbol: withTokenSymbol,
           isFlipped: isFlipped,
           localeConfig: localeConfig,
         );
@@ -326,7 +326,7 @@ final txAmountDisplayProvider =
           data = data.copyWith(primaryAmount: withSignPrefix ? '$prefix${data.primaryAmount}' : data.primaryAmount);
         }
 
-        if (!withQuanSymbol && isFlipped && !isHidden) {
+        if (!withTokenSymbol && isFlipped && !isHidden) {
           data = data.copyWith(secondaryAmount: '${data.secondaryAmount} ${AppConstants.tokenSymbol}');
         }
 
@@ -347,7 +347,7 @@ String _toFiatNumeric(
   ExchangeRateService xRate, {
   required LocaleNumberConfig localeConfig,
 }) {
-  final fiatValue = xRate.quanRawToFiat(rawBalance, fiat, AppConstants.decimals);
+  final fiatValue = xRate.tokenToFiat(rawBalance, fiat, AppConstants.decimals);
   final canonical = fiatValue.toStringAsFixed(fiat.decimals);
 
   return localeConfig.localize(canonical);
@@ -359,18 +359,18 @@ CurrencyDisplayState _toFiatDisplayState(
   ExchangeRateService xRate,
   NumberFormattingService fmt,
   String hiddenText, {
-  required int quanDecimals,
+  required int tokenDecimals,
   required bool isFlipped,
   required bool isHidden,
-  required bool withQuanSymbol,
+  required bool withTokenSymbol,
   required LocaleNumberConfig localeConfig,
 }) {
-  final quanFormatted = fmt.formatBalance(amount, smartDecimals: quanDecimals, addSymbol: withQuanSymbol);
+  final tokenFormatted = fmt.formatBalance(amount, smartDecimals: tokenDecimals, addSymbol: withTokenSymbol);
   final fiatFormatted = selectedFiat.format(_toFiatNumeric(amount, selectedFiat, xRate, localeConfig: localeConfig));
 
   CurrencyDisplayState data = CurrencyDisplayState(
-    primaryAmount: isFlipped ? fiatFormatted : quanFormatted,
-    secondaryAmount: isFlipped ? quanFormatted : fiatFormatted,
+    primaryAmount: isFlipped ? fiatFormatted : tokenFormatted,
+    secondaryAmount: isFlipped ? tokenFormatted : fiatFormatted,
     isFlipped: isFlipped,
     selectedFiat: selectedFiat,
   );

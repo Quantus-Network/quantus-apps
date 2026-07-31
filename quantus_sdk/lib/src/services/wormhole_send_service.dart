@@ -276,7 +276,7 @@ class WormholeSendService {
             transfer: transfer,
             secret: secretBytes,
             exitAccount1: destinationBytes,
-            outputAmount1: wormholeNetScaled(wormholeScaledFromPlanck(transfer.amount)),
+            outputAmount1: wormholeNetScaled(wormholeScaledFromToken(transfer.amount)),
           ),
       ];
       final batches = [
@@ -397,7 +397,7 @@ class WormholeSendService {
       return ClaimResult(
         totalWithdrawn: submitted.fold(
           BigInt.zero,
-          (sum, b) => sum + b.fold(BigInt.zero, (s, spend) => s + wormholePlanckFromScaled(spend.outputAmount1)),
+          (sum, b) => sum + b.fold(BigInt.zero, (s, spend) => s + wormholeTokenFromScaled(spend.outputAmount1)),
         ),
         transfersProcessed: submitted.fold(0, (sum, b) => sum + b.length),
         batchesSubmitted: txHashes.length,
@@ -424,7 +424,7 @@ class WormholeSendService {
   }
 
   /// Generates a single leaf proof and writes it (and its nullifier hex) to
-  /// the output buffers. Returns the planck amount paid to exit slot 1.
+  /// the output buffers. Returns the token amount paid to exit slot 1.
   /// [onComplete] fires once the proof is written so callers can update
   /// progress per-leaf.
   Future<BigInt> _generateLeafProof({
@@ -501,9 +501,9 @@ class WormholeSendService {
     proofBuffer[outputIndex] = proof.proofBytes;
     nullifierBuffer[outputIndex] = '0x${hex.encode(proof.nullifier)}';
     onComplete?.call();
-    // On-chain dispatch transfers `outputAmount * scaleFactor` planck to
+    // On-chain dispatch transfers `outputAmount * scaleFactor` token units to
     // each exit account; slot 1 is the recipient's exact contribution.
-    return wormholePlanckFromScaled(spend.outputAmount1);
+    return wormholeTokenFromScaled(spend.outputAmount1);
   }
 
   /// Submits an unsigned extrinsic via `author_submitExtrinsic` and returns the

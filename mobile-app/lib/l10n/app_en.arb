@@ -261,9 +261,14 @@
     "@homeActivityEmptyTitle": {
       "description": "Empty state title in home activity section"
     },
-    "homeActivityEmptyMessage": "Your activity will appear here once you send or receive QUAN.",
+    "homeActivityEmptyMessage": "Your activity will appear here once you send or receive {tokenSymbol}.",
     "@homeActivityEmptyMessage": {
-      "description": "Empty state message in home activity section"
+      "description": "Empty state message in home activity section",
+      "placeholders": {
+        "tokenSymbol": {
+          "type": "String"
+        }
+      }
     },
 
     "accountsSheetTitle": "Accounts",
@@ -2249,9 +2254,14 @@
     "@settingsMiningStatRedeemable": {
       "description": "Redeemable rewards stat label"
     },
-    "settingsMiningQuanEarned": "QUAN EARNED",
-    "@settingsMiningQuanEarned": {
-      "description": "QUAN earned stat label"
+    "settingsMiningTokenEarned": "{tokenSymbol} EARNED",
+    "@settingsMiningTokenEarned": {
+      "description": "Token earned stat label",
+      "placeholders": {
+        "tokenSymbol": {
+          "type": "String"
+        }
+      }
     },
     "settingsMiningViewTelemetry": "View Telemetry ↗",
     "@settingsMiningViewTelemetry": {
@@ -2424,7 +2434,7 @@
     "@swapGetQuote": {
       "description": "Get quote button on swap screen"
     },
-    "swapRateLabel": "1 QUAN = {amount} {symbol}",
+    "swapRateLabel": "1 {tokenSymbol} = {amount} {symbol}",
     "@swapRateLabel": {
       "description": "Exchange rate display",
       "placeholders": {
@@ -2433,14 +2443,20 @@
         },
         "symbol": {
           "type": "String"
+        },
+        "tokenSymbol": {
+          "type": "String"
         }
       }
     },
-    "swapRateZero": "1 QUAN = 0 {symbol}",
+    "swapRateZero": "1 {tokenSymbol} = 0 {symbol}",
     "@swapRateZero": {
       "description": "Exchange rate when amount is zero",
       "placeholders": {
         "symbol": {
+          "type": "String"
+        },
+        "tokenSymbol": {
           "type": "String"
         }
       }
@@ -2539,11 +2555,14 @@
     "@swapDepositCompleteTitle": {
       "description": "Title when swap is complete"
     },
-    "swapDepositCompleteBody": "Your swap for {amount} QUAN is complete.",
+    "swapDepositCompleteBody": "Your swap for {amount} {tokenSymbol} is complete.",
     "@swapDepositCompleteBody": {
       "description": "Body when swap is complete",
       "placeholders": {
         "amount": {
+          "type": "String"
+        },
+        "tokenSymbol": {
           "type": "String"
         }
       }
@@ -2767,13 +2786,23 @@
     "@encryptedSendFeeLabel": {
       "description": "Fee label for encrypted sends (wormhole volume fee)"
     },
-    "encryptedSendAmountStep": "Use steps of 0.01 QUAN",
+    "encryptedSendAmountStep": "Use steps of 0.01 {tokenSymbol}",
     "@encryptedSendAmountStep": {
-      "description": "Shown when an encrypted send amount is not a multiple of 0.01 QUAN"
+      "description": "Shown when an encrypted send amount is not a multiple of 0.01 token",
+      "placeholders": {
+        "tokenSymbol": {
+          "type": "String"
+        }
+      }
     },
-    "encryptedSendMinimum": "Encrypted sends must move at least 0.1 QUAN",
+    "encryptedSendMinimum": "Encrypted sends must move at least 0.1 {tokenSymbol}",
     "@encryptedSendMinimum": {
-      "description": "Shown when an encrypted send falls below the chain's minimum exit amount"
+      "description": "Shown when an encrypted send falls below the chain's minimum exit amount",
+      "placeholders": {
+        "tokenSymbol": {
+          "type": "String"
+        }
+      }
     },
     "encryptedSendProgressTitle": "Private Send",
     "@encryptedSendProgressTitle": {

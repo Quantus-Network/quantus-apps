@@ -93,7 +93,7 @@ class MultisigProposalCreatedEvent extends TransactionEvent {
     }
 
     final block = jsonMapOrNull(created['block']);
-    final feeRaw = created['fee'] ?? proposalJson?['creation_network_fee'] ?? proposalJson?['creationNetworkFee'];
+    final feeToken = created['fee'] ?? proposalJson?['creation_network_fee'] ?? proposalJson?['creationNetworkFee'];
     final signerCount = proposal?.signerCount ?? _signerCountFromProposalJson(proposalJson);
     final palletFee =
         burnedPalletFeeOverride ??
@@ -108,7 +108,7 @@ class MultisigProposalCreatedEvent extends TransactionEvent {
       amount: amount,
       palletFee: palletFee,
       deposit: bigIntFromJson(created['deposit']),
-      fee: feeRaw != null ? bigIntFromJson(feeRaw) : null,
+      fee: feeToken != null ? bigIntFromJson(feeToken) : null,
       timestamp: accountEventTimestamp ?? dateTimeFromJson(created['timestamp']),
       blockNumber: blockHeightFromJsonMap(block),
       blockHash: blockHashFromJsonMap(block),

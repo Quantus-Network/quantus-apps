@@ -92,10 +92,10 @@ void main() {
     test('wormhole derivation known values', () {
       const mnemonic =
           'orchard answer curve patient visual flower maze noise retreat penalty cage small earth domain scan pitch bottom crunch theme club client swap slice raven';
-      const expectedPreimage = 'e4be02a913727c01c1a155fd6e807b7c1a4a13abf37a352b7c9ed4412d127fc3';
+      const expectedPreimage = '0xe4be02a913727c01c1a155fd6e807b7c1a4a13abf37a352b7c9ed4412d127fc3';
 
-      final result = HdWalletService().deriveWormhole(mnemonic);
-      expect(hex.encode(result.firstHash), expectedPreimage);
+      final result = HdWalletService().deriveWormholeKeyPair(mnemonic: mnemonic);
+      expect(result.rewardsPreimageHex.toLowerCase(), expectedPreimage.toLowerCase());
 
       final addressBytes = ss58ToAccountId(s: result.address);
       // Same account bytes as '5H8AGzwKPtKMfKKuKYCoAFApCoy4EVewCqc9k6GrSgqHoaXm'

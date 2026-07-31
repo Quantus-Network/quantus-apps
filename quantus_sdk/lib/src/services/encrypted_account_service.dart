@@ -19,37 +19,52 @@ typedef MnemonicGetter = Future<String?> Function();
 /// wormhole addresses, plus change that has been submitted but not yet indexed.
 class EncryptedAccountState {
   final List<WormholeUtxo> utxos;
-  final BigInt pendingChangePlanck;
-  final BigInt totalReceivedPlanck;
-  final BigInt totalSpentPlanck;
+  final BigInt pendingChangeToken;
+  final BigInt totalReceivedToken;
 
-  /// Next unused address index — shown as the receive address and allocated
-  /// as the change address of the next send.
+  /// Slice of [totalReceivedToken] that arrived on change-branch addresses.
+  final BigInt changeReceivedToken;
+  final BigInt totalSpentToken;
+
+  /// Next unused external index — shown as the receive address.
   final int nextIndex;
+
+  /// Next unused change-branch index — allocated as the change address of the
+  /// next send.
+  final int nextChangeIndex;
 
   const EncryptedAccountState({
     required this.utxos,
-    required this.pendingChangePlanck,
-    required this.totalReceivedPlanck,
-    required this.totalSpentPlanck,
+    required this.pendingChangeToken,
+    required this.totalReceivedToken,
+    required this.changeReceivedToken,
+    required this.totalSpentToken,
     required this.nextIndex,
+    required this.nextChangeIndex,
   });
 
-  BigInt get balance => utxos.fold(BigInt.zero, (sum, u) => sum + u.amount) + pendingChangePlanck;
+  BigInt get balance => utxos.fold(BigInt.zero, (sum, u) => sum + u.amount) + pendingChangeToken;
+
+  /// Externally received funds only: change outputs return to the change
+  /// branch and are excluded, so the indexed (non-pending) balance equals
+  /// `incomingToken + changeReceivedToken - totalSpentToken`.
+  BigInt get incomingToken => totalReceivedToken - changeReceivedToken;
 
   /// Max amount sendable right now (post volume fee, excluding pending change).
   BigInt get maxSendable => wormholeMaxSendable(utxos);
 }
 
-/// An encrypted account: one linear HD sequence of wormhole addresses
-/// (`m/44'/189189189'/0'/0'/n'`) treated as a single pool of funds.
-///
-/// Receive and change share the sequence — the next unused index is shown for
-/// receiving and consumed as the fresh change address of the next send, so a
-/// gap-limit scan (same algorithm as transparent accounts) rediscovers all
-/// funds from the mnemonic alone. Spent inputs are excluded via on-chain
-/// nullifiers; in-flight sends are bridged by locally persisted pending-spend
-/// records until the indexer catches up.
+/// An encrypted account: two HD sequences of wormhole addresses treated as a
+/// single pool of funds — an external branch (`m/44'/189189189'/0'/0'/n'`)
+/// whose next unused index is shown for receiving, and a change branch
+/// (`m/44'/189189189'/0'/1'/n'`) whose next unused index is consumed as the
+/// fresh change address of each send. Both branches are gap-limit scanned
+/// (same algorithm as transparent accounts) so all funds are rediscovered
+/// from the mnemonic alone, and keeping change off the external branch lets
+/// externally received funds be reported separately from returning change.
+/// Spent inputs are excluded via on-chain nullifiers; in-flight sends are
+/// bridged by locally persisted pending-spend records until the indexer
+/// catches up.
 ///
 /// Secret hygiene (M11): wormhole key pairs are never cached — every use
 /// re-derives from the mnemonic and the result is dropped as soon as the
@@ -138,11 +153,13 @@ class EncryptedAccountService {
     return mnemonic;
   }
 
-  /// Derives the key pair at [index] on demand. Never cached (M11): the
-  /// returned pair carries the spendable secret as an immutable String, so
-  /// callers must use it immediately and let it go out of scope.
-  WormholeKeyPair _deriveKeyPair(String mnemonic, int index) =>
-      _hdWalletService.deriveWormholeKeyPair(mnemonic: mnemonic, index: index);
+  /// Derives the key pair at [index] on the external or change branch on
+  /// demand. Never cached (M11): the returned pair carries the spendable
+  /// secret as an immutable String, so callers must use it immediately and
+  /// let it go out of scope.
+  WormholeKeyPair _deriveKeyPair(String mnemonic, int index, {bool isChange = false}) => isChange
+      ? _hdWalletService.deriveWormholeChangeAddressKeyPair(mnemonic: mnemonic, index: index)
+      : _hdWalletService.deriveWormholeKeyPair(mnemonic: mnemonic, index: index);
 
   Future<WormholeKeyPair> keyPairAt(int index) async => _deriveKeyPair(await _mnemonic(), index);
 
@@ -151,13 +168,17 @@ class EncryptedAccountService {
   Future<WormholeKeyPair> receiveKeyPair() async => keyPairAt((await _readStateLocked()).nextIndex);
 
   /// Whether [address] is one of this wallet's derived wormhole addresses —
-  /// indices `0..nextIndex` cover every address ever shown for receiving or
-  /// allocated for change. Used to block self-sends from the encrypted account.
+  /// external indices `0..nextIndex` and change indices `0..nextChangeIndex`
+  /// cover every address ever shown for receiving or allocated for change.
+  /// Used to block self-sends from the encrypted account.
   Future<bool> ownsAddress(String address) async {
-    final nextIndex = (await _readStateLocked()).nextIndex;
+    final state = await _readStateLocked();
     final mnemonic = await _mnemonic();
-    for (int i = 0; i <= nextIndex; i++) {
+    for (int i = 0; i <= state.nextIndex; i++) {
       if (_deriveKeyPair(mnemonic, i).address == address) return true;
+    }
+    for (int i = 0; i <= state.nextChangeIndex; i++) {
+      if (_deriveKeyPair(mnemonic, i, isChange: true).address == address) return true;
     }
     return false;
   }
@@ -172,7 +193,10 @@ class EncryptedAccountService {
     // the secret half of each pair is discarded immediately).
     final state = await _readStateLocked();
     final mnemonic = await _mnemonic();
-    final addresses = [for (int i = 0; i <= state.nextIndex; i++) _deriveKeyPair(mnemonic, i).address];
+    final addresses = [
+      for (int i = 0; i <= state.nextIndex; i++) _deriveKeyPair(mnemonic, i).address,
+      for (int i = 0; i <= state.nextChangeIndex; i++) _deriveKeyPair(mnemonic, i, isChange: true).address,
+    ];
     if (addresses.isNotEmpty) {
       await WormholeUtxoService.clearCachesForAddresses(addresses);
     }
@@ -194,19 +218,26 @@ class EncryptedAccountService {
     final sw = Stopwatch()..start();
     final mnemonic = await _mnemonic();
 
-    final usedIndices = await _discoveryService.discoverUsedIndices(
-      addressAt: (i) => _deriveKeyPair(mnemonic, i).address,
-    );
-    _log('Discovery: used indices $usedIndices');
+    final [usedIndices, usedChangeIndices] = await Future.wait([
+      _discoveryService.discoverUsedIndices(addressAt: (i) => _deriveKeyPair(mnemonic, i).address),
+      _discoveryService.discoverUsedIndices(addressAt: (i) => _deriveKeyPair(mnemonic, i, isChange: true).address),
+    ]);
+    _log('Discovery: used indices $usedIndices, used change indices $usedChangeIndices');
+
+    WormholeAddressInfo infoAt(int i, {bool isChange = false}) {
+      final keyPair = _deriveKeyPair(mnemonic, i, isChange: isChange);
+      return WormholeAddressInfo(index: i, isChange: isChange, address: keyPair.address, secretHex: keyPair.secretHex);
+    }
 
     final scanIndices = {0, ...usedIndices}.toList()..sort();
+    final changeScanIndices = usedChangeIndices.toList()..sort();
     // Secrets live only inside this list for the duration of the UTXO fetch
     // (needed there for nullifier computation); the returned UTXOs carry no
     // secrets and this list is dropped when load() returns.
-    final addresses = scanIndices.map((i) {
-      final keyPair = _deriveKeyPair(mnemonic, i);
-      return WormholeAddressInfo(index: i, address: keyPair.address, secretHex: keyPair.secretHex);
-    }).toList();
+    final addresses = [
+      for (final i in scanIndices) infoAt(i),
+      for (final i in changeScanIndices) infoAt(i, isChange: true),
+    ];
 
     final utxoResult = await _utxoService.getUnspentUtxos(
       addresses: addresses,
@@ -215,9 +246,16 @@ class EncryptedAccountService {
     );
 
     final unspentNullifiers = utxoResult.utxos.map((u) => u.nullifierHex).toSet();
-    final usedAddresses = {for (final i in usedIndices) _deriveKeyPair(mnemonic, i).address};
+    // Change-branch entries are all discovered-used by construction; external
+    // entries include index 0 even when unused, so filter those.
+    final usedAddresses = {
+      for (final a in addresses)
+        if (a.isChange || usedIndices.contains(a.index)) a.address,
+    };
 
-    final discoveredNext = usedIndices.isEmpty ? 0 : (usedIndices.reduce((a, b) => a > b ? a : b) + 1);
+    int nextAfter(Set<int> used) => used.isEmpty ? 0 : (used.reduce((a, b) => a > b ? a : b) + 1);
+    final discoveredNext = nextAfter(usedIndices);
+    final discoveredNextChange = nextAfter(usedChangeIndices);
     final state = await _mutateState((s) {
       final kept = <PendingSpend>[];
       for (final record in s.pendingSpends) {
@@ -232,23 +270,29 @@ class EncryptedAccountService {
           kept.add(record);
         }
       }
-      return _FileState(nextIndex: s.nextIndex > discoveredNext ? s.nextIndex : discoveredNext, pendingSpends: kept);
+      return _FileState(
+        nextIndex: s.nextIndex > discoveredNext ? s.nextIndex : discoveredNext,
+        nextChangeIndex: s.nextChangeIndex > discoveredNextChange ? s.nextChangeIndex : discoveredNextChange,
+        pendingSpends: kept,
+      );
     });
 
     final pendingNullifiers = state.pendingSpends.expand((r) => r.nullifiers).toSet();
     final spendable = utxoResult.utxos.where((u) => !pendingNullifiers.contains(u.nullifierHex)).toList();
-    final pendingChange = state.pendingSpends.fold(BigInt.zero, (sum, r) => sum + r.changeAmountPlanck);
+    final pendingChange = state.pendingSpends.fold(BigInt.zero, (sum, r) => sum + r.changeAmountToken);
 
     _log(
       'load DONE: ${spendable.length} spendable UTXOs, pendingChange=$pendingChange, '
-      'nextIndex=${state.nextIndex} (${sw.elapsedMilliseconds}ms)',
+      'nextIndex=${state.nextIndex}, nextChangeIndex=${state.nextChangeIndex} (${sw.elapsedMilliseconds}ms)',
     );
     return EncryptedAccountState(
       utxos: spendable,
-      pendingChangePlanck: pendingChange,
-      totalReceivedPlanck: utxoResult.totalReceivedPlanck,
-      totalSpentPlanck: utxoResult.totalSpentPlanck,
+      pendingChangeToken: pendingChange,
+      totalReceivedToken: utxoResult.totalReceivedToken,
+      changeReceivedToken: utxoResult.changeReceivedToken,
+      totalSpentToken: utxoResult.totalSpentToken,
       nextIndex: state.nextIndex,
+      nextChangeIndex: state.nextChangeIndex,
     );
   }
 
@@ -273,18 +317,18 @@ class EncryptedAccountService {
     final secretBuffers = <Uint8List>[];
     try {
       final mnemonic = await _mnemonic();
-      final changeKeyPair = _deriveKeyPair(mnemonic, changeIndex);
+      final changeKeyPair = _deriveKeyPair(mnemonic, changeIndex, isChange: true);
       final recipientBytes = Uint8List.fromList(getAccountId32(recipientAddress));
       final changeBytes = Uint8List.fromList(getAccountId32(changeKeyPair.address));
       _log(
         'send: ${plan.inputCount} inputs in ${plan.batches.length} batches, '
-        'amount=${plan.amountPlanck}, change=${plan.changePlanck} -> index $changeIndex',
+        'amount=${plan.amountToken}, change=${plan.changeToken} -> change index $changeIndex',
       );
 
       // UTXOs carry no secrets (see WormholeUtxoService.getUnspentUtxos), so
-      // each input's secret is re-derived from its owner's HD index.
-      Uint8List secretAt(int ownerIndex) {
-        final keyPair = _deriveKeyPair(mnemonic, ownerIndex);
+      // each input's secret is re-derived from its owner's HD branch and index.
+      Uint8List secretAt(WormholeAddressInfo owner) {
+        final keyPair = _deriveKeyPair(mnemonic, owner.index, isChange: owner.isChange);
         final secret = Uint8List.fromList(hex.decode(keyPair.secretHex.replaceFirst('0x', '')));
         secretBuffers.add(secret);
         return secret;
@@ -296,7 +340,7 @@ class EncryptedAccountService {
             for (final a in batch)
               WormholeLeafSpend(
                 transfer: a.utxo.transfer,
-                secret: secretAt(a.utxo.owner.index),
+                secret: secretAt(a.utxo.owner),
                 exitAccount1: recipientBytes,
                 outputAmount1: a.recipientScaled,
                 exitAccount2: a.changeScaled > 0 ? changeBytes : null,
@@ -315,13 +359,14 @@ class EncryptedAccountService {
           final hasChange = changeScaled > 0;
           await _mutateState(
             (s) => _FileState(
-              nextIndex: hasChange && changeIndex >= s.nextIndex ? changeIndex + 1 : s.nextIndex,
+              nextIndex: s.nextIndex,
+              nextChangeIndex: hasChange && changeIndex >= s.nextChangeIndex ? changeIndex + 1 : s.nextChangeIndex,
               pendingSpends: [
                 ...s.pendingSpends,
                 PendingSpend(
                   nullifiers: nullifiers,
                   changeAddress: hasChange ? changeKeyPair.address : null,
-                  changeAmountPlanck: wormholePlanckFromScaled(changeScaled),
+                  changeAmountToken: wormholeTokenFromScaled(changeScaled),
                   createdAtMs: DateTime.now().millisecondsSinceEpoch,
                 ),
               ],
@@ -334,8 +379,9 @@ class EncryptedAccountService {
       for (final secret in secretBuffers) {
         secret.fillRange(0, secret.length, 0);
       }
-      // By now either a change-bearing batch bumped the persisted nextIndex
-      // past the reservation, or the send failed and the index is free again.
+      // By now either a change-bearing batch bumped the persisted
+      // nextChangeIndex past the reservation, or the send failed and the
+      // index is free again.
       _reservedChangeIndices.remove(changeIndex);
     }
   }
@@ -377,7 +423,7 @@ class EncryptedAccountService {
 
   Future<_FileState> _readState() async {
     final file = await _stateFile();
-    if (!await file.exists()) return const _FileState(nextIndex: 0, pendingSpends: []);
+    if (!await file.exists()) return const _FileState(nextIndex: 0, nextChangeIndex: 0, pendingSpends: []);
     return _FileState.fromJson(jsonDecode(await file.readAsString()) as Map<String, dynamic>);
   }
 
@@ -392,10 +438,10 @@ class EncryptedAccountService {
 
   Future<_FileState> _readStateLocked() => _withStateLock(_readState);
 
-  /// Claims the change index for a new send: the persisted next unused index,
-  /// skipping indices already reserved by other in-flight sends.
+  /// Claims the change-branch index for a new send: the persisted next unused
+  /// change index, skipping indices already reserved by other in-flight sends.
   Future<int> _reserveChangeIndex() => _withStateLock(() async {
-    var index = (await _readState()).nextIndex;
+    var index = (await _readState()).nextChangeIndex;
     while (_reservedChangeIndices.contains(index)) {
       index++;
     }
@@ -424,39 +470,46 @@ class EncryptedAccountService {
 class PendingSpend {
   final List<String> nullifiers;
   final String? changeAddress;
-  final BigInt changeAmountPlanck;
+  final BigInt changeAmountToken;
   final int createdAtMs;
 
   const PendingSpend({
     required this.nullifiers,
     required this.changeAddress,
-    required this.changeAmountPlanck,
+    required this.changeAmountToken,
     required this.createdAtMs,
   });
 
   factory PendingSpend.fromJson(Map<String, dynamic> json) => PendingSpend(
     nullifiers: (json['nullifiers'] as List<dynamic>).cast<String>(),
     changeAddress: json['changeAddress'] as String?,
-    changeAmountPlanck: BigInt.parse(json['changeAmountPlanck'] as String),
+    // 'changeAmountPlanck' is the key used by files written before the
+    // planck -> token rename; fall back so old pending spends still load.
+    changeAmountToken: BigInt.parse((json['changeAmountToken'] ?? json['changeAmountPlanck']) as String),
     createdAtMs: json['createdAtMs'] as int,
   );
 
   Map<String, dynamic> toJson() => {
     'nullifiers': nullifiers,
     'changeAddress': changeAddress,
-    'changeAmountPlanck': changeAmountPlanck.toString(),
+    'changeAmountToken': changeAmountToken.toString(),
     'createdAtMs': createdAtMs,
   };
 }
 
 class _FileState {
   final int nextIndex;
+  final int nextChangeIndex;
   final List<PendingSpend> pendingSpends;
 
-  const _FileState({required this.nextIndex, required this.pendingSpends});
+  const _FileState({required this.nextIndex, required this.nextChangeIndex, required this.pendingSpends});
 
   factory _FileState.fromJson(Map<String, dynamic> json) => _FileState(
     nextIndex: json['nextIndex'] as int,
+    // Absent in files written before change moved to its own branch; those
+    // wallets' old change addresses live on the external branch and stay
+    // covered by nextIndex.
+    nextChangeIndex: json['nextChangeIndex'] as int? ?? 0,
     pendingSpends: (json['pendingSpends'] as List<dynamic>)
         .map((e) => PendingSpend.fromJson(e as Map<String, dynamic>))
         .toList(),
@@ -464,6 +517,7 @@ class _FileState {
 
   Map<String, dynamic> toJson() => {
     'nextIndex': nextIndex,
+    'nextChangeIndex': nextChangeIndex,
     'pendingSpends': pendingSpends.map((e) => e.toJson()).toList(),
   };
 }

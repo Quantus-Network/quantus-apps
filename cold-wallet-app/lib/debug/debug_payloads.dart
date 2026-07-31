@@ -23,7 +23,7 @@ class DebugPayloads {
     return _withExtensions(
       const balances_pallet.Txs().transferAllowDeath(
         dest: _address(AppConstants.debugTestAddress),
-        value: BigInt.from(1500000000000), // 1.5 QUAN
+        value: BigInt.from(1500000000000), // 1.5 tokens
       ),
     );
   }
@@ -33,7 +33,7 @@ class DebugPayloads {
   static Uint8List multisigApproveTransfer() {
     final inner = const balances_pallet.Txs().transferAllowDeath(
       dest: _address(AppConstants.debugTestAddress),
-      value: BigInt.from(4200000000000), // 4.2 QUAN
+      value: BigInt.from(4200000000000), // 4.2 tokens
     );
     return _withExtensions(
       const multisig_pallet.Txs().approve(multisigAddress: _debugMultisigAccount, proposalId: 12, call: inner.encode()),

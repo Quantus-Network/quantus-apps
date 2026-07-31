@@ -9,7 +9,7 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:quantus_cold_wallet/debug/debug_payloads.dart';
 
 void main() {
-  // The 0.1 QUAN keystone transfer call with a Planck extension suffix (era 5501 =
+  // The 0.1 token keystone transfer call with a Planck extension suffix (era 5501 =
   // period 64 phase 21, nonce 0, tip 0, spec 131, tx version 2, metadata None), so the
   // cold wallet is verified against the exact byte layout the hot wallet produces.
   const planckHex =
@@ -56,7 +56,7 @@ void main() {
       expect(destination.kind, ValueKind.address);
       expect(destination.value, startsWith('qz'));
       final amount = parsed.call.fields.whereType<AmountField>().firstWhere((f) => f.label == 'Amount');
-      expect(amount.planck, BigInt.parse('100000000000')); // 0.1 QUAN at 12 decimals
+      expect(amount.token, BigInt.parse('100000000000')); // 0.1 token at 12 decimals
       expect(parsed.call.summary?.amount, BigInt.parse('100000000000'));
       expect(parsed.network, 'Planck');
       expect(parsed.extensions.era.toString(), '64 blocks');
@@ -93,7 +93,7 @@ void main() {
           .call;
       expect(approved.call, 'transfer_allow_death');
       expect(
-        approved.fields.whereType<AmountField>().firstWhere((f) => f.label == 'Amount').planck,
+        approved.fields.whereType<AmountField>().firstWhere((f) => f.label == 'Amount').token,
         BigInt.from(4200000000000),
       );
       // Hero amount comes from the authorised transfer.

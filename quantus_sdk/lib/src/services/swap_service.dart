@@ -1,7 +1,9 @@
 import 'dart:convert';
 import 'dart:math';
+
 import 'package:collection/collection.dart';
 import 'package:http/http.dart' as http;
+import 'package:quantus_sdk/src/constants/app_constants.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 enum SwapStatus { pending, depositing, processing, complete, failed, expired }
@@ -102,10 +104,10 @@ class SwapService {
     SwapToken(symbol: 'ETH', name: 'Ethereum', network: 'Ethereum'),
     SwapToken(symbol: 'BTC', name: 'Bitcoin', network: 'Bitcoin', decimals: 8),
     SwapToken(symbol: 'SOL', name: 'Solana', network: 'Solana', decimals: 9),
-    SwapToken(symbol: 'QUAN', name: 'Quantus', network: 'Quantus'),
+    _quToken,
   ];
 
-  static const _quToken = SwapToken(symbol: 'QUAN', name: 'Quantus', network: 'Quantus');
+  static const _quToken = SwapToken(symbol: AppConstants.tokenSymbol, name: 'Quantus', network: 'Quantus');
 
   Future<List<SwapToken>> getFromTokens({int limit = 10, bool forceRefresh = false}) async {
     final now = DateTime.now();
@@ -127,7 +129,7 @@ class SwapService {
       }
     } catch (_) {}
 
-    final fallback = availableTokens.where((t) => t.symbol != 'QUAN').take(limit).toList();
+    final fallback = availableTokens.where((t) => t.symbol != AppConstants.tokenSymbol).take(limit).toList();
     _cachedFromTokens = fallback;
     _cachedFromTokensAt = now;
     return fallback;
@@ -180,7 +182,7 @@ class SwapService {
         return 60000.0;
       case 'SOL':
         return 150.0;
-      case 'QUAN':
+      case AppConstants.tokenSymbol:
         return 1.0;
       default:
         return 0.0;
@@ -205,7 +207,7 @@ class SwapService {
       if (symbolRaw is! String || symbolRaw.isEmpty) continue;
       if (blockchainRaw is! String || blockchainRaw.isEmpty) continue;
       final symbol = symbolRaw.toUpperCase();
-      if (symbol == 'QUAN') continue;
+      if (symbol == AppConstants.tokenSymbol) continue;
       final price = (priceRaw as num?)?.toDouble() ?? 0;
       if (price <= 0) continue;
       final decimals = (decimalsRaw as num?)?.toInt() ?? 18;

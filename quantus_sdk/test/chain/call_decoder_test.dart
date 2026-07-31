@@ -30,7 +30,7 @@ final codeHash = Uint8List.fromList(List.filled(32, 0xCC));
 
 multi_address.MultiAddress dest(Uint8List id) => multi_address.MultiAddress.values.id(id);
 
-final oneQuan = BigInt.from(1000000000000);
+final oneToken = BigInt.from(1000000000000);
 
 /// Encodes then re-decodes through [CallDecoder.decodeBytes], so every assertion
 /// runs against the same path a signer takes: bytes in, display tree out.
@@ -48,31 +48,31 @@ NestedCallField nestedField(DecodedCall call, String label) =>
 void main() {
   group('transfers', () {
     test('balances.transfer_allow_death decodes destination, amount and summary', () {
-      final decoded = roundTrip(const balances_pallet.Txs().transferAllowDeath(dest: dest(bobId), value: oneQuan));
+      final decoded = roundTrip(const balances_pallet.Txs().transferAllowDeath(dest: dest(bobId), value: oneToken));
 
       expect(decoded.pallet, 'Balances');
       expect(decoded.call, 'transfer_allow_death');
       expect(valueField(decoded, 'Destination').kind, ValueKind.address);
       expect(valueField(decoded, 'Destination').value, startsWith('qz'));
-      expect(amountField(decoded, 'Amount').planck, oneQuan);
-      expect(decoded.summary?.amount, oneQuan);
+      expect(amountField(decoded, 'Amount').token, oneToken);
+      expect(decoded.summary?.amount, oneToken);
       expect(decoded.summary?.recipient, valueField(decoded, 'Destination').value);
       expect(decoded.summary?.assetId, isNull);
     });
 
     test('balances.transfer_keep_alive carries the same summary as allow_death', () {
-      final decoded = roundTrip(const balances_pallet.Txs().transferKeepAlive(dest: dest(bobId), value: oneQuan));
+      final decoded = roundTrip(const balances_pallet.Txs().transferKeepAlive(dest: dest(bobId), value: oneToken));
 
       expect(decoded.call, 'transfer_keep_alive');
-      expect(decoded.summary?.amount, oneQuan);
+      expect(decoded.summary?.amount, oneToken);
       expect(decoded.summary?.recipient, valueField(decoded, 'Destination').value);
     });
 
     test('reversible schedule_transfer decodes destination, amount and summary', () {
-      final decoded = roundTrip(const reversible_pallet.Txs().scheduleTransfer(dest: dest(bobId), amount: oneQuan));
+      final decoded = roundTrip(const reversible_pallet.Txs().scheduleTransfer(dest: dest(bobId), amount: oneToken));
 
       expect(decoded.call, 'schedule_transfer');
-      expect(decoded.summary?.amount, oneQuan);
+      expect(decoded.summary?.amount, oneToken);
       expect(decoded.summary?.recipient, valueField(decoded, 'Destination').value);
     });
 
@@ -80,11 +80,11 @@ void main() {
       final decoded = roundTrip(
         const balances_pallet.Txs().transferAllowDeath(
           dest: multi_address.MultiAddress.values.index(BigInt.one),
-          value: oneQuan,
+          value: oneToken,
         ),
       );
 
-      expect(decoded.summary?.amount, oneQuan);
+      expect(decoded.summary?.amount, oneToken);
       expect(decoded.summary?.recipient, isNull);
     });
 
@@ -92,7 +92,7 @@ void main() {
       final decoded = roundTrip(
         const reversible_pallet.Txs().scheduleTransferWithDelay(
           dest: dest(bobId),
-          amount: oneQuan,
+          amount: oneToken,
           delay: qp.BlockNumberOrTimestamp.values.timestamp(BigInt.from(600000)),
         ),
       );
@@ -102,12 +102,12 @@ void main() {
       expect(delay.kind, ValueKind.blockOrTime);
       expect(delay.value, contains('10m'));
       expect(delay.value, contains('600000 ms'));
-      expect(decoded.summary?.amount, oneQuan);
+      expect(decoded.summary?.amount, oneToken);
     });
 
     test('reversible schedule_asset_transfer carries the asset id into the summary', () {
       final decoded = roundTrip(
-        const reversible_pallet.Txs().scheduleAssetTransfer(assetId: 42, dest: dest(bobId), amount: oneQuan),
+        const reversible_pallet.Txs().scheduleAssetTransfer(assetId: 42, dest: dest(bobId), amount: oneToken),
       );
 
       expect(decoded.call, 'schedule_asset_transfer');
@@ -119,7 +119,7 @@ void main() {
 
   group('multisig', () {
     test('approve exposes the inner call being approved and lifts its amount', () {
-      final inner = const balances_pallet.Txs().transferAllowDeath(dest: dest(bobId), value: oneQuan);
+      final inner = const balances_pallet.Txs().transferAllowDeath(dest: dest(bobId), value: oneToken);
       final decoded = roundTrip(
         const multisig_pallet.Txs().approve(multisigAddress: aliceId, proposalId: 7, call: inner.encode()),
       );
@@ -131,15 +131,15 @@ void main() {
 
       final approved = nestedField(decoded, 'Call being approved').call;
       expect(approved.call, 'transfer_allow_death');
-      expect(amountField(approved, 'Amount').planck, oneQuan);
+      expect(amountField(approved, 'Amount').token, oneToken);
 
       // The hero amount for an approval comes from the call it authorises.
-      expect(decoded.summary?.amount, oneQuan);
+      expect(decoded.summary?.amount, oneToken);
       expect(decoded.summary?.recipient, valueField(approved, 'Destination').value);
     });
 
     test('propose exposes the inner call and expiry', () {
-      final inner = const reversible_pallet.Txs().scheduleTransfer(dest: dest(bobId), amount: oneQuan);
+      final inner = const reversible_pallet.Txs().scheduleTransfer(dest: dest(bobId), amount: oneToken);
       final decoded = roundTrip(
         const multisig_pallet.Txs().propose(multisigAddress: aliceId, call: inner.encode(), expiry: 12345),
       );
@@ -147,7 +147,7 @@ void main() {
       expect(decoded.call, 'propose');
       expect(valueField(decoded, 'Expires at block').value, '12345');
       expect(nestedField(decoded, 'Proposed call').call.call, 'schedule_transfer');
-      expect(decoded.summary?.amount, oneQuan);
+      expect(decoded.summary?.amount, oneToken);
     });
 
     test('create_multisig lists every signer alongside the threshold', () {
@@ -262,7 +262,7 @@ void main() {
       final decoded = roundTrip(
         const utility_pallet.Txs().batchAll(
           calls: [
-            const balances_pallet.Txs().transferAllowDeath(dest: dest(bobId), value: oneQuan),
+            const balances_pallet.Txs().transferAllowDeath(dest: dest(bobId), value: oneToken),
             const collective_pallet.Txs().vote(poll: 3, aye: true),
           ],
         ),
@@ -278,13 +278,13 @@ void main() {
       final decoded = roundTrip(
         const recovery_pallet.Txs().asRecovered(
           account: dest(aliceId),
-          call: const balances_pallet.Txs().transferAllowDeath(dest: dest(bobId), value: oneQuan),
+          call: const balances_pallet.Txs().transferAllowDeath(dest: dest(bobId), value: oneToken),
         ),
       );
 
       expect(decoded.call, 'as_recovered');
       expect(nestedField(decoded, 'Call').call.call, 'transfer_allow_death');
-      expect(decoded.summary?.amount, oneQuan);
+      expect(decoded.summary?.amount, oneToken);
     });
   });
 
