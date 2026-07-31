@@ -63,7 +63,8 @@ class AnimatedQrScanner extends StatefulWidget {
 }
 
 class _AnimatedQrScannerState extends State<AnimatedQrScanner> {
-  final MobileScannerController _controller = MobileScannerController();
+  // Unrestricted: deliver every decoded camera frame; dedup happens via _parts.
+  final MobileScannerController _controller = MobileScannerController(detectionSpeed: DetectionSpeed.unrestricted);
   final Set<String> _parts = {};
   final Set<int> _seenSequenceIndexes = {};
 

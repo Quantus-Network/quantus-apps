@@ -8,6 +8,7 @@ import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
 Uint8List decodeUr({required List<String> urParts}) => RustLib.instance.api.crateApiUrDecodeUr(urParts: urParts);
 
-List<String> encodeUr({required List<int> data}) => RustLib.instance.api.crateApiUrEncodeUr(data: data);
+List<String> encodeUr({required List<int> data, int? maxFragmentLength}) =>
+    RustLib.instance.api.crateApiUrEncodeUr(data: data, maxFragmentLength: maxFragmentLength);
 
 bool isCompleteUr({required List<String> urParts}) => RustLib.instance.api.crateApiUrIsCompleteUr(urParts: urParts);

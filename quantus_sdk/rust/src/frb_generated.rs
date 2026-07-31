@@ -470,9 +470,10 @@ fn wire__crate__api__ur__encode_ur_impl(
             let mut deserializer =
                 flutter_rust_bridge::for_generated::SseDeserializer::new(message);
             let api_data = <Vec<u8>>::sse_decode(&mut deserializer);
+            let api_max_fragment_length = <Option<u32>>::sse_decode(&mut deserializer);
             deserializer.end();
             transform_result_sse::<_, String>((move || {
-                let output_ok = crate::api::ur::encode_ur(api_data)?;
+                let output_ok = crate::api::ur::encode_ur(api_data, api_max_fragment_length)?;
                 Ok(output_ok)
             })())
         },
@@ -657,15 +658,15 @@ fn wire__crate__api__wormhole__generate_proof_impl(
             let mut deserializer =
                 flutter_rust_bridge::for_generated::SseDeserializer::new(message);
             let api_input = <crate::api::wormhole::ProofInput>::sse_decode(&mut deserializer);
-            let api_prover_bin_path = <String>::sse_decode(&mut deserializer);
-            let api_common_bin_path = <String>::sse_decode(&mut deserializer);
+            let api__prover_bin_path = <String>::sse_decode(&mut deserializer);
+            let api__common_bin_path = <String>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| {
                 transform_result_sse::<_, String>((move || {
                     let output_ok = crate::api::wormhole::generate_proof(
                         api_input,
-                        api_prover_bin_path,
-                        api_common_bin_path,
+                        api__prover_bin_path,
+                        api__common_bin_path,
                     )?;
                     Ok(output_ok)
                 })())
@@ -1198,6 +1199,17 @@ impl SseDecode for crate::api::wormhole::MerkleProcessed {
     }
 }
 
+impl SseDecode for Option<u32> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        if (<bool>::sse_decode(deserializer)) {
+            return Some(<u32>::sse_decode(deserializer));
+        } else {
+            return None;
+        }
+    }
+}
+
 impl SseDecode for Option<[u8; 32]> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
@@ -1622,6 +1634,16 @@ impl SseEncode for crate::api::wormhole::MerkleProcessed {
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         <Vec<u8>>::sse_encode(self.sorted_siblings_flat, serializer);
         <Vec<u8>>::sse_encode(self.positions, serializer);
+    }
+}
+
+impl SseEncode for Option<u32> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <bool>::sse_encode(self.is_some(), serializer);
+        if let Some(value) = self {
+            <u32>::sse_encode(value, serializer);
+        }
     }
 }
 

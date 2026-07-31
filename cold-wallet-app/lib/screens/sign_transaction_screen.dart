@@ -31,6 +31,11 @@ class SignTransactionScreen extends ConsumerStatefulWidget {
 }
 
 class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> {
+  /// Tuning knobs for the animated signature QR (7 KB payload): bytes per frame
+  /// and how long each frame is shown. Larger fragments mean fewer, denser QRs.
+  static const _kUrFragmentLength = 1500;
+  static const _kUrFrameInterval = Duration(milliseconds: 100);
+
   final ScrollController _scrollController = ScrollController();
 
   ParsedPayload? _parsed;
@@ -101,7 +106,7 @@ class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> {
         keypair: keypair,
         message: QuantusSigningPayload.signablePayload(widget.payload),
       );
-      final parts = encodeUr(data: signed);
+      final parts = encodeUr(data: signed, maxFragmentLength: _kUrFragmentLength);
       setState(() {
         _signing = false;
         _signatureUr = parts;
@@ -400,7 +405,14 @@ class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 24),
-            Center(child: AnimatedUrQr(parts: parts)),
+            Center(
+              child: AnimatedUrQr(
+                parts: parts,
+                interval: _kUrFrameInterval,
+                // Dense frames need as many screen pixels per QR module as possible.
+                size: (MediaQuery.sizeOf(context).width - 48).clamp(280.0, 500.0),
+              ),
+            ),
             const SizedBox(height: 16),
             if (parts.length > 1)
               Text(

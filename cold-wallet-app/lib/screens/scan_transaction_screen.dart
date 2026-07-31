@@ -18,7 +18,8 @@ class ScanTransactionScreen extends StatefulWidget {
 }
 
 class _ScanTransactionScreenState extends State<ScanTransactionScreen> {
-  final MobileScannerController _controller = MobileScannerController();
+  // Unrestricted: deliver every decoded camera frame; dedup happens via _parts.
+  final MobileScannerController _controller = MobileScannerController(detectionSpeed: DetectionSpeed.unrestricted);
   final Set<String> _parts = {};
   final Set<int> _seenSeq = {};
   final RegExp _seqPattern = RegExp(r'/(\d+)-(\d+)/');

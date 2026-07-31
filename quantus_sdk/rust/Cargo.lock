@@ -3083,7 +3083,6 @@ dependencies = [
 [[package]]
 name = "quantus_ur"
 version = "0.1.0"
-source = "git+https://github.com/Quantus-Network/quantus_ur.git?tag=1.4.0#f3929da023e9c8081b8e9944b5b665871980fa79"
 dependencies = [
  "hex",
  "keystone-ur",
