@@ -15,6 +15,7 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
   final Color textSecondary;
   final Color textTertiary;
   final Color textMuted;
+  final Color textSubtle;
   final Color textError;
   final Color textLabel;
   final Color textLightGray;
@@ -87,6 +88,7 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
     required this.textSecondary,
     required this.textTertiary,
     required this.textMuted,
+    required this.textSubtle,
     required this.textError,
     required this.textLabel,
     required this.textLightGray,
@@ -140,6 +142,7 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
         textSecondary: const Color(0x80FFFFFF),
         textTertiary: const Color(0xFF3D3D3D),
         textMuted: const Color(0xFF888888),
+        textSubtle: const Color(0xFFA3A3A3),
         textError: const Color(0xFFC0392B),
         textLabel: const Color(0xFF787878),
         textLightGray: const Color(0xFFEBEBEB),
@@ -185,6 +188,7 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
     Color? textSecondary,
     Color? textTertiary,
     Color? textMuted,
+    Color? textSubtle,
     Color? textError,
     Color? textLabel,
     Color? textLightGray,
@@ -240,6 +244,7 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
       textSecondary: textSecondary ?? this.textSecondary,
       textTertiary: textTertiary ?? this.textTertiary,
       textMuted: textMuted ?? this.textMuted,
+      textSubtle: textSubtle ?? this.textSubtle,
       textError: textError ?? this.textError,
       textLabel: textLabel ?? this.textLabel,
       textLightGray: textLightGray ?? this.textLightGray,
@@ -295,6 +300,7 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
       textSecondary: Color.lerp(textSecondary, other.textSecondary, t) ?? textSecondary,
       textTertiary: Color.lerp(textTertiary, other.textTertiary, t) ?? textTertiary,
       textMuted: Color.lerp(textMuted, other.textMuted, t) ?? textMuted,
+      textSubtle: Color.lerp(textSubtle, other.textSubtle, t) ?? textSubtle,
       textError: Color.lerp(textError, other.textError, t) ?? textError,
       textLabel: Color.lerp(textLabel, other.textLabel, t) ?? textLabel,
       textLightGray: Color.lerp(textLightGray, other.textLightGray, t) ?? textLightGray,

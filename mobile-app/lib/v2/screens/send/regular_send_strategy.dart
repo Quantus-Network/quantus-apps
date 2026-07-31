@@ -130,7 +130,6 @@ class RegularSendStrategy extends SendStrategy {
         session: KeystoneSigningSession(
           account: account,
           buildCall: () => ref.read(balancesServiceProvider).getBalanceTransferCall(recipient, amount),
-          title: isPayMode ? l10n.sendPayTitle : l10n.sendTitle,
           primaryDetail: l10n.commonAmountBalance(
             fmt.formatBalance(amount, smartDecimals: 4),
             AppConstants.tokenSymbol,
