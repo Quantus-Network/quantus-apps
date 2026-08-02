@@ -347,7 +347,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               alignment: CrossAxisAlignment.center,
               useTokenLogo: true,
             );
-          },111
+          },
           loading: () => const Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
