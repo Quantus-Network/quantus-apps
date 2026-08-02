@@ -263,6 +263,15 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
   Widget _buildWalletHeader(AppLocalizations l10n, WalletGroup wallet, String? activeAccountId) {
     return Row(
       children: [
+        Expanded(child: _buildWalletNameAndEdit(l10n, wallet)),
+        if (_containsAccount(wallet, activeAccountId)) _ActiveWalletTag(label: l10n.accountsScreenActiveWallet),
+      ],
+    );
+  }
+
+  Widget _buildWalletNameAndEdit(AppLocalizations l10n, WalletGroup wallet) {
+    return Row(
+      children: [
         Flexible(
           child: Text(
             _walletDisplayName(l10n, wallet),
@@ -277,8 +286,6 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
           onTap: () => _openWalletNameEditor(wallet.walletIndex),
           size: IconButtonSize.small,
         ),
-        const Spacer(),
-        if (_containsAccount(wallet, activeAccountId)) _ActiveWalletTag(label: l10n.accountsScreenActiveWallet),
       ],
     );
   }
@@ -304,7 +311,7 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
             }),
             behavior: HitTestBehavior.opaque,
             child: expanded
-                ? _buildExpandedWalletHeader(l10n, wallet, displayName, activeAccountId)
+                ? _buildExpandedWalletHeader(l10n, wallet, activeAccountId)
                 : _buildCollapsedWalletHeader(l10n, wallet, displayName),
           ),
           AnimatedSize(
@@ -364,29 +371,10 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
     );
   }
 
-  Widget _buildExpandedWalletHeader(
-    AppLocalizations l10n,
-    WalletGroup wallet,
-    String displayName,
-    String? activeAccountId,
-  ) {
+  Widget _buildExpandedWalletHeader(AppLocalizations l10n, WalletGroup wallet, String? activeAccountId) {
     return Row(
       children: [
-        Flexible(
-          child: Text(
-            displayName,
-            style: context.themeText.paragraph?.copyWith(height: 1),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ),
-        const SizedBox(width: 4),
-        QuantusIconButton.circular(
-          icon: Icons.edit_outlined,
-          onTap: () => _openWalletNameEditor(wallet.walletIndex),
-          size: IconButtonSize.small,
-        ),
-        const Spacer(),
+        Expanded(child: _buildWalletNameAndEdit(l10n, wallet)),
         if (_containsAccount(wallet, activeAccountId)) ...[
           _ActiveWalletTag(label: l10n.accountsScreenActiveWallet),
           const SizedBox(width: 8),
