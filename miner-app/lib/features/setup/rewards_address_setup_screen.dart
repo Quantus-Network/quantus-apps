@@ -73,9 +73,10 @@ class _RewardsAddressSetupScreenState extends State<RewardsAddressSetupScreen> {
   }
 
   /// Generate a new 24-word mnemonic.
-  void _generateNewMnemonic() {
+  Future<void> _generateNewMnemonic() async {
+    final mnemonic = await _walletService.generateMnemonic();
     setState(() {
-      _generatedMnemonic = _walletService.generateMnemonic();
+      _generatedMnemonic = mnemonic;
       _mnemonicConfirmed = false;
     });
   }

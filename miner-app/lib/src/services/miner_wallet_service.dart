@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:math';
 
 import 'package:quantus_miner/src/services/binary_manager.dart';
 import 'package:quantus_miner/src/utils/app_logger.dart';
@@ -33,11 +32,8 @@ class MinerWalletService {
       File('${await BinaryManager.getQuantusHomeDirectoryPath()}/$_legacyRewardsAddressFileName');
 
   /// Generate a new 24-word mnemonic (256 bits of entropy).
-  String generateMnemonic() {
-    final random = Random.secure();
-    final entropy = List<int>.generate(32, (_) => random.nextInt(256));
-    return Mnemonic(entropy, Language.english).sentence;
-  }
+  /// Delegates to the SDK so all seed generation lives in one place.
+  Future<String> generateMnemonic() => SubstrateService().generateMnemonic();
 
   /// Normalize user-entered mnemonic input: lowercase + collapse whitespace.
   /// The BIP-39 English wordlist is lowercase only.
