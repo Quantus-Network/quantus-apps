@@ -71,7 +71,7 @@ class AccountMenuScreen extends ConsumerWidget {
       return ScaffoldBaseBottomContent(
         child: QuantusButton.simple(
           label: l10n.accountMenuDone,
-          onTap: () => returnToAccountsSheet(context, ref, highlightAccountId: account.accountId),
+          onTap: () => returnToAccountsScreen(context, ref, highlightAccountId: account.accountId),
         ),
       );
     }
@@ -173,7 +173,7 @@ class AccountMenuScreen extends ConsumerWidget {
       await AccountsService().removeAccount(account);
       ref.invalidate(accountsProvider);
       ref.invalidate(activeAccountProvider);
-      if (context.mounted) returnToAccountsSheet(context, ref);
+      if (context.mounted) returnToAccountsScreen(context, ref);
     } catch (e, st) {
       quantusPrint('[AccountMenu] disconnect account error: $e\n$st');
       if (context.mounted) context.showErrorToaster(message: l10n.accountMenuDisconnectError);
@@ -186,7 +186,7 @@ class AccountMenuScreen extends ConsumerWidget {
       await AccountsService().removeWallet(walletIndex);
       ref.invalidate(accountsProvider);
       ref.invalidate(activeAccountProvider);
-      if (context.mounted) returnToAccountsSheet(context, ref);
+      if (context.mounted) returnToAccountsScreen(context, ref);
     } catch (e, st) {
       quantusPrint('[AccountMenu] disconnect wallet error: $e\n$st');
       if (context.mounted) context.showErrorToaster(message: l10n.accountMenuDisconnectError);

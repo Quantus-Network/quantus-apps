@@ -2,48 +2,44 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 
 enum WalletKind { software, keystone }
 
-enum AccountSegment { transparent, encrypted, keystone, multisig }
-
-sealed class AccountListItem {
-  const AccountListItem();
-}
-
-/// A wallet group header, e.g. "Wallet 1" or "Keystone Hardware Wallet 1".
-/// [number] is the 1-based position within its [kind].
-class WalletHeaderItem extends AccountListItem {
+/// One wallet as displayed on the Accounts screen: its transparent (or
+/// keystone) accounts, the single encrypted account (software wallets only),
+/// and any multisigs owned by one of its accounts. [number] is the 1-based
+/// position within its [kind], used for "Wallet {n}" fallback naming.
+class WalletGroup {
+  final int walletIndex;
   final WalletKind kind;
   final int number;
-  const WalletHeaderItem({required this.kind, required this.number});
+  final List<Account> accounts;
+  final Account? encryptedAccount;
+  final List<MultisigAccount> multisigs;
+
+  const WalletGroup({
+    required this.walletIndex,
+    required this.kind,
+    required this.number,
+    required this.accounts,
+    required this.encryptedAccount,
+    required this.multisigs,
+  });
+
+  int get accountCount => accounts.length + (encryptedAccount == null ? 0 : 1) + multisigs.length;
 }
 
-class SegmentHeaderItem extends AccountListItem {
-  final AccountSegment segment;
-  const SegmentHeaderItem(this.segment);
+/// Result of grouping accounts for the Accounts screen. The first wallet is
+/// the main wallet (lowest software walletIndex); multisigs whose member
+/// account is unknown trail in [standaloneMultisigs].
+class WalletsGrouping {
+  final List<WalletGroup> wallets;
+  final List<MultisigAccount> standaloneMultisigs;
+  const WalletsGrouping({required this.wallets, required this.standaloneMultisigs});
 }
 
-class AccountRowItem extends AccountListItem {
-  final BaseAccount account;
-  const AccountRowItem(this.account);
-}
-
-/// Result of grouping accounts for the Accounts popup. When [segmented] is
-/// false, [items] is a flat list of [AccountRowItem] with no headers.
-class AccountsGrouping {
-  final bool segmented;
-  final List<AccountListItem> items;
-  const AccountsGrouping({required this.segmented, required this.items});
-}
-
-/// Pure mapping of accounts + multisigs to an ordered, segmented list.
-///
-/// Order: software wallets (by walletIndex) then keystone wallets (by
-/// walletIndex). Within each wallet, sub-segments appear in order and are
-/// skipped when empty: transparent, encrypted (software) / keystone (hardware),
-/// then multisig. Multisigs are owned by the wallet of the account matching
-/// [MultisigAccount.myMemberAccountId]; unresolved ones trail in a standalone
-/// multisig segment. A single software wallet of only transparent accounts with
-/// no multisigs renders flat (no headers).
-AccountsGrouping groupAccounts({required List<Account> accounts, required List<MultisigAccount> multisigs}) {
+/// Pure mapping of accounts + multisigs to wallet groups, ordered software
+/// wallets (by walletIndex) then keystone wallets (by walletIndex). Multisigs
+/// are owned by the wallet of the account matching
+/// [MultisigAccount.myMemberAccountId].
+WalletsGrouping groupWallets({required List<Account> accounts, required List<MultisigAccount> multisigs}) {
   final byWallet = <int, List<Account>>{};
   for (final a in accounts) {
     byWallet.putIfAbsent(a.walletIndex, () => []).add(a);
@@ -72,58 +68,34 @@ AccountsGrouping groupAccounts({required List<Account> accounts, required List<M
   softwareIndices.sort();
   keystoneIndices.sort();
 
-  final atMostOneSoftwareWallet = softwareIndices.length <= 1 && keystoneIndices.isEmpty;
-  final hasEncrypted = accounts.any((a) => a.accountType == AccountType.encrypted);
-  final segmented = !(atMostOneSoftwareWallet && !hasEncrypted && multisigs.isEmpty);
-
-  if (!segmented) {
-    final flat = [...accounts]..sort(_compareAccounts);
-    return AccountsGrouping(segmented: false, items: [for (final a in flat) AccountRowItem(a)]);
-  }
-
-  final items = <AccountListItem>[];
-
-  void addSegment(AccountSegment segment, List<BaseAccount> rows) {
-    if (rows.isEmpty) return;
-    items.add(SegmentHeaderItem(segment));
-    items.addAll(rows.map(AccountRowItem.new));
-  }
-
-  void addWallet(WalletKind kind, int number, int walletIndex) {
+  WalletGroup buildGroup(WalletKind kind, int number, int walletIndex) {
     final group = byWallet[walletIndex] ?? [];
+    final regular = group.where((a) => a.accountType != AccountType.encrypted).toList()..sort(_compareAccounts);
+    final encrypted = group.where((a) => a.accountType == AccountType.encrypted).toList()..sort(_compareAccounts);
     final msigs = [...?multisigsByWallet[walletIndex]]..sort(_compareMultisigs);
-    items.add(WalletHeaderItem(kind: kind, number: number));
-
-    if (kind == WalletKind.software) {
-      final transparent = group.where((a) => a.accountType != AccountType.encrypted).toList()..sort(_compareAccounts);
-      final encrypted = group.where((a) => a.accountType == AccountType.encrypted).toList()..sort(_compareAccounts);
-      addSegment(AccountSegment.transparent, transparent);
-      addSegment(AccountSegment.encrypted, encrypted);
-    } else {
-      final keystone = [...group]..sort(_compareAccounts);
-      addSegment(AccountSegment.keystone, keystone);
-    }
-    addSegment(AccountSegment.multisig, msigs);
+    return WalletGroup(
+      walletIndex: walletIndex,
+      kind: kind,
+      number: number,
+      accounts: regular,
+      encryptedAccount: encrypted.isEmpty ? null : encrypted.first,
+      multisigs: msigs,
+    );
   }
 
-  for (var i = 0; i < softwareIndices.length; i++) {
-    addWallet(WalletKind.software, i + 1, softwareIndices[i]);
-  }
-  for (var i = 0; i < keystoneIndices.length; i++) {
-    addWallet(WalletKind.keystone, i + 1, keystoneIndices[i]);
-  }
+  final wallets = <WalletGroup>[
+    for (var i = 0; i < softwareIndices.length; i++) buildGroup(WalletKind.software, i + 1, softwareIndices[i]),
+    for (var i = 0; i < keystoneIndices.length; i++) buildGroup(WalletKind.keystone, i + 1, keystoneIndices[i]),
+  ];
 
-  final standalone = [...standaloneMultisigs]..sort(_compareMultisigs);
-  addSegment(AccountSegment.multisig, standalone);
-
-  return AccountsGrouping(segmented: true, items: items);
+  return WalletsGrouping(wallets: wallets, standaloneMultisigs: [...standaloneMultisigs]..sort(_compareMultisigs));
 }
 
 bool _isKeystoneWallet(List<Account> group) =>
     group.isNotEmpty && group.every((a) => a.accountType == AccountType.keystone);
 
 /// 1-based display number of the software wallet at [walletIndex], matching the
-/// numbering used by [groupAccounts]. Returns null when [walletIndex] is not a
+/// numbering used by [groupWallets]. Returns null when [walletIndex] is not a
 /// software wallet.
 int? softwareWalletNumber(List<Account> accounts, int walletIndex) {
   final byWallet = <int, List<Account>>{};

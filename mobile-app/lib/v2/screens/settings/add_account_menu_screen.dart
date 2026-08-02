@@ -93,26 +93,18 @@ class _AddAccountMenuScreenState extends ConsumerState<AddAccountMenuScreen> {
             ),
             const SizedBox(height: 14),
           ],
-          _AccountOptionCard(
-            icon: Icons.save_alt,
-            title: l10n.addAccountMenuImportTitle,
-            subtitle: l10n.addAccountMenuImportSubtitle,
-            onTap: _onImportWallet,
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            child: Divider(color: colors.separator, height: 1),
+          ),
+          _AdvancedSection(
+            title: l10n.addAccountMenuMoreTitle,
+            expanded: _advancedExpanded,
+            onToggle: () => setState(() => _advancedExpanded = !_advancedExpanded),
             colors: colors,
             text: text,
-          ),
-          if (enableMultisig) ...[
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              child: Divider(color: colors.separator, height: 1),
-            ),
-            _AdvancedSection(
-              title: l10n.addAccountMenuMoreTitle,
-              expanded: _advancedExpanded,
-              onToggle: () => setState(() => _advancedExpanded = !_advancedExpanded),
-              colors: colors,
-              text: text,
-              children: [
+            children: [
+              if (enableMultisig) ...[
                 GestureDetector(
                   onTap: _onDiscoverMultisig,
                   behavior: HitTestBehavior.opaque,
@@ -139,9 +131,24 @@ class _AddAccountMenuScreenState extends ConsumerState<AddAccountMenuScreen> {
                     text: text,
                   ),
                 ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  child: Divider(color: colors.separator, height: 1),
+                ),
               ],
-            ),
-          ],
+              GestureDetector(
+                onTap: _onImportWallet,
+                behavior: HitTestBehavior.opaque,
+                child: _AccountOptionRowContent(
+                  icon: Icons.save_alt,
+                  title: l10n.addAccountMenuImportTitle,
+                  subtitle: l10n.addAccountMenuImportSubtitle,
+                  colors: colors,
+                  text: text,
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );
