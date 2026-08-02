@@ -1302,14 +1302,6 @@
     "@addKeystoneStepUnlock": {
       "description": "On-device step: unlock"
     },
-    "addKeystoneStepMenu": "Tap the menu icon",
-    "@addKeystoneStepMenu": {
-      "description": "On-device step: open menu"
-    },
-    "addKeystoneStepConnectSoftware": "Tap connect Software Wallet",
-    "@addKeystoneStepConnectSoftware": {
-      "description": "On-device step: connect software wallet"
-    },
     "addKeystoneStepSelectQuantus": "Select Quantus and scan the QR code",
     "@addKeystoneStepSelectQuantus": {
       "description": "On-device step: select Quantus and scan"

@@ -1760,18 +1760,6 @@ abstract class AppLocalizations {
   /// **'Unlock your Keystone'**
   String get addKeystoneStepUnlock;
 
-  /// On-device step: open menu
-  ///
-  /// In en, this message translates to:
-  /// **'Tap the menu icon'**
-  String get addKeystoneStepMenu;
-
-  /// On-device step: connect software wallet
-  ///
-  /// In en, this message translates to:
-  /// **'Tap connect Software Wallet'**
-  String get addKeystoneStepConnectSoftware;
-
   /// On-device step: select Quantus and scan
   ///
   /// In en, this message translates to:

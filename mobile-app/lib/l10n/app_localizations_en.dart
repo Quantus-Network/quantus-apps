@@ -941,12 +941,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get addKeystoneStepUnlock => 'Unlock your Keystone';
 
   @override
-  String get addKeystoneStepMenu => 'Tap the menu icon';
-
-  @override
-  String get addKeystoneStepConnectSoftware => 'Tap connect Software Wallet';
-
-  @override
   String get addKeystoneStepSelectQuantus => 'Select Quantus and scan the QR code';
 
   @override
