@@ -24,11 +24,16 @@ class WalletGroup {
   });
 
   int get accountCount => accounts.length + (encryptedAccount == null ? 0 : 1) + multisigs.length;
+
+  bool contains(String accountId) =>
+      accounts.any((a) => a.accountId == accountId) ||
+      encryptedAccount?.accountId == accountId ||
+      multisigs.any((m) => m.accountId == accountId);
 }
 
 /// Result of grouping accounts for the Accounts screen. The first wallet is
-/// the main wallet (lowest software walletIndex); multisigs whose member
-/// account is unknown trail in [standaloneMultisigs].
+/// the active wallet (falling back to the lowest software walletIndex);
+/// multisigs whose member account is unknown trail in [standaloneMultisigs].
 class WalletsGrouping {
   final List<WalletGroup> wallets;
   final List<MultisigAccount> standaloneMultisigs;
@@ -36,10 +41,15 @@ class WalletsGrouping {
 }
 
 /// Pure mapping of accounts + multisigs to wallet groups, ordered software
-/// wallets (by walletIndex) then keystone wallets (by walletIndex). Multisigs
-/// are owned by the wallet of the account matching
-/// [MultisigAccount.myMemberAccountId].
-WalletsGrouping groupWallets({required List<Account> accounts, required List<MultisigAccount> multisigs}) {
+/// wallets (by walletIndex) then keystone wallets (by walletIndex). The wallet
+/// containing [activeAccountId] moves to the front; the rest keep their order
+/// and their "Wallet {n}" numbering. Multisigs are owned by the wallet of the
+/// account matching [MultisigAccount.myMemberAccountId].
+WalletsGrouping groupWallets({
+  required List<Account> accounts,
+  required List<MultisigAccount> multisigs,
+  String? activeAccountId,
+}) {
   final byWallet = <int, List<Account>>{};
   for (final a in accounts) {
     byWallet.putIfAbsent(a.walletIndex, () => []).add(a);
@@ -87,6 +97,13 @@ WalletsGrouping groupWallets({required List<Account> accounts, required List<Mul
     for (var i = 0; i < softwareIndices.length; i++) buildGroup(WalletKind.software, i + 1, softwareIndices[i]),
     for (var i = 0; i < keystoneIndices.length; i++) buildGroup(WalletKind.keystone, i + 1, keystoneIndices[i]),
   ];
+
+  if (activeAccountId != null) {
+    final activePos = wallets.indexWhere((w) => w.contains(activeAccountId));
+    if (activePos > 0) {
+      wallets.insert(0, wallets.removeAt(activePos));
+    }
+  }
 
   return WalletsGrouping(wallets: wallets, standaloneMultisigs: [...standaloneMultisigs]..sort(_compareMultisigs));
 }

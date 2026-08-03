@@ -48,7 +48,6 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
   bool _scrolledToTarget = false;
   String? _highlightAccountId;
   final Set<int> _expandedWallets = {};
-  bool _autoExpandedActive = false;
 
   @override
   void initState() {
@@ -175,7 +174,11 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
       );
     }
 
-    final grouping = groupWallets(accounts: accountsAsync.value ?? [], multisigs: multisigAsync.value ?? []);
+    final grouping = groupWallets(
+      accounts: accountsAsync.value ?? [],
+      multisigs: multisigAsync.value ?? [],
+      activeAccountId: activeAccountId,
+    );
 
     if (grouping.wallets.isEmpty && grouping.standaloneMultisigs.isEmpty) {
       return Center(
@@ -189,24 +192,13 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
     return _buildWalletsListView(l10n, grouping, activeAccountId);
   }
 
-  bool _containsAccount(WalletGroup group, String? accountId) {
-    if (accountId == null) return false;
-    return group.accounts.any((a) => a.accountId == accountId) ||
-        group.encryptedAccount?.accountId == accountId ||
-        group.multisigs.any((m) => m.accountId == accountId);
-  }
+  bool _containsAccount(WalletGroup group, String? accountId) => accountId != null && group.contains(accountId);
 
   Widget _buildWalletsListView(AppLocalizations l10n, WalletsGrouping grouping, String? activeAccountId) {
     final scrollTargetId = _highlightAccountId ?? activeAccountId;
 
-    // First open: reveal where the user currently is when the active account
-    // lives in a secondary wallet. A pending highlight (new account from an
-    // add/import flow) must also expand its wallet to be scrolled to.
-    if (!_autoExpandedActive) {
-      _autoExpandedActive = true;
-      final activeGroup = grouping.wallets.skip(1).firstWhereOrNull((g) => _containsAccount(g, activeAccountId));
-      if (activeGroup != null) _expandedWallets.add(activeGroup.walletIndex);
-    }
+    // A pending highlight (new account from an add/import flow) must expand
+    // its wallet to be scrolled to.
     if (!_scrolledToTarget && scrollTargetId != null) {
       final targetGroup = grouping.wallets.skip(1).firstWhereOrNull((g) => _containsAccount(g, scrollTargetId));
       if (targetGroup != null) _expandedWallets.add(targetGroup.walletIndex);
@@ -419,11 +411,7 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
       leading: AccountBadge.account(account: account, isActive: isActive),
       title: account.name,
       subtitle: _balanceText(l10n, account),
-      trailing: QuantusIconButton.circular(
-        icon: Icons.edit_outlined,
-        onTap: () => _openAccountMenu(account),
-        size: IconButtonSize.medium,
-      ),
+      trailing: _MenuCaret(onTap: () => _openAccountMenu(account)),
     );
   }
 
@@ -449,10 +437,26 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
       title: account.name,
       subtitle: _balanceText(l10n, account),
       tag: MultisigTag(label: l10n.multisigTag),
-      trailing: QuantusIconButton.circular(
-        icon: Icons.edit_outlined,
-        onTap: () => _openMultisigAccountMenu(account),
-        size: IconButtonSize.medium,
+      trailing: _MenuCaret(onTap: () => _openMultisigAccountMenu(account)),
+    );
+  }
+}
+
+/// Trailing chevron on an account row: opens the account menu, while tapping
+/// the row itself switches to the account.
+class _MenuCaret extends StatelessWidget {
+  final VoidCallback onTap;
+
+  const _MenuCaret({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Padding(
+        padding: const EdgeInsets.all(10),
+        child: Icon(Icons.chevron_right, size: 20, color: context.colors.textMuted),
       ),
     );
   }

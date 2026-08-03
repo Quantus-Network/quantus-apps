@@ -60,6 +60,21 @@ void main() {
       expect(r.wallets.every((w) => w.kind == WalletKind.software), isTrue);
     });
 
+    test('active wallet moves to front keeping its number, others stay in order', () {
+      final r = groupWallets(
+        accounts: [_acc(0, 0), _acc(1, 0), _acc(2, 0)],
+        multisigs: [],
+        activeAccountId: 'addr-1-0',
+      );
+      expect(r.wallets.map((w) => w.walletIndex), [1, 0, 2]);
+      expect(r.wallets.map((w) => w.number), [2, 1, 3]);
+    });
+
+    test('unknown active account leaves wallet order unchanged', () {
+      final r = groupWallets(accounts: [_acc(0, 0), _acc(1, 0)], multisigs: [], activeAccountId: 'stranger');
+      expect(r.wallets.map((w) => w.walletIndex), [0, 1]);
+    });
+
     test('keystone wallets come after software wallets with own numbering', () {
       final r = groupWallets(
         accounts: [
