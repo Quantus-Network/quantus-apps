@@ -64,8 +64,7 @@ class _ConnectKeystoneScreenState extends ConsumerState<ConnectKeystoneScreen> {
         accountType: AccountType.keystone,
       );
       await _accountsService.addAccount(account);
-      ref.invalidate(accountsProvider);
-      ref.invalidate(activeAccountProvider);
+      invalidateAccountProviders(ref);
       if (mounted) {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (_) => AccountMenuScreen(initialAccount: account, isPostCreation: true)),

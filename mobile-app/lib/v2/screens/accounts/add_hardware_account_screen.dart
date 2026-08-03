@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base_bottom_content.dart';
-import 'package:resonance_network_wallet/v2/components/underlined_text_link.dart';
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/connect_keystone_screen.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
@@ -37,12 +37,12 @@ class AddHardwareAccountScreen extends ConsumerWidget {
           Container(
             height: 218,
             decoration: BoxDecoration(
-              border: Border.all(color: Colors.white.withValues(alpha: 0.07)),
+              border: Border.all(color: colors.textPrimary.useOpacity(0.07)),
               borderRadius: BorderRadius.circular(8),
-              gradient: const LinearGradient(
+              gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [Color(0xFF1A1A1A), Color(0xFF141210)],
+                colors: [colors.sheetBackground, colors.surfaceHero],
               ),
             ),
             child: ClipRRect(
@@ -75,10 +75,11 @@ class AddHardwareAccountScreen extends ConsumerWidget {
                 ),
               ),
             ),
-            const SizedBox(height: 16),
-            UnderlinedTextLink(
+            const SizedBox(height: 4),
+            QuantusButton.simple(
               label: l10n.addKeystoneGetOneLink,
-              color: colors.accentOrange,
+              variant: ButtonVariant.underline,
+              textStyle: TextStyle(color: colors.accentOrange),
               onTap: () => launchUrl(_keystoneStoreUrl, mode: LaunchMode.externalApplication),
             ),
           ],

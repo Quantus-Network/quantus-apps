@@ -7,7 +7,6 @@ import 'package:resonance_network_wallet/v2/components/address_checkphrase_with_
 import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base_bottom_content.dart';
-import 'package:resonance_network_wallet/v2/components/underlined_text_link.dart';
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
 import 'package:resonance_network_wallet/v2/screens/send/keystone_reject_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/send/keystone_signature_scan_screen.dart';
@@ -73,10 +72,10 @@ class KeystoneVerifyScreen extends ConsumerWidget {
         child: Column(
           children: [
             QuantusButton.simple(label: l10n.keystoneSignNext, onTap: () => _goToScan(context)),
-            const SizedBox(height: 16),
-            UnderlinedTextLink(
+            const SizedBox(height: 4),
+            QuantusButton.simple(
               label: l10n.keystoneVerifyMismatch,
-              color: colors.textMuted,
+              variant: ButtonVariant.underline,
               onTap: () => _goToReject(context),
             ),
           ],

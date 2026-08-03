@@ -114,8 +114,7 @@ class _ImportWalletScreenV2State extends ConsumerState<ImportWalletScreenV2> {
       if (!HdWalletService.isDevAccount(mnemonic)) {
         await _discoverAccounts(mnemonic);
       }
-      ref.invalidate(accountsProvider);
-      ref.invalidate(activeAccountProvider);
+      invalidateAccountProviders(ref);
       _settingsService.setReferralCheckCompleted();
       _settingsService.setExistingUserSeenPromoVideo();
       _settingsService.setWalletOrigin(widget.walletIndex, WalletOrigin.imported);
@@ -154,8 +153,7 @@ class _ImportWalletScreenV2State extends ConsumerState<ImportWalletScreenV2> {
           await _accountsService.addAccount(account);
         }
       }
-      ref.invalidate(accountsProvider);
-      ref.invalidate(activeAccountProvider);
+      invalidateAccountProviders(ref);
       unawaited(_discoverEncryptedAccount());
     } catch (e) {
       quantusPrint('error discovering accounts: $e');

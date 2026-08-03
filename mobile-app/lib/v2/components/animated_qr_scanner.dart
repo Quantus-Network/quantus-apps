@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
@@ -182,14 +183,14 @@ class _AnimatedQrScannerState extends State<AnimatedQrScanner> {
             if (_submitting)
               Positioned.fill(
                 child: ColoredBox(
-                  color: Colors.black.withValues(alpha: 0.7),
+                  color: colors.background.useOpacity(0.7),
                   child: Center(
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         CircularProgressIndicator(color: colors.accentOrange),
                         const SizedBox(height: 16),
-                        Text(widget.submittingLabel, style: text.paragraph?.copyWith(color: Colors.white)),
+                        Text(widget.submittingLabel, style: text.paragraph?.copyWith(color: colors.textPrimary)),
                       ],
                     ),
                   ),
@@ -278,12 +279,7 @@ class _AnimatedQrScannerState extends State<AnimatedQrScanner> {
           ],
           if (widget.debugPartsBuilder != null && !_submitting) ...[
             const SizedBox(height: 16),
-            QuantusButton.simple(
-              label: widget.debugActionLabel,
-              onTap: _simulateScan,
-              variant: ButtonVariant.danger,
-              width: null,
-            ),
+            QuantusButton.simple(label: widget.debugActionLabel, onTap: _simulateScan, variant: ButtonVariant.danger),
           ],
         ],
       ),
@@ -298,7 +294,7 @@ class _ScanBrackets extends StatelessWidget {
   static const double _length = 28;
   static const double _thickness = 2;
 
-  Widget _corner({required Alignment alignment}) {
+  Widget _corner({required Color color, required Alignment alignment}) {
     final horizontal = alignment.x < 0 ? Alignment.centerLeft : Alignment.centerRight;
     return Align(
       alignment: alignment,
@@ -307,33 +303,36 @@ class _ScanBrackets extends StatelessWidget {
         crossAxisAlignment: alignment.x < 0 ? CrossAxisAlignment.start : CrossAxisAlignment.end,
         children: [
           if (alignment.y < 0) ...[
-            _bar(vertical: true),
-            Align(alignment: horizontal, child: _bar(vertical: false)),
+            _bar(color: color, vertical: true),
+            Align(
+              alignment: horizontal,
+              child: _bar(color: color, vertical: false),
+            ),
           ] else ...[
-            Align(alignment: horizontal, child: _bar(vertical: false)),
-            _bar(vertical: true),
+            Align(
+              alignment: horizontal,
+              child: _bar(color: color, vertical: false),
+            ),
+            _bar(color: color, vertical: true),
           ],
         ],
       ),
     );
   }
 
-  Widget _bar({required bool vertical}) {
-    return Container(
-      width: vertical ? _thickness : _length,
-      height: vertical ? _length : _thickness,
-      color: Colors.white,
-    );
+  Widget _bar({required Color color, required bool vertical}) {
+    return Container(width: vertical ? _thickness : _length, height: vertical ? _length : _thickness, color: color);
   }
 
   @override
   Widget build(BuildContext context) {
+    final color = context.colors.textPrimary;
     return Stack(
       children: [
-        _corner(alignment: Alignment.topLeft),
-        _corner(alignment: Alignment.topRight),
-        _corner(alignment: Alignment.bottomLeft),
-        _corner(alignment: Alignment.bottomRight),
+        _corner(color: color, alignment: Alignment.topLeft),
+        _corner(color: color, alignment: Alignment.topRight),
+        _corner(color: color, alignment: Alignment.bottomLeft),
+        _corner(color: color, alignment: Alignment.bottomRight),
       ],
     );
   }
