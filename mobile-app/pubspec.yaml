@@ -102,6 +102,12 @@ flutter:
     - assets/v2/splash_background.jpg
     - assets/v2/ascii_background.png
     - assets/v2/quantus_orange_logo.png
+    - assets/v2/keystone_hero.png
+    - assets/v2/keystone_logo.png
+    - assets/v2/keystone_arrow_line_down.svg
+    - assets/v2/keystone_lock_simple_open.svg
+    - assets/v2/keystone_qr_code.svg
+    - assets/v2/keystone_warning.svg
 
 
   fonts:

@@ -1688,65 +1688,89 @@ abstract class AppLocalizations {
   /// **'Address Details'**
   String get accountDetailsTitle;
 
-  /// Title when adding a new hardware wallet
+  /// App bar title for the add Keystone wallet screens
   ///
   /// In en, this message translates to:
-  /// **'Add Hardware Wallet'**
-  String get addHardwareAccountAddWallet;
+  /// **'Add Keystone Wallet'**
+  String get addKeystoneAppBarTitle;
 
-  /// Title when adding a hardware account to existing wallet
+  /// Headline on the add Keystone intro screen
   ///
   /// In en, this message translates to:
-  /// **'Add Hardware Account'**
-  String get addHardwareAccountAddAccount;
+  /// **'Keystone Hardware Wallet'**
+  String get addKeystoneIntroTitle;
 
-  /// Name field label
+  /// Subtitle on the add Keystone intro screen
   ///
   /// In en, this message translates to:
-  /// **'NAME'**
-  String get addHardwareAccountNameLabel;
+  /// **'Air-gapped signing for QUAN. Keys stay on the device, signing happens over QR.'**
+  String get addKeystoneIntroSubtitle;
 
-  /// Name field hint for new hardware wallet
+  /// Primary button on the add Keystone intro screen
   ///
   /// In en, this message translates to:
-  /// **'Hardware Wallet'**
-  String get addHardwareAccountNameHintWallet;
+  /// **'Connect Hardware Wallet'**
+  String get addKeystoneConnectButton;
 
-  /// Name field hint for hardware account
+  /// Link to the Keystone store on the add Keystone intro screen
   ///
   /// In en, this message translates to:
-  /// **'Account'**
-  String get addHardwareAccountNameHintAccount;
+  /// **'Don\'t have one? Get a Keystone ↗'**
+  String get addKeystoneGetOneLink;
 
-  /// Address field label
+  /// Headline on the Keystone connect instructions screen
   ///
   /// In en, this message translates to:
-  /// **'ADDRESS'**
-  String get addHardwareAccountAddressLabel;
+  /// **'Connect Hardware Wallet'**
+  String get addKeystoneConnectTitle;
 
-  /// Address field hint
+  /// Subtitle on the Keystone connect instructions screen
   ///
   /// In en, this message translates to:
-  /// **'Signer address'**
-  String get addHardwareAccountAddressHint;
+  /// **'Scan your device\'s QR code to connect.'**
+  String get addKeystoneConnectSubtitle;
 
-  /// Debug fill button
+  /// Section label on the Keystone connect instructions screen
   ///
   /// In en, this message translates to:
-  /// **'Debug Fill'**
-  String get addHardwareAccountDebugFill;
+  /// **'BEFORE YOU START'**
+  String get addKeystoneBeforeYouStart;
 
-  /// Validation when name is empty
+  /// Firmware reminder title on the Keystone connect instructions screen
   ///
   /// In en, this message translates to:
-  /// **'Name is required'**
-  String get addHardwareAccountNameRequired;
+  /// **'Update to the latest Keystone firmware'**
+  String get addKeystoneFirmwareTitle;
 
-  /// Validation when address is invalid
+  /// Firmware reminder subtitle on the Keystone connect instructions screen
   ///
   /// In en, this message translates to:
-  /// **'Invalid address'**
-  String get addHardwareAccountInvalidAddress;
+  /// **'Required for QUAN signing'**
+  String get addKeystoneFirmwareSubtitle;
+
+  /// Section label for the on-device steps
+  ///
+  /// In en, this message translates to:
+  /// **'ON YOUR KEYSTONE'**
+  String get addKeystoneOnYourKeystone;
+
+  /// On-device step: unlock
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock your Keystone'**
+  String get addKeystoneStepUnlock;
+
+  /// On-device step: select Quantus and scan
+  ///
+  /// In en, this message translates to:
+  /// **'Select Quantus and scan the QR code'**
+  String get addKeystoneStepSelectQuantus;
+
+  /// Primary button opening the QR scanner on the Keystone connect instructions screen
+  ///
+  /// In en, this message translates to:
+  /// **'Ready to Scan'**
+  String get addKeystoneReadyToScan;
 
   /// Shown when an address fails SS58 validation
   ///
@@ -1934,6 +1958,18 @@ abstract class AppLocalizations {
   /// **'Done'**
   String get sendTxSubmittedDone;
 
+  /// App bar title shared by the Keystone signing screens
+  ///
+  /// In en, this message translates to:
+  /// **'Sign with Keystone'**
+  String get keystoneSignScreenTitle;
+
+  /// Step indicator on the Keystone signing screens
+  ///
+  /// In en, this message translates to:
+  /// **'STEP {current}/{total}'**
+  String keystoneSignStep(int current, int total);
+
   /// Title on the Keystone sign screen showing the unsigned transaction QR
   ///
   /// In en, this message translates to:
@@ -1943,14 +1979,26 @@ abstract class AppLocalizations {
   /// Instruction on the Keystone sign screen
   ///
   /// In en, this message translates to:
-  /// **'Show this QR code to your Keystone hardware wallet to sign the transaction.'**
+  /// **'Open your Keystone and scan this QR code to load the transaction.'**
   String get keystoneSignInstruction;
 
-  /// Button to advance from showing the QR to scanning the signature
+  /// Section label above the transaction details on the Keystone sign screen
   ///
   /// In en, this message translates to:
-  /// **'Scan signature'**
+  /// **'YOU ARE SIGNING'**
+  String get keystoneSignYouAreSigning;
+
+  /// Button to advance to the next Keystone signing step
+  ///
+  /// In en, this message translates to:
+  /// **'Continue to Sign'**
   String get keystoneSignNext;
+
+  /// Link to abort the Keystone signing flow
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel Transaction'**
+  String get keystoneSignCancel;
 
   /// Error when building the unsigned transaction payload fails
   ///
@@ -1958,16 +2006,52 @@ abstract class AppLocalizations {
   /// **'Failed to prepare the transaction. Please try again.'**
   String get keystoneSignError;
 
+  /// Title on the Keystone verification screen
+  ///
+  /// In en, this message translates to:
+  /// **'Check your Keystone Screen'**
+  String get keystoneVerifyTitle;
+
+  /// Instruction on the Keystone verification screen
+  ///
+  /// In en, this message translates to:
+  /// **'Before approving on your Keystone, make sure its screen shows exactly this:'**
+  String get keystoneVerifyInstruction;
+
+  /// Warning shown when asking the user to compare the Keystone screen
+  ///
+  /// In en, this message translates to:
+  /// **'If the amount or address on your Keystone screen is different from what\'s shown here, reject the transaction on your device.'**
+  String get keystoneVerifyWarning;
+
+  /// Link opening the mismatch help screen
+  ///
+  /// In en, this message translates to:
+  /// **'It doesn\'t match'**
+  String get keystoneVerifyMismatch;
+
+  /// Title on the Keystone signature scanner screen
+  ///
+  /// In en, this message translates to:
+  /// **'Scan the signature'**
+  String get keystoneScanTitle;
+
   /// Instruction on the Keystone signature scanner screen
   ///
   /// In en, this message translates to:
-  /// **'Scan the signature QR from your Keystone'**
+  /// **'Your Keystone is now showing an animated QR. Hold your phone up to it, this takes a moment.'**
   String get keystoneScanInstruction;
+
+  /// Label next to the scan progress on the Keystone signature scanner screen
+  ///
+  /// In en, this message translates to:
+  /// **'RECEIVING SIGNATURE'**
+  String get keystoneScanReceiving;
 
   /// Progress indicator showing scanned vs total animated QR frames
   ///
   /// In en, this message translates to:
-  /// **'{scanned} / {total} frames'**
+  /// **'{scanned}/{total}'**
   String keystoneScanProgress(int scanned, int total);
 
   /// Progress text before the total frame count is known
@@ -1987,6 +2071,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Couldn\'t read the signature. Please try again.'**
   String get keystoneScanError;
+
+  /// Headline on the Keystone mismatch help screen
+  ///
+  /// In en, this message translates to:
+  /// **'Don\'t approve this transaction'**
+  String get keystoneRejectTitle;
+
+  /// First step title on the Keystone mismatch help screen
+  ///
+  /// In en, this message translates to:
+  /// **'Reject the transaction on your Keystone.'**
+  String get keystoneRejectStep1Title;
+
+  /// First step body on the Keystone mismatch help screen
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing is signed or sent until you approve there.'**
+  String get keystoneRejectStep1Body;
+
+  /// Second step title on the Keystone mismatch help screen
+  ///
+  /// In en, this message translates to:
+  /// **'Don\'t retry from this phone.'**
+  String get keystoneRejectStep2Title;
+
+  /// Second step body on the Keystone mismatch help screen
+  ///
+  /// In en, this message translates to:
+  /// **'If it\'s compromised, retrying gives the attacker another chance.'**
+  String get keystoneRejectStep2Body;
+
+  /// Third step title on the Keystone mismatch help screen
+  ///
+  /// In en, this message translates to:
+  /// **'Your funds are safe on the Keystone.'**
+  String get keystoneRejectStep3Title;
+
+  /// Third step body on the Keystone mismatch help screen
+  ///
+  /// In en, this message translates to:
+  /// **'Keys never left the device. Move to a trusted phone before sending again.'**
+  String get keystoneRejectStep3Body;
+
+  /// Button confirming the transaction was rejected on the device
+  ///
+  /// In en, this message translates to:
+  /// **'I rejected it on Keystone'**
+  String get keystoneRejectConfirm;
+
+  /// Link to contact support from the Keystone mismatch help screen
+  ///
+  /// In en, this message translates to:
+  /// **'Contact Support'**
+  String get keystoneRejectContactSupport;
 
   /// Button label when sending to own address
   ///

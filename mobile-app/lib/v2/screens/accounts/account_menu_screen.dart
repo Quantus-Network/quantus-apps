@@ -171,8 +171,7 @@ class AccountMenuScreen extends ConsumerWidget {
     final l10n = ref.read(l10nProvider);
     try {
       await AccountsService().removeAccount(account);
-      ref.invalidate(accountsProvider);
-      ref.invalidate(activeAccountProvider);
+      invalidateAccountProviders(ref);
       if (context.mounted) returnToAccountsSheet(context, ref);
     } catch (e, st) {
       quantusPrint('[AccountMenu] disconnect account error: $e\n$st');
@@ -184,8 +183,7 @@ class AccountMenuScreen extends ConsumerWidget {
     final l10n = ref.read(l10nProvider);
     try {
       await AccountsService().removeWallet(walletIndex);
-      ref.invalidate(accountsProvider);
-      ref.invalidate(activeAccountProvider);
+      invalidateAccountProviders(ref);
       if (context.mounted) returnToAccountsSheet(context, ref);
     } catch (e, st) {
       quantusPrint('[AccountMenu] disconnect wallet error: $e\n$st');

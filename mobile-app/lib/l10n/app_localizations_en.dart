@@ -904,34 +904,47 @@ class AppLocalizationsEn extends AppLocalizations {
   String get accountDetailsTitle => 'Address Details';
 
   @override
-  String get addHardwareAccountAddWallet => 'Add Hardware Wallet';
+  String get addKeystoneAppBarTitle => 'Add Keystone Wallet';
 
   @override
-  String get addHardwareAccountAddAccount => 'Add Hardware Account';
+  String get addKeystoneIntroTitle => 'Keystone Hardware Wallet';
 
   @override
-  String get addHardwareAccountNameLabel => 'NAME';
+  String get addKeystoneIntroSubtitle =>
+      'Air-gapped signing for QUAN. Keys stay on the device, signing happens over QR.';
 
   @override
-  String get addHardwareAccountNameHintWallet => 'Hardware Wallet';
+  String get addKeystoneConnectButton => 'Connect Hardware Wallet';
 
   @override
-  String get addHardwareAccountNameHintAccount => 'Account';
+  String get addKeystoneGetOneLink => 'Don\'t have one? Get a Keystone ↗';
 
   @override
-  String get addHardwareAccountAddressLabel => 'ADDRESS';
+  String get addKeystoneConnectTitle => 'Connect Hardware Wallet';
 
   @override
-  String get addHardwareAccountAddressHint => 'Signer address';
+  String get addKeystoneConnectSubtitle => 'Scan your device\'s QR code to connect.';
 
   @override
-  String get addHardwareAccountDebugFill => 'Debug Fill';
+  String get addKeystoneBeforeYouStart => 'BEFORE YOU START';
 
   @override
-  String get addHardwareAccountNameRequired => 'Name is required';
+  String get addKeystoneFirmwareTitle => 'Update to the latest Keystone firmware';
 
   @override
-  String get addHardwareAccountInvalidAddress => 'Invalid address';
+  String get addKeystoneFirmwareSubtitle => 'Required for QUAN signing';
+
+  @override
+  String get addKeystoneOnYourKeystone => 'ON YOUR KEYSTONE';
+
+  @override
+  String get addKeystoneStepUnlock => 'Unlock your Keystone';
+
+  @override
+  String get addKeystoneStepSelectQuantus => 'Select Quantus and scan the QR code';
+
+  @override
+  String get addKeystoneReadyToScan => 'Ready to Scan';
 
   @override
   String get invalidAddress => 'Invalid address';
@@ -1035,23 +1048,57 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sendTxSubmittedDone => 'Done';
 
   @override
+  String get keystoneSignScreenTitle => 'Sign with Keystone';
+
+  @override
+  String keystoneSignStep(int current, int total) {
+    return 'STEP $current/$total';
+  }
+
+  @override
   String get keystoneSignTitle => 'Scan with your Keystone';
 
   @override
-  String get keystoneSignInstruction => 'Show this QR code to your Keystone hardware wallet to sign the transaction.';
+  String get keystoneSignInstruction => 'Open your Keystone and scan this QR code to load the transaction.';
 
   @override
-  String get keystoneSignNext => 'Scan signature';
+  String get keystoneSignYouAreSigning => 'YOU ARE SIGNING';
+
+  @override
+  String get keystoneSignNext => 'Continue to Sign';
+
+  @override
+  String get keystoneSignCancel => 'Cancel Transaction';
 
   @override
   String get keystoneSignError => 'Failed to prepare the transaction. Please try again.';
 
   @override
-  String get keystoneScanInstruction => 'Scan the signature QR from your Keystone';
+  String get keystoneVerifyTitle => 'Check your Keystone Screen';
+
+  @override
+  String get keystoneVerifyInstruction => 'Before approving on your Keystone, make sure its screen shows exactly this:';
+
+  @override
+  String get keystoneVerifyWarning =>
+      'If the amount or address on your Keystone screen is different from what\'s shown here, reject the transaction on your device.';
+
+  @override
+  String get keystoneVerifyMismatch => 'It doesn\'t match';
+
+  @override
+  String get keystoneScanTitle => 'Scan the signature';
+
+  @override
+  String get keystoneScanInstruction =>
+      'Your Keystone is now showing an animated QR. Hold your phone up to it, this takes a moment.';
+
+  @override
+  String get keystoneScanReceiving => 'RECEIVING SIGNATURE';
 
   @override
   String keystoneScanProgress(int scanned, int total) {
-    return '$scanned / $total frames';
+    return '$scanned/$total';
   }
 
   @override
@@ -1064,6 +1111,33 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get keystoneScanError => 'Couldn\'t read the signature. Please try again.';
+
+  @override
+  String get keystoneRejectTitle => 'Don\'t approve this transaction';
+
+  @override
+  String get keystoneRejectStep1Title => 'Reject the transaction on your Keystone.';
+
+  @override
+  String get keystoneRejectStep1Body => 'Nothing is signed or sent until you approve there.';
+
+  @override
+  String get keystoneRejectStep2Title => 'Don\'t retry from this phone.';
+
+  @override
+  String get keystoneRejectStep2Body => 'If it\'s compromised, retrying gives the attacker another chance.';
+
+  @override
+  String get keystoneRejectStep3Title => 'Your funds are safe on the Keystone.';
+
+  @override
+  String get keystoneRejectStep3Body => 'Keys never left the device. Move to a trusted phone before sending again.';
+
+  @override
+  String get keystoneRejectConfirm => 'I rejected it on Keystone';
+
+  @override
+  String get keystoneRejectContactSupport => 'Contact Support';
 
   @override
   String get sendLogicCantSelfTransfer => 'Can\'t Self Transfer';

@@ -1254,45 +1254,61 @@
       "description": "App bar title on account details screen"
     },
 
-    "addHardwareAccountAddWallet": "Add Hardware Wallet",
-    "@addHardwareAccountAddWallet": {
-      "description": "Title when adding a new hardware wallet"
+    "addKeystoneAppBarTitle": "Add Keystone Wallet",
+    "@addKeystoneAppBarTitle": {
+      "description": "App bar title for the add Keystone wallet screens"
     },
-    "addHardwareAccountAddAccount": "Add Hardware Account",
-    "@addHardwareAccountAddAccount": {
-      "description": "Title when adding a hardware account to existing wallet"
+    "addKeystoneIntroTitle": "Keystone Hardware Wallet",
+    "@addKeystoneIntroTitle": {
+      "description": "Headline on the add Keystone intro screen"
     },
-    "addHardwareAccountNameLabel": "NAME",
-    "@addHardwareAccountNameLabel": {
-      "description": "Name field label"
+    "addKeystoneIntroSubtitle": "Air-gapped signing for QUAN. Keys stay on the device, signing happens over QR.",
+    "@addKeystoneIntroSubtitle": {
+      "description": "Subtitle on the add Keystone intro screen"
     },
-    "addHardwareAccountNameHintWallet": "Hardware Wallet",
-    "@addHardwareAccountNameHintWallet": {
-      "description": "Name field hint for new hardware wallet"
+    "addKeystoneConnectButton": "Connect Hardware Wallet",
+    "@addKeystoneConnectButton": {
+      "description": "Primary button on the add Keystone intro screen"
     },
-    "addHardwareAccountNameHintAccount": "Account",
-    "@addHardwareAccountNameHintAccount": {
-      "description": "Name field hint for hardware account"
+    "addKeystoneGetOneLink": "Don't have one? Get a Keystone ↗",
+    "@addKeystoneGetOneLink": {
+      "description": "Link to the Keystone store on the add Keystone intro screen"
     },
-    "addHardwareAccountAddressLabel": "ADDRESS",
-    "@addHardwareAccountAddressLabel": {
-      "description": "Address field label"
+    "addKeystoneConnectTitle": "Connect Hardware Wallet",
+    "@addKeystoneConnectTitle": {
+      "description": "Headline on the Keystone connect instructions screen"
     },
-    "addHardwareAccountAddressHint": "Signer address",
-    "@addHardwareAccountAddressHint": {
-      "description": "Address field hint"
+    "addKeystoneConnectSubtitle": "Scan your device's QR code to connect.",
+    "@addKeystoneConnectSubtitle": {
+      "description": "Subtitle on the Keystone connect instructions screen"
     },
-    "addHardwareAccountDebugFill": "Debug Fill",
-    "@addHardwareAccountDebugFill": {
-      "description": "Debug fill button"
+    "addKeystoneBeforeYouStart": "BEFORE YOU START",
+    "@addKeystoneBeforeYouStart": {
+      "description": "Section label on the Keystone connect instructions screen"
     },
-    "addHardwareAccountNameRequired": "Name is required",
-    "@addHardwareAccountNameRequired": {
-      "description": "Validation when name is empty"
+    "addKeystoneFirmwareTitle": "Update to the latest Keystone firmware",
+    "@addKeystoneFirmwareTitle": {
+      "description": "Firmware reminder title on the Keystone connect instructions screen"
     },
-    "addHardwareAccountInvalidAddress": "Invalid address",
-    "@addHardwareAccountInvalidAddress": {
-      "description": "Validation when address is invalid"
+    "addKeystoneFirmwareSubtitle": "Required for QUAN signing",
+    "@addKeystoneFirmwareSubtitle": {
+      "description": "Firmware reminder subtitle on the Keystone connect instructions screen"
+    },
+    "addKeystoneOnYourKeystone": "ON YOUR KEYSTONE",
+    "@addKeystoneOnYourKeystone": {
+      "description": "Section label for the on-device steps"
+    },
+    "addKeystoneStepUnlock": "Unlock your Keystone",
+    "@addKeystoneStepUnlock": {
+      "description": "On-device step: unlock"
+    },
+    "addKeystoneStepSelectQuantus": "Select Quantus and scan the QR code",
+    "@addKeystoneStepSelectQuantus": {
+      "description": "On-device step: select Quantus and scan"
+    },
+    "addKeystoneReadyToScan": "Ready to Scan",
+    "@addKeystoneReadyToScan": {
+      "description": "Primary button opening the QR scanner on the Keystone connect instructions screen"
     },
 
     "invalidAddress": "Invalid address",
@@ -1451,27 +1467,75 @@
       "description": "Done button on transaction submitted screen"
     },
 
+    "keystoneSignScreenTitle": "Sign with Keystone",
+    "@keystoneSignScreenTitle": {
+      "description": "App bar title shared by the Keystone signing screens"
+    },
+    "keystoneSignStep": "STEP {current}/{total}",
+    "@keystoneSignStep": {
+      "description": "Step indicator on the Keystone signing screens",
+      "placeholders": {
+        "current": {
+          "type": "int"
+        },
+        "total": {
+          "type": "int"
+        }
+      }
+    },
     "keystoneSignTitle": "Scan with your Keystone",
     "@keystoneSignTitle": {
       "description": "Title on the Keystone sign screen showing the unsigned transaction QR"
     },
-    "keystoneSignInstruction": "Show this QR code to your Keystone hardware wallet to sign the transaction.",
+    "keystoneSignInstruction": "Open your Keystone and scan this QR code to load the transaction.",
     "@keystoneSignInstruction": {
       "description": "Instruction on the Keystone sign screen"
     },
-    "keystoneSignNext": "Scan signature",
+    "keystoneSignYouAreSigning": "YOU ARE SIGNING",
+    "@keystoneSignYouAreSigning": {
+      "description": "Section label above the transaction details on the Keystone sign screen"
+    },
+    "keystoneSignNext": "Continue to Sign",
     "@keystoneSignNext": {
-      "description": "Button to advance from showing the QR to scanning the signature"
+      "description": "Button to advance to the next Keystone signing step"
+    },
+    "keystoneSignCancel": "Cancel Transaction",
+    "@keystoneSignCancel": {
+      "description": "Link to abort the Keystone signing flow"
     },
     "keystoneSignError": "Failed to prepare the transaction. Please try again.",
     "@keystoneSignError": {
       "description": "Error when building the unsigned transaction payload fails"
     },
-    "keystoneScanInstruction": "Scan the signature QR from your Keystone",
+    "keystoneVerifyTitle": "Check your Keystone Screen",
+    "@keystoneVerifyTitle": {
+      "description": "Title on the Keystone verification screen"
+    },
+    "keystoneVerifyInstruction": "Before approving on your Keystone, make sure its screen shows exactly this:",
+    "@keystoneVerifyInstruction": {
+      "description": "Instruction on the Keystone verification screen"
+    },
+    "keystoneVerifyWarning": "If the amount or address on your Keystone screen is different from what's shown here, reject the transaction on your device.",
+    "@keystoneVerifyWarning": {
+      "description": "Warning shown when asking the user to compare the Keystone screen"
+    },
+    "keystoneVerifyMismatch": "It doesn't match",
+    "@keystoneVerifyMismatch": {
+      "description": "Link opening the mismatch help screen"
+    },
+    "keystoneScanTitle": "Scan the signature",
+    "@keystoneScanTitle": {
+      "description": "Title on the Keystone signature scanner screen"
+    },
+    "keystoneScanInstruction": "Your Keystone is now showing an animated QR. Hold your phone up to it, this takes a moment.",
     "@keystoneScanInstruction": {
       "description": "Instruction on the Keystone signature scanner screen"
     },
-    "keystoneScanProgress": "{scanned} / {total} frames",
+    "keystoneScanReceiving": "RECEIVING SIGNATURE",
+    "@keystoneScanReceiving": {
+      "description": "Label next to the scan progress on the Keystone signature scanner screen"
+    },
+    "keystoneScanProgress": "{scanned}/{total}",
     "@keystoneScanProgress": {
       "description": "Progress indicator showing scanned vs total animated QR frames",
       "placeholders": {
@@ -1499,6 +1563,42 @@
     "keystoneScanError": "Couldn't read the signature. Please try again.",
     "@keystoneScanError": {
       "description": "Error when decoding or submitting the scanned signature fails"
+    },
+    "keystoneRejectTitle": "Don't approve this transaction",
+    "@keystoneRejectTitle": {
+      "description": "Headline on the Keystone mismatch help screen"
+    },
+    "keystoneRejectStep1Title": "Reject the transaction on your Keystone.",
+    "@keystoneRejectStep1Title": {
+      "description": "First step title on the Keystone mismatch help screen"
+    },
+    "keystoneRejectStep1Body": "Nothing is signed or sent until you approve there.",
+    "@keystoneRejectStep1Body": {
+      "description": "First step body on the Keystone mismatch help screen"
+    },
+    "keystoneRejectStep2Title": "Don't retry from this phone.",
+    "@keystoneRejectStep2Title": {
+      "description": "Second step title on the Keystone mismatch help screen"
+    },
+    "keystoneRejectStep2Body": "If it's compromised, retrying gives the attacker another chance.",
+    "@keystoneRejectStep2Body": {
+      "description": "Second step body on the Keystone mismatch help screen"
+    },
+    "keystoneRejectStep3Title": "Your funds are safe on the Keystone.",
+    "@keystoneRejectStep3Title": {
+      "description": "Third step title on the Keystone mismatch help screen"
+    },
+    "keystoneRejectStep3Body": "Keys never left the device. Move to a trusted phone before sending again.",
+    "@keystoneRejectStep3Body": {
+      "description": "Third step body on the Keystone mismatch help screen"
+    },
+    "keystoneRejectConfirm": "I rejected it on Keystone",
+    "@keystoneRejectConfirm": {
+      "description": "Button confirming the transaction was rejected on the device"
+    },
+    "keystoneRejectContactSupport": "Contact Support",
+    "@keystoneRejectContactSupport": {
+      "description": "Link to contact support from the Keystone mismatch help screen"
     },
 
     "sendLogicCantSelfTransfer": "Can't Self Transfer",

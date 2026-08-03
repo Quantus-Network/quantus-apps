@@ -303,7 +303,6 @@ class _MultisigActionConfirmSheetState extends ConsumerState<MultisigActionConfi
     final session = KeystoneSigningSession(
       account: signer,
       buildCall: () => widget.buildCall(signer, _callBytes),
-      title: widget.labels.title(l10n),
       primaryDetail: headline.primary,
       secondaryDetail: headline.secondary,
       cacheKey: KeystoneSignCacheKey.forExtrinsic(accountId: signer.accountId, identity: widget.hardwareCacheIdentity),

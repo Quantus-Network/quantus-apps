@@ -283,17 +283,6 @@
 
   "accountDetailsTitle": "Detail Alamat",
 
-  "addHardwareAccountAddWallet": "Tambah Hardware Wallet",
-  "addHardwareAccountAddAccount": "Tambah Akun Hardware",
-  "addHardwareAccountNameLabel": "NAMA",
-  "addHardwareAccountNameHintWallet": "Hardware Wallet",
-  "addHardwareAccountNameHintAccount": "Akun",
-  "addHardwareAccountAddressLabel": "ALAMAT",
-  "addHardwareAccountAddressHint": "Alamat penandatangan",
-  "addHardwareAccountDebugFill": "Isi Debug",
-  "addHardwareAccountNameRequired": "Nama wajib diisi",
-  "addHardwareAccountInvalidAddress": "Alamat tidak valid",
-
   "invalidAddress": "Alamat tidak valid",
 
   "sendTitle": "Kirim",
@@ -332,11 +321,7 @@
   "sendTxSubmittedDone": "Selesai",
 
   "keystoneSignTitle": "Pindai dengan Keystone Anda",
-  "keystoneSignInstruction": "Tunjukkan kode QR ini ke dompet perangkat keras Keystone Anda untuk menandatangani transaksi.",
-  "keystoneSignNext": "Pindai tanda tangan",
   "keystoneSignError": "Gagal menyiapkan transaksi. Silakan coba lagi.",
-  "keystoneScanInstruction": "Pindai QR tanda tangan dari Keystone Anda",
-  "keystoneScanProgress": "{scanned} / {total} bingkai",
   "keystoneScanScanning": "{count} bingkai dipindai",
   "keystoneScanSubmitting": "Mengirim transaksi...",
   "keystoneScanError": "Tidak dapat membaca tanda tangan. Silakan coba lagi.",
