@@ -157,21 +157,11 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
     }
 
     if (accountsAsync.hasError || multisigAsync.hasError) {
-      return Center(
-        child: Text(
-          l10n.accountsSheetFailedLoadAccounts,
-          style: context.themeText.smallParagraph?.copyWith(color: context.colors.textSecondary),
-        ),
-      );
+      return _centeredMessage(l10n.accountsSheetFailedLoadAccounts);
     }
 
     if (activeDisplayAccountAsync.hasError) {
-      return Center(
-        child: Text(
-          l10n.accountsSheetFailedLoadActiveAccount,
-          style: context.themeText.smallParagraph?.copyWith(color: context.colors.textSecondary),
-        ),
-      );
+      return _centeredMessage(l10n.accountsSheetFailedLoadActiveAccount);
     }
 
     final grouping = groupWallets(
@@ -181,15 +171,16 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
     );
 
     if (grouping.wallets.isEmpty && grouping.standaloneMultisigs.isEmpty) {
-      return Center(
-        child: Text(
-          l10n.accountsSheetNoAccountsFound,
-          style: context.themeText.smallParagraph?.copyWith(color: context.colors.textSecondary),
-        ),
-      );
+      return _centeredMessage(l10n.accountsSheetNoAccountsFound);
     }
 
     return _buildWalletsListView(l10n, grouping, activeAccountId);
+  }
+
+  Widget _centeredMessage(String message) {
+    return Center(
+      child: Text(message, style: context.themeText.smallParagraph?.copyWith(color: context.colors.textSecondary)),
+    );
   }
 
   bool _containsAccount(WalletGroup group, String? accountId) => accountId != null && group.contains(accountId);
@@ -347,7 +338,7 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
               const SizedBox(height: 8),
               Text(
                 _walletBalanceText(l10n, wallet),
-                style: context.themeText.smallParagraph!.copyWith(fontSize: 14, color: colors.textTertiary, height: 1),
+                style: context.themeText.smallParagraph!.copyWith(color: colors.textTertiary, height: 1),
               ),
             ],
           ),
@@ -355,7 +346,7 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
         const SizedBox(width: 8),
         Text(
           l10n.accountsScreenAccountCount(wallet.accountCount),
-          style: context.themeText.smallParagraph?.copyWith(fontSize: 14, color: colors.textSubtle, height: 1),
+          style: context.themeText.smallParagraph?.copyWith(color: colors.textSubtle, height: 1),
         ),
         const SizedBox(width: 4),
         Icon(Icons.keyboard_arrow_down, size: 20, color: colors.textMuted),
@@ -560,11 +551,7 @@ class _AccountRowShell extends StatelessWidget {
                         ],
                         Text(
                           subtitle,
-                          style: context.themeText.smallParagraph!.copyWith(
-                            fontSize: 14,
-                            color: colors.textTertiary,
-                            height: 1,
-                          ),
+                          style: context.themeText.smallParagraph!.copyWith(color: colors.textTertiary, height: 1),
                         ),
                       ],
                     ),
