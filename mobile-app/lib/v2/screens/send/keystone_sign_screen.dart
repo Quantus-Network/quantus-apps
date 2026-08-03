@@ -11,7 +11,6 @@ import 'package:resonance_network_wallet/v2/components/loader.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base_bottom_content.dart';
-import 'package:resonance_network_wallet/v2/components/underlined_text_link.dart';
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
 import 'package:resonance_network_wallet/v2/screens/send/keystone_sign_cache.dart';
 import 'package:resonance_network_wallet/v2/screens/send/keystone_signing_session.dart';
@@ -132,10 +131,10 @@ class _KeystoneSignScreenState extends ConsumerState<KeystoneSignScreen> {
         child: Column(
           children: [
             QuantusButton.simple(label: l10n.keystoneSignNext, isDisabled: _unsignedData == null, onTap: _goToVerify),
-            const SizedBox(height: 16),
-            UnderlinedTextLink(
+            const SizedBox(height: 4),
+            QuantusButton.simple(
               label: l10n.keystoneSignCancel,
-              color: colors.textMuted,
+              variant: ButtonVariant.underline,
               onTap: () => Navigator.pop(context),
             ),
           ],
@@ -147,7 +146,7 @@ class _KeystoneSignScreenState extends ConsumerState<KeystoneSignScreen> {
   Widget _details(AppColorsV2 colors, AppTextTheme text, AppLocalizations l10n, KeystoneSigningSession session) {
     final labelStyle = text.transactionDetailRowLabel?.copyWith(color: colors.textTertiary);
     final valueStyle = text.transactionDetailRowValue?.copyWith(
-      color: colors.textPrimary.withValues(alpha: 0.8),
+      color: colors.textPrimary.useOpacity(0.8),
       fontWeight: FontWeight.w400,
     );
     final secondary = session.secondaryDetail?.trim();

@@ -96,3 +96,10 @@ final activeAccountProvider = StateNotifierProvider<ActiveAccountNotifier, Async
   final settingsService = ref.watch(settingsServiceProvider);
   return ActiveAccountNotifier(settingsService);
 });
+
+/// Refreshes the account list and active account together; call after any
+/// mutation that adds, removes, or reassigns accounts or wallets.
+void invalidateAccountProviders(WidgetRef ref) {
+  ref.invalidate(accountsProvider);
+  ref.invalidate(activeAccountProvider);
+}

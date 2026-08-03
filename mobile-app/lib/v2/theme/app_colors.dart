@@ -27,6 +27,8 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
 
   // Semantic
   final Color error;
+  final Color errorLight;
+  final Color errorDeep;
   final Color danger;
   final Color success;
 
@@ -64,6 +66,9 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
   final Color copyButtonCopiedBg;
   final Color copyButtonCopiedBorder;
 
+  // Hero cards (keystone intro)
+  final Color surfaceHero;
+
   // Account tags
   final Color tagGuardian;
   final Color tagEntrusted;
@@ -96,6 +101,8 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
     required this.accentGreen,
     required this.checksum,
     required this.error,
+    required this.errorLight,
+    required this.errorDeep,
     required this.danger,
     required this.success,
     required this.backgroundGlow,
@@ -118,6 +125,7 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
     required this.surfaceDeep,
     required this.copyButtonCopiedBg,
     required this.copyButtonCopiedBorder,
+    required this.surfaceHero,
     required this.tagGuardian,
     required this.tagEntrusted,
     required this.tagHighSecurity,
@@ -150,6 +158,8 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
         accentGreen: const Color(0xFF34C759),
         checksum: const Color(0xFF95A7FB),
         error: const Color(0xFFFF2D54),
+        errorLight: const Color(0xFFFF5B5B),
+        errorDeep: const Color(0xFF5A1B14),
         danger: const Color(0xFFFF1F45),
         success: const Color(0xFF22A27F),
         backgroundGlow: const Color(0xFFFFFFFF),
@@ -166,6 +176,7 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
         surfaceDeep: const Color(0xFF141414),
         copyButtonCopiedBg: const Color(0xFF0C1C14),
         copyButtonCopiedBorder: const Color(0xFF1A3226),
+        surfaceHero: const Color(0xFF141210),
         buttonDisabled: const Color(0xFF3D3C44),
         buttonDanger: const Color(0x1AFF0000),
         skeletonBase: const Color(0xFF161616),
@@ -196,6 +207,8 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
     Color? accentGreen,
     Color? checksum,
     Color? error,
+    Color? errorLight,
+    Color? errorDeep,
     Color? danger,
     Color? success,
     Color? backgroundGlow,
@@ -224,6 +237,7 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
     Color? surfaceDeep,
     Color? copyButtonCopiedBg,
     Color? copyButtonCopiedBorder,
+    Color? surfaceHero,
     Color? tagGuardian,
     Color? tagEntrusted,
     Color? tagHighSecurity,
@@ -252,6 +266,8 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
       accentGreen: accentGreen ?? this.accentGreen,
       checksum: checksum ?? this.checksum,
       error: error ?? this.error,
+      errorLight: errorLight ?? this.errorLight,
+      errorDeep: errorDeep ?? this.errorDeep,
       danger: danger ?? this.danger,
       success: success ?? this.success,
       backgroundGlow: backgroundGlow ?? this.backgroundGlow,
@@ -275,6 +291,7 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
       surfaceDeep: surfaceDeep ?? this.surfaceDeep,
       copyButtonCopiedBg: copyButtonCopiedBg ?? this.copyButtonCopiedBg,
       copyButtonCopiedBorder: copyButtonCopiedBorder ?? this.copyButtonCopiedBorder,
+      surfaceHero: surfaceHero ?? this.surfaceHero,
       tagGuardian: tagGuardian ?? this.tagGuardian,
       tagEntrusted: tagEntrusted ?? this.tagEntrusted,
       tagHighSecurity: tagHighSecurity ?? this.tagHighSecurity,
@@ -308,6 +325,8 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
       accentGreen: Color.lerp(accentGreen, other.accentGreen, t) ?? accentGreen,
       checksum: Color.lerp(checksum, other.checksum, t) ?? checksum,
       error: Color.lerp(error, other.error, t) ?? error,
+      errorLight: Color.lerp(errorLight, other.errorLight, t) ?? errorLight,
+      errorDeep: Color.lerp(errorDeep, other.errorDeep, t) ?? errorDeep,
       danger: Color.lerp(danger, other.danger, t) ?? danger,
       success: Color.lerp(success, other.success, t) ?? success,
       backgroundGlow: Color.lerp(backgroundGlow, other.backgroundGlow, t) ?? backgroundGlow,
@@ -338,6 +357,7 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
       copyButtonCopiedBg: Color.lerp(copyButtonCopiedBg, other.copyButtonCopiedBg, t) ?? copyButtonCopiedBg,
       copyButtonCopiedBorder:
           Color.lerp(copyButtonCopiedBorder, other.copyButtonCopiedBorder, t) ?? copyButtonCopiedBorder,
+      surfaceHero: Color.lerp(surfaceHero, other.surfaceHero, t) ?? surfaceHero,
       tagGuardian: Color.lerp(tagGuardian, other.tagGuardian, t) ?? tagGuardian,
       tagEntrusted: Color.lerp(tagEntrusted, other.tagEntrusted, t) ?? tagEntrusted,
       tagHighSecurity: Color.lerp(tagHighSecurity, other.tagHighSecurity, t) ?? tagHighSecurity,

@@ -132,8 +132,7 @@ class WalletInitializerState extends ConsumerState<WalletInitializer> {
   }
 
   void _reloadAccounts() {
-    ref.invalidate(accountsProvider);
-    ref.invalidate(activeAccountProvider);
+    invalidateAccountProviders(ref);
   }
 
   Future<void> _performMigration() async {
