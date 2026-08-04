@@ -18,7 +18,7 @@ class QrScannerPage extends ConsumerStatefulWidget {
 }
 
 class _QrScannerPageState extends ConsumerState<QrScannerPage> {
-  final _controller = MobileScannerController();
+  final _controller = MobileScannerController(formats: const [BarcodeFormat.qrCode]);
   bool _scanned = false;
 
   @override

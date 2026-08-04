@@ -37,10 +37,11 @@ class KeystoneSignScreen extends ConsumerStatefulWidget {
 
 class _KeystoneSignScreenState extends ConsumerState<KeystoneSignScreen> {
   /// Tuning knobs for the animated payload QR: bytes per frame and how long each
-  /// frame is shown. Defaults are Keystone-hardware-safe; the cold wallet app
-  /// accepts much denser, faster frames, so raise these for cold↔hot experiments.
-  static const _kUrFragmentLength = 200;
-  static const _kUrFrameInterval = Duration(milliseconds: 200);
+  /// frame is shown. Both ends are phone cameras, so dense, fast frames scan
+  /// fine: a typical transaction fits one static QR, and larger payloads cycle
+  /// at 10 fps.
+  static const _kUrFragmentLength = 1000;
+  static const _kUrFrameInterval = Duration(milliseconds: 100);
 
   UnsignedTransactionData? _unsignedData;
   List<String>? _urParts;

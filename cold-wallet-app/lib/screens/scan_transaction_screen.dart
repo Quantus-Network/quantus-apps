@@ -19,7 +19,11 @@ class ScanTransactionScreen extends StatefulWidget {
 
 class _ScanTransactionScreenState extends State<ScanTransactionScreen> {
   // Unrestricted: deliver every decoded camera frame; dedup happens via _parts.
-  final MobileScannerController _controller = MobileScannerController(detectionSpeed: DetectionSpeed.unrestricted);
+  // QR-only: skipping the other symbologies shortens per-frame detection.
+  final MobileScannerController _controller = MobileScannerController(
+    detectionSpeed: DetectionSpeed.unrestricted,
+    formats: const [BarcodeFormat.qrCode],
+  );
   final Set<String> _parts = {};
   final Set<int> _seenSeq = {};
   final RegExp _seqPattern = RegExp(r'/(\d+)-(\d+)/');
