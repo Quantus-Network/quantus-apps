@@ -35,6 +35,12 @@ class KeystoneSignScreen extends ConsumerStatefulWidget {
 }
 
 class _KeystoneSignScreenState extends ConsumerState<KeystoneSignScreen> {
+  /// Bytes per QR frame for the animated payload. The Keystone device scans
+  /// this QR, so frames must stay easy to read. SCALE-encoded transactions are
+  /// ~300 bytes, so 400-byte fragments put a typical transaction in a single
+  /// static QR (~version 21, well within Keystone's range).
+  static const _kUrFragmentLength = 400;
+
   UnsignedTransactionData? _unsignedData;
   List<String>? _urParts;
   String? _error;
@@ -65,7 +71,7 @@ class _KeystoneSignScreenState extends ConsumerState<KeystoneSignScreen> {
         widget.session.account,
         widget.session.buildCall(),
       );
-      final parts = encodeUr(data: unsigned.encodedPayloadRaw);
+      final parts = encodeUr(data: unsigned.encodedPayloadRaw, maxFragmentLength: _kUrFragmentLength);
       if (parts.isEmpty) throw Exception('Failed to encode transaction payload as UR');
       if (cacheKey != null) {
         ref.read(keystoneSignCacheProvider.notifier).store(key: cacheKey, unsignedData: unsigned, urParts: parts);
