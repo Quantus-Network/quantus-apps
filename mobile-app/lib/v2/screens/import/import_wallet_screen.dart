@@ -15,7 +15,7 @@ import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base_bottom_content.dart';
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
-import 'package:resonance_network_wallet/v2/screens/accounts/accounts_navigation.dart';
+import 'package:resonance_network_wallet/v2/screens/accounts/wallet_name_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/home/home_screen.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
@@ -25,8 +25,9 @@ class ImportWalletScreenV2 extends ConsumerStatefulWidget {
 
   final int walletIndex;
 
-  /// When true (in-app add), returns to the Accounts popup with the imported
-  /// account pre-selected. Onboarding leaves this false and goes to Home.
+  /// When true (in-app add), continues to the wallet naming step and then
+  /// returns to the Accounts screen with the imported account pre-selected.
+  /// Onboarding leaves this false and goes to Home.
   final bool openAccountsOnComplete;
 
   @override
@@ -113,8 +114,7 @@ class _ImportWalletScreenV2State extends ConsumerState<ImportWalletScreenV2> {
       if (!HdWalletService.isDevAccount(mnemonic)) {
         await _discoverAccounts(mnemonic);
       }
-      ref.invalidate(accountsProvider);
-      ref.invalidate(activeAccountProvider);
+      invalidateAccountProviders(ref);
       _settingsService.setReferralCheckCompleted();
       _settingsService.setExistingUserSeenPromoVideo();
       _settingsService.setWalletOrigin(widget.walletIndex, WalletOrigin.imported);
@@ -126,7 +126,12 @@ class _ImportWalletScreenV2State extends ConsumerState<ImportWalletScreenV2> {
 
       if (!mounted) return;
       if (widget.openAccountsOnComplete) {
-        returnToAccountsSheet(context, ref, highlightAccountId: key.ss58Address);
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (_) =>
+                WalletNameScreen(walletIndex: widget.walletIndex, returnHighlightAccountId: key.ss58Address),
+          ),
+        );
       } else {
         Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const HomeScreen()), (route) => false);
       }
@@ -148,8 +153,7 @@ class _ImportWalletScreenV2State extends ConsumerState<ImportWalletScreenV2> {
           await _accountsService.addAccount(account);
         }
       }
-      ref.invalidate(accountsProvider);
-      ref.invalidate(activeAccountProvider);
+      invalidateAccountProviders(ref);
       unawaited(_discoverEncryptedAccount());
     } catch (e) {
       quantusPrint('error discovering accounts: $e');

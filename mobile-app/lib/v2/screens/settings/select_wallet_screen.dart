@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
+import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/shared/utils/account_utils.dart';
 import 'package:resonance_network_wallet/v2/components/loader.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
@@ -41,7 +42,7 @@ class SelectWalletScreen extends ConsumerWidget {
           return ListView.separated(
             itemCount: indices.length,
             separatorBuilder: (_, _) => const SizedBox(height: 12),
-            itemBuilder: (_, i) => _walletItem(context, l10n, indices[i], colors, text),
+            itemBuilder: (_, i) => _walletItem(context, ref, l10n, indices[i], colors, text),
           );
         },
       ),
@@ -50,11 +51,13 @@ class SelectWalletScreen extends ConsumerWidget {
 
   Widget _walletItem(
     BuildContext context,
+    WidgetRef ref,
     AppLocalizations l10n,
     int walletIndex,
     AppColorsV2 colors,
     AppTextTheme text,
   ) {
+    final walletName = ref.watch(walletNameProvider(walletIndex)) ?? l10n.settingsSelectWalletItem(walletIndex + 1);
     return GestureDetector(
       onTap: () => Navigator.push(
         context,
@@ -67,7 +70,7 @@ class SelectWalletScreen extends ConsumerWidget {
           children: [
             Expanded(
               child: Text(
-                l10n.settingsSelectWalletItem(walletIndex + 1),
+                walletName,
                 style: text.paragraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500),
               ),
             ),

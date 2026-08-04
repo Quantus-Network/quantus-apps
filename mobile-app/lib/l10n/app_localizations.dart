@@ -494,29 +494,35 @@ abstract class AppLocalizations {
   /// **'{number, plural, =1{Keystone Hardware Wallet} other{Keystone Hardware Wallet {number}}}'**
   String accountsSheetKeystoneWallet(int number);
 
-  /// Sub-segment header for transparent accounts
+  /// Badge on the wallet header containing the active account; rendered uppercase
   ///
   /// In en, this message translates to:
-  /// **'Transparent Accounts'**
-  String get accountsSheetSubheaderTransparent;
+  /// **'Active Wallet'**
+  String get accountsScreenActiveWallet;
 
-  /// Sub-segment header for the encrypted account
+  /// Account count on a collapsed wallet row
   ///
   /// In en, this message translates to:
-  /// **'Encrypted Account'**
-  String get accountsSheetSubheaderEncrypted;
+  /// **'{count, plural, =1{1 Account} other{{count} Accounts}}'**
+  String accountsScreenAccountCount(int count);
 
-  /// Sub-segment header for keystone accounts
+  /// App bar title of the wallet naming screen
   ///
   /// In en, this message translates to:
-  /// **'Keystone Accounts'**
-  String get accountsSheetSubheaderKeystone;
+  /// **'Wallet Name'**
+  String get walletNameTitle;
 
-  /// Sub-segment header for multisig accounts
+  /// Explainer text on the wallet naming screen
   ///
   /// In en, this message translates to:
-  /// **'Multisig Accounts'**
-  String get accountsSheetSubheaderMultisig;
+  /// **'Naming your wallets makes it easier to tell their accounts apart. Each wallet has its own encrypted account.'**
+  String get walletNameSubtitle;
+
+  /// Placeholder of the wallet name field
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a name for your wallet'**
+  String get walletNameHint;
 
   /// App bar title on add account menu
   ///
@@ -545,7 +551,7 @@ abstract class AppLocalizations {
   /// Add keystone hardware account menu row title
   ///
   /// In en, this message translates to:
-  /// **'Add Keystone Account'**
+  /// **'Add Keystone Wallet'**
   String get addAccountMenuImportKeystoneTitle;
 
   /// Add keystone hardware account menu row subtitle
@@ -1759,18 +1765,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Unlock your Keystone'**
   String get addKeystoneStepUnlock;
-
-  /// On-device step: open menu
-  ///
-  /// In en, this message translates to:
-  /// **'Tap the menu icon'**
-  String get addKeystoneStepMenu;
-
-  /// On-device step: connect software wallet
-  ///
-  /// In en, this message translates to:
-  /// **'Tap connect Software Wallet'**
-  String get addKeystoneStepConnectSoftware;
 
   /// On-device step: select Quantus and scan
   ///

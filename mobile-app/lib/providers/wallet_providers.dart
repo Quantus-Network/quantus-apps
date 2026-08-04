@@ -293,6 +293,12 @@ final walletOriginProvider = Provider.family<WalletOrigin?, int>((ref, walletInd
   return ref.watch(settingsServiceProvider).getWalletOrigin(walletIndex);
 });
 
+/// Optional user-set wallet name; null falls back to "Wallet {n}" display copy.
+/// Invalidate after [SettingsService.setWalletName].
+final walletNameProvider = Provider.family<String?, int>((ref, walletIndex) {
+  return ref.watch(settingsServiceProvider).getWalletName(walletIndex);
+});
+
 /// 0.0001 tokens in smallest units; dust below this doesn't warrant a backup nudge.
 final _backupNudgeBalanceThreshold = BigInt.from(10).pow(AppConstants.decimals - 4);
 

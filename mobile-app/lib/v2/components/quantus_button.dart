@@ -5,7 +5,7 @@ import 'package:resonance_network_wallet/v2/components/loader.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 
-enum ButtonVariant { transparent, primary, secondary, danger, success, outline, glass }
+enum ButtonVariant { transparent, primary, secondary, danger, success, outline, glass, underline }
 
 enum IconPlacement { leading, trailing, top }
 
@@ -110,6 +110,20 @@ class QuantusButton extends StatelessWidget {
       case ButtonVariant.glass:
         buttonDecorationColor = context.colors.surfaceGlass;
         break;
+
+      case ButtonVariant.underline:
+        buttonDecorationColor = Colors.transparent;
+        break;
+    }
+
+    if (variant == ButtonVariant.underline) {
+      return InkWell(
+        onTap: disabled ? null : onTap,
+        child: Opacity(
+          opacity: visibility,
+          child: Container(width: width, padding: padding, child: buttonContent),
+        ),
+      );
     }
 
     return InkWell(
@@ -139,6 +153,7 @@ class QuantusButton extends StatelessWidget {
       ButtonVariant.success => context.colors.textPrimary,
       ButtonVariant.outline => context.colors.textLabel,
       ButtonVariant.glass => context.colors.textPrimary,
+      ButtonVariant.underline => context.colors.textMuted,
     };
 
     if (isLoading) {
@@ -148,13 +163,14 @@ class QuantusButton extends StatelessWidget {
 
     if (child != null) return child!;
 
-    final effectiveTextStyle =
-        _textStyle ??
-        context.themeText.paragraph!.copyWith(
-          fontSize: buttonFontSize,
-          color: disabled ? context.colors.textPrimary.useOpacity(0.5) : textColor,
-          fontWeight: FontWeight.w500,
-        );
+    final effectiveTextStyle = variant == ButtonVariant.underline
+        ? _underlineTextStyle(context, textColor)
+        : _textStyle ??
+              context.themeText.paragraph!.copyWith(
+                fontSize: buttonFontSize,
+                color: disabled ? context.colors.textPrimary.useOpacity(0.5) : textColor,
+                fontWeight: FontWeight.w500,
+              );
 
     Widget content;
     if (_iconPlacement == IconPlacement.top) {
@@ -179,5 +195,12 @@ class QuantusButton extends StatelessWidget {
     }
 
     return Center(child: content);
+  }
+
+  /// Underlined link label; a [textStyle] override supplies the color (e.g.
+  /// accent orange), everything else stays uniform across links.
+  TextStyle _underlineTextStyle(BuildContext context, Color defaultColor) {
+    final style = context.themeText.smallParagraph!.copyWith(color: defaultColor).merge(_textStyle);
+    return style.copyWith(decoration: TextDecoration.underline, decorationColor: style.color);
   }
 }

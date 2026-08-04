@@ -11,7 +11,6 @@ import 'package:resonance_network_wallet/v2/components/loader.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base_bottom_content.dart';
-import 'package:resonance_network_wallet/v2/components/underlined_text_link.dart';
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
 import 'package:resonance_network_wallet/v2/screens/send/keystone_sign_cache.dart';
 import 'package:resonance_network_wallet/v2/screens/send/keystone_signing_session.dart';
@@ -36,14 +35,6 @@ class KeystoneSignScreen extends ConsumerStatefulWidget {
 }
 
 class _KeystoneSignScreenState extends ConsumerState<KeystoneSignScreen> {
-  /// Tuning knobs for the animated payload QR: bytes per frame and how long each
-  /// frame is shown. The Keystone device scans this QR, so frames must stay
-  /// easy to read. SCALE-encoded transactions are ~300 bytes, so 400-byte
-  /// fragments put a typical transaction in a single static QR (~version 21,
-  /// well within Keystone's range) — no animation in the common case.
-  static const _kUrFragmentLength = 400;
-  static const _kUrFrameInterval = Duration(milliseconds: 200);
-
   UnsignedTransactionData? _unsignedData;
   List<String>? _urParts;
   String? _error;
@@ -74,7 +65,7 @@ class _KeystoneSignScreenState extends ConsumerState<KeystoneSignScreen> {
         widget.session.account,
         widget.session.buildCall(),
       );
-      final parts = encodeUr(data: unsigned.encodedPayloadRaw, maxFragmentLength: _kUrFragmentLength);
+      final parts = encodeUr(data: unsigned.encodedPayloadRaw);
       if (parts.isEmpty) throw Exception('Failed to encode transaction payload as UR');
       if (cacheKey != null) {
         ref.read(keystoneSignCacheProvider.notifier).store(key: cacheKey, unsignedData: unsigned, urParts: parts);
@@ -140,10 +131,10 @@ class _KeystoneSignScreenState extends ConsumerState<KeystoneSignScreen> {
         child: Column(
           children: [
             QuantusButton.simple(label: l10n.keystoneSignNext, isDisabled: _unsignedData == null, onTap: _goToVerify),
-            const SizedBox(height: 16),
-            UnderlinedTextLink(
+            const SizedBox(height: 4),
+            QuantusButton.simple(
               label: l10n.keystoneSignCancel,
-              color: colors.textMuted,
+              variant: ButtonVariant.underline,
               onTap: () => Navigator.pop(context),
             ),
           ],
@@ -155,7 +146,7 @@ class _KeystoneSignScreenState extends ConsumerState<KeystoneSignScreen> {
   Widget _details(AppColorsV2 colors, AppTextTheme text, AppLocalizations l10n, KeystoneSigningSession session) {
     final labelStyle = text.transactionDetailRowLabel?.copyWith(color: colors.textTertiary);
     final valueStyle = text.transactionDetailRowValue?.copyWith(
-      color: colors.textPrimary.withValues(alpha: 0.8),
+      color: colors.textPrimary.useOpacity(0.8),
       fontWeight: FontWeight.w400,
     );
     final secondary = session.secondaryDetail?.trim();
@@ -241,7 +232,7 @@ class _KeystoneSignScreenState extends ConsumerState<KeystoneSignScreen> {
         border: Border.all(color: colors.textTertiary),
         borderRadius: BorderRadius.circular(14),
       ),
-      child: AnimatedUrQr(parts: parts, interval: _kUrFrameInterval, size: 267),
+      child: AnimatedUrQr(parts: parts, size: 267),
     );
   }
 }

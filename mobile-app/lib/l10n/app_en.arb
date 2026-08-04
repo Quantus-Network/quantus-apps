@@ -325,21 +325,30 @@
         }
       }
     },
-    "accountsSheetSubheaderTransparent": "Transparent Accounts",
-    "@accountsSheetSubheaderTransparent": {
-      "description": "Sub-segment header for transparent accounts"
+    "accountsScreenActiveWallet": "Active Wallet",
+    "@accountsScreenActiveWallet": {
+      "description": "Badge on the wallet header containing the active account; rendered uppercase"
     },
-    "accountsSheetSubheaderEncrypted": "Encrypted Account",
-    "@accountsSheetSubheaderEncrypted": {
-      "description": "Sub-segment header for the encrypted account"
+    "accountsScreenAccountCount": "{count, plural, =1{1 Account} other{{count} Accounts}}",
+    "@accountsScreenAccountCount": {
+      "description": "Account count on a collapsed wallet row",
+      "placeholders": {
+        "count": {
+          "type": "int"
+        }
+      }
     },
-    "accountsSheetSubheaderKeystone": "Keystone Accounts",
-    "@accountsSheetSubheaderKeystone": {
-      "description": "Sub-segment header for keystone accounts"
+    "walletNameTitle": "Wallet Name",
+    "@walletNameTitle": {
+      "description": "App bar title of the wallet naming screen"
     },
-    "accountsSheetSubheaderMultisig": "Multisig Accounts",
-    "@accountsSheetSubheaderMultisig": {
-      "description": "Sub-segment header for multisig accounts"
+    "walletNameSubtitle": "Naming your wallets makes it easier to tell their accounts apart. Each wallet has its own encrypted account.",
+    "@walletNameSubtitle": {
+      "description": "Explainer text on the wallet naming screen"
+    },
+    "walletNameHint": "Enter a name for your wallet",
+    "@walletNameHint": {
+      "description": "Placeholder of the wallet name field"
     },
 
     "addAccountMenuTitle": "Add Account",
@@ -358,7 +367,7 @@
     "@addAccountMenuMoreTitle": {
       "description": "Title of the add account more options action sheet"
     },
-    "addAccountMenuImportKeystoneTitle": "Add Keystone Account",
+    "addAccountMenuImportKeystoneTitle": "Add Keystone Wallet",
     "@addAccountMenuImportKeystoneTitle": {
       "description": "Add keystone hardware account menu row title"
     },
@@ -1301,14 +1310,6 @@
     "addKeystoneStepUnlock": "Unlock your Keystone",
     "@addKeystoneStepUnlock": {
       "description": "On-device step: unlock"
-    },
-    "addKeystoneStepMenu": "Tap the menu icon",
-    "@addKeystoneStepMenu": {
-      "description": "On-device step: open menu"
-    },
-    "addKeystoneStepConnectSoftware": "Tap connect Software Wallet",
-    "@addKeystoneStepConnectSoftware": {
-      "description": "On-device step: connect software wallet"
     },
     "addKeystoneStepSelectQuantus": "Select Quantus and scan the QR code",
     "@addKeystoneStepSelectQuantus": {

@@ -406,7 +406,8 @@ class SubstrateService {
   Future<String> generateMnemonic() async {
     try {
       // Generate a random entropy
-      final entropy = List<int>.generate(32, (i) => Random.secure().nextInt(256));
+      final random = Random.secure();
+      final entropy = List<int>.generate(32, (_) => random.nextInt(256));
       // Generate mnemonic from entropy
       final mnemonic = Mnemonic(entropy, Language.english);
 

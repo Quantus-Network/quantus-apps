@@ -64,8 +64,7 @@ class _ConnectKeystoneScreenState extends ConsumerState<ConnectKeystoneScreen> {
         accountType: AccountType.keystone,
       );
       await _accountsService.addAccount(account);
-      ref.invalidate(accountsProvider);
-      ref.invalidate(activeAccountProvider);
+      invalidateAccountProviders(ref);
       if (mounted) {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (_) => AccountMenuScreen(initialAccount: account, isPostCreation: true)),
@@ -118,10 +117,6 @@ class _ConnectKeystoneScreenState extends ConsumerState<ConnectKeystoneScreen> {
             Text(l10n.addKeystoneOnYourKeystone, style: sectionLabelStyle),
             const SizedBox(height: 12),
             _InstructionRow(iconAsset: 'assets/v2/keystone_lock_simple_open.svg', title: l10n.addKeystoneStepUnlock),
-            _rowDivider(colors),
-            _InstructionRow(iconAsset: 'assets/v2/keystone_dots_three.svg', title: l10n.addKeystoneStepMenu),
-            _rowDivider(colors),
-            _InstructionRow(iconAsset: 'assets/v2/keystone_link.svg', title: l10n.addKeystoneStepConnectSoftware),
             _rowDivider(colors),
             _InstructionRow(iconAsset: 'assets/v2/keystone_qr_code.svg', title: l10n.addKeystoneStepSelectQuantus),
             if (_error != null) ...[
