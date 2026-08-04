@@ -37,10 +37,11 @@ class KeystoneSignScreen extends ConsumerStatefulWidget {
 
 class _KeystoneSignScreenState extends ConsumerState<KeystoneSignScreen> {
   /// Tuning knobs for the animated payload QR: bytes per frame and how long each
-  /// frame is shown. Keystone-hardware-safe: the device scans this QR, so keep
-  /// frames small and slow. Only the cold-wallet response QR (scanned by our
-  /// own app) can afford dense, fast frames.
-  static const _kUrFragmentLength = 200;
+  /// frame is shown. The Keystone device scans this QR, so frames must stay
+  /// easy to read. SCALE-encoded transactions are ~300 bytes, so 400-byte
+  /// fragments put a typical transaction in a single static QR (~version 21,
+  /// well within Keystone's range) — no animation in the common case.
+  static const _kUrFragmentLength = 400;
   static const _kUrFrameInterval = Duration(milliseconds: 200);
 
   UnsignedTransactionData? _unsignedData;
