@@ -255,16 +255,23 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get accountsSheetSubheaderTransparent => 'Transparent Accounts';
+  String get accountsScreenActiveWallet => 'Active Wallet';
 
   @override
-  String get accountsSheetSubheaderEncrypted => 'Encrypted Account';
+  String accountsScreenAccountCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count Accounts', one: '1 Account');
+    return '$_temp0';
+  }
 
   @override
-  String get accountsSheetSubheaderKeystone => 'Keystone Accounts';
+  String get walletNameTitle => 'Wallet Name';
 
   @override
-  String get accountsSheetSubheaderMultisig => 'Multisig Accounts';
+  String get walletNameSubtitle =>
+      'Naming your wallets makes it easier to tell their accounts apart. Each wallet has its own encrypted account.';
+
+  @override
+  String get walletNameHint => 'Enter a name for your wallet';
 
   @override
   String get addAccountMenuTitle => 'Add Account';
@@ -279,7 +286,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get addAccountMenuMoreTitle => 'Advanced';
 
   @override
-  String get addAccountMenuImportKeystoneTitle => 'Add Keystone Account';
+  String get addAccountMenuImportKeystoneTitle => 'Add Keystone Wallet';
 
   @override
   String get addAccountMenuImportKeystoneSubtitle => 'Air-gapped signing via QR code';

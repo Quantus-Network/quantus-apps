@@ -20,84 +20,103 @@ MultisigAccount _msig(String id, String myMember, {String name = 'Multisig'}) =>
 );
 
 void main() {
-  group('groupAccounts', () {
-    test('empty input is flat and empty', () {
-      final r = groupAccounts(accounts: [], multisigs: []);
-      expect(r.segmented, isFalse);
-      expect(r.items, isEmpty);
+  group('groupWallets', () {
+    test('empty input has no wallets', () {
+      final r = groupWallets(accounts: [], multisigs: []);
+      expect(r.wallets, isEmpty);
+      expect(r.standaloneMultisigs, isEmpty);
     });
 
-    test('single software wallet of only transparent accounts renders flat', () {
-      final r = groupAccounts(accounts: [_acc(0, 0), _acc(0, 1)], multisigs: []);
-      expect(r.segmented, isFalse);
-      expect(r.items.length, 2);
-      expect(r.items.every((e) => e is AccountRowItem), isTrue);
+    test('single wallet groups transparent accounts sorted by index', () {
+      final r = groupWallets(accounts: [_acc(0, 1), _acc(0, 0)], multisigs: []);
+      expect(r.wallets.length, 1);
+      final w = r.wallets.single;
+      expect(w.walletIndex, 0);
+      expect(w.kind, WalletKind.software);
+      expect(w.number, 1);
+      expect(w.accounts.map((a) => a.index), [0, 1]);
+      expect(w.encryptedAccount, isNull);
+      expect(w.accountCount, 2);
     });
 
-    test('encrypted account forces segmented layout with sub-segments', () {
-      final r = groupAccounts(
+    test('encrypted account is split out of the account list', () {
+      final r = groupWallets(
         accounts: [
           _acc(0, 0),
-          _acc(0, 1, type: AccountType.encrypted, id: 'enc'),
+          _acc(0, 1024, type: AccountType.encrypted, id: 'enc'),
         ],
         multisigs: [],
       );
-      expect(r.segmented, isTrue);
-      expect(r.items[0], isA<WalletHeaderItem>());
-      final header = r.items[0] as WalletHeaderItem;
-      expect(header.kind, WalletKind.software);
-      expect(header.number, 1);
-      expect((r.items[1] as SegmentHeaderItem).segment, AccountSegment.transparent);
-      expect(r.items[2], isA<AccountRowItem>());
-      expect((r.items[3] as SegmentHeaderItem).segment, AccountSegment.encrypted);
-      expect(((r.items[4] as AccountRowItem).account as Account).accountType, AccountType.encrypted);
+      final w = r.wallets.single;
+      expect(w.accounts.length, 1);
+      expect(w.encryptedAccount?.accountId, 'enc');
+      expect(w.accountCount, 2);
     });
 
-    test('multiple software wallets are numbered by display order', () {
-      final r = groupAccounts(accounts: [_acc(1, 0), _acc(0, 0)], multisigs: []);
-      final headers = r.items.whereType<WalletHeaderItem>().toList();
-      expect(headers.length, 2);
-      expect(headers.map((h) => h.number), [1, 2]);
-      expect(headers.every((h) => h.kind == WalletKind.software), isTrue);
+    test('multiple software wallets are ordered and numbered by walletIndex', () {
+      final r = groupWallets(accounts: [_acc(1, 0), _acc(0, 0)], multisigs: []);
+      expect(r.wallets.map((w) => w.walletIndex), [0, 1]);
+      expect(r.wallets.map((w) => w.number), [1, 2]);
+      expect(r.wallets.every((w) => w.kind == WalletKind.software), isTrue);
+    });
+
+    test('active wallet moves to front keeping its number, others stay in order', () {
+      final r = groupWallets(
+        accounts: [_acc(0, 0), _acc(1, 0), _acc(2, 0)],
+        multisigs: [],
+        activeAccountId: 'addr-1-0',
+      );
+      expect(r.wallets.map((w) => w.walletIndex), [1, 0, 2]);
+      expect(r.wallets.map((w) => w.number), [2, 1, 3]);
+    });
+
+    test('unknown active account leaves wallet order unchanged', () {
+      final r = groupWallets(accounts: [_acc(0, 0), _acc(1, 0)], multisigs: [], activeAccountId: 'stranger');
+      expect(r.wallets.map((w) => w.walletIndex), [0, 1]);
     });
 
     test('keystone wallets come after software wallets with own numbering', () {
-      final r = groupAccounts(
+      final r = groupWallets(
         accounts: [
-          _acc(0, 0),
-          _acc(1, 0, type: AccountType.keystone, id: 'k'),
+          _acc(1, 0),
+          _acc(0, 0, type: AccountType.keystone, id: 'k'),
         ],
         multisigs: [],
       );
-      final headers = r.items.whereType<WalletHeaderItem>().toList();
-      expect(headers.length, 2);
-      expect(headers[0].kind, WalletKind.software);
-      expect(headers[0].number, 1);
-      expect(headers[1].kind, WalletKind.keystone);
-      expect(headers[1].number, 1);
-      expect(r.items.whereType<SegmentHeaderItem>().any((s) => s.segment == AccountSegment.keystone), isTrue);
+      expect(r.wallets.length, 2);
+      expect(r.wallets[0].kind, WalletKind.software);
+      expect(r.wallets[0].walletIndex, 1);
+      expect(r.wallets[0].number, 1);
+      expect(r.wallets[1].kind, WalletKind.keystone);
+      expect(r.wallets[1].walletIndex, 0);
+      expect(r.wallets[1].number, 1);
     });
 
-    test('multisig is grouped under its owner wallet', () {
+    test('multisig is grouped under its owner wallet and counted', () {
       final accounts = [_acc(0, 0, id: 'mine0'), _acc(1, 0, id: 'mine1')];
-      final r = groupAccounts(accounts: accounts, multisigs: [_msig('msigaddr', 'mine1')]);
-      final idx = r.items.indexWhere((e) => e is AccountRowItem && e.account.accountId == 'msigaddr');
-      expect(idx, greaterThan(0));
-      final header = r.items.sublist(0, idx).whereType<WalletHeaderItem>().last;
-      expect(header.kind, WalletKind.software);
-      expect(header.number, 2);
-      expect((r.items[idx - 1] as SegmentHeaderItem).segment, AccountSegment.multisig);
+      final r = groupWallets(accounts: accounts, multisigs: [_msig('msigaddr', 'mine1')]);
+      expect(r.wallets[0].multisigs, isEmpty);
+      expect(r.wallets[1].multisigs.single.accountId, 'msigaddr');
+      expect(r.wallets[1].accountCount, 2);
+      expect(r.standaloneMultisigs, isEmpty);
     });
 
-    test('unresolved multisig trails as a standalone multisig segment', () {
-      final r = groupAccounts(
+    test('unresolved multisig trails as standalone', () {
+      final r = groupWallets(
         accounts: [_acc(0, 0, id: 'mine')],
         multisigs: [_msig('msigaddr', 'stranger')],
       );
-      expect(r.segmented, isTrue);
-      final last = r.items.last as AccountRowItem;
-      expect(last.account.accountId, 'msigaddr');
-      expect((r.items[r.items.length - 2] as SegmentHeaderItem).segment, AccountSegment.multisig);
+      expect(r.wallets.single.multisigs, isEmpty);
+      expect(r.standaloneMultisigs.single.accountId, 'msigaddr');
+    });
+  });
+
+  group('softwareWalletNumber', () {
+    test('numbers software wallets by display order, skipping keystone', () {
+      final accounts = [_acc(0, 0, type: AccountType.keystone, id: 'k'), _acc(1, 0), _acc(3, 0)];
+      expect(softwareWalletNumber(accounts, 1), 1);
+      expect(softwareWalletNumber(accounts, 3), 2);
+      expect(softwareWalletNumber(accounts, 0), isNull);
     });
   });
 }

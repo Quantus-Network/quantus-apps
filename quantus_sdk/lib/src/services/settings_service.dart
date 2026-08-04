@@ -167,6 +167,7 @@ class SettingsService {
     await deleteMnemonic(walletIndex);
     await _prefs.remove(_walletOriginKey(walletIndex));
     await _prefs.remove(_recoveryPhraseViewedKey(walletIndex));
+    await _prefs.remove(_walletNameKey(walletIndex));
   }
 
   Future<void> setActiveAccount(DisplayAccount account) async {
@@ -565,6 +566,21 @@ class SettingsService {
 
   void setWalletOrigin(int walletIndex, WalletOrigin origin) {
     _prefs.setString(_walletOriginKey(walletIndex), origin.name);
+  }
+
+  // Note: the bare legacy key 'wallet_name' (no index suffix) is a pre-v5
+  // account name consumed by the migration in [getAccounts]; index 0 must stay
+  // suffixed so the two never collide.
+  String _walletNameKey(int walletIndex) => 'wallet_name_$walletIndex';
+
+  String? getWalletName(int walletIndex) => _prefs.getString(_walletNameKey(walletIndex));
+
+  Future<void> setWalletName(int walletIndex, String? name) async {
+    if (name == null || name.isEmpty) {
+      await _prefs.remove(_walletNameKey(walletIndex));
+    } else {
+      await _prefs.setString(_walletNameKey(walletIndex), name);
+    }
   }
 
   bool existingUserSeenPromoVideo() {

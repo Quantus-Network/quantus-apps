@@ -250,16 +250,23 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
-  String get accountsSheetSubheaderTransparent => 'Akun Transparan';
+  String get accountsScreenActiveWallet => 'Wallet Aktif';
 
   @override
-  String get accountsSheetSubheaderEncrypted => 'Akun Terenkripsi';
+  String accountsScreenAccountCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count Akun', one: '1 Akun');
+    return '$_temp0';
+  }
 
   @override
-  String get accountsSheetSubheaderKeystone => 'Akun Keystone';
+  String get walletNameTitle => 'Nama Wallet';
 
   @override
-  String get accountsSheetSubheaderMultisig => 'Akun Multisig';
+  String get walletNameSubtitle =>
+      'Memberi nama wallet memudahkan Anda membedakan akun-akunnya. Setiap wallet memiliki akun terenkripsi sendiri.';
+
+  @override
+  String get walletNameHint => 'Masukkan nama untuk wallet Anda';
 
   @override
   String get addAccountMenuTitle => 'Tambah Akun';
@@ -274,7 +281,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get addAccountMenuMoreTitle => 'Lanjutan';
 
   @override
-  String get addAccountMenuImportKeystoneTitle => 'Tambah Akun Keystone';
+  String get addAccountMenuImportKeystoneTitle => 'Tambah Wallet Keystone';
 
   @override
   String get addAccountMenuImportKeystoneSubtitle => 'Penandatanganan air-gap melalui kode QR';

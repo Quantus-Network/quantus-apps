@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:resonance_network_wallet/v2/components/glass_button_base.dart';
-import 'package:resonance_network_wallet/v2/screens/accounts/accounts_sheet.dart';
+import 'package:resonance_network_wallet/v2/screens/accounts/accounts_screen.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 
 class OpenAccountsManagementButton extends StatelessWidget {
@@ -14,7 +14,7 @@ class OpenAccountsManagementButton extends StatelessWidget {
     final double iconSize = 20;
 
     return GestureDetector(
-      onTap: () => showAccountsSheet(context),
+      onTap: () => openAccountsScreen(context),
       child: GlassButtonBase(
         buttonHeight: buttonHeight,
         borderRadius: borderRadius,
