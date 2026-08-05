@@ -440,7 +440,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         label: label,
         onTap: onTap,
         isDisabled: isDisabled,
-        icon: SvgPicture.asset(iconAsset, width: 24, height: 24),
+        icon: SvgPicture.asset(
+          iconAsset,
+          width: 24,
+          height: 24,
+          colorFilter: ColorFilter.mode(context.colors.accentOrange, BlendMode.srcIn),
+        ),
         iconPlacement: IconPlacement.top,
         padding: const EdgeInsets.all(14),
         variant: ButtonVariant.secondary,
