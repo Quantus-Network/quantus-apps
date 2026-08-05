@@ -18,7 +18,6 @@ class ResonanceWalletApp extends ConsumerStatefulWidget {
 }
 
 class _ResonanceWalletAppState extends ConsumerState<ResonanceWalletApp> {
-
   @override
   void initState() {
     super.initState();

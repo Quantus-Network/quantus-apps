@@ -6,11 +6,9 @@ class WalletCreationService {
   final SettingsService _settings;
   final AccountsService _accounts;
 
-  WalletCreationService({
-    SettingsService? settingsService,
-    AccountsService? accountsService,
-  }) : _settings = settingsService ?? SettingsService(),
-       _accounts = accountsService ?? AccountsService();
+  WalletCreationService({SettingsService? settingsService, AccountsService? accountsService})
+    : _settings = settingsService ?? SettingsService(),
+      _accounts = accountsService ?? AccountsService();
 
   /// Saves [mnemonic] for [walletIndex], adds the root account when missing,
   /// and runs referral registration for brand-new roots.

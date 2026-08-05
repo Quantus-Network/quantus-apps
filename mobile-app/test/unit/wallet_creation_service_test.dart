@@ -13,10 +13,7 @@ void main() {
       final settings = MockSettingsService();
       final accounts = MockAccountsService();
 
-      final service = WalletCreationService(
-        settingsService: settings,
-        accountsService: accounts,
-      );
+      final service = WalletCreationService(settingsService: settings, accountsService: accounts);
 
       const mnemonic = 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about';
       const accountId = 'abc';
@@ -41,10 +38,7 @@ void main() {
       final settings = MockSettingsService();
       final accounts = MockAccountsService();
 
-      final service = WalletCreationService(
-        settingsService: settings,
-        accountsService: accounts,
-      );
+      final service = WalletCreationService(settingsService: settings, accountsService: accounts);
 
       const existing = Account(walletIndex: 0, index: 0, name: 'Existing', accountId: 'existing_addr');
 
