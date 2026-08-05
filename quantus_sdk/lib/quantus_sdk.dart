@@ -67,7 +67,7 @@ export 'src/services/reversible_transfers_service.dart';
 export 'src/services/settings_service.dart';
 export 'src/services/substrate_service.dart';
 export 'src/services/swap_service.dart';
-export 'src/services/taskmaster_service.dart';
+export 'src/services/quersi_service.dart';
 export 'src/services/senoti_service.dart';
 export 'src/services/circuit_manager.dart';
 export 'src/services/encrypted_account_service.dart';

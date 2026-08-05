@@ -7,12 +7,12 @@ import 'package:resonance_network_wallet/shared/utils/print.dart';
 const String remoteConfigCacheKey = 'remote_config_cache_v1';
 
 class RemoteConfigService {
-  final TaskmasterService _taskmasterService = TaskmasterService();
+  final QuersiService _quersiService = QuersiService();
   final SettingsService _settingsService = SettingsService();
 
   Future<RemoteConfigModel?> readRemoteConfig() async {
     try {
-      final remoteData = await _taskmasterService.getRemoteConfig();
+      final remoteData = await _quersiService.getRemoteConfig();
       return remoteData;
     } catch (error) {
       quantusPrint('Remote config remote read failed: $error');

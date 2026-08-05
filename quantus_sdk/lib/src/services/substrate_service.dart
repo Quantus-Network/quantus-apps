@@ -400,7 +400,6 @@ class SubstrateService {
     // and would otherwise leak balances into the next wallet session.
     await WormholeUtxoService.clearAllCaches();
     await EncryptedAccountService.clearAllPersistedState();
-    TaskmasterService().logout();
   }
 
   Future<String> generateMnemonic() async {

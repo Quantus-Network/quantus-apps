@@ -4,15 +4,12 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'dart:async' as _i5;
-import 'dart:ui' as _i9;
 
 import 'package:mockito/mockito.dart' as _i1;
 import 'package:mockito/src/dummies.dart' as _i7;
 import 'package:quantus_sdk/quantus_sdk.dart' as _i4;
 import 'package:quantus_sdk/src/models/account.dart' as _i2;
 import 'package:quantus_sdk/src/models/display_account.dart' as _i6;
-import 'package:resonance_network_wallet/services/referral_service.dart' as _i8;
-import 'package:share_plus/share_plus.dart' as _i3;
 
 // ignore_for_file: type=lint
 // ignore_for_file: avoid_redundant_argument_values
@@ -30,10 +27,6 @@ import 'package:share_plus/share_plus.dart' as _i3;
 
 class _FakeAccount_0 extends _i1.SmartFake implements _i2.Account {
   _FakeAccount_0(Object parent, Invocation parentInvocation) : super(parent, parentInvocation);
-}
-
-class _FakeShareParams_1 extends _i1.SmartFake implements _i3.ShareParams {
-  _FakeShareParams_1(Object parent, Invocation parentInvocation) : super(parent, parentInvocation);
 }
 
 /// A class which mocks [SettingsService].
@@ -533,116 +526,4 @@ class MockAccountsService extends _i1.Mock implements _i4.AccountsService {
             returnValueForMissingStub: _i5.Future<void>.value(),
           )
           as _i5.Future<void>);
-}
-
-/// A class which mocks [ReferralService].
-///
-/// See the documentation for Mockito's code generation for more information.
-class MockReferralService extends _i1.Mock implements _i8.ReferralService {
-  @override
-  _i5.Future<void> checkPlayStoreReferralCode() =>
-      (super.noSuchMethod(
-            Invocation.method(#checkPlayStoreReferralCode, []),
-            returnValue: _i5.Future<void>.value(),
-            returnValueForMissingStub: _i5.Future<void>.value(),
-          )
-          as _i5.Future<void>);
-
-  @override
-  _i5.Future<void> optInRewardProgram() =>
-      (super.noSuchMethod(
-            Invocation.method(#optInRewardProgram, []),
-            returnValue: _i5.Future<void>.value(),
-            returnValueForMissingStub: _i5.Future<void>.value(),
-          )
-          as _i5.Future<void>);
-
-  @override
-  _i5.Future<String?> getReferralData() =>
-      (super.noSuchMethod(
-            Invocation.method(#getReferralData, []),
-            returnValue: _i5.Future<String?>.value(),
-            returnValueForMissingStub: _i5.Future<String?>.value(),
-          )
-          as _i5.Future<String?>);
-
-  @override
-  void invalidateCache() =>
-      super.noSuchMethod(Invocation.method(#invalidateCache, []), returnValueForMissingStub: null);
-
-  @override
-  _i5.Future<bool> getRewardProgramParticiation() =>
-      (super.noSuchMethod(
-            Invocation.method(#getRewardProgramParticiation, []),
-            returnValue: _i5.Future<bool>.value(false),
-            returnValueForMissingStub: _i5.Future<bool>.value(false),
-          )
-          as _i5.Future<bool>);
-
-  @override
-  _i5.Future<void> submitReferralToBackend({required String? referral}) =>
-      (super.noSuchMethod(
-            Invocation.method(#submitReferralToBackend, [], {#referral: referral}),
-            returnValue: _i5.Future<void>.value(),
-            returnValueForMissingStub: _i5.Future<void>.value(),
-          )
-          as _i5.Future<void>);
-
-  @override
-  _i5.Future<void> submitAddressToBackend() =>
-      (super.noSuchMethod(
-            Invocation.method(#submitAddressToBackend, []),
-            returnValue: _i5.Future<void>.value(),
-            returnValueForMissingStub: _i5.Future<void>.value(),
-          )
-          as _i5.Future<void>);
-
-  @override
-  String generateReferralLink(String? referralCode) =>
-      (super.noSuchMethod(
-            Invocation.method(#generateReferralLink, [referralCode]),
-            returnValue: _i7.dummyValue<String>(this, Invocation.method(#generateReferralLink, [referralCode])),
-            returnValueForMissingStub: _i7.dummyValue<String>(
-              this,
-              Invocation.method(#generateReferralLink, [referralCode]),
-            ),
-          )
-          as String);
-
-  @override
-  _i5.Future<_i2.Account> getMainAccount() =>
-      (super.noSuchMethod(
-            Invocation.method(#getMainAccount, []),
-            returnValue: _i5.Future<_i2.Account>.value(_FakeAccount_0(this, Invocation.method(#getMainAccount, []))),
-            returnValueForMissingStub: _i5.Future<_i2.Account>.value(
-              _FakeAccount_0(this, Invocation.method(#getMainAccount, [])),
-            ),
-          )
-          as _i5.Future<_i2.Account>);
-
-  @override
-  _i5.Future<String> getMyInviteCode() =>
-      (super.noSuchMethod(
-            Invocation.method(#getMyInviteCode, []),
-            returnValue: _i5.Future<String>.value(
-              _i7.dummyValue<String>(this, Invocation.method(#getMyInviteCode, [])),
-            ),
-            returnValueForMissingStub: _i5.Future<String>.value(
-              _i7.dummyValue<String>(this, Invocation.method(#getMyInviteCode, [])),
-            ),
-          )
-          as _i5.Future<String>);
-
-  @override
-  _i5.Future<_i3.ShareParams> getShareLinkParameters(_i9.Rect? positionOrigin) =>
-      (super.noSuchMethod(
-            Invocation.method(#getShareLinkParameters, [positionOrigin]),
-            returnValue: _i5.Future<_i3.ShareParams>.value(
-              _FakeShareParams_1(this, Invocation.method(#getShareLinkParameters, [positionOrigin])),
-            ),
-            returnValueForMissingStub: _i5.Future<_i3.ShareParams>.value(
-              _FakeShareParams_1(this, Invocation.method(#getShareLinkParameters, [positionOrigin])),
-            ),
-          )
-          as _i5.Future<_i3.ShareParams>);
 }

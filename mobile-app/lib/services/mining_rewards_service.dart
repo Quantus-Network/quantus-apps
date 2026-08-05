@@ -60,7 +60,7 @@ class MiningRewardsService {
     final schrodinger = _countBlocks('schrodinger', miners['schrodinger']!, allAccountIds);
     final dirac = _countBlocks('dirac', miners['dirac']!, allAccountIds);
     final (planckStats, redeemableRewards) = await (
-      TaskmasterService().getMinerStats(),
+      QuersiService().getMinerStats(),
       wormholeUtxoService.getUnspentBalance(wormholeAddress: keyPair.address, secretHex: keyPair.secretHex),
     ).wait;
     final redeemedRewards = planckStats.totalRewards - redeemableRewards;

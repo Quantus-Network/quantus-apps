@@ -97,7 +97,7 @@ final exchangeRatesProvider = FutureProvider<Map<String, Decimal>>((ref) async {
   if (cached != null) return cached;
 
   try {
-    final result = await TaskmasterService().getExchangeRates();
+    final result = await QuersiService().getExchangeRates();
     final rates = result.rates.map((k, v) => MapEntry(k, Decimal.parse(v.toString())));
     await _writeRatesCache(settings, rates, result.timeNextUpdateUnix);
 

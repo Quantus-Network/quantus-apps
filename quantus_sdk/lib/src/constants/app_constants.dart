@@ -19,11 +19,7 @@ class AppConstants {
   ];
   static const List<String> graphQlEndpoints = ['https://sub2.quantus.com/v1/graphql'];
 
-  // local test android use special ip
-  // static const String taskMasterEndpoint = 'http://10.0.2.2:3000/api';
-  // local test
-  // static const String taskMasterEndpoint = 'http://localhost:3000/api';
-  static const String taskMasterEndpoint = 'https://quests.quantus.com/api';
+  static const String quersiEndpoint = 'https://qrc-1.quantus.com/api';
 
   static const String senotiEndpoint = 'https://snt.quantus.com/api';
 

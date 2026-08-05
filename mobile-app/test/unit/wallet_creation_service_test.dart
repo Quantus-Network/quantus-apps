@@ -2,10 +2,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/services/referral_service.dart';
 import 'package:resonance_network_wallet/services/wallet_creation_service.dart';
 
-@GenerateNiceMocks([MockSpec<SettingsService>(), MockSpec<AccountsService>(), MockSpec<ReferralService>()])
+@GenerateNiceMocks([MockSpec<SettingsService>(), MockSpec<AccountsService>()])
 import 'wallet_creation_service_test.mocks.dart';
 
 void main() {
@@ -13,12 +12,10 @@ void main() {
     test('persists mnemonic, adds root account, and submits referral when no root exists', () async {
       final settings = MockSettingsService();
       final accounts = MockAccountsService();
-      final referral = MockReferralService();
 
       final service = WalletCreationService(
         settingsService: settings,
         accountsService: accounts,
-        referralService: referral,
       );
 
       const mnemonic = 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about';
@@ -35,7 +32,6 @@ void main() {
 
       verify(settings.setMnemonic(mnemonic, 0)).called(1);
       verify(accounts.addAccount(argThat(isA<Account>().having((a) => a.accountId, 'accountId', 'abc')))).called(1);
-      verify(referral.submitAddressToBackend()).called(1);
 
       expect(created.accountId, accountId);
       expect(created.name, name);
@@ -44,12 +40,10 @@ void main() {
     test('skips add and referral when root account already exists', () async {
       final settings = MockSettingsService();
       final accounts = MockAccountsService();
-      final referral = MockReferralService();
 
       final service = WalletCreationService(
         settingsService: settings,
         accountsService: accounts,
-        referralService: referral,
       );
 
       const existing = Account(walletIndex: 0, index: 0, name: 'Existing', accountId: 'existing_addr');
@@ -64,7 +58,6 @@ void main() {
 
       verify(settings.setMnemonic('word ' * 12, 0)).called(1);
       verifyNever(accounts.addAccount(any));
-      verifyNever(referral.submitAddressToBackend());
       expect(created, same(existing));
     });
   });

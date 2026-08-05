@@ -28,7 +28,7 @@ final miningRewardsProvider = FutureProvider<MiningRewardsData>((ref) async {
   }
   final keyPair = ref.watch(hdWalletServiceProvider).deriveWormholeKeyPair(mnemonic: mnemonic);
 
-  final oldMiningAccountId = await TaskmasterService().getOldMiningAccountId();
+  final oldMiningAccountId = await QuersiService().getOldMiningAccountId();
   final accountsList = accounts.map((a) => a.accountId).toList();
   accountsList.add(oldMiningAccountId);
 
