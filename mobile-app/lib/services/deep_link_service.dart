@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:app_links/app_links.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:resonance_network_wallet/providers/account_associations_providers.dart';
 import 'package:resonance_network_wallet/providers/route_intent_providers.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/shared/utils/print.dart';
@@ -66,10 +65,6 @@ class DeepLinkService {
       } else {
         quantusPrint('Missing payment parameters or invalid recipient address');
       }
-    }
-
-    if (uri.pathSegments.isNotEmpty && uri.pathSegments.first == 'oauth') {
-      _ref.invalidate(accountAssociationsProvider);
     }
   }
 

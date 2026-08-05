@@ -6,11 +6,9 @@ import 'package:resonance_network_wallet/v2/screens/auth/auth_wrapper.dart';
 import 'package:resonance_network_wallet/v2/theme/app_theme.dart';
 import 'package:resonance_network_wallet/services/local_notifications_service.dart';
 import 'package:resonance_network_wallet/services/notification_integration_service.dart';
-import 'package:resonance_network_wallet/services/referral_service.dart';
 import 'package:resonance_network_wallet/services/telemetry_navigator_observer.dart';
 import 'package:resonance_network_wallet/services/deep_link_service.dart';
 import 'package:resonance_network_wallet/l10n/app_localizations.dart';
-import 'dart:io' show Platform;
 
 class ResonanceWalletApp extends ConsumerStatefulWidget {
   const ResonanceWalletApp({super.key});
@@ -20,8 +18,6 @@ class ResonanceWalletApp extends ConsumerStatefulWidget {
 }
 
 class _ResonanceWalletAppState extends ConsumerState<ResonanceWalletApp> {
-  final ReferralService _referralService = ReferralService();
-
   @override
   void initState() {
     super.initState();
@@ -31,8 +27,6 @@ class _ResonanceWalletAppState extends ConsumerState<ResonanceWalletApp> {
     final localNotifications = ref.read(localNotificationsServiceProvider);
     localNotifications.setupNotificationsClickListener();
     localNotifications.handleLaunchByNotification();
-
-    if (Platform.isAndroid) _referralService.checkPlayStoreReferralCode();
   }
 
   @override

@@ -42,7 +42,6 @@ class _AppLifecycleManagerState extends ConsumerState<AppLifecycleManager> with 
       ref.read(appLifecycleStateProvider.notifier).state =
           WidgetsBinding.instance.lifecycleState ?? AppLifecycleState.resumed;
 
-      _initializeTaskmasterLogin();
       _setupConnectivityListener();
       localAuthNotifier.checkAuthentication();
     });
@@ -104,9 +103,6 @@ class _AppLifecycleManagerState extends ConsumerState<AppLifecycleManager> with 
         // that briefly pause/resume the app.
         localAuthNotifier.checkAuthentication();
 
-        // Initialize Taskmaster login if wallet exists
-        _initializeTaskmasterLogin();
-
         // Sync remote config on background resume
         unawaited(ref.read(remoteConfigProvider.notifier).syncConfig());
       }
@@ -129,22 +125,6 @@ class _AppLifecycleManagerState extends ConsumerState<AppLifecycleManager> with 
       } else {
         quantusPrint('AppLifecycleState.$state - already backgrounded, skipping actions');
       }
-    }
-  }
-
-  // This is merely an optimization - check our login is active.
-  Future<void> _initializeTaskmasterLogin() async {
-    try {
-      final settingsService = SettingsService();
-      final hasWallet = await settingsService.getHasWallet();
-
-      if (hasWallet) {
-        final taskmasterService = TaskmasterService();
-        await taskmasterService.ensureIsLoggedIn();
-        quantusPrint('Taskmaster login initialized');
-      }
-    } catch (e) {
-      quantusPrint('Failed to initialize taskmaster login: $e');
     }
   }
 
