@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
-import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/services/telemetry_service.dart';
 import 'package:resonance_network_wallet/shared/utils/print.dart';
 import 'package:resonance_network_wallet/v2/components/animated_ur_qr.dart';
@@ -46,35 +45,18 @@ class _KeystoneSignScreenState extends ConsumerState<KeystoneSignScreen> {
   }
 
   Future<void> _prepare() async {
-    final cacheKey = widget.session.cacheKey;
-    if (cacheKey != null) {
-      final cached = ref.read(keystoneSignCacheProvider.notifier).lookup(cacheKey);
-      if (cached != null) {
-        if (!mounted) return;
-        setState(() {
-          _unsignedData = cached.unsignedData;
-          _urParts = cached.urParts;
-        });
-        return;
-      }
-    }
-
     try {
-      final substrate = ref.read(substrateServiceProvider);
-      final unsigned = await substrate.getUnsignedTransactionPayload(
-        widget.session.account,
-        widget.session.buildCall(),
+      final payload = await ensureKeystoneSignPayload(
+        ref,
+        account: widget.session.account,
+        buildCall: widget.session.buildCall,
+        cacheKey: widget.session.cacheKey,
       );
-      final parts = encodeUr(data: unsigned.encodedPayloadRaw);
-      if (parts.isEmpty) throw Exception('Failed to encode transaction payload as UR');
-      if (cacheKey != null) {
-        ref.read(keystoneSignCacheProvider.notifier).store(key: cacheKey, unsignedData: unsigned, urParts: parts);
-      }
       TelemetryService().sendEvent('${widget.session.telemetryPrefix}_payload_ready');
       if (!mounted) return;
       setState(() {
-        _unsignedData = unsigned;
-        _urParts = parts;
+        _unsignedData = payload.unsignedData;
+        _urParts = payload.urParts;
       });
     } catch (error) {
       quantusPrint('Keystone payload preparation failed: $error');

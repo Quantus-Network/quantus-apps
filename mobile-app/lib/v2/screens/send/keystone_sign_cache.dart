@@ -1,5 +1,7 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 
 /// Blocks of safety margin before mortal era expiry when treating cache as stale.
 const int keystoneSignCacheEraSafetyMarginBlocks = 2;
@@ -119,3 +121,25 @@ class KeystoneSignCacheNotifier extends StateNotifier<KeystoneSignCacheEntry?> {
 final keystoneSignCacheProvider = StateNotifierProvider<KeystoneSignCacheNotifier, KeystoneSignCacheEntry?>(
   (ref) => KeystoneSignCacheNotifier(),
 );
+
+/// Builds the unsigned payload and its UR frames, serving a fresh cache entry
+/// when one exists and storing the result under [cacheKey]. The review screen
+/// prefetches through this so the QR screen usually renders instantly; the QR
+/// screen itself calls it as the fallback when nothing was prefetched.
+Future<({UnsignedTransactionData unsignedData, List<String> urParts})> ensureKeystoneSignPayload(
+  WidgetRef ref, {
+  required Account account,
+  required RuntimeCall Function() buildCall,
+  KeystoneSignCacheKey? cacheKey,
+}) async {
+  final cache = ref.read(keystoneSignCacheProvider.notifier);
+  if (cacheKey != null) {
+    final cached = cache.lookup(cacheKey);
+    if (cached != null) return (unsignedData: cached.unsignedData, urParts: cached.urParts);
+  }
+  final unsigned = await ref.read(substrateServiceProvider).getUnsignedTransactionPayload(account, buildCall());
+  final parts = encodeUr(data: unsigned.encodedPayloadRaw);
+  if (parts.isEmpty) throw Exception('Failed to encode transaction payload as UR');
+  if (cacheKey != null) cache.store(key: cacheKey, unsignedData: unsigned, urParts: parts);
+  return (unsignedData: unsigned, urParts: parts);
+}
