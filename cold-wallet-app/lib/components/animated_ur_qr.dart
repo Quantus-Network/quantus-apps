@@ -6,6 +6,10 @@ import 'package:qr_flutter/qr_flutter.dart';
 /// Renders a UR payload as a QR code. A multi-part UR is animated by cycling
 /// through its fragments with a [Timer] (no post-frame callbacks). Reacts to
 /// [fps], [paused] and [parts] changes so the animation can be tuned live.
+///
+/// Every frame's QR is encoded once up front: encoding a dense QR takes long
+/// enough that doing it inside build caps the real frame rate well below the
+/// requested one. Painting a precomputed module matrix keeps ticks cheap.
 class AnimatedUrQr extends StatefulWidget {
   final List<String> parts;
   final int fps;
@@ -21,20 +25,35 @@ class AnimatedUrQr extends StatefulWidget {
 class _AnimatedUrQrState extends State<AnimatedUrQr> {
   Timer? _timer;
   int _index = 0;
+  late List<QrPainter> _painters;
 
   @override
   void initState() {
     super.initState();
+    _painters = _buildPainters();
     _restartTimer();
   }
+
+  List<QrPainter> _buildPainters() => widget.parts
+      .map(
+        (part) => QrPainter.withQr(
+          qr: QrCode.fromData(data: part, errorCorrectLevel: QrErrorCorrectLevel.L),
+          gapless: true,
+          eyeStyle: const QrEyeStyle(eyeShape: QrEyeShape.square, color: Colors.black),
+          dataModuleStyle: const QrDataModuleStyle(dataModuleShape: QrDataModuleShape.square, color: Colors.black),
+        ),
+      )
+      .toList();
 
   @override
   void didUpdateWidget(AnimatedUrQr oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.parts.length != oldWidget.parts.length) _index = 0;
-    if (widget.fps != oldWidget.fps ||
-        widget.paused != oldWidget.paused ||
-        widget.parts.length != oldWidget.parts.length) {
+    final partsChanged = !identical(widget.parts, oldWidget.parts);
+    if (partsChanged) {
+      _painters = _buildPainters();
+      _index = 0;
+    }
+    if (partsChanged || widget.fps != oldWidget.fps || widget.paused != oldWidget.paused) {
       _restartTimer();
     }
   }
@@ -61,14 +80,7 @@ class _AnimatedUrQrState extends State<AnimatedUrQr> {
       height: widget.size,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
-      child: QrImageView(
-        data: widget.parts[_index],
-        errorCorrectionLevel: QrErrorCorrectLevel.L,
-        version: QrVersions.auto,
-        backgroundColor: Colors.white,
-        eyeStyle: const QrEyeStyle(eyeShape: QrEyeShape.square, color: Colors.black),
-        dataModuleStyle: const QrDataModuleStyle(dataModuleShape: QrDataModuleShape.square, color: Colors.black),
-      ),
+      child: CustomPaint(painter: _painters[_index]),
     );
   }
 }

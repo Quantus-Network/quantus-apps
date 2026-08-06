@@ -18,7 +18,13 @@ class ScanTransactionScreen extends StatefulWidget {
 }
 
 class _ScanTransactionScreenState extends State<ScanTransactionScreen> {
-  final MobileScannerController _controller = MobileScannerController();
+  // Unrestricted: the default DetectionSpeed.normal enforces a 250ms timeout
+  // between detections, capping an animated QR at ~4 frames/second. Duplicate
+  // deliveries are cheap — parts dedupe through the set below.
+  final MobileScannerController _controller = MobileScannerController(
+    detectionSpeed: DetectionSpeed.unrestricted,
+    formats: const [BarcodeFormat.qrCode],
+  );
   final Set<String> _parts = {};
   final Set<int> _seenSeq = {};
   final RegExp _seqPattern = RegExp(r'/(\d+)-(\d+)/');
