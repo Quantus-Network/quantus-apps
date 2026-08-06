@@ -4,18 +4,15 @@ import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
 /// Renders a UR payload as a QR code. A multi-part UR is animated by cycling
-/// through its fragments with a [Timer] (no post-frame callbacks).
+/// through its fragments with a [Timer] (no post-frame callbacks). Reacts to
+/// [fps], [paused] and [parts] changes so the animation can be tuned live.
 class AnimatedUrQr extends StatefulWidget {
   final List<String> parts;
-  final Duration interval;
+  final int fps;
+  final bool paused;
   final double size;
 
-  const AnimatedUrQr({
-    super.key,
-    required this.parts,
-    this.interval = const Duration(milliseconds: 200),
-    this.size = 280,
-  });
+  const AnimatedUrQr({super.key, required this.parts, required this.fps, this.paused = false, this.size = 280});
 
   @override
   State<AnimatedUrQr> createState() => _AnimatedUrQrState();
@@ -28,11 +25,27 @@ class _AnimatedUrQrState extends State<AnimatedUrQr> {
   @override
   void initState() {
     super.initState();
-    if (widget.parts.length > 1) {
-      _timer = Timer.periodic(widget.interval, (_) {
-        setState(() => _index = (_index + 1) % widget.parts.length);
-      });
+    _restartTimer();
+  }
+
+  @override
+  void didUpdateWidget(AnimatedUrQr oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.parts.length != oldWidget.parts.length) _index = 0;
+    if (widget.fps != oldWidget.fps ||
+        widget.paused != oldWidget.paused ||
+        widget.parts.length != oldWidget.parts.length) {
+      _restartTimer();
     }
+  }
+
+  void _restartTimer() {
+    _timer?.cancel();
+    _timer = null;
+    if (widget.paused || widget.parts.length <= 1) return;
+    _timer = Timer.periodic(Duration(milliseconds: (1000 / widget.fps).round()), (_) {
+      setState(() => _index = (_index + 1) % widget.parts.length);
+    });
   }
 
   @override

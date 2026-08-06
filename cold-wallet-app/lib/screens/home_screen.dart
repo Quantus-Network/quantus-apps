@@ -4,34 +4,13 @@ import 'package:quantus_cold_wallet/components/scaffold_base.dart';
 import 'package:quantus_cold_wallet/components/v2_app_bar.dart';
 import 'package:quantus_cold_wallet/providers/wallet_providers.dart';
 import 'package:quantus_cold_wallet/screens/scan_transaction_screen.dart';
+import 'package:quantus_cold_wallet/screens/settings_screen.dart';
 import 'package:quantus_cold_wallet/screens/show_key_screen.dart';
 import 'package:quantus_cold_wallet/theme/app_colors.dart';
 import 'package:quantus_cold_wallet/theme/app_text_styles.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
-
-  Future<void> _confirmReset(BuildContext context, WidgetRef ref) async {
-    final colors = context.colors;
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: colors.sheetBackground,
-        title: const Text('Reset wallet?'),
-        content: const Text(
-          'This erases the encrypted key from this device. You can only restore it with your recovery phrase.',
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text('Reset', style: TextStyle(color: colors.error)),
-          ),
-        ],
-      ),
-    );
-    if (confirmed == true) await ref.read(walletControllerProvider.notifier).wipe();
-  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -46,8 +25,8 @@ class HomeScreen extends ConsumerWidget {
           child: Icon(Icons.lock_outline, color: colors.textPrimary, size: 22),
         ),
         trailing: GestureDetector(
-          onTap: () => _confirmReset(context, ref),
-          child: Icon(Icons.more_horiz, color: colors.textPrimary, size: 22),
+          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen())),
+          child: Icon(Icons.settings_outlined, color: colors.textPrimary, size: 22),
         ),
       ),
       mainContent: Column(
