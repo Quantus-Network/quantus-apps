@@ -23,12 +23,12 @@ quantus_ur = { git = "https://github.com/Quantus-Network/quantus_ur.git", tag = 
 anyhow = "1.0"
 blake3 = "1.8"
 qp-plonky2 = { version = "1.5.5", default-features = false, features = ["rand", "std"] }
-qp-wormhole-circuit = { git = "https://github.com/Quantus-Network/qp-zk-circuits", branch = "chore/bump-crypto-deps-2026-08", default-features = false, features = ["std"] }
-qp-wormhole-prover = { git = "https://github.com/Quantus-Network/qp-zk-circuits", branch = "chore/bump-crypto-deps-2026-08", default-features = false, features = ["std"] }
-qp-wormhole-aggregator = { git = "https://github.com/Quantus-Network/qp-zk-circuits", branch = "chore/bump-crypto-deps-2026-08", default-features = false, features = ["std"] }
-qp-wormhole-inputs = { git = "https://github.com/Quantus-Network/qp-zk-circuits", branch = "chore/bump-crypto-deps-2026-08", default-features = false, features = ["std"] }
-qp-zk-circuits-common = { git = "https://github.com/Quantus-Network/qp-zk-circuits", branch = "chore/bump-crypto-deps-2026-08", default-features = false, features = ["std"] }
-qp-wormhole-circuit-builder = { git = "https://github.com/Quantus-Network/qp-zk-circuits", branch = "chore/bump-crypto-deps-2026-08" }
+qp-wormhole-circuit = { version = "4.2.0", default-features = false, features = ["std"] }
+qp-wormhole-prover = { version = "4.2.0", default-features = false, features = ["std"] }
+qp-wormhole-aggregator = { version = "4.2.0", default-features = false, features = ["std"] }
+qp-wormhole-inputs = { version = "4.2.0", default-features = false, features = ["std"] }
+qp-zk-circuits-common = { version = "4.2.0", default-features = false, features = ["std"] }
+qp-wormhole-circuit-builder = { version = "4.2.0" }
 
 # Circuit generation is CPU-intensive; without this it takes ~10min instead of ~30s.
 [profile.dev.build-override]
