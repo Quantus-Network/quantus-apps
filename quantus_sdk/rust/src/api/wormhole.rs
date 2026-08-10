@@ -1,6 +1,7 @@
 use qp_wormhole_circuit::{
     inputs::{CircuitInputs, PrivateCircuitInputs},
     nullifier::Nullifier,
+    sensitive::Secret,
 };
 use qp_wormhole_inputs::{BytesDigest, PublicCircuitInputs};
 use qp_zk_circuits_common::{
@@ -201,7 +202,8 @@ pub fn compute_merkle_positions(
             }
         }
 
-        current_hash = hash_node_presorted(&all_four);
+        current_hash = hash_node_presorted(&all_four)
+            .map_err(|e| format!("Failed to hash merkle node at level: {}", e))?;
     }
 
     Ok(MerkleProcessed {
@@ -242,21 +244,19 @@ pub fn ensure_circuit_binaries(bins_dir: String) -> Result<String, String> {
 }
 
 fn all_required_files_exist(dir: &Path) -> bool {
-    // Must match the artifacts produced by `generate_all_circuit_binaries` and
-    // consumed by `PrivateBatchProver::new_from_binaries_dir` in qp-wormhole-*
-    // 3.1.x. Two things changed vs 3.0.x: the leaf circuit no longer emits a
-    // `prover.bin` (the leaf prover is always built from source), and the
-    // aggregation artifacts were renamed `aggregated_*` -> `private_batch_*`.
-    // If this list still names the old files, a stale 3.0.x circuits directory
-    // satisfies the check, generation is skipped, and proving later fails with
-    // "Failed to read aggregated prover file .../private_batch_prover.bin".
+    // Must match the artifacts produced by `generate_all_circuit_binaries` in
+    // qp-wormhole-* 4.2.x. No circuit emits a prover binary anymore (provers
+    // always rebuild their circuits from source), so `private_batch_prover.bin`
+    // is gone; `PrivateBatchProver::new_from_binaries_dir` now loads only
+    // common.bin, verifier.bin, dummy_proof.bin and config.json. Keeping the
+    // removed prover file in this list makes the check never pass, forcing a
+    // full (expensive) circuit regeneration on every call.
     const REQUIRED: &[&str] = &[
         "common.bin",
         "verifier.bin",
         "dummy_proof.bin",
         "private_batch_common.bin",
         "private_batch_verifier.bin",
-        "private_batch_prover.bin",
         "config.json",
     ];
     REQUIRED.iter().all(|f| dir.join(f).exists())
@@ -312,7 +312,7 @@ pub fn generate_proof(
     }
 
     let private = PrivateCircuitInputs {
-        secret: secret_digest,
+        secret: Secret::from(secret_digest),
         transfer_count: input.transfer_count,
         unspendable_account: unspendable_bytes,
         parent_hash: vec_to_digest(&input.parent_hash, "parent_hash")?,
