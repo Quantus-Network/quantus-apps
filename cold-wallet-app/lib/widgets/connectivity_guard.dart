@@ -45,7 +45,7 @@ class _ConnectivityGuardState extends ConsumerState<ConnectivityGuard> {
     final isOnline = status.maybeWhen(data: (s) => s == NetworkStatus.online, orElse: () => true);
     if (!isOnline) return const SizedBox.shrink();
 
-    if (ref.watch(wifiLockOverriddenProvider)) return _overriddenBanner(context);
+    if (ref.watch(wifiLockOverriddenProvider)) return _relockButton(context);
 
     return Positioned.fill(
       child: Material(
@@ -141,26 +141,24 @@ class _ConnectivityGuardState extends ConsumerState<ConnectivityGuard> {
     );
   }
 
-  /// Thin strip along the bottom edge: keeps the online state loudly visible
-  /// without covering the app's top bar or content. Tapping it re-arms the lock.
-  Widget _overriddenBanner(BuildContext context) {
-    final colors = context.colors;
-    final text = context.themeText;
-    final bottomInset = MediaQuery.paddingOf(context).bottom;
-
+  /// Danger button floating above the bottom safe area: keeps the online state
+  /// loudly visible without covering the app's own top or bottom UI. Tapping it
+  /// re-arms the lock.
+  Widget _relockButton(BuildContext context) {
     return Positioned(
       bottom: 0,
       left: 0,
       right: 0,
-      child: GestureDetector(
-        onTap: () => ref.read(wifiLockOverriddenProvider.notifier).set(false),
-        child: Container(
-          color: colors.error,
-          padding: EdgeInsets.only(top: 8, bottom: bottomInset > 0 ? bottomInset : 8),
-          child: Text(
-            'Online — lock overridden. Tap to re-lock.',
-            style: text.detail?.copyWith(color: colors.textPrimary),
-            textAlign: TextAlign.center,
+      child: SafeArea(
+        minimum: const EdgeInsets.only(bottom: 16),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: QuantusButton.simple(
+            label: 'Online — tap to re-lock',
+            icon: Icon(Icons.wifi_rounded, size: 18, color: context.colors.textPrimary),
+            iconPlacement: IconPlacement.leading,
+            variant: ButtonVariant.danger,
+            onTap: () => ref.read(wifiLockOverriddenProvider.notifier).set(false),
           ),
         ),
       ),
