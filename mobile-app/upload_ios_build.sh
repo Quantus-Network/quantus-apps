@@ -4,6 +4,8 @@
 
 set -eu
 
+cd "$(dirname "$0")"
+
 # Ensure Xcode export uses Apple's rsync implementation.
 # In case user installed custom rsync in homebrew for example
 export PATH="/usr/bin:/bin:/usr/sbin:/sbin:$PATH"
