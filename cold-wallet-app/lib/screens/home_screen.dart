@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:quantus_cold_wallet/components/quantus_button.dart';
 import 'package:quantus_cold_wallet/components/scaffold_base.dart';
+import 'package:quantus_cold_wallet/components/scaffold_base_bottom_content.dart';
 import 'package:quantus_cold_wallet/components/v2_app_bar.dart';
+import 'package:quantus_cold_wallet/providers/settings_providers.dart';
 import 'package:quantus_cold_wallet/providers/wallet_providers.dart';
 import 'package:quantus_cold_wallet/screens/scan_transaction_screen.dart';
 import 'package:quantus_cold_wallet/screens/settings_screen.dart';
@@ -56,6 +59,17 @@ class HomeScreen extends ConsumerWidget {
           ),
         ],
       ),
+      bottomContent: !ref.watch(wifiLockOverriddenProvider)
+          ? null
+          : ScaffoldBaseBottomContent(
+              child: QuantusButton.simple(
+                label: 'Online — tap to re-lock',
+                icon: Icon(Icons.wifi_rounded, size: 18, color: colors.textPrimary),
+                iconPlacement: IconPlacement.leading,
+                variant: ButtonVariant.danger,
+                onTap: () => ref.read(wifiLockOverriddenProvider.notifier).set(false),
+              ),
+            ),
     );
   }
 

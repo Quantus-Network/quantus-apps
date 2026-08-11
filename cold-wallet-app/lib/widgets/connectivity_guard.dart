@@ -17,8 +17,8 @@ import 'package:quantus_cold_wallet/theme/app_text_styles.dart';
 /// When the Wi-Fi Lock Override setting is enabled, an Override button leads to
 /// an inline confirmation step (this widget sits above the [Navigator] in the
 /// [MaterialApp.builder] stack, so dialog routes cannot be shown from here);
-/// once confirmed the lock is dismissed for the session and a banner stays on
-/// screen so an online signer is never mistaken for an offline one.
+/// once confirmed the lock is dismissed for the session. While overridden this
+/// guard renders nothing — the home screen shows a normal re-lock button.
 ///
 /// The override is INTENTIONALLY available in release builds: the cold wallet
 /// is not yet distributed through app stores, and release builds are tested on
@@ -45,7 +45,7 @@ class _ConnectivityGuardState extends ConsumerState<ConnectivityGuard> {
     final isOnline = status.maybeWhen(data: (s) => s == NetworkStatus.online, orElse: () => true);
     if (!isOnline) return const SizedBox.shrink();
 
-    if (ref.watch(wifiLockOverriddenProvider)) return _relockButton(context);
+    if (ref.watch(wifiLockOverriddenProvider)) return const SizedBox.shrink();
 
     return Positioned.fill(
       child: Material(
@@ -138,35 +138,6 @@ class _ConnectivityGuardState extends ConsumerState<ConnectivityGuard> {
           onTap: () => setState(() => _confirming = false),
         ),
       ],
-    );
-  }
-
-  /// Danger button floating above the bottom safe area: keeps the online state
-  /// loudly visible without covering the app's own top or bottom UI. Tapping it
-  /// re-arms the lock.
-  Widget _relockButton(BuildContext context) {
-    return Positioned(
-      bottom: 0,
-      left: 0,
-      right: 0,
-      // This sits above the Navigator, outside any Scaffold, so the InkWell
-      // inside QuantusButton needs its own Material ancestor.
-      child: Material(
-        type: MaterialType.transparency,
-        child: SafeArea(
-          minimum: const EdgeInsets.only(bottom: 16),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: QuantusButton.simple(
-              label: 'Online — tap to re-lock',
-              icon: Icon(Icons.wifi_rounded, size: 18, color: context.colors.textPrimary),
-              iconPlacement: IconPlacement.leading,
-              variant: ButtonVariant.danger,
-              onTap: () => ref.read(wifiLockOverriddenProvider.notifier).set(false),
-            ),
-          ),
-        ),
-      ),
     );
   }
 }
