@@ -2947,7 +2947,7 @@ dependencies = [
 [[package]]
 name = "quantus_ur"
 version = "0.1.0"
-source = "git+https://github.com/Quantus-Network/quantus_ur.git?tag=1.4.0#f3929da023e9c8081b8e9944b5b665871980fa79"
+source = "git+https://github.com/Quantus-Network/quantus_ur.git?tag=1.6.0#0b9bcc586a6ccb845c4d476ffa0880b0478b284a"
 dependencies = [
  "hex",
  "keystone-ur",
@@ -3154,6 +3154,7 @@ dependencies = [
  "quantus_ur",
  "sp-core",
  "sp-runtime",
+ "tempfile",
 ]
 
 [[package]]
@@ -3965,7 +3966,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "32497e9a4c7b38532efcdebeef879707aa9f794296a4f0244f6f69e9bc8574bd"
 dependencies = [
  "fastrand",
- "getrandom 0.4.3",
+ "getrandom 0.3.4",
  "once_cell",
  "rustix 1.1.4",
  "windows-sys 0.61.2",

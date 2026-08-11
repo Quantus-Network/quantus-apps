@@ -8,7 +8,57 @@ use qp_zk_circuits_common::{
     utils::digest_to_bytes,
     zk_merkle::{hash_node_presorted, SIBLINGS_PER_LEVEL},
 };
-use std::path::Path;
+use std::path::{Path, PathBuf};
+
+pub const ZK_CIRCUITS_VERSION: &str = "4.2.0";
+
+fn versioned_bins_dir(base: &Path) -> PathBuf {
+    base.join(format!("v{}", ZK_CIRCUITS_VERSION))
+}
+
+const LEGACY_FILES: &[&str] = &[
+    "common.bin",
+    "verifier.bin",
+    "dummy_proof.bin",
+    "private_batch_common.bin",
+    "private_batch_verifier.bin",
+    "private_batch_prover.bin",
+    "prover.bin",
+    "config.json",
+];
+
+fn cleanup_stale_circuit_dirs(base: &Path) {
+    for name in LEGACY_FILES {
+        let path = base.join(name);
+        if path.exists() {
+            eprintln!("[circuits] removing legacy file: {}", path.display());
+            if let Err(e) = std::fs::remove_file(&path) {
+                eprintln!("[circuits] failed to remove {}: {}", path.display(), e);
+            }
+        }
+    }
+
+    let current = format!("v{}", ZK_CIRCUITS_VERSION);
+    let entries = match std::fs::read_dir(base) {
+        Ok(e) => e,
+        Err(_) => return,
+    };
+    for entry in entries.flatten() {
+        let name = entry.file_name();
+        let name_str = name.to_string_lossy();
+        if name_str.starts_with('v') && name_str != current && entry.path().is_dir() {
+            eprintln!("[circuits] removing old version dir: {}", entry.path().display());
+            if let Err(e) = std::fs::remove_dir_all(entry.path()) {
+                eprintln!("[circuits] failed to remove {}: {}", entry.path().display(), e);
+            }
+        }
+    }
+}
+
+#[flutter_rust_bridge::frb(sync)]
+pub fn zk_circuits_version() -> String {
+    ZK_CIRCUITS_VERSION.to_string()
+}
 
 #[flutter_rust_bridge::frb(sync)]
 pub fn compute_address_hash_hex(raw_address: Vec<u8>) -> Result<String, String> {
@@ -213,15 +263,19 @@ pub fn compute_merkle_positions(
 }
 
 pub fn ensure_circuit_binaries(bins_dir: String) -> Result<String, String> {
-    let dir = Path::new(&bins_dir);
-    std::fs::create_dir_all(dir)
+    let base = Path::new(&bins_dir);
+    std::fs::create_dir_all(base)
         .map_err(|e| format!("Failed to create bins directory {}: {}", bins_dir, e))?;
 
+    cleanup_stale_circuit_dirs(base);
+
+    let dir = versioned_bins_dir(base);
+    std::fs::create_dir_all(&dir)
+        .map_err(|e| format!("Failed to create versioned bins directory {}: {}", dir.display(), e))?;
+
     let config_path = dir.join("config.json");
-    if all_required_files_exist(dir) {
-        // Reuse existing binaries only if they were generated with the current
-        // batch size; otherwise regenerate (e.g. after the chain's 16 -> 7 change).
-        match qp_wormhole_circuit_builder::CircuitBinsConfig::load(dir) {
+    if all_required_files_exist(&dir) {
+        match qp_wormhole_circuit_builder::CircuitBinsConfig::load(&dir) {
             Ok(config) if config.num_leaf_proofs == DEFAULT_NUM_LEAF_PROOFS => {
                 return std::fs::read_to_string(&config_path)
                     .map_err(|e| format!("Failed to read config.json: {}", e));
@@ -231,7 +285,7 @@ pub fn ensure_circuit_binaries(bins_dir: String) -> Result<String, String> {
     }
 
     qp_wormhole_circuit_builder::generate_all_circuit_binaries(
-        dir,
+        &dir,
         true,
         DEFAULT_NUM_LEAF_PROOFS,
         None,
@@ -360,7 +414,7 @@ pub fn aggregate_proofs(proof_bytes_list: Vec<Vec<u8>>, bins_dir: String) -> Res
     use qp_wormhole_aggregator::private_batch::prover::PrivateBatchProver;
     use qp_zk_circuits_common::circuit::{C, D, F};
 
-    let bins_path = Path::new(&bins_dir);
+    let bins_path = versioned_bins_dir(Path::new(&bins_dir));
 
     let leaf_prover = qp_wormhole_prover::build_fresh();
     let common_data = &leaf_prover.circuit_data.common;
@@ -374,7 +428,7 @@ pub fn aggregate_proofs(proof_bytes_list: Vec<Vec<u8>>, bins_dir: String) -> Res
         })
         .collect::<Result<_, _>>()?;
 
-    let prover = PrivateBatchProver::new_from_binaries_dir(bins_path)
+    let prover = PrivateBatchProver::new_from_binaries_dir(&bins_path)
         .map_err(|e| format!("Failed to create private-batch prover: {}", e))?;
 
     let aggregated = prover
@@ -382,4 +436,192 @@ pub fn aggregate_proofs(proof_bytes_list: Vec<Vec<u8>>, bins_dir: String) -> Res
         .map_err(|e| format!("Aggregation failed: {}", e))?;
 
     Ok(aggregated.to_bytes())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn versioned_bins_dir_appends_version() {
+        let base = Path::new("/tmp/circuits");
+        let result = versioned_bins_dir(base);
+        assert_eq!(result, PathBuf::from(format!("/tmp/circuits/v{}", ZK_CIRCUITS_VERSION)));
+    }
+
+    #[test]
+    fn zk_circuits_version_matches_const() {
+        assert_eq!(zk_circuits_version(), ZK_CIRCUITS_VERSION);
+    }
+
+    #[test]
+    fn cleanup_removes_legacy_files() {
+        let tmp = tempfile::tempdir().unwrap();
+        let base = tmp.path();
+        for name in LEGACY_FILES {
+            std::fs::write(base.join(name), b"x").unwrap();
+        }
+        cleanup_stale_circuit_dirs(base);
+        for name in LEGACY_FILES {
+            assert!(!base.join(name).exists(), "{} should have been removed", name);
+        }
+    }
+
+    #[test]
+    fn cleanup_removes_old_version_dirs() {
+        let tmp = tempfile::tempdir().unwrap();
+        let base = tmp.path();
+        std::fs::create_dir(base.join("v1.0.0")).unwrap();
+        std::fs::create_dir(base.join("v3.9.0")).unwrap();
+        let current = format!("v{}", ZK_CIRCUITS_VERSION);
+        std::fs::create_dir(base.join(&current)).unwrap();
+
+        cleanup_stale_circuit_dirs(base);
+
+        assert!(!base.join("v1.0.0").exists());
+        assert!(!base.join("v3.9.0").exists());
+        assert!(base.join(&current).exists(), "current version dir must survive");
+    }
+
+    #[test]
+    fn cleanup_ignores_non_version_entries() {
+        let tmp = tempfile::tempdir().unwrap();
+        let base = tmp.path();
+        std::fs::create_dir(base.join("other_dir")).unwrap();
+        std::fs::write(base.join("notes.txt"), b"keep").unwrap();
+
+        cleanup_stale_circuit_dirs(base);
+
+        assert!(base.join("other_dir").exists());
+        assert!(base.join("notes.txt").exists());
+    }
+
+    #[test]
+    fn cleanup_on_empty_dir_is_noop() {
+        let tmp = tempfile::tempdir().unwrap();
+        cleanup_stale_circuit_dirs(tmp.path());
+    }
+
+    #[test]
+    fn all_required_files_exist_true_when_complete() {
+        let tmp = tempfile::tempdir().unwrap();
+        let dir = tmp.path();
+        for name in &["common.bin", "verifier.bin", "dummy_proof.bin",
+                      "private_batch_common.bin", "private_batch_verifier.bin", "config.json"] {
+            std::fs::write(dir.join(name), b"x").unwrap();
+        }
+        assert!(all_required_files_exist(dir));
+    }
+
+    #[test]
+    fn all_required_files_exist_false_when_missing() {
+        let tmp = tempfile::tempdir().unwrap();
+        let dir = tmp.path();
+        std::fs::write(dir.join("common.bin"), b"x").unwrap();
+        assert!(!all_required_files_exist(dir));
+    }
+
+    #[test]
+    fn compute_address_hash_hex_deterministic() {
+        let addr = vec![42u8; 32];
+        let h1 = compute_address_hash_hex(addr.clone()).unwrap();
+        let h2 = compute_address_hash_hex(addr).unwrap();
+        assert_eq!(h1, h2);
+        assert_eq!(h1.len(), 64);
+    }
+
+    #[test]
+    fn compute_address_hash_hex_rejects_wrong_length() {
+        assert!(compute_address_hash_hex(vec![0u8; 31]).is_err());
+        assert!(compute_address_hash_hex(vec![0u8; 33]).is_err());
+    }
+
+    #[test]
+    fn output_amount_with_10bps_fee() {
+        let out = wormhole_compute_output_amount(10_000, 10).unwrap();
+        assert_eq!(out, 9990);
+    }
+
+    #[test]
+    fn output_amount_zero_fee() {
+        let out = wormhole_compute_output_amount(10_000, 0).unwrap();
+        assert_eq!(out, 10_000);
+    }
+
+    #[test]
+    fn output_amount_full_fee() {
+        let out = wormhole_compute_output_amount(10_000, 10_000).unwrap();
+        assert_eq!(out, 0);
+    }
+
+    #[test]
+    fn output_amount_rejects_excessive_fee() {
+        assert!(wormhole_compute_output_amount(1, 10_001).is_err());
+    }
+
+    #[test]
+    fn decode_leaf_amount_valid() {
+        let mut data = vec![0u8; 60];
+        let amount: u128 = 500 * SCALE_DOWN_FACTOR;
+        data[44..60].copy_from_slice(&amount.to_le_bytes());
+        assert_eq!(decode_leaf_amount(data).unwrap(), 500);
+    }
+
+    #[test]
+    fn decode_leaf_amount_too_short() {
+        assert!(decode_leaf_amount(vec![0u8; 59]).is_err());
+    }
+
+    #[test]
+    fn decode_leaf_transfer_count_valid() {
+        let mut data = vec![0u8; 40];
+        data[32..40].copy_from_slice(&77u64.to_le_bytes());
+        assert_eq!(decode_leaf_transfer_count(data).unwrap(), 77);
+    }
+
+    #[test]
+    fn decode_leaf_transfer_count_too_short() {
+        assert!(decode_leaf_transfer_count(vec![0u8; 39]).is_err());
+    }
+
+    #[test]
+    fn decode_leaf_to_account_valid() {
+        let mut data = vec![0u8; 64];
+        data[0..32].copy_from_slice(&[0xAB; 32]);
+        assert_eq!(decode_leaf_to_account(data).unwrap(), vec![0xAB; 32]);
+    }
+
+    #[test]
+    fn decode_leaf_to_account_too_short() {
+        assert!(decode_leaf_to_account(vec![0u8; 31]).is_err());
+    }
+
+    #[test]
+    fn compute_nullifier_deterministic() {
+        let secret = vec![1u8; 32];
+        let n1 = compute_nullifier(secret.clone(), 0).unwrap();
+        let n2 = compute_nullifier(secret.clone(), 0).unwrap();
+        assert_eq!(n1, n2);
+        let n3 = compute_nullifier(secret, 1).unwrap();
+        assert_ne!(n1, n3);
+    }
+
+    #[test]
+    fn compute_nullifier_rejects_bad_length() {
+        assert!(compute_nullifier(vec![0u8; 16], 0).is_err());
+    }
+
+    #[test]
+    fn compute_wormhole_address_deterministic() {
+        let secret = vec![7u8; 32];
+        let a1 = compute_wormhole_address(secret.clone()).unwrap();
+        let a2 = compute_wormhole_address(secret).unwrap();
+        assert_eq!(a1, a2);
+        assert_eq!(a1.len(), 32);
+    }
+
+    #[test]
+    fn compute_wormhole_address_rejects_bad_length() {
+        assert!(compute_wormhole_address(vec![0u8; 10]).is_err());
+    }
 }

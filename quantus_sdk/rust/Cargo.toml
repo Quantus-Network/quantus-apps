@@ -17,7 +17,7 @@ hex = "0.4.3"
 sp-core = { version = "43.0.0", default-features = true }
 parity-scale-codec = { version = "3.7.5", default-features = false, features = ["std"] }
 sp-runtime = { version = "48.0.0", default-features = false, features = ["std"] }
-quantus_ur = { git = "https://github.com/Quantus-Network/quantus_ur.git", tag = "1.4.0" }
+quantus_ur = { git = "https://github.com/Quantus-Network/quantus_ur.git", tag = "1.6.0" }
 
 # ZK proof generation (aligned with quantus-cli / chain)
 anyhow = "1.0"
@@ -29,6 +29,9 @@ qp-wormhole-aggregator = { version = "4.2.0", default-features = false, features
 qp-wormhole-inputs = { version = "4.2.0", default-features = false, features = ["std"] }
 qp-zk-circuits-common = { version = "4.2.0", default-features = false, features = ["std"] }
 qp-wormhole-circuit-builder = { version = "4.2.0" }
+
+[dev-dependencies]
+tempfile = "3"
 
 # Circuit generation is CPU-intensive; without this it takes ~10min instead of ~30s.
 [profile.dev.build-override]
