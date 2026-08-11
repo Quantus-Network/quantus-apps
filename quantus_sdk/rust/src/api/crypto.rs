@@ -1,7 +1,10 @@
 use qp_poseidon_core::{hash_bytes, hash_to_bytes, serialization::bytes_to_digest};
 use qp_rusty_crystals_dilithium::ml_dsa_87;
-use qp_rusty_crystals_hdwallet::{derive_key_from_mnemonic, derive_wormhole_from_mnemonic, mnemonic_to_seed, SensitiveBytes32, SensitiveBytes64};
 pub use qp_rusty_crystals_hdwallet::HDLatticeError;
+use qp_rusty_crystals_hdwallet::{
+    derive_key_from_mnemonic, derive_wormhole_from_mnemonic, mnemonic_to_seed, SensitiveBytes32,
+    SensitiveBytes64,
+};
 use sp_core::crypto::{AccountId32, Ss58Codec};
 use std::convert::AsRef;
 
@@ -68,13 +71,18 @@ pub fn generate_keypair(mnemonic_str: String) -> Result<Keypair, HDLatticeError>
     let mut seed64 = SensitiveBytes64::zeroed();
     mnemonic_to_seed(mnemonic_str, None, &mut seed64)?;
     let mut entropy = SensitiveBytes32::zeroed();
-    entropy.as_mut_bytes().copy_from_slice(&seed64.as_bytes()[..32]);
+    entropy
+        .as_mut_bytes()
+        .copy_from_slice(&seed64.as_bytes()[..32]);
     let ml_dsa_keypair = MlDsaKeypair::generate(&mut entropy);
     Ok(Keypair::from_ml_dsa(ml_dsa_keypair))
 }
 
 #[flutter_rust_bridge::frb(sync)]
-pub fn generate_derived_keypair(mnemonic_str: String, path: &str) -> Result<Keypair, HDLatticeError> {
+pub fn generate_derived_keypair(
+    mnemonic_str: String,
+    path: &str,
+) -> Result<Keypair, HDLatticeError> {
     derive_key_from_mnemonic(&mnemonic_str, None, path).map(Keypair::from_ml_dsa)
 }
 
@@ -137,7 +145,11 @@ pub fn sign_message(keypair: &Keypair, message: &[u8], entropy: Option<[u8; 32]>
 }
 
 #[flutter_rust_bridge::frb(sync)]
-pub fn sign_message_with_pubkey(keypair: &Keypair, message: &[u8], entropy: Option<[u8; 32]>) -> Vec<u8> {
+pub fn sign_message_with_pubkey(
+    keypair: &Keypair,
+    message: &[u8],
+    entropy: Option<[u8; 32]>,
+) -> Vec<u8> {
     let signature = sign_message(keypair, message, entropy);
     let mut result = Vec::with_capacity(signature.len() + keypair.public_key.len());
     result.extend_from_slice(&signature);

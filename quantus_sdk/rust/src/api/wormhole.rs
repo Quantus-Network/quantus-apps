@@ -16,15 +16,22 @@ fn versioned_bins_dir(base: &Path) -> PathBuf {
     base.join(format!("v{}", ZK_CIRCUITS_VERSION))
 }
 
+// Flat-dir artifacts from pre-versioned installs. Union of 3.0 (`aggregated_*`)
+// and 3.1 (`private_batch_*` + `dummy_private_batch_proof.bin` from
+// `generate_all_circuit_binaries(..., true, ...)`).
 const LEGACY_FILES: &[&str] = &[
     "common.bin",
     "verifier.bin",
     "dummy_proof.bin",
+    "prover.bin",
+    "config.json",
     "private_batch_common.bin",
     "private_batch_verifier.bin",
     "private_batch_prover.bin",
-    "prover.bin",
-    "config.json",
+    "dummy_private_batch_proof.bin",
+    "aggregated_prover.bin",
+    "aggregated_verifier.bin",
+    "aggregated_common.bin",
 ];
 
 fn cleanup_stale_circuit_dirs(base: &Path) {
@@ -47,9 +54,16 @@ fn cleanup_stale_circuit_dirs(base: &Path) {
         let name = entry.file_name();
         let name_str = name.to_string_lossy();
         if name_str.starts_with('v') && name_str != current && entry.path().is_dir() {
-            eprintln!("[circuits] removing old version dir: {}", entry.path().display());
+            eprintln!(
+                "[circuits] removing old version dir: {}",
+                entry.path().display()
+            );
             if let Err(e) = std::fs::remove_dir_all(entry.path()) {
-                eprintln!("[circuits] failed to remove {}: {}", entry.path().display(), e);
+                eprintln!(
+                    "[circuits] failed to remove {}: {}",
+                    entry.path().display(),
+                    e
+                );
             }
         }
     }
@@ -270,8 +284,13 @@ pub fn ensure_circuit_binaries(bins_dir: String) -> Result<String, String> {
     cleanup_stale_circuit_dirs(base);
 
     let dir = versioned_bins_dir(base);
-    std::fs::create_dir_all(&dir)
-        .map_err(|e| format!("Failed to create versioned bins directory {}: {}", dir.display(), e))?;
+    std::fs::create_dir_all(&dir).map_err(|e| {
+        format!(
+            "Failed to create versioned bins directory {}: {}",
+            dir.display(),
+            e
+        )
+    })?;
 
     let config_path = dir.join("config.json");
     if all_required_files_exist(&dir) {
@@ -409,7 +428,10 @@ pub fn generate_proof(
     })
 }
 
-pub fn aggregate_proofs(proof_bytes_list: Vec<Vec<u8>>, bins_dir: String) -> Result<Vec<u8>, String> {
+pub fn aggregate_proofs(
+    proof_bytes_list: Vec<Vec<u8>>,
+    bins_dir: String,
+) -> Result<Vec<u8>, String> {
     use plonky2::plonk::proof::ProofWithPublicInputs;
     use qp_wormhole_aggregator::private_batch::prover::PrivateBatchProver;
     use qp_zk_circuits_common::circuit::{C, D, F};
@@ -446,7 +468,10 @@ mod tests {
     fn versioned_bins_dir_appends_version() {
         let base = Path::new("/tmp/circuits");
         let result = versioned_bins_dir(base);
-        assert_eq!(result, PathBuf::from(format!("/tmp/circuits/v{}", ZK_CIRCUITS_VERSION)));
+        assert_eq!(
+            result,
+            PathBuf::from(format!("/tmp/circuits/v{}", ZK_CIRCUITS_VERSION))
+        );
     }
 
     #[test]
@@ -454,16 +479,71 @@ mod tests {
         assert_eq!(zk_circuits_version(), ZK_CIRCUITS_VERSION);
     }
 
+    // Independent of LEGACY_FILES so omissions in that list fail the tests.
+    const V3_0_MANIFEST: &[&str] = &[
+        "prover.bin",
+        "verifier.bin",
+        "common.bin",
+        "aggregated_prover.bin",
+        "aggregated_verifier.bin",
+        "aggregated_common.bin",
+        "dummy_proof.bin",
+        "config.json",
+    ];
+
+    const V3_1_MANIFEST: &[&str] = &[
+        "common.bin",
+        "verifier.bin",
+        "dummy_proof.bin",
+        "private_batch_common.bin",
+        "private_batch_verifier.bin",
+        "private_batch_prover.bin",
+        "dummy_private_batch_proof.bin",
+        "config.json",
+    ];
+
     #[test]
-    fn cleanup_removes_legacy_files() {
+    fn legacy_files_covers_historical_manifests() {
+        for name in V3_0_MANIFEST.iter().chain(V3_1_MANIFEST.iter()) {
+            assert!(
+                LEGACY_FILES.contains(name),
+                "LEGACY_FILES missing historical artifact {}",
+                name
+            );
+        }
+    }
+
+    #[test]
+    fn cleanup_removes_v3_0_manifest() {
         let tmp = tempfile::tempdir().unwrap();
         let base = tmp.path();
-        for name in LEGACY_FILES {
+        for name in V3_0_MANIFEST {
             std::fs::write(base.join(name), b"x").unwrap();
         }
         cleanup_stale_circuit_dirs(base);
-        for name in LEGACY_FILES {
-            assert!(!base.join(name).exists(), "{} should have been removed", name);
+        for name in V3_0_MANIFEST {
+            assert!(
+                !base.join(name).exists(),
+                "{} should have been removed",
+                name
+            );
+        }
+    }
+
+    #[test]
+    fn cleanup_removes_v3_1_manifest() {
+        let tmp = tempfile::tempdir().unwrap();
+        let base = tmp.path();
+        for name in V3_1_MANIFEST {
+            std::fs::write(base.join(name), b"x").unwrap();
+        }
+        cleanup_stale_circuit_dirs(base);
+        for name in V3_1_MANIFEST {
+            assert!(
+                !base.join(name).exists(),
+                "{} should have been removed",
+                name
+            );
         }
     }
 
@@ -480,7 +560,10 @@ mod tests {
 
         assert!(!base.join("v1.0.0").exists());
         assert!(!base.join("v3.9.0").exists());
-        assert!(base.join(&current).exists(), "current version dir must survive");
+        assert!(
+            base.join(&current).exists(),
+            "current version dir must survive"
+        );
     }
 
     #[test]
@@ -506,8 +589,14 @@ mod tests {
     fn all_required_files_exist_true_when_complete() {
         let tmp = tempfile::tempdir().unwrap();
         let dir = tmp.path();
-        for name in &["common.bin", "verifier.bin", "dummy_proof.bin",
-                      "private_batch_common.bin", "private_batch_verifier.bin", "config.json"] {
+        for name in &[
+            "common.bin",
+            "verifier.bin",
+            "dummy_proof.bin",
+            "private_batch_common.bin",
+            "private_batch_verifier.bin",
+            "config.json",
+        ] {
             std::fs::write(dir.join(name), b"x").unwrap();
         }
         assert!(all_required_files_exist(dir));
