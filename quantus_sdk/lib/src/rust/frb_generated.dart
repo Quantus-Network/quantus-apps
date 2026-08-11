@@ -65,7 +65,7 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
   String get codegenVersion => '2.12.0';
 
   @override
-  int get rustContentHash => -22852253;
+  int get rustContentHash => 300623511;
 
   static const kDefaultExternalLibraryLoaderConfig = ExternalLibraryLoaderConfig(
     stem: 'rust_lib_quantus_wallet',
@@ -161,6 +161,8 @@ abstract class RustLibApi extends BaseApi {
   });
 
   int crateApiWormholeWormholeComputeOutputAmount({required int inputAmount, required int feeBps});
+
+  String crateApiWormholeZkCircuitsVersion();
 
   RustArcIncrementStrongCountFnType get rust_arc_increment_strong_count_HdLatticeError;
 
@@ -881,6 +883,25 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   TaskConstMeta get kCrateApiWormholeWormholeComputeOutputAmountConstMeta =>
       const TaskConstMeta(debugName: 'wormhole_compute_output_amount', argNames: ['inputAmount', 'feeBps']);
+
+  @override
+  String crateApiWormholeZkCircuitsVersion() {
+    return handler.executeSync(
+      SyncTask(
+        callFfi: () {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 34)!;
+        },
+        codec: SseCodec(decodeSuccessData: sse_decode_String, decodeErrorData: null),
+        constMeta: kCrateApiWormholeZkCircuitsVersionConstMeta,
+        argValues: [],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiWormholeZkCircuitsVersionConstMeta =>
+      const TaskConstMeta(debugName: 'zk_circuits_version', argNames: []);
 
   RustArcIncrementStrongCountFnType get rust_arc_increment_strong_count_HdLatticeError =>
       wire.rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerHDLatticeError;
