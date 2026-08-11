@@ -346,10 +346,10 @@ packages:
     dependency: "direct main"
     description:
       name: flutter_riverpod
-      sha256: "56e81e662e6e54e59b231da57e90ac0d06ac67d8e3f2273c129a37ae6282b40c"
+      sha256: "4e166be88e1dbbaa34a280bdb744aeae73b7ef25fdf8db7a3bb776760a3648e2"
       url: "https://pub.dev"
     source: hosted
-    version: "3.4.2"
+    version: "3.3.1"
   flutter_rust_bridge:
     dependency: transitive
     description:
@@ -585,22 +585,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "6.1.0"
-  listen:
-    dependency: transitive
-    description:
-      name: listen
-      sha256: "47501a08016a43fcad79252439d723f50f14f88fa7bfd8a177e0a417e5c9e1f2"
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.0.1"
   local_auth:
     dependency: "direct main"
     description:
       name: local_auth
-      sha256: ecf24edf2283c509ecd217e3595f6f71034b68888d28ad1dae6bfa0857b816ac
+      sha256: ae6f382f638108c6becd134318d7c3f0a93875383a54010f61d7c97ac05d5137
       url: "https://pub.dev"
     source: hosted
-    version: "3.0.2"
+    version: "3.0.1"
   local_auth_android:
     dependency: transitive
     description:
@@ -685,10 +677,10 @@ packages:
     dependency: "direct main"
     description:
       name: mobile_scanner
-      sha256: ce3f059ebd6dbfab7292bba0e893e354b46730636820d3c9ef69005ce2d55bce
+      sha256: c92c26bf2231695b6d3477c8dcf435f51e28f87b1745966b1fe4c47a286171ce
       url: "https://pub.dev"
     source: hosted
-    version: "7.4.0"
+    version: "7.2.0"
   nm:
     dependency: transitive
     description:
@@ -932,10 +924,10 @@ packages:
     dependency: transitive
     description:
       name: riverpod
-      sha256: "84351b3472a447f7b89f961f95c73287009d58c59d8cc1267425d995f78e50f1"
+      sha256: "8c22216be8ad3ef2b44af3a329693558c98eca7b8bd4ef495c92db0bba279f83"
       url: "https://pub.dev"
     source: hosted
-    version: "3.4.2"
+    version: "3.2.1"
   rust_lib_quantus_wallet:
     dependency: transitive
     description:
@@ -1212,14 +1204,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.3"
-  uuid:
-    dependency: transitive
-    description:
-      name: uuid
-      sha256: "9b129329f58692f6e6578329498a8fe9fbe98f090beb764ffbb8ee2eadd01dcd"
-      url: "https://pub.dev"
-    source: hosted
-    version: "4.6.0"
   vector_graphics:
     dependency: transitive
     description:
@@ -1341,5 +1325,5 @@ packages:
     source: hosted
     version: "3.1.3"
 sdks:
-  dart: ">=3.12.0 <4.0.0"
+  dart: ">=3.11.0 <4.0.0"
   flutter: ">=3.38.4"
