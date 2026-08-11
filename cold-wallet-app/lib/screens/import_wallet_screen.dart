@@ -62,26 +62,28 @@ class _ImportWalletScreenState extends State<ImportWalletScreen> {
   Future<void> _import() async {
     final mnemonic = _controller.text.trim();
 
+    if (!mnemonic.startsWith('//')) {
+      final words = mnemonic.split(' ').where((w) => w.isNotEmpty).toList();
+      if (words.length != 12 && words.length != 24) {
+        setState(() => _error = 'Recovery phrase must be 12 or 24 words');
+        return;
+      }
+    }
+
     setState(() {
       _isLoading = true;
       _error = null;
     });
 
     try {
-      if (!mnemonic.startsWith('//')) {
-        final words = mnemonic.split(' ').where((w) => w.isNotEmpty).toList();
-        if (words.length != 12 && words.length != 24) {
-          throw Exception('Recovery phrase must be 12 or 24 words');
-        }
-      }
-
       // Throws on an invalid phrase.
       HdWalletService().keyPairAtIndex(mnemonic, 0);
 
       if (!mounted) return;
       Navigator.push(context, MaterialPageRoute(builder: (_) => SetPasswordScreen(mnemonic: mnemonic)));
     } catch (e) {
-      if (mounted) setState(() => _error = e.toString());
+      debugPrint('Import rejected: $e');
+      if (mounted) setState(() => _error = 'Not a valid recovery phrase');
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
