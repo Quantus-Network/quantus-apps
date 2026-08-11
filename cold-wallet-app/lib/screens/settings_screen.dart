@@ -133,6 +133,7 @@ class SettingsScreen extends ConsumerWidget {
             const SizedBox(height: 8),
             GestureDetector(
               onTap: () => _confirmReset(context, ref),
+              behavior: HitTestBehavior.opaque,
               child: Row(
                 children: [
                   Expanded(
