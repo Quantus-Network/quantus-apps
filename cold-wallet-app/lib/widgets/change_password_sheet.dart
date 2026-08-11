@@ -30,6 +30,7 @@ class _ChangePasswordSheetState extends ConsumerState<_ChangePasswordSheet> {
   final _next = TextEditingController();
   final _confirm = TextEditingController();
   bool _busy = false;
+  bool _done = false;
   String? _error;
 
   @override
@@ -61,7 +62,10 @@ class _ChangePasswordSheetState extends ConsumerState<_ChangePasswordSheet> {
         });
         return;
       }
-      Navigator.pop(context, true);
+      setState(() {
+        _busy = false;
+        _done = true;
+      });
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -80,32 +84,54 @@ class _ChangePasswordSheetState extends ConsumerState<_ChangePasswordSheet> {
       padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
       child: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(24, 24, 24, 40),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text('Change password', style: text.smallTitle?.copyWith(color: colors.textPrimary)),
-            const SizedBox(height: 8),
-            Text(
-              'Your password encrypts the wallet key stored on this device. If you never set one, leave the current '
-              'password empty.',
-              style: text.detail?.copyWith(color: colors.textSecondary),
-            ),
-            const SizedBox(height: 24),
-            PasswordField(controller: _current, hintText: 'Current password'),
-            const SizedBox(height: 12),
-            PasswordField(controller: _next, hintText: 'New password'),
-            const SizedBox(height: 12),
-            PasswordField(controller: _confirm, hintText: 'Confirm new password', onSubmitted: (_) => _submit()),
-            if (_error != null) ...[
-              const SizedBox(height: 16),
-              Text(_error!, style: text.detail?.copyWith(color: colors.error)),
-            ],
-            const SizedBox(height: 24),
-            QuantusButton.simple(label: 'Change password', isLoading: _busy, onTap: _busy ? null : _submit),
-          ],
-        ),
+        child: _done ? _successContent(colors, text) : _formContent(colors, text),
       ),
+    );
+  }
+
+  Widget _successContent(AppColorsV2 colors, AppTextTheme text) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Icon(Icons.check_circle_outline_rounded, size: 48, color: colors.success),
+        const SizedBox(height: 16),
+        Text(
+          'Password changed',
+          style: text.smallTitle?.copyWith(color: colors.textPrimary),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 24),
+        QuantusButton.simple(label: 'Done', onTap: () => Navigator.pop(context, true)),
+      ],
+    );
+  }
+
+  Widget _formContent(AppColorsV2 colors, AppTextTheme text) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text('Change password', style: text.smallTitle?.copyWith(color: colors.textPrimary)),
+        const SizedBox(height: 8),
+        Text(
+          'Your password encrypts the wallet key stored on this device. If you never set one, leave the current '
+          'password empty.',
+          style: text.detail?.copyWith(color: colors.textSecondary),
+        ),
+        const SizedBox(height: 24),
+        PasswordField(controller: _current, hintText: 'Current password'),
+        const SizedBox(height: 12),
+        PasswordField(controller: _next, hintText: 'New password'),
+        const SizedBox(height: 12),
+        PasswordField(controller: _confirm, hintText: 'Confirm new password', onSubmitted: (_) => _submit()),
+        if (_error != null) ...[
+          const SizedBox(height: 16),
+          Text(_error!, style: text.detail?.copyWith(color: colors.error)),
+        ],
+        const SizedBox(height: 24),
+        QuantusButton.simple(label: 'Change password', isLoading: _busy, onTap: _busy ? null : _submit),
+      ],
     );
   }
 }

@@ -13,18 +13,6 @@ import 'package:quantus_cold_wallet/widgets/change_password_sheet.dart';
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
 
-  Future<void> _changePassword(BuildContext context) async {
-    final changed = await showChangePasswordSheet(context);
-    if (!changed || !context.mounted) return;
-    final colors = context.colors;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        backgroundColor: colors.surfaceDeep,
-        content: Text('Password changed', style: context.themeText.smallParagraph?.copyWith(color: colors.textPrimary)),
-      ),
-    );
-  }
-
   Future<void> _confirmReset(BuildContext context, WidgetRef ref) async {
     final confirmed = await showConfirmDialog(
       context,
@@ -53,7 +41,7 @@ class SettingsScreen extends ConsumerWidget {
             Text('SECURITY', style: text.transactionDetailRowLabel?.copyWith(color: colors.textLabel)),
             const SizedBox(height: 8),
             GestureDetector(
-              onTap: () => _changePassword(context),
+              onTap: () => showChangePasswordSheet(context),
               behavior: HitTestBehavior.opaque,
               child: Row(
                 children: [
