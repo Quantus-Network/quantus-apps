@@ -68,6 +68,26 @@ class RegularSendStrategy extends SendStrategy {
   @override
   String? affordabilityError(WidgetRef ref, SendFee fee, AppLocalizations l10n) => null;
 
+  bool get _signsWithHardware => account.accountType == AccountType.keystone || AppConstants.debugHardwareWallet;
+
+  RuntimeCall _transferCall(WidgetRef ref, String recipient, BigInt amount) =>
+      ref.read(balancesServiceProvider).getBalanceTransferCall(recipient, amount);
+
+  KeystoneSignCacheKey _hardwareCacheKey(String recipient, BigInt amount) =>
+      KeystoneSignCacheKey.fromSendParams(accountId: account.accountId, recipientAddress: recipient, amount: amount);
+
+  @override
+  Future<void> prefetchSignPayload(WidgetRef ref, {required String recipientAddress, required BigInt amount}) async {
+    if (!_signsWithHardware) return;
+    final recipient = recipientAddress.trim();
+    await ensureKeystoneSignPayload(
+      ref,
+      account: account,
+      buildCall: () => _transferCall(ref, recipient, amount),
+      cacheKey: _hardwareCacheKey(recipient, amount),
+    );
+  }
+
   @override
   List<Widget> reviewRows(
     BuildContext context,
@@ -125,22 +145,18 @@ class RegularSendStrategy extends SendStrategy {
 
     // Keystone (hardware) accounts sign off-device: hand off to the QR flow
     // instead of signing locally. The debug flag forces this path for testing.
-    if (account.accountType == AccountType.keystone || AppConstants.debugHardwareWallet) {
+    if (_signsWithHardware) {
       return SendNeedsHardwareSignature(
         session: KeystoneSigningSession(
           account: account,
-          buildCall: () => ref.read(balancesServiceProvider).getBalanceTransferCall(recipient, amount),
+          buildCall: () => _transferCall(ref, recipient, amount),
           primaryDetail: l10n.commonAmountBalance(
             fmt.formatBalance(amount, smartDecimals: 4),
             AppConstants.tokenSymbol,
           ),
           secondaryDetail: recipient,
           tertiaryDetail: recipientChecksum,
-          cacheKey: KeystoneSignCacheKey.fromSendParams(
-            accountId: account.accountId,
-            recipientAddress: recipient,
-            amount: amount,
-          ),
+          cacheKey: _hardwareCacheKey(recipient, amount),
           telemetryPrefix: 'send_transfer_hardware',
           submitSigned: (ref, {required unsignedData, required signature, required publicKey}) async {
             final hash = await ref

@@ -8,9 +8,11 @@ import 'package:quantus_cold_wallet/components/animated_ur_qr.dart';
 import 'package:quantus_cold_wallet/components/call_detail_view.dart';
 import 'package:quantus_cold_wallet/components/detail_row.dart';
 import 'package:quantus_cold_wallet/components/quantus_button.dart';
+import 'package:quantus_cold_wallet/components/qr_tuning_controls.dart';
 import 'package:quantus_cold_wallet/components/scaffold_base.dart';
 import 'package:quantus_cold_wallet/components/scaffold_base_bottom_content.dart';
 import 'package:quantus_cold_wallet/components/v2_app_bar.dart';
+import 'package:quantus_cold_wallet/providers/settings_providers.dart';
 import 'package:quantus_cold_wallet/providers/wallet_providers.dart';
 import 'package:quantus_cold_wallet/theme/app_colors.dart';
 import 'package:quantus_cold_wallet/theme/app_text_styles.dart';
@@ -35,7 +37,10 @@ class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> {
 
   ParsedPayload? _parsed;
   String? _parseError;
-  List<String>? _signatureUr;
+  Uint8List? _signed;
+  List<String>? _urParts;
+  int? _urPartsBytes;
+  bool _qrPaused = false;
   bool _signing = false;
   bool _reviewedToEnd = false;
   bool _showRawPayload = false;
@@ -101,10 +106,9 @@ class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> {
         keypair: keypair,
         message: QuantusSigningPayload.signablePayload(widget.payload),
       );
-      final parts = encodeUr(data: signed);
       setState(() {
         _signing = false;
-        _signatureUr = parts;
+        _signed = signed;
       });
     } catch (e) {
       setState(() {
@@ -117,7 +121,7 @@ class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> {
   @override
   Widget build(BuildContext context) {
     if (_parseError != null) return _errorView(context, _parseError!);
-    if (_signatureUr != null) return _signatureView(context, _signatureUr!);
+    if (_signed != null) return _signatureView(context, _signed!);
     return _reviewView(context, _parsed!);
   }
 
@@ -383,9 +387,40 @@ class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> {
     );
   }
 
-  Widget _signatureView(BuildContext context, List<String> parts) {
+  /// Pauses the animation and opens the tuning sheet; resumes when it closes.
+  Future<void> _pauseAndTune() async {
+    setState(() => _qrPaused = true);
     final colors = context.colors;
     final text = context.themeText;
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: colors.sheetBackground,
+      builder: (_) => Padding(
+        padding: const EdgeInsets.fromLTRB(24, 24, 24, 40),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text('QR display options', style: text.smallTitle?.copyWith(color: colors.textPrimary)),
+            const SizedBox(height: 16),
+            const QrTuningControls(),
+          ],
+        ),
+      ),
+    );
+    if (mounted) setState(() => _qrPaused = false);
+  }
+
+  Widget _signatureView(BuildContext context, Uint8List signed) {
+    final colors = context.colors;
+    final text = context.themeText;
+    final settings = ref.watch(coldSettingsProvider);
+
+    if (_urParts == null || _urPartsBytes != settings.qrBytes) {
+      _urParts = encodeUrForQr(data: signed, maxFragmentLength: settings.qrBytes);
+      _urPartsBytes = settings.qrBytes;
+    }
+    final parts = _urParts!;
 
     return ScaffoldBase(
       appBar: const V2AppBar(title: 'Signature', showBackButton: false),
@@ -400,14 +435,40 @@ class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 24),
-            Center(child: AnimatedUrQr(parts: parts)),
-            const SizedBox(height: 16),
-            if (parts.length > 1)
+            Center(
+              child: AnimatedUrQr(parts: parts, fps: settings.qrFps, paused: _qrPaused),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  '${parts.length} ${parts.length == 1 ? 'frame' : 'frames'} · ${settings.qrFps} FPS · '
+                  '${settings.qrBytes} bytes',
+                  style: text.detail?.copyWith(color: colors.textMuted),
+                ),
+                if (parts.length > 1) ...[
+                  const SizedBox(width: 12),
+                  GestureDetector(
+                    onTap: _pauseAndTune,
+                    child: Container(
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(color: colors.surfaceDeep, shape: BoxShape.circle),
+                      child: Icon(Icons.pause_rounded, size: 20, color: colors.textPrimary),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+            if (parts.length > 1) ...[
+              const SizedBox(height: 16),
               Text(
                 'Animated QR — keep both devices steady until the hot wallet finishes scanning.',
                 style: text.detail?.copyWith(color: colors.textMuted),
                 textAlign: TextAlign.center,
               ),
+            ],
           ],
         ),
       ),

@@ -326,6 +326,7 @@
   "keystoneScanScanning": "{count} bingkai dipindai",
   "keystoneScanSubmitting": "Mengirim transaksi...",
   "keystoneScanError": "Tidak dapat membaca tanda tangan. Silakan coba lagi.",
+  "keystoneScanExpired": "Transaksi kedaluwarsa sebelum sempat dikirim. Kembali dan pindai kode QR baru dengan perangkat Anda.",
 
   "sendLogicCantSelfTransfer": "Tidak Bisa Transfer ke Diri Sendiri",
   "sendLogicEnterAmount": "Masukkan Jumlah",

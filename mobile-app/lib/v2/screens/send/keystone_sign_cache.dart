@@ -1,17 +1,42 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 
-/// Blocks of safety margin before mortal era expiry when treating cache as stale.
-const int keystoneSignCacheEraSafetyMarginBlocks = 2;
+/// Blocks of era lifetime that must still remain when a payload is served or
+/// kept on screen. After the QR is displayed the user still has to scan it
+/// with the device, verify, approve, and scan the signature back, so a payload
+/// anywhere near expiry must never enter that round trip.
+const int keystoneSignEraReserveBlocks = 10;
 
-/// Max age for a cached Keystone payload derived from its mortal era period.
+/// Blocks left before era expiry below which a signed payload is refused at
+/// submission: it would likely expire while propagating.
+const int keystoneSignSubmitEraMarginBlocks = 2;
+
+/// Thrown when a signed payload reaches submission too close to era expiry.
+class KeystoneEraExpiredException implements Exception {
+  final int currentBlock;
+  final int expiryBlock;
+
+  const KeystoneEraExpiredException({required this.currentBlock, required this.expiryBlock});
+
+  @override
+  String toString() => 'Keystone payload era expired: block $currentBlock, era ends at block $expiryBlock';
+}
+
+/// Max age for a Keystone payload derived from its mortal era period: expired
+/// once less than [keystoneSignEraReserveBlocks] of era lifetime remain.
 Duration keystoneSignCacheMaxAge(QuantusSigningPayload payload) {
   if (payload.eraPeriod == 0) {
     return const Duration(days: 1);
   }
-  final eraSeconds = payload.eraPeriod * AppConstants.avgBlockTimeSeconds;
-  final safetySeconds = keystoneSignCacheEraSafetyMarginBlocks * AppConstants.avgBlockTimeSeconds;
-  return Duration(seconds: eraSeconds - safetySeconds);
+  final usableBlocks = payload.eraPeriod - keystoneSignEraReserveBlocks;
+  if (usableBlocks <= 0) {
+    throw StateError(
+      'Era period ${payload.eraPeriod} is not longer than the $keystoneSignEraReserveBlocks-block reserve',
+    );
+  }
+  return Duration(seconds: usableBlocks * AppConstants.avgBlockTimeSeconds);
 }
 
 /// Returns true when [entry] is older than the mortal era validity window.
@@ -119,3 +144,28 @@ class KeystoneSignCacheNotifier extends StateNotifier<KeystoneSignCacheEntry?> {
 final keystoneSignCacheProvider = StateNotifierProvider<KeystoneSignCacheNotifier, KeystoneSignCacheEntry?>(
   (ref) => KeystoneSignCacheNotifier(),
 );
+
+/// Builds the unsigned payload and its UR frames, serving a fresh cache entry
+/// when one exists and storing the result under [cacheKey]. The review screen
+/// prefetches through this so the QR screen usually renders instantly; the QR
+/// screen itself calls it as the fallback when nothing was prefetched.
+Future<({UnsignedTransactionData unsignedData, List<String> urParts, DateTime storedAt})> ensureKeystoneSignPayload(
+  WidgetRef ref, {
+  required Account account,
+  required RuntimeCall Function() buildCall,
+  KeystoneSignCacheKey? cacheKey,
+}) async {
+  final cache = ref.read(keystoneSignCacheProvider.notifier);
+  if (cacheKey != null) {
+    final cached = cache.lookup(cacheKey);
+    if (cached != null) {
+      return (unsignedData: cached.unsignedData, urParts: cached.urParts, storedAt: cached.storedAt);
+    }
+  }
+  final unsigned = await ref.read(substrateServiceProvider).getUnsignedTransactionPayload(account, buildCall());
+  final parts = encodeUr(data: unsigned.encodedPayloadRaw);
+  if (parts.isEmpty) throw Exception('Failed to encode transaction payload as UR');
+  final storedAt = DateTime.now();
+  if (cacheKey != null) cache.store(key: cacheKey, unsignedData: unsigned, urParts: parts, storedAt: storedAt);
+  return (unsignedData: unsigned, urParts: parts, storedAt: storedAt);
+}

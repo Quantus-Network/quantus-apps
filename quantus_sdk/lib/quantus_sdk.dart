@@ -46,6 +46,7 @@ export 'src/models/raid_stats.dart';
 // should probably expise all of crypto.dart through substrateservice instead
 export 'src/rust/api/crypto.dart' hide crystalAlice, crystalCharlie, crystalBob;
 export 'src/rust/api/ur.dart';
+export 'src/utils/ur_qr.dart';
 export 'src/rust/api/wormhole.dart';
 export 'src/services/account_discovery_service.dart';
 export 'src/services/accounts_service.dart';

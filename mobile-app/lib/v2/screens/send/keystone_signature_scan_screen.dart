@@ -33,6 +33,18 @@ class _KeystoneSignatureScanScreenState extends ConsumerState<KeystoneSignatureS
     return AnimatedQrSequence(index: int.parse(match.group(1)!), total: int.parse(match.group(2)!));
   }
 
+  /// Refuses submission when the mortal era window is (nearly) over — the
+  /// chain would reject the extrinsic, or worse, accept it right at the edge.
+  Future<void> _ensureEraNotExpired() async {
+    final payload = widget.unsignedData.payloadToSign;
+    if (payload.eraPeriod == 0) return;
+    final currentBlock = await SubstrateService().getCurrentBlockNumber();
+    final expiryBlock = payload.blockNumber + payload.eraPeriod;
+    if (currentBlock >= expiryBlock - keystoneSignSubmitEraMarginBlocks) {
+      throw KeystoneEraExpiredException(currentBlock: currentBlock, expiryBlock: expiryBlock);
+    }
+  }
+
   Future<void> _submit(List<String> parts) async {
     final bytes = decodeUr(urParts: parts);
     final signatureSize = signatureBytes().toInt();
@@ -40,6 +52,8 @@ class _KeystoneSignatureScanScreenState extends ConsumerState<KeystoneSignatureS
     if (bytes.length != expectedSize) {
       throw Exception('Invalid signature length: expected $expectedSize bytes, got ${bytes.length}');
     }
+
+    await _ensureEraNotExpired();
 
     final hash = await widget.session.submitSigned(
       ref,
@@ -59,7 +73,8 @@ class _KeystoneSignatureScanScreenState extends ConsumerState<KeystoneSignatureS
     TelemetryService().sendError('Keystone signature processing failed', error: error);
     ref.read(keystoneSignCacheProvider.notifier).reset();
     if (!mounted) return;
-    setState(() => _error = ref.read(l10nProvider).keystoneScanError);
+    final l10n = ref.read(l10nProvider);
+    setState(() => _error = error is KeystoneEraExpiredException ? l10n.keystoneScanExpired : l10n.keystoneScanError);
   }
 
   Future<List<String>> _simulateSignature() async {
