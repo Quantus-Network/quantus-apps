@@ -85,10 +85,8 @@ flutter_launcher_icons:
   android: true
   ios: true
   remove_alpha_ios: true
-  # Frozen "deep freeze" Quantus Q marks this as the cold (air-gapped) wallet.
-  # iOS / legacy Android use the full square; Android adaptive layers the frosted
-  # Q glow (transparent foreground) over a glacial navy gradient so the inset
-  # foreground blends seamlessly with no visible card seam.
+  # Clean light-blue Q (same asset as iOS). Solid bg matches the 1024 plate so
+  # Android adaptive inset does not expose a different layer under the mask.
   image_path: assets/cold_icon_1024.png
-  adaptive_icon_background: assets/cold_icon_bg.png
-  adaptive_icon_foreground: assets/cold_icon_fg.png
+  adaptive_icon_background: "#A8D5E5"
+  adaptive_icon_foreground: assets/cold_icon_1024.png
