@@ -417,7 +417,7 @@ class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> {
     final settings = ref.watch(coldSettingsProvider);
 
     if (_urParts == null || _urPartsBytes != settings.qrBytes) {
-      _urParts = encodeUr(data: signed, maxFragmentLength: settings.qrBytes);
+      _urParts = encodeUrForQr(data: signed, maxFragmentLength: settings.qrBytes);
       _urPartsBytes = settings.qrBytes;
     }
     final parts = _urParts!;

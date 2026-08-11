@@ -1120,6 +1120,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get keystoneScanError => 'Couldn\'t read the signature. Please try again.';
 
   @override
+  String get keystoneScanExpired =>
+      'The transaction expired before it could be submitted. Go back and scan the new QR code with your device.';
+
+  @override
   String get keystoneRejectTitle => 'Don\'t approve this transaction';
 
   @override

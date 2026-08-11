@@ -18,6 +18,11 @@ import 'package:quantus_cold_wallet/theme/app_text_styles.dart';
 /// When the Wi-Fi Lock Override setting is enabled, an Override button lets the
 /// lock be dismissed for the session after a warning; while dismissed a banner
 /// stays on screen so an online signer is never mistaken for an offline one.
+///
+/// The override is INTENTIONALLY available in release builds: the cold wallet
+/// is not yet distributed through app stores, and release builds are tested on
+/// real devices where re-toggling radios for every flow costs hours. Do not
+/// flag or compile it out — see the note on the Settings screen toggle.
 class ConnectivityGuard extends ConsumerWidget {
   const ConnectivityGuard({super.key});
 

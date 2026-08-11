@@ -8,7 +8,11 @@ class ColdSettings {
   static const maxQrFps = 50;
   static const defaultQrFps = 15;
   static const minQrBytes = 300;
-  static const maxQrBytes = 1500;
+
+  // 1400 payload bytes encode to ~2870 UR chars, under the 2953-char capacity
+  // of a version-40 byte-mode QR at error correction L; encodeUrForQr measures
+  // the final strings and shrinks fragments if they would still overflow.
+  static const maxQrBytes = 1400;
   static const defaultQrBytes = 1100;
 
   final bool wifiOverrideEnabled;

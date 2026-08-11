@@ -35,6 +35,12 @@ class SubstrateService {
   DateTime? _runtimeVersionFetchedAt;
   static const _runtimeVersionMaxAge = Duration(minutes: 5);
 
+  void _clearChainCaches() {
+    _cachedGenesisHash = null;
+    _cachedRuntimeVersion = null;
+    _runtimeVersionFetchedAt = null;
+  }
+
   /// Runtime version only changes on runtime upgrades, so it is cached briefly.
   /// Send flows prefetch it on entry so payload builds hit the cache.
   Future<RuntimeVersion> getRuntimeVersion() async {
@@ -136,6 +142,10 @@ class SubstrateService {
 
     quantusPrint('submitExtrinsic response: ${response.result}');
     if (response.error != null) {
+      // A rejected extrinsic can mean a runtime upgrade landed while the cached
+      // spec/genesis was still considered fresh — drop the caches so the next
+      // payload is built against re-fetched chain state.
+      _clearChainCaches();
       throw Exception(response.error.toString());
     }
 

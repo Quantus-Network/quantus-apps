@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
@@ -36,15 +38,40 @@ class KeystoneSignScreen extends ConsumerStatefulWidget {
 class _KeystoneSignScreenState extends ConsumerState<KeystoneSignScreen> {
   UnsignedTransactionData? _unsignedData;
   List<String>? _urParts;
+  DateTime? _payloadStoredAt;
+  Timer? _freshnessTimer;
+  bool _preparing = false;
   String? _error;
 
   @override
   void initState() {
     super.initState();
     _prepare();
+    _freshnessTimer = Timer.periodic(const Duration(seconds: 5), (_) => _refreshIfStale());
+  }
+
+  @override
+  void dispose() {
+    _freshnessTimer?.cancel();
+    super.dispose();
+  }
+
+  /// True once the payload's era reserve is consumed: the remaining lifetime
+  /// no longer covers a full device scan/verify/sign/submit round trip.
+  bool get _payloadStale {
+    final unsignedData = _unsignedData;
+    final storedAt = _payloadStoredAt;
+    if (unsignedData == null || storedAt == null) return false;
+    return DateTime.now().difference(storedAt) >= keystoneSignCacheMaxAge(unsignedData.payloadToSign);
+  }
+
+  void _refreshIfStale() {
+    if (_payloadStale) _prepare();
   }
 
   Future<void> _prepare() async {
+    if (_preparing) return;
+    _preparing = true;
     try {
       final payload = await ensureKeystoneSignPayload(
         ref,
@@ -57,18 +84,28 @@ class _KeystoneSignScreenState extends ConsumerState<KeystoneSignScreen> {
       setState(() {
         _unsignedData = payload.unsignedData;
         _urParts = payload.urParts;
+        _payloadStoredAt = payload.storedAt;
       });
     } catch (error) {
       quantusPrint('Keystone payload preparation failed: $error');
       TelemetryService().sendError('Keystone payload preparation failed', error: error);
       if (!mounted) return;
       setState(() => _error = ref.read(l10nProvider).keystoneSignError);
+    } finally {
+      _preparing = false;
     }
   }
 
   Future<void> _goToVerify() async {
     final unsignedData = _unsignedData;
     if (unsignedData == null) return;
+    // Never carry a nearly expired payload into the verify/sign/submit steps —
+    // rebuild the QR instead, so the device has to rescan a fresh payload.
+    if (_payloadStale) {
+      quantusPrint('Keystone payload stale on advance, regenerating');
+      _prepare();
+      return;
+    }
     final result = await Navigator.push<Object>(
       context,
       MaterialPageRoute(

@@ -4,7 +4,7 @@ import 'package:resonance_network_wallet/v2/screens/send/keystone_sign_cache.dar
 
 import '../fakes.dart';
 
-/// Mortal era validity for Keystone payloads (eraPeriod 64, ~12s blocks, 2-block margin).
+/// Mortal era validity for Keystone payloads: the era minus the round-trip reserve.
 Duration _mortalEraMaxCacheAge(QuantusSigningPayload payload) => keystoneSignCacheMaxAge(payload);
 
 void main() {
@@ -101,6 +101,18 @@ void main() {
       final entry = notifier.lookup(key);
       expect(entry, isNotNull);
       expect(entry!.urParts, const ['ur:second']);
+    });
+  });
+
+  group('keystoneSignCacheMaxAge', () {
+    test('leaves the full round-trip reserve of era lifetime unused', () {
+      final payload = makeUnsignedTransactionData().payloadToSign;
+      final expectedSeconds = (payload.eraPeriod - keystoneSignEraReserveBlocks) * AppConstants.avgBlockTimeSeconds;
+      expect(keystoneSignCacheMaxAge(payload), Duration(seconds: expectedSeconds));
+    });
+
+    test('the live era period keeps a positive usable window', () {
+      expect(AppConstants.txMortalEraPeriodBlocks, greaterThan(keystoneSignEraReserveBlocks));
     });
   });
 

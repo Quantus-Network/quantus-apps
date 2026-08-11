@@ -39,17 +39,28 @@ class SettingsScreen extends ConsumerWidget {
             const SizedBox(height: 8),
             Text('SECURITY', style: text.transactionDetailRowLabel?.copyWith(color: colors.textLabel)),
             const SizedBox(height: 8),
+            // INTENTIONAL: this override ships in RELEASE builds. The cold wallet is
+            // not yet distributed through app stores, and testing release builds on
+            // real devices without it means toggling Wi-Fi/airplane mode for every
+            // flow. The lock stays fail-closed by default: the Override button only
+            // exists behind this persistent opt-in, an override lasts one session,
+            // and a red banner stays on screen while it is active. Do not "fix" this
+            // by compiling it out of release builds; revisit only when the app ships
+            // to app-store users.
             Row(
               children: [
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Wi-Fi Lock Override', style: text.smallParagraph?.copyWith(color: colors.textPrimary)),
+                      Text(
+                        'Wi-Fi Lock Override (debugging only)',
+                        style: text.smallParagraph?.copyWith(color: colors.textPrimary),
+                      ),
                       const SizedBox(height: 4),
                       Text(
-                        'Shows an Override button on the network lock screen so it can be dismissed for testing. '
-                        'Never use this with a wallet that holds real funds.',
+                        'For debugging only — shows an Override button on the network lock screen so it can be '
+                        'dismissed while testing. Not safe: never use this with a wallet that holds real funds.',
                         style: text.detail?.copyWith(color: colors.textSecondary),
                       ),
                     ],
