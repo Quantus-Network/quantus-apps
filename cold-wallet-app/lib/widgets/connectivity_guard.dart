@@ -149,16 +149,21 @@ class _ConnectivityGuardState extends ConsumerState<ConnectivityGuard> {
       bottom: 0,
       left: 0,
       right: 0,
-      child: SafeArea(
-        minimum: const EdgeInsets.only(bottom: 16),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: QuantusButton.simple(
-            label: 'Online — tap to re-lock',
-            icon: Icon(Icons.wifi_rounded, size: 18, color: context.colors.textPrimary),
-            iconPlacement: IconPlacement.leading,
-            variant: ButtonVariant.danger,
-            onTap: () => ref.read(wifiLockOverriddenProvider.notifier).set(false),
+      // This sits above the Navigator, outside any Scaffold, so the InkWell
+      // inside QuantusButton needs its own Material ancestor.
+      child: Material(
+        type: MaterialType.transparency,
+        child: SafeArea(
+          minimum: const EdgeInsets.only(bottom: 16),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: QuantusButton.simple(
+              label: 'Online — tap to re-lock',
+              icon: Icon(Icons.wifi_rounded, size: 18, color: context.colors.textPrimary),
+              iconPlacement: IconPlacement.leading,
+              variant: ButtonVariant.danger,
+              onTap: () => ref.read(wifiLockOverriddenProvider.notifier).set(false),
+            ),
           ),
         ),
       ),
