@@ -141,22 +141,22 @@ class _ConnectivityGuardState extends ConsumerState<ConnectivityGuard> {
     );
   }
 
-  /// Thin strip over the status bar area: keeps the online state loudly visible
-  /// without covering the app. Tapping it re-arms the lock.
+  /// Thin strip along the bottom edge: keeps the online state loudly visible
+  /// without covering the app's top bar or content. Tapping it re-arms the lock.
   Widget _overriddenBanner(BuildContext context) {
     final colors = context.colors;
     final text = context.themeText;
-    final topInset = MediaQuery.paddingOf(context).top;
+    final bottomInset = MediaQuery.paddingOf(context).bottom;
 
     return Positioned(
-      top: 0,
+      bottom: 0,
       left: 0,
       right: 0,
       child: GestureDetector(
         onTap: () => ref.read(wifiLockOverriddenProvider.notifier).set(false),
         child: Container(
           color: colors.error,
-          padding: EdgeInsets.only(top: topInset > 0 ? topInset : 8, bottom: 4),
+          padding: EdgeInsets.only(top: 8, bottom: bottomInset > 0 ? bottomInset : 8),
           child: Text(
             'Online — lock overridden. Tap to re-lock.',
             style: text.detail?.copyWith(color: colors.textPrimary),
