@@ -136,3 +136,5 @@ mobile-app/.env.test
 /.cursor
 mobile-app/android/app/google-services.json
 mobile-app/patrol_test/test_bundle.dart
+# Google Play upload credentials (cold wallet / mobile)
+**/android/play-service-account.json

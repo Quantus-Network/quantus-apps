@@ -8,13 +8,10 @@ set -eu
 # In case user installed custom rsync in homebrew for example
 export PATH="/usr/bin:/bin:/usr/sbin:/sbin:$PATH"
 
+# Faster than `flutter clean` (avoids Flutter tool startup and keeps .dart_tool).
+# Needed because leftover compile fragments can get packaged into the IPA and fail App Store upload.
 echo "Cleaning build folder"
-rm -rf build/ios/ipa/*.ipa
-
-# Clean because sometimes there's fragments of compile items left that get uploaded
-# to the app store and cause the entire upload to fail... 
-echo "Flutter clean"
-flutter clean
+rm -rf build
 
 echo "Building the app"
 flutter build ipa --release
