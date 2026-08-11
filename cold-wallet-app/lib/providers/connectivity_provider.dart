@@ -15,3 +15,9 @@ final networkStatusProvider = StreamProvider<NetworkStatus>((ref) async* {
   yield service.currentStatus;
   yield* service.statusStream;
 });
+
+/// True while any network is reachable. Defaults to true (fail closed) until
+/// the first status arrives.
+final isOnlineProvider = Provider<bool>((ref) {
+  return ref.watch(networkStatusProvider).maybeWhen(data: (s) => s == NetworkStatus.online, orElse: () => true);
+});

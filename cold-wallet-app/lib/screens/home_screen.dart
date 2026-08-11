@@ -4,6 +4,7 @@ import 'package:quantus_cold_wallet/components/quantus_button.dart';
 import 'package:quantus_cold_wallet/components/scaffold_base.dart';
 import 'package:quantus_cold_wallet/components/scaffold_base_bottom_content.dart';
 import 'package:quantus_cold_wallet/components/v2_app_bar.dart';
+import 'package:quantus_cold_wallet/providers/connectivity_provider.dart';
 import 'package:quantus_cold_wallet/providers/settings_providers.dart';
 import 'package:quantus_cold_wallet/providers/wallet_providers.dart';
 import 'package:quantus_cold_wallet/screens/scan_transaction_screen.dart';
@@ -59,7 +60,8 @@ class HomeScreen extends ConsumerWidget {
           ),
         ],
       ),
-      bottomContent: !ref.watch(wifiLockOverriddenProvider)
+      bottomContent:
+          !(ref.watch(coldSettingsProvider.select((s) => s.wifiOverrideEnabled)) && ref.watch(isOnlineProvider))
           ? null
           : ScaffoldBaseBottomContent(
               child: QuantusButton.simple(
@@ -67,7 +69,7 @@ class HomeScreen extends ConsumerWidget {
                 icon: Icon(Icons.wifi_rounded, size: 18, color: colors.textPrimary),
                 iconPlacement: IconPlacement.leading,
                 variant: ButtonVariant.danger,
-                onTap: () => ref.read(wifiLockOverriddenProvider.notifier).set(false),
+                onTap: () => ref.read(coldSettingsProvider.notifier).setWifiOverrideEnabled(false),
               ),
             ),
     );
