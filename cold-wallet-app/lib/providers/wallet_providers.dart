@@ -87,6 +87,27 @@ class WalletController extends Notifier<WalletState> {
     }
   }
 
+  /// Verifies [currentPassword] against the vault, then re-encrypts the
+  /// mnemonic under [newPassword]. Returns false when the current password is
+  /// wrong; rethrows storage failures. Biometric unlock keeps working — the
+  /// key derived from the new password is re-stored when it was enabled.
+  Future<bool> changePassword({required String currentPassword, required String newPassword}) async {
+    final UnlockResult result;
+    try {
+      result = await _vault.unlockWithPassword(currentPassword);
+    } catch (e) {
+      debugPrint('Change password: current password rejected: $e');
+      return false;
+    }
+    final biometric = await _vault.isBiometricEnabled();
+    await _vault.createVault(mnemonic: result.mnemonic, password: newPassword);
+    if (biometric) {
+      final fresh = await _vault.unlockWithPassword(newPassword);
+      await _vault.storeBiometricKey(fresh.keyBytes);
+    }
+    return true;
+  }
+
   void lock() {
     if (state.status != WalletStatus.unlocked) return;
     state = WalletState(status: WalletStatus.locked, biometricEnabled: state.biometricEnabled);

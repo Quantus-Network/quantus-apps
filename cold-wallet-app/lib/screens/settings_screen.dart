@@ -8,9 +8,22 @@ import 'package:quantus_cold_wallet/providers/settings_providers.dart';
 import 'package:quantus_cold_wallet/providers/wallet_providers.dart';
 import 'package:quantus_cold_wallet/theme/app_colors.dart';
 import 'package:quantus_cold_wallet/theme/app_text_styles.dart';
+import 'package:quantus_cold_wallet/widgets/change_password_sheet.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
+
+  Future<void> _changePassword(BuildContext context) async {
+    final changed = await showChangePasswordSheet(context);
+    if (!changed || !context.mounted) return;
+    final colors = context.colors;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        backgroundColor: colors.surfaceDeep,
+        content: Text('Password changed', style: context.themeText.smallParagraph?.copyWith(color: colors.textPrimary)),
+      ),
+    );
+  }
 
   Future<void> _confirmReset(BuildContext context, WidgetRef ref) async {
     final confirmed = await showConfirmDialog(
@@ -39,6 +52,29 @@ class SettingsScreen extends ConsumerWidget {
             const SizedBox(height: 8),
             Text('SECURITY', style: text.transactionDetailRowLabel?.copyWith(color: colors.textLabel)),
             const SizedBox(height: 8),
+            GestureDetector(
+              onTap: () => _changePassword(context),
+              behavior: HitTestBehavior.opaque,
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Change password', style: text.smallParagraph?.copyWith(color: colors.textPrimary)),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Set or change the password that encrypts the wallet key on this device.',
+                          style: text.detail?.copyWith(color: colors.textSecondary),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Icon(Icons.chevron_right, color: colors.textMuted, size: 22),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
             // INTENTIONAL: this override ships in RELEASE builds. The cold wallet is
             // not yet distributed through app stores, and testing release builds on
             // real devices without it means toggling Wi-Fi/airplane mode for every
