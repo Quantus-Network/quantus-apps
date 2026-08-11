@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
@@ -12,7 +11,8 @@ import 'package:quantus_cold_wallet/theme/app_text_styles.dart';
 /// Full-screen blocker shown whenever any network is reachable. A cold wallet
 /// must stay air-gapped, so this overlays everything and only clears once the
 /// device reports it is offline. Fails closed: while connectivity is unknown
-/// it stays blocked.
+/// it stays blocked. Debug and release builds behave identically — the
+/// Override setting below is the only way past the lock.
 ///
 /// When the Wi-Fi Lock Override setting is enabled, an Override button leads to
 /// an inline confirmation step (this widget sits above the [Navigator] in the
@@ -36,8 +36,6 @@ class _ConnectivityGuardState extends ConsumerState<ConnectivityGuard> {
 
   @override
   Widget build(BuildContext context) {
-    if (kDebugMode) return const SizedBox.shrink();
-
     ref.listen(networkStatusProvider, (_, next) {
       final online = next.maybeWhen(data: (s) => s == NetworkStatus.online, orElse: () => true);
       if (!online && _confirming) setState(() => _confirming = false);
