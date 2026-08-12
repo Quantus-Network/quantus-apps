@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:quantus_cold_wallet/components/quantus_button.dart';
 import 'package:quantus_cold_wallet/debug/debug_payloads.dart';
 import 'package:quantus_cold_wallet/screens/sign_transaction_screen.dart';
 import 'package:quantus_cold_wallet/theme/app_colors.dart';
@@ -112,7 +113,21 @@ class _ScanTransactionScreenState extends State<ScanTransactionScreen> {
     );
   }
 
+  /// Retries a failed start. [MobileScannerController.start] folds scanner
+  /// failures into the controller's value, so a second failure re-renders this
+  /// same panel with the new reason.
+  Future<void> _restartCamera() async {
+    try {
+      await _controller.start();
+    } catch (e) {
+      debugPrint('Camera restart failed: $e');
+    }
+  }
+
   Widget _cameraError(BuildContext context, MobileScannerException error) {
+    final denied = error.errorCode == MobileScannerErrorCode.permissionDenied;
+    final detail = error.errorDetails?.message;
+
     return ColoredBox(
       color: Colors.black,
       child: Center(
@@ -130,10 +145,15 @@ class _ScanTransactionScreenState extends State<ScanTransactionScreen> {
               ),
               const SizedBox(height: 12),
               Text(
-                'Grant camera access in Settings to scan the transaction QR (${error.errorCode.name}).',
+                denied
+                    ? 'Grant camera access in Settings to scan the transaction QR.'
+                    : 'The camera could not be started (${error.errorCode.name})'
+                          '${detail == null ? '' : ': $detail'}.',
                 style: const TextStyle(color: Colors.white70),
                 textAlign: TextAlign.center,
               ),
+              const SizedBox(height: 24),
+              QuantusButton.simple(label: 'Try again', width: null, onTap: _restartCamera),
             ],
           ),
         ),

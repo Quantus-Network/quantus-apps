@@ -115,6 +115,17 @@ class DecodedCall {
   /// `Multisig · approve` — pallet and call exactly as the runtime names them.
   String get displayTitle => '$pallet · $call';
 
+  /// `SEND`, `MULTISIG APPROVE` — the action in the words a signer thinks in,
+  /// for the headline position.
+  ///
+  /// Only a call that moves value *itself* reads as SEND: a wrapper carries the
+  /// summary of the call it dispatches, and naming that wrapper SEND would hide
+  /// the approval or batch the signer is actually authorising.
+  String get actionTitle {
+    if (summary != null && !fields.any((f) => f is NestedCallField)) return 'SEND';
+    return '$pallet $humanCall'.trim().toUpperCase();
+  }
+
   /// `Transfer allow death` — the call name made readable, for headings.
   String get humanCall {
     if (call.isEmpty) return call;

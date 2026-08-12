@@ -316,4 +316,34 @@ void main() {
       expect(valueField(decoded, 'Now').value, '1700000000000');
     });
   });
+
+  group('action title', () {
+    test('a call that moves value itself reads as SEND', () {
+      expect(
+        roundTrip(const balances_pallet.Txs().transferAllowDeath(dest: dest(bobId), value: oneToken)).actionTitle,
+        'SEND',
+      );
+      expect(
+        roundTrip(const balances_pallet.Txs().transferKeepAlive(dest: dest(bobId), value: oneToken)).actionTitle,
+        'SEND',
+      );
+    });
+
+    test('a wrapper names itself, never the transfer it carries', () {
+      final inner = const balances_pallet.Txs().transferAllowDeath(dest: dest(bobId), value: oneToken);
+      final approve = roundTrip(
+        const multisig_pallet.Txs().approve(multisigAddress: aliceId, proposalId: 7, call: inner.encode()),
+      );
+
+      // The summary is lifted from the inner transfer, but calling the approval
+      // SEND would hide that a multisig, not the signer, moves the funds.
+      expect(approve.summary?.amount, oneToken);
+      expect(approve.actionTitle, 'MULTISIG APPROVE');
+      expect(nestedField(approve, 'Call being approved').call.actionTitle, 'SEND');
+    });
+
+    test('a call that moves nothing names its pallet and call', () {
+      expect(roundTrip(const timestamp_pallet.Txs().set(now: BigInt.from(1))).actionTitle, 'TIMESTAMP SET');
+    });
+  });
 }
