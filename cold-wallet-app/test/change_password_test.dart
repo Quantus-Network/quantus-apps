@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:cryptography/cryptography.dart' show SecretBoxAuthenticationError;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/test/test_flutter_secure_storage_platform.dart';
@@ -86,6 +88,39 @@ void main() {
     expect(await vault.isBiometricEnabled(), isTrue);
     expect(await vault.unlockWithBiometricKey(), _mnemonic);
     expect(container.read(walletControllerProvider).biometricEnabled, isTrue);
+  });
+
+  test('a rotation killed after the vault write disables biometric unlock at the next launch', () async {
+    await controller.createWallet(mnemonic: _mnemonic, password: 'alpha', enableBiometric: true);
+    // The interrupted interval: the new vault is committed but the process
+    // died before the biometric key was re-stored or deleted.
+    await vault.createVault(mnemonic: _mnemonic, password: 'beta');
+
+    final fresh = ProviderContainer();
+    addTearDown(fresh.dispose);
+    fresh.read(walletControllerProvider.notifier);
+    while (fresh.read(walletControllerProvider).status == WalletStatus.initializing) {
+      await Future<void>.delayed(const Duration(milliseconds: 5));
+    }
+
+    expect(fresh.read(walletControllerProvider).status, WalletStatus.locked);
+    expect(fresh.read(walletControllerProvider).biometricEnabled, isFalse);
+    expect(storage.data.containsKey('cold_unlock_key'), isFalse);
+    expect((await vault.unlockWithPassword('beta')).mnemonic, _mnemonic);
+  });
+
+  test('a pre-pairing biometric key keeps working and self-heals once stale', () async {
+    await controller.createWallet(mnemonic: _mnemonic, password: 'alpha', enableBiometric: true);
+    final keyBytes = (await vault.unlockWithPassword('alpha')).keyBytes;
+    storage.data['cold_unlock_key'] = base64Encode(keyBytes);
+
+    expect(await vault.isBiometricEnabled(), isTrue);
+    expect(await vault.unlockWithBiometricKey(), _mnemonic);
+
+    await vault.createVault(mnemonic: _mnemonic, password: 'beta');
+    expect(await vault.isBiometricEnabled(), isTrue, reason: 'a bare key carries no pairing to check at startup');
+    await expectLater(vault.unlockWithBiometricKey(), throwsA(isA<SecretBoxAuthenticationError>()));
+    expect(storage.data.containsKey('cold_unlock_key'), isFalse, reason: 'the failed unlock removes the stale key');
   });
 
   test('a failed biometric re-store keeps the new password and disables biometric unlock', () async {

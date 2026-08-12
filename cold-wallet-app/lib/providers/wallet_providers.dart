@@ -91,6 +91,12 @@ class WalletController extends Notifier<WalletState> {
       final mnemonic = await _vault.unlockWithBiometricKey();
       state = state.copyWith(status: WalletStatus.unlocked, mnemonic: mnemonic);
       return true;
+    } on SecretBoxAuthenticationError {
+      // The vault removed a key that belonged to a previous vault; stop
+      // offering biometric unlock and let the user fall back to the password.
+      debugPrint('Biometric unlock failed with a stale key; biometric unlock disabled');
+      state = state.copyWith(biometricEnabled: false);
+      return false;
     } catch (e) {
       debugPrint('Biometric unlock failed: $e');
       return false;
