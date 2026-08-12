@@ -38,6 +38,9 @@ class VaultService {
   Future<SecretKey> _deriveKey(String password, List<int> salt) =>
       _kdf.deriveKey(secretKey: SecretKey(utf8.encode(password)), nonce: salt);
 
+  /// Writes only the vault entry. A biometric key stored for a previous vault
+  /// stays valid for that vault until the write lands, so callers own keeping
+  /// the biometric entry consistent with the vault they committed.
   Future<void> createVault({required String mnemonic, required String password}) async {
     final salt = _randomBytes(16);
     final key = await _deriveKey(password, salt);
@@ -49,10 +52,6 @@ class VaultService {
       'ct': base64Encode(box.cipherText),
       'mac': base64Encode(box.mac.bytes),
     });
-    // A stored biometric key belongs to the previous vault key, so drop it
-    // before the new vault is written: if the write then fails, the old vault
-    // (and its password) is still intact instead of a half-committed rotation.
-    await _storage.delete(key: _bioKeyKey);
     await _storage.write(key: _vaultKey, value: blob);
   }
 

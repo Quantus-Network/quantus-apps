@@ -66,6 +66,9 @@ class WalletController extends Notifier<WalletState> {
     if (enableBiometric) {
       final result = await _vault.unlockWithPassword(password);
       await _vault.storeBiometricKey(result.keyBytes);
+    } else {
+      // A biometric key left over from an earlier vault must not survive.
+      await _vault.disableBiometric();
     }
     state = WalletState(status: WalletStatus.unlocked, mnemonic: mnemonic, biometricEnabled: enableBiometric);
   }
@@ -96,9 +99,9 @@ class WalletController extends Notifier<WalletState> {
 
   /// Verifies [currentPassword] against the vault, then re-encrypts the
   /// mnemonic under [newPassword]. The vault write is the commit point: any
-  /// failure before it rethrows with the old password still valid, while a
-  /// biometric re-store failure after it keeps the committed change and
-  /// reports biometric unlock as disabled.
+  /// failure before it rethrows with the old password and the old biometric
+  /// key both untouched, while a biometric re-store failure after it keeps
+  /// the committed change and reports biometric unlock as disabled.
   Future<PasswordChangeResult> changePassword({required String currentPassword, required String newPassword}) async {
     final UnlockResult result;
     try {
@@ -108,14 +111,7 @@ class WalletController extends Notifier<WalletState> {
       return PasswordChangeResult.wrongPassword;
     }
     final biometric = await _vault.isBiometricEnabled();
-    try {
-      await _vault.createVault(mnemonic: result.mnemonic, password: newPassword);
-    } catch (e) {
-      // createVault drops the biometric key before writing, so a failed write
-      // keeps the old password valid but may have lost biometric unlock.
-      if (biometric) state = state.copyWith(biometricEnabled: false);
-      rethrow;
-    }
+    await _vault.createVault(mnemonic: result.mnemonic, password: newPassword);
     if (!biometric) return PasswordChangeResult.changed;
     try {
       final fresh = await _vault.unlockWithPassword(newPassword);
@@ -123,6 +119,14 @@ class WalletController extends Notifier<WalletState> {
       return PasswordChangeResult.changed;
     } catch (e, st) {
       debugPrint('Change password: biometric key re-store failed, biometric unlock disabled: $e\n$st');
+      try {
+        // The stored key still belongs to the old vault and can no longer
+        // decrypt anything; leaving it would offer a biometric unlock that
+        // always fails.
+        await _vault.disableBiometric();
+      } catch (e2, st2) {
+        debugPrint('Change password: stale biometric key could not be removed: $e2\n$st2');
+      }
       state = state.copyWith(biometricEnabled: false);
       return PasswordChangeResult.changedBiometricDisabled;
     }

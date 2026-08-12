@@ -70,11 +70,12 @@ class _ChangePasswordSheetState extends ConsumerState<_ChangePasswordSheet> {
             _biometricDisabled = true;
         }
       });
-    } catch (e) {
+    } catch (e, st) {
+      debugPrint('Change password failed before commit: $e\n$st');
       if (!mounted) return;
       setState(() {
         _busy = false;
-        _error = 'Could not change password: $e';
+        _error = 'Could not change password because secure storage failed. Nothing was changed.';
       });
     }
   }
@@ -138,11 +139,16 @@ class _ChangePasswordSheetState extends ConsumerState<_ChangePasswordSheet> {
           style: text.detail?.copyWith(color: colors.textSecondary),
         ),
         const SizedBox(height: 24),
-        PasswordField(controller: _current, hintText: 'Current password'),
+        PasswordField(controller: _current, hintText: 'Current password', enabled: !_busy),
         const SizedBox(height: 12),
-        PasswordField(controller: _next, hintText: 'New password'),
+        PasswordField(controller: _next, hintText: 'New password', enabled: !_busy),
         const SizedBox(height: 12),
-        PasswordField(controller: _confirm, hintText: 'Confirm new password', onSubmitted: (_) => _submit()),
+        PasswordField(
+          controller: _confirm,
+          hintText: 'Confirm new password',
+          enabled: !_busy,
+          onSubmitted: (_) => _submit(),
+        ),
         if (_error != null) ...[
           const SizedBox(height: 16),
           Text(_error!, style: text.detail?.copyWith(color: colors.error)),
