@@ -11,6 +11,7 @@ import 'package:quantus_cold_wallet/components/quantus_button.dart';
 import 'package:quantus_cold_wallet/components/qr_tuning_controls.dart';
 import 'package:quantus_cold_wallet/components/scaffold_base.dart';
 import 'package:quantus_cold_wallet/components/scaffold_base_bottom_content.dart';
+import 'package:quantus_cold_wallet/components/titled_sheet.dart';
 import 'package:quantus_cold_wallet/components/v2_app_bar.dart';
 import 'package:quantus_cold_wallet/providers/settings_providers.dart';
 import 'package:quantus_cold_wallet/providers/wallet_providers.dart';
@@ -40,7 +41,6 @@ class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> {
   int? _urPartsBytes;
   bool _qrPaused = false;
   bool _signing = false;
-  bool _showAdvanced = false;
   String? _error;
 
   @override
@@ -203,28 +203,23 @@ class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> {
     final colors = context.colors;
     final text = context.themeText;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: () => setState(() => _showAdvanced = !_showAdvanced),
-          child: Row(
-            children: [
-              Text('ADVANCED', style: text.transactionDetailRowLabel?.copyWith(color: colors.textLabel)),
-              const SizedBox(width: 6),
-              Icon(_showAdvanced ? Icons.expand_less : Icons.expand_more, size: 18, color: colors.textLabel),
-            ],
-          ),
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => showTitledSheet(
+        context,
+        title: 'Advanced',
+        child: Text(
+          _advancedLines(parsed).join('\n'),
+          style: text.detail?.copyWith(color: colors.textMuted, fontFamily: AppTextTheme.fontFamilySecondary),
         ),
-        if (_showAdvanced) ...[
-          const SizedBox(height: 8),
-          Text(
-            _advancedLines(parsed).join('\n'),
-            style: text.detail?.copyWith(color: colors.textMuted, fontFamily: AppTextTheme.fontFamilySecondary),
-          ),
+      ),
+      child: Row(
+        children: [
+          Text('ADVANCED', style: text.transactionDetailRowLabel?.copyWith(color: colors.textLabel)),
+          const SizedBox(width: 6),
+          Icon(Icons.chevron_right, size: 18, color: colors.textLabel),
         ],
-      ],
+      ),
     );
   }
 
@@ -289,24 +284,7 @@ class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> {
   /// Pauses the animation and opens the tuning sheet; resumes when it closes.
   Future<void> _pauseAndTune() async {
     setState(() => _qrPaused = true);
-    final colors = context.colors;
-    final text = context.themeText;
-    await showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: colors.sheetBackground,
-      builder: (_) => Padding(
-        padding: const EdgeInsets.fromLTRB(24, 24, 24, 40),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text('QR display options', style: text.smallTitle?.copyWith(color: colors.textPrimary)),
-            const SizedBox(height: 16),
-            const QrTuningControls(),
-          ],
-        ),
-      ),
-    );
+    await showTitledSheet(context, title: 'QR display options', child: const QrTuningControls());
     if (mounted) setState(() => _qrPaused = false);
   }
 
