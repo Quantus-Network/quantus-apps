@@ -12,6 +12,7 @@ Future<bool> showChangePasswordSheet(BuildContext context) async {
   final changed = await showModalBottomSheet<bool>(
     context: context,
     isScrollControlled: true,
+    enableDrag: false,
     backgroundColor: context.colors.sheetBackground,
     builder: (_) => const _ChangePasswordSheet(),
   );
@@ -31,6 +32,7 @@ class _ChangePasswordSheetState extends ConsumerState<_ChangePasswordSheet> {
   final _confirm = TextEditingController();
   bool _busy = false;
   bool _done = false;
+  bool _biometricDisabled = false;
   String? _error;
 
   @override
@@ -42,6 +44,7 @@ class _ChangePasswordSheetState extends ConsumerState<_ChangePasswordSheet> {
   }
 
   Future<void> _submit() async {
+    if (_busy) return;
     if (_next.text != _confirm.text) {
       setState(() => _error = 'New passwords do not match');
       return;
@@ -51,20 +54,21 @@ class _ChangePasswordSheetState extends ConsumerState<_ChangePasswordSheet> {
       _error = null;
     });
     try {
-      final ok = await ref
+      final result = await ref
           .read(walletControllerProvider.notifier)
           .changePassword(currentPassword: _current.text, newPassword: _next.text);
       if (!mounted) return;
-      if (!ok) {
-        setState(() {
-          _busy = false;
-          _error = 'Current password is incorrect';
-        });
-        return;
-      }
       setState(() {
         _busy = false;
-        _done = true;
+        switch (result) {
+          case PasswordChangeResult.wrongPassword:
+            _error = 'Current password is incorrect';
+          case PasswordChangeResult.changed:
+            _done = true;
+          case PasswordChangeResult.changedBiometricDisabled:
+            _done = true;
+            _biometricDisabled = true;
+        }
       });
     } catch (e) {
       if (!mounted) return;
@@ -80,11 +84,16 @@ class _ChangePasswordSheetState extends ConsumerState<_ChangePasswordSheet> {
     final colors = context.colors;
     final text = context.themeText;
 
-    return Padding(
-      padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(24, 24, 24, 40),
-        child: _done ? _successContent(colors, text) : _formContent(colors, text),
+    // The rotation must not look cancellable once it is running: block barrier
+    // taps and back navigation until the result lands in this sheet.
+    return PopScope(
+      canPop: !_busy,
+      child: Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(24, 24, 24, 40),
+          child: _done ? _successContent(colors, text) : _formContent(colors, text),
+        ),
       ),
     );
   }
@@ -101,6 +110,15 @@ class _ChangePasswordSheetState extends ConsumerState<_ChangePasswordSheet> {
           style: text.smallTitle?.copyWith(color: colors.textPrimary),
           textAlign: TextAlign.center,
         ),
+        if (_biometricDisabled) ...[
+          const SizedBox(height: 12),
+          Text(
+            'Biometric unlock was turned off because its key could not be updated for the new password. '
+            'Unlock with your password.',
+            style: text.detail?.copyWith(color: colors.textSecondary),
+            textAlign: TextAlign.center,
+          ),
+        ],
         const SizedBox(height: 24),
         QuantusButton.simple(label: 'Done', onTap: () => Navigator.pop(context, true)),
       ],

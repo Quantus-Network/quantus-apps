@@ -1,3 +1,4 @@
+import 'package:cryptography/cryptography.dart' show SecretBoxAuthenticationError;
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
@@ -5,6 +6,12 @@ import 'package:quantus_cold_wallet/services/cold_auth_service.dart';
 import 'package:quantus_cold_wallet/services/vault_service.dart';
 
 enum WalletStatus { initializing, needsSetup, locked, unlocked }
+
+/// Outcome of a password rotation. The vault write is the commit point:
+/// [changed] and [changedBiometricDisabled] both mean the new password is in
+/// effect; the latter means the biometric unlock key could not be re-stored
+/// and biometric unlock was turned off.
+enum PasswordChangeResult { wrongPassword, changed, changedBiometricDisabled }
 
 @immutable
 class WalletState {
@@ -88,24 +95,37 @@ class WalletController extends Notifier<WalletState> {
   }
 
   /// Verifies [currentPassword] against the vault, then re-encrypts the
-  /// mnemonic under [newPassword]. Returns false when the current password is
-  /// wrong; rethrows storage failures. Biometric unlock keeps working — the
-  /// key derived from the new password is re-stored when it was enabled.
-  Future<bool> changePassword({required String currentPassword, required String newPassword}) async {
+  /// mnemonic under [newPassword]. The vault write is the commit point: any
+  /// failure before it rethrows with the old password still valid, while a
+  /// biometric re-store failure after it keeps the committed change and
+  /// reports biometric unlock as disabled.
+  Future<PasswordChangeResult> changePassword({required String currentPassword, required String newPassword}) async {
     final UnlockResult result;
     try {
       result = await _vault.unlockWithPassword(currentPassword);
-    } catch (e) {
-      debugPrint('Change password: current password rejected: $e');
-      return false;
+    } on SecretBoxAuthenticationError {
+      debugPrint('Change password: current password rejected');
+      return PasswordChangeResult.wrongPassword;
     }
     final biometric = await _vault.isBiometricEnabled();
-    await _vault.createVault(mnemonic: result.mnemonic, password: newPassword);
-    if (biometric) {
+    try {
+      await _vault.createVault(mnemonic: result.mnemonic, password: newPassword);
+    } catch (e) {
+      // createVault drops the biometric key before writing, so a failed write
+      // keeps the old password valid but may have lost biometric unlock.
+      if (biometric) state = state.copyWith(biometricEnabled: false);
+      rethrow;
+    }
+    if (!biometric) return PasswordChangeResult.changed;
+    try {
       final fresh = await _vault.unlockWithPassword(newPassword);
       await _vault.storeBiometricKey(fresh.keyBytes);
+      return PasswordChangeResult.changed;
+    } catch (e, st) {
+      debugPrint('Change password: biometric key re-store failed, biometric unlock disabled: $e\n$st');
+      state = state.copyWith(biometricEnabled: false);
+      return PasswordChangeResult.changedBiometricDisabled;
     }
-    return true;
   }
 
   void lock() {

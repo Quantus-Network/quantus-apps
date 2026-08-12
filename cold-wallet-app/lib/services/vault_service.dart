@@ -49,9 +49,11 @@ class VaultService {
       'ct': base64Encode(box.cipherText),
       'mac': base64Encode(box.mac.bytes),
     });
-    await _storage.write(key: _vaultKey, value: blob);
-    // (Re)creating a wallet invalidates any previously stored biometric key.
+    // A stored biometric key belongs to the previous vault key, so drop it
+    // before the new vault is written: if the write then fails, the old vault
+    // (and its password) is still intact instead of a half-committed rotation.
     await _storage.delete(key: _bioKeyKey);
+    await _storage.write(key: _vaultKey, value: blob);
   }
 
   Future<_Vault> _readVault() async {
