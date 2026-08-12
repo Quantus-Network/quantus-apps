@@ -139,7 +139,6 @@ class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> {
               parsed.call.actionTitle,
               style: text.mediumTitle?.copyWith(color: colors.accentOrange, letterSpacing: 1.2),
             ),
-            Text(parsed.call.displayTitle, style: text.detail?.copyWith(color: colors.textMuted)),
             ..._callBody(context, parsed.call),
             const SizedBox(height: 20),
             _advancedSection(context, parsed),
@@ -232,6 +231,7 @@ class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> {
   List<String> _advancedLines(ParsedPayload parsed) {
     final ext = parsed.extensions;
     return [
+      'Call: ${parsed.call.displayTitle}',
       'Network: ${parsed.network}',
       'Runtime: spec ${ext.specVersion}, tx version ${ext.transactionVersion}',
       'Nonce: ${ext.nonce}',

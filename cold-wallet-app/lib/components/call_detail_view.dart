@@ -118,7 +118,6 @@ class CallDetailView extends StatelessWidget {
           call.actionTitle,
           style: text.smallTitle?.copyWith(color: depth == 0 ? colors.textPrimary : colors.checksum),
         ),
-        Text(call.displayTitle, style: text.detail?.copyWith(color: colors.textMuted)),
         ...callSummaryBody(call, depth: depth),
       ],
     );
