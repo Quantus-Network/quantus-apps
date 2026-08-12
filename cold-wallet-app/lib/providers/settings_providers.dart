@@ -53,7 +53,6 @@ class ColdSettingsController extends Notifier<ColdSettings> {
 
   Future<void> setWifiOverrideEnabled(bool enabled) async {
     state = state.copyWith(wifiOverrideEnabled: enabled);
-    if (!enabled) ref.read(wifiLockOverriddenProvider.notifier).set(false);
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_wifiOverrideKey, enabled);
   }
@@ -72,14 +71,3 @@ class ColdSettingsController extends Notifier<ColdSettings> {
 }
 
 final coldSettingsProvider = NotifierProvider<ColdSettingsController, ColdSettings>(ColdSettingsController.new);
-
-/// Session-only: armed from the connectivity guard after the user confirms the
-/// override warning; disarmed when the persistent toggle is switched off.
-class WifiLockOverridden extends Notifier<bool> {
-  @override
-  bool build() => false;
-
-  void set(bool value) => state = value;
-}
-
-final wifiLockOverriddenProvider = NotifierProvider<WifiLockOverridden, bool>(WifiLockOverridden.new);

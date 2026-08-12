@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:quantus_cold_wallet/components/base_background.dart';
 import 'package:quantus_cold_wallet/components/quantus_button.dart';
 import 'package:quantus_cold_wallet/providers/connectivity_provider.dart';
@@ -12,13 +11,14 @@ import 'package:quantus_cold_wallet/theme/app_text_styles.dart';
 /// must stay air-gapped, so this overlays everything and only clears once the
 /// device reports it is offline. Fails closed: while connectivity is unknown
 /// it stays blocked. Debug and release builds behave identically — the
-/// Override setting below is the only way past the lock.
+/// Override flow below is the only way past the lock.
 ///
-/// When the Wi-Fi Lock Override setting is enabled, an Override button leads to
-/// an inline confirmation step (this widget sits above the [Navigator] in the
-/// [MaterialApp.builder] stack, so dialog routes cannot be shown from here);
-/// once confirmed the lock is dismissed for the session. While overridden this
-/// guard renders nothing — the home screen shows a normal re-lock button.
+/// The Override button leads to an inline confirmation step (this widget sits
+/// above the [Navigator] in the [MaterialApp.builder] stack, so dialog routes
+/// cannot be shown from here); confirming enables the persistent Wi-Fi Lock
+/// Override setting and dismisses the lock. While overridden this guard
+/// renders nothing — the home screen shows a red re-lock button that switches
+/// the setting back off, and the Settings screen has the same toggle.
 ///
 /// The override is INTENTIONALLY available in release builds: the cold wallet
 /// is not yet distributed through app stores, and release builds are tested on
@@ -36,16 +36,13 @@ class _ConnectivityGuardState extends ConsumerState<ConnectivityGuard> {
 
   @override
   Widget build(BuildContext context) {
-    ref.listen(networkStatusProvider, (_, next) {
-      final online = next.maybeWhen(data: (s) => s == NetworkStatus.online, orElse: () => true);
+    ref.listen(isOnlineProvider, (_, online) {
       if (!online && _confirming) setState(() => _confirming = false);
     });
 
-    final status = ref.watch(networkStatusProvider);
-    final isOnline = status.maybeWhen(data: (s) => s == NetworkStatus.online, orElse: () => true);
-    if (!isOnline) return const SizedBox.shrink();
+    if (!ref.watch(isOnlineProvider)) return const SizedBox.shrink();
 
-    if (ref.watch(wifiLockOverriddenProvider)) return const SizedBox.shrink();
+    if (ref.watch(coldSettingsProvider.select((s) => s.wifiOverrideEnabled))) return const SizedBox.shrink();
 
     return Positioned.fill(
       child: Material(
@@ -65,7 +62,6 @@ class _ConnectivityGuardState extends ConsumerState<ConnectivityGuard> {
   Widget _lockContent(BuildContext context) {
     final colors = context.colors;
     final text = context.themeText;
-    final overrideAvailable = ref.watch(coldSettingsProvider.select((s) => s.wifiOverrideEnabled));
 
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -90,14 +86,12 @@ class _ConnectivityGuardState extends ConsumerState<ConnectivityGuard> {
           style: text.detail?.copyWith(color: colors.textMuted),
           textAlign: TextAlign.center,
         ),
-        if (overrideAvailable) ...[
-          const SizedBox(height: 32),
-          QuantusButton.simple(
-            label: 'Override for testing',
-            variant: ButtonVariant.secondary,
-            onTap: () => setState(() => _confirming = true),
-          ),
-        ],
+        const SizedBox(height: 32),
+        QuantusButton.simple(
+          label: 'Override for testing',
+          variant: ButtonVariant.secondary,
+          onTap: () => setState(() => _confirming = true),
+        ),
       ],
     );
   }
@@ -127,7 +121,7 @@ class _ConnectivityGuardState extends ConsumerState<ConnectivityGuard> {
         QuantusButton.simple(
           label: 'Override — I accept the risk',
           onTap: () {
-            ref.read(wifiLockOverriddenProvider.notifier).set(true);
+            ref.read(coldSettingsProvider.notifier).setWifiOverrideEnabled(true);
             setState(() => _confirming = false);
           },
         ),

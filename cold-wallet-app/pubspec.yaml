@@ -38,6 +38,8 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  # Storage failure injection in tests (kept in lockstep with flutter_secure_storage)
+  flutter_secure_storage_platform_interface: ^2.0.1
   flutter_lints: ^6.0.0
   flutter_launcher_icons: ^0.14.4
   flutter_native_splash: ^2.4.7
