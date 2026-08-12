@@ -89,7 +89,7 @@ void main() {
 
       final approved = parsed.call.fields
           .whereType<NestedCallField>()
-          .firstWhere((f) => f.label == 'Call being approved')
+          .firstWhere((f) => f.label == 'You are approving')
           .call;
       expect(approved.call, 'transfer_allow_death');
       expect(

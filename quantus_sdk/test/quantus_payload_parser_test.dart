@@ -148,7 +148,7 @@ void main() {
         expect(parsed.call.displayTitle, 'Multisig · approve');
         expect(valueField(parsed.call, 'Proposal id').value, '9');
 
-        final approved = nestedField(parsed.call, 'Call being approved').call;
+        final approved = nestedField(parsed.call, 'You are approving').call;
         expect(approved.call, 'transfer_allow_death');
         expect(amountField(approved, 'Amount').token, BigInt.from(2500000000000));
         expect(parsed.call.summary?.amount, BigInt.from(2500000000000));
@@ -164,7 +164,7 @@ void main() {
 
         expect(parsed.call.call, 'propose');
         expect(valueField(parsed.call, 'Expires at block').value, '999');
-        expect(nestedField(parsed.call, 'Proposed call').call.call, 'transfer_keep_alive');
+        expect(nestedField(parsed.call, 'You are proposing').call.call, 'transfer_keep_alive');
       });
 
       test('governance vote decodes with its direction', () {

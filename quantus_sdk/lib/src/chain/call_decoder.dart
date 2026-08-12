@@ -332,7 +332,7 @@ class CallDecoder {
           fields: [
             _accountField('Multisig account', multisigAddress),
             ValueField('Expires at block', '$expiry', kind: ValueKind.blockOrTime),
-            NestedCallField('Proposed call', inner),
+            NestedCallField('You are proposing', inner),
           ],
           summary: inner.summary,
         );
@@ -347,7 +347,7 @@ class CallDecoder {
           fields: [
             _accountField('Multisig account', multisigAddress),
             ValueField('Proposal id', '$proposalId', kind: ValueKind.number),
-            NestedCallField('Call being approved', inner),
+            NestedCallField('You are approving', inner),
           ],
           summary: inner.summary,
         );

@@ -129,7 +129,7 @@ void main() {
       expect(valueField(decoded, 'Proposal id').value, '7');
       expect(valueField(decoded, 'Multisig account').kind, ValueKind.address);
 
-      final approved = nestedField(decoded, 'Call being approved').call;
+      final approved = nestedField(decoded, 'You are approving').call;
       expect(approved.call, 'transfer_allow_death');
       expect(amountField(approved, 'Amount').token, oneToken);
 
@@ -146,7 +146,7 @@ void main() {
 
       expect(decoded.call, 'propose');
       expect(valueField(decoded, 'Expires at block').value, '12345');
-      expect(nestedField(decoded, 'Proposed call').call.call, 'schedule_transfer');
+      expect(nestedField(decoded, 'You are proposing').call.call, 'schedule_transfer');
       expect(decoded.summary?.amount, oneToken);
     });
 
@@ -339,7 +339,7 @@ void main() {
       // SEND would hide that a multisig, not the signer, moves the funds.
       expect(approve.summary?.amount, oneToken);
       expect(approve.actionTitle, 'MULTISIG APPROVE');
-      expect(nestedField(approve, 'Call being approved').call.actionTitle, 'SEND');
+      expect(nestedField(approve, 'You are approving').call.actionTitle, 'SEND');
     });
 
     test('a call that moves nothing names its pallet and call', () {
