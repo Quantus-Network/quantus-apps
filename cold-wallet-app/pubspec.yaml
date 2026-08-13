@@ -2,7 +2,7 @@ name: quantus_cold_wallet
 description: "Quantus Cold Wallet - air-gapped ML-DSA transaction signer"
 publish_to: "none"
 
-version: 1.2.0+8
+version: 1.2.0+9
 
 environment:
   sdk: ">=3.8.0 <4.0.0"
