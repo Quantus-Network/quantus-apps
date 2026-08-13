@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:convert/convert.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:quantus_sdk/generated/planck/pallets/assets.dart' as assets_pallet;
 import 'package:quantus_sdk/generated/planck/pallets/balances.dart' as balances_pallet;
 import 'package:quantus_sdk/generated/planck/pallets/multisig.dart' as multisig_pallet;
 import 'package:quantus_sdk/generated/planck/pallets/preimage.dart' as preimage_pallet;
@@ -344,6 +345,33 @@ void main() {
 
     test('a call that moves nothing names its pallet and call', () {
       expect(roundTrip(const timestamp_pallet.Txs().set(now: BigInt.from(1))).actionTitle, 'TIMESTAMP SET');
+    });
+
+    test('reversible and asset transfers name their kind', () {
+      expect(
+        roundTrip(const reversible_pallet.Txs().scheduleTransfer(dest: dest(bobId), amount: oneToken)).actionTitle,
+        'REVERSIBLE SEND',
+      );
+      expect(
+        roundTrip(
+          const assets_pallet.Txs().transfer(id: BigInt.from(7), target: dest(bobId), amount: oneToken),
+        ).actionTitle,
+        'ASSET SEND',
+      );
+      expect(
+        roundTrip(
+          const reversible_pallet.Txs().scheduleAssetTransfer(assetId: 7, dest: dest(bobId), amount: oneToken),
+        ).actionTitle,
+        'REVERSIBLE ASSET SEND',
+      );
+    });
+
+    test('the display title chain names every call in dispatch order', () {
+      final inner = const balances_pallet.Txs().transferAllowDeath(dest: dest(bobId), value: oneToken);
+      final approve = roundTrip(
+        const multisig_pallet.Txs().approve(multisigAddress: aliceId, proposalId: 7, call: inner.encode()),
+      );
+      expect(approve.displayTitleChain, 'Multisig · approve → Balances · transfer_allow_death');
     });
   });
 }

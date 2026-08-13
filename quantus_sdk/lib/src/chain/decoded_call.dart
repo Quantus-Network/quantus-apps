@@ -93,13 +93,24 @@ class TransferSummary {
   /// Asset id for non-native transfers; null means the native token.
   final int? assetId;
 
+  /// True for a scheduled, reversible transfer — a materially different action
+  /// from an immediate send, so the headline names it.
+  final bool reversible;
+
   /// The exact fields this summary restates, so a renderer that leads with the
   /// summary can suppress those fields and no others — a different field that
   /// merely carries an equal value is still listed.
   final CallField? amountField;
   final CallField? recipientField;
 
-  const TransferSummary({required this.amount, this.recipient, this.assetId, this.amountField, this.recipientField});
+  const TransferSummary({
+    required this.amount,
+    this.recipient,
+    this.assetId,
+    this.reversible = false,
+    this.amountField,
+    this.recipientField,
+  });
 }
 
 /// A fully decoded runtime call: pallet, call name, every parameter, plus an
@@ -121,22 +132,51 @@ class DecodedCall {
   /// `Multisig · approve` — pallet and call exactly as the runtime names them.
   String get displayTitle => '$pallet · $call';
 
+  /// `Multisig · approve → Balances · transfer_allow_death` — the exact runtime
+  /// identity of every call in the payload, in dispatch order, nested calls
+  /// included. The one line that never summarises; the signing screen renders
+  /// it in the Advanced list, and only there.
+  String get displayTitleChain => [for (final c in _withNested) c.displayTitle].join(' → ');
+
+  Iterable<DecodedCall> get _withNested sync* {
+    yield this;
+    for (final nested in _nestedCalls(fields)) {
+      yield* nested._withNested;
+    }
+  }
+
   /// True when this call dispatches another call it carries — a multisig
   /// approval or proposal, a batch, an inline governance proposal — wherever
   /// that nested call sits, including inside a parameter group.
-  bool get isWrapper => _carriesNestedCall(fields);
+  bool get isWrapper => _nestedCalls(fields).isNotEmpty;
 
-  static bool _carriesNestedCall(List<CallField> fields) =>
-      fields.any((f) => f is NestedCallField || (f is FieldGroup && _carriesNestedCall(f.items)));
+  static Iterable<DecodedCall> _nestedCalls(List<CallField> fields) sync* {
+    for (final field in fields) {
+      if (field is NestedCallField) yield field.call;
+      if (field is FieldGroup) yield* _nestedCalls(field.items);
+    }
+  }
 
-  /// `SEND`, `MULTISIG APPROVE` — the action in the words a signer thinks in,
-  /// for the headline position.
+  /// `SEND`, `REVERSIBLE SEND`, `ASSET SEND`, `MULTISIG APPROVE` — the action
+  /// in the words a signer thinks in, for the headline position.
   ///
-  /// Only a call that moves value *itself* reads as SEND: a wrapper carries the
-  /// summary of the call it dispatches, and naming that wrapper SEND would hide
-  /// the approval or batch the signer is actually authorising.
+  /// INTENTIONALLY opinionated, do not "fix" this back to runtime naming:
+  /// every runtime spelling of "move value" — `transfer_allow_death`,
+  /// `transfer_keep_alive`, `force_transfer`, `Assets · transfer` — collapses
+  /// into the one distinction a human actually weighs (send / reversible send /
+  /// asset send), because runtime naming is noise to the person deciding
+  /// whether to sign. The exact `pallet · call` identity is not lost: it lives
+  /// in exactly one place, [displayTitleChain], on the Advanced list.
+  ///
+  /// Only a call that moves value *itself* reads as a send: a wrapper carries
+  /// the summary of the call it dispatches, and naming that wrapper SEND would
+  /// hide the approval or batch the signer is actually authorising.
   String get actionTitle {
-    if (summary != null && !isWrapper) return 'SEND';
+    final transfer = summary;
+    if (transfer != null && !isWrapper) {
+      final kind = transfer.assetId != null ? 'ASSET SEND' : 'SEND';
+      return transfer.reversible ? 'REVERSIBLE $kind' : kind;
+    }
     return '$pallet $humanCall'.trim().toUpperCase();
   }
 

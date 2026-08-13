@@ -135,11 +135,13 @@ class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> {
           children: [
             const SizedBox(height: 8),
             if (!parsed.specMatchesBundled) _specDriftBanner(context, parsed.extensions),
+            // The headline is an opinionated human summary (SEND / REVERSIBLE
+            // SEND / …) by design; the exact pallet · call chain is the Call
+            // line in the Advanced sheet. See [DecodedCall.actionTitle].
             Text(
               parsed.call.actionTitle,
               style: text.mediumTitle?.copyWith(color: colors.accentOrange, letterSpacing: 1.2),
             ),
-            Text(parsed.call.displayTitle, style: text.detail?.copyWith(color: colors.textMuted)),
             ..._callBody(context, parsed.call),
             const SizedBox(height: 20),
             _advancedSection(context, parsed),
@@ -237,7 +239,9 @@ class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> {
   List<String> _advancedLines(ParsedPayload parsed) {
     final ext = parsed.extensions;
     return [
-      'Call: ${parsed.call.displayTitle}',
+      // The one place the runtime's own naming appears, nested calls included —
+      // the headlines above deliberately summarise it away.
+      'Call: ${parsed.call.displayTitleChain}',
       'Network: ${parsed.network}',
       'Runtime: spec ${ext.specVersion}, tx version ${ext.transactionVersion}',
       'Nonce: ${ext.nonce}',

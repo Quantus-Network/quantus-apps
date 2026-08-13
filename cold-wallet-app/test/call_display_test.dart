@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_sdk/generated/planck/pallets/balances.dart' as balances_pallet;
 import 'package:quantus_sdk/generated/planck/pallets/multisig.dart' as multisig_pallet;
+import 'package:quantus_sdk/generated/planck/pallets/reversible_transfers.dart' as reversible_pallet;
 import 'package:quantus_sdk/generated/planck/pallets/tech_collective.dart' as collective_pallet;
 import 'package:quantus_sdk/generated/planck/types/sp_runtime/multiaddress/multi_address.dart' as multi_address;
 import 'package:quantus_sdk/quantus_sdk.dart';
@@ -105,7 +106,7 @@ void main() {
   });
 
   group('sign screen', () {
-    testWidgets('the exact pallet · call is on screen at every depth', (tester) async {
+    testWidgets('headlines summarise; the exact call chain lives in Advanced', (tester) async {
       final inner = const balances_pallet.Txs().transferAllowDeath(dest: account(bobId), value: oneToken);
       final payload = DebugPayloads.withExtensions(
         const multisig_pallet.Txs().approve(multisigAddress: aliceId, proposalId: 12, call: inner.encode()),
@@ -113,9 +114,25 @@ void main() {
       await pumpSignScreen(tester, payload);
 
       expect(find.text('MULTISIG APPROVE'), findsOneWidget);
-      expect(find.text('Multisig · approve'), findsOneWidget);
       expect(find.text('SEND'), findsOneWidget);
-      expect(find.text('Balances · transfer_allow_death'), findsOneWidget);
+      expect(find.textContaining('Multisig · approve'), findsNothing);
+      expect(find.textContaining('Balances · transfer_allow_death'), findsNothing);
+
+      await tester.ensureVisible(find.text('ADVANCED'));
+      await tester.tap(find.text('ADVANCED'));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Multisig · approve → Balances · transfer_allow_death'), findsOneWidget);
+    });
+
+    testWidgets('a reversible send names itself and shows its window', (tester) async {
+      await pumpSignScreen(
+        tester,
+        DebugPayloads.withExtensions(
+          const reversible_pallet.Txs().scheduleTransfer(dest: account(bobId), amount: oneToken),
+        ),
+      );
+      expect(find.text('REVERSIBLE SEND'), findsOneWidget);
+      expect(find.text('Account default reversibility window'), findsOneWidget);
     });
 
     testWidgets('signer row reads From for a plain send', (tester) async {
@@ -126,7 +143,6 @@ void main() {
         ),
       );
       expect(find.text('SEND'), findsOneWidget);
-      expect(find.text('Balances · transfer_allow_death'), findsOneWidget);
       expect(signerRow(tester).label, 'From');
     });
 

@@ -94,6 +94,12 @@ class TransferAmount extends StatelessWidget {
 ///
 /// The summary is a lead, never a replacement: any field it does not already
 /// show is listed underneath, so if a byte is being signed it is on this screen.
+///
+/// The heading is [DecodedCall.actionTitle] — an INTENTIONALLY opinionated
+/// summary (`SEND`, `REVERSIBLE SEND`, `ASSET SEND`) at every depth, never
+/// runtime naming. Do not add a `pallet · call` line here: that identity is
+/// deliberately kept to one place, [DecodedCall.displayTitleChain] on the
+/// signing screen's Advanced list.
 class CallDetailView extends StatelessWidget {
   final DecodedCall call;
 
@@ -114,7 +120,6 @@ class CallDetailView extends StatelessWidget {
           call.actionTitle,
           style: text.smallTitle?.copyWith(color: depth == 0 ? colors.textPrimary : colors.checksum),
         ),
-        Text(call.displayTitle, style: text.detail?.copyWith(color: colors.textMuted)),
         ...callSummaryBody(call, depth: depth),
       ],
     );

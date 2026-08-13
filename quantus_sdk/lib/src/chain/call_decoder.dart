@@ -164,7 +164,7 @@ class CallDecoder {
             value,
             const ValueField('Delay', 'Account default reversibility window', kind: ValueKind.text),
           ],
-          summary: _transferSummary(destination, value),
+          summary: _transferSummary(destination, value, reversible: true),
         );
       case reversible.ScheduleTransferWithDelay(:final dest, :final amount, :final delay):
         final destination = _addressField('Destination', dest);
@@ -173,7 +173,7 @@ class CallDecoder {
           pallet: 'ReversibleTransfers',
           call: 'schedule_transfer_with_delay',
           fields: [destination, value, _delayField('Delay', delay)],
-          summary: _transferSummary(destination, value),
+          summary: _transferSummary(destination, value, reversible: true),
         );
       case reversible.ScheduleAssetTransfer(:final assetId, :final dest, :final amount):
         final destination = _addressField('Destination', dest);
@@ -187,7 +187,7 @@ class CallDecoder {
             value,
             const ValueField('Delay', 'Account default reversibility window', kind: ValueKind.text),
           ],
-          summary: _transferSummary(destination, value),
+          summary: _transferSummary(destination, value, reversible: true),
         );
       case reversible.ScheduleAssetTransferWithDelay(:final assetId, :final dest, :final amount, :final delay):
         final destination = _addressField('Destination', dest);
@@ -201,7 +201,7 @@ class CallDecoder {
             value,
             _delayField('Delay', delay),
           ],
-          summary: _transferSummary(destination, value),
+          summary: _transferSummary(destination, value, reversible: true),
         );
       case reversible.SetHighSecurity(:final delay, :final guardian):
         return DecodedCall(
@@ -858,13 +858,15 @@ class CallDecoder {
   /// Summary restating [destination] and [amount], carrying their identities so
   /// a renderer that leads with the summary can suppress exactly those fields.
   /// The recipient is only a plain ss58 account when [_addressField] said so.
-  static TransferSummary _transferSummary(ValueField destination, AmountField amount) => TransferSummary(
-    amount: amount.token,
-    recipient: destination.kind == ValueKind.address ? destination.value : null,
-    assetId: amount.assetId,
-    amountField: amount,
-    recipientField: destination,
-  );
+  static TransferSummary _transferSummary(ValueField destination, AmountField amount, {bool reversible = false}) =>
+      TransferSummary(
+        amount: amount.token,
+        recipient: destination.kind == ValueKind.address ? destination.value : null,
+        assetId: amount.assetId,
+        reversible: reversible,
+        amountField: amount,
+        recipientField: destination,
+      );
 
   static ValueField _accountField(String label, List<int> accountId32) =>
       ValueField(label, _ss58(accountId32), kind: ValueKind.address);
