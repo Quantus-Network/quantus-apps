@@ -19,6 +19,7 @@ export 'src/extensions/string_extensions.dart';
 // UI-related exports
 export 'src/ui/themes/app_theme.dart';
 export 'src/ui/themes/app_colors.dart';
+export 'src/ui/themes/app_radius.dart';
 export 'src/ui/themes/app_spacing.dart';
 export 'src/ui/themes/app_text_styles.dart';
 

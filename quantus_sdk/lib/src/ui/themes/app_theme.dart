@@ -6,6 +6,7 @@ class AppTheme {
     final isTablet = context.isTablet;
     final colors = const AppColorsV2.dark();
     final text = isTablet ? const AppTextTheme.iPad() : const AppTextTheme.defaultTheme();
+    const radius = AppRadiusV3.standard();
 
     return ThemeData(
       scaffoldBackgroundColor: colors.background,
@@ -15,11 +16,11 @@ class AppTheme {
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           foregroundColor: Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          shape: RoundedRectangleBorder(borderRadius: radius.mdBorder),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
-        style: OutlinedButton.styleFrom(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
+        style: OutlinedButton.styleFrom(shape: RoundedRectangleBorder(borderRadius: radius.mdBorder)),
       ),
       textButtonTheme: TextButtonThemeData(style: TextButton.styleFrom(foregroundColor: colors.textPrimary)),
       textSelectionTheme: TextSelectionThemeData(
@@ -37,10 +38,7 @@ class AppTheme {
         filled: true,
         fillColor: Colors.transparent,
       ),
-      extensions: [
-        colors,
-        text,
-      ],
+      extensions: [colors, const AppColorsV3.dark(), text, const AppTextThemeV3.standard(), radius],
     );
   }
 }

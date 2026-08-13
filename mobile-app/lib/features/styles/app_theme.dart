@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 
-
 class AppTheme {
   static ThemeData lightTheme(BuildContext context) {
     final appColors = const AppColorsTheme.light();

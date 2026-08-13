@@ -3,7 +3,6 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/v2/components/bottom_sheet_container.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 
-
 /// Generic "are you sure?" confirmation sheet. Resolves to true when the user
 /// taps the confirm action, false on cancel/dismiss.
 Future<bool> showConfirmActionSheet(
