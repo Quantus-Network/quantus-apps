@@ -151,6 +151,16 @@ class CallDecoder {
 
   // ------------------------------------------------- ReversibleTransfers
 
+  /// The window of a `schedule_transfer` without an explicit delay. Its length
+  /// is the account's on-chain setting, so an air-gapped signer cannot show the
+  /// actual timeframe — the explicit `_with_delay` variants can, and do.
+  static const _defaultWindowField = ValueField(
+    'Reversible for',
+    'Account default reversibility window',
+    kind: ValueKind.text,
+    note: 'The window is this account\'s on-chain setting; its length is not part of what you sign here.',
+  );
+
   static DecodedCall _reversible(reversible.Call call) {
     switch (call) {
       case reversible.ScheduleTransfer(:final dest, :final amount):
@@ -159,11 +169,7 @@ class CallDecoder {
         return DecodedCall(
           pallet: 'ReversibleTransfers',
           call: 'schedule_transfer',
-          fields: [
-            destination,
-            value,
-            const ValueField('Delay', 'Account default reversibility window', kind: ValueKind.text),
-          ],
+          fields: [destination, value, _defaultWindowField],
           summary: _transferSummary(destination, value, reversible: true),
         );
       case reversible.ScheduleTransferWithDelay(:final dest, :final amount, :final delay):
@@ -172,7 +178,7 @@ class CallDecoder {
         return DecodedCall(
           pallet: 'ReversibleTransfers',
           call: 'schedule_transfer_with_delay',
-          fields: [destination, value, _delayField('Delay', delay)],
+          fields: [destination, value, _delayField('Reversible for', delay)],
           summary: _transferSummary(destination, value, reversible: true),
         );
       case reversible.ScheduleAssetTransfer(:final assetId, :final dest, :final amount):
@@ -185,7 +191,7 @@ class CallDecoder {
             ValueField('Asset id', '$assetId', kind: ValueKind.number),
             destination,
             value,
-            const ValueField('Delay', 'Account default reversibility window', kind: ValueKind.text),
+            _defaultWindowField,
           ],
           summary: _transferSummary(destination, value, reversible: true),
         );
@@ -199,7 +205,7 @@ class CallDecoder {
             ValueField('Asset id', '$assetId', kind: ValueKind.number),
             destination,
             value,
-            _delayField('Delay', delay),
+            _delayField('Reversible for', delay),
           ],
           summary: _transferSummary(destination, value, reversible: true),
         );
@@ -890,7 +896,7 @@ class CallDecoder {
       final ms = json['Timestamp'];
       final millis = ms is BigInt ? ms.toInt() : (ms as num).toInt();
       final formatted = DatetimeFormattingService.formatDuration(Duration(milliseconds: millis)).formatted;
-      return ValueField(label, '$formatted ($millis ms)', kind: ValueKind.blockOrTime);
+      return ValueField(label, formatted, kind: ValueKind.blockOrTime);
     }
     if (json is Map && json.containsKey('BlockNumber')) {
       return ValueField(label, '${json['BlockNumber']} blocks', kind: ValueKind.blockOrTime);

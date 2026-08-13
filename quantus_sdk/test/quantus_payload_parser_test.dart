@@ -128,7 +128,7 @@ void main() {
       expect(parsed.call.call, 'schedule_transfer_with_delay');
       expect(valueField(parsed.call, 'Destination').value, 'qzn5St24cMsjE4JKYdXLBctusWj5zom67dnrW22SweAahLGeG');
       expect(amountField(parsed.call, 'Amount').token, BigInt.from(1440000000000));
-      expect(valueField(parsed.call, 'Delay').value, contains('300000 ms')); // 5 minutes
+      expect(valueField(parsed.call, 'Reversible for').value, contains('05m')); // 5 minutes
       expect(parsed.extensions.nonce, 3);
     });
 

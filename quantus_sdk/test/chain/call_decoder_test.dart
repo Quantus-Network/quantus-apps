@@ -99,10 +99,10 @@ void main() {
       );
 
       expect(decoded.call, 'schedule_transfer_with_delay');
-      final delay = valueField(decoded, 'Delay');
+      final delay = valueField(decoded, 'Reversible for');
       expect(delay.kind, ValueKind.blockOrTime);
       expect(delay.value, contains('10m'));
-      expect(delay.value, contains('600000 ms'));
+      expect(delay.value, isNot(contains('ms')), reason: 'raw milliseconds are noise next to the formatted window');
       expect(decoded.summary?.amount, oneToken);
     });
 
