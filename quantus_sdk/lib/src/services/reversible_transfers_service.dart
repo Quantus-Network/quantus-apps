@@ -42,7 +42,7 @@ class ReversibleTransfersService {
       call.hashCode;
 
       // Submit the transaction using substrate service
-      return _substrateService.submitExtrinsic(account, call);
+      return await _substrateService.submitExtrinsic(account, call);
     } catch (e) {
       throw Exception('Failed to schedule reversible transfer: $e');
     }
@@ -118,7 +118,7 @@ class ReversibleTransfersService {
       final call = quantusApi.tx.reversibleTransfers.cancel(txId: transactionId);
 
       // Submit the transaction using substrate service
-      return _substrateService.submitExtrinsic(account, call);
+      return await _substrateService.submitExtrinsic(account, call);
     } catch (e) {
       throw Exception('Failed to cancel reversible transfer: $e');
     }
