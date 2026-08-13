@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:convert/convert.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:quantus_sdk/generated/planck/pallets/assets.dart' as assets_pallet;
 import 'package:quantus_sdk/generated/planck/pallets/balances.dart' as balances_pallet;
 import 'package:quantus_sdk/generated/planck/pallets/multisig.dart' as multisig_pallet;
 import 'package:quantus_sdk/generated/planck/pallets/preimage.dart' as preimage_pallet;
@@ -98,10 +99,10 @@ void main() {
       );
 
       expect(decoded.call, 'schedule_transfer_with_delay');
-      final delay = valueField(decoded, 'Delay');
+      final delay = valueField(decoded, 'Reversible for');
       expect(delay.kind, ValueKind.blockOrTime);
       expect(delay.value, contains('10m'));
-      expect(delay.value, contains('600000 ms'));
+      expect(delay.value, isNot(contains('ms')), reason: 'raw milliseconds are noise next to the formatted window');
       expect(decoded.summary?.amount, oneToken);
     });
 
@@ -129,7 +130,7 @@ void main() {
       expect(valueField(decoded, 'Proposal id').value, '7');
       expect(valueField(decoded, 'Multisig account').kind, ValueKind.address);
 
-      final approved = nestedField(decoded, 'Call being approved').call;
+      final approved = nestedField(decoded, 'You are approving').call;
       expect(approved.call, 'transfer_allow_death');
       expect(amountField(approved, 'Amount').token, oneToken);
 
@@ -146,7 +147,7 @@ void main() {
 
       expect(decoded.call, 'propose');
       expect(valueField(decoded, 'Expires at block').value, '12345');
-      expect(nestedField(decoded, 'Proposed call').call.call, 'schedule_transfer');
+      expect(nestedField(decoded, 'You are proposing').call.call, 'schedule_transfer');
       expect(decoded.summary?.amount, oneToken);
     });
 
@@ -314,6 +315,63 @@ void main() {
       expect(decoded.call, 'set');
       expect(decoded.fields, hasLength(1));
       expect(valueField(decoded, 'Now').value, '1700000000000');
+    });
+  });
+
+  group('action title', () {
+    test('a call that moves value itself reads as SEND', () {
+      expect(
+        roundTrip(const balances_pallet.Txs().transferAllowDeath(dest: dest(bobId), value: oneToken)).actionTitle,
+        'SEND',
+      );
+      expect(
+        roundTrip(const balances_pallet.Txs().transferKeepAlive(dest: dest(bobId), value: oneToken)).actionTitle,
+        'SEND',
+      );
+    });
+
+    test('a wrapper names itself, never the transfer it carries', () {
+      final inner = const balances_pallet.Txs().transferAllowDeath(dest: dest(bobId), value: oneToken);
+      final approve = roundTrip(
+        const multisig_pallet.Txs().approve(multisigAddress: aliceId, proposalId: 7, call: inner.encode()),
+      );
+
+      // The summary is lifted from the inner transfer, but calling the approval
+      // SEND would hide that a multisig, not the signer, moves the funds.
+      expect(approve.summary?.amount, oneToken);
+      expect(approve.actionTitle, 'MULTISIG APPROVE');
+      expect(nestedField(approve, 'You are approving').call.actionTitle, 'SEND');
+    });
+
+    test('a call that moves nothing names its pallet and call', () {
+      expect(roundTrip(const timestamp_pallet.Txs().set(now: BigInt.from(1))).actionTitle, 'TIMESTAMP SET');
+    });
+
+    test('reversible and asset transfers name their kind', () {
+      expect(
+        roundTrip(const reversible_pallet.Txs().scheduleTransfer(dest: dest(bobId), amount: oneToken)).actionTitle,
+        'REVERSIBLE SEND',
+      );
+      expect(
+        roundTrip(
+          const assets_pallet.Txs().transfer(id: BigInt.from(7), target: dest(bobId), amount: oneToken),
+        ).actionTitle,
+        'ASSET SEND',
+      );
+      expect(
+        roundTrip(
+          const reversible_pallet.Txs().scheduleAssetTransfer(assetId: 7, dest: dest(bobId), amount: oneToken),
+        ).actionTitle,
+        'REVERSIBLE ASSET SEND',
+      );
+    });
+
+    test('the display title chain names every call in dispatch order', () {
+      final inner = const balances_pallet.Txs().transferAllowDeath(dest: dest(bobId), value: oneToken);
+      final approve = roundTrip(
+        const multisig_pallet.Txs().approve(multisigAddress: aliceId, proposalId: 7, call: inner.encode()),
+      );
+      expect(approve.displayTitleChain, 'Multisig · approve → Balances · transfer_allow_death');
     });
   });
 }

@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:quantus_cold_wallet/components/quantus_button.dart';
 import 'package:quantus_cold_wallet/debug/debug_payloads.dart';
 import 'package:quantus_cold_wallet/screens/sign_transaction_screen.dart';
 import 'package:quantus_cold_wallet/theme/app_colors.dart';
@@ -76,35 +77,31 @@ class _ScanTransactionScreenState extends State<ScanTransactionScreen> {
     Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => SignTransactionScreen(payload: payload)));
   }
 
+  /// One button per payload in [DebugPayloads.all], so every screen the signer
+  /// can be shown is one tap away on a simulator.
   Widget _debugPayloadButtons(BuildContext context) {
     final text = context.themeText;
-
-    Widget button(String label, Uint8List Function() build) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4),
-        child: ElevatedButton(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.white24,
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            visualDensity: VisualDensity.compact,
-          ),
-          onPressed: () => _loadDebugPayload(build()),
-          child: Text(label, style: text.detail?.copyWith(color: Colors.white)),
-        ),
-      );
-    }
 
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         Text('DEBUG PAYLOADS', style: text.detail?.copyWith(color: Colors.white38, letterSpacing: 1.2)),
         const SizedBox(height: 8),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
+        Wrap(
+          alignment: WrapAlignment.center,
+          spacing: 8,
+          runSpacing: 8,
           children: [
-            button('Send', DebugPayloads.transfer),
-            button('Msig approve', DebugPayloads.multisigApproveTransfer),
-            button('Vote aye', DebugPayloads.governanceVoteAye),
+            for (final entry in DebugPayloads.all.entries)
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.white24,
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  visualDensity: VisualDensity.compact,
+                ),
+                onPressed: () => _loadDebugPayload(entry.value()),
+                child: Text(entry.key, style: text.detail?.copyWith(color: Colors.white)),
+              ),
           ],
         ),
         const SizedBox(height: 20),
@@ -112,7 +109,25 @@ class _ScanTransactionScreenState extends State<ScanTransactionScreen> {
     );
   }
 
+  /// Retries a failed start. [MobileScannerController.start] folds scanner
+  /// failures into the controller's value, re-rendering this same panel with
+  /// the new reason; the controller-lifecycle errors it throws instead are
+  /// surfaced through [_error], which each retry clears so a recovered camera
+  /// never scans behind a stale failure banner.
+  Future<void> _restartCamera() async {
+    setState(() => _error = null);
+    try {
+      await _controller.start();
+    } catch (e) {
+      debugPrint('Camera restart failed: $e');
+      if (mounted) setState(() => _error = 'Camera restart failed: $e');
+    }
+  }
+
   Widget _cameraError(BuildContext context, MobileScannerException error) {
+    final denied = error.errorCode == MobileScannerErrorCode.permissionDenied;
+    final detail = error.errorDetails?.message;
+
     return ColoredBox(
       color: Colors.black,
       child: Center(
@@ -130,10 +145,15 @@ class _ScanTransactionScreenState extends State<ScanTransactionScreen> {
               ),
               const SizedBox(height: 12),
               Text(
-                'Grant camera access in Settings to scan the transaction QR (${error.errorCode.name}).',
+                denied
+                    ? 'Grant camera access in Settings to scan the transaction QR.'
+                    : 'The camera could not be started (${error.errorCode.name})'
+                          '${detail == null ? '' : ': $detail'}.',
                 style: const TextStyle(color: Colors.white70),
                 textAlign: TextAlign.center,
               ),
+              const SizedBox(height: 24),
+              QuantusButton.simple(label: 'Try again', width: null, onTap: _restartCamera),
             ],
           ),
         ),

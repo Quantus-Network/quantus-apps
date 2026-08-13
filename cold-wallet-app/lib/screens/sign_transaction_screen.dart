@@ -4,13 +4,14 @@ import 'package:convert/convert.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:quantus_cold_wallet/components/address_with_checkphrase.dart';
 import 'package:quantus_cold_wallet/components/animated_ur_qr.dart';
 import 'package:quantus_cold_wallet/components/call_detail_view.dart';
-import 'package:quantus_cold_wallet/components/detail_row.dart';
 import 'package:quantus_cold_wallet/components/quantus_button.dart';
 import 'package:quantus_cold_wallet/components/qr_tuning_controls.dart';
 import 'package:quantus_cold_wallet/components/scaffold_base.dart';
 import 'package:quantus_cold_wallet/components/scaffold_base_bottom_content.dart';
+import 'package:quantus_cold_wallet/components/titled_sheet.dart';
 import 'package:quantus_cold_wallet/components/v2_app_bar.dart';
 import 'package:quantus_cold_wallet/providers/settings_providers.dart';
 import 'package:quantus_cold_wallet/providers/wallet_providers.dart';
@@ -19,11 +20,11 @@ import 'package:quantus_cold_wallet/theme/app_text_styles.dart';
 
 /// Reviews a scanned signing payload and, on approval, produces the signature QR.
 ///
-/// Every parameter of the call — nested calls included — is on screen before the
-/// Sign button becomes usable. There is no summarised or collapsed view: if a
-/// byte is being signed, it is displayed. The Sign button stays disabled until
-/// the parameter list has been scrolled to the end, so "I read it" is an action
-/// rather than an assumption.
+/// The two questions that decide whether a signature is safe — how much, and to
+/// whom — are answered above the fold, in the largest type on the screen. Every
+/// call parameter the summary does not already show is listed under it; only the
+/// signed extensions and the raw bytes, which no signer verifies by eye, live
+/// behind the Advanced disclosure.
 class SignTransactionScreen extends ConsumerStatefulWidget {
   final Uint8List payload;
   const SignTransactionScreen({super.key, required this.payload});
@@ -33,8 +34,6 @@ class SignTransactionScreen extends ConsumerStatefulWidget {
 }
 
 class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> {
-  final ScrollController _scrollController = ScrollController();
-
   ParsedPayload? _parsed;
   String? _parseError;
   Uint8List? _signed;
@@ -42,8 +41,6 @@ class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> {
   int? _urPartsBytes;
   bool _qrPaused = false;
   bool _signing = false;
-  bool _reviewedToEnd = false;
-  bool _showRawPayload = false;
   String? _error;
 
   @override
@@ -55,37 +52,6 @@ class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> {
       debugPrint('Rejected signing payload: $e');
       _parseError = e is FormatException ? e.message : e.toString();
     }
-    _scrollController.addListener(_onScroll);
-  }
-
-  @override
-  void dispose() {
-    _scrollController.removeListener(_onScroll);
-    _scrollController.dispose();
-    super.dispose();
-  }
-
-  void _onScroll() {
-    if (_reviewedToEnd || !_scrollController.hasClients) return;
-    final position = _scrollController.position;
-    if (!position.hasContentDimensions) return;
-    if (position.pixels >= position.maxScrollExtent - 16) {
-      setState(() => _reviewedToEnd = true);
-    }
-  }
-
-  /// A payload short enough to fit on one screen has nothing to scroll, so the
-  /// gate would never open — release it once layout confirms there is no overflow.
-  ///
-  /// Runs after the frame: during build the scroll position exists but has no
-  /// content dimensions yet, and asking for its extent then throws.
-  void _scheduleReviewGateCheck() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || _reviewedToEnd || !_scrollController.hasClients) return;
-      final position = _scrollController.position;
-      if (!position.hasContentDimensions) return;
-      if (position.maxScrollExtent <= 0) setState(() => _reviewedToEnd = true);
-    });
   }
 
   void _sign() {
@@ -160,62 +126,25 @@ class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> {
   Widget _reviewView(BuildContext context, ParsedPayload parsed) {
     final colors = context.colors;
     final text = context.themeText;
-    final ext = parsed.extensions;
-    final signerAddress = ref.watch(addressProvider);
-    final signerCheckphrase = ref.watch(checkphraseProvider);
-
-    _scheduleReviewGateCheck();
 
     return ScaffoldBase(
       appBar: const V2AppBar(title: 'Review & Sign'),
       mainContent: SingleChildScrollView(
-        controller: _scrollController,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const SizedBox(height: 8),
-            if (!parsed.specMatchesBundled) _specDriftBanner(context, ext),
-            _hero(context, parsed),
-            const SizedBox(height: 24),
-
-            if (signerAddress != null) DetailRow(label: 'Signing as', value: signerAddress, monospace: true),
-            signerCheckphrase.maybeWhen(
-              data: (phrase) => phrase.isEmpty
-                  ? const SizedBox.shrink()
-                  : DetailRow(label: 'Signing as checkphrase', value: phrase, valueColor: colors.checksum),
-              orElse: () => const SizedBox.shrink(),
+            if (!parsed.specMatchesBundled) _specDriftBanner(context, parsed.extensions),
+            // The headline is an opinionated human summary (SEND / REVERSIBLE
+            // SEND / …) by design; the exact pallet · call chain is the Call
+            // line in the Advanced sheet. See [DecodedCall.actionTitle].
+            Text(
+              parsed.call.actionTitle,
+              style: text.mediumTitle?.copyWith(color: colors.accentOrange, letterSpacing: 1.2),
             ),
-
-            const SizedBox(height: 8),
-            Divider(color: colors.borderButton),
-            const SizedBox(height: 8),
-            Text('CALL', style: text.transactionDetailRowLabel?.copyWith(color: colors.textLabel)),
-            const SizedBox(height: 8),
-            CallDetailView(call: parsed.call),
-
-            const SizedBox(height: 16),
-            Divider(color: colors.borderButton),
-            const SizedBox(height: 8),
-            Text('SIGNED EXTENSIONS', style: text.transactionDetailRowLabel?.copyWith(color: colors.textLabel)),
-            DetailRow(label: 'Network', value: parsed.network),
-            DetailRow(label: 'Runtime', value: 'spec ${ext.specVersion}, tx version ${ext.transactionVersion}'),
-            DetailRow(label: 'Nonce', value: '${ext.nonce}'),
-            DetailRow(label: 'Era', value: '${ext.era}'),
-            DetailRow(
-              label: 'Tip',
-              value: '${NumberFormattingService().formatAmount(ext.tip)} ${AppConstants.tokenSymbol}',
-            ),
-            DetailRow(label: 'Genesis hash', value: '0x${hex.encode(ext.genesisHash)}', monospace: true),
-            DetailRow(label: 'Block hash', value: '0x${hex.encode(ext.blockHash)}', monospace: true),
-            DetailRow(
-              label: 'Metadata hash',
-              value: ext.metadataHash == null ? 'None (check disabled)' : '0x${hex.encode(ext.metadataHash!)}',
-              monospace: ext.metadataHash != null,
-            ),
-
-            const SizedBox(height: 16),
-            _rawPayloadSection(context, parsed),
-
+            ..._callBody(context, parsed.call),
+            const SizedBox(height: 20),
+            _advancedSection(context, parsed),
             if (_error != null) ...[
               const SizedBox(height: 16),
               Text(
@@ -229,41 +158,100 @@ class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> {
         ),
       ),
       bottomContent: ScaffoldBaseBottomContent(
-        child: Column(
+        child: Row(
           children: [
-            if (!_reviewedToEnd)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: Text(
-                  'Scroll through every parameter to enable signing.',
-                  style: text.detail?.copyWith(color: colors.textMuted),
-                  textAlign: TextAlign.center,
-                ),
+            Expanded(
+              child: QuantusButton.simple(
+                label: 'Cancel',
+                variant: ButtonVariant.secondary,
+                onTap: () => Navigator.popUntil(context, (r) => r.isFirst),
               ),
-            Row(
-              children: [
-                Expanded(
-                  child: QuantusButton.simple(
-                    label: 'Cancel',
-                    variant: ButtonVariant.secondary,
-                    onTap: () => Navigator.popUntil(context, (r) => r.isFirst),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: QuantusButton.simple(
-                    label: 'Sign',
-                    isLoading: _signing,
-                    isDisabled: !_reviewedToEnd,
-                    onTap: (_signing || !_reviewedToEnd) ? null : _sign,
-                  ),
-                ),
-              ],
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: QuantusButton.simple(label: 'Sign', isLoading: _signing, onTap: _signing ? null : _sign),
             ),
           ],
         ),
       ),
     );
+  }
+
+  /// What is being authorised, then who is authorising it, then the parameters
+  /// neither of those already showed.
+  ///
+  /// A call that dispatches another one — a multisig approval, a batch — leads
+  /// with the boxed inner call: the amount and recipient inside it are what the
+  /// signer is really approving, and the wrapper's own parameters (which
+  /// multisig, which proposal) are context that follows.
+  ///
+  /// The signer's row claims `From` only when the summary shows a plain send
+  /// and the call names no other account the funds could leave instead — a
+  /// `force_transfer` moves its Source's funds, not the signer's. Anything
+  /// else says no more than `Signed by`.
+  List<Widget> _callBody(BuildContext context, DecodedCall call) {
+    final signerAddress = ref.watch(addressProvider);
+    final transfer = heroSummary(call);
+    final fromSigner =
+        transfer?.recipient != null &&
+        !call.fields.any(
+          (f) => f is ValueField && f.kind == ValueKind.address && !identical(f, transfer!.recipientField),
+        );
+    final signer = signerAddress == null
+        ? null
+        : AddressWithCheckphrase(label: fromSigner ? 'From' : 'Signed by', address: signerAddress);
+
+    if (!call.isWrapper) return [...callSummaryBody(call), ?signer];
+
+    return [
+      for (final field in call.fields.whereType<NestedCallField>()) CallFieldView(field: field),
+      ?signer,
+      for (final field in call.fields.where((f) => f is! NestedCallField)) CallFieldView(field: field),
+    ];
+  }
+
+  /// Everything a signer never verifies by eye: the signed extensions and the
+  /// bytes themselves, listed plainly for the rare reader who wants them.
+  Widget _advancedSection(BuildContext context, ParsedPayload parsed) {
+    final colors = context.colors;
+    final text = context.themeText;
+
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => showTitledSheet(
+        context,
+        title: 'Advanced',
+        child: Text(
+          _advancedLines(parsed).join('\n'),
+          style: text.detail?.copyWith(color: colors.textMuted, fontFamily: AppTextTheme.fontFamilySecondary),
+        ),
+      ),
+      child: Row(
+        children: [
+          Text('ADVANCED', style: text.transactionDetailRowLabel?.copyWith(color: colors.textLabel)),
+          const SizedBox(width: 6),
+          Icon(Icons.chevron_right, size: 18, color: colors.textLabel),
+        ],
+      ),
+    );
+  }
+
+  List<String> _advancedLines(ParsedPayload parsed) {
+    final ext = parsed.extensions;
+    return [
+      // The one place the runtime's own naming appears, nested calls included —
+      // the headlines above deliberately summarise it away.
+      'Call: ${parsed.call.displayTitleChain}',
+      'Network: ${parsed.network}',
+      'Runtime: spec ${ext.specVersion}, tx version ${ext.transactionVersion}',
+      'Nonce: ${ext.nonce}',
+      'Era: ${ext.era}',
+      'Tip: ${NumberFormattingService().formatAmount(ext.tip)} ${AppConstants.tokenSymbol}',
+      'Genesis hash: 0x${hex.encode(ext.genesisHash)}',
+      'Block hash: 0x${hex.encode(ext.blockHash)}',
+      'Metadata hash: ${ext.metadataHash == null ? 'none (check disabled)' : '0x${hex.encode(ext.metadataHash!)}'}',
+      'Raw payload (${parsed.raw.length} bytes): 0x${hex.encode(parsed.raw)}',
+    ];
   }
 
   Widget _specDriftBanner(BuildContext context, SignedExtensions ext) {
@@ -308,106 +296,10 @@ class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> {
     );
   }
 
-  Widget _hero(BuildContext context, ParsedPayload parsed) {
-    final colors = context.colors;
-    final text = context.themeText;
-    final summary = parsed.call.summary;
-
-    return Center(
-      child: Column(
-        children: [
-          Text('You are signing', style: text.smallParagraph?.copyWith(color: colors.textSecondary)),
-          const SizedBox(height: 8),
-          if (summary != null && summary.assetId == null)
-            RichText(
-              text: TextSpan(
-                children: [
-                  TextSpan(
-                    text: NumberFormattingService().formatAmount(summary.amount),
-                    style: text.transactionDetailAmountPrimary?.copyWith(color: colors.textPrimary),
-                  ),
-                  TextSpan(
-                    text: ' ${AppConstants.tokenSymbol}',
-                    style: text.transactionDetailAmountSymbol?.copyWith(color: colors.textSecondary),
-                  ),
-                ],
-              ),
-            )
-          else if (summary != null)
-            Text(
-              '${summary.amount} of asset #${summary.assetId}',
-              style: text.mediumTitle?.copyWith(color: colors.textPrimary),
-              textAlign: TextAlign.center,
-            )
-          else
-            Text(
-              parsed.call.humanCall,
-              style: text.mediumTitle?.copyWith(color: colors.textPrimary),
-              textAlign: TextAlign.center,
-            ),
-          const SizedBox(height: 6),
-          Text(
-            parsed.call.displayTitle,
-            style: text.detail?.copyWith(color: colors.textMuted),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _rawPayloadSection(BuildContext context, ParsedPayload parsed) {
-    final colors = context.colors;
-    final text = context.themeText;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        GestureDetector(
-          onTap: () => setState(() => _showRawPayload = !_showRawPayload),
-          child: Row(
-            children: [
-              Text(
-                'RAW PAYLOAD (${parsed.raw.length} BYTES)',
-                style: text.transactionDetailRowLabel?.copyWith(color: colors.textLabel),
-              ),
-              const SizedBox(width: 6),
-              Icon(_showRawPayload ? Icons.expand_less : Icons.expand_more, size: 18, color: colors.textLabel),
-            ],
-          ),
-        ),
-        if (_showRawPayload) ...[
-          const SizedBox(height: 8),
-          Text(
-            '0x${hex.encode(parsed.raw)}',
-            style: text.detail?.copyWith(color: colors.textMuted, fontFamily: AppTextTheme.fontFamilySecondary),
-          ),
-        ],
-      ],
-    );
-  }
-
   /// Pauses the animation and opens the tuning sheet; resumes when it closes.
   Future<void> _pauseAndTune() async {
     setState(() => _qrPaused = true);
-    final colors = context.colors;
-    final text = context.themeText;
-    await showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: colors.sheetBackground,
-      builder: (_) => Padding(
-        padding: const EdgeInsets.fromLTRB(24, 24, 24, 40),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text('QR display options', style: text.smallTitle?.copyWith(color: colors.textPrimary)),
-            const SizedBox(height: 16),
-            const QrTuningControls(),
-          ],
-        ),
-      ),
-    );
+    await showTitledSheet(context, title: 'QR display options', child: const QrTuningControls());
     if (mounted) setState(() => _qrPaused = false);
   }
 
