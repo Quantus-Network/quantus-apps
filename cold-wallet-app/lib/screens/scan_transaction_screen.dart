@@ -114,13 +114,15 @@ class _ScanTransactionScreenState extends State<ScanTransactionScreen> {
   }
 
   /// Retries a failed start. [MobileScannerController.start] folds scanner
-  /// failures into the controller's value, so a second failure re-renders this
-  /// same panel with the new reason.
+  /// failures into the controller's value, re-rendering this same panel with
+  /// the new reason; the controller-lifecycle errors it throws instead are
+  /// surfaced through [_error].
   Future<void> _restartCamera() async {
     try {
       await _controller.start();
     } catch (e) {
       debugPrint('Camera restart failed: $e');
+      if (mounted) setState(() => _error = 'Camera restart failed: $e');
     }
   }
 

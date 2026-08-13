@@ -93,7 +93,13 @@ class TransferSummary {
   /// Asset id for non-native transfers; null means the native token.
   final int? assetId;
 
-  const TransferSummary({required this.amount, this.recipient, this.assetId});
+  /// The exact fields this summary restates, so a renderer that leads with the
+  /// summary can suppress those fields and no others — a different field that
+  /// merely carries an equal value is still listed.
+  final CallField? amountField;
+  final CallField? recipientField;
+
+  const TransferSummary({required this.amount, this.recipient, this.assetId, this.amountField, this.recipientField});
 }
 
 /// A fully decoded runtime call: pallet, call name, every parameter, plus an
@@ -115,6 +121,14 @@ class DecodedCall {
   /// `Multisig · approve` — pallet and call exactly as the runtime names them.
   String get displayTitle => '$pallet · $call';
 
+  /// True when this call dispatches another call it carries — a multisig
+  /// approval or proposal, a batch, an inline governance proposal — wherever
+  /// that nested call sits, including inside a parameter group.
+  bool get isWrapper => _carriesNestedCall(fields);
+
+  static bool _carriesNestedCall(List<CallField> fields) =>
+      fields.any((f) => f is NestedCallField || (f is FieldGroup && _carriesNestedCall(f.items)));
+
   /// `SEND`, `MULTISIG APPROVE` — the action in the words a signer thinks in,
   /// for the headline position.
   ///
@@ -122,7 +136,7 @@ class DecodedCall {
   /// summary of the call it dispatches, and naming that wrapper SEND would hide
   /// the approval or batch the signer is actually authorising.
   String get actionTitle {
-    if (summary != null && !fields.any((f) => f is NestedCallField)) return 'SEND';
+    if (summary != null && !isWrapper) return 'SEND';
     return '$pallet $humanCall'.trim().toUpperCase();
   }
 

@@ -6,15 +6,14 @@ import 'package:quantus_cold_wallet/components/detail_row.dart';
 import 'package:quantus_cold_wallet/theme/app_colors.dart';
 import 'package:quantus_cold_wallet/theme/app_text_styles.dart';
 
-/// True when [summary] already puts this field on screen, so listing it again
-/// would only add noise. Matches on the values themselves, not on labels, so a
-/// renamed parameter can never silently drop a field.
+/// True when [summary] already puts this exact field on screen, so listing it
+/// again would only add noise. Matches by identity, never by label or value, so
+/// a renamed field — or a different field that merely carries an equal value —
+/// can never be silently dropped.
 bool coveredBySummary(CallField field, TransferSummary summary) {
-  return switch (field) {
-    AmountField(:final token, :final assetId) => token == summary.amount && assetId == summary.assetId,
-    ValueField(:final kind, :final value) => kind == ValueKind.address && value == summary.recipient,
-    _ => false,
-  };
+  if (identical(field, summary.amountField)) return true;
+  // With no plain recipient there is no To row, so the field must be listed.
+  return summary.recipient != null && identical(field, summary.recipientField);
 }
 
 /// The transfer a call performs, or null when it dispatches another call.
@@ -22,10 +21,7 @@ bool coveredBySummary(CallField field, TransferSummary summary) {
 /// A wrapper (multisig approve, batch, `as_derivative`) inherits the summary of
 /// the call it carries; the amount belongs on that inner call, where the nested
 /// box shows it, not on the wrapper.
-TransferSummary? heroSummary(DecodedCall call) {
-  if (call.fields.any((f) => f is NestedCallField)) return null;
-  return call.summary;
-}
+TransferSummary? heroSummary(DecodedCall call) => call.isWrapper ? null : call.summary;
 
 /// The amount, recipient, and every parameter the two of them do not already
 /// cover — the body shared by the top-level review and each nested call box.
@@ -118,6 +114,7 @@ class CallDetailView extends StatelessWidget {
           call.actionTitle,
           style: text.smallTitle?.copyWith(color: depth == 0 ? colors.textPrimary : colors.checksum),
         ),
+        Text(call.displayTitle, style: text.detail?.copyWith(color: colors.textMuted)),
         ...callSummaryBody(call, depth: depth),
       ],
     );

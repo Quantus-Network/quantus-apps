@@ -139,6 +139,7 @@ class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> {
               parsed.call.actionTitle,
               style: text.mediumTitle?.copyWith(color: colors.accentOrange, letterSpacing: 1.2),
             ),
+            Text(parsed.call.displayTitle, style: text.detail?.copyWith(color: colors.textMuted)),
             ..._callBody(context, parsed.call),
             const SizedBox(height: 20),
             _advancedSection(context, parsed),
@@ -181,17 +182,27 @@ class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> {
   /// with the boxed inner call: the amount and recipient inside it are what the
   /// signer is really approving, and the wrapper's own parameters (which
   /// multisig, which proposal) are context that follows.
+  ///
+  /// The signer's row claims `From` only when the summary shows a plain send
+  /// and the call names no other account the funds could leave instead — a
+  /// `force_transfer` moves its Source's funds, not the signer's. Anything
+  /// else says no more than `Signed by`.
   List<Widget> _callBody(BuildContext context, DecodedCall call) {
     final signerAddress = ref.watch(addressProvider);
-    final nested = call.fields.whereType<NestedCallField>().toList();
+    final transfer = heroSummary(call);
+    final fromSigner =
+        transfer?.recipient != null &&
+        !call.fields.any(
+          (f) => f is ValueField && f.kind == ValueKind.address && !identical(f, transfer!.recipientField),
+        );
     final signer = signerAddress == null
         ? null
-        : AddressWithCheckphrase(label: nested.isEmpty ? 'From' : 'Signed by', address: signerAddress);
+        : AddressWithCheckphrase(label: fromSigner ? 'From' : 'Signed by', address: signerAddress);
 
-    if (nested.isEmpty) return [...callSummaryBody(call), ?signer];
+    if (!call.isWrapper) return [...callSummaryBody(call), ?signer];
 
     return [
-      for (final field in nested) CallFieldView(field: field),
+      for (final field in call.fields.whereType<NestedCallField>()) CallFieldView(field: field),
       ?signer,
       for (final field in call.fields.where((f) => f is! NestedCallField)) CallFieldView(field: field),
     ];

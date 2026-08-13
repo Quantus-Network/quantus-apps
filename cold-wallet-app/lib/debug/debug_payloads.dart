@@ -20,7 +20,7 @@ class DebugPayloads {
 
   /// A plain transfer — the everyday case.
   static Uint8List transfer() {
-    return _withExtensions(
+    return withExtensions(
       const balances_pallet.Txs().transferAllowDeath(
         dest: _address(AppConstants.debugTestAddress),
         value: BigInt.from(1500000000000), // 1.5 tokens
@@ -35,7 +35,7 @@ class DebugPayloads {
       dest: _address(AppConstants.debugTestAddress),
       value: BigInt.from(4200000000000), // 4.2 tokens
     );
-    return _withExtensions(
+    return withExtensions(
       const multisig_pallet.Txs().approve(multisigAddress: _debugMultisigAccount, proposalId: 12, call: inner.encode()),
     );
   }
@@ -44,7 +44,7 @@ class DebugPayloads {
   /// uses to enact a runtime upgrade. Moves no value, so the review screen must
   /// name the call instead of showing an amount.
   static Uint8List governanceVoteAye() {
-    return _withExtensions(const collective_pallet.Txs().vote(poll: 7, aye: true));
+    return withExtensions(const collective_pallet.Txs().vote(poll: 7, aye: true));
   }
 
   /// Synthetic multisig account; renders as a valid ss58 address with a
@@ -57,7 +57,7 @@ class DebugPayloads {
   /// Appends the signed extensions the runtime expects, using the spec and
   /// transaction versions this build's metadata was generated from — so these
   /// payloads do not trip the spec-drift warning.
-  static Uint8List _withExtensions(RuntimeCall call) {
+  static Uint8List withExtensions(RuntimeCall call) {
     final out = ByteOutput();
     out.write(call.encode());
     out.write(const [0x55, 0x01]); // mortal era: period 64, phase 21
