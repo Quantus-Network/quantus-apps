@@ -28,7 +28,7 @@ class DebugPayloads {
     'Send': transfer,
     'Force send': forceTransfer,
     'Reversible': reversibleTransfer,
-    'Reversible delayed': reversibleTransferWithDelay,
+    'Reversible 8h': reversibleTransferWithDelay,
     'Asset': assetTransfer,
     'Reversible asset': reversibleAssetTransfer,
     'Msig approve': multisigApproveTransfer,

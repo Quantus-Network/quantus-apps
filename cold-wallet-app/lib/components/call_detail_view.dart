@@ -23,6 +23,10 @@ bool coveredBySummary(CallField field, TransferSummary summary) {
 /// box shows it, not on the wrapper.
 TransferSummary? heroSummary(DecodedCall call) => call.isWrapper ? null : call.summary;
 
+/// `4200 units of asset 1` — asset amounts stay in the payload's own units:
+/// decimals are per-asset chain state an air-gapped signer cannot resolve.
+String assetAmountText(BigInt amount, int assetId) => '$amount units of asset $assetId';
+
 /// The amount, recipient, and every parameter the two of them do not already
 /// cover — the body shared by the top-level review and each nested call box.
 List<Widget> callSummaryBody(DecodedCall call, {int depth = 0}) {
@@ -55,7 +59,7 @@ class TransferAmount extends StatelessWidget {
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 10),
         child: Text(
-          '${summary.amount} raw units of asset #${summary.assetId}',
+          assetAmountText(summary.amount, summary.assetId!),
           style: text.mediumTitle?.copyWith(color: colors.textPrimary),
         ),
       );
@@ -154,7 +158,7 @@ class CallFieldView extends ConsumerWidget {
           label: label,
           value: assetId == null
               ? '${NumberFormattingService().formatAmount(token)} ${AppConstants.tokenSymbol}'
-              : '$token raw units of asset #$assetId',
+              : assetAmountText(token, assetId),
           note: assetId == null
               ? note
               : [

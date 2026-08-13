@@ -213,7 +213,7 @@ class CallDecoder {
         return DecodedCall(
           pallet: 'ReversibleTransfers',
           call: 'set_high_security',
-          fields: [_delayField('Reversibility window', delay), _accountField('Guardian', guardian)],
+          fields: [_delayField('Reversible for', delay), _accountField('Guardian', guardian)],
         );
       case reversible.Cancel(:final txId):
         return DecodedCall(pallet: 'ReversibleTransfers', call: 'cancel', fields: [_hashField('Transaction id', txId)]);
@@ -640,7 +640,7 @@ class CallDecoder {
           fields: [
             _accountListField('Friends', friends),
             ValueField('Threshold', '$threshold of ${friends.length}', kind: ValueKind.number),
-            ValueField('Delay period', '$delayPeriod blocks', kind: ValueKind.blockOrTime),
+            ValueField('Waiting period', '$delayPeriod blocks', kind: ValueKind.blockOrTime),
           ],
         );
       case recovery.SetRecovered(:final lost, :final rescuer):
