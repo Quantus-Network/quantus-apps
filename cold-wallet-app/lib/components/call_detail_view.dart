@@ -23,9 +23,10 @@ bool coveredBySummary(CallField field, TransferSummary summary) {
 /// box shows it, not on the wrapper.
 TransferSummary? heroSummary(DecodedCall call) => call.isWrapper ? null : call.summary;
 
-/// `4200 units of asset 1` — asset amounts stay in the payload's own units:
-/// decimals are per-asset chain state an air-gapped signer cannot resolve.
-String assetAmountText(BigInt amount, int assetId) => '$amount units of asset $assetId';
+/// `4200 raw units of asset 1` — asset amounts stay in the payload's own raw
+/// units, and say so: decimals are per-asset chain state an air-gapped signer
+/// cannot resolve, so this integer must never read as a human asset quantity.
+String assetAmountText(BigInt amount, int assetId) => '$amount raw units of asset $assetId';
 
 /// The amount, recipient, and every parameter the two of them do not already
 /// cover — the body shared by the top-level review and each nested call box.
