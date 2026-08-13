@@ -2,9 +2,12 @@ import 'dart:typed_data';
 
 import 'package:convert/convert.dart';
 import 'package:polkadart/scale_codec.dart';
+import 'package:quantus_sdk/generated/planck/pallets/assets.dart' as assets_pallet;
 import 'package:quantus_sdk/generated/planck/pallets/balances.dart' as balances_pallet;
 import 'package:quantus_sdk/generated/planck/pallets/multisig.dart' as multisig_pallet;
+import 'package:quantus_sdk/generated/planck/pallets/reversible_transfers.dart' as reversible_pallet;
 import 'package:quantus_sdk/generated/planck/pallets/tech_collective.dart' as collective_pallet;
+import 'package:quantus_sdk/generated/planck/types/qp_scheduler/block_number_or_timestamp.dart' as qp;
 import 'package:quantus_sdk/generated/planck/types/sp_runtime/multiaddress/multi_address.dart' as multi_address;
 import 'package:quantus_sdk/quantus_sdk.dart';
 
@@ -18,12 +21,80 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 class DebugPayloads {
   const DebugPayloads._();
 
-  /// A plain transfer — the everyday case.
+  /// Every payload the debug buttons offer, keyed by button label — one per
+  /// distinct screen the signer can be shown, so each headline, hero and row
+  /// combination can be eyeballed without a hot wallet.
+  static final Map<String, Uint8List Function()> all = {
+    'Send': transfer,
+    'Force send': forceTransfer,
+    'Reversible': reversibleTransfer,
+    'Reversible delayed': reversibleTransferWithDelay,
+    'Asset': assetTransfer,
+    'Reversible asset': reversibleAssetTransfer,
+    'Msig approve': multisigApproveTransfer,
+    'Msig propose': multisigProposeTransfer,
+    'Vote aye': governanceVoteAye,
+  };
+
+  /// A plain transfer — the everyday case. Headline: SEND.
   static Uint8List transfer() {
+    return withExtensions(_send(BigInt.from(1500000000000))); // 1.5 tokens
+  }
+
+  /// A root-level transfer of another account's funds. The screen must show
+  /// the Source row and say `Signed by`, never `From`: the funds do not leave
+  /// the signer.
+  static Uint8List forceTransfer() {
     return withExtensions(
-      const balances_pallet.Txs().transferAllowDeath(
+      const balances_pallet.Txs().forceTransfer(
+        source: multi_address.MultiAddress.values.id(_debugSourceAccount),
         dest: _address(AppConstants.debugTestAddress),
-        value: BigInt.from(1500000000000), // 1.5 tokens
+        value: BigInt.from(2500000000000), // 2.5 tokens
+      ),
+    );
+  }
+
+  /// A reversible transfer on the account's default window.
+  /// Headline: REVERSIBLE SEND.
+  static Uint8List reversibleTransfer() {
+    return withExtensions(
+      const reversible_pallet.Txs().scheduleTransfer(
+        dest: _address(AppConstants.debugTestAddress),
+        amount: BigInt.from(3000000000000), // 3 tokens
+      ),
+    );
+  }
+
+  /// A reversible transfer with an explicit one-off window, so the Delay row
+  /// shows a real timeframe instead of the account default.
+  static Uint8List reversibleTransferWithDelay() {
+    return withExtensions(
+      const reversible_pallet.Txs().scheduleTransferWithDelay(
+        dest: _address(AppConstants.debugTestAddress),
+        amount: BigInt.from(750000000000), // 0.75 tokens
+        delay: qp.BlockNumberOrTimestamp.values.timestamp(BigInt.from(28800000)), // 8 hours
+      ),
+    );
+  }
+
+  /// A non-native asset transfer. Headline: ASSET SEND, amount in raw units.
+  static Uint8List assetTransfer() {
+    return withExtensions(
+      const assets_pallet.Txs().transfer(
+        id: BigInt.one,
+        target: _address(AppConstants.debugTestAddress),
+        amount: BigInt.from(4200),
+      ),
+    );
+  }
+
+  /// A reversible non-native asset transfer. Headline: REVERSIBLE ASSET SEND.
+  static Uint8List reversibleAssetTransfer() {
+    return withExtensions(
+      const reversible_pallet.Txs().scheduleAssetTransfer(
+        assetId: 1,
+        dest: _address(AppConstants.debugTestAddress),
+        amount: BigInt.from(1250),
       ),
     );
   }
@@ -31,12 +102,22 @@ class DebugPayloads {
   /// A multisig approval carrying the transfer it authorises, so the review
   /// screen has a nested call to expand and an amount to lift into the hero.
   static Uint8List multisigApproveTransfer() {
-    final inner = const balances_pallet.Txs().transferAllowDeath(
-      dest: _address(AppConstants.debugTestAddress),
-      value: BigInt.from(4200000000000), // 4.2 tokens
-    );
+    final inner = _send(BigInt.from(4200000000000)); // 4.2 tokens
     return withExtensions(
       const multisig_pallet.Txs().approve(multisigAddress: _debugMultisigAccount, proposalId: 12, call: inner.encode()),
+    );
+  }
+
+  /// A new multisig proposal wrapping a transfer — same shape as the approval
+  /// but labelled `You are proposing`, with an expiry instead of a proposal id.
+  static Uint8List multisigProposeTransfer() {
+    final inner = _send(BigInt.from(900000000000)); // 0.9 tokens
+    return withExtensions(
+      const multisig_pallet.Txs().propose(
+        multisigAddress: _debugMultisigAccount,
+        call: inner.encode(),
+        expiry: 5000000,
+      ),
     );
   }
 
@@ -47,9 +128,15 @@ class DebugPayloads {
     return withExtensions(const collective_pallet.Txs().vote(poll: 7, aye: true));
   }
 
+  static RuntimeCall _send(BigInt value) =>
+      const balances_pallet.Txs().transferAllowDeath(dest: _address(AppConstants.debugTestAddress), value: value);
+
   /// Synthetic multisig account; renders as a valid ss58 address with a
   /// checkphrase without needing a real on-chain multisig.
   static final Uint8List _debugMultisigAccount = Uint8List.fromList(List.filled(32, 0xA7));
+
+  /// Synthetic force_transfer source, distinct from every other address shown.
+  static final Uint8List _debugSourceAccount = Uint8List.fromList(List.filled(32, 0xF0));
 
   static multi_address.MultiAddress _address(String ss58) =>
       multi_address.MultiAddress.values.id(ss58ToAccountId(s: ss58));

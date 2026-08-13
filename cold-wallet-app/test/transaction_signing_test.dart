@@ -121,7 +121,7 @@ void main() {
   });
 
   group('DebugPayloads (simulator scan substitutes)', () {
-    // The three debug buttons share one extension encoder, so if it drifts they
+    // The debug buttons all share one extension encoder, so if it drifts they
     // all fail with "could not read transaction" on the simulator. Only the vote
     // payload is checkable here — the others resolve addresses through the Rust
     // bridge, which unit tests do not initialise.

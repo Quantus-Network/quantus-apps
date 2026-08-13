@@ -77,35 +77,31 @@ class _ScanTransactionScreenState extends State<ScanTransactionScreen> {
     Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => SignTransactionScreen(payload: payload)));
   }
 
+  /// One button per payload in [DebugPayloads.all], so every screen the signer
+  /// can be shown is one tap away on a simulator.
   Widget _debugPayloadButtons(BuildContext context) {
     final text = context.themeText;
-
-    Widget button(String label, Uint8List Function() build) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4),
-        child: ElevatedButton(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.white24,
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            visualDensity: VisualDensity.compact,
-          ),
-          onPressed: () => _loadDebugPayload(build()),
-          child: Text(label, style: text.detail?.copyWith(color: Colors.white)),
-        ),
-      );
-    }
 
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         Text('DEBUG PAYLOADS', style: text.detail?.copyWith(color: Colors.white38, letterSpacing: 1.2)),
         const SizedBox(height: 8),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
+        Wrap(
+          alignment: WrapAlignment.center,
+          spacing: 8,
+          runSpacing: 8,
           children: [
-            button('Send', DebugPayloads.transfer),
-            button('Msig approve', DebugPayloads.multisigApproveTransfer),
-            button('Vote aye', DebugPayloads.governanceVoteAye),
+            for (final entry in DebugPayloads.all.entries)
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.white24,
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  visualDensity: VisualDensity.compact,
+                ),
+                onPressed: () => _loadDebugPayload(entry.value()),
+                child: Text(entry.key, style: text.detail?.copyWith(color: Colors.white)),
+              ),
           ],
         ),
         const SizedBox(height: 20),
