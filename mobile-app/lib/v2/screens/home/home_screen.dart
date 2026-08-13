@@ -44,8 +44,6 @@ import 'package:resonance_network_wallet/providers/currency_display_provider.dar
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/screens/send/send_providers.dart';
-import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
-import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 import 'package:resonance_network_wallet/v2/components/global_toast_listener.dart';
 import 'package:resonance_network_wallet/v2/screens/home/activity_section.dart';
 import 'package:resonance_network_wallet/v2/screens/home/backup_reminder_banner.dart';

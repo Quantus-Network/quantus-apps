@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
-import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 
 enum TextFieldVariant { primary, secondary }
 

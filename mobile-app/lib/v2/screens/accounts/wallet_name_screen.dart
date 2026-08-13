@@ -9,8 +9,6 @@ import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base_bottom_content.dart';
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/accounts_navigation.dart';
-import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
-import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 
 /// Names (or renames) a wallet. The name is optional: saving an empty field
 /// clears it and the wallet falls back to its "Wallet {n}" display name.

@@ -15,8 +15,6 @@ import 'package:resonance_network_wallet/shared/utils/print.dart';
 import 'package:resonance_network_wallet/v2/components/detail_summary_row.dart';
 import 'package:resonance_network_wallet/v2/components/multisig_expiry_value.dart';
 import 'package:resonance_network_wallet/v2/screens/send/send_strategy.dart';
-import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
-import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 
 /// Proposes a transfer from a multisig account. The multisig is a view-only
 /// account, so funds leave from [msig] while the proposing member pays the fee.

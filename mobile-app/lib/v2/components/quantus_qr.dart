@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
-import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
 
 class QuantusQr extends StatelessWidget {
   final String accountId;

@@ -17,8 +17,6 @@ import 'package:resonance_network_wallet/v2/screens/send/keystone_sign_cache.dar
 import 'package:resonance_network_wallet/v2/screens/send/keystone_signing_session.dart';
 import 'package:resonance_network_wallet/v2/screens/send/keystone_signing_widgets.dart';
 import 'package:resonance_network_wallet/v2/screens/send/keystone_verify_screen.dart';
-import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
-import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 
 /// Step 1/3 of Keystone signing: shows the unsigned transaction as an
 /// animated UR QR for the device to scan.

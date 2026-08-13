@@ -10,8 +10,6 @@ import 'package:resonance_network_wallet/shared/utils/print.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
-import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
-import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 
 class DiscoverMultisigScreen extends ConsumerStatefulWidget {
   const DiscoverMultisigScreen({super.key});

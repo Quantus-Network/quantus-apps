@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:resonance_network_wallet/v2/theme/app_theme.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
 
 extension Device on WidgetTester {
   Size get devicePixel {

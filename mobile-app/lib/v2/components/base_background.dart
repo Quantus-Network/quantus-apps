@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
 
 class BaseBackground extends StatelessWidget {
   final Widget child;

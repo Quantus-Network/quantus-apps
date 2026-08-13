@@ -8,7 +8,6 @@ import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/services/local_auth_service.dart';
 import 'package:resonance_network_wallet/v2/components/detail_summary_row.dart';
 import 'package:resonance_network_wallet/v2/screens/send/send_strategy.dart';
-import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 
 /// ZK-private transfer from an encrypted (wormhole) account. Coin selection
 /// runs during fee estimation; submission hands the plan to the proving

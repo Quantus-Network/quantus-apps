@@ -2,8 +2,6 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/v2/components/loader.dart';
-import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
-import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 
 enum ButtonVariant { transparent, primary, secondary, danger, success, outline, glass, underline }
 

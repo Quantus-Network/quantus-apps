@@ -7,8 +7,6 @@ import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/v2/components/multisig_signer_list_tile.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
-import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
-import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 
 class MultisigDetailsScreen extends ConsumerWidget {
   const MultisigDetailsScreen({super.key, required this.account});

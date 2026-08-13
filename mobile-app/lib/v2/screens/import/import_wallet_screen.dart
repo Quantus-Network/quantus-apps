@@ -17,8 +17,6 @@ import 'package:resonance_network_wallet/v2/components/scaffold_base_bottom_cont
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/wallet_name_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/home/home_screen.dart';
-import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
-import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 
 class ImportWalletScreenV2 extends ConsumerStatefulWidget {
   const ImportWalletScreenV2({super.key, this.walletIndex = 0, this.openAccountsOnComplete = false});

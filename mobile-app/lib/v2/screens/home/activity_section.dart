@@ -14,8 +14,6 @@ import 'package:resonance_network_wallet/shared/constants/e2e_keys.dart';
 import 'package:resonance_network_wallet/v2/screens/activity/activity_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/activity/transaction_detail_sheet.dart';
 import 'package:resonance_network_wallet/v2/screens/activity/tx_item.dart';
-import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
-import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 
 class ActivitySection extends ConsumerStatefulWidget {
   final AsyncValue<CombinedTransactionsList> txAsync;

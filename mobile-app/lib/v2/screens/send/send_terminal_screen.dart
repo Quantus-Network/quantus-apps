@@ -11,8 +11,6 @@ import 'package:resonance_network_wallet/v2/components/scaffold_base_bottom_cont
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
 import 'package:resonance_network_wallet/v2/screens/home/home_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/send/send_strategy.dart';
-import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
-import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 
 /// Shared success screen for both regular sends and multisig proposals,
 /// configured entirely by [SendTerminalContent].

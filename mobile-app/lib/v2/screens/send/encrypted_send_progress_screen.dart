@@ -15,8 +15,6 @@ import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
 import 'package:resonance_network_wallet/v2/components/wormhole_progress_steps.dart';
 import 'package:resonance_network_wallet/v2/screens/send/send_strategy.dart';
 import 'package:resonance_network_wallet/v2/screens/send/send_terminal_screen.dart';
-import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
-import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 
 /// Renders an encrypted send driven by [encryptedSendControllerProvider]: the
 /// controller owns the operation (revalidation, proving, submission, cancel);

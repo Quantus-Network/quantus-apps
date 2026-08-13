@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:collection/collection.dart';
-import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
-import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
 
 class SegmentedControls<T> extends StatelessWidget {
   final List<SegmentedControlItem<T>> items;

@@ -2,7 +2,7 @@ import 'package:flash/flash.dart';
 import 'package:flash/flash_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:resonance_network_wallet/v2/components/toaster.dart';
-import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
 
 Future<void> showToaster(
   BuildContext context, {

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:resonance_network_wallet/features/components/network_status_banner.dart';
 import 'package:resonance_network_wallet/v2/components/base_background.dart';
-import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
 
 class ScaffoldBase extends StatelessWidget {
   final Widget? mainContent;

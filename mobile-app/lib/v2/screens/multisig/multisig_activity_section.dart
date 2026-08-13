@@ -19,8 +19,6 @@ import 'package:resonance_network_wallet/v2/screens/activity/transaction_detail_
 import 'package:resonance_network_wallet/v2/screens/activity/tx_item.dart';
 import 'package:resonance_network_wallet/v2/screens/multisig/multisig_proposal_detail_sheet.dart';
 import 'package:resonance_network_wallet/v2/screens/multisig/proposal_row.dart';
-import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
-import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 
 /// Home section for a multisig account: open proposals pinned on top, followed
 /// by a unified activity feed (past proposals + transfers) below.

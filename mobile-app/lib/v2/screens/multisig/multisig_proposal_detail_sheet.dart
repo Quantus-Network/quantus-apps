@@ -26,8 +26,6 @@ import 'package:resonance_network_wallet/v2/screens/multisig/multisig_approve_co
 import 'package:resonance_network_wallet/v2/screens/multisig/multisig_cancel_confirm_sheet.dart';
 import 'package:resonance_network_wallet/v2/screens/multisig/multisig_execute_confirm_sheet.dart';
 import 'package:resonance_network_wallet/v2/screens/multisig/multisig_signer_picker_sheet.dart';
-import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
-import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 
 /// Shows proposal detail with approve or execute actions for eligible signers.
 void showMultisigProposalDetailSheet(

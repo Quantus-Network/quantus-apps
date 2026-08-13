@@ -7,8 +7,6 @@ import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base_bottom_content.dart';
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
 import 'package:resonance_network_wallet/v2/screens/send/keystone_signing_widgets.dart';
-import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
-import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 /// Shown when the Keystone screen does not match what the app asked it to

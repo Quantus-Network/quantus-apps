@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/generated/version.g.dart';
 import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
@@ -17,7 +18,6 @@ import 'package:resonance_network_wallet/v2/screens/settings/settings_divider.da
 import 'package:resonance_network_wallet/v2/screens/settings/settings_tappable_row.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/mining_rewards_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/wallet_settings_screen.dart';
-import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 
 class SettingsScreenV2 extends ConsumerStatefulWidget {
   const SettingsScreenV2({super.key});

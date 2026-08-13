@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 
 /// A skeleton widget with shimmer animation for loading states
 class Skeleton extends StatefulWidget {

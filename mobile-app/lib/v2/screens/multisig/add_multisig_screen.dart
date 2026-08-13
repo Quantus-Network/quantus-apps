@@ -20,8 +20,6 @@ import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
 import 'package:resonance_network_wallet/services/local_auth_service.dart';
 import 'package:resonance_network_wallet/services/multisig_submission_service.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/accounts_navigation.dart';
-import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
-import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 
 class AddMultisigScreen extends ConsumerStatefulWidget {
   const AddMultisigScreen({super.key});

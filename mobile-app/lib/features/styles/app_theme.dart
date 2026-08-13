@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
-import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
-import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
-import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
+
 
 class AppTheme {
   static ThemeData lightTheme(BuildContext context) {

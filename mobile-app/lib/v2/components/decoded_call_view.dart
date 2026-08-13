@@ -3,8 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/currency_display_provider.dart';
 import 'package:resonance_network_wallet/v2/components/detail_summary_row.dart';
-import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
-import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 
 /// Renders every parameter of a [DecodedCall], nested calls included.
 ///

@@ -13,8 +13,6 @@ import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/refund_address_picker_sheet.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/review_quote_sheet.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/token_picker_sheet.dart';
-import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
-import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 
 class SwapScreen extends ConsumerStatefulWidget {
   const SwapScreen({super.key});

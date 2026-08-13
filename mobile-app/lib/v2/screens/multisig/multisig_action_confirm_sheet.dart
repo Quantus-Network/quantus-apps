@@ -18,8 +18,6 @@ import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/screens/send/keystone_sign_cache.dart';
 import 'package:resonance_network_wallet/v2/screens/send/keystone_sign_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/send/keystone_signing_session.dart';
-import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
-import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 
 /// Estimates the network fee for the action being confirmed.
 ///

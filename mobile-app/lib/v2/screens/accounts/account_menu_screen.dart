@@ -19,8 +19,6 @@ import 'package:resonance_network_wallet/v2/screens/accounts/account_details_scr
 import 'package:resonance_network_wallet/v2/screens/accounts/accounts_navigation.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/edit_account_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/recovery_phrase_confirmation_screen.dart';
-import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
-import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 
 class AccountMenuScreen extends ConsumerWidget {
   final Account initialAccount;
