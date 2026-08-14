@@ -235,7 +235,7 @@ jobs:
       - name: Package Linux App
         run: |
           cd miner-app/build/linux/x64/release/bundle/
-          tar -czvf quantus_miner_linux.tar.gz *
+          tar -czvf quantus_miner_linux.tar.gz -- *
 
       - name: Upload Linux Artifact
         uses: actions/upload-artifact@v4
