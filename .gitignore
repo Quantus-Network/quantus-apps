@@ -132,7 +132,6 @@ app.*.symbols
 /mobile-app/android/.idea
 mobile-app/.env
 mobile-app/.env.test
-/rust-transaction-parser/target
 /.cursor
 mobile-app/android/app/google-services.json
 mobile-app/patrol_test/test_bundle.dart
