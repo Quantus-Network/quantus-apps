@@ -1944,7 +1944,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get redeemConfirmFee => 'Fee';
 
   @override
-  String get redeemFeeValue => '0.1% volume fee';
+  String redeemFeeValue(String rate) {
+    return '$rate% volume fee';
+  }
 
   @override
   String get redeemProgressTitle => 'Redeeming...';

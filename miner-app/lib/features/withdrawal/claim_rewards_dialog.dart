@@ -307,7 +307,7 @@ class _ClaimRewardsDialogState extends State<_ClaimRewardsDialog> {
           const SizedBox(height: 12),
           _confirmRow('Destination', _addressController.text.trim(), mono: true),
           const SizedBox(height: 12),
-          _confirmRow('Fee', '0.1% volume fee'),
+          _confirmRow('Fee', '${wormholeVolumeFeePercentText()}% volume fee'),
           const SizedBox(height: 24),
           Container(
             padding: const EdgeInsets.all(12),
