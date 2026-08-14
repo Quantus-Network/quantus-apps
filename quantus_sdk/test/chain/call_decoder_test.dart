@@ -37,6 +37,30 @@ final oneToken = BigInt.from(1000000000000);
 /// runs against the same path a signer takes: bytes in, display tree out.
 DecodedCall roundTrip(RuntimeCall call) => CallDecoder.decodeBytes(call.encode());
 
+RuntimeCall nestedMainIfElse(int depth) {
+  RuntimeCall call = const system_pallet.Txs().remark(remark: <int>[]);
+  final fallback = const system_pallet.Txs().remark(remark: <int>[]);
+  for (var i = 0; i < depth; i++) {
+    call = const utility_pallet.Txs().ifElse(main: call, fallback: fallback);
+  }
+  return call;
+}
+
+RuntimeCall multisigWrapping(int depth) =>
+    const multisig_pallet.Txs().propose(multisigAddress: aliceId, call: nestedMainIfElse(depth).encode(), expiry: 10);
+
+RuntimeCall recoveryWrapping(int depth) =>
+    const recovery_pallet.Txs().asRecovered(account: dest(aliceId), call: nestedMainIfElse(depth));
+
+RuntimeCall preimageWrapping(int depth) =>
+    const preimage_pallet.Txs().notePreimage(bytes: nestedMainIfElse(depth).encode());
+
+RuntimeCall referendaWrapping(int depth) => const referenda_pallet.Txs().submit(
+  proposalOrigin: origin_caller.OriginCaller.values.system(raw_origin.RawOrigin.values.root()),
+  proposal: bounded.Bounded.values.inline(nestedMainIfElse(depth).encode()),
+  enactmentMoment: dispatch_time.DispatchTime.values.after(100),
+);
+
 ValueField valueField(DecodedCall call, String label) =>
     call.fields.whereType<ValueField>().firstWhere((f) => f.label == label);
 
@@ -45,6 +69,19 @@ AmountField amountField(DecodedCall call, String label) =>
 
 NestedCallField nestedField(DecodedCall call, String label) =>
     call.fields.whereType<NestedCallField>().firstWhere((f) => f.label == label);
+
+void expectNestingRejected(RuntimeCall call) {
+  expect(
+    () => roundTrip(call),
+    throwsA(
+      isA<CallNestingLimitException>().having(
+        (error) => error.message,
+        'message',
+        allOf(contains('Cannot parse transaction'), contains('NESTING_DEPTH_LIMIT (2)')),
+      ),
+    ),
+  );
+}
 
 void main() {
   group('transfers', () {
@@ -259,6 +296,90 @@ void main() {
   });
 
   group('nested and batched calls', () {
+    test('allows top-level calls and two nested if_else levels', () {
+      for (final depth in [0, 1, 2]) {
+        final decoded = roundTrip(nestedMainIfElse(depth));
+        expect(decoded.call, depth == 0 ? 'remark' : 'if_else');
+      }
+    });
+
+    test('rejects three or more nested if_else levels', () {
+      for (final depth in [3, 4, 42]) {
+        expectNestingRejected(nestedMainIfElse(depth));
+      }
+    });
+
+    test('rejects nesting on the fallback branch as well as the main branch', () {
+      final call = const utility_pallet.Txs().ifElse(
+        main: const system_pallet.Txs().remark(remark: <int>[]),
+        fallback: const utility_pallet.Txs().ifElse(
+          main: const utility_pallet.Txs().ifElse(
+            main: const utility_pallet.Txs().ifElse(
+              main: const system_pallet.Txs().remark(remark: <int>[]),
+              fallback: const system_pallet.Txs().remark(remark: <int>[]),
+            ),
+            fallback: const system_pallet.Txs().remark(remark: <int>[]),
+          ),
+          fallback: const system_pallet.Txs().remark(remark: <int>[]),
+        ),
+      );
+      expectNestingRejected(call);
+    });
+
+    test('applies the limit to utility batches', () {
+      final allowed = const utility_pallet.Txs().batch(
+        calls: [
+          const utility_pallet.Txs().ifElse(
+            main: const system_pallet.Txs().remark(remark: <int>[]),
+            fallback: const system_pallet.Txs().remark(remark: <int>[]),
+          ),
+        ],
+      );
+      roundTrip(allowed);
+
+      final rejected = const utility_pallet.Txs().batch(
+        calls: [
+          const utility_pallet.Txs().ifElse(
+            main: const utility_pallet.Txs().ifElse(
+              main: const utility_pallet.Txs().ifElse(
+                main: const system_pallet.Txs().remark(remark: <int>[]),
+                fallback: const system_pallet.Txs().remark(remark: <int>[]),
+              ),
+              fallback: const system_pallet.Txs().remark(remark: <int>[]),
+            ),
+            fallback: const system_pallet.Txs().remark(remark: <int>[]),
+          ),
+        ],
+      );
+      expectNestingRejected(rejected);
+    });
+
+    test('propagates the limit through multisig proposal bytes', () {
+      roundTrip(multisigWrapping(1));
+      expectNestingRejected(multisigWrapping(2));
+    });
+
+    test('propagates the limit through recovery-wrapped calls', () {
+      roundTrip(recoveryWrapping(1));
+      expectNestingRejected(recoveryWrapping(2));
+    });
+
+    test('propagates the limit through inline referendum proposals', () {
+      roundTrip(referendaWrapping(1));
+      expectNestingRejected(referendaWrapping(2));
+    });
+
+    test('does not hide the limit inside decodable preimages', () {
+      roundTrip(preimageWrapping(1));
+      expectNestingRejected(preimageWrapping(2));
+    });
+
+    test('the fixed report payload is rejected before expensive traversal', () {
+      final call = nestedMainIfElse(42);
+      expect(call.encode(), hasLength(213));
+      expectNestingRejected(call);
+    });
+
     test('utility.batch_all expands every inner call', () {
       final decoded = roundTrip(
         const utility_pallet.Txs().batchAll(

@@ -162,6 +162,18 @@ class _MultisigActionConfirmSheetState extends ConsumerState<MultisigActionConfi
       try {
         final bytes = await loader(ref);
         if (!mounted) return;
+        try {
+          CallDecoder.decodeBytes(bytes);
+        } catch (e, st) {
+          quantusPrint('${widget.logPrefix} proposal call cannot be parsed: $e $st');
+          setState(() {
+            _callBytes = bytes;
+            _loadingCallBytes = false;
+            _callBytesFailed = true;
+            _loadingFee = false;
+          });
+          return;
+        }
         setState(() {
           _callBytes = bytes;
           _loadingCallBytes = false;
@@ -189,6 +201,7 @@ class _MultisigActionConfirmSheetState extends ConsumerState<MultisigActionConfi
         return CallDecoder.decodeBytes(bytes);
       } catch (e) {
         quantusPrint('${widget.logPrefix} could not decode stored proposal call: $e');
+        return null;
       }
     }
     return widget.proposal.decodedCall;
