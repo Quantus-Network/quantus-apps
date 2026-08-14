@@ -244,6 +244,12 @@ abstract class SendStrategy {
     required SendFee fee,
   });
 
+  /// Called while the user is on the review screen (and periodically until it
+  /// closes). Strategies that hand off to hardware signing warm the Keystone
+  /// sign cache here so the QR screen renders instantly. No-op for flows that
+  /// sign locally. Uses `ref.read`.
+  Future<void> prefetchSignPayload(WidgetRef ref, {required String recipientAddress, required BigInt amount}) async {}
+
   /// Authenticates and submits. Uses `ref.read`. Never navigates.
   Future<SendOutcome> submit(
     WidgetRef ref, {

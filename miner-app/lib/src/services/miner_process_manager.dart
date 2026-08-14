@@ -15,6 +15,13 @@ class ExternalMinerConfig {
   /// Address and port of the node's QUIC endpoint (e.g., "127.0.0.1:9833").
   final String nodeAddress;
 
+  /// Path to the node's miner auth token file (shared secret, required by the node).
+  final String authTokenFile;
+
+  /// SHA-256 fingerprint of the node's miner TLS certificate (64 hex chars),
+  /// parsed from the node's startup logs.
+  final String tlsCertSha256;
+
   /// Number of CPU worker threads.
   final int cpuWorkers;
 
@@ -27,6 +34,8 @@ class ExternalMinerConfig {
   ExternalMinerConfig({
     required this.binary,
     required this.nodeAddress,
+    required this.authTokenFile,
+    required this.tlsCertSha256,
     this.cpuWorkers = 8,
     this.gpuDevices = 0,
     this.metricsPort = 9900,
@@ -122,6 +131,10 @@ class MinerProcessManager extends BaseProcessManager {
       'serve', // Subcommand required by new miner CLI
       '--node-addr',
       config.nodeAddress,
+      '--auth-token-file',
+      config.authTokenFile,
+      '--tls-cert-sha256',
+      config.tlsCertSha256,
       '--cpu-workers',
       config.cpuWorkers.toString(),
       '--gpu-devices',

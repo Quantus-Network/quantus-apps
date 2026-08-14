@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
@@ -26,6 +28,19 @@ Future<void> startSendFlow(BuildContext context, {required Widget screen}) async
     return;
   }
   container.read(keystoneSignCacheProvider.notifier).startNewSendSession();
+  // Warm the runtime-version cache (5 min TTL) so payload builds later in the
+  // flow skip that round trip.
+  unawaited(
+    container
+        .read(substrateServiceProvider)
+        .getRuntimeVersion()
+        .then<void>(
+          (_) {},
+          onError: (Object e) {
+            quantusPrint('Runtime version prefetch failed: $e');
+          },
+        ),
+  );
   sendFlow.state = true;
   try {
     await Navigator.push(context, MaterialPageRoute<void>(builder: (_) => screen));

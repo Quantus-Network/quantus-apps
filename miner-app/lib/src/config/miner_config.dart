@@ -40,6 +40,10 @@ class MinerConfig {
   /// Number of consecutive metrics failures before resetting hashrate to zero
   static const int maxConsecutiveMetricsFailures = 5;
 
+  /// Time to wait for the node to write its miner auth token file and log the
+  /// miner TLS cert fingerprint before giving up on starting the miner
+  static const Duration minerAuthReadyTimeout = Duration(seconds: 30);
+
   /// Delay after killing a process before checking if port is free
   static const Duration portCleanupDelay = Duration(seconds: 1);
 
@@ -81,6 +85,11 @@ class MinerConfig {
   /// Emitted by the node from `service.rs` on both local and external mining paths
   /// (e.g. "🥇 Successfully mined and submitted a new block ...").
   static const String blockSubmittedLogMarker = 'Successfully mined and submitted a new block';
+
+  /// Prefix of the node log line that publishes the miner TLS cert fingerprint
+  /// (e.g. "⛏️ Miner TLS cert SHA-256: <64 hex chars>"). The miner must pin
+  /// this fingerprint to connect.
+  static const String minerTlsFingerprintLogMarker = 'Miner TLS cert SHA-256';
 
   // ============================================================
   // Hardware Detection

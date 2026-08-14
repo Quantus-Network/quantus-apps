@@ -6,7 +6,9 @@
 import '../frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-// These functions are ignored because they are not marked as `pub`: `all_required_files_exist`, `vec_to_32`, `vec_to_digest`
+// These functions are ignored because they are not marked as `pub`: `all_required_files_exist`, `cleanup_stale_circuit_dirs`, `vec_to_32`, `vec_to_digest`, `versioned_bins_dir`
+
+String zkCircuitsVersion() => RustLib.instance.api.crateApiWormholeZkCircuitsVersion();
 
 String computeAddressHashHex({required List<int> rawAddress}) =>
     RustLib.instance.api.crateApiWormholeComputeAddressHashHex(rawAddress: rawAddress);

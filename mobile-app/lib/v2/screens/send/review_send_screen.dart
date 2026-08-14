@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:resonance_network_wallet/l10n/app_localizations.dart';
@@ -45,6 +47,31 @@ class ReviewSendScreen extends ConsumerStatefulWidget {
 class _ReviewSendScreenState extends ConsumerState<ReviewSendScreen> {
   bool _submitting = false;
   String? _errorMessage;
+  Timer? _prefetchTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    // Warm hardware-signing payloads while the user reviews, and keep them
+    // warm: a cache hit is a no-op, so the periodic tick only refetches once
+    // the mortal-era window has expired the cached entry.
+    _prefetchSignPayload();
+    _prefetchTimer = Timer.periodic(const Duration(seconds: 30), (_) => _prefetchSignPayload());
+  }
+
+  @override
+  void dispose() {
+    _prefetchTimer?.cancel();
+    super.dispose();
+  }
+
+  void _prefetchSignPayload() {
+    unawaited(
+      widget.strategy
+          .prefetchSignPayload(ref, recipientAddress: widget.recipientAddress.trim(), amount: widget.amount)
+          .catchError((Object e) => quantusPrint('Keystone payload prefetch failed: $e')),
+    );
+  }
 
   Future<void> _toggleFlip() async {
     await ref.read(isCurrencyFlippedProvider.notifier).toggle();

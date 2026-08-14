@@ -1117,6 +1117,10 @@ class AppLocalizationsId extends AppLocalizations {
   String get keystoneScanError => 'Tidak dapat membaca tanda tangan. Silakan coba lagi.';
 
   @override
+  String get keystoneScanExpired =>
+      'Transaksi kedaluwarsa sebelum sempat dikirim. Kembali dan pindai kode QR baru dengan perangkat Anda.';
+
+  @override
   String get keystoneRejectTitle => 'Don\'t approve this transaction';
 
   @override

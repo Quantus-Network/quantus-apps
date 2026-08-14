@@ -2078,6 +2078,12 @@ abstract class AppLocalizations {
   /// **'Couldn\'t read the signature. Please try again.'**
   String get keystoneScanError;
 
+  /// Error when the mortal era window closed before the signed transaction was submitted
+  ///
+  /// In en, this message translates to:
+  /// **'The transaction expired before it could be submitted. Go back and scan the new QR code with your device.'**
+  String get keystoneScanExpired;
+
   /// Headline on the Keystone mismatch help screen
   ///
   /// In en, this message translates to:

@@ -53,6 +53,10 @@ class AppConstants {
   /// Average Quantus block time in seconds (~12s). Used for mortal-era TTL and block↔time estimates.
   static const int avgBlockTimeSeconds = 12;
 
+  /// Mortal era length for signed transactions, in blocks. Must be a power of
+  /// two (the era encoding rounds up); 16 blocks ≈ 3.2 minutes at 12s blocks.
+  static const int txMortalEraPeriodBlocks = 16;
+
   // Digits of precision
   static const int decimals = 12;
   static const int ss58prefix = 189;

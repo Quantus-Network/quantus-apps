@@ -121,6 +121,12 @@ class MiningOrchestrator {
   Timer? _prometheusTimer;
   int _actualMetricsPort = MinerConfig.defaultMinerMetricsPort;
 
+  // TLS cert fingerprint of the node's miner server, captured from node logs.
+  // The node regenerates the cert on temp storage (dev mode), so the log line
+  // is the only reliable source across all chains and platforms.
+  static final _tlsFingerprintPattern = RegExp('${MinerConfig.minerTlsFingerprintLogMarker}: ([0-9a-fA-F]{64})');
+  String? _minerTlsCertSha256;
+
   // Hashrate tracking for resilience
   double _lastValidHashrate = 0.0;
   int _consecutiveMetricsFailures = 0;
@@ -223,6 +229,7 @@ class MiningOrchestrator {
 
       // Perform pre-start cleanup
       _setState(MiningState.startingNode);
+      _minerTlsCertSha256 = null;
       await ProcessCleanupService.performPreStartCleanup(config.chainId);
 
       // Ensure ports are available
@@ -312,10 +319,15 @@ class MiningOrchestrator {
     try {
       _setState(MiningState.startingMiner);
 
+      final authTokenFile = File(await NodeProcessManager.minerAuthTokenPath());
+      final tlsCertSha256 = await _waitForMinerAuth(authTokenFile);
+
       await _minerManager.start(
         ExternalMinerConfig(
           binary: config.minerBinary,
           nodeAddress: '${MinerConfig.localhost}:${config.minerListenPort}',
+          authTokenFile: authTokenFile.path,
+          tlsCertSha256: tlsCertSha256,
           cpuWorkers: config.cpuWorkers,
           gpuDevices: config.gpuDevices,
           metricsPort: _actualMetricsPort,
@@ -448,8 +460,13 @@ class MiningOrchestrator {
   }
 
   void _subscribeToProcessEvents() {
-    // Forward node logs
+    // Forward node logs, capturing the miner TLS cert fingerprint on the way
     _nodeLogsSubscription = _nodeManager.logs.listen((entry) {
+      final match = _tlsFingerprintPattern.firstMatch(entry.message);
+      if (match != null) {
+        _minerTlsCertSha256 = match.group(1);
+        _log.i('Captured miner TLS cert fingerprint from node logs');
+      }
       _logsController.add(entry);
     });
 
@@ -483,6 +500,27 @@ class MiningOrchestrator {
       _minerApiClient.onMetricsUpdate = _handleMinerMetrics;
       _minerApiClient.onError = _handleMinerMetricsError;
     }
+  }
+
+  /// Wait until the node has written its miner auth token file and logged the
+  /// miner TLS cert fingerprint. Both are required to start the miner.
+  Future<String> _waitForMinerAuth(File authTokenFile) async {
+    final deadline = DateTime.now().add(MinerConfig.minerAuthReadyTimeout);
+    while (DateTime.now().isBefore(deadline)) {
+      final fingerprint = _minerTlsCertSha256;
+      if (fingerprint != null && await authTokenFile.exists()) {
+        return fingerprint;
+      }
+      await Future.delayed(const Duration(milliseconds: 250));
+    }
+
+    final missing = [
+      if (_minerTlsCertSha256 == null) 'TLS cert fingerprint not seen in node logs',
+      if (!await authTokenFile.exists()) 'auth token file missing: ${authTokenFile.path}',
+    ].join('; ');
+    final error = MinerError.minerStartupFailed('Node did not publish miner auth credentials ($missing)');
+    _errorController.add(error);
+    throw Exception(error.message);
   }
 
   Future<void> _waitForNodeRpc() async {

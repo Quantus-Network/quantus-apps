@@ -1,22 +1,110 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:quantus_cold_wallet/components/address_with_checkphrase.dart';
 import 'package:quantus_cold_wallet/components/detail_row.dart';
 import 'package:quantus_cold_wallet/theme/app_colors.dart';
 import 'package:quantus_cold_wallet/theme/app_text_styles.dart';
 
-/// Resolves human checkphrases for every address on screen, not just a
-/// destination — an approval or a governance call can name several accounts, and
-/// each one needs to be verifiable by eye.
-final _checkphraseProvider = FutureProvider.family<String, String>((ref, address) async {
-  return (await HumanReadableChecksumService().getHumanReadableName(address)) ?? '';
-});
+/// True when [summary] already puts this exact field on screen, so listing it
+/// again would only add noise. Matches by identity, never by label or value, so
+/// a renamed field — or a different field that merely carries an equal value —
+/// can never be silently dropped.
+bool coveredBySummary(CallField field, TransferSummary summary) {
+  if (identical(field, summary.amountField)) return true;
+  // With no plain recipient there is no To row, so the field must be listed.
+  return summary.recipient != null && identical(field, summary.recipientField);
+}
 
-/// Renders every parameter of a decoded call, recursing into nested calls.
+/// The transfer a call performs, or null when it dispatches another call.
 ///
-/// This is the whole point of the signing screen: nothing is summarised away and
-/// nothing is hidden behind a "details" tap. If a field is in the bytes being
-/// signed, it is on this screen.
+/// A wrapper (multisig approve, batch, `as_derivative`) inherits the summary of
+/// the call it carries; the amount belongs on that inner call, where the nested
+/// box shows it, not on the wrapper.
+TransferSummary? heroSummary(DecodedCall call) => call.isWrapper ? null : call.summary;
+
+/// `4200 raw units of asset 1` — asset amounts stay in the payload's own raw
+/// units, and say so: decimals are per-asset chain state an air-gapped signer
+/// cannot resolve, so this integer must never read as a human asset quantity.
+String assetAmountText(BigInt amount, int assetId) => '$amount raw units of asset $assetId';
+
+/// The amount, recipient, and every parameter the two of them do not already
+/// cover — the body shared by the top-level review and each nested call box.
+List<Widget> callSummaryBody(DecodedCall call, {int depth = 0}) {
+  final summary = heroSummary(call);
+  final recipient = summary?.recipient;
+
+  return [
+    if (summary != null) TransferAmount(summary: summary, large: depth == 0),
+    if (recipient != null) AddressWithCheckphrase(label: 'To', address: recipient),
+    for (final field in call.fields)
+      if (summary == null || !coveredBySummary(field, summary)) CallFieldView(field: field, depth: depth),
+  ];
+}
+
+/// The amount being moved, in the largest type on the screen.
+class TransferAmount extends StatelessWidget {
+  final TransferSummary summary;
+
+  /// Top-level calls get the hero treatment; nested ones step down a size.
+  final bool large;
+
+  const TransferAmount({super.key, required this.summary, this.large = true});
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    final text = context.themeText;
+
+    if (summary.assetId != null) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        child: Text(
+          assetAmountText(summary.amount, summary.assetId!),
+          style: text.mediumTitle?.copyWith(color: colors.textPrimary),
+        ),
+      );
+    }
+
+    final amount = NumberFormattingService().formatAmount(summary.amount);
+    final style = large ? text.transactionDetailAmountPrimary : text.conversionAmountPrimary;
+    final symbolStyle = large ? text.transactionDetailAmountSymbol : text.conversionAmountPrimary;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        alignment: Alignment.centerLeft,
+        child: RichText(
+          text: TextSpan(
+            children: [
+              TextSpan(
+                text: amount,
+                style: style?.copyWith(color: colors.textPrimary),
+              ),
+              TextSpan(
+                text: ' ${AppConstants.tokenSymbol}',
+                style: symbolStyle?.copyWith(color: colors.textSecondary),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// A decoded call rendered the way a signer reads it: what it does, how much,
+/// to whom — then every remaining parameter, nested calls included.
+///
+/// The summary is a lead, never a replacement: any field it does not already
+/// show is listed underneath, so if a byte is being signed it is on this screen.
+///
+/// The heading is [DecodedCall.actionTitle] — an INTENTIONALLY opinionated
+/// summary (`SEND`, `REVERSIBLE SEND`, `ASSET SEND`) at every depth, never
+/// runtime naming. Do not add a `pallet · call` line here: that identity is
+/// deliberately kept to one place, [DecodedCall.displayTitleChain] on the
+/// signing screen's Advanced list.
 class CallDetailView extends StatelessWidget {
   final DecodedCall call;
 
@@ -34,23 +122,20 @@ class CallDetailView extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
-          call.displayTitle,
-          style: text.transactionDetailRowValue?.copyWith(
-            color: depth == 0 ? colors.textPrimary : colors.checksum,
-            fontWeight: FontWeight.w600,
-          ),
+          call.actionTitle,
+          style: text.smallTitle?.copyWith(color: depth == 0 ? colors.textPrimary : colors.checksum),
         ),
-        for (final field in call.fields) _CallFieldView(field: field, depth: depth),
+        ...callSummaryBody(call, depth: depth),
       ],
     );
   }
 }
 
-class _CallFieldView extends ConsumerWidget {
+class CallFieldView extends ConsumerWidget {
   final CallField field;
   final int depth;
 
-  const _CallFieldView({required this.field, required this.depth});
+  const CallFieldView({super.key, required this.field, this.depth = 0});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -60,7 +145,7 @@ class _CallFieldView extends ConsumerWidget {
     switch (field) {
       case ValueField(:final label, :final value, :final kind, :final note):
         if (kind == ValueKind.address) {
-          return _AddressField(label: label, address: value, note: note);
+          return AddressWithCheckphrase(label: label, address: value, note: note);
         }
         return DetailRow(
           label: label,
@@ -74,7 +159,7 @@ class _CallFieldView extends ConsumerWidget {
           label: label,
           value: assetId == null
               ? '${NumberFormattingService().formatAmount(token)} ${AppConstants.tokenSymbol}'
-              : '$token raw units of asset #$assetId',
+              : assetAmountText(token, assetId),
           note: assetId == null
               ? note
               : [
@@ -94,7 +179,7 @@ class _CallFieldView extends ConsumerWidget {
                 padding: const EdgeInsets.only(left: 12),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [for (final item in items) _CallFieldView(field: item, depth: depth)],
+                  children: [for (final item in items) CallFieldView(field: item, depth: depth)],
                 ),
               ),
             ],
@@ -126,34 +211,5 @@ class _CallFieldView extends ConsumerWidget {
           ),
         );
     }
-  }
-}
-
-/// An address plus its checkphrase, so the signer can verify it out loud rather
-/// than character by character.
-class _AddressField extends ConsumerWidget {
-  final String label;
-  final String address;
-  final String? note;
-
-  const _AddressField({required this.label, required this.address, this.note});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final colors = context.colors;
-    final checkphrase = ref.watch(_checkphraseProvider(address));
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        DetailRow(label: label, value: address, monospace: true, note: note),
-        checkphrase.maybeWhen(
-          data: (phrase) => phrase.isEmpty
-              ? const SizedBox.shrink()
-              : DetailRow(label: '$label checkphrase', value: phrase, valueColor: colors.checksum),
-          orElse: () => const SizedBox.shrink(),
-        ),
-      ],
-    );
   }
 }

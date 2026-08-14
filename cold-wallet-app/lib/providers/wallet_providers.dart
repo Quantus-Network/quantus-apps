@@ -1,3 +1,4 @@
+import 'package:cryptography/cryptography.dart' show SecretBoxAuthenticationError;
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
@@ -5,6 +6,12 @@ import 'package:quantus_cold_wallet/services/cold_auth_service.dart';
 import 'package:quantus_cold_wallet/services/vault_service.dart';
 
 enum WalletStatus { initializing, needsSetup, locked, unlocked }
+
+/// Outcome of a password rotation. The vault write is the commit point:
+/// [changed] and [changedBiometricDisabled] both mean the new password is in
+/// effect; the latter means the biometric unlock key could not be re-stored
+/// and biometric unlock was turned off.
+enum PasswordChangeResult { wrongPassword, changed, changedBiometricDisabled }
 
 @immutable
 class WalletState {
@@ -59,6 +66,9 @@ class WalletController extends Notifier<WalletState> {
     if (enableBiometric) {
       final result = await _vault.unlockWithPassword(password);
       await _vault.storeBiometricKey(result.keyBytes);
+    } else {
+      // A biometric key left over from an earlier vault must not survive.
+      await _vault.disableBiometric();
     }
     state = WalletState(status: WalletStatus.unlocked, mnemonic: mnemonic, biometricEnabled: enableBiometric);
   }
@@ -81,9 +91,50 @@ class WalletController extends Notifier<WalletState> {
       final mnemonic = await _vault.unlockWithBiometricKey();
       state = state.copyWith(status: WalletStatus.unlocked, mnemonic: mnemonic);
       return true;
+    } on SecretBoxAuthenticationError {
+      // The vault removed a key that belonged to a previous vault; stop
+      // offering biometric unlock and let the user fall back to the password.
+      debugPrint('Biometric unlock failed with a stale key; biometric unlock disabled');
+      state = state.copyWith(biometricEnabled: false);
+      return false;
     } catch (e) {
       debugPrint('Biometric unlock failed: $e');
       return false;
+    }
+  }
+
+  /// Verifies [currentPassword] against the vault, then re-encrypts the
+  /// mnemonic under [newPassword]. The vault write is the commit point: any
+  /// failure before it rethrows with the old password and the old biometric
+  /// key both untouched, while a biometric re-store failure after it keeps
+  /// the committed change and reports biometric unlock as disabled.
+  Future<PasswordChangeResult> changePassword({required String currentPassword, required String newPassword}) async {
+    final UnlockResult result;
+    try {
+      result = await _vault.unlockWithPassword(currentPassword);
+    } on SecretBoxAuthenticationError {
+      debugPrint('Change password: current password rejected');
+      return PasswordChangeResult.wrongPassword;
+    }
+    final biometric = await _vault.isBiometricEnabled();
+    await _vault.createVault(mnemonic: result.mnemonic, password: newPassword);
+    if (!biometric) return PasswordChangeResult.changed;
+    try {
+      final fresh = await _vault.unlockWithPassword(newPassword);
+      await _vault.storeBiometricKey(fresh.keyBytes);
+      return PasswordChangeResult.changed;
+    } catch (e, st) {
+      debugPrint('Change password: biometric key re-store failed, biometric unlock disabled: $e\n$st');
+      try {
+        // The stored key still belongs to the old vault and can no longer
+        // decrypt anything; leaving it would offer a biometric unlock that
+        // always fails.
+        await _vault.disableBiometric();
+      } catch (e2, st2) {
+        debugPrint('Change password: stale biometric key could not be removed: $e2\n$st2');
+      }
+      state = state.copyWith(biometricEnabled: false);
+      return PasswordChangeResult.changedBiometricDisabled;
     }
   }
 
@@ -111,9 +162,15 @@ final keypairProvider = Provider<Keypair?>((ref) {
 
 final addressProvider = Provider<String?>((ref) => ref.watch(keypairProvider)?.ss58Address);
 
+/// Resolves human checkphrases for every address on screen, not just the
+/// wallet's own — an approval or a governance call can name several accounts,
+/// and each one needs to be verifiable by eye.
+final addressCheckphraseProvider = FutureProvider.family<String, String>((ref, address) async {
+  return (await HumanReadableChecksumService().getHumanReadableName(address)) ?? '';
+});
+
 final checkphraseProvider = FutureProvider<String>((ref) async {
   final address = ref.watch(addressProvider);
   if (address == null) return '';
-  final name = await HumanReadableChecksumService().getHumanReadableName(address);
-  return name ?? '';
+  return ref.watch(addressCheckphraseProvider(address).future);
 });
