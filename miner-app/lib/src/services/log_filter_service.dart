@@ -36,6 +36,7 @@ class LogFilterService {
       'sealed',
       'proposed',
       MinerConfig.blockSubmittedLogMarker,
+      MinerConfig.minerTlsFingerprintLogMarker,
       // Keep existing keywords
       '[peers]',
     ],
