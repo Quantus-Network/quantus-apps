@@ -86,8 +86,7 @@ class NodeProcessManager extends BaseProcessManager {
   }
 
   /// Node data directory used as --base-path for non-dev chains.
-  static Future<String> nodeDataPath() async =>
-      p.join(await BinaryManager.getQuantusHomeDirectoryPath(), 'node_data');
+  static Future<String> nodeDataPath() async => p.join(await BinaryManager.getQuantusHomeDirectoryPath(), 'node_data');
 
   /// Fixed miner auth token location, passed to the node via
   /// --miner-auth-token-file so the path is known even in dev mode, where the
