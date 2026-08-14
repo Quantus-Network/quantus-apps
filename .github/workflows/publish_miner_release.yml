@@ -24,6 +24,7 @@ jobs:
       tag: ${{ steps.extract_version.outputs.tag }}
       version: ${{ steps.extract_version.outputs.version }}
       is_draft: ${{ steps.extract_version.outputs.is_draft }}
+      sha: ${{ github.event.pull_request.merge_commit_sha }}
     steps:
       - name: Checkout merge commit
         uses: actions/checkout@v4
@@ -85,7 +86,9 @@ jobs:
     needs: create-tag
     uses: ./.github/workflows/create_miner_build.yml
     with:
-      ref: ${{ needs.create-tag.outputs.tag }}
+      # The verified merge SHA, never the bare tag name: checkout resolves
+      # branches before tags, so a same-named branch could shadow the release
+      ref: ${{ needs.create-tag.outputs.sha }}
     secrets: inherit
 
   create-release:
@@ -95,10 +98,10 @@ jobs:
     permissions:
       contents: write
     steps:
-      - name: Checkout code at tag
+      - name: Checkout code at release commit
         uses: actions/checkout@v4
         with:
-          ref: ${{ needs.create-tag.outputs.tag }}
+          ref: ${{ needs.create-tag.outputs.sha }}
           fetch-depth: 0
           fetch-tags: true
 
