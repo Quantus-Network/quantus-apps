@@ -91,7 +91,7 @@ class MultisigProposalExecutedEvent extends TransactionEvent {
     final approvers = approversRaw is List ? approversRaw.map((e) => e.toString()).toList() : <String>[];
 
     final block = jsonMapOrNull(executed['block']);
-    final feeRaw = executed['fee'];
+    final feeToken = executed['fee'];
     final result = executed['result']?.toString() ?? '';
 
     return MultisigProposalExecutedEvent(
@@ -103,7 +103,7 @@ class MultisigProposalExecutedEvent extends TransactionEvent {
       proposalId: proposalId,
       approvers: approvers,
       result: result,
-      fee: feeRaw != null ? bigIntFromJson(feeRaw) : null,
+      fee: feeToken != null ? bigIntFromJson(feeToken) : null,
       timestamp: accountEventTimestamp ?? dateTimeFromJson(executed['timestamp']),
       blockNumber: blockHeightFromJsonMap(block),
       blockHash: blockHashFromJsonMap(block),

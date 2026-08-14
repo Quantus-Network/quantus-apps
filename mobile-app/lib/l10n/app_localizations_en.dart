@@ -211,7 +211,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get homeActivityEmptyTitle => 'No Transactions Yet';
 
   @override
-  String get homeActivityEmptyMessage => 'Your activity will appear here once you send or receive QUAN.';
+  String homeActivityEmptyMessage(String tokenSymbol) {
+    return 'Your activity will appear here once you send or receive $tokenSymbol.';
+  }
 
   @override
   String get accountsSheetTitle => 'Accounts';
@@ -253,16 +255,23 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get accountsSheetSubheaderTransparent => 'Transparent Accounts';
+  String get accountsScreenActiveWallet => 'Active Wallet';
 
   @override
-  String get accountsSheetSubheaderEncrypted => 'Encrypted Account';
+  String accountsScreenAccountCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count Accounts', one: '1 Account');
+    return '$_temp0';
+  }
 
   @override
-  String get accountsSheetSubheaderKeystone => 'Keystone Accounts';
+  String get walletNameTitle => 'Wallet Name';
 
   @override
-  String get accountsSheetSubheaderMultisig => 'Multisig Accounts';
+  String get walletNameSubtitle =>
+      'Naming your wallets makes it easier to tell their accounts apart. Each wallet has its own encrypted account.';
+
+  @override
+  String get walletNameHint => 'Enter a name for your wallet';
 
   @override
   String get addAccountMenuTitle => 'Add Account';
@@ -277,7 +286,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get addAccountMenuMoreTitle => 'Advanced';
 
   @override
-  String get addAccountMenuImportKeystoneTitle => 'Add Keystone Account';
+  String get addAccountMenuImportKeystoneTitle => 'Add Keystone Wallet';
 
   @override
   String get addAccountMenuImportKeystoneSubtitle => 'Air-gapped signing via QR code';
@@ -426,6 +435,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String multisigProposalToAddress(String address) {
     return 'to $address';
   }
+
+  @override
+  String get multisigProposalCallLoading => 'Reading the proposal from the chain…';
+
+  @override
+  String get multisigProposalCallUnavailable =>
+      'Could not read this proposal from the chain, so there is nothing to approve. Try again when you are back online.';
 
   @override
   String get multisigStatusApproved => 'SIGNED';
@@ -895,34 +911,50 @@ class AppLocalizationsEn extends AppLocalizations {
   String get accountDetailsTitle => 'Address Details';
 
   @override
-  String get addHardwareAccountAddWallet => 'Add Hardware Wallet';
+  String get addKeystoneAppBarTitle => 'Add Keystone Wallet';
 
   @override
-  String get addHardwareAccountAddAccount => 'Add Hardware Account';
+  String get addKeystoneIntroTitle => 'Keystone Hardware Wallet';
 
   @override
-  String get addHardwareAccountNameLabel => 'NAME';
+  String get addKeystoneIntroSubtitle =>
+      'Air-gapped signing for QUAN. Keys stay on the device, signing happens over QR.';
 
   @override
-  String get addHardwareAccountNameHintWallet => 'Hardware Wallet';
+  String get addKeystoneConnectButton => 'Connect Hardware Wallet';
 
   @override
-  String get addHardwareAccountNameHintAccount => 'Account';
+  String get addKeystoneGetOneLink => 'Don\'t have one? Get a Keystone ↗';
 
   @override
-  String get addHardwareAccountAddressLabel => 'ADDRESS';
+  String get addKeystoneConnectTitle => 'Connect Hardware Wallet';
 
   @override
-  String get addHardwareAccountAddressHint => 'Signer address';
+  String get addKeystoneConnectSubtitle => 'Scan your device\'s QR code to connect.';
 
   @override
-  String get addHardwareAccountDebugFill => 'Debug Fill';
+  String get addKeystoneBeforeYouStart => 'BEFORE YOU START';
 
   @override
-  String get addHardwareAccountNameRequired => 'Name is required';
+  String get addKeystoneFirmwareTitle => 'Update to the latest Keystone firmware';
 
   @override
-  String get addHardwareAccountInvalidAddress => 'Invalid address';
+  String get addKeystoneFirmwareSubtitle => 'Required for QUAN signing';
+
+  @override
+  String get addKeystoneOnYourKeystone => 'ON YOUR KEYSTONE';
+
+  @override
+  String get addKeystoneStepUnlock => 'Unlock your Keystone';
+
+  @override
+  String get addKeystoneStepSelectQuantus => 'Select Quantus and scan the QR code';
+
+  @override
+  String get addKeystoneReadyToScan => 'Ready to Scan';
+
+  @override
+  String get invalidAddress => 'Invalid address';
 
   @override
   String get sendTitle => 'Send';
@@ -1001,6 +1033,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sendReviewSubmitFailed => 'Failed submitting transaction';
 
   @override
+  String get sendRegularAccountRequired => 'Switch to a regular account to send';
+
+  @override
   String sendTxSubmittedHeadlinePaid(String amount, String symbol) {
     return '$amount $symbol paid';
   }
@@ -1020,23 +1055,57 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sendTxSubmittedDone => 'Done';
 
   @override
+  String get keystoneSignScreenTitle => 'Sign with Keystone';
+
+  @override
+  String keystoneSignStep(int current, int total) {
+    return 'STEP $current/$total';
+  }
+
+  @override
   String get keystoneSignTitle => 'Scan with your Keystone';
 
   @override
-  String get keystoneSignInstruction => 'Show this QR code to your Keystone hardware wallet to sign the transaction.';
+  String get keystoneSignInstruction => 'Open your Keystone and scan this QR code to load the transaction.';
 
   @override
-  String get keystoneSignNext => 'Scan signature';
+  String get keystoneSignYouAreSigning => 'YOU ARE SIGNING';
+
+  @override
+  String get keystoneSignNext => 'Continue to Sign';
+
+  @override
+  String get keystoneSignCancel => 'Cancel Transaction';
 
   @override
   String get keystoneSignError => 'Failed to prepare the transaction. Please try again.';
 
   @override
-  String get keystoneScanInstruction => 'Scan the signature QR from your Keystone';
+  String get keystoneVerifyTitle => 'Check your Keystone Screen';
+
+  @override
+  String get keystoneVerifyInstruction => 'Before approving on your Keystone, make sure its screen shows exactly this:';
+
+  @override
+  String get keystoneVerifyWarning =>
+      'If the amount or address on your Keystone screen is different from what\'s shown here, reject the transaction on your device.';
+
+  @override
+  String get keystoneVerifyMismatch => 'It doesn\'t match';
+
+  @override
+  String get keystoneScanTitle => 'Scan the signature';
+
+  @override
+  String get keystoneScanInstruction =>
+      'Your Keystone is now showing an animated QR. Hold your phone up to it, this takes a moment.';
+
+  @override
+  String get keystoneScanReceiving => 'RECEIVING SIGNATURE';
 
   @override
   String keystoneScanProgress(int scanned, int total) {
-    return '$scanned / $total frames';
+    return '$scanned/$total';
   }
 
   @override
@@ -1049,6 +1118,37 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get keystoneScanError => 'Couldn\'t read the signature. Please try again.';
+
+  @override
+  String get keystoneScanExpired =>
+      'The transaction expired before it could be submitted. Go back and scan the new QR code with your device.';
+
+  @override
+  String get keystoneRejectTitle => 'Don\'t approve this transaction';
+
+  @override
+  String get keystoneRejectStep1Title => 'Reject the transaction on your Keystone.';
+
+  @override
+  String get keystoneRejectStep1Body => 'Nothing is signed or sent until you approve there.';
+
+  @override
+  String get keystoneRejectStep2Title => 'Don\'t retry from this phone.';
+
+  @override
+  String get keystoneRejectStep2Body => 'If it\'s compromised, retrying gives the attacker another chance.';
+
+  @override
+  String get keystoneRejectStep3Title => 'Your funds are safe on the Keystone.';
+
+  @override
+  String get keystoneRejectStep3Body => 'Keys never left the device. Move to a trusted phone before sending again.';
+
+  @override
+  String get keystoneRejectConfirm => 'I rejected it on Keystone';
+
+  @override
+  String get keystoneRejectContactSupport => 'Contact Support';
 
   @override
   String get sendLogicCantSelfTransfer => 'Can\'t Self Transfer';
@@ -1566,7 +1666,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsMiningStatRedeemable => 'REDEEMABLE';
 
   @override
-  String get settingsMiningQuanEarned => 'QUAN EARNED';
+  String settingsMiningTokenEarned(String tokenSymbol) {
+    return '$tokenSymbol EARNED';
+  }
 
   @override
   String get settingsMiningViewTelemetry => 'View Telemetry ↗';
@@ -1686,13 +1788,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get swapGetQuote => 'Get a Quote';
 
   @override
-  String swapRateLabel(String amount, String symbol) {
-    return '1 QUAN = $amount $symbol';
+  String swapRateLabel(String amount, String symbol, String tokenSymbol) {
+    return '1 $tokenSymbol = $amount $symbol';
   }
 
   @override
-  String swapRateZero(String symbol) {
-    return '1 QUAN = 0 $symbol';
+  String swapRateZero(String symbol, String tokenSymbol) {
+    return '1 $tokenSymbol = 0 $symbol';
   }
 
   @override
@@ -1750,8 +1852,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get swapDepositCompleteTitle => 'Swap Complete';
 
   @override
-  String swapDepositCompleteBody(String amount) {
-    return 'Your swap for $amount QUAN is complete.';
+  String swapDepositCompleteBody(String amount, String tokenSymbol) {
+    return 'Your swap for $amount $tokenSymbol is complete.';
   }
 
   @override
@@ -1903,10 +2005,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get encryptedSendFeeLabel => 'Privacy fee';
 
   @override
-  String get encryptedSendAmountStep => 'Use steps of 0.01 QUAN';
+  String encryptedSendAmountStep(String tokenSymbol) {
+    return 'Use steps of 0.01 $tokenSymbol';
+  }
 
   @override
-  String get encryptedSendMinimum => 'Encrypted sends must move at least 0.1 QUAN';
+  String encryptedSendMinimum(String tokenSymbol) {
+    return 'Encrypted sends must move at least 0.1 $tokenSymbol';
+  }
 
   @override
   String get encryptedSendProgressTitle => 'Private Send';

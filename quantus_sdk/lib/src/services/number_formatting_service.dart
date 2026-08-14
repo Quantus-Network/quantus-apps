@@ -1,6 +1,6 @@
 import 'package:decimal/decimal.dart';
-import 'package:flutter/foundation.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:quantus_sdk/src/utils/print.dart';
 
 class NumberFormattingService {
   static const int decimals = AppConstants.decimals;
@@ -23,6 +23,10 @@ class NumberFormattingService {
   ///
   /// Example: 1234500000000 -> "1.2345" (smartDecimals = 4, US locale)
   /// Example: 100000000      -> "0.0001" (smartDecimals = 2, extended)
+  /// Standard token-amount display: 4 smart decimals, extending to the
+  /// chain's full precision for smaller amounts.
+  String formatAmount(BigInt amount) => formatBalance(amount, smartDecimals: 4, maxDecimals: AppConstants.decimals);
+
   String formatBalance(
     BigInt balance, {
     int smartDecimals = 4,
@@ -133,12 +137,12 @@ class NumberFormattingService {
     try {
       final decimalAmount = _localeConfig.parseDecimal(formattedAmount);
       if (decimalAmount.scale > decimals) {
-        debugPrint('Warning: Input amount $formattedAmount exceeds $decimals decimals, will be truncated.');
+        quantusPrint('Warning: Input amount $formattedAmount exceeds $decimals decimals, will be truncated.');
       }
       final rawDecimalAmount = decimalAmount * scaleFactorDecimal;
       return rawDecimalAmount.toBigInt();
     } catch (e) {
-      debugPrint('Error parsing amount $formattedAmount: $e');
+      quantusPrint('Error parsing amount $formattedAmount: $e');
       return null;
     }
   }

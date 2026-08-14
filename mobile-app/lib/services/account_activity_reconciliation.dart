@@ -31,8 +31,8 @@ Future<void> appendConfirmedEventToHistory({
 
     invalidateAccountBalances(ref, [accountId]);
   } catch (e, stackTrace) {
-    quantusDebugPrint('[AccountActivityReconcile] Error: $e');
-    quantusDebugPrint('Stack trace: $stackTrace');
-    TelemetryService().sendError('account_activity_reconcile_failed', error: e, stackTrace: stackTrace);
+    quantusPrint('[AccountActivityReconcile] Error: $e');
+    quantusPrint('Stack trace: $stackTrace');
+    TelemetryService().sendError('account_activity_reconcile_failed', error: e);
   }
 }

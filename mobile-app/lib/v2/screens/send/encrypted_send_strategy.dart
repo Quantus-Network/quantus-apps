@@ -66,7 +66,7 @@ class EncryptedSendStrategy extends SendStrategy {
     final state = await ref.read(encryptedStateProvider(account.walletIndex).future);
     try {
       return EncryptedFee(
-        plan: selectWormholeInputs(utxos: state.utxos, amountPlanck: amount),
+        plan: selectWormholeInputs(utxos: state.utxos, amountToken: amount),
       );
     } on InsufficientEncryptedFunds {
       return const EncryptedFee(blocker: EncryptedSendBlocker.insufficient);
@@ -79,9 +79,9 @@ class EncryptedSendStrategy extends SendStrategy {
   String? affordabilityError(WidgetRef ref, SendFee fee, AppLocalizations l10n) {
     return switch ((fee as EncryptedFee).blocker) {
       null => null,
-      EncryptedSendBlocker.notQuantized => l10n.encryptedSendAmountStep,
+      EncryptedSendBlocker.notQuantized => l10n.encryptedSendAmountStep(AppConstants.tokenSymbol),
       EncryptedSendBlocker.insufficient => l10n.sendLogicInsufficientBalance,
-      EncryptedSendBlocker.belowBatchMinimum => l10n.encryptedSendMinimum,
+      EncryptedSendBlocker.belowBatchMinimum => l10n.encryptedSendMinimum(AppConstants.tokenSymbol),
     };
   }
 
@@ -128,6 +128,11 @@ class EncryptedSendStrategy extends SendStrategy {
     if (plan == null) {
       throw StateError('Encrypted send reached submit without a spend plan');
     }
+    // The plan is frozen at estimate time and its amountToken is what the
+    // recipient is provably paid — it must match the confirmed amount.
+    if (plan.amountToken != amount) {
+      throw StateError('Encrypted send plan amount ${plan.amountToken} does not match confirmed amount $amount');
+    }
 
     final authed = await LocalAuthService().authenticate(localizedReason: l10n.sendReviewAuthReason);
     if (!authed) return SendFailed(l10n.sendReviewAuthRequired);
@@ -135,6 +140,7 @@ class EncryptedSendStrategy extends SendStrategy {
     return SendNeedsProving(
       account: account,
       plan: plan,
+      amount: amount,
       terminal: buildSentTerminalContent(
         l10n,
         ref.read(numberFormattingServiceProvider),

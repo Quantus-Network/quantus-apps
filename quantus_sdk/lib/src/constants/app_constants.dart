@@ -19,11 +19,7 @@ class AppConstants {
   ];
   static const List<String> graphQlEndpoints = ['https://sub2.quantus.com/v1/graphql'];
 
-  // local test android use special ip
-  // static const String taskMasterEndpoint = 'http://10.0.2.2:3000/api';
-  // local test
-  // static const String taskMasterEndpoint = 'http://localhost:3000/api';
-  static const String taskMasterEndpoint = 'https://quests.quantus.com/api';
+  static const String quersiEndpoint = 'https://qrc-1.quantus.com/api';
 
   static const String senotiEndpoint = 'https://snt.quantus.com/api';
 
@@ -57,9 +53,20 @@ class AppConstants {
   /// Average Quantus block time in seconds (~12s). Used for mortal-era TTL and block↔time estimates.
   static const int avgBlockTimeSeconds = 12;
 
+  /// Mortal era length for signed transactions, in blocks. Must be a power of
+  /// two (the era encoding rounds up); 16 blocks ≈ 3.2 minutes at 12s blocks.
+  static const int txMortalEraPeriodBlocks = 16;
+
   // Digits of precision
   static const int decimals = 12;
   static const int ss58prefix = 189;
+
+  // Runtime the bundled polkadart metadata (lib/generated/planck) was generated
+  // from. A signing payload declaring a different spec version may decode
+  // against shifted pallet/call indices, so signers warn loudly rather than
+  // present a decode they cannot vouch for. Bump both when regenerating.
+  static const int bundledSpecVersion = 136;
+  static const int bundledTransactionVersion = 3;
 
   // Reserved account index for the per-wallet encrypted (wormhole) account.
   // Kept high so it never collides with sequential transparent (BIP44) indices;

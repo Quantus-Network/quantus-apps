@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/currency_display_provider.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
+import 'package:resonance_network_wallet/v2/components/decoded_call_view.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 
@@ -14,6 +15,12 @@ class ProposalListTile extends ConsumerWidget {
   final VoidCallback? onTap;
   final bool highlighted;
 
+  /// The proposal's decoded call, when the indexer supplied its bytes.
+  ///
+  /// Proposals are not always transfers, so when this is present the row names
+  /// the actual call instead of rendering a non-transfer as "0 tokens to ''".
+  final DecodedCall? call;
+
   const ProposalListTile({
     super.key,
     required this.amount,
@@ -21,6 +28,7 @@ class ProposalListTile extends ConsumerWidget {
     required this.trailing,
     this.onTap,
     this.highlighted = false,
+    this.call,
   });
 
   @override
@@ -28,8 +36,16 @@ class ProposalListTile extends ConsumerWidget {
     final l10n = ref.watch(l10nProvider);
     final colors = context.colors;
     final text = context.themeText;
-    final amountText = ref.watch(txAmountDisplayProvider)(amount, isSend: true).primaryAmount;
-    final shortAddr = AddressFormattingService.formatAddress(recipientAddress);
+    final formatAmount = ref.watch(txAmountDisplayProvider);
+    final decoded = call;
+    final headline = decoded == null
+        ? null
+        : DecodedCallHeadline.of(decoded, amountText: (token) => formatAmount(token, isSend: true).primaryAmount);
+    final amountText = headline?.primary ?? formatAmount(amount, isSend: true).primaryAmount;
+    final recipient = headline == null
+        ? (recipientAddress.isEmpty ? null : AddressFormattingService.formatAddress(recipientAddress))
+        : headline.recipient;
+    final subtitle = recipient != null ? l10n.multisigProposalToAddress(recipient) : headline?.palletSubtitle;
 
     final content = Container(
       padding: const EdgeInsets.all(14),
@@ -54,14 +70,16 @@ class ProposalListTile extends ConsumerWidget {
                     fontFamily: AppTextTheme.fontFamilySecondary,
                   ),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  l10n.multisigProposalToAddress(shortAddr),
-                  style: text.detail?.copyWith(
-                    color: colors.textTertiary,
-                    fontFamily: AppTextTheme.fontFamilySecondary,
+                if (subtitle != null) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    style: text.detail?.copyWith(
+                      color: colors.textTertiary,
+                      fontFamily: AppTextTheme.fontFamilySecondary,
+                    ),
                   ),
-                ),
+                ],
               ],
             ),
           ),

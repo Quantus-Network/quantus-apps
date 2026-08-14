@@ -6,9 +6,9 @@ Future<void> openUrl(String urlString, {LaunchMode mode = LaunchMode.platformDef
   try {
     final launched = await launchUrl(uri, mode: mode);
     if (!launched) {
-      quantusDebugPrint('launchUrl returned false: $urlString');
+      quantusPrint('launchUrl returned false: $urlString');
     }
   } catch (e, st) {
-    quantusDebugPrint('launchUrl failed: $urlString error=$e\n$st');
+    quantusPrint('launchUrl failed: $urlString error=$e\n$st');
   }
 }

@@ -1,4 +1,5 @@
 import 'package:convert/convert.dart';
+import 'package:flutter/foundation.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:ss58/ss58.dart';
 
@@ -10,6 +11,10 @@ import '../rust/api/wormhole.dart' as wormhole_ffi;
 /// Funds are claimed either by revealing [rewardsPreimageHex] (miner rewards) or by
 /// producing a ZK proof that knows [secretHex] (withdrawals). [secretHex] is empty
 /// when the pair was reconstructed from a raw preimage.
+///
+/// [secretHex] is spendable key material held as an immutable Dart String, so
+/// it cannot be zeroized — never cache key pairs; derive, use immediately, and
+/// let them go out of scope (M11).
 class WormholeKeyPair {
   final String address;
   final String addressHex;
@@ -35,13 +40,15 @@ class WormholeKeyPair {
 }
 
 class HdWalletService {
+  // Dev accounts (//Crystal Alice etc.) derive from publicly known seeds, so
+  // they are only importable in debug builds (M8).
   static const _devAccounts = {
     AppConstants.crystalAlice: crypto.crystalAlice,
     AppConstants.crystalBob: crypto.crystalBob,
     AppConstants.crystalCharlie: crypto.crystalCharlie,
   };
 
-  static bool isDevAccount(String mnemonic) => _devAccounts.containsKey(mnemonic);
+  static bool isDevAccount(String mnemonic) => kDebugMode && _devAccounts.containsKey(mnemonic);
 
   Keypair _deriveHDWallet({required String mnemonic, int account = 0, int change = 0, int addressIndex = 0}) {
     final derivationPath = "m/44'/189189'/$account'/$change'/$addressIndex'";
@@ -49,20 +56,25 @@ class HdWalletService {
   }
 
   Keypair keyPairAtIndex(String mnemonic, int index) {
-    final devKeypair = _devAccounts[mnemonic];
-    if (devKeypair != null) return devKeypair();
+    if (kDebugMode) {
+      final devKeypair = _devAccounts[mnemonic];
+      if (devKeypair != null) return devKeypair();
+    }
     if (index == -1) return crypto.generateKeypair(mnemonicStr: mnemonic);
     return _deriveHDWallet(mnemonic: mnemonic, account: index);
   }
 
-  crypto.WormholeResult deriveWormhole(String mnemonic, {int account = 0, int change = 0, int addressIndex = 0}) {
+  crypto.WormholeResult _deriveWormhole(String mnemonic, {int account = 0, int change = 0, int addressIndex = 0}) {
     final path = "m/44'/189189189'/$account'/$change'/$addressIndex'";
     return crypto.deriveWormhole(mnemonicStr: mnemonic, path: path);
   }
 
   /// Derive the wormhole key pair at HD index `index` (account=0, change=0).
   WormholeKeyPair deriveWormholeKeyPair({required String mnemonic, int index = 0}) =>
-      WormholeKeyPair.fromResult(deriveWormhole(mnemonic, addressIndex: index));
+      WormholeKeyPair.fromResult(_deriveWormhole(mnemonic, addressIndex: index));
+
+  WormholeKeyPair deriveWormholeChangeAddressKeyPair({required String mnemonic, int index = 0}) =>
+      WormholeKeyPair.fromResult(_deriveWormhole(mnemonic, change: 1, addressIndex: index));
 
   /// Compute the on-chain wormhole address for a rewards preimage (first_hash hex).
   String preimageToAddress(String preimageHex) => crypto.firstHashToAddress(firstHashHex: preimageHex);

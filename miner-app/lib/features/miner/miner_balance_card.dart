@@ -113,7 +113,7 @@ class _MinerBalanceCardState extends State<MinerBalanceCard> {
     _log.i('Fetching unspent balance for $address ...');
     try {
       final balance = await _utxoService.getUnspentBalance(wormholeAddress: address, secretHex: secretHex);
-      _log.i('Unspent balance: $balance planck (${_formatter.formatBalance(balance, addSymbol: true)})');
+      _log.i('Unspent balance: $balance token units (${_formatter.formatBalance(balance, addSymbol: true)})');
       if (!mounted) return;
       setState(() {
         _balance = balance;

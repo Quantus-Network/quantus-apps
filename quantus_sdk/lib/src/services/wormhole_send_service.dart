@@ -12,6 +12,7 @@ import 'package:quantus_sdk/src/services/network/redundant_endpoint.dart';
 import 'package:quantus_sdk/src/services/substrate_service.dart' show getAccountId32;
 import 'package:quantus_sdk/src/services/wormhole_coin_selection.dart';
 import 'package:quantus_sdk/src/services/wormhole_utxo_service.dart';
+import 'package:quantus_sdk/src/utils/print.dart';
 
 class ClaimProgressItem {
   final int step;
@@ -118,8 +119,10 @@ class WormholeSendService {
     6: 'Submitting to chain',
   };
 
-  final WormholeUtxoService _utxoService = WormholeUtxoService();
+  final WormholeUtxoService _utxoService;
   final RpcEndpointService _rpcEndpoint = RpcEndpointService();
+
+  WormholeSendService({WormholeUtxoService? utxoService}) : _utxoService = utxoService ?? WormholeUtxoService();
 
   int _requestId = 1;
 
@@ -173,13 +176,13 @@ class WormholeSendService {
     String? rpcUrl,
   }) {
     return _runOperation(rpcUrl, (op) async {
-      final maxProofsPerBatch = await _ensureCircuits(op, circuitBinsDir, onProgress);
+      final maxProofsPerBatch = await ensureCircuits(op, circuitBinsDir, onProgress);
       for (final batch in batches) {
         if (batch.isEmpty || batch.length > maxProofsPerBatch) {
           throw StateError('Batch of ${batch.length} spends violates aggregation arity $maxProofsPerBatch');
         }
       }
-      return _proveAndSubmitBatches(
+      return proveAndSubmitBatches(
         op: op,
         batches: batches,
         circuitBinsDir: circuitBinsDir,
@@ -218,7 +221,8 @@ class WormholeSendService {
   }
 
   /// Step 1: ensures circuit binaries exist and returns the aggregation arity.
-  Future<int> _ensureCircuits(WormholeOperation op, String circuitBinsDir, ClaimProgressCallback onProgress) async {
+  @visibleForTesting
+  Future<int> ensureCircuits(WormholeOperation op, String circuitBinsDir, ClaimProgressCallback onProgress) async {
     op.checkCancelled();
     _reportProgress(onProgress, 1, 0);
     _log('Ensuring circuit binaries at: $circuitBinsDir');
@@ -240,7 +244,7 @@ class WormholeSendService {
     required String circuitBinsDir,
     required ClaimProgressCallback onProgress,
   }) async {
-    final maxProofsPerBatch = await _ensureCircuits(op, circuitBinsDir, onProgress);
+    final maxProofsPerBatch = await ensureCircuits(op, circuitBinsDir, onProgress);
 
     _reportProgress(onProgress, 2, 0);
     final unspent = await _utxoService.getUnspentTransfers(
@@ -261,26 +265,38 @@ class WormholeSendService {
     op.checkCancelled();
 
     // A claim pays each leaf's full net (post-fee) amount to the destination.
+    // The secret lives only in this buffer and is zeroized as soon as the
+    // proofs are done (M11).
     final secretBytes = Uint8List.fromList(hex.decode(secretHex.replaceFirst('0x', '')));
-    final destinationBytes = Uint8List.fromList(getAccountId32(destinationAddress));
-    final spends = [
-      for (final transfer in unspent)
-        WormholeLeafSpend(
-          transfer: transfer,
-          secret: secretBytes,
-          exitAccount1: destinationBytes,
-          outputAmount1: wormholeNetScaled(wormholeScaledFromPlanck(transfer.amount)),
-        ),
-    ];
-    final batches = [
-      for (var i = 0; i < spends.length; i += maxProofsPerBatch)
-        spends.sublist(i, (i + maxProofsPerBatch).clamp(0, spends.length)),
-    ];
+    try {
+      final destinationBytes = Uint8List.fromList(getAccountId32(destinationAddress));
+      final spends = [
+        for (final transfer in unspent)
+          WormholeLeafSpend(
+            transfer: transfer,
+            secret: secretBytes,
+            exitAccount1: destinationBytes,
+            outputAmount1: wormholeNetScaled(wormholeScaledFromToken(transfer.amount)),
+          ),
+      ];
+      final batches = [
+        for (var i = 0; i < spends.length; i += maxProofsPerBatch)
+          spends.sublist(i, (i + maxProofsPerBatch).clamp(0, spends.length)),
+      ];
 
-    return _proveAndSubmitBatches(op: op, batches: batches, circuitBinsDir: circuitBinsDir, onProgress: onProgress);
+      return await proveAndSubmitBatches(
+        op: op,
+        batches: batches,
+        circuitBinsDir: circuitBinsDir,
+        onProgress: onProgress,
+      );
+    } finally {
+      secretBytes.fillRange(0, secretBytes.length, 0);
+    }
   }
 
-  Future<ClaimResult> _proveAndSubmitBatches({
+  @visibleForTesting
+  Future<ClaimResult> proveAndSubmitBatches({
     required WormholeOperation op,
     required List<List<WormholeLeafSpend>> batches,
     required String circuitBinsDir,
@@ -334,8 +350,7 @@ class WormholeSendService {
               outputIndex: i,
               onComplete: () {
                 proofsCompleted++;
-                // ignore: avoid_print
-                print(
+                quantusPrint(
                   '[WormholeSend] Proof $proofsCompleted/$numTransfers '
                   'leaf=${spend.transfer.leafIndex} (${genSw.elapsedMilliseconds}ms elapsed)',
                 );
@@ -382,7 +397,7 @@ class WormholeSendService {
       return ClaimResult(
         totalWithdrawn: submitted.fold(
           BigInt.zero,
-          (sum, b) => sum + b.fold(BigInt.zero, (s, spend) => s + wormholePlanckFromScaled(spend.outputAmount1)),
+          (sum, b) => sum + b.fold(BigInt.zero, (s, spend) => s + wormholeTokenFromScaled(spend.outputAmount1)),
         ),
         transfersProcessed: submitted.fold(0, (sum, b) => sum + b.length),
         batchesSubmitted: txHashes.length,
@@ -409,7 +424,7 @@ class WormholeSendService {
   }
 
   /// Generates a single leaf proof and writes it (and its nullifier hex) to
-  /// the output buffers. Returns the planck amount paid to exit slot 1.
+  /// the output buffers. Returns the token amount paid to exit slot 1.
   /// [onComplete] fires once the proof is written so callers can update
   /// progress per-leaf.
   Future<BigInt> _generateLeafProof({
@@ -486,9 +501,9 @@ class WormholeSendService {
     proofBuffer[outputIndex] = proof.proofBytes;
     nullifierBuffer[outputIndex] = '0x${hex.encode(proof.nullifier)}';
     onComplete?.call();
-    // On-chain dispatch transfers `outputAmount * scaleFactor` planck to
+    // On-chain dispatch transfers `outputAmount * scaleFactor` token units to
     // each exit account; slot 1 is the recipient's exact contribution.
-    return wormholePlanckFromScaled(spend.outputAmount1);
+    return wormholeTokenFromScaled(spend.outputAmount1);
   }
 
   /// Submits an unsigned extrinsic via `author_submitExtrinsic` and returns the
@@ -574,8 +589,7 @@ class WormholeSendService {
 
   // --- Utilities ---
 
-  // ignore: avoid_print
-  static void _log(String msg) => print('[WormholeSend] $msg');
+  static void _log(String msg) => quantusPrint('[WormholeSend] $msg');
 
   static int _hexToInt(String hexStr) => int.parse(hexStr.replaceFirst('0x', ''), radix: 16);
 

@@ -22,14 +22,14 @@ class PendingTransactionPollingService {
   /// blockNumber) matching. Fails early if neither is usable.
   void startPolling(PendingTransactionEvent pendingTx, {void Function(TransactionEvent result)? onFound}) {
     if (pendingTx.extrinsicHash == null && pendingTx.blockNumber == 0) {
-      quantusDebugPrint(
+      quantusPrint(
         '[PendingTxPoller] ERROR: cannot poll ${pendingTx.id} — no extrinsicHash and blockNumber is 0. '
         'This would search all historical blocks and risk false positives.',
       );
       return;
     }
 
-    quantusDebugPrint(
+    quantusPrint(
       '[PendingTxPoller] startPolling id=${pendingTx.id} '
       'hash=${pendingTx.extrinsicHash} block=${pendingTx.blockNumber} '
       'reversible=${pendingTx.isReversible} from=${pendingTx.from} '
@@ -41,7 +41,7 @@ class PendingTransactionPollingService {
 
     final timer = Timer.periodic(_searchInterval, (_) {
       if (DateTime.now().difference(startTime) > _timeout) {
-        quantusDebugPrint('[PendingTxPoller] Timeout for ${pendingTx.id}, deferring to reconciliation');
+        quantusPrint('[PendingTxPoller] Timeout for ${pendingTx.id}, deferring to reconciliation');
         stopPolling(pendingTx.id);
         _ref.read(pendingTransactionsProvider.notifier).remove(pendingTx.id);
         return;
@@ -63,10 +63,10 @@ class PendingTransactionPollingService {
       final hash = pendingTx.extrinsicHash;
       final TransactionEvent? result;
       if (hash != null) {
-        quantusDebugPrint('[PendingTxPoller] searching by extrinsic hash $hash for ${pendingTx.id}');
+        quantusPrint('[PendingTxPoller] searching by extrinsic hash $hash for ${pendingTx.id}');
         result = await historyService.searchByExtrinsicHash(extrinsicHash: hash, isReversible: pendingTx.isReversible);
       } else {
-        quantusDebugPrint(
+        quantusPrint(
           '[PendingTxPoller] searching fallback (from, to, amount, block>${pendingTx.blockNumber}) '
           'for ${pendingTx.id}',
         );
@@ -80,7 +80,7 @@ class PendingTransactionPollingService {
       }
 
       if (result != null) {
-        quantusDebugPrint('[PendingTxPoller] Found matching tx for ${pendingTx.id} at block ${result.blockNumber}');
+        quantusPrint('[PendingTxPoller] Found matching tx for ${pendingTx.id} at block ${result.blockNumber}');
         stopPolling(pendingTx.id);
 
         triggerSilentHistoryRefresh(_ref, affectedAccountIds: {pendingTx.from, pendingTx.to}, newTransaction: result);
@@ -94,10 +94,10 @@ class PendingTransactionPollingService {
         _ref.read(pendingTransactionsProvider.notifier).remove(pendingTx.id);
         invalidateAccountBalances(_ref, {pendingTx.from, pendingTx.to});
       } else {
-        quantusDebugPrint('[PendingTxPoller] no match yet for ${pendingTx.id}, will retry');
+        quantusPrint('[PendingTxPoller] no match yet for ${pendingTx.id}, will retry');
       }
     } catch (e) {
-      quantusDebugPrint('[PendingTxPoller] Search error for ${pendingTx.id}: $e');
+      quantusPrint('[PendingTxPoller] Search error for ${pendingTx.id}: $e');
     }
   }
 
@@ -136,6 +136,6 @@ void triggerSilentHistoryRefresh(Ref ref, {required Set<String> affectedAccountI
       });
     }
   } catch (e) {
-    quantusDebugPrint('[SilentHistoryRefresh] Error: $e');
+    quantusPrint('[SilentHistoryRefresh] Error: $e');
   }
 }

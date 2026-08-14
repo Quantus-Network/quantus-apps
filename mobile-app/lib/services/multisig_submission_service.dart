@@ -72,7 +72,7 @@ class MultisigSubmissionService {
   }) async {
     final service = _ref.read(multisigServiceProvider);
     try {
-      quantusDebugPrint('[MultisigSubmission] submitting creation for ${draft.accountId}');
+      quantusPrint('[MultisigSubmission] submitting creation for ${draft.accountId}');
 
       final hashBytes = await service.submitCreateMultisigExtrinsic(
         creator: creator,
@@ -81,7 +81,7 @@ class MultisigSubmissionService {
         nonce: nonce,
       );
       final extrinsicHash = '0x${hex.encode(hashBytes)}';
-      quantusDebugPrint('[MultisigSubmission] submitted $extrinsicHash');
+      quantusPrint('[MultisigSubmission] submitted $extrinsicHash');
 
       unawaited(
         _ref.read(pendingMultisigCreationsProvider.notifier).updateExtrinsicHash(draft.accountId, extrinsicHash),
@@ -93,9 +93,9 @@ class MultisigSubmissionService {
       // Retries live in SubstrateService.submitExtrinsic (same signed bytes);
       // avoid outer retries here because each attempt re-signs with a fresh
       // nonce and can double-submit if a prior submit already landed.
-      quantusDebugPrint('[MultisigSubmission] submit failed: $e');
-      quantusDebugPrint('Stack trace: $stackTrace');
-      TelemetryService().sendError('multisig_create_submit_failed', error: e, stackTrace: stackTrace);
+      quantusPrint('[MultisigSubmission] submit failed: $e');
+      quantusPrint('Stack trace: $stackTrace');
+      TelemetryService().sendError('multisig_create_submit_failed', error: e);
       removePendingMultisigCreation(_ref, draft.accountId);
       rethrow;
     }

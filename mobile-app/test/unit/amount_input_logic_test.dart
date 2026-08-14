@@ -26,37 +26,37 @@ void main() {
       );
     }
 
-    test('quanToFiatString converts correctly', () {
+    test('tokenToFiatString converts correctly', () {
       final logic = createLogic();
-      final amount = BigInt.from(1000000000000); // 1.0 QUAN
-      expect(logic.quanToFiatString(amount), '1.00');
+      final amount = BigInt.from(1000000000000); // 1.0 tokens
+      expect(logic.tokenToFiatString(amount), '1.00');
     });
 
-    test('fiatStringToQuan parses correctly', () {
+    test('fiatStringToToken parses correctly', () {
       final logic = createLogic();
-      final result = logic.fiatStringToQuan('1.00');
+      final result = logic.fiatStringToToken('1.00');
       expect(result, BigInt.from(1000000000000));
     });
 
-    test('getToggledInput handles QUAN -> Fiat toggle', () {
+    test('getToggledInput handles tokens -> Fiat toggle', () {
       final logic = createLogic();
-      final amount = BigInt.from(1500000000000); // 1.5 QUAN
+      final amount = BigInt.from(1500000000000); // 1.5 tokens
       final result = logic.getToggledInput(wasFlipped: false, currentAmount: amount);
 
       expect(result.text, '1.50');
       expect(result.amount, BigInt.from(1500000000000));
     });
 
-    test('getToggledInput handles Fiat -> QUAN toggle', () {
+    test('getToggledInput handles Fiat -> tokens toggle', () {
       final logic = createLogic();
-      final amount = BigInt.from(1500000000000); // 1.5 QUAN
+      final amount = BigInt.from(1500000000000); // 1.5 tokens
       final result = logic.getToggledInput(wasFlipped: true, currentAmount: amount);
 
       expect(result.text, '1.5');
       expect(result.amount, amount);
     });
 
-    test('onAmountChanged handles QUAN input', () {
+    test('onAmountChanged handles token input', () {
       final logic = createLogic();
       final result = logic.onAmountChanged(value: '1.5', isFlipped: false);
       expect(result, BigInt.from(1500000000000));
@@ -68,14 +68,14 @@ void main() {
       expect(result, BigInt.from(1500000000000));
     });
 
-    test('quanToFiatString returns empty string for zero', () {
+    test('tokenToFiatString returns empty string for zero', () {
       final logic = createLogic();
-      expect(logic.quanToFiatString(BigInt.zero), '');
+      expect(logic.tokenToFiatString(BigInt.zero), '');
     });
 
-    test('formatQuanAmount returns empty string for zero', () {
+    test('formatTokenAmount returns empty string for zero', () {
       final logic = createLogic();
-      expect(logic.formatQuanAmount(BigInt.zero), '');
+      expect(logic.formatTokenAmount(BigInt.zero), '');
     });
   });
 }

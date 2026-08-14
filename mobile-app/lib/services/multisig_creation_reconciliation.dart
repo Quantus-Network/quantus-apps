@@ -23,8 +23,8 @@ Future<void> reconcileConfirmedMultisigCreation(Ref ref, MultisigAccount draft, 
 
     invalidateAccountBalances(ref, affectedIds);
   } catch (e, stackTrace) {
-    quantusDebugPrint('[MultisigCreationReconcile] Error: $e');
-    quantusDebugPrint('Stack trace: $stackTrace');
+    quantusPrint('[MultisigCreationReconcile] Error: $e');
+    quantusPrint('Stack trace: $stackTrace');
   }
 }
 
@@ -35,8 +35,8 @@ Future<MultisigCreatedEvent> _loadCreatedEvent(Ref ref, MultisigAccount draft, {
       return MultisigCreatedEvent.fromMultisigGraphql(multisig: record);
     }
   } catch (e, stackTrace) {
-    quantusDebugPrint('[MultisigCreationReconcile] Indexer unavailable ($e); using draft with preflight networkFee');
-    quantusDebugPrint('Stack trace: $stackTrace');
+    quantusPrint('[MultisigCreationReconcile] Indexer unavailable ($e); using draft with preflight networkFee');
+    quantusPrint('Stack trace: $stackTrace');
   }
 
   return MultisigCreatedEvent.fromDraft(draft, networkFee: networkFee);

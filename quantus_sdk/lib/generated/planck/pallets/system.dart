@@ -712,7 +712,7 @@ class Constants {
       normal: _i21.WeightsPerClass(
         baseExtrinsic: _i13.Weight(refTime: BigInt.from(108157000), proofSize: BigInt.zero),
         maxExtrinsic: _i13.Weight(
-          refTime: BigInt.from(3899891843000),
+          refTime: BigInt.from(3899460229000),
           proofSize: BigInt.parse('11990383647911208550', radix: 10),
         ),
         maxTotal: _i13.Weight(
@@ -724,7 +724,7 @@ class Constants {
       operational: _i21.WeightsPerClass(
         baseExtrinsic: _i13.Weight(refTime: BigInt.from(108157000), proofSize: BigInt.zero),
         maxExtrinsic: _i13.Weight(
-          refTime: BigInt.from(5399891843000),
+          refTime: BigInt.from(5399460229000),
           proofSize: BigInt.parse('16602069666338596454', radix: 10),
         ),
         maxTotal: _i13.Weight(
@@ -764,7 +764,7 @@ class Constants {
     specName: 'quantus-runtime',
     implName: 'quantus-runtime',
     authoringVersion: 1,
-    specVersion: 129,
+    specVersion: 136,
     implVersion: 1,
     apis: [
       _i9.Tuple2<List<int>, int>(<int>[223, 106, 203, 104, 153, 7, 96, 155], 5),
@@ -780,7 +780,7 @@ class Constants {
       _i9.Tuple2<List<int>, int>(<int>[243, 255, 20, 213, 171, 82, 112, 89], 3),
       _i9.Tuple2<List<int>, int>(<int>[251, 197, 119, 185, 215, 71, 239, 214], 1),
     ],
-    transactionVersion: 2,
+    transactionVersion: 3,
     systemVersion: 1,
   );
 

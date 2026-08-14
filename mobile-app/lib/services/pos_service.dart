@@ -24,9 +24,9 @@ class PosService {
     return uri.toString();
   }
 
-  PosPaymentRequest createPaymentRequest({required String accountId, required BigInt amountPlanck}) {
+  PosPaymentRequest createPaymentRequest({required String accountId, required BigInt amountToken}) {
     final refId = generateRefId();
-    final wireAmount = _formattingService.formatWireAmount(amountPlanck);
+    final wireAmount = _formattingService.formatWireAmount(amountToken);
     final url = buildPaymentUrl(accountId: accountId, amount: wireAmount, refId: refId);
     return PosPaymentRequest(paymentUrl: url, refId: refId, amount: wireAmount);
   }

@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'dart:math';
-import 'dart:typed_data';
 
 import 'package:cryptography/cryptography.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 /// Decrypted result of a successful unlock: the mnemonic plus the derived key
@@ -33,11 +33,42 @@ class VaultService {
 
   Future<bool> hasWallet() async => (await _storage.read(key: _vaultKey)) != null;
 
-  Future<bool> isBiometricEnabled() async => (await _storage.read(key: _bioKeyKey)) != null;
+  /// True only when the stored biometric key belongs to the current vault
+  /// (matched via the vault salt it was paired with). A key orphaned by a
+  /// rotation that died between the vault write and the re-store is deleted
+  /// here, so startup never advertises an unlock option that cannot work.
+  /// Pre-pairing entries (bare base64) carry no salt and are instead
+  /// validated at use in [unlockWithBiometricKey].
+  Future<bool> isBiometricEnabled() async {
+    final raw = await _storage.read(key: _bioKeyKey);
+    if (raw == null) return false;
+    final vaultSalt = await _vaultSaltB64();
+    if (vaultSalt == null) return false;
+    final entry = _decodeBioEntry(raw);
+    if (entry.salt == null || entry.salt == vaultSalt) return true;
+    debugPrint('Biometric key belongs to a previous vault (interrupted rotation); removing it');
+    await _storage.delete(key: _bioKeyKey);
+    return false;
+  }
+
+  Future<String?> _vaultSaltB64() async {
+    final raw = await _storage.read(key: _vaultKey);
+    if (raw == null) return null;
+    return (jsonDecode(raw) as Map<String, dynamic>)['salt'] as String;
+  }
+
+  ({String? salt, String key}) _decodeBioEntry(String raw) {
+    if (!raw.startsWith('{')) return (salt: null, key: raw);
+    final m = jsonDecode(raw) as Map<String, dynamic>;
+    return (salt: m['salt'] as String, key: m['key'] as String);
+  }
 
   Future<SecretKey> _deriveKey(String password, List<int> salt) =>
       _kdf.deriveKey(secretKey: SecretKey(utf8.encode(password)), nonce: salt);
 
+  /// Writes only the vault entry. A biometric key stored for a previous vault
+  /// stays valid for that vault until the write lands, so callers own keeping
+  /// the biometric entry consistent with the vault they committed.
   Future<void> createVault({required String mnemonic, required String password}) async {
     final salt = _randomBytes(16);
     final key = await _deriveKey(password, salt);
@@ -50,8 +81,6 @@ class VaultService {
       'mac': base64Encode(box.mac.bytes),
     });
     await _storage.write(key: _vaultKey, value: blob);
-    // (Re)creating a wallet invalidates any previously stored biometric key.
-    await _storage.delete(key: _bioKeyKey);
   }
 
   Future<_Vault> _readVault() async {
@@ -82,15 +111,28 @@ class VaultService {
     return UnlockResult(mnemonic: mnemonic, keyBytes: await key.extractBytes());
   }
 
-  Future<void> storeBiometricKey(List<int> keyBytes) async =>
-      _storage.write(key: _bioKeyKey, value: base64Encode(keyBytes));
+  /// Pairs the key with the current vault via its salt, so a key orphaned by
+  /// an interrupted rotation is detectable at the next launch.
+  Future<void> storeBiometricKey(List<int> keyBytes) async {
+    final vaultSalt = await _vaultSaltB64();
+    if (vaultSalt == null) throw StateError('No wallet vault found');
+    await _storage.write(key: _bioKeyKey, value: jsonEncode({'salt': vaultSalt, 'key': base64Encode(keyBytes)}));
+  }
 
   Future<void> disableBiometric() async => _storage.delete(key: _bioKeyKey);
 
   Future<String> unlockWithBiometricKey() async {
     final raw = await _storage.read(key: _bioKeyKey);
     if (raw == null) throw StateError('Biometric unlock not set up');
-    return _decrypt(await _readVault(), SecretKey(base64Decode(raw)));
+    try {
+      return await _decrypt(await _readVault(), SecretKey(base64Decode(_decodeBioEntry(raw).key)));
+    } on SecretBoxAuthenticationError {
+      // The key cannot authenticate this vault, so it belongs to a previous
+      // one; drop it so the broken unlock option disappears.
+      debugPrint('Biometric key failed to decrypt the vault; removing it');
+      await _storage.delete(key: _bioKeyKey);
+      rethrow;
+    }
   }
 
   Future<void> wipe() async {

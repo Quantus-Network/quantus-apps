@@ -16,6 +16,9 @@ void main() {
   setUpAll(() async {
     SharedPreferences.setMockInitialValues({});
     await RustLib.init();
+    // ss58ToAccountId only accepts Quantus (prefix 189) addresses, so
+    // toAccountId must encode with that prefix too.
+    crypto.setDefaultSs58Prefix(prefix: 189);
   });
 
   group('Recovery proxy account encoding', () {

@@ -9,8 +9,9 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:quantus_sdk/src/resonance_extrinsic_payload.dart';
 import 'package:quantus_sdk/src/rust/api/crypto.dart' as crypto;
 import 'package:quantus_sdk/src/utils/timing.dart';
-import 'package:ss58/ss58.dart';
+import 'package:ss58/ss58.dart' hide Registry;
 import 'package:quantus_sdk/src/extensions/address_extension.dart';
+import 'package:quantus_sdk/src/utils/print.dart';
 
 const crystalAlice = '//Crystal Alice';
 const crystalBob = '//Crystal Bob';
@@ -29,14 +30,38 @@ class SubstrateService {
   final RpcEndpointService _rpcEndpointService = RpcEndpointService();
   final SettingsService _settingsService = SettingsService();
 
+  String? _cachedGenesisHash;
+  RuntimeVersion? _cachedRuntimeVersion;
+  DateTime? _runtimeVersionFetchedAt;
+  static const _runtimeVersionMaxAge = Duration(minutes: 5);
+
+  void _clearChainCaches() {
+    _cachedGenesisHash = null;
+    _cachedRuntimeVersion = null;
+    _runtimeVersionFetchedAt = null;
+  }
+
+  /// Runtime version only changes on runtime upgrades, so it is cached briefly.
+  /// Send flows prefetch it on entry so payload builds hit the cache.
+  Future<RuntimeVersion> getRuntimeVersion() async {
+    final cached = _cachedRuntimeVersion;
+    final fetchedAt = _runtimeVersionFetchedAt;
+    if (cached != null && fetchedAt != null && DateTime.now().difference(fetchedAt) < _runtimeVersionMaxAge) {
+      return cached;
+    }
+    final version = await _rpcEndpointService.providerTask((provider) => StateApi(provider).getRuntimeVersion());
+    _cachedRuntimeVersion = version;
+    _runtimeVersionFetchedAt = DateTime.now();
+    return version;
+  }
+
   Future<BigInt> getFee(Uint8List signedExtrinsic) async {
     try {
       final hexEncodedSignedExtrinsic = bytesToHex(signedExtrinsic);
 
-      final result = await _rpcEndpointService.rpcTask((uri) async {
-        final provider = Provider.fromUri(uri);
-        return await provider.send('payment_queryInfo', [hexEncodedSignedExtrinsic, null]);
-      });
+      final result = await _rpcEndpointService.providerTask(
+        (provider) => provider.send('payment_queryInfo', [hexEncodedSignedExtrinsic, null]),
+      );
 
       if (result.error != null) {
         throw Exception('RPC Error: ${result.error}');
@@ -44,7 +69,7 @@ class SubstrateService {
       final partialFeeString = result.result['partialFee'] as String;
       return BigInt.parse(partialFeeString);
     } catch (e, s) {
-      debugPrint('Error estimating fee: $e $s');
+      quantusPrint('Error estimating fee: $e $s');
       throw Exception('Failed to estimate network fee: $e');
     }
   }
@@ -59,7 +84,7 @@ class SubstrateService {
   Future<BigInt> queryUserBalance() async {
     final keyPair = await _getUserWallet();
     final balance = await queryBalance(keyPair.ss58Address);
-    print('user balance: $balance');
+    quantusPrint('user balance: $balance');
     return balance;
   }
 
@@ -68,23 +93,18 @@ class SubstrateService {
       final accountID = crypto.ss58ToAccountId(s: address);
       final totalSw = Stopwatch()..start();
 
-      final accountInfo = await _rpcEndpointService.rpcTask((uri) async {
-        final setupSw = Stopwatch()..start();
-        final provider = Provider.fromUri(uri);
-        final quantusApi = Planck(provider);
-        printTiming('queryBalance setup $uri', setupSw.elapsedMilliseconds);
-
+      final accountInfo = await _rpcEndpointService.providerTask((provider) async {
         final callSw = Stopwatch()..start();
-        final result = await quantusApi.query.system.account(accountID);
-        printTiming('queryBalance call $uri', callSw.elapsedMilliseconds);
+        final result = await Planck(provider).query.system.account(accountID);
+        printTiming('queryBalance call', callSw.elapsedMilliseconds);
         return result;
       });
 
       printTiming('queryBalance total', totalSw.elapsedMilliseconds);
-      print('user balance $address: ${accountInfo.data.free}');
+      quantusPrint('user balance $address: ${accountInfo.data.free}');
       return accountInfo.data.free;
     } catch (e, st) {
-      print('Error querying balance: $e, $st');
+      quantusPrint('Error querying balance: $e, $st');
       throw Exception('Failed to query balance: $e');
     }
   }
@@ -116,14 +136,16 @@ class SubstrateService {
   Future<Uint8List> _submitExtrinsic(Uint8List extrinsic) async {
     final params = ['0x${hex.encode(extrinsic)}'];
 
-    final response = await _rpcEndpointService.rpcTask((uri) async {
-      print('submitExtrinsic to $uri');
-      final provider = Provider.fromUri(uri);
-      return await provider.send('author_submitExtrinsic', params);
-    });
+    final response = await _rpcEndpointService.providerTask(
+      (provider) => provider.send('author_submitExtrinsic', params),
+    );
 
-    print('submitExtrinsic response: ${response.result}');
+    quantusPrint('submitExtrinsic response: ${response.result}');
     if (response.error != null) {
+      // A rejected extrinsic can mean a runtime upgrade landed while the cached
+      // spec/genesis was still considered fresh — drop the caches so the next
+      // payload is built against re-fetched chain state.
+      _clearChainCaches();
       throw Exception(response.error.toString());
     }
 
@@ -140,32 +162,32 @@ class SubstrateService {
     // For debugging: calculate the hash locally since submitAndWatch returns a sub ID
     final txHash = Hasher.blake2b256.hash(extrinsic);
     final txHashHex = '0x${hex.encode(txHash)}';
-    print('Calculated Tx Hash: $txHashHex');
+    quantusPrint('Calculated Tx Hash: $txHashHex');
 
     // We don't await this because we want to return the hash immediately
     // but keep the listener running
     _rpcEndpointService.rpcTask((uri) async {
       final wsUri = uri.replace(scheme: uri.scheme == 'https' ? 'wss' : 'ws');
-      print('submitExtrinsic (Watch) to $wsUri');
+      quantusPrint('submitExtrinsic (Watch) to $wsUri');
 
       final provider = Provider.fromUri(wsUri);
 
       try {
         final subscription = await provider.subscribe('author_submitAndWatchExtrinsic', params);
-        print('Subscribed to extrinsic updates: ${subscription.id}');
+        quantusPrint('Subscribed to extrinsic updates: ${subscription.id}');
 
         subscription.stream.listen((message) {
-          print('Extrinsic Status Update [${message.subscription}]: ${message.result}');
+          quantusPrint('Extrinsic Status Update [${message.subscription}]: ${message.result}');
 
           // Check for error/invalid
           final result = message.result;
           if (result is Map &&
               (result.containsKey('invalid') || result.containsKey('dropped') || result.containsKey('error'))) {
-            print('Extrinsic FAILED/DROPPED: $result');
+            quantusPrint('Extrinsic FAILED/DROPPED: $result');
           }
         });
       } catch (e) {
-        print('Error watching extrinsic: $e');
+        quantusPrint('Error watching extrinsic: $e');
       }
 
       // Keep alive for logs
@@ -187,14 +209,14 @@ class SubstrateService {
         return await _submitExtrinsic(extrinsic);
       } catch (e) {
         if (_isAlreadySubmittedError(e, isRetry: attempt > 1)) {
-          print('Extrinsic 0x${hex.encode(txHash)} already known by network: $e');
+          quantusPrint('Extrinsic 0x${hex.encode(txHash)} already known by network: $e');
           return txHash;
         }
         if (attempt >= maxRetries) {
-          print('Failed to submit extrinsic after $maxRetries attempts: $e');
+          quantusPrint('Failed to submit extrinsic after $maxRetries attempts: $e');
           rethrow;
         }
-        print('Failed to submit extrinsic, retrying... attempt $attempt error: $e');
+        quantusPrint('Failed to submit extrinsic, retrying... attempt $attempt error: $e');
         await Future.delayed(Duration(milliseconds: 500 * attempt));
       }
     }
@@ -209,39 +231,47 @@ class SubstrateService {
     return isRetry && (message.contains('outdated') || message.contains('stale'));
   }
 
-  Future<ExtrinsicData> getExtrinsicPayload(Account account, RuntimeCall call, {bool isSigned = true}) async {
-    final [runtimeVersion, genesisHash, blockNumber, blockHash, nonce] = await Future.wait([
-      _rpcEndpointService.rpcTask((uri) async {
-        final provider = Provider.fromUri(uri);
-        final stateApi = StateApi(provider);
-        return await stateApi.getRuntimeVersion();
-      }),
+  /// Everything chain-dependent a signing payload needs, fetched in one
+  /// parallel round trip. Genesis hash and runtime version come from cache
+  /// when fresh, so usually only header, block hash and nonce hit the network.
+  Future<({RuntimeVersion runtimeVersion, dynamic genesisHash, int blockNumber, dynamic blockHash, int nonce})>
+  _getSigningContext(String accountId) async {
+    final [runtimeVersion, genesisHash, blockNumber, blockHash, nonce] = await Future.wait<dynamic>([
+      getRuntimeVersion(),
       _getGenesisHash(),
       _getBlockNumber(),
       _getBlockHash(),
-      _getNextAccountNonceFromAddress(account.accountId),
+      _getNextAccountNonceFromAddress(accountId),
     ]);
+    return (
+      runtimeVersion: runtimeVersion as RuntimeVersion,
+      genesisHash: genesisHash,
+      blockNumber: blockNumber as int,
+      blockHash: blockHash,
+      nonce: nonce as int,
+    );
+  }
 
-    final [specVersion, transactionVersion] = [runtimeVersion.specVersion, runtimeVersion.transactionVersion];
+  Future<ExtrinsicData> getExtrinsicPayload(Account account, RuntimeCall call, {bool isSigned = true}) async {
+    final ctx = await _getSigningContext(account.accountId);
+    final blockNumber = ctx.blockNumber;
+    final blockHash = ctx.blockHash;
+    final nonce = ctx.nonce;
     final encodedCall = call.encode();
 
     final payloadToSign = SigningPayload(
       method: encodedCall,
-      specVersion: specVersion,
-      transactionVersion: transactionVersion,
-      genesisHash: genesisHash,
+      specVersion: ctx.runtimeVersion.specVersion,
+      transactionVersion: ctx.runtimeVersion.transactionVersion,
+      genesisHash: ctx.genesisHash,
       blockHash: blockHash,
       blockNumber: blockNumber,
-      eraPeriod: 64,
+      eraPeriod: AppConstants.txMortalEraPeriodBlocks,
       nonce: nonce,
       tip: 0,
     );
 
-    final registry = await _rpcEndpointService.rpcTask((uri) async {
-      final provider = Provider.fromUri(uri);
-      return Planck(provider).registry;
-    });
-
+    final registry = Registry();
     final payload = payloadToSign.encode(registry);
 
     if (isSigned) {
@@ -258,7 +288,7 @@ class SubstrateService {
         signer: Uint8List.fromList(senderWallet.addressBytes),
         method: encodedCall,
         signature: signatureWithPublicKeyBytes,
-        eraPeriod: 64,
+        eraPeriod: AppConstants.txMortalEraPeriodBlocks,
         blockNumber: blockNumber,
         nonce: nonce,
         tip: 0,
@@ -275,7 +305,7 @@ class SubstrateService {
         signer: signerBytes,
         method: encodedCall,
         signature: dummySignature,
-        eraPeriod: 64,
+        eraPeriod: AppConstants.txMortalEraPeriodBlocks,
         blockNumber: blockNumber,
         nonce: nonce,
         tip: 0,
@@ -287,40 +317,22 @@ class SubstrateService {
 
   Future<UnsignedTransactionData> getUnsignedTransactionPayload(Account account, RuntimeCall call) async {
     final accountIdBytes = crypto.ss58ToAccountId(s: account.accountId);
-
-    final [runtimeVersion, genesisHash, blockNumber, blockHash, nonce] = await Future.wait([
-      _rpcEndpointService.rpcTask((uri) async {
-        final provider = Provider.fromUri(uri);
-        final stateApi = StateApi(provider);
-        return await stateApi.getRuntimeVersion();
-      }),
-      _getGenesisHash(),
-      _getBlockNumber(),
-      _getBlockHash(),
-      _getNextAccountNonceFromAddress(account.accountId),
-    ]);
-
-    final [specVersion, transactionVersion] = [runtimeVersion.specVersion, runtimeVersion.transactionVersion];
+    final ctx = await _getSigningContext(account.accountId);
     final encodedCall = call.encode();
 
     final payloadToSign = QuantusSigningPayload(
       method: encodedCall,
-      specVersion: specVersion,
-      transactionVersion: transactionVersion,
-      genesisHash: genesisHash,
-      blockHash: blockHash,
-      blockNumber: blockNumber,
-      eraPeriod: 64,
-      nonce: nonce,
+      specVersion: ctx.runtimeVersion.specVersion,
+      transactionVersion: ctx.runtimeVersion.transactionVersion,
+      genesisHash: ctx.genesisHash,
+      blockHash: ctx.blockHash,
+      blockNumber: ctx.blockNumber,
+      eraPeriod: AppConstants.txMortalEraPeriodBlocks,
+      nonce: ctx.nonce,
       tip: 0,
     );
 
-    final registry = await _rpcEndpointService.rpcTask((uri) async {
-      final provider = Provider.fromUri(uri);
-      return Planck(provider).registry;
-    });
-
-    return UnsignedTransactionData(payloadToSign: payloadToSign, signer: accountIdBytes, registry: registry);
+    return UnsignedTransactionData(payloadToSign: payloadToSign, signer: accountIdBytes, registry: Registry());
   }
 
   Future<Uint8List> submitExtrinsicWithExternalSignature(
@@ -346,34 +358,29 @@ class SubstrateService {
   }
 
   Future<int> _getNextAccountNonceFromAddress(String address) async {
-    final nonceResult = await _rpcEndpointService.rpcTask((uri) async {
-      final provider = Provider.fromUri(uri);
-      return await provider.send('system_accountNextIndex', [address]);
-    });
+    final nonceResult = await _rpcEndpointService.providerTask(
+      (provider) => provider.send('system_accountNextIndex', [address]),
+    );
     return int.parse(nonceResult.result.toString());
   }
 
   Future<dynamic> _getBlockHash() async {
-    final result = await _rpcEndpointService.rpcTask((uri) async {
-      final provider = Provider.fromUri(uri);
-      return await provider.send('chain_getBlockHash', []);
-    });
+    final result = await _rpcEndpointService.providerTask((provider) => provider.send('chain_getBlockHash', []));
     return result.result.replaceAll('0x', '');
   }
 
+  /// Immutable per chain, so fetched once per app run.
   Future<dynamic> _getGenesisHash() async {
-    final result = await _rpcEndpointService.rpcTask((uri) async {
-      final provider = Provider.fromUri(uri);
-      return await provider.send('chain_getBlockHash', [0]);
-    });
-    return result.result.replaceAll('0x', '');
+    final cached = _cachedGenesisHash;
+    if (cached != null) return cached;
+    final result = await _rpcEndpointService.providerTask((provider) => provider.send('chain_getBlockHash', [0]));
+    final hash = result.result.replaceAll('0x', '') as String;
+    _cachedGenesisHash = hash;
+    return hash;
   }
 
   Future<int> _getBlockNumber() async {
-    final blockHeader = await _rpcEndpointService.rpcTask((uri) async {
-      final provider = Provider.fromUri(uri);
-      return await provider.send('chain_getHeader', []);
-    });
+    final blockHeader = await _rpcEndpointService.providerTask((provider) => provider.send('chain_getHeader', []));
     return int.parse(blockHeader.result['number']);
   }
 
@@ -382,14 +389,14 @@ class SubstrateService {
 
   Provider? get provider {
     try {
-      return Provider.fromUri(Uri.parse(_rpcEndpointService.bestEndpointUrl));
+      return _rpcEndpointService.providerFor(_rpcEndpointService.bestEndpointUrl);
     } catch (e) {
       return null;
     }
   }
 
   Future<void> logout() async {
-    print('Log out!');
+    quantusPrint('Log out!');
     // Quiesce in-flight encrypted-account work (loads, sends) before wiping
     // anything: an operation still holding the old mnemonic-derived material
     // must not keep running — or persist state — past this point.
@@ -399,13 +406,13 @@ class SubstrateService {
     // and would otherwise leak balances into the next wallet session.
     await WormholeUtxoService.clearAllCaches();
     await EncryptedAccountService.clearAllPersistedState();
-    TaskmasterService().logout();
   }
 
   Future<String> generateMnemonic() async {
     try {
       // Generate a random entropy
-      final entropy = List<int>.generate(32, (i) => Random.secure().nextInt(256));
+      final random = Random.secure();
+      final entropy = List<int>.generate(32, (_) => random.nextInt(256));
       // Generate mnemonic from entropy
       final mnemonic = Mnemonic(entropy, Language.english);
 

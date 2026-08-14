@@ -51,14 +51,14 @@ Future<bool> _tryResolveExecutionTimeout(Ref ref, MultisigAccount msig, PendingM
         return true;
       }
     } catch (e) {
-      quantusDebugPrint('[MultisigExecutionPoller] soft timeout reconcile error: $e');
+      quantusPrint('[MultisigExecutionPoller] soft timeout reconcile error: $e');
     }
   }
 
   // The proposal is executed but this user's own extrinsic was never indexed:
   // another signer most likely executed first and this user's submission
   // failed on-chain. Surface that instead of resolving silently.
-  quantusDebugPrint(
+  quantusPrint(
     '[MultisigExecutionPoller] proposal ${pending.proposalId} executed but extrinsic '
     '${hash ?? '(no hash)'} not indexed; likely executed by another signer',
   );

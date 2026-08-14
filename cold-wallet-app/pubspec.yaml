@@ -2,7 +2,7 @@ name: quantus_cold_wallet
 description: "Quantus Cold Wallet - air-gapped ML-DSA transaction signer"
 publish_to: "none"
 
-version: 1.0.0+1
+version: 1.2.0+9
 
 environment:
   sdk: ">=3.8.0 <4.0.0"
@@ -14,6 +14,7 @@ dependencies:
     sdk: flutter
 
   quantus_sdk:
+    path: ../quantus_sdk
 
   # Blockchain infra (canonical versions in melos.yaml)
   # DO NOT UPDATE polkadart - pinned to match quantus_sdk's ML-DSA override.
@@ -22,6 +23,7 @@ dependencies:
 
   # State management
   flutter_riverpod: ^3.3.1
+  shared_preferences: ^2.5.5
 
   # UI
   qr_flutter: ^4.1.0
@@ -36,6 +38,8 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  # Storage failure injection in tests (kept in lockstep with flutter_secure_storage)
+  flutter_secure_storage_platform_interface: ^2.0.1
   flutter_lints: ^6.0.0
   flutter_launcher_icons: ^0.14.4
   flutter_native_splash: ^2.4.7
@@ -83,10 +87,8 @@ flutter_launcher_icons:
   android: true
   ios: true
   remove_alpha_ios: true
-  # Frozen "deep freeze" Quantus Q marks this as the cold (air-gapped) wallet.
-  # iOS / legacy Android use the full square; Android adaptive layers the frosted
-  # Q glow (transparent foreground) over a glacial navy gradient so the inset
-  # foreground blends seamlessly with no visible card seam.
+  # Clean light-blue Q (same asset as iOS). Solid bg matches the 1024 plate so
+  # Android adaptive inset does not expose a different layer under the mask.
   image_path: assets/cold_icon_1024.png
-  adaptive_icon_background: assets/cold_icon_bg.png
-  adaptive_icon_foreground: assets/cold_icon_fg.png
+  adaptive_icon_background: "#A8D5E5"
+  adaptive_icon_foreground: assets/cold_icon_1024.png

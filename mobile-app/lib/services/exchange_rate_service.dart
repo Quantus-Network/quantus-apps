@@ -1,12 +1,12 @@
 import 'package:decimal/decimal.dart';
 import 'package:resonance_network_wallet/models/fiat_currency.dart';
 
-/// Provides QUAN → fiat exchange rates.
+/// Provides token → fiat exchange rates.
 ///
 /// Constructed with a live [rates] map (ISO-4217 code → value in that currency
 /// per 1 USD). Falls back to [fallbackRates] for any code not present.
 ///
-/// [quanToUsdRate] defaults to `1` (1 QUAN = 1 USD). Wire a dedicated QUAN
+/// [tokenToUsdRate] defaults to `1` (1 token = 1 USD). Wire a dedicated tokens
 /// price feed into this field when one becomes available.
 class ExchangeRateService {
   /// Static rates used before any live or cached data is available (e.g. on
@@ -23,11 +23,11 @@ class ExchangeRateService {
   };
 
   final Map<String, Decimal> _rates;
-  final Decimal quanToUsdRate;
+  final Decimal tokenToUsdRate;
 
-  ExchangeRateService({required Map<String, Decimal> rates, Decimal? quanToUsdRate})
+  ExchangeRateService({required Map<String, Decimal> rates, Decimal? tokenToUsdRate})
     : _rates = rates,
-      quanToUsdRate = quanToUsdRate ?? Decimal.one;
+      tokenToUsdRate = tokenToUsdRate ?? Decimal.one;
 
   /// Returns the exchange rate for [fiat] (units per 1 USD).
   Decimal getRate(FiatCurrency fiat) {
@@ -37,32 +37,32 @@ class ExchangeRateService {
     return rate;
   }
 
-  /// Converts [quanAmount] to [fiat] using the current rates.
-  Decimal convert(Decimal quanAmount, FiatCurrency fiat) {
-    final result = (quanAmount * quanToUsdRate * getRate(fiat));
+  /// Converts [tokenAmount] to [fiat] using the current rates.
+  Decimal convert(Decimal tokenAmount, FiatCurrency fiat) {
+    final result = (tokenAmount * tokenToUsdRate * getRate(fiat));
     // Round to fiat precision to ensure stable round-trips
     return Decimal.parse(result.toStringAsFixed(fiat.decimals));
   }
 
-  /// Converts a raw QUAN [BigInt] (scaled by 10^[quanDecimals]) to a fiat [Decimal].
+  /// Converts a raw tokens [BigInt] (scaled by 10^[tokenDecimals]) to a fiat [Decimal].
   ///
   /// Centralises the scale-factor arithmetic so both display providers and the
   /// send screen share a single, testable conversion path.
-  Decimal quanRawToFiat(BigInt rawQuan, FiatCurrency fiat, int quanDecimals) {
-    final scaleFactor = BigInt.from(10).pow(quanDecimals);
-    final quanDecimal = (Decimal.fromBigInt(rawQuan) / Decimal.fromBigInt(scaleFactor)).toDecimal();
-    return convert(quanDecimal, fiat);
+  Decimal tokenToFiat(BigInt tokenAmount, FiatCurrency fiat, int tokenDecimals) {
+    final scaleFactor = BigInt.from(10).pow(tokenDecimals);
+    final tokenDecimal = (Decimal.fromBigInt(tokenAmount) / Decimal.fromBigInt(scaleFactor)).toDecimal();
+    return convert(tokenDecimal, fiat);
   }
 
-  /// Converts a [fiatAmount] back to raw QUAN [BigInt] scaled by 10^[quanDecimals].
+  /// Converts a [fiatAmount] back to raw tokens [BigInt] scaled by 10^[tokenDecimals].
   ///
-  /// Uses the inverse of [convert]: fiat / (quanToUsdRate × rate).
+  /// Uses the inverse of [convert]: fiat / (tokenToUsdRate × rate).
   /// Returns [BigInt.zero] when the effective rate is zero.
-  BigInt fiatToQuanRaw(Decimal fiatAmount, FiatCurrency fiat, int quanDecimals) {
-    final effectiveRate = quanToUsdRate * getRate(fiat);
+  BigInt fiatToToken(Decimal fiatAmount, FiatCurrency fiat, int tokenDecimals) {
+    final effectiveRate = tokenToUsdRate * getRate(fiat);
     if (effectiveRate == Decimal.zero) return BigInt.zero;
-    final scaleFactor = Decimal.fromBigInt(BigInt.from(10).pow(quanDecimals));
-    final quanDecimal = (fiatAmount / effectiveRate).toDecimal(scaleOnInfinitePrecision: quanDecimals);
-    return (quanDecimal * scaleFactor).toBigInt();
+    final scaleFactor = Decimal.fromBigInt(BigInt.from(10).pow(tokenDecimals));
+    final tokenDecimal = (fiatAmount / effectiveRate).toDecimal(scaleOnInfinitePrecision: tokenDecimals);
+    return (tokenDecimal * scaleFactor).toBigInt();
   }
 }

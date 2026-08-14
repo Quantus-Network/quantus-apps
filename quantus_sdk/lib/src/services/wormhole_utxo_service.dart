@@ -3,11 +3,13 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:convert/convert.dart';
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:path_provider/path_provider.dart';
 import 'package:quantus_sdk/src/rust/api/wormhole.dart' as wormhole_ffi;
 import 'package:quantus_sdk/src/services/hd_wallet_service.dart';
 import 'package:quantus_sdk/src/services/network/redundant_endpoint.dart';
 import 'package:quantus_sdk/src/services/substrate_service.dart';
+import 'package:quantus_sdk/src/utils/print.dart';
 
 class WormholeTransfer {
   final String id;
@@ -60,14 +62,26 @@ class WormholeTransfer {
       'leafIndex: $leafIndex, transferCount: $transferCount}';
 }
 
-/// One HD-derived wormhole address (index in the wormhole derivation sequence)
-/// together with the secret needed to compute nullifiers and spend proofs.
+/// One HD-derived wormhole address (index in the wormhole derivation sequence,
+/// with [isChange] selecting the change branch of the derivation path) together
+/// with the secret needed to compute nullifiers and spend proofs.
+///
+/// [secretHex] is required on input to [WormholeUtxoService.getUnspentUtxos]
+/// (nullifier computation) but is always blanked on the [WormholeUtxo.owner]
+/// of returned UTXOs: UTXOs are kept in long-lived app state, and secrets are
+/// never cached — spenders re-derive from [index]/[isChange] when needed (M11).
 class WormholeAddressInfo {
   final int index;
+  final bool isChange;
   final String address;
   final String secretHex;
 
-  const WormholeAddressInfo({required this.index, required this.address, required this.secretHex});
+  const WormholeAddressInfo({
+    required this.index,
+    this.isChange = false,
+    required this.address,
+    required this.secretHex,
+  });
 }
 
 /// An unspent wormhole transfer together with the address that owns it.
@@ -83,10 +97,19 @@ class WormholeUtxo {
 
 class WormholeUtxoResult {
   final List<WormholeUtxo> utxos;
-  final BigInt totalReceivedPlanck;
-  final BigInt totalSpentPlanck;
+  final BigInt totalReceivedToken;
 
-  const WormholeUtxoResult({required this.utxos, required this.totalReceivedPlanck, required this.totalSpentPlanck});
+  /// Slice of [totalReceivedToken] received on change-branch addresses, so
+  /// callers can report externally received funds separately from change.
+  final BigInt changeReceivedToken;
+  final BigInt totalSpentToken;
+
+  const WormholeUtxoResult({
+    required this.utxos,
+    required this.totalReceivedToken,
+    required this.changeReceivedToken,
+    required this.totalSpentToken,
+  });
 }
 
 typedef WormholeProgressCallback = void Function(int phase, int completed, {int? total});
@@ -109,7 +132,7 @@ class WormholeUtxoService {
   final GraphQlEndpointService _graphQlEndpoint = GraphQlEndpointService();
   final RpcEndpointService _rpcEndpoint = RpcEndpointService();
 
-  static void _log(String msg) => print('[WormholeUtxo] $msg');
+  static void _log(String msg) => quantusPrint('[WormholeUtxo] $msg');
 
   static String _addressHash(Uint8List raw32) => wormhole_ffi.computeAddressHashHex(rawAddress: raw32);
 
@@ -423,7 +446,8 @@ query SpentNullifiers($hashes: [String!]!) {
   /// Returns a map from nullifier hex to the block height where it was spent.
   /// Callers are responsible for deciding which entries are reorg-safe to
   /// persist (see `getUnspentUtxos`).
-  Future<Map<String, int>> _checkNullifiersSpent(
+  @visibleForTesting
+  Future<Map<String, int>> checkNullifiersSpent(
     List<(String nullifierHex, String nullifierHash)> nullifiers, {
     WormholeProgressCallback? onProgress,
     IsCancelledCallback? isCancelled,
@@ -570,13 +594,20 @@ query SpentNullifiers($hashes: [String!]!) {
     final totalTransfers = fetched.byAddress.values.fold<int>(0, (sum, l) => sum + l.length);
     if (totalTransfers == 0) {
       _log('getUnspentUtxos: no transfers found');
-      return WormholeUtxoResult(utxos: const [], totalReceivedPlanck: BigInt.zero, totalSpentPlanck: BigInt.zero);
+      return WormholeUtxoResult(
+        utxos: const [],
+        totalReceivedToken: BigInt.zero,
+        changeReceivedToken: BigInt.zero,
+        totalSpentToken: BigInt.zero,
+      );
     }
 
-    BigInt totalReceivedPlanck = BigInt.zero;
-    for (final transfers in fetched.byAddress.values) {
-      for (final t in transfers) {
-        totalReceivedPlanck += t.amount;
+    BigInt totalReceivedToken = BigInt.zero;
+    BigInt changeReceivedToken = BigInt.zero;
+    for (final owner in addresses) {
+      for (final t in fetched.byAddress[owner.address]!) {
+        totalReceivedToken += t.amount;
+        if (owner.isChange) changeReceivedToken += t.amount;
       }
     }
 
@@ -600,7 +631,19 @@ query SpentNullifiers($hashes: [String!]!) {
           secretHex: owner.secretHex,
           transferCount: transfer.transferCount,
         );
-        nullifierToUtxo[nullifierHex] = WormholeUtxo(transfer: transfer, owner: owner, nullifierHex: nullifierHex);
+        // The secret is used only for the nullifier above — the returned UTXO
+        // carries a blanked owner so no secret is retained in app state (M11).
+        final redactedOwner = WormholeAddressInfo(
+          index: owner.index,
+          isChange: owner.isChange,
+          address: owner.address,
+          secretHex: '',
+        );
+        nullifierToUtxo[nullifierHex] = WormholeUtxo(
+          transfer: transfer,
+          owner: redactedOwner,
+          nullifierHex: nullifierHex,
+        );
         if (cachedSpent.contains(nullifierHex)) {
           skipped++;
         } else {
@@ -615,7 +658,7 @@ query SpentNullifiers($hashes: [String!]!) {
     _log('Computed nullifiers: $skipped cached-spent, ${uncheckedPairs.length} to check');
 
     if (uncheckedPairs.isNotEmpty) {
-      final newSpent = await _checkNullifiersSpent(uncheckedPairs, onProgress: onProgress, isCancelled: isCancelled);
+      final newSpent = await checkNullifiersSpent(uncheckedPairs, onProgress: onProgress, isCancelled: isCancelled);
       // In-memory: every spent nullifier we've seen, including ones in
       // unfinalized blocks — must not be re-claimed in this call.
       allSpent.addAll(newSpent.keys);
@@ -643,14 +686,15 @@ query SpentNullifiers($hashes: [String!]!) {
     }
 
     final unspent = nullifierToUtxo.entries.where((e) => !allSpent.contains(e.key)).map((e) => e.value).toList();
-    final totalSpentPlanck = nullifierToUtxo.entries
+    final totalSpentToken = nullifierToUtxo.entries
         .where((e) => allSpent.contains(e.key))
         .fold(BigInt.zero, (sum, e) => sum + e.value.amount);
     _log('getUnspentUtxos: ${unspent.length} unspent out of $totalTransfers total');
     return WormholeUtxoResult(
       utxos: unspent,
-      totalReceivedPlanck: totalReceivedPlanck,
-      totalSpentPlanck: totalSpentPlanck,
+      totalReceivedToken: totalReceivedToken,
+      changeReceivedToken: changeReceivedToken,
+      totalSpentToken: totalSpentToken,
     );
   }
 
@@ -680,7 +724,7 @@ query SpentNullifiers($hashes: [String!]!) {
       isCancelled: isCancelled,
     );
     final balance = unspent.fold<BigInt>(BigInt.zero, (sum, t) => sum + t.amount);
-    _log('getUnspentBalance: $balance planck (${unspent.length} unspent transfers)');
+    _log('getUnspentBalance: $balance token units (${unspent.length} unspent transfers)');
     return balance;
   }
 }

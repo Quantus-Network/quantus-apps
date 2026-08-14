@@ -21,6 +21,7 @@ import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 import 'package:resonance_network_wallet/shared/extensions/toaster_extensions.dart';
 import 'package:resonance_network_wallet/shared/utils/amount_input_logic.dart';
 import 'package:resonance_network_wallet/shared/utils/debouncer.dart';
+import 'package:resonance_network_wallet/shared/utils/print.dart';
 import 'package:resonance_network_wallet/v2/components/loader.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_icon_button.dart';
 
@@ -76,12 +77,12 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
     _amountFocus.addListener(_onAmountFocusChanged);
     if (widget.initialAmount != null && widget.initialAmount!.isNotEmpty) {
       final formattingService = ref.read(numberFormattingServiceProvider);
-      final planck = widget.isPayMode
+      final token = widget.isPayMode
           ? formattingService.parseWireAmount(widget.initialAmount!) ?? BigInt.zero
-          : _amountInputLogic.parseQuanAmount(widget.initialAmount!);
-      if (planck > BigInt.zero) {
-        _amount = planck;
-        _amountController.text = _amountInputLogic.formatQuanAmount(planck);
+          : _amountInputLogic.parseTokenAmount(widget.initialAmount!);
+      if (token > BigInt.zero) {
+        _amount = token;
+        _amountController.text = _amountInputLogic.formatTokenAmount(token);
       }
     }
     if (widget.recipientChecksum != null) {
@@ -131,15 +132,30 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
     try {
       setState(() => _amount = _amountInputLogic.onAmountChanged(value: _amountController.text, isFlipped: isFlipped));
     } on InvalidNumberInputException catch (e, stack) {
-      debugPrint('Amount parse failed: $e\n$stack');
+      quantusPrint('Amount parse failed: $e\n$stack');
       final l10n = ref.read(l10nProvider);
       context.showErrorToaster(message: l10n.sendInputAmountInvalidAmount);
       return;
     }
+    _invalidateFee();
     _feeDebouncer.run(_refreshFee);
   }
 
+  /// For encrypted sends the fee estimate *is* the spend plan, frozen for the
+  /// amount it was computed with — a stale fee must never stay valid for a new
+  /// amount. Drop it and orphan any in-flight fetch so Review stays blocked
+  /// until a refetch for the current amount lands.
+  void _invalidateFee() {
+    _fetchFeeCounter++;
+    setState(() {
+      _fee = null;
+      _hasFee = false;
+      _feeFetchFailed = false;
+    });
+  }
+
   void _refreshFee() {
+    _feeDebouncer.cancel();
     final counter = ++_fetchFeeCounter;
     final showLoader = !_hasFee || _feeFetchFailed;
     setState(() {
@@ -160,7 +176,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
         _isFetchingFee = false;
       });
     } catch (e, st) {
-      debugPrint('Fee fetch error: $e\n$st');
+      quantusPrint('Fee fetch error: $e\n$st');
       if (!mounted || counter != _fetchFeeCounter) return;
       setState(() {
         _fee = null;
@@ -171,12 +187,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
     }
   }
 
-  void _retryFeeFetch() {
-    _feeDebouncer.cancel();
-    _refreshFee();
-  }
-
-  /// Converts a raw QUAN [BigInt] to a fiat input string using the current
+  /// Converts a token amount [BigInt] to a fiat input string using the current
   /// exchange rate and selected fiat currency, formatted for the user's locale.
   void _setMax() {
     final spendable = ref.read(widget.strategy.spendableBalanceProvider).value ?? BigInt.zero;
@@ -186,9 +197,10 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
     );
     final isFlipped = ref.read(isCurrencyFlippedProvider);
     _amountController.text = isFlipped
-        ? _amountInputLogic.quanToFiatString(max)
-        : _amountInputLogic.formatQuanAmount(max);
+        ? _amountInputLogic.tokenToFiatString(max)
+        : _amountInputLogic.formatTokenAmount(max);
     setState(() => _amount = max);
+    _invalidateFee();
     _refreshFee();
   }
 
@@ -202,12 +214,21 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
       _amountController.text = result.text;
       _amount = result.amount;
     });
+    // The flip can change the token amount (fiat rounding), so the plan must
+    // be re-estimated for the new amount.
+    _invalidateFee();
+    _refreshFee();
   }
 
   void _openReview() {
     final fee = _fee;
-    if (_recipientChecksum == null || fee == null) {
-      context.showErrorToaster(message: ref.read(l10nProvider).sendInputAmountChecksumRequired);
+    final l10n = ref.read(l10nProvider);
+    if (_recipientChecksum == null) {
+      context.showErrorToaster(message: l10n.sendInputAmountChecksumRequired);
+      return;
+    }
+    if (fee == null) {
+      context.showErrorToaster(message: widget.strategy.strings(l10n).feeFetchFailedMessage);
       return;
     }
 
@@ -249,6 +270,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
     final btnDisabled =
         !_hasFee ||
         _feeFetchFailed ||
+        _feeDebouncer.isPending ||
         _recipientChecksum == null ||
         balance.isLoading ||
         widget.strategy.extraBalancesLoading(ref) ||
@@ -370,9 +392,9 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
     final display = ref.watch(txAmountDisplayProvider)(
       _amount,
       withSignPrefix: false,
-      quanDecimals: 4,
+      tokenDecimals: 4,
       isSend: true,
-      withQuanSymbol: false,
+      withTokenSymbol: false,
     );
 
     final symbolStyle = text.transactionDetailAmountSymbol?.copyWith(color: colors.textPrimary);
@@ -402,7 +424,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
     final symbolWidget = Text(isFlipped ? selectedFiat.symbol : AppConstants.tokenSymbol, style: symbolStyle);
 
     // For prefix fiat currencies (e.g. $, Rp) place symbol before the field;
-    // for suffix currencies and QUAN keep it after.
+    // for suffix currencies and the token symbol keep it after.
     final List<Widget> primaryRowChildren = isPrefixFiat
         ? [symbolWidget, const SizedBox(width: 8), inputField]
         : [inputField, const SizedBox(width: 8), symbolWidget];
@@ -471,7 +493,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
           IntrinsicWidth(
             child: QuantusButton.simple(
               label: l10n.homeActivityRetry,
-              onTap: _retryFeeFetch,
+              onTap: _refreshFee,
               padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 0),
               variant: ButtonVariant.transparent,
               textStyle: text.smallParagraph?.copyWith(

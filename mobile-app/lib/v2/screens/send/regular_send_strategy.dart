@@ -5,11 +5,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/l10n/app_localizations.dart';
-import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/services/local_auth_service.dart';
 import 'package:resonance_network_wallet/services/transaction_submission_service.dart';
+import 'package:resonance_network_wallet/shared/utils/print.dart';
 import 'package:resonance_network_wallet/shared/utils/url_utils.dart';
 import 'package:resonance_network_wallet/v2/components/detail_summary_row.dart';
 import 'package:resonance_network_wallet/v2/screens/send/keystone_sign_cache.dart';
@@ -20,13 +20,19 @@ import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 
 /// Standard single-signer transfer from the active account. Signs locally, or
 /// hands off to the Keystone QR flow for hardware accounts.
+///
+/// The source [account] is captured when the flow starts and used for the whole
+/// flow (fee estimation, balance validation, submission), so a mid-flow account
+/// switch can never change the account being signed from.
 class RegularSendStrategy extends SendStrategy {
-  const RegularSendStrategy();
+  final Account account;
+
+  const RegularSendStrategy({required this.account});
 
   static final BigInt _estimateFeeAmount = BigInt.from(1000) * NumberFormattingService.scaleFactorBigInt;
 
   @override
-  String? sourceAccountId(WidgetRef ref) => ref.read(activeAccountProvider).value?.account.accountId;
+  String? sourceAccountId(WidgetRef ref) => account.accountId;
 
   @override
   SendStrings strings(AppLocalizations l10n) => SendStrings(
@@ -41,7 +47,8 @@ class RegularSendStrategy extends SendStrategy {
   );
 
   @override
-  ProviderListenable<AsyncValue<BigInt>> get spendableBalanceProvider => effectiveMaxBalanceProvider;
+  ProviderListenable<AsyncValue<BigInt>> get spendableBalanceProvider =>
+      effectiveMaxBalanceProviderFamily(account.accountId);
 
   @override
   bool extraBalancesLoading(WidgetRef ref) => false;
@@ -51,11 +58,6 @@ class RegularSendStrategy extends SendStrategy {
 
   @override
   Future<SendFee> estimateFee(WidgetRef ref, {required String recipient, required BigInt amount}) async {
-    final displayAccount = ref.read(activeAccountProvider).value;
-    if (displayAccount is! RegularAccount) {
-      throw StateError('Regular send requires an active regular account');
-    }
-    final account = displayAccount.account;
     final useReal = amount > BigInt.zero && ref.read(substrateServiceProvider).isValidSS58Address(recipient);
     final feeAmount = useReal ? amount : _estimateFeeAmount;
     final toAddress = useReal ? recipient : account.accountId;
@@ -65,6 +67,26 @@ class RegularSendStrategy extends SendStrategy {
 
   @override
   String? affordabilityError(WidgetRef ref, SendFee fee, AppLocalizations l10n) => null;
+
+  bool get _signsWithHardware => account.accountType == AccountType.keystone || AppConstants.debugHardwareWallet;
+
+  RuntimeCall _transferCall(WidgetRef ref, String recipient, BigInt amount) =>
+      ref.read(balancesServiceProvider).getBalanceTransferCall(recipient, amount);
+
+  KeystoneSignCacheKey _hardwareCacheKey(String recipient, BigInt amount) =>
+      KeystoneSignCacheKey.fromSendParams(accountId: account.accountId, recipientAddress: recipient, amount: amount);
+
+  @override
+  Future<void> prefetchSignPayload(WidgetRef ref, {required String recipientAddress, required BigInt amount}) async {
+    if (!_signsWithHardware) return;
+    final recipient = recipientAddress.trim();
+    await ensureKeystoneSignPayload(
+      ref,
+      account: account,
+      buildCall: () => _transferCall(ref, recipient, amount),
+      cacheKey: _hardwareCacheKey(recipient, amount),
+    );
+  }
 
   @override
   List<Widget> reviewRows(
@@ -109,7 +131,9 @@ class RegularSendStrategy extends SendStrategy {
     final fmt = ref.read(numberFormattingServiceProvider);
     final regularFee = fee as RegularFee;
     final recipient = recipientAddress.trim();
-    final account = (await SettingsService().getActiveRegularAccount())!;
+    // Sign from the account captured when the flow started, not whichever
+    // account happens to be active at submit time.
+    final account = this.account;
     final terminal = buildSentTerminalContent(
       l10n,
       fmt,
@@ -121,23 +145,18 @@ class RegularSendStrategy extends SendStrategy {
 
     // Keystone (hardware) accounts sign off-device: hand off to the QR flow
     // instead of signing locally. The debug flag forces this path for testing.
-    if (account.accountType == AccountType.keystone || AppConstants.debugHardwareWallet) {
+    if (_signsWithHardware) {
       return SendNeedsHardwareSignature(
         session: KeystoneSigningSession(
           account: account,
-          buildCall: () => ref.read(balancesServiceProvider).getBalanceTransferCall(recipient, amount),
-          title: isPayMode ? l10n.sendPayTitle : l10n.sendTitle,
+          buildCall: () => _transferCall(ref, recipient, amount),
           primaryDetail: l10n.commonAmountBalance(
             fmt.formatBalance(amount, smartDecimals: 4),
             AppConstants.tokenSymbol,
           ),
           secondaryDetail: recipient,
           tertiaryDetail: recipientChecksum,
-          cacheKey: KeystoneSignCacheKey.fromSendParams(
-            accountId: account.accountId,
-            recipientAddress: recipient,
-            amount: amount,
-          ),
+          cacheKey: _hardwareCacheKey(recipient, amount),
           telemetryPrefix: 'send_transfer_hardware',
           submitSigned: (ref, {required unsignedData, required signature, required publicKey}) async {
             final hash = await ref
@@ -155,7 +174,7 @@ class RegularSendStrategy extends SendStrategy {
             unawaited(
               RecentAddressesService()
                   .addAddress(recipient)
-                  .catchError((Object error) => debugPrint('Failed to save recent address: $error')),
+                  .catchError((Object error) => quantusPrint('Failed to save recent address: $error')),
             );
             return hash;
           },
@@ -174,11 +193,11 @@ class RegularSendStrategy extends SendStrategy {
       unawaited(
         RecentAddressesService()
             .addAddress(recipient)
-            .catchError((Object e) => debugPrint('Failed to save recent address: $e')),
+            .catchError((Object e) => quantusPrint('Failed to save recent address: $e')),
       );
       return SendSubmitted(terminal.copyWith(explorerUrl: explorerImmediateTransactionUrl(hash)));
     } catch (e) {
-      debugPrint('Transfer failed: $e');
+      quantusPrint('Transfer failed: $e');
       return SendFailed(l10n.sendReviewSubmitFailed);
     }
   }

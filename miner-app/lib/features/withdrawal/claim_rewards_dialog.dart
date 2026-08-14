@@ -67,8 +67,8 @@ class _ClaimRewardsDialogState extends State<_ClaimRewardsDialog> {
     super.dispose();
   }
 
-  String _formatBalance(BigInt planck) =>
-      _balanceFormatter.formatBalance(planck, smartDecimals: 4, addThousandsSeparators: false);
+  String _formatBalance(BigInt amount) =>
+      _balanceFormatter.formatBalance(amount, smartDecimals: 4, addThousandsSeparators: false);
 
   bool _validateAddress(String address) {
     final trimmed = address.trim();
@@ -229,7 +229,7 @@ class _ClaimRewardsDialogState extends State<_ClaimRewardsDialog> {
               children: [
                 Text('Claimable Balance', style: TextStyle(fontSize: 14, color: Colors.white.withValues(alpha: 0.7))),
                 Text(
-                  '${_formatBalance(widget.balance)} QUAN',
+                  '${_formatBalance(widget.balance)} ${AppConstants.tokenSymbol}',
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w700,
@@ -308,7 +308,7 @@ class _ClaimRewardsDialogState extends State<_ClaimRewardsDialog> {
             ],
           ),
           const SizedBox(height: 24),
-          _confirmRow('Amount', '${_formatBalance(widget.balance)} QUAN'),
+          _confirmRow('Amount', '${_formatBalance(widget.balance)} ${AppConstants.tokenSymbol}'),
           const SizedBox(height: 12),
           _confirmRow('Destination', _addressController.text.trim(), mono: true),
           const SizedBox(height: 12),

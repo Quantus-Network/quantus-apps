@@ -206,7 +206,7 @@ class _DiscoverMultisigRowState extends ConsumerState<_DiscoverMultisigRow> {
           if (mounted) setState(() => _checksum = name);
         })
         .catchError((Object e) {
-          quantusDebugPrint('DiscoverMultisigRow: checksum lookup error: $e');
+          quantusPrint('DiscoverMultisigRow: checksum lookup error: $e');
           if (mounted) setState(() => _checksum = 'Error getting checksum');
         });
   }

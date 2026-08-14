@@ -29,6 +29,10 @@ import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 class EncryptedSendProgressScreen extends ConsumerStatefulWidget {
   final Account account;
   final WormholeSpendPlan plan;
+
+  /// The amount the user confirmed at review; the controller refuses to prove
+  /// a plan whose amountToken differs.
+  final BigInt amount;
   final String recipientAddress;
   final SendTerminalContent terminal;
 
@@ -36,6 +40,7 @@ class EncryptedSendProgressScreen extends ConsumerStatefulWidget {
     super.key,
     required this.account,
     required this.plan,
+    required this.amount,
     required this.recipientAddress,
     required this.terminal,
   });
@@ -54,7 +59,12 @@ class _EncryptedSendProgressScreenState extends ConsumerState<EncryptedSendProgr
       unawaited(
         ref
             .read(encryptedSendControllerProvider.notifier)
-            .start(account: widget.account, plan: widget.plan, recipientAddress: widget.recipientAddress),
+            .start(
+              account: widget.account,
+              plan: widget.plan,
+              amount: widget.amount,
+              recipientAddress: widget.recipientAddress,
+            ),
       );
     });
   }
@@ -124,9 +134,9 @@ class _EncryptedSendProgressScreenState extends ConsumerState<EncryptedSendProgr
               hasError: errorMessage != null,
             ),
             if (errorMessage != null) ...[const SizedBox(height: 24), _buildErrorBanner(colors, text, errorMessage)],
-            if (cancelled && send.submittedRecipientPlanck > BigInt.zero) ...[
+            if (cancelled && send.submittedRecipientToken > BigInt.zero) ...[
               const SizedBox(height: 24),
-              _buildPartialCancelNotice(colors, text, l10n, send.submittedRecipientPlanck),
+              _buildPartialCancelNotice(colors, text, l10n, send.submittedRecipientToken),
             ],
           ],
         ),
@@ -137,7 +147,7 @@ class _EncryptedSendProgressScreenState extends ConsumerState<EncryptedSendProgr
 
   Widget _buildStatusHeader(AppColorsV2 colors, AppTextTheme text, AppLocalizations l10n) {
     final fmt = ref.watch(numberFormattingServiceProvider);
-    final amountLabel = fmt.formatBalance(widget.plan.amountPlanck, maxDecimals: 2, addSymbol: true);
+    final amountLabel = fmt.formatBalance(widget.plan.amountToken, maxDecimals: 2, addSymbol: true);
     final shortAddr = AddressFormattingService.formatAddress(widget.recipientAddress.trim());
 
     return Container(

@@ -5,12 +5,10 @@ import 'dart:typed_data' as _i8;
 import 'package:polkadart/polkadart.dart' as _i1;
 import 'package:polkadart/scale_codec.dart' as _i2;
 
-import '../types/pallet_scheduler/pallet/call.dart' as _i10;
 import '../types/pallet_scheduler/retry_config.dart' as _i6;
 import '../types/pallet_scheduler/scheduled.dart' as _i4;
 import '../types/qp_scheduler/block_number_or_timestamp.dart' as _i3;
-import '../types/quantus_runtime/runtime_call.dart' as _i9;
-import '../types/sp_weights/weight_v2/weight.dart' as _i11;
+import '../types/sp_weights/weight_v2/weight.dart' as _i9;
 import '../types/tuples_1.dart' as _i5;
 
 class Queries {
@@ -217,111 +215,11 @@ class Queries {
   }
 }
 
-class Txs {
-  const Txs();
-
-  _i9.Scheduler schedule({required int when, required int priority, required _i9.RuntimeCall call}) {
-    return _i9.Scheduler(_i10.Schedule(when: when, priority: priority, call: call));
-  }
-
-  /// Cancel an anonymously scheduled task.
-  _i9.Scheduler cancel({required _i3.BlockNumberOrTimestamp when, required int index}) {
-    return _i9.Scheduler(_i10.Cancel(when: when, index: index));
-  }
-
-  _i9.Scheduler scheduleNamed({
-    required List<int> id,
-    required int when,
-    required int priority,
-    required _i9.RuntimeCall call,
-  }) {
-    return _i9.Scheduler(_i10.ScheduleNamed(id: id, when: when, priority: priority, call: call));
-  }
-
-  /// Cancel a named scheduled task.
-  _i9.Scheduler cancelNamed({required List<int> id}) {
-    return _i9.Scheduler(_i10.CancelNamed(id: id));
-  }
-
-  _i9.Scheduler scheduleAfter({
-    required _i3.BlockNumberOrTimestamp after,
-    required int priority,
-    required _i9.RuntimeCall call,
-  }) {
-    return _i9.Scheduler(_i10.ScheduleAfter(after: after, priority: priority, call: call));
-  }
-
-  _i9.Scheduler scheduleNamedAfter({
-    required List<int> id,
-    required _i3.BlockNumberOrTimestamp after,
-    required int priority,
-    required _i9.RuntimeCall call,
-  }) {
-    return _i9.Scheduler(_i10.ScheduleNamedAfter(id: id, after: after, priority: priority, call: call));
-  }
-
-  /// Set a retry configuration for a task so that, in case its scheduled run fails, it will
-  /// be retried after `period` blocks, for a total amount of `retries` retries or until it
-  /// succeeds.
-  ///
-  /// Tasks which need to be scheduled for a retry are still subject to weight metering and
-  /// agenda space, same as a regular task.
-  ///
-  /// Tasks scheduled as a result of a retry are unnamed
-  /// clones of the original task. Their retry configuration will be derived from the
-  /// original task's configuration, but will have a lower value for `remaining` than the
-  /// original `total_retries`.
-  ///
-  /// The `period` type must match the task's scheduling type: block-scheduled tasks
-  /// require a block-number period, and timestamp-scheduled tasks require a timestamp
-  /// period. Mismatched types will return [`Error::RetryPeriodMismatch`].
-  _i9.Scheduler setRetry({
-    required _i5.Tuple2<_i3.BlockNumberOrTimestamp, int> task,
-    required int retries,
-    required _i3.BlockNumberOrTimestamp period,
-  }) {
-    return _i9.Scheduler(_i10.SetRetry(task: task, retries: retries, period: period));
-  }
-
-  /// Set a retry configuration for a named task so that, in case its scheduled run fails, it
-  /// will be retried after `period` blocks, for a total amount of `retries` retries or until
-  /// it succeeds.
-  ///
-  /// Tasks which need to be scheduled for a retry are still subject to weight metering and
-  /// agenda space, same as a regular task.
-  ///
-  /// Tasks scheduled as a result of a retry are unnamed
-  /// clones of the original task. Their retry configuration will be derived from the
-  /// original task's configuration, but will have a lower value for `remaining` than the
-  /// original `total_retries`.
-  ///
-  /// The `period` type must match the task's scheduling type: block-scheduled tasks
-  /// require a block-number period, and timestamp-scheduled tasks require a timestamp
-  /// period. Mismatched types will return [`Error::RetryPeriodMismatch`].
-  _i9.Scheduler setRetryNamed({
-    required List<int> id,
-    required int retries,
-    required _i3.BlockNumberOrTimestamp period,
-  }) {
-    return _i9.Scheduler(_i10.SetRetryNamed(id: id, retries: retries, period: period));
-  }
-
-  /// Removes the retry configuration of a task.
-  _i9.Scheduler cancelRetry({required _i5.Tuple2<_i3.BlockNumberOrTimestamp, int> task}) {
-    return _i9.Scheduler(_i10.CancelRetry(task: task));
-  }
-
-  /// Cancel the retry configuration of a named task.
-  _i9.Scheduler cancelRetryNamed({required List<int> id}) {
-    return _i9.Scheduler(_i10.CancelRetryNamed(id: id));
-  }
-}
-
 class Constants {
   Constants();
 
   /// The maximum weight that may be scheduled per block for any dispatchables.
-  final _i11.Weight maximumWeight = _i11.Weight(
+  final _i9.Weight maximumWeight = _i9.Weight(
     refTime: BigInt.from(4800000000000),
     proofSize: BigInt.parse('14757395258967641292', radix: 10),
   );

@@ -8,8 +8,9 @@ class NameField extends ConsumerWidget {
   final TextEditingController controller;
   final String? subtitle;
   final String? error;
+  final String? hint;
 
-  const NameField({super.key, required this.controller, this.subtitle, this.error});
+  const NameField({super.key, required this.controller, this.subtitle, this.error, this.hint});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -28,7 +29,7 @@ class NameField extends ConsumerWidget {
                   controller: controller,
                   style: textStyle,
                   decoration: InputDecoration.collapsed(
-                    hintText: l10n.componentNameFieldHint,
+                    hintText: hint ?? l10n.componentNameFieldHint,
                     hintStyle: textStyle.copyWith(color: context.colors.textSecondary),
                   ),
                 ),

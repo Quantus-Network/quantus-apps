@@ -1,7 +1,6 @@
 import 'dart:convert';
 
 import 'package:decimal/decimal.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
@@ -9,6 +8,7 @@ import 'package:resonance_network_wallet/models/fiat_currency.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/services/exchange_rate_service.dart';
+import 'package:resonance_network_wallet/shared/utils/print.dart';
 
 // ---------------------------------------------------------------------------
 // Exchange rate caching helpers
@@ -33,7 +33,7 @@ Map<String, Decimal>? _readRatesCache(SettingsService settings) {
     if (nowUnix >= expiryUnix) return null;
     return _parseRatesMap(decoded['rates'] as Map<String, dynamic>);
   } catch (e) {
-    debugPrint('Failed parsing exchange rates: $e');
+    quantusPrint('Failed parsing exchange rates: $e');
     return null;
   }
 }
@@ -52,7 +52,7 @@ Map<String, Decimal> _readRatesCacheAnyAge(SettingsService settings) {
     final decoded = jsonDecode(raw) as Map<String, dynamic>;
     return _parseRatesMap(decoded['rates'] as Map<String, dynamic>);
   } catch (e) {
-    debugPrint('Failed parsing exchange rates cache: $e');
+    quantusPrint('Failed parsing exchange rates cache: $e');
 
     return ExchangeRateService.fallbackRates;
   }
@@ -66,7 +66,7 @@ const _kMinCacheTtlSeconds = 60;
 Future<void> _writeRatesCache(SettingsService settings, Map<String, Decimal> rates, int timeNextUpdateUnix) async {
   final nowUnix = DateTime.now().millisecondsSinceEpoch ~/ 1000;
   if (timeNextUpdateUnix <= nowUnix + _kMinCacheTtlSeconds) {
-    debugPrint(
+    quantusPrint(
       'Skipping exchange rates cache write: timeNextUpdateUnix=$timeNextUpdateUnix '
       'is not at least ${_kMinCacheTtlSeconds}s in the future (now=$nowUnix).',
     );
@@ -97,13 +97,13 @@ final exchangeRatesProvider = FutureProvider<Map<String, Decimal>>((ref) async {
   if (cached != null) return cached;
 
   try {
-    final result = await TaskmasterService().getExchangeRates();
+    final result = await QuersiService().getExchangeRates();
     final rates = result.rates.map((k, v) => MapEntry(k, Decimal.parse(v.toString())));
     await _writeRatesCache(settings, rates, result.timeNextUpdateUnix);
 
     return rates;
   } catch (e) {
-    debugPrint('Failed fetching exchange rates: $e');
+    quantusPrint('Failed fetching exchange rates: $e');
 
     return _readRatesCacheAnyAge(settings);
   }
@@ -172,10 +172,10 @@ class SelectedFiatCurrencyNotifier extends StateNotifier<FiatCurrency> {
 // Currency flip provider
 // ---------------------------------------------------------------------------
 
-/// Whether fiat is shown as the primary (large) display and QUAN secondary.
+/// Whether fiat is shown as the primary (large) display and the token secondary.
 ///
-/// false → primary = QUAN,  secondary = fiat  (default)
-/// true  → primary = fiat,  secondary = QUAN
+/// false → primary = token,  secondary = fiat  (default)
+/// true  → primary = fiat,  secondary = token
 ///
 /// To toggle from the swap button:
 ///   ref.read(isCurrencyFlippedProvider.notifier).toggle();
@@ -265,10 +265,10 @@ final balanceDisplayProvider = Provider<AsyncValue<CurrencyDisplayState>>((ref) 
         xRate,
         fmt,
         _hiddenAmountText,
-        quanDecimals: 3,
+        tokenDecimals: 3,
         isFlipped: isFlipped,
         isHidden: isHidden,
-        withQuanSymbol: false,
+        withTokenSymbol: false,
         localeConfig: localeConfig,
       );
       return AsyncValue.data(data);
@@ -285,8 +285,8 @@ final txAmountDisplayProvider =
       CurrencyDisplayState Function(
         BigInt, {
         required bool isSend,
-        int quanDecimals,
-        bool withQuanSymbol,
+        int tokenDecimals,
+        bool withTokenSymbol,
         bool withSignPrefix,
         String? customHiddenText,
       })
@@ -301,9 +301,9 @@ final txAmountDisplayProvider =
       return (
         BigInt amount, {
         required bool isSend,
-        bool withQuanSymbol = true,
+        bool withTokenSymbol = true,
         bool withSignPrefix = true,
-        int quanDecimals = 2,
+        int tokenDecimals = 2,
         String? customHiddenText,
       }) {
         final hiddenText = customHiddenText ?? _hiddenAmountText;
@@ -315,9 +315,9 @@ final txAmountDisplayProvider =
           xRate,
           fmt,
           hiddenText,
-          quanDecimals: quanDecimals,
+          tokenDecimals: tokenDecimals,
           isHidden: isHidden,
-          withQuanSymbol: withQuanSymbol,
+          withTokenSymbol: withTokenSymbol,
           isFlipped: isFlipped,
           localeConfig: localeConfig,
         );
@@ -326,7 +326,7 @@ final txAmountDisplayProvider =
           data = data.copyWith(primaryAmount: withSignPrefix ? '$prefix${data.primaryAmount}' : data.primaryAmount);
         }
 
-        if (!withQuanSymbol && isFlipped && !isHidden) {
+        if (!withTokenSymbol && isFlipped && !isHidden) {
           data = data.copyWith(secondaryAmount: '${data.secondaryAmount} ${AppConstants.tokenSymbol}');
         }
 
@@ -347,7 +347,7 @@ String _toFiatNumeric(
   ExchangeRateService xRate, {
   required LocaleNumberConfig localeConfig,
 }) {
-  final fiatValue = xRate.quanRawToFiat(rawBalance, fiat, AppConstants.decimals);
+  final fiatValue = xRate.tokenToFiat(rawBalance, fiat, AppConstants.decimals);
   final canonical = fiatValue.toStringAsFixed(fiat.decimals);
 
   return localeConfig.localize(canonical);
@@ -359,18 +359,18 @@ CurrencyDisplayState _toFiatDisplayState(
   ExchangeRateService xRate,
   NumberFormattingService fmt,
   String hiddenText, {
-  required int quanDecimals,
+  required int tokenDecimals,
   required bool isFlipped,
   required bool isHidden,
-  required bool withQuanSymbol,
+  required bool withTokenSymbol,
   required LocaleNumberConfig localeConfig,
 }) {
-  final quanFormatted = fmt.formatBalance(amount, smartDecimals: quanDecimals, addSymbol: withQuanSymbol);
+  final tokenFormatted = fmt.formatBalance(amount, smartDecimals: tokenDecimals, addSymbol: withTokenSymbol);
   final fiatFormatted = selectedFiat.format(_toFiatNumeric(amount, selectedFiat, xRate, localeConfig: localeConfig));
 
   CurrencyDisplayState data = CurrencyDisplayState(
-    primaryAmount: isFlipped ? fiatFormatted : quanFormatted,
-    secondaryAmount: isFlipped ? quanFormatted : fiatFormatted,
+    primaryAmount: isFlipped ? fiatFormatted : tokenFormatted,
+    secondaryAmount: isFlipped ? tokenFormatted : fiatFormatted,
     isFlipped: isFlipped,
     selectedFiat: selectedFiat,
   );

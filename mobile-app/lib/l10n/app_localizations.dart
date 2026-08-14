@@ -437,8 +437,8 @@ abstract class AppLocalizations {
   /// Empty state message in home activity section
   ///
   /// In en, this message translates to:
-  /// **'Your activity will appear here once you send or receive QUAN.'**
-  String get homeActivityEmptyMessage;
+  /// **'Your activity will appear here once you send or receive {tokenSymbol}.'**
+  String homeActivityEmptyMessage(String tokenSymbol);
 
   /// Title of the accounts bottom sheet
   ///
@@ -494,29 +494,35 @@ abstract class AppLocalizations {
   /// **'{number, plural, =1{Keystone Hardware Wallet} other{Keystone Hardware Wallet {number}}}'**
   String accountsSheetKeystoneWallet(int number);
 
-  /// Sub-segment header for transparent accounts
+  /// Badge on the wallet header containing the active account; rendered uppercase
   ///
   /// In en, this message translates to:
-  /// **'Transparent Accounts'**
-  String get accountsSheetSubheaderTransparent;
+  /// **'Active Wallet'**
+  String get accountsScreenActiveWallet;
 
-  /// Sub-segment header for the encrypted account
+  /// Account count on a collapsed wallet row
   ///
   /// In en, this message translates to:
-  /// **'Encrypted Account'**
-  String get accountsSheetSubheaderEncrypted;
+  /// **'{count, plural, =1{1 Account} other{{count} Accounts}}'**
+  String accountsScreenAccountCount(int count);
 
-  /// Sub-segment header for keystone accounts
+  /// App bar title of the wallet naming screen
   ///
   /// In en, this message translates to:
-  /// **'Keystone Accounts'**
-  String get accountsSheetSubheaderKeystone;
+  /// **'Wallet Name'**
+  String get walletNameTitle;
 
-  /// Sub-segment header for multisig accounts
+  /// Explainer text on the wallet naming screen
   ///
   /// In en, this message translates to:
-  /// **'Multisig Accounts'**
-  String get accountsSheetSubheaderMultisig;
+  /// **'Naming your wallets makes it easier to tell their accounts apart. Each wallet has its own encrypted account.'**
+  String get walletNameSubtitle;
+
+  /// Placeholder of the wallet name field
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a name for your wallet'**
+  String get walletNameHint;
 
   /// App bar title on add account menu
   ///
@@ -545,7 +551,7 @@ abstract class AppLocalizations {
   /// Add keystone hardware account menu row title
   ///
   /// In en, this message translates to:
-  /// **'Add Keystone Account'**
+  /// **'Add Keystone Wallet'**
   String get addAccountMenuImportKeystoneTitle;
 
   /// Add keystone hardware account menu row subtitle
@@ -817,6 +823,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'to {address}'**
   String multisigProposalToAddress(String address);
+
+  /// Shown while the proposal's stored call bytes are being fetched before approving
+  ///
+  /// In en, this message translates to:
+  /// **'Reading the proposal from the chain…'**
+  String get multisigProposalCallLoading;
+
+  /// Shown when the proposal's stored call bytes could not be fetched, blocking approval
+  ///
+  /// In en, this message translates to:
+  /// **'Could not read this proposal from the chain, so there is nothing to approve. Try again when you are back online.'**
+  String get multisigProposalCallUnavailable;
 
   /// Proposal status chip when the current signer has approved
   ///
@@ -1676,65 +1694,95 @@ abstract class AppLocalizations {
   /// **'Address Details'**
   String get accountDetailsTitle;
 
-  /// Title when adding a new hardware wallet
+  /// App bar title for the add Keystone wallet screens
   ///
   /// In en, this message translates to:
-  /// **'Add Hardware Wallet'**
-  String get addHardwareAccountAddWallet;
+  /// **'Add Keystone Wallet'**
+  String get addKeystoneAppBarTitle;
 
-  /// Title when adding a hardware account to existing wallet
+  /// Headline on the add Keystone intro screen
   ///
   /// In en, this message translates to:
-  /// **'Add Hardware Account'**
-  String get addHardwareAccountAddAccount;
+  /// **'Keystone Hardware Wallet'**
+  String get addKeystoneIntroTitle;
 
-  /// Name field label
+  /// Subtitle on the add Keystone intro screen
   ///
   /// In en, this message translates to:
-  /// **'NAME'**
-  String get addHardwareAccountNameLabel;
+  /// **'Air-gapped signing for QUAN. Keys stay on the device, signing happens over QR.'**
+  String get addKeystoneIntroSubtitle;
 
-  /// Name field hint for new hardware wallet
+  /// Primary button on the add Keystone intro screen
   ///
   /// In en, this message translates to:
-  /// **'Hardware Wallet'**
-  String get addHardwareAccountNameHintWallet;
+  /// **'Connect Hardware Wallet'**
+  String get addKeystoneConnectButton;
 
-  /// Name field hint for hardware account
+  /// Link to the Keystone store on the add Keystone intro screen
   ///
   /// In en, this message translates to:
-  /// **'Account'**
-  String get addHardwareAccountNameHintAccount;
+  /// **'Don\'t have one? Get a Keystone ↗'**
+  String get addKeystoneGetOneLink;
 
-  /// Address field label
+  /// Headline on the Keystone connect instructions screen
   ///
   /// In en, this message translates to:
-  /// **'ADDRESS'**
-  String get addHardwareAccountAddressLabel;
+  /// **'Connect Hardware Wallet'**
+  String get addKeystoneConnectTitle;
 
-  /// Address field hint
+  /// Subtitle on the Keystone connect instructions screen
   ///
   /// In en, this message translates to:
-  /// **'Signer address'**
-  String get addHardwareAccountAddressHint;
+  /// **'Scan your device\'s QR code to connect.'**
+  String get addKeystoneConnectSubtitle;
 
-  /// Debug fill button
+  /// Section label on the Keystone connect instructions screen
   ///
   /// In en, this message translates to:
-  /// **'Debug Fill'**
-  String get addHardwareAccountDebugFill;
+  /// **'BEFORE YOU START'**
+  String get addKeystoneBeforeYouStart;
 
-  /// Validation when name is empty
+  /// Firmware reminder title on the Keystone connect instructions screen
   ///
   /// In en, this message translates to:
-  /// **'Name is required'**
-  String get addHardwareAccountNameRequired;
+  /// **'Update to the latest Keystone firmware'**
+  String get addKeystoneFirmwareTitle;
 
-  /// Validation when address is invalid
+  /// Firmware reminder subtitle on the Keystone connect instructions screen
+  ///
+  /// In en, this message translates to:
+  /// **'Required for QUAN signing'**
+  String get addKeystoneFirmwareSubtitle;
+
+  /// Section label for the on-device steps
+  ///
+  /// In en, this message translates to:
+  /// **'ON YOUR KEYSTONE'**
+  String get addKeystoneOnYourKeystone;
+
+  /// On-device step: unlock
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock your Keystone'**
+  String get addKeystoneStepUnlock;
+
+  /// On-device step: select Quantus and scan
+  ///
+  /// In en, this message translates to:
+  /// **'Select Quantus and scan the QR code'**
+  String get addKeystoneStepSelectQuantus;
+
+  /// Primary button opening the QR scanner on the Keystone connect instructions screen
+  ///
+  /// In en, this message translates to:
+  /// **'Ready to Scan'**
+  String get addKeystoneReadyToScan;
+
+  /// Shown when an address fails SS58 validation
   ///
   /// In en, this message translates to:
   /// **'Invalid address'**
-  String get addHardwareAccountInvalidAddress;
+  String get invalidAddress;
 
   /// Send flow app bar title
   ///
@@ -1880,6 +1928,12 @@ abstract class AppLocalizations {
   /// **'Failed submitting transaction'**
   String get sendReviewSubmitFailed;
 
+  /// Toast when a send is requested while the active account cannot make regular transfers
+  ///
+  /// In en, this message translates to:
+  /// **'Switch to a regular account to send'**
+  String get sendRegularAccountRequired;
+
   /// Success headline when payment completed
   ///
   /// In en, this message translates to:
@@ -1910,6 +1964,18 @@ abstract class AppLocalizations {
   /// **'Done'**
   String get sendTxSubmittedDone;
 
+  /// App bar title shared by the Keystone signing screens
+  ///
+  /// In en, this message translates to:
+  /// **'Sign with Keystone'**
+  String get keystoneSignScreenTitle;
+
+  /// Step indicator on the Keystone signing screens
+  ///
+  /// In en, this message translates to:
+  /// **'STEP {current}/{total}'**
+  String keystoneSignStep(int current, int total);
+
   /// Title on the Keystone sign screen showing the unsigned transaction QR
   ///
   /// In en, this message translates to:
@@ -1919,14 +1985,26 @@ abstract class AppLocalizations {
   /// Instruction on the Keystone sign screen
   ///
   /// In en, this message translates to:
-  /// **'Show this QR code to your Keystone hardware wallet to sign the transaction.'**
+  /// **'Open your Keystone and scan this QR code to load the transaction.'**
   String get keystoneSignInstruction;
 
-  /// Button to advance from showing the QR to scanning the signature
+  /// Section label above the transaction details on the Keystone sign screen
   ///
   /// In en, this message translates to:
-  /// **'Scan signature'**
+  /// **'YOU ARE SIGNING'**
+  String get keystoneSignYouAreSigning;
+
+  /// Button to advance to the next Keystone signing step
+  ///
+  /// In en, this message translates to:
+  /// **'Continue to Sign'**
   String get keystoneSignNext;
+
+  /// Link to abort the Keystone signing flow
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel Transaction'**
+  String get keystoneSignCancel;
 
   /// Error when building the unsigned transaction payload fails
   ///
@@ -1934,16 +2012,52 @@ abstract class AppLocalizations {
   /// **'Failed to prepare the transaction. Please try again.'**
   String get keystoneSignError;
 
+  /// Title on the Keystone verification screen
+  ///
+  /// In en, this message translates to:
+  /// **'Check your Keystone Screen'**
+  String get keystoneVerifyTitle;
+
+  /// Instruction on the Keystone verification screen
+  ///
+  /// In en, this message translates to:
+  /// **'Before approving on your Keystone, make sure its screen shows exactly this:'**
+  String get keystoneVerifyInstruction;
+
+  /// Warning shown when asking the user to compare the Keystone screen
+  ///
+  /// In en, this message translates to:
+  /// **'If the amount or address on your Keystone screen is different from what\'s shown here, reject the transaction on your device.'**
+  String get keystoneVerifyWarning;
+
+  /// Link opening the mismatch help screen
+  ///
+  /// In en, this message translates to:
+  /// **'It doesn\'t match'**
+  String get keystoneVerifyMismatch;
+
+  /// Title on the Keystone signature scanner screen
+  ///
+  /// In en, this message translates to:
+  /// **'Scan the signature'**
+  String get keystoneScanTitle;
+
   /// Instruction on the Keystone signature scanner screen
   ///
   /// In en, this message translates to:
-  /// **'Scan the signature QR from your Keystone'**
+  /// **'Your Keystone is now showing an animated QR. Hold your phone up to it, this takes a moment.'**
   String get keystoneScanInstruction;
+
+  /// Label next to the scan progress on the Keystone signature scanner screen
+  ///
+  /// In en, this message translates to:
+  /// **'RECEIVING SIGNATURE'**
+  String get keystoneScanReceiving;
 
   /// Progress indicator showing scanned vs total animated QR frames
   ///
   /// In en, this message translates to:
-  /// **'{scanned} / {total} frames'**
+  /// **'{scanned}/{total}'**
   String keystoneScanProgress(int scanned, int total);
 
   /// Progress text before the total frame count is known
@@ -1963,6 +2077,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Couldn\'t read the signature. Please try again.'**
   String get keystoneScanError;
+
+  /// Error when the mortal era window closed before the signed transaction was submitted
+  ///
+  /// In en, this message translates to:
+  /// **'The transaction expired before it could be submitted. Go back and scan the new QR code with your device.'**
+  String get keystoneScanExpired;
+
+  /// Headline on the Keystone mismatch help screen
+  ///
+  /// In en, this message translates to:
+  /// **'Don\'t approve this transaction'**
+  String get keystoneRejectTitle;
+
+  /// First step title on the Keystone mismatch help screen
+  ///
+  /// In en, this message translates to:
+  /// **'Reject the transaction on your Keystone.'**
+  String get keystoneRejectStep1Title;
+
+  /// First step body on the Keystone mismatch help screen
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing is signed or sent until you approve there.'**
+  String get keystoneRejectStep1Body;
+
+  /// Second step title on the Keystone mismatch help screen
+  ///
+  /// In en, this message translates to:
+  /// **'Don\'t retry from this phone.'**
+  String get keystoneRejectStep2Title;
+
+  /// Second step body on the Keystone mismatch help screen
+  ///
+  /// In en, this message translates to:
+  /// **'If it\'s compromised, retrying gives the attacker another chance.'**
+  String get keystoneRejectStep2Body;
+
+  /// Third step title on the Keystone mismatch help screen
+  ///
+  /// In en, this message translates to:
+  /// **'Your funds are safe on the Keystone.'**
+  String get keystoneRejectStep3Title;
+
+  /// Third step body on the Keystone mismatch help screen
+  ///
+  /// In en, this message translates to:
+  /// **'Keys never left the device. Move to a trusted phone before sending again.'**
+  String get keystoneRejectStep3Body;
+
+  /// Button confirming the transaction was rejected on the device
+  ///
+  /// In en, this message translates to:
+  /// **'I rejected it on Keystone'**
+  String get keystoneRejectConfirm;
+
+  /// Link to contact support from the Keystone mismatch help screen
+  ///
+  /// In en, this message translates to:
+  /// **'Contact Support'**
+  String get keystoneRejectContactSupport;
 
   /// Button label when sending to own address
   ///
@@ -2924,11 +3098,11 @@ abstract class AppLocalizations {
   /// **'REDEEMABLE'**
   String get settingsMiningStatRedeemable;
 
-  /// QUAN earned stat label
+  /// Token earned stat label
   ///
   /// In en, this message translates to:
-  /// **'QUAN EARNED'**
-  String get settingsMiningQuanEarned;
+  /// **'{tokenSymbol} EARNED'**
+  String settingsMiningTokenEarned(String tokenSymbol);
 
   /// Link to mining telemetry
   ///
@@ -3149,14 +3323,14 @@ abstract class AppLocalizations {
   /// Exchange rate display
   ///
   /// In en, this message translates to:
-  /// **'1 QUAN = {amount} {symbol}'**
-  String swapRateLabel(String amount, String symbol);
+  /// **'1 {tokenSymbol} = {amount} {symbol}'**
+  String swapRateLabel(String amount, String symbol, String tokenSymbol);
 
   /// Exchange rate when amount is zero
   ///
   /// In en, this message translates to:
-  /// **'1 QUAN = 0 {symbol}'**
-  String swapRateZero(String symbol);
+  /// **'1 {tokenSymbol} = 0 {symbol}'**
+  String swapRateZero(String symbol, String tokenSymbol);
 
   /// Title on token picker sheet
   ///
@@ -3257,8 +3431,8 @@ abstract class AppLocalizations {
   /// Body when swap is complete
   ///
   /// In en, this message translates to:
-  /// **'Your swap for {amount} QUAN is complete.'**
-  String swapDepositCompleteBody(String amount);
+  /// **'Your swap for {amount} {tokenSymbol} is complete.'**
+  String swapDepositCompleteBody(String amount, String tokenSymbol);
 
   /// Testnet demo banner on deposit screen
   ///
@@ -3536,17 +3710,17 @@ abstract class AppLocalizations {
   /// **'Privacy fee'**
   String get encryptedSendFeeLabel;
 
-  /// Shown when an encrypted send amount is not a multiple of 0.01 QUAN
+  /// Shown when an encrypted send amount is not a multiple of 0.01 token
   ///
   /// In en, this message translates to:
-  /// **'Use steps of 0.01 QUAN'**
-  String get encryptedSendAmountStep;
+  /// **'Use steps of 0.01 {tokenSymbol}'**
+  String encryptedSendAmountStep(String tokenSymbol);
 
   /// Shown when an encrypted send falls below the chain's minimum exit amount
   ///
   /// In en, this message translates to:
-  /// **'Encrypted sends must move at least 0.1 QUAN'**
-  String get encryptedSendMinimum;
+  /// **'Encrypted sends must move at least 0.1 {tokenSymbol}'**
+  String encryptedSendMinimum(String tokenSymbol);
 
   /// App bar title while an encrypted send is proving/submitting
   ///

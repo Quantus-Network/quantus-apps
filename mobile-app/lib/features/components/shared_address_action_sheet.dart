@@ -5,14 +5,19 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
+import 'package:resonance_network_wallet/providers/account_providers.dart';
+import 'package:resonance_network_wallet/providers/l10n_provider.dart';
+import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/routes.dart';
 import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
 import 'package:resonance_network_wallet/shared/extensions/current_route_extensions.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
+import 'package:resonance_network_wallet/shared/extensions/toaster_extensions.dart';
+import 'package:resonance_network_wallet/shared/utils/print.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/screens/send/input_amount_screen.dart';
-import 'package:resonance_network_wallet/v2/screens/send/keystone_sign_cache.dart';
 import 'package:resonance_network_wallet/v2/screens/send/regular_send_strategy.dart';
+import 'package:resonance_network_wallet/v2/screens/send/send_providers.dart';
 
 class SharedAddressActionSheet extends StatefulWidget {
   final String address;
@@ -24,7 +29,7 @@ class SharedAddressActionSheet extends StatefulWidget {
 
 class _SharedAddressActionSheetState extends State<SharedAddressActionSheet> {
   String? _checksum;
-  Future<String>? _checksumFuture;
+  Future<String?>? _checksumFuture;
   List<String>? _splittedAddress;
 
   final HumanReadableChecksumService _checksumService = HumanReadableChecksumService();
@@ -42,7 +47,7 @@ class _SharedAddressActionSheetState extends State<SharedAddressActionSheet> {
         _splittedAddress = AddressFormattingService.splitIntoChunks(widget.address);
       });
     } catch (e) {
-      debugPrint('Error loading account data: $e');
+      quantusPrint('Error loading account data: $e');
       if (mounted) {
         setState(() {});
       }
@@ -60,12 +65,25 @@ class _SharedAddressActionSheetState extends State<SharedAddressActionSheet> {
   }
 
   void _sendToAddress() {
-    ProviderScope.containerOf(context).read(keystoneSignCacheProvider.notifier).startNewSendSession();
+    final container = ProviderScope.containerOf(context);
+    // Fail closed: never pre-fill the send flow with an invalid address,
+    // same as address entry in the send flow itself.
+    if (!container.read(substrateServiceProvider).isValidSS58Address(widget.address)) {
+      context.showErrorToaster(message: container.read(l10nProvider).invalidAddress);
+      return;
+    }
+    final active = container.read(activeAccountProvider).value;
+    if (active is! RegularAccount) {
+      quantusPrint('shared address send: active account cannot send regular transfers');
+      context.showWarningToaster(message: container.read(l10nProvider).sendRegularAccountRequired);
+      return;
+    }
     Navigator.of(context).pop();
-    Navigator.push(
+    startSendFlow(
       context,
-      MaterialPageRoute(
-        builder: (_) => InputAmountScreen(strategy: const RegularSendStrategy(), recipientAddress: widget.address),
+      screen: InputAmountScreen(
+        strategy: RegularSendStrategy(account: active.account),
+        recipientAddress: widget.address,
       ),
     );
   }
@@ -141,7 +159,7 @@ class _SharedAddressActionSheetState extends State<SharedAddressActionSheet> {
                             !snapshot.hasData ||
                             snapshot.data == null ||
                             snapshot.data!.isEmpty) {
-                          debugPrint(
+                          quantusPrint(
                             'Error loading checksum name for ${widget.address}: '
                             '${snapshot.error}',
                           );

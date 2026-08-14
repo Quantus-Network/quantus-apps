@@ -70,7 +70,7 @@ class _WithRewards extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = ref.watch(l10nProvider);
     final numberFmt = ref.watch(numberFormattingServiceProvider);
-    final quanEarned = numberFmt.formatBalance(data.planckRewards, smartDecimals: 2, addSymbol: true);
+    final tokenEarned = numberFmt.formatBalance(data.planckRewards, smartDecimals: 2, addSymbol: true);
     final redeemedRewards = numberFmt.formatBalance(data.redeemedRewards, smartDecimals: 2, addSymbol: true);
     final redeemableRewards = numberFmt.formatBalance(data.redeemableRewards, smartDecimals: 2, addSymbol: true);
 
@@ -92,7 +92,7 @@ class _WithRewards extends ConsumerWidget {
         ),
         right: _MiningStatCell(
           label: l10n.settingsMiningStatTestnetRewards,
-          value: quanEarned,
+          value: tokenEarned,
           valueColor: colors.accentOrange,
         ),
       ),
@@ -174,7 +174,7 @@ class _NoRewards extends StatelessWidget {
             isLoading: isLoading,
           ),
           bottomChild: _StatColumn(
-            label: l10n.settingsMiningQuanEarned,
+            label: l10n.settingsMiningTokenEarned(AppConstants.tokenSymbol),
             value: '0.00',
             valueColor: colors.textTertiary,
             isLoading: isLoading,

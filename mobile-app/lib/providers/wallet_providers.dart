@@ -46,8 +46,9 @@ final humanReadableChecksumServiceProvider = Provider<HumanReadableChecksumServi
   return HumanReadableChecksumService();
 });
 
-final checksumNameProvider = FutureProvider.family<String, String>((ref, address) {
-  return ref.watch(humanReadableChecksumServiceProvider).getHumanReadableName(address);
+final checksumNameProvider = FutureProvider.family<String, String>((ref, address) async {
+  final name = await ref.watch(humanReadableChecksumServiceProvider).getHumanReadableName(address);
+  return name ?? '';
 });
 
 final reversibleTransfersServiceProvider = Provider<ReversibleTransfersService>((ref) {
@@ -70,8 +71,9 @@ final wormholeUtxoServiceProvider = Provider<WormholeUtxoService>((ref) {
   return WormholeUtxoService();
 });
 
-/// One encrypted-account service per wallet: caches derived wormhole key pairs
-/// and owns the persisted next-index / pending-spend state.
+/// One encrypted-account service per wallet: derives wormhole key pairs on
+/// demand (never cached — M11) and owns the persisted next-index /
+/// pending-spend state.
 final encryptedAccountServiceProvider = Provider.family<EncryptedAccountService, int>((ref, walletIndex) {
   final service = EncryptedAccountService(
     walletIndex: walletIndex,
@@ -98,11 +100,11 @@ final encryptedSpendableProvider = Provider.family<AsyncValue<BigInt>, int>((ref
 });
 
 final encryptedTotalReceivedProvider = Provider.family<AsyncValue<BigInt>, int>((ref, walletIndex) {
-  return ref.watch(encryptedStateProvider(walletIndex)).whenData((s) => s.totalReceivedPlanck);
+  return ref.watch(encryptedStateProvider(walletIndex)).whenData((s) => s.totalReceivedToken);
 });
 
 final encryptedTotalSpentProvider = Provider.family<AsyncValue<BigInt>, int>((ref, walletIndex) {
-  return ref.watch(encryptedStateProvider(walletIndex)).whenData((s) => s.totalSpentPlanck);
+  return ref.watch(encryptedStateProvider(walletIndex)).whenData((s) => s.totalSpentToken);
 });
 
 bool isEncryptedAccount(BaseAccount? account) => account is Account && account.accountType == AccountType.encrypted;
@@ -123,7 +125,7 @@ final isHighSecurityProvider = FutureProvider.family<bool, Account>((ref, accoun
 
 final balanceProviderFamily = FutureProvider.family<BigInt, String>((ref, accountId) async {
   final substrateService = ref.watch(substrateServiceProvider);
-  quantusDebugPrint('query balance for $accountId');
+  quantusPrint('query balance for $accountId');
   return await substrateService.queryBalance(accountId);
 });
 
@@ -136,23 +138,25 @@ final effectiveBalanceProviderFamily = Provider.family<AsyncValue<BigInt>, Strin
   final pendingMultisigCancellations = ref.watch(pendingMultisigCancellationsProvider);
   final pendingMultisigCreations = ref.watch(pendingMultisigCreationsProvider);
 
-  return balanceAsync.when(
-    data: (blockchainBalance) {
-      final pendingOutgoing = _calculatePendingOutgoing(
-        pendingTransactions,
-        pendingMultisigProposals,
-        pendingMultisigExecutions,
-        pendingMultisigCancellations,
-        pendingMultisigCreations,
-        accountId,
-      );
-      final effectiveBalance = blockchainBalance - pendingOutgoing;
-      final result = effectiveBalance >= BigInt.zero ? effectiveBalance : BigInt.zero;
-      return AsyncValue.data(result);
-    },
-    loading: () => const AsyncValue.loading(),
-    error: (err, stack) => AsyncValue.error(err, stack),
+  // AsyncError/AsyncLoading preserve the previously fetched balance; keep
+  // using it so a transient refresh error can't zero out spendable-balance
+  // checks mid-send. Errors before any successful fetch still propagate.
+  final blockchainBalance = balanceAsync.value;
+  if (blockchainBalance == null) {
+    return balanceAsync.isLoading
+        ? const AsyncValue.loading()
+        : AsyncValue.error(balanceAsync.error!, balanceAsync.stackTrace!);
+  }
+  final pendingOutgoing = _calculatePendingOutgoing(
+    pendingTransactions,
+    pendingMultisigProposals,
+    pendingMultisigExecutions,
+    pendingMultisigCancellations,
+    pendingMultisigCreations,
+    accountId,
   );
+  final effectiveBalance = blockchainBalance - pendingOutgoing;
+  return AsyncValue.data(effectiveBalance >= BigInt.zero ? effectiveBalance : BigInt.zero);
 });
 
 // Raw blockchain balance (without pending transaction adjustments)
@@ -289,7 +293,13 @@ final walletOriginProvider = Provider.family<WalletOrigin?, int>((ref, walletInd
   return ref.watch(settingsServiceProvider).getWalletOrigin(walletIndex);
 });
 
-/// 0.0001 QUAN in raw units; dust below this doesn't warrant a backup nudge.
+/// Optional user-set wallet name; null falls back to "Wallet {n}" display copy.
+/// Invalidate after [SettingsService.setWalletName].
+final walletNameProvider = Provider.family<String?, int>((ref, walletIndex) {
+  return ref.watch(settingsServiceProvider).getWalletName(walletIndex);
+});
+
+/// 0.0001 tokens in smallest units; dust below this doesn't warrant a backup nudge.
 final _backupNudgeBalanceThreshold = BigInt.from(10).pow(AppConstants.decimals - 4);
 
 /// Wallet index needing a recovery phrase backup reminder, or null when none.

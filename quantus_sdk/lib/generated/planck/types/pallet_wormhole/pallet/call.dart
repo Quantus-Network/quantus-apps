@@ -84,6 +84,11 @@ class $CallCodec with _i1.Codec<Call> {
   }
 }
 
+/// Verify a private-batch wormhole proof and process all exits in the batch.
+///
+/// Returns `DispatchResultWithPostInfo` to allow weight correction on early failures.
+/// If validation fails before ZK verification, we return minimal weight.
+/// If ZK verification fails, we return full weight since the work was done.
 class VerifyPrivateBatch extends Call {
   const VerifyPrivateBatch({required this.proofBytes});
 
@@ -91,6 +96,7 @@ class VerifyPrivateBatch extends Call {
     return VerifyPrivateBatch(proofBytes: _i1.U8SequenceCodec.codec.decode(input));
   }
 
+  /// Vec<u8>
   final List<int> proofBytes;
 
   @override
@@ -117,6 +123,13 @@ class VerifyPrivateBatch extends Call {
   int get hashCode => proofBytes.hashCode;
 }
 
+/// Verify a public-batch wormhole proof and process all valid exit segments.
+///
+/// Invalid segments (already-spent nullifiers) are denied individually; dummy-padded
+/// segments (all-zero nullifiers) are skipped silently. A portion of the burn bucket
+/// is minted to the proof's `aggregator_address`; if that mint fails (e.g. the
+/// account doesn't exist and the rebate is below the existential deposit) the
+/// rebate is burned instead of failing the users' exits.
 class VerifyPublicBatch extends Call {
   const VerifyPublicBatch({required this.proofBytes});
 
@@ -124,6 +137,7 @@ class VerifyPublicBatch extends Call {
     return VerifyPublicBatch(proofBytes: _i1.U8SequenceCodec.codec.decode(input));
   }
 
+  /// Vec<u8>
   final List<int> proofBytes;
 
   @override

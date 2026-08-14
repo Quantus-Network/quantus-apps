@@ -4,6 +4,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:quantus_sdk/src/models/account.dart';
 import 'package:quantus_sdk/src/models/display_account.dart';
 import 'package:quantus_sdk/src/models/multisig_account.dart';
+import 'package:quantus_sdk/src/utils/print.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SettingsService {
@@ -166,6 +167,7 @@ class SettingsService {
     await deleteMnemonic(walletIndex);
     await _prefs.remove(_walletOriginKey(walletIndex));
     await _prefs.remove(_recoveryPhraseViewedKey(walletIndex));
+    await _prefs.remove(_walletNameKey(walletIndex));
   }
 
   Future<void> setActiveAccount(DisplayAccount account) async {
@@ -493,9 +495,9 @@ class SettingsService {
 
   /// Set old accounts data (for debugging/testing)
   Future<void> setOldAccountsData(String jsonData) async {
-    print('removing accounts data');
+    quantusPrint('removing accounts data');
     await _prefs.remove(_accountsKey);
-    print('setting old accounts data - reload app after this');
+    quantusPrint('setting old accounts data - reload app after this');
     await _prefs.setString(_oldAccountsKeyV4, jsonData);
   }
 
@@ -564,6 +566,21 @@ class SettingsService {
 
   void setWalletOrigin(int walletIndex, WalletOrigin origin) {
     _prefs.setString(_walletOriginKey(walletIndex), origin.name);
+  }
+
+  // Note: the bare legacy key 'wallet_name' (no index suffix) is a pre-v5
+  // account name consumed by the migration in [getAccounts]; index 0 must stay
+  // suffixed so the two never collide.
+  String _walletNameKey(int walletIndex) => 'wallet_name_$walletIndex';
+
+  String? getWalletName(int walletIndex) => _prefs.getString(_walletNameKey(walletIndex));
+
+  Future<void> setWalletName(int walletIndex, String? name) async {
+    if (name == null || name.isEmpty) {
+      await _prefs.remove(_walletNameKey(walletIndex));
+    } else {
+      await _prefs.setString(_walletNameKey(walletIndex), name);
+    }
   }
 
   bool existingUserSeenPromoVideo() {

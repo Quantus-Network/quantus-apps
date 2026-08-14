@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/currency_display_provider.dart';
 import 'package:resonance_network_wallet/shared/constants/e2e_keys.dart';
+import 'package:resonance_network_wallet/shared/utils/print.dart';
 import 'package:resonance_network_wallet/shared/utils/url_utils.dart';
 import 'package:resonance_network_wallet/v2/components/address_checkphrase_with_initial.dart';
 import 'package:resonance_network_wallet/v2/components/amount_display_with_conversion.dart';
@@ -44,6 +47,31 @@ class ReviewSendScreen extends ConsumerStatefulWidget {
 class _ReviewSendScreenState extends ConsumerState<ReviewSendScreen> {
   bool _submitting = false;
   String? _errorMessage;
+  Timer? _prefetchTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    // Warm hardware-signing payloads while the user reviews, and keep them
+    // warm: a cache hit is a no-op, so the periodic tick only refetches once
+    // the mortal-era window has expired the cached entry.
+    _prefetchSignPayload();
+    _prefetchTimer = Timer.periodic(const Duration(seconds: 30), (_) => _prefetchSignPayload());
+  }
+
+  @override
+  void dispose() {
+    _prefetchTimer?.cancel();
+    super.dispose();
+  }
+
+  void _prefetchSignPayload() {
+    unawaited(
+      widget.strategy
+          .prefetchSignPayload(ref, recipientAddress: widget.recipientAddress.trim(), amount: widget.amount)
+          .catchError((Object e) => quantusPrint('Keystone payload prefetch failed: $e')),
+    );
+  }
 
   Future<void> _toggleFlip() async {
     await ref.read(isCurrencyFlippedProvider.notifier).toggle();
@@ -55,14 +83,21 @@ class _ReviewSendScreenState extends ConsumerState<ReviewSendScreen> {
       _errorMessage = null;
     });
 
-    final outcome = await widget.strategy.submit(
-      ref,
-      recipientAddress: widget.recipientAddress.trim(),
-      recipientChecksum: widget.recipientChecksum,
-      amount: widget.amount,
-      fee: widget.fee,
-      isPayMode: widget.isPayMode,
-    );
+    SendOutcome outcome;
+    try {
+      outcome = await widget.strategy.submit(
+        ref,
+        recipientAddress: widget.recipientAddress.trim(),
+        recipientChecksum: widget.recipientChecksum,
+        amount: widget.amount,
+        fee: widget.fee,
+        isPayMode: widget.isPayMode,
+      );
+    } catch (e, st) {
+      quantusPrint('Send submit error: $e\n$st');
+      if (!mounted) return;
+      outcome = SendFailed(ref.read(l10nProvider).sendReviewSubmitFailed);
+    }
     if (!mounted) return;
 
     switch (outcome) {
@@ -86,7 +121,7 @@ class _ReviewSendScreenState extends ConsumerState<ReviewSendScreen> {
                 SendTerminalScreen(content: terminal.copyWith(explorerUrl: explorerImmediateTransactionUrl(hash))),
           ),
         );
-      case SendNeedsProving(:final account, :final plan, :final terminal):
+      case SendNeedsProving(:final account, :final plan, :final amount, :final terminal):
         setState(() => _submitting = false);
         Navigator.push(
           context,
@@ -94,6 +129,7 @@ class _ReviewSendScreenState extends ConsumerState<ReviewSendScreen> {
             builder: (_) => EncryptedSendProgressScreen(
               account: account,
               plan: plan,
+              amount: amount,
               recipientAddress: widget.recipientAddress.trim(),
               terminal: terminal,
             ),
@@ -117,8 +153,8 @@ class _ReviewSendScreenState extends ConsumerState<ReviewSendScreen> {
       widget.amount,
       isSend: true,
       withSignPrefix: false,
-      withQuanSymbol: false,
-      quanDecimals: 4,
+      withTokenSymbol: false,
+      tokenDecimals: 4,
     );
 
     return ScaffoldBase(

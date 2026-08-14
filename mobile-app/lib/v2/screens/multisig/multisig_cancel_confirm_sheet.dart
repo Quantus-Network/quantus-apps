@@ -31,10 +31,15 @@ void showMultisigCancelConfirmSheet(
         authReason: (l10n) => l10n.multisigCancelAuthReason,
         failedMessage: (l10n) => l10n.multisigCancelFailed,
       ),
-      estimateFee: (ref, signer) =>
+      // Shows the signer the stored call being cancelled rather than the
+      // indexer's description; a proposal no longer in storage could not be
+      // cancelled anyway.
+      loadCallBytes: (ref) =>
+          ref.read(multisigServiceProvider).fetchProposalCallBytes(msig: msig, proposalId: proposal.id),
+      estimateFee: (ref, signer, callBytes) =>
           ref.read(multisigServiceProvider).estimateCancelFee(msig: msig, signer: signer, proposalId: proposal.id),
-      buildCall: (signer) => MultisigService().buildCancelCall(msig: msig, proposalId: proposal.id),
-      submit: (ref, signer, fee) => ref
+      buildCall: (signer, callBytes) => MultisigService().buildCancelCall(msig: msig, proposalId: proposal.id),
+      submit: (ref, signer, fee, callBytes) => ref
           .read(transactionSubmissionServiceProvider)
           .cancelProposal(msig: msig, proposer: signer, proposal: proposal, fee: fee),
       submitExternal: (ref, {required signer, required unsignedData, required signature, required publicKey, fee}) =>

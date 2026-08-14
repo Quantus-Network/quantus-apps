@@ -152,7 +152,7 @@ class _ActivitySectionState extends ConsumerState<ActivitySection> {
           ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 240),
             child: Text(
-              l10n.homeActivityEmptyMessage,
+              l10n.homeActivityEmptyMessage(AppConstants.tokenSymbol),
               textAlign: TextAlign.center,
               style: text.smallParagraph?.copyWith(color: colors.txItemIconDefault),
             ),

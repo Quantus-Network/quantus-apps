@@ -92,14 +92,22 @@ void main() {
     test('wormhole derivation known values', () {
       const mnemonic =
           'orchard answer curve patient visual flower maze noise retreat penalty cage small earth domain scan pitch bottom crunch theme club client swap slice raven';
-      const expectedPreimage = 'e4be02a913727c01c1a155fd6e807b7c1a4a13abf37a352b7c9ed4412d127fc3';
+      const expectedPreimage = '0xe4be02a913727c01c1a155fd6e807b7c1a4a13abf37a352b7c9ed4412d127fc3';
 
-      final result = HdWalletService().deriveWormhole(mnemonic);
-      expect(hex.encode(result.firstHash), expectedPreimage);
+      final result = HdWalletService().deriveWormholeKeyPair(mnemonic: mnemonic);
+      expect(result.rewardsPreimageHex.toLowerCase(), expectedPreimage.toLowerCase());
 
       final addressBytes = ss58ToAccountId(s: result.address);
-      final expectedAddressBytes = ss58ToAccountId(s: '5H8AGzwKPtKMfKKuKYCoAFApCoy4EVewCqc9k6GrSgqHoaXm');
+      // Same account bytes as '5H8AGzwKPtKMfKKuKYCoAFApCoy4EVewCqc9k6GrSgqHoaXm'
+      // (generic Substrate prefix 42), encoded with the Quantus prefix (189).
+      final expectedAddressBytes = ss58ToAccountId(s: 'qzpWh4AEtsgCyEbv4WBgFWnB9bcdF2L2jVDuyjXP9mSTyBaeU');
       expect(addressBytes, expectedAddressBytes);
+    });
+
+    test('ss58ToAccountId rejects foreign ss58 prefixes and invalid input', () {
+      // Generic Substrate (42) encoding of the wormhole test account above.
+      expect(() => ss58ToAccountId(s: '5H8AGzwKPtKMfKKuKYCoAFApCoy4EVewCqc9k6GrSgqHoaXm'), throwsA(anything));
+      expect(() => ss58ToAccountId(s: 'not an ss58 address'), throwsA(anything));
     });
 
     test('test for keystone hardware wallet', () {

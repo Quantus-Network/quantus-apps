@@ -70,7 +70,7 @@ class EncryptedFee extends SendFee {
   const EncryptedFee({this.plan, this.blocker});
 
   @override
-  BigInt get displayFee => plan?.feePlanck ?? BigInt.zero;
+  BigInt get displayFee => plan?.feeToken ?? BigInt.zero;
 }
 
 /// Content for the shared terminal (success) screen. All strings are resolved
@@ -140,12 +140,15 @@ class SendNeedsHardwareSignature extends SendOutcome {
 
 /// Encrypted send authenticated and planned: hand off to the proving progress
 /// screen, which generates the ZK proofs, submits and then shows [terminal].
+/// [amount] is the confirmed amount; the controller re-checks it against
+/// [plan] before proving, since the plan pays exactly its own amountToken.
 class SendNeedsProving extends SendOutcome {
   final Account account;
   final WormholeSpendPlan plan;
+  final BigInt amount;
   final SendTerminalContent terminal;
 
-  const SendNeedsProving({required this.account, required this.plan, required this.terminal});
+  const SendNeedsProving({required this.account, required this.plan, required this.amount, required this.terminal});
 }
 
 /// Submission failed or was not authenticated; show [message] inline.
@@ -240,6 +243,12 @@ abstract class SendStrategy {
     required BigInt amount,
     required SendFee fee,
   });
+
+  /// Called while the user is on the review screen (and periodically until it
+  /// closes). Strategies that hand off to hardware signing warm the Keystone
+  /// sign cache here so the QR screen renders instantly. No-op for flows that
+  /// sign locally. Uses `ref.read`.
+  Future<void> prefetchSignPayload(WidgetRef ref, {required String recipientAddress, required BigInt amount}) async {}
 
   /// Authenticates and submits. Uses `ref.read`. Never navigates.
   Future<SendOutcome> submit(

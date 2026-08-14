@@ -8,28 +8,30 @@ crate-type = ["cdylib", "staticlib", "rlib"]
 
 [dependencies]
 # NOTE: Quantus chain dependencies.
-qp-poseidon-core = "3.0.2"
-qp-rusty-crystals-dilithium = { version = "3.0.1", default-features = false }
-qp-rusty-crystals-hdwallet = { version = "3.0.1" }
+qp-poseidon-core = "3.1.0"
+qp-rusty-crystals-dilithium = { version = "4.1.0", default-features = false }
+qp-rusty-crystals-hdwallet = { version = "4.1.0" }
 
 flutter_rust_bridge = "=2.12.0"
 hex = "0.4.3"
-nam-tiny-hderive = "0.3.1-nam.0"
 sp-core = { version = "43.0.0", default-features = true }
 parity-scale-codec = { version = "3.7.5", default-features = false, features = ["std"] }
 sp-runtime = { version = "48.0.0", default-features = false, features = ["std"] }
-quantus_ur = { git = "https://github.com/Quantus-Network/quantus_ur.git", tag = "1.4.0" }
+quantus_ur = { git = "https://github.com/Quantus-Network/quantus_ur.git", tag = "1.6.0" }
 
 # ZK proof generation (aligned with quantus-cli / chain)
 anyhow = "1.0"
 blake3 = "1.8"
-qp-plonky2 = { version = "1.5.4", default-features = false, features = ["rand", "std"] }
-qp-wormhole-circuit = { version = "3.1.0", default-features = false, features = ["std"] }
-qp-wormhole-prover = { version = "3.1.0", default-features = false, features = ["std"] }
-qp-wormhole-aggregator = { version = "3.1.0", default-features = false, features = ["std"] }
-qp-wormhole-inputs = { version = "3.1.0", default-features = false, features = ["std"] }
-qp-zk-circuits-common = { version = "3.1.0", default-features = false, features = ["std"] }
-qp-wormhole-circuit-builder = { version = "3.1.0" }
+qp-plonky2 = { version = "1.5.5", default-features = false, features = ["rand", "std"] }
+qp-wormhole-circuit = { version = "4.2.0", default-features = false, features = ["std"] }
+qp-wormhole-prover = { version = "4.2.0", default-features = false, features = ["std"] }
+qp-wormhole-aggregator = { version = "4.2.0", default-features = false, features = ["std"] }
+qp-wormhole-inputs = { version = "4.2.0", default-features = false, features = ["std"] }
+qp-zk-circuits-common = { version = "4.2.0", default-features = false, features = ["std"] }
+qp-wormhole-circuit-builder = { version = "4.2.0" }
+
+[dev-dependencies]
+tempfile = "3"
 
 # Circuit generation is CPU-intensive; without this it takes ~10min instead of ~30s.
 [profile.dev.build-override]
