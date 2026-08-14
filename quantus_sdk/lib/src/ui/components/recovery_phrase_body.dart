@@ -6,11 +6,11 @@ import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/shared/constants/e2e_keys.dart';
 import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
-import 'package:resonance_network_wallet/v2/components/loader.dart';
-import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
-import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
-import 'package:resonance_network_wallet/v2/components/scaffold_base_bottom_content.dart';
-import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
+import 'package:quantus_sdk/src/ui/components/loader.dart';
+import 'package:quantus_sdk/src/ui/components/quantus_button.dart';
+import 'package:quantus_sdk/src/ui/components/scaffold_base.dart';
+import 'package:quantus_sdk/src/ui/components/scaffold_base_bottom_content.dart';
+import 'package:quantus_sdk/src/ui/components/v2_app_bar.dart';
 
 class RecoveryPhraseBody extends ConsumerStatefulWidget {
   final String appBarTitle;

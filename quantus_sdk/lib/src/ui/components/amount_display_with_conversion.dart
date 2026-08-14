@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/currency_display_provider.dart';
-import 'package:resonance_network_wallet/v2/components/quantus_icon_button.dart';
 
 class AmountDisplayWithConversion extends StatelessWidget {
   final CurrencyDisplayState amountDisplay;

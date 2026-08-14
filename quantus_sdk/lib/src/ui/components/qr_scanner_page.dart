@@ -5,8 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
-import 'package:resonance_network_wallet/v2/components/quantus_icon_button.dart';
-import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
+import 'package:quantus_sdk/src/ui/components/v2_app_bar.dart';
 
 class QrScannerPage extends ConsumerStatefulWidget {
   final bool Function(String)? validator;

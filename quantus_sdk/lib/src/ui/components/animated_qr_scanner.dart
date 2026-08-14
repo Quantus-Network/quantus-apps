@@ -3,8 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
-import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
+import 'package:quantus_sdk/src/ui/components/quantus_button.dart';
+import 'package:quantus_sdk/src/ui/components/v2_app_bar.dart';
 
 /// Sequence metadata encoded in one frame of an animated QR payload.
 class AnimatedQrSequence {

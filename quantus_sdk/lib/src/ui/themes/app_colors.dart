@@ -391,6 +391,9 @@ class AppColorsV3 extends ThemeExtension<AppColorsV3> {
   /// Default text. Titles, amounts, body. Warm, not pure white.
   final Color textContent;
 
+  /// Void text. Used for text on accent color.
+  final Color textVoid;
+
   /// Secondary. Darkest gray legal on small text (AA floor).
   final Color textMuted;
 
@@ -429,6 +432,7 @@ class AppColorsV3 extends ThemeExtension<AppColorsV3> {
     required this.bgSurface,
     required this.bgSurface2,
     required this.textContent,
+    required this.textVoid,
     required this.textMuted,
     required this.textMuted2,
     required this.textWhite,
@@ -451,6 +455,7 @@ class AppColorsV3 extends ThemeExtension<AppColorsV3> {
         bgSurface: const Color(0xFF181818),
         bgSurface2: const Color(0xFF222222),
         textContent: const Color(0xFFE8E6E0),
+        textVoid: const Color(0xFF0E0E0E),
         textMuted: const Color(0xFF8A8784),
         textMuted2: const Color(0xFF6B6966),
         textWhite: const Color(0xFFFFFFFF),
@@ -470,6 +475,7 @@ class AppColorsV3 extends ThemeExtension<AppColorsV3> {
     Color? bgSurface,
     Color? bgSurface2,
     Color? textContent,
+    Color? textVoid,
     Color? textMuted,
     Color? textMuted2,
     Color? textWhite,
@@ -487,6 +493,7 @@ class AppColorsV3 extends ThemeExtension<AppColorsV3> {
       bgSurface: bgSurface ?? this.bgSurface,
       bgSurface2: bgSurface2 ?? this.bgSurface2,
       textContent: textContent ?? this.textContent,
+      textVoid: textVoid ?? this.textVoid,
       textMuted: textMuted ?? this.textMuted,
       textMuted2: textMuted2 ?? this.textMuted2,
       textWhite: textWhite ?? this.textWhite,
@@ -509,6 +516,7 @@ class AppColorsV3 extends ThemeExtension<AppColorsV3> {
       bgSurface: Color.lerp(bgSurface, other.bgSurface, t) ?? bgSurface,
       bgSurface2: Color.lerp(bgSurface2, other.bgSurface2, t) ?? bgSurface2,
       textContent: Color.lerp(textContent, other.textContent, t) ?? textContent,
+      textVoid: Color.lerp(textVoid, other.textVoid, t) ?? textVoid,
       textMuted: Color.lerp(textMuted, other.textMuted, t) ?? textMuted,
       textMuted2: Color.lerp(textMuted2, other.textMuted2, t) ?? textMuted2,
       textWhite: Color.lerp(textWhite, other.textWhite, t) ?? textWhite,

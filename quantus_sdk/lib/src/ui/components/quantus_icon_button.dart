@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/v2/components/glass_button_base.dart';
 
 enum IconButtonShape { rounded, circular }
 

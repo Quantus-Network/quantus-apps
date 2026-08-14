@@ -17,12 +17,7 @@ export 'src/extensions/keypair_extensions.dart';
 export 'src/extensions/media_query_data_extension.dart';
 export 'src/extensions/string_extensions.dart';
 // UI-related exports
-export 'src/ui/themes/app_theme.dart';
-export 'src/ui/themes/app_colors.dart';
-export 'src/ui/themes/app_radius.dart';
-export 'src/ui/themes/app_spacing.dart';
-export 'src/ui/themes/app_text_styles.dart';
-
+export 'src/ui/index.dart';
 export 'src/models/account.dart';
 export 'src/models/base_account.dart';
 export 'src/models/high_security_data.dart';
@@ -54,6 +49,7 @@ export 'src/models/raid_stats.dart';
 export 'src/rust/api/crypto.dart' hide crystalAlice, crystalCharlie, crystalBob;
 export 'src/rust/api/ur.dart';
 export 'src/utils/ur_qr.dart';
+export 'src/utils/account_utils.dart';
 export 'src/rust/api/wormhole.dart';
 export 'src/services/account_discovery_service.dart';
 export 'src/services/accounts_service.dart';

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/v2/components/glass_button_base.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/accounts_screen.dart';
 
 class OpenAccountsManagementButton extends StatelessWidget {

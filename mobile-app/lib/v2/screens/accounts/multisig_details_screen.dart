@@ -4,9 +4,9 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
-import 'package:resonance_network_wallet/v2/components/multisig_signer_list_tile.dart';
-import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
-import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
+import 'package:quantus_sdk/src/ui/components/multisig_signer_list_tile.dart';
+import 'package:quantus_sdk/src/ui/components/scaffold_base.dart';
+import 'package:quantus_sdk/src/ui/components/v2_app_bar.dart';
 
 class MultisigDetailsScreen extends ConsumerWidget {
   const MultisigDetailsScreen({super.key, required this.account});

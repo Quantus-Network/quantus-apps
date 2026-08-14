@@ -9,19 +9,19 @@ import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/currency_display_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/shared/constants/e2e_keys.dart';
-import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
-import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
-import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
+import 'package:quantus_sdk/src/ui/components/quantus_button.dart';
+import 'package:quantus_sdk/src/ui/components/scaffold_base.dart';
+import 'package:quantus_sdk/src/ui/components/v2_app_bar.dart';
 import 'package:resonance_network_wallet/v2/screens/send/review_send_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/send/send_screen_logic.dart';
 import 'package:resonance_network_wallet/v2/screens/send/send_strategy.dart';
-import 'package:resonance_network_wallet/v2/components/scaffold_base_bottom_content.dart';
+import 'package:quantus_sdk/src/ui/components/scaffold_base_bottom_content.dart';
 import 'package:resonance_network_wallet/shared/extensions/toaster_extensions.dart';
 import 'package:resonance_network_wallet/shared/utils/amount_input_logic.dart';
 import 'package:resonance_network_wallet/shared/utils/debouncer.dart';
 import 'package:resonance_network_wallet/shared/utils/print.dart';
-import 'package:resonance_network_wallet/v2/components/loader.dart';
-import 'package:resonance_network_wallet/v2/components/quantus_icon_button.dart';
+import 'package:quantus_sdk/src/ui/components/loader.dart';
+import 'package:quantus_sdk/src/ui/components/quantus_icon_button.dart';
 
 class InputAmountScreen extends ConsumerStatefulWidget {
   final SendStrategy strategy;

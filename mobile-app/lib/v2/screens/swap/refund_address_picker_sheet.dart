@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
-import 'package:resonance_network_wallet/v2/components/bottom_sheet_container.dart';
+import 'package:quantus_sdk/src/ui/components/bottom_sheet_container.dart';
 
 Future<String?> showRefundAddressPickerSheet(BuildContext context, String network) {
   return BottomSheetContainer.show<String>(context, builder: (_) => _RefundAddressPickerContent(network: network));

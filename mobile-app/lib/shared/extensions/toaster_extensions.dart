@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:resonance_network_wallet/v2/components/toaster_helper.dart' as th;
+import 'package:quantus_sdk/src/ui/components/toaster_helper.dart' as th;
 
 extension ToasterExtensions on BuildContext {
   Future<void> showSuccessToaster({required String message}) async {
