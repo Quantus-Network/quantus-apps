@@ -23,7 +23,6 @@ import 'dart:typed_data';
 
 import 'package:convert/convert.dart';
 import 'package:polkadart/scale_codec.dart';
-import 'package:quantus_sdk/generated/planck/types/quantus_runtime/runtime_call.dart';
 import 'package:quantus_sdk/src/chain/call_decoder.dart';
 import 'package:quantus_sdk/src/chain/decoded_call.dart';
 import 'package:quantus_sdk/src/constants/app_constants.dart';
@@ -122,7 +121,7 @@ class QuantusPayloadParser {
     }
 
     final input = Input.fromBytes(payload);
-    final call = _section('call', () => _decodeCall(input));
+    final call = _section('call', () => CallDecoder.decodeFrom(input));
     final extensions = _section('extensions', () => _decodeExtensions(input));
 
     final remaining = input.remainingLength ?? 0;
@@ -153,10 +152,6 @@ class QuantusPayloadParser {
     } catch (e) {
       throw FormatException('$section: $e');
     }
-  }
-
-  static DecodedCall _decodeCall(Input input) {
-    return CallDecoder.describe(RuntimeCall.codec.decode(input));
   }
 
   static Era _decodeEra(Input input) {

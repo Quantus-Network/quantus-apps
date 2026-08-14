@@ -20,6 +20,7 @@ import 'package:quantus_sdk/generated/planck/types/qp_scheduler/block_number_or_
 import 'package:quantus_sdk/generated/planck/types/quantus_runtime/origin_caller.dart' as origin_caller;
 import 'package:quantus_sdk/generated/planck/types/quantus_runtime/runtime_call.dart';
 import 'package:quantus_sdk/generated/planck/types/sp_runtime/multiaddress/multi_address.dart' as multi_address;
+import 'package:quantus_sdk/generated/planck/types/sp_weights/weight_v2/weight.dart' as weight_v2;
 import 'package:quantus_sdk/src/chain/call_decoder.dart';
 import 'package:quantus_sdk/src/chain/decoded_call.dart';
 
@@ -56,10 +57,31 @@ RuntimeCall preimageWrapping(int depth) =>
     const preimage_pallet.Txs().notePreimage(bytes: nestedMainIfElse(depth).encode());
 
 RuntimeCall referendaWrapping(int depth) => const referenda_pallet.Txs().submit(
-  proposalOrigin: origin_caller.OriginCaller.values.system(raw_origin.RawOrigin.values.root()),
+  proposalOrigin: rootOrigin,
   proposal: bounded.Bounded.values.inline(nestedMainIfElse(depth).encode()),
   enactmentMoment: dispatch_time.DispatchTime.values.after(100),
 );
+
+final rootOrigin = origin_caller.OriginCaller.values.system(raw_origin.RawOrigin.values.root());
+
+/// `Utility.batch` wrapping a single call, [depth] times over, built straight
+/// from bytes: encoding a chain this deep in Dart would itself blow the stack,
+/// which is the point — a decoder that recurses first never gets to say no.
+Uint8List batchChainBytes(int depth) => Uint8List.fromList([
+  for (var i = 0; i < depth; i++) ...[9, 0, 4], // Utility(9) · batch(0), one call
+  0, 0, 0, // System(0) · remark(0), empty
+]);
+
+/// Every field of a decoded tree as one comparable string, so a decode that got
+/// a variant index or a field order wrong cannot compare equal.
+String flatten(DecodedCall call) => '${call.pallet}.${call.call}(${call.fields.map(flattenField).join(', ')})';
+
+String flattenField(CallField field) => switch (field) {
+  ValueField() => '${field.label}=${field.value}',
+  AmountField() => '${field.label}=${field.token}',
+  NestedCallField() => '${field.label}=${flatten(field.call)}',
+  FieldGroup() => '${field.label}={${field.items.map(flattenField).join(', ')}}',
+};
 
 ValueField valueField(DecodedCall call, String label) =>
     call.fields.whereType<ValueField>().firstWhere((f) => f.label == label);
@@ -70,18 +92,15 @@ AmountField amountField(DecodedCall call, String label) =>
 NestedCallField nestedField(DecodedCall call, String label) =>
     call.fields.whereType<NestedCallField>().firstWhere((f) => f.label == label);
 
-void expectNestingRejected(RuntimeCall call) {
-  expect(
-    () => roundTrip(call),
-    throwsA(
-      isA<CallNestingLimitException>().having(
-        (error) => error.message,
-        'message',
-        allOf(contains('Cannot parse transaction'), contains('NESTING_DEPTH_LIMIT (2)')),
-      ),
-    ),
-  );
-}
+final isNestingRejection = throwsA(
+  isA<CallNestingLimitException>().having(
+    (error) => error.message,
+    'message',
+    allOf(contains('Cannot parse transaction'), contains('exceeds the limit of 2')),
+  ),
+);
+
+void expectNestingRejected(RuntimeCall call) => expect(() => roundTrip(call), isNestingRejection);
 
 void main() {
   group('transfers', () {
@@ -374,10 +393,40 @@ void main() {
       expectNestingRejected(preimageWrapping(2));
     });
 
-    test('the fixed report payload is rejected before expensive traversal', () {
+    test('the fixed report payload is rejected', () {
       final call = nestedMainIfElse(42);
       expect(call.encode(), hasLength(213));
       expectNestingRejected(call);
+    });
+
+    test('rejects over-nested bytes without recursing into them', () {
+      // Past where the generated codecs overflow the stack (~20k levels here,
+      // fewer on a mobile isolate). Checking the limit on the decoded tree would
+      // mean crashing on the way in instead of refusing the call.
+      expect(() => CallDecoder.decodeBytes(batchChainBytes(100000)), isNestingRejection);
+    });
+
+    test('the bounded decoder agrees with the generated codec on every inline nesting variant', () {
+      final inner = const system_pallet.Txs().remark(remark: [1, 2, 3]);
+      final other = const system_pallet.Txs().remark(remark: [4]);
+      final weight = weight_v2.Weight(refTime: BigInt.from(7), proofSize: BigInt.from(9));
+      final variants = <RuntimeCall>[
+        const utility_pallet.Txs().batch(calls: [inner, other]),
+        const utility_pallet.Txs().batchAll(calls: [inner]),
+        const utility_pallet.Txs().forceBatch(calls: []),
+        const utility_pallet.Txs().asDerivative(index: 7, call: inner),
+        const utility_pallet.Txs().dispatchAs(asOrigin: rootOrigin, call: inner),
+        const utility_pallet.Txs().dispatchAsFallible(asOrigin: rootOrigin, call: inner),
+        const utility_pallet.Txs().withWeight(call: inner, weight: weight),
+        const utility_pallet.Txs().ifElse(main: inner, fallback: other),
+        const recovery_pallet.Txs().asRecovered(account: dest(aliceId), call: inner),
+        // Recovery variants the bounded decoder must hand back to the codec.
+        const recovery_pallet.Txs().claimRecovery(account: dest(bobId)),
+        const recovery_pallet.Txs().removeRecovery(),
+      ];
+      for (final call in variants) {
+        expect(flatten(roundTrip(call)), flatten(CallDecoder.describe(call)), reason: '${call.toJson()}');
+      }
     });
 
     test('utility.batch_all expands every inner call', () {
