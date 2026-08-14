@@ -2810,9 +2810,14 @@
     "@redeemConfirmFee": {
       "description": "Fee row label on redeem confirmation"
     },
-    "redeemFeeValue": "0.1% volume fee",
+    "redeemFeeValue": "{rate}% volume fee",
     "@redeemFeeValue": {
-      "description": "Volume fee value on redeem confirmation"
+      "description": "Volume fee value on redeem confirmation",
+      "placeholders": {
+        "rate": {
+          "type": "String"
+        }
+      }
     },
     "redeemProgressTitle": "Redeeming...",
     "@redeemProgressTitle": {

@@ -1,8 +1,13 @@
 import 'package:quantus_sdk/src/services/wormhole_utxo_service.dart';
 
 /// Wormhole circuit economics, shared by coin selection and the send service.
-/// Values must match the chain runtime and the Rust wormhole API.
-const int wormholeVolumeFeeBps = 10;
+/// The fee must match the chain runtime and is passed unchanged to the Rust proof API.
+const int wormholeVolumeFeeBps = 4;
+
+String wormholeVolumeFeePercentText() {
+  final percent = wormholeVolumeFeeBps / 100;
+  return percent == percent.truncateToDouble() ? percent.toInt().toString() : percent.toString();
+}
 
 /// Scaled-down → token multiplier; matches `SCALE_DOWN_FACTOR` in the Rust
 /// wormhole API. Proofs commit to amounts in scaled-down units (0.01 tokens) and
@@ -41,7 +46,7 @@ class WormholeSpendPlan {
   final BigInt changeToken;
 
   /// Everything consumed that neither the recipient nor the change receives:
-  /// the 10 bps volume fee plus sub-0.01-tokens quantization dust.
+  /// the 4 bps volume fee plus sub-0.01-tokens quantization dust.
   final BigInt feeToken;
 
   const WormholeSpendPlan({

@@ -598,7 +598,7 @@
   "redeemConfirmAmount": "Jumlah",
   "redeemConfirmTo": "Ke",
   "redeemConfirmFee": "Biaya",
-  "redeemFeeValue": "Biaya volume 0,1%",
+  "redeemFeeValue": "Biaya volume {rate}%",
   "redeemProgressTitle": "Menukar...",
   "redeemCompleteTitle": "Penukaran Selesai",
   "redeemFailedTitle": "Penukaran Gagal",
