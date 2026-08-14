@@ -30,6 +30,15 @@ jobs:
       - name: Enable macOS desktop
         run: flutter config --enable-macos-desktop
 
+      # The CocoaPods gem preinstalled on the macos-26 runner image is broken
+      # (built against a different Ruby), so Flutter skips `pod install` and the
+      # build aborts with "CocoaPods not installed or not in valid state".
+      # Homebrew's CocoaPods ships with its own Ruby and takes PATH precedence.
+      - name: Install working CocoaPods
+        run: |
+          brew install cocoapods || brew reinstall cocoapods
+          pod --version
+
       - name: Import Apple code-signing certificate
         uses: apple-actions/import-codesign-certs@v3
         with:
