@@ -55,6 +55,16 @@ void main() {
     return ProviderScope.containerOf(tester.element(find.byType(HomeScreen)));
   }
 
+  testWidgets('home actions only show receive and send', (tester) async {
+    final settings = FakeSettingsService(activeAccount: RegularAccount(makeAccount(1)));
+    final auth = TestLocalAuthController(authenticated: true);
+    await pumpHome(tester, settings: settings, auth: auth);
+
+    expect(find.text('Receive'), findsOneWidget);
+    expect(find.text('Send'), findsOneWidget);
+    expect(find.text('Swap'), findsNothing);
+  });
+
   testWidgets('intent arriving while locked stays queued and drains on unlock', (tester) async {
     final settings = FakeSettingsService(activeAccount: RegularAccount(makeAccount(1)));
     final auth = TestLocalAuthController(authenticated: false);
