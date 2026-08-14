@@ -1,9 +1,0 @@
-[package]
-name = "quantus-transaction-parser"
-version = "0.1.0"
-edition = "2021"
-
-[dependencies]
-parity-scale-codec = { version = "3.6", default-features = false, features = ["derive", "full"] }
-ss58 = "0.0.3"
-hex = "0.4"
