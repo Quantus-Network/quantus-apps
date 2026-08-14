@@ -1,15 +1,15 @@
 name: Create Miner Build
 on:
-  workflow_dispatch: # Manual trigger only
+  workflow_dispatch: # Manual test builds (no release)
+  workflow_call: # Reused by publish_miner_release.yml
     inputs:
-      create_release:
-        description: 'Create a new release'
+      ref:
+        description: 'Git ref (tag/branch/SHA) to build'
         required: false
-        default: false
-        type: boolean
+        type: string
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   build-macos:
@@ -20,6 +20,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref || github.ref }}
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
@@ -202,6 +204,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref || github.ref }}
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
@@ -240,7 +244,7 @@ jobs:
       - name: Package Linux App
         run: |
           cd miner-app/build/linux/x64/release/bundle/
-          tar -czvf quantus_miner_linux.tar.gz *
+          tar -czvf quantus_miner_linux.tar.gz -- *
 
       - name: Upload Linux Artifact
         uses: actions/upload-artifact@v4
@@ -256,6 +260,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref || github.ref }}
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
@@ -288,103 +294,3 @@ jobs:
         with:
           name: quantus_miner-windows
           path: miner-app/build/windows/x64/runner/Release/quantus_miner_windows.zip
-
-  create-release:
-    name: Create Release
-    if: ${{ inputs.create_release }}
-    needs: [build-macos, build-linux, build-windows]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Read version from pubspec.yaml
-        id: get_version
-        run: |
-          VERSION=$(grep '^version:' miner-app/pubspec.yaml | head -1 | sed 's/version:[[:space:]]*//')
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-          echo "tag=miner-v$VERSION" >> "$GITHUB_OUTPUT"
-
-      - name: Download all artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: ./artifacts
-
-      - name: List downloaded artifacts
-        run: |
-          # For debugging only; artifact already contains the final ZIP we want
-          find ./artifacts -type f \( -name "*.zip" -o -name "*.tar.gz" \) -o -type d -name "*.app" | sort
-
-      - name: Create and push git tag
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          TAG="${{ steps.get_version.outputs.tag }}"
-          echo "Tag to create: $TAG"
-
-          if git ls-remote --tags origin "$TAG" | grep -q "$TAG"; then
-            echo "Error: Tag $TAG already exists on remote."
-            echo "Please update the version in pubspec.yaml before creating a new release."
-            exit 1
-          else
-            git config user.name "github-actions[bot]"
-            git config user.email "github-actions[bot]@users.noreply.github.com"
-            git tag "$TAG" "$GITHUB_SHA"
-            git push origin "$TAG"
-          fi
-
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ steps.get_version.outputs.tag }}
-          release_name: Quantus Miner ${{ steps.get_version.outputs.version }}
-          body: |
-            ## Quantus Miner Release
-            This release includes binaries for:
-            - 🍎 macOS (Intel/Apple Silicon)
-            - 🐧 Linux (x64)
-            - 🪟 Windows (x64)
-            ### Installation
-            **macOS**: Download the `.zip` file, extract it, and run the `Quantus Miner.app`
-            **Linux**: Download the `.tar.gz` file, extract it, and run the `quantus_miner` executable
-            **Windows**: Download the `.zip` file, extract it, and run the `quantus_miner.exe`
-            ### What's Changed
-            - Cross-platform mining support
-            - External miner integration
-            - Improved UI and stability
-            Built from commit: ${{ github.sha }}
-          draft: false
-          prerelease: false
-
-      - name: Upload macOS Asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./artifacts/quantus_miner-macos/quantus_miner_macos.zip
-          asset_name: quantus_miner_macos.zip
-          asset_content_type: application/zip
-
-      - name: Upload Linux Asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./artifacts/quantus_miner-linux/quantus_miner_linux.tar.gz
-          asset_name: quantus_miner_linux.tar.gz
-          asset_content_type: application/gzip
-
-      - name: Upload Windows Asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./artifacts/quantus_miner-windows/quantus_miner_windows.zip
-          asset_name: quantus_miner_windows.zip
-          asset_content_type: application/zip
