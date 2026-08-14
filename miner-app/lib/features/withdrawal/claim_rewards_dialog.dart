@@ -1,7 +1,4 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
-import 'package:quantus_miner/src/services/binary_manager.dart';
 import 'package:quantus_miner/src/services/miner_settings_service.dart';
 import 'package:quantus_miner/src/services/miner_wallet_service.dart';
 import 'package:quantus_miner/src/utils/app_logger.dart';
@@ -117,9 +114,7 @@ class _ClaimRewardsDialogState extends State<_ClaimRewardsDialog> {
       }
 
       final chainConfig = await _settingsService.getChainConfig();
-      final binsDir = '${await BinaryManager.getQuantusHomeDirectoryPath()}/generated-bins';
-      await Directory(binsDir).create(recursive: true);
-
+      final circuitDir = await CircuitManager.getCircuitDirectory();
       final rpcUrl = chainConfig.rpcUrl;
       _log.i('Starting claim for ${keyPair.address} to ${_addressController.text.trim()}');
 
@@ -128,7 +123,7 @@ class _ClaimRewardsDialogState extends State<_ClaimRewardsDialog> {
         secretHex: keyPair.secretHex,
         destinationAddress: _addressController.text.trim(),
         rpcUrl: rpcUrl,
-        circuitBinsDir: binsDir,
+        circuitBinsDir: circuitDir,
         onProgress: (progress) {
           if (!mounted) return;
           setState(() {
