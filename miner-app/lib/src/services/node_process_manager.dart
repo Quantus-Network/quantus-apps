@@ -85,6 +85,15 @@ class NodeProcessManager extends BaseProcessManager {
     initLogProcessor('node', getSyncState: () => getSyncState?.call() ?? false);
   }
 
+  /// Node data directory used as --base-path for non-dev chains.
+  static Future<String> nodeDataPath() async =>
+      p.join(await BinaryManager.getQuantusHomeDirectoryPath(), 'node_data');
+
+  /// Fixed miner auth token location, passed to the node via
+  /// --miner-auth-token-file so the path is known even in dev mode, where the
+  /// node runs on temp storage and the default token path is unpredictable.
+  static Future<String> minerAuthTokenPath() async => p.join(await nodeDataPath(), 'miner-auth-token');
+
   /// Start the node process.
   ///
   /// Throws an exception if startup fails.
@@ -111,12 +120,11 @@ class NodeProcessManager extends BaseProcessManager {
     }
 
     // Prepare data directory
-    final quantusHome = await BinaryManager.getQuantusHomeDirectoryPath();
-    final basePath = p.join(quantusHome, 'node_data');
+    final basePath = await nodeDataPath();
     await Directory(basePath).create(recursive: true);
 
     // Build command arguments
-    final args = _buildArgs(config, basePath);
+    final args = _buildArgs(config, basePath, await minerAuthTokenPath());
 
     log.i('Starting node...');
     log.d('Command: ${config.binary.path} ${args.join(' ')}');
@@ -137,7 +145,7 @@ class NodeProcessManager extends BaseProcessManager {
     }
   }
 
-  List<String> _buildArgs(NodeConfig config, String basePath) {
+  List<String> _buildArgs(NodeConfig config, String basePath, String minerAuthTokenPath) {
     return [
       // Only use --base-path for non-dev chains (dev uses temp storage for fresh state)
       if (config.chainId != 'dev') ...['--base-path', basePath],
@@ -153,6 +161,7 @@ class NodeProcessManager extends BaseProcessManager {
       'listen-addr=${MinerConfig.localhost}:${config.rpcPort},methods=unsafe,cors=all',
       '--name', 'QuantusMinerGUI',
       '--miner-listen-port', config.minerListenPort.toString(),
+      '--miner-auth-token-file', minerAuthTokenPath,
       '--enable-peer-sharing',
     ];
   }
