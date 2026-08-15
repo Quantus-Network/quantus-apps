@@ -4,12 +4,7 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/multisig_providers.dart';
-import 'package:resonance_network_wallet/shared/extensions/toaster_extensions.dart';
-import 'package:quantus_sdk/src/ui/components/name_field.dart';
-import 'package:quantus_sdk/src/ui/components/quantus_button.dart';
-import 'package:quantus_sdk/src/ui/components/scaffold_base.dart';
-import 'package:quantus_sdk/src/ui/components/scaffold_base_bottom_content.dart';
-import 'package:quantus_sdk/src/ui/components/v2_app_bar.dart';
+import 'package:resonance_network_wallet/v2/components/name_field.dart';
 
 class EditAccountScreen extends ConsumerStatefulWidget {
   const EditAccountScreen({super.key, required Account initialAccount})

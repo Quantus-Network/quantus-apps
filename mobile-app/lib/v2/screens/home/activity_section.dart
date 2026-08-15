@@ -2,7 +2,7 @@ import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/features/components/skeleton.dart';
+import 'package:resonance_network_wallet/v2/components/skeleton.dart';
 import 'package:resonance_network_wallet/models/combined_transactions_list.dart';
 import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/providers/active_account_transactions_provider.dart';

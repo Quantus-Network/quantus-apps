@@ -3,9 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/local_auth_provider.dart';
-import 'package:quantus_sdk/src/ui/components/base_background.dart';
-import 'package:quantus_sdk/src/ui/components/loader.dart';
-import 'package:quantus_sdk/src/ui/components/quantus_button.dart';
 
 class AuthWrapper extends ConsumerWidget {
   const AuthWrapper({super.key});

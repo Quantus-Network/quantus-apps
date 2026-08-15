@@ -1,4 +1,3 @@
-
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -10,9 +9,6 @@ import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/services/firebase_messaging_service.dart';
 import 'package:resonance_network_wallet/services/wallet_creation_service.dart';
 import 'package:resonance_network_wallet/shared/constants/e2e_keys.dart';
-import 'package:resonance_network_wallet/shared/extensions/toaster_extensions.dart';
-import 'package:quantus_sdk/src/ui/components/quantus_button.dart';
-import 'package:quantus_sdk/src/ui/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/account_ready_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/import/import_wallet_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/welcome/onboarding_background.dart';

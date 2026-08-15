@@ -2,23 +2,15 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:quantus_sdk/quantus_sdk.dart' hide AddressDetailsCard;
+import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
-import 'package:resonance_network_wallet/shared/extensions/toaster_extensions.dart';
-import 'package:resonance_network_wallet/v2/components/address_details_card.dart';
-import 'package:quantus_sdk/src/ui/components/loader.dart';
-import 'package:quantus_sdk/src/ui/components/quantus_qr.dart';
-import 'package:quantus_sdk/src/ui/components/scaffold_base_bottom_content.dart';
-import 'package:quantus_sdk/src/ui/components/share_account_button.dart';
 import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
+import 'package:resonance_network_wallet/v2/components/address_details_card.dart';
 import 'package:resonance_network_wallet/shared/utils/print.dart';
 import 'package:resonance_network_wallet/shared/utils/share_utils.dart';
-import 'package:quantus_sdk/src/ui/components/quantus_button.dart';
-import 'package:quantus_sdk/src/ui/components/scaffold_base.dart';
-import 'package:quantus_sdk/src/ui/components/segmented_controls.dart';
-import 'package:quantus_sdk/src/ui/components/v2_app_bar.dart';
+import 'package:resonance_network_wallet/v2/components/share_account_button.dart';
 
 enum ReceiveTab { qrCode, address }
 

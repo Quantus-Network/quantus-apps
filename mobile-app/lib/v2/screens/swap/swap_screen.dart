@@ -3,13 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
-import 'package:quantus_sdk/src/ui/components/quantus_button.dart';
-import 'package:quantus_sdk/src/ui/components/qr_scanner_page.dart';
+import 'package:resonance_network_wallet/v2/components/qr_scanner_page.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/shared/utils/print.dart';
-import 'package:quantus_sdk/src/ui/components/token_icon.dart';
-import 'package:quantus_sdk/src/ui/components/scaffold_base.dart';
-import 'package:quantus_sdk/src/ui/components/v2_app_bar.dart';
+import 'package:resonance_network_wallet/v2/components/token_icon.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/refund_address_picker_sheet.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/review_quote_sheet.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/token_picker_sheet.dart';
@@ -198,7 +195,7 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
                 variant: ButtonVariant.glass,
                 onTap: _pickToken,
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                borderRadius: 8,
+                borderRadius: BorderRadius.circular(8),
                 child: Row(
                   children: [
                     TokenIcon(token: _fromToken, size: 25, networkBadgeSize: 10),
@@ -316,7 +313,7 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
         onTap: onTap,
         variant: ButtonVariant.glass,
         padding: EdgeInsets.zero,
-        borderRadius: 8,
+        borderRadius: BorderRadius.circular(8),
         child: Center(
           child: SvgPicture.asset(
             iconAsset,
@@ -361,7 +358,7 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
                 variant: ButtonVariant.glass,
                 onTap: () {},
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                borderRadius: 8,
+                borderRadius: BorderRadius.circular(8),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [

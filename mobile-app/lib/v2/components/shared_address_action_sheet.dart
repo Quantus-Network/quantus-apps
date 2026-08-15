@@ -3,14 +3,12 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/routes.dart';
 import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
 import 'package:resonance_network_wallet/shared/extensions/current_route_extensions.dart';
-import 'package:resonance_network_wallet/shared/extensions/toaster_extensions.dart';
 import 'package:resonance_network_wallet/shared/utils/print.dart';
 import 'package:resonance_network_wallet/v2/screens/send/input_amount_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/send/regular_send_strategy.dart';
@@ -100,7 +98,7 @@ class _SharedAddressActionSheetState extends State<SharedAddressActionSheet> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
         decoration: ShapeDecoration(
-          color: context.themeColors.background,
+          color: context.colors.background,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
         ),
         child: Stack(

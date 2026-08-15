@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:quantus_sdk/src/ui/components/bottom_sheet_container.dart';
-import 'package:quantus_sdk/src/ui/components/quantus_button.dart';
 
 /// Generic "are you sure?" confirmation sheet. Resolves to true when the user
 /// taps the confirm action, false on cancel/dismiss.

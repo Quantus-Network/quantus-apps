@@ -4,10 +4,7 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/mining_rewards_provider.dart';
 import 'package:resonance_network_wallet/services/mining_rewards_service.dart';
-import 'package:quantus_sdk/src/ui/components/loader.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/settings_divider.dart';
-import 'package:quantus_sdk/src/ui/components/scaffold_base.dart';
-import 'package:quantus_sdk/src/ui/components/v2_app_bar.dart';
 import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 
 class TestnetRewardsScreen extends ConsumerWidget {

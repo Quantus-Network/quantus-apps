@@ -4,21 +4,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/features/components/dotted_border.dart';
-import 'package:resonance_network_wallet/features/components/skeleton.dart';
+import 'package:resonance_network_wallet/v2/components/dotted_border.dart';
+import 'package:resonance_network_wallet/v2/components/skeleton.dart';
 import 'package:resonance_network_wallet/features/components/shared_address_action_sheet.dart';
 import 'package:resonance_network_wallet/services/global_history_polling_service.dart';
 import 'package:resonance_network_wallet/services/telemetry_service.dart';
 import 'package:resonance_network_wallet/shared/constants/e2e_keys.dart';
-import 'package:resonance_network_wallet/shared/extensions/toaster_extensions.dart';
 import 'package:resonance_network_wallet/shared/utils/print.dart';
 import 'package:resonance_network_wallet/shared/utils/url_utils.dart';
-import 'package:quantus_sdk/src/ui/components/amount_display_with_conversion.dart';
-import 'package:quantus_sdk/src/ui/components/loader.dart';
-import 'package:quantus_sdk/src/ui/components/private_activity_notice.dart';
-import 'package:quantus_sdk/src/ui/components/quantus_button.dart';
-import 'package:quantus_sdk/src/ui/components/quantus_icon_button.dart';
-import 'package:quantus_sdk/src/ui/components/scaffold_base_bottom_content.dart';
+import 'package:resonance_network_wallet/v2/components/amount_display_with_conversion.dart';
+import 'package:resonance_network_wallet/v2/components/private_activity_notice.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/open_accounts_management_button.dart';
 import 'package:resonance_network_wallet/v2/screens/activity/transaction_detail_sheet.dart';
 import 'package:resonance_network_wallet/v2/screens/receive/receive_screen.dart';
@@ -32,7 +27,6 @@ import 'package:resonance_network_wallet/v2/screens/send/select_recipient_screen
 import 'package:resonance_network_wallet/v2/screens/send/send_strategy.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/settings_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/pos/pos_amount_screen.dart';
-import 'package:resonance_network_wallet/v2/screens/swap/swap_screen.dart';
 import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
@@ -42,9 +36,8 @@ import 'package:resonance_network_wallet/providers/multisig_providers.dart';
 import 'package:resonance_network_wallet/providers/route_intent_providers.dart';
 import 'package:resonance_network_wallet/providers/currency_display_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
-import 'package:quantus_sdk/src/ui/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/screens/send/send_providers.dart';
-import 'package:quantus_sdk/src/ui/components/global_toast_listener.dart';
+import 'package:resonance_network_wallet/v2/components/global_toast_listener.dart';
 import 'package:resonance_network_wallet/v2/screens/home/activity_section.dart';
 import 'package:resonance_network_wallet/v2/screens/home/backup_reminder_banner.dart';
 
@@ -363,7 +356,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   Widget _buildActionButtons(AppLocalizations l10n, Account account) {
     final isEncrypted = isEncryptedAccount(account);
-    const enableSwap = true; // ref.watch(remoteConfigProvider).enableSwap; Override enable swap config for now
     final SendStrategy sendStrategy = isEncrypted
         ? EncryptedSendStrategy(account: account)
         : RegularSendStrategy(account: account);
@@ -381,27 +373,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       onTap: () => startSendFlow(context, screen: SelectRecipientScreen(strategy: sendStrategy)),
     );
 
-    final swapCard = _actionCard(
-      iconAsset: 'assets/v2/action_swap.svg',
-      label: l10n.homeSwap,
-      // Swap is not available for encrypted accounts; keep the button visible
-      // but disabled so the layout doesn't change between account types.
-      isDisabled: isEncrypted,
-      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SwapScreen())),
-    );
-
-    final List<Widget> children = [];
-
-    children.add(receiveCard);
-    children.add(const SizedBox(width: 15));
-    children.add(sendCard);
-
-    if (enableSwap) {
-      children.add(const SizedBox(width: 15));
-      children.add(swapCard);
-    }
-
-    return Row(children: children);
+    return Row(children: [receiveCard, const SizedBox(width: 15), sendCard]);
   }
 
   Widget _buildMultisigActionButtons(AppLocalizations l10n, MultisigAccount msig) {
@@ -425,19 +397,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Widget _actionCard({
-    Key? key,
-    required String iconAsset,
-    required String label,
-    required VoidCallback onTap,
-    bool isDisabled = false,
-  }) {
+  Widget _actionCard({Key? key, required String iconAsset, required String label, required VoidCallback onTap}) {
     return Expanded(
       child: QuantusButton.simple(
         key: key,
         label: label,
         onTap: onTap,
-        isDisabled: isDisabled,
         icon: SvgPicture.asset(
           iconAsset,
           width: 24,

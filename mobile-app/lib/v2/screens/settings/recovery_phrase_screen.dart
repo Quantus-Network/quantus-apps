@@ -4,7 +4,7 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/shared/constants/e2e_keys.dart';
-import 'package:quantus_sdk/src/ui/components/recovery_phrase_body.dart';
+import 'package:resonance_network_wallet/v2/components/recovery_phrase_body.dart';
 
 class RecoveryPhraseScreen extends ConsumerStatefulWidget {
   const RecoveryPhraseScreen({super.key, this.walletIndex = 0});

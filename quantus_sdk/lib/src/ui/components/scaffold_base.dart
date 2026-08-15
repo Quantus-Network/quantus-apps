@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:resonance_network_wallet/features/components/network_status_banner.dart';
 import 'package:quantus_sdk/src/ui/components/base_background.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 
@@ -8,6 +7,7 @@ class ScaffoldBase extends StatelessWidget {
   final Widget? bottomContent;
   final List<Widget>? slivers;
   final Widget? appBar;
+  final Widget? networkBanner;
   final ScrollController? scrollController;
   final ScrollPhysics? scrollPhysics;
   final RefreshCallback? onRefresh;
@@ -20,6 +20,7 @@ class ScaffoldBase extends StatelessWidget {
   const ScaffoldBase({
     super.key,
     this.appBar,
+    this.networkBanner,
     this.padding = defaultPadding,
     this.backgroundWidget,
     this.bottomContent,
@@ -33,6 +34,7 @@ class ScaffoldBase extends StatelessWidget {
   const ScaffoldBase.refreshable({
     super.key,
     this.appBar,
+    this.networkBanner,
     this.padding = defaultPadding,
     this.backgroundWidget,
     this.scrollController,
@@ -48,7 +50,7 @@ class ScaffoldBase extends StatelessWidget {
 
     Widget bodyContent = Column(
       children: [
-        const NetworkStatusBanner(),
+        ?networkBanner,
         if (appBar != null) Padding(padding: padding, child: appBar!),
         Expanded(child: _buildChild(colors)),
       ],

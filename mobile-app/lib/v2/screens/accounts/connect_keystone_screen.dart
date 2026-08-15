@@ -5,11 +5,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
-import 'package:quantus_sdk/src/ui/components/quantus_button.dart';
-import 'package:quantus_sdk/src/ui/components/qr_scanner_page.dart';
-import 'package:quantus_sdk/src/ui/components/scaffold_base.dart';
-import 'package:quantus_sdk/src/ui/components/scaffold_base_bottom_content.dart';
-import 'package:quantus_sdk/src/ui/components/v2_app_bar.dart';
+import 'package:resonance_network_wallet/v2/components/qr_scanner_page.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/account_menu_screen.dart';
 
 /// Second add-Keystone screen: on-device instructions, then scans the device's

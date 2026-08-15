@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
@@ -6,13 +5,8 @@ import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/shared/constants/e2e_keys.dart';
-import 'package:quantus_sdk/src/ui/components/account_badge.dart';
-import 'package:quantus_sdk/src/ui/components/loader.dart';
-import 'package:quantus_sdk/src/ui/components/private_activity_notice.dart';
-import 'package:quantus_sdk/src/ui/components/quantus_button.dart';
-import 'package:quantus_sdk/src/ui/components/scaffold_base.dart';
-import 'package:quantus_sdk/src/ui/components/scaffold_base_bottom_content.dart';
-import 'package:quantus_sdk/src/ui/components/v2_app_bar.dart';
+import 'package:resonance_network_wallet/v2/components/account_badge.dart';
+import 'package:resonance_network_wallet/v2/components/private_activity_notice.dart';
 import 'package:resonance_network_wallet/v2/screens/home/home_screen.dart';
 
 enum AccountReadyOverviewOrigin { accountCreated, walletCreated, walletImported }

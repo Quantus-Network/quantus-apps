@@ -11,7 +11,6 @@ import 'package:resonance_network_wallet/services/local_auth_service.dart';
 import 'package:resonance_network_wallet/services/transaction_submission_service.dart';
 import 'package:resonance_network_wallet/shared/utils/print.dart';
 import 'package:resonance_network_wallet/shared/utils/url_utils.dart';
-import 'package:quantus_sdk/src/ui/components/detail_summary_row.dart';
 import 'package:resonance_network_wallet/v2/screens/send/keystone_sign_cache.dart';
 import 'package:resonance_network_wallet/v2/screens/send/keystone_signing_session.dart';
 import 'package:resonance_network_wallet/v2/screens/send/send_providers.dart';

@@ -5,8 +5,6 @@ import 'package:resonance_network_wallet/providers/currency_display_provider.dar
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/notification_config_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
-import 'package:quantus_sdk/src/ui/components/scaffold_base.dart';
-import 'package:quantus_sdk/src/ui/components/v2_app_bar.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/currency_picker_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/language_picker_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/settings_divider.dart';

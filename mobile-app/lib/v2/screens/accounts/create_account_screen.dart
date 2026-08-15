@@ -5,14 +5,9 @@ import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
 import 'package:resonance_network_wallet/services/firebase_messaging_service.dart';
-import 'package:resonance_network_wallet/shared/extensions/toaster_extensions.dart';
 import 'package:resonance_network_wallet/shared/utils/account_utils.dart';
 import 'package:resonance_network_wallet/shared/utils/print.dart';
-import 'package:quantus_sdk/src/ui/components/name_field.dart';
-import 'package:quantus_sdk/src/ui/components/quantus_button.dart';
-import 'package:quantus_sdk/src/ui/components/scaffold_base.dart';
-import 'package:quantus_sdk/src/ui/components/scaffold_base_bottom_content.dart';
-import 'package:quantus_sdk/src/ui/components/v2_app_bar.dart';
+import 'package:resonance_network_wallet/v2/components/name_field.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/accounts_navigation.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/add_hardware_account_screen.dart';
 

@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/shared/utils/account_utils.dart';
 
 class AddressCheckphraseWithInitial extends StatelessWidget {
   final String recipientChecksum;

@@ -60,3 +60,7 @@ polkadart:
   output_dir: lib/generated
   chains:
     planck: wss://a1-planck.quantus.cat
+
+flutter:
+  assets:
+    - assets/v2/uppercase_q_black_bg.png

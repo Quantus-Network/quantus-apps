@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/features/components/dotted_border.dart';
+import 'package:resonance_network_wallet/v2/components/dotted_border.dart';
 import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/currency_display_provider.dart';
@@ -10,9 +10,8 @@ import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/routes.dart';
 import 'package:resonance_network_wallet/shared/extensions/current_route_extensions.dart';
 import 'package:resonance_network_wallet/shared/extensions/transaction_event_extension.dart';
-import 'package:quantus_sdk/src/ui/components/amount_display_with_conversion.dart';
-import 'package:quantus_sdk/src/ui/components/bottom_sheet_container.dart';
-import 'package:quantus_sdk/src/ui/components/explorer_link.dart';
+import 'package:resonance_network_wallet/v2/components/amount_display_with_conversion.dart';
+import 'package:resonance_network_wallet/v2/components/explorer_link.dart';
 
 void showTransactionDetailSheet(BuildContext context, TransactionEvent tx, String activeAccountId) {
   if (context.peekTopRouteName == transactionDetailSheetRouteSettings.name) Navigator.pop(context);

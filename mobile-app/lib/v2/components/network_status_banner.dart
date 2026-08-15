@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/connectivity_provider.dart';
 
 class NetworkStatusBanner extends ConsumerWidget {
@@ -26,7 +26,7 @@ class NetworkStatusBanner extends ConsumerWidget {
           Text(
             'Not Connected',
             style: TextStyle(
-              color: context.themeColors.textPrimary,
+              color: context.colors.textPrimary,
               fontSize: 16,
               fontFamily: 'Fira Code',
               fontWeight: FontWeight.w400,

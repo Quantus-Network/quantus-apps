@@ -22,7 +22,7 @@ class QuantusQr extends StatelessWidget {
       child: QrImageView(
         data: accountId,
         errorCorrectionLevel: QrErrorCorrectLevel.M,
-        embeddedImage: const AssetImage('assets/v2/uppercase_q_black_bg.png'),
+        embeddedImage: const AssetImage('assets/v2/uppercase_q_black_bg.png', package: 'quantus_sdk'),
         embeddedImageStyle: QrEmbeddedImageStyle(size: Size(qrLogoSize, qrLogoSize)),
         version: QrVersions.auto,
         size: qrSize,

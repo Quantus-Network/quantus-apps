@@ -2738,6 +2738,10 @@
     "@componentNameFieldHint": {
       "description": "Hint text on account name field"
     },
+    "componentAmountApproximatePrefix": "≈",
+    "@componentAmountApproximatePrefix": {
+      "description": "Prefix before a converted secondary amount"
+    },
 
     "commonLoading": "Loading...",
     "@commonLoading": {

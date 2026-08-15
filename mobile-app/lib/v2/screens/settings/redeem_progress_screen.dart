@@ -6,11 +6,7 @@ import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/mining_rewards_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/shared/utils/print.dart';
-import 'package:quantus_sdk/src/ui/components/quantus_button.dart';
-import 'package:quantus_sdk/src/ui/components/scaffold_base.dart';
-import 'package:quantus_sdk/src/ui/components/scaffold_base_bottom_content.dart';
-import 'package:quantus_sdk/src/ui/components/v2_app_bar.dart';
-import 'package:quantus_sdk/src/ui/components/wormhole_progress_steps.dart';
+import 'package:resonance_network_wallet/v2/components/wormhole_progress_steps.dart';
 
 class RedeemProgressScreen extends ConsumerStatefulWidget {
   final BigInt redeemableRewards;

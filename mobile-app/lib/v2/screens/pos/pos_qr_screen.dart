@@ -13,16 +13,9 @@ import 'package:resonance_network_wallet/services/pending_transaction_polling_se
 import 'package:resonance_network_wallet/services/pos_service.dart';
 import 'package:resonance_network_wallet/shared/utils/print.dart';
 import 'package:resonance_network_wallet/shared/utils/url_utils.dart';
-import 'package:quantus_sdk/src/ui/components/explorer_link.dart';
-import 'package:quantus_sdk/src/ui/components/loader.dart';
-import 'package:quantus_sdk/src/ui/components/quantus_button.dart';
-import 'package:quantus_sdk/src/ui/components/quantus_icon_button.dart';
-import 'package:quantus_sdk/src/ui/components/quantus_qr.dart';
-import 'package:quantus_sdk/src/ui/components/scaffold_base_bottom_content.dart';
 import 'package:resonance_network_wallet/services/tx_watch_service.dart';
+import 'package:resonance_network_wallet/v2/components/explorer_link.dart';
 import 'package:resonance_network_wallet/v2/screens/pos/pos_amount_screen.dart';
-import 'package:quantus_sdk/src/ui/components/scaffold_base.dart';
-import 'package:quantus_sdk/src/ui/components/v2_app_bar.dart';
 
 class PosQrScreen extends ConsumerStatefulWidget {
   final BigInt amountToken;

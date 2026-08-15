@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/shared/utils/account_utils.dart';
 
 class AccountBadge extends StatelessWidget {
   final String name;

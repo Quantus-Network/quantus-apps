@@ -16,6 +16,7 @@ export 'src/extensions/decimal_input_filter.dart';
 export 'src/extensions/keypair_extensions.dart';
 export 'src/extensions/media_query_data_extension.dart';
 export 'src/extensions/string_extensions.dart';
+export 'src/extensions/toaster_extensions.dart';
 // UI-related exports
 export 'src/ui/index.dart';
 export 'src/models/account.dart';
@@ -49,7 +50,6 @@ export 'src/models/raid_stats.dart';
 export 'src/rust/api/crypto.dart' hide crystalAlice, crystalCharlie, crystalBob;
 export 'src/rust/api/ur.dart';
 export 'src/utils/ur_qr.dart';
-export 'src/utils/account_utils.dart';
 export 'src/rust/api/wormhole.dart';
 export 'src/services/account_discovery_service.dart';
 export 'src/services/accounts_service.dart';

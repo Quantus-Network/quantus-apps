@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/providers/currency_display_provider.dart';
-import 'package:quantus_sdk/src/ui/components/detail_summary_row.dart';
 
 /// Renders every parameter of a [DecodedCall], nested calls included.
 ///
@@ -10,16 +7,19 @@ import 'package:quantus_sdk/src/ui/components/detail_summary_row.dart';
 /// upgrade authorisations and batches all arrive through the same pallet — so a
 /// transfer-shaped layout silently misreports them. This shows the call the
 /// runtime actually declared, with each of its parameters.
-class DecodedCallView extends ConsumerWidget {
+class DecodedCallView extends StatelessWidget {
   final DecodedCall call;
 
   /// Nesting depth; nested calls indent and drop a level of visual weight.
   final int depth;
 
-  const DecodedCallView({super.key, required this.call, this.depth = 0});
+  /// Formats a native token amount for the current locale and currency display.
+  final String Function(BigInt token) amountText;
+
+  const DecodedCallView({super.key, required this.call, required this.amountText, this.depth = 0});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final colors = context.colors;
     final text = context.themeText;
 
@@ -35,12 +35,12 @@ class DecodedCallView extends ConsumerWidget {
           ),
         ),
         const SizedBox(height: 4),
-        for (final field in call.fields) _field(context, ref, field),
+        for (final field in call.fields) _field(context, field),
       ],
     );
   }
 
-  Widget _field(BuildContext context, WidgetRef ref, CallField field) {
+  Widget _field(BuildContext context, CallField field) {
     final colors = context.colors;
     final text = context.themeText;
 
@@ -62,9 +62,7 @@ class DecodedCallView extends ConsumerWidget {
         );
 
       case AmountField(:final label, :final token, :final assetId, :final note):
-        final value = assetId == null
-            ? ref.watch(txAmountDisplayProvider)(token, isSend: true).primaryAmount
-            : '$token (asset #$assetId, raw units)';
+        final value = assetId == null ? amountText(token) : '$token (asset #$assetId, raw units)';
         return Padding(
           padding: const EdgeInsets.only(top: 6),
           child: Column(
@@ -91,7 +89,7 @@ class DecodedCallView extends ConsumerWidget {
                 padding: const EdgeInsets.only(left: 12),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [for (final item in items) _field(context, ref, item)],
+                  children: [for (final item in items) _field(context, item)],
                 ),
               ),
             ],
@@ -113,7 +111,7 @@ class DecodedCallView extends ConsumerWidget {
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(color: colors.borderButton.useOpacity(0.4)),
                 ),
-                child: DecodedCallView(call: call, depth: depth + 1),
+                child: DecodedCallView(call: call, depth: depth + 1, amountText: amountText),
               ),
               if (note != null)
                 Padding(

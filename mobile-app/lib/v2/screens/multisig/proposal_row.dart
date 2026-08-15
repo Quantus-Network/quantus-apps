@@ -7,7 +7,7 @@ import 'package:resonance_network_wallet/providers/pending_multisig_approvals_pr
 import 'package:resonance_network_wallet/providers/pending_multisig_cancellations_provider.dart';
 import 'package:resonance_network_wallet/providers/pending_multisig_executions_provider.dart';
 import 'package:resonance_network_wallet/shared/utils/multisig_local_signers.dart';
-import 'package:quantus_sdk/src/ui/components/proposal_list_tile.dart';
+import 'package:resonance_network_wallet/v2/components/proposal_list_tile.dart';
 
 class ProposalRow extends ConsumerWidget {
   final MultisigProposal proposal;
