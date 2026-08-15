@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/shared/utils/print.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
@@ -27,6 +28,10 @@ class AnimatedQrScanner extends StatefulWidget {
   final Future<void> Function(List<String> parts) onComplete;
   final FutureOr<void> Function(Object error)? onError;
   final AnimatedQrSequence? Function(String part)? sequenceForPart;
+
+  /// Frames this scanner will accumulate before giving up. Payload policy, like
+  /// [acceptsPart] and [isComplete], so this widget stays format-agnostic.
+  final int maxParts;
   final String appBarTitle;
   final String stepLabel;
   final String title;
@@ -44,6 +49,7 @@ class AnimatedQrScanner extends StatefulWidget {
     required this.acceptsPart,
     required this.isComplete,
     required this.onComplete,
+    required this.maxParts,
     required this.appBarTitle,
     required this.stepLabel,
     required this.title,
@@ -87,9 +93,16 @@ class _AnimatedQrScannerState extends State<AnimatedQrScanner> {
   void _onDetect(BarcodeCapture capture) {
     if (_done) return;
     final code = capture.barcodes.firstOrNull?.rawValue;
-    // maxUrParts bounds the accumulation set: a hostile animation could
-    // otherwise keep emitting distinct frames and grow memory without limit.
-    if (code == null || _parts.length >= maxUrParts() || !widget.acceptsPart(code) || !_parts.add(code)) return;
+    if (code == null || !widget.acceptsPart(code)) return;
+    // maxParts bounds the accumulation set: a hostile animation could otherwise
+    // keep emitting distinct frames and grow memory without limit. Reaching it
+    // means the set can never complete, so report it and start over instead of
+    // dropping frames in silence.
+    if (_parts.length >= widget.maxParts) {
+      unawaited(_abortOverflowing());
+      return;
+    }
+    if (!_parts.add(code)) return;
 
     final sequence = widget.sequenceForPart?.call(code);
     if (sequence != null) {
@@ -104,6 +117,16 @@ class _AnimatedQrScannerState extends State<AnimatedQrScanner> {
     }
 
     unawaited(_complete(parts));
+  }
+
+  Future<void> _abortOverflowing() async {
+    quantusPrint('Animated QR scan limit hit: ${widget.maxParts} parts accumulated without completing');
+    setState(() {
+      _parts.clear();
+      _seenSequenceIndexes.clear();
+      _expectedParts = null;
+    });
+    await widget.onError?.call(StateError('Scan did not complete within ${widget.maxParts} frames'));
   }
 
   Future<void> _complete(List<String> parts) async {

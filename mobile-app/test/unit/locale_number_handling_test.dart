@@ -801,16 +801,20 @@ void main() {
       }
     });
 
-    test('a giant all-digits paste passes the filter but is rejected by the parser instantly', () {
-      // Digits are a valid shape, so the field accepts them — the parseDecimal
-      // length cap is what makes this cheap and safe.
+    test('a giant all-digits paste never reaches the field', () {
+      // Digits are a valid shape, so only the length cap keeps a million of
+      // them out — laying that out in a TextField is its own UI freeze.
       final sw = Stopwatch()..start();
       final text = pasteInto('9' * 1000000).text;
-      final amount = service.parseAmount(text);
       sw.stop();
 
-      expect(amount, isNull);
+      expect(text, isEmpty);
       expect(sw.elapsedMilliseconds, lessThan(500));
+    });
+
+    test('the field accepts exactly up to the input cap', () {
+      expect(pasteInto('9' * LocaleNumberConfig.maxInputLength).text.length, LocaleNumberConfig.maxInputLength);
+      expect(pasteInto('9' * (LocaleNumberConfig.maxInputLength + 1)).text, isEmpty);
     });
 
     test('the full paste pipeline never throws and stays bounded', () {

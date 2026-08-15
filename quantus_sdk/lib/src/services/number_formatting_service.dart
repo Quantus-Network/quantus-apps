@@ -101,23 +101,20 @@ class NumberFormattingService {
 
   /// Parses a payment URL amount in our own wire format.
   ///
-  /// Deliberately locale-free: the wire format is ours alone, so no
-  /// [LocaleNumberConfig] is involved — comma-decimal locales must not be
-  /// able to parse it. The regex gate also keeps exponent notation out, so
-  /// the [Decimal.parse] below can never materialise an attacker-sized BigInt.
+  /// Deliberately locale-free: the wire format is ours alone, so the gate below
+  /// runs before any locale-aware parsing — comma-decimal locales must not be
+  /// able to parse it, and exponent notation must never reach [Decimal], where
+  /// it could materialise an attacker-sized BigInt. Everything the gate admits
+  /// is already canonical, so the scaling itself is [parseAmount]'s.
   BigInt? parseWireAmount(String formattedAmount) {
     if (formattedAmount.isEmpty) {
       return BigInt.zero;
     }
-    if (formattedAmount.length > LocaleNumberConfig.maxInputLength || !_wireAmountPattern.hasMatch(formattedAmount)) {
+    if (!_wireAmountPattern.hasMatch(formattedAmount)) {
       quantusPrint('Invalid wire amount: $formattedAmount');
       return null;
     }
-    final decimalAmount = Decimal.parse(formattedAmount);
-    if (decimalAmount.scale > decimals) {
-      quantusPrint('Warning: wire amount $formattedAmount exceeds $decimals decimals, will be truncated.');
-    }
-    return (decimalAmount * scaleFactorDecimal).toBigInt();
+    return NumberFormattingService(localeConfig: LocaleNumberConfig.dotDecimal).parseAmount(formattedAmount);
   }
 
   /// Parses a user-entered formatted string amount into a raw BigInt amount

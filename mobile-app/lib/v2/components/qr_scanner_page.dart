@@ -6,6 +6,7 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/route_intent_providers.dart';
+import 'package:resonance_network_wallet/shared/utils/print.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_icon_button.dart';
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
@@ -38,7 +39,10 @@ class _QrScannerPageState extends ConsumerState<QrScannerPage> {
     if (_scanned) return;
     // External input is trollable: bound its length before it reaches any
     // parser. Everything scanned here is an address or a /pay link.
-    if (code.length > maxDeepLinkLength) return;
+    if (code.length > maxDeepLinkLength) {
+      quantusPrint('Ignoring over-long scanned code (${code.length} chars)');
+      return;
+    }
     if (widget.validator != null && !widget.validator!(code)) return;
     _scanned = true;
     Navigator.pop(context, code);

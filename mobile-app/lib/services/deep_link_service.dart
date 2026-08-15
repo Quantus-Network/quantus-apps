@@ -37,22 +37,25 @@ class DeepLinkService {
 
   @visibleForTesting
   void handleLink(Uri uri) {
+    final url = uri.toString();
     // External input is trollable: reject over-long links before any parsing.
-    if (uri.toString().length > maxDeepLinkLength) {
-      quantusPrint('Ignoring over-long link (${uri.toString().length} chars)');
+    if (url.length > maxDeepLinkLength) {
+      quantusPrint('Ignoring over-long link (${url.length} chars)');
       return;
     }
+    final parts = decodedLinkParts(uri);
+    if (parts == null) return;
 
-    if (uri.pathSegments.isNotEmpty && uri.pathSegments.first == 'account') {
+    if (parts.path.isNotEmpty && parts.path.first == 'account') {
       String? accountId;
 
       // Check for new format: /account?id=123
-      if (uri.pathSegments.length == 1 && uri.queryParameters.containsKey('id')) {
-        accountId = uri.queryParameters['id'];
+      if (parts.path.length == 1 && parts.query.containsKey('id')) {
+        accountId = parts.query['id'];
       }
       // Check for old format: /account/123
-      else if (uri.pathSegments.length == 2) {
-        accountId = uri.pathSegments.last;
+      else if (parts.path.length == 2) {
+        accountId = parts.path.last;
       }
 
       // Fail closed, same as address entry in the send flow.
@@ -65,8 +68,8 @@ class DeepLinkService {
       }
     }
 
-    if (uri.pathSegments.isNotEmpty && uri.pathSegments.first == 'pay') {
-      final payment = PaymentIntent.tryParseUrl(uri.toString());
+    if (parts.path.isNotEmpty && parts.path.first == 'pay') {
+      final payment = PaymentIntent.tryParseUrl(url);
       // Fail closed: a /pay link with an invalid recipient must not pre-fill
       // the send flow, same as address entry in the send flow itself.
       if (payment != null && _ref.read(substrateServiceProvider).isValidSS58Address(payment.to)) {

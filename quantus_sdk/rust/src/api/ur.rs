@@ -23,8 +23,7 @@ pub fn max_ur_part_chars() -> u32 {
 }
 
 fn within_limits(ur_parts: &[String]) -> bool {
-    ur_parts.len() <= MAX_UR_PARTS as usize
-        && ur_parts.iter().all(|p| p.len() <= MAX_UR_PART_CHARS as usize)
+    ur_parts.len() <= MAX_UR_PARTS && ur_parts.iter().all(|p| p.len() <= MAX_UR_PART_CHARS)
 }
 
 // Note decode_ur takes the list of QR Codes in any order and assembles them correctly.

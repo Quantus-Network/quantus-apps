@@ -25,11 +25,29 @@ void main() {
       final parts = encodeUrForQr(data: data, maxFragmentLength: fragment);
       var longest = '';
       for (final part in parts) {
-        expect(part.length, lessThanOrEqualTo(maxUrPartChars()), reason: 'fragment setting $fragment');
+        expect(part.length, lessThanOrEqualTo(maxUrScanPartChars), reason: 'fragment setting $fragment');
         if (part.length > longest.length) longest = part;
       }
       QrCode.fromData(data: longest, errorCorrectLevel: QrErrorCorrectLevel.L);
       expect(decodeUr(urParts: parts), equals(data), reason: 'fragment setting $fragment');
     }
+  });
+
+  // The scanners refuse frames declaring more parts than the cap, so the
+  // smallest fragment setting a user can pick must still encode within it.
+  test('signature payload stays within the scan cap at the smallest fragment setting', () {
+    final data = List<int>.generate((signatureBytes() + publicKeyBytes()).toInt(), (i) => i % 256);
+    final parts = encodeUrForQr(data: data, maxFragmentLength: 50);
+
+    expect(parts.length, lessThanOrEqualTo(maxUrScanParts));
+    expect(parts.every(isAcceptableUrPart), isTrue);
+    expect(decodeUr(urParts: parts), equals(data));
+  });
+
+  test('encoding fails loudly rather than emitting frames no scanner accepts', () {
+    expect(
+      () => encodeUrForQr(data: List<int>.filled(maxUrScanParts * 50 + 5000, 7), maxFragmentLength: 50),
+      throwsStateError,
+    );
   });
 }

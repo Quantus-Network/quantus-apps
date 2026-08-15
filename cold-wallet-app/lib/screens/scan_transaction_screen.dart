@@ -42,9 +42,19 @@ class _ScanTransactionScreenState extends State<ScanTransactionScreen> {
   void _onDetect(BarcodeCapture capture) {
     if (_done) return;
     final code = capture.barcodes.firstOrNull?.rawValue;
-    // maxUrParts bounds the accumulation set: a hostile animation could
+    if (code == null || !isAcceptableUrPart(code)) return;
+    // maxUrScanParts bounds the accumulation set: a hostile animation could
     // otherwise keep emitting distinct frames and grow memory without limit.
-    if (code == null || _parts.length >= maxUrParts() || !isAcceptableUrPart(code)) return;
+    // Reaching it means the set can never complete, so say so and start over
+    // instead of dropping frames in silence.
+    if (_parts.length >= maxUrScanParts) {
+      debugPrint('UR scan limit hit: $maxUrScanParts parts accumulated without completing');
+      _parts.clear();
+      _seenSeq.clear();
+      _expectedParts = null;
+      setState(() => _error = 'Too many unusable QR frames. Restart the transfer on your hot wallet.');
+      return;
+    }
     if (!_parts.add(code)) return; // already seen this exact frame
 
     final sequence = urSequenceFor(code);

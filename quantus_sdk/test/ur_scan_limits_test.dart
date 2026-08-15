@@ -2,7 +2,6 @@
 library;
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:quantus_sdk/src/rust/api/ur.dart';
 import 'package:quantus_sdk/src/rust/frb_generated.dart';
 import 'package:quantus_sdk/src/utils/ur_qr.dart';
 
@@ -27,19 +26,33 @@ void main() {
     });
 
     test('rejects frames longer than a version-40 QR can hold', () {
-      expect(isAcceptableUrPart('ur:bytes/${'a' * maxUrPartChars()}'), isFalse);
+      expect(isAcceptableUrPart('ur:bytes/${'a' * maxUrScanPartChars}'), isFalse);
     });
 
     test('rejects declared fragment counts beyond the scan cap', () {
-      expect(isAcceptableUrPart('ur:bytes/1-${maxUrParts() + 1}/x/y'), isFalse);
-      expect(isAcceptableUrPart('ur:bytes/1-${maxUrParts()}/x/y'), isTrue);
+      expect(isAcceptableUrPart('ur:bytes/1-${maxUrScanParts + 1}/x/y'), isFalse);
+      expect(isAcceptableUrPart('ur:bytes/1-$maxUrScanParts/x/y'), isTrue);
       expect(isAcceptableUrPart('ur:bytes/1-0/x/y'), isFalse);
     });
 
-    test('sequence numbers are digit-bounded so int parsing cannot overflow', () {
-      // No header match: treated as a single-part payload.
+    test('rejects an index outside its own declared count, as the decoder does', () {
+      expect(isAcceptableUrPart('ur:bytes/6-5/x/y'), isFalse);
+      expect(isAcceptableUrPart('ur:bytes/0-5/x/y'), isFalse);
+      expect(isAcceptableUrPart('ur:bytes/5-5/x/y'), isTrue);
+    });
+
+    test('rejects out-of-range sequence headers instead of reading them as single-part', () {
+      // A header the int parser cannot hold must fail closed — treating it as a
+      // header-less frame would let any count past the cap.
       expect(urSequenceFor('ur:bytes/99999999999999999999-1/x/y'), isNull);
-      expect(isAcceptableUrPart('ur:bytes/99999999999999999999-1/x/y'), isTrue);
+      expect(isAcceptableUrPart('ur:bytes/99999999999999999999-1/x/y'), isFalse);
+      expect(isAcceptableUrPart('ur:bytes/1-1000000/x/y'), isFalse);
+      expect(isAcceptableUrPart('ur:bytes/1234567-1/x/y'), isFalse);
+    });
+
+    test('the sequence header is only read from the frame head', () {
+      // An unanchored pattern would find "/1-2/" anywhere in the payload.
+      expect(urSequenceFor('ur:bytes/digest/payload/1-2/more'), isNull);
     });
   });
 

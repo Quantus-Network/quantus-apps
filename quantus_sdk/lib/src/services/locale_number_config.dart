@@ -105,18 +105,17 @@ class LocaleNumberConfig {
   /// Empty input also throws — callers that want to treat empty as zero should
   /// short-circuit before calling.
   Decimal parseDecimal(String input) {
+    if (input.length > maxInputLength) {
+      throw InvalidNumberInputException(rawInput: input, normalized: input);
+    }
     final normalized = normalize(input);
     final canonical = (normalized.endsWith('.') && '.'.allMatches(normalized).length == 1)
         ? normalized.substring(0, normalized.length - 1)
         : normalized;
-    if (input.length > maxInputLength || !_plainDecimalShape.hasMatch(canonical)) {
+    if (!_plainDecimalShape.hasMatch(canonical)) {
       throw InvalidNumberInputException(rawInput: input, normalized: normalized);
     }
-    final result = Decimal.tryParse(canonical);
-    if (result == null) {
-      throw InvalidNumberInputException(rawInput: input, normalized: normalized);
-    }
-    return result;
+    return Decimal.parse(canonical);
   }
 
   /// Converts a canonical numeric string (dot decimal, no grouping) to the

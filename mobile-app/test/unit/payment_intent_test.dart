@@ -43,6 +43,17 @@ void main() {
       expect(PaymentIntent.tryParseUrl(':::'), isNull);
     });
 
+    test('returns null instead of throwing on malformed percent-escapes', () {
+      // Uri.tryParse accepts these; pathSegments/queryParameters decode lazily
+      // and throw FormatException, which would escape into the deep-link stream
+      // listener and the barcode callback.
+      expect(PaymentIntent.tryParseUrl('https://www.quantus.com/pay?to=%c3%28&amount=1.5'), isNull);
+      expect(PaymentIntent.tryParseUrl('https://www.quantus.com/pay?to=a&amount=%c3'), isNull);
+      expect(PaymentIntent.tryParseUrl('https://www.quantus.com/pay?to=a&amount=1.5&ref=%ff%fe'), isNull);
+      expect(PaymentIntent.tryParseUrl('https://www.quantus.com/pay/%ff?to=a&amount=1.5'), isNull);
+      expect(PaymentIntent.tryParseUrl('https://www.quantus.com/pay?to=%ed%a0%80&amount=1.5'), isNull);
+    });
+
     test('rejects exponent notation in amount', () {
       // Immunefi regression: amount=1e10000000 froze the wallet materialising
       // an unbounded BigInt on the UI isolate.

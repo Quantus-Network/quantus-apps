@@ -87,6 +87,7 @@ class _KeystoneSignatureScanScreenState extends ConsumerState<KeystoneSignatureS
 
     return AnimatedQrScanner(
       acceptsPart: isAcceptableUrPart,
+      maxParts: maxUrScanParts,
       isComplete: (parts) => isCompleteUr(urParts: parts),
       sequenceForPart: _sequenceForPart,
       onComplete: _submit,
