@@ -32,7 +32,6 @@ import 'package:resonance_network_wallet/v2/screens/send/select_recipient_screen
 import 'package:resonance_network_wallet/v2/screens/send/send_strategy.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/settings_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/pos/pos_amount_screen.dart';
-import 'package:resonance_network_wallet/v2/screens/swap/swap_screen.dart';
 import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
@@ -365,7 +364,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   Widget _buildActionButtons(AppLocalizations l10n, Account account) {
     final isEncrypted = isEncryptedAccount(account);
-    const enableSwap = true; // ref.watch(remoteConfigProvider).enableSwap; Override enable swap config for now
     final SendStrategy sendStrategy = isEncrypted
         ? EncryptedSendStrategy(account: account)
         : RegularSendStrategy(account: account);
@@ -383,27 +381,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       onTap: () => startSendFlow(context, screen: SelectRecipientScreen(strategy: sendStrategy)),
     );
 
-    final swapCard = _actionCard(
-      iconAsset: 'assets/v2/action_swap.svg',
-      label: l10n.homeSwap,
-      // Swap is not available for encrypted accounts; keep the button visible
-      // but disabled so the layout doesn't change between account types.
-      isDisabled: isEncrypted,
-      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SwapScreen())),
-    );
-
-    final List<Widget> children = [];
-
-    children.add(receiveCard);
-    children.add(const SizedBox(width: 15));
-    children.add(sendCard);
-
-    if (enableSwap) {
-      children.add(const SizedBox(width: 15));
-      children.add(swapCard);
-    }
-
-    return Row(children: children);
+    return Row(children: [receiveCard, const SizedBox(width: 15), sendCard]);
   }
 
   Widget _buildMultisigActionButtons(AppLocalizations l10n, MultisigAccount msig) {
@@ -427,19 +405,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Widget _actionCard({
-    Key? key,
-    required String iconAsset,
-    required String label,
-    required VoidCallback onTap,
-    bool isDisabled = false,
-  }) {
+  Widget _actionCard({Key? key, required String iconAsset, required String label, required VoidCallback onTap}) {
     return Expanded(
       child: QuantusButton.simple(
         key: key,
         label: label,
         onTap: onTap,
-        isDisabled: isDisabled,
         icon: SvgPicture.asset(
           iconAsset,
           width: 24,

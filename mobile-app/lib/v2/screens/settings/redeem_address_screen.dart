@@ -195,7 +195,7 @@ class _RedeemConfirmSheet extends StatelessWidget {
           Divider(color: colors.separator, height: 32),
           _row(l10n.redeemConfirmTo, AddressFormattingService.formatAddress(destination), colors, text),
           Divider(color: colors.separator, height: 32),
-          _row(l10n.redeemConfirmFee, l10n.redeemFeeValue, colors, text),
+          _row(l10n.redeemConfirmFee, l10n.redeemFeeValue(wormholeVolumeFeePercentText()), colors, text),
           const SizedBox(height: 32),
           QuantusButton.simple(label: l10n.redeemAmountCta(formatted), onTap: () => Navigator.of(context).pop(true)),
         ],

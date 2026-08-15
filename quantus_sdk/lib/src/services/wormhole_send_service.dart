@@ -8,6 +8,7 @@ import 'package:http/http.dart' as http;
 import 'package:polkadart/scale_codec.dart' show ByteOutput, CompactCodec;
 import 'package:quantus_sdk/generated/planck/pallets/wormhole.dart' as wormhole_pallet;
 import 'package:quantus_sdk/src/rust/api/wormhole.dart' as wormhole_ffi;
+import 'package:quantus_sdk/src/services/circuit_manager.dart';
 import 'package:quantus_sdk/src/services/network/redundant_endpoint.dart';
 import 'package:quantus_sdk/src/services/substrate_service.dart' show getAccountId32;
 import 'package:quantus_sdk/src/services/wormhole_coin_selection.dart';
@@ -226,11 +227,12 @@ class WormholeSendService {
     op.checkCancelled();
     _reportProgress(onProgress, 1, 0);
     _log('Ensuring circuit binaries at: $circuitBinsDir');
-    final circuitConfig =
-        jsonDecode(await wormhole_ffi.ensureCircuitBinaries(binsDir: circuitBinsDir)) as Map<String, dynamic>;
-    // Batch size must match the circuits' aggregation arity (chain expects 7).
-    final maxProofsPerBatch = circuitConfig['num_leaf_proofs'] as int;
-    _log('Circuit binaries ready (num_leaf_proofs=$maxProofsPerBatch)');
+    final artifacts = await CircuitManager().ensureAt(circuitBinsDir);
+    final maxProofsPerBatch = artifacts.numLeafProofs;
+    _log(
+      'Circuit binaries ${artifacts.version} ready at ${artifacts.circuitDir} '
+      '(num_leaf_proofs=$maxProofsPerBatch)',
+    );
     _reportProgress(onProgress, 1, 1);
     op.checkCancelled();
     return maxProofsPerBatch;

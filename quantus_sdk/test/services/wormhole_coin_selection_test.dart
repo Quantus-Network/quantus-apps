@@ -20,6 +20,12 @@ WormholeUtxo utxo(int scaled) => WormholeUtxo(
 BigInt tokens(String v) => wormholeTokenFromScaled((double.parse(v) * 100).round());
 
 void main() {
+  test('uses the live runtime volume fee', () {
+    expect(wormholeVolumeFeeBps, 4);
+    expect(wormholeVolumeFeePercentText(), '0.04');
+    expect(wormholeNetScaled(2500), 2499);
+  });
+
   group('selectWormholeInputs', () {
     test('plan worked example: 10 tokens from 1.1 + 5.8 + 4.0', () {
       final plan = selectWormholeInputs(utxos: [utxo(110), utxo(580), utxo(400)], amountToken: tokens('10'));
