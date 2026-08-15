@@ -19,22 +19,23 @@ enum Error {
   blockNotFound('BlockNotFound', 3),
   verifierNotAvailable('VerifierNotAvailable', 4),
   proofDeserializationFailed('ProofDeserializationFailed', 5),
-  proofVerificationFailed('ProofVerificationFailed', 6),
-  invalidProofPublicInputs('InvalidProofPublicInputs', 7),
+
+  /// The submitted proof blob exceeds [`crate::MAX_PROOF_BYTES`]. Rejected before
+  /// any copy or parsing so oversized unsigned spam costs only a length check.
+  proofTooLarge('ProofTooLarge', 6),
+
+  /// The proof bytes are not the canonical serialization of the decoded proof
+  /// (e.g. a valid proof with trailing bytes, which the plonky2 parser would
+  /// silently ignore). Every proof has exactly one accepted byte encoding.
+  nonCanonicalProofEncoding('NonCanonicalProofEncoding', 7),
+  proofVerificationFailed('ProofVerificationFailed', 8),
+  invalidProofPublicInputs('InvalidProofPublicInputs', 9),
 
   /// The volume fee rate in the proof doesn't match the configured rate
-  invalidVolumeFeeRate('InvalidVolumeFeeRate', 8),
-
-  /// Transfer amount is below the minimum required
-  transferAmountBelowMinimum('TransferAmountBelowMinimum', 9),
+  invalidVolumeFeeRate('InvalidVolumeFeeRate', 10),
 
   /// Only native asset (asset_id = 0) is supported in this version
-  nonNativeAssetNotSupported('NonNativeAssetNotSupported', 10),
-
-  /// Soundness invariant violated: total wormhole exits would exceed the value that could
-  /// possibly have been deposited into wormhole addresses. This indicates a potential
-  /// soundness bug in the ZK proof system, so the exit is rejected.
-  soundnessInvariantViolation('SoundnessInvariantViolation', 11);
+  nonNativeAssetNotSupported('NonNativeAssetNotSupported', 11);
 
   const Error(this.variantName, this.codecIndex);
 
@@ -75,17 +76,17 @@ class $ErrorCodec with _i1.Codec<Error> {
       case 5:
         return Error.proofDeserializationFailed;
       case 6:
-        return Error.proofVerificationFailed;
+        return Error.proofTooLarge;
       case 7:
-        return Error.invalidProofPublicInputs;
+        return Error.nonCanonicalProofEncoding;
       case 8:
-        return Error.invalidVolumeFeeRate;
+        return Error.proofVerificationFailed;
       case 9:
-        return Error.transferAmountBelowMinimum;
+        return Error.invalidProofPublicInputs;
       case 10:
-        return Error.nonNativeAssetNotSupported;
+        return Error.invalidVolumeFeeRate;
       case 11:
-        return Error.soundnessInvariantViolation;
+        return Error.nonNativeAssetNotSupported;
       default:
         throw Exception('Error: Invalid variant index: "$index"');
     }

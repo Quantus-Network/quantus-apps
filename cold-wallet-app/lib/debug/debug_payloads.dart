@@ -2,7 +2,6 @@ import 'dart:typed_data';
 
 import 'package:convert/convert.dart';
 import 'package:polkadart/scale_codec.dart';
-import 'package:quantus_sdk/generated/planck/pallets/assets.dart' as assets_pallet;
 import 'package:quantus_sdk/generated/planck/pallets/balances.dart' as balances_pallet;
 import 'package:quantus_sdk/generated/planck/pallets/multisig.dart' as multisig_pallet;
 import 'package:quantus_sdk/generated/planck/pallets/reversible_transfers.dart' as reversible_pallet;
@@ -29,8 +28,6 @@ class DebugPayloads {
     'Force send': forceTransfer,
     'Reversible': reversibleTransfer,
     'Reversible 8h': reversibleTransferWithDelay,
-    'Asset': assetTransfer,
-    'Reversible asset': reversibleAssetTransfer,
     'Msig approve': multisigApproveTransfer,
     'Msig propose': multisigProposeTransfer,
     'Vote aye': governanceVoteAye,
@@ -73,28 +70,6 @@ class DebugPayloads {
         dest: _address(AppConstants.debugTestAddress),
         amount: BigInt.from(750000000000), // 0.75 tokens
         delay: qp.BlockNumberOrTimestamp.values.timestamp(BigInt.from(28800000)), // 8 hours
-      ),
-    );
-  }
-
-  /// A non-native asset transfer. Headline: ASSET SEND, amount in raw units.
-  static Uint8List assetTransfer() {
-    return withExtensions(
-      const assets_pallet.Txs().transfer(
-        id: BigInt.one,
-        target: _address(AppConstants.debugTestAddress),
-        amount: BigInt.from(4200),
-      ),
-    );
-  }
-
-  /// A reversible non-native asset transfer. Headline: REVERSIBLE ASSET SEND.
-  static Uint8List reversibleAssetTransfer() {
-    return withExtensions(
-      const reversible_pallet.Txs().scheduleAssetTransfer(
-        assetId: 1,
-        dest: _address(AppConstants.debugTestAddress),
-        amount: BigInt.from(1250),
       ),
     );
   }

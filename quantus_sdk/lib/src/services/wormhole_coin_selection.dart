@@ -1,8 +1,12 @@
+import 'package:quantus_sdk/generated/planck/pallets/wormhole.dart' as wormhole_pallet;
 import 'package:quantus_sdk/src/services/wormhole_utxo_service.dart';
 
 /// Wormhole circuit economics, shared by coin selection and the send service.
-/// The fee must match the chain runtime and is passed unchanged to the Rust proof API.
-const int wormholeVolumeFeeBps = 4;
+/// The fee is the runtime's own `Wormhole::VolumeFeeRateBps`, taken from the
+/// metadata the app ships with (the generated pallet constants) and passed
+/// unchanged to the Rust proof API — a runtime that changes it needs
+/// regenerated bindings (`melos run generate`), never a hand-edited value.
+final int wormholeVolumeFeeBps = wormhole_pallet.Constants().volumeFeeRateBps;
 
 String wormholeVolumeFeePercentText() {
   final percent = wormholeVolumeFeeBps / 100;

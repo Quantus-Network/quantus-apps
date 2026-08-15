@@ -30,7 +30,16 @@ enum Error {
   ///
   /// Block-scheduled tasks require a block-number retry period,
   /// and timestamp-scheduled tasks require a timestamp retry period.
-  retryPeriodMismatch('RetryPeriodMismatch', 7);
+  retryPeriodMismatch('RetryPeriodMismatch', 7),
+
+  /// Retry period value is invalid.
+  ///
+  /// A retry period must be non-zero, and a timestamp retry period must additionally
+  /// be a whole multiple of [`Config::TimestampBucketSize`]. A zero period would
+  /// re-target the agenda currently being serviced (losing the retry to the stale
+  /// agenda write-back), and a non-bucket-aligned timestamp period would place the
+  /// retry in an agenda key the servicing loop never visits.
+  invalidRetryPeriod('InvalidRetryPeriod', 8);
 
   const Error(this.variantName, this.codecIndex);
 
@@ -74,6 +83,8 @@ class $ErrorCodec with _i1.Codec<Error> {
         return Error.periodicNotSupported;
       case 7:
         return Error.retryPeriodMismatch;
+      case 8:
+        return Error.invalidRetryPeriod;
       default:
         throw Exception('Error: Invalid variant index: "$index"');
     }

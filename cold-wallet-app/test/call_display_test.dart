@@ -3,7 +3,6 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:quantus_sdk/generated/planck/pallets/assets.dart' as assets_pallet;
 import 'package:quantus_sdk/generated/planck/pallets/balances.dart' as balances_pallet;
 import 'package:quantus_sdk/generated/planck/pallets/multisig.dart' as multisig_pallet;
 import 'package:quantus_sdk/generated/planck/pallets/reversible_transfers.dart' as reversible_pallet;
@@ -134,17 +133,6 @@ void main() {
       );
       expect(find.text('REVERSIBLE SEND'), findsOneWidget);
       expect(find.text('Account default reversibility window'), findsOneWidget);
-    });
-
-    testWidgets('an asset hero says its amount is in raw units', (tester) async {
-      await pumpSignScreen(
-        tester,
-        DebugPayloads.withExtensions(
-          const assets_pallet.Txs().transfer(id: BigInt.one, target: account(bobId), amount: BigInt.from(4200)),
-        ),
-      );
-      expect(find.text('ASSET SEND'), findsOneWidget);
-      expect(find.text('4200 raw units of asset 1'), findsOneWidget);
     });
 
     testWidgets('signer row reads From for a plain send', (tester) async {

@@ -2,7 +2,6 @@ import 'dart:typed_data';
 
 import 'package:convert/convert.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:quantus_sdk/generated/planck/pallets/assets.dart' as assets_pallet;
 import 'package:quantus_sdk/generated/planck/pallets/balances.dart' as balances_pallet;
 import 'package:quantus_sdk/generated/planck/pallets/multisig.dart' as multisig_pallet;
 import 'package:quantus_sdk/generated/planck/pallets/preimage.dart' as preimage_pallet;
@@ -104,17 +103,6 @@ void main() {
       expect(delay.value, contains('10m'));
       expect(delay.value, isNot(contains('ms')), reason: 'raw milliseconds are noise next to the formatted window');
       expect(decoded.summary?.amount, oneToken);
-    });
-
-    test('reversible schedule_asset_transfer carries the asset id into the summary', () {
-      final decoded = roundTrip(
-        const reversible_pallet.Txs().scheduleAssetTransfer(assetId: 42, dest: dest(bobId), amount: oneToken),
-      );
-
-      expect(decoded.call, 'schedule_asset_transfer');
-      expect(valueField(decoded, 'Asset id').value, '42');
-      expect(decoded.summary?.assetId, 42);
-      expect(amountField(decoded, 'Amount').assetId, 42);
     });
   });
 
@@ -347,22 +335,10 @@ void main() {
       expect(roundTrip(const timestamp_pallet.Txs().set(now: BigInt.from(1))).actionTitle, 'TIMESTAMP SET');
     });
 
-    test('reversible and asset transfers name their kind', () {
+    test('reversible transfers name their kind', () {
       expect(
         roundTrip(const reversible_pallet.Txs().scheduleTransfer(dest: dest(bobId), amount: oneToken)).actionTitle,
         'REVERSIBLE SEND',
-      );
-      expect(
-        roundTrip(
-          const assets_pallet.Txs().transfer(id: BigInt.from(7), target: dest(bobId), amount: oneToken),
-        ).actionTitle,
-        'ASSET SEND',
-      );
-      expect(
-        roundTrip(
-          const reversible_pallet.Txs().scheduleAssetTransfer(assetId: 7, dest: dest(bobId), amount: oneToken),
-        ).actionTitle,
-        'REVERSIBLE ASSET SEND',
       );
     });
 
