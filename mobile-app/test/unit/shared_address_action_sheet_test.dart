@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:flutter_riverpod/misc.dart';
-import 'package:resonance_network_wallet/features/components/shared_address_action_sheet.dart';
+import 'package:resonance_network_wallet/v2/components/shared_address_action_sheet.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/v2/screens/send/input_amount_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
