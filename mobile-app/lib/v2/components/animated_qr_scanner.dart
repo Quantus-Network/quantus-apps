@@ -87,7 +87,9 @@ class _AnimatedQrScannerState extends State<AnimatedQrScanner> {
   void _onDetect(BarcodeCapture capture) {
     if (_done) return;
     final code = capture.barcodes.firstOrNull?.rawValue;
-    if (code == null || !widget.acceptsPart(code) || !_parts.add(code)) return;
+    // maxUrParts bounds the accumulation set: a hostile animation could
+    // otherwise keep emitting distinct frames and grow memory without limit.
+    if (code == null || _parts.length >= maxUrParts() || !widget.acceptsPart(code) || !_parts.add(code)) return;
 
     final sequence = widget.sequenceForPart?.call(code);
     if (sequence != null) {

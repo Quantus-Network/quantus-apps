@@ -116,6 +116,27 @@ void main() {
         expect(() => config.parseDecimal(''), throwsA(isA<InvalidNumberInputException>()));
       });
 
+      test('rejects scientific notation, signs, and non-plain shapes', () {
+        const config = LocaleNumberConfig.dotDecimal;
+        // Decimal.tryParse would accept all of these; a huge exponent parsed
+        // into a BigInt can block the UI isolate for minutes (Immunefi: /pay
+        // deep-link amount freeze).
+        expect(() => config.parseDecimal('1e10000000'), throwsA(isA<InvalidNumberInputException>()));
+        expect(() => config.parseDecimal('1E5'), throwsA(isA<InvalidNumberInputException>()));
+        expect(() => config.parseDecimal('-1'), throwsA(isA<InvalidNumberInputException>()));
+        expect(() => config.parseDecimal('+1'), throwsA(isA<InvalidNumberInputException>()));
+        expect(() => config.parseDecimal('Infinity'), throwsA(isA<InvalidNumberInputException>()));
+        expect(() => config.parseDecimal('0x10'), throwsA(isA<InvalidNumberInputException>()));
+      });
+
+      test('rejects over-long input before parsing', () {
+        const config = LocaleNumberConfig.dotDecimal;
+        final huge = '9' * (LocaleNumberConfig.maxInputLength + 1);
+        expect(() => config.parseDecimal(huge), throwsA(isA<InvalidNumberInputException>()));
+        // Exactly at the cap still parses.
+        expect(config.parseDecimal('9' * LocaleNumberConfig.maxInputLength), isNotNull);
+      });
+
       test('US locale: tolerates trailing decimal separator (mid-typing)', () {
         const config = LocaleNumberConfig.dotDecimal;
         expect(config.parseDecimal('1.'), Decimal.one);
@@ -739,6 +760,77 @@ void main() {
         const TextEditingValue(text: '15,5', selection: TextSelection.collapsed(offset: 4)),
       );
       expect(result.text, '15,5');
+    });
+  });
+
+  group('adversarial paste (clipboard content is untrusted)', () {
+    final filter = DecimalInputFilter(localeConfig: LocaleNumberConfig.dotDecimal);
+    final service = NumberFormattingService(localeConfig: LocaleNumberConfig.dotDecimal);
+
+    TextEditingValue pasteInto(String pasted) {
+      return filter.formatEditUpdate(
+        const TextEditingValue(text: '', selection: TextSelection.collapsed(offset: 0)),
+        TextEditingValue(
+          text: pasted,
+          selection: TextSelection.collapsed(offset: pasted.length),
+        ),
+      );
+    }
+
+    test('non-numeric shapes never enter the field', () {
+      const hostiles = [
+        '1e10000000', // the Immunefi payload
+        '1E5',
+        '-1',
+        '+1',
+        'Infinity',
+        'NaN',
+        '0x10',
+        '1 0',
+        '1\t0',
+        '1\n0',
+        '١٢٣', // Arabic-Indic digits
+        '１２３', // fullwidth digits
+        '1\u00002', // embedded NUL
+        '\u202e1.5', // RTL override
+        '1.5.0',
+        '1,5,0,0,0.5.5',
+      ];
+      for (final hostile in hostiles) {
+        expect(pasteInto(hostile).text, isEmpty, reason: 'paste of "$hostile" must be rejected by the input filter');
+      }
+    });
+
+    test('a giant all-digits paste passes the filter but is rejected by the parser instantly', () {
+      // Digits are a valid shape, so the field accepts them — the parseDecimal
+      // length cap is what makes this cheap and safe.
+      final sw = Stopwatch()..start();
+      final text = pasteInto('9' * 1000000).text;
+      final amount = service.parseAmount(text);
+      sw.stop();
+
+      expect(amount, isNull);
+      expect(sw.elapsedMilliseconds, lessThan(500));
+    });
+
+    test('the full paste pipeline never throws and stays bounded', () {
+      final hostiles = ['1e10000000', '9' * 63, '9' * 64, '9' * 1000, '${'9' * 60}.${'9' * 12}', '.${'9' * 100}'];
+      final sw = Stopwatch()..start();
+      for (final hostile in hostiles) {
+        expect(service.parseAmount(pasteInto(hostile).text) ?? BigInt.zero, isA<BigInt>());
+      }
+      sw.stop();
+
+      expect(sw.elapsedMilliseconds, lessThan(500));
+    });
+
+    test('comma locale treats dot as grouping on paste (by design)', () {
+      final commaFilter = DecimalInputFilter(localeConfig: LocaleNumberConfig.commaDecimal);
+      final result = commaFilter.formatEditUpdate(
+        const TextEditingValue(text: '', selection: TextSelection.collapsed(offset: 0)),
+        const TextEditingValue(text: '1.5', selection: TextSelection.collapsed(offset: 3)),
+      );
+      expect(result.text, '15');
     });
   });
 }

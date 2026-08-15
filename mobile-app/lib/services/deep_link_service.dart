@@ -37,6 +37,12 @@ class DeepLinkService {
 
   @visibleForTesting
   void handleLink(Uri uri) {
+    // External input is trollable: reject over-long links before any parsing.
+    if (uri.toString().length > maxDeepLinkLength) {
+      quantusPrint('Ignoring over-long link (${uri.toString().length} chars)');
+      return;
+    }
+
     if (uri.pathSegments.isNotEmpty && uri.pathSegments.first == 'account') {
       String? accountId;
 
@@ -49,10 +55,13 @@ class DeepLinkService {
         accountId = uri.pathSegments.last;
       }
 
-      if (accountId != null && accountId.isNotEmpty) {
+      // Fail closed, same as address entry in the send flow.
+      if (accountId != null &&
+          accountId.length <= maxAddressLength &&
+          _ref.read(substrateServiceProvider).isValidSS58Address(accountId)) {
         _ref.read(sharedAccountIntentProvider.notifier).state = accountId;
       } else {
-        quantusPrint('Missing or empty account id');
+        quantusPrint('Missing or invalid account id');
       }
     }
 

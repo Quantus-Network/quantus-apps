@@ -46,6 +46,14 @@ class ProposalIntent {
 
 final proposalIntentProvider = StateProvider<ProposalIntent?>((_) => null);
 
+/// Inbound caps for anything arriving via deep link or QR code. A maximal
+/// legitimate /pay link is ~190 chars (host + path, ~50-char SS58 address,
+/// NNNNNNNNNNNNNNNNNNNN.NNNNNNNNNNNN amount, 64-char ref), so 256 for the
+/// whole URL leaves headroom while keeping every parsed value bounded.
+const int maxDeepLinkLength = 256;
+const int maxAddressLength = 64;
+const int maxPaymentRefLength = 64;
+
 class PaymentIntent {
   final String to;
   final String amount;
@@ -53,13 +61,23 @@ class PaymentIntent {
 
   const PaymentIntent({required this.to, required this.amount, this.ref});
 
+  /// Wire amount format for /pay links: NNN[.NNN] in QUAN, dot as the decimal
+  /// separator, up to [AppConstants.decimals] fractional digits. Scientific
+  /// notation, signs, and grouping separators are not part of the scheme —
+  /// parsing those into a BigInt can block the UI isolate for minutes.
+  static final RegExp _amountPattern = RegExp('^\\d{1,20}(\\.\\d{1,${AppConstants.decimals}})?\$');
+
   static PaymentIntent? tryParseUrl(String input) {
+    if (input.length > maxDeepLinkLength) return null;
     final uri = Uri.tryParse(input);
     if (uri == null || uri.pathSegments.isEmpty || uri.pathSegments.first != 'pay') return null;
     final to = uri.queryParameters['to'];
     final amount = uri.queryParameters['amount'];
-    if (to == null || to.isEmpty || amount == null || amount.isEmpty) return null;
-    return PaymentIntent(to: to, amount: amount, ref: uri.queryParameters['ref']);
+    final ref = uri.queryParameters['ref'];
+    if (to == null || to.isEmpty || to.length > maxAddressLength) return null;
+    if (amount == null || !_amountPattern.hasMatch(amount)) return null;
+    if (ref != null && ref.length > maxPaymentRefLength) return null;
+    return PaymentIntent(to: to, amount: amount, ref: ref);
   }
 }
 

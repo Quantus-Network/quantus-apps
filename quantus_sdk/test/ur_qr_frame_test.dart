@@ -25,7 +25,7 @@ void main() {
       final parts = encodeUrForQr(data: data, maxFragmentLength: fragment);
       var longest = '';
       for (final part in parts) {
-        expect(part.length, lessThanOrEqualTo(maxUrQrFrameChars), reason: 'fragment setting $fragment');
+        expect(part.length, lessThanOrEqualTo(maxUrPartChars()), reason: 'fragment setting $fragment');
         if (part.length > longest.length) longest = part;
       }
       QrCode.fromData(data: longest, errorCorrectLevel: QrErrorCorrectLevel.L);

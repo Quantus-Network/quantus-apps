@@ -95,32 +95,29 @@ class NumberFormattingService {
     ).formatBalance(balance, smartDecimals: decimals, addThousandsSeparators: false);
   }
 
-  /// Parses a payment URL amount without assuming the payer's locale.
+  /// Wire amount shape: NNN[.NNN], dot as the decimal separator, no grouping,
+  /// no exponent — exactly what [formatWireAmount] produces.
+  static final RegExp _wireAmountPattern = RegExp(r'^\d+(\.\d+)?$');
+
+  /// Parses a payment URL amount in our own wire format.
   ///
-  /// Supports canonical dot-decimal wire amounts and legacy locale-formatted
-  /// amounts from older POS QR codes.
+  /// Deliberately locale-free: the wire format is ours alone, so no
+  /// [LocaleNumberConfig] is involved — comma-decimal locales must not be
+  /// able to parse it. The regex gate also keeps exponent notation out, so
+  /// the [Decimal.parse] below can never materialise an attacker-sized BigInt.
   BigInt? parseWireAmount(String formattedAmount) {
     if (formattedAmount.isEmpty) {
       return BigInt.zero;
     }
-
-    final config = _wireLocaleConfigFor(formattedAmount);
-    return NumberFormattingService(localeConfig: config).parseAmount(formattedAmount);
-  }
-
-  static LocaleNumberConfig _wireLocaleConfigFor(String input) {
-    final hasComma = input.contains(',');
-    final hasDot = input.contains('.');
-
-    if (hasComma && hasDot) {
-      final lastComma = input.lastIndexOf(',');
-      final lastDot = input.lastIndexOf('.');
-      return lastComma > lastDot ? LocaleNumberConfig.commaDecimal : LocaleNumberConfig.dotDecimal;
+    if (formattedAmount.length > LocaleNumberConfig.maxInputLength || !_wireAmountPattern.hasMatch(formattedAmount)) {
+      quantusPrint('Invalid wire amount: $formattedAmount');
+      return null;
     }
-    if (hasComma) {
-      return LocaleNumberConfig.commaDecimal;
+    final decimalAmount = Decimal.parse(formattedAmount);
+    if (decimalAmount.scale > decimals) {
+      quantusPrint('Warning: wire amount $formattedAmount exceeds $decimals decimals, will be truncated.');
     }
-    return LocaleNumberConfig.dotDecimal;
+    return (decimalAmount * scaleFactorDecimal).toBigInt();
   }
 
   /// Parses a user-entered formatted string amount into a raw BigInt amount

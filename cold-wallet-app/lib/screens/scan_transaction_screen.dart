@@ -28,7 +28,6 @@ class _ScanTransactionScreenState extends State<ScanTransactionScreen> {
   );
   final Set<String> _parts = {};
   final Set<int> _seenSeq = {};
-  final RegExp _seqPattern = RegExp(r'/(\d+)-(\d+)/');
 
   int? _expectedParts;
   bool _done = false;
@@ -43,13 +42,15 @@ class _ScanTransactionScreenState extends State<ScanTransactionScreen> {
   void _onDetect(BarcodeCapture capture) {
     if (_done) return;
     final code = capture.barcodes.firstOrNull?.rawValue;
-    if (code == null || !code.toLowerCase().startsWith('ur:')) return;
+    // maxUrParts bounds the accumulation set: a hostile animation could
+    // otherwise keep emitting distinct frames and grow memory without limit.
+    if (code == null || _parts.length >= maxUrParts() || !isAcceptableUrPart(code)) return;
     if (!_parts.add(code)) return; // already seen this exact frame
 
-    final match = _seqPattern.firstMatch(code);
-    if (match != null) {
-      _seenSeq.add(int.parse(match.group(1)!));
-      _expectedParts = int.parse(match.group(2)!);
+    final sequence = urSequenceFor(code);
+    if (sequence != null) {
+      _seenSeq.add(sequence.index);
+      _expectedParts = sequence.total;
     }
 
     final parts = _parts.toList();
