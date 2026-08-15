@@ -136,7 +136,7 @@ jobs:
       - name: Create version bump branch and PR
         env:
           NEW_VERSION: ${{ needs.calculate-next-version.outputs.new_version }}
-          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SOURCE_BRANCH: ${{ needs.calculate-next-version.outputs.source_branch }}
           TARGET_BRANCH: ${{ github.event.inputs.target_branch }}
           VERSION_TYPE: ${{ github.event.inputs.version_type }}
@@ -153,7 +153,7 @@ jobs:
           fi
 
           git checkout "$SOURCE_BRANCH"
-          git checkout -b "$branch_name"
+          git checkout -B "$branch_name"
 
           current_pubspec=$(grep -E '^version:' miner-app/pubspec.yaml | head -n 1 | sed -E 's/^version:[[:space:]]*//' | cut -d+ -f1)
           lower=$(printf '%s\n%s\n' "$new_pubspec_version" "$current_pubspec" | sort -V | head -n 1)
@@ -176,11 +176,7 @@ jobs:
           git add miner-app/pubspec.yaml
           # --allow-empty: pubspec may already be at the target version (manual pre-bump)
           git commit --allow-empty -m "ci: Miner version bump to $NEW_VERSION"
-          git push origin "$branch_name"
-
-          gh label create "automated" --force --color "ededed" --description "Created by CI"
-          gh label create "miner-release-proposal" --force --color "0e8a16" --description "Miner release proposal PR"
-          gh label create "draft-release" --force --color "d4c5f9" --description "Release will be created as draft"
+          git push --force-with-lease origin "$branch_name"
 
           PR_TITLE="ci: Miner version bump to $NEW_VERSION"
           PR_LABELS="automated,miner-release-proposal"
@@ -202,9 +198,14 @@ jobs:
           Bump type: ${VERSION_TYPE}
           EOF
 
-          gh pr create \
-            --title "$PR_TITLE" \
-            --body-file pr_body.md \
-            --base "$TARGET_BRANCH" \
-            --head "$branch_name" \
-            --label "$PR_LABELS"
+          existing_pr=$(gh pr list --head "$branch_name" --base "$TARGET_BRANCH" --json number --jq '.[0].number // empty')
+          if [[ -n "$existing_pr" ]]; then
+            gh pr edit "$existing_pr" --title "$PR_TITLE" --body-file pr_body.md --add-label "$PR_LABELS"
+          else
+            gh pr create \
+              --title "$PR_TITLE" \
+              --body-file pr_body.md \
+              --base "$TARGET_BRANCH" \
+              --head "$branch_name" \
+              --label "$PR_LABELS"
+          fi

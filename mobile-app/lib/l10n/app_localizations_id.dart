@@ -1941,7 +1941,9 @@ class AppLocalizationsId extends AppLocalizations {
   String get redeemConfirmFee => 'Biaya';
 
   @override
-  String get redeemFeeValue => 'Biaya volume 0,1%';
+  String redeemFeeValue(String rate) {
+    return 'Biaya volume $rate%';
+  }
 
   @override
   String get redeemProgressTitle => 'Menukar...';

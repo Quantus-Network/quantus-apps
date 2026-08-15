@@ -3599,8 +3599,8 @@ abstract class AppLocalizations {
   /// Volume fee value on redeem confirmation
   ///
   /// In en, this message translates to:
-  /// **'0.1% volume fee'**
-  String get redeemFeeValue;
+  /// **'{rate}% volume fee'**
+  String redeemFeeValue(String rate);
 
   /// App bar title while a redeem is in progress
   ///
