@@ -59,6 +59,10 @@ class AppConstants {
 
   // Digits of precision
   static const int decimals = 12;
+
+  // The chain runtime caps issuance at MAX_SUPPLY = 21_000_000 QUAN
+  // (runtime/src/lib.rs), so no legitimate amount has more whole digits.
+  static const int maxWholeDigits = 8;
   static const int ss58prefix = 189;
 
   // Runtime the bundled polkadart metadata (lib/generated/planck) was generated

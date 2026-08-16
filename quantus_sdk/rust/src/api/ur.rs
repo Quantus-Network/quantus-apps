@@ -2,6 +2,30 @@
 ///
 use quantus_ur::{decode_bytes, encode_bytes, encode_bytes_with_options, is_complete};
 
+/// Inbound caps, the single source of truth for UR scan limits — Dart reads
+/// them through the generated getters below (see ur_qr.dart). Scanned UR
+/// frames are attacker-controlled: without a bound, a hostile sequence could
+/// grow the accumulated parts (and any allocation the decoder keys off them)
+/// without limit. The largest legitimate payload (a 7,219-byte ML-DSA
+/// signature at the minimum 50-byte fragment setting) needs ~145 frames, so
+/// these caps never fire on honest input.
+const MAX_UR_PARTS: usize = 256;
+const MAX_UR_PART_CHARS: usize = 2953;
+
+#[flutter_rust_bridge::frb(sync)]
+pub fn max_ur_parts() -> u32 {
+    MAX_UR_PARTS as u32
+}
+
+#[flutter_rust_bridge::frb(sync)]
+pub fn max_ur_part_chars() -> u32 {
+    MAX_UR_PART_CHARS as u32
+}
+
+fn within_limits(ur_parts: &[String]) -> bool {
+    ur_parts.len() <= MAX_UR_PARTS && ur_parts.iter().all(|p| p.len() <= MAX_UR_PART_CHARS)
+}
+
 // Note decode_ur takes the list of QR Codes in any order and assembles them correctly.
 // It also deals with the weird elements that are created in the UR standard when we exceed the number
 // of segments.
@@ -11,6 +35,9 @@ use quantus_ur::{decode_bytes, encode_bytes, encode_bytes_with_options, is_compl
 // standard. FYI.
 #[flutter_rust_bridge::frb(sync)]
 pub fn decode_ur(ur_parts: Vec<String>) -> Result<Vec<u8>, String> {
+    if !within_limits(&ur_parts) {
+        return Err("UR input exceeds scan limits".to_string());
+    }
     decode_bytes(&ur_parts).map_err(|e| e.to_string())
 }
 
@@ -27,6 +54,9 @@ pub fn encode_ur(data: Vec<u8>, max_fragment_length: Option<u32>) -> Result<Vec<
 
 #[flutter_rust_bridge::frb(sync)]
 pub fn is_complete_ur(ur_parts: Vec<String>) -> bool {
+    if !within_limits(&ur_parts) {
+        return false;
+    }
     is_complete(&ur_parts)
 }
 #[cfg(test)]
@@ -135,5 +165,29 @@ mod tests {
             is_complete_ur(scrambled_parts),
             "Scrambled parts should still be complete"
         );
+    }
+
+    #[test]
+    fn test_decode_rejects_too_many_parts() {
+        let parts = vec!["ur:bytes/1-1/aaaa".to_string(); MAX_UR_PARTS + 1];
+        assert!(decode_ur(parts).is_err());
+    }
+
+    #[test]
+    fn test_decode_rejects_overlong_part() {
+        let parts = vec!["a".repeat(MAX_UR_PART_CHARS + 1)];
+        assert!(decode_ur(parts).is_err());
+    }
+
+    #[test]
+    fn test_is_complete_rejects_over_limit_input() {
+        let parts = vec!["ur:bytes/1-1/aaaa".to_string(); MAX_UR_PARTS + 1];
+        assert!(!is_complete_ur(parts));
+    }
+
+    #[test]
+    fn test_limits_getters() {
+        assert_eq!(max_ur_parts() as usize, MAX_UR_PARTS);
+        assert_eq!(max_ur_part_chars() as usize, MAX_UR_PART_CHARS);
     }
 }

@@ -23,14 +23,12 @@ class KeystoneSignatureScanScreen extends ConsumerStatefulWidget {
 }
 
 class _KeystoneSignatureScanScreenState extends ConsumerState<KeystoneSignatureScanScreen> {
-  static final RegExp _sequencePattern = RegExp(r'/(\d+)-(\d+)/');
-
   String? _error;
 
   AnimatedQrSequence? _sequenceForPart(String part) {
-    final match = _sequencePattern.firstMatch(part);
-    if (match == null) return null;
-    return AnimatedQrSequence(index: int.parse(match.group(1)!), total: int.parse(match.group(2)!));
+    final sequence = urSequenceFor(part);
+    if (sequence == null) return null;
+    return AnimatedQrSequence(index: sequence.index, total: sequence.total);
   }
 
   /// Refuses submission when the mortal era window is (nearly) over — the
@@ -88,7 +86,8 @@ class _KeystoneSignatureScanScreenState extends ConsumerState<KeystoneSignatureS
     final l10n = ref.watch(l10nProvider);
 
     return AnimatedQrScanner(
-      acceptsPart: (part) => part.toLowerCase().startsWith('ur:'),
+      acceptsPart: isAcceptableUrPart,
+      maxParts: maxUrScanParts,
       isComplete: (parts) => isCompleteUr(urParts: parts),
       sequenceForPart: _sequenceForPart,
       onComplete: _submit,

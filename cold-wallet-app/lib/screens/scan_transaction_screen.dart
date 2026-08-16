@@ -28,7 +28,6 @@ class _ScanTransactionScreenState extends State<ScanTransactionScreen> {
   );
   final Set<String> _parts = {};
   final Set<int> _seenSeq = {};
-  final RegExp _seqPattern = RegExp(r'/(\d+)-(\d+)/');
 
   int? _expectedParts;
   bool _done = false;
@@ -40,16 +39,35 @@ class _ScanTransactionScreenState extends State<ScanTransactionScreen> {
     super.dispose();
   }
 
+  /// Reports [reason] and drops the accumulated parts. A set that can't
+  /// complete or decode never will, and keeping it makes every replayed frame
+  /// look like a duplicate, so scanning has to start from empty.
+  void _restartAccumulation(String reason) {
+    _parts.clear();
+    _seenSeq.clear();
+    _expectedParts = null;
+    setState(() => _error = reason);
+  }
+
   void _onDetect(BarcodeCapture capture) {
     if (_done) return;
     final code = capture.barcodes.firstOrNull?.rawValue;
-    if (code == null || !code.toLowerCase().startsWith('ur:')) return;
+    if (code == null || !isAcceptableUrPart(code)) return;
+    // maxUrScanParts bounds the accumulation set: a hostile animation could
+    // otherwise keep emitting distinct frames and grow memory without limit.
+    // Reaching it means the set can never complete, so say so and start over
+    // instead of dropping frames in silence.
+    if (_parts.length >= maxUrScanParts) {
+      debugPrint('UR scan limit hit: $maxUrScanParts parts accumulated without completing');
+      _restartAccumulation('Too many unusable QR frames. Restart the transfer on your hot wallet.');
+      return;
+    }
     if (!_parts.add(code)) return; // already seen this exact frame
 
-    final match = _seqPattern.firstMatch(code);
-    if (match != null) {
-      _seenSeq.add(int.parse(match.group(1)!));
-      _expectedParts = int.parse(match.group(2)!);
+    final sequence = urSequenceFor(code);
+    if (sequence != null) {
+      _seenSeq.add(sequence.index);
+      _expectedParts = sequence.total;
     }
 
     final parts = _parts.toList();
@@ -65,8 +83,10 @@ class _ScanTransactionScreenState extends State<ScanTransactionScreen> {
       if (!mounted) return;
       Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => SignTransactionScreen(payload: payload)));
     } catch (e) {
+      // Keeping the parts would make every replayed frame a duplicate, so the
+      // decode is never retried and the screen stays stuck on this error.
       _done = false;
-      setState(() => _error = 'Failed to decode QR: $e');
+      _restartAccumulation('Failed to decode QR: $e');
     }
   }
 

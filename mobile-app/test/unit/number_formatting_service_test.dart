@@ -129,11 +129,7 @@ void main() {
         expect(service.parseWireAmount(wire), balance);
       });
 
-      test('parses legacy comma-decimal amounts', () {
-        expect(service.parseWireAmount('1,5'), BigInt.parse('1500000000000'));
-      });
-
-      test('parses legacy dot-decimal amounts', () {
+      test('parses dot-decimal wire amounts', () {
         expect(service.parseWireAmount('1.5'), BigInt.parse('1500000000000'));
       });
 
@@ -141,13 +137,31 @@ void main() {
         expect(service.parseWireAmount('1000'), scaleFactor * BigInt.from(1000));
       });
 
-      test('parses mixed separators using rightmost decimal mark', () {
-        expect(service.parseWireAmount('1.000,50'), BigInt.parse('1000500000000000'));
-        expect(service.parseWireAmount('1,000.50'), BigInt.parse('1000500000000000'));
+      test('rejects locale-formatted amounts — the wire format is locale-free', () {
+        expect(service.parseWireAmount('1,5'), isNull);
+        expect(service.parseWireAmount('1.000,50'), isNull);
+        expect(service.parseWireAmount('1,000.50'), isNull);
+        expect(service.parseWireAmount('1 000.5'), isNull);
+        expect(service.parseWireAmount('.5'), isNull);
+        expect(service.parseWireAmount('1.'), isNull);
       });
 
       test('returns zero for empty wire amount', () {
         expect(service.parseWireAmount(''), BigInt.zero);
+      });
+
+      test('rejects exponent notation and over-long input', () {
+        // Regression test for the Immunefi report: amount=1e10000000 in a /pay
+        // deep link froze the wallet materialising an unbounded BigInt.
+        expect(service.parseWireAmount('1e10000000'), isNull);
+        expect(service.parseWireAmount('1e5'), isNull);
+        expect(service.parseWireAmount('9' * 100), isNull);
+        expect(service.parseWireAmount('1.25'), BigInt.parse('1250000000000'));
+      });
+
+      test('bounds whole digits by the supply cap', () {
+        expect(service.parseWireAmount('9' * (AppConstants.maxWholeDigits + 1)), isNull);
+        expect(service.parseWireAmount('20999999.999999999999'), BigInt.parse('20999999999999999999'));
       });
     });
   });
