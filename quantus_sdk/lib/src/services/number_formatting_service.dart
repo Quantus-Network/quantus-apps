@@ -96,8 +96,14 @@ class NumberFormattingService {
   }
 
   /// Wire amount shape: NNN[.NNN], dot as the decimal separator, no grouping,
-  /// no exponent — exactly what [formatWireAmount] produces.
-  static final RegExp _wireAmountPattern = RegExp(r'^\d+(\.\d+)?$');
+  /// no exponent — exactly what [formatWireAmount] produces. At most
+  /// [AppConstants.maxWholeDigits] whole digits (MAX_SUPPLY bounds every
+  /// legitimate amount) and [AppConstants.decimals] fractional digits.
+  /// Scientific notation, signs, and separators are rejected — parsing those
+  /// into a BigInt can block the UI isolate for minutes.
+  static final RegExp wireAmountPattern = RegExp(
+    '^\\d{1,${AppConstants.maxWholeDigits}}(\\.\\d{1,$decimals})?\$',
+  );
 
   /// Parses a payment URL amount in our own wire format.
   ///
@@ -110,7 +116,7 @@ class NumberFormattingService {
     if (formattedAmount.isEmpty) {
       return BigInt.zero;
     }
-    if (!_wireAmountPattern.hasMatch(formattedAmount)) {
+    if (!wireAmountPattern.hasMatch(formattedAmount)) {
       quantusPrint('Invalid wire amount: $formattedAmount');
       return null;
     }

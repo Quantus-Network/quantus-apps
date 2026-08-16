@@ -76,13 +76,19 @@ void main() {
       expect(PaymentIntent.tryParseUrl('https://www.quantus.com/pay?to=recipient&amount=1.5&ref=${'r' * 65}'), isNull);
     });
 
+    test('rejects amounts with more whole digits than the supply allows', () {
+      // MAX_SUPPLY is 21M QUAN, so 8 whole digits cover every legitimate amount.
+      expect(PaymentIntent.tryParseUrl('https://www.quantus.com/pay?to=recipient&amount=999999999'), isNull);
+      expect(PaymentIntent.tryParseUrl('https://www.quantus.com/pay?to=recipient&amount=99999999'), isNotNull);
+    });
+
     test('accepts a maximal valid link', () {
       final intent = PaymentIntent.tryParseUrl(
-        'https://www.quantus.com/pay?to=${'a' * 50}&amount=12345678901234567890.123456789012&ref=${'r' * 64}',
+        'https://www.quantus.com/pay?to=${'a' * 50}&amount=21000000.999999999999&ref=${'r' * 64}',
       );
 
       expect(intent, isNotNull);
-      expect(intent!.amount, '12345678901234567890.123456789012');
+      expect(intent!.amount, '21000000.999999999999');
       expect(intent.ref, 'r' * 64);
     });
   });

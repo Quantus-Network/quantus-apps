@@ -1,5 +1,6 @@
 import 'package:decimal/decimal.dart';
 import 'package:intl/intl.dart';
+import 'package:quantus_sdk/src/constants/app_constants.dart';
 
 /// Thrown by [LocaleNumberConfig.parseDecimal] when the input cannot be parsed
 /// as a decimal number after locale normalization. Callers should catch this
@@ -81,10 +82,13 @@ class LocaleNumberConfig {
     return result;
   }
 
-  /// Hard cap on raw input length. External input (deep links, QR codes) is
-  /// attacker-controlled, and even local input is bounded by the amount keypad,
-  /// so anything longer is trolling — reject before any parsing work happens.
-  static const int maxInputLength = 64;
+  /// Hard cap on raw input length, applied before normalization so it must
+  /// admit locale grouping: the widest legitimate amount is
+  /// [AppConstants.maxWholeDigits] whole digits, two grouping separators, one
+  /// decimal separator, and [AppConstants.decimals] fractional digits
+  /// (`21,000,000.999999999999`). External input is attacker-controlled —
+  /// reject anything wider before any parsing work happens.
+  static const int maxInputLength = AppConstants.maxWholeDigits + 2 + 1 + AppConstants.decimals;
 
   /// The only numeric shape we accept after normalization: digits with an
   /// optional single decimal separator, plus the mid-typing `.5` form.

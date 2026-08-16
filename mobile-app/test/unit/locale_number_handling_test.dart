@@ -137,6 +137,13 @@ void main() {
         expect(config.parseDecimal('9' * LocaleNumberConfig.maxInputLength), isNotNull);
       });
 
+      test('the widest legitimate grouped amount fits exactly at the cap', () {
+        final expected = Decimal.parse('21000000.999999999999');
+        expect('21,000,000.999999999999'.length, LocaleNumberConfig.maxInputLength);
+        expect(LocaleNumberConfig.dotDecimal.parseDecimal('21,000,000.999999999999'), expected);
+        expect(LocaleNumberConfig.commaDecimal.parseDecimal('21.000.000,999999999999'), expected);
+      });
+
       test('US locale: tolerates trailing decimal separator (mid-typing)', () {
         const config = LocaleNumberConfig.dotDecimal;
         expect(config.parseDecimal('1.'), Decimal.one);

@@ -105,7 +105,7 @@ void main() {
 
     container.read(paymentIntentProvider.notifier).state = PaymentIntent(
       to: makeAccount(9).accountId,
-      amount: '1000000000000',
+      amount: '1.5',
     );
     await tester.pump();
     expect(find.byType(InputAmountScreen), findsNothing);
@@ -131,7 +131,7 @@ void main() {
 
     container.read(paymentIntentProvider.notifier).state = PaymentIntent(
       to: makeAccount(9).accountId,
-      amount: '1000000000000',
+      amount: '1.5',
     );
     await tester.pump();
 
@@ -154,7 +154,7 @@ void main() {
 
     container.read(paymentIntentProvider.notifier).state = PaymentIntent(
       to: makeAccount(9).accountId,
-      amount: '1000000000000',
+      amount: '1.5',
     );
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));

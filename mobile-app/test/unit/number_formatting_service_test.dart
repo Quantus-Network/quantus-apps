@@ -158,6 +158,11 @@ void main() {
         expect(service.parseWireAmount('9' * 100), isNull);
         expect(service.parseWireAmount('1.25'), BigInt.parse('1250000000000'));
       });
+
+      test('bounds whole digits by the supply cap', () {
+        expect(service.parseWireAmount('9' * (AppConstants.maxWholeDigits + 1)), isNull);
+        expect(service.parseWireAmount('21000000.999999999999'), BigInt.parse('21000000999999999999'));
+      });
     });
   });
 }
