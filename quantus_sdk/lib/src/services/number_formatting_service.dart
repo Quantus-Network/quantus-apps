@@ -101,9 +101,7 @@ class NumberFormattingService {
   /// legitimate amount) and [AppConstants.decimals] fractional digits.
   /// Scientific notation, signs, and separators are rejected — parsing those
   /// into a BigInt can block the UI isolate for minutes.
-  static final RegExp wireAmountPattern = RegExp(
-    '^\\d{1,${AppConstants.maxWholeDigits}}(\\.\\d{1,$decimals})?\$',
-  );
+  static final RegExp wireAmountPattern = RegExp('^\\d{1,${AppConstants.maxWholeDigits}}(\\.\\d{1,$decimals})?\$');
 
   /// Parses a payment URL amount in our own wire format.
   ///

@@ -103,10 +103,7 @@ void main() {
           urParts: const ['ur:part'],
         );
 
-    container.read(paymentIntentProvider.notifier).state = PaymentIntent(
-      to: makeAccount(9).accountId,
-      amount: '1.5',
-    );
+    container.read(paymentIntentProvider.notifier).state = PaymentIntent(to: makeAccount(9).accountId, amount: '1.5');
     await tester.pump();
     expect(find.byType(InputAmountScreen), findsNothing);
     expect(container.read(paymentIntentProvider), isNotNull);
@@ -129,10 +126,7 @@ void main() {
     final auth = TestLocalAuthController(authenticated: true)..setVisuallyLocked(true);
     final container = await pumpHome(tester, settings: settings, auth: auth);
 
-    container.read(paymentIntentProvider.notifier).state = PaymentIntent(
-      to: makeAccount(9).accountId,
-      amount: '1.5',
-    );
+    container.read(paymentIntentProvider.notifier).state = PaymentIntent(to: makeAccount(9).accountId, amount: '1.5');
     await tester.pump();
 
     expect(container.read(paymentIntentProvider), isNotNull);
@@ -152,10 +146,7 @@ void main() {
     final auth = TestLocalAuthController(authenticated: true);
     final container = await pumpHome(tester, settings: settings, auth: auth);
 
-    container.read(paymentIntentProvider.notifier).state = PaymentIntent(
-      to: makeAccount(9).accountId,
-      amount: '1.5',
-    );
+    container.read(paymentIntentProvider.notifier).state = PaymentIntent(to: makeAccount(9).accountId, amount: '1.5');
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
     expect(find.byType(InputAmountScreen), findsOneWidget);
