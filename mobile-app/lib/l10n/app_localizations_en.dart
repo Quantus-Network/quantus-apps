@@ -18,61 +18,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get walletInitErrorButtonLabel => 'OK';
 
   @override
-  String get migrationDialogTitle => 'Migrate your accounts';
-
-  @override
-  String get migrationDialogBody =>
-      'We\'ll record your old‑chain testnet rewards and actions to determine rewards on the new Quantus Testnet.\n\nBalances do not migrate.\n\nUse the new testnet faucet for funds.';
-
-  @override
-  String migrationDialogAccountsToMigrate(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count Accounts to migrate.',
-      one: '1 Account to migrate.',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String migrationDialogAccountsCannotMigrate(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count accounts cannot be migrated (missing wallet data).',
-      one: '1 account cannot be migrated (missing wallet data).',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String get migrationDialogUploadError => 'We couldn\'t upload migration data. Please retry or try later.';
-
-  @override
-  String get migrationDialogMigrate => 'Migrate Accounts';
-
-  @override
-  String get migrationDialogRetry => 'Retry';
-
-  @override
-  String get migrationDialogTryLater => 'Try later';
-
-  @override
-  String get migrationDialogSkip => 'Skip';
-
-  @override
-  String migrationPartialFailureToast(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count accounts could not be migrated. Migration will retry on next app launch.',
-      one: '1 account could not be migrated. Migration will retry on next app launch.',
-    );
-    return '$_temp0';
-  }
-
-  @override
   String get authUseDeviceBiometricsToUnlock => 'Use device biometrics to unlock';
 
   @override

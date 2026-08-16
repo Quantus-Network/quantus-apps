@@ -110,66 +110,6 @@ abstract class AppLocalizations {
   /// **'OK'**
   String get walletInitErrorButtonLabel;
 
-  /// Title of the account migration dialog
-  ///
-  /// In en, this message translates to:
-  /// **'Migrate your accounts'**
-  String get migrationDialogTitle;
-
-  /// Body text of the account migration dialog
-  ///
-  /// In en, this message translates to:
-  /// **'We\'ll record your old‑chain testnet rewards and actions to determine rewards on the new Quantus Testnet.\n\nBalances do not migrate.\n\nUse the new testnet faucet for funds.'**
-  String get migrationDialogBody;
-
-  /// Number of accounts that will be migrated
-  ///
-  /// In en, this message translates to:
-  /// **'{count, plural, =1{1 Account to migrate.} other{{count} Accounts to migrate.}}'**
-  String migrationDialogAccountsToMigrate(int count);
-
-  /// Number of accounts that cannot be migrated
-  ///
-  /// In en, this message translates to:
-  /// **'{count, plural, =1{1 account cannot be migrated (missing wallet data).} other{{count} accounts cannot be migrated (missing wallet data).}}'**
-  String migrationDialogAccountsCannotMigrate(int count);
-
-  /// Error shown in the migration dialog when the upload fails
-  ///
-  /// In en, this message translates to:
-  /// **'We couldn\'t upload migration data. Please retry or try later.'**
-  String get migrationDialogUploadError;
-
-  /// Label for the migrate button in the migration dialog
-  ///
-  /// In en, this message translates to:
-  /// **'Migrate Accounts'**
-  String get migrationDialogMigrate;
-
-  /// Label for the retry button in the migration dialog
-  ///
-  /// In en, this message translates to:
-  /// **'Retry'**
-  String get migrationDialogRetry;
-
-  /// Label for the try-later button in the migration dialog
-  ///
-  /// In en, this message translates to:
-  /// **'Try later'**
-  String get migrationDialogTryLater;
-
-  /// Label for the skip button in the migration dialog when no accounts can be migrated
-  ///
-  /// In en, this message translates to:
-  /// **'Skip'**
-  String get migrationDialogSkip;
-
-  /// Toast shown when some accounts failed to migrate
-  ///
-  /// In en, this message translates to:
-  /// **'{count, plural, =1{1 account could not be migrated. Migration will retry on next app launch.} other{{count} accounts could not be migrated. Migration will retry on next app launch.}}'**
-  String migrationPartialFailureToast(int count);
-
   /// Text for the text on the lock screen when using device biometrics to unlock
   ///
   /// In en, this message translates to:
