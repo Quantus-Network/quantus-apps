@@ -72,7 +72,6 @@ class SettingsService {
     await _prefs.setString(_accountsKey, jsonEncode(jsonData));
   }
 
-
   Future<void> addAccount(Account account) async {
     final accounts = await getAccounts();
     // Check for duplicates by index or accountId before adding
