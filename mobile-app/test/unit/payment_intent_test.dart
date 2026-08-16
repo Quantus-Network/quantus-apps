@@ -84,11 +84,11 @@ void main() {
 
     test('accepts a maximal valid link', () {
       final intent = PaymentIntent.tryParseUrl(
-        'https://www.quantus.com/pay?to=${'a' * 50}&amount=21000000.999999999999&ref=${'r' * 64}',
+        'https://www.quantus.com/pay?to=${'a' * 50}&amount=20999999.999999999999&ref=${'r' * 64}',
       );
 
       expect(intent, isNotNull);
-      expect(intent!.amount, '21000000.999999999999');
+      expect(intent!.amount, '20999999.999999999999');
       expect(intent.ref, 'r' * 64);
     });
   });

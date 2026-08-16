@@ -86,7 +86,7 @@ class LocaleNumberConfig {
   /// admit locale grouping: the widest legitimate amount is
   /// [AppConstants.maxWholeDigits] whole digits, two grouping separators, one
   /// decimal separator, and [AppConstants.decimals] fractional digits
-  /// (`21,000,000.999999999999`). External input is attacker-controlled —
+  /// (`20,999,999.999999999999`). External input is attacker-controlled —
   /// reject anything wider before any parsing work happens.
   static const int maxInputLength = AppConstants.maxWholeDigits + 2 + 1 + AppConstants.decimals;
 

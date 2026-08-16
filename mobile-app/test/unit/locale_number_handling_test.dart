@@ -138,10 +138,10 @@ void main() {
       });
 
       test('the widest legitimate grouped amount fits exactly at the cap', () {
-        final expected = Decimal.parse('21000000.999999999999');
-        expect('21,000,000.999999999999'.length, LocaleNumberConfig.maxInputLength);
-        expect(LocaleNumberConfig.dotDecimal.parseDecimal('21,000,000.999999999999'), expected);
-        expect(LocaleNumberConfig.commaDecimal.parseDecimal('21.000.000,999999999999'), expected);
+        final expected = Decimal.parse('20999999.999999999999');
+        expect('20,999,999.999999999999'.length, LocaleNumberConfig.maxInputLength);
+        expect(LocaleNumberConfig.dotDecimal.parseDecimal('20,999,999.999999999999'), expected);
+        expect(LocaleNumberConfig.commaDecimal.parseDecimal('20.999.999,999999999999'), expected);
       });
 
       test('US locale: tolerates trailing decimal separator (mid-typing)', () {

@@ -161,7 +161,7 @@ void main() {
 
       test('bounds whole digits by the supply cap', () {
         expect(service.parseWireAmount('9' * (AppConstants.maxWholeDigits + 1)), isNull);
-        expect(service.parseWireAmount('21000000.999999999999'), BigInt.parse('21000000999999999999'));
+        expect(service.parseWireAmount('20999999.999999999999'), BigInt.parse('20999999999999999999'));
       });
     });
   });
