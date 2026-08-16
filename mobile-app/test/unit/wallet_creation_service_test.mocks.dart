@@ -61,33 +61,6 @@ class MockSettingsService extends _i1.Mock implements _i4.SettingsService {
           as _i5.Future<void>);
 
   @override
-  _i5.Future<void> setAccountsToMigrate(List<_i2.Account>? accounts) =>
-      (super.noSuchMethod(
-            Invocation.method(#setAccountsToMigrate, [accounts]),
-            returnValue: _i5.Future<void>.value(),
-            returnValueForMissingStub: _i5.Future<void>.value(),
-          )
-          as _i5.Future<void>);
-
-  @override
-  List<_i2.Account> getAccountsToMigrate() =>
-      (super.noSuchMethod(
-            Invocation.method(#getAccountsToMigrate, []),
-            returnValue: <_i2.Account>[],
-            returnValueForMissingStub: <_i2.Account>[],
-          )
-          as List<_i2.Account>);
-
-  @override
-  _i5.Future<void> clearAccountsToMigrate() =>
-      (super.noSuchMethod(
-            Invocation.method(#clearAccountsToMigrate, []),
-            returnValue: _i5.Future<void>.value(),
-            returnValueForMissingStub: _i5.Future<void>.value(),
-          )
-          as _i5.Future<void>);
-
-  @override
   _i5.Future<void> addAccount(_i2.Account? account) =>
       (super.noSuchMethod(
             Invocation.method(#addAccount, [account]),
@@ -365,38 +338,6 @@ class MockSettingsService extends _i1.Mock implements _i4.SettingsService {
   _i5.Future<void> setString(String? key, String? value) =>
       (super.noSuchMethod(
             Invocation.method(#setString, [key, value]),
-            returnValue: _i5.Future<void>.value(),
-            returnValueForMissingStub: _i5.Future<void>.value(),
-          )
-          as _i5.Future<void>);
-
-  @override
-  bool hasOldAccounts() =>
-      (super.noSuchMethod(Invocation.method(#hasOldAccounts, []), returnValue: false, returnValueForMissingStub: false)
-          as bool);
-
-  @override
-  List<_i2.Account> getOldAccounts() =>
-      (super.noSuchMethod(
-            Invocation.method(#getOldAccounts, []),
-            returnValue: <_i2.Account>[],
-            returnValueForMissingStub: <_i2.Account>[],
-          )
-          as List<_i2.Account>);
-
-  @override
-  _i5.Future<void> clearOldAccounts() =>
-      (super.noSuchMethod(
-            Invocation.method(#clearOldAccounts, []),
-            returnValue: _i5.Future<void>.value(),
-            returnValueForMissingStub: _i5.Future<void>.value(),
-          )
-          as _i5.Future<void>);
-
-  @override
-  _i5.Future<void> setOldAccountsData(String? jsonData) =>
-      (super.noSuchMethod(
-            Invocation.method(#setOldAccountsData, [jsonData]),
             returnValue: _i5.Future<void>.value(),
             returnValueForMissingStub: _i5.Future<void>.value(),
           )

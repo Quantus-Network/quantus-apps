@@ -2,39 +2,23 @@
   "walletInitErrorTitle": "Wallet Bermasalah",
   "walletInitErrorMessage": "Gagal mencari secret phrase. Coba pulihkan wallet anda.",
   "walletInitErrorButtonLabel": "OK",
-
-  "migrationDialogTitle": "Migrasikan akun Anda",
-  "migrationDialogBody": "Kami akan mencatat hadiah dan aktivitas testnet chain lama Anda untuk menentukan hadiah di Quantus Testnet yang baru.\n\nSaldo tidak ikut dimigrasikan.\n\nGunakan faucet testnet baru untuk mendapatkan dana.",
-  "migrationDialogAccountsToMigrate": "{count, plural, other{{count} Akun akan dimigrasikan.}}",
-  "migrationDialogAccountsCannotMigrate": "{count, plural, other{{count} akun tidak dapat dimigrasikan (data wallet hilang).}}",
-  "migrationDialogUploadError": "Kami tidak dapat mengunggah data migrasi. Silakan coba lagi atau coba nanti.",
-  "migrationDialogMigrate": "Migrasikan Akun",
-  "migrationDialogRetry": "Coba Lagi",
-  "migrationDialogTryLater": "Coba nanti",
-  "migrationDialogSkip": "Lewati",
-  "migrationPartialFailureToast": "{count, plural, other{{count} akun tidak dapat dimigrasikan. Migrasi akan diulang saat aplikasi dibuka berikutnya.}}",
-
   "authUseDeviceBiometricsToUnlock": "Gunakan biometrik untuk mengakses wallet",
   "authAuthenticating": "Mengotentikasi...",
   "authUnlockWallet": "Buka Wallet",
   "authAuthorizationRequired": "Otorisasi \n Diperlukan",
-
   "welcomeTagline": "Uang Terenkripsi Aman Kuantum",
   "welcomeCreateNewWallet": "Buat Wallet Baru",
   "welcomeImportWallet": "Impor Wallet",
-
   "createWalletCautionHeadline": "Jaga Kerahasiaan Recovery Phrase Anda",
   "createWalletCautionBullet1": "Jika Anda kehilangan perangkat ini, recovery phrase adalah satu-satunya cara kembali",
   "createWalletCautionBullet2": "Siapa pun yang mendapatkannya akan memiliki kendali penuh atas dana Anda, secara permanen",
   "createWalletCautionBullet3": "Tuliskan dan simpan di tempat yang aman. Jangan simpan secara digital",
   "createWalletRecoveryPhraseSaveError": "Gagal menyimpan wallet: {error}",
-
   "recoveryPhraseBodyInstructions": "Tuliskan kata-kata ini secara berurutan dan simpan di tempat yang hanya Anda yang bisa akses. Jangan screenshot atau salin ke aplikasi catatan.",
   "recoveryPhraseBodyCopy": "Salin",
   "recoveryPhraseBodyTapToReveal": "Ketuk untuk menampilkan",
   "recoveryPhraseBodyTapToHide": "Ketuk untuk menyembunyikan",
   "recoveryPhraseBodyCopiedMessage": "Recovery phrase disalin ke clipboard",
-
   "accountReadyAccountCreated": "Akun Dibuat",
   "accountReadyWalletCreated": "Wallet Dibuat",
   "accountReadyWalletImported": "Wallet Diimpor",
@@ -43,13 +27,11 @@
   "accountReadyMainAccountDescription": "Akun utama Anda. Cepat, terlihat di chain.",
   "accountReadyEncryptedAccountDescription": "Untuk transaksi privat. Tershield, lebih lambat.",
   "accountReadyGoToWallet": "Buka Wallet",
-
   "importWalletAppBarTitle": "Impor Wallet",
   "importWalletDescription": "Pulihkan wallet yang ada dengan recovery phrase 12 atau 24 kata Anda",
   "importWalletHint": "Ketik atau tempel recovery phrase Anda. Pisahkan kata dengan spasi.",
   "importWalletButton": "Impor",
   "importWalletValidationError": "Recovery phrase harus 12 atau 24 kata",
-
   "homeError": "Gagal: {error}",
   "homeNoActiveAccount": "Tidak ada akun aktif",
   "homeCharge": "Tagih",
@@ -59,14 +41,12 @@
   "homeReceive": "Terima",
   "homeSend": "Kirim",
   "homeSwap": "Tukar",
-
   "homeActivityTitle": "Aktivitas",
   "homeActivityViewAll": "Lihat Semua",
   "homeActivityErrorLoading": "Gagal memuat transaksi",
   "homeActivityRetry": "Coba Lagi",
   "homeActivityEmptyTitle": "Belum Ada Transaksi",
   "homeActivityEmptyMessage": "Aktivitas Anda akan muncul di sini setelah Anda mengirim atau menerima {tokenSymbol}.",
-
   "accountsSheetTitle": "Akun",
   "accountsSheetFailedLoadAccounts": "Gagal memuat akun.",
   "accountsSheetFailedLoadActiveAccount": "Gagal memuat akun aktif.",
@@ -81,7 +61,6 @@
   "walletNameTitle": "Nama Wallet",
   "walletNameSubtitle": "Memberi nama wallet memudahkan Anda membedakan akun-akunnya. Setiap wallet memiliki akun terenkripsi sendiri.",
   "walletNameHint": "Masukkan nama untuk wallet Anda",
-
   "addAccountMenuTitle": "Tambah Akun",
   "addAccountMenuCreateTitle": "Tambah Akun Transparan",
   "addAccountMenuCreateSubtitle": "Tambahkan akun publik lainnya",
@@ -94,7 +73,6 @@
   "addAccountMenuMultisigSubtitle": "Siapkan alamat bersama dengan beberapa penandatangan",
   "addAccountMenuDiscoverMultisigTitle": "Tambah Akun Multisig",
   "addAccountMenuDiscoverMultisigSubtitle": "Cari multisig di mana akun Anda adalah penandatangan",
-
   "multisigTag": "MULTISIG",
   "multisigProposeTitle": "Ajukan",
   "multisigAddTitle": "Buat Multisig",
@@ -198,7 +176,6 @@
   "multisigAlreadyApproved": "Sudah Ditandatangani",
   "multisigSignerPickerTitle": "Pilih akun",
   "multisigSignerPickerBody": "Beberapa akun di perangkat ini dapat menandatangani. Pilih akun mana yang akan digunakan untuk menyetujui.",
-
   "multisigCancelProposalButton": "Batalkan Proposal",
   "multisigProposalExpiresLabel": "KEDALUWARSA",
   "multisigProposalAtLabel": "PADA",
@@ -248,19 +225,16 @@
   "multisigApproveDoneRecorded": "Persetujuan dicatat",
   "multisigApproveDoneExecutedSubline": "Ambang tercapai — transfer dikirim.",
   "multisigApproveDoneRecordedSubline": "Menunggu co-signer lainnya.",
-
   "createAccountAppBarTitle": "Nama Akun",
   "createAccountSubtitle": "Berikan nama yang mudah Anda kenali. Anda bisa mengubahnya kapan saja.",
   "createAccountButton": "Buat",
   "createAccountErrorCouldNotAdd": "Gagal menambahkan akun.",
   "createAccountEncryptedDefaultName": "Akun Terenkripsi",
   "createAccountDefaultName": "Akun {number}",
-
   "editAccountAppBarTitle": "Nama Akun",
   "editAccountDone": "Selesai",
   "editAccountNameEmpty": "Nama akun tidak boleh kosong",
   "editAccountRenameFailed": "Gagal mengganti nama akun.",
-
   "accountMenuTitle": "Akun",
   "accountMenuAccountName": "Nama Akun",
   "accountMenuAddressDetails": "Detail Alamat",
@@ -281,29 +255,23 @@
   "accountMenuDeleteWalletTitle": "Apakah Anda yakin?",
   "accountMenuDeleteWalletMessage": "Frasa pemulihan Dompet {number} akan dihapus permanen dari perangkat ini. Pastikan sudah dicadangkan — ini tidak dapat dibatalkan.",
   "accountMenuDeleteWalletConfirm": "Hapus Dompet",
-
   "accountDetailsTitle": "Detail Alamat",
-
   "invalidAddress": "Alamat tidak valid",
-
   "sendTitle": "Kirim",
   "sendPayTitle": "Bayar",
   "sendEnterAddress": "Masukkan Alamat",
-
   "sendSelectRecipientSendTo": "Kirim Ke",
   "sendSelectRecipientSearchHint": "Masukkan Alamat {symbol}",
   "sendSelectRecipientScanTitle": "Pindai kode QR",
   "sendSelectRecipientScanSubtitle": "Ketuk untuk memindai Alamat {symbol}",
   "sendSelectRecipientRecents": "Terbaru",
   "sendSelectRecipientContinue": "Lanjutkan",
-
   "sendInputAmountSendTo": "KIRIM KE",
   "sendInputAmountAvailableBalance": "Saldo Tersedia:",
   "sendInputAmountNetworkFee": "Biaya Jaringan:",
   "sendInputAmountMax": "Maks",
   "sendInputAmountInvalidAmount": "Masukkan jumlah yang valid",
   "sendInputAmountChecksumRequired": "Checksum penerima diperlukan",
-
   "sendReviewSending": "MENGIRIM",
   "sendReviewTo": "KE",
   "sendReviewAmount": "JUMLAH",
@@ -314,27 +282,23 @@
   "sendReviewAuthRequired": "Autentikasi diperlukan untuk mengirim",
   "sendReviewSubmitFailed": "Gagal mengirim transaksi",
   "sendRegularAccountRequired": "Beralih ke akun reguler untuk mengirim",
-
   "sendTxSubmittedHeadlinePaid": "{amount} {symbol} dibayar",
   "sendTxSubmittedHeadlineSent": "{amount} {symbol} terkirim",
   "sendTxSubmittedOnItsWay": "Sedang dalam perjalanan",
   "sendTxSubmittedToLabel": "Ke",
   "sendTxSubmittedDone": "Selesai",
-
   "keystoneSignTitle": "Pindai dengan Keystone Anda",
   "keystoneSignError": "Gagal menyiapkan transaksi. Silakan coba lagi.",
   "keystoneScanScanning": "{count} bingkai dipindai",
   "keystoneScanSubmitting": "Mengirim transaksi...",
   "keystoneScanError": "Tidak dapat membaca tanda tangan. Silakan coba lagi.",
   "keystoneScanExpired": "Transaksi kedaluwarsa sebelum sempat dikirim. Kembali dan pindai kode QR baru dengan perangkat Anda.",
-
   "sendLogicCantSelfTransfer": "Tidak Bisa Transfer ke Diri Sendiri",
   "sendLogicEnterAmount": "Masukkan Jumlah",
   "sendLogicInvalidAmount": "Jumlah Tidak Valid",
   "sendLogicBelowExistentialDeposit": "Di Bawah Deposit Eksistensial",
   "sendLogicInsufficientBalance": "Saldo Tidak Cukup",
   "sendLogicReviewSend": "Tinjau Pengiriman",
-
   "activityTitle": "Aktivitas",
   "activityError": "Gagal: {error}",
   "activityNoAccount": "Tidak ada akun",
@@ -346,7 +310,6 @@
   "activityFilterReceive": "Terima",
   "activityDateToday": "Hari Ini",
   "activityDateYesterday": "Kemarin",
-
   "activityTxSending": "Mengirim",
   "activityTxReceiving": "Menerima",
   "activityTxPending": "Tertunda",
@@ -366,7 +329,6 @@
   "activityTxTimeHoursAgo": "{hours}j lalu",
   "activityTxTimeDaysAgo": "{days}h lalu",
   "activityTxTimeRemaining": "{days}h:{hours}j:{minutes}m",
-
   "activityDetailTitleSending": "Mengirim",
   "activityDetailTitleScheduled": "Terjadwal",
   "activityDetailTitleReceiving": "Menerima",
@@ -404,18 +366,15 @@
   "activityDetailMultisigCreationFee": "BIAYA PALLET",
   "activityDetailMultisigDeposit": "DEPOSIT TERSIMPAN",
   "activityDetailMultisigFeePaidByCreator": "Dibayar oleh pembuat",
-
   "receiveTitle": "Terima",
   "receiveTabQrCode": "Kode QR",
   "receiveTabAddress": "Alamat",
   "receiveCopy": "Salin",
   "receiveErrorLoadingAccount": "Gagal memuat data akun: {error}",
   "receiveCopiedMessage": "Alamat disalin ke clipboard",
-
   "posAmountTitle": "Tagihan Baru",
   "posAmountCharge": "Tagih {amount}",
   "posAmountEnterAmount": "Masukkan Jumlah",
-
   "posQrTitleScanToPay": "Pindai untuk Bayar",
   "posQrTitlePaymentReceived": "Pembayaran Diterima",
   "posQrError": "Gagal: {error}",
@@ -431,7 +390,6 @@
   "posQrNetworkError": "Jaringan Bermasalah",
   "posQrTryAgain": "Coba Lagi",
   "posQrPaidAt": "Pada {time}",
-
   "settingsTitle": "Pengaturan",
   "settingsWalletTitle": "Dompet",
   "settingsWalletSubtitle": "Frasa Pemulihan, Reset Dompet",
@@ -446,25 +404,20 @@
   "settingsHelpSubtitle": "FAQ, Hubungi tim",
   "settingsAboutTitle": "Tentang Quantus",
   "settingsAboutHubSubtitle": "Versi {version} ({build})",
-
   "settingsWalletRecoveryPhrase": "Frasa Pemulihan",
   "settingsWalletRecoveryPhraseSubtitle": "Lihat Kata Sandi Cadangan 24 kata Anda",
   "settingsWalletReset": "Reset Dompet",
   "settingsWalletResetSubtitle": "Menghapus semua data dari perangkat ini",
   "settingsWalletNoWalletsFound": "Tidak ada dompet ditemukan",
   "settingsWalletFailedToLoad": "Gagal memuat dompet",
-
   "settingsSelectWalletTitle": "Pilih Dompet",
   "settingsSelectWalletNoWallets": "Tidak ada dompet ditemukan",
   "settingsSelectWalletItem": "Dompet {number}",
-
   "settingsRecoveryConfirmAuthReason": "Autentikasi untuk melihat frasa pemulihan",
   "settingsRecoveryConfirmAuthRequired": "Autentikasi diperlukan untuk melihat frasa pemulihan",
-
   "settingsRecoveryPhraseTitle": "Frasa Pemulihan",
   "settingsRecoveryPhraseDone": "Selesai",
   "settingsRecoveryAlreadyBackedUp": "Saya sudah mencadangkan dompet saya",
-
   "settingsResetTitle": "Reset Dompet",
   "settingsResetAuthReason": "Autentikasi untuk mereset dompet",
   "settingsResetFailed": "Gagal mereset dompet: {error}",
@@ -474,7 +427,6 @@
   "settingsResetCautionBullet2": "Dana Anda tetap di blockchain tetapi hanya frasa pemulihan yang dapat memulihkan akses",
   "settingsResetCautionBullet3": "Tanpa frasa pemulihan, dana Anda hilang selamanya",
   "settingsResetCautionCheckbox": "Saya sudah mencadangkan frasa pemulihan saya",
-
   "settingsPreferencesLanguage": "Bahasa",
   "settingsPreferencesLanguageSubtitle": "Bahasa tampilan aplikasi",
   "settingsPreferencesCurrency": "Mata Uang",
@@ -483,17 +435,14 @@
   "settingsPreferencesPosModeSubtitle": "Fitur point of sale",
   "settingsPreferencesNotifications": "Notifikasi",
   "settingsPreferencesNotificationsSubtitle": "Peringatan transaksi dan dompet",
-
   "settingsCurrencyTitle": "Mata Uang",
   "settingsCurrencySearchHint": "Cari",
   "settingsCurrencyNoMatch": "Tidak ada mata uang yang cocok dengan pencarian Anda",
   "settingsCurrencyError": "Gagal memilih mata uang: {error}",
-
   "settingsLanguageTitle": "Bahasa",
   "settingsLanguageSearchHint": "Cari",
   "settingsLanguageNoMatch": "Tidak ada bahasa yang cocok dengan pencarian Anda",
   "settingsLanguageError": "Gagal memilih bahasa: {error}",
-
   "settingsMiningTitle": "Hadiah Mining",
   "settingsMiningRedeem": "Tukar",
   "settingsMiningStatusMining": "Mining",
@@ -515,18 +464,15 @@
   "settingsMiningDiracSince": "Nov 2025",
   "settingsMiningSchrodingerSince": "Okt 2025",
   "settingsMiningResonanceSince": "Jul 2025",
-
   "settingsTestnetTitle": "Hadiah Testnet",
   "settingsTestnetLoadError": "Gagal memuat hadiah testnet",
   "settingsTestnetTotalBlocks": "{count} blok",
   "settingsTestnetTotalDescription": "Total blok ditambang di semua testnet",
   "settingsTestnetBreakdown": "Rincian",
   "settingsTestnetRowBlocks": "{count} blok",
-
   "settingsHelpScreenTitle": "Bantuan & Dukungan",
   "settingsHelpEmail": "Dukungan Email",
   "settingsHelpTelegram": "Telegram",
-
   "settingsAboutScreenTitle": "Tentang",
   "settingsAboutIntro": "Quantus adalah blockchain Layer 1 yang diamankan oleh ML-DSA Dilithium-5, standar emas enkripsi tahan kuantum. Dibangun untuk masa depan di mana kriptografi klasik tidak lagi cukup. Kriptografi pasca-kuantum untuk semua orang.",
   "settingsAboutTerms": "Ketentuan Layanan",
@@ -536,7 +482,6 @@
   "settingsAboutWebsite": "Kunjungi Situs Web",
   "settingsAboutWebsiteSubtitle": "quantus.com",
   "settingsAboutVersion": "Versi {version} ({build})",
-
   "swapTitle": "Tukar",
   "swapFrom": "Dari",
   "swapTo": "Ke",
@@ -547,16 +492,13 @@
   "swapGetQuote": "Dapatkan Penawaran",
   "swapRateLabel": "1 {tokenSymbol} = {amount} {symbol}",
   "swapRateZero": "1 {tokenSymbol} = 0 {symbol}",
-
   "swapTokenPickerTitle": "Pilih Token",
   "swapTokenPickerLoadError": "Gagal memuat token",
-
   "swapReviewTitle": "Tinjau Penawaran",
   "swapReviewTotalFees": "Total biaya",
   "swapReviewTotalAmount": "Jumlah Total",
   "swapReviewSlippageWarning": "Anda bisa menerima hingga ${amount} lebih sedikit berdasarkan slippage {percent}% yang Anda atur",
   "swapReviewConfirm": "Konfirmasi",
-
   "swapDepositAmount": "Jumlah Deposit",
   "swapDepositAmountCopied": "Jumlah deposit disalin ke clipboard",
   "swapDepositDemoWarning": "Hanya untuk demo - jangan kirim dana!",
@@ -572,10 +514,8 @@
   "swapDemoOnlyBody": "Tidak ada swap sungguhan yang dilakukan.",
   "swapDepositSentFunds": "Saya sudah mengirim dana",
   "swapDepositDone": "Selesai",
-
   "swapRefundPickerTitle": "Alamat Refund",
   "swapRefundPickerEmpty": "Tidak ada alamat refund terbaru",
-
   "componentQrScannerTitle": "Pindai Kode QR",
   "componentQrScannerNoCode": "Tidak ada kode QR pada gambar",
   "componentShare": "Bagikan",
@@ -583,14 +523,12 @@
   "componentCheckphraseLabel": "CHECKPHRASE",
   "componentCheckphraseCopied": "Checkphrase disalin",
   "componentNameFieldHint": "Masukkan nama untuk akun Anda",
-
   "commonLoading": "Memuat...",
   "commonCancel": "Batal",
   "commonCanceling": "Membatalkan...",
   "commonAmountBalance": "{balance} {symbol}",
   "commonContinue": "Lanjutkan",
   "commonDone": "Selesai",
-
   "redeemToLabel": "Tukar Ke",
   "redeemAddressHint": "Tempel Alamat {symbol}",
   "redeemAmountCta": "Tukar {amount}",
