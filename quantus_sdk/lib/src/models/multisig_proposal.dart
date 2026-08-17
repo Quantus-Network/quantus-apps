@@ -148,6 +148,12 @@ class MultisigProposal {
     return bytes == null ? null : _decodeCall(bytes);
   }
 
+  /// True when [callRaw] is present but [CallDecoder.decodeBytes] rejects it.
+  bool get hasUndecodableCall {
+    final bytes = callRaw;
+    return bytes != null && decodedCall == null;
+  }
+
   /// Parses a (possibly upper-cased) indexer status string.
   static MultisigProposalStatus parseStatus(dynamic raw) {
     final value = raw?.toString().toLowerCase();

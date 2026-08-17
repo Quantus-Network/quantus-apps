@@ -70,6 +70,7 @@ class ProposalRow extends ConsumerWidget {
       amount: proposal.amount,
       recipientAddress: proposal.recipient,
       call: proposal.decodedCall,
+      callUndecodable: proposal.hasUndecodableCall,
       highlighted: isPending,
       onTap: onTap,
       trailing: Column(

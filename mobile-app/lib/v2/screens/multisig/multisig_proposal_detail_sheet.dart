@@ -290,12 +290,12 @@ class _MultisigProposalDetailSheet extends ConsumerWidget {
 
     return Column(
       children: [
-        if (decoded != null && decoded.summary == null)
+        if (!liveProposal.hasUndecodableCall && decoded != null && decoded.summary == null)
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 8),
             child: DecodedCallView(call: decoded),
           )
-        else
+        else if (!liveProposal.hasUndecodableCall)
           DetailSummaryRow(label: l10n.activityDetailTo, value: recipient),
         if (isTerminal)
           DetailSummaryRow(
@@ -417,7 +417,9 @@ class _MultisigProposalDetailSheet extends ConsumerWidget {
     required bool hasLocalSigner,
     required bool isActionable,
   }) {
-    if (liveProposal.isTerminal || (allLocalApproved && !liveProposal.isReadyToExecute)) {
+    if (liveProposal.hasUndecodableCall ||
+        liveProposal.isTerminal ||
+        (allLocalApproved && !liveProposal.isReadyToExecute)) {
       return QuantusButton.simple(
         label: l10n.multisigDone,
         variant: ButtonVariant.secondary,
@@ -619,6 +621,9 @@ class _MultisigProposalDetailSheet extends ConsumerWidget {
     required bool hasLocalSigner,
     required bool isActionable,
   }) {
+    if (liveProposal.hasUndecodableCall) {
+      return '';
+    }
     if (liveProposal.status == MultisigProposalStatus.cancelled) {
       return l10n.multisigProposalAlreadyCancelledNote;
     }
@@ -683,6 +688,14 @@ class _AmountSection extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    if (proposal.hasUndecodableCall) {
+      return Text(
+        'Invalid proposal',
+        textAlign: TextAlign.center,
+        style: context.themeText.smallTitle?.copyWith(color: context.colors.textError),
+      );
+    }
+
     // Only a value-moving proposal has an amount hero; a governance vote or a
     // runtime-upgrade authorisation is named instead of shown as zero.
     final decoded = proposal.decodedCall;
