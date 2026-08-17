@@ -45,7 +45,7 @@ class ProposalListTile extends ConsumerWidget {
         ? null
         : DecodedCallHeadline.of(decoded, amountText: (token) => formatAmount(token, isSend: true).primaryAmount);
     final amountText = callUndecodable
-        ? 'Invalid proposal'
+        ? l10n.multisigProposalInvalid
         : (headline?.primary ?? formatAmount(amount, isSend: true).primaryAmount);
     final recipient = headline == null
         ? (recipientAddress.isEmpty ? null : AddressFormattingService.formatAddress(recipientAddress))

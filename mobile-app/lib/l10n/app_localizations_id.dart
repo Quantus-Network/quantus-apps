@@ -440,6 +440,9 @@ class AppLocalizationsId extends AppLocalizations {
       'Tidak dapat membaca usulan ini dari rantai, jadi tidak ada yang bisa disetujui. Coba lagi setelah Anda kembali online.';
 
   @override
+  String get multisigProposalInvalid => 'Proposal tidak valid';
+
+  @override
   String get multisigStatusApproved => 'DITANDATANGANI';
 
   @override

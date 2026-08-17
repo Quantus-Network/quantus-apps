@@ -135,6 +135,7 @@
   "multisigProposalToAddress": "ke {address}",
   "multisigProposalCallLoading": "Membaca usulan dari rantai…",
   "multisigProposalCallUnavailable": "Tidak dapat membaca usulan ini dari rantai, jadi tidak ada yang bisa disetujui. Coba lagi setelah Anda kembali online.",
+  "multisigProposalInvalid": "Proposal tidak valid",
   "multisigStatusApproved": "DITANDATANGANI",
   "multisigStatusProposed": "DIAJUKAN",
   "multisigStatusExpired": "KEDALUWARSA",

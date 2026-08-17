@@ -690,7 +690,7 @@ class _AmountSection extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     if (proposal.hasUndecodableCall) {
       return Text(
-        'Invalid proposal',
+        ref.watch(l10nProvider).multisigProposalInvalid,
         textAlign: TextAlign.center,
         style: context.themeText.smallTitle?.copyWith(color: context.colors.textError),
       );
