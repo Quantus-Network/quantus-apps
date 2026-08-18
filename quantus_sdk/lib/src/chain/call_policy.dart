@@ -50,39 +50,52 @@ final _zero = BigInt.zero;
 class CallIds {
   const CallIds._();
 
-  static final transferAllowDeath = CallId.of(balances_pallet.Txs().transferAllowDeath(dest: _zeroDest, value: _zero));
-  static final transferKeepAlive = CallId.of(balances_pallet.Txs().transferKeepAlive(dest: _zeroDest, value: _zero));
-  static final transferAll = CallId.of(balances_pallet.Txs().transferAll(dest: _zeroDest, keepAlive: false));
-  static final scheduleTransfer = CallId.of(reversible_pallet.Txs().scheduleTransfer(dest: _zeroDest, amount: _zero));
+  static final transferAllowDeath = CallId.of(
+    const balances_pallet.Txs().transferAllowDeath(dest: _zeroDest, value: _zero),
+  );
+  static final transferKeepAlive = CallId.of(
+    const balances_pallet.Txs().transferKeepAlive(dest: _zeroDest, value: _zero),
+  );
+  static final transferAll = CallId.of(const balances_pallet.Txs().transferAll(dest: _zeroDest, keepAlive: false));
+  static final scheduleTransfer = CallId.of(
+    const reversible_pallet.Txs().scheduleTransfer(dest: _zeroDest, amount: _zero),
+  );
   static final scheduleTransferWithDelay = CallId.of(
-    reversible_pallet.Txs().scheduleTransferWithDelay(
+    const reversible_pallet.Txs().scheduleTransferWithDelay(
       dest: _zeroDest,
       amount: _zero,
       delay: qp.BlockNumberOrTimestamp.values.blockNumber(0),
     ),
   );
 
-  static final reversibleCancel = CallId.of(reversible_pallet.Txs().cancel(txId: _zero32));
-  static final executeTransfer = CallId.of(reversible_pallet.Txs().executeTransfer(txId: _zero32));
+  static final reversibleCancel = CallId.of(const reversible_pallet.Txs().cancel(txId: _zero32));
+  static final executeTransfer = CallId.of(const reversible_pallet.Txs().executeTransfer(txId: _zero32));
   static final setHighSecurity = CallId.of(
-    reversible_pallet.Txs().setHighSecurity(delay: qp.BlockNumberOrTimestamp.values.blockNumber(0), guardian: _zero32),
+    const reversible_pallet.Txs().setHighSecurity(
+      delay: qp.BlockNumberOrTimestamp.values.blockNumber(0),
+      guardian: _zero32,
+    ),
   );
 
   static final createMultisig = CallId.of(
-    multisig_pallet.Txs().createMultisig(signers: const [], threshold: 1, nonce: _zero),
+    const multisig_pallet.Txs().createMultisig(signers: const [], threshold: 1, nonce: _zero),
   );
   static final multisigPropose = CallId.of(
-    multisig_pallet.Txs().propose(multisigAddress: _zero32, call: const [], expiry: 0),
+    const multisig_pallet.Txs().propose(multisigAddress: _zero32, call: const [], expiry: 0),
   );
   static final multisigApprove = CallId.of(
-    multisig_pallet.Txs().approve(multisigAddress: _zero32, proposalId: 0, call: const []),
+    const multisig_pallet.Txs().approve(multisigAddress: _zero32, proposalId: 0, call: const []),
   );
-  static final multisigCancel = CallId.of(multisig_pallet.Txs().cancel(multisigAddress: _zero32, proposalId: 0));
-  static final multisigExecute = CallId.of(multisig_pallet.Txs().execute(multisigAddress: _zero32, proposalId: 0));
-  static final removeExpired = CallId.of(multisig_pallet.Txs().removeExpired(multisigAddress: _zero32, proposalId: 0));
-  static final claimDeposits = CallId.of(multisig_pallet.Txs().claimDeposits(multisigAddress: _zero32));
+  static final multisigCancel = CallId.of(const multisig_pallet.Txs().cancel(multisigAddress: _zero32, proposalId: 0));
+  static final multisigExecute = CallId.of(
+    const multisig_pallet.Txs().execute(multisigAddress: _zero32, proposalId: 0),
+  );
+  static final removeExpired = CallId.of(
+    const multisig_pallet.Txs().removeExpired(multisigAddress: _zero32, proposalId: 0),
+  );
+  static final claimDeposits = CallId.of(const multisig_pallet.Txs().claimDeposits(multisigAddress: _zero32));
 
-  static final batchAll = CallId.of(utility_pallet.Txs().batchAll(calls: const []));
+  static final batchAll = CallId.of(const utility_pallet.Txs().batchAll(calls: const []));
 
   /// The value-moving calls the mobile wallet can build.
   static final Set<CallId> transfers = {

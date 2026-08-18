@@ -110,9 +110,13 @@ class DebugPayloads {
     return SigningRequest(signer: debugSigner, payload: _payload(call)).encode();
   }
 
-  static Uint8List _payload(RuntimeCall call) {
+  static Uint8List _payload(RuntimeCall call) => payloadForCall(call.encode());
+
+  /// Wraps already-encoded call bytes in the signed extensions the runtime
+  /// expects, so a corpus entry can reach the signing screen.
+  static Uint8List payloadForCall(List<int> callBytes) {
     final out = ByteOutput();
-    out.write(call.encode());
+    out.write(callBytes);
     out.write(const [0x55, 0x01]); // mortal era: period 64, phase 21
     CompactCodec.codec.encodeTo(0, out); // nonce
     CompactBigIntCodec.codec.encodeTo(BigInt.zero, out); // tip

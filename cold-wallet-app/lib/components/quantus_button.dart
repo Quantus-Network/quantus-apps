@@ -167,7 +167,9 @@ class QuantusButton extends StatelessWidget {
         spacing: 8,
         children: [
           if (_iconPlacement == IconPlacement.leading && _icon != null) _icon,
-          Text(_label!, style: effectiveTextStyle),
+          Flexible(
+            child: Text(_label!, textAlign: TextAlign.center, style: effectiveTextStyle),
+          ),
           if (_iconPlacement == IconPlacement.trailing && _icon != null) _icon,
         ],
       );

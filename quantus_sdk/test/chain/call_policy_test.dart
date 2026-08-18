@@ -57,7 +57,7 @@ void main() {
       const system_pallet.Txs().remark(remark: [1, 2, 3]),
       const vesting_pallet.Txs().claim(scheduleId: BigInt.one),
       const recovery_pallet.Txs().removeRecovery(),
-      utility_pallet.Txs().batchAll(calls: [transfer()]),
+      const utility_pallet.Txs().batchAll(calls: [transfer()]),
     ];
 
     for (final call in everything) {
@@ -90,7 +90,7 @@ void main() {
     });
 
     test('rejects a bare batch_all outside a proposal', () {
-      expectRejected(utility_pallet.Txs().batchAll(calls: [transfer()]));
+      expectRejected(const utility_pallet.Txs().batchAll(calls: [transfer()]));
     });
   });
 
@@ -100,9 +100,12 @@ void main() {
     });
 
     test('accepts batch_all of transfers only', () {
-      expectAllowed(utility_pallet.Txs().batchAll(calls: [transfer(), transfer()]), within: CallIds.insideProposal);
+      expectAllowed(
+        const utility_pallet.Txs().batchAll(calls: [transfer(), transfer()]),
+        within: CallIds.insideProposal,
+      );
       expectRejected(
-        utility_pallet.Txs().batchAll(
+        const utility_pallet.Txs().batchAll(
           calls: [
             transfer(),
             const system_pallet.Txs().remark(remark: [1]),
@@ -114,9 +117,9 @@ void main() {
 
     test('rejects a nested batch_all', () {
       expectRejected(
-        utility_pallet.Txs().batchAll(
+        const utility_pallet.Txs().batchAll(
           calls: [
-            utility_pallet.Txs().batchAll(calls: [transfer()]),
+            const utility_pallet.Txs().batchAll(calls: [transfer()]),
           ],
         ),
         within: CallIds.insideProposal,

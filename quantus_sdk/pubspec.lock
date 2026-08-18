@@ -666,7 +666,7 @@ packages:
     source: hosted
     version: "0.7.1"
   polkadart_scale_codec:
-    dependency: transitive
+    dependency: "direct dev"
     description:
       name: polkadart_scale_codec
       sha256: "07044bf15d5c02ee79984b2696dcf25c598563eca12e70bc9ff45dd7948d93d5"
@@ -894,7 +894,7 @@ packages:
     source: hosted
     version: "0.7.1"
   substrate_metadata:
-    dependency: transitive
+    dependency: "direct dev"
     description:
       name: substrate_metadata
       sha256: "252a4a00a23b7da4982d7d2ac5154b6164fd71b3eb0a113faa0ce7983b4e0035"
