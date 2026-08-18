@@ -3,6 +3,7 @@ export 'skeleton.dart';
 export 'quantus_text_field.dart';
 export 'quantus_badge.dart';
 export 'quantus_data_row.dart';
+export 'quantus_step_row.dart';
 export 'quantus_banner.dart';
 export 'quantus_dialog.dart';
 export 'quantus_action_sheet.dart';
