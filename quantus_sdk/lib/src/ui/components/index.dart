@@ -1,4 +1,5 @@
 export 'quantus_button.dart';
+export 'skeleton.dart';
 export 'quantus_text_field.dart';
 export 'quantus_badge.dart';
 export 'quantus_data_row.dart';
