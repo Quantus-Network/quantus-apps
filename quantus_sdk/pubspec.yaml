@@ -64,3 +64,4 @@ polkadart:
 flutter:
   assets:
     - assets/v2/uppercase_q_black_bg.png
+    - assets/icons/

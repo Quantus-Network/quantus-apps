@@ -6,6 +6,7 @@ export 'quantus_banner.dart';
 export 'quantus_dialog.dart';
 export 'quantus_action_sheet.dart';
 export 'loader.dart';
+export 'quantus_icon.dart';
 export 'quantus_icon_button.dart';
 export 'glass_button_base.dart';
 export 'decoded_call_view.dart';
