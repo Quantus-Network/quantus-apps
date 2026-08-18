@@ -7,7 +7,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:quantus_sdk/src/testing/call_corpus.dart';
-import 'package:quantus_cold_wallet/components/call_detail_view.dart';
 import 'package:quantus_cold_wallet/debug/debug_payloads.dart';
 import 'package:quantus_cold_wallet/models/cold_account.dart';
 import 'package:quantus_cold_wallet/providers/wallet_providers.dart';

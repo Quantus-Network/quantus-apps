@@ -652,8 +652,8 @@ packages:
     dependency: "direct dev"
     description:
       path: "packages/polkadart_cli"
-      ref: "0_7_1_quantus_1"
-      resolved-ref: "2b492e0c55cc4dace77c7af3ae5d30084ba97ea5"
+      ref: "0_7_1_quantus_2"
+      resolved-ref: e7186065d0ce6bef8b91833591f6e9e6ab8d2fa7
       url: "https://github.com/Quantus-Network/polkadart.git"
     source: git
     version: "0.7.1"
@@ -668,11 +668,12 @@ packages:
   polkadart_scale_codec:
     dependency: "direct dev"
     description:
-      name: polkadart_scale_codec
-      sha256: "07044bf15d5c02ee79984b2696dcf25c598563eca12e70bc9ff45dd7948d93d5"
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.6.0"
+      path: "packages/polkadart_scale_codec"
+      ref: "0_7_1_quantus_2"
+      resolved-ref: e7186065d0ce6bef8b91833591f6e9e6ab8d2fa7
+      url: "https://github.com/Quantus-Network/polkadart.git"
+    source: git
+    version: "1.5.0"
   process:
     dependency: transitive
     description:

@@ -6,6 +6,7 @@ import 'package:quantus_cold_wallet/debug/debug_payloads.dart';
 import 'package:quantus_cold_wallet/models/cold_account.dart';
 import 'package:quantus_cold_wallet/providers/wallet_providers.dart';
 import 'package:quantus_cold_wallet/screens/sign_transaction_screen.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:quantus_cold_wallet/services/vault_service.dart';
 import 'package:quantus_cold_wallet/theme/app_theme.dart';
 
@@ -40,6 +41,50 @@ Future<void> pumpFor(WidgetTester tester, String signer, {required Map<String, C
 }
 
 void main() {
+  group('the vault stays openable across a session', () {
+    late WalletController controller;
+
+    setUp(() {
+      FlutterSecureStorage.setMockInitialValues({});
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+      controller = container.read(walletControllerProvider.notifier);
+    });
+
+    test('rotating the password then adding an account leaves the vault openable', () async {
+      await controller.createWallet(
+        mnemonic: mnemonic,
+        password: 'alpha',
+        enableBiometric: false,
+        accounts: [ColdAccount(label: 'One', index: 0)],
+      );
+
+      expect(
+        await controller.changePassword(currentPassword: 'alpha', newPassword: 'beta'),
+        PasswordChangeResult.changed,
+      );
+      await controller.addAccount(ColdAccount(label: 'Two', index: 1));
+
+      final reopened = await VaultService().unlockWithPassword('beta');
+      expect(reopened.mnemonic, mnemonic);
+      expect(reopened.accounts, hasLength(2));
+    });
+
+    test('a biometric unlock can still add an account', () async {
+      await controller.createWallet(
+        mnemonic: mnemonic,
+        password: 'alpha',
+        enableBiometric: true,
+        accounts: [ColdAccount(label: 'One', index: 0)],
+      );
+      controller.lock();
+
+      final unlocked = await VaultService().unlockWithBiometricKey();
+      expect(unlocked.keyBytes, isNotEmpty);
+      expect(unlocked.accounts, hasLength(1));
+    });
+  });
+
   group('ColdAccount', () {
     test('an index fills the wallet template', () {
       expect(ColdAccount(label: 'a', index: 3).derivationPath, HdWalletService.pathForIndex(3));

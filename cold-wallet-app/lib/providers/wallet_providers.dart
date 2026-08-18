@@ -142,9 +142,14 @@ class WalletController extends Notifier<WalletState> {
     }
     final biometric = await _vault.isBiometricEnabled();
     await _vault.createVault(mnemonic: result.mnemonic, password: newPassword, accounts: result.accounts);
+
+    // The vault is now under a key the old one cannot open, so anything that
+    // rewrites it in this session - adding an account - must use the new key.
+    final fresh = await _vault.unlockWithPassword(newPassword);
+    _keyBytes = fresh.keyBytes;
+
     if (!biometric) return PasswordChangeResult.changed;
     try {
-      final fresh = await _vault.unlockWithPassword(newPassword);
       await _vault.storeBiometricKey(fresh.keyBytes);
       return PasswordChangeResult.changed;
     } catch (e, st) {

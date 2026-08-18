@@ -62,13 +62,25 @@ class CallDecoder {
   /// Trailing bytes mean the sender and this decoder disagree about the call's
   /// shape, so the result cannot be trusted for display — throw instead.
   static DecodedCall decodeBytes(List<int> bytes, {required CallPolicy policy, List<CallId> within = const []}) {
-    return _decodeBytesAtPath(bytes, policy, within);
+    return _asFormatException(() => _decodeBytesAtPath(bytes, policy, within));
   }
 
   /// Decodes a call off [input], leaving it positioned on the bytes that follow —
   /// the signing-payload parser reads its extensions from there.
   static DecodedCall decodeFrom(ByteInput input, {required CallPolicy policy}) {
-    return _describe(_decodeCall(input, policy, const []), 0);
+    return _asFormatException(() => _describe(_decodeCall(input, policy, const []), 0, policy: policy));
+  }
+
+  /// The generated codecs signal malformed bytes with their own exception types.
+  /// Callers fail closed on [FormatException], so every rejection arrives as one.
+  static DecodedCall _asFormatException(DecodedCall Function() decode) {
+    try {
+      return decode();
+    } on FormatException {
+      rethrow;
+    } catch (e) {
+      throw FormatException('$e');
+    }
   }
 
   static DecodedCall _decodeBytesAtPath(List<int> bytes, CallPolicy policy, List<CallId> path) {
@@ -78,18 +90,18 @@ class CallDecoder {
     if (remaining != 0) {
       throw FormatException('$remaining trailing bytes after nested call');
     }
-    return _describe(call, path.length);
+    return _describe(call, path.length, policy: policy, path: path);
   }
 
   /// Describes [call] as a display tree carrying every one of its parameters.
-  static DecodedCall describe(runtime.RuntimeCall call) {
-    return _describe(call, 0);
+  static DecodedCall describe(runtime.RuntimeCall call, {required CallPolicy policy}) {
+    return _describe(call, 0, policy: policy);
   }
 
   static DecodedCall _describe(
     runtime.RuntimeCall call,
     int depth, {
-    CallPolicy policy = const FullCallPolicy(),
+    required CallPolicy policy,
     List<CallId> path = const [],
   }) {
     if (depth > maxCallNestingDepth) {
@@ -835,8 +847,6 @@ class CallDecoder {
 
   static ValueField _boolField(String label, bool value) =>
       ValueField(label, value ? 'Yes' : 'No', kind: ValueKind.boolean);
-
-  static ValueField _assetIdField(BigInt id) => ValueField('Asset id', '$id', kind: ValueKind.number);
 
   /// `qp_scheduler::BlockNumberOrTimestamp<u32, u64>`.
   static ValueField _delayField(String label, dynamic delay) {

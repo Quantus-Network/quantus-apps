@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 
+import 'package:convert/convert.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_sdk/generated/planck/pallets/balances.dart' as balances_pallet;
 import 'package:quantus_sdk/generated/planck/pallets/multisig.dart' as multisig_pallet;
@@ -132,12 +133,52 @@ void main() {
     });
   });
 
+  group('the policy reaches calls carried as bytes', () {
+    test('a proposal inner call is judged by the same policy as the wrapper', () {
+      final proposal = const multisig_pallet.Txs().propose(
+        multisigAddress: _alice,
+        call: const system_pallet.Txs().remark(remark: [1]).encode(),
+        expiry: 10,
+      );
+
+      expectRejected(proposal);
+      expectAllowed(const multisig_pallet.Txs().propose(multisigAddress: _alice, call: transfer().encode(), expiry: 10));
+    });
+
+    test('the nesting limit counts levels carried as bytes', () {
+      RuntimeCall wrapped(int depth) {
+        RuntimeCall call = transfer();
+        for (var i = 0; i < depth; i++) {
+          call = const multisig_pallet.Txs().propose(multisigAddress: _alice, call: call.encode(), expiry: 10);
+        }
+        return call;
+      }
+
+      CallDecoder.decodeBytes(wrapped(1).encode(), policy: const FullCallPolicy());
+      for (final depth in [3, 4, 6]) {
+        expect(
+          () => CallDecoder.decodeBytes(wrapped(depth).encode(), policy: const FullCallPolicy()),
+          throwsA(isA<FormatException>()),
+          reason: 'depth $depth is past the limit but decoded',
+        );
+      }
+    });
+  });
+
   group('the policy runs before arguments are read', () {
     test('a rejected call is refused without decoding its arguments', () {
       final vote = const collective_pallet.Txs().vote(poll: 1, aye: true).encode();
       expect(
         () => CallDecoder.decodeBytes([vote[0], vote[1]], policy: const WalletCallPolicy()),
         throwsA(isA<CallRejectedException>()),
+      );
+    });
+
+    test('a length prefix larger than the input is refused before it is allocated', () {
+      // An allowed transfer whose MultiAddress::Raw claims a gigabyte.
+      expect(
+        () => CallDecoder.decodeBytes(hex.decode('020002feffffff'), policy: const FullCallPolicy()),
+        throwsA(isA<FormatException>()),
       );
     });
 

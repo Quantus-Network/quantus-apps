@@ -173,3 +173,12 @@ flutter_native_splash:
     icon_background_color: "#0E0E0E"
     branding: assets/v2/uppercase_q.png
     branding_bottom_padding: 88
+
+dependency_overrides:
+  # polkadart_scale_codec allocated sequence buffers straight from the compact
+  # length prefix, so a few malformed bytes could claim gigabytes.
+  polkadart_scale_codec:
+    git:
+      url: https://github.com/Quantus-Network/polkadart.git
+      ref: 0_7_1_quantus_2
+      path: packages/polkadart_scale_codec

@@ -57,10 +57,19 @@ dev_dependencies:
   polkadart_cli:
     git:
       url: https://github.com/Quantus-Network/polkadart.git
-      ref: 0_7_1_quantus_1
+      ref: 0_7_1_quantus_2
       path: packages/polkadart_cli
 
 polkadart:
   output_dir: lib/generated
   chains:
     planck: wss://a1-planck.quantus.cat
+
+dependency_overrides:
+  # polkadart_scale_codec allocated sequence buffers straight from the compact
+  # length prefix, so a few malformed bytes could claim gigabytes.
+  polkadart_scale_codec:
+    git:
+      url: https://github.com/Quantus-Network/polkadart.git
+      ref: 0_7_1_quantus_2
+      path: packages/polkadart_scale_codec

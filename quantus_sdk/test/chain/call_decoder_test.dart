@@ -379,7 +379,11 @@ void main() {
         const recovery_pallet.Txs().removeRecovery(),
       ];
       for (final call in variants) {
-        expect(flatten(roundTrip(call)), flatten(CallDecoder.describe(call)), reason: '${call.toJson()}');
+        expect(
+          flatten(roundTrip(call)),
+          flatten(CallDecoder.describe(call, policy: const FullCallPolicy())),
+          reason: '${call.toJson()}',
+        );
       }
     });
 

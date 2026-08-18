@@ -176,13 +176,13 @@ class VaultService {
 
   Future<void> disableBiometric() async => _storage.delete(key: _bioKeyKey);
 
-  Future<VaultContents> unlockWithBiometricKey() async {
+  Future<UnlockResult> unlockWithBiometricKey() async {
     final raw = await _storage.read(key: _bioKeyKey);
     if (raw == null) throw StateError('Biometric unlock not set up');
+    final keyBytes = base64Decode(_decodeBioEntry(raw).key);
     try {
-      return VaultContents.decode(
-        await _decrypt(await _readVault(), SecretKey(base64Decode(_decodeBioEntry(raw).key))),
-      );
+      final contents = VaultContents.decode(await _decrypt(await _readVault(), SecretKey(keyBytes)));
+      return UnlockResult(mnemonic: contents.mnemonic, accounts: contents.accounts, keyBytes: keyBytes);
     } on SecretBoxAuthenticationError {
       // The key cannot authenticate this vault, so it belongs to a previous
       // one; drop it so the broken unlock option disappears.
