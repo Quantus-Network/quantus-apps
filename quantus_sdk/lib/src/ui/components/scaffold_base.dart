@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:quantus_sdk/src/ui/components/base_background.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 
 class ScaffoldBase extends StatelessWidget {

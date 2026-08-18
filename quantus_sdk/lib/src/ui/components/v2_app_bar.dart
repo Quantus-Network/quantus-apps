@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:quantus_sdk/src/ui/components/back_button.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 
 class V2AppBar extends StatelessWidget {
