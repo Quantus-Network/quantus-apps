@@ -57,7 +57,7 @@ dev_dependencies:
   polkadart_cli:
     git:
       url: https://github.com/Quantus-Network/polkadart.git
-      ref: n13/compact-inner-type-0.7.1
+      ref: 0_7_1_quantus_1
       path: packages/polkadart_cli
 
 polkadart:

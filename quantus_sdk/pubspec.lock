@@ -652,7 +652,7 @@ packages:
     dependency: "direct dev"
     description:
       path: "packages/polkadart_cli"
-      ref: "n13/compact-inner-type-0.7.1"
+      ref: "0_7_1_quantus_1"
       resolved-ref: "2b492e0c55cc4dace77c7af3ae5d30084ba97ea5"
       url: "https://github.com/Quantus-Network/polkadart.git"
     source: git
