@@ -39,14 +39,16 @@ class WalletState {
       );
 }
 
+/// Injectable so a test can stand in for the platform biometric prompt.
+final coldAuthServiceProvider = Provider<ColdAuthService>((ref) => ColdAuthService());
+
 class WalletController extends Notifier<WalletState> {
   final VaultService _vault = VaultService();
-  final ColdAuthService _auth = ColdAuthService();
 
   List<int>? _keyBytes;
 
   VaultService get vault => _vault;
-  ColdAuthService get auth => _auth;
+  ColdAuthService get auth => ref.read(coldAuthServiceProvider);
 
   @override
   WalletState build() {
@@ -109,11 +111,12 @@ class WalletController extends Notifier<WalletState> {
   }
 
   Future<bool> unlockWithBiometric() async {
-    final authenticated = await _auth.authenticate('Unlock your cold wallet');
+    final authenticated = await auth.authenticate('Unlock your cold wallet');
     if (!authenticated) return false;
     try {
-      final contents = await _vault.unlockWithBiometricKey();
-      state = state.copyWith(status: WalletStatus.unlocked, mnemonic: contents.mnemonic, accounts: contents.accounts);
+      final result = await _vault.unlockWithBiometricKey();
+      _keyBytes = result.keyBytes;
+      state = state.copyWith(status: WalletStatus.unlocked, mnemonic: result.mnemonic, accounts: result.accounts);
       return true;
     } on SecretBoxAuthenticationError {
       // The vault removed a key that belonged to a previous vault; stop

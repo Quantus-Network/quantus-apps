@@ -7,6 +7,7 @@ import 'package:quantus_cold_wallet/models/cold_account.dart';
 import 'package:quantus_cold_wallet/providers/wallet_providers.dart';
 import 'package:quantus_cold_wallet/screens/sign_transaction_screen.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:quantus_cold_wallet/services/cold_auth_service.dart';
 import 'package:quantus_cold_wallet/services/vault_service.dart';
 import 'package:quantus_cold_wallet/theme/app_theme.dart';
 
@@ -40,6 +41,14 @@ Future<void> pumpFor(WidgetTester tester, String signer, {required Map<String, C
   await tester.pumpAndSettle();
 }
 
+class _AlwaysAuthenticates extends ColdAuthService {
+  @override
+  Future<bool> authenticate(String reason) async => true;
+
+  @override
+  Future<bool> canUseBiometrics() async => true;
+}
+
 void main() {
   group('the vault stays openable across a session', () {
     late WalletController controller;
@@ -70,18 +79,26 @@ void main() {
       expect(reopened.accounts, hasLength(2));
     });
 
-    test('a biometric unlock can still add an account', () async {
-      await controller.createWallet(
+    test('an account can be added after a biometric unlock', () async {
+      final container = ProviderContainer(
+        overrides: [coldAuthServiceProvider.overrideWithValue(_AlwaysAuthenticates())],
+      );
+      addTearDown(container.dispose);
+      final biometric = container.read(walletControllerProvider.notifier);
+
+      await biometric.createWallet(
         mnemonic: mnemonic,
         password: 'alpha',
         enableBiometric: true,
         accounts: [ColdAccount(label: 'One', index: 0)],
       );
-      controller.lock();
+      biometric.lock();
 
-      final unlocked = await VaultService().unlockWithBiometricKey();
-      expect(unlocked.keyBytes, isNotEmpty);
-      expect(unlocked.accounts, hasLength(1));
+      expect(await biometric.unlockWithBiometric(), isTrue);
+      await biometric.addAccount(ColdAccount(label: 'Two', index: 1));
+
+      expect(container.read(accountsProvider), hasLength(2));
+      expect((await VaultService().unlockWithPassword('alpha')).accounts, hasLength(2));
     });
   });
 
