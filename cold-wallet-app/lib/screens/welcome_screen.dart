@@ -1,14 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:quantus_cold_wallet/components/quantus_button.dart';
-import 'package:quantus_cold_wallet/components/scaffold_base.dart';
-import 'package:quantus_cold_wallet/components/scaffold_base_bottom_content.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:quantus_cold_wallet/providers/wallet_providers.dart';
 import 'package:quantus_cold_wallet/screens/create_wallet_screen.dart';
 import 'package:quantus_cold_wallet/screens/import_wallet_screen.dart';
 import 'package:quantus_cold_wallet/screens/secure_element_warning_screen.dart';
-import 'package:quantus_cold_wallet/theme/app_colors.dart';
-import 'package:quantus_cold_wallet/theme/app_text_styles.dart';
 
 class WelcomeScreen extends ConsumerWidget {
   const WelcomeScreen({super.key});

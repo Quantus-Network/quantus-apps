@@ -1,9 +1,7 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
-import 'package:quantus_cold_wallet/shared/context_extensions.dart';
-import 'package:quantus_cold_wallet/theme/app_colors.dart';
-import 'package:quantus_cold_wallet/theme/app_text_styles.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
 
 class MnemonicGrid extends StatelessWidget {
   final List<String> words;

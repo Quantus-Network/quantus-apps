@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:quantus_cold_wallet/components/base_background.dart';
-import 'package:quantus_cold_wallet/components/quantus_button.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:quantus_cold_wallet/providers/connectivity_provider.dart';
 import 'package:quantus_cold_wallet/providers/settings_providers.dart';
-import 'package:quantus_cold_wallet/theme/app_colors.dart';
-import 'package:quantus_cold_wallet/theme/app_text_styles.dart';
 
 /// Full-screen blocker shown whenever any network is reachable. A cold wallet
 /// must stay air-gapped, so this overlays everything and only clears once the

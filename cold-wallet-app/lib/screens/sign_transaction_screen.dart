@@ -4,18 +4,11 @@ import 'package:convert/convert.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:quantus_cold_wallet/components/animated_ur_qr.dart';
 import 'package:quantus_cold_wallet/components/call_detail_view.dart';
 import 'package:quantus_cold_wallet/components/detail_row.dart';
-import 'package:quantus_cold_wallet/components/quantus_button.dart';
 import 'package:quantus_cold_wallet/components/qr_tuning_controls.dart';
-import 'package:quantus_cold_wallet/components/scaffold_base.dart';
-import 'package:quantus_cold_wallet/components/scaffold_base_bottom_content.dart';
-import 'package:quantus_cold_wallet/components/v2_app_bar.dart';
 import 'package:quantus_cold_wallet/providers/settings_providers.dart';
 import 'package:quantus_cold_wallet/providers/wallet_providers.dart';
-import 'package:quantus_cold_wallet/theme/app_colors.dart';
-import 'package:quantus_cold_wallet/theme/app_text_styles.dart';
 
 /// Reviews a scanned signing payload and, on approval, produces the signature QR.
 ///

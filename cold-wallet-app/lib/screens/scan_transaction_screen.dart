@@ -4,8 +4,6 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:quantus_cold_wallet/debug/debug_payloads.dart';
 import 'package:quantus_cold_wallet/screens/sign_transaction_screen.dart';
-import 'package:quantus_cold_wallet/theme/app_colors.dart';
-import 'package:quantus_cold_wallet/theme/app_text_styles.dart';
 
 /// Scans a (possibly multi-part / animated) UR QR code, accumulating parts
 /// until [isCompleteUr] is satisfied, then decodes to the raw payload bytes

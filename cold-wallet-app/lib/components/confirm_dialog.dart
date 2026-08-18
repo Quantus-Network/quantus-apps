@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:quantus_cold_wallet/theme/app_colors.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
 
 Future<bool> showConfirmDialog(
   BuildContext context, {

@@ -1,10 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:quantus_cold_wallet/components/quantus_button.dart';
-import 'package:quantus_cold_wallet/components/scaffold_base.dart';
-import 'package:quantus_cold_wallet/components/scaffold_base_bottom_content.dart';
-import 'package:quantus_cold_wallet/components/v2_app_bar.dart';
-import 'package:quantus_cold_wallet/theme/app_colors.dart';
-import 'package:quantus_cold_wallet/theme/app_text_styles.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
 
 /// Shown during setup when the device reports no biometrics / device lock,
 /// which we treat as a proxy for a missing hardware-backed secure element.

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:quantus_cold_wallet/providers/wallet_providers.dart';
 import 'package:quantus_cold_wallet/screens/root_gate.dart';
-import 'package:quantus_cold_wallet/theme/app_theme.dart';
 import 'package:quantus_cold_wallet/widgets/connectivity_guard.dart';
 import 'package:quantus_cold_wallet/widgets/lock_overlay.dart';
 
