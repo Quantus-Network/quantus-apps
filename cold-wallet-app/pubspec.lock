@@ -813,8 +813,8 @@ packages:
     dependency: "direct main"
     description:
       path: "packages/polkadart"
-      ref: "0_7_3_quantus_1"
-      resolved-ref: e091e717f0d3a32a6934a0a5bb3faef8d7e5a8f2
+      ref: "0_7_3_quantus_2"
+      resolved-ref: "824ff9898ac491fe4be2f38871f2fda65bbc952d"
       url: "https://github.com/Quantus-Network/polkadart.git"
     source: git
     version: "0.7.3"
@@ -822,8 +822,8 @@ packages:
     dependency: transitive
     description:
       path: "packages/polkadart_keyring"
-      ref: "0_7_3_quantus_1"
-      resolved-ref: e091e717f0d3a32a6934a0a5bb3faef8d7e5a8f2
+      ref: "0_7_3_quantus_2"
+      resolved-ref: "824ff9898ac491fe4be2f38871f2fda65bbc952d"
       url: "https://github.com/Quantus-Network/polkadart.git"
     source: git
     version: "0.7.1"
@@ -831,8 +831,8 @@ packages:
     dependency: transitive
     description:
       path: "packages/polkadart_scale_codec"
-      ref: "0_7_3_quantus_1"
-      resolved-ref: e091e717f0d3a32a6934a0a5bb3faef8d7e5a8f2
+      ref: "0_7_3_quantus_2"
+      resolved-ref: "824ff9898ac491fe4be2f38871f2fda65bbc952d"
       url: "https://github.com/Quantus-Network/polkadart.git"
     source: git
     version: "1.6.0"
@@ -942,8 +942,8 @@ packages:
     dependency: transitive
     description:
       path: "packages/secp256k1_ecdsa"
-      ref: "0_7_3_quantus_1"
-      resolved-ref: e091e717f0d3a32a6934a0a5bb3faef8d7e5a8f2
+      ref: "0_7_3_quantus_2"
+      resolved-ref: "824ff9898ac491fe4be2f38871f2fda65bbc952d"
       url: "https://github.com/Quantus-Network/polkadart.git"
     source: git
     version: "0.6.2"
@@ -1068,8 +1068,8 @@ packages:
     dependency: transitive
     description:
       path: "packages/sr25519"
-      ref: "0_7_3_quantus_1"
-      resolved-ref: e091e717f0d3a32a6934a0a5bb3faef8d7e5a8f2
+      ref: "0_7_3_quantus_2"
+      resolved-ref: "824ff9898ac491fe4be2f38871f2fda65bbc952d"
       url: "https://github.com/Quantus-Network/polkadart.git"
     source: git
     version: "0.7.1"
@@ -1077,8 +1077,8 @@ packages:
     dependency: transitive
     description:
       path: "packages/ss58"
-      ref: "0_7_3_quantus_1"
-      resolved-ref: e091e717f0d3a32a6934a0a5bb3faef8d7e5a8f2
+      ref: "0_7_3_quantus_2"
+      resolved-ref: "824ff9898ac491fe4be2f38871f2fda65bbc952d"
       url: "https://github.com/Quantus-Network/polkadart.git"
     source: git
     version: "1.3.1"
@@ -1126,8 +1126,8 @@ packages:
     dependency: transitive
     description:
       path: "packages/substrate_bip39"
-      ref: "0_7_3_quantus_1"
-      resolved-ref: e091e717f0d3a32a6934a0a5bb3faef8d7e5a8f2
+      ref: "0_7_3_quantus_2"
+      resolved-ref: "824ff9898ac491fe4be2f38871f2fda65bbc952d"
       url: "https://github.com/Quantus-Network/polkadart.git"
     source: git
     version: "0.7.1"
@@ -1135,8 +1135,8 @@ packages:
     dependency: transitive
     description:
       path: "packages/substrate_metadata"
-      ref: "0_7_3_quantus_1"
-      resolved-ref: e091e717f0d3a32a6934a0a5bb3faef8d7e5a8f2
+      ref: "0_7_3_quantus_2"
+      resolved-ref: "824ff9898ac491fe4be2f38871f2fda65bbc952d"
       url: "https://github.com/Quantus-Network/polkadart.git"
     source: git
     version: "1.6.0"

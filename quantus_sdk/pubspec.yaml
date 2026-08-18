@@ -23,7 +23,7 @@ dependencies:
   polkadart:
     git:
       url: https://github.com/Quantus-Network/polkadart.git
-      ref: 0_7_3_quantus_1
+      ref: 0_7_3_quantus_2
       path: packages/polkadart
   bip39_mnemonic: ^4.0.1
   convert: ^3.1.2
@@ -38,7 +38,7 @@ dependencies:
   ss58:
     git:
       url: https://github.com/Quantus-Network/polkadart.git
-      ref: 0_7_3_quantus_1
+      ref: 0_7_3_quantus_2
       path: packages/ss58
   intl: ^0.20.2
   flutter_secure_storage: ^10.1.0
@@ -62,18 +62,18 @@ dev_dependencies:
   polkadart_scale_codec:
     git:
       url: https://github.com/Quantus-Network/polkadart.git
-      ref: 0_7_3_quantus_1
+      ref: 0_7_3_quantus_2
       path: packages/polkadart_scale_codec
   substrate_metadata:
     git:
       url: https://github.com/Quantus-Network/polkadart.git
-      ref: 0_7_3_quantus_1
+      ref: 0_7_3_quantus_2
       path: packages/substrate_metadata
   # DO NOT UPDATE polkadart_cli - must match polkadart 0.7.x. See note above.
   polkadart_cli:
     git:
       url: https://github.com/Quantus-Network/polkadart.git
-      ref: 0_7_3_quantus_1
+      ref: 0_7_3_quantus_2
       path: packages/polkadart_cli
 polkadart:
   output_dir: lib/generated
