@@ -37,7 +37,7 @@ class $MultiAddress {
     return Id(value0);
   }
 
-  Index index(BigInt value0) {
+  Index index(dynamic value0) {
     return Index(value0);
   }
 
@@ -153,24 +153,24 @@ class Index extends MultiAddress {
   const Index(this.value0);
 
   factory Index._decode(_i1.Input input) {
-    return Index(_i1.CompactBigIntCodec.codec.decode(input));
+    return Index(_i1.NullCodec.codec.decode(input));
   }
 
   /// AccountIndex
-  final BigInt value0;
+  final dynamic value0;
 
   @override
-  Map<String, BigInt> toJson() => {'Index': value0};
+  Map<String, dynamic> toJson() => {'Index': null};
 
   int _sizeHint() {
     int size = 1;
-    size = size + _i1.CompactBigIntCodec.codec.sizeHint(value0);
+    size = size + _i1.NullCodec.codec.sizeHint(value0);
     return size;
   }
 
   void encodeTo(_i1.Output output) {
     _i1.U8Codec.codec.encodeTo(1, output);
-    _i1.CompactBigIntCodec.codec.encodeTo(value0, output);
+    _i1.NullCodec.codec.encodeTo(value0, output);
   }
 
   @override

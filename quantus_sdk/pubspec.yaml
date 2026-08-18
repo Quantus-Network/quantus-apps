@@ -51,7 +51,11 @@ dev_dependencies:
   flutter_lints: ^6.0.0
   qr_flutter: ^4.1.0
   # DO NOT UPDATE polkadart_cli - must match polkadart 0.7.x. See note above.
-  polkadart_cli: ^0.7.1
+  polkadart_cli:
+    git:
+      url: https://github.com/Quantus-Network/polkadart.git
+      ref: n13/compact-inner-type-0.7.1
+      path: packages/polkadart_cli
 
 polkadart:
   output_dir: lib/generated

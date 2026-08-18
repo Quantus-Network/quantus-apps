@@ -2,9 +2,8 @@
 import 'dart:typed_data' as _i2;
 
 import 'package:polkadart/scale_codec.dart' as _i1;
-import 'package:quiver/collection.dart' as _i5;
+import 'package:quiver/collection.dart' as _i4;
 
-import '../../sp_arithmetic/per_things/permill.dart' as _i4;
 import '../../sp_core/crypto/account_id32.dart' as _i3;
 
 /// The `Event` enum of this pallet
@@ -29,7 +28,7 @@ abstract class Event {
     return codec.sizeHint(this);
   }
 
-  Map<String, Map<String, dynamic>> toJson();
+  Map<String, Map<String, List<int>?>> toJson();
 }
 
 class $Event {
@@ -37,10 +36,6 @@ class $Event {
 
   TreasuryAccountUpdated treasuryAccountUpdated({_i3.AccountId32? oldAccount, required _i3.AccountId32 newAccount}) {
     return TreasuryAccountUpdated(oldAccount: oldAccount, newAccount: newAccount);
-  }
-
-  TreasuryPortionUpdated treasuryPortionUpdated({required _i4.Permill newPortion}) {
-    return TreasuryPortionUpdated(newPortion: newPortion);
   }
 }
 
@@ -53,8 +48,6 @@ class $EventCodec with _i1.Codec<Event> {
     switch (index) {
       case 0:
         return TreasuryAccountUpdated._decode(input);
-      case 1:
-        return TreasuryPortionUpdated._decode(input);
       default:
         throw Exception('Event: Invalid variant index: "$index"');
     }
@@ -66,9 +59,6 @@ class $EventCodec with _i1.Codec<Event> {
       case TreasuryAccountUpdated:
         (value as TreasuryAccountUpdated).encodeTo(output);
         break;
-      case TreasuryPortionUpdated:
-        (value as TreasuryPortionUpdated).encodeTo(output);
-        break;
       default:
         throw Exception('Event: Unsupported "$value" of type "${value.runtimeType}"');
     }
@@ -79,8 +69,6 @@ class $EventCodec with _i1.Codec<Event> {
     switch (value.runtimeType) {
       case TreasuryAccountUpdated:
         return (value as TreasuryAccountUpdated)._sizeHint();
-      case TreasuryPortionUpdated:
-        return (value as TreasuryPortionUpdated)._sizeHint();
       default:
         throw Exception('Event: Unsupported "$value" of type "${value.runtimeType}"');
     }
@@ -89,7 +77,7 @@ class $EventCodec with _i1.Codec<Event> {
 
 /// The treasury account was updated.
 ///
-/// Note: This only redirects where future mining rewards are sent. Any balance
+/// Note: This only redirects where future treasury credits are sent. Any balance
 /// accumulated in the old account remains there and is NOT automatically migrated.
 /// Use a separate balance transfer if funds need to be moved.
 class TreasuryAccountUpdated extends Event {
@@ -107,7 +95,7 @@ class TreasuryAccountUpdated extends Event {
   final _i3.AccountId32? oldAccount;
 
   /// T::AccountId
-  /// The new treasury account that will receive future rewards.
+  /// The new treasury account that will receive future credits.
   final _i3.AccountId32 newAccount;
 
   @override
@@ -131,43 +119,8 @@ class TreasuryAccountUpdated extends Event {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is TreasuryAccountUpdated && other.oldAccount == oldAccount && _i5.listsEqual(other.newAccount, newAccount);
+      other is TreasuryAccountUpdated && other.oldAccount == oldAccount && _i4.listsEqual(other.newAccount, newAccount);
 
   @override
   int get hashCode => Object.hash(oldAccount, newAccount);
-}
-
-/// The treasury portion (share of mining rewards) was updated.
-class TreasuryPortionUpdated extends Event {
-  const TreasuryPortionUpdated({required this.newPortion});
-
-  factory TreasuryPortionUpdated._decode(_i1.Input input) {
-    return TreasuryPortionUpdated(newPortion: _i1.U32Codec.codec.decode(input));
-  }
-
-  /// Permill
-  final _i4.Permill newPortion;
-
-  @override
-  Map<String, Map<String, int>> toJson() => {
-    'TreasuryPortionUpdated': {'newPortion': newPortion},
-  };
-
-  int _sizeHint() {
-    int size = 1;
-    size = size + const _i4.PermillCodec().sizeHint(newPortion);
-    return size;
-  }
-
-  void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(1, output);
-    _i1.U32Codec.codec.encodeTo(newPortion, output);
-  }
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) || other is TreasuryPortionUpdated && other.newPortion == newPortion;
-
-  @override
-  int get hashCode => newPortion.hashCode;
 }

@@ -2,9 +2,8 @@
 import 'dart:typed_data' as _i2;
 
 import 'package:polkadart/scale_codec.dart' as _i1;
-import 'package:quiver/collection.dart' as _i5;
+import 'package:quiver/collection.dart' as _i4;
 
-import '../../sp_arithmetic/per_things/permill.dart' as _i4;
 import '../../sp_core/crypto/account_id32.dart' as _i3;
 
 /// Contains a variant per dispatchable extrinsic that this pallet has.
@@ -29,7 +28,7 @@ abstract class Call {
     return codec.sizeHint(this);
   }
 
-  Map<String, Map<String, dynamic>> toJson();
+  Map<String, Map<String, List<int>>> toJson();
 }
 
 class $Call {
@@ -37,10 +36,6 @@ class $Call {
 
   SetTreasuryAccount setTreasuryAccount({required _i3.AccountId32 account}) {
     return SetTreasuryAccount(account: account);
-  }
-
-  SetTreasuryPortion setTreasuryPortion({required _i4.Permill portion}) {
-    return SetTreasuryPortion(portion: portion);
   }
 }
 
@@ -53,8 +48,6 @@ class $CallCodec with _i1.Codec<Call> {
     switch (index) {
       case 0:
         return SetTreasuryAccount._decode(input);
-      case 1:
-        return SetTreasuryPortion._decode(input);
       default:
         throw Exception('Call: Invalid variant index: "$index"');
     }
@@ -66,9 +59,6 @@ class $CallCodec with _i1.Codec<Call> {
       case SetTreasuryAccount:
         (value as SetTreasuryAccount).encodeTo(output);
         break;
-      case SetTreasuryPortion:
-        (value as SetTreasuryPortion).encodeTo(output);
-        break;
       default:
         throw Exception('Call: Unsupported "$value" of type "${value.runtimeType}"');
     }
@@ -79,8 +69,6 @@ class $CallCodec with _i1.Codec<Call> {
     switch (value.runtimeType) {
       case SetTreasuryAccount:
         return (value as SetTreasuryAccount)._sizeHint();
-      case SetTreasuryPortion:
-        return (value as SetTreasuryPortion)._sizeHint();
       default:
         throw Exception('Call: Unsupported "$value" of type "${value.runtimeType}"');
     }
@@ -89,7 +77,7 @@ class $CallCodec with _i1.Codec<Call> {
 
 /// Set the treasury account. Root only. Zero address is rejected (funds would be locked).
 ///
-/// **Important**: This only changes where *future* mining rewards are sent. Any balance
+/// **Important**: This only changes where *future* treasury credits are sent. Any balance
 /// that has already accumulated in the current treasury account is NOT automatically
 /// migrated to the new account. If you need to move existing funds, perform a separate
 /// balance transfer (e.g., via governance proposal) after updating the account.
@@ -121,42 +109,8 @@ class SetTreasuryAccount extends Call {
 
   @override
   bool operator ==(Object other) =>
-      identical(this, other) || other is SetTreasuryAccount && _i5.listsEqual(other.account, account);
+      identical(this, other) || other is SetTreasuryAccount && _i4.listsEqual(other.account, account);
 
   @override
   int get hashCode => account.hashCode;
-}
-
-/// Set the treasury portion (Permill, 0–100%). Root only.
-class SetTreasuryPortion extends Call {
-  const SetTreasuryPortion({required this.portion});
-
-  factory SetTreasuryPortion._decode(_i1.Input input) {
-    return SetTreasuryPortion(portion: _i1.U32Codec.codec.decode(input));
-  }
-
-  /// Permill
-  final _i4.Permill portion;
-
-  @override
-  Map<String, Map<String, int>> toJson() => {
-    'set_treasury_portion': {'portion': portion},
-  };
-
-  int _sizeHint() {
-    int size = 1;
-    size = size + const _i4.PermillCodec().sizeHint(portion);
-    return size;
-  }
-
-  void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(1, output);
-    _i1.U32Codec.codec.encodeTo(portion, output);
-  }
-
-  @override
-  bool operator ==(Object other) => identical(this, other) || other is SetTreasuryPortion && other.portion == portion;
-
-  @override
-  int get hashCode => portion.hashCode;
 }

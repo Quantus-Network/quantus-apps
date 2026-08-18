@@ -3,7 +3,6 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:quantus_sdk/generated/planck/pallets/assets.dart' as assets_pallet;
 import 'package:quantus_sdk/generated/planck/pallets/balances.dart' as balances_pallet;
 import 'package:quantus_sdk/generated/planck/pallets/multisig.dart' as multisig_pallet;
 import 'package:quantus_sdk/generated/planck/pallets/reversible_transfers.dart' as reversible_pallet;
@@ -77,11 +76,6 @@ void main() {
   group('every field reaches the screen exactly once', () {
     final fixtures = <String, RuntimeCall>{
       'plain transfer': const balances_pallet.Txs().transferAllowDeath(dest: account(bobId), value: oneToken),
-      'force_transfer with source == destination': const balances_pallet.Txs().forceTransfer(
-        source: account(bobId),
-        dest: account(bobId),
-        value: oneToken,
-      ),
       'multisig approve wrapping a transfer': const multisig_pallet.Txs().approve(
         multisigAddress: aliceId,
         proposalId: 12,
@@ -93,17 +87,6 @@ void main() {
     for (final entry in fixtures.entries) {
       test(entry.key, () => expectEveryFieldShownOnce(roundTrip(entry.value)));
     }
-  });
-
-  test('force_transfer keeps its Source row even when it equals the recipient', () {
-    final call = roundTrip(
-      const balances_pallet.Txs().forceTransfer(source: account(bobId), dest: account(bobId), value: oneToken),
-    );
-    final body = callSummaryBody(call);
-    final labels = body.whereType<CallFieldView>().map((w) => w.field.label).toList();
-    expect(labels, contains('Source'));
-    expect(labels, isNot(contains('Destination')), reason: 'the To row already restates the destination');
-    expect(body.any((w) => w is AddressWithCheckphrase && w.label == 'To'), isTrue);
   });
 
   group('sign screen', () {
@@ -136,17 +119,6 @@ void main() {
       expect(find.text('Account default reversibility window'), findsOneWidget);
     });
 
-    testWidgets('an asset hero says its amount is in raw units', (tester) async {
-      await pumpSignScreen(
-        tester,
-        DebugPayloads.withExtensions(
-          const assets_pallet.Txs().transfer(id: BigInt.one, target: account(bobId), amount: BigInt.from(4200)),
-        ),
-      );
-      expect(find.text('ASSET SEND'), findsOneWidget);
-      expect(find.text('4200 raw units of asset 1'), findsOneWidget);
-    });
-
     testWidgets('signer row reads From for a plain send', (tester) async {
       await pumpSignScreen(
         tester,
@@ -156,16 +128,6 @@ void main() {
       );
       expect(find.text('SEND'), findsOneWidget);
       expect(signerRow(tester).label, 'From');
-    });
-
-    testWidgets('signer row reads Signed by when the funds leave an explicit source', (tester) async {
-      await pumpSignScreen(
-        tester,
-        DebugPayloads.withExtensions(
-          const balances_pallet.Txs().forceTransfer(source: account(aliceId), dest: account(bobId), value: oneToken),
-        ),
-      );
-      expect(signerRow(tester).label, 'Signed by');
     });
 
     testWidgets('signer row reads Signed by when nothing is sent', (tester) async {

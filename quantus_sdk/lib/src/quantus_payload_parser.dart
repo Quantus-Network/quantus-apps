@@ -106,8 +106,7 @@ class ParsedPayload {
   /// indices — the field labels may belong to a different call than the one that
   /// will execute. Signers must say so prominently.
   bool get specMatchesBundled =>
-      extensions.specVersion == AppConstants.bundledSpecVersion &&
-      extensions.transactionVersion == AppConstants.bundledTransactionVersion;
+      AppConstants.compatibleRuntimes.contains((spec: extensions.specVersion, tx: extensions.transactionVersion));
 }
 
 class QuantusPayloadParser {

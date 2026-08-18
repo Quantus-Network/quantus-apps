@@ -6,9 +6,9 @@ import 'package:polkadart/scale_codec.dart';
 import 'package:quantus_sdk/generated/planck/pallets/balances.dart' as balances_pallet;
 import 'package:quantus_sdk/generated/planck/pallets/multisig.dart' as multisig_pallet;
 import 'package:quantus_sdk/generated/planck/pallets/preimage.dart' as preimage_pallet;
+import 'package:quantus_sdk/generated/planck/pallets/recovery.dart' as recovery_pallet;
 import 'package:quantus_sdk/generated/planck/pallets/system.dart' as system_pallet;
 import 'package:quantus_sdk/generated/planck/pallets/tech_collective.dart' as collective_pallet;
-import 'package:quantus_sdk/generated/planck/pallets/utility.dart' as utility_pallet;
 import 'package:quantus_sdk/generated/planck/types/sp_runtime/multiaddress/multi_address.dart' as multi_address;
 import 'package:quantus_sdk/quantus_sdk.dart';
 
@@ -268,23 +268,23 @@ void main() {
       });
 
       test('rejects a call nested deeper than the limit', () {
-        final nested = const utility_pallet.Txs().batch(
-          calls: [
-            const utility_pallet.Txs().batch(
-              calls: [
-                const utility_pallet.Txs().batch(calls: [const system_pallet.Txs().remark(remark: <int>[])]),
-              ],
-            ),
-          ],
-        );
+        RuntimeCall nested = const system_pallet.Txs().remark(remark: <int>[]);
+        for (var i = 0; i < 3; i++) {
+          nested = const recovery_pallet.Txs().asRecovered(
+            account: multi_address.MultiAddress.values.id(Uint8List.fromList(List.filled(32, 0xAA))),
+            call: nested,
+          );
+        }
         expect(() => QuantusPayloadParser.parsePayload(payloadForCall(nested)), throwsRejection('nesting depth'));
       });
 
       test('rejects the deepest chain the payload cap can carry', () {
-        // `Utility.batch` of one costs 3 bytes a level, so the 8 KiB cap still
-        // leaves room for thousands of levels: the cap is not the depth limit.
+        // `Recovery.as_recovered` costs 35 bytes a level, so the 8 KiB cap still
+        // leaves room for far more levels than the depth limit allows: the cap is
+        // not the depth limit.
+        final recoveryPallet = const recovery_pallet.Txs().removeRecovery().encode()[0];
         final chain = [
-          for (var i = 0; i < 2000; i++) ...[9, 0, 4], // Utility(9) · batch(0), one call
+          for (var i = 0; i < 200; i++) ...[recoveryPallet, 0, 0, ...List.filled(32, 0xAA)],
           0, 0, 0, // System(0) · remark(0), empty
         ];
         final payload = Uint8List.fromList([...chain, ...extSuffix()]);

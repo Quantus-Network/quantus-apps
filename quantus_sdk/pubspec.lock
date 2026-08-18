@@ -651,11 +651,12 @@ packages:
   polkadart_cli:
     dependency: "direct dev"
     description:
-      name: polkadart_cli
-      sha256: "6a4545652a23aa9ea425d05799101059eb040384dd3d09f3f9b5bb1b7ff7812b"
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.7.2"
+      path: "packages/polkadart_cli"
+      ref: "n13/compact-inner-type-0.7.1"
+      resolved-ref: "2b492e0c55cc4dace77c7af3ae5d30084ba97ea5"
+      url: "https://github.com/Quantus-Network/polkadart.git"
+    source: git
+    version: "0.7.1"
   polkadart_keyring:
     dependency: transitive
     description:

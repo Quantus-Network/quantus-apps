@@ -25,7 +25,6 @@ import 'package:quantus_sdk/generated/planck/types/frame_support/dispatch/raw_or
 import 'package:quantus_sdk/generated/planck/types/frame_support/traits/preimages/bounded.dart' as bounded;
 import 'package:quantus_sdk/generated/planck/types/frame_support/traits/schedule/dispatch_time.dart' as dispatch_time;
 import 'package:quantus_sdk/generated/planck/types/frame_system/pallet/call.dart' as system;
-import 'package:quantus_sdk/generated/planck/types/pallet_assets/pallet/call.dart' as assets;
 import 'package:quantus_sdk/generated/planck/types/pallet_balances/pallet/call.dart' as balances;
 import 'package:quantus_sdk/generated/planck/types/pallet_multisig/pallet/call.dart' as multisig;
 import 'package:quantus_sdk/generated/planck/types/pallet_preimage/pallet/call.dart' as preimage;
@@ -35,10 +34,10 @@ import 'package:quantus_sdk/generated/planck/types/pallet_referenda/pallet/call.
 import 'package:quantus_sdk/generated/planck/types/pallet_reversible_transfers/pallet/call.dart' as reversible;
 import 'package:quantus_sdk/generated/planck/types/pallet_treasury/pallet/call.dart' as treasury;
 import 'package:quantus_sdk/generated/planck/types/pallet_utility/pallet/call.dart' as utility;
+import 'package:quantus_sdk/generated/planck/types/pallet_vesting/pallet/call.dart' as vesting;
 import 'package:quantus_sdk/generated/planck/types/quantus_runtime/origin_caller.dart' as origin_caller;
 import 'package:quantus_sdk/generated/planck/types/quantus_runtime/runtime_call.dart' as runtime;
 import 'package:quantus_sdk/generated/planck/types/sp_runtime/multiaddress/multi_address.dart' as multi_address;
-import 'package:quantus_sdk/generated/planck/types/sp_weights/weight_v2/weight.dart' as weight_v2;
 import 'package:quantus_sdk/src/chain/decoded_call.dart';
 import 'package:quantus_sdk/src/extensions/address_extension.dart';
 import 'package:quantus_sdk/src/services/datetime_formatting_service.dart';
@@ -94,7 +93,6 @@ class CallDecoder {
     return switch (call) {
       runtime.Balances(:final value0) => _balances(value0),
       runtime.ReversibleTransfers(:final value0) => _reversible(value0),
-      runtime.Assets(:final value0) => _assets(value0),
       runtime.Multisig(:final value0) => _multisig(value0, depth),
       runtime.Preimage(:final value0) => _preimage(value0, depth),
       runtime.TechCollective(:final value0) => _collective(value0),
@@ -102,6 +100,7 @@ class CallDecoder {
       runtime.TreasuryPallet(:final value0) => _treasury(value0),
       runtime.Utility(:final value0) => _utility(value0, depth),
       runtime.Recovery(:final value0) => _recovery(value0, depth),
+      runtime.Vesting(:final value0) => _vesting(value0),
       runtime.System(:final value0) => _system(value0),
       _ => _generic(call),
     };
@@ -123,52 +122,40 @@ class CallDecoder {
   // spending a byte.
 
   // Read off the generated encoder rather than written down, so a runtime that
-  // renumbers its pallets cannot quietly route a nesting call past this decoder.
-  // The call indices below are hardcoded but covered: decoding one wrongly
-  // produces a different tree than the generated codec, which the tests compare.
-  static final int _utilityPalletIndex = const runtime.Utility(utility.Batch(calls: [])).encode()[0];
-  static final int _recoveryPalletIndex = const runtime.Recovery(recovery.RemoveRecovery()).encode()[0];
-  static const int _asRecoveredCallIndex = 0;
+  // renumbers its pallets or calls cannot quietly route a nesting call past this
+  // decoder — and so a call this runtime drops fails to compile here.
+  static final Uint8List _batchAll = const runtime.Utility(utility.BatchAll(calls: [])).encode();
+  static final int _utilityPalletIndex = _batchAll[0];
+  static final int _batchAllCallIndex = _batchAll[1];
+  static final Uint8List _asRecovered = runtime.Recovery(
+    recovery.AsRecovered(
+      account: multi_address.Id(Uint8List(32)),
+      call: const runtime.System(system.Remark(remark: [])),
+    ),
+  ).encode();
+  static final int _recoveryPalletIndex = _asRecovered[0];
+  static final int _asRecoveredCallIndex = _asRecovered[1];
 
-  static runtime.RuntimeCall _decodeCall(ByteInput input, int depth) {
+  static runtime.RuntimeCall _decodeCall(ByteInput input, int depth, [bool inBatchAll = false]) {
     if (depth > maxCallNestingDepth) {
       throw CallNestingLimitException(depth);
     }
     final pallet = _readIndex(input);
-    if (pallet == _utilityPalletIndex) return runtime.Utility(_decodeUtility(input, depth));
+    if (pallet == _utilityPalletIndex) return runtime.Utility(_decodeUtility(input, depth, inBatchAll));
     if (pallet == _recoveryPalletIndex) return runtime.Recovery(_decodeRecovery(input, depth));
     input.offset -= 1;
     return runtime.RuntimeCall.codec.decode(input);
   }
 
-  static utility.Call _decodeUtility(ByteInput input, int depth) {
+  static utility.Call _decodeUtility(ByteInput input, int depth, bool inBatchAll) {
     final variant = _readIndex(input);
-    switch (variant) {
-      case 0:
-        return utility.Batch(calls: _decodeCalls(input, depth));
-      case 1:
-        return utility.AsDerivative(index: U16Codec.codec.decode(input), call: _decodeCall(input, depth + 1));
-      case 2:
-        return utility.BatchAll(calls: _decodeCalls(input, depth));
-      case 3:
-        return utility.DispatchAs(
-          asOrigin: origin_caller.OriginCaller.codec.decode(input),
-          call: _decodeCall(input, depth + 1),
-        );
-      case 4:
-        return utility.ForceBatch(calls: _decodeCalls(input, depth));
-      case 5:
-        return utility.WithWeight(call: _decodeCall(input, depth + 1), weight: weight_v2.Weight.codec.decode(input));
-      case 6:
-        return utility.IfElse(main: _decodeCall(input, depth + 1), fallback: _decodeCall(input, depth + 1));
-      case 7:
-        return utility.DispatchAsFallible(
-          asOrigin: origin_caller.OriginCaller.codec.decode(input),
-          call: _decodeCall(input, depth + 1),
-        );
-      default:
-        throw FormatException('Utility: invalid call index "$variant"');
+    if (variant != _batchAllCallIndex) {
+      throw FormatException('Utility: invalid call index "$variant"');
     }
+    if (inBatchAll) {
+      throw const FormatException('Utility: batch_all cannot be nested inside another batch_all');
+    }
+    return utility.BatchAll(calls: _decodeCalls(input, depth, true));
   }
 
   static recovery.Call _decodeRecovery(ByteInput input, int depth) {
@@ -182,13 +169,13 @@ class CallDecoder {
     );
   }
 
-  static List<runtime.RuntimeCall> _decodeCalls(ByteInput input, int depth) {
+  static List<runtime.RuntimeCall> _decodeCalls(ByteInput input, int depth, bool inBatchAll) {
     final count = CompactCodec.codec.decode(input);
     final remaining = input.remainingLength ?? 0;
     if (count > remaining) {
       throw FormatException('Batch claims $count calls but only $remaining bytes remain');
     }
-    return [for (var i = 0; i < count; i++) _decodeCall(input, depth + 1)];
+    return [for (var i = 0; i < count; i++) _decodeCall(input, depth + 1, inBatchAll)];
   }
 
   /// The next pallet or call index byte. A call that ends here is truncated.
@@ -217,44 +204,12 @@ class CallDecoder {
             _boolField('Keep account alive', keepAlive),
           ],
         );
-      case balances.ForceTransfer(:final source, :final dest, :final value):
-        final destination = _addressField('Destination', dest);
-        final amount = AmountField('Amount', value);
-        return DecodedCall(
-          pallet: 'Balances',
-          call: 'force_transfer',
-          fields: [_addressField('Source', source), destination, amount],
-          summary: _transferSummary(destination, amount),
-        );
-      case balances.ForceUnreserve(:final who, :final amount):
-        return DecodedCall(
-          pallet: 'Balances',
-          call: 'force_unreserve',
-          fields: [_addressField('Account', who), AmountField('Amount', amount)],
-        );
-      case balances.ForceSetBalance(:final who, :final newFree):
-        return DecodedCall(
-          pallet: 'Balances',
-          call: 'force_set_balance',
-          fields: [_addressField('Account', who), AmountField('New free balance', newFree)],
-        );
-      case balances.ForceAdjustTotalIssuance(:final direction, :final delta):
-        return DecodedCall(
-          pallet: 'Balances',
-          call: 'force_adjust_total_issuance',
-          fields: [
-            ValueField('Direction', direction.variantName, kind: ValueKind.text),
-            AmountField('Delta', delta),
-          ],
-        );
       case balances.Burn(:final value, :final keepAlive):
         return DecodedCall(
           pallet: 'Balances',
           call: 'burn',
           fields: [AmountField('Amount', value), _boolField('Keep account alive', keepAlive)],
         );
-      case balances.UpgradeAccounts(:final who):
-        return DecodedCall(pallet: 'Balances', call: 'upgrade_accounts', fields: [_accountListField('Accounts', who)]);
       default:
         return _generic(runtime.Balances(call));
     }
@@ -303,34 +258,6 @@ class CallDecoder {
           fields: [destination, value, _delayField('Reversible for', delay)],
           summary: _transferSummary(destination, value, reversible: true),
         );
-      case reversible.ScheduleAssetTransfer(:final assetId, :final dest, :final amount):
-        final destination = _addressField('Destination', dest);
-        final value = AmountField('Amount', amount, assetId: assetId);
-        return DecodedCall(
-          pallet: 'ReversibleTransfers',
-          call: 'schedule_asset_transfer',
-          fields: [
-            ValueField('Asset id', '$assetId', kind: ValueKind.number),
-            destination,
-            value,
-            _defaultWindowField,
-          ],
-          summary: _transferSummary(destination, value, reversible: true),
-        );
-      case reversible.ScheduleAssetTransferWithDelay(:final assetId, :final dest, :final amount, :final delay):
-        final destination = _addressField('Destination', dest);
-        final value = AmountField('Amount', amount, assetId: assetId);
-        return DecodedCall(
-          pallet: 'ReversibleTransfers',
-          call: 'schedule_asset_transfer_with_delay',
-          fields: [
-            ValueField('Asset id', '$assetId', kind: ValueKind.number),
-            destination,
-            value,
-            _delayField('Reversible for', delay),
-          ],
-          summary: _transferSummary(destination, value, reversible: true),
-        );
       case reversible.SetHighSecurity(:final delay, :final guardian):
         return DecodedCall(
           pallet: 'ReversibleTransfers',
@@ -354,97 +281,6 @@ class CallDecoder {
       default:
         return _generic(runtime.ReversibleTransfers(call));
     }
-  }
-
-  // ------------------------------------------------------------------ Assets
-
-  static DecodedCall _assets(assets.Call call) {
-    switch (call) {
-      case assets.Transfer(:final id, :final target, :final amount):
-        return _assetTransfer('transfer', id, target, amount);
-      case assets.TransferKeepAlive(:final id, :final target, :final amount):
-        return _assetTransfer('transfer_keep_alive', id, target, amount);
-      case assets.TransferAll(:final id, :final dest, :final keepAlive):
-        return DecodedCall(
-          pallet: 'Assets',
-          call: 'transfer_all',
-          fields: [
-            _assetIdField(id),
-            _addressField('Destination', dest),
-            const ValueField('Amount', 'Entire asset balance', kind: ValueKind.text),
-            _boolField('Keep account alive', keepAlive),
-          ],
-        );
-      case assets.Mint(:final id, :final beneficiary, :final amount):
-        return DecodedCall(
-          pallet: 'Assets',
-          call: 'mint',
-          fields: [
-            _assetIdField(id),
-            _addressField('Beneficiary', beneficiary),
-            AmountField('Amount', amount, assetId: id.toInt()),
-          ],
-        );
-      case assets.Burn(:final id, :final who, :final amount):
-        return DecodedCall(
-          pallet: 'Assets',
-          call: 'burn',
-          fields: [
-            _assetIdField(id),
-            _addressField('Account', who),
-            AmountField('Amount', amount, assetId: id.toInt()),
-          ],
-        );
-      case assets.Freeze(:final id, :final who):
-        return DecodedCall(
-          pallet: 'Assets',
-          call: 'freeze',
-          fields: [_assetIdField(id), _addressField('Account', who)],
-        );
-      case assets.Thaw(:final id, :final who):
-        return DecodedCall(pallet: 'Assets', call: 'thaw', fields: [_assetIdField(id), _addressField('Account', who)]);
-      case assets.SetTeam(:final id, :final issuer, :final admin, :final freezer):
-        return DecodedCall(
-          pallet: 'Assets',
-          call: 'set_team',
-          fields: [
-            _assetIdField(id),
-            _addressField('Issuer', issuer),
-            _addressField('Admin', admin),
-            _addressField('Freezer', freezer),
-          ],
-        );
-      case assets.TransferOwnership(:final id, :final owner):
-        return DecodedCall(
-          pallet: 'Assets',
-          call: 'transfer_ownership',
-          fields: [_assetIdField(id), _addressField('New owner', owner)],
-        );
-      case assets.SetMetadata(:final id, :final name, :final symbol, :final decimals):
-        return DecodedCall(
-          pallet: 'Assets',
-          call: 'set_metadata',
-          fields: [
-            _assetIdField(id),
-            ValueField('Name', _utf8OrHex(name), kind: ValueKind.text),
-            ValueField('Symbol', _utf8OrHex(symbol), kind: ValueKind.text),
-            ValueField('Decimals', '$decimals', kind: ValueKind.number),
-          ],
-        );
-      default:
-        return _generic(runtime.Assets(call));
-    }
-  }
-
-  static DecodedCall _assetTransfer(String name, BigInt id, multi_address.MultiAddress target, BigInt amount) {
-    final destination = _addressField('Destination', target);
-    final value = AmountField('Amount', amount, assetId: id.toInt());
-    return DecodedCall(
-      pallet: 'Assets',
-      call: name,
-      fields: [_assetIdField(id), destination, value],
-      summary: _transferSummary(destination, value),
-    );
   }
 
   // ---------------------------------------------------------------- Multisig
@@ -657,14 +493,6 @@ class CallDecoder {
           call: 'set_treasury_account',
           fields: [_accountField('Treasury account', account)],
         );
-      case treasury.SetTreasuryPortion(:final portion):
-        // Permill: parts per million.
-        final percent = (portion / 10000).toStringAsFixed(4);
-        return DecodedCall(
-          pallet: 'TreasuryPallet',
-          call: 'set_treasury_portion',
-          fields: [ValueField('Portion', '$percent% ($portion per million)', kind: ValueKind.number)],
-        );
       default:
         return _generic(runtime.TreasuryPallet(call));
     }
@@ -674,47 +502,8 @@ class CallDecoder {
 
   static DecodedCall _utility(utility.Call call, int depth) {
     switch (call) {
-      case utility.Batch(:final calls):
-        return _batch('batch', calls, depth);
       case utility.BatchAll(:final calls):
         return _batch('batch_all', calls, depth);
-      case utility.ForceBatch(:final calls):
-        return _batch('force_batch', calls, depth);
-      case utility.AsDerivative(:final index, :final call):
-        final inner = _describe(call, depth + 1);
-        return DecodedCall(
-          pallet: 'Utility',
-          call: 'as_derivative',
-          fields: [
-            ValueField('Derivative index', '$index', kind: ValueKind.number),
-            NestedCallField('Call', inner),
-          ],
-          summary: inner.summary,
-        );
-      case utility.DispatchAs(:final asOrigin, :final call):
-        return _dispatchAs('dispatch_as', asOrigin, call, depth);
-      case utility.DispatchAsFallible(:final asOrigin, :final call):
-        return _dispatchAs('dispatch_as_fallible', asOrigin, call, depth);
-      case utility.WithWeight(:final call, :final weight):
-        final inner = _describe(call, depth + 1);
-        return DecodedCall(
-          pallet: 'Utility',
-          call: 'with_weight',
-          fields: [
-            NestedCallField('Call', inner),
-            ValueField('Weight', 'ref time ${weight.refTime}, proof size ${weight.proofSize}', kind: ValueKind.number),
-          ],
-          summary: inner.summary,
-        );
-      case utility.IfElse(:final main, :final fallback):
-        final mainDecoded = _describe(main, depth + 1);
-        final fallbackDecoded = _describe(fallback, depth + 1);
-        return DecodedCall(
-          pallet: 'Utility',
-          call: 'if_else',
-          fields: [NestedCallField('Primary call', mainDecoded), NestedCallField('Fallback call', fallbackDecoded)],
-          summary: mainDecoded.summary,
-        );
       default:
         return _generic(runtime.Utility(call));
     }
@@ -728,24 +517,6 @@ class CallDecoder {
         ValueField('Calls', '${calls.length}', kind: ValueKind.number),
         for (var i = 0; i < calls.length; i++) NestedCallField('Call ${i + 1}', _describe(calls[i], depth + 1)),
       ],
-    );
-  }
-
-  static DecodedCall _dispatchAs(
-    String name,
-    origin_caller.OriginCaller asOrigin,
-    runtime.RuntimeCall call,
-    int depth,
-  ) {
-    final inner = _describe(call, depth + 1);
-    return DecodedCall(
-      pallet: 'Utility',
-      call: name,
-      fields: [
-        ValueField('Dispatch origin', _origin(asOrigin), kind: ValueKind.text),
-        NestedCallField('Call', inner),
-      ],
-      summary: inner.summary,
     );
   }
 
@@ -801,6 +572,45 @@ class CallDecoder {
         return _generic(runtime.Recovery(call));
     }
   }
+
+  // ----------------------------------------------------------------- Vesting
+
+  static DecodedCall _vesting(vesting.Call call) {
+    switch (call) {
+      case vesting.Claim(:final scheduleId):
+        return DecodedCall(pallet: 'Vesting', call: 'claim', fields: [_scheduleField(scheduleId)]);
+      case vesting.CreateSchedule(:final beneficiary, :final start, :final cliff, :final end, :final total):
+        return DecodedCall(
+          pallet: 'Vesting',
+          call: 'create_schedule',
+          fields: [
+            _accountField('Beneficiary', beneficiary),
+            _momentField('Starts', start),
+            _momentField('Cliff', cliff),
+            _momentField('Ends', end),
+            AmountField('Total', total),
+          ],
+        );
+      case vesting.EndSchedule(:final scheduleId):
+        return DecodedCall(pallet: 'Vesting', call: 'end_schedule', fields: [_scheduleField(scheduleId)]);
+      case vesting.RetargetSchedule(:final scheduleId, :final newBeneficiary):
+        return DecodedCall(
+          pallet: 'Vesting',
+          call: 'retarget_schedule',
+          fields: [_scheduleField(scheduleId), _accountField('New beneficiary', newBeneficiary)],
+        );
+      default:
+        return _generic(runtime.Vesting(call));
+    }
+  }
+
+  static ValueField _scheduleField(BigInt scheduleId) => ValueField('Schedule', '#$scheduleId', kind: ValueKind.number);
+
+  static ValueField _momentField(String label, BigInt millis) => ValueField(
+    label,
+    DatetimeFormattingService.formatTimestamp(DateTime.fromMillisecondsSinceEpoch(millis.toInt(), isUtc: true)),
+    kind: ValueKind.blockOrTime,
+  );
 
   // ------------------------------------------------------------------ System
 
@@ -960,31 +770,10 @@ class CallDecoder {
   // ------------------------------------------------------------- Field helpers
 
   static ValueField _addressField(String label, multi_address.MultiAddress address) {
-    return switch (address) {
-      multi_address.Id(:final value0) => ValueField(label, _ss58(value0), kind: ValueKind.address),
-      multi_address.Index(:final value0) => ValueField(label, 'Account index $value0', kind: ValueKind.number),
-      multi_address.Raw(:final value0) => ValueField(
-        label,
-        _hex(value0),
-        kind: ValueKind.bytes,
-        note: 'Raw address form — not a plain account id.',
-      ),
-      multi_address.Address32(:final value0) => ValueField(
-        label,
-        _hex(value0),
-        kind: ValueKind.bytes,
-        note: 'Address32 form — not a plain account id.',
-      ),
-      multi_address.Address20(:final value0) => ValueField(
-        label,
-        _hex(value0),
-        kind: ValueKind.bytes,
-        note: 'Address20 form — not a plain account id.',
-      ),
-      // The generated enum is not sealed, so a future variant must still be
-      // shown rather than crash the display.
-      _ => ValueField(label, address.toJson().toString(), kind: ValueKind.text, note: 'Unrecognised address form.'),
-    };
+    if (address is multi_address.Id) {
+      return ValueField(label, _ss58(address.value0), kind: ValueKind.address);
+    }
+    throw FormatException('$label: only a plain account id is accepted, got ${address.runtimeType}');
   }
 
   /// Summary restating [destination] and [amount], carrying their identities so

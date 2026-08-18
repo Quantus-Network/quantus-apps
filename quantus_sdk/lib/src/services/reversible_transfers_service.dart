@@ -10,7 +10,6 @@ import 'package:quantus_sdk/generated/planck/types/primitive_types/h256.dart';
 import 'package:quantus_sdk/generated/planck/types/qp_scheduler/block_number_or_timestamp.dart' as qp;
 import 'package:quantus_sdk/generated/planck/types/quantus_runtime/runtime_call.dart';
 import 'package:quantus_sdk/generated/planck/types/sp_runtime/multiaddress/multi_address.dart' as multi_address;
-import 'package:quantus_sdk/src/extensions/address_extension.dart';
 import 'package:quantus_sdk/src/extensions/duration_extension.dart';
 import 'package:quantus_sdk/src/models/account.dart';
 import 'package:quantus_sdk/src/models/extrinsic_fee_data.dart';
@@ -244,33 +243,6 @@ class ReversibleTransfersService {
 
   Future<Uint8List> interceptTransaction({required Account guardianAccount, required H256 transactionId}) async {
     return cancelReversibleTransfer(account: guardianAccount, transactionId: transactionId);
-  }
-
-  /// Check if account is a guardian (interceptor) for any accounts
-  Future<bool> isGuardian(String address) async {
-    quantusPrint('isGuardian: $address');
-    return (await getInterceptedAccounts(address)).isNotEmpty;
-  }
-
-  /// Get list of accounts that the given account is a guardian (interceptor) for
-  Future<List<String>> getInterceptedAccounts(String guardianAddress) async {
-    quantusPrint('getInterceptedAccounts: $guardianAddress');
-
-    try {
-      final quantusApi = Planck(_substrateService.provider!);
-      final accountId = crypto.ss58ToAccountId(s: guardianAddress);
-      final interceptedAccounts = await quantusApi.query.reversibleTransfers.guardianIndex(accountId);
-
-      List<String> result = interceptedAccounts.map((id) {
-        final address = AddressExtension.ss58AddressFromBytes(Uint8List.fromList(id));
-        quantusPrint('intercepted account: $address');
-        return address;
-      }).toList();
-
-      return result;
-    } catch (e) {
-      throw Exception('Failed to get intercepted accounts: $e');
-    }
   }
 
   Future<ExtrinsicFeeData> getHighSecuritySetupFee(
