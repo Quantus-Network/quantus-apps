@@ -2,6 +2,7 @@ import 'package:cryptography/cryptography.dart' show SecretBoxAuthenticationErro
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:quantus_cold_wallet/models/cold_account.dart';
 import 'package:quantus_cold_wallet/services/cold_auth_service.dart';
 import 'package:quantus_cold_wallet/services/vault_service.dart';
 
@@ -17,21 +18,32 @@ enum PasswordChangeResult { wrongPassword, changed, changedBiometricDisabled }
 class WalletState {
   final WalletStatus status;
   final String? mnemonic;
+  final List<ColdAccount> accounts;
   final bool biometricEnabled;
   final String? error;
 
-  const WalletState({required this.status, this.mnemonic, this.biometricEnabled = false, this.error});
+  const WalletState({
+    required this.status,
+    this.mnemonic,
+    this.accounts = const [],
+    this.biometricEnabled = false,
+    this.error,
+  });
 
-  WalletState copyWith({WalletStatus? status, String? mnemonic, bool? biometricEnabled}) => WalletState(
-    status: status ?? this.status,
-    mnemonic: mnemonic ?? this.mnemonic,
-    biometricEnabled: biometricEnabled ?? this.biometricEnabled,
-  );
+  WalletState copyWith({WalletStatus? status, String? mnemonic, List<ColdAccount>? accounts, bool? biometricEnabled}) =>
+      WalletState(
+        status: status ?? this.status,
+        mnemonic: mnemonic ?? this.mnemonic,
+        accounts: accounts ?? this.accounts,
+        biometricEnabled: biometricEnabled ?? this.biometricEnabled,
+      );
 }
 
 class WalletController extends Notifier<WalletState> {
   final VaultService _vault = VaultService();
   final ColdAuthService _auth = ColdAuthService();
+
+  List<int>? _keyBytes;
 
   VaultService get vault => _vault;
   ColdAuthService get auth => _auth;
@@ -61,8 +73,13 @@ class WalletController extends Notifier<WalletState> {
     await _init();
   }
 
-  Future<void> createWallet({required String mnemonic, required String password, required bool enableBiometric}) async {
-    await _vault.createVault(mnemonic: mnemonic, password: password);
+  Future<void> createWallet({
+    required String mnemonic,
+    required String password,
+    required bool enableBiometric,
+    required List<ColdAccount> accounts,
+  }) async {
+    await _vault.createVault(mnemonic: mnemonic, password: password, accounts: accounts);
     if (enableBiometric) {
       final result = await _vault.unlockWithPassword(password);
       await _vault.storeBiometricKey(result.keyBytes);
@@ -70,13 +87,20 @@ class WalletController extends Notifier<WalletState> {
       // A biometric key left over from an earlier vault must not survive.
       await _vault.disableBiometric();
     }
-    state = WalletState(status: WalletStatus.unlocked, mnemonic: mnemonic, biometricEnabled: enableBiometric);
+    _keyBytes = (await _vault.unlockWithPassword(password)).keyBytes;
+    state = WalletState(
+      status: WalletStatus.unlocked,
+      mnemonic: mnemonic,
+      accounts: accounts,
+      biometricEnabled: enableBiometric,
+    );
   }
 
   Future<bool> unlockWithPassword(String password) async {
     try {
       final result = await _vault.unlockWithPassword(password);
-      state = state.copyWith(status: WalletStatus.unlocked, mnemonic: result.mnemonic);
+      _keyBytes = result.keyBytes;
+      state = state.copyWith(status: WalletStatus.unlocked, mnemonic: result.mnemonic, accounts: result.accounts);
       return true;
     } catch (e) {
       debugPrint('Password unlock failed: $e');
@@ -88,8 +112,8 @@ class WalletController extends Notifier<WalletState> {
     final authenticated = await _auth.authenticate('Unlock your cold wallet');
     if (!authenticated) return false;
     try {
-      final mnemonic = await _vault.unlockWithBiometricKey();
-      state = state.copyWith(status: WalletStatus.unlocked, mnemonic: mnemonic);
+      final contents = await _vault.unlockWithBiometricKey();
+      state = state.copyWith(status: WalletStatus.unlocked, mnemonic: contents.mnemonic, accounts: contents.accounts);
       return true;
     } on SecretBoxAuthenticationError {
       // The vault removed a key that belonged to a previous vault; stop
@@ -117,7 +141,7 @@ class WalletController extends Notifier<WalletState> {
       return PasswordChangeResult.wrongPassword;
     }
     final biometric = await _vault.isBiometricEnabled();
-    await _vault.createVault(mnemonic: result.mnemonic, password: newPassword);
+    await _vault.createVault(mnemonic: result.mnemonic, password: newPassword, accounts: result.accounts);
     if (!biometric) return PasswordChangeResult.changed;
     try {
       final fresh = await _vault.unlockWithPassword(newPassword);
@@ -138,12 +162,28 @@ class WalletController extends Notifier<WalletState> {
     }
   }
 
+  /// Adds an account derived from the seed already in the vault.
+  Future<void> addAccount(ColdAccount account) async {
+    final mnemonic = state.mnemonic;
+    final keyBytes = _keyBytes;
+    if (mnemonic == null || keyBytes == null) throw StateError('Wallet is locked');
+
+    final accounts = [...state.accounts, account];
+    await _vault.replaceContents(
+      keyBytes: keyBytes,
+      contents: VaultContents(mnemonic: mnemonic, accounts: accounts),
+    );
+    state = state.copyWith(accounts: accounts);
+  }
+
   void lock() {
     if (state.status != WalletStatus.unlocked) return;
+    _keyBytes = null;
     state = WalletState(status: WalletStatus.locked, biometricEnabled: state.biometricEnabled);
   }
 
   Future<void> wipe() async {
+    _keyBytes = null;
     await _vault.wipe();
     state = const WalletState(status: WalletStatus.needsSetup);
   }
@@ -151,16 +191,30 @@ class WalletController extends Notifier<WalletState> {
 
 final walletControllerProvider = NotifierProvider<WalletController, WalletState>(WalletController.new);
 
-/// The cold wallet manages a single account: HD index 0, matching the default
-/// account the hot wallet derives, so the address shown here is the one a hot
-/// wallet imports as a keystone account.
-final keypairProvider = Provider<Keypair?>((ref) {
+final accountsProvider = Provider<List<ColdAccount>>((ref) => ref.watch(walletControllerProvider).accounts);
+
+/// Every account's address, resolved once per unlock so a scanned request can
+/// be matched to the account that must sign it. Addresses only — key pairs are
+/// derived at the point of use and never cached.
+final addressesProvider = Provider<Map<String, ColdAccount>>((ref) {
   final mnemonic = ref.watch(walletControllerProvider).mnemonic;
-  if (mnemonic == null) return null;
-  return HdWalletService().keyPairAtIndex(mnemonic, 0);
+  if (mnemonic == null) return const {};
+  final service = HdWalletService();
+  return {
+    for (final account in ref.watch(accountsProvider))
+      service.keyPairAtPath(mnemonic, account.derivationPath).ss58Address: account,
+  };
 });
 
-final addressProvider = Provider<String?>((ref) => ref.watch(keypairProvider)?.ss58Address);
+Keypair? keypairFor(WidgetRef ref, String address) {
+  final mnemonic = ref.read(walletControllerProvider).mnemonic;
+  final account = ref.read(addressesProvider)[address];
+  if (mnemonic == null || account == null) return null;
+  return HdWalletService().keyPairAtPath(mnemonic, account.derivationPath);
+}
+
+/// The first account, which the home screen leads with.
+final addressProvider = Provider<String?>((ref) => ref.watch(addressesProvider).keys.firstOrNull);
 
 /// Resolves human checkphrases for every address on screen, not just the
 /// wallet's own — an approval or a governance call can name several accounts,

@@ -26,8 +26,8 @@ import 'package:quantus_cold_wallet/theme/app_text_styles.dart';
 /// signed extensions and the raw bytes, which no signer verifies by eye, live
 /// behind the Advanced disclosure.
 class SignTransactionScreen extends ConsumerStatefulWidget {
-  final Uint8List payload;
-  const SignTransactionScreen({super.key, required this.payload});
+  final SigningRequest request;
+  const SignTransactionScreen({super.key, required this.request});
 
   @override
   ConsumerState<SignTransactionScreen> createState() => _SignTransactionScreenState();
@@ -47,7 +47,7 @@ class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> {
   void initState() {
     super.initState();
     try {
-      _parsed = QuantusPayloadParser.parsePayload(widget.payload, policy: const FullCallPolicy());
+      _parsed = QuantusPayloadParser.parsePayload(widget.request.payload, policy: const FullCallPolicy());
     } catch (e) {
       debugPrint('Rejected signing payload: $e');
       _parseError = e is FormatException ? e.message : e.toString();
@@ -55,7 +55,7 @@ class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> {
   }
 
   void _sign() {
-    final keypair = ref.read(keypairProvider);
+    final keypair = keypairFor(ref, widget.request.signer);
     if (keypair == null) {
       setState(() => _error = 'Wallet is locked — unlock and try again. Nothing was signed.');
       return;
@@ -70,7 +70,7 @@ class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> {
       // extrinsic via submitExtrinsicWithExternalSignature.
       final signed = signMessageWithPubkey(
         keypair: keypair,
-        message: QuantusSigningPayload.signablePayload(widget.payload),
+        message: QuantusSigningPayload.signablePayload(widget.request.payload),
       );
       setState(() {
         _signing = false;
@@ -87,6 +87,9 @@ class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> {
   @override
   Widget build(BuildContext context) {
     if (_parseError != null) return _errorView(context, _parseError!);
+    if (!ref.watch(addressesProvider).containsKey(widget.request.signer)) {
+      return _errorView(context, 'This transaction is for ${widget.request.signer}, which this wallet does not hold.');
+    }
     if (_signed != null) return _signatureView(context, _signed!);
     return _reviewView(context, _parsed!);
   }
@@ -190,22 +193,20 @@ class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> {
   /// `force_transfer` moves its Source's funds, not the signer's. Anything
   /// else says no more than `Signed by`.
   List<Widget> _callBody(BuildContext context, DecodedCall call) {
-    final signerAddress = ref.watch(addressProvider);
+    final signerAddress = widget.request.signer;
     final transfer = heroSummary(call);
     final fromSigner =
         transfer?.recipient != null &&
         !call.fields.any(
           (f) => f is ValueField && f.kind == ValueKind.address && !identical(f, transfer!.recipientField),
         );
-    final signer = signerAddress == null
-        ? null
-        : AddressWithCheckphrase(label: fromSigner ? 'From' : 'Signed by', address: signerAddress);
+    final signer = AddressWithCheckphrase(label: fromSigner ? 'From' : 'Signed by', address: signerAddress);
 
-    if (!call.isWrapper) return [...callSummaryBody(call), ?signer];
+    if (!call.isWrapper) return [...callSummaryBody(call), signer];
 
     return [
       for (final field in call.fields.whereType<NestedCallField>()) CallFieldView(field: field),
-      ?signer,
+      signer,
       for (final field in call.fields.where((f) => f is! NestedCallField)) CallFieldView(field: field),
     ];
   }

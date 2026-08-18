@@ -9,14 +9,19 @@ import 'package:quantus_cold_wallet/theme/app_colors.dart';
 import 'package:quantus_cold_wallet/theme/app_text_styles.dart';
 
 class ShowKeyScreen extends ConsumerWidget {
-  const ShowKeyScreen({super.key});
+  /// The account to show; defaults to the wallet's first.
+  final String? address;
+
+  const ShowKeyScreen({super.key, this.address});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = context.colors;
     final text = context.themeText;
-    final address = ref.watch(addressProvider);
-    final checkphrase = ref.watch(checkphraseProvider);
+    final address = this.address ?? ref.watch(addressProvider);
+    final checkphrase = address == null
+        ? const AsyncValue<String>.data('')
+        : ref.watch(addressCheckphraseProvider(address));
 
     return ScaffoldBase(
       appBar: const V2AppBar(title: 'Show Key'),

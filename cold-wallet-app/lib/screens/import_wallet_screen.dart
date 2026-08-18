@@ -4,9 +4,11 @@ import 'package:quantus_cold_wallet/components/quantus_button.dart';
 import 'package:quantus_cold_wallet/components/scaffold_base.dart';
 import 'package:quantus_cold_wallet/components/scaffold_base_bottom_content.dart';
 import 'package:quantus_cold_wallet/components/v2_app_bar.dart';
+import 'package:quantus_cold_wallet/models/cold_account.dart';
 import 'package:quantus_cold_wallet/screens/set_password_screen.dart';
 import 'package:quantus_cold_wallet/theme/app_colors.dart';
 import 'package:quantus_cold_wallet/theme/app_text_styles.dart';
+import 'package:quantus_cold_wallet/widgets/derivation_field.dart';
 
 class ImportWalletScreen extends StatefulWidget {
   const ImportWalletScreen({super.key});
@@ -38,6 +40,7 @@ class _ImportWalletScreenState extends State<ImportWalletScreen> {
   final _buttonKey = GlobalKey();
   bool _isLoading = false;
   String? _error;
+  ColdAccount? _account = ColdAccount(label: 'Account 1', index: 0);
 
   @override
   void initState() {
@@ -70,6 +73,12 @@ class _ImportWalletScreenState extends State<ImportWalletScreen> {
       }
     }
 
+    final account = _account;
+    if (account == null) {
+      setState(() => _error = 'Enter a valid account index or derivation path');
+      return;
+    }
+
     setState(() {
       _isLoading = true;
       _error = null;
@@ -77,10 +86,15 @@ class _ImportWalletScreenState extends State<ImportWalletScreen> {
 
     try {
       // Throws on an invalid phrase.
-      HdWalletService().keyPairAtIndex(mnemonic, 0);
+      HdWalletService().keyPairAtPath(mnemonic, account.derivationPath);
 
       if (!mounted) return;
-      Navigator.push(context, MaterialPageRoute(builder: (_) => SetPasswordScreen(mnemonic: mnemonic)));
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => SetPasswordScreen(mnemonic: mnemonic, accounts: [account]),
+        ),
+      );
     } catch (e) {
       debugPrint('Import rejected: $e');
       if (mounted) setState(() => _error = 'Not a valid recovery phrase');
@@ -152,6 +166,8 @@ class _ImportWalletScreenState extends State<ImportWalletScreen> {
                   ],
                 ),
               ),
+              const SizedBox(height: 20),
+              DerivationField(onChanged: (a) => setState(() => _account = a)),
               if (_error != null) ...[
                 const SizedBox(height: 16),
                 Text(

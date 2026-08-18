@@ -163,7 +163,8 @@ Future<({UnsignedTransactionData unsignedData, List<String> urParts, DateTime st
     }
   }
   final unsigned = await ref.read(substrateServiceProvider).getUnsignedTransactionPayload(account, buildCall());
-  final parts = encodeUr(data: unsigned.encodedPayloadRaw);
+  final request = SigningRequest(signer: account.accountId, payload: unsigned.encodedPayloadRaw);
+  final parts = encodeUr(data: request.encode());
   if (parts.isEmpty) throw Exception('Failed to encode transaction payload as UR');
   final storedAt = DateTime.now();
   if (cacheKey != null) cache.store(key: cacheKey, unsignedData: unsigned, urParts: parts, storedAt: storedAt);

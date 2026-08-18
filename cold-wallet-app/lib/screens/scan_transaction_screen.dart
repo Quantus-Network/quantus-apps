@@ -78,10 +78,10 @@ class _ScanTransactionScreenState extends State<ScanTransactionScreen> {
 
     _done = true;
     try {
-      final payload = decodeUr(urParts: parts);
+      final request = SigningRequest.decode(decodeUr(urParts: parts));
       _controller.stop();
       if (!mounted) return;
-      Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => SignTransactionScreen(payload: payload)));
+      Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => SignTransactionScreen(request: request)));
     } catch (e) {
       // Keeping the parts would make every replayed frame a duplicate, so the
       // decode is never retried and the screen stays stuck on this error.
@@ -94,7 +94,10 @@ class _ScanTransactionScreenState extends State<ScanTransactionScreen> {
   /// exercise the same review → sign path a scan would reach.
   void _loadDebugPayload(Uint8List payload) {
     _controller.stop();
-    Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => SignTransactionScreen(payload: payload)));
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => SignTransactionScreen(request: SigningRequest.decode(payload))),
+    );
   }
 
   /// One button per payload in [DebugPayloads.all], so every screen the signer

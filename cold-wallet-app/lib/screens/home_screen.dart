@@ -9,7 +9,7 @@ import 'package:quantus_cold_wallet/providers/settings_providers.dart';
 import 'package:quantus_cold_wallet/providers/wallet_providers.dart';
 import 'package:quantus_cold_wallet/screens/scan_transaction_screen.dart';
 import 'package:quantus_cold_wallet/screens/settings_screen.dart';
-import 'package:quantus_cold_wallet/screens/show_key_screen.dart';
+import 'package:quantus_cold_wallet/screens/accounts_screen.dart';
 import 'package:quantus_cold_wallet/theme/app_colors.dart';
 import 'package:quantus_cold_wallet/theme/app_text_styles.dart';
 
@@ -48,7 +48,7 @@ class HomeScreen extends ConsumerWidget {
             icon: Icons.qr_code_2_rounded,
             title: 'Show Key',
             subtitle: 'Display your public address for a hot wallet to scan.',
-            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ShowKeyScreen())),
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AccountsScreen())),
           ),
           const SizedBox(height: 16),
           _actionCard(

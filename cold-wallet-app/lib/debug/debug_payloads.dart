@@ -102,7 +102,15 @@ class DebugPayloads {
   /// Appends the signed extensions the runtime expects, using the spec and
   /// transaction versions this build's metadata was generated from — so these
   /// payloads do not trip the spec-drift warning.
+  /// The debug account the scanner injects for, matching the vault's first
+  /// account so the signer screen can resolve it.
+  static String debugSigner = AppConstants.debugTestAddress;
+
   static Uint8List withExtensions(RuntimeCall call) {
+    return SigningRequest(signer: debugSigner, payload: _payload(call)).encode();
+  }
+
+  static Uint8List _payload(RuntimeCall call) {
     final out = ByteOutput();
     out.write(call.encode());
     out.write(const [0x55, 0x01]); // mortal era: period 64, phase 21

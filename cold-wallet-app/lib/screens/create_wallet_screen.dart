@@ -6,6 +6,7 @@ import 'package:quantus_cold_wallet/components/quantus_button.dart';
 import 'package:quantus_cold_wallet/components/scaffold_base.dart';
 import 'package:quantus_cold_wallet/components/scaffold_base_bottom_content.dart';
 import 'package:quantus_cold_wallet/components/v2_app_bar.dart';
+import 'package:quantus_cold_wallet/models/cold_account.dart';
 import 'package:quantus_cold_wallet/screens/set_password_screen.dart';
 import 'package:quantus_cold_wallet/theme/app_colors.dart';
 import 'package:quantus_cold_wallet/theme/app_text_styles.dart';
@@ -35,7 +36,15 @@ class _CreateWalletScreenState extends State<CreateWalletScreen> {
   void _continue() {
     final words = _words;
     if (words == null) return;
-    Navigator.push(context, MaterialPageRoute(builder: (_) => SetPasswordScreen(mnemonic: words.join(' '))));
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => SetPasswordScreen(
+          mnemonic: words.join(' '),
+          accounts: [ColdAccount(label: 'Account 1', index: 0)],
+        ),
+      ),
+    );
   }
 
   @override

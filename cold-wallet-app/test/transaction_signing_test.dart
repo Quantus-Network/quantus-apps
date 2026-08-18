@@ -126,10 +126,10 @@ void main() {
     // payload is checkable here — the others resolve addresses through the Rust
     // bridge, which unit tests do not initialise.
     test('governance vote payload parses with no spec drift', () {
-      final parsed = QuantusPayloadParser.parsePayload(
-        DebugPayloads.governanceVoteAye(),
-        policy: const FullCallPolicy(),
-      );
+      final request = SigningRequest.decode(DebugPayloads.governanceVoteAye());
+      final parsed = QuantusPayloadParser.parsePayload(request.payload, policy: const FullCallPolicy());
+
+      expect(request.signer, DebugPayloads.debugSigner);
 
       expect(parsed.call.displayTitle, 'TechCollective · vote');
       expect(parsed.call.fields.whereType<ValueField>().firstWhere((f) => f.label == 'Vote').value, contains('Aye'));

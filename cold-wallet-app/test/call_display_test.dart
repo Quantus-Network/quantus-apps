@@ -12,6 +12,7 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:quantus_cold_wallet/components/address_with_checkphrase.dart';
 import 'package:quantus_cold_wallet/components/call_detail_view.dart';
 import 'package:quantus_cold_wallet/debug/debug_payloads.dart';
+import 'package:quantus_cold_wallet/models/cold_account.dart';
 import 'package:quantus_cold_wallet/providers/wallet_providers.dart';
 import 'package:quantus_cold_wallet/screens/sign_transaction_screen.dart';
 import 'package:quantus_cold_wallet/theme/app_theme.dart';
@@ -19,7 +20,7 @@ import 'package:quantus_cold_wallet/theme/app_theme.dart';
 final aliceId = Uint8List.fromList(List.filled(32, 0xAA));
 final bobId = Uint8List.fromList(List.filled(32, 0xBB));
 final oneToken = BigInt.from(1000000000000);
-const signerAddress = 'qz-test-signer-address';
+const signerAddress = AppConstants.debugTestAddress;
 
 multi_address.MultiAddress account(Uint8List id) => multi_address.MultiAddress.values.id(id);
 
@@ -52,14 +53,14 @@ Future<void> pumpSignScreen(WidgetTester tester, Uint8List payload) async {
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
-        addressProvider.overrideWith((ref) => signerAddress),
+        addressesProvider.overrideWith((ref) => {signerAddress: ColdAccount(label: 'Account 1', index: 0)}),
         addressCheckphraseProvider.overrideWith((ref, address) async => 'check phrase'),
       ],
       child: MaterialApp(
         home: Builder(
           builder: (context) => Theme(
             data: AppTheme.darkTheme(context),
-            child: SignTransactionScreen(payload: payload),
+            child: SignTransactionScreen(request: SigningRequest.decode(payload)),
           ),
         ),
       ),
