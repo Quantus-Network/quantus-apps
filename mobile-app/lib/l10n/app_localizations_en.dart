@@ -444,6 +444,9 @@ class AppLocalizationsEn extends AppLocalizations {
       'Could not read this proposal from the chain, so there is nothing to approve. Try again when you are back online.';
 
   @override
+  String get multisigProposalInvalid => 'Invalid proposal';
+
+  @override
   String get multisigStatusApproved => 'SIGNED';
 
   @override

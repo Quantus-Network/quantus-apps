@@ -593,6 +593,10 @@
     "@multisigProposalCallUnavailable": {
       "description": "Shown when the proposal's stored call bytes could not be fetched, blocking approval"
     },
+    "multisigProposalInvalid": "Invalid proposal",
+    "@multisigProposalInvalid": {
+      "description": "Shown in place of the amount when the proposal's stored call bytes cannot be decoded, blocking approval"
+    },
     "multisigStatusApproved": "SIGNED",
     "@multisigStatusApproved": {
       "description": "Proposal status chip when the current signer has approved"
