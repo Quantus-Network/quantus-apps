@@ -142,7 +142,9 @@ void main() {
       );
 
       expectRejected(proposal);
-      expectAllowed(const multisig_pallet.Txs().propose(multisigAddress: _alice, call: transfer().encode(), expiry: 10));
+      expectAllowed(
+        const multisig_pallet.Txs().propose(multisigAddress: _alice, call: transfer().encode(), expiry: 10),
+      );
     });
 
     test('the nesting limit counts levels carried as bytes', () {

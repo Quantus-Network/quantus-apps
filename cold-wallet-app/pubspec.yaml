@@ -18,7 +18,11 @@ dependencies:
 
   # Blockchain infra (canonical versions in melos.yaml)
   # DO NOT UPDATE polkadart - pinned to match quantus_sdk's ML-DSA override.
-  polkadart: ^0.7.3
+  polkadart:
+    git:
+      url: https://github.com/Quantus-Network/polkadart.git
+      ref: 0_7_3_quantus_1
+      path: packages/polkadart
   convert: ^3.1.2
 
   # State management
@@ -92,12 +96,3 @@ flutter_launcher_icons:
   image_path: assets/cold_icon_1024.png
   adaptive_icon_background: "#A8D5E5"
   adaptive_icon_foreground: assets/cold_icon_1024.png
-
-dependency_overrides:
-  # polkadart_scale_codec allocated sequence buffers straight from the compact
-  # length prefix, so a few malformed bytes could claim gigabytes.
-  polkadart_scale_codec:
-    git:
-      url: https://github.com/Quantus-Network/polkadart.git
-      ref: 0_7_1_quantus_2
-      path: packages/polkadart_scale_codec
