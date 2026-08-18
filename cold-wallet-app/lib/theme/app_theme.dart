@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:quantus_sdk/quantus_sdk.dart' show AppColorsV3, AppRadiusV3, AppTextThemeV3, ColorOpacityExtension;
 import 'package:quantus_cold_wallet/shared/context_extensions.dart';
 import 'package:quantus_cold_wallet/theme/app_colors.dart';
 import 'package:quantus_cold_wallet/theme/app_spacing.dart';
@@ -10,6 +10,7 @@ class AppTheme {
     final isTablet = context.isTablet;
     final colors = const AppColorsV2.dark();
     final text = isTablet ? const AppTextTheme.iPad() : const AppTextTheme.defaultTheme();
+    const radius = AppRadiusV3.standard();
 
     return ThemeData(
       scaffoldBackgroundColor: colors.background,
@@ -41,7 +42,14 @@ class AppTheme {
         filled: true,
         fillColor: Colors.transparent,
       ),
-      extensions: [colors, text, isTablet ? const AppSizeTheme.iPad() : const AppSizeTheme.defaultTheme()],
+      extensions: [
+        colors,
+        const AppColorsV3.dark(),
+        text,
+        const AppTextThemeV3.standard(),
+        radius,
+        isTablet ? const AppSizeTheme.iPad() : const AppSizeTheme.defaultTheme(),
+      ],
     );
   }
 }
