@@ -2,82 +2,45 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 
+/// Shared v3 sheet shell: handle, title, content slot.
+///
+/// Presentational only. Overlay presentation is [BottomSheetContainer.show].
 class BottomSheetContainer extends StatelessWidget {
   final String title;
-  final Widget Function(String title)? titleBuilder;
   final Widget child;
-  final VoidCallback? onBack;
   final double? height;
-  final bool showDragHandle;
 
-  const BottomSheetContainer({
-    super.key,
-    required this.title,
-    required this.child,
-    this.titleBuilder,
-    this.onBack,
-    this.height,
-    this.showDragHandle = true,
-  });
+  const BottomSheetContainer({super.key, required this.title, required this.child, this.height});
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.colors;
-    final text = context.themeText;
-    final topPadding = showDragHandle ? 12.0 : 40.0;
-    return Container(
-      height: height,
-      padding: EdgeInsets.fromLTRB(24, topPadding, 24, 24),
-      decoration: BoxDecoration(
-        color: colors.background,
-        border: Border.all(color: colors.borderButton, width: 1),
-        borderRadius: BorderRadius.circular(32),
-      ),
-      child: Column(
-        mainAxisSize: height != null ? MainAxisSize.max : MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (showDragHandle) ...[
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
+
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 362),
+      child: Container(
+        width: double.infinity,
+        height: height,
+        padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
+        decoration: BoxDecoration(color: colors.bgSurface, borderRadius: context.radiusV3.lgBorder),
+        child: Column(
+          mainAxisSize: height != null ? MainAxisSize.max : MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
             Center(
               child: Container(
-                width: 56,
+                width: 36,
                 height: 4,
-                decoration: BoxDecoration(color: colors.borderButton, borderRadius: BorderRadius.circular(23)),
+                decoration: BoxDecoration(color: colors.bgSurface2, borderRadius: BorderRadius.circular(2)),
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 16),
+            Text(title, style: text.headingRow.copyWith(color: colors.textContent)),
+            const SizedBox(height: 16),
+            if (height != null) Expanded(child: child) else Flexible(child: SingleChildScrollView(child: child)),
           ],
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              if (onBack != null)
-                GestureDetector(
-                  onTap: onBack,
-                  child: Icon(Icons.arrow_back_ios_new, color: colors.textPrimary, size: 20),
-                ),
-
-              if (titleBuilder != null)
-                titleBuilder!(title)
-              else
-                Text(
-                  title,
-                  style: text.smallTitle?.copyWith(
-                    color: colors.textPrimary,
-                    fontSize: 20,
-                    fontWeight: FontWeight.w500,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-
-              GestureDetector(
-                onTap: () => Navigator.pop(context),
-                child: Icon(Icons.close, color: colors.textPrimary, size: 20),
-              ),
-            ],
-          ),
-          SizedBox(height: showDragHandle ? 28 : 32),
-          if (height != null) Expanded(child: child) else Flexible(child: SingleChildScrollView(child: child)),
-        ],
+        ),
       ),
     );
   }

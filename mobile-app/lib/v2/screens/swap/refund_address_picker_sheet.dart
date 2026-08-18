@@ -40,7 +40,6 @@ class _RefundAddressPickerContentState extends ConsumerState<_RefundAddressPicke
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const SizedBox(height: 8),
           Align(
             alignment: Alignment.centerLeft,
             child: Text(widget.network, style: text.detail?.copyWith(color: colors.textSecondary)),

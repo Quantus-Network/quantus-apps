@@ -50,7 +50,6 @@ class _ConfirmActionSheet extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
         children: [
-          const SizedBox(height: 16),
           Text(message, style: text.paragraph?.copyWith(color: colors.textSecondary)),
           const SizedBox(height: 24),
           QuantusButton.simple(

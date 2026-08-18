@@ -362,7 +362,6 @@ class _MultisigActionConfirmSheetState extends ConsumerState<MultisigActionConfi
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
         children: [
-          const SizedBox(height: 16),
           Text(widget.labels.body(l10n), style: text.paragraph?.copyWith(color: colors.textPrimary)),
           const SizedBox(height: 8),
           Text(headline.primary, style: text.smallTitle?.copyWith(color: colors.textPrimary)),

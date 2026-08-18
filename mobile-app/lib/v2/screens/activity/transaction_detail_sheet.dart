@@ -111,7 +111,6 @@ class _TransactionDetailSheet extends ConsumerWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const SizedBox(height: 16),
           _AmountSection(tx: tx, isSend: _isSend, activeAccountId: activeAccountId, colors: colors),
           const SizedBox(height: 20),
           _DetailRow(

@@ -196,7 +196,6 @@ class _MultisigProposalDetailSheet extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
         children: [
-          const SizedBox(height: 16),
           _AmountSection(proposal: liveProposal),
           const SizedBox(height: 20),
           DetailSummaryRow(
