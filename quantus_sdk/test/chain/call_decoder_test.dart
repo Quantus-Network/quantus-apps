@@ -20,6 +20,7 @@ import 'package:quantus_sdk/generated/planck/types/quantus_runtime/origin_caller
 import 'package:quantus_sdk/generated/planck/types/quantus_runtime/runtime_call.dart';
 import 'package:quantus_sdk/generated/planck/types/sp_runtime/multiaddress/multi_address.dart' as multi_address;
 import 'package:quantus_sdk/src/chain/call_decoder.dart';
+import 'package:quantus_sdk/src/chain/call_policy.dart';
 import 'package:quantus_sdk/src/chain/decoded_call.dart';
 
 // Two distinct 32-byte account ids, so a decoded address can be told apart from
@@ -34,7 +35,7 @@ final oneToken = BigInt.from(1000000000000);
 
 /// Encodes then re-decodes through [CallDecoder.decodeBytes], so every assertion
 /// runs against the same path a signer takes: bytes in, display tree out.
-DecodedCall roundTrip(RuntimeCall call) => CallDecoder.decodeBytes(call.encode());
+DecodedCall roundTrip(RuntimeCall call) => CallDecoder.decodeBytes(call.encode(), policy: const FullCallPolicy());
 
 RuntimeCall nestedRecovered(int depth) {
   RuntimeCall call = const system_pallet.Txs().remark(remark: <int>[]);
@@ -360,7 +361,10 @@ void main() {
       // Past where the generated codecs overflow the stack (~20k levels here,
       // fewer on a mobile isolate). Checking the limit on the decoded tree would
       // mean crashing on the way in instead of refusing the call.
-      expect(() => CallDecoder.decodeBytes(recoveredChainBytes(100000)), isNestingRejection);
+      expect(
+        () => CallDecoder.decodeBytes(recoveredChainBytes(100000), policy: const FullCallPolicy()),
+        isNestingRejection,
+      );
     });
 
     test('the bounded decoder agrees with the generated codec on every inline nesting variant', () {
@@ -413,7 +417,7 @@ void main() {
     test('trailing bytes after a call are rejected', () {
       final bytes = const collective_pallet.Txs().vote(poll: 1, aye: true).encode();
       expect(
-        () => CallDecoder.decodeBytes([...bytes, 0x00]),
+        () => CallDecoder.decodeBytes([...bytes, 0x00], policy: const FullCallPolicy()),
         throwsA(isA<FormatException>().having((e) => e.message, 'message', contains('trailing bytes'))),
       );
     });
@@ -421,11 +425,14 @@ void main() {
     test('a multisig proposal wrapping undecodable bytes is rejected, not shown as hex', () {
       // Pallet index 250 does not exist on this runtime.
       final propose = const multisig_pallet.Txs().propose(multisigAddress: aliceId, call: [250, 0], expiry: 10);
-      expect(() => CallDecoder.decodeBytes(propose.encode()), throwsA(isA<Exception>()));
+      expect(
+        () => CallDecoder.decodeBytes(propose.encode(), policy: const FullCallPolicy()),
+        throwsA(isA<Exception>()),
+      );
     });
 
     test('an unknown pallet index is rejected outright', () {
-      expect(() => CallDecoder.decodeBytes([250, 0]), throwsA(isA<Exception>()));
+      expect(() => CallDecoder.decodeBytes([250, 0], policy: const FullCallPolicy()), throwsA(isA<Exception>()));
     });
 
     test('a call with no describer still shows every field', () {

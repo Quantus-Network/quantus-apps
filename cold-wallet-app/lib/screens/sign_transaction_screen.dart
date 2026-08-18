@@ -47,7 +47,7 @@ class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> {
   void initState() {
     super.initState();
     try {
-      _parsed = QuantusPayloadParser.parsePayload(widget.payload);
+      _parsed = QuantusPayloadParser.parsePayload(widget.payload, policy: const FullCallPolicy());
     } catch (e) {
       debugPrint('Rejected signing payload: $e');
       _parseError = e is FormatException ? e.message : e.toString();

@@ -23,7 +23,7 @@ const signerAddress = 'qz-test-signer-address';
 
 multi_address.MultiAddress account(Uint8List id) => multi_address.MultiAddress.values.id(id);
 
-DecodedCall roundTrip(RuntimeCall call) => CallDecoder.decodeBytes(call.encode());
+DecodedCall roundTrip(RuntimeCall call) => CallDecoder.decodeBytes(call.encode(), policy: const FullCallPolicy());
 
 /// The screen's contract: every field of [call] reaches the screen exactly
 /// once — as its own row, or restated by the summary hero the body leads with.
