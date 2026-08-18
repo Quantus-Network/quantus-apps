@@ -17,30 +17,27 @@ class BottomSheetContainer extends StatelessWidget {
     final colors = context.colorsV3;
     final text = context.themeTextV3;
 
-    return ConstrainedBox(
-      constraints: const BoxConstraints(maxWidth: 362),
-      child: Container(
-        width: double.infinity,
-        height: height,
-        padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
-        decoration: BoxDecoration(color: colors.bgSurface, borderRadius: context.radiusV3.lgBorder),
-        child: Column(
-          mainAxisSize: height != null ? MainAxisSize.max : MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Center(
-              child: Container(
-                width: 36,
-                height: 4,
-                decoration: BoxDecoration(color: colors.bgSurface2, borderRadius: BorderRadius.circular(2)),
-              ),
+    return Container(
+      width: double.infinity,
+      height: height,
+      padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
+      decoration: BoxDecoration(color: colors.bgSurface, borderRadius: context.radiusV3.lgBorder),
+      child: Column(
+        mainAxisSize: height != null ? MainAxisSize.max : MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Center(
+            child: Container(
+              width: 36,
+              height: 4,
+              decoration: BoxDecoration(color: colors.bgSurface2, borderRadius: BorderRadius.circular(2)),
             ),
-            const SizedBox(height: 16),
-            Text(title, style: text.headingRow.copyWith(color: colors.textContent)),
-            const SizedBox(height: 16),
-            if (height != null) Expanded(child: child) else Flexible(child: SingleChildScrollView(child: child)),
-          ],
-        ),
+          ),
+          const SizedBox(height: 16),
+          Text(title, style: text.headingRow.copyWith(color: colors.textContent)),
+          const SizedBox(height: 16),
+          if (height != null) Expanded(child: child) else Flexible(child: SingleChildScrollView(child: child)),
+        ],
       ),
     );
   }

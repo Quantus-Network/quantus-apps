@@ -98,12 +98,13 @@ void main() {
     expect(decoration.color, colors.bgSurface2);
   });
 
-  testWidgets('caps width at 362', (tester) async {
+  testWidgets('takes the full available width', (tester) async {
     await pumpSheet(tester, sheet());
 
     expect(
       tester.widgetList<ConstrainedBox>(find.byType(ConstrainedBox)).any((box) => box.constraints.maxWidth == 362),
-      isTrue,
+      isFalse,
     );
+    expect(tester.getSize(find.byType(BottomSheetContainer)).width, tester.getSize(find.byType(Scaffold)).width);
   });
 }
