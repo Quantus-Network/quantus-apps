@@ -36,16 +36,8 @@ class _DerivationFieldState extends State<DerivationField> {
     super.dispose();
   }
 
-  ColdAccount? get _account {
-    try {
-      if (_useFullPath) return ColdAccount(label: 'Account 1', path: _path.text.trim());
-      final index = int.tryParse(_index.text.trim());
-      if (index == null) return null;
-      return ColdAccount(label: 'Account ${index + 1}', index: index);
-    } catch (_) {
-      return null;
-    }
-  }
+  ColdAccount? get _account =>
+      _useFullPath ? ColdAccount.atPath(_path.text, label: 'Account 1') : ColdAccount.atIndexText(_index.text);
 
   void _emit() => widget.onChanged(_account);
 

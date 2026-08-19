@@ -199,7 +199,12 @@ class WalletController extends Notifier<WalletState> {
 
 final walletControllerProvider = NotifierProvider<WalletController, WalletState>(WalletController.new);
 
-final accountsProvider = Provider<List<ColdAccount>>((ref) => ref.watch(walletControllerProvider).accounts);
+/// Every account, ordered by the slot it derives from, so the list reads as the
+/// seed's own sequence rather than the order the accounts happened to be added.
+/// A path typed out for a seed from elsewhere sits after the numbered ones.
+final accountsProvider = Provider<List<ColdAccount>>((ref) {
+  return [...ref.watch(walletControllerProvider).accounts]..sort(ColdAccount.compareByDerivation);
+});
 
 /// Every account's address, resolved once per unlock so a scanned request can
 /// be matched to the account that must sign it. Addresses only — key pairs are
@@ -223,6 +228,14 @@ Keypair? keypairFor(WidgetRef ref, String address) {
 
 /// The first account, which the home screen leads with.
 final addressProvider = Provider<String?>((ref) => ref.watch(addressesProvider).keys.firstOrNull);
+
+/// The address a derivation path produces, so an account can be checked before
+/// it is added. Auto-disposed: a path still being typed is not worth keeping.
+final derivedAddressProvider = FutureProvider.autoDispose.family<String, String>((ref, path) async {
+  final mnemonic = ref.watch(walletControllerProvider).mnemonic;
+  if (mnemonic == null) throw StateError('Wallet is locked');
+  return HdWalletService().keyPairAtPath(mnemonic, path).ss58Address;
+});
 
 /// Resolves human checkphrases for every address on screen, not just the
 /// wallet's own — an approval or a governance call can name several accounts,
