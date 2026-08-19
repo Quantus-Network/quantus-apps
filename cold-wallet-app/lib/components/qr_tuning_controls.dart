@@ -61,8 +61,8 @@ class _TuningSlider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.colors;
-    final text = context.themeText;
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -70,16 +70,16 @@ class _TuningSlider extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(label, style: text.detail?.copyWith(color: colors.textSecondary)),
-            Text(valueText, style: text.detail?.copyWith(color: colors.textPrimary)),
+            Text(label, style: text.caption.copyWith(color: colors.textMuted)),
+            Text(valueText, style: text.caption.copyWith(color: colors.textContent)),
           ],
         ),
         SliderTheme(
           data: SliderTheme.of(context).copyWith(
-            activeTrackColor: colors.accentOrange,
-            inactiveTrackColor: colors.borderButton,
-            thumbColor: colors.accentOrange,
-            overlayColor: colors.accentOrange.withValues(alpha: 0.15),
+            activeTrackColor: colors.accentFlare,
+            inactiveTrackColor: colors.borderHairline,
+            thumbColor: colors.accentFlare,
+            overlayColor: colors.accentFlare.useOpacity(0.15),
             trackHeight: 2,
           ),
           child: Slider(value: value, min: min, max: max, divisions: divisions, onChanged: onChanged),
