@@ -37,8 +37,8 @@ class _InitError extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final colors = context.colors;
-    final text = context.themeText;
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
     return Scaffold(
       body: BaseBackground(
         child: SafeArea(
@@ -47,17 +47,17 @@ class _InitError extends ConsumerWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.error_outline, size: 64, color: colors.error),
+                Icon(Icons.error_outline, size: 64, color: colors.semanticEmber),
                 const SizedBox(height: 24),
                 Text(
                   'Storage error',
-                  style: text.mediumTitle?.copyWith(color: colors.textPrimary),
+                  style: text.titleScreen.copyWith(color: colors.textContent),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 12),
                 Text(
                   message,
-                  style: text.smallParagraph?.copyWith(color: colors.textSecondary),
+                  style: text.body.copyWith(color: colors.textMuted),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 32),
