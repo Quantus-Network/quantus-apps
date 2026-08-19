@@ -33,6 +33,10 @@ class _ScanTransactionScreenState extends State<ScanTransactionScreen> {
   bool _done = false;
   String? _error;
 
+  /// The last camera failure written to the log, so a rebuild of the same
+  /// error state does not repeat it.
+  String? _loggedCameraError;
+
   @override
   void dispose() {
     _controller.dispose();
@@ -93,12 +97,11 @@ class _ScanTransactionScreenState extends State<ScanTransactionScreen> {
   /// Simulators have no camera, so debug builds open the catalogue of every
   /// call the signer can review and inject one directly, exercising the same
   /// review → sign path a scan would reach.
-  Future<void> _openDebugCalls() async {
-    await _controller.stop();
-    if (!mounted) return;
-    await Navigator.push(context, MaterialPageRoute(builder: (_) => const DebugCallsScreen()));
-    if (!mounted) return;
-    await _restartCamera();
+  Future<void> _openDebugCalls() {
+    // The controller is left running: MobileScanner starts and stops it with
+    // this route's lifecycle, and starting it again here is what raised
+    // controllerAlreadyInitialized on the way back.
+    return Navigator.push(context, MaterialPageRoute(builder: (_) => const DebugCallsScreen()));
   }
 
   /// Retries a failed start. [MobileScannerController.start] folds scanner
@@ -112,13 +115,16 @@ class _ScanTransactionScreenState extends State<ScanTransactionScreen> {
       await _controller.start();
     } catch (e) {
       debugPrint('Camera restart failed: $e');
-      if (mounted) setState(() => _error = 'Camera restart failed: $e');
+      if (mounted) setState(() => _error = 'The camera could not be started.');
     }
   }
 
   Widget _cameraError(BuildContext context, MobileScannerException error) {
     final denied = error.errorCode == MobileScannerErrorCode.permissionDenied;
-    final detail = error.errorDetails?.message;
+    if (_loggedCameraError != error.toString()) {
+      _loggedCameraError = error.toString();
+      debugPrint('Camera unavailable (${error.errorCode.name}): ${error.errorDetails?.message}');
+    }
 
     return ColoredBox(
       color: Colors.black,
@@ -139,8 +145,7 @@ class _ScanTransactionScreenState extends State<ScanTransactionScreen> {
               Text(
                 denied
                     ? 'Grant camera access in Settings to scan the transaction QR.'
-                    : 'The camera could not be started (${error.errorCode.name})'
-                          '${detail == null ? '' : ': $detail'}.',
+                    : 'The camera could not be started.',
                 style: const TextStyle(color: Colors.white70),
                 textAlign: TextAlign.center,
               ),
@@ -167,13 +172,17 @@ class _ScanTransactionScreenState extends State<ScanTransactionScreen> {
       body: Stack(
         children: [
           MobileScanner(controller: _controller, onDetect: _onDetect, errorBuilder: _cameraError),
-          Center(
-            child: Container(
-              width: frame,
-              height: frame,
-              decoration: BoxDecoration(
-                border: Border.all(color: colors.accentOrange, width: 2),
-                borderRadius: BorderRadius.circular(16),
+          ValueListenableBuilder<MobileScannerState>(
+            valueListenable: _controller,
+            builder: (context, state, child) => state.error == null ? child! : const SizedBox.shrink(),
+            child: Center(
+              child: Container(
+                width: frame,
+                height: frame,
+                decoration: BoxDecoration(
+                  border: Border.all(color: colors.accentOrange, width: 2),
+                  borderRadius: BorderRadius.circular(16),
+                ),
               ),
             ),
           ),
