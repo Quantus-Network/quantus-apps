@@ -41,8 +41,8 @@ class SettingsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final colors = context.colors;
-    final text = context.themeText;
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
     final settings = ref.watch(coldSettingsProvider);
 
     return ScaffoldBase(
@@ -52,7 +52,7 @@ class SettingsScreen extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const SizedBox(height: 8),
-            Text('SECURITY', style: text.transactionDetailRowLabel?.copyWith(color: colors.textLabel)),
+            Text('SECURITY', style: text.labelMonogram.copyWith(color: colors.textMuted)),
             const SizedBox(height: 8),
             GestureDetector(
               onTap: () => showChangePasswordSheet(context),
@@ -63,11 +63,11 @@ class SettingsScreen extends ConsumerWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Change password', style: text.smallParagraph?.copyWith(color: colors.textPrimary)),
+                        Text('Change password', style: text.body.copyWith(color: colors.textContent)),
                         const SizedBox(height: 4),
                         Text(
                           'Set or change the password that encrypts the wallet key on this device.',
-                          style: text.detail?.copyWith(color: colors.textSecondary),
+                          style: text.caption.copyWith(color: colors.textMuted),
                         ),
                       ],
                     ),
@@ -94,13 +94,13 @@ class SettingsScreen extends ConsumerWidget {
                     children: [
                       Text(
                         'Wi-Fi Lock Override (debugging only)',
-                        style: text.smallParagraph?.copyWith(color: colors.textPrimary),
+                        style: text.body.copyWith(color: colors.textContent),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         'For debugging only — disables the network lock so the signer can be used while online. '
                         'Not safe: never use this with a wallet that holds real funds.',
-                        style: text.detail?.copyWith(color: colors.textSecondary),
+                        style: text.caption.copyWith(color: colors.textMuted),
                       ),
                     ],
                   ),
@@ -108,26 +108,26 @@ class SettingsScreen extends ConsumerWidget {
                 const SizedBox(width: 16),
                 Switch(
                   value: settings.wifiOverrideEnabled,
-                  activeTrackColor: colors.accentOrange,
+                  activeTrackColor: colors.accentFlare,
                   onChanged: (v) => _setWifiOverride(context, ref, v),
                 ),
               ],
             ),
             const SizedBox(height: 24),
-            Divider(color: colors.borderButton),
+            Divider(color: colors.borderHairline),
             const SizedBox(height: 16),
-            Text('SIGNATURE QR', style: text.transactionDetailRowLabel?.copyWith(color: colors.textLabel)),
+            Text('SIGNATURE QR', style: text.labelMonogram.copyWith(color: colors.textMuted)),
             const SizedBox(height: 8),
             Text(
               'How the animated signature QR is displayed. Higher values transfer faster but are harder to scan.',
-              style: text.detail?.copyWith(color: colors.textSecondary),
+              style: text.caption.copyWith(color: colors.textMuted),
             ),
             const SizedBox(height: 16),
             const QrTuningControls(),
             const SizedBox(height: 24),
-            Divider(color: colors.borderButton),
+            Divider(color: colors.borderHairline),
             const SizedBox(height: 16),
-            Text('DANGER ZONE', style: text.transactionDetailRowLabel?.copyWith(color: colors.textLabel)),
+            Text('DANGER ZONE', style: text.labelMonogram.copyWith(color: colors.textMuted)),
             const SizedBox(height: 8),
             GestureDetector(
               onTap: () => _confirmReset(context, ref),
@@ -138,11 +138,11 @@ class SettingsScreen extends ConsumerWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Reset wallet', style: text.smallParagraph?.copyWith(color: colors.error)),
+                        Text('Reset wallet', style: text.body.copyWith(color: colors.semanticEmber)),
                         const SizedBox(height: 4),
                         Text(
                           'Erase the encrypted key from this device.',
-                          style: text.detail?.copyWith(color: colors.textSecondary),
+                          style: text.caption.copyWith(color: colors.textMuted),
                         ),
                       ],
                     ),

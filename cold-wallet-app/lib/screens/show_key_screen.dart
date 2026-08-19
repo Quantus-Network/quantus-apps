@@ -8,8 +8,8 @@ class ShowKeyScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final colors = context.colors;
-    final text = context.themeText;
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
     final address = ref.watch(addressProvider);
     final checkphrase = ref.watch(checkphraseProvider);
 
@@ -24,7 +24,7 @@ class ShowKeyScreen extends ConsumerWidget {
                   const SizedBox(height: 8),
                   Text(
                     'Scan with your Quantus hot wallet to add this account.',
-                    style: text.smallParagraph?.copyWith(color: colors.textSecondary),
+                    style: text.body.copyWith(color: colors.textMuted),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 24),
@@ -33,7 +33,7 @@ class ShowKeyScreen extends ConsumerWidget {
                   checkphrase.when(
                     data: (phrase) => Text(
                       phrase,
-                      style: text.smallTitle?.copyWith(color: colors.checksum),
+                      style: text.headingRow.copyWith(color: colors.semanticLilac),
                       textAlign: TextAlign.center,
                     ),
                     loading: () => const Loader(size: 16),
@@ -42,13 +42,10 @@ class ShowKeyScreen extends ConsumerWidget {
                   const SizedBox(height: 16),
                   Container(
                     padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(color: colors.surfaceDeep, borderRadius: BorderRadius.circular(14)),
+                    decoration: BoxDecoration(color: colors.bgSurface, borderRadius: context.radiusV3.mdBorder),
                     child: Text(
                       address,
-                      style: text.detail?.copyWith(
-                        color: colors.textPrimary,
-                        fontFamily: AppTextTheme.fontFamilySecondary,
-                      ),
+                      style: text.dataAddressLarge.copyWith(color: colors.textContent),
                       textAlign: TextAlign.center,
                     ),
                   ),
