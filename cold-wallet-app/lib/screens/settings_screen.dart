@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:quantus_cold_wallet/components/confirm_dialog.dart';
 import 'package:quantus_cold_wallet/components/qr_tuning_controls.dart';
 import 'package:quantus_cold_wallet/providers/settings_providers.dart';
 import 'package:quantus_cold_wallet/providers/wallet_providers.dart';
@@ -15,23 +14,25 @@ class SettingsScreen extends ConsumerWidget {
       await ref.read(coldSettingsProvider.notifier).setWifiOverrideEnabled(false);
       return;
     }
-    final confirmed = await showConfirmDialog(
+    final confirmed = await showQuantusDialog(
       context,
       title: 'Override network lock?',
-      message:
+      body:
           'A cold wallet is only safe while fully offline — override the lock for testing only, never with a '
           'wallet that holds real funds.',
-      confirmLabel: 'Override',
+      actionLabel: 'Override',
+      isDestructive: true,
     );
     if (confirmed) await ref.read(coldSettingsProvider.notifier).setWifiOverrideEnabled(true);
   }
 
   Future<void> _confirmReset(BuildContext context, WidgetRef ref) async {
-    final confirmed = await showConfirmDialog(
+    final confirmed = await showQuantusDialog(
       context,
       title: 'Reset wallet?',
-      message: 'This erases the encrypted key from this device. You can only restore it with your recovery phrase.',
-      confirmLabel: 'Reset',
+      body: 'This erases the encrypted key from this device. You can only restore it with your recovery phrase.',
+      actionLabel: 'Reset',
+      isDestructive: true,
     );
     if (!confirmed) return;
     await ref.read(walletControllerProvider.notifier).wipe();

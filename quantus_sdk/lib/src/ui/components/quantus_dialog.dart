@@ -1,17 +1,30 @@
 import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 
-/// Shared v3 centered dialog: title, plain-consequence body, primary CTA.
+/// Shared v3 centered dialog: title, plain-consequence body, primary CTA, Cancel.
 ///
-/// Presentational only. Callers pass already-resolved [title], [body], and
-/// [actionLabel] strings. Overlay presentation is [showQuantusDialog].
+/// Presentational only. Callers pass already-resolved [title], [body],
+/// [actionLabel], and [cancelLabel] strings. Overlay presentation is
+/// [showQuantusDialog].
 class QuantusDialog extends StatelessWidget {
   final String title;
   final String body;
   final String actionLabel;
+  final String cancelLabel;
+  final bool isDestructive;
   final VoidCallback? onAction;
+  final VoidCallback? onCancel;
 
-  const QuantusDialog({super.key, required this.title, required this.body, required this.actionLabel, this.onAction});
+  const QuantusDialog({
+    super.key,
+    required this.title,
+    required this.body,
+    required this.actionLabel,
+    this.cancelLabel = 'Cancel',
+    this.isDestructive = false,
+    this.onAction,
+    this.onCancel,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -35,7 +48,13 @@ class QuantusDialog extends StatelessWidget {
           const SizedBox(height: 10),
           Text(body, style: text.body.copyWith(color: colors.textMuted, height: 1.55)),
           const SizedBox(height: 18),
-          QuantusButton.simple(label: actionLabel, onTap: onAction),
+          QuantusButton.simple(
+            label: actionLabel,
+            variant: isDestructive ? ButtonVariant.danger : ButtonVariant.primary,
+            onTap: onAction,
+          ),
+          const SizedBox(height: 12),
+          QuantusButton.simple(label: cancelLabel, variant: ButtonVariant.secondary, onTap: onCancel),
         ],
       ),
     );
@@ -44,12 +63,15 @@ class QuantusDialog extends StatelessWidget {
 
 /// Shows a centered [QuantusDialog].
 ///
-/// Returns `true` when the primary action is tapped, `false` if the barrier is dismissed.
+/// Returns `true` when the primary action is tapped, `false` when Cancel is
+/// tapped or the barrier is dismissed.
 Future<bool> showQuantusDialog(
   BuildContext context, {
   required String title,
   required String body,
   required String actionLabel,
+  String cancelLabel = 'Cancel',
+  bool isDestructive = false,
   bool barrierDismissible = true,
 }) async {
   final confirmed = await showDialog<bool>(
@@ -64,7 +86,10 @@ Future<bool> showQuantusDialog(
           title: title,
           body: body,
           actionLabel: actionLabel,
+          cancelLabel: cancelLabel,
+          isDestructive: isDestructive,
           onAction: () => Navigator.pop(dialogContext, true),
+          onCancel: () => Navigator.pop(dialogContext, false),
         ),
       );
     },
