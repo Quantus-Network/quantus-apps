@@ -120,12 +120,12 @@ class DebugPayloads {
     ),
   ];
 
-  /// The payloads Immunefi researchers used against the previous wallet, each
+  /// The payloads audit researchers used against the previous wallet, each
   /// of which had it display something other than what would execute. Kept as a
   /// live demonstration that the signer now refuses them; the assertions live in
-  /// `test/immunefi_regressions_test.dart`.
+  /// `test/audit_regressions_test.dart`.
   ///
-  /// Reports: security-reports/immunefi-1.
+  /// Labels carry the audit report id each payload comes from.
   static final List<DebugCall> invalidQrData = [
     DebugCall(
       pallet: 'Multisig',

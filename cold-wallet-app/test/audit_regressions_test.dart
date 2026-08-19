@@ -17,7 +17,7 @@ import 'package:quantus_cold_wallet/theme/app_theme.dart';
 
 import 'every_call_renders_test.dart' show renderedText;
 
-/// Every payload here is one an Immunefi researcher used against the previous
+/// Every payload here is one an audit researcher used against the previous
 /// wallet, where it produced a screen that did not describe what would execute:
 /// a multisig approval showing a zero amount, a batch showing no calls at all,
 /// a headline taken from a branch that was guaranteed to fail, or a benign
@@ -28,7 +28,7 @@ import 'every_call_renders_test.dart' show renderedText;
 /// attack depended on is rendered on the way to refusing it. A screen that
 /// refuses while still showing "SEND 1000 QUAN" has not fixed anything.
 ///
-/// Reports live in security-reports/immunefi-1.
+/// Each group names the audit report it comes from.
 const wallet = 'qzn6iLdo3ZfEbfr8LHbnehPTr7ubMmxSaftg9L1qw3wt55FSK';
 
 Future<void> pumpRequest(WidgetTester tester, SigningRequest request) async {
