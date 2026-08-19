@@ -41,6 +41,8 @@ class DebugCallsScreen extends ConsumerWidget {
                 ],
                 _header(context, 'REFUSED · ${DebugPayloads.refused.length}', colors.error),
                 for (final call in DebugPayloads.refused) _row(context, call, signer),
+                _header(context, 'INVALID QR CODE DATA · ${DebugPayloads.invalidQrData.length}', colors.error),
+                for (final call in DebugPayloads.invalidQrData) _row(context, call, signer),
                 const SizedBox(height: 24),
               ],
             ),
@@ -67,7 +69,7 @@ class DebugCallsScreen extends ConsumerWidget {
         context,
         MaterialPageRoute(
           builder: (_) => SignTransactionScreen(
-            request: SigningRequest(signer: signer, payload: DebugPayloads.payloadForCall(call.call)),
+            request: SigningRequest(signer: call.signer ?? signer, payload: DebugPayloads.payloadForCall(call.call)),
           ),
         ),
       ),

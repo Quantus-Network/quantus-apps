@@ -24,7 +24,10 @@ class DebugCall {
   /// The SCALE-encoded `RuntimeCall`, ready to be wrapped in signed extensions.
   final Uint8List call;
 
-  const DebugCall({required this.pallet, required this.label, required this.call});
+  /// The account the request names, when it is deliberately not this wallet's.
+  final String? signer;
+
+  const DebugCall({required this.pallet, required this.label, required this.call, this.signer});
 }
 
 /// Sample signing payloads for exercising the scan → review → sign flow on a
@@ -116,6 +119,106 @@ class DebugPayloads {
           .encode(),
     ),
   ];
+
+  /// The payloads Immunefi researchers used against the previous wallet, each
+  /// of which had it display something other than what would execute. Kept as a
+  /// live demonstration that the signer now refuses them; the assertions live in
+  /// `test/immunefi_regressions_test.dart`.
+  ///
+  /// Reports: security-reports/immunefi-1.
+  static final List<DebugCall> invalidQrData = [
+    DebugCall(
+      pallet: 'Multisig',
+      // #88483: the pallet decodes an inner call with `Decode`, which stops at
+      // the first complete call, so a padded blob stores and executes as a real
+      // transfer while the wallet that fetched it read it as something else.
+      label: 'approve, inner call padded with a trailing byte [#88483]',
+      call: const multisig_pallet.Txs()
+          .approve(multisigAddress: _debugMultisigAccount, proposalId: 0, call: [..._send(_tokens(1000)).encode(), 0])
+          .encode(),
+    ),
+    DebugCall(
+      pallet: 'Balances',
+      label: 'transfer padded with a trailing byte [#88483]',
+      call: Uint8List.fromList([..._send(_tokens(1000)).encode(), 0]),
+    ),
+    DebugCall(
+      pallet: 'Utility',
+      // #89008: the second call is undecodable, and the previous wallet
+      // suppressed that failure, showed the batch's generic label with no
+      // amount and no recipient, and left Approve enabled.
+      label: 'batch whose second call cannot be decoded [#89008]',
+      call: const utility_pallet.Txs()
+          .batchAll(
+            calls: [
+              _send(_tokens(50)),
+              const multisig_pallet.Txs().approve(
+                multisigAddress: _debugMultisigAccount,
+                proposalId: 0,
+                call: [0xfa, 0x00],
+              ),
+            ],
+          )
+          .encode(),
+    ),
+    DebugCall(
+      pallet: 'Utility',
+      // #88348 / #88914: if_else was displayed with the summary of its main
+      // branch, so a branch guaranteed to fail headlined the screen while the
+      // fallback moved the real amount. Decoding it also cost exponential time.
+      label: 'if_else headlining 1 QUAN over a 999999 QUAN fallback [#88914]',
+      call: _utilityCall(6, [..._send(_tokens(1)).encode(), ..._send(_tokens(999999)).encode()]),
+    ),
+    DebugCall(
+      pallet: 'Utility',
+      label: 'force_batch hiding calls after a failing one [#88730]',
+      call: _utilityCall(4, [0x04, ..._send(_tokens(1000)).encode()]),
+    ),
+    DebugCall(
+      pallet: 'Utility',
+      // #88730: 268 bytes that are a complete, canonical call under both the
+      // runtime's schema and the app's, with different call boundaries and
+      // different meanings — a benign add_member the victim reads, a
+      // transfer_all the chain runs. Verbatim from the report.
+      label: 'cross-schema payload hiding transfer_all [#88730]',
+      call: Uint8List.fromList(hex.decode(_crossSchemaPoc)),
+    ),
+    DebugCall(
+      pallet: 'Balances',
+      // The address form the boundary shift above is built on: an Index the
+      // runtime reads as zero-width and the old codec read as a compact.
+      label: 'transfer to an Index address [#88730]',
+      call: Uint8List.fromList(hex.decode(refusedCallCorpus['Balances.transfer_allow_death [dest=Index]']!)),
+    ),
+    DebugCall(
+      pallet: 'Balances',
+      label: 'transfer to an Address20 destination [#88730]',
+      call: Uint8List.fromList(hex.decode(refusedCallCorpus['Balances.transfer_allow_death [dest=Address20]']!)),
+    ),
+    DebugCall(
+      pallet: 'Balances',
+      // Not a decode failure: a well-formed request for a key this wallet does
+      // not hold, which the signer must refuse rather than sign with whatever
+      // account it happens to have.
+      label: 'a transfer addressed to another account',
+      call: _send(_tokens(1)).encode(),
+      signer: AppConstants.debugTestAddress,
+    ),
+  ];
+
+  /// The 268-byte proof of concept from report #88730, verbatim.
+  static const String _crossSchemaPoc =
+      '09060d0001090414020504aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa000000000000000000000000000000000204'
+      '00caad1e5b5296b318fc77ef3822ae82b74613590f03337b5e8220dc806c5cd56f000000f8aaaaaaaaaaaaaaaaaaaaaaaa'
+      'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+      'aaaa0000f8bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'
+      'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb0000d0cccccccccccccccccccccccccccccccccccccccccccccccccccccccc'
+      'cccccccccccccccccccccccccccccccccccccccccccccccccccc';
+
+  /// A `Utility` call this runtime does not declare, built at the pallet index
+  /// the generated encoder reports so it stays a Utility call if that moves.
+  static Uint8List _utilityCall(int callIndex, List<int> args) =>
+      Uint8List.fromList([const utility_pallet.Txs().batchAll(calls: []).encode()[0], callIndex, ...args]);
 
   /// Shapes the signer refuses outright, so the fail-closed screen — the one a
   /// signer sees instead of a call it cannot read in full — is reachable too.
