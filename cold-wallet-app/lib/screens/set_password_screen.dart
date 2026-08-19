@@ -74,8 +74,8 @@ class _SetPasswordScreenState extends ConsumerState<SetPasswordScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.colors;
-    final text = context.themeText;
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
 
     return ScaffoldBase(
       appBar: const V2AppBar(title: 'Set password'),
@@ -85,7 +85,7 @@ class _SetPasswordScreenState extends ConsumerState<SetPasswordScreen> {
           children: [
             Text(
               'Your password encrypts the wallet key stored on this device. There is no recovery if you forget it.',
-              style: text.smallParagraph?.copyWith(color: colors.textTertiary),
+              style: text.body.copyWith(color: colors.textMuted),
             ),
             const SizedBox(height: 24),
             PasswordField(controller: _password, hintText: 'Password'),
@@ -94,7 +94,7 @@ class _SetPasswordScreenState extends ConsumerState<SetPasswordScreen> {
             if (_biometricAvailable) ...[const SizedBox(height: 24), _biometricToggle(colors, text)],
             if (_error != null) ...[
               const SizedBox(height: 16),
-              Text(_error!, style: text.detail?.copyWith(color: colors.error)),
+              Text(_error!, style: text.caption.copyWith(color: colors.semanticEmber)),
             ],
           ],
         ),
@@ -105,24 +105,24 @@ class _SetPasswordScreenState extends ConsumerState<SetPasswordScreen> {
     );
   }
 
-  Widget _biometricToggle(AppColorsV2 colors, AppTextTheme text) {
+  Widget _biometricToggle(AppColorsV3 colors, AppTextThemeV3 text) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: colors.surfaceDeep,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: colors.borderButton, width: 1),
+        color: colors.bgSurface,
+        borderRadius: context.radiusV3.mdBorder,
+        border: Border.all(color: colors.borderHairline, width: 1),
       ),
       child: Row(
         children: [
-          Icon(Icons.fingerprint, color: colors.textPrimary, size: 20),
+          Icon(Icons.fingerprint, color: colors.textContent, size: 20),
           const SizedBox(width: 12),
           Expanded(
-            child: Text('Enable biometric unlock', style: text.smallParagraph?.copyWith(color: colors.textPrimary)),
+            child: Text('Enable biometric unlock', style: text.body.copyWith(color: colors.textContent)),
           ),
           Switch(
             value: _enableBiometric,
-            activeThumbColor: colors.accentOrange,
+            activeTrackColor: colors.accentFlare,
             onChanged: (v) => setState(() => _enableBiometric = v),
           ),
         ],

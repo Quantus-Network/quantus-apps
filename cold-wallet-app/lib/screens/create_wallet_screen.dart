@@ -32,8 +32,8 @@ class _CreateWalletScreenState extends State<CreateWalletScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.colors;
-    final text = context.themeText;
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
     final words = _words;
 
     return ScaffoldBase(
@@ -46,7 +46,7 @@ class _CreateWalletScreenState extends State<CreateWalletScreen> {
                 Text(
                   'Write these words down in order and keep them offline. Anyone with this phrase controls your funds. '
                   'It is never shown again and cannot be copied from this device.',
-                  style: text.smallParagraph?.copyWith(color: colors.textTertiary),
+                  style: text.body.copyWith(color: colors.textMuted),
                 ),
                 const SizedBox(height: 24),
                 Expanded(

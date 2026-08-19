@@ -28,8 +28,8 @@ class WelcomeScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final colors = context.colors;
-    final text = context.themeText;
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
 
     return ScaffoldBase(
       mainContent: Column(
@@ -40,13 +40,13 @@ class WelcomeScreen extends ConsumerWidget {
           const SizedBox(height: 32),
           Text(
             'Quantus Cold Wallet',
-            style: text.largeTitle?.copyWith(color: colors.textPrimary),
+            style: text.titleHero.copyWith(color: colors.textContent),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 12),
           Text(
             'An air-gapped signer for the Quantus network. This device never touches the internet.',
-            style: text.paragraph?.copyWith(color: colors.textSecondary),
+            style: text.body.copyWith(color: colors.textMuted),
             textAlign: TextAlign.center,
           ),
           const Spacer(flex: 3),
