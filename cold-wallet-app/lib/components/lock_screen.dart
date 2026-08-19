@@ -50,8 +50,8 @@ class _LockScreenState extends ConsumerState<LockScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.colors;
-    final text = context.themeText;
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
     final biometricEnabled = ref.watch(walletControllerProvider).biometricEnabled;
 
     return ScaffoldBase(
@@ -59,11 +59,11 @@ class _LockScreenState extends ConsumerState<LockScreen> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const Spacer(),
-          Icon(Icons.lock_outline_rounded, size: 64, color: colors.accentOrange),
+          Icon(Icons.lock_outline_rounded, size: 64, color: colors.accentFlare),
           const SizedBox(height: 24),
           Text(
             'Cold Wallet Locked',
-            style: text.mediumTitle?.copyWith(color: colors.textPrimary),
+            style: text.titleScreen.copyWith(color: colors.textContent),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 32),
@@ -76,7 +76,7 @@ class _LockScreenState extends ConsumerState<LockScreen> {
             const SizedBox(height: 12),
             Text(
               _error!,
-              style: text.detail?.copyWith(color: colors.error),
+              style: text.caption.copyWith(color: colors.semanticEmber),
               textAlign: TextAlign.center,
             ),
           ],
@@ -86,7 +86,7 @@ class _LockScreenState extends ConsumerState<LockScreen> {
             const SizedBox(height: 12),
             QuantusButton.simple(
               label: 'Use biometrics',
-              icon: Icon(Icons.fingerprint, color: colors.textPrimary, size: 18),
+              icon: Icon(Icons.fingerprint, color: colors.textContent, size: 18),
               iconPlacement: IconPlacement.leading,
               variant: ButtonVariant.secondary,
               onTap: _busy ? null : _unlockWithBiometric,

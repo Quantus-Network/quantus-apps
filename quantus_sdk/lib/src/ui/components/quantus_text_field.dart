@@ -12,10 +12,14 @@ class QuantusTextField extends StatefulWidget {
   final FocusNode? focusNode;
   final ValueChanged<String>? onChanged;
   final bool enabled;
+  final bool obscureText;
+  final bool enableSuggestions;
   final TextInputType? keyboardType;
   final TextInputAction? textInputAction;
   final TextCapitalization textCapitalization;
   final bool autocorrect;
+  final ValueChanged<String>? onSubmitted;
+  final Widget? trailing;
 
   const QuantusTextField({
     super.key,
@@ -26,10 +30,14 @@ class QuantusTextField extends StatefulWidget {
     this.focusNode,
     this.onChanged,
     this.enabled = true,
+    this.obscureText = false,
+    this.enableSuggestions = true,
     this.keyboardType,
     this.textInputAction,
     this.textCapitalization = TextCapitalization.none,
     this.autocorrect = true,
+    this.onSubmitted,
+    this.trailing,
   });
 
   @override
@@ -114,11 +122,14 @@ class _QuantusTextFieldState extends State<QuantusTextField> {
                   controller: widget.controller,
                   focusNode: _focusNode,
                   enabled: widget.enabled,
+                  obscureText: widget.obscureText,
+                  enableSuggestions: widget.enableSuggestions,
                   keyboardType: widget.keyboardType,
                   textInputAction: widget.textInputAction,
                   textCapitalization: widget.textCapitalization,
                   autocorrect: widget.autocorrect,
                   onChanged: widget.onChanged,
+                  onSubmitted: widget.onSubmitted,
                   cursorColor: colors.accentFlare,
                   style: textStyle,
                   decoration: InputDecoration.collapsed(hintText: widget.hint, hintStyle: hintStyle),
@@ -128,6 +139,7 @@ class _QuantusTextFieldState extends State<QuantusTextField> {
                 const SizedBox(width: 8),
                 _QuantusTextFieldClearButton(onTap: widget.controller.clear),
               ],
+              if (widget.trailing != null) ...[const SizedBox(width: 8), widget.trailing!],
             ],
           ),
         ),

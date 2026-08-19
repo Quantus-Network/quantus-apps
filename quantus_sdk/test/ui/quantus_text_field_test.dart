@@ -66,4 +66,37 @@ void main() {
     await tester.pump();
     expect(focusNode.hasFocus, isTrue);
   });
+
+  testWidgets('obscureText and enableSuggestions are forwarded', (tester) async {
+    final controller = TextEditingController(text: 'secret');
+    addTearDown(controller.dispose);
+
+    await pumpField(tester, QuantusTextField(controller: controller, obscureText: true, enableSuggestions: false));
+
+    final field = tester.widget<TextField>(find.byType(TextField));
+    expect(field.obscureText, isTrue);
+    expect(field.enableSuggestions, isFalse);
+  });
+
+  testWidgets('onSubmitted fires on IME done', (tester) async {
+    final controller = TextEditingController(text: 'hello');
+    addTearDown(controller.dispose);
+    String? submitted;
+
+    await pumpField(tester, QuantusTextField(controller: controller, onSubmitted: (value) => submitted = value));
+
+    await tester.showKeyboard(find.byType(TextField));
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    expect(submitted, 'hello');
+  });
+
+  testWidgets('trailing widget is shown', (tester) async {
+    final controller = TextEditingController();
+    addTearDown(controller.dispose);
+
+    await pumpField(tester, QuantusTextField(controller: controller, trailing: const Icon(Icons.visibility_outlined)));
+
+    expect(find.byIcon(Icons.visibility_outlined), findsOneWidget);
+    expect(find.byIcon(Icons.close), findsNothing);
+  });
 }
