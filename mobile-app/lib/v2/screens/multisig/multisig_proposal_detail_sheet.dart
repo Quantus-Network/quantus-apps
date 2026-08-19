@@ -210,7 +210,7 @@ class _MultisigProposalDetailSheet extends ConsumerWidget {
             child: const SizedBox(width: double.infinity, height: 1),
           ),
           const SizedBox(height: 8),
-          _summary(l10n, colors, text, fmt, multisigService, currentBlock, liveProposal),
+          _summary(l10n, fmt, multisigService, currentBlock, liveProposal),
           const SizedBox(height: 24),
           _signers(l10n, colors, text, liveProposal, localSignerIds),
           const SizedBox(height: 24),
@@ -261,8 +261,6 @@ class _MultisigProposalDetailSheet extends ConsumerWidget {
 
   Widget _summary(
     AppLocalizations l10n,
-    AppColorsV2 colors,
-    AppTextTheme text,
     NumberFormattingService fmt,
     MultisigService multisigService,
     int? currentBlock,
@@ -298,10 +296,7 @@ class _MultisigProposalDetailSheet extends ConsumerWidget {
         else
           DetailSummaryRow(
             label: l10n.multisigProposalExpiresLabel,
-            valueWidget: MultisigExpiryValue(
-              parts: expiryParts,
-              style: text.transactionDetailRowValue?.copyWith(color: Colors.white.withValues(alpha: 0.8)),
-            ),
+            valueWidget: MultisigExpiryValue(parts: expiryParts),
             valueFlex: 4,
           ),
         DetailSummaryRow(

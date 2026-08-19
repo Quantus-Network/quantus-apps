@@ -114,7 +114,6 @@ class MultisigProposeStrategy extends SendStrategy {
     final multisigService = ref.watch(multisigServiceProvider);
     final currentBlock = ref.watch(multisigCurrentBlockProvider).value;
     final breakdown = (fee as ProposeFee).breakdown;
-    final valueStyle = context.themeText.transactionDetailRowLabel;
     final proposerChecksum = ref.watch(checksumNameProvider(msig.myMemberAccountId)).value ?? '';
 
     String amt(BigInt v) =>
@@ -124,17 +123,15 @@ class MultisigProposeStrategy extends SendStrategy {
       const SizedBox(height: 4),
       DetailSummaryRow.review(
         label: l10n.multisigProposeProposerLabel,
-        valueWidget: _ProposerValue(address: msig.myMemberAccountId, checkphrase: proposerChecksum, style: valueStyle),
+        valueWidget: _ProposerValue(address: msig.myMemberAccountId, checkphrase: proposerChecksum),
         valueFlex: 4,
-        valueStyle: valueStyle,
       ),
       const SizedBox(height: 4),
-      DetailSummaryRow.review(label: l10n.sendReviewAmount, value: amt(amount), valueStyle: valueStyle),
+      DetailSummaryRow.review(label: l10n.sendReviewAmount, value: amt(amount)),
       const SizedBox(height: 4),
       DetailSummaryRow.review(
         label: l10n.multisigProposeThresholdLabel,
         value: '${msig.threshold}/${msig.signers.length}',
-        valueStyle: valueStyle,
       ),
       const SizedBox(height: 4),
       DetailSummaryRow.review(
@@ -146,35 +143,17 @@ class MultisigProposeStrategy extends SendStrategy {
             multisigService: multisigService,
             currentBlock: currentBlock,
           ),
-          style: valueStyle,
         ),
         valueFlex: 4,
-        valueStyle: valueStyle,
       ),
       const SizedBox(height: 4),
-      DetailSummaryRow.review(
-        label: l10n.sendReviewNetworkFee,
-        value: amt(breakdown.networkFee),
-        valueStyle: valueStyle,
-      ),
+      DetailSummaryRow.review(label: l10n.sendReviewNetworkFee, value: amt(breakdown.networkFee)),
       const SizedBox(height: 4),
-      DetailSummaryRow.review(
-        label: l10n.multisigProposalDepositLabel,
-        value: amt(breakdown.deposit),
-        valueStyle: valueStyle,
-      ),
+      DetailSummaryRow.review(label: l10n.multisigProposalDepositLabel, value: amt(breakdown.deposit)),
       const SizedBox(height: 4),
-      DetailSummaryRow.review(
-        label: l10n.multisigProposeFeeRowLabel,
-        value: amt(breakdown.creationFee),
-        valueStyle: valueStyle,
-      ),
+      DetailSummaryRow.review(label: l10n.multisigProposeFeeRowLabel, value: amt(breakdown.creationFee)),
       const SizedBox(height: 4),
-      DetailSummaryRow.review(
-        label: l10n.multisigProposeMemberTotalLabel,
-        value: amt(breakdown.memberCost),
-        valueStyle: valueStyle,
-      ),
+      DetailSummaryRow.review(label: l10n.multisigProposeMemberTotalLabel, value: amt(breakdown.memberCost)),
       const SizedBox(height: 4),
     ];
   }
@@ -256,15 +235,15 @@ class MultisigProposeStrategy extends SendStrategy {
 }
 
 class _ProposerValue extends StatelessWidget {
-  const _ProposerValue({required this.address, required this.checkphrase, required this.style});
+  const _ProposerValue({required this.address, required this.checkphrase});
 
   final String address;
   final String checkphrase;
-  final TextStyle? style;
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.colors;
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.end,
       mainAxisSize: MainAxisSize.min,
@@ -272,11 +251,16 @@ class _ProposerValue extends StatelessWidget {
         if (checkphrase.isNotEmpty)
           Text(
             checkphrase,
-            style: style?.copyWith(color: colors.checksum),
+            style: text.caption.copyWith(color: colors.semanticLilac),
             textAlign: TextAlign.right,
           ),
         const SizedBox(height: 2),
-        Text(address, style: style, textAlign: TextAlign.right, softWrap: true),
+        Text(
+          address,
+          style: text.body.copyWith(color: colors.textContent),
+          textAlign: TextAlign.right,
+          softWrap: true,
+        ),
       ],
     );
   }

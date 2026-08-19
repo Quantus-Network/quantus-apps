@@ -343,7 +343,6 @@ class _MultisigActionConfirmSheetState extends ConsumerState<MultisigActionConfi
     final colors = context.colors;
     final text = context.themeText;
     final fmt = ref.watch(numberFormattingServiceProvider);
-    final valueStyle = text.transactionDetailRowLabel;
     final networkFeeLabel = _networkFeeLabel(l10n, fmt);
     final decoded = _decodedProposalCall;
     final headline = DecodedCallHeadline.of(
@@ -383,7 +382,7 @@ class _MultisigActionConfirmSheetState extends ConsumerState<MultisigActionConfi
           ],
           if (networkFeeLabel != null) ...[
             const SizedBox(height: 16),
-            DetailSummaryRow.review(label: l10n.sendReviewNetworkFee, value: networkFeeLabel, valueStyle: valueStyle),
+            DetailSummaryRow.review(label: l10n.sendReviewNetworkFee, value: networkFeeLabel),
           ],
           if (_feeEstimateFailed) ...[
             const SizedBox(height: 16),

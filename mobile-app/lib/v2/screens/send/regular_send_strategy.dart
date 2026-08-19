@@ -97,7 +97,6 @@ class RegularSendStrategy extends SendStrategy {
     final l10n = ref.watch(l10nProvider);
     final fmt = ref.watch(numberFormattingServiceProvider);
     final networkFee = (fee as RegularFee).networkFee;
-    final valueStyle = context.themeText.transactionDetailRowLabel;
     final addr = recipientAddress.trim();
 
     String amt(BigInt v) =>
@@ -105,13 +104,13 @@ class RegularSendStrategy extends SendStrategy {
 
     return [
       const SizedBox(height: 7),
-      DetailSummaryRow.review(label: l10n.sendReviewTo, value: addr, valueStyle: valueStyle),
+      DetailSummaryRow.review(label: l10n.sendReviewTo, value: addr),
       const SizedBox(height: 7),
-      DetailSummaryRow.review(label: l10n.sendReviewAmount, value: amt(amount), valueStyle: valueStyle),
+      DetailSummaryRow.review(label: l10n.sendReviewAmount, value: amt(amount)),
       const SizedBox(height: 7),
-      DetailSummaryRow.review(label: l10n.sendReviewNetworkFee, value: amt(networkFee), valueStyle: valueStyle),
+      DetailSummaryRow.review(label: l10n.sendReviewNetworkFee, value: amt(networkFee)),
       const SizedBox(height: 7),
-      DetailSummaryRow.review(label: l10n.sendReviewYouPay, value: amt(amount + networkFee), valueStyle: valueStyle),
+      DetailSummaryRow.review(label: l10n.sendReviewYouPay, value: amt(amount + networkFee)),
       const SizedBox(height: 7),
     ];
   }

@@ -121,4 +121,31 @@ class DecodedCall {
     final words = call.split('_').where((w) => w.isNotEmpty).join(' ');
     return words[0].toUpperCase() + words.substring(1);
   }
+
+  /// Every ss58 address this call names, nested calls included, first-seen order.
+  ///
+  /// Renderers watch checkphrases for this list in the host app, then pass the
+  /// resolved strings into the presentational tree.
+  List<String> get addresses {
+    final seen = <String>{};
+    final out = <String>[];
+    void walk(List<CallField> fields) {
+      for (final field in fields) {
+        switch (field) {
+          case ValueField(:final value, kind: ValueKind.address):
+            if (seen.add(value)) out.add(value);
+          case FieldGroup(:final items):
+            walk(items);
+          case NestedCallField(:final call):
+            walk(call.fields);
+          case AmountField():
+          case ValueField():
+            break;
+        }
+      }
+    }
+
+    walk(fields);
+    return out;
+  }
 }

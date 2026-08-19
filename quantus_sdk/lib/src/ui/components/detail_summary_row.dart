@@ -1,7 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 
-/// Label/value row used in review screens and detail sheets.
+/// Density for [DetailSummaryRow] until design picks one layout.
+enum DetailSummaryLayout {
+  /// Sheet/list: label left, value right.
+  compact,
+
+  /// Signing review: label above value, wrap, no ellipsis.
+  stacked,
+}
+
+/// Label/value row used in review screens, detail sheets, and signing.
 class DetailSummaryRow extends StatelessWidget {
   final String label;
   final String? value;
@@ -11,6 +20,15 @@ class DetailSummaryRow extends StatelessWidget {
   final EdgeInsetsGeometry padding;
   final TextStyle? labelStyle;
   final TextStyle? valueStyle;
+  final DetailSummaryLayout layout;
+
+  /// Monospace value, for addresses, hashes and byte blobs. [stacked] only.
+  final bool monospace;
+
+  final Color? valueColor;
+
+  /// Caveat shown under the value. [stacked] only.
+  final String? note;
 
   const DetailSummaryRow({
     super.key,
@@ -22,6 +40,10 @@ class DetailSummaryRow extends StatelessWidget {
     this.padding = const EdgeInsets.symmetric(vertical: 8),
     this.labelStyle,
     this.valueStyle,
+    this.layout = DetailSummaryLayout.compact,
+    this.monospace = false,
+    this.valueColor,
+    this.note,
   }) : assert(value != null || valueWidget != null);
 
   factory DetailSummaryRow.review({
@@ -43,13 +65,33 @@ class DetailSummaryRow extends StatelessWidget {
     );
   }
 
+  /// Label-above-value row. Values wrap rather than ellipsize so a signer can
+  /// read a full address or hash.
+  const DetailSummaryRow.stacked({
+    super.key,
+    required this.label,
+    required String this.value,
+    this.monospace = false,
+    this.valueColor,
+    this.note,
+  }) : valueWidget = null,
+       labelFlex = 2,
+       valueFlex = 3,
+       labelStyle = null,
+       valueStyle = null,
+       layout = DetailSummaryLayout.stacked,
+       padding = const EdgeInsets.symmetric(vertical: 10);
+
   @override
   Widget build(BuildContext context) {
-    final text = context.themeText;
-    final colors = context.colors;
-    final effectiveLabelStyle = labelStyle ?? text.transactionDetailRowLabel?.copyWith(color: colors.textTertiary);
-    final effectiveValueStyle =
-        valueStyle ?? text.transactionDetailRowValue?.copyWith(color: Colors.white.withValues(alpha: 0.8));
+    return layout == DetailSummaryLayout.stacked ? _stacked(context) : _compact(context);
+  }
+
+  Widget _compact(BuildContext context) {
+    final text = context.themeTextV3;
+    final colors = context.colorsV3;
+    final effectiveLabelStyle = labelStyle ?? _labelStyle(text, colors);
+    final effectiveValueStyle = valueStyle ?? text.body.copyWith(color: colors.textContent);
 
     return Container(
       padding: padding,
@@ -72,5 +114,33 @@ class DetailSummaryRow extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  Widget _stacked(BuildContext context) {
+    final text = context.themeTextV3;
+    final colors = context.colorsV3;
+
+    return Padding(
+      padding: padding,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label.toUpperCase(), style: _labelStyle(text, colors)),
+          const SizedBox(height: 6),
+          Text(
+            value!,
+            style: (monospace ? text.dataAddressLarge : text.body).copyWith(color: valueColor ?? colors.textContent),
+          ),
+          if (note != null) ...[
+            const SizedBox(height: 4),
+            Text(note!, style: text.caption.copyWith(color: colors.textMuted)),
+          ],
+        ],
+      ),
+    );
+  }
+
+  TextStyle _labelStyle(AppTextThemeV3 text, AppColorsV3 colors) {
+    return text.labelMonogram.copyWith(fontSize: 10, letterSpacing: 1, color: colors.textMuted);
   }
 }

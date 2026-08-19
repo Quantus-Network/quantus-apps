@@ -168,3 +168,7 @@ final checkphraseProvider = FutureProvider<String>((ref) async {
   final name = await HumanReadableChecksumService().getHumanReadableName(address);
   return name ?? '';
 });
+
+final checksumNameProvider = FutureProvider.family<String, String>((ref, address) async {
+  return (await HumanReadableChecksumService().getHumanReadableName(address)) ?? '';
+});
