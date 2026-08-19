@@ -202,7 +202,7 @@ class DebugPayloads {
       // account it happens to have.
       label: 'a transfer addressed to another account',
       call: _send(_tokens(1)).encode(),
-      signer: AppConstants.debugTestAddress,
+      signer: _otherAccount,
     ),
   ];
 
@@ -287,6 +287,10 @@ class DebugPayloads {
   /// Synthetic multisig account; renders as a valid ss58 address with a
   /// checkphrase without needing a real on-chain multisig.
   static final Uint8List _debugMultisigAccount = Uint8List.fromList(List.filled(32, 0xA7));
+
+  /// An account no vault holds, for the request a signer must refuse because it
+  /// is addressed elsewhere.
+  static final String _otherAccount = AddressExtension.ss58AddressFromBytes(_debugMultisigAccount);
 
   /// Decoded in pure Dart rather than through the Rust bridge, so the catalogue
   /// can be built before — or without — [RustLib] being initialised.

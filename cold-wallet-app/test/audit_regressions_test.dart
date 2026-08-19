@@ -29,7 +29,7 @@ import 'every_call_renders_test.dart' show renderedText;
 /// refuses while still showing "SEND 1000 QUAN" has not fixed anything.
 ///
 /// Each group names the audit report it comes from.
-const wallet = 'qzn6iLdo3ZfEbfr8LHbnehPTr7ubMmxSaftg9L1qw3wt55FSK';
+const wallet = AppConstants.debugTestAddress;
 
 Future<void> pumpRequest(WidgetTester tester, SigningRequest request) async {
   await tester.pumpWidget(
