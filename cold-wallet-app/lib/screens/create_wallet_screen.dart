@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:quantus_cold_wallet/components/mnemonic_grid.dart';
 import 'package:quantus_cold_wallet/screens/set_password_screen.dart';
 
 class CreateWalletScreen extends StatefulWidget {

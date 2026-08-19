@@ -24,3 +24,4 @@ export 'quantus_qr.dart';
 export 'segmented_controls.dart';
 export 'back_button.dart';
 export 'animated_ur_qr.dart';
+export 'mnemonic_grid.dart';
