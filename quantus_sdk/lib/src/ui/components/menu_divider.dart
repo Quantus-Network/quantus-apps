@@ -6,5 +6,5 @@ class MenuDivider extends StatelessWidget {
   const MenuDivider({super.key});
 
   @override
-  Widget build(BuildContext context) => Divider(color: context.colors.toasterBackground, height: 1);
+  Widget build(BuildContext context) => Divider(color: context.colorsV3.borderHairline, height: 1);
 }
