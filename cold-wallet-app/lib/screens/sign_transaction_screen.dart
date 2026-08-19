@@ -99,26 +99,32 @@ class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> {
     final text = context.themeText;
     return ScaffoldBase(
       appBar: const V2AppBar(title: 'Sign Transaction'),
-      mainContent: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.error_outline, size: 64, color: colors.error),
-          const SizedBox(height: 24),
-          Text('Could not read transaction', style: text.mediumTitle?.copyWith(color: colors.textPrimary)),
-          const SizedBox(height: 12),
-          Text(
-            'This QR code is not a transaction this wallet can read in full, so it will not be signed. '
-            'Nothing was signed.',
-            style: text.smallParagraph?.copyWith(color: colors.textSecondary),
-            textAlign: TextAlign.center,
+      // The reason is as long as the decoder's message, which no layout can
+      // bound, so this column scrolls rather than overflowing on a small screen.
+      mainContent: Center(
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.error_outline, size: 64, color: colors.error),
+              const SizedBox(height: 24),
+              Text('Could not read transaction', style: text.mediumTitle?.copyWith(color: colors.textPrimary)),
+              const SizedBox(height: 12),
+              Text(
+                'This QR code is not a transaction this wallet can read in full, so it will not be signed. '
+                'Nothing was signed.',
+                style: text.smallParagraph?.copyWith(color: colors.textSecondary),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                reason,
+                style: text.detail?.copyWith(color: colors.textMuted),
+                textAlign: TextAlign.center,
+              ),
+            ],
           ),
-          const SizedBox(height: 12),
-          Text(
-            reason,
-            style: text.detail?.copyWith(color: colors.textMuted),
-            textAlign: TextAlign.center,
-          ),
-        ],
+        ),
       ),
       bottomContent: ScaffoldBaseBottomContent(
         child: QuantusButton.simple(label: 'Back to home', onTap: () => Navigator.popUntil(context, (r) => r.isFirst)),

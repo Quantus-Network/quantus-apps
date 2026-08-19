@@ -61,11 +61,18 @@ Iterable<String> renderedText(WidgetTester tester) sync* {
   }
 }
 
+/// Everything the debug catalogue offers: every call the runtime declares, plus
+/// the wrapper shapes composed by hand because the corpus fills every nested
+/// call slot with the same placeholder remark.
+final catalogue = [for (final entry in DebugPayloads.byPallet.entries) ...entry.value];
+
+String nameOf(DebugCall call) => '${call.pallet}.${call.label}';
+
 void main() {
-  group('every call the runtime declares renders on the signing screen', () {
-    for (final entry in callCorpus.entries) {
-      testWidgets(entry.key, (tester) async {
-        final payload = payloadFor(entry.value);
+  group('every call the debug catalogue offers renders on the signing screen', () {
+    for (final call in catalogue) {
+      testWidgets(nameOf(call), (tester) async {
+        final payload = DebugPayloads.payloadForCall(call.call);
 
         for (final surface in surfaces) {
           await pumpAt(tester, payload, surface.size, surface.scale);
@@ -73,16 +80,16 @@ void main() {
           expect(
             tester.takeException(),
             isNull,
-            reason: '${entry.key} at ${surface.label}: the screen overflowed or threw',
+            reason: '${nameOf(call)} at ${surface.label}: the screen overflowed or threw',
           );
 
           final texts = renderedText(tester).toList();
-          expect(texts, isNotEmpty, reason: '${entry.key} at ${surface.label}: nothing rendered');
+          expect(texts, isNotEmpty, reason: '${nameOf(call)} at ${surface.label}: nothing rendered');
           for (final text in texts) {
             expect(
               text,
               isNot(anyOf(contains("Instance of '"), contains('MapEntry('))),
-              reason: '${entry.key} at ${surface.label}: a Dart object reached the screen',
+              reason: '${nameOf(call)} at ${surface.label}: a Dart object reached the screen',
             );
           }
 
@@ -90,7 +97,7 @@ void main() {
             expect(
               paragraph.didExceedMaxLines,
               isFalse,
-              reason: '${entry.key} at ${surface.label}: "${paragraph.text.toPlainText()}" was truncated',
+              reason: '${nameOf(call)} at ${surface.label}: "${paragraph.text.toPlainText()}" was truncated',
             );
           }
         }
@@ -99,9 +106,9 @@ void main() {
   });
 
   group('every field reaches the screen exactly once', () {
-    for (final entry in callCorpus.entries) {
-      test(entry.key, () {
-        expectEveryFieldShownOnce(CallDecoder.decodeBytes(hex.decode(entry.value), policy: const FullCallPolicy()));
+    for (final call in catalogue) {
+      test(nameOf(call), () {
+        expectEveryFieldShownOnce(CallDecoder.decodeBytes(call.call, policy: const FullCallPolicy()));
       });
     }
   });
@@ -116,5 +123,53 @@ void main() {
       expect(decoded.isWrapper, isTrue);
       expect(decoded.fields.whereType<NestedCallField>(), hasLength(1));
     });
+
+    test('a multisig approval carries every call of the batch it approves', () {
+      final approval = catalogue.firstWhere((c) => c.label == 'approve [batch_all of 16 transfers]');
+      final decoded = CallDecoder.decodeBytes(approval.call, policy: const FullCallPolicy());
+
+      final batch = decoded.fields.whereType<NestedCallField>().single.call;
+      expect(batch.call, 'batch_all');
+      // Pins the pure-Dart ss58 decode the catalogue builds addresses with
+      // against the address it was given.
+      final first = batch.fields.whereType<NestedCallField>().first.call;
+      expect(
+        first.fields.whereType<ValueField>().singleWhere((f) => f.kind == ValueKind.address).value,
+        AppConstants.debugTestAddress,
+      );
+      expect(batch.fields.whereType<NestedCallField>(), hasLength(16));
+      // The batch moves value but is not itself a send, so the approval must not
+      // borrow one of the sixteen amounts for its headline.
+      expect(decoded.actionTitle, 'MULTISIG APPROVE');
+    });
+
+    testWidgets('all sixteen batched transfers reach the screen', (tester) async {
+      final approval = catalogue.firstWhere((c) => c.label == 'approve [batch_all of 16 transfers]');
+      await pumpAt(tester, DebugPayloads.payloadForCall(approval.call), surfaces.first.size, surfaces.first.scale);
+
+      expect(tester.takeException(), isNull);
+      for (var i = 1; i <= 16; i++) {
+        await tester.scrollUntilVisible(find.text('CALL $i'), 200);
+        expect(find.text('CALL $i'), findsOneWidget, reason: 'batched transfer $i never reached the screen');
+      }
+    });
+  });
+
+  group('the shapes the signer refuses fail closed', () {
+    for (final call in DebugPayloads.refused) {
+      testWidgets(nameOf(call), (tester) async {
+        expect(
+          () => CallDecoder.decodeBytes(call.call, policy: const FullCallPolicy()),
+          throwsA(isA<FormatException>()),
+          reason: '${nameOf(call)} decoded, but the catalogue lists it as refused',
+        );
+
+        await pumpAt(tester, DebugPayloads.payloadForCall(call.call), surfaces.first.size, surfaces.first.scale);
+
+        expect(tester.takeException(), isNull);
+        expect(find.text('Could not read transaction'), findsOneWidget);
+        expect(find.text('Sign'), findsNothing, reason: '${nameOf(call)} offered a Sign button');
+      });
+    }
   });
 }

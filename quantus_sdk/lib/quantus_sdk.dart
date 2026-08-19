@@ -11,6 +11,7 @@ export 'src/chain/call_decoder.dart';
 export 'src/chain/call_policy.dart';
 export 'src/chain/decoded_call.dart';
 export 'src/constants/app_constants.dart';
+export 'src/extensions/address_extension.dart';
 export 'src/extensions/color_extensions.dart';
 export 'src/extensions/context_extension.dart';
 export 'src/extensions/decimal_input_filter.dart';

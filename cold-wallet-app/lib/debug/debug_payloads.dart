@@ -93,6 +93,21 @@ class DebugPayloads {
       label: 'batch_all [two transfers]',
       call: const utility_pallet.Txs().batchAll(calls: [_send(_tokens(1.5)), _send(_tokens(0.25))]).encode(),
     ),
+    DebugCall(pallet: 'Utility', label: 'batch_all [16 transfers]', call: _batchOf(16).encode()),
+    DebugCall(
+      pallet: 'Multisig',
+      label: 'approve [batch_all of 16 transfers]',
+      call: const multisig_pallet.Txs()
+          .approve(multisigAddress: _debugMultisigAccount, proposalId: 12, call: _batchOf(16).encode())
+          .encode(),
+    ),
+    DebugCall(
+      pallet: 'Multisig',
+      label: 'propose [batch_all of 16 transfers]',
+      call: const multisig_pallet.Txs()
+          .propose(multisigAddress: _debugMultisigAccount, call: _batchOf(16).encode(), expiry: 5000000)
+          .encode(),
+    ),
     DebugCall(
       pallet: 'Recovery',
       label: 'as_recovered [carrying a transfer]',
@@ -101,6 +116,59 @@ class DebugPayloads {
           .encode(),
     ),
   ];
+
+  /// Shapes the signer refuses outright, so the fail-closed screen — the one a
+  /// signer sees instead of a call it cannot read in full — is reachable too.
+  ///
+  /// Nesting stops at [maxCallNestingDepth] levels, and a batch may not carry
+  /// another batch at any depth, so neither a ten-level chain nor a tree of
+  /// batches inside multisigs inside batches can be built: the decoder refuses
+  /// them before it reads an argument byte.
+  static final List<DebugCall> refused = [
+    DebugCall(pallet: 'Multisig', label: 'propose × 3 [one level past the limit]', call: _multisigChain(3).encode()),
+    DebugCall(pallet: 'Multisig', label: 'propose × 10 [ten levels deep]', call: _multisigChain(10).encode()),
+    DebugCall(
+      pallet: 'Utility',
+      label: 'batch_all inside a batch_all',
+      call: const utility_pallet.Txs().batchAll(calls: [_innerBatch]).encode(),
+    ),
+    DebugCall(
+      pallet: 'Utility',
+      label: 'batch_all of multisigs carrying batch_alls',
+      call: const utility_pallet.Txs()
+          .batchAll(
+            calls: [
+              const multisig_pallet.Txs().propose(
+                multisigAddress: _debugMultisigAccount,
+                call: _innerBatch.encode(),
+                expiry: 5000000,
+              ),
+            ],
+          )
+          .encode(),
+    ),
+  ];
+
+  /// The batch every refused shape carries as its second batch.
+  static final RuntimeCall _innerBatch = _batchOf(2);
+
+  /// A batch of [count] transfers, each for a different amount so no two rows
+  /// on the review screen are interchangeable.
+  static RuntimeCall _batchOf(int count) =>
+      const utility_pallet.Txs().batchAll(calls: [for (var i = 1; i <= count; i++) _send(_tokens(i / 4))]);
+
+  /// [depth] multisig proposals, each carrying the next, innermost a transfer.
+  static RuntimeCall _multisigChain(int depth) {
+    var call = _send(_tokens(1.5));
+    for (var i = 0; i < depth; i++) {
+      call = const multisig_pallet.Txs().propose(
+        multisigAddress: _debugMultisigAccount,
+        call: call.encode(),
+        expiry: 5000000,
+      );
+    }
+    return call;
+  }
 
   /// An aye vote on a tech-collective referendum — moves no value, so the review
   /// screen must name the call instead of showing an amount.
@@ -117,8 +185,10 @@ class DebugPayloads {
   /// checkphrase without needing a real on-chain multisig.
   static final Uint8List _debugMultisigAccount = Uint8List.fromList(List.filled(32, 0xA7));
 
+  /// Decoded in pure Dart rather than through the Rust bridge, so the catalogue
+  /// can be built before — or without — [RustLib] being initialised.
   static multi_address.MultiAddress _address(String ss58) =>
-      multi_address.MultiAddress.values.id(ss58ToAccountId(s: ss58));
+      multi_address.MultiAddress.values.id(AddressExtension.accountIdFromSs58(ss58));
 
   /// The debug account the scanner injects for, matching the vault's first
   /// account so the signer screen can resolve it.

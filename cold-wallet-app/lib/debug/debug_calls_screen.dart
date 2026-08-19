@@ -36,18 +36,24 @@ class DebugCallsScreen extends ConsumerWidget {
           : ListView(
               children: [
                 for (final entry in DebugPayloads.byPallet.entries) ...[
-                  Padding(
-                    padding: const EdgeInsets.only(top: 20, bottom: 8),
-                    child: Text(
-                      '${entry.key.toUpperCase()} · ${entry.value.length}',
-                      style: text.transactionDetailRowLabel?.copyWith(color: colors.accentOrange, letterSpacing: 1.2),
-                    ),
-                  ),
+                  _header(context, '${entry.key.toUpperCase()} · ${entry.value.length}', colors.accentOrange),
                   for (final call in entry.value) _row(context, call, signer),
                 ],
+                _header(context, 'REFUSED · ${DebugPayloads.refused.length}', colors.error),
+                for (final call in DebugPayloads.refused) _row(context, call, signer),
                 const SizedBox(height: 24),
               ],
             ),
+    );
+  }
+
+  Widget _header(BuildContext context, String title, Color color) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 20, bottom: 8),
+      child: Text(
+        title,
+        style: context.themeText.transactionDetailRowLabel?.copyWith(color: color, letterSpacing: 1.2),
+      ),
     );
   }
 

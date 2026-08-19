@@ -6,7 +6,6 @@ import 'package:quantus_sdk/generated/planck/types/pallet_recovery/active_recove
 import 'package:quantus_sdk/generated/planck/types/pallet_recovery/recovery_config.dart';
 import 'package:quantus_sdk/generated/planck/types/sp_runtime/multiaddress/multi_address.dart' as multi_address;
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:quantus_sdk/src/extensions/address_extension.dart';
 import 'package:quantus_sdk/src/rust/api/crypto.dart' as crypto;
 
 /// Service for managing account recovery functionality

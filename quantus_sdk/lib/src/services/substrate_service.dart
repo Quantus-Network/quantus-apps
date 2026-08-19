@@ -10,7 +10,6 @@ import 'package:quantus_sdk/src/resonance_extrinsic_payload.dart';
 import 'package:quantus_sdk/src/rust/api/crypto.dart' as crypto;
 import 'package:quantus_sdk/src/utils/timing.dart';
 import 'package:ss58/ss58.dart' hide Registry;
-import 'package:quantus_sdk/src/extensions/address_extension.dart';
 import 'package:quantus_sdk/src/utils/print.dart';
 
 const crystalAlice = '//Crystal Alice';
