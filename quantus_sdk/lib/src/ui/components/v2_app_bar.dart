@@ -19,8 +19,8 @@ class V2AppBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.colors;
-    final text = context.themeText;
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
 
     Widget leftWidget = leading ?? (showBackButton ? const AppBackButton() : const SizedBox(width: 24));
     Widget rightWidget = trailing ?? const SizedBox(width: 24);
@@ -31,7 +31,7 @@ class V2AppBar extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           leftWidget,
-          Text(title, style: text.smallTitle?.copyWith(color: colors.textPrimary, fontSize: 20)),
+          Text(title, style: text.titleScreen.copyWith(color: colors.textContent)),
           rightWidget,
         ],
       ),

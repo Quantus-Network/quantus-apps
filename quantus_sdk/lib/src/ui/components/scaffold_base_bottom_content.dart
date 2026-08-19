@@ -13,7 +13,7 @@ class ScaffoldBaseBottomContent extends StatelessWidget {
     return Container(
       padding: padding,
       decoration: BoxDecoration(
-        border: Border(top: BorderSide(color: context.colors.surfaceDeep, width: 1)),
+        border: Border(top: BorderSide(color: context.colorsV3.borderHairline, width: 1)),
       ),
       child: child,
     );

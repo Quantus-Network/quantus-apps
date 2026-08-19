@@ -8,6 +8,6 @@ class BaseBackground extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(color: context.colors.background, child: child);
+    return Container(color: context.colorsV3.bgVoid, child: child);
   }
 }

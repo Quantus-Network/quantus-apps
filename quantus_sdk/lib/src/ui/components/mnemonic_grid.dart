@@ -48,15 +48,18 @@ class MnemonicGrid extends StatelessWidget {
     final double blur = isRevealed ? 0 : 5;
     final effectiveWord = isRevealed ? word : 'blurred';
 
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
+
     return Container(
       padding: padding,
-      decoration: BoxDecoration(color: context.colors.surfaceDeep, borderRadius: BorderRadius.circular(14)),
+      decoration: BoxDecoration(color: colors.bgSurface, borderRadius: context.radiusV3.mdBorder),
       child: Row(
         children: [
           Text(
             '$index',
             textAlign: TextAlign.left,
-            style: context.themeText.detail?.copyWith(color: context.colors.textTertiary),
+            style: text.caption.copyWith(color: colors.textMuted),
           ),
           const SizedBox(width: 8),
           ImageFiltered(
@@ -64,7 +67,7 @@ class MnemonicGrid extends StatelessWidget {
             child: Text(
               effectiveWord,
               textAlign: TextAlign.left,
-              style: context.themeText.detail?.copyWith(color: context.colors.checksum),
+              style: text.caption.copyWith(color: colors.semanticLilac),
             ),
           ),
         ],

@@ -418,7 +418,7 @@ class AppColorsV3 extends ThemeExtension<AppColorsV3> {
   /// Waits. Pending, suspended, reversible, in-between.
   final Color semanticGlacier;
 
-  /// Checkphrases only. Nothing else wears lilac, ever.
+  /// Checkphrases and recovery/mnemonic words. Nothing else wears lilac.
   final Color semanticLilac;
 
   /// Default border. All cards, rows, dividers. White at 7%.

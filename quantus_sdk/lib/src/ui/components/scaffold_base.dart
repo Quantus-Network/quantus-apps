@@ -45,7 +45,7 @@ class ScaffoldBase extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.colors;
+    final colors = context.colorsV3;
 
     Widget bodyContent = Column(
       children: [
@@ -66,13 +66,13 @@ class ScaffoldBase extends StatelessWidget {
     return Scaffold(body: scaffoldBody);
   }
 
-  Widget _buildChild(AppColorsV2 colors) {
+  Widget _buildChild(AppColorsV3 colors) {
     // Scrollable with refresh (CustomScrollView with slivers)
     if (onRefresh != null && slivers != null) {
       return RefreshIndicator(
         onRefresh: onRefresh!,
-        color: colors.textPrimary,
-        backgroundColor: colors.surface,
+        color: colors.textContent,
+        backgroundColor: colors.bgSurface,
         child: Column(
           children: [
             Expanded(

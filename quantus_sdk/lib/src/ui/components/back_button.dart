@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 
 class AppBackButton extends StatelessWidget {
@@ -19,12 +18,7 @@ class AppBackButton extends StatelessWidget {
         buttonWidth: containerSize,
         borderRadius: BorderRadius.circular(containerSize / 2),
         padding: const EdgeInsets.all(2),
-        child: SvgPicture.asset(
-          'assets/v2/caret_left.svg',
-          width: iconSize,
-          height: iconSize,
-          colorFilter: ColorFilter.mode(context.colors.textPrimary, BlendMode.srcIn),
-        ),
+        child: QuantusIcon(QuantusIcons.chevronLeft, size: iconSize, color: context.colorsV3.textContent),
       ),
     );
   }
