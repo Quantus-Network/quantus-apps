@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:quantus_cold_wallet/components/quantus_button.dart';
-import 'package:quantus_cold_wallet/debug/debug_payloads.dart';
+import 'package:quantus_cold_wallet/debug/debug_calls_screen.dart';
 import 'package:quantus_cold_wallet/screens/sign_transaction_screen.dart';
 import 'package:quantus_cold_wallet/theme/app_colors.dart';
 import 'package:quantus_cold_wallet/theme/app_text_styles.dart';
@@ -90,46 +90,15 @@ class _ScanTransactionScreenState extends State<ScanTransactionScreen> {
     }
   }
 
-  /// Simulators have no camera, so debug builds can inject a payload directly and
-  /// exercise the same review → sign path a scan would reach.
-  void _loadDebugPayload(Uint8List payload) {
-    _controller.stop();
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (_) => SignTransactionScreen(request: SigningRequest.decode(payload))),
-    );
-  }
-
-  /// One button per payload in [DebugPayloads.all], so every screen the signer
-  /// can be shown is one tap away on a simulator.
-  Widget _debugPayloadButtons(BuildContext context) {
-    final text = context.themeText;
-
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text('DEBUG PAYLOADS', style: text.detail?.copyWith(color: Colors.white38, letterSpacing: 1.2)),
-        const SizedBox(height: 8),
-        Wrap(
-          alignment: WrapAlignment.center,
-          spacing: 8,
-          runSpacing: 8,
-          children: [
-            for (final entry in DebugPayloads.all.entries)
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.white24,
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  visualDensity: VisualDensity.compact,
-                ),
-                onPressed: () => _loadDebugPayload(entry.value()),
-                child: Text(entry.key, style: text.detail?.copyWith(color: Colors.white)),
-              ),
-          ],
-        ),
-        const SizedBox(height: 20),
-      ],
-    );
+  /// Simulators have no camera, so debug builds open the catalogue of every
+  /// call the signer can review and inject one directly, exercising the same
+  /// review → sign path a scan would reach.
+  Future<void> _openDebugCalls() async {
+    await _controller.stop();
+    if (!mounted) return;
+    await Navigator.push(context, MaterialPageRoute(builder: (_) => const DebugCallsScreen()));
+    if (!mounted) return;
+    await _restartCamera();
   }
 
   /// Retries a failed start. [MobileScannerController.start] folds scanner
@@ -235,7 +204,10 @@ class _ScanTransactionScreenState extends State<ScanTransactionScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                if (kDebugMode) _debugPayloadButtons(context),
+                if (kDebugMode) ...[
+                  QuantusButton.simple(label: 'Debug calls', width: null, onTap: _openDebugCalls),
+                  const SizedBox(height: 20),
+                ],
                 Text(
                   _error ?? 'Scan the transaction QR from your hot wallet',
                   style: text.paragraph?.copyWith(color: _error != null ? colors.error : Colors.white),

@@ -4,11 +4,28 @@ import 'package:convert/convert.dart';
 import 'package:polkadart/scale_codec.dart';
 import 'package:quantus_sdk/generated/planck/pallets/balances.dart' as balances_pallet;
 import 'package:quantus_sdk/generated/planck/pallets/multisig.dart' as multisig_pallet;
-import 'package:quantus_sdk/generated/planck/pallets/reversible_transfers.dart' as reversible_pallet;
+import 'package:quantus_sdk/generated/planck/pallets/recovery.dart' as recovery_pallet;
 import 'package:quantus_sdk/generated/planck/pallets/tech_collective.dart' as collective_pallet;
-import 'package:quantus_sdk/generated/planck/types/qp_scheduler/block_number_or_timestamp.dart' as qp;
+import 'package:quantus_sdk/generated/planck/pallets/utility.dart' as utility_pallet;
 import 'package:quantus_sdk/generated/planck/types/sp_runtime/multiaddress/multi_address.dart' as multi_address;
 import 'package:quantus_sdk/quantus_sdk.dart';
+// ignore: implementation_imports — the generated corpus is test/debug data, deliberately not public SDK API.
+import 'package:quantus_sdk/src/testing/call_corpus.dart';
+
+/// One entry in the debug catalogue: a call the signer can be asked to review.
+class DebugCall {
+  /// Pallet name as the runtime declares it, e.g. `Balances`.
+  final String pallet;
+
+  /// Call name, with the corpus' variant suffix where it has one, e.g.
+  /// `set_metadata [maybe_hash=Some]`.
+  final String label;
+
+  /// The SCALE-encoded `RuntimeCall`, ready to be wrapped in signed extensions.
+  final Uint8List call;
+
+  const DebugCall({required this.pallet, required this.label, required this.call});
+}
 
 /// Sample signing payloads for exercising the scan → review → sign flow on a
 /// simulator, where there is no camera to scan a real QR with.
@@ -20,77 +37,81 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 class DebugPayloads {
   const DebugPayloads._();
 
-  /// Every payload the debug buttons offer, keyed by button label — one per
-  /// distinct screen the signer can be shown, so each headline, hero and row
-  /// combination can be eyeballed without a hot wallet.
-  static final Map<String, Uint8List Function()> all = {
-    'Send': transfer,
-    'Reversible': reversibleTransfer,
-    'Reversible 8h': reversibleTransferWithDelay,
-    'Msig approve': multisigApproveTransfer,
-    'Msig propose': multisigProposeTransfer,
-    'Vote aye': governanceVoteAye,
-  };
+  /// Every call the debug list offers, grouped by pallet with Balances first.
+  ///
+  /// The bulk comes from the generated [callCorpus] — one encoding per call the
+  /// runtime declares, plus one per enum-argument variant — so a runtime that
+  /// gains a call gains a row here without anything being written by hand.
+  static final Map<String, List<DebugCall>> byPallet = _grouped();
 
-  /// A plain transfer — the everyday case. Headline: SEND.
-  static Uint8List transfer() {
-    return withExtensions(_send(BigInt.from(1500000000000))); // 1.5 tokens
+  static Map<String, List<DebugCall>> _grouped() {
+    final grouped = <String, List<DebugCall>>{};
+    final seen = <String>{};
+    for (final call in [...callCorpus.entries.map(_fromCorpus), ..._composed]) {
+      // The corpus repeats an identical encoding once per nested-call variant
+      // (every `as_recovered [call=…]` is the same bytes); one row is enough.
+      if (!seen.add(hex.encode(call.call))) continue;
+      grouped.putIfAbsent(call.pallet, () => []).add(call);
+    }
+
+    final balances = grouped.remove('Balances');
+    if (balances == null) throw StateError('The call corpus declares no Balances pallet');
+    return {'Balances': balances, ...grouped};
   }
 
-  /// A reversible transfer on the account's default window.
-  /// Headline: REVERSIBLE SEND.
-  static Uint8List reversibleTransfer() {
-    return withExtensions(
-      const reversible_pallet.Txs().scheduleTransfer(
-        dest: _address(AppConstants.debugTestAddress),
-        amount: BigInt.from(3000000000000), // 3 tokens
-      ),
+  static DebugCall _fromCorpus(MapEntry<String, String> entry) {
+    final dot = entry.key.indexOf('.');
+    if (dot < 0) throw StateError('Corpus key "${entry.key}" is not Pallet.call');
+    return DebugCall(
+      pallet: entry.key.substring(0, dot),
+      label: entry.key.substring(dot + 1),
+      call: Uint8List.fromList(hex.decode(entry.value)),
     );
   }
 
-  /// A reversible transfer with an explicit one-off window, so the Delay row
-  /// shows a real timeframe instead of the account default.
-  static Uint8List reversibleTransferWithDelay() {
-    return withExtensions(
-      const reversible_pallet.Txs().scheduleTransferWithDelay(
-        dest: _address(AppConstants.debugTestAddress),
-        amount: BigInt.from(750000000000), // 0.75 tokens
-        delay: qp.BlockNumberOrTimestamp.values.timestamp(BigInt.from(28800000)), // 8 hours
-      ),
-    );
-  }
+  /// The wrapper calls the corpus cannot express: it fills every nested call
+  /// slot with the same three-byte `System.remark`, so the screens that lift an
+  /// inner transfer into the hero position — a multisig proposal or approval, a
+  /// batch, a recovered-account dispatch — are only reachable from here.
+  static final List<DebugCall> _composed = [
+    DebugCall(
+      pallet: 'Multisig',
+      label: 'propose [carrying a transfer]',
+      call: const multisig_pallet.Txs()
+          .propose(multisigAddress: _debugMultisigAccount, call: _send(_tokens(0.9)).encode(), expiry: 5000000)
+          .encode(),
+    ),
+    DebugCall(
+      pallet: 'Multisig',
+      label: 'approve [carrying a transfer]',
+      call: const multisig_pallet.Txs()
+          .approve(multisigAddress: _debugMultisigAccount, proposalId: 12, call: _send(_tokens(4.2)).encode())
+          .encode(),
+    ),
+    DebugCall(
+      pallet: 'Utility',
+      label: 'batch_all [two transfers]',
+      call: const utility_pallet.Txs().batchAll(calls: [_send(_tokens(1.5)), _send(_tokens(0.25))]).encode(),
+    ),
+    DebugCall(
+      pallet: 'Recovery',
+      label: 'as_recovered [carrying a transfer]',
+      call: const recovery_pallet.Txs()
+          .asRecovered(account: _address(AppConstants.debugTestAddress), call: _send(_tokens(3)))
+          .encode(),
+    ),
+  ];
 
-  /// A multisig approval carrying the transfer it authorises, so the review
-  /// screen has a nested call to expand and an amount to lift into the hero.
-  static Uint8List multisigApproveTransfer() {
-    final inner = _send(BigInt.from(4200000000000)); // 4.2 tokens
-    return withExtensions(
-      const multisig_pallet.Txs().approve(multisigAddress: _debugMultisigAccount, proposalId: 12, call: inner.encode()),
-    );
-  }
-
-  /// A new multisig proposal wrapping a transfer — same shape as the approval
-  /// but labelled `You are proposing`, with an expiry instead of a proposal id.
-  static Uint8List multisigProposeTransfer() {
-    final inner = _send(BigInt.from(900000000000)); // 0.9 tokens
-    return withExtensions(
-      const multisig_pallet.Txs().propose(
-        multisigAddress: _debugMultisigAccount,
-        call: inner.encode(),
-        expiry: 5000000,
-      ),
-    );
-  }
-
-  /// An aye vote on a tech-collective referendum — the governance path a core dev
-  /// uses to enact a runtime upgrade. Moves no value, so the review screen must
-  /// name the call instead of showing an amount.
+  /// An aye vote on a tech-collective referendum — moves no value, so the review
+  /// screen must name the call instead of showing an amount.
   static Uint8List governanceVoteAye() {
     return withExtensions(const collective_pallet.Txs().vote(poll: 7, aye: true));
   }
 
   static RuntimeCall _send(BigInt value) =>
       const balances_pallet.Txs().transferAllowDeath(dest: _address(AppConstants.debugTestAddress), value: value);
+
+  static BigInt _tokens(double amount) => BigInt.from(amount * 1000000000000);
 
   /// Synthetic multisig account; renders as a valid ss58 address with a
   /// checkphrase without needing a real on-chain multisig.
@@ -99,9 +120,6 @@ class DebugPayloads {
   static multi_address.MultiAddress _address(String ss58) =>
       multi_address.MultiAddress.values.id(ss58ToAccountId(s: ss58));
 
-  /// Appends the signed extensions the runtime expects, using the spec and
-  /// transaction versions this build's metadata was generated from — so these
-  /// payloads do not trip the spec-drift warning.
   /// The debug account the scanner injects for, matching the vault's first
   /// account so the signer screen can resolve it.
   static String debugSigner = AppConstants.debugTestAddress;
@@ -112,8 +130,9 @@ class DebugPayloads {
 
   static Uint8List _payload(RuntimeCall call) => payloadForCall(call.encode());
 
-  /// Wraps already-encoded call bytes in the signed extensions the runtime
-  /// expects, so a corpus entry can reach the signing screen.
+  /// Appends the signed extensions the runtime expects, using the spec and
+  /// transaction versions this build's metadata was generated from — so these
+  /// payloads do not trip the spec-drift warning.
   static Uint8List payloadForCall(List<int> callBytes) {
     final out = ByteOutput();
     out.write(callBytes);
