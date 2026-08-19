@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:quantus_cold_wallet/providers/wallet_providers.dart';
 import 'package:quantus_cold_wallet/screens/root_gate.dart';
-import 'package:quantus_cold_wallet/widgets/connectivity_guard.dart';
-import 'package:quantus_cold_wallet/widgets/lock_overlay.dart';
+import 'package:quantus_cold_wallet/components/connectivity_guard.dart';
+import 'package:quantus_cold_wallet/components/lock_overlay.dart';
 
 class ColdWalletApp extends ConsumerStatefulWidget {
   const ColdWalletApp({super.key});

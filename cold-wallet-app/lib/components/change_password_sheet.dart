@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:quantus_cold_wallet/providers/wallet_providers.dart';
-import 'package:quantus_cold_wallet/widgets/password_field.dart';
+import 'package:quantus_cold_wallet/components/password_field.dart';
 
 /// Action pane for setting or changing the vault password. Resolves to true
 /// when the password was changed.
@@ -11,7 +11,7 @@ Future<bool> showChangePasswordSheet(BuildContext context) async {
     context: context,
     isScrollControlled: true,
     enableDrag: false,
-    backgroundColor: context.colors.sheetBackground,
+    backgroundColor: context.colorsV3.bgSurface,
     builder: (_) => const _ChangePasswordSheet(),
   );
   return changed == true;
@@ -80,8 +80,8 @@ class _ChangePasswordSheetState extends ConsumerState<_ChangePasswordSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.colors;
-    final text = context.themeText;
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
 
     // The rotation must not look cancellable once it is running: block barrier
     // taps and back navigation until the result lands in this sheet.
@@ -97,16 +97,16 @@ class _ChangePasswordSheetState extends ConsumerState<_ChangePasswordSheet> {
     );
   }
 
-  Widget _successContent(AppColorsV2 colors, AppTextTheme text) {
+  Widget _successContent(AppColorsV3 colors, AppTextThemeV3 text) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Icon(Icons.check_circle_outline_rounded, size: 48, color: colors.success),
+        Icon(Icons.check_circle_outline_rounded, size: 48, color: colors.semanticSage),
         const SizedBox(height: 16),
         Text(
           'Password changed',
-          style: text.smallTitle?.copyWith(color: colors.textPrimary),
+          style: text.titleScreen.copyWith(color: colors.textContent),
           textAlign: TextAlign.center,
         ),
         if (_biometricDisabled) ...[
@@ -114,7 +114,7 @@ class _ChangePasswordSheetState extends ConsumerState<_ChangePasswordSheet> {
           Text(
             'Biometric unlock was turned off because its key could not be updated for the new password. '
             'Unlock with your password.',
-            style: text.detail?.copyWith(color: colors.textSecondary),
+            style: text.body.copyWith(color: colors.textMuted, height: 1.55),
             textAlign: TextAlign.center,
           ),
         ],
@@ -124,17 +124,17 @@ class _ChangePasswordSheetState extends ConsumerState<_ChangePasswordSheet> {
     );
   }
 
-  Widget _formContent(AppColorsV2 colors, AppTextTheme text) {
+  Widget _formContent(AppColorsV3 colors, AppTextThemeV3 text) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text('Change password', style: text.smallTitle?.copyWith(color: colors.textPrimary)),
+        Text('Change password', style: text.titleScreen.copyWith(color: colors.textContent)),
         const SizedBox(height: 8),
         Text(
           'Your password encrypts the wallet key stored on this device. If you never set one, leave the current '
           'password empty.',
-          style: text.detail?.copyWith(color: colors.textSecondary),
+          style: text.body.copyWith(color: colors.textMuted, height: 1.55),
         ),
         const SizedBox(height: 24),
         PasswordField(controller: _current, hintText: 'Current password', enabled: !_busy),
@@ -149,7 +149,7 @@ class _ChangePasswordSheetState extends ConsumerState<_ChangePasswordSheet> {
         ),
         if (_error != null) ...[
           const SizedBox(height: 16),
-          Text(_error!, style: text.detail?.copyWith(color: colors.error)),
+          Text(_error!, style: text.caption.copyWith(color: colors.semanticEmber)),
         ],
         const SizedBox(height: 24),
         QuantusButton.simple(label: 'Change password', isLoading: _busy, onTap: _busy ? null : _submit),
