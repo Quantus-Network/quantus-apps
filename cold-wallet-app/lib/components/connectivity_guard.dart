@@ -43,7 +43,7 @@ class _ConnectivityGuardState extends ConsumerState<ConnectivityGuard> {
 
     return Positioned.fill(
       child: Material(
-        color: context.colors.background,
+        color: context.colorsV3.bgVoid,
         child: BaseBackground(
           child: SafeArea(
             child: Padding(
@@ -57,30 +57,30 @@ class _ConnectivityGuardState extends ConsumerState<ConnectivityGuard> {
   }
 
   Widget _lockContent(BuildContext context) {
-    final colors = context.colors;
-    final text = context.themeText;
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
 
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Icon(Icons.wifi_off_rounded, size: 72, color: colors.accentOrange),
+        Icon(Icons.wifi_off_rounded, size: 72, color: colors.semanticSand),
         const SizedBox(height: 32),
         Text(
           'Network detected',
-          style: text.mediumTitle?.copyWith(color: colors.textPrimary),
+          style: text.titleScreen.copyWith(color: colors.textContent),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 16),
         Text(
           'This is a cold wallet and must stay offline. Turn on Airplane Mode and disable Wi-Fi, cellular, '
           'Bluetooth and any other connections to continue.',
-          style: text.paragraph?.copyWith(color: colors.textSecondary),
+          style: text.body.copyWith(color: colors.textMuted, height: 1.55),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 32),
         Text(
           'The signer will unlock automatically once the device is fully offline.',
-          style: text.detail?.copyWith(color: colors.textMuted),
+          style: text.caption.copyWith(color: colors.textMuted),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 32),
@@ -94,29 +94,30 @@ class _ConnectivityGuardState extends ConsumerState<ConnectivityGuard> {
   }
 
   Widget _confirmContent(BuildContext context) {
-    final colors = context.colors;
-    final text = context.themeText;
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
 
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Icon(Icons.warning_amber_rounded, size: 72, color: colors.error),
+        Icon(Icons.warning_amber_rounded, size: 72, color: colors.semanticEmber),
         const SizedBox(height: 32),
         Text(
           'Override network lock?',
-          style: text.mediumTitle?.copyWith(color: colors.textPrimary),
+          style: text.titleScreen.copyWith(color: colors.textContent),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 16),
         Text(
           'This device is connected to a network. A cold wallet is only safe while fully offline — override the '
           'lock for testing only, never with a wallet that holds real funds.',
-          style: text.paragraph?.copyWith(color: colors.textSecondary),
+          style: text.body.copyWith(color: colors.textMuted, height: 1.55),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 40),
         QuantusButton.simple(
           label: 'Override — I accept the risk',
+          variant: ButtonVariant.danger,
           onTap: () {
             ref.read(coldSettingsProvider.notifier).setWifiOverrideEnabled(true);
             setState(() => _confirming = false);
