@@ -63,13 +63,7 @@ class _ActivitySectionState extends ConsumerState<ActivitySection> {
             const SizedBox(height: 28),
 
             ...recentTransactions.mapIndexed((index, tx) {
-              final data = TxItemData.from(
-                tx,
-                widget.activeAccount.accountId,
-                context.colors,
-                l10n,
-                isPrivate: isPrivate,
-              );
+              final data = TxItemData.from(tx, widget.activeAccount.accountId, colors, l10n, isPrivate: isPrivate);
               final isLastItem = index == recentTransactions.length - 1;
               Key? itemKey;
               if (!pendingSendKeyAssigned &&
@@ -82,8 +76,8 @@ class _ActivitySectionState extends ConsumerState<ActivitySection> {
               return buildTxItem(
                 tx,
                 data,
-                context.colors,
-                context.themeText,
+                colors,
+                text,
                 l10n,
                 formattedAmount: data.hideAmount ? '—' : formatTxAmount(data.amount, isSend: data.isSend).primaryAmount,
                 isLastItem: isLastItem,

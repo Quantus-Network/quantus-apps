@@ -157,12 +157,12 @@ class MultisigActivitySection extends ConsumerWidget {
               )
             else
               ...recent.mapIndexed((index, tx) {
-                final itemData = TxItemData.from(tx, msig.accountId, colors, l10n);
+                final itemData = TxItemData.from(tx, msig.accountId, context.colorsV3, l10n);
                 return buildTxItem(
                   tx,
                   itemData,
-                  colors,
-                  text,
+                  context.colorsV3,
+                  context.themeTextV3,
                   l10n,
                   formattedAmount: itemData.hideAmount
                       ? '—'

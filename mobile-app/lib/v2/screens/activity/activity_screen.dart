@@ -163,7 +163,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                           final itemData = TxItemData.from(
                             tx,
                             active.account.accountId,
-                            colors,
+                            context.colorsV3,
                             l10n,
                             isPrivate: isEncryptedAccount(active.account),
                           );
@@ -171,8 +171,8 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                           return buildTxItem(
                             tx,
                             itemData,
-                            colors,
-                            text,
+                            context.colorsV3,
+                            context.themeTextV3,
                             l10n,
                             formattedAmount: itemData.hideAmount
                                 ? '—'
