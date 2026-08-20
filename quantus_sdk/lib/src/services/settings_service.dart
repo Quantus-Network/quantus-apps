@@ -4,7 +4,6 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:quantus_sdk/src/models/account.dart';
 import 'package:quantus_sdk/src/models/display_account.dart';
 import 'package:quantus_sdk/src/models/multisig_account.dart';
-import 'package:quantus_sdk/src/utils/print.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SettingsService {
@@ -18,13 +17,8 @@ class SettingsService {
   // New keys for multi-account support
   static const String _accountsKey = 'accounts_v5';
   static const String _multisigAccountsKey = 'multisig_accounts_v1';
-  static const String _accountsToMigrateKey = 'accounts_to_migrate';
   static const String _addressBookKey = 'address_book';
 
-  static const String _oldAccountsKeyV4 = 'accounts_v4';
-  static const String _oldAccountsKeyV3 = 'accounts_v3';
-  static const String _oldAccountsKeyV2 = 'accounts_v2';
-  static const String _oldAccountsKeyV1 = 'accounts';
   static const String _activeAccountIndexKey = 'active_account_index';
   static const String _activeAccountIdKey = 'active_account_id';
   static const String _activeDisplayAccountKey = 'active_display_account';
@@ -76,27 +70,6 @@ class SettingsService {
   Future<void> saveAccounts(List<Account> accounts) async {
     final List<Map<String, dynamic>> jsonData = accounts.map((a) => a.toJson()).toList();
     await _prefs.setString(_accountsKey, jsonEncode(jsonData));
-  }
-
-  // --- Accounts To Migrate (for deferred upload) ---
-  Future<void> setAccountsToMigrate(List<Account> accounts) async {
-    final List<Map<String, dynamic>> jsonData = accounts.map((a) => a.toJson()).toList();
-    await _prefs.setString(_accountsToMigrateKey, jsonEncode(jsonData));
-  }
-
-  List<Account> getAccountsToMigrate() {
-    final jsonStr = _prefs.getString(_accountsToMigrateKey);
-    if (jsonStr == null) return [];
-    try {
-      final decoded = jsonDecode(jsonStr) as List<dynamic>;
-      return decoded.map((e) => Account.fromJson(e)).toList();
-    } catch (_) {
-      return [];
-    }
-  }
-
-  Future<void> clearAccountsToMigrate() async {
-    await _prefs.remove(_accountsToMigrateKey);
   }
 
   Future<void> addAccount(Account account) async {
@@ -457,48 +430,6 @@ class SettingsService {
   /// Set a string value from SharedPreferences
   Future<void> setString(String key, String value) async {
     await _prefs.setString(key, value);
-  }
-
-  // --- Migration Methods ---
-
-  /// Check if old accounts exist in legacy storage
-  bool hasOldAccounts() {
-    final oldAccounts = getOldAccounts();
-    return oldAccounts.isNotEmpty;
-  }
-
-  /// Get old accounts from legacy storage or v2 storage
-  List<Account> getOldAccounts() {
-    final oldAccountsJson =
-        _prefs.getString(_oldAccountsKeyV1) ??
-        _prefs.getString(_oldAccountsKeyV2) ??
-        _prefs.getString(_oldAccountsKeyV3) ??
-        _prefs.getString(_oldAccountsKeyV4);
-    if (oldAccountsJson != null) {
-      try {
-        final decoded = jsonDecode(oldAccountsJson) as List<dynamic>;
-        return decoded.map((e) => Account.fromJson(e)).toList();
-      } catch (e) {
-        return [];
-      }
-    }
-    return [];
-  }
-
-  /// Remove old accounts from legacy storage after successful migration
-  Future<void> clearOldAccounts() async {
-    await _prefs.remove(_oldAccountsKeyV1);
-    await _prefs.remove(_oldAccountsKeyV2);
-    await _prefs.remove(_oldAccountsKeyV3);
-    await _prefs.remove(_oldAccountsKeyV4);
-  }
-
-  /// Set old accounts data (for debugging/testing)
-  Future<void> setOldAccountsData(String jsonData) async {
-    quantusPrint('removing accounts data');
-    await _prefs.remove(_accountsKey);
-    quantusPrint('setting old accounts data - reload app after this');
-    await _prefs.setString(_oldAccountsKeyV4, jsonData);
   }
 
   // Test-only helper to reset initialization between tests

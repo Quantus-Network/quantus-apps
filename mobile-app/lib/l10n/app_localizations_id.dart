@@ -18,55 +18,6 @@ class AppLocalizationsId extends AppLocalizations {
   String get walletInitErrorButtonLabel => 'OK';
 
   @override
-  String get migrationDialogTitle => 'Migrasikan akun Anda';
-
-  @override
-  String get migrationDialogBody =>
-      'Kami akan mencatat hadiah dan aktivitas testnet chain lama Anda untuk menentukan hadiah di Quantus Testnet yang baru.\n\nSaldo tidak ikut dimigrasikan.\n\nGunakan faucet testnet baru untuk mendapatkan dana.';
-
-  @override
-  String migrationDialogAccountsToMigrate(int count) {
-    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count Akun akan dimigrasikan.');
-    return '$_temp0';
-  }
-
-  @override
-  String migrationDialogAccountsCannotMigrate(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count akun tidak dapat dimigrasikan (data wallet hilang).',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String get migrationDialogUploadError =>
-      'Kami tidak dapat mengunggah data migrasi. Silakan coba lagi atau coba nanti.';
-
-  @override
-  String get migrationDialogMigrate => 'Migrasikan Akun';
-
-  @override
-  String get migrationDialogRetry => 'Coba Lagi';
-
-  @override
-  String get migrationDialogTryLater => 'Coba nanti';
-
-  @override
-  String get migrationDialogSkip => 'Lewati';
-
-  @override
-  String migrationPartialFailureToast(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count akun tidak dapat dimigrasikan. Migrasi akan diulang saat aplikasi dibuka berikutnya.',
-    );
-    return '$_temp0';
-  }
-
-  @override
   String get authUseDeviceBiometricsToUnlock => 'Gunakan biometrik untuk mengakses wallet';
 
   @override
