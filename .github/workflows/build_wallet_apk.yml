@@ -41,6 +41,10 @@ jobs:
       ANDROID_STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
       ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
       ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+      COLD_ANDROID_KEYSTORE_BASE64: ${{ secrets.COLD_ANDROID_KEYSTORE_BASE64 }}
+      COLD_ANDROID_STORE_PASSWORD: ${{ secrets.COLD_ANDROID_STORE_PASSWORD }}
+      COLD_ANDROID_KEY_ALIAS: ${{ secrets.COLD_ANDROID_KEY_ALIAS }}
+      COLD_ANDROID_KEY_PASSWORD: ${{ secrets.COLD_ANDROID_KEY_PASSWORD }}
       MOBILE_APP_ENV: ${{ secrets.MOBILE_APP_ENV }}
       GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
     steps:
@@ -128,36 +132,46 @@ jobs:
         if: inputs.app == 'mobile'
         run: echo "$GOOGLE_SERVICES_JSON" > mobile-app/android/app/google-services.json
 
-      - name: Decode Android keystore
-        if: inputs.build_mode == 'release' && inputs.app == 'mobile'
-        run: echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "${{ steps.meta.outputs.dir }}/android/upload-keystore.jks"
-
-      - name: Create key.properties
-        if: inputs.build_mode == 'release' && inputs.app == 'mobile'
+      - name: Configure Android signing
+        if: inputs.build_mode == 'release'
         env:
           APP_DIR: ${{ steps.meta.outputs.dir }}
         run: |
+          set -euo pipefail
+          case "${{ inputs.app }}" in
+            mobile)
+              B64=$ANDROID_KEYSTORE_BASE64
+              STORE=$ANDROID_STORE_PASSWORD
+              ALIAS=$ANDROID_KEY_ALIAS
+              KEY=$ANDROID_KEY_PASSWORD
+              ;;
+            cold)
+              B64=$COLD_ANDROID_KEYSTORE_BASE64
+              STORE=$COLD_ANDROID_STORE_PASSWORD
+              ALIAS=$COLD_ANDROID_KEY_ALIAS
+              KEY=$COLD_ANDROID_KEY_PASSWORD
+              ;;
+            *)
+              echo "Unknown app: ${{ inputs.app }}" >&2
+              exit 1
+              ;;
+          esac
+          for name in B64 STORE ALIAS KEY; do
+            eval "value=\${$name}"
+            if [ -z "$value" ]; then
+              echo "Error: signing secret $name is empty for app '${{ inputs.app }}'" >&2
+              exit 1
+            fi
+          done
+          echo "$B64" | base64 --decode > "$APP_DIR/android/upload-keystore.jks"
+          keytool -list -keystore "$APP_DIR/android/upload-keystore.jks" \
+            -storepass "$STORE" -alias "$ALIAS" > /dev/null
           cat > "$APP_DIR/android/key.properties" << EOF
           storeFile=../upload-keystore.jks
-          storePassword=$ANDROID_STORE_PASSWORD
-          keyAlias=$ANDROID_KEY_ALIAS
-          keyPassword=$ANDROID_KEY_PASSWORD
+          storePassword=$STORE
+          keyAlias=$ALIAS
+          keyPassword=$KEY
           EOF
-
-      - name: Verify cold wallet signing files
-        if: inputs.build_mode == 'release' && inputs.app == 'cold'
-        run: |
-          set -euo pipefail
-          KEYSTORE=cold-wallet-app/android/upload-keystore.jks
-          PROPS=cold-wallet-app/android/key.properties
-          if [ ! -f "$KEYSTORE" ]; then
-            echo "Error: $KEYSTORE is missing from the checkout" >&2
-            exit 1
-          fi
-          if [ ! -f "$PROPS" ]; then
-            echo "Error: $PROPS is missing from the checkout" >&2
-            exit 1
-          fi
 
       - name: Generate splash screen
         working-directory: ${{ steps.meta.outputs.dir }}

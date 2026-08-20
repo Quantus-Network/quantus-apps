@@ -57,9 +57,7 @@ unlinked_spec.ds
 **/android/local.properties
 **/android/**/GeneratedPluginRegistrant.java
 **/android/key.properties
-!cold-wallet-app/android/key.properties
 *.jks
-!cold-wallet-app/android/upload-keystore.jks
 
 # iOS/XCode related
 **/ios/**/*.mode1v3
