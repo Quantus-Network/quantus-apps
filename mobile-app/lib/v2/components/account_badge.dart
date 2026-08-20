@@ -21,20 +21,20 @@ class AccountBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.colors;
-    final foreground = isActive ? colors.accentOrange : colors.textLabel;
-    final effectiveTextStyle = textStyle ?? context.themeText.transactionDetailRowValue?.copyWith(letterSpacing: -0.25);
+    final colors = context.colorsV3;
+    final foreground = isActive ? colors.accentFlare : colors.textMuted;
+    final effectiveTextStyle = textStyle ?? context.themeTextV3.labelMonogram;
 
     return Container(
       width: size,
       height: size,
       alignment: Alignment.center,
-      decoration: BoxDecoration(color: colors.sheetBackground, borderRadius: BorderRadius.circular(size / 2)),
+      decoration: BoxDecoration(color: colors.bgSurface2, borderRadius: BorderRadius.circular(size / 2)),
       child: icon != null
           ? Icon(icon, size: size * 0.5, color: foreground)
           : Text(
               getAccountBadgeInitials(name, separator: ' '),
-              style: effectiveTextStyle?.copyWith(color: foreground),
+              style: effectiveTextStyle.copyWith(color: foreground),
             ),
     );
   }

@@ -9,17 +9,17 @@ class EncryptedLockBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.colors;
+    final colors = context.colorsV3;
     return Container(
       width: size,
       height: size,
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: colors.sheetBackground,
+        color: colors.bgSurface2,
         borderRadius: BorderRadius.circular(size / 2),
-        border: Border.all(color: colors.borderButton),
+        border: Border.all(color: colors.borderHairline),
       ),
-      child: Icon(Icons.lock_outline, size: size * 0.4, color: colors.accentOrange),
+      child: QuantusIcon(QuantusIcons.lock, size: size * 0.4, color: colors.accentFlare),
     );
   }
 }
@@ -36,8 +36,8 @@ class PrivateActivityNotice extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.colors;
-    final text = context.themeText;
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
 
     final row = Row(
       children: [
@@ -47,9 +47,9 @@ class PrivateActivityNotice extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(title, style: text.paragraph?.copyWith(color: colors.textMuted, height: 1.0)),
+              Text(title, style: text.bodyLarge.copyWith(color: colors.textContent)),
               const SizedBox(height: 4),
-              Text(subtitle, style: text.detail?.copyWith(color: colors.textTertiary, height: 1.0)),
+              Text(subtitle, style: text.caption.copyWith(color: colors.textMuted)),
             ],
           ),
         ),
@@ -62,8 +62,8 @@ class PrivateActivityNotice extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: colors.borderButton),
+        borderRadius: context.radiusV3.mdBorder,
+        border: Border.all(color: colors.borderHairline),
       ),
       child: row,
     );
