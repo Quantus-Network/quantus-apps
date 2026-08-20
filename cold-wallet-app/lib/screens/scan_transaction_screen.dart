@@ -153,7 +153,7 @@ class _ScanTransactionScreenState extends State<ScanTransactionScreen> {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 24),
-              QuantusButton.simple(label: 'Try again', width: null, onTap: _restartCamera),
+              QuantusButton.simple(label: 'Try again', width: 240, onTap: _restartCamera),
             ],
           ),
         ),
