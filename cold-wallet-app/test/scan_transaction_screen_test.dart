@@ -42,5 +42,13 @@ void main() {
     final debugLabel = tester.widget<Text>(find.text('DEBUG PAYLOADS'));
     expect(debugLabel.style?.color, colors.textMuted);
     expect(debugLabel.style?.fontSize, text.caption.fontSize);
+
+    final sendButton = tester.widget<ElevatedButton>(find.widgetWithText(ElevatedButton, 'Send'));
+    expect(sendButton.style?.backgroundColor?.resolve({}), colors.bgSurface);
+    final sendLabel = tester.widget<Text>(
+      find.descendant(of: find.widgetWithText(ElevatedButton, 'Send'), matching: find.text('Send')),
+    );
+    expect(sendLabel.style?.color, colors.textContent);
+    expect(sendLabel.style?.fontSize, text.caption.fontSize);
   });
 }
