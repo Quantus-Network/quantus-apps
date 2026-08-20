@@ -114,7 +114,7 @@ class _ScanTransactionScreenState extends State<ScanTransactionScreen> {
     try {
       await _controller.start();
     } catch (e) {
-      debugPrint('Camera restart failed: $e');
+      debugPrint('Camera could not be started: $e');
       if (mounted) setState(() => _error = 'The camera could not be started.');
     }
   }
