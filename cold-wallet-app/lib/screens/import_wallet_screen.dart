@@ -1,12 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:quantus_cold_wallet/components/quantus_button.dart';
-import 'package:quantus_cold_wallet/components/scaffold_base.dart';
-import 'package:quantus_cold_wallet/components/scaffold_base_bottom_content.dart';
-import 'package:quantus_cold_wallet/components/v2_app_bar.dart';
 import 'package:quantus_cold_wallet/screens/set_password_screen.dart';
-import 'package:quantus_cold_wallet/theme/app_colors.dart';
-import 'package:quantus_cold_wallet/theme/app_text_styles.dart';
 
 class ImportWalletScreen extends StatefulWidget {
   const ImportWalletScreen({super.key});
@@ -91,9 +85,10 @@ class _ImportWalletScreenState extends State<ImportWalletScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.colors;
-    final text = context.themeText;
-    final fieldTextStyle = text.smallTitle?.copyWith(color: colors.checksum, fontWeight: FontWeight.w400);
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
+    final fieldTextStyle = text.dataAddressLarge.copyWith(color: colors.textContent);
+    final hintStyle = text.dataAddressLarge.copyWith(color: colors.textMuted);
 
     return ScaffoldBase(
       appBar: const V2AppBar(title: 'Import Wallet'),
@@ -105,16 +100,16 @@ class _ImportWalletScreenState extends State<ImportWalletScreen> {
             children: [
               Text(
                 'Restore an existing wallet with your 12 or 24 words recovery phrase',
-                style: text.smallParagraph?.copyWith(color: colors.textSecondary),
+                style: text.body.copyWith(color: colors.textMuted),
               ),
               const SizedBox(height: 16),
               Container(
                 height: 202,
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: colors.surfaceDeep,
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: colors.borderButton, width: 1),
+                  color: colors.bgSurface,
+                  borderRadius: context.radiusV3.mdBorder,
+                  border: Border.all(color: colors.borderHairline, width: 1),
                 ),
                 child: Stack(
                   children: [
@@ -124,10 +119,11 @@ class _ImportWalletScreenState extends State<ImportWalletScreen> {
                         controller: _controller,
                         focusNode: _focusNode,
                         onChanged: (_) => setState(() {}),
+                        cursorColor: colors.accentFlare,
                         style: fieldTextStyle,
                         decoration: InputDecoration.collapsed(
                           hintText: 'Type in or paste your recovery phrase. Separate words with spaces.',
-                          hintStyle: fieldTextStyle?.copyWith(color: colors.textSecondary),
+                          hintStyle: hintStyle,
                         ),
                         maxLines: null,
                         keyboardType: TextInputType.multiline,
@@ -145,7 +141,7 @@ class _ImportWalletScreenState extends State<ImportWalletScreen> {
                         child: Icon(
                           _controller.obscured ? Icons.visibility_off_outlined : Icons.visibility_outlined,
                           size: 22,
-                          color: colors.textSecondary,
+                          color: colors.textMuted,
                         ),
                       ),
                     ),
@@ -156,7 +152,7 @@ class _ImportWalletScreenState extends State<ImportWalletScreen> {
                 const SizedBox(height: 16),
                 Text(
                   _error!,
-                  style: text.detail?.copyWith(color: colors.error),
+                  style: text.caption.copyWith(color: colors.semanticEmber),
                   textAlign: TextAlign.center,
                 ),
               ],

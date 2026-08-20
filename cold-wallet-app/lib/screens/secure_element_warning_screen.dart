@@ -1,10 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:quantus_cold_wallet/components/quantus_button.dart';
-import 'package:quantus_cold_wallet/components/scaffold_base.dart';
-import 'package:quantus_cold_wallet/components/scaffold_base_bottom_content.dart';
-import 'package:quantus_cold_wallet/components/v2_app_bar.dart';
-import 'package:quantus_cold_wallet/theme/app_colors.dart';
-import 'package:quantus_cold_wallet/theme/app_text_styles.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
 
 /// Shown during setup when the device reports no biometrics / device lock,
 /// which we treat as a proxy for a missing hardware-backed secure element.
@@ -14,26 +9,28 @@ class SecureElementWarningScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.colors;
-    final text = context.themeText;
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
 
     return ScaffoldBase(
       appBar: const V2AppBar(title: 'Security warning', leading: SizedBox(width: 24)),
-      mainContent: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const SizedBox(height: 20),
-          Icon(Icons.warning_amber_rounded, size: 64, color: colors.accentOrange),
-          const SizedBox(height: 24),
-          Text('No secure element detected', style: text.mediumTitle?.copyWith(color: colors.textPrimary)),
-          const SizedBox(height: 16),
-          Text(
-            'This device has no biometrics or device lock configured, so your wallet key cannot be stored in a '
-            'hardware-backed secure element. Your encrypted key will be protected only by your password.\n\n'
-            'For a cold wallet we strongly recommend a device with a secure element and a device lock.',
-            style: text.paragraph?.copyWith(color: colors.textSecondary),
-          ),
-        ],
+      mainContent: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const SizedBox(height: 20),
+            Icon(Icons.warning_amber_rounded, size: 64, color: colors.semanticSand),
+            const SizedBox(height: 24),
+            Text('No secure element detected', style: text.titleScreen.copyWith(color: colors.textContent)),
+            const SizedBox(height: 16),
+            Text(
+              'This device has no biometrics or device lock configured, so your wallet key cannot be stored in a '
+              'hardware-backed secure element. Your encrypted key will be protected only by your password.\n\n'
+              'For a cold wallet we strongly recommend a device with a secure element and a device lock.',
+              style: text.body.copyWith(color: colors.textMuted),
+            ),
+          ],
+        ),
       ),
       bottomContent: ScaffoldBaseBottomContent(
         child: Column(

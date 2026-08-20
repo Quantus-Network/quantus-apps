@@ -3458,6 +3458,12 @@ abstract class AppLocalizations {
   /// **'Enter a name for your account'**
   String get componentNameFieldHint;
 
+  /// Prefix before a converted secondary amount
+  ///
+  /// In en, this message translates to:
+  /// **'≈'**
+  String get componentAmountApproximatePrefix;
+
   /// Text for generic loading state
   ///
   /// In en, this message translates to:

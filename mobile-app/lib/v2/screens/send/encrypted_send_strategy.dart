@@ -6,9 +6,7 @@ import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/services/local_auth_service.dart';
-import 'package:resonance_network_wallet/v2/components/detail_summary_row.dart';
 import 'package:resonance_network_wallet/v2/screens/send/send_strategy.dart';
-import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 
 /// ZK-private transfer from an encrypted (wormhole) account. Coin selection
 /// runs during fee estimation; submission hands the plan to the proving
@@ -96,20 +94,19 @@ class EncryptedSendStrategy extends SendStrategy {
     final l10n = ref.watch(l10nProvider);
     final fmt = ref.watch(numberFormattingServiceProvider);
     final feeAmount = fee.displayFee;
-    final valueStyle = context.themeText.transactionDetailRowLabel;
 
     String amt(BigInt v) =>
         l10n.commonAmountBalance(fmt.formatBalance(v, smartDecimals: AppConstants.decimals), AppConstants.tokenSymbol);
 
     return [
       const SizedBox(height: 7),
-      DetailSummaryRow.review(label: l10n.sendReviewTo, value: recipientAddress.trim(), valueStyle: valueStyle),
+      DetailSummaryRow.review(label: l10n.sendReviewTo, value: recipientAddress.trim()),
       const SizedBox(height: 7),
-      DetailSummaryRow.review(label: l10n.sendReviewAmount, value: amt(amount), valueStyle: valueStyle),
+      DetailSummaryRow.review(label: l10n.sendReviewAmount, value: amt(amount)),
       const SizedBox(height: 7),
-      DetailSummaryRow.review(label: l10n.encryptedSendFeeLabel, value: amt(feeAmount), valueStyle: valueStyle),
+      DetailSummaryRow.review(label: l10n.encryptedSendFeeLabel, value: amt(feeAmount)),
       const SizedBox(height: 7),
-      DetailSummaryRow.review(label: l10n.sendReviewYouPay, value: amt(amount + feeAmount), valueStyle: valueStyle),
+      DetailSummaryRow.review(label: l10n.sendReviewYouPay, value: amt(amount + feeAmount)),
       const SizedBox(height: 7),
     ];
   }

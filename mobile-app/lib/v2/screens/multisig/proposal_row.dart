@@ -8,8 +8,6 @@ import 'package:resonance_network_wallet/providers/pending_multisig_cancellation
 import 'package:resonance_network_wallet/providers/pending_multisig_executions_provider.dart';
 import 'package:resonance_network_wallet/shared/utils/multisig_local_signers.dart';
 import 'package:resonance_network_wallet/v2/components/proposal_list_tile.dart';
-import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
-import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 
 class ProposalRow extends ConsumerWidget {
   final MultisigProposal proposal;
