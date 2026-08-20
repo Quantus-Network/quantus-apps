@@ -191,8 +191,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final l10n = ref.watch(l10nProvider);
     final accountAsync = ref.watch(activeAccountProvider);
     final txAsync = ref.watch(activeAccountTransactionsProvider(TransactionFilter.all));
-    final colors = context.colors;
-    final text = context.themeText;
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
 
     return GlobalToastListener(
       key: const Key(E2EKeys.homeScreen),
@@ -200,12 +200,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         loading: () => const ScaffoldBase(mainContent: Center(child: Loader())),
         error: (e, _) => ScaffoldBase(
           mainContent: Center(
-            child: Text(l10n.homeError(e.toString()), style: text.detail?.copyWith(color: colors.textError)),
+            child: Text(l10n.homeError(e.toString()), style: text.caption.copyWith(color: colors.semanticEmber)),
           ),
         ),
         data: (active) {
           if (active == null) {
-            return ScaffoldBase(mainContent: Center(child: Text(l10n.homeNoActiveAccount)));
+            return ScaffoldBase(
+              mainContent: Center(
+                child: Text(l10n.homeNoActiveAccount, style: text.body.copyWith(color: colors.textMuted)),
+              ),
+            );
           }
           return ScaffoldBase.refreshable(
             onRefresh: _refresh,
@@ -224,7 +228,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Widget _buildContent(DisplayAccount active, AppColorsV2 colors, AppTextTheme text, AppLocalizations l10n) {
+  Widget _buildContent(DisplayAccount active, AppColorsV3 colors, AppTextThemeV3 text, AppLocalizations l10n) {
     final backupWalletIndex = ref.watch(backupReminderWalletIndexProvider);
 
     return Column(
@@ -247,7 +251,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         DottedBorder(
           dashLength: 3,
           gapLength: 5,
-          color: colors.borderButton.useOpacity(0.5),
+          color: colors.borderHairline,
           child: const SizedBox(width: double.infinity, height: 1),
         ),
       ],
@@ -324,7 +328,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Widget _buildBalance(AppColorsV2 colors, AppTextTheme text, AppLocalizations l10n) {
+  Widget _buildBalance(AppColorsV3 colors, AppTextThemeV3 text, AppLocalizations l10n) {
     final currencyAsync = ref.watch(balanceDisplayProvider);
 
     return Column(
@@ -348,7 +352,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               Row(mainAxisAlignment: MainAxisAlignment.center, children: [Skeleton(width: 100, height: 18)]),
             ],
           ),
-          error: (_, _) => Text(l10n.homeErrorLoadingBalance, style: text.detail?.copyWith(color: colors.textError)),
+          error: (_, _) =>
+              Text(l10n.homeErrorLoadingBalance, style: text.caption.copyWith(color: colors.semanticEmber)),
         ),
       ],
     );
@@ -398,6 +403,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _actionCard({Key? key, required String iconAsset, required String label, required VoidCallback onTap}) {
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
     return Expanded(
       child: QuantusButton.simple(
         key: key,
@@ -407,12 +414,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           iconAsset,
           width: 24,
           height: 24,
-          colorFilter: ColorFilter.mode(context.colors.accentOrange, BlendMode.srcIn),
+          colorFilter: ColorFilter.mode(colors.accentFlare, BlendMode.srcIn),
         ),
         iconPlacement: IconPlacement.top,
         padding: const EdgeInsets.all(14),
         variant: ButtonVariant.secondary,
-        textStyle: context.themeText.paragraph?.copyWith(color: context.colors.textPrimary.useOpacity(0.8)),
+        textStyle: text.bodyLarge.copyWith(color: colors.textContent),
       ),
     );
   }
