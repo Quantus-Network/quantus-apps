@@ -22,13 +22,18 @@ class DetailSummaryRow extends StatelessWidget {
   final TextStyle? valueStyle;
   final DetailSummaryLayout layout;
 
-  /// Monospace value, for addresses, hashes and byte blobs. [stacked] only.
+  /// Monospace value, for addresses, hashes and byte blobs.
   final bool monospace;
 
   final Color? valueColor;
 
-  /// Caveat shown under the value. [stacked] only.
+  /// Caveat shown under the value.
   final String? note;
+
+  /// Resolved checkphrase for an address value.
+  ///
+  /// Compact paints it under the value; stacked uses a second labeled row.
+  final String? checkphrase;
 
   const DetailSummaryRow({
     super.key,
@@ -44,7 +49,9 @@ class DetailSummaryRow extends StatelessWidget {
     this.monospace = false,
     this.valueColor,
     this.note,
-  }) : assert(value != null || valueWidget != null);
+    this.checkphrase,
+  }) : assert(value != null || valueWidget != null),
+       assert(checkphrase == null || valueWidget == null);
 
   factory DetailSummaryRow.review({
     Key? key,
@@ -74,6 +81,7 @@ class DetailSummaryRow extends StatelessWidget {
     this.monospace = false,
     this.valueColor,
     this.note,
+    this.checkphrase,
   }) : valueWidget = null,
        labelFlex = 2,
        valueFlex = 3,
@@ -91,34 +99,59 @@ class DetailSummaryRow extends StatelessWidget {
     final text = context.themeTextV3;
     final colors = context.colorsV3;
     final effectiveLabelStyle = labelStyle ?? _labelStyle(text, colors);
-    final effectiveValueStyle = valueStyle ?? text.body.copyWith(color: colors.textContent);
+    final effectiveValueStyle =
+        valueStyle ?? (monospace ? text.dataAddress : text.body).copyWith(color: valueColor ?? colors.textContent);
 
-    return Container(
+    return Padding(
       padding: padding,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Expanded(
-            flex: labelFlex,
-            child: Text(label, style: effectiveLabelStyle),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                flex: labelFlex,
+                child: Text(label, style: effectiveLabelStyle),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                flex: valueFlex,
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: valueWidget ?? _compactValue(effectiveValueStyle, text, colors),
+                ),
+              ),
+            ],
           ),
-          const SizedBox(width: 8),
-          Expanded(
-            flex: valueFlex,
-            child: Align(
-              alignment: Alignment.centerRight,
-              child:
-                  valueWidget ?? Text(value!, style: effectiveValueStyle, textAlign: TextAlign.right, softWrap: true),
-            ),
-          ),
+          if (note != null) ...[const SizedBox(height: 4), Text(note!, style: _noteStyle(text, colors))],
         ],
       ),
+    );
+  }
+
+  Widget _compactValue(TextStyle valueStyle, AppTextThemeV3 text, AppColorsV3 colors) {
+    final valueText = Text(value!, style: valueStyle, textAlign: TextAlign.right, softWrap: true);
+    if (checkphrase == null) return valueText;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        valueText,
+        Text(
+          checkphrase!,
+          style: text.caption.copyWith(color: colors.semanticLilac),
+          textAlign: TextAlign.right,
+        ),
+      ],
     );
   }
 
   Widget _stacked(BuildContext context) {
     final text = context.themeTextV3;
     final colors = context.colorsV3;
+    final effectiveValueStyle = (monospace ? text.dataAddressLarge : text.body).copyWith(
+      color: valueColor ?? colors.textContent,
+    );
 
     return Padding(
       padding: padding,
@@ -127,13 +160,13 @@ class DetailSummaryRow extends StatelessWidget {
         children: [
           Text(label.toUpperCase(), style: _labelStyle(text, colors)),
           const SizedBox(height: 6),
-          Text(
-            value!,
-            style: (monospace ? text.dataAddressLarge : text.body).copyWith(color: valueColor ?? colors.textContent),
-          ),
-          if (note != null) ...[
-            const SizedBox(height: 4),
-            Text(note!, style: text.caption.copyWith(color: colors.textMuted)),
+          Text(value!, style: effectiveValueStyle),
+          if (note != null) ...[const SizedBox(height: 4), Text(note!, style: _noteStyle(text, colors))],
+          if (checkphrase != null) ...[
+            const SizedBox(height: 10),
+            Text('$label checkphrase'.toUpperCase(), style: _labelStyle(text, colors)),
+            const SizedBox(height: 6),
+            Text(checkphrase!, style: effectiveValueStyle.copyWith(color: colors.semanticLilac)),
           ],
         ],
       ),
@@ -142,5 +175,9 @@ class DetailSummaryRow extends StatelessWidget {
 
   TextStyle _labelStyle(AppTextThemeV3 text, AppColorsV3 colors) {
     return text.labelMonogram.copyWith(fontSize: 10, letterSpacing: 1, color: colors.textMuted);
+  }
+
+  TextStyle _noteStyle(AppTextThemeV3 text, AppColorsV3 colors) {
+    return text.caption.copyWith(color: colors.textMuted);
   }
 }

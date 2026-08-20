@@ -66,4 +66,44 @@ void main() {
     expect(value.style?.color, colors.semanticLilac);
     expect(find.text('Verify out loud.'), findsOneWidget);
   });
+
+  testWidgets('stacked checkphrase is a second labeled row in lilac', (tester) async {
+    await pumpRow(
+      tester,
+      const DetailSummaryRow.stacked(label: 'To', value: 'qzDest', monospace: true, checkphrase: 'alpha bravo'),
+    );
+
+    expect(find.text('TO'), findsOneWidget);
+    expect(find.text('TO CHECKPHRASE'), findsOneWidget);
+    final phrase = tester.widget<Text>(find.text('alpha bravo'));
+    expect(phrase.style?.color, colors.semanticLilac);
+    expect(phrase.style?.fontSize, text.dataAddressLarge.fontSize);
+  });
+
+  testWidgets('compact checkphrase sits under the value without a second label', (tester) async {
+    await pumpRow(
+      tester,
+      const DetailSummaryRow(label: 'Destination', value: 'qzDest', monospace: true, checkphrase: 'alpha bravo'),
+    );
+
+    expect(find.text('DESTINATION CHECKPHRASE'), findsNothing);
+    expect(find.text('Destination checkphrase'), findsNothing);
+    final phrase = tester.widget<Text>(find.text('alpha bravo'));
+    expect(phrase.style?.color, colors.semanticLilac);
+    expect(phrase.style?.fontSize, text.caption.fontSize);
+    expect(phrase.textAlign, TextAlign.right);
+
+    final value = tester.widget<Text>(find.text('qzDest'));
+    expect(value.style?.fontFamily, AppTextTheme.fontFamilySecondary);
+    expect(value.textAlign, TextAlign.right);
+  });
+
+  testWidgets('compact shows a note under the row', (tester) async {
+    await pumpRow(
+      tester,
+      const DetailSummaryRow(label: 'Amount', value: '99 raw', note: 'Asset decimals are not in this payload.'),
+    );
+
+    expect(find.text('Asset decimals are not in this payload.'), findsOneWidget);
+  });
 }

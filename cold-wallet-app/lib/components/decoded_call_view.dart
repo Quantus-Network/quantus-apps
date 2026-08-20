@@ -7,8 +7,9 @@ import 'package:quantus_cold_wallet/providers/wallet_providers.dart';
 class DecodedCallView extends ConsumerWidget {
   final sdk.DecodedCall call;
   final int depth;
+  final Widget? signer;
 
-  const DecodedCallView({super.key, required this.call, this.depth = 0});
+  const DecodedCallView({super.key, required this.call, this.depth = 0, this.signer});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -17,8 +18,11 @@ class DecodedCallView extends ConsumerWidget {
       call: call,
       depth: depth,
       layout: sdk.DecodedCallLayout.stacked,
+      showTitle: false,
+      recipientLabel: 'To',
       amountText: (token) => '${sdk.NumberFormattingService().formatAmount(token)} ${sdk.AppConstants.tokenSymbol}',
       checkphraseOf: (address) => checkphrases[address],
+      signer: signer,
     );
   }
 }
