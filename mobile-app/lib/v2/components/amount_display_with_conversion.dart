@@ -23,18 +23,15 @@ class AmountDisplayWithConversion extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final text = context.themeText;
-    final colors = context.colors;
+    final text = context.themeTextV3;
+    final colors = context.colorsV3;
 
-    final primaryAmountColor = amountColor ?? (colorizeAmount ? colors.success : colors.textPrimary);
-    final tokenLogoPrimarySize = 32.0;
+    final primaryAmountColor = amountColor ?? (colorizeAmount ? colors.semanticSage : colors.textContent);
+    const tokenLogoPrimarySize = 32.0;
 
-    final secondaryAmountColor = colors.textTertiary;
-    final secondaryAmountBaseStyle = text.paragraph?.copyWith(
-      color: secondaryAmountColor,
-      fontFamily: AppTextTheme.fontFamilySecondary,
-    );
-    final tokenLogoSecondarySize = 12.0;
+    final secondaryAmountColor = colors.textMuted;
+    final secondaryAmountBaseStyle = text.body.copyWith(color: secondaryAmountColor);
+    const tokenLogoSecondarySize = 12.0;
 
     final MainAxisAlignment mainAxisAlignment = switch (alignment) {
       CrossAxisAlignment.center => MainAxisAlignment.center,
@@ -52,7 +49,7 @@ class AmountDisplayWithConversion extends StatelessWidget {
                 'assets/v2/uppercase_q.svg',
                 width: tokenLogoPrimarySize,
                 height: tokenLogoPrimarySize,
-                colorFilter: ColorFilter.mode(context.colors.textPrimary, BlendMode.srcIn),
+                colorFilter: ColorFilter.mode(colors.textContent, BlendMode.srcIn),
               ),
               const SizedBox(width: 4),
             ],
@@ -61,16 +58,13 @@ class AmountDisplayWithConversion extends StatelessWidget {
                 children: [
                   TextSpan(
                     text: amountDisplay.primaryAmount,
-                    style: text.conversionAmountPrimary?.copyWith(color: primaryAmountColor),
+                    style: text.displayBalance.copyWith(color: primaryAmountColor),
                   ),
                   if (!useTokenLogo && !amountDisplay.isFlipped) ...[
-                    const TextSpan(text: '     '),
+                    const TextSpan(text: ' '),
                     TextSpan(
                       text: AppConstants.tokenSymbol,
-                      style: text.mediumTitle?.copyWith(
-                        fontFamily: AppTextTheme.fontFamilySecondary,
-                        color: primaryAmountColor,
-                      ),
+                      style: text.amountHero.copyWith(color: primaryAmountColor),
                     ),
                   ],
                 ],
@@ -78,7 +72,7 @@ class AmountDisplayWithConversion extends StatelessWidget {
             ),
           ],
         ),
-        const SizedBox(height: 6),
+        const SizedBox(height: 8),
         Row(
           mainAxisAlignment: mainAxisAlignment,
           children: [
