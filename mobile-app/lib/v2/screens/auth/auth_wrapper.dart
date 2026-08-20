@@ -51,7 +51,7 @@ class AuthWrapper extends ConsumerWidget {
                 const Loader()
               else
                 Padding(
-                  padding: EdgeInsets.symmetric(horizontal: context.themeSize.screenPadding),
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
                   child: QuantusButton.simple(
                     label: l10n.authUnlockWallet,
                     onTap: () {
