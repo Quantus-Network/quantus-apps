@@ -119,7 +119,7 @@ void main() {
       test('rejects scientific notation, signs, and non-plain shapes', () {
         const config = LocaleNumberConfig.dotDecimal;
         // Decimal.tryParse would accept all of these; a huge exponent parsed
-        // into a BigInt can block the UI isolate for minutes (Immunefi: /pay
+        // into a BigInt can block the UI isolate for minutes (audit report: /pay
         // deep-link amount freeze).
         expect(() => config.parseDecimal('1e10000000'), throwsA(isA<InvalidNumberInputException>()));
         expect(() => config.parseDecimal('1E5'), throwsA(isA<InvalidNumberInputException>()));
@@ -786,7 +786,7 @@ void main() {
 
     test('non-numeric shapes never enter the field', () {
       const hostiles = [
-        '1e10000000', // the Immunefi payload
+        '1e10000000', // the reported payload
         '1E5',
         '-1',
         '+1',

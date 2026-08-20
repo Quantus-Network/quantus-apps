@@ -51,8 +51,21 @@ class HdWalletService {
   static bool isDevAccount(String mnemonic) => kDebugMode && _devAccounts.containsKey(mnemonic);
 
   Keypair _deriveHDWallet({required String mnemonic, int account = 0, int change = 0, int addressIndex = 0}) {
-    final derivationPath = "m/44'/189189'/$account'/$change'/$addressIndex'";
-    return crypto.generateDerivedKeypair(mnemonicStr: mnemonic, path: derivationPath);
+    return crypto.generateDerivedKeypair(mnemonicStr: mnemonic, path: pathForIndex(account, change, addressIndex));
+  }
+
+  /// The transparent-account derivation path this wallet uses.
+  static String pathForIndex(int account, [int change = 0, int addressIndex = 0]) =>
+      "m/44'/189189'/$account'/$change'/$addressIndex'";
+
+  static final RegExp _pathPattern = RegExp(r"^m(/\d+'?)+$");
+
+  static bool isValidPath(String path) => _pathPattern.hasMatch(path.trim());
+
+  Keypair keyPairAtPath(String mnemonic, String path) {
+    final trimmed = path.trim();
+    if (!isValidPath(trimmed)) throw FormatException('Not a derivation path: $path');
+    return crypto.generateDerivedKeypair(mnemonicStr: mnemonic, path: trimmed);
   }
 
   Keypair keyPairAtIndex(String mnemonic, int index) {

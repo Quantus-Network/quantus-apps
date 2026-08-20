@@ -4,6 +4,7 @@ import 'package:convert/convert.dart';
 import 'package:flutter/foundation.dart';
 import 'package:quantus_sdk/generated/planck/pallets/multisig.dart';
 import 'package:quantus_sdk/src/chain/call_decoder.dart';
+import 'package:quantus_sdk/src/chain/call_policy.dart';
 import 'package:quantus_sdk/src/chain/decoded_call.dart';
 import 'package:quantus_sdk/src/models/json_dynamic_parse.dart';
 import 'package:quantus_sdk/src/models/multisig_account.dart';
@@ -271,9 +272,13 @@ class MultisigProposal {
     }
   }
 
+  /// A proposal's stored inner call, under the policy the mobile wallet renders.
+  static DecodedCall decodeProposalCall(List<int> bytes) =>
+      CallDecoder.decodeBytes(bytes, policy: const WalletCallPolicy(), within: CallIds.insideProposal);
+
   static DecodedCall? _decodeCall(Uint8List bytes) {
     try {
-      return CallDecoder.decodeBytes(bytes);
+      return decodeProposalCall(bytes);
     } catch (e) {
       quantusPrint('[MultisigProposal] Failed to decode call_raw: $e');
       return null;

@@ -4,6 +4,7 @@ import 'package:quantus_cold_wallet/components/quantus_button.dart';
 import 'package:quantus_cold_wallet/components/scaffold_base.dart';
 import 'package:quantus_cold_wallet/components/scaffold_base_bottom_content.dart';
 import 'package:quantus_cold_wallet/components/v2_app_bar.dart';
+import 'package:quantus_cold_wallet/models/cold_account.dart';
 import 'package:quantus_cold_wallet/providers/wallet_providers.dart';
 import 'package:quantus_cold_wallet/theme/app_colors.dart';
 import 'package:quantus_cold_wallet/theme/app_text_styles.dart';
@@ -11,7 +12,9 @@ import 'package:quantus_cold_wallet/widgets/password_field.dart';
 
 class SetPasswordScreen extends ConsumerStatefulWidget {
   final String mnemonic;
-  const SetPasswordScreen({super.key, required this.mnemonic});
+  final List<ColdAccount> accounts;
+
+  const SetPasswordScreen({super.key, required this.mnemonic, required this.accounts});
 
   @override
   ConsumerState<SetPasswordScreen> createState() => _SetPasswordScreenState();
@@ -65,7 +68,12 @@ class _SetPasswordScreenState extends ConsumerState<SetPasswordScreen> {
     try {
       await ref
           .read(walletControllerProvider.notifier)
-          .createWallet(mnemonic: widget.mnemonic, password: _password.text, enableBiometric: _enableBiometric);
+          .createWallet(
+            mnemonic: widget.mnemonic,
+            password: _password.text,
+            enableBiometric: _enableBiometric,
+            accounts: widget.accounts,
+          );
       if (!mounted) return;
       Navigator.of(context).popUntil((route) => route.isFirst);
     } catch (e) {

@@ -40,6 +40,8 @@ jobs:
       - name: Test Quantus SDK
         # Tests tagged 'native' need the Rust dylib built locally; skip them in CI.
         run: melos exec --concurrency=1 --scope="quantus_sdk" -- "flutter test --exclude-tags=native"
+      - name: Test Cold Wallet App
+        run: melos exec --concurrency=1 --scope="quantus_cold_wallet" -- "flutter test"
 
   # build_android:
   #   name: Build Android

@@ -18,6 +18,7 @@ class Queries {
     valueCodec: _i2.U128Codec.codec,
   );
 
+  /// Fees and failed-mint retries awaiting distribution by `on_finalize`.
   _i3.Future<BigInt> collectedFees({_i1.BlockHash? at}) async {
     final hashedKey = _collectedFees.hashedKey();
     final bytes = await __api.getStorage(hashedKey, at: at);

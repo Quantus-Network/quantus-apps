@@ -85,6 +85,10 @@ class $Event {
   TransferRecoveryFailed transferRecoveryFailed({required _i5.H256 txId}) {
     return TransferRecoveryFailed(txId: txId);
   }
+
+  RecoverySweepFailed recoverySweepFailed({required _i3.AccountId32 account, required _i3.AccountId32 guardian}) {
+    return RecoverySweepFailed(account: account, guardian: guardian);
+  }
 }
 
 class $EventCodec with _i1.Codec<Event> {
@@ -106,6 +110,8 @@ class $EventCodec with _i1.Codec<Event> {
         return FundsRecovered._decode(input);
       case 5:
         return TransferRecoveryFailed._decode(input);
+      case 6:
+        return RecoverySweepFailed._decode(input);
       default:
         throw Exception('Event: Invalid variant index: "$index"');
     }
@@ -132,6 +138,9 @@ class $EventCodec with _i1.Codec<Event> {
       case TransferRecoveryFailed:
         (value as TransferRecoveryFailed).encodeTo(output);
         break;
+      case RecoverySweepFailed:
+        (value as RecoverySweepFailed).encodeTo(output);
+        break;
       default:
         throw Exception('Event: Unsupported "$value" of type "${value.runtimeType}"');
     }
@@ -152,6 +161,8 @@ class $EventCodec with _i1.Codec<Event> {
         return (value as FundsRecovered)._sizeHint();
       case TransferRecoveryFailed:
         return (value as TransferRecoveryFailed)._sizeHint();
+      case RecoverySweepFailed:
+        return (value as RecoverySweepFailed)._sizeHint();
       default:
         throw Exception('Event: Unsupported "$value" of type "${value.runtimeType}"');
     }
@@ -487,4 +498,52 @@ class TransferRecoveryFailed extends Event {
 
   @override
   int get hashCode => txId.hashCode;
+}
+
+/// The final free-balance sweep of `recover_funds` failed. All pending-transfer
+/// cancellations performed by the same call remain in effect; the guardian can
+/// retry `recover_funds` to sweep the free balance once the cause is resolved.
+class RecoverySweepFailed extends Event {
+  const RecoverySweepFailed({required this.account, required this.guardian});
+
+  factory RecoverySweepFailed._decode(_i1.Input input) {
+    return RecoverySweepFailed(
+      account: const _i1.U8ArrayCodec(32).decode(input),
+      guardian: const _i1.U8ArrayCodec(32).decode(input),
+    );
+  }
+
+  /// T::AccountId
+  final _i3.AccountId32 account;
+
+  /// T::AccountId
+  final _i3.AccountId32 guardian;
+
+  @override
+  Map<String, Map<String, List<int>>> toJson() => {
+    'RecoverySweepFailed': {'account': account.toList(), 'guardian': guardian.toList()},
+  };
+
+  int _sizeHint() {
+    int size = 1;
+    size = size + const _i3.AccountId32Codec().sizeHint(account);
+    size = size + const _i3.AccountId32Codec().sizeHint(guardian);
+    return size;
+  }
+
+  void encodeTo(_i1.Output output) {
+    _i1.U8Codec.codec.encodeTo(6, output);
+    const _i1.U8ArrayCodec(32).encodeTo(account, output);
+    const _i1.U8ArrayCodec(32).encodeTo(guardian, output);
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is RecoverySweepFailed &&
+          _i9.listsEqual(other.account, account) &&
+          _i9.listsEqual(other.guardian, guardian);
+
+  @override
+  int get hashCode => Object.hash(account, guardian);
 }

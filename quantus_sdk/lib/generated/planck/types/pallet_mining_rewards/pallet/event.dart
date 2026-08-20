@@ -42,16 +42,12 @@ class $Event {
     return FeesCollected(amount: amount, total: total);
   }
 
-  TreasuryRewarded treasuryRewarded({required BigInt reward}) {
-    return TreasuryRewarded(reward: reward);
+  PayoutDeferred payoutDeferred({required BigInt amount}) {
+    return PayoutDeferred(amount: amount);
   }
 
-  MinerRewardRedirected minerRewardRedirected({required _i3.AccountId32 miner, required BigInt reward}) {
-    return MinerRewardRedirected(miner: miner, reward: reward);
-  }
-
-  TreasuryMintFailed treasuryMintFailed({required BigInt reward}) {
-    return TreasuryMintFailed(reward: reward);
+  MinerMintFailed minerMintFailed({required _i3.AccountId32 miner, required BigInt reward}) {
+    return MinerMintFailed(miner: miner, reward: reward);
   }
 }
 
@@ -67,11 +63,9 @@ class $EventCodec with _i1.Codec<Event> {
       case 1:
         return FeesCollected._decode(input);
       case 2:
-        return TreasuryRewarded._decode(input);
+        return PayoutDeferred._decode(input);
       case 3:
-        return MinerRewardRedirected._decode(input);
-      case 4:
-        return TreasuryMintFailed._decode(input);
+        return MinerMintFailed._decode(input);
       default:
         throw Exception('Event: Invalid variant index: "$index"');
     }
@@ -86,14 +80,11 @@ class $EventCodec with _i1.Codec<Event> {
       case FeesCollected:
         (value as FeesCollected).encodeTo(output);
         break;
-      case TreasuryRewarded:
-        (value as TreasuryRewarded).encodeTo(output);
+      case PayoutDeferred:
+        (value as PayoutDeferred).encodeTo(output);
         break;
-      case MinerRewardRedirected:
-        (value as MinerRewardRedirected).encodeTo(output);
-        break;
-      case TreasuryMintFailed:
-        (value as TreasuryMintFailed).encodeTo(output);
+      case MinerMintFailed:
+        (value as MinerMintFailed).encodeTo(output);
         break;
       default:
         throw Exception('Event: Unsupported "$value" of type "${value.runtimeType}"');
@@ -107,12 +98,10 @@ class $EventCodec with _i1.Codec<Event> {
         return (value as MinerRewarded)._sizeHint();
       case FeesCollected:
         return (value as FeesCollected)._sizeHint();
-      case TreasuryRewarded:
-        return (value as TreasuryRewarded)._sizeHint();
-      case MinerRewardRedirected:
-        return (value as MinerRewardRedirected)._sizeHint();
-      case TreasuryMintFailed:
-        return (value as TreasuryMintFailed)._sizeHint();
+      case PayoutDeferred:
+        return (value as PayoutDeferred)._sizeHint();
+      case MinerMintFailed:
+        return (value as MinerMintFailed)._sizeHint();
       default:
         throw Exception('Event: Unsupported "$value" of type "${value.runtimeType}"');
     }
@@ -132,7 +121,7 @@ class MinerRewarded extends Event {
   final _i3.AccountId32 miner;
 
   /// BalanceOf<T>
-  /// Total reward (base + fees)
+  /// Quantized reward (block reward + fees, aligned to the wormhole quantum)
   final BigInt reward;
 
   @override
@@ -203,50 +192,47 @@ class FeesCollected extends Event {
   int get hashCode => Object.hash(amount, total);
 }
 
-/// Rewards were sent to Treasury when no miner was specified
-class TreasuryRewarded extends Event {
-  const TreasuryRewarded({required this.reward});
+/// No miner in the digest; the credit stays in [`CollectedFees`] for the next block.
+class PayoutDeferred extends Event {
+  const PayoutDeferred({required this.amount});
 
-  factory TreasuryRewarded._decode(_i1.Input input) {
-    return TreasuryRewarded(reward: _i1.U128Codec.codec.decode(input));
+  factory PayoutDeferred._decode(_i1.Input input) {
+    return PayoutDeferred(amount: _i1.U128Codec.codec.decode(input));
   }
 
   /// BalanceOf<T>
-  /// Total reward (base + fees)
-  final BigInt reward;
+  /// Amount held for the next miner
+  final BigInt amount;
 
   @override
   Map<String, Map<String, BigInt>> toJson() => {
-    'TreasuryRewarded': {'reward': reward},
+    'PayoutDeferred': {'amount': amount},
   };
 
   int _sizeHint() {
     int size = 1;
-    size = size + _i1.U128Codec.codec.sizeHint(reward);
+    size = size + _i1.U128Codec.codec.sizeHint(amount);
     return size;
   }
 
   void encodeTo(_i1.Output output) {
     _i1.U8Codec.codec.encodeTo(2, output);
-    _i1.U128Codec.codec.encodeTo(reward, output);
+    _i1.U128Codec.codec.encodeTo(amount, output);
   }
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is TreasuryRewarded && other.reward == reward;
+  bool operator ==(Object other) => identical(this, other) || other is PayoutDeferred && other.amount == amount;
 
   @override
-  int get hashCode => reward.hashCode;
+  int get hashCode => amount.hashCode;
 }
 
-/// Miner reward was redirected to treasury due to mint failure
-class MinerRewardRedirected extends Event {
-  const MinerRewardRedirected({required this.miner, required this.reward});
+/// Miner mint failed; the credit stays in [`CollectedFees`] for retry.
+class MinerMintFailed extends Event {
+  const MinerMintFailed({required this.miner, required this.reward});
 
-  factory MinerRewardRedirected._decode(_i1.Input input) {
-    return MinerRewardRedirected(
-      miner: const _i1.U8ArrayCodec(32).decode(input),
-      reward: _i1.U128Codec.codec.decode(input),
-    );
+  factory MinerMintFailed._decode(_i1.Input input) {
+    return MinerMintFailed(miner: const _i1.U8ArrayCodec(32).decode(input), reward: _i1.U128Codec.codec.decode(input));
   }
 
   /// T::AccountId
@@ -254,12 +240,12 @@ class MinerRewardRedirected extends Event {
   final _i3.AccountId32 miner;
 
   /// BalanceOf<T>
-  /// The reward amount redirected to treasury
+  /// The reward amount retained
   final BigInt reward;
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-    'MinerRewardRedirected': {'miner': miner.toList(), 'reward': reward},
+    'MinerMintFailed': {'miner': miner.toList(), 'reward': reward},
   };
 
   int _sizeHint() {
@@ -278,47 +264,8 @@ class MinerRewardRedirected extends Event {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is MinerRewardRedirected && _i4.listsEqual(other.miner, miner) && other.reward == reward;
+      other is MinerMintFailed && _i4.listsEqual(other.miner, miner) && other.reward == reward;
 
   @override
   int get hashCode => Object.hash(miner, reward);
-}
-
-/// Treasury mint failed - reward was not issued.
-///
-/// This is a critical operational signal. If this event is observed, it indicates
-/// either a misconfigured treasury account or a currency invariant violation.
-/// The reward amount was permanently lost (not minted).
-class TreasuryMintFailed extends Event {
-  const TreasuryMintFailed({required this.reward});
-
-  factory TreasuryMintFailed._decode(_i1.Input input) {
-    return TreasuryMintFailed(reward: _i1.U128Codec.codec.decode(input));
-  }
-
-  /// BalanceOf<T>
-  /// The reward amount that failed to mint
-  final BigInt reward;
-
-  @override
-  Map<String, Map<String, BigInt>> toJson() => {
-    'TreasuryMintFailed': {'reward': reward},
-  };
-
-  int _sizeHint() {
-    int size = 1;
-    size = size + _i1.U128Codec.codec.sizeHint(reward);
-    return size;
-  }
-
-  void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(4, output);
-    _i1.U128Codec.codec.encodeTo(reward, output);
-  }
-
-  @override
-  bool operator ==(Object other) => identical(this, other) || other is TreasuryMintFailed && other.reward == reward;
-
-  @override
-  int get hashCode => reward.hashCode;
 }

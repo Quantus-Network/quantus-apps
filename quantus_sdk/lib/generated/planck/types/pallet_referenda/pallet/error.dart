@@ -45,7 +45,19 @@ enum Error {
   preimageNotExist('PreimageNotExist', 12),
 
   /// The preimage is stored with a different length than the one provided.
-  preimageStoredWithDifferentLength('PreimageStoredWithDifferentLength', 13);
+  preimageStoredWithDifferentLength('PreimageStoredWithDifferentLength', 13),
+
+  /// The referendum's wake-up alarm could not be scheduled.
+  alarmSchedulingFailed('AlarmSchedulingFailed', 14),
+
+  /// There are already the maximum number of ongoing referenda.
+  tooManyActive('TooManyActive', 15),
+
+  /// The submitter already has the maximum number of ongoing referenda.
+  tooManyActiveBySubmitter('TooManyActiveBySubmitter', 16),
+
+  /// The proposal's preimage is larger than [`Config::MaxProposalSize`].
+  preimageTooBig('PreimageTooBig', 17);
 
   const Error(this.variantName, this.codecIndex);
 
@@ -60,7 +72,6 @@ enum Error {
   static const $ErrorCodec codec = $ErrorCodec();
 
   String toJson() => variantName;
-
   _i2.Uint8List encode() {
     return codec.encode(this);
   }
@@ -101,6 +112,14 @@ class $ErrorCodec with _i1.Codec<Error> {
         return Error.preimageNotExist;
       case 13:
         return Error.preimageStoredWithDifferentLength;
+      case 14:
+        return Error.alarmSchedulingFailed;
+      case 15:
+        return Error.tooManyActive;
+      case 16:
+        return Error.tooManyActiveBySubmitter;
+      case 17:
+        return Error.preimageTooBig;
       default:
         throw Exception('Error: Invalid variant index: "$index"');
     }

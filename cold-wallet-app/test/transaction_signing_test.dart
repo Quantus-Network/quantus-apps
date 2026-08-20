@@ -49,7 +49,7 @@ void main() {
   group('QuantusPayloadParser.parsePayload (scan -> display path)', () {
     test('keystone transfer payload decodes to a displayable transaction', () {
       final payload = Uint8List.fromList(hex.decode(planckHex));
-      final parsed = QuantusPayloadParser.parsePayload(payload);
+      final parsed = QuantusPayloadParser.parsePayload(payload, policy: const FullCallPolicy());
       expect(parsed.call.pallet, 'Balances');
       expect(parsed.call.call, 'transfer_allow_death');
       final destination = parsed.call.fields.whereType<ValueField>().firstWhere((f) => f.label == 'Destination');
@@ -82,7 +82,7 @@ void main() {
       );
       final payload = Uint8List.fromList([...approve.encode(), ...hex.decode(planckExtensionSuffixHex)]);
 
-      final parsed = QuantusPayloadParser.parsePayload(payload);
+      final parsed = QuantusPayloadParser.parsePayload(payload, policy: const FullCallPolicy());
 
       expect(parsed.call.displayTitle, 'Multisig · approve');
       expect(parsed.call.fields.whereType<ValueField>().firstWhere((f) => f.label == 'Proposal id').value, '12');
@@ -109,14 +109,14 @@ void main() {
     test('retired devnet payload is rejected with unknown genesis (never signed)', () {
       final payload = Uint8List.fromList(hex.decode(retiredDevnetHex));
       expect(
-        () => QuantusPayloadParser.parsePayload(payload),
+        () => QuantusPayloadParser.parsePayload(payload, policy: const FullCallPolicy()),
         throwsA(isA<FormatException>().having((e) => e.message, 'message', contains('Unknown genesis hash'))),
       );
     });
 
     test('non-transaction bytes are rejected (never signed)', () {
       final garbage = Uint8List.fromList(List<int>.generate(40, (i) => 0xff - i));
-      expect(() => QuantusPayloadParser.parsePayload(garbage), throwsFormatException);
+      expect(() => QuantusPayloadParser.parsePayload(garbage, policy: const FullCallPolicy()), throwsFormatException);
     });
   });
 
@@ -126,7 +126,10 @@ void main() {
     // payload is checkable here — the others resolve addresses through the Rust
     // bridge, which unit tests do not initialise.
     test('governance vote payload parses with no spec drift', () {
-      final parsed = QuantusPayloadParser.parsePayload(DebugPayloads.governanceVoteAye());
+      final request = SigningRequest.decode(DebugPayloads.governanceVoteAye());
+      final parsed = QuantusPayloadParser.parsePayload(request.payload, policy: const FullCallPolicy());
+
+      expect(request.signer, DebugPayloads.debugSigner);
 
       expect(parsed.call.displayTitle, 'TechCollective · vote');
       expect(parsed.call.fields.whereType<ValueField>().firstWhere((f) => f.label == 'Vote').value, contains('Aye'));

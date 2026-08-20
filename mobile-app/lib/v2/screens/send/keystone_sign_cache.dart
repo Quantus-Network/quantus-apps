@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
@@ -145,6 +147,15 @@ final keystoneSignCacheProvider = StateNotifierProvider<KeystoneSignCacheNotifie
   (ref) => KeystoneSignCacheNotifier(),
 );
 
+/// What an air-gapped signer is sent, before UR framing: the payload wrapped in
+/// a [SigningRequest], which names the account that must sign it.
+///
+/// The payload alone says nothing about whose key it belongs to, so a signer
+/// holding several accounts could not tell which to use, and one holding none
+/// of them could not tell that it does not hold the right key.
+Uint8List signRequestBytes({required String signer, required Uint8List payload}) =>
+    SigningRequest(signer: signer, payload: payload).encode();
+
 /// Builds the unsigned payload and its UR frames, serving a fresh cache entry
 /// when one exists and storing the result under [cacheKey]. The review screen
 /// prefetches through this so the QR screen usually renders instantly; the QR
@@ -163,7 +174,9 @@ Future<({UnsignedTransactionData unsignedData, List<String> urParts, DateTime st
     }
   }
   final unsigned = await ref.read(substrateServiceProvider).getUnsignedTransactionPayload(account, buildCall());
-  final parts = encodeUr(data: unsigned.encodedPayloadRaw);
+  final parts = encodeUr(
+    data: signRequestBytes(signer: account.accountId, payload: unsigned.encodedPayloadRaw),
+  );
   if (parts.isEmpty) throw Exception('Failed to encode transaction payload as UR');
   final storedAt = DateTime.now();
   if (cacheKey != null) cache.store(key: cacheKey, unsignedData: unsigned, urParts: parts, storedAt: storedAt);

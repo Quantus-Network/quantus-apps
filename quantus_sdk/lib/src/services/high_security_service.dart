@@ -1,11 +1,9 @@
 import 'dart:async';
 import 'dart:typed_data';
 
-import 'package:collection/collection.dart';
 import 'package:quantus_sdk/generated/planck/planck.dart';
 import 'package:quantus_sdk/generated/planck/types/qp_scheduler/block_number_or_timestamp.dart' as qp;
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:quantus_sdk/src/extensions/address_extension.dart';
 import 'package:quantus_sdk/src/extensions/duration_extension.dart';
 import 'package:quantus_sdk/src/rust/api/crypto.dart' as crypto;
 import 'package:quantus_sdk/src/utils/print.dart';
@@ -36,26 +34,6 @@ class HighSecurityService {
 
   Future<bool> isHighSecurity(Account account) async {
     return await getHighSecurityConfig(account.accountId) != null;
-  }
-
-  Future<bool> isGuardian(Account account) async {
-    return await _reversibleTransfersService.isGuardian(account.accountId);
-  }
-
-  Future<List<EntrustedAccount>> getEntrustedAccounts(Account account) async {
-    final accounts = await AccountsService().getAccounts();
-    String getAccountName(String ss58Address) =>
-        accounts.firstWhereOrNull((a) => a.accountId == ss58Address)?.name ?? 'Entrusted Account';
-    return (await _reversibleTransfersService.getInterceptedAccounts(account.accountId))
-        .mapIndexed(
-          (index, accountId) => EntrustedAccount(
-            parentAccountId: account.accountId,
-            index: index,
-            name: getAccountName(accountId),
-            accountId: accountId,
-          ),
-        )
-        .toList();
   }
 
   Future<Account?> getGuardianAccount(EntrustedAccount entrustedAccount) async {

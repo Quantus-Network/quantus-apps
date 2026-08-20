@@ -151,7 +151,7 @@ void main() {
       });
 
       test('rejects exponent notation and over-long input', () {
-        // Regression test for the Immunefi report: amount=1e10000000 in a /pay
+        // Regression test for the audit report: amount=1e10000000 in a /pay
         // deep link froze the wallet materialising an unbounded BigInt.
         expect(service.parseWireAmount('1e10000000'), isNull);
         expect(service.parseWireAmount('1e5'), isNull);

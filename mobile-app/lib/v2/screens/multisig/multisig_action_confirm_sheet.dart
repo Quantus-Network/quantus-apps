@@ -164,7 +164,7 @@ class _MultisigActionConfirmSheetState extends ConsumerState<MultisigActionConfi
       setState(() => _loadingCallBytes = true);
       try {
         final bytes = await loader(ref);
-        final decoded = CallDecoder.decodeBytes(bytes);
+        final decoded = MultisigProposal.decodeProposalCall(bytes);
         if (!mounted) return;
         setState(() {
           _callBytes = bytes;

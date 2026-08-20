@@ -55,7 +55,7 @@ void main() {
     });
 
     test('rejects exponent notation in amount', () {
-      // Immunefi regression: amount=1e10000000 froze the wallet materialising
+      // Audit regression: amount=1e10000000 froze the wallet materialising
       // an unbounded BigInt on the UI isolate.
       expect(PaymentIntent.tryParseUrl('https://www.quantus.com/pay?to=recipient&amount=1e10000000'), isNull);
       expect(PaymentIntent.tryParseUrl('https://www.quantus.com/pay?to=recipient&amount=1E5'), isNull);
