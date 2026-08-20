@@ -129,11 +129,11 @@ jobs:
         run: echo "$GOOGLE_SERVICES_JSON" > mobile-app/android/app/google-services.json
 
       - name: Decode Android keystore
-        if: inputs.build_mode == 'release'
+        if: inputs.build_mode == 'release' && inputs.app == 'mobile'
         run: echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "${{ steps.meta.outputs.dir }}/android/upload-keystore.jks"
 
       - name: Create key.properties
-        if: inputs.build_mode == 'release'
+        if: inputs.build_mode == 'release' && inputs.app == 'mobile'
         env:
           APP_DIR: ${{ steps.meta.outputs.dir }}
         run: |
@@ -143,6 +143,21 @@ jobs:
           keyAlias=$ANDROID_KEY_ALIAS
           keyPassword=$ANDROID_KEY_PASSWORD
           EOF
+
+      - name: Verify cold wallet signing files
+        if: inputs.build_mode == 'release' && inputs.app == 'cold'
+        run: |
+          set -euo pipefail
+          KEYSTORE=cold-wallet-app/android/upload-keystore.jks
+          PROPS=cold-wallet-app/android/key.properties
+          if [ ! -f "$KEYSTORE" ]; then
+            echo "Error: $KEYSTORE is missing from the checkout" >&2
+            exit 1
+          fi
+          if [ ! -f "$PROPS" ]; then
+            echo "Error: $PROPS is missing from the checkout" >&2
+            exit 1
+          fi
 
       - name: Generate splash screen
         working-directory: ${{ steps.meta.outputs.dir }}
