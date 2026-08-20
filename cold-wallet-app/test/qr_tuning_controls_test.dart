@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_cold_wallet/components/qr_tuning_controls.dart';
+import 'package:quantus_cold_wallet/providers/settings_providers.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -38,7 +39,7 @@ void main() {
       expect(widget.style?.fontSize, text.caption.fontSize);
     }
 
-    for (final value in ['15 FPS', '1100 bytes']) {
+    for (final value in ['${ColdSettings.defaultQrFps} FPS', '${ColdSettings.defaultQrBytes} bytes']) {
       final widget = tester.widget<Text>(find.text(value));
       expect(widget.style?.color, colors.textContent);
       expect(widget.style?.fontSize, text.caption.fontSize);
