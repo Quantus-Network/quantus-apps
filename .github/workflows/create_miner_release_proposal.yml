@@ -1,0 +1,211 @@
+name: Miner - Create Release Proposal
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_branch:
+        description: 'Target branch for the PR (default: main)'
+        required: false
+        type: string
+        default: 'main'
+      version_type:
+        description: 'Type of version bump (major, minor, patch) or specify custom version'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+          - custom
+      custom_version:
+        description: 'Custom version string (e.g., 0.5.0). Only used if version_type is "custom". Do NOT include "miner-v" prefix'
+        required: false
+      is_draft:
+        description: 'Is this a draft release?'
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  calculate-next-version:
+    name: 🧮 Calculate Next Miner Version
+    runs-on: ubuntu-latest
+    outputs:
+      new_version: ${{ steps.versioner.outputs.new_version }}
+      source_branch: ${{ steps.vars.outputs.source_branch }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Get current branch
+        id: vars
+        run: |
+          echo "source_branch=$(git rev-parse --abbrev-ref HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Get current versions
+        id: current_versions
+        run: |
+          set -euo pipefail
+          latest_miner_tag=$(git tag -l "miner-v[0-9]*.[0-9]*.[0-9]*" | sort -V | tail -n 1)
+
+          if [ -z "$latest_miner_tag" ]; then
+            latest_miner_tag="miner-v0.0.0"
+          fi
+
+          pubspec_version=$(grep -E '^version:' miner-app/pubspec.yaml | head -n 1 | sed -E 's/^version:[[:space:]]*//' | cut -d+ -f1)
+          if [[ ! "$pubspec_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Error: could not parse version from miner-app/pubspec.yaml (got: '$pubspec_version')"
+            exit 1
+          fi
+
+          echo "latest_tag_found=$latest_miner_tag" >> "$GITHUB_OUTPUT"
+          echo "pubspec_version=$pubspec_version" >> "$GITHUB_OUTPUT"
+          echo "Latest miner tag found: $latest_miner_tag (pubspec: $pubspec_version)"
+
+      - name: Calculate new version
+        id: versioner
+        env:
+          LATEST_TAG: ${{ steps.current_versions.outputs.latest_tag_found }}
+          PUBSPEC_VERSION: ${{ steps.current_versions.outputs.pubspec_version }}
+          VERSION_TYPE: ${{ github.event.inputs.version_type }}
+          CUSTOM_VERSION: ${{ github.event.inputs.custom_version }}
+        run: |
+          set -euo pipefail
+          tag_version=${LATEST_TAG#miner-v}
+          # Bump from whichever is higher: the last released tag or a manually pre-bumped pubspec
+          current_version=$(printf '%s\n%s\n' "$tag_version" "$PUBSPEC_VERSION" | sort -V | tail -n 1)
+          echo "Base version: $current_version (tag: $tag_version, pubspec: $PUBSPEC_VERSION)"
+
+          if [[ "$VERSION_TYPE" == "custom" ]]; then
+            if [[ -z "$CUSTOM_VERSION" ]]; then
+              echo "Error: Custom version is selected but no custom_version string provided."
+              exit 1
+            fi
+            if [[ ! "$CUSTOM_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+              echo "Error: Custom version string must be in format X.Y.Z (e.g., 0.5.0)."
+              exit 1
+            fi
+            lower=$(printf '%s\n%s\n' "$CUSTOM_VERSION" "$current_version" | sort -V | head -n 1)
+            if [[ "$lower" == "$CUSTOM_VERSION" && "$CUSTOM_VERSION" != "$current_version" ]]; then
+              echo "Error: custom version $CUSTOM_VERSION is lower than current version $current_version (latest tag / pubspec)."
+              exit 1
+            fi
+            new_version="miner-v$CUSTOM_VERSION"
+          else
+            IFS='.' read -r major minor patch <<< "$current_version"
+
+            if [[ "$VERSION_TYPE" == "major" ]]; then
+              major=$((major + 1))
+              minor=0
+              patch=0
+            elif [[ "$VERSION_TYPE" == "minor" ]]; then
+              minor=$((minor + 1))
+              patch=0
+            elif [[ "$VERSION_TYPE" == "patch" ]]; then
+              patch=$((patch + 1))
+            else
+              echo "Error: Invalid version_type: $VERSION_TYPE"
+              exit 1
+            fi
+            new_version="miner-v$major.$minor.$patch"
+          fi
+
+          echo "New version: $new_version"
+          echo "new_version=$new_version" >> "$GITHUB_OUTPUT"
+
+  update-version:
+    name: 📝 Update Version & Open PR
+    needs: calculate-next-version
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Create version bump branch and PR
+        env:
+          NEW_VERSION: ${{ needs.calculate-next-version.outputs.new_version }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SOURCE_BRANCH: ${{ needs.calculate-next-version.outputs.source_branch }}
+          TARGET_BRANCH: ${{ github.event.inputs.target_branch }}
+          VERSION_TYPE: ${{ github.event.inputs.version_type }}
+          IS_DRAFT: ${{ github.event.inputs.is_draft }}
+        run: |
+          set -ex
+          new_pubspec_version=${NEW_VERSION#miner-v}
+          branch_name="release/${NEW_VERSION}"
+
+          # Check the remote directly so the guard doesn't depend on local tag state
+          if git ls-remote --exit-code --tags origin "refs/tags/$NEW_VERSION" >/dev/null; then
+            echo "Error: Tag $NEW_VERSION already exists"
+            exit 1
+          fi
+
+          git checkout "$SOURCE_BRANCH"
+          git checkout -B "$branch_name"
+
+          current_pubspec=$(grep -E '^version:' miner-app/pubspec.yaml | head -n 1 | sed -E 's/^version:[[:space:]]*//' | cut -d+ -f1)
+          lower=$(printf '%s\n%s\n' "$new_pubspec_version" "$current_pubspec" | sort -V | head -n 1)
+          if [[ "$lower" == "$new_pubspec_version" && "$new_pubspec_version" != "$current_pubspec" ]]; then
+            echo "Error: refusing to downgrade miner-app/pubspec.yaml from $current_pubspec to $new_pubspec_version"
+            exit 1
+          fi
+
+          echo "Updating miner-app/pubspec.yaml to version: $new_pubspec_version"
+          sed -i -E "s/^version:[[:space:]]*.+$/version: $new_pubspec_version/" miner-app/pubspec.yaml
+
+          if ! grep -q "^version: $new_pubspec_version$" miner-app/pubspec.yaml; then
+            echo "Error: Failed to update version in miner-app/pubspec.yaml"
+            exit 1
+          fi
+
+          git config user.name "${{ github.actor }}"
+          git config user.email "${{ github.actor }}@users.noreply.github.com"
+
+          git add miner-app/pubspec.yaml
+          # --allow-empty: pubspec may already be at the target version (manual pre-bump)
+          git commit --allow-empty -m "ci: Miner version bump to $NEW_VERSION"
+          git push --force-with-lease origin "$branch_name"
+
+          PR_TITLE="ci: Miner version bump to $NEW_VERSION"
+          PR_LABELS="automated,miner-release-proposal"
+          if [[ "$IS_DRAFT" == "true" ]]; then
+            PR_LABELS="$PR_LABELS,draft-release"
+          fi
+
+          cat > pr_body.md << EOF
+          ## Miner Release Proposal
+
+          This PR proposes releasing **Quantus Miner** version \`${new_pubspec_version}\` (tag \`${NEW_VERSION}\`).
+
+          Merging this PR will automatically tag the merge commit, build macOS/Linux/Windows binaries, and publish a GitHub release.
+
+          ### Changes
+          - Updated \`miner-app/pubspec.yaml\` version to \`${new_pubspec_version}\`
+
+          Triggered by workflow run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          Bump type: ${VERSION_TYPE}
+          EOF
+
+          existing_pr=$(gh pr list --head "$branch_name" --base "$TARGET_BRANCH" --json number --jq '.[0].number // empty')
+          if [[ -n "$existing_pr" ]]; then
+            gh pr edit "$existing_pr" --title "$PR_TITLE" --body-file pr_body.md --add-label "$PR_LABELS"
+          else
+            gh pr create \
+              --title "$PR_TITLE" \
+              --body-file pr_body.md \
+              --base "$TARGET_BRANCH" \
+              --head "$branch_name" \
+              --label "$PR_LABELS"
+          fi

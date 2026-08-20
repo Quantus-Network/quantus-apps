@@ -162,11 +162,17 @@ final keypairProvider = Provider<Keypair?>((ref) {
 
 final addressProvider = Provider<String?>((ref) => ref.watch(keypairProvider)?.ss58Address);
 
+/// Resolves human checkphrases for every address on screen, not just the
+/// wallet's own — an approval or a governance call can name several accounts,
+/// and each one needs to be verifiable by eye.
+final addressCheckphraseProvider = FutureProvider.family<String, String>((ref, address) async {
+  return (await HumanReadableChecksumService().getHumanReadableName(address)) ?? '';
+});
+
 final checkphraseProvider = FutureProvider<String>((ref) async {
   final address = ref.watch(addressProvider);
   if (address == null) return '';
-  final name = await HumanReadableChecksumService().getHumanReadableName(address);
-  return name ?? '';
+  return ref.watch(addressCheckphraseProvider(address).future);
 });
 
 final checksumNameProvider = FutureProvider.family<String, String>((ref, address) async {

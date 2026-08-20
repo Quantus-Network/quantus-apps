@@ -74,36 +74,31 @@ class _ScanTransactionScreenState extends State<ScanTransactionScreen> {
     Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => SignTransactionScreen(payload: payload)));
   }
 
+  /// One button per payload in [DebugPayloads.all], so every screen the signer
+  /// can be shown is one tap away on a simulator.
   Widget _debugPayloadButtons(BuildContext context) {
-    final colors = context.colorsV3;
-    final text = context.themeTextV3;
-
-    Widget button(String label, Uint8List Function() build) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4),
-        child: ElevatedButton(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: colors.bgSurface2,
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            visualDensity: VisualDensity.compact,
-          ),
-          onPressed: () => _loadDebugPayload(build()),
-          child: Text(label, style: text.caption.copyWith(color: colors.textContent)),
-        ),
-      );
-    }
+    final text = context.themeText;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text('DEBUG PAYLOADS', style: text.caption.copyWith(color: colors.textMuted)),
+        Text('DEBUG PAYLOADS', style: text.detail?.copyWith(color: Colors.white38, letterSpacing: 1.2)),
         const SizedBox(height: 8),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
+        Wrap(
+          alignment: WrapAlignment.center,
+          spacing: 8,
+          runSpacing: 8,
           children: [
-            button('Send', DebugPayloads.transfer),
-            button('Msig approve', DebugPayloads.multisigApproveTransfer),
-            button('Vote aye', DebugPayloads.governanceVoteAye),
+            for (final entry in DebugPayloads.all.entries)
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.white24,
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  visualDensity: VisualDensity.compact,
+                ),
+                onPressed: () => _loadDebugPayload(entry.value()),
+                child: Text(entry.key, style: text.detail?.copyWith(color: Colors.white)),
+              ),
           ],
         ),
         const SizedBox(height: 20),
@@ -111,30 +106,51 @@ class _ScanTransactionScreenState extends State<ScanTransactionScreen> {
     );
   }
 
+  /// Retries a failed start. [MobileScannerController.start] folds scanner
+  /// failures into the controller's value, re-rendering this same panel with
+  /// the new reason; the controller-lifecycle errors it throws instead are
+  /// surfaced through [_error], which each retry clears so a recovered camera
+  /// never scans behind a stale failure banner.
+  Future<void> _restartCamera() async {
+    setState(() => _error = null);
+    try {
+      await _controller.start();
+    } catch (e) {
+      debugPrint('Camera restart failed: $e');
+      if (mounted) setState(() => _error = 'Camera restart failed: $e');
+    }
+  }
+
   Widget _cameraError(BuildContext context, MobileScannerException error) {
-    final colors = context.colorsV3;
-    final text = context.themeTextV3;
+    final denied = error.errorCode == MobileScannerErrorCode.permissionDenied;
+    final detail = error.errorDetails?.message;
+
     return ColoredBox(
-      color: colors.bgVoid,
+      color: Colors.black,
       child: Center(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 32),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.no_photography_outlined, color: colors.textMuted, size: 64),
+              const Icon(Icons.no_photography_outlined, color: Colors.white70, size: 64),
               const SizedBox(height: 24),
-              Text(
+              const Text(
                 'Camera unavailable',
-                style: text.titleScreen.copyWith(color: colors.textContent),
+                style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w600),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 12),
               Text(
-                'Grant camera access in Settings to scan the transaction QR (${error.errorCode.name}).',
-                style: text.body.copyWith(color: colors.textMuted),
+                denied
+                    ? 'Grant camera access in Settings to scan the transaction QR.'
+                    : 'The camera could not be started (${error.errorCode.name})'
+                          '${detail == null ? '' : ': $detail'}.',
+                style: const TextStyle(color: Colors.white70),
                 textAlign: TextAlign.center,
               ),
+              const SizedBox(height: 24),
+              QuantusButton.simple(label: 'Try again', width: null, onTap: _restartCamera),
             ],
           ),
         ),
@@ -144,15 +160,15 @@ class _ScanTransactionScreenState extends State<ScanTransactionScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.colorsV3;
-    final text = context.themeTextV3;
+    final colors = context.colors;
+    final text = context.themeText;
     final size = MediaQuery.of(context).size;
     final frame = (size.width - 96).clamp(220.0, 300.0);
 
     final progress = _expectedParts == null ? null : (_seenSeq.length / _expectedParts!).clamp(0.0, 1.0);
 
     return Scaffold(
-      backgroundColor: colors.bgVoid,
+      backgroundColor: Colors.black,
       body: Stack(
         children: [
           MobileScanner(controller: _controller, onDetect: _onDetect, errorBuilder: _cameraError),
@@ -161,8 +177,8 @@ class _ScanTransactionScreenState extends State<ScanTransactionScreen> {
               width: frame,
               height: frame,
               decoration: BoxDecoration(
-                border: Border.all(color: colors.accentFlare, width: 2),
-                borderRadius: context.radiusV3.mdBorder,
+                border: Border.all(color: colors.accentOrange, width: 2),
+                borderRadius: BorderRadius.circular(16),
               ),
             ),
           ),
@@ -175,12 +191,12 @@ class _ScanTransactionScreenState extends State<ScanTransactionScreen> {
                 children: [
                   IconButton(
                     onPressed: () => Navigator.pop(context),
-                    icon: Icon(Icons.arrow_back, color: colors.textContent),
+                    icon: const Icon(Icons.arrow_back, color: Colors.white),
                   ),
                   const Spacer(),
                   IconButton(
                     onPressed: _controller.toggleTorch,
-                    icon: Icon(Icons.flash_on, color: colors.textContent),
+                    icon: const Icon(Icons.flash_on, color: Colors.white),
                   ),
                 ],
               ),
@@ -196,27 +212,27 @@ class _ScanTransactionScreenState extends State<ScanTransactionScreen> {
                 if (kDebugMode) _debugPayloadButtons(context),
                 Text(
                   _error ?? 'Scan the transaction QR from your hot wallet',
-                  style: text.body.copyWith(color: _error != null ? colors.semanticEmber : colors.textContent),
+                  style: text.paragraph?.copyWith(color: _error != null ? colors.error : Colors.white),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 16),
                 if (progress != null) ...[
                   ClipRRect(
-                    borderRadius: context.radiusV3.xsBorder,
+                    borderRadius: BorderRadius.circular(4),
                     child: LinearProgressIndicator(
                       value: progress,
                       minHeight: 6,
-                      backgroundColor: colors.bgSurface2,
-                      color: colors.accentFlare,
+                      backgroundColor: colors.surface,
+                      color: colors.accentOrange,
                     ),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     '${_seenSeq.length} / ${_expectedParts!} parts',
-                    style: text.caption.copyWith(color: colors.textMuted),
+                    style: text.detail?.copyWith(color: Colors.white70),
                   ),
                 ] else if (_parts.isNotEmpty)
-                  Text('${_parts.length} parts scanned', style: text.caption.copyWith(color: colors.textMuted)),
+                  Text('${_parts.length} parts scanned', style: text.detail?.copyWith(color: Colors.white70)),
               ],
             ),
           ),

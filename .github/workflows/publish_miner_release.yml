@@ -1,0 +1,168 @@
+name: Miner - Publish Release
+
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: miner-publish-release
+  cancel-in-progress: false
+
+jobs:
+  create-tag:
+    name: Create Miner Tag
+    if: github.event.pull_request.merged == true && contains(github.event.pull_request.labels.*.name, 'miner-release-proposal')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      tag: ${{ steps.extract_version.outputs.tag }}
+      version: ${{ steps.extract_version.outputs.version }}
+      is_draft: ${{ steps.extract_version.outputs.is_draft }}
+      sha: ${{ github.event.pull_request.merge_commit_sha }}
+    steps:
+      - name: Checkout merge commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.merge_commit_sha }}
+
+      - name: Extract version from PR title
+        id: extract_version
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          HAS_DRAFT_LABEL: ${{ contains(github.event.pull_request.labels.*.name, 'draft-release') }}
+        run: |
+          # PR title format: "ci: Miner version bump to miner-vX.Y.Z"
+          TAG=$(echo "$PR_TITLE" | grep -o 'miner-v[0-9]\+\.[0-9]\+\.[0-9]\+' | head -n 1)
+          if [ -z "$TAG" ]; then
+            echo "Error: Could not extract miner version from PR title: $PR_TITLE"
+            exit 1
+          fi
+          {
+            echo "tag=$TAG"
+            echo "version=${TAG#miner-v}"
+            echo "is_draft=$HAS_DRAFT_LABEL"
+          } >> "$GITHUB_OUTPUT"
+          echo "Extracted tag: $TAG"
+
+      - name: Verify pubspec version matches tag
+        env:
+          VERSION: ${{ steps.extract_version.outputs.version }}
+        run: |
+          PUBSPEC_VERSION=$(grep '^version:' miner-app/pubspec.yaml | head -n 1 | sed 's/version:[[:space:]]*//')
+          if [ "$PUBSPEC_VERSION" != "$VERSION" ]; then
+            echo "Error: pubspec version ($PUBSPEC_VERSION) does not match release version ($VERSION)"
+            exit 1
+          fi
+
+      - name: Create and push tag
+        env:
+          TAG: ${{ steps.extract_version.outputs.tag }}
+          MERGE_COMMIT: ${{ github.event.pull_request.merge_commit_sha }}
+        run: |
+          set -euo pipefail
+          # Idempotent: a re-run after a failed build/release must not die here
+          if git fetch origin "refs/tags/$TAG:refs/tags/$TAG" 2>/dev/null; then
+            EXISTING=$(git rev-parse "$TAG^{commit}")
+            if [ "$EXISTING" = "$MERGE_COMMIT" ]; then
+              echo "Tag $TAG already points at $MERGE_COMMIT; skipping tag creation"
+              exit 0
+            fi
+            echo "Error: tag $TAG already exists at $EXISTING, not at merge commit $MERGE_COMMIT"
+            exit 1
+          fi
+          git config user.name "${{ github.actor }}"
+          git config user.email "${{ github.actor }}@users.noreply.github.com"
+          git tag -a "$TAG" "$MERGE_COMMIT" -m "Quantus Miner release $TAG"
+          git push origin "$TAG"
+
+  build:
+    name: Build Miner
+    needs: create-tag
+    uses: ./.github/workflows/create_miner_build.yml
+    with:
+      # The verified merge SHA, never the bare tag name: checkout resolves
+      # branches before tags, so a same-named branch could shadow the release
+      ref: ${{ needs.create-tag.outputs.sha }}
+    secrets: inherit
+
+  create-release:
+    name: 🚀 Create GitHub Release
+    needs: [create-tag, build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout code at release commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.create-tag.outputs.sha }}
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: ./artifacts
+
+      - name: Create GitHub Release with assets
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ needs.create-tag.outputs.tag }}
+          VERSION: ${{ needs.create-tag.outputs.version }}
+          IS_DRAFT: ${{ needs.create-tag.outputs.is_draft }}
+        run: |
+          set -eo pipefail
+
+          ASSETS=(
+            ./artifacts/quantus_miner-macos/quantus_miner_macos.zip
+            ./artifacts/quantus_miner-linux/quantus_miner_linux.tar.gz
+            ./artifacts/quantus_miner-windows/quantus_miner_windows.zip
+          )
+          for ASSET in "${ASSETS[@]}"; do
+            if [ ! -f "$ASSET" ]; then
+              echo "Error: expected build artifact missing: $ASSET"
+              exit 1
+            fi
+          done
+
+          # Idempotent: a re-run after a partial failure re-uploads assets
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Release $TAG already exists; re-uploading assets"
+            gh release upload "$TAG" --clobber "${ASSETS[@]}"
+            exit 0
+          fi
+
+          NOTES="## Quantus Miner Release
+          This release includes binaries for:
+          - 🍎 macOS (Intel/Apple Silicon)
+          - 🐧 Linux (x64)
+          - 🪟 Windows (x64)
+          ### Installation
+          **macOS**: Download the \`.zip\` file, extract it, and run the \`Quantus Miner.app\`
+          **Linux**: Download the \`.tar.gz\` file, extract it, and run the \`quantus_miner\` executable
+          **Windows**: Download the \`.zip\` file, extract it, and run the \`quantus_miner.exe\`"
+
+          EXTRA_ARGS=()
+
+          # Generated notes must diff against the previous miner tag, not a wallet-v* tag
+          PREV_TAG=$(git tag -l "miner-v[0-9]*.[0-9]*.[0-9]*" | sort -V | grep -Fx -B1 "$TAG" | head -n 1 || true)
+          if [ -n "$PREV_TAG" ] && [ "$PREV_TAG" != "$TAG" ]; then
+            EXTRA_ARGS+=(--notes-start-tag "$PREV_TAG")
+          fi
+
+          if [[ "$IS_DRAFT" == "true" ]]; then
+            EXTRA_ARGS+=(--draft)
+          fi
+
+          gh release create "$TAG" \
+            --title "Quantus Miner $VERSION" \
+            --notes "$NOTES" \
+            --generate-notes \
+            "${EXTRA_ARGS[@]}" \
+            "${ASSETS[@]}"

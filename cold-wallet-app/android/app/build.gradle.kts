@@ -51,6 +51,14 @@ android {
             } else {
                 signingConfigs.getByName("debug")
             }
+            // AGP shrinks release builds by default. R8 full mode honours ML Kit's
+            // `-keep class * implements ComponentRegistrar` rule by keeping the class but
+            // dropping its no-arg constructor, which ML Kit instantiates reflectively:
+            // BarcodeScanning.getClient() then throws and the QR scanner reports
+            // genericError on release builds only. Shrinking buys this app nothing —
+            // the Dart code is AOT-compiled and only the thin plugin layer is Java.
+            isMinifyEnabled = false
+            isShrinkResources = false
         }
     }
 }

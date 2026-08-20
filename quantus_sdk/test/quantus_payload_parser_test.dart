@@ -128,7 +128,7 @@ void main() {
       expect(parsed.call.call, 'schedule_transfer_with_delay');
       expect(valueField(parsed.call, 'Destination').value, 'qzn5St24cMsjE4JKYdXLBctusWj5zom67dnrW22SweAahLGeG');
       expect(amountField(parsed.call, 'Amount').token, BigInt.from(1440000000000));
-      expect(valueField(parsed.call, 'Delay').value, contains('300000 ms')); // 5 minutes
+      expect(valueField(parsed.call, 'Reversible for').value, contains('05m')); // 5 minutes
       expect(parsed.extensions.nonce, 3);
     });
 
@@ -148,7 +148,7 @@ void main() {
         expect(parsed.call.displayTitle, 'Multisig · approve');
         expect(valueField(parsed.call, 'Proposal id').value, '9');
 
-        final approved = nestedField(parsed.call, 'Call being approved').call;
+        final approved = nestedField(parsed.call, 'You are approving').call;
         expect(approved.call, 'transfer_allow_death');
         expect(amountField(approved, 'Amount').token, BigInt.from(2500000000000));
         expect(parsed.call.summary?.amount, BigInt.from(2500000000000));
@@ -164,7 +164,7 @@ void main() {
 
         expect(parsed.call.call, 'propose');
         expect(valueField(parsed.call, 'Expires at block').value, '999');
-        expect(nestedField(parsed.call, 'Proposed call').call.call, 'transfer_keep_alive');
+        expect(nestedField(parsed.call, 'You are proposing').call.call, 'transfer_keep_alive');
       });
 
       test('governance vote decodes with its direction', () {

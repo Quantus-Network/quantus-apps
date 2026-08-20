@@ -12,61 +12,6 @@
       "description": "Label for the button on the error dialog when the wallet is not found"
     },
 
-    "migrationDialogTitle": "Migrate your accounts",
-    "@migrationDialogTitle": {
-      "description": "Title of the account migration dialog"
-    },
-    "migrationDialogBody": "We'll record your old\u2011chain testnet rewards and actions to determine rewards on the new Quantus Testnet.\n\nBalances do not migrate.\n\nUse the new testnet faucet for funds.",
-    "@migrationDialogBody": {
-      "description": "Body text of the account migration dialog"
-    },
-    "migrationDialogAccountsToMigrate": "{count, plural, =1{1 Account to migrate.} other{{count} Accounts to migrate.}}",
-    "@migrationDialogAccountsToMigrate": {
-      "description": "Number of accounts that will be migrated",
-      "placeholders": {
-        "count": {
-          "type": "int"
-        }
-      }
-    },
-    "migrationDialogAccountsCannotMigrate": "{count, plural, =1{1 account cannot be migrated (missing wallet data).} other{{count} accounts cannot be migrated (missing wallet data).}}",
-    "@migrationDialogAccountsCannotMigrate": {
-      "description": "Number of accounts that cannot be migrated",
-      "placeholders": {
-        "count": {
-          "type": "int"
-        }
-      }
-    },
-    "migrationDialogUploadError": "We couldn't upload migration data. Please retry or try later.",
-    "@migrationDialogUploadError": {
-      "description": "Error shown in the migration dialog when the upload fails"
-    },
-    "migrationDialogMigrate": "Migrate Accounts",
-    "@migrationDialogMigrate": {
-      "description": "Label for the migrate button in the migration dialog"
-    },
-    "migrationDialogRetry": "Retry",
-    "@migrationDialogRetry": {
-      "description": "Label for the retry button in the migration dialog"
-    },
-    "migrationDialogTryLater": "Try later",
-    "@migrationDialogTryLater": {
-      "description": "Label for the try-later button in the migration dialog"
-    },
-    "migrationDialogSkip": "Skip",
-    "@migrationDialogSkip": {
-      "description": "Label for the skip button in the migration dialog when no accounts can be migrated"
-    },
-    "migrationPartialFailureToast": "{count, plural, =1{1 account could not be migrated. Migration will retry on next app launch.} other{{count} accounts could not be migrated. Migration will retry on next app launch.}}",
-    "@migrationPartialFailureToast": {
-      "description": "Toast shown when some accounts failed to migrate",
-      "placeholders": {
-        "count": {
-          "type": "int"
-        }
-      }
-    },
 
     "authUseDeviceBiometricsToUnlock": "Use device biometrics to unlock",
     "@authUseDeviceBiometricsToUnlock": {
@@ -2814,9 +2759,14 @@
     "@redeemConfirmFee": {
       "description": "Fee row label on redeem confirmation"
     },
-    "redeemFeeValue": "0.1% volume fee",
+    "redeemFeeValue": "{rate}% volume fee",
     "@redeemFeeValue": {
-      "description": "Volume fee value on redeem confirmation"
+      "description": "Volume fee value on redeem confirmation",
+      "placeholders": {
+        "rate": {
+          "type": "String"
+        }
+      }
     },
     "redeemProgressTitle": "Redeeming...",
     "@redeemProgressTitle": {

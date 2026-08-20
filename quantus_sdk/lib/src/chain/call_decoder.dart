@@ -96,12 +96,13 @@ class CallDecoder {
           ],
         );
       case balances.ForceTransfer(:final source, :final dest, :final value):
-        final destination = _plainAccount(dest);
+        final destination = _addressField('Destination', dest);
+        final amount = AmountField('Amount', value);
         return DecodedCall(
           pallet: 'Balances',
           call: 'force_transfer',
-          fields: [_addressField('Source', source), _addressField('Destination', dest), AmountField('Amount', value)],
-          summary: TransferSummary(amount: value, recipient: destination),
+          fields: [_addressField('Source', source), destination, amount],
+          summary: _transferSummary(destination, amount),
         );
       case balances.ForceUnreserve(:final who, :final amount):
         return DecodedCall(
@@ -138,65 +139,81 @@ class CallDecoder {
   }
 
   static DecodedCall _transfer(String pallet, String name, multi_address.MultiAddress dest, BigInt amount) {
+    final destination = _addressField('Destination', dest);
+    final value = AmountField('Amount', amount);
     return DecodedCall(
       pallet: pallet,
       call: name,
-      fields: [_addressField('Destination', dest), AmountField('Amount', amount)],
-      summary: TransferSummary(amount: amount, recipient: _plainAccount(dest)),
+      fields: [destination, value],
+      summary: _transferSummary(destination, value),
     );
   }
 
   // ------------------------------------------------- ReversibleTransfers
 
+  /// The window of a `schedule_transfer` without an explicit delay. Its length
+  /// is the account's on-chain setting, so an air-gapped signer cannot show the
+  /// actual timeframe — the explicit `_with_delay` variants can, and do.
+  static const _defaultWindowField = ValueField(
+    'Reversible for',
+    'Account default reversibility window',
+    kind: ValueKind.text,
+    note: 'The window is this account\'s on-chain setting; its length is not part of what you sign here.',
+  );
+
   static DecodedCall _reversible(reversible.Call call) {
     switch (call) {
       case reversible.ScheduleTransfer(:final dest, :final amount):
+        final destination = _addressField('Destination', dest);
+        final value = AmountField('Amount', amount);
         return DecodedCall(
           pallet: 'ReversibleTransfers',
           call: 'schedule_transfer',
-          fields: [
-            _addressField('Destination', dest),
-            AmountField('Amount', amount),
-            const ValueField('Delay', 'Account default reversibility window', kind: ValueKind.text),
-          ],
-          summary: TransferSummary(amount: amount, recipient: _plainAccount(dest)),
+          fields: [destination, value, _defaultWindowField],
+          summary: _transferSummary(destination, value, reversible: true),
         );
       case reversible.ScheduleTransferWithDelay(:final dest, :final amount, :final delay):
+        final destination = _addressField('Destination', dest);
+        final value = AmountField('Amount', amount);
         return DecodedCall(
           pallet: 'ReversibleTransfers',
           call: 'schedule_transfer_with_delay',
-          fields: [_addressField('Destination', dest), AmountField('Amount', amount), _delayField('Delay', delay)],
-          summary: TransferSummary(amount: amount, recipient: _plainAccount(dest)),
+          fields: [destination, value, _delayField('Reversible for', delay)],
+          summary: _transferSummary(destination, value, reversible: true),
         );
       case reversible.ScheduleAssetTransfer(:final assetId, :final dest, :final amount):
+        final destination = _addressField('Destination', dest);
+        final value = AmountField('Amount', amount, assetId: assetId);
         return DecodedCall(
           pallet: 'ReversibleTransfers',
           call: 'schedule_asset_transfer',
           fields: [
             ValueField('Asset id', '$assetId', kind: ValueKind.number),
-            _addressField('Destination', dest),
-            AmountField('Amount', amount, assetId: assetId),
-            const ValueField('Delay', 'Account default reversibility window', kind: ValueKind.text),
+            destination,
+            value,
+            _defaultWindowField,
           ],
-          summary: TransferSummary(amount: amount, recipient: _plainAccount(dest), assetId: assetId),
+          summary: _transferSummary(destination, value, reversible: true),
         );
       case reversible.ScheduleAssetTransferWithDelay(:final assetId, :final dest, :final amount, :final delay):
+        final destination = _addressField('Destination', dest);
+        final value = AmountField('Amount', amount, assetId: assetId);
         return DecodedCall(
           pallet: 'ReversibleTransfers',
           call: 'schedule_asset_transfer_with_delay',
           fields: [
             ValueField('Asset id', '$assetId', kind: ValueKind.number),
-            _addressField('Destination', dest),
-            AmountField('Amount', amount, assetId: assetId),
-            _delayField('Delay', delay),
+            destination,
+            value,
+            _delayField('Reversible for', delay),
           ],
-          summary: TransferSummary(amount: amount, recipient: _plainAccount(dest), assetId: assetId),
+          summary: _transferSummary(destination, value, reversible: true),
         );
       case reversible.SetHighSecurity(:final delay, :final guardian):
         return DecodedCall(
           pallet: 'ReversibleTransfers',
           call: 'set_high_security',
-          fields: [_delayField('Reversibility window', delay), _accountField('Guardian', guardian)],
+          fields: [_delayField('Reversible for', delay), _accountField('Guardian', guardian)],
         );
       case reversible.Cancel(:final txId):
         return DecodedCall(pallet: 'ReversibleTransfers', call: 'cancel', fields: [_hashField('Transaction id', txId)]);
@@ -298,15 +315,13 @@ class CallDecoder {
   }
 
   static DecodedCall _assetTransfer(String name, BigInt id, multi_address.MultiAddress target, BigInt amount) {
+    final destination = _addressField('Destination', target);
+    final value = AmountField('Amount', amount, assetId: id.toInt());
     return DecodedCall(
       pallet: 'Assets',
       call: name,
-      fields: [
-        _assetIdField(id),
-        _addressField('Destination', target),
-        AmountField('Amount', amount, assetId: id.toInt()),
-      ],
-      summary: TransferSummary(amount: amount, recipient: _plainAccount(target), assetId: id.toInt()),
+      fields: [_assetIdField(id), destination, value],
+      summary: _transferSummary(destination, value),
     );
   }
 
@@ -332,7 +347,7 @@ class CallDecoder {
           fields: [
             _accountField('Multisig account', multisigAddress),
             ValueField('Expires at block', '$expiry', kind: ValueKind.blockOrTime),
-            NestedCallField('Proposed call', inner),
+            NestedCallField('You are proposing', inner),
           ],
           summary: inner.summary,
         );
@@ -347,7 +362,7 @@ class CallDecoder {
           fields: [
             _accountField('Multisig account', multisigAddress),
             ValueField('Proposal id', '$proposalId', kind: ValueKind.number),
-            NestedCallField('Call being approved', inner),
+            NestedCallField('You are approving', inner),
           ],
           summary: inner.summary,
         );
@@ -625,7 +640,7 @@ class CallDecoder {
           fields: [
             _accountListField('Friends', friends),
             ValueField('Threshold', '$threshold of ${friends.length}', kind: ValueKind.number),
-            ValueField('Delay period', '$delayPeriod blocks', kind: ValueKind.blockOrTime),
+            ValueField('Waiting period', '$delayPeriod blocks', kind: ValueKind.blockOrTime),
           ],
         );
       case recovery.SetRecovered(:final lost, :final rescuer):
@@ -846,10 +861,18 @@ class CallDecoder {
     };
   }
 
-  /// ss58 of a `MultiAddress::Id`, or null for any other form.
-  static String? _plainAccount(multi_address.MultiAddress address) {
-    return address is multi_address.Id ? _ss58(address.value0) : null;
-  }
+  /// Summary restating [destination] and [amount], carrying their identities so
+  /// a renderer that leads with the summary can suppress exactly those fields.
+  /// The recipient is only a plain ss58 account when [_addressField] said so.
+  static TransferSummary _transferSummary(ValueField destination, AmountField amount, {bool reversible = false}) =>
+      TransferSummary(
+        amount: amount.token,
+        recipient: destination.kind == ValueKind.address ? destination.value : null,
+        assetId: amount.assetId,
+        reversible: reversible,
+        amountField: amount,
+        recipientField: destination,
+      );
 
   static ValueField _accountField(String label, List<int> accountId32) =>
       ValueField(label, _ss58(accountId32), kind: ValueKind.address);
@@ -873,7 +896,7 @@ class CallDecoder {
       final ms = json['Timestamp'];
       final millis = ms is BigInt ? ms.toInt() : (ms as num).toInt();
       final formatted = DatetimeFormattingService.formatDuration(Duration(milliseconds: millis)).formatted;
-      return ValueField(label, '$formatted ($millis ms)', kind: ValueKind.blockOrTime);
+      return ValueField(label, formatted, kind: ValueKind.blockOrTime);
     }
     if (json is Map && json.containsKey('BlockNumber')) {
       return ValueField(label, '${json['BlockNumber']} blocks', kind: ValueKind.blockOrTime);
