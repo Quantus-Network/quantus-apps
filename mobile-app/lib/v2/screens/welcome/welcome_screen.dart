@@ -80,6 +80,8 @@ class _WelcomeScreenV2State extends ConsumerState<WelcomeScreenV2> {
   @override
   Widget build(BuildContext context) {
     final l10n = ref.watch(l10nProvider);
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
 
     return ScaffoldBase(
       key: const Key(E2EKeys.welcomeScreen),
@@ -89,10 +91,11 @@ class _WelcomeScreenV2State extends ConsumerState<WelcomeScreenV2> {
         children: [
           Image.asset('assets/v2/quantus_orange_logo.png', height: 32),
           const SizedBox(height: 16),
-          SizedBox(
-            width: 210,
-            child: Text(l10n.welcomeTagline, textAlign: TextAlign.center, style: context.themeText.mediumTitle),
-          ),
+          SizedBox(width: 240, child: Text(
+            l10n.welcomeTagline,
+            textAlign: TextAlign.center,
+            style: text.titleHero.copyWith(color: colors.textWhite),
+          )),
           const SizedBox(height: 56),
           QuantusButton.simple(
             key: const Key(E2EKeys.welcomeCreateWalletButton),
