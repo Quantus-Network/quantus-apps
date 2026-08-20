@@ -1,30 +1,64 @@
 name: Create Miner Build
 on:
-  workflow_dispatch: # Manual test builds (no release)
+  workflow_dispatch: # Manual test builds; the macOS artifact is unsigned
   workflow_call: # Reused by publish_miner_release.yml
     inputs:
       ref:
-        description: 'Git ref (tag/branch/SHA) to build'
-        required: false
+        description: 'Full commit SHA to build'
+        required: true
         type: string
+      sign_macos:
+        description: 'Sign and notarize the macOS artifact'
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: read
 
 jobs:
+  authorize-macos-signing:
+    name: Authorize macOS Signing
+    if: inputs.sign_macos
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - name: Verify trusted release context
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_ACTION: ${{ github.event.action }}
+          EVENT_REF: ${{ github.ref }}
+          PR_MERGED: ${{ github.event.pull_request.merged }}
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+          HAS_RELEASE_LABEL: ${{ contains(github.event.pull_request.labels.*.name, 'miner-release-proposal') }}
+          MERGE_SHA: ${{ github.event.pull_request.merge_commit_sha }}
+          REQUESTED_REF: ${{ inputs.ref }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT_NAME" != "pull_request" ] || [ "$EVENT_ACTION" != "closed" ] || [ "$PR_MERGED" != "true" ]; then
+            echo "::error::macOS signing is restricted to merged pull-request release events"
+            exit 1
+          fi
+          if [ "$EVENT_REF" != "refs/heads/main" ] || [ "$BASE_REF" != "main" ] || [ "$HAS_RELEASE_LABEL" != "true" ]; then
+            echo "::error::macOS signing requires a miner release proposal merged into main"
+            exit 1
+          fi
+          if ! [[ "$MERGE_SHA" =~ ^[0-9a-f]{40}$ ]] || [ "$REQUESTED_REF" != "$MERGE_SHA" ]; then
+            echo "::error::requested ref must exactly match the verified merge commit"
+            exit 1
+          fi
+
   build-macos:
-    name: Build macOS App
+    name: Build Unsigned macOS App
     runs-on: macos-26
-    env:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
-          ref: ${{ inputs.ref || github.ref }}
+          ref: ${{ inputs.ref || github.sha }}
 
       - name: Set up Flutter
-        uses: subosito/flutter-action@v2
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
           channel: 'stable'
           cache: true
@@ -40,12 +74,6 @@ jobs:
         run: |
           brew install cocoapods || brew reinstall cocoapods
           pod --version
-
-      - name: Import Apple code-signing certificate
-        uses: apple-actions/import-codesign-certs@v3
-        with:
-          p12-file-base64: ${{ secrets.MACOS_CERTIFICATE }}
-          p12-password: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
 
       - name: Get dependencies
         run: flutter pub get
@@ -67,31 +95,83 @@ jobs:
           ' project.pbxproj
 
       - name: Build macOS release (unsigned, will re-sign after)
-        run: |
-          flutter build macos --release
+        run: flutter build macos --release
         working-directory: ./miner-app
 
-      - name: Re-sign app and frameworks with Developer ID
+      - name: Package signing input
         run: |
           set -euo pipefail
-          cd miner-app/build/macos/Build/Products/Release/
+          INPUT_DIR="miner-app/build/signing-input"
+          mkdir -p "$INPUT_DIR"
+          ditto -c -k --keepParent \
+            "miner-app/build/macos/Build/Products/Release/Quantus Miner.app" \
+            "$INPUT_DIR/quantus_miner_macos_unsigned.zip"
+          cp miner-app/macos/Runner/Release.entitlements "$INPUT_DIR/Release.entitlements"
+          cd "$INPUT_DIR"
+          shasum -a 256 quantus_miner_macos_unsigned.zip Release.entitlements > SHA256SUMS
+
+      - name: Upload unsigned macOS signing input
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: quantus_miner-macos-unsigned
+          path: miner-app/build/signing-input
+          retention-days: 1
+
+  sign-macos:
+    name: Sign and Notarize macOS App
+    if: inputs.sign_macos
+    needs: [authorize-macos-signing, build-macos]
+    runs-on: macos-26
+    permissions: {}
+    environment: apple-signing
+    steps:
+      - name: Download unsigned macOS signing input
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: quantus_miner-macos-unsigned
+          path: signing-input
+
+      - name: Verify signing input
+        run: |
+          set -euo pipefail
+          cd signing-input
+          shasum -a 256 -c SHA256SUMS
+          ditto -x -k quantus_miner_macos_unsigned.zip .
+          if [ ! -d "Quantus Miner.app" ] || [ ! -f Release.entitlements ]; then
+            echo "::error::unsigned app or release entitlements missing from signing input"
+            exit 1
+          fi
+
+      - name: Import Apple code-signing certificate
+        uses: apple-actions/import-codesign-certs@63fff01cd422d4b7b855d40ca1e9d34d2de9427d # v3
+        with:
+          p12-file-base64: ${{ secrets.MACOS_CERTIFICATE }}
+          p12-password: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
+
+      - name: Verify Apple signing certificate
+        run: |
+          set -euo pipefail
+          CERT_NAME="Developer ID Application: Quantus Labs LLC (8BRRAHLVW5)"
+          EXPECTED_SHA256="821619B4787E28DF87F1D4F15F3391B880769BD6C0136E76ABBE31827CE7CDBD"
+          CERT_PEM=$(security find-certificate -c "$CERT_NAME" -p)
+          if [ -z "$CERT_PEM" ]; then
+            echo "::error::expected Developer ID certificate not found"
+            exit 1
+          fi
+          ACTUAL_SHA256=$(printf '%s' "$CERT_PEM" | openssl x509 -noout -fingerprint -sha256 | cut -d= -f2 | tr -d ':' | tr '[:lower:]' '[:upper:]')
+          if [ "$ACTUAL_SHA256" != "$EXPECTED_SHA256" ]; then
+            echo "::error::Developer ID certificate fingerprint does not match the approved release certificate"
+            exit 1
+          fi
+          CERT_IDENTITY=$(printf '%s' "$CERT_PEM" | openssl x509 -noout -fingerprint -sha1 | cut -d= -f2 | tr -d ':')
+          echo "CERT_IDENTITY=$CERT_IDENTITY" >> "$GITHUB_ENV"
+
+      - name: Sign app and frameworks with Developer ID
+        run: |
+          set -euo pipefail
+          cd signing-input
           APP_PATH="Quantus Miner.app"
-          ENTITLEMENTS_PATH="$(cd ../../../../.. && pwd)/macos/Runner/Release.entitlements"
-          if [ ! -f "$ENTITLEMENTS_PATH" ]; then
-            echo "::error::Entitlements file not found at $ENTITLEMENTS_PATH"
-            exit 1
-          fi
-          CERT_IDENTITY=$(security find-identity -v -p codesigning | grep "Developer ID Application" | head -1 | awk '{print $2}')
-          if [ -z "$CERT_IDENTITY" ]; then
-            echo "::error::Developer ID Application certificate not found in keychain"
-            security find-identity -v -p codesigning
-            exit 1
-          fi
-          echo "Using certificate identity: $CERT_IDENTITY"
-          echo "Using entitlements:        $ENTITLEMENTS_PATH"
-          echo "--- Entitlements to be applied ---"
-          cat "$ENTITLEMENTS_PATH"
-          echo "----------------------------------"
+          ENTITLEMENTS_PATH="Release.entitlements"
           while IFS= read -r -d '' framework; do
             echo "Signing framework: $framework"
             codesign --force --verify --verbose --sign "$CERT_IDENTITY" \
@@ -114,9 +194,9 @@ jobs:
       - name: Verify signed app entitlements match Release.entitlements
         run: |
           set -euo pipefail
-          cd miner-app/build/macos/Build/Products/Release/
+          cd signing-input
           APP_PATH="Quantus Miner.app"
-          ENTITLEMENTS_PATH="$(cd ../../../../.. && pwd)/macos/Runner/Release.entitlements"
+          ENTITLEMENTS_PATH="Release.entitlements"
           ACTUAL=$(codesign -d --entitlements :- "$APP_PATH" 2>/dev/null)
           echo "--- Entitlements embedded in signed app ---"
           echo "$ACTUAL"
@@ -149,10 +229,46 @@ jobs:
           fi
           echo "All entitlements from Release.entitlements are present in the signed app."
 
-      - name: Smoke-launch signed app to catch AMFI/launchd rejections
+      - name: Create ZIP for notarization and distribution
+        run: |
+          cd signing-input
+          ditto -c -k --keepParent "Quantus Miner.app" quantus_miner_macos.zip
+
+      - name: Notarize macOS App
+        env:
+          APPLE_ID: ${{ secrets.MACOS_NOTARIZATION_APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.MACOS_NOTARIZATION_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.MACOS_TEAM_ID }}
+        run: |
+          cd signing-input
+          xcrun notarytool submit quantus_miner_macos.zip \
+            --apple-id "$APPLE_ID" \
+            --team-id "$APPLE_TEAM_ID" \
+            --password "$APPLE_APP_SPECIFIC_PASSWORD" \
+            --wait
+
+      - name: Upload macOS Artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: quantus_miner-macos
+          path: signing-input/quantus_miner_macos.zip
+
+  smoke-test-macos:
+    name: Smoke Test Signed macOS App
+    if: inputs.sign_macos
+    needs: sign-macos
+    runs-on: macos-26
+    permissions: {}
+    steps:
+      - name: Download signed macOS artifact
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: quantus_miner-macos
+
+      - name: Smoke-launch signed app
         run: |
           set -euo pipefail
-          cd miner-app/build/macos/Build/Products/Release/
+          ditto -x -k quantus_miner_macos.zip .
           EXE="Quantus Miner.app/Contents/MacOS/Quantus Miner"
           "$EXE" >/tmp/miner_launch.log 2>&1 &
           PID=$!
@@ -170,45 +286,17 @@ jobs:
           /usr/bin/log show --predicate 'eventMessage CONTAINS "Quantus Miner"' --last 1m --info 2>&1 | tail -40 || true
           exit 1
 
-      # Create a single ZIP that we will both notarize AND ship to users.
-      # This guarantees the shipped bits are exactly what Apple accepted.
-      - name: Create ZIP for notarization and distribution
-        run: |
-          cd miner-app/build/macos/Build/Products/Release/
-          ditto -c -k --keepParent "Quantus Miner.app" quantus_miner_macos.zip
-
-      - name: Notarize macOS App
-        env:
-          APPLE_ID: ${{ secrets.MACOS_NOTARIZATION_APPLE_ID }}
-          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.MACOS_NOTARIZATION_PASSWORD }}
-          APPLE_TEAM_ID: ${{ secrets.MACOS_TEAM_ID }}
-        run: |
-          cd miner-app/build/macos/Build/Products/Release/
-          xcrun notarytool submit quantus_miner_macos.zip \
-            --apple-id "$APPLE_ID" \
-            --team-id "$APPLE_TEAM_ID" \
-            --password "$APPLE_APP_SPECIFIC_PASSWORD" \
-            --wait
-
-      - name: Upload macOS Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: quantus_miner-macos
-          path: miner-app/build/macos/Build/Products/Release/quantus_miner_macos.zip
-
   build-linux:
     name: Build Linux App
     runs-on: ubuntu-latest
-    env:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
-          ref: ${{ inputs.ref || github.ref }}
+          ref: ${{ inputs.ref || github.sha }}
 
       - name: Set up Flutter
-        uses: subosito/flutter-action@v2
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
           channel: 'stable'
           cache: true
@@ -247,7 +335,7 @@ jobs:
           tar -czvf quantus_miner_linux.tar.gz -- *
 
       - name: Upload Linux Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: quantus_miner-linux
           path: miner-app/build/linux/x64/release/bundle/quantus_miner_linux.tar.gz
@@ -255,16 +343,14 @@ jobs:
   build-windows:
     name: Build Windows App
     runs-on: windows-latest
-    env:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
-          ref: ${{ inputs.ref || github.ref }}
+          ref: ${{ inputs.ref || github.sha }}
 
       - name: Set up Flutter
-        uses: subosito/flutter-action@v2
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
           channel: 'stable'
           cache: true
@@ -290,7 +376,7 @@ jobs:
           Compress-Archive -Path * -DestinationPath quantus_miner_windows.zip -Force
 
       - name: Upload Windows Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: quantus_miner-windows
           path: miner-app/build/windows/x64/runner/Release/quantus_miner_windows.zip

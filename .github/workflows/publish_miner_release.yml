@@ -27,7 +27,7 @@ jobs:
       sha: ${{ github.event.pull_request.merge_commit_sha }}
     steps:
       - name: Checkout merge commit
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           ref: ${{ github.event.pull_request.merge_commit_sha }}
 
@@ -89,7 +89,7 @@ jobs:
       # The verified merge SHA, never the bare tag name: checkout resolves
       # branches before tags, so a same-named branch could shadow the release
       ref: ${{ needs.create-tag.outputs.sha }}
-    secrets: inherit
+      sign_macos: true
 
   create-release:
     name: 🚀 Create GitHub Release
@@ -99,14 +99,14 @@ jobs:
       contents: write
     steps:
       - name: Checkout code at release commit
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           ref: ${{ needs.create-tag.outputs.sha }}
           fetch-depth: 0
           fetch-tags: true
 
       - name: Download all artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           path: ./artifacts
 
