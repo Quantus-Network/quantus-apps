@@ -99,4 +99,70 @@ void main() {
     expect(find.byIcon(Icons.visibility_outlined), findsOneWidget);
     expect(find.byIcon(Icons.close), findsNothing);
   });
+
+  testWidgets('defaults to a single-line TextField', (tester) async {
+    final controller = TextEditingController();
+    addTearDown(controller.dispose);
+
+    await pumpField(tester, QuantusTextField(controller: controller));
+
+    final field = tester.widget<TextField>(find.byType(TextField));
+    expect(field.maxLines, 1);
+    expect(field.expands, isFalse);
+    expect(field.minLines, isNull);
+  });
+
+  testWidgets('forwards multiline height, expands, and maxLines', (tester) async {
+    final controller = TextEditingController();
+    addTearDown(controller.dispose);
+
+    await pumpField(
+      tester,
+      QuantusTextField(
+        controller: controller,
+        height: 202,
+        maxLines: null,
+        expands: true,
+        trailing: const Icon(Icons.visibility_outlined),
+      ),
+    );
+
+    final field = tester.widget<TextField>(find.byType(TextField));
+    expect(field.maxLines, isNull);
+    expect(field.minLines, isNull);
+    expect(field.expands, isTrue);
+    expect(tester.getSize(find.byType(QuantusTextField)).height, 202);
+
+    final fieldTop = tester.getTopLeft(find.byType(QuantusTextField)).dy;
+    final iconTop = tester.getTopLeft(find.byIcon(Icons.visibility_outlined)).dy;
+    expect(iconTop - fieldTop, lessThan(30));
+  });
+
+  testWidgets('obscuring controller paints xs and restores real text', (tester) async {
+    final controller = ObscuringTextEditingController(text: 'secret');
+    addTearDown(controller.dispose);
+
+    late BuildContext captured;
+    await pumpField(
+      tester,
+      Builder(
+        builder: (context) {
+          captured = context;
+          return const SizedBox.shrink();
+        },
+      ),
+    );
+
+    expect(
+      controller.buildTextSpan(context: captured, style: const TextStyle(), withComposing: false).toPlainText(),
+      'xxxxxx',
+    );
+    expect(controller.text, 'secret');
+
+    controller.obscured = false;
+    expect(
+      controller.buildTextSpan(context: captured, style: const TextStyle(), withComposing: false).toPlainText(),
+      'secret',
+    );
+  });
 }

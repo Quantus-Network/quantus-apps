@@ -1,6 +1,33 @@
 import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 
+/// Renders the value as `x` characters while keeping the real text intact.
+///
+/// Use this when [TextField.obscureText] is unsupported, such as multiline
+/// fields. The mask keeps the same character count as the real text so the
+/// caret and selection positions stay accurate while typing.
+class ObscuringTextEditingController extends TextEditingController {
+  ObscuringTextEditingController({super.text});
+
+  bool _obscured = true;
+
+  bool get obscured => _obscured;
+
+  set obscured(bool value) {
+    if (_obscured == value) return;
+    _obscured = value;
+    notifyListeners();
+  }
+
+  @override
+  TextSpan buildTextSpan({required BuildContext context, TextStyle? style, required bool withComposing}) {
+    if (!_obscured) {
+      return super.buildTextSpan(context: context, style: style, withComposing: withComposing);
+    }
+    return TextSpan(style: style, text: 'x' * text.length);
+  }
+}
+
 /// Shared v3 text field: default, focus, and inline error chrome.
 ///
 /// Presentational only. Callers pass already-resolved [hint] and [error] strings.
@@ -20,6 +47,10 @@ class QuantusTextField extends StatefulWidget {
   final bool autocorrect;
   final ValueChanged<String>? onSubmitted;
   final Widget? trailing;
+  final int? maxLines;
+  final int? minLines;
+  final bool expands;
+  final double? height;
 
   const QuantusTextField({
     super.key,
@@ -38,6 +69,10 @@ class QuantusTextField extends StatefulWidget {
     this.autocorrect = true,
     this.onSubmitted,
     this.trailing,
+    this.maxLines = 1,
+    this.minLines,
+    this.expands = false,
+    this.height,
   });
 
   @override
@@ -49,6 +84,8 @@ class _QuantusTextFieldState extends State<QuantusTextField> {
   late bool _ownsFocusNode;
 
   bool get _hasError => widget.error != null;
+
+  bool get _isMultiline => widget.expands || widget.maxLines != 1;
 
   @override
   void initState() {
@@ -108,7 +145,8 @@ class _QuantusTextFieldState extends State<QuantusTextField> {
       children: [
         Container(
           width: double.infinity,
-          constraints: const BoxConstraints(minHeight: 60),
+          height: widget.height,
+          constraints: widget.height == null ? const BoxConstraints(minHeight: 60) : null,
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
             color: colors.bgSurface,
@@ -116,6 +154,7 @@ class _QuantusTextFieldState extends State<QuantusTextField> {
             border: Border.all(color: _borderColor(colors), width: 1),
           ),
           child: Row(
+            crossAxisAlignment: _isMultiline ? CrossAxisAlignment.start : CrossAxisAlignment.center,
             children: [
               Expanded(
                 child: TextField(
@@ -128,6 +167,9 @@ class _QuantusTextFieldState extends State<QuantusTextField> {
                   textInputAction: widget.textInputAction,
                   textCapitalization: widget.textCapitalization,
                   autocorrect: widget.autocorrect,
+                  maxLines: widget.maxLines,
+                  minLines: widget.minLines,
+                  expands: widget.expands,
                   onChanged: widget.onChanged,
                   onSubmitted: widget.onSubmitted,
                   cursorColor: colors.accentFlare,

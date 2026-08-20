@@ -26,11 +26,15 @@ void main() {
     expect(helper.style?.color, colors.textMuted);
     expect(helper.style?.fontSize, text.body.fontSize);
 
+    expect(find.byType(QuantusTextField), findsOneWidget);
+
     final field = tester.widget<TextField>(find.byType(TextField));
     expect(field.style?.color, colors.textContent);
     expect(field.style?.fontSize, text.dataAddressLarge.fontSize);
     expect(field.cursorColor, colors.accentFlare);
     expect(field.decoration?.hintStyle?.color, colors.textMuted);
+    expect(field.maxLines, isNull);
+    expect(field.expands, isTrue);
 
     final fieldBox = tester
         .widgetList<Container>(find.byType(Container))
@@ -38,7 +42,7 @@ void main() {
         .whereType<BoxDecoration>()
         .firstWhere((d) => d.color == colors.bgSurface);
     expect(fieldBox.borderRadius, radius.mdBorder);
-    expect((fieldBox.border as Border?)?.top.color, colors.borderHairline);
+    expect((fieldBox.border as Border?)?.top.color, colors.borderEmphasis);
 
     final eye = tester.widget<Icon>(find.byIcon(Icons.visibility_off_outlined));
     expect(eye.color, colors.textMuted);

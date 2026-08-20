@@ -9,25 +9,8 @@ class ImportWalletScreen extends StatefulWidget {
   State<ImportWalletScreen> createState() => _ImportWalletScreenState();
 }
 
-/// Renders the seed phrase as `x` characters while keeping the real text
-/// intact, since [TextField.obscureText] is unsupported for multiline fields.
-///
-/// The mask must keep the same character count as the real text so the caret
-/// and selection positions stay accurate while typing.
-class _ObscuringMnemonicController extends TextEditingController {
-  bool obscured = true;
-
-  @override
-  TextSpan buildTextSpan({required BuildContext context, TextStyle? style, required bool withComposing}) {
-    if (!obscured) {
-      return super.buildTextSpan(context: context, style: style, withComposing: withComposing);
-    }
-    return TextSpan(style: style, text: 'x' * text.length);
-  }
-}
-
 class _ImportWalletScreenState extends State<ImportWalletScreen> {
-  final _controller = _ObscuringMnemonicController();
+  final _controller = ObscuringTextEditingController();
   final _focusNode = FocusNode();
   final _buttonKey = GlobalKey();
   bool _isLoading = false;
@@ -87,8 +70,6 @@ class _ImportWalletScreenState extends State<ImportWalletScreen> {
   Widget build(BuildContext context) {
     final colors = context.colorsV3;
     final text = context.themeTextV3;
-    final fieldTextStyle = text.dataAddressLarge.copyWith(color: colors.textContent);
-    final hintStyle = text.dataAddressLarge.copyWith(color: colors.textMuted);
 
     return ScaffoldBase(
       appBar: const V2AppBar(title: 'Import Wallet'),
@@ -103,59 +84,29 @@ class _ImportWalletScreenState extends State<ImportWalletScreen> {
                 style: text.body.copyWith(color: colors.textMuted),
               ),
               const SizedBox(height: 16),
-              Container(
+              QuantusTextField(
+                controller: _controller,
+                focusNode: _focusNode,
+                hint: 'Type in or paste your recovery phrase. Separate words with spaces.',
+                error: _error,
                 height: 202,
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: colors.bgSurface,
-                  borderRadius: context.radiusV3.mdBorder,
-                  border: Border.all(color: colors.borderHairline, width: 1),
-                ),
-                child: Stack(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.only(right: 36),
-                      child: TextField(
-                        controller: _controller,
-                        focusNode: _focusNode,
-                        onChanged: (_) => setState(() {}),
-                        cursorColor: colors.accentFlare,
-                        style: fieldTextStyle,
-                        decoration: InputDecoration.collapsed(
-                          hintText: 'Type in or paste your recovery phrase. Separate words with spaces.',
-                          hintStyle: hintStyle,
-                        ),
-                        maxLines: null,
-                        keyboardType: TextInputType.multiline,
-                        textInputAction: TextInputAction.done,
-                        autocorrect: false,
-                        enableSuggestions: false,
-                      ),
-                    ),
-                    Positioned(
-                      top: 0,
-                      right: 0,
-                      child: GestureDetector(
-                        onTap: () => setState(() => _controller.obscured = !_controller.obscured),
-                        behavior: HitTestBehavior.opaque,
-                        child: Icon(
-                          _controller.obscured ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-                          size: 22,
-                          color: colors.textMuted,
-                        ),
-                      ),
-                    ),
-                  ],
+                maxLines: null,
+                expands: true,
+                keyboardType: TextInputType.multiline,
+                textInputAction: TextInputAction.done,
+                autocorrect: false,
+                enableSuggestions: false,
+                onChanged: (_) => setState(() {}),
+                trailing: GestureDetector(
+                  onTap: () => setState(() => _controller.obscured = !_controller.obscured),
+                  behavior: HitTestBehavior.opaque,
+                  child: Icon(
+                    _controller.obscured ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                    size: 22,
+                    color: colors.textMuted,
+                  ),
                 ),
               ),
-              if (_error != null) ...[
-                const SizedBox(height: 16),
-                Text(
-                  _error!,
-                  style: text.caption.copyWith(color: colors.semanticEmber),
-                  textAlign: TextAlign.center,
-                ),
-              ],
             ],
           ),
         ),

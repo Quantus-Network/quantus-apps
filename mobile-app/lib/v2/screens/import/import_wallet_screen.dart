@@ -29,25 +29,8 @@ class ImportWalletScreenV2 extends ConsumerStatefulWidget {
   ConsumerState<ImportWalletScreenV2> createState() => _ImportWalletScreenV2State();
 }
 
-/// Renders the seed phrase as `x` characters while keeping the real text
-/// intact, since [TextField.obscureText] is unsupported for multiline fields.
-///
-/// The mask must keep the same character count as the real text so the caret
-/// and selection positions stay accurate while typing.
-class _ObscuringMnemonicController extends TextEditingController {
-  bool obscured = true;
-
-  @override
-  TextSpan buildTextSpan({required BuildContext context, TextStyle? style, required bool withComposing}) {
-    if (!obscured) {
-      return super.buildTextSpan(context: context, style: style, withComposing: withComposing);
-    }
-    return TextSpan(style: style, text: 'x' * text.length);
-  }
-}
-
 class _ImportWalletScreenV2State extends ConsumerState<ImportWalletScreenV2> {
-  final _controller = _ObscuringMnemonicController();
+  final _controller = ObscuringTextEditingController();
   final _focusNode = FocusNode();
   final _buttonKey = GlobalKey();
   final _settingsService = SettingsService();
@@ -176,9 +159,8 @@ class _ImportWalletScreenV2State extends ConsumerState<ImportWalletScreenV2> {
   @override
   Widget build(BuildContext context) {
     final l10n = ref.watch(l10nProvider);
-    final colors = context.colors;
-    final text = context.themeText;
-    final fieldTextStyle = text.smallTitle?.copyWith(color: colors.checksum, fontWeight: FontWeight.w400);
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
 
     return ScaffoldBase(
       key: const Key(E2EKeys.importWalletScreen),
@@ -189,61 +171,32 @@ class _ImportWalletScreenV2State extends ConsumerState<ImportWalletScreenV2> {
         child: SingleChildScrollView(
           child: Column(
             children: [
-              Text(l10n.importWalletDescription, style: text.smallParagraph?.copyWith(color: colors.textSecondary)),
+              Text(l10n.importWalletDescription, style: text.body.copyWith(color: colors.textMuted)),
               const SizedBox(height: 16),
-              Container(
+              QuantusTextField(
+                key: const Key(E2EKeys.importWalletSeedPhraseField),
+                controller: _controller,
+                focusNode: _focusNode,
+                hint: l10n.importWalletHint,
+                error: _error,
                 height: 202,
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: colors.surfaceDeep,
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: colors.borderButton, width: 1),
-                ),
-                child: Stack(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.only(right: 36),
-                      child: TextField(
-                        key: const Key(E2EKeys.importWalletSeedPhraseField),
-                        controller: _controller,
-                        focusNode: _focusNode,
-                        onChanged: (_) => setState(() {}),
-                        style: fieldTextStyle,
-                        decoration: InputDecoration.collapsed(
-                          hintText: l10n.importWalletHint,
-                          hintStyle: fieldTextStyle?.copyWith(color: colors.textSecondary),
-                        ),
-                        maxLines: null,
-                        keyboardType: TextInputType.multiline,
-                        textInputAction: TextInputAction.done,
-                        autocorrect: false,
-                        enableSuggestions: false,
-                      ),
-                    ),
-                    Positioned(
-                      top: 0,
-                      right: 0,
-                      child: GestureDetector(
-                        onTap: () => setState(() => _controller.obscured = !_controller.obscured),
-                        behavior: HitTestBehavior.opaque,
-                        child: Icon(
-                          _controller.obscured ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-                          size: 22,
-                          color: colors.textSecondary,
-                        ),
-                      ),
-                    ),
-                  ],
+                maxLines: null,
+                expands: true,
+                keyboardType: TextInputType.multiline,
+                textInputAction: TextInputAction.done,
+                autocorrect: false,
+                enableSuggestions: false,
+                onChanged: (_) => setState(() {}),
+                trailing: GestureDetector(
+                  onTap: () => setState(() => _controller.obscured = !_controller.obscured),
+                  behavior: HitTestBehavior.opaque,
+                  child: Icon(
+                    _controller.obscured ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                    size: 22,
+                    color: colors.textMuted,
+                  ),
                 ),
               ),
-              if (_error != null) ...[
-                const SizedBox(height: 16),
-                Text(
-                  _error!,
-                  style: text.detail?.copyWith(color: colors.error),
-                  textAlign: TextAlign.center,
-                ),
-              ],
             ],
           ),
         ),
