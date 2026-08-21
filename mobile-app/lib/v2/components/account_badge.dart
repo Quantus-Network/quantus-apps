@@ -29,7 +29,11 @@ class AccountBadge extends StatelessWidget {
       width: size,
       height: size,
       alignment: Alignment.center,
-      decoration: BoxDecoration(color: colors.bgSurface2, borderRadius: BorderRadius.circular(size / 2)),
+      decoration: BoxDecoration(
+        color: colors.bgSurface2,
+        borderRadius: BorderRadius.circular(size / 2),
+        border: Border.all(color: colors.borderHairline),
+      ),
       child: icon != null
           ? Icon(icon, size: size * 0.5, color: foreground)
           : Text(

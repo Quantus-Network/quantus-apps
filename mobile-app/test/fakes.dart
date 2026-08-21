@@ -7,8 +7,9 @@ import 'package:resonance_network_wallet/services/local_auth_service.dart';
 
 class FakeSettingsService extends Fake implements SettingsService {
   DisplayAccount? activeAccount;
+  List<MultisigAccount> multisigs;
 
-  FakeSettingsService({this.activeAccount});
+  FakeSettingsService({this.activeAccount, this.multisigs = const []});
 
   @override
   Future<DisplayAccount?> getActiveAccount() async => activeAccount;
@@ -17,7 +18,7 @@ class FakeSettingsService extends Fake implements SettingsService {
   Future<void> setActiveAccount(DisplayAccount account) async => activeAccount = account;
 
   @override
-  Future<List<MultisigAccount>> getMultisigAccounts() async => [];
+  Future<List<MultisigAccount>> getMultisigAccounts() async => multisigs;
 
   @override
   String? getSelectedAppLocale() => 'en';
@@ -33,6 +34,9 @@ class FakeSettingsService extends Fake implements SettingsService {
 
   @override
   bool isPosModeEnabled() => false;
+
+  @override
+  String? getWalletName(int walletIndex) => null;
 }
 
 /// Drives [LocalAuthState] directly so tests can lock/unlock without the

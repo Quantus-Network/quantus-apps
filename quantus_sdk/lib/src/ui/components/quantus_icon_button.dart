@@ -51,7 +51,7 @@ class QuantusIconButton extends StatelessWidget {
     this.isLoading = false,
     this.isDisabled = false,
     this.radius,
-    this.shape = IconButtonShape.rounded
+    this.shape = IconButtonShape.rounded,
   }) : style = IconButtonStyle.ghost;
 
   double get buttonSize {
