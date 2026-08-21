@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/l10n/app_localizations.dart';
+import 'package:resonance_network_wallet/providers/currency_display_provider.dart';
 import 'package:resonance_network_wallet/shared/extensions/transaction_event_extension.dart';
+import 'package:resonance_network_wallet/v2/components/amount_display_with_conversion.dart';
 
 class TxItemData {
   final String label;
@@ -323,6 +325,17 @@ class TxItemData {
       counterpartyAddr: AddressFormattingService.formatAddress(isSend ? tx.to : tx.from, prefix: 5, postFix: 3),
     );
   }
+}
+
+/// Amount text for a transaction row.
+///
+/// [isHidden] is passed down by the screen that owns the hide-balances toggle;
+/// the amount formatter has no notion of hidden balances.
+String txItemAmountText(TxItemData data, TxAmountFormatter format, {bool isHidden = false}) {
+  if (isHidden) return hiddenAmountText;
+  if (data.hideAmount) return '—';
+
+  return format(data.amount, isSend: data.isSend).primaryAmount;
 }
 
 Widget buildTxItem(

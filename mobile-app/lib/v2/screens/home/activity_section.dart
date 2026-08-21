@@ -20,7 +20,17 @@ class ActivitySection extends ConsumerStatefulWidget {
   final BaseAccount activeAccount;
   final Future<void> Function()? onRetry;
 
-  const ActivitySection({super.key, required this.txAsync, required this.activeAccount, this.onRetry});
+  /// Masks the listed amounts. Passed down by the home screen, which owns the
+  /// hide-balances toggle.
+  final bool isHidden;
+
+  const ActivitySection({
+    super.key,
+    required this.txAsync,
+    required this.activeAccount,
+    this.onRetry,
+    this.isHidden = false,
+  });
 
   @override
   ConsumerState<ActivitySection> createState() => _ActivitySectionState();
@@ -85,7 +95,7 @@ class _ActivitySectionState extends ConsumerState<ActivitySection> {
                 colors,
                 text,
                 l10n,
-                formattedAmount: data.hideAmount ? '—' : formatTxAmount(data.amount, isSend: data.isSend).primaryAmount,
+                formattedAmount: txItemAmountText(data, formatTxAmount, isHidden: widget.isHidden),
                 isLastItem: isLastItem,
                 itemKey: itemKey,
                 onTap: () {

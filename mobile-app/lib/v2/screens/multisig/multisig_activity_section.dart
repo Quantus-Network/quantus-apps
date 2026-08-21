@@ -26,7 +26,18 @@ class MultisigActivitySection extends ConsumerWidget {
   final AsyncValue<CombinedTransactionsList> txAsync;
   final Future<void> Function()? onRetry;
 
-  const MultisigActivitySection({super.key, required this.msig, required this.txAsync, this.onRetry});
+  /// Masks the amounts in the activity feed. Passed down by the home screen,
+  /// which owns the hide-balances toggle. Open proposals are never masked:
+  /// they are pending decisions, not balance disclosure.
+  final bool isHidden;
+
+  const MultisigActivitySection({
+    super.key,
+    required this.msig,
+    required this.txAsync,
+    this.onRetry,
+    this.isHidden = false,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -164,9 +175,7 @@ class MultisigActivitySection extends ConsumerWidget {
                   colors,
                   text,
                   l10n,
-                  formattedAmount: itemData.hideAmount
-                      ? '—'
-                      : formatTxAmount(itemData.amount, isSend: itemData.isSend).primaryAmount,
+                  formattedAmount: txItemAmountText(itemData, formatTxAmount, isHidden: isHidden),
                   isLastItem: index == recent.length - 1,
                   onTap: () => _onTap(context, tx),
                 );
