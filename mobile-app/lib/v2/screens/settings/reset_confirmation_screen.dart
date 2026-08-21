@@ -5,7 +5,6 @@ import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/services/local_auth_service.dart';
 import 'package:resonance_network_wallet/services/logout_service.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/settings_caution_scaffold.dart';
-import 'package:resonance_network_wallet/v2/screens/settings/settings_divider.dart';
 
 class ResetConfirmationScreen extends ConsumerStatefulWidget {
   const ResetConfirmationScreen({super.key});
@@ -47,7 +46,6 @@ class _ResetConfirmationScreenState extends ConsumerState<ResetConfirmationScree
       appBarTitle: l10n.settingsResetTitle,
       data: SettingsCautionScaffoldData.walletReset(l10n),
       continueLabel: l10n.commonContinue,
-      betweenBulletsStyle: SettingsDividerStyle.sectionEmphasis,
       checkboxChecked: _backedUpChecked,
       onCheckboxChanged: () => setState(() => _backedUpChecked = !_backedUpChecked),
       onContinue: _resetAndClearData,

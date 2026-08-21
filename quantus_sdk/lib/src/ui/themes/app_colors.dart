@@ -403,7 +403,7 @@ class AppColorsV3 extends ThemeExtension<AppColorsV3> {
   /// Rare deliberate emphasis. Using it often means something is wrong.
   final Color textWhite;
 
-  /// Actions and CTAs only. Never selection, identity, or data.
+  /// Actions, prominent colors, and CTAs only.
   final Color accentFlare;
 
   /// Settles. Success, confirmed, guaranteed minimum, funds safe.
