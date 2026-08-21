@@ -36,12 +36,29 @@ class SettingsService {
   static const String hasWatchedQuestsPromoKey = 'quests_promo';
   static const String existingUserSeenPromoVideoKey = 'existing_user_seen_promo_video';
 
+  static const _legacyStorage = FlutterSecureStorage(mOptions: MacOsOptions(usesDataProtectionKeychain: false));
+  static const _migratedKeychainKey = 'keychain_migrated_to_this_device';
+  bool _keychainMigrated = false;
+
   Future<void> initialize() async {
-    // Always (re)bind the SharedPreferences instance. This ensures tests that
-    // call SharedPreferences.setMockInitialValues({}) before initialize()
-    // get a clean, isolated preferences store even if the service singleton
-    // was created earlier in the process.
     _prefs = await SharedPreferences.getInstance();
+    _keychainMigrated = _prefs.getBool(_migratedKeychainKey) == true;
+  }
+
+  Future<void> _ensureKeychainMigrated() async {
+    if (_keychainMigrated) return;
+    _keychainMigrated = true;
+    try {
+      for (int i = 0; i < 10; i++) {
+        final key = getMnemonicKey(i);
+        final value = await _legacyStorage.read(key: key);
+        if (value != null) {
+          await _legacyStorage.delete(key: key);
+          await _secureStorage.write(key: key, value: value);
+        }
+      }
+    } catch (_) {}
+    await _prefs.setBool(_migratedKeychainKey, true);
   }
 
   // --- Multi-Account Methods ---
@@ -326,10 +343,12 @@ class SettingsService {
 
   // Mnemonic Settings - Using secure storage
   Future<void> setMnemonic(String mnemonic, int walletIndex) async {
+    await _ensureKeychainMigrated();
     await _secureStorage.write(key: getMnemonicKey(walletIndex), value: mnemonic);
   }
 
   Future<String?> getMnemonic(int walletIndex) async {
+    await _ensureKeychainMigrated();
     return await _secureStorage.read(key: getMnemonicKey(walletIndex));
   }
 
