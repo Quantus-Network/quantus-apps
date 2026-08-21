@@ -72,17 +72,18 @@ class _AddAccountMenuScreenState extends ConsumerState<AddAccountMenuScreen> {
             subtitle: l10n.addAccountMenuCreateSubtitle,
             onTap: _onCreateNewAccount,
           ),
-          const SizedBox(height: 14),
           if (enableKeystone) ...[
+            const SizedBox(height: 14),
             _AccountOptionCard(
               icon: Icons.qr_code_scanner,
               title: l10n.addAccountMenuImportKeystoneTitle,
               subtitle: l10n.addAccountMenuImportKeystoneSubtitle,
               onTap: _onImportKeystone,
             ),
-            const SizedBox(height: 14),
           ],
-          const Padding(padding: EdgeInsets.symmetric(vertical: 16), child: MenuDivider()),
+          const SizedBox(height: 24),
+          const MenuDivider(),
+          const SizedBox(height: 24),
           _AdvancedSection(
             title: l10n.addAccountMenuMoreTitle,
             expanded: _advancedExpanded,
@@ -166,10 +167,9 @@ class _AccountOptionRowContent extends StatelessWidget {
 
     return Row(
       children: [
-        Container(
+        SizedBox(
           width: 40,
           height: 40,
-          decoration: BoxDecoration(color: colors.bgSurface2, shape: BoxShape.circle),
           child: Center(child: Icon(icon, size: 16, color: colors.accentFlare)),
         ),
         const SizedBox(width: 12),
@@ -177,7 +177,7 @@ class _AccountOptionRowContent extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(title, style: text.bodyLarge.copyWith(color: colors.textContent)),
+              Text(title, style: text.amountRow.copyWith(color: colors.textContent)),
               const SizedBox(height: 4),
               Text(subtitle, style: text.caption.copyWith(color: colors.textMuted)),
             ],
@@ -213,7 +213,7 @@ class _AdvancedSection extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(title, style: text.titleScreen.copyWith(color: colors.textContent)),
+                Text(title, style: text.amountRow.copyWith(color: colors.textContent)),
                 AnimatedRotation(
                   turns: expanded ? 0.5 : 0,
                   duration: const Duration(milliseconds: 200),
