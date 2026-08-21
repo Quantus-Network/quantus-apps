@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/features/components/dotted_border.dart';
+import 'package:quantus_sdk/quantus_sdk.dart' hide DecodedCallView;
+import 'package:resonance_network_wallet/v2/components/dotted_border.dart';
 import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/currency_display_provider.dart';
@@ -11,23 +11,17 @@ import 'package:resonance_network_wallet/providers/pending_multisig_approvals_pr
 import 'package:resonance_network_wallet/providers/pending_multisig_cancellations_provider.dart';
 import 'package:resonance_network_wallet/providers/pending_multisig_executions_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
-import 'package:resonance_network_wallet/v2/components/multisig_expiry_value.dart';
 import 'package:resonance_network_wallet/routes.dart';
 import 'package:resonance_network_wallet/shared/extensions/current_route_extensions.dart';
 import 'package:resonance_network_wallet/shared/utils/multisig_local_signers.dart';
 import 'package:resonance_network_wallet/v2/components/amount_display_with_conversion.dart';
 import 'package:resonance_network_wallet/v2/components/decoded_call_view.dart';
-import 'package:resonance_network_wallet/v2/components/bottom_sheet_container.dart';
-import 'package:resonance_network_wallet/v2/components/detail_summary_row.dart';
 import 'package:resonance_network_wallet/v2/components/explorer_link.dart';
-import 'package:resonance_network_wallet/v2/components/loader.dart';
-import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
+import 'package:resonance_network_wallet/v2/components/multisig_expiry_value.dart';
 import 'package:resonance_network_wallet/v2/screens/multisig/multisig_approve_confirm_sheet.dart';
 import 'package:resonance_network_wallet/v2/screens/multisig/multisig_cancel_confirm_sheet.dart';
 import 'package:resonance_network_wallet/v2/screens/multisig/multisig_execute_confirm_sheet.dart';
 import 'package:resonance_network_wallet/v2/screens/multisig/multisig_signer_picker_sheet.dart';
-import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
-import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 
 /// Shows proposal detail with approve or execute actions for eligible signers.
 void showMultisigProposalDetailSheet(
@@ -202,7 +196,6 @@ class _MultisigProposalDetailSheet extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
         children: [
-          const SizedBox(height: 16),
           _AmountSection(proposal: liveProposal),
           const SizedBox(height: 20),
           DetailSummaryRow(
@@ -217,7 +210,7 @@ class _MultisigProposalDetailSheet extends ConsumerWidget {
             child: const SizedBox(width: double.infinity, height: 1),
           ),
           const SizedBox(height: 8),
-          _summary(l10n, colors, text, fmt, multisigService, currentBlock, liveProposal),
+          _summary(l10n, fmt, multisigService, currentBlock, liveProposal),
           const SizedBox(height: 24),
           _signers(l10n, colors, text, liveProposal, localSignerIds),
           const SizedBox(height: 24),
@@ -268,8 +261,6 @@ class _MultisigProposalDetailSheet extends ConsumerWidget {
 
   Widget _summary(
     AppLocalizations l10n,
-    AppColorsV2 colors,
-    AppTextTheme text,
     NumberFormattingService fmt,
     MultisigService multisigService,
     int? currentBlock,
@@ -305,10 +296,7 @@ class _MultisigProposalDetailSheet extends ConsumerWidget {
         else
           DetailSummaryRow(
             label: l10n.multisigProposalExpiresLabel,
-            valueWidget: MultisigExpiryValue(
-              parts: expiryParts,
-              style: text.transactionDetailRowValue?.copyWith(color: Colors.white.withValues(alpha: 0.8)),
-            ),
+            valueWidget: MultisigExpiryValue(parts: expiryParts),
             valueFlex: 4,
           ),
         DetailSummaryRow(

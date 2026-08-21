@@ -11,12 +11,10 @@ import 'package:resonance_network_wallet/services/local_auth_service.dart';
 import 'package:resonance_network_wallet/services/transaction_submission_service.dart';
 import 'package:resonance_network_wallet/shared/utils/print.dart';
 import 'package:resonance_network_wallet/shared/utils/url_utils.dart';
-import 'package:resonance_network_wallet/v2/components/detail_summary_row.dart';
 import 'package:resonance_network_wallet/v2/screens/send/keystone_sign_cache.dart';
 import 'package:resonance_network_wallet/v2/screens/send/keystone_signing_session.dart';
 import 'package:resonance_network_wallet/v2/screens/send/send_providers.dart';
 import 'package:resonance_network_wallet/v2/screens/send/send_strategy.dart';
-import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 
 /// Standard single-signer transfer from the active account. Signs locally, or
 /// hands off to the Keystone QR flow for hardware accounts.
@@ -99,7 +97,6 @@ class RegularSendStrategy extends SendStrategy {
     final l10n = ref.watch(l10nProvider);
     final fmt = ref.watch(numberFormattingServiceProvider);
     final networkFee = (fee as RegularFee).networkFee;
-    final valueStyle = context.themeText.transactionDetailRowLabel;
     final addr = recipientAddress.trim();
 
     String amt(BigInt v) =>
@@ -107,13 +104,13 @@ class RegularSendStrategy extends SendStrategy {
 
     return [
       const SizedBox(height: 7),
-      DetailSummaryRow.review(label: l10n.sendReviewTo, value: addr, valueStyle: valueStyle),
+      DetailSummaryRow.review(label: l10n.sendReviewTo, value: addr),
       const SizedBox(height: 7),
-      DetailSummaryRow.review(label: l10n.sendReviewAmount, value: amt(amount), valueStyle: valueStyle),
+      DetailSummaryRow.review(label: l10n.sendReviewAmount, value: amt(amount)),
       const SizedBox(height: 7),
-      DetailSummaryRow.review(label: l10n.sendReviewNetworkFee, value: amt(networkFee), valueStyle: valueStyle),
+      DetailSummaryRow.review(label: l10n.sendReviewNetworkFee, value: amt(networkFee)),
       const SizedBox(height: 7),
-      DetailSummaryRow.review(label: l10n.sendReviewYouPay, value: amt(amount + networkFee), valueStyle: valueStyle),
+      DetailSummaryRow.review(label: l10n.sendReviewYouPay, value: amt(amount + networkFee)),
       const SizedBox(height: 7),
     ];
   }

@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:quantus_cold_wallet/providers/settings_providers.dart';
-import 'package:quantus_cold_wallet/theme/app_colors.dart';
-import 'package:quantus_cold_wallet/theme/app_text_styles.dart';
 
 /// FPS and bytes-per-frame sliders bound to [coldSettingsProvider], shared by
 /// the settings screen and the signature view so tuning behaves identically.
@@ -62,8 +61,8 @@ class _TuningSlider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.colors;
-    final text = context.themeText;
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -71,16 +70,16 @@ class _TuningSlider extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(label, style: text.detail?.copyWith(color: colors.textSecondary)),
-            Text(valueText, style: text.detail?.copyWith(color: colors.textPrimary)),
+            Text(label, style: text.caption.copyWith(color: colors.textMuted)),
+            Text(valueText, style: text.caption.copyWith(color: colors.textContent)),
           ],
         ),
         SliderTheme(
           data: SliderTheme.of(context).copyWith(
-            activeTrackColor: colors.accentOrange,
-            inactiveTrackColor: colors.borderButton,
-            thumbColor: colors.accentOrange,
-            overlayColor: colors.accentOrange.withValues(alpha: 0.15),
+            activeTrackColor: colors.accentFlare,
+            inactiveTrackColor: colors.borderHairline,
+            thumbColor: colors.accentFlare,
+            overlayColor: colors.accentFlare.useOpacity(0.15),
             trackHeight: 2,
           ),
           child: Slider(value: value, min: min, max: max, divisions: divisions, onChanged: onChanged),

@@ -3,20 +3,11 @@ import 'dart:typed_data';
 import 'package:convert/convert.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:quantus_cold_wallet/components/address_with_checkphrase.dart';
-import 'package:quantus_cold_wallet/components/animated_ur_qr.dart';
-import 'package:quantus_cold_wallet/components/call_detail_view.dart';
-import 'package:quantus_cold_wallet/components/quantus_button.dart';
+import 'package:quantus_sdk/quantus_sdk.dart' hide DecodedCallView;
+import 'package:quantus_cold_wallet/components/decoded_call_view.dart';
 import 'package:quantus_cold_wallet/components/qr_tuning_controls.dart';
-import 'package:quantus_cold_wallet/components/scaffold_base.dart';
-import 'package:quantus_cold_wallet/components/scaffold_base_bottom_content.dart';
-import 'package:quantus_cold_wallet/components/titled_sheet.dart';
-import 'package:quantus_cold_wallet/components/v2_app_bar.dart';
 import 'package:quantus_cold_wallet/providers/settings_providers.dart';
 import 'package:quantus_cold_wallet/providers/wallet_providers.dart';
-import 'package:quantus_cold_wallet/theme/app_colors.dart';
-import 'package:quantus_cold_wallet/theme/app_text_styles.dart';
 
 /// Reviews a scanned signing payload and, on approval, produces the signature QR.
 ///
@@ -95,8 +86,8 @@ class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> {
   }
 
   Widget _errorView(BuildContext context, String reason) {
-    final colors = context.colors;
-    final text = context.themeText;
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
     return ScaffoldBase(
       appBar: const V2AppBar(title: 'Sign Transaction'),
       // The reason is as long as the decoder's message, which no layout can
@@ -106,20 +97,20 @@ class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.error_outline, size: 64, color: colors.error),
+              Icon(Icons.error_outline, size: 64, color: colors.semanticEmber),
               const SizedBox(height: 24),
-              Text('Could not read transaction', style: text.mediumTitle?.copyWith(color: colors.textPrimary)),
+              Text('Could not read transaction', style: text.titleScreen.copyWith(color: colors.textContent)),
               const SizedBox(height: 12),
               Text(
                 'This QR code is not a transaction this wallet can read in full, so it will not be signed. '
                 'Nothing was signed.',
-                style: text.smallParagraph?.copyWith(color: colors.textSecondary),
+                style: text.body.copyWith(color: colors.textMuted),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 12),
               Text(
                 reason,
-                style: text.detail?.copyWith(color: colors.textMuted),
+                style: text.caption.copyWith(color: colors.textMuted2),
                 textAlign: TextAlign.center,
               ),
             ],
@@ -133,8 +124,8 @@ class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> {
   }
 
   Widget _reviewView(BuildContext context, ParsedPayload parsed) {
-    final colors = context.colors;
-    final text = context.themeText;
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
 
     return ScaffoldBase(
       appBar: const V2AppBar(title: 'Review & Sign'),
@@ -147,18 +138,15 @@ class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> {
             // The headline is an opinionated human summary (SEND / REVERSIBLE
             // SEND / …) by design; the exact pallet · call chain is the Call
             // line in the Advanced sheet. See [DecodedCall.actionTitle].
-            Text(
-              parsed.call.actionTitle,
-              style: text.mediumTitle?.copyWith(color: colors.accentOrange, letterSpacing: 1.2),
-            ),
-            ..._callBody(context, parsed.call),
+            Text(parsed.call.actionTitle, style: text.titleScreen.copyWith(color: colors.accentFlare)),
+            DecodedCallView(call: parsed.call, signer: _signer(parsed.call)),
             const SizedBox(height: 20),
             _advancedSection(context, parsed),
             if (_error != null) ...[
               const SizedBox(height: 16),
               Text(
                 _error!,
-                style: text.detail?.copyWith(color: colors.error),
+                style: text.caption.copyWith(color: colors.semanticEmber),
                 textAlign: TextAlign.center,
               ),
             ],
@@ -186,19 +174,11 @@ class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> {
     );
   }
 
-  /// What is being authorised, then who is authorising it, then the parameters
-  /// neither of those already showed.
-  ///
-  /// A call that dispatches another one — a multisig approval, a batch — leads
-  /// with the boxed inner call: the amount and recipient inside it are what the
-  /// signer is really approving, and the wrapper's own parameters (which
-  /// multisig, which proposal) are context that follows.
-  ///
   /// The signer's row claims `From` only when the summary shows a plain send
   /// and the call names no other account the funds could leave instead — a
   /// `force_transfer` moves its Source's funds, not the signer's. Anything
   /// else says no more than `Signed by`.
-  List<Widget> _callBody(BuildContext context, DecodedCall call) {
+  Widget _signer(DecodedCall call) {
     final signerAddress = widget.request.signer;
     final transfer = heroSummary(call);
     final fromSigner =
@@ -206,38 +186,31 @@ class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> {
         !call.fields.any(
           (f) => f is ValueField && f.kind == ValueKind.address && !identical(f, transfer!.recipientField),
         );
-    final signer = AddressWithCheckphrase(label: fromSigner ? 'From' : 'Signed by', address: signerAddress);
+    final label = fromSigner ? 'From' : 'Signed by';
+    final phrase = ref
+        .watch(checksumNameProvider(signerAddress))
+        .maybeWhen(data: (value) => value.isEmpty ? null : value, orElse: () => null);
 
-    if (!call.isWrapper) return [...callSummaryBody(call), signer];
-
-    return [
-      for (final field in call.fields.whereType<NestedCallField>()) CallFieldView(field: field),
-      signer,
-      for (final field in call.fields.where((f) => f is! NestedCallField)) CallFieldView(field: field),
-    ];
+    return DetailSummaryRow.stacked(label: label, value: signerAddress, monospace: true, checkphrase: phrase);
   }
 
   /// Everything a signer never verifies by eye: the signed extensions and the
   /// bytes themselves, listed plainly for the rare reader who wants them.
   Widget _advancedSection(BuildContext context, ParsedPayload parsed) {
-    final colors = context.colors;
-    final text = context.themeText;
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onTap: () => showTitledSheet(
-        context,
+      onTap: () => _showSheet(
         title: 'Advanced',
-        child: Text(
-          _advancedLines(parsed).join('\n'),
-          style: text.detail?.copyWith(color: colors.textMuted, fontFamily: AppTextTheme.fontFamilySecondary),
-        ),
+        child: Text(_advancedLines(parsed).join('\n'), style: text.dataAddress.copyWith(color: colors.textMuted)),
       ),
       child: Row(
         children: [
-          Text('ADVANCED', style: text.transactionDetailRowLabel?.copyWith(color: colors.textLabel)),
+          Text('ADVANCED', style: text.labelData.copyWith(color: colors.textMuted)),
           const SizedBox(width: 6),
-          Icon(Icons.chevron_right, size: 18, color: colors.textLabel),
+          Icon(Icons.chevron_right, size: 18, color: colors.textMuted),
         ],
       ),
     );
@@ -262,30 +235,27 @@ class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> {
   }
 
   Widget _specDriftBanner(BuildContext context, SignedExtensions ext) {
-    final colors = context.colors;
-    final text = context.themeText;
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: colors.error.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: colors.error),
+        color: colors.semanticEmber.useOpacity(0.12),
+        borderRadius: context.radiusV3.mdBorder,
+        border: Border.all(color: colors.semanticEmber),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.warning_amber_rounded, color: colors.error, size: 22),
+          Icon(Icons.warning_amber_rounded, color: colors.semanticEmber, size: 22),
           const SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Built for a different runtime',
-                  style: text.smallParagraph?.copyWith(color: colors.error, fontWeight: FontWeight.w700),
-                ),
+                Text('Built for a different runtime', style: text.bodyEmphasis.copyWith(color: colors.semanticEmber)),
                 const SizedBox(height: 4),
                 Text(
                   'This payload targets spec ${ext.specVersion} / tx version ${ext.transactionVersion}, but this '
@@ -293,7 +263,7 @@ class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> {
                   '${AppConstants.bundledTransactionVersion}. Across runtime versions the same index can mean a '
                   'different call, so the parameters below may be mislabelled. Update the cold wallet before signing '
                   'anything you cannot verify another way.',
-                  style: text.detail?.copyWith(color: colors.textSecondary),
+                  style: text.caption.copyWith(color: colors.textMuted),
                 ),
               ],
             ),
@@ -303,16 +273,23 @@ class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> {
     );
   }
 
+  Future<void> _showSheet({required String title, required Widget child}) {
+    return BottomSheetContainer.show<void>(
+      context,
+      builder: (ctx) => BottomSheetContainer(title: title, child: child),
+    );
+  }
+
   /// Pauses the animation and opens the tuning sheet; resumes when it closes.
   Future<void> _pauseAndTune() async {
     setState(() => _qrPaused = true);
-    await showTitledSheet(context, title: 'QR display options', child: const QrTuningControls());
+    await _showSheet(title: 'QR display options', child: const QrTuningControls());
     if (mounted) setState(() => _qrPaused = false);
   }
 
   Widget _signatureView(BuildContext context, Uint8List signed) {
-    final colors = context.colors;
-    final text = context.themeText;
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
     final settings = ref.watch(coldSettingsProvider);
 
     if (_urParts == null || _urPartsBytes != settings.qrBytes) {
@@ -330,7 +307,7 @@ class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> {
             const SizedBox(height: 8),
             Text(
               'Scan this with your hot wallet to broadcast the transaction.',
-              style: text.smallParagraph?.copyWith(color: colors.textSecondary),
+              style: text.body.copyWith(color: colors.textMuted),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 24),
@@ -344,7 +321,7 @@ class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> {
                 Text(
                   '${parts.length} ${parts.length == 1 ? 'frame' : 'frames'} · ${settings.qrFps} FPS · '
                   '${settings.qrBytes} bytes',
-                  style: text.detail?.copyWith(color: colors.textMuted),
+                  style: text.caption.copyWith(color: colors.textMuted),
                 ),
                 if (parts.length > 1) ...[
                   const SizedBox(width: 12),
@@ -353,8 +330,8 @@ class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> {
                     child: Container(
                       width: 32,
                       height: 32,
-                      decoration: BoxDecoration(color: colors.surfaceDeep, shape: BoxShape.circle),
-                      child: Icon(Icons.pause_rounded, size: 20, color: colors.textPrimary),
+                      decoration: BoxDecoration(color: colors.bgSurface2, shape: BoxShape.circle),
+                      child: Icon(Icons.pause_rounded, size: 20, color: colors.textContent),
                     ),
                   ),
                 ],
@@ -364,7 +341,7 @@ class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> {
               const SizedBox(height: 16),
               Text(
                 'Animated QR — keep both devices steady until the hot wallet finishes scanning.',
-                style: text.detail?.copyWith(color: colors.textMuted),
+                style: text.caption.copyWith(color: colors.textMuted),
                 textAlign: TextAlign.center,
               ),
             ],

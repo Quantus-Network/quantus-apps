@@ -1,7 +1,7 @@
 import 'package:convert/convert.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:quantus_sdk/quantus_sdk.dart' hide DecodedCallView;
 import 'package:quantus_sdk/src/testing/call_corpus.dart';
 import 'package:resonance_network_wallet/v2/components/decoded_call_view.dart';
 

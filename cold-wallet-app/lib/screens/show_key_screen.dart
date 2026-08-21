@@ -1,12 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:quantus_cold_wallet/components/loader.dart';
-import 'package:quantus_cold_wallet/components/quantus_qr.dart';
-import 'package:quantus_cold_wallet/components/scaffold_base.dart';
-import 'package:quantus_cold_wallet/components/v2_app_bar.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:quantus_cold_wallet/providers/wallet_providers.dart';
-import 'package:quantus_cold_wallet/theme/app_colors.dart';
-import 'package:quantus_cold_wallet/theme/app_text_styles.dart';
 
 class ShowKeyScreen extends ConsumerWidget {
   /// The account to show; defaults to the wallet's first.
@@ -16,12 +11,10 @@ class ShowKeyScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final colors = context.colors;
-    final text = context.themeText;
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
     final address = this.address ?? ref.watch(addressProvider);
-    final checkphrase = address == null
-        ? const AsyncValue<String>.data('')
-        : ref.watch(addressCheckphraseProvider(address));
+    final checkphrase = address == null ? const AsyncValue<String>.data('') : ref.watch(checksumNameProvider(address));
 
     return ScaffoldBase(
       appBar: const V2AppBar(title: 'Show Key'),
@@ -34,7 +27,7 @@ class ShowKeyScreen extends ConsumerWidget {
                   const SizedBox(height: 8),
                   Text(
                     'Scan with your Quantus hot wallet to add this account.',
-                    style: text.smallParagraph?.copyWith(color: colors.textSecondary),
+                    style: text.body.copyWith(color: colors.textMuted),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 24),
@@ -43,7 +36,7 @@ class ShowKeyScreen extends ConsumerWidget {
                   checkphrase.when(
                     data: (phrase) => Text(
                       phrase,
-                      style: text.smallTitle?.copyWith(color: colors.checksum),
+                      style: text.headingRow.copyWith(color: colors.semanticLilac),
                       textAlign: TextAlign.center,
                     ),
                     loading: () => const Loader(size: 16),
@@ -52,13 +45,10 @@ class ShowKeyScreen extends ConsumerWidget {
                   const SizedBox(height: 16),
                   Container(
                     padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(color: colors.surfaceDeep, borderRadius: BorderRadius.circular(14)),
+                    decoration: BoxDecoration(color: colors.bgSurface, borderRadius: context.radiusV3.mdBorder),
                     child: Text(
                       address,
-                      style: text.detail?.copyWith(
-                        color: colors.textPrimary,
-                        fontFamily: AppTextTheme.fontFamilySecondary,
-                      ),
+                      style: text.dataAddressLarge.copyWith(color: colors.textContent),
                       textAlign: TextAlign.center,
                     ),
                   ),

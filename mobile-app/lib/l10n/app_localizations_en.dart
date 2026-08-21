@@ -1847,6 +1847,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get componentNameFieldHint => 'Enter a name for your account';
 
   @override
+  String get componentAmountApproximatePrefix => '≈';
+
+  @override
   String get commonLoading => 'Loading...';
 
   @override

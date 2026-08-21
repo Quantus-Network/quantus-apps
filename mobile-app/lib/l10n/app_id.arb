@@ -524,6 +524,7 @@
   "componentCheckphraseLabel": "CHECKPHRASE",
   "componentCheckphraseCopied": "Checkphrase disalin",
   "componentNameFieldHint": "Masukkan nama untuk akun Anda",
+  "componentAmountApproximatePrefix": "≈",
   "commonLoading": "Memuat...",
   "commonCancel": "Batal",
   "commonCanceling": "Membatalkan...",

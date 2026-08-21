@@ -1,13 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:quantus_cold_wallet/components/mnemonic_grid.dart';
-import 'package:quantus_cold_wallet/components/quantus_button.dart';
-import 'package:quantus_cold_wallet/components/scaffold_base.dart';
-import 'package:quantus_cold_wallet/components/scaffold_base_bottom_content.dart';
-import 'package:quantus_cold_wallet/components/v2_app_bar.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:quantus_cold_wallet/providers/wallet_providers.dart';
-import 'package:quantus_cold_wallet/theme/app_colors.dart';
-import 'package:quantus_cold_wallet/theme/app_text_styles.dart';
 
 class ShowSecretPhraseScreen extends ConsumerStatefulWidget {
   const ShowSecretPhraseScreen({super.key});
@@ -21,8 +15,8 @@ class _ShowSecretPhraseScreenState extends ConsumerState<ShowSecretPhraseScreen>
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.colors;
-    final text = context.themeText;
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
 
     // Locking clears the mnemonic while the LockOverlay covers this route;
     // re-hide so unlocking does not land on an exposed phrase.
@@ -40,7 +34,7 @@ class _ShowSecretPhraseScreenState extends ConsumerState<ShowSecretPhraseScreen>
           Text(
             'Anyone with this phrase controls your funds. Never share it and never enter it on a device that '
             'goes online.',
-            style: text.smallParagraph?.copyWith(color: colors.textTertiary),
+            style: text.body.copyWith(color: colors.textMuted),
           ),
           const SizedBox(height: 24),
           Expanded(
@@ -55,12 +49,12 @@ class _ShowSecretPhraseScreenState extends ConsumerState<ShowSecretPhraseScreen>
                       children: [
                         MnemonicGrid(words: words, isRevealed: _isRevealed),
                         if (!_isRevealed)
-                          _tapHint(Icons.visibility_outlined, 'Tap to reveal', colors.textPrimary, text),
+                          _tapHint(Icons.visibility_outlined, 'Tap to reveal', colors.textContent, text),
                       ],
                     ),
                     if (_isRevealed) ...[
                       const SizedBox(height: 16),
-                      _tapHint(Icons.visibility_off_outlined, 'Tap to hide', colors.textSecondary, text),
+                      _tapHint(Icons.visibility_off_outlined, 'Tap to hide', colors.textMuted, text),
                     ],
                   ],
                 ),
@@ -75,13 +69,13 @@ class _ShowSecretPhraseScreenState extends ConsumerState<ShowSecretPhraseScreen>
     );
   }
 
-  Widget _tapHint(IconData icon, String label, Color color, AppTextTheme text) {
+  Widget _tapHint(IconData icon, String label, Color color, AppTextThemeV3 text) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         Icon(icon, size: 18, color: color),
         const SizedBox(width: 8),
-        Text(label, style: text.smallParagraph?.copyWith(color: color)),
+        Text(label, style: text.body.copyWith(color: color)),
       ],
     );
   }

@@ -3,7 +3,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:quantus_sdk/quantus_sdk.dart' hide DecodedCallView;
 import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
@@ -11,15 +11,10 @@ import 'package:resonance_network_wallet/providers/multisig_providers.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/services/local_auth_service.dart';
 import 'package:resonance_network_wallet/shared/utils/print.dart';
-import 'package:resonance_network_wallet/v2/components/bottom_sheet_container.dart';
 import 'package:resonance_network_wallet/v2/components/decoded_call_view.dart';
-import 'package:resonance_network_wallet/v2/components/detail_summary_row.dart';
-import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/screens/send/keystone_sign_cache.dart';
 import 'package:resonance_network_wallet/v2/screens/send/keystone_sign_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/send/keystone_signing_session.dart';
-import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
-import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 
 /// Estimates the network fee for the action being confirmed.
 ///
@@ -346,7 +341,6 @@ class _MultisigActionConfirmSheetState extends ConsumerState<MultisigActionConfi
     final colors = context.colors;
     final text = context.themeText;
     final fmt = ref.watch(numberFormattingServiceProvider);
-    final valueStyle = text.transactionDetailRowLabel;
     final networkFeeLabel = _networkFeeLabel(l10n, fmt);
     final decoded = _decodedProposalCall;
     final headline = DecodedCallHeadline.of(
@@ -365,7 +359,6 @@ class _MultisigActionConfirmSheetState extends ConsumerState<MultisigActionConfi
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
         children: [
-          const SizedBox(height: 16),
           Text(widget.labels.body(l10n), style: text.paragraph?.copyWith(color: colors.textPrimary)),
           const SizedBox(height: 8),
           Text(headline.primary, style: text.smallTitle?.copyWith(color: colors.textPrimary)),
@@ -387,7 +380,7 @@ class _MultisigActionConfirmSheetState extends ConsumerState<MultisigActionConfi
           ],
           if (networkFeeLabel != null) ...[
             const SizedBox(height: 16),
-            DetailSummaryRow.review(label: l10n.sendReviewNetworkFee, value: networkFeeLabel, valueStyle: valueStyle),
+            DetailSummaryRow.review(label: l10n.sendReviewNetworkFee, value: networkFeeLabel),
           ],
           if (_feeEstimateFailed) ...[
             const SizedBox(height: 16),

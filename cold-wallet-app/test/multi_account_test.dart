@@ -9,7 +9,6 @@ import 'package:quantus_cold_wallet/screens/sign_transaction_screen.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:quantus_cold_wallet/services/cold_auth_service.dart';
 import 'package:quantus_cold_wallet/services/vault_service.dart';
-import 'package:quantus_cold_wallet/theme/app_theme.dart';
 
 import 'call_display_test.dart' show signerAddress;
 
@@ -21,7 +20,7 @@ Future<void> pumpFor(WidgetTester tester, String signer, {required Map<String, C
     ProviderScope(
       overrides: [
         addressesProvider.overrideWith((ref) => held),
-        addressCheckphraseProvider.overrideWith((ref, address) async => 'check phrase'),
+        checksumNameProvider.overrideWith((ref, address) async => 'check phrase'),
       ],
       child: MaterialApp(
         home: Builder(

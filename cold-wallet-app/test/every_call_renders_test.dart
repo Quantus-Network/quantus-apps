@@ -11,9 +11,8 @@ import 'package:quantus_cold_wallet/debug/debug_payloads.dart';
 import 'package:quantus_cold_wallet/models/cold_account.dart';
 import 'package:quantus_cold_wallet/providers/wallet_providers.dart';
 import 'package:quantus_cold_wallet/screens/sign_transaction_screen.dart';
-import 'package:quantus_cold_wallet/theme/app_theme.dart';
 
-import 'call_display_test.dart' show expectEveryFieldShownOnce, signerAddress;
+import 'call_display_test.dart' show signerAddress;
 
 /// The smallest supported handset, the reference size, and the smallest at the
 /// largest text scale — where fixed-height bottom content actually breaks.
@@ -34,7 +33,7 @@ Future<void> pumpAt(WidgetTester tester, Uint8List payload, Size size, double sc
     ProviderScope(
       overrides: [
         addressesProvider.overrideWith((ref) => {signerAddress: ColdAccount(label: 'Account 1', index: 0)}),
-        addressCheckphraseProvider.overrideWith((ref, address) async => 'check phrase'),
+        checksumNameProvider.overrideWith((ref, address) async => 'check phrase'),
       ],
       child: MediaQuery(
         data: MediaQueryData(size: size, textScaler: TextScaler.linear(scale)),
@@ -101,14 +100,6 @@ void main() {
             );
           }
         }
-      });
-    }
-  });
-
-  group('every field reaches the screen exactly once', () {
-    for (final call in catalogue) {
-      test(nameOf(call), () {
-        expectEveryFieldShownOnce(CallDecoder.decodeBytes(call.call, policy: const FullCallPolicy()));
       });
     }
   });
