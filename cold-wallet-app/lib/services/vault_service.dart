@@ -53,7 +53,7 @@ class VaultService {
   static const _bioKeyKey = 'cold_unlock_key';
 
   static const _storage = FlutterSecureStorage(
-    iOptions: IOSOptions(accessibility: KeychainAccessibility.first_unlock_this_device),
+    iOptions: IOSOptions(accessibility: KeychainAccessibility.unlocked_this_device),
   );
 
   // Argon2id parameters. Tunable: a cold wallet favors strength, but the
