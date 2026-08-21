@@ -217,6 +217,9 @@ class MultisigService {
     if (signers.length < minSigners) {
       throw ArgumentError.value(signers, 'signers', 'At least $minSigners signer(s) are required');
     }
+    if (signers.length != signers.toSet().length) {
+      throw ArgumentError.value(signers, 'signers', 'Duplicate signers are not allowed');
+    }
     if (threshold < 1 || threshold > signers.length) {
       throw ArgumentError.value(threshold, 'threshold', 'Must be between 1 and ${signers.length}');
     }
