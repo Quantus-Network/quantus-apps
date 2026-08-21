@@ -53,15 +53,33 @@ class VaultService {
   static const _bioKeyKey = 'cold_unlock_key';
 
   static const _storage = FlutterSecureStorage(
+    iOptions: IOSOptions(accessibility: KeychainAccessibility.unlocked_this_device),
+  );
+  static const _legacyStorage = FlutterSecureStorage(
     iOptions: IOSOptions(accessibility: KeychainAccessibility.first_unlock_this_device),
   );
 
-  // Argon2id parameters. Tunable: a cold wallet favors strength, but the
-  // pure-Dart KDF runs on-device so we keep memory modest to bound unlock time.
   static final Argon2id _kdf = Argon2id(memory: 8192, parallelism: 1, iterations: 3, hashLength: 32);
   final AesGcm _aead = AesGcm.with256bits();
 
-  Future<bool> hasWallet() async => (await _storage.read(key: _vaultKey)) != null;
+  bool _keychainMigrated = false;
+
+  Future<void> _ensureKeychainMigrated() async {
+    if (_keychainMigrated) return;
+    _keychainMigrated = true;
+    for (final key in [_vaultKey, _bioKeyKey]) {
+      final value = await _legacyStorage.read(key: key);
+      if (value != null) {
+        await _legacyStorage.delete(key: key);
+        await _storage.write(key: key, value: value);
+      }
+    }
+  }
+
+  Future<bool> hasWallet() async {
+    await _ensureKeychainMigrated();
+    return (await _storage.read(key: _vaultKey)) != null;
+  }
 
   /// True only when the stored biometric key belongs to the current vault
   /// (matched via the vault salt it was paired with). A key orphaned by a
