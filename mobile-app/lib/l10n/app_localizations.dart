@@ -2558,6 +2558,24 @@ abstract class AppLocalizations {
   /// **'Address copied to clipboard'**
   String get receiveCopiedMessage;
 
+  /// Label above the account address on the receive screen
+  ///
+  /// In en, this message translates to:
+  /// **'YOUR ADDRESS'**
+  String get receiveYourAddressLabel;
+
+  /// Primary button that copies the receive address
+  ///
+  /// In en, this message translates to:
+  /// **'Copy Address'**
+  String get receiveCopyAddress;
+
+  /// Footnote under the checkphrase on the receive screen
+  ///
+  /// In en, this message translates to:
+  /// **'Ask the sender to confirm this phrase matches your address.'**
+  String get receiveCheckphraseFootnote;
+
   /// App bar title on POS amount screen
   ///
   /// In en, this message translates to:

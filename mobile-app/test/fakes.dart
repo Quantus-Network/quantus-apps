@@ -56,6 +56,15 @@ class FakeSubstrateService extends Fake implements SubstrateService {
   bool isValidSS58Address(String address) => true;
 }
 
+class FakeHumanReadableChecksumService extends Fake implements HumanReadableChecksumService {
+  FakeHumanReadableChecksumService({this.phrase = 'Stand-Envelope-Topic-Term-Help'});
+
+  final String phrase;
+
+  @override
+  Future<String?> getHumanReadableName(String address, {upperCase = true}) async => phrase;
+}
+
 class FakeBalancesService extends Fake implements BalancesService {
   Account? lastFeeAccount;
 

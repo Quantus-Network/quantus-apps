@@ -1927,6 +1927,18 @@
     "@receiveCopiedMessage": {
       "description": "Toast when the address is copied"
     },
+    "receiveYourAddressLabel": "YOUR ADDRESS",
+    "@receiveYourAddressLabel": {
+      "description": "Label above the account address on the receive screen"
+    },
+    "receiveCopyAddress": "Copy Address",
+    "@receiveCopyAddress": {
+      "description": "Primary button that copies the receive address"
+    },
+    "receiveCheckphraseFootnote": "Ask the sender to confirm this phrase matches your address.",
+    "@receiveCheckphraseFootnote": {
+      "description": "Footnote under the checkphrase on the receive screen"
+    },
 
     "posAmountTitle": "New Charge",
     "@posAmountTitle": {

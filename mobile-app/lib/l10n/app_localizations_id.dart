@@ -1353,6 +1353,15 @@ class AppLocalizationsId extends AppLocalizations {
   String get receiveCopiedMessage => 'Alamat disalin ke clipboard';
 
   @override
+  String get receiveYourAddressLabel => 'ALAMAT ANDA';
+
+  @override
+  String get receiveCopyAddress => 'Salin Alamat';
+
+  @override
+  String get receiveCheckphraseFootnote => 'Minta pengirim mengonfirmasi bahwa frasa ini sesuai dengan alamat Anda.';
+
+  @override
   String get posAmountTitle => 'Tagihan Baru';
 
   @override

@@ -1350,6 +1350,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get receiveCopiedMessage => 'Address copied to clipboard';
 
   @override
+  String get receiveYourAddressLabel => 'YOUR ADDRESS';
+
+  @override
+  String get receiveCopyAddress => 'Copy Address';
+
+  @override
+  String get receiveCheckphraseFootnote => 'Ask the sender to confirm this phrase matches your address.';
+
+  @override
   String get posAmountTitle => 'New Charge';
 
   @override
