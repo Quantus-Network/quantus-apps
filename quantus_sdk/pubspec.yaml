@@ -51,13 +51,15 @@ dependencies:
       ref: v2.2.0
       path: dart
 
+  qr_flutter: ^4.1.0
+  flutter_svg: ^2.3.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
   integration_test:
     sdk: flutter
   flutter_lints: ^6.0.0
-  qr_flutter: ^4.1.0
   # Used by tool/generate_call_corpus.dart to enumerate the runtime's calls.
   polkadart_scale_codec:
     git:
@@ -79,3 +81,8 @@ polkadart:
   output_dir: lib/generated
   chains:
     planck: wss://a1-planck.quantus.cat
+
+flutter:
+  assets:
+    - assets/v2/uppercase_q_black_bg.png
+    - assets/icons/

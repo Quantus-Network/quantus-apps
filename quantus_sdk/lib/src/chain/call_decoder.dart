@@ -43,6 +43,9 @@ import 'package:quantus_sdk/src/chain/decoded_call.dart';
 import 'package:quantus_sdk/src/extensions/address_extension.dart';
 import 'package:quantus_sdk/src/services/datetime_formatting_service.dart';
 
+/// Hard cap on one encoded call; every supported runtime call is far below it.
+const int maxCallBytes = 8 * 1024;
+
 /// How deep a call tree may go before this decoder refuses it. Depth 0 is the
 /// outermost call, so a multisig proposal carrying a batch of transfers is the
 /// deepest shape a signer is ever shown. Centralized so hot- and cold-wallet
@@ -68,7 +71,11 @@ class CallDecoder {
   /// Decodes a call off [input], leaving it positioned on the bytes that follow —
   /// the signing-payload parser reads its extensions from there.
   static DecodedCall decodeFrom(ByteInput input, {required CallPolicy policy}) {
-    return _asFormatException(() => _describe(_decodeCall(input, policy, const []), 0, policy: policy));
+    return _asFormatException(() {
+      final length = input.remainingLength;
+      if (length != null) _checkCallSize(length);
+      return _describe(_decodeCall(input, policy, const []), 0, policy: policy);
+    });
   }
 
   /// The generated codecs signal malformed bytes with their own exception types.
@@ -84,6 +91,7 @@ class CallDecoder {
   }
 
   static DecodedCall _decodeBytesAtPath(List<int> bytes, CallPolicy policy, List<CallId> path) {
+    _checkCallSize(bytes.length);
     final input = Input.fromBytes(Uint8List.fromList(bytes));
     final call = _decodeCall(input, policy, path);
     final remaining = input.remainingLength ?? 0;
@@ -91,6 +99,12 @@ class CallDecoder {
       throw FormatException('$remaining trailing bytes after nested call');
     }
     return _describe(call, path.length, policy: policy, path: path);
+  }
+
+  static void _checkCallSize(int length) {
+    if (length > maxCallBytes) {
+      throw FormatException('Call is too large: $length bytes exceeds the $maxCallBytes-byte limit');
+    }
   }
 
   /// Describes [call] as a display tree carrying every one of its parameters.

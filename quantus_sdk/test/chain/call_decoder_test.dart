@@ -358,13 +358,10 @@ void main() {
     });
 
     test('rejects over-nested bytes without recursing into them', () {
-      // Past where the generated codecs overflow the stack (~20k levels here,
-      // fewer on a mobile isolate). Checking the limit on the decoded tree would
-      // mean crashing on the way in instead of refusing the call.
-      expect(
-        () => CallDecoder.decodeBytes(recoveredChainBytes(100000), policy: const FullCallPolicy()),
-        isNestingRejection,
-      );
+      final depth = (maxCallBytes - 3) ~/ 35;
+      final bytes = recoveredChainBytes(depth);
+      expect(bytes.length, lessThanOrEqualTo(maxCallBytes));
+      expect(() => CallDecoder.decodeBytes(bytes, policy: const FullCallPolicy()), isNestingRejection);
     });
 
     test('the bounded decoder agrees with the generated codec on every inline nesting variant', () {
@@ -418,6 +415,13 @@ void main() {
   });
 
   group('strictness and fallback', () {
+    test('call bytes above the hard cap are rejected before decoding', () {
+      expect(
+        () => CallDecoder.decodeBytes(Uint8List(maxCallBytes + 1), policy: const FullCallPolicy()),
+        throwsA(isA<FormatException>().having((e) => e.message, 'message', contains('too large'))),
+      );
+    });
+
     test('trailing bytes after a call are rejected', () {
       final bytes = const collective_pallet.Txs().vote(poll: 1, aye: true).encode();
       expect(

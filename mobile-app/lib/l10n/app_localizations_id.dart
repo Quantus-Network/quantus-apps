@@ -1850,6 +1850,9 @@ class AppLocalizationsId extends AppLocalizations {
   String get componentNameFieldHint => 'Masukkan nama untuk akun Anda';
 
   @override
+  String get componentAmountApproximatePrefix => '≈';
+
+  @override
   String get commonLoading => 'Memuat...';
 
   @override

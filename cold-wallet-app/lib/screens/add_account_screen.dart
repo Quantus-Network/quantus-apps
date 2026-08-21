@@ -5,15 +5,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:quantus_cold_wallet/components/address_with_checkphrase.dart';
-import 'package:quantus_cold_wallet/components/quantus_button.dart';
-import 'package:quantus_cold_wallet/components/scaffold_base.dart';
-import 'package:quantus_cold_wallet/components/scaffold_base_bottom_content.dart';
-import 'package:quantus_cold_wallet/components/segmented_controls.dart';
-import 'package:quantus_cold_wallet/components/v2_app_bar.dart';
 import 'package:quantus_cold_wallet/models/cold_account.dart';
 import 'package:quantus_cold_wallet/providers/wallet_providers.dart';
-import 'package:quantus_cold_wallet/theme/app_colors.dart';
-import 'package:quantus_cold_wallet/theme/app_text_styles.dart';
 
 enum _Derivation { accountIndex, fullPath }
 
@@ -159,8 +152,8 @@ class _AddAccountScreenState extends ConsumerState<AddAccountScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.colors;
-    final text = context.themeText;
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
     final account = _account;
     final duplicate = _duplicate;
 
@@ -177,7 +170,7 @@ class _AddAccountScreenState extends ConsumerState<AddAccountScreen> {
               const SizedBox(height: 8),
               Text(
                 'Every account comes from the same recovery phrase. Choose which one to add.',
-                style: text.smallParagraph?.copyWith(color: colors.textSecondary),
+                style: text.body.copyWith(color: colors.textMuted),
               ),
               const SizedBox(height: 24),
               SegmentedControls<_Derivation>(
@@ -196,7 +189,7 @@ class _AddAccountScreenState extends ConsumerState<AddAccountScreen> {
                 const SizedBox(height: 16),
                 Text(
                   _error!,
-                  style: text.detail?.copyWith(color: colors.error),
+                  style: text.caption.copyWith(color: colors.semanticEmber),
                   textAlign: TextAlign.center,
                 ),
               ],
@@ -219,15 +212,15 @@ class _AddAccountScreenState extends ConsumerState<AddAccountScreen> {
   /// The index, with steppers either side: the common move is one account along
   /// from the last, and that should not need the keyboard at all.
   Widget _indexField(BuildContext context) {
-    final colors = context.colors;
-    final text = context.themeText;
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
       decoration: BoxDecoration(
-        color: colors.surfaceDeep,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: colors.borderButton),
+        color: colors.bgSurface,
+        borderRadius: context.radiusV3.mdBorder,
+        border: Border.all(color: colors.borderHairline),
       ),
       child: Row(
         children: [
@@ -238,7 +231,7 @@ class _AddAccountScreenState extends ConsumerState<AddAccountScreen> {
               keyboardType: TextInputType.number,
               textAlign: TextAlign.center,
               inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(9)],
-              style: text.mediumTitle?.copyWith(color: colors.textPrimary),
+              style: text.titleScreen.copyWith(color: colors.textContent),
               decoration: const InputDecoration(border: InputBorder.none, isCollapsed: true),
             ),
           ),
@@ -249,20 +242,20 @@ class _AddAccountScreenState extends ConsumerState<AddAccountScreen> {
   }
 
   Widget _pathField(BuildContext context) {
-    final colors = context.colors;
-    final text = context.themeText;
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: colors.surfaceDeep,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: colors.borderButton),
+        color: colors.bgSurface,
+        borderRadius: context.radiusV3.mdBorder,
+        border: Border.all(color: colors.borderHairline),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text('DERIVATION PATH', style: text.transactionDetailRowLabel?.copyWith(color: colors.textLabel)),
+          Text('DERIVATION PATH', style: text.labelMonogram.copyWith(color: colors.textMuted)),
           const SizedBox(height: 6),
           TextField(
             controller: _path,
@@ -275,15 +268,15 @@ class _AddAccountScreenState extends ConsumerState<AddAccountScreen> {
             // own start out of sight, and a path half-read is not verified.
             maxLines: null,
             keyboardType: TextInputType.text,
-            style: text.smallParagraph?.copyWith(
-              color: colors.textPrimary,
+            style: text.dataAddressLarge.copyWith(
+              color: colors.textContent,
               fontFamily: AppTextTheme.fontFamilySecondary,
             ),
             decoration: InputDecoration(
               border: InputBorder.none,
               isCollapsed: true,
               hintText: HdWalletService.pathForIndex(0),
-              hintStyle: text.smallParagraph?.copyWith(
+              hintStyle: text.dataAddressLarge.copyWith(
                 color: colors.textMuted,
                 fontFamily: AppTextTheme.fontFamilySecondary,
               ),
@@ -298,8 +291,8 @@ class _AddAccountScreenState extends ConsumerState<AddAccountScreen> {
   /// derives to with its checkphrase, so the account can be recognised here
   /// rather than after the fact.
   Widget _preview(BuildContext context, ColdAccount? account, ColdAccount? duplicate) {
-    final colors = context.colors;
-    final text = context.themeText;
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
 
     if (account == null) {
       return _notice(
@@ -318,22 +311,22 @@ class _AddAccountScreenState extends ConsumerState<AddAccountScreen> {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: colors.surfaceDeep,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: colors.borderButton),
+        color: colors.bgSurface,
+        borderRadius: context.radiusV3.mdBorder,
+        border: Border.all(color: colors.borderHairline),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(account.label, style: text.smallTitle?.copyWith(color: colors.textPrimary)),
-          Text(path, style: text.detail?.copyWith(color: colors.textMuted)),
+          Text(account.label, style: text.headingRow.copyWith(color: colors.textContent)),
+          Text(path, style: text.caption.copyWith(color: colors.textMuted)),
           const SizedBox(height: 4),
           address.when(
             data: (value) => AddressWithCheckphrase(label: 'Address', address: value),
             loading: () => _addressPlaceholder(context),
             error: (e, _) {
               debugPrint('Address preview failed for $path: $e');
-              return Text('Could not derive this account.', style: text.detail?.copyWith(color: colors.error));
+              return Text('Could not derive this account.', style: text.caption.copyWith(color: colors.semanticEmber));
             },
           ),
         ],
@@ -344,8 +337,6 @@ class _AddAccountScreenState extends ConsumerState<AddAccountScreen> {
   /// Holds the address row's height while it derives, so the card does not jump
   /// as the preview settles.
   Widget _addressPlaceholder(BuildContext context) {
-    final colors = context.colors;
-
     return Padding(
       padding: const EdgeInsets.only(top: 12),
       child: Column(
@@ -354,11 +345,7 @@ class _AddAccountScreenState extends ConsumerState<AddAccountScreen> {
           for (final width in const [0.4, 0.9, 0.55])
             FractionallySizedBox(
               widthFactor: width,
-              child: Container(
-                height: 12,
-                margin: const EdgeInsets.only(bottom: 8),
-                decoration: BoxDecoration(color: colors.skeletonBase, borderRadius: BorderRadius.circular(4)),
-              ),
+              child: Container(height: 12, margin: const EdgeInsets.only(bottom: 8), child: const Skeleton(height: 12)),
             ),
         ],
       ),
@@ -366,10 +353,10 @@ class _AddAccountScreenState extends ConsumerState<AddAccountScreen> {
   }
 
   Widget _notice(BuildContext context, String message, {required bool isError}) {
-    final colors = context.colors;
-    final text = context.themeText;
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
 
-    return Text(message, style: text.detail?.copyWith(color: isError ? colors.error : colors.textMuted));
+    return Text(message, style: text.caption.copyWith(color: isError ? colors.semanticEmber : colors.textMuted));
   }
 }
 
@@ -382,7 +369,7 @@ class _StepperButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.colors;
+    final colors = context.colorsV3;
 
     return Semantics(
       button: true,
@@ -391,7 +378,7 @@ class _StepperButton extends StatelessWidget {
         onTap: onTap,
         behavior: HitTestBehavior.opaque,
         // 44pt: the smallest target a finger hits reliably.
-        child: SizedBox(width: 44, height: 44, child: Icon(icon, size: 22, color: colors.textPrimary)),
+        child: SizedBox(width: 44, height: 44, child: Icon(icon, size: 22, color: colors.textContent)),
       ),
     );
   }

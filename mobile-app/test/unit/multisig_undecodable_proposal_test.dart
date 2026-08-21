@@ -10,7 +10,6 @@ import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/providers/multisig_providers.dart';
 import 'package:resonance_network_wallet/v2/components/proposal_list_tile.dart';
 import 'package:resonance_network_wallet/v2/screens/multisig/multisig_proposal_detail_sheet.dart';
-import 'package:resonance_network_wallet/v2/theme/app_theme.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../fakes.dart';

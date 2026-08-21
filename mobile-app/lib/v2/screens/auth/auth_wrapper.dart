@@ -1,13 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/local_auth_provider.dart';
-import 'package:resonance_network_wallet/v2/components/base_background.dart';
-import 'package:resonance_network_wallet/v2/components/loader.dart';
-import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
-import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
-import 'package:resonance_network_wallet/v2/theme/app_spacing.dart';
-import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 
 class AuthWrapper extends ConsumerWidget {
   const AuthWrapper({super.key});
@@ -56,7 +51,7 @@ class AuthWrapper extends ConsumerWidget {
                 const Loader()
               else
                 Padding(
-                  padding: EdgeInsets.symmetric(horizontal: context.themeSize.screenPadding),
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
                   child: QuantusButton.simple(
                     label: l10n.authUnlockWallet,
                     onTap: () {

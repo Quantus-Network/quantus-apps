@@ -29,7 +29,7 @@ import 'package:quantus_sdk/src/chain/decoded_call.dart';
 import 'package:quantus_sdk/src/constants/app_constants.dart';
 
 /// Hard cap on the raw signing payload; every supported call is far below this.
-const int maxPayloadBytes = 8 * 1024;
+const int maxPayloadBytes = maxCallBytes;
 
 /// Networks this wallet will sign for, keyed by genesis hash (lowercase hex).
 /// A payload whose genesis hash is not listed here is rejected.

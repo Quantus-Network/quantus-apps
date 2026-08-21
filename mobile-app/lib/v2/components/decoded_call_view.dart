@@ -2,39 +2,25 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/currency_display_provider.dart';
-import 'package:resonance_network_wallet/v2/components/detail_summary_row.dart';
-import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
-import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 
-/// Renders every parameter of a [DecodedCall], nested calls included.
-///
-/// Multisig proposals are not always transfers — governance votes, runtime
-/// upgrade authorisations and batches all arrive through the same pallet — so a
-/// transfer-shaped layout silently misreports them. This shows the call the
-/// runtime actually declared, with each of its parameters.
+/// Renders every parameter of a decoded multisig proposal, nested calls included.
 class DecodedCallView extends ConsumerWidget {
   final DecodedCall call;
-
-  /// Nesting depth; nested calls indent and drop a level of visual weight.
   final int depth;
 
   const DecodedCallView({super.key, required this.call, this.depth = 0});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final colors = context.colors;
-    final text = context.themeText;
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
           call.displayTitle,
-          style: text.detail?.copyWith(
-            color: depth == 0 ? colors.textPrimary : colors.textSecondary,
-            fontWeight: FontWeight.w600,
-            fontFamily: AppTextTheme.fontFamilySecondary,
-          ),
+          style: text.labelData.copyWith(color: depth == 0 ? colors.textContent : colors.textMuted),
         ),
         const SizedBox(height: 4),
         for (final field in call.fields) _field(context, ref, field),
@@ -43,113 +29,99 @@ class DecodedCallView extends ConsumerWidget {
   }
 
   Widget _field(BuildContext context, WidgetRef ref, CallField field) {
-    final colors = context.colors;
-    final text = context.themeText;
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
+    final valueStyle = text.dataAddress.copyWith(color: colors.textContent);
 
-    switch (field) {
-      case ValueField(:final label, :final value, :final note):
-        return Padding(
-          padding: const EdgeInsets.only(top: 6),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              DetailSummaryRow.review(label: label, value: value),
-              if (note != null)
-                Padding(
-                  padding: const EdgeInsets.only(top: 2),
-                  child: Text(note, style: text.detail?.copyWith(color: colors.textTertiary, fontSize: 11)),
-                ),
-            ],
-          ),
-        );
-
-      case AmountField(:final label, :final token, :final assetId, :final note):
-        final value = assetId == null
-            ? ref.watch(txAmountDisplayProvider)(token, isSend: true).primaryAmount
-            : '$token (asset #$assetId, raw units)';
-        return Padding(
-          padding: const EdgeInsets.only(top: 6),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              DetailSummaryRow.review(label: label, value: value),
-              if (note != null)
-                Padding(
-                  padding: const EdgeInsets.only(top: 2),
-                  child: Text(note, style: text.detail?.copyWith(color: colors.textTertiary, fontSize: 11)),
-                ),
-            ],
-          ),
-        );
-
-      case FieldGroup(:final label, :final items):
-        return Padding(
-          padding: const EdgeInsets.only(top: 6),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(label, style: text.transactionDetailRowLabel?.copyWith(color: colors.textTertiary)),
+    return switch (field) {
+      ValueField(:final label, :final value, :final note) => Padding(
+        padding: const EdgeInsets.only(top: 6),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            DetailSummaryRow.review(label: label, value: value, valueStyle: valueStyle),
+            if (note != null)
               Padding(
-                padding: const EdgeInsets.only(left: 12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [for (final item in items) _field(context, ref, item)],
-                ),
+                padding: const EdgeInsets.only(top: 2),
+                child: Text(note, style: text.caption.copyWith(color: colors.textMuted2)),
               ),
-            ],
-          ),
-        );
-
-      case NestedCallField(:final label, :final call, :final note):
-        return Padding(
-          padding: const EdgeInsets.only(top: 10),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(label, style: text.transactionDetailRowLabel?.copyWith(color: colors.textTertiary)),
-              const SizedBox(height: 4),
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: colors.surfaceDeep,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: colors.borderButton.useOpacity(0.4)),
-                ),
-                child: DecodedCallView(call: call, depth: depth + 1),
+          ],
+        ),
+      ),
+      AmountField(:final label, :final token, :final assetId, :final note) => Padding(
+        padding: const EdgeInsets.only(top: 6),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            DetailSummaryRow.review(
+              label: label,
+              value: assetId == null
+                  ? ref.watch(txAmountDisplayProvider)(token, isSend: true).primaryAmount
+                  : '$token (asset #$assetId, raw units)',
+              valueStyle: valueStyle,
+            ),
+            if (note != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 2),
+                child: Text(note, style: text.caption.copyWith(color: colors.textMuted2)),
               ),
-              if (note != null)
-                Padding(
-                  padding: const EdgeInsets.only(top: 4),
-                  child: Text(note, style: text.detail?.copyWith(color: colors.textTertiary, fontSize: 11)),
-                ),
-            ],
-          ),
-        );
-    }
+          ],
+        ),
+      ),
+      FieldGroup(:final label, :final items) => Padding(
+        padding: const EdgeInsets.only(top: 6),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(label, style: text.labelMonogram.copyWith(color: colors.textMuted2)),
+            Padding(
+              padding: const EdgeInsets.only(left: 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [for (final item in items) _field(context, ref, item)],
+              ),
+            ),
+          ],
+        ),
+      ),
+      NestedCallField(:final label, :final call, :final note) => Padding(
+        padding: const EdgeInsets.only(top: 10),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(label, style: text.labelMonogram.copyWith(color: colors.textMuted2)),
+            const SizedBox(height: 4),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: colors.bgSurface2,
+                borderRadius: context.radiusV3.mdBorder,
+                border: Border.all(color: colors.borderHairline),
+              ),
+              child: DecodedCallView(call: call, depth: depth + 1),
+            ),
+            if (note != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(note, style: text.caption.copyWith(color: colors.textMuted2)),
+              ),
+          ],
+        ),
+      ),
+    };
   }
 }
 
-/// The one-line-plus-subtitle form of a decoded call, for list rows and sheets.
-///
-/// A transfer keeps reading as an amount and a recipient; anything else names
-/// the call rather than pretending to be a zero-value transfer.
+/// The one-line-plus-subtitle form used by multisig proposal rows and sheets.
 class DecodedCallHeadline {
-  /// Primary line: formatted amount for transfers, otherwise the call name.
   final String primary;
-
-  /// Shortened recipient address when this call moves value, else null.
   final String? recipient;
-
-  /// Subtitle for calls that move no value (the owning pallet), else null.
   final String? palletSubtitle;
 
   const DecodedCallHeadline({required this.primary, this.recipient, this.palletSubtitle});
 
-  /// Either the recipient or the pallet, whichever this call has.
   String? get secondary => recipient ?? palletSubtitle;
 
-  /// [amountText] formats a native token amount for the current locale and
-  /// currency display; injected so this stays independent of Riverpod.
   static DecodedCallHeadline of(DecodedCall call, {required String Function(BigInt token) amountText}) {
     final summary = call.summary;
     if (summary == null) {

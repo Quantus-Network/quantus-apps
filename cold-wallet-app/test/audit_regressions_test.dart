@@ -8,12 +8,10 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 // ignore: implementation_imports — the generated corpus is test data, deliberately not public SDK API.
 import 'package:quantus_sdk/src/testing/call_corpus.dart';
 import 'package:quantus_cold_wallet/components/address_with_checkphrase.dart';
-import 'package:quantus_cold_wallet/components/quantus_button.dart';
 import 'package:quantus_cold_wallet/debug/debug_payloads.dart';
 import 'package:quantus_cold_wallet/models/cold_account.dart';
 import 'package:quantus_cold_wallet/providers/wallet_providers.dart';
 import 'package:quantus_cold_wallet/screens/sign_transaction_screen.dart';
-import 'package:quantus_cold_wallet/theme/app_theme.dart';
 
 import 'every_call_renders_test.dart' show renderedText;
 
@@ -36,7 +34,7 @@ Future<void> pumpRequest(WidgetTester tester, SigningRequest request) async {
     ProviderScope(
       overrides: [
         addressesProvider.overrideWith((ref) => {wallet: ColdAccount(label: 'Account 1', index: 0)}),
-        addressCheckphraseProvider.overrideWith((ref, address) async => 'check phrase'),
+        checksumNameProvider.overrideWith((ref, address) async => 'check phrase'),
       ],
       child: MaterialApp(
         home: Builder(

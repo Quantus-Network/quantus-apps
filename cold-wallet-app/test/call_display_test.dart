@@ -15,7 +15,6 @@ import 'package:quantus_cold_wallet/debug/debug_payloads.dart';
 import 'package:quantus_cold_wallet/models/cold_account.dart';
 import 'package:quantus_cold_wallet/providers/wallet_providers.dart';
 import 'package:quantus_cold_wallet/screens/sign_transaction_screen.dart';
-import 'package:quantus_cold_wallet/theme/app_theme.dart';
 
 final aliceId = Uint8List.fromList(List.filled(32, 0xAA));
 final bobId = Uint8List.fromList(List.filled(32, 0xBB));
@@ -26,22 +25,19 @@ multi_address.MultiAddress account(Uint8List id) => multi_address.MultiAddress.v
 
 DecodedCall roundTrip(RuntimeCall call) => CallDecoder.decodeBytes(call.encode(), policy: const FullCallPolicy());
 
-/// The screen's contract: every field of [call] reaches the screen exactly
-/// once — as its own row, or restated by the summary hero the body leads with.
-/// A field is only ever suppressed for the exact hero widget that restates it.
 void expectEveryFieldShownOnce(DecodedCall call) {
   final body = callSummaryBody(call);
-  final rows = body.whereType<CallFieldView>().map((w) => w.field).toList();
+  final rows = body.whereType<CallFieldView>().map((widget) => widget.field).toList();
   final summary = heroSummary(call);
-  final showsAmount = body.any((w) => w is TransferAmount);
-  final showsRecipient = body.any((w) => w is AddressWithCheckphrase && w.label == 'To');
+  final showsAmount = body.any((widget) => widget is TransferAmount);
+  final showsRecipient = body.any((widget) => widget is AddressWithCheckphrase && widget.label == 'To');
 
   for (final field in call.fields) {
     final restated =
         (showsAmount && identical(field, summary?.amountField)) ||
         (showsRecipient && identical(field, summary?.recipientField));
     expect(
-      rows.where((f) => identical(f, field)).length,
+      rows.where((row) => identical(row, field)).length,
       restated ? 0 : 1,
       reason: '${call.displayTitle}: "${field.label}" must reach the screen exactly once',
     );
@@ -54,7 +50,7 @@ Future<void> pumpSignScreen(WidgetTester tester, Uint8List payload) async {
     ProviderScope(
       overrides: [
         addressesProvider.overrideWith((ref) => {signerAddress: ColdAccount(label: 'Account 1', index: 0)}),
-        addressCheckphraseProvider.overrideWith((ref, address) async => 'check phrase'),
+        checksumNameProvider.overrideWith((ref, address) async => 'check phrase'),
       ],
       child: MaterialApp(
         home: Builder(
@@ -70,7 +66,7 @@ Future<void> pumpSignScreen(WidgetTester tester, Uint8List payload) async {
 }
 
 AddressWithCheckphrase signerRow(WidgetTester tester) => tester.widget<AddressWithCheckphrase>(
-  find.byWidgetPredicate((w) => w is AddressWithCheckphrase && w.address == signerAddress),
+  find.byWidgetPredicate((widget) => widget is AddressWithCheckphrase && widget.address == signerAddress),
 );
 
 void main() {

@@ -6,6 +6,14 @@ import 'package:quantus_sdk/generated/planck/types/sp_runtime/multiaddress/multi
 import 'package:quantus_sdk/quantus_sdk.dart';
 
 final bobId = Uint8List.fromList(List.filled(32, 0xBB));
+final msig = MultisigAccount(
+  name: 'Team',
+  accountId: 'msig',
+  signers: const ['alice', 'bob'],
+  threshold: 2,
+  nonce: BigInt.zero,
+  myMemberAccountId: 'alice',
+);
 
 MultisigProposal proposalWith({Uint8List? callRaw}) => MultisigProposal(
   entityId: 'p1',
@@ -55,6 +63,28 @@ void main() {
 
     test('true for an unknown pallet index', () {
       final proposal = proposalWith(callRaw: Uint8List.fromList([250, 0]));
+      expect(proposal.hasUndecodableCall, isTrue);
+    });
+
+    test('true for call bytes above the hard cap', () {
+      final proposal = proposalWith(callRaw: Uint8List(maxCallBytes + 1));
+      expect(proposal.hasUndecodableCall, isTrue);
+    });
+
+    test('true when oversized indexer hex is rejected before decoding', () {
+      final proposal = MultisigProposal.fromIndexerJson({
+        'id': 'p1',
+        'proposal_id': 1,
+        'created_at': '2026-01-01T00:00:00.000Z',
+        'call_raw': '0x${'00' * (maxCallBytes + 1)}',
+        'status': 'ACTIVE',
+        'expiry_block': 100,
+        'deposit': '0',
+        'approvals': <String>[],
+        'proposer': {'id': 'alice'},
+      }, msig: msig);
+
+      expect(proposal.callRaw, isEmpty);
       expect(proposal.hasUndecodableCall, isTrue);
     });
   });
