@@ -57,8 +57,6 @@ class _AddAccountMenuScreenState extends ConsumerState<AddAccountMenuScreen> {
     final l10n = ref.watch(l10nProvider);
     final enableKeystone = ref.watch(remoteConfigProvider).enableKeystoneHardwareWallet;
     final enableMultisig = ref.watch(remoteConfigProvider).enableMultisig;
-    final colors = context.colors;
-    final text = context.themeText;
 
     return ScaffoldBase(
       appBar: V2AppBar(title: l10n.addAccountMenuTitle),
@@ -73,8 +71,6 @@ class _AddAccountMenuScreenState extends ConsumerState<AddAccountMenuScreen> {
             title: l10n.addAccountMenuCreateTitle,
             subtitle: l10n.addAccountMenuCreateSubtitle,
             onTap: _onCreateNewAccount,
-            colors: colors,
-            text: text,
           ),
           const SizedBox(height: 14),
           if (enableKeystone) ...[
@@ -83,21 +79,14 @@ class _AddAccountMenuScreenState extends ConsumerState<AddAccountMenuScreen> {
               title: l10n.addAccountMenuImportKeystoneTitle,
               subtitle: l10n.addAccountMenuImportKeystoneSubtitle,
               onTap: _onImportKeystone,
-              colors: colors,
-              text: text,
             ),
             const SizedBox(height: 14),
           ],
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            child: Divider(color: colors.separator, height: 1),
-          ),
+          const Padding(padding: EdgeInsets.symmetric(vertical: 16), child: MenuDivider()),
           _AdvancedSection(
             title: l10n.addAccountMenuMoreTitle,
             expanded: _advancedExpanded,
             onToggle: () => setState(() => _advancedExpanded = !_advancedExpanded),
-            colors: colors,
-            text: text,
             children: [
               if (enableMultisig) ...[
                 GestureDetector(
@@ -107,14 +96,9 @@ class _AddAccountMenuScreenState extends ConsumerState<AddAccountMenuScreen> {
                     icon: Icons.radar_outlined,
                     title: l10n.addAccountMenuDiscoverMultisigTitle,
                     subtitle: l10n.addAccountMenuDiscoverMultisigSubtitle,
-                    colors: colors,
-                    text: text,
                   ),
                 ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  child: Divider(color: colors.separator, height: 1),
-                ),
+                const Padding(padding: EdgeInsets.symmetric(vertical: 16), child: MenuDivider()),
                 GestureDetector(
                   onTap: _onCreateMultisig,
                   behavior: HitTestBehavior.opaque,
@@ -122,14 +106,9 @@ class _AddAccountMenuScreenState extends ConsumerState<AddAccountMenuScreen> {
                     icon: Icons.group_outlined,
                     title: l10n.addAccountMenuMultisigTitle,
                     subtitle: l10n.addAccountMenuMultisigSubtitle,
-                    colors: colors,
-                    text: text,
                   ),
                 ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  child: Divider(color: colors.separator, height: 1),
-                ),
+                const Padding(padding: EdgeInsets.symmetric(vertical: 16), child: MenuDivider()),
               ],
               GestureDetector(
                 onTap: _onImportWallet,
@@ -138,8 +117,6 @@ class _AddAccountMenuScreenState extends ConsumerState<AddAccountMenuScreen> {
                   icon: Icons.save_alt,
                   title: l10n.addAccountMenuImportTitle,
                   subtitle: l10n.addAccountMenuImportSubtitle,
-                  colors: colors,
-                  text: text,
                 ),
               ),
             ],
@@ -151,33 +128,24 @@ class _AddAccountMenuScreenState extends ConsumerState<AddAccountMenuScreen> {
 }
 
 class _AccountOptionCard extends StatelessWidget {
-  const _AccountOptionCard({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.onTap,
-    required this.colors,
-    required this.text,
-  });
+  const _AccountOptionCard({required this.icon, required this.title, required this.subtitle, required this.onTap});
 
   final IconData icon;
   final String title;
   final String subtitle;
   final VoidCallback onTap;
-  final AppColorsV2 colors;
-  final AppTextTheme text;
 
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: colors.surfaceDeep,
-      borderRadius: BorderRadius.circular(14),
+      color: context.colorsV3.bgSurface,
+      borderRadius: context.radiusV3.mdBorder,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: context.radiusV3.mdBorder,
         child: Padding(
           padding: const EdgeInsets.all(16),
-          child: _AccountOptionRowContent(icon: icon, title: title, subtitle: subtitle, colors: colors, text: text),
+          child: _AccountOptionRowContent(icon: icon, title: title, subtitle: subtitle),
         ),
       ),
     );
@@ -185,68 +153,57 @@ class _AccountOptionCard extends StatelessWidget {
 }
 
 class _AccountOptionRowContent extends StatelessWidget {
-  const _AccountOptionRowContent({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.colors,
-    required this.text,
-  });
+  const _AccountOptionRowContent({required this.icon, required this.title, required this.subtitle});
 
   final IconData icon;
   final String title;
   final String subtitle;
-  final AppColorsV2 colors;
-  final AppTextTheme text;
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
+
     return Row(
       children: [
         Container(
           width: 40,
           height: 40,
-          decoration: BoxDecoration(color: colors.sheetBackground, shape: BoxShape.circle),
-          child: Center(child: Icon(icon, size: 16, color: colors.accentOrange)),
+          decoration: BoxDecoration(color: colors.bgSurface2, shape: BoxShape.circle),
+          child: Center(child: Icon(icon, size: 16, color: colors.accentFlare)),
         ),
         const SizedBox(width: 12),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(title, style: text.paragraph?.copyWith(fontSize: 18, color: colors.textPrimary)),
+              Text(title, style: text.bodyLarge.copyWith(color: colors.textContent)),
               const SizedBox(height: 4),
-              Text(subtitle, style: text.detail?.copyWith(color: colors.textMuted)),
+              Text(subtitle, style: text.caption.copyWith(color: colors.textMuted)),
             ],
           ),
         ),
-        Icon(Icons.chevron_right, size: 20, color: colors.textMuted),
+        QuantusIcon(QuantusIcons.chevronRight, color: colors.textMuted),
       ],
     );
   }
 }
 
 class _AdvancedSection extends StatelessWidget {
-  const _AdvancedSection({
-    required this.title,
-    required this.expanded,
-    required this.onToggle,
-    required this.colors,
-    required this.text,
-    required this.children,
-  });
+  const _AdvancedSection({required this.title, required this.expanded, required this.onToggle, required this.children});
 
   final String title;
   final bool expanded;
   final VoidCallback onToggle;
-  final AppColorsV2 colors;
-  final AppTextTheme text;
   final List<Widget> children;
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
+
     return Container(
-      decoration: BoxDecoration(color: colors.surfaceDeep, borderRadius: BorderRadius.circular(14)),
+      decoration: BoxDecoration(color: colors.bgSurface, borderRadius: context.radiusV3.mdBorder),
       padding: const EdgeInsets.all(16),
       child: Column(
         children: [
@@ -256,11 +213,11 @@ class _AdvancedSection extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(title, style: text.paragraph?.copyWith(fontSize: 18, color: colors.textPrimary)),
+                Text(title, style: text.titleScreen.copyWith(color: colors.textContent)),
                 AnimatedRotation(
                   turns: expanded ? 0.5 : 0,
                   duration: const Duration(milliseconds: 200),
-                  child: Icon(Icons.keyboard_arrow_down, size: 20, color: colors.textMuted),
+                  child: QuantusIcon(QuantusIcons.caretDown, color: colors.textMuted),
                 ),
               ],
             ),
@@ -272,10 +229,7 @@ class _AdvancedSection extends StatelessWidget {
             child: expanded
                 ? Column(
                     children: [
-                      Padding(
-                        padding: const EdgeInsets.only(top: 16),
-                        child: Divider(color: colors.separator, height: 1),
-                      ),
+                      const Padding(padding: EdgeInsets.only(top: 16), child: MenuDivider()),
                       const SizedBox(height: 16),
                       ...children,
                     ],
