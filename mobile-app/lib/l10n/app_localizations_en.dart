@@ -132,6 +132,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get homeBackupReminder => 'Back up your recovery phrase';
 
   @override
+  String get networkStatusOfflineBanner => 'Offline · showing last known balances';
+
+  @override
   String get homeReceive => 'Receive';
 
   @override

@@ -127,7 +127,7 @@ class _ReceiveScreenState extends ConsumerState<ReceiveScreen> {
               label: l10n.receiveCopy,
               onTap: () => _copyAddress(context),
               isDisabled: isLoading,
-              icon: Icon(Icons.copy, size: 20, color: context.colors.textPrimary),
+              icon: Icon(Icons.copy, size: 20, color: context.colorsV3.textContent),
               iconPlacement: IconPlacement.leading,
               variant: ButtonVariant.secondary,
             ),
@@ -154,6 +154,9 @@ class QrCodeTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
+
     return Expanded(
       child: Column(
         children: [
@@ -161,17 +164,13 @@ class QrCodeTab extends StatelessWidget {
           const SizedBox(height: 12),
           Text(
             checksum,
-            style: context.themeText.paragraph?.copyWith(color: context.colors.checksum),
+            style: text.headingRow.copyWith(color: colors.semanticLilac),
             textAlign: TextAlign.center,
           ),
-
           const SizedBox(height: 8),
           Text(
             accountId,
-            style: context.themeText.smallParagraph?.copyWith(
-              color: context.colors.textPrimary,
-              fontWeight: FontWeight.w500,
-            ),
+            style: text.dataAddressLarge.copyWith(color: colors.textContent),
             textAlign: TextAlign.center,
           ),
         ],

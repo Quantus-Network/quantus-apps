@@ -173,6 +173,10 @@
     "@homeBackupReminder": {
       "description": "Home banner prompting the user to back up their recovery phrase"
     },
+    "networkStatusOfflineBanner": "Offline · showing last known balances",
+    "@networkStatusOfflineBanner": {
+      "description": "Full-width strip shown when the device is offline; rendered uppercase"
+    },
     "homeReceive": "Receive",
     "@homeReceive": {
       "description": "Receive action button on the home screen"

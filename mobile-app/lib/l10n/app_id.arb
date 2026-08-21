@@ -38,6 +38,7 @@
   "homeGetTestnetTokens": "Dapatkan Token Testnet ↗",
   "homeErrorLoadingBalance": "Gagal memuat saldo",
   "homeBackupReminder": "Cadangkan recovery phrase Anda",
+  "networkStatusOfflineBanner": "Offline · menampilkan saldo terakhir",
   "homeReceive": "Terima",
   "homeSend": "Kirim",
   "homeSwap": "Tukar",

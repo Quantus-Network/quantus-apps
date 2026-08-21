@@ -133,6 +133,9 @@ class AppLocalizationsId extends AppLocalizations {
   String get homeBackupReminder => 'Cadangkan recovery phrase Anda';
 
   @override
+  String get networkStatusOfflineBanner => 'Offline · menampilkan saldo terakhir';
+
+  @override
   String get homeReceive => 'Terima';
 
   @override

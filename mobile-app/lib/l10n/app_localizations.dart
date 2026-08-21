@@ -326,6 +326,12 @@ abstract class AppLocalizations {
   /// **'Back up your recovery phrase'**
   String get homeBackupReminder;
 
+  /// Full-width strip shown when the device is offline; rendered uppercase
+  ///
+  /// In en, this message translates to:
+  /// **'Offline · showing last known balances'**
+  String get networkStatusOfflineBanner;
+
   /// Receive action button on the home screen
   ///
   /// In en, this message translates to:
