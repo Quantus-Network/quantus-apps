@@ -25,7 +25,6 @@ import 'package:quantus_sdk/generated/planck/types/frame_support/dispatch/raw_or
 import 'package:quantus_sdk/generated/planck/types/frame_support/traits/preimages/bounded.dart' as bounded;
 import 'package:quantus_sdk/generated/planck/types/frame_support/traits/schedule/dispatch_time.dart' as dispatch_time;
 import 'package:quantus_sdk/generated/planck/types/frame_system/pallet/call.dart' as system;
-import 'package:quantus_sdk/generated/planck/types/pallet_assets/pallet/call.dart' as assets;
 import 'package:quantus_sdk/generated/planck/types/pallet_balances/pallet/call.dart' as balances;
 import 'package:quantus_sdk/generated/planck/types/pallet_multisig/pallet/call.dart' as multisig;
 import 'package:quantus_sdk/generated/planck/types/pallet_preimage/pallet/call.dart' as preimage;
@@ -64,7 +63,6 @@ class CallDecoder {
     return switch (call) {
       runtime.Balances(:final value0) => _balances(value0),
       runtime.ReversibleTransfers(:final value0) => _reversible(value0),
-      runtime.Assets(:final value0) => _assets(value0),
       runtime.Multisig(:final value0) => _multisig(value0),
       runtime.Preimage(:final value0) => _preimage(value0),
       runtime.TechCollective(:final value0) => _collective(value0),
@@ -181,40 +179,6 @@ class CallDecoder {
           fields: [destination, value, _delayField('Reversible for', delay)],
           summary: _transferSummary(destination, value, reversible: true),
         );
-      case reversible.ScheduleAssetTransfer(:final assetId, :final dest, :final amount):
-        final destination = _addressField('Destination', dest);
-        final value = AmountField('Amount', amount, assetId: assetId);
-        return DecodedCall(
-          pallet: 'ReversibleTransfers',
-          call: 'schedule_asset_transfer',
-          fields: [
-            ValueField('Asset id', '$assetId', kind: ValueKind.number),
-            destination,
-            value,
-            _defaultWindowField,
-          ],
-          summary: _transferSummary(destination, value, reversible: true),
-        );
-      case reversible.ScheduleAssetTransferWithDelay(:final assetId, :final dest, :final amount, :final delay):
-        final destination = _addressField('Destination', dest);
-        final value = AmountField('Amount', amount, assetId: assetId);
-        return DecodedCall(
-          pallet: 'ReversibleTransfers',
-          call: 'schedule_asset_transfer_with_delay',
-          fields: [
-            ValueField('Asset id', '$assetId', kind: ValueKind.number),
-            destination,
-            value,
-            _delayField('Reversible for', delay),
-          ],
-          summary: _transferSummary(destination, value, reversible: true),
-        );
-      case reversible.SetHighSecurity(:final delay, :final guardian):
-        return DecodedCall(
-          pallet: 'ReversibleTransfers',
-          call: 'set_high_security',
-          fields: [_delayField('Reversible for', delay), _accountField('Guardian', guardian)],
-        );
       case reversible.Cancel(:final txId):
         return DecodedCall(pallet: 'ReversibleTransfers', call: 'cancel', fields: [_hashField('Transaction id', txId)]);
       case reversible.ExecuteTransfer(:final txId):
@@ -232,97 +196,6 @@ class CallDecoder {
       default:
         return _generic(runtime.ReversibleTransfers(call));
     }
-  }
-
-  // ------------------------------------------------------------------ Assets
-
-  static DecodedCall _assets(assets.Call call) {
-    switch (call) {
-      case assets.Transfer(:final id, :final target, :final amount):
-        return _assetTransfer('transfer', id, target, amount);
-      case assets.TransferKeepAlive(:final id, :final target, :final amount):
-        return _assetTransfer('transfer_keep_alive', id, target, amount);
-      case assets.TransferAll(:final id, :final dest, :final keepAlive):
-        return DecodedCall(
-          pallet: 'Assets',
-          call: 'transfer_all',
-          fields: [
-            _assetIdField(id),
-            _addressField('Destination', dest),
-            const ValueField('Amount', 'Entire asset balance', kind: ValueKind.text),
-            _boolField('Keep account alive', keepAlive),
-          ],
-        );
-      case assets.Mint(:final id, :final beneficiary, :final amount):
-        return DecodedCall(
-          pallet: 'Assets',
-          call: 'mint',
-          fields: [
-            _assetIdField(id),
-            _addressField('Beneficiary', beneficiary),
-            AmountField('Amount', amount, assetId: id.toInt()),
-          ],
-        );
-      case assets.Burn(:final id, :final who, :final amount):
-        return DecodedCall(
-          pallet: 'Assets',
-          call: 'burn',
-          fields: [
-            _assetIdField(id),
-            _addressField('Account', who),
-            AmountField('Amount', amount, assetId: id.toInt()),
-          ],
-        );
-      case assets.Freeze(:final id, :final who):
-        return DecodedCall(
-          pallet: 'Assets',
-          call: 'freeze',
-          fields: [_assetIdField(id), _addressField('Account', who)],
-        );
-      case assets.Thaw(:final id, :final who):
-        return DecodedCall(pallet: 'Assets', call: 'thaw', fields: [_assetIdField(id), _addressField('Account', who)]);
-      case assets.SetTeam(:final id, :final issuer, :final admin, :final freezer):
-        return DecodedCall(
-          pallet: 'Assets',
-          call: 'set_team',
-          fields: [
-            _assetIdField(id),
-            _addressField('Issuer', issuer),
-            _addressField('Admin', admin),
-            _addressField('Freezer', freezer),
-          ],
-        );
-      case assets.TransferOwnership(:final id, :final owner):
-        return DecodedCall(
-          pallet: 'Assets',
-          call: 'transfer_ownership',
-          fields: [_assetIdField(id), _addressField('New owner', owner)],
-        );
-      case assets.SetMetadata(:final id, :final name, :final symbol, :final decimals):
-        return DecodedCall(
-          pallet: 'Assets',
-          call: 'set_metadata',
-          fields: [
-            _assetIdField(id),
-            ValueField('Name', _utf8OrHex(name), kind: ValueKind.text),
-            ValueField('Symbol', _utf8OrHex(symbol), kind: ValueKind.text),
-            ValueField('Decimals', '$decimals', kind: ValueKind.number),
-          ],
-        );
-      default:
-        return _generic(runtime.Assets(call));
-    }
-  }
-
-  static DecodedCall _assetTransfer(String name, BigInt id, multi_address.MultiAddress target, BigInt amount) {
-    final destination = _addressField('Destination', target);
-    final value = AmountField('Amount', amount, assetId: id.toInt());
-    return DecodedCall(
-      pallet: 'Assets',
-      call: name,
-      fields: [_assetIdField(id), destination, value],
-      summary: _transferSummary(destination, value),
-    );
   }
 
   // ---------------------------------------------------------------- Multisig
@@ -885,8 +758,6 @@ class CallDecoder {
 
   static ValueField _boolField(String label, bool value) =>
       ValueField(label, value ? 'Yes' : 'No', kind: ValueKind.boolean);
-
-  static ValueField _assetIdField(BigInt id) => ValueField('Asset id', '$id', kind: ValueKind.number);
 
   /// `qp_scheduler::BlockNumberOrTimestamp<u32, u64>`.
   static ValueField _delayField(String label, dynamic delay) {

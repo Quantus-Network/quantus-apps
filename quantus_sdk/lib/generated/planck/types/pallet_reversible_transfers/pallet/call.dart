@@ -61,23 +61,6 @@ class $Call {
     return ScheduleTransferWithDelay(dest: dest, amount: amount, delay: delay);
   }
 
-  ScheduleAssetTransfer scheduleAssetTransfer({
-    required int assetId,
-    required _i6.MultiAddress dest,
-    required BigInt amount,
-  }) {
-    return ScheduleAssetTransfer(assetId: assetId, dest: dest, amount: amount);
-  }
-
-  ScheduleAssetTransferWithDelay scheduleAssetTransferWithDelay({
-    required int assetId,
-    required _i6.MultiAddress dest,
-    required BigInt amount,
-    required _i3.BlockNumberOrTimestamp delay,
-  }) {
-    return ScheduleAssetTransferWithDelay(assetId: assetId, dest: dest, amount: amount, delay: delay);
-  }
-
   RecoverFunds recoverFunds({required _i4.AccountId32 account}) {
     return RecoverFunds(account: account);
   }
@@ -100,10 +83,6 @@ class $CallCodec with _i1.Codec<Call> {
         return ScheduleTransfer._decode(input);
       case 4:
         return ScheduleTransferWithDelay._decode(input);
-      case 5:
-        return ScheduleAssetTransfer._decode(input);
-      case 6:
-        return ScheduleAssetTransferWithDelay._decode(input);
       case 7:
         return RecoverFunds._decode(input);
       default:
@@ -129,12 +108,6 @@ class $CallCodec with _i1.Codec<Call> {
       case ScheduleTransferWithDelay:
         (value as ScheduleTransferWithDelay).encodeTo(output);
         break;
-      case ScheduleAssetTransfer:
-        (value as ScheduleAssetTransfer).encodeTo(output);
-        break;
-      case ScheduleAssetTransferWithDelay:
-        (value as ScheduleAssetTransferWithDelay).encodeTo(output);
-        break;
       case RecoverFunds:
         (value as RecoverFunds).encodeTo(output);
         break;
@@ -156,10 +129,6 @@ class $CallCodec with _i1.Codec<Call> {
         return (value as ScheduleTransfer)._sizeHint();
       case ScheduleTransferWithDelay:
         return (value as ScheduleTransferWithDelay)._sizeHint();
-      case ScheduleAssetTransfer:
-        return (value as ScheduleAssetTransfer)._sizeHint();
-      case ScheduleAssetTransferWithDelay:
-        return (value as ScheduleAssetTransferWithDelay)._sizeHint();
       case RecoverFunds:
         return (value as RecoverFunds)._sizeHint();
       default:
@@ -182,8 +151,6 @@ class $CallCodec with _i1.Codec<Call> {
 /// to only the following operations:
 /// - [`schedule_transfer`](Self::schedule_transfer) - Schedule delayed native token
 ///  transfers
-/// - [`schedule_asset_transfer`](Self::schedule_asset_transfer) - Schedule delayed asset
-///  transfers
 /// - [`cancel`](Self::cancel) - Cancel pending transfers
 /// - [`recover_funds`](Self::recover_funds) - Guardian-initiated emergency fund recovery
 ///
@@ -198,8 +165,7 @@ class $CallCodec with _i1.Codec<Call> {
 /// repeatedly as needed.
 ///
 /// Users who no longer wish to use high-security features can simply transfer their
-/// funds to a different account using [`schedule_transfer`](Self::schedule_transfer)
-/// or [`schedule_asset_transfer`](Self::schedule_asset_transfer).
+/// funds to a different account using [`schedule_transfer`](Self::schedule_transfer).
 ///
 /// # Parameters
 ///
@@ -430,133 +396,21 @@ class ScheduleTransferWithDelay extends Call {
   int get hashCode => Object.hash(dest, amount, delay);
 }
 
-/// Schedule an asset transfer (pallet-assets) for delayed execution using the configured
-/// delay.
-class ScheduleAssetTransfer extends Call {
-  const ScheduleAssetTransfer({required this.assetId, required this.dest, required this.amount});
-
-  factory ScheduleAssetTransfer._decode(_i1.Input input) {
-    return ScheduleAssetTransfer(
-      assetId: _i1.U32Codec.codec.decode(input),
-      dest: _i6.MultiAddress.codec.decode(input),
-      amount: _i1.U128Codec.codec.decode(input),
-    );
-  }
-
-  /// AssetIdOf<T>
-  final int assetId;
-
-  /// <<T as frame_system::Config>::Lookup as StaticLookup>::Source
-  final _i6.MultiAddress dest;
-
-  /// BalanceOf<T>
-  final BigInt amount;
-
-  @override
-  Map<String, Map<String, dynamic>> toJson() => {
-    'schedule_asset_transfer': {'assetId': assetId, 'dest': dest.toJson(), 'amount': amount},
-  };
-
-  int _sizeHint() {
-    int size = 1;
-    size = size + _i1.U32Codec.codec.sizeHint(assetId);
-    size = size + _i6.MultiAddress.codec.sizeHint(dest);
-    size = size + _i1.U128Codec.codec.sizeHint(amount);
-    return size;
-  }
-
-  void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(5, output);
-    _i1.U32Codec.codec.encodeTo(assetId, output);
-    _i6.MultiAddress.codec.encodeTo(dest, output);
-    _i1.U128Codec.codec.encodeTo(amount, output);
-  }
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is ScheduleAssetTransfer && other.assetId == assetId && other.dest == dest && other.amount == amount;
-
-  @override
-  int get hashCode => Object.hash(assetId, dest, amount);
-}
-
-/// Schedule an asset transfer (pallet-assets) with a custom one-time delay.
-class ScheduleAssetTransferWithDelay extends Call {
-  const ScheduleAssetTransferWithDelay({
-    required this.assetId,
-    required this.dest,
-    required this.amount,
-    required this.delay,
-  });
-
-  factory ScheduleAssetTransferWithDelay._decode(_i1.Input input) {
-    return ScheduleAssetTransferWithDelay(
-      assetId: _i1.U32Codec.codec.decode(input),
-      dest: _i6.MultiAddress.codec.decode(input),
-      amount: _i1.U128Codec.codec.decode(input),
-      delay: _i3.BlockNumberOrTimestamp.codec.decode(input),
-    );
-  }
-
-  /// AssetIdOf<T>
-  final int assetId;
-
-  /// <<T as frame_system::Config>::Lookup as StaticLookup>::Source
-  final _i6.MultiAddress dest;
-
-  /// BalanceOf<T>
-  final BigInt amount;
-
-  /// BlockNumberOrTimestampOf<T>
-  final _i3.BlockNumberOrTimestamp delay;
-
-  @override
-  Map<String, Map<String, dynamic>> toJson() => {
-    'schedule_asset_transfer_with_delay': {
-      'assetId': assetId,
-      'dest': dest.toJson(),
-      'amount': amount,
-      'delay': delay.toJson(),
-    },
-  };
-
-  int _sizeHint() {
-    int size = 1;
-    size = size + _i1.U32Codec.codec.sizeHint(assetId);
-    size = size + _i6.MultiAddress.codec.sizeHint(dest);
-    size = size + _i1.U128Codec.codec.sizeHint(amount);
-    size = size + _i3.BlockNumberOrTimestamp.codec.sizeHint(delay);
-    return size;
-  }
-
-  void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(6, output);
-    _i1.U32Codec.codec.encodeTo(assetId, output);
-    _i6.MultiAddress.codec.encodeTo(dest, output);
-    _i1.U128Codec.codec.encodeTo(amount, output);
-    _i3.BlockNumberOrTimestamp.codec.encodeTo(delay, output);
-  }
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is ScheduleAssetTransferWithDelay &&
-          other.assetId == assetId &&
-          other.dest == dest &&
-          other.amount == amount &&
-          other.delay == delay;
-
-  @override
-  int get hashCode => Object.hash(assetId, dest, amount, delay);
-}
-
 /// Allows the guardian to recover all funds from a high-security account
 /// by transferring the entire balance to themselves.
 ///
 /// This is an emergency function for when the high-security account may be compromised.
 /// It cancels all pending transfers first (applying volume fees), then transfers
 /// the remaining free balance to the guardian.
+///
+/// # Cancel vs recovery authority
+///
+/// Per-transfer `cancel` freezes authority in `pending.guardian` at schedule time
+/// (so a later `set_high_security` cannot rewrite cancel rights on pre-enrollment
+/// one-time transfers). `recover_funds` does **not** use that freeze: it authorizes
+/// against the *live* high-security guardian and seizes every pending hold on the
+/// account (volume fee applied). That asymmetry is intentional — recovery is
+/// seize-the-account, not a batch of frozen cancel policies.
 ///
 /// # Repeated Recovery
 ///
@@ -570,6 +424,13 @@ class ScheduleAssetTransferWithDelay extends Call {
 /// If releasing held funds fails for any transfer, that transfer is skipped (metadata
 /// preserved for manual retry via `cancel`) and a `TransferRecoveryFailed` event is
 /// emitted. Other transfers continue to be processed.
+///
+/// The closing free-balance sweep to the guardian is likewise best-effort: if it
+/// fails (e.g. the guardian cannot receive the funds), the call still succeeds and
+/// all cancellations performed above remain in effect — they must not be rolled
+/// back, or the pending transfers would be re-armed and execute at their scheduled
+/// time. A `RecoverySweepFailed` event is emitted instead of `FundsRecovered`, and
+/// the guardian can call `recover_funds` again to retry the sweep.
 class RecoverFunds extends Call {
   const RecoverFunds({required this.account});
 

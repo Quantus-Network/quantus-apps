@@ -284,11 +284,7 @@ class MinerRewardRedirected extends Event {
   int get hashCode => Object.hash(miner, reward);
 }
 
-/// Treasury mint failed - reward was not issued.
-///
-/// This is a critical operational signal. If this event is observed, it indicates
-/// either a misconfigured treasury account or a currency invariant violation.
-/// The reward amount was permanently lost (not minted).
+/// Treasury mint failed; amount retained in [`CollectedFees`] for retry.
 class TreasuryMintFailed extends Event {
   const TreasuryMintFailed({required this.reward});
 

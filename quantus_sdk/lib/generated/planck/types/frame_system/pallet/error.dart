@@ -34,7 +34,10 @@ enum Error {
   nothingAuthorized('NothingAuthorized', 7),
 
   /// The submitted code is not authorized.
-  unauthorized('Unauthorized', 8);
+  unauthorized('Unauthorized', 8),
+
+  /// The provided number of heap pages is outside the supported range of `64..=65536`.
+  invalidHeapPages('InvalidHeapPages', 9);
 
   const Error(this.variantName, this.codecIndex);
 
@@ -80,6 +83,8 @@ class $ErrorCodec with _i1.Codec<Error> {
         return Error.nothingAuthorized;
       case 8:
         return Error.unauthorized;
+      case 9:
+        return Error.invalidHeapPages;
       default:
         throw Exception('Error: Invalid variant index: "$index"');
     }

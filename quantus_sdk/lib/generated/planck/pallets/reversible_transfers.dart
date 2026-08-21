@@ -236,8 +236,6 @@ class Txs {
   /// to only the following operations:
   /// - [`schedule_transfer`](Self::schedule_transfer) - Schedule delayed native token
   ///  transfers
-  /// - [`schedule_asset_transfer`](Self::schedule_asset_transfer) - Schedule delayed asset
-  ///  transfers
   /// - [`cancel`](Self::cancel) - Cancel pending transfers
   /// - [`recover_funds`](Self::recover_funds) - Guardian-initiated emergency fund recovery
   ///
@@ -252,8 +250,7 @@ class Txs {
   /// repeatedly as needed.
   ///
   /// Users who no longer wish to use high-security features can simply transfer their
-  /// funds to a different account using [`schedule_transfer`](Self::schedule_transfer)
-  /// or [`schedule_asset_transfer`](Self::schedule_asset_transfer).
+  /// funds to a different account using [`schedule_transfer`](Self::schedule_transfer).
   ///
   /// # Parameters
   ///
@@ -313,34 +310,21 @@ class Txs {
     return _i9.ReversibleTransfers(_i11.ScheduleTransferWithDelay(dest: dest, amount: amount, delay: delay));
   }
 
-  /// Schedule an asset transfer (pallet-assets) for delayed execution using the configured
-  /// delay.
-  _i9.ReversibleTransfers scheduleAssetTransfer({
-    required int assetId,
-    required _i12.MultiAddress dest,
-    required BigInt amount,
-  }) {
-    return _i9.ReversibleTransfers(_i11.ScheduleAssetTransfer(assetId: assetId, dest: dest, amount: amount));
-  }
-
-  /// Schedule an asset transfer (pallet-assets) with a custom one-time delay.
-  _i9.ReversibleTransfers scheduleAssetTransferWithDelay({
-    required int assetId,
-    required _i12.MultiAddress dest,
-    required BigInt amount,
-    required _i10.BlockNumberOrTimestamp delay,
-  }) {
-    return _i9.ReversibleTransfers(
-      _i11.ScheduleAssetTransferWithDelay(assetId: assetId, dest: dest, amount: amount, delay: delay),
-    );
-  }
-
   /// Allows the guardian to recover all funds from a high-security account
   /// by transferring the entire balance to themselves.
   ///
   /// This is an emergency function for when the high-security account may be compromised.
   /// It cancels all pending transfers first (applying volume fees), then transfers
   /// the remaining free balance to the guardian.
+  ///
+  /// # Cancel vs recovery authority
+  ///
+  /// Per-transfer `cancel` freezes authority in `pending.guardian` at schedule time
+  /// (so a later `set_high_security` cannot rewrite cancel rights on pre-enrollment
+  /// one-time transfers). `recover_funds` does **not** use that freeze: it authorizes
+  /// against the *live* high-security guardian and seizes every pending hold on the
+  /// account (volume fee applied). That asymmetry is intentional — recovery is
+  /// seize-the-account, not a batch of frozen cancel policies.
   ///
   /// # Repeated Recovery
   ///
@@ -354,6 +338,13 @@ class Txs {
   /// If releasing held funds fails for any transfer, that transfer is skipped (metadata
   /// preserved for manual retry via `cancel`) and a `TransferRecoveryFailed` event is
   /// emitted. Other transfers continue to be processed.
+  ///
+  /// The closing free-balance sweep to the guardian is likewise best-effort: if it
+  /// fails (e.g. the guardian cannot receive the funds), the call still succeeds and
+  /// all cancellations performed above remain in effect — they must not be rolled
+  /// back, or the pending transfers would be re-armed and execute at their scheduled
+  /// time. A `RecoverySweepFailed` event is emitted instead of `FundsRecovered`, and
+  /// the guardian can call `recover_funds` again to retry the sweep.
   _i9.ReversibleTransfers recoverFunds({required _i2.AccountId32 account}) {
     return _i9.ReversibleTransfers(_i11.RecoverFunds(account: account));
   }
