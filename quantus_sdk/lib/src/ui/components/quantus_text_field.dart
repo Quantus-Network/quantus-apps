@@ -138,53 +138,63 @@ class _QuantusTextFieldState extends State<QuantusTextField> {
     final textStyle = context.themeTextV3.dataAddressLarge.copyWith(color: colors.textContent);
     final hintStyle = context.themeTextV3.dataAddressLarge.copyWith(color: colors.textMuted);
     final showClear = widget.showClearButton && widget.controller.text.isNotEmpty;
+    final hasExtraContent = showClear || widget.trailing != null;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Container(
-          width: double.infinity,
-          height: widget.height,
-          constraints: widget.height == null ? const BoxConstraints(minHeight: 48) : null,
-          padding: const EdgeInsets.symmetric(horizontal: 14),
-          decoration: BoxDecoration(
-            color: colors.bgSurface,
-            borderRadius: context.radiusV3.mdBorder,
-            border: Border.all(color: _borderColor(colors), width: 1),
-          ),
-          child: Row(
-            crossAxisAlignment: _isMultiline ? CrossAxisAlignment.start : CrossAxisAlignment.center,
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: widget.controller,
-                  focusNode: _focusNode,
-                  enabled: widget.enabled,
-                  obscureText: widget.obscureText,
-                  enableSuggestions: widget.enableSuggestions,
-                  keyboardType: widget.keyboardType,
-                  textInputAction: widget.textInputAction,
-                  textCapitalization: widget.textCapitalization,
-                  autocorrect: widget.autocorrect,
-                  maxLines: widget.maxLines,
-                  minLines: widget.minLines,
-                  expands: widget.expands,
-                  onChanged: widget.onChanged,
-                  onSubmitted: widget.onSubmitted,
-                  cursorColor: colors.accentFlare,
-                  style: textStyle,
-                  decoration: InputDecoration.collapsed(hintText: widget.hint, hintStyle: hintStyle),
+        Stack(
+          children: [
+            Container(
+              width: double.infinity,
+              height: widget.height,
+              constraints: widget.height == null ? const BoxConstraints(minHeight: 48) : null,
+              padding: EdgeInsets.only(left: 14, right: hasExtraContent ? 40 : 14, top: 14, bottom: 14),
+              decoration: BoxDecoration(
+                color: colors.bgSurface,
+                borderRadius: context.radiusV3.mdBorder,
+                border: Border.all(color: _borderColor(colors), width: 1),
+              ),
+              child: Row(
+                crossAxisAlignment: _isMultiline ? CrossAxisAlignment.start : CrossAxisAlignment.center,
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: widget.controller,
+                      focusNode: _focusNode,
+                      enabled: widget.enabled,
+                      obscureText: widget.obscureText,
+                      enableSuggestions: widget.enableSuggestions,
+                      keyboardType: widget.keyboardType,
+                      textInputAction: widget.textInputAction,
+                      textCapitalization: widget.textCapitalization,
+                      autocorrect: widget.autocorrect,
+                      maxLines: widget.maxLines,
+                      minLines: widget.minLines,
+                      expands: widget.expands,
+                      onChanged: widget.onChanged,
+                      onSubmitted: widget.onSubmitted,
+                      cursorColor: colors.accentFlare,
+                      style: textStyle,
+                      decoration: InputDecoration.collapsed(hintText: widget.hint, hintStyle: hintStyle),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (hasExtraContent)
+              Positioned(
+                right: 4,
+                top: 0,
+                bottom: 0,
+                child: Center(
+                  child: showClear ? _QuantusTextFieldClearButton(onTap: widget.controller.clear) : widget.trailing!,
                 ),
               ),
-              if (showClear) ...[
-                const SizedBox(width: 8),
-                _QuantusTextFieldClearButton(onTap: widget.controller.clear),
-              ],
-              if (widget.trailing != null) ...[const SizedBox(width: 8), widget.trailing!],
-            ],
-          ),
+          ],
         ),
+
         if (widget.error != null) ...[
           const SizedBox(height: 8),
           Text(widget.error!, style: context.themeTextV3.caption.copyWith(color: colors.semanticEmber)),
@@ -204,19 +214,22 @@ class _QuantusTextFieldClearButton extends StatelessWidget {
     final colors = context.colorsV3;
     const size = 20.0;
 
-    return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: Container(
-        width: size,
-        height: size,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: colors.textMuted,
-          border: Border.all(color: colors.borderHairline, width: 0.5),
-          borderRadius: BorderRadius.circular(16),
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: GestureDetector(
+        onTap: onTap,
+        behavior: HitTestBehavior.opaque,
+        child: Container(
+          width: size,
+          height: size,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: colors.textMuted,
+            border: Border.all(color: colors.borderHairline, width: 0.5),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Icon(Icons.close, size: 12, color: colors.textVoid),
         ),
-        child: Icon(Icons.close, size: 12, color: colors.textVoid),
       ),
     );
   }

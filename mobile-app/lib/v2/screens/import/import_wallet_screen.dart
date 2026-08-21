@@ -187,14 +187,9 @@ class _ImportWalletScreenV2State extends ConsumerState<ImportWalletScreenV2> {
                 autocorrect: false,
                 enableSuggestions: false,
                 onChanged: (_) => setState(() {}),
-                trailing: GestureDetector(
+                trailing: QuantusIconButton.ghost(
                   onTap: () => setState(() => _controller.obscured = !_controller.obscured),
-                  behavior: HitTestBehavior.opaque,
-                  child: Icon(
-                    _controller.obscured ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-                    size: 22,
-                    color: colors.textMuted,
-                  ),
+                  icon: _controller.obscured ? Icons.visibility_off_outlined : Icons.visibility_outlined,
                 ),
               ),
             ],

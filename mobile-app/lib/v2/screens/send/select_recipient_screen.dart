@@ -282,13 +282,7 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
       hasValid: hasValid,
       recipientChecksum: _recipientChecksum,
       hintText: l10n.sendSelectRecipientSearchHint(AppConstants.tokenSymbol),
-      trailing: IconButton(
-        onPressed: _pasteRecipient,
-        icon: Icon(Icons.paste, size: 20, color: colors.textContent),
-        padding: EdgeInsets.zero,
-        visualDensity: VisualDensity.compact,
-        constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
-      ),
+      trailing: QuantusIconButton.ghost(onTap: _pasteRecipient, icon: Icons.paste),
     );
   }
 
