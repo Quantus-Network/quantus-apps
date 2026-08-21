@@ -59,15 +59,15 @@ class _RecoveryPhraseBodyState extends ConsumerState<RecoveryPhraseBody> {
   @override
   Widget build(BuildContext context) {
     final l10n = ref.watch(l10nProvider);
-    final colors = context.colors;
-    final text = context.themeText;
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
 
     return ScaffoldBase(
       appBar: V2AppBar(title: widget.appBarTitle),
       mainContent: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(l10n.recoveryPhraseBodyInstructions, style: text.smallParagraph?.copyWith(color: colors.textTertiary)),
+          Text(l10n.recoveryPhraseBodyInstructions, style: text.body.copyWith(color: colors.textMuted)),
           const SizedBox(height: 24),
           Expanded(
             child: widget.isGridLoading
@@ -76,11 +76,11 @@ class _RecoveryPhraseBodyState extends ConsumerState<RecoveryPhraseBody> {
           ),
         ],
       ),
-      bottomContent: _bottomBar(l10n, colors),
+      bottomContent: _bottomBar(l10n),
     );
   }
 
-  Widget _grid(AppLocalizations l10n, AppColorsV2 colors, AppTextTheme text) {
+  Widget _grid(AppLocalizations l10n, AppColorsV3 colors, AppTextThemeV3 text) {
     return GestureDetector(
       key: const Key(E2EKeys.recoveryPhraseRevealArea),
       onTap: _toggleRevealed,
@@ -92,7 +92,7 @@ class _RecoveryPhraseBodyState extends ConsumerState<RecoveryPhraseBody> {
             children: [
               MnemonicGrid(words: widget.words, isRevealed: _isRevealed),
               if (!_isRevealed)
-                _tapHint(Icons.visibility_outlined, l10n.recoveryPhraseBodyTapToReveal, colors.textPrimary, text),
+                _tapHint(Icons.visibility_outlined, l10n.recoveryPhraseBodyTapToReveal, colors.textContent, text),
             ],
           ),
           if (_isRevealed) ...[
@@ -100,7 +100,7 @@ class _RecoveryPhraseBodyState extends ConsumerState<RecoveryPhraseBody> {
             _tapHint(
               Icons.visibility_off_outlined,
               l10n.recoveryPhraseBodyTapToHide,
-              colors.textSecondary,
+              colors.textMuted,
               text,
               key: const Key(E2EKeys.recoveryPhraseRevealed),
             ),
@@ -110,32 +110,27 @@ class _RecoveryPhraseBodyState extends ConsumerState<RecoveryPhraseBody> {
     );
   }
 
-  Widget _tapHint(IconData icon, String label, Color color, AppTextTheme text, {Key? key}) {
+  Widget _tapHint(IconData icon, String label, Color color, AppTextThemeV3 text, {Key? key}) {
     return Row(
       key: key,
       mainAxisSize: MainAxisSize.min,
       children: [
         Icon(icon, size: 18, color: color),
         const SizedBox(width: 8),
-        Text(label, style: text.smallParagraph?.copyWith(color: color)),
+        Text(label, style: text.body.copyWith(color: color)),
       ],
     );
   }
 
-  Widget _bottomBar(AppLocalizations l10n, AppColorsV2 colors) {
-    const padding = EdgeInsets.symmetric(horizontal: 24, vertical: 12);
-
+  Widget _bottomBar(AppLocalizations l10n) {
     return ScaffoldBaseBottomContent(
       child: Row(
         children: [
           Expanded(
             child: QuantusButton.simple(
               label: l10n.recoveryPhraseBodyCopy,
-              icon: Icon(Icons.copy, color: colors.textPrimary, size: 14),
-              iconPlacement: IconPlacement.leading,
               onTap: _copyToClipboard,
-              variant: ButtonVariant.secondary,
-              padding: padding,
+              variant: ButtonVariant.staged,
             ),
           ),
           const SizedBox(width: 24),
@@ -146,7 +141,6 @@ class _RecoveryPhraseBodyState extends ConsumerState<RecoveryPhraseBody> {
               isLoading: widget.isPrimaryButtonLoading,
               onTap: widget.onPrimary,
               variant: ButtonVariant.primary,
-              padding: padding,
             ),
           ),
         ],
