@@ -31,7 +31,6 @@ import 'package:resonance_network_wallet/v2/screens/send/regular_send_strategy.d
 import 'package:resonance_network_wallet/v2/screens/send/select_recipient_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/send/send_strategy.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/settings_screen.dart';
-import 'package:resonance_network_wallet/v2/screens/pos/pos_amount_screen.dart';
 import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
@@ -263,27 +262,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget? _buildBottomContent(AppLocalizations l10n) {
-    final enablePos = ref.watch(posModeProvider);
     final balanceAsync = ref.watch(balanceProvider);
     final active = ref.watch(activeAccountProvider).value;
 
-    // Encrypted accounts show a persistent privacy notice instead of POS /
-    // faucet CTAs (Figma: Encrypted Account Home footer).
     if (isEncryptedAccount(active?.account)) {
       return ScaffoldBaseBottomContent(
         child: PrivateActivityNotice(
           title: l10n.createAccountEncryptedDefaultName,
           subtitle: l10n.privateSendSubtitle,
           showCard: true,
-        ),
-      );
-    }
-
-    if (enablePos) {
-      return ScaffoldBaseBottomContent(
-        child: QuantusButton.simple(
-          label: l10n.homeCharge,
-          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PosAmountScreen())),
         ),
       );
     }
