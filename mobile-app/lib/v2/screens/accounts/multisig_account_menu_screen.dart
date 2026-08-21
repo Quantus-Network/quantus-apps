@@ -21,8 +21,6 @@ class MultisigAccountMenuScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = ref.watch(l10nProvider);
-    final colors = context.colors;
-    final text = context.themeText;
 
     final accounts = ref.watch(multisigAccountsProvider);
     final account = accounts.value?.firstWhereOrNull((a) => a.accountId == initialAccount.accountId) ?? initialAccount;
@@ -33,16 +31,20 @@ class MultisigAccountMenuScreen extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const SizedBox(height: 8),
-          _ProfileHeader(account: account, colors: colors, text: text),
+          _ProfileHeader(account: account),
           const SizedBox(height: 80),
           _MenuRow(
             label: l10n.accountMenuAccountName,
             value: account.name,
             onTap: () => _openNameEditor(context, ref, account),
           ),
+          const SizedBox(height: 16),
           const MenuDivider(),
+          const SizedBox(height: 24),
           _MenuRow(label: l10n.accountMenuAddressDetails, onTap: () => _openAddressDetails(context, account)),
+          const SizedBox(height: 16),
           const MenuDivider(),
+          const SizedBox(height: 24),
           _MenuRow(
             label: l10n.multisigAccountMenuDetails,
             value: l10n.multisigThresholdOf(account.threshold, account.signers.length),
@@ -102,31 +104,22 @@ class MultisigAccountMenuScreen extends ConsumerWidget {
 }
 
 class _ProfileHeader extends StatelessWidget {
-  const _ProfileHeader({required this.account, required this.colors, required this.text});
+  const _ProfileHeader({required this.account});
 
   final MultisigAccount account;
-  final AppColorsV2 colors;
-  final AppTextTheme text;
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
+
     return Column(
       children: [
-        AccountBadge(
-          name: account.name,
-          isActive: true,
-          size: 96,
-          textStyle: text.largeTitle?.copyWith(
-            fontWeight: FontWeight.w500,
-            letterSpacing: -0.59,
-            height: 1,
-            fontFamily: AppTextTheme.fontFamilySecondary,
-          ),
-        ),
+        AccountBadge(name: account.name, isActive: true, size: 96, textStyle: text.titleHero),
         const SizedBox(height: 12),
         Text(
           account.name,
-          style: text.mediumTitle?.copyWith(fontWeight: FontWeight.w400, height: 1),
+          style: text.titleHero.copyWith(color: colors.textContent),
           textAlign: TextAlign.center,
         ),
       ],
@@ -143,30 +136,29 @@ class _MenuRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.colors;
-    final text = context.themeText;
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
 
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(child: Text(label, style: text.paragraph?.copyWith(fontSize: 18))),
-              Row(
-                children: [
-                  if (value != null) ...[
-                    Text(value!, style: text.smallParagraph?.copyWith(color: colors.textMuted)),
-                    const SizedBox(width: 4),
-                  ],
-                  Icon(Icons.chevron_right, size: 16, color: colors.textMuted),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(
+              child: Text(label, style: text.amountRow.copyWith(color: colors.textContent)),
+            ),
+            Row(
+              children: [
+                if (value != null) ...[
+                  Text(value!, style: text.body.copyWith(color: colors.textMuted)),
+                  const SizedBox(width: 4),
                 ],
-              ),
-            ],
-          ),
+                QuantusIcon(QuantusIcons.chevronRight, color: colors.textMuted),
+              ],
+            ),
+          ],
         ),
       ),
     );
