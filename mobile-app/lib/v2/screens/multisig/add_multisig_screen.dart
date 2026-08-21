@@ -377,16 +377,9 @@ class _SignersSection extends StatelessWidget {
               checksum: creatorChecksum,
               isYou: true,
               youLabel: l10n.multisigYouLabel,
-              colors: colors,
-              text: text,
             ),
           ...additionalSigners.map(
-            (address) => MultisigSignerListTile(
-              accountId: address,
-              onRemove: () => onRemoveSigner(address),
-              colors: colors,
-              text: text,
-            ),
+            (address) => MultisigSignerListTile(accountId: address, onRemove: () => onRemoveSigner(address)),
           ),
           const SizedBox(height: 16),
           Container(

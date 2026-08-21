@@ -244,8 +244,8 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
   Widget build(BuildContext context) {
     final l10n = ref.watch(l10nProvider);
     final strings = widget.strategy.strings(l10n);
-    final colors = context.colors;
-    final text = context.themeText;
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
     final balance = ref.watch(widget.strategy.spendableBalanceProvider);
     final displayBalance = ref.watch(widget.strategy.displayBalanceProvider);
     final sourceId = widget.strategy.sourceAccountId(ref) ?? '';
@@ -313,13 +313,13 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
     );
   }
 
-  Widget _recipientCard(AppColorsV2 colors, AppTextTheme text, SendStrings strings) {
+  Widget _recipientCard(AppColorsV3 colors, AppTextThemeV3 text, SendStrings strings) {
     final addr = widget.recipientAddress.trim();
     final shortAddr = AddressFormattingService.formatAddress(addr);
 
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
-      decoration: BoxDecoration(color: colors.surfaceDeep, borderRadius: BorderRadius.circular(14)),
+      decoration: BoxDecoration(color: colors.bgSurface, borderRadius: context.radiusV3.mdBorder),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -327,34 +327,24 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  strings.amountRecipientCardLabel,
-                  style: context.themeText.receiveLabel?.copyWith(color: colors.textLabel),
-                ),
+                Text(strings.amountRecipientCardLabel, style: text.labelData.copyWith(color: colors.textMuted)),
                 const SizedBox(height: 16),
                 if (_recipientChecksum != null) ...[
                   Text(
                     _recipientChecksum!,
-                    style: text.smallParagraph?.copyWith(color: colors.checksum, height: 1.2),
+                    style: text.body.copyWith(color: colors.semanticLilac),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 4),
                 ],
-                Text(
-                  shortAddr,
-                  style: text.detail?.copyWith(
-                    color: colors.textMuted,
-                    fontFamily: AppTextTheme.fontFamilySecondary,
-                    fontSize: 12,
-                  ),
-                ),
+                Text(shortAddr, style: text.dataAddress.copyWith(color: colors.textContent)),
               ],
             ),
           ),
           const SizedBox(width: 12),
           Material(
-            color: colors.background,
+            color: colors.bgVoid,
             shape: const CircleBorder(),
             child: InkWell(
               customBorder: const CircleBorder(),
@@ -365,9 +355,9 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  border: Border.all(color: colors.borderButton),
+                  border: Border.all(color: colors.borderHairline),
                 ),
-                child: Icon(Icons.edit_outlined, size: 18, color: colors.textPrimary),
+                child: Icon(Icons.edit_outlined, size: 18, color: colors.textContent),
               ),
             ),
           ),
@@ -376,7 +366,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
     );
   }
 
-  Widget _amountCenter(AppColorsV2 colors, AppTextTheme text) {
+  Widget _amountCenter(AppColorsV3 colors, AppTextThemeV3 text) {
     final isPayMode = widget.isPayMode;
     final isFlipped = isPayMode ? false : ref.watch(isCurrencyFlippedProvider);
     final selectedFiat = ref.watch(selectedFiatCurrencyProvider);
@@ -389,7 +379,9 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
       withTokenSymbol: false,
     );
 
-    final symbolStyle = text.transactionDetailAmountSymbol?.copyWith(color: colors.textPrimary);
+    final amountColor = _amount == BigInt.zero ? colors.textMuted2 : colors.textContent;
+    final amountStyle = text.displayCharge.copyWith(color: amountColor);
+    final symbolStyle = text.amountHero.copyWith(color: colors.textContent);
     final isPrefixFiat = isFlipped && selectedFiat.symbolPosition == SymbolPosition.prefix;
 
     final maxDecimals = isFlipped ? selectedFiat.decimals : null;
@@ -402,13 +394,11 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
         keyboardType: const TextInputType.numberWithOptions(decimal: true),
         textAlign: isPrefixFiat ? TextAlign.left : TextAlign.right,
         inputFormatters: [DecimalInputFilter(localeConfig: localeConfig, maxDecimalPlaces: maxDecimals)],
-        style: text.transactionDetailAmountPrimary?.copyWith(
-          color: _amount == BigInt.zero ? colors.textTertiary : colors.textPrimary,
-        ),
+        style: amountStyle,
         decoration: InputDecoration(
           isDense: true,
           hintText: '0',
-          hintStyle: text.transactionDetailAmountPrimary?.copyWith(color: colors.textTertiary),
+          hintStyle: text.displayCharge.copyWith(color: colors.textMuted2),
         ),
       ),
     );
@@ -439,13 +429,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text(
-                '≈ ${display.secondaryAmount}',
-                style: text.paragraph?.copyWith(
-                  color: colors.textTertiary,
-                  fontFamily: AppTextTheme.fontFamilySecondary,
-                ),
-              ),
+              Text('≈ ${display.secondaryAmount}', style: text.body.copyWith(color: colors.textMuted)),
               if (!isPayMode) ...[
                 const SizedBox(width: 8),
                 QuantusIconButton.circular(
@@ -463,8 +447,8 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
   }
 
   Widget _feeValue(
-    AppColorsV2 colors,
-    AppTextTheme text,
+    AppColorsV3 colors,
+    AppTextThemeV3 text,
     AppLocalizations l10n,
     SendStrings strings,
     NumberFormattingService fmt,
@@ -478,7 +462,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
         children: [
           Text(
             strings.feeFetchFailedMessage,
-            style: text.smallParagraph?.copyWith(color: colors.error),
+            style: text.body.copyWith(color: colors.semanticEmber),
             textAlign: TextAlign.right,
           ),
           const SizedBox(height: 4),
@@ -488,10 +472,10 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
               onTap: _refreshFee,
               padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 0),
               variant: ButtonVariant.transparent,
-              textStyle: text.smallParagraph?.copyWith(
-                color: colors.accentOrange,
+              textStyle: text.body.copyWith(
+                color: colors.accentFlare,
                 decoration: TextDecoration.underline,
-                decorationColor: colors.accentOrange,
+                decorationColor: colors.accentFlare,
               ),
             ),
           ),
@@ -502,15 +486,15 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
     if (_hasFee && fee != null) {
       return Text(
         l10n.commonAmountBalance(fmt.formatBalance(fee.displayFee, smartDecimals: 5), AppConstants.tokenSymbol),
-        style: text.smallParagraph?.copyWith(color: colors.textTertiary),
+        style: text.body.copyWith(color: colors.textMuted),
       );
     }
     return const Align(alignment: Alignment.centerRight, child: Loader());
   }
 
   Widget _bottomSection(
-    AppColorsV2 colors,
-    AppTextTheme text,
+    AppColorsV3 colors,
+    AppTextThemeV3 text,
     AppLocalizations l10n,
     SendStrings strings,
     String btnText,
@@ -520,6 +504,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
     final formattingService = ref.read(numberFormattingServiceProvider);
     final feePayerProvider = widget.strategy.feePayerBalanceProvider;
     final feePayerLabel = widget.strategy.feePayerBalanceLabel(l10n);
+    final mutedBody = text.body.copyWith(color: colors.textMuted);
 
     return ScaffoldBaseBottomContent(
       child: Column(
@@ -537,18 +522,15 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          l10n.sendInputAmountAvailableBalance,
-                          style: text.smallParagraph?.copyWith(color: colors.textTertiary),
-                        ),
+                        Text(l10n.sendInputAmountAvailableBalance, style: mutedBody),
                         const SizedBox(height: 4),
                         balance.when(
                           data: (b) => Text(
                             l10n.commonAmountBalance(formattingService.formatBalance(b), AppConstants.tokenSymbol),
-                            style: text.smallParagraph?.copyWith(color: colors.textTertiary),
+                            style: mutedBody,
                           ),
-                          loading: () => Text('...', style: text.smallParagraph?.copyWith(color: colors.textTertiary)),
-                          error: (_, _) => Text('—', style: text.smallParagraph?.copyWith(color: colors.textTertiary)),
+                          loading: () => Text('...', style: mutedBody),
+                          error: (_, _) => Text('—', style: mutedBody),
                         ),
                       ],
                     ),
@@ -557,7 +539,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        Text(strings.feeLabel, style: text.smallParagraph?.copyWith(color: colors.textTertiary)),
+                        Text(strings.feeLabel, style: mutedBody),
                         const SizedBox(height: 4),
                         _feeValue(colors, text, l10n, strings, formattingService),
                       ],
@@ -579,10 +561,10 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
                   onTap: _setMax,
                   padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 0),
                   variant: ButtonVariant.transparent,
-                  textStyle: text.smallParagraph?.copyWith(
-                    color: colors.accentOrange,
+                  textStyle: text.body.copyWith(
+                    color: colors.accentFlare,
                     decoration: TextDecoration.underline,
-                    decorationColor: colors.accentOrange,
+                    decorationColor: colors.accentFlare,
                   ),
                 ),
               ),
@@ -602,15 +584,15 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
   }
 
   Widget _feePayerBalance(
-    AppColorsV2 colors,
-    AppTextTheme text,
+    AppColorsV3 colors,
+    AppTextThemeV3 text,
     AppLocalizations l10n,
     String label,
     ProviderListenable<AsyncValue<BigInt>> provider,
     NumberFormattingService fmt,
   ) {
     final balanceAsync = ref.watch(provider);
-    final style = text.smallParagraph?.copyWith(color: colors.textTertiary);
+    final style = text.body.copyWith(color: colors.textMuted);
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [

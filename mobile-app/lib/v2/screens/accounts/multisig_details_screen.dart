@@ -97,8 +97,6 @@ class _SignersSection extends StatelessWidget {
               creatorLabel: l10n.multisigSignerCreatorLabel,
               isYou: signerId == account.myMemberAccountId,
               youLabel: l10n.multisigYouLabel,
-              colors: colors,
-              text: text,
             ),
           ),
         ],
