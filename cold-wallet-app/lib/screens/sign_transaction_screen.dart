@@ -3,8 +3,9 @@ import 'dart:typed_data';
 import 'package:convert/convert.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:quantus_sdk/quantus_sdk.dart' hide DecodedCallView;
-import 'package:quantus_cold_wallet/components/decoded_call_view.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:quantus_cold_wallet/components/address_with_checkphrase.dart';
+import 'package:quantus_cold_wallet/components/call_detail_view.dart';
 import 'package:quantus_cold_wallet/components/qr_tuning_controls.dart';
 import 'package:quantus_cold_wallet/providers/settings_providers.dart';
 import 'package:quantus_cold_wallet/providers/wallet_providers.dart';
@@ -139,7 +140,7 @@ class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> {
             // SEND / …) by design; the exact pallet · call chain is the Call
             // line in the Advanced sheet. See [DecodedCall.actionTitle].
             Text(parsed.call.actionTitle, style: text.titleScreen.copyWith(color: colors.accentFlare)),
-            DecodedCallView(call: parsed.call, signer: _signer(parsed.call)),
+            ..._callBody(parsed.call),
             const SizedBox(height: 20),
             _advancedSection(context, parsed),
             if (_error != null) ...[
@@ -174,11 +175,14 @@ class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> {
     );
   }
 
+  /// What is being authorised, then who is authorising it, then the parameters
+  /// neither of those already showed. Wrappers lead with their nested calls.
+  ///
   /// The signer's row claims `From` only when the summary shows a plain send
   /// and the call names no other account the funds could leave instead — a
   /// `force_transfer` moves its Source's funds, not the signer's. Anything
   /// else says no more than `Signed by`.
-  Widget _signer(DecodedCall call) {
+  List<Widget> _callBody(DecodedCall call) {
     final signerAddress = widget.request.signer;
     final transfer = heroSummary(call);
     final fromSigner =
@@ -186,12 +190,15 @@ class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> {
         !call.fields.any(
           (f) => f is ValueField && f.kind == ValueKind.address && !identical(f, transfer!.recipientField),
         );
-    final label = fromSigner ? 'From' : 'Signed by';
-    final phrase = ref
-        .watch(checksumNameProvider(signerAddress))
-        .maybeWhen(data: (value) => value.isEmpty ? null : value, orElse: () => null);
+    final signer = AddressWithCheckphrase(label: fromSigner ? 'From' : 'Signed by', address: signerAddress);
 
-    return DetailSummaryRow.stacked(label: label, value: signerAddress, monospace: true, checkphrase: phrase);
+    if (!call.isWrapper) return [...callSummaryBody(call), signer];
+
+    return [
+      for (final field in call.fields.whereType<NestedCallField>()) CallFieldView(field: field),
+      signer,
+      for (final field in call.fields.where((field) => field is! NestedCallField)) CallFieldView(field: field),
+    ];
   }
 
   /// Everything a signer never verifies by eye: the signed extensions and the

@@ -53,9 +53,13 @@ class SigningRequest {
     if (payload is! String || !payload.startsWith('0x')) {
       throw const FormatException('Signing request payload is not 0x hex');
     }
+    final payloadHex = payload.substring(2);
+    if (payloadHex.length > maxPayloadBytes * 2) {
+      throw const FormatException('Signing request payload too large: more than $maxPayloadBytes bytes');
+    }
     final Uint8List bytesOut;
     try {
-      bytesOut = Uint8List.fromList(hex.decode(payload.substring(2)));
+      bytesOut = Uint8List.fromList(hex.decode(payloadHex));
     } catch (e) {
       throw FormatException('Signing request payload is not hex: $e');
     }

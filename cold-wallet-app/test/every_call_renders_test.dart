@@ -12,7 +12,7 @@ import 'package:quantus_cold_wallet/models/cold_account.dart';
 import 'package:quantus_cold_wallet/providers/wallet_providers.dart';
 import 'package:quantus_cold_wallet/screens/sign_transaction_screen.dart';
 
-import 'call_display_test.dart' show signerAddress;
+import 'call_display_test.dart' show expectEveryFieldShownOnce, signerAddress;
 
 /// The smallest supported handset, the reference size, and the smallest at the
 /// largest text scale — where fixed-height bottom content actually breaks.
@@ -100,6 +100,14 @@ void main() {
             );
           }
         }
+      });
+    }
+  });
+
+  group('every field reaches the screen exactly once', () {
+    for (final call in catalogue) {
+      test(nameOf(call), () {
+        expectEveryFieldShownOnce(CallDecoder.decodeBytes(call.call, policy: const FullCallPolicy()));
       });
     }
   });

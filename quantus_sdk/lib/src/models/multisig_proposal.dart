@@ -264,11 +264,16 @@ class MultisigProposal {
 
   static Uint8List? _callRawBytes(String? callRawHex) {
     if (callRawHex == null || callRawHex.isEmpty) return null;
+    final encoded = callRawHex.startsWith('0x') ? callRawHex.substring(2) : callRawHex;
+    if (encoded.length > maxCallBytes * 2) {
+      quantusPrint('[MultisigProposal] call_raw exceeds the $maxCallBytes-byte limit');
+      return Uint8List(0);
+    }
     try {
-      return Uint8List.fromList(hex.decode(callRawHex.startsWith('0x') ? callRawHex.substring(2) : callRawHex));
+      return Uint8List.fromList(hex.decode(encoded));
     } catch (e) {
       quantusPrint('[MultisigProposal] Malformed call_raw hex: $e');
-      return null;
+      return Uint8List(0);
     }
   }
 
