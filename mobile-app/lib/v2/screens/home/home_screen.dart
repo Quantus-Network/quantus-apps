@@ -191,6 +191,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final l10n = ref.watch(l10nProvider);
     final accountAsync = ref.watch(activeAccountProvider);
     final txAsync = ref.watch(activeAccountTransactionsProvider(TransactionFilter.all));
+    final isBalanceHidden = ref.watch(isBalanceHiddenProvider);
     final colors = context.colors;
     final text = context.themeText;
 
@@ -210,11 +211,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           return ScaffoldBase.refreshable(
             onRefresh: _refresh,
             slivers: [
-              _buildContent(active, colors, text, l10n),
+              _buildContent(active, colors, text, l10n, isBalanceHidden),
               if (active is MultisigDisplayAccount)
-                MultisigActivitySection(msig: active.account, txAsync: txAsync, onRetry: _refresh)
+                MultisigActivitySection(
+                  msig: active.account,
+                  txAsync: txAsync,
+                  onRetry: _refresh,
+                  isHidden: isBalanceHidden,
+                )
               else
-                ActivitySection(txAsync: txAsync, activeAccount: active.account, onRetry: _refresh),
+                ActivitySection(
+                  txAsync: txAsync,
+                  activeAccount: active.account,
+                  onRetry: _refresh,
+                  isHidden: isBalanceHidden,
+                ),
               const SizedBox(height: 58),
             ],
             bottomContent: _buildBottomContent(l10n),
@@ -224,16 +235,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Widget _buildContent(DisplayAccount active, AppColorsV2 colors, AppTextTheme text, AppLocalizations l10n) {
+  Widget _buildContent(
+    DisplayAccount active,
+    AppColorsV2 colors,
+    AppTextTheme text,
+    AppLocalizations l10n,
+    bool isBalanceHidden,
+  ) {
     final backupWalletIndex = ref.watch(backupReminderWalletIndexProvider);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 16),
-        _buildTopBar(),
+        _buildTopBar(isBalanceHidden),
         const SizedBox(height: 40),
-        _buildBalance(colors, text, l10n),
+        _buildBalance(colors, text, l10n, isBalanceHidden),
         const SizedBox(height: 40),
         if (active is MultisigDisplayAccount) ...[
           _buildMultisigActionButtons(l10n, active.account),
@@ -294,9 +311,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         .value;
   }
 
-  Widget _buildTopBar() {
-    final isBalanceHidden = ref.watch(isBalanceHiddenProvider);
-
+  Widget _buildTopBar(bool isBalanceHidden) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -324,7 +339,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Widget _buildBalance(AppColorsV2 colors, AppTextTheme text, AppLocalizations l10n) {
+  Widget _buildBalance(AppColorsV2 colors, AppTextTheme text, AppLocalizations l10n, bool isBalanceHidden) {
     final currencyAsync = ref.watch(balanceDisplayProvider);
 
     return Column(
@@ -337,6 +352,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               onFlip: _toggleFlip,
               alignment: CrossAxisAlignment.center,
               useTokenLogo: true,
+              isHidden: isBalanceHidden,
             );
           },
           loading: () => const Column(

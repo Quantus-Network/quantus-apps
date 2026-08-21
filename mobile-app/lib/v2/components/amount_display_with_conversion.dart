@@ -3,6 +3,9 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/currency_display_provider.dart';
 
+/// Placeholder rendered in place of an amount the screen has chosen to hide.
+const String hiddenAmountText = '-----';
+
 class AmountDisplayWithConversion extends StatelessWidget {
   final CurrencyDisplayState amountDisplay;
   final VoidCallback? onFlip;
@@ -10,6 +13,10 @@ class AmountDisplayWithConversion extends StatelessWidget {
   final bool colorizeAmount;
   final Color? amountColor;
   final bool useTokenLogo;
+
+  /// Masks both amounts with [hiddenAmountText]. Owned by the screen that
+  /// offers the hide toggle — never read from a global setting here.
+  final bool isHidden;
 
   const AmountDisplayWithConversion({
     super.key,
@@ -19,12 +26,16 @@ class AmountDisplayWithConversion extends StatelessWidget {
     this.colorizeAmount = false,
     this.amountColor,
     this.useTokenLogo = false,
+    this.isHidden = false,
   });
 
   @override
   Widget build(BuildContext context) {
     final text = context.themeText;
     final colors = context.colors;
+
+    final primaryAmount = isHidden ? hiddenAmountText : amountDisplay.primaryAmount;
+    final secondaryAmount = isHidden ? hiddenAmountText : amountDisplay.secondaryAmount;
 
     final primaryAmountColor = amountColor ?? (colorizeAmount ? colors.success : colors.textPrimary);
     final tokenLogoPrimarySize = 32.0;
@@ -60,7 +71,7 @@ class AmountDisplayWithConversion extends StatelessWidget {
               TextSpan(
                 children: [
                   TextSpan(
-                    text: amountDisplay.primaryAmount,
+                    text: primaryAmount,
                     style: text.conversionAmountPrimary?.copyWith(color: primaryAmountColor),
                   ),
                   if (!useTokenLogo && !amountDisplay.isFlipped) ...[
@@ -91,9 +102,9 @@ class AmountDisplayWithConversion extends StatelessWidget {
                 colorFilter: ColorFilter.mode(secondaryAmountColor, BlendMode.srcIn),
               ),
               const SizedBox(width: 2),
-              Text(amountDisplay.secondaryAmount, style: secondaryAmountBaseStyle),
+              Text(secondaryAmount, style: secondaryAmountBaseStyle),
             ] else
-              Text('≈ ${amountDisplay.secondaryAmount}', style: secondaryAmountBaseStyle),
+              Text('≈ $secondaryAmount', style: secondaryAmountBaseStyle),
             if (onFlip != null) ...[
               const SizedBox(width: 8),
               QuantusIconButton.circular(
