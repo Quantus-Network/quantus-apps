@@ -146,8 +146,7 @@ class _QuantusTextFieldState extends State<QuantusTextField> {
         Container(
           width: double.infinity,
           height: widget.height,
-          constraints: widget.height == null ? const BoxConstraints(minHeight: 60) : null,
-          padding: const EdgeInsets.all(14),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
           decoration: BoxDecoration(
             color: colors.bgSurface,
             borderRadius: context.radiusV3.mdBorder,
