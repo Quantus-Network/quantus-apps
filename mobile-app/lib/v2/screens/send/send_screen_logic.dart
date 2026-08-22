@@ -1,10 +1,15 @@
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:quantus_sdk/generated/planck/pallets/balances.dart' as balances;
 import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 
-enum AmountStatus { valid, negative, zero, belowExistential, insufficientBalance }
+enum AmountStatus { valid, negative, zero, belowMinimum, insufficientBalance }
 
 class SendScreenLogic {
+  /// Smallest amount any send may move: one wormhole leaf quantum (0.01 token).
+  /// A recipient can be a wormhole address, and anything below the quantum is
+  /// committed as a zero-value leaf there — so it is rejected on the way in
+  /// rather than at proving time. Sits above the existential deposit.
+  static BigInt get minimumSendAmount => wormholeScaleFactor;
+
   static bool _isSelfTransfer(String recipient, String activeAccountId) {
     return recipient.isNotEmpty && recipient == activeAccountId;
   }
@@ -12,14 +17,14 @@ class SendScreenLogic {
   static AmountStatus getAmountStatus(BigInt amount, BigInt balance, BigInt networkFee) {
     if (amount < BigInt.zero) return AmountStatus.negative;
     if (amount == BigInt.zero) return AmountStatus.zero;
-    if (amount < balances.Constants().existentialDeposit) return AmountStatus.belowExistential;
+    if (amount < minimumSendAmount) return AmountStatus.belowMinimum;
     if ((amount + networkFee) > balance) return AmountStatus.insufficientBalance;
     return AmountStatus.valid;
   }
 
   static bool hasAmountError({required BigInt amount, required BigInt balance, required BigInt networkFee}) {
     final status = getAmountStatus(amount, balance, networkFee);
-    return status == AmountStatus.belowExistential ||
+    return status == AmountStatus.belowMinimum ||
         status == AmountStatus.insufficientBalance ||
         status == AmountStatus.negative;
   }
@@ -53,8 +58,8 @@ class SendScreenLogic {
         return l10n.sendLogicEnterAmount;
       case AmountStatus.negative:
         return l10n.sendLogicInvalidAmount;
-      case AmountStatus.belowExistential:
-        return l10n.sendLogicBelowExistentialDeposit;
+      case AmountStatus.belowMinimum:
+        return l10n.sendLogicBelowMinimum(formattingService.formatAmount(minimumSendAmount), AppConstants.tokenSymbol);
       case AmountStatus.insufficientBalance:
         return l10n.sendLogicInsufficientBalance;
       case AmountStatus.valid:

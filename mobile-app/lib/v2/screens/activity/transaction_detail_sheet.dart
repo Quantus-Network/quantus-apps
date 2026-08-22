@@ -176,12 +176,7 @@ class _AmountSection extends ConsumerWidget {
       return Text('—', style: text.transactionDetailAmountPrimary?.copyWith(color: colors.textTertiary));
     }
 
-    final amount = ref.watch(txAmountDisplayProvider)(
-      displayAmount,
-      isSend: true,
-      withTokenSymbol: false,
-      customHiddenText: '-----',
-    );
+    final amount = ref.watch(txAmountDisplayProvider)(displayAmount, isSend: true, withTokenSymbol: false);
 
     return AmountDisplayWithConversion(
       amountDisplay: amount,

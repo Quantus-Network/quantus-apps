@@ -297,7 +297,7 @@
   "sendLogicCantSelfTransfer": "Tidak Bisa Transfer ke Diri Sendiri",
   "sendLogicEnterAmount": "Masukkan Jumlah",
   "sendLogicInvalidAmount": "Jumlah Tidak Valid",
-  "sendLogicBelowExistentialDeposit": "Di Bawah Deposit Eksistensial",
+  "sendLogicBelowMinimum": "Minimum {amount} {tokenSymbol}",
   "sendLogicInsufficientBalance": "Saldo Tidak Cukup",
   "sendLogicReviewSend": "Tinjau Pengiriman",
   "activityTitle": "Aktivitas",
