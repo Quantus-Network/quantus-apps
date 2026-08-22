@@ -65,7 +65,8 @@ class _RedeemAddressScreenState extends ConsumerState<RedeemAddressScreen> {
     });
     if (isValid) {
       ref.read(humanReadableChecksumServiceProvider).getHumanReadableName(text).then((checksum) {
-        if (mounted) setState(() => _recipientChecksum = checksum);
+        if (!mounted || _recipientController.text.trim() != text) return;
+        setState(() => _recipientChecksum = checksum);
       });
     }
   }
