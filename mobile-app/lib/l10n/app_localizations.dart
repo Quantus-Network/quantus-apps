@@ -2096,11 +2096,11 @@ abstract class AppLocalizations {
   /// **'Invalid Amount'**
   String get sendLogicInvalidAmount;
 
-  /// Button label when amount is below existential deposit
+  /// Button label when amount is below the minimum send amount (one wormhole leaf quantum)
   ///
   /// In en, this message translates to:
-  /// **'Below Existential Deposit'**
-  String get sendLogicBelowExistentialDeposit;
+  /// **'Minimum is {amount} {tokenSymbol}'**
+  String sendLogicBelowMinimum(String amount, String tokenSymbol);
 
   /// Button label when balance is insufficient
   ///

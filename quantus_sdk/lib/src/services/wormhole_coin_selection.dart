@@ -1,3 +1,4 @@
+import 'package:quantus_sdk/generated/planck/pallets/vesting.dart' as vesting_pallet;
 import 'package:quantus_sdk/generated/planck/pallets/wormhole.dart' as wormhole_pallet;
 import 'package:quantus_sdk/src/services/wormhole_utxo_service.dart';
 
@@ -13,10 +14,14 @@ String wormholeVolumeFeePercentText() {
   return percent == percent.truncateToDouble() ? percent.toInt().toString() : percent.toString();
 }
 
-/// Scaled-down → token multiplier; matches `SCALE_DOWN_FACTOR` in the Rust
-/// wormhole API. Proofs commit to amounts in scaled-down units (0.01 tokens) and
-/// the chain dispatches `outputAmount * scaleFactor` token units.
-final BigInt wormholeScaleFactor = BigInt.from(10000000000);
+/// Scaled-down → token multiplier (`SCALE_DOWN_FACTOR` in the Rust wormhole
+/// API). Proofs commit to amounts in scaled-down units (0.01 tokens) and the
+/// chain dispatches `outputAmount * scaleFactor` token units. The wormhole
+/// pallet exposes no constant for it, so this comes from the shipped metadata's
+/// `Vesting::PayoutQuantum`, which the runtime defines as
+/// `pallet_wormhole::SCALE_DOWN_FACTOR` — same rule as the volume fee above,
+/// never a hand-edited value.
+final BigInt wormholeScaleFactor = vesting_pallet.Constants().payoutQuantum;
 
 /// Chain's `MinimumTransferAmount` (0.1 token) in scaled units, enforced per
 /// aggregated batch on the total exit amount.

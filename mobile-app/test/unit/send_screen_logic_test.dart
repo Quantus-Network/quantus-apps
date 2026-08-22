@@ -3,7 +3,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/v2/screens/send/send_screen_logic.dart';
-import 'package:quantus_sdk/generated/planck/pallets/balances.dart' as balances;
 
 void main() {
   group('SendScreenLogic', () {
@@ -21,23 +20,28 @@ void main() {
         expect(status, AmountStatus.zero);
       });
 
-      test('returns belowExistential when < ED', () {
+      test('returns belowMinimum below one wormhole quantum', () {
         final status = SendScreenLogic.getAmountStatus(
-          balances.Constants().existentialDeposit - BigInt.one,
+          SendScreenLogic.minimumSendAmount - BigInt.one,
           BigInt.from(5000000000000),
           BigInt.from(100),
         );
-        expect(status, AmountStatus.belowExistential);
+        expect(status, AmountStatus.belowMinimum);
+      });
+
+      test('minimum send amount is the wormhole quantum (0.01 token)', () {
+        expect(SendScreenLogic.minimumSendAmount, wormholeScaleFactor);
+        expect(SendScreenLogic.minimumSendAmount, BigInt.from(10000000000));
       });
 
       test('returns insufficientBalance when amount + fee > balance', () {
-        final status = SendScreenLogic.getAmountStatus(BigInt.from(1_000_000_000), BigInt.from(1000), BigInt.from(10));
+        final status = SendScreenLogic.getAmountStatus(BigInt.from(10_000_000_000), BigInt.from(1000), BigInt.from(10));
         expect(status, AmountStatus.insufficientBalance);
       });
 
-      test('returns valid for correct inputs', () {
+      test('returns valid at exactly the minimum', () {
         final status = SendScreenLogic.getAmountStatus(
-          BigInt.from(1_000_000_000),
+          SendScreenLogic.minimumSendAmount,
           BigInt.from(1_000_000_000_000),
           BigInt.from(10),
         );
@@ -79,7 +83,7 @@ void main() {
       test('returns true when amount has error', () {
         final result = SendScreenLogic.isButtonDisabled(
           hasAddressError: false,
-          amountStatus: AmountStatus.belowExistential,
+          amountStatus: AmountStatus.belowMinimum,
           recipientText: 'valid_address',
           activeAccountId: 'sender_address',
         );
@@ -170,17 +174,17 @@ void main() {
         expect(result, equals(l10n.sendLogicCantSelfTransfer));
       });
 
-      test('returns "Below Existential Deposit" when status matches', () {
+      test('returns the minimum amount when status is belowMinimum', () {
         final result = SendScreenLogic.getButtonText(
           l10n: l10n,
           hasAddressError: false,
-          amountStatus: AmountStatus.belowExistential,
+          amountStatus: AmountStatus.belowMinimum,
           recipientText: 'valid_address',
           amount: BigInt.from(1),
           activeAccountId: 'sender_address',
           formattingService: formattingService,
         );
-        expect(result, equals(l10n.sendLogicBelowExistentialDeposit));
+        expect(result, equals(l10n.sendLogicBelowMinimum('0.01', AppConstants.tokenSymbol)));
       });
 
       test('returns Review Send for valid status', () {

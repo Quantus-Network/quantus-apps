@@ -1108,7 +1108,9 @@ class AppLocalizationsId extends AppLocalizations {
   String get sendLogicInvalidAmount => 'Jumlah Tidak Valid';
 
   @override
-  String get sendLogicBelowExistentialDeposit => 'Di Bawah Deposit Eksistensial';
+  String sendLogicBelowMinimum(String amount, String tokenSymbol) {
+    return 'Minimum $amount $tokenSymbol';
+  }
 
   @override
   String get sendLogicInsufficientBalance => 'Saldo Tidak Cukup';
