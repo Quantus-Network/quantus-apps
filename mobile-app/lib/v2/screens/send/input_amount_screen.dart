@@ -77,13 +77,11 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
         _amountController.text = _amountInputLogic.formatTokenAmount(token);
       }
     }
-    if (widget.recipientChecksum != null) {
-      _recipientChecksum = widget.recipientChecksum;
-    } else {
-      _checksumService.getHumanReadableName(widget.recipientAddress.trim()).then((name) {
-        if (mounted) setState(() => _recipientChecksum = name);
-      });
-    }
+    _recipientChecksum = widget.recipientChecksum;
+    _checksumService.getHumanReadableName(widget.recipientAddress.trim()).then((name) {
+      if (!mounted) return;
+      setState(() => _recipientChecksum = name);
+    });
 
     _refreshFee();
   }
