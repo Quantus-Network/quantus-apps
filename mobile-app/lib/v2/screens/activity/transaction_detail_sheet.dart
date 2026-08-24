@@ -625,16 +625,14 @@ class _ExplorerLink extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.colorsV3;
     final isPending =
         tx is PendingTransactionEvent ||
         tx is PendingMultisigCreationEvent ||
         tx is PendingMultisigProposalEvent ||
         tx is PendingMultisigExecutionEvent ||
         tx is PendingMultisigCancellationEvent;
-    final color = isPending ? colors.accentFlare.useOpacity(0.3) : colors.accentFlare;
 
-    return ExplorerLink(url: _explorerUrl(), color: color, enabled: !isPending);
+    return ExplorerLink(url: _explorerUrl(), enabled: !isPending);
   }
 
   String? _explorerUrl() {

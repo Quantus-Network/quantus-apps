@@ -243,7 +243,6 @@ class _MultisigProposalDetailSheet extends ConsumerWidget {
           Center(
             child: ExplorerLink(
               url: '${AppConstants.explorerEndpoint}/multisig-proposals/${liveProposal.explorerProposalId}',
-              color: colors.accentOrange,
             ),
           ),
           const SizedBox(height: 8),

@@ -66,7 +66,7 @@ class TxItemData {
         label: l10n.activityTxProposalCreated,
         timeLabel: _timeAgo(tx.timestamp, l10n),
         iconBg: Colors.transparent,
-        iconColor: colors.textMuted,
+        iconColor: colors.textContent,
         labelColor: colors.textContent,
         amountColor: colors.textContent,
         borderColor: colors.borderHairline,
@@ -84,7 +84,7 @@ class TxItemData {
         label: l10n.activityTxProposalApproved,
         timeLabel: _timeAgo(tx.timestamp, l10n),
         iconBg: Colors.transparent,
-        iconColor: colors.textMuted,
+        iconColor: colors.textContent,
         labelColor: colors.textContent,
         amountColor: colors.textContent,
         borderColor: colors.borderHairline,
@@ -122,7 +122,7 @@ class TxItemData {
         label: l10n.activityTxProposalExecuted,
         timeLabel: _timeAgo(tx.timestamp, l10n),
         iconBg: Colors.transparent,
-        iconColor: colors.textMuted,
+        iconColor: colors.textContent,
         labelColor: colors.textContent,
         amountColor: colors.textContent,
         borderColor: colors.borderHairline,
@@ -160,7 +160,7 @@ class TxItemData {
         label: l10n.activityTxProposalCancelled,
         timeLabel: _timeAgo(tx.timestamp, l10n),
         iconBg: Colors.transparent,
-        iconColor: colors.textMuted,
+        iconColor: colors.textContent,
         labelColor: colors.textContent,
         amountColor: colors.textContent,
         borderColor: colors.borderHairline,
@@ -177,7 +177,7 @@ class TxItemData {
         label: l10n.activityTxProposal,
         timeLabel: _timeAgo(tx.timestamp, l10n),
         iconBg: Colors.transparent,
-        iconColor: colors.textMuted,
+        iconColor: colors.textContent,
         labelColor: colors.textContent,
         amountColor: colors.textContent,
         borderColor: colors.borderHairline,
@@ -212,7 +212,7 @@ class TxItemData {
         label: l10n.activityTxMultisigCreated,
         timeLabel: _timeAgo(tx.timestamp, l10n),
         iconBg: Colors.transparent,
-        iconColor: colors.textMuted,
+        iconColor: colors.textContent,
         labelColor: colors.textContent,
         amountColor: colors.textContent,
         borderColor: colors.borderHairline,
@@ -276,7 +276,7 @@ class TxItemData {
       if (isHighlighted && isSend) {
         return colors.semanticGlacier;
       }
-      return colors.textMuted;
+      return colors.textContent;
     }
 
     Color getLabelColor() {
@@ -358,46 +358,49 @@ Widget buildTxItem(
     behavior: HitTestBehavior.opaque,
     child: Column(
       children: [
-        Row(
-          children: [
-            Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: data.iconBg,
-                borderRadius: radius,
-                border: Border.all(color: data.borderColor, width: 1.5),
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12.0),
+          child: Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: data.iconBg,
+                  borderRadius: radius,
+                  border: Border.all(color: data.borderColor, width: 1.5),
+                ),
+                child: data.customIcon != null
+                    ? Icon(data.customIcon, size: 14, color: data.iconColor)
+                    : Transform.rotate(
+                        angle: data.isSend ? 3.14159 : 0,
+                        child: Icon(Icons.arrow_downward_rounded, size: 14, color: data.iconColor),
+                      ),
               ),
-              child: data.customIcon != null
-                  ? Icon(data.customIcon, size: 14, color: data.iconColor)
-                  : Transform.rotate(
-                      angle: data.isSend ? 3.14159 : 0,
-                      child: Icon(Icons.arrow_downward_rounded, size: 14, color: data.iconColor),
-                    ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(data.label, style: text.bodyLarge.copyWith(color: data.labelColor)),
+                    const SizedBox(height: 8),
+                    Text(data.timeLabel, style: text.caption.copyWith(color: colors.textMuted)),
+                  ],
+                ),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  Text(data.label, style: text.bodyLarge.copyWith(color: data.labelColor)),
+                  Text(formattedAmount, style: text.bodyLarge.copyWith(color: data.amountColor)),
                   const SizedBox(height: 8),
-                  Text(data.timeLabel, style: text.caption.copyWith(color: colors.textMuted)),
+                  Text(
+                    '$directionLabel: ${data.counterpartyAddr}',
+                    style: text.caption.copyWith(color: colors.textMuted),
+                  ),
                 ],
               ),
-            ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(formattedAmount, style: text.bodyLarge.copyWith(color: data.amountColor)),
-                const SizedBox(height: 8),
-                Text(
-                  '$directionLabel: ${data.counterpartyAddr}',
-                  style: text.caption.copyWith(color: colors.textMuted),
-                ),
-              ],
-            ),
-          ],
+            ],
+          ),
         ),
         if (!isLastItem) Divider(color: colors.borderHairline, height: 1),
       ],
