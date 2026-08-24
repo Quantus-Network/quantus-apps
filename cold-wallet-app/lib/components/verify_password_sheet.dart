@@ -7,10 +7,8 @@ import 'package:quantus_cold_wallet/providers/wallet_providers.dart';
 /// Asks for the vault password and verifies it against the vault. Resolves to
 /// true only after a successful verification.
 Future<bool> showVerifyPasswordSheet(BuildContext context, {required String message}) async {
-  final verified = await showModalBottomSheet<bool>(
-    context: context,
-    isScrollControlled: true,
-    backgroundColor: context.colorsV3.bgSurface,
+  final verified = await BottomSheetContainer.show<bool>(
+    context,
     builder: (_) => _VerifyPasswordSheet(message: message),
   );
   return verified == true;
@@ -61,21 +59,21 @@ class _VerifyPasswordSheetState extends ConsumerState<_VerifyPasswordSheet> {
 
     return Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(24, 24, 24, 40),
+      child: BottomSheetContainer(
+        title: 'Enter password',
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text('Enter password', style: text.titleScreen.copyWith(color: colors.textContent)),
-            const SizedBox(height: 8),
             Text(widget.message, style: text.body.copyWith(color: colors.textMuted)),
             const SizedBox(height: 24),
-            PasswordField(controller: _password, hintText: 'Password', enabled: !_busy, onSubmitted: (_) => _submit()),
-            if (_error != null) ...[
-              const SizedBox(height: 16),
-              Text(_error!, style: text.caption.copyWith(color: colors.semanticEmber)),
-            ],
+            PasswordField(
+              controller: _password,
+              hintText: 'Password',
+              error: _error,
+              enabled: !_busy,
+              onSubmitted: (_) => _submit(),
+            ),
             const SizedBox(height: 24),
             QuantusButton.simple(label: 'Continue', isLoading: _busy, onTap: _busy ? null : _submit),
           ],

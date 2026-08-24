@@ -7,13 +7,7 @@ import 'package:quantus_cold_wallet/components/password_field.dart';
 /// Action pane for setting or changing the vault password. Resolves to true
 /// when the password was changed.
 Future<bool> showChangePasswordSheet(BuildContext context) async {
-  final changed = await showModalBottomSheet<bool>(
-    context: context,
-    isScrollControlled: true,
-    enableDrag: false,
-    backgroundColor: context.colorsV3.bgSurface,
-    builder: (_) => const _ChangePasswordSheet(),
-  );
+  final changed = await BottomSheetContainer.show<bool>(context, builder: (_) => const _ChangePasswordSheet());
   return changed == true;
 }
 
@@ -89,8 +83,8 @@ class _ChangePasswordSheetState extends ConsumerState<_ChangePasswordSheet> {
       canPop: !_busy,
       child: Padding(
         padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(24, 24, 24, 40),
+        child: BottomSheetContainer(
+          title: _done ? 'Password changed' : 'Change password',
           child: _done ? _successContent(colors, text) : _formContent(colors, text),
         ),
       ),
@@ -103,18 +97,12 @@ class _ChangePasswordSheetState extends ConsumerState<_ChangePasswordSheet> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Icon(Icons.check_circle_outline_rounded, size: 48, color: colors.semanticSage),
-        const SizedBox(height: 16),
-        Text(
-          'Password changed',
-          style: text.titleScreen.copyWith(color: colors.textContent),
-          textAlign: TextAlign.center,
-        ),
         if (_biometricDisabled) ...[
           const SizedBox(height: 12),
           Text(
             'Biometric unlock was turned off because its key could not be updated for the new password. '
             'Unlock with your password.',
-            style: text.body.copyWith(color: colors.textMuted, height: 1.55),
+            style: text.body.copyWith(color: colors.textMuted),
             textAlign: TextAlign.center,
           ),
         ],
@@ -129,12 +117,10 @@ class _ChangePasswordSheetState extends ConsumerState<_ChangePasswordSheet> {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text('Change password', style: text.titleScreen.copyWith(color: colors.textContent)),
-        const SizedBox(height: 8),
         Text(
           'Your password encrypts the wallet key stored on this device. If you never set one, leave the current '
           'password empty.',
-          style: text.body.copyWith(color: colors.textMuted, height: 1.55),
+          style: text.body.copyWith(color: colors.textMuted),
         ),
         const SizedBox(height: 24),
         PasswordField(controller: _current, hintText: 'Current password', enabled: !_busy),

@@ -71,18 +71,18 @@ void main() {
   testWidgets('uses v3 title, body, error, and surface tokens', (tester) async {
     await openSheet(tester);
 
+    expect(find.byType(BottomSheetContainer), findsOneWidget);
+
     final title = tester.widget<Text>(find.text('Change password').first);
     expect(title.style?.color, colors.textContent);
-    expect(title.style?.fontSize, text.titleScreen.fontSize);
-    expect(title.style?.fontWeight, text.titleScreen.fontWeight);
+    expect(title.style?.fontSize, text.headingRow.fontSize);
+    expect(title.style?.fontWeight, text.headingRow.fontWeight);
 
     final body = tester.widget<Text>(
       find.textContaining('Your password encrypts the wallet key stored on this device'),
     );
     expect(body.style?.color, colors.textMuted);
     expect(body.style?.fontSize, text.body.fontSize);
-
-    expect(tester.widget<BottomSheet>(find.byType(BottomSheet)).backgroundColor, colors.bgSurface);
 
     await tester.enterText(find.byType(TextField).at(1), 'beta');
     await tester.enterText(find.byType(TextField).at(2), 'gamma');
@@ -109,7 +109,7 @@ void main() {
 
     final title = tester.widget<Text>(find.text('Password changed'));
     expect(title.style?.color, colors.textContent);
-    expect(title.style?.fontSize, text.titleScreen.fontSize);
-    expect(title.style?.fontWeight, text.titleScreen.fontWeight);
+    expect(title.style?.fontSize, text.headingRow.fontSize);
+    expect(title.style?.fontWeight, text.headingRow.fontWeight);
   });
 }
