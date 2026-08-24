@@ -132,10 +132,7 @@ class _EncryptedSendProgressScreenState extends ConsumerState<EncryptedSendProgr
                 const SizedBox(height: 24),
                 QuantusBanner(tone: BannerTone.ember, message: errorMessage),
               ],
-              if (cancelled && send.submittedRecipientToken > BigInt.zero) ...[
-                const SizedBox(height: 24),
-                _buildPartialCancelNotice(l10n, send.submittedRecipientToken),
-              ],
+              if (cancelled) ...[const SizedBox(height: 24), _buildCancelNotice(l10n, send)],
             ],
           ),
         ),
@@ -169,10 +166,19 @@ class _EncryptedSendProgressScreenState extends ConsumerState<EncryptedSendProgr
     );
   }
 
-  Widget _buildPartialCancelNotice(AppLocalizations l10n, BigInt submitted) {
+  Widget _buildCancelNotice(AppLocalizations l10n, EncryptedSendState send) {
     final fmt = ref.watch(numberFormattingServiceProvider);
-    final amount = fmt.formatBalance(submitted, maxDecimals: 2, addSymbol: true);
-    return QuantusBanner(tone: BannerTone.sand, message: l10n.encryptedSendCancelledPartial(amount));
+    if (send.submittedRecipientToken > BigInt.zero) {
+      final amount = fmt.formatBalance(send.submittedRecipientToken, maxDecimals: 2, addSymbol: true);
+      return QuantusBanner(tone: BannerTone.sand, message: l10n.encryptedSendCancelledPartial(amount));
+    }
+
+    return QuantusBanner.stacked(
+      tone: BannerTone.sage,
+      label: l10n.encryptedSendFundsSafeLabel,
+      amount: fmt.formatBalance(widget.amount, maxDecimals: 2, addSymbol: true),
+      message: l10n.encryptedSendFundsSafeCaption(widget.account.name),
+    );
   }
 
   double _overallProgress(EncryptedSendState send) {

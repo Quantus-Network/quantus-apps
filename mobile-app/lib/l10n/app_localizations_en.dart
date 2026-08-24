@@ -2021,6 +2021,14 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get encryptedSendFundsSafeLabel => 'Your funds are safe';
+
+  @override
+  String encryptedSendFundsSafeCaption(String account) {
+    return 'Still in $account. Nothing left your wallet.';
+  }
+
+  @override
   String get privateSendTitle => 'Private Send';
 
   @override

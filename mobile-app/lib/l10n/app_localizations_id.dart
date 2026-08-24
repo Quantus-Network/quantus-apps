@@ -1972,7 +1972,7 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
-  String get encryptedSendFeeLabel => 'Biaya privasi';
+  String get encryptedSendFeeLabel => 'BIAYA PRIVASI';
 
   @override
   String encryptedSendAmountStep(String tokenSymbol) {
@@ -2021,6 +2021,14 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String encryptedSendCancelledPartial(String amount) {
     return '$amount sudah terkirim sebelum dibatalkan. Sisanya tetap berada di akun Anda.';
+  }
+
+  @override
+  String get encryptedSendFundsSafeLabel => 'Dana Anda aman';
+
+  @override
+  String encryptedSendFundsSafeCaption(String account) {
+    return 'Masih di $account. Tidak ada yang keluar dari dompet Anda.';
   }
 
   @override

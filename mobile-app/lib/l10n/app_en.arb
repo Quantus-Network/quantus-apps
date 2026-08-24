@@ -2952,6 +2952,19 @@
         }
       }
     },
+    "encryptedSendFundsSafeLabel": "Your funds are safe",
+    "@encryptedSendFundsSafeLabel": {
+      "description": "Stacked banner kicker when an encrypted send was cancelled before anything left the wallet"
+    },
+    "encryptedSendFundsSafeCaption": "Still in {account}. Nothing left your wallet.",
+    "@encryptedSendFundsSafeCaption": {
+      "description": "Stacked banner caption when an encrypted send was cancelled before anything left the wallet",
+      "placeholders": {
+        "account": {
+          "type": "String"
+        }
+      }
+    },
     "privateSendTitle": "Private Send",
     "@privateSendTitle": {
       "description": "Title of the private-send notice on encrypted send recipient screen"

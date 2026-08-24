@@ -3770,6 +3770,18 @@ abstract class AppLocalizations {
   /// **'{amount} was already sent before cancelling. The rest remains in your account.'**
   String encryptedSendCancelledPartial(String amount);
 
+  /// Stacked banner kicker when an encrypted send was cancelled before anything left the wallet
+  ///
+  /// In en, this message translates to:
+  /// **'Your funds are safe'**
+  String get encryptedSendFundsSafeLabel;
+
+  /// Stacked banner caption when an encrypted send was cancelled before anything left the wallet
+  ///
+  /// In en, this message translates to:
+  /// **'Still in {account}. Nothing left your wallet.'**
+  String encryptedSendFundsSafeCaption(String account);
+
   /// Title of the private-send notice on encrypted send recipient screen
   ///
   /// In en, this message translates to:
