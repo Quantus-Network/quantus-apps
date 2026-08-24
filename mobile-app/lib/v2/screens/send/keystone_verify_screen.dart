@@ -42,8 +42,8 @@ class KeystoneVerifyScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = ref.watch(l10nProvider);
-    final colors = context.colors;
-    final text = context.themeText;
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
 
     return ScaffoldBase(
       appBar: V2AppBar(title: l10n.keystoneSignScreenTitle),
@@ -53,9 +53,9 @@ class KeystoneVerifyScreen extends ConsumerWidget {
           children: [
             const KeystoneStepLabel(current: 2, total: 3),
             const SizedBox(height: 12),
-            Text(l10n.keystoneVerifyTitle, style: text.paragraph?.copyWith(color: colors.textPrimary, height: 1.0)),
+            Text(l10n.keystoneVerifyTitle, style: text.headingRow.copyWith(color: colors.textContent)),
             const SizedBox(height: 8),
-            Text(l10n.keystoneVerifyInstruction, style: text.detail?.copyWith(color: colors.textSubtle, height: 1.35)),
+            Text(l10n.keystoneVerifyInstruction, style: text.caption.copyWith(color: colors.textMuted)),
             const SizedBox(height: 24),
             _summaryCard(context, l10n, colors, text),
             const SizedBox(height: 24),
@@ -79,26 +79,23 @@ class KeystoneVerifyScreen extends ConsumerWidget {
     );
   }
 
-  Widget _summaryCard(BuildContext context, AppLocalizations l10n, AppColorsV2 colors, AppTextTheme text) {
-    final labelStyle = text.receiveLabel?.copyWith(color: colors.textLabel, fontSize: 14);
+  Widget _summaryCard(BuildContext context, AppLocalizations l10n, AppColorsV3 colors, AppTextThemeV3 text) {
+    final labelStyle = text.labelData.copyWith(color: colors.textMuted);
     final address = session.secondaryDetail?.trim();
     final checksum = session.tertiaryDetail;
 
     return Container(
       padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(color: colors.surfaceDeep, borderRadius: BorderRadius.circular(14)),
+      decoration: BoxDecoration(color: colors.bgSurface, borderRadius: context.radiusV3.mdBorder),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (session.primaryDetail != null) ...[
             Text(l10n.sendReviewAmount.toUpperCase(), style: labelStyle),
             const SizedBox(height: 16),
-            Text(
-              session.primaryDetail!,
-              style: text.conversionAmountPrimary?.copyWith(color: colors.textPrimary, height: 1.0),
-            ),
+            Text(session.primaryDetail!, style: text.amountHero.copyWith(color: colors.textContent)),
             const SizedBox(height: 24),
-            Divider(height: 1, color: colors.separator),
+            const MenuDivider(),
             const SizedBox(height: 24),
           ],
           if (address != null) ...[
@@ -107,7 +104,7 @@ class KeystoneVerifyScreen extends ConsumerWidget {
             if (checksum != null)
               AddressCheckphraseWithInitial(recipientChecksum: checksum, recipientAddress: address)
             else
-              Text(address, style: text.transactionDetailRowValue?.copyWith(fontSize: 14, height: 1.35)),
+              Text(address, style: text.dataAddressLarge.copyWith(color: colors.textContent)),
           ],
         ],
       ),

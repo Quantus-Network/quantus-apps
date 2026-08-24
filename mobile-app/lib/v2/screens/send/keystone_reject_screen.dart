@@ -17,7 +17,6 @@ class KeystoneRejectScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = ref.watch(l10nProvider);
-    final colors = context.colors;
 
     final steps = [
       (l10n.keystoneRejectStep1Title, l10n.keystoneRejectStep1Body),
@@ -34,11 +33,7 @@ class KeystoneRejectScreen extends ConsumerWidget {
             KeystoneWarningCard(title: l10n.keystoneRejectTitle, text: l10n.keystoneVerifyWarning),
             const SizedBox(height: 40),
             for (var i = 0; i < steps.length; i++) ...[
-              if (i > 0) ...[
-                const SizedBox(height: 16),
-                Divider(height: 1, color: colors.separator),
-                const SizedBox(height: 16),
-              ],
+              if (i > 0) const Padding(padding: EdgeInsets.symmetric(vertical: 16), child: MenuDivider()),
               _RejectStep(number: '0${i + 1}', title: steps[i].$1, body: steps[i].$2),
             ],
           ],
@@ -70,24 +65,21 @@ class _RejectStep extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.colors;
-    final text = context.themeText;
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          number,
-          style: text.paragraph?.copyWith(fontFamily: AppTextTheme.fontFamilySecondary, color: colors.accentOrange),
-        ),
+        Text(number, style: text.bodyLarge.copyWith(color: colors.accentFlare)),
         const SizedBox(width: 16),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(title, style: text.smallParagraph?.copyWith(color: colors.textLightGray, height: 1.4)),
+              Text(title, style: text.body.copyWith(color: colors.textContent)),
               const SizedBox(height: 4),
-              Text(body, style: text.detail?.copyWith(color: colors.textSubtle, height: 1.35)),
+              Text(body, style: text.caption.copyWith(color: colors.textMuted)),
             ],
           ),
         ),
