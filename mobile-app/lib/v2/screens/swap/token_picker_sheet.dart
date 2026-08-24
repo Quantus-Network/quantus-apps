@@ -71,8 +71,8 @@ class _TokenPickerContentState extends ConsumerState<_TokenPickerContent> {
   @override
   Widget build(BuildContext context) {
     final l10n = ref.watch(l10nProvider);
-    final colors = context.colors;
-    final text = context.themeText;
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
     final size = MediaQuery.of(context).size;
     final height = size.height;
     final cardHeight = (height - 120).clamp(360.0, 506.0);
@@ -87,7 +87,7 @@ class _TokenPickerContentState extends ConsumerState<_TokenPickerContent> {
     );
   }
 
-  Widget _content(AppLocalizations l10n, AppColorsV2 colors, AppTextTheme text) {
+  Widget _content(AppLocalizations l10n, AppColorsV3 colors, AppTextThemeV3 text) {
     if (_loading && _tokens.isEmpty) {
       return const Center(child: Loader());
     }
@@ -96,21 +96,11 @@ class _TokenPickerContentState extends ConsumerState<_TokenPickerContent> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              _error!,
-              style: text.smallParagraph?.copyWith(color: colors.textSecondary, decoration: TextDecoration.none),
-            ),
+            Text(_error!, style: text.body.copyWith(color: colors.textMuted)),
             const SizedBox(height: 12),
             GestureDetector(
               onTap: () => _loadTokens(forceRefresh: true),
-              child: Text(
-                l10n.posQrTryAgain,
-                style: text.paragraph?.copyWith(
-                  color: colors.textPrimary,
-                  fontWeight: FontWeight.w600,
-                  decoration: TextDecoration.none,
-                ),
-              ),
+              child: Text(l10n.posQrTryAgain, style: text.body.copyWith(color: colors.accentFlare)),
             ),
           ],
         ),
@@ -122,21 +112,11 @@ class _TokenPickerContentState extends ConsumerState<_TokenPickerContent> {
           Row(
             children: [
               Expanded(
-                child: Text(
-                  _error!,
-                  style: text.detail?.copyWith(color: colors.textSecondary, decoration: TextDecoration.none),
-                ),
+                child: Text(_error!, style: text.caption.copyWith(color: colors.textMuted)),
               ),
               GestureDetector(
                 onTap: () => _loadTokens(forceRefresh: true),
-                child: Text(
-                  l10n.posQrTryAgain,
-                  style: text.detail?.copyWith(
-                    color: colors.textPrimary,
-                    fontWeight: FontWeight.w600,
-                    decoration: TextDecoration.none,
-                  ),
-                ),
+                child: Text(l10n.posQrTryAgain, style: text.caption.copyWith(color: colors.accentFlare)),
               ),
             ],
           ),
@@ -144,12 +124,12 @@ class _TokenPickerContentState extends ConsumerState<_TokenPickerContent> {
         ],
         Expanded(
           child: RefreshIndicator(
-            color: colors.textPrimary,
+            color: colors.accentFlare,
             onRefresh: () => _loadTokens(forceRefresh: true),
             child: Scrollbar(
               controller: _scrollController,
               thumbVisibility: true,
-              radius: const Radius.circular(25),
+              radius: Radius.circular(context.radiusV3.md),
               thickness: 4,
               child: ListView.builder(
                 controller: _scrollController,
@@ -164,7 +144,7 @@ class _TokenPickerContentState extends ConsumerState<_TokenPickerContent> {
     );
   }
 
-  Widget _tokenRow(BuildContext context, SwapToken token, AppColorsV2 colors, AppTextTheme text) {
+  Widget _tokenRow(BuildContext context, SwapToken token, AppColorsV3 colors, AppTextThemeV3 text) {
     final selected = token == widget.current;
     return GestureDetector(
       onTap: () => Navigator.pop(context, token),
@@ -173,8 +153,8 @@ class _TokenPickerContentState extends ConsumerState<_TokenPickerContent> {
         margin: const EdgeInsets.only(bottom: 8),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(14),
-          border: selected ? Border.all(color: Colors.white.withValues(alpha: 0.44), width: 0.9) : null,
+          borderRadius: context.radiusV3.mdBorder,
+          border: selected ? Border.all(color: colors.borderEmphasis) : null,
         ),
         child: Row(
           children: [
@@ -184,19 +164,9 @@ class _TokenPickerContentState extends ConsumerState<_TokenPickerContent> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    token.symbol,
-                    style: text.paragraph?.copyWith(
-                      color: colors.textPrimary,
-                      fontWeight: FontWeight.w600,
-                      decoration: TextDecoration.none,
-                    ),
-                  ),
+                  Text(token.symbol, style: text.headingRow.copyWith(color: colors.textContent)),
                   const SizedBox(height: 4),
-                  Text(
-                    token.network,
-                    style: text.paragraph?.copyWith(color: colors.textSecondary, decoration: TextDecoration.none),
-                  ),
+                  Text(token.network, style: text.body.copyWith(color: colors.textMuted)),
                 ],
               ),
             ),
