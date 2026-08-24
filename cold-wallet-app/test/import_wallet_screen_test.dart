@@ -45,7 +45,7 @@ void main() {
     expect((fieldBox.border as Border?)?.top.color, colors.borderEmphasis);
 
     final eye = tester.widget<Icon>(find.byIcon(Icons.visibility_off_outlined));
-    expect(eye.color, colors.textMuted);
+    expect(eye.color, colors.textContent);
   });
 
   testWidgets('uses v3 ember caption for validation errors', (tester) async {
