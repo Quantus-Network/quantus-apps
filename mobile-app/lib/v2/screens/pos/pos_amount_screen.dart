@@ -73,8 +73,8 @@ class _PosAmountScreenState extends ConsumerState<PosAmountScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = ref.watch(l10nProvider);
-    final colors = context.colors;
-    final text = context.themeText;
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
     final primaryAmount = ref
         .watch(txAmountDisplayProvider)(_amount, withSignPrefix: false, isSend: true)
         .primaryAmount;
@@ -86,7 +86,7 @@ class _PosAmountScreenState extends ConsumerState<PosAmountScreen> {
     );
   }
 
-  Widget _amountCenter(AppColorsV2 colors, AppTextTheme text) {
+  Widget _amountCenter(AppColorsV3 colors, AppTextThemeV3 text) {
     final isFlipped = ref.watch(isCurrencyFlippedProvider);
     final selectedFiat = ref.watch(selectedFiatCurrencyProvider);
     final display = ref.watch(txAmountDisplayProvider)(
@@ -97,7 +97,9 @@ class _PosAmountScreenState extends ConsumerState<PosAmountScreen> {
       withTokenSymbol: false,
     );
 
-    final symbolStyle = text.transactionDetailAmountSymbol?.copyWith(color: colors.textPrimary);
+    final amountColor = _amount == BigInt.zero ? colors.textMuted2 : colors.textContent;
+    final amountStyle = text.displayCharge.copyWith(color: amountColor);
+    final symbolStyle = text.amountHero.copyWith(color: colors.textContent);
     final isPrefixFiat = isFlipped && selectedFiat.symbolPosition == SymbolPosition.prefix;
 
     final maxDecimals = isFlipped ? selectedFiat.decimals : null;
@@ -111,13 +113,11 @@ class _PosAmountScreenState extends ConsumerState<PosAmountScreen> {
         inputFormatters: [
           DecimalInputFilter(localeConfig: ref.read(localeNumberConfigProvider), maxDecimalPlaces: maxDecimals),
         ],
-        style: text.transactionDetailAmountPrimary?.copyWith(
-          color: _amount == BigInt.zero ? colors.textTertiary : colors.textPrimary,
-        ),
+        style: amountStyle,
         decoration: InputDecoration(
           isDense: true,
           hintText: '0',
-          hintStyle: text.transactionDetailAmountPrimary?.copyWith(color: colors.textTertiary),
+          hintStyle: text.displayCharge.copyWith(color: colors.textMuted2),
         ),
       ),
     );
@@ -145,13 +145,7 @@ class _PosAmountScreenState extends ConsumerState<PosAmountScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text(
-                '≈ ${display.secondaryAmount}',
-                style: text.paragraph?.copyWith(
-                  color: colors.textTertiary,
-                  fontFamily: AppTextTheme.fontFamilySecondary,
-                ),
-              ),
+              Text('≈ ${display.secondaryAmount}', style: text.body.copyWith(color: colors.textMuted)),
               const SizedBox(width: 8),
               QuantusIconButton.circular(
                 icon: Icons.swap_vert,
