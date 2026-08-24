@@ -37,7 +37,13 @@ jobs:
     with:
       app: mobile
       build_mode: ${{ inputs.build_mode }}
-    secrets: inherit
+    secrets:
+      KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+      STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
+      KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+      KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+      MOBILE_APP_ENV: ${{ secrets.MOBILE_APP_ENV }}
+      GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
 
   build-cold:
     name: Build cold wallet
@@ -46,7 +52,11 @@ jobs:
     with:
       app: cold
       build_mode: ${{ inputs.build_mode }}
-    secrets: inherit
+    secrets:
+      KEYSTORE_BASE64: ${{ secrets.COLD_ANDROID_KEYSTORE_BASE64 }}
+      STORE_PASSWORD: ${{ secrets.COLD_ANDROID_STORE_PASSWORD }}
+      KEY_ALIAS: ${{ secrets.COLD_ANDROID_KEY_ALIAS }}
+      KEY_PASSWORD: ${{ secrets.COLD_ANDROID_KEY_PASSWORD }}
 
   release-mobile:
     name: Release mobile wallet

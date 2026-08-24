@@ -13,6 +13,19 @@ on:
         description: "Build mode"
         required: true
         type: string
+    secrets:
+      KEYSTORE_BASE64:
+        required: true
+      STORE_PASSWORD:
+        required: true
+      KEY_ALIAS:
+        required: true
+      KEY_PASSWORD:
+        required: true
+      MOBILE_APP_ENV:
+        required: false
+      GOOGLE_SERVICES_JSON:
+        required: false
     outputs:
       version:
         description: "pubspec version (e.g. 1.5.10+127)"
@@ -37,10 +50,10 @@ jobs:
       artifact_name: ${{ steps.meta.outputs.artifact_name }}
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
-      ANDROID_STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
-      ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-      ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+      KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+      STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}
+      KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+      KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
       MOBILE_APP_ENV: ${{ secrets.MOBILE_APP_ENV }}
       GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
     steps:
@@ -79,6 +92,16 @@ jobs:
             echo "tag=${TAG_PREFIX}${VERSION}"
             echo "artifact_name=${ARTIFACT}-android-${{ inputs.build_mode }}"
           } >> "$GITHUB_OUTPUT"
+
+      - name: Check required secrets
+        run: |
+          set -euo pipefail
+          names=""
+          if [ "${{ inputs.app }}" = mobile ]; then names="$names MOBILE_APP_ENV GOOGLE_SERVICES_JSON"; fi
+          if [ "${{ inputs.build_mode }}" = release ]; then names="$names KEYSTORE_BASE64 STORE_PASSWORD KEY_ALIAS KEY_PASSWORD"; fi
+          for name in $names; do
+            [ -n "${!name}" ] || { echo "::error::secret $name for ${{ inputs.app }} is empty" >&2; exit 1; }
+          done
 
       - name: Cache Rust
         uses: actions/cache@v4
@@ -130,7 +153,7 @@ jobs:
 
       - name: Decode Android keystore
         if: inputs.build_mode == 'release'
-        run: echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "${{ steps.meta.outputs.dir }}/android/upload-keystore.jks"
+        run: echo "$KEYSTORE_BASE64" | base64 --decode > "${{ steps.meta.outputs.dir }}/android/upload-keystore.jks"
 
       - name: Create key.properties
         if: inputs.build_mode == 'release'
@@ -139,9 +162,9 @@ jobs:
         run: |
           cat > "$APP_DIR/android/key.properties" << EOF
           storeFile=../upload-keystore.jks
-          storePassword=$ANDROID_STORE_PASSWORD
-          keyAlias=$ANDROID_KEY_ALIAS
-          keyPassword=$ANDROID_KEY_PASSWORD
+          storePassword=$STORE_PASSWORD
+          keyAlias=$KEY_ALIAS
+          keyPassword=$KEY_PASSWORD
           EOF
 
       - name: Generate splash screen
