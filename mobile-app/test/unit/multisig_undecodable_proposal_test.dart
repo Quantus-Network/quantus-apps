@@ -67,6 +67,9 @@ class FakeMultisigService extends Fake implements MultisigService {
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
+  const colors = AppColorsV3.dark();
+  const text = AppTextThemeV3.standard();
+
   setUp(() async {
     SharedPreferences.setMockInitialValues({'selected_app_locale': 'en'});
     await SettingsService().initialize();
@@ -118,6 +121,83 @@ void main() {
       await tester.pump();
 
       expect(find.text(l10n.multisigProposalInvalid), findsNothing);
+    });
+
+    testWidgets('uses v3 amount, caption, surface, and hairline tokens', (tester) async {
+      const recipient = 'qzrecipientxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx';
+      await tester.pumpWidget(
+        wrap(
+          ProposalListTile(
+            amount: BigInt.from(1000000000000),
+            recipientAddress: recipient,
+            trailing: const SizedBox.shrink(),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      final formatted = AddressFormattingService.formatAddress(recipient);
+      final subtitle = tester.widget<Text>(find.text(l10n.multisigProposalToAddress(formatted)));
+      expect(subtitle.style?.color, colors.textMuted);
+      expect(subtitle.style?.fontSize, text.caption.fontSize);
+
+      final container = tester.widget<Container>(
+        find.ancestor(of: find.text(l10n.multisigProposalToAddress(formatted)), matching: find.byType(Container)).first,
+      );
+      final decoration = container.decoration! as BoxDecoration;
+      expect(decoration.color, colors.bgSurface);
+      expect(decoration.borderRadius, const AppRadiusV3.standard().mdBorder);
+      expect(decoration.border?.top.color, colors.borderHairline);
+    });
+
+    testWidgets('an invalid proposal uses ember on the amount row', (tester) async {
+      await tester.pumpWidget(
+        wrap(
+          ProposalListTile(
+            amount: BigInt.from(1000000000000),
+            recipientAddress: 'qzrecipientxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+            trailing: const SizedBox.shrink(),
+            callUndecodable: true,
+          ),
+        ),
+      );
+      await tester.pump();
+
+      final amount = tester.widget<Text>(find.text(l10n.multisigProposalInvalid));
+      expect(amount.style?.color, colors.semanticEmber);
+      expect(amount.style?.fontSize, text.amountRow.fontSize);
+      expect(amount.style?.fontWeight, text.amountRow.fontWeight);
+    });
+
+    testWidgets('a pending row uses glacier on the proposing chip and highlight', (tester) async {
+      await tester.pumpWidget(
+        wrap(
+          PendingProposalRow(
+            pending: PendingMultisigProposalEvent(
+              tempId: 'pending_1',
+              multisigAddress: 'multisig',
+              proposerId: 'proposer',
+              recipient: 'qzrecipientxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+              amount: BigInt.from(1000000000000),
+              deposit: BigInt.zero,
+              expiryBlock: 1,
+              palletFee: BigInt.zero,
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      final proposing = tester.widget<Text>(find.text(l10n.activityTxProposing));
+      expect(proposing.style?.color, colors.semanticGlacier);
+      expect(proposing.style?.fontSize, text.labelChip.fontSize);
+      expect(proposing.style?.fontWeight, text.labelChip.fontWeight);
+
+      final container = tester.widget<Container>(
+        find.ancestor(of: find.text(l10n.activityTxProposing), matching: find.byType(Container)).first,
+      );
+      final decoration = container.decoration! as BoxDecoration;
+      expect(decoration.border?.top.color, colors.semanticGlacier.useOpacity(0.15));
     });
   });
 

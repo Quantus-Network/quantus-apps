@@ -35,8 +35,8 @@ class ProposalListTile extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = ref.watch(l10nProvider);
-    final colors = context.colors;
-    final text = context.themeText;
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
     final formatAmount = ref.watch(txAmountDisplayProvider);
     final decoded = call;
     final headline = decoded == null
@@ -55,11 +55,9 @@ class ProposalListTile extends ConsumerWidget {
     final content = Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: colors.surfaceDeep,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: highlighted ? colors.txItemOutgoingHighlightBorder : colors.borderButton.useOpacity(0.4),
-        ),
+        color: colors.bgSurface,
+        borderRadius: context.radiusV3.mdBorder,
+        border: Border.all(color: highlighted ? colors.semanticGlacier.useOpacity(0.15) : colors.borderHairline),
       ),
       child: Row(
         children: [
@@ -69,21 +67,11 @@ class ProposalListTile extends ConsumerWidget {
               children: [
                 Text(
                   amountText,
-                  style: text.paragraph?.copyWith(
-                    color: callUndecodable ? colors.textError : colors.textPrimary,
-                    fontWeight: FontWeight.w500,
-                    fontFamily: AppTextTheme.fontFamilySecondary,
-                  ),
+                  style: text.amountRow.copyWith(color: callUndecodable ? colors.semanticEmber : colors.textContent),
                 ),
                 if (subtitle != null) ...[
                   const SizedBox(height: 4),
-                  Text(
-                    subtitle,
-                    style: text.detail?.copyWith(
-                      color: colors.textTertiary,
-                      fontFamily: AppTextTheme.fontFamilySecondary,
-                    ),
-                  ),
+                  Text(subtitle, style: text.caption.copyWith(color: colors.textMuted)),
                 ],
               ],
             ),
@@ -96,10 +84,7 @@ class ProposalListTile extends ConsumerWidget {
 
     if (onTap == null) return content;
 
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(onTap: onTap, borderRadius: BorderRadius.circular(12), child: content),
-    );
+    return GestureDetector(onTap: onTap, behavior: HitTestBehavior.opaque, child: content);
   }
 }
 
@@ -113,18 +98,15 @@ class PendingProposalRow extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = ref.watch(l10nProvider);
-    final colors = context.colors;
-    final text = context.themeText;
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
 
     return ProposalListTile(
       amount: pending.amount,
       recipientAddress: pending.recipient,
       highlighted: true,
       onTap: onTap,
-      trailing: Text(
-        l10n.activityTxProposing,
-        style: text.detail?.copyWith(color: colors.checksum, fontWeight: FontWeight.w600, letterSpacing: 0.4),
-      ),
+      trailing: Text(l10n.activityTxProposing, style: text.labelChip.copyWith(color: colors.semanticGlacier)),
     );
   }
 }
