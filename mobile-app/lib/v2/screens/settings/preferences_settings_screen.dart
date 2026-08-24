@@ -34,8 +34,8 @@ class _PreferencesSettingsScreenV2State extends ConsumerState<PreferencesSetting
   @override
   Widget build(BuildContext context) {
     final l10n = ref.watch(l10nProvider);
-    final colors = context.colors;
-    final text = context.themeText;
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
     final notifConfig = ref.watch(notificationConfigProvider);
     final appLocale = ref.watch(selectedAppLocaleProvider);
     final fiat = ref.watch(selectedFiatCurrencyProvider);
@@ -51,9 +51,9 @@ class _PreferencesSettingsScreenV2State extends ConsumerState<PreferencesSetting
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(appLocale.displayName, style: text.smallParagraph?.copyWith(color: colors.textMuted)),
+                Text(appLocale.displayName, style: text.caption.copyWith(color: colors.textMuted)),
                 const SizedBox(width: 4),
-                SettingsTappableRowUtils.chevron(colors, color: colors.textMuted, size: 18),
+                SettingsTappableRowUtils.chevron(),
               ],
             ),
           ),
@@ -65,9 +65,9 @@ class _PreferencesSettingsScreenV2State extends ConsumerState<PreferencesSetting
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(fiat.code, style: text.smallParagraph?.copyWith(color: colors.textMuted)),
+                Text(fiat.code, style: text.caption.copyWith(color: colors.textMuted)),
                 const SizedBox(width: 4),
-                SettingsTappableRowUtils.chevron(colors, color: colors.textMuted, size: 18),
+                SettingsTappableRowUtils.chevron(),
               ],
             ),
           ),

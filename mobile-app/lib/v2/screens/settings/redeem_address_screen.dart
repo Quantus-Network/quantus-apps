@@ -97,8 +97,8 @@ class _RedeemAddressScreenState extends ConsumerState<RedeemAddressScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.colors;
-    final text = context.themeText;
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
     final fmt = ref.watch(numberFormattingServiceProvider);
     final l10n = ref.watch(l10nProvider);
 
@@ -110,9 +110,9 @@ class _RedeemAddressScreenState extends ConsumerState<RedeemAddressScreen> {
       mainContent: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _AmountSummary(amountLabel: amountLabel, colors: colors, text: text, l10n: l10n),
+          _AmountSummary(amountLabel: amountLabel, l10n: l10n),
           const SizedBox(height: 28),
-          Text(l10n.redeemToLabel, style: text.sendSectionLabel?.copyWith(color: colors.textPrimary)),
+          Text(l10n.redeemToLabel, style: text.headingRow.copyWith(color: colors.textContent)),
           const SizedBox(height: 12),
           AddressInputField(
             controller: _recipientController,
@@ -137,21 +137,22 @@ class _RedeemAddressScreenState extends ConsumerState<RedeemAddressScreen> {
 
 class _AmountSummary extends StatelessWidget {
   final String amountLabel;
-  final AppColorsV2 colors;
-  final AppTextTheme text;
   final AppLocalizations l10n;
 
-  const _AmountSummary({required this.amountLabel, required this.colors, required this.text, required this.l10n});
+  const _AmountSummary({required this.amountLabel, required this.l10n});
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
+
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: colors.sheetBackground, borderRadius: BorderRadius.circular(12)),
+      decoration: BoxDecoration(color: colors.bgSurface, borderRadius: context.radiusV3.mdBorder),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(l10n.settingsMiningStatRedeemable, style: text.receiveLabel?.copyWith(color: colors.textLabel)),
+          Text(l10n.settingsMiningStatRedeemable, style: text.labelData.copyWith(color: colors.textMuted)),
           FittedBox(
             fit: BoxFit.scaleDown,
             alignment: Alignment.centerRight,
@@ -159,7 +160,7 @@ class _AmountSummary extends StatelessWidget {
               amountLabel,
               maxLines: 1,
               softWrap: false,
-              style: text.sendSectionLabel?.copyWith(color: colors.success),
+              style: text.amountInline.copyWith(color: colors.semanticSage),
             ),
           ),
         ],
@@ -177,8 +178,8 @@ class _RedeemConfirmSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.colors;
-    final text = context.themeText;
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
 
     return BottomSheetContainer(
       title: l10n.redeemConfirmTitle,
@@ -187,9 +188,9 @@ class _RedeemConfirmSheet extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _row(l10n.redeemConfirmAmount, formatted, colors, text),
-          Divider(color: colors.separator, height: 32),
+          const Padding(padding: EdgeInsets.symmetric(vertical: 16), child: MenuDivider()),
           _row(l10n.redeemConfirmTo, AddressFormattingService.formatAddress(destination), colors, text),
-          Divider(color: colors.separator, height: 32),
+          const Padding(padding: EdgeInsets.symmetric(vertical: 16), child: MenuDivider()),
           _row(l10n.redeemConfirmFee, l10n.redeemFeeValue(wormholeVolumeFeePercentText()), colors, text),
           const SizedBox(height: 32),
           QuantusButton.simple(label: l10n.redeemAmountCta(formatted), onTap: () => Navigator.of(context).pop(true)),
@@ -198,15 +199,15 @@ class _RedeemConfirmSheet extends StatelessWidget {
     );
   }
 
-  Widget _row(String label, String value, AppColorsV2 colors, AppTextTheme text) {
+  Widget _row(String label, String value, AppColorsV3 colors, AppTextThemeV3 text) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: text.smallParagraph?.copyWith(color: colors.textSecondary)),
+        Text(label, style: text.caption.copyWith(color: colors.textMuted)),
         Flexible(
           child: Text(
             value,
-            style: text.smallParagraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500),
+            style: text.body.copyWith(color: colors.textContent),
             textAlign: TextAlign.end,
             overflow: TextOverflow.ellipsis,
           ),

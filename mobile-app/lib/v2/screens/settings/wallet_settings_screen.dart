@@ -45,10 +45,9 @@ class _WalletSettingsScreenV2State extends ConsumerState<WalletSettingsScreenV2>
   @override
   Widget build(BuildContext context) {
     final l10n = ref.watch(l10nProvider);
-    final colors = context.colors;
-    final text = context.themeText;
-    final titleColor = colors.textError;
-    final subtitleColor = const Color(0xFF67231C);
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
+    final destructiveColor = colors.semanticEmber;
 
     final accountsAsync = ref.watch(accountsProvider);
 
@@ -58,7 +57,7 @@ class _WalletSettingsScreenV2State extends ConsumerState<WalletSettingsScreenV2>
       mainContent: accountsAsync.when(
         loading: () => const Center(child: Loader()),
         error: (e, _) => Center(
-          child: Text(l10n.settingsWalletFailedToLoad, style: text.paragraph?.copyWith(color: colors.textSecondary)),
+          child: Text(l10n.settingsWalletFailedToLoad, style: text.body.copyWith(color: colors.textMuted)),
         ),
         data: (accounts) => ListView(
           children: [
@@ -67,16 +66,15 @@ class _WalletSettingsScreenV2State extends ConsumerState<WalletSettingsScreenV2>
               title: l10n.settingsWalletRecoveryPhrase,
               subtitle: l10n.settingsWalletRecoveryPhraseSubtitle,
               onTap: () => _navigateToRecoveryPhrase(accounts),
-              trailing: SettingsTappableRowUtils.chevron(colors),
+              trailing: SettingsTappableRowUtils.chevron(),
             ),
-            const SettingsDivider(style: SettingsDividerStyle.walletSection),
+            const SettingsDivider(),
             SettingsTappableRow(
               title: l10n.settingsWalletReset,
-              titleColor: titleColor,
+              titleColor: destructiveColor,
               subtitle: l10n.settingsWalletResetSubtitle,
-              subtitleColor: subtitleColor,
               onTap: _showResetConfirmation,
-              trailing: SettingsTappableRowUtils.chevron(colors, color: titleColor),
+              trailing: SettingsTappableRowUtils.chevron(color: destructiveColor),
             ),
           ],
         ),
