@@ -70,16 +70,9 @@ class _LockScreenState extends ConsumerState<LockScreen> {
           PasswordField(
             controller: _passwordController,
             hintText: 'Enter password',
+            error: _error,
             onSubmitted: (_) => _unlockWithPassword(),
           ),
-          if (_error != null) ...[
-            const SizedBox(height: 12),
-            Text(
-              _error!,
-              style: text.caption.copyWith(color: colors.semanticEmber),
-              textAlign: TextAlign.center,
-            ),
-          ],
           const Spacer(),
           QuantusButton.simple(label: 'Unlock', onTap: _busy ? null : _unlockWithPassword, isLoading: _busy),
           if (biometricEnabled) ...[

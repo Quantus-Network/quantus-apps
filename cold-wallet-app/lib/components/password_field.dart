@@ -8,6 +8,7 @@ class PasswordField extends StatefulWidget {
   final ValueChanged<String>? onSubmitted;
   final TextInputAction? textInputAction;
   final bool enabled;
+  final String? error;
 
   const PasswordField({
     super.key,
@@ -16,7 +17,9 @@ class PasswordField extends StatefulWidget {
     this.onChanged,
     this.onSubmitted,
     this.textInputAction,
+    this.error,
     this.enabled = true,
+    
   });
 
   @override
@@ -32,6 +35,7 @@ class _PasswordFieldState extends State<PasswordField> {
       controller: widget.controller,
       hint: widget.hintText,
       enabled: widget.enabled,
+      error: widget.error,
       obscureText: _obscured,
       autocorrect: false,
       enableSuggestions: false,
