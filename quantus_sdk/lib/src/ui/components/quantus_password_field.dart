@@ -1,19 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 
-class PasswordField extends StatefulWidget {
+/// Single-line password field with a visibility toggle.
+///
+/// Starts obscured. Callers own the [controller] and pass already-resolved [hint]
+/// and [error] strings. Defaults [textInputAction] to [TextInputAction.done]
+/// when [onSubmitted] is set, otherwise [TextInputAction.next].
+class QuantusPasswordField extends StatefulWidget {
   final TextEditingController controller;
-  final String hintText;
+  final String hint;
   final ValueChanged<String>? onChanged;
   final ValueChanged<String>? onSubmitted;
   final TextInputAction? textInputAction;
   final bool enabled;
   final String? error;
 
-  const PasswordField({
+  const QuantusPasswordField({
     super.key,
     required this.controller,
-    required this.hintText,
+    required this.hint,
     this.onChanged,
     this.onSubmitted,
     this.textInputAction,
@@ -22,17 +27,17 @@ class PasswordField extends StatefulWidget {
   });
 
   @override
-  State<PasswordField> createState() => _PasswordFieldState();
+  State<QuantusPasswordField> createState() => _QuantusPasswordFieldState();
 }
 
-class _PasswordFieldState extends State<PasswordField> {
+class _QuantusPasswordFieldState extends State<QuantusPasswordField> {
   bool _obscured = true;
 
   @override
   Widget build(BuildContext context) {
     return QuantusTextField(
       controller: widget.controller,
-      hint: widget.hintText,
+      hint: widget.hint,
       enabled: widget.enabled,
       error: widget.error,
       obscureText: _obscured,

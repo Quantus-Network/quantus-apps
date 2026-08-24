@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:quantus_cold_wallet/components/password_field.dart';
 import 'package:quantus_cold_wallet/providers/wallet_providers.dart';
 
 /// Asks for the vault password and verifies it against the vault. Resolves to
@@ -67,9 +66,9 @@ class _VerifyPasswordSheetState extends ConsumerState<_VerifyPasswordSheet> {
           children: [
             Text(widget.message, style: text.body.copyWith(color: colors.textMuted)),
             const SizedBox(height: 24),
-            PasswordField(
+            QuantusPasswordField(
               controller: _password,
-              hintText: 'Password',
+              hint: 'Password',
               error: _error,
               enabled: !_busy,
               onSubmitted: (_) => _submit(),

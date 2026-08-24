@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_cold_wallet/providers/wallet_providers.dart';
-import 'package:quantus_cold_wallet/components/password_field.dart';
 
 class LockScreen extends ConsumerStatefulWidget {
   const LockScreen({super.key});
@@ -67,9 +66,9 @@ class _LockScreenState extends ConsumerState<LockScreen> {
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 32),
-          PasswordField(
+          QuantusPasswordField(
             controller: _passwordController,
-            hintText: 'Enter password',
+            hint: 'Enter password',
             error: _error,
             onSubmitted: (_) => _unlockWithPassword(),
           ),

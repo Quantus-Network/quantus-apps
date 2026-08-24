@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:quantus_cold_wallet/providers/wallet_providers.dart';
-import 'package:quantus_cold_wallet/components/password_field.dart';
 
 /// Action pane for setting or changing the vault password. Resolves to true
 /// when the password was changed.
@@ -123,13 +122,13 @@ class _ChangePasswordSheetState extends ConsumerState<_ChangePasswordSheet> {
           style: text.body.copyWith(color: colors.textMuted),
         ),
         const SizedBox(height: 24),
-        PasswordField(controller: _current, hintText: 'Current password', enabled: !_busy),
+        QuantusPasswordField(controller: _current, hint: 'Current password', enabled: !_busy),
         const SizedBox(height: 12),
-        PasswordField(controller: _next, hintText: 'New password', enabled: !_busy),
+        QuantusPasswordField(controller: _next, hint: 'New password', enabled: !_busy),
         const SizedBox(height: 12),
-        PasswordField(
+        QuantusPasswordField(
           controller: _confirm,
-          hintText: 'Confirm new password',
+          hint: 'Confirm new password',
           enabled: !_busy,
           onSubmitted: (_) => _submit(),
         ),

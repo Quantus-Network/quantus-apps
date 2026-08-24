@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:quantus_cold_wallet/components/password_field.dart';
 import 'package:quantus_cold_wallet/models/cold_account.dart';
 import 'package:quantus_cold_wallet/providers/wallet_providers.dart';
 
@@ -96,9 +95,9 @@ class _SetPasswordScreenState extends ConsumerState<SetPasswordScreen> {
               style: text.body.copyWith(color: colors.textMuted),
             ),
             const SizedBox(height: 24),
-            PasswordField(controller: _password, hintText: 'Password'),
+            QuantusPasswordField(controller: _password, hint: 'Password'),
             const SizedBox(height: 12),
-            PasswordField(controller: _confirm, hintText: 'Confirm password', onSubmitted: (_) => _create()),
+            QuantusPasswordField(controller: _confirm, hint: 'Confirm password', onSubmitted: (_) => _create()),
             if (_biometricAvailable) ...[const SizedBox(height: 24), _biometricToggle(colors, text)],
             if (_error != null) ...[
               const SizedBox(height: 16),
