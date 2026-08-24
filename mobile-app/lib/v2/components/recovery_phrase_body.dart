@@ -72,53 +72,21 @@ class _RecoveryPhraseBodyState extends ConsumerState<RecoveryPhraseBody> {
           Expanded(
             child: widget.isGridLoading
                 ? const Center(child: Loader(size: 24))
-                : SingleChildScrollView(child: _grid(l10n, colors, text)),
+                : SingleChildScrollView(
+                    child: MnemonicRevealGrid(
+                      key: const Key(E2EKeys.recoveryPhraseRevealArea),
+                      words: widget.words,
+                      isRevealed: _isRevealed,
+                      revealHint: l10n.recoveryPhraseBodyTapToReveal,
+                      hideHint: l10n.recoveryPhraseBodyTapToHide,
+                      onToggle: _toggleRevealed,
+                      hideHintKey: const Key(E2EKeys.recoveryPhraseRevealed),
+                    ),
+                  ),
           ),
         ],
       ),
       bottomContent: _bottomBar(l10n),
-    );
-  }
-
-  Widget _grid(AppLocalizations l10n, AppColorsV3 colors, AppTextThemeV3 text) {
-    return GestureDetector(
-      key: const Key(E2EKeys.recoveryPhraseRevealArea),
-      onTap: _toggleRevealed,
-      behavior: HitTestBehavior.opaque,
-      child: Column(
-        children: [
-          Stack(
-            alignment: Alignment.center,
-            children: [
-              MnemonicGrid(words: widget.words, isRevealed: _isRevealed),
-              if (!_isRevealed)
-                _tapHint(Icons.visibility_outlined, l10n.recoveryPhraseBodyTapToReveal, colors.textContent, text),
-            ],
-          ),
-          if (_isRevealed) ...[
-            const SizedBox(height: 16),
-            _tapHint(
-              Icons.visibility_off_outlined,
-              l10n.recoveryPhraseBodyTapToHide,
-              colors.textMuted,
-              text,
-              key: const Key(E2EKeys.recoveryPhraseRevealed),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _tapHint(IconData icon, String label, Color color, AppTextThemeV3 text, {Key? key}) {
-    return Row(
-      key: key,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 18, color: color),
-        const SizedBox(width: 8),
-        Text(label, style: text.body.copyWith(color: color)),
-      ],
     );
   }
 
