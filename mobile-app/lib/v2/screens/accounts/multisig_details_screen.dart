@@ -33,8 +33,6 @@ class MultisigDetailsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = ref.watch(l10nProvider);
-    final colors = context.colors;
-    final text = context.themeText;
     final signers = _orderedSigners();
 
     return ScaffoldBase(
@@ -47,12 +45,10 @@ class MultisigDetailsScreen extends ConsumerWidget {
               account: account,
               signers: signers,
               localNameFor: (id) => _localAccountName(ref, id),
-              colors: colors,
-              text: text,
               l10n: l10n,
             ),
             const SizedBox(height: 24),
-            _ThresholdSection(account: account, colors: colors, text: text, l10n: l10n),
+            _ThresholdSection(account: account, l10n: l10n),
           ],
         ),
       ),
@@ -61,33 +57,27 @@ class MultisigDetailsScreen extends ConsumerWidget {
 }
 
 class _SignersSection extends StatelessWidget {
-  const _SignersSection({
-    required this.account,
-    required this.signers,
-    required this.localNameFor,
-    required this.colors,
-    required this.text,
-    required this.l10n,
-  });
+  const _SignersSection({required this.account, required this.signers, required this.localNameFor, required this.l10n});
 
   final MultisigAccount account;
   final List<String> signers;
   final String? Function(String accountId) localNameFor;
-  final AppColorsV2 colors;
-  final AppTextTheme text;
   final AppLocalizations l10n;
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
+
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: colors.surfaceDeep, borderRadius: BorderRadius.circular(14)),
+      decoration: BoxDecoration(color: colors.bgSurface, borderRadius: context.radiusV3.mdBorder),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(l10n.multisigCreateSignersLabel, style: text.receiveLabel?.copyWith(color: colors.textLabel)),
+          Text(l10n.multisigCreateSignersLabel, style: text.labelData.copyWith(color: colors.textMuted)),
           const SizedBox(height: 8),
-          Text(l10n.multisigCreateSignersSubtitle, style: text.detail?.copyWith(color: colors.textTertiary)),
+          Text(l10n.multisigCreateSignersSubtitle, style: text.caption.copyWith(color: colors.textMuted)),
           const SizedBox(height: 8),
           ...signers.map(
             (signerId) => MultisigSignerListTile(
@@ -106,29 +96,30 @@ class _SignersSection extends StatelessWidget {
 }
 
 class _ThresholdSection extends StatelessWidget {
-  const _ThresholdSection({required this.account, required this.colors, required this.text, required this.l10n});
+  const _ThresholdSection({required this.account, required this.l10n});
 
   final MultisigAccount account;
-  final AppColorsV2 colors;
-  final AppTextTheme text;
   final AppLocalizations l10n;
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
+
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: colors.surfaceDeep, borderRadius: BorderRadius.circular(14)),
+      decoration: BoxDecoration(color: colors.bgSurface, borderRadius: context.radiusV3.mdBorder),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(l10n.multisigCreateThresholdLabel, style: text.receiveLabel?.copyWith(color: colors.textLabel)),
+          Text(l10n.multisigCreateThresholdLabel, style: text.labelData.copyWith(color: colors.textMuted)),
           const SizedBox(height: 12),
           Text(
             l10n.multisigThresholdOf(account.threshold, account.signers.length),
-            style: text.mediumTitle?.copyWith(color: colors.accentOrange, fontFamily: AppTextTheme.fontFamilySecondary),
+            style: text.amountInline.copyWith(color: colors.accentFlare),
           ),
           const SizedBox(height: 8),
-          Text(l10n.multisigAccountMenuDetailsThresholdHint, style: text.detail?.copyWith(color: colors.textTertiary)),
+          Text(l10n.multisigAccountMenuDetailsThresholdHint, style: text.caption.copyWith(color: colors.textMuted)),
         ],
       ),
     );

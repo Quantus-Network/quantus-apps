@@ -21,8 +21,9 @@ class AddHardwareAccountScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = ref.watch(l10nProvider);
-    final colors = context.colors;
-    final text = context.themeText;
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
+    final heroRadius = context.radiusV3.smBorder;
 
     return ScaffoldBase(
       appBar: V2AppBar(title: l10n.addKeystoneAppBarTitle),
@@ -32,29 +33,25 @@ class AddHardwareAccountScreen extends ConsumerWidget {
           Container(
             height: 218,
             decoration: BoxDecoration(
-              border: Border.all(color: colors.textPrimary.useOpacity(0.07)),
-              borderRadius: BorderRadius.circular(8),
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [colors.sheetBackground, colors.surfaceHero],
-              ),
+              border: Border.all(color: colors.borderHairline),
+              borderRadius: heroRadius,
+              color: colors.bgSurface,
             ),
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: heroRadius,
               child: Image.asset('assets/v2/keystone_hero.png', fit: BoxFit.cover, alignment: Alignment.topCenter),
             ),
           ),
           const SizedBox(height: 24),
           Text(
             l10n.addKeystoneIntroTitle,
-            style: text.mediumTitle?.copyWith(color: colors.textPrimary),
+            style: text.titleHero.copyWith(color: colors.textContent),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 8),
           Text(
             l10n.addKeystoneIntroSubtitle,
-            style: text.smallParagraph?.copyWith(color: colors.textSubtle),
+            style: text.body.copyWith(color: colors.textMuted),
             textAlign: TextAlign.center,
           ),
         ],
@@ -74,7 +71,7 @@ class AddHardwareAccountScreen extends ConsumerWidget {
             QuantusButton.simple(
               label: l10n.addKeystoneGetOneLink,
               variant: ButtonVariant.underline,
-              textStyle: TextStyle(color: colors.accentOrange),
+              textStyle: TextStyle(color: colors.accentFlare),
               onTap: () => launchUrl(_keystoneStoreUrl, mode: LaunchMode.externalApplication),
             ),
           ],

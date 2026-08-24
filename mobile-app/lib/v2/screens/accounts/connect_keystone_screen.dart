@@ -75,14 +75,10 @@ class _ConnectKeystoneScreenState extends ConsumerState<ConnectKeystoneScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = ref.watch(l10nProvider);
-    final colors = context.colors;
-    final text = context.themeText;
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
 
-    final sectionLabelStyle = text.tiny?.copyWith(
-      fontFamily: AppTextTheme.fontFamilySecondary,
-      color: colors.textMuted,
-      letterSpacing: 0.88,
-    );
+    final sectionLabelStyle = text.labelData.copyWith(color: colors.textMuted);
 
     return ScaffoldBase(
       appBar: V2AppBar(title: l10n.addKeystoneAppBarTitle),
@@ -92,12 +88,9 @@ class _ConnectKeystoneScreenState extends ConsumerState<ConnectKeystoneScreen> {
           children: [
             Image.asset('assets/v2/keystone_logo.png', width: 142, height: 32),
             const SizedBox(height: 24),
-            Text(
-              l10n.addKeystoneConnectTitle,
-              style: text.mediumTitle?.copyWith(color: colors.textLightGray, letterSpacing: -0.48),
-            ),
+            Text(l10n.addKeystoneConnectTitle, style: text.titleHero.copyWith(color: colors.textContent)),
             const SizedBox(height: 8),
-            Text(l10n.addKeystoneConnectSubtitle, style: text.smallParagraph?.copyWith(color: colors.textSubtle)),
+            Text(l10n.addKeystoneConnectSubtitle, style: text.body.copyWith(color: colors.textMuted)),
             const SizedBox(height: 40),
             Text(l10n.addKeystoneBeforeYouStart, style: sectionLabelStyle),
             const SizedBox(height: 12),
@@ -107,16 +100,16 @@ class _ConnectKeystoneScreenState extends ConsumerState<ConnectKeystoneScreen> {
               subtitle: l10n.addKeystoneFirmwareSubtitle,
             ),
             const SizedBox(height: 24),
-            Divider(height: 1, color: colors.separator),
+            const MenuDivider(),
             const SizedBox(height: 24),
             Text(l10n.addKeystoneOnYourKeystone, style: sectionLabelStyle),
             const SizedBox(height: 12),
             _InstructionRow(iconAsset: 'assets/v2/keystone_lock_simple_open.svg', title: l10n.addKeystoneStepUnlock),
-            _rowDivider(colors),
+            const Padding(padding: EdgeInsets.symmetric(vertical: 12), child: MenuDivider()),
             _InstructionRow(iconAsset: 'assets/v2/keystone_qr_code.svg', title: l10n.addKeystoneStepSelectQuantus),
             if (_error != null) ...[
               const SizedBox(height: 16),
-              Text(_error!, style: text.detail?.copyWith(color: colors.textError)),
+              Text(_error!, style: text.caption.copyWith(color: colors.semanticEmber)),
             ],
           ],
         ),
@@ -142,13 +135,6 @@ class _ConnectKeystoneScreenState extends ConsumerState<ConnectKeystoneScreen> {
       ),
     );
   }
-
-  Widget _rowDivider(AppColorsV2 colors) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      child: Divider(height: 1, color: colors.separator),
-    );
-  }
 }
 
 class _InstructionRow extends StatelessWidget {
@@ -160,8 +146,8 @@ class _InstructionRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.colors;
-    final text = context.themeText;
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
@@ -170,7 +156,7 @@ class _InstructionRow extends StatelessWidget {
           width: 40,
           height: 40,
           alignment: Alignment.center,
-          decoration: BoxDecoration(color: colors.sheetBackground, borderRadius: BorderRadius.circular(20)),
+          decoration: BoxDecoration(color: colors.bgSurface, shape: BoxShape.circle),
           child: SvgPicture.asset(iconAsset, width: 16, height: 16),
         ),
         const SizedBox(width: 12),
@@ -178,10 +164,10 @@ class _InstructionRow extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(title, style: text.paragraph?.copyWith(color: colors.textPrimary, height: 1.0)),
+              Text(title, style: text.bodyLarge.copyWith(color: colors.textContent)),
               if (subtitle != null) ...[
                 const SizedBox(height: 8),
-                Text(subtitle!, style: text.detail?.copyWith(color: colors.textSubtle)),
+                Text(subtitle!, style: text.caption.copyWith(color: colors.textMuted)),
               ],
             ],
           ),
