@@ -61,20 +61,23 @@ class _QrScannerPageState extends ConsumerState<QrScannerPage> {
   @override
   Widget build(BuildContext context) {
     final l10n = ref.watch(l10nProvider);
-    final colors = context.colors;
+    final colors = context.colorsV3;
+    final radius = context.radiusV3.md;
     final screen = MediaQuery.of(context).size;
     final frameSize = (screen.width - 112).clamp(220.0, 280.0);
 
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: colors.bgVoid,
       body: Stack(
         children: [
           MobileScanner(controller: _controller, onDetect: _onDetect),
           CustomPaint(
             size: Size(screen.width, screen.height),
-            painter: _OverlayPainter(frameSize: frameSize, screenSize: screen),
+            painter: _OverlayPainter(frameSize: frameSize, color: colors.bgVoid.useOpacity(0.6), cutoutRadius: radius),
           ),
-          Center(child: _ScanFrame(size: frameSize)),
+          Center(
+            child: _ScanFrame(size: frameSize, color: colors.textContent, radius: radius),
+          ),
           Positioned(
             left: 0,
             right: 0,
@@ -86,22 +89,14 @@ class _QrScannerPageState extends ConsumerState<QrScannerPage> {
                   valueListenable: _controller,
                   builder: (_, state, _) {
                     final isOn = state.torchState == TorchState.on;
-                    return _actionButton(
-                      icon: isOn ? Icons.flash_on : Icons.flash_off,
-                      onTap: _controller.toggleTorch,
-                      colors: colors,
-                    );
+                    return _actionButton(icon: isOn ? Icons.flash_on : Icons.flash_off, onTap: _controller.toggleTorch);
                   },
                 ),
                 const SizedBox(width: 8),
-                _actionButton(icon: Icons.image_outlined, onTap: _pickImage, colors: colors),
+                _actionButton(icon: Icons.image_outlined, onTap: _pickImage),
                 if (kDebugMode) ...[
                   const SizedBox(width: 8),
-                  _actionButton(
-                    icon: Icons.bug_report,
-                    onTap: () => _handleCode(AppConstants.debugTestAddress),
-                    colors: colors,
-                  ),
+                  _actionButton(icon: Icons.bug_report, onTap: () => _handleCode(AppConstants.debugTestAddress)),
                 ],
               ],
             ),
@@ -123,16 +118,17 @@ class _QrScannerPageState extends ConsumerState<QrScannerPage> {
     );
   }
 
-  Widget _actionButton({required IconData icon, required VoidCallback onTap, required AppColorsV2 colors}) {
+  Widget _actionButton({required IconData icon, required VoidCallback onTap}) {
     return QuantusIconButton.rounded(icon: icon, onTap: onTap, size: IconButtonSize.large);
   }
 }
 
 class _OverlayPainter extends CustomPainter {
   final double frameSize;
-  final Size screenSize;
+  final Color color;
+  final double cutoutRadius;
 
-  _OverlayPainter({required this.frameSize, required this.screenSize});
+  _OverlayPainter({required this.frameSize, required this.color, required this.cutoutRadius});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -144,38 +140,40 @@ class _OverlayPainter extends CustomPainter {
     );
     final path = Path()
       ..addRect(rect)
-      ..addRRect(RRect.fromRectAndRadius(frameRect, const Radius.circular(16)));
+      ..addRRect(RRect.fromRectAndRadius(frameRect, Radius.circular(cutoutRadius)));
     path.fillType = PathFillType.evenOdd;
-    canvas.drawPath(path, Paint()..color = Colors.black.withValues(alpha: 0.6));
+    canvas.drawPath(path, Paint()..color = color);
   }
 
   @override
-  bool shouldRepaint(_OverlayPainter old) => frameSize != old.frameSize;
+  bool shouldRepaint(_OverlayPainter old) =>
+      frameSize != old.frameSize || color != old.color || cutoutRadius != old.cutoutRadius;
 }
 
 class _ScanFrame extends StatelessWidget {
   final double size;
-  const _ScanFrame({required this.size});
+  final Color color;
+  final double radius;
+
+  const _ScanFrame({required this.size, required this.color, required this.radius});
 
   @override
   Widget build(BuildContext context) {
-    final color = context.colors.accentOrange;
-
     return SizedBox(
       width: size,
       height: size,
       child: Stack(
         children: [
-          _corner(top: true, left: true, color: color),
-          _corner(top: true, left: false, color: color),
-          _corner(top: false, left: true, color: color),
-          _corner(top: false, left: false, color: color),
+          _corner(top: true, left: true),
+          _corner(top: true, left: false),
+          _corner(top: false, left: true),
+          _corner(top: false, left: false),
         ],
       ),
     );
   }
 
-  Widget _corner({required bool top, required bool left, required Color color}) {
+  Widget _corner({required bool top, required bool left}) {
     return Positioned(
       top: top ? 0 : null,
       bottom: top ? null : 0,
@@ -187,10 +185,10 @@ class _ScanFrame extends StatelessWidget {
         child: DecoratedBox(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.only(
-              topLeft: top && left ? const Radius.circular(16) : Radius.zero,
-              topRight: top && !left ? const Radius.circular(16) : Radius.zero,
-              bottomLeft: !top && left ? const Radius.circular(16) : Radius.zero,
-              bottomRight: !top && !left ? const Radius.circular(16) : Radius.zero,
+              topLeft: top && left ? Radius.circular(radius) : Radius.zero,
+              topRight: top && !left ? Radius.circular(radius) : Radius.zero,
+              bottomLeft: !top && left ? Radius.circular(radius) : Radius.zero,
+              bottomRight: !top && !left ? Radius.circular(radius) : Radius.zero,
             ),
             border: Border(
               top: top ? BorderSide(color: color, width: 1.6) : BorderSide.none,
