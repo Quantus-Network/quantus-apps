@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:quantus_cold_wallet/components/lock_overlay.dart';
 import 'package:quantus_cold_wallet/components/lock_screen.dart';
 import 'package:quantus_cold_wallet/providers/wallet_providers.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
@@ -62,5 +63,27 @@ void main() {
     expect(find.text('Use biometrics'), findsOneWidget);
     final icon = tester.widget<Icon>(find.byIcon(Icons.fingerprint));
     expect(icon.color, colors.textContent);
+  });
+
+  testWidgets('password field can be tapped when LockOverlay sits above the navigator', (tester) async {
+    FlutterSecureStorage.setMockInitialValues({});
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [walletControllerProvider.overrideWith(_LockedController.new)],
+        child: Builder(
+          builder: (context) => MaterialApp(
+            theme: AppTheme.darkTheme(context),
+            home: const SizedBox(),
+            builder: (context, child) => Stack(children: [?child, const LockOverlay()]),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    await tester.tap(find.byType(TextField));
+    await tester.pump();
+
+    expect(tester.takeException(), isNull);
   });
 }

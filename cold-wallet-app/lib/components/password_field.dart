@@ -28,8 +28,6 @@ class _PasswordFieldState extends State<PasswordField> {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.colorsV3;
-
     return QuantusTextField(
       controller: widget.controller,
       hint: widget.hintText,
@@ -41,14 +39,9 @@ class _PasswordFieldState extends State<PasswordField> {
           widget.textInputAction ?? (widget.onSubmitted != null ? TextInputAction.done : TextInputAction.next),
       onChanged: widget.onChanged,
       onSubmitted: widget.onSubmitted,
-      trailing: GestureDetector(
+      trailing: QuantusIconButton.ghost(
+        icon: _obscured ? Icons.visibility_off_outlined : Icons.visibility_outlined,
         onTap: () => setState(() => _obscured = !_obscured),
-        behavior: HitTestBehavior.opaque,
-        child: Icon(
-          _obscured ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-          size: 22,
-          color: colors.textMuted,
-        ),
       ),
     );
   }
