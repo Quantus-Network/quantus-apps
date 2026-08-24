@@ -216,7 +216,7 @@ class _AddAccountScreenState extends ConsumerState<AddAccountScreen> {
     final text = context.themeTextV3;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 1),
       decoration: BoxDecoration(
         color: colors.bgSurface,
         borderRadius: context.radiusV3.mdBorder,
@@ -231,6 +231,7 @@ class _AddAccountScreenState extends ConsumerState<AddAccountScreen> {
               keyboardType: TextInputType.number,
               textAlign: TextAlign.center,
               inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(9)],
+              cursorColor: colors.accentFlare,
               style: text.titleScreen.copyWith(color: colors.textContent),
               decoration: const InputDecoration(border: InputBorder.none, isCollapsed: true),
             ),
@@ -242,48 +243,18 @@ class _AddAccountScreenState extends ConsumerState<AddAccountScreen> {
   }
 
   Widget _pathField(BuildContext context) {
-    final colors = context.colorsV3;
-    final text = context.themeTextV3;
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      decoration: BoxDecoration(
-        color: colors.bgSurface,
-        borderRadius: context.radiusV3.mdBorder,
-        border: Border.all(color: colors.borderHairline),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text('DERIVATION PATH', style: text.labelMonogram.copyWith(color: colors.textMuted)),
-          const SizedBox(height: 6),
-          TextField(
-            controller: _path,
-            onChanged: (_) => _userChangedPath = true,
-            autocorrect: false,
-            enableSuggestions: false,
-            textInputAction: TextInputAction.done,
-            onSubmitted: (_) => FocusScope.of(context).unfocus(),
-            // Wraps: a path longer than the field would otherwise scroll its
-            // own start out of sight, and a path half-read is not verified.
-            maxLines: null,
-            keyboardType: TextInputType.text,
-            style: text.dataAddressLarge.copyWith(
-              color: colors.textContent,
-              fontFamily: AppTextTheme.fontFamilySecondary,
-            ),
-            decoration: InputDecoration(
-              border: InputBorder.none,
-              isCollapsed: true,
-              hintText: HdWalletService.pathForIndex(0),
-              hintStyle: text.dataAddressLarge.copyWith(
-                color: colors.textMuted,
-                fontFamily: AppTextTheme.fontFamilySecondary,
-              ),
-            ),
-          ),
-        ],
-      ),
+    return QuantusTextField(
+      controller: _path,
+      hint: HdWalletService.pathForIndex(0),
+      onChanged: (_) => _userChangedPath = true,
+      autocorrect: false,
+      enableSuggestions: false,
+      textInputAction: TextInputAction.done,
+      onSubmitted: (_) => FocusScope.of(context).unfocus(),
+      // Wraps: a path longer than the field would otherwise scroll its
+      // own start out of sight, and a path half-read is not verified.
+      maxLines: null,
+      keyboardType: TextInputType.text,
     );
   }
 

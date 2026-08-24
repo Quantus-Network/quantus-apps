@@ -19,7 +19,6 @@ class PasswordField extends StatefulWidget {
     this.textInputAction,
     this.error,
     this.enabled = true,
-    
   });
 
   @override

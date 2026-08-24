@@ -111,14 +111,9 @@ class _ImportWalletScreenState extends State<ImportWalletScreen> {
                 autocorrect: false,
                 enableSuggestions: false,
                 onChanged: (_) => setState(() {}),
-                trailing: GestureDetector(
+                trailing: QuantusIconButton.ghost(
+                  icon: _controller.obscured ? Icons.visibility_off_outlined : Icons.visibility_outlined,
                   onTap: () => setState(() => _controller.obscured = !_controller.obscured),
-                  behavior: HitTestBehavior.opaque,
-                  child: Icon(
-                    _controller.obscured ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-                    size: 22,
-                    color: colors.textMuted,
-                  ),
                 ),
               ),
               const SizedBox(height: 20),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 
 /// Renders the value as `x` characters while keeping the real text intact.
@@ -44,7 +45,9 @@ class QuantusTextField extends StatefulWidget {
   final TextInputType? keyboardType;
   final TextInputAction? textInputAction;
   final TextCapitalization textCapitalization;
+  final TextAlign textAlign;
   final bool autocorrect;
+  final List<TextInputFormatter>? inputFormatters;
   final ValueChanged<String>? onSubmitted;
   final Widget? trailing;
   final int? maxLines;
@@ -66,7 +69,9 @@ class QuantusTextField extends StatefulWidget {
     this.keyboardType,
     this.textInputAction,
     this.textCapitalization = TextCapitalization.none,
+    this.textAlign = TextAlign.start,
     this.autocorrect = true,
+    this.inputFormatters,
     this.onSubmitted,
     this.trailing,
     this.maxLines = 1,
@@ -169,6 +174,7 @@ class _QuantusTextFieldState extends State<QuantusTextField> {
                       keyboardType: widget.keyboardType,
                       textInputAction: widget.textInputAction,
                       textCapitalization: widget.textCapitalization,
+                      textAlign: widget.textAlign,
                       autocorrect: widget.autocorrect,
                       maxLines: widget.maxLines,
                       minLines: widget.minLines,
@@ -176,6 +182,7 @@ class _QuantusTextFieldState extends State<QuantusTextField> {
                       onChanged: widget.onChanged,
                       onSubmitted: widget.onSubmitted,
                       cursorColor: colors.accentFlare,
+                      inputFormatters: widget.inputFormatters,
                       style: textStyle,
                       decoration: InputDecoration.collapsed(hintText: widget.hint, hintStyle: hintStyle),
                     ),

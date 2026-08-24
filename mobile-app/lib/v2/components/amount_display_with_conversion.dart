@@ -36,10 +36,9 @@ class AmountDisplayWithConversion extends StatelessWidget {
 
     final primaryAmountColor = amountColor ?? (colorizeAmount ? colors.semanticSage : colors.textContent);
     const tokenLogoPrimarySize = 32.0;
-    
+
     final primaryAmount = isHidden ? hiddenAmountText : amountDisplay.primaryAmount;
     final secondaryAmount = isHidden ? hiddenAmountText : amountDisplay.secondaryAmount;
-
 
     final secondaryAmountColor = colors.textMuted;
     final secondaryAmountBaseStyle = text.body.copyWith(color: secondaryAmountColor);

@@ -8,8 +8,6 @@ class SegmentedControls<T> extends StatelessWidget {
   final ValueChanged<T> onChanged;
 
   static const double _padding = 5.0;
-  static const double _outerRadius = 10.5;
-  static const double _pillRadius = 8.0;
   static const double _verticalPadding = 14.0;
   static const Duration _duration = Duration(milliseconds: 300);
 
@@ -18,15 +16,17 @@ class SegmentedControls<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.colors;
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
+    final radius = context.radiusV3;
     final selectedIndex = items.indexWhere((item) => item.value == selectedValue);
 
     return Container(
       padding: const EdgeInsets.all(_padding),
       decoration: BoxDecoration(
-        color: colors.background,
-        borderRadius: BorderRadius.circular(_outerRadius),
-        border: Border.all(color: colors.txItemBorderDefault, width: 1.5),
+        color: colors.bgSurface,
+        borderRadius: radius.mdBorder,
+        border: Border.all(color: colors.borderHairline),
       ),
       child: LayoutBuilder(
         builder: (context, constraints) {
@@ -37,7 +37,6 @@ class SegmentedControls<T> extends StatelessWidget {
             height: _verticalPadding * 2 + 22,
             child: Stack(
               children: [
-                // Sliding pill
                 AnimatedPositioned(
                   duration: _duration,
                   curve: Curves.easeInOut,
@@ -46,13 +45,9 @@ class SegmentedControls<T> extends StatelessWidget {
                   bottom: 0,
                   width: segmentWidth,
                   child: Container(
-                    decoration: BoxDecoration(
-                      color: colors.segmentedControlPill,
-                      borderRadius: BorderRadius.circular(_pillRadius),
-                    ),
+                    decoration: BoxDecoration(color: colors.bgSurface2, borderRadius: radius.smBorder),
                   ),
                 ),
-                // Labels row
                 Row(
                   children: items.mapIndexed((index, item) {
                     final isSelected = index == selectedIndex;
@@ -70,9 +65,8 @@ class SegmentedControls<T> extends StatelessWidget {
                               child: AnimatedDefaultTextStyle(
                                 duration: _duration,
                                 curve: Curves.easeInOut,
-                                style: (context.themeText.smallTitle ?? const TextStyle(fontSize: 18)).copyWith(
-                                  color: isSelected ? colors.textPrimary : colors.txItemIconDefault,
-                                  fontWeight: FontWeight.w400,
+                                style: text.headingRow.copyWith(
+                                  color: isSelected ? colors.textContent : colors.textMuted,
                                 ),
                                 child: Text(item.label, textAlign: TextAlign.center),
                               ),
