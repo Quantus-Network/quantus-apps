@@ -42,8 +42,8 @@ class MultisigActivitySection extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = ref.watch(l10nProvider);
-    final colors = context.colors;
-    final text = context.themeText;
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
 
     final openProposalsAsync = ref.watch(multisigOpenProposalsProvider(msig));
     final pastProposalsAsync = ref.watch(multisigPastProposalsProvider(msig));
@@ -57,11 +57,11 @@ class MultisigActivitySection extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         const SizedBox(height: 24),
-        Text(l10n.multisigOpenProposals, style: text.smallTitle?.copyWith(color: colors.textPrimary)),
+        Text(l10n.multisigOpenProposals, style: text.headingRow.copyWith(color: colors.textContent)),
         const SizedBox(height: 16),
-        _openProposals(context, l10n, colors, text, openProposalsAsync, pending, effectiveLocalSignerIds),
+        _openProposals(context, l10n, openProposalsAsync, pending, effectiveLocalSignerIds),
         const SizedBox(height: 8),
-        _activity(context, ref, l10n, colors, text, pastProposalsAsync),
+        _activity(context, ref, l10n, pastProposalsAsync),
       ],
     );
   }
@@ -69,12 +69,12 @@ class MultisigActivitySection extends ConsumerWidget {
   Widget _openProposals(
     BuildContext context,
     AppLocalizations l10n,
-    AppColorsV2 colors,
-    AppTextTheme text,
     AsyncValue<List<MultisigProposal>> openProposalsAsync,
     List<PendingMultisigProposalEvent> pending,
     List<String> localSignerIds,
   ) {
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
     if (openProposalsAsync.isLoading && !openProposalsAsync.hasValue) {
       return const Center(
         child: Padding(padding: EdgeInsets.all(24), child: Loader()),
@@ -83,14 +83,14 @@ class MultisigActivitySection extends ConsumerWidget {
     if (openProposalsAsync.hasError && !openProposalsAsync.hasValue && pending.isEmpty) {
       return Text(
         l10n.multisigLoadFailed(openProposalsAsync.error.toString()),
-        style: text.detail?.copyWith(color: colors.textError),
+        style: text.caption.copyWith(color: colors.semanticEmber),
       );
     }
 
     final openProposals = [...(openProposalsAsync.value ?? const <MultisigProposal>[])]
       ..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
     if (pending.isEmpty && openProposals.isEmpty) {
-      return Text(l10n.multisigNoOpenProposals, style: text.smallParagraph?.copyWith(color: colors.textTertiary));
+      return Text(l10n.multisigNoOpenProposals, style: text.body.copyWith(color: colors.textMuted));
     }
 
     return Column(
@@ -119,10 +119,10 @@ class MultisigActivitySection extends ConsumerWidget {
     BuildContext context,
     WidgetRef ref,
     AppLocalizations l10n,
-    AppColorsV2 colors,
-    AppTextTheme text,
     AsyncValue<List<MultisigProposal>> pastProposalsAsync,
   ) {
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
     final formatTxAmount = ref.watch(txAmountDisplayProvider);
 
     return txAsync.when(
@@ -134,14 +134,14 @@ class MultisigActivitySection extends ConsumerWidget {
         padding: const EdgeInsets.only(top: 40),
         child: Column(
           children: [
-            Text(l10n.homeActivityErrorLoading, style: text.detail?.copyWith(color: colors.textError)),
+            Text(l10n.homeActivityErrorLoading, style: text.caption.copyWith(color: colors.semanticEmber)),
             const SizedBox(height: 12),
             GestureDetector(
               behavior: HitTestBehavior.opaque,
               onTap: () => onRetry?.call(),
               child: Text(
                 l10n.homeActivityRetry,
-                style: text.smallParagraph?.copyWith(color: colors.textPrimary, decoration: TextDecoration.underline),
+                style: text.body.copyWith(color: colors.textContent, decoration: TextDecoration.underline),
               ),
             ),
           ],
@@ -155,7 +155,7 @@ class MultisigActivitySection extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const SizedBox(height: 32),
-            Text(l10n.homeActivityTitle, style: text.smallTitle),
+            Text(l10n.homeActivityTitle, style: text.headingRow.copyWith(color: colors.textContent)),
             const SizedBox(height: 12),
             if (recent.isEmpty)
               Padding(
@@ -163,7 +163,7 @@ class MultisigActivitySection extends ConsumerWidget {
                 child: Text(
                   l10n.homeActivityEmptyTitle,
                   textAlign: TextAlign.center,
-                  style: text.smallParagraph?.copyWith(color: colors.textMuted),
+                  style: text.body.copyWith(color: colors.textMuted),
                 ),
               )
             else

@@ -20,8 +20,8 @@ class _MultisigSignerPickerSheet extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = ref.watch(l10nProvider);
-    final colors = context.colors;
-    final text = context.themeText;
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
 
     return BottomSheetContainer(
       title: l10n.multisigSignerPickerTitle,
@@ -29,7 +29,7 @@ class _MultisigSignerPickerSheet extends ConsumerWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(l10n.multisigSignerPickerBody, style: text.paragraph?.copyWith(color: colors.textPrimary)),
+          Text(l10n.multisigSignerPickerBody, style: text.bodyLarge.copyWith(color: colors.textContent)),
           const SizedBox(height: 16),
           ConstrainedBox(
             constraints: const BoxConstraints(maxHeight: 360),
@@ -37,7 +37,7 @@ class _MultisigSignerPickerSheet extends ConsumerWidget {
               shrinkWrap: true,
               padding: EdgeInsets.zero,
               itemCount: accounts.length,
-              separatorBuilder: (_, _) => Divider(color: colors.separator, height: 1),
+              separatorBuilder: (_, _) => const MenuDivider(),
               itemBuilder: (_, i) => _accountItem(context, accounts[i], colors, text),
             ),
           ),
@@ -47,7 +47,7 @@ class _MultisigSignerPickerSheet extends ConsumerWidget {
     );
   }
 
-  Widget _accountItem(BuildContext context, Account account, AppColorsV2 colors, AppTextTheme text) {
+  Widget _accountItem(BuildContext context, Account account, AppColorsV3 colors, AppTextThemeV3 text) {
     return GestureDetector(
       onTap: () => Navigator.pop(context, account),
       behavior: HitTestBehavior.opaque,
@@ -63,22 +63,19 @@ class _MultisigSignerPickerSheet extends ConsumerWidget {
                 children: [
                   Text(
                     account.name,
-                    style: text.smallParagraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w600),
+                    style: text.amountRow.copyWith(color: colors.textContent),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 2),
                   Text(
                     AddressFormattingService.formatAddress(account.accountId),
-                    style: text.detail?.copyWith(
-                      color: colors.textTertiary,
-                      fontFamily: AppTextTheme.fontFamilySecondary,
-                    ),
+                    style: text.dataAddress.copyWith(color: colors.textMuted),
                   ),
                 ],
               ),
             ),
-            Icon(Icons.chevron_right, color: colors.textMuted, size: 20),
+            QuantusIcon(QuantusIcons.chevronRight, color: colors.textMuted),
           ],
         ),
       ),

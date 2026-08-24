@@ -52,8 +52,8 @@ class _DiscoverMultisigScreenState extends ConsumerState<DiscoverMultisigScreen>
   @override
   Widget build(BuildContext context) {
     final l10n = ref.watch(l10nProvider);
-    final colors = context.colors;
-    final text = context.themeText;
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
     final discoveredAsync = ref.watch(discoveredMultisigsProvider);
     final savedIds = (ref.watch(multisigAccountsProvider).value ?? []).map((a) => a.accountId).toSet();
 
@@ -76,8 +76,6 @@ class _DiscoverMultisigScreenState extends ConsumerState<DiscoverMultisigScreen>
           message: l10n.multisigAddDiscoverFailed(error.toString()),
           retryLabel: l10n.homeActivityRetry,
           onRetry: () => ref.invalidate(discoveredMultisigsProvider),
-          colors: colors,
-          text: text,
         ),
         data: (discovered) {
           final sorted = _sortedDiscovered(discovered, savedIds);
@@ -85,7 +83,7 @@ class _DiscoverMultisigScreenState extends ConsumerState<DiscoverMultisigScreen>
             return Center(
               child: Text(
                 l10n.multisigAddNoneFound,
-                style: text.smallParagraph?.copyWith(color: colors.textSecondary),
+                style: text.body.copyWith(color: colors.textMuted),
                 textAlign: TextAlign.center,
               ),
             );
@@ -94,9 +92,9 @@ class _DiscoverMultisigScreenState extends ConsumerState<DiscoverMultisigScreen>
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(l10n.multisigAddDiscoveredTitle, style: text.receiveLabel?.copyWith(color: colors.textLabel)),
+              Text(l10n.multisigAddDiscoveredTitle, style: text.labelData.copyWith(color: colors.textMuted)),
               const SizedBox(height: 8),
-              Text(l10n.multisigAddDiscoveredSubtitle, style: text.detail?.copyWith(color: colors.textTertiary)),
+              Text(l10n.multisigAddDiscoveredSubtitle, style: text.caption.copyWith(color: colors.textMuted)),
               const SizedBox(height: 24),
               ListView.separated(
                 shrinkWrap: true,
@@ -116,8 +114,6 @@ class _DiscoverMultisigScreenState extends ConsumerState<DiscoverMultisigScreen>
                     addLabel: l10n.multisigAddButton,
                     addedLabel: l10n.multisigAddedButton,
                     thresholdLabel: l10n.multisigThresholdOf(account.threshold, account.signers.length),
-                    colors: colors,
-                    text: text,
                     onAdd: () => _addMultisig(account),
                   );
                 },
@@ -131,26 +127,21 @@ class _DiscoverMultisigScreenState extends ConsumerState<DiscoverMultisigScreen>
 }
 
 class _DiscoverError extends StatelessWidget {
-  const _DiscoverError({
-    required this.message,
-    required this.retryLabel,
-    required this.onRetry,
-    required this.colors,
-    required this.text,
-  });
+  const _DiscoverError({required this.message, required this.retryLabel, required this.onRetry});
 
   final String message;
   final String retryLabel;
   final VoidCallback onRetry;
-  final AppColorsV2 colors;
-  final AppTextTheme text;
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(message, style: text.detail?.copyWith(color: colors.textError)),
+        Text(message, style: text.caption.copyWith(color: colors.semanticEmber)),
         const SizedBox(height: 16),
         QuantusButton.simple(label: retryLabel, variant: ButtonVariant.secondary, onTap: onRetry),
       ],
@@ -167,8 +158,6 @@ class _DiscoverMultisigRow extends ConsumerStatefulWidget {
     required this.addLabel,
     required this.addedLabel,
     required this.thresholdLabel,
-    required this.colors,
-    required this.text,
     required this.onAdd,
   });
 
@@ -178,8 +167,6 @@ class _DiscoverMultisigRow extends ConsumerStatefulWidget {
   final String addLabel;
   final String addedLabel;
   final String thresholdLabel;
-  final AppColorsV2 colors;
-  final AppTextTheme text;
   final VoidCallback onAdd;
 
   @override
@@ -208,11 +195,13 @@ class _DiscoverMultisigRowState extends ConsumerState<_DiscoverMultisigRow> {
   @override
   Widget build(BuildContext context) {
     final l10n = ref.watch(l10nProvider);
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
     final address = AddressFormattingService.formatAddress(widget.account.accountId);
 
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: widget.colors.surfaceDeep, borderRadius: BorderRadius.circular(14)),
+      decoration: BoxDecoration(color: colors.bgSurface, borderRadius: context.radiusV3.mdBorder),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
@@ -222,18 +211,12 @@ class _DiscoverMultisigRowState extends ConsumerState<_DiscoverMultisigRow> {
               children: [
                 Text(
                   _checksum ?? l10n.commonLoading,
-                  style: widget.text.detail?.copyWith(color: context.colors.checksum),
+                  style: text.body.copyWith(color: _checksum == null ? colors.textMuted : colors.semanticLilac),
                 ),
                 const SizedBox(height: 4),
-                Text(
-                  address,
-                  style: widget.text.smallParagraph?.copyWith(
-                    color: widget.colors.textPrimary,
-                    fontFamily: AppTextTheme.fontFamilySecondary,
-                  ),
-                ),
+                Text(address, style: text.dataAddress.copyWith(color: colors.textContent)),
                 const SizedBox(height: 4),
-                Text(widget.thresholdLabel, style: widget.text.detail?.copyWith(color: widget.colors.textTertiary)),
+                Text(widget.thresholdLabel, style: text.caption.copyWith(color: colors.textMuted)),
               ],
             ),
           ),

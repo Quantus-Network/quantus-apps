@@ -24,8 +24,8 @@ class ProposalRow extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = ref.watch(l10nProvider);
-    final colors = context.colors;
-    final text = context.themeText;
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
     final ids = localSignerIds.isEmpty ? const <String>[] : localSignerIds;
     final allLocalApproved = ids.isNotEmpty && ids.every(proposal.didApprove);
     final pendingApprovals = ref.watch(pendingMultisigApprovalsProvider);
@@ -63,6 +63,13 @@ class ProposalRow extends ConsumerWidget {
     final isExecuting = pendingExecution != null;
     final isCancelling = pendingCancellation != null;
     final isPending = isApproving || isExecuting || isCancelling;
+    final pendingLabel = isExecuting
+        ? l10n.activityTxExecuting
+        : isApproving
+        ? l10n.activityTxApproving
+        : isCancelling
+        ? l10n.activityTxCancelling
+        : null;
 
     return ProposalListTile(
       amount: proposal.amount,
@@ -74,41 +81,27 @@ class ProposalRow extends ConsumerWidget {
       trailing: Column(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          if (isExecuting)
-            Text(
-              l10n.activityTxExecuting,
-              style: text.detail?.copyWith(color: colors.checksum, fontWeight: FontWeight.w600, letterSpacing: 0.4),
-            )
-          else if (isApproving)
-            Text(
-              l10n.activityTxApproving,
-              style: text.detail?.copyWith(color: colors.checksum, fontWeight: FontWeight.w600, letterSpacing: 0.4),
-            )
-          else if (isCancelling)
-            Text(
-              l10n.activityTxCancelling,
-              style: text.detail?.copyWith(color: colors.checksum, fontWeight: FontWeight.w600, letterSpacing: 0.4),
-            )
+          if (pendingLabel != null)
+            Text(pendingLabel, style: text.labelChip.copyWith(color: colors.semanticGlacier))
           else
             _statusChip(l10n, colors, text),
           if (proposal.isOpen && !isPending) ...[
             const SizedBox(height: 6),
-            if (allLocalApproved) _approvedPill(l10n, colors, text) else _proposedPill(l10n, colors, text),
+            QuantusBadge(
+              label: allLocalApproved ? l10n.multisigStatusApproved : l10n.multisigStatusProposed,
+              tone: allLocalApproved ? BadgeTone.sage : BadgeTone.glacier,
+            ),
           ],
         ],
       ),
     );
   }
 
-  Widget _statusChip(AppLocalizations l10n, AppColorsV2 colors, AppTextTheme text) {
+  Widget _statusChip(AppLocalizations l10n, AppColorsV3 colors, AppTextThemeV3 text) {
     if (proposal.isOpen) {
       return Text(
         '${proposal.approvalCount}/${proposal.threshold}',
-        style: text.paragraph?.copyWith(
-          color: colors.textPrimary,
-          fontWeight: FontWeight.w600,
-          fontFamily: AppTextTheme.fontFamilySecondary,
-        ),
+        style: text.amountRow.copyWith(color: colors.textContent),
       );
     }
     final label = switch (proposal.status) {
@@ -118,54 +111,12 @@ class ProposalRow extends ConsumerWidget {
       MultisigProposalStatus.unknown => l10n.multisigStatusUnknown,
       _ => l10n.multisigStatusActive,
     };
-    final color = switch (proposal.status) {
-      MultisigProposalStatus.executed => colors.success,
-      MultisigProposalStatus.cancelled => colors.textError,
-      MultisigProposalStatus.removed => colors.textError,
-      MultisigProposalStatus.unknown => colors.textTertiary,
-      _ => colors.textPrimary,
+    final tone = switch (proposal.status) {
+      MultisigProposalStatus.executed => BadgeTone.sage,
+      MultisigProposalStatus.cancelled => BadgeTone.ember,
+      MultisigProposalStatus.removed => BadgeTone.ember,
+      _ => BadgeTone.neutral,
     };
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(color: color.useOpacity(0.12), borderRadius: BorderRadius.circular(4)),
-      child: Text(
-        label,
-        style: text.detail?.copyWith(color: color, fontSize: 10, fontWeight: FontWeight.w600, letterSpacing: 0.8),
-      ),
-    );
-  }
-
-  Widget _approvedPill(AppLocalizations l10n, AppColorsV2 colors, AppTextTheme text) {
-    return _statusPill(
-      label: l10n.multisigStatusApproved,
-      background: colors.success,
-      foreground: colors.background,
-      text: text,
-    );
-  }
-
-  Widget _proposedPill(AppLocalizations l10n, AppColorsV2 colors, AppTextTheme text) {
-    return _statusPill(
-      label: l10n.multisigStatusProposed,
-      background: colors.checksum.useOpacity(0.18),
-      foreground: colors.checksum,
-      text: text,
-    );
-  }
-
-  Widget _statusPill({
-    required String label,
-    required Color background,
-    required Color foreground,
-    required AppTextTheme text,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(color: background, borderRadius: BorderRadius.circular(4)),
-      child: Text(
-        label,
-        style: text.detail?.copyWith(color: foreground, fontSize: 10, fontWeight: FontWeight.w700, letterSpacing: 0.8),
-      ),
-    );
+    return QuantusBadge(label: label, tone: tone);
   }
 }

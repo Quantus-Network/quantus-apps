@@ -338,8 +338,8 @@ class _MultisigActionConfirmSheetState extends ConsumerState<MultisigActionConfi
   @override
   Widget build(BuildContext context) {
     final l10n = ref.watch(l10nProvider);
-    final colors = context.colors;
-    final text = context.themeText;
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
     final fmt = ref.watch(numberFormattingServiceProvider);
     final networkFeeLabel = _networkFeeLabel(l10n, fmt);
     final decoded = _decodedProposalCall;
@@ -359,20 +359,20 @@ class _MultisigActionConfirmSheetState extends ConsumerState<MultisigActionConfi
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(widget.labels.body(l10n), style: text.paragraph?.copyWith(color: colors.textPrimary)),
+          Text(widget.labels.body(l10n), style: text.bodyLarge.copyWith(color: colors.textContent)),
           const SizedBox(height: 8),
-          Text(headline.primary, style: text.smallTitle?.copyWith(color: colors.textPrimary)),
+          Text(headline.primary, style: text.titleScreen.copyWith(color: colors.textContent)),
           if (headline.secondary != null) ...[
             const SizedBox(height: 8),
-            Text(headline.secondary!, style: text.smallParagraph?.copyWith(color: colors.textTertiary)),
+            Text(headline.secondary!, style: text.body.copyWith(color: colors.textMuted)),
           ],
           if (_loadingCallBytes) ...[
             const SizedBox(height: 16),
-            Text(l10n.multisigProposalCallLoading, style: text.detail?.copyWith(color: colors.textTertiary)),
+            Text(l10n.multisigProposalCallLoading, style: text.caption.copyWith(color: colors.textMuted)),
           ],
           if (_callBytesFailed) ...[
             const SizedBox(height: 16),
-            Text(l10n.multisigProposalCallUnavailable, style: text.detail?.copyWith(color: colors.textError)),
+            Text(l10n.multisigProposalCallUnavailable, style: text.caption.copyWith(color: colors.semanticEmber)),
           ],
           if (decoded != null && decoded.fields.isNotEmpty) ...[
             const SizedBox(height: 16),
@@ -384,11 +384,11 @@ class _MultisigActionConfirmSheetState extends ConsumerState<MultisigActionConfi
           ],
           if (_feeEstimateFailed) ...[
             const SizedBox(height: 16),
-            Text(l10n.multisigFeeEstimateUnavailable, style: text.detail?.copyWith(color: colors.textTertiary)),
+            Text(l10n.multisigFeeEstimateUnavailable, style: text.caption.copyWith(color: colors.textMuted)),
           ],
           if (_errorMessage != null) ...[
             const SizedBox(height: 16),
-            Text(_errorMessage!, style: text.detail?.copyWith(color: colors.textError)),
+            Text(_errorMessage!, style: text.caption.copyWith(color: colors.semanticEmber)),
           ],
           const SizedBox(height: 24),
           QuantusButton.simple(
