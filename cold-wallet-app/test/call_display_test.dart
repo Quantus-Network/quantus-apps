@@ -8,7 +8,7 @@ import 'package:quantus_sdk/generated/planck/pallets/multisig.dart' as multisig_
 import 'package:quantus_sdk/generated/planck/pallets/reversible_transfers.dart' as reversible_pallet;
 import 'package:quantus_sdk/generated/planck/pallets/tech_collective.dart' as collective_pallet;
 import 'package:quantus_sdk/generated/planck/types/sp_runtime/multiaddress/multi_address.dart' as multi_address;
-import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:quantus_sdk/quantus_sdk.dart' hide CallFieldView;
 import 'package:quantus_cold_wallet/components/address_with_checkphrase.dart';
 import 'package:quantus_cold_wallet/components/call_detail_view.dart';
 import 'package:quantus_cold_wallet/debug/debug_payloads.dart';

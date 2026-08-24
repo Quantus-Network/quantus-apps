@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:quantus_sdk/quantus_sdk.dart' hide CallFieldView;
+import 'package:quantus_sdk/quantus_sdk.dart' as sdk;
 import 'package:quantus_cold_wallet/components/address_with_checkphrase.dart';
 
 /// True when [summary] already puts this exact field on screen, so listing it
@@ -15,6 +16,23 @@ TransferSummary? heroSummary(DecodedCall call) => call.isWrapper ? null : call.s
 
 /// Asset decimals are chain state unavailable to an air-gapped signer.
 String assetAmountText(BigInt amount, int assetId) => '$amount raw units of asset $assetId';
+
+String _formatAmount(AmountField field) {
+  if (field.assetId == null) {
+    return '${NumberFormattingService().formatAmount(field.token)} ${AppConstants.tokenSymbol}';
+  }
+  return assetAmountText(field.token, field.assetId!);
+}
+
+String? _amountNote(AmountField field) {
+  if (field.assetId == null) return field.note;
+  return [
+    field.note,
+    'Asset decimals are not part of this payload, so the raw amount is shown.',
+  ].whereType<String>().join(' ');
+}
+
+Widget _address(ValueField field) => AddressWithCheckphrase(label: field.label, address: field.value, note: field.note);
 
 /// The amount, recipient, and every parameter those two do not already cover.
 List<Widget> callSummaryBody(DecodedCall call, {int depth = 0}) {
@@ -109,70 +127,15 @@ class CallFieldView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.colorsV3;
-    final text = context.themeTextV3;
-
-    return switch (field) {
-      ValueField(:final label, :final value, :final kind, :final note) =>
-        kind == ValueKind.address
-            ? AddressWithCheckphrase(label: label, address: value, note: note)
-            : DetailSummaryRow.stacked(
-                label: label,
-                value: value,
-                monospace: kind == ValueKind.hash || kind == ValueKind.bytes,
-                note: note,
-              ),
-      AmountField(:final label, :final token, :final assetId, :final note) => DetailSummaryRow.stacked(
-        label: label,
-        value: assetId == null
-            ? '${NumberFormattingService().formatAmount(token)} ${AppConstants.tokenSymbol}'
-            : assetAmountText(token, assetId),
-        note: assetId == null
-            ? note
-            : [
-                note,
-                'Asset decimals are not part of this payload, so the raw amount is shown.',
-              ].whereType<String>().join(' '),
-      ),
-      FieldGroup(:final label, :final items) => Padding(
-        padding: const EdgeInsets.only(top: 10),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(label.toUpperCase(), style: text.labelMonogram.copyWith(color: colors.textMuted)),
-            Padding(
-              padding: const EdgeInsets.only(left: 12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [for (final item in items) CallFieldView(field: item, depth: depth)],
-              ),
-            ),
-          ],
-        ),
-      ),
-      NestedCallField(:final label, :final call, :final note) => Padding(
-        padding: const EdgeInsets.only(top: 14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(label.toUpperCase(), style: text.labelMonogram.copyWith(color: colors.textMuted)),
-            const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: colors.bgSurface2,
-                borderRadius: context.radiusV3.mdBorder,
-                border: Border.all(color: colors.borderHairline),
-              ),
-              child: CallDetailView(call: call, depth: depth + 1),
-            ),
-            if (note != null) ...[
-              const SizedBox(height: 6),
-              Text(note, style: text.caption.copyWith(color: colors.textMuted)),
-            ],
-          ],
-        ),
-      ),
-    };
+    return sdk.CallFieldView(
+      field: field,
+      depth: depth,
+      layout: DetailSummaryLayout.stacked,
+      titleOf: (call) => call.actionTitle,
+      formatAmount: _formatAmount,
+      addressBuilder: _address,
+      amountNoteOf: _amountNote,
+      nestedCallBuilder: (call, nestedDepth) => CallDetailView(call: call, depth: nestedDepth),
+    );
   }
 }
