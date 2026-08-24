@@ -1,5 +1,3 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
@@ -83,198 +81,123 @@ class _SharedAddressActionSheetState extends State<SharedAddressActionSheet> {
     );
   }
 
-  void _closeSheet() {
-    Navigator.of(context).pop();
-  }
-
-  Widget _copyIcon() {
-    return const Icon(Icons.copy, size: 20, color: Colors.white);
+  Widget _copyIcon(AppColorsV3 colors) {
+    return Icon(Icons.copy, size: 20, color: colors.textContent);
   }
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      bottom: false,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-        decoration: ShapeDecoration(
-          color: context.colors.background,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
-        ),
-        child: Stack(
-          children: [
-            Column(
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.start,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(7),
-                  decoration: ShapeDecoration(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100))),
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
+
+    return BottomSheetContainer(
+      title: 'Shared Acount',
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          FutureBuilder<String?>(
+            future: _checksumFuture,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return SizedBox(
+                  height: 18,
                   child: Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      InkWell(
-                        onTap: _closeSheet,
-                        child: Icon(Icons.close, size: context.isTablet ? 28 : 24),
+                      SizedBox(
+                        width: 12,
+                        height: 12,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: colors.accentFlare),
                       ),
+                      const SizedBox(width: 8),
+                      Text('Loading checkphrase...', style: text.caption.copyWith(color: colors.textMuted)),
                     ],
                   ),
-                ),
-                const SizedBox(height: 28),
-                Text('Shared Acount', style: context.themeText.largeTitle),
-                SizedBox(height: context.isTablet ? 36 : 28),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
+                );
+              } else if (snapshot.hasError || !snapshot.hasData || snapshot.data == null || snapshot.data!.isEmpty) {
+                quantusPrint(
+                  'Error loading checksum name for ${widget.address}: '
+                  '${snapshot.error}',
+                );
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (_checksum != null) {
+                    setState(() {
+                      _checksum = null;
+                    });
+                  }
+                });
+
+                return Text(
+                  'Name not found',
+                  style: text.body.copyWith(color: colors.textMuted),
+                  textAlign: TextAlign.center,
+                );
+              } else {
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (_checksum != snapshot.data) {
+                    setState(() {
+                      _checksum = snapshot.data!;
+                    });
+                  }
+                });
+
+                return Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  spacing: 7,
                   children: [
-                    FutureBuilder<String?>(
-                      future: _checksumFuture,
-                      builder: (context, snapshot) {
-                        if (snapshot.connectionState == ConnectionState.waiting) {
-                          return SizedBox(
-                            height: 18,
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                const SizedBox(
-                                  width: 12,
-                                  height: 12,
-                                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white54),
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  'Loading checkphrase...',
-                                  style: context.themeText.paragraph?.copyWith(color: Colors.white54),
-                                ),
-                              ],
-                            ),
-                          );
-                        } else if (snapshot.hasError ||
-                            !snapshot.hasData ||
-                            snapshot.data == null ||
-                            snapshot.data!.isEmpty) {
-                          quantusPrint(
-                            'Error loading checksum name for ${widget.address}: '
-                            '${snapshot.error}',
-                          );
-                          WidgetsBinding.instance.addPostFrameCallback((_) {
-                            if (_checksum != null) {
-                              // Only clear if it was set before
-                              setState(() {
-                                _checksum = null;
-                              });
-                            }
-                          });
-
-                          return Text(
-                            'Name not found',
-                            style: context.themeText.paragraph,
-                            textAlign: TextAlign.center,
-                          );
-                        } else {
-                          WidgetsBinding.instance.addPostFrameCallback((_) {
-                            if (_checksum != snapshot.data) {
-                              // Only update if it's different
-                              setState(() {
-                                _checksum = snapshot.data!;
-                              });
-                            }
-                          });
-
-                          return Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            spacing: 7,
-                            children: [
-                              Flexible(
-                                child: Text(
-                                  snapshot.data!,
-                                  style: context.themeText.paragraph,
-                                  textAlign: TextAlign.center,
-                                ),
-                              ),
-                              InkWell(onTap: _copyChecksum, child: _copyIcon()),
-                            ],
-                          );
-                        }
-                      },
+                    Flexible(
+                      child: Text(
+                        snapshot.data!,
+                        style: text.body.copyWith(color: colors.semanticLilac),
+                        textAlign: TextAlign.center,
+                      ),
                     ),
-                    const SizedBox(height: 26),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      spacing: 8,
-                      children: [
-                        Container(
-                          width: context.isTablet ? 386 : 271,
-                          padding: const EdgeInsets.all(10),
-                          decoration: ShapeDecoration(
-                            color: Colors.white.withValues(alpha: 0.15),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-                          ),
-                          child: Text(
-                            '${_splittedAddress?.join(" ")}',
-                            textAlign: TextAlign.left,
-                            style: context.themeText.smallParagraph,
-                          ),
-                        ),
-                        InkWell(onTap: _copyAddress, child: _copyIcon()),
-                      ],
-                    ),
+                    InkWell(onTap: _copyChecksum, child: _copyIcon(colors)),
                   ],
+                );
+              }
+            },
+          ),
+          const SizedBox(height: 26),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            spacing: 8,
+            children: [
+              Container(
+                width: context.isTablet ? 386 : 271,
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: colors.bgSurface2,
+                  borderRadius: context.radiusV3.mdBorder,
+                  border: Border.all(color: colors.borderHairline),
                 ),
-                const SizedBox(height: 26),
-                SizedBox(
-                  width: context.isTablet ? 465 : 305,
-                  child: QuantusButton.simple(label: 'Send To This Account', onTap: _sendToAddress),
+                child: Text(
+                  '${_splittedAddress?.join(" ")}',
+                  textAlign: TextAlign.left,
+                  style: text.dataAddressLarge.copyWith(color: colors.textContent),
                 ),
-                const SizedBox(height: 80),
-              ],
-            ),
-          ],
-        ),
+              ),
+              InkWell(onTap: _copyAddress, child: _copyIcon(colors)),
+            ],
+          ),
+          const SizedBox(height: 26),
+          SizedBox(
+            width: context.isTablet ? 465 : 305,
+            child: QuantusButton.simple(label: 'Send To This Account', onTap: _sendToAddress),
+          ),
+        ],
       ),
     );
   }
 }
 
-// Helper function to show the receive sheet
 void showSharedAddressActionSheet(BuildContext context, String address) {
   if (context.peekTopRouteName == sharedAccountSheetRouteSettings.name) Navigator.pop(context);
 
-  showModalBottomSheet(
-    context: context,
+  BottomSheetContainer.show(
+    context,
     routeSettings: sharedAccountSheetRouteSettings,
-    backgroundColor: Colors.transparent,
-    isScrollControlled: true,
-    constraints: BoxConstraints(
-      maxWidth: MediaQuery.of(context).size.width, // Ensure full width
-    ),
-    builder: (context) => Stack(
-      children: [
-        Positioned.fill(
-          child: Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [Colors.black, const Color(0xFF312E6E).useOpacity(0.4), Colors.black],
-              ),
-            ),
-          ),
-        ),
-        Positioned(
-          bottom: 0,
-          left: 0,
-          right: 0,
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 3, sigmaY: 3),
-            child: Container(
-              color: Colors.black.useOpacity(0.3),
-              child: SharedAddressActionSheet(address: address),
-            ),
-          ),
-        ),
-      ],
-    ),
+    builder: (_) => SharedAddressActionSheet(address: address),
   );
 }
