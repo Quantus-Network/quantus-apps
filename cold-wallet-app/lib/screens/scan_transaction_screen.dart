@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:quantus_cold_wallet/debug/debug_payloads.dart';
+import 'package:quantus_cold_wallet/debug/debug_calls_screen.dart';
 import 'package:quantus_cold_wallet/screens/sign_transaction_screen.dart';
 
 /// Scans a (possibly multi-part / animated) UR QR code, accumulating parts
@@ -25,11 +25,14 @@ class _ScanTransactionScreenState extends State<ScanTransactionScreen> {
   );
   final Set<String> _parts = {};
   final Set<int> _seenSeq = {};
-  final RegExp _seqPattern = RegExp(r'/(\d+)-(\d+)/');
 
   int? _expectedParts;
   bool _done = false;
   String? _error;
+
+  /// The last camera failure written to the log, so a rebuild of the same
+  /// error state does not repeat it.
+  String? _loggedCameraError;
 
   @override
   void dispose() {
@@ -37,16 +40,35 @@ class _ScanTransactionScreenState extends State<ScanTransactionScreen> {
     super.dispose();
   }
 
+  /// Reports [reason] and drops the accumulated parts. A set that can't
+  /// complete or decode never will, and keeping it makes every replayed frame
+  /// look like a duplicate, so scanning has to start from empty.
+  void _restartAccumulation(String reason) {
+    _parts.clear();
+    _seenSeq.clear();
+    _expectedParts = null;
+    setState(() => _error = reason);
+  }
+
   void _onDetect(BarcodeCapture capture) {
     if (_done) return;
     final code = capture.barcodes.firstOrNull?.rawValue;
-    if (code == null || !code.toLowerCase().startsWith('ur:')) return;
+    if (code == null || !isAcceptableUrPart(code)) return;
+    // maxUrScanParts bounds the accumulation set: a hostile animation could
+    // otherwise keep emitting distinct frames and grow memory without limit.
+    // Reaching it means the set can never complete, so say so and start over
+    // instead of dropping frames in silence.
+    if (_parts.length >= maxUrScanParts) {
+      debugPrint('UR scan limit hit: $maxUrScanParts parts accumulated without completing');
+      _restartAccumulation('Too many unusable QR frames. Restart the transfer on your hot wallet.');
+      return;
+    }
     if (!_parts.add(code)) return; // already seen this exact frame
 
-    final match = _seqPattern.firstMatch(code);
-    if (match != null) {
-      _seenSeq.add(int.parse(match.group(1)!));
-      _expectedParts = int.parse(match.group(2)!);
+    final sequence = urSequenceFor(code);
+    if (sequence != null) {
+      _seenSeq.add(sequence.index);
+      _expectedParts = sequence.total;
     }
 
     final parts = _parts.toList();
@@ -57,54 +79,26 @@ class _ScanTransactionScreenState extends State<ScanTransactionScreen> {
 
     _done = true;
     try {
-      final payload = decodeUr(urParts: parts);
+      final request = SigningRequest.decode(decodeUr(urParts: parts));
       _controller.stop();
       if (!mounted) return;
-      Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => SignTransactionScreen(payload: payload)));
+      Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => SignTransactionScreen(request: request)));
     } catch (e) {
+      // Keeping the parts would make every replayed frame a duplicate, so the
+      // decode is never retried and the screen stays stuck on this error.
       _done = false;
-      setState(() => _error = 'Failed to decode QR: $e');
+      _restartAccumulation('Failed to decode QR: $e');
     }
   }
 
-  /// Simulators have no camera, so debug builds can inject a payload directly and
-  /// exercise the same review → sign path a scan would reach.
-  void _loadDebugPayload(Uint8List payload) {
-    _controller.stop();
-    Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => SignTransactionScreen(payload: payload)));
-  }
-
-  /// One button per payload in [DebugPayloads.all], so every screen the signer
-  /// can be shown is one tap away on a simulator.
-  Widget _debugPayloadButtons(BuildContext context) {
-    final colors = context.colorsV3;
-    final text = context.themeTextV3;
-
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text('DEBUG PAYLOADS', style: text.caption.copyWith(color: colors.textMuted)),
-        const SizedBox(height: 8),
-        Wrap(
-          alignment: WrapAlignment.center,
-          spacing: 8,
-          runSpacing: 8,
-          children: [
-            for (final entry in DebugPayloads.all.entries)
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: colors.bgSurface,
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  visualDensity: VisualDensity.compact,
-                ),
-                onPressed: () => _loadDebugPayload(entry.value()),
-                child: Text(entry.key, style: text.caption.copyWith(color: colors.textContent)),
-              ),
-          ],
-        ),
-        const SizedBox(height: 20),
-      ],
-    );
+  /// Simulators have no camera, so debug builds open the catalogue of every
+  /// call the signer can review and inject one directly, exercising the same
+  /// review → sign path a scan would reach.
+  Future<void> _openDebugCalls() {
+    // The controller is left running: MobileScanner starts and stops it with
+    // this route's lifecycle, and starting it again here is what raised
+    // controllerAlreadyInitialized on the way back.
+    return Navigator.push(context, MaterialPageRoute(builder: (_) => const DebugCallsScreen()));
   }
 
   /// Retries a failed start. [MobileScannerController.start] folds scanner
@@ -117,8 +111,8 @@ class _ScanTransactionScreenState extends State<ScanTransactionScreen> {
     try {
       await _controller.start();
     } catch (e) {
-      debugPrint('Camera restart failed: $e');
-      if (mounted) setState(() => _error = 'Camera restart failed: $e');
+      debugPrint('Camera could not be started: $e');
+      if (mounted) setState(() => _error = 'The camera could not be started.');
     }
   }
 
@@ -126,7 +120,10 @@ class _ScanTransactionScreenState extends State<ScanTransactionScreen> {
     final colors = context.colorsV3;
     final text = context.themeTextV3;
     final denied = error.errorCode == MobileScannerErrorCode.permissionDenied;
-    final detail = error.errorDetails?.message;
+    if (_loggedCameraError != error.toString()) {
+      _loggedCameraError = error.toString();
+      debugPrint('Camera unavailable (${error.errorCode.name}): ${error.errorDetails?.message}');
+    }
 
     return ColoredBox(
       color: colors.bgVoid,
@@ -147,8 +144,7 @@ class _ScanTransactionScreenState extends State<ScanTransactionScreen> {
               Text(
                 denied
                     ? 'Grant camera access in Settings to scan the transaction QR.'
-                    : 'The camera could not be started (${error.errorCode.name})'
-                          '${detail == null ? '' : ': $detail'}.',
+                    : 'The camera could not be started.',
                 style: text.body.copyWith(color: colors.textMuted),
                 textAlign: TextAlign.center,
               ),
@@ -176,13 +172,17 @@ class _ScanTransactionScreenState extends State<ScanTransactionScreen> {
       body: Stack(
         children: [
           MobileScanner(controller: _controller, onDetect: _onDetect, errorBuilder: _cameraError),
-          Center(
-            child: Container(
-              width: frame,
-              height: frame,
-              decoration: BoxDecoration(
-                border: Border.all(color: colors.accentFlare, width: 2),
-                borderRadius: radius.mdBorder,
+          ValueListenableBuilder<MobileScannerState>(
+            valueListenable: _controller,
+            builder: (context, state, child) => state.error == null ? child! : const SizedBox.shrink(),
+            child: Center(
+              child: Container(
+                width: frame,
+                height: frame,
+                decoration: BoxDecoration(
+                  border: Border.all(color: colors.accentFlare, width: 2),
+                  borderRadius: radius.mdBorder,
+                ),
               ),
             ),
           ),
@@ -213,7 +213,10 @@ class _ScanTransactionScreenState extends State<ScanTransactionScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                if (kDebugMode) _debugPayloadButtons(context),
+                if (kDebugMode) ...[
+                  QuantusButton.simple(label: 'Debug calls', width: null, onTap: _openDebugCalls),
+                  const SizedBox(height: 20),
+                ],
                 Text(
                   _error ?? 'Scan the transaction QR from your hot wallet',
                   style: text.body.copyWith(color: _error != null ? colors.semanticEmber : colors.textContent),

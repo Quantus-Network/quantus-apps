@@ -392,6 +392,9 @@ class AppLocalizationsEn extends AppLocalizations {
       'Could not read this proposal from the chain, so there is nothing to approve. Try again when you are back online.';
 
   @override
+  String get multisigProposalInvalid => 'Invalid proposal';
+
+  @override
   String get multisigStatusApproved => 'SIGNED';
 
   @override
@@ -1108,7 +1111,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sendLogicInvalidAmount => 'Invalid Amount';
 
   @override
-  String get sendLogicBelowExistentialDeposit => 'Below Existential Deposit';
+  String sendLogicBelowMinimum(String amount, String tokenSymbol) {
+    return 'Minimum is $amount $tokenSymbol';
+  }
 
   @override
   String get sendLogicInsufficientBalance => 'Insufficient Balance';

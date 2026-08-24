@@ -394,6 +394,9 @@ class AppLocalizationsId extends AppLocalizations {
       'Tidak dapat membaca usulan ini dari rantai, jadi tidak ada yang bisa disetujui. Coba lagi setelah Anda kembali online.';
 
   @override
+  String get multisigProposalInvalid => 'Proposal tidak valid';
+
+  @override
   String get multisigStatusApproved => 'DITANDATANGANI';
 
   @override
@@ -1111,7 +1114,9 @@ class AppLocalizationsId extends AppLocalizations {
   String get sendLogicInvalidAmount => 'Jumlah Tidak Valid';
 
   @override
-  String get sendLogicBelowExistentialDeposit => 'Di Bawah Deposit Eksistensial';
+  String sendLogicBelowMinimum(String amount, String tokenSymbol) {
+    return 'Minimum $amount $tokenSymbol';
+  }
 
   @override
   String get sendLogicInsufficientBalance => 'Saldo Tidak Cukup';

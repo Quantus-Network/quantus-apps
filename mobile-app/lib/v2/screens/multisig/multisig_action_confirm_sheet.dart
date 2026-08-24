@@ -3,7 +3,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:quantus_sdk/quantus_sdk.dart' hide DecodedCallView;
+import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
@@ -137,8 +137,11 @@ class _MultisigActionConfirmSheetState extends ConsumerState<MultisigActionConfi
   bool _loadingFee = true;
   bool _feeEstimateFailed = false;
 
-  /// The proposal's inner call as stored on chain, for actions that resubmit it.
+  /// The proposal's inner call as stored on chain, for actions that resubmit it,
+  /// kept only once those bytes have decoded — nothing downstream may use bytes
+  /// this wallet could not parse.
   List<int>? _callBytes;
+  DecodedCall? _decodedCallBytes;
   bool _loadingCallBytes = false;
   bool _callBytesFailed = false;
 
@@ -156,13 +159,15 @@ class _MultisigActionConfirmSheetState extends ConsumerState<MultisigActionConfi
       setState(() => _loadingCallBytes = true);
       try {
         final bytes = await loader(ref);
+        final decoded = MultisigProposal.decodeProposalCall(bytes);
         if (!mounted) return;
         setState(() {
           _callBytes = bytes;
+          _decodedCallBytes = decoded;
           _loadingCallBytes = false;
         });
       } catch (e, st) {
-        quantusPrint('${widget.logPrefix} proposal call load error: $e $st');
+        quantusPrint('${widget.logPrefix} proposal call unavailable: $e $st');
         if (!mounted) return;
         setState(() {
           _loadingCallBytes = false;
@@ -176,18 +181,11 @@ class _MultisigActionConfirmSheetState extends ConsumerState<MultisigActionConfi
   }
 
   /// The proposal's call as a display tree: from the authoritative chain bytes
-  /// when loaded, otherwise from the indexer's copy.
-  DecodedCall? get _decodedProposalCall {
-    final bytes = _callBytes;
-    if (bytes != null) {
-      try {
-        return CallDecoder.decodeBytes(bytes);
-      } catch (e) {
-        quantusPrint('${widget.logPrefix} could not decode stored proposal call: $e');
-      }
-    }
-    return widget.proposal.decodedCall;
-  }
+  /// when this action loads them, otherwise from the indexer's copy. Null once
+  /// authoritative bytes were meant to load and did not parse — the indexer's
+  /// labels must not stand in for call bytes this wallet rejected.
+  DecodedCall? get _decodedProposalCall =>
+      widget.loadCallBytes != null ? _decodedCallBytes : widget.proposal.decodedCall;
 
   /// Last resort when no call bytes are available at all: the indexer's own
   /// pallet/call names and transfer fields, with no invented parameters.

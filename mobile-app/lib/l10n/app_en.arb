@@ -542,6 +542,10 @@
     "@multisigProposalCallUnavailable": {
       "description": "Shown when the proposal's stored call bytes could not be fetched, blocking approval"
     },
+    "multisigProposalInvalid": "Invalid proposal",
+    "@multisigProposalInvalid": {
+      "description": "Shown in place of the amount when the proposal's stored call bytes cannot be decoded, blocking approval"
+    },
     "multisigStatusApproved": "SIGNED",
     "@multisigStatusApproved": {
       "description": "Proposal status chip when the current signer has approved"
@@ -1575,9 +1579,17 @@
     "@sendLogicInvalidAmount": {
       "description": "Button label when amount is negative"
     },
-    "sendLogicBelowExistentialDeposit": "Below Existential Deposit",
-    "@sendLogicBelowExistentialDeposit": {
-      "description": "Button label when amount is below existential deposit"
+    "sendLogicBelowMinimum": "Minimum is {amount} {tokenSymbol}",
+    "@sendLogicBelowMinimum": {
+      "description": "Button label when amount is below the minimum send amount (one wormhole leaf quantum)",
+      "placeholders": {
+        "amount": {
+          "type": "String"
+        },
+        "tokenSymbol": {
+          "type": "String"
+        }
+      }
     },
     "sendLogicInsufficientBalance": "Insufficient Balance",
     "@sendLogicInsufficientBalance": {

@@ -20,7 +20,6 @@ enum UnexpectedKind {
   static const $UnexpectedKindCodec codec = $UnexpectedKindCodec();
 
   String toJson() => variantName;
-
   _i2.Uint8List encode() {
     return codec.encode(this);
   }

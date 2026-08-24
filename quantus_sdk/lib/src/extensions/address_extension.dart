@@ -14,4 +14,8 @@ extension AddressExtension on Address {
 
   static String ss58AddressFromBytes(Uint8List bytes) =>
       Address(prefix: AppConstants.ss58prefix, pubkey: bytes).encode();
+
+  /// The inverse of [ss58AddressFromBytes], in pure Dart — no Rust bridge, so a
+  /// caller can convert before [RustLib] is initialised.
+  static Uint8List accountIdFromSs58(String ss58) => Address.decode(ss58).addressBytes;
 }

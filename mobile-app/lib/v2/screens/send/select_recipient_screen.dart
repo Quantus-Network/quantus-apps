@@ -128,7 +128,8 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
           quantusPrint('SelectRecipientScreen self-send check: $e');
         });
     checksumService.getHumanReadableName(address).then((checksum) {
-      if (mounted) setState(() => _recipientChecksum = checksum);
+      if (!mounted || _recipientController.text.trim() != address) return;
+      setState(() => _recipientChecksum = checksum);
     });
   }
 

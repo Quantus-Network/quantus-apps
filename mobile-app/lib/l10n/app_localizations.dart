@@ -782,6 +782,12 @@ abstract class AppLocalizations {
   /// **'Could not read this proposal from the chain, so there is nothing to approve. Try again when you are back online.'**
   String get multisigProposalCallUnavailable;
 
+  /// Shown in place of the amount when the proposal's stored call bytes cannot be decoded, blocking approval
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid proposal'**
+  String get multisigProposalInvalid;
+
   /// Proposal status chip when the current signer has approved
   ///
   /// In en, this message translates to:
@@ -2102,11 +2108,11 @@ abstract class AppLocalizations {
   /// **'Invalid Amount'**
   String get sendLogicInvalidAmount;
 
-  /// Button label when amount is below existential deposit
+  /// Button label when amount is below the minimum send amount (one wormhole leaf quantum)
   ///
   /// In en, this message translates to:
-  /// **'Below Existential Deposit'**
-  String get sendLogicBelowExistentialDeposit;
+  /// **'Minimum is {amount} {tokenSymbol}'**
+  String sendLogicBelowMinimum(String amount, String tokenSymbol);
 
   /// Button label when balance is insufficient
   ///

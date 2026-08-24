@@ -4,9 +4,8 @@ import 'dart:typed_data' as _i2;
 import 'package:polkadart/scale_codec.dart' as _i1;
 
 import '../frame_system/pallet/call.dart' as _i3;
-import '../pallet_assets/pallet/call.dart' as _i13;
 import '../pallet_balances/pallet/call.dart' as _i5;
-import '../pallet_multisig/pallet/call.dart' as _i14;
+import '../pallet_multisig/pallet/call.dart' as _i13;
 import '../pallet_preimage/pallet/call.dart' as _i6;
 import '../pallet_ranked_collective/pallet/call.dart' as _i9;
 import '../pallet_recovery/pallet/call.dart' as _i12;
@@ -15,7 +14,8 @@ import '../pallet_reversible_transfers/pallet/call.dart' as _i8;
 import '../pallet_timestamp/pallet/call.dart' as _i4;
 import '../pallet_treasury/pallet/call.dart' as _i11;
 import '../pallet_utility/pallet/call.dart' as _i7;
-import '../pallet_wormhole/pallet/call.dart' as _i15;
+import '../pallet_vesting/pallet/call.dart' as _i15;
+import '../pallet_wormhole/pallet/call.dart' as _i14;
 
 abstract class RuntimeCall {
   const RuntimeCall();
@@ -84,16 +84,16 @@ class $RuntimeCall {
     return Recovery(value0);
   }
 
-  Assets assets(_i13.Call value0) {
-    return Assets(value0);
-  }
-
-  Multisig multisig(_i14.Call value0) {
+  Multisig multisig(_i13.Call value0) {
     return Multisig(value0);
   }
 
-  Wormhole wormhole(_i15.Call value0) {
+  Wormhole wormhole(_i14.Call value0) {
     return Wormhole(value0);
+  }
+
+  Vesting vesting(_i15.Call value0) {
+    return Vesting(value0);
   }
 }
 
@@ -124,12 +124,12 @@ class $RuntimeCallCodec with _i1.Codec<RuntimeCall> {
         return TreasuryPallet._decode(input);
       case 16:
         return Recovery._decode(input);
-      case 17:
-        return Assets._decode(input);
       case 19:
         return Multisig._decode(input);
       case 20:
         return Wormhole._decode(input);
+      case 22:
+        return Vesting._decode(input);
       default:
         throw Exception('RuntimeCall: Invalid variant index: "$index"');
     }
@@ -168,14 +168,14 @@ class $RuntimeCallCodec with _i1.Codec<RuntimeCall> {
       case Recovery:
         (value as Recovery).encodeTo(output);
         break;
-      case Assets:
-        (value as Assets).encodeTo(output);
-        break;
       case Multisig:
         (value as Multisig).encodeTo(output);
         break;
       case Wormhole:
         (value as Wormhole).encodeTo(output);
+        break;
+      case Vesting:
+        (value as Vesting).encodeTo(output);
         break;
       default:
         throw Exception('RuntimeCall: Unsupported "$value" of type "${value.runtimeType}"');
@@ -205,12 +205,12 @@ class $RuntimeCallCodec with _i1.Codec<RuntimeCall> {
         return (value as TreasuryPallet)._sizeHint();
       case Recovery:
         return (value as Recovery)._sizeHint();
-      case Assets:
-        return (value as Assets)._sizeHint();
       case Multisig:
         return (value as Multisig)._sizeHint();
       case Wormhole:
         return (value as Wormhole)._sizeHint();
+      case Vesting:
+        return (value as Vesting)._sizeHint();
       default:
         throw Exception('RuntimeCall: Unsupported "$value" of type "${value.runtimeType}"');
     }
@@ -357,7 +357,7 @@ class Utility extends RuntimeCall {
   final _i7.Call value0;
 
   @override
-  Map<String, Map<String, Map<String, dynamic>>> toJson() => {'Utility': value0.toJson()};
+  Map<String, Map<String, Map<String, List<Map<String, dynamic>>>>> toJson() => {'Utility': value0.toJson()};
 
   int _sizeHint() {
     int size = 1;
@@ -485,7 +485,7 @@ class TreasuryPallet extends RuntimeCall {
   final _i11.Call value0;
 
   @override
-  Map<String, Map<String, Map<String, dynamic>>> toJson() => {'TreasuryPallet': value0.toJson()};
+  Map<String, Map<String, Map<String, List<int>>>> toJson() => {'TreasuryPallet': value0.toJson()};
 
   int _sizeHint() {
     int size = 1;
@@ -537,19 +537,19 @@ class Recovery extends RuntimeCall {
   int get hashCode => value0.hashCode;
 }
 
-class Assets extends RuntimeCall {
-  const Assets(this.value0);
+class Multisig extends RuntimeCall {
+  const Multisig(this.value0);
 
-  factory Assets._decode(_i1.Input input) {
-    return Assets(_i13.Call.codec.decode(input));
+  factory Multisig._decode(_i1.Input input) {
+    return Multisig(_i13.Call.codec.decode(input));
   }
 
   /// self::sp_api_hidden_includes_construct_runtime::hidden_include::dispatch
-  ///::CallableCallFor<Assets, Runtime>
+  ///::CallableCallFor<Multisig, Runtime>
   final _i13.Call value0;
 
   @override
-  Map<String, Map<String, Map<String, dynamic>>> toJson() => {'Assets': value0.toJson()};
+  Map<String, Map<String, Map<String, dynamic>>> toJson() => {'Multisig': value0.toJson()};
 
   int _sizeHint() {
     int size = 1;
@@ -558,40 +558,8 @@ class Assets extends RuntimeCall {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(17, output);
-    _i13.Call.codec.encodeTo(value0, output);
-  }
-
-  @override
-  bool operator ==(Object other) => identical(this, other) || other is Assets && other.value0 == value0;
-
-  @override
-  int get hashCode => value0.hashCode;
-}
-
-class Multisig extends RuntimeCall {
-  const Multisig(this.value0);
-
-  factory Multisig._decode(_i1.Input input) {
-    return Multisig(_i14.Call.codec.decode(input));
-  }
-
-  /// self::sp_api_hidden_includes_construct_runtime::hidden_include::dispatch
-  ///::CallableCallFor<Multisig, Runtime>
-  final _i14.Call value0;
-
-  @override
-  Map<String, Map<String, Map<String, dynamic>>> toJson() => {'Multisig': value0.toJson()};
-
-  int _sizeHint() {
-    int size = 1;
-    size = size + _i14.Call.codec.sizeHint(value0);
-    return size;
-  }
-
-  void encodeTo(_i1.Output output) {
     _i1.U8Codec.codec.encodeTo(19, output);
-    _i14.Call.codec.encodeTo(value0, output);
+    _i13.Call.codec.encodeTo(value0, output);
   }
 
   @override
@@ -605,15 +573,47 @@ class Wormhole extends RuntimeCall {
   const Wormhole(this.value0);
 
   factory Wormhole._decode(_i1.Input input) {
-    return Wormhole(_i15.Call.codec.decode(input));
+    return Wormhole(_i14.Call.codec.decode(input));
   }
 
   /// self::sp_api_hidden_includes_construct_runtime::hidden_include::dispatch
   ///::CallableCallFor<Wormhole, Runtime>
-  final _i15.Call value0;
+  final _i14.Call value0;
 
   @override
   Map<String, Map<String, Map<String, List<int>>>> toJson() => {'Wormhole': value0.toJson()};
+
+  int _sizeHint() {
+    int size = 1;
+    size = size + _i14.Call.codec.sizeHint(value0);
+    return size;
+  }
+
+  void encodeTo(_i1.Output output) {
+    _i1.U8Codec.codec.encodeTo(20, output);
+    _i14.Call.codec.encodeTo(value0, output);
+  }
+
+  @override
+  bool operator ==(Object other) => identical(this, other) || other is Wormhole && other.value0 == value0;
+
+  @override
+  int get hashCode => value0.hashCode;
+}
+
+class Vesting extends RuntimeCall {
+  const Vesting(this.value0);
+
+  factory Vesting._decode(_i1.Input input) {
+    return Vesting(_i15.Call.codec.decode(input));
+  }
+
+  /// self::sp_api_hidden_includes_construct_runtime::hidden_include::dispatch
+  ///::CallableCallFor<Vesting, Runtime>
+  final _i15.Call value0;
+
+  @override
+  Map<String, Map<String, Map<String, dynamic>>> toJson() => {'Vesting': value0.toJson()};
 
   int _sizeHint() {
     int size = 1;
@@ -622,12 +622,12 @@ class Wormhole extends RuntimeCall {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(20, output);
+    _i1.U8Codec.codec.encodeTo(22, output);
     _i15.Call.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is Wormhole && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Vesting && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;

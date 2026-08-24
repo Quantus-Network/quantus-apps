@@ -37,27 +37,39 @@ class DeepLinkService {
 
   @visibleForTesting
   void handleLink(Uri uri) {
-    if (uri.pathSegments.isNotEmpty && uri.pathSegments.first == 'account') {
+    final url = uri.toString();
+    // External input is trollable: reject over-long links before any parsing.
+    if (url.length > maxDeepLinkLength) {
+      quantusPrint('Ignoring over-long link (${url.length} chars)');
+      return;
+    }
+    final parts = decodedLinkParts(uri);
+    if (parts == null) return;
+
+    if (parts.path.isNotEmpty && parts.path.first == 'account') {
       String? accountId;
 
       // Check for new format: /account?id=123
-      if (uri.pathSegments.length == 1 && uri.queryParameters.containsKey('id')) {
-        accountId = uri.queryParameters['id'];
+      if (parts.path.length == 1 && parts.query.containsKey('id')) {
+        accountId = parts.query['id'];
       }
       // Check for old format: /account/123
-      else if (uri.pathSegments.length == 2) {
-        accountId = uri.pathSegments.last;
+      else if (parts.path.length == 2) {
+        accountId = parts.path.last;
       }
 
-      if (accountId != null && accountId.isNotEmpty) {
+      // Fail closed, same as address entry in the send flow.
+      if (accountId != null &&
+          accountId.length <= maxAddressLength &&
+          _ref.read(substrateServiceProvider).isValidSS58Address(accountId)) {
         _ref.read(sharedAccountIntentProvider.notifier).state = accountId;
       } else {
-        quantusPrint('Missing or empty account id');
+        quantusPrint('Missing or invalid account id');
       }
     }
 
-    if (uri.pathSegments.isNotEmpty && uri.pathSegments.first == 'pay') {
-      final payment = PaymentIntent.tryParseUrl(uri.toString());
+    if (parts.path.isNotEmpty && parts.path.first == 'pay') {
+      final payment = PaymentIntent.tryParseUrl(url);
       // Fail closed: a /pay link with an invalid recipient must not pre-fill
       // the send flow, same as address entry in the send flow itself.
       if (payment != null && _ref.read(substrateServiceProvider).isValidSS58Address(payment.to)) {

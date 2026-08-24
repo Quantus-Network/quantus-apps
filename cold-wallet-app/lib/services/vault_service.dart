@@ -4,13 +4,43 @@ import 'dart:math';
 import 'package:cryptography/cryptography.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:quantus_cold_wallet/models/cold_account.dart';
 
-/// Decrypted result of a successful unlock: the mnemonic plus the derived key
-/// bytes (so the caller can optionally persist them for biometric unlock).
+/// Decrypted result of a successful unlock: the vault contents plus the derived
+/// key bytes (so the caller can optionally persist them for biometric unlock).
 class UnlockResult {
   final String mnemonic;
+  final List<ColdAccount> accounts;
   final List<int> keyBytes;
-  const UnlockResult({required this.mnemonic, required this.keyBytes});
+  const UnlockResult({required this.mnemonic, required this.accounts, required this.keyBytes});
+}
+
+/// The vault plaintext. A v1 vault stored the bare mnemonic, so plaintext that
+/// is not JSON is read as a single account at index 0.
+class VaultContents {
+  final String mnemonic;
+  final List<ColdAccount> accounts;
+
+  const VaultContents({required this.mnemonic, required this.accounts});
+
+  String encode() => jsonEncode({
+    'mnemonic': mnemonic,
+    'accounts': [for (final a in accounts) a.toJson()],
+  });
+
+  factory VaultContents.decode(String plaintext) {
+    if (!plaintext.startsWith('{')) {
+      return VaultContents(
+        mnemonic: plaintext,
+        accounts: [ColdAccount(label: 'Account 1', index: 0)],
+      );
+    }
+    final m = jsonDecode(plaintext) as Map<String, dynamic>;
+    return VaultContents(
+      mnemonic: m['mnemonic'] as String,
+      accounts: [for (final a in m['accounts'] as List) ColdAccount.fromJson(a as Map<String, dynamic>)],
+    );
+  }
 }
 
 /// Encrypts the wallet mnemonic with a password-derived key (Argon2id +
@@ -23,15 +53,33 @@ class VaultService {
   static const _bioKeyKey = 'cold_unlock_key';
 
   static const _storage = FlutterSecureStorage(
+    iOptions: IOSOptions(accessibility: KeychainAccessibility.unlocked_this_device),
+  );
+  static const _legacyStorage = FlutterSecureStorage(
     iOptions: IOSOptions(accessibility: KeychainAccessibility.first_unlock_this_device),
   );
 
-  // Argon2id parameters. Tunable: a cold wallet favors strength, but the
-  // pure-Dart KDF runs on-device so we keep memory modest to bound unlock time.
   static final Argon2id _kdf = Argon2id(memory: 8192, parallelism: 1, iterations: 3, hashLength: 32);
   final AesGcm _aead = AesGcm.with256bits();
 
-  Future<bool> hasWallet() async => (await _storage.read(key: _vaultKey)) != null;
+  bool _keychainMigrated = false;
+
+  Future<void> _ensureKeychainMigrated() async {
+    if (_keychainMigrated) return;
+    _keychainMigrated = true;
+    for (final key in [_vaultKey, _bioKeyKey]) {
+      final value = await _legacyStorage.read(key: key);
+      if (value != null) {
+        await _legacyStorage.delete(key: key);
+        await _storage.write(key: key, value: value);
+      }
+    }
+  }
+
+  Future<bool> hasWallet() async {
+    await _ensureKeychainMigrated();
+    return (await _storage.read(key: _vaultKey)) != null;
+  }
 
   /// True only when the stored biometric key belongs to the current vault
   /// (matched via the vault salt it was paired with). A key orphaned by a
@@ -69,10 +117,17 @@ class VaultService {
   /// Writes only the vault entry. A biometric key stored for a previous vault
   /// stays valid for that vault until the write lands, so callers own keeping
   /// the biometric entry consistent with the vault they committed.
-  Future<void> createVault({required String mnemonic, required String password}) async {
+  Future<void> createVault({
+    required String mnemonic,
+    required String password,
+    required List<ColdAccount> accounts,
+  }) async {
     final salt = _randomBytes(16);
     final key = await _deriveKey(password, salt);
-    final box = await _aead.encrypt(utf8.encode(mnemonic), secretKey: key);
+    final box = await _aead.encrypt(
+      utf8.encode(VaultContents(mnemonic: mnemonic, accounts: accounts).encode()),
+      secretKey: key,
+    );
     final blob = jsonEncode({
       'v': 1,
       'salt': base64Encode(salt),
@@ -81,6 +136,24 @@ class VaultService {
       'mac': base64Encode(box.mac.bytes),
     });
     await _storage.write(key: _vaultKey, value: blob);
+  }
+
+  /// Re-encrypts the vault with the key an unlock already derived, so the
+  /// account list can change without asking for the password again. The salt is
+  /// preserved, which keeps any paired biometric key valid.
+  Future<void> replaceContents({required List<int> keyBytes, required VaultContents contents}) async {
+    final existing = await _readVault();
+    final box = await _aead.encrypt(utf8.encode(contents.encode()), secretKey: SecretKey(keyBytes));
+    await _storage.write(
+      key: _vaultKey,
+      value: jsonEncode({
+        'v': 1,
+        'salt': base64Encode(existing.salt),
+        'nonce': base64Encode(box.nonce),
+        'ct': base64Encode(box.cipherText),
+        'mac': base64Encode(box.mac.bytes),
+      }),
+    );
   }
 
   Future<_Vault> _readVault() async {
@@ -107,8 +180,8 @@ class VaultService {
   Future<UnlockResult> unlockWithPassword(String password) async {
     final v = await _readVault();
     final key = await _deriveKey(password, v.salt);
-    final mnemonic = await _decrypt(v, key);
-    return UnlockResult(mnemonic: mnemonic, keyBytes: await key.extractBytes());
+    final contents = VaultContents.decode(await _decrypt(v, key));
+    return UnlockResult(mnemonic: contents.mnemonic, accounts: contents.accounts, keyBytes: await key.extractBytes());
   }
 
   /// Pairs the key with the current vault via its salt, so a key orphaned by
@@ -121,11 +194,13 @@ class VaultService {
 
   Future<void> disableBiometric() async => _storage.delete(key: _bioKeyKey);
 
-  Future<String> unlockWithBiometricKey() async {
+  Future<UnlockResult> unlockWithBiometricKey() async {
     final raw = await _storage.read(key: _bioKeyKey);
     if (raw == null) throw StateError('Biometric unlock not set up');
+    final keyBytes = base64Decode(_decodeBioEntry(raw).key);
     try {
-      return await _decrypt(await _readVault(), SecretKey(base64Decode(_decodeBioEntry(raw).key)));
+      final contents = VaultContents.decode(await _decrypt(await _readVault(), SecretKey(keyBytes)));
+      return UnlockResult(mnemonic: contents.mnemonic, accounts: contents.accounts, keyBytes: keyBytes);
     } on SecretBoxAuthenticationError {
       // The key cannot authenticate this vault, so it belongs to a previous
       // one; drop it so the broken unlock option disappears.

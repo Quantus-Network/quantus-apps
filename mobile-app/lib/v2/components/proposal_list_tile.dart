@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/currency_display_provider.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
+import 'package:resonance_network_wallet/v2/components/decoded_call_view.dart';
 
 /// Shared card layout for indexed and pending multisig proposal rows.
 class ProposalListTile extends ConsumerWidget {
@@ -18,6 +19,8 @@ class ProposalListTile extends ConsumerWidget {
   /// the actual call instead of rendering a non-transfer as "0 tokens to ''".
   final DecodedCall? call;
 
+  final bool callUndecodable;
+
   const ProposalListTile({
     super.key,
     required this.amount,
@@ -26,6 +29,7 @@ class ProposalListTile extends ConsumerWidget {
     this.onTap,
     this.highlighted = false,
     this.call,
+    this.callUndecodable = false,
   });
 
   @override
@@ -38,11 +42,15 @@ class ProposalListTile extends ConsumerWidget {
     final headline = decoded == null
         ? null
         : DecodedCallHeadline.of(decoded, amountText: (token) => formatAmount(token, isSend: true).primaryAmount);
-    final amountText = headline?.primary ?? formatAmount(amount, isSend: true).primaryAmount;
+    final amountText = callUndecodable
+        ? l10n.multisigProposalInvalid
+        : (headline?.primary ?? formatAmount(amount, isSend: true).primaryAmount);
     final recipient = headline == null
         ? (recipientAddress.isEmpty ? null : AddressFormattingService.formatAddress(recipientAddress))
         : headline.recipient;
-    final subtitle = recipient != null ? l10n.multisigProposalToAddress(recipient) : headline?.palletSubtitle;
+    final subtitle = callUndecodable
+        ? null
+        : (recipient != null ? l10n.multisigProposalToAddress(recipient) : headline?.palletSubtitle);
 
     final content = Container(
       padding: const EdgeInsets.all(14),
@@ -62,7 +70,7 @@ class ProposalListTile extends ConsumerWidget {
                 Text(
                   amountText,
                   style: text.paragraph?.copyWith(
-                    color: colors.textPrimary,
+                    color: callUndecodable ? colors.textError : colors.textPrimary,
                     fontWeight: FontWeight.w500,
                     fontFamily: AppTextTheme.fontFamilySecondary,
                   ),

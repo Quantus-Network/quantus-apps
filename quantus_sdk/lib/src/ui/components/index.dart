@@ -11,7 +11,6 @@ export 'loader.dart';
 export 'quantus_icon.dart';
 export 'quantus_icon_button.dart';
 export 'glass_button_base.dart';
-export 'decoded_call_view.dart';
 export 'v2_app_bar.dart';
 export 'bottom_sheet_container.dart';
 export 'scaffold_base.dart';

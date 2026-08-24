@@ -764,7 +764,7 @@ class Constants {
     specName: 'quantus-runtime',
     implName: 'quantus-runtime',
     authoringVersion: 1,
-    specVersion: 136,
+    specVersion: 146,
     implVersion: 1,
     apis: [
       _i9.Tuple2<List<int>, int>(<int>[223, 106, 203, 104, 153, 7, 96, 155], 5),
@@ -780,7 +780,7 @@ class Constants {
       _i9.Tuple2<List<int>, int>(<int>[243, 255, 20, 213, 171, 82, 112, 89], 3),
       _i9.Tuple2<List<int>, int>(<int>[251, 197, 119, 185, 215, 71, 239, 214], 1),
     ],
-    transactionVersion: 3,
+    transactionVersion: 5,
     systemVersion: 1,
   );
 

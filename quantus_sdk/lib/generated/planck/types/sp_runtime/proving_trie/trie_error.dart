@@ -32,7 +32,6 @@ enum TrieError {
   static const $TrieErrorCodec codec = $TrieErrorCodec();
 
   String toJson() => variantName;
-
   _i2.Uint8List encode() {
     return codec.encode(this);
   }

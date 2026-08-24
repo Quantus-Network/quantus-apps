@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:quantus_cold_wallet/providers/wallet_providers.dart';
 import 'package:quantus_cold_wallet/components/password_field.dart';
+import 'package:quantus_cold_wallet/models/cold_account.dart';
+import 'package:quantus_cold_wallet/providers/wallet_providers.dart';
 
 class SetPasswordScreen extends ConsumerStatefulWidget {
   final String mnemonic;
-  const SetPasswordScreen({super.key, required this.mnemonic});
+  final List<ColdAccount> accounts;
+
+  const SetPasswordScreen({super.key, required this.mnemonic, required this.accounts});
 
   @override
   ConsumerState<SetPasswordScreen> createState() => _SetPasswordScreenState();
@@ -60,7 +63,12 @@ class _SetPasswordScreenState extends ConsumerState<SetPasswordScreen> {
     try {
       await ref
           .read(walletControllerProvider.notifier)
-          .createWallet(mnemonic: widget.mnemonic, password: _password.text, enableBiometric: _enableBiometric);
+          .createWallet(
+            mnemonic: widget.mnemonic,
+            password: _password.text,
+            enableBiometric: _enableBiometric,
+            accounts: widget.accounts,
+          );
       if (!mounted) return;
       Navigator.of(context).popUntil((route) => route.isFirst);
     } catch (e) {

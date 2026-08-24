@@ -4,6 +4,7 @@ import 'package:convert/convert.dart';
 import 'package:flutter/foundation.dart';
 import 'package:quantus_sdk/generated/planck/pallets/multisig.dart';
 import 'package:quantus_sdk/src/chain/call_decoder.dart';
+import 'package:quantus_sdk/src/chain/call_policy.dart';
 import 'package:quantus_sdk/src/chain/decoded_call.dart';
 import 'package:quantus_sdk/src/models/json_dynamic_parse.dart';
 import 'package:quantus_sdk/src/models/multisig_account.dart';
@@ -148,6 +149,12 @@ class MultisigProposal {
     return bytes == null ? null : _decodeCall(bytes);
   }
 
+  /// True when [callRaw] is present but [CallDecoder.decodeBytes] rejects it.
+  bool get hasUndecodableCall {
+    final bytes = callRaw;
+    return bytes != null && decodedCall == null;
+  }
+
   /// Parses a (possibly upper-cased) indexer status string.
   static MultisigProposalStatus parseStatus(dynamic raw) {
     final value = raw?.toString().toLowerCase();
@@ -257,17 +264,26 @@ class MultisigProposal {
 
   static Uint8List? _callRawBytes(String? callRawHex) {
     if (callRawHex == null || callRawHex.isEmpty) return null;
+    final encoded = callRawHex.startsWith('0x') ? callRawHex.substring(2) : callRawHex;
+    if (encoded.length > maxCallBytes * 2) {
+      quantusPrint('[MultisigProposal] call_raw exceeds the $maxCallBytes-byte limit');
+      return Uint8List(0);
+    }
     try {
-      return Uint8List.fromList(hex.decode(callRawHex.startsWith('0x') ? callRawHex.substring(2) : callRawHex));
+      return Uint8List.fromList(hex.decode(encoded));
     } catch (e) {
       quantusPrint('[MultisigProposal] Malformed call_raw hex: $e');
-      return null;
+      return Uint8List(0);
     }
   }
 
+  /// A proposal's stored inner call, under the policy the mobile wallet renders.
+  static DecodedCall decodeProposalCall(List<int> bytes) =>
+      CallDecoder.decodeBytes(bytes, policy: const WalletCallPolicy(), within: CallIds.insideProposal);
+
   static DecodedCall? _decodeCall(Uint8List bytes) {
     try {
-      return CallDecoder.decodeBytes(bytes);
+      return decodeProposalCall(bytes);
     } catch (e) {
       quantusPrint('[MultisigProposal] Failed to decode call_raw: $e');
       return null;

@@ -3,8 +3,9 @@ import 'dart:typed_data';
 import 'package:convert/convert.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:quantus_sdk/quantus_sdk.dart' hide DecodedCallView;
-import 'package:quantus_cold_wallet/components/decoded_call_view.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:quantus_cold_wallet/components/address_with_checkphrase.dart';
+import 'package:quantus_cold_wallet/components/call_detail_view.dart';
 import 'package:quantus_cold_wallet/components/qr_tuning_controls.dart';
 import 'package:quantus_cold_wallet/providers/settings_providers.dart';
 import 'package:quantus_cold_wallet/providers/wallet_providers.dart';
@@ -17,8 +18,8 @@ import 'package:quantus_cold_wallet/providers/wallet_providers.dart';
 /// signed extensions and the raw bytes, which no signer verifies by eye, live
 /// behind the Advanced disclosure.
 class SignTransactionScreen extends ConsumerStatefulWidget {
-  final Uint8List payload;
-  const SignTransactionScreen({super.key, required this.payload});
+  final SigningRequest request;
+  const SignTransactionScreen({super.key, required this.request});
 
   @override
   ConsumerState<SignTransactionScreen> createState() => _SignTransactionScreenState();
@@ -38,7 +39,7 @@ class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> {
   void initState() {
     super.initState();
     try {
-      _parsed = QuantusPayloadParser.parsePayload(widget.payload);
+      _parsed = QuantusPayloadParser.parsePayload(widget.request.payload, policy: const FullCallPolicy());
     } catch (e) {
       debugPrint('Rejected signing payload: $e');
       _parseError = e is FormatException ? e.message : e.toString();
@@ -46,7 +47,7 @@ class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> {
   }
 
   void _sign() {
-    final keypair = ref.read(keypairProvider);
+    final keypair = keypairFor(ref, widget.request.signer);
     if (keypair == null) {
       setState(() => _error = 'Wallet is locked — unlock and try again. Nothing was signed.');
       return;
@@ -61,7 +62,7 @@ class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> {
       // extrinsic via submitExtrinsicWithExternalSignature.
       final signed = signMessageWithPubkey(
         keypair: keypair,
-        message: QuantusSigningPayload.signablePayload(widget.payload),
+        message: QuantusSigningPayload.signablePayload(widget.request.payload),
       );
       setState(() {
         _signing = false;
@@ -78,6 +79,9 @@ class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> {
   @override
   Widget build(BuildContext context) {
     if (_parseError != null) return _errorView(context, _parseError!);
+    if (!ref.watch(addressesProvider).containsKey(widget.request.signer)) {
+      return _errorView(context, 'This transaction is for ${widget.request.signer}, which this wallet does not hold.');
+    }
     if (_signed != null) return _signatureView(context, _signed!);
     return _reviewView(context, _parsed!);
   }
@@ -87,26 +91,32 @@ class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> {
     final text = context.themeTextV3;
     return ScaffoldBase(
       appBar: const V2AppBar(title: 'Sign Transaction'),
-      mainContent: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.error_outline, size: 64, color: colors.semanticEmber),
-          const SizedBox(height: 24),
-          Text('Could not read transaction', style: text.titleScreen.copyWith(color: colors.textContent)),
-          const SizedBox(height: 12),
-          Text(
-            'This QR code is not a transaction this wallet can read in full, so it will not be signed. '
-            'Nothing was signed.',
-            style: text.body.copyWith(color: colors.textMuted),
-            textAlign: TextAlign.center,
+      // The reason is as long as the decoder's message, which no layout can
+      // bound, so this column scrolls rather than overflowing on a small screen.
+      mainContent: Center(
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.error_outline, size: 64, color: colors.semanticEmber),
+              const SizedBox(height: 24),
+              Text('Could not read transaction', style: text.titleScreen.copyWith(color: colors.textContent)),
+              const SizedBox(height: 12),
+              Text(
+                'This QR code is not a transaction this wallet can read in full, so it will not be signed. '
+                'Nothing was signed.',
+                style: text.body.copyWith(color: colors.textMuted),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                reason,
+                style: text.caption.copyWith(color: colors.textMuted2),
+                textAlign: TextAlign.center,
+              ),
+            ],
           ),
-          const SizedBox(height: 12),
-          Text(
-            reason,
-            style: text.caption.copyWith(color: colors.textMuted2),
-            textAlign: TextAlign.center,
-          ),
-        ],
+        ),
       ),
       bottomContent: ScaffoldBaseBottomContent(
         child: QuantusButton.simple(label: 'Back to home', onTap: () => Navigator.popUntil(context, (r) => r.isFirst)),
@@ -130,7 +140,7 @@ class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> {
             // SEND / …) by design; the exact pallet · call chain is the Call
             // line in the Advanced sheet. See [DecodedCall.actionTitle].
             Text(parsed.call.actionTitle, style: text.titleScreen.copyWith(color: colors.accentFlare)),
-            DecodedCallView(call: parsed.call, signer: _signer(parsed.call)),
+            ..._callBody(parsed.call),
             const SizedBox(height: 20),
             _advancedSection(context, parsed),
             if (_error != null) ...[
@@ -165,26 +175,30 @@ class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> {
     );
   }
 
+  /// What is being authorised, then who is authorising it, then the parameters
+  /// neither of those already showed. Wrappers lead with their nested calls.
+  ///
   /// The signer's row claims `From` only when the summary shows a plain send
   /// and the call names no other account the funds could leave instead — a
   /// `force_transfer` moves its Source's funds, not the signer's. Anything
   /// else says no more than `Signed by`.
-  Widget? _signer(DecodedCall call) {
-    final signerAddress = ref.watch(addressProvider);
-    if (signerAddress == null) return null;
-
+  List<Widget> _callBody(DecodedCall call) {
+    final signerAddress = widget.request.signer;
     final transfer = heroSummary(call);
     final fromSigner =
         transfer?.recipient != null &&
         !call.fields.any(
           (f) => f is ValueField && f.kind == ValueKind.address && !identical(f, transfer!.recipientField),
         );
-    final label = fromSigner ? 'From' : 'Signed by';
-    final phrase = ref
-        .watch(checksumNameProvider(signerAddress))
-        .maybeWhen(data: (value) => value.isEmpty ? null : value, orElse: () => null);
+    final signer = AddressWithCheckphrase(label: fromSigner ? 'From' : 'Signed by', address: signerAddress);
 
-    return DetailSummaryRow.stacked(label: label, value: signerAddress, monospace: true, checkphrase: phrase);
+    if (!call.isWrapper) return [...callSummaryBody(call), signer];
+
+    return [
+      for (final field in call.fields.whereType<NestedCallField>()) CallFieldView(field: field),
+      signer,
+      for (final field in call.fields.where((field) => field is! NestedCallField)) CallFieldView(field: field),
+    ];
   }
 
   /// Everything a signer never verifies by eye: the signed extensions and the

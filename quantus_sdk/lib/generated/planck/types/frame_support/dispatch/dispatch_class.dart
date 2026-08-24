@@ -21,7 +21,6 @@ enum DispatchClass {
   static const $DispatchClassCodec codec = $DispatchClassCodec();
 
   String toJson() => variantName;
-
   _i2.Uint8List encode() {
     return codec.encode(this);
   }

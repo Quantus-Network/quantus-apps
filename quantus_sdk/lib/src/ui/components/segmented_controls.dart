@@ -57,20 +57,25 @@ class SegmentedControls<T> extends StatelessWidget {
                   children: items.mapIndexed((index, item) {
                     final isSelected = index == selectedIndex;
                     return Expanded(
-                      child: GestureDetector(
-                        onTap: () => onChanged(item.value),
-                        behavior: HitTestBehavior.opaque,
-                        child: SizedBox(
-                          height: double.infinity,
-                          child: Center(
-                            child: AnimatedDefaultTextStyle(
-                              duration: _duration,
-                              curve: Curves.easeInOut,
-                              style: (context.themeText.smallTitle ?? const TextStyle(fontSize: 18)).copyWith(
-                                color: isSelected ? colors.textPrimary : colors.txItemIconDefault,
-                                fontWeight: FontWeight.w400,
+                      child: Semantics(
+                        button: true,
+                        selected: isSelected,
+                        label: item.label,
+                        child: GestureDetector(
+                          onTap: () => onChanged(item.value),
+                          behavior: HitTestBehavior.opaque,
+                          child: SizedBox(
+                            height: double.infinity,
+                            child: Center(
+                              child: AnimatedDefaultTextStyle(
+                                duration: _duration,
+                                curve: Curves.easeInOut,
+                                style: (context.themeText.smallTitle ?? const TextStyle(fontSize: 18)).copyWith(
+                                  color: isSelected ? colors.textPrimary : colors.txItemIconDefault,
+                                  fontWeight: FontWeight.w400,
+                                ),
+                                child: Text(item.label, textAlign: TextAlign.center),
                               ),
-                              child: Text(item.label, textAlign: TextAlign.center),
                             ),
                           ),
                         ),

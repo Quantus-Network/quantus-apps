@@ -4,11 +4,9 @@ import 'dart:typed_data' as _i2;
 import 'package:polkadart/scale_codec.dart' as _i1;
 
 import '../frame_system/pallet/event.dart' as _i3;
-import '../pallet_assets/pallet/event.dart' as _i16;
-import '../pallet_assets_holder/pallet/event.dart' as _i17;
 import '../pallet_balances/pallet/event.dart' as _i4;
 import '../pallet_mining_rewards/pallet/event.dart' as _i7;
-import '../pallet_multisig/pallet/event.dart' as _i18;
+import '../pallet_multisig/pallet/event.dart' as _i16;
 import '../pallet_preimage/pallet/event.dart' as _i8;
 import '../pallet_qpow/pallet/event.dart' as _i6;
 import '../pallet_ranked_collective/pallet/event.dart' as _i12;
@@ -19,8 +17,9 @@ import '../pallet_scheduler/pallet/event.dart' as _i9;
 import '../pallet_transaction_payment/pallet/event.dart' as _i5;
 import '../pallet_treasury/pallet/event.dart' as _i14;
 import '../pallet_utility/pallet/event.dart' as _i10;
-import '../pallet_wormhole/pallet/event.dart' as _i19;
-import '../pallet_zk_tree/pallet/event.dart' as _i20;
+import '../pallet_vesting/pallet/event.dart' as _i19;
+import '../pallet_wormhole/pallet/event.dart' as _i17;
+import '../pallet_zk_tree/pallet/event.dart' as _i18;
 
 abstract class RuntimeEvent {
   const RuntimeEvent();
@@ -43,7 +42,7 @@ abstract class RuntimeEvent {
     return codec.sizeHint(this);
   }
 
-  Map<String, Map<String, dynamic>> toJson();
+  Map<String, dynamic> toJson();
 }
 
 class $RuntimeEvent {
@@ -101,24 +100,20 @@ class $RuntimeEvent {
     return Recovery(value0);
   }
 
-  Assets assets(_i16.Event value0) {
-    return Assets(value0);
-  }
-
-  AssetsHolder assetsHolder(_i17.Event value0) {
-    return AssetsHolder(value0);
-  }
-
-  Multisig multisig(_i18.Event value0) {
+  Multisig multisig(_i16.Event value0) {
     return Multisig(value0);
   }
 
-  Wormhole wormhole(_i19.Event value0) {
+  Wormhole wormhole(_i17.Event value0) {
     return Wormhole(value0);
   }
 
-  ZkTree zkTree(_i20.Event value0) {
+  ZkTree zkTree(_i18.Event value0) {
     return ZkTree(value0);
+  }
+
+  Vesting vesting(_i19.Event value0) {
+    return Vesting(value0);
   }
 }
 
@@ -155,16 +150,14 @@ class $RuntimeEventCodec with _i1.Codec<RuntimeEvent> {
         return TreasuryPallet._decode(input);
       case 16:
         return Recovery._decode(input);
-      case 17:
-        return Assets._decode(input);
-      case 18:
-        return AssetsHolder._decode(input);
       case 19:
         return Multisig._decode(input);
       case 20:
         return Wormhole._decode(input);
       case 21:
         return ZkTree._decode(input);
+      case 22:
+        return Vesting._decode(input);
       default:
         throw Exception('RuntimeEvent: Invalid variant index: "$index"');
     }
@@ -212,12 +205,6 @@ class $RuntimeEventCodec with _i1.Codec<RuntimeEvent> {
       case Recovery:
         (value as Recovery).encodeTo(output);
         break;
-      case Assets:
-        (value as Assets).encodeTo(output);
-        break;
-      case AssetsHolder:
-        (value as AssetsHolder).encodeTo(output);
-        break;
       case Multisig:
         (value as Multisig).encodeTo(output);
         break;
@@ -226,6 +213,9 @@ class $RuntimeEventCodec with _i1.Codec<RuntimeEvent> {
         break;
       case ZkTree:
         (value as ZkTree).encodeTo(output);
+        break;
+      case Vesting:
+        (value as Vesting).encodeTo(output);
         break;
       default:
         throw Exception('RuntimeEvent: Unsupported "$value" of type "${value.runtimeType}"');
@@ -261,16 +251,14 @@ class $RuntimeEventCodec with _i1.Codec<RuntimeEvent> {
         return (value as TreasuryPallet)._sizeHint();
       case Recovery:
         return (value as Recovery)._sizeHint();
-      case Assets:
-        return (value as Assets)._sizeHint();
-      case AssetsHolder:
-        return (value as AssetsHolder)._sizeHint();
       case Multisig:
         return (value as Multisig)._sizeHint();
       case Wormhole:
         return (value as Wormhole)._sizeHint();
       case ZkTree:
         return (value as ZkTree)._sizeHint();
+      case Vesting:
+        return (value as Vesting)._sizeHint();
       default:
         throw Exception('RuntimeEvent: Unsupported "$value" of type "${value.runtimeType}"');
     }
@@ -505,7 +493,7 @@ class Utility extends RuntimeEvent {
   final _i10.Event value0;
 
   @override
-  Map<String, Map<String, dynamic>> toJson() => {'Utility': value0.toJson()};
+  Map<String, String> toJson() => {'Utility': value0.toJson()};
 
   int _sizeHint() {
     int size = 1;
@@ -629,7 +617,7 @@ class TreasuryPallet extends RuntimeEvent {
   final _i14.Event value0;
 
   @override
-  Map<String, Map<String, Map<String, dynamic>>> toJson() => {'TreasuryPallet': value0.toJson()};
+  Map<String, Map<String, Map<String, List<int>?>>> toJson() => {'TreasuryPallet': value0.toJson()};
 
   int _sizeHint() {
     int size = 1;
@@ -680,18 +668,18 @@ class Recovery extends RuntimeEvent {
   int get hashCode => value0.hashCode;
 }
 
-class Assets extends RuntimeEvent {
-  const Assets(this.value0);
+class Multisig extends RuntimeEvent {
+  const Multisig(this.value0);
 
-  factory Assets._decode(_i1.Input input) {
-    return Assets(_i16.Event.codec.decode(input));
+  factory Multisig._decode(_i1.Input input) {
+    return Multisig(_i16.Event.codec.decode(input));
   }
 
-  /// pallet_assets::Event<Runtime>
+  /// pallet_multisig::Event<Runtime>
   final _i16.Event value0;
 
   @override
-  Map<String, Map<String, Map<String, dynamic>>> toJson() => {'Assets': value0.toJson()};
+  Map<String, Map<String, Map<String, dynamic>>> toJson() => {'Multisig': value0.toJson()};
 
   int _sizeHint() {
     int size = 1;
@@ -700,70 +688,8 @@ class Assets extends RuntimeEvent {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(17, output);
-    _i16.Event.codec.encodeTo(value0, output);
-  }
-
-  @override
-  bool operator ==(Object other) => identical(this, other) || other is Assets && other.value0 == value0;
-
-  @override
-  int get hashCode => value0.hashCode;
-}
-
-class AssetsHolder extends RuntimeEvent {
-  const AssetsHolder(this.value0);
-
-  factory AssetsHolder._decode(_i1.Input input) {
-    return AssetsHolder(_i17.Event.codec.decode(input));
-  }
-
-  /// pallet_assets_holder::Event<Runtime>
-  final _i17.Event value0;
-
-  @override
-  Map<String, Map<String, Map<String, dynamic>>> toJson() => {'AssetsHolder': value0.toJson()};
-
-  int _sizeHint() {
-    int size = 1;
-    size = size + _i17.Event.codec.sizeHint(value0);
-    return size;
-  }
-
-  void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(18, output);
-    _i17.Event.codec.encodeTo(value0, output);
-  }
-
-  @override
-  bool operator ==(Object other) => identical(this, other) || other is AssetsHolder && other.value0 == value0;
-
-  @override
-  int get hashCode => value0.hashCode;
-}
-
-class Multisig extends RuntimeEvent {
-  const Multisig(this.value0);
-
-  factory Multisig._decode(_i1.Input input) {
-    return Multisig(_i18.Event.codec.decode(input));
-  }
-
-  /// pallet_multisig::Event<Runtime>
-  final _i18.Event value0;
-
-  @override
-  Map<String, Map<String, Map<String, dynamic>>> toJson() => {'Multisig': value0.toJson()};
-
-  int _sizeHint() {
-    int size = 1;
-    size = size + _i18.Event.codec.sizeHint(value0);
-    return size;
-  }
-
-  void encodeTo(_i1.Output output) {
     _i1.U8Codec.codec.encodeTo(19, output);
-    _i18.Event.codec.encodeTo(value0, output);
+    _i16.Event.codec.encodeTo(value0, output);
   }
 
   @override
@@ -777,24 +703,24 @@ class Wormhole extends RuntimeEvent {
   const Wormhole(this.value0);
 
   factory Wormhole._decode(_i1.Input input) {
-    return Wormhole(_i19.Event.codec.decode(input));
+    return Wormhole(_i17.Event.codec.decode(input));
   }
 
   /// pallet_wormhole::Event<Runtime>
-  final _i19.Event value0;
+  final _i17.Event value0;
 
   @override
   Map<String, Map<String, Map<String, dynamic>>> toJson() => {'Wormhole': value0.toJson()};
 
   int _sizeHint() {
     int size = 1;
-    size = size + _i19.Event.codec.sizeHint(value0);
+    size = size + _i17.Event.codec.sizeHint(value0);
     return size;
   }
 
   void encodeTo(_i1.Output output) {
     _i1.U8Codec.codec.encodeTo(20, output);
-    _i19.Event.codec.encodeTo(value0, output);
+    _i17.Event.codec.encodeTo(value0, output);
   }
 
   @override
@@ -808,28 +734,59 @@ class ZkTree extends RuntimeEvent {
   const ZkTree(this.value0);
 
   factory ZkTree._decode(_i1.Input input) {
-    return ZkTree(_i20.Event.codec.decode(input));
+    return ZkTree(_i18.Event.codec.decode(input));
   }
 
   /// pallet_zk_tree::Event<Runtime>
-  final _i20.Event value0;
+  final _i18.Event value0;
 
   @override
   Map<String, Map<String, Map<String, dynamic>>> toJson() => {'ZkTree': value0.toJson()};
 
   int _sizeHint() {
     int size = 1;
-    size = size + _i20.Event.codec.sizeHint(value0);
+    size = size + _i18.Event.codec.sizeHint(value0);
     return size;
   }
 
   void encodeTo(_i1.Output output) {
     _i1.U8Codec.codec.encodeTo(21, output);
-    _i20.Event.codec.encodeTo(value0, output);
+    _i18.Event.codec.encodeTo(value0, output);
   }
 
   @override
   bool operator ==(Object other) => identical(this, other) || other is ZkTree && other.value0 == value0;
+
+  @override
+  int get hashCode => value0.hashCode;
+}
+
+class Vesting extends RuntimeEvent {
+  const Vesting(this.value0);
+
+  factory Vesting._decode(_i1.Input input) {
+    return Vesting(_i19.Event.codec.decode(input));
+  }
+
+  /// pallet_vesting::Event<Runtime>
+  final _i19.Event value0;
+
+  @override
+  Map<String, Map<String, Map<String, dynamic>>> toJson() => {'Vesting': value0.toJson()};
+
+  int _sizeHint() {
+    int size = 1;
+    size = size + _i19.Event.codec.sizeHint(value0);
+    return size;
+  }
+
+  void encodeTo(_i1.Output output) {
+    _i1.U8Codec.codec.encodeTo(22, output);
+    _i19.Event.codec.encodeTo(value0, output);
+  }
+
+  @override
+  bool operator ==(Object other) => identical(this, other) || other is Vesting && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;

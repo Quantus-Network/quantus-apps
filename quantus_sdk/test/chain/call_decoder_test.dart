@@ -2,7 +2,6 @@ import 'dart:typed_data';
 
 import 'package:convert/convert.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:quantus_sdk/generated/planck/pallets/assets.dart' as assets_pallet;
 import 'package:quantus_sdk/generated/planck/pallets/balances.dart' as balances_pallet;
 import 'package:quantus_sdk/generated/planck/pallets/multisig.dart' as multisig_pallet;
 import 'package:quantus_sdk/generated/planck/pallets/preimage.dart' as preimage_pallet;
@@ -21,6 +20,7 @@ import 'package:quantus_sdk/generated/planck/types/quantus_runtime/origin_caller
 import 'package:quantus_sdk/generated/planck/types/quantus_runtime/runtime_call.dart';
 import 'package:quantus_sdk/generated/planck/types/sp_runtime/multiaddress/multi_address.dart' as multi_address;
 import 'package:quantus_sdk/src/chain/call_decoder.dart';
+import 'package:quantus_sdk/src/chain/call_policy.dart';
 import 'package:quantus_sdk/src/chain/decoded_call.dart';
 
 // Two distinct 32-byte account ids, so a decoded address can be told apart from
@@ -35,7 +35,53 @@ final oneToken = BigInt.from(1000000000000);
 
 /// Encodes then re-decodes through [CallDecoder.decodeBytes], so every assertion
 /// runs against the same path a signer takes: bytes in, display tree out.
-DecodedCall roundTrip(RuntimeCall call) => CallDecoder.decodeBytes(call.encode());
+DecodedCall roundTrip(RuntimeCall call) => CallDecoder.decodeBytes(call.encode(), policy: const FullCallPolicy());
+
+RuntimeCall nestedRecovered(int depth) {
+  RuntimeCall call = const system_pallet.Txs().remark(remark: <int>[]);
+  for (var i = 0; i < depth; i++) {
+    call = const recovery_pallet.Txs().asRecovered(account: dest(aliceId), call: call);
+  }
+  return call;
+}
+
+RuntimeCall multisigWrapping(int depth) =>
+    const multisig_pallet.Txs().propose(multisigAddress: aliceId, call: nestedRecovered(depth).encode(), expiry: 10);
+
+RuntimeCall recoveryWrapping(int depth) =>
+    const recovery_pallet.Txs().asRecovered(account: dest(aliceId), call: nestedRecovered(depth));
+
+RuntimeCall preimageWrapping(int depth) =>
+    const preimage_pallet.Txs().notePreimage(bytes: nestedRecovered(depth).encode());
+
+RuntimeCall referendaWrapping(int depth) => const referenda_pallet.Txs().submit(
+  proposalOrigin: rootOrigin,
+  proposal: bounded.Bounded.values.inline(nestedRecovered(depth).encode()),
+  enactmentMoment: dispatch_time.DispatchTime.values.after(100),
+);
+
+final rootOrigin = origin_caller.OriginCaller.values.system(raw_origin.RawOrigin.values.root());
+
+/// Built straight from bytes: encoding a chain this deep in Dart would itself
+/// blow the stack, which is the point — a decoder that recurses first never gets
+/// to say no.
+final int _recoveryPallet = const recovery_pallet.Txs().removeRecovery().encode()[0];
+
+Uint8List recoveredChainBytes(int depth) => Uint8List.fromList([
+  for (var i = 0; i < depth; i++) ...[_recoveryPallet, 0, 0, ...List.filled(32, 0xAA)],
+  0, 0, 0, // System(0) · remark(0), empty
+]);
+
+/// Every field of a decoded tree as one comparable string, so a decode that got
+/// a variant index or a field order wrong cannot compare equal.
+String flatten(DecodedCall call) => '${call.pallet}.${call.call}(${call.fields.map(flattenField).join(', ')})';
+
+String flattenField(CallField field) => switch (field) {
+  ValueField() => '${field.label}=${field.value}',
+  AmountField() => '${field.label}=${field.token}',
+  NestedCallField() => '${field.label}=${flatten(field.call)}',
+  FieldGroup() => '${field.label}={${field.items.map(flattenField).join(', ')}}',
+};
 
 ValueField valueField(DecodedCall call, String label) =>
     call.fields.whereType<ValueField>().firstWhere((f) => f.label == label);
@@ -45,6 +91,16 @@ AmountField amountField(DecodedCall call, String label) =>
 
 NestedCallField nestedField(DecodedCall call, String label) =>
     call.fields.whereType<NestedCallField>().firstWhere((f) => f.label == label);
+
+final isNestingRejection = throwsA(
+  isA<CallNestingLimitException>().having(
+    (error) => error.message,
+    'message',
+    allOf(contains('Cannot parse transaction'), contains('exceeds the limit of 2')),
+  ),
+);
+
+void expectNestingRejected(RuntimeCall call) => expect(() => roundTrip(call), isNestingRejection);
 
 void main() {
   group('transfers', () {
@@ -77,16 +133,21 @@ void main() {
       expect(decoded.summary?.recipient, valueField(decoded, 'Destination').value);
     });
 
-    test('a non-account destination yields a summary without a recipient', () {
-      final decoded = roundTrip(
-        const balances_pallet.Txs().transferAllowDeath(
-          dest: multi_address.MultiAddress.values.index(BigInt.one),
-          value: oneToken,
-        ),
-      );
+    test('every destination that is not a plain account id is refused', () {
+      final destinations = {
+        'index': multi_address.MultiAddress.values.index(BigInt.one),
+        'raw': multi_address.MultiAddress.values.raw([1, 2, 3]),
+        'address32': multi_address.MultiAddress.values.address32(List.filled(32, 7)),
+        'address20': multi_address.MultiAddress.values.address20(List.filled(20, 7)),
+      };
 
-      expect(decoded.summary?.amount, oneToken);
-      expect(decoded.summary?.recipient, isNull);
+      for (final entry in destinations.entries) {
+        expect(
+          () => roundTrip(const balances_pallet.Txs().transferAllowDeath(dest: entry.value, value: oneToken)),
+          throwsA(isA<FormatException>()),
+          reason: '${entry.key} must not reach the display',
+        );
+      }
     });
 
     test('reversible schedule_transfer_with_delay renders the delay as a duration', () {
@@ -106,19 +167,6 @@ void main() {
       expect(decoded.summary?.amount, oneToken);
     });
 
-    test('reversible schedule_asset_transfer carries the asset id into the summary', () {
-      final decoded = roundTrip(
-        const reversible_pallet.Txs().scheduleAssetTransfer(assetId: 42, dest: dest(bobId), amount: oneToken),
-      );
-
-      expect(decoded.call, 'schedule_asset_transfer');
-      expect(valueField(decoded, 'Asset id').value, '42');
-      expect(decoded.summary?.assetId, 42);
-      expect(amountField(decoded, 'Amount').assetId, 42);
-    });
-  });
-
-  group('multisig', () {
     test('approve exposes the inner call being approved and lifts its amount', () {
       final inner = const balances_pallet.Txs().transferAllowDeath(dest: dest(bobId), value: oneToken);
       final decoded = roundTrip(
@@ -259,6 +307,83 @@ void main() {
   });
 
   group('nested and batched calls', () {
+    test('allows top-level calls and two nested levels', () {
+      for (final depth in [0, 1, 2]) {
+        final decoded = roundTrip(nestedRecovered(depth));
+        expect(decoded.call, depth == 0 ? 'remark' : 'as_recovered');
+      }
+    });
+
+    test('rejects three or more nested inline levels', () {
+      for (final depth in [3, 4, 42]) {
+        expectNestingRejected(nestedRecovered(depth));
+      }
+    });
+
+    test('batch_all cannot be nested inside another batch_all', () {
+      final inner = const utility_pallet.Txs().batchAll(calls: [const system_pallet.Txs().remark(remark: <int>[])]);
+      expect(
+        () => roundTrip(const utility_pallet.Txs().batchAll(calls: [inner])),
+        throwsA(isA<FormatException>().having((e) => e.message, 'message', contains('cannot be nested'))),
+      );
+    });
+
+    test('applies the limit to utility batches', () {
+      roundTrip(const utility_pallet.Txs().batchAll(calls: [nestedRecovered(1)]));
+      expectNestingRejected(const utility_pallet.Txs().batchAll(calls: [nestedRecovered(2)]));
+    });
+
+    test('propagates the limit through multisig proposal bytes', () {
+      roundTrip(multisigWrapping(1));
+      expectNestingRejected(multisigWrapping(2));
+    });
+
+    test('propagates the limit through recovery-wrapped calls', () {
+      roundTrip(recoveryWrapping(1));
+      expectNestingRejected(recoveryWrapping(2));
+    });
+
+    test('propagates the limit through inline referendum proposals', () {
+      roundTrip(referendaWrapping(1));
+      expectNestingRejected(referendaWrapping(2));
+    });
+
+    test('does not hide the limit inside decodable preimages', () {
+      roundTrip(preimageWrapping(1));
+      expectNestingRejected(preimageWrapping(2));
+    });
+
+    test('a deeply nested chain the size of the report payload is rejected', () {
+      expectNestingRejected(nestedRecovered(42));
+    });
+
+    test('rejects over-nested bytes without recursing into them', () {
+      final depth = (maxCallBytes - 3) ~/ 35;
+      final bytes = recoveredChainBytes(depth);
+      expect(bytes.length, lessThanOrEqualTo(maxCallBytes));
+      expect(() => CallDecoder.decodeBytes(bytes, policy: const FullCallPolicy()), isNestingRejection);
+    });
+
+    test('the bounded decoder agrees with the generated codec on every inline nesting variant', () {
+      final inner = const system_pallet.Txs().remark(remark: [1, 2, 3]);
+      final other = const system_pallet.Txs().remark(remark: [4]);
+      final variants = <RuntimeCall>[
+        const utility_pallet.Txs().batchAll(calls: [inner, other]),
+        const utility_pallet.Txs().batchAll(calls: []),
+        const recovery_pallet.Txs().asRecovered(account: dest(aliceId), call: inner),
+        // Recovery variants the bounded decoder must hand back to the codec.
+        const recovery_pallet.Txs().claimRecovery(account: dest(bobId)),
+        const recovery_pallet.Txs().removeRecovery(),
+      ];
+      for (final call in variants) {
+        expect(
+          flatten(roundTrip(call)),
+          flatten(CallDecoder.describe(call, policy: const FullCallPolicy())),
+          reason: '${call.toJson()}',
+        );
+      }
+    });
+
     test('utility.batch_all expands every inner call', () {
       final decoded = roundTrip(
         const utility_pallet.Txs().batchAll(
@@ -290,10 +415,17 @@ void main() {
   });
 
   group('strictness and fallback', () {
+    test('call bytes above the hard cap are rejected before decoding', () {
+      expect(
+        () => CallDecoder.decodeBytes(Uint8List(maxCallBytes + 1), policy: const FullCallPolicy()),
+        throwsA(isA<FormatException>().having((e) => e.message, 'message', contains('too large'))),
+      );
+    });
+
     test('trailing bytes after a call are rejected', () {
       final bytes = const collective_pallet.Txs().vote(poll: 1, aye: true).encode();
       expect(
-        () => CallDecoder.decodeBytes([...bytes, 0x00]),
+        () => CallDecoder.decodeBytes([...bytes, 0x00], policy: const FullCallPolicy()),
         throwsA(isA<FormatException>().having((e) => e.message, 'message', contains('trailing bytes'))),
       );
     });
@@ -301,11 +433,14 @@ void main() {
     test('a multisig proposal wrapping undecodable bytes is rejected, not shown as hex', () {
       // Pallet index 250 does not exist on this runtime.
       final propose = const multisig_pallet.Txs().propose(multisigAddress: aliceId, call: [250, 0], expiry: 10);
-      expect(() => CallDecoder.decodeBytes(propose.encode()), throwsA(isA<Exception>()));
+      expect(
+        () => CallDecoder.decodeBytes(propose.encode(), policy: const FullCallPolicy()),
+        throwsA(isA<Exception>()),
+      );
     });
 
     test('an unknown pallet index is rejected outright', () {
-      expect(() => CallDecoder.decodeBytes([250, 0]), throwsA(isA<Exception>()));
+      expect(() => CallDecoder.decodeBytes([250, 0], policy: const FullCallPolicy()), throwsA(isA<Exception>()));
     });
 
     test('a call with no describer still shows every field', () {
@@ -347,22 +482,10 @@ void main() {
       expect(roundTrip(const timestamp_pallet.Txs().set(now: BigInt.from(1))).actionTitle, 'TIMESTAMP SET');
     });
 
-    test('reversible and asset transfers name their kind', () {
+    test('a reversible transfer names its kind', () {
       expect(
         roundTrip(const reversible_pallet.Txs().scheduleTransfer(dest: dest(bobId), amount: oneToken)).actionTitle,
         'REVERSIBLE SEND',
-      );
-      expect(
-        roundTrip(
-          const assets_pallet.Txs().transfer(id: BigInt.from(7), target: dest(bobId), amount: oneToken),
-        ).actionTitle,
-        'ASSET SEND',
-      );
-      expect(
-        roundTrip(
-          const reversible_pallet.Txs().scheduleAssetTransfer(assetId: 7, dest: dest(bobId), amount: oneToken),
-        ).actionTitle,
-        'REVERSIBLE ASSET SEND',
       );
     });
 

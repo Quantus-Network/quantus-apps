@@ -134,10 +134,6 @@ class $Event {
     return Thawed(who: who, amount: amount);
   }
 
-  TotalIssuanceForced totalIssuanceForced({required BigInt old, required BigInt new_}) {
-    return TotalIssuanceForced(old: old, new_: new_);
-  }
-
   Held held({required _i5.RuntimeHoldReason reason, required _i3.AccountId32 who, required BigInt amount}) {
     return Held(reason: reason, who: who, amount: amount);
   }
@@ -227,18 +223,16 @@ class $EventCodec with _i1.Codec<Event> {
       case 22:
         return Thawed._decode(input);
       case 23:
-        return TotalIssuanceForced._decode(input);
-      case 24:
         return Held._decode(input);
-      case 25:
+      case 24:
         return BurnedHeld._decode(input);
-      case 26:
+      case 25:
         return TransferOnHold._decode(input);
-      case 27:
+      case 26:
         return TransferAndHold._decode(input);
-      case 28:
+      case 27:
         return Released._decode(input);
-      case 29:
+      case 28:
         return Unexpected._decode(input);
       default:
         throw Exception('Event: Invalid variant index: "$index"');
@@ -317,9 +311,6 @@ class $EventCodec with _i1.Codec<Event> {
       case Thawed:
         (value as Thawed).encodeTo(output);
         break;
-      case TotalIssuanceForced:
-        (value as TotalIssuanceForced).encodeTo(output);
-        break;
       case Held:
         (value as Held).encodeTo(output);
         break;
@@ -392,8 +383,6 @@ class $EventCodec with _i1.Codec<Event> {
         return (value as Frozen)._sizeHint();
       case Thawed:
         return (value as Thawed)._sizeHint();
-      case TotalIssuanceForced:
-        return (value as TotalIssuanceForced)._sizeHint();
       case Held:
         return (value as Held)._sizeHint();
       case BurnedHeld:
@@ -1345,46 +1334,6 @@ class Thawed extends Event {
   int get hashCode => Object.hash(who, amount);
 }
 
-/// The `TotalIssuance` was forcefully changed.
-class TotalIssuanceForced extends Event {
-  const TotalIssuanceForced({required this.old, required this.new_});
-
-  factory TotalIssuanceForced._decode(_i1.Input input) {
-    return TotalIssuanceForced(old: _i1.U128Codec.codec.decode(input), new_: _i1.U128Codec.codec.decode(input));
-  }
-
-  /// T::Balance
-  final BigInt old;
-
-  /// T::Balance
-  final BigInt new_;
-
-  @override
-  Map<String, Map<String, BigInt>> toJson() => {
-    'TotalIssuanceForced': {'old': old, 'new': new_},
-  };
-
-  int _sizeHint() {
-    int size = 1;
-    size = size + _i1.U128Codec.codec.sizeHint(old);
-    size = size + _i1.U128Codec.codec.sizeHint(new_);
-    return size;
-  }
-
-  void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(23, output);
-    _i1.U128Codec.codec.encodeTo(old, output);
-    _i1.U128Codec.codec.encodeTo(new_, output);
-  }
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) || other is TotalIssuanceForced && other.old == old && other.new_ == new_;
-
-  @override
-  int get hashCode => Object.hash(old, new_);
-}
-
 /// Some balance was placed on hold.
 class Held extends Event {
   const Held({required this.reason, required this.who, required this.amount});
@@ -1420,7 +1369,7 @@ class Held extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(24, output);
+    _i1.U8Codec.codec.encodeTo(23, output);
     _i5.RuntimeHoldReason.codec.encodeTo(reason, output);
     const _i1.U8ArrayCodec(32).encodeTo(who, output);
     _i1.U128Codec.codec.encodeTo(amount, output);
@@ -1470,7 +1419,7 @@ class BurnedHeld extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(25, output);
+    _i1.U8Codec.codec.encodeTo(24, output);
     _i5.RuntimeHoldReason.codec.encodeTo(reason, output);
     const _i1.U8ArrayCodec(32).encodeTo(who, output);
     _i1.U128Codec.codec.encodeTo(amount, output);
@@ -1525,7 +1474,7 @@ class TransferOnHold extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(26, output);
+    _i1.U8Codec.codec.encodeTo(25, output);
     _i5.RuntimeHoldReason.codec.encodeTo(reason, output);
     const _i1.U8ArrayCodec(32).encodeTo(source, output);
     const _i1.U8ArrayCodec(32).encodeTo(dest, output);
@@ -1590,7 +1539,7 @@ class TransferAndHold extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(27, output);
+    _i1.U8Codec.codec.encodeTo(26, output);
     _i5.RuntimeHoldReason.codec.encodeTo(reason, output);
     const _i1.U8ArrayCodec(32).encodeTo(source, output);
     const _i1.U8ArrayCodec(32).encodeTo(dest, output);
@@ -1645,7 +1594,7 @@ class Released extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(28, output);
+    _i1.U8Codec.codec.encodeTo(27, output);
     _i5.RuntimeHoldReason.codec.encodeTo(reason, output);
     const _i1.U8ArrayCodec(32).encodeTo(who, output);
     _i1.U128Codec.codec.encodeTo(amount, output);
@@ -1681,7 +1630,7 @@ class Unexpected extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(29, output);
+    _i1.U8Codec.codec.encodeTo(28, output);
     _i6.UnexpectedKind.codec.encodeTo(value0, output);
   }
 
