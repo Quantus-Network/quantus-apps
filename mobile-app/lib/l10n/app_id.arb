@@ -560,7 +560,7 @@
   "redeemClose": "Tutup",
   "redeemDone": "Selesai",
   "redeemSuccessBanner": "{amount} ditukar dalam {count} batch",
-  "encryptedSendFeeLabel": "Biaya privasi",
+  "encryptedSendFeeLabel": "BIAYA PRIVASI",
   "encryptedSendAmountStep": "Gunakan kelipatan 0,01 {tokenSymbol}",
   "encryptedSendMinimum": "Pengiriman terenkripsi minimal 0,1 {tokenSymbol}",
   "encryptedSendProgressTitle": "Mengirim Secara Privat...",
