@@ -26,6 +26,7 @@ import 'package:resonance_network_wallet/v2/screens/send/regular_send_strategy.d
 import 'package:resonance_network_wallet/v2/screens/send/select_recipient_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/send/send_strategy.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/settings_screen.dart';
+import 'package:resonance_network_wallet/v2/screens/swap/swap_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/pos/pos_amount_screen.dart';
 import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
@@ -389,7 +390,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       onTap: () => startSendFlow(context, screen: SelectRecipientScreen(strategy: sendStrategy)),
     );
 
-    return Row(children: [receiveCard, const SizedBox(width: 15), sendCard]);
+    final swapCard = _actionCard(
+      iconAsset: 'assets/v2/action_swap.svg',
+      label: l10n.homeSwap,
+      isDisabled: isEncrypted,
+      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SwapScreen())),
+    );
+
+    return Row(children: [receiveCard, const SizedBox(width: 15), sendCard, const SizedBox(width: 15), swapCard]);
   }
 
   Widget _buildMultisigActionButtons(AppLocalizations l10n, MultisigAccount msig) {
@@ -413,12 +421,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Widget _actionCard({Key? key, required String iconAsset, required String label, required VoidCallback onTap}) {
+  Widget _actionCard({
+    Key? key,
+    required String iconAsset,
+    required String label,
+    required VoidCallback onTap,
+    bool isDisabled = false,
+  }) {
     return Expanded(
       child: QuantusButton.simple(
         key: key,
         label: label,
         onTap: onTap,
+        isDisabled: isDisabled,
         icon: SvgPicture.asset(
           iconAsset,
           width: 24,
