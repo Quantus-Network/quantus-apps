@@ -30,8 +30,8 @@ class AboutQuantusScreenV2 extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = ref.watch(l10nProvider);
-    final colors = context.colors;
-    final text = context.themeText;
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
     final externalLinks = _externalLinks(l10n);
 
     return ScaffoldBase(
@@ -42,17 +42,14 @@ class AboutQuantusScreenV2 extends ConsumerWidget {
           Expanded(
             child: ListView(
               children: [
-                Text(
-                  l10n.settingsAboutIntro,
-                  style: text.smallParagraph?.copyWith(color: colors.textMuted, height: 1.35),
-                ),
+                Text(l10n.settingsAboutIntro, style: text.body.copyWith(color: colors.textMuted)),
                 const SizedBox(height: 40),
                 for (final entry in externalLinks.asMap().entries) ...[
                   SettingsTappableRow(
                     title: entry.value.title,
                     subtitle: entry.value.subtitle,
                     onTap: () => openUrl(_uriForAboutLink(entry.value).toString()),
-                    trailing: SettingsTappableRowUtils.externalLink(colors),
+                    trailing: SettingsTappableRowUtils.externalLink(context),
                   ),
                   if (entry.key < externalLinks.length - 1) const SettingsDivider(),
                 ],
@@ -67,7 +64,7 @@ class AboutQuantusScreenV2 extends ConsumerWidget {
               Text(
                 l10n.settingsAboutVersion(appVersion, appBuildNumber),
                 textAlign: TextAlign.center,
-                style: text.paragraph?.copyWith(color: colors.textMuted, fontSize: 16, height: 1.0),
+                style: text.caption.copyWith(color: colors.textMuted),
               ),
             ],
           ),

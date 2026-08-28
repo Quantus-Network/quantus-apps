@@ -463,7 +463,7 @@ class Constants {
     _i5.Tuple2<int, _i14.TrackDetails>(
       0,
       _i14.TrackDetails(
-        name: 'tech_collective_members',
+        name: 'tech_collective_members  ',
         maxDeciding: 1,
         decisionDeposit: BigInt.from(1000000000000000),
         preparePeriod: 600,

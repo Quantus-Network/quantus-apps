@@ -28,16 +28,16 @@ Future<void> startSendFlow(BuildContext context, {required Widget screen}) async
     return;
   }
   container.read(keystoneSignCacheProvider.notifier).startNewSendSession();
-  // Warm the runtime-version cache (5 min TTL) so payload builds later in the
-  // flow skip that round trip.
+  // Warm the runtime-version (5 min TTL) and transfer-weight caches so the fee
+  // display and payload builds later in the flow skip those round trips.
   unawaited(
     container
-        .read(substrateServiceProvider)
-        .getRuntimeVersion()
+        .read(balancesServiceProvider)
+        .transferDispatchWeight()
         .then<void>(
           (_) {},
           onError: (Object e) {
-            quantusPrint('Runtime version prefetch failed: $e');
+            quantusPrint('Transfer weight prefetch failed: $e');
           },
         ),
   );

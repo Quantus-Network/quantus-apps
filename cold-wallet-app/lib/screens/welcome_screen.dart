@@ -59,7 +59,7 @@ class WelcomeScreen extends ConsumerWidget {
             const SizedBox(height: 12),
             QuantusButton.simple(
               label: 'Import wallet',
-              variant: ButtonVariant.secondary,
+              variant: ButtonVariant.staged,
               onTap: () => _start(context, ref, isImport: true),
             ),
           ],

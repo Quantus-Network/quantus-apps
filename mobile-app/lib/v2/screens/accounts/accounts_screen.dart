@@ -12,6 +12,7 @@ import 'package:resonance_network_wallet/providers/route_intent_providers.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/shared/utils/print.dart';
 import 'package:resonance_network_wallet/v2/components/account_badge.dart';
+import 'package:resonance_network_wallet/v2/components/account_list_row.dart';
 import 'package:resonance_network_wallet/v2/components/multisig_tag.dart';
 import 'package:resonance_network_wallet/v2/components/private_activity_notice.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/account_menu_screen.dart';
@@ -131,7 +132,7 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
           label: l10n.accountsSheetAddAccount,
           onTap: _openAddAccountMenu,
           variant: ButtonVariant.primary,
-          icon: Icon(Icons.add, size: 16, color: context.colors.background),
+          icon: QuantusIcon(QuantusIcons.plus, size: 16, color: context.colorsV3.textVoid),
           iconPlacement: IconPlacement.leading,
         ),
       ),
@@ -172,7 +173,7 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
 
   Widget _centeredMessage(String message) {
     return Center(
-      child: Text(message, style: context.themeText.smallParagraph?.copyWith(color: context.colors.textSecondary)),
+      child: Text(message, style: context.themeTextV3.body.copyWith(color: context.colorsV3.textMuted)),
     );
   }
 
@@ -200,7 +201,7 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
         ..._withGaps(_walletRows(l10n, mainWallet, activeAccountId, scrollTargetId), 14),
         if (otherWallets.isNotEmpty || grouping.standaloneMultisigs.isNotEmpty) ...[
           const SizedBox(height: 16),
-          Divider(color: context.colors.separator, height: 1),
+          const MenuDivider(),
           const SizedBox(height: 16),
         ],
         ..._withGaps([
@@ -226,15 +227,35 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
     };
   }
 
-  List<Widget> _walletRows(AppLocalizations l10n, WalletGroup wallet, String? activeAccountId, String? scrollTargetId) {
+  List<Widget> _walletRows(
+    AppLocalizations l10n,
+    WalletGroup wallet,
+    String? activeAccountId,
+    String? scrollTargetId, {
+    bool embedded = false,
+  }) {
     return [
-      for (final account in wallet.accounts) _buildRegularRow(l10n, account, activeAccountId, scrollTargetId),
+      for (final account in wallet.accounts)
+        _buildRegularRow(l10n, account, activeAccountId, scrollTargetId, embedded: embedded),
       if (wallet.encryptedAccount != null)
-        _buildEncryptedRow(l10n, wallet.encryptedAccount!, activeAccountId, scrollTargetId),
+        _buildEncryptedRow(l10n, wallet.encryptedAccount!, activeAccountId, scrollTargetId, embedded: embedded),
       for (final multisig in wallet.multisigs)
-        _buildMultisigRow(l10n, multisig, multisig.accountId == activeAccountId, scrollTargetId),
+        _buildMultisigRow(l10n, multisig, multisig.accountId == activeAccountId, scrollTargetId, embedded: embedded),
     ];
   }
+
+  List<Widget> _embeddedWalletRows(
+    AppLocalizations l10n,
+    WalletGroup wallet,
+    String? activeAccountId,
+    String? scrollTargetId,
+  ) {
+    return _withDividers(_walletRows(l10n, wallet, activeAccountId, scrollTargetId, embedded: true));
+  }
+
+  List<Widget> _withDividers(List<Widget> children) => [
+    for (var i = 0; i < children.length; i++) ...[if (i > 0) const MenuDivider(), children[i]],
+  ];
 
   Widget _buildWalletHeader(AppLocalizations l10n, WalletGroup wallet, String? activeAccountId) {
     return Row(
@@ -251,13 +272,13 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
         Flexible(
           child: Text(
             _walletDisplayName(l10n, wallet),
-            style: context.themeText.paragraph?.copyWith(height: 1),
+            style: context.themeTextV3.bodyLarge.copyWith(color: context.colorsV3.textContent),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
         ),
         const SizedBox(width: 4),
-        QuantusIconButton.circular(
+        QuantusIconButton.ghost(
           icon: Icons.edit_outlined,
           onTap: () => _openWalletNameEditor(wallet.walletIndex),
           size: IconButtonSize.small,
@@ -272,24 +293,30 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
     String? activeAccountId,
     String? scrollTargetId,
   ) {
-    final colors = context.colors;
+    final colors = context.colorsV3;
     final expanded = _expandedWallets.contains(wallet.walletIndex);
     final displayName = _walletDisplayName(l10n, wallet);
+    final headerDimmed = !_containsAccount(wallet, activeAccountId);
+
+    Widget header = GestureDetector(
+      onTap: () => setState(() {
+        expanded ? _expandedWallets.remove(wallet.walletIndex) : _expandedWallets.add(wallet.walletIndex);
+      }),
+      behavior: HitTestBehavior.opaque,
+      child: expanded
+          ? _buildExpandedWalletHeader(l10n, wallet, activeAccountId)
+          : _buildCollapsedWalletHeader(l10n, wallet, displayName),
+    );
+    if (headerDimmed) {
+      header = Opacity(opacity: AccountListRow.unselectedOpacity, child: header);
+    }
 
     return Container(
-      decoration: BoxDecoration(color: colors.surfaceDeep, borderRadius: BorderRadius.circular(14)),
-      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(color: colors.bgSurface, borderRadius: context.radiusV3.mdBorder),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
       child: Column(
         children: [
-          GestureDetector(
-            onTap: () => setState(() {
-              expanded ? _expandedWallets.remove(wallet.walletIndex) : _expandedWallets.add(wallet.walletIndex);
-            }),
-            behavior: HitTestBehavior.opaque,
-            child: expanded
-                ? _buildExpandedWalletHeader(l10n, wallet, activeAccountId)
-                : _buildCollapsedWalletHeader(l10n, wallet, displayName),
-          ),
+          header,
           AnimatedSize(
             duration: const Duration(milliseconds: 200),
             curve: Curves.easeInOut,
@@ -297,15 +324,12 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
             child: expanded
                 ? Column(
                     children: [
-                      Padding(
-                        padding: const EdgeInsets.only(top: 16),
-                        child: Divider(color: colors.separator, height: 1),
-                      ),
-                      const SizedBox(height: 8),
-                      ..._walletRows(l10n, wallet, activeAccountId, scrollTargetId),
+                      const SizedBox(height: 16),
+                      const MenuDivider(),
+                      ..._embeddedWalletRows(l10n, wallet, activeAccountId, scrollTargetId),
                     ],
                   )
-                : const SizedBox.shrink(),
+                : const SizedBox(height: 16),
           ),
         ],
       ),
@@ -313,10 +337,11 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
   }
 
   Widget _buildCollapsedWalletHeader(AppLocalizations l10n, WalletGroup wallet, String displayName) {
-    final colors = context.colors;
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
     return Row(
       children: [
-        AccountBadge(name: displayName),
+        AccountBadge(name: displayName, isActive: true),
         const SizedBox(width: 12),
         Expanded(
           child: Column(
@@ -324,25 +349,19 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
             children: [
               Text(
                 displayName,
-                style: context.themeText.paragraph!.copyWith(fontSize: 18, height: 1),
+                style: text.amountRow.copyWith(color: colors.textContent),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
-              const SizedBox(height: 8),
-              Text(
-                _walletBalanceText(l10n, wallet),
-                style: context.themeText.smallParagraph!.copyWith(color: colors.textTertiary, height: 1),
-              ),
+              const SizedBox(height: 4),
+              Text(_walletBalanceText(l10n, wallet), style: text.caption.copyWith(color: colors.textMuted)),
             ],
           ),
         ),
         const SizedBox(width: 8),
-        Text(
-          l10n.accountsScreenAccountCount(wallet.accountCount),
-          style: context.themeText.smallParagraph?.copyWith(color: colors.textSubtle, height: 1),
-        ),
+        Text(l10n.accountsScreenAccountCount(wallet.accountCount), style: text.body.copyWith(color: colors.textMuted)),
         const SizedBox(width: 4),
-        Icon(Icons.keyboard_arrow_down, size: 20, color: colors.textMuted),
+        QuantusIcon(QuantusIcons.caretDown, color: colors.textMuted),
       ],
     );
   }
@@ -355,7 +374,7 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
           _ActiveWalletTag(label: l10n.accountsScreenActiveWallet),
           const SizedBox(width: 8),
         ],
-        Icon(Icons.keyboard_arrow_up, size: 20, color: context.colors.textMuted),
+        RotatedBox(quarterTurns: 2, child: QuantusIcon(QuantusIcons.caretDown, color: context.colorsV3.textMuted)),
       ],
     );
   }
@@ -385,25 +404,39 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
     );
   }
 
-  Widget _buildRegularRow(AppLocalizations l10n, Account account, String? activeAccountId, String? scrollTargetId) {
+  Widget _buildRegularRow(
+    AppLocalizations l10n,
+    Account account,
+    String? activeAccountId,
+    String? scrollTargetId, {
+    bool embedded = false,
+  }) {
     final isActive = account.accountId == activeAccountId;
-    return _AccountRowShell(
+    return AccountListRow(
       key: account.accountId == scrollTargetId ? _scrollTargetKey : null,
-      isActive: isActive,
+      isSelected: isActive,
       isHighlighted: account.accountId == _highlightAccountId,
+      embedded: embedded,
       onTap: () => _switchAccount(RegularAccount(account)),
-      leading: AccountBadge.account(account: account, isActive: isActive),
+      leading: AccountBadge.account(account: account, isActive: true),
       title: account.name,
       subtitle: _balanceText(l10n, account),
-      trailing: _MenuCaret(onTap: () => _openAccountMenu(account)),
+      trailing: _MenuKebab(onTap: () => _openAccountMenu(account)),
     );
   }
 
-  Widget _buildEncryptedRow(AppLocalizations l10n, Account account, String? activeAccountId, String? scrollTargetId) {
-    return _AccountRowShell(
+  Widget _buildEncryptedRow(
+    AppLocalizations l10n,
+    Account account,
+    String? activeAccountId,
+    String? scrollTargetId, {
+    bool embedded = false,
+  }) {
+    return AccountListRow(
       key: account.accountId == scrollTargetId ? _scrollTargetKey : null,
-      isActive: account.accountId == activeAccountId,
+      isSelected: account.accountId == activeAccountId,
       isHighlighted: account.accountId == _highlightAccountId,
+      embedded: embedded,
       onTap: () => _switchAccount(RegularAccount(account)),
       leading: const EncryptedLockBadge(),
       title: account.name,
@@ -411,27 +444,33 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
     );
   }
 
-  Widget _buildMultisigRow(AppLocalizations l10n, MultisigAccount account, bool isActive, String? scrollTargetId) {
-    return _AccountRowShell(
+  Widget _buildMultisigRow(
+    AppLocalizations l10n,
+    MultisigAccount account,
+    bool isActive,
+    String? scrollTargetId, {
+    bool embedded = false,
+  }) {
+    return AccountListRow(
       key: account.accountId == scrollTargetId ? _scrollTargetKey : null,
-      isActive: isActive,
+      isSelected: isActive,
       isHighlighted: account.accountId == _highlightAccountId,
+      embedded: embedded,
       onTap: () => _switchAccount(MultisigDisplayAccount(account)),
-      leading: AccountBadge(name: account.name, isActive: isActive),
+      leading: AccountBadge(name: account.name, isActive: true),
       title: account.name,
       subtitle: _balanceText(l10n, account),
       tag: MultisigTag(label: l10n.multisigTag),
-      trailing: _MenuCaret(onTap: () => _openMultisigAccountMenu(account)),
+      trailing: _MenuKebab(onTap: () => _openMultisigAccountMenu(account)),
     );
   }
 }
 
-/// Trailing chevron on an account row: opens the account menu, while tapping
-/// the row itself switches to the account.
-class _MenuCaret extends StatelessWidget {
+/// Opens the account menu; tapping the row itself switches account.
+class _MenuKebab extends StatelessWidget {
   final VoidCallback onTap;
 
-  const _MenuCaret({required this.onTap});
+  const _MenuKebab({required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -440,7 +479,7 @@ class _MenuCaret extends StatelessWidget {
       behavior: HitTestBehavior.opaque,
       child: Padding(
         padding: const EdgeInsets.all(10),
-        child: Icon(Icons.chevron_right, size: 20, color: context.colors.textMuted),
+        child: QuantusIcon(QuantusIcons.kebab, color: context.colorsV3.textContent),
       ),
     );
   }
@@ -453,109 +492,6 @@ class _ActiveWalletTag extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.colors;
-    final accent = colors.accentOrange;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(4),
-        border: Border.all(color: accent.useOpacity(0.1)),
-        color: accent.useOpacity(0.1),
-      ),
-      child: Text(
-        label.toUpperCase(),
-        style: context.themeText.detail?.copyWith(
-          color: accent,
-          fontSize: 11,
-          letterSpacing: 0.88,
-          height: 1.2,
-          fontFamily: AppTextTheme.fontFamilySecondary,
-        ),
-      ),
-    );
-  }
-}
-
-class _AccountRowShell extends StatelessWidget {
-  final bool isActive;
-  final bool isHighlighted;
-  final VoidCallback onTap;
-  final Widget leading;
-  final String? title;
-  final String subtitle;
-  final Widget? trailing;
-  final Widget? tag;
-
-  const _AccountRowShell({
-    super.key,
-    required this.isActive,
-    required this.onTap,
-    required this.leading,
-    required this.subtitle,
-    this.isHighlighted = false,
-    this.title,
-    this.trailing,
-    this.tag,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = context.colors;
-    final border = isHighlighted
-        ? Border.all(color: colors.accentOrange, width: 2)
-        : isActive
-        ? Border.all(color: colors.borderButton)
-        : null;
-    final hasTitle = title != null && title!.isNotEmpty;
-
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(color: colors.surfaceDeep, borderRadius: BorderRadius.circular(14), border: border),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Expanded(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  leading,
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        if (hasTitle) ...[
-                          Row(
-                            children: [
-                              Flexible(
-                                child: Text(
-                                  title!,
-                                  style: context.themeText.paragraph!.copyWith(fontSize: 18, height: 1),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                              if (tag != null) ...[const SizedBox(width: 8), tag!],
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                        ],
-                        Text(
-                          subtitle,
-                          style: context.themeText.smallParagraph!.copyWith(color: colors.textTertiary, height: 1),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            if (trailing != null) ...[const SizedBox(width: 8), trailing!],
-          ],
-        ),
-      ),
-    );
+    return QuantusBadge(label: label, tone: BadgeTone.flare);
   }
 }

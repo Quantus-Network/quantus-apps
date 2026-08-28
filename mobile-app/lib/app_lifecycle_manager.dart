@@ -117,13 +117,13 @@ class _AppLifecycleManagerState extends ConsumerState<AppLifecycleManager> with 
       final authInProgress =
           ref.read(localAuthProvider).isAuthenticating || ref.read(localAuthServiceProvider).isAuthenticating;
       if (!_isBackgrounded && !authInProgress) {
-        quantusPrint('AppLifecycleState.$state - pausing (update pause time only)');
+        quantusPrint('$state - pausing (update pause time only)');
         _isBackgrounded = true;
 
         pollingManager.pausePolling();
         localAuthNotifier.recordBackgroundTime();
       } else {
-        quantusPrint('AppLifecycleState.$state - already backgrounded, skipping actions');
+        quantusPrint('$state - already backgrounded, skipping actions');
       }
     }
   }

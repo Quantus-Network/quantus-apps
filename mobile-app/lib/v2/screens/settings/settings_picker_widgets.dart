@@ -2,72 +2,58 @@ import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 
 class SettingsPickerSearchField extends StatelessWidget {
-  const SettingsPickerSearchField({
-    super.key,
-    required this.controller,
-    required this.colors,
-    required this.text,
-    required this.hintText,
-    required this.onChanged,
-  });
+  const SettingsPickerSearchField({super.key, required this.controller, required this.hintText});
 
   final TextEditingController controller;
-  final AppColorsV2 colors;
-  final AppTextTheme text;
   final String hintText;
-  final ValueChanged<String> onChanged;
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
+
+    return Container(
       height: 48,
-      child: Container(
-        padding: const EdgeInsets.only(left: 12, right: 8),
-        decoration: BoxDecoration(color: colors.surfaceDeep, borderRadius: BorderRadius.circular(14)),
-        child: Row(
-          children: [
-            Icon(Icons.search, size: 18, color: colors.textLabel),
-            const SizedBox(width: 8),
-            Expanded(
-              child: TextField(
-                controller: controller,
-                onChanged: onChanged,
-                style: text.smallParagraph,
-                decoration: InputDecoration(
-                  isDense: true,
-                  border: InputBorder.none,
-                  hintText: hintText,
-                  hintStyle: text.smallParagraph?.copyWith(color: colors.textLabel),
-                ),
+      padding: const EdgeInsets.only(left: 12, right: 8),
+      decoration: BoxDecoration(
+        color: colors.bgSurface,
+        borderRadius: context.radiusV3.mdBorder,
+        border: Border.all(color: colors.borderHairline),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.search, size: 18, color: colors.textMuted),
+          const SizedBox(width: 8),
+          Expanded(
+            child: TextField(
+              controller: controller,
+              style: text.body.copyWith(color: colors.textContent),
+              decoration: InputDecoration(
+                isDense: true,
+                border: InputBorder.none,
+                hintText: hintText,
+                hintStyle: text.body.copyWith(color: colors.textMuted),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 }
 
 class SettingsPickerListTile extends StatelessWidget {
-  const SettingsPickerListTile({
-    super.key,
-    required this.label,
-    required this.selected,
-    required this.colors,
-    required this.text,
-    required this.onTap,
-  });
+  const SettingsPickerListTile({super.key, required this.label, required this.selected, required this.onTap});
 
   final String label;
   final bool selected;
-  final AppColorsV2 colors;
-  final AppTextTheme text;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final accent = colors.accentOrange;
-    final fg = selected ? accent : colors.textPrimary;
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
+    final fg = selected ? colors.accentFlare : colors.textContent;
 
     return Material(
       color: Colors.transparent,
@@ -79,9 +65,9 @@ class SettingsPickerListTile extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Expanded(
-                child: Text(label, style: text.paragraph?.copyWith(color: fg, height: 1.2)),
+                child: Text(label, style: text.body.copyWith(color: fg)),
               ),
-              if (selected) ...[const SizedBox(width: 12), Icon(Icons.check, size: 18, color: accent)],
+              if (selected) ...[const SizedBox(width: 12), Icon(Icons.check, size: 18, color: colors.accentFlare)],
             ],
           ),
         ),

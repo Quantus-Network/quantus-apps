@@ -16,6 +16,26 @@ import 'package:resonance_network_wallet/v2/screens/send/keystone_signing_sessio
 import 'package:resonance_network_wallet/v2/screens/send/send_providers.dart';
 import 'package:resonance_network_wallet/v2/screens/send/send_strategy.dart';
 
+/// Ref-time a signed transfer is charged for, probed once per runtime version
+/// (the metadata carries no call or extension weights).
+final transferDispatchWeightProvider = FutureProvider.autoDispose<BigInt>((ref) async {
+  try {
+    return await ref.watch(balancesServiceProvider).transferDispatchWeight();
+  } catch (e, st) {
+    quantusPrint('Transfer weight probe failed: $e\n$st');
+    rethrow;
+  }
+});
+
+/// Transfer fee for an amount: base and length fee from the shipped metadata,
+/// dispatch weight from [transferDispatchWeightProvider]. Address-independent.
+final regularSendFeeProvider = Provider.autoDispose.family<AsyncValue<SendFee>, BigInt>((ref, amount) {
+  final balances = ref.watch(balancesServiceProvider);
+  return ref
+      .watch(transferDispatchWeightProvider)
+      .whenData<SendFee>((weight) => RegularFee(networkFee: balances.transferFee(amount, dispatchWeight: weight)));
+});
+
 /// Standard single-signer transfer from the active account. Signs locally, or
 /// hands off to the Keystone QR flow for hardware accounts.
 ///
@@ -26,8 +46,6 @@ class RegularSendStrategy extends SendStrategy {
   final Account account;
 
   const RegularSendStrategy({required this.account});
-
-  static final BigInt _estimateFeeAmount = BigInt.from(1000) * NumberFormattingService.scaleFactorBigInt;
 
   @override
   String? sourceAccountId(WidgetRef ref) => account.accountId;
@@ -55,13 +73,12 @@ class RegularSendStrategy extends SendStrategy {
   BigInt feeChargedToBalance(SendFee? fee) => (fee as RegularFee?)?.networkFee ?? BigInt.zero;
 
   @override
-  Future<SendFee> estimateFee(WidgetRef ref, {required String recipient, required BigInt amount}) async {
-    final useReal = amount > BigInt.zero && ref.read(substrateServiceProvider).isValidSS58Address(recipient);
-    final feeAmount = useReal ? amount : _estimateFeeAmount;
-    final toAddress = useReal ? recipient : account.accountId;
-    final feeData = await ref.read(balancesServiceProvider).getBalanceTransferFee(account, toAddress, feeAmount);
-    return RegularFee(networkFee: feeData.fee, blockHeight: feeData.blockNumber);
-  }
+  ProviderListenable<AsyncValue<SendFee>> feeProvider({required String recipient, required BigInt amount}) =>
+      regularSendFeeProvider(amount);
+
+  @override
+  void retryFee(WidgetRef ref, {required String recipient, required BigInt amount}) =>
+      ref.invalidate(transferDispatchWeightProvider);
 
   @override
   String? affordabilityError(WidgetRef ref, SendFee fee, AppLocalizations l10n) => null;
@@ -186,7 +203,7 @@ class RegularSendStrategy extends SendStrategy {
     try {
       final hash = await ref
           .read(transactionSubmissionServiceProvider)
-          .balanceTransfer(account, recipient, amount, regularFee.networkFee, regularFee.blockHeight);
+          .balanceTransfer(account, recipient, amount, regularFee.networkFee);
       unawaited(
         RecentAddressesService()
             .addAddress(recipient)

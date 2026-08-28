@@ -15,8 +15,8 @@ class SelectWalletScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = ref.watch(l10nProvider);
-    final colors = context.colors;
-    final text = context.themeText;
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
     final accountsAsync = ref.watch(accountsProvider);
 
     return ScaffoldBase(
@@ -24,16 +24,13 @@ class SelectWalletScreen extends ConsumerWidget {
       mainContent: accountsAsync.when(
         loading: () => const Center(child: Loader()),
         error: (e, _) => Center(
-          child: Text(l10n.settingsWalletFailedToLoad, style: text.paragraph?.copyWith(color: colors.textSecondary)),
+          child: Text(l10n.settingsWalletFailedToLoad, style: text.body.copyWith(color: colors.textMuted)),
         ),
         data: (accounts) {
           final indices = getNonHardwareWalletIndices(accounts);
           if (indices.isEmpty) {
             return Center(
-              child: Text(
-                l10n.settingsSelectWalletNoWallets,
-                style: text.paragraph?.copyWith(color: colors.textSecondary),
-              ),
+              child: Text(l10n.settingsSelectWalletNoWallets, style: text.body.copyWith(color: colors.textMuted)),
             );
           }
           return ListView.separated(
@@ -51,8 +48,8 @@ class SelectWalletScreen extends ConsumerWidget {
     WidgetRef ref,
     AppLocalizations l10n,
     int walletIndex,
-    AppColorsV2 colors,
-    AppTextTheme text,
+    AppColorsV3 colors,
+    AppTextThemeV3 text,
   ) {
     final walletName = ref.watch(walletNameProvider(walletIndex)) ?? l10n.settingsSelectWalletItem(walletIndex + 1);
     return GestureDetector(
@@ -62,16 +59,13 @@ class SelectWalletScreen extends ConsumerWidget {
       ),
       child: Container(
         padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(color: colors.surfaceCard, borderRadius: BorderRadius.circular(14)),
+        decoration: BoxDecoration(color: colors.bgSurface, borderRadius: context.radiusV3.mdBorder),
         child: Row(
           children: [
             Expanded(
-              child: Text(
-                walletName,
-                style: text.paragraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500),
-              ),
+              child: Text(walletName, style: text.bodyLarge.copyWith(color: colors.textContent)),
             ),
-            Icon(Icons.chevron_right, color: colors.textSecondary, size: 20),
+            QuantusIcon(QuantusIcons.chevronRight, color: colors.textMuted),
           ],
         ),
       ),

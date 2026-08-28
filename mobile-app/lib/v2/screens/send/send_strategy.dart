@@ -40,9 +40,8 @@ sealed class SendFee {
 
 class RegularFee extends SendFee {
   final BigInt networkFee;
-  final int blockHeight;
 
-  const RegularFee({required this.networkFee, required this.blockHeight});
+  const RegularFee({required this.networkFee});
 
   @override
   BigInt get displayFee => networkFee;
@@ -211,7 +210,7 @@ abstract class SendStrategy {
   /// [spendableBalanceProvider] for validation and Max.
   ProviderListenable<AsyncValue<BigInt>> get displayBalanceProvider => spendableBalanceProvider;
 
-  /// Whether a secondary balance used for gating is still loading. Watched.
+  /// Whether a secondary balance used for gating has no value yet. Watched.
   bool extraBalancesLoading(WidgetRef ref);
 
   /// Portion of [fee] charged against the spendable balance (drives the
@@ -226,9 +225,13 @@ abstract class SendStrategy {
   /// Label for the fee payer balance line (e.g. "Your Balance:").
   String? feePayerBalanceLabel(AppLocalizations l10n) => null;
 
-  /// Estimates the fee for [amount] to [recipient]. Uses `ref.read`. Handles
-  /// the zero/invalid-amount estimate internally.
-  Future<SendFee> estimateFee(WidgetRef ref, {required String recipient, required BigInt amount});
+  /// Authoritative fee for sending [amount] to [recipient]. Watched by the
+  /// amount screen, so it recomputes as the amount changes; strategies derive
+  /// it from local state wherever the runtime makes that possible.
+  ProviderListenable<AsyncValue<SendFee>> feeProvider({required String recipient, required BigInt amount});
+
+  /// Re-queries whatever source [feeProvider] failed on.
+  void retryFee(WidgetRef ref, {required String recipient, required BigInt amount});
 
   /// Affordability gate beyond `amount <= spendable` (e.g. the proposing member
   /// must cover the proposal cost). Returns an error label, or null when ok or

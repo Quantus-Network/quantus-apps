@@ -300,24 +300,6 @@ class MockSettingsService extends _i1.Mock implements _i4.SettingsService {
           as _i5.Future<void>);
 
   @override
-  _i5.Future<void> setPosModeEnabled(bool? enabled) =>
-      (super.noSuchMethod(
-            Invocation.method(#setPosModeEnabled, [enabled]),
-            returnValue: _i5.Future<void>.value(),
-            returnValueForMissingStub: _i5.Future<void>.value(),
-          )
-          as _i5.Future<void>);
-
-  @override
-  bool isPosModeEnabled() =>
-      (super.noSuchMethod(
-            Invocation.method(#isPosModeEnabled, []),
-            returnValue: false,
-            returnValueForMissingStub: false,
-          )
-          as bool);
-
-  @override
   bool? getBool(String? key) =>
       (super.noSuchMethod(Invocation.method(#getBool, [key]), returnValueForMissingStub: null) as bool?);
 

@@ -120,9 +120,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get homeNoActiveAccount => 'No active account';
 
   @override
-  String get homeCharge => 'Charge';
-
-  @override
   String get homeGetTestnetTokens => 'Get Testnet Tokens ↗';
 
   @override
@@ -130,6 +127,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get homeBackupReminder => 'Back up your recovery phrase';
+
+  @override
+  String get networkStatusOfflineBanner => 'Offline · showing last known balances';
 
   @override
   String get homeReceive => 'Receive';
@@ -387,6 +387,9 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get multisigProposalCallUnavailable =>
       'Could not read this proposal from the chain, so there is nothing to approve. Try again when you are back online.';
+
+  @override
+  String get multisigProposalInvalid => 'Invalid proposal';
 
   @override
   String get multisigStatusApproved => 'SIGNED';
@@ -1332,12 +1335,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get receiveTitle => 'Receive';
 
   @override
-  String get receiveTabQrCode => 'QR Code';
-
-  @override
-  String get receiveTabAddress => 'Address';
-
-  @override
   String get receiveCopy => 'Copy';
 
   @override
@@ -1349,66 +1346,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get receiveCopiedMessage => 'Address copied to clipboard';
 
   @override
-  String get posAmountTitle => 'New Charge';
+  String get receiveYourAddressLabel => 'YOUR ADDRESS';
 
   @override
-  String posAmountCharge(String amount) {
-    return 'Charge $amount';
-  }
+  String get receiveCopyAddress => 'Copy Address';
 
   @override
-  String get posAmountEnterAmount => 'Enter Amount';
-
-  @override
-  String get posQrTitleScanToPay => 'Scan to Pay';
-
-  @override
-  String get posQrTitlePaymentReceived => 'Payment Received';
-
-  @override
-  String posQrError(String error) {
-    return 'Error: $error';
-  }
-
-  @override
-  String get posQrNoActiveAccount => 'No active account';
-
-  @override
-  String get posQrInvalidAmount => 'Invalid amount. Tap to retry.';
-
-  @override
-  String get posQrConnectionLost => 'Connection lost. Tap to retry.';
-
-  @override
-  String get posQrTimedOut => 'Timed out. Tap to retry.';
-
-  @override
-  String get posQrNewCharge => 'New Charge';
-
-  @override
-  String get posQrDone => 'Done';
-
-  @override
-  String posQrAmountReceived(String amount) {
-    return '$amount received';
-  }
-
-  @override
-  String get posQrFrom => 'From:';
-
-  @override
-  String get posQrWaitingForPayment => 'Waiting for payment';
-
-  @override
-  String get posQrNetworkError => 'Network Error';
-
-  @override
-  String get posQrTryAgain => 'Try Again';
-
-  @override
-  String posQrPaidAt(String time) {
-    return 'At $time';
-  }
+  String get receiveCheckphraseFootnote => 'Ask the sender to confirm this phrase matches your address.';
 
   @override
   String get settingsTitle => 'Settings';
@@ -1423,7 +1367,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsPreferencesTitle => 'Preferences';
 
   @override
-  String get settingsPreferencesSubtitle => 'Language, currency, POS mode, notifications';
+  String get settingsPreferencesSubtitle => 'Language, currency, notifications';
 
   @override
   String get settingsMiningRewards => 'Mining Rewards';
@@ -1541,12 +1485,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsPreferencesLanguageSubtitle => 'App display language';
-
-  @override
-  String get settingsPreferencesPosMode => 'POS Mode';
-
-  @override
-  String get settingsPreferencesPosModeSubtitle => 'Point of sale features';
 
   @override
   String get settingsPreferencesNotifications => 'Notifications';
@@ -1869,6 +1807,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get commonDone => 'Done';
 
   @override
+  String get commonTryAgain => 'Try Again';
+
+  @override
   String get redeemToLabel => 'Redeem To';
 
   @override
@@ -2003,6 +1944,14 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String encryptedSendCancelledPartial(String amount) {
     return '$amount was already sent before cancelling. The rest remains in your account.';
+  }
+
+  @override
+  String get encryptedSendFundsSafeLabel => 'Your funds are safe';
+
+  @override
+  String encryptedSendFundsSafeCaption(String account) {
+    return 'Still in $account. Nothing left your wallet.';
   }
 
   @override

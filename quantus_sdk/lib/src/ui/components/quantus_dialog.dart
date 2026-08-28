@@ -54,7 +54,7 @@ class QuantusDialog extends StatelessWidget {
             onTap: onAction,
           ),
           const SizedBox(height: 12),
-          QuantusButton.simple(label: cancelLabel, variant: ButtonVariant.secondary, onTap: onCancel),
+          QuantusButton.simple(label: cancelLabel, variant: ButtonVariant.staged, onTap: onCancel),
         ],
       ),
     );

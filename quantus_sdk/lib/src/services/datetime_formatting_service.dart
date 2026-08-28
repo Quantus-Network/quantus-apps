@@ -151,6 +151,6 @@ class DatetimeFormattingService {
   }
 
   static String formatDateGroupLabel(DateTime dt, String localeName) {
-    return DateFormat.yMMMd(localeName).format(dt);
+    return DateFormat.yMMMd(localeName).format(dt.toLocal());
   }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:quantus_cold_wallet/models/cold_account.dart';
 import 'package:quantus_cold_wallet/screens/set_password_screen.dart';
 
 class CreateWalletScreen extends StatefulWidget {
@@ -27,7 +28,15 @@ class _CreateWalletScreenState extends State<CreateWalletScreen> {
   void _continue() {
     final words = _words;
     if (words == null) return;
-    Navigator.push(context, MaterialPageRoute(builder: (_) => SetPasswordScreen(mnemonic: words.join(' '))));
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => SetPasswordScreen(
+          mnemonic: words.join(' '),
+          accounts: [ColdAccount(label: 'Account 1', index: 0)],
+        ),
+      ),
+    );
   }
 
   @override

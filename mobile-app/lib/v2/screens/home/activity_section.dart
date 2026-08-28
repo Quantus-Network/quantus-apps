@@ -41,8 +41,8 @@ class _ActivitySectionState extends ConsumerState<ActivitySection> {
   Widget build(BuildContext context) {
     final l10n = ref.watch(l10nProvider);
     final formatTxAmount = ref.watch(txAmountDisplayProvider);
-    final colors = context.colors;
-    final text = context.themeText;
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
 
     return widget.txAsync.when(
       data: (data) {
@@ -61,13 +61,7 @@ class _ActivitySectionState extends ConsumerState<ActivitySection> {
         var pendingSendKeyAssigned = false;
 
         if (all.isEmpty) {
-          return Column(
-            children: [
-              const SizedBox(height: 40),
-              _header(colors, text, context, l10n),
-              _emptyState(text, colors, l10n),
-            ],
-          );
+          return Column(children: [const SizedBox(height: 40), _header(l10n), _emptyState(l10n)]);
         }
 
         final isPrivate = isEncryptedAccount(widget.activeAccount);
@@ -75,7 +69,7 @@ class _ActivitySectionState extends ConsumerState<ActivitySection> {
         return Column(
           children: [
             const SizedBox(height: 40),
-            _header(colors, text, context, l10n),
+            _header(l10n),
             const SizedBox(height: 28),
 
             ...recentTransactions.mapIndexed((index, tx) {
@@ -94,6 +88,7 @@ class _ActivitySectionState extends ConsumerState<ActivitySection> {
                 data,
                 colors,
                 text,
+                context.radiusV3,
                 l10n,
                 formattedAmount: txItemAmountText(data, formatTxAmount, isHidden: widget.isHidden),
                 isLastItem: isLastItem,
@@ -111,11 +106,11 @@ class _ActivitySectionState extends ConsumerState<ActivitySection> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _header(colors, text, context, l10n),
+            _header(l10n),
             const SizedBox(height: 24),
             for (var i = 0; i < 3; i++) ...[
               const TxItemSkeleton(),
-              if (i < 2) Divider(color: colors.txItemSeparator, height: 24),
+              if (i < 2) Divider(color: colors.borderHairline, height: 24),
             ],
           ],
         ),
@@ -124,7 +119,7 @@ class _ActivitySectionState extends ConsumerState<ActivitySection> {
         padding: const EdgeInsets.only(top: 40),
         child: Column(
           children: [
-            Text(l10n.homeActivityErrorLoading, style: text.detail?.copyWith(color: colors.textError)),
+            Text(l10n.homeActivityErrorLoading, style: text.caption.copyWith(color: colors.semanticEmber)),
             const SizedBox(height: 12),
             GestureDetector(
               behavior: HitTestBehavior.opaque,
@@ -136,7 +131,7 @@ class _ActivitySectionState extends ConsumerState<ActivitySection> {
                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                 child: Text(
                   l10n.homeActivityRetry,
-                  style: text.smallParagraph?.copyWith(color: colors.textPrimary, decoration: TextDecoration.underline),
+                  style: text.body.copyWith(color: colors.textContent, decoration: TextDecoration.underline),
                 ),
               ),
             ),
@@ -146,23 +141,22 @@ class _ActivitySectionState extends ConsumerState<ActivitySection> {
     );
   }
 
-  Widget _emptyState(AppTextTheme text, AppColorsV2 colors, AppLocalizations l10n) {
+  Widget _emptyState(AppLocalizations l10n) {
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 24),
       child: Column(
         children: [
-          Text(
-            l10n.homeActivityEmptyTitle,
-            style: text.mediumTitle?.copyWith(color: colors.textMuted, fontWeight: FontWeight.w400),
-          ),
+          Text(l10n.homeActivityEmptyTitle, style: text.bodyLarge.copyWith(color: colors.textMuted)),
           const SizedBox(height: 8),
           ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 240),
             child: Text(
               l10n.homeActivityEmptyMessage(AppConstants.tokenSymbol),
               textAlign: TextAlign.center,
-              style: text.smallParagraph?.copyWith(color: colors.txItemIconDefault),
+              style: text.body.copyWith(color: colors.textMuted),
             ),
           ),
         ],
@@ -170,23 +164,16 @@ class _ActivitySectionState extends ConsumerState<ActivitySection> {
     );
   }
 
-  Widget _header(AppColorsV2 colors, AppTextTheme text, BuildContext context, AppLocalizations l10n) {
+  Widget _header(AppLocalizations l10n) {
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(l10n.homeActivityTitle, style: text.smallTitle),
+        Text(l10n.homeActivityTitle, style: text.headingRow.copyWith(color: colors.textContent)),
         GestureDetector(
           onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ActivityScreen())),
-          child: Text(
-            l10n.homeActivityViewAll,
-            style: text.smallTitle?.copyWith(
-              color: colors.textMuted,
-              decoration: TextDecoration.underline,
-              decorationColor: colors.textMuted,
-              decorationStyle: TextDecorationStyle.dotted,
-              decorationThickness: 1.0,
-            ),
-          ),
+          child: Text(l10n.homeActivityViewAll, style: text.headingRow.copyWith(color: colors.textMuted)),
         ),
       ],
     );

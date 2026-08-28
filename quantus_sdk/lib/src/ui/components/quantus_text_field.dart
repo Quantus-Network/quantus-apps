@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 
 /// Shared v3 text field: default, focus, and inline error chrome.
-///
-/// Presentational only. Callers pass already-resolved [hint] and [error] strings.
 class QuantusTextField extends StatefulWidget {
   final TextEditingController controller;
   final String? hint;
@@ -20,6 +18,9 @@ class QuantusTextField extends StatefulWidget {
   final bool autocorrect;
   final ValueChanged<String>? onSubmitted;
   final Widget? trailing;
+  final int? maxLines;
+  final bool expands;
+  final double? height;
 
   const QuantusTextField({
     super.key,
@@ -38,7 +39,11 @@ class QuantusTextField extends StatefulWidget {
     this.autocorrect = true,
     this.onSubmitted,
     this.trailing,
-  });
+    this.maxLines = 1,
+    this.expands = false,
+    this.height,
+  }) : assert(!showClearButton || trailing == null, 'showClearButton and trailing are mutually exclusive'),
+       assert(!expands || (maxLines == null && height != null), 'expands needs maxLines: null and an explicit height');
 
   @override
   State<QuantusTextField> createState() => _QuantusTextFieldState();
@@ -49,6 +54,8 @@ class _QuantusTextFieldState extends State<QuantusTextField> {
   late bool _ownsFocusNode;
 
   bool get _hasError => widget.error != null;
+
+  bool get _isMultiline => widget.expands || widget.maxLines != 1;
 
   @override
   void initState() {
@@ -89,6 +96,9 @@ class _QuantusTextFieldState extends State<QuantusTextField> {
 
   void _rebuild() => setState(() {});
 
+  /// Keep the editable area clear of the trailing widget, whatever its size.
+  double _trailingReserve(Widget extra) => 4 + (extra is QuantusIconButton ? extra.buttonSize : 36);
+
   Color _borderColor(AppColorsV3 colors) {
     if (_hasError) return colors.semanticEmber.useOpacity(0.55);
     if (_focusNode.hasFocus) return colors.accentFlare;
@@ -101,48 +111,55 @@ class _QuantusTextFieldState extends State<QuantusTextField> {
     final textStyle = context.themeTextV3.dataAddressLarge.copyWith(color: colors.textContent);
     final hintStyle = context.themeTextV3.dataAddressLarge.copyWith(color: colors.textMuted);
     final showClear = widget.showClearButton && widget.controller.text.isNotEmpty;
+    final extra = showClear ? _QuantusTextFieldClearButton(onTap: widget.controller.clear) : widget.trailing;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Container(
-          width: double.infinity,
-          constraints: const BoxConstraints(minHeight: 60),
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: colors.bgSurface,
-            borderRadius: context.radiusV3.mdBorder,
-            border: Border.all(color: _borderColor(colors), width: 1),
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: widget.controller,
-                  focusNode: _focusNode,
-                  enabled: widget.enabled,
-                  obscureText: widget.obscureText,
-                  enableSuggestions: widget.enableSuggestions,
-                  keyboardType: widget.keyboardType,
-                  textInputAction: widget.textInputAction,
-                  textCapitalization: widget.textCapitalization,
-                  autocorrect: widget.autocorrect,
-                  onChanged: widget.onChanged,
-                  onSubmitted: widget.onSubmitted,
-                  cursorColor: colors.accentFlare,
-                  style: textStyle,
-                  decoration: InputDecoration.collapsed(hintText: widget.hint, hintStyle: hintStyle),
-                ),
+        Stack(
+          children: [
+            Container(
+              width: double.infinity,
+              height: widget.height,
+              constraints: widget.height == null ? const BoxConstraints(minHeight: 48) : null,
+              padding: EdgeInsets.only(
+                left: 14,
+                right: extra == null ? 14 : _trailingReserve(extra),
+                top: 14,
+                bottom: 14,
               ),
-              if (showClear) ...[
-                const SizedBox(width: 8),
-                _QuantusTextFieldClearButton(onTap: widget.controller.clear),
-              ],
-              if (widget.trailing != null) ...[const SizedBox(width: 8), widget.trailing!],
-            ],
-          ),
+              decoration: BoxDecoration(
+                color: colors.bgSurface,
+                borderRadius: context.radiusV3.mdBorder,
+                border: Border.all(color: _borderColor(colors), width: 1),
+              ),
+              child: TextField(
+                controller: widget.controller,
+                focusNode: _focusNode,
+                enabled: widget.enabled,
+                obscureText: widget.obscureText,
+                enableSuggestions: widget.enableSuggestions,
+                keyboardType: widget.keyboardType,
+                textInputAction: widget.textInputAction,
+                textCapitalization: widget.textCapitalization,
+                autocorrect: widget.autocorrect,
+                maxLines: widget.maxLines,
+                expands: widget.expands,
+                onChanged: widget.onChanged,
+                onSubmitted: widget.onSubmitted,
+                cursorColor: colors.accentFlare,
+                style: textStyle,
+                decoration: InputDecoration.collapsed(hintText: widget.hint, hintStyle: hintStyle),
+              ),
+            ),
+            if (extra != null)
+              _isMultiline
+                  ? Positioned(right: 4, top: 6, child: extra)
+                  : Positioned(right: 4, top: 0, bottom: 0, child: Center(child: extra)),
+          ],
         ),
+
         if (widget.error != null) ...[
           const SizedBox(height: 8),
           Text(widget.error!, style: context.themeTextV3.caption.copyWith(color: colors.semanticEmber)),
@@ -162,19 +179,22 @@ class _QuantusTextFieldClearButton extends StatelessWidget {
     final colors = context.colorsV3;
     const size = 20.0;
 
-    return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: Container(
-        width: size,
-        height: size,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: colors.textMuted,
-          border: Border.all(color: colors.borderHairline, width: 0.5),
-          borderRadius: BorderRadius.circular(16),
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: GestureDetector(
+        onTap: onTap,
+        behavior: HitTestBehavior.opaque,
+        child: Container(
+          width: size,
+          height: size,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: colors.textMuted,
+            border: Border.all(color: colors.borderHairline, width: 0.5),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Icon(Icons.close, size: 12, color: colors.textVoid),
         ),
-        child: Icon(Icons.close, size: 12, color: colors.textVoid),
       ),
     );
   }

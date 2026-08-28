@@ -1,6 +1,6 @@
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/shared/utils/account_utils.dart';
+import 'package:resonance_network_wallet/v2/components/account_badge.dart';
 
 class AddressCheckphraseWithInitial extends StatelessWidget {
   final String recipientChecksum;
@@ -16,10 +16,9 @@ class AddressCheckphraseWithInitial extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.colors;
-    final text = context.themeText;
-
-    final avatarSize = 40.0;
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
+    final addressStyle = showFullAddress ? text.dataAddressLarge : text.dataAddress;
     final displayAddress = showFullAddress
         ? recipientAddress.trim()
         : AddressFormattingService.formatAddress(recipientAddress.trim());
@@ -27,16 +26,7 @@ class AddressCheckphraseWithInitial extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Container(
-          width: avatarSize,
-          height: avatarSize,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(color: colors.sheetBackground, borderRadius: BorderRadius.circular(20)),
-          child: Text(
-            getAccountBadgeInitials(recipientChecksum, separator: '-'),
-            style: text.transactionDetailRowValue?.copyWith(color: colors.textLabel),
-          ),
-        ),
+        AccountBadge(name: recipientChecksum.replaceAll('-', ' ')),
         const SizedBox(width: 14),
         Expanded(
           child: Column(
@@ -44,12 +34,12 @@ class AddressCheckphraseWithInitial extends StatelessWidget {
             children: [
               Text(
                 recipientChecksum,
-                style: text.smallParagraph?.copyWith(color: colors.checksum, height: 1.35),
+                style: text.body.copyWith(color: colors.semanticLilac),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
               const SizedBox(height: 4),
-              Text(displayAddress, style: text.transactionDetailRowValue?.copyWith(fontSize: 14), softWrap: true),
+              Text(displayAddress, style: addressStyle.copyWith(color: colors.textContent), softWrap: true),
             ],
           ),
         ),

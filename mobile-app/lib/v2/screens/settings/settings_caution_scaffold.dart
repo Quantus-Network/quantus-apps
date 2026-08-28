@@ -3,7 +3,6 @@ import 'package:quantus_sdk/quantus_sdk.dart' hide ScaffoldBase;
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/settings_checkbox.dart';
-import 'package:resonance_network_wallet/v2/screens/settings/settings_divider.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/settings_list_row.dart';
 
 class SettingsCautionScaffoldData {
@@ -40,7 +39,6 @@ class SettingsCautionScaffold extends StatelessWidget {
   final VoidCallback? onCheckboxChanged;
   final VoidCallback onContinue;
   final SettingsCautionScaffoldData data;
-  final SettingsDividerStyle betweenBulletsStyle;
   final bool continueButtonLoading;
   final String? secondaryLabel;
   final VoidCallback? onSecondary;
@@ -54,7 +52,6 @@ class SettingsCautionScaffold extends StatelessWidget {
     required this.continueLabel,
     this.checkboxChecked = false,
     this.onCheckboxChanged,
-    this.betweenBulletsStyle = SettingsDividerStyle.list,
     this.continueButtonLoading = false,
     this.secondaryLabel,
     this.onSecondary,
@@ -63,23 +60,26 @@ class SettingsCautionScaffold extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.colors;
-    final text = context.themeText;
-
-    final headlineStyle = text.mediumTitle?.copyWith(fontSize: 28);
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
 
     return ScaffoldBase(
       appBar: V2AppBar(title: appBarTitle),
       mainContent: SingleChildScrollView(
         child: Column(
           children: [
-            Icon(Icons.warning_amber_outlined, size: 40, color: colors.accentOrange),
+            Icon(Icons.warning_amber_outlined, size: 40, color: colors.accentFlare),
             const SizedBox(height: 16),
-            Text(data.headline, textAlign: TextAlign.center, style: headlineStyle),
+            Text(
+              data.headline,
+              textAlign: TextAlign.center,
+              style: text.titleHero.copyWith(color: colors.textContent),
+            ),
             const SizedBox(height: 40),
             for (var i = 0; i < data.bulletItems.length; i++) ...[
               SettingsListRow(label: (i + 1).toString().padLeft(2, '0'), content: data.bulletItems[i]),
-              if (i < data.bulletItems.length - 1) SettingsDivider(style: betweenBulletsStyle),
+              if (i < data.bulletItems.length - 1)
+                const Padding(padding: EdgeInsets.only(top: 16, bottom: 24), child: MenuDivider()),
             ],
             const SizedBox(height: 40),
           ],
@@ -143,7 +143,7 @@ class _SettingsCautionBottom extends StatelessWidget {
           ),
           if (secondaryLabel != null) ...[
             const SizedBox(height: 12),
-            QuantusButton.simple(label: secondaryLabel!, onTap: onSecondary, variant: ButtonVariant.transparent),
+            QuantusButton.simple(label: secondaryLabel!, onTap: onSecondary, variant: ButtonVariant.ghost),
           ],
         ],
       ),

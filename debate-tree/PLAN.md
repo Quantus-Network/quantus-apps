@@ -146,7 +146,7 @@ Coinhive's death defines our guardrails:
 (in-process Postgres), LLM via Anthropic / OpenAI / OpenRouter (stub offline
 fallback). Production framework TBD; Postgres + pgvector for embeddings.
 Wallet auth via ML-DSA signature verification —
-`quantus_sdk`'s Rust bridge and `rust-transaction-parser` are references;
+`quantus_sdk`'s Rust bridge is a reference;
 server-side verification can link the same Rust crates.
 
 **Data model** (implemented in `spike/schema.sql` — pure adjacency tree,

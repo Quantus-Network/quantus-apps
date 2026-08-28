@@ -8,23 +8,6 @@ class MultisigTag extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.colors;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: colors.sheetBackground,
-        borderRadius: BorderRadius.circular(4),
-        border: Border.all(color: colors.borderButton.useOpacity(0.5)),
-      ),
-      child: Text(
-        label,
-        style: context.themeText.detail?.copyWith(
-          color: colors.checksum,
-          fontSize: 10,
-          fontWeight: FontWeight.w600,
-          letterSpacing: 0.8,
-        ),
-      ),
-    );
+    return QuantusBadge(label: label);
   }
 }

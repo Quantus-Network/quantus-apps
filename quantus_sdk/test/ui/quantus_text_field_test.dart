@@ -98,5 +98,112 @@ void main() {
 
     expect(find.byIcon(Icons.visibility_outlined), findsOneWidget);
     expect(find.byIcon(Icons.close), findsNothing);
+
+    final fieldCenter = tester.getCenter(find.byType(QuantusTextField)).dy;
+    final iconCenter = tester.getCenter(find.byIcon(Icons.visibility_outlined)).dy;
+    expect(iconCenter, closeTo(fieldCenter, 2));
+  });
+
+  testWidgets('defaults to a single-line TextField', (tester) async {
+    final controller = TextEditingController();
+    addTearDown(controller.dispose);
+
+    await pumpField(tester, QuantusTextField(controller: controller));
+
+    final field = tester.widget<TextField>(find.byType(TextField));
+    expect(field.maxLines, 1);
+    expect(field.expands, isFalse);
+    expect(field.minLines, isNull);
+  });
+
+  testWidgets('forwards multiline height, expands, and maxLines', (tester) async {
+    final controller = TextEditingController();
+    addTearDown(controller.dispose);
+
+    await pumpField(
+      tester,
+      QuantusTextField(
+        controller: controller,
+        height: 202,
+        maxLines: null,
+        expands: true,
+        trailing: const Icon(Icons.visibility_outlined),
+      ),
+    );
+
+    final field = tester.widget<TextField>(find.byType(TextField));
+    expect(field.maxLines, isNull);
+    expect(field.minLines, isNull);
+    expect(field.expands, isTrue);
+    expect(tester.getSize(find.byType(QuantusTextField)).height, 202);
+
+    final fieldTop = tester.getTopLeft(find.byType(QuantusTextField)).dy;
+    final iconTop = tester.getTopLeft(find.byIcon(Icons.visibility_outlined)).dy;
+    expect(iconTop - fieldTop, lessThan(30));
+  });
+
+  testWidgets('a non-focusable trailing lets keyboard next reach the following field', (tester) async {
+    final first = TextEditingController();
+    final second = TextEditingController();
+    addTearDown(first.dispose);
+    addTearDown(second.dispose);
+
+    await pumpField(
+      tester,
+      Column(
+        children: [
+          QuantusTextField(
+            controller: first,
+            textInputAction: TextInputAction.next,
+            trailing: QuantusIconButton.ghost(
+              icon: Icons.visibility_off_outlined,
+              onTap: () {},
+              canRequestFocus: false,
+            ),
+          ),
+          QuantusTextField(controller: second),
+        ],
+      ),
+    );
+
+    await tester.tap(find.byType(TextField).first);
+    await tester.pump();
+    await tester.testTextInput.receiveAction(TextInputAction.next);
+    await tester.pump();
+
+    final fields = tester.widgetList<TextField>(find.byType(TextField)).toList();
+    expect(fields[1].focusNode?.hasPrimaryFocus, isTrue, reason: 'next must skip the trailing button');
+  });
+
+  testWidgets('a default trailing stays reachable by focus traversal', (tester) async {
+    final controller = TextEditingController();
+    addTearDown(controller.dispose);
+
+    await pumpField(
+      tester,
+      QuantusTextField(
+        controller: controller,
+        trailing: QuantusIconButton.ghost(icon: Icons.paste, onTap: () {}),
+      ),
+    );
+
+    final inkWell = tester.widget<InkWell>(
+      find.ancestor(of: find.byIcon(Icons.paste), matching: find.byType(InkWell)).first,
+    );
+    expect(inkWell.canRequestFocus, isTrue, reason: 'paste must stay available to keyboard and switch users');
+  });
+
+  testWidgets('showClearButton and trailing are mutually exclusive', (tester) async {
+    final controller = TextEditingController();
+    addTearDown(controller.dispose);
+
+    expect(
+      () => QuantusTextField(
+        controller: controller,
+        showClearButton: true,
+        trailing: const Icon(Icons.visibility_outlined),
+      ),
+      throwsAssertionError,
+    );
   });
 }

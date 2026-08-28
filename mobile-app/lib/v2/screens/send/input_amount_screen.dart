@@ -14,7 +14,6 @@ import 'package:resonance_network_wallet/v2/screens/send/review_send_screen.dart
 import 'package:resonance_network_wallet/v2/screens/send/send_screen_logic.dart';
 import 'package:resonance_network_wallet/v2/screens/send/send_strategy.dart';
 import 'package:resonance_network_wallet/shared/utils/amount_input_logic.dart';
-import 'package:resonance_network_wallet/shared/utils/debouncer.dart';
 import 'package:resonance_network_wallet/shared/utils/print.dart';
 
 class InputAmountScreen extends ConsumerStatefulWidget {
@@ -40,20 +39,15 @@ class InputAmountScreen extends ConsumerStatefulWidget {
 class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
   final _amountController = TextEditingController();
   final _amountFocus = FocusNode();
-  final _scrollController = ScrollController();
-  final _amountCenterKey = GlobalKey();
   final _checksumService = HumanReadableChecksumService();
-
-  final _feeDebouncer = Debouncer(delay: const Duration(milliseconds: 500));
 
   String? _recipientChecksum;
   BigInt _amount = BigInt.zero;
-  SendFee? _fee;
-  bool _isFetchingFee = false;
-  bool _hasFee = false;
-  bool _feeFetchFailed = false;
-  // Each request has a counter value, so old responses can be ignored
-  int _fetchFeeCounter = 0;
+
+  String get _recipient => widget.recipientAddress.trim();
+
+  ProviderListenable<AsyncValue<SendFee>> _feeProvider(BigInt amount) =>
+      widget.strategy.feeProvider(recipient: _recipient, amount: amount);
 
   AmountInputLogic get _amountInputLogic => AmountInputLogic(
     exchangeRateService: ref.read(exchangeRateServiceProvider),
@@ -66,7 +60,6 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
   void initState() {
     super.initState();
     assert(widget.recipientAddress.trim().isNotEmpty, 'InputAmountScreen requires a recipient');
-    _amountFocus.addListener(_onAmountFocusChanged);
     if (widget.initialAmount != null && widget.initialAmount!.isNotEmpty) {
       final formattingService = ref.read(numberFormattingServiceProvider);
       final token = widget.isPayMode
@@ -77,44 +70,18 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
         _amountController.text = _amountInputLogic.formatTokenAmount(token);
       }
     }
-    if (widget.recipientChecksum != null) {
-      _recipientChecksum = widget.recipientChecksum;
-    } else {
-      _checksumService.getHumanReadableName(widget.recipientAddress.trim()).then((name) {
-        if (mounted) setState(() => _recipientChecksum = name);
-      });
-    }
-
-    _refreshFee();
+    _recipientChecksum = widget.recipientChecksum;
+    _checksumService.getHumanReadableName(widget.recipientAddress.trim()).then((name) {
+      if (!mounted) return;
+      setState(() => _recipientChecksum = name);
+    });
   }
 
   @override
   void dispose() {
-    _feeDebouncer.cancel();
     _amountController.dispose();
-    _amountFocus.removeListener(_onAmountFocusChanged);
     _amountFocus.dispose();
-    _scrollController.dispose();
     super.dispose();
-  }
-
-  void _onAmountFocusChanged() {
-    if (!_amountFocus.hasFocus) return;
-    // Wait for the keyboard animation to finish before scrolling so that the
-    // viewport has already shrunk and ensureVisible can compute the correct offset.
-    Future.delayed(const Duration(milliseconds: 300), () {
-      if (!mounted) return;
-      final ctx = _amountCenterKey.currentContext;
-      if (ctx != null) {
-        Scrollable.ensureVisible(
-          // ignore: use_build_context_synchronously
-          ctx,
-          alignment: 0.5,
-          duration: const Duration(milliseconds: 250),
-          curve: Curves.easeInOut,
-        );
-      }
-    });
   }
 
   void _onAmountChanged(String _) {
@@ -129,71 +96,22 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
       context.showErrorToaster(message: l10n.sendInputAmountInvalidAmount);
       return;
     }
-    _invalidateFee();
-    _feeDebouncer.run(_refreshFee);
-  }
-
-  /// For encrypted sends the fee estimate *is* the spend plan, frozen for the
-  /// amount it was computed with — a stale fee must never stay valid for a new
-  /// amount. Drop it and orphan any in-flight fetch so Review stays blocked
-  /// until a refetch for the current amount lands.
-  void _invalidateFee() {
-    _fetchFeeCounter++;
-    setState(() {
-      _fee = null;
-      _hasFee = false;
-      _feeFetchFailed = false;
-    });
-  }
-
-  void _refreshFee() {
-    _feeDebouncer.cancel();
-    final counter = ++_fetchFeeCounter;
-    final showLoader = !_hasFee || _feeFetchFailed;
-    setState(() {
-      _isFetchingFee = showLoader;
-      if (showLoader) _feeFetchFailed = false;
-    });
-    _fetchFee(counter);
-  }
-
-  Future<void> _fetchFee(int counter) async {
-    try {
-      final fee = await widget.strategy.estimateFee(ref, recipient: widget.recipientAddress.trim(), amount: _amount);
-      if (!mounted || counter != _fetchFeeCounter) return;
-      setState(() {
-        _fee = fee;
-        _hasFee = true;
-        _feeFetchFailed = false;
-        _isFetchingFee = false;
-      });
-    } catch (e, st) {
-      quantusPrint('Fee fetch error: $e\n$st');
-      if (!mounted || counter != _fetchFeeCounter) return;
-      setState(() {
-        _fee = null;
-        _hasFee = false;
-        _feeFetchFailed = true;
-        _isFetchingFee = false;
-      });
-    }
   }
 
   /// Converts a token amount [BigInt] to a fiat input string using the current
   /// exchange rate and selected fiat currency, formatted for the user's locale.
   void _setMax() {
     final spendable = ref.read(widget.strategy.spendableBalanceProvider).value ?? BigInt.zero;
+    final feeAtMax = ref.read(_feeProvider(spendable)).value;
     final max = SendScreenLogic.calculateMaxSendableAmount(
       balance: spendable,
-      networkFee: widget.strategy.feeChargedToBalance(_fee),
+      networkFee: widget.strategy.feeChargedToBalance(feeAtMax),
     );
     final isFlipped = ref.read(isCurrencyFlippedProvider);
     _amountController.text = isFlipped
         ? _amountInputLogic.tokenToFiatString(max)
         : _amountInputLogic.formatTokenAmount(max);
     setState(() => _amount = max);
-    _invalidateFee();
-    _refreshFee();
   }
 
   Future<void> _toggleFlip() async {
@@ -206,14 +124,10 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
       _amountController.text = result.text;
       _amount = result.amount;
     });
-    // The flip can change the token amount (fiat rounding), so the plan must
-    // be re-estimated for the new amount.
-    _invalidateFee();
-    _refreshFee();
   }
 
   void _openReview() {
-    final fee = _fee;
+    final fee = ref.read(_feeProvider(_amount)).value;
     final l10n = ref.read(l10nProvider);
     if (_recipientChecksum == null) {
       context.showErrorToaster(message: l10n.sendInputAmountChecksumRequired);
@@ -244,14 +158,15 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
   Widget build(BuildContext context) {
     final l10n = ref.watch(l10nProvider);
     final strings = widget.strategy.strings(l10n);
-    final colors = context.colors;
-    final text = context.themeText;
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
     final balance = ref.watch(widget.strategy.spendableBalanceProvider);
     final displayBalance = ref.watch(widget.strategy.displayBalanceProvider);
     final sourceId = widget.strategy.sourceAccountId(ref) ?? '';
-    final recipient = widget.recipientAddress.trim();
+    final recipient = _recipient;
     final formattingService = ref.read(numberFormattingServiceProvider);
-    final fee = _fee;
+    final feeAsync = ref.watch(_feeProvider(_amount));
+    final fee = feeAsync.value;
 
     final amountStatus = SendScreenLogic.getAmountStatus(
       _amount,
@@ -260,11 +175,9 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
     );
     final affordabilityError = fee == null ? null : widget.strategy.affordabilityError(ref, fee, l10n);
     final btnDisabled =
-        !_hasFee ||
-        _feeFetchFailed ||
-        _feeDebouncer.isPending ||
+        fee == null ||
         _recipientChecksum == null ||
-        balance.isLoading ||
+        !balance.hasValue ||
         widget.strategy.extraBalancesLoading(ref) ||
         affordabilityError != null ||
         SendScreenLogic.isButtonDisabled(
@@ -292,34 +205,34 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
       appBar: V2AppBar(title: widget.isPayMode ? l10n.sendPayTitle : strings.flowTitle),
       mainContent: LayoutBuilder(
         builder: (context, constraints) => SingleChildScrollView(
-          controller: _scrollController,
           child: ConstrainedBox(
+            // Fill the viewport so the amount block centres in whatever the
+            // keyboard leaves, and grow past it — scrolling — once the recipient
+            // card and the amount need more room than that, as at large text sizes.
             constraints: BoxConstraints(minHeight: constraints.maxHeight),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                _recipientCard(colors, text, strings),
-                const SizedBox(height: 32),
-                _amountCenter(colors, text),
-                const SizedBox(height: 32),
-                const SizedBox.shrink(),
-              ],
+            child: IntrinsicHeight(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _recipientCard(colors, text, strings),
+                  Expanded(child: _amountCenter(colors, text)),
+                ],
+              ),
             ),
           ),
         ),
       ),
-      bottomContent: _bottomSection(colors, text, l10n, strings, btnText, displayBalance, btnDisabled),
+      bottomContent: _bottomSection(colors, text, l10n, strings, btnText, displayBalance, feeAsync, btnDisabled),
     );
   }
 
-  Widget _recipientCard(AppColorsV2 colors, AppTextTheme text, SendStrings strings) {
+  Widget _recipientCard(AppColorsV3 colors, AppTextThemeV3 text, SendStrings strings) {
     final addr = widget.recipientAddress.trim();
     final shortAddr = AddressFormattingService.formatAddress(addr);
 
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
-      decoration: BoxDecoration(color: colors.surfaceDeep, borderRadius: BorderRadius.circular(14)),
+      decoration: BoxDecoration(color: colors.bgSurface, borderRadius: context.radiusV3.mdBorder),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -327,34 +240,24 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  strings.amountRecipientCardLabel,
-                  style: context.themeText.receiveLabel?.copyWith(color: colors.textLabel),
-                ),
+                Text(strings.amountRecipientCardLabel, style: text.labelData.copyWith(color: colors.textMuted)),
                 const SizedBox(height: 16),
                 if (_recipientChecksum != null) ...[
                   Text(
                     _recipientChecksum!,
-                    style: text.smallParagraph?.copyWith(color: colors.checksum, height: 1.2),
+                    style: text.body.copyWith(color: colors.semanticLilac),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 4),
                 ],
-                Text(
-                  shortAddr,
-                  style: text.detail?.copyWith(
-                    color: colors.textMuted,
-                    fontFamily: AppTextTheme.fontFamilySecondary,
-                    fontSize: 12,
-                  ),
-                ),
+                Text(shortAddr, style: text.dataAddress.copyWith(color: colors.textContent)),
               ],
             ),
           ),
           const SizedBox(width: 12),
           Material(
-            color: colors.background,
+            color: colors.bgVoid,
             shape: const CircleBorder(),
             child: InkWell(
               customBorder: const CircleBorder(),
@@ -365,9 +268,9 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  border: Border.all(color: colors.borderButton),
+                  border: Border.all(color: colors.borderHairline),
                 ),
-                child: Icon(Icons.edit_outlined, size: 18, color: colors.textPrimary),
+                child: Icon(Icons.edit_outlined, size: 18, color: colors.textContent),
               ),
             ),
           ),
@@ -376,7 +279,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
     );
   }
 
-  Widget _amountCenter(AppColorsV2 colors, AppTextTheme text) {
+  Widget _amountCenter(AppColorsV3 colors, AppTextThemeV3 text) {
     final isPayMode = widget.isPayMode;
     final isFlipped = isPayMode ? false : ref.watch(isCurrencyFlippedProvider);
     final selectedFiat = ref.watch(selectedFiatCurrencyProvider);
@@ -389,7 +292,9 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
       withTokenSymbol: false,
     );
 
-    final symbolStyle = text.transactionDetailAmountSymbol?.copyWith(color: colors.textPrimary);
+    final amountColor = _amount == BigInt.zero ? colors.textMuted2 : colors.textContent;
+    final amountStyle = text.displayCharge.copyWith(color: amountColor);
+    final symbolStyle = text.amountHero.copyWith(color: colors.textContent);
     final isPrefixFiat = isFlipped && selectedFiat.symbolPosition == SymbolPosition.prefix;
 
     final maxDecimals = isFlipped ? selectedFiat.decimals : null;
@@ -402,13 +307,11 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
         keyboardType: const TextInputType.numberWithOptions(decimal: true),
         textAlign: isPrefixFiat ? TextAlign.left : TextAlign.right,
         inputFormatters: [DecimalInputFilter(localeConfig: localeConfig, maxDecimalPlaces: maxDecimals)],
-        style: text.transactionDetailAmountPrimary?.copyWith(
-          color: _amount == BigInt.zero ? colors.textTertiary : colors.textPrimary,
-        ),
+        style: amountStyle,
         decoration: InputDecoration(
           isDense: true,
           hintText: '0',
-          hintStyle: text.transactionDetailAmountPrimary?.copyWith(color: colors.textTertiary),
+          hintStyle: text.displayCharge.copyWith(color: colors.textMuted2),
         ),
       ),
     );
@@ -421,105 +324,97 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
         ? [symbolWidget, const SizedBox(width: 8), inputField]
         : [inputField, const SizedBox(width: 8), symbolWidget];
 
+    // Scales down rather than clipping when the keyboard leaves little room,
+    // or when a long amount would overflow horizontally.
     return Center(
-      key: _amountCenterKey,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.end,
               children: primaryRowChildren,
             ),
-          ),
-          const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                '≈ ${display.secondaryAmount}',
-                style: text.paragraph?.copyWith(
-                  color: colors.textTertiary,
-                  fontFamily: AppTextTheme.fontFamilySecondary,
-                ),
-              ),
-              if (!isPayMode) ...[
-                const SizedBox(width: 8),
-                QuantusIconButton.circular(
-                  icon: Icons.swap_vert,
-                  onTap: _toggleFlip,
-                  isActive: display.isFlipped,
-                  size: IconButtonSize.small,
-                ),
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text('≈ ${display.secondaryAmount}', style: text.body.copyWith(color: colors.textMuted)),
+                if (!isPayMode) ...[
+                  const SizedBox(width: 8),
+                  QuantusIconButton.circular(
+                    icon: Icons.swap_vert,
+                    onTap: _toggleFlip,
+                    isActive: display.isFlipped,
+                    size: IconButtonSize.small,
+                  ),
+                ],
               ],
-            ],
-          ),
-        ],
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Widget _feeValue(
-    AppColorsV2 colors,
-    AppTextTheme text,
+    AppColorsV3 colors,
+    AppTextThemeV3 text,
     AppLocalizations l10n,
     SendStrings strings,
     NumberFormattingService fmt,
+    AsyncValue<SendFee> feeAsync,
   ) {
-    if (_isFetchingFee) {
-      return const Align(alignment: Alignment.centerRight, child: Loader());
-    }
-    if (_feeFetchFailed) {
-      return Column(
+    return feeAsync.when(
+      data: (fee) => Text(
+        l10n.commonAmountBalance(fmt.formatBalance(fee.displayFee, smartDecimals: 5), AppConstants.tokenSymbol),
+        style: text.body.copyWith(color: colors.textMuted),
+      ),
+      error: (_, _) => Column(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           Text(
             strings.feeFetchFailedMessage,
-            style: text.smallParagraph?.copyWith(color: colors.error),
+            style: text.body.copyWith(color: colors.semanticEmber),
             textAlign: TextAlign.right,
           ),
           const SizedBox(height: 4),
           IntrinsicWidth(
             child: QuantusButton.simple(
               label: l10n.homeActivityRetry,
-              onTap: _refreshFee,
+              onTap: () => widget.strategy.retryFee(ref, recipient: _recipient, amount: _amount),
               padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 0),
-              variant: ButtonVariant.transparent,
-              textStyle: text.smallParagraph?.copyWith(
-                color: colors.accentOrange,
+              variant: ButtonVariant.ghost,
+              textStyle: text.body.copyWith(
+                color: colors.accentFlare,
                 decoration: TextDecoration.underline,
-                decorationColor: colors.accentOrange,
+                decorationColor: colors.accentFlare,
               ),
             ),
           ),
         ],
-      );
-    }
-    final fee = _fee;
-    if (_hasFee && fee != null) {
-      return Text(
-        l10n.commonAmountBalance(fmt.formatBalance(fee.displayFee, smartDecimals: 5), AppConstants.tokenSymbol),
-        style: text.smallParagraph?.copyWith(color: colors.textTertiary),
-      );
-    }
-    return const Align(alignment: Alignment.centerRight, child: Loader());
+      ),
+      loading: () => const Align(alignment: Alignment.centerRight, child: Loader()),
+    );
   }
 
   Widget _bottomSection(
-    AppColorsV2 colors,
-    AppTextTheme text,
+    AppColorsV3 colors,
+    AppTextThemeV3 text,
     AppLocalizations l10n,
     SendStrings strings,
     String btnText,
     AsyncValue<BigInt> balance,
+    AsyncValue<SendFee> feeAsync,
     bool btnDisabled,
   ) {
     final formattingService = ref.read(numberFormattingServiceProvider);
     final feePayerProvider = widget.strategy.feePayerBalanceProvider;
     final feePayerLabel = widget.strategy.feePayerBalanceLabel(l10n);
+    final mutedBody = text.body.copyWith(color: colors.textMuted);
 
     return ScaffoldBaseBottomContent(
       child: Column(
@@ -537,18 +432,15 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          l10n.sendInputAmountAvailableBalance,
-                          style: text.smallParagraph?.copyWith(color: colors.textTertiary),
-                        ),
+                        Text(l10n.sendInputAmountAvailableBalance, style: mutedBody),
                         const SizedBox(height: 4),
                         balance.when(
                           data: (b) => Text(
                             l10n.commonAmountBalance(formattingService.formatBalance(b), AppConstants.tokenSymbol),
-                            style: text.smallParagraph?.copyWith(color: colors.textTertiary),
+                            style: mutedBody,
                           ),
-                          loading: () => Text('...', style: text.smallParagraph?.copyWith(color: colors.textTertiary)),
-                          error: (_, _) => Text('—', style: text.smallParagraph?.copyWith(color: colors.textTertiary)),
+                          loading: () => Text('...', style: mutedBody),
+                          error: (_, _) => Text('—', style: mutedBody),
                         ),
                       ],
                     ),
@@ -557,9 +449,9 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        Text(strings.feeLabel, style: text.smallParagraph?.copyWith(color: colors.textTertiary)),
+                        Text(strings.feeLabel, style: mutedBody),
                         const SizedBox(height: 4),
-                        _feeValue(colors, text, l10n, strings, formattingService),
+                        _feeValue(colors, text, l10n, strings, formattingService, feeAsync),
                       ],
                     ),
                   ),
@@ -578,11 +470,11 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
                   label: l10n.sendInputAmountMax,
                   onTap: _setMax,
                   padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 0),
-                  variant: ButtonVariant.transparent,
-                  textStyle: text.smallParagraph?.copyWith(
-                    color: colors.accentOrange,
+                  variant: ButtonVariant.ghost,
+                  textStyle: text.body.copyWith(
+                    color: colors.accentFlare,
                     decoration: TextDecoration.underline,
-                    decorationColor: colors.accentOrange,
+                    decorationColor: colors.accentFlare,
                   ),
                 ),
               ),
@@ -602,15 +494,15 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
   }
 
   Widget _feePayerBalance(
-    AppColorsV2 colors,
-    AppTextTheme text,
+    AppColorsV3 colors,
+    AppTextThemeV3 text,
     AppLocalizations l10n,
     String label,
     ProviderListenable<AsyncValue<BigInt>> provider,
     NumberFormattingService fmt,
   ) {
     final balanceAsync = ref.watch(provider);
-    final style = text.smallParagraph?.copyWith(color: colors.textTertiary);
+    final style = text.body.copyWith(color: colors.textMuted);
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [

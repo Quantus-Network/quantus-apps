@@ -1,14 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 
-/// Tracking-timeline states for [QuantusStepRow].
-///
 /// Done settles, active is in flight, pending has not started, ended stopped.
 enum StepRowState { done, active, pending, ended }
 
-/// Figma Block / Step Row. Presentational only. Callers pass already-resolved [label] and [substate].
-///
-/// Takes the available width. Parent owns [state]; Active spins the flare mark.
+/// Timeline step row; parent owns [state], active spins the flare mark.
 class QuantusStepRow extends StatefulWidget {
   final StepRowState state;
   final String label;
@@ -112,7 +108,7 @@ class _Glyph extends StatelessWidget {
     return Text(
       text,
       style: TextStyle(
-        fontFamily: AppTextTheme.fontFamily,
+        fontFamily: AppTextThemeV3.fontFamily,
         fontSize: 13,
         fontWeight: FontWeight.w400,
         height: 1,
@@ -177,7 +173,6 @@ class _StepCopy extends StatelessWidget {
     );
   }
 
-  /// Figma substate microlabel: Geist Mono Regular 10, tracking 0.8, from Label / Monogram.
   TextStyle _substateStyle(AppTextThemeV3 text, AppColorsV3 colors) {
     return text.labelMonogram.copyWith(
       fontSize: 10,

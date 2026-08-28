@@ -1,7 +1,5 @@
-import 'dart:convert';
 import 'dart:developer' as developer;
 
-import 'package:http/http.dart' as http;
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:quantus_sdk/src/services/multisig_graphql.dart';
 import 'package:quantus_sdk/src/utils/timing.dart';
@@ -575,29 +573,11 @@ ${MultisigGraphql.cancelledMultisigProposalAccountEventSelection}
       return null;
     }
 
-    final Map<String, dynamic> requestBody = {
-      'query': _executedTransactionByTxId,
-      'variables': {'txId': txId},
-    };
-
     try {
-      final http.Response response = await _graphQlEndpointService.post(body: jsonEncode(requestBody));
-
-      if (response.statusCode != 200) {
-        throw Exception('GraphQL request failed with status: ${response.statusCode}. Body: ${response.body}');
-      }
-
-      final Map<String, dynamic> responseBody = jsonDecode(response.body);
-
-      if (responseBody['errors'] != null) {
-        _log('GraphQL errors in response: ${responseBody['errors']}');
-        throw Exception('GraphQL errors: ${responseBody['errors'].toString()}');
-      }
-
-      final Map<String, dynamic>? data = responseBody['data'];
-      if (data == null) {
-        throw Exception('GraphQL response data is null.');
-      }
+      final Map<String, dynamic> data = await _graphQlEndpointService.query(
+        document: _executedTransactionByTxId,
+        variables: {'txId': txId},
+      );
 
       final List<dynamic>? events = data['executedReversibleTransfers'];
 
@@ -623,29 +603,16 @@ ${MultisigGraphql.cancelledMultisigProposalAccountEventSelection}
   }) async {
     final after = DateTime.now().subtract(const Duration(minutes: 2)).toUtc().toIso8601String();
 
-    final Map<String, dynamic> requestBody = {
-      'query': _buildScheduledReversibleTransfersQuery(filter),
-      'variables': {'accounts': accountIds, 'limit': _lookaheadLimit(limit), 'offset': offset, 'after': after},
-    };
-
-    final jsonBody = jsonEncode(requestBody);
-
     final sw = Stopwatch()..start();
     try {
-      final http.Response response = await _graphQlEndpointService.post(body: jsonBody);
+      final Map<String, dynamic> data = await _graphQlEndpointService.query(
+        document: _buildScheduledReversibleTransfersQuery(filter),
+        variables: {'accounts': accountIds, 'limit': _lookaheadLimit(limit), 'offset': offset, 'after': after},
+      );
       sw.stop();
       printTiming('fetchScheduledTransfers HTTP', sw.elapsedMilliseconds);
 
-      if (response.statusCode != 200) {
-        throw Exception('GraphQL request failed with status: ${response.statusCode}. Body: ${response.body}');
-      }
-
-      final Map<String, dynamic> responseBody = jsonDecode(response.body);
-      if (responseBody['errors'] != null) {
-        throw Exception('GraphQL errors: ${responseBody['errors']}');
-      }
-
-      final List<dynamic>? events = responseBody['data']?['accountEvents'];
+      final List<dynamic>? events = data['accountEvents'];
       return _pageFromEvents(events, limit, _parseScheduledTransferEvent);
     } catch (e, stackTrace) {
       sw.stop();
@@ -661,29 +628,16 @@ ${MultisigGraphql.cancelledMultisigProposalAccountEventSelection}
     int offset = 0,
     required TransactionFilter filter,
   }) async {
-    final Map<String, dynamic> requestBody = {
-      'query': _buildAccountEventsQuery(filter),
-      'variables': {'accounts': accountIds, 'limit': _lookaheadLimit(limit), 'offset': offset},
-    };
-
-    final jsonBody = jsonEncode(requestBody);
-
     final sw = Stopwatch()..start();
     try {
-      final http.Response response = await _graphQlEndpointService.post(body: jsonBody);
+      final Map<String, dynamic> data = await _graphQlEndpointService.query(
+        document: _buildAccountEventsQuery(filter),
+        variables: {'accounts': accountIds, 'limit': _lookaheadLimit(limit), 'offset': offset},
+      );
       sw.stop();
       printTiming('fetchAccountEvents HTTP', sw.elapsedMilliseconds);
 
-      if (response.statusCode != 200) {
-        throw Exception('GraphQL request failed with status: ${response.statusCode}. Body: ${response.body}');
-      }
-
-      final Map<String, dynamic> responseBody = jsonDecode(response.body);
-      if (responseBody['errors'] != null) {
-        throw Exception('GraphQL errors: ${responseBody['errors']}');
-      }
-
-      final List<dynamic>? events = responseBody['data']?['accountEvents'];
+      final List<dynamic>? events = data['accountEvents'];
       final page = _pageFromEvents(events, limit, tryParseOtherTransferEvent);
       return OtherTransfersResult(transfers: page.items, hasMore: page.hasMore, rawRowsConsumed: page.rawRowsConsumed);
     } catch (e, stackTrace) {
@@ -815,26 +769,13 @@ ${MultisigGraphql.cancelledMultisigProposalAccountEventSelection}
     required String description,
   }) async {
     _log('Searching $description by extrinsic hash: $extrinsicHash');
-    final Map<String, dynamic> requestBody = {
-      'query': query,
-      'variables': {'extrinsicHash': extrinsicHash},
-    };
-
     try {
-      final http.Response response = await _graphQlEndpointService.post(body: jsonEncode(requestBody));
+      final Map<String, dynamic> data = await _graphQlEndpointService.query(
+        document: query,
+        variables: {'extrinsicHash': extrinsicHash},
+      );
 
-      if (response.statusCode != 200) {
-        throw Exception('GraphQL request failed with status: ${response.statusCode}. Body: ${response.body}');
-      }
-
-      final Map<String, dynamic> responseBody = jsonDecode(response.body);
-
-      if (responseBody['errors'] != null) {
-        _log('GraphQL errors in response: ${responseBody['errors']}');
-        throw Exception('GraphQL errors: ${responseBody['errors'].toString()}');
-      }
-
-      final List<dynamic>? events = responseBody['data']?['accountEvents'];
+      final List<dynamic>? events = data['accountEvents'];
       if (events == null || events.isEmpty) {
         _log('No matching $description found for hash $extrinsicHash');
         return null;
@@ -859,26 +800,8 @@ ${MultisigGraphql.cancelledMultisigProposalAccountEventSelection}
     required Map<String, dynamic> variables,
     required bool isReversible,
   }) async {
-    final Map<String, dynamic> requestBody = {'query': query, 'variables': variables};
-
     try {
-      final http.Response response = await _graphQlEndpointService.post(body: jsonEncode(requestBody));
-
-      if (response.statusCode != 200) {
-        throw Exception('GraphQL request failed with status: ${response.statusCode}. Body: ${response.body}');
-      }
-
-      final Map<String, dynamic> responseBody = jsonDecode(response.body);
-
-      if (responseBody['errors'] != null) {
-        _log('GraphQL errors in response: ${responseBody['errors']}');
-        throw Exception('GraphQL errors: ${responseBody['errors'].toString()}');
-      }
-
-      final Map<String, dynamic>? data = responseBody['data'];
-      if (data == null) {
-        throw Exception('GraphQL response data is null.');
-      }
+      final Map<String, dynamic> data = await _graphQlEndpointService.query(document: query, variables: variables);
 
       final List<dynamic>? events = data['events'];
 

@@ -3,7 +3,7 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 
 enum IconButtonShape { rounded, circular }
 
-enum IconButtonStyle { glass, flat }
+enum IconButtonStyle { glass, flat, ghost }
 
 enum IconButtonSize { small, medium, large }
 
@@ -18,6 +18,10 @@ class QuantusIconButton extends StatelessWidget {
   final bool isActive;
   final double? radius;
 
+  /// False keeps the button out of focus traversal, so a field's "next" action
+  /// reaches the following field instead of stopping on the trailing button.
+  final bool canRequestFocus;
+
   const QuantusIconButton.rounded({
     super.key,
     required this.icon,
@@ -28,6 +32,7 @@ class QuantusIconButton extends StatelessWidget {
     this.isDisabled = false,
     this.radius,
     this.style = IconButtonStyle.flat,
+    this.canRequestFocus = true,
   }) : shape = IconButtonShape.rounded;
 
   const QuantusIconButton.circular({
@@ -40,7 +45,21 @@ class QuantusIconButton extends StatelessWidget {
     this.isDisabled = false,
     this.radius,
     this.style = IconButtonStyle.flat,
+    this.canRequestFocus = true,
   }) : shape = IconButtonShape.circular;
+
+  const QuantusIconButton.ghost({
+    super.key,
+    required this.icon,
+    this.size = IconButtonSize.medium,
+    this.onTap,
+    this.isActive = false,
+    this.isLoading = false,
+    this.isDisabled = false,
+    this.radius,
+    this.shape = IconButtonShape.rounded,
+    this.canRequestFocus = true,
+  }) : style = IconButtonStyle.ghost;
 
   double get buttonSize {
     switch (size) {
@@ -67,9 +86,15 @@ class QuantusIconButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bool disabled = onTap == null || isLoading || isDisabled;
-    final double defaultRadius = size == IconButtonSize.small ? 8 : 16;
+    final colors = context.colorsV3;
+    final radiusTokens = context.radiusV3;
+    final double defaultRadius = size == IconButtonSize.small ? radiusTokens.sm : radiusTokens.md;
     final double cornerRadius = radius ?? defaultRadius;
-    final Color iconColor = isActive ? context.colors.accentOrange : context.colors.textPrimary;
+    final Color iconColor = disabled
+        ? colors.textMuted2
+        : isActive
+        ? colors.accentFlare
+        : colors.textContent;
 
     final BorderRadius borderRadius;
     switch (shape) {
@@ -86,7 +111,7 @@ class QuantusIconButton extends StatelessWidget {
           ? SizedBox(
               width: iconSize,
               height: iconSize,
-              child: CircularProgressIndicator(color: context.colors.textPrimary, strokeWidth: 1.5),
+              child: CircularProgressIndicator(color: iconColor, strokeWidth: 1.5),
             )
           : Icon(icon, color: iconColor, size: iconSize),
     );
@@ -96,14 +121,24 @@ class QuantusIconButton extends StatelessWidget {
         content = _buildGlassStyle(content, buttonSize: buttonSize, borderRadius: borderRadius);
         break;
       case IconButtonStyle.flat:
-        content = _buildFlatStyle(content, buttonSize: buttonSize, borderRadius: borderRadius, colors: context.colors);
+        content = _buildFlatStyle(
+          content,
+          buttonSize: buttonSize,
+          borderRadius: borderRadius,
+          colors: colors,
+          disabled: disabled,
+        );
+        break;
+      case IconButtonStyle.ghost:
+        content = _buildGhostStyle(content, buttonSize: buttonSize, borderRadius: borderRadius);
         break;
     }
 
     return InkWell(
       onTap: disabled ? null : onTap,
       borderRadius: borderRadius,
-      child: Opacity(opacity: disabled ? 0.9 : 1, child: content),
+      canRequestFocus: canRequestFocus,
+      child: content,
     );
   }
 
@@ -111,12 +146,17 @@ class QuantusIconButton extends StatelessWidget {
     Widget child, {
     required double buttonSize,
     required BorderRadius borderRadius,
-    required AppColorsV2 colors,
+    required AppColorsV3 colors,
+    required bool disabled,
   }) {
+    final Border? border = disabled
+        ? null
+        : Border.all(color: isActive ? colors.accentFlare.useOpacity(0.2) : colors.borderHairline, width: 1);
+
     return Container(
       decoration: BoxDecoration(
-        color: colors.background,
-        border: BoxBorder.all(color: isActive ? colors.accentOrange.useOpacity(0.2) : colors.borderButton, width: 1),
+        color: disabled ? colors.bgSurface2 : colors.bgSurface,
+        border: border,
         borderRadius: borderRadius,
       ),
       child: SizedBox(width: buttonSize, height: buttonSize, child: child),
@@ -125,5 +165,9 @@ class QuantusIconButton extends StatelessWidget {
 
   Widget _buildGlassStyle(Widget child, {required double buttonSize, required BorderRadius borderRadius}) {
     return GlassButtonBase(buttonHeight: buttonSize, buttonWidth: buttonSize, borderRadius: borderRadius, child: child);
+  }
+
+  Widget _buildGhostStyle(Widget child, {required double buttonSize, required BorderRadius borderRadius}) {
+    return SizedBox(width: buttonSize, height: buttonSize, child: child);
   }
 }

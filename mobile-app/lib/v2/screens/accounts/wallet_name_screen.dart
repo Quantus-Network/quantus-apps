@@ -55,6 +55,8 @@ class _WalletNameScreenState extends ConsumerState<WalletNameScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = ref.watch(l10nProvider);
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
 
     return ScaffoldBase(
       appBar: V2AppBar(title: l10n.walletNameTitle, showBackButton: widget.returnHighlightAccountId == null),
@@ -66,10 +68,7 @@ class _WalletNameScreenState extends ConsumerState<WalletNameScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(
-              l10n.walletNameSubtitle,
-              style: context.themeText.smallParagraph?.copyWith(color: context.colors.textTertiary),
-            ),
+            Text(l10n.walletNameSubtitle, style: text.body.copyWith(color: colors.textMuted2)),
             const SizedBox(height: 24),
             QuantusButton.simple(label: l10n.commonDone, onTap: _save, isLoading: _saving),
           ],

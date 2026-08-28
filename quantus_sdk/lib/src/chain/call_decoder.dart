@@ -34,12 +34,28 @@ import 'package:quantus_sdk/generated/planck/types/pallet_referenda/pallet/call.
 import 'package:quantus_sdk/generated/planck/types/pallet_reversible_transfers/pallet/call.dart' as reversible;
 import 'package:quantus_sdk/generated/planck/types/pallet_treasury/pallet/call.dart' as treasury;
 import 'package:quantus_sdk/generated/planck/types/pallet_utility/pallet/call.dart' as utility;
+import 'package:quantus_sdk/generated/planck/types/pallet_vesting/pallet/call.dart' as vesting;
 import 'package:quantus_sdk/generated/planck/types/quantus_runtime/origin_caller.dart' as origin_caller;
 import 'package:quantus_sdk/generated/planck/types/quantus_runtime/runtime_call.dart' as runtime;
 import 'package:quantus_sdk/generated/planck/types/sp_runtime/multiaddress/multi_address.dart' as multi_address;
+import 'package:quantus_sdk/src/chain/call_policy.dart';
 import 'package:quantus_sdk/src/chain/decoded_call.dart';
 import 'package:quantus_sdk/src/extensions/address_extension.dart';
 import 'package:quantus_sdk/src/services/datetime_formatting_service.dart';
+
+/// Hard cap on one encoded call; every supported runtime call is far below it.
+const int maxCallBytes = 8 * 1024;
+
+/// How deep a call tree may go before this decoder refuses it. Depth 0 is the
+/// outermost call, so a multisig proposal carrying a batch of transfers is the
+/// deepest shape a signer is ever shown. Centralized so hot- and cold-wallet
+/// parsing share one policy.
+const int maxCallNestingDepth = 2;
+
+class CallNestingLimitException extends FormatException {
+  CallNestingLimitException(int depth)
+    : super('Cannot parse transaction: call nesting depth $depth exceeds the limit of $maxCallNestingDepth');
+}
 
 class CallDecoder {
   const CallDecoder._();
@@ -48,31 +64,169 @@ class CallDecoder {
   ///
   /// Trailing bytes mean the sender and this decoder disagree about the call's
   /// shape, so the result cannot be trusted for display — throw instead.
-  static DecodedCall decodeBytes(List<int> bytes) {
+  static DecodedCall decodeBytes(List<int> bytes, {required CallPolicy policy, List<CallId> within = const []}) {
+    return _asFormatException(() => _decodeBytesAtPath(bytes, policy, within));
+  }
+
+  /// Decodes a call off [input], leaving it positioned on the bytes that follow —
+  /// the signing-payload parser reads its extensions from there.
+  static DecodedCall decodeFrom(ByteInput input, {required CallPolicy policy}) {
+    return _asFormatException(() {
+      final length = input.remainingLength;
+      if (length != null) _checkCallSize(length);
+      return _describe(_decodeCall(input, policy, const []), 0, policy: policy);
+    });
+  }
+
+  /// The generated codecs signal malformed bytes with their own exception types.
+  /// Callers fail closed on [FormatException], so every rejection arrives as one.
+  static DecodedCall _asFormatException(DecodedCall Function() decode) {
+    try {
+      return decode();
+    } on FormatException {
+      rethrow;
+    } catch (e) {
+      throw FormatException('$e');
+    }
+  }
+
+  static DecodedCall _decodeBytesAtPath(List<int> bytes, CallPolicy policy, List<CallId> path) {
+    _checkCallSize(bytes.length);
     final input = Input.fromBytes(Uint8List.fromList(bytes));
-    final call = runtime.RuntimeCall.codec.decode(input);
+    final call = _decodeCall(input, policy, path);
     final remaining = input.remainingLength ?? 0;
     if (remaining != 0) {
       throw FormatException('$remaining trailing bytes after nested call');
     }
-    return describe(call);
+    return _describe(call, path.length, policy: policy, path: path);
+  }
+
+  static void _checkCallSize(int length) {
+    if (length > maxCallBytes) {
+      throw FormatException('Call is too large: $length bytes exceeds the $maxCallBytes-byte limit');
+    }
   }
 
   /// Describes [call] as a display tree carrying every one of its parameters.
-  static DecodedCall describe(runtime.RuntimeCall call) {
+  static DecodedCall describe(runtime.RuntimeCall call, {required CallPolicy policy}) {
+    return _describe(call, 0, policy: policy);
+  }
+
+  static DecodedCall _describe(
+    runtime.RuntimeCall call,
+    int depth, {
+    required CallPolicy policy,
+    List<CallId> path = const [],
+  }) {
+    if (depth > maxCallNestingDepth) {
+      throw CallNestingLimitException(depth);
+    }
+
     return switch (call) {
       runtime.Balances(:final value0) => _balances(value0),
       runtime.ReversibleTransfers(:final value0) => _reversible(value0),
-      runtime.Multisig(:final value0) => _multisig(value0),
-      runtime.Preimage(:final value0) => _preimage(value0),
+      runtime.Multisig(:final value0) => _multisig(value0, depth, policy, path),
+      runtime.Preimage(:final value0) => _preimage(value0, depth, policy, path),
       runtime.TechCollective(:final value0) => _collective(value0),
-      runtime.TechReferenda(:final value0) => _referenda(value0),
+      runtime.TechReferenda(:final value0) => _referenda(value0, depth, policy, path),
       runtime.TreasuryPallet(:final value0) => _treasury(value0),
-      runtime.Utility(:final value0) => _utility(value0),
-      runtime.Recovery(:final value0) => _recovery(value0),
+      runtime.Utility(:final value0) => _utility(value0, depth, policy, path),
+      runtime.Recovery(:final value0) => _recovery(value0, depth, policy, path),
+      runtime.Vesting(:final value0) => _vesting(value0),
       runtime.System(:final value0) => _system(value0),
       _ => _generic(call),
     };
+  }
+
+  // ------------------------------------------------- Depth-bounded SCALE decode
+  //
+  // The generated codecs recurse into `RuntimeCall` the moment they meet a
+  // nesting variant, so a limit applied to the decoded tree would already have
+  // paid for the whole recursion — an over-nested payload could exhaust the
+  // stack instead of being refused. `Utility` and `Recovery` are the only
+  // pallets that embed a call inline, so decoding just those variants here
+  // bounds the recursion at its only entry points; every other call is handed
+  // straight to the generated codec, which cannot recurse.
+  //
+  // Calls carried as length-prefixed bytes (multisig proposals, noted preimages,
+  // inline referendum proposals) do not recurse during decoding at all — they
+  // come back through [_decodeBytesAtPath], which checks the depth before
+  // spending a byte.
+
+  // Read off the generated encoder rather than written down, so a runtime that
+  // renumbers its pallets or calls cannot quietly route a nesting call past this
+  // decoder — and so a call this runtime drops fails to compile here.
+  static final Uint8List _batchAll = const runtime.Utility(utility.BatchAll(calls: [])).encode();
+  static final int _utilityPalletIndex = _batchAll[0];
+  static final int _batchAllCallIndex = _batchAll[1];
+  static final Uint8List _asRecovered = runtime.Recovery(
+    recovery.AsRecovered(
+      account: multi_address.Id(Uint8List(32)),
+      call: const runtime.System(system.Remark(remark: [])),
+    ),
+  ).encode();
+  static final int _recoveryPalletIndex = _asRecovered[0];
+  static final int _asRecoveredCallIndex = _asRecovered[1];
+
+  static runtime.RuntimeCall _decodeCall(ByteInput input, CallPolicy policy, List<CallId> path) {
+    if (path.length > maxCallNestingDepth) {
+      throw CallNestingLimitException(path.length);
+    }
+    final pallet = _readIndex(input);
+    final call = _readIndex(input);
+    final id = CallId.wire(pallet, call);
+    policy.check(id, path);
+    input.offset -= 2;
+
+    if (pallet == _utilityPalletIndex) {
+      input.offset += 1;
+      return runtime.Utility(_decodeUtility(input, policy, path));
+    }
+    if (pallet == _recoveryPalletIndex) {
+      input.offset += 1;
+      return runtime.Recovery(_decodeRecovery(input, policy, path));
+    }
+    return runtime.RuntimeCall.codec.decode(input);
+  }
+
+  static utility.Call _decodeUtility(ByteInput input, CallPolicy policy, List<CallId> path) {
+    final variant = _readIndex(input);
+    if (variant != _batchAllCallIndex) {
+      throw FormatException('Utility: invalid call index "$variant"');
+    }
+    if (path.contains(CallIds.batchAll)) {
+      throw const FormatException('Utility: batch_all cannot be nested inside another batch_all');
+    }
+    return utility.BatchAll(calls: _decodeCalls(input, policy, [...path, CallIds.batchAll]));
+  }
+
+  static recovery.Call _decodeRecovery(ByteInput input, CallPolicy policy, List<CallId> path) {
+    final variant = _readIndex(input);
+    if (variant != _asRecoveredCallIndex) {
+      input.offset -= 1;
+      return recovery.Call.codec.decode(input);
+    }
+    return recovery.AsRecovered(
+      account: multi_address.MultiAddress.codec.decode(input),
+      call: _decodeCall(input, policy, [...path, CallId.wire(_recoveryPalletIndex, variant)]),
+    );
+  }
+
+  static List<runtime.RuntimeCall> _decodeCalls(ByteInput input, CallPolicy policy, List<CallId> path) {
+    final count = CompactCodec.codec.decode(input);
+    final remaining = input.remainingLength ?? 0;
+    if (count > remaining) {
+      throw FormatException('Batch claims $count calls but only $remaining bytes remain');
+    }
+    return [for (var i = 0; i < count; i++) _decodeCall(input, policy, path)];
+  }
+
+  /// The next pallet or call index byte. A call that ends here is truncated.
+  static int _readIndex(ByteInput input) {
+    if ((input.remainingLength ?? 0) < 1) {
+      throw const FormatException('Call bytes end where an index byte was expected');
+    }
+    return input.read();
   }
 
   // ---------------------------------------------------------------- Balances
@@ -93,44 +247,12 @@ class CallDecoder {
             _boolField('Keep account alive', keepAlive),
           ],
         );
-      case balances.ForceTransfer(:final source, :final dest, :final value):
-        final destination = _addressField('Destination', dest);
-        final amount = AmountField('Amount', value);
-        return DecodedCall(
-          pallet: 'Balances',
-          call: 'force_transfer',
-          fields: [_addressField('Source', source), destination, amount],
-          summary: _transferSummary(destination, amount),
-        );
-      case balances.ForceUnreserve(:final who, :final amount):
-        return DecodedCall(
-          pallet: 'Balances',
-          call: 'force_unreserve',
-          fields: [_addressField('Account', who), AmountField('Amount', amount)],
-        );
-      case balances.ForceSetBalance(:final who, :final newFree):
-        return DecodedCall(
-          pallet: 'Balances',
-          call: 'force_set_balance',
-          fields: [_addressField('Account', who), AmountField('New free balance', newFree)],
-        );
-      case balances.ForceAdjustTotalIssuance(:final direction, :final delta):
-        return DecodedCall(
-          pallet: 'Balances',
-          call: 'force_adjust_total_issuance',
-          fields: [
-            ValueField('Direction', direction.variantName, kind: ValueKind.text),
-            AmountField('Delta', delta),
-          ],
-        );
       case balances.Burn(:final value, :final keepAlive):
         return DecodedCall(
           pallet: 'Balances',
           call: 'burn',
           fields: [AmountField('Amount', value), _boolField('Keep account alive', keepAlive)],
         );
-      case balances.UpgradeAccounts(:final who):
-        return DecodedCall(pallet: 'Balances', call: 'upgrade_accounts', fields: [_accountListField('Accounts', who)]);
       default:
         return _generic(runtime.Balances(call));
     }
@@ -179,6 +301,12 @@ class CallDecoder {
           fields: [destination, value, _delayField('Reversible for', delay)],
           summary: _transferSummary(destination, value, reversible: true),
         );
+      case reversible.SetHighSecurity(:final delay, :final guardian):
+        return DecodedCall(
+          pallet: 'ReversibleTransfers',
+          call: 'set_high_security',
+          fields: [_delayField('Reversible for', delay), _accountField('Guardian', guardian)],
+        );
       case reversible.Cancel(:final txId):
         return DecodedCall(pallet: 'ReversibleTransfers', call: 'cancel', fields: [_hashField('Transaction id', txId)]);
       case reversible.ExecuteTransfer(:final txId):
@@ -200,7 +328,7 @@ class CallDecoder {
 
   // ---------------------------------------------------------------- Multisig
 
-  static DecodedCall _multisig(multisig.Call call) {
+  static DecodedCall _multisig(multisig.Call call, int depth, CallPolicy policy, List<CallId> path) {
     switch (call) {
       case multisig.CreateMultisig(:final signers, :final threshold, :final nonce):
         return DecodedCall(
@@ -213,7 +341,7 @@ class CallDecoder {
           ],
         );
       case multisig.Propose(:final multisigAddress, :final call, :final expiry):
-        final inner = decodeBytes(call);
+        final inner = _decodeBytesAtPath(call, policy, [...path, CallIds.multisigPropose]);
         return DecodedCall(
           pallet: 'Multisig',
           call: 'propose',
@@ -228,7 +356,7 @@ class CallDecoder {
         // The chain only counts this approval if these bytes are byte-equal to
         // the stored proposal, so the inner call shown here is the call being
         // approved — not unverifiable context.
-        final inner = decodeBytes(call);
+        final inner = _decodeBytesAtPath(call, policy, [...path, CallIds.multisigApprove]);
         return DecodedCall(
           pallet: 'Multisig',
           call: 'approve',
@@ -276,10 +404,16 @@ class CallDecoder {
 
   // ------------------------------------------------------- Governance
 
-  static DecodedCall _preimage(preimage.Call call) {
+  static DecodedCall _preimage(preimage.Call call, int depth, CallPolicy policy, List<CallId> path) {
     switch (call) {
       case preimage.NotePreimage(:final bytes):
-        return DecodedCall(pallet: 'Preimage', call: 'note_preimage', fields: [_preimageBytesField(bytes)]);
+        return DecodedCall(
+          pallet: 'Preimage',
+          call: 'note_preimage',
+          fields: [
+            _preimageBytesField(bytes, depth, policy, [...path, CallId.of(runtime.Preimage(call))]),
+          ],
+        );
       case preimage.UnnotePreimage(:final hash):
         return DecodedCall(pallet: 'Preimage', call: 'unnote_preimage', fields: [_hashField('Preimage hash', hash)]);
       case preimage.RequestPreimage(:final hash):
@@ -345,7 +479,7 @@ class CallDecoder {
     }
   }
 
-  static DecodedCall _referenda(referenda.Call call) {
+  static DecodedCall _referenda(referenda.Call call, int depth, CallPolicy policy, List<CallId> path) {
     switch (call) {
       case referenda.Submit(:final proposalOrigin, :final proposal, :final enactmentMoment):
         return DecodedCall(
@@ -353,7 +487,7 @@ class CallDecoder {
           call: 'submit',
           fields: [
             ValueField('Dispatch origin', _origin(proposalOrigin), kind: ValueKind.text),
-            _boundedProposalField(proposal),
+            _boundedProposalField(proposal, depth, policy, [...path, CallId.of(runtime.TechReferenda(call))]),
             ValueField('Enactment', _enactment(enactmentMoment), kind: ValueKind.blockOrTime),
           ],
         );
@@ -408,14 +542,6 @@ class CallDecoder {
           call: 'set_treasury_account',
           fields: [_accountField('Treasury account', account)],
         );
-      case treasury.SetTreasuryPortion(:final portion):
-        // Permill: parts per million.
-        final percent = (portion / 10000).toStringAsFixed(4);
-        return DecodedCall(
-          pallet: 'TreasuryPallet',
-          call: 'set_treasury_portion',
-          fields: [ValueField('Portion', '$percent% ($portion per million)', kind: ValueKind.number)],
-        );
       default:
         return _generic(runtime.TreasuryPallet(call));
     }
@@ -423,83 +549,42 @@ class CallDecoder {
 
   // ------------------------------------------------------- Utility / Recovery
 
-  static DecodedCall _utility(utility.Call call) {
+  static DecodedCall _utility(utility.Call call, int depth, CallPolicy policy, List<CallId> path) {
     switch (call) {
-      case utility.Batch(:final calls):
-        return _batch('batch', calls);
       case utility.BatchAll(:final calls):
-        return _batch('batch_all', calls);
-      case utility.ForceBatch(:final calls):
-        return _batch('force_batch', calls);
-      case utility.AsDerivative(:final index, :final call):
-        final inner = describe(call);
-        return DecodedCall(
-          pallet: 'Utility',
-          call: 'as_derivative',
-          fields: [
-            ValueField('Derivative index', '$index', kind: ValueKind.number),
-            NestedCallField('Call', inner),
-          ],
-          summary: inner.summary,
-        );
-      case utility.DispatchAs(:final asOrigin, :final call):
-        return _dispatchAs('dispatch_as', asOrigin, call);
-      case utility.DispatchAsFallible(:final asOrigin, :final call):
-        return _dispatchAs('dispatch_as_fallible', asOrigin, call);
-      case utility.WithWeight(:final call, :final weight):
-        final inner = describe(call);
-        return DecodedCall(
-          pallet: 'Utility',
-          call: 'with_weight',
-          fields: [
-            NestedCallField('Call', inner),
-            ValueField('Weight', 'ref time ${weight.refTime}, proof size ${weight.proofSize}', kind: ValueKind.number),
-          ],
-          summary: inner.summary,
-        );
-      case utility.IfElse(:final main, :final fallback):
-        return DecodedCall(
-          pallet: 'Utility',
-          call: 'if_else',
-          fields: [
-            NestedCallField('Primary call', describe(main)),
-            NestedCallField('Fallback call', describe(fallback)),
-          ],
-          summary: describe(main).summary,
-        );
+        return _batch('batch_all', calls, depth, policy, [...path, CallIds.batchAll]);
       default:
         return _generic(runtime.Utility(call));
     }
   }
 
-  static DecodedCall _batch(String name, List<runtime.RuntimeCall> calls) {
+  static DecodedCall _batch(
+    String name,
+    List<runtime.RuntimeCall> calls,
+    int depth,
+    CallPolicy policy,
+    List<CallId> path,
+  ) {
     return DecodedCall(
       pallet: 'Utility',
       call: name,
       fields: [
         ValueField('Calls', '${calls.length}', kind: ValueKind.number),
-        for (var i = 0; i < calls.length; i++) NestedCallField('Call ${i + 1}', describe(calls[i])),
+        for (var i = 0; i < calls.length; i++)
+          NestedCallField('Call ${i + 1}', _describe(calls[i], depth + 1, policy: policy, path: path)),
       ],
     );
   }
 
-  static DecodedCall _dispatchAs(String name, origin_caller.OriginCaller asOrigin, runtime.RuntimeCall call) {
-    final inner = describe(call);
-    return DecodedCall(
-      pallet: 'Utility',
-      call: name,
-      fields: [
-        ValueField('Dispatch origin', _origin(asOrigin), kind: ValueKind.text),
-        NestedCallField('Call', inner),
-      ],
-      summary: inner.summary,
-    );
-  }
-
-  static DecodedCall _recovery(recovery.Call call) {
+  static DecodedCall _recovery(recovery.Call call, int depth, CallPolicy policy, List<CallId> path) {
     switch (call) {
       case recovery.AsRecovered(:final account, :final call):
-        final inner = describe(call);
+        final inner = _describe(
+          call,
+          depth + 1,
+          policy: policy,
+          path: [...path, CallId.wire(_recoveryPalletIndex, _asRecoveredCallIndex)],
+        );
         return DecodedCall(
           pallet: 'Recovery',
           call: 'as_recovered',
@@ -548,6 +633,45 @@ class CallDecoder {
         return _generic(runtime.Recovery(call));
     }
   }
+
+  // ----------------------------------------------------------------- Vesting
+
+  static DecodedCall _vesting(vesting.Call call) {
+    switch (call) {
+      case vesting.Claim(:final scheduleId):
+        return DecodedCall(pallet: 'Vesting', call: 'claim', fields: [_scheduleField(scheduleId)]);
+      case vesting.CreateSchedule(:final beneficiary, :final start, :final cliff, :final end, :final total):
+        return DecodedCall(
+          pallet: 'Vesting',
+          call: 'create_schedule',
+          fields: [
+            _accountField('Beneficiary', beneficiary),
+            _momentField('Starts', start),
+            _momentField('Cliff', cliff),
+            _momentField('Ends', end),
+            AmountField('Total', total),
+          ],
+        );
+      case vesting.EndSchedule(:final scheduleId):
+        return DecodedCall(pallet: 'Vesting', call: 'end_schedule', fields: [_scheduleField(scheduleId)]);
+      case vesting.RetargetSchedule(:final scheduleId, :final newBeneficiary):
+        return DecodedCall(
+          pallet: 'Vesting',
+          call: 'retarget_schedule',
+          fields: [_scheduleField(scheduleId), _accountField('New beneficiary', newBeneficiary)],
+        );
+      default:
+        return _generic(runtime.Vesting(call));
+    }
+  }
+
+  static ValueField _scheduleField(BigInt scheduleId) => ValueField('Schedule', '#$scheduleId', kind: ValueKind.number);
+
+  static ValueField _momentField(String label, BigInt millis) => ValueField(
+    label,
+    DatetimeFormattingService.formatTimestamp(DateTime.fromMillisecondsSinceEpoch(millis.toInt(), isUtc: true)),
+    kind: ValueKind.blockOrTime,
+  );
 
   // ------------------------------------------------------------------ System
 
@@ -707,31 +831,10 @@ class CallDecoder {
   // ------------------------------------------------------------- Field helpers
 
   static ValueField _addressField(String label, multi_address.MultiAddress address) {
-    return switch (address) {
-      multi_address.Id(:final value0) => ValueField(label, _ss58(value0), kind: ValueKind.address),
-      multi_address.Index(:final value0) => ValueField(label, 'Account index $value0', kind: ValueKind.number),
-      multi_address.Raw(:final value0) => ValueField(
-        label,
-        _hex(value0),
-        kind: ValueKind.bytes,
-        note: 'Raw address form — not a plain account id.',
-      ),
-      multi_address.Address32(:final value0) => ValueField(
-        label,
-        _hex(value0),
-        kind: ValueKind.bytes,
-        note: 'Address32 form — not a plain account id.',
-      ),
-      multi_address.Address20(:final value0) => ValueField(
-        label,
-        _hex(value0),
-        kind: ValueKind.bytes,
-        note: 'Address20 form — not a plain account id.',
-      ),
-      // The generated enum is not sealed, so a future variant must still be
-      // shown rather than crash the display.
-      _ => ValueField(label, address.toJson().toString(), kind: ValueKind.text, note: 'Unrecognised address form.'),
-    };
+    if (address is multi_address.Id) {
+      return ValueField(label, _ss58(address.value0), kind: ValueKind.address);
+    }
+    throw FormatException('$label: only a plain account id is accepted, got ${address.runtimeType}');
   }
 
   /// Summary restating [destination] and [amount], carrying their identities so
@@ -775,10 +878,10 @@ class CallDecoder {
     return ValueField(label, '$json', kind: ValueKind.blockOrTime);
   }
 
-  static CallField _boundedProposalField(bounded.Bounded proposal) {
+  static CallField _boundedProposalField(bounded.Bounded proposal, int depth, CallPolicy policy, List<CallId> path) {
     switch (proposal) {
       case bounded.Inline(:final value0):
-        return NestedCallField('Proposal', decodeBytes(value0));
+        return NestedCallField('Proposal', _decodeBytesAtPath(value0, policy, path));
       case bounded.Lookup(:final hash, :final len):
         return ValueField(
           'Proposal',
@@ -801,9 +904,15 @@ class CallDecoder {
   }
 
   /// A noted preimage is usually an encoded call; show it as one when it decodes.
-  static CallField _preimageBytesField(List<int> bytes) {
+  static CallField _preimageBytesField(List<int> bytes, int depth, CallPolicy policy, List<CallId> path) {
     try {
-      return NestedCallField('Preimage', decodeBytes(bytes), note: 'Noted for later dispatch by a referendum.');
+      return NestedCallField(
+        'Preimage',
+        _decodeBytesAtPath(bytes, policy, path),
+        note: 'Noted for later dispatch by a referendum.',
+      );
+    } on CallNestingLimitException {
+      rethrow;
     } catch (_) {
       return ValueField(
         'Preimage',

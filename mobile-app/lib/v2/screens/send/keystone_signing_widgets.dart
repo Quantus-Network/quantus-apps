@@ -16,16 +16,12 @@ class KeystoneStepLabel extends ConsumerWidget {
     final l10n = ref.watch(l10nProvider);
     return Text(
       l10n.keystoneSignStep(current, total),
-      style: context.themeText.detail?.copyWith(
-        fontFamily: AppTextTheme.fontFamilySecondary,
-        color: context.colors.accentOrange,
-        letterSpacing: 0.96,
-      ),
+      style: context.themeTextV3.labelData.copyWith(color: context.colorsV3.accentFlare),
     );
   }
 }
 
-/// Red gradient warning card shared by the Keystone verify and reject screens.
+/// Ember warning card shared by the Keystone verify and reject screens.
 class KeystoneWarningCard extends StatelessWidget {
   final String text;
   final String? title;
@@ -34,56 +30,17 @@ class KeystoneWarningCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.colors;
-    final textTheme = context.themeText;
-    final warningIcon = SvgPicture.asset('assets/v2/keystone_warning.svg', width: 16, height: 16);
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        border: Border.all(color: colors.textError.useOpacity(0.1)),
-        borderRadius: BorderRadius.circular(14),
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [colors.textError.useOpacity(0.1), colors.errorDeep.useOpacity(0.1)],
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (title != null) ...[
-            Row(
-              children: [
-                warningIcon,
-                const SizedBox(width: 8),
-                Text(title!, style: textTheme.paragraph?.copyWith(color: colors.textError)),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Text(text, style: textTheme.detail?.copyWith(color: colors.textMuted)),
-          ] else
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    border: Border.all(color: colors.errorLight.useOpacity(0.1)),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: warningIcon,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(text, style: textTheme.detail?.copyWith(color: colors.textError)),
-                ),
-              ],
-            ),
-        ],
-      ),
+    final warningIcon = SvgPicture.asset(
+      'assets/v2/keystone_warning.svg',
+      width: 16,
+      height: 16,
+      colorFilter: ColorFilter.mode(context.colorsV3.semanticEmber, BlendMode.srcIn),
     );
+    final cardTitle = title;
+
+    if (cardTitle == null) {
+      return QuantusBanner(tone: BannerTone.ember, message: text, leading: warningIcon);
+    }
+    return QuantusBanner.titled(tone: BannerTone.ember, label: cardTitle, message: text, leading: warningIcon);
   }
 }

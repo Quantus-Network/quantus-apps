@@ -42,7 +42,7 @@ abstract class RuntimeEvent {
     return codec.sizeHint(this);
   }
 
-  Map<String, Map<String, dynamic>> toJson();
+  Map<String, dynamic> toJson();
 }
 
 class $RuntimeEvent {
@@ -493,7 +493,7 @@ class Utility extends RuntimeEvent {
   final _i10.Event value0;
 
   @override
-  Map<String, Map<String, dynamic>> toJson() => {'Utility': value0.toJson()};
+  Map<String, String> toJson() => {'Utility': value0.toJson()};
 
   int _sizeHint() {
     int size = 1;
@@ -617,7 +617,7 @@ class TreasuryPallet extends RuntimeEvent {
   final _i14.Event value0;
 
   @override
-  Map<String, Map<String, Map<String, dynamic>>> toJson() => {'TreasuryPallet': value0.toJson()};
+  Map<String, Map<String, Map<String, List<int>?>>> toJson() => {'TreasuryPallet': value0.toJson()};
 
   int _sizeHint() {
     int size = 1;

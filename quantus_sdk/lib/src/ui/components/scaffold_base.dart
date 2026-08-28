@@ -73,38 +73,43 @@ class ScaffoldBase extends StatelessWidget {
         onRefresh: onRefresh!,
         color: colors.textContent,
         backgroundColor: colors.bgSurface,
-        child: Column(
-          children: [
-            Expanded(
-              child: CustomScrollView(
-                controller: scrollController,
-                physics: scrollPhysics ?? const AlwaysScrollableScrollPhysics(),
-                slivers: [
-                  SliverPadding(
-                    padding: padding,
-                    sliver: SliverList(delegate: SliverChildListDelegate(slivers!)),
-                  ),
-                ],
+        child: _withBottomContent(
+          CustomScrollView(
+            controller: scrollController,
+            physics: scrollPhysics ?? const AlwaysScrollableScrollPhysics(),
+            slivers: [
+              SliverPadding(
+                padding: padding,
+                sliver: SliverList(delegate: SliverChildListDelegate(slivers!)),
               ),
-            ),
-            ?bottomContent,
-          ],
+            ],
+          ),
         ),
       );
     }
 
     // Static content
     if (mainContent != null) {
-      return Column(
-        children: [
-          Expanded(
-            child: Padding(padding: padding, child: mainContent!),
-          ),
-          ?bottomContent,
-        ],
-      );
+      return _withBottomContent(Padding(padding: padding, child: mainContent!));
     }
 
     return const SizedBox.shrink();
+  }
+
+  Widget _withBottomContent(Widget content) {
+    return Column(
+      children: [
+        Expanded(
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              content,
+              const Positioned(left: 0, right: 0, bottom: 0, child: ToastHost()),
+            ],
+          ),
+        ),
+        ?bottomContent,
+      ],
+    );
   }
 }

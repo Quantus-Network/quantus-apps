@@ -41,8 +41,8 @@ class _ConfirmActionSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final AppColorsV2 colors = context.colors;
-    final AppTextTheme text = context.themeText;
+    final AppColorsV3 colors = context.colorsV3;
+    final AppTextThemeV3 text = context.themeTextV3;
 
     return BottomSheetContainer(
       title: title,
@@ -50,7 +50,7 @@ class _ConfirmActionSheet extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(message, style: text.paragraph?.copyWith(color: colors.textSecondary)),
+          Text(message, style: text.bodyLarge.copyWith(color: colors.textMuted)),
           const SizedBox(height: 24),
           QuantusButton.simple(
             label: confirmLabel,
@@ -60,7 +60,7 @@ class _ConfirmActionSheet extends StatelessWidget {
           const SizedBox(height: 12),
           QuantusButton.simple(
             label: cancelLabel,
-            variant: ButtonVariant.secondary,
+            variant: ButtonVariant.staged,
             onTap: () => Navigator.pop(context, false),
           ),
           const SizedBox(height: 8),

@@ -23,6 +23,32 @@ void main() {
     await tester.pump();
   }
 
+  Future<void> showViaApi(WidgetTester tester) async {
+    await tester.pumpWidget(
+      MediaQuery(
+        data: const MediaQueryData(size: Size(375, 667)),
+        child: Builder(
+          builder: (context) => MaterialApp(
+            theme: AppTheme.darkTheme(context),
+            home: Scaffold(
+              body: Builder(
+                builder: (context) => TextButton(
+                  onPressed: () => BottomSheetContainer.show<void>(
+                    context,
+                    builder: (_) => const BottomSheetContainer(title: 'Locked', child: Text('body')),
+                  ),
+                  child: const Text('open'),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('open'));
+    await tester.pumpAndSettle();
+  }
+
   BoxDecoration decorationAround(WidgetTester tester, String label) {
     final container = tester.widget<Container>(
       find.ancestor(of: find.text(label), matching: find.byType(Container)).first,
@@ -106,5 +132,35 @@ void main() {
       isFalse,
     );
     expect(tester.getSize(find.byType(BottomSheetContainer)).width, tester.getSize(find.byType(Scaffold)).width);
+  });
+
+  testWidgets('show defaults to a draggable, barrier-dismissible sheet', (tester) async {
+    await showViaApi(tester);
+
+    expect(tester.widget<BottomSheet>(find.byType(BottomSheet)).enableDrag, isTrue);
+    expect(ModalRoute.of(tester.element(find.text('Locked')))!.barrierDismissible, isTrue);
+  });
+
+  testWidgets('show pops when tapping the area above the sheet', (tester) async {
+    await showViaApi(tester);
+    expect(find.text('Locked'), findsOneWidget);
+
+    final sheetTop = tester.getTopLeft(find.byType(BottomSheetContainer)).dy;
+    expect(sheetTop, greaterThan(8));
+
+    await tester.tapAt(Offset(tester.getSize(find.byType(MaterialApp)).width / 2, 8));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Locked'), findsNothing);
+  });
+
+  testWidgets('show stays open when tapping the sheet', (tester) async {
+    await showViaApi(tester);
+
+    await tester.tap(find.text('Locked'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Locked'), findsOneWidget);
+    expect(find.text('body'), findsOneWidget);
   });
 }

@@ -14,7 +14,7 @@ class Loader extends StatelessWidget {
     return SizedBox(
       height: effectiveSize,
       width: effectiveSize,
-      child: CircularProgressIndicator(strokeWidth: 2, color: color ?? context.colorsV3.textMuted),
+      child: CircularProgressIndicator(strokeWidth: 2, color: color ?? context.colorsV3.accentFlare),
     );
   }
 }

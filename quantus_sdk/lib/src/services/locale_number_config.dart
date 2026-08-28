@@ -1,5 +1,6 @@
 import 'package:decimal/decimal.dart';
 import 'package:intl/intl.dart';
+import 'package:quantus_sdk/src/constants/app_constants.dart';
 
 /// Thrown by [LocaleNumberConfig.parseDecimal] when the input cannot be parsed
 /// as a decimal number after locale normalization. Callers should catch this
@@ -81,6 +82,22 @@ class LocaleNumberConfig {
     return result;
   }
 
+  /// Hard cap on raw input length, applied before normalization so it must
+  /// admit locale grouping: the widest legitimate amount is
+  /// [AppConstants.maxWholeDigits] whole digits, two grouping separators, one
+  /// decimal separator, and [AppConstants.decimals] fractional digits
+  /// (`20,999,999.999999999999`). External input is attacker-controlled —
+  /// reject anything wider before any parsing work happens.
+  static const int maxInputLength = AppConstants.maxWholeDigits + 2 + 1 + AppConstants.decimals;
+
+  /// The only numeric shape we accept after normalization: digits with an
+  /// optional single decimal separator, plus the mid-typing `.5` form.
+  /// `Decimal.tryParse` additionally accepts scientific notation
+  /// (`1e10000000`), signs, and `Infinity` — parsing those into a BigInt can
+  /// block the UI isolate for minutes, so they are rejected here regardless
+  /// of entry point.
+  static final RegExp _plainDecimalShape = RegExp(r'^(\d+(\.\d+)?|\.\d+)$');
+
   /// Parses a locale-formatted numeric string into a [Decimal].
   ///
   /// Tolerates a single trailing decimal separator with no fractional digits
@@ -92,15 +109,17 @@ class LocaleNumberConfig {
   /// Empty input also throws — callers that want to treat empty as zero should
   /// short-circuit before calling.
   Decimal parseDecimal(String input) {
+    if (input.length > maxInputLength) {
+      throw InvalidNumberInputException(rawInput: input, normalized: input);
+    }
     final normalized = normalize(input);
     final canonical = (normalized.endsWith('.') && '.'.allMatches(normalized).length == 1)
         ? normalized.substring(0, normalized.length - 1)
         : normalized;
-    final result = Decimal.tryParse(canonical);
-    if (result == null) {
+    if (!_plainDecimalShape.hasMatch(canonical)) {
       throw InvalidNumberInputException(rawInput: input, normalized: normalized);
     }
-    return result;
+    return Decimal.parse(canonical);
   }
 
   /// Converts a canonical numeric string (dot decimal, no grouping) to the

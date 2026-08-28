@@ -114,7 +114,7 @@ void main() {
     );
 
     expect(actionButton(tester, 'Label').variant, ButtonVariant.danger);
-    expect(actionButton(tester, 'Cancel').variant, ButtonVariant.secondary);
+    expect(actionButton(tester, 'Cancel').variant, ButtonVariant.staged);
   });
 
   testWidgets('stacks Cancel below the primary action', (tester) async {

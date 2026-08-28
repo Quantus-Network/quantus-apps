@@ -13,22 +13,21 @@ class HelpAndSupportScreenV2 extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = ref.watch(l10nProvider);
-    final colors = context.colors;
 
     return ScaffoldBase(
       appBar: V2AppBar(title: l10n.settingsHelpScreenTitle),
       mainContent: ListView(
         children: [
           _contactBlock(
+            context,
             title: l10n.settingsHelpEmail,
             subtitle: AppConstants.emailSupport,
-            colors: colors,
             onTap: () => openUrl('mailto:${AppConstants.emailSupport}'),
           ),
           _contactBlock(
+            context,
             title: l10n.settingsHelpTelegram,
             subtitle: AppConstants.telegramHandle,
-            colors: colors,
             onTap: () => openUrl(AppConstants.communityUrl),
             showBottomDivider: false,
           ),
@@ -37,10 +36,10 @@ class HelpAndSupportScreenV2 extends ConsumerWidget {
     );
   }
 
-  Widget _contactBlock({
+  Widget _contactBlock(
+    BuildContext context, {
     required String title,
     required String subtitle,
-    required AppColorsV2 colors,
     required VoidCallback onTap,
     bool showBottomDivider = true,
   }) {
@@ -51,7 +50,7 @@ class HelpAndSupportScreenV2 extends ConsumerWidget {
           title: title,
           subtitle: subtitle,
           onTap: onTap,
-          trailing: SettingsTappableRowUtils.externalLink(colors),
+          trailing: SettingsTappableRowUtils.externalLink(context),
         ),
         if (showBottomDivider) const SettingsDivider(),
       ],

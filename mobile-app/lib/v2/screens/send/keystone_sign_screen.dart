@@ -115,8 +115,8 @@ class _KeystoneSignScreenState extends ConsumerState<KeystoneSignScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = ref.watch(l10nProvider);
-    final colors = context.colors;
-    final text = context.themeText;
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
     final session = widget.session;
 
     return ScaffoldBase(
@@ -127,14 +127,14 @@ class _KeystoneSignScreenState extends ConsumerState<KeystoneSignScreen> {
           children: [
             const KeystoneStepLabel(current: 1, total: 3),
             const SizedBox(height: 12),
-            Text(l10n.keystoneSignTitle, style: text.paragraph?.copyWith(color: colors.textPrimary, height: 1.0)),
+            Text(l10n.keystoneSignTitle, style: text.headingRow.copyWith(color: colors.textContent)),
             const SizedBox(height: 8),
-            Text(l10n.keystoneSignInstruction, style: text.detail?.copyWith(color: colors.textSubtle, height: 1.35)),
+            Text(l10n.keystoneSignInstruction, style: text.caption.copyWith(color: colors.textMuted)),
             const SizedBox(height: 32),
             Center(child: _buildQr(colors, text)),
             if (session.primaryDetail != null || session.secondaryDetail != null) ...[
               const SizedBox(height: 32),
-              _details(colors, text, l10n, session),
+              _details(l10n, session),
             ],
           ],
         ),
@@ -155,12 +155,9 @@ class _KeystoneSignScreenState extends ConsumerState<KeystoneSignScreen> {
     );
   }
 
-  Widget _details(AppColorsV2 colors, AppTextTheme text, AppLocalizations l10n, KeystoneSigningSession session) {
-    final labelStyle = text.transactionDetailRowLabel?.copyWith(color: colors.textTertiary);
-    final valueStyle = text.transactionDetailRowValue?.copyWith(
-      color: colors.textPrimary.useOpacity(0.8),
-      fontWeight: FontWeight.w400,
-    );
+  Widget _details(AppLocalizations l10n, KeystoneSigningSession session) {
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
     final secondary = session.secondaryDetail?.trim();
     final displaySecondary = secondary != null && SubstrateService().isValidSS58Address(secondary)
         ? AddressFormattingService.formatAddress(secondary)
@@ -169,68 +166,31 @@ class _KeystoneSignScreenState extends ConsumerState<KeystoneSignScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          l10n.keystoneSignYouAreSigning,
-          style: text.detail?.copyWith(fontFamily: AppTextTheme.fontFamilySecondary, color: colors.textPrimary),
-        ),
+        Text(l10n.keystoneSignYouAreSigning, style: text.labelData.copyWith(color: colors.textContent)),
         const SizedBox(height: 12),
         if (session.primaryDetail != null)
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(l10n.sendReviewAmount.toUpperCase(), style: labelStyle),
-                Text(session.primaryDetail!, style: valueStyle),
-              ],
-            ),
-          ),
+          DetailSummaryRow(label: l10n.sendReviewAmount.toUpperCase(), value: session.primaryDetail!),
         if (session.primaryDetail != null && session.secondaryDetail != null)
-          Divider(height: 1, color: colors.separator),
+          const Padding(padding: EdgeInsets.symmetric(vertical: 8), child: MenuDivider()),
         if (secondary != null)
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(l10n.sendReviewTo.toUpperCase(), style: labelStyle),
-                const SizedBox(width: 24),
-                Flexible(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        displaySecondary!,
-                        style: text.transactionDetailRowValue?.copyWith(height: 1.35),
-                        textAlign: TextAlign.end,
-                      ),
-                      if (session.tertiaryDetail != null) ...[
-                        const SizedBox(height: 4),
-                        Text(
-                          session.tertiaryDetail!,
-                          style: text.detail?.copyWith(color: colors.checksum),
-                          textAlign: TextAlign.end,
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              ],
-            ),
+          DetailSummaryRow(
+            label: l10n.sendReviewTo.toUpperCase(),
+            value: displaySecondary!,
+            checkphrase: session.tertiaryDetail,
+            monospace: true,
           ),
       ],
     );
   }
 
-  Widget _buildQr(AppColorsV2 colors, AppTextTheme text) {
+  Widget _buildQr(AppColorsV3 colors, AppTextThemeV3 text) {
     final error = _error;
     if (error != null) {
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 48),
         child: Text(
           error,
-          style: text.detail?.copyWith(color: colors.textError),
+          style: text.caption.copyWith(color: colors.semanticEmber),
           textAlign: TextAlign.center,
         ),
       );
@@ -241,8 +201,8 @@ class _KeystoneSignScreenState extends ConsumerState<KeystoneSignScreen> {
     }
     return Container(
       decoration: BoxDecoration(
-        border: Border.all(color: colors.textTertiary),
-        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: colors.borderHairline),
+        borderRadius: context.radiusV3.mdBorder,
       ),
       child: AnimatedUrQr(parts: parts, size: 267),
     );

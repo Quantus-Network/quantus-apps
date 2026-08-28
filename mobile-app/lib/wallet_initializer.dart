@@ -54,12 +54,12 @@ class WalletInitializerState extends ConsumerState<WalletInitializer> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(l10n.walletInitErrorMessage, style: ctx.themeText.smallParagraph),
+            Text(l10n.walletInitErrorMessage, style: ctx.themeTextV3.body),
             const SizedBox(height: 32),
             QuantusButton.simple(
               label: l10n.walletInitErrorButtonLabel,
               onTap: () => Navigator.pop(ctx),
-              variant: ButtonVariant.secondary,
+              variant: ButtonVariant.staged,
             ),
           ],
         ),
@@ -71,7 +71,7 @@ class WalletInitializerState extends ConsumerState<WalletInitializer> {
   @override
   Widget build(BuildContext context) {
     if (_loading) {
-      return const ScaffoldBase(mainContent: Center(child: CircularProgressIndicator()));
+      return const ScaffoldBase(mainContent: Center(child: Loader()));
     }
 
     if (_walletExists) {

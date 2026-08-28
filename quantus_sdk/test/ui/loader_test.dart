@@ -26,17 +26,17 @@ void main() {
     return tester.widget<CircularProgressIndicator>(find.byType(CircularProgressIndicator));
   }
 
-  testWidgets('defaults to v3 textMuted', (tester) async {
+  testWidgets('defaults to v3 accentFlare', (tester) async {
     await pumpLoader(tester, const Loader());
 
-    expect(indicator(tester).color, colors.textMuted);
+    expect(indicator(tester).color, colors.accentFlare);
     expect(tester.getSize(find.byType(Loader)), const Size(16, 16));
   });
 
   testWidgets('uses the explicit color when provided', (tester) async {
-    await pumpLoader(tester, Loader(color: colors.accentFlare, size: 20));
+    await pumpLoader(tester, Loader(color: colors.textMuted, size: 20));
 
-    expect(indicator(tester).color, colors.accentFlare);
+    expect(indicator(tester).color, colors.textMuted);
     expect(tester.getSize(find.byType(Loader)), const Size(20, 20));
   });
 }

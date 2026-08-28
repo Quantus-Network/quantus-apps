@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:quantus_cold_wallet/models/cold_account.dart';
 import 'package:quantus_cold_wallet/screens/set_password_screen.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 
@@ -18,7 +19,10 @@ void main() {
         child: Builder(
           builder: (context) => MaterialApp(
             theme: AppTheme.darkTheme(context),
-            home: const SetPasswordScreen(mnemonic: 'test mnemonic'),
+            home: SetPasswordScreen(
+              mnemonic: 'test mnemonic',
+              accounts: [ColdAccount(label: 'Account 1', index: 0)],
+            ),
           ),
         ),
       ),

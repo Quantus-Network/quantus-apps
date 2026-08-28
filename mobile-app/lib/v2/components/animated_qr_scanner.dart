@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/shared/utils/print.dart';
 
 /// Sequence metadata encoded in one frame of an animated QR payload.
 class AnimatedQrSequence {
@@ -23,6 +24,10 @@ class AnimatedQrScanner extends StatefulWidget {
   final Future<void> Function(List<String> parts) onComplete;
   final FutureOr<void> Function(Object error)? onError;
   final AnimatedQrSequence? Function(String part)? sequenceForPart;
+
+  /// Frames this scanner will accumulate before giving up. Payload policy, like
+  /// [acceptsPart] and [isComplete], so this widget stays format-agnostic.
+  final int maxParts;
   final String appBarTitle;
   final String stepLabel;
   final String title;
@@ -40,6 +45,7 @@ class AnimatedQrScanner extends StatefulWidget {
     required this.acceptsPart,
     required this.isComplete,
     required this.onComplete,
+    required this.maxParts,
     required this.appBarTitle,
     required this.stepLabel,
     required this.title,
@@ -83,7 +89,16 @@ class _AnimatedQrScannerState extends State<AnimatedQrScanner> {
   void _onDetect(BarcodeCapture capture) {
     if (_done) return;
     final code = capture.barcodes.firstOrNull?.rawValue;
-    if (code == null || !widget.acceptsPart(code) || !_parts.add(code)) return;
+    if (code == null || !widget.acceptsPart(code)) return;
+    // maxParts bounds the accumulation set: a hostile animation could otherwise
+    // keep emitting distinct frames and grow memory without limit. Reaching it
+    // means the set can never complete, so report it and start over instead of
+    // dropping frames in silence.
+    if (_parts.length >= widget.maxParts) {
+      unawaited(_abortOverflowing());
+      return;
+    }
+    if (!_parts.add(code)) return;
 
     final sequence = widget.sequenceForPart?.call(code);
     if (sequence != null) {
@@ -98,6 +113,16 @@ class _AnimatedQrScannerState extends State<AnimatedQrScanner> {
     }
 
     unawaited(_complete(parts));
+  }
+
+  Future<void> _abortOverflowing() async {
+    quantusPrint('Animated QR scan limit hit: ${widget.maxParts} parts accumulated without completing');
+    setState(() {
+      _parts.clear();
+      _seenSequenceIndexes.clear();
+      _expectedParts = null;
+    });
+    await widget.onError?.call(StateError('Scan did not complete within ${widget.maxParts} frames'));
   }
 
   Future<void> _complete(List<String> parts) async {
@@ -139,12 +164,13 @@ class _AnimatedQrScannerState extends State<AnimatedQrScanner> {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.colors;
-    final text = context.themeText;
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
+    final radius = context.radiusV3;
     final progress = _expectedParts == null ? null : (_seenSequenceIndexes.length / _expectedParts!).clamp(0.0, 1.0);
 
     return Scaffold(
-      backgroundColor: colors.background,
+      backgroundColor: colors.bgVoid,
       body: SafeArea(
         child: Stack(
           children: [
@@ -160,39 +186,35 @@ class _AnimatedQrScannerState extends State<AnimatedQrScanner> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        widget.stepLabel,
-                        style: text.detail?.copyWith(
-                          fontFamily: AppTextTheme.fontFamilySecondary,
-                          color: colors.accentOrange,
-                          letterSpacing: 0.96,
-                        ),
-                      ),
+                      Text(widget.stepLabel, style: text.labelData.copyWith(color: colors.accentFlare)),
                       const SizedBox(height: 12),
-                      Text(widget.title, style: text.paragraph?.copyWith(color: colors.textPrimary, height: 1.0)),
+                      Text(widget.title, style: text.headingRow.copyWith(color: colors.textContent)),
                       const SizedBox(height: 8),
-                      Text(widget.instruction, style: text.detail?.copyWith(color: colors.textSubtle, height: 1.35)),
+                      Text(widget.instruction, style: text.caption.copyWith(color: colors.textMuted)),
                     ],
                   ),
                 ),
                 const SizedBox(height: 24),
                 Expanded(
-                  child: Padding(padding: const EdgeInsets.symmetric(horizontal: 24), child: _cameraView(colors)),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: _cameraView(colors, radius),
+                  ),
                 ),
-                _bottomSection(colors, text, progress),
+                _bottomSection(colors, text, radius, progress),
               ],
             ),
             if (_submitting)
               Positioned.fill(
                 child: ColoredBox(
-                  color: colors.background.useOpacity(0.7),
+                  color: colors.bgVoid.useOpacity(0.7),
                   child: Center(
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        CircularProgressIndicator(color: colors.accentOrange),
+                        CircularProgressIndicator(color: colors.accentFlare),
                         const SizedBox(height: 16),
-                        Text(widget.submittingLabel, style: text.paragraph?.copyWith(color: colors.textPrimary)),
+                        Text(widget.submittingLabel, style: text.body.copyWith(color: colors.textContent)),
                       ],
                     ),
                   ),
@@ -204,14 +226,14 @@ class _AnimatedQrScannerState extends State<AnimatedQrScanner> {
     );
   }
 
-  Widget _cameraView(AppColorsV2 colors) {
+  Widget _cameraView(AppColorsV3 colors, AppRadiusV3 radius) {
     return Container(
       decoration: BoxDecoration(
-        border: Border.all(color: colors.textLabel),
-        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: colors.borderHairline),
+        borderRadius: radius.mdBorder,
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: radius.mdBorder,
         child: LayoutBuilder(
           builder: (context, constraints) {
             final frame = (constraints.maxWidth - 96).clamp(160.0, 300.0);
@@ -230,7 +252,7 @@ class _AnimatedQrScannerState extends State<AnimatedQrScanner> {
     );
   }
 
-  Widget _bottomSection(AppColorsV2 colors, AppTextTheme text, double? progress) {
+  Widget _bottomSection(AppColorsV3 colors, AppTextThemeV3 text, AppRadiusV3 radius, double? progress) {
     final progressText = progress != null
         ? widget.progressLabel(_seenSequenceIndexes.length, _expectedParts!)
         : (_parts.isNotEmpty ? widget.scanningLabel(_parts.length) : null);
@@ -238,44 +260,29 @@ class _AnimatedQrScannerState extends State<AnimatedQrScanner> {
     return Container(
       padding: const EdgeInsets.fromLTRB(24, 25, 24, 24),
       decoration: BoxDecoration(
-        border: Border(top: BorderSide(color: colors.surfaceDeep, width: 1)),
+        border: Border(top: BorderSide(color: colors.borderHairline)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           if (widget.errorText != null)
-            Text(widget.errorText!, style: text.detail?.copyWith(color: colors.textError))
+            Text(widget.errorText!, style: text.caption.copyWith(color: colors.semanticEmber))
           else ...[
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  widget.progressHeader,
-                  style: text.detail?.copyWith(
-                    fontFamily: AppTextTheme.fontFamilySecondary,
-                    color: colors.textSubtle,
-                    letterSpacing: 0.96,
-                  ),
-                ),
-                if (progressText != null)
-                  Text(
-                    progressText,
-                    style: text.detail?.copyWith(
-                      fontFamily: AppTextTheme.fontFamilySecondary,
-                      color: colors.textPrimary,
-                      letterSpacing: 0.96,
-                    ),
-                  ),
+                Text(widget.progressHeader, style: text.labelData.copyWith(color: colors.textMuted)),
+                if (progressText != null) Text(progressText, style: text.labelData.copyWith(color: colors.textContent)),
               ],
             ),
             const SizedBox(height: 16),
             ClipRRect(
-              borderRadius: BorderRadius.circular(2),
+              borderRadius: radius.xsBorder,
               child: LinearProgressIndicator(
                 value: progress,
                 minHeight: 4,
-                backgroundColor: colors.progressStepPendingDot,
-                color: colors.accentOrange,
+                backgroundColor: colors.bgSurface2,
+                color: colors.accentFlare,
               ),
             ),
           ],
@@ -289,7 +296,7 @@ class _AnimatedQrScannerState extends State<AnimatedQrScanner> {
   }
 }
 
-/// White corner brackets marking the scan region.
+/// Corner brackets marking the scan region.
 class _ScanBrackets extends StatelessWidget {
   const _ScanBrackets();
 
@@ -328,7 +335,7 @@ class _ScanBrackets extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = context.colors.textPrimary;
+    final color = context.colorsV3.textContent;
     return Stack(
       children: [
         _corner(color: color, alignment: Alignment.topLeft),

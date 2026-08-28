@@ -27,7 +27,6 @@ import 'package:resonance_network_wallet/v2/screens/send/select_recipient_screen
 import 'package:resonance_network_wallet/v2/screens/send/send_strategy.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/settings_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/swap_screen.dart';
-import 'package:resonance_network_wallet/v2/screens/pos/pos_amount_screen.dart';
 import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
@@ -193,8 +192,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final accountAsync = ref.watch(activeAccountProvider);
     final txAsync = ref.watch(activeAccountTransactionsProvider(TransactionFilter.all));
     final isBalanceHidden = ref.watch(isBalanceHiddenProvider);
-    final colors = context.colors;
-    final text = context.themeText;
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
 
     return GlobalToastListener(
       key: const Key(E2EKeys.homeScreen),
@@ -202,12 +201,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         loading: () => const ScaffoldBase(mainContent: Center(child: Loader())),
         error: (e, _) => ScaffoldBase(
           mainContent: Center(
-            child: Text(l10n.homeError(e.toString()), style: text.detail?.copyWith(color: colors.textError)),
+            child: Text(l10n.homeError(e.toString()), style: text.caption.copyWith(color: colors.semanticEmber)),
           ),
         ),
         data: (active) {
           if (active == null) {
-            return ScaffoldBase(mainContent: Center(child: Text(l10n.homeNoActiveAccount)));
+            return ScaffoldBase(
+              mainContent: Center(
+                child: Text(l10n.homeNoActiveAccount, style: text.body.copyWith(color: colors.textMuted)),
+              ),
+            );
           }
           return ScaffoldBase.refreshable(
             onRefresh: _refresh,
@@ -238,8 +241,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   Widget _buildContent(
     DisplayAccount active,
-    AppColorsV2 colors,
-    AppTextTheme text,
+    AppColorsV3 colors,
+    AppTextThemeV3 text,
     AppLocalizations l10n,
     bool isBalanceHidden,
   ) {
@@ -265,7 +268,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         DottedBorder(
           dashLength: 3,
           gapLength: 5,
-          color: colors.borderButton.useOpacity(0.5),
+          color: colors.borderHairline,
           child: const SizedBox(width: double.infinity, height: 1),
         ),
       ],
@@ -273,27 +276,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget? _buildBottomContent(AppLocalizations l10n) {
-    final enablePos = ref.watch(posModeProvider);
     final balanceAsync = ref.watch(balanceProvider);
     final active = ref.watch(activeAccountProvider).value;
 
-    // Encrypted accounts show a persistent privacy notice instead of POS /
-    // faucet CTAs (Figma: Encrypted Account Home footer).
     if (isEncryptedAccount(active?.account)) {
       return ScaffoldBaseBottomContent(
         child: PrivateActivityNotice(
           title: l10n.createAccountEncryptedDefaultName,
           subtitle: l10n.privateSendSubtitle,
           showCard: true,
-        ),
-      );
-    }
-
-    if (enablePos) {
-      return ScaffoldBaseBottomContent(
-        child: QuantusButton.simple(
-          label: l10n.homeCharge,
-          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PosAmountScreen())),
         ),
       );
     }
@@ -340,7 +331,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Widget _buildBalance(AppColorsV2 colors, AppTextTheme text, AppLocalizations l10n, bool isBalanceHidden) {
+  Widget _buildBalance(AppColorsV3 colors, AppTextThemeV3 text, AppLocalizations l10n, bool isBalanceHidden) {
     final currencyAsync = ref.watch(balanceDisplayProvider);
 
     return Column(
@@ -365,7 +356,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               Row(mainAxisAlignment: MainAxisAlignment.center, children: [Skeleton(width: 100, height: 18)]),
             ],
           ),
-          error: (_, _) => Text(l10n.homeErrorLoadingBalance, style: text.detail?.copyWith(color: colors.textError)),
+          error: (_, _) =>
+              Text(l10n.homeErrorLoadingBalance, style: text.caption.copyWith(color: colors.semanticEmber)),
         ),
       ],
     );
@@ -428,6 +420,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     required VoidCallback onTap,
     bool isDisabled = false,
   }) {
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
     return Expanded(
       child: QuantusButton.simple(
         key: key,
@@ -438,12 +432,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           iconAsset,
           width: 24,
           height: 24,
-          colorFilter: ColorFilter.mode(context.colors.accentOrange, BlendMode.srcIn),
+          colorFilter: ColorFilter.mode(colors.accentFlare, BlendMode.srcIn),
         ),
         iconPlacement: IconPlacement.top,
         padding: const EdgeInsets.all(14),
-        variant: ButtonVariant.secondary,
-        textStyle: context.themeText.paragraph?.copyWith(color: context.colors.textPrimary.useOpacity(0.8)),
+        variant: ButtonVariant.staged,
+        textStyle: text.bodyLarge.copyWith(color: colors.textContent),
       ),
     );
   }

@@ -86,7 +86,7 @@ class _ConnectivityGuardState extends ConsumerState<ConnectivityGuard> {
         const SizedBox(height: 32),
         QuantusButton.simple(
           label: 'Override for testing',
-          variant: ButtonVariant.secondary,
+          variant: ButtonVariant.staged,
           onTap: () => setState(() => _confirming = true),
         ),
       ],
@@ -126,7 +126,7 @@ class _ConnectivityGuardState extends ConsumerState<ConnectivityGuard> {
         const SizedBox(height: 12),
         QuantusButton.simple(
           label: 'Cancel',
-          variant: ButtonVariant.secondary,
+          variant: ButtonVariant.staged,
           onTap: () => setState(() => _confirming = false),
         ),
       ],

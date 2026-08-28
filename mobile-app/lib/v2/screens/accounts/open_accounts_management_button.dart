@@ -9,7 +9,7 @@ class OpenAccountsManagementButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final double buttonHeight = 44;
-    final BorderRadius borderRadius = BorderRadius.circular(36);
+    final BorderRadius borderRadius = context.radiusV3.pillBorder;
     final double iconSize = 20;
 
     return GestureDetector(
@@ -28,7 +28,7 @@ class OpenAccountsManagementButton extends StatelessWidget {
                 'assets/v2/caret_left.svg',
                 width: iconSize,
                 height: iconSize,
-                colorFilter: ColorFilter.mode(context.colors.textPrimary, BlendMode.srcIn),
+                colorFilter: ColorFilter.mode(context.colorsV3.textContent, BlendMode.srcIn),
               ),
             ),
           ],

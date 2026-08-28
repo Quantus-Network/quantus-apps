@@ -172,6 +172,21 @@ class $CallCodec with _i1.Codec<Call> {
 /// - `delay`: The reversibility time for any transfer made by the high-security account.
 /// - `guardian`: The guardian account that can cancel pending transfers and recover funds
 ///  from this high-security account.
+///
+/// # Choose the guardian carefully
+///
+/// The guardian holds instant, total seizure power: `recover_funds`
+/// sweeps every hold plus the entire free balance to the guardian,
+/// with no delay, no second approver, and no way to change the
+/// relationship afterwards. A single-key guardian is therefore a
+/// single point of failure for the whole scheme. **Use a multisig
+/// address as the guardian**: `pallet_multisig` dispatches calls as
+/// its derived address, so a multisig can cancel and recover exactly
+/// like a plain account.
+///
+/// Guardianship is discoverable offchain (e.g. Subsquid) via the
+/// `HighSecuritySet` event; there is deliberately no on-chain
+/// guardian index to fill up or grief.
 class SetHighSecurity extends Call {
   const SetHighSecurity({required this.delay, required this.guardian});
 

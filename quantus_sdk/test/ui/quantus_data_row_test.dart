@@ -55,12 +55,12 @@ void main() {
     expect(label.style?.color, colors.textMuted);
     expect(label.style?.fontSize, 10);
     expect(label.style?.letterSpacing, 1);
-    expect(label.style?.fontFamily, AppTextTheme.fontFamilySecondary);
+    expect(label.style?.fontFamily, AppTextThemeV3.fontFamilySecondary);
 
     final value = tester.widget<Text>(find.text('0xabc'));
     expect(value.style?.color, colors.textContent);
     expect(value.style?.fontSize, text.dataAddress.fontSize);
-    expect(value.style?.fontFamily, AppTextTheme.fontFamilySecondary);
+    expect(value.style?.fontFamily, AppTextThemeV3.fontFamilySecondary);
     expect(value.textAlign, TextAlign.right);
   });
 

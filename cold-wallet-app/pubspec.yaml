@@ -2,7 +2,7 @@ name: quantus_cold_wallet
 description: "Quantus Cold Wallet - air-gapped ML-DSA transaction signer"
 publish_to: "none"
 
-version: 1.2.0+9
+version: 1.2.0+12
 
 environment:
   sdk: ">=3.8.0 <4.0.0"
@@ -18,7 +18,11 @@ dependencies:
 
   # Blockchain infra (canonical versions in melos.yaml)
   # DO NOT UPDATE polkadart - pinned to match quantus_sdk's ML-DSA override.
-  polkadart: ^0.7.3
+  polkadart:
+    git:
+      url: https://github.com/Quantus-Network/polkadart.git
+      ref: 0_7_3_quantus_2
+      path: packages/polkadart
   convert: ^3.1.2
 
   # State management

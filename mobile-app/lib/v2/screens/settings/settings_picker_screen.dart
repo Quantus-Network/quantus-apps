@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart' hide ScaffoldBase;
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/shared/utils/print.dart';
-import 'package:resonance_network_wallet/v2/screens/settings/settings_divider.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/settings_picker_widgets.dart';
 
 /// Searchable list for choosing a single settings value (language, currency, etc.).
@@ -39,10 +38,19 @@ class _SettingsPickerScreenState<T> extends State<SettingsPickerScreen<T>> {
   bool _isLoading = false;
 
   @override
+  void initState() {
+    super.initState();
+    _searchController.addListener(_onSearchChanged);
+  }
+
+  @override
   void dispose() {
+    _searchController.removeListener(_onSearchChanged);
     _searchController.dispose();
     super.dispose();
   }
+
+  void _onSearchChanged() => setState(() {});
 
   List<T> _filtered(String query) {
     final q = query.trim().toLowerCase();
@@ -57,8 +65,8 @@ class _SettingsPickerScreenState<T> extends State<SettingsPickerScreen<T>> {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.colors;
-    final text = context.themeText;
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
     final filtered = _filtered(_searchController.text);
 
     return ScaffoldBase(
@@ -66,41 +74,32 @@ class _SettingsPickerScreenState<T> extends State<SettingsPickerScreen<T>> {
       mainContent: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          SettingsPickerSearchField(
-            controller: _searchController,
-            colors: colors,
-            text: text,
-            hintText: widget.searchHint,
-            onChanged: (_) => setState(() {}),
-          ),
+          SettingsPickerSearchField(controller: _searchController, hintText: widget.searchHint),
           const SizedBox(height: 24),
           Expanded(
             child: Container(
-              decoration: BoxDecoration(color: colors.surfaceDeep, borderRadius: BorderRadius.circular(14)),
+              decoration: BoxDecoration(color: colors.bgSurface, borderRadius: context.radiusV3.mdBorder),
               clipBehavior: Clip.antiAlias,
               child: Scrollbar(
                 thumbVisibility: true,
                 thickness: 4,
-                radius: const Radius.circular(25),
+                radius: Radius.circular(context.radiusV3.md),
                 child: filtered.isEmpty
                     ? Center(
                         child: Text(
                           widget.emptyMessage,
-                          style: text.smallParagraph?.copyWith(color: colors.textMuted),
+                          style: text.caption.copyWith(color: colors.textMuted),
                           textAlign: TextAlign.center,
                         ),
                       )
                     : ListView.separated(
                         itemCount: filtered.length,
-                        separatorBuilder: (context, index) =>
-                            const SettingsDivider(style: SettingsDividerStyle.currencyList, padding: EdgeInsets.zero),
+                        separatorBuilder: (context, index) => const MenuDivider(),
                         itemBuilder: (context, index) {
                           final item = filtered[index];
                           return SettingsPickerListTile(
                             label: widget.labelBuilder(item),
                             selected: item == widget.selected,
-                            colors: colors,
-                            text: text,
                             onTap: () async {
                               if (_isLoading) return;
 

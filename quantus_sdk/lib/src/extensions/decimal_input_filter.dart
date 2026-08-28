@@ -27,6 +27,9 @@ class DecimalInputFilter extends TextInputFormatter {
   @override
   TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
     if (newValue.text.isEmpty) return newValue;
+    // A paste is untrusted: keep an over-long one out of the field entirely,
+    // rather than laying out a million glyphs before the parser rejects it.
+    if (newValue.text.length > LocaleNumberConfig.maxInputLength) return oldValue;
 
     final sep = localeConfig.decimalSeparator;
     final groupSep = localeConfig.groupingSeparator;

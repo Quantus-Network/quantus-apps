@@ -10,7 +10,6 @@ import 'package:quantus_sdk/src/resonance_extrinsic_payload.dart';
 import 'package:quantus_sdk/src/rust/api/crypto.dart' as crypto;
 import 'package:quantus_sdk/src/utils/timing.dart';
 import 'package:ss58/ss58.dart' hide Registry;
-import 'package:quantus_sdk/src/extensions/address_extension.dart';
 import 'package:quantus_sdk/src/utils/print.dart';
 
 const crystalAlice = '//Crystal Alice';
@@ -55,23 +54,32 @@ class SubstrateService {
     return version;
   }
 
+  Future<Map<String, dynamic>> _paymentQueryInfo(Uint8List signedExtrinsic) async {
+    final result = await _rpcEndpointService.providerTask(
+      (provider) => provider.send('payment_queryInfo', [bytesToHex(signedExtrinsic), null]),
+    );
+    if (result.error != null) {
+      throw Exception('RPC Error: ${result.error}');
+    }
+    return result.result as Map<String, dynamic>;
+  }
+
   Future<BigInt> getFee(Uint8List signedExtrinsic) async {
     try {
-      final hexEncodedSignedExtrinsic = bytesToHex(signedExtrinsic);
-
-      final result = await _rpcEndpointService.providerTask(
-        (provider) => provider.send('payment_queryInfo', [hexEncodedSignedExtrinsic, null]),
-      );
-
-      if (result.error != null) {
-        throw Exception('RPC Error: ${result.error}');
-      }
-      final partialFeeString = result.result['partialFee'] as String;
-      return BigInt.parse(partialFeeString);
+      return BigInt.parse((await _paymentQueryInfo(signedExtrinsic))['partialFee'] as String);
     } catch (e, s) {
       quantusPrint('Error estimating fee: $e $s');
       throw Exception('Failed to estimate network fee: $e');
     }
+  }
+
+  /// Ref-time the runtime charges for [call] plus its transaction extensions,
+  /// as `payment_queryInfo` reports for a dummy-signed probe. Call and
+  /// extension weights are not part of the metadata and change with the
+  /// runtime, so this is the one fee input that has to be asked from chain.
+  Future<BigInt> queryDispatchWeight(RuntimeCall call) async {
+    final info = await _paymentQueryInfo(_dummySignedExtrinsic(Uint8List(32), call.encode()));
+    return BigInt.from((info['weight'] as Map<String, dynamic>)['ref_time'] as int);
   }
 
   Future<crypto.Keypair> _getUserWallet() async {
@@ -197,11 +205,13 @@ class SubstrateService {
     return txHash;
   }
 
-  Future<Uint8List> submitExtrinsic(Account account, RuntimeCall call, {int maxRetries = 3}) async {
-    // Sign once and resubmit the exact same bytes on retry. Re-signing with a
-    // fresh nonce can double spend when an earlier attempt already reached the
-    // network despite a client-side error.
-    final extrinsic = (await getExtrinsicPayload(account, call)).payload;
+  Future<Uint8List> submitExtrinsic(Account account, RuntimeCall call, {int maxRetries = 3}) async =>
+      submitSignedExtrinsic((await getExtrinsicPayload(account, call)).payload, maxRetries: maxRetries);
+
+  /// Broadcasts already-signed [extrinsic] bytes. Retries resubmit the exact
+  /// same bytes: re-signing with a fresh nonce can double spend when an earlier
+  /// attempt already reached the network despite a client-side error.
+  Future<Uint8List> submitSignedExtrinsic(Uint8List extrinsic, {int maxRetries = 3}) async {
     final txHash = Hasher.blake2b256.hash(extrinsic);
 
     for (int attempt = 1; ; attempt++) {
@@ -252,67 +262,86 @@ class SubstrateService {
     );
   }
 
+  /// Dilithium (ML-DSA-87) signature plus public key, carried by every signed
+  /// extrinsic.
+  static const int signatureWithPublicKeyBytes = 7219;
+
+  /// Largest compact nonce short of the 5-byte encoding. Sizes length
+  /// estimates so the fee is never understated.
+  static const int _maxCompactNonce = (1 << 30) - 1;
+
+  Uint8List _encodeSignedExtrinsic({
+    required Uint8List signer,
+    required Uint8List method,
+    required Uint8List signature,
+    required int blockNumber,
+    required int nonce,
+  }) => ResonanceExtrinsicPayload(
+    signer: signer,
+    method: method,
+    signature: signature,
+    eraPeriod: AppConstants.txMortalEraPeriodBlocks,
+    blockNumber: blockNumber,
+    nonce: nonce,
+    tip: 0,
+  ).encodeResonance(Registry(), ResonanceSignatureType.resonance);
+
+  /// Correctly sized but unsigned extrinsic, for fee probes and length math.
+  Uint8List _dummySignedExtrinsic(
+    Uint8List signer,
+    Uint8List method, {
+    int blockNumber = 0,
+    int nonce = _maxCompactNonce,
+  }) => _encodeSignedExtrinsic(
+    signer: signer,
+    method: method,
+    signature: Uint8List(signatureWithPublicKeyBytes),
+    blockNumber: blockNumber,
+    nonce: nonce,
+  );
+
+  /// Bytes [call] occupies on chain as a signed extrinsic. Address, signature
+  /// and key sizes are fixed; only the compact nonce varies and is taken at
+  /// its 4-byte maximum.
+  int signedExtrinsicLength(RuntimeCall call) => _dummySignedExtrinsic(Uint8List(32), call.encode()).length;
+
   Future<ExtrinsicData> getExtrinsicPayload(Account account, RuntimeCall call, {bool isSigned = true}) async {
     final ctx = await _getSigningContext(account.accountId);
-    final blockNumber = ctx.blockNumber;
-    final blockHash = ctx.blockHash;
-    final nonce = ctx.nonce;
     final encodedCall = call.encode();
-
-    final payloadToSign = SigningPayload(
-      method: encodedCall,
-      specVersion: ctx.runtimeVersion.specVersion,
-      transactionVersion: ctx.runtimeVersion.transactionVersion,
-      genesisHash: ctx.genesisHash,
-      blockHash: blockHash,
-      blockNumber: blockNumber,
-      eraPeriod: AppConstants.txMortalEraPeriodBlocks,
-      nonce: nonce,
-      tip: 0,
-    );
-
-    final registry = Registry();
-    final payload = payloadToSign.encode(registry);
-
+    final Uint8List extrinsic;
     if (isSigned) {
+      final payload = SigningPayload(
+        method: encodedCall,
+        specVersion: ctx.runtimeVersion.specVersion,
+        transactionVersion: ctx.runtimeVersion.transactionVersion,
+        genesisHash: ctx.genesisHash,
+        blockHash: ctx.blockHash,
+        blockNumber: ctx.blockNumber,
+        eraPeriod: AppConstants.txMortalEraPeriodBlocks,
+        nonce: ctx.nonce,
+        tip: 0,
+      ).encode(Registry());
       final mnemonic = await account.getMnemonic();
       if (mnemonic == null) {
         throw Exception('Mnemonic not found for signing.');
       }
       final senderWallet = HdWalletService().keyPairAtIndex(mnemonic, account.index);
-
-      final signature = senderWallet.sign(payload);
-      final signatureWithPublicKeyBytes = _combineSignatureAndPubkey(signature, senderWallet.publicKey);
-
-      final extrinsic = ResonanceExtrinsicPayload(
+      extrinsic = _encodeSignedExtrinsic(
         signer: Uint8List.fromList(senderWallet.addressBytes),
         method: encodedCall,
-        signature: signatureWithPublicKeyBytes,
-        eraPeriod: AppConstants.txMortalEraPeriodBlocks,
-        blockNumber: blockNumber,
-        nonce: nonce,
-        tip: 0,
-      ).encodeResonance(registry, ResonanceSignatureType.resonance);
-
-      return ExtrinsicData(payload: extrinsic, blockNumber: blockNumber, blockHash: blockHash, nonce: nonce);
+        signature: _combineSignatureAndPubkey(senderWallet.sign(payload), senderWallet.publicKey),
+        blockNumber: ctx.blockNumber,
+        nonce: ctx.nonce,
+      );
     } else {
-      // Use a dummy signature for fee estimation
-      // 7219 is the size of the Dilithium signature + public key
-      final dummySignature = Uint8List(7219);
-      final signerBytes = getAccountId32(account.accountId);
-
-      final extrinsic = ResonanceExtrinsicPayload(
-        signer: signerBytes,
-        method: encodedCall,
-        signature: dummySignature,
-        eraPeriod: AppConstants.txMortalEraPeriodBlocks,
-        blockNumber: blockNumber,
-        nonce: nonce,
-        tip: 0,
-      ).encodeResonance(registry, ResonanceSignatureType.resonance);
-
-      return ExtrinsicData(payload: extrinsic, blockNumber: blockNumber, blockHash: blockHash, nonce: nonce);
+      extrinsic = _dummySignedExtrinsic(
+        getAccountId32(account.accountId),
+        encodedCall,
+        blockNumber: ctx.blockNumber,
+        nonce: ctx.nonce,
+      );
     }
+    return ExtrinsicData(payload: extrinsic, blockNumber: ctx.blockNumber, blockHash: ctx.blockHash, nonce: ctx.nonce);
   }
 
   Future<UnsignedTransactionData> getUnsignedTransactionPayload(Account account, RuntimeCall call) async {
