@@ -14,7 +14,7 @@ class QuantusQr extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        border: Border.all(color: context.colors.textTertiary, width: 1),
+        border: Border.all(color: context.colorsV3.borderHairline, width: 1),
         borderRadius: BorderRadius.circular(16),
       ),
       width: qrSize,

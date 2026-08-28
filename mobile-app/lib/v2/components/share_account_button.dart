@@ -17,7 +17,7 @@ class ShareAccountButton extends ConsumerWidget {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
       label: l10n.componentShare,
       onTap: onTap,
-      icon: Icon(Icons.shortcut_rounded, size: 20, color: context.colors.background),
+      icon: Icon(Icons.shortcut_rounded, size: 20, color: context.colorsV3.textVoid),
       iconPlacement: IconPlacement.leading,
       isDisabled: isDisabled,
     );

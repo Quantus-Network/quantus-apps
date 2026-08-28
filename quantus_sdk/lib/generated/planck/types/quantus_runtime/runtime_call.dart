@@ -357,7 +357,7 @@ class Utility extends RuntimeCall {
   final _i7.Call value0;
 
   @override
-  Map<String, Map<String, Map<String, dynamic>>> toJson() => {'Utility': value0.toJson()};
+  Map<String, Map<String, Map<String, List<Map<String, dynamic>>>>> toJson() => {'Utility': value0.toJson()};
 
   int _sizeHint() {
     int size = 1;
@@ -485,7 +485,7 @@ class TreasuryPallet extends RuntimeCall {
   final _i11.Call value0;
 
   @override
-  Map<String, Map<String, Map<String, dynamic>>> toJson() => {'TreasuryPallet': value0.toJson()};
+  Map<String, Map<String, Map<String, List<int>>>> toJson() => {'TreasuryPallet': value0.toJson()};
 
   int _sizeHint() {
     int size = 1;

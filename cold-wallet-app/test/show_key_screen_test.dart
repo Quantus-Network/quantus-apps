@@ -19,7 +19,7 @@ void main() {
       ProviderScope(
         overrides: [
           addressProvider.overrideWith((ref) => address),
-          checkphraseProvider.overrideWith((ref) async => checkphrase),
+          checksumNameProvider.overrideWith((ref, _) async => checkphrase),
         ],
         child: Builder(
           builder: (context) => MaterialApp(theme: AppTheme.darkTheme(context), home: const ShowKeyScreen()),

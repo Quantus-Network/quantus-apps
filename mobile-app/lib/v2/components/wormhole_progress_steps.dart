@@ -25,16 +25,17 @@ class WormholeProgressSteps extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.colors;
-    final text = context.themeText;
-
-    return Column(
-      children: [for (int i = 0; i < steps.length; i++) _buildStepRow(steps[i].$1, steps[i].$2, colors, text)],
-    );
+    return Column(children: [for (final step in steps) _rowFor(step.$1, step.$2)]);
   }
 
-  Widget _buildStepRow(int step, String title, AppColorsV2 colors, AppTextTheme text) {
+  Widget _rowFor(int step, String title) {
     final progress = stepProgress[step];
+    final state = _stateFor(step, progress);
+    final substate = state == StepRowState.active && progress != null ? _substateFor(step, progress) : null;
+    return QuantusStepRow(state: state, label: title, substate: substate);
+  }
+
+  StepRowState _stateFor(int step, ClaimProgressItem? progress) {
     final isError = !done && hasError && currentStep == step;
     final reachedTotal = progress != null && progress.total != null && progress.completed >= progress.total!;
 
@@ -51,69 +52,16 @@ class WormholeProgressSteps extends StatelessWidget {
       isActive = !isCompleted && !cancelled && !hasError && currentStep == step;
     }
 
-    final icon = _stepIcon(colors, isCompleted: isCompleted, isError: isError, isActive: isActive);
-
-    final Color titleColor;
-    if (isCompleted || isActive) {
-      titleColor = colors.textPrimary;
-    } else if (isError) {
-      titleColor = colors.textError;
-    } else {
-      titleColor = colors.progressStepPendingText;
-    }
-
-    String progressText = '';
-    if (progress != null && isActive) {
-      progressText =
-          progressLabelOverride?.call(step, progress) ??
-          (progress.total != null ? '${progress.completed} / ${progress.total}' : '');
-    }
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 11),
-      child: Row(
-        children: [
-          icon,
-          const SizedBox(width: 14),
-          Expanded(
-            child: Text(title, style: text.smallParagraph?.copyWith(color: titleColor)),
-          ),
-          if (progressText.isNotEmpty)
-            Text(
-              progressText,
-              style: text.detail?.copyWith(
-                color: colors.progressStepPendingText,
-                fontFamily: AppTextTheme.fontFamilySecondary,
-              ),
-            ),
-        ],
-      ),
-    );
+    if (isCompleted) return StepRowState.done;
+    if (isError) return StepRowState.ended;
+    if (isActive) return StepRowState.active;
+    return StepRowState.pending;
   }
 
-  Widget _iconBox(Widget child) => SizedBox(width: 22, height: 22, child: Center(child: child));
-
-  Widget _stepIcon(AppColorsV2 colors, {required bool isCompleted, required bool isError, required bool isActive}) {
-    if (isCompleted) return _iconBox(Icon(Icons.check, color: colors.success, size: 14));
-    if (isError) return _iconBox(Icon(Icons.close, color: colors.textError, size: 14));
-    if (isActive) {
-      return _iconBox(
-        Container(
-          width: 16,
-          height: 16,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: colors.accentOrange, width: 1),
-          ),
-        ),
-      );
-    }
-    return _iconBox(
-      Container(
-        width: 5,
-        height: 5,
-        decoration: BoxDecoration(color: colors.progressStepPendingDot, borderRadius: BorderRadius.circular(2.5)),
-      ),
-    );
+  String? _substateFor(int step, ClaimProgressItem progress) {
+    final label =
+        progressLabelOverride?.call(step, progress) ??
+        (progress.total != null ? '${progress.completed} / ${progress.total}' : '');
+    return label.isEmpty ? null : label;
   }
 }

@@ -87,22 +87,22 @@ class _TransactionDetailSheet extends ConsumerWidget {
     return l10n.activityDetailStatusCompleted;
   }
 
-  Color _statusColor(AppColorsV2 colors) {
+  Color _statusColor(AppColorsV3 colors) {
     if (_isPending ||
         _isPendingMultisigCreation ||
         _isPendingMultisigProposal ||
         _isPendingMultisigExecution ||
         _isPendingMultisigCancellation ||
         tx.isReversibleScheduled) {
-      return colors.checksum;
+      return colors.semanticGlacier;
     }
-    return colors.success;
+    return colors.semanticSage;
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = ref.watch(l10nProvider);
-    final colors = context.colors;
+    final colors = context.colorsV3;
     final isPrivate = isEncryptedAccount(ref.watch(activeAccountProvider).value?.account);
 
     return BottomSheetContainer(
@@ -111,27 +111,20 @@ class _TransactionDetailSheet extends ConsumerWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _AmountSection(tx: tx, isSend: _isSend, activeAccountId: activeAccountId, colors: colors),
+          _AmountSection(tx: tx, isSend: _isSend, activeAccountId: activeAccountId),
           const SizedBox(height: 20),
-          _DetailRow(
-            label: l10n.activityDetailStatus,
-            value: _statusLabel(l10n),
-            valueColor: _statusColor(colors),
-            colors: colors,
-          ),
+          _StatusRow(label: l10n.activityDetailStatus, value: _statusLabel(l10n), color: _statusColor(colors)),
           const SizedBox(height: 8),
           DottedBorder(
             dashLength: 3,
             gapLength: 8,
-            color: colors.borderButton.useOpacity(0.5),
+            color: colors.borderHairline,
             child: const SizedBox(width: double.infinity, height: 1),
           ),
           const SizedBox(height: 8),
-          _DetailsSection(tx: tx, isSend: _isSend, activeAccountId: activeAccountId, colors: colors),
+          _DetailsSection(tx: tx, isSend: _isSend, activeAccountId: activeAccountId),
           const SizedBox(height: 24),
-          Center(
-            child: _ExplorerLink(tx: tx, colors: colors),
-          ),
+          Center(child: _ExplorerLink(tx: tx)),
           const SizedBox(height: 8),
         ],
       ),
@@ -143,46 +136,48 @@ class _AmountSection extends ConsumerWidget {
   final TransactionEvent tx;
   final bool isSend;
   final String activeAccountId;
-  final AppColorsV2 colors;
 
-  const _AmountSection({required this.tx, required this.isSend, required this.activeAccountId, required this.colors});
+  const _AmountSection({required this.tx, required this.isSend, required this.activeAccountId});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final text = context.themeText;
+    final text = context.themeTextV3;
+    final colors = context.colorsV3;
 
     final (displayAmount, amountColor) = switch (tx) {
       PendingMultisigCreationEvent(:final totalCost, :final creatorId) when creatorId != activeAccountId => (
         null,
         null,
       ),
-      PendingMultisigCreationEvent(:final totalCost) => (totalCost, colors.checksum),
+      PendingMultisigCreationEvent(:final totalCost) => (totalCost, colors.semanticGlacier),
       MultisigCreatedEvent(:final totalCost, :final creatorId) when creatorId != activeAccountId => (null, null),
-      MultisigCreatedEvent(:final totalCost) => (totalCost, colors.textPrimary),
+      MultisigCreatedEvent(:final totalCost) => (totalCost, colors.textContent),
       MultisigProposalApprovedEvent(:final fee) when fee == null || fee == BigInt.zero => (null, null),
-      MultisigProposalApprovedEvent(:final fee) => (fee!, colors.textPrimary),
+      MultisigProposalApprovedEvent(:final fee) => (fee!, colors.textContent),
       MultisigProposalExecutedEvent(:final fee) when fee == null || fee == BigInt.zero => (null, null),
-      MultisigProposalExecutedEvent(:final fee) => (fee!, colors.textPrimary),
+      MultisigProposalExecutedEvent(:final fee) => (fee!, colors.textContent),
       MultisigProposalCancelledEvent(:final fee) when fee == null || fee == BigInt.zero => (null, null),
-      MultisigProposalCancelledEvent(:final fee) => (fee!, colors.textPrimary),
-      PendingMultisigExecutionEvent(:final fee) when fee == null || fee == BigInt.zero => (null, colors.checksum),
-      PendingMultisigExecutionEvent(:final fee) => (fee!, colors.checksum),
-      PendingMultisigCancellationEvent(:final fee) when fee == null || fee == BigInt.zero => (null, colors.checksum),
-      PendingMultisigCancellationEvent(:final fee) => (fee!, colors.checksum),
-      _ => (tx.amount, isSend ? colors.textPrimary : colors.success),
+      MultisigProposalCancelledEvent(:final fee) => (fee!, colors.textContent),
+      PendingMultisigExecutionEvent(:final fee) when fee == null || fee == BigInt.zero => (
+        null,
+        colors.semanticGlacier,
+      ),
+      PendingMultisigExecutionEvent(:final fee) => (fee!, colors.semanticGlacier),
+      PendingMultisigCancellationEvent(:final fee) when fee == null || fee == BigInt.zero => (
+        null,
+        colors.semanticGlacier,
+      ),
+      PendingMultisigCancellationEvent(:final fee) => (fee!, colors.semanticGlacier),
+      _ => (tx.amount, isSend ? colors.textContent : colors.semanticSage),
     };
 
     if (displayAmount == null) {
-      return Text('—', style: text.transactionDetailAmountPrimary?.copyWith(color: colors.textTertiary));
+      return Text('—', style: text.amountHero.copyWith(color: colors.textMuted));
     }
 
     final amount = ref.watch(txAmountDisplayProvider)(displayAmount, isSend: true, withTokenSymbol: false);
 
-    return AmountDisplayWithConversion(
-      amountDisplay: amount,
-      colorizeAmount: amountColor == colors.success,
-      amountColor: amountColor == colors.success ? null : amountColor,
-    );
+    return AmountDisplayWithConversion(amountDisplay: amount, colorizeAmount: false, amountColor: amountColor);
   }
 }
 
@@ -190,9 +185,8 @@ class _DetailsSection extends ConsumerWidget {
   final TransactionEvent tx;
   final bool isSend;
   final String activeAccountId;
-  final AppColorsV2 colors;
 
-  const _DetailsSection({required this.tx, required this.isSend, required this.activeAccountId, required this.colors});
+  const _DetailsSection({required this.tx, required this.isSend, required this.activeAccountId});
 
   String _formatBalance(AppLocalizations l10n, NumberFormattingService formattingService, BigInt value) {
     return l10n.commonAmountBalance(
@@ -263,10 +257,15 @@ class _DetailsSection extends ConsumerWidget {
 
     return Column(
       children: [
-        _DetailRow(label: isSend ? l10n.activityDetailTo : l10n.activityDetailFrom, value: address, colors: colors),
-        _DetailRow(label: l10n.activityDetailDate, value: dateTime, colors: colors),
-        if (feeStr != null) _DetailRow(label: l10n.activityDetailNetworkFee, value: feeStr, colors: colors),
-        if (txHash != null) _DetailRow(label: l10n.activityDetailTxHash, value: txHash, colors: colors),
+        _DetailRow(
+          label: isSend ? l10n.activityDetailTo : l10n.activityDetailFrom,
+          value: address,
+          valueKind: _DetailValueKind.mono,
+        ),
+        _DetailRow(label: l10n.activityDetailDate, value: dateTime),
+        if (feeStr != null) _DetailRow(label: l10n.activityDetailNetworkFee, value: feeStr),
+        if (txHash != null)
+          _DetailRow(label: l10n.activityDetailTxHash, value: txHash, valueKind: _DetailValueKind.mono),
       ],
     );
   }
@@ -308,14 +307,14 @@ class _DetailsSection extends ConsumerWidget {
 
     return Column(
       children: [
-        _DetailRow(label: l10n.activityDetailMultisigAddress, value: multisig, colors: colors),
-        _DetailRow(label: l10n.activityDetailTo, value: recipientAddress, colors: colors),
-        _DetailRow(label: l10n.activityDetailProposalTransferAmount, value: transferAmount, colors: colors),
-        _DetailRow(label: l10n.multisigProposalApprovalsLabel, value: approvalsLabel, colors: colors),
-        if (networkFeeValue != null)
-          _DetailRow(label: l10n.activityDetailNetworkFee, value: networkFeeValue, colors: colors),
-        _DetailRow(label: l10n.activityDetailDate, value: dateTime, colors: colors),
-        if (txHash != null) _DetailRow(label: l10n.activityDetailTxHash, value: txHash, colors: colors),
+        _DetailRow(label: l10n.activityDetailMultisigAddress, value: multisig, valueKind: _DetailValueKind.mono),
+        _DetailRow(label: l10n.activityDetailTo, value: recipientAddress, valueKind: _DetailValueKind.mono),
+        _DetailRow(label: l10n.activityDetailProposalTransferAmount, value: transferAmount),
+        _DetailRow(label: l10n.multisigProposalApprovalsLabel, value: approvalsLabel),
+        if (networkFeeValue != null) _DetailRow(label: l10n.activityDetailNetworkFee, value: networkFeeValue),
+        _DetailRow(label: l10n.activityDetailDate, value: dateTime),
+        if (txHash != null)
+          _DetailRow(label: l10n.activityDetailTxHash, value: txHash, valueKind: _DetailValueKind.mono),
       ],
     );
   }
@@ -337,12 +336,12 @@ class _DetailsSection extends ConsumerWidget {
 
     return Column(
       children: [
-        _DetailRow(label: l10n.activityDetailMultisigAddress, value: multisig, colors: colors),
-        _DetailRow(label: l10n.activityDetailTo, value: recipientAddress, colors: colors),
-        _DetailRow(label: l10n.activityDetailProposalTransferAmount, value: transferAmount, colors: colors),
-        if (networkFeeValue != null)
-          _DetailRow(label: l10n.activityDetailNetworkFee, value: networkFeeValue, colors: colors),
-        if (txHash != null) _DetailRow(label: l10n.activityDetailTxHash, value: txHash, colors: colors),
+        _DetailRow(label: l10n.activityDetailMultisigAddress, value: multisig, valueKind: _DetailValueKind.mono),
+        _DetailRow(label: l10n.activityDetailTo, value: recipientAddress, valueKind: _DetailValueKind.mono),
+        _DetailRow(label: l10n.activityDetailProposalTransferAmount, value: transferAmount),
+        if (networkFeeValue != null) _DetailRow(label: l10n.activityDetailNetworkFee, value: networkFeeValue),
+        if (txHash != null)
+          _DetailRow(label: l10n.activityDetailTxHash, value: txHash, valueKind: _DetailValueKind.mono),
       ],
     );
   }
@@ -364,12 +363,12 @@ class _DetailsSection extends ConsumerWidget {
 
     return Column(
       children: [
-        _DetailRow(label: l10n.activityDetailMultisigAddress, value: multisig, colors: colors),
-        _DetailRow(label: l10n.activityDetailTo, value: recipientAddress, colors: colors),
-        _DetailRow(label: l10n.activityDetailProposalTransferAmount, value: transferAmount, colors: colors),
-        if (networkFeeValue != null)
-          _DetailRow(label: l10n.activityDetailNetworkFee, value: networkFeeValue, colors: colors),
-        if (txHash != null) _DetailRow(label: l10n.activityDetailTxHash, value: txHash, colors: colors),
+        _DetailRow(label: l10n.activityDetailMultisigAddress, value: multisig, valueKind: _DetailValueKind.mono),
+        _DetailRow(label: l10n.activityDetailTo, value: recipientAddress, valueKind: _DetailValueKind.mono),
+        _DetailRow(label: l10n.activityDetailProposalTransferAmount, value: transferAmount),
+        if (networkFeeValue != null) _DetailRow(label: l10n.activityDetailNetworkFee, value: networkFeeValue),
+        if (txHash != null)
+          _DetailRow(label: l10n.activityDetailTxHash, value: txHash, valueKind: _DetailValueKind.mono),
       ],
     );
   }
@@ -392,13 +391,13 @@ class _DetailsSection extends ConsumerWidget {
 
     return Column(
       children: [
-        _DetailRow(label: l10n.activityDetailMultisigAddress, value: multisig, colors: colors),
-        _DetailRow(label: l10n.activityDetailTo, value: recipientAddress, colors: colors),
-        _DetailRow(label: l10n.activityDetailProposalTransferAmount, value: transferAmount, colors: colors),
-        if (networkFeeValue != null)
-          _DetailRow(label: l10n.activityDetailNetworkFee, value: networkFeeValue, colors: colors),
-        _DetailRow(label: l10n.activityDetailDate, value: dateTime, colors: colors),
-        if (txHash != null) _DetailRow(label: l10n.activityDetailTxHash, value: txHash, colors: colors),
+        _DetailRow(label: l10n.activityDetailMultisigAddress, value: multisig, valueKind: _DetailValueKind.mono),
+        _DetailRow(label: l10n.activityDetailTo, value: recipientAddress, valueKind: _DetailValueKind.mono),
+        _DetailRow(label: l10n.activityDetailProposalTransferAmount, value: transferAmount),
+        if (networkFeeValue != null) _DetailRow(label: l10n.activityDetailNetworkFee, value: networkFeeValue),
+        _DetailRow(label: l10n.activityDetailDate, value: dateTime),
+        if (txHash != null)
+          _DetailRow(label: l10n.activityDetailTxHash, value: txHash, valueKind: _DetailValueKind.mono),
       ],
     );
   }
@@ -421,13 +420,13 @@ class _DetailsSection extends ConsumerWidget {
 
     return Column(
       children: [
-        _DetailRow(label: l10n.activityDetailMultisigAddress, value: multisig, colors: colors),
-        _DetailRow(label: l10n.activityDetailTo, value: recipientAddress, colors: colors),
-        _DetailRow(label: l10n.activityDetailProposalTransferAmount, value: transferAmount, colors: colors),
-        if (networkFeeValue != null)
-          _DetailRow(label: l10n.activityDetailNetworkFee, value: networkFeeValue, colors: colors),
-        _DetailRow(label: l10n.activityDetailDate, value: dateTime, colors: colors),
-        if (txHash != null) _DetailRow(label: l10n.activityDetailTxHash, value: txHash, colors: colors),
+        _DetailRow(label: l10n.activityDetailMultisigAddress, value: multisig, valueKind: _DetailValueKind.mono),
+        _DetailRow(label: l10n.activityDetailTo, value: recipientAddress, valueKind: _DetailValueKind.mono),
+        _DetailRow(label: l10n.activityDetailProposalTransferAmount, value: transferAmount),
+        if (networkFeeValue != null) _DetailRow(label: l10n.activityDetailNetworkFee, value: networkFeeValue),
+        _DetailRow(label: l10n.activityDetailDate, value: dateTime),
+        if (txHash != null)
+          _DetailRow(label: l10n.activityDetailTxHash, value: txHash, valueKind: _DetailValueKind.mono),
       ],
     );
   }
@@ -473,14 +472,14 @@ class _DetailsSection extends ConsumerWidget {
 
     return Column(
       children: [
-        _DetailRow(label: l10n.activityDetailMultisigAddress, value: multisig, colors: colors),
-        _DetailRow(label: l10n.activityDetailTo, value: recipientAddress, colors: colors),
-        _DetailRow(label: l10n.multisigProposalFeeRowLabel, value: palletFeeValue, colors: colors),
-        _DetailRow(label: l10n.multisigProposalDepositLabel, value: depositValue, colors: colors),
-        if (networkFeeValue != null)
-          _DetailRow(label: l10n.activityDetailNetworkFee, value: networkFeeValue, colors: colors),
-        _DetailRow(label: l10n.activityDetailDate, value: dateTime, colors: colors),
-        if (txHash != null) _DetailRow(label: l10n.activityDetailTxHash, value: txHash, colors: colors),
+        _DetailRow(label: l10n.activityDetailMultisigAddress, value: multisig, valueKind: _DetailValueKind.mono),
+        _DetailRow(label: l10n.activityDetailTo, value: recipientAddress, valueKind: _DetailValueKind.mono),
+        _DetailRow(label: l10n.multisigProposalFeeRowLabel, value: palletFeeValue),
+        _DetailRow(label: l10n.multisigProposalDepositLabel, value: depositValue),
+        if (networkFeeValue != null) _DetailRow(label: l10n.activityDetailNetworkFee, value: networkFeeValue),
+        _DetailRow(label: l10n.activityDetailDate, value: dateTime),
+        if (txHash != null)
+          _DetailRow(label: l10n.activityDetailTxHash, value: txHash, valueKind: _DetailValueKind.mono),
       ],
     );
   }
@@ -546,68 +545,88 @@ class _DetailsSection extends ConsumerWidget {
 
     return Column(
       children: [
-        _DetailRow(label: l10n.activityDetailMultisigAddress, value: formattedMultisigAddress, colors: colors),
+        _DetailRow(
+          label: l10n.activityDetailMultisigAddress,
+          value: formattedMultisigAddress,
+          valueKind: _DetailValueKind.mono,
+        ),
         _DetailRow(
           label: l10n.activityDetailMultisigThreshold,
           value: l10n.activityDetailMultisigThresholdValue(threshold, signers.length),
-          colors: colors,
         ),
-        _DetailRow(label: l10n.activityDetailMultisigSignerCount, value: '${signers.length}', colors: colors),
-        _DetailRow(label: l10n.activityDetailMultisigCreator, value: creatorAddress, colors: colors),
-        _DetailRow(label: l10n.activityDetailMultisigCreationFee, value: palletFeeValue, colors: colors),
-        _DetailRow(label: l10n.activityDetailNetworkFee, value: networkFeeValue, colors: colors),
-        _DetailRow(label: l10n.activityDetailDate, value: dateTime, colors: colors),
-        if (txHash != null) _DetailRow(label: l10n.activityDetailTxHash, value: txHash, colors: colors),
+        _DetailRow(label: l10n.activityDetailMultisigSignerCount, value: '${signers.length}'),
+        _DetailRow(label: l10n.activityDetailMultisigCreator, value: creatorAddress, valueKind: _DetailValueKind.mono),
+        _DetailRow(label: l10n.activityDetailMultisigCreationFee, value: palletFeeValue),
+        _DetailRow(label: l10n.activityDetailNetworkFee, value: networkFeeValue),
+        _DetailRow(label: l10n.activityDetailDate, value: dateTime),
+        if (txHash != null)
+          _DetailRow(label: l10n.activityDetailTxHash, value: txHash, valueKind: _DetailValueKind.mono),
       ],
     );
   }
 }
 
+enum _DetailValueKind { caption, mono }
+
+Widget _labelValueRow(BuildContext context, String label, Widget value) {
+  return Padding(
+    padding: const EdgeInsets.symmetric(vertical: 8),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(label, style: context.themeTextV3.dataAddress.copyWith(color: context.colorsV3.textMuted)),
+        value,
+      ],
+    ),
+  );
+}
+
 class _DetailRow extends StatelessWidget {
   final String label;
   final String value;
-  final Color? valueColor;
-  final AppColorsV2 colors;
+  final _DetailValueKind valueKind;
 
-  const _DetailRow({required this.label, required this.value, required this.colors, this.valueColor});
+  const _DetailRow({required this.label, required this.value, this.valueKind = _DetailValueKind.caption});
 
   @override
   Widget build(BuildContext context) {
-    final text = context.themeText;
-
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(label, style: text.transactionDetailRowLabel?.copyWith(color: colors.textTertiary)),
-          Text(
-            value,
-            style: text.transactionDetailRowValue?.copyWith(color: valueColor ?? Colors.white.withValues(alpha: 0.8)),
-          ),
-        ],
-      ),
-    );
+    final text = context.themeTextV3;
+    final style = switch (valueKind) {
+      _DetailValueKind.mono => text.dataAddress,
+      _DetailValueKind.caption => text.caption,
+    };
+    return _labelValueRow(context, label, Text(value, style: style.copyWith(color: context.colorsV3.textContent)));
   }
 }
 
-class _ExplorerLink extends ConsumerWidget {
-  final TransactionEvent tx;
-  final AppColorsV2 colors;
+class _StatusRow extends StatelessWidget {
+  final String label;
+  final String value;
+  final Color color;
 
-  const _ExplorerLink({required this.tx, required this.colors});
+  const _StatusRow({required this.label, required this.value, required this.color});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
+    return _labelValueRow(context, label, Text(value, style: context.themeTextV3.labelChip.copyWith(color: color)));
+  }
+}
+
+class _ExplorerLink extends StatelessWidget {
+  final TransactionEvent tx;
+
+  const _ExplorerLink({required this.tx});
+
+  @override
+  Widget build(BuildContext context) {
     final isPending =
         tx is PendingTransactionEvent ||
         tx is PendingMultisigCreationEvent ||
         tx is PendingMultisigProposalEvent ||
         tx is PendingMultisigExecutionEvent ||
         tx is PendingMultisigCancellationEvent;
-    final color = isPending ? colors.accentOrange.withValues(alpha: 0.3) : colors.accentOrange;
 
-    return ExplorerLink(url: _explorerUrl(), color: color, enabled: !isPending);
+    return ExplorerLink(url: _explorerUrl(), enabled: !isPending);
   }
 
   String? _explorerUrl() {

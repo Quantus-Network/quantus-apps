@@ -96,9 +96,11 @@ class _AddressDetailsCardState extends ConsumerState<AddressDetailsCard> {
     bool isCheckphrase = false,
     required bool isCopied,
   }) {
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
     final valueTextStyle = isCheckphrase
-        ? context.themeText.smallParagraph?.copyWith(color: context.colors.checksum)
-        : context.themeText.smallParagraph?.copyWith(fontFamily: AppTextTheme.fontFamilySecondary);
+        ? text.dataAddressLarge.copyWith(color: colors.semanticLilac)
+        : text.dataAddressLarge.copyWith(color: colors.textContent);
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
@@ -107,7 +109,7 @@ class _AddressDetailsCardState extends ConsumerState<AddressDetailsCard> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(label, style: context.themeText.receiveLabel?.copyWith(color: context.colors.textLabel)),
+              Text(label, style: text.labelData.copyWith(color: colors.textMuted)),
               const SizedBox(height: 16),
               Text(value, style: valueTextStyle),
             ],
@@ -120,26 +122,24 @@ class _AddressDetailsCardState extends ConsumerState<AddressDetailsCard> {
   }
 
   Widget _copyButton({required bool isCopied}) {
-    final containerSize = 40.0;
-    final iconSize = 16.0;
+    const containerSize = 40.0;
+    const iconSize = 16.0;
+    final colors = context.colorsV3;
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
       width: containerSize,
       height: containerSize,
       decoration: BoxDecoration(
-        color: isCopied ? context.colors.copyButtonCopiedBg : Colors.transparent,
-        border: Border.all(
-          color: isCopied ? context.colors.copyButtonCopiedBorder : context.colors.borderButton,
-          width: 1,
-        ),
-        borderRadius: BorderRadius.circular(containerSize / 2),
+        color: isCopied ? colors.semanticSage.useOpacity(0.08) : Colors.transparent,
+        shape: BoxShape.circle,
+        border: Border.all(color: isCopied ? colors.semanticSage.useOpacity(0.15) : colors.borderHairline, width: 1),
       ),
       child: Center(
         child: Icon(
           isCopied ? Icons.check : Icons.copy,
           size: iconSize,
-          color: isCopied ? context.colors.success : context.colors.textPrimary,
+          color: isCopied ? colors.semanticSage : colors.textContent,
         ),
       ),
     );

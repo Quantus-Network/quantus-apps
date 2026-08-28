@@ -39,7 +39,7 @@ class SecureElementWarningScreen extends StatelessWidget {
             const SizedBox(height: 12),
             QuantusButton.simple(
               label: 'Continue anyway',
-              variant: ButtonVariant.secondary,
+              variant: ButtonVariant.staged,
               onTap: () => Navigator.pop(context, true),
             ),
           ],

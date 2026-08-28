@@ -125,9 +125,37 @@ class WormholeOperationCancelled implements Exception {
 }
 
 class WormholeUtxoService {
-  static const int _transferPageSize = 300;
+  @visibleForTesting
+  static const int transferPageSize = 300;
+
+  /// v2 drops v1 files that may have omitted a same-height sibling and then
+  /// advanced `cachedUpToBlock` past that height.
+  @visibleForTesting
+  static const int transferCacheVersion = 2;
   static const int _nullifierBatchSize = 300;
   static const int _reorgDepth = 180;
+
+  /// GraphQL for inbound wormhole transfers. OFFSET pagination requires a
+  /// unique `order_by`; height alone is not unique (same-block siblings).
+  @visibleForTesting
+  static const String transfersToAddressesQuery = r'''
+query TransfersToAddresses($tos: [String!]!, $limit: Int!, $offset: Int!, $afterBlock: Int) {
+  transfers: transfer(
+    where: { to: { id: {_in: $tos } }, block: { height: {_gt: $afterBlock } } }
+    order_by: [{block: {height: asc}}, {id: asc}]
+    limit: $limit
+    offset: $offset
+  ) {
+    id
+    block { height }
+    from { id }
+    to { id }
+    amount
+    toHash: to_hash
+    leafIndex: leaf_index
+    transferCount: transfer_count
+  }
+}''';
 
   final GraphQlEndpointService _graphQlEndpoint = GraphQlEndpointService();
   final RpcEndpointService _rpcEndpoint = RpcEndpointService();
@@ -148,7 +176,7 @@ class WormholeUtxoService {
 
   static Future<File> _transferCacheFile(String addressHash) async {
     final dir = await getApplicationSupportDirectory();
-    return File('${dir.path}/wormhole_cache_${_cachePrefix(addressHash)}.json');
+    return File('${dir.path}/wormhole_cache_v${transferCacheVersion}_${_cachePrefix(addressHash)}.json');
   }
 
   /// Bumped to v2 to drop any pre-finalization-filter caches that may contain
@@ -172,7 +200,21 @@ class WormholeUtxoService {
     }
   }
 
+  static Future<void> _deleteLegacyTransferCache(String addressHash) async {
+    try {
+      final dir = await getApplicationSupportDirectory();
+      final legacy = File('${dir.path}/wormhole_cache_${_cachePrefix(addressHash)}.json');
+      if (await legacy.exists()) {
+        await legacy.delete();
+        _log('Deleted legacy transfer cache: ${legacy.path}');
+      }
+    } catch (e) {
+      _log('Legacy transfer cache delete failed (non-fatal): $e');
+    }
+  }
+
   static Future<_TransferCache> _loadTransferCache(String addressHash) async {
+    await _deleteLegacyTransferCache(addressHash);
     try {
       final file = await _transferCacheFile(addressHash);
       if (!await file.exists()) return _TransferCache.empty();
@@ -228,7 +270,10 @@ class WormholeUtxoService {
         if (entity is! File) continue;
         final name = entity.uri.pathSegments.isEmpty ? entity.path : entity.uri.pathSegments.last;
         final matchesPrefix = prefixes.any(
-          (p) => name == 'wormhole_cache_$p.json' || name == 'wormhole_nullifiers_v2_$p.json',
+          (p) =>
+              name == 'wormhole_cache_$p.json' ||
+              name == 'wormhole_cache_v${transferCacheVersion}_$p.json' ||
+              name == 'wormhole_nullifiers_v2_$p.json',
         );
         if (matchesPrefix) {
           await entity.delete();
@@ -289,29 +334,10 @@ class WormholeUtxoService {
 
   Future<List<WormholeTransfer>> _queryTransfers({
     required List<String> toAddresses,
-    int limit = _transferPageSize,
+    int limit = transferPageSize,
     int offset = 0,
     int? afterBlock,
   }) async {
-    const query = r'''
-query TransfersToAddresses($tos: [String!]!, $limit: Int!, $offset: Int!, $afterBlock: Int) {
-  transfers: transfer(
-    where: { to: { id: {_in: $tos } }, block: { height: {_gt: $afterBlock } } }
-    order_by: {block: {height: asc}}
-    limit: $limit
-    offset: $offset
-  ) {
-    id
-    block { height }
-    from { id }
-    to { id }
-    amount
-    toHash: to_hash
-    leafIndex: leaf_index
-    transferCount: transfer_count
-  }
-}''';
-
     final variables = <String, dynamic>{
       'tos': toAddresses,
       'limit': limit,
@@ -319,7 +345,7 @@ query TransfersToAddresses($tos: [String!]!, $limit: Int!, $offset: Int!, $after
       'afterBlock': afterBlock ?? 0,
     };
 
-    final body = jsonEncode({'query': query, 'variables': variables});
+    final body = jsonEncode({'query': transfersToAddressesQuery, 'variables': variables});
 
     _log(
       '=== TRANSFERS QUERY ===\n'
@@ -378,7 +404,7 @@ query TransfersToAddresses($tos: [String!]!, $limit: Int!, $offset: Int!, $after
       pageNum++;
       final page = await _queryTransfers(
         toAddresses: toAddresses,
-        limit: _transferPageSize,
+        limit: transferPageSize,
         offset: offset,
         afterBlock: afterBlock,
       );
@@ -387,8 +413,8 @@ query TransfersToAddresses($tos: [String!]!, $limit: Int!, $offset: Int!, $after
       _log(
         'Page $pageNum: got ${page.length} transfers, total so far: ${all.length} (${totalSw.elapsedMilliseconds}ms elapsed)',
       );
-      if (page.isEmpty || page.length < _transferPageSize) break;
-      offset += _transferPageSize;
+      if (page.isEmpty || page.length < transferPageSize) break;
+      offset += transferPageSize;
     }
     _log('Fetched ${all.length} total transfers in ${totalSw.elapsedMilliseconds}ms ($pageNum pages)');
     return all;

@@ -5,7 +5,6 @@ import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/mining_rewards_provider.dart';
 import 'package:resonance_network_wallet/services/mining_rewards_service.dart';
-import 'package:resonance_network_wallet/v2/screens/settings/settings_divider.dart';
 import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 
 class TestnetRewardsScreen extends ConsumerWidget {
@@ -14,8 +13,8 @@ class TestnetRewardsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = ref.watch(l10nProvider);
-    final colors = context.colors;
-    final text = context.themeText;
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
     final miningAsync = ref.watch(miningRewardsProvider);
 
     return ScaffoldBase(
@@ -24,23 +23,20 @@ class TestnetRewardsScreen extends ConsumerWidget {
         skipLoadingOnRefresh: false,
         data: (data) => RefreshIndicator(
           onRefresh: () async => ref.invalidate(miningRewardsProvider),
-          child: _buildContent(l10n, data, colors, text),
+          child: _buildContent(context, l10n, data, colors, text),
         ),
         loading: () => const Center(child: Loader()),
         error: (_, _) => Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(l10n.settingsTestnetLoadError, style: text.paragraph?.copyWith(color: colors.textPrimary)),
+              Text(l10n.settingsTestnetLoadError, style: text.body.copyWith(color: colors.textContent)),
               const SizedBox(height: 8),
-              Text(l10n.settingsMiningCheckConnection, style: text.detail?.copyWith(color: colors.textTertiary)),
+              Text(l10n.settingsMiningCheckConnection, style: text.caption.copyWith(color: colors.textMuted)),
               const SizedBox(height: 20),
               GestureDetector(
                 onTap: () => ref.invalidate(miningRewardsProvider),
-                child: Text(
-                  l10n.posQrTryAgain,
-                  style: text.smallParagraph?.copyWith(color: colors.accentGreen, fontWeight: FontWeight.w600),
-                ),
+                child: Text(l10n.commonTryAgain, style: text.body.copyWith(color: colors.accentFlare)),
               ),
             ],
           ),
@@ -49,7 +45,13 @@ class TestnetRewardsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildContent(AppLocalizations l10n, MiningRewardsData data, AppColorsV2 colors, AppTextTheme text) {
+  Widget _buildContent(
+    BuildContext context,
+    AppLocalizations l10n,
+    MiningRewardsData data,
+    AppColorsV3 colors,
+    AppTextThemeV3 text,
+  ) {
     final testnets = [
       ('Planck', data.planckBlocks),
       ('Dirac', data.diracBlocks),
@@ -63,44 +65,41 @@ class TestnetRewardsScreen extends ConsumerWidget {
       children: [
         Container(
           padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 20),
-          decoration: BoxDecoration(color: colors.surfaceCard, borderRadius: BorderRadius.circular(14)),
+          decoration: BoxDecoration(color: colors.bgSurface, borderRadius: context.radiusV3.mdBorder),
           child: Column(
             children: [
               const Text('💰', style: TextStyle(fontSize: 40)),
               const SizedBox(height: 12),
               Text(
                 l10n.settingsTestnetTotalBlocks(data.totalBlocks),
-                style: text.largeTitle?.copyWith(color: colors.accentGreen, fontWeight: FontWeight.w700),
+                style: text.displayBalance.copyWith(color: colors.semanticSage),
               ),
               const SizedBox(height: 8),
-              Text(l10n.settingsTestnetTotalDescription, style: text.detail?.copyWith(color: colors.textTertiary)),
+              Text(l10n.settingsTestnetTotalDescription, style: text.caption.copyWith(color: colors.textMuted)),
             ],
           ),
         ),
         const SizedBox(height: 24),
         Padding(
           padding: const EdgeInsets.only(bottom: 16),
-          child: Text(
-            l10n.settingsTestnetBreakdown,
-            style: text.paragraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w600),
-          ),
+          child: Text(l10n.settingsTestnetBreakdown, style: text.headingRow.copyWith(color: colors.textContent)),
         ),
         Container(
           padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(color: colors.surfaceCard, borderRadius: BorderRadius.circular(14)),
+          decoration: BoxDecoration(color: colors.bgSurface, borderRadius: context.radiusV3.mdBorder),
           child: Column(
             children: [
               for (var i = 0; i < testnets.length; i++) ...[
-                if (i > 0) const SettingsDivider(style: SettingsDividerStyle.cardInterior),
+                if (i > 0) const Padding(padding: EdgeInsets.only(top: 16, bottom: 24), child: MenuDivider()),
                 Row(
                   children: [
                     Expanded(
-                      child: Text(testnets[i].$1, style: text.paragraph?.copyWith(color: colors.textPrimary)),
+                      child: Text(testnets[i].$1, style: text.body.copyWith(color: colors.textContent)),
                     ),
                     const Text('💰 ', style: TextStyle(fontSize: 14)),
                     Text(
                       l10n.settingsTestnetRowBlocks(testnets[i].$2),
-                      style: text.smallParagraph?.copyWith(color: colors.accentGreen, fontWeight: FontWeight.w600),
+                      style: text.bodyEmphasis.copyWith(color: colors.semanticSage),
                     ),
                   ],
                 ),

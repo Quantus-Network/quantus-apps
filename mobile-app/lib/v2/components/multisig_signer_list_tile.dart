@@ -8,8 +8,6 @@ class MultisigSignerListTile extends ConsumerStatefulWidget {
   const MultisigSignerListTile({
     super.key,
     required this.accountId,
-    required this.colors,
-    required this.text,
     this.checksum,
     this.displayName,
     this.isCreator = false,
@@ -20,8 +18,6 @@ class MultisigSignerListTile extends ConsumerStatefulWidget {
   });
 
   final String accountId;
-  final AppColorsV2 colors;
-  final AppTextTheme text;
   final String? checksum;
   final String? displayName;
   final bool isCreator;
@@ -55,8 +51,20 @@ class _MultisigSignerListTileState extends ConsumerState<MultisigSignerListTile>
     return _checksum ?? '…';
   }
 
+  Color _primaryColor(AppColorsV3 colors) {
+    if (widget.displayName != null && widget.displayName!.isNotEmpty) {
+      return colors.textContent;
+    }
+    if (_checksum != null) {
+      return colors.semanticLilac;
+    }
+    return colors.textMuted;
+  }
+
   @override
   Widget build(BuildContext context) {
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
     final showYou = widget.isYou && widget.youLabel != null;
     final showCreator = widget.isCreator && widget.creatorLabel != null;
 
@@ -71,28 +79,16 @@ class _MultisigSignerListTileState extends ConsumerState<MultisigSignerListTile>
                 Row(
                   children: [
                     Flexible(
-                      child: Text(
-                        _primaryLabel,
-                        style: widget.text.smallParagraph?.copyWith(color: widget.colors.checksum),
-                      ),
+                      child: Text(_primaryLabel, style: text.body.copyWith(color: _primaryColor(colors))),
                     ),
-                    if (showCreator) ...[
-                      const SizedBox(width: 8),
-                      _SignerBadge(label: widget.creatorLabel!, colors: widget.colors, text: widget.text),
-                    ],
-                    if (showYou) ...[
-                      const SizedBox(width: 8),
-                      _SignerBadge(label: widget.youLabel!, colors: widget.colors, text: widget.text),
-                    ],
+                    if (showCreator) ...[const SizedBox(width: 8), QuantusBadge(label: widget.creatorLabel!)],
+                    if (showYou) ...[const SizedBox(width: 8), QuantusBadge(label: widget.youLabel!)],
                   ],
                 ),
                 const SizedBox(height: 2),
                 Text(
                   AddressFormattingService.formatAddress(widget.accountId),
-                  style: widget.text.detail?.copyWith(
-                    color: widget.colors.textTertiary,
-                    fontFamily: AppTextTheme.fontFamilySecondary,
-                  ),
+                  style: text.dataAddress.copyWith(color: colors.textContent),
                 ),
               ],
             ),
@@ -100,35 +96,10 @@ class _MultisigSignerListTileState extends ConsumerState<MultisigSignerListTile>
           if (widget.onRemove != null)
             IconButton(
               onPressed: widget.onRemove,
-              icon: Icon(Icons.close, size: 18, color: widget.colors.textMuted),
+              icon: Icon(Icons.close, size: 18, color: colors.textMuted),
               visualDensity: VisualDensity.compact,
             ),
         ],
-      ),
-    );
-  }
-}
-
-class _SignerBadge extends StatelessWidget {
-  const _SignerBadge({required this.label, required this.colors, required this.text});
-
-  final String label;
-  final AppColorsV2 colors;
-  final AppTextTheme text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(color: colors.accentOrange.useOpacity(0.18), borderRadius: BorderRadius.circular(4)),
-      child: Text(
-        label,
-        style: text.detail?.copyWith(
-          color: colors.accentOrange,
-          fontSize: 10,
-          fontWeight: FontWeight.w700,
-          letterSpacing: 0.8,
-        ),
       ),
     );
   }

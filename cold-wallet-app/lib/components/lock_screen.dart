@@ -88,7 +88,7 @@ class _LockScreenState extends ConsumerState<LockScreen> {
               label: 'Use biometrics',
               icon: Icon(Icons.fingerprint, color: colors.textContent, size: 18),
               iconPlacement: IconPlacement.leading,
-              variant: ButtonVariant.secondary,
+              variant: ButtonVariant.staged,
               onTap: _busy ? null : _unlockWithBiometric,
             ),
           ],

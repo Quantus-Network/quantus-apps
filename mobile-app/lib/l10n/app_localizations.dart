@@ -302,12 +302,6 @@ abstract class AppLocalizations {
   /// **'No active account'**
   String get homeNoActiveAccount;
 
-  /// POS charge button on the home screen bottom bar
-  ///
-  /// In en, this message translates to:
-  /// **'Charge'**
-  String get homeCharge;
-
   /// Faucet button when balance is zero on the home screen
   ///
   /// In en, this message translates to:
@@ -325,6 +319,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Back up your recovery phrase'**
   String get homeBackupReminder;
+
+  /// Full-width strip shown when the device is offline; rendered uppercase
+  ///
+  /// In en, this message translates to:
+  /// **'Offline · showing last known balances'**
+  String get networkStatusOfflineBanner;
 
   /// Receive action button on the home screen
   ///
@@ -775,6 +775,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Could not read this proposal from the chain, so there is nothing to approve. Try again when you are back online.'**
   String get multisigProposalCallUnavailable;
+
+  /// Shown in place of the amount when the proposal's stored call bytes cannot be decoded, blocking approval
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid proposal'**
+  String get multisigProposalInvalid;
 
   /// Proposal status chip when the current signer has approved
   ///
@@ -2522,18 +2528,6 @@ abstract class AppLocalizations {
   /// **'Receive'**
   String get receiveTitle;
 
-  /// QR Code tab on receive screen
-  ///
-  /// In en, this message translates to:
-  /// **'QR Code'**
-  String get receiveTabQrCode;
-
-  /// Address tab on receive screen
-  ///
-  /// In en, this message translates to:
-  /// **'Address'**
-  String get receiveTabAddress;
-
   /// Copy button on receive screen
   ///
   /// In en, this message translates to:
@@ -2552,113 +2546,23 @@ abstract class AppLocalizations {
   /// **'Address copied to clipboard'**
   String get receiveCopiedMessage;
 
-  /// App bar title on POS amount screen
+  /// Label above the account address on the receive screen
   ///
   /// In en, this message translates to:
-  /// **'New Charge'**
-  String get posAmountTitle;
+  /// **'YOUR ADDRESS'**
+  String get receiveYourAddressLabel;
 
-  /// Charge button with formatted amount
+  /// Primary button that copies the receive address
   ///
   /// In en, this message translates to:
-  /// **'Charge {amount}'**
-  String posAmountCharge(String amount);
+  /// **'Copy Address'**
+  String get receiveCopyAddress;
 
-  /// Charge button when amount is empty
+  /// Footnote under the checkphrase on the receive screen
   ///
   /// In en, this message translates to:
-  /// **'Enter Amount'**
-  String get posAmountEnterAmount;
-
-  /// App bar title while waiting for payment
-  ///
-  /// In en, this message translates to:
-  /// **'Scan to Pay'**
-  String get posQrTitleScanToPay;
-
-  /// App bar title when payment is received
-  ///
-  /// In en, this message translates to:
-  /// **'Payment Received'**
-  String get posQrTitlePaymentReceived;
-
-  /// Error message on POS QR screen
-  ///
-  /// In en, this message translates to:
-  /// **'Error: {error}'**
-  String posQrError(String error);
-
-  /// Shown when no active account on POS QR screen
-  ///
-  /// In en, this message translates to:
-  /// **'No active account'**
-  String get posQrNoActiveAccount;
-
-  /// Error when amount cannot be parsed
-  ///
-  /// In en, this message translates to:
-  /// **'Invalid amount. Tap to retry.'**
-  String get posQrInvalidAmount;
-
-  /// Error when payment watch connection is lost
-  ///
-  /// In en, this message translates to:
-  /// **'Connection lost. Tap to retry.'**
-  String get posQrConnectionLost;
-
-  /// Error when payment watch times out
-  ///
-  /// In en, this message translates to:
-  /// **'Timed out. Tap to retry.'**
-  String get posQrTimedOut;
-
-  /// New charge button on POS QR screen
-  ///
-  /// In en, this message translates to:
-  /// **'New Charge'**
-  String get posQrNewCharge;
-
-  /// Done button after payment received
-  ///
-  /// In en, this message translates to:
-  /// **'Done'**
-  String get posQrDone;
-
-  /// Headline when payment is received
-  ///
-  /// In en, this message translates to:
-  /// **'{amount} received'**
-  String posQrAmountReceived(String amount);
-
-  /// Sender label on payment received screen
-  ///
-  /// In en, this message translates to:
-  /// **'From:'**
-  String get posQrFrom;
-
-  /// Status while waiting for payment
-  ///
-  /// In en, this message translates to:
-  /// **'Waiting for payment'**
-  String get posQrWaitingForPayment;
-
-  /// Network error title on POS QR screen
-  ///
-  /// In en, this message translates to:
-  /// **'Network Error'**
-  String get posQrNetworkError;
-
-  /// Retry button on POS QR screen
-  ///
-  /// In en, this message translates to:
-  /// **'Try Again'**
-  String get posQrTryAgain;
-
-  /// Paid at timestamp on payment received screen
-  ///
-  /// In en, this message translates to:
-  /// **'At {time}'**
-  String posQrPaidAt(String time);
+  /// **'Ask the sender to confirm this phrase matches your address.'**
+  String get receiveCheckphraseFootnote;
 
   /// App bar title on settings hub
   ///
@@ -2687,7 +2591,7 @@ abstract class AppLocalizations {
   /// Preferences row subtitle on settings hub
   ///
   /// In en, this message translates to:
-  /// **'Language, currency, POS mode, notifications'**
+  /// **'Language, currency, notifications'**
   String get settingsPreferencesSubtitle;
 
   /// Mining rewards row title on settings hub
@@ -2905,18 +2809,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'App display language'**
   String get settingsPreferencesLanguageSubtitle;
-
-  /// POS mode row on preferences
-  ///
-  /// In en, this message translates to:
-  /// **'POS Mode'**
-  String get settingsPreferencesPosMode;
-
-  /// POS mode row subtitle
-  ///
-  /// In en, this message translates to:
-  /// **'Point of sale features'**
-  String get settingsPreferencesPosModeSubtitle;
 
   /// Notifications row on preferences
   ///
@@ -3500,6 +3392,12 @@ abstract class AppLocalizations {
   /// **'Done'**
   String get commonDone;
 
+  /// Retry label shown when a list or quote fails to load
+  ///
+  /// In en, this message translates to:
+  /// **'Try Again'**
+  String get commonTryAgain;
+
   /// Section label above the destination address field on redeem
   ///
   /// In en, this message translates to:
@@ -3739,6 +3637,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{amount} was already sent before cancelling. The rest remains in your account.'**
   String encryptedSendCancelledPartial(String amount);
+
+  /// Stacked banner kicker when an encrypted send was cancelled before anything left the wallet
+  ///
+  /// In en, this message translates to:
+  /// **'Your funds are safe'**
+  String get encryptedSendFundsSafeLabel;
+
+  /// Stacked banner caption when an encrypted send was cancelled before anything left the wallet
+  ///
+  /// In en, this message translates to:
+  /// **'Still in {account}. Nothing left your wallet.'**
+  String encryptedSendFundsSafeCaption(String account);
 
   /// Title of the private-send notice on encrypted send recipient screen
   ///

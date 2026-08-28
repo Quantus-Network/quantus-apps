@@ -6,6 +6,7 @@ import 'package:polkadart/scale_codec.dart';
 import 'package:quantus_sdk/generated/planck/pallets/balances.dart' as balances_pallet;
 import 'package:quantus_sdk/generated/planck/pallets/multisig.dart' as multisig_pallet;
 import 'package:quantus_sdk/generated/planck/pallets/preimage.dart' as preimage_pallet;
+import 'package:quantus_sdk/generated/planck/pallets/recovery.dart' as recovery_pallet;
 import 'package:quantus_sdk/generated/planck/pallets/system.dart' as system_pallet;
 import 'package:quantus_sdk/generated/planck/pallets/tech_collective.dart' as collective_pallet;
 import 'package:quantus_sdk/generated/planck/types/sp_runtime/multiaddress/multi_address.dart' as multi_address;
@@ -91,7 +92,7 @@ void main() {
     test('parses transfer with extensions', () {
       // Mortal era bytes 8501 = period 64 phase 24; compact nonce 10.
       final payload = payloadWithSuffix(transferCall1, era: const [0x85, 0x01], nonce: 10);
-      final parsed = QuantusPayloadParser.parsePayload(payload);
+      final parsed = QuantusPayloadParser.parsePayload(payload, policy: const FullCallPolicy());
 
       expect(parsed.call.pallet, 'Balances');
       expect(parsed.call.call, 'transfer_allow_death');
@@ -111,7 +112,7 @@ void main() {
     test('parses transfer with tip and immortal era', () {
       final tip = BigInt.from(1500000000000);
       final payload = payloadWithSuffix(transferCall2, tip: tip);
-      final parsed = QuantusPayloadParser.parsePayload(payload);
+      final parsed = QuantusPayloadParser.parsePayload(payload, policy: const FullCallPolicy());
 
       expect(valueField(parsed.call, 'Destination').value, 'qzn5St24cMsjE4JKYdXLBctusWj5zom67dnrW22SweAahLGeG');
       expect(amountField(parsed.call, 'Amount').token, BigInt.from(100000000000));
@@ -122,7 +123,7 @@ void main() {
 
     test('parses reversible transfer with delay', () {
       final payload = payloadWithSuffix(reversibleCall, nonce: 3);
-      final parsed = QuantusPayloadParser.parsePayload(payload);
+      final parsed = QuantusPayloadParser.parsePayload(payload, policy: const FullCallPolicy());
 
       expect(parsed.call.pallet, 'ReversibleTransfers');
       expect(parsed.call.call, 'schedule_transfer_with_delay');
@@ -143,6 +144,7 @@ void main() {
           payloadForCall(
             const multisig_pallet.Txs().approve(multisigAddress: multisigId, proposalId: 9, call: inner.encode()),
           ),
+          policy: const FullCallPolicy(),
         );
 
         expect(parsed.call.displayTitle, 'Multisig · approve');
@@ -160,6 +162,7 @@ void main() {
           payloadForCall(
             const multisig_pallet.Txs().propose(multisigAddress: multisigId, call: inner.encode(), expiry: 999),
           ),
+          policy: const FullCallPolicy(),
         );
 
         expect(parsed.call.call, 'propose');
@@ -170,6 +173,7 @@ void main() {
       test('governance vote decodes with its direction', () {
         final parsed = QuantusPayloadParser.parsePayload(
           payloadForCall(const collective_pallet.Txs().vote(poll: 41, aye: true)),
+          policy: const FullCallPolicy(),
         );
 
         expect(parsed.call.displayTitle, 'TechCollective · vote');
@@ -181,6 +185,7 @@ void main() {
       test('runtime upgrade authorisation decodes with its code hash', () {
         final parsed = QuantusPayloadParser.parsePayload(
           payloadForCall(const system_pallet.Txs().authorizeUpgrade(codeHash: codeHash)),
+          policy: const FullCallPolicy(),
         );
 
         expect(parsed.call.displayTitle, 'System · authorize_upgrade');
@@ -193,6 +198,7 @@ void main() {
         final upgrade = const system_pallet.Txs().authorizeUpgrade(codeHash: codeHash);
         final parsed = QuantusPayloadParser.parsePayload(
           payloadForCall(const preimage_pallet.Txs().notePreimage(bytes: upgrade.encode())),
+          policy: const FullCallPolicy(),
         );
 
         expect(parsed.call.call, 'note_preimage');
@@ -203,7 +209,7 @@ void main() {
     group('spec drift', () {
       test('flags a payload built for a different runtime but still decodes it', () {
         final payload = payloadWithSuffix(transferCall1, specVersion: 999);
-        final parsed = QuantusPayloadParser.parsePayload(payload);
+        final parsed = QuantusPayloadParser.parsePayload(payload, policy: const FullCallPolicy());
 
         expect(parsed.extensions.specVersion, 999);
         expect(parsed.specMatchesBundled, isFalse);
@@ -213,7 +219,7 @@ void main() {
 
       test('a matching spec but mismatched transaction version also counts as drift', () {
         final payload = Uint8List.fromList([...hex.decode(transferCall1), ...extSuffix(transactionVersion: 99)]);
-        expect(QuantusPayloadParser.parsePayload(payload).specMatchesBundled, isFalse);
+        expect(QuantusPayloadParser.parsePayload(payload, policy: const FullCallPolicy()).specMatchesBundled, isFalse);
       });
     });
 
@@ -221,7 +227,10 @@ void main() {
       test('rejects old devnet transfer with unknown genesis (regression)', () {
         // Proves the parser walks all the way to the genesis hash and rejects unknown networks.
         final payload = Uint8List.fromList(hex.decode(oldNetworkTransfer));
-        expect(() => QuantusPayloadParser.parsePayload(payload), throwsRejection('Unknown genesis hash'));
+        expect(
+          () => QuantusPayloadParser.parsePayload(payload, policy: const FullCallPolicy()),
+          throwsRejection('Unknown genesis hash'),
+        );
       });
 
       test('rejects old devnet reversible transfer (regression)', () {
@@ -234,43 +243,98 @@ void main() {
         // metadata gets a prominent warning: across runtimes, an index can mean a
         // different call. The payload still fails closed either way.
         final payload = Uint8List.fromList(hex.decode(oldNetworkReversible));
-        expect(() => QuantusPayloadParser.parsePayload(payload), throwsRejection('extensions'));
+        expect(
+          () => QuantusPayloadParser.parsePayload(payload, policy: const FullCallPolicy()),
+          throwsRejection('extensions'),
+        );
       });
 
       test('rejects trailing bytes after signed payload', () {
         final payload = payloadWithSuffix(transferCall1, era: const [0x85, 0x01], nonce: 10);
         final tampered = Uint8List.fromList([...payload, 0xde, 0xad, 0xbe, 0xef]);
-        expect(() => QuantusPayloadParser.parsePayload(tampered), throwsRejection('trailing bytes'));
+        expect(
+          () => QuantusPayloadParser.parsePayload(tampered, policy: const FullCallPolicy()),
+          throwsRejection('trailing bytes'),
+        );
       });
 
       test('rejects bare call without extensions', () {
         final payload = Uint8List.fromList(hex.decode(transferCall1));
-        expect(() => QuantusPayloadParser.parsePayload(payload), throwsRejection('extensions'));
+        expect(
+          () => QuantusPayloadParser.parsePayload(payload, policy: const FullCallPolicy()),
+          throwsRejection('extensions'),
+        );
       });
 
       test('rejects metadata mode mismatch', () {
         final suffix = extSuffix();
         suffix[3] = 1; // mode: enabled, but metadata hash stays None
         final payload = Uint8List.fromList([...hex.decode(transferCall1), ...suffix]);
-        expect(() => QuantusPayloadParser.parsePayload(payload), throwsRejection('inconsistent'));
+        expect(
+          () => QuantusPayloadParser.parsePayload(payload, policy: const FullCallPolicy()),
+          throwsRejection('inconsistent'),
+        );
       });
 
       test('rejects oversized payload', () {
         final payload = Uint8List(maxPayloadBytes + 1);
-        expect(() => QuantusPayloadParser.parsePayload(payload), throwsRejection('too large'));
+        expect(
+          () => QuantusPayloadParser.parsePayload(payload, policy: const FullCallPolicy()),
+          throwsRejection('too large'),
+        );
       });
 
       test('rejects unknown pallet and unknown call index', () {
         // Pallet 250 and Balances call 200 do not exist on this runtime.
-        expect(() => QuantusPayloadParser.parsePayload(payloadWithSuffix('fa00')), throwsRejection('call'));
-        expect(() => QuantusPayloadParser.parsePayload(payloadWithSuffix('02c8')), throwsRejection('call'));
+        expect(
+          () => QuantusPayloadParser.parsePayload(payloadWithSuffix('fa00'), policy: const FullCallPolicy()),
+          throwsRejection('call'),
+        );
+        expect(
+          () => QuantusPayloadParser.parsePayload(payloadWithSuffix('02c8'), policy: const FullCallPolicy()),
+          throwsRejection('call'),
+        );
+      });
+
+      test('rejects a call nested deeper than the limit', () {
+        RuntimeCall nested = const system_pallet.Txs().remark(remark: <int>[]);
+        for (var i = 0; i < 3; i++) {
+          nested = const recovery_pallet.Txs().asRecovered(
+            account: multi_address.MultiAddress.values.id(Uint8List.fromList(List.filled(32, 0xAA))),
+            call: nested,
+          );
+        }
+        expect(
+          () => QuantusPayloadParser.parsePayload(payloadForCall(nested), policy: const FullCallPolicy()),
+          throwsRejection('nesting depth'),
+        );
+      });
+
+      test('rejects the deepest chain the payload cap can carry', () {
+        // `Recovery.as_recovered` costs 35 bytes a level, so the 8 KiB cap still
+        // leaves room for far more levels than the depth limit allows: the cap is
+        // not the depth limit.
+        final recoveryPallet = const recovery_pallet.Txs().removeRecovery().encode()[0];
+        final chain = [
+          for (var i = 0; i < 200; i++) ...[recoveryPallet, 0, 0, ...List.filled(32, 0xAA)],
+          0, 0, 0, // System(0) · remark(0), empty
+        ];
+        final payload = Uint8List.fromList([...chain, ...extSuffix()]);
+        expect(payload.length, lessThan(maxPayloadBytes));
+        expect(
+          () => QuantusPayloadParser.parsePayload(payload, policy: const FullCallPolicy()),
+          throwsRejection('nesting depth'),
+        );
       });
 
       test('rejects a multisig proposal whose inner call cannot be decoded', () {
         // No blind signing: an unreadable inner call fails the whole payload
         // rather than being shown as an opaque blob next to a Sign button.
         final propose = const multisig_pallet.Txs().propose(multisigAddress: multisigId, call: [250, 0], expiry: 10);
-        expect(() => QuantusPayloadParser.parsePayload(payloadForCall(propose)), throwsRejection('call'));
+        expect(
+          () => QuantusPayloadParser.parsePayload(payloadForCall(propose), policy: const FullCallPolicy()),
+          throwsRejection('call'),
+        );
       });
     });
   });

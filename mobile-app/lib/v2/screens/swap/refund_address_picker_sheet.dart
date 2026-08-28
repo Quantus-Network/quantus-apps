@@ -32,8 +32,8 @@ class _RefundAddressPickerContentState extends ConsumerState<_RefundAddressPicke
   @override
   Widget build(BuildContext context) {
     final l10n = ref.watch(l10nProvider);
-    final colors = context.colors;
-    final text = context.themeText;
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
 
     return BottomSheetContainer(
       title: l10n.swapRefundPickerTitle,
@@ -42,13 +42,13 @@ class _RefundAddressPickerContentState extends ConsumerState<_RefundAddressPicke
         children: [
           Align(
             alignment: Alignment.centerLeft,
-            child: Text(widget.network, style: text.detail?.copyWith(color: colors.textSecondary)),
+            child: Text(widget.network, style: text.caption.copyWith(color: colors.textMuted)),
           ),
           const SizedBox(height: 24),
           if (_addresses.isEmpty)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 32),
-              child: Text(l10n.swapRefundPickerEmpty, style: text.detail?.copyWith(color: colors.textTertiary)),
+              child: Text(l10n.swapRefundPickerEmpty, style: text.caption.copyWith(color: colors.textMuted)),
             )
           else
             ConstrainedBox(
@@ -57,7 +57,7 @@ class _RefundAddressPickerContentState extends ConsumerState<_RefundAddressPicke
                 shrinkWrap: true,
                 padding: EdgeInsets.zero,
                 itemCount: _addresses.length,
-                separatorBuilder: (_, _) => Divider(color: colors.separator, height: 1),
+                separatorBuilder: (_, _) => const MenuDivider(),
                 itemBuilder: (_, i) => _addressItem(_addresses[i], colors, text),
               ),
             ),
@@ -66,7 +66,7 @@ class _RefundAddressPickerContentState extends ConsumerState<_RefundAddressPicke
     );
   }
 
-  Widget _addressItem(String address, AppColorsV2 colors, AppTextTheme text) {
+  Widget _addressItem(String address, AppColorsV3 colors, AppTextThemeV3 text) {
     return GestureDetector(
       onTap: () => Navigator.pop(context, address),
       behavior: HitTestBehavior.opaque,
@@ -74,7 +74,7 @@ class _RefundAddressPickerContentState extends ConsumerState<_RefundAddressPicke
         padding: const EdgeInsets.symmetric(vertical: 16),
         child: Text(
           AddressFormattingService.formatAddress(address),
-          style: text.smallParagraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500),
+          style: text.dataAddress.copyWith(color: colors.textContent),
         ),
       ),
     );

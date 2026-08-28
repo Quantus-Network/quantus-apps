@@ -41,8 +41,8 @@ class AccountReadyScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = ref.watch(l10nProvider);
-    final colors = context.colors;
-    final text = context.themeText;
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
     final appBarTitle = _appBarTitle(l10n);
     final headline = isWalletRelated ? appBarTitle : accountName;
     final ctaLabel = _showTwoAccountCards ? l10n.accountReadyGoToWallet : l10n.accountReadyDone;
@@ -73,22 +73,22 @@ class AccountReadyScreen extends ConsumerWidget {
                             alignment: Alignment.center,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              border: Border.all(color: colors.success, width: _borderWidth),
+                              border: Border.all(color: colors.semanticSage, width: _borderWidth),
                             ),
-                            child: Icon(Icons.check_rounded, size: _checkIconSize, color: colors.success),
+                            child: Icon(Icons.check_rounded, size: _checkIconSize, color: colors.semanticSage),
                           ),
                           const SizedBox(height: 16),
                           Text(
                             headline,
                             textAlign: TextAlign.center,
-                            style: text.paragraph?.copyWith(fontSize: 32, color: colors.textLightGray, height: 1.0),
+                            style: text.titleSuccess.copyWith(color: colors.textContent),
                           ),
                           if (_showTwoAccountCards) ...[
                             const SizedBox(height: 4),
                             Text(
                               l10n.accountReadyTwoAccountsCreated,
                               textAlign: TextAlign.center,
-                              style: text.smallParagraph?.copyWith(color: colors.textMuted, height: 1.35),
+                              style: text.body.copyWith(color: colors.textMuted),
                             ),
                           ],
                         ],
@@ -102,7 +102,7 @@ class AccountReadyScreen extends ConsumerWidget {
                           Text(
                             accountName,
                             textAlign: TextAlign.center,
-                            style: text.transactionDetailRowLabel?.copyWith(color: colors.textTertiary),
+                            style: text.caption.copyWith(color: colors.textMuted),
                           ),
                           const SizedBox(height: 12),
                         ],
@@ -116,7 +116,7 @@ class AccountReadyScreen extends ConsumerWidget {
                                     data: (checksum) => Text(
                                       checksum,
                                       textAlign: TextAlign.center,
-                                      style: text.smallParagraph?.copyWith(color: colors.checksum),
+                                      style: text.body.copyWith(color: colors.semanticLilac),
                                     ),
                                     loading: () => const Loader(size: 14),
                                     error: (_, _) => const SizedBox.shrink(),
@@ -130,7 +130,7 @@ class AccountReadyScreen extends ConsumerWidget {
                                   postFix: 10,
                                 ).toLowerCase(),
                                 textAlign: TextAlign.center,
-                                style: text.transactionDetailRowValue?.copyWith(fontSize: 14),
+                                style: text.dataAddressLarge.copyWith(color: colors.textContent),
                               ),
                             ],
                           ),
@@ -164,8 +164,6 @@ class _WalletCreatedAccountCards extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.colors;
-    final text = context.themeText;
     final encryptedName = l10n.createAccountEncryptedDefaultName;
 
     return Column(
@@ -174,16 +172,12 @@ class _WalletCreatedAccountCards extends StatelessWidget {
           leading: AccountBadge(name: mainAccountName),
           title: mainAccountName,
           description: l10n.accountReadyMainAccountDescription,
-          colors: colors,
-          text: text,
         ),
         const SizedBox(height: 14),
         _AccountPreviewCard(
           leading: const EncryptedLockBadge(),
           title: encryptedName,
           description: l10n.accountReadyEncryptedAccountDescription,
-          colors: colors,
-          text: text,
         ),
       ],
     );
@@ -191,26 +185,21 @@ class _WalletCreatedAccountCards extends StatelessWidget {
 }
 
 class _AccountPreviewCard extends StatelessWidget {
-  const _AccountPreviewCard({
-    required this.leading,
-    required this.title,
-    required this.description,
-    required this.colors,
-    required this.text,
-  });
+  const _AccountPreviewCard({required this.leading, required this.title, required this.description});
 
   final Widget leading;
   final String title;
   final String description;
-  final AppColorsV2 colors;
-  final AppTextTheme text;
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: colors.surfaceDeep, borderRadius: BorderRadius.circular(14)),
+      decoration: BoxDecoration(color: colors.bgSurface, borderRadius: context.radiusV3.mdBorder),
       child: Row(
         children: [
           leading,
@@ -219,9 +208,9 @@ class _AccountPreviewCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: text.paragraph?.copyWith(fontSize: 18, height: 1.0)),
+                Text(title, style: text.headingRow.copyWith(color: colors.textContent)),
                 const SizedBox(height: 4),
-                Text(description, style: text.detail?.copyWith(color: colors.textMuted, height: 1.0)),
+                Text(description, style: text.caption.copyWith(color: colors.textMuted)),
               ],
             ),
           ),

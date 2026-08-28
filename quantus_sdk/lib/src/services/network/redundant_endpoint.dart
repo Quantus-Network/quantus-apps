@@ -1,5 +1,7 @@
+import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:http/http.dart' as http;
 import 'package:polkadart/polkadart.dart' show Provider;
 import 'package:quantus_sdk/quantus_sdk.dart';
@@ -26,6 +28,56 @@ class GraphQlEndpointService extends RedundantEndpointService {
 
   GraphQlEndpointService._internal()
     : super(endpoints: AppConstants.graphQlEndpoints.map((e) => Endpoint(url: e)).toList());
+
+  static const int _transientRetries = 3;
+  static const Duration _retryBackoff = Duration(milliseconds: 400);
+
+  /// Posts [document] and returns its `data`, throwing on any HTTP, transport
+  /// or GraphQL error.
+  ///
+  /// A transient indexer failure is retried with an exponential backoff. Under
+  /// concurrent load the indexer answers a valid query with
+  /// `{"code": "unexpected"}` — a Postgres statement timeout — and the same
+  /// query succeeds moments later; cold start fires several queries at once and
+  /// a single 400ms retry is not enough to outlast it. Every other GraphQL
+  /// error is the caller's problem and throws on the first attempt.
+  Future<Map<String, dynamic>> query({required String document, Map<String, dynamic> variables = const {}}) async {
+    final String body = jsonEncode({'query': document, 'variables': variables});
+
+    for (int attempt = 0; ; attempt++) {
+      final http.Response response = await post(body: body);
+
+      if (response.statusCode != 200) {
+        throw Exception('GraphQL request failed with status: ${response.statusCode}. Body: ${response.body}');
+      }
+
+      final Map<String, dynamic> decoded = jsonDecode(response.body);
+      final Object? errors = decoded['errors'];
+
+      if (errors == null) {
+        final Map<String, dynamic>? data = decoded['data'];
+        if (data == null) {
+          throw Exception('GraphQL response has no data: ${response.body}');
+        }
+        return data;
+      }
+
+      if (attempt >= _transientRetries || !isTransientGraphQlError(errors)) {
+        throw Exception('GraphQL errors: $errors');
+      }
+
+      final backoff = _retryBackoff * (1 << attempt);
+      quantusPrint('Transient GraphQL failure, retrying in ${backoff.inMilliseconds}ms: $errors');
+      await Future.delayed(backoff);
+    }
+  }
+
+  /// Hasura reports a statement timeout or an exhausted pool as `unexpected`.
+  @visibleForTesting
+  static bool isTransientGraphQlError(Object? errors) {
+    if (errors is! List || errors.isEmpty) return false;
+    return errors.every((e) => e is Map && e['extensions'] is Map && e['extensions']['code'] == 'unexpected');
+  }
 }
 
 class RpcEndpointService extends RedundantEndpointService {

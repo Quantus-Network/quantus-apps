@@ -3,29 +3,28 @@ import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 
 abstract final class SettingsTappableRowUtils {
-  static TextStyle? title(AppTextTheme text, AppColorsV2 colors, {Color? color}) {
-    return text.smallTitle?.copyWith(fontWeight: FontWeight.w400, color: color ?? colors.textPrimary);
+  static TextStyle title(BuildContext context, {Color? color}) {
+    return context.themeTextV3.amountRow.copyWith(color: color ?? context.colorsV3.textContent);
   }
 
-  static TextStyle? subtitle(AppTextTheme text, AppColorsV2 colors, {Color? color}) {
-    return text.smallParagraph?.copyWith(color: color ?? colors.textTertiary);
+  static TextStyle subtitle(BuildContext context, {Color? color}) {
+    return context.themeTextV3.caption.copyWith(color: color ?? context.colorsV3.textMuted);
   }
 
-  static Widget externalLink(AppColorsV2 colors) {
-    return Icon(Icons.north_east, size: 14, color: colors.textLabel);
+  static Widget externalLink(BuildContext context) {
+    return Icon(Icons.north_east, size: 14, color: context.colorsV3.textMuted);
   }
 
-  static Widget chevron(AppColorsV2 colors, {double size = 14, Color? color}) {
-    return Icon(Icons.chevron_right, size: size, color: color ?? colors.textSecondary);
+  static Widget chevron({Color? color}) {
+    return QuantusIcon(QuantusIcons.chevronRight, color: color);
   }
 
   static const Widget titleGap = SizedBox(height: 2);
 
   static Widget titleAndSubtitle(
+    BuildContext context,
     String title,
     String subtitle, {
-    required AppTextTheme text,
-    required AppColorsV2 colors,
     Color? titleColor,
     Color? subtitleColor,
   }) {
@@ -34,9 +33,9 @@ abstract final class SettingsTappableRowUtils {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(title, style: SettingsTappableRowUtils.title(text, colors, color: titleColor)),
+          Text(title, style: SettingsTappableRowUtils.title(context, color: titleColor)),
           SettingsTappableRowUtils.titleGap,
-          Text(subtitle, style: SettingsTappableRowUtils.subtitle(text, colors, color: subtitleColor)),
+          Text(subtitle, style: SettingsTappableRowUtils.subtitle(context, color: subtitleColor)),
         ],
       ),
     );
@@ -70,18 +69,14 @@ class SettingsTappableRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.colors;
-    final text = context.themeText;
-
     final row = Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         if (leading != null) ...[leading!, const SizedBox(width: 12)],
         SettingsTappableRowUtils.titleAndSubtitle(
+          context,
           title,
           subtitle,
-          text: text,
-          colors: colors,
           titleColor: titleColor,
           subtitleColor: subtitleColor,
         ),
@@ -93,7 +88,7 @@ class SettingsTappableRow extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: context.radiusV3.mdBorder,
         child: padding != null ? Padding(padding: padding!, child: row) : row,
       ),
     );
@@ -117,14 +112,11 @@ class SettingsSwitchRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.colors;
-    final text = context.themeText;
-
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        SettingsTappableRowUtils.titleAndSubtitle(title, subtitle, text: text, colors: colors),
-        CupertinoSwitch(value: value, onChanged: onChanged, activeTrackColor: colors.accentGreen),
+        SettingsTappableRowUtils.titleAndSubtitle(context, title, subtitle),
+        CupertinoSwitch(value: value, onChanged: onChanged, activeTrackColor: context.colorsV3.accentFlare),
       ],
     );
   }

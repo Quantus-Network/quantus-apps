@@ -31,7 +31,16 @@ class V2AppBar extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           leftWidget,
-          Text(title, style: text.titleScreen.copyWith(color: colors.textContent)),
+          Expanded(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                title,
+                textAlign: TextAlign.center,
+                style: text.titleScreen.copyWith(color: colors.textContent),
+              ),
+            ),
+          ),
           rightWidget,
         ],
       ),

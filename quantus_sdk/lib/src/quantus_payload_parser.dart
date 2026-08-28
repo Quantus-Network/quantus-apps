@@ -5,15 +5,15 @@
 /// Anything that cannot be decoded exactly hard-fails with a [FormatException];
 /// nothing is silently ignored, and no call is ever presented partially.
 ///
-/// The call itself decodes through [CallDecoder], i.e. the generated polkadart
-/// codecs, so **every** call the bundled metadata declares is supported and
-/// displayed field by field — there is no allowlist of signable pallets to fall
-/// behind the runtime. An unknown pallet or call index throws.
+/// The call itself decodes through [CallDecoder] under the [CallPolicy] the
+/// caller supplies: a cold signer passes [FullCallPolicy] and reads every call
+/// the bundled metadata declares, field by field. An unknown pallet or call
+/// index throws, as does a call the policy does not admit.
 ///
 /// Usage:
 /// ```dart
 /// final payload = signingPayload.encodeRaw(registry);
-/// final parsed = QuantusPayloadParser.parsePayload(payload); // throws on rejection
+/// final parsed = QuantusPayloadParser.parsePayload(payload, policy: const FullCallPolicy());
 /// print('${parsed.call.displayTitle} on ${parsed.network}');
 /// ```
 library;
@@ -23,13 +23,13 @@ import 'dart:typed_data';
 
 import 'package:convert/convert.dart';
 import 'package:polkadart/scale_codec.dart';
-import 'package:quantus_sdk/generated/planck/types/quantus_runtime/runtime_call.dart';
 import 'package:quantus_sdk/src/chain/call_decoder.dart';
+import 'package:quantus_sdk/src/chain/call_policy.dart';
 import 'package:quantus_sdk/src/chain/decoded_call.dart';
 import 'package:quantus_sdk/src/constants/app_constants.dart';
 
 /// Hard cap on the raw signing payload; every supported call is far below this.
-const int maxPayloadBytes = 8 * 1024;
+const int maxPayloadBytes = maxCallBytes;
 
 /// Networks this wallet will sign for, keyed by genesis hash (lowercase hex).
 /// A payload whose genesis hash is not listed here is rejected.
@@ -107,8 +107,7 @@ class ParsedPayload {
   /// indices — the field labels may belong to a different call than the one that
   /// will execute. Signers must say so prominently.
   bool get specMatchesBundled =>
-      extensions.specVersion == AppConstants.bundledSpecVersion &&
-      extensions.transactionVersion == AppConstants.bundledTransactionVersion;
+      AppConstants.compatibleRuntimes.contains((spec: extensions.specVersion, tx: extensions.transactionVersion));
 }
 
 class QuantusPayloadParser {
@@ -116,13 +115,13 @@ class QuantusPayloadParser {
   /// unknown pallet/call index, an inner call that does not decode exactly,
   /// malformed extensions, trailing bytes, metadata-mode inconsistency, or a
   /// genesis hash not in [knownNetworks].
-  static ParsedPayload parsePayload(Uint8List payload) {
+  static ParsedPayload parsePayload(Uint8List payload, {required CallPolicy policy}) {
     if (payload.length > maxPayloadBytes) {
       throw FormatException('Payload too large: ${payload.length} bytes');
     }
 
     final input = Input.fromBytes(payload);
-    final call = _section('call', () => _decodeCall(input));
+    final call = _section('call', () => CallDecoder.decodeFrom(input, policy: policy));
     final extensions = _section('extensions', () => _decodeExtensions(input));
 
     final remaining = input.remainingLength ?? 0;
@@ -153,10 +152,6 @@ class QuantusPayloadParser {
     } catch (e) {
       throw FormatException('$section: $e');
     }
-  }
-
-  static DecodedCall _decodeCall(Input input) {
-    return CallDecoder.describe(RuntimeCall.codec.decode(input));
   }
 
   static Era _decodeEra(Input input) {

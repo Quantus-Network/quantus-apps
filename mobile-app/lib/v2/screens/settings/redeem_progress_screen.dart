@@ -105,8 +105,8 @@ class _RedeemProgressScreenState extends ConsumerState<RedeemProgressScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.colors;
-    final text = context.themeText;
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
     final l10n = ref.watch(l10nProvider);
 
     return PopScope(
@@ -120,40 +120,45 @@ class _RedeemProgressScreenState extends ConsumerState<RedeemProgressScreen> {
               : l10n.redeemProgressTitle,
           showBackButton: !_running,
         ),
-        mainContent: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const SizedBox(height: 24),
-            _buildStatusHeader(colors, text, l10n),
-            const SizedBox(height: 32),
-            _buildSteps(colors, text, l10n),
-            if (_errorMessage != null) ...[const SizedBox(height: 24), _buildErrorBanner(colors, text)],
-            if (_done && _result != null) ...[const SizedBox(height: 24), _buildSuccessBanner(colors, text, l10n)],
-          ],
+        mainContent: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const SizedBox(height: 24),
+              _buildStatusHeader(colors, text, l10n),
+              const SizedBox(height: 32),
+              _buildSteps(l10n),
+              if (_errorMessage != null) ...[
+                const SizedBox(height: 24),
+                QuantusBanner(tone: BannerTone.ember, message: _errorMessage!),
+              ],
+              if (_done && _result != null) ...[const SizedBox(height: 24), _buildSuccessBanner(l10n)],
+            ],
+          ),
         ),
-        bottomContent: _buildBottomContent(colors, l10n),
+        bottomContent: _buildBottomContent(l10n),
       ),
     );
   }
 
-  Widget _buildStatusHeader(AppColorsV2 colors, AppTextTheme text, AppLocalizations l10n) {
+  Widget _buildStatusHeader(AppColorsV3 colors, AppTextThemeV3 text, AppLocalizations l10n) {
     final fmt = ref.watch(numberFormattingServiceProvider);
     final amountLabel = fmt.formatBalance(widget.redeemableRewards, maxDecimals: 2, addSymbol: true);
 
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: colors.sheetBackground, borderRadius: BorderRadius.circular(12)),
+      decoration: BoxDecoration(color: colors.bgSurface, borderRadius: context.radiusV3.mdBorder),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(l10n.redeemingLabel, style: text.receiveLabel?.copyWith(color: colors.textLabel)),
-          Text(amountLabel, style: text.sendSectionLabel?.copyWith(color: colors.success)),
+          Text(l10n.redeemingLabel, style: text.labelData.copyWith(color: colors.textMuted)),
+          Text(amountLabel, style: text.amountInline.copyWith(color: colors.semanticSage)),
         ],
       ),
     );
   }
 
-  Widget _buildSteps(AppColorsV2 colors, AppTextTheme text, AppLocalizations l10n) {
+  Widget _buildSteps(AppLocalizations l10n) {
     return WormholeProgressSteps(
       steps: [
         (1, l10n.redeemStepCircuits),
@@ -172,56 +177,19 @@ class _RedeemProgressScreenState extends ConsumerState<RedeemProgressScreen> {
     );
   }
 
-  Widget _buildErrorBanner(AppColorsV2 colors, AppTextTheme text) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: colors.textError.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: colors.textError.withValues(alpha: 0.2)),
-      ),
-      child: Row(
-        children: [
-          Icon(Icons.error_outline, color: colors.textError, size: 16),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(_errorMessage!, style: text.detail?.copyWith(color: colors.textError)),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSuccessBanner(AppColorsV2 colors, AppTextTheme text, AppLocalizations l10n) {
+  Widget _buildSuccessBanner(AppLocalizations l10n) {
     final fmt = ref.watch(numberFormattingServiceProvider);
     final withdrawn = fmt.formatBalance(_result!.totalWithdrawn, maxDecimals: 4, addSymbol: true);
-
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: colors.success.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: colors.success.withValues(alpha: 0.2)),
-      ),
-      child: Row(
-        children: [
-          Icon(Icons.check_circle_outline, color: colors.success, size: 16),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              l10n.redeemSuccessBanner(withdrawn, _result!.batchesSubmitted),
-              style: text.detail?.copyWith(color: colors.success),
-            ),
-          ),
-        ],
-      ),
+    return QuantusBanner(
+      tone: BannerTone.sage,
+      message: l10n.redeemSuccessBanner(withdrawn, _result!.batchesSubmitted),
     );
   }
 
-  Widget? _buildBottomContent(AppColorsV2 colors, AppLocalizations l10n) {
+  Widget? _buildBottomContent(AppLocalizations l10n) {
     if (_running) {
       return ScaffoldBaseBottomContent(
-        child: QuantusButton.simple(label: l10n.redeemCancel, variant: ButtonVariant.secondary, onTap: _cancel),
+        child: QuantusButton.simple(label: l10n.redeemCancel, variant: ButtonVariant.staged, onTap: _cancel),
       );
     }
 
@@ -236,7 +204,7 @@ class _RedeemProgressScreenState extends ConsumerState<RedeemProgressScreen> {
             Expanded(
               child: QuantusButton.simple(
                 label: l10n.redeemClose,
-                variant: ButtonVariant.secondary,
+                variant: ButtonVariant.staged,
                 onTap: () => Navigator.of(context).pop(),
               ),
             ),

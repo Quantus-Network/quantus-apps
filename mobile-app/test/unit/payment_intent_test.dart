@@ -42,5 +42,54 @@ void main() {
     test('returns null for a malformed url', () {
       expect(PaymentIntent.tryParseUrl(':::'), isNull);
     });
+
+    test('returns null instead of throwing on malformed percent-escapes', () {
+      // Uri.tryParse accepts these; pathSegments/queryParameters decode lazily
+      // and throw FormatException, which would escape into the deep-link stream
+      // listener and the barcode callback.
+      expect(PaymentIntent.tryParseUrl('https://www.quantus.com/pay?to=%c3%28&amount=1.5'), isNull);
+      expect(PaymentIntent.tryParseUrl('https://www.quantus.com/pay?to=a&amount=%c3'), isNull);
+      expect(PaymentIntent.tryParseUrl('https://www.quantus.com/pay?to=a&amount=1.5&ref=%ff%fe'), isNull);
+      expect(PaymentIntent.tryParseUrl('https://www.quantus.com/pay/%ff?to=a&amount=1.5'), isNull);
+      expect(PaymentIntent.tryParseUrl('https://www.quantus.com/pay?to=%ed%a0%80&amount=1.5'), isNull);
+    });
+
+    test('rejects exponent notation in amount', () {
+      // Audit regression: amount=1e10000000 froze the wallet materialising
+      // an unbounded BigInt on the UI isolate.
+      expect(PaymentIntent.tryParseUrl('https://www.quantus.com/pay?to=recipient&amount=1e10000000'), isNull);
+      expect(PaymentIntent.tryParseUrl('https://www.quantus.com/pay?to=recipient&amount=1E5'), isNull);
+    });
+
+    test('rejects non-scheme amount shapes', () {
+      // Wire amounts are NNN[.NNN], dot separator only.
+      expect(PaymentIntent.tryParseUrl('https://www.quantus.com/pay?to=recipient&amount=1,5'), isNull);
+      expect(PaymentIntent.tryParseUrl('https://www.quantus.com/pay?to=recipient&amount=-1'), isNull);
+      expect(PaymentIntent.tryParseUrl('https://www.quantus.com/pay?to=recipient&amount=.5'), isNull);
+      expect(PaymentIntent.tryParseUrl('https://www.quantus.com/pay?to=recipient&amount=1.1234567890123'), isNull);
+      expect(PaymentIntent.tryParseUrl('https://www.quantus.com/pay?to=recipient&amount=1.25'), isNotNull);
+    });
+
+    test('rejects over-long input', () {
+      expect(PaymentIntent.tryParseUrl('https://www.quantus.com/pay?to=recipient&amount=${'9' * 100}'), isNull);
+      expect(PaymentIntent.tryParseUrl('https://www.quantus.com/pay?to=${'a' * 65}&amount=1.5'), isNull);
+      expect(PaymentIntent.tryParseUrl('https://www.quantus.com/pay?to=recipient&amount=1.5&ref=${'r' * 65}'), isNull);
+    });
+
+    test('rejects amounts with more whole digits than the supply allows', () {
+      // MAX_SUPPLY is 21M QUAN, so 8 whole digits cover every legitimate amount.
+      expect(PaymentIntent.tryParseUrl('https://www.quantus.com/pay?to=recipient&amount=999999999'), isNull);
+      expect(PaymentIntent.tryParseUrl('https://www.quantus.com/pay?to=recipient&amount=99999999'), isNotNull);
+    });
+
+    test('accepts a maximal valid link', () {
+      final intent = PaymentIntent.tryParseUrl(
+        'https://www.quantus.com/pay?to=${'a' * 50}&amount=20999999.999999999999&ref=${'r' * 64}',
+      );
+
+      expect(intent, isNotNull);
+      expect(intent!.amount, '20999999.999999999999');
+      expect(intent.ref, 'r' * 64);
+    });
   });
 }

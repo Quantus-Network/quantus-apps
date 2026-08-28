@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/v2/screens/send/keystone_sign_cache.dart';
@@ -143,6 +145,25 @@ void main() {
       notifier.store(key: key, unsignedData: unsigned, urParts: const ['ur:fresh'], storedAt: storedAt);
 
       expect(notifier.lookup(key, now: now), isNotNull);
+    });
+  });
+
+  group('what an air-gapped signer is sent', () {
+    final payload = Uint8List.fromList(List.generate(64, (i) => i));
+    const signer = AppConstants.debugTestAddress;
+
+    test('is the payload addressed to the account that must sign it', () {
+      // UR framing is the SDK's and tested there; what this app contributes is
+      // the envelope, which used to be absent — the payload went out bare, and
+      // the signer had to guess which of its accounts the request was for.
+      final decoded = SigningRequest.decode(signRequestBytes(signer: signer, payload: payload));
+
+      expect(decoded.signer, signer);
+      expect(decoded.payload, payload);
+    });
+
+    test('is not the bare payload, which the signer refuses', () {
+      expect(() => SigningRequest.decode(payload), throwsA(isA<FormatException>()));
     });
   });
 }

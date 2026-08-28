@@ -15,6 +15,42 @@ import 'package:resonance_network_wallet/shared/utils/print.dart';
 import 'package:resonance_network_wallet/v2/components/multisig_expiry_value.dart';
 import 'package:resonance_network_wallet/v2/screens/send/send_strategy.dart';
 
+/// Proposal cost for a recipient. The network fee is still a chain estimate,
+/// so it is keyed by recipient only and sized with a representative amount —
+/// the amount moves the encoded length by a few bytes at most — rather than
+/// re-fetched on every keystroke.
+final multisigProposeFeeProvider = FutureProvider.autoDispose.family<SendFee, (MultisigAccount msig, String recipient)>(
+  (ref, key) async {
+    final (msig, recipient) = key;
+    final service = ref.read(multisigServiceProvider);
+    final signer = ref.read(accountsProvider).value?.where((a) => a.accountId == msig.myMemberAccountId).firstOrNull;
+    try {
+      if (signer != null) {
+        return ProposeFee(
+          await service.estimateProposeFeeBreakdown(
+            msig: msig,
+            signer: signer,
+            recipient: recipient,
+            amount: MultisigProposeStrategy._estimateFeeAmount,
+          ),
+        );
+      }
+      final currentBlock = await service.currentBlockNumber();
+      return ProposeFee(
+        ProposeFeeBreakdown(
+          networkFee: BigInt.zero,
+          deposit: service.proposalDeposit,
+          creationFee: service.proposalCreationFee(msig.signers.length),
+          expiryBlock: currentBlock + service.blocksForDuration(MultisigService.defaultProposalExpiry),
+        ),
+      );
+    } catch (e, st) {
+      quantusPrint('Propose fee estimate failed: $e\n$st');
+      rethrow;
+    }
+  },
+);
+
 /// Proposes a transfer from a multisig account. The multisig is a view-only
 /// account, so funds leave from [msig] while the proposing member pays the fee.
 class MultisigProposeStrategy extends SendStrategy {
@@ -44,7 +80,7 @@ class MultisigProposeStrategy extends SendStrategy {
 
   @override
   bool extraBalancesLoading(WidgetRef ref) =>
-      ref.watch(effectiveBalanceProviderFamily(msig.myMemberAccountId)).isLoading;
+      !ref.watch(effectiveBalanceProviderFamily(msig.myMemberAccountId)).hasValue;
 
   // The proposal fee is paid by the member, not from the multisig balance.
   @override
@@ -58,41 +94,12 @@ class MultisigProposeStrategy extends SendStrategy {
   String? feePayerBalanceLabel(AppLocalizations l10n) => l10n.multisigProposeFeePayerBalanceLabel;
 
   @override
-  Future<SendFee> estimateFee(WidgetRef ref, {required String recipient, required BigInt amount}) async {
-    final service = ref.read(multisigServiceProvider);
-    final useReal = amount > BigInt.zero && ref.read(substrateServiceProvider).isValidSS58Address(recipient);
-    final feeAmount = useReal ? amount : _estimateFeeAmount;
+  ProviderListenable<AsyncValue<SendFee>> feeProvider({required String recipient, required BigInt amount}) =>
+      multisigProposeFeeProvider((msig, recipient.trim()));
 
-    final accounts = ref.read(accountsProvider).value;
-    Account? signer;
-    if (accounts != null) {
-      for (final account in accounts) {
-        if (account.accountId == msig.myMemberAccountId) {
-          signer = account;
-          break;
-        }
-      }
-    }
-
-    final ProposeFeeBreakdown breakdown;
-    if (signer != null) {
-      breakdown = await service.estimateProposeFeeBreakdown(
-        msig: msig,
-        signer: signer,
-        recipient: recipient.trim(),
-        amount: feeAmount,
-      );
-    } else {
-      final currentBlock = await service.currentBlockNumber();
-      breakdown = ProposeFeeBreakdown(
-        networkFee: BigInt.zero,
-        deposit: service.proposalDeposit,
-        creationFee: service.proposalCreationFee(msig.signers.length),
-        expiryBlock: currentBlock + service.blocksForDuration(MultisigService.defaultProposalExpiry),
-      );
-    }
-    return ProposeFee(breakdown);
-  }
+  @override
+  void retryFee(WidgetRef ref, {required String recipient, required BigInt amount}) =>
+      ref.invalidate(multisigProposeFeeProvider((msig, recipient.trim())));
 
   @override
   String? affordabilityError(WidgetRef ref, SendFee fee, AppLocalizations l10n) {

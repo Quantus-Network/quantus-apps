@@ -9,22 +9,17 @@ class SettingsListRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final text = context.themeText;
-    final colors = context.colors;
-
-    final bodyStyle = text.paragraph?.copyWith(color: colors.textMuted);
-    final numStyle = text.paragraph?.copyWith(
-      fontFamily: AppTextTheme.fontFamilySecondary,
-      color: colors.accentOrange,
-      height: 1.35,
-    );
+    final text = context.themeTextV3;
+    final colors = context.colorsV3;
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: numStyle),
+        Text(label, style: text.bodyLarge.copyWith(color: colors.accentFlare)),
         const SizedBox(width: 16),
-        Expanded(child: Text(content, style: bodyStyle)),
+        Expanded(
+          child: Text(content, style: text.body.copyWith(color: colors.textMuted)),
+        ),
       ],
     );
   }

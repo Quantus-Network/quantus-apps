@@ -7,8 +7,9 @@ import 'package:resonance_network_wallet/services/local_auth_service.dart';
 
 class FakeSettingsService extends Fake implements SettingsService {
   DisplayAccount? activeAccount;
+  List<MultisigAccount> multisigs;
 
-  FakeSettingsService({this.activeAccount});
+  FakeSettingsService({this.activeAccount, this.multisigs = const []});
 
   @override
   Future<DisplayAccount?> getActiveAccount() async => activeAccount;
@@ -17,7 +18,7 @@ class FakeSettingsService extends Fake implements SettingsService {
   Future<void> setActiveAccount(DisplayAccount account) async => activeAccount = account;
 
   @override
-  Future<List<MultisigAccount>> getMultisigAccounts() async => [];
+  Future<List<MultisigAccount>> getMultisigAccounts() async => multisigs;
 
   @override
   String? getSelectedAppLocale() => 'en';
@@ -32,7 +33,10 @@ class FakeSettingsService extends Fake implements SettingsService {
   bool isCurrencyFlipped() => false;
 
   @override
-  bool isPosModeEnabled() => false;
+  String? getWalletName(int walletIndex) => null;
+
+  @override
+  String? getString(String key) => null;
 }
 
 /// Drives [LocalAuthState] directly so tests can lock/unlock without the
@@ -56,14 +60,27 @@ class FakeSubstrateService extends Fake implements SubstrateService {
   bool isValidSS58Address(String address) => true;
 }
 
-class FakeBalancesService extends Fake implements BalancesService {
-  Account? lastFeeAccount;
+class FakeHumanReadableChecksumService extends Fake implements HumanReadableChecksumService {
+  FakeHumanReadableChecksumService({this.phrase = 'Stand-Envelope-Topic-Term-Help'});
+
+  final String phrase;
 
   @override
-  Future<ExtrinsicFeeData> getBalanceTransferFee(Account account, String targetAddress, BigInt amount) async {
-    lastFeeAccount = account;
-    return ExtrinsicFeeData(fee: BigInt.from(1000000000), blockHash: '0x00', blockNumber: 1);
+  Future<String?> getHumanReadableName(String address, {upperCase = true}) async => phrase;
+}
+
+class FakeBalancesService extends Fake implements BalancesService {
+  static final BigInt dispatchWeight = BigInt.from(5551728000);
+  int weightProbes = 0;
+
+  @override
+  Future<BigInt> transferDispatchWeight() async {
+    weightProbes++;
+    return dispatchWeight;
   }
+
+  @override
+  BigInt transferFee(BigInt amount, {required BigInt dispatchWeight}) => amount + dispatchWeight;
 }
 
 Account makeAccount(int index, {AccountType accountType = AccountType.local}) => Account(

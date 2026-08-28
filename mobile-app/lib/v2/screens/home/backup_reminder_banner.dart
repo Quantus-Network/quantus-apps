@@ -12,8 +12,8 @@ class BackupReminderBanner extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = ref.watch(l10nProvider);
-    final colors = context.colors;
-    final text = context.themeText;
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
 
     return GestureDetector(
       onTap: () => Navigator.push(
@@ -25,16 +25,18 @@ class BackupReminderBanner extends ConsumerWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: colors.surfaceDeep,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: colors.borderButton, width: 1),
+          color: colors.bgSurface,
+          borderRadius: context.radiusV3.mdBorder,
+          border: Border.all(color: colors.borderHairline, width: 1),
         ),
         child: Row(
           children: [
-            Icon(Icons.warning_amber_outlined, size: 20, color: colors.accentOrange),
+            Icon(Icons.warning_amber_outlined, size: 20, color: colors.semanticSand),
             const SizedBox(width: 12),
-            Expanded(child: Text(l10n.homeBackupReminder, style: text.smallParagraph)),
-            Icon(Icons.chevron_right, size: 20, color: colors.textSecondary),
+            Expanded(
+              child: Text(l10n.homeBackupReminder, style: text.body.copyWith(color: colors.textContent)),
+            ),
+            const QuantusIcon(QuantusIcons.chevronRight),
           ],
         ),
       ),

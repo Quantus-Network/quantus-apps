@@ -67,8 +67,8 @@ class _EncryptedSendProgressScreenState extends ConsumerState<EncryptedSendProgr
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.colors;
-    final text = context.themeText;
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
     final l10n = ref.watch(l10nProvider);
     final send = ref.watch(encryptedSendControllerProvider);
 
@@ -108,103 +108,76 @@ class _EncryptedSendProgressScreenState extends ConsumerState<EncryptedSendProgr
           showBackButton: false,
           leading: running ? null : AppBackButton(onTap: _goHome),
         ),
-        mainContent: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const SizedBox(height: 16),
-            _buildStatusHeader(colors, text, l10n),
-            const SizedBox(height: 24),
-            WormholeProgressSteps(
-              steps: [
-                (1, l10n.encryptedSendStepPreparing),
-                (4, l10n.encryptedSendStepGenerating),
-                (5, l10n.encryptedSendStepProving),
-                (6, l10n.encryptedSendStepSubmitting),
-              ],
-              stepProgress: send.stepProgress,
-              currentStep: send.currentStep,
-              done: false,
-              cancelled: cancelled,
-              hasError: errorMessage != null,
-            ),
-            if (errorMessage != null) ...[const SizedBox(height: 24), _buildErrorBanner(colors, text, errorMessage)],
-            if (cancelled && send.submittedRecipientToken > BigInt.zero) ...[
+        mainContent: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const SizedBox(height: 16),
+              _buildStatusHeader(colors, text, l10n),
               const SizedBox(height: 24),
-              _buildPartialCancelNotice(colors, text, l10n, send.submittedRecipientToken),
+              WormholeProgressSteps(
+                steps: [
+                  (1, l10n.encryptedSendStepPreparing),
+                  (4, l10n.encryptedSendStepGenerating),
+                  (5, l10n.encryptedSendStepProving),
+                  (6, l10n.encryptedSendStepSubmitting),
+                ],
+                stepProgress: send.stepProgress,
+                currentStep: send.currentStep,
+                done: false,
+                cancelled: cancelled,
+                hasError: errorMessage != null,
+              ),
+              if (errorMessage != null) ...[
+                const SizedBox(height: 24),
+                QuantusBanner(tone: BannerTone.ember, message: errorMessage),
+              ],
+              if (cancelled) ...[const SizedBox(height: 24), _buildCancelNotice(l10n, send)],
             ],
-          ],
+          ),
         ),
         bottomContent: _buildBottomContent(colors, text, l10n, send, running),
       ),
     );
   }
 
-  Widget _buildStatusHeader(AppColorsV2 colors, AppTextTheme text, AppLocalizations l10n) {
+  Widget _buildStatusHeader(AppColorsV3 colors, AppTextThemeV3 text, AppLocalizations l10n) {
     final fmt = ref.watch(numberFormattingServiceProvider);
     final amountLabel = fmt.formatBalance(widget.plan.amountToken, maxDecimals: 2, addSymbol: true);
     final shortAddr = AddressFormattingService.formatAddress(widget.recipientAddress.trim());
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-      decoration: BoxDecoration(color: colors.sheetBackground, borderRadius: BorderRadius.circular(14)),
+      decoration: BoxDecoration(color: colors.bgSurface, borderRadius: context.radiusV3.mdBorder),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(l10n.encryptedSendingLabel, style: text.receiveLabel?.copyWith(color: colors.textLabel)),
+          Text(l10n.encryptedSendingLabel, style: text.labelData.copyWith(color: colors.textMuted)),
           const SizedBox(height: 16),
-          Text(amountLabel, style: text.conversionAmountPrimary?.copyWith(fontSize: 32, color: colors.textPrimary)),
+          Text(amountLabel, style: text.amountHero.copyWith(color: colors.textContent)),
           const SizedBox(height: 16),
           if (widget.terminal.recipientChecksum != null) ...[
-            Text(
-              widget.terminal.recipientChecksum!,
-              style: text.transactionDetailRowValue?.copyWith(color: colors.checksum),
-            ),
+            Text(widget.terminal.recipientChecksum!, style: text.body.copyWith(color: colors.semanticLilac)),
             const SizedBox(height: 4),
           ],
-          Text(shortAddr, style: text.transactionDetailRowValue?.copyWith(color: colors.textMuted)),
+          Text(shortAddr, style: text.dataAddress.copyWith(color: colors.textContent)),
         ],
       ),
     );
   }
 
-  Widget _buildErrorBanner(AppColorsV2 colors, AppTextTheme text, String message) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: colors.textError.useOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: colors.textError.useOpacity(0.2)),
-      ),
-      child: Row(
-        children: [
-          Icon(Icons.error_outline, color: colors.textError, size: 16),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(message, style: text.detail?.copyWith(color: colors.textError)),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPartialCancelNotice(AppColorsV2 colors, AppTextTheme text, AppLocalizations l10n, BigInt submitted) {
+  Widget _buildCancelNotice(AppLocalizations l10n, EncryptedSendState send) {
     final fmt = ref.watch(numberFormattingServiceProvider);
-    final amount = fmt.formatBalance(submitted, maxDecimals: 2, addSymbol: true);
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(color: colors.sheetBackground, borderRadius: BorderRadius.circular(12)),
-      child: Row(
-        children: [
-          Icon(Icons.info_outline, color: colors.textSecondary, size: 16),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              l10n.encryptedSendCancelledPartial(amount),
-              style: text.detail?.copyWith(color: colors.textSecondary),
-            ),
-          ),
-        ],
-      ),
+    if (send.submittedRecipientToken > BigInt.zero) {
+      final amount = fmt.formatBalance(send.submittedRecipientToken, maxDecimals: 2, addSymbol: true);
+      return QuantusBanner(tone: BannerTone.sand, message: l10n.encryptedSendCancelledPartial(amount));
+    }
+
+    return QuantusBanner.stacked(
+      tone: BannerTone.sage,
+      label: l10n.encryptedSendFundsSafeLabel,
+      amount: fmt.formatBalance(widget.amount, maxDecimals: 2, addSymbol: true),
+      message: l10n.encryptedSendFundsSafeCaption(widget.account.name),
     );
   }
 
@@ -223,8 +196,8 @@ class _EncryptedSendProgressScreenState extends ConsumerState<EncryptedSendProgr
   }
 
   Widget _buildBottomContent(
-    AppColorsV2 colors,
-    AppTextTheme text,
+    AppColorsV3 colors,
+    AppTextThemeV3 text,
     AppLocalizations l10n,
     EncryptedSendState send,
     bool running,
@@ -239,8 +212,8 @@ class _EncryptedSendProgressScreenState extends ConsumerState<EncryptedSendProgr
               borderRadius: BorderRadius.circular(2),
               child: LinearProgressIndicator(
                 value: _overallProgress(send),
-                backgroundColor: colors.borderButton,
-                valueColor: AlwaysStoppedAnimation(colors.accentOrange),
+                backgroundColor: colors.bgSurface2,
+                color: colors.accentFlare,
                 minHeight: 4,
               ),
             ),
@@ -248,12 +221,12 @@ class _EncryptedSendProgressScreenState extends ConsumerState<EncryptedSendProgr
             Text(
               canceling ? l10n.commonCanceling : l10n.encryptedSendProgressFooter,
               textAlign: TextAlign.center,
-              style: text.smallParagraph?.copyWith(color: colors.textTertiary),
+              style: text.caption.copyWith(color: colors.textMuted),
             ),
             const SizedBox(height: 32),
             QuantusButton.simple(
               label: l10n.redeemCancel,
-              variant: ButtonVariant.secondary,
+              variant: ButtonVariant.staged,
               onTap: () => unawaited(ref.read(encryptedSendControllerProvider.notifier).cancel()),
               isDisabled: canceling,
             ),

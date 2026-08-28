@@ -1,75 +1,74 @@
-import 'package:flash/flash.dart';
-import 'package:flash/flash_helper.dart';
 import 'package:flutter/material.dart';
-import 'package:quantus_sdk/src/ui/components/toaster.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 
 Future<void> showToaster(
   BuildContext context, {
   required String message,
   required IconData iconData,
-  Color? iconColor,
-  Color? textColor,
+  required Color iconColor,
+  required Color textColor,
   Duration duration = const Duration(seconds: 2),
-  FlashBehavior behavior = FlashBehavior.floating,
 }) async {
   if (!context.mounted) return;
 
-  await context.showFlash<void>(
-    duration: duration,
-    persistent: true,
-    builder: (context, controller) {
-      return FlashBar(
-        controller: controller,
-        behavior: behavior,
-        margin: const EdgeInsets.only(bottom: 86),
-        backgroundColor: Colors.transparent,
-        surfaceTintColor: Colors.transparent,
-        shadowColor: Colors.transparent,
-        indicatorColor: Colors.transparent,
-        position: FlashPosition.bottom,
-        clipBehavior: Clip.none,
-        shouldIconPulse: false,
-        content: Toaster(message: message, iconData: iconData, iconColor: iconColor, textColor: textColor),
-      );
-    },
+  ToastController.instance.show(
+    ToastRequest(message: message, iconData: iconData, iconColor: iconColor, textColor: textColor),
+    duration,
   );
 }
 
 Future<void> showCopyToaster(BuildContext context, {required String message}) async {
+  final colors = context.colorsV3;
   await showToaster(
     context,
     iconData: Icons.check,
     message: message,
-    textColor: context.colors.success,
-    iconColor: context.colors.success,
+    textColor: colors.semanticSage,
+    iconColor: colors.semanticSage,
   );
 }
 
 Future<void> showWarningToaster(BuildContext context, {required String message}) async {
-  await showToaster(context, message: message, iconData: Icons.warning, iconColor: Colors.amber);
+  final colors = context.colorsV3;
+  await showToaster(
+    context,
+    message: message,
+    iconData: Icons.warning,
+    iconColor: colors.semanticSand,
+    textColor: colors.textContent,
+  );
 }
 
 Future<void> showInfoToaster(BuildContext context, {required String message}) async {
-  await showToaster(context, message: message, iconData: Icons.info);
+  final colors = context.colorsV3;
+  await showToaster(
+    context,
+    message: message,
+    iconData: Icons.info,
+    iconColor: colors.textContent,
+    textColor: colors.textContent,
+  );
 }
 
 Future<void> showErrorToaster(BuildContext context, {required String message}) async {
+  final colors = context.colorsV3;
   await showToaster(
     context,
     message: message,
     duration: const Duration(seconds: 10),
     iconData: Icons.error_rounded,
-    iconColor: context.colors.error,
+    iconColor: colors.semanticEmber,
+    textColor: colors.textContent,
   );
 }
 
 Future<void> showSuccessToaster(BuildContext context, {required String message}) async {
+  final colors = context.colorsV3;
   await showToaster(
     context,
     message: message,
     iconData: Icons.check_circle_rounded,
-    iconColor: context.colors.success,
-    textColor: context.colors.success,
+    iconColor: colors.semanticSage,
+    textColor: colors.semanticSage,
   );
 }

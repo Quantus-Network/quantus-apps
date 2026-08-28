@@ -31,9 +31,8 @@ class _SettingsScreenV2State extends ConsumerState<SettingsScreenV2> {
     final l10n = ref.watch(l10nProvider);
     final miningAsync = ref.watch(miningRewardsProvider);
 
-    final colors = context.colors;
-    final trailing = SettingsTappableRowUtils.chevron(colors);
-    final entries = _settingsHubItems(colors, l10n);
+    final trailing = SettingsTappableRowUtils.chevron();
+    final entries = _settingsHubItems(context, l10n);
 
     return ScaffoldBase(
       key: const Key(E2EKeys.settingsScreen),
@@ -93,7 +92,8 @@ class _SettingsHubItem {
   final Key? rowKey;
 }
 
-List<_SettingsHubItem> _settingsHubItems(AppColorsV2 colors, AppLocalizations l10n) {
+List<_SettingsHubItem> _settingsHubItems(BuildContext context, AppLocalizations l10n) {
+  final colors = context.colorsV3;
   return [
     _SettingsHubItem(
       leading: _settingsHubIcon(colors, icon: Icons.account_balance_wallet_outlined),
@@ -109,7 +109,15 @@ List<_SettingsHubItem> _settingsHubItems(AppColorsV2 colors, AppLocalizations l1
       page: const PreferencesSettingsScreenV2(),
     ),
     _SettingsHubItem(
-      leading: _settingsHubIcon(colors, svg: SvgPicture.asset('assets/v2/axe.svg', width: 18, height: 18)),
+      leading: _settingsHubIcon(
+        colors,
+        svg: SvgPicture.asset(
+          'assets/v2/axe.svg',
+          width: 18,
+          height: 18,
+          colorFilter: ColorFilter.mode(colors.accentFlare, BlendMode.srcIn),
+        ),
+      ),
       title: l10n.settingsMiningRewards,
       subtitle: l10n.commonLoading,
       page: const MiningRewardsScreen(),
@@ -128,7 +136,15 @@ List<_SettingsHubItem> _settingsHubItems(AppColorsV2 colors, AppLocalizations l1
       page: const HelpAndSupportScreenV2(),
     ),
     _SettingsHubItem(
-      leading: _settingsHubIcon(colors, svg: SvgPicture.asset('assets/v2/uppercase_q.svg', width: 18, height: 18)),
+      leading: _settingsHubIcon(
+        colors,
+        svg: SvgPicture.asset(
+          'assets/v2/uppercase_q.svg',
+          width: 18,
+          height: 18,
+          colorFilter: ColorFilter.mode(colors.accentFlare, BlendMode.srcIn),
+        ),
+      ),
       title: l10n.settingsAboutTitle,
       subtitle: l10n.settingsAboutHubSubtitle(appVersion, appBuildNumber),
       page: const AboutQuantusScreenV2(),
@@ -136,13 +152,13 @@ List<_SettingsHubItem> _settingsHubItems(AppColorsV2 colors, AppLocalizations l1
   ];
 }
 
-/// 40×40 leading slot: [icon] in accent orange, or a custom [svg].
-Widget _settingsHubIcon(AppColorsV2 colors, {IconData? icon, SvgPicture? svg}) {
+/// 40×40 leading slot: [icon] in accent flare, or a custom [svg].
+Widget _settingsHubIcon(AppColorsV3 colors, {IconData? icon, SvgPicture? svg}) {
   const double iconSlot = 40;
   Widget? child;
 
   if (icon != null) {
-    child = Icon(icon, color: colors.accentOrange, size: 22);
+    child = Icon(icon, color: colors.accentFlare, size: 22);
   } else if (svg != null) {
     child = svg;
   }

@@ -61,22 +61,27 @@ void main() {
     expect(ref.read(strategy.spendableBalanceProvider).value, capturedBalance - existentialDeposit);
   });
 
-  testWidgets('estimates fees from the captured account', (tester) async {
+  test('fee provider prices any amount locally from one probed dispatch weight', () async {
     final balancesService = FakeBalancesService();
-    final settings = FakeSettingsService(activeAccount: RegularAccount(other));
-    final ref = await pumpRef(
-      tester,
-      overrides: [
-        settingsServiceProvider.overrideWithValue(settings),
-        balancesServiceProvider.overrideWithValue(balancesService),
-      ],
-    );
+    final container = ProviderContainer(overrides: [balancesServiceProvider.overrideWithValue(balancesService)]);
+    addTearDown(container.dispose);
     final strategy = RegularSendStrategy(account: captured);
+    final ten = strategy.feeProvider(recipient: other.accountId, amount: BigInt.from(10));
+    final twenty = strategy.feeProvider(recipient: other.accountId, amount: BigInt.from(20));
+    final subs = [ten, twenty].map((p) => container.listen(p, (_, _) {})).toList();
 
-    final fee = await strategy.estimateFee(ref, recipient: other.accountId, amount: BigInt.from(10));
+    expect(subs[0].read().isLoading, isTrue);
+    await container.read(transferDispatchWeightProvider.future);
 
-    expect(balancesService.lastFeeAccount?.accountId, captured.accountId);
-    expect((fee as RegularFee).networkFee, BigInt.from(1000000000));
+    expect(
+      (subs[0].read().requireValue as RegularFee).networkFee,
+      BigInt.from(10) + FakeBalancesService.dispatchWeight,
+    );
+    expect(
+      (subs[1].read().requireValue as RegularFee).networkFee,
+      BigInt.from(20) + FakeBalancesService.dispatchWeight,
+    );
+    expect(balancesService.weightProbes, 1);
   });
 
   testWidgets('submit hands the captured keystone account to the signing session after a switch', (tester) async {
@@ -94,7 +99,7 @@ void main() {
       recipientAddress: other.accountId,
       recipientChecksum: 'checksum',
       amount: BigInt.from(1000),
-      fee: RegularFee(networkFee: BigInt.from(10), blockHeight: 1),
+      fee: RegularFee(networkFee: BigInt.from(10)),
       isPayMode: false,
     );
 

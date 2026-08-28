@@ -1,13 +1,9 @@
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 
 enum ButtonVariant {
-  transparent,
   primary,
-  secondary,
   danger,
-  outline,
   glass,
   underline,
 
@@ -98,7 +94,6 @@ class QuantusButton extends StatelessWidget {
           padding: padding,
           decoration: ShapeDecoration(
             color: chrome.color,
-            gradient: chrome.gradient,
             shape: RoundedRectangleBorder(borderRadius: borderRadius, side: chrome.borderSide),
           ),
           child: buttonContent,
@@ -126,23 +121,12 @@ class QuantusButton extends StatelessWidget {
         color: Colors.transparent,
         textColor: disabled ? colors.textMuted2 : colors.textMuted,
       ),
-      ButtonVariant.secondary => _ButtonChrome(
-        gradient: LinearGradient(
-          transform: const GradientRotation(90 * math.pi / 180),
-          colors: [context.colors.surfaceDeep, context.colors.sheetBackground],
-          stops: [0.0, 1.0],
-        ),
-        borderSide: basicBorder.copyWith(color: context.colors.borderButton.useOpacity(0.5)),
+      ButtonVariant.glass => _ButtonChrome(color: colors.bgSurfaceGlass, textColor: colors.textContent),
+      ButtonVariant.danger => _ButtonChrome(
+        color: colors.semanticEmber.useOpacity(0.10),
+        borderSide: BorderSide(color: colors.semanticEmber.useOpacity(0.25), width: 1),
         textColor: colors.textContent,
       ),
-      ButtonVariant.danger => _ButtonChrome(color: context.colors.buttonDanger, textColor: colors.textContent),
-      ButtonVariant.transparent => _ButtonChrome(color: Colors.transparent, textColor: colors.textContent),
-      ButtonVariant.outline => _ButtonChrome(
-        color: Colors.transparent,
-        borderSide: basicBorder,
-        textColor: colors.textContent,
-      ),
-      ButtonVariant.glass => _ButtonChrome(color: context.colors.surfaceGlass, textColor: colors.textContent),
       ButtonVariant.underline => _ButtonChrome(
         color: Colors.transparent,
         opacity: disabled ? 0.5 : 1.0,
@@ -164,11 +148,12 @@ class QuantusButton extends StatelessWidget {
   }
 
   _ButtonChrome _legacyDisabledChrome(BuildContext context, BorderSide basicBorder) {
+    final colors = context.colorsV3;
     return _ButtonChrome(
-      color: context.colors.sheetBackground,
+      color: colors.bgSurface,
       borderSide: basicBorder,
       opacity: 0.5,
-      textColor: context.colors.textPrimary.useOpacity(0.5),
+      textColor: colors.textContent.useOpacity(0.5),
     );
   }
 
@@ -202,7 +187,9 @@ class QuantusButton extends StatelessWidget {
         spacing: 8,
         children: [
           if (_iconPlacement == IconPlacement.leading && _icon != null) _icon,
-          Text(_label!, style: effectiveTextStyle),
+          Flexible(
+            child: Text(_label!, textAlign: TextAlign.center, style: effectiveTextStyle),
+          ),
           if (_iconPlacement == IconPlacement.trailing && _icon != null) _icon,
         ],
       );
@@ -214,23 +201,16 @@ class QuantusButton extends StatelessWidget {
   /// Underlined link label; a [textStyle] override supplies the color (e.g.
   /// accent orange), everything else stays uniform across links.
   TextStyle _underlineTextStyle(BuildContext context, Color defaultColor) {
-    final style = context.themeText.smallParagraph!.copyWith(color: defaultColor).merge(_textStyle);
+    final style = context.themeTextV3.body.copyWith(color: defaultColor).merge(_textStyle);
     return style.copyWith(decoration: TextDecoration.underline, decorationColor: style.color);
   }
 }
 
 class _ButtonChrome {
   final Color? color;
-  final LinearGradient? gradient;
   final BorderSide borderSide;
   final double opacity;
   final Color textColor;
 
-  const _ButtonChrome({
-    this.color,
-    this.gradient,
-    this.borderSide = BorderSide.none,
-    this.opacity = 1.0,
-    required this.textColor,
-  });
+  const _ButtonChrome({this.color, this.borderSide = BorderSide.none, this.opacity = 1.0, required this.textColor});
 }

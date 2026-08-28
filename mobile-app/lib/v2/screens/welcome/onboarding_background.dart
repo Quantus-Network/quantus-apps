@@ -15,7 +15,7 @@ class OnboardingBackground extends StatelessWidget {
             gradient: LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
-              colors: [Colors.transparent, context.colors.background],
+              colors: [Colors.transparent, context.colorsV3.bgVoid],
               stops: [0, 0.75],
             ),
           ),

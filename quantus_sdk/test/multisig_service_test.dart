@@ -7,6 +7,7 @@ import 'package:quantus_sdk/generated/planck/types/pallet_multisig/pallet/call.d
 import 'package:quantus_sdk/generated/planck/types/quantus_runtime/runtime_call.dart';
 import 'package:quantus_sdk/generated/planck/types/sp_runtime/multiaddress/multi_address.dart';
 import 'package:quantus_sdk/src/chain/call_decoder.dart';
+import 'package:quantus_sdk/src/chain/call_policy.dart';
 import 'package:quantus_sdk/src/models/multisig_account.dart';
 import 'package:quantus_sdk/src/models/multisig_create_submission.dart';
 import 'package:quantus_sdk/src/models/multisig_proposal.dart';
@@ -515,7 +516,7 @@ void main() {
 
       expect(approveCall.proposalId, 7);
       expect(approveCall.call, innerBytes);
-      expect(CallDecoder.describe(decoded).summary?.amount, BigInt.from(900000000000));
+      expect(CallDecoder.describe(decoded, policy: const FullCallPolicy()).summary?.amount, BigInt.from(900000000000));
     });
   });
 

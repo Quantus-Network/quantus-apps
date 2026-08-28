@@ -59,14 +59,26 @@ class AppConstants {
 
   // Digits of precision
   static const int decimals = 12;
+
+  // The chain runtime caps issuance at MAX_SUPPLY = 21_000_000 QUAN
+  // (runtime/src/lib.rs), so no legitimate amount has more whole digits.
+  static const int maxWholeDigits = 8;
   static const int ss58prefix = 189;
 
   // Runtime the bundled polkadart metadata (lib/generated/planck) was generated
   // from. A signing payload declaring a different spec version may decode
   // against shifted pallet/call indices, so signers warn loudly rather than
   // present a decode they cannot vouch for. Bump both when regenerating.
-  static const int bundledSpecVersion = 136;
-  static const int bundledTransactionVersion = 3;
+  static const int bundledSpecVersion = 146;
+  static const int bundledTransactionVersion = 5;
+
+  // Runtimes this build's metadata decodes correctly, beyond the one it was
+  // generated from. A pair belongs here only once the calls the wallet displays
+  // are known to carry identical pallet and call indices — a matching decode is
+  // not something to assume across a transaction-version bump.
+  static const Set<({int spec, int tx})> compatibleRuntimes = {
+    (spec: bundledSpecVersion, tx: bundledTransactionVersion),
+  };
 
   // Reserved account index for the per-wallet encrypted (wormhole) account.
   // Kept high so it never collides with sequential transparent (BIP44) indices;

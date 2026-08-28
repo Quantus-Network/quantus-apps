@@ -20,7 +20,11 @@ dependencies:
   # DO NOT UPDATE polkadart - newer versions are incompatible with our ML-DSA
   # signature override, work completely differently, and add no benefits.
   # Re-exported from quantus_sdk.dart so apps don't need a direct polkadart dep.
-  polkadart: ^0.7.3
+  polkadart:
+    git:
+      url: https://github.com/Quantus-Network/polkadart.git
+      ref: 0_7_3_quantus_2
+      path: packages/polkadart
   bip39_mnemonic: ^4.0.1
   convert: ^3.1.2
   http: ^1.6.0
@@ -31,7 +35,11 @@ dependencies:
   collection: ^1.19.1
 
   # SDK-only
-  ss58: ^1.3.1
+  ss58:
+    git:
+      url: https://github.com/Quantus-Network/polkadart.git
+      ref: 0_7_3_quantus_2
+      path: packages/ss58
   intl: ^0.20.2
   flutter_secure_storage: ^10.1.0
   connectivity_plus: ^7.1.1
@@ -42,7 +50,7 @@ dependencies:
       url: https://github.com/Quantus-Network/qp-human-checkphrase.git
       ref: v2.2.0
       path: dart
-  
+
   qr_flutter: ^4.1.0
   flutter_svg: ^2.3.0
 
@@ -52,10 +60,23 @@ dev_dependencies:
   integration_test:
     sdk: flutter
   flutter_lints: ^6.0.0
-  
+  # Used by tool/generate_call_corpus.dart to enumerate the runtime's calls.
+  polkadart_scale_codec:
+    git:
+      url: https://github.com/Quantus-Network/polkadart.git
+      ref: 0_7_3_quantus_2
+      path: packages/polkadart_scale_codec
+  substrate_metadata:
+    git:
+      url: https://github.com/Quantus-Network/polkadart.git
+      ref: 0_7_3_quantus_2
+      path: packages/substrate_metadata
   # DO NOT UPDATE polkadart_cli - must match polkadart 0.7.x. See note above.
-  polkadart_cli: ^0.7.1
-
+  polkadart_cli:
+    git:
+      url: https://github.com/Quantus-Network/polkadart.git
+      ref: 0_7_3_quantus_2
+      path: packages/polkadart_cli
 polkadart:
   output_dir: lib/generated
   chains:

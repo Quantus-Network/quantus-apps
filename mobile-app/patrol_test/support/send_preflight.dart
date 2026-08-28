@@ -8,22 +8,20 @@ class SendPreflight {
   SendPreflight._();
 
   /// Throws [StateError] if the imported wallet cannot afford existential deposit + fee.
-  static Future<({BigInt amount, String amountText})> assertFundedAndGetMinimalSend({
-    required String recipientAddress,
-  }) async {
+  static Future<({BigInt amount, String amountText})> assertFundedAndGetMinimalSend() async {
     final ed = balances.Constants().existentialDeposit;
     final account = (await SettingsService().getActiveRegularAccount())!;
     final substrateService = SubstrateService();
     final balancesService = BalancesService();
 
     final balance = await substrateService.queryBalance(account.accountId);
-    final feeData = await balancesService.getBalanceTransferFee(account, recipientAddress, ed);
-    final required = ed + feeData.fee;
+    final fee = balancesService.transferFee(ed, dispatchWeight: await balancesService.transferDispatchWeight());
+    final required = ed + fee;
 
     if (balance < required) {
       throw StateError(
         'Test wallet underfunded for minimal send: '
-        'balance=$balance, need>=$required (existentialDeposit=$ed + fee=${feeData.fee}). '
+        'balance=$balance, need>=$required (existentialDeposit=$ed + fee=$fee). '
         'Fund TEST_IMPORT_MNEMONIC account or use a different fixture.',
       );
     }

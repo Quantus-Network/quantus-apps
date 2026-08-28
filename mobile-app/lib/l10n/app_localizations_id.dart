@@ -121,9 +121,6 @@ class AppLocalizationsId extends AppLocalizations {
   String get homeNoActiveAccount => 'Tidak ada akun aktif';
 
   @override
-  String get homeCharge => 'Tagih';
-
-  @override
   String get homeGetTestnetTokens => 'Dapatkan Token Testnet ↗';
 
   @override
@@ -131,6 +128,9 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get homeBackupReminder => 'Cadangkan recovery phrase Anda';
+
+  @override
+  String get networkStatusOfflineBanner => 'Offline · menampilkan saldo terakhir';
 
   @override
   String get homeReceive => 'Terima';
@@ -389,6 +389,9 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get multisigProposalCallUnavailable =>
       'Tidak dapat membaca usulan ini dari rantai, jadi tidak ada yang bisa disetujui. Coba lagi setelah Anda kembali online.';
+
+  @override
+  String get multisigProposalInvalid => 'Proposal tidak valid';
 
   @override
   String get multisigStatusApproved => 'DITANDATANGANI';
@@ -1335,12 +1338,6 @@ class AppLocalizationsId extends AppLocalizations {
   String get receiveTitle => 'Terima';
 
   @override
-  String get receiveTabQrCode => 'Kode QR';
-
-  @override
-  String get receiveTabAddress => 'Alamat';
-
-  @override
   String get receiveCopy => 'Salin';
 
   @override
@@ -1352,66 +1349,13 @@ class AppLocalizationsId extends AppLocalizations {
   String get receiveCopiedMessage => 'Alamat disalin ke clipboard';
 
   @override
-  String get posAmountTitle => 'Tagihan Baru';
+  String get receiveYourAddressLabel => 'ALAMAT ANDA';
 
   @override
-  String posAmountCharge(String amount) {
-    return 'Tagih $amount';
-  }
+  String get receiveCopyAddress => 'Salin Alamat';
 
   @override
-  String get posAmountEnterAmount => 'Masukkan Jumlah';
-
-  @override
-  String get posQrTitleScanToPay => 'Pindai untuk Bayar';
-
-  @override
-  String get posQrTitlePaymentReceived => 'Pembayaran Diterima';
-
-  @override
-  String posQrError(String error) {
-    return 'Gagal: $error';
-  }
-
-  @override
-  String get posQrNoActiveAccount => 'Tidak ada akun aktif';
-
-  @override
-  String get posQrInvalidAmount => 'Jumlah tidak valid. Ketuk untuk coba lagi.';
-
-  @override
-  String get posQrConnectionLost => 'Koneksi terputus. Ketuk untuk coba lagi.';
-
-  @override
-  String get posQrTimedOut => 'Waktu habis. Ketuk untuk coba lagi.';
-
-  @override
-  String get posQrNewCharge => 'Tagihan Baru';
-
-  @override
-  String get posQrDone => 'Selesai';
-
-  @override
-  String posQrAmountReceived(String amount) {
-    return '$amount diterima';
-  }
-
-  @override
-  String get posQrFrom => 'Dari:';
-
-  @override
-  String get posQrWaitingForPayment => 'Menunggu pembayaran';
-
-  @override
-  String get posQrNetworkError => 'Jaringan Bermasalah';
-
-  @override
-  String get posQrTryAgain => 'Coba Lagi';
-
-  @override
-  String posQrPaidAt(String time) {
-    return 'Pada $time';
-  }
+  String get receiveCheckphraseFootnote => 'Minta pengirim mengonfirmasi bahwa frasa ini sesuai dengan alamat Anda.';
 
   @override
   String get settingsTitle => 'Pengaturan';
@@ -1426,7 +1370,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get settingsPreferencesTitle => 'Preferensi';
 
   @override
-  String get settingsPreferencesSubtitle => 'Bahasa, mata uang, mode POS, notifikasi';
+  String get settingsPreferencesSubtitle => 'Bahasa, mata uang, notifikasi';
 
   @override
   String get settingsMiningRewards => 'Hadiah Mining';
@@ -1544,12 +1488,6 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get settingsPreferencesLanguageSubtitle => 'Bahasa tampilan aplikasi';
-
-  @override
-  String get settingsPreferencesPosMode => 'Mode POS';
-
-  @override
-  String get settingsPreferencesPosModeSubtitle => 'Fitur point of sale';
 
   @override
   String get settingsPreferencesNotifications => 'Notifikasi';
@@ -1872,6 +1810,9 @@ class AppLocalizationsId extends AppLocalizations {
   String get commonDone => 'Selesai';
 
   @override
+  String get commonTryAgain => 'Coba Lagi';
+
+  @override
   String get redeemToLabel => 'Tukar Ke';
 
   @override
@@ -2006,6 +1947,14 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String encryptedSendCancelledPartial(String amount) {
     return '$amount sudah terkirim sebelum dibatalkan. Sisanya tetap berada di akun Anda.';
+  }
+
+  @override
+  String get encryptedSendFundsSafeLabel => 'Dana Anda aman';
+
+  @override
+  String encryptedSendFundsSafeCaption(String account) {
+    return 'Masih di $account. Tidak ada yang keluar dari dompet Anda.';
   }
 
   @override

@@ -137,8 +137,11 @@ class _MultisigActionConfirmSheetState extends ConsumerState<MultisigActionConfi
   bool _loadingFee = true;
   bool _feeEstimateFailed = false;
 
-  /// The proposal's inner call as stored on chain, for actions that resubmit it.
+  /// The proposal's inner call as stored on chain, for actions that resubmit it,
+  /// kept only once those bytes have decoded — nothing downstream may use bytes
+  /// this wallet could not parse.
   List<int>? _callBytes;
+  DecodedCall? _decodedCallBytes;
   bool _loadingCallBytes = false;
   bool _callBytesFailed = false;
 
@@ -156,13 +159,15 @@ class _MultisigActionConfirmSheetState extends ConsumerState<MultisigActionConfi
       setState(() => _loadingCallBytes = true);
       try {
         final bytes = await loader(ref);
+        final decoded = MultisigProposal.decodeProposalCall(bytes);
         if (!mounted) return;
         setState(() {
           _callBytes = bytes;
+          _decodedCallBytes = decoded;
           _loadingCallBytes = false;
         });
       } catch (e, st) {
-        quantusPrint('${widget.logPrefix} proposal call load error: $e $st');
+        quantusPrint('${widget.logPrefix} proposal call unavailable: $e $st');
         if (!mounted) return;
         setState(() {
           _loadingCallBytes = false;
@@ -176,18 +181,11 @@ class _MultisigActionConfirmSheetState extends ConsumerState<MultisigActionConfi
   }
 
   /// The proposal's call as a display tree: from the authoritative chain bytes
-  /// when loaded, otherwise from the indexer's copy.
-  DecodedCall? get _decodedProposalCall {
-    final bytes = _callBytes;
-    if (bytes != null) {
-      try {
-        return CallDecoder.decodeBytes(bytes);
-      } catch (e) {
-        quantusPrint('${widget.logPrefix} could not decode stored proposal call: $e');
-      }
-    }
-    return widget.proposal.decodedCall;
-  }
+  /// when this action loads them, otherwise from the indexer's copy. Null once
+  /// authoritative bytes were meant to load and did not parse — the indexer's
+  /// labels must not stand in for call bytes this wallet rejected.
+  DecodedCall? get _decodedProposalCall =>
+      widget.loadCallBytes != null ? _decodedCallBytes : widget.proposal.decodedCall;
 
   /// Last resort when no call bytes are available at all: the indexer's own
   /// pallet/call names and transfer fields, with no invented parameters.
@@ -340,8 +338,8 @@ class _MultisigActionConfirmSheetState extends ConsumerState<MultisigActionConfi
   @override
   Widget build(BuildContext context) {
     final l10n = ref.watch(l10nProvider);
-    final colors = context.colors;
-    final text = context.themeText;
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
     final fmt = ref.watch(numberFormattingServiceProvider);
     final networkFeeLabel = _networkFeeLabel(l10n, fmt);
     final decoded = _decodedProposalCall;
@@ -361,20 +359,20 @@ class _MultisigActionConfirmSheetState extends ConsumerState<MultisigActionConfi
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(widget.labels.body(l10n), style: text.paragraph?.copyWith(color: colors.textPrimary)),
+          Text(widget.labels.body(l10n), style: text.bodyLarge.copyWith(color: colors.textContent)),
           const SizedBox(height: 8),
-          Text(headline.primary, style: text.smallTitle?.copyWith(color: colors.textPrimary)),
+          Text(headline.primary, style: text.titleScreen.copyWith(color: colors.textContent)),
           if (headline.secondary != null) ...[
             const SizedBox(height: 8),
-            Text(headline.secondary!, style: text.smallParagraph?.copyWith(color: colors.textTertiary)),
+            Text(headline.secondary!, style: text.body.copyWith(color: colors.textMuted)),
           ],
           if (_loadingCallBytes) ...[
             const SizedBox(height: 16),
-            Text(l10n.multisigProposalCallLoading, style: text.detail?.copyWith(color: colors.textTertiary)),
+            Text(l10n.multisigProposalCallLoading, style: text.caption.copyWith(color: colors.textMuted)),
           ],
           if (_callBytesFailed) ...[
             const SizedBox(height: 16),
-            Text(l10n.multisigProposalCallUnavailable, style: text.detail?.copyWith(color: colors.textError)),
+            Text(l10n.multisigProposalCallUnavailable, style: text.caption.copyWith(color: colors.semanticEmber)),
           ],
           if (decoded != null && decoded.fields.isNotEmpty) ...[
             const SizedBox(height: 16),
@@ -386,11 +384,11 @@ class _MultisigActionConfirmSheetState extends ConsumerState<MultisigActionConfi
           ],
           if (_feeEstimateFailed) ...[
             const SizedBox(height: 16),
-            Text(l10n.multisigFeeEstimateUnavailable, style: text.detail?.copyWith(color: colors.textTertiary)),
+            Text(l10n.multisigFeeEstimateUnavailable, style: text.caption.copyWith(color: colors.textMuted)),
           ],
           if (_errorMessage != null) ...[
             const SizedBox(height: 16),
-            Text(_errorMessage!, style: text.detail?.copyWith(color: colors.textError)),
+            Text(_errorMessage!, style: text.caption.copyWith(color: colors.semanticEmber)),
           ],
           const SizedBox(height: 24),
           QuantusButton.simple(
@@ -402,7 +400,7 @@ class _MultisigActionConfirmSheetState extends ConsumerState<MultisigActionConfi
           const SizedBox(height: 12),
           QuantusButton.simple(
             label: widget.labels.dismissLabel(l10n),
-            variant: ButtonVariant.secondary,
+            variant: ButtonVariant.staged,
             isDisabled: _submitting,
             onTap: _submitting ? null : () => Navigator.pop(context),
           ),

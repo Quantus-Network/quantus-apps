@@ -8,8 +8,36 @@ import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/services/local_auth_service.dart';
 import 'package:resonance_network_wallet/v2/screens/send/send_strategy.dart';
 
+/// Spend plan — and so the fee — for an amount from the wallet's current
+/// UTXO set. Derived from whatever [encryptedStateProvider] holds, including
+/// the previous state during a background rescan, so typing never waits on
+/// the chain: the volume fee and quantum come from the shipped metadata.
+final encryptedSendFeeProvider = Provider.autoDispose.family<AsyncValue<SendFee>, (int walletIndex, BigInt amount)>((
+  ref,
+  key,
+) {
+  final (walletIndex, amount) = key;
+  return ref.watch(encryptedStateProvider(walletIndex)).whenData<SendFee>((s) => planEncryptedFee(s.utxos, amount));
+});
+
+EncryptedFee planEncryptedFee(List<WormholeUtxo> utxos, BigInt amount) {
+  if (amount <= BigInt.zero) return const EncryptedFee();
+  if (amount % wormholeScaleFactor != BigInt.zero) {
+    return const EncryptedFee(blocker: EncryptedSendBlocker.notQuantized);
+  }
+  try {
+    return EncryptedFee(
+      plan: selectWormholeInputs(utxos: utxos, amountToken: amount),
+    );
+  } on InsufficientEncryptedFunds {
+    return const EncryptedFee(blocker: EncryptedSendBlocker.insufficient);
+  } on BatchBelowMinimumExit {
+    return const EncryptedFee(blocker: EncryptedSendBlocker.belowBatchMinimum);
+  }
+}
+
 /// ZK-private transfer from an encrypted (wormhole) account. Coin selection
-/// runs during fee estimation; submission hands the plan to the proving
+/// runs as the fee is derived; submission hands the plan to the proving
 /// progress screen via [SendNeedsProving].
 class EncryptedSendStrategy extends SendStrategy {
   final Account account;
@@ -56,22 +84,12 @@ class EncryptedSendStrategy extends SendStrategy {
   BigInt feeChargedToBalance(SendFee? fee) => BigInt.zero;
 
   @override
-  Future<SendFee> estimateFee(WidgetRef ref, {required String recipient, required BigInt amount}) async {
-    if (amount <= BigInt.zero) return const EncryptedFee();
-    if (amount % wormholeScaleFactor != BigInt.zero) {
-      return const EncryptedFee(blocker: EncryptedSendBlocker.notQuantized);
-    }
-    final state = await ref.read(encryptedStateProvider(account.walletIndex).future);
-    try {
-      return EncryptedFee(
-        plan: selectWormholeInputs(utxos: state.utxos, amountToken: amount),
-      );
-    } on InsufficientEncryptedFunds {
-      return const EncryptedFee(blocker: EncryptedSendBlocker.insufficient);
-    } on BatchBelowMinimumExit {
-      return const EncryptedFee(blocker: EncryptedSendBlocker.belowBatchMinimum);
-    }
-  }
+  ProviderListenable<AsyncValue<SendFee>> feeProvider({required String recipient, required BigInt amount}) =>
+      encryptedSendFeeProvider((account.walletIndex, amount));
+
+  @override
+  void retryFee(WidgetRef ref, {required String recipient, required BigInt amount}) =>
+      ref.invalidate(encryptedStateProvider(account.walletIndex));
 
   @override
   String? affordabilityError(WidgetRef ref, SendFee fee, AppLocalizations l10n) {

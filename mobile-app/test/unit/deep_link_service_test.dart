@@ -49,5 +49,21 @@ void main() {
 
       expect(container.read(paymentIntentProvider), isNull);
     });
+
+    test('survives malformed percent-escapes instead of throwing at the caller', () {
+      // handleLink runs inside the app_links stream listener, where a
+      // FormatException from lazy percent-decoding has no handler.
+      for (final url in [
+        'https://www.quantus.com/account?id=%ff',
+        'https://www.quantus.com/%ff%fe/account',
+        'https://www.quantus.com/pay?to=%c3%28&amount=1.5',
+        'https://www.quantus.com/pay/%ff',
+      ]) {
+        expect(() => handle(url), returnsNormally, reason: url);
+      }
+
+      expect(container.read(paymentIntentProvider), isNull);
+      expect(container.read(sharedAccountIntentProvider), isNull);
+    });
   });
 }

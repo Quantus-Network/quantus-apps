@@ -27,35 +27,26 @@ class TransactionSubmissionService {
 
   TransactionSubmissionService(this._ref) : _poller = PendingTransactionPollingService(_ref);
 
-  Future<String> balanceTransfer(
-    Account account,
-    String targetAddress,
-    BigInt amount,
-    BigInt fee,
-    int blockHeight,
-  ) async {
-    // A. Create the initial pending transaction event
-    final pendingTx = PendingTransactionEvent(
-      tempId: 'pending_${DateTime.now().millisecondsSinceEpoch}',
+  /// Signs first so the pending record carries the extrinsic's own block
+  /// number (the poller's search floor), then broadcasts the signed bytes.
+  Future<String> balanceTransfer(Account account, String targetAddress, BigInt amount, BigInt fee) async {
+    final substrate = SubstrateService();
+    final signed = await substrate.getExtrinsicPayload(
+      account,
+      BalancesService().getBalanceTransferCall(targetAddress, amount),
+    );
+    final pendingTx = createPendingTransaction(
       from: account.accountId,
       to: targetAddress,
       amount: amount,
-      timestamp: DateTime.now(),
-      transactionState: TransactionState.created,
       fee: fee,
-      blockNumber: blockHeight,
+      blockHeight: signed.blockNumber,
     );
-
-    // B. Immediately add it to the state so the UI can update
     _ref.read(pendingTransactionsProvider.notifier).add(pendingTx);
 
     TelemetryService().sendEvent('send_transfer');
 
-    // C. Submit and track the transaction
-    return submitAndTrackTransaction(
-      () => BalancesService().balanceTransfer(account, targetAddress, amount),
-      pendingTx,
-    );
+    return submitAndTrackTransaction(() => substrate.submitSignedExtrinsic(signed.payload), pendingTx);
   }
 
   /// Broadcasts a transfer whose signature was produced off-device (e.g. by a

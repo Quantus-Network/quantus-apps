@@ -29,14 +29,20 @@ void main() {
     return container.decoration! as BoxDecoration;
   }
 
-  testWidgets('shows message and default glyph', (tester) async {
+  testWidgets('default glyph follows the tone', (tester) async {
     await pumpBanner(
       tester,
       const QuantusBanner(tone: BannerTone.sage, message: 'Your funds are safe. Nothing left your wallet.'),
     );
 
     expect(find.text('Your funds are safe. Nothing left your wallet.'), findsOneWidget);
-    expect(find.text('!'), findsOneWidget);
+    expect(find.text('\u2713'), findsOneWidget, reason: 'success must not wear the failure mark');
+    expect(find.text('!'), findsNothing);
+
+    for (final tone in [BannerTone.sand, BannerTone.ember, BannerTone.glacier]) {
+      await pumpBanner(tester, QuantusBanner(tone: tone, message: 'Status'));
+      expect(find.text('!'), findsOneWidget, reason: '$tone glyph');
+    }
   });
 
   testWidgets('custom leading replaces the default glyph', (tester) async {
@@ -70,5 +76,45 @@ void main() {
     await pumpBanner(tester, const QuantusBanner(tone: BannerTone.glacier, message: 'Waiting'));
 
     expect(decorationAround(tester, 'Waiting').borderRadius, const AppRadiusV3.standard().mdBorder);
+  });
+
+  testWidgets('stacked shows uppercase label, amount, and muted caption', (tester) async {
+    await pumpBanner(
+      tester,
+      const QuantusBanner.stacked(
+        tone: BannerTone.sage,
+        label: 'Your funds are safe',
+        amount: '12.5 QUAN',
+        message: 'Still in Account 1. Nothing left your wallet.',
+      ),
+    );
+
+    expect(find.text('YOUR FUNDS ARE SAFE'), findsOneWidget);
+    expect(find.text('12.5 QUAN'), findsOneWidget);
+    expect(find.text('Still in Account 1. Nothing left your wallet.'), findsOneWidget);
+    expect(find.text('!'), findsNothing);
+
+    expect(tester.widget<Text>(find.text('YOUR FUNDS ARE SAFE')).style?.color, colors.semanticSage);
+    expect(tester.widget<Text>(find.text('12.5 QUAN')).style?.color, colors.semanticSage);
+    expect(
+      tester.widget<Text>(find.text('Still in Account 1. Nothing left your wallet.')).style?.color,
+      colors.textMuted,
+    );
+  });
+
+  testWidgets('stacked paints 10 percent tone stroke', (tester) async {
+    await pumpBanner(
+      tester,
+      const QuantusBanner.stacked(
+        tone: BannerTone.sage,
+        label: 'Your funds are safe',
+        amount: '12.5 QUAN',
+        message: 'Still in Account 1. Nothing left your wallet.',
+      ),
+    );
+
+    final border = decorationAround(tester, '12.5 QUAN').border! as Border;
+    expect(border.top.color, colors.semanticSage.useOpacity(0.10));
+    expect(decorationAround(tester, '12.5 QUAN').gradient, isA<LinearGradient>());
   });
 }

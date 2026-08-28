@@ -21,8 +21,8 @@ class _ReviewQuoteContent extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = ref.watch(l10nProvider);
-    final colors = context.colors;
-    final text = context.themeText;
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
     final swapService = SwapService();
     final fromUsd = quote.fromAmount * swapService.getUsdPrice(quote.fromToken);
     final toUsd = quote.toAmount * swapService.getUsdPrice(quote.toToken);
@@ -41,7 +41,7 @@ class _ReviewQuoteContent extends ConsumerWidget {
             colors,
             text,
           ),
-          Divider(color: colors.separator, height: 32),
+          const Padding(padding: EdgeInsets.symmetric(vertical: 16), child: MenuDivider()),
           _feeRow(
             l10n.swapReviewTotalAmount,
             '${SwapService.formatTokenAmount(quote.totalAmount, quote.fromToken)} ${quote.fromToken.symbol}',
@@ -55,33 +55,41 @@ class _ReviewQuoteContent extends ConsumerWidget {
               (quote.fromAmount * quote.slippageTolerance).toStringAsFixed(2),
               (quote.slippageTolerance * 100).toStringAsFixed(0),
             ),
-            style: text.tiny?.copyWith(color: colors.textSecondary, height: 1.35),
+            style: text.caption.copyWith(color: colors.textMuted),
           ),
           const SizedBox(height: 24),
-          _confirmButton(context, l10n, colors, text),
+          _confirmButton(context, l10n),
         ],
       ),
     );
   }
 
-  Widget _swapVisual(BuildContext context, AppColorsV2 colors, AppTextTheme text, double fromUsd, double toUsd) {
+  Widget _swapVisual(BuildContext context, AppColorsV3 colors, AppTextThemeV3 text, double fromUsd, double toUsd) {
     final cardWidth = MediaQuery.of(context).size.width / 3;
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        _tokenCard(quote.fromToken, quote.fromAmount, fromUsd, cardWidth, colors, text),
-        Icon(Icons.arrow_forward, color: colors.textSecondary, size: 20),
-        _tokenCard(quote.toToken, quote.toAmount, toUsd, cardWidth, colors, text),
+        _tokenCard(context, quote.fromToken, quote.fromAmount, fromUsd, cardWidth, colors, text),
+        Icon(Icons.arrow_forward, color: colors.textMuted, size: 20),
+        _tokenCard(context, quote.toToken, quote.toAmount, toUsd, cardWidth, colors, text),
       ],
     );
   }
 
-  Widget _tokenCard(SwapToken token, double amount, double usd, double width, AppColorsV2 colors, AppTextTheme text) {
+  Widget _tokenCard(
+    BuildContext context,
+    SwapToken token,
+    double amount,
+    double usd,
+    double width,
+    AppColorsV3 colors,
+    AppTextThemeV3 text,
+  ) {
     return Container(
       width: width,
       height: 111,
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-      decoration: BoxDecoration(color: colors.surfaceGlass, borderRadius: BorderRadius.circular(14)),
+      decoration: BoxDecoration(color: colors.bgSurface2, borderRadius: context.radiusV3.mdBorder),
       child: Column(
         children: [
           Row(
@@ -93,50 +101,34 @@ class _ReviewQuoteContent extends ConsumerWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    token.symbol,
-                    style: text.detail?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w600),
-                  ),
-                  Text(token.network, style: text.tiny?.copyWith(color: colors.textSecondary)),
+                  Text(token.symbol, style: text.caption.copyWith(color: colors.textContent)),
+                  Text(token.network, style: text.caption.copyWith(color: colors.textMuted)),
                 ],
               ),
             ],
           ),
           const SizedBox(height: 6),
-          Text(
-            SwapService.formatTokenAmount(amount, token),
-            style: text.paragraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w600),
-          ),
-          const SizedBox(height: 0),
-          Text(
-            '\$${usd.toStringAsFixed(2)}',
-            style: text.detail?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500),
-          ),
+          Text(SwapService.formatTokenAmount(amount, token), style: text.amountRow.copyWith(color: colors.textContent)),
+          Text('\$${usd.toStringAsFixed(2)}', style: text.caption.copyWith(color: colors.textMuted)),
         ],
       ),
     );
   }
 
-  Widget _feeRow(String label, String value, AppColorsV2 colors, AppTextTheme text, {bool highlight = false}) {
+  Widget _feeRow(String label, String value, AppColorsV3 colors, AppTextThemeV3 text, {bool highlight = false}) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: text.detail?.copyWith(color: colors.textSecondary)),
-        Text(
-          value,
-          style: text.detail?.copyWith(
-            color: highlight ? colors.textPrimary : colors.textSecondary,
-            fontWeight: highlight ? FontWeight.w500 : null,
-          ),
-        ),
+        Text(label, style: text.caption.copyWith(color: colors.textMuted)),
+        Text(value, style: text.body.copyWith(color: highlight ? colors.textContent : colors.textMuted)),
       ],
     );
   }
 
-  Widget _confirmButton(BuildContext context, AppLocalizations l10n, AppColorsV2 colors, AppTextTheme text) {
+  Widget _confirmButton(BuildContext context, AppLocalizations l10n) {
     return QuantusButton.simple(
       label: l10n.swapReviewConfirm,
-      variant: ButtonVariant.secondary,
+      variant: ButtonVariant.staged,
       onTap: () async {
         final swapService = SwapService();
         final order = await swapService.createSwap(quote);

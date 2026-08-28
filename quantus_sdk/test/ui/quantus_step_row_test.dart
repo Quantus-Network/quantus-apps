@@ -43,7 +43,7 @@ void main() {
     final mark = tester.widget<Text>(find.text('✓'));
     expect(mark.style?.color, colors.semanticSage);
     expect(mark.style?.fontSize, 13);
-    expect(mark.style?.fontFamily, AppTextTheme.fontFamily);
+    expect(mark.style?.fontFamily, AppTextThemeV3.fontFamily);
 
     final label = tester.widget<Text>(find.text('Preparing'));
     expect(label.style?.color, colors.textMuted2);
@@ -75,7 +75,7 @@ void main() {
     expect(substate.style?.color, colors.textMuted2);
     expect(substate.style?.fontSize, 10);
     expect(substate.style?.letterSpacing, 0.8);
-    expect(substate.style?.fontFamily, AppTextTheme.fontFamilySecondary);
+    expect(substate.style?.fontFamily, AppTextThemeV3.fontFamilySecondary);
     expect(substate.style?.fontWeight, FontWeight.w400);
   });
 

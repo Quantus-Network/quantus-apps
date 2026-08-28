@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:quantus_cold_wallet/components/change_password_sheet.dart';
 import 'package:quantus_cold_wallet/components/qr_tuning_controls.dart';
+import 'package:quantus_cold_wallet/components/verify_password_sheet.dart';
 import 'package:quantus_cold_wallet/providers/settings_providers.dart';
 import 'package:quantus_cold_wallet/providers/wallet_providers.dart';
-import 'package:quantus_cold_wallet/components/change_password_sheet.dart';
+import 'package:quantus_cold_wallet/screens/show_secret_phrase_screen.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -24,6 +26,15 @@ class SettingsScreen extends ConsumerWidget {
       isDestructive: true,
     );
     if (confirmed) await ref.read(coldSettingsProvider.notifier).setWifiOverrideEnabled(true);
+  }
+
+  Future<void> _showSecretPhrase(BuildContext context) async {
+    final verified = await showVerifyPasswordSheet(
+      context,
+      message: 'Your password is required to show the secret phrase.',
+    );
+    if (!verified || !context.mounted) return;
+    await Navigator.push(context, MaterialPageRoute(builder: (_) => const ShowSecretPhraseScreen()));
   }
 
   Future<void> _confirmReset(BuildContext context, WidgetRef ref) async {
@@ -54,27 +65,18 @@ class SettingsScreen extends ConsumerWidget {
             const SizedBox(height: 8),
             Text('SECURITY', style: text.labelMonogram.copyWith(color: colors.textMuted)),
             const SizedBox(height: 8),
-            GestureDetector(
+            _navRow(
+              context,
+              title: 'Change password',
+              subtitle: 'Set or change the password that encrypts the wallet key on this device.',
               onTap: () => showChangePasswordSheet(context),
-              behavior: HitTestBehavior.opaque,
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Change password', style: text.body.copyWith(color: colors.textContent)),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Set or change the password that encrypts the wallet key on this device.',
-                          style: text.caption.copyWith(color: colors.textMuted),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Icon(Icons.chevron_right, color: colors.textMuted, size: 22),
-                ],
-              ),
+            ),
+            const SizedBox(height: 24),
+            _navRow(
+              context,
+              title: 'Show secret phrase',
+              subtitle: 'Reveal the recovery phrase for this wallet. Your password is required.',
+              onTap: () => _showSecretPhrase(context),
             ),
             const SizedBox(height: 24),
             // INTENTIONAL: this override ships in RELEASE builds. The cold wallet is
@@ -129,31 +131,46 @@ class SettingsScreen extends ConsumerWidget {
             const SizedBox(height: 16),
             Text('DANGER ZONE', style: text.labelMonogram.copyWith(color: colors.textMuted)),
             const SizedBox(height: 8),
-            GestureDetector(
+            _navRow(
+              context,
+              title: 'Reset wallet',
+              subtitle: 'Erase the encrypted key from this device.',
+              titleColor: colors.semanticEmber,
               onTap: () => _confirmReset(context, ref),
-              behavior: HitTestBehavior.opaque,
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Reset wallet', style: text.body.copyWith(color: colors.semanticEmber)),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Erase the encrypted key from this device.',
-                          style: text.caption.copyWith(color: colors.textMuted),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Icon(Icons.chevron_right, color: colors.textMuted, size: 22),
-                ],
-              ),
             ),
             const SizedBox(height: 16),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _navRow(
+    BuildContext context, {
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+    Color? titleColor,
+  }) {
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: text.body.copyWith(color: titleColor ?? colors.textContent)),
+                const SizedBox(height: 4),
+                Text(subtitle, style: text.caption.copyWith(color: colors.textMuted)),
+              ],
+            ),
+          ),
+          Icon(Icons.chevron_right, color: colors.textMuted, size: 22),
+        ],
       ),
     );
   }

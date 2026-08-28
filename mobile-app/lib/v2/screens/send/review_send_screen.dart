@@ -143,8 +143,8 @@ class _ReviewSendScreenState extends ConsumerState<ReviewSendScreen> {
   Widget build(BuildContext context) {
     final l10n = ref.watch(l10nProvider);
     final strings = widget.strategy.strings(l10n);
-    final colors = context.colors;
-    final text = context.themeText;
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
     final approxDisplay = ref.watch(txAmountDisplayProvider)(
       widget.amount,
       isSend: true,
@@ -159,7 +159,7 @@ class _ReviewSendScreenState extends ConsumerState<ReviewSendScreen> {
       mainContent: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _heroCard(colors, text, l10n, strings, approxDisplay),
+          _heroCard(l10n, strings, approxDisplay),
           const SizedBox(height: 28),
           Expanded(
             child: SingleChildScrollView(
@@ -177,7 +177,7 @@ class _ReviewSendScreenState extends ConsumerState<ReviewSendScreen> {
           ),
           if (_errorMessage != null) ...[
             const SizedBox(height: 16),
-            Text(_errorMessage!, style: text.detail?.copyWith(color: colors.textError)),
+            Text(_errorMessage!, style: text.caption.copyWith(color: colors.semanticEmber)),
           ],
         ],
       ),
@@ -194,14 +194,10 @@ class _ReviewSendScreenState extends ConsumerState<ReviewSendScreen> {
     );
   }
 
-  Widget _heroCard(
-    AppColorsV2 colors,
-    AppTextTheme text,
-    AppLocalizations l10n,
-    SendStrings strings,
-    CurrencyDisplayState approxDisplay,
-  ) {
-    final sectionLabelStyle = text.receiveLabel?.copyWith(color: colors.textLabel);
+  Widget _heroCard(AppLocalizations l10n, SendStrings strings, CurrencyDisplayState approxDisplay) {
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
+    final sectionLabelStyle = text.labelData.copyWith(color: colors.textMuted);
 
     return SplitCard(
       topChild: Column(

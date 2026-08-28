@@ -33,9 +33,7 @@ void main() {
     await AppLauncher.launchFresh($);
     await WalletFlows.importFromWelcome($);
 
-    final send = await SendPreflight.assertFundedAndGetMinimalSend(
-      recipientAddress: TestEnv.sendRecipientAddress,
-    );
+    final send = await SendPreflight.assertFundedAndGetMinimalSend();
 
     await $(Selectors.homeSendButton).tap();
     await $(Selectors.sendSelectRecipientScreen).waitUntilVisible(timeout: PatrolTimeouts.visible);

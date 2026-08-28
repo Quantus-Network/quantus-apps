@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
@@ -30,6 +31,43 @@ class UnifiedPaginationController extends StateNotifier<PaginationState> {
   final int _limit;
   final TransactionFilter _filter;
 
+  Future<void>? _inFlight;
+  List<String>? _inFlightIds;
+
+  /// Runs [load] for [ids], joining a running load only when it is fetching the
+  /// same accounts.
+  ///
+  /// `_init` and the accounts listener both fire when accounts settle, and
+  /// `loadingRefresh` resets `isFetching` before it fetches, so the state flag
+  /// alone cannot keep them from hitting the indexer twice. A load for a
+  /// *different* scope is queued behind the running one instead of joining it:
+  /// the account set can change mid-flight, and the newer scope has to win the
+  /// final state write or the list keeps showing the previous account.
+  Future<void> _once(List<String> ids, Future<void> Function() load) {
+    final running = _inFlight;
+    if (running != null && listEquals(_inFlightIds, ids)) return running;
+
+    final task = running == null ? load() : _queueAfter(running, load);
+    _inFlight = task;
+    _inFlightIds = List<String>.unmodifiable(ids);
+
+    return task.whenComplete(() {
+      if (identical(_inFlight, task)) {
+        _inFlight = null;
+        _inFlightIds = null;
+      }
+    });
+  }
+
+  Future<void> _queueAfter(Future<void> running, Future<void> Function() load) async {
+    try {
+      await running;
+    } catch (_) {
+      // Reported by whoever started that load; this scope still has to load.
+    }
+    await load();
+  }
+
   void _listenToAccounts() {
     ref.listen(accountsProvider, (previous, next) {
       if (next != previous && !next.isLoading) {
@@ -53,7 +91,7 @@ class UnifiedPaginationController extends StateNotifier<PaginationState> {
       return;
     }
 
-    await _fetchPage(ids);
+    await _once(ids, () => _fetchPage(ids));
   }
 
   Future<List<String>> _getAccountIdsAsync() async {
@@ -116,25 +154,25 @@ class UnifiedPaginationController extends StateNotifier<PaginationState> {
     final targetAccountIds = _getAccountIds();
     if (targetAccountIds.isEmpty) return;
 
-    await _fetchPage(targetAccountIds);
+    await _once(targetAccountIds, () => _fetchPage(targetAccountIds));
   }
 
   /// Refresh data silently without showing loading indicators.
   /// Used for automatic polling to update data in background.
   Future<void> silentRefresh() async {
     quantusPrint('UnifiedPaginationController: Silent refresh called');
-    if (state.isFetching) return;
 
     final targetAccountIds = _getAccountIds();
     if (targetAccountIds.isEmpty) return;
 
-    state = state.copyWith(isFetching: true);
-
-    try {
-      await _silentFetchFirstPage(targetAccountIds);
-    } finally {
-      state = state.copyWith(isFetching: false);
-    }
+    await _once(targetAccountIds, () async {
+      state = state.copyWith(isFetching: true);
+      try {
+        await _silentFetchFirstPage(targetAccountIds);
+      } finally {
+        state = state.copyWith(isFetching: false);
+      }
+    });
   }
 
   /// Refresh data with loading indicators.
@@ -155,9 +193,11 @@ class UnifiedPaginationController extends StateNotifier<PaginationState> {
       return;
     }
 
-    // Reset to initial state to show loading
-    state = PaginationState.initial();
-    await _fetchPage(targetAccountIds);
+    await _once(targetAccountIds, () {
+      // Reset to initial state to show loading
+      state = PaginationState.initial();
+      return _fetchPage(targetAccountIds);
+    });
   }
 
   Future<void> _silentFetchFirstPage(List<String> targetAccountIds) async {

@@ -10,14 +10,12 @@ class SettingsCheckbox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.colors;
-    final text = context.themeText;
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
 
-    final borderColor = checked ? colors.accentOrange : colors.borderButton;
-    final labelStyle = text.paragraph?.copyWith(color: colors.textMuted, fontSize: 16);
-    final double kSettingsSquareCheckboxSize = 20;
-    final double kSettingsSquareCheckboxRadius = 4;
-    final double kSettingsSquareCheckboxCheckSize = 14;
+    final borderColor = checked ? colors.accentFlare : colors.borderHairline;
+    const double kSettingsSquareCheckboxSize = 20;
+    const double kSettingsSquareCheckboxCheckSize = 14;
 
     return Semantics(
       checked: checked,
@@ -33,17 +31,19 @@ class SettingsCheckbox extends StatelessWidget {
                 width: kSettingsSquareCheckboxSize,
                 height: kSettingsSquareCheckboxSize,
                 decoration: BoxDecoration(
-                  color: checked ? colors.accentOrange : Colors.transparent,
-                  borderRadius: BorderRadius.circular(kSettingsSquareCheckboxRadius),
+                  color: checked ? colors.accentFlare : Colors.transparent,
+                  borderRadius: context.radiusV3.xsBorder,
                   border: Border.all(color: borderColor, width: 1),
                 ),
                 alignment: Alignment.center,
                 child: checked
-                    ? Icon(Icons.check, size: kSettingsSquareCheckboxCheckSize, color: colors.background)
+                    ? Icon(Icons.check, size: kSettingsSquareCheckboxCheckSize, color: colors.textVoid)
                     : null,
               ),
               const SizedBox(width: 16),
-              Expanded(child: Text(label, style: labelStyle)),
+              Expanded(
+                child: Text(label, style: text.body.copyWith(color: colors.textMuted)),
+              ),
             ],
           ),
         ),

@@ -30,7 +30,7 @@ void main() {
     expect(label.style?.color, colors.textMuted);
     expect(label.style?.fontSize, 10);
     expect(label.style?.letterSpacing, 1);
-    expect(label.style?.fontFamily, AppTextTheme.fontFamilySecondary);
+    expect(label.style?.fontFamily, AppTextThemeV3.fontFamilySecondary);
 
     final value = tester.widget<Text>(find.text('1.00 QNT'));
     expect(value.style?.color, colors.textContent);
@@ -46,7 +46,7 @@ void main() {
 
     final value = tester.widget<Text>(find.text('0xabc'));
     expect(value.textAlign, isNull);
-    expect(value.style?.fontFamily, AppTextTheme.fontFamilySecondary);
+    expect(value.style?.fontFamily, AppTextThemeV3.fontFamilySecondary);
     expect(value.style?.fontSize, text.dataAddressLarge.fontSize);
     expect(value.style?.color, colors.textContent);
   });
@@ -94,7 +94,7 @@ void main() {
     expect(phrase.textAlign, TextAlign.right);
 
     final value = tester.widget<Text>(find.text('qzDest'));
-    expect(value.style?.fontFamily, AppTextTheme.fontFamilySecondary);
+    expect(value.style?.fontFamily, AppTextThemeV3.fontFamilySecondary);
     expect(value.textAlign, TextAlign.right);
   });
 

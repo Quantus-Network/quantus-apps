@@ -157,10 +157,6 @@
     "@homeNoActiveAccount": {
       "description": "Shown when no account is active on the home screen"
     },
-    "homeCharge": "Charge",
-    "@homeCharge": {
-      "description": "POS charge button on the home screen bottom bar"
-    },
     "homeGetTestnetTokens": "Get Testnet Tokens ↗",
     "@homeGetTestnetTokens": {
       "description": "Faucet button when balance is zero on the home screen"
@@ -172,6 +168,10 @@
     "homeBackupReminder": "Back up your recovery phrase",
     "@homeBackupReminder": {
       "description": "Home banner prompting the user to back up their recovery phrase"
+    },
+    "networkStatusOfflineBanner": "Offline · showing last known balances",
+    "@networkStatusOfflineBanner": {
+      "description": "Full-width strip shown when the device is offline; rendered uppercase"
     },
     "homeReceive": "Receive",
     "@homeReceive": {
@@ -537,6 +537,10 @@
     "multisigProposalCallUnavailable": "Could not read this proposal from the chain, so there is nothing to approve. Try again when you are back online.",
     "@multisigProposalCallUnavailable": {
       "description": "Shown when the proposal's stored call bytes could not be fetched, blocking approval"
+    },
+    "multisigProposalInvalid": "Invalid proposal",
+    "@multisigProposalInvalid": {
+      "description": "Shown in place of the amount when the proposal's stored call bytes cannot be decoded, blocking approval"
     },
     "multisigStatusApproved": "SIGNED",
     "@multisigStatusApproved": {
@@ -1906,14 +1910,6 @@
     "@receiveTitle": {
       "description": "App bar title on receive screen"
     },
-    "receiveTabQrCode": "QR Code",
-    "@receiveTabQrCode": {
-      "description": "QR Code tab on receive screen"
-    },
-    "receiveTabAddress": "Address",
-    "@receiveTabAddress": {
-      "description": "Address tab on receive screen"
-    },
     "receiveCopy": "Copy",
     "@receiveCopy": {
       "description": "Copy button on receive screen"
@@ -1931,100 +1927,20 @@
     "@receiveCopiedMessage": {
       "description": "Toast when the address is copied"
     },
-
-    "posAmountTitle": "New Charge",
-    "@posAmountTitle": {
-      "description": "App bar title on POS amount screen"
+    "receiveYourAddressLabel": "YOUR ADDRESS",
+    "@receiveYourAddressLabel": {
+      "description": "Label above the account address on the receive screen"
     },
-    "posAmountCharge": "Charge {amount}",
-    "@posAmountCharge": {
-      "description": "Charge button with formatted amount",
-      "placeholders": {
-        "amount": {
-          "type": "String"
-        }
-      }
+    "receiveCopyAddress": "Copy Address",
+    "@receiveCopyAddress": {
+      "description": "Primary button that copies the receive address"
     },
-    "posAmountEnterAmount": "Enter Amount",
-    "@posAmountEnterAmount": {
-      "description": "Charge button when amount is empty"
+    "receiveCheckphraseFootnote": "Ask the sender to confirm this phrase matches your address.",
+    "@receiveCheckphraseFootnote": {
+      "description": "Footnote under the checkphrase on the receive screen"
     },
 
-    "posQrTitleScanToPay": "Scan to Pay",
-    "@posQrTitleScanToPay": {
-      "description": "App bar title while waiting for payment"
-    },
-    "posQrTitlePaymentReceived": "Payment Received",
-    "@posQrTitlePaymentReceived": {
-      "description": "App bar title when payment is received"
-    },
-    "posQrError": "Error: {error}",
-    "@posQrError": {
-      "description": "Error message on POS QR screen",
-      "placeholders": {
-        "error": {
-          "type": "String"
-        }
-      }
-    },
-    "posQrNoActiveAccount": "No active account",
-    "@posQrNoActiveAccount": {
-      "description": "Shown when no active account on POS QR screen"
-    },
-    "posQrInvalidAmount": "Invalid amount. Tap to retry.",
-    "@posQrInvalidAmount": {
-      "description": "Error when amount cannot be parsed"
-    },
-    "posQrConnectionLost": "Connection lost. Tap to retry.",
-    "@posQrConnectionLost": {
-      "description": "Error when payment watch connection is lost"
-    },
-    "posQrTimedOut": "Timed out. Tap to retry.",
-    "@posQrTimedOut": {
-      "description": "Error when payment watch times out"
-    },
-    "posQrNewCharge": "New Charge",
-    "@posQrNewCharge": {
-      "description": "New charge button on POS QR screen"
-    },
-    "posQrDone": "Done",
-    "@posQrDone": {
-      "description": "Done button after payment received"
-    },
-    "posQrAmountReceived": "{amount} received",
-    "@posQrAmountReceived": {
-      "description": "Headline when payment is received",
-      "placeholders": {
-        "amount": {
-          "type": "String"
-        }
-      }
-    },
-    "posQrFrom": "From:",
-    "@posQrFrom": {
-      "description": "Sender label on payment received screen"
-    },
-    "posQrWaitingForPayment": "Waiting for payment",
-    "@posQrWaitingForPayment": {
-      "description": "Status while waiting for payment"
-    },
-    "posQrNetworkError": "Network Error",
-    "@posQrNetworkError": {
-      "description": "Network error title on POS QR screen"
-    },
-    "posQrTryAgain": "Try Again",
-    "@posQrTryAgain": {
-      "description": "Retry button on POS QR screen"
-    },
-    "posQrPaidAt": "At {time}",
-    "@posQrPaidAt": {
-      "description": "Paid at timestamp on payment received screen",
-      "placeholders": {
-        "time": {
-          "type": "String"
-        }
-      }
-    },
+
 
     "settingsTitle": "Settings",
     "@settingsTitle": {
@@ -2042,7 +1958,7 @@
     "@settingsPreferencesTitle": {
       "description": "Preferences row title on settings hub"
     },
-    "settingsPreferencesSubtitle": "Language, currency, POS mode, notifications",
+    "settingsPreferencesSubtitle": "Language, currency, notifications",
     "@settingsPreferencesSubtitle": {
       "description": "Preferences row subtitle on settings hub"
     },
@@ -2218,14 +2134,6 @@
     "settingsPreferencesLanguageSubtitle": "App display language",
     "@settingsPreferencesLanguageSubtitle": {
       "description": "Language row subtitle"
-    },
-    "settingsPreferencesPosMode": "POS Mode",
-    "@settingsPreferencesPosMode": {
-      "description": "POS mode row on preferences"
-    },
-    "settingsPreferencesPosModeSubtitle": "Point of sale features",
-    "@settingsPreferencesPosModeSubtitle": {
-      "description": "POS mode row subtitle"
     },
     "settingsPreferencesNotifications": "Notifications",
     "@settingsPreferencesNotifications": {
@@ -2728,6 +2636,10 @@
     "@commonDone": {
       "description": "Done button on various screens"
     },
+    "commonTryAgain": "Try Again",
+    "@commonTryAgain": {
+      "description": "Retry label shown when a list or quote fails to load"
+    },
 
     "redeemToLabel": "Redeem To",
     "@redeemToLabel": {
@@ -2928,6 +2840,19 @@
       "description": "Notice on the cancelled encrypted-send screen when some batches were already submitted",
       "placeholders": {
         "amount": {
+          "type": "String"
+        }
+      }
+    },
+    "encryptedSendFundsSafeLabel": "Your funds are safe",
+    "@encryptedSendFundsSafeLabel": {
+      "description": "Stacked banner kicker when an encrypted send was cancelled before anything left the wallet"
+    },
+    "encryptedSendFundsSafeCaption": "Still in {account}. Nothing left your wallet.",
+    "@encryptedSendFundsSafeCaption": {
+      "description": "Stacked banner caption when an encrypted send was cancelled before anything left the wallet",
+      "placeholders": {
+        "account": {
           "type": "String"
         }
       }
