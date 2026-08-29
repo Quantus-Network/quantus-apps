@@ -150,6 +150,31 @@ void main() {
       expect(valueField(decoded, 'Threshold').value, '2 of 2');
     });
 
+    test('execute shows the call it dispatches, not just the proposal id', () {
+      final inner = const balances_pallet.Txs().transferAllowDeath(dest: dest(bobId), value: oneToken);
+      final decoded = roundTrip(
+        const multisig_pallet.Txs().execute(multisigAddress: aliceId, proposalId: 4, call: inner),
+      );
+
+      expect(decoded.call, 'execute');
+      expect(valueField(decoded, 'Proposal id').value, '4');
+      expect(nestedField(decoded, 'You are executing').call.call, 'transfer_allow_death');
+      expect(decoded.summary?.amount, oneToken);
+    });
+
+    test('execute carries the inner call inline, unlike approve', () {
+      final inner = const balances_pallet.Txs().transferAllowDeath(dest: dest(bobId), value: oneToken);
+      final execute = const multisig_pallet.Txs().execute(multisigAddress: aliceId, proposalId: 4, call: inner);
+      final approve = const multisig_pallet.Txs().approve(
+        multisigAddress: aliceId,
+        proposalId: 4,
+        call: inner.encode(),
+      );
+
+      // approve's BoundedVec<u8> adds a compact length prefix; execute's Box<RuntimeCall> does not.
+      expect(execute.encode().length, approve.encode().length - 1);
+    });
+
     test('cancel flags that the proposal contents are not in the payload', () {
       final decoded = roundTrip(const multisig_pallet.Txs().cancel(multisigAddress: aliceId, proposalId: 4));
       final field = valueField(decoded, 'Proposal id');

@@ -59,6 +59,27 @@ void main() {
       expect(find.textContaining('Multisig · approve → Balances · transfer_allow_death'), findsOneWidget);
     });
 
+    testWidgets('a multisig execute reviews the call it dispatches', (tester) async {
+      final inner = const balances_pallet.Txs().transferAllowDeath(dest: account(bobId), value: oneToken);
+      await pumpSignScreen(
+        tester,
+        DebugPayloads.withExtensions(
+          const multisig_pallet.Txs().execute(multisigAddress: aliceId, proposalId: 12, call: inner),
+        ),
+      );
+
+      expect(find.text('MULTISIG EXECUTE'), findsOneWidget);
+      expect(find.text('SEND'), findsOneWidget);
+      // The proposal contents are in the payload now, so the screen must not
+      // claim they are held on chain and unsigned.
+      expect(find.textContaining('not part of what you sign'), findsNothing);
+
+      await tester.ensureVisible(find.text('ADVANCED'));
+      await tester.tap(find.text('ADVANCED'));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Multisig · execute → Balances · transfer_allow_death'), findsOneWidget);
+    });
+
     testWidgets('a reversible send names itself and shows its window', (tester) async {
       await pumpSignScreen(
         tester,

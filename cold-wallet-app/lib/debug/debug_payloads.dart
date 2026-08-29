@@ -29,6 +29,7 @@ class DebugPayloads {
     'Reversible 8h': reversibleTransferWithDelay,
     'Msig approve': multisigApproveTransfer,
     'Msig propose': multisigProposeTransfer,
+    'Msig execute': multisigExecuteTransfer,
     'Vote aye': governanceVoteAye,
   };
 
@@ -78,6 +79,18 @@ class DebugPayloads {
         multisigAddress: _debugMultisigAccount,
         call: inner.encode(),
         expiry: 5000000,
+      ),
+    );
+  }
+
+  /// A multisig execution carrying the call it dispatches — the same review as
+  /// the approval, labelled `You are executing`.
+  static Uint8List multisigExecuteTransfer() {
+    return withExtensions(
+      const multisig_pallet.Txs().execute(
+        multisigAddress: _debugMultisigAccount,
+        proposalId: 12,
+        call: _send(BigInt.from(900000000000)), // 0.9 tokens
       ),
     );
   }

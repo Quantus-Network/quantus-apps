@@ -211,8 +211,20 @@ class CallDecoder {
         );
       case multisig.Cancel(:final multisigAddress, :final proposalId):
         return _multisigProposalRef('cancel', multisigAddress, proposalId);
-      case multisig.Execute(:final multisigAddress, :final proposalId):
-        return _multisigProposalRef('execute', multisigAddress, proposalId);
+      case multisig.Execute(:final multisigAddress, :final proposalId, :final call):
+        // The chain dispatches this call only if it re-encodes to the stored
+        // proposal, so what is shown here is what executes.
+        final inner = describe(call);
+        return DecodedCall(
+          pallet: 'Multisig',
+          call: 'execute',
+          fields: [
+            _accountField('Multisig account', multisigAddress),
+            ValueField('Proposal id', '$proposalId', kind: ValueKind.number),
+            NestedCallField('You are executing', inner),
+          ],
+          summary: inner.summary,
+        );
       case multisig.RemoveExpired(:final multisigAddress, :final proposalId):
         return _multisigProposalRef('remove_expired', multisigAddress, proposalId);
       case multisig.ClaimDeposits(:final multisigAddress):
