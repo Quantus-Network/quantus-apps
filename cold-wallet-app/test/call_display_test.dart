@@ -82,10 +82,12 @@ void main() {
     });
 
     testWidgets('signer row reads Signed by when the funds leave an explicit source', (tester) async {
+      // A multisig proposal moves the multisig account's funds, not the signer's.
+      final inner = const balances_pallet.Txs().transferAllowDeath(dest: account(bobId), value: oneToken);
       await pumpSignScreen(
         tester,
         DebugPayloads.withExtensions(
-          const balances_pallet.Txs().forceTransfer(source: account(aliceId), dest: account(bobId), value: oneToken),
+          const multisig_pallet.Txs().propose(multisigAddress: aliceId, call: inner.encode(), expiry: 5000),
         ),
       );
       expect(find.text('SIGNED BY'), findsOneWidget);

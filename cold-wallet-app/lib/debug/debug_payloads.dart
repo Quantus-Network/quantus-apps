@@ -25,7 +25,6 @@ class DebugPayloads {
   /// combination can be eyeballed without a hot wallet.
   static final Map<String, Uint8List Function()> all = {
     'Send': transfer,
-    'Force send': forceTransfer,
     'Reversible': reversibleTransfer,
     'Reversible 8h': reversibleTransferWithDelay,
     'Msig approve': multisigApproveTransfer,
@@ -36,19 +35,6 @@ class DebugPayloads {
   /// A plain transfer — the everyday case. Headline: SEND.
   static Uint8List transfer() {
     return withExtensions(_send(BigInt.from(1500000000000))); // 1.5 tokens
-  }
-
-  /// A root-level transfer of another account's funds. The screen must show
-  /// the Source row and say `Signed by`, never `From`: the funds do not leave
-  /// the signer.
-  static Uint8List forceTransfer() {
-    return withExtensions(
-      const balances_pallet.Txs().forceTransfer(
-        source: multi_address.MultiAddress.values.id(_debugSourceAccount),
-        dest: _address(AppConstants.debugTestAddress),
-        value: BigInt.from(2500000000000), // 2.5 tokens
-      ),
-    );
   }
 
   /// A reversible transfer on the account's default window.
@@ -109,9 +95,6 @@ class DebugPayloads {
   /// Synthetic multisig account; renders as a valid ss58 address with a
   /// checkphrase without needing a real on-chain multisig.
   static final Uint8List _debugMultisigAccount = Uint8List.fromList(List.filled(32, 0xA7));
-
-  /// Synthetic force_transfer source, distinct from every other address shown.
-  static final Uint8List _debugSourceAccount = Uint8List.fromList(List.filled(32, 0xF0));
 
   static multi_address.MultiAddress _address(String ss58) =>
       multi_address.MultiAddress.values.id(ss58ToAccountId(s: ss58));

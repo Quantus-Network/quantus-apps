@@ -289,6 +289,7 @@ class TransactionSubmissionService {
     required MultisigAccount msig,
     required Account signer,
     required MultisigProposal proposal,
+    List<int>? callBytes,
     BigInt? fee,
   }) async {
     final pending = PendingMultisigExecutionEvent.fromProposal(
@@ -302,7 +303,7 @@ class TransactionSubmissionService {
 
     TelemetryService().sendEvent('multisig_execute');
 
-    await _submitExecute(msig: msig, signer: signer, proposalId: proposal.id, pending: pending);
+    await _submitExecute(msig: msig, signer: signer, proposalId: proposal.id, callBytes: callBytes, pending: pending);
   }
 
   Future<void> _submitExecute({
@@ -310,10 +311,16 @@ class TransactionSubmissionService {
     required Account signer,
     required int proposalId,
     required PendingMultisigExecutionEvent pending,
+    List<int>? callBytes,
   }) async {
     try {
       final service = _ref.read(multisigServiceProvider);
-      final hashBytes = await service.submitExecuteExtrinsic(msig: msig, signer: signer, proposalId: proposalId);
+      final hashBytes = await service.submitExecuteExtrinsic(
+        msig: msig,
+        signer: signer,
+        proposalId: proposalId,
+        callBytes: callBytes,
+      );
       final extrinsicHash = '0x${hex.encode(hashBytes)}';
       quantusPrint('[Execute] submitted: $extrinsicHash');
 

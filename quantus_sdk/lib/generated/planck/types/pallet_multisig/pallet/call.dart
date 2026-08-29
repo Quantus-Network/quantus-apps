@@ -2,8 +2,9 @@
 import 'dart:typed_data' as _i2;
 
 import 'package:polkadart/scale_codec.dart' as _i1;
-import 'package:quiver/collection.dart' as _i4;
+import 'package:quiver/collection.dart' as _i5;
 
+import '../../quantus_runtime/runtime_call.dart' as _i4;
 import '../../sp_core/crypto/account_id32.dart' as _i3;
 
 /// Contains a variant per dispatchable extrinsic that this pallet has.
@@ -62,8 +63,8 @@ class $Call {
     return ClaimDeposits(multisigAddress: multisigAddress);
   }
 
-  Execute execute({required _i3.AccountId32 multisigAddress, required int proposalId}) {
-    return Execute(multisigAddress: multisigAddress, proposalId: proposalId);
+  Execute execute({required _i3.AccountId32 multisigAddress, required int proposalId, required _i4.RuntimeCall call}) {
+    return Execute(multisigAddress: multisigAddress, proposalId: proposalId, call: call);
   }
 }
 
@@ -155,7 +156,8 @@ class $CallCodec with _i1.Codec<Call> {
 /// The multisig address is deterministically derived from:
 /// hash(pallet_id || sorted_signers || threshold || nonce)
 ///
-/// Signers are automatically sorted before hashing, so order doesn't matter.
+/// Signers are sorted before hashing, so order doesn't matter.
+/// Duplicate accounts are rejected.
 ///
 /// Economic costs:
 /// - MultisigFee: burned immediately (spam prevention)
@@ -207,7 +209,7 @@ class CreateMultisig extends Call {
   bool operator ==(Object other) =>
       identical(this, other) ||
       other is CreateMultisig &&
-          _i4.listsEqual(other.signers, signers) &&
+          _i5.listsEqual(other.signers, signers) &&
           other.threshold == threshold &&
           other.nonce == nonce;
 
@@ -278,8 +280,8 @@ class Propose extends Call {
   bool operator ==(Object other) =>
       identical(this, other) ||
       other is Propose &&
-          _i4.listsEqual(other.multisigAddress, multisigAddress) &&
-          _i4.listsEqual(other.call, call) &&
+          _i5.listsEqual(other.multisigAddress, multisigAddress) &&
+          _i5.listsEqual(other.call, call) &&
           other.expiry == expiry;
 
   @override
@@ -347,9 +349,9 @@ class Approve extends Call {
   bool operator ==(Object other) =>
       identical(this, other) ||
       other is Approve &&
-          _i4.listsEqual(other.multisigAddress, multisigAddress) &&
+          _i5.listsEqual(other.multisigAddress, multisigAddress) &&
           other.proposalId == proposalId &&
-          _i4.listsEqual(other.call, call);
+          _i5.listsEqual(other.call, call);
 
   @override
   int get hashCode => Object.hash(multisigAddress, proposalId, call);
@@ -397,7 +399,7 @@ class Cancel extends Call {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is Cancel && _i4.listsEqual(other.multisigAddress, multisigAddress) && other.proposalId == proposalId;
+      other is Cancel && _i5.listsEqual(other.multisigAddress, multisigAddress) && other.proposalId == proposalId;
 
   @override
   int get hashCode => Object.hash(multisigAddress, proposalId);
@@ -452,7 +454,7 @@ class RemoveExpired extends Call {
   bool operator ==(Object other) =>
       identical(this, other) ||
       other is RemoveExpired &&
-          _i4.listsEqual(other.multisigAddress, multisigAddress) &&
+          _i5.listsEqual(other.multisigAddress, multisigAddress) &&
           other.proposalId == proposalId;
 
   @override
@@ -497,7 +499,7 @@ class ClaimDeposits extends Call {
 
   @override
   bool operator ==(Object other) =>
-      identical(this, other) || other is ClaimDeposits && _i4.listsEqual(other.multisigAddress, multisigAddress);
+      identical(this, other) || other is ClaimDeposits && _i5.listsEqual(other.multisigAddress, multisigAddress);
 
   @override
   int get hashCode => multisigAddress.hashCode;
@@ -508,25 +510,37 @@ class ClaimDeposits extends Call {
 /// Can be called by any signer of the multisig once the proposal has reached
 /// the approval threshold (status = Approved). The proposal must not be expired.
 ///
+/// The executor resubmits the proposal's inner call; execution proceeds only
+/// if it is byte-equal to the payload stored at `proposal_id` — the same
+/// binding `approve` enforces. This serves two purposes:
+/// - **Clearsigning:** the executor's (hardware) wallet displays and signs the actual call
+///  being dispatched, not an opaque proposal id.
+/// - **Self-describing weight:** the executing extrinsic carries the inner call, so its
+///  declared weight carries the inner call's own declared weight (refunded to actuals
+///  post-dispatch) instead of reserving a flat `MaxInnerCallWeight`, and runtime
+///  transaction extensions can inspect the inner call and price its side effects
+///  (account-reap cleanup, transfer-proof recording) exactly as they do for directly
+///  submitted calls. Nothing about the dispatch is invisible to pre-dispatch admission or
+///  fees. (Only the bookkeeping term is reserved at `MaxCallSize`, since the stored bytes'
+///  length is unknown pre-dispatch; the unused remainder is refunded.)
+///
 /// On execution:
-/// - The call is decoded and dispatched as the multisig account
+/// - The call is dispatched as the multisig account
 /// - Proposal is removed from storage
 /// - Deposit is returned to the proposer
 ///
 /// Parameters:
 /// - `multisig_address`: The multisig account
 /// - `proposal_id`: ID (nonce) of the proposal to execute
-///
-/// Note: The weight charged includes both multisig bookkeeping and MaxInnerCallWeight.
-/// Actual weight is refunded based on the inner call's post-dispatch info.
-/// The inner call's weight is validated against MaxInnerCallWeight at propose time.
+/// - `call`: The proposal's inner call, byte-equal to the stored payload
 class Execute extends Call {
-  const Execute({required this.multisigAddress, required this.proposalId});
+  const Execute({required this.multisigAddress, required this.proposalId, required this.call});
 
   factory Execute._decode(_i1.Input input) {
     return Execute(
       multisigAddress: const _i1.U8ArrayCodec(32).decode(input),
       proposalId: _i1.U32Codec.codec.decode(input),
+      call: _i4.RuntimeCall.codec.decode(input),
     );
   }
 
@@ -536,15 +550,19 @@ class Execute extends Call {
   /// u32
   final int proposalId;
 
+  /// Box<<T as Config>::RuntimeCall>
+  final _i4.RuntimeCall call;
+
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-    'execute': {'multisigAddress': multisigAddress.toList(), 'proposalId': proposalId},
+    'execute': {'multisigAddress': multisigAddress.toList(), 'proposalId': proposalId, 'call': call.toJson()},
   };
 
   int _sizeHint() {
     int size = 1;
     size = size + const _i3.AccountId32Codec().sizeHint(multisigAddress);
     size = size + _i1.U32Codec.codec.sizeHint(proposalId);
+    size = size + _i4.RuntimeCall.codec.sizeHint(call);
     return size;
   }
 
@@ -552,13 +570,17 @@ class Execute extends Call {
     _i1.U8Codec.codec.encodeTo(6, output);
     const _i1.U8ArrayCodec(32).encodeTo(multisigAddress, output);
     _i1.U32Codec.codec.encodeTo(proposalId, output);
+    _i4.RuntimeCall.codec.encodeTo(call, output);
   }
 
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is Execute && _i4.listsEqual(other.multisigAddress, multisigAddress) && other.proposalId == proposalId;
+      other is Execute &&
+          _i5.listsEqual(other.multisigAddress, multisigAddress) &&
+          other.proposalId == proposalId &&
+          other.call == call;
 
   @override
-  int get hashCode => Object.hash(multisigAddress, proposalId);
+  int get hashCode => Object.hash(multisigAddress, proposalId, call);
 }

@@ -3,7 +3,7 @@ import 'dart:typed_data';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:polkadart/scale_codec.dart';
 import 'package:quantus_sdk/generated/planck/pallets/balances.dart' as balances_pallet;
-import 'package:quantus_sdk/generated/planck/types/pallet_multisig/pallet/call.dart' show Approve;
+import 'package:quantus_sdk/generated/planck/types/pallet_multisig/pallet/call.dart' show Approve, Execute;
 import 'package:quantus_sdk/generated/planck/types/quantus_runtime/runtime_call.dart';
 import 'package:quantus_sdk/generated/planck/types/sp_runtime/multiaddress/multi_address.dart';
 import 'package:quantus_sdk/src/chain/call_decoder.dart';
@@ -520,9 +520,56 @@ void main() {
   });
 
   group('MultisigService.buildExecuteCall', () {
+    // Execute resubmits the proposal's inner call, and the runtime dispatches it
+    // only when it re-encodes to the stored bytes.
+    final innerCall = const balances_pallet.Txs().transferAllowDeath(
+      dest: MultiAddress.values.id(Uint8List.fromList(List.filled(32, 0xCC))),
+      value: BigInt.from(750000000000),
+    );
+
     test('returns a Multisig runtime call for valid params', () {
-      final call = MultisigService().buildExecuteCall(msig: _buildTestMsig(), proposalId: 3);
+      final call = MultisigService().buildExecuteCall(msig: _buildTestMsig(), proposalId: 3, call: innerCall.encode());
       expect(call.encode().isNotEmpty, isTrue);
+    });
+
+    test('re-encodes the inner call to the exact stored bytes', () {
+      final innerBytes = innerCall.encode();
+      final execute = MultisigService().buildExecuteCall(msig: _buildTestMsig(), proposalId: 7, call: innerBytes);
+
+      final decoded = RuntimeCall.codec.decode(Input.fromBytes(execute.encode()));
+      final executeCall = (decoded as Multisig).value0 as Execute;
+
+      expect(executeCall.proposalId, 7);
+      expect(executeCall.call.encode(), innerBytes);
+    });
+
+    test('carries the inner call inline, with no length prefix', () {
+      // `approve` length-prefixes its `BoundedVec<u8>`; `execute` takes a
+      // `Box<RuntimeCall>` and must not.
+      final innerBytes = innerCall.encode();
+      final msig = _buildTestMsig();
+      final execute = MultisigService().buildExecuteCall(msig: msig, proposalId: 7, call: innerBytes);
+      final approve = MultisigService().buildApproveCall(msig: msig, proposalId: 7, call: innerBytes);
+
+      expect(execute.encode().length, approve.encode().length - _compactLength(innerBytes.length));
+    });
+
+    test('rejects call bytes that do not decode', () {
+      expect(
+        () => MultisigService().buildExecuteCall(msig: _buildTestMsig(), proposalId: 7, call: [0xff, 0xff]),
+        throwsA(anything),
+      );
+    });
+
+    test('rejects trailing bytes after the inner call', () {
+      expect(
+        () => MultisigService().buildExecuteCall(
+          msig: _buildTestMsig(),
+          proposalId: 7,
+          call: [...innerCall.encode(), 0x00],
+        ),
+        throwsA(isA<FormatException>()),
+      );
     });
   });
 
@@ -617,4 +664,12 @@ MultisigAccount _buildTestMsig() {
     nonce: BigInt.zero,
     myMemberAccountId: signerB,
   );
+}
+
+/// Byte length of the SCALE compact encoding of [value].
+int _compactLength(int value) {
+  if (value < 64) return 1;
+  if (value < 16384) return 2;
+  if (value < 1073741824) return 4;
+  return 5;
 }

@@ -46,6 +46,12 @@ class Queries {
     valueCodec: _i3.U8ArrayCodec(32),
   );
 
+  final _i1.StorageValue<BigInt> _unprocessedLeaves = const _i1.StorageValue<BigInt>(
+    prefix: 'ZkTree',
+    storage: 'UnprocessedLeaves',
+    valueCodec: _i3.U64Codec.codec,
+  );
+
   /// Leaf data stored by index.
   _i5.Future<_i2.ZkLeaf?> leaves(BigInt key1, {_i1.BlockHash? at}) async {
     final hashedKey = _leaves.hashedKeyFor(key1);
@@ -89,6 +95,10 @@ class Queries {
   }
 
   /// Current root hash of the tree.
+  ///
+  /// Covers exactly the first `LeafCount - UnprocessedLeaves` leaves: root
+  /// recomputation is batched once per block in `on_finalize`, so during block
+  /// execution this is the root as of the end of the previous block.
   _i5.Future<List<int>> root({_i1.BlockHash? at}) async {
     final hashedKey = _root.hashedKey();
     final bytes = await __api.getStorage(hashedKey, at: at);
@@ -96,6 +106,17 @@ class Queries {
       return _root.decodeValue(bytes);
     }
     return List<int>.filled(32, 0, growable: false); /* Default */
+  }
+
+  /// Number of trailing leaves appended this block but not yet folded into
+  /// `Nodes`/`Root`. Always drained back to 0 by `on_finalize`.
+  _i5.Future<BigInt> unprocessedLeaves({_i1.BlockHash? at}) async {
+    final hashedKey = _unprocessedLeaves.hashedKey();
+    final bytes = await __api.getStorage(hashedKey, at: at);
+    if (bytes != null) {
+      return _unprocessedLeaves.decodeValue(bytes);
+    }
+    return BigInt.zero; /* Default */
   }
 
   /// Leaf data stored by index.
@@ -147,6 +168,12 @@ class Queries {
   /// Returns the storage key for `root`.
   _i6.Uint8List rootKey() {
     final hashedKey = _root.hashedKey();
+    return hashedKey;
+  }
+
+  /// Returns the storage key for `unprocessedLeaves`.
+  _i6.Uint8List unprocessedLeavesKey() {
+    final hashedKey = _unprocessedLeaves.hashedKey();
     return hashedKey;
   }
 

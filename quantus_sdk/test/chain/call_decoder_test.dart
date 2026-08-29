@@ -5,7 +5,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_sdk/generated/planck/pallets/balances.dart' as balances_pallet;
 import 'package:quantus_sdk/generated/planck/pallets/multisig.dart' as multisig_pallet;
 import 'package:quantus_sdk/generated/planck/pallets/preimage.dart' as preimage_pallet;
-import 'package:quantus_sdk/generated/planck/pallets/recovery.dart' as recovery_pallet;
 import 'package:quantus_sdk/generated/planck/pallets/reversible_transfers.dart' as reversible_pallet;
 import 'package:quantus_sdk/generated/planck/pallets/system.dart' as system_pallet;
 import 'package:quantus_sdk/generated/planck/pallets/tech_collective.dart' as collective_pallet;
@@ -151,15 +150,11 @@ void main() {
       expect(valueField(decoded, 'Threshold').value, '2 of 2');
     });
 
-    test('execute and cancel flag that the proposal contents are not in the payload', () {
-      for (final decoded in [
-        roundTrip(const multisig_pallet.Txs().execute(multisigAddress: aliceId, proposalId: 4)),
-        roundTrip(const multisig_pallet.Txs().cancel(multisigAddress: aliceId, proposalId: 4)),
-      ]) {
-        final field = valueField(decoded, 'Proposal id');
-        expect(field.value, '4');
-        expect(field.note, contains('not part of what you sign'));
-      }
+    test('cancel flags that the proposal contents are not in the payload', () {
+      final decoded = roundTrip(const multisig_pallet.Txs().cancel(multisigAddress: aliceId, proposalId: 4));
+      final field = valueField(decoded, 'Proposal id');
+      expect(field.value, '4');
+      expect(field.note, contains('not part of what you sign'));
     });
 
     test('claim_deposits decodes with only the multisig account', () {
@@ -261,19 +256,6 @@ void main() {
       expect(valueField(decoded, 'Calls').value, '2');
       expect(nestedField(decoded, 'Call 1').call.call, 'transfer_allow_death');
       expect(nestedField(decoded, 'Call 2').call.call, 'vote');
-    });
-
-    test('recovery.as_recovered lifts the wrapped transfer summary', () {
-      final decoded = roundTrip(
-        const recovery_pallet.Txs().asRecovered(
-          account: dest(aliceId),
-          call: const balances_pallet.Txs().transferAllowDeath(dest: dest(bobId), value: oneToken),
-        ),
-      );
-
-      expect(decoded.call, 'as_recovered');
-      expect(nestedField(decoded, 'Call').call.call, 'transfer_allow_death');
-      expect(decoded.summary?.amount, oneToken);
     });
   });
 

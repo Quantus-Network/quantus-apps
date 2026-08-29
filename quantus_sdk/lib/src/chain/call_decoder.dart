@@ -29,7 +29,6 @@ import 'package:quantus_sdk/generated/planck/types/pallet_balances/pallet/call.d
 import 'package:quantus_sdk/generated/planck/types/pallet_multisig/pallet/call.dart' as multisig;
 import 'package:quantus_sdk/generated/planck/types/pallet_preimage/pallet/call.dart' as preimage;
 import 'package:quantus_sdk/generated/planck/types/pallet_ranked_collective/pallet/call.dart' as collective;
-import 'package:quantus_sdk/generated/planck/types/pallet_recovery/pallet/call.dart' as recovery;
 import 'package:quantus_sdk/generated/planck/types/pallet_referenda/pallet/call.dart' as referenda;
 import 'package:quantus_sdk/generated/planck/types/pallet_reversible_transfers/pallet/call.dart' as reversible;
 import 'package:quantus_sdk/generated/planck/types/pallet_treasury/pallet/call.dart' as treasury;
@@ -48,14 +47,18 @@ class CallDecoder {
   ///
   /// Trailing bytes mean the sender and this decoder disagree about the call's
   /// shape, so the result cannot be trusted for display — throw instead.
-  static DecodedCall decodeBytes(List<int> bytes) {
+  static DecodedCall decodeBytes(List<int> bytes) => describe(decodeRuntimeCall(bytes));
+
+  /// Decodes SCALE-encoded call bytes into the runtime call itself, for callers
+  /// that resubmit them (`multisig.execute`) rather than only display them.
+  static runtime.RuntimeCall decodeRuntimeCall(List<int> bytes) {
     final input = Input.fromBytes(Uint8List.fromList(bytes));
     final call = runtime.RuntimeCall.codec.decode(input);
     final remaining = input.remainingLength ?? 0;
     if (remaining != 0) {
       throw FormatException('$remaining trailing bytes after nested call');
     }
-    return describe(call);
+    return call;
   }
 
   /// Describes [call] as a display tree carrying every one of its parameters.
@@ -69,7 +72,6 @@ class CallDecoder {
       runtime.TechReferenda(:final value0) => _referenda(value0),
       runtime.TreasuryPallet(:final value0) => _treasury(value0),
       runtime.Utility(:final value0) => _utility(value0),
-      runtime.Recovery(:final value0) => _recovery(value0),
       runtime.System(:final value0) => _system(value0),
       _ => _generic(call),
     };
@@ -93,44 +95,12 @@ class CallDecoder {
             _boolField('Keep account alive', keepAlive),
           ],
         );
-      case balances.ForceTransfer(:final source, :final dest, :final value):
-        final destination = _addressField('Destination', dest);
-        final amount = AmountField('Amount', value);
-        return DecodedCall(
-          pallet: 'Balances',
-          call: 'force_transfer',
-          fields: [_addressField('Source', source), destination, amount],
-          summary: _transferSummary(destination, amount),
-        );
-      case balances.ForceUnreserve(:final who, :final amount):
-        return DecodedCall(
-          pallet: 'Balances',
-          call: 'force_unreserve',
-          fields: [_addressField('Account', who), AmountField('Amount', amount)],
-        );
-      case balances.ForceSetBalance(:final who, :final newFree):
-        return DecodedCall(
-          pallet: 'Balances',
-          call: 'force_set_balance',
-          fields: [_addressField('Account', who), AmountField('New free balance', newFree)],
-        );
-      case balances.ForceAdjustTotalIssuance(:final direction, :final delta):
-        return DecodedCall(
-          pallet: 'Balances',
-          call: 'force_adjust_total_issuance',
-          fields: [
-            ValueField('Direction', direction.variantName, kind: ValueKind.text),
-            AmountField('Delta', delta),
-          ],
-        );
       case balances.Burn(:final value, :final keepAlive):
         return DecodedCall(
           pallet: 'Balances',
           call: 'burn',
           fields: [AmountField('Amount', value), _boolField('Keep account alive', keepAlive)],
         );
-      case balances.UpgradeAccounts(:final who):
-        return DecodedCall(pallet: 'Balances', call: 'upgrade_accounts', fields: [_accountListField('Accounts', who)]);
       default:
         return _generic(runtime.Balances(call));
     }
@@ -408,14 +378,6 @@ class CallDecoder {
           call: 'set_treasury_account',
           fields: [_accountField('Treasury account', account)],
         );
-      case treasury.SetTreasuryPortion(:final portion):
-        // Permill: parts per million.
-        final percent = (portion / 10000).toStringAsFixed(4);
-        return DecodedCall(
-          pallet: 'TreasuryPallet',
-          call: 'set_treasury_portion',
-          fields: [ValueField('Portion', '$percent% ($portion per million)', kind: ValueKind.number)],
-        );
       default:
         return _generic(runtime.TreasuryPallet(call));
     }
@@ -425,48 +387,8 @@ class CallDecoder {
 
   static DecodedCall _utility(utility.Call call) {
     switch (call) {
-      case utility.Batch(:final calls):
-        return _batch('batch', calls);
       case utility.BatchAll(:final calls):
         return _batch('batch_all', calls);
-      case utility.ForceBatch(:final calls):
-        return _batch('force_batch', calls);
-      case utility.AsDerivative(:final index, :final call):
-        final inner = describe(call);
-        return DecodedCall(
-          pallet: 'Utility',
-          call: 'as_derivative',
-          fields: [
-            ValueField('Derivative index', '$index', kind: ValueKind.number),
-            NestedCallField('Call', inner),
-          ],
-          summary: inner.summary,
-        );
-      case utility.DispatchAs(:final asOrigin, :final call):
-        return _dispatchAs('dispatch_as', asOrigin, call);
-      case utility.DispatchAsFallible(:final asOrigin, :final call):
-        return _dispatchAs('dispatch_as_fallible', asOrigin, call);
-      case utility.WithWeight(:final call, :final weight):
-        final inner = describe(call);
-        return DecodedCall(
-          pallet: 'Utility',
-          call: 'with_weight',
-          fields: [
-            NestedCallField('Call', inner),
-            ValueField('Weight', 'ref time ${weight.refTime}, proof size ${weight.proofSize}', kind: ValueKind.number),
-          ],
-          summary: inner.summary,
-        );
-      case utility.IfElse(:final main, :final fallback):
-        return DecodedCall(
-          pallet: 'Utility',
-          call: 'if_else',
-          fields: [
-            NestedCallField('Primary call', describe(main)),
-            NestedCallField('Fallback call', describe(fallback)),
-          ],
-          summary: describe(main).summary,
-        );
       default:
         return _generic(runtime.Utility(call));
     }
@@ -481,72 +403,6 @@ class CallDecoder {
         for (var i = 0; i < calls.length; i++) NestedCallField('Call ${i + 1}', describe(calls[i])),
       ],
     );
-  }
-
-  static DecodedCall _dispatchAs(String name, origin_caller.OriginCaller asOrigin, runtime.RuntimeCall call) {
-    final inner = describe(call);
-    return DecodedCall(
-      pallet: 'Utility',
-      call: name,
-      fields: [
-        ValueField('Dispatch origin', _origin(asOrigin), kind: ValueKind.text),
-        NestedCallField('Call', inner),
-      ],
-      summary: inner.summary,
-    );
-  }
-
-  static DecodedCall _recovery(recovery.Call call) {
-    switch (call) {
-      case recovery.AsRecovered(:final account, :final call):
-        final inner = describe(call);
-        return DecodedCall(
-          pallet: 'Recovery',
-          call: 'as_recovered',
-          fields: [_addressField('Recovered account', account), NestedCallField('Call', inner)],
-          summary: inner.summary,
-        );
-      case recovery.CreateRecovery(:final friends, :final threshold, :final delayPeriod):
-        return DecodedCall(
-          pallet: 'Recovery',
-          call: 'create_recovery',
-          fields: [
-            _accountListField('Friends', friends),
-            ValueField('Threshold', '$threshold of ${friends.length}', kind: ValueKind.number),
-            ValueField('Waiting period', '$delayPeriod blocks', kind: ValueKind.blockOrTime),
-          ],
-        );
-      case recovery.SetRecovered(:final lost, :final rescuer):
-        return DecodedCall(
-          pallet: 'Recovery',
-          call: 'set_recovered',
-          fields: [_addressField('Lost account', lost), _addressField('Rescuer', rescuer)],
-        );
-      case recovery.VouchRecovery(:final lost, :final rescuer):
-        return DecodedCall(
-          pallet: 'Recovery',
-          call: 'vouch_recovery',
-          fields: [_addressField('Lost account', lost), _addressField('Rescuer', rescuer)],
-        );
-      case recovery.InitiateRecovery(:final account):
-        return DecodedCall(
-          pallet: 'Recovery',
-          call: 'initiate_recovery',
-          fields: [_addressField('Account to recover', account)],
-        );
-      case recovery.ClaimRecovery(:final account):
-        return DecodedCall(
-          pallet: 'Recovery',
-          call: 'claim_recovery',
-          fields: [_addressField('Account to claim', account)],
-        );
-      case recovery.CloseRecovery(:final rescuer):
-        return DecodedCall(pallet: 'Recovery', call: 'close_recovery', fields: [_addressField('Rescuer', rescuer)]);
-      case recovery.CancelRecovered(:final account):
-        return DecodedCall(pallet: 'Recovery', call: 'cancel_recovered', fields: [_addressField('Account', account)]);
-      default:
-        return _generic(runtime.Recovery(call));
-    }
   }
 
   // ------------------------------------------------------------------ System
@@ -666,7 +522,7 @@ class CallDecoder {
       return DecodedCall(pallet: pallet, call: '', fields: const []);
     }
     final callName = inner.keys.first;
-    final args = inner[callName];
+    final dynamic args = inner[callName];
 
     final fields = <CallField>[];
     if (args is Map) {

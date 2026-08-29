@@ -65,7 +65,6 @@ export 'src/services/network/redundant_endpoint.dart';
 export 'src/services/locale_number_config.dart';
 export 'src/services/number_formatting_service.dart';
 export 'src/services/recent_addresses_service.dart';
-export 'src/services/recovery_service.dart';
 export 'src/services/reversible_transfers_service.dart';
 export 'src/services/settings_service.dart';
 export 'src/services/substrate_service.dart';

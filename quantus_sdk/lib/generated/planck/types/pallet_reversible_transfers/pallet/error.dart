@@ -45,15 +45,12 @@ enum Error {
   /// deterrence)
   accountAlreadyReversibleCannotScheduleOneTime('AccountAlreadyReversibleCannotScheduleOneTime', 12),
 
-  /// The guardian has reached the maximum number of accounts they can protect.
-  tooManyGuardianAccounts('TooManyGuardianAccounts', 13),
-
   /// Asset transfers are not supported.
-  assetsNotSupported('AssetsNotSupported', 14),
+  assetsNotSupported('AssetsNotSupported', 13),
 
   /// Zero-amount transfers cannot be scheduled: there is nothing to hold,
   /// execute, or reverse.
-  zeroAmount('ZeroAmount', 15);
+  zeroAmount('ZeroAmount', 14);
 
   const Error(this.variantName, this.codecIndex);
 
@@ -108,10 +105,8 @@ class $ErrorCodec with _i1.Codec<Error> {
       case 12:
         return Error.accountAlreadyReversibleCannotScheduleOneTime;
       case 13:
-        return Error.tooManyGuardianAccounts;
-      case 14:
         return Error.assetsNotSupported;
-      case 15:
+      case 14:
         return Error.zeroAmount;
       default:
         throw Exception('Error: Invalid variant index: "$index"');

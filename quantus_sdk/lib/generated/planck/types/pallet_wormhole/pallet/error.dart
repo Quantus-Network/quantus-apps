@@ -12,9 +12,9 @@ enum Error {
   /// proof does).
   nullifierAlreadyUsed('NullifierAlreadyUsed', 1),
 
-  /// The bundle contains only dummy (all-zero) padding segments, so there is
-  /// nothing to exit. Distinct from [`Error::NullifierAlreadyUsed`], which is a
-  /// replay of real segments.
+  /// The bundle has nothing to settle: only dummy (all-zero) padding, or
+  /// every valid segment exits zero. Distinct from [`Error::NullifierAlreadyUsed`],
+  /// which is a replay of real segments.
   noValidSegments('NoValidSegments', 2),
   blockNotFound('BlockNotFound', 3),
   verifierNotAvailable('VerifierNotAvailable', 4),

@@ -9,7 +9,6 @@ import '../types/frame_support/traits/tokens/misc/id_amount_1.dart' as _i7;
 import '../types/frame_support/traits/tokens/misc/id_amount_2.dart' as _i8;
 import '../types/pallet_balances/pallet/call.dart' as _i13;
 import '../types/pallet_balances/types/account_data.dart' as _i4;
-import '../types/pallet_balances/types/adjustment_direction.dart' as _i14;
 import '../types/pallet_balances/types/balance_lock.dart' as _i5;
 import '../types/pallet_balances/types/reserve_data.dart' as _i6;
 import '../types/quantus_runtime/runtime_call.dart' as _i11;
@@ -351,16 +350,6 @@ class Txs {
     return _i11.Balances(_i13.TransferAllowDeath(dest: dest, value: value));
   }
 
-  /// Exactly as `transfer_allow_death`, except the origin must be root and the source account
-  /// may be specified.
-  _i11.Balances forceTransfer({
-    required _i12.MultiAddress source,
-    required _i12.MultiAddress dest,
-    required BigInt value,
-  }) {
-    return _i11.Balances(_i13.ForceTransfer(source: source, dest: dest, value: value));
-  }
-
   /// Same as the [`transfer_allow_death`] call, but with a check that the transfer will not
   /// kill the origin account.
   ///
@@ -388,41 +377,6 @@ class Txs {
   ///  keep the sender account alive (true).
   _i11.Balances transferAll({required _i12.MultiAddress dest, required bool keepAlive}) {
     return _i11.Balances(_i13.TransferAll(dest: dest, keepAlive: keepAlive));
-  }
-
-  /// Unreserve some balance from a user by force.
-  ///
-  /// Can only be called by ROOT.
-  _i11.Balances forceUnreserve({required _i12.MultiAddress who, required BigInt amount}) {
-    return _i11.Balances(_i13.ForceUnreserve(who: who, amount: amount));
-  }
-
-  /// Upgrade a specified account.
-  ///
-  /// - `origin`: Must be `Signed`.
-  /// - `who`: The account to be upgraded.
-  ///
-  /// This will waive the transaction fee if at least all but 10% of the accounts needed to
-  /// be upgraded. (We let some not have to be upgraded just in order to allow for the
-  /// possibility of churn).
-  _i11.Balances upgradeAccounts({required List<_i3.AccountId32> who}) {
-    return _i11.Balances(_i13.UpgradeAccounts(who: who));
-  }
-
-  /// Set the regular balance of a given account.
-  ///
-  /// The dispatch origin for this call is `root`.
-  _i11.Balances forceSetBalance({required _i12.MultiAddress who, required BigInt newFree}) {
-    return _i11.Balances(_i13.ForceSetBalance(who: who, newFree: newFree));
-  }
-
-  /// Adjust the total issuance in a saturating way.
-  ///
-  /// Can only be called by root and always needs a positive `delta`.
-  ///
-  /// # Example
-  _i11.Balances forceAdjustTotalIssuance({required _i14.AdjustmentDirection direction, required BigInt delta}) {
-    return _i11.Balances(_i13.ForceAdjustTotalIssuance(direction: direction, delta: delta));
   }
 
   /// Burn the specified liquid free balance from the origin account.

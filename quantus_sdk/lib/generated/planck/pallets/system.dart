@@ -703,16 +703,16 @@ class Constants {
 
   /// Block & extrinsics weights: base values and limits.
   final _i19.BlockWeights blockWeights = _i19.BlockWeights(
-    baseBlock: _i13.Weight(refTime: BigInt.from(431614000), proofSize: BigInt.zero),
+    baseBlock: _i13.Weight(refTime: BigInt.from(710231000), proofSize: BigInt.zero),
     maxBlock: _i13.Weight(
       refTime: BigInt.from(6000000000000),
       proofSize: BigInt.parse('18446744073709551615', radix: 10),
     ),
     perClass: _i20.PerDispatchClass(
       normal: _i21.WeightsPerClass(
-        baseExtrinsic: _i13.Weight(refTime: BigInt.from(108157000), proofSize: BigInt.zero),
+        baseExtrinsic: _i13.Weight(refTime: BigInt.from(767297000), proofSize: BigInt.zero),
         maxExtrinsic: _i13.Weight(
-          refTime: BigInt.from(3899460229000),
+          refTime: BigInt.from(3898522472000),
           proofSize: BigInt.parse('11990383647911208550', radix: 10),
         ),
         maxTotal: _i13.Weight(
@@ -722,9 +722,9 @@ class Constants {
         reserved: _i13.Weight(refTime: BigInt.zero, proofSize: BigInt.zero),
       ),
       operational: _i21.WeightsPerClass(
-        baseExtrinsic: _i13.Weight(refTime: BigInt.from(108157000), proofSize: BigInt.zero),
+        baseExtrinsic: _i13.Weight(refTime: BigInt.from(767297000), proofSize: BigInt.zero),
         maxExtrinsic: _i13.Weight(
-          refTime: BigInt.from(5399460229000),
+          refTime: BigInt.from(5398522472000),
           proofSize: BigInt.parse('16602069666338596454', radix: 10),
         ),
         maxTotal: _i13.Weight(
@@ -737,7 +737,7 @@ class Constants {
         ),
       ),
       mandatory: _i21.WeightsPerClass(
-        baseExtrinsic: _i13.Weight(refTime: BigInt.from(108157000), proofSize: BigInt.zero),
+        baseExtrinsic: _i13.Weight(refTime: BigInt.from(767297000), proofSize: BigInt.zero),
         maxExtrinsic: null,
         maxTotal: null,
         reserved: null,
@@ -764,7 +764,7 @@ class Constants {
     specName: 'quantus-runtime',
     implName: 'quantus-runtime',
     authoringVersion: 1,
-    specVersion: 144,
+    specVersion: 147,
     implVersion: 1,
     apis: [
       _i9.Tuple2<List<int>, int>(<int>[223, 106, 203, 104, 153, 7, 96, 155], 5),
@@ -780,7 +780,7 @@ class Constants {
       _i9.Tuple2<List<int>, int>(<int>[243, 255, 20, 213, 171, 82, 112, 89], 3),
       _i9.Tuple2<List<int>, int>(<int>[251, 197, 119, 185, 215, 71, 239, 214], 1),
     ],
-    transactionVersion: 3,
+    transactionVersion: 6,
     systemVersion: 1,
   );
 

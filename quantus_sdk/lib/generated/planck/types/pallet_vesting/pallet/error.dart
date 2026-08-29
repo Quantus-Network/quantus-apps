@@ -24,22 +24,19 @@ enum Error {
   /// entire remainder has vested.
   claimWouldLeaveDust('ClaimWouldLeaveDust', 4),
 
-  /// Ending now would emit a non-zero beneficiary payout below the minimum.
-  payoutBelowMinimum('PayoutBelowMinimum', 5),
-
   /// The treasury account is not configured or aliases the vesting pot.
-  treasuryNotConfigured('TreasuryNotConfigured', 6),
+  treasuryNotConfigured('TreasuryNotConfigured', 5),
 
   /// The pot does not hold its existential-deposit buffer; endow it first.
-  potUnderfunded('PotUnderfunded', 7),
+  potUnderfunded('PotUnderfunded', 6),
 
   /// The beneficiary must not be the pot, and retargeting must change the account.
-  invalidBeneficiary('InvalidBeneficiary', 8),
+  invalidBeneficiary('InvalidBeneficiary', 7),
 
   /// The proof recorder reported the payout credit as dropped: no wormhole leaf
   /// was created, so the payout is rolled back rather than finalized without the
   /// proof material a keyless beneficiary needs to exit.
-  payoutProofNotRecorded('PayoutProofNotRecorded', 9);
+  payoutProofNotRecorded('PayoutProofNotRecorded', 8);
 
   const Error(this.variantName, this.codecIndex);
 
@@ -78,14 +75,12 @@ class $ErrorCodec with _i1.Codec<Error> {
       case 4:
         return Error.claimWouldLeaveDust;
       case 5:
-        return Error.payoutBelowMinimum;
-      case 6:
         return Error.treasuryNotConfigured;
-      case 7:
+      case 6:
         return Error.potUnderfunded;
-      case 8:
+      case 7:
         return Error.invalidBeneficiary;
-      case 9:
+      case 8:
         return Error.payoutProofNotRecorded;
       default:
         throw Exception('Error: Invalid variant index: "$index"');

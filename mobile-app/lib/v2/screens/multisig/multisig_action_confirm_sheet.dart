@@ -38,6 +38,10 @@ typedef MultisigConfirmCallBuilder = RuntimeCall Function(Account signer, List<i
 /// this null.
 typedef MultisigConfirmCallBytesLoader = Future<List<int>> Function(WidgetRef ref);
 
+/// The stored inner call, which a resubmitting action cannot be built without.
+List<int> requireCallBytes(List<int>? callBytes, String action) =>
+    callBytes ?? (throw StateError('$action requires the proposal call bytes'));
+
 /// Submits a hardware-signed extrinsic for the action.
 typedef MultisigConfirmExternalSubmitter =
     Future<String> Function(

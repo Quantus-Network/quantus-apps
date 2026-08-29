@@ -172,6 +172,21 @@ class $CallCodec with _i1.Codec<Call> {
 /// - `delay`: The reversibility time for any transfer made by the high-security account.
 /// - `guardian`: The guardian account that can cancel pending transfers and recover funds
 ///  from this high-security account.
+///
+/// # Choose the guardian carefully
+///
+/// The guardian holds instant, total seizure power: `recover_funds`
+/// sweeps every hold plus the entire free balance to the guardian,
+/// with no delay, no second approver, and no way to change the
+/// relationship afterwards. A single-key guardian is therefore a
+/// single point of failure for the whole scheme. **Use a multisig
+/// address as the guardian**: `pallet_multisig` dispatches calls as
+/// its derived address, so a multisig can cancel and recover exactly
+/// like a plain account.
+///
+/// Guardianship is discoverable offchain (e.g. Subsquid) via the
+/// `HighSecuritySet` event; there is deliberately no on-chain
+/// guardian index to fill up or grief.
 class SetHighSecurity extends Call {
   const SetHighSecurity({required this.delay, required this.guardian});
 
@@ -261,6 +276,15 @@ class Cancel extends Call {
 /// # Parameters
 ///
 /// - `tx_id`: The unique identifier of the pending transfer to execute.
+///
+/// Execution uses `transfer_allow_death` so a sender who spent their leftover
+/// free balance during the delay still completes. A failed inner transfer (e.g.
+/// dest overflow, or `amount < ED` to a new account) does not fail this
+/// extrinsic: the hold is already released and the pending transfer is already
+/// removed. Propagating that error would roll back those writes (FRAME
+/// dispatchables are transactional) while Scheduler terminally drops the named
+/// task, freezing the funds with no retry. The inner result is still recorded on
+/// [`Event::TransactionExecuted`].
 ///
 /// # Errors
 ///

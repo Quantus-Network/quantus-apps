@@ -3,12 +3,12 @@ import 'dart:async' as _i7;
 import 'dart:typed_data' as _i8;
 
 import 'package:polkadart/polkadart.dart' as _i1;
-import 'package:polkadart/scale_codec.dart' as _i6;
+import 'package:polkadart/scale_codec.dart' as _i4;
 
 import '../types/pallet_reversible_transfers/high_security_account_data.dart' as _i3;
 import '../types/pallet_reversible_transfers/pallet/call.dart' as _i11;
-import '../types/pallet_reversible_transfers/pending_transfer.dart' as _i5;
-import '../types/primitive_types/h256.dart' as _i4;
+import '../types/pallet_reversible_transfers/pending_transfer.dart' as _i6;
+import '../types/primitive_types/h256.dart' as _i5;
 import '../types/qp_scheduler/block_number_or_timestamp.dart' as _i10;
 import '../types/quantus_runtime/runtime_call.dart' as _i9;
 import '../types/sp_arithmetic/per_things/permill.dart' as _i13;
@@ -28,34 +28,34 @@ class Queries {
         hasher: _i1.StorageHasher.blake2b128Concat(_i2.AccountId32Codec()),
       );
 
-  final _i1.StorageMap<_i4.H256, _i5.PendingTransfer> _pendingTransfers =
-      const _i1.StorageMap<_i4.H256, _i5.PendingTransfer>(
+  final _i1.StorageMap<_i2.AccountId32, List<int>> _highSecurityTxQuota =
+      const _i1.StorageMap<_i2.AccountId32, List<int>>(
         prefix: 'ReversibleTransfers',
-        storage: 'PendingTransfers',
-        valueCodec: _i5.PendingTransfer.codec,
-        hasher: _i1.StorageHasher.blake2b128Concat(_i4.H256Codec()),
-      );
-
-  final _i1.StorageMap<_i2.AccountId32, List<_i4.H256>> _pendingTransfersBySender =
-      const _i1.StorageMap<_i2.AccountId32, List<_i4.H256>>(
-        prefix: 'ReversibleTransfers',
-        storage: 'PendingTransfersBySender',
-        valueCodec: _i6.SequenceCodec<_i4.H256>(_i4.H256Codec()),
+        storage: 'HighSecurityTxQuota',
+        valueCodec: _i4.U32SequenceCodec.codec,
         hasher: _i1.StorageHasher.blake2b128Concat(_i2.AccountId32Codec()),
       );
 
-  final _i1.StorageMap<_i2.AccountId32, List<_i2.AccountId32>> _guardianIndex =
-      const _i1.StorageMap<_i2.AccountId32, List<_i2.AccountId32>>(
+  final _i1.StorageMap<_i5.H256, _i6.PendingTransfer> _pendingTransfers =
+      const _i1.StorageMap<_i5.H256, _i6.PendingTransfer>(
         prefix: 'ReversibleTransfers',
-        storage: 'GuardianIndex',
-        valueCodec: _i6.SequenceCodec<_i2.AccountId32>(_i2.AccountId32Codec()),
+        storage: 'PendingTransfers',
+        valueCodec: _i6.PendingTransfer.codec,
+        hasher: _i1.StorageHasher.blake2b128Concat(_i5.H256Codec()),
+      );
+
+  final _i1.StorageMap<_i2.AccountId32, List<_i5.H256>> _pendingTransfersBySender =
+      const _i1.StorageMap<_i2.AccountId32, List<_i5.H256>>(
+        prefix: 'ReversibleTransfers',
+        storage: 'PendingTransfersBySender',
+        valueCodec: _i4.SequenceCodec<_i5.H256>(_i5.H256Codec()),
         hasher: _i1.StorageHasher.blake2b128Concat(_i2.AccountId32Codec()),
       );
 
   final _i1.StorageValue<BigInt> _nextTransactionId = const _i1.StorageValue<BigInt>(
     prefix: 'ReversibleTransfers',
     storage: 'NextTransactionId',
-    valueCodec: _i6.U64Codec.codec,
+    valueCodec: _i4.U64Codec.codec,
   );
 
   /// Maps accounts to their chosen reversibility delay period (in milliseconds).
@@ -69,9 +69,23 @@ class Queries {
     return null; /* Nullable */
   }
 
+  /// Rolling window of included signed extrinsics for each high-security account.
+  ///
+  /// Oldest block number is at index 0. Recording a tx is O(1): compare
+  /// `now - oldest` to [`Config::HighSecurityTxWindowBlocks`], maybe evict
+  /// that one head, then push. Normal accounts are not stored here.
+  _i7.Future<List<int>> highSecurityTxQuota(_i2.AccountId32 key1, {_i1.BlockHash? at}) async {
+    final hashedKey = _highSecurityTxQuota.hashedKeyFor(key1);
+    final bytes = await __api.getStorage(hashedKey, at: at);
+    if (bytes != null) {
+      return _highSecurityTxQuota.decodeValue(bytes);
+    }
+    return List<int>.filled(0, 0, growable: true); /* Default */
+  }
+
   /// Stores the details of pending transactions scheduled for delayed execution.
   /// Keyed by the unique transaction ID.
-  _i7.Future<_i5.PendingTransfer?> pendingTransfers(_i4.H256 key1, {_i1.BlockHash? at}) async {
+  _i7.Future<_i6.PendingTransfer?> pendingTransfers(_i5.H256 key1, {_i1.BlockHash? at}) async {
     final hashedKey = _pendingTransfers.hashedKeyFor(key1);
     final bytes = await __api.getStorage(hashedKey, at: at);
     if (bytes != null) {
@@ -81,23 +95,11 @@ class Queries {
   }
 
   /// Maps sender accounts to their list of pending transaction IDs.
-  _i7.Future<List<_i4.H256>> pendingTransfersBySender(_i2.AccountId32 key1, {_i1.BlockHash? at}) async {
+  _i7.Future<List<_i5.H256>> pendingTransfersBySender(_i2.AccountId32 key1, {_i1.BlockHash? at}) async {
     final hashedKey = _pendingTransfersBySender.hashedKeyFor(key1);
     final bytes = await __api.getStorage(hashedKey, at: at);
     if (bytes != null) {
       return _pendingTransfersBySender.decodeValue(bytes);
-    }
-    return []; /* Default */
-  }
-
-  /// Maps guardian accounts to the list of accounts they protect.
-  /// This allows the UI to efficiently query all accounts for which a given account is a
-  /// guardian.
-  _i7.Future<List<_i2.AccountId32>> guardianIndex(_i2.AccountId32 key1, {_i1.BlockHash? at}) async {
-    final hashedKey = _guardianIndex.hashedKeyFor(key1);
-    final bytes = await __api.getStorage(hashedKey, at: at);
-    if (bytes != null) {
-      return _guardianIndex.decodeValue(bytes);
     }
     return []; /* Default */
   }
@@ -128,9 +130,23 @@ class Queries {
     return []; /* Nullable */
   }
 
+  /// Rolling window of included signed extrinsics for each high-security account.
+  ///
+  /// Oldest block number is at index 0. Recording a tx is O(1): compare
+  /// `now - oldest` to [`Config::HighSecurityTxWindowBlocks`], maybe evict
+  /// that one head, then push. Normal accounts are not stored here.
+  _i7.Future<List<List<int>>> multiHighSecurityTxQuota(List<_i2.AccountId32> keys, {_i1.BlockHash? at}) async {
+    final hashedKeys = keys.map((key) => _highSecurityTxQuota.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(hashedKeys, at: at);
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes.map((v) => _highSecurityTxQuota.decodeValue(v.key)).toList();
+    }
+    return (keys.map((key) => List<int>.filled(0, 0, growable: true)).toList() as List<List<int>>); /* Default */
+  }
+
   /// Stores the details of pending transactions scheduled for delayed execution.
   /// Keyed by the unique transaction ID.
-  _i7.Future<List<_i5.PendingTransfer?>> multiPendingTransfers(List<_i4.H256> keys, {_i1.BlockHash? at}) async {
+  _i7.Future<List<_i6.PendingTransfer?>> multiPendingTransfers(List<_i5.H256> keys, {_i1.BlockHash? at}) async {
     final hashedKeys = keys.map((key) => _pendingTransfers.hashedKeyFor(key)).toList();
     final bytes = await __api.queryStorageAt(hashedKeys, at: at);
     if (bytes.isNotEmpty) {
@@ -140,7 +156,7 @@ class Queries {
   }
 
   /// Maps sender accounts to their list of pending transaction IDs.
-  _i7.Future<List<List<_i4.H256>>> multiPendingTransfersBySender(
+  _i7.Future<List<List<_i5.H256>>> multiPendingTransfersBySender(
     List<_i2.AccountId32> keys, {
     _i1.BlockHash? at,
   }) async {
@@ -149,19 +165,7 @@ class Queries {
     if (bytes.isNotEmpty) {
       return bytes.first.changes.map((v) => _pendingTransfersBySender.decodeValue(v.key)).toList();
     }
-    return (keys.map((key) => []).toList() as List<List<_i4.H256>>); /* Default */
-  }
-
-  /// Maps guardian accounts to the list of accounts they protect.
-  /// This allows the UI to efficiently query all accounts for which a given account is a
-  /// guardian.
-  _i7.Future<List<List<_i2.AccountId32>>> multiGuardianIndex(List<_i2.AccountId32> keys, {_i1.BlockHash? at}) async {
-    final hashedKeys = keys.map((key) => _guardianIndex.hashedKeyFor(key)).toList();
-    final bytes = await __api.queryStorageAt(hashedKeys, at: at);
-    if (bytes.isNotEmpty) {
-      return bytes.first.changes.map((v) => _guardianIndex.decodeValue(v.key)).toList();
-    }
-    return (keys.map((key) => []).toList() as List<List<_i2.AccountId32>>); /* Default */
+    return (keys.map((key) => []).toList() as List<List<_i5.H256>>); /* Default */
   }
 
   /// Returns the storage key for `highSecurityAccounts`.
@@ -170,8 +174,14 @@ class Queries {
     return hashedKey;
   }
 
+  /// Returns the storage key for `highSecurityTxQuota`.
+  _i8.Uint8List highSecurityTxQuotaKey(_i2.AccountId32 key1) {
+    final hashedKey = _highSecurityTxQuota.hashedKeyFor(key1);
+    return hashedKey;
+  }
+
   /// Returns the storage key for `pendingTransfers`.
-  _i8.Uint8List pendingTransfersKey(_i4.H256 key1) {
+  _i8.Uint8List pendingTransfersKey(_i5.H256 key1) {
     final hashedKey = _pendingTransfers.hashedKeyFor(key1);
     return hashedKey;
   }
@@ -179,12 +189,6 @@ class Queries {
   /// Returns the storage key for `pendingTransfersBySender`.
   _i8.Uint8List pendingTransfersBySenderKey(_i2.AccountId32 key1) {
     final hashedKey = _pendingTransfersBySender.hashedKeyFor(key1);
-    return hashedKey;
-  }
-
-  /// Returns the storage key for `guardianIndex`.
-  _i8.Uint8List guardianIndexKey(_i2.AccountId32 key1) {
-    final hashedKey = _guardianIndex.hashedKeyFor(key1);
     return hashedKey;
   }
 
@@ -200,6 +204,12 @@ class Queries {
     return hashedKey;
   }
 
+  /// Returns the storage map key prefix for `highSecurityTxQuota`.
+  _i8.Uint8List highSecurityTxQuotaMapPrefix() {
+    final hashedKey = _highSecurityTxQuota.mapPrefix();
+    return hashedKey;
+  }
+
   /// Returns the storage map key prefix for `pendingTransfers`.
   _i8.Uint8List pendingTransfersMapPrefix() {
     final hashedKey = _pendingTransfers.mapPrefix();
@@ -209,12 +219,6 @@ class Queries {
   /// Returns the storage map key prefix for `pendingTransfersBySender`.
   _i8.Uint8List pendingTransfersBySenderMapPrefix() {
     final hashedKey = _pendingTransfersBySender.mapPrefix();
-    return hashedKey;
-  }
-
-  /// Returns the storage map key prefix for `guardianIndex`.
-  _i8.Uint8List guardianIndexMapPrefix() {
-    final hashedKey = _guardianIndex.mapPrefix();
     return hashedKey;
   }
 }
@@ -257,6 +261,21 @@ class Txs {
   /// - `delay`: The reversibility time for any transfer made by the high-security account.
   /// - `guardian`: The guardian account that can cancel pending transfers and recover funds
   ///  from this high-security account.
+  ///
+  /// # Choose the guardian carefully
+  ///
+  /// The guardian holds instant, total seizure power: `recover_funds`
+  /// sweeps every hold plus the entire free balance to the guardian,
+  /// with no delay, no second approver, and no way to change the
+  /// relationship afterwards. A single-key guardian is therefore a
+  /// single point of failure for the whole scheme. **Use a multisig
+  /// address as the guardian**: `pallet_multisig` dispatches calls as
+  /// its derived address, so a multisig can cancel and recover exactly
+  /// like a plain account.
+  ///
+  /// Guardianship is discoverable offchain (e.g. Subsquid) via the
+  /// `HighSecuritySet` event; there is deliberately no on-chain
+  /// guardian index to fill up or grief.
   _i9.ReversibleTransfers setHighSecurity({
     required _i10.BlockNumberOrTimestamp delay,
     required _i2.AccountId32 guardian,
@@ -267,7 +286,7 @@ class Txs {
   /// Cancel a pending reversible transaction scheduled by the caller.
   ///
   /// - `tx_id`: The unique identifier of the transaction to cancel.
-  _i9.ReversibleTransfers cancel({required _i4.H256 txId}) {
+  _i9.ReversibleTransfers cancel({required _i5.H256 txId}) {
     return _i9.ReversibleTransfers(_i11.Cancel(txId: txId));
   }
 
@@ -282,12 +301,21 @@ class Txs {
   ///
   /// - `tx_id`: The unique identifier of the pending transfer to execute.
   ///
+  /// Execution uses `transfer_allow_death` so a sender who spent their leftover
+  /// free balance during the delay still completes. A failed inner transfer (e.g.
+  /// dest overflow, or `amount < ED` to a new account) does not fail this
+  /// extrinsic: the hold is already released and the pending transfer is already
+  /// removed. Propagating that error would roll back those writes (FRAME
+  /// dispatchables are transactional) while Scheduler terminally drops the named
+  /// task, freezing the funds with no retry. The inner result is still recorded on
+  /// [`Event::TransactionExecuted`].
+  ///
   /// # Errors
   ///
   /// - [`InvalidSchedulerOrigin`](Error::InvalidSchedulerOrigin): Called by an account other
   ///  than this pallet's account.
   /// - [`PendingTxNotFound`](Error::PendingTxNotFound): No pending transfer with this ID.
-  _i9.ReversibleTransfers executeTransfer({required _i4.H256 txId}) {
+  _i9.ReversibleTransfers executeTransfer({required _i5.H256 txId}) {
     return _i9.ReversibleTransfers(_i11.ExecuteTransfer(txId: txId));
   }
 
@@ -353,11 +381,16 @@ class Txs {
 class Constants {
   Constants();
 
-  /// Maximum number of accounts a single guardian can protect. Used for BoundedVec.
-  final int maxGuardianAccounts = 32;
-
   /// Maximum pending reversible transactions allowed per account.
   final int maxPendingPerAccount = 16;
+
+  /// Maximum signed extrinsics a high-security account may include in one
+  /// rolling window. Update of the quota ring is O(1).
+  final int maxHighSecurityTxsPerWindow = 16;
+
+  /// Length of the high-security extrinsic quota window, in blocks.
+  /// At the runtime's 12s target this is one day (`DAYS`).
+  final int highSecurityTxWindowBlocks = 7200;
 
   /// The default delay period for reversible transactions if none is specified.
   ///

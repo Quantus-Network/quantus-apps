@@ -257,20 +257,57 @@ class ReversibleTransfersService {
     quantusPrint('getInterceptedAccounts: $guardianAddress');
 
     try {
-      final quantusApi = Planck(_substrateService.provider!);
-      final accountId = crypto.ss58ToAccountId(s: guardianAddress);
-      final interceptedAccounts = await quantusApi.query.reversibleTransfers.guardianIndex(accountId);
+      final provider = _substrateService.provider!;
+      final quantusApi = Planck(provider);
+      final guardian = crypto.ss58ToAccountId(s: guardianAddress);
 
-      List<String> result = interceptedAccounts.map((id) {
-        final address = AddressExtension.ss58AddressFromBytes(Uint8List.fromList(id));
+      // The runtime no longer keeps a guardian -> accounts reverse index, so walk
+      // the HighSecurityAccounts map and keep the entries naming this guardian.
+      final accountIds = await _highSecurityAccountIds(provider, quantusApi);
+      final configs = await quantusApi.query.reversibleTransfers.multiHighSecurityAccounts(accountIds);
+
+      final result = <String>[];
+      for (var i = 0; i < accountIds.length; i++) {
+        final config = configs[i];
+        if (config == null || !_sameAccount(config.guardian, guardian)) continue;
+        final address = AddressExtension.ss58AddressFromBytes(Uint8List.fromList(accountIds[i]));
         quantusPrint('intercepted account: $address');
-        return address;
-      }).toList();
-
+        result.add(address);
+      }
       return result;
     } catch (e) {
       throw Exception('Failed to get intercepted accounts: $e');
     }
+  }
+
+  /// Every key of the `HighSecurityAccounts` map, read one page at a time.
+  ///
+  /// The map is `Blake2_128Concat`, so each storage key ends with the unhashed
+  /// `AccountId32` it was built from.
+  Future<List<List<int>>> _highSecurityAccountIds(Provider provider, Planck quantusApi) async {
+    const pageSize = 256;
+    final prefix = quantusApi.query.reversibleTransfers.highSecurityAccountsMapPrefix();
+    final state = StateApi(provider);
+
+    final ids = <List<int>>[];
+    Uint8List? startKey;
+    while (true) {
+      final keys = await state.getKeysPaged(key: prefix, count: pageSize, startKey: startKey);
+      if (keys.isEmpty) return ids;
+      for (final key in keys) {
+        ids.add(key.sublist(key.length - 32));
+      }
+      if (keys.length < pageSize) return ids;
+      startKey = keys.last;
+    }
+  }
+
+  bool _sameAccount(List<int> a, List<int> b) {
+    if (a.length != b.length) return false;
+    for (var i = 0; i < a.length; i++) {
+      if (a[i] != b[i]) return false;
+    }
+    return true;
   }
 
   Future<ExtrinsicFeeData> getHighSecuritySetupFee(
