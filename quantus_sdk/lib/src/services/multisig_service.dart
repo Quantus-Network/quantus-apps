@@ -375,6 +375,7 @@ class MultisigService {
   }) {
     final innerCall = BalancesService().getBalanceTransferCall(recipient, amount);
     final callBytes = innerCall.encode();
+    CallDecoder.checkCallSize(callBytes.length);
     return const Txs().propose(multisigAddress: getAccountId32(msig.accountId), call: callBytes, expiry: expiryBlock);
   }
 
@@ -418,6 +419,7 @@ class MultisigService {
   /// [call] must be the proposal's stored inner call bytes — see
   /// [fetchProposalCallBytes]. The chain rejects an approval whose bytes differ.
   Multisig buildApproveCall({required MultisigAccount msig, required int proposalId, required List<int> call}) {
+    CallDecoder.checkCallSize(call.length);
     return const Txs().approve(multisigAddress: getAccountId32(msig.accountId), proposalId: proposalId, call: call);
   }
 
@@ -456,6 +458,7 @@ class MultisigService {
   /// it re-encodes to those exact bytes, so the executor signs the call itself
   /// rather than an opaque proposal id.
   Multisig buildExecuteCall({required MultisigAccount msig, required int proposalId, required List<int> call}) {
+    CallDecoder.checkCallSize(call.length);
     return const Txs().execute(
       multisigAddress: getAccountId32(msig.accountId),
       proposalId: proposalId,

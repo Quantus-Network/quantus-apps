@@ -554,6 +554,20 @@ void main() {
       expect(execute.encode().length, approve.encode().length - _compactLength(innerBytes.length));
     });
 
+    test('rejects a call larger than a signer will review', () {
+      // The limit is sized for a batch_all of 32 transfers (1707 bytes inside a
+      // multisig wrapper), well above anything the wallet itself builds.
+      final oversized = List<int>.filled(CallDecoder.maxCallBytes + 1, 0);
+      expect(
+        () => MultisigService().buildExecuteCall(msig: _buildTestMsig(), proposalId: 7, call: oversized),
+        throwsA(isA<FormatException>()),
+      );
+      expect(
+        () => MultisigService().buildApproveCall(msig: _buildTestMsig(), proposalId: 7, call: oversized),
+        throwsA(isA<FormatException>()),
+      );
+    });
+
     test('rejects call bytes that do not decode', () {
       expect(
         () => MultisigService().buildExecuteCall(msig: _buildTestMsig(), proposalId: 7, call: [0xff, 0xff]),
