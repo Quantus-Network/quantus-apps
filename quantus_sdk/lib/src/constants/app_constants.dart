@@ -65,8 +65,8 @@ class AppConstants {
   // from. A signing payload declaring a different spec version may decode
   // against shifted pallet/call indices, so signers warn loudly rather than
   // present a decode they cannot vouch for. Bump both when regenerating.
-  static const int bundledSpecVersion = 136;
-  static const int bundledTransactionVersion = 3;
+  static const int bundledSpecVersion = 147;
+  static const int bundledTransactionVersion = 6;
 
   // Reserved account index for the per-wallet encrypted (wormhole) account.
   // Kept high so it never collides with sequential transparent (BIP44) indices;
