@@ -138,4 +138,3 @@ mobile-app/patrol_test/test_bundle.dart
 # Google Play upload credentials (cold wallet / mobile)
 **/android/play-service-account.json
 /miner-app/macos/Runner.xcworkspace/xcshareddata
-/rust-transaction-parser/target
