@@ -82,7 +82,10 @@ enum Error {
   callWeightExceedsLimit('CallWeightExceedsLimit', 24),
 
   /// Provided call does not match the stored proposal payload
-  callMismatch('CallMismatch', 25);
+  callMismatch('CallMismatch', 25),
+
+  /// Signer list contains the same account more than once
+  duplicateSigners('DuplicateSigners', 26);
 
   const Error(this.variantName, this.codecIndex);
 
@@ -97,6 +100,7 @@ enum Error {
   static const $ErrorCodec codec = $ErrorCodec();
 
   String toJson() => variantName;
+
   _i2.Uint8List encode() {
     return codec.encode(this);
   }
@@ -161,6 +165,8 @@ class $ErrorCodec with _i1.Codec<Error> {
         return Error.callWeightExceedsLimit;
       case 25:
         return Error.callMismatch;
+      case 26:
+        return Error.duplicateSigners;
       default:
         throw Exception('Error: Invalid variant index: "$index"');
     }

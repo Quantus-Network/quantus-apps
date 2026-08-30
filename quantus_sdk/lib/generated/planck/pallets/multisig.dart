@@ -104,7 +104,8 @@ class Txs {
   /// The multisig address is deterministically derived from:
   /// hash(pallet_id || sorted_signers || threshold || nonce)
   ///
-  /// Signers are automatically sorted before hashing, so order doesn't matter.
+  /// Signers are sorted before hashing, so order doesn't matter.
+  /// Duplicate accounts are rejected.
   ///
   /// Economic costs:
   /// - MultisigFee: burned immediately (spam prevention)
@@ -199,20 +200,35 @@ class Txs {
   /// Can be called by any signer of the multisig once the proposal has reached
   /// the approval threshold (status = Approved). The proposal must not be expired.
   ///
+  /// The executor resubmits the proposal's inner call; execution proceeds only
+  /// if it is byte-equal to the payload stored at `proposal_id` — the same
+  /// binding `approve` enforces. This serves two purposes:
+  /// - **Clearsigning:** the executor's (hardware) wallet displays and signs the actual call
+  ///  being dispatched, not an opaque proposal id.
+  /// - **Self-describing weight:** the executing extrinsic carries the inner call, so its
+  ///  declared weight carries the inner call's own declared weight (refunded to actuals
+  ///  post-dispatch) instead of reserving a flat `MaxInnerCallWeight`, and runtime
+  ///  transaction extensions can inspect the inner call and price its side effects
+  ///  (account-reap cleanup, transfer-proof recording) exactly as they do for directly
+  ///  submitted calls. Nothing about the dispatch is invisible to pre-dispatch admission or
+  ///  fees. (Only the bookkeeping term is reserved at `MaxCallSize`, since the stored bytes'
+  ///  length is unknown pre-dispatch; the unused remainder is refunded.)
+  ///
   /// On execution:
-  /// - The call is decoded and dispatched as the multisig account
+  /// - The call is dispatched as the multisig account
   /// - Proposal is removed from storage
   /// - Deposit is returned to the proposer
   ///
   /// Parameters:
   /// - `multisig_address`: The multisig account
   /// - `proposal_id`: ID (nonce) of the proposal to execute
-  ///
-  /// Note: The weight charged includes both multisig bookkeeping and MaxInnerCallWeight.
-  /// Actual weight is refunded based on the inner call's post-dispatch info.
-  /// The inner call's weight is validated against MaxInnerCallWeight at propose time.
-  _i8.Multisig execute({required _i2.AccountId32 multisigAddress, required int proposalId}) {
-    return _i8.Multisig(_i9.Execute(multisigAddress: multisigAddress, proposalId: proposalId));
+  /// - `call`: The proposal's inner call, byte-equal to the stored payload
+  _i8.Multisig execute({
+    required _i2.AccountId32 multisigAddress,
+    required int proposalId,
+    required _i8.RuntimeCall call,
+  }) {
+    return _i8.Multisig(_i9.Execute(multisigAddress: multisigAddress, proposalId: proposalId, call: call));
   }
 }
 

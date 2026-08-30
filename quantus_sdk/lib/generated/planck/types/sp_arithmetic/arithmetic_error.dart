@@ -21,6 +21,7 @@ enum ArithmeticError {
   static const $ArithmeticErrorCodec codec = $ArithmeticErrorCodec();
 
   String toJson() => variantName;
+
   _i2.Uint8List encode() {
     return codec.encode(this);
   }

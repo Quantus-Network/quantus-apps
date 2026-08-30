@@ -32,11 +32,21 @@ typedef MultisigConfirmCallBuilder = RuntimeCall Function(Account signer, List<i
 
 /// Loads the proposal's inner call bytes from chain storage.
 ///
-/// `multisig.approve` only counts an approval whose bytes are byte-equal to the
-/// stored proposal, so actions that resubmit the call must read it from the chain
-/// rather than reconstruct it. Actions that carry only a proposal reference leave
-/// this null.
+/// `multisig.approve` and `multisig.execute` only count a submission whose bytes
+/// are byte-equal to the stored proposal, so actions that resubmit the call must
+/// read it from the chain rather than reconstruct it. Actions that carry only a
+/// proposal reference leave this null.
 typedef MultisigConfirmCallBytesLoader = Future<List<int>> Function(WidgetRef ref);
+
+/// The call bytes an action that resubmits the proposal cannot proceed without.
+///
+/// [MultisigConfirmCallBuilder] takes them as nullable because actions carrying
+/// only a proposal reference have none; [action] names the caller so a missing
+/// load is not mistaken for a chain rejection.
+List<int> requireCallBytes(List<int>? callBytes, String action) {
+  if (callBytes == null) throw StateError('$action requires the proposal call bytes');
+  return callBytes;
+}
 
 /// Submits a hardware-signed extrinsic for the action.
 typedef MultisigConfirmExternalSubmitter =

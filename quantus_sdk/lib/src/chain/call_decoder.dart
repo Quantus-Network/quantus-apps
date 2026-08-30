@@ -29,7 +29,6 @@ import 'package:quantus_sdk/generated/planck/types/pallet_balances/pallet/call.d
 import 'package:quantus_sdk/generated/planck/types/pallet_multisig/pallet/call.dart' as multisig;
 import 'package:quantus_sdk/generated/planck/types/pallet_preimage/pallet/call.dart' as preimage;
 import 'package:quantus_sdk/generated/planck/types/pallet_ranked_collective/pallet/call.dart' as collective;
-import 'package:quantus_sdk/generated/planck/types/pallet_recovery/pallet/call.dart' as recovery;
 import 'package:quantus_sdk/generated/planck/types/pallet_referenda/pallet/call.dart' as referenda;
 import 'package:quantus_sdk/generated/planck/types/pallet_reversible_transfers/pallet/call.dart' as reversible;
 import 'package:quantus_sdk/generated/planck/types/pallet_treasury/pallet/call.dart' as treasury;
@@ -78,9 +77,23 @@ class CallDecoder {
     });
   }
 
+  /// Decodes call bytes into the runtime call they carry, requiring an exact fit.
+  ///
+  /// `multisig.execute` carries its inner call inline rather than as the
+  /// length-prefixed bytes `approve` takes, so a proposal's stored payload has to
+  /// be decoded before it can be resubmitted. Bytes the bundled metadata cannot
+  /// read fail here, before signing, instead of building a call the chain rejects.
+  static runtime.RuntimeCall decodeRuntimeCall(
+    List<int> bytes, {
+    required CallPolicy policy,
+    List<CallId> within = const [],
+  }) {
+    return _asFormatException(() => _decodeExact(bytes, policy, within));
+  }
+
   /// The generated codecs signal malformed bytes with their own exception types.
   /// Callers fail closed on [FormatException], so every rejection arrives as one.
-  static DecodedCall _asFormatException(DecodedCall Function() decode) {
+  static T _asFormatException<T>(T Function() decode) {
     try {
       return decode();
     } on FormatException {
@@ -90,7 +103,7 @@ class CallDecoder {
     }
   }
 
-  static DecodedCall _decodeBytesAtPath(List<int> bytes, CallPolicy policy, List<CallId> path) {
+  static runtime.RuntimeCall _decodeExact(List<int> bytes, CallPolicy policy, List<CallId> path) {
     _checkCallSize(bytes.length);
     final input = Input.fromBytes(Uint8List.fromList(bytes));
     final call = _decodeCall(input, policy, path);
@@ -98,7 +111,11 @@ class CallDecoder {
     if (remaining != 0) {
       throw FormatException('$remaining trailing bytes after nested call');
     }
-    return _describe(call, path.length, policy: policy, path: path);
+    return call;
+  }
+
+  static DecodedCall _decodeBytesAtPath(List<int> bytes, CallPolicy policy, List<CallId> path) {
+    return _describe(_decodeExact(bytes, policy, path), path.length, policy: policy, path: path);
   }
 
   static void _checkCallSize(int length) {
@@ -131,7 +148,6 @@ class CallDecoder {
       runtime.TechReferenda(:final value0) => _referenda(value0, depth, policy, path),
       runtime.TreasuryPallet(:final value0) => _treasury(value0),
       runtime.Utility(:final value0) => _utility(value0, depth, policy, path),
-      runtime.Recovery(:final value0) => _recovery(value0, depth, policy, path),
       runtime.Vesting(:final value0) => _vesting(value0),
       runtime.System(:final value0) => _system(value0),
       _ => _generic(call),
@@ -143,10 +159,10 @@ class CallDecoder {
   // The generated codecs recurse into `RuntimeCall` the moment they meet a
   // nesting variant, so a limit applied to the decoded tree would already have
   // paid for the whole recursion — an over-nested payload could exhaust the
-  // stack instead of being refused. `Utility` and `Recovery` are the only
-  // pallets that embed a call inline, so decoding just those variants here
-  // bounds the recursion at its only entry points; every other call is handed
-  // straight to the generated codec, which cannot recurse.
+  // stack instead of being refused. `Utility.batch_all` and `Multisig.execute`
+  // are the only calls that embed a call inline, so decoding just those variants
+  // here bounds the recursion at its only entry points; every other call is
+  // handed straight to the generated codec, which cannot recurse.
   //
   // Calls carried as length-prefixed bytes (multisig proposals, noted preimages,
   // inline referendum proposals) do not recurse during decoding at all — they
@@ -159,14 +175,6 @@ class CallDecoder {
   static final Uint8List _batchAll = const runtime.Utility(utility.BatchAll(calls: [])).encode();
   static final int _utilityPalletIndex = _batchAll[0];
   static final int _batchAllCallIndex = _batchAll[1];
-  static final Uint8List _asRecovered = runtime.Recovery(
-    recovery.AsRecovered(
-      account: multi_address.Id(Uint8List(32)),
-      call: const runtime.System(system.Remark(remark: [])),
-    ),
-  ).encode();
-  static final int _recoveryPalletIndex = _asRecovered[0];
-  static final int _asRecoveredCallIndex = _asRecovered[1];
 
   static runtime.RuntimeCall _decodeCall(ByteInput input, CallPolicy policy, List<CallId> path) {
     if (path.length > maxCallNestingDepth) {
@@ -182,11 +190,23 @@ class CallDecoder {
       input.offset += 1;
       return runtime.Utility(_decodeUtility(input, policy, path));
     }
-    if (pallet == _recoveryPalletIndex) {
-      input.offset += 1;
-      return runtime.Recovery(_decodeRecovery(input, policy, path));
+    if (id == CallIds.multisigExecute) {
+      input.offset += 2;
+      return runtime.Multisig(_decodeMultisigExecute(input, policy, path));
     }
     return runtime.RuntimeCall.codec.decode(input);
+  }
+
+  /// `multisig.execute` carries its inner call inline, so letting the generated
+  /// codec read it would skip the policy and nesting checks every other call
+  /// boundary gets. Read the fields here and route the inner call back through
+  /// [_decodeCall].
+  static multisig.Call _decodeMultisigExecute(ByteInput input, CallPolicy policy, List<CallId> path) {
+    return multisig.Execute(
+      multisigAddress: const U8ArrayCodec(32).decode(input),
+      proposalId: U32Codec.codec.decode(input),
+      call: _decodeCall(input, policy, [...path, CallIds.multisigExecute]),
+    );
   }
 
   static utility.Call _decodeUtility(ByteInput input, CallPolicy policy, List<CallId> path) {
@@ -198,18 +218,6 @@ class CallDecoder {
       throw const FormatException('Utility: batch_all cannot be nested inside another batch_all');
     }
     return utility.BatchAll(calls: _decodeCalls(input, policy, [...path, CallIds.batchAll]));
-  }
-
-  static recovery.Call _decodeRecovery(ByteInput input, CallPolicy policy, List<CallId> path) {
-    final variant = _readIndex(input);
-    if (variant != _asRecoveredCallIndex) {
-      input.offset -= 1;
-      return recovery.Call.codec.decode(input);
-    }
-    return recovery.AsRecovered(
-      account: multi_address.MultiAddress.codec.decode(input),
-      call: _decodeCall(input, policy, [...path, CallId.wire(_recoveryPalletIndex, variant)]),
-    );
   }
 
   static List<runtime.RuntimeCall> _decodeCalls(ByteInput input, CallPolicy policy, List<CallId> path) {
@@ -369,8 +377,20 @@ class CallDecoder {
         );
       case multisig.Cancel(:final multisigAddress, :final proposalId):
         return _multisigProposalRef('cancel', multisigAddress, proposalId);
-      case multisig.Execute(:final multisigAddress, :final proposalId):
-        return _multisigProposalRef('execute', multisigAddress, proposalId);
+      case multisig.Execute(:final multisigAddress, :final proposalId, :final call):
+        // The chain dispatches this only if the call re-encodes to the payload
+        // stored at the proposal id, so what is shown here is what executes.
+        final inner = _describe(call, depth + 1, policy: policy, path: [...path, CallIds.multisigExecute]);
+        return DecodedCall(
+          pallet: 'Multisig',
+          call: 'execute',
+          fields: [
+            _accountField('Multisig account', multisigAddress),
+            ValueField('Proposal id', '$proposalId', kind: ValueKind.number),
+            NestedCallField('You are executing', inner),
+          ],
+          summary: inner.summary,
+        );
       case multisig.RemoveExpired(:final multisigAddress, :final proposalId):
         return _multisigProposalRef('remove_expired', multisigAddress, proposalId);
       case multisig.ClaimDeposits(:final multisigAddress):
@@ -547,7 +567,7 @@ class CallDecoder {
     }
   }
 
-  // ------------------------------------------------------- Utility / Recovery
+  // ----------------------------------------------------------------- Utility
 
   static DecodedCall _utility(utility.Call call, int depth, CallPolicy policy, List<CallId> path) {
     switch (call) {
@@ -574,64 +594,6 @@ class CallDecoder {
           NestedCallField('Call ${i + 1}', _describe(calls[i], depth + 1, policy: policy, path: path)),
       ],
     );
-  }
-
-  static DecodedCall _recovery(recovery.Call call, int depth, CallPolicy policy, List<CallId> path) {
-    switch (call) {
-      case recovery.AsRecovered(:final account, :final call):
-        final inner = _describe(
-          call,
-          depth + 1,
-          policy: policy,
-          path: [...path, CallId.wire(_recoveryPalletIndex, _asRecoveredCallIndex)],
-        );
-        return DecodedCall(
-          pallet: 'Recovery',
-          call: 'as_recovered',
-          fields: [_addressField('Recovered account', account), NestedCallField('Call', inner)],
-          summary: inner.summary,
-        );
-      case recovery.CreateRecovery(:final friends, :final threshold, :final delayPeriod):
-        return DecodedCall(
-          pallet: 'Recovery',
-          call: 'create_recovery',
-          fields: [
-            _accountListField('Friends', friends),
-            ValueField('Threshold', '$threshold of ${friends.length}', kind: ValueKind.number),
-            ValueField('Waiting period', '$delayPeriod blocks', kind: ValueKind.blockOrTime),
-          ],
-        );
-      case recovery.SetRecovered(:final lost, :final rescuer):
-        return DecodedCall(
-          pallet: 'Recovery',
-          call: 'set_recovered',
-          fields: [_addressField('Lost account', lost), _addressField('Rescuer', rescuer)],
-        );
-      case recovery.VouchRecovery(:final lost, :final rescuer):
-        return DecodedCall(
-          pallet: 'Recovery',
-          call: 'vouch_recovery',
-          fields: [_addressField('Lost account', lost), _addressField('Rescuer', rescuer)],
-        );
-      case recovery.InitiateRecovery(:final account):
-        return DecodedCall(
-          pallet: 'Recovery',
-          call: 'initiate_recovery',
-          fields: [_addressField('Account to recover', account)],
-        );
-      case recovery.ClaimRecovery(:final account):
-        return DecodedCall(
-          pallet: 'Recovery',
-          call: 'claim_recovery',
-          fields: [_addressField('Account to claim', account)],
-        );
-      case recovery.CloseRecovery(:final rescuer):
-        return DecodedCall(pallet: 'Recovery', call: 'close_recovery', fields: [_addressField('Rescuer', rescuer)]);
-      case recovery.CancelRecovered(:final account):
-        return DecodedCall(pallet: 'Recovery', call: 'cancel_recovered', fields: [_addressField('Account', account)]);
-      default:
-        return _generic(runtime.Recovery(call));
-    }
   }
 
   // ----------------------------------------------------------------- Vesting
@@ -792,12 +754,10 @@ class CallDecoder {
     final callName = inner.keys.first;
     final args = inner[callName];
 
-    final fields = <CallField>[];
-    if (args is Map) {
-      args.forEach((key, value) => fields.add(_genericField(_humanLabel(key.toString()), value)));
-    } else if (args != null) {
-      fields.add(_genericField('Value', args));
-    }
+    final fields = <CallField>[
+      if (args != null)
+        for (final arg in args.entries) _genericField(_humanLabel(arg.key), arg.value),
+    ];
     return DecodedCall(pallet: pallet, call: callName, fields: fields);
   }
 

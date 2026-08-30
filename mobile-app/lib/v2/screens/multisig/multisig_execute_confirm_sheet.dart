@@ -28,17 +28,23 @@ void showMultisigExecuteConfirmSheet(
         authReason: (l10n) => l10n.multisigExecuteAuthReason,
         failedMessage: (l10n) => l10n.multisigExecuteFailed,
       ),
-      // Executing dispatches the stored call, so what the signer reviews comes
-      // from chain storage, not the indexer; a proposal no longer in storage
-      // could not execute anyway.
+      // Executing resubmits the proposal's inner call, which the chain compares
+      // byte-for-byte against what it stored — so the bytes come from chain
+      // storage, not the indexer, and the signer reviews the call that will
+      // dispatch rather than an opaque proposal id.
       loadCallBytes: (ref) =>
           ref.read(multisigServiceProvider).fetchProposalCallBytes(msig: msig, proposalId: proposal.id),
-      estimateFee: (ref, signer, callBytes) =>
-          ref.read(multisigServiceProvider).estimateExecuteFee(msig: msig, signer: signer, proposalId: proposal.id),
-      buildCall: (signer, callBytes) => MultisigService().buildExecuteCall(msig: msig, proposalId: proposal.id),
+      estimateFee: (ref, signer, callBytes) => ref
+          .read(multisigServiceProvider)
+          .estimateExecuteFee(msig: msig, signer: signer, proposalId: proposal.id, callBytes: callBytes),
+      buildCall: (signer, callBytes) => MultisigService().buildExecuteCall(
+        msig: msig,
+        proposalId: proposal.id,
+        call: requireCallBytes(callBytes, 'Execute'),
+      ),
       submit: (ref, signer, fee, callBytes) => ref
           .read(transactionSubmissionServiceProvider)
-          .executeProposal(msig: msig, signer: signer, proposal: proposal, fee: fee),
+          .executeProposal(msig: msig, signer: signer, proposal: proposal, callBytes: callBytes, fee: fee),
       submitExternal: (ref, {required signer, required unsignedData, required signature, required publicKey, fee}) =>
           ref
               .read(transactionSubmissionServiceProvider)

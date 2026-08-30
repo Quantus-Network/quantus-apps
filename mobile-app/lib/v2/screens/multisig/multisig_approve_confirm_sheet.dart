@@ -45,7 +45,7 @@ void showMultisigApproveConfirmSheet(
       buildCall: (resolvedSigner, callBytes) => MultisigService().buildApproveCall(
         msig: msig,
         proposalId: proposal.id,
-        call: callBytes ?? (throw StateError('Approve requires the proposal call bytes')),
+        call: requireCallBytes(callBytes, 'Approve'),
       ),
       submit: (ref, resolvedSigner, fee, callBytes) => ref
           .read(transactionSubmissionServiceProvider)

@@ -69,8 +69,8 @@ class AppConstants {
   // from. A signing payload declaring a different spec version may decode
   // against shifted pallet/call indices, so signers warn loudly rather than
   // present a decode they cannot vouch for. Bump both when regenerating.
-  static const int bundledSpecVersion = 146;
-  static const int bundledTransactionVersion = 5;
+  static const int bundledSpecVersion = 147;
+  static const int bundledTransactionVersion = 6;
 
   // Runtimes this build's metadata decodes correctly, beyond the one it was
   // generated from. A pair belongs here only once the calls the wallet displays

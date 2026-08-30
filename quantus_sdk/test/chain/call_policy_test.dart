@@ -5,7 +5,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_sdk/generated/planck/pallets/balances.dart' as balances_pallet;
 import 'package:quantus_sdk/generated/planck/pallets/multisig.dart' as multisig_pallet;
 import 'package:quantus_sdk/generated/planck/pallets/preimage.dart' as preimage_pallet;
-import 'package:quantus_sdk/generated/planck/pallets/recovery.dart' as recovery_pallet;
 import 'package:quantus_sdk/generated/planck/pallets/reversible_transfers.dart' as reversible_pallet;
 import 'package:quantus_sdk/generated/planck/pallets/system.dart' as system_pallet;
 import 'package:quantus_sdk/generated/planck/pallets/tech_collective.dart' as collective_pallet;
@@ -57,7 +56,7 @@ void main() {
       const preimage_pallet.Txs().notePreimage(bytes: [0, 0, 0]),
       const system_pallet.Txs().remark(remark: [1, 2, 3]),
       const vesting_pallet.Txs().claim(scheduleId: BigInt.one),
-      const recovery_pallet.Txs().removeRecovery(),
+      const balances_pallet.Txs().burn(value: _one, keepAlive: true),
       const utility_pallet.Txs().batchAll(calls: [transfer()]),
     ];
 
@@ -78,7 +77,7 @@ void main() {
 
     test('accepts the multisig lifecycle', () {
       expectAllowed(const multisig_pallet.Txs().cancel(multisigAddress: _alice, proposalId: 1));
-      expectAllowed(const multisig_pallet.Txs().execute(multisigAddress: _alice, proposalId: 1));
+      expectAllowed(const multisig_pallet.Txs().execute(multisigAddress: _alice, proposalId: 1, call: transfer()));
       expectAllowed(const multisig_pallet.Txs().claimDeposits(multisigAddress: _alice));
     });
 
@@ -87,7 +86,7 @@ void main() {
       expectRejected(const system_pallet.Txs().remark(remark: [1]));
       expectRejected(const preimage_pallet.Txs().notePreimage(bytes: [0, 0, 0]));
       expectRejected(const vesting_pallet.Txs().claim(scheduleId: BigInt.one));
-      expectRejected(const recovery_pallet.Txs().removeRecovery());
+      expectRejected(const balances_pallet.Txs().burn(value: _one, keepAlive: true));
     });
 
     test('rejects a bare batch_all outside a proposal', () {

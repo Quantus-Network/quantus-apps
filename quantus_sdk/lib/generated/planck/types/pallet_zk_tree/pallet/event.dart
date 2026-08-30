@@ -2,7 +2,6 @@
 import 'dart:typed_data' as _i2;
 
 import 'package:polkadart/scale_codec.dart' as _i1;
-import 'package:quiver/collection.dart' as _i3;
 
 /// The `Event` enum of this pallet
 abstract class Event {
@@ -32,8 +31,8 @@ abstract class Event {
 class $Event {
   const $Event();
 
-  LeafInserted leafInserted({required BigInt index, required List<int> leafHash, required List<int> newRoot}) {
-    return LeafInserted(index: index, leafHash: leafHash, newRoot: newRoot);
+  LeafInserted leafInserted({required BigInt index}) {
+    return LeafInserted(index: index);
   }
 
   TreeGrew treeGrew({required int newDepth}) {
@@ -84,57 +83,42 @@ class $EventCodec with _i1.Codec<Event> {
   }
 }
 
-/// A new leaf was inserted into the tree.
+/// A new leaf was inserted into the tree. The root including this leaf is
+/// computed at the end of the block and published in the block header. The
+/// leaf hash is deliberately not included: it is derivable from `Leaves`
+/// (and served by the RPC), and hashing it here would double the per-leaf
+/// Poseidon work the batched settlement saves.
 class LeafInserted extends Event {
-  const LeafInserted({required this.index, required this.leafHash, required this.newRoot});
+  const LeafInserted({required this.index});
 
   factory LeafInserted._decode(_i1.Input input) {
-    return LeafInserted(
-      index: _i1.U64Codec.codec.decode(input),
-      leafHash: const _i1.U8ArrayCodec(32).decode(input),
-      newRoot: const _i1.U8ArrayCodec(32).decode(input),
-    );
+    return LeafInserted(index: _i1.U64Codec.codec.decode(input));
   }
 
   /// u64
   final BigInt index;
 
-  /// Hash256
-  final List<int> leafHash;
-
-  /// Hash256
-  final List<int> newRoot;
-
   @override
-  Map<String, Map<String, dynamic>> toJson() => {
-    'LeafInserted': {'index': index, 'leafHash': leafHash.toList(), 'newRoot': newRoot.toList()},
+  Map<String, Map<String, BigInt>> toJson() => {
+    'LeafInserted': {'index': index},
   };
 
   int _sizeHint() {
     int size = 1;
     size = size + _i1.U64Codec.codec.sizeHint(index);
-    size = size + const _i1.U8ArrayCodec(32).sizeHint(leafHash);
-    size = size + const _i1.U8ArrayCodec(32).sizeHint(newRoot);
     return size;
   }
 
   void encodeTo(_i1.Output output) {
     _i1.U8Codec.codec.encodeTo(0, output);
     _i1.U64Codec.codec.encodeTo(index, output);
-    const _i1.U8ArrayCodec(32).encodeTo(leafHash, output);
-    const _i1.U8ArrayCodec(32).encodeTo(newRoot, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is LeafInserted &&
-          other.index == index &&
-          _i3.listsEqual(other.leafHash, leafHash) &&
-          _i3.listsEqual(other.newRoot, newRoot);
+  bool operator ==(Object other) => identical(this, other) || other is LeafInserted && other.index == index;
 
   @override
-  int get hashCode => Object.hash(index, leafHash, newRoot);
+  int get hashCode => index.hashCode;
 }
 
 /// Tree depth increased.

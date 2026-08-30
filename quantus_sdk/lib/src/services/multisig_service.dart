@@ -4,6 +4,8 @@ import 'package:flutter/foundation.dart';
 import 'package:quantus_sdk/generated/planck/pallets/multisig.dart' show Constants, Txs;
 import 'package:quantus_sdk/generated/planck/planck.dart' show Planck;
 import 'package:quantus_sdk/generated/planck/types/quantus_runtime/runtime_call.dart';
+import 'package:quantus_sdk/src/chain/call_decoder.dart';
+import 'package:quantus_sdk/src/chain/call_policy.dart';
 import 'package:quantus_sdk/src/constants/app_constants.dart';
 import 'package:quantus_sdk/src/models/account.dart';
 import 'package:quantus_sdk/src/models/json_dynamic_parse.dart';
@@ -452,17 +454,36 @@ class MultisigService {
   }
 
   /// Builds the `multisig.execute` runtime call for [proposalId].
-  Multisig buildExecuteCall({required MultisigAccount msig, required int proposalId}) {
-    return const Txs().execute(multisigAddress: getAccountId32(msig.accountId), proposalId: proposalId);
+  ///
+  /// [call] must be the proposal's stored inner call bytes — see
+  /// [fetchProposalCallBytes]. The chain dispatches only a call that re-encodes
+  /// to them, which is what lets the executor read what they are dispatching
+  /// instead of signing an opaque proposal id.
+  ///
+  /// Unlike `approve`, which resubmits the bytes length-prefixed, `execute`
+  /// carries the call itself, so the stored bytes are decoded here. A proposal
+  /// the bundled metadata cannot read fails now, before signing, rather than
+  /// building a call the chain would reject.
+  Multisig buildExecuteCall({required MultisigAccount msig, required int proposalId, required List<int> call}) {
+    return const Txs().execute(
+      multisigAddress: getAccountId32(msig.accountId),
+      proposalId: proposalId,
+      call: CallDecoder.decodeRuntimeCall(call, policy: const WalletCallPolicy(), within: CallIds.insideProposal),
+    );
   }
 
   /// Estimates the network fee for executing [proposalId].
+  ///
+  /// Fee scales with the inner call size, so [callBytes] is fetched when not
+  /// supplied by the caller.
   Future<BigInt> estimateExecuteFee({
     required MultisigAccount msig,
     required Account signer,
     required int proposalId,
+    List<int>? callBytes,
   }) async {
-    final call = buildExecuteCall(msig: msig, proposalId: proposalId);
+    final inner = callBytes ?? await fetchProposalCallBytes(msig: msig, proposalId: proposalId);
+    final call = buildExecuteCall(msig: msig, proposalId: proposalId, call: inner);
     final feeData = await _substrateService.getFeeForCall(signer, call);
     return feeData.fee;
   }
@@ -472,8 +493,10 @@ class MultisigService {
     required MultisigAccount msig,
     required Account signer,
     required int proposalId,
+    List<int>? callBytes,
   }) async {
-    final call = buildExecuteCall(msig: msig, proposalId: proposalId);
+    final inner = callBytes ?? await fetchProposalCallBytes(msig: msig, proposalId: proposalId);
+    final call = buildExecuteCall(msig: msig, proposalId: proposalId, call: inner);
     return _substrateService.submitExtrinsic(signer, call);
   }
 

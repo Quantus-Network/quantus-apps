@@ -5,7 +5,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_sdk/generated/planck/pallets/balances.dart' as balances_pallet;
 import 'package:quantus_sdk/generated/planck/pallets/multisig.dart' as multisig_pallet;
 import 'package:quantus_sdk/generated/planck/pallets/preimage.dart' as preimage_pallet;
-import 'package:quantus_sdk/generated/planck/pallets/recovery.dart' as recovery_pallet;
 import 'package:quantus_sdk/generated/planck/pallets/reversible_transfers.dart' as reversible_pallet;
 import 'package:quantus_sdk/generated/planck/pallets/system.dart' as system_pallet;
 import 'package:quantus_sdk/generated/planck/pallets/tech_collective.dart' as collective_pallet;
@@ -37,26 +36,26 @@ final oneToken = BigInt.from(1000000000000);
 /// runs against the same path a signer takes: bytes in, display tree out.
 DecodedCall roundTrip(RuntimeCall call) => CallDecoder.decodeBytes(call.encode(), policy: const FullCallPolicy());
 
-RuntimeCall nestedRecovered(int depth) {
+RuntimeCall nestedExecute(int depth) {
   RuntimeCall call = const system_pallet.Txs().remark(remark: <int>[]);
   for (var i = 0; i < depth; i++) {
-    call = const recovery_pallet.Txs().asRecovered(account: dest(aliceId), call: call);
+    call = const multisig_pallet.Txs().execute(multisigAddress: aliceId, proposalId: 4, call: call);
   }
   return call;
 }
 
 RuntimeCall multisigWrapping(int depth) =>
-    const multisig_pallet.Txs().propose(multisigAddress: aliceId, call: nestedRecovered(depth).encode(), expiry: 10);
+    const multisig_pallet.Txs().propose(multisigAddress: aliceId, call: nestedExecute(depth).encode(), expiry: 10);
 
-RuntimeCall recoveryWrapping(int depth) =>
-    const recovery_pallet.Txs().asRecovered(account: dest(aliceId), call: nestedRecovered(depth));
+RuntimeCall executeWrapping(int depth) =>
+    const multisig_pallet.Txs().execute(multisigAddress: aliceId, proposalId: 4, call: nestedExecute(depth));
 
 RuntimeCall preimageWrapping(int depth) =>
-    const preimage_pallet.Txs().notePreimage(bytes: nestedRecovered(depth).encode());
+    const preimage_pallet.Txs().notePreimage(bytes: nestedExecute(depth).encode());
 
 RuntimeCall referendaWrapping(int depth) => const referenda_pallet.Txs().submit(
   proposalOrigin: rootOrigin,
-  proposal: bounded.Bounded.values.inline(nestedRecovered(depth).encode()),
+  proposal: bounded.Bounded.values.inline(nestedExecute(depth).encode()),
   enactmentMoment: dispatch_time.DispatchTime.values.after(100),
 );
 
@@ -65,12 +64,19 @@ final rootOrigin = origin_caller.OriginCaller.values.system(raw_origin.RawOrigin
 /// Built straight from bytes: encoding a chain this deep in Dart would itself
 /// blow the stack, which is the point — a decoder that recurses first never gets
 /// to say no.
-final int _recoveryPallet = const recovery_pallet.Txs().removeRecovery().encode()[0];
-
-Uint8List recoveredChainBytes(int depth) => Uint8List.fromList([
-  for (var i = 0; i < depth; i++) ...[_recoveryPallet, 0, 0, ...List.filled(32, 0xAA)],
+Uint8List executeChainBytes(int depth) => Uint8List.fromList([
+  for (var i = 0; i < depth; i++) ...[
+    CallIds.multisigExecute.pallet,
+    CallIds.multisigExecute.call,
+    ...List.filled(32, 0xAA), // multisig address
+    0, 0, 0, 0, // proposal id
+  ],
   0, 0, 0, // System(0) · remark(0), empty
 ]);
+
+/// Bytes one level of [executeChainBytes] costs: the two indices, the address
+/// and the proposal id.
+const int _executeLevelBytes = 2 + 32 + 4;
 
 /// Every field of a decoded tree as one comparable string, so a decode that got
 /// a variant index or a field order wrong cannot compare equal.
@@ -211,11 +217,8 @@ void main() {
       expect(valueField(decoded, 'Threshold').value, '2 of 2');
     });
 
-    test('execute and cancel flag that the proposal contents are not in the payload', () {
-      for (final decoded in [
-        roundTrip(const multisig_pallet.Txs().execute(multisigAddress: aliceId, proposalId: 4)),
-        roundTrip(const multisig_pallet.Txs().cancel(multisigAddress: aliceId, proposalId: 4)),
-      ]) {
+    test('cancel flags that the proposal contents are not in the payload', () {
+      for (final decoded in [roundTrip(const multisig_pallet.Txs().cancel(multisigAddress: aliceId, proposalId: 4))]) {
         final field = valueField(decoded, 'Proposal id');
         expect(field.value, '4');
         expect(field.note, contains('not part of what you sign'));
@@ -309,14 +312,14 @@ void main() {
   group('nested and batched calls', () {
     test('allows top-level calls and two nested levels', () {
       for (final depth in [0, 1, 2]) {
-        final decoded = roundTrip(nestedRecovered(depth));
-        expect(decoded.call, depth == 0 ? 'remark' : 'as_recovered');
+        final decoded = roundTrip(nestedExecute(depth));
+        expect(decoded.call, depth == 0 ? 'remark' : 'execute');
       }
     });
 
     test('rejects three or more nested inline levels', () {
       for (final depth in [3, 4, 42]) {
-        expectNestingRejected(nestedRecovered(depth));
+        expectNestingRejected(nestedExecute(depth));
       }
     });
 
@@ -329,8 +332,8 @@ void main() {
     });
 
     test('applies the limit to utility batches', () {
-      roundTrip(const utility_pallet.Txs().batchAll(calls: [nestedRecovered(1)]));
-      expectNestingRejected(const utility_pallet.Txs().batchAll(calls: [nestedRecovered(2)]));
+      roundTrip(const utility_pallet.Txs().batchAll(calls: [nestedExecute(1)]));
+      expectNestingRejected(const utility_pallet.Txs().batchAll(calls: [nestedExecute(2)]));
     });
 
     test('propagates the limit through multisig proposal bytes', () {
@@ -338,9 +341,9 @@ void main() {
       expectNestingRejected(multisigWrapping(2));
     });
 
-    test('propagates the limit through recovery-wrapped calls', () {
-      roundTrip(recoveryWrapping(1));
-      expectNestingRejected(recoveryWrapping(2));
+    test('propagates the limit through the call multisig.execute carries', () {
+      roundTrip(executeWrapping(1));
+      expectNestingRejected(executeWrapping(2));
     });
 
     test('propagates the limit through inline referendum proposals', () {
@@ -354,12 +357,12 @@ void main() {
     });
 
     test('a deeply nested chain the size of the report payload is rejected', () {
-      expectNestingRejected(nestedRecovered(42));
+      expectNestingRejected(nestedExecute(42));
     });
 
     test('rejects over-nested bytes without recursing into them', () {
-      final depth = (maxCallBytes - 3) ~/ 35;
-      final bytes = recoveredChainBytes(depth);
+      final depth = (maxCallBytes - 3) ~/ _executeLevelBytes;
+      final bytes = executeChainBytes(depth);
       expect(bytes.length, lessThanOrEqualTo(maxCallBytes));
       expect(() => CallDecoder.decodeBytes(bytes, policy: const FullCallPolicy()), isNestingRejection);
     });
@@ -370,10 +373,10 @@ void main() {
       final variants = <RuntimeCall>[
         const utility_pallet.Txs().batchAll(calls: [inner, other]),
         const utility_pallet.Txs().batchAll(calls: []),
-        const recovery_pallet.Txs().asRecovered(account: dest(aliceId), call: inner),
-        // Recovery variants the bounded decoder must hand back to the codec.
-        const recovery_pallet.Txs().claimRecovery(account: dest(bobId)),
-        const recovery_pallet.Txs().removeRecovery(),
+        const multisig_pallet.Txs().execute(multisigAddress: aliceId, proposalId: 4, call: inner),
+        // Multisig variants the bounded decoder must hand back to the codec.
+        const multisig_pallet.Txs().cancel(multisigAddress: bobId, proposalId: 4),
+        const multisig_pallet.Txs().claimDeposits(multisigAddress: bobId),
       ];
       for (final call in variants) {
         expect(
@@ -400,16 +403,17 @@ void main() {
       expect(nestedField(decoded, 'Call 2').call.call, 'vote');
     });
 
-    test('recovery.as_recovered lifts the wrapped transfer summary', () {
+    test('multisig.execute lifts the carried transfer summary', () {
       final decoded = roundTrip(
-        const recovery_pallet.Txs().asRecovered(
-          account: dest(aliceId),
+        const multisig_pallet.Txs().execute(
+          multisigAddress: aliceId,
+          proposalId: 4,
           call: const balances_pallet.Txs().transferAllowDeath(dest: dest(bobId), value: oneToken),
         ),
       );
 
-      expect(decoded.call, 'as_recovered');
-      expect(nestedField(decoded, 'Call').call.call, 'transfer_allow_death');
+      expect(decoded.call, 'execute');
+      expect(nestedField(decoded, 'You are executing').call.call, 'transfer_allow_death');
       expect(decoded.summary?.amount, oneToken);
     });
   });

@@ -46,6 +46,10 @@ final _zero32 = List.filled(32, 0);
 final _zeroDest = multi_address.MultiAddress.values.id(_zero32);
 final _zero = BigInt.zero;
 
+/// Stands in for the inner call of a sample `multisig.execute`, which carries one
+/// inline. Only the enclosing call's own indices are read off the sample.
+final _zeroInnerCall = const balances_pallet.Txs().transferAllowDeath(dest: _zeroDest, value: _zero);
+
 /// The calls the wallet grammar names, each read off the runtime's own encoder.
 class CallIds {
   const CallIds._();
@@ -88,7 +92,7 @@ class CallIds {
   );
   static final multisigCancel = CallId.of(const multisig_pallet.Txs().cancel(multisigAddress: _zero32, proposalId: 0));
   static final multisigExecute = CallId.of(
-    const multisig_pallet.Txs().execute(multisigAddress: _zero32, proposalId: 0),
+    const multisig_pallet.Txs().execute(multisigAddress: _zero32, proposalId: 0, call: _zeroInnerCall),
   );
   static final removeExpired = CallId.of(
     const multisig_pallet.Txs().removeExpired(multisigAddress: _zero32, proposalId: 0),
@@ -170,12 +174,20 @@ class WalletCallPolicy extends CallPolicy {
     CallIds.claimDeposits,
   };
 
+  /// The multisig calls that carry a proposal's inner call. Each is bound by the
+  /// chain to the stored payload, so what they nest is what the proposal holds.
+  static final Set<CallId> _carriesProposal = {
+    CallIds.multisigPropose,
+    CallIds.multisigApprove,
+    CallIds.multisigExecute,
+  };
+
   @override
   bool allows(CallId id, List<CallId> path) {
     if (path.isEmpty) return _topLevel.contains(id);
     final parent = path.last;
     if (parent == CallIds.batchAll) return CallIds.transfers.contains(id);
-    if (parent == CallIds.multisigPropose || parent == CallIds.multisigApprove) return _proposalInner.contains(id);
+    if (_carriesProposal.contains(parent)) return _proposalInner.contains(id);
     return false;
   }
 }

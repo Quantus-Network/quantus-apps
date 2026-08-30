@@ -3,7 +3,7 @@ import 'dart:typed_data';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:polkadart/scale_codec.dart';
 import 'package:quantus_sdk/generated/planck/pallets/balances.dart' as balances_pallet;
-import 'package:quantus_sdk/generated/planck/types/pallet_multisig/pallet/call.dart' show Approve;
+import 'package:quantus_sdk/generated/planck/types/pallet_multisig/pallet/call.dart' show Approve, Execute;
 import 'package:quantus_sdk/generated/planck/types/quantus_runtime/runtime_call.dart';
 import 'package:quantus_sdk/generated/planck/types/sp_runtime/multiaddress/multi_address.dart';
 import 'package:quantus_sdk/src/chain/call_decoder.dart';
@@ -521,9 +521,64 @@ void main() {
   });
 
   group('MultisigService.buildExecuteCall', () {
+    // The chain dispatches only a call that re-encodes to the stored proposal,
+    // so execute has to carry those bytes through as faithfully as approve does
+    // — but inline, as a `Box<RuntimeCall>`, with no length prefix.
+    final innerCall = const balances_pallet.Txs().transferAllowDeath(
+      dest: MultiAddress.values.id(Uint8List.fromList(List.filled(32, 0xBB))),
+      value: BigInt.from(900000000000),
+    );
+
     test('returns a Multisig runtime call for valid params', () {
-      final call = MultisigService().buildExecuteCall(msig: _buildTestMsig(), proposalId: 3);
+      final call = MultisigService().buildExecuteCall(msig: _buildTestMsig(), proposalId: 3, call: innerCall.encode());
       expect(call.encode().isNotEmpty, isTrue);
+    });
+
+    test('round-trips the stored call bytes and proposal id', () {
+      final innerBytes = innerCall.encode();
+      final execute = MultisigService().buildExecuteCall(msig: _buildTestMsig(), proposalId: 7, call: innerBytes);
+
+      final decoded = RuntimeCall.codec.decode(Input.fromBytes(execute.encode()));
+      final executeCall = (decoded as Multisig).value0 as Execute;
+
+      expect(executeCall.proposalId, 7);
+      expect(executeCall.call.encode(), innerBytes);
+      expect(CallDecoder.describe(decoded, policy: const FullCallPolicy()).summary?.amount, BigInt.from(900000000000));
+    });
+
+    test('encodes the call inline, without the length prefix approve carries', () {
+      final innerBytes = innerCall.encode();
+      final msig = _buildTestMsig();
+      final execute = MultisigService().buildExecuteCall(msig: msig, proposalId: 7, call: innerBytes);
+      final approve = MultisigService().buildApproveCall(msig: msig, proposalId: 7, call: innerBytes);
+
+      // Same fields either way, so the whole difference is approve's compact
+      // length prefix in front of the same bytes.
+      final prefix = CompactCodec.codec.encode(innerBytes.length).length;
+      expect(approve.encode().length - execute.encode().length, prefix);
+    });
+
+    test('refuses bytes the bundled metadata cannot decode', () {
+      expect(
+        () => MultisigService().buildExecuteCall(msig: _buildTestMsig(), proposalId: 1, call: [0xfa, 0x00]),
+        throwsA(isA<FormatException>()),
+      );
+    });
+
+    test('refuses bytes with a trailing byte after a complete call', () {
+      expect(
+        () =>
+            MultisigService().buildExecuteCall(msig: _buildTestMsig(), proposalId: 1, call: [...innerCall.encode(), 0]),
+        throwsA(isA<FormatException>()),
+      );
+    });
+
+    test('refuses a call the wallet does not display inside a proposal', () {
+      final notInAProposal = const balances_pallet.Txs().burn(value: BigInt.one, keepAlive: true);
+      expect(
+        () => MultisigService().buildExecuteCall(msig: _buildTestMsig(), proposalId: 1, call: notInAProposal.encode()),
+        throwsA(isA<FormatException>()),
+      );
     });
   });
 

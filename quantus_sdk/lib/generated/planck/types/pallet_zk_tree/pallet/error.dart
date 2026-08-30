@@ -9,7 +9,11 @@ enum Error {
   leafIndexOutOfBounds('LeafIndexOutOfBounds', 0),
 
   /// Leaf not found.
-  leafNotFound('LeafNotFound', 1);
+  leafNotFound('LeafNotFound', 1),
+
+  /// Leaf was appended this block and is not yet folded into the root; it
+  /// becomes provable once the block is finalized.
+  leafNotYetSettled('LeafNotYetSettled', 2);
 
   const Error(this.variantName, this.codecIndex);
 
@@ -24,6 +28,7 @@ enum Error {
   static const $ErrorCodec codec = $ErrorCodec();
 
   String toJson() => variantName;
+
   _i2.Uint8List encode() {
     return codec.encode(this);
   }
@@ -40,6 +45,8 @@ class $ErrorCodec with _i1.Codec<Error> {
         return Error.leafIndexOutOfBounds;
       case 1:
         return Error.leafNotFound;
+      case 2:
+        return Error.leafNotYetSettled;
       default:
         throw Exception('Error: Invalid variant index: "$index"');
     }

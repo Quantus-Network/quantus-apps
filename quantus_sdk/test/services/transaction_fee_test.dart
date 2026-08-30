@@ -7,14 +7,19 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 /// `payment_queryInfo` on a1-planck (spec 144) for a dummy-signed
 /// `transfer_allow_death` of 10 QUAN with a 1-byte nonce: 7303 bytes,
 /// weight.ref_time 5_551_728_000, partialFee 12_962_885_000.
+///
+/// The bundled metadata is spec 147, which raises the normal-class base
+/// extrinsic weight from 108_157_000 to 767_297_000, so the fee this build
+/// computes for that same extrinsic moves with it. Length and dispatch weight
+/// are unchanged; re-measure against a live endpoint once Planck runs 147.
 final BigInt _liveDispatchWeight = BigInt.from(5551728000);
-final BigInt _livePartialFee = BigInt.from(12962885000);
+final BigInt _expectedPartialFee = BigInt.from(13622025000);
 final BigInt _tenQuan = BigInt.from(10).pow(13);
 
 void main() {
   test('inclusion fee reproduces the chain fee from length and dispatch weight', () {
-    expect(system_pallet.Constants().blockWeights.perClass.normal.baseExtrinsic.refTime, BigInt.from(108157000));
-    expect(inclusionFee(length: 7303, dispatchWeight: _liveDispatchWeight), _livePartialFee);
+    expect(system_pallet.Constants().blockWeights.perClass.normal.baseExtrinsic.refTime, BigInt.from(767297000));
+    expect(inclusionFee(length: 7303, dispatchWeight: _liveDispatchWeight), _expectedPartialFee);
   });
 
   test('signed extrinsic length sizes the nonce at its 4-byte maximum', () {
@@ -29,6 +34,6 @@ void main() {
 
   test('transfer fee is the chain fee plus the nonce headroom', () {
     final fee = BalancesService().transferFee(_tenQuan, dispatchWeight: _liveDispatchWeight);
-    expect(fee, _livePartialFee + lengthFeePerByte * BigInt.from(3));
+    expect(fee, _expectedPartialFee + lengthFeePerByte * BigInt.from(3));
   });
 }
