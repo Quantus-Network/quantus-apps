@@ -43,19 +43,13 @@ import 'package:quantus_sdk/src/services/datetime_formatting_service.dart';
 class CallDecoder {
   const CallDecoder._();
 
-  /// Largest encoded call a multisig proposal may carry.
+  /// Largest inner call a multisig proposal may carry, mirroring the runtime's
+  /// `pallet_multisig::Config::MaxCallSize` (`BoundedVec<u8, MaxCallSize>`, 10 KiB).
   ///
-  /// Sized by the biggest call we ever expect to put through a multisig: a
-  /// `batch_all` of 32 transfers — double the 16 a batch is expected to carry —
-  /// which is 1667 bytes at the worst-case encoding of every field, or 1707
-  /// inside a multisig wrapper. The chain's own `MaxCallSize` is 10 KiB; this is
-  /// deliberately tighter, because a call a signer cannot review is one they
-  /// cannot meaningfully approve.
-  ///
-  /// This bounds the multisig paths only. `system.set_code` and
-  /// `preimage.note_preimage` legitimately carry a runtime blob and are governed
-  /// by their own limits.
-  static const int maxCallBytes = 2 * 1024;
+  /// Deliberately the chain's number rather than a tighter one of our own: a limit
+  /// below it would refuse proposals the chain accepts, leaving a multisig no cold
+  /// signer could act on.
+  static const int maxCallBytes = 10 * 1024;
 
   /// Throws when a call of [length] bytes is larger than a signer will review.
   static void checkCallSize(int length) {
