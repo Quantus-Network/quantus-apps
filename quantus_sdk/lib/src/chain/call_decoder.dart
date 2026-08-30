@@ -204,7 +204,7 @@ class CallDecoder {
           ],
         );
       case multisig.Propose(:final multisigAddress, :final call, :final expiry):
-        final inner = decodeBytes(call);
+        final inner = _multisigInner(call);
         return DecodedCall(
           pallet: 'Multisig',
           call: 'propose',
@@ -219,7 +219,7 @@ class CallDecoder {
         // The chain only counts this approval if these bytes are byte-equal to
         // the stored proposal, so the inner call shown here is the call being
         // approved — not unverifiable context.
-        final inner = decodeBytes(call);
+        final inner = _multisigInner(call);
         return DecodedCall(
           pallet: 'Multisig',
           call: 'approve',
@@ -235,6 +235,7 @@ class CallDecoder {
       case multisig.Execute(:final multisigAddress, :final proposalId, :final call):
         // The chain dispatches this call only if it re-encodes to the stored
         // proposal, so what is shown here is what executes.
+        checkCallSize(call.encode().length);
         final inner = describe(call);
         return DecodedCall(
           pallet: 'Multisig',
@@ -257,6 +258,13 @@ class CallDecoder {
       default:
         return _generic(runtime.Multisig(call));
     }
+  }
+
+  /// The inner call of a multisig action, refused when larger than a signer will
+  /// review — the same bound the firmware enforces.
+  static DecodedCall _multisigInner(List<int> bytes) {
+    checkCallSize(bytes.length);
+    return decodeBytes(bytes);
   }
 
   static DecodedCall _multisigProposalRef(String name, List<int> multisigAddress, int proposalId) {

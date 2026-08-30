@@ -175,6 +175,25 @@ void main() {
       expect(execute.encode().length, approve.encode().length - 1);
     });
 
+    test('refuses a multisig inner call larger than a signer will review', () {
+      // 64 signers encodes to 2064 bytes, just over the limit.
+      final oversized = const multisig_pallet.Txs().createMultisig(
+        signers: List.generate(64, (i) => Uint8List.fromList(List.filled(32, i))),
+        threshold: 2,
+        nonce: BigInt.zero,
+      );
+      final oversizedBytes = oversized.encode();
+      expect(oversizedBytes.length, greaterThan(CallDecoder.maxCallBytes));
+
+      for (final call in [
+        const multisig_pallet.Txs().propose(multisigAddress: aliceId, call: oversizedBytes, expiry: 5000),
+        const multisig_pallet.Txs().approve(multisigAddress: aliceId, proposalId: 4, call: oversizedBytes),
+        const multisig_pallet.Txs().execute(multisigAddress: aliceId, proposalId: 4, call: oversized),
+      ]) {
+        expect(() => roundTrip(call), throwsA(isA<FormatException>()));
+      }
+    });
+
     test('cancel flags that the proposal contents are not in the payload', () {
       final decoded = roundTrip(const multisig_pallet.Txs().cancel(multisigAddress: aliceId, proposalId: 4));
       final field = valueField(decoded, 'Proposal id');
