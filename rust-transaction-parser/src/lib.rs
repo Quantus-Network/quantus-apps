@@ -5,6 +5,14 @@ use std::fmt;
 const MAX_PAYLOAD_BYTES: usize = 8 * 1024;
 /// Maximum nesting of multisig `propose` inner calls (top-level call is depth 0).
 const MAX_CALL_DEPTH: u32 = 2;
+/// Largest encoded call a signer will review.
+///
+/// Sized by the biggest call we ever expect to sign: a `batch_all` of 32 transfers — double
+/// the 16 a batch is expected to carry — which is 1667 bytes at the worst-case encoding of
+/// every field, or 1707 inside a multisig wrapper. The chain's own `MaxCallSize` is 10 KiB;
+/// this is deliberately tighter, because a call a signer cannot review is one they cannot
+/// meaningfully approve.
+const MAX_CALL_BYTES: usize = 2 * 1024;
 
 /// Networks this parser will accept: (genesis hash, display name).
 /// A payload whose `CheckGenesis` hash is not listed here is rejected.
@@ -362,6 +370,16 @@ fn multi_address_to_ss58(address: MultiAddress) -> String {
     bytes_to_ss58(&account_id)
 }
 
+fn check_call_size(len: usize) -> Result<(), String> {
+    if len > MAX_CALL_BYTES {
+        return Err(format!(
+            "Call is {} bytes, over the {} byte review limit",
+            len, MAX_CALL_BYTES
+        ));
+    }
+    Ok(())
+}
+
 /// Depth of the next nested call, or an error once `MAX_CALL_DEPTH` is reached.
 fn nested_depth(depth: u32) -> Result<u32, String> {
     if depth >= MAX_CALL_DEPTH {
@@ -382,6 +400,7 @@ fn decode_runtime_call<I: Input>(input: &mut I) -> Result<RuntimeCall, String> {
 }
 
 fn decode_call(bytes: &[u8], depth: u32) -> Result<QuantusTx, String> {
+    check_call_size(bytes.len())?;
     let mut input = bytes;
     let call = decode_runtime_call(&mut input)?;
     if !input.is_empty() {
@@ -397,6 +416,8 @@ pub fn parse_payload(payload: &[u8]) -> Result<ParsedPayload, String> {
 
     let mut input = payload;
     let call = decode_runtime_call(&mut input)?;
+    // Bounds the inline `execute` inner call too, since it is contained in this one.
+    check_call_size(payload.len() - input.len())?;
     let extensions =
         SignedExtensions::decode(&mut input).map_err(|e| format!("extensions: {}", e))?;
     if !input.is_empty() {
@@ -608,6 +629,50 @@ mod tests {
 
     fn parse_call_hex(call_hex: &str) -> QuantusTx {
         parse(&payload_with_suffix(call_hex, &[0x00], 0, 0)).call
+    }
+
+    /// `create_multisig` with `signers` accounts: the cheapest way to build a call of a
+    /// chosen size out of calls the parser actually supports.
+    fn create_multisig_call(signers: usize) -> Vec<u8> {
+        let mut call = vec![0x13, 0x00];
+        call.extend(Compact(signers as u32).encode());
+        for _ in 0..signers {
+            call.extend_from_slice(&[0xaa; 32]);
+        }
+        call.extend_from_slice(&2u32.to_le_bytes());
+        call.extend_from_slice(&0u64.to_le_bytes());
+        call
+    }
+
+    #[test]
+    fn test_call_size_limit_covers_the_largest_expected_call() {
+        // A batch_all of 32 transfers is 1667 bytes at the worst-case encoding, 1707 inside
+        // a multisig wrapper; the limit must sit above that.
+        assert!(MAX_CALL_BYTES > 1707);
+    }
+
+    #[test]
+    fn test_accepts_a_call_just_under_the_size_limit() {
+        let call = create_multisig_call(40);
+        assert!(call.len() < MAX_CALL_BYTES);
+        assert!(parse_wrapped(call).is_ok());
+    }
+
+    #[test]
+    fn test_reject_oversized_calls_at_every_position() {
+        // 64 signers encodes to 2064 bytes.
+        let oversized = create_multisig_call(64);
+        assert!(oversized.len() > MAX_CALL_BYTES);
+
+        for wrapped in [
+            oversized.clone(),
+            propose_wrapping(&oversized),
+            approve_wrapping(&oversized),
+            execute_wrapping(&oversized),
+        ] {
+            let err = parse_wrapped(wrapped).unwrap_err();
+            assert!(err.contains("review limit"), "{}", err);
+        }
     }
 
     #[test]
