@@ -1,0 +1,33 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>05-multisig-create</title>
+<style>
+  body { margin: 0; display: grid; place-items: center; min-height: 100vh;
+         font: 14px system-ui, sans-serif; background: #fff; color: #111; }
+  img { width: 420px; image-rendering: pixelated; }
+  p { margin: 8px 0 0; }
+</style>
+<img id="f">
+<p>Create a 2-of-3 multisig.</p>
+<p><b>05-multisig-create</b> — frame <span id="n">1</span>/3 — <span id="ms">200</span>ms
+   (&larr;/&rarr; to change speed)</p>
+<script>
+  const total = 3;
+  let i = 0, ms = 200;
+  const img = document.getElementById('f'), n = document.getElementById('n');
+  const msEl = document.getElementById('ms');
+  const pad = v => String(v).padStart(3, '0');
+  let timer;
+  function tick() {
+    img.src = `frames/frame-${pad(i)}.svg`;
+    n.textContent = i + 1;
+    i = (i + 1) % total;
+  }
+  function restart() { clearInterval(timer); timer = setInterval(tick, ms); msEl.textContent = ms; }
+  addEventListener('keydown', e => {
+    if (e.key === 'ArrowLeft') ms = Math.min(2000, ms + 50);
+    if (e.key === 'ArrowRight') ms = Math.max(50, ms - 50);
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') restart();
+  });
+  tick(); restart();
+</script>

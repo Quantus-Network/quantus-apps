@@ -1,0 +1,97 @@
+{
+  "specVersion": 147,
+  "transactionVersion": 6,
+  "network": "Planck",
+  "cases": [
+    {
+      "slug": "01-transfer-allow-death",
+      "call": "balances.transfer_allow_death",
+      "description": "Plain transfer of 1 QUAN.",
+      "innerCall": null,
+      "signer": "qzn9sph6ZoQxwseSFyrdfTUEWmozsex7hhCJQPG29nbgesGei",
+      "callBytes": 41,
+      "payloadBytes": 118,
+      "frames": 2
+    },
+    {
+      "slug": "02-transfer-keep-alive",
+      "call": "balances.transfer_keep_alive",
+      "description": "Transfer of 2.5 QUAN that leaves the account above existential deposit.",
+      "innerCall": null,
+      "signer": "qzn9sph6ZoQxwseSFyrdfTUEWmozsex7hhCJQPG29nbgesGei",
+      "callBytes": 42,
+      "payloadBytes": 119,
+      "frames": 2
+    },
+    {
+      "slug": "03-schedule-transfer",
+      "call": "reversible_transfers.schedule_transfer",
+      "description": "Reversible transfer of 3 QUAN using the account's configured delay.",
+      "innerCall": null,
+      "signer": "qzn9sph6ZoQxwseSFyrdfTUEWmozsex7hhCJQPG29nbgesGei",
+      "callBytes": 51,
+      "payloadBytes": 128,
+      "frames": 2
+    },
+    {
+      "slug": "04-schedule-transfer-with-delay",
+      "call": "reversible_transfers.schedule_transfer_with_delay",
+      "description": "Reversible transfer of 5 QUAN with an explicit one-hour reversal window.",
+      "innerCall": null,
+      "signer": "qzn9sph6ZoQxwseSFyrdfTUEWmozsex7hhCJQPG29nbgesGei",
+      "callBytes": 60,
+      "payloadBytes": 137,
+      "frames": 2
+    },
+    {
+      "slug": "05-multisig-create",
+      "call": "multisig.create_multisig",
+      "description": "Create a 2-of-3 multisig.",
+      "innerCall": null,
+      "signer": "qzn9sph6ZoQxwseSFyrdfTUEWmozsex7hhCJQPG29nbgesGei",
+      "callBytes": 111,
+      "payloadBytes": 188,
+      "frames": 3
+    },
+    {
+      "slug": "06-multisig-propose-transfer",
+      "call": "multisig.propose",
+      "description": "Propose a 42 QUAN transfer from the multisig.",
+      "innerCall": "balances.transfer_allow_death",
+      "signer": "qzn9sph6ZoQxwseSFyrdfTUEWmozsex7hhCJQPG29nbgesGei",
+      "callBytes": 81,
+      "payloadBytes": 158,
+      "frames": 3
+    },
+    {
+      "slug": "07-multisig-approve-transfer",
+      "call": "multisig.approve",
+      "description": "Approve proposal 7, which carries the 42 QUAN transfer being approved.",
+      "innerCall": "balances.transfer_allow_death",
+      "signer": "qzn9sph6ZoQxwseSFyrdfTUEWmozsex7hhCJQPG29nbgesGei",
+      "callBytes": 81,
+      "payloadBytes": 158,
+      "frames": 3
+    },
+    {
+      "slug": "08-multisig-execute-transfer",
+      "call": "multisig.execute",
+      "description": "Execute proposal 7, which carries the 42 QUAN transfer being dispatched.",
+      "innerCall": "balances.transfer_allow_death",
+      "signer": "qzn9sph6ZoQxwseSFyrdfTUEWmozsex7hhCJQPG29nbgesGei",
+      "callBytes": 80,
+      "payloadBytes": 157,
+      "frames": 2
+    },
+    {
+      "slug": "09-multisig-execute-reversible",
+      "call": "multisig.execute",
+      "description": "Execute a proposal whose inner call is a reversible transfer, not a plain one.",
+      "innerCall": "reversible_transfers.schedule_transfer",
+      "signer": "qzn9sph6ZoQxwseSFyrdfTUEWmozsex7hhCJQPG29nbgesGei",
+      "callBytes": 89,
+      "payloadBytes": 166,
+      "frames": 3
+    }
+  ]
+}
