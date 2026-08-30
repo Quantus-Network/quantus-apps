@@ -176,9 +176,9 @@ void main() {
     });
 
     test('refuses a multisig inner call larger than a signer will review', () {
-      // 64 signers encodes to 2064 bytes, just over the limit.
+      // 320 signers encodes to 10_256 bytes, just over the chain's MaxCallSize.
       final oversized = const multisig_pallet.Txs().createMultisig(
-        signers: List.generate(64, (i) => Uint8List.fromList(List.filled(32, i))),
+        signers: List.generate(320, (i) => Uint8List.fromList(List.filled(32, i % 256))),
         threshold: 2,
         nonce: BigInt.zero,
       );

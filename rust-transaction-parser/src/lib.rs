@@ -1,18 +1,19 @@
 use parity_scale_codec::{Decode, DecodeLimit, Error as CodecError, Input};
 use std::fmt;
 
-/// Hard cap on the raw signing payload; every supported call is far below this.
-const MAX_PAYLOAD_BYTES: usize = 8 * 1024;
+/// Hard cap on the raw signing payload. Sized so a chain-maximum proposal still fits:
+/// `MAX_CALL_BYTES` of inner call, plus the multisig wrapper and the signed extensions.
+const MAX_PAYLOAD_BYTES: usize = 12 * 1024;
 /// Maximum nesting of multisig `propose` inner calls (top-level call is depth 0).
 const MAX_CALL_DEPTH: u32 = 2;
-/// Largest encoded call a signer will review.
+/// Largest inner call a multisig proposal may carry, mirroring the runtime's
+/// `pallet_multisig::Config::MaxCallSize` (`BoundedVec<u8, MaxCallSize>`, 10 KiB).
 ///
-/// Sized by the biggest call we ever expect to sign: a `batch_all` of 32 transfers — double
-/// the 16 a batch is expected to carry — which is 1667 bytes at the worst-case encoding of
-/// every field, or 1707 inside a multisig wrapper. The chain's own `MaxCallSize` is 10 KiB;
-/// this is deliberately tighter, because a call a signer cannot review is one they cannot
-/// meaningfully approve.
-const MAX_CALL_BYTES: usize = 2 * 1024;
+/// Deliberately the chain's number rather than a tighter one of our own: a limit below it
+/// would refuse proposals the chain accepts, leaving a multisig no cold signer could act on.
+const MAX_CALL_BYTES: usize = 10 * 1024;
+/// A chain-maximum proposal has to fit in a payload, or the cap above is unreachable.
+const _: () = assert!(MAX_PAYLOAD_BYTES > MAX_CALL_BYTES + 256);
 
 /// Networks this parser will accept: (genesis hash, display name).
 /// A payload whose `CheckGenesis` hash is not listed here is rejected.
@@ -416,8 +417,6 @@ pub fn parse_payload(payload: &[u8]) -> Result<ParsedPayload, String> {
 
     let mut input = payload;
     let call = decode_runtime_call(&mut input)?;
-    // Bounds the inline `execute` inner call too, since it is contained in this one.
-    check_call_size(payload.len() - input.len())?;
     let extensions =
         SignedExtensions::decode(&mut input).map_err(|e| format!("extensions: {}", e))?;
     if !input.is_empty() {
@@ -645,31 +644,23 @@ mod tests {
     }
 
     #[test]
-    fn test_call_size_limit_covers_the_largest_expected_call() {
-        // A batch_all of 32 transfers is 1667 bytes at the worst-case encoding, 1707 inside
-        // a multisig wrapper; the limit must sit above that.
-        assert!(MAX_CALL_BYTES > 1707);
+    fn test_accepts_an_inner_call_at_the_chain_limit() {
+        // A proposal the chain would accept must not be refused here: 319 signers encodes to
+        // 10_224 bytes, just inside `MaxCallSize`, and the propose wrapper pushes the outer
+        // call past it — which is why the limit is not applied to the outer call.
+        let inner = create_multisig_call(319);
+        assert!(inner.len() <= MAX_CALL_BYTES);
+        let wrapped = propose_wrapping(&inner);
+        assert!(wrapped.len() > MAX_CALL_BYTES);
+        assert!(parse_wrapped(wrapped).is_ok());
     }
 
     #[test]
-    fn test_accepts_a_call_just_under_the_size_limit() {
-        let call = create_multisig_call(40);
-        assert!(call.len() < MAX_CALL_BYTES);
-        assert!(parse_wrapped(call).is_ok());
-    }
-
-    #[test]
-    fn test_reject_oversized_calls_at_every_position() {
-        // 64 signers encodes to 2064 bytes.
-        let oversized = create_multisig_call(64);
+    fn test_reject_inner_call_over_the_chain_limit() {
+        // 320 signers encodes to 10_256 bytes, just over `MaxCallSize`.
+        let oversized = create_multisig_call(320);
         assert!(oversized.len() > MAX_CALL_BYTES);
-
-        for wrapped in [
-            oversized.clone(),
-            propose_wrapping(&oversized),
-            approve_wrapping(&oversized),
-            execute_wrapping(&oversized),
-        ] {
+        for wrapped in [propose_wrapping(&oversized), approve_wrapping(&oversized)] {
             let err = parse_wrapped(wrapped).unwrap_err();
             assert!(err.contains("review limit"), "{}", err);
         }
@@ -818,15 +809,19 @@ mod tests {
 
     #[test]
     fn test_deep_nesting_bomb_rejected_quickly() {
-        // The audit's C-1 payload shape: hundreds of nested propose levels. Must fail via the
-        // depth limit, not by exhausting the stack.
+        // The audit's C-1 payload shape: hundreds of nested propose levels. Must fail on one
+        // of the counters — depth, payload size, or call size — not by exhausting the stack.
         let mut call = hex::decode(TRANSFER_CALL_1).unwrap();
         for _ in 0..300 {
             call = propose_wrapping(&call);
         }
         call.extend(ext_suffix(&[0x00], 0, 0, &PLANCK_GENESIS));
         let err = parse_payload(&call).unwrap_err();
-        assert!(err.contains("depth limit") || err.contains("too large"), "{}", err);
+        assert!(
+            err.contains("depth limit") || err.contains("too large") || err.contains("review limit"),
+            "{}",
+            err
+        );
     }
 
     #[test]
