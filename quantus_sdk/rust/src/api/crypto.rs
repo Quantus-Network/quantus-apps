@@ -1,3 +1,4 @@
+use crate::signing_context;
 use qp_poseidon_core::{hash_bytes, hash_to_bytes, serialization::bytes_to_digest};
 use qp_rusty_crystals_dilithium::ml_dsa_87;
 pub use qp_rusty_crystals_hdwallet::HDLatticeError;
@@ -133,13 +134,14 @@ pub fn generate_keypair_from_seed(seed: Vec<u8>) -> Keypair {
     Keypair::from_ml_dsa(ml_dsa_keypair)
 }
 
+/// Signs under the FIPS 204 `EXTRINSIC` context the chain verifies with.
 #[flutter_rust_bridge::frb(sync)]
 pub fn sign_message(keypair: &Keypair, message: &[u8], entropy: Option<[u8; 32]>) -> Vec<u8> {
     let ml_dsa_keypair = keypair.to_ml_dsa();
     let mut entropy = entropy;
     let hedge = entropy.as_mut().map(SensitiveBytes32::new);
     let signature = ml_dsa_keypair
-        .sign(message, None, hedge.as_ref())
+        .sign(message, Some(signing_context::EXTRINSIC), hedge.as_ref())
         .expect("Signing failed");
     signature.to_vec()
 }
@@ -157,10 +159,11 @@ pub fn sign_message_with_pubkey(
     result
 }
 
+/// Verifies a signature made under the `EXTRINSIC` context.
 #[flutter_rust_bridge::frb(sync)]
 pub fn verify_message(keypair: &Keypair, message: &[u8], signature: &[u8]) -> bool {
     let ml_dsa_keypair = keypair.to_ml_dsa();
-    ml_dsa_keypair.verify(&message, &signature, None)
+    ml_dsa_keypair.verify(&message, &signature, Some(signing_context::EXTRINSIC))
 }
 
 #[flutter_rust_bridge::frb(sync)]
@@ -215,6 +218,18 @@ mod tests {
         // Verify the signature
         let is_valid = verify_message(&keypair, message, &signature);
         assert!(is_valid, "Signature verification failed");
+    }
+
+    #[test]
+    fn test_signature_is_bound_to_the_extrinsic_context() {
+        let message = b"Hello, World!";
+        let keypair = crystal_alice();
+        let signature = sign_message(&keypair, message, None);
+        let public = ml_dsa_87::PublicKey::from_bytes(&keypair.public_key).unwrap();
+
+        assert_eq!(signing_context::EXTRINSIC, b"QUANTUS_EXTRINSIC");
+        assert!(public.verify(message, &signature, Some(signing_context::EXTRINSIC)));
+        assert!(!public.verify(message, &signature, None));
     }
 
     #[test]
