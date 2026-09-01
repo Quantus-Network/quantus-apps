@@ -10,7 +10,7 @@ use qp_zk_circuits_common::{
 };
 use std::path::{Path, PathBuf};
 
-pub const ZK_CIRCUITS_VERSION: &str = "4.2.0";
+pub const ZK_CIRCUITS_VERSION: &str = "4.3.0";
 
 fn versioned_bins_dir(base: &Path) -> PathBuf {
     base.join(format!("v{}", ZK_CIRCUITS_VERSION))
@@ -390,7 +390,6 @@ pub fn generate_proof(
         state_root: vec_to_digest(&input.state_root, "state_root")?,
         extrinsics_root: vec_to_digest(&input.extrinsics_root, "extrinsics_root")?,
         digest: digest_padded,
-        input_amount: input.input_amount,
         zk_tree_root: vec_to_32(&input.zk_tree_root, "zk_tree_root")?,
         zk_merkle_siblings,
         zk_merkle_positions: input.positions.clone(),
@@ -406,6 +405,7 @@ pub fn generate_proof(
         exit_account_2: vec_to_digest(&input.exit_account_2, "exit_account_2")?,
         block_hash: vec_to_digest(&input.block_hash, "block_hash")?,
         block_number: input.block_number,
+        input_amount: input.input_amount,
     };
 
     let circuit_inputs = CircuitInputs { public, private };
