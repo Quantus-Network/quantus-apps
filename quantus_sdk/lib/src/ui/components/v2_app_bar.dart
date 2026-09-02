@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 
+/// Title bar with equal [AppBackButton.hitSize] side slots so the title stays
+/// centred whatever sits in them. Default padding keeps the bar 76pt tall.
 class V2AppBar extends StatelessWidget {
   final String title;
   final Widget? leading;
@@ -14,23 +16,27 @@ class V2AppBar extends StatelessWidget {
     this.leading,
     this.trailing,
     this.showBackButton = true,
-    this.padding = const EdgeInsets.only(top: 16.0, bottom: 32.0),
+    this.padding = const EdgeInsets.only(top: 6.0, bottom: 22.0),
   });
+
+  Widget _slot(Widget? child, Alignment alignment) => SizedBox(
+    width: AppBackButton.hitSize,
+    height: AppBackButton.hitSize,
+    child: child == null ? null : Align(alignment: alignment, child: child),
+  );
 
   @override
   Widget build(BuildContext context) {
     final colors = context.colorsV3;
     final text = context.themeTextV3;
 
-    Widget leftWidget = leading ?? (showBackButton ? const AppBackButton() : const SizedBox(width: 24));
-    Widget rightWidget = trailing ?? const SizedBox(width: 24);
+    final leftWidget = leading ?? (showBackButton ? const AppBackButton() : null);
 
     return Padding(
       padding: padding,
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          leftWidget,
+          _slot(leftWidget, Alignment.centerLeft),
           Expanded(
             child: FittedBox(
               fit: BoxFit.scaleDown,
@@ -41,7 +47,7 @@ class V2AppBar extends StatelessWidget {
               ),
             ),
           ),
-          rightWidget,
+          _slot(trailing, Alignment.centerRight),
         ],
       ),
     );

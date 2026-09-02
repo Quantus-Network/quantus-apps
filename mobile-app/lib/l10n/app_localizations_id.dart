@@ -796,6 +796,9 @@ class AppLocalizationsId extends AppLocalizations {
   String get accountMenuAddressDetails => 'Detail Alamat';
 
   @override
+  String get accountMenuInnerHash => 'Inner Hash';
+
+  @override
   String get accountMenuShowRecoveryPhrase => 'Tampilkan Recovery Phrase';
 
   @override
@@ -860,6 +863,18 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get accountDetailsTitle => 'Detail Alamat';
+
+  @override
+  String get innerHashTitle => 'Inner Hash';
+
+  @override
+  String get innerHashLabel => 'INNER HASH';
+
+  @override
+  String get innerHashCopied => 'Inner hash disalin';
+
+  @override
+  String get innerHashLoadError => 'Gagal memuat inner hash';
 
   @override
   String get addKeystoneAppBarTitle => 'Add Keystone Wallet';

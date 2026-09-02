@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 
+/// Menu row; without [onTap] it is static and shows no chevron.
 class MenuRow extends StatelessWidget {
   final String label;
   final String? value;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
-  const MenuRow({super.key, required this.label, this.value, required this.onTap});
+  const MenuRow({super.key, required this.label, this.value, this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -31,7 +32,7 @@ class MenuRow extends StatelessWidget {
                     Text(value!, style: text.body.copyWith(color: colors.textMuted)),
                     const SizedBox(width: 4),
                   ],
-                  QuantusIcon(QuantusIcons.chevronRight, color: colors.textMuted),
+                  if (onTap != null) QuantusIcon(QuantusIcons.chevronRight, color: colors.textMuted),
                 ],
               ),
             ],
