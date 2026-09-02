@@ -946,12 +946,14 @@ fn wire__crate__api__crypto__sign_message_impl(
             let api_keypair = <crate::api::crypto::Keypair>::sse_decode(&mut deserializer);
             let api_message = <Vec<u8>>::sse_decode(&mut deserializer);
             let api_entropy = <Option<[u8; 32]>>::sse_decode(&mut deserializer);
+            let api_spec_version = <u32>::sse_decode(&mut deserializer);
             deserializer.end();
             transform_result_sse::<_, ()>((move || {
                 let output_ok = Result::<_, ()>::Ok(crate::api::crypto::sign_message(
                     &api_keypair,
                     &api_message,
                     api_entropy,
+                    api_spec_version,
                 ))?;
                 Ok(output_ok)
             })())
@@ -982,12 +984,14 @@ fn wire__crate__api__crypto__sign_message_with_pubkey_impl(
             let api_keypair = <crate::api::crypto::Keypair>::sse_decode(&mut deserializer);
             let api_message = <Vec<u8>>::sse_decode(&mut deserializer);
             let api_entropy = <Option<[u8; 32]>>::sse_decode(&mut deserializer);
+            let api_spec_version = <u32>::sse_decode(&mut deserializer);
             deserializer.end();
             transform_result_sse::<_, ()>((move || {
                 let output_ok = Result::<_, ()>::Ok(crate::api::crypto::sign_message_with_pubkey(
                     &api_keypair,
                     &api_message,
                     api_entropy,
+                    api_spec_version,
                 ))?;
                 Ok(output_ok)
             })())
@@ -1107,12 +1111,14 @@ fn wire__crate__api__crypto__verify_message_impl(
             let api_keypair = <crate::api::crypto::Keypair>::sse_decode(&mut deserializer);
             let api_message = <Vec<u8>>::sse_decode(&mut deserializer);
             let api_signature = <Vec<u8>>::sse_decode(&mut deserializer);
+            let api_spec_version = <u32>::sse_decode(&mut deserializer);
             deserializer.end();
             transform_result_sse::<_, ()>((move || {
                 let output_ok = Result::<_, ()>::Ok(crate::api::crypto::verify_message(
                     &api_keypair,
                     &api_message,
                     &api_signature,
+                    api_spec_version,
                 ))?;
                 Ok(output_ok)
             })())

@@ -40,15 +40,30 @@ void main() {
 
       // Test signing and verification
       final message = [1, 2, 3, 4, 5];
-      final signature = keypair.sign(message);
+      final signature = keypair.sign(message, specVersion: 148);
 
       // Verify signature
       expect(signature, isNotEmpty);
 
       // Verify the signature is valid
-      final isValid = verifyMessage(keypair: keypair, message: message, signature: signature);
+      final isValid = verifyMessage(keypair: keypair, message: message, signature: signature, specVersion: 148);
 
       expect(isValid, isTrue);
+    });
+
+    test('spec 148 binds QUANTUS_EXTRINSIC; earlier specs use the empty context', () {
+      const testMnemonic =
+          'situate more drip void arrest just action prepare engine undo honey delay sponsor come achieve symptom crumble solution glass garden fury valid garbage old';
+      final keypair = generateKeypair(mnemonicStr: testMnemonic);
+      final message = [1, 2, 3, 4, 5];
+
+      final withContext = keypair.sign(message, specVersion: 148);
+      final withoutContext = keypair.sign(message, specVersion: 147);
+
+      expect(verifyMessage(keypair: keypair, message: message, signature: withContext, specVersion: 148), isTrue);
+      expect(verifyMessage(keypair: keypair, message: message, signature: withContext, specVersion: 147), isFalse);
+      expect(verifyMessage(keypair: keypair, message: message, signature: withoutContext, specVersion: 147), isTrue);
+      expect(verifyMessage(keypair: keypair, message: message, signature: withoutContext, specVersion: 148), isFalse);
     });
 
     test('should generate different keypairs for different mnemonics', () {
@@ -122,8 +137,9 @@ void main() {
       const hexPayload =
           '0200007416854906f03a9dff66e3270a736c44e15970ac03a638471523a03069f276ca0700e876481755010000007400000002000000826beefbe2be72645ff376f18de745ac196dc77637436090de4174180706118e5a77ae1c95817ee664cf733fafa7baa8e6244b396a54e57a5bc414b24c52800600';
       final payload = hex.decode(hexPayload);
-      final signature = keypair.sign(payload);
-      final isValid = verifyMessage(keypair: keypair, message: payload, signature: signature);
+      const specVersion = 116;
+      final signature = keypair.sign(payload, specVersion: specVersion);
+      final isValid = verifyMessage(keypair: keypair, message: payload, signature: signature, specVersion: specVersion);
       expect(isValid, true);
       print('signature: ${hex.encode(signature)}');
       final hashedSignature = const Blake2bHasher(32).hash(signature);
@@ -142,7 +158,8 @@ void main() {
       final signable = QuantusSigningPayload.signablePayload(payload);
 
       // Cold wallet (Keystone) signs the signable payload and emits signature ++ pubkey.
-      final signed = signMessageWithPubkey(keypair: keypair, message: signable);
+      const specVersion = 116;
+      final signed = signMessageWithPubkey(keypair: keypair, message: signable, specVersion: specVersion);
 
       // The signature QR is a multi-part animated UR (the "5 / 81 frames" case).
       final parts = encodeUr(data: signed);
@@ -158,7 +175,10 @@ void main() {
       final publicKey = bytes.sublist(sigSize);
 
       expect(publicKey, equals(keypair.publicKey));
-      expect(verifyMessage(keypair: keypair, message: signable, signature: signature), isTrue);
+      expect(
+        verifyMessage(keypair: keypair, message: signable, signature: signature, specVersion: specVersion),
+        isTrue,
+      );
     });
   });
 }

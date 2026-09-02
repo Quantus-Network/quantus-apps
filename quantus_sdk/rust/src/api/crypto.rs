@@ -1,3 +1,4 @@
+use crate::signing_context;
 use qp_poseidon_core::{hash_bytes, hash_to_bytes, serialization::bytes_to_digest};
 use qp_rusty_crystals_dilithium::ml_dsa_87;
 pub use qp_rusty_crystals_hdwallet::HDLatticeError;
@@ -133,13 +134,23 @@ pub fn generate_keypair_from_seed(seed: Vec<u8>) -> Keypair {
     Keypair::from_ml_dsa(ml_dsa_keypair)
 }
 
+/// Signs `message`. Spec 148+ uses [`signing_context::EXTRINSIC`]; earlier specs use none.
 #[flutter_rust_bridge::frb(sync)]
-pub fn sign_message(keypair: &Keypair, message: &[u8], entropy: Option<[u8; 32]>) -> Vec<u8> {
+pub fn sign_message(
+    keypair: &Keypair,
+    message: &[u8],
+    entropy: Option<[u8; 32]>,
+    spec_version: u32,
+) -> Vec<u8> {
     let ml_dsa_keypair = keypair.to_ml_dsa();
     let mut entropy = entropy;
     let hedge = entropy.as_mut().map(SensitiveBytes32::new);
     let signature = ml_dsa_keypair
-        .sign(message, None, hedge.as_ref())
+        .sign(
+            message,
+            signing_context::context_for_spec(spec_version),
+            hedge.as_ref(),
+        )
         .expect("Signing failed");
     signature.to_vec()
 }
@@ -149,18 +160,29 @@ pub fn sign_message_with_pubkey(
     keypair: &Keypair,
     message: &[u8],
     entropy: Option<[u8; 32]>,
+    spec_version: u32,
 ) -> Vec<u8> {
-    let signature = sign_message(keypair, message, entropy);
+    let signature = sign_message(keypair, message, entropy, spec_version);
     let mut result = Vec::with_capacity(signature.len() + keypair.public_key.len());
     result.extend_from_slice(&signature);
     result.extend_from_slice(&keypair.public_key);
     result
 }
 
+/// Verifies under the same context [`sign_message`] would use for `spec_version`.
 #[flutter_rust_bridge::frb(sync)]
-pub fn verify_message(keypair: &Keypair, message: &[u8], signature: &[u8]) -> bool {
+pub fn verify_message(
+    keypair: &Keypair,
+    message: &[u8],
+    signature: &[u8],
+    spec_version: u32,
+) -> bool {
     let ml_dsa_keypair = keypair.to_ml_dsa();
-    ml_dsa_keypair.verify(&message, &signature, None)
+    ml_dsa_keypair.verify(
+        &message,
+        &signature,
+        signing_context::context_for_spec(spec_version),
+    )
 }
 
 #[flutter_rust_bridge::frb(sync)]
@@ -203,32 +225,85 @@ pub fn init_app() {
 mod tests {
     use super::*;
 
+    const SPEC_WITH_CONTEXT: u32 = signing_context::EXTRINSIC_MIN_SPEC;
+    const SPEC_WITHOUT_CONTEXT: u32 = signing_context::EXTRINSIC_MIN_SPEC - 1;
+
     #[test]
     fn test_sign_and_verify() {
-        // Test with a simple message
         let message = b"Hello, World!";
         let keypair = crystal_alice();
-
-        // Sign the message
-        let signature = sign_message(&keypair, message, None);
-
-        // Verify the signature
-        let is_valid = verify_message(&keypair, message, &signature);
+        let signature = sign_message(&keypair, message, None, SPEC_WITH_CONTEXT);
+        let is_valid = verify_message(&keypair, message, &signature, SPEC_WITH_CONTEXT);
         assert!(is_valid, "Signature verification failed");
     }
 
     #[test]
-    fn test_sign_and_verify_with_different_keypair() {
-        // Test with a simple message
+    fn test_context_for_spec() {
+        assert_eq!(signing_context::context_for_spec(147), None);
+        assert_eq!(
+            signing_context::context_for_spec(148),
+            Some(signing_context::EXTRINSIC)
+        );
+        assert_eq!(
+            signing_context::context_for_spec(149),
+            Some(signing_context::EXTRINSIC)
+        );
+    }
+
+    #[test]
+    fn test_signature_is_bound_to_the_extrinsic_context() {
         let message = b"Hello, World!";
         let keypair = crystal_alice();
+        let signature = sign_message(&keypair, message, None, SPEC_WITH_CONTEXT);
+        let public = ml_dsa_87::PublicKey::from_bytes(&keypair.public_key).unwrap();
 
-        // Sign the message
-        let signature = sign_message(&keypair, message, None);
+        assert_eq!(signing_context::EXTRINSIC, b"QUANTUS_EXTRINSIC");
+        assert!(public.verify(message, &signature, Some(signing_context::EXTRINSIC)));
+        assert!(!public.verify(message, &signature, None));
+        assert!(verify_message(
+            &keypair,
+            message,
+            &signature,
+            SPEC_WITH_CONTEXT
+        ));
+        assert!(!verify_message(
+            &keypair,
+            message,
+            &signature,
+            SPEC_WITHOUT_CONTEXT
+        ));
+    }
 
-        // Try to verify with a different keypair
+    #[test]
+    fn test_pre_148_signs_with_empty_context() {
+        let message = b"Hello, World!";
+        let keypair = crystal_alice();
+        let signature = sign_message(&keypair, message, None, SPEC_WITHOUT_CONTEXT);
+        let public = ml_dsa_87::PublicKey::from_bytes(&keypair.public_key).unwrap();
+
+        assert!(public.verify(message, &signature, None));
+        assert!(!public.verify(message, &signature, Some(signing_context::EXTRINSIC)));
+        assert!(verify_message(
+            &keypair,
+            message,
+            &signature,
+            SPEC_WITHOUT_CONTEXT
+        ));
+        assert!(!verify_message(
+            &keypair,
+            message,
+            &signature,
+            SPEC_WITH_CONTEXT
+        ));
+    }
+
+    #[test]
+    fn test_sign_and_verify_with_different_keypair() {
+        let message = b"Hello, World!";
+        let keypair = crystal_alice();
+        let signature = sign_message(&keypair, message, None, SPEC_WITH_CONTEXT);
         let different_keypair = crystal_bob();
-        let is_valid = verify_message(&different_keypair, message, &signature);
+        let is_valid = verify_message(&different_keypair, message, &signature, SPEC_WITH_CONTEXT);
         assert!(
             !is_valid,
             "Signature should not be valid with different keypair"
@@ -237,29 +312,19 @@ mod tests {
 
     #[test]
     fn test_sign_and_verify_with_empty_message() {
-        // Test with an empty message
         let message = b"";
         let keypair = crystal_alice();
-
-        // Sign the message
-        let signature = sign_message(&keypair, message, None);
-
-        // Verify the signature
-        let is_valid = verify_message(&keypair, message, &signature);
+        let signature = sign_message(&keypair, message, None, SPEC_WITH_CONTEXT);
+        let is_valid = verify_message(&keypair, message, &signature, SPEC_WITH_CONTEXT);
         assert!(is_valid, "Signature verification failed for empty message");
     }
 
     #[test]
     fn test_sign_and_verify_with_long_message() {
-        // Test with a longer message
         let message = b"This is a longer message that should also work correctly with our signing and verification process.";
         let keypair = crystal_alice();
-
-        // Sign the message
-        let signature = sign_message(&keypair, message, None);
-
-        // Verify the signature
-        let is_valid = verify_message(&keypair, message, &signature);
+        let signature = sign_message(&keypair, message, None, SPEC_WITH_CONTEXT);
+        let is_valid = verify_message(&keypair, message, &signature, SPEC_WITH_CONTEXT);
         assert!(is_valid, "Signature verification failed for long message");
     }
 }

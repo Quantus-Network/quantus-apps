@@ -58,11 +58,20 @@ class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> {
     });
 
     try {
+      final parsed = _parsed;
+      if (parsed == null) {
+        setState(() {
+          _signing = false;
+          _error = 'Cannot sign an undecoded payload.';
+        });
+        return;
+      }
       // Returns signature ++ publicKey; the hot wallet splits it and rebuilds the
       // extrinsic via submitExtrinsicWithExternalSignature.
       final signed = signMessageWithPubkey(
         keypair: keypair,
         message: QuantusSigningPayload.signablePayload(widget.request.payload),
+        specVersion: parsed.extensions.specVersion,
       );
       setState(() {
         _signing = false;
