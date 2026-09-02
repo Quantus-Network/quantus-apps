@@ -19,6 +19,14 @@ dependencies:
   # Shared (canonical versions in melos.yaml)
   # DO NOT UPDATE polkadart - newer versions are incompatible with our ML-DSA
   # signature override, work completely differently, and add no benefits.
+  #
+  # The fork also carries a security fix to the code generator. Upstream emits a
+  # compact integer for the MultiAddress::Index variant where the metadata
+  # declares the field zero-width. A codec that disagrees with the metadata about
+  # a field's width re-frames every byte after it, so a crafted payload can
+  # display one call and sign another - a clearsigning bypass on the cold wallet.
+  # Pinned by test/chain/multi_address_codec_test.dart. Never regenerate the
+  # bindings with pub.dev polkadart_cli.
   # Re-exported from quantus_sdk.dart so apps don't need a direct polkadart dep.
   polkadart:
     git:
@@ -71,7 +79,8 @@ dev_dependencies:
       url: https://github.com/Quantus-Network/polkadart.git
       ref: 0_7_3_quantus_2
       path: packages/substrate_metadata
-  # DO NOT UPDATE polkadart_cli - must match polkadart 0.7.x. See note above.
+  # DO NOT UPDATE polkadart_cli - must match polkadart 0.7.x, and generates the
+  # MultiAddress::Index codec correctly. See note above.
   polkadart_cli:
     git:
       url: https://github.com/Quantus-Network/polkadart.git

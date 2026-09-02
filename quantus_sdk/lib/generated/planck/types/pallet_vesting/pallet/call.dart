@@ -117,7 +117,9 @@ class $CallCodec with _i1.Codec<Call> {
 /// Pay the largest valid claim on `schedule_id` to its beneficiary. Payouts are
 /// rounded down to [`Config::PayoutQuantum`], must meet [`Config::MinimumPayout`],
 /// and reserve at least one minimum-sized final claim unless the schedule is fully
-/// vested.
+/// vested. Non-final payouts are further rounded down to
+/// [`NON_FINAL_PAYOUT_QUANTA`] leaf quanta; the leftover stays on the schedule
+/// until a later claim or the exact final payout.
 ///
 /// Permissionless: any signed account may call this for any schedule; the payout
 /// always goes to the stored beneficiary. This is the only claim path for
@@ -235,13 +237,11 @@ class CreateSchedule extends Call {
   int get hashCode => Object.hash(beneficiary, start, cliff, end, total);
 }
 
-/// End a schedule early: the still-unpaid vested part (rounded down to a
-/// [`Config::PayoutQuantum`] multiple) goes to the beneficiary, everything else
-/// this schedule still holds — the unvested remainder plus any sub-quantum
-/// vested dust — returns to the treasury, and the schedule is removed. The
-/// treasury is signature-controlled and needs no wormhole leaf, so dust is safe
-/// there but would be stranded on a keyless beneficiary. A non-zero beneficiary
-/// payout below [`Config::MinimumPayout`] is rejected without ending the schedule.
+/// End a schedule early: the still-unpaid vested part (rounded to the nearest
+/// [`Config::PayoutQuantum`]) goes to the beneficiary if it meets
+/// [`Config::MinimumPayout`]; otherwise that sliver is refunded with the
+/// unvested remainder. The treasury is signature-controlled and needs no
+/// wormhole leaf, so the refund is not quantized and never blocks ending.
 class EndSchedule extends Call {
   const EndSchedule({required this.scheduleId});
 
@@ -275,8 +275,12 @@ class EndSchedule extends Call {
   int get hashCode => scheduleId.hashCode;
 }
 
-/// Settle any payout a permissionless claim could currently force, then change the
-/// beneficiary. This makes retargeting independent of claim transaction ordering.
+/// Change the schedule's beneficiary without paying anything out. A retarget
+/// replaces the wallet of the *same* grantee (lost-key remedy): the old address
+/// may be lost or stolen, so settling it would burn funds or pay the thief.
+/// Everything vested but unclaimed stays on the schedule and goes to the new
+/// wallet at its next claim. (A permissionless claim landing before the
+/// retarget still pays the old address, so rotate promptly.)
 class RetargetSchedule extends Call {
   const RetargetSchedule({required this.scheduleId, required this.newBeneficiary});
 

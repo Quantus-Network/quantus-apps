@@ -4,7 +4,6 @@ import 'package:convert/convert.dart';
 import 'package:polkadart/scale_codec.dart';
 import 'package:quantus_sdk/generated/planck/pallets/balances.dart' as balances_pallet;
 import 'package:quantus_sdk/generated/planck/pallets/multisig.dart' as multisig_pallet;
-import 'package:quantus_sdk/generated/planck/pallets/recovery.dart' as recovery_pallet;
 import 'package:quantus_sdk/generated/planck/pallets/tech_collective.dart' as collective_pallet;
 import 'package:quantus_sdk/generated/planck/pallets/utility.dart' as utility_pallet;
 import 'package:quantus_sdk/generated/planck/types/sp_runtime/multiaddress/multi_address.dart' as multi_address;
@@ -52,7 +51,7 @@ class DebugPayloads {
     final seen = <String>{};
     for (final call in [...callCorpus.entries.map(_fromCorpus), ..._composed]) {
       // The corpus repeats an identical encoding once per nested-call variant
-      // (every `as_recovered [call=…]` is the same bytes); one row is enough.
+      // (every `execute [call=…]` is the same bytes); one row is enough.
       if (!seen.add(hex.encode(call.call))) continue;
       grouped.putIfAbsent(call.pallet, () => []).add(call);
     }
@@ -74,8 +73,8 @@ class DebugPayloads {
 
   /// The wrapper calls the corpus cannot express: it fills every nested call
   /// slot with the same three-byte `System.remark`, so the screens that lift an
-  /// inner transfer into the hero position — a multisig proposal or approval, a
-  /// batch, a recovered-account dispatch — are only reachable from here.
+  /// inner transfer into the hero position — a multisig proposal, approval or
+  /// execution, a batch — are only reachable from here.
   static final List<DebugCall> _composed = [
     DebugCall(
       pallet: 'Multisig',
@@ -112,10 +111,10 @@ class DebugPayloads {
           .encode(),
     ),
     DebugCall(
-      pallet: 'Recovery',
-      label: 'as_recovered [carrying a transfer]',
-      call: const recovery_pallet.Txs()
-          .asRecovered(account: _address(AppConstants.debugTestAddress), call: _send(_tokens(3)))
+      pallet: 'Multisig',
+      label: 'execute [carrying a transfer]',
+      call: const multisig_pallet.Txs()
+          .execute(multisigAddress: _debugMultisigAccount, proposalId: 12, call: _send(_tokens(3)))
           .encode(),
     ),
   ];

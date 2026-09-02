@@ -20,6 +20,7 @@ enum ProposalStatus {
   static const $ProposalStatusCodec codec = $ProposalStatusCodec();
 
   String toJson() => variantName;
+
   _i2.Uint8List encode() {
     return codec.encode(this);
   }

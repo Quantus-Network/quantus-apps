@@ -19,6 +19,7 @@ enum HoldReason {
   static const $HoldReasonCodec codec = $HoldReasonCodec();
 
   String toJson() => variantName;
+
   _i2.Uint8List encode() {
     return codec.encode(this);
   }

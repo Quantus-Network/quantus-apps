@@ -74,14 +74,8 @@ class $Event {
     required BigInt scheduleId,
     required _i3.AccountId32 oldBeneficiary,
     required _i3.AccountId32 newBeneficiary,
-    required BigInt vestedPaid,
   }) {
-    return ScheduleRetargeted(
-      scheduleId: scheduleId,
-      oldBeneficiary: oldBeneficiary,
-      newBeneficiary: newBeneficiary,
-      vestedPaid: vestedPaid,
-    );
+    return ScheduleRetargeted(scheduleId: scheduleId, oldBeneficiary: oldBeneficiary, newBeneficiary: newBeneficiary);
   }
 }
 
@@ -354,21 +348,17 @@ class ScheduleEnded extends Event {
   int get hashCode => Object.hash(scheduleId, beneficiary, vestedPaid, unvestedReturned);
 }
 
-/// A schedule's beneficiary was changed after settling any currently claimable payout.
+/// A schedule's beneficiary was changed. Nothing was paid out: the retarget
+/// replaces the same grantee's wallet, so the accrued entitlement follows the
+/// schedule to the new address.
 class ScheduleRetargeted extends Event {
-  const ScheduleRetargeted({
-    required this.scheduleId,
-    required this.oldBeneficiary,
-    required this.newBeneficiary,
-    required this.vestedPaid,
-  });
+  const ScheduleRetargeted({required this.scheduleId, required this.oldBeneficiary, required this.newBeneficiary});
 
   factory ScheduleRetargeted._decode(_i1.Input input) {
     return ScheduleRetargeted(
       scheduleId: _i1.U64Codec.codec.decode(input),
       oldBeneficiary: const _i1.U8ArrayCodec(32).decode(input),
       newBeneficiary: const _i1.U8ArrayCodec(32).decode(input),
-      vestedPaid: _i1.U128Codec.codec.decode(input),
     );
   }
 
@@ -381,16 +371,12 @@ class ScheduleRetargeted extends Event {
   /// T::AccountId
   final _i3.AccountId32 newBeneficiary;
 
-  /// BalanceOf<T>
-  final BigInt vestedPaid;
-
   @override
   Map<String, Map<String, dynamic>> toJson() => {
     'ScheduleRetargeted': {
       'scheduleId': scheduleId,
       'oldBeneficiary': oldBeneficiary.toList(),
       'newBeneficiary': newBeneficiary.toList(),
-      'vestedPaid': vestedPaid,
     },
   };
 
@@ -399,7 +385,6 @@ class ScheduleRetargeted extends Event {
     size = size + _i1.U64Codec.codec.sizeHint(scheduleId);
     size = size + const _i3.AccountId32Codec().sizeHint(oldBeneficiary);
     size = size + const _i3.AccountId32Codec().sizeHint(newBeneficiary);
-    size = size + _i1.U128Codec.codec.sizeHint(vestedPaid);
     return size;
   }
 
@@ -408,7 +393,6 @@ class ScheduleRetargeted extends Event {
     _i1.U64Codec.codec.encodeTo(scheduleId, output);
     const _i1.U8ArrayCodec(32).encodeTo(oldBeneficiary, output);
     const _i1.U8ArrayCodec(32).encodeTo(newBeneficiary, output);
-    _i1.U128Codec.codec.encodeTo(vestedPaid, output);
   }
 
   @override
@@ -417,9 +401,8 @@ class ScheduleRetargeted extends Event {
       other is ScheduleRetargeted &&
           other.scheduleId == scheduleId &&
           _i4.listsEqual(other.oldBeneficiary, oldBeneficiary) &&
-          _i4.listsEqual(other.newBeneficiary, newBeneficiary) &&
-          other.vestedPaid == vestedPaid;
+          _i4.listsEqual(other.newBeneficiary, newBeneficiary);
 
   @override
-  int get hashCode => Object.hash(scheduleId, oldBeneficiary, newBeneficiary, vestedPaid);
+  int get hashCode => Object.hash(scheduleId, oldBeneficiary, newBeneficiary);
 }

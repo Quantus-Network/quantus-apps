@@ -67,42 +67,6 @@ const Map<String, String> callCorpus = {
   'TechReferenda.set_metadata [maybe_hash=Some]':
       '0e0843420f0001a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1',
   'TreasuryPallet.set_treasury_account': '0f00a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0',
-  'Recovery.as_recovered': '100000a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0000000',
-  'Recovery.as_recovered [call=Timestamp]':
-      '100000a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0000000',
-  'Recovery.as_recovered [call=Balances]':
-      '100000a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0000000',
-  'Recovery.as_recovered [call=Preimage]':
-      '100000a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0000000',
-  'Recovery.as_recovered [call=Utility]':
-      '100000a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0000000',
-  'Recovery.as_recovered [call=ReversibleTransfers]':
-      '100000a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0000000',
-  'Recovery.as_recovered [call=TechCollective]':
-      '100000a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0000000',
-  'Recovery.as_recovered [call=TechReferenda]':
-      '100000a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0000000',
-  'Recovery.as_recovered [call=TreasuryPallet]':
-      '100000a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0000000',
-  'Recovery.as_recovered [call=Recovery]':
-      '100000a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0000000',
-  'Recovery.as_recovered [call=Multisig]':
-      '100000a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0000000',
-  'Recovery.as_recovered [call=Wormhole]':
-      '100000a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0000000',
-  'Recovery.as_recovered [call=Vesting]':
-      '100000a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0000000',
-  'Recovery.set_recovered':
-      '100100a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a000a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1',
-  'Recovery.create_recovery': '100204a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0921045420f00',
-  'Recovery.initiate_recovery': '100300a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0',
-  'Recovery.vouch_recovery':
-      '100400a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a000a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1',
-  'Recovery.claim_recovery': '100500a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0',
-  'Recovery.close_recovery': '100600a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0',
-  'Recovery.remove_recovery': '1007',
-  'Recovery.cancel_recovered': '100800a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0',
-  'Recovery.poke_deposit': '100900',
   'Multisig.create_multisig':
       '130004a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a044420f000098f73e5d010000',
   'Multisig.propose': '1301a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a00c00000045420f00',
@@ -110,7 +74,29 @@ const Map<String, String> callCorpus = {
   'Multisig.cancel': '1303a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a044420f00',
   'Multisig.remove_expired': '1304a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a044420f00',
   'Multisig.claim_deposits': '1305a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0',
-  'Multisig.execute': '1306a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a044420f00',
+  'Multisig.execute': '1306a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a044420f00000000',
+  'Multisig.execute [call=Timestamp]':
+      '1306a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a044420f00000000',
+  'Multisig.execute [call=Balances]':
+      '1306a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a044420f00000000',
+  'Multisig.execute [call=Preimage]':
+      '1306a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a044420f00000000',
+  'Multisig.execute [call=Utility]':
+      '1306a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a044420f00000000',
+  'Multisig.execute [call=ReversibleTransfers]':
+      '1306a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a044420f00000000',
+  'Multisig.execute [call=TechCollective]':
+      '1306a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a044420f00000000',
+  'Multisig.execute [call=TechReferenda]':
+      '1306a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a044420f00000000',
+  'Multisig.execute [call=TreasuryPallet]':
+      '1306a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a044420f00000000',
+  'Multisig.execute [call=Multisig]':
+      '1306a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a044420f00000000',
+  'Multisig.execute [call=Wormhole]':
+      '1306a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a044420f00000000',
+  'Multisig.execute [call=Vesting]':
+      '1306a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a044420f00000000',
   'Wormhole.verify_private_batch': '14020c000000',
   'Wormhole.verify_public_batch': '14030c000000',
   'Vesting.claim': '16000098f73e5d010000',
@@ -185,58 +171,4 @@ const Map<String, String> refusedCallCorpus = {
       '0d0600a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a003a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1',
   'TechCollective.exchange_member [new_who=Address20]':
       '0d0600a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a004a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1',
-  'Recovery.as_recovered [account=Index]': '100001000000',
-  'Recovery.as_recovered [account=Raw]': '1000020c000000000000',
-  'Recovery.as_recovered [account=Address32]':
-      '100003a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0000000',
-  'Recovery.as_recovered [account=Address20]': '100004a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0000000',
-  'Recovery.set_recovered [lost=Index]': '10010100a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1',
-  'Recovery.set_recovered [lost=Raw]':
-      '1001020c00000000a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1',
-  'Recovery.set_recovered [lost=Address32]':
-      '100103a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a000a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1',
-  'Recovery.set_recovered [lost=Address20]':
-      '100104a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a000a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1',
-  'Recovery.set_recovered [rescuer=Index]': '100100a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a001',
-  'Recovery.set_recovered [rescuer=Raw]':
-      '100100a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0020c000000',
-  'Recovery.set_recovered [rescuer=Address32]':
-      '100100a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a003a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1',
-  'Recovery.set_recovered [rescuer=Address20]':
-      '100100a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a004a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1',
-  'Recovery.initiate_recovery [account=Index]': '100301',
-  'Recovery.initiate_recovery [account=Raw]': '1003020c000000',
-  'Recovery.initiate_recovery [account=Address32]':
-      '100303a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0',
-  'Recovery.initiate_recovery [account=Address20]': '100304a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0',
-  'Recovery.vouch_recovery [lost=Index]': '10040100a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1',
-  'Recovery.vouch_recovery [lost=Raw]':
-      '1004020c00000000a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1',
-  'Recovery.vouch_recovery [lost=Address32]':
-      '100403a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a000a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1',
-  'Recovery.vouch_recovery [lost=Address20]':
-      '100404a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a000a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1',
-  'Recovery.vouch_recovery [rescuer=Index]': '100400a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a001',
-  'Recovery.vouch_recovery [rescuer=Raw]':
-      '100400a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0020c000000',
-  'Recovery.vouch_recovery [rescuer=Address32]':
-      '100400a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a003a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1',
-  'Recovery.vouch_recovery [rescuer=Address20]':
-      '100400a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a004a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1',
-  'Recovery.claim_recovery [account=Index]': '100501',
-  'Recovery.claim_recovery [account=Raw]': '1005020c000000',
-  'Recovery.claim_recovery [account=Address32]':
-      '100503a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0',
-  'Recovery.claim_recovery [account=Address20]': '100504a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0',
-  'Recovery.close_recovery [rescuer=Index]': '100601',
-  'Recovery.close_recovery [rescuer=Raw]': '1006020c000000',
-  'Recovery.close_recovery [rescuer=Address32]':
-      '100603a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0',
-  'Recovery.close_recovery [rescuer=Address20]': '100604a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0',
-  'Recovery.cancel_recovered [account=Index]': '100801',
-  'Recovery.cancel_recovered [account=Raw]': '1008020c000000',
-  'Recovery.cancel_recovered [account=Address32]':
-      '100803a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0',
-  'Recovery.cancel_recovered [account=Address20]': '100804a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0',
-  'Recovery.poke_deposit [maybe_account=Some]': '10090101',
 };

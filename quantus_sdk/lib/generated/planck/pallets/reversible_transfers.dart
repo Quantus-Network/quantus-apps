@@ -301,6 +301,15 @@ class Txs {
   ///
   /// - `tx_id`: The unique identifier of the pending transfer to execute.
   ///
+  /// Execution uses `transfer_allow_death` so a sender who spent their leftover
+  /// free balance during the delay still completes. A failed inner transfer (e.g.
+  /// dest overflow, or `amount < ED` to a new account) does not fail this
+  /// extrinsic: the hold is already released and the pending transfer is already
+  /// removed. Propagating that error would roll back those writes (FRAME
+  /// dispatchables are transactional) while Scheduler terminally drops the named
+  /// task, freezing the funds with no retry. The inner result is still recorded on
+  /// [`Event::TransactionExecuted`].
+  ///
   /// # Errors
   ///
   /// - [`InvalidSchedulerOrigin`](Error::InvalidSchedulerOrigin): Called by an account other
