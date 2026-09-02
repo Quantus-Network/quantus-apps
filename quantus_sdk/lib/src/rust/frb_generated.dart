@@ -144,12 +144,18 @@ abstract class RustLibApi extends BaseApi {
 
   void crateApiCryptoSetDefaultSs58Prefix({required int prefix});
 
-  Uint8List crateApiCryptoSignMessage({required Keypair keypair, required List<int> message, U8Array32? entropy});
+  Uint8List crateApiCryptoSignMessage({
+    required Keypair keypair,
+    required List<int> message,
+    U8Array32? entropy,
+    required int specVersion,
+  });
 
   Uint8List crateApiCryptoSignMessageWithPubkey({
     required Keypair keypair,
     required List<int> message,
     U8Array32? entropy,
+    required int specVersion,
   });
 
   BigInt crateApiCryptoSignatureBytes();
@@ -162,6 +168,7 @@ abstract class RustLibApi extends BaseApi {
     required Keypair keypair,
     required List<int> message,
     required List<int> signature,
+    required int specVersion,
   });
 
   int crateApiWormholeWormholeComputeOutputAmount({required int inputAmount, required int feeBps});
@@ -772,32 +779,11 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       const TaskConstMeta(debugName: 'set_default_ss58_prefix', argNames: ['prefix']);
 
   @override
-  Uint8List crateApiCryptoSignMessage({required Keypair keypair, required List<int> message, U8Array32? entropy}) {
-    return handler.executeSync(
-      SyncTask(
-        callFfi: () {
-          final serializer = SseSerializer(generalizedFrbRustBinding);
-          sse_encode_box_autoadd_keypair(keypair, serializer);
-          sse_encode_list_prim_u_8_loose(message, serializer);
-          sse_encode_opt_u_8_array_32(entropy, serializer);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 29)!;
-        },
-        codec: SseCodec(decodeSuccessData: sse_decode_list_prim_u_8_strict, decodeErrorData: null),
-        constMeta: kCrateApiCryptoSignMessageConstMeta,
-        argValues: [keypair, message, entropy],
-        apiImpl: this,
-      ),
-    );
-  }
-
-  TaskConstMeta get kCrateApiCryptoSignMessageConstMeta =>
-      const TaskConstMeta(debugName: 'sign_message', argNames: ['keypair', 'message', 'entropy']);
-
-  @override
-  Uint8List crateApiCryptoSignMessageWithPubkey({
+  Uint8List crateApiCryptoSignMessage({
     required Keypair keypair,
     required List<int> message,
     U8Array32? entropy,
+    required int specVersion,
   }) {
     return handler.executeSync(
       SyncTask(
@@ -806,18 +792,49 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           sse_encode_box_autoadd_keypair(keypair, serializer);
           sse_encode_list_prim_u_8_loose(message, serializer);
           sse_encode_opt_u_8_array_32(entropy, serializer);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 30)!;
+          sse_encode_u_32(specVersion, serializer);
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 29)!;
         },
         codec: SseCodec(decodeSuccessData: sse_decode_list_prim_u_8_strict, decodeErrorData: null),
-        constMeta: kCrateApiCryptoSignMessageWithPubkeyConstMeta,
-        argValues: [keypair, message, entropy],
+        constMeta: kCrateApiCryptoSignMessageConstMeta,
+        argValues: [keypair, message, entropy, specVersion],
         apiImpl: this,
       ),
     );
   }
 
-  TaskConstMeta get kCrateApiCryptoSignMessageWithPubkeyConstMeta =>
-      const TaskConstMeta(debugName: 'sign_message_with_pubkey', argNames: ['keypair', 'message', 'entropy']);
+  TaskConstMeta get kCrateApiCryptoSignMessageConstMeta =>
+      const TaskConstMeta(debugName: 'sign_message', argNames: ['keypair', 'message', 'entropy', 'specVersion']);
+
+  @override
+  Uint8List crateApiCryptoSignMessageWithPubkey({
+    required Keypair keypair,
+    required List<int> message,
+    U8Array32? entropy,
+    required int specVersion,
+  }) {
+    return handler.executeSync(
+      SyncTask(
+        callFfi: () {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_box_autoadd_keypair(keypair, serializer);
+          sse_encode_list_prim_u_8_loose(message, serializer);
+          sse_encode_opt_u_8_array_32(entropy, serializer);
+          sse_encode_u_32(specVersion, serializer);
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 30)!;
+        },
+        codec: SseCodec(decodeSuccessData: sse_decode_list_prim_u_8_strict, decodeErrorData: null),
+        constMeta: kCrateApiCryptoSignMessageWithPubkeyConstMeta,
+        argValues: [keypair, message, entropy, specVersion],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiCryptoSignMessageWithPubkeyConstMeta => const TaskConstMeta(
+    debugName: 'sign_message_with_pubkey',
+    argNames: ['keypair', 'message', 'entropy', 'specVersion'],
+  );
 
   @override
   BigInt crateApiCryptoSignatureBytes() {
@@ -883,6 +900,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     required Keypair keypair,
     required List<int> message,
     required List<int> signature,
+    required int specVersion,
   }) {
     return handler.executeSync(
       SyncTask(
@@ -891,18 +909,19 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           sse_encode_box_autoadd_keypair(keypair, serializer);
           sse_encode_list_prim_u_8_loose(message, serializer);
           sse_encode_list_prim_u_8_loose(signature, serializer);
+          sse_encode_u_32(specVersion, serializer);
           return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 34)!;
         },
         codec: SseCodec(decodeSuccessData: sse_decode_bool, decodeErrorData: null),
         constMeta: kCrateApiCryptoVerifyMessageConstMeta,
-        argValues: [keypair, message, signature],
+        argValues: [keypair, message, signature, specVersion],
         apiImpl: this,
       ),
     );
   }
 
   TaskConstMeta get kCrateApiCryptoVerifyMessageConstMeta =>
-      const TaskConstMeta(debugName: 'verify_message', argNames: ['keypair', 'message', 'signature']);
+      const TaskConstMeta(debugName: 'verify_message', argNames: ['keypair', 'message', 'signature', 'specVersion']);
 
   @override
   int crateApiWormholeWormholeComputeOutputAmount({required int inputAmount, required int feeBps}) {

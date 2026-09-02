@@ -329,7 +329,10 @@ class SubstrateService {
       extrinsic = _encodeSignedExtrinsic(
         signer: Uint8List.fromList(senderWallet.addressBytes),
         method: encodedCall,
-        signature: _combineSignatureAndPubkey(senderWallet.sign(payload), senderWallet.publicKey),
+        signature: _combineSignatureAndPubkey(
+          senderWallet.sign(payload, specVersion: ctx.runtimeVersion.specVersion),
+          senderWallet.publicKey,
+        ),
         blockNumber: ctx.blockNumber,
         nonce: ctx.nonce,
       );

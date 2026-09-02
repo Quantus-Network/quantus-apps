@@ -10,4 +10,11 @@
 /// On-chain extrinsic signatures.
 pub const EXTRINSIC: &[u8] = b"QUANTUS_EXTRINSIC";
 
+/// First spec that verifies extrinsics under [`EXTRINSIC`]. Earlier specs use the empty context.
+pub const EXTRINSIC_MIN_SPEC: u32 = 148;
+
 const _: () = assert!(EXTRINSIC.len() <= 255);
+
+pub fn context_for_spec(spec_version: u32) -> Option<&'static [u8]> {
+    (spec_version >= EXTRINSIC_MIN_SPEC).then_some(EXTRINSIC)
+}

@@ -38,14 +38,43 @@ String firstHashToAddress({required String firstHashHex}) =>
 Keypair generateKeypairFromSeed({required List<int> seed}) =>
     RustLib.instance.api.crateApiCryptoGenerateKeypairFromSeed(seed: seed);
 
-Uint8List signMessage({required Keypair keypair, required List<int> message, U8Array32? entropy}) =>
-    RustLib.instance.api.crateApiCryptoSignMessage(keypair: keypair, message: message, entropy: entropy);
+/// Signs `message`. Spec 148+ uses [`signing_context::EXTRINSIC`]; earlier specs use none.
+Uint8List signMessage({
+  required Keypair keypair,
+  required List<int> message,
+  U8Array32? entropy,
+  required int specVersion,
+}) => RustLib.instance.api.crateApiCryptoSignMessage(
+  keypair: keypair,
+  message: message,
+  entropy: entropy,
+  specVersion: specVersion,
+);
 
-Uint8List signMessageWithPubkey({required Keypair keypair, required List<int> message, U8Array32? entropy}) =>
-    RustLib.instance.api.crateApiCryptoSignMessageWithPubkey(keypair: keypair, message: message, entropy: entropy);
+Uint8List signMessageWithPubkey({
+  required Keypair keypair,
+  required List<int> message,
+  U8Array32? entropy,
+  required int specVersion,
+}) => RustLib.instance.api.crateApiCryptoSignMessageWithPubkey(
+  keypair: keypair,
+  message: message,
+  entropy: entropy,
+  specVersion: specVersion,
+);
 
-bool verifyMessage({required Keypair keypair, required List<int> message, required List<int> signature}) =>
-    RustLib.instance.api.crateApiCryptoVerifyMessage(keypair: keypair, message: message, signature: signature);
+/// Verifies under the same context [`sign_message`] would use for `spec_version`.
+bool verifyMessage({
+  required Keypair keypair,
+  required List<int> message,
+  required List<int> signature,
+  required int specVersion,
+}) => RustLib.instance.api.crateApiCryptoVerifyMessage(
+  keypair: keypair,
+  message: message,
+  signature: signature,
+  specVersion: specVersion,
+);
 
 Keypair crystalAlice() => RustLib.instance.api.crateApiCryptoCrystalAlice();
 

@@ -77,7 +77,11 @@ class _KeystoneSignatureScanScreenState extends ConsumerState<KeystoneSignatureS
 
   Future<List<String>> _simulateSignature() async {
     final keypair = await widget.session.account.getKeypair();
-    final signed = signMessageWithPubkey(keypair: keypair, message: widget.unsignedData.encodedPayloadToSign);
+    final signed = signMessageWithPubkey(
+      keypair: keypair,
+      message: widget.unsignedData.encodedPayloadToSign,
+      specVersion: widget.unsignedData.payloadToSign.specVersion,
+    );
     return encodeUr(data: signed);
   }
 
