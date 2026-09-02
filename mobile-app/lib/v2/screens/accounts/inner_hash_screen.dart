@@ -49,20 +49,19 @@ class _InnerHashScreenState extends ConsumerState<InnerHashScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = ref.watch(l10nProvider);
-    final innerHash = _innerHash;
 
     return ScaffoldBase(
       appBar: V2AppBar(title: l10n.innerHashTitle),
       mainContent: SplitCard.single(
         child: CopyableDataItem(
           label: l10n.innerHashLabel,
-          value: innerHash ?? l10n.commonLoading,
+          value: _innerHash ?? l10n.commonLoading,
           copiedMessage: l10n.innerHashCopied,
-          enabled: innerHash != null,
+          enabled: _innerHash != null,
         ),
       ),
       bottomContent: ScaffoldBaseBottomContent(
-        child: ShareAccountButton(onTap: _share, isDisabled: innerHash == null),
+        child: ShareAccountButton(onTap: _share, isDisabled: _innerHash == null),
       ),
     );
   }
