@@ -385,22 +385,24 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final swapCard = _actionCard(
       iconAsset: 'assets/v2/action_swap.svg',
       label: l10n.homeSwap,
+      // Swap is not available for encrypted accounts; keep the button visible
+      // but disabled so the layout doesn't change between account types.
       isDisabled: isEncrypted,
       onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SwapScreen())),
     );
 
-    return Row(children: [receiveCard, const SizedBox(width: 15), sendCard, const SizedBox(width: 15), swapCard]);
+    return Row(spacing: 20, children: [receiveCard, sendCard, if (AppConstants.showSwapButton) swapCard]);
   }
 
   Widget _buildMultisigActionButtons(AppLocalizations l10n, MultisigAccount msig) {
     return Row(
+      spacing: 20,
       children: [
         _actionCard(
           iconAsset: 'assets/v2/action_receive.svg',
           label: l10n.homeReceive,
           onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ReceiveScreen())),
         ),
-        const SizedBox(width: 15),
         _actionCard(
           iconAsset: 'assets/v2/action_send.svg',
           label: l10n.multisigProposeTitle,
@@ -435,7 +437,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           colorFilter: ColorFilter.mode(colors.accentFlare, BlendMode.srcIn),
         ),
         iconPlacement: IconPlacement.top,
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
         variant: ButtonVariant.staged,
         textStyle: text.bodyLarge.copyWith(color: colors.textContent),
       ),
