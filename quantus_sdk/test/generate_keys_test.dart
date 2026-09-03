@@ -127,11 +127,8 @@ void main() {
       );
     });
 
-    test('scheme sizes match Rust and the signature-with-public-key round trips', () {
+    test('the signature-with-public-key size round trips to its scheme', () {
       for (final scheme in DilithiumScheme.values) {
-        // The pure-Dart size constants must match the authoritative Rust values.
-        expect(scheme.signatureByteLength, signatureBytes(scheme: scheme));
-        expect(scheme.publicKeyByteLength, publicKeyBytes(scheme: scheme));
         final combined = scheme.signatureWithPublicKeyBytes;
         expect(combined, signatureBytes(scheme: scheme) + publicKeyBytes(scheme: scheme));
         expect(DilithiumSchemeExtension.forSignatureWithPublicKeyLength(combined), scheme);

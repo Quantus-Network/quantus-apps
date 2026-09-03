@@ -336,11 +336,10 @@ class SubstrateService {
         scheme: senderWallet.scheme,
       );
     } else {
-      // Keyless (hardware) accounts size the probe with the larger legacy scheme.
       extrinsic = _dummySignedExtrinsic(
         getAccountId32(account.accountId),
         encodedCall,
-        scheme: account.scheme ?? DilithiumSchemeExtension.legacy,
+        scheme: account.feeSizingScheme,
         blockNumber: ctx.blockNumber,
         nonce: ctx.nonce,
       );

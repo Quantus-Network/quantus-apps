@@ -50,14 +50,16 @@ class ColdAccount {
     if (left != null && right != null) {
       final byIndex = left.compareTo(right);
       if (byIndex != 0) return byIndex;
-      return _schemeRank(a.scheme).compareTo(_schemeRank(b.scheme));
+      return _schemeSortOrder(a.scheme).compareTo(_schemeSortOrder(b.scheme));
     }
     if (left != null) return -1;
     if (right != null) return 1;
     return a.derivationPath.compareTo(b.derivationPath);
   }
 
-  static int _schemeRank(DilithiumScheme scheme) => scheme == DilithiumSchemeExtension.current ? 0 : 1;
+  /// Sort position by scheme (current first). This is an ordering key, not the
+  /// derivation path index (which is 0 for 87, 1 for 65).
+  static int _schemeSortOrder(DilithiumScheme scheme) => scheme == DilithiumSchemeExtension.current ? 0 : 1;
 
   /// Scheme new accounts of this wallet use: the current scheme once the wallet
   /// holds any account of it, otherwise the legacy one, so pre-existing wallets

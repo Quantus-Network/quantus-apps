@@ -103,15 +103,23 @@ class Account implements BaseAccount {
     );
   }
 
+  /// Scheme to size a signed extrinsic's fee and length against when this
+  /// account is the sender. Hardware (keystone) accounts hold no local key and
+  /// their scheme is only known once the device signs, so the larger ML-DSA-87
+  /// is used to avoid ever understating the fee.
+  DilithiumScheme get feeSizingScheme => scheme ?? DilithiumSchemeExtension.legacy;
+
   /// Wallet, then scheme (current first, keyless accounts last), then derivation index.
   static int compare(Account a, Account b) {
     final w = a.walletIndex.compareTo(b.walletIndex);
     if (w != 0) return w;
-    final s = _schemeRank(a.scheme).compareTo(_schemeRank(b.scheme));
+    final s = _schemeSortOrder(a.scheme).compareTo(_schemeSortOrder(b.scheme));
     return s != 0 ? s : a.index.compareTo(b.index);
   }
 
-  static int _schemeRank(DilithiumScheme? scheme) => switch (scheme) {
+  /// Sort position by scheme (current first, legacy next, keyless last). This is
+  /// an ordering key, not the derivation path index (which is 0 for 87, 1 for 65).
+  static int _schemeSortOrder(DilithiumScheme? scheme) => switch (scheme) {
     DilithiumSchemeExtension.current => 0,
     DilithiumSchemeExtension.legacy => 1,
     null => 2,

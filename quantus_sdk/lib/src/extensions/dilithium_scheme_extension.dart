@@ -34,21 +34,10 @@ extension DilithiumSchemeExtension on DilithiumScheme {
     );
   }
 
-  /// Bytes of an ML-DSA signature. FIPS 204 fixed constants, cross-checked
-  /// against the Rust `signatureBytes` in tests.
-  int get signatureByteLength => switch (this) {
-    DilithiumScheme.mlDsa65 => 3309,
-    DilithiumScheme.mlDsa87 => 4627,
-  };
-
-  /// Bytes of an ML-DSA public key.
-  int get publicKeyByteLength => switch (this) {
-    DilithiumScheme.mlDsa65 => 1952,
-    DilithiumScheme.mlDsa87 => 2592,
-  };
-
-  /// Bytes of `signature ++ publicKey`, the payload every signed extrinsic carries.
-  int get signatureWithPublicKeyBytes => signatureByteLength + publicKeyByteLength;
+  /// Bytes of `signature ++ publicKey`, the payload every signed extrinsic
+  /// carries. Sourced from the rusty-crystals crate via the Rust bridge, so the
+  /// sizes are never duplicated in Dart.
+  int get signatureWithPublicKeyBytes => signatureBytes(scheme: this) + publicKeyBytes(scheme: this);
 
   /// The scheme whose `signature ++ publicKey` is [length] bytes long.
   static DilithiumScheme forSignatureWithPublicKeyLength(int length) => DilithiumScheme.values.firstWhere(

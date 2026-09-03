@@ -55,7 +55,11 @@ pub struct Keypair {
 }
 
 impl Keypair {
-    fn new(scheme: DilithiumScheme, public_key: impl AsRef<[u8]>, secret_key: impl AsRef<[u8]>) -> Self {
+    fn new(
+        scheme: DilithiumScheme,
+        public_key: impl AsRef<[u8]>,
+        secret_key: impl AsRef<[u8]>,
+    ) -> Self {
         Keypair {
             public_key: public_key.as_ref().to_vec(),
             secret_key: secret_key.as_ref().to_vec(),
@@ -445,7 +449,12 @@ mod tests {
         ));
 
         let other = derived(PATH_87_INDEX_0, DilithiumScheme::MlDsa87);
-        assert!(!verify_message(&other, message, &signature, SPEC_WITH_CONTEXT));
+        assert!(!verify_message(
+            &other,
+            message,
+            &signature,
+            SPEC_WITH_CONTEXT
+        ));
     }
 
     #[test]

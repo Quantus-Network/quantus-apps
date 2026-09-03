@@ -18,7 +18,7 @@ class SendPreflight {
     final fee = balancesService.transferFee(
       ed,
       dispatchWeight: await balancesService.transferDispatchWeight(),
-      scheme: account.scheme ?? DilithiumSchemeExtension.legacy,
+      scheme: account.feeSizingScheme,
     );
     final required = ed + fee;
 

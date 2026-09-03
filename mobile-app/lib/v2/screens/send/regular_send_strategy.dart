@@ -79,7 +79,7 @@ class RegularSendStrategy extends SendStrategy {
 
   @override
   ProviderListenable<AsyncValue<SendFee>> feeProvider({required String recipient, required BigInt amount}) =>
-      regularSendFeeProvider((amount: amount, scheme: account.scheme ?? DilithiumSchemeExtension.legacy));
+      regularSendFeeProvider((amount: amount, scheme: account.feeSizingScheme));
 
   @override
   void retryFee(WidgetRef ref, {required String recipient, required BigInt amount}) =>
