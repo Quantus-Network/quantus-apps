@@ -80,8 +80,8 @@ WalletsGrouping groupWallets({
 
   WalletGroup buildGroup(WalletKind kind, int number, int walletIndex) {
     final group = byWallet[walletIndex] ?? [];
-    final regular = group.where((a) => a.accountType != AccountType.encrypted).toList()..sort(_compareAccounts);
-    final encrypted = group.where((a) => a.accountType == AccountType.encrypted).toList()..sort(_compareAccounts);
+    final regular = group.where((a) => a.accountType != AccountType.encrypted).toList()..sort(Account.compare);
+    final encrypted = group.where((a) => a.accountType == AccountType.encrypted).toList()..sort(Account.compare);
     final msigs = [...?multisigsByWallet[walletIndex]]..sort(_compareMultisigs);
     return WalletGroup(
       walletIndex: walletIndex,
@@ -125,11 +125,6 @@ int? softwareWalletNumber(List<Account> accounts, int walletIndex) {
   ]..sort();
   final pos = softwareIndices.indexOf(walletIndex);
   return pos == -1 ? null : pos + 1;
-}
-
-int _compareAccounts(Account a, Account b) {
-  final w = a.walletIndex.compareTo(b.walletIndex);
-  return w != 0 ? w : a.index.compareTo(b.index);
 }
 
 int _compareMultisigs(MultisigAccount a, MultisigAccount b) {

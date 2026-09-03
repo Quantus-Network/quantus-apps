@@ -565,10 +565,14 @@ fn wire__crate__api__crypto__generate_derived_keypair_impl(
                 flutter_rust_bridge::for_generated::SseDeserializer::new(message);
             let api_mnemonic_str = <String>::sse_decode(&mut deserializer);
             let api_path = <String>::sse_decode(&mut deserializer);
+            let api_scheme = <crate::api::crypto::DilithiumScheme>::sse_decode(&mut deserializer);
             deserializer.end();
             transform_result_sse::<_, HDLatticeError>((move || {
-                let output_ok =
-                    crate::api::crypto::generate_derived_keypair(api_mnemonic_str, &api_path)?;
+                let output_ok = crate::api::crypto::generate_derived_keypair(
+                    api_mnemonic_str,
+                    &api_path,
+                    api_scheme,
+                )?;
                 Ok(output_ok)
             })())
         },
@@ -853,9 +857,11 @@ fn wire__crate__api__crypto__public_key_bytes_impl(
             };
             let mut deserializer =
                 flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_scheme = <crate::api::crypto::DilithiumScheme>::sse_decode(&mut deserializer);
             deserializer.end();
             transform_result_sse::<_, ()>((move || {
-                let output_ok = Result::<_, ()>::Ok(crate::api::crypto::public_key_bytes())?;
+                let output_ok =
+                    Result::<_, ()>::Ok(crate::api::crypto::public_key_bytes(api_scheme))?;
                 Ok(output_ok)
             })())
         },
@@ -882,9 +888,11 @@ fn wire__crate__api__crypto__secret_key_bytes_impl(
             };
             let mut deserializer =
                 flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_scheme = <crate::api::crypto::DilithiumScheme>::sse_decode(&mut deserializer);
             deserializer.end();
             transform_result_sse::<_, ()>((move || {
-                let output_ok = Result::<_, ()>::Ok(crate::api::crypto::secret_key_bytes())?;
+                let output_ok =
+                    Result::<_, ()>::Ok(crate::api::crypto::secret_key_bytes(api_scheme))?;
                 Ok(output_ok)
             })())
         },
@@ -1019,9 +1027,11 @@ fn wire__crate__api__crypto__signature_bytes_impl(
             };
             let mut deserializer =
                 flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_scheme = <crate::api::crypto::DilithiumScheme>::sse_decode(&mut deserializer);
             deserializer.end();
             transform_result_sse::<_, ()>((move || {
-                let output_ok = Result::<_, ()>::Ok(crate::api::crypto::signature_bytes())?;
+                let output_ok =
+                    Result::<_, ()>::Ok(crate::api::crypto::signature_bytes(api_scheme))?;
                 Ok(output_ok)
             })())
         },
@@ -1232,14 +1242,35 @@ impl SseDecode for bool {
     }
 }
 
+impl SseDecode for crate::api::crypto::DilithiumScheme {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut inner = <i32>::sse_decode(deserializer);
+        return match inner {
+            0 => crate::api::crypto::DilithiumScheme::MlDsa65,
+            1 => crate::api::crypto::DilithiumScheme::MlDsa87,
+            _ => unreachable!("Invalid variant for DilithiumScheme: {}", inner),
+        };
+    }
+}
+
+impl SseDecode for i32 {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        deserializer.cursor.read_i32::<NativeEndian>().unwrap()
+    }
+}
+
 impl SseDecode for crate::api::crypto::Keypair {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut var_publicKey = <Vec<u8>>::sse_decode(deserializer);
         let mut var_secretKey = <Vec<u8>>::sse_decode(deserializer);
+        let mut var_scheme = <crate::api::crypto::DilithiumScheme>::sse_decode(deserializer);
         return crate::api::crypto::Keypair {
             public_key: var_publicKey,
             secret_key: var_secretKey,
+            scheme: var_scheme,
         };
     }
 }
@@ -1434,13 +1465,6 @@ impl SseDecode for crate::api::crypto::WormholeResult {
     }
 }
 
-impl SseDecode for i32 {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
-        deserializer.cursor.read_i32::<NativeEndian>().unwrap()
-    }
-}
-
 fn pde_ffi_dispatcher_primary_impl(
     func_id: i32,
     port: flutter_rust_bridge::for_generated::MessagePort,
@@ -1535,11 +1559,33 @@ impl flutter_rust_bridge::IntoIntoDart<FrbWrapper<HDLatticeError>> for HDLattice
 }
 
 // Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::api::crypto::DilithiumScheme {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        match self {
+            Self::MlDsa65 => 0.into_dart(),
+            Self::MlDsa87 => 1.into_dart(),
+            _ => unreachable!(),
+        }
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::api::crypto::DilithiumScheme
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::api::crypto::DilithiumScheme>
+    for crate::api::crypto::DilithiumScheme
+{
+    fn into_into_dart(self) -> crate::api::crypto::DilithiumScheme {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
 impl flutter_rust_bridge::IntoDart for crate::api::crypto::Keypair {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
             self.public_key.into_into_dart().into_dart(),
             self.secret_key.into_into_dart().into_dart(),
+            self.scheme.into_into_dart().into_dart(),
         ]
         .into_dart()
     }
@@ -1687,11 +1733,35 @@ impl SseEncode for bool {
     }
 }
 
+impl SseEncode for crate::api::crypto::DilithiumScheme {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <i32>::sse_encode(
+            match self {
+                crate::api::crypto::DilithiumScheme::MlDsa65 => 0,
+                crate::api::crypto::DilithiumScheme::MlDsa87 => 1,
+                _ => {
+                    unimplemented!("");
+                }
+            },
+            serializer,
+        );
+    }
+}
+
+impl SseEncode for i32 {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        serializer.cursor.write_i32::<NativeEndian>(self).unwrap();
+    }
+}
+
 impl SseEncode for crate::api::crypto::Keypair {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         <Vec<u8>>::sse_encode(self.public_key, serializer);
         <Vec<u8>>::sse_encode(self.secret_key, serializer);
+        <crate::api::crypto::DilithiumScheme>::sse_encode(self.scheme, serializer);
     }
 }
 
@@ -1848,13 +1918,6 @@ impl SseEncode for crate::api::crypto::WormholeResult {
         <String>::sse_encode(self.address, serializer);
         <Vec<u8>>::sse_encode(self.first_hash, serializer);
         <Vec<u8>>::sse_encode(self.secret, serializer);
-    }
-}
-
-impl SseEncode for i32 {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
-        serializer.cursor.write_i32::<NativeEndian>(self).unwrap();
     }
 }
 

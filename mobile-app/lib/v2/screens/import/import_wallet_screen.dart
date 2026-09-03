@@ -59,19 +59,22 @@ class _ImportWalletScreenV2State extends ConsumerState<ImportWalletScreenV2> {
         }
       }
 
-      final key = HdWalletService().keyPairAtIndex(mnemonic, 0);
+      const scheme = DilithiumSchemeExtension.current;
+      final path = HdWalletService.pathForIndex(0, scheme);
+      final key = HdWalletService().keyPairAtPath(mnemonic, path, scheme);
       await _settingsService.setMnemonic(mnemonic, widget.walletIndex);
       await _accountsService.addAccount(
-        Account(
+        Account.derived(
           walletIndex: widget.walletIndex,
           index: 0,
           name: 'Account ${accounts.length + 1}',
-          accountId: key.ss58Address,
+          keypair: key,
+          derivationPath: path,
         ),
       );
 
       if (!HdWalletService.isDevAccount(mnemonic)) {
-        await _discoverAccounts(mnemonic);
+        await _discoverAccounts(mnemonic, defaultAccountId: key.ss58Address);
       }
       invalidateAccountProviders(ref);
       _settingsService.setReferralCheckCompleted();
@@ -101,22 +104,55 @@ class _ImportWalletScreenV2State extends ConsumerState<ImportWalletScreenV2> {
     }
   }
 
-  /// Discovers on-chain HD accounts only. Multisigs are added manually via
-  /// Add Account → Discover Multisig.
-  Future<void> _discoverAccounts(String mnemonic) async {
+  /// Discovers on-chain HD accounts across both signature schemes. Multisigs
+  /// are added manually via Add Account → Discover Multisig.
+  ///
+  /// [defaultAccountId] is the current-scheme account 0 added before discovery.
+  /// When it has no on-chain history but discovery finds funded accounts, the
+  /// first funded one is made active so a returning user lands on it.
+  Future<void> _discoverAccounts(String mnemonic, {required String defaultAccountId}) async {
     try {
       final discovered = await _discoveryService.discoverAccounts(mnemonic: mnemonic, walletIndex: widget.walletIndex);
-      final existing = (await _accountsService.getAccounts()).map((e) => e.accountId).toSet();
+      final current = await _accountsService.getAccounts();
+      final existing = current.map((e) => e.accountId).toSet();
+      var count = current.length;
       for (final account in discovered) {
-        if (!existing.contains(account.accountId)) {
-          await _accountsService.addAccount(account);
-        }
+        if (existing.contains(account.accountId)) continue;
+        await _accountsService.addAccount(account.copyWith(name: 'Account ${++count}'));
+      }
+      if (!discovered.any((a) => a.accountId == defaultAccountId) && discovered.isNotEmpty) {
+        await _settingsService.setActiveAccount(RegularAccount(discovered.first));
       }
       invalidateAccountProviders(ref);
       unawaited(_discoverEncryptedAccount());
     } catch (e) {
       quantusPrint('error discovering accounts: $e');
       TelemetryService().sendError('Error discovering accounts', error: e);
+      // Discovery is best-effort, but an old ML-DSA-87 seed must still yield its
+      // funded root account even when the indexer is unreachable.
+      await _addLegacyRootFallback(mnemonic);
+    }
+  }
+
+  Future<void> _addLegacyRootFallback(String mnemonic) async {
+    try {
+      const legacy = DilithiumSchemeExtension.legacy;
+      final path = HdWalletService.pathForIndex(0, legacy);
+      final key = HdWalletService().keyPairAtPath(mnemonic, path, legacy);
+      final existing = (await _accountsService.getAccounts()).map((e) => e.accountId).toSet();
+      if (existing.contains(key.ss58Address)) return;
+      await _accountsService.addAccount(
+        Account.derived(
+          walletIndex: widget.walletIndex,
+          index: 0,
+          name: 'Account ${existing.length + 1}',
+          keypair: key,
+          derivationPath: path,
+        ),
+      );
+      invalidateAccountProviders(ref);
+    } catch (e) {
+      quantusPrint('legacy root fallback failed: $e');
     }
   }
 

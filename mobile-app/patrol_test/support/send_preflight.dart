@@ -15,7 +15,11 @@ class SendPreflight {
     final balancesService = BalancesService();
 
     final balance = await substrateService.queryBalance(account.accountId);
-    final fee = balancesService.transferFee(ed, dispatchWeight: await balancesService.transferDispatchWeight());
+    final fee = balancesService.transferFee(
+      ed,
+      dispatchWeight: await balancesService.transferDispatchWeight(),
+      scheme: account.scheme ?? DilithiumSchemeExtension.legacy,
+    );
     final required = ed + fee;
 
     if (balance < required) {

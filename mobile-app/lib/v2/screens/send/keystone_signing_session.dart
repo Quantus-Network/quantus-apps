@@ -13,8 +13,7 @@ typedef KeystoneSignatureSubmitter =
     Future<String> Function(
       WidgetRef ref, {
       required UnsignedTransactionData unsignedData,
-      required Uint8List signature,
-      required Uint8List publicKey,
+      required Uint8List signatureWithPublicKey,
     });
 
 /// Describes one Keystone hardware-signing flow.

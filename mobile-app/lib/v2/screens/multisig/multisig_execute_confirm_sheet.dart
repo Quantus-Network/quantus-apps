@@ -45,18 +45,16 @@ void showMultisigExecuteConfirmSheet(
       submit: (ref, signer, fee, callBytes) => ref
           .read(transactionSubmissionServiceProvider)
           .executeProposal(msig: msig, signer: signer, proposal: proposal, callBytes: callBytes, fee: fee),
-      submitExternal: (ref, {required signer, required unsignedData, required signature, required publicKey, fee}) =>
-          ref
-              .read(transactionSubmissionServiceProvider)
-              .executeProposalWithExternalSignature(
-                msig: msig,
-                signer: signer,
-                proposal: proposal,
-                unsignedData: unsignedData,
-                signature: signature,
-                publicKey: publicKey,
-                fee: fee,
-              ),
+      submitExternal: (ref, {required signer, required unsignedData, required signatureWithPublicKey, fee}) => ref
+          .read(transactionSubmissionServiceProvider)
+          .executeProposalWithExternalSignature(
+            msig: msig,
+            signer: signer,
+            proposal: proposal,
+            unsignedData: unsignedData,
+            signatureWithPublicKey: signatureWithPublicKey,
+            fee: fee,
+          ),
     ),
   );
 }

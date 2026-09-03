@@ -78,7 +78,9 @@ class SubstrateService {
   /// extension weights are not part of the metadata and change with the
   /// runtime, so this is the one fee input that has to be asked from chain.
   Future<BigInt> queryDispatchWeight(RuntimeCall call) async {
-    final info = await _paymentQueryInfo(_dummySignedExtrinsic(Uint8List(32), call.encode()));
+    final info = await _paymentQueryInfo(
+      _dummySignedExtrinsic(Uint8List(32), call.encode(), scheme: DilithiumSchemeExtension.legacy),
+    );
     return BigInt.from((info['weight'] as Map<String, dynamic>)['ref_time'] as int);
   }
 
@@ -262,10 +264,6 @@ class SubstrateService {
     );
   }
 
-  /// Dilithium (ML-DSA-87) signature plus public key, carried by every signed
-  /// extrinsic.
-  static const int signatureWithPublicKeyBytes = 7219;
-
   /// Largest compact nonce short of the 5-byte encoding. Sizes length
   /// estimates so the fee is never understated.
   static const int _maxCompactNonce = (1 << 30) - 1;
@@ -276,6 +274,7 @@ class SubstrateService {
     required Uint8List signature,
     required int blockNumber,
     required int nonce,
+    required DilithiumScheme scheme,
   }) => ResonanceExtrinsicPayload(
     signer: signer,
     method: method,
@@ -284,26 +283,29 @@ class SubstrateService {
     blockNumber: blockNumber,
     nonce: nonce,
     tip: 0,
-  ).encodeResonance(Registry(), ResonanceSignatureType.resonance);
+  ).encodeResonance(Registry(), scheme);
 
   /// Correctly sized but unsigned extrinsic, for fee probes and length math.
   Uint8List _dummySignedExtrinsic(
     Uint8List signer,
     Uint8List method, {
+    required DilithiumScheme scheme,
     int blockNumber = 0,
     int nonce = _maxCompactNonce,
   }) => _encodeSignedExtrinsic(
     signer: signer,
     method: method,
-    signature: Uint8List(signatureWithPublicKeyBytes),
+    signature: Uint8List(scheme.signatureWithPublicKeyBytes),
     blockNumber: blockNumber,
     nonce: nonce,
+    scheme: scheme,
   );
 
   /// Bytes [call] occupies on chain as a signed extrinsic. Address, signature
-  /// and key sizes are fixed; only the compact nonce varies and is taken at
-  /// its 4-byte maximum.
-  int signedExtrinsicLength(RuntimeCall call) => _dummySignedExtrinsic(Uint8List(32), call.encode()).length;
+  /// and key sizes are fixed per [scheme]; only the compact nonce varies and is
+  /// taken at its 4-byte maximum.
+  int signedExtrinsicLength(RuntimeCall call, DilithiumScheme scheme) =>
+      _dummySignedExtrinsic(Uint8List(32), call.encode(), scheme: scheme).length;
 
   Future<ExtrinsicData> getExtrinsicPayload(Account account, RuntimeCall call, {bool isSigned = true}) async {
     final ctx = await _getSigningContext(account.accountId);
@@ -321,11 +323,7 @@ class SubstrateService {
         nonce: ctx.nonce,
         tip: 0,
       ).encode(Registry());
-      final mnemonic = await account.getMnemonic();
-      if (mnemonic == null) {
-        throw Exception('Mnemonic not found for signing.');
-      }
-      final senderWallet = HdWalletService().keyPairAtIndex(mnemonic, account.index);
+      final senderWallet = await account.getKeypair();
       extrinsic = _encodeSignedExtrinsic(
         signer: Uint8List.fromList(senderWallet.addressBytes),
         method: encodedCall,
@@ -335,11 +333,14 @@ class SubstrateService {
         ),
         blockNumber: ctx.blockNumber,
         nonce: ctx.nonce,
+        scheme: senderWallet.scheme,
       );
     } else {
+      // Keyless (hardware) accounts size the probe with the larger legacy scheme.
       extrinsic = _dummySignedExtrinsic(
         getAccountId32(account.accountId),
         encodedCall,
+        scheme: account.scheme ?? DilithiumSchemeExtension.legacy,
         blockNumber: ctx.blockNumber,
         nonce: ctx.nonce,
       );
@@ -367,24 +368,24 @@ class SubstrateService {
     return UnsignedTransactionData(payloadToSign: payloadToSign, signer: accountIdBytes, registry: Registry());
   }
 
+  /// Submits [unsignedData] signed off-device. [signatureWithPublicKey] is the
+  /// signer's `signature ++ publicKey`; its length identifies the scheme.
   Future<Uint8List> submitExtrinsicWithExternalSignature(
     UnsignedTransactionData unsignedData,
-    Uint8List signature,
-    Uint8List publicKey,
+    Uint8List signatureWithPublicKey,
   ) async {
-    final signatureWithPublicKeyBytes = _combineSignatureAndPubkey(signature, publicKey);
-
+    final scheme = DilithiumSchemeExtension.forSignatureWithPublicKeyLength(signatureWithPublicKey.length);
     final payload = unsignedData.payloadToSign;
 
     final extrinsic = ResonanceExtrinsicPayload(
       signer: unsignedData.signer,
       method: payload.method,
-      signature: signatureWithPublicKeyBytes,
+      signature: signatureWithPublicKey,
       eraPeriod: payload.eraPeriod,
       blockNumber: payload.blockNumber,
       nonce: payload.nonce,
       tip: payload.tip,
-    ).encodeResonance(unsignedData.registry, ResonanceSignatureType.resonance);
+    ).encodeResonance(unsignedData.registry, scheme);
 
     return await _submitExtrinsic(extrinsic);
   }

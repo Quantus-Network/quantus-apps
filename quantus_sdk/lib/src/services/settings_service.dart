@@ -1,9 +1,12 @@
 import 'dart:convert';
 
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:quantus_sdk/src/extensions/dilithium_scheme_extension.dart';
 import 'package:quantus_sdk/src/models/account.dart';
 import 'package:quantus_sdk/src/models/display_account.dart';
 import 'package:quantus_sdk/src/models/multisig_account.dart';
+import 'package:quantus_sdk/src/rust/api/crypto.dart';
+import 'package:quantus_sdk/src/services/hd_wallet_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SettingsService {
@@ -67,15 +70,21 @@ class SettingsService {
     final accountsJson = _prefs.getString(_accountsKey);
     if (accountsJson != null) {
       final decoded = jsonDecode(accountsJson) as List<dynamic>;
-      return decoded.map((e) => Account.fromJson(e)).toList()..sort(
-        (a, b) => a.walletIndex != b.walletIndex ? a.walletIndex.compareTo(b.walletIndex) : a.index.compareTo(b.index),
-      );
+      return decoded.map((e) => Account.fromJson(e)).toList()..sort(Account.compare);
     }
     // Migration for existing single-account users
     final oldAccountId = _prefs.getString('account_id');
     if (oldAccountId != null) {
       final oldWalletName = _prefs.getString('wallet_name') ?? 'Account 1';
-      final account = Account(walletIndex: 0, index: 0, name: oldWalletName, accountId: oldAccountId);
+      const legacy = DilithiumSchemeExtension.legacy;
+      final account = Account(
+        walletIndex: 0,
+        index: 0,
+        name: oldWalletName,
+        accountId: oldAccountId,
+        scheme: legacy,
+        derivationPath: HdWalletService.pathForIndex(0, legacy),
+      );
       await saveAccounts([account]);
       await setActiveAccount(RegularAccount(account));
       // Clean up old keys after migration
@@ -94,9 +103,11 @@ class SettingsService {
 
   Future<void> addAccount(Account account) async {
     final accounts = await getAccounts();
-    // Check for duplicates by index or accountId before adding
+    // Check for duplicates by derivation slot or accountId before adding
     if (!accounts.any(
-      (a) => (a.walletIndex == account.walletIndex && a.index == account.index) || a.accountId == account.accountId,
+      (a) =>
+          (a.walletIndex == account.walletIndex && a.index == account.index && a.scheme == account.scheme) ||
+          a.accountId == account.accountId,
     )) {
       accounts.add(account);
       await saveAccounts(accounts);
@@ -221,21 +232,28 @@ class SettingsService {
     }
   }
 
-  Future<Account?> getAccount({required int walletIndex, required int index}) async {
+  /// The wallet's first transparent account.
+  Future<Account?> getPrimaryAccount() async {
     final accounts = await getAccounts();
-    final ix = accounts.indexWhere((a) => a.walletIndex == walletIndex && a.index == index);
-    return ix != -1 ? accounts[ix] : null;
+    return accounts.where((a) => a.walletIndex == 0 && a.accountType != AccountType.encrypted).firstOrNull;
   }
 
   /// Returns the lowest non-negative derivation index not currently used by a
-  /// (non-encrypted) account in [walletIndex]. Filling the lowest gap first
-  /// keeps a wallet's accounts contiguous and deterministic: removing then
-  /// re-adding accounts always reproduces the same indices (and therefore the
-  /// same addresses) in the same order.
-  Future<int> getNextFreeAccountIndex(int walletIndex) async {
+  /// (non-encrypted) account of [scheme] in [walletIndex]; a null [scheme]
+  /// considers every non-encrypted account. Filling the lowest gap first keeps
+  /// a wallet's accounts contiguous and deterministic: removing then re-adding
+  /// accounts always reproduces the same indices (and therefore the same
+  /// addresses) in the same order.
+  Future<int> getNextFreeAccountIndex(int walletIndex, {DilithiumScheme? scheme}) async {
     final accounts = await getAccounts();
     final used = accounts
-        .where((a) => a.walletIndex == walletIndex && a.index >= 0 && a.accountType != AccountType.encrypted)
+        .where(
+          (a) =>
+              a.walletIndex == walletIndex &&
+              a.index >= 0 &&
+              a.accountType != AccountType.encrypted &&
+              (scheme == null || a.scheme == scheme),
+        )
         .map((a) => a.index)
         .toSet();
     var index = 0;

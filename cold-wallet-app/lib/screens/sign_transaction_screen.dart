@@ -66,8 +66,8 @@ class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> {
         });
         return;
       }
-      // Returns signature ++ publicKey; the hot wallet splits it and rebuilds the
-      // extrinsic via submitExtrinsicWithExternalSignature.
+      // Returns signature ++ publicKey; the hot wallet reads the scheme off its
+      // length and rebuilds the extrinsic via submitExtrinsicWithExternalSignature.
       final signed = signMessageWithPubkey(
         keypair: keypair,
         message: QuantusSigningPayload.signablePayload(widget.request.payload),

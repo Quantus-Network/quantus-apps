@@ -7,7 +7,8 @@ import '../frb_generated.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-// These functions are ignored because they are not marked as `pub`: `from_ml_dsa`, `to_ml_dsa`
+// These functions are ignored because they are not marked as `pub`: `ml_dsa_87_from_entropy`, `new`
+// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `assert_receiver_is_total_eq`, `clone`, `eq`, `fmt`
 
 void setDefaultSs58Prefix({required int prefix}) =>
     RustLib.instance.api.crateApiCryptoSetDefaultSs58Prefix(prefix: prefix);
@@ -18,11 +19,12 @@ String toAccountId({required Keypair obj}) => RustLib.instance.api.crateApiCrypt
 /// Convert key in ss58check format to accountId32
 Uint8List ss58ToAccountId({required String s}) => RustLib.instance.api.crateApiCryptoSs58ToAccountId(s: s);
 
+/// Legacy non-HD ML-DSA-87 keypair straight from the mnemonic seed (early CLI and miner accounts).
 Keypair generateKeypair({required String mnemonicStr}) =>
     RustLib.instance.api.crateApiCryptoGenerateKeypair(mnemonicStr: mnemonicStr);
 
-Keypair generateDerivedKeypair({required String mnemonicStr, required String path}) =>
-    RustLib.instance.api.crateApiCryptoGenerateDerivedKeypair(mnemonicStr: mnemonicStr, path: path);
+Keypair generateDerivedKeypair({required String mnemonicStr, required String path, required DilithiumScheme scheme}) =>
+    RustLib.instance.api.crateApiCryptoGenerateDerivedKeypair(mnemonicStr: mnemonicStr, path: path, scheme: scheme);
 
 WormholeResult deriveWormhole({required String mnemonicStr, required String path}) =>
     RustLib.instance.api.crateApiCryptoDeriveWormhole(mnemonicStr: mnemonicStr, path: path);
@@ -35,6 +37,7 @@ WormholeResult deriveWormhole({required String mnemonicStr, required String path
 String firstHashToAddress({required String firstHashHex}) =>
     RustLib.instance.api.crateApiCryptoFirstHashToAddress(firstHashHex: firstHashHex);
 
+/// ML-DSA-87 keypair from a raw 32-byte seed (dev accounts).
 Keypair generateKeypairFromSeed({required List<int> seed}) =>
     RustLib.instance.api.crateApiCryptoGenerateKeypairFromSeed(seed: seed);
 
@@ -82,23 +85,31 @@ Keypair crystalBob() => RustLib.instance.api.crateApiCryptoCrystalBob();
 
 Keypair crystalCharlie() => RustLib.instance.api.crateApiCryptoCrystalCharlie();
 
-BigInt publicKeyBytes() => RustLib.instance.api.crateApiCryptoPublicKeyBytes();
+int publicKeyBytes({required DilithiumScheme scheme}) =>
+    RustLib.instance.api.crateApiCryptoPublicKeyBytes(scheme: scheme);
 
-BigInt secretKeyBytes() => RustLib.instance.api.crateApiCryptoSecretKeyBytes();
+int secretKeyBytes({required DilithiumScheme scheme}) =>
+    RustLib.instance.api.crateApiCryptoSecretKeyBytes(scheme: scheme);
 
-BigInt signatureBytes() => RustLib.instance.api.crateApiCryptoSignatureBytes();
+int signatureBytes({required DilithiumScheme scheme}) =>
+    RustLib.instance.api.crateApiCryptoSignatureBytes(scheme: scheme);
 
 // Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<HDLatticeError>>
 abstract class HdLatticeError implements RustOpaqueInterface {}
 
+/// ML-DSA parameter set of a keypair. Mirrors quantus-cli's `DilithiumScheme`;
+/// accounts stored before this existed are ML-DSA-87.
+enum DilithiumScheme { mlDsa65, mlDsa87 }
+
 class Keypair {
   final Uint8List publicKey;
   final Uint8List secretKey;
+  final DilithiumScheme scheme;
 
-  const Keypair({required this.publicKey, required this.secretKey});
+  const Keypair({required this.publicKey, required this.secretKey, required this.scheme});
 
   @override
-  int get hashCode => publicKey.hashCode ^ secretKey.hashCode;
+  int get hashCode => publicKey.hashCode ^ secretKey.hashCode ^ scheme.hashCode;
 
   @override
   bool operator ==(Object other) =>
@@ -106,7 +117,8 @@ class Keypair {
       other is Keypair &&
           runtimeType == other.runtimeType &&
           publicKey == other.publicKey &&
-          secretKey == other.secretKey;
+          secretKey == other.secretKey &&
+          scheme == other.scheme;
 }
 
 class U8Array32 extends NonGrowableListView<int> {

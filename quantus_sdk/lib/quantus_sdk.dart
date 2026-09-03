@@ -15,6 +15,7 @@ export 'src/extensions/address_extension.dart';
 export 'src/extensions/color_extensions.dart';
 export 'src/extensions/context_extension.dart';
 export 'src/extensions/decimal_input_filter.dart';
+export 'src/extensions/dilithium_scheme_extension.dart';
 export 'src/extensions/keypair_extensions.dart';
 export 'src/extensions/media_query_data_extension.dart';
 export 'src/extensions/string_extensions.dart';

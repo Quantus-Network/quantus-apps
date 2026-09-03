@@ -64,14 +64,14 @@ void main() {
         mnemonic: mnemonic,
         password: 'alpha',
         enableBiometric: false,
-        accounts: [ColdAccount(label: 'One', index: 0)],
+        accounts: [ColdAccount(label: 'One', index: 0, scheme: DilithiumSchemeExtension.legacy)],
       );
 
       expect(
         await controller.changePassword(currentPassword: 'alpha', newPassword: 'beta'),
         PasswordChangeResult.changed,
       );
-      await controller.addAccount(ColdAccount(label: 'Two', index: 1));
+      await controller.addAccount(ColdAccount(label: 'Two', index: 1, scheme: DilithiumSchemeExtension.legacy));
 
       final reopened = await VaultService().unlockWithPassword('beta');
       expect(reopened.mnemonic, mnemonic);
@@ -89,12 +89,12 @@ void main() {
         mnemonic: mnemonic,
         password: 'alpha',
         enableBiometric: true,
-        accounts: [ColdAccount(label: 'One', index: 0)],
+        accounts: [ColdAccount(label: 'One', index: 0, scheme: DilithiumSchemeExtension.legacy)],
       );
       biometric.lock();
 
       expect(await biometric.unlockWithBiometric(), isTrue);
-      await biometric.addAccount(ColdAccount(label: 'Two', index: 1));
+      await biometric.addAccount(ColdAccount(label: 'Two', index: 1, scheme: DilithiumSchemeExtension.legacy));
 
       expect(container.read(accountsProvider), hasLength(2));
       expect((await VaultService().unlockWithPassword('alpha')).accounts, hasLength(2));
@@ -103,18 +103,30 @@ void main() {
 
   group('ColdAccount', () {
     test('an index fills the wallet template', () {
-      expect(ColdAccount(label: 'a', index: 3).derivationPath, HdWalletService.pathForIndex(3));
+      expect(
+        ColdAccount(label: 'a', index: 3, scheme: DilithiumSchemeExtension.legacy).derivationPath,
+        HdWalletService.pathForIndex(3, DilithiumSchemeExtension.legacy),
+      );
     });
 
     test('a path is taken verbatim', () {
-      expect(ColdAccount(label: 'a', path: "m/44'/189189'/9'/0'/0'").derivationPath, "m/44'/189189'/9'/0'/0'");
+      expect(
+        ColdAccount(label: 'a', path: "m/44'/189189'/9'/0'/0'", scheme: DilithiumSchemeExtension.legacy).derivationPath,
+        "m/44'/189189'/9'/0'/0'",
+      );
     });
 
     test('needs exactly one of index or path', () {
-      expect(() => ColdAccount(label: 'a'), throwsArgumentError);
-      expect(() => ColdAccount(label: 'a', index: 0, path: "m/44'"), throwsArgumentError);
-      expect(() => ColdAccount(label: 'a', index: -1), throwsArgumentError);
-      expect(() => ColdAccount(label: 'a', path: 'not a path'), throwsArgumentError);
+      expect(() => ColdAccount(label: 'a', scheme: DilithiumSchemeExtension.legacy), throwsArgumentError);
+      expect(
+        () => ColdAccount(label: 'a', index: 0, path: "m/44'", scheme: DilithiumSchemeExtension.legacy),
+        throwsArgumentError,
+      );
+      expect(() => ColdAccount(label: 'a', index: -1, scheme: DilithiumSchemeExtension.legacy), throwsArgumentError);
+      expect(
+        () => ColdAccount(label: 'a', path: 'not a path', scheme: DilithiumSchemeExtension.legacy),
+        throwsArgumentError,
+      );
     });
   });
 
@@ -123,8 +135,8 @@ void main() {
       final contents = VaultContents(
         mnemonic: mnemonic,
         accounts: [
-          ColdAccount(label: 'One', index: 0),
-          ColdAccount(label: 'Two', path: "m/44'/189189'/7'/0'/0'"),
+          ColdAccount(label: 'One', index: 0, scheme: DilithiumSchemeExtension.legacy),
+          ColdAccount(label: 'Two', path: "m/44'/189189'/7'/0'/0'", scheme: DilithiumSchemeExtension.legacy),
         ],
       );
       final decoded = VaultContents.decode(contents.encode());
@@ -144,14 +156,22 @@ void main() {
 
   group('the signing screen matches the request to an account', () {
     testWidgets('signs when the wallet holds the signer', (tester) async {
-      await pumpFor(tester, signerAddress, held: {signerAddress: ColdAccount(label: 'One', index: 0)});
+      await pumpFor(
+        tester,
+        signerAddress,
+        held: {signerAddress: ColdAccount(label: 'One', index: 0, scheme: DilithiumSchemeExtension.legacy)},
+      );
 
       expect(find.text('Sign'), findsOneWidget);
       expect(find.textContaining('does not hold'), findsNothing);
     });
 
     testWidgets('refuses when the wallet does not hold the signer', (tester) async {
-      await pumpFor(tester, otherAddress, held: {signerAddress: ColdAccount(label: 'One', index: 0)});
+      await pumpFor(
+        tester,
+        otherAddress,
+        held: {signerAddress: ColdAccount(label: 'One', index: 0, scheme: DilithiumSchemeExtension.legacy)},
+      );
 
       expect(find.textContaining('does not hold'), findsOneWidget);
       expect(find.text('Sign'), findsNothing);

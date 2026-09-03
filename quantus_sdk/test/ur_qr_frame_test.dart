@@ -16,27 +16,32 @@ void main() {
   // Regression: the ML-DSA signature-plus-public-key payload (7,219 bytes) at
   // large fragment settings used to produce UR frames longer than a version-40
   // QR can hold, throwing QrInputTooLongException after signing.
-  test('signature payload fits QR frames at every fragment setting', () {
-    final payloadSize = (signatureBytes() + publicKeyBytes()).toInt();
-    expect(payloadSize, 7219);
-    final data = List<int>.generate(payloadSize, (i) => i % 256);
+  for (final (scheme, expectedSize) in [(DilithiumScheme.mlDsa65, 5261), (DilithiumScheme.mlDsa87, 7219)]) {
+    test('${scheme.storageName} signature payload fits QR frames at every fragment setting', () {
+      final payloadSize = signatureBytes(scheme: scheme) + publicKeyBytes(scheme: scheme);
+      expect(payloadSize, expectedSize);
+      final data = List<int>.generate(payloadSize, (i) => i % 256);
 
-    for (var fragment = 300; fragment <= 1500; fragment += 25) {
-      final parts = encodeUrForQr(data: data, maxFragmentLength: fragment);
-      var longest = '';
-      for (final part in parts) {
-        expect(part.length, lessThanOrEqualTo(maxUrScanPartChars), reason: 'fragment setting $fragment');
-        if (part.length > longest.length) longest = part;
+      for (var fragment = 300; fragment <= 1500; fragment += 25) {
+        final parts = encodeUrForQr(data: data, maxFragmentLength: fragment);
+        var longest = '';
+        for (final part in parts) {
+          expect(part.length, lessThanOrEqualTo(maxUrScanPartChars), reason: 'fragment setting $fragment');
+          if (part.length > longest.length) longest = part;
+        }
+        QrCode.fromData(data: longest, errorCorrectLevel: QrErrorCorrectLevel.L);
+        expect(decodeUr(urParts: parts), equals(data), reason: 'fragment setting $fragment');
       }
-      QrCode.fromData(data: longest, errorCorrectLevel: QrErrorCorrectLevel.L);
-      expect(decodeUr(urParts: parts), equals(data), reason: 'fragment setting $fragment');
-    }
-  });
+    });
+  }
 
   // The scanners refuse frames declaring more parts than the cap, so the
   // smallest fragment setting a user can pick must still encode within it.
   test('signature payload stays within the scan cap at the smallest fragment setting', () {
-    final data = List<int>.generate((signatureBytes() + publicKeyBytes()).toInt(), (i) => i % 256);
+    final data = List<int>.generate(
+      signatureBytes(scheme: DilithiumScheme.mlDsa87) + publicKeyBytes(scheme: DilithiumScheme.mlDsa87),
+      (i) => i % 256,
+    );
     final parts = encodeUrForQr(data: data, maxFragmentLength: 50);
 
     expect(parts.length, lessThanOrEqualTo(maxUrScanParts));

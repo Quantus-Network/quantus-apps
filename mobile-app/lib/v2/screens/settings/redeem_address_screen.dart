@@ -43,7 +43,7 @@ class _RedeemAddressScreenState extends ConsumerState<RedeemAddressScreen> {
 
   Future<void> _prefillPrimaryAccount() async {
     final settings = ref.read(settingsServiceProvider);
-    final primary = await settings.getAccount(walletIndex: 0, index: 0);
+    final primary = await settings.getPrimaryAccount();
     if (!mounted || primary == null) return;
     _recipientController.text = primary.accountId;
   }

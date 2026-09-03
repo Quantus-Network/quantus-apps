@@ -97,13 +97,48 @@ void main() {
 
       const knownAccountHdIndex0 = 'qzm5QCox8Dp5A3oSXZZYHD8YoYgPz7enykZb6RPUropdCyN5h'; // account index 0
       const knownAccountHdIndex1 = 'qzmufPopkLKAwDmTzR5uXg8GMp5sUP48CqafJLUz3fPMSSGSh'; // account index 1
-      final keyPair1 = HdWalletService().keyPairAtIndex(mnemonic1, 0);
-      final keyPair2 = HdWalletService().keyPairAtIndex(mnemonic1, 1);
+      final keyPair1 = HdWalletService().keyPairAtIndex(mnemonic1, 0, DilithiumScheme.mlDsa87);
+      final keyPair2 = HdWalletService().keyPairAtIndex(mnemonic1, 1, DilithiumScheme.mlDsa87);
       final accountId1 = toAccountId(obj: keyPair1);
       final accountId2 = toAccountId(obj: keyPair2);
       expect(accountId1, knownAccountHdIndex0);
       expect(accountId2, knownAccountHdIndex1);
     });
+
+    test('ML-DSA-65 known values match quantus-cli', () {
+      // Addresses produced by `quantus wallet import --scheme ml-dsa-65` for the
+      // same mnemonic. Index 0 uses the default 65 path (.../0'/0'/1'); index 1
+      // uses .../1'/0'/1'. The 87 counterparts differ, proving no collision.
+      const mnemonic =
+          'orchard answer curve patient visual flower maze noise retreat penalty cage small earth domain scan pitch bottom crunch theme club client swap slice raven';
+      const knownAccount65Index0 = 'qzoyC4eRTrexYoutXABVsf61QJZxJim3iWvayRQwEjXWgA4mw';
+      const knownAccount65Index1 = 'qzmTuBUzGHX7tohwjJHASSbCt64cJt6WC6j6v1SHpMTL77UyB';
+
+      final key0 = HdWalletService().keyPairAtIndex(mnemonic, 0, DilithiumScheme.mlDsa65);
+      final key1 = HdWalletService().keyPairAtIndex(mnemonic, 1, DilithiumScheme.mlDsa65);
+      expect(key0.scheme, DilithiumScheme.mlDsa65);
+      expect(toAccountId(obj: key0), knownAccount65Index0);
+      expect(toAccountId(obj: key1), knownAccount65Index1);
+
+      // Same mnemonic and index, different scheme, must never share an address.
+      expect(
+        toAccountId(obj: HdWalletService().keyPairAtIndex(mnemonic, 0, DilithiumScheme.mlDsa87)),
+        isNot(knownAccount65Index0),
+      );
+    });
+
+    test('scheme sizes match Rust and the signature-with-public-key round trips', () {
+      for (final scheme in DilithiumScheme.values) {
+        // The pure-Dart size constants must match the authoritative Rust values.
+        expect(scheme.signatureByteLength, signatureBytes(scheme: scheme));
+        expect(scheme.publicKeyByteLength, publicKeyBytes(scheme: scheme));
+        final combined = scheme.signatureWithPublicKeyBytes;
+        expect(combined, signatureBytes(scheme: scheme) + publicKeyBytes(scheme: scheme));
+        expect(DilithiumSchemeExtension.forSignatureWithPublicKeyLength(combined), scheme);
+      }
+      expect(() => DilithiumSchemeExtension.forSignatureWithPublicKeyLength(1234), throwsFormatException);
+    });
+
     test('wormhole derivation known values', () {
       const mnemonic =
           'orchard answer curve patient visual flower maze noise retreat penalty cage small earth domain scan pitch bottom crunch theme club client swap slice raven';
@@ -129,7 +164,7 @@ void main() {
       const mnemonic1 = 'human snow truck virus now jaguar wall brisk shoe craft gravity diesel';
 
       const knownAccountId = 'qznQKhufTDfU3szAzfgCny7wMhxUN3qjEqneiRUNgC7MjSDyG';
-      final keypair = HdWalletService().keyPairAtIndex(mnemonic1, 0);
+      final keypair = HdWalletService().keyPairAtIndex(mnemonic1, 0, DilithiumScheme.mlDsa87);
       final accountId = toAccountId(obj: keypair);
       expect(accountId, knownAccountId);
 
@@ -150,7 +185,7 @@ void main() {
 
     test('keystone signature UR round-trips and splits into signature + pubkey', () {
       const mnemonic = 'human snow truck virus now jaguar wall brisk shoe craft gravity diesel';
-      final keypair = HdWalletService().keyPairAtIndex(mnemonic, 0);
+      final keypair = HdWalletService().keyPairAtIndex(mnemonic, 0, DilithiumScheme.mlDsa87);
 
       const hexPayload =
           '0200007416854906f03a9dff66e3270a736c44e15970ac03a638471523a03069f276ca0700e876481755010000007400000002000000826beefbe2be72645ff376f18de745ac196dc77637436090de4174180706118e5a77ae1c95817ee664cf733fafa7baa8e6244b396a54e57a5bc414b24c52800600';
@@ -168,8 +203,8 @@ void main() {
 
       // Hot wallet decodes and splits exactly like KeystoneScanSignatureScreen.
       final bytes = decodeUr(urParts: parts);
-      final sigSize = signatureBytes().toInt();
-      expect(bytes.length, sigSize + publicKeyBytes().toInt());
+      final sigSize = signatureBytes(scheme: keypair.scheme);
+      expect(bytes.length, sigSize + publicKeyBytes(scheme: keypair.scheme));
 
       final signature = bytes.sublist(0, sigSize);
       final publicKey = bytes.sublist(sigSize);

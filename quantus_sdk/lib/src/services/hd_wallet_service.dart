@@ -50,32 +50,27 @@ class HdWalletService {
 
   static bool isDevAccount(String mnemonic) => kDebugMode && _devAccounts.containsKey(mnemonic);
 
-  Keypair _deriveHDWallet({required String mnemonic, int account = 0, int change = 0, int addressIndex = 0}) {
-    return crypto.generateDerivedKeypair(mnemonicStr: mnemonic, path: pathForIndex(account, change, addressIndex));
-  }
-
-  /// The transparent-account derivation path this wallet uses.
-  static String pathForIndex(int account, [int change = 0, int addressIndex = 0]) =>
-      "m/44'/189189'/$account'/$change'/$addressIndex'";
+  /// Transparent-account path. The account level carries the index; the trailing
+  /// address index carries the scheme (`0'` for ML-DSA-87, `1'` for ML-DSA-65), as in quantus-cli.
+  static String pathForIndex(int account, DilithiumScheme scheme) =>
+      "m/44'/189189'/$account'/0'/${scheme.derivationAddressIndex}'";
 
   static final RegExp _pathPattern = RegExp(r"^m(/\d+'?)+$");
 
   static bool isValidPath(String path) => _pathPattern.hasMatch(path.trim());
 
-  Keypair keyPairAtPath(String mnemonic, String path) {
-    final trimmed = path.trim();
-    if (!isValidPath(trimmed)) throw FormatException('Not a derivation path: $path');
-    return crypto.generateDerivedKeypair(mnemonicStr: mnemonic, path: trimmed);
-  }
-
-  Keypair keyPairAtIndex(String mnemonic, int index) {
+  Keypair keyPairAtPath(String mnemonic, String path, DilithiumScheme scheme) {
     if (kDebugMode) {
       final devKeypair = _devAccounts[mnemonic];
       if (devKeypair != null) return devKeypair();
     }
-    if (index == -1) return crypto.generateKeypair(mnemonicStr: mnemonic);
-    return _deriveHDWallet(mnemonic: mnemonic, account: index);
+    final trimmed = path.trim();
+    if (!isValidPath(trimmed)) throw FormatException('Not a derivation path: $path');
+    return crypto.generateDerivedKeypair(mnemonicStr: mnemonic, path: trimmed, scheme: scheme);
   }
+
+  Keypair keyPairAtIndex(String mnemonic, int index, DilithiumScheme scheme) =>
+      keyPairAtPath(mnemonic, pathForIndex(index, scheme), scheme);
 
   crypto.WormholeResult _deriveWormhole(String mnemonic, {int account = 0, int change = 0, int addressIndex = 0}) {
     final path = "m/44'/189189189'/$account'/$change'/$addressIndex'";

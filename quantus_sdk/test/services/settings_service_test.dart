@@ -9,8 +9,22 @@ void main() {
     late SettingsService settingsService;
 
     // Accounts for testing
-    const account1 = Account(walletIndex: 0, index: 0, name: 'Account 1', accountId: 'id_1');
-    const account2 = Account(walletIndex: 0, index: 1, name: 'Account 2', accountId: 'id_2');
+    final account1 = Account(
+      walletIndex: 0,
+      index: 0,
+      name: 'Account 1',
+      accountId: 'id_1',
+      scheme: DilithiumSchemeExtension.current,
+      derivationPath: HdWalletService.pathForIndex(0, DilithiumSchemeExtension.current),
+    );
+    final account2 = Account(
+      walletIndex: 0,
+      index: 1,
+      name: 'Account 2',
+      accountId: 'id_2',
+      scheme: DilithiumSchemeExtension.current,
+      derivationPath: HdWalletService.pathForIndex(1, DilithiumSchemeExtension.current),
+    );
     const account3 = Account(walletIndex: 0, index: 2, name: 'Account 3', accountId: 'id_3');
 
     setUp(() async {
@@ -108,7 +122,7 @@ void main() {
       await settingsService.saveAccounts([account1, account2]);
 
       // Act
-      await settingsService.setActiveAccount(const RegularAccount(account2));
+      await settingsService.setActiveAccount(RegularAccount(account2));
       final activeAccount = (await settingsService.getActiveAccount())!;
 
       // Assert
@@ -122,7 +136,7 @@ void main() {
 
       // Act & Assert
       expect(
-        () async => await settingsService.setActiveAccount(const RegularAccount(account2)),
+        () async => await settingsService.setActiveAccount(RegularAccount(account2)),
         throwsA(isA<Exception>().having((e) => e.toString(), 'message', contains('Account index does not exist'))),
       );
     });
@@ -157,7 +171,7 @@ void main() {
       // Arrange
       await settingsService.initialize();
       await settingsService.saveAccounts([account1, account2, account3]);
-      await settingsService.setActiveAccount(const RegularAccount(account2));
+      await settingsService.setActiveAccount(RegularAccount(account2));
 
       // Act
       await settingsService.removeAccount(account2);

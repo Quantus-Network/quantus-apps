@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:cryptography/cryptography.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:quantus_cold_wallet/models/cold_account.dart';
 
 /// Decrypted result of a successful unlock: the vault contents plus the derived
@@ -32,7 +33,7 @@ class VaultContents {
     if (!plaintext.startsWith('{')) {
       return VaultContents(
         mnemonic: plaintext,
-        accounts: [ColdAccount(label: 'Account 1', index: 0)],
+        accounts: [ColdAccount(label: 'Account 1', index: 0, scheme: DilithiumSchemeExtension.legacy)],
       );
     }
     final m = jsonDecode(plaintext) as Map<String, dynamic>;

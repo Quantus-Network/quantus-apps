@@ -35,7 +35,9 @@ class _WelcomeScreenV2State extends ConsumerState<WelcomeScreenV2> {
       final mnemonic = await SubstrateService().generateMnemonic();
       if (mnemonic.isEmpty) throw Exception('Mnemonic generation returned empty.');
 
-      final address = HdWalletService().keyPairAtIndex(mnemonic, 0).ss58Address;
+      const scheme = DilithiumSchemeExtension.current;
+      final path = HdWalletService.pathForIndex(0, scheme);
+      final address = HdWalletService().keyPairAtPath(mnemonic, path, scheme).ss58Address;
 
       final accounts = ref.read(accountsProvider).value ?? <Account>[];
       await _walletCreationService.createNewWallet(
@@ -43,6 +45,8 @@ class _WelcomeScreenV2State extends ConsumerState<WelcomeScreenV2> {
         mnemonic: mnemonic,
         walletIndex: _walletIndex,
         accountId: address,
+        scheme: scheme,
+        derivationPath: path,
         existingAccounts: accounts,
       );
 
