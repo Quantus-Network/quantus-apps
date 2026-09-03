@@ -26,6 +26,7 @@ import 'package:resonance_network_wallet/v2/screens/send/regular_send_strategy.d
 import 'package:resonance_network_wallet/v2/screens/send/select_recipient_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/send/send_strategy.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/settings_screen.dart';
+import 'package:resonance_network_wallet/shared/constants/feature_flags.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/swap_screen.dart';
 import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
@@ -385,11 +386,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final swapCard = _actionCard(
       iconAsset: 'assets/v2/action_swap.svg',
       label: l10n.homeSwap,
+      // Swap is not available for encrypted accounts; keep the button visible
+      // but disabled so the layout doesn't change between account types.
       isDisabled: isEncrypted,
       onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SwapScreen())),
     );
 
-    return Row(children: [receiveCard, const SizedBox(width: 15), sendCard, const SizedBox(width: 15), swapCard]);
+    return Row(
+      children: [
+        receiveCard,
+        const SizedBox(width: 15),
+        sendCard,
+        if (FeatureFlags.showSwapButton) ...[const SizedBox(width: 15), swapCard],
+      ],
+    );
   }
 
   Widget _buildMultisigActionButtons(AppLocalizations l10n, MultisigAccount msig) {
