@@ -12,6 +12,8 @@ class CreateWalletScreen extends StatefulWidget {
 
 class _CreateWalletScreenState extends State<CreateWalletScreen> {
   List<String>? _words;
+  bool _advancedExpanded = false;
+  DilithiumScheme _scheme = DilithiumSchemeExtension.current;
 
   @override
   void initState() {
@@ -33,7 +35,7 @@ class _CreateWalletScreenState extends State<CreateWalletScreen> {
       MaterialPageRoute(
         builder: (_) => SetPasswordScreen(
           mnemonic: words.join(' '),
-          accounts: [ColdAccount(label: 'Account 1', index: 0, scheme: DilithiumSchemeExtension.current)],
+          accounts: [ColdAccount(label: 'Account 1', index: 0, scheme: _scheme)],
         ),
       ),
     );
@@ -59,13 +61,59 @@ class _CreateWalletScreenState extends State<CreateWalletScreen> {
                 ),
                 const SizedBox(height: 24),
                 Expanded(
-                  child: SingleChildScrollView(child: MnemonicGrid(words: words, isRevealed: true)),
+                  child: SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        MnemonicGrid(words: words, isRevealed: true),
+                        const SizedBox(height: 24),
+                        _advancedSection(context),
+                      ],
+                    ),
+                  ),
                 ),
               ],
             ),
       bottomContent: ScaffoldBaseBottomContent(
         child: QuantusButton.simple(label: "I've written it down", onTap: words == null ? null : _continue),
       ),
+    );
+  }
+
+  /// Signature-scheme choice, collapsed by default so ordinary users never see
+  /// it. New wallets stay ML-DSA-65 unless the user opts into ML-DSA-87 here.
+  Widget _advancedSection(BuildContext context) {
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () => setState(() => _advancedExpanded = !_advancedExpanded),
+          child: Row(
+            children: [
+              Text('ADVANCED', style: text.labelMonogram.copyWith(color: colors.textMuted)),
+              const SizedBox(width: 6),
+              Icon(_advancedExpanded ? Icons.expand_less : Icons.chevron_right, size: 18, color: colors.textMuted),
+            ],
+          ),
+        ),
+        if (_advancedExpanded) ...[
+          const SizedBox(height: 12),
+          Text('SIGNATURE TYPE', style: text.labelMonogram.copyWith(color: colors.textMuted)),
+          const SizedBox(height: 8),
+          SegmentedControls<DilithiumScheme>(
+            selectedValue: _scheme,
+            onChanged: (scheme) => setState(() => _scheme = scheme),
+            items: const [
+              SegmentedControlItem(value: DilithiumSchemeExtension.current, label: 'ML-DSA-65'),
+              SegmentedControlItem(value: DilithiumSchemeExtension.legacy, label: 'ML-DSA-87'),
+            ],
+          ),
+        ],
+      ],
     );
   }
 }
