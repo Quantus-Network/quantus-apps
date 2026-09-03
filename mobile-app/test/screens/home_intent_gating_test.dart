@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/models/combined_transactions_list.dart';
-import 'package:resonance_network_wallet/shared/constants/feature_flags.dart';
 import 'package:resonance_network_wallet/models/fiat_currency.dart';
 import 'package:resonance_network_wallet/providers/active_account_transactions_provider.dart';
 import 'package:resonance_network_wallet/providers/currency_display_provider.dart';
@@ -63,7 +62,7 @@ void main() {
 
     expect(find.text('Receive'), findsOneWidget);
     expect(find.text('Send'), findsOneWidget);
-    expect(find.text('Swap'), FeatureFlags.showSwapButton ? findsOneWidget : findsNothing);
+    expect(find.text('Swap'), AppConstants.showSwapButton ? findsOneWidget : findsNothing);
   });
 
   testWidgets('intent arriving while locked stays queued and drains on unlock', (tester) async {
