@@ -1532,6 +1532,12 @@ abstract class AppLocalizations {
   /// **'Address Details'**
   String get accountMenuAddressDetails;
 
+  /// Menu row label shown for encrypted accounts instead of address details
+  ///
+  /// In en, this message translates to:
+  /// **'Inner Hash'**
+  String get accountMenuInnerHash;
+
   /// Show recovery phrase menu row label
   ///
   /// In en, this message translates to:
@@ -1639,6 +1645,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Address Details'**
   String get accountDetailsTitle;
+
+  /// App bar title on the encrypted account inner hash screen
+  ///
+  /// In en, this message translates to:
+  /// **'Inner Hash'**
+  String get innerHashTitle;
+
+  /// Card label above the inner hash value
+  ///
+  /// In en, this message translates to:
+  /// **'INNER HASH'**
+  String get innerHashLabel;
+
+  /// Toaster shown after copying the inner hash
+  ///
+  /// In en, this message translates to:
+  /// **'Inner hash copied'**
+  String get innerHashCopied;
+
+  /// Toaster shown when deriving the inner hash fails
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load inner hash'**
+  String get innerHashLoadError;
 
   /// App bar title for the add Keystone wallet screens
   ///

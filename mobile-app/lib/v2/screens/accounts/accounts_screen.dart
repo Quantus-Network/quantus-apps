@@ -441,6 +441,7 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
       leading: const EncryptedLockBadge(),
       title: account.name,
       subtitle: _balanceText(l10n, account),
+      trailing: _MenuKebab(onTap: () => _openAccountMenu(account)),
     );
   }
 

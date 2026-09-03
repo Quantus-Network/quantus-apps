@@ -1105,6 +1105,10 @@
     "@accountMenuAddressDetails": {
       "description": "Address details menu row label"
     },
+    "accountMenuInnerHash": "Inner Hash",
+    "@accountMenuInnerHash": {
+      "description": "Menu row label shown for encrypted accounts instead of address details"
+    },
     "accountMenuShowRecoveryPhrase": "Show Recovery Phrase",
     "@accountMenuShowRecoveryPhrase": {
       "description": "Show recovery phrase menu row label"
@@ -1210,6 +1214,23 @@
     "accountDetailsTitle": "Address Details",
     "@accountDetailsTitle": {
       "description": "App bar title on account details screen"
+    },
+
+    "innerHashTitle": "Inner Hash",
+    "@innerHashTitle": {
+      "description": "App bar title on the encrypted account inner hash screen"
+    },
+    "innerHashLabel": "INNER HASH",
+    "@innerHashLabel": {
+      "description": "Card label above the inner hash value"
+    },
+    "innerHashCopied": "Inner hash copied",
+    "@innerHashCopied": {
+      "description": "Toaster shown after copying the inner hash"
+    },
+    "innerHashLoadError": "Couldn't load inner hash",
+    "@innerHashLoadError": {
+      "description": "Toaster shown when deriving the inner hash fails"
     },
 
     "addKeystoneAppBarTitle": "Add Keystone Wallet",

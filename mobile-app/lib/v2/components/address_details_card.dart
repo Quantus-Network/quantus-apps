@@ -1,146 +1,32 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:resonance_network_wallet/l10n/app_localizations.dart';
-import 'package:resonance_network_wallet/providers/l10n_provider.dart';
-import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
-import 'package:resonance_network_wallet/v2/components/split_card.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/providers/l10n_provider.dart';
+import 'package:resonance_network_wallet/v2/components/copyable_data_item.dart';
+import 'package:resonance_network_wallet/v2/components/split_card.dart';
 
-class AddressDetailsCard extends ConsumerStatefulWidget {
+class AddressDetailsCard extends ConsumerWidget {
   final String accountId;
   final String? checksum;
 
   const AddressDetailsCard({super.key, required this.accountId, this.checksum});
 
   @override
-  ConsumerState<AddressDetailsCard> createState() => _AddressDetailsCardState();
-}
-
-class _AddressDetailsCardState extends ConsumerState<AddressDetailsCard> {
-  bool _addressCopied = false;
-  bool _checksumCopied = false;
-  Timer? _resetTimer;
-
-  void _copyAddress(BuildContext context) {
-    context.copyTextWithToaster(widget.accountId);
-    _triggerCopied(isAddress: true);
-  }
-
-  void _copyChecksum(BuildContext context, AppLocalizations l10n) {
-    if (widget.checksum == null) return;
-
-    context.copyTextWithToaster(widget.checksum!, message: l10n.componentCheckphraseCopied);
-    _triggerCopied(isAddress: false);
-  }
-
-  void _triggerCopied({required bool isAddress}) {
-    _resetTimer?.cancel();
-
-    setState(() {
-      if (isAddress) {
-        _addressCopied = true;
-        _checksumCopied = false;
-      } else {
-        _checksumCopied = true;
-        _addressCopied = false;
-      }
-    });
-
-    _resetTimer = Timer(const Duration(seconds: 2), () {
-      if (mounted) {
-        setState(() {
-          if (isAddress) {
-            _addressCopied = false;
-          } else {
-            _checksumCopied = false;
-          }
-        });
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    _resetTimer?.cancel();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = ref.watch(l10nProvider);
 
     return SplitCard(
-      topChild: InkWell(
-        onTap: () => _copyAddress(context),
-        child: _buildItem(context, l10n.componentAddressLabel, widget.accountId, isCopied: _addressCopied),
+      topChild: CopyableDataItem(
+        label: l10n.componentAddressLabel,
+        value: accountId,
+        copiedMessage: l10n.receiveCopiedMessage,
       ),
-      bottomChild: InkWell(
-        onTap: () => _copyChecksum(context, l10n),
-        child: _buildItem(
-          context,
-          l10n.componentCheckphraseLabel,
-          widget.checksum ?? l10n.commonLoading,
-          isCheckphrase: true,
-          isCopied: _checksumCopied,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildItem(
-    BuildContext context,
-    String label,
-    String value, {
-    bool isCheckphrase = false,
-    required bool isCopied,
-  }) {
-    final colors = context.colorsV3;
-    final text = context.themeTextV3;
-    final valueTextStyle = isCheckphrase
-        ? text.dataAddressLarge.copyWith(color: colors.semanticLilac)
-        : text.dataAddressLarge.copyWith(color: colors.textContent);
-
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(label, style: text.labelData.copyWith(color: colors.textMuted)),
-              const SizedBox(height: 16),
-              Text(value, style: valueTextStyle),
-            ],
-          ),
-        ),
-        const SizedBox(width: 32),
-        _copyButton(isCopied: isCopied),
-      ],
-    );
-  }
-
-  Widget _copyButton({required bool isCopied}) {
-    const containerSize = 40.0;
-    const iconSize = 16.0;
-    final colors = context.colorsV3;
-
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
-      width: containerSize,
-      height: containerSize,
-      decoration: BoxDecoration(
-        color: isCopied ? colors.semanticSage.useOpacity(0.08) : Colors.transparent,
-        shape: BoxShape.circle,
-        border: Border.all(color: isCopied ? colors.semanticSage.useOpacity(0.15) : colors.borderHairline, width: 1),
-      ),
-      child: Center(
-        child: Icon(
-          isCopied ? Icons.check : Icons.copy,
-          size: iconSize,
-          color: isCopied ? colors.semanticSage : colors.textContent,
-        ),
+      bottomChild: CopyableDataItem(
+        label: l10n.componentCheckphraseLabel,
+        value: checksum ?? l10n.commonLoading,
+        copiedMessage: l10n.componentCheckphraseCopied,
+        valueColor: context.colorsV3.semanticLilac,
+        enabled: checksum != null,
       ),
     );
   }

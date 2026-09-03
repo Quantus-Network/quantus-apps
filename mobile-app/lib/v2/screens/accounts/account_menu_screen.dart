@@ -12,7 +12,9 @@ import 'package:resonance_network_wallet/v2/components/account_badge.dart';
 import 'package:resonance_network_wallet/v2/components/menu_row.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/account_details_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/accounts_navigation.dart';
+import 'package:resonance_network_wallet/v2/components/private_activity_notice.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/edit_account_screen.dart';
+import 'package:resonance_network_wallet/v2/screens/accounts/inner_hash_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/recovery_phrase_confirmation_screen.dart';
 
 class AccountMenuScreen extends ConsumerWidget {
@@ -30,6 +32,7 @@ class AccountMenuScreen extends ConsumerWidget {
 
     final accounts = ref.watch(accountsProvider);
     final account = accounts.value?.firstWhereOrNull((a) => a.accountId == initialAccount.accountId) ?? initialAccount;
+    final isEncrypted = account.accountType == AccountType.encrypted;
     final canShowRecoveryPhrase = account.accountType == AccountType.local;
 
     return ScaffoldBase(
@@ -43,12 +46,15 @@ class AccountMenuScreen extends ConsumerWidget {
           MenuRow(
             label: l10n.accountMenuAccountName,
             value: account.name,
-            onTap: () => _openNameEditor(context, ref, account),
+            onTap: isEncrypted ? null : () => _openNameEditor(context, ref, account),
           ),
           const SizedBox(height: 4),
           const MenuDivider(),
           const SizedBox(height: 12),
-          MenuRow(label: l10n.accountMenuAddressDetails, onTap: () => _openAddressDetails(context, account)),
+          if (isEncrypted)
+            MenuRow(label: l10n.accountMenuInnerHash, onTap: () => _openInnerHash(context, account))
+          else
+            MenuRow(label: l10n.accountMenuAddressDetails, onTap: () => _openAddressDetails(context, account)),
           if (canShowRecoveryPhrase) ...[
             const SizedBox(height: 4),
             const MenuDivider(),
@@ -205,6 +211,12 @@ class AccountMenuScreen extends ConsumerWidget {
       context,
     ).push<void>(MaterialPageRoute(builder: (_) => AccountDetailsScreen(accountId: account.accountId)));
   }
+
+  void _openInnerHash(BuildContext context, Account account) {
+    Navigator.of(
+      context,
+    ).push<void>(MaterialPageRoute(builder: (_) => InnerHashScreen(walletIndex: account.walletIndex)));
+  }
 }
 
 class _ProfileHeader extends StatelessWidget {
@@ -219,7 +231,10 @@ class _ProfileHeader extends StatelessWidget {
 
     return Column(
       children: [
-        AccountBadge.account(account: account, isActive: true, size: 96, textStyle: text.titleHero),
+        if (account.accountType == AccountType.encrypted)
+          const EncryptedLockBadge(size: 96)
+        else
+          AccountBadge.account(account: account, isActive: true, size: 96, textStyle: text.titleHero),
         const SizedBox(height: 12),
         Text(
           account.name,
