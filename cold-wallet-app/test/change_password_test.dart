@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/test/test_flutter_secure_storage_platform.dart';
 import 'package:flutter_secure_storage_platform_interface/flutter_secure_storage_platform_interface.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:quantus_cold_wallet/providers/wallet_providers.dart';
 import 'package:quantus_cold_wallet/models/cold_account.dart';
 import 'package:quantus_cold_wallet/services/vault_service.dart';
@@ -23,7 +24,7 @@ class _FaultInjectingStorage extends TestFlutterSecureStoragePlatform {
   }
 }
 
-final _accounts = [ColdAccount(label: 'Account 1', index: 0)];
+final _accounts = [ColdAccount(label: 'Account 1', index: 0, scheme: DilithiumSchemeExtension.legacy)];
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -100,7 +101,7 @@ void main() {
     await vault.createVault(
       mnemonic: _mnemonic,
       password: 'beta',
-      accounts: [ColdAccount(label: 'Account 1', index: 0)],
+      accounts: [ColdAccount(label: 'Account 1', index: 0, scheme: DilithiumSchemeExtension.legacy)],
     );
 
     final fresh = ProviderContainer();
@@ -127,7 +128,7 @@ void main() {
     await vault.createVault(
       mnemonic: _mnemonic,
       password: 'beta',
-      accounts: [ColdAccount(label: 'Account 1', index: 0)],
+      accounts: [ColdAccount(label: 'Account 1', index: 0, scheme: DilithiumSchemeExtension.legacy)],
     );
     expect(await vault.isBiometricEnabled(), isTrue, reason: 'a bare key carries no pairing to check at startup');
     await expectLater(vault.unlockWithBiometricKey(), throwsA(isA<SecretBoxAuthenticationError>()));

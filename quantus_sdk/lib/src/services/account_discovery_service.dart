@@ -15,22 +15,43 @@ class AccountDiscoveryService {
     }
   ''';
 
-  /// Discovers on-chain HD accounts using the BIP-44 gap-limit algorithm:
-  /// scan HD indices in batches and keep going as long as accounts exist,
-  /// stopping once [gapLimit] consecutive indices have no on-chain account.
+  /// Discovers on-chain HD accounts of every signature scheme using the BIP-44
+  /// gap-limit algorithm per scheme: scan HD indices in batches and keep going
+  /// as long as accounts exist, stopping once [gapLimit] consecutive indices
+  /// have no on-chain account. Current-scheme accounts come first, by index.
   Future<List<Account>> discoverAccounts({
     required String mnemonic,
     required int walletIndex,
     int gapLimit = 20,
   }) async {
+    final perScheme = await Future.wait([
+      for (final scheme in [DilithiumSchemeExtension.current, DilithiumSchemeExtension.legacy])
+        _discoverScheme(mnemonic: mnemonic, walletIndex: walletIndex, scheme: scheme, gapLimit: gapLimit),
+    ]);
+    return perScheme.expand((accounts) => accounts).toList();
+  }
+
+  Future<List<Account>> _discoverScheme({
+    required String mnemonic,
+    required int walletIndex,
+    required DilithiumScheme scheme,
+    required int gapLimit,
+  }) async {
     final addressByIndex = <int, String>{};
     final used = await discoverUsedIndices(
-      addressAt: (i) => addressByIndex[i] ??= _hdWalletService.keyPairAtIndex(mnemonic, i).ss58Address,
+      addressAt: (i) => addressByIndex[i] ??= _hdWalletService.keyPairAtIndex(mnemonic, i, scheme).ss58Address,
       gapLimit: gapLimit,
     );
     return [
       for (final i in used.toList()..sort())
-        Account(walletIndex: walletIndex, index: i, name: 'Account ${i + 1}', accountId: addressByIndex[i]!),
+        Account(
+          walletIndex: walletIndex,
+          index: i,
+          name: 'Account ${i + 1}',
+          accountId: addressByIndex[i]!,
+          scheme: scheme,
+          derivationPath: HdWalletService.pathForIndex(i, scheme),
+        ),
     ];
   }
 

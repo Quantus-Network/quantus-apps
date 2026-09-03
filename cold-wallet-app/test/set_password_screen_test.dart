@@ -21,7 +21,7 @@ void main() {
             theme: AppTheme.darkTheme(context),
             home: SetPasswordScreen(
               mnemonic: 'test mnemonic',
-              accounts: [ColdAccount(label: 'Account 1', index: 0)],
+              accounts: [ColdAccount(label: 'Account 1', index: 0, scheme: DilithiumSchemeExtension.legacy)],
             ),
           ),
         ),

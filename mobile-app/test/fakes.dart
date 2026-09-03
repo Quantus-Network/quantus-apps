@@ -80,7 +80,8 @@ class FakeBalancesService extends Fake implements BalancesService {
   }
 
   @override
-  BigInt transferFee(BigInt amount, {required BigInt dispatchWeight}) => amount + dispatchWeight;
+  BigInt transferFee(BigInt amount, {required BigInt dispatchWeight, required DilithiumScheme scheme}) =>
+      amount + dispatchWeight;
 }
 
 Account makeAccount(int index, {AccountType accountType = AccountType.local}) => Account(
@@ -89,6 +90,10 @@ Account makeAccount(int index, {AccountType accountType = AccountType.local}) =>
   name: 'Account $index',
   accountId: 'qzaccount$index${'x' * 40}',
   accountType: accountType,
+  scheme: accountType == AccountType.local ? DilithiumSchemeExtension.current : null,
+  derivationPath: accountType == AccountType.local
+      ? HdWalletService.pathForIndex(index, DilithiumSchemeExtension.current)
+      : null,
 );
 
 MultisigAccount makeMultisigAccount() => MultisigAccount(

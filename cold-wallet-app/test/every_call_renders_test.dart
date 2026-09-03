@@ -32,7 +32,9 @@ Future<void> pumpAt(WidgetTester tester, Uint8List payload, Size size, double sc
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
-        addressesProvider.overrideWith((ref) => {signerAddress: ColdAccount(label: 'Account 1', index: 0)}),
+        addressesProvider.overrideWith(
+          (ref) => {signerAddress: ColdAccount(label: 'Account 1', index: 0, scheme: DilithiumSchemeExtension.legacy)},
+        ),
         checksumNameProvider.overrideWith((ref, address) async => 'check phrase'),
       ],
       child: MediaQuery(

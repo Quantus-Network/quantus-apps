@@ -20,6 +20,8 @@ class WalletCreationService {
     required String mnemonic,
     required int walletIndex,
     required String accountId,
+    required DilithiumScheme scheme,
+    required String derivationPath,
     required List<Account> existingAccounts,
   }) async {
     await _settings.setMnemonic(mnemonic, walletIndex);
@@ -27,7 +29,14 @@ class WalletCreationService {
     final hasRoot = existingAccounts.any((a) => a.walletIndex == walletIndex && a.index == 0);
     if (!hasRoot) {
       _settings.setWalletOrigin(walletIndex, WalletOrigin.created);
-      final account = Account(walletIndex: walletIndex, index: 0, name: name, accountId: accountId);
+      final account = Account(
+        walletIndex: walletIndex,
+        index: 0,
+        name: name,
+        accountId: accountId,
+        scheme: scheme,
+        derivationPath: derivationPath,
+      );
       await _accounts.addAccount(account);
       return account;
     }

@@ -45,19 +45,15 @@ class _KeystoneSignatureScanScreenState extends ConsumerState<KeystoneSignatureS
 
   Future<void> _submit(List<String> parts) async {
     final bytes = decodeUr(urParts: parts);
-    final signatureSize = signatureBytes().toInt();
-    final expectedSize = signatureSize + publicKeyBytes().toInt();
-    if (bytes.length != expectedSize) {
-      throw Exception('Invalid signature length: expected $expectedSize bytes, got ${bytes.length}');
-    }
+    // Validates the length and identifies the signature scheme; the SDK reads it back off the blob.
+    DilithiumSchemeExtension.forSignatureWithPublicKeyLength(bytes.length);
 
     await _ensureEraNotExpired();
 
     final hash = await widget.session.submitSigned(
       ref,
       unsignedData: widget.unsignedData,
-      signature: bytes.sublist(0, signatureSize),
-      publicKey: bytes.sublist(signatureSize),
+      signatureWithPublicKey: bytes,
     );
 
     ref.read(keystoneSignCacheProvider.notifier).reset();
@@ -76,7 +72,9 @@ class _KeystoneSignatureScanScreenState extends ConsumerState<KeystoneSignatureS
   }
 
   Future<List<String>> _simulateSignature() async {
-    final keypair = await widget.session.account.getKeypair();
+    final account = widget.session.account;
+    final mnemonic = (await account.getMnemonic())!;
+    final keypair = HdWalletService().keyPairAtIndex(mnemonic, account.index, DilithiumScheme.mlDsa87);
     final signed = signMessageWithPubkey(
       keypair: keypair,
       message: widget.unsignedData.encodedPayloadToSign,

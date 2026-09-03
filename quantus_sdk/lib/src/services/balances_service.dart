@@ -30,8 +30,8 @@ class BalancesService {
   /// Fee of a transfer of [amount], computed locally: base and length fee from
   /// the shipped metadata, [dispatchWeight] from [transferDispatchWeight].
   /// Only the compact-encoded amount varies the length.
-  BigInt transferFee(BigInt amount, {required BigInt dispatchWeight}) => inclusionFee(
-    length: _substrateService.signedExtrinsicLength(_transferCall(_anyDest, amount)),
+  BigInt transferFee(BigInt amount, {required BigInt dispatchWeight, required DilithiumScheme scheme}) => inclusionFee(
+    length: _substrateService.signedExtrinsicLength(_transferCall(_anyDest, amount), scheme),
     dispatchWeight: dispatchWeight,
   );
 

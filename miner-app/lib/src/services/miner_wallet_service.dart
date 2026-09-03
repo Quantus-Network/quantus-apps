@@ -115,7 +115,7 @@ class MinerWalletService {
   Future<String?> getDefaultAccountAddress() async {
     final mnemonic = await getMnemonic();
     if (mnemonic == null || mnemonic.isEmpty) return null;
-    return _hdWallet.keyPairAtIndex(mnemonic, _minerWalletIndex).ss58Address;
+    return _hdWallet.keyPairAtIndex(mnemonic, _minerWalletIndex, DilithiumScheme.mlDsa87).ss58Address;
   }
 
   Future<bool> hasRewardsPreimageFile() async {

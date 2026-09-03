@@ -62,10 +62,18 @@ class _AddAccountScreenState extends ConsumerState<AddAccountScreen> {
     super.dispose();
   }
 
-  /// The lowest index this wallet does not already hold, so the field opens on
-  /// an account that can actually be added.
+  /// Scheme new accounts of this wallet use, so an added account matches the
+  /// ones already there.
+  DilithiumScheme get _scheme => ColdAccount.walletScheme(ref.read(accountsProvider));
+
+  /// The lowest index this wallet does not already hold at [_scheme], so the
+  /// field opens on an account that can actually be added.
   int _firstFreeIndex() {
-    final taken = {for (final account in ref.read(accountsProvider)) account.index};
+    final scheme = _scheme;
+    final taken = {
+      for (final account in ref.read(accountsProvider))
+        if (account.scheme == scheme) account.templateIndex,
+    };
     for (var index = 0; ; index++) {
       if (!taken.contains(index)) return index;
     }
@@ -81,17 +89,17 @@ class _AddAccountScreenState extends ConsumerState<AddAccountScreen> {
   }
 
   ColdAccount? get _account => switch (_mode) {
-    _Derivation.accountIndex => ColdAccount.atIndexText(_index.text),
-    _Derivation.fullPath => ColdAccount.atPath(_path.text, label: _nextFreeLabel()),
+    _Derivation.accountIndex => ColdAccount.atIndexText(_index.text, scheme: _scheme),
+    _Derivation.fullPath => ColdAccount.atPath(_path.text, label: _nextFreeLabel(), defaultScheme: _scheme),
   };
 
   /// The account already holding this derivation, if any. Adding it twice would
   /// put two rows with one address in the list.
   ColdAccount? get _duplicate {
-    final path = _account?.derivationPath;
-    if (path == null) return null;
+    final target = _account;
+    if (target == null) return null;
     for (final account in ref.read(accountsProvider)) {
-      if (account.derivationPath == path) return account;
+      if (account.derivationPath == target.derivationPath && account.scheme == target.scheme) return account;
     }
     return null;
   }
@@ -111,7 +119,7 @@ class _AddAccountScreenState extends ConsumerState<AddAccountScreen> {
     // disagree about which account is being added. A path typed by hand follows
     // no template and is left alone.
     if (mode == _Derivation.fullPath && !_userChangedPath) {
-      _path.text = ColdAccount.atIndexText(_index.text)?.derivationPath ?? '';
+      _path.text = ColdAccount.atIndexText(_index.text, scheme: _scheme)?.derivationPath ?? '';
     }
     setState(() {
       _mode = mode;
@@ -275,7 +283,7 @@ class _AddAccountScreenState extends ConsumerState<AddAccountScreen> {
             decoration: InputDecoration(
               border: InputBorder.none,
               isCollapsed: true,
-              hintText: HdWalletService.pathForIndex(0),
+              hintText: HdWalletService.pathForIndex(0, DilithiumSchemeExtension.current),
               hintStyle: text.dataAddressLarge.copyWith(
                 color: colors.textMuted,
                 fontFamily: AppTextThemeV3.fontFamilySecondary,
@@ -306,7 +314,9 @@ class _AddAccountScreenState extends ConsumerState<AddAccountScreen> {
     }
 
     final path = account.derivationPath;
-    final address = _previewPath == path ? ref.watch(derivedAddressProvider(path)) : const AsyncValue<String>.loading();
+    final address = _previewPath == path
+        ? ref.watch(derivedAddressProvider((path: path, scheme: account.scheme)))
+        : const AsyncValue<String>.loading();
 
     return Container(
       padding: const EdgeInsets.all(14),

@@ -16,7 +16,7 @@ class DerivationField extends StatefulWidget {
 
 class _DerivationFieldState extends State<DerivationField> {
   final _index = TextEditingController(text: '0');
-  final _path = TextEditingController(text: HdWalletService.pathForIndex(0));
+  final _path = TextEditingController(text: HdWalletService.pathForIndex(0, DilithiumSchemeExtension.current));
   bool _expanded = false;
   bool _useFullPath = false;
 
@@ -34,8 +34,9 @@ class _DerivationFieldState extends State<DerivationField> {
     super.dispose();
   }
 
-  ColdAccount? get _account =>
-      _useFullPath ? ColdAccount.atPath(_path.text, label: 'Account 1') : ColdAccount.atIndexText(_index.text);
+  ColdAccount? get _account => _useFullPath
+      ? ColdAccount.atPath(_path.text, label: 'Account 1', defaultScheme: DilithiumSchemeExtension.current)
+      : ColdAccount.atIndexText(_index.text, scheme: DilithiumSchemeExtension.current);
 
   void _emit() => widget.onChanged(_account);
 

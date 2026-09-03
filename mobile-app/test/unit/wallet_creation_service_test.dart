@@ -24,6 +24,8 @@ void main() {
         mnemonic: mnemonic,
         walletIndex: 0,
         accountId: accountId,
+        scheme: DilithiumSchemeExtension.current,
+        derivationPath: HdWalletService.pathForIndex(0, DilithiumSchemeExtension.current),
         existingAccounts: const [],
       );
 
@@ -47,6 +49,8 @@ void main() {
         mnemonic: 'word ' * 12,
         walletIndex: 0,
         accountId: 'new_derived_addr',
+        scheme: DilithiumSchemeExtension.current,
+        derivationPath: HdWalletService.pathForIndex(0, DilithiumSchemeExtension.current),
         existingAccounts: const [existing],
       );
 

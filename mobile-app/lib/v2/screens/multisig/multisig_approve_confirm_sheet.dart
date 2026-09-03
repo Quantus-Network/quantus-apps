@@ -50,17 +50,15 @@ void showMultisigApproveConfirmSheet(
       submit: (ref, resolvedSigner, fee, callBytes) => ref
           .read(transactionSubmissionServiceProvider)
           .approveProposal(msig: msig, signer: resolvedSigner, proposal: proposal, callBytes: callBytes),
-      submitExternal: (ref, {required signer, required unsignedData, required signature, required publicKey, fee}) =>
-          ref
-              .read(transactionSubmissionServiceProvider)
-              .approveProposalWithExternalSignature(
-                msig: msig,
-                signer: signer,
-                proposal: proposal,
-                unsignedData: unsignedData,
-                signature: signature,
-                publicKey: publicKey,
-              ),
+      submitExternal: (ref, {required signer, required unsignedData, required signatureWithPublicKey, fee}) => ref
+          .read(transactionSubmissionServiceProvider)
+          .approveProposalWithExternalSignature(
+            msig: msig,
+            signer: signer,
+            proposal: proposal,
+            unsignedData: unsignedData,
+            signatureWithPublicKey: signatureWithPublicKey,
+          ),
     ),
   );
 }

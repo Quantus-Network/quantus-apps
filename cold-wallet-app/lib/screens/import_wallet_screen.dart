@@ -34,7 +34,7 @@ class _ImportWalletScreenState extends State<ImportWalletScreen> {
   final _buttonKey = GlobalKey();
   bool _isLoading = false;
   String? _error;
-  ColdAccount? _account = ColdAccount(label: 'Account 1', index: 0);
+  ColdAccount? _account = ColdAccount(label: 'Account 1', index: 0, scheme: DilithiumSchemeExtension.current);
 
   @override
   void initState() {
@@ -79,14 +79,25 @@ class _ImportWalletScreenState extends State<ImportWalletScreen> {
     });
 
     try {
+      // An index (the default) could be either scheme, and this air-gapped
+      // wallet cannot check the chain, so hold both. A path names one scheme.
+      final accounts = account.index != null
+          ? [
+              ColdAccount(label: 'Account 1', index: account.index, scheme: DilithiumSchemeExtension.current),
+              ColdAccount(label: 'Account 2', index: account.index, scheme: DilithiumSchemeExtension.legacy),
+            ]
+          : [account];
+
       // Throws on an invalid phrase.
-      HdWalletService().keyPairAtPath(mnemonic, account.derivationPath);
+      for (final a in accounts) {
+        HdWalletService().keyPairAtPath(mnemonic, a.derivationPath, a.scheme);
+      }
 
       if (!mounted) return;
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) => SetPasswordScreen(mnemonic: mnemonic, accounts: [account]),
+          builder: (_) => SetPasswordScreen(mnemonic: mnemonic, accounts: accounts),
         ),
       );
     } catch (e) {

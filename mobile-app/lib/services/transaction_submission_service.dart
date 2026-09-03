@@ -51,7 +51,7 @@ class TransactionSubmissionService {
 
   /// Broadcasts a transfer whose signature was produced off-device (e.g. by a
   /// Keystone hardware wallet). The [unsignedData] is rebuilt into an extrinsic
-  /// using the externally provided [signature] and [publicKey].
+  /// using the externally provided [signatureWithPublicKey] (`signature ++ publicKey`).
   Future<String> submitExternallySignedTransfer({
     required Account account,
     required String targetAddress,
@@ -59,8 +59,7 @@ class TransactionSubmissionService {
     required BigInt fee,
     required int blockHeight,
     required UnsignedTransactionData unsignedData,
-    required Uint8List signature,
-    required Uint8List publicKey,
+    required Uint8List signatureWithPublicKey,
   }) async {
     final pendingTx = createPendingTransaction(
       from: account.accountId,
@@ -75,7 +74,7 @@ class TransactionSubmissionService {
     TelemetryService().sendEvent('send_transfer_hardware');
 
     return submitAndTrackTransaction(
-      () => SubstrateService().submitExtrinsicWithExternalSignature(unsignedData, signature, publicKey),
+      () => SubstrateService().submitExtrinsicWithExternalSignature(unsignedData, signatureWithPublicKey),
       pendingTx,
     );
   }
@@ -227,15 +226,14 @@ class TransactionSubmissionService {
     required Account signer,
     required MultisigProposal proposal,
     required UnsignedTransactionData unsignedData,
-    required Uint8List signature,
-    required Uint8List publicKey,
+    required Uint8List signatureWithPublicKey,
   }) async {
     return _submitAndTrackApproval(
       msig: msig,
       proposal: proposal,
       approverId: signer.accountId,
       telemetryEvent: 'multisig_approve_hardware',
-      submit: () => SubstrateService().submitExtrinsicWithExternalSignature(unsignedData, signature, publicKey),
+      submit: () => SubstrateService().submitExtrinsicWithExternalSignature(unsignedData, signatureWithPublicKey),
     );
   }
 
@@ -331,8 +329,7 @@ class TransactionSubmissionService {
     required Account signer,
     required MultisigProposal proposal,
     required UnsignedTransactionData unsignedData,
-    required Uint8List signature,
-    required Uint8List publicKey,
+    required Uint8List signatureWithPublicKey,
     BigInt? fee,
   }) async {
     final pending = PendingMultisigExecutionEvent.fromProposal(
@@ -348,8 +345,7 @@ class TransactionSubmissionService {
     try {
       final hashBytes = await SubstrateService().submitExtrinsicWithExternalSignature(
         unsignedData,
-        signature,
-        publicKey,
+        signatureWithPublicKey,
       );
       final extrinsicHash = '0x${hex.encode(hashBytes)}';
       quantusPrint('[Execute] hardware submitted: $extrinsicHash');
@@ -419,8 +415,7 @@ class TransactionSubmissionService {
     required Account proposer,
     required MultisigProposal proposal,
     required UnsignedTransactionData unsignedData,
-    required Uint8List signature,
-    required Uint8List publicKey,
+    required Uint8List signatureWithPublicKey,
     BigInt? fee,
   }) async {
     final pending = PendingMultisigCancellationEvent.fromProposal(
@@ -436,8 +431,7 @@ class TransactionSubmissionService {
     try {
       final hashBytes = await SubstrateService().submitExtrinsicWithExternalSignature(
         unsignedData,
-        signature,
-        publicKey,
+        signatureWithPublicKey,
       );
       final extrinsicHash = '0x${hex.encode(hashBytes)}';
       quantusPrint('[Cancel] hardware submitted: $extrinsicHash');

@@ -29,12 +29,17 @@ final transferDispatchWeightProvider = FutureProvider.autoDispose<BigInt>((ref) 
 
 /// Transfer fee for an amount: base and length fee from the shipped metadata,
 /// dispatch weight from [transferDispatchWeightProvider]. Address-independent.
-final regularSendFeeProvider = Provider.autoDispose.family<AsyncValue<SendFee>, BigInt>((ref, amount) {
-  final balances = ref.watch(balancesServiceProvider);
-  return ref
-      .watch(transferDispatchWeightProvider)
-      .whenData<SendFee>((weight) => RegularFee(networkFee: balances.transferFee(amount, dispatchWeight: weight)));
-});
+final regularSendFeeProvider = Provider.autoDispose
+    .family<AsyncValue<SendFee>, ({BigInt amount, DilithiumScheme scheme})>((ref, key) {
+      final balances = ref.watch(balancesServiceProvider);
+      return ref
+          .watch(transferDispatchWeightProvider)
+          .whenData<SendFee>(
+            (weight) => RegularFee(
+              networkFee: balances.transferFee(key.amount, dispatchWeight: weight, scheme: key.scheme),
+            ),
+          );
+    });
 
 /// Standard single-signer transfer from the active account. Signs locally, or
 /// hands off to the Keystone QR flow for hardware accounts.
@@ -74,7 +79,7 @@ class RegularSendStrategy extends SendStrategy {
 
   @override
   ProviderListenable<AsyncValue<SendFee>> feeProvider({required String recipient, required BigInt amount}) =>
-      regularSendFeeProvider(amount);
+      regularSendFeeProvider((amount: amount, scheme: account.feeSizingScheme));
 
   @override
   void retryFee(WidgetRef ref, {required String recipient, required BigInt amount}) =>
@@ -172,7 +177,7 @@ class RegularSendStrategy extends SendStrategy {
           tertiaryDetail: recipientChecksum,
           cacheKey: _hardwareCacheKey(recipient, amount),
           telemetryPrefix: 'send_transfer_hardware',
-          submitSigned: (ref, {required unsignedData, required signature, required publicKey}) async {
+          submitSigned: (ref, {required unsignedData, required signatureWithPublicKey}) async {
             final hash = await ref
                 .read(transactionSubmissionServiceProvider)
                 .submitExternallySignedTransfer(
@@ -182,8 +187,7 @@ class RegularSendStrategy extends SendStrategy {
                   fee: regularFee.networkFee,
                   blockHeight: unsignedData.payloadToSign.blockNumber,
                   unsignedData: unsignedData,
-                  signature: signature,
-                  publicKey: publicKey,
+                  signatureWithPublicKey: signatureWithPublicKey,
                 );
             unawaited(
               RecentAddressesService()

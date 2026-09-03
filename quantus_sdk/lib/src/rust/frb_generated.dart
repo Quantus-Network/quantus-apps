@@ -112,7 +112,11 @@ abstract class RustLibApi extends BaseApi {
 
   String crateApiCryptoFirstHashToAddress({required String firstHashHex});
 
-  Keypair crateApiCryptoGenerateDerivedKeypair({required String mnemonicStr, required String path});
+  Keypair crateApiCryptoGenerateDerivedKeypair({
+    required String mnemonicStr,
+    required String path,
+    required DilithiumScheme scheme,
+  });
 
   Keypair crateApiCryptoGenerateKeypair({required String mnemonicStr});
 
@@ -138,9 +142,9 @@ abstract class RustLibApi extends BaseApi {
     required BigInt nonce,
   });
 
-  BigInt crateApiCryptoPublicKeyBytes();
+  int crateApiCryptoPublicKeyBytes({required DilithiumScheme scheme});
 
-  BigInt crateApiCryptoSecretKeyBytes();
+  int crateApiCryptoSecretKeyBytes({required DilithiumScheme scheme});
 
   void crateApiCryptoSetDefaultSs58Prefix({required int prefix});
 
@@ -158,7 +162,7 @@ abstract class RustLibApi extends BaseApi {
     required int specVersion,
   });
 
-  BigInt crateApiCryptoSignatureBytes();
+  int crateApiCryptoSignatureBytes({required DilithiumScheme scheme});
 
   Uint8List crateApiCryptoSs58ToAccountId({required String s});
 
@@ -525,13 +529,18 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       const TaskConstMeta(debugName: 'first_hash_to_address', argNames: ['firstHashHex']);
 
   @override
-  Keypair crateApiCryptoGenerateDerivedKeypair({required String mnemonicStr, required String path}) {
+  Keypair crateApiCryptoGenerateDerivedKeypair({
+    required String mnemonicStr,
+    required String path,
+    required DilithiumScheme scheme,
+  }) {
     return handler.executeSync(
       SyncTask(
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
           sse_encode_String(mnemonicStr, serializer);
           sse_encode_String(path, serializer);
+          sse_encode_dilithium_scheme(scheme, serializer);
           return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 17)!;
         },
         codec: SseCodec(
@@ -540,14 +549,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
               sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerHDLatticeError,
         ),
         constMeta: kCrateApiCryptoGenerateDerivedKeypairConstMeta,
-        argValues: [mnemonicStr, path],
+        argValues: [mnemonicStr, path, scheme],
         apiImpl: this,
       ),
     );
   }
 
   TaskConstMeta get kCrateApiCryptoGenerateDerivedKeypairConstMeta =>
-      const TaskConstMeta(debugName: 'generate_derived_keypair', argNames: ['mnemonicStr', 'path']);
+      const TaskConstMeta(debugName: 'generate_derived_keypair', argNames: ['mnemonicStr', 'path', 'scheme']);
 
   @override
   Keypair crateApiCryptoGenerateKeypair({required String mnemonicStr}) {
@@ -721,42 +730,44 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       const TaskConstMeta(debugName: 'predict_multisig_address', argNames: ['signers', 'threshold', 'nonce']);
 
   @override
-  BigInt crateApiCryptoPublicKeyBytes() {
+  int crateApiCryptoPublicKeyBytes({required DilithiumScheme scheme}) {
     return handler.executeSync(
       SyncTask(
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_dilithium_scheme(scheme, serializer);
           return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 26)!;
         },
-        codec: SseCodec(decodeSuccessData: sse_decode_usize, decodeErrorData: null),
+        codec: SseCodec(decodeSuccessData: sse_decode_u_32, decodeErrorData: null),
         constMeta: kCrateApiCryptoPublicKeyBytesConstMeta,
-        argValues: [],
+        argValues: [scheme],
         apiImpl: this,
       ),
     );
   }
 
   TaskConstMeta get kCrateApiCryptoPublicKeyBytesConstMeta =>
-      const TaskConstMeta(debugName: 'public_key_bytes', argNames: []);
+      const TaskConstMeta(debugName: 'public_key_bytes', argNames: ['scheme']);
 
   @override
-  BigInt crateApiCryptoSecretKeyBytes() {
+  int crateApiCryptoSecretKeyBytes({required DilithiumScheme scheme}) {
     return handler.executeSync(
       SyncTask(
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_dilithium_scheme(scheme, serializer);
           return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 27)!;
         },
-        codec: SseCodec(decodeSuccessData: sse_decode_usize, decodeErrorData: null),
+        codec: SseCodec(decodeSuccessData: sse_decode_u_32, decodeErrorData: null),
         constMeta: kCrateApiCryptoSecretKeyBytesConstMeta,
-        argValues: [],
+        argValues: [scheme],
         apiImpl: this,
       ),
     );
   }
 
   TaskConstMeta get kCrateApiCryptoSecretKeyBytesConstMeta =>
-      const TaskConstMeta(debugName: 'secret_key_bytes', argNames: []);
+      const TaskConstMeta(debugName: 'secret_key_bytes', argNames: ['scheme']);
 
   @override
   void crateApiCryptoSetDefaultSs58Prefix({required int prefix}) {
@@ -837,23 +848,24 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   );
 
   @override
-  BigInt crateApiCryptoSignatureBytes() {
+  int crateApiCryptoSignatureBytes({required DilithiumScheme scheme}) {
     return handler.executeSync(
       SyncTask(
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_dilithium_scheme(scheme, serializer);
           return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 31)!;
         },
-        codec: SseCodec(decodeSuccessData: sse_decode_usize, decodeErrorData: null),
+        codec: SseCodec(decodeSuccessData: sse_decode_u_32, decodeErrorData: null),
         constMeta: kCrateApiCryptoSignatureBytesConstMeta,
-        argValues: [],
+        argValues: [scheme],
         apiImpl: this,
       ),
     );
   }
 
   TaskConstMeta get kCrateApiCryptoSignatureBytesConstMeta =>
-      const TaskConstMeta(debugName: 'signature_bytes', argNames: []);
+      const TaskConstMeta(debugName: 'signature_bytes', argNames: ['scheme']);
 
   @override
   Uint8List crateApiCryptoSs58ToAccountId({required String s}) {
@@ -1014,13 +1026,26 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  DilithiumScheme dco_decode_dilithium_scheme(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return DilithiumScheme.values[raw as int];
+  }
+
+  @protected
+  int dco_decode_i_32(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw as int;
+  }
+
+  @protected
   Keypair dco_decode_keypair(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
-    if (arr.length != 2) throw Exception('unexpected arr length: expect 2 but see ${arr.length}');
+    if (arr.length != 3) throw Exception('unexpected arr length: expect 3 but see ${arr.length}');
     return Keypair(
       publicKey: dco_decode_list_prim_u_8_strict(arr[0]),
       secretKey: dco_decode_list_prim_u_8_strict(arr[1]),
+      scheme: dco_decode_dilithium_scheme(arr[2]),
     );
   }
 
@@ -1212,11 +1237,25 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  DilithiumScheme sse_decode_dilithium_scheme(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var inner = sse_decode_i_32(deserializer);
+    return DilithiumScheme.values[inner];
+  }
+
+  @protected
+  int sse_decode_i_32(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return deserializer.buffer.getInt32();
+  }
+
+  @protected
   Keypair sse_decode_keypair(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     var var_publicKey = sse_decode_list_prim_u_8_strict(deserializer);
     var var_secretKey = sse_decode_list_prim_u_8_strict(deserializer);
-    return Keypair(publicKey: var_publicKey, secretKey: var_secretKey);
+    var var_scheme = sse_decode_dilithium_scheme(deserializer);
+    return Keypair(publicKey: var_publicKey, secretKey: var_secretKey, scheme: var_scheme);
   }
 
   @protected
@@ -1392,12 +1431,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  int sse_decode_i_32(SseDeserializer deserializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    return deserializer.buffer.getInt32();
-  }
-
-  @protected
   void sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerHDLatticeError(
     HdLatticeError self,
     SseSerializer serializer,
@@ -1446,10 +1479,23 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void sse_encode_dilithium_scheme(DilithiumScheme self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.index, serializer);
+  }
+
+  @protected
+  void sse_encode_i_32(int self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    serializer.buffer.putInt32(self);
+  }
+
+  @protected
   void sse_encode_keypair(Keypair self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_list_prim_u_8_strict(self.publicKey, serializer);
     sse_encode_list_prim_u_8_strict(self.secretKey, serializer);
+    sse_encode_dilithium_scheme(self.scheme, serializer);
   }
 
   @protected
@@ -1589,12 +1635,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     sse_encode_String(self.address, serializer);
     sse_encode_list_prim_u_8_strict(self.firstHash, serializer);
     sse_encode_list_prim_u_8_strict(self.secret, serializer);
-  }
-
-  @protected
-  void sse_encode_i_32(int self, SseSerializer serializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    serializer.buffer.putInt32(self);
   }
 }
 

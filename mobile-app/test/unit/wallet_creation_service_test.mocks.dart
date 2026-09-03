@@ -3,13 +3,15 @@
 // Do not manually edit this file.
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'dart:async' as _i5;
+import 'dart:async' as _i4;
 
 import 'package:mockito/mockito.dart' as _i1;
-import 'package:mockito/src/dummies.dart' as _i7;
-import 'package:quantus_sdk/quantus_sdk.dart' as _i4;
+import 'package:mockito/src/dummies.dart' as _i8;
+import 'package:quantus_sdk/quantus_sdk.dart' as _i3;
 import 'package:quantus_sdk/src/models/account.dart' as _i2;
-import 'package:quantus_sdk/src/models/display_account.dart' as _i6;
+import 'package:quantus_sdk/src/models/display_account.dart' as _i5;
+import 'package:quantus_sdk/src/models/multisig_account.dart' as _i7;
+import 'package:quantus_sdk/src/rust/api/crypto.dart' as _i6;
 
 // ignore_for_file: type=lint
 // ignore_for_file: avoid_redundant_argument_values
@@ -24,6 +26,7 @@ import 'package:quantus_sdk/src/models/display_account.dart' as _i6;
 // ignore_for_file: unnecessary_parenthesis
 // ignore_for_file: camel_case_types
 // ignore_for_file: subtype_of_sealed_class
+// ignore_for_file: invalid_use_of_internal_member
 
 class _FakeAccount_0 extends _i1.SmartFake implements _i2.Account {
   _FakeAccount_0(Object parent, Invocation parentInvocation) : super(parent, parentInvocation);
@@ -32,204 +35,258 @@ class _FakeAccount_0 extends _i1.SmartFake implements _i2.Account {
 /// A class which mocks [SettingsService].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockSettingsService extends _i1.Mock implements _i4.SettingsService {
+class MockSettingsService extends _i1.Mock implements _i3.SettingsService {
   @override
-  _i5.Future<void> initialize() =>
+  _i4.Future<void> initialize() =>
       (super.noSuchMethod(
             Invocation.method(#initialize, []),
-            returnValue: _i5.Future<void>.value(),
-            returnValueForMissingStub: _i5.Future<void>.value(),
+            returnValue: _i4.Future<void>.value(),
+            returnValueForMissingStub: _i4.Future<void>.value(),
           )
-          as _i5.Future<void>);
+          as _i4.Future<void>);
 
   @override
-  _i5.Future<List<_i2.Account>> getAccounts() =>
+  _i4.Future<List<_i2.Account>> getAccounts() =>
       (super.noSuchMethod(
             Invocation.method(#getAccounts, []),
-            returnValue: _i5.Future<List<_i2.Account>>.value(<_i2.Account>[]),
-            returnValueForMissingStub: _i5.Future<List<_i2.Account>>.value(<_i2.Account>[]),
+            returnValue: _i4.Future<List<_i2.Account>>.value(<_i2.Account>[]),
+            returnValueForMissingStub: _i4.Future<List<_i2.Account>>.value(<_i2.Account>[]),
           )
-          as _i5.Future<List<_i2.Account>>);
+          as _i4.Future<List<_i2.Account>>);
 
   @override
-  _i5.Future<void> saveAccounts(List<_i2.Account>? accounts) =>
+  _i4.Future<void> saveAccounts(List<_i2.Account>? accounts) =>
       (super.noSuchMethod(
             Invocation.method(#saveAccounts, [accounts]),
-            returnValue: _i5.Future<void>.value(),
-            returnValueForMissingStub: _i5.Future<void>.value(),
+            returnValue: _i4.Future<void>.value(),
+            returnValueForMissingStub: _i4.Future<void>.value(),
           )
-          as _i5.Future<void>);
+          as _i4.Future<void>);
 
   @override
-  _i5.Future<void> addAccount(_i2.Account? account) =>
+  _i4.Future<void> addAccount(_i2.Account? account) =>
       (super.noSuchMethod(
             Invocation.method(#addAccount, [account]),
-            returnValue: _i5.Future<void>.value(),
-            returnValueForMissingStub: _i5.Future<void>.value(),
+            returnValue: _i4.Future<void>.value(),
+            returnValueForMissingStub: _i4.Future<void>.value(),
           )
-          as _i5.Future<void>);
+          as _i4.Future<void>);
 
   @override
-  _i5.Future<void> updateAccount(_i2.Account? account) =>
+  _i4.Future<void> updateAccount(_i2.Account? account) =>
       (super.noSuchMethod(
             Invocation.method(#updateAccount, [account]),
-            returnValue: _i5.Future<void>.value(),
-            returnValueForMissingStub: _i5.Future<void>.value(),
+            returnValue: _i4.Future<void>.value(),
+            returnValueForMissingStub: _i4.Future<void>.value(),
           )
-          as _i5.Future<void>);
+          as _i4.Future<void>);
 
   @override
-  _i5.Future<void> removeAccount(_i2.Account? account) =>
+  _i4.Future<void> removeAccount(_i2.Account? account) =>
       (super.noSuchMethod(
             Invocation.method(#removeAccount, [account]),
-            returnValue: _i5.Future<void>.value(),
-            returnValueForMissingStub: _i5.Future<void>.value(),
+            returnValue: _i4.Future<void>.value(),
+            returnValueForMissingStub: _i4.Future<void>.value(),
           )
-          as _i5.Future<void>);
+          as _i4.Future<void>);
 
   @override
-  _i5.Future<void> setActiveAccount(_i6.DisplayAccount? account) =>
+  _i4.Future<void> removeWallet(int? walletIndex) =>
+      (super.noSuchMethod(
+            Invocation.method(#removeWallet, [walletIndex]),
+            returnValue: _i4.Future<void>.value(),
+            returnValueForMissingStub: _i4.Future<void>.value(),
+          )
+          as _i4.Future<void>);
+
+  @override
+  _i4.Future<void> setActiveAccount(_i5.DisplayAccount? account) =>
       (super.noSuchMethod(
             Invocation.method(#setActiveAccount, [account]),
-            returnValue: _i5.Future<void>.value(),
-            returnValueForMissingStub: _i5.Future<void>.value(),
+            returnValue: _i4.Future<void>.value(),
+            returnValueForMissingStub: _i4.Future<void>.value(),
           )
-          as _i5.Future<void>);
+          as _i4.Future<void>);
 
   @override
-  _i5.Future<_i6.DisplayAccount?> getActiveAccount() =>
+  _i4.Future<_i5.DisplayAccount?> getActiveAccount() =>
       (super.noSuchMethod(
             Invocation.method(#getActiveAccount, []),
-            returnValue: _i5.Future<_i6.DisplayAccount?>.value(),
-            returnValueForMissingStub: _i5.Future<_i6.DisplayAccount?>.value(),
+            returnValue: _i4.Future<_i5.DisplayAccount?>.value(),
+            returnValueForMissingStub: _i4.Future<_i5.DisplayAccount?>.value(),
           )
-          as _i5.Future<_i6.DisplayAccount?>);
+          as _i4.Future<_i5.DisplayAccount?>);
 
   @override
-  _i5.Future<_i2.Account?> getActiveRegularAccount() =>
+  _i4.Future<_i2.Account?> getActiveRegularAccount() =>
       (super.noSuchMethod(
             Invocation.method(#getActiveRegularAccount, []),
-            returnValue: _i5.Future<_i2.Account?>.value(),
-            returnValueForMissingStub: _i5.Future<_i2.Account?>.value(),
+            returnValue: _i4.Future<_i2.Account?>.value(),
+            returnValueForMissingStub: _i4.Future<_i2.Account?>.value(),
           )
-          as _i5.Future<_i2.Account?>);
+          as _i4.Future<_i2.Account?>);
 
   @override
-  _i5.Future<_i2.Account?> getAccount({required int? walletIndex, required int? index}) =>
+  _i4.Future<_i2.Account?> getPrimaryAccount() =>
       (super.noSuchMethod(
-            Invocation.method(#getAccount, [], {#walletIndex: walletIndex, #index: index}),
-            returnValue: _i5.Future<_i2.Account?>.value(),
-            returnValueForMissingStub: _i5.Future<_i2.Account?>.value(),
+            Invocation.method(#getPrimaryAccount, []),
+            returnValue: _i4.Future<_i2.Account?>.value(),
+            returnValueForMissingStub: _i4.Future<_i2.Account?>.value(),
           )
-          as _i5.Future<_i2.Account?>);
+          as _i4.Future<_i2.Account?>);
 
   @override
-  _i5.Future<int> getNextFreeAccountIndex(int? walletIndex) =>
+  _i4.Future<int> getNextFreeAccountIndex(int? walletIndex, {_i6.DilithiumScheme? scheme}) =>
       (super.noSuchMethod(
-            Invocation.method(#getNextFreeAccountIndex, [walletIndex]),
-            returnValue: _i5.Future<int>.value(0),
-            returnValueForMissingStub: _i5.Future<int>.value(0),
+            Invocation.method(#getNextFreeAccountIndex, [walletIndex], {#scheme: scheme}),
+            returnValue: _i4.Future<int>.value(0),
+            returnValueForMissingStub: _i4.Future<int>.value(0),
           )
-          as _i5.Future<int>);
+          as _i4.Future<int>);
 
   @override
-  _i5.Future<Map<String, String>> getAddressBook() =>
+  _i4.Future<List<_i7.MultisigAccount>> getMultisigAccounts() =>
+      (super.noSuchMethod(
+            Invocation.method(#getMultisigAccounts, []),
+            returnValue: _i4.Future<List<_i7.MultisigAccount>>.value(<_i7.MultisigAccount>[]),
+            returnValueForMissingStub: _i4.Future<List<_i7.MultisigAccount>>.value(<_i7.MultisigAccount>[]),
+          )
+          as _i4.Future<List<_i7.MultisigAccount>>);
+
+  @override
+  _i4.Future<void> addMultisigAccount(_i7.MultisigAccount? account) =>
+      (super.noSuchMethod(
+            Invocation.method(#addMultisigAccount, [account]),
+            returnValue: _i4.Future<void>.value(),
+            returnValueForMissingStub: _i4.Future<void>.value(),
+          )
+          as _i4.Future<void>);
+
+  @override
+  _i4.Future<void> updateMultisigAccount(_i7.MultisigAccount? account) =>
+      (super.noSuchMethod(
+            Invocation.method(#updateMultisigAccount, [account]),
+            returnValue: _i4.Future<void>.value(),
+            returnValueForMissingStub: _i4.Future<void>.value(),
+          )
+          as _i4.Future<void>);
+
+  @override
+  _i4.Future<void> removeMultisigAccount(String? accountId) =>
+      (super.noSuchMethod(
+            Invocation.method(#removeMultisigAccount, [accountId]),
+            returnValue: _i4.Future<void>.value(),
+            returnValueForMissingStub: _i4.Future<void>.value(),
+          )
+          as _i4.Future<void>);
+
+  @override
+  _i4.Future<Map<String, String>> getAddressBook() =>
       (super.noSuchMethod(
             Invocation.method(#getAddressBook, []),
-            returnValue: _i5.Future<Map<String, String>>.value(<String, String>{}),
-            returnValueForMissingStub: _i5.Future<Map<String, String>>.value(<String, String>{}),
+            returnValue: _i4.Future<Map<String, String>>.value(<String, String>{}),
+            returnValueForMissingStub: _i4.Future<Map<String, String>>.value(<String, String>{}),
           )
-          as _i5.Future<Map<String, String>>);
+          as _i4.Future<Map<String, String>>);
 
   @override
-  _i5.Future<void> saveAddressBook(Map<String, String>? addressBook) =>
+  _i4.Future<void> saveAddressBook(Map<String, String>? addressBook) =>
       (super.noSuchMethod(
             Invocation.method(#saveAddressBook, [addressBook]),
-            returnValue: _i5.Future<void>.value(),
-            returnValueForMissingStub: _i5.Future<void>.value(),
+            returnValue: _i4.Future<void>.value(),
+            returnValueForMissingStub: _i4.Future<void>.value(),
           )
-          as _i5.Future<void>);
+          as _i4.Future<void>);
 
   @override
-  _i5.Future<void> setAddressName(String? address, String? name) =>
+  _i4.Future<void> setAddressName(String? address, String? name) =>
       (super.noSuchMethod(
             Invocation.method(#setAddressName, [address, name]),
-            returnValue: _i5.Future<void>.value(),
-            returnValueForMissingStub: _i5.Future<void>.value(),
+            returnValue: _i4.Future<void>.value(),
+            returnValueForMissingStub: _i4.Future<void>.value(),
           )
-          as _i5.Future<void>);
+          as _i4.Future<void>);
 
   @override
-  _i5.Future<String?> getAddressName(String? address) =>
+  _i4.Future<String?> getAddressName(String? address) =>
       (super.noSuchMethod(
             Invocation.method(#getAddressName, [address]),
-            returnValue: _i5.Future<String?>.value(),
-            returnValueForMissingStub: _i5.Future<String?>.value(),
+            returnValue: _i4.Future<String?>.value(),
+            returnValueForMissingStub: _i4.Future<String?>.value(),
           )
-          as _i5.Future<String?>);
+          as _i4.Future<String?>);
 
   @override
-  _i5.Future<void> removeAddressName(String? address) =>
+  _i4.Future<void> removeAddressName(String? address) =>
       (super.noSuchMethod(
             Invocation.method(#removeAddressName, [address]),
-            returnValue: _i5.Future<void>.value(),
-            returnValueForMissingStub: _i5.Future<void>.value(),
+            returnValue: _i4.Future<void>.value(),
+            returnValueForMissingStub: _i4.Future<void>.value(),
           )
-          as _i5.Future<void>);
+          as _i4.Future<void>);
 
   @override
-  _i5.Future<bool> getHasWallet() =>
+  _i4.Future<bool> getHasWallet() =>
       (super.noSuchMethod(
             Invocation.method(#getHasWallet, []),
-            returnValue: _i5.Future<bool>.value(false),
-            returnValueForMissingStub: _i5.Future<bool>.value(false),
+            returnValue: _i4.Future<bool>.value(false),
+            returnValueForMissingStub: _i4.Future<bool>.value(false),
           )
-          as _i5.Future<bool>);
+          as _i4.Future<bool>);
 
   @override
-  _i5.Future<bool> isWalletLoggedOut() =>
+  _i4.Future<bool> isWalletLoggedOut() =>
       (super.noSuchMethod(
             Invocation.method(#isWalletLoggedOut, []),
-            returnValue: _i5.Future<bool>.value(false),
-            returnValueForMissingStub: _i5.Future<bool>.value(false),
+            returnValue: _i4.Future<bool>.value(false),
+            returnValueForMissingStub: _i4.Future<bool>.value(false),
           )
-          as _i5.Future<bool>);
+          as _i4.Future<bool>);
 
   @override
   String getMnemonicKey(int? walletIndex) =>
       (super.noSuchMethod(
             Invocation.method(#getMnemonicKey, [walletIndex]),
-            returnValue: _i7.dummyValue<String>(this, Invocation.method(#getMnemonicKey, [walletIndex])),
-            returnValueForMissingStub: _i7.dummyValue<String>(this, Invocation.method(#getMnemonicKey, [walletIndex])),
+            returnValue: _i8.dummyValue<String>(this, Invocation.method(#getMnemonicKey, [walletIndex])),
+            returnValueForMissingStub: _i8.dummyValue<String>(this, Invocation.method(#getMnemonicKey, [walletIndex])),
           )
           as String);
 
   @override
-  _i5.Future<void> setMnemonic(String? mnemonic, int? walletIndex) =>
+  _i4.Future<void> setMnemonic(String? mnemonic, int? walletIndex) =>
       (super.noSuchMethod(
             Invocation.method(#setMnemonic, [mnemonic, walletIndex]),
-            returnValue: _i5.Future<void>.value(),
-            returnValueForMissingStub: _i5.Future<void>.value(),
+            returnValue: _i4.Future<void>.value(),
+            returnValueForMissingStub: _i4.Future<void>.value(),
           )
-          as _i5.Future<void>);
+          as _i4.Future<void>);
 
   @override
-  _i5.Future<String?> getMnemonic(int? walletIndex) =>
+  _i4.Future<String?> getMnemonic(int? walletIndex) =>
       (super.noSuchMethod(
             Invocation.method(#getMnemonic, [walletIndex]),
-            returnValue: _i5.Future<String?>.value(),
-            returnValueForMissingStub: _i5.Future<String?>.value(),
+            returnValue: _i4.Future<String?>.value(),
+            returnValueForMissingStub: _i4.Future<String?>.value(),
           )
-          as _i5.Future<String?>);
+          as _i4.Future<String?>);
 
   @override
-  _i5.Future<void> setReversibleEnabled(bool? enabled) =>
+  _i4.Future<void> deleteMnemonic(int? walletIndex) =>
+      (super.noSuchMethod(
+            Invocation.method(#deleteMnemonic, [walletIndex]),
+            returnValue: _i4.Future<void>.value(),
+            returnValueForMissingStub: _i4.Future<void>.value(),
+          )
+          as _i4.Future<void>);
+
+  @override
+  _i4.Future<void> setReversibleEnabled(bool? enabled) =>
       (super.noSuchMethod(
             Invocation.method(#setReversibleEnabled, [enabled]),
-            returnValue: _i5.Future<void>.value(),
-            returnValueForMissingStub: _i5.Future<void>.value(),
+            returnValue: _i4.Future<void>.value(),
+            returnValueForMissingStub: _i4.Future<void>.value(),
           )
-          as _i5.Future<void>);
+          as _i4.Future<void>);
 
   @override
   bool isReversibleEnabled() =>
@@ -241,31 +298,31 @@ class MockSettingsService extends _i1.Mock implements _i4.SettingsService {
           as bool);
 
   @override
-  _i5.Future<void> setReversibleTimeSeconds(int? seconds) =>
+  _i4.Future<void> setReversibleTimeSeconds(int? seconds) =>
       (super.noSuchMethod(
             Invocation.method(#setReversibleTimeSeconds, [seconds]),
-            returnValue: _i5.Future<void>.value(),
-            returnValueForMissingStub: _i5.Future<void>.value(),
+            returnValue: _i4.Future<void>.value(),
+            returnValueForMissingStub: _i4.Future<void>.value(),
           )
-          as _i5.Future<void>);
+          as _i4.Future<void>);
 
   @override
-  _i5.Future<int?> getReversibleTimeSeconds() =>
+  _i4.Future<int?> getReversibleTimeSeconds() =>
       (super.noSuchMethod(
             Invocation.method(#getReversibleTimeSeconds, []),
-            returnValue: _i5.Future<int?>.value(),
-            returnValueForMissingStub: _i5.Future<int?>.value(),
+            returnValue: _i4.Future<int?>.value(),
+            returnValueForMissingStub: _i4.Future<int?>.value(),
           )
-          as _i5.Future<int?>);
+          as _i4.Future<int?>);
 
   @override
-  _i5.Future<void> setBalanceHidden(bool? hidden) =>
+  _i4.Future<void> setBalanceHidden(bool? hidden) =>
       (super.noSuchMethod(
             Invocation.method(#setBalanceHidden, [hidden]),
-            returnValue: _i5.Future<void>.value(),
-            returnValueForMissingStub: _i5.Future<void>.value(),
+            returnValue: _i4.Future<void>.value(),
+            returnValueForMissingStub: _i4.Future<void>.value(),
           )
-          as _i5.Future<void>);
+          as _i4.Future<void>);
 
   @override
   bool isBalanceHidden() =>
@@ -273,13 +330,13 @@ class MockSettingsService extends _i1.Mock implements _i4.SettingsService {
           as bool);
 
   @override
-  _i5.Future<void> setCurrencyFlipped(bool? flipped) =>
+  _i4.Future<void> setCurrencyFlipped(bool? flipped) =>
       (super.noSuchMethod(
             Invocation.method(#setCurrencyFlipped, [flipped]),
-            returnValue: _i5.Future<void>.value(),
-            returnValueForMissingStub: _i5.Future<void>.value(),
+            returnValue: _i4.Future<void>.value(),
+            returnValueForMissingStub: _i4.Future<void>.value(),
           )
-          as _i5.Future<void>);
+          as _i4.Future<void>);
 
   @override
   bool isCurrencyFlipped() =>
@@ -291,51 +348,78 @@ class MockSettingsService extends _i1.Mock implements _i4.SettingsService {
           as bool);
 
   @override
-  _i5.Future<void> setSelectedFiatCurrency(String? currencyCode) =>
+  _i4.Future<void> setSelectedFiatCurrency(String? currencyCode) =>
       (super.noSuchMethod(
             Invocation.method(#setSelectedFiatCurrency, [currencyCode]),
-            returnValue: _i5.Future<void>.value(),
-            returnValueForMissingStub: _i5.Future<void>.value(),
+            returnValue: _i4.Future<void>.value(),
+            returnValueForMissingStub: _i4.Future<void>.value(),
           )
-          as _i5.Future<void>);
+          as _i4.Future<void>);
+
+  @override
+  _i4.Future<void> clearSelectedFiatCurrency() =>
+      (super.noSuchMethod(
+            Invocation.method(#clearSelectedFiatCurrency, []),
+            returnValue: _i4.Future<void>.value(),
+            returnValueForMissingStub: _i4.Future<void>.value(),
+          )
+          as _i4.Future<void>);
+
+  @override
+  _i4.Future<void> setSelectedAppLocale(String? languageCode) =>
+      (super.noSuchMethod(
+            Invocation.method(#setSelectedAppLocale, [languageCode]),
+            returnValue: _i4.Future<void>.value(),
+            returnValueForMissingStub: _i4.Future<void>.value(),
+          )
+          as _i4.Future<void>);
+
+  @override
+  _i4.Future<void> clearSelectedAppLocale() =>
+      (super.noSuchMethod(
+            Invocation.method(#clearSelectedAppLocale, []),
+            returnValue: _i4.Future<void>.value(),
+            returnValueForMissingStub: _i4.Future<void>.value(),
+          )
+          as _i4.Future<void>);
 
   @override
   bool? getBool(String? key) =>
       (super.noSuchMethod(Invocation.method(#getBool, [key]), returnValueForMissingStub: null) as bool?);
 
   @override
-  _i5.Future<void> setBool(String? key, bool? value) =>
+  _i4.Future<void> setBool(String? key, bool? value) =>
       (super.noSuchMethod(
             Invocation.method(#setBool, [key, value]),
-            returnValue: _i5.Future<void>.value(),
-            returnValueForMissingStub: _i5.Future<void>.value(),
+            returnValue: _i4.Future<void>.value(),
+            returnValueForMissingStub: _i4.Future<void>.value(),
           )
-          as _i5.Future<void>);
+          as _i4.Future<void>);
 
   @override
   String? getString(String? key) =>
       (super.noSuchMethod(Invocation.method(#getString, [key]), returnValueForMissingStub: null) as String?);
 
   @override
-  _i5.Future<void> setString(String? key, String? value) =>
+  _i4.Future<void> setString(String? key, String? value) =>
       (super.noSuchMethod(
             Invocation.method(#setString, [key, value]),
-            returnValue: _i5.Future<void>.value(),
-            returnValueForMissingStub: _i5.Future<void>.value(),
+            returnValue: _i4.Future<void>.value(),
+            returnValueForMissingStub: _i4.Future<void>.value(),
           )
-          as _i5.Future<void>);
+          as _i4.Future<void>);
 
   @override
   void resetForTest() => super.noSuchMethod(Invocation.method(#resetForTest, []), returnValueForMissingStub: null);
 
   @override
-  _i5.Future<void> clearAll() =>
+  _i4.Future<void> clearAll() =>
       (super.noSuchMethod(
             Invocation.method(#clearAll, []),
-            returnValue: _i5.Future<void>.value(),
-            returnValueForMissingStub: _i5.Future<void>.value(),
+            returnValue: _i4.Future<void>.value(),
+            returnValueForMissingStub: _i4.Future<void>.value(),
           )
-          as _i5.Future<void>);
+          as _i4.Future<void>);
 
   @override
   bool referralCheckCompleted() =>
@@ -376,6 +460,42 @@ class MockSettingsService extends _i1.Mock implements _i4.SettingsService {
       super.noSuchMethod(Invocation.method(#clearQuestsPromoWatchedFlag, []), returnValueForMissingStub: null);
 
   @override
+  bool recoveryPhraseViewed(int? walletIndex) =>
+      (super.noSuchMethod(
+            Invocation.method(#recoveryPhraseViewed, [walletIndex]),
+            returnValue: false,
+            returnValueForMissingStub: false,
+          )
+          as bool);
+
+  @override
+  void setRecoveryPhraseViewed(int? walletIndex) =>
+      super.noSuchMethod(Invocation.method(#setRecoveryPhraseViewed, [walletIndex]), returnValueForMissingStub: null);
+
+  @override
+  _i2.WalletOrigin? getWalletOrigin(int? walletIndex) =>
+      (super.noSuchMethod(Invocation.method(#getWalletOrigin, [walletIndex]), returnValueForMissingStub: null)
+          as _i2.WalletOrigin?);
+
+  @override
+  void setWalletOrigin(int? walletIndex, _i2.WalletOrigin? origin) =>
+      super.noSuchMethod(Invocation.method(#setWalletOrigin, [walletIndex, origin]), returnValueForMissingStub: null);
+
+  @override
+  String? getWalletName(int? walletIndex) =>
+      (super.noSuchMethod(Invocation.method(#getWalletName, [walletIndex]), returnValueForMissingStub: null)
+          as String?);
+
+  @override
+  _i4.Future<void> setWalletName(int? walletIndex, String? name) =>
+      (super.noSuchMethod(
+            Invocation.method(#setWalletName, [walletIndex, name]),
+            returnValue: _i4.Future<void>.value(),
+            returnValueForMissingStub: _i4.Future<void>.value(),
+          )
+          as _i4.Future<void>);
+
+  @override
   bool existingUserSeenPromoVideo() =>
       (super.noSuchMethod(
             Invocation.method(#existingUserSeenPromoVideo, []),
@@ -396,57 +516,94 @@ class MockSettingsService extends _i1.Mock implements _i4.SettingsService {
 /// A class which mocks [AccountsService].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockAccountsService extends _i1.Mock implements _i4.AccountsService {
+class MockAccountsService extends _i1.Mock implements _i3.AccountsService {
   @override
-  set onAccountsChanged(void Function()? _onAccountsChanged) =>
-      super.noSuchMethod(Invocation.setter(#onAccountsChanged, _onAccountsChanged), returnValueForMissingStub: null);
+  set onAccountsChanged(void Function()? value) =>
+      super.noSuchMethod(Invocation.setter(#onAccountsChanged, value), returnValueForMissingStub: null);
 
   @override
-  _i5.Future<_i2.Account> createNewAccount({required int? walletIndex}) =>
+  _i4.Future<_i2.Account> createNewAccount({required int? walletIndex}) =>
       (super.noSuchMethod(
             Invocation.method(#createNewAccount, [], {#walletIndex: walletIndex}),
-            returnValue: _i5.Future<_i2.Account>.value(
+            returnValue: _i4.Future<_i2.Account>.value(
               _FakeAccount_0(this, Invocation.method(#createNewAccount, [], {#walletIndex: walletIndex})),
             ),
-            returnValueForMissingStub: _i5.Future<_i2.Account>.value(
+            returnValueForMissingStub: _i4.Future<_i2.Account>.value(
               _FakeAccount_0(this, Invocation.method(#createNewAccount, [], {#walletIndex: walletIndex})),
             ),
           )
-          as _i5.Future<_i2.Account>);
+          as _i4.Future<_i2.Account>);
 
   @override
-  _i5.Future<void> updateAccountName(_i2.Account? account, String? name) =>
+  _i4.Future<_i2.Account> createEncryptedAccount({required int? walletIndex, required String? name}) =>
+      (super.noSuchMethod(
+            Invocation.method(#createEncryptedAccount, [], {#walletIndex: walletIndex, #name: name}),
+            returnValue: _i4.Future<_i2.Account>.value(
+              _FakeAccount_0(
+                this,
+                Invocation.method(#createEncryptedAccount, [], {#walletIndex: walletIndex, #name: name}),
+              ),
+            ),
+            returnValueForMissingStub: _i4.Future<_i2.Account>.value(
+              _FakeAccount_0(
+                this,
+                Invocation.method(#createEncryptedAccount, [], {#walletIndex: walletIndex, #name: name}),
+              ),
+            ),
+          )
+          as _i4.Future<_i2.Account>);
+
+  @override
+  _i4.Future<bool> ensureEncryptedAccountsForSoftwareWallets({required String? name}) =>
+      (super.noSuchMethod(
+            Invocation.method(#ensureEncryptedAccountsForSoftwareWallets, [], {#name: name}),
+            returnValue: _i4.Future<bool>.value(false),
+            returnValueForMissingStub: _i4.Future<bool>.value(false),
+          )
+          as _i4.Future<bool>);
+
+  @override
+  _i4.Future<void> updateAccountName(_i2.Account? account, String? name) =>
       (super.noSuchMethod(
             Invocation.method(#updateAccountName, [account, name]),
-            returnValue: _i5.Future<void>.value(),
-            returnValueForMissingStub: _i5.Future<void>.value(),
+            returnValue: _i4.Future<void>.value(),
+            returnValueForMissingStub: _i4.Future<void>.value(),
           )
-          as _i5.Future<void>);
+          as _i4.Future<void>);
 
   @override
-  _i5.Future<void> addAccount(_i2.Account? newAccount) =>
+  _i4.Future<void> addAccount(_i2.Account? newAccount) =>
       (super.noSuchMethod(
             Invocation.method(#addAccount, [newAccount]),
-            returnValue: _i5.Future<void>.value(),
-            returnValueForMissingStub: _i5.Future<void>.value(),
+            returnValue: _i4.Future<void>.value(),
+            returnValueForMissingStub: _i4.Future<void>.value(),
           )
-          as _i5.Future<void>);
+          as _i4.Future<void>);
 
   @override
-  _i5.Future<List<_i2.Account>> getAccounts() =>
+  _i4.Future<List<_i2.Account>> getAccounts() =>
       (super.noSuchMethod(
             Invocation.method(#getAccounts, []),
-            returnValue: _i5.Future<List<_i2.Account>>.value(<_i2.Account>[]),
-            returnValueForMissingStub: _i5.Future<List<_i2.Account>>.value(<_i2.Account>[]),
+            returnValue: _i4.Future<List<_i2.Account>>.value(<_i2.Account>[]),
+            returnValueForMissingStub: _i4.Future<List<_i2.Account>>.value(<_i2.Account>[]),
           )
-          as _i5.Future<List<_i2.Account>>);
+          as _i4.Future<List<_i2.Account>>);
 
   @override
-  _i5.Future<void> removeAccount(_i2.Account? account) =>
+  _i4.Future<void> removeAccount(_i2.Account? account) =>
       (super.noSuchMethod(
             Invocation.method(#removeAccount, [account]),
-            returnValue: _i5.Future<void>.value(),
-            returnValueForMissingStub: _i5.Future<void>.value(),
+            returnValue: _i4.Future<void>.value(),
+            returnValueForMissingStub: _i4.Future<void>.value(),
           )
-          as _i5.Future<void>);
+          as _i4.Future<void>);
+
+  @override
+  _i4.Future<void> removeWallet(int? walletIndex) =>
+      (super.noSuchMethod(
+            Invocation.method(#removeWallet, [walletIndex]),
+            returnValue: _i4.Future<void>.value(),
+            returnValueForMissingStub: _i4.Future<void>.value(),
+          )
+          as _i4.Future<void>);
 }

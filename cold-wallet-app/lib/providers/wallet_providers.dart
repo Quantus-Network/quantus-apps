@@ -215,7 +215,7 @@ final addressesProvider = Provider<Map<String, ColdAccount>>((ref) {
   final service = HdWalletService();
   return {
     for (final account in ref.watch(accountsProvider))
-      service.keyPairAtPath(mnemonic, account.derivationPath).ss58Address: account,
+      service.keyPairAtPath(mnemonic, account.derivationPath, account.scheme).ss58Address: account,
   };
 });
 
@@ -223,7 +223,7 @@ Keypair? keypairFor(WidgetRef ref, String address) {
   final mnemonic = ref.read(walletControllerProvider).mnemonic;
   final account = ref.read(addressesProvider)[address];
   if (mnemonic == null || account == null) return null;
-  return HdWalletService().keyPairAtPath(mnemonic, account.derivationPath);
+  return HdWalletService().keyPairAtPath(mnemonic, account.derivationPath, account.scheme);
 }
 
 /// The first account, which the home screen leads with.
@@ -231,10 +231,13 @@ final addressProvider = Provider<String?>((ref) => ref.watch(addressesProvider).
 
 /// The address a derivation path produces, so an account can be checked before
 /// it is added. Auto-disposed: a path still being typed is not worth keeping.
-final derivedAddressProvider = FutureProvider.autoDispose.family<String, String>((ref, path) async {
+final derivedAddressProvider = FutureProvider.autoDispose.family<String, ({String path, DilithiumScheme scheme})>((
+  ref,
+  key,
+) async {
   final mnemonic = ref.watch(walletControllerProvider).mnemonic;
   if (mnemonic == null) throw StateError('Wallet is locked');
-  return HdWalletService().keyPairAtPath(mnemonic, path).ss58Address;
+  return HdWalletService().keyPairAtPath(mnemonic, key.path, key.scheme).ss58Address;
 });
 
 /// Resolves human checkphrases for every address on screen, not just the

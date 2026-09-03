@@ -24,16 +24,23 @@ void main() {
 
   test('signed extrinsic length sizes the nonce at its 4-byte maximum', () {
     final dest = const multi_address.$MultiAddress().id(List<int>.filled(32, 2));
-    int length(BigInt amount) => SubstrateService().signedExtrinsicLength(
+    int length(BigInt amount, DilithiumScheme scheme) => SubstrateService().signedExtrinsicLength(
       const balances_pallet.Txs().transferAllowDeath(dest: dest, value: amount),
+      scheme,
     );
 
-    expect(length(_tenQuan), 7303 + 3);
-    expect(length(BigInt.from(10).pow(10)), 7303 + 3 - 1);
+    // ML-DSA-87: 7219-byte signature+pubkey. ML-DSA-65: 5261, i.e. 1958 bytes shorter.
+    expect(length(_tenQuan, DilithiumScheme.mlDsa87), 7303 + 3);
+    expect(length(BigInt.from(10).pow(10), DilithiumScheme.mlDsa87), 7303 + 3 - 1);
+    expect(length(_tenQuan, DilithiumScheme.mlDsa65), 7303 + 3 - 1958);
   });
 
   test('transfer fee is the chain fee plus the nonce headroom', () {
-    final fee = BalancesService().transferFee(_tenQuan, dispatchWeight: _liveDispatchWeight);
+    final fee = BalancesService().transferFee(
+      _tenQuan,
+      dispatchWeight: _liveDispatchWeight,
+      scheme: DilithiumScheme.mlDsa87,
+    );
     expect(fee, _expectedPartialFee + lengthFeePerByte * BigInt.from(3));
   });
 }

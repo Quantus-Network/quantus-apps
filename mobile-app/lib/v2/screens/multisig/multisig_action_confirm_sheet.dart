@@ -54,8 +54,7 @@ typedef MultisigConfirmExternalSubmitter =
       WidgetRef ref, {
       required Account signer,
       required UnsignedTransactionData unsignedData,
-      required Uint8List signature,
-      required Uint8List publicKey,
+      required Uint8List signatureWithPublicKey,
       BigInt? fee,
     });
 
@@ -310,13 +309,12 @@ class _MultisigActionConfirmSheetState extends ConsumerState<MultisigActionConfi
       secondaryDetail: headline.secondary,
       cacheKey: KeystoneSignCacheKey.forExtrinsic(accountId: signer.accountId, identity: widget.hardwareCacheIdentity),
       telemetryPrefix: widget.hardwareTelemetryPrefix,
-      submitSigned: (ref, {required unsignedData, required signature, required publicKey}) {
+      submitSigned: (ref, {required unsignedData, required signatureWithPublicKey}) {
         return widget.submitExternal(
           ref,
           signer: signer,
           unsignedData: unsignedData,
-          signature: signature,
-          publicKey: publicKey,
+          signatureWithPublicKey: signatureWithPublicKey,
           fee: _networkFee,
         );
       },

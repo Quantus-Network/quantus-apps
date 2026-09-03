@@ -33,7 +33,7 @@ class _CreateWalletScreenState extends State<CreateWalletScreen> {
       MaterialPageRoute(
         builder: (_) => SetPasswordScreen(
           mnemonic: words.join(' '),
-          accounts: [ColdAccount(label: 'Account 1', index: 0)],
+          accounts: [ColdAccount(label: 'Account 1', index: 0, scheme: DilithiumSchemeExtension.current)],
         ),
       ),
     );

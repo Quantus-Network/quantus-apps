@@ -1,19 +1,46 @@
 use crate::signing_context;
 use qp_poseidon_core::{hash_bytes, hash_to_bytes, serialization::bytes_to_digest};
-use qp_rusty_crystals_dilithium::ml_dsa_87;
 pub use qp_rusty_crystals_hdwallet::HDLatticeError;
 use qp_rusty_crystals_hdwallet::{
-    derive_key_from_mnemonic, derive_wormhole_from_mnemonic, mnemonic_to_seed, SensitiveBytes32,
-    SensitiveBytes64,
+    derive_wormhole_from_mnemonic, mnemonic_to_seed, SensitiveBytes32, SensitiveBytes64,
 };
 use sp_core::crypto::{AccountId32, Ss58Codec};
 use std::convert::AsRef;
 
-type MlDsaKeypair = ml_dsa_87::Keypair;
-
 /// SS58 network prefix of the Quantus chain. Must match the chain runtime
 /// (`Ss58AddressFormat::custom(189)`) and `AppConstants.ss58prefix` in Dart.
 const QUANTUS_SS58_PREFIX: u16 = 189;
+
+/// ML-DSA parameter set of a keypair. Mirrors quantus-cli's `DilithiumScheme`;
+/// accounts stored before this existed are ML-DSA-87.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum DilithiumScheme {
+    MlDsa65,
+    MlDsa87,
+}
+
+/// Runs `$body` with `$dsa` and `$hd` bound to the `ml_dsa_65` or `ml_dsa_87`
+/// modules of the dilithium and hdwallet crates selected by `$scheme`.
+macro_rules! dispatch {
+    ($scheme:expr, $dsa:ident, $hd:ident, $body:block) => {
+        match $scheme {
+            DilithiumScheme::MlDsa65 => {
+                #[allow(unused_imports)]
+                use qp_rusty_crystals_dilithium::ml_dsa_65 as $dsa;
+                #[allow(unused_imports)]
+                use qp_rusty_crystals_hdwallet::ml_dsa_65 as $hd;
+                $body
+            }
+            DilithiumScheme::MlDsa87 => {
+                #[allow(unused_imports)]
+                use qp_rusty_crystals_dilithium::ml_dsa_87 as $dsa;
+                #[allow(unused_imports)]
+                use qp_rusty_crystals_hdwallet::ml_dsa_87 as $hd;
+                $body
+            }
+        }
+    };
+}
 
 #[flutter_rust_bridge::frb(sync)]
 pub fn set_default_ss58_prefix(prefix: u16) {
@@ -24,23 +51,30 @@ pub fn set_default_ss58_prefix(prefix: u16) {
 pub struct Keypair {
     pub public_key: Vec<u8>,
     pub secret_key: Vec<u8>,
+    pub scheme: DilithiumScheme,
 }
 
 impl Keypair {
-    fn from_ml_dsa(ml_dsa_keypair: MlDsaKeypair) -> Self {
+    fn new(
+        scheme: DilithiumScheme,
+        public_key: impl AsRef<[u8]>,
+        secret_key: impl AsRef<[u8]>,
+    ) -> Self {
         Keypair {
-            public_key: ml_dsa_keypair.public().to_bytes().to_vec(),
-            secret_key: ml_dsa_keypair.secret().to_bytes().to_vec(),
+            public_key: public_key.as_ref().to_vec(),
+            secret_key: secret_key.as_ref().to_vec(),
+            scheme,
         }
     }
+}
 
-    fn to_ml_dsa(&self) -> MlDsaKeypair {
-        let secret =
-            ml_dsa_87::SecretKey::from_bytes(&self.secret_key).expect("Failed to parse secret key");
-        let public =
-            ml_dsa_87::PublicKey::from_bytes(&self.public_key).expect("Failed to parse public key");
-        MlDsaKeypair::from_parts(secret, public).expect("Keypair halves do not correspond")
-    }
+fn ml_dsa_87_from_entropy(entropy: &mut SensitiveBytes32) -> Keypair {
+    let keypair = qp_rusty_crystals_dilithium::ml_dsa_87::Keypair::generate(entropy);
+    Keypair::new(
+        DilithiumScheme::MlDsa87,
+        keypair.public().to_bytes(),
+        keypair.secret().to_bytes(),
+    )
 }
 
 /// Convert public key to accountId32 in ss58check format
@@ -67,6 +101,7 @@ pub fn ss58_to_account_id(s: &str) -> Result<Vec<u8>, String> {
     Ok(AsRef::<[u8]>::as_ref(&account).to_vec())
 }
 
+/// Legacy non-HD ML-DSA-87 keypair straight from the mnemonic seed (early CLI and miner accounts).
 #[flutter_rust_bridge::frb(sync)]
 pub fn generate_keypair(mnemonic_str: String) -> Result<Keypair, HDLatticeError> {
     let mut seed64 = SensitiveBytes64::zeroed();
@@ -75,16 +110,23 @@ pub fn generate_keypair(mnemonic_str: String) -> Result<Keypair, HDLatticeError>
     entropy
         .as_mut_bytes()
         .copy_from_slice(&seed64.as_bytes()[..32]);
-    let ml_dsa_keypair = MlDsaKeypair::generate(&mut entropy);
-    Ok(Keypair::from_ml_dsa(ml_dsa_keypair))
+    Ok(ml_dsa_87_from_entropy(&mut entropy))
 }
 
 #[flutter_rust_bridge::frb(sync)]
 pub fn generate_derived_keypair(
     mnemonic_str: String,
     path: &str,
+    scheme: DilithiumScheme,
 ) -> Result<Keypair, HDLatticeError> {
-    derive_key_from_mnemonic(&mnemonic_str, None, path).map(Keypair::from_ml_dsa)
+    dispatch!(scheme, dsa, hd, {
+        let keypair = hd::derive_key_from_mnemonic(&mnemonic_str, None, path)?;
+        Ok(Keypair::new(
+            scheme,
+            keypair.public().to_bytes(),
+            keypair.secret().to_bytes(),
+        ))
+    })
 }
 
 #[flutter_rust_bridge::frb(sync)]
@@ -126,12 +168,12 @@ pub fn first_hash_to_address(first_hash_hex: String) -> Result<String, String> {
     Ok(account.to_ss58check())
 }
 
+/// ML-DSA-87 keypair from a raw 32-byte seed (dev accounts).
 #[flutter_rust_bridge::frb(sync)]
 pub fn generate_keypair_from_seed(seed: Vec<u8>) -> Keypair {
     let mut seed_array: [u8; 32] = seed.try_into().expect("Seed must be 32 bytes");
     let mut entropy = SensitiveBytes32::new(&mut seed_array);
-    let ml_dsa_keypair = MlDsaKeypair::generate(&mut entropy);
-    Keypair::from_ml_dsa(ml_dsa_keypair)
+    ml_dsa_87_from_entropy(&mut entropy)
 }
 
 /// Signs `message`. Spec 148+ uses [`signing_context::EXTRINSIC`]; earlier specs use none.
@@ -142,17 +184,21 @@ pub fn sign_message(
     entropy: Option<[u8; 32]>,
     spec_version: u32,
 ) -> Vec<u8> {
-    let ml_dsa_keypair = keypair.to_ml_dsa();
     let mut entropy = entropy;
     let hedge = entropy.as_mut().map(SensitiveBytes32::new);
-    let signature = ml_dsa_keypair
-        .sign(
-            message,
-            signing_context::context_for_spec(spec_version),
-            hedge.as_ref(),
-        )
-        .expect("Signing failed");
-    signature.to_vec()
+    let context = signing_context::context_for_spec(spec_version);
+    dispatch!(keypair.scheme, dsa, hd, {
+        let secret =
+            dsa::SecretKey::from_bytes(&keypair.secret_key).expect("Failed to parse secret key");
+        let public =
+            dsa::PublicKey::from_bytes(&keypair.public_key).expect("Failed to parse public key");
+        let ml_dsa_keypair =
+            dsa::Keypair::from_parts(secret, public).expect("Keypair halves do not correspond");
+        ml_dsa_keypair
+            .sign(message, context, hedge.as_ref())
+            .expect("Signing failed")
+            .to_vec()
+    })
 }
 
 #[flutter_rust_bridge::frb(sync)]
@@ -177,12 +223,12 @@ pub fn verify_message(
     signature: &[u8],
     spec_version: u32,
 ) -> bool {
-    let ml_dsa_keypair = keypair.to_ml_dsa();
-    ml_dsa_keypair.verify(
-        &message,
-        &signature,
-        signing_context::context_for_spec(spec_version),
-    )
+    let context = signing_context::context_for_spec(spec_version);
+    dispatch!(keypair.scheme, dsa, hd, {
+        let public =
+            dsa::PublicKey::from_bytes(&keypair.public_key).expect("Failed to parse public key");
+        public.verify(message, signature, context)
+    })
 }
 
 #[flutter_rust_bridge::frb(sync)]
@@ -201,18 +247,18 @@ pub fn crystal_charlie() -> Keypair {
 }
 
 #[flutter_rust_bridge::frb(sync)]
-pub fn public_key_bytes() -> usize {
-    ml_dsa_87::PUBLICKEYBYTES
+pub fn public_key_bytes(scheme: DilithiumScheme) -> u32 {
+    dispatch!(scheme, dsa, hd, { dsa::PUBLICKEYBYTES as u32 })
 }
 
 #[flutter_rust_bridge::frb(sync)]
-pub fn secret_key_bytes() -> usize {
-    ml_dsa_87::SECRETKEYBYTES
+pub fn secret_key_bytes(scheme: DilithiumScheme) -> u32 {
+    dispatch!(scheme, dsa, hd, { dsa::SECRETKEYBYTES as u32 })
 }
 
 #[flutter_rust_bridge::frb(sync)]
-pub fn signature_bytes() -> usize {
-    ml_dsa_87::SIGNBYTES
+pub fn signature_bytes(scheme: DilithiumScheme) -> u32 {
+    dispatch!(scheme, dsa, hd, { dsa::SIGNBYTES as u32 })
 }
 
 #[flutter_rust_bridge::frb(init)]
@@ -224,9 +270,26 @@ pub fn init_app() {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use qp_rusty_crystals_dilithium::{ml_dsa_65, ml_dsa_87};
 
     const SPEC_WITH_CONTEXT: u32 = signing_context::EXTRINSIC_MIN_SPEC;
     const SPEC_WITHOUT_CONTEXT: u32 = signing_context::EXTRINSIC_MIN_SPEC - 1;
+
+    /// Shared with quantus-cli `test_known_values` and the Dart `generate_keys_test`.
+    const TEST_MNEMONIC: &str = "orchard answer curve patient visual flower maze noise retreat penalty cage small earth domain scan pitch bottom crunch theme club client swap slice raven";
+    const PATH_87_INDEX_0: &str = "m/44'/189189'/0'/0'/0'";
+    const PATH_65_INDEX_0: &str = "m/44'/189189'/0'/0'/1'";
+    const KNOWN_ADDRESS_87_INDEX_0: &str = "qzm5QCox8Dp5A3oSXZZYHD8YoYgPz7enykZb6RPUropdCyN5h";
+    /// `quantus wallet import --scheme ml-dsa-65` (default path) for the same mnemonic.
+    const KNOWN_ADDRESS_65_INDEX_0: &str = "qzoyC4eRTrexYoutXABVsf61QJZxJim3iWvayRQwEjXWgA4mw";
+
+    fn set_prefix() {
+        set_default_ss58_prefix(QUANTUS_SS58_PREFIX);
+    }
+
+    fn derived(path: &str, scheme: DilithiumScheme) -> Keypair {
+        generate_derived_keypair(TEST_MNEMONIC.to_string(), path, scheme).expect("derive")
+    }
 
     #[test]
     fn test_sign_and_verify() {
@@ -326,5 +389,96 @@ mod tests {
         let signature = sign_message(&keypair, message, None, SPEC_WITH_CONTEXT);
         let is_valid = verify_message(&keypair, message, &signature, SPEC_WITH_CONTEXT);
         assert!(is_valid, "Signature verification failed for long message");
+    }
+
+    #[test]
+    fn test_legacy_constructors_are_ml_dsa_87() {
+        assert_eq!(crystal_alice().scheme, DilithiumScheme::MlDsa87);
+        assert_eq!(
+            generate_keypair(TEST_MNEMONIC.to_string()).unwrap().scheme,
+            DilithiumScheme::MlDsa87
+        );
+    }
+
+    #[test]
+    fn test_sizes_per_scheme() {
+        assert_eq!(public_key_bytes(DilithiumScheme::MlDsa65), 1952);
+        assert_eq!(secret_key_bytes(DilithiumScheme::MlDsa65), 4032);
+        assert_eq!(signature_bytes(DilithiumScheme::MlDsa65), 3309);
+        assert_eq!(public_key_bytes(DilithiumScheme::MlDsa87), 2592);
+        assert_eq!(secret_key_bytes(DilithiumScheme::MlDsa87), 4896);
+        assert_eq!(signature_bytes(DilithiumScheme::MlDsa87), 4627);
+    }
+
+    #[test]
+    fn test_derived_keypair_matches_scheme_sizes() {
+        for scheme in [DilithiumScheme::MlDsa65, DilithiumScheme::MlDsa87] {
+            let keypair = derived(PATH_87_INDEX_0, scheme);
+            assert_eq!(keypair.scheme, scheme);
+            assert_eq!(keypair.public_key.len(), public_key_bytes(scheme) as usize);
+            assert_eq!(keypair.secret_key.len(), secret_key_bytes(scheme) as usize);
+            let signed = sign_message_with_pubkey(&keypair, b"msg", None, SPEC_WITH_CONTEXT);
+            assert_eq!(
+                signed.len(),
+                (signature_bytes(scheme) + public_key_bytes(scheme)) as usize
+            );
+        }
+    }
+
+    #[test]
+    fn test_ml_dsa_65_sign_and_verify_with_context() {
+        let message = b"Hello, World!";
+        let keypair = derived(PATH_65_INDEX_0, DilithiumScheme::MlDsa65);
+        let signature = sign_message(&keypair, message, None, SPEC_WITH_CONTEXT);
+        let public = ml_dsa_65::PublicKey::from_bytes(&keypair.public_key).unwrap();
+
+        assert_eq!(signature.len(), 3309);
+        assert!(public.verify(message, &signature, Some(signing_context::EXTRINSIC)));
+        assert!(!public.verify(message, &signature, None));
+        assert!(verify_message(
+            &keypair,
+            message,
+            &signature,
+            SPEC_WITH_CONTEXT
+        ));
+        assert!(!verify_message(
+            &keypair,
+            message,
+            &signature,
+            SPEC_WITHOUT_CONTEXT
+        ));
+
+        let other = derived(PATH_87_INDEX_0, DilithiumScheme::MlDsa87);
+        assert!(!verify_message(
+            &other,
+            message,
+            &signature,
+            SPEC_WITH_CONTEXT
+        ));
+    }
+
+    #[test]
+    fn test_known_ml_dsa_87_address() {
+        set_prefix();
+        let keypair = derived(PATH_87_INDEX_0, DilithiumScheme::MlDsa87);
+        assert_eq!(to_account_id(&keypair), KNOWN_ADDRESS_87_INDEX_0);
+    }
+
+    #[test]
+    fn test_known_ml_dsa_65_address_matches_cli() {
+        set_prefix();
+        let keypair = derived(PATH_65_INDEX_0, DilithiumScheme::MlDsa65);
+        assert_eq!(to_account_id(&keypair), KNOWN_ADDRESS_65_INDEX_0);
+    }
+
+    #[test]
+    fn test_schemes_never_share_an_address() {
+        set_prefix();
+        let a87 = to_account_id(&derived(PATH_87_INDEX_0, DilithiumScheme::MlDsa87));
+        let a65 = to_account_id(&derived(PATH_65_INDEX_0, DilithiumScheme::MlDsa65));
+        let a65_same_path = to_account_id(&derived(PATH_87_INDEX_0, DilithiumScheme::MlDsa65));
+        assert_ne!(a87, a65);
+        assert_ne!(a87, a65_same_path);
+        assert_ne!(a65, a65_same_path);
     }
 }

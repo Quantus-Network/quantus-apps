@@ -5,6 +5,8 @@ import 'package:polkadart/extrinsic/signed_extensions/signed_extensions_abstract
 import 'package:polkadart/polkadart.dart';
 import 'package:polkadart/scale_codec.dart';
 import 'package:polkadart/substrate/era.dart';
+import 'package:quantus_sdk/src/extensions/dilithium_scheme_extension.dart';
+import 'package:quantus_sdk/src/rust/api/crypto.dart';
 
 /// This is a modified version of the ExtrinsicPayload class from polkadart
 /// It adds a method to encode the extrinsic payload with all our signature types
@@ -12,13 +14,6 @@ import 'package:polkadart/substrate/era.dart';
 ///
 /// The reason we need this is that vanilla polkadart is not using the chain metadata to encode
 /// the signature type. Instead, it is redefining the original sig type.
-
-enum ResonanceSignatureType {
-  resonance(0);
-
-  final int type;
-  const ResonanceSignatureType(this.type);
-}
 
 class ResonanceExtrinsicPayload extends ExtrinsicPayload {
   ResonanceExtrinsicPayload({
@@ -52,9 +47,7 @@ class ResonanceExtrinsicPayload extends ExtrinsicPayload {
 
   /// Encode the extrinsic payload with all our signature types
   /// This replaces the original method 'encode' in the parent class
-  // Uint8List encodeResonance(dynamic registry, ResonanceSignatureType signatureType) {
-
-  Uint8List encodeResonance(dynamic registry, ResonanceSignatureType signatureType) {
+  Uint8List encodeResonance(dynamic registry, DilithiumScheme scheme) {
     if (customSignedExtensions.isNotEmpty && registry is! Registry) {
       throw Exception(
         'Custom signed extensions are not supported on this registry. Please use registry from `runtimeMetadata.chainInfo.scaleCodec.registry`.',
@@ -78,7 +71,7 @@ class ResonanceExtrinsicPayload extends ExtrinsicPayload {
       // Push Signer Address
       ..write(signer)
       // Push signature type byte
-      ..pushByte(signatureType.type)
+      ..pushByte(scheme.signatureTypeByte)
       // Push signature
       ..write(signature);
 
