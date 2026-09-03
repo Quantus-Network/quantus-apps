@@ -79,25 +79,15 @@ class _ImportWalletScreenState extends State<ImportWalletScreen> {
     });
 
     try {
-      // An index (the default) could be either scheme, and this air-gapped
-      // wallet cannot check the chain, so hold both. A path names one scheme.
-      final accounts = account.index != null
-          ? [
-              ColdAccount(label: 'Account 1', index: account.index, scheme: DilithiumSchemeExtension.current),
-              ColdAccount(label: 'Account 2', index: account.index, scheme: DilithiumSchemeExtension.legacy),
-            ]
-          : [account];
-
-      // Throws on an invalid phrase.
-      for (final a in accounts) {
-        HdWalletService().keyPairAtPath(mnemonic, a.derivationPath, a.scheme);
-      }
+      // The scheme is chosen in the derivation field (ADVANCED), so import the
+      // one account it names. Throws on an invalid phrase.
+      HdWalletService().keyPairAtPath(mnemonic, account.derivationPath, account.scheme);
 
       if (!mounted) return;
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) => SetPasswordScreen(mnemonic: mnemonic, accounts: accounts),
+          builder: (_) => SetPasswordScreen(mnemonic: mnemonic, accounts: [account]),
         ),
       );
     } catch (e) {
