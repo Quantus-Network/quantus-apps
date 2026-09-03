@@ -2,7 +2,6 @@ import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:quantus_sdk/quantus_sdk.dart' hide ScaffoldBase;
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/dotted_border.dart';
@@ -422,25 +421,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     required VoidCallback onTap,
     bool isDisabled = false,
   }) {
-    final colors = context.colorsV3;
-    final text = context.themeTextV3;
     return Expanded(
-      child: QuantusButton.simple(
-        key: key,
-        label: label,
-        onTap: onTap,
-        isDisabled: isDisabled,
-        icon: SvgPicture.asset(
-          iconAsset,
-          width: 24,
-          height: 24,
-          colorFilter: ColorFilter.mode(colors.accentFlare, BlendMode.srcIn),
-        ),
-        iconPlacement: IconPlacement.top,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-        variant: ButtonVariant.staged,
-        textStyle: text.bodyLarge.copyWith(color: colors.textContent),
-      ),
+      child: ActionCard(key: key, iconAsset: iconAsset, label: label, onTap: onTap, isDisabled: isDisabled),
     );
   }
 }

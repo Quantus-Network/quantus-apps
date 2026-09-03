@@ -18,6 +18,12 @@ class AppColorsV3 extends ThemeExtension<AppColorsV3> {
   /// Anything on a surface but glassy: inputs in cards, skeletons, disabled CTAs.
   final Color bgSurfaceGlass;
 
+  /// Action card fill, top stop. From the app design action cards, not the token table.
+  final Color bgCardGradientTop;
+
+  /// Action card fill, bottom stop.
+  final Color bgCardGradientBottom;
+
   /// Default text. Titles, amounts, body. Warm, not pure white.
   final Color textContent;
 
@@ -62,6 +68,8 @@ class AppColorsV3 extends ThemeExtension<AppColorsV3> {
     required this.bgSurface,
     required this.bgSurface2,
     required this.bgSurfaceGlass,
+    required this.bgCardGradientTop,
+    required this.bgCardGradientBottom,
     required this.textContent,
     required this.textVoid,
     required this.textMuted,
@@ -86,6 +94,8 @@ class AppColorsV3 extends ThemeExtension<AppColorsV3> {
         bgSurface: const Color(0xFF181818),
         bgSurface2: const Color(0xFF222222),
         bgSurfaceGlass: const Color(0x1AFFFFFF),
+        bgCardGradientTop: const Color(0xFF141414),
+        bgCardGradientBottom: const Color(0xFF1A1A1A),
         textContent: const Color(0xFFE8E6E0),
         textVoid: const Color(0xFF0E0E0E),
         textMuted: const Color(0xFF8A8784),
@@ -107,6 +117,8 @@ class AppColorsV3 extends ThemeExtension<AppColorsV3> {
     Color? bgSurface,
     Color? bgSurface2,
     Color? bgSurfaceGlass,
+    Color? bgCardGradientTop,
+    Color? bgCardGradientBottom,
     Color? textContent,
     Color? textVoid,
     Color? textMuted,
@@ -126,6 +138,8 @@ class AppColorsV3 extends ThemeExtension<AppColorsV3> {
       bgSurface: bgSurface ?? this.bgSurface,
       bgSurface2: bgSurface2 ?? this.bgSurface2,
       bgSurfaceGlass: bgSurfaceGlass ?? this.bgSurfaceGlass,
+      bgCardGradientTop: bgCardGradientTop ?? this.bgCardGradientTop,
+      bgCardGradientBottom: bgCardGradientBottom ?? this.bgCardGradientBottom,
       textContent: textContent ?? this.textContent,
       textVoid: textVoid ?? this.textVoid,
       textMuted: textMuted ?? this.textMuted,
@@ -150,6 +164,8 @@ class AppColorsV3 extends ThemeExtension<AppColorsV3> {
       bgSurface: Color.lerp(bgSurface, other.bgSurface, t) ?? bgSurface,
       bgSurface2: Color.lerp(bgSurface2, other.bgSurface2, t) ?? bgSurface2,
       bgSurfaceGlass: Color.lerp(bgSurfaceGlass, other.bgSurfaceGlass, t) ?? bgSurfaceGlass,
+      bgCardGradientTop: Color.lerp(bgCardGradientTop, other.bgCardGradientTop, t) ?? bgCardGradientTop,
+      bgCardGradientBottom: Color.lerp(bgCardGradientBottom, other.bgCardGradientBottom, t) ?? bgCardGradientBottom,
       textContent: Color.lerp(textContent, other.textContent, t) ?? textContent,
       textVoid: Color.lerp(textVoid, other.textVoid, t) ?? textVoid,
       textMuted: Color.lerp(textMuted, other.textMuted, t) ?? textMuted,
