@@ -34,7 +34,7 @@ class ActionCard extends StatelessWidget {
             gradient: LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
-              colors: [colors.bgCardTop, colors.bgCardBottom],
+              colors: [colors.bgCardGradientTop, colors.bgCardGradientBottom],
             ),
             shape: RoundedRectangleBorder(
               borderRadius: radius,
