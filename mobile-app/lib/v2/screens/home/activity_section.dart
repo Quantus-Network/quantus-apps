@@ -170,10 +170,10 @@ class _ActivitySectionState extends ConsumerState<ActivitySection> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(l10n.homeActivityTitle, style: text.headingRow.copyWith(color: colors.textContent)),
+        Text(l10n.homeActivityTitle, style: text.titleScreen.copyWith(color: colors.textContent)),
         GestureDetector(
           onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ActivityScreen())),
-          child: Text(l10n.homeActivityViewAll, style: text.headingRow.copyWith(color: colors.textMuted)),
+          child: Text(l10n.homeActivityViewAll, style: text.amountRow.copyWith(color: colors.textMuted)),
         ),
       ],
     );
