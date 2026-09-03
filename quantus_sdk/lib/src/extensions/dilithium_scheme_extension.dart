@@ -1,3 +1,5 @@
+import 'package:quantus_sdk/generated/planck/types/qp_dilithium_crypto/types/dilithium65_signature_with_public.dart';
+import 'package:quantus_sdk/generated/planck/types/qp_dilithium_crypto/types/dilithium87_signature_with_public.dart';
 import 'package:quantus_sdk/src/rust/api/crypto.dart';
 
 /// Scheme-dependent constants, in one place. Conventions match quantus-cli.
@@ -35,9 +37,16 @@ extension DilithiumSchemeExtension on DilithiumScheme {
   }
 
   /// Bytes of `signature ++ publicKey`, the payload every signed extrinsic
-  /// carries. Sourced from the rusty-crystals crate via the Rust bridge, so the
-  /// sizes are never duplicated in Dart.
-  int get signatureWithPublicKeyBytes => signatureBytes(scheme: this) + publicKeyBytes(scheme: this);
+  /// carries. Read from the chain metadata's fixed-size codec, so it always
+  /// matches the wire format the runtime expects.
+  int get signatureWithPublicKeyBytes => switch (this) {
+    DilithiumScheme.mlDsa65 => Dilithium65SignatureWithPublic.codec.sizeHint(
+      const Dilithium65SignatureWithPublic(bytes: []),
+    ),
+    DilithiumScheme.mlDsa87 => Dilithium87SignatureWithPublic.codec.sizeHint(
+      const Dilithium87SignatureWithPublic(bytes: []),
+    ),
+  };
 
   /// The scheme whose `signature ++ publicKey` is [length] bytes long.
   static DilithiumScheme forSignatureWithPublicKeyLength(int length) => DilithiumScheme.values.firstWhere(
