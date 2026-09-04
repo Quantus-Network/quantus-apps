@@ -36,43 +36,30 @@ class QuersiService {
     return rawKeyPair.ss58Address;
   }
 
-  Future<RemoteConfigModel> getRemoteConfig() async {
-    final http.Response response = await http.get(
-      _remoteConfigsEndpoint,
-      headers: {'Content-Type': 'application/json'},
-    );
+  static const _requestTimeout = Duration(seconds: 10);
+
+  /// Reads `data` from a quersi endpoint. Bounded so an unreachable server
+  /// fails within [_requestTimeout] instead of stalling callers.
+  Future<Map<String, dynamic>> _getData(Uri endpoint, String what) async {
+    final http.Response response = await http
+        .get(endpoint, headers: {'Content-Type': 'application/json'})
+        .timeout(_requestTimeout);
     if (response.statusCode != 200) {
-      throw Exception('Configs request failed with status: ${response.statusCode}. Body: ${response.body}');
+      throw Exception('$what request failed with status: ${response.statusCode}. Body: ${response.body}');
     }
 
-    final Map<String, dynamic>? responseBody = jsonDecode(response.body);
-    final Map<String, dynamic>? data = responseBody?['data'];
-
+    final Map<String, dynamic>? data = (jsonDecode(response.body) as Map<String, dynamic>?)?['data'];
     if (data == null) {
-      throw Exception('Configs request failed with status: ${response.statusCode}. Body: ${response.body}');
+      throw Exception('$what response has no data. Body: ${response.body}');
     }
-
-    return RemoteConfigModel.fromJson(data);
+    return data;
   }
 
-  Future<ExchangeRatesResult> getExchangeRates() async {
-    final http.Response response = await http.get(
-      _exchangeRatesEndpoint,
-      headers: {'Content-Type': 'application/json'},
-    );
-    if (response.statusCode != 200) {
-      throw Exception('Exchange rates request failed with status: ${response.statusCode}. Body: ${response.body}');
-    }
+  Future<RemoteConfigModel> getRemoteConfig() async =>
+      RemoteConfigModel.fromJson(await _getData(_remoteConfigsEndpoint, 'Configs'));
 
-    final Map<String, dynamic>? responseBody = jsonDecode(response.body);
-    final Map<String, dynamic>? data = responseBody?['data'];
-
-    if (data == null) {
-      throw Exception('Exchange rates not found!');
-    }
-
-    return ExchangeRatesResult.fromJson(data);
-  }
+  Future<ExchangeRatesResult> getExchangeRates() async =>
+      ExchangeRatesResult.fromJson(await _getData(_exchangeRatesEndpoint, 'Exchange rates'));
 
   Future<MinerStats> getMinerStats() async {
     final String minerStatsQuery = r'''

@@ -6,16 +6,23 @@ import 'package:resonance_network_wallet/shared/utils/print.dart';
 
 const String remoteConfigCacheKey = 'remote_config_cache_v1';
 
+/// Remote config never blocks or breaks the wallet: an unreachable quersi
+/// server or a bad payload leaves the current config (last fetched, else the
+/// in-code defaults) in effect.
 class RemoteConfigService {
-  final QuersiService _quersiService = QuersiService();
-  final SettingsService _settingsService = SettingsService();
+  final QuersiService _quersiService;
+  final SettingsService _settingsService;
 
+  RemoteConfigService({QuersiService? quersiService, SettingsService? settingsService})
+    : _quersiService = quersiService ?? QuersiService(),
+      _settingsService = settingsService ?? SettingsService();
+
+  /// Null when quersi cannot be reached or answers with a bad payload.
   Future<RemoteConfigModel?> readRemoteConfig() async {
     try {
-      final remoteData = await _quersiService.getRemoteConfig();
-      return remoteData;
+      return await _quersiService.getRemoteConfig();
     } catch (error) {
-      quantusPrint('Remote config remote read failed: $error');
+      quantusPrint('Remote config remote read failed, keeping current config: $error');
       return null;
     }
   }
@@ -23,20 +30,22 @@ class RemoteConfigService {
   RemoteConfigModel readLocalConfig() {
     // In debug builds never trust the persisted cache: stale flags from an
     // earlier run can poison local state. Always reset to in-code defaults.
-    if (kDebugMode) {
-      cacheConfig(RemoteConfigModel.defaults.toCacheJson());
-      return RemoteConfigModel.defaults;
-    }
+    if (kDebugMode) return _resetToDefaults();
 
     final jsonString = _settingsService.getString(remoteConfigCacheKey);
+    if (jsonString == null || jsonString.isEmpty) return _resetToDefaults();
 
-    if (jsonString == null || jsonString.isEmpty) {
-      cacheConfig(RemoteConfigModel.defaults.toCacheJson());
-      return RemoteConfigModel.defaults;
+    try {
+      return RemoteConfigModel.fromJson(jsonDecode(jsonString));
+    } catch (error) {
+      quantusPrint('Remote config cache unreadable, resetting to defaults: $error');
+      return _resetToDefaults();
     }
+  }
 
-    final decoded = jsonDecode(jsonString);
-    return RemoteConfigModel.fromJson(decoded);
+  RemoteConfigModel _resetToDefaults() {
+    cacheConfig(RemoteConfigModel.defaults.toCacheJson());
+    return RemoteConfigModel.defaults;
   }
 
   Future<void> cacheConfig(Object json) async {

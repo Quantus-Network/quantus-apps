@@ -23,6 +23,7 @@ class RemoteConfigNotifier extends StateNotifier<RemoteConfigModel> {
   bool _isEnablingRemoteNotifications = false;
 
   RemoteConfigNotifier(this._service) : super(_service.readLocalConfig()) {
+    NetworkEndpointsService().apply(state.endpoints);
     syncConfig();
   }
 
@@ -38,6 +39,7 @@ class RemoteConfigNotifier extends StateNotifier<RemoteConfigModel> {
 
         if (remote != state) {
           _service.cacheConfig(remote.toCacheJson());
+          NetworkEndpointsService().apply(remote.endpoints);
           state = remote;
         }
       } catch (e) {

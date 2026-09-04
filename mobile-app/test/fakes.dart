@@ -35,8 +35,13 @@ class FakeSettingsService extends Fake implements SettingsService {
   @override
   String? getWalletName(int walletIndex) => null;
 
+  final Map<String, String> strings = {};
+
   @override
-  String? getString(String key) => null;
+  String? getString(String key) => strings[key];
+
+  @override
+  Future<void> setString(String key, String value) async => strings[key] = value;
 }
 
 /// Drives [LocalAuthState] directly so tests can lock/unlock without the
