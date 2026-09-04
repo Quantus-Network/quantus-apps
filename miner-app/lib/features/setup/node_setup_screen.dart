@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:quantus_miner/src/services/binary_manager.dart';
+import 'package:quantus_miner/src/config/miner_config.dart';
+import 'package:quantus_miner/src/services/disk_space_service.dart';
 import 'dart:io';
 import 'package:flutter_svg/flutter_svg.dart';
 
@@ -66,6 +68,20 @@ class _NodeSetupScreenState extends State<NodeSetupScreen> {
     try {
       // Install node binary first
       if (!_isNodeInstalled) {
+        // A fresh node install commits this volume to roughly 100 GB of chain data during sync.
+        // Refuse here rather than fail an hour into syncing. An unknown probe result passes.
+        final quantusHome = await BinaryManager.getQuantusHomeDirectoryPath();
+        final freeBytes = await DiskSpaceService.freeBytesForPath(quantusHome);
+        if (freeBytes != null && freeBytes < MinerConfig.minNodeDiskBytes) {
+          final freeGb = (freeBytes / MinerConfig.bytesPerGb).toStringAsFixed(0);
+          final minGb = MinerConfig.minNodeDiskBytes ~/ MinerConfig.bytesPerGb;
+          final recommendedGb = MinerConfig.recommendedNodeDiskBytes ~/ MinerConfig.bytesPerGb;
+          throw Exception(
+            'Not enough free disk space for a Quantus node: $freeGb GB free at $quantusHome, '
+            '$minGb GB required ($recommendedGb GB recommended). The node stores chain data there while syncing.',
+          );
+        }
+
         final nodeVersion = await BinaryManager.getLatestNodeVersion();
 
         setState(() {

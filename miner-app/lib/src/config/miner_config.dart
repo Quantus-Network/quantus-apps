@@ -224,4 +224,17 @@ class ChainConfig {
 
   @override
   String toString() => 'ChainConfig(id: $id, displayName: $displayName, rpcUrl: $rpcUrl)';
+
+  // ============================================================
+  // Disk Space
+  // ============================================================
+
+  /// Bytes in one gibibyte, for disk arithmetic
+  static const int bytesPerGb = 1024 * 1024 * 1024;
+
+  /// Minimum free space required before a fresh node install, per chain/MINING.md
+  static const int minNodeDiskBytes = 100 * bytesPerGb;
+
+  /// Recommended free space for a node, per chain/MINING.md
+  static const int recommendedNodeDiskBytes = 500 * bytesPerGb;
 }
