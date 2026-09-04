@@ -11,6 +11,7 @@ import 'package:quantus_miner/src/utils/app_logger.dart';
 
 import '../../main.dart';
 import '../../src/services/binary_manager.dart';
+import 'package:quantus_miner/src/services/pair_compatibility_service.dart';
 import '../../src/services/gpu_detection_service.dart';
 import '../../src/services/miner_settings_service.dart';
 
@@ -207,6 +208,23 @@ class _MinerControlsState extends State<MinerControls> {
       _log.w('Miner binary not found');
       if (mounted) {
         context.showWarningSnackbar(title: 'Miner binary not found!', message: 'Please run setup.');
+      }
+      return;
+    }
+
+    // Check the pair speaks the same miner-auth protocol before starting, the same probe the
+    // official script runs. A mixed pair fails at connection time with only a generic crash.
+    final nodeBinPath = await BinaryManager.getNodeBinaryFilePath();
+    final pair = await PairCompatibilityService.check(nodeBinPath: nodeBinPath, minerBinPath: minerBinPath);
+    if (pair != null && pair != PairCompatibility.compatible) {
+      final nodeVersion = (await BinaryManager.getNodeBinaryVersion())?.version ?? 'installed';
+      final minerVersion = (await BinaryManager.getMinerBinaryVersion())?.version ?? 'installed';
+      final message = pair == PairCompatibility.minerTooOld
+          ? 'Miner $minerVersion predates the authentication node $nodeVersion requires. Update the miner.'
+          : 'Node $nodeVersion predates the authentication miner $minerVersion expects. Update the node.';
+      _log.w('Refusing to start miner: $pair (node $nodeVersion, miner $minerVersion)');
+      if (mounted) {
+        context.showWarningSnackbar(title: 'Node and miner versions do not match', message: message);
       }
       return;
     }
