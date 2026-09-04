@@ -34,7 +34,9 @@ class SubstrateService {
   DateTime? _runtimeVersionFetchedAt;
   static const _runtimeVersionMaxAge = Duration(minutes: 5);
 
-  void _clearChainCaches() {
+  /// Genesis hash and runtime version belong to one chain; drop them whenever
+  /// the RPC endpoints move.
+  void clearChainCaches() {
     _cachedGenesisHash = null;
     _cachedRuntimeVersion = null;
     _runtimeVersionFetchedAt = null;
@@ -155,7 +157,7 @@ class SubstrateService {
       // A rejected extrinsic can mean a runtime upgrade landed while the cached
       // spec/genesis was still considered fresh — drop the caches so the next
       // payload is built against re-fetched chain state.
-      _clearChainCaches();
+      clearChainCaches();
       throw Exception(response.error.toString());
     }
 

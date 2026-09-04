@@ -1,3 +1,6 @@
+import 'package:collection/collection.dart';
+import 'package:quantus_sdk/src/models/network_endpoints.dart';
+
 class RemoteConfigModel {
   final bool enableTestButtons;
   final bool enableKeystoneHardwareWallet;
@@ -6,6 +9,7 @@ class RemoteConfigModel {
   final bool enableSwap;
   final bool enableEncryptedAccount;
   final bool enableMultisig;
+  final NetworkEndpoints endpoints;
 
   const RemoteConfigModel({
     required this.enableTestButtons,
@@ -15,30 +19,8 @@ class RemoteConfigModel {
     required this.enableSwap,
     required this.enableEncryptedAccount,
     required this.enableMultisig,
+    this.endpoints = NetworkEndpoints.defaults,
   });
-
-  R match<R>({
-    required R Function(
-      bool enableTestButtons,
-      bool enableKeystoneHardwareWallet,
-      bool enableHighSecurity,
-      bool enableRemoteNotifications,
-      bool enableSwap,
-      bool enableEncryptedAccount,
-      bool enableMultisig,
-    )
-    fn,
-  }) {
-    return fn(
-      enableTestButtons,
-      enableKeystoneHardwareWallet,
-      enableHighSecurity,
-      enableRemoteNotifications,
-      enableSwap,
-      enableEncryptedAccount,
-      enableMultisig,
-    );
-  }
 
   static const RemoteConfigModel defaults = RemoteConfigModel(
     enableTestButtons: false,
@@ -50,65 +32,33 @@ class RemoteConfigModel {
     enableMultisig: true,
   );
 
-  Map<String, dynamic> toCacheJson() {
-    return match(
-      fn: (test, keystone, security, notifications, swap, encrypted, multisig) => {
-        'enableTestButtons': test,
-        'enableKeystoneHardwareWallet': keystone,
-        'enableHighSecurity': security,
-        'enableRemoteNotifications': notifications,
-        'enableSwap': swap,
-        'enableEncryptedAccount': encrypted,
-        'enableMultisig': multisig,
-      },
-    );
-  }
+  static const _equality = DeepCollectionEquality();
 
-  factory RemoteConfigModel.fromJson(Map<String, dynamic> json) {
-    return RemoteConfigModel(
-      enableTestButtons: json['enableTestButtons'] ?? defaults.enableTestButtons,
-      enableKeystoneHardwareWallet: json['enableKeystoneHardwareWallet'] ?? defaults.enableKeystoneHardwareWallet,
-      enableHighSecurity: json['enableHighSecurity'] ?? defaults.enableHighSecurity,
-      enableRemoteNotifications: json['enableRemoteNotifications'] ?? defaults.enableRemoteNotifications,
-      enableSwap: json['enableSwap'] ?? defaults.enableSwap,
-      enableEncryptedAccount: json['enableEncryptedAccount'] ?? defaults.enableEncryptedAccount,
-      enableMultisig: json['enableMultisig'] ?? defaults.enableMultisig,
-    );
-  }
+  Map<String, dynamic> toCacheJson() => {
+    'enableTestButtons': enableTestButtons,
+    'enableKeystoneHardwareWallet': enableKeystoneHardwareWallet,
+    'enableHighSecurity': enableHighSecurity,
+    'enableRemoteNotifications': enableRemoteNotifications,
+    'enableSwap': enableSwap,
+    'enableEncryptedAccount': enableEncryptedAccount,
+    'enableMultisig': enableMultisig,
+    'endpoints': endpoints.toJson(),
+  };
 
-  bool compare(RemoteConfigModel other) {
-    return match(
-      fn:
-          (
-            enableTestButtons,
-            enableKeystoneHardwareWallet,
-            enableHighSecurity,
-            enableRemoteNotifications,
-            enableSwap,
-            enableEncryptedAccount,
-            enableMultisig,
-          ) {
-            return other.match(
-              fn:
-                  (
-                    otherEnableTestButtons,
-                    otherEnableKeystoneHardwareWallet,
-                    otherEnableHighSecurity,
-                    otherEnableRemoteNotifications,
-                    otherEnableSwap,
-                    otherEnableEncryptedAccount,
-                    otherEnableMultisig,
-                  ) {
-                    return enableTestButtons == otherEnableTestButtons &&
-                        enableKeystoneHardwareWallet == otherEnableKeystoneHardwareWallet &&
-                        enableHighSecurity == otherEnableHighSecurity &&
-                        enableRemoteNotifications == otherEnableRemoteNotifications &&
-                        enableSwap == otherEnableSwap &&
-                        enableEncryptedAccount == otherEnableEncryptedAccount &&
-                        enableMultisig == otherEnableMultisig;
-                  },
-            );
-          },
-    );
-  }
+  factory RemoteConfigModel.fromJson(Map<String, dynamic> json) => RemoteConfigModel(
+    enableTestButtons: json['enableTestButtons'] ?? defaults.enableTestButtons,
+    enableKeystoneHardwareWallet: json['enableKeystoneHardwareWallet'] ?? defaults.enableKeystoneHardwareWallet,
+    enableHighSecurity: json['enableHighSecurity'] ?? defaults.enableHighSecurity,
+    enableRemoteNotifications: json['enableRemoteNotifications'] ?? defaults.enableRemoteNotifications,
+    enableSwap: json['enableSwap'] ?? defaults.enableSwap,
+    enableEncryptedAccount: json['enableEncryptedAccount'] ?? defaults.enableEncryptedAccount,
+    enableMultisig: json['enableMultisig'] ?? defaults.enableMultisig,
+    endpoints: NetworkEndpoints.fromJson(json['endpoints'] ?? const {}),
+  );
+
+  @override
+  bool operator ==(Object other) => other is RemoteConfigModel && _equality.equals(toCacheJson(), other.toCacheJson());
+
+  @override
+  int get hashCode => _equality.hash(toCacheJson());
 }
