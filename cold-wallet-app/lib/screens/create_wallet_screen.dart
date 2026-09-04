@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:quantus_cold_wallet/components/advanced_section.dart';
+import 'package:quantus_cold_wallet/components/scheme_picker.dart';
 import 'package:quantus_cold_wallet/models/cold_account.dart';
 import 'package:quantus_cold_wallet/screens/set_password_screen.dart';
 
@@ -12,7 +14,6 @@ class CreateWalletScreen extends StatefulWidget {
 
 class _CreateWalletScreenState extends State<CreateWalletScreen> {
   List<String>? _words;
-  bool _advancedExpanded = false;
   DilithiumScheme _scheme = DilithiumSchemeExtension.current;
 
   @override
@@ -83,37 +84,8 @@ class _CreateWalletScreenState extends State<CreateWalletScreen> {
   /// Signature-scheme choice, collapsed by default so ordinary users never see
   /// it. New wallets stay ML-DSA-65 unless the user opts into ML-DSA-87 here.
   Widget _advancedSection(BuildContext context) {
-    final colors = context.colorsV3;
-    final text = context.themeTextV3;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: () => setState(() => _advancedExpanded = !_advancedExpanded),
-          child: Row(
-            children: [
-              Text('ADVANCED', style: text.labelMonogram.copyWith(color: colors.textMuted)),
-              const SizedBox(width: 6),
-              Icon(_advancedExpanded ? Icons.expand_less : Icons.chevron_right, size: 18, color: colors.textMuted),
-            ],
-          ),
-        ),
-        if (_advancedExpanded) ...[
-          const SizedBox(height: 12),
-          Text('SIGNATURE TYPE', style: text.labelMonogram.copyWith(color: colors.textMuted)),
-          const SizedBox(height: 8),
-          SegmentedControls<DilithiumScheme>(
-            selectedValue: _scheme,
-            onChanged: (scheme) => setState(() => _scheme = scheme),
-            items: const [
-              SegmentedControlItem(value: DilithiumSchemeExtension.current, label: 'ML-DSA-65'),
-              SegmentedControlItem(value: DilithiumSchemeExtension.legacy, label: 'ML-DSA-87'),
-            ],
-          ),
-        ],
-      ],
+    return AdvancedSection(
+      children: [SchemePicker(value: _scheme, onChanged: (scheme) => setState(() => _scheme = scheme))],
     );
   }
 }
