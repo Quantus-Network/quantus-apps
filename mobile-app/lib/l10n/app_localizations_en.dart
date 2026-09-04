@@ -881,7 +881,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get addKeystoneIntroSubtitle =>
-      'Air-gapped signing for QUAN. Keys stay on the device, signing happens over QR.';
+      'Air-gapped signing for QTC. Keys stay on the device, signing happens over QR.';
 
   @override
   String get addKeystoneConnectButton => 'Connect Hardware Wallet';
@@ -902,7 +902,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get addKeystoneFirmwareTitle => 'Update to the latest Keystone firmware';
 
   @override
-  String get addKeystoneFirmwareSubtitle => 'Required for QUAN signing';
+  String get addKeystoneFirmwareSubtitle => 'Required for QTC signing';
 
   @override
   String get addKeystoneOnYourKeystone => 'ON YOUR KEYSTONE';

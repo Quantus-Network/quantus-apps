@@ -84,18 +84,18 @@ void main() {
       const QuantusBanner.stacked(
         tone: BannerTone.sage,
         label: 'Your funds are safe',
-        amount: '12.5 QUAN',
+        amount: '12.5 QTC',
         message: 'Still in Account 1. Nothing left your wallet.',
       ),
     );
 
     expect(find.text('YOUR FUNDS ARE SAFE'), findsOneWidget);
-    expect(find.text('12.5 QUAN'), findsOneWidget);
+    expect(find.text('12.5 QTC'), findsOneWidget);
     expect(find.text('Still in Account 1. Nothing left your wallet.'), findsOneWidget);
     expect(find.text('!'), findsNothing);
 
     expect(tester.widget<Text>(find.text('YOUR FUNDS ARE SAFE')).style?.color, colors.semanticSage);
-    expect(tester.widget<Text>(find.text('12.5 QUAN')).style?.color, colors.semanticSage);
+    expect(tester.widget<Text>(find.text('12.5 QTC')).style?.color, colors.semanticSage);
     expect(
       tester.widget<Text>(find.text('Still in Account 1. Nothing left your wallet.')).style?.color,
       colors.textMuted,
@@ -108,13 +108,13 @@ void main() {
       const QuantusBanner.stacked(
         tone: BannerTone.sage,
         label: 'Your funds are safe',
-        amount: '12.5 QUAN',
+        amount: '12.5 QTC',
         message: 'Still in Account 1. Nothing left your wallet.',
       ),
     );
 
-    final border = decorationAround(tester, '12.5 QUAN').border! as Border;
+    final border = decorationAround(tester, '12.5 QTC').border! as Border;
     expect(border.top.color, colors.semanticSage.useOpacity(0.10));
-    expect(decorationAround(tester, '12.5 QUAN').gradient, isA<LinearGradient>());
+    expect(decorationAround(tester, '12.5 QTC').gradient, isA<LinearGradient>());
   });
 }

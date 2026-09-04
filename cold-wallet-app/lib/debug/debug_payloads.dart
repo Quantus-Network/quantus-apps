@@ -165,7 +165,7 @@ class DebugPayloads {
       // #88348 / #88914: if_else was displayed with the summary of its main
       // branch, so a branch guaranteed to fail headlined the screen while the
       // fallback moved the real amount. Decoding it also cost exponential time.
-      label: 'if_else headlining 1 QUAN over a 999999 QUAN fallback [#88914]',
+      label: 'if_else headlining 1 QTC over a 999999 QTC fallback [#88914]',
       call: _utilityCall(6, [..._send(_tokens(1)).encode(), ..._send(_tokens(999999)).encode()]),
     ),
     DebugCall(

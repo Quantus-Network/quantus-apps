@@ -24,7 +24,7 @@ import 'every_call_renders_test.dart' show renderedText;
 /// These are negative tests. Each asserts the payload never reaches a signable
 /// screen, and — the part that matters — that none of the benign text the
 /// attack depended on is rendered on the way to refusing it. A screen that
-/// refuses while still showing "SEND 1000 QUAN" has not fixed anything.
+/// refuses while still showing "SEND 1000 QTC" has not fixed anything.
 ///
 /// Each group names the audit report it comes from.
 const wallet = AppConstants.debugTestAddress;
@@ -107,7 +107,7 @@ void main() {
         tester,
         'inner call padded',
         because: 'trailing bytes after nested call',
-        nothingReads: ['MULTISIG APPROVE', 'SEND', 'QUAN'],
+        nothingReads: ['MULTISIG APPROVE', 'SEND', 'QTC'],
       );
     });
 
@@ -116,7 +116,7 @@ void main() {
         tester,
         'transfer padded',
         because: 'trailing bytes after nested call',
-        nothingReads: ['SEND', 'QUAN'],
+        nothingReads: ['SEND', 'QTC'],
       );
     });
   });
@@ -140,7 +140,7 @@ void main() {
         tester,
         'if_else headlining',
         because: 'Utility: invalid call index',
-        nothingReads: ['IF ELSE', 'SEND', 'QUAN'],
+        nothingReads: ['IF ELSE', 'SEND', 'QTC'],
       );
     });
 
@@ -187,7 +187,7 @@ void main() {
         tester,
         'Index address',
         because: 'only a plain account id is accepted',
-        nothingReads: ['SEND', 'QUAN'],
+        nothingReads: ['SEND', 'QTC'],
       );
     });
 
@@ -196,7 +196,7 @@ void main() {
         tester,
         'Address20',
         because: 'only a plain account id is accepted',
-        nothingReads: ['SEND', 'QUAN'],
+        nothingReads: ['SEND', 'QTC'],
       );
     });
 

@@ -1,7 +1,7 @@
 # Debate Tree — Project Plan
 
 AI-moderated structured debate for the Quantus ecosystem, spam-protected by
-Quantus-native primitives (mining-share proof-of-work and QUAN balance gates).
+Quantus-native primitives (mining-share proof-of-work and QTC balance gates).
 
 **Runnable prototype:** `spike/` — see [`spike/README.md`](spike/README.md).
 
@@ -51,7 +51,7 @@ differentiators are the AI moderator and the chain-native spam economics.)
 
 - **Reading**: free, no account, indexable. The tree is the growth asset.
 - **Creating a question**: requires a signed challenge from a wallet holding
-  ≥ N QUAN (threshold configurable per space). Capital-at-stake, nothing
+  ≥ N QTC (threshold configurable per space). Capital-at-stake, nothing
   locked or slashed.
 - **Posting answers/pros/cons + starting a steelman session**: requires a
   proof-of-work share via the captcha gadget. Rate limiter, not identity.
@@ -152,7 +152,7 @@ server-side verification can link the same Rust crates.
 **Data model** (implemented in `spike/schema.sql` — pure adjacency tree,
 plain Postgres so it ports from the spike's PGlite to hosted PG verbatim):
 - `space` — a debate context (e.g. "QIPs", "PQ-migration"), holds `config`
-  jsonb: question threshold N QUAN, share target, model tier.
+  jsonb: question threshold N QTC, share target, model tier.
 - `node` — id, space, `parent_id` (null = direct answer to the question),
   kind (`answer | pro | con`), `published_text` (author-approved steelman =
   the node), `original_text` (verbatim, always attached), `transcript` jsonb
@@ -260,5 +260,5 @@ independently shippable regardless of how Debate Tree evolves.
   `quantus-miner/web-miner`) — decide when wiring the build.
 - Webapp framework + hosting; whether backend verifies ML-DSA sigs via
   linked Rust crate or a small verifier sidecar.
-- Per-space QUAN thresholds — governance-adjustable? fiat-pegged?
+- Per-space QTC thresholds — governance-adjustable? fiat-pegged?
 - Whether/when to anchor node hashes on-chain.

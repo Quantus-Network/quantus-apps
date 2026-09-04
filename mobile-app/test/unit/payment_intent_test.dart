@@ -77,7 +77,7 @@ void main() {
     });
 
     test('rejects amounts with more whole digits than the supply allows', () {
-      // MAX_SUPPLY is 21M QUAN, so 8 whole digits cover every legitimate amount.
+      // MAX_SUPPLY is 21M QTC, so 8 whole digits cover every legitimate amount.
       expect(PaymentIntent.tryParseUrl('https://www.quantus.com/pay?to=recipient&amount=999999999'), isNull);
       expect(PaymentIntent.tryParseUrl('https://www.quantus.com/pay?to=recipient&amount=99999999'), isNotNull);
     });
