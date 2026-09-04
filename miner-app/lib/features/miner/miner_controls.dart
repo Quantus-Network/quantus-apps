@@ -6,12 +6,12 @@ import 'package:quantus_miner/src/config/miner_config.dart';
 import 'package:quantus_miner/src/services/miner_wallet_service.dart';
 import 'package:quantus_miner/src/services/mining_orchestrator.dart';
 import 'package:quantus_miner/src/services/mining_stats_service.dart';
+import 'package:quantus_miner/src/services/pair_compatibility_service.dart';
 import 'package:quantus_miner/src/shared/extensions/snackbar_extensions.dart';
 import 'package:quantus_miner/src/utils/app_logger.dart';
 
 import '../../main.dart';
 import '../../src/services/binary_manager.dart';
-import 'package:quantus_miner/src/services/pair_compatibility_service.dart';
 import '../../src/services/gpu_detection_service.dart';
 import '../../src/services/miner_settings_service.dart';
 
