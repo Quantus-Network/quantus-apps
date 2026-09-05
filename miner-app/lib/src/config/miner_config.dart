@@ -197,6 +197,19 @@ class MinerConfig {
 
   /// Number of ports to try when finding an alternative
   static const int portSearchRange = 10;
+
+  // ============================================================
+  // Disk Space
+  // ============================================================
+
+  /// Bytes in one gibibyte, for disk arithmetic
+  static const int bytesPerGb = 1024 * 1024 * 1024;
+
+  /// Minimum free space required before a fresh node install, per chain/MINING.md
+  static const int minNodeDiskBytes = 100 * bytesPerGb;
+
+  /// Recommended free space for a node, per chain/MINING.md
+  static const int recommendedNodeDiskBytes = 500 * bytesPerGb;
 }
 
 /// Configuration for a blockchain network.
