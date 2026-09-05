@@ -5,6 +5,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:quantus_cold_wallet/components/address_with_checkphrase.dart';
+import 'package:quantus_cold_wallet/components/advanced_section.dart';
+import 'package:quantus_cold_wallet/components/scheme_picker.dart';
 import 'package:quantus_cold_wallet/models/cold_account.dart';
 import 'package:quantus_cold_wallet/providers/wallet_providers.dart';
 
@@ -32,6 +34,10 @@ class _AddAccountScreenState extends ConsumerState<AddAccountScreen> {
 
   _Derivation _mode = _Derivation.accountIndex;
 
+  /// Scheme the screen opens on: the wallet's own, so an added account matches
+  /// the ones already there unless the other is chosen under ADVANCED.
+  late DilithiumScheme _scheme;
+
   /// Set once the path has been typed in rather than seeded, so the index stops
   /// writing over it. Lives with the screen: leaving and coming back is a fresh
   /// choice, and the path follows the index again.
@@ -48,6 +54,7 @@ class _AddAccountScreenState extends ConsumerState<AddAccountScreen> {
   @override
   void initState() {
     super.initState();
+    _scheme = ColdAccount.walletScheme(ref.read(accountsProvider));
     _index = TextEditingController(text: '${_firstFreeIndex()}');
     _index.addListener(_onInputChanged);
     _path.addListener(_onInputChanged);
@@ -62,10 +69,6 @@ class _AddAccountScreenState extends ConsumerState<AddAccountScreen> {
     super.dispose();
   }
 
-  /// Scheme new accounts of this wallet use, so an added account matches the
-  /// ones already there.
-  DilithiumScheme get _scheme => ColdAccount.walletScheme(ref.read(accountsProvider));
-
   /// The lowest index this wallet does not already hold at [_scheme], so the
   /// field opens on an account that can actually be added.
   int _firstFreeIndex() {
@@ -79,9 +82,11 @@ class _AddAccountScreenState extends ConsumerState<AddAccountScreen> {
     }
   }
 
+  Set<String> get _takenLabels => {for (final account in ref.read(accountsProvider)) account.label};
+
   /// `Account 3` for a path that follows no template this wallet numbers.
   String _nextFreeLabel() {
-    final taken = {for (final account in ref.read(accountsProvider)) account.label};
+    final taken = _takenLabels;
     for (var ordinal = 1; ; ordinal++) {
       final label = 'Account $ordinal';
       if (!taken.contains(label)) return label;
@@ -89,9 +94,17 @@ class _AddAccountScreenState extends ConsumerState<AddAccountScreen> {
   }
 
   ColdAccount? get _account => switch (_mode) {
-    _Derivation.accountIndex => ColdAccount.atIndexText(_index.text, scheme: _scheme),
+    _Derivation.accountIndex => _indexedAccount,
     _Derivation.fullPath => ColdAccount.atPath(_path.text, label: _nextFreeLabel(), defaultScheme: _scheme),
   };
+
+  /// Labelled by its index unless that name is taken, as it is once the wallet
+  /// holds the same index at the other scheme.
+  ColdAccount? get _indexedAccount {
+    final account = ColdAccount.atIndexText(_index.text, scheme: _scheme);
+    if (account == null || !_takenLabels.contains(account.label)) return account;
+    return ColdAccount(label: _nextFreeLabel(), index: account.index, scheme: _scheme);
+  }
 
   /// The account already holding this derivation, if any. Adding it twice would
   /// put two rows with one address in the list.
@@ -110,6 +123,17 @@ class _AddAccountScreenState extends ConsumerState<AddAccountScreen> {
     _previewDebounce = Timer(_previewDelay, () {
       if (mounted) setState(() => _previewPath = _account?.derivationPath);
     });
+  }
+
+  void _setScheme(DilithiumScheme scheme) {
+    if (scheme == _scheme) return;
+    setState(() => _scheme = scheme);
+    // The index moves to the first slot free at the new scheme, and a path not
+    // typed by hand follows it, so the preview never offers an account that
+    // cannot be added.
+    _index.text = '${_firstFreeIndex()}';
+    if (!_userChangedPath) _path.text = ColdAccount.atIndexText(_index.text, scheme: _scheme)?.derivationPath ?? '';
+    _onInputChanged();
   }
 
   void _setMode(_Derivation mode) {
@@ -191,6 +215,10 @@ class _AddAccountScreenState extends ConsumerState<AddAccountScreen> {
               ),
               const SizedBox(height: 24),
               if (_mode == _Derivation.accountIndex) _indexField(context) else _pathField(context),
+              const SizedBox(height: 24),
+              AdvancedSection(
+                children: [SchemePicker(value: _scheme, onChanged: _setScheme)],
+              ),
               const SizedBox(height: 24),
               _preview(context, account, duplicate),
               if (_error != null) ...[

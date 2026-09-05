@@ -61,9 +61,9 @@ class ColdAccount {
   /// derivation path index (which is 0 for 87, 1 for 65).
   static int _schemeSortOrder(DilithiumScheme scheme) => scheme == DilithiumSchemeExtension.current ? 0 : 1;
 
-  /// Scheme new accounts of this wallet use: the current scheme once the wallet
-  /// holds any account of it, otherwise the legacy one, so pre-existing wallets
-  /// stay uniform.
+  /// Scheme new accounts of this wallet open on: the current scheme once the
+  /// wallet holds any account of it, otherwise the legacy one, so pre-existing
+  /// wallets stay uniform unless the other scheme is chosen for an account.
   static DilithiumScheme walletScheme(Iterable<ColdAccount> accounts) =>
       accounts.any((a) => a.scheme == DilithiumSchemeExtension.current)
       ? DilithiumSchemeExtension.current

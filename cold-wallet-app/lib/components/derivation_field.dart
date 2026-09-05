@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:quantus_cold_wallet/components/advanced_section.dart';
+import 'package:quantus_cold_wallet/components/scheme_picker.dart';
 import 'package:quantus_cold_wallet/models/cold_account.dart';
 
 /// Chooses which account a seed phrase derives: the signature scheme (which sets
@@ -18,7 +20,6 @@ class DerivationField extends StatefulWidget {
 class _DerivationFieldState extends State<DerivationField> {
   final _index = TextEditingController(text: '0');
   final _path = TextEditingController(text: HdWalletService.pathForIndex(0, DilithiumSchemeExtension.current));
-  bool _expanded = false;
   bool _useFullPath = false;
   bool _userEditedPath = false;
   DilithiumScheme _scheme = DilithiumSchemeExtension.current;
@@ -72,71 +73,47 @@ class _DerivationFieldState extends State<DerivationField> {
     final text = context.themeTextV3;
     final account = _account;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+    return AdvancedSection(
       children: [
+        SchemePicker(value: _scheme, onChanged: _setScheme),
+        const SizedBox(height: 16),
+        if (!_useFullPath)
+          TextField(
+            controller: _index,
+            keyboardType: TextInputType.number,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(9)],
+            style: text.body.copyWith(color: colors.textContent),
+            decoration: InputDecoration(
+              labelText: 'Account index',
+              labelStyle: text.caption.copyWith(color: colors.textMuted),
+            ),
+          )
+        else
+          TextField(
+            controller: _path,
+            autocorrect: false,
+            enableSuggestions: false,
+            onChanged: (_) => _userEditedPath = true,
+            style: text.body.copyWith(color: colors.textContent),
+            decoration: InputDecoration(
+              labelText: 'Derivation path',
+              labelStyle: text.caption.copyWith(color: colors.textMuted),
+            ),
+          ),
+        const SizedBox(height: 8),
+        Text(
+          account == null ? 'Not a valid derivation' : account.derivationPath,
+          style: text.caption.copyWith(color: account == null ? colors.semanticEmber : colors.textMuted),
+        ),
+        const SizedBox(height: 8),
         GestureDetector(
           behavior: HitTestBehavior.opaque,
-          onTap: () => setState(() => _expanded = !_expanded),
-          child: Row(
-            children: [
-              Text('ADVANCED', style: text.labelMonogram.copyWith(color: colors.textMuted)),
-              const SizedBox(width: 6),
-              Icon(_expanded ? Icons.expand_less : Icons.chevron_right, size: 18, color: colors.textMuted),
-            ],
+          onTap: _toggleFullPath,
+          child: Text(
+            _useFullPath ? 'Use an account index instead' : 'Use a full derivation path',
+            style: text.caption.copyWith(color: colors.accentFlare),
           ),
         ),
-        if (_expanded) ...[
-          const SizedBox(height: 12),
-          Text('SIGNATURE TYPE', style: text.labelMonogram.copyWith(color: colors.textMuted)),
-          const SizedBox(height: 8),
-          SegmentedControls<DilithiumScheme>(
-            selectedValue: _scheme,
-            onChanged: _setScheme,
-            items: const [
-              SegmentedControlItem(value: DilithiumSchemeExtension.current, label: 'ML-DSA-65'),
-              SegmentedControlItem(value: DilithiumSchemeExtension.legacy, label: 'ML-DSA-87'),
-            ],
-          ),
-          const SizedBox(height: 16),
-          if (!_useFullPath)
-            TextField(
-              controller: _index,
-              keyboardType: TextInputType.number,
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(9)],
-              style: text.body.copyWith(color: colors.textContent),
-              decoration: InputDecoration(
-                labelText: 'Account index',
-                labelStyle: text.caption.copyWith(color: colors.textMuted),
-              ),
-            )
-          else
-            TextField(
-              controller: _path,
-              autocorrect: false,
-              enableSuggestions: false,
-              onChanged: (_) => _userEditedPath = true,
-              style: text.body.copyWith(color: colors.textContent),
-              decoration: InputDecoration(
-                labelText: 'Derivation path',
-                labelStyle: text.caption.copyWith(color: colors.textMuted),
-              ),
-            ),
-          const SizedBox(height: 8),
-          Text(
-            account == null ? 'Not a valid derivation' : account.derivationPath,
-            style: text.caption.copyWith(color: account == null ? colors.semanticEmber : colors.textMuted),
-          ),
-          const SizedBox(height: 8),
-          GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: _toggleFullPath,
-            child: Text(
-              _useFullPath ? 'Use an account index instead' : 'Use a full derivation path',
-              style: text.caption.copyWith(color: colors.accentFlare),
-            ),
-          ),
-        ],
       ],
     );
   }
