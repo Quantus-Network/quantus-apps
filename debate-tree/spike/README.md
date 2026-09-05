@@ -69,7 +69,7 @@ The seeded tree is recreated automatically on next start if the space is empty.
 ## Not wired yet
 
 - Captcha / share-token gate on writes
-- Wallet auth + QUAN balance gate for new questions
+- Wallet auth + QTC balance gate for new questions
 - Embedding-based dedup (pgvector optional; currently disabled)
 - Shareable per-node links, QIP space, on-chain anchoring
 

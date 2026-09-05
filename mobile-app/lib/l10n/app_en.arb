@@ -1241,7 +1241,7 @@
     "@addKeystoneIntroTitle": {
       "description": "Headline on the add Keystone intro screen"
     },
-    "addKeystoneIntroSubtitle": "Air-gapped signing for QUAN. Keys stay on the device, signing happens over QR.",
+    "addKeystoneIntroSubtitle": "Air-gapped signing for QTC. Keys stay on the device, signing happens over QR.",
     "@addKeystoneIntroSubtitle": {
       "description": "Subtitle on the add Keystone intro screen"
     },
@@ -1269,7 +1269,7 @@
     "@addKeystoneFirmwareTitle": {
       "description": "Firmware reminder title on the Keystone connect instructions screen"
     },
-    "addKeystoneFirmwareSubtitle": "Required for QUAN signing",
+    "addKeystoneFirmwareSubtitle": "Required for QTC signing",
     "@addKeystoneFirmwareSubtitle": {
       "description": "Firmware reminder subtitle on the Keystone connect instructions screen"
     },

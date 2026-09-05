@@ -2,7 +2,7 @@ class AppConstants {
   static const globalDebug = false;
 
   static const String appName = 'Quantus Wallet';
-  static const String tokenSymbol = 'QUAN'; // fetch this from chain eventually
+  static const String tokenSymbol = 'QTC'; // fetch this from chain eventually
   static const String shareUrl = 'https://linktr.ee/quantusnetwork';
   static const String websiteBaseUrl = 'https://www.quantus.com';
   static const String emailSupport = 'support@quantus.com';
@@ -60,7 +60,7 @@ class AppConstants {
   // Digits of precision
   static const int decimals = 12;
 
-  // The chain runtime caps issuance at MAX_SUPPLY = 21_000_000 QUAN
+  // The chain runtime caps issuance at MAX_SUPPLY = 21_000_000 QTC
   // (runtime/src/lib.rs), so no legitimate amount has more whole digits.
   static const int maxWholeDigits = 8;
   static const int ss58prefix = 189;

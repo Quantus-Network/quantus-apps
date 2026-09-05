@@ -1685,7 +1685,7 @@ abstract class AppLocalizations {
   /// Subtitle on the add Keystone intro screen
   ///
   /// In en, this message translates to:
-  /// **'Air-gapped signing for QUAN. Keys stay on the device, signing happens over QR.'**
+  /// **'Air-gapped signing for QTC. Keys stay on the device, signing happens over QR.'**
   String get addKeystoneIntroSubtitle;
 
   /// Primary button on the add Keystone intro screen
@@ -1727,7 +1727,7 @@ abstract class AppLocalizations {
   /// Firmware reminder subtitle on the Keystone connect instructions screen
   ///
   /// In en, this message translates to:
-  /// **'Required for QUAN signing'**
+  /// **'Required for QTC signing'**
   String get addKeystoneFirmwareSubtitle;
 
   /// Section label for the on-device steps

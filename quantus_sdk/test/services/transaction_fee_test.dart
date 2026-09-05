@@ -5,7 +5,7 @@ import 'package:quantus_sdk/generated/planck/types/sp_runtime/multiaddress/multi
 import 'package:quantus_sdk/quantus_sdk.dart';
 
 /// `payment_queryInfo` on a1-planck (spec 144) for a dummy-signed
-/// `transfer_allow_death` of 10 QUAN with a 1-byte nonce: 7303 bytes,
+/// `transfer_allow_death` of 10 QTC with a 1-byte nonce: 7303 bytes,
 /// weight.ref_time 5_551_728_000, partialFee 12_962_885_000.
 ///
 /// The bundled metadata is spec 147, which raises the normal-class base
