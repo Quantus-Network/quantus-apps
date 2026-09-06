@@ -175,7 +175,7 @@ class _AmountSection extends ConsumerWidget {
       return Text('—', style: text.amountHero.copyWith(color: colors.textMuted));
     }
 
-    final amount = ref.watch(txAmountDisplayProvider)(displayAmount, isSend: true, withTokenSymbol: false);
+    final amount = ref.watch(txAmountDisplayProvider)(displayAmount, isSend: isSend, withTokenSymbol: false);
 
     return AmountDisplayWithConversion(amountDisplay: amount, colorizeAmount: false, amountColor: amountColor);
   }
