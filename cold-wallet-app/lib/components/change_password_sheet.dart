@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:quantus_cold_wallet/providers/wallet_providers.dart';
 import 'package:quantus_cold_wallet/components/password_field.dart';
+import 'package:quantus_cold_wallet/components/sheet_body.dart';
 
 /// Action pane for setting or changing the vault password. Resolves to true
 /// when the password was changed.
@@ -87,13 +88,7 @@ class _ChangePasswordSheetState extends ConsumerState<_ChangePasswordSheet> {
     // taps and back navigation until the result lands in this sheet.
     return PopScope(
       canPop: !_busy,
-      child: Padding(
-        padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(24, 24, 24, 40),
-          child: _done ? _successContent(colors, text) : _formContent(colors, text),
-        ),
-      ),
+      child: SheetBody(child: _done ? _successContent(colors, text) : _formContent(colors, text)),
     );
   }
 

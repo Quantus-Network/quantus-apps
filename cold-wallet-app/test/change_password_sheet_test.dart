@@ -22,19 +22,26 @@ void main() {
   const colors = AppColorsV3.dark();
   const text = AppTextThemeV3.standard();
 
-  Future<void> openSheet(WidgetTester tester, {_HangingController? controller}) async {
+  Future<void> openSheet(
+    WidgetTester tester, {
+    _HangingController? controller,
+    EdgeInsets padding = EdgeInsets.zero,
+  }) async {
     FlutterSecureStorage.setMockInitialValues({});
     await tester.pumpWidget(
       ProviderScope(
         overrides: [if (controller != null) walletControllerProvider.overrideWith(() => controller)],
-        child: MaterialApp(
-          home: Builder(
-            builder: (context) => Theme(
-              data: AppTheme.darkTheme(context),
-              child: Scaffold(
-                body: Builder(
-                  builder: (context) => Center(
-                    child: TextButton(onPressed: () => showChangePasswordSheet(context), child: const Text('open')),
+        child: MediaQuery(
+          data: MediaQueryData(size: const Size(375, 667), padding: padding),
+          child: MaterialApp(
+            home: Builder(
+              builder: (context) => Theme(
+                data: AppTheme.darkTheme(context),
+                child: Scaffold(
+                  body: Builder(
+                    builder: (context) => Center(
+                      child: TextButton(onPressed: () => showChangePasswordSheet(context), child: const Text('open')),
+                    ),
                   ),
                 ),
               ),
@@ -111,5 +118,12 @@ void main() {
     expect(title.style?.color, colors.textContent);
     expect(title.style?.fontSize, text.titleScreen.fontSize);
     expect(title.style?.fontWeight, text.titleScreen.fontWeight);
+  });
+
+  testWidgets('keeps the form above the bottom system inset', (tester) async {
+    await openSheet(tester, padding: const EdgeInsets.only(bottom: 48));
+
+    final screenBottom = tester.getBottomLeft(find.byType(MaterialApp)).dy;
+    expect(tester.getBottomLeft(find.byType(QuantusButton)).dy, closeTo(screenBottom - 40 - 48, 0.01));
   });
 }

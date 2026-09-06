@@ -20,24 +20,27 @@ class BottomSheetContainer extends StatelessWidget {
       height: height,
       padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
       decoration: BoxDecoration(color: colors.bgSurface, borderRadius: context.radiusV3.lgBorder),
-      child: Column(
-        mainAxisSize: height != null ? MainAxisSize.max : MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Center(
-            child: Container(
-              width: 36,
-              height: 4,
-              decoration: BoxDecoration(color: colors.bgSurface2, borderRadius: BorderRadius.circular(2)),
+      child: SafeArea(
+        top: false,
+        child: Column(
+          mainAxisSize: height != null ? MainAxisSize.max : MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Center(
+              child: Container(
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(color: colors.bgSurface2, borderRadius: BorderRadius.circular(2)),
+              ),
             ),
-          ),
-          const SizedBox(height: 16),
-          Text(title, style: text.headingRow.copyWith(color: colors.textContent)),
-          const SizedBox(height: 16),
-          if (height != null) Expanded(child: child) else Flexible(child: SingleChildScrollView(child: child)),
-          // Toasts raised from inside a sheet would otherwise render behind it.
-          const ToastHost(),
-        ],
+            const SizedBox(height: 16),
+            Text(title, style: text.headingRow.copyWith(color: colors.textContent)),
+            const SizedBox(height: 16),
+            if (height != null) Expanded(child: child) else Flexible(child: SingleChildScrollView(child: child)),
+            // Toasts raised from inside a sheet would otherwise render behind it.
+            const ToastHost(),
+          ],
+        ),
       ),
     );
   }
