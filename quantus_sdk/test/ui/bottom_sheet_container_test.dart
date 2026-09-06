@@ -23,10 +23,10 @@ void main() {
     await tester.pump();
   }
 
-  Future<void> showViaApi(WidgetTester tester) async {
+  Future<void> showViaApi(WidgetTester tester, {EdgeInsets padding = EdgeInsets.zero}) async {
     await tester.pumpWidget(
       MediaQuery(
-        data: const MediaQueryData(size: Size(375, 667)),
+        data: MediaQueryData(size: const Size(375, 667), padding: padding),
         child: Builder(
           builder: (context) => MaterialApp(
             theme: AppTheme.darkTheme(context),
@@ -162,5 +162,13 @@ void main() {
 
     expect(find.text('Locked'), findsOneWidget);
     expect(find.text('body'), findsOneWidget);
+  });
+
+  testWidgets('keeps content above the bottom system inset', (tester) async {
+    await showViaApi(tester, padding: const EdgeInsets.only(bottom: 48));
+
+    final screenBottom = tester.getBottomLeft(find.byType(MaterialApp)).dy;
+    expect(tester.getBottomLeft(find.byType(BottomSheetContainer)).dy, screenBottom);
+    expect(tester.getBottomLeft(find.text('body')).dy, closeTo(screenBottom - 32 - 48, 0.01));
   });
 }

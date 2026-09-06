@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:quantus_cold_wallet/components/password_field.dart';
+import 'package:quantus_cold_wallet/components/sheet_body.dart';
 import 'package:quantus_cold_wallet/providers/wallet_providers.dart';
 
 /// Asks for the vault password and verifies it against the vault. Resolves to
@@ -59,27 +60,23 @@ class _VerifyPasswordSheetState extends ConsumerState<_VerifyPasswordSheet> {
     final colors = context.colorsV3;
     final text = context.themeTextV3;
 
-    return Padding(
-      padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(24, 24, 24, 40),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text('Enter password', style: text.titleScreen.copyWith(color: colors.textContent)),
-            const SizedBox(height: 8),
-            Text(widget.message, style: text.body.copyWith(color: colors.textMuted)),
-            const SizedBox(height: 24),
-            PasswordField(controller: _password, hintText: 'Password', enabled: !_busy, onSubmitted: (_) => _submit()),
-            if (_error != null) ...[
-              const SizedBox(height: 16),
-              Text(_error!, style: text.caption.copyWith(color: colors.semanticEmber)),
-            ],
-            const SizedBox(height: 24),
-            QuantusButton.simple(label: 'Continue', isLoading: _busy, onTap: _busy ? null : _submit),
+    return SheetBody(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text('Enter password', style: text.titleScreen.copyWith(color: colors.textContent)),
+          const SizedBox(height: 8),
+          Text(widget.message, style: text.body.copyWith(color: colors.textMuted)),
+          const SizedBox(height: 24),
+          PasswordField(controller: _password, hintText: 'Password', enabled: !_busy, onSubmitted: (_) => _submit()),
+          if (_error != null) ...[
+            const SizedBox(height: 16),
+            Text(_error!, style: text.caption.copyWith(color: colors.semanticEmber)),
           ],
-        ),
+          const SizedBox(height: 24),
+          QuantusButton.simple(label: 'Continue', isLoading: _busy, onTap: _busy ? null : _submit),
+        ],
       ),
     );
   }
