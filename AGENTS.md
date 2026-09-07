@@ -11,7 +11,7 @@ melos run format   # dart format lib test --line-length=120 across all packages
 melos run analyze  # flutter analyze . --fatal-infos across all packages
 ```
 
-Both commands normally finish in a few seconds, but `flutter analyze` occasionally hangs. **Never wait more than 20 seconds for either command — if it hasn't finished by then, kill the process.** A run that takes longer is hung, not slow; kill it and retry.
+Both commands normally finish in a few seconds, but the analyzer gets stuck on this machine: the analysis server stops consuming CPU after a few seconds and never returns. **Never wait more than 20 seconds for either command — if it hasn't finished by then, kill the process.** A run that takes longer is hung, not slow. Do not retry in a loop; use a `flutter test` run that imports the changed files as the compile check instead.
 
 Do not run `dart analyze` or `flutter analyze` directly in individual packages; use the melos scripts above so every package is covered with the right flags.
 
