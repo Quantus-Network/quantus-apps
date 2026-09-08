@@ -182,6 +182,7 @@ class WormholeSendService {
         if (batch.isEmpty || batch.length > maxProofsPerBatch) {
           throw StateError('Batch of ${batch.length} spends violates aggregation arity $maxProofsPerBatch');
         }
+        _validateBatchOutputs(batch, batch.map((spend) => wormholeScaledFromToken(spend.transfer.amount)));
       }
       return proveAndSubmitBatches(
         op: op,
@@ -266,25 +267,28 @@ class WormholeSendService {
     _log('Found ${unspent.length} unspent transfers');
     op.checkCancelled();
 
-    // A claim pays each leaf's full net (post-fee) amount to the destination.
+    // A claim pays each private batch's full net amount to the destination.
     // The secret lives only in this buffer and is zeroized as soon as the
     // proofs are done (M11).
     final secretBytes = Uint8List.fromList(hex.decode(secretHex.replaceFirst('0x', '')));
     try {
       final destinationBytes = Uint8List.fromList(getAccountId32(destinationAddress));
-      final spends = [
-        for (final transfer in unspent)
-          WormholeLeafSpend(
-            transfer: transfer,
-            secret: secretBytes,
-            exitAccount1: destinationBytes,
-            outputAmount1: wormholeNetScaled(wormholeScaledFromToken(transfer.amount)),
-          ),
-      ];
-      final batches = [
-        for (var i = 0; i < spends.length; i += maxProofsPerBatch)
-          spends.sublist(i, (i + maxProofsPerBatch).clamp(0, spends.length)),
-      ];
+      final batches = <List<WormholeLeafSpend>>[];
+      for (var i = 0; i < unspent.length; i += maxProofsPerBatch) {
+        final transfers = unspent.sublist(i, (i + maxProofsPerBatch).clamp(0, unspent.length));
+        final outputAmounts = wormholeBatchOutputs(
+          transfers.map((transfer) => wormholeScaledFromToken(transfer.amount)).toList(),
+        );
+        batches.add([
+          for (var j = 0; j < transfers.length; j++)
+            WormholeLeafSpend(
+              transfer: transfers[j],
+              secret: secretBytes,
+              exitAccount1: destinationBytes,
+              outputAmount1: outputAmounts[j],
+            ),
+        ]);
+      }
 
       return await proveAndSubmitBatches(
         op: op,
@@ -332,7 +336,7 @@ class WormholeSendService {
 
         final proofBytesList = List<Uint8List?>.filled(batch.length, null);
         final nullifierHexes = List<String?>.filled(batch.length, null);
-        final futures = <Future<BigInt>>[];
+        final futures = <Future<({int inputScaled, BigInt recipientToken})>>[];
         for (int i = 0; i < batch.length; i++) {
           final spend = batch[i];
           futures.add(
@@ -363,8 +367,9 @@ class WormholeSendService {
         }
 
         final outputs = await Future.wait(futures, eagerError: true);
-        for (final out in outputs) {
-          recipientTotal += out;
+        _validateBatchOutputs(batch, outputs.map((output) => output.inputScaled));
+        for (final output in outputs) {
+          recipientTotal += output.recipientToken;
         }
         op.checkCancelled();
 
@@ -426,10 +431,10 @@ class WormholeSendService {
   }
 
   /// Generates a single leaf proof and writes it (and its nullifier hex) to
-  /// the output buffers. Returns the token amount paid to exit slot 1.
+  /// the output buffers. Returns its decoded input and exit-slot-1 amount.
   /// [onComplete] fires once the proof is written so callers can update
   /// progress per-leaf.
-  Future<BigInt> _generateLeafProof({
+  Future<({int inputScaled, BigInt recipientToken})> _generateLeafProof({
     required WormholeOperation op,
     required WormholeLeafSpend spend,
     required String blockHash,
@@ -463,13 +468,6 @@ class WormholeSendService {
     );
 
     final inputAmount = wormhole_ffi.decodeLeafAmount(leafData: leafData);
-    final maxOutput = wormholeNetScaled(inputAmount);
-    if (spend.outputAmount1 + spend.outputAmount2 > maxOutput) {
-      throw StateError(
-        'Leaf ${transfer.leafIndex}: assigned outputs ${spend.outputAmount1}+${spend.outputAmount2} '
-        'exceed net input $maxOutput (input $inputAmount)',
-      );
-    }
     final wormholeAddressBytes = wormhole_ffi.decodeLeafToAccount(leafData: leafData);
 
     // The FFI proof itself cannot be interrupted, so check one last time
@@ -505,7 +503,20 @@ class WormholeSendService {
     onComplete?.call();
     // On-chain dispatch transfers `outputAmount * scaleFactor` token units to
     // each exit account; slot 1 is the recipient's exact contribution.
-    return wormholeTokenFromScaled(spend.outputAmount1);
+    return (inputScaled: inputAmount, recipientToken: wormholeTokenFromScaled(spend.outputAmount1));
+  }
+
+  void _validateBatchOutputs(List<WormholeLeafSpend> batch, Iterable<int> inputAmounts) {
+    final inputs = inputAmounts.toList();
+    if (inputs.length != batch.length) throw StateError('Wormhole batch input count changed during proving');
+    if (batch.any((spend) => spend.outputAmount1 < 0 || spend.outputAmount2 < 0)) {
+      throw StateError('Wormhole batch outputs must be non-negative');
+    }
+    final outputTotal = batch.fold<int>(0, (sum, spend) => sum + spend.outputAmount1 + spend.outputAmount2);
+    final maxOutput = wormholeBatchNetScaled(inputs);
+    if (outputTotal > maxOutput) {
+      throw StateError('Batch outputs $outputTotal exceed net input $maxOutput');
+    }
   }
 
   /// Submits an unsigned extrinsic via `author_submitExtrinsic` and returns the

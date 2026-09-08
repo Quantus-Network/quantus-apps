@@ -141,8 +141,8 @@ void main() {
       transferCount: BigInt.one,
     );
 
-    Future<_StubProvingSendService> runClaim({Object? proveError}) async {
-      final service = _StubProvingSendService(utxoService: _FakeUtxoService()..unspent = [transfer])
+    Future<_StubProvingSendService> runClaim({Object? proveError, List<WormholeTransfer>? transfers}) async {
+      final service = _StubProvingSendService(utxoService: _FakeUtxoService()..unspent = transfers ?? [transfer])
         ..proveError = proveError;
       final claim = service.claimRewards(
         wormholeAddress: 'wormhole_addr',
@@ -172,6 +172,28 @@ void main() {
       final service = await runClaim(proveError: StateError('boom'));
       final liveSecret = service.capturedBatches![0][0].secret;
       expect(liveSecret.every((b) => b == 0), isTrue);
+    });
+
+    test('deducts the volume fee once per private batch', () async {
+      final rewards = [
+        for (var i = 0; i < 7; i++)
+          WormholeTransfer(
+            id: 't$i',
+            blockHeight: i,
+            fromId: 'from',
+            toId: 'wormhole_addr',
+            amount: wormholeTokenFromScaled(50),
+            toHash: '0x00',
+            leafIndex: BigInt.from(i + 1),
+            transferCount: BigInt.one,
+          ),
+      ];
+
+      final service = await runClaim(transfers: rewards);
+      final outputs = service.capturedBatches!.single.map((spend) => spend.outputAmount1).toList();
+      expect(outputs.where((amount) => amount == 50).length, 6);
+      expect(outputs.where((amount) => amount == 49).length, 1);
+      expect(outputs.fold(0, (sum, amount) => sum + amount), 349);
     });
   });
 }

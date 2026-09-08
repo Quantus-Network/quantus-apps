@@ -55,10 +55,10 @@ void main() {
 
     expect(sub.read().isLoading, isTrue);
     await container.read(encryptedStateProvider(account.walletIndex).future);
-    expect((sub.read().requireValue as EncryptedFee).plan?.feeToken, wormholeTokenFromScaled(3));
+    expect((sub.read().requireValue as EncryptedFee).plan?.feeToken, wormholeTokenFromScaled(1));
 
     container.invalidate(encryptedStateProvider(account.walletIndex));
-    expect(sub.read().value?.displayFee, wormholeTokenFromScaled(3));
+    expect(sub.read().value?.displayFee, wormholeTokenFromScaled(1));
     expect(loads, 2);
   });
 

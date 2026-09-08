@@ -23,17 +23,43 @@ String wormholeVolumeFeePercentText() {
 /// never a hand-edited value.
 final BigInt wormholeScaleFactor = vesting_pallet.Constants().payoutQuantum;
 
-/// Chain's `MinimumTransferAmount` (0.1 token) in scaled units, enforced per
-/// aggregated batch on the total exit amount.
-const int wormholeMinBatchExitScaled = 10;
-
 int wormholeScaledFromToken(BigInt token) => (token ~/ wormholeScaleFactor).toInt();
 
 BigInt wormholeTokenFromScaled(int scaled) => BigInt.from(scaled) * wormholeScaleFactor;
 
-/// Max total output the circuit allows for a consumed input:
+/// Max total output the circuit allows for a private batch:
 /// `(out1 + out2) * 10000 <= input * (10000 - feeBps)`.
 int wormholeNetScaled(int inputScaled) => inputScaled * (10000 - wormholeVolumeFeeBps) ~/ 10000;
+
+int wormholeBatchNetScaled(Iterable<int> inputAmounts) =>
+    wormholeNetScaled(inputAmounts.fold(0, (sum, amount) => sum + amount));
+
+List<int> wormholeBatchOutputs(List<int> inputAmounts) {
+  if (inputAmounts.any((amount) => amount < 0)) throw ArgumentError('Wormhole batch inputs must be non-negative');
+  final outputs = [...inputAmounts];
+  var fee = outputs.fold(0, (sum, amount) => sum + amount) - wormholeBatchNetScaled(outputs);
+  for (var i = outputs.length - 1; i >= 0 && fee > 0; i--) {
+    final deduction = outputs[i] < fee ? outputs[i] : fee;
+    outputs[i] -= deduction;
+    fee -= deduction;
+  }
+  if (fee != 0) throw StateError('Unable to allocate wormhole batch fee');
+  return outputs;
+}
+
+List<List<T>> _chunks<T>(List<T> values, int size) {
+  if (size <= 0) throw ArgumentError.value(size, 'size', 'must be positive');
+  return [for (var i = 0; i < values.length; i += size) values.sublist(i, (i + size).clamp(0, values.length))];
+}
+
+List<WormholeUtxo> _sortedSpendable(List<WormholeUtxo> utxos) =>
+    utxos.where((utxo) => wormholeScaledFromToken(utxo.amount) > 0).toList()
+      ..sort((a, b) => b.amount.compareTo(a.amount));
+
+int _maxExitScaled(List<WormholeUtxo> sorted, int maxProofsPerBatch) => _chunks(
+  sorted,
+  maxProofsPerBatch,
+).fold<int>(0, (sum, batch) => sum + wormholeBatchNetScaled(batch.map((utxo) => wormholeScaledFromToken(utxo.amount))));
 
 /// One leaf proof's spend: consumes [utxo] entirely, pays [recipientScaled] to
 /// the recipient (exit slot 1) and [changeScaled] back to the sender's fresh
@@ -54,8 +80,7 @@ class WormholeSpendPlan {
   final BigInt amountToken;
   final BigInt changeToken;
 
-  /// Everything consumed that neither the recipient nor the change receives:
-  /// the 4 bps volume fee plus sub-0.01-tokens quantization dust.
+  /// Everything consumed that neither the recipient nor the change receives.
   final BigInt feeToken;
 
   const WormholeSpendPlan({
@@ -81,25 +106,14 @@ class InsufficientEncryptedFunds extends WormholeSelectionException {
     : super('Insufficient encrypted funds: max sendable is $maxSendableToken token units');
 }
 
-/// An aggregation batch's total exit would fall below the chain's minimum
-/// (0.1 token); the amounts are too fragmented to send this way.
-class BatchBelowMinimumExit extends WormholeSelectionException {
-  BatchBelowMinimumExit(int totalScaled)
-    : super('Batch exit total $totalScaled is below the chain minimum of $wormholeMinBatchExitScaled (0.1 token)');
-}
-
-/// Maximum amount spendable from [utxos] (sum of per-input nets after the
-/// volume fee), in token units.
-BigInt wormholeMaxSendable(List<WormholeUtxo> utxos) {
-  final totalScaled = utxos.fold<int>(0, (sum, u) => sum + wormholeNetScaled(wormholeScaledFromToken(u.amount)));
-  return wormholeTokenFromScaled(totalScaled);
+/// Maximum amount spendable from [utxos] after one fee per private batch.
+BigInt wormholeMaxSendable(List<WormholeUtxo> utxos, {int maxProofsPerBatch = 7}) {
+  return wormholeTokenFromScaled(_maxExitScaled(_sortedSpendable(utxos), maxProofsPerBatch));
 }
 
 /// Selects inputs to send exactly [amountToken] (a multiple of 0.01 tokens) to
-/// the recipient, largest-first. Every leaf pays its full net to the recipient
-/// except the last, which splits between the recipient remainder and change.
-/// Leaves are distributed round-robin (largest exits first) across the minimum
-/// number of 7-proof batches so each batch clears the chain's minimum exit.
+/// the recipient, largest-first. The volume fee is deducted once per private
+/// batch; any remaining output returns to the sender as change.
 WormholeSpendPlan selectWormholeInputs({
   required List<WormholeUtxo> utxos,
   required BigInt amountToken,
@@ -113,38 +127,43 @@ WormholeSpendPlan selectWormholeInputs({
   }
   final targetScaled = wormholeScaledFromToken(amountToken);
 
-  final candidates = utxos.where((u) => wormholeNetScaled(wormholeScaledFromToken(u.amount)) > 0).toList()
-    ..sort((a, b) => b.amount.compareTo(a.amount));
-  final maxSendable = wormholeMaxSendable(candidates);
+  final candidates = _sortedSpendable(utxos);
+  final maxSendable = wormholeTokenFromScaled(_maxExitScaled(candidates, maxProofsPerBatch));
   if (wormholeTokenFromScaled(targetScaled) > maxSendable) {
     throw InsufficientEncryptedFunds(maxSendable);
   }
 
-  final assignments = <WormholeLeafAssignment>[];
-  var remaining = targetScaled;
-  var consumedToken = BigInt.zero;
+  final selected = <WormholeUtxo>[];
+  var completedBatchNet = 0;
+  var currentBatchInput = 0;
   for (final utxo in candidates) {
-    final net = wormholeNetScaled(wormholeScaledFromToken(utxo.amount));
-    final pay = net < remaining ? net : remaining;
-    assignments.add(WormholeLeafAssignment(utxo: utxo, recipientScaled: pay, changeScaled: net - pay));
-    consumedToken += utxo.amount;
-    remaining -= pay;
-    if (remaining == 0) break;
+    if (selected.isNotEmpty && selected.length % maxProofsPerBatch == 0) {
+      completedBatchNet += wormholeNetScaled(currentBatchInput);
+      currentBatchInput = 0;
+    }
+    selected.add(utxo);
+    currentBatchInput += wormholeScaledFromToken(utxo.amount);
+    if (completedBatchNet + wormholeNetScaled(currentBatchInput) >= targetScaled) break;
   }
 
-  final numBatches = (assignments.length + maxProofsPerBatch - 1) ~/ maxProofsPerBatch;
-  final byExitDesc = [...assignments]..sort((a, b) => b.exitScaled.compareTo(a.exitScaled));
-  final batches = List.generate(numBatches, (_) => <WormholeLeafAssignment>[]);
-  for (var i = 0; i < byExitDesc.length; i++) {
-    batches[i % numBatches].add(byExitDesc[i]);
+  var remaining = targetScaled;
+  final batches = <List<WormholeLeafAssignment>>[];
+  for (final inputs in _chunks(selected, maxProofsPerBatch)) {
+    final outputAmounts = wormholeBatchOutputs(inputs.map((u) => wormholeScaledFromToken(u.amount)).toList());
+    final batch = <WormholeLeafAssignment>[];
+    for (var i = 0; i < inputs.length; i++) {
+      final pay = outputAmounts[i] < remaining ? outputAmounts[i] : remaining;
+      batch.add(WormholeLeafAssignment(utxo: inputs[i], recipientScaled: pay, changeScaled: outputAmounts[i] - pay));
+      remaining -= pay;
+    }
+    batches.add(batch);
   }
-  for (final batch in batches) {
-    final totalScaled = batch.fold<int>(0, (sum, a) => sum + a.exitScaled);
-    if (totalScaled < wormholeMinBatchExitScaled) throw BatchBelowMinimumExit(totalScaled);
-  }
+  if (remaining != 0) throw StateError('Selected wormhole inputs are short by $remaining scaled units');
 
+  final assignments = batches.expand((batch) => batch);
   final changeScaled = assignments.fold<int>(0, (sum, a) => sum + a.changeScaled);
   final changeToken = wormholeTokenFromScaled(changeScaled);
+  final consumedToken = selected.fold(BigInt.zero, (sum, utxo) => sum + utxo.amount);
   return WormholeSpendPlan(
     batches: batches,
     amountToken: amountToken,
