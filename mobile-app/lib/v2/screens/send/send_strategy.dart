@@ -57,7 +57,7 @@ class ProposeFee extends SendFee {
 }
 
 /// Why an encrypted send can't be built for the entered amount.
-enum EncryptedSendBlocker { notQuantized, insufficient, belowBatchMinimum }
+enum EncryptedSendBlocker { notQuantized, insufficient }
 
 /// Fee for an encrypted (wormhole) send: the in-circuit volume fee plus
 /// quantization dust, carried with the coin-selection [plan] that produced it.

@@ -31,8 +31,6 @@ EncryptedFee planEncryptedFee(List<WormholeUtxo> utxos, BigInt amount) {
     );
   } on InsufficientEncryptedFunds {
     return const EncryptedFee(blocker: EncryptedSendBlocker.insufficient);
-  } on BatchBelowMinimumExit {
-    return const EncryptedFee(blocker: EncryptedSendBlocker.belowBatchMinimum);
   }
 }
 
@@ -97,7 +95,6 @@ class EncryptedSendStrategy extends SendStrategy {
       null => null,
       EncryptedSendBlocker.notQuantized => l10n.encryptedSendAmountStep(AppConstants.tokenSymbol),
       EncryptedSendBlocker.insufficient => l10n.sendLogicInsufficientBalance,
-      EncryptedSendBlocker.belowBatchMinimum => l10n.encryptedSendMinimum(AppConstants.tokenSymbol),
     };
   }
 
