@@ -20,10 +20,15 @@ typedef KeystoneSignatureSubmitter =
 ///
 /// Transfers, multisig actions, and future runtime calls configure this session
 /// and share the same QR display and signature scanner screens.
+///
+/// [primaryLabel] and [secondaryLabel] caption the details on the sign and
+/// verify screens; they default to the transfer labels (amount / to).
 class KeystoneSigningSession {
   final Account account;
   final RuntimeCall Function() buildCall;
+  final String? primaryLabel;
   final String? primaryDetail;
+  final String? secondaryLabel;
   final String? secondaryDetail;
   final String? tertiaryDetail;
   final KeystoneSignCacheKey? cacheKey;
@@ -34,7 +39,9 @@ class KeystoneSigningSession {
     required this.account,
     required this.buildCall,
     required this.submitSigned,
+    this.primaryLabel,
     this.primaryDetail,
+    this.secondaryLabel,
     this.secondaryDetail,
     this.tertiaryDetail,
     this.cacheKey,

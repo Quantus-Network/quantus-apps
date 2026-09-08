@@ -95,6 +95,7 @@
   "multisigCreateInvalidSigner": "Masukkan alamat penandatangan yang valid.",
   "multisigCreateThresholdLabel": "AMBANG BATAS",
   "multisigCreateThresholdValue": "{count} dari {total}",
+  "multisigCreateKeystoneAction": "Buat multisig {count} dari {total}",
   "multisigCreatePredictedAddressLabel": "ALAMAT MULTISIG",
   "multisigCreatePredictedAddressPlaceholder": "Tambahkan penandatangan untuk melihat alamat",
   "multisigDone": "Selesai",

@@ -9,6 +9,7 @@ import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/services/local_auth_service.dart';
 import 'package:resonance_network_wallet/services/transaction_submission_service.dart';
+import 'package:resonance_network_wallet/shared/utils/account_utils.dart';
 import 'package:resonance_network_wallet/shared/utils/print.dart';
 import 'package:resonance_network_wallet/shared/utils/url_utils.dart';
 import 'package:resonance_network_wallet/v2/screens/send/keystone_sign_cache.dart';
@@ -88,8 +89,6 @@ class RegularSendStrategy extends SendStrategy {
   @override
   String? affordabilityError(WidgetRef ref, SendFee fee, AppLocalizations l10n) => null;
 
-  bool get _signsWithHardware => account.accountType == AccountType.keystone || AppConstants.debugHardwareWallet;
-
   RuntimeCall _transferCall(WidgetRef ref, String recipient, BigInt amount) =>
       ref.read(balancesServiceProvider).getBalanceTransferCall(recipient, amount);
 
@@ -97,8 +96,13 @@ class RegularSendStrategy extends SendStrategy {
       KeystoneSignCacheKey.fromSendParams(accountId: account.accountId, recipientAddress: recipient, amount: amount);
 
   @override
-  Future<void> prefetchSignPayload(WidgetRef ref, {required String recipientAddress, required BigInt amount}) async {
-    if (!_signsWithHardware) return;
+  Future<void> prefetchSignPayload(
+    WidgetRef ref, {
+    required String recipientAddress,
+    required BigInt amount,
+    required SendFee fee,
+  }) async {
+    if (!account.signsWithHardware) return;
     final recipient = recipientAddress.trim();
     await ensureKeystoneSignPayload(
       ref,
@@ -164,7 +168,7 @@ class RegularSendStrategy extends SendStrategy {
 
     // Keystone (hardware) accounts sign off-device: hand off to the QR flow
     // instead of signing locally. The debug flag forces this path for testing.
-    if (_signsWithHardware) {
+    if (account.signsWithHardware) {
       return SendNeedsHardwareSignature(
         session: KeystoneSigningSession(
           account: account,
@@ -197,7 +201,7 @@ class RegularSendStrategy extends SendStrategy {
             return hash;
           },
         ),
-        terminal: terminal,
+        terminalForHash: (hash) => terminal.copyWith(explorerUrl: explorerImmediateTransactionUrl(hash)),
       );
     }
 

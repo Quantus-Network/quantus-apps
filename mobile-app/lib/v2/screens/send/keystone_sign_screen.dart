@@ -169,12 +169,15 @@ class _KeystoneSignScreenState extends ConsumerState<KeystoneSignScreen> {
         Text(l10n.keystoneSignYouAreSigning, style: text.labelData.copyWith(color: colors.textContent)),
         const SizedBox(height: 12),
         if (session.primaryDetail != null)
-          DetailSummaryRow(label: l10n.sendReviewAmount.toUpperCase(), value: session.primaryDetail!),
+          DetailSummaryRow(
+            label: (session.primaryLabel ?? l10n.sendReviewAmount).toUpperCase(),
+            value: session.primaryDetail!,
+          ),
         if (session.primaryDetail != null && session.secondaryDetail != null)
           const Padding(padding: EdgeInsets.symmetric(vertical: 8), child: MenuDivider()),
         if (secondary != null)
           DetailSummaryRow(
-            label: l10n.sendReviewTo.toUpperCase(),
+            label: (session.secondaryLabel ?? l10n.sendReviewTo).toUpperCase(),
             value: displaySecondary!,
             checkphrase: session.tertiaryDetail,
             monospace: true,

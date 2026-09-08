@@ -16,22 +16,6 @@ void main() {
   final captured = makeAccount(1);
   final other = makeAccount(2);
 
-  Future<WidgetRef> pumpRef(WidgetTester tester, {List<Override> overrides = const []}) async {
-    late WidgetRef widgetRef;
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: overrides,
-        child: Consumer(
-          builder: (context, ref, _) {
-            widgetRef = ref;
-            return const SizedBox();
-          },
-        ),
-      ),
-    );
-    return widgetRef;
-  }
-
   testWidgets('stays bound to the captured account after the active account switches', (tester) async {
     final settings = FakeSettingsService(activeAccount: RegularAccount(other));
     final ref = await pumpRef(tester, overrides: [settingsServiceProvider.overrideWithValue(settings)]);
