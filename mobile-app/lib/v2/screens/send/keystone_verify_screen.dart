@@ -91,7 +91,7 @@ class KeystoneVerifyScreen extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (session.primaryDetail != null) ...[
-            Text(l10n.sendReviewAmount.toUpperCase(), style: labelStyle),
+            Text((session.primaryLabel ?? l10n.sendReviewAmount).toUpperCase(), style: labelStyle),
             const SizedBox(height: 16),
             Text(session.primaryDetail!, style: text.amountHero.copyWith(color: colors.textContent)),
             const SizedBox(height: 24),
@@ -99,7 +99,7 @@ class KeystoneVerifyScreen extends ConsumerWidget {
             const SizedBox(height: 24),
           ],
           if (address != null) ...[
-            Text(l10n.sendReviewTo.toUpperCase(), style: labelStyle),
+            Text((session.secondaryLabel ?? l10n.sendReviewTo).toUpperCase(), style: labelStyle),
             const SizedBox(height: 16),
             if (checksum != null)
               AddressCheckphraseWithInitial(recipientChecksum: checksum, recipientAddress: address)

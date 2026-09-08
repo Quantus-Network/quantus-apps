@@ -154,17 +154,64 @@ class TransactionSubmissionService {
   /// indexer polling then continues in the background. Rethrows on submission
   /// failure so callers can surface the error instead of optimistically
   /// navigating away.
-  Future<void> proposeTransfer({
+  Future<String> proposeTransfer({
     required MultisigAccount msig,
     required Account signer,
     required String recipient,
     required BigInt amount,
     required int expiryBlock,
     required ProposeFeeBreakdown feeBreakdown,
+  }) {
+    return _submitAndTrackProposal(
+      msig: msig,
+      proposerId: signer.accountId,
+      recipient: recipient,
+      amount: amount,
+      expiryBlock: expiryBlock,
+      feeBreakdown: feeBreakdown,
+      telemetryEvent: 'multisig_propose',
+      submit: () => _ref
+          .read(multisigServiceProvider)
+          .propose(msig: msig, signer: signer, recipient: recipient, amount: amount, expiryBlock: expiryBlock),
+    );
+  }
+
+  /// Proposes a transfer using a signature produced off-device (Keystone).
+  Future<String> proposeTransferWithExternalSignature({
+    required MultisigAccount msig,
+    required Account signer,
+    required String recipient,
+    required BigInt amount,
+    required int expiryBlock,
+    required ProposeFeeBreakdown feeBreakdown,
+    required UnsignedTransactionData unsignedData,
+    required Uint8List signatureWithPublicKey,
+  }) {
+    return _submitAndTrackProposal(
+      msig: msig,
+      proposerId: signer.accountId,
+      recipient: recipient,
+      amount: amount,
+      expiryBlock: expiryBlock,
+      feeBreakdown: feeBreakdown,
+      telemetryEvent: 'multisig_propose_hardware',
+      submit: () => SubstrateService().submitExtrinsicWithExternalSignature(unsignedData, signatureWithPublicKey),
+    );
+  }
+
+  Future<String> _submitAndTrackProposal({
+    required MultisigAccount msig,
+    required String proposerId,
+    required String recipient,
+    required BigInt amount,
+    required int expiryBlock,
+    required ProposeFeeBreakdown feeBreakdown,
+    required String telemetryEvent,
+    required Future<Uint8List> Function() submit,
   }) async {
     final pending = PendingMultisigProposalEvent.create(
       msig: msig,
-      proposerId: signer.accountId,
+      proposerId: proposerId,
       recipient: recipient,
       amount: amount,
       expiryBlock: expiryBlock,
@@ -174,17 +221,25 @@ class TransactionSubmissionService {
     );
 
     addPendingMultisigProposal(_ref, pending);
+    TelemetryService().sendEvent(telemetryEvent);
 
-    TelemetryService().sendEvent('multisig_propose');
+    try {
+      final hashBytes = await submit();
+      final extrinsicHash = '0x${hex.encode(hashBytes)}';
+      quantusPrint('[Propose] submitted: $extrinsicHash');
 
-    await _submitProposal(
-      msig: msig,
-      signer: signer,
-      recipient: recipient,
-      amount: amount,
-      expiryBlock: expiryBlock,
-      pending: pending,
-    );
+      updatePendingMultisigProposal(_ref, pending.id, extrinsicHash: extrinsicHash);
+      final updated = findPendingMultisigProposal(_ref, pending.id) ?? pending.copyWith(extrinsicHash: extrinsicHash);
+      _ref.read(multisigProposalPollingServiceProvider).startPolling(msig, updated);
+      return extrinsicHash;
+    } catch (e, stackTrace) {
+      // Retries live in SubstrateService.submitExtrinsic; avoid outer retries
+      // here because each attempt fetches a fresh nonce and can duplicate
+      // deposit-reserving proposals if a prior submit already landed.
+      quantusPrint('[Propose] submit failed: $e\n$stackTrace');
+      removePendingMultisigProposal(_ref, pending.id);
+      rethrow;
+    }
   }
 
   /// Submits a multisig proposal approval and tracks it optimistically.
@@ -444,39 +499,6 @@ class TransactionSubmissionService {
     } catch (e, stackTrace) {
       quantusPrint('[Cancel] hardware submit failed: $e\n$stackTrace');
       removePendingMultisigCancellation(_ref, pending.id);
-      rethrow;
-    }
-  }
-
-  Future<void> _submitProposal({
-    required MultisigAccount msig,
-    required Account signer,
-    required String recipient,
-    required BigInt amount,
-    required int expiryBlock,
-    required PendingMultisigProposalEvent pending,
-  }) async {
-    try {
-      final service = _ref.read(multisigServiceProvider);
-      final hashBytes = await service.propose(
-        msig: msig,
-        signer: signer,
-        recipient: recipient,
-        amount: amount,
-        expiryBlock: expiryBlock,
-      );
-      final extrinsicHash = '0x${hex.encode(hashBytes)}';
-      quantusPrint('[Propose] submitted: $extrinsicHash');
-
-      updatePendingMultisigProposal(_ref, pending.id, extrinsicHash: extrinsicHash);
-      final updated = findPendingMultisigProposal(_ref, pending.id) ?? pending.copyWith(extrinsicHash: extrinsicHash);
-      _ref.read(multisigProposalPollingServiceProvider).startPolling(msig, updated);
-    } catch (e, stackTrace) {
-      // Retries live in SubstrateService.submitExtrinsic; avoid outer retries
-      // here because each attempt fetches a fresh nonce and can duplicate
-      // deposit-reserving proposals if a prior submit already landed.
-      quantusPrint('[Propose] submit failed: $e\n$stackTrace');
-      removePendingMultisigProposal(_ref, pending.id);
       rethrow;
     }
   }

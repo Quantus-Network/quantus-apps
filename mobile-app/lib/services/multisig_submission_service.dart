@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:convert/convert.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -10,6 +11,10 @@ import 'package:resonance_network_wallet/services/multisig_creation_polling_serv
 import 'package:resonance_network_wallet/services/telemetry_service.dart';
 import 'package:resonance_network_wallet/shared/utils/print.dart';
 
+/// Everything a creation needs once on-chain checks have passed: the draft
+/// account (with the resolved nonce) and the network fee it was checked with.
+typedef MultisigCreationPreflight = ({MultisigAccount draft, BigInt networkFee});
+
 class MultisigSubmissionService {
   MultisigSubmissionService(this._ref);
 
@@ -20,88 +25,7 @@ class MultisigSubmissionService {
   /// Throws [MultisigAlreadyExistsException] if the predicted address already
   /// exists, or [MultisigInsufficientBalanceException] if the creator cannot
   /// afford pallet fee + network fee.
-  Future<void> preflightMultisigCreation({
-    required List<String> signers,
-    required int threshold,
-    required Account creator,
-    BigInt? nonce,
-  }) async {
-    await _runCreationPreflight(name: '', signers: signers, threshold: threshold, creator: creator, nonce: nonce);
-  }
-
-  /// Preflight on-chain state, then submit and track creation.
-  ///
-  /// Awaits acceptance of the creation extrinsic by the chain before
-  /// completing; indexer polling then continues in the background. Throws
-  /// [MultisigAlreadyExistsException] if the predicted address already exists,
-  /// or [MultisigInsufficientBalanceException] if the creator cannot afford
-  /// the total creation cost. Rethrows on submission failure so callers can
-  /// surface the error instead of optimistically navigating away.
-  Future<void> startMultisigCreation({
-    required String name,
-    required List<String> signers,
-    required int threshold,
-    required Account creator,
-    BigInt? nonce,
-  }) async {
-    final preflight = await _runCreationPreflight(
-      name: name,
-      signers: signers,
-      threshold: threshold,
-      creator: creator,
-      nonce: nonce,
-    );
-
-    final draft = preflight.draft;
-    final networkFee = preflight.networkFee;
-
-    TelemetryService().sendEvent('multisig_create_started');
-    await _ref
-        .read(pendingMultisigCreationsProvider.notifier)
-        .add(PendingMultisigCreationEvent.fromDraft(draft, networkFee: networkFee), draft);
-
-    await _submitAndTrack(creator: creator, signers: signers, threshold: threshold, nonce: draft.nonce, draft: draft);
-  }
-
-  Future<void> _submitAndTrack({
-    required Account creator,
-    required List<String> signers,
-    required int threshold,
-    required BigInt nonce,
-    required MultisigAccount draft,
-  }) async {
-    final service = _ref.read(multisigServiceProvider);
-    try {
-      quantusPrint('[MultisigSubmission] submitting creation for ${draft.accountId}');
-
-      final hashBytes = await service.submitCreateMultisigExtrinsic(
-        creator: creator,
-        signers: signers,
-        threshold: threshold,
-        nonce: nonce,
-      );
-      final extrinsicHash = '0x${hex.encode(hashBytes)}';
-      quantusPrint('[MultisigSubmission] submitted $extrinsicHash');
-
-      unawaited(
-        _ref.read(pendingMultisigCreationsProvider.notifier).updateExtrinsicHash(draft.accountId, extrinsicHash),
-      );
-
-      final submittedAt = _ref.read(pendingMultisigCreationsProvider.notifier).recordFor(draft.accountId)?.submittedAt;
-      _ref.read(multisigCreationPollingServiceProvider).startPolling(draft, submittedAt: submittedAt);
-    } catch (e, stackTrace) {
-      // Retries live in SubstrateService.submitExtrinsic (same signed bytes);
-      // avoid outer retries here because each attempt re-signs with a fresh
-      // nonce and can double-submit if a prior submit already landed.
-      quantusPrint('[MultisigSubmission] submit failed: $e');
-      quantusPrint('Stack trace: $stackTrace');
-      TelemetryService().sendError('multisig_create_submit_failed', error: e);
-      removePendingMultisigCreation(_ref, draft.accountId);
-      rethrow;
-    }
-  }
-
-  Future<({MultisigAccount draft, BigInt networkFee})> _runCreationPreflight({
+  Future<MultisigCreationPreflight> preflightMultisigCreation({
     required String name,
     required List<String> signers,
     required int threshold,
@@ -133,10 +57,7 @@ class MultisigSubmissionService {
 
     final networkFee = await _ref
         .read(substrateServiceProvider)
-        .getFeeForCall(
-          creator,
-          service.buildCreateMultisigCall(signers: signers, threshold: threshold, nonce: effectiveNonce),
-        )
+        .getFeeForCall(creator, buildCreateCall(draft))
         .then((data) => data.fee);
 
     final totalCost = MultisigCreationDraftFields.fromDraft(draft, networkFee: networkFee).totalCost;
@@ -146,6 +67,81 @@ class MultisigSubmissionService {
     }
 
     return (draft: draft, networkFee: networkFee);
+  }
+
+  /// The `create_multisig` call for [draft]; also the Keystone unsigned payload.
+  RuntimeCall buildCreateCall(MultisigAccount draft) => _ref
+      .read(multisigServiceProvider)
+      .buildCreateMultisigCall(signers: draft.signers, threshold: draft.threshold, nonce: draft.nonce);
+
+  /// Signs the creation with [creator]'s local key, submits it and tracks it.
+  ///
+  /// Awaits acceptance of the extrinsic by the chain before completing; indexer
+  /// polling then continues in the background. Rethrows on submission failure
+  /// so callers can surface the error instead of optimistically navigating away.
+  Future<String> startMultisigCreation({required MultisigCreationPreflight preflight, required Account creator}) {
+    final draft = preflight.draft;
+    return _submitAndTrack(
+      preflight,
+      telemetryEvent: 'multisig_create_started',
+      submit: () => _ref
+          .read(multisigServiceProvider)
+          .submitCreateMultisigExtrinsic(
+            creator: creator,
+            signers: draft.signers,
+            threshold: draft.threshold,
+            nonce: draft.nonce,
+          ),
+    );
+  }
+
+  /// Submits a creation signed off-device (Keystone) and tracks it.
+  Future<String> submitExternallySignedMultisigCreation({
+    required MultisigCreationPreflight preflight,
+    required UnsignedTransactionData unsignedData,
+    required Uint8List signatureWithPublicKey,
+  }) {
+    return _submitAndTrack(
+      preflight,
+      telemetryEvent: 'multisig_create_hardware',
+      submit: () => _ref
+          .read(substrateServiceProvider)
+          .submitExtrinsicWithExternalSignature(unsignedData, signatureWithPublicKey),
+    );
+  }
+
+  Future<String> _submitAndTrack(
+    MultisigCreationPreflight preflight, {
+    required String telemetryEvent,
+    required Future<Uint8List> Function() submit,
+  }) async {
+    final draft = preflight.draft;
+    final pending = _ref.read(pendingMultisigCreationsProvider.notifier);
+
+    TelemetryService().sendEvent(telemetryEvent);
+    await pending.add(PendingMultisigCreationEvent.fromDraft(draft, networkFee: preflight.networkFee), draft);
+
+    try {
+      quantusPrint('[MultisigSubmission] submitting creation for ${draft.accountId}');
+
+      final extrinsicHash = '0x${hex.encode(await submit())}';
+      quantusPrint('[MultisigSubmission] submitted $extrinsicHash');
+
+      unawaited(pending.updateExtrinsicHash(draft.accountId, extrinsicHash));
+
+      final submittedAt = pending.recordFor(draft.accountId)?.submittedAt;
+      _ref.read(multisigCreationPollingServiceProvider).startPolling(draft, submittedAt: submittedAt);
+      return extrinsicHash;
+    } catch (e, stackTrace) {
+      // Retries live in SubstrateService.submitExtrinsic (same signed bytes);
+      // avoid outer retries here because each attempt re-signs with a fresh
+      // nonce and can double-submit if a prior submit already landed.
+      quantusPrint('[MultisigSubmission] submit failed: $e');
+      quantusPrint('Stack trace: $stackTrace');
+      TelemetryService().sendError('multisig_create_submit_failed', error: e);
+      removePendingMultisigCreation(_ref, draft.accountId);
+      rethrow;
+    }
   }
 }
 

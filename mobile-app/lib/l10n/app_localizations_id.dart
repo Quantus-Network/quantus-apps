@@ -328,6 +328,11 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
+  String multisigCreateKeystoneAction(int count, int total) {
+    return 'Buat multisig $count dari $total';
+  }
+
+  @override
   String get multisigCreatePredictedAddressLabel => 'ALAMAT MULTISIG';
 
   @override
@@ -1033,6 +1038,9 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get keystoneSignInstruction => 'Open your Keystone and scan this QR code to load the transaction.';
+
+  @override
+  String get keystoneSignActionLabel => 'ACTION';
 
   @override
   String get keystoneSignYouAreSigning => 'YOU ARE SIGNING';

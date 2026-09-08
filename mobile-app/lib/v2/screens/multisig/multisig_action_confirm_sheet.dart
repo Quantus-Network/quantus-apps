@@ -10,6 +10,7 @@ import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/multisig_providers.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/services/local_auth_service.dart';
+import 'package:resonance_network_wallet/shared/utils/account_utils.dart';
 import 'package:resonance_network_wallet/shared/utils/print.dart';
 import 'package:resonance_network_wallet/v2/components/decoded_call_view.dart';
 import 'package:resonance_network_wallet/v2/screens/send/keystone_sign_cache.dart';
@@ -225,10 +226,6 @@ class _MultisigActionConfirmSheetState extends ConsumerState<MultisigActionConfi
     return signer;
   }
 
-  bool _isHardwareSigner(Account signer) {
-    return signer.accountType == AccountType.keystone || AppConstants.debugHardwareWallet;
-  }
-
   Future<void> _loadNetworkFee() async {
     try {
       final fee = await widget.estimateFee(ref, _requireSigner(), _callBytes);
@@ -258,7 +255,7 @@ class _MultisigActionConfirmSheetState extends ConsumerState<MultisigActionConfi
     final signer = _requireSigner();
 
     // Hardware accounts sign off-device via QR — same path as regular transfers.
-    if (_isHardwareSigner(signer)) {
+    if (signer.signsWithHardware) {
       await _confirmWithHardware(signer, l10n);
       return;
     }

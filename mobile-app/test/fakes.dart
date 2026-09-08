@@ -1,5 +1,8 @@
 import 'dart:typed_data';
 
+import 'package:flutter/widgets.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/local_auth_provider.dart';
@@ -121,4 +124,22 @@ UnsignedTransactionData makeUnsignedTransactionData() {
     signer: Uint8List(32),
     registry: Object(),
   );
+}
+
+/// Pumps a bare [ProviderScope] and returns a [WidgetRef] bound to it, for
+/// exercising code that takes a `WidgetRef` outside a real screen.
+Future<WidgetRef> pumpRef(WidgetTester tester, {List<Override> overrides = const []}) async {
+  late WidgetRef widgetRef;
+  await tester.pumpWidget(
+    ProviderScope(
+      overrides: overrides,
+      child: Consumer(
+        builder: (context, ref, _) {
+          widgetRef = ref;
+          return const SizedBox();
+        },
+      ),
+    ),
+  );
+  return widgetRef;
 }

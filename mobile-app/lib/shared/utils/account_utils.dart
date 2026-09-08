@@ -14,6 +14,12 @@ int walletIndexForActiveAccount(List<Account> accounts, DisplayAccount? activeDi
   return accounts.isNotEmpty ? accounts.first.walletIndex : 0;
 }
 
+/// Keystone accounts sign off-device via the QR flow. The debug flag forces
+/// that path for testing.
+extension AccountSigning on Account {
+  bool get signsWithHardware => accountType == AccountType.keystone || AppConstants.debugHardwareWallet;
+}
+
 List<int> getNonHardwareWalletIndices(List<Account> accounts) {
   final nonHardwareWalletIndices = <int>{};
   for (final account in accounts) {

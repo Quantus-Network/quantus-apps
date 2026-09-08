@@ -9,7 +9,6 @@ import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/currency_display_provider.dart';
 import 'package:resonance_network_wallet/shared/constants/e2e_keys.dart';
 import 'package:resonance_network_wallet/shared/utils/print.dart';
-import 'package:resonance_network_wallet/shared/utils/url_utils.dart';
 import 'package:resonance_network_wallet/v2/components/address_checkphrase_with_initial.dart';
 import 'package:resonance_network_wallet/v2/components/amount_display_with_conversion.dart';
 import 'package:resonance_network_wallet/v2/components/split_card.dart';
@@ -64,7 +63,12 @@ class _ReviewSendScreenState extends ConsumerState<ReviewSendScreen> {
   void _prefetchSignPayload() {
     unawaited(
       widget.strategy
-          .prefetchSignPayload(ref, recipientAddress: widget.recipientAddress.trim(), amount: widget.amount)
+          .prefetchSignPayload(
+            ref,
+            recipientAddress: widget.recipientAddress.trim(),
+            amount: widget.amount,
+            fee: widget.fee,
+          )
           .catchError((Object e) => quantusPrint('Keystone payload prefetch failed: $e')),
     );
   }
@@ -103,20 +107,14 @@ class _ReviewSendScreenState extends ConsumerState<ReviewSendScreen> {
           _errorMessage = null;
         });
         Navigator.push(context, MaterialPageRoute(builder: (_) => SendTerminalScreen(content: terminal)));
-      case SendNeedsHardwareSignature(:final session, :final terminal):
+      case SendNeedsHardwareSignature(:final session, :final terminalForHash):
         setState(() => _submitting = false);
         final hash = await Navigator.push<String>(
           context,
           MaterialPageRoute(builder: (_) => KeystoneSignScreen(session: session)),
         );
         if (!mounted || hash == null) return;
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) =>
-                SendTerminalScreen(content: terminal.copyWith(explorerUrl: explorerImmediateTransactionUrl(hash))),
-          ),
-        );
+        Navigator.push(context, MaterialPageRoute(builder: (_) => SendTerminalScreen(content: terminalForHash(hash))));
       case SendNeedsProving(:final account, :final plan, :final amount, :final terminal):
         setState(() => _submitting = false);
         Navigator.push(

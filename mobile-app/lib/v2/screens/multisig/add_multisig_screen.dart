@@ -11,10 +11,14 @@ import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/multisig_providers.dart';
 import 'package:resonance_network_wallet/providers/pending_multisig_creations_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
+import 'package:resonance_network_wallet/shared/utils/account_utils.dart';
 import 'package:resonance_network_wallet/shared/utils/print.dart';
 import 'package:resonance_network_wallet/services/local_auth_service.dart';
 import 'package:resonance_network_wallet/services/multisig_submission_service.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/accounts_navigation.dart';
+import 'package:resonance_network_wallet/v2/screens/send/keystone_sign_cache.dart';
+import 'package:resonance_network_wallet/v2/screens/send/keystone_sign_screen.dart';
+import 'package:resonance_network_wallet/v2/screens/send/keystone_signing_session.dart';
 
 class AddMultisigScreen extends ConsumerStatefulWidget {
   const AddMultisigScreen({super.key});
@@ -203,32 +207,29 @@ class _AddMultisigScreenState extends ConsumerState<AddMultisigScreen> {
 
     final submissionService = ref.read(multisigSubmissionServiceProvider);
 
+    final MultisigCreationPreflight preflight;
     try {
-      await submissionService.preflightMultisigCreation(
+      preflight = await submissionService.preflightMultisigCreation(
+        name: _accountName.text.trim(),
         signers: _allSigners,
         threshold: _threshold,
         creator: creator,
         nonce: nonce,
       );
     } on MultisigAlreadyExistsException {
-      if (mounted) {
-        context.showErrorToaster(message: l10n.multisigCreateAlreadyExists);
-      }
-      if (mounted) setState(() => _isLoading = false);
+      _failCreation(l10n.multisigCreateAlreadyExists);
       return;
     } on MultisigInsufficientBalanceException {
-      if (mounted) {
-        context.showErrorToaster(message: l10n.multisigCreateInsufficientBalance);
-      }
-      if (mounted) setState(() => _isLoading = false);
+      _failCreation(l10n.multisigCreateInsufficientBalance);
       return;
     } catch (e) {
       quantusPrint('[AddMultisigScreen] preflight error: $e');
+      _failCreation(l10n.multisigCreateErrorCouldNotCreate);
+      return;
+    }
 
-      if (mounted) {
-        context.showErrorToaster(message: l10n.multisigCreateErrorCouldNotCreate);
-      }
-      if (mounted) setState(() => _isLoading = false);
+    if (creator.signsWithHardware) {
+      await _createWithHardware(creator, preflight);
       return;
     }
 
@@ -239,32 +240,55 @@ class _AddMultisigScreenState extends ConsumerState<AddMultisigScreen> {
     }
 
     try {
-      await submissionService.startMultisigCreation(
-        name: _accountName.text.trim(),
-        signers: _allSigners,
-        threshold: _threshold,
-        creator: creator,
-        nonce: nonce,
-      );
+      await submissionService.startMultisigCreation(preflight: preflight, creator: creator);
 
       if (!mounted) return;
-      returnToAccountsScreen(context, ref, highlightAccountId: _predictedAddress!);
-    } on MultisigAlreadyExistsException {
-      if (mounted) {
-        context.showErrorToaster(message: l10n.multisigCreateAlreadyExists);
-      }
-    } on MultisigInsufficientBalanceException {
-      if (mounted) {
-        context.showErrorToaster(message: l10n.multisigCreateInsufficientBalance);
-      }
+      returnToAccountsScreen(context, ref, highlightAccountId: preflight.draft.accountId);
     } catch (e) {
       quantusPrint('[AddMultisigScreen] createMultisig error: $e');
-      if (mounted) {
-        context.showErrorToaster(message: l10n.multisigCreateErrorCouldNotCreate);
-      }
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
+      _failCreation(l10n.multisigCreateErrorCouldNotCreate);
     }
+  }
+
+  void _failCreation(String message) {
+    if (!mounted) return;
+    context.showErrorToaster(message: message);
+    setState(() => _isLoading = false);
+  }
+
+  /// Keystone creators sign off-device: the shared QR flow signs and submits
+  /// the creation, then we return to Accounts exactly like the local path.
+  Future<void> _createWithHardware(Account creator, MultisigCreationPreflight preflight) async {
+    final l10n = ref.read(l10nProvider);
+    final draft = preflight.draft;
+    final checksum = await _checksumService.getHumanReadableName(draft.accountId);
+    if (!mounted) return;
+
+    final session = KeystoneSigningSession(
+      account: creator,
+      buildCall: () => ref.read(multisigSubmissionServiceProvider).buildCreateCall(draft),
+      primaryLabel: l10n.keystoneSignActionLabel,
+      primaryDetail: l10n.multisigCreateKeystoneAction(draft.threshold, draft.signers.length),
+      secondaryLabel: l10n.multisigCreatePredictedAddressLabel,
+      secondaryDetail: draft.accountId,
+      tertiaryDetail: checksum,
+      cacheKey: KeystoneSignCacheKey.forExtrinsic(accountId: creator.accountId, identity: 'create|${draft.accountId}'),
+      telemetryPrefix: 'multisig_create_hardware',
+      submitSigned: (ref, {required unsignedData, required signatureWithPublicKey}) => ref
+          .read(multisigSubmissionServiceProvider)
+          .submitExternallySignedMultisigCreation(
+            preflight: preflight,
+            unsignedData: unsignedData,
+            signatureWithPublicKey: signatureWithPublicKey,
+          ),
+    );
+
+    setState(() => _isLoading = false);
+    final hash = await Navigator.of(
+      context,
+    ).push<String>(MaterialPageRoute(builder: (_) => KeystoneSignScreen(session: session)));
+    if (!mounted || hash == null) return;
+    returnToAccountsScreen(context, ref, highlightAccountId: draft.accountId);
   }
 
   @override

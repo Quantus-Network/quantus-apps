@@ -129,12 +129,13 @@ class SendSubmitted extends SendOutcome {
 }
 
 /// The source account signs off-device (Keystone): hand off to the hardware QR
-/// flow, which broadcasts and then shows [terminal].
+/// flow, which broadcasts and then shows [terminalForHash] built from the
+/// submitted extrinsic hash.
 class SendNeedsHardwareSignature extends SendOutcome {
   final KeystoneSigningSession session;
-  final SendTerminalContent terminal;
+  final SendTerminalContent Function(String extrinsicHash) terminalForHash;
 
-  const SendNeedsHardwareSignature({required this.session, required this.terminal});
+  const SendNeedsHardwareSignature({required this.session, required this.terminalForHash});
 }
 
 /// Encrypted send authenticated and planned: hand off to the proving progress
@@ -251,7 +252,12 @@ abstract class SendStrategy {
   /// closes). Strategies that hand off to hardware signing warm the Keystone
   /// sign cache here so the QR screen renders instantly. No-op for flows that
   /// sign locally. Uses `ref.read`.
-  Future<void> prefetchSignPayload(WidgetRef ref, {required String recipientAddress, required BigInt amount}) async {}
+  Future<void> prefetchSignPayload(
+    WidgetRef ref, {
+    required String recipientAddress,
+    required BigInt amount,
+    required SendFee fee,
+  }) async {}
 
   /// Authenticates and submits. Uses `ref.read`. Never navigates.
   Future<SendOutcome> submit(

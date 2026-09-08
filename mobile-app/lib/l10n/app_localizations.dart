@@ -668,6 +668,12 @@ abstract class AppLocalizations {
   /// **'{count} of {total}'**
   String multisigCreateThresholdValue(int count, int total);
 
+  /// What a Keystone creator is signing, shown on the Keystone sign and verify screens
+  ///
+  /// In en, this message translates to:
+  /// **'Create {count} of {total} multisig'**
+  String multisigCreateKeystoneAction(int count, int total);
+
   /// Label for predicted multisig address preview
   ///
   /// In en, this message translates to:
@@ -1963,6 +1969,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Open your Keystone and scan this QR code to load the transaction.'**
   String get keystoneSignInstruction;
+
+  /// Label for a non-transfer action on the Keystone sign and verify screens
+  ///
+  /// In en, this message translates to:
+  /// **'ACTION'**
+  String get keystoneSignActionLabel;
 
   /// Section label above the transaction details on the Keystone sign screen
   ///

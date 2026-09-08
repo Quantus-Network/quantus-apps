@@ -446,6 +446,18 @@
         }
       }
     },
+    "multisigCreateKeystoneAction": "Create {count} of {total} multisig",
+    "@multisigCreateKeystoneAction": {
+      "description": "What a Keystone creator is signing, shown on the Keystone sign and verify screens",
+      "placeholders": {
+        "count": {
+          "type": "int"
+        },
+        "total": {
+          "type": "int"
+        }
+      }
+    },
     "multisigCreatePredictedAddressLabel": "MULTISIG ADDRESS",
     "@multisigCreatePredictedAddressLabel": {
       "description": "Label for predicted multisig address preview"
@@ -1469,6 +1481,10 @@
     "keystoneSignInstruction": "Open your Keystone and scan this QR code to load the transaction.",
     "@keystoneSignInstruction": {
       "description": "Instruction on the Keystone sign screen"
+    },
+    "keystoneSignActionLabel": "ACTION",
+    "@keystoneSignActionLabel": {
+      "description": "Label for a non-transfer action on the Keystone sign and verify screens"
     },
     "keystoneSignYouAreSigning": "YOU ARE SIGNING",
     "@keystoneSignYouAreSigning": {

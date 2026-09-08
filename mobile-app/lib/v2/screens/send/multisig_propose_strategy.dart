@@ -11,8 +11,11 @@ import 'package:resonance_network_wallet/providers/multisig_providers.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/services/local_auth_service.dart';
 import 'package:resonance_network_wallet/services/transaction_submission_service.dart';
+import 'package:resonance_network_wallet/shared/utils/account_utils.dart';
 import 'package:resonance_network_wallet/shared/utils/print.dart';
 import 'package:resonance_network_wallet/v2/components/multisig_expiry_value.dart';
+import 'package:resonance_network_wallet/v2/screens/send/keystone_sign_cache.dart';
+import 'package:resonance_network_wallet/v2/screens/send/keystone_signing_session.dart';
 import 'package:resonance_network_wallet/v2/screens/send/send_strategy.dart';
 
 /// Proposal cost for a recipient. The network fee is still a chain estimate,
@@ -165,6 +168,56 @@ class MultisigProposeStrategy extends SendStrategy {
     ];
   }
 
+  Account _signer(WidgetRef ref) {
+    final signer = ref
+        .read(accountsProvider)
+        .value
+        ?.firstWhere(
+          (a) => a.accountId == msig.myMemberAccountId,
+          orElse: () => throw Exception('Member account not found in local wallet'),
+        );
+    if (signer == null) throw Exception('No signer account available');
+    return signer;
+  }
+
+  RuntimeCall _proposeCall(
+    WidgetRef ref, {
+    required String recipient,
+    required BigInt amount,
+    required int expiryBlock,
+  }) => ref
+      .read(multisigServiceProvider)
+      .buildProposeTransferCall(msig: msig, recipient: recipient, amount: amount, expiryBlock: expiryBlock);
+
+  KeystoneSignCacheKey _hardwareCacheKey(
+    Account signer, {
+    required String recipient,
+    required BigInt amount,
+    required int expiryBlock,
+  }) => KeystoneSignCacheKey.forExtrinsic(
+    accountId: signer.accountId,
+    identity: 'propose|${msig.accountId}|$recipient|$amount|$expiryBlock',
+  );
+
+  @override
+  Future<void> prefetchSignPayload(
+    WidgetRef ref, {
+    required String recipientAddress,
+    required BigInt amount,
+    required SendFee fee,
+  }) async {
+    final signer = _signer(ref);
+    if (!signer.signsWithHardware) return;
+    final recipient = recipientAddress.trim();
+    final expiryBlock = (fee as ProposeFee).breakdown.expiryBlock;
+    await ensureKeystoneSignPayload(
+      ref,
+      account: signer,
+      buildCall: () => _proposeCall(ref, recipient: recipient, amount: amount, expiryBlock: expiryBlock),
+      cacheKey: _hardwareCacheKey(signer, recipient: recipient, amount: amount, expiryBlock: expiryBlock),
+    );
+  }
+
   @override
   Future<SendOutcome> submit(
     WidgetRef ref, {
@@ -177,48 +230,84 @@ class MultisigProposeStrategy extends SendStrategy {
     final l10n = ref.read(l10nProvider);
     final fmt = ref.read(numberFormattingServiceProvider);
     final breakdown = (fee as ProposeFee).breakdown;
+    final recipient = recipientAddress.trim();
+    final terminal = _terminal(l10n, fmt, recipient: recipient, checksum: recipientChecksum, amount: amount);
+
+    final Account signer;
+    try {
+      signer = _signer(ref);
+    } catch (e, st) {
+      quantusPrint('Propose signer error: $e $st');
+      return SendFailed(l10n.multisigProposeSubmitFailed);
+    }
+
+    // Keystone members sign off-device: hand off to the QR flow, which submits
+    // the proposal once the signature is scanned back.
+    if (signer.signsWithHardware) {
+      return SendNeedsHardwareSignature(
+        session: KeystoneSigningSession(
+          account: signer,
+          buildCall: () => _proposeCall(ref, recipient: recipient, amount: amount, expiryBlock: breakdown.expiryBlock),
+          primaryDetail: l10n.commonAmountBalance(
+            fmt.formatBalance(amount, smartDecimals: 4),
+            AppConstants.tokenSymbol,
+          ),
+          secondaryDetail: recipient,
+          tertiaryDetail: recipientChecksum,
+          cacheKey: _hardwareCacheKey(signer, recipient: recipient, amount: amount, expiryBlock: breakdown.expiryBlock),
+          telemetryPrefix: 'multisig_propose_hardware',
+          submitSigned: (ref, {required unsignedData, required signatureWithPublicKey}) async {
+            final hash = await ref
+                .read(transactionSubmissionServiceProvider)
+                .proposeTransferWithExternalSignature(
+                  msig: msig,
+                  signer: signer,
+                  recipient: recipient,
+                  amount: amount,
+                  expiryBlock: breakdown.expiryBlock,
+                  feeBreakdown: breakdown,
+                  unsignedData: unsignedData,
+                  signatureWithPublicKey: signatureWithPublicKey,
+                );
+            _afterProposed(ref, recipient);
+            return hash;
+          },
+        ),
+        terminalForHash: (_) => terminal,
+      );
+    }
 
     final authed = await LocalAuthService().authenticate(localizedReason: l10n.multisigProposeAuthReason);
     if (!authed) return SendFailed(l10n.multisigProposeAuthRequired);
 
     try {
-      final signer = ref
-          .read(accountsProvider)
-          .value
-          ?.firstWhere(
-            (a) => a.accountId == msig.myMemberAccountId,
-            orElse: () => throw Exception('Member account not found in local wallet'),
-          );
-      if (signer == null) throw Exception('No signer account available');
-
       await ref
           .read(transactionSubmissionServiceProvider)
           .proposeTransfer(
             msig: msig,
             signer: signer,
-            recipient: recipientAddress,
+            recipient: recipient,
             amount: amount,
             expiryBlock: breakdown.expiryBlock,
             feeBreakdown: breakdown,
           );
-
-      unawaited(
-        RecentAddressesService()
-            .addAddress(recipientAddress.trim())
-            .catchError((Object e) => quantusPrint('Failed to save recent address: $e')),
-      );
-
-      ref.invalidate(multisigOpenProposalsProvider(msig));
-      ref.invalidate(multisigPastProposalsProvider(msig));
-      ref.invalidate(multisigCurrentBlockProvider);
-
-      return SendSubmitted(
-        _terminal(l10n, fmt, recipient: recipientAddress, checksum: recipientChecksum, amount: amount),
-      );
+      _afterProposed(ref, recipient);
+      return SendSubmitted(terminal);
     } catch (e, st) {
       quantusPrint('Propose submit error: $e $st');
       return SendFailed(l10n.multisigProposeSubmitFailed);
     }
+  }
+
+  void _afterProposed(WidgetRef ref, String recipient) {
+    unawaited(
+      RecentAddressesService()
+          .addAddress(recipient)
+          .catchError((Object e) => quantusPrint('Failed to save recent address: $e')),
+    );
+    ref.invalidate(multisigOpenProposalsProvider(msig));
+    ref.invalidate(multisigPastProposalsProvider(msig));
+    ref.invalidate(multisigCurrentBlockProvider);
   }
 
   SendTerminalContent _terminal(
