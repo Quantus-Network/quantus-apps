@@ -16,22 +16,14 @@ import 'package:resonance_network_wallet/v2/components/account_list_row.dart';
 import 'package:resonance_network_wallet/v2/components/multisig_tag.dart';
 import 'package:resonance_network_wallet/v2/components/private_activity_notice.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/account_menu_screen.dart';
-import 'package:resonance_network_wallet/v2/screens/accounts/accounts_navigation.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/multisig_account_menu_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/wallet_name_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/add_account_menu_screen.dart';
 
-Future<T?> openAccountsScreen<T>(BuildContext context) {
-  return Navigator.of(context).push<T>(
-    MaterialPageRoute(
-      settings: const RouteSettings(name: accountsScreenRouteName),
-      builder: (_) => const AccountsScreen(),
-    ),
-  );
-}
-
 class AccountsScreen extends ConsumerStatefulWidget {
-  const AccountsScreen({super.key});
+  const AccountsScreen({super.key, this.highlightAccountId});
+
+  final String? highlightAccountId;
 
   @override
   ConsumerState<AccountsScreen> createState() => _AccountsScreenState();
@@ -46,6 +38,7 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
   @override
   void initState() {
     super.initState();
+    _highlightAccountId = widget.highlightAccountId;
     _ensureEncryptedAccounts();
   }
 
