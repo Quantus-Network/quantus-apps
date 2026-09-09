@@ -11,9 +11,9 @@
 # Keystone scanner, and scan what this prints.
 set -euo pipefail
 
-# The live Planck node, so the request carries a genesis hash the wallets know.
+# The live mainnet node, so the request carries a genesis hash the wallets know.
 # A local dev chain has its own genesis and every wallet refuses it.
-NODE_URL="${NODE_URL:-wss://a1-planck.quantus.cat}"
+NODE_URL="${NODE_URL:-wss://rpc1-mainnet.quantus.com}"
 
 # A wallet whose bundled metadata came from a different runtime than the node
 # runs says so on its review screen. That warning is the wallet working, not a
