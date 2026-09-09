@@ -14,7 +14,7 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 const planckGenesisHex = '4901bf5c57fd3f9e726af399c763de6670dbdb115a91c0237e173f16eef65e72';
 
 // Call portions of the original "real world" vectors (extensions stripped); the full
-// vectors were captured on a retired devnet whose genesis hash is no longer accepted.
+// vectors were captured on a retired devnet whose genesis hash is not in [knownNetworks].
 // The reversible call is re-indexed from the retired pallet index 13 to the current 11.
 const transferCall1 = '020000ef5f320156894f0fde742921c6990bf446e82c89fae5a23e701900abcd92dfb40700282e8cd1';
 const transferCall2 = '0200007416854906f03a9dff66e3270a736c44e15970ac03a638471523a03069f276ca0700e8764817';
@@ -22,7 +22,7 @@ const reversibleCall =
     '0b04007416854906f03a9dff66e3270a736c44e15970ac03a638471523a03069f276ca0040b0464f010000000000000000000001e093040000000000';
 
 // The two original real-world vectors, kept verbatim as regression tests: both were
-// captured on the retired devnet (genesis 826beefb…) and must now be rejected.
+// captured on the retired devnet (genesis 826beefb…), which no network table lists.
 const oldNetworkTransfer =
     '020000ef5f320156894f0fde742921c6990bf446e82c89fae5a23e701900abcd92dfb40700282e8cd185012800007400000002000000826beefbe2be72645ff376f18de745ac196dc77637436090de4174180706118e3d3e081c6e3599f8ae31d404d9f087f50c25b4e08c35712e23470a60da5799ca00';
 const oldNetworkReversible =
@@ -222,16 +222,19 @@ void main() {
       });
     });
 
-    group('rejections', () {
-      test('rejects old devnet transfer with unknown genesis (regression)', () {
-        // Proves the parser walks all the way to the genesis hash and rejects unknown networks.
+    group('genesis hash', () {
+      test('signs for any chain: an unlisted genesis hash decodes with no network name', () {
         final payload = Uint8List.fromList(hex.decode(oldNetworkTransfer));
-        expect(
-          () => QuantusPayloadParser.parsePayload(payload, policy: const FullCallPolicy()),
-          throwsRejection('Unknown genesis hash'),
-        );
-      });
+        final parsed = QuantusPayloadParser.parsePayload(payload, policy: const FullCallPolicy());
 
+        expect(parsed.network, isNull);
+        expect(hex.encode(parsed.extensions.genesisHash), startsWith('826beefb'));
+        expect(parsed.call.call, 'transfer_allow_death');
+        expect(parsed.specMatchesBundled, isFalse);
+      });
+    });
+
+    group('rejections', () {
       test('rejects old devnet reversible transfer (regression)', () {
         // Rejected, but note *where*: pallet index 13 was ReversibleTransfers on the
         // retired devnet and is TechCollective on this runtime, so these bytes now

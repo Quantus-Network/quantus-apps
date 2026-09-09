@@ -133,5 +133,23 @@ void main() {
       await pumpSignScreen(tester, DebugPayloads.governanceVoteAye());
       expect(signerRow(tester).label, 'Signed by');
     });
+
+    testWidgets('an unlisted genesis hash reaches review and reads Network: Unknown', (tester) async {
+      final payload = DebugPayloads.payloadForCall(
+        const balances_pallet.Txs().transferAllowDeath(dest: account(bobId), value: oneToken).encode(),
+      );
+      // Genesis hash sits before the 32-byte block hash and the metadata None byte.
+      payload.fillRange(payload.length - 65, payload.length - 33, 0xEE);
+      await pumpSignScreen(tester, SigningRequest(signer: DebugPayloads.debugSigner, payload: payload).encode());
+
+      expect(find.text('SEND'), findsOneWidget);
+      expect(find.text('Could not read transaction'), findsNothing);
+
+      await tester.ensureVisible(find.text('ADVANCED'));
+      await tester.tap(find.text('ADVANCED'));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Network: Unknown'), findsOneWidget);
+      expect(find.textContaining('Genesis hash: 0x${'ee' * 32}'), findsOneWidget);
+    });
   });
 }

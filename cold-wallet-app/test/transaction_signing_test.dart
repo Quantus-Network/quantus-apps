@@ -26,7 +26,7 @@ void main() {
       '111111111111111111111111111111111111111111111111111111111111111100';
 
   // The same transfer as originally captured on the retired devnet (genesis 826beefb…).
-  // Regression: the signer must reject payloads for networks it does not know.
+  // The signer signs for any chain, so this decodes like any other payload.
   const retiredDevnetHex =
       '0200007416854906f03a9dff66e3270a736c44e15970ac03a638471523a03069f276ca0700e876481755010000007400000002000000826beefbe2be72645ff376f18de745ac196dc77637436090de4174180706118e5a77ae1c95817ee664cf733fafa7baa8e6244b396a54e57a5bc414b24c52800600';
 
@@ -106,12 +106,12 @@ void main() {
       expect(QuantusSigningPayload.signablePayload(payload), payload);
     });
 
-    test('retired devnet payload is rejected with unknown genesis (never signed)', () {
+    test('retired devnet payload with an unlisted genesis hash is signable', () {
       final payload = Uint8List.fromList(hex.decode(retiredDevnetHex));
-      expect(
-        () => QuantusPayloadParser.parsePayload(payload, policy: const FullCallPolicy()),
-        throwsA(isA<FormatException>().having((e) => e.message, 'message', contains('Unknown genesis hash'))),
-      );
+      final parsed = QuantusPayloadParser.parsePayload(payload, policy: const FullCallPolicy());
+      expect(parsed.network, isNull);
+      expect(parsed.call.summary?.amount, BigInt.from(100000000000));
+      expect(QuantusSigningPayload.signablePayload(payload), payload);
     });
 
     test('non-transaction bytes are rejected (never signed)', () {
