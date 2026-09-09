@@ -31,8 +31,9 @@ import 'package:quantus_sdk/src/constants/app_constants.dart';
 /// Hard cap on the raw signing payload; every supported call is far below this.
 const int maxPayloadBytes = maxCallBytes;
 
-/// Networks this wallet will sign for, keyed by genesis hash (lowercase hex).
-/// A payload whose genesis hash is not listed here is rejected.
+/// Display names for known networks, keyed by genesis hash (lowercase hex).
+/// Purely informational: the signer signs for any genesis hash and shows the
+/// raw hash alongside the name when one is known.
 const Map<String, String> knownNetworks = {
   '4901bf5c57fd3f9e726af399c763de6670dbdb115a91c0237e173f16eef65e72': 'Planck',
   'a5aa9e5c84d4a3722c152295e7973c9af522f2fb1ef7db5afaa3d5f4dc8d3b4f': 'Heisenberg',
@@ -94,7 +95,9 @@ class ParsedPayload {
   final DecodedCall call;
 
   final SignedExtensions extensions;
-  final String network;
+
+  /// Display name from [knownNetworks], or null when the genesis hash is not listed.
+  final String? network;
 
   /// The raw payload bytes, so a signer can offer them for inspection.
   final Uint8List raw;
@@ -113,8 +116,8 @@ class ParsedPayload {
 class QuantusPayloadParser {
   /// Decodes a full signing payload. Throws [FormatException] on any rejection:
   /// unknown pallet/call index, an inner call that does not decode exactly,
-  /// malformed extensions, trailing bytes, metadata-mode inconsistency, or a
-  /// genesis hash not in [knownNetworks].
+  /// malformed extensions, trailing bytes, or metadata-mode inconsistency.
+  /// The genesis hash is never validated; any chain is accepted.
   static ParsedPayload parsePayload(Uint8List payload, {required CallPolicy policy}) {
     if (payload.length > maxPayloadBytes) {
       throw FormatException('Payload too large: ${payload.length} bytes');
@@ -136,12 +139,12 @@ class QuantusPayloadParser {
       throw FormatException('Metadata hash mode ${extensions.metadataMode} inconsistent with metadata hash presence');
     }
 
-    final network = knownNetworks[hex.encode(extensions.genesisHash)];
-    if (network == null) {
-      throw FormatException('Unknown genesis hash: 0x${hex.encode(extensions.genesisHash)}');
-    }
-
-    return ParsedPayload(call: call, extensions: extensions, network: network, raw: payload);
+    return ParsedPayload(
+      call: call,
+      extensions: extensions,
+      network: knownNetworks[hex.encode(extensions.genesisHash)],
+      raw: payload,
+    );
   }
 
   static T _section<T>(String section, T Function() decode) {
