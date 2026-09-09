@@ -35,6 +35,7 @@ const int maxPayloadBytes = maxCallBytes;
 /// Purely informational: the signer signs for any genesis hash and shows the
 /// raw hash alongside the name when one is known.
 const Map<String, String> knownNetworks = {
+  'fb5487c0be6ae4ade2d41d16e50465129861636c2b8d61fa94d7a19631626fba': 'Mainnet',
   '4901bf5c57fd3f9e726af399c763de6670dbdb115a91c0237e173f16eef65e72': 'Planck',
   'a5aa9e5c84d4a3722c152295e7973c9af522f2fb1ef7db5afaa3d5f4dc8d3b4f': 'Heisenberg',
 };

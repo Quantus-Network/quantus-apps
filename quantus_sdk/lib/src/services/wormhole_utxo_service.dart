@@ -128,10 +128,11 @@ class WormholeUtxoService {
   @visibleForTesting
   static const int transferPageSize = 300;
 
-  /// v2 drops v1 files that may have omitted a same-height sibling and then
-  /// advanced `cachedUpToBlock` past that height.
+  /// Generation of both on-disk caches; bump on any format change. v3 keys the
+  /// files by network as well as address, so Planck-era files are dropped
+  /// instead of being read against mainnet.
   @visibleForTesting
-  static const int transferCacheVersion = 2;
+  static const int cacheVersion = 3;
   static const int _nullifierBatchSize = 300;
   static const int _reorgDepth = 180;
 
@@ -157,8 +158,13 @@ query TransfersToAddresses($tos: [String!]!, $limit: Int!, $offset: Int!, $after
   }
 }''';
 
-  final GraphQlEndpointService _graphQlEndpoint = GraphQlEndpointService();
-  final RpcEndpointService _rpcEndpoint = RpcEndpointService();
+  final GraphQlEndpointService _graphQlEndpoint;
+  final RpcEndpointService _rpcEndpoint;
+
+  /// Defaults to the app-wide endpoints; pass both to discover on another chain.
+  WormholeUtxoService({GraphQlEndpointService? graphQl, RpcEndpointService? rpc})
+    : _graphQlEndpoint = graphQl ?? GraphQlEndpointService(),
+      _rpcEndpoint = rpc ?? RpcEndpointService();
 
   static void _log(String msg) => quantusPrint('[WormholeUtxo] $msg');
 
@@ -172,51 +178,68 @@ query TransfersToAddresses($tos: [String!]!, $limit: Int!, $offset: Int!, $after
 
   // --- Cache ---
 
-  static String _cachePrefix(String addressHash) => addressHash.substring(0, 16);
+  static const int _idLength = 16;
 
-  static Future<File> _transferCacheFile(String addressHash) async {
-    final dir = await getApplicationSupportDirectory();
-    return File('${dir.path}/wormhole_cache_v${transferCacheVersion}_${_cachePrefix(addressHash)}.json');
+  String? _networkId;
+
+  /// Namespace of this chain's caches: the first 16 hex chars of its genesis
+  /// hash, so a chain switch never reads another chain's transfers, scan
+  /// height, or spent nullifiers. Fetched once per instance.
+  @visibleForTesting
+  Future<String> networkId() async {
+    if (_networkId != null) return _networkId!;
+    final result = await _rpc('chain_getBlockHash', [0]);
+    final hash = result is String ? result.replaceFirst('0x', '') : '';
+    if (hash.length < _idLength) throw Exception('chain_getBlockHash(0) returned no genesis hash: $result');
+    return _networkId = hash.substring(0, _idLength);
   }
 
-  /// Bumped to v2 to drop any pre-finalization-filter caches that may contain
-  /// nullifiers from reorged-out blocks. Old `wormhole_nullifiers_<prefix>.json`
-  /// files are best-effort deleted on first read.
-  static Future<File> _nullifierCacheFile(String addressHash) async {
+  static String _cachePrefix(String addressHash) => addressHash.substring(0, _idLength);
+
+  static String _cacheName(String kind, String networkId, String prefix) =>
+      'wormhole_${kind}_v${cacheVersion}_${networkId}_$prefix.json';
+
+  static bool _isCacheFileFor(String name, String prefix) =>
+      (name.startsWith('wormhole_cache_') || name.startsWith('wormhole_nullifiers')) && name.endsWith('_$prefix.json');
+
+  static final RegExp _currentGeneration = RegExp(
+    '^wormhole_(cache|nullifiers)_v${cacheVersion}_[0-9a-fA-F]{$_idLength}_[0-9a-fA-F]{$_idLength}\\.json\$',
+  );
+
+  static String _fileName(FileSystemEntity entity) =>
+      entity.uri.pathSegments.isEmpty ? entity.path : entity.uri.pathSegments.last;
+
+  Future<File> _cacheFile(String kind, String addressHash) async {
     final dir = await getApplicationSupportDirectory();
-    return File('${dir.path}/wormhole_nullifiers_v2_${_cachePrefix(addressHash)}.json');
+    return File('${dir.path}/${_cacheName(kind, await networkId(), _cachePrefix(addressHash))}');
   }
 
-  static Future<void> _deleteLegacyNullifierCache(String addressHash) async {
+  /// Deletes every cache file of [addressHash] from an earlier generation.
+  /// Current-generation files of other networks stay, so switching chains
+  /// back and forth does not rescan.
+  @visibleForTesting
+  static Future<void> deleteStaleCaches(String addressHash) async {
     try {
+      final prefix = _cachePrefix(addressHash);
       final dir = await getApplicationSupportDirectory();
-      final legacy = File('${dir.path}/wormhole_nullifiers_${_cachePrefix(addressHash)}.json');
-      if (await legacy.exists()) {
-        await legacy.delete();
-        _log('Deleted legacy nullifier cache: ${legacy.path}');
+      if (!await dir.exists()) return;
+      await for (final entity in dir.list()) {
+        if (entity is! File) continue;
+        final name = _fileName(entity);
+        if (_isCacheFileFor(name, prefix) && !_currentGeneration.hasMatch(name)) {
+          await entity.delete();
+          _log('Deleted stale cache: $name');
+        }
       }
     } catch (e) {
-      _log('Legacy nullifier cache delete failed (non-fatal): $e');
+      _log('Stale cache delete failed (non-fatal): $e');
     }
   }
 
-  static Future<void> _deleteLegacyTransferCache(String addressHash) async {
+  Future<_TransferCache> _loadTransferCache(String addressHash) async {
+    await deleteStaleCaches(addressHash);
     try {
-      final dir = await getApplicationSupportDirectory();
-      final legacy = File('${dir.path}/wormhole_cache_${_cachePrefix(addressHash)}.json');
-      if (await legacy.exists()) {
-        await legacy.delete();
-        _log('Deleted legacy transfer cache: ${legacy.path}');
-      }
-    } catch (e) {
-      _log('Legacy transfer cache delete failed (non-fatal): $e');
-    }
-  }
-
-  static Future<_TransferCache> _loadTransferCache(String addressHash) async {
-    await _deleteLegacyTransferCache(addressHash);
-    try {
-      final file = await _transferCacheFile(addressHash);
+      final file = await _cacheFile('cache', addressHash);
       if (!await file.exists()) return _TransferCache.empty();
       final json = jsonDecode(await file.readAsString()) as Map<String, dynamic>;
       return _TransferCache.fromJson(json);
@@ -226,9 +249,12 @@ query TransfersToAddresses($tos: [String!]!, $limit: Int!, $offset: Int!, $after
     }
   }
 
-  static Future<void> _saveTransferCache(String addressHash, _TransferCache cache) async {
+  @visibleForTesting
+  Future<int> cachedTransferHeight(String addressHash) async => (await _loadTransferCache(addressHash)).cachedUpToBlock;
+
+  Future<void> _saveTransferCache(String addressHash, _TransferCache cache) async {
     try {
-      final file = await _transferCacheFile(addressHash);
+      final file = await _cacheFile('cache', addressHash);
       await file.writeAsString(jsonEncode(cache.toJson()));
       _log('Transfer cache saved: ${cache.transfers.length} transfers up to block ${cache.cachedUpToBlock}');
     } catch (e) {
@@ -236,10 +262,11 @@ query TransfersToAddresses($tos: [String!]!, $limit: Int!, $offset: Int!, $after
     }
   }
 
-  static Future<Set<String>> _loadSpentNullifiers(String addressHash) async {
-    await _deleteLegacyNullifierCache(addressHash);
+  @visibleForTesting
+  Future<Set<String>> loadSpentNullifiers(String addressHash) async {
+    await deleteStaleCaches(addressHash);
     try {
-      final file = await _nullifierCacheFile(addressHash);
+      final file = await _cacheFile('nullifiers', addressHash);
       if (!await file.exists()) return {};
       final list = jsonDecode(await file.readAsString()) as List<dynamic>;
       return list.cast<String>().toSet();
@@ -249,9 +276,10 @@ query TransfersToAddresses($tos: [String!]!, $limit: Int!, $offset: Int!, $after
     }
   }
 
-  static Future<void> _saveSpentNullifiers(String addressHash, Set<String> spent) async {
+  @visibleForTesting
+  Future<void> saveSpentNullifiers(String addressHash, Set<String> spent) async {
     try {
-      final file = await _nullifierCacheFile(addressHash);
+      final file = await _cacheFile('nullifiers', addressHash);
       await file.writeAsString(jsonEncode(spent.toList()));
       _log('Nullifier cache saved: ${spent.length} spent nullifiers');
     } catch (e) {
@@ -268,14 +296,8 @@ query TransfersToAddresses($tos: [String!]!, $limit: Int!, $offset: Int!, $after
       var deleted = 0;
       await for (final entity in dir.list()) {
         if (entity is! File) continue;
-        final name = entity.uri.pathSegments.isEmpty ? entity.path : entity.uri.pathSegments.last;
-        final matchesPrefix = prefixes.any(
-          (p) =>
-              name == 'wormhole_cache_$p.json' ||
-              name == 'wormhole_cache_v${transferCacheVersion}_$p.json' ||
-              name == 'wormhole_nullifiers_v2_$p.json',
-        );
-        if (matchesPrefix) {
+        final name = _fileName(entity);
+        if (prefixes.any((p) => _isCacheFileFor(name, p))) {
           await entity.delete();
           deleted++;
         }
@@ -295,7 +317,7 @@ query TransfersToAddresses($tos: [String!]!, $limit: Int!, $offset: Int!, $after
       var deleted = 0;
       await for (final entity in dir.list()) {
         if (entity is! File) continue;
-        final name = entity.uri.pathSegments.isEmpty ? entity.path : entity.uri.pathSegments.last;
+        final name = _fileName(entity);
         if (name.startsWith('wormhole_cache_') || name.startsWith('wormhole_nullifiers')) {
           await entity.delete();
           deleted++;
@@ -307,23 +329,28 @@ query TransfersToAddresses($tos: [String!]!, $limit: Int!, $offset: Int!, $after
     }
   }
 
-  // --- Block height ---
+  // --- RPC ---
+
+  Future<dynamic> _rpc(String method, List<dynamic> params) async {
+    final body = jsonEncode({'jsonrpc': '2.0', 'id': 1, 'method': method, 'params': params});
+    final response = await _rpcEndpoint.post(body: body);
+    if (response.statusCode != 200) {
+      throw Exception('$method HTTP ${response.statusCode}: ${response.body}');
+    }
+    final parsed = jsonDecode(response.body) as Map<String, dynamic>;
+    if (parsed['error'] != null) {
+      throw Exception('$method RPC error: ${parsed['error']}');
+    }
+    return parsed['result'];
+  }
 
   /// Current chain head (best block) height. Throws if RPC fails — callers must
   /// not advance the cache from a fabricated value.
   Future<int> _getChainHeight() async {
-    final body = jsonEncode({'jsonrpc': '2.0', 'id': 1, 'method': 'chain_getHeader', 'params': []});
-    final response = await _rpcEndpoint.post(body: body);
-    if (response.statusCode != 200) {
-      throw Exception('chain_getHeader HTTP ${response.statusCode}: ${response.body}');
-    }
-    final parsed = jsonDecode(response.body) as Map<String, dynamic>;
-    if (parsed['error'] != null) {
-      throw Exception('chain_getHeader RPC error: ${parsed['error']}');
-    }
-    final numberHex = parsed['result']?['number'] as String?;
+    final result = await _rpc('chain_getHeader', []);
+    final numberHex = result is Map ? result['number'] as String? : null;
     if (numberHex == null) {
-      throw Exception('chain_getHeader returned no number: ${response.body}');
+      throw Exception('chain_getHeader returned no number: $result');
     }
     final height = int.parse(numberHex.replaceFirst('0x', ''), radix: 16);
     _log('Chain height from RPC: $height');
@@ -647,7 +674,7 @@ query SpentNullifiers($hashes: [String!]!) {
 
     for (final owner in addresses) {
       final ownerHash = _addressHashOf(owner.address);
-      final cachedSpent = await _loadSpentNullifiers(ownerHash);
+      final cachedSpent = await loadSpentNullifiers(ownerHash);
       cachedSpentByOwner[ownerHash] = cachedSpent;
       allSpent.addAll(cachedSpent);
 
@@ -705,7 +732,7 @@ query SpentNullifiers($hashes: [String!]!) {
       }
       for (final entry in toPersistByOwner.entries) {
         if (entry.value.length != cachedSpentByOwner[entry.key]!.length) {
-          await _saveSpentNullifiers(entry.key, entry.value);
+          await saveSpentNullifiers(entry.key, entry.value);
         }
       }
       _log('Nullifier persistence: skipped $unfinalizedCount above cutoff $safeCutoff');

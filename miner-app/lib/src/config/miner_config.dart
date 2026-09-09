@@ -141,7 +141,15 @@ class MinerConfig {
       displayName: 'Planck Testnet',
       description: 'Planck testnet',
       rpcUrl: 'https://a1-planck.quantus.cat',
-      subsquidUrl: 'http://127.0.0.1:4000/graphql', // Local Subsquid for testing
+      subsquidUrl: 'https://sub2.quantus.com/v1/graphql',
+      isDefault: false,
+    ),
+    ChainConfig(
+      id: 'mainnet',
+      displayName: 'Mainnet',
+      description: 'Quantus mainnet',
+      rpcUrl: 'https://rpc1-mainnet.quantus.com',
+      subsquidUrl: 'https://subsquid-mainnet-app-1.quantus.com/v1/graphql',
       isDefault: true,
     ),
   ];
@@ -207,7 +215,7 @@ class ChainConfig {
   final String displayName;
   final String description;
   final String rpcUrl;
-  final String? subsquidUrl;
+  final String subsquidUrl;
   final bool isDefault;
 
   const ChainConfig({
@@ -215,7 +223,7 @@ class ChainConfig {
     required this.displayName,
     required this.description,
     required this.rpcUrl,
-    this.subsquidUrl,
+    required this.subsquidUrl,
     this.isDefault = false,
   });
 

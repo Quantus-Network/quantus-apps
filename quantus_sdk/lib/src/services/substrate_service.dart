@@ -128,9 +128,6 @@ class SubstrateService {
 
   // Legacy method - supports CLI addresses and Miner App
   // The mobile app should use @HdWalletService for everything.
-  crypto.Keypair nonHDdilithiumKeypairFromMnemonic(String senderSeed) {
-    return crypto.generateKeypair(mnemonicStr: senderSeed);
-  }
 
   Future<ExtrinsicFeeData> getFeeForCall(Account account, RuntimeCall call) async {
     // We use a dummy signature for fee estimation to avoid prompting for password/device.

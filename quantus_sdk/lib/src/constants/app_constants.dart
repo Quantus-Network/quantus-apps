@@ -11,13 +11,11 @@ class AppConstants {
   // static const List<String> rpcEndpoints = ['http://127.0.0.1:9944']; // local testing
   // static const List<String> graphQlEndpoints = ['http://127.0.0.1:4350/v1/graphql']; // local testing
 
-  static const stillOnTestnet = true;
-  static const List<String> rpcEndpoints = [
-    'https://a1-planck.quantus.cat',
-    'https://a2-planck.quantus.cat',
-    'https://matcha-latte.quantus.com',
+  static const List<String> rpcEndpoints = ['https://rpc1-mainnet.quantus.com', 'https://rpc2-mainnet.quantus.com'];
+  static const List<String> graphQlEndpoints = [
+    'https://subsquid-mainnet-app-1.quantus.com/v1/graphql',
+    'https://subsquid-mainnet-app-2.quantus.com/v1/graphql',
   ];
-  static const List<String> graphQlEndpoints = ['https://sub2.quantus.com/v1/graphql'];
 
   static const String quersiEndpoint = 'https://qrc-1.quantus.com/api';
 
@@ -34,9 +32,6 @@ class AppConstants {
   static const String shillQuestsPageUrl = 'https://www.quantus.com/quests/shill';
   static const String raidQuestsPageUrl = 'https://www.quantus.com/quests/raid';
   static const String communityUrl = 'https://t.me/quantusnetwork';
-  static const String faucetUrl = 'https://x.com/QuantusNetwork/status/2033738875827589221';
-  static const String miningSetupGuideUrl = 'https://docs.quantus.com/guides/mining';
-  static const String telemetryUrl = 'https://telemetry.quantus.cat';
 
   // Development accounts
   static const String crystalAlice = '//Crystal Alice';

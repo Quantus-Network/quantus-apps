@@ -302,12 +302,6 @@ abstract class AppLocalizations {
   /// **'No active account'**
   String get homeNoActiveAccount;
 
-  /// Faucet button when balance is zero on the home screen
-  ///
-  /// In en, this message translates to:
-  /// **'Get Testnet Tokens ↗'**
-  String get homeGetTestnetTokens;
-
   /// Error when balance fails to load on the home screen
   ///
   /// In en, this message translates to:
@@ -2636,24 +2630,6 @@ abstract class AppLocalizations {
   /// **'Language, currency, notifications'**
   String get settingsPreferencesSubtitle;
 
-  /// Mining rewards row title on settings hub
-  ///
-  /// In en, this message translates to:
-  /// **'Mining Rewards'**
-  String get settingsMiningRewards;
-
-  /// Mining rewards row subtitle when data loaded
-  ///
-  /// In en, this message translates to:
-  /// **'{count} blocks mined'**
-  String settingsMiningRewardsSubtitle(int count);
-
-  /// Mining rewards row subtitle on error
-  ///
-  /// In en, this message translates to:
-  /// **'Error getting mining rewards'**
-  String get settingsMiningRewardsError;
-
   /// Add account row title on settings hub
   ///
   /// In en, this message translates to:
@@ -2912,168 +2888,6 @@ abstract class AppLocalizations {
   /// **'Error selecting language: {error}'**
   String settingsLanguageError(String error);
 
-  /// App bar on mining rewards screen
-  ///
-  /// In en, this message translates to:
-  /// **'Mining Rewards'**
-  String get settingsMiningTitle;
-
-  /// Redeem button on mining rewards
-  ///
-  /// In en, this message translates to:
-  /// **'Redeem'**
-  String get settingsMiningRedeem;
-
-  /// Active mining status label
-  ///
-  /// In en, this message translates to:
-  /// **'Mining'**
-  String get settingsMiningStatusMining;
-
-  /// Pending mining status label
-  ///
-  /// In en, this message translates to:
-  /// **'Pending'**
-  String get settingsMiningStatusPending;
-
-  /// Blocks mined stat label
-  ///
-  /// In en, this message translates to:
-  /// **'BLOCKS MINED'**
-  String get settingsMiningBlocksMined;
-
-  /// Subtitle under blocks mined count
-  ///
-  /// In en, this message translates to:
-  /// **'blocks across all testnets'**
-  String get settingsMiningBlocksAcrossTestnets;
-
-  /// Testnet blocks stat label
-  ///
-  /// In en, this message translates to:
-  /// **'TESTNET BLOCKS'**
-  String get settingsMiningStatTestnetBlocks;
-
-  /// Testnet rewards stat label
-  ///
-  /// In en, this message translates to:
-  /// **'TESTNET REWARDS'**
-  String get settingsMiningStatTestnetRewards;
-
-  /// Redeemed rewards stat label
-  ///
-  /// In en, this message translates to:
-  /// **'REDEEMED'**
-  String get settingsMiningStatRedeemed;
-
-  /// Redeemable rewards stat label
-  ///
-  /// In en, this message translates to:
-  /// **'REDEEMABLE'**
-  String get settingsMiningStatRedeemable;
-
-  /// Token earned stat label
-  ///
-  /// In en, this message translates to:
-  /// **'{tokenSymbol} EARNED'**
-  String settingsMiningTokenEarned(String tokenSymbol);
-
-  /// Link to mining telemetry
-  ///
-  /// In en, this message translates to:
-  /// **'View Telemetry ↗'**
-  String get settingsMiningViewTelemetry;
-
-  /// Empty state title on mining rewards
-  ///
-  /// In en, this message translates to:
-  /// **'No mining data yet'**
-  String get settingsMiningNoDataTitle;
-
-  /// Empty state body on mining rewards
-  ///
-  /// In en, this message translates to:
-  /// **'Set up a Quantus mining node to start earning rewards.'**
-  String get settingsMiningNoDataBody;
-
-  /// Link to mining setup guide
-  ///
-  /// In en, this message translates to:
-  /// **'Mining Setup Guide ↗'**
-  String get settingsMiningSetupGuide;
-
-  /// Error title on mining rewards screen
-  ///
-  /// In en, this message translates to:
-  /// **'Failed to load mining rewards'**
-  String get settingsMiningLoadError;
-
-  /// Error subtitle when connection fails
-  ///
-  /// In en, this message translates to:
-  /// **'Please check your connection'**
-  String get settingsMiningCheckConnection;
-
-  /// Blocks label on testnet row
-  ///
-  /// In en, this message translates to:
-  /// **'blocks'**
-  String get settingsMiningTestnetBlocks;
-
-  /// Dirac testnet active since date
-  ///
-  /// In en, this message translates to:
-  /// **'Nov 2025'**
-  String get settingsMiningDiracSince;
-
-  /// Schrödinger testnet active since date
-  ///
-  /// In en, this message translates to:
-  /// **'Oct 2025'**
-  String get settingsMiningSchrodingerSince;
-
-  /// Resonance testnet active since date
-  ///
-  /// In en, this message translates to:
-  /// **'Jul 2025'**
-  String get settingsMiningResonanceSince;
-
-  /// App bar on testnet rewards screen
-  ///
-  /// In en, this message translates to:
-  /// **'Testnet Rewards'**
-  String get settingsTestnetTitle;
-
-  /// Error title on testnet rewards
-  ///
-  /// In en, this message translates to:
-  /// **'Failed to load testnet rewards'**
-  String get settingsTestnetLoadError;
-
-  /// Total blocks headline on testnet rewards
-  ///
-  /// In en, this message translates to:
-  /// **'{count} blocks'**
-  String settingsTestnetTotalBlocks(int count);
-
-  /// Description under total blocks
-  ///
-  /// In en, this message translates to:
-  /// **'Total blocks mined across all testnets'**
-  String get settingsTestnetTotalDescription;
-
-  /// Breakdown section header
-  ///
-  /// In en, this message translates to:
-  /// **'Breakdown'**
-  String get settingsTestnetBreakdown;
-
-  /// Blocks count in testnet breakdown row
-  ///
-  /// In en, this message translates to:
-  /// **'{count} blocks'**
-  String settingsTestnetRowBlocks(int count);
-
   /// App bar on help and support screen
   ///
   /// In en, this message translates to:
@@ -3308,12 +3122,6 @@ abstract class AppLocalizations {
   /// **'Your swap for {amount} {tokenSymbol} is complete.'**
   String swapDepositCompleteBody(String amount, String tokenSymbol);
 
-  /// Testnet demo banner on deposit screen
-  ///
-  /// In en, this message translates to:
-  /// **'DEMO ONLY - WE ARE STILL ON TESTNET'**
-  String get swapDepositTestnetBanner;
-
   /// Large banner making clear the swap flow is a demo and nothing is swapped
   ///
   /// In en, this message translates to:
@@ -3440,155 +3248,17 @@ abstract class AppLocalizations {
   /// **'Try Again'**
   String get commonTryAgain;
 
-  /// Section label above the destination address field on redeem
-  ///
-  /// In en, this message translates to:
-  /// **'Redeem To'**
-  String get redeemToLabel;
-
-  /// Hint on the redeem destination address field
-  ///
-  /// In en, this message translates to:
-  /// **'Paste a {symbol} Address'**
-  String redeemAddressHint(String symbol);
-
-  /// Primary redeem button showing the amount
-  ///
-  /// In en, this message translates to:
-  /// **'Redeem {amount}'**
-  String redeemAmountCta(String amount);
-
-  /// Title of the redeem confirmation sheet
-  ///
-  /// In en, this message translates to:
-  /// **'Confirm Redeem'**
-  String get redeemConfirmTitle;
-
-  /// Amount row label on redeem confirmation
-  ///
-  /// In en, this message translates to:
-  /// **'Amount'**
-  String get redeemConfirmAmount;
-
-  /// Destination row label on redeem confirmation
-  ///
-  /// In en, this message translates to:
-  /// **'To'**
-  String get redeemConfirmTo;
-
-  /// Fee row label on redeem confirmation
-  ///
-  /// In en, this message translates to:
-  /// **'Fee'**
-  String get redeemConfirmFee;
-
-  /// Volume fee value on redeem confirmation
-  ///
-  /// In en, this message translates to:
-  /// **'{rate}% volume fee'**
-  String redeemFeeValue(String rate);
-
-  /// App bar title while a redeem is in progress
-  ///
-  /// In en, this message translates to:
-  /// **'Redeeming...'**
-  String get redeemProgressTitle;
-
-  /// App bar title when a redeem finished
-  ///
-  /// In en, this message translates to:
-  /// **'Redeem Complete'**
-  String get redeemCompleteTitle;
-
-  /// App bar title when a redeem failed
-  ///
-  /// In en, this message translates to:
-  /// **'Redeem Failed'**
-  String get redeemFailedTitle;
-
-  /// Status header label on redeem progress
-  ///
-  /// In en, this message translates to:
-  /// **'REDEEMING'**
-  String get redeemingLabel;
-
-  /// Redeem progress step: preparing circuits
-  ///
-  /// In en, this message translates to:
-  /// **'Preparing circuits'**
-  String get redeemStepCircuits;
-
-  /// Redeem progress step: fetching transfers
-  ///
-  /// In en, this message translates to:
-  /// **'Fetching transfers'**
-  String get redeemStepTransfers;
-
-  /// Redeem progress step: computing nullifiers
-  ///
-  /// In en, this message translates to:
-  /// **'Computing nullifiers'**
-  String get redeemStepNullifiers;
-
-  /// Redeem progress step: checking nullifiers
-  ///
-  /// In en, this message translates to:
-  /// **'Checking nullifiers'**
-  String get redeemStepCheckNullifiers;
-
-  /// Redeem progress step: generating ZK proofs
-  ///
-  /// In en, this message translates to:
-  /// **'Generating ZK proofs'**
-  String get redeemStepProofs;
-
-  /// Redeem progress step: aggregating ZK proofs
-  ///
-  /// In en, this message translates to:
-  /// **'Aggregating proofs'**
-  String get redeemStepAggregate;
-
-  /// Redeem progress step: submitting the transaction
-  ///
-  /// In en, this message translates to:
-  /// **'Submitting to chain'**
-  String get redeemStepSubmit;
-
-  /// Per-step fetched counter on redeem progress
-  ///
-  /// In en, this message translates to:
-  /// **'{count} fetched'**
-  String redeemFetchedCount(int count);
-
   /// Cancel button on redeem progress
   ///
   /// In en, this message translates to:
   /// **'Cancel'**
   String get redeemCancel;
 
-  /// Retry button on redeem progress
-  ///
-  /// In en, this message translates to:
-  /// **'Retry'**
-  String get redeemRetry;
-
   /// Close button on redeem progress
   ///
   /// In en, this message translates to:
   /// **'Close'**
   String get redeemClose;
-
-  /// Done button on redeem progress
-  ///
-  /// In en, this message translates to:
-  /// **'Done'**
-  String get redeemDone;
-
-  /// Success banner on redeem progress
-  ///
-  /// In en, this message translates to:
-  /// **'{amount} redeemed in {count} batch(es)'**
-  String redeemSuccessBanner(String amount, int count);
 
   /// Fee label for encrypted sends (wormhole volume fee)
   ///

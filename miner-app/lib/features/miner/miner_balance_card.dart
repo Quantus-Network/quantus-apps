@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:quantus_miner/src/config/miner_config.dart';
 import 'package:quantus_miner/src/services/log_stream_processor.dart';
+import 'package:quantus_miner/src/services/miner_settings_service.dart';
 import 'package:quantus_miner/src/services/miner_wallet_service.dart';
 import 'package:quantus_miner/src/services/mining_orchestrator.dart';
 import 'package:quantus_miner/src/shared/extensions/snackbar_extensions.dart';
@@ -24,7 +25,7 @@ class MinerBalanceCard extends StatefulWidget {
 
 class _MinerBalanceCardState extends State<MinerBalanceCard> {
   final _walletService = MinerWalletService();
-  final _utxoService = WormholeUtxoService();
+  final _settingsService = MinerSettingsService();
   String? _address;
   BigInt? _balance;
   bool _loading = true;
@@ -112,7 +113,8 @@ class _MinerBalanceCardState extends State<MinerBalanceCard> {
     setState(() => _balanceLoading = true);
     _log.i('Fetching unspent balance for $address ...');
     try {
-      final balance = await _utxoService.getUnspentBalance(wormholeAddress: address, secretHex: secretHex);
+      final utxoService = await _settingsService.utxoService();
+      final balance = await utxoService.getUnspentBalance(wormholeAddress: address, secretHex: secretHex);
       _log.i('Unspent balance: $balance token units (${_formatter.formatBalance(balance, addSymbol: true)})');
       if (!mounted) return;
       setState(() {

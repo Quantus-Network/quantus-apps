@@ -38,7 +38,6 @@ export 'src/models/miner_reward_event.dart';
 export 'src/models/multisig_creation_event.dart';
 export 'src/models/multisig_created_event.dart';
 export 'src/models/pending_multisig_creation_event.dart';
-export 'src/models/miner_stats.dart';
 export 'src/models/opted_in_position.dart';
 export 'src/models/pending_transfer_event.dart';
 export 'src/models/reversible_transfer_status.dart';
