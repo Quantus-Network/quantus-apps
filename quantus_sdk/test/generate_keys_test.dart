@@ -136,19 +136,16 @@ void main() {
       expect(() => DilithiumSchemeExtension.forSignatureWithPublicKeyLength(1234), throwsFormatException);
     });
 
-    test('wormhole derivation known values', () {
+    test('wormhole inner hash and address match the node known values', () {
+      // TEST_WORMHOLE_PREIMAGE / TEST_WORMHOLE_ADDRESS in chain node/src/tests/data/quantus_key_test_data.rs
       const mnemonic =
           'orchard answer curve patient visual flower maze noise retreat penalty cage small earth domain scan pitch bottom crunch theme club client swap slice raven';
-      const expectedPreimage = '0xe4be02a913727c01c1a155fd6e807b7c1a4a13abf37a352b7c9ed4412d127fc3';
+      const knownInnerHash = '0xe4be02a913727c01c1a155fd6e807b7c1a4a13abf37a352b7c9ed4412d127fc3';
+      const knownWormholeAddress = 'qzpWh4AEtsgCyEbv4WBgFWnB9bcdF2L2jVDuyjXP9mSTyBaeU';
 
       final result = HdWalletService().deriveWormholeKeyPair(mnemonic: mnemonic);
-      expect(result.rewardsPreimageHex.toLowerCase(), expectedPreimage.toLowerCase());
-
-      final addressBytes = ss58ToAccountId(s: result.address);
-      // Same account bytes as '5H8AGzwKPtKMfKKuKYCoAFApCoy4EVewCqc9k6GrSgqHoaXm'
-      // (generic Substrate prefix 42), encoded with the Quantus prefix (189).
-      final expectedAddressBytes = ss58ToAccountId(s: 'qzpWh4AEtsgCyEbv4WBgFWnB9bcdF2L2jVDuyjXP9mSTyBaeU');
-      expect(addressBytes, expectedAddressBytes);
+      expect(result.rewardsPreimageHex, knownInnerHash);
+      expect(result.address, knownWormholeAddress);
     });
 
     test('ss58ToAccountId rejects foreign ss58 prefixes and invalid input', () {
