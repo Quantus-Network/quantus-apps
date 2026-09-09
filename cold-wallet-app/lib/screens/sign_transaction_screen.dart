@@ -238,7 +238,7 @@ class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> {
       // The one place the runtime's own naming appears, nested calls included —
       // the headlines above deliberately summarise it away.
       'Call: ${parsed.call.displayTitleChain}',
-      if (parsed.network != null) 'Network: ${parsed.network}',
+      'Network: ${parsed.network ?? 'Unknown'}',
       'Runtime: spec ${ext.specVersion}, tx version ${ext.transactionVersion}',
       'Nonce: ${ext.nonce}',
       'Era: ${ext.era}',
