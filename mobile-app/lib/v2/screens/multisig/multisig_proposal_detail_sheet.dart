@@ -240,7 +240,8 @@ class _MultisigProposalDetailSheet extends ConsumerWidget {
           ),
           Center(
             child: ExplorerLink(
-              url: '${AppConstants.explorerEndpoint}/multisig-proposals/${liveProposal.explorerProposalId}',
+              url:
+                  '${NetworkEndpointsService().current.explorer}/multisig-proposals/${liveProposal.explorerProposalId}',
             ),
           ),
           const SizedBox(height: 8),

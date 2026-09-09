@@ -667,6 +667,6 @@ class _ExplorerLink extends StatelessWidget {
       path = '$transactionType/${tx.blockHash}';
     }
 
-    return path == null ? null : '${AppConstants.explorerEndpoint}/$path';
+    return path == null ? null : '${NetworkEndpointsService().current.explorer}/$path';
   }
 }

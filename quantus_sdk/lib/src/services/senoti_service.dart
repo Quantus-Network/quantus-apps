@@ -57,7 +57,7 @@ class SenotiService {
   SenotiService._internal();
 
   final SettingsService _settingsService = SettingsService();
-  SenotiAuthClient get _client => SenotiAuthClient(AppConstants.senotiEndpoint);
+  SenotiAuthClient get _client => SenotiAuthClient(NetworkEndpointsService().current.senoti);
 
   /// Wormhole addresses are meant to be unlinkable to the user's identity, so
   /// registering them with the notification service would deanonymize them.

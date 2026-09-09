@@ -109,6 +109,26 @@ class RpcEndpointService extends RedundantEndpointService {
   }
 }
 
+/// Endpoints the app is talking to: [NetworkEndpoints.defaults] until remote
+/// config supplies overrides.
+class NetworkEndpointsService {
+  static final NetworkEndpointsService _instance = NetworkEndpointsService._internal();
+  factory NetworkEndpointsService() => _instance;
+  NetworkEndpointsService._internal();
+
+  NetworkEndpoints _current = NetworkEndpoints.defaults;
+  NetworkEndpoints get current => _current;
+
+  void apply(NetworkEndpoints endpoints) {
+    if (endpoints == _current) return;
+    quantusPrint('Switching network endpoints to ${jsonEncode(endpoints.toJson())}');
+    RpcEndpointService().setEndpoints(endpoints.rpc);
+    GraphQlEndpointService().setEndpoints(endpoints.graphQl);
+    SubstrateService().clearChainCaches();
+    _current = endpoints;
+  }
+}
+
 class RedundantEndpointService {
   final List<Endpoint> endpoints;
 
@@ -116,6 +136,15 @@ class RedundantEndpointService {
   final http.Client _httpClient = http.Client();
 
   RedundantEndpointService({required this.endpoints});
+
+  /// Replaces the endpoint set, keeping measured latency for URLs that stay.
+  void setEndpoints(List<String> urls) {
+    final known = {for (final e in endpoints) e.url: e};
+    endpoints
+      ..clear()
+      ..addAll(urls.map((url) => known[url] ?? Endpoint(url: url)));
+    _sortServers();
+  }
 
   Map<String, String> _mergedHeaders(Map<String, String>? headers) {
     return {'Content-Type': 'application/json', ...?headers};
