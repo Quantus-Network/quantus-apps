@@ -10,7 +10,6 @@ import 'package:resonance_network_wallet/services/global_history_polling_service
 import 'package:resonance_network_wallet/services/telemetry_service.dart';
 import 'package:resonance_network_wallet/shared/constants/e2e_keys.dart';
 import 'package:resonance_network_wallet/shared/utils/print.dart';
-import 'package:resonance_network_wallet/shared/utils/url_utils.dart';
 import 'package:resonance_network_wallet/v2/components/amount_display_with_conversion.dart';
 import 'package:resonance_network_wallet/v2/components/private_activity_notice.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/open_accounts_management_button.dart';
@@ -275,31 +274,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget? _buildBottomContent(AppLocalizations l10n) {
-    final balanceAsync = ref.watch(balanceProvider);
     final active = ref.watch(activeAccountProvider).value;
-
-    if (isEncryptedAccount(active?.account)) {
-      return ScaffoldBaseBottomContent(
-        child: PrivateActivityNotice(
-          title: l10n.createAccountEncryptedDefaultName,
-          subtitle: l10n.privateSendSubtitle,
-          showCard: true,
-        ),
-      );
-    }
-
-    return balanceAsync
-        .whenData(
-          (balance) => balance == BigInt.zero
-              ? ScaffoldBaseBottomContent(
-                  child: QuantusButton.simple(
-                    label: l10n.homeGetTestnetTokens,
-                    onTap: () => launchXPost(AppConstants.faucetUrl),
-                  ),
-                )
-              : null,
-        )
-        .value;
+    if (!isEncryptedAccount(active?.account)) return null;
+    return ScaffoldBaseBottomContent(
+      child: PrivateActivityNotice(
+        title: l10n.createAccountEncryptedDefaultName,
+        subtitle: l10n.privateSendSubtitle,
+        showCard: true,
+      ),
+    );
   }
 
   Widget _buildTopBar(bool isBalanceHidden) {

@@ -6,18 +6,16 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/app.dart';
 import 'package:resonance_network_wallet/app_initializer.dart';
 import 'package:resonance_network_wallet/app_lifecycle_manager.dart';
-import 'package:resonance_network_wallet/shared/utils/env_utils.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:telemetrydecksdk/telemetrydecksdk.dart';
 
 bool _initialized = false;
 
 /// Initializes everything the app needs before [buildApp] can run.
 ///
-/// Safe to call more than once: the heavy, one-shot initializers (Supabase,
-/// the Rust SDK, Telemetry) run only on the first invocation. This lets E2E
-/// tests reuse the exact production startup path while running several tests in
-/// a single app process.
+/// Safe to call more than once: the heavy, one-shot initializers (the Rust
+/// SDK, Telemetry) run only on the first invocation. This lets E2E tests reuse
+/// the exact production startup path while running several tests in a single
+/// app process.
 Future<void> bootstrap() async {
   WidgetsFlutterBinding.ensureInitialized();
   if (_initialized) return;
@@ -33,7 +31,6 @@ Future<void> bootstrap() async {
 
   await dotenv.load();
 
-  await Supabase.initialize(url: EnvUtils.supabaseUrl, anonKey: EnvUtils.supabaseKey);
   await QuantusSdk.init();
 
   Telemetrydecksdk.start(

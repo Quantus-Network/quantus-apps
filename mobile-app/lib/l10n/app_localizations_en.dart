@@ -120,9 +120,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get homeNoActiveAccount => 'No active account';
 
   @override
-  String get homeGetTestnetTokens => 'Get Testnet Tokens ↗';
-
-  @override
   String get homeErrorLoadingBalance => 'Error loading balance';
 
   @override
@@ -1393,17 +1390,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsPreferencesSubtitle => 'Language, currency, notifications';
 
   @override
-  String get settingsMiningRewards => 'Mining Rewards';
-
-  @override
-  String settingsMiningRewardsSubtitle(int count) {
-    return '$count blocks mined';
-  }
-
-  @override
-  String get settingsMiningRewardsError => 'Error getting mining rewards';
-
-  @override
   String get settingsAccountTypeTitle => 'Add Account';
 
   @override
@@ -1544,93 +1530,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get settingsMiningTitle => 'Mining Rewards';
-
-  @override
-  String get settingsMiningRedeem => 'Redeem';
-
-  @override
-  String get settingsMiningStatusMining => 'Mining';
-
-  @override
-  String get settingsMiningStatusPending => 'Pending';
-
-  @override
-  String get settingsMiningBlocksMined => 'BLOCKS MINED';
-
-  @override
-  String get settingsMiningBlocksAcrossTestnets => 'blocks across all testnets';
-
-  @override
-  String get settingsMiningStatTestnetBlocks => 'TESTNET BLOCKS';
-
-  @override
-  String get settingsMiningStatTestnetRewards => 'TESTNET REWARDS';
-
-  @override
-  String get settingsMiningStatRedeemed => 'REDEEMED';
-
-  @override
-  String get settingsMiningStatRedeemable => 'REDEEMABLE';
-
-  @override
-  String settingsMiningTokenEarned(String tokenSymbol) {
-    return '$tokenSymbol EARNED';
-  }
-
-  @override
-  String get settingsMiningViewTelemetry => 'View Telemetry ↗';
-
-  @override
-  String get settingsMiningNoDataTitle => 'No mining data yet';
-
-  @override
-  String get settingsMiningNoDataBody => 'Set up a Quantus mining node to start earning rewards.';
-
-  @override
-  String get settingsMiningSetupGuide => 'Mining Setup Guide ↗';
-
-  @override
-  String get settingsMiningLoadError => 'Failed to load mining rewards';
-
-  @override
-  String get settingsMiningCheckConnection => 'Please check your connection';
-
-  @override
-  String get settingsMiningTestnetBlocks => 'blocks';
-
-  @override
-  String get settingsMiningDiracSince => 'Nov 2025';
-
-  @override
-  String get settingsMiningSchrodingerSince => 'Oct 2025';
-
-  @override
-  String get settingsMiningResonanceSince => 'Jul 2025';
-
-  @override
-  String get settingsTestnetTitle => 'Testnet Rewards';
-
-  @override
-  String get settingsTestnetLoadError => 'Failed to load testnet rewards';
-
-  @override
-  String settingsTestnetTotalBlocks(int count) {
-    return '$count blocks';
-  }
-
-  @override
-  String get settingsTestnetTotalDescription => 'Total blocks mined across all testnets';
-
-  @override
-  String get settingsTestnetBreakdown => 'Breakdown';
-
-  @override
-  String settingsTestnetRowBlocks(int count) {
-    return '$count blocks';
-  }
-
-  @override
   String get settingsHelpScreenTitle => 'Help & Support';
 
   @override
@@ -1765,9 +1664,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get swapDepositTestnetBanner => 'DEMO ONLY - WE ARE STILL ON TESTNET';
-
-  @override
   String get swapDemoOnly => 'Demo Only';
 
   @override
@@ -1833,89 +1729,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get commonTryAgain => 'Try Again';
 
   @override
-  String get redeemToLabel => 'Redeem To';
-
-  @override
-  String redeemAddressHint(String symbol) {
-    return 'Paste a $symbol Address';
-  }
-
-  @override
-  String redeemAmountCta(String amount) {
-    return 'Redeem $amount';
-  }
-
-  @override
-  String get redeemConfirmTitle => 'Confirm Redeem';
-
-  @override
-  String get redeemConfirmAmount => 'Amount';
-
-  @override
-  String get redeemConfirmTo => 'To';
-
-  @override
-  String get redeemConfirmFee => 'Fee';
-
-  @override
-  String redeemFeeValue(String rate) {
-    return '$rate% volume fee';
-  }
-
-  @override
-  String get redeemProgressTitle => 'Redeeming...';
-
-  @override
-  String get redeemCompleteTitle => 'Redeem Complete';
-
-  @override
-  String get redeemFailedTitle => 'Redeem Failed';
-
-  @override
-  String get redeemingLabel => 'REDEEMING';
-
-  @override
-  String get redeemStepCircuits => 'Preparing circuits';
-
-  @override
-  String get redeemStepTransfers => 'Fetching transfers';
-
-  @override
-  String get redeemStepNullifiers => 'Computing nullifiers';
-
-  @override
-  String get redeemStepCheckNullifiers => 'Checking nullifiers';
-
-  @override
-  String get redeemStepProofs => 'Generating ZK proofs';
-
-  @override
-  String get redeemStepAggregate => 'Aggregating proofs';
-
-  @override
-  String get redeemStepSubmit => 'Submitting to chain';
-
-  @override
-  String redeemFetchedCount(int count) {
-    return '$count fetched';
-  }
-
-  @override
   String get redeemCancel => 'Cancel';
 
   @override
-  String get redeemRetry => 'Retry';
-
-  @override
   String get redeemClose => 'Close';
-
-  @override
-  String get redeemDone => 'Done';
-
-  @override
-  String redeemSuccessBanner(String amount, int count) {
-    return '$amount redeemed in $count batch(es)';
-  }
 
   @override
   String get encryptedSendFeeLabel => 'Privacy fee';

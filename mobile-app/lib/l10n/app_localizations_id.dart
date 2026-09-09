@@ -121,9 +121,6 @@ class AppLocalizationsId extends AppLocalizations {
   String get homeNoActiveAccount => 'Tidak ada akun aktif';
 
   @override
-  String get homeGetTestnetTokens => 'Dapatkan Token Testnet ↗';
-
-  @override
   String get homeErrorLoadingBalance => 'Gagal memuat saldo';
 
   @override
@@ -1396,17 +1393,6 @@ class AppLocalizationsId extends AppLocalizations {
   String get settingsPreferencesSubtitle => 'Bahasa, mata uang, notifikasi';
 
   @override
-  String get settingsMiningRewards => 'Hadiah Mining';
-
-  @override
-  String settingsMiningRewardsSubtitle(int count) {
-    return '$count blok ditambang';
-  }
-
-  @override
-  String get settingsMiningRewardsError => 'Gagal memuat hadiah mining';
-
-  @override
   String get settingsAccountTypeTitle => 'Tambah Akun';
 
   @override
@@ -1547,93 +1533,6 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
-  String get settingsMiningTitle => 'Hadiah Mining';
-
-  @override
-  String get settingsMiningRedeem => 'Tukar';
-
-  @override
-  String get settingsMiningStatusMining => 'Mining';
-
-  @override
-  String get settingsMiningStatusPending => 'Menunggu';
-
-  @override
-  String get settingsMiningBlocksMined => 'BLOK DITAMBANG';
-
-  @override
-  String get settingsMiningBlocksAcrossTestnets => 'blok di semua testnet';
-
-  @override
-  String get settingsMiningStatTestnetBlocks => 'BLOK TESTNET';
-
-  @override
-  String get settingsMiningStatTestnetRewards => 'HADIAH TESTNET';
-
-  @override
-  String get settingsMiningStatRedeemed => 'DITUKAR';
-
-  @override
-  String get settingsMiningStatRedeemable => 'DAPAT DITUKAR';
-
-  @override
-  String settingsMiningTokenEarned(String tokenSymbol) {
-    return '$tokenSymbol DIHASILKAN';
-  }
-
-  @override
-  String get settingsMiningViewTelemetry => 'Lihat Telemetri ↗';
-
-  @override
-  String get settingsMiningNoDataTitle => 'Belum ada data mining';
-
-  @override
-  String get settingsMiningNoDataBody => 'Siapkan node mining Quantus untuk mulai mendapatkan hadiah.';
-
-  @override
-  String get settingsMiningSetupGuide => 'Panduan Setup Mining ↗';
-
-  @override
-  String get settingsMiningLoadError => 'Gagal memuat hadiah mining';
-
-  @override
-  String get settingsMiningCheckConnection => 'Periksa koneksi Anda';
-
-  @override
-  String get settingsMiningTestnetBlocks => 'blok';
-
-  @override
-  String get settingsMiningDiracSince => 'Nov 2025';
-
-  @override
-  String get settingsMiningSchrodingerSince => 'Okt 2025';
-
-  @override
-  String get settingsMiningResonanceSince => 'Jul 2025';
-
-  @override
-  String get settingsTestnetTitle => 'Hadiah Testnet';
-
-  @override
-  String get settingsTestnetLoadError => 'Gagal memuat hadiah testnet';
-
-  @override
-  String settingsTestnetTotalBlocks(int count) {
-    return '$count blok';
-  }
-
-  @override
-  String get settingsTestnetTotalDescription => 'Total blok ditambang di semua testnet';
-
-  @override
-  String get settingsTestnetBreakdown => 'Rincian';
-
-  @override
-  String settingsTestnetRowBlocks(int count) {
-    return '$count blok';
-  }
-
-  @override
   String get settingsHelpScreenTitle => 'Bantuan & Dukungan';
 
   @override
@@ -1768,9 +1667,6 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
-  String get swapDepositTestnetBanner => 'HANYA DEMO - KAMI MASIH DI TESTNET';
-
-  @override
   String get swapDemoOnly => 'Hanya Demo';
 
   @override
@@ -1836,89 +1732,10 @@ class AppLocalizationsId extends AppLocalizations {
   String get commonTryAgain => 'Coba Lagi';
 
   @override
-  String get redeemToLabel => 'Tukar Ke';
-
-  @override
-  String redeemAddressHint(String symbol) {
-    return 'Tempel Alamat $symbol';
-  }
-
-  @override
-  String redeemAmountCta(String amount) {
-    return 'Tukar $amount';
-  }
-
-  @override
-  String get redeemConfirmTitle => 'Konfirmasi Penukaran';
-
-  @override
-  String get redeemConfirmAmount => 'Jumlah';
-
-  @override
-  String get redeemConfirmTo => 'Ke';
-
-  @override
-  String get redeemConfirmFee => 'Biaya';
-
-  @override
-  String redeemFeeValue(String rate) {
-    return 'Biaya volume $rate%';
-  }
-
-  @override
-  String get redeemProgressTitle => 'Menukar...';
-
-  @override
-  String get redeemCompleteTitle => 'Penukaran Selesai';
-
-  @override
-  String get redeemFailedTitle => 'Penukaran Gagal';
-
-  @override
-  String get redeemingLabel => 'MENUKAR';
-
-  @override
-  String get redeemStepCircuits => 'Menyiapkan sirkuit';
-
-  @override
-  String get redeemStepTransfers => 'Mengambil transfer';
-
-  @override
-  String get redeemStepNullifiers => 'Menghitung nullifier';
-
-  @override
-  String get redeemStepCheckNullifiers => 'Memeriksa nullifier';
-
-  @override
-  String get redeemStepProofs => 'Membuat bukti ZK';
-
-  @override
-  String get redeemStepAggregate => 'Mengagregasi bukti';
-
-  @override
-  String get redeemStepSubmit => 'Mengirim ke chain';
-
-  @override
-  String redeemFetchedCount(int count) {
-    return '$count diambil';
-  }
-
-  @override
   String get redeemCancel => 'Batal';
 
   @override
-  String get redeemRetry => 'Coba Lagi';
-
-  @override
   String get redeemClose => 'Tutup';
-
-  @override
-  String get redeemDone => 'Selesai';
-
-  @override
-  String redeemSuccessBanner(String amount, int count) {
-    return '$amount ditukar dalam $count batch';
-  }
 
   @override
   String get encryptedSendFeeLabel => 'Biaya privasi';

@@ -4,7 +4,6 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/currency_display_provider.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
-import 'package:resonance_network_wallet/providers/mining_rewards_provider.dart';
 import 'package:resonance_network_wallet/providers/multisig_providers.dart';
 import 'package:resonance_network_wallet/providers/pending_multisig_approvals_provider.dart';
 import 'package:resonance_network_wallet/providers/pending_multisig_cancellations_provider.dart';
@@ -43,8 +42,6 @@ class LogoutService {
     _ref.read(pendingMultisigApprovalsProvider.notifier).clear();
     _ref.read(pendingMultisigExecutionsProvider.notifier).clear();
     _ref.read(pendingMultisigCancellationsProvider.notifier).clear();
-    _ref.read(miningRewardsServiceProvider).clearCachedRewardsData();
-    _ref.invalidate(miningRewardsProvider);
     _ref.read(accountsProvider.notifier).reset();
     _ref.read(activeAccountProvider.notifier).reset();
     _ref.invalidate(recoveryPhraseViewedProvider);

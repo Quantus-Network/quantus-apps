@@ -7,7 +7,7 @@ import 'selectors.dart';
 
 /// Launches the real app in a guaranteed-clean state for an E2E test.
 ///
-/// This runs the production [bootstrap] (dotenv, Supabase, SDK, telemetry),
+/// This runs the production [bootstrap] (dotenv, SDK, telemetry),
 /// then wipes all persisted wallet state via [AppState.reset] so the app starts
 /// at onboarding, and finally pumps the real widget tree.
 ///

@@ -32,9 +32,6 @@ class AppConstants {
   static const String shillQuestsPageUrl = 'https://www.quantus.com/quests/shill';
   static const String raidQuestsPageUrl = 'https://www.quantus.com/quests/raid';
   static const String communityUrl = 'https://t.me/quantusnetwork';
-  static const String faucetUrl = 'https://x.com/QuantusNetwork/status/2033738875827589221';
-  static const String miningSetupGuideUrl = 'https://docs.quantus.com/guides/mining';
-  static const String telemetryUrl = 'https://telemetry.quantus.cat';
 
   // Development accounts
   static const String crystalAlice = '//Crystal Alice';

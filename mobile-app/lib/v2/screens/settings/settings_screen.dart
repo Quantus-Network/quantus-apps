@@ -6,16 +6,13 @@ import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/generated/version.g.dart';
 import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
-import 'package:resonance_network_wallet/providers/mining_rewards_provider.dart';
 import 'package:resonance_network_wallet/shared/constants/e2e_keys.dart';
-import 'package:resonance_network_wallet/shared/utils/print.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/about_quantus_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/add_account_menu_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/help_and_support_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/preferences_settings_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/settings_divider.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/settings_tappable_row.dart';
-import 'package:resonance_network_wallet/v2/screens/settings/mining_rewards_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/wallet_settings_screen.dart';
 
 class SettingsScreenV2 extends ConsumerStatefulWidget {
@@ -29,8 +26,6 @@ class _SettingsScreenV2State extends ConsumerState<SettingsScreenV2> {
   @override
   Widget build(BuildContext context) {
     final l10n = ref.watch(l10nProvider);
-    final miningAsync = ref.watch(miningRewardsProvider);
-
     final trailing = SettingsTappableRowUtils.chevron();
     final entries = _settingsHubItems(context, l10n);
 
@@ -40,38 +35,20 @@ class _SettingsScreenV2State extends ConsumerState<SettingsScreenV2> {
       mainContent: ListView(
         children: [
           for (final e in entries.asMap().entries) ...[
-            if (e.value.isMiningRewards)
-              miningAsync.when(
-                data: (data) => _buildTappableRow(
-                  e.value,
-                  subtitle: l10n.settingsMiningRewardsSubtitle(data.totalBlocks),
-                  trailing: trailing,
-                ),
-                loading: () => _buildTappableRow(e.value, subtitle: l10n.commonLoading, trailing: trailing),
-                error: (err, st) {
-                  quantusPrint('Error getting mining rewards: ${err.toString()}');
-                  quantusPrint('Stack trace: ${st.toString()}');
-
-                  return _buildTappableRow(e.value, subtitle: l10n.settingsMiningRewardsError, trailing: trailing);
-                },
-              )
-            else
-              _buildTappableRow(e.value, trailing: trailing),
+            SettingsTappableRow(
+              key: e.value.rowKey,
+              leading: e.value.leading,
+              title: e.value.title,
+              subtitle: e.value.subtitle,
+              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => e.value.page)),
+              trailing: trailing,
+            ),
             if (e.key < entries.length - 1) const SettingsDivider(),
           ],
         ],
       ),
     );
   }
-
-  Widget _buildTappableRow(_SettingsHubItem item, {required Widget trailing, String? subtitle}) => SettingsTappableRow(
-    key: item.rowKey,
-    leading: item.leading,
-    title: item.title,
-    subtitle: subtitle ?? item.subtitle,
-    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => item.page)),
-    trailing: trailing,
-  );
 }
 
 class _SettingsHubItem {
@@ -80,7 +57,6 @@ class _SettingsHubItem {
     required this.title,
     required this.subtitle,
     required this.page,
-    this.isMiningRewards = false,
     this.rowKey,
   });
 
@@ -88,7 +64,6 @@ class _SettingsHubItem {
   final String title;
   final String subtitle;
   final Widget page;
-  final bool isMiningRewards;
   final Key? rowKey;
 }
 
@@ -107,21 +82,6 @@ List<_SettingsHubItem> _settingsHubItems(BuildContext context, AppLocalizations 
       title: l10n.settingsPreferencesTitle,
       subtitle: l10n.settingsPreferencesSubtitle,
       page: const PreferencesSettingsScreenV2(),
-    ),
-    _SettingsHubItem(
-      leading: _settingsHubIcon(
-        colors,
-        svg: SvgPicture.asset(
-          'assets/v2/axe.svg',
-          width: 18,
-          height: 18,
-          colorFilter: ColorFilter.mode(colors.accentFlare, BlendMode.srcIn),
-        ),
-      ),
-      title: l10n.settingsMiningRewards,
-      subtitle: l10n.commonLoading,
-      page: const MiningRewardsScreen(),
-      isMiningRewards: true,
     ),
     _SettingsHubItem(
       leading: _settingsHubIcon(colors, icon: Icons.person_add_outlined),

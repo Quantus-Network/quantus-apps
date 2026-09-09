@@ -43,7 +43,6 @@ dependencies:
 
   # Config + backend
   flutter_dotenv: ^6.0.1
-  supabase_flutter: ^2.12.4
   play_install_referrer: ^0.5.0
 
   # Notifications
@@ -82,7 +81,6 @@ flutter:
   assets:
     - .env
     - assets/
-    - assets/testnet_data/
     - assets/text/human_checkphrase_final_wordlist.txt
     - assets/notification/
     - assets/notification/notification_top_icon.png
@@ -93,7 +91,6 @@ flutter:
     - assets/v2/action_swap.svg
     - assets/v2/uppercase_q.svg
     - assets/v2/uppercase_q.png
-    - assets/v2/axe.svg
     - assets/v2/swap_arrows_down_up.svg
     - assets/v2/swap_clock_counter_clockwise.svg
     - assets/v2/swap_qr_code.svg
