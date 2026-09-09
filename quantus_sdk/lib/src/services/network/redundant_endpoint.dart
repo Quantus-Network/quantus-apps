@@ -104,7 +104,8 @@ class RpcEndpointService extends RedundantEndpointService {
   RpcEndpointService._internal() : super(endpoints: AppConstants.rpcEndpoints.map((e) => Endpoint(url: e)).toList());
 
   /// A non-shared instance for a specific node, e.g. the chain a miner selected.
-  RpcEndpointService.forUrls(List<String> urls) : super(endpoints: urls.map((e) => Endpoint(url: e)).toList());
+  RpcEndpointService.forUrls(List<String> urls, {super.client})
+    : super(endpoints: urls.map((e) => Endpoint(url: e)).toList());
 
   String get bestEndpointUrl => endpoints.first.url;
 
