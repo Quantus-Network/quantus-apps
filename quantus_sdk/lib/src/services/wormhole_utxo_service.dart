@@ -128,10 +128,11 @@ class WormholeUtxoService {
   @visibleForTesting
   static const int transferPageSize = 300;
 
-  /// v2 drops v1 files that may have omitted a same-height sibling and then
-  /// advanced `cachedUpToBlock` past that height.
+  /// Generation of both on-disk caches. They are keyed by address only, not by
+  /// network, so a network switch must bump this: v3 is the mainnet switch, so
+  /// Planck-era transfers and nullifiers are never read against mainnet.
   @visibleForTesting
-  static const int transferCacheVersion = 2;
+  static const int cacheVersion = 3;
   static const int _nullifierBatchSize = 300;
   static const int _reorgDepth = 180;
 
@@ -157,8 +158,13 @@ query TransfersToAddresses($tos: [String!]!, $limit: Int!, $offset: Int!, $after
   }
 }''';
 
-  final GraphQlEndpointService _graphQlEndpoint = GraphQlEndpointService();
-  final RpcEndpointService _rpcEndpoint = RpcEndpointService();
+  final GraphQlEndpointService _graphQlEndpoint;
+  final RpcEndpointService _rpcEndpoint;
+
+  /// Defaults to the app-wide endpoints; pass both to discover on another chain.
+  WormholeUtxoService({GraphQlEndpointService? graphQl, RpcEndpointService? rpc})
+    : _graphQlEndpoint = graphQl ?? GraphQlEndpointService(),
+      _rpcEndpoint = rpc ?? RpcEndpointService();
 
   static void _log(String msg) => quantusPrint('[WormholeUtxo] $msg');
 
@@ -174,47 +180,49 @@ query TransfersToAddresses($tos: [String!]!, $limit: Int!, $offset: Int!, $after
 
   static String _cachePrefix(String addressHash) => addressHash.substring(0, 16);
 
+  static String _transferCacheName(String prefix) => 'wormhole_cache_v${cacheVersion}_$prefix.json';
+
+  static String _nullifierCacheName(String prefix) => 'wormhole_nullifiers_v${cacheVersion}_$prefix.json';
+
+  static bool _isCacheFileFor(String name, String prefix) =>
+      (name.startsWith('wormhole_cache_') || name.startsWith('wormhole_nullifiers')) && name.endsWith('_$prefix.json');
+
+  static String _fileName(FileSystemEntity entity) =>
+      entity.uri.pathSegments.isEmpty ? entity.path : entity.uri.pathSegments.last;
+
   static Future<File> _transferCacheFile(String addressHash) async {
     final dir = await getApplicationSupportDirectory();
-    return File('${dir.path}/wormhole_cache_v${transferCacheVersion}_${_cachePrefix(addressHash)}.json');
+    return File('${dir.path}/${_transferCacheName(_cachePrefix(addressHash))}');
   }
 
-  /// Bumped to v2 to drop any pre-finalization-filter caches that may contain
-  /// nullifiers from reorged-out blocks. Old `wormhole_nullifiers_<prefix>.json`
-  /// files are best-effort deleted on first read.
   static Future<File> _nullifierCacheFile(String addressHash) async {
     final dir = await getApplicationSupportDirectory();
-    return File('${dir.path}/wormhole_nullifiers_v2_${_cachePrefix(addressHash)}.json');
+    return File('${dir.path}/${_nullifierCacheName(_cachePrefix(addressHash))}');
   }
 
-  static Future<void> _deleteLegacyNullifierCache(String addressHash) async {
+  /// Deletes every cache file of [addressHash] from an earlier generation.
+  @visibleForTesting
+  static Future<void> deleteStaleCaches(String addressHash) async {
     try {
+      final prefix = _cachePrefix(addressHash);
+      final current = {_transferCacheName(prefix), _nullifierCacheName(prefix)};
       final dir = await getApplicationSupportDirectory();
-      final legacy = File('${dir.path}/wormhole_nullifiers_${_cachePrefix(addressHash)}.json');
-      if (await legacy.exists()) {
-        await legacy.delete();
-        _log('Deleted legacy nullifier cache: ${legacy.path}');
+      if (!await dir.exists()) return;
+      await for (final entity in dir.list()) {
+        if (entity is! File) continue;
+        final name = _fileName(entity);
+        if (_isCacheFileFor(name, prefix) && !current.contains(name)) {
+          await entity.delete();
+          _log('Deleted stale cache: $name');
+        }
       }
     } catch (e) {
-      _log('Legacy nullifier cache delete failed (non-fatal): $e');
-    }
-  }
-
-  static Future<void> _deleteLegacyTransferCache(String addressHash) async {
-    try {
-      final dir = await getApplicationSupportDirectory();
-      final legacy = File('${dir.path}/wormhole_cache_${_cachePrefix(addressHash)}.json');
-      if (await legacy.exists()) {
-        await legacy.delete();
-        _log('Deleted legacy transfer cache: ${legacy.path}');
-      }
-    } catch (e) {
-      _log('Legacy transfer cache delete failed (non-fatal): $e');
+      _log('Stale cache delete failed (non-fatal): $e');
     }
   }
 
   static Future<_TransferCache> _loadTransferCache(String addressHash) async {
-    await _deleteLegacyTransferCache(addressHash);
+    await deleteStaleCaches(addressHash);
     try {
       final file = await _transferCacheFile(addressHash);
       if (!await file.exists()) return _TransferCache.empty();
@@ -236,8 +244,9 @@ query TransfersToAddresses($tos: [String!]!, $limit: Int!, $offset: Int!, $after
     }
   }
 
-  static Future<Set<String>> _loadSpentNullifiers(String addressHash) async {
-    await _deleteLegacyNullifierCache(addressHash);
+  @visibleForTesting
+  static Future<Set<String>> loadSpentNullifiers(String addressHash) async {
+    await deleteStaleCaches(addressHash);
     try {
       final file = await _nullifierCacheFile(addressHash);
       if (!await file.exists()) return {};
@@ -268,14 +277,8 @@ query TransfersToAddresses($tos: [String!]!, $limit: Int!, $offset: Int!, $after
       var deleted = 0;
       await for (final entity in dir.list()) {
         if (entity is! File) continue;
-        final name = entity.uri.pathSegments.isEmpty ? entity.path : entity.uri.pathSegments.last;
-        final matchesPrefix = prefixes.any(
-          (p) =>
-              name == 'wormhole_cache_$p.json' ||
-              name == 'wormhole_cache_v${transferCacheVersion}_$p.json' ||
-              name == 'wormhole_nullifiers_v2_$p.json',
-        );
-        if (matchesPrefix) {
+        final name = _fileName(entity);
+        if (prefixes.any((p) => _isCacheFileFor(name, p))) {
           await entity.delete();
           deleted++;
         }
@@ -295,7 +298,7 @@ query TransfersToAddresses($tos: [String!]!, $limit: Int!, $offset: Int!, $after
       var deleted = 0;
       await for (final entity in dir.list()) {
         if (entity is! File) continue;
-        final name = entity.uri.pathSegments.isEmpty ? entity.path : entity.uri.pathSegments.last;
+        final name = _fileName(entity);
         if (name.startsWith('wormhole_cache_') || name.startsWith('wormhole_nullifiers')) {
           await entity.delete();
           deleted++;
@@ -647,7 +650,7 @@ query SpentNullifiers($hashes: [String!]!) {
 
     for (final owner in addresses) {
       final ownerHash = _addressHashOf(owner.address);
-      final cachedSpent = await _loadSpentNullifiers(ownerHash);
+      final cachedSpent = await loadSpentNullifiers(ownerHash);
       cachedSpentByOwner[ownerHash] = cachedSpent;
       allSpent.addAll(cachedSpent);
 

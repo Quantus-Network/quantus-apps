@@ -88,7 +88,7 @@ void main() {
     expect(ids.toSet(), hasLength(ids.length), reason: 'pages must not overlap on a tied height');
   });
 
-  test('transfer cache is versioned so a prior height-only miss is re-walked', () {
-    expect(WormholeUtxoService.transferCacheVersion, 2);
+  test('caches are generation-versioned so a network switch never reads the previous chain', () {
+    expect(WormholeUtxoService.cacheVersion, 3);
   });
 }

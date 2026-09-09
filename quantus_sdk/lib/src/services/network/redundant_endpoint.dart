@@ -21,6 +21,18 @@ class Endpoint {
   Endpoint({required this.url, this.latency, this.lastSuccess, this.lastFailure});
 }
 
+/// An HTTP 5xx from an endpoint. Raised inside the failover loop so the next
+/// endpoint is tried; a 4xx is the request's problem and is returned as is.
+class EndpointServerError implements Exception {
+  final String url;
+  final int statusCode;
+
+  EndpointServerError(this.url, this.statusCode);
+
+  @override
+  String toString() => 'EndpointServerError: HTTP $statusCode from $url';
+}
+
 class GraphQlEndpointService extends RedundantEndpointService {
   static final GraphQlEndpointService _instance = GraphQlEndpointService._internal();
 
@@ -28,6 +40,10 @@ class GraphQlEndpointService extends RedundantEndpointService {
 
   GraphQlEndpointService._internal()
     : super(endpoints: AppConstants.graphQlEndpoints.map((e) => Endpoint(url: e)).toList());
+
+  /// A non-shared instance for a specific indexer, e.g. the chain a miner selected.
+  GraphQlEndpointService.forUrls(List<String> urls, {super.client})
+    : super(endpoints: urls.map((e) => Endpoint(url: e)).toList());
 
   static const int _transientRetries = 3;
   static const Duration _retryBackoff = Duration(milliseconds: 400);
@@ -87,6 +103,9 @@ class RpcEndpointService extends RedundantEndpointService {
 
   RpcEndpointService._internal() : super(endpoints: AppConstants.rpcEndpoints.map((e) => Endpoint(url: e)).toList());
 
+  /// A non-shared instance for a specific node, e.g. the chain a miner selected.
+  RpcEndpointService.forUrls(List<String> urls) : super(endpoints: urls.map((e) => Endpoint(url: e)).toList());
+
   String get bestEndpointUrl => endpoints.first.url;
 
   final Map<String, Provider> _providers = {};
@@ -113,9 +132,9 @@ class RedundantEndpointService {
   final List<Endpoint> endpoints;
 
   /// Shared client so plain HTTP calls reuse keep-alive connections too.
-  final http.Client _httpClient = http.Client();
+  final http.Client _httpClient;
 
-  RedundantEndpointService({required this.endpoints});
+  RedundantEndpointService({required this.endpoints, http.Client? client}) : _httpClient = client ?? http.Client();
 
   Map<String, String> _mergedHeaders(Map<String, String>? headers) {
     return {'Content-Type': 'application/json', ...?headers};
@@ -178,13 +197,24 @@ class RedundantEndpointService {
     }
   }
 
+  static http.Response _failOverOnServerError(String url, http.Response response) {
+    if (response.statusCode >= 500) throw EndpointServerError(url, response.statusCode);
+    return response;
+  }
+
   Future<http.Response> get(String path, {Map<String, String>? headers}) async {
-    return _executeTask((url) => _httpClient.get(Uri.parse('$url$path'), headers: _mergedHeaders(headers)));
+    return _executeTask(
+      (url) async =>
+          _failOverOnServerError(url, await _httpClient.get(Uri.parse('$url$path'), headers: _mergedHeaders(headers))),
+    );
   }
 
   Future<http.Response> post({String? path, Map<String, String>? headers, String? body}) async {
     return _executeTask(
-      (url) => _httpClient.post(Uri.parse('$url${(path ?? '')}'), body: body, headers: _mergedHeaders(headers)),
+      (url) async => _failOverOnServerError(
+        url,
+        await _httpClient.post(Uri.parse('$url${(path ?? '')}'), body: body, headers: _mergedHeaders(headers)),
+      ),
     );
   }
 }

@@ -65,6 +65,8 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  path_provider_platform_interface: ^2.1.0
+  plugin_platform_interface: ^2.1.0
   integration_test:
     sdk: flutter
   flutter_lints: ^6.0.0

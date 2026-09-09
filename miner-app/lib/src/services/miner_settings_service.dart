@@ -42,34 +42,9 @@ class MinerSettingsService {
     return prefs.getInt(_keyGpuDevices);
   }
 
-  /// Save the selected chain ID and configure endpoints accordingly.
   Future<void> saveChainId(String chainId) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_keyChainId, chainId);
-    // Update GraphQL endpoint for the selected chain
-    _configureEndpointsForChain(chainId);
-  }
-
-  /// Configure RPC and GraphQL endpoints based on chain ID.
-  void _configureEndpointsForChain(String chainId) {
-    final chain = MinerConfig.getChainById(chainId);
-    _log.i('Configuring endpoints for chain $chainId:');
-    _log.i('  RPC: ${chain.rpcUrl}');
-    _log.i('  GraphQL: ${chain.subsquidUrl ?? 'not configured'}');
-
-    // Configure RPC endpoint for SubstrateService
-    final rpcService = RpcEndpointService();
-    _log.i('  RPC endpoints before: ${rpcService.endpoints.length}');
-    // rpcService.setEndpoints([chain.rpcUrl]);
-    // _log.i('  RPC endpoints after: ${rpcService.endpoints.length}');
-    // _log.i('  Best RPC endpoint: ${rpcService.bestEndpointUrl}');
-
-    // Configure GraphQL endpoint (for any remaining Subsquid usage)
-    // if (chain.subsquidUrl != null) {
-    //   GraphQlEndpointService().setEndpoints([chain.subsquidUrl!]);
-    // } else {
-    //   GraphQlEndpointService().setEndpoints([]);
-    // }
   }
 
   /// Get the saved chain ID, returns default if not set.
@@ -89,8 +64,6 @@ class MinerSettingsService {
         chainId = savedChainId;
       }
     }
-    // Configure endpoints for this chain
-    _configureEndpointsForChain(chainId);
     return chainId;
   }
 
@@ -98,6 +71,16 @@ class MinerSettingsService {
   Future<ChainConfig> getChainConfig() async {
     final chainId = await getChainId();
     return MinerConfig.getChainById(chainId);
+  }
+
+  /// UTXO discovery bound to the selected chain, so balances, claims and proofs
+  /// all talk to the same network instead of the SDK's app-wide endpoints.
+  Future<WormholeUtxoService> utxoService() async {
+    final chain = await getChainConfig();
+    return WormholeUtxoService(
+      graphQl: GraphQlEndpointService.forUrls([chain.subsquidUrl]),
+      rpc: RpcEndpointService.forUrls([chain.rpcUrl]),
+    );
   }
 
   Future<void> logout() async {

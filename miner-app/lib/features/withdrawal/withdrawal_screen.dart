@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:quantus_miner/src/services/miner_settings_service.dart';
 import 'package:quantus_miner/src/services/miner_wallet_service.dart';
 import 'package:quantus_miner/src/shared/extensions/snackbar_extensions.dart';
-import 'package:quantus_sdk/quantus_sdk.dart';
 
 import 'claim_rewards_dialog.dart';
 
@@ -17,7 +17,7 @@ class WithdrawalScreen extends StatefulWidget {
 
 class _WithdrawalScreenState extends State<WithdrawalScreen> {
   final _walletService = MinerWalletService();
-  final _utxoService = WormholeUtxoService();
+  final _settingsService = MinerSettingsService();
   BigInt? _balance;
   bool _loading = true;
   bool _canWithdraw = false;
@@ -34,7 +34,8 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
     BigInt? balance;
     if (keyPair != null && keyPair.secretHex.isNotEmpty) {
       try {
-        balance = await _utxoService.getUnspentBalance(wormholeAddress: keyPair.address, secretHex: keyPair.secretHex);
+        final utxoService = await _settingsService.utxoService();
+        balance = await utxoService.getUnspentBalance(wormholeAddress: keyPair.address, secretHex: keyPair.secretHex);
       } catch (_) {}
     }
     if (!mounted) return;
