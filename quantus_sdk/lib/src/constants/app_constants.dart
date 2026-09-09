@@ -12,10 +12,7 @@ class AppConstants {
   // static const List<String> graphQlEndpoints = ['http://127.0.0.1:4350/v1/graphql']; // local testing
 
   static const List<String> rpcEndpoints = ['https://rpc1-mainnet.quantus.com', 'https://rpc2-mainnet.quantus.com'];
-  static const List<String> graphQlEndpoints = [
-    'https://subsquid-mainnet-app-1.quantus.com/v1/graphql',
-    'https://subsquid-mainnet-app-2.quantus.com/v1/graphql',
-  ];
+  static const List<String> graphQlEndpoints = ['https://sqm.quantus.com/v1/graphql'];
 
   static const String quersiEndpoint = 'https://qrc-1.quantus.com/api';
 

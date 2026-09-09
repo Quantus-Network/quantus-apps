@@ -149,7 +149,7 @@ class MinerConfig {
       displayName: 'Mainnet',
       description: 'Quantus mainnet',
       rpcUrl: 'https://rpc1-mainnet.quantus.com',
-      subsquidUrl: 'https://subsquid-mainnet-app-1.quantus.com/v1/graphql',
+      subsquidUrl: 'https://sqm.quantus.com/v1/graphql',
       isDefault: true,
     ),
   ];
