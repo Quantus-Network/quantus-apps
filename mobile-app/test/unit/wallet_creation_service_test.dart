@@ -58,5 +58,27 @@ void main() {
       verifyNever(accounts.addAccount(any));
       expect(created, same(existing));
     });
+
+    test('a failed completion write surfaces instead of finishing the wallet', () async {
+      final settings = MockSettingsService();
+      final accounts = MockAccountsService();
+      when(settings.setMainnetMigrationDone()).thenThrow(Exception('disk full'));
+
+      final service = WalletCreationService(settingsService: settings, accountsService: accounts);
+
+      await expectLater(
+        service.createNewWallet(
+          name: 'Account 1',
+          mnemonic: 'word ' * 12,
+          walletIndex: 0,
+          accountId: 'abc',
+          scheme: DilithiumSchemeExtension.current,
+          derivationPath: HdWalletService.pathForIndex(0, DilithiumSchemeExtension.current),
+          existingAccounts: const [],
+        ),
+        throwsException,
+      );
+      verifyNever(accounts.addAccount(any));
+    });
   });
 }

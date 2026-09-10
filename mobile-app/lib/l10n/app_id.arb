@@ -530,6 +530,7 @@
   "mainnetMigrationNewcomerZero": "Apa pun pilihannya, saldo {tokenSymbol} mainnet Anda dimulai dari nol. Migrasi mempertahankan wallet ini apa adanya: frasa pemulihan dan akun yang sama.",
   "mainnetMigrationUnreachableTitle": "Testnet tidak dapat dijangkau",
   "mainnetMigrationUnreachableBody": "Riwayat testnet wallet ini tidak dapat diperiksa.",
+  "mainnetMigrationSaveFailed": "Pilihan Anda tidak dapat disimpan: {error}",
   "mainnetMigrationKeepWallet": "Simpan Wallet",
   "mainnetMigrationMigrateWallet": "Migrasikan Wallet Lama"
 }

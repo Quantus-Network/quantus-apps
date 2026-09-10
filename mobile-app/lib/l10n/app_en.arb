@@ -2738,6 +2738,15 @@
     "@mainnetMigrationUnreachableBody": {
       "description": "Warning row body when the testnet check fails"
     },
+    "mainnetMigrationSaveFailed": "Could not save your choice: {error}",
+    "@mainnetMigrationSaveFailed": {
+      "description": "Toaster when the migration completion flag cannot be written",
+      "placeholders": {
+        "error": {
+          "type": "String"
+        }
+      }
+    },
     "mainnetMigrationKeepWallet": "Keep Wallet",
     "@mainnetMigrationKeepWallet": {
       "description": "Button that keeps the existing wallet"

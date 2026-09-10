@@ -3506,6 +3506,12 @@ abstract class AppLocalizations {
   /// **'This wallet\'s testnet history could not be checked.'**
   String get mainnetMigrationUnreachableBody;
 
+  /// Toaster when the migration completion flag cannot be written
+  ///
+  /// In en, this message translates to:
+  /// **'Could not save your choice: {error}'**
+  String mainnetMigrationSaveFailed(String error);
+
   /// Button that keeps the existing wallet
   ///
   /// In en, this message translates to:

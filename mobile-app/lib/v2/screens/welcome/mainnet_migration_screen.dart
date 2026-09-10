@@ -7,6 +7,7 @@ import 'package:resonance_network_wallet/providers/mainnet_migration_provider.da
 import 'package:resonance_network_wallet/services/mainnet_migration_service.dart';
 import 'package:resonance_network_wallet/services/telemetry_service.dart';
 import 'package:resonance_network_wallet/shared/constants/e2e_keys.dart';
+import 'package:resonance_network_wallet/shared/utils/print.dart';
 import 'package:resonance_network_wallet/v2/components/account_badge.dart';
 import 'package:resonance_network_wallet/v2/components/info_card.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
@@ -35,8 +36,14 @@ class _MainnetMigrationScreenState extends ConsumerState<MainnetMigrationScreen>
 
   void _next() => _pages.animateToPage(1, duration: const Duration(milliseconds: 450), curve: Curves.easeInOutCubic);
 
-  void _finish(TestnetUserKind? kind) {
-    ref.read(mainnetMigrationServiceProvider).markDone();
+  Future<void> _finish(TestnetUserKind? kind) async {
+    try {
+      await ref.read(mainnetMigrationServiceProvider).markDone();
+    } catch (e) {
+      quantusPrint('Mainnet migration completion not saved: $e');
+      if (mounted) context.showErrorToaster(message: ref.read(l10nProvider).mainnetMigrationSaveFailed('$e'));
+      return;
+    }
     TelemetryService().sendEvent('mainnet_migration_done', parameters: {'testnet_user': kind?.name ?? 'unknown'});
     widget.onFinished();
   }
@@ -285,7 +292,7 @@ class _Outcome extends StatelessWidget {
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
                   color: colors.bgSurface,
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: context.radiusV3.mdBorder,
                   border: Border.all(color: colors.borderHairline),
                 ),
                 child: Column(

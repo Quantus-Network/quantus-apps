@@ -1884,6 +1884,11 @@ class AppLocalizationsId extends AppLocalizations {
   String get mainnetMigrationUnreachableBody => 'Riwayat testnet wallet ini tidak dapat diperiksa.';
 
   @override
+  String mainnetMigrationSaveFailed(String error) {
+    return 'Pilihan Anda tidak dapat disimpan: $error';
+  }
+
+  @override
   String get mainnetMigrationKeepWallet => 'Simpan Wallet';
 
   @override

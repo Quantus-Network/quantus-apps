@@ -54,7 +54,7 @@ query TestnetStats($ids: [String!]!) {
 
   bool isPending() => !_settings.isMainnetMigrationDone();
 
-  void markDone() => _settings.setMainnetMigrationDone();
+  Future<void> markDone() => _settings.setMainnetMigrationDone();
 
   /// Every address this wallet could have used on testnet: all stored accounts
   /// plus each software wallet's wormhole address, where mining rewards were paid.

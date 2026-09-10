@@ -79,7 +79,7 @@ class _ImportWalletScreenV2State extends ConsumerState<ImportWalletScreenV2> {
       invalidateAccountProviders(ref);
       _settingsService.setReferralCheckCompleted();
       _settingsService.setExistingUserSeenPromoVideo();
-      _settingsService.setMainnetMigrationDone();
+      await _settingsService.setMainnetMigrationDone();
       _settingsService.setWalletOrigin(widget.walletIndex, WalletOrigin.imported);
       ref.invalidate(walletOriginProvider(widget.walletIndex));
 

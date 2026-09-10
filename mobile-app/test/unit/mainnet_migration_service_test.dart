@@ -29,7 +29,7 @@ class _Settings extends FakeSettingsService {
   bool isMainnetMigrationDone() => migrationDone;
 
   @override
-  void setMainnetMigrationDone() => migrationDone = true;
+  Future<void> setMainnetMigrationDone() async => migrationDone = true;
 }
 
 class _HdWallet extends Fake implements HdWalletService {

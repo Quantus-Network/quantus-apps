@@ -488,8 +488,10 @@ class SettingsService {
     return _prefs.getBool(mainnetMigrationDoneKey) ?? false;
   }
 
-  void setMainnetMigrationDone() {
-    _prefs.setBool(mainnetMigrationDoneKey, true);
+  Future<void> setMainnetMigrationDone() async {
+    if (!await _prefs.setBool(mainnetMigrationDoneKey, true)) {
+      throw Exception('Could not save $mainnetMigrationDoneKey');
+    }
   }
 
   void clearReferralCheckCompletedFlag() {

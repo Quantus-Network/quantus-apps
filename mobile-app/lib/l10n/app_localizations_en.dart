@@ -1881,6 +1881,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mainnetMigrationUnreachableBody => 'This wallet\'s testnet history could not be checked.';
 
   @override
+  String mainnetMigrationSaveFailed(String error) {
+    return 'Could not save your choice: $error';
+  }
+
+  @override
   String get mainnetMigrationKeepWallet => 'Keep Wallet';
 
   @override

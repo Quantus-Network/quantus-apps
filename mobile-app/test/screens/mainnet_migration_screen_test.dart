@@ -15,12 +15,16 @@ import '../fakes.dart';
 
 class _Settings extends FakeSettingsService {
   bool migrationDone = false;
+  bool failWrite = false;
 
   @override
   bool isMainnetMigrationDone() => migrationDone;
 
   @override
-  void setMainnetMigrationDone() => migrationDone = true;
+  Future<void> setMainnetMigrationDone() async {
+    if (failWrite) throw Exception('disk full');
+    migrationDone = true;
+  }
 }
 
 final _miner = TestnetStatus(blocksMined: 1234, balance: BigInt.zero);
@@ -34,9 +38,10 @@ void main() {
   /// Pumps the flow, taps Next and lets the page animation finish.
   Future<({_Settings settings, List<bool> finished})> pumpSecondPage(
     WidgetTester tester,
-    Future<TestnetStatus> Function() status,
-  ) async {
-    final settings = _Settings();
+    Future<TestnetStatus> Function() status, {
+    bool failWrite = false,
+  }) async {
+    final settings = _Settings()..failWrite = failWrite;
     final finished = <bool>[];
     await tester.pumpApp(
       MainnetMigrationScreen(onFinished: () => finished.add(true)),
@@ -114,6 +119,17 @@ void main() {
     await tester.tap(find.byKey(const Key(E2EKeys.mainnetMigrationRetryButton)));
     await tester.pump();
     expect(calls, 2);
+  });
+
+  testWidgets('a failed completion write keeps the notice open and says why', (tester) async {
+    final flow = await pumpSecondPage(tester, () async => _newcomer, failWrite: true);
+    await tester.tap(finish);
+    await tester.pump();
+    await tester.pump();
+    expect(flow.finished, isEmpty);
+    expect(flow.settings.migrationDone, isFalse);
+    expect(find.textContaining('disk full'), findsOneWidget);
+    await tester.pump(const Duration(seconds: 10));
   });
 
   testWidgets('the second page waits on the check', (tester) async {
