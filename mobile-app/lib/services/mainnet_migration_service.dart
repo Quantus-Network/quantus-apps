@@ -25,13 +25,13 @@ class TestnetStatus {
 class MainnetMigrationService {
   static const _timeout = Duration(seconds: 20);
 
-  static const String _statsQuery = r"""
+  static const String _statsQuery = r'''
 query TestnetStats($ids: [String!]!) {
   stats: account_stats(where: { id: { _in: $ids } }) {
     id
     total_mined_blocks
   }
-}""";
+}''';
 
   static final _testnetRpc = RpcEndpointService.forUrls([_testnetRpcUrl]);
 
