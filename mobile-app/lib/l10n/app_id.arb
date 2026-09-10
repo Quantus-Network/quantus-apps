@@ -524,7 +524,7 @@
   "mainnetMigrationHolderMinedTitle": "Menambang di testnet?",
   "mainnetMigrationHolderMinedBody": "Simpan wallet ini. Hadiah mining akan segera hadir.",
   "mainnetMigrationHolderNotMinedTitle": "Tidak menambang?",
-  "mainnetMigrationHolderNotMinedBody": "Simpan wallet ini, atau buat yang baru jika frasa pemulihan Anda mungkin tidak aman.",
+  "mainnetMigrationHolderNotMinedBody": "Simpan frasa rahasia Anda atau buat yang baru.",
   "mainnetMigrationNewcomerBody": "Quantus kini di mainnet. Buat wallet baru, atau tetap gunakan wallet testnet Anda di mainnet.",
   "mainnetMigrationNewcomerZero": "Apa pun pilihannya, saldo {tokenSymbol} mainnet Anda dimulai dari nol. Migrasi mempertahankan wallet ini apa adanya: frasa pemulihan dan akun yang sama.",
   "mainnetMigrationCheckFailed": "Testnet tidak dapat dijangkau, sehingga riwayat testnet wallet ini tidak dapat diperiksa.",

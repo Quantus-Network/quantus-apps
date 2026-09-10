@@ -49,12 +49,18 @@ class _MainnetMigrationScreenState extends ConsumerState<MainnetMigrationScreen>
     final l10n = ref.watch(l10nProvider);
     // Watched here so the check runs while the intro page is still showing.
     final status = ref.watch(testnetStatusProvider);
+    final forced = ref.watch(forcedTestnetOutcomeProvider);
 
     return PageView(
       key: const Key(E2EKeys.mainnetMigrationScreen),
       controller: _pages,
       children: [
-        _IntroPage(l10n: l10n, onNext: _next),
+        _IntroPage(
+          l10n: l10n,
+          onNext: _next,
+          debugOutcome: forced,
+          onDebugOutcome: (outcome) => ref.read(forcedTestnetOutcomeProvider.notifier).state = outcome,
+        ),
         _StatusPage(l10n: l10n, status: status, onFinish: _finish, onCreateNewWallet: _createNewWallet),
       ],
     );
@@ -64,8 +70,15 @@ class _MainnetMigrationScreenState extends ConsumerState<MainnetMigrationScreen>
 class _IntroPage extends StatelessWidget {
   final AppLocalizations l10n;
   final VoidCallback onNext;
+  final String? debugOutcome;
+  final ValueChanged<String> onDebugOutcome;
 
-  const _IntroPage({required this.l10n, required this.onNext});
+  const _IntroPage({
+    required this.l10n,
+    required this.onNext,
+    required this.debugOutcome,
+    required this.onDebugOutcome,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -97,6 +110,20 @@ class _IntroPage extends StatelessWidget {
             style: text.caption.copyWith(color: colors.textMuted),
           ),
           const SizedBox(height: 56),
+          if (debugOutcome != null) ...[
+            Wrap(
+              spacing: 8,
+              children: [
+                for (final outcome in debugTestnetOutcomes)
+                  ChoiceChip(
+                    label: Text(outcome),
+                    selected: outcome == debugOutcome,
+                    onSelected: (_) => onDebugOutcome(outcome),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 16),
+          ],
           QuantusButton.simple(
             key: const Key(E2EKeys.mainnetMigrationNextButton),
             label: l10n.mainnetMigrationNext,

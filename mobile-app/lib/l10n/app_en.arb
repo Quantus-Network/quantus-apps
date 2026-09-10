@@ -2709,7 +2709,7 @@
     "@mainnetMigrationHolderNotMinedTitle": {
       "description": "Card title for users who did not mine"
     },
-    "mainnetMigrationHolderNotMinedBody": "Keep this wallet, or create a new one if your recovery phrase may not be safe.",
+    "mainnetMigrationHolderNotMinedBody": "Keep your secret phrase or create a new one.",
     "@mainnetMigrationHolderNotMinedBody": {
       "description": "Card body for users who did not mine"
     },

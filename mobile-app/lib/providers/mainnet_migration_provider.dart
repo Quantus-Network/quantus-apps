@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/services/mainnet_migration_service.dart';
@@ -12,16 +13,23 @@ final mainnetMigrationServiceProvider = Provider<MainnetMigrationService>(
   ),
 );
 
-/// Whether the notice is still due. Debug builds can force it via
-/// [AppConstants.debugMainnetMigration].
+/// Debug builds force the notice through [AppConstants.debugMainnetMigration];
+/// the intro page then switches the outcome at runtime, no restart needed.
+final forcedTestnetOutcomeProvider = StateProvider<String?>(
+  (_) => kDebugMode ? AppConstants.debugMainnetMigration : null,
+);
+
+const debugTestnetOutcomes = ['miner', 'holder', 'newcomer', 'error'];
+
+/// Whether the notice is still due.
 final mainnetMigrationPendingProvider = Provider<bool>(
-  (ref) => forcedTestnetOutcome != null || ref.watch(mainnetMigrationServiceProvider).isPending(),
+  (ref) => ref.watch(forcedTestnetOutcomeProvider) != null || ref.watch(mainnetMigrationServiceProvider).isPending(),
 );
 
 /// The one-shot check is not retried: the fallback page is written for an
 /// unreachable testnet, and a retry would flip it back to a spinner.
 final testnetStatusProvider = FutureProvider<TestnetStatus>((ref) async {
-  final forced = forcedTestnetOutcome;
+  final forced = ref.watch(forcedTestnetOutcomeProvider);
   if (forced != null) return _forcedStatus(forced);
   try {
     return await ref.watch(mainnetMigrationServiceProvider).checkTestnetStatus();
@@ -30,8 +38,6 @@ final testnetStatusProvider = FutureProvider<TestnetStatus>((ref) async {
     rethrow;
   }
 }, retry: (_, _) => null);
-
-String? get forcedTestnetOutcome => kDebugMode ? AppConstants.debugMainnetMigration : null;
 
 TestnetStatus _forcedStatus(String outcome) => switch (outcome) {
   'miner' => TestnetStatus(blocksMined: 1234, balance: BigInt.zero),

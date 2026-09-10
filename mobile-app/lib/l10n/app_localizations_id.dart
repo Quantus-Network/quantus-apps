@@ -1863,8 +1863,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get mainnetMigrationHolderNotMinedTitle => 'Tidak menambang?';
 
   @override
-  String get mainnetMigrationHolderNotMinedBody =>
-      'Simpan wallet ini, atau buat yang baru jika frasa pemulihan Anda mungkin tidak aman.';
+  String get mainnetMigrationHolderNotMinedBody => 'Simpan frasa rahasia Anda atau buat yang baru.';
 
   @override
   String get mainnetMigrationNewcomerBody =>

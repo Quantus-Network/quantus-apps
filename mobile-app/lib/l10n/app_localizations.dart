@@ -3473,7 +3473,7 @@ abstract class AppLocalizations {
   /// Card body for users who did not mine
   ///
   /// In en, this message translates to:
-  /// **'Keep this wallet, or create a new one if your recovery phrase may not be safe.'**
+  /// **'Keep your secret phrase or create a new one.'**
   String get mainnetMigrationHolderNotMinedBody;
 
   /// Body for wallets with no testnet history

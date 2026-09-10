@@ -1860,8 +1860,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mainnetMigrationHolderNotMinedTitle => 'Did not mine?';
 
   @override
-  String get mainnetMigrationHolderNotMinedBody =>
-      'Keep this wallet, or create a new one if your recovery phrase may not be safe.';
+  String get mainnetMigrationHolderNotMinedBody => 'Keep your secret phrase or create a new one.';
 
   @override
   String get mainnetMigrationNewcomerBody =>
