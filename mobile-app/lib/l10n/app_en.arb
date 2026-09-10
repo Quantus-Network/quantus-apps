@@ -2693,21 +2693,25 @@
     "@mainnetMigrationUserTitle": {
       "description": "Title for wallets that did not mine"
     },
-    "mainnetMigrationHolderThanks": "Thank you for testing Quantus testnet.",
-    "@mainnetMigrationHolderThanks": {
-      "description": "Thanks line for testnet users with a balance"
+    "mainnetMigrationHolderIntro": "Thank you for testing Quantus. Testnet is shut down, mainnet is live, and testnet balances do not carry over.",
+    "@mainnetMigrationHolderIntro": {
+      "description": "Lead paragraph for testnet users with a balance"
     },
-    "mainnetMigrationHolderShutdown": "Testnet is now shut down, and mainnet is live.",
-    "@mainnetMigrationHolderShutdown": {
-      "description": "Shutdown notice for testnet users"
+    "mainnetMigrationHolderMinedTitle": "Mined on testnet?",
+    "@mainnetMigrationHolderMinedTitle": {
+      "description": "Card title for users who may have mined"
     },
-    "mainnetMigrationHolderMined": "If you mined on testnet, keep this wallet: testnet mining rewards will come soon.",
-    "@mainnetMigrationHolderMined": {
-      "description": "Advice for users who may have mined"
+    "mainnetMigrationHolderMinedBody": "Keep this wallet. Mining rewards are coming soon.",
+    "@mainnetMigrationHolderMinedBody": {
+      "description": "Card body for users who may have mined"
     },
-    "mainnetMigrationHolderNotMined": "If not, keep this wallet or create a new one, depending on how safe you consider your recovery phrase. Testnet balances do not move to mainnet.",
-    "@mainnetMigrationHolderNotMined": {
-      "description": "Advice for users who did not mine"
+    "mainnetMigrationHolderNotMinedTitle": "Did not mine?",
+    "@mainnetMigrationHolderNotMinedTitle": {
+      "description": "Card title for users who did not mine"
+    },
+    "mainnetMigrationHolderNotMinedBody": "Keep this wallet, or create a new one if your recovery phrase may not be safe.",
+    "@mainnetMigrationHolderNotMinedBody": {
+      "description": "Card body for users who did not mine"
     },
     "mainnetMigrationNewcomerBody": "Quantus is now on mainnet. Create a new wallet, or keep using your testnet wallet on mainnet.",
     "@mainnetMigrationNewcomerBody": {

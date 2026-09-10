@@ -3446,29 +3446,35 @@ abstract class AppLocalizations {
   /// **'Dear Testnet User'**
   String get mainnetMigrationUserTitle;
 
-  /// Thanks line for testnet users with a balance
+  /// Lead paragraph for testnet users with a balance
   ///
   /// In en, this message translates to:
-  /// **'Thank you for testing Quantus testnet.'**
-  String get mainnetMigrationHolderThanks;
+  /// **'Thank you for testing Quantus. Testnet is shut down, mainnet is live, and testnet balances do not carry over.'**
+  String get mainnetMigrationHolderIntro;
 
-  /// Shutdown notice for testnet users
+  /// Card title for users who may have mined
   ///
   /// In en, this message translates to:
-  /// **'Testnet is now shut down, and mainnet is live.'**
-  String get mainnetMigrationHolderShutdown;
+  /// **'Mined on testnet?'**
+  String get mainnetMigrationHolderMinedTitle;
 
-  /// Advice for users who may have mined
+  /// Card body for users who may have mined
   ///
   /// In en, this message translates to:
-  /// **'If you mined on testnet, keep this wallet: testnet mining rewards will come soon.'**
-  String get mainnetMigrationHolderMined;
+  /// **'Keep this wallet. Mining rewards are coming soon.'**
+  String get mainnetMigrationHolderMinedBody;
 
-  /// Advice for users who did not mine
+  /// Card title for users who did not mine
   ///
   /// In en, this message translates to:
-  /// **'If not, keep this wallet or create a new one, depending on how safe you consider your recovery phrase. Testnet balances do not move to mainnet.'**
-  String get mainnetMigrationHolderNotMined;
+  /// **'Did not mine?'**
+  String get mainnetMigrationHolderNotMinedTitle;
+
+  /// Card body for users who did not mine
+  ///
+  /// In en, this message translates to:
+  /// **'Keep this wallet, or create a new one if your recovery phrase may not be safe.'**
+  String get mainnetMigrationHolderNotMinedBody;
 
   /// Body for wallets with no testnet history
   ///

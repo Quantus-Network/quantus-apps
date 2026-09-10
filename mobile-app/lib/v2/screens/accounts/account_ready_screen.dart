@@ -7,6 +7,7 @@ import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/shared/constants/e2e_keys.dart';
 import 'package:resonance_network_wallet/v2/components/account_badge.dart';
+import 'package:resonance_network_wallet/v2/components/info_card.dart';
 import 'package:resonance_network_wallet/v2/components/private_activity_notice.dart';
 import 'package:resonance_network_wallet/v2/screens/home/home_screen.dart';
 
@@ -168,54 +169,18 @@ class _WalletCreatedAccountCards extends StatelessWidget {
 
     return Column(
       children: [
-        _AccountPreviewCard(
+        InfoCard(
           leading: AccountBadge(name: mainAccountName),
           title: mainAccountName,
           description: l10n.accountReadyMainAccountDescription,
         ),
         const SizedBox(height: 14),
-        _AccountPreviewCard(
+        InfoCard(
           leading: const EncryptedLockBadge(),
           title: encryptedName,
           description: l10n.accountReadyEncryptedAccountDescription,
         ),
       ],
-    );
-  }
-}
-
-class _AccountPreviewCard extends StatelessWidget {
-  const _AccountPreviewCard({required this.leading, required this.title, required this.description});
-
-  final Widget leading;
-  final String title;
-  final String description;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = context.colorsV3;
-    final text = context.themeTextV3;
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: colors.bgSurface, borderRadius: context.radiusV3.mdBorder),
-      child: Row(
-        children: [
-          leading,
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: text.headingRow.copyWith(color: colors.textContent)),
-                const SizedBox(height: 4),
-                Text(description, style: text.caption.copyWith(color: colors.textMuted)),
-              ],
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

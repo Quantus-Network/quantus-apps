@@ -7,6 +7,8 @@ import 'package:resonance_network_wallet/providers/mainnet_migration_provider.da
 import 'package:resonance_network_wallet/services/mainnet_migration_service.dart';
 import 'package:resonance_network_wallet/services/telemetry_service.dart';
 import 'package:resonance_network_wallet/shared/constants/e2e_keys.dart';
+import 'package:resonance_network_wallet/v2/components/account_badge.dart';
+import 'package:resonance_network_wallet/v2/components/info_card.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/reset_confirmation_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/welcome/onboarding_background.dart';
@@ -153,11 +155,18 @@ class _StatusPage extends StatelessWidget {
   Widget _holder({bool checkFailed = false}) => _Outcome(
     l10n: l10n,
     title: l10n.mainnetMigrationUserTitle,
-    paragraphs: [
-      l10n.mainnetMigrationHolderThanks,
-      l10n.mainnetMigrationHolderShutdown,
-      l10n.mainnetMigrationHolderMined,
-      l10n.mainnetMigrationHolderNotMined,
+    paragraphs: [l10n.mainnetMigrationHolderIntro],
+    cards: [
+      InfoCard(
+        leading: const AccountBadge.icon(icon: Icons.memory_rounded),
+        title: l10n.mainnetMigrationHolderMinedTitle,
+        description: l10n.mainnetMigrationHolderMinedBody,
+      ),
+      InfoCard(
+        leading: const AccountBadge.icon(icon: Icons.key_rounded),
+        title: l10n.mainnetMigrationHolderNotMinedTitle,
+        description: l10n.mainnetMigrationHolderNotMinedBody,
+      ),
     ],
     footnote: checkFailed ? l10n.mainnetMigrationCheckFailed : null,
     actions: [
@@ -188,6 +197,7 @@ class _Outcome extends StatelessWidget {
   final List<String> paragraphs;
   final int? blocksMined;
   final List<String> trailingParagraphs;
+  final List<Widget> cards;
   final String? footnote;
   final List<Widget> actions;
 
@@ -197,6 +207,7 @@ class _Outcome extends StatelessWidget {
     required this.paragraphs,
     this.blocksMined,
     this.trailingParagraphs = const [],
+    this.cards = const [],
     this.footnote,
     required this.actions,
   });
@@ -240,6 +251,7 @@ class _Outcome extends StatelessWidget {
               ),
             ],
             for (final paragraph in trailingParagraphs) ...[const SizedBox(height: 16), Text(paragraph, style: body)],
+            for (final (i, card) in cards.indexed) ...[SizedBox(height: i == 0 ? 24 : 14), card],
             if (footnote != null) ...[
               const SizedBox(height: 24),
               Text(footnote!, style: text.caption.copyWith(color: colors.textMuted)),

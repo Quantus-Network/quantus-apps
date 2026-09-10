@@ -1847,18 +1847,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mainnetMigrationUserTitle => 'Dear Testnet User';
 
   @override
-  String get mainnetMigrationHolderThanks => 'Thank you for testing Quantus testnet.';
+  String get mainnetMigrationHolderIntro =>
+      'Thank you for testing Quantus. Testnet is shut down, mainnet is live, and testnet balances do not carry over.';
 
   @override
-  String get mainnetMigrationHolderShutdown => 'Testnet is now shut down, and mainnet is live.';
+  String get mainnetMigrationHolderMinedTitle => 'Mined on testnet?';
 
   @override
-  String get mainnetMigrationHolderMined =>
-      'If you mined on testnet, keep this wallet: testnet mining rewards will come soon.';
+  String get mainnetMigrationHolderMinedBody => 'Keep this wallet. Mining rewards are coming soon.';
 
   @override
-  String get mainnetMigrationHolderNotMined =>
-      'If not, keep this wallet or create a new one, depending on how safe you consider your recovery phrase. Testnet balances do not move to mainnet.';
+  String get mainnetMigrationHolderNotMinedTitle => 'Did not mine?';
+
+  @override
+  String get mainnetMigrationHolderNotMinedBody =>
+      'Keep this wallet, or create a new one if your recovery phrase may not be safe.';
 
   @override
   String get mainnetMigrationNewcomerBody =>

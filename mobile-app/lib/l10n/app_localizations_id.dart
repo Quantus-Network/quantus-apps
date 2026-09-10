@@ -1850,18 +1850,21 @@ class AppLocalizationsId extends AppLocalizations {
   String get mainnetMigrationUserTitle => 'Pengguna Testnet yang Terhormat';
 
   @override
-  String get mainnetMigrationHolderThanks => 'Terima kasih telah menguji testnet Quantus.';
+  String get mainnetMigrationHolderIntro =>
+      'Terima kasih telah menguji Quantus. Testnet telah ditutup, mainnet sudah aktif, dan saldo testnet tidak dibawa ke mainnet.';
 
   @override
-  String get mainnetMigrationHolderShutdown => 'Testnet kini telah ditutup, dan mainnet sudah aktif.';
+  String get mainnetMigrationHolderMinedTitle => 'Menambang di testnet?';
 
   @override
-  String get mainnetMigrationHolderMined =>
-      'Jika Anda menambang di testnet, simpan wallet ini: hadiah mining testnet akan segera hadir.';
+  String get mainnetMigrationHolderMinedBody => 'Simpan wallet ini. Hadiah mining akan segera hadir.';
 
   @override
-  String get mainnetMigrationHolderNotMined =>
-      'Jika tidak, simpan wallet ini atau buat yang baru, tergantung seberapa aman frasa pemulihan Anda. Saldo testnet tidak berpindah ke mainnet.';
+  String get mainnetMigrationHolderNotMinedTitle => 'Tidak menambang?';
+
+  @override
+  String get mainnetMigrationHolderNotMinedBody =>
+      'Simpan wallet ini, atau buat yang baru jika frasa pemulihan Anda mungkin tidak aman.';
 
   @override
   String get mainnetMigrationNewcomerBody =>
