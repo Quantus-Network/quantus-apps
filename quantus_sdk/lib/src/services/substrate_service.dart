@@ -98,12 +98,15 @@ class SubstrateService {
     return balance;
   }
 
-  Future<BigInt> queryBalance(String address) async {
+  Future<BigInt> queryBalance(String address) => queryBalanceOn(_rpcEndpointService, address);
+
+  /// Free balance of [address] on the chain behind [rpc].
+  static Future<BigInt> queryBalanceOn(RpcEndpointService rpc, String address) async {
     try {
       final accountID = crypto.ss58ToAccountId(s: address);
       final totalSw = Stopwatch()..start();
 
-      final accountInfo = await _rpcEndpointService.providerTask((provider) async {
+      final accountInfo = await rpc.providerTask((provider) async {
         final callSw = Stopwatch()..start();
         final result = await Planck(provider).query.system.account(accountID);
         printTiming('queryBalance call', callSw.elapsedMilliseconds);

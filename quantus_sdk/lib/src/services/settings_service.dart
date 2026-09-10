@@ -38,6 +38,7 @@ class SettingsService {
   static const String referralCodeKey = 'referral_code';
   static const String hasWatchedQuestsPromoKey = 'quests_promo';
   static const String existingUserSeenPromoVideoKey = 'existing_user_seen_promo_video';
+  static const String mainnetMigrationDoneKey = 'mainnet_migration_done';
 
   static const _legacyStorage = FlutterSecureStorage(mOptions: MacOsOptions(usesDataProtectionKeychain: false));
   static const _migratedKeychainKey = 'keychain_migrated_to_this_device';
@@ -481,6 +482,14 @@ class SettingsService {
 
   void setReferralCheckCompleted() {
     _prefs.setBool(hasCheckedReferralKey, true);
+  }
+
+  bool isMainnetMigrationDone() {
+    return _prefs.getBool(mainnetMigrationDoneKey) ?? false;
+  }
+
+  void setMainnetMigrationDone() {
+    _prefs.setBool(mainnetMigrationDoneKey, true);
   }
 
   void clearReferralCheckCompletedFlag() {
