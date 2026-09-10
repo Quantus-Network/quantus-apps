@@ -3242,6 +3242,12 @@ abstract class AppLocalizations {
   /// **'Done'**
   String get commonDone;
 
+  /// Retry action on various screens
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get commonRetry;
+
   /// Retry label shown when a list or quote fails to load
   ///
   /// In en, this message translates to:
@@ -3488,11 +3494,17 @@ abstract class AppLocalizations {
   /// **'Either way your mainnet {tokenSymbol} balance starts at zero. Migrating keeps this wallet exactly as it is: same recovery phrase, same accounts.'**
   String mainnetMigrationNewcomerZero(String tokenSymbol);
 
-  /// Footnote when the testnet check fails
+  /// Warning row title when the testnet check fails
   ///
   /// In en, this message translates to:
-  /// **'Testnet could not be reached, so this wallet\'s testnet history could not be checked.'**
-  String get mainnetMigrationCheckFailed;
+  /// **'Testnet could not be reached'**
+  String get mainnetMigrationUnreachableTitle;
+
+  /// Warning row body when the testnet check fails
+  ///
+  /// In en, this message translates to:
+  /// **'This wallet\'s testnet history could not be checked.'**
+  String get mainnetMigrationUnreachableBody;
 
   /// Button that keeps the existing wallet
   ///

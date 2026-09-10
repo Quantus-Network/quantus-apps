@@ -15,6 +15,7 @@ class E2EKeys {
   static const String mainnetMigrationScreen = 'mainnet_migration_screen';
   static const String mainnetMigrationNextButton = 'mainnet_migration_next_button';
   static const String mainnetMigrationFinishButton = 'mainnet_migration_finish_button';
+  static const String mainnetMigrationRetryButton = 'mainnet_migration_retry_button';
   static const String mainnetMigrationCreateWalletButton = 'mainnet_migration_create_wallet_button';
   static const String welcomeImportWalletButton = 'welcome_import_wallet_button';
 

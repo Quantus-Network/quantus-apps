@@ -1729,6 +1729,9 @@ class AppLocalizationsId extends AppLocalizations {
   String get commonDone => 'Selesai';
 
   @override
+  String get commonRetry => 'Coba Lagi';
+
+  @override
   String get commonTryAgain => 'Coba Lagi';
 
   @override
@@ -1875,8 +1878,10 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
-  String get mainnetMigrationCheckFailed =>
-      'Testnet tidak dapat dijangkau, sehingga riwayat testnet wallet ini tidak dapat diperiksa.';
+  String get mainnetMigrationUnreachableTitle => 'Testnet tidak dapat dijangkau';
+
+  @override
+  String get mainnetMigrationUnreachableBody => 'Riwayat testnet wallet ini tidak dapat diperiksa.';
 
   @override
   String get mainnetMigrationKeepWallet => 'Simpan Wallet';

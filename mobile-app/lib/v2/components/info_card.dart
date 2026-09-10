@@ -3,11 +3,12 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 
 /// A surface row with a leading badge, a heading and a short description.
 class InfoCard extends StatelessWidget {
-  const InfoCard({super.key, required this.leading, required this.title, required this.description});
+  const InfoCard({super.key, required this.leading, required this.title, required this.description, this.trailing});
 
   final Widget leading;
   final String title;
   final String description;
+  final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
@@ -32,6 +33,7 @@ class InfoCard extends StatelessWidget {
               ],
             ),
           ),
+          if (trailing != null) ...[const SizedBox(width: 12), trailing!],
         ],
       ),
     );

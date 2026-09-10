@@ -61,7 +61,13 @@ class _MainnetMigrationScreenState extends ConsumerState<MainnetMigrationScreen>
           debugOutcome: forced,
           onDebugOutcome: (outcome) => ref.read(forcedTestnetOutcomeProvider.notifier).state = outcome,
         ),
-        _StatusPage(l10n: l10n, status: status, onFinish: _finish, onCreateNewWallet: _createNewWallet),
+        _StatusPage(
+          l10n: l10n,
+          status: status,
+          onFinish: _finish,
+          onCreateNewWallet: _createNewWallet,
+          onRetry: () => ref.invalidate(testnetStatusProvider),
+        ),
       ],
     );
   }
@@ -141,12 +147,14 @@ class _StatusPage extends StatelessWidget {
   final AsyncValue<TestnetStatus> status;
   final void Function(TestnetUserKind? kind) onFinish;
   final VoidCallback onCreateNewWallet;
+  final VoidCallback onRetry;
 
   const _StatusPage({
     required this.l10n,
     required this.status,
     required this.onFinish,
     required this.onCreateNewWallet,
+    required this.onRetry,
   });
 
   @override
@@ -195,7 +203,21 @@ class _StatusPage extends StatelessWidget {
         description: l10n.mainnetMigrationHolderNotMinedBody,
       ),
     ],
-    footnote: checkFailed ? l10n.mainnetMigrationCheckFailed : null,
+    warning: checkFailed
+        ? InfoCard(
+            leading: const AccountBadge.icon(icon: Icons.warning_amber_rounded, isActive: true),
+            title: l10n.mainnetMigrationUnreachableTitle,
+            description: l10n.mainnetMigrationUnreachableBody,
+            trailing: QuantusButton.simple(
+              key: const Key(E2EKeys.mainnetMigrationRetryButton),
+              label: l10n.commonRetry,
+              onTap: onRetry,
+              variant: ButtonVariant.underline,
+              width: null,
+              padding: EdgeInsets.zero,
+            ),
+          )
+        : null,
     actions: [
       _finishButton(l10n.mainnetMigrationKeepWallet, checkFailed ? null : TestnetUserKind.holder),
       const SizedBox(height: 16),
@@ -225,7 +247,7 @@ class _Outcome extends StatelessWidget {
   final int? blocksMined;
   final List<String> trailingParagraphs;
   final List<Widget> cards;
-  final String? footnote;
+  final Widget? warning;
   final List<Widget> actions;
 
   const _Outcome({
@@ -235,7 +257,7 @@ class _Outcome extends StatelessWidget {
     this.blocksMined,
     this.trailingParagraphs = const [],
     this.cards = const [],
-    this.footnote,
+    this.warning,
     required this.actions,
   });
 
@@ -254,6 +276,7 @@ class _Outcome extends StatelessWidget {
             Image.asset('assets/v2/quantus_orange_logo.png', height: 32, alignment: Alignment.centerLeft),
             const SizedBox(height: 32),
             Text(title, style: text.titleScreen.copyWith(color: colors.textWhite)),
+            if (warning != null) ...[const SizedBox(height: 16), warning!],
             for (final paragraph in paragraphs) ...[const SizedBox(height: 16), Text(paragraph, style: body)],
             if (blocksMined != null) ...[
               const SizedBox(height: 24),
@@ -279,10 +302,6 @@ class _Outcome extends StatelessWidget {
             ],
             for (final paragraph in trailingParagraphs) ...[const SizedBox(height: 16), Text(paragraph, style: body)],
             for (final (i, card) in cards.indexed) ...[SizedBox(height: i == 0 ? 24 : 14), card],
-            if (footnote != null) ...[
-              const SizedBox(height: 24),
-              Text(footnote!, style: text.caption.copyWith(color: colors.textMuted)),
-            ],
             const SizedBox(height: 24),
           ],
         ),

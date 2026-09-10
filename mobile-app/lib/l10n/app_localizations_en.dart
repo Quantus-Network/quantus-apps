@@ -1726,6 +1726,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get commonDone => 'Done';
 
   @override
+  String get commonRetry => 'Retry';
+
+  @override
   String get commonTryAgain => 'Try Again';
 
   @override
@@ -1872,8 +1875,10 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get mainnetMigrationCheckFailed =>
-      'Testnet could not be reached, so this wallet\'s testnet history could not be checked.';
+  String get mainnetMigrationUnreachableTitle => 'Testnet could not be reached';
+
+  @override
+  String get mainnetMigrationUnreachableBody => 'This wallet\'s testnet history could not be checked.';
 
   @override
   String get mainnetMigrationKeepWallet => 'Keep Wallet';

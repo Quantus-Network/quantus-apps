@@ -486,6 +486,7 @@
   "commonAmountBalance": "{balance} {symbol}",
   "commonContinue": "Lanjutkan",
   "commonDone": "Selesai",
+  "commonRetry": "Coba Lagi",
   "commonTryAgain": "Coba Lagi",
   "redeemCancel": "Batal",
   "redeemClose": "Tutup",
@@ -527,7 +528,8 @@
   "mainnetMigrationHolderNotMinedBody": "Simpan frasa rahasia Anda atau buat yang baru.",
   "mainnetMigrationNewcomerBody": "Quantus kini di mainnet. Buat wallet baru, atau tetap gunakan wallet testnet Anda di mainnet.",
   "mainnetMigrationNewcomerZero": "Apa pun pilihannya, saldo {tokenSymbol} mainnet Anda dimulai dari nol. Migrasi mempertahankan wallet ini apa adanya: frasa pemulihan dan akun yang sama.",
-  "mainnetMigrationCheckFailed": "Testnet tidak dapat dijangkau, sehingga riwayat testnet wallet ini tidak dapat diperiksa.",
+  "mainnetMigrationUnreachableTitle": "Testnet tidak dapat dijangkau",
+  "mainnetMigrationUnreachableBody": "Riwayat testnet wallet ini tidak dapat diperiksa.",
   "mainnetMigrationKeepWallet": "Simpan Wallet",
   "mainnetMigrationMigrateWallet": "Migrasikan Wallet Lama"
 }

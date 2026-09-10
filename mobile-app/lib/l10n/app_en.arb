@@ -2525,6 +2525,10 @@
     "@commonDone": {
       "description": "Done button on various screens"
     },
+    "commonRetry": "Retry",
+    "@commonRetry": {
+      "description": "Retry action on various screens"
+    },
     "commonTryAgain": "Try Again",
     "@commonTryAgain": {
       "description": "Retry label shown when a list or quote fails to load"
@@ -2726,9 +2730,13 @@
         }
       }
     },
-    "mainnetMigrationCheckFailed": "Testnet could not be reached, so this wallet's testnet history could not be checked.",
-    "@mainnetMigrationCheckFailed": {
-      "description": "Footnote when the testnet check fails"
+    "mainnetMigrationUnreachableTitle": "Testnet could not be reached",
+    "@mainnetMigrationUnreachableTitle": {
+      "description": "Warning row title when the testnet check fails"
+    },
+    "mainnetMigrationUnreachableBody": "This wallet's testnet history could not be checked.",
+    "@mainnetMigrationUnreachableBody": {
+      "description": "Warning row body when the testnet check fails"
     },
     "mainnetMigrationKeepWallet": "Keep Wallet",
     "@mainnetMigrationKeepWallet": {

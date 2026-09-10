@@ -184,6 +184,7 @@ class QuantusButton extends StatelessWidget {
     } else {
       content = Row(
         mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: width == null ? MainAxisSize.min : MainAxisSize.max,
         spacing: 8,
         children: [
           if (_iconPlacement == IconPlacement.leading && _icon != null) _icon,

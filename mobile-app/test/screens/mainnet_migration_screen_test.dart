@@ -104,6 +104,18 @@ void main() {
     expect(flow.settings.migrationDone, isFalse);
   });
 
+  testWidgets('Retry on the unreachable page runs the check again', (tester) async {
+    var calls = 0;
+    await pumpSecondPage(tester, () async {
+      calls++;
+      throw Exception('testnet down');
+    });
+    expect(calls, 1);
+    await tester.tap(find.byKey(const Key(E2EKeys.mainnetMigrationRetryButton)));
+    await tester.pump();
+    expect(calls, 2);
+  });
+
   testWidgets('the second page waits on the check', (tester) async {
     await pumpSecondPage(tester, () => Completer<TestnetStatus>().future);
     expect(find.byType(Loader), findsOneWidget);
