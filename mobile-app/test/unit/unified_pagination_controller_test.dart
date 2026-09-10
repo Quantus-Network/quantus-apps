@@ -136,4 +136,22 @@ void main() {
       [newAccount.accountId],
     ], reason: 'a scope change must queue behind the running load, never be dropped');
   });
+
+  test('a silent refresh that beats the initial load still settles', () async {
+    history.gate = Completer<void>();
+
+    // The poller reads the notifier and refreshes in the same tick, before
+    // `_init` has reached its fetch.
+    final c = controller();
+    final refresh = c.silentRefresh();
+    await settle();
+    expect(history.calls, 1, reason: 'the initial load must join the silent refresh, not run again');
+
+    history.gate!.complete();
+    await refresh;
+    await settle();
+
+    expect(c.state.isLoading, isFalse, reason: 'an empty first page is loaded, not still loading');
+    expect(c.state.error, isNull);
+  });
 }

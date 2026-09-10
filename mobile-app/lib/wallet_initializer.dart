@@ -3,7 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart' hide ScaffoldBase;
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
+import 'package:resonance_network_wallet/providers/mainnet_migration_provider.dart';
 import 'package:resonance_network_wallet/v2/screens/home/home_screen.dart';
+import 'package:resonance_network_wallet/v2/screens/welcome/mainnet_migration_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/welcome/welcome_screen.dart';
 import 'package:resonance_network_wallet/services/logout_service.dart';
 import 'package:resonance_network_wallet/services/telemetry_service.dart';
@@ -18,6 +20,7 @@ class WalletInitializer extends ConsumerStatefulWidget {
 class WalletInitializerState extends ConsumerState<WalletInitializer> {
   bool _loading = true;
   bool _walletExists = false;
+  bool _migrationPending = false;
   final SettingsService _settingsService = SettingsService();
 
   @override
@@ -40,6 +43,7 @@ class WalletInitializerState extends ConsumerState<WalletInitializer> {
 
     setState(() {
       _walletExists = hasWallet;
+      _migrationPending = hasWallet && ref.read(mainnetMigrationPendingProvider);
       _loading = false;
     });
   }
@@ -74,10 +78,10 @@ class WalletInitializerState extends ConsumerState<WalletInitializer> {
       return const ScaffoldBase(mainContent: Center(child: Loader()));
     }
 
-    if (_walletExists) {
-      return const HomeScreen();
-    } else {
-      return const WelcomeScreenV2();
+    if (!_walletExists) return const WelcomeScreenV2();
+    if (_migrationPending) {
+      return MainnetMigrationScreen(onFinished: () => setState(() => _migrationPending = false));
     }
+    return const HomeScreen();
   }
 }

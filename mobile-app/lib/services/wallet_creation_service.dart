@@ -25,6 +25,7 @@ class WalletCreationService {
     required List<Account> existingAccounts,
   }) async {
     await _settings.setMnemonic(mnemonic, walletIndex);
+    await _settings.setMainnetMigrationDone();
 
     final hasRoot = existingAccounts.any((a) => a.walletIndex == walletIndex && a.index == 0);
     if (!hasRoot) {

@@ -1729,6 +1729,9 @@ class AppLocalizationsId extends AppLocalizations {
   String get commonDone => 'Selesai';
 
   @override
+  String get commonRetry => 'Coba Lagi';
+
+  @override
   String get commonTryAgain => 'Coba Lagi';
 
   @override
@@ -1806,4 +1809,88 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get encryptedSendPlanStale =>
       'Saldo terenkripsi Anda berubah saat meninjau. Silakan kembali dan masukkan jumlahnya lagi.';
+
+  @override
+  String get mainnetMigrationTitle => 'Quantus kini di Mainnet!';
+
+  @override
+  String get mainnetMigrationIntro =>
+      'Testnet telah ditutup dan mainnet sudah aktif. Mari lihat artinya untuk wallet ini.';
+
+  @override
+  String get mainnetMigrationChecking => 'Kami sedang memeriksa saldo testnet dan blok yang ditambang oleh wallet ini.';
+
+  @override
+  String get mainnetMigrationNext => 'Lanjut';
+
+  @override
+  String get mainnetMigrationMinerTitle => 'Penambang Testnet yang Terhormat';
+
+  @override
+  String get mainnetMigrationMinerThanks => 'Terima kasih telah membantu mengamankan testnet!';
+
+  @override
+  String get mainnetMigrationMinerKeep =>
+      'Simpan wallet ini: Anda memerlukannya untuk mengklaim hadiah mining testnet, yang akan segera hadir.';
+
+  @override
+  String mainnetMigrationBlocksMinedCount(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return '$countString';
+  }
+
+  @override
+  String get mainnetMigrationBlocksMined => 'blok ditambang di testnet';
+
+  @override
+  String mainnetMigrationMinerBalance(String tokenSymbol) {
+    return 'Saldo $tokenSymbol mainnet Anda dimulai dari nol. Token testnet tidak dibawa ke mainnet: hadiah mining dihitung dari blok yang ditambang, bukan dari saldo testnet Anda.';
+  }
+
+  @override
+  String get mainnetMigrationUserTitle => 'Pengguna Testnet yang Terhormat';
+
+  @override
+  String get mainnetMigrationHolderIntro =>
+      'Terima kasih telah menguji Quantus. Testnet telah ditutup, mainnet sudah aktif, dan saldo testnet tidak dibawa ke mainnet.';
+
+  @override
+  String get mainnetMigrationHolderMinedTitle => 'Menambang di testnet?';
+
+  @override
+  String get mainnetMigrationHolderMinedBody => 'Simpan wallet ini. Hadiah mining akan segera hadir.';
+
+  @override
+  String get mainnetMigrationHolderNotMinedTitle => 'Tidak menambang?';
+
+  @override
+  String get mainnetMigrationHolderNotMinedBody => 'Simpan frasa rahasia Anda atau buat yang baru.';
+
+  @override
+  String get mainnetMigrationNewcomerBody =>
+      'Quantus kini di mainnet. Buat wallet baru, atau tetap gunakan wallet testnet Anda di mainnet.';
+
+  @override
+  String mainnetMigrationNewcomerZero(String tokenSymbol) {
+    return 'Apa pun pilihannya, saldo $tokenSymbol mainnet Anda dimulai dari nol. Migrasi mempertahankan wallet ini apa adanya: frasa pemulihan dan akun yang sama.';
+  }
+
+  @override
+  String get mainnetMigrationUnreachableTitle => 'Testnet tidak dapat dijangkau';
+
+  @override
+  String get mainnetMigrationUnreachableBody => 'Riwayat testnet wallet ini tidak dapat diperiksa.';
+
+  @override
+  String mainnetMigrationSaveFailed(String error) {
+    return 'Pilihan Anda tidak dapat disimpan: $error';
+  }
+
+  @override
+  String get mainnetMigrationKeepWallet => 'Simpan Wallet';
+
+  @override
+  String get mainnetMigrationMigrateWallet => 'Migrasikan Wallet Lama';
 }

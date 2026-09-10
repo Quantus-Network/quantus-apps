@@ -90,6 +90,10 @@ class AppConstants {
   // Always show the home backup nudge regardless of viewed state and balance
   static const bool debugAlwaysShowBackupNudge = false;
 
+  // Forces the one-time mainnet migration notice with a fixed testnet outcome
+  // so every page can be checked in the simulator: miner, holder, newcomer, error.
+  static const String? debugMainnetMigration = null;
+
   // Home swap action. Off while app review requires swap gone; flip to true to bring it back.
   static const bool showSwapButton = false;
 

@@ -2525,6 +2525,10 @@
     "@commonDone": {
       "description": "Done button on various screens"
     },
+    "commonRetry": "Retry",
+    "@commonRetry": {
+      "description": "Retry action on various screens"
+    },
     "commonTryAgain": "Try Again",
     "@commonTryAgain": {
       "description": "Retry label shown when a list or quote fails to load"
@@ -2637,5 +2641,118 @@
     "encryptedSendPlanStale": "Your encrypted balance changed while reviewing. Please go back and enter the amount again.",
     "@encryptedSendPlanStale": {
       "description": "Error shown when the planned inputs of an encrypted send were spent between review and confirm"
+    },
+    "mainnetMigrationTitle": "Quantus is now on Mainnet!",
+    "@mainnetMigrationTitle": {
+      "description": "Headline of the one-time mainnet migration intro"
+    },
+    "mainnetMigrationIntro": "Testnet has been shut down and mainnet is live. Let's see what that means for this wallet.",
+    "@mainnetMigrationIntro": {
+      "description": "Intro body on the mainnet migration intro page"
+    },
+    "mainnetMigrationChecking": "We are checking this wallet's testnet balance and mined blocks.",
+    "@mainnetMigrationChecking": {
+      "description": "Caption while the testnet check runs"
+    },
+    "mainnetMigrationNext": "Next",
+    "@mainnetMigrationNext": {
+      "description": "Button to the second mainnet migration page"
+    },
+    "mainnetMigrationMinerTitle": "Dear Testnet Miner",
+    "@mainnetMigrationMinerTitle": {
+      "description": "Title for wallets that mined testnet blocks"
+    },
+    "mainnetMigrationMinerThanks": "Thank you for helping secure testnet!",
+    "@mainnetMigrationMinerThanks": {
+      "description": "Thanks line for testnet miners"
+    },
+    "mainnetMigrationMinerKeep": "Keep this wallet: you will need it to claim your testnet mining rewards, which are coming soon.",
+    "@mainnetMigrationMinerKeep": {
+      "description": "Tells miners to keep their wallet"
+    },
+    "mainnetMigrationBlocksMinedCount": "{count}",
+    "@mainnetMigrationBlocksMinedCount": {
+      "description": "Formatted number of testnet blocks mined",
+      "placeholders": {
+        "count": {
+          "type": "int",
+          "format": "decimalPattern"
+        }
+      }
+    },
+    "mainnetMigrationBlocksMined": "blocks mined on testnet",
+    "@mainnetMigrationBlocksMined": {
+      "description": "Caption under the blocks-mined number"
+    },
+    "mainnetMigrationMinerBalance": "Your mainnet {tokenSymbol} balance starts at zero. Testnet tokens do not carry over: mining rewards are based on blocks mined, not on your testnet balance.",
+    "@mainnetMigrationMinerBalance": {
+      "description": "Explains the zero mainnet balance to miners",
+      "placeholders": {
+        "tokenSymbol": {
+          "type": "String"
+        }
+      }
+    },
+    "mainnetMigrationUserTitle": "Dear Testnet User",
+    "@mainnetMigrationUserTitle": {
+      "description": "Title for wallets that did not mine"
+    },
+    "mainnetMigrationHolderIntro": "Thank you for testing Quantus. Testnet is shut down, mainnet is live, and testnet balances do not carry over.",
+    "@mainnetMigrationHolderIntro": {
+      "description": "Lead paragraph for testnet users with a balance"
+    },
+    "mainnetMigrationHolderMinedTitle": "Mined on testnet?",
+    "@mainnetMigrationHolderMinedTitle": {
+      "description": "Card title for users who may have mined"
+    },
+    "mainnetMigrationHolderMinedBody": "Keep this wallet. Mining rewards are coming soon.",
+    "@mainnetMigrationHolderMinedBody": {
+      "description": "Card body for users who may have mined"
+    },
+    "mainnetMigrationHolderNotMinedTitle": "Did not mine?",
+    "@mainnetMigrationHolderNotMinedTitle": {
+      "description": "Card title for users who did not mine"
+    },
+    "mainnetMigrationHolderNotMinedBody": "Keep your secret phrase or create a new one.",
+    "@mainnetMigrationHolderNotMinedBody": {
+      "description": "Card body for users who did not mine"
+    },
+    "mainnetMigrationNewcomerBody": "Quantus is now on mainnet. Create a new wallet, or keep using your testnet wallet on mainnet.",
+    "@mainnetMigrationNewcomerBody": {
+      "description": "Body for wallets with no testnet history"
+    },
+    "mainnetMigrationNewcomerZero": "Either way your mainnet {tokenSymbol} balance starts at zero. Migrating keeps this wallet exactly as it is: same recovery phrase, same accounts.",
+    "@mainnetMigrationNewcomerZero": {
+      "description": "Explains migration to wallets with no testnet history",
+      "placeholders": {
+        "tokenSymbol": {
+          "type": "String"
+        }
+      }
+    },
+    "mainnetMigrationUnreachableTitle": "Testnet could not be reached",
+    "@mainnetMigrationUnreachableTitle": {
+      "description": "Warning row title when the testnet check fails"
+    },
+    "mainnetMigrationUnreachableBody": "This wallet's testnet history could not be checked.",
+    "@mainnetMigrationUnreachableBody": {
+      "description": "Warning row body when the testnet check fails"
+    },
+    "mainnetMigrationSaveFailed": "Could not save your choice: {error}",
+    "@mainnetMigrationSaveFailed": {
+      "description": "Toaster when the migration completion flag cannot be written",
+      "placeholders": {
+        "error": {
+          "type": "String"
+        }
+      }
+    },
+    "mainnetMigrationKeepWallet": "Keep Wallet",
+    "@mainnetMigrationKeepWallet": {
+      "description": "Button that keeps the existing wallet"
+    },
+    "mainnetMigrationMigrateWallet": "Migrate Old Wallet",
+    "@mainnetMigrationMigrateWallet": {
+      "description": "Button that keeps the testnet wallet for mainnet"
     }
-  }
+}

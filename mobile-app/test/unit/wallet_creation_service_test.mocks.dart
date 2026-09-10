@@ -435,6 +435,24 @@ class MockSettingsService extends _i1.Mock implements _i3.SettingsService {
       super.noSuchMethod(Invocation.method(#setReferralCheckCompleted, []), returnValueForMissingStub: null);
 
   @override
+  bool isMainnetMigrationDone() =>
+      (super.noSuchMethod(
+            Invocation.method(#isMainnetMigrationDone, []),
+            returnValue: false,
+            returnValueForMissingStub: false,
+          )
+          as bool);
+
+  @override
+  _i4.Future<void> setMainnetMigrationDone() =>
+      (super.noSuchMethod(
+            Invocation.method(#setMainnetMigrationDone, []),
+            returnValue: _i4.Future<void>.value(),
+            returnValueForMissingStub: _i4.Future<void>.value(),
+          )
+          as _i4.Future<void>);
+
+  @override
   void clearReferralCheckCompletedFlag() =>
       super.noSuchMethod(Invocation.method(#clearReferralCheckCompletedFlag, []), returnValueForMissingStub: null);
 
