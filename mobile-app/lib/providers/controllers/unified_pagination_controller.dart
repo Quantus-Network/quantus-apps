@@ -165,6 +165,10 @@ class UnifiedPaginationController extends StateNotifier<PaginationState> {
     final targetAccountIds = _getAccountIds();
     if (targetAccountIds.isEmpty) return;
 
+    // The poller can fire before `_init` runs; a silent fetch would then win the
+    // dedup and never clear `isLoading`, leaving empty accounts on the skeleton.
+    if (state.isLoading) return _once(targetAccountIds, () => _fetchPage(targetAccountIds));
+
     await _once(targetAccountIds, () async {
       state = state.copyWith(isFetching: true);
       try {
