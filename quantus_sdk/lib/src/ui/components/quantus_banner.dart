@@ -28,9 +28,10 @@ class QuantusBanner extends StatelessWidget {
   final String? amount;
   final _BannerLayout _layout;
 
-  const QuantusBanner({super.key, required this.tone, required this.message, this.leading})
-    : label = null,
-      amount = null,
+  /// Icon ring beside the text; with a [label] the message drops to a muted
+  /// caption under it.
+  const QuantusBanner({super.key, required this.tone, required this.message, this.leading, this.label})
+    : amount = null,
       _layout = _BannerLayout.message;
 
   /// Leading glyph inline with [label], message below in muted caption.
@@ -65,6 +66,7 @@ class QuantusBanner extends StatelessWidget {
         _BannerLayout.titled => _TitledBody(foreground: foreground, title: label!, message: message, leading: leading!),
         _BannerLayout.message => _MessageBody(
           foreground: foreground,
+          label: label,
           message: message,
           leading: leading ?? Text(tone.glyph),
         ),
@@ -103,19 +105,32 @@ class _BannerChrome extends StatelessWidget {
 
 class _MessageBody extends StatelessWidget {
   final Color foreground;
+  final String? label;
   final String message;
   final Widget leading;
 
-  const _MessageBody({required this.foreground, required this.message, required this.leading});
+  const _MessageBody({required this.foreground, required this.label, required this.message, required this.leading});
 
   @override
   Widget build(BuildContext context) {
+    final text = context.themeTextV3;
+    final messageColor = label == null ? foreground : context.colorsV3.textMuted;
+
     return Row(
       children: [
         _BannerIcon(foreground: foreground, child: leading),
         const SizedBox(width: 12),
         Expanded(
-          child: Text(message, style: context.themeTextV3.caption.copyWith(color: foreground, height: 1.5)),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (label != null) ...[
+                Text(label!, style: text.body.copyWith(color: foreground)),
+                const SizedBox(height: 3),
+              ],
+              Text(message, style: text.caption.copyWith(color: messageColor, height: 1.5)),
+            ],
+          ),
         ),
       ],
     );

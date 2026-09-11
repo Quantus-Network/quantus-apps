@@ -13,21 +13,22 @@ final mainnetMigrationServiceProvider = Provider<MainnetMigrationService>(
   ),
 );
 
-/// Debug builds force the notice through [AppConstants.debugMainnetMigration];
-/// the intro page then switches the outcome at runtime, no restart needed.
-final forcedTestnetOutcomeProvider = StateProvider<String?>(
-  (_) => kDebugMode ? AppConstants.debugMainnetMigration : null,
-);
+/// Debug builds show the notice on every launch; its checking page then picks
+/// the testnet outcome at runtime, no real testnet data needed.
+final debugMainnetMigrationProvider = Provider<bool>((_) => kDebugMode && AppConstants.debugMainnetMigration);
+
+/// A picked outcome stands in for the testnet check; null runs the real one.
+final forcedTestnetOutcomeProvider = StateProvider<String?>((_) => null);
 
 const debugTestnetOutcomes = ['miner', 'holder', 'newcomer', 'error'];
 
 /// Whether the notice is still due.
 final mainnetMigrationPendingProvider = Provider<bool>(
-  (ref) => ref.watch(forcedTestnetOutcomeProvider) != null || ref.watch(mainnetMigrationServiceProvider).isPending(),
+  (ref) => ref.watch(debugMainnetMigrationProvider) || ref.watch(mainnetMigrationServiceProvider).isPending(),
 );
 
-/// The one-shot check is not retried: the fallback page is written for an
-/// unreachable testnet, and a retry would flip it back to a spinner.
+/// The one-shot check is not retried: the unreachable page is written for it,
+/// and a retry would flip it back to the checking page.
 final testnetStatusProvider = FutureProvider<TestnetStatus>((ref) async {
   final forced = ref.watch(forcedTestnetOutcomeProvider);
   if (forced != null) return _forcedStatus(forced);

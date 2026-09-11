@@ -3386,47 +3386,23 @@ abstract class AppLocalizations {
   /// **'Your encrypted balance changed while reviewing. Please go back and enter the amount again.'**
   String get encryptedSendPlanStale;
 
-  /// Headline of the one-time mainnet migration intro
+  /// Headline of the mainnet migration checking page; the part between asterisks is highlighted
   ///
   /// In en, this message translates to:
-  /// **'Quantus is now on Mainnet!'**
+  /// **'Quantus is live on *mainnet*.'**
   String get mainnetMigrationTitle;
 
-  /// Intro body on the mainnet migration intro page
+  /// Body of the checking page
   ///
   /// In en, this message translates to:
-  /// **'Testnet has been shut down and mainnet is live. Let\'s see what that means for this wallet.'**
-  String get mainnetMigrationIntro;
-
-  /// Caption while the testnet check runs
-  ///
-  /// In en, this message translates to:
-  /// **'We are checking this wallet\'s testnet balance and mined blocks.'**
+  /// **'Testnet has shut down. Checking what that means for this wallet.'**
   String get mainnetMigrationChecking;
 
-  /// Button to the second mainnet migration page
+  /// Progress label on the checking page, shown uppercase
   ///
   /// In en, this message translates to:
-  /// **'Next'**
-  String get mainnetMigrationNext;
-
-  /// Title for wallets that mined testnet blocks
-  ///
-  /// In en, this message translates to:
-  /// **'Dear Testnet Miner'**
-  String get mainnetMigrationMinerTitle;
-
-  /// Thanks line for testnet miners
-  ///
-  /// In en, this message translates to:
-  /// **'Thank you for helping secure testnet!'**
-  String get mainnetMigrationMinerThanks;
-
-  /// Tells miners to keep their wallet
-  ///
-  /// In en, this message translates to:
-  /// **'Keep this wallet: you will need it to claim your testnet mining rewards, which are coming soon.'**
-  String get mainnetMigrationMinerKeep;
+  /// **'Reading testnet history'**
+  String get mainnetMigrationReadingHistory;
 
   /// Formatted number of testnet blocks mined
   ///
@@ -3434,95 +3410,149 @@ abstract class AppLocalizations {
   /// **'{count}'**
   String mainnetMigrationBlocksMinedCount(int count);
 
-  /// Caption under the blocks-mined number
+  /// Label under the blocks-mined number, shown uppercase
   ///
   /// In en, this message translates to:
-  /// **'blocks mined on testnet'**
+  /// **'Blocks mined on testnet'**
   String get mainnetMigrationBlocksMined;
 
-  /// Explains the zero mainnet balance to miners
+  /// Title for wallets that mined testnet blocks
   ///
   /// In en, this message translates to:
-  /// **'Your mainnet {tokenSymbol} balance starts at zero. Testnet tokens do not carry over: mining rewards are based on blocks mined, not on your testnet balance.'**
-  String mainnetMigrationMinerBalance(String tokenSymbol);
+  /// **'Keep this wallet.'**
+  String get mainnetMigrationMinerTitle;
+
+  /// Body for wallets that mined testnet blocks
+  ///
+  /// In en, this message translates to:
+  /// **'Your rewards are safe. They\'re tied to it and arrive after launch. Your balance starts at zero because rewards are based on blocks mined, not on your testnet balance.'**
+  String get mainnetMigrationMinerBody;
 
   /// Title for wallets that did not mine
   ///
   /// In en, this message translates to:
-  /// **'Dear Testnet User'**
-  String get mainnetMigrationUserTitle;
+  /// **'Nothing carried over.'**
+  String get mainnetMigrationNotMinedTitle;
 
-  /// Lead paragraph for testnet users with a balance
+  /// Body for wallets that did not mine
   ///
   /// In en, this message translates to:
-  /// **'Thank you for testing Quantus. Testnet is shut down, mainnet is live, and testnet balances do not carry over.'**
-  String get mainnetMigrationHolderIntro;
+  /// **'Your testnet balance stayed on testnet. Those coins were only ever for testing, so this wallet starts at zero {tokenSymbol}.'**
+  String mainnetMigrationNotMinedBody(String tokenSymbol);
 
-  /// Card title for users who may have mined
+  /// Badge on the page shown when the testnet check fails, shown uppercase
   ///
   /// In en, this message translates to:
-  /// **'Mined on testnet?'**
-  String get mainnetMigrationHolderMinedTitle;
+  /// **'Couldn\'t check'**
+  String get mainnetMigrationUnreachableBadge;
 
-  /// Card body for users who may have mined
+  /// Title when the testnet check fails
   ///
   /// In en, this message translates to:
-  /// **'Keep this wallet. Mining rewards are coming soon.'**
-  String get mainnetMigrationHolderMinedBody;
-
-  /// Card title for users who did not mine
-  ///
-  /// In en, this message translates to:
-  /// **'Did not mine?'**
-  String get mainnetMigrationHolderNotMinedTitle;
-
-  /// Card body for users who did not mine
-  ///
-  /// In en, this message translates to:
-  /// **'Keep your secret phrase or create a new one.'**
-  String get mainnetMigrationHolderNotMinedBody;
-
-  /// Body for wallets with no testnet history
-  ///
-  /// In en, this message translates to:
-  /// **'Quantus is now on mainnet. Create a new wallet, or keep using your testnet wallet on mainnet.'**
-  String get mainnetMigrationNewcomerBody;
-
-  /// Explains migration to wallets with no testnet history
-  ///
-  /// In en, this message translates to:
-  /// **'Either way your mainnet {tokenSymbol} balance starts at zero. Migrating keeps this wallet exactly as it is: same recovery phrase, same accounts.'**
-  String mainnetMigrationNewcomerZero(String tokenSymbol);
-
-  /// Warning row title when the testnet check fails
-  ///
-  /// In en, this message translates to:
-  /// **'Testnet could not be reached'**
+  /// **'We couldn\'t check this wallet.'**
   String get mainnetMigrationUnreachableTitle;
 
-  /// Warning row body when the testnet check fails
+  /// Body when the testnet check fails
   ///
   /// In en, this message translates to:
-  /// **'This wallet\'s testnet history could not be checked.'**
-  String get mainnetMigrationUnreachableBody;
+  /// **'Testnet was unreachable, so we don\'t know yet whether you mined. Your balance starts at zero {tokenSymbol} either way.'**
+  String mainnetMigrationUnreachableBody(String tokenSymbol);
+
+  /// Reassurance when the testnet check fails
+  ///
+  /// In en, this message translates to:
+  /// **'If you mined, your rewards are safe. They stay tied to this wallet whether we can check today or not.'**
+  String get mainnetMigrationUnreachableRewards;
+
+  /// Button that keeps the existing wallet
+  ///
+  /// In en, this message translates to:
+  /// **'Keep this wallet'**
+  String get mainnetMigrationKeepWallet;
+
+  /// Button that offers a fresh wallet next to the existing one
+  ///
+  /// In en, this message translates to:
+  /// **'Create a new wallet'**
+  String get mainnetMigrationCreateWallet;
+
+  /// Title of the confirmation before creating a new wallet
+  ///
+  /// In en, this message translates to:
+  /// **'Create a new wallet?'**
+  String get mainnetMigrationCreateDialogTitle;
+
+  /// Body of the confirmation before creating a new wallet
+  ///
+  /// In en, this message translates to:
+  /// **'You\'ll get a new secret phrase to write down and store safely. This wallet stays on the device.'**
+  String get mainnetMigrationCreateDialogBody;
+
+  /// Banner title in the confirmation when the testnet check failed
+  ///
+  /// In en, this message translates to:
+  /// **'We couldn\'t check this wallet'**
+  String get mainnetMigrationCreateDialogUncheckedTitle;
+
+  /// Banner body in the confirmation when the testnet check failed
+  ///
+  /// In en, this message translates to:
+  /// **'So we don\'t know whether you mined on testnet.'**
+  String get mainnetMigrationCreateDialogUncheckedBody;
+
+  /// Body of the confirmation when the testnet check failed
+  ///
+  /// In en, this message translates to:
+  /// **'If you mined, your rewards are tied to this wallet. We\'d suggest keeping it and trying again later.'**
+  String get mainnetMigrationCreateDialogUncheckedAdvice;
+
+  /// Confirmation button that creates the new wallet
+  ///
+  /// In en, this message translates to:
+  /// **'Create new wallet'**
+  String get mainnetMigrationCreateDialogConfirm;
+
+  /// Confirmation button that keeps the existing wallet
+  ///
+  /// In en, this message translates to:
+  /// **'Keep my wallet'**
+  String get mainnetMigrationCreateDialogCancel;
+
+  /// Badge on the closing page, shown uppercase
+  ///
+  /// In en, this message translates to:
+  /// **'Mainnet'**
+  String get mainnetMigrationAllSetBadge;
+
+  /// Title of the closing page
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re all set.'**
+  String get mainnetMigrationAllSetTitle;
+
+  /// Body of the closing page
+  ///
+  /// In en, this message translates to:
+  /// **'Everything from here is real money. Add some {tokenSymbol} whenever you\'re ready.'**
+  String mainnetMigrationAllSetBody(String tokenSymbol);
+
+  /// Button on the closing page that opens the receive screen
+  ///
+  /// In en, this message translates to:
+  /// **'Get {tokenSymbol}'**
+  String mainnetMigrationGetTokens(String tokenSymbol);
+
+  /// Button on the closing page that opens the wallet
+  ///
+  /// In en, this message translates to:
+  /// **'Go to wallet'**
+  String get mainnetMigrationGoToWallet;
 
   /// Toaster when the migration completion flag cannot be written
   ///
   /// In en, this message translates to:
   /// **'Could not save your choice: {error}'**
   String mainnetMigrationSaveFailed(String error);
-
-  /// Button that keeps the existing wallet
-  ///
-  /// In en, this message translates to:
-  /// **'Keep Wallet'**
-  String get mainnetMigrationKeepWallet;
-
-  /// Button that keeps the testnet wallet for mainnet
-  ///
-  /// In en, this message translates to:
-  /// **'Migrate Old Wallet'**
-  String get mainnetMigrationMigrateWallet;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

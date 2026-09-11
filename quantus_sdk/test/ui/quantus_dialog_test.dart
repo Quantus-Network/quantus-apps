@@ -182,6 +182,40 @@ void main() {
     expect(decorationAround(tester, 'Dialog title?').borderRadius, const AppRadiusV3.standard().lgBorder);
   });
 
+  testWidgets('cancelIsPrimary hands the emphasis to Cancel', (tester) async {
+    await pumpDialog(
+      tester,
+      QuantusDialog(
+        title: 'Dialog title?',
+        body: 'Consequences.',
+        actionLabel: 'Label',
+        cancelIsPrimary: true,
+        onAction: () {},
+        onCancel: () {},
+      ),
+    );
+
+    expect(actionButton(tester, 'Label').variant, ButtonVariant.staged);
+    expect(actionButton(tester, 'Cancel').variant, ButtonVariant.primary);
+  });
+
+  testWidgets('a banner sits between the title and the body', (tester) async {
+    await pumpDialog(
+      tester,
+      QuantusDialog(
+        title: 'Dialog title?',
+        body: 'Consequences.',
+        actionLabel: 'Label',
+        banner: const QuantusBanner(tone: BannerTone.glacier, message: 'Still checking.'),
+        onAction: () {},
+      ),
+    );
+
+    final bannerTop = tester.getTopLeft(find.text('Still checking.')).dy;
+    expect(bannerTop, greaterThan(tester.getTopLeft(find.text('Dialog title?')).dy));
+    expect(bannerTop, lessThan(tester.getTopLeft(find.text('Consequences.')).dy));
+  });
+
   testWidgets('showQuantusDialog returns true when the action is tapped', (tester) async {
     bool? result;
     await pumpShownDialog(tester, onResult: (confirmed) async => result = confirmed);

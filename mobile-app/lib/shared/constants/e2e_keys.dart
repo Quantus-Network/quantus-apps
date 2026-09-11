@@ -13,10 +13,10 @@ class E2EKeys {
   static const String welcomeScreen = 'welcome_screen';
   static const String welcomeCreateWalletButton = 'welcome_create_wallet_button';
   static const String mainnetMigrationScreen = 'mainnet_migration_screen';
-  static const String mainnetMigrationNextButton = 'mainnet_migration_next_button';
-  static const String mainnetMigrationFinishButton = 'mainnet_migration_finish_button';
-  static const String mainnetMigrationRetryButton = 'mainnet_migration_retry_button';
+  static const String mainnetMigrationKeepWalletButton = 'mainnet_migration_keep_wallet_button';
   static const String mainnetMigrationCreateWalletButton = 'mainnet_migration_create_wallet_button';
+  static const String mainnetMigrationGetTokensButton = 'mainnet_migration_get_tokens_button';
+  static const String mainnetMigrationGoToWalletButton = 'mainnet_migration_go_to_wallet_button';
   static const String welcomeImportWalletButton = 'welcome_import_wallet_button';
 
   static const String accountReadyDoneButton = 'account_ready_done_button';
