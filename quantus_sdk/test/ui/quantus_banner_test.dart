@@ -117,4 +117,17 @@ void main() {
     expect(border.top.color, colors.semanticSage.useOpacity(0.10));
     expect(decorationAround(tester, '12.5 QTC').gradient, isA<LinearGradient>());
   });
+  testWidgets('a label heads the message, which drops to muted', (tester) async {
+    await pumpBanner(
+      tester,
+      const QuantusBanner(tone: BannerTone.glacier, label: 'Could not check', message: 'So we do not know yet.'),
+    );
+
+    expect(tester.widget<Text>(find.text('Could not check')).style!.color, colors.semanticGlacier);
+    expect(tester.widget<Text>(find.text('So we do not know yet.')).style!.color, colors.textMuted);
+    expect(
+      tester.getTopLeft(find.text('So we do not know yet.')).dy,
+      greaterThan(tester.getTopLeft(find.text('Could not check')).dy),
+    );
+  });
 }
