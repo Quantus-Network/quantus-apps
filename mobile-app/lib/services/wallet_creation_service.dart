@@ -19,11 +19,14 @@ class WalletCreationService {
     : _settings = settingsService ?? SettingsService(),
       _accounts = accountsService ?? AccountsService();
 
-  /// Saves [mnemonic] for [walletIndex], adds the root account when missing,
-  /// and runs referral registration for brand-new roots.
+  /// Saves [mnemonic] for [walletIndex], inserts its root account and makes
+  /// that the active account.
   ///
-  /// Returns the root [Account] row to use after persistence (newly created or
-  /// already present).
+  /// The root insert is the commit point: a failure up to and including it
+  /// leaves nothing behind (the mnemonic is deleted again), so the caller may
+  /// retry. After it the wallet exists, so the remaining writes are best-effort
+  /// and only logged — surfacing them would prompt a retry that creates a
+  /// second wallet.
   Future<Account> createNewWallet({
     required String name,
     required String mnemonic,
@@ -31,27 +34,32 @@ class WalletCreationService {
     required String accountId,
     required DilithiumScheme scheme,
     required String derivationPath,
-    required List<Account> existingAccounts,
   }) async {
+    final account = Account(
+      walletIndex: walletIndex,
+      index: 0,
+      name: name,
+      accountId: accountId,
+      scheme: scheme,
+      derivationPath: derivationPath,
+    );
     await _settings.setMnemonic(mnemonic, walletIndex);
-    await _settings.setMainnetMigrationDone();
-
-    final hasRoot = existingAccounts.any((a) => a.walletIndex == walletIndex && a.index == 0);
-    if (!hasRoot) {
-      _settings.setWalletOrigin(walletIndex, WalletOrigin.created);
-      final account = Account(
-        walletIndex: walletIndex,
-        index: 0,
-        name: name,
-        accountId: accountId,
-        scheme: scheme,
-        derivationPath: derivationPath,
-      );
+    try {
       await _accounts.addAccount(account);
-      return account;
+    } catch (_) {
+      await _settings.deleteMnemonic(walletIndex);
+      rethrow;
     }
 
-    return existingAccounts.firstWhere((a) => a.walletIndex == walletIndex && a.index == 0);
+    try {
+      _settings.setWalletOrigin(walletIndex, WalletOrigin.created);
+      // Adding an account only makes it active when it is the first one.
+      await _settings.setActiveAccount(RegularAccount(account));
+      await _settings.setMainnetMigrationDone();
+    } catch (e) {
+      quantusPrint('Wallet $walletIndex was created but finishing its setup failed: $e');
+    }
+    return account;
   }
 }
 
@@ -101,13 +109,16 @@ Future<Account> _createSoftwareWallet(WidgetRef ref) async {
         accountId: HdWalletService().keyPairAtPath(mnemonic, path, scheme).ss58Address,
         scheme: scheme,
         derivationPath: path,
-        existingAccounts: accounts,
       );
-  // Adding an account only makes it active when it is the first one.
-  await settings.setActiveAccount(RegularAccount(account));
 
-  // Software wallets always get a companion encrypted (wormhole) account.
-  await ensureEncryptedAccounts(ref);
+  // Software wallets always get a companion encrypted (wormhole) account. The
+  // wallet already exists at this point, and the accounts screen backfills a
+  // missing one, so a failure here must not read as a failed creation.
+  try {
+    await ensureEncryptedAccounts(ref);
+  } catch (e) {
+    quantusPrint('Encrypted account backfill failed for wallet $walletIndex: $e');
+  }
   invalidateAccountProviders(ref);
   ref.invalidate(walletOriginProvider(walletIndex));
   ref.invalidate(recoveryPhraseViewedProvider(walletIndex));
