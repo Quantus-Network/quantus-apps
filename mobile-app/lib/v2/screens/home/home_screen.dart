@@ -247,9 +247,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       children: [
         const SizedBox(height: 16),
         _buildTopBar(isBalanceHidden),
-        const SizedBox(height: 40),
+        const SizedBox(height: 52),
         _buildBalance(colors, text, l10n, isBalanceHidden),
-        const SizedBox(height: 40),
+        const SizedBox(height: 52),
         if (active is MultisigDisplayAccount) ...[
           _buildMultisigActionButtons(l10n, active.account),
           const SizedBox(height: 40),
