@@ -135,8 +135,6 @@ class _DepositScreenState extends ConsumerState<DepositScreen> {
             ),
           ],
         ),
-        const SizedBox(height: 8),
-        const SizedBox(height: 17.5),
         const SizedBox(height: 40),
         ClipRRect(
           borderRadius: context.radiusV3.smBorder,

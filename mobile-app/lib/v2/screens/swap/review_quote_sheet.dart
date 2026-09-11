@@ -87,6 +87,7 @@ class _ReviewQuoteContent extends ConsumerWidget {
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
       decoration: BoxDecoration(color: colors.bgSurface2, borderRadius: context.radiusV3.mdBorder),
       child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -105,7 +106,6 @@ class _ReviewQuoteContent extends ConsumerWidget {
           ),
           const SizedBox(height: 6),
           Text(SwapService.formatTokenAmount(amount, token), style: text.amountRow.copyWith(color: colors.textContent)),
-          const SizedBox(height: 15),
         ],
       ),
     );

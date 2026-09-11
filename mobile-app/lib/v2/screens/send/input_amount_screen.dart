@@ -291,21 +291,14 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
     return Center(
       child: FittedBox(
         fit: BoxFit.scaleDown,
-        child: Column(
+        child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.baseline,
+          textBaseline: TextBaseline.alphabetic,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                inputField,
-                const SizedBox(width: 8),
-                Text(AppConstants.tokenSymbol, style: symbolStyle),
-              ],
-            ),
-            const SizedBox(height: 16),
-            const SizedBox(height: 28),
+            inputField,
+            const SizedBox(width: 8),
+            Text(AppConstants.tokenSymbol, style: symbolStyle),
           ],
         ),
       ),

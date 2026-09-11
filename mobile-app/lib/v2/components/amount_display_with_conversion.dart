@@ -12,7 +12,6 @@ class AmountDisplayWithConversion extends StatelessWidget {
   final bool colorizeAmount;
   final Color? amountColor;
   final bool useTokenLogo;
-  final bool reserveSwitcherSpace;
 
   /// Masks the amount with [hiddenAmountText]. Owned by the screen that
   /// offers the hide toggle — never read from a global setting here.
@@ -25,7 +24,6 @@ class AmountDisplayWithConversion extends StatelessWidget {
     this.colorizeAmount = false,
     this.amountColor,
     this.useTokenLogo = false,
-    this.reserveSwitcherSpace = false,
     this.isHidden = false,
   });
 
@@ -79,8 +77,6 @@ class AmountDisplayWithConversion extends StatelessWidget {
             ),
           ],
         ),
-        const SizedBox(height: 8),
-        SizedBox(height: reserveSwitcherSpace ? 28 : 17.5),
       ],
     );
   }

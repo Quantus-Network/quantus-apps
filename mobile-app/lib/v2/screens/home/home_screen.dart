@@ -321,7 +321,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               amountDisplay: display,
               alignment: CrossAxisAlignment.center,
               useTokenLogo: true,
-              reserveSwitcherSpace: true,
               isHidden: isBalanceHidden,
             );
           },
@@ -330,8 +329,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             children: [
               SizedBox(height: 12),
               Row(mainAxisAlignment: MainAxisAlignment.center, children: [Skeleton(width: 200, height: 36)]),
-              SizedBox(height: 16),
-              Row(mainAxisAlignment: MainAxisAlignment.center, children: [Skeleton(width: 100, height: 18)]),
             ],
           ),
           error: (_, _) =>

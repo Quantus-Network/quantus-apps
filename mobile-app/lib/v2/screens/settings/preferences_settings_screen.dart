@@ -51,8 +51,6 @@ class _PreferencesSettingsScreenV2State extends ConsumerState<PreferencesSetting
             ),
           ),
           const SettingsDivider(),
-          const SizedBox(height: 35),
-          const SettingsDivider(),
           SettingsSwitchRow(
             title: l10n.settingsPreferencesNotifications,
             subtitle: l10n.settingsPreferencesNotificationsSubtitle,

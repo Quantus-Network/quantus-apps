@@ -199,11 +199,7 @@ class _ReviewSendScreenState extends ConsumerState<ReviewSendScreen> {
         children: [
           Text(strings.reviewHeroLabel, style: sectionLabelStyle),
           const SizedBox(height: 16),
-          AmountDisplayWithConversion(
-            amountDisplay: approxDisplay,
-            alignment: CrossAxisAlignment.start,
-            reserveSwitcherSpace: true,
-          ),
+          AmountDisplayWithConversion(amountDisplay: approxDisplay, alignment: CrossAxisAlignment.start),
         ],
       ),
       bottomChild: Column(

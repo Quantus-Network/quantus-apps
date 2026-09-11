@@ -222,7 +222,6 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
             ),
           ],
         ),
-        const SizedBox(height: 19),
       ],
     );
   }
@@ -358,7 +357,6 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
             ),
           ],
         ),
-        const SizedBox(height: 19),
       ],
     );
   }
