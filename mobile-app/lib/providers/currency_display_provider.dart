@@ -169,39 +169,6 @@ class SelectedFiatCurrencyNotifier extends StateNotifier<FiatCurrency> {
 }
 
 // ---------------------------------------------------------------------------
-// Currency flip provider
-// ---------------------------------------------------------------------------
-
-/// Whether fiat is shown as the primary (large) display and the token secondary.
-///
-/// false → primary = token,  secondary = fiat  (default)
-/// true  → primary = fiat,  secondary = token
-///
-/// To toggle from the swap button:
-///   ref.read(isCurrencyFlippedProvider.notifier).toggle();
-final isCurrencyFlippedProvider = StateNotifierProvider<IsCurrencyFlippedNotifier, bool>((ref) {
-  final settings = ref.watch(settingsServiceProvider);
-  return IsCurrencyFlippedNotifier(settings);
-});
-
-class IsCurrencyFlippedNotifier extends StateNotifier<bool> {
-  final SettingsService _settings;
-
-  IsCurrencyFlippedNotifier(this._settings) : super(_settings.isCurrencyFlipped());
-
-  Future<void> toggle() async {
-    final next = !state;
-    await _settings.setCurrencyFlipped(next);
-    state = next;
-  }
-
-  Future<void> setFlipped(bool value) async {
-    await _settings.setCurrencyFlipped(value);
-    state = value;
-  }
-}
-
-// ---------------------------------------------------------------------------
 // Display state
 // ---------------------------------------------------------------------------
 
@@ -212,34 +179,23 @@ class IsCurrencyFlippedNotifier extends StateNotifier<bool> {
 class CurrencyDisplayState {
   final String primaryAmount;
   final String secondaryAmount;
-  final bool isFlipped;
   final FiatCurrency selectedFiat;
 
-  const CurrencyDisplayState({
-    required this.primaryAmount,
-    required this.secondaryAmount,
-    required this.isFlipped,
-    required this.selectedFiat,
-  });
+  const CurrencyDisplayState({required this.primaryAmount, required this.secondaryAmount, required this.selectedFiat});
 
-  CurrencyDisplayState copyWith({
-    String? primaryAmount,
-    String? secondaryAmount,
-    bool? isFlipped,
-    FiatCurrency? selectedFiat,
-  }) => CurrencyDisplayState(
-    primaryAmount: primaryAmount ?? this.primaryAmount,
-    secondaryAmount: secondaryAmount ?? this.secondaryAmount,
-    isFlipped: isFlipped ?? this.isFlipped,
-    selectedFiat: selectedFiat ?? this.selectedFiat,
-  );
+  CurrencyDisplayState copyWith({String? primaryAmount, String? secondaryAmount, FiatCurrency? selectedFiat}) =>
+      CurrencyDisplayState(
+        primaryAmount: primaryAmount ?? this.primaryAmount,
+        secondaryAmount: secondaryAmount ?? this.secondaryAmount,
+        selectedFiat: selectedFiat ?? this.selectedFiat,
+      );
 }
 
 // ---------------------------------------------------------------------------
 // Balance display provider
 // ---------------------------------------------------------------------------
 
-/// Combines balance, flip state, selected fiat, and exchange rate into
+/// Combines balance, selected fiat, and exchange rate into
 /// [CurrencyDisplayState] ready for widgets to render.
 ///
 /// Hiding balances is a UX concern owned by the screen that offers the toggle,
@@ -250,7 +206,6 @@ final balanceDisplayProvider = Provider<AsyncValue<CurrencyDisplayState>>((ref) 
   final balanceAsync = active != null && isEncryptedAccount(active.account)
       ? ref.watch(encryptedBalanceProvider((active.account as Account).walletIndex))
       : ref.watch(balanceProvider);
-  final isFlipped = ref.watch(isCurrencyFlippedProvider);
   final selectedFiat = ref.watch(selectedFiatCurrencyProvider);
   final xRate = ref.watch(exchangeRateServiceProvider);
   final fmt = ref.watch(numberFormattingServiceProvider);
@@ -266,7 +221,6 @@ final balanceDisplayProvider = Provider<AsyncValue<CurrencyDisplayState>>((ref) 
         xRate,
         fmt,
         tokenDecimals: 3,
-        isFlipped: isFlipped,
         withTokenSymbol: false,
         localeConfig: localeConfig,
       );
@@ -289,7 +243,6 @@ typedef TxAmountFormatter =
     });
 
 final txAmountDisplayProvider = Provider<TxAmountFormatter>((ref) {
-  final isFlipped = ref.watch(isCurrencyFlippedProvider);
   final selectedFiat = ref.watch(selectedFiatCurrencyProvider);
   final xRate = ref.watch(exchangeRateServiceProvider);
   final fmt = ref.watch(numberFormattingServiceProvider);
@@ -311,16 +264,11 @@ final txAmountDisplayProvider = Provider<TxAmountFormatter>((ref) {
       fmt,
       tokenDecimals: tokenDecimals,
       withTokenSymbol: withTokenSymbol,
-      isFlipped: isFlipped,
       localeConfig: localeConfig,
     );
 
     if (withSignPrefix) {
       data = data.copyWith(primaryAmount: '$prefix${data.primaryAmount}');
-    }
-
-    if (!withTokenSymbol && isFlipped) {
-      data = data.copyWith(secondaryAmount: '${data.secondaryAmount} ${AppConstants.tokenSymbol}');
     }
 
     return data;
@@ -352,7 +300,6 @@ CurrencyDisplayState _toFiatDisplayState(
   ExchangeRateService xRate,
   NumberFormattingService fmt, {
   required int tokenDecimals,
-  required bool isFlipped,
   required bool withTokenSymbol,
   required LocaleNumberConfig localeConfig,
 }) {
@@ -360,9 +307,8 @@ CurrencyDisplayState _toFiatDisplayState(
   final fiatFormatted = selectedFiat.format(_toFiatNumeric(amount, selectedFiat, xRate, localeConfig: localeConfig));
 
   return CurrencyDisplayState(
-    primaryAmount: isFlipped ? fiatFormatted : tokenFormatted,
-    secondaryAmount: isFlipped ? tokenFormatted : fiatFormatted,
-    isFlipped: isFlipped,
+    primaryAmount: tokenFormatted,
+    secondaryAmount: fiatFormatted,
     selectedFiat: selectedFiat,
   );
 }
