@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart';
 import 'package:quantus_sdk/quantus_sdk.dart' hide ScaffoldBase;
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
-import 'package:resonance_network_wallet/models/fiat_currency.dart';
 import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/currency_display_provider.dart';
@@ -87,9 +86,8 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
   void _onAmountChanged(String _) {
     HapticFeedback.mediumImpact();
 
-    final isFlipped = widget.isPayMode ? false : ref.read(isCurrencyFlippedProvider);
     try {
-      setState(() => _amount = _amountInputLogic.onAmountChanged(value: _amountController.text, isFlipped: isFlipped));
+      setState(() => _amount = _amountInputLogic.parseTokenAmount(_amountController.text));
     } on InvalidNumberInputException catch (e, stack) {
       quantusPrint('Amount parse failed: $e\n$stack');
       final l10n = ref.read(l10nProvider);
@@ -98,8 +96,6 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
     }
   }
 
-  /// Converts a token amount [BigInt] to a fiat input string using the current
-  /// exchange rate and selected fiat currency, formatted for the user's locale.
   void _setMax() {
     final spendable = ref.read(widget.strategy.spendableBalanceProvider).value ?? BigInt.zero;
     final feeAtMax = ref.read(_feeProvider(spendable)).value;
@@ -107,23 +103,8 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
       balance: spendable,
       networkFee: widget.strategy.feeChargedToBalance(feeAtMax),
     );
-    final isFlipped = ref.read(isCurrencyFlippedProvider);
-    _amountController.text = isFlipped
-        ? _amountInputLogic.tokenToFiatString(max)
-        : _amountInputLogic.formatTokenAmount(max);
+    _amountController.text = _amountInputLogic.formatTokenAmount(max);
     setState(() => _amount = max);
-  }
-
-  Future<void> _toggleFlip() async {
-    final wasFlipped = ref.read(isCurrencyFlippedProvider);
-    await ref.read(isCurrencyFlippedProvider.notifier).toggle();
-
-    final result = _amountInputLogic.getToggledInput(wasFlipped: wasFlipped, currentAmount: _amount);
-
-    setState(() {
-      _amountController.text = result.text;
-      _amount = result.amount;
-    });
   }
 
   void _openReview() {
@@ -280,24 +261,12 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
   }
 
   Widget _amountCenter(AppColorsV3 colors, AppTextThemeV3 text) {
-    final isPayMode = widget.isPayMode;
-    final isFlipped = isPayMode ? false : ref.watch(isCurrencyFlippedProvider);
-    final selectedFiat = ref.watch(selectedFiatCurrencyProvider);
     final localeConfig = ref.watch(localeNumberConfigProvider);
-    final display = ref.watch(txAmountDisplayProvider)(
-      _amount,
-      withSignPrefix: false,
-      tokenDecimals: 4,
-      isSend: true,
-      withTokenSymbol: false,
-    );
 
     final amountColor = _amount == BigInt.zero ? colors.textMuted2 : colors.textContent;
     final amountStyle = text.displayCharge.copyWith(color: amountColor);
     final symbolStyle = text.amountHero.copyWith(color: colors.textContent);
-    final isPrefixFiat = isFlipped && selectedFiat.symbolPosition == SymbolPosition.prefix;
 
-    final maxDecimals = isFlipped ? selectedFiat.decimals : null;
     final inputField = IntrinsicWidth(
       child: TextField(
         key: const Key(E2EKeys.sendAmountField),
@@ -305,8 +274,8 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
         focusNode: _amountFocus,
         onChanged: _onAmountChanged,
         keyboardType: const TextInputType.numberWithOptions(decimal: true),
-        textAlign: isPrefixFiat ? TextAlign.left : TextAlign.right,
-        inputFormatters: [DecimalInputFilter(localeConfig: localeConfig, maxDecimalPlaces: maxDecimals)],
+        textAlign: TextAlign.right,
+        inputFormatters: [DecimalInputFilter(localeConfig: localeConfig)],
         style: amountStyle,
         decoration: InputDecoration(
           isDense: true,
@@ -316,44 +285,18 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
       ),
     );
 
-    final symbolWidget = Text(isFlipped ? selectedFiat.symbol : AppConstants.tokenSymbol, style: symbolStyle);
-
-    // For prefix fiat currencies (e.g. $, Rp) place symbol before the field;
-    // for suffix currencies and the token symbol keep it after.
-    final List<Widget> primaryRowChildren = isPrefixFiat
-        ? [symbolWidget, const SizedBox(width: 8), inputField]
-        : [inputField, const SizedBox(width: 8), symbolWidget];
-
     // Scales down rather than clipping when the keyboard leaves little room,
     // or when a long amount would overflow horizontally.
     return Center(
       child: FittedBox(
         fit: BoxFit.scaleDown,
-        child: Column(
+        child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: primaryRowChildren,
-            ),
-            const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text('≈ ${display.secondaryAmount}', style: text.body.copyWith(color: colors.textMuted)),
-                if (!isPayMode) ...[
-                  const SizedBox(width: 8),
-                  QuantusIconButton.circular(
-                    icon: Icons.swap_vert,
-                    onTap: _toggleFlip,
-                    isActive: display.isFlipped,
-                    size: IconButtonSize.small,
-                  ),
-                ],
-              ],
-            ),
+            inputField,
+            const SizedBox(width: 8),
+            Text(AppConstants.tokenSymbol, style: symbolStyle),
           ],
         ),
       ),

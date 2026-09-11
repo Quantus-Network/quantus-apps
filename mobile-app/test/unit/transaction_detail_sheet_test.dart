@@ -47,7 +47,6 @@ void main() {
           return CurrencyDisplayState(
             primaryAmount: '${isSend ? '-' : '+'}$amount',
             secondaryAmount: '',
-            isFlipped: false,
             selectedFiat: FiatCurrency.usd,
           );
         }),

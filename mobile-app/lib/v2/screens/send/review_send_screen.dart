@@ -73,10 +73,6 @@ class _ReviewSendScreenState extends ConsumerState<ReviewSendScreen> {
     );
   }
 
-  Future<void> _toggleFlip() async {
-    await ref.read(isCurrencyFlippedProvider.notifier).toggle();
-  }
-
   Future<void> _confirmSend() async {
     setState(() {
       _submitting = true;
@@ -203,11 +199,7 @@ class _ReviewSendScreenState extends ConsumerState<ReviewSendScreen> {
         children: [
           Text(strings.reviewHeroLabel, style: sectionLabelStyle),
           const SizedBox(height: 16),
-          AmountDisplayWithConversion(
-            amountDisplay: approxDisplay,
-            alignment: CrossAxisAlignment.start,
-            onFlip: _toggleFlip,
-          ),
+          AmountDisplayWithConversion(amountDisplay: approxDisplay, alignment: CrossAxisAlignment.start),
         ],
       ),
       bottomChild: Column(

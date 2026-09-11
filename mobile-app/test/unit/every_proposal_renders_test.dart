@@ -76,12 +76,7 @@ void main() {
                 bool withTokenSymbol = true,
                 bool withSignPrefix = false,
                 String? customHiddenText,
-              }) => CurrencyDisplayState(
-                primaryAmount: '$amount',
-                secondaryAmount: '',
-                isFlipped: false,
-                selectedFiat: FiatCurrency.usd,
-              ),
+              }) => CurrencyDisplayState(primaryAmount: '$amount', secondaryAmount: '', selectedFiat: FiatCurrency.usd),
             ),
           ],
         );

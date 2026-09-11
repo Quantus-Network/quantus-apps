@@ -37,12 +37,7 @@ void main() {
         balanceProviderFamily.overrideWith((ref, accountId) async => BigInt.from(10).pow(15)),
         balanceDisplayProvider.overrideWithValue(
           const AsyncValue.data(
-            CurrencyDisplayState(
-              primaryAmount: '10',
-              secondaryAmount: '10',
-              isFlipped: false,
-              selectedFiat: FiatCurrency.usd,
-            ),
+            CurrencyDisplayState(primaryAmount: '10', secondaryAmount: '10', selectedFiat: FiatCurrency.usd),
           ),
         ),
         backupReminderWalletIndexProvider.overrideWithValue(null),
