@@ -239,8 +239,8 @@ class CurrencyDisplayState {
 // Balance display provider
 // ---------------------------------------------------------------------------
 
-/// Combines balance, flip state, selected fiat, and exchange rate into
-/// [CurrencyDisplayState] ready for widgets to render.
+/// Combines balance, selected fiat, and exchange rate into
+/// [CurrencyDisplayState] ready for widgets to render token-first.
 ///
 /// Hiding balances is a UX concern owned by the screen that offers the toggle,
 /// which passes it into AmountDisplayWithConversion; it is deliberately absent
@@ -250,7 +250,6 @@ final balanceDisplayProvider = Provider<AsyncValue<CurrencyDisplayState>>((ref) 
   final balanceAsync = active != null && isEncryptedAccount(active.account)
       ? ref.watch(encryptedBalanceProvider((active.account as Account).walletIndex))
       : ref.watch(balanceProvider);
-  final isFlipped = ref.watch(isCurrencyFlippedProvider);
   final selectedFiat = ref.watch(selectedFiatCurrencyProvider);
   final xRate = ref.watch(exchangeRateServiceProvider);
   final fmt = ref.watch(numberFormattingServiceProvider);
@@ -266,7 +265,7 @@ final balanceDisplayProvider = Provider<AsyncValue<CurrencyDisplayState>>((ref) 
         xRate,
         fmt,
         tokenDecimals: 3,
-        isFlipped: isFlipped,
+        isFlipped: false,
         withTokenSymbol: false,
         localeConfig: localeConfig,
       );
@@ -289,7 +288,6 @@ typedef TxAmountFormatter =
     });
 
 final txAmountDisplayProvider = Provider<TxAmountFormatter>((ref) {
-  final isFlipped = ref.watch(isCurrencyFlippedProvider);
   final selectedFiat = ref.watch(selectedFiatCurrencyProvider);
   final xRate = ref.watch(exchangeRateServiceProvider);
   final fmt = ref.watch(numberFormattingServiceProvider);
@@ -311,16 +309,12 @@ final txAmountDisplayProvider = Provider<TxAmountFormatter>((ref) {
       fmt,
       tokenDecimals: tokenDecimals,
       withTokenSymbol: withTokenSymbol,
-      isFlipped: isFlipped,
+      isFlipped: false,
       localeConfig: localeConfig,
     );
 
     if (withSignPrefix) {
       data = data.copyWith(primaryAmount: '$prefix${data.primaryAmount}');
-    }
-
-    if (!withTokenSymbol && isFlipped) {
-      data = data.copyWith(secondaryAmount: '${data.secondaryAmount} ${AppConstants.tokenSymbol}');
     }
 
     return data;

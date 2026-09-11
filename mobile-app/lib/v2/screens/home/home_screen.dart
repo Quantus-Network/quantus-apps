@@ -180,10 +180,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     await notifier.setIsBalanceHidden(!ref.read(isBalanceHiddenProvider));
   }
 
-  Future<void> _toggleFlip() async {
-    await ref.read(isCurrencyFlippedProvider.notifier).toggle();
-  }
-
   @override
   Widget build(BuildContext context) {
     final l10n = ref.watch(l10nProvider);
@@ -323,9 +319,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           data: (display) {
             return AmountDisplayWithConversion(
               amountDisplay: display,
-              onFlip: _toggleFlip,
               alignment: CrossAxisAlignment.center,
               useTokenLogo: true,
+              reserveSwitcherSpace: true,
               isHidden: isBalanceHidden,
             );
           },

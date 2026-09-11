@@ -78,7 +78,6 @@ class _DepositScreenState extends ConsumerState<DepositScreen> {
     final colors = context.colorsV3;
     final text = context.themeTextV3;
     final quote = _order.quote;
-    final usd = quote.fromAmount * _swapService.getUsdPrice(quote.fromToken);
 
     return ScaffoldBase(
       appBar: V2AppBar(
@@ -92,7 +91,7 @@ class _DepositScreenState extends ConsumerState<DepositScreen> {
           else if (_order.status == SwapStatus.processing)
             _processingBody(l10n, colors, text)
           else
-            _depositBody(l10n, colors, text, quote, usd),
+            _depositBody(l10n, colors, text, quote),
           const Spacer(),
           if (_order.status == SwapStatus.depositing) _sentButton(l10n),
           if (_order.status == SwapStatus.complete) _doneButton(l10n),
@@ -102,7 +101,7 @@ class _DepositScreenState extends ConsumerState<DepositScreen> {
     );
   }
 
-  Widget _depositBody(AppLocalizations l10n, AppColorsV3 colors, AppTextThemeV3 text, SwapQuote quote, double usd) {
+  Widget _depositBody(AppLocalizations l10n, AppColorsV3 colors, AppTextThemeV3 text, SwapQuote quote) {
     return Column(
       children: [
         Row(
@@ -137,7 +136,7 @@ class _DepositScreenState extends ConsumerState<DepositScreen> {
           ],
         ),
         const SizedBox(height: 8),
-        Text('\$${usd.toStringAsFixed(2)}', style: text.body.copyWith(color: colors.textMuted)),
+        const SizedBox(height: 17.5),
         const SizedBox(height: 40),
         ClipRRect(
           borderRadius: context.radiusV3.smBorder,

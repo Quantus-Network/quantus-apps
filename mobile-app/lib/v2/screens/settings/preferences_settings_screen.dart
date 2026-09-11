@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart' hide ScaffoldBase;
-import 'package:resonance_network_wallet/providers/currency_display_provider.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/notification_config_provider.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
-import 'package:resonance_network_wallet/v2/screens/settings/currency_picker_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/language_picker_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/settings_divider.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/settings_tappable_row.dart';
@@ -27,10 +25,6 @@ class _PreferencesSettingsScreenV2State extends ConsumerState<PreferencesSetting
     Navigator.push(context, MaterialPageRoute(builder: (_) => const LanguagePickerScreenV2()));
   }
 
-  void _openCurrencyPicker() {
-    Navigator.push(context, MaterialPageRoute(builder: (_) => const CurrencyPickerScreenV2()));
-  }
-
   @override
   Widget build(BuildContext context) {
     final l10n = ref.watch(l10nProvider);
@@ -38,7 +32,6 @@ class _PreferencesSettingsScreenV2State extends ConsumerState<PreferencesSetting
     final text = context.themeTextV3;
     final notifConfig = ref.watch(notificationConfigProvider);
     final appLocale = ref.watch(selectedAppLocaleProvider);
-    final fiat = ref.watch(selectedFiatCurrencyProvider);
 
     return ScaffoldBase(
       appBar: V2AppBar(title: l10n.settingsPreferencesTitle),
@@ -58,19 +51,7 @@ class _PreferencesSettingsScreenV2State extends ConsumerState<PreferencesSetting
             ),
           ),
           const SettingsDivider(),
-          SettingsTappableRow(
-            title: l10n.settingsPreferencesCurrency,
-            subtitle: l10n.settingsPreferencesCurrencySubtitle,
-            onTap: _openCurrencyPicker,
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(fiat.code, style: text.caption.copyWith(color: colors.textMuted)),
-                const SizedBox(width: 4),
-                SettingsTappableRowUtils.chevron(),
-              ],
-            ),
-          ),
+          const SizedBox(height: 35),
           const SettingsDivider(),
           SettingsSwitchRow(
             title: l10n.settingsPreferencesNotifications,

@@ -23,9 +23,6 @@ class _ReviewQuoteContent extends ConsumerWidget {
     final l10n = ref.watch(l10nProvider);
     final colors = context.colorsV3;
     final text = context.themeTextV3;
-    final swapService = SwapService();
-    final fromUsd = quote.fromAmount * swapService.getUsdPrice(quote.fromToken);
-    final toUsd = quote.toAmount * swapService.getUsdPrice(quote.toToken);
 
     return BottomSheetContainer(
       title: l10n.swapReviewTitle,
@@ -33,7 +30,7 @@ class _ReviewQuoteContent extends ConsumerWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _swapVisual(context, colors, text, fromUsd, toUsd),
+          _swapVisual(context, colors, text),
           const SizedBox(height: 48),
           _feeRow(
             l10n.swapReviewTotalFees,
@@ -64,14 +61,14 @@ class _ReviewQuoteContent extends ConsumerWidget {
     );
   }
 
-  Widget _swapVisual(BuildContext context, AppColorsV3 colors, AppTextThemeV3 text, double fromUsd, double toUsd) {
+  Widget _swapVisual(BuildContext context, AppColorsV3 colors, AppTextThemeV3 text) {
     final cardWidth = MediaQuery.of(context).size.width / 3;
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        _tokenCard(context, quote.fromToken, quote.fromAmount, fromUsd, cardWidth, colors, text),
+        _tokenCard(context, quote.fromToken, quote.fromAmount, cardWidth, colors, text),
         Icon(Icons.arrow_forward, color: colors.textMuted, size: 20),
-        _tokenCard(context, quote.toToken, quote.toAmount, toUsd, cardWidth, colors, text),
+        _tokenCard(context, quote.toToken, quote.toAmount, cardWidth, colors, text),
       ],
     );
   }
@@ -80,7 +77,6 @@ class _ReviewQuoteContent extends ConsumerWidget {
     BuildContext context,
     SwapToken token,
     double amount,
-    double usd,
     double width,
     AppColorsV3 colors,
     AppTextThemeV3 text,
@@ -109,7 +105,7 @@ class _ReviewQuoteContent extends ConsumerWidget {
           ),
           const SizedBox(height: 6),
           Text(SwapService.formatTokenAmount(amount, token), style: text.amountRow.copyWith(color: colors.textContent)),
-          Text('\$${usd.toStringAsFixed(2)}', style: text.caption.copyWith(color: colors.textMuted)),
+          const SizedBox(height: 15),
         ],
       ),
     );

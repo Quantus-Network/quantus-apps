@@ -12,8 +12,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../fakes.dart';
 
 /// The send amount screen has to survive a keyboard eating most of the
-/// viewport: the fiat conversion line stays reachable on a normal phone, and a
-/// short phone scrolls rather than overflowing.
+/// viewport, and a short phone scrolls rather than overflowing.
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -96,20 +95,12 @@ void main() {
     expect(position.maxScrollExtent, greaterThan(0), reason: 'the tall layout must scroll, not overflow');
   });
 
-  testWidgets('the fiat conversion line stays on screen with the keyboard up', (tester) async {
+  testWidgets('the amount input only offers QUAN', (tester) async {
     await pumpAmountScreen(tester, size: const Size(390, 844), keyboardInset: 336);
     expect(tester.takeException(), isNull);
 
-    final fiat = find.textContaining('≈');
-    expect(fiat, findsOneWidget);
-
-    // Visible means inside the viewport, not merely present in the tree.
-    final fiatRect = tester.getRect(fiat);
-    final divider = tester.getRect(find.byType(ScaffoldBaseBottomContent));
-    expect(
-      fiatRect.bottom,
-      lessThanOrEqualTo(divider.top),
-      reason: 'fiat line at $fiatRect is hidden behind the bottom panel at $divider',
-    );
+    expect(find.textContaining('≈'), findsNothing);
+    expect(find.byIcon(Icons.swap_vert), findsNothing);
+    expect(find.text(AppConstants.tokenSymbol), findsWidgets);
   });
 }

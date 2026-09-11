@@ -29,8 +29,6 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
   final _addressController = TextEditingController();
   SwapToken _fromToken = SwapService.availableTokens.first;
   double _toAmount = 0;
-  double _fromUsd = 0;
-  double _toUsd = 0;
   bool _loading = false;
 
   double get _rate => _swapService.getRate(_fromToken);
@@ -69,8 +67,6 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
     final amount = double.tryParse(_fromController.text) ?? 0;
     setState(() {
       _toAmount = amount * _rate;
-      _fromUsd = amount * _swapService.getUsdPrice(_fromToken);
-      _toUsd = _toAmount * _swapService.getUsdPrice(_swapService.getQuToken());
     });
   }
 
@@ -226,14 +222,7 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
             ),
           ],
         ),
-        const SizedBox(height: 4),
-        Row(
-          children: [
-            Text('\$${_fromUsd.toStringAsFixed(2)}', style: text.caption.copyWith(color: colors.textMuted)),
-            const SizedBox(width: 4),
-            QuantusIcon(QuantusIcons.swapVertical, color: colors.textMuted, size: 12),
-          ],
-        ),
+        const SizedBox(height: 19),
       ],
     );
   }
@@ -369,8 +358,7 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
             ),
           ],
         ),
-        const SizedBox(height: 4),
-        Text('\$${_toUsd.toStringAsFixed(2)}', style: text.caption.copyWith(color: colors.textMuted)),
+        const SizedBox(height: 19),
       ],
     );
   }
