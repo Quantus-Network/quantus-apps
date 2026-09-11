@@ -12,11 +12,15 @@ import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 
 import '../fakes.dart';
 
-/// Records the scope of every fetch, and optionally holds them open so
-/// overlapping callers are still in flight when the next one arrives.
+typedef _RequestedCursors = ({AccountEventCursor? other, AccountEventCursor? scheduled});
+
+/// Records the scope and cursors of every fetch, and optionally holds them
+/// open so overlapping callers are still in flight when the next one arrives.
 class _FakeHistoryService extends ChainHistoryService {
   final List<List<String>> scopes = [];
+  final List<_RequestedCursors> cursors = [];
   Completer<void>? gate;
+  SortedTransactionsList page = SortedTransactionsList.empty;
 
   int get calls => scopes.length;
 
@@ -24,14 +28,15 @@ class _FakeHistoryService extends ChainHistoryService {
   Future<SortedTransactionsList> fetchAllTransactionTypes({
     required List<String> accountIds,
     int limit = 20,
-    int otherOffset = 0,
-    int scheduledOffset = 0,
+    AccountEventCursor? otherAfter,
+    AccountEventCursor? scheduledAfter,
     required TransactionFilter filter,
   }) async {
     scopes.add(List<String>.unmodifiable(accountIds));
+    cursors.add((other: otherAfter, scheduled: scheduledAfter));
     final held = gate;
     if (held != null) await held.future;
-    return SortedTransactionsList.empty;
+    return page;
   }
 }
 
@@ -90,6 +95,29 @@ void main() {
 
     await c.loadingRefresh();
     expect(history.calls, 2, reason: 'the guard must clear once nothing is in flight');
+  });
+
+  test('fetchMore continues from the cursors returned by the previous page', () async {
+    const otherCursor = AccountEventCursor(timestamp: '2026-06-02T05:15:08.147+00:00', id: 'ae-transfer-1-acc');
+    const scheduledCursor = AccountEventCursor(timestamp: '2026-06-02T05:15:08.147+00:00', id: 'ae-scheduled-1-acc');
+    history.page = const SortedTransactionsList(
+      scheduledReversibleTransfers: [],
+      otherTransfers: [],
+      nextOtherCursor: otherCursor,
+      nextScheduledCursor: scheduledCursor,
+      hasMore: true,
+    );
+
+    final c = controller();
+    await settle();
+    expect(history.cursors, [(other: null, scheduled: null)], reason: 'the first page starts from the newest row');
+
+    await c.fetchMore();
+    expect(history.cursors.last.other, same(otherCursor));
+    expect(history.cursors.last.scheduled, same(scheduledCursor));
+
+    await c.loadingRefresh();
+    expect(history.cursors.last, (other: null, scheduled: null), reason: 'a full refresh restarts from the top');
   });
 
   test('an account switch mid-flight still loads the new scope', () async {

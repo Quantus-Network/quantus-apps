@@ -3,7 +3,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:convert/convert.dart';
-import 'package:flutter/foundation.dart' show visibleForTesting;
+import 'package:flutter/foundation.dart' show protected, visibleForTesting;
 import 'package:path_provider/path_provider.dart';
 import 'package:quantus_sdk/src/rust/api/wormhole.dart' as wormhole_ffi;
 import 'package:quantus_sdk/src/services/hd_wallet_service.dart';
@@ -60,6 +60,21 @@ class WormholeTransfer {
   String toString() =>
       'WormholeTransfer{id: $id, block: $blockHeight, amount: $amount, '
       'leafIndex: $leafIndex, transferCount: $transferCount}';
+}
+
+/// Position of the last row already fetched in the `(block_height asc, id asc)`
+/// transfer order; the next page starts strictly after it.
+class WormholeTransferCursor {
+  final int blockHeight;
+  final String id;
+
+  const WormholeTransferCursor({required this.blockHeight, required this.id});
+
+  WormholeTransferCursor.afterTransfer(WormholeTransfer transfer)
+    : this(blockHeight: transfer.blockHeight, id: transfer.id);
+
+  @override
+  String toString() => 'WormholeTransferCursor(block: $blockHeight, id: $id)';
 }
 
 /// One HD-derived wormhole address (index in the wormhole derivation sequence,
@@ -136,25 +151,54 @@ class WormholeUtxoService {
   static const int _nullifierBatchSize = 300;
   static const int _reorgDepth = 180;
 
-  /// GraphQL for inbound wormhole transfers. OFFSET pagination requires a
-  /// unique `order_by`; height alone is not unique (same-block siblings).
-  @visibleForTesting
-  static const String transfersToAddressesQuery = r'''
-query TransfersToAddresses($tos: [String!]!, $limit: Int!, $offset: Int!, $afterBlock: Int) {
-  transfers: transfer(
-    where: { to: { id: {_in: $tos } }, block: { height: {_gt: $afterBlock } } }
-    order_by: [{block: {height: asc}}, {id: asc}]
-    limit: $limit
-    offset: $offset
-  ) {
+  static const String _transferSelection = r'''
     id
-    block { height }
-    from { id }
-    to { id }
+    blockHeight: block_height
+    fromId: from_id
+    toId: to_id
     amount
     toHash: to_hash
     leafIndex: leaf_index
-    transferCount: transfer_count
+    transferCount: transfer_count''';
+
+  /// First page of inbound wormhole transfers above [afterBlock].
+  ///
+  /// Filters and orders on scalar columns only so Postgres can walk the
+  /// `(to_id, block_height, id)` index in output order; a nested `to { id }`
+  /// or `block { height }` predicate would force a join and a sort.
+  @visibleForTesting
+  static const String transfersToAddressesQuery =
+      '''
+query TransfersToAddresses(\$tos: [String!]!, \$limit: Int!, \$afterBlock: Int!) {
+  transfers: transfer(
+    where: { to_id: {_in: \$tos}, block_height: {_gt: \$afterBlock} }
+    order_by: [{block_height: asc}, {id: asc}]
+    limit: \$limit
+  ) {
+$_transferSelection
+  }
+}''';
+
+  /// Subsequent pages: rows strictly after the `(block_height, id)` cursor.
+  /// The cursor row is itself above `afterBlock`, so that bound is implied.
+  ///
+  /// Written as `height >= h AND NOT (height = h AND id <= id)` rather than an
+  /// `_or` so the planner keeps a single ordered index range scan instead of a
+  /// BitmapOr followed by a sort.
+  @visibleForTesting
+  static const String transfersToAddressesAfterQuery =
+      '''
+query TransfersToAddressesAfter(\$tos: [String!]!, \$limit: Int!, \$cursorHeight: Int!, \$cursorId: String!) {
+  transfers: transfer(
+    where: {
+      to_id: {_in: \$tos}
+      block_height: {_gte: \$cursorHeight}
+      _not: {block_height: {_eq: \$cursorHeight}, id: {_lte: \$cursorId}}
+    }
+    order_by: [{block_height: asc}, {id: asc}]
+    limit: \$limit
+  ) {
+$_transferSelection
   }
 }''';
 
@@ -359,30 +403,39 @@ query TransfersToAddresses($tos: [String!]!, $limit: Int!, $offset: Int!, $after
 
   // --- GraphQL queries ---
 
-  Future<List<WormholeTransfer>> _queryTransfers({
+  /// One page of transfers to [toAddresses] above [afterBlock], in
+  /// `(block_height, id)` order. With [after] set, only rows strictly after
+  /// that cursor are returned.
+  @protected
+  @visibleForTesting
+  Future<List<WormholeTransfer>> queryTransfersPage({
     required List<String> toAddresses,
+    required int afterBlock,
+    WormholeTransferCursor? after,
     int limit = transferPageSize,
-    int offset = 0,
-    int? afterBlock,
   }) async {
-    final variables = <String, dynamic>{
-      'tos': toAddresses,
-      'limit': limit,
-      'offset': offset,
-      'afterBlock': afterBlock ?? 0,
-    };
+    final String document;
+    final variables = <String, dynamic>{'tos': toAddresses, 'limit': limit};
+    if (after == null) {
+      document = transfersToAddressesQuery;
+      variables['afterBlock'] = afterBlock;
+    } else {
+      document = transfersToAddressesAfterQuery;
+      variables['cursorHeight'] = after.blockHeight;
+      variables['cursorId'] = after.id;
+    }
 
-    final body = jsonEncode({'query': transfersToAddressesQuery, 'variables': variables});
+    final body = jsonEncode({'query': document, 'variables': variables});
 
     _log(
       '=== TRANSFERS QUERY ===\n'
-      'to=${toAddresses.length} addresses limit=$limit offset=$offset afterBlock=${afterBlock ?? 0}',
+      'to=${toAddresses.length} addresses limit=$limit afterBlock=$afterBlock cursor=$after',
     );
 
     final sw = Stopwatch()..start();
     final response = await _graphQlEndpoint.post(body: body);
     final elapsed = sw.elapsedMilliseconds;
-    _log('transfers query: status=${response.statusCode} offset=$offset elapsed=${elapsed}ms');
+    _log('transfers query: status=${response.statusCode} cursor=$after elapsed=${elapsed}ms');
 
     if (response.statusCode != 200) {
       _log('transfers query FAILED: ${response.body}');
@@ -401,47 +454,38 @@ query TransfersToAddresses($tos: [String!]!, $limit: Int!, $offset: Int!, $after
     _log('transfers query: received $count transfers (${elapsed}ms)');
     if (transfers == null || transfers.isEmpty) return [];
 
-    return transfers.map((t) {
-      final m = t as Map<String, dynamic>;
-      return WormholeTransfer(
-        id: m['id'] as String,
-        blockHeight: (m['block'] as Map<String, dynamic>)['height'] as int,
-        fromId: (m['from'] as Map<String, dynamic>)['id'] as String,
-        toId: (m['to'] as Map<String, dynamic>)['id'] as String,
-        amount: BigInt.parse(m['amount'] as String),
-        toHash: m['toHash'] as String? ?? '',
-        leafIndex: BigInt.parse(m['leafIndex'] as String),
-        transferCount: BigInt.parse(m['transferCount'] as String),
-      );
-    }).toList();
+    return transfers.map((t) => WormholeTransfer.fromJson(t as Map<String, dynamic>)).toList();
   }
 
-  Future<List<WormholeTransfer>> _fetchAllTransfers({
+  /// Walks every transfer to [toAddresses] above [afterBlock] by following the
+  /// `(block_height, id)` cursor of each full page.
+  @visibleForTesting
+  Future<List<WormholeTransfer>> fetchAllTransfers({
     required List<String> toAddresses,
-    int? afterBlock,
+    required int afterBlock,
     void Function(int fetched)? onFetched,
     IsCancelledCallback? isCancelled,
   }) async {
     final totalSw = Stopwatch()..start();
     final all = <WormholeTransfer>[];
-    int offset = 0;
+    WormholeTransferCursor? cursor;
     int pageNum = 0;
     while (true) {
       _throwIfCancelled(isCancelled);
       pageNum++;
-      final page = await _queryTransfers(
+      final page = await queryTransfersPage(
         toAddresses: toAddresses,
-        limit: transferPageSize,
-        offset: offset,
         afterBlock: afterBlock,
+        after: cursor,
+        limit: transferPageSize,
       );
       all.addAll(page);
       onFetched?.call(all.length);
       _log(
         'Page $pageNum: got ${page.length} transfers, total so far: ${all.length} (${totalSw.elapsedMilliseconds}ms elapsed)',
       );
-      if (page.isEmpty || page.length < transferPageSize) break;
-      offset += transferPageSize;
+      if (page.length < transferPageSize) break;
+      cursor = WormholeTransferCursor.afterTransfer(page.last);
     }
     _log('Fetched ${all.length} total transfers in ${totalSw.elapsedMilliseconds}ms ($pageNum pages)');
     return all;
@@ -589,7 +633,7 @@ query SpentNullifiers($hashes: [String!]!) {
       _throwIfCancelled(isCancelled);
       _log('Querying ${entry.value.length} addresses after block ${entry.key}');
       final groupBase = fetchedCount;
-      final fetched = await _fetchAllTransfers(
+      final fetched = await fetchAllTransfers(
         toAddresses: entry.value,
         afterBlock: entry.key,
         onFetched: (n) => onProgress?.call(1, cachedCount + groupBase + n),

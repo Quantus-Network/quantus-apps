@@ -2,40 +2,117 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_sdk/generated/planck/pallets/multisig.dart' as multisig_pallet;
 import 'package:quantus_sdk/quantus_sdk.dart';
 
+/// The `where:` argument of the first `account_event` selection in [query].
+String _whereClause(String query) {
+  final start = query.indexOf('where:');
+  final end = query.indexOf('order_by:', start);
+  expect(start, isNonNegative, reason: 'query has a where clause');
+  expect(end, greaterThan(start), reason: 'query has an order_by after where');
+  return query.substring(start, end);
+}
+
 void main() {
   final service = ChainHistoryService();
 
-  group('OtherTransfersResult', () {
-    test('includes rawRowsConsumed for cursor advancement', () {
-      const result = OtherTransfersResult(transfers: [], hasMore: true, rawRowsConsumed: 10);
+  group('account_event queries', () {
+    const withoutCursor = false;
+    final all = ChainHistoryService.buildAccountEventsQuery(TransactionFilter.all, withCursor: withoutCursor);
+    final send = ChainHistoryService.buildAccountEventsQuery(TransactionFilter.send, withCursor: withoutCursor);
+    final receive = ChainHistoryService.buildAccountEventsQuery(TransactionFilter.receive, withCursor: withoutCursor);
 
-      expect(result.rawRowsConsumed, 10);
-      expect(result.transfers.length, 0);
-      expect(result.hasMore, true);
+    test('send and receive filter on the indexed direction columns', () {
+      expect(_whereClause(send), contains('outgoing: {_eq: true}'));
+      expect(_whereClause(send), isNot(contains('incoming')));
+      expect(_whereClause(receive), contains('incoming: {_eq: true}'));
+      expect(_whereClause(receive), isNot(contains('outgoing')));
+      expect(_whereClause(all), isNot(contains('outgoing')));
+      expect(_whereClause(all), isNot(contains('incoming')));
     });
 
-    test('rawRowsConsumed can differ from transfers.length', () {
-      // Simulates when some rows are skipped during parsing
-      final result = OtherTransfersResult(
-        transfers: [
-          TransferEvent(
-            id: 'test',
-            from: 'from',
-            to: 'to',
-            amount: BigInt.one,
-            fee: BigInt.one,
-            timestamp: DateTime.now(),
-            blockNumber: 1,
-            blockHash: '0xabc',
-          ),
-        ],
-        hasMore: true,
-        rawRowsConsumed: 5, // 5 rows consumed, only 1 parsed successfully
+    test('no variant filters through nested relations, _or, or an extrinsic guard', () {
+      for (final query in [all, send, receive]) {
+        final where = _whereClause(query);
+        expect(where, isNot(contains('_or')), reason: 'nested OR defeats the (account_id, ..., timestamp, id) index');
+        expect(where, isNot(contains('transfer: {')));
+        expect(where, isNot(contains('executedReversibleTransfer: {')));
+        expect(where, isNot(contains('cancelledReversibleTransfer: {')));
+        expect(where, isNot(contains('extrinsic_id')), reason: 'extrinsic-less transfers are no longer indexed rows');
+        expect(where, contains(r'account_id: {_in: $accounts}'));
+        expect(where, contains('scheduled_reversible_transfer_id: {_is_null: true}'));
+      }
+    });
+
+    test('pages by (timestamp, id) keyset instead of OFFSET', () {
+      for (final query in [all, send, receive]) {
+        expect(query, isNot(contains('offset')));
+        expect(query, contains('order_by: [{timestamp: desc}, {id: desc}]'));
+        expect(query, isNot(contains(r'$cursorTimestamp')), reason: 'first page has no cursor');
+      }
+
+      final afterCursor = ChainHistoryService.buildAccountEventsQuery(TransactionFilter.all, withCursor: true);
+      expect(afterCursor, contains(r'$cursorTimestamp: timestamptz!'));
+      expect(afterCursor, contains(r'$cursorId: String!'));
+      expect(_whereClause(afterCursor), contains(r'timestamp: {_lte: $cursorTimestamp}'));
+      expect(_whereClause(afterCursor), contains(r'_not: {timestamp: {_eq: $cursorTimestamp}, id: {_gte: $cursorId}}'));
+    });
+
+    test('scheduled reversible query uses the same direction columns and keyset', () {
+      final scheduledSend = ChainHistoryService.buildScheduledReversibleTransfersQuery(
+        TransactionFilter.send,
+        withCursor: false,
+      );
+      final scheduledAfter = ChainHistoryService.buildScheduledReversibleTransfersQuery(
+        TransactionFilter.receive,
+        withCursor: true,
       );
 
-      expect(result.transfers.length, 1);
-      expect(result.rawRowsConsumed, 5);
-      expect(result.rawRowsConsumed, greaterThan(result.transfers.length));
+      expect(_whereClause(scheduledSend), contains('outgoing: {_eq: true}'));
+      expect(_whereClause(scheduledSend), isNot(contains('from_id')));
+      expect(_whereClause(scheduledSend), contains(r'scheduledReversibleTransfer: {scheduled_at: {_gt: $after}}'));
+      expect(scheduledSend, isNot(contains('offset')));
+      expect(scheduledSend, contains('order_by: [{timestamp: desc}, {id: desc}]'));
+      expect(_whereClause(scheduledAfter), contains('incoming: {_eq: true}'));
+      expect(_whereClause(scheduledAfter), contains(r'timestamp: {_lte: $cursorTimestamp}'));
+      expect(
+        _whereClause(scheduledAfter),
+        contains(r'_not: {timestamp: {_eq: $cursorTimestamp}, id: {_gte: $cursorId}}'),
+      );
+    });
+  });
+
+  group('pageFromRows', () {
+    Map<String, dynamic> row(String id, String timestamp) => {'id': id, 'timestamp': timestamp};
+    String? parseId(dynamic row) {
+      final id = (row as Map<String, dynamic>)['id'] as String;
+      return id.startsWith('skip') ? null : id;
+    }
+
+    test('advances the cursor to the last consumed raw row, even one that parsed to null', () {
+      final rows = [row('a', 't2'), row('skip-b', 't1'), row('c', 't1')];
+
+      final page = ChainHistoryService.pageFromRows(rows, 2, parseId, previousCursor: null);
+
+      expect(page.items, ['a']);
+      expect(page.hasMore, isTrue, reason: 'a lookahead row was returned');
+      expect(page.nextCursor?.timestamp, 't1');
+      expect(page.nextCursor?.id, 'skip-b');
+    });
+
+    test('keeps the previous cursor when the page is empty', () {
+      const previous = AccountEventCursor(timestamp: 't9', id: 'z');
+
+      final page = ChainHistoryService.pageFromRows(<dynamic>[], 2, parseId, previousCursor: previous);
+
+      expect(page.items, isEmpty);
+      expect(page.hasMore, isFalse);
+      expect(page.nextCursor, same(previous));
+    });
+
+    test('a short page has no more and points at its last row', () {
+      final page = ChainHistoryService.pageFromRows([row('a', 't2')], 2, parseId, previousCursor: null);
+
+      expect(page.hasMore, isFalse);
+      expect(page.nextCursor?.id, 'a');
     });
   });
 

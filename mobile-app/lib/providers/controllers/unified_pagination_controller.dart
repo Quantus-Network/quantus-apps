@@ -122,8 +122,8 @@ class UnifiedPaginationController extends StateNotifier<PaginationState> {
           .fetchAllTransactionTypes(
             accountIds: targetAccountIds,
             limit: _limit,
-            otherOffset: state.otherOffset,
-            scheduledOffset: state.scheduledOffset,
+            otherAfter: state.otherCursor,
+            scheduledAfter: state.scheduledCursor,
             filter: _filter,
           );
 
@@ -133,8 +133,7 @@ class UnifiedPaginationController extends StateNotifier<PaginationState> {
       state = state.copyWith(
         otherTransfers: [...state.otherTransfers, ...newOtherTransfers],
         scheduledReversibleTransfers: [...state.scheduledReversibleTransfers, ...newScheduledReversibleTransfers],
-        otherOffset: newTransactions.nextOtherOffset,
-        scheduledOffset: newTransactions.nextScheduledOffset,
+        cursors: (scheduled: newTransactions.nextScheduledCursor, other: newTransactions.nextOtherCursor),
         hasMore: newTransactions.hasMore,
         isFetching: false,
         isLoading: false,
@@ -216,8 +215,7 @@ class UnifiedPaginationController extends StateNotifier<PaginationState> {
       state = state.copyWith(
         otherTransfers: newOtherTransfers,
         scheduledReversibleTransfers: newScheduledReversibleTransfers,
-        otherOffset: newTransactions.nextOtherOffset,
-        scheduledOffset: newTransactions.nextScheduledOffset,
+        cursors: (scheduled: newTransactions.nextScheduledCursor, other: newTransactions.nextOtherCursor),
         hasMore: newTransactions.hasMore,
         clearError: true,
       );
