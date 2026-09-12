@@ -566,12 +566,9 @@ mod tests {
         let address_bytes = derive_dilithium("dilithium-v10-padded", &keypair.public_key);
         let claim_bytes = [9u8; 32];
 
-        let body = build_airdrop_dilithium_claim(
-            &keypair,
-            to_ss58(&address_bytes),
-            to_ss58(&claim_bytes),
-        )
-        .unwrap();
+        let body =
+            build_airdrop_dilithium_claim(&keypair, to_ss58(&address_bytes), to_ss58(&claim_bytes))
+                .unwrap();
         assert_eq!(body.scheme, "dilithium-v10-padded");
 
         let mut msg = [0u8; 72];
