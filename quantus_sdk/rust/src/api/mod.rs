@@ -1,3 +1,4 @@
+pub mod airdrop;
 pub mod crypto;
 pub mod multisig;
 pub mod ur;

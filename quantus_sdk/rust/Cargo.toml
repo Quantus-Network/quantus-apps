@@ -22,6 +22,9 @@ quantus_ur = { git = "https://github.com/Quantus-Network/quantus_ur.git", tag = 
 # ZK proof generation (aligned with quantus-cli / chain)
 anyhow = "1.0"
 blake3 = "1.8"
+# Airdrop ownership proofs. Git source so the wormhole 4.3.0 crates below stay untouched.
+qp-ownership-circuit = { version = "4.4.0", git = "https://github.com/Quantus-Network/qp-zk-circuits", tag = "v4.4.0", default-features = false, features = ["std"] }
+qp-ownership-prover = { version = "4.4.0", git = "https://github.com/Quantus-Network/qp-zk-circuits", tag = "v4.4.0", default-features = false, features = ["std"] }
 qp-plonky2 = { version = "1.5.5", default-features = false, features = ["rand", "std"] }
 qp-wormhole-circuit = { version = "4.3.0", default-features = false, features = ["std"] }
 qp-wormhole-prover = { version = "4.3.0", default-features = false, features = ["std"] }

@@ -2737,6 +2737,39 @@ dependencies = [
 ]
 
 [[package]]
+name = "qp-ownership-circuit"
+version = "4.4.0"
+source = "git+https://github.com/Quantus-Network/qp-zk-circuits?tag=v4.4.0#c2ceefacd28fc800f0f1a2e4236d5d695f4239d2"
+dependencies = [
+ "anyhow",
+ "qp-ownership-inputs",
+ "qp-plonky2",
+ "qp-wormhole-circuit 4.4.0",
+ "qp-zk-circuits-common 4.4.0",
+]
+
+[[package]]
+name = "qp-ownership-inputs"
+version = "4.4.0"
+source = "git+https://github.com/Quantus-Network/qp-zk-circuits?tag=v4.4.0#c2ceefacd28fc800f0f1a2e4236d5d695f4239d2"
+dependencies = [
+ "anyhow",
+ "qp-wormhole-inputs 4.4.0",
+]
+
+[[package]]
+name = "qp-ownership-prover"
+version = "4.4.0"
+source = "git+https://github.com/Quantus-Network/qp-zk-circuits?tag=v4.4.0#c2ceefacd28fc800f0f1a2e4236d5d695f4239d2"
+dependencies = [
+ "anyhow",
+ "qp-ownership-circuit",
+ "qp-plonky2",
+ "qp-wormhole-circuit 4.4.0",
+ "qp-zk-circuits-common 4.4.0",
+]
+
+[[package]]
 name = "qp-plonky2"
 version = "1.5.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2870,10 +2903,10 @@ dependencies = [
  "anyhow",
  "hex",
  "qp-plonky2",
- "qp-wormhole-circuit",
- "qp-wormhole-inputs",
+ "qp-wormhole-circuit 4.3.0",
+ "qp-wormhole-inputs 4.3.0",
  "qp-wormhole-prover",
- "qp-zk-circuits-common",
+ "qp-zk-circuits-common 4.3.0",
  "rand 0.8.6",
  "serde",
  "serde_json",
@@ -2888,8 +2921,21 @@ dependencies = [
  "anyhow",
  "hex",
  "qp-plonky2",
- "qp-wormhole-inputs",
- "qp-zk-circuits-common",
+ "qp-wormhole-inputs 4.3.0",
+ "qp-zk-circuits-common 4.3.0",
+ "zeroize",
+]
+
+[[package]]
+name = "qp-wormhole-circuit"
+version = "4.4.0"
+source = "git+https://github.com/Quantus-Network/qp-zk-circuits?tag=v4.4.0#c2ceefacd28fc800f0f1a2e4236d5d695f4239d2"
+dependencies = [
+ "anyhow",
+ "hex",
+ "qp-plonky2",
+ "qp-wormhole-inputs 4.4.0",
+ "qp-zk-circuits-common 4.4.0",
  "zeroize",
 ]
 
@@ -2903,8 +2949,8 @@ dependencies = [
  "clap",
  "qp-plonky2",
  "qp-wormhole-aggregator",
- "qp-wormhole-circuit",
- "qp-zk-circuits-common",
+ "qp-wormhole-circuit 4.3.0",
+ "qp-zk-circuits-common 4.3.0",
  "rand 0.8.6",
 ]
 
@@ -2918,6 +2964,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "qp-wormhole-inputs"
+version = "4.4.0"
+source = "git+https://github.com/Quantus-Network/qp-zk-circuits?tag=v4.4.0#c2ceefacd28fc800f0f1a2e4236d5d695f4239d2"
+dependencies = [
+ "anyhow",
+]
+
+[[package]]
 name = "qp-wormhole-prover"
 version = "4.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2925,8 +2979,8 @@ checksum = "7203e454113812e1ca85aee7687dc5f270f7c297d113a647a3a00b6d43c5a4f6"
 dependencies = [
  "anyhow",
  "qp-plonky2",
- "qp-wormhole-circuit",
- "qp-zk-circuits-common",
+ "qp-wormhole-circuit 4.3.0",
+ "qp-zk-circuits-common 4.3.0",
 ]
 
 [[package]]
@@ -2938,7 +2992,21 @@ dependencies = [
  "anyhow",
  "qp-plonky2",
  "qp-poseidon-core",
- "qp-wormhole-inputs",
+ "qp-wormhole-inputs 4.3.0",
+ "rand 0.8.6",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "qp-zk-circuits-common"
+version = "4.4.0"
+source = "git+https://github.com/Quantus-Network/qp-zk-circuits?tag=v4.4.0#c2ceefacd28fc800f0f1a2e4236d5d695f4239d2"
+dependencies = [
+ "anyhow",
+ "qp-plonky2",
+ "qp-poseidon-core",
+ "qp-wormhole-inputs 4.4.0",
  "rand 0.8.6",
  "serde",
  "serde_json",
@@ -3141,16 +3209,18 @@ dependencies = [
  "flutter_rust_bridge",
  "hex",
  "parity-scale-codec",
+ "qp-ownership-circuit",
+ "qp-ownership-prover",
  "qp-plonky2",
  "qp-poseidon-core",
  "qp-rusty-crystals-dilithium",
  "qp-rusty-crystals-hdwallet",
  "qp-wormhole-aggregator",
- "qp-wormhole-circuit",
+ "qp-wormhole-circuit 4.3.0",
  "qp-wormhole-circuit-builder",
- "qp-wormhole-inputs",
+ "qp-wormhole-inputs 4.3.0",
  "qp-wormhole-prover",
- "qp-zk-circuits-common",
+ "qp-zk-circuits-common 4.3.0",
  "quantus_ur",
  "sp-core",
  "sp-runtime",
