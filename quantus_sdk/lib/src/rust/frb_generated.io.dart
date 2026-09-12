@@ -57,10 +57,16 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   int dco_decode_box_autoadd_u_32(dynamic raw);
 
   @protected
+  DilithiumClaimBody dco_decode_dilithium_claim_body(dynamic raw);
+
+  @protected
   DilithiumScheme dco_decode_dilithium_scheme(dynamic raw);
 
   @protected
   int dco_decode_i_32(dynamic raw);
+
+  @protected
+  PlatformInt64 dco_decode_i_64(dynamic raw);
 
   @protected
   Keypair dco_decode_keypair(dynamic raw);
@@ -123,6 +129,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   BigInt dco_decode_usize(dynamic raw);
 
   @protected
+  WormholeClaimBody dco_decode_wormhole_claim_body(dynamic raw);
+
+  @protected
   WormholeResult dco_decode_wormhole_result(dynamic raw);
 
   @protected
@@ -156,10 +165,18 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   int sse_decode_box_autoadd_u_32(SseDeserializer deserializer);
 
   @protected
+  DilithiumClaimBody sse_decode_dilithium_claim_body(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   DilithiumScheme sse_decode_dilithium_scheme(SseDeserializer deserializer);
 
   @protected
   int sse_decode_i_32(SseDeserializer deserializer);
+
+  @protected
+  PlatformInt64 sse_decode_i_64(SseDeserializer deserializer);
 
   @protected
   Keypair sse_decode_keypair(SseDeserializer deserializer);
@@ -226,6 +243,11 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   BigInt sse_decode_usize(SseDeserializer deserializer);
 
   @protected
+  WormholeClaimBody sse_decode_wormhole_claim_body(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   WormholeResult sse_decode_wormhole_result(SseDeserializer deserializer);
 
   @protected
@@ -264,6 +286,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void sse_encode_box_autoadd_u_32(int self, SseSerializer serializer);
 
   @protected
+  void sse_encode_dilithium_claim_body(
+    DilithiumClaimBody self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_dilithium_scheme(
     DilithiumScheme self,
     SseSerializer serializer,
@@ -271,6 +299,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void sse_encode_i_32(int self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_i_64(PlatformInt64 self, SseSerializer serializer);
 
   @protected
   void sse_encode_keypair(Keypair self, SseSerializer serializer);
@@ -346,6 +377,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void sse_encode_usize(BigInt self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_wormhole_claim_body(
+    WormholeClaimBody self,
+    SseSerializer serializer,
+  );
 
   @protected
   void sse_encode_wormhole_result(

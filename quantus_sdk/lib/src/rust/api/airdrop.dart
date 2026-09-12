@@ -4,11 +4,12 @@
 // ignore_for_file: invalid_use_of_internal_member, unused_import, unnecessary_import
 
 import '../frb_generated.dart';
+import 'crypto.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-// These functions are ignored because they are not marked as `pub`: `compact8_decode`, `derive_dilithium`, `derive`, `hash_felts_rate4_pad10`, `hash_felts`, `hash_no_pad_v09`, `hash_padded_v09`, `hash_padded_v10`, `injective4`, `rehash`
+// These functions are ignored because they are not marked as `pub`: `compact8_decode`, `decode_account`, `derive_dilithium`, `derive`, `hash_felts_rate4_pad10`, `hash_felts`, `hash_no_pad_v09`, `hash_padded_v09`, `hash_padded_v10`, `injective4`, `now_unix`, `rehash`
 // These types are ignored because they are neither used by any `pub` functions nor (for structs and enums) marked `#[frb(unignore)]`: `SecretEncoding`, `Sponge`, `WormholeSchemeDef`
-// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `assert_receiver_is_total_eq`, `clone`, `clone`, `eq`, `fmt`
+// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `assert_receiver_is_total_eq`, `clone`, `clone`, `eq`, `fmt`, `fmt`
 
 /// Determine which snapshot addresses belong to this wallet.
 ///
@@ -28,6 +29,31 @@ Future<List<AirdropMatch>> findAirdropMatches({
   dilithiumPublicKey: dilithiumPublicKey,
   mnemonic: mnemonic,
   extraWormholeSecrets: extraWormholeSecrets,
+);
+
+/// Sign an airdrop claim for a Dilithium-era snapshot `address`, paying out to
+/// `claim_account`. The wallet must be ML-DSA-87 (miner keys are). Submit the
+/// result as `{"kind": "dilithium", ...fields}` within ~10 minutes.
+Future<DilithiumClaimBody> buildAirdropDilithiumClaim({
+  required Keypair keypair,
+  required String address,
+  required String claimAccount,
+}) => RustLib.instance.api.crateApiAirdropBuildAirdropDilithiumClaim(
+  keypair: keypair,
+  address: address,
+  claimAccount: claimAccount,
+);
+
+/// Prove ownership of the wormhole address derived from `wormhole_secret`
+/// (current rate-8 scheme), binding the payout to `claim_account`. Builds the
+/// circuit in-process: expect tens of seconds of CPU on first call. Submit as
+/// `{"kind": "wormhole", ...fields}`.
+Future<WormholeClaimBody> proveAirdropWormhole({
+  required List<int> wormholeSecret,
+  required String claimAccount,
+}) => RustLib.instance.api.crateApiAirdropProveAirdropWormhole(
+  wormholeSecret: wormholeSecret,
+  claimAccount: claimAccount,
 );
 
 /// A snapshot address this wallet can prove ownership of.
@@ -81,4 +107,63 @@ class AirdropMatch {
           claimable == other.claimable &&
           source == other.source &&
           wormholeSecret == other.wormholeSecret;
+}
+
+/// The `POST /claim` body fields for a Dilithium claim.
+class DilithiumClaimBody {
+  final String scheme;
+  final String address;
+  final String claimAccount;
+  final String publicKeyHex;
+  final String signatureHex;
+  final PlatformInt64 expiryUnix;
+
+  const DilithiumClaimBody({
+    required this.scheme,
+    required this.address,
+    required this.claimAccount,
+    required this.publicKeyHex,
+    required this.signatureHex,
+    required this.expiryUnix,
+  });
+
+  @override
+  int get hashCode =>
+      scheme.hashCode ^
+      address.hashCode ^
+      claimAccount.hashCode ^
+      publicKeyHex.hashCode ^
+      signatureHex.hashCode ^
+      expiryUnix.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is DilithiumClaimBody &&
+          runtimeType == other.runtimeType &&
+          scheme == other.scheme &&
+          address == other.address &&
+          claimAccount == other.claimAccount &&
+          publicKeyHex == other.publicKeyHex &&
+          signatureHex == other.signatureHex &&
+          expiryUnix == other.expiryUnix;
+}
+
+/// The `POST /claim` body fields for a wormhole claim.
+class WormholeClaimBody {
+  final String proofKind;
+  final String proofHex;
+
+  const WormholeClaimBody({required this.proofKind, required this.proofHex});
+
+  @override
+  int get hashCode => proofKind.hashCode ^ proofHex.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WormholeClaimBody &&
+          runtimeType == other.runtimeType &&
+          proofKind == other.proofKind &&
+          proofHex == other.proofHex;
 }
