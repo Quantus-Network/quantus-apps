@@ -7,6 +7,7 @@ void main() {
   test('airdrop API is exported from quantus_sdk.dart', () {
     expect(findAirdropMatches, isA<Function>());
     expect(buildAirdropDilithiumClaim, isA<Function>());
+    expect(buildAirdropDilithiumClaimFromMnemonic, isA<Function>());
     expect(proveAirdropWormhole, isA<Function>());
   });
 }

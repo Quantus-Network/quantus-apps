@@ -7,19 +7,21 @@ import '../frb_generated.dart';
 import 'crypto.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-// These functions are ignored because they are not marked as `pub`: `compact8_decode`, `decode_account`, `derive_dilithium`, `derive`, `hash_felts_rate4_pad10`, `hash_felts`, `hash_padded_legacy`, `hash_padded_v10`, `injective4`, `now_unix`, `rehash`
-// These types are ignored because they are neither used by any `pub` functions nor (for structs and enums) marked `#[frb(unignore)]`: `SecretEncoding`, `Sponge`, `WormholeSchemeDef`
-// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `assert_receiver_is_total_eq`, `clone`, `clone`, `eq`, `fmt`, `fmt`
+// These functions are ignored because they are not marked as `pub`: `as_slice`, `compact8_decode`, `decode_account`, `derive_dilithium`, `derive_historical_dilithium`, `derive`, `dilithium_keygen_ids`, `hash_felts_rate4_pad10`, `hash_felts`, `hash_padded_legacy`, `hash_padded_v10`, `injective4_secret_words`, `injective4`, `mldsa87_keypair`, `now_unix`, `push`, `rehash`, `sign_dilithium_claim`, `v09_hash_no_pad`, `v09_permutation`, `wipe_bytes`, `wipe_felts`, `with_capacity`
+// These types are ignored because they are neither used by any `pub` functions nor (for structs and enums) marked `#[frb(unignore)]`: `HistoricalKeypair`, `SecretEncoding`, `SecretKeyBytes`, `SensitiveFelts`, `Sponge`, `WormholeSchemeDef`
+// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `assert_receiver_is_total_eq`, `clone`, `clone`, `drop`, `drop`, `eq`, `fmt`, `fmt`
 
 /// Determine which snapshot addresses belong to this wallet.
 ///
 /// `snapshot_addresses` are the SS58 addresses from `GET /snapshot` (or the
 /// miner-rewards CSV). Dilithium matches are checked against
-/// `dilithium_public_key` under every historical hash. Wormhole matches are
-/// checked for HD-derived secrets (`m/44'/189189189'/0'/{0..=8}'/{0..=16}'`,
-/// covering the app's external/change branches and the CLI's multiround
-/// rounds) when `mnemonic` is given, plus any `extra_wormhole_secrets`
-/// (32 bytes each).
+/// `dilithium_public_key` under every historical hash, and — when `mnemonic`
+/// is given — against keypairs re-derived under every historical keygen era
+/// (see `dilithium_keygen_ids`). Wormhole matches are checked for HD-derived
+/// secrets (`m/44'/189189189'/0'/{0..=8}'/{0..=16}'` under both the current
+/// "Dilithium seed" and the pre-2.1.0 "Bitcoin seed" BIP32 masters, plus the
+/// legacy master-node secret) when `mnemonic` is given, plus any
+/// `extra_wormhole_secrets` (32 bytes each).
 Future<List<AirdropMatch>> findAirdropMatches({
   required List<String> snapshotAddresses,
   Uint8List? dilithiumPublicKey,
@@ -41,6 +43,22 @@ Future<DilithiumClaimBody> buildAirdropDilithiumClaim({
   required String claimAccount,
 }) => RustLib.instance.api.crateApiAirdropBuildAirdropDilithiumClaim(
   keypair: keypair,
+  address: address,
+  claimAccount: claimAccount,
+);
+
+/// Sign an airdrop claim with a key from a historical keygen era: pass the
+/// `dilithium_keygen` id from the `AirdropMatch`. Re-derives the era's
+/// keypair from the mnemonic, so the wallet does not need to store it.
+/// Submit like `build_airdrop_dilithium_claim`'s result.
+Future<DilithiumClaimBody> buildAirdropDilithiumClaimFromMnemonic({
+  required String mnemonic,
+  required String dilithiumKeygen,
+  required String address,
+  required String claimAccount,
+}) => RustLib.instance.api.crateApiAirdropBuildAirdropDilithiumClaimFromMnemonic(
+  mnemonic: mnemonic,
+  dilithiumKeygen: dilithiumKeygen,
   address: address,
   claimAccount: claimAccount,
 );
@@ -69,13 +87,19 @@ class AirdropMatch {
   /// Whether the claim server currently accepts proofs for this scheme.
   final bool claimable;
 
-  /// Where the key came from: "dilithium public key", an HD path, or
-  /// "provided secret #N".
+  /// Where the key came from: "dilithium public key", an HD path,
+  /// "provided secret #N", or a historical keygen description.
   final String source;
 
   /// The 32-byte wormhole secret that produced the match (needed to build
   /// the ownership proof). None for Dilithium matches.
   final Uint8List? wormholeSecret;
+
+  /// For Dilithium matches found through a historical keygen scheme: the
+  /// keygen id to pass to `build_airdrop_dilithium_claim_from_mnemonic`.
+  /// None when the match came from the provided current public key (claim
+  /// with `build_airdrop_dilithium_claim`).
+  final String? dilithiumKeygen;
 
   const AirdropMatch({
     required this.address,
@@ -84,6 +108,7 @@ class AirdropMatch {
     required this.claimable,
     required this.source,
     this.wormholeSecret,
+    this.dilithiumKeygen,
   });
 
   @override
@@ -93,7 +118,8 @@ class AirdropMatch {
       scheme.hashCode ^
       claimable.hashCode ^
       source.hashCode ^
-      wormholeSecret.hashCode;
+      wormholeSecret.hashCode ^
+      dilithiumKeygen.hashCode;
 
   @override
   bool operator ==(Object other) =>
@@ -105,7 +131,8 @@ class AirdropMatch {
           scheme == other.scheme &&
           claimable == other.claimable &&
           source == other.source &&
-          wormholeSecret == other.wormholeSecret;
+          wormholeSecret == other.wormholeSecret &&
+          dilithiumKeygen == other.dilithiumKeygen;
 }
 
 /// The `POST /claim` body fields for a Dilithium claim.

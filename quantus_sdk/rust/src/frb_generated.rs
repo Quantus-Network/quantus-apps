@@ -39,7 +39,7 @@ flutter_rust_bridge::frb_generated_boilerplate!(
     default_rust_auto_opaque = RustAutoOpaqueMoi,
 );
 pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_VERSION: &str = "2.12.0";
-pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = 272316986;
+pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = -1962506674;
 
 // Section: executor
 
@@ -115,6 +115,48 @@ fn wire__crate__api__airdrop__build_airdrop_dilithium_claim_impl(
                         api_address,
                         api_claim_account,
                     )?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__api__airdrop__build_airdrop_dilithium_claim_from_mnemonic_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "build_airdrop_dilithium_claim_from_mnemonic",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_mnemonic = <String>::sse_decode(&mut deserializer);
+            let api_dilithium_keygen = <String>::sse_decode(&mut deserializer);
+            let api_address = <String>::sse_decode(&mut deserializer);
+            let api_claim_account = <String>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, String>((move || {
+                    let output_ok =
+                        crate::api::airdrop::build_airdrop_dilithium_claim_from_mnemonic(
+                            api_mnemonic,
+                            api_dilithium_keygen,
+                            api_address,
+                            api_claim_account,
+                        )?;
                     Ok(output_ok)
                 })())
             }
@@ -1361,6 +1403,7 @@ impl SseDecode for crate::api::airdrop::AirdropMatch {
         let mut var_claimable = <bool>::sse_decode(deserializer);
         let mut var_source = <String>::sse_decode(deserializer);
         let mut var_wormholeSecret = <Option<Vec<u8>>>::sse_decode(deserializer);
+        let mut var_dilithiumKeygen = <Option<String>>::sse_decode(deserializer);
         return crate::api::airdrop::AirdropMatch {
             address: var_address,
             kind: var_kind,
@@ -1368,6 +1411,7 @@ impl SseDecode for crate::api::airdrop::AirdropMatch {
             claimable: var_claimable,
             source: var_source,
             wormhole_secret: var_wormholeSecret,
+            dilithium_keygen: var_dilithiumKeygen,
         };
     }
 }
@@ -1693,18 +1737,24 @@ fn pde_ffi_dispatcher_primary_impl(
             rust_vec_len,
             data_len,
         ),
-        16 => wire__crate__api__wormhole__ensure_circuit_binaries_impl(
+        3 => wire__crate__api__airdrop__build_airdrop_dilithium_claim_from_mnemonic_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        17 => {
+        17 => wire__crate__api__wormhole__ensure_circuit_binaries_impl(
+            port,
+            ptr,
+            rust_vec_len,
+            data_len,
+        ),
+        18 => {
             wire__crate__api__airdrop__find_airdrop_matches_impl(port, ptr, rust_vec_len, data_len)
         }
-        22 => wire__crate__api__wormhole__generate_proof_impl(port, ptr, rust_vec_len, data_len),
-        23 => wire__crate__api__crypto__init_app_impl(port, ptr, rust_vec_len, data_len),
-        28 => wire__crate__api__airdrop__prove_airdrop_wormhole_impl(
+        23 => wire__crate__api__wormhole__generate_proof_impl(port, ptr, rust_vec_len, data_len),
+        24 => wire__crate__api__crypto__init_app_impl(port, ptr, rust_vec_len, data_len),
+        29 => wire__crate__api__airdrop__prove_airdrop_wormhole_impl(
             port,
             ptr,
             rust_vec_len,
@@ -1722,48 +1772,48 @@ fn pde_ffi_dispatcher_sync_impl(
 ) -> flutter_rust_bridge::for_generated::WireSyncRust2DartSse {
     // Codec=Pde (Serialization + dispatch), see doc to use other codecs
     match func_id {
-        3 => wire__crate__api__wormhole__compute_address_hash_hex_impl(ptr, rust_vec_len, data_len),
-        4 => wire__crate__api__wormhole__compute_merkle_positions_impl(ptr, rust_vec_len, data_len),
-        5 => wire__crate__api__wormhole__compute_nullifier_impl(ptr, rust_vec_len, data_len),
-        6 => wire__crate__api__wormhole__compute_wormhole_address_impl(ptr, rust_vec_len, data_len),
-        7 => wire__crate__api__crypto__crystal_alice_impl(ptr, rust_vec_len, data_len),
-        8 => wire__crate__api__crypto__crystal_bob_impl(ptr, rust_vec_len, data_len),
-        9 => wire__crate__api__crypto__crystal_charlie_impl(ptr, rust_vec_len, data_len),
-        10 => wire__crate__api__wormhole__decode_leaf_amount_impl(ptr, rust_vec_len, data_len),
-        11 => wire__crate__api__wormhole__decode_leaf_to_account_impl(ptr, rust_vec_len, data_len),
-        12 => {
+        4 => wire__crate__api__wormhole__compute_address_hash_hex_impl(ptr, rust_vec_len, data_len),
+        5 => wire__crate__api__wormhole__compute_merkle_positions_impl(ptr, rust_vec_len, data_len),
+        6 => wire__crate__api__wormhole__compute_nullifier_impl(ptr, rust_vec_len, data_len),
+        7 => wire__crate__api__wormhole__compute_wormhole_address_impl(ptr, rust_vec_len, data_len),
+        8 => wire__crate__api__crypto__crystal_alice_impl(ptr, rust_vec_len, data_len),
+        9 => wire__crate__api__crypto__crystal_bob_impl(ptr, rust_vec_len, data_len),
+        10 => wire__crate__api__crypto__crystal_charlie_impl(ptr, rust_vec_len, data_len),
+        11 => wire__crate__api__wormhole__decode_leaf_amount_impl(ptr, rust_vec_len, data_len),
+        12 => wire__crate__api__wormhole__decode_leaf_to_account_impl(ptr, rust_vec_len, data_len),
+        13 => {
             wire__crate__api__wormhole__decode_leaf_transfer_count_impl(ptr, rust_vec_len, data_len)
         }
-        13 => wire__crate__api__ur__decode_ur_impl(ptr, rust_vec_len, data_len),
-        14 => wire__crate__api__crypto__derive_wormhole_impl(ptr, rust_vec_len, data_len),
-        15 => wire__crate__api__ur__encode_ur_impl(ptr, rust_vec_len, data_len),
-        18 => wire__crate__api__crypto__first_hash_to_address_impl(ptr, rust_vec_len, data_len),
-        19 => wire__crate__api__crypto__generate_derived_keypair_impl(ptr, rust_vec_len, data_len),
-        20 => wire__crate__api__crypto__generate_keypair_impl(ptr, rust_vec_len, data_len),
-        21 => {
+        14 => wire__crate__api__ur__decode_ur_impl(ptr, rust_vec_len, data_len),
+        15 => wire__crate__api__crypto__derive_wormhole_impl(ptr, rust_vec_len, data_len),
+        16 => wire__crate__api__ur__encode_ur_impl(ptr, rust_vec_len, data_len),
+        19 => wire__crate__api__crypto__first_hash_to_address_impl(ptr, rust_vec_len, data_len),
+        20 => wire__crate__api__crypto__generate_derived_keypair_impl(ptr, rust_vec_len, data_len),
+        21 => wire__crate__api__crypto__generate_keypair_impl(ptr, rust_vec_len, data_len),
+        22 => {
             wire__crate__api__crypto__generate_keypair_from_seed_impl(ptr, rust_vec_len, data_len)
         }
-        24 => wire__crate__api__ur__is_complete_ur_impl(ptr, rust_vec_len, data_len),
-        25 => wire__crate__api__ur__max_ur_part_chars_impl(ptr, rust_vec_len, data_len),
-        26 => wire__crate__api__ur__max_ur_parts_impl(ptr, rust_vec_len, data_len),
-        27 => {
+        25 => wire__crate__api__ur__is_complete_ur_impl(ptr, rust_vec_len, data_len),
+        26 => wire__crate__api__ur__max_ur_part_chars_impl(ptr, rust_vec_len, data_len),
+        27 => wire__crate__api__ur__max_ur_parts_impl(ptr, rust_vec_len, data_len),
+        28 => {
             wire__crate__api__multisig__predict_multisig_address_impl(ptr, rust_vec_len, data_len)
         }
-        29 => wire__crate__api__crypto__public_key_bytes_impl(ptr, rust_vec_len, data_len),
-        30 => wire__crate__api__crypto__secret_key_bytes_impl(ptr, rust_vec_len, data_len),
-        31 => wire__crate__api__crypto__set_default_ss58_prefix_impl(ptr, rust_vec_len, data_len),
-        32 => wire__crate__api__crypto__sign_message_impl(ptr, rust_vec_len, data_len),
-        33 => wire__crate__api__crypto__sign_message_with_pubkey_impl(ptr, rust_vec_len, data_len),
-        34 => wire__crate__api__crypto__signature_bytes_impl(ptr, rust_vec_len, data_len),
-        35 => wire__crate__api__crypto__ss58_to_account_id_impl(ptr, rust_vec_len, data_len),
-        36 => wire__crate__api__crypto__to_account_id_impl(ptr, rust_vec_len, data_len),
-        37 => wire__crate__api__crypto__verify_message_impl(ptr, rust_vec_len, data_len),
-        38 => wire__crate__api__wormhole__wormhole_compute_output_amount_impl(
+        30 => wire__crate__api__crypto__public_key_bytes_impl(ptr, rust_vec_len, data_len),
+        31 => wire__crate__api__crypto__secret_key_bytes_impl(ptr, rust_vec_len, data_len),
+        32 => wire__crate__api__crypto__set_default_ss58_prefix_impl(ptr, rust_vec_len, data_len),
+        33 => wire__crate__api__crypto__sign_message_impl(ptr, rust_vec_len, data_len),
+        34 => wire__crate__api__crypto__sign_message_with_pubkey_impl(ptr, rust_vec_len, data_len),
+        35 => wire__crate__api__crypto__signature_bytes_impl(ptr, rust_vec_len, data_len),
+        36 => wire__crate__api__crypto__ss58_to_account_id_impl(ptr, rust_vec_len, data_len),
+        37 => wire__crate__api__crypto__to_account_id_impl(ptr, rust_vec_len, data_len),
+        38 => wire__crate__api__crypto__verify_message_impl(ptr, rust_vec_len, data_len),
+        39 => wire__crate__api__wormhole__wormhole_compute_output_amount_impl(
             ptr,
             rust_vec_len,
             data_len,
         ),
-        39 => wire__crate__api__wormhole__zk_circuits_version_impl(ptr, rust_vec_len, data_len),
+        40 => wire__crate__api__wormhole__zk_circuits_version_impl(ptr, rust_vec_len, data_len),
         _ => unreachable!(),
     }
 }
@@ -1795,6 +1845,7 @@ impl flutter_rust_bridge::IntoDart for crate::api::airdrop::AirdropMatch {
             self.claimable.into_into_dart().into_dart(),
             self.source.into_into_dart().into_dart(),
             self.wormhole_secret.into_into_dart().into_dart(),
+            self.dilithium_keygen.into_into_dart().into_dart(),
         ]
         .into_dart()
     }
@@ -2033,6 +2084,7 @@ impl SseEncode for crate::api::airdrop::AirdropMatch {
         <bool>::sse_encode(self.claimable, serializer);
         <String>::sse_encode(self.source, serializer);
         <Option<Vec<u8>>>::sse_encode(self.wormhole_secret, serializer);
+        <Option<String>>::sse_encode(self.dilithium_keygen, serializer);
     }
 }
 

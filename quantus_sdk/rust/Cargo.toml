@@ -14,6 +14,11 @@ qp-poseidon-core = "3.1.0"
 qp-poseidon-core-v09 = { package = "qp-poseidon-core", version = "=0.9.5" }
 qp-rusty-crystals-dilithium = { version = "4.1.1", default-features = false, features = ["ml-dsa-65", "ml-dsa-87"] }
 qp-rusty-crystals-hdwallet = { version = "4.1.1", features = ["ml-dsa-65"] }
+# The pre-March-2026 BIP32 tree ("Bitcoin seed" master HMAC key, soft child
+# support): historical Dilithium accounts and wormhole entropies in
+# api/airdrop.rs derive through it. Same crate qp-rusty-crystals-hdwallet
+# < 2.1.0 used internally.
+nam-tiny-hderive = { version = "=0.3.1-nam.1", default-features = false }
 
 flutter_rust_bridge = "=2.12.0"
 hex = "0.4.3"
@@ -46,6 +51,7 @@ qp-zk-circuits-common = { version = "4.4.0", default-features = false, features 
 qp-wormhole-circuit-builder = { version = "4.4.0" }
 
 [dev-dependencies]
+sha2 = "0.10"
 tempfile = "3"
 
 # Circuit generation is CPU-intensive; without this it takes ~10min instead of ~30s.
