@@ -30,6 +30,13 @@ blake3 = "1.8"
 # family-wide bump keeps wormhole proofs chain-compatible.
 qp-ownership-circuit = { version = "4.4.0", default-features = false, features = ["std"] }
 qp-ownership-prover = { version = "4.4.0", default-features = false, features = ["std"] }
+# Building blocks of qp-poseidon-core 0.9.5's hasher. The local v09 sponge in
+# api/airdrop.rs hashes secret preimages from borrowed slices because the
+# 0.9.5 crate's hash_no_pad consumes its Vec and frees it unscrubbed.
+p3-field = { version = "0.3.0", default-features = false }
+p3-goldilocks = { version = "0.3.0", default-features = false }
+p3-symmetric = { version = "0.3.0", default-features = false }
+rand_chacha = { version = "0.9", default-features = false }
 qp-plonky2 = { version = "1.5.5", default-features = false, features = ["rand", "std"] }
 qp-wormhole-circuit = { version = "4.4.0", default-features = false, features = ["std"] }
 qp-wormhole-prover = { version = "4.4.0", default-features = false, features = ["std"] }
