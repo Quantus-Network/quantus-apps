@@ -20,7 +20,9 @@ use qp_poseidon_core::{
 };
 use qp_poseidon_core_v09 as v09;
 use qp_rusty_crystals_dilithium::ml_dsa_87;
-use qp_rusty_crystals_hdwallet::{derive_wormhole_from_mnemonic, QUANTUS_WORMHOLE_CHAIN_ID};
+use qp_rusty_crystals_hdwallet::{
+    generate_wormhole_from_seed, mnemonic_to_seed, SensitiveBytes64, QUANTUS_WORMHOLE_CHAIN_ID,
+};
 use std::collections::HashMap;
 
 const RATE_4: usize = 4;
@@ -28,6 +30,10 @@ const WORMHOLE_SALT: &[u8] = b"wormhole";
 /// Only proofs for the current wormhole scheme are accepted by the claim server.
 const CLAIMABLE_WORMHOLE_SCHEME: &str = "wormhole-rate8-compact";
 const HD_SCAN_INDEXES: u32 = 17;
+/// Middle HD path component. The app uses 0 (external) and 1 (dedicated
+/// change branch since July 2026); the CLI's wormhole multiround flow uses it
+/// as a round counter (default 2 rounds), so scan several rounds beyond that.
+const HD_SCAN_BRANCHES: u32 = 9;
 /// FIPS 204 context for airdrop claim signatures; must match the claim server.
 const CLAIM_CONTEXT: &[u8] = b"qp-airdrop-claim-v1";
 /// Claim expiry horizon. The server rejects expiries more than 15 min out.
@@ -282,9 +288,10 @@ pub struct AirdropMatch {
 /// `snapshot_addresses` are the SS58 addresses from `GET /snapshot` (or the
 /// miner-rewards CSV). Dilithium matches are checked against
 /// `dilithium_public_key` under every historical hash. Wormhole matches are
-/// checked for HD-derived secrets (`m/44'/189189189'/0'/{0,1}'/{0..=16}'`)
-/// when `mnemonic` is given, plus any `extra_wormhole_secrets` (32 bytes
-/// each).
+/// checked for HD-derived secrets (`m/44'/189189189'/0'/{0..=8}'/{0..=16}'`,
+/// covering the app's external/change branches and the CLI's multiround
+/// rounds) when `mnemonic` is given, plus any `extra_wormhole_secrets`
+/// (32 bytes each).
 pub fn find_airdrop_matches(
     snapshot_addresses: Vec<String>,
     dilithium_public_key: Option<Vec<u8>>,
@@ -321,13 +328,18 @@ pub fn find_airdrop_matches(
 
     let mut secrets: Vec<([u8; 32], String)> = Vec::new();
     if let Some(mnemonic) = mnemonic {
-        for change in 0..=1u32 {
+        // Stretch the BIP39 seed once, then walk the HD tree per path.
+        // `mnemonic_to_seed` consumes and zeroizes the mnemonic string.
+        let mut seed = SensitiveBytes64::zeroed();
+        mnemonic_to_seed(mnemonic, None, &mut seed)
+            .map_err(|e| format!("invalid mnemonic: {e:?}"))?;
+        for branch in 0..HD_SCAN_BRANCHES {
             for index in 0..HD_SCAN_INDEXES {
                 let path = format!(
                     "m/44'/{}/0'/{}'/{}'",
-                    QUANTUS_WORMHOLE_CHAIN_ID, change, index
+                    QUANTUS_WORMHOLE_CHAIN_ID, branch, index
                 );
-                let pair = derive_wormhole_from_mnemonic(&mnemonic, None, &path)
+                let pair = generate_wormhole_from_seed(&seed, &path)
                     .map_err(|e| format!("HD derivation failed at {path}: {e:?}"))?;
                 secrets.push((*pair.secret().as_bytes(), path));
             }
@@ -726,19 +738,32 @@ mod tests {
     #[test]
     fn hd_scan_finds_wallet_wormhole_address() {
         let mnemonic = "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about";
-        let path = format!("m/44'/{}/0'/0'/3'", QUANTUS_WORMHOLE_CHAIN_ID);
-        let pair = derive_wormhole_from_mnemonic(mnemonic, None, &path).unwrap();
-        let current = WORMHOLE_SCHEMES
+        // App external branch, plus a CLI multiround round-2 address: the
+        // middle component is a round counter there, not a change branch.
+        let paths = [
+            format!("m/44'/{}/0'/0'/3'", QUANTUS_WORMHOLE_CHAIN_ID),
+            format!("m/44'/{}/0'/2'/1'", QUANTUS_WORMHOLE_CHAIN_ID),
+        ];
+        let scheme = WORMHOLE_SCHEMES
             .iter()
             .find(|s| s.id == CLAIMABLE_WORMHOLE_SCHEME)
-            .unwrap()
-            .derive(pair.secret().as_bytes());
-        let snapshot = vec![to_ss58(&current)];
+            .unwrap();
+        let snapshot: Vec<String> = paths
+            .iter()
+            .map(|path| {
+                let pair =
+                    qp_rusty_crystals_hdwallet::derive_wormhole_from_mnemonic(mnemonic, None, path)
+                        .unwrap();
+                to_ss58(&scheme.derive(pair.secret().as_bytes()))
+            })
+            .collect();
 
         let matches =
             find_airdrop_matches(snapshot.clone(), None, Some(mnemonic.into()), vec![]).unwrap();
-        assert_eq!(matches.len(), 1);
-        assert_eq!(matches[0].source, path);
-        assert!(matches[0].claimable);
+        assert_eq!(matches.len(), 2);
+        let sources: Vec<_> = matches.iter().map(|m| m.source.as_str()).collect();
+        assert!(sources.contains(&paths[0].as_str()));
+        assert!(sources.contains(&paths[1].as_str()));
+        assert!(matches.iter().all(|m| m.claimable));
     }
 }

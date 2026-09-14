@@ -7,7 +7,7 @@ import '../frb_generated.dart';
 import 'crypto.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-// These functions are ignored because they are not marked as `pub`: `compact8_decode`, `decode_account`, `derive_dilithium`, `derive`, `hash_felts_rate4_pad10`, `hash_felts`, `hash_no_pad_v09`, `hash_padded_v09`, `hash_padded_v10`, `injective4`, `now_unix`, `rehash`
+// These functions are ignored because they are not marked as `pub`: `compact8_decode`, `decode_account`, `derive_dilithium`, `derive`, `hash_felts_rate4_pad10`, `hash_felts`, `hash_padded_legacy`, `hash_padded_v10`, `injective4`, `now_unix`, `rehash`
 // These types are ignored because they are neither used by any `pub` functions nor (for structs and enums) marked `#[frb(unignore)]`: `SecretEncoding`, `Sponge`, `WormholeSchemeDef`
 // These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `assert_receiver_is_total_eq`, `clone`, `clone`, `eq`, `fmt`, `fmt`
 
@@ -16,9 +16,10 @@ import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 /// `snapshot_addresses` are the SS58 addresses from `GET /snapshot` (or the
 /// miner-rewards CSV). Dilithium matches are checked against
 /// `dilithium_public_key` under every historical hash. Wormhole matches are
-/// checked for HD-derived secrets (`m/44'/189189189'/0'/{0,1}'/{0..=16}'`)
-/// when `mnemonic` is given, plus any `extra_wormhole_secrets` (32 bytes
-/// each).
+/// checked for HD-derived secrets (`m/44'/189189189'/0'/{0..=8}'/{0..=16}'`,
+/// covering the app's external/change branches and the CLI's multiround
+/// rounds) when `mnemonic` is given, plus any `extra_wormhole_secrets`
+/// (32 bytes each).
 Future<List<AirdropMatch>> findAirdropMatches({
   required List<String> snapshotAddresses,
   Uint8List? dilithiumPublicKey,
