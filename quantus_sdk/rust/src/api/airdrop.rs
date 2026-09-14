@@ -4,7 +4,11 @@
 //! server; secrets never leave the process.
 //!
 //! Testnet address history:
-//! - Resonance / early Schrödinger (qp-poseidon 0.9.x): different permutation
+//! - early Resonance (poseidon-resonance 0.8.0): legacy plonky2 Poseidon,
+//!   8-byte limbs zero-padded to 73 felts
+//! - mid Resonance (qp-poseidon 0.9.1): legacy plonky2 Poseidon, 4-byte limbs
+//!   zero-padded to 188 felts
+//! - Resonance / early Schrödinger (qp-poseidon 0.9.5): different permutation
 //!   constants (ChaCha8, seed 0x189189189189189) AND a different sponge
 //!   (rate 4, pad10 + domain block). Handled by the real 0.9.5 crate.
 //! - late Schrödinger / Dirac (1.0.x–1.1.x): current permutation, rate 4, pad10
@@ -127,6 +131,32 @@ fn hash_felts_rate4_pad10(x: &[Goldilocks]) -> [u8; 32] {
     digest_to_bytes(&digest)
 }
 
+/// Pre-0.9.5 Resonance AccountId hash: legacy plonky2 Poseidon (unchanged in
+/// today's qp-plonky2) over little-endian limbs, zero-padded to a fixed
+/// preimage length. poseidon-resonance 0.8.0 used 8-byte limbs and 73 felts;
+/// qp-poseidon 0.9.1 used 4-byte limbs and 188 felts.
+fn hash_padded_legacy(bytes: &[u8], bytes_per_felt: usize, pad_to: usize) -> [u8; 32] {
+    use plonky2::field::goldilocks_field::GoldilocksField;
+    use plonky2::field::types::Field;
+    use plonky2::plonk::config::{GenericHashOut, Hasher};
+
+    let mut felts: Vec<GoldilocksField> = bytes
+        .chunks(bytes_per_felt)
+        .map(|chunk| {
+            let mut word = [0u8; 8];
+            word[..chunk.len()].copy_from_slice(chunk);
+            GoldilocksField::from_noncanonical_u64(u64::from_le_bytes(word))
+        })
+        .collect();
+    if felts.len() < pad_to {
+        felts.resize(pad_to, GoldilocksField::ZERO);
+    }
+    plonky2::hash::poseidon::PoseidonHash::hash_no_pad(&felts)
+        .to_bytes()
+        .try_into()
+        .expect("poseidon output is 32 bytes")
+}
+
 /// qp-poseidon 1.0.x Dilithium AccountId: injective bytes, zero-pad to 189, rate-4 pad10.
 fn hash_padded_v10(bytes: &[u8]) -> [u8; 32] {
     const PAD: usize = 189;
@@ -206,6 +236,8 @@ impl WormholeSchemeDef {
 }
 
 const DILITHIUM_SCHEMES: &[&str] = &[
+    "dilithium-v08-padded",
+    "dilithium-v091-padded",
     "dilithium-v09-padded",
     "dilithium-v10-padded",
     "dilithium-rate8-hash-bytes",
@@ -213,6 +245,8 @@ const DILITHIUM_SCHEMES: &[&str] = &[
 
 fn derive_dilithium(scheme: &str, public_key: &[u8]) -> [u8; 32] {
     match scheme {
+        "dilithium-v08-padded" => hash_padded_legacy(public_key, 8, 73),
+        "dilithium-v091-padded" => hash_padded_legacy(public_key, 4, 188),
         "dilithium-v09-padded" => v09::Poseidon2Core::new().hash_padded(public_key),
         "dilithium-v10-padded" => hash_padded_v10(public_key),
         "dilithium-rate8-hash-bytes" => qp_poseidon_core::hash_bytes(public_key),
@@ -459,6 +493,96 @@ mod tests {
             scheme.derive(&secret),
             hex32("6a2f0d3abe4390e0b05f6dea4ba10670676cda7c00d49526ddde59f16c85269f")
         );
+    }
+
+    /// Vectors computed with the exact crates the shipped Resonance chains
+    /// pinned: poseidon-resonance 0.8.0 (rev fcb49a7, plonky2 fork rev
+    /// 80a1000, per chain tag v0.0.12-resonance-alpha) and crates.io
+    /// qp-poseidon 0.9.1 (per chain rev e9fc9b9). The 2592-byte inputs are
+    /// ML-DSA-87 public key sized.
+    #[test]
+    fn pre_v095_dilithium_matches_original_crate_vectors() {
+        let square_pattern: Vec<u8> = (0..2592u32).map(|i| (i * i % 251) as u8).collect();
+        let vectors: &[(&str, &[u8], &str)] = &[
+            (
+                "dilithium-v08-padded",
+                &[0u8],
+                "fdf0715f178bfb2381d3804961bda8c679990d6318ff53f7a6475e1bef1982ca",
+            ),
+            (
+                "dilithium-v08-padded",
+                &[42u8; 32],
+                "832c0ecb43187d773d7e54865c5148be7a2f9c9b86d8ad630196b0ff9a8037b5",
+            ),
+            (
+                "dilithium-v08-padded",
+                &[5u8; 2592],
+                "9c69917b10f0228a0beed1d78ce34026b4778dc04a49a401dd5e692a51f44207",
+            ),
+            (
+                "dilithium-v08-padded",
+                &square_pattern,
+                "3222344f6b35748d59d5983410b1baaba0bb680af7fecfdd7cd54de1a848977e",
+            ),
+            (
+                "dilithium-v091-padded",
+                &[0u8],
+                "c4f1020767625056e669e3653f190b7763c6c398a45f1dc20db0d7ed32b14ff7",
+            ),
+            (
+                "dilithium-v091-padded",
+                &[42u8; 32],
+                "19be0e79d925f42481cb5b30fb703903c866395373671728bb1594b01d850f6e",
+            ),
+            (
+                "dilithium-v091-padded",
+                &[5u8; 2592],
+                "8ba4f919664c796aa811f552eaff5975570d56ed6812728944f60fe7d28d3c74",
+            ),
+            (
+                "dilithium-v091-padded",
+                &square_pattern,
+                "61d1490430a295ad2d33ed55948ece058cce09b43994f35c7528f164a482a5e5",
+            ),
+        ];
+        for (scheme, input, expected) in vectors {
+            assert_eq!(
+                derive_dilithium(scheme, input),
+                hex32(expected),
+                "{scheme} input len {}",
+                input.len()
+            );
+        }
+    }
+
+    #[test]
+    fn all_dilithium_schemes_disagree_on_same_public_key() {
+        let pk = [5u8; 2592];
+        let addrs: Vec<_> = DILITHIUM_SCHEMES
+            .iter()
+            .map(|s| derive_dilithium(s, &pk))
+            .collect();
+        for i in 0..addrs.len() {
+            for j in (i + 1)..addrs.len() {
+                assert_ne!(
+                    addrs[i], addrs[j],
+                    "{} and {} collide",
+                    DILITHIUM_SCHEMES[i], DILITHIUM_SCHEMES[j]
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn matches_v08_dilithium_address_against_snapshot() {
+        let pk = vec![5u8; 2592];
+        let resonance_era = derive_dilithium("dilithium-v08-padded", &pk);
+        let snapshot = vec![to_ss58(&resonance_era)];
+
+        let matches = find_airdrop_matches(snapshot.clone(), Some(pk), None, vec![]).unwrap();
+        assert_eq!(matches.len(), 1);
+        assert_eq!(matches[0].scheme, "dilithium-v08-padded");
+        assert!(matches[0].claimable);
     }
 
     /// Vectors computed with qp-poseidon-core 0.9.5 (git tag v0.9.5); the
