@@ -259,11 +259,12 @@ query ExecutedReversibleTransferByTxId($txId: String!) {
   // `extrinsic_isNull: false` excludes mining/wormhole transfers which share the
   // transfer entity but have no extrinsic. Limit is 1 because we only ever use
   // the first match.
-  final String _searchPendingTransferQuery = r'''
+  @visibleForTesting
+  static const String searchPendingTransferQuery = r'''
 query SearchPendingTransaction(
   $from: String!,
   $to: String!,
-  $amount: BigInt!,
+  $amount: numeric!,
   $blockHeightAfter: Int!,
 ) {
   events: event(
@@ -303,11 +304,12 @@ query SearchPendingTransaction(
 }
 ''';
 
-  final String _searchPendingReversibleQuery = r'''
+  @visibleForTesting
+  static const String searchPendingReversibleQuery = r'''
 query SearchPendingTransaction(
   $from: String!,
   $to: String!,
-  $amount: BigInt!,
+  $amount: numeric!,
   $blockHeightAfter: Int!,
 ) {
   events: event(
@@ -745,7 +747,7 @@ ${MultisigGraphql.cancelledMultisigProposalAccountEventSelection}
       'reversible: $isReversible, after block: $blockHeightAfter',
     );
     return _searchEvent(
-      query: isReversible ? _searchPendingReversibleQuery : _searchPendingTransferQuery,
+      query: isReversible ? searchPendingReversibleQuery : searchPendingTransferQuery,
       variables: {'from': from, 'to': to, 'amount': amount.toString(), 'blockHeightAfter': blockHeightAfter},
       isReversible: isReversible,
     );

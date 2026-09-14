@@ -56,6 +56,16 @@ void main() {
       expect(_whereClause(afterCursor), contains(r'_not: {timestamp: {_eq: $cursorTimestamp}, id: {_gte: $cursorId}}'));
     });
 
+    test('pending search declares amount as Hasura numeric, not BigInt', () {
+      for (final query in [
+        ChainHistoryService.searchPendingTransferQuery,
+        ChainHistoryService.searchPendingReversibleQuery,
+      ]) {
+        expect(query, contains(r'$amount: numeric!'));
+        expect(query, isNot(contains('BigInt')));
+      }
+    });
+
     test('scheduled reversible query uses the same direction columns and keyset', () {
       final scheduledSend = ChainHistoryService.buildScheduledReversibleTransfersQuery(
         TransactionFilter.send,
