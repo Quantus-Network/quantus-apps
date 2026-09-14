@@ -48,13 +48,11 @@ Future<DilithiumClaimBody> buildAirdropDilithiumClaim({
 /// (current rate-8 scheme), binding the payout to `claim_account`. Builds the
 /// circuit in-process: expect tens of seconds of CPU on first call. Submit as
 /// `{"kind": "wormhole", ...fields}`.
-Future<WormholeClaimBody> proveAirdropWormhole({
-  required List<int> wormholeSecret,
-  required String claimAccount,
-}) => RustLib.instance.api.crateApiAirdropProveAirdropWormhole(
-  wormholeSecret: wormholeSecret,
-  claimAccount: claimAccount,
-);
+Future<WormholeClaimBody> proveAirdropWormhole({required List<int> wormholeSecret, required String claimAccount}) =>
+    RustLib.instance.api.crateApiAirdropProveAirdropWormhole(
+      wormholeSecret: wormholeSecret,
+      claimAccount: claimAccount,
+    );
 
 /// A snapshot address this wallet can prove ownership of.
 class AirdropMatch {
