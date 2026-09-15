@@ -1946,6 +1946,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get miningRewardsNone => 'No testnet mining rewards were found for this wallet.';
 
   @override
+  String get miningRewardsNotClaimable => 'Claim not available yet';
+
+  @override
   String get miningRewardsCheckFailed => 'Check failed, tap to retry';
 
   @override

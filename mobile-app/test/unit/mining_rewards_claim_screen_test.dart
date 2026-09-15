@@ -10,6 +10,7 @@ import 'package:resonance_network_wallet/providers/mining_rewards_provider.dart'
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/services/mining_rewards_service.dart';
 import 'package:resonance_network_wallet/shared/constants/e2e_keys.dart';
+import 'package:resonance_network_wallet/shared/utils/miner_stats_csv.dart';
 import 'package:resonance_network_wallet/v2/screens/mining_rewards/mining_rewards_claim_screen.dart';
 
 import '../extensions.dart';
@@ -53,11 +54,9 @@ void main() {
   final accounts = [makeAccount(0), makeAccount(1), encrypted];
   final eligible = ChainRewards(
     chain: TestnetChain.dirac,
-    blocksMined: 300,
-    rewardHundredths: 6539,
-    matches: [_match('qzdirac')],
+    rows: [AddressReward(match: _match('qzdirac'), reward: const MinerReward(blocks: 300, rewardHundredths: 6539))],
   );
-  const ineligible = ChainRewards(chain: TestnetChain.planck, blocksMined: 0, rewardHundredths: 0, matches: []);
+  const ineligible = ChainRewards(chain: TestnetChain.planck, rows: []);
 
   late _Service service;
 

@@ -2827,6 +2827,10 @@
     "@miningRewardsNone": {
       "description": "Shown when every chain answered and none of them pays this wallet"
     },
+    "miningRewardsNotClaimable": "Claim not available yet",
+    "@miningRewardsNotClaimable": {
+      "description": "Shown next to a matched address whose key era the claim server does not accept yet"
+    },
     "miningRewardsCheckFailed": "Check failed, tap to retry",
     "@miningRewardsCheckFailed": {
       "description": "Shown in a chain row when its eligibility check threw"

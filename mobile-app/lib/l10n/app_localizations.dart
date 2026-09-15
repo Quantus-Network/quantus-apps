@@ -3602,6 +3602,12 @@ abstract class AppLocalizations {
   /// **'No testnet mining rewards were found for this wallet.'**
   String get miningRewardsNone;
 
+  /// Shown next to a matched address whose key era the claim server does not accept yet
+  ///
+  /// In en, this message translates to:
+  /// **'Claim not available yet'**
+  String get miningRewardsNotClaimable;
+
   /// Shown in a chain row when its eligibility check threw
   ///
   /// In en, this message translates to:

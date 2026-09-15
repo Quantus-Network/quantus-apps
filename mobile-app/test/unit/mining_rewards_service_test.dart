@@ -107,14 +107,30 @@ void main() {
 
     expect(bundle.loaded, [TestnetChain.dirac.rewardsAsset]);
     expect(seen, ['qza', 'qzb', 'qzc']);
+    expect(rewards.rows.map((r) => r.address), ['qza', 'qzc']);
+    expect(rewards.rows.map((r) => r.reward.rewardHundredths), [6539, 10]);
     expect(rewards.blocksMined, 89779);
     expect(rewards.rewardHundredths, 6549);
     expect(rewards.rewardTokens, BigInt.from(6549) * BigInt.from(10).pow(AppConstants.decimals - 2));
     expect(rewards.isEligible, isTrue);
   });
 
+  test('a row from a key era the server rejects counts its blocks but not its payout', () async {
+    final rewards = await _service(
+      matches: [_dilithium('qza'), _dilithium('qzb', claimable: false)],
+    ).checkChain(0, TestnetChain.dirac);
+    expect(rewards.blocksMined, 89828);
+    expect(rewards.rewardHundredths, 6539);
+    expect(rewards.isEligible, isTrue);
+
+    final onlyOld = await _service(matches: [_dilithium('qzb', claimable: false)]).checkChain(0, TestnetChain.dirac);
+    expect(onlyOld.rewardHundredths, 0);
+    expect(onlyOld.isEligible, isFalse);
+  });
+
   test('a wallet with no row in the table is not eligible', () async {
     final rewards = await _service().checkChain(0, TestnetChain.planck);
+    expect(rewards.rows, isEmpty);
     expect(rewards.blocksMined, 0);
     expect(rewards.rewardHundredths, 0);
     expect(rewards.isEligible, isFalse);

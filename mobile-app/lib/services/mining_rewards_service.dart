@@ -53,12 +53,9 @@ class MiningRewardsService {
     final mnemonic = await _mnemonic(walletIndex);
     final table = parseMinerStatsCsv(await _bundle.loadString(chain.rewardsAsset));
     final matches = await _findMatches(snapshotAddresses: table.keys.toList(), mnemonic: mnemonic);
-    final rows = [for (final m in matches) table[m.address]!];
     return ChainRewards(
       chain: chain,
-      blocksMined: rows.fold(0, (sum, r) => sum + r.blocks),
-      rewardHundredths: rows.fold(0, (sum, r) => sum + r.rewardHundredths),
-      matches: matches,
+      rows: [for (final m in matches) AddressReward(match: m, reward: table[m.address]!)],
     );
   }
 

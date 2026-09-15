@@ -99,38 +99,64 @@ class _ChainRow extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = context.colorsV3;
     final text = context.themeTextV3;
+    final rows = result.value?.rows ?? const <AddressReward>[];
 
-    return Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Expanded(
-          child: Text(check.chain.displayName, style: text.body.copyWith(color: colors.textContent)),
-        ),
-        result.when(
-          skipLoadingOnRefresh: false,
-          loading: () => const Loader(),
-          error: (_, _) => GestureDetector(
-            onTap: () => ref.invalidate(chainEligibilityProvider(check)),
-            child: Text(l10n.miningRewardsCheckFailed, style: text.caption.copyWith(color: colors.semanticEmber)),
-          ),
-          data: (rewards) => Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                l10n.miningRewardsBlocksMined(rewards.blocksMined),
-                style: rewards.isEligible
-                    ? text.bodyEmphasis.copyWith(color: colors.textContent)
-                    : text.body.copyWith(color: colors.textMuted),
+        Row(
+          children: [
+            Expanded(
+              child: Text(check.chain.displayName, style: text.body.copyWith(color: colors.textContent)),
+            ),
+            result.when(
+              skipLoadingOnRefresh: false,
+              loading: () => const Loader(),
+              error: (_, _) => GestureDetector(
+                onTap: () => ref.invalidate(chainEligibilityProvider(check)),
+                child: Text(l10n.miningRewardsCheckFailed, style: text.caption.copyWith(color: colors.semanticEmber)),
               ),
-              if (rewards.isEligible) ...[
-                const SizedBox(height: 4),
-                _RewardText(
-                  hundredths: rewards.rewardHundredths,
-                  style: text.caption.copyWith(color: colors.semanticSage),
+              data: (rewards) => Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    l10n.miningRewardsBlocksMined(rewards.blocksMined),
+                    style: rewards.isEligible
+                        ? text.bodyEmphasis.copyWith(color: colors.textContent)
+                        : text.body.copyWith(color: colors.textMuted),
+                  ),
+                  if (rewards.isEligible) ...[
+                    const SizedBox(height: 4),
+                    _RewardText(
+                      hundredths: rewards.rewardHundredths,
+                      style: text.caption.copyWith(color: colors.semanticSage),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        ),
+        for (final row in rows) ...[
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  AddressFormattingService.formatAddress(row.address),
+                  style: text.dataAddress.copyWith(color: colors.textMuted),
                 ),
-              ],
+              ),
+              if (row.claimable)
+                _RewardText(
+                  hundredths: row.reward.rewardHundredths,
+                  style: text.caption.copyWith(color: colors.textMuted),
+                )
+              else
+                Text(l10n.miningRewardsNotClaimable, style: text.caption.copyWith(color: colors.textMuted)),
             ],
           ),
-        ),
+        ],
       ],
     );
   }
