@@ -1,10 +1,10 @@
 import 'dart:convert';
-import 'dart:math';
 
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/models/mining_rewards.dart';
+import 'package:resonance_network_wallet/shared/utils/miner_stats_csv.dart';
 
 typedef MatchFinder =
     Future<List<AirdropMatch>> Function({required List<String> snapshotAddresses, required String mnemonic});
@@ -21,9 +21,6 @@ typedef WormholeClaimProver =
 /// Testnet mining rewards: which rows of the bundled per-chain rewards tables
 /// a wallet owns, and the ownership proofs the claim server pays out against.
 class MiningRewardsService {
-  /// Thank-you floor: a miner whose share rounds to nothing still gets 0.1.
-  static const int minimumRewardHundredths = 10;
-
   final SettingsService _settings;
   final AssetBundle _bundle;
   final http.Client _client;
@@ -52,61 +49,9 @@ class MiningRewardsService {
     required String mnemonic,
   }) => findAirdropMatches(snapshotAddresses: snapshotAddresses, mnemonic: mnemonic, extraWormholeSecrets: const []);
 
-  /// Address → blocks and mainnet reward from a "Miner Stats" export. The
-  /// exports name their columns differently, so each is found by keyword; the
-  /// trailing totals row has no address and is dropped.
-  static Map<String, MinerReward> parseRewardsTable(String csv) {
-    final lines = const LineSplitter().convert(csv).where((l) => l.trim().isNotEmpty).toList();
-    final header = _csvFields(lines.first).map((h) => h.toLowerCase()).toList();
-    int column(String what, bool Function(String) matches) {
-      final i = header.indexWhere(matches);
-      if (i == -1) throw FormatException('Rewards table has no $what column: $header');
-      return i;
-    }
-
-    final address = column('address', (h) => h == 'id' || h == 'address');
-    final blocks = column(
-      'blocks',
-      (h) => h.contains('mined') && h.contains('blocks') && !h.contains('sqrt') && !h.contains('cumulative'),
-    );
-    final reward = column('mainnet reward', (h) => h == 'total rewards on mainnet');
-
-    final table = <String, MinerReward>{};
-    for (final line in lines.skip(1)) {
-      final fields = _csvFields(line);
-      if (fields[address].isEmpty) continue;
-      table[fields[address]] = MinerReward(
-        blocks: _number(fields[blocks]).toInt(),
-        rewardHundredths: max(minimumRewardHundredths, (_number(fields[reward]) * 100).round()),
-      );
-    }
-    return table;
-  }
-
-  static double _number(String field) => field.isEmpty ? 0 : double.parse(field.replaceAll(',', ''));
-
-  /// Splits one CSV line, honouring double-quoted fields.
-  static List<String> _csvFields(String line) {
-    final fields = <String>[];
-    final field = StringBuffer();
-    var quoted = false;
-    for (final char in line.runes.map(String.fromCharCode)) {
-      if (char == '"') {
-        quoted = !quoted;
-      } else if (char == ',' && !quoted) {
-        fields.add(field.toString().trim());
-        field.clear();
-      } else {
-        field.write(char);
-      }
-    }
-    fields.add(field.toString().trim());
-    return fields;
-  }
-
   Future<ChainRewards> checkChain(int walletIndex, TestnetChain chain) async {
     final mnemonic = await _mnemonic(walletIndex);
-    final table = parseRewardsTable(await _bundle.loadString(chain.rewardsAsset));
+    final table = parseMinerStatsCsv(await _bundle.loadString(chain.rewardsAsset));
     final matches = await _findMatches(snapshotAddresses: table.keys.toList(), mnemonic: mnemonic);
     final rows = [for (final m in matches) table[m.address]!];
     return ChainRewards(

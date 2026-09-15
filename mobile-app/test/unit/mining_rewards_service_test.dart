@@ -13,22 +13,9 @@ import '../fakes.dart';
 const _mnemonic = 'testnet seed';
 const _beneficiary = 'qzbeneficiary';
 
-/// A Dirac-style export: quoted thousands, a "0.00" share, and a totals row.
-const _diracTable = '''
-ID,Total Rewards On Testnet,Total Mined Blocks,Sqrt Mined Blocks,Cumulative Mined,Cumulative Sqrt,% Reward Pool,Total Rewards On Mainnet,Total Reward Pool,Rewards Denominator
-qza,877676606141581253,"89,778",300,"89,778",299.63,2.62%,65.39,2500,"11,456.25"
-qzb,10000000000000,50,7,"89,828",306.63,0.06%,1.50,,
-qzc,10000000000000,1,1,"89,829",307.63,0.01%,0.00,,
-,,"89,829",,"179,658","12,721.96",,,,
-''';
-
-/// A Planck-style export: different address and blocks headers, an empty
-/// reward, and a decimal block count.
-const _planckTable = '''
-Address,Total Rewards,Blocks mined,Cumulative Mined,Sqrt Mined,Cumulative Sqrt,% Reward Pool,Total Rewards On Mainnet,Total Reward Pool,Rewards Denominator
-qzw,,"107,650.00","107,650",328.10,328.10,4.10%,102.53,2500,"8,000.13"
-qzx,,1,"107,651",1.00,329.10,0.01%,,,
-''';
+/// Trimmed tables as the tool leaves them in assets.
+const _diracTable = 'address,blocks,reward\nqza,89778,65.39\nqzb,50,1.50\nqzc,1,0.10\n';
+const _planckTable = 'address,blocks,reward\nqzw,107650,102.53\nqzx,1,0.10\n';
 
 class _Settings extends FakeSettingsService {
   final String? mnemonic;
@@ -109,33 +96,6 @@ MiningRewardsService _service({
 );
 
 void main() {
-  group('parseRewardsTable', () {
-    test('reads address, blocks and mainnet reward whatever the export calls them', () {
-      final dirac = MiningRewardsService.parseRewardsTable(_diracTable);
-      expect(dirac.keys, ['qza', 'qzb', 'qzc']);
-      expect(dirac['qza']!.blocks, 89778);
-      expect(dirac['qza']!.rewardHundredths, 6539);
-      expect(dirac['qzb']!.rewardHundredths, 150);
-
-      final planck = MiningRewardsService.parseRewardsTable(_planckTable);
-      expect(planck.keys, ['qzw', 'qzx']);
-      expect(planck['qzw']!.blocks, 107650);
-      expect(planck['qzw']!.rewardHundredths, 10253);
-    });
-
-    test('a zero or missing share becomes the 0.1 thank-you', () {
-      expect(MiningRewardsService.parseRewardsTable(_diracTable)['qzc']!.rewardHundredths, 10);
-      expect(MiningRewardsService.parseRewardsTable(_planckTable)['qzx']!.rewardHundredths, 10);
-    });
-
-    test('an export without a mainnet reward column is refused', () {
-      expect(
-        () => MiningRewardsService.parseRewardsTable('ID,Total Mined Blocks\nqza,5\n'),
-        throwsA(isA<FormatException>()),
-      );
-    });
-  });
-
   test('matches the chain table and sums blocks and rewards over every owned row', () async {
     final bundle = _Bundle({TestnetChain.dirac.rewardsAsset: _diracTable});
     final seen = <String>[];

@@ -16,14 +16,6 @@ enum TestnetChain {
   String get rewardsAsset => 'assets/testnet_data/Miner Stats - $_fileName Testnet.csv';
 }
 
-/// One miner's row in a chain's rewards table.
-class MinerReward {
-  final int blocks;
-  final int rewardHundredths;
-
-  const MinerReward({required this.blocks, required this.rewardHundredths});
-}
-
 /// What one wallet mined on one testnet and what that pays out, summed over
 /// every table row the wallet owns.
 class ChainRewards {
