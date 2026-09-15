@@ -39,12 +39,43 @@ class ChainHistoryService {
     developer.log(message, name: _logName, error: error, stackTrace: stackTrace);
   }
 
-  /// `account_event` rows are paged in this order; every keyset predicate and
-  /// cursor below assumes it.
-  static const String _accountEventOrder = 'order_by: [{timestamp: desc}, {id: desc}]';
+  /// `order_by` for one account's `account_event` selection.
+  ///
+  /// Rows are consumed in `(timestamp desc, id desc)` order; every keyset
+  /// predicate and cursor below assumes it. The leading `account_id` (and the
+  /// direction flag for send / receive) are constants under the `_eq` filters,
+  /// so they do not change the order — they are there so the ORDER BY matches
+  /// the `(account_id[, incoming|outgoing], timestamp, id)` index prefix.
+  /// Without them the planner walks the global `timestamp` index backwards
+  /// filtering row by row; on Planck that was 14s / 1.6M rows to find zero
+  /// incoming rows for a send-only account, versus 4ms on the composite.
+  static String _accountEventOrder(TransactionFilter filter) {
+    final direction = switch (filter) {
+      TransactionFilter.send => '{outgoing: desc}, ',
+      TransactionFilter.receive => '{incoming: desc}, ',
+      TransactionFilter.all => '',
+    };
+    return 'order_by: [{account_id: desc}, $direction{timestamp: desc}, {id: desc}]';
+  }
 
   /// Variables declared by the cursor variant of a query.
   static const String _cursorVariables = ', \$cursorTimestamp: timestamptz!, \$cursorId: String!';
+
+  /// Alias of the selection for the account at [index]; the response is
+  /// reassembled by [mergeAccountEventRows].
+  static String _accountAlias(int index) => 'events$index';
+
+  /// `$account0: String!, $account1: String!, ...` for [accountCount] accounts.
+  ///
+  /// Each account gets its own `_eq` selection instead of one `_in` list:
+  /// Hasura renders `_in` as `account_id = ANY(array)`, which Postgres will
+  /// not use as an ordered range scan on the composite index.
+  static String _accountVariables(int accountCount) {
+    if (accountCount < 1) {
+      throw ArgumentError.value(accountCount, 'accountCount', 'Must query at least one account');
+    }
+    return [for (var i = 0; i < accountCount; i++) '\$account$i: String!'].join(', ');
+  }
 
   /// Keyset predicate for rows strictly after the cursor in [_accountEventOrder].
   ///
@@ -69,25 +100,24 @@ class ChainHistoryService {
     }
   }
 
-  /// Builds the pending-scheduled-reversible-transfers query.
+  /// Builds the pending-scheduled-reversible-transfers query for
+  /// [accountCount] accounts, one aliased selection per account.
   ///
   /// With [withCursor], the query declares `$cursorTimestamp` / `$cursorId`
   /// and only returns rows strictly after that keyset.
   @visibleForTesting
-  static String buildScheduledReversibleTransfersQuery(TransactionFilter filter, {required bool withCursor}) {
-    final whereClause =
-        '{_and: [{account_id: {_in: \$accounts}}, {scheduled_reversible_transfer_id: {_is_null: false}}'
+  static String buildScheduledReversibleTransfersQuery(
+    TransactionFilter filter, {
+    required bool withCursor,
+    required int accountCount,
+  }) {
+    String whereClause(int index) =>
+        '{_and: [{account_id: {_eq: \$account$index}}, {scheduled_reversible_transfer_id: {_is_null: false}}'
         '${_directionPredicate(filter)}'
         ', {scheduledReversibleTransfer: {scheduled_at: {_gt: \$after}}}'
         '${withCursor ? ', $_cursorPredicate' : ''}]}';
 
-    return '''
-query ScheduledReversibleTransfersByAccounts(\$accounts: [String!]!, \$limit: Int!, \$after: timestamptz!${withCursor ? _cursorVariables : ''}) {
-  accountEvents: account_event(
-    limit: \$limit, 
-    where: $whereClause, 
-    $_accountEventOrder
-  ) {
+    const selection = '''
     id
     timestamp
     scheduledReversibleTransfer {
@@ -109,13 +139,49 @@ query ScheduledReversibleTransfersByAccounts(\$accounts: [String!]!, \$limit: In
       extrinsic {
         id
       }
-    }
+    }''';
+
+    return _accountEventDocument(
+      operationName: 'ScheduledReversibleTransfersByAccounts',
+      extraVariables: ', \$after: timestamptz!',
+      filter: filter,
+      withCursor: withCursor,
+      accountCount: accountCount,
+      whereClause: whereClause,
+      selection: selection,
+    );
   }
+
+  /// One `account_event` selection per account, aliased `events0..N-1`, all
+  /// sharing `$limit` and the optional cursor.
+  static String _accountEventDocument({
+    required String operationName,
+    required String extraVariables,
+    required TransactionFilter filter,
+    required bool withCursor,
+    required int accountCount,
+    required String Function(int index) whereClause,
+    required String selection,
+  }) {
+    final variables =
+        '${_accountVariables(accountCount)}, \$limit: Int!$extraVariables${withCursor ? _cursorVariables : ''}';
+    final selections = [
+      for (var i = 0; i < accountCount; i++)
+        '''
+  ${_accountAlias(i)}: account_event(limit: \$limit, where: ${whereClause(i)}, ${_accountEventOrder(filter)}) {
+$selection
+  }''',
+    ].join('\n');
+
+    return '''
+query $operationName($variables) {
+$selections
 }
 ''';
   }
 
-  /// Builds the account-events (other transfers) query.
+  /// Builds the account-events (other transfers) query for [accountCount]
+  /// accounts, one aliased selection per account.
   ///
   /// Every predicate is a plain column on `account_event` so Postgres serves
   /// the page straight from the `(account_id[, outgoing|incoming], timestamp,
@@ -126,7 +192,11 @@ query ScheduledReversibleTransfersByAccounts(\$accounts: [String!]!, \$limit: In
   /// With [withCursor], the query declares `$cursorTimestamp` / `$cursorId`
   /// and only returns rows strictly after that keyset.
   @visibleForTesting
-  static String buildAccountEventsQuery(TransactionFilter filter, {required bool withCursor}) {
+  static String buildAccountEventsQuery(
+    TransactionFilter filter, {
+    required bool withCursor,
+    required int accountCount,
+  }) {
     // Whether to include the minerReward field in the response
     final bool includeMinerReward = filter != TransactionFilter.send;
 
@@ -152,14 +222,12 @@ query ScheduledReversibleTransfersByAccounts(\$accounts: [String!]!, \$limit: In
     final String executedProposalField = MultisigGraphql.executedMultisigProposalAccountEventSelection;
     final String cancelledProposalField = MultisigGraphql.cancelledMultisigProposalAccountEventSelection;
 
-    final whereClause =
-        '{_and: [{account_id: {_in: \$accounts}}, {scheduled_reversible_transfer_id: {_is_null: true}}'
+    String whereClause(int index) =>
+        '{_and: [{account_id: {_eq: \$account$index}}, {scheduled_reversible_transfer_id: {_is_null: true}}'
         '${_directionPredicate(filter)}'
         '${withCursor ? ', $_cursorPredicate' : ''}]}';
 
-    return '''
-query AccountEvents(\$accounts: [String!]!, \$limit: Int!${withCursor ? _cursorVariables : ''}) {
-  accountEvents: account_event(limit: \$limit, where: $whereClause, $_accountEventOrder) {
+    final selection = '''
     id
     timestamp
     transfer {
@@ -224,10 +292,17 @@ query AccountEvents(\$accounts: [String!]!, \$limit: Int!${withCursor ? _cursorV
         }
         scheduledAt: scheduled_at
       }
-    }$minerRewardField$multisigField$proposalCreatedField$signerApprovedField$executedProposalField$cancelledProposalField
-  }
-}
-''';
+    }$minerRewardField$multisigField$proposalCreatedField$signerApprovedField$executedProposalField$cancelledProposalField''';
+
+    return _accountEventDocument(
+      operationName: 'AccountEvents',
+      extraVariables: '',
+      filter: filter,
+      withCursor: withCursor,
+      accountCount: accountCount,
+      whereClause: whereClause,
+      selection: selection,
+    );
   }
 
   // GraphQL query to fetch transactions by their hash
@@ -464,13 +539,17 @@ ${MultisigGraphql.cancelledMultisigProposalAccountEventSelection}
   int _lookaheadLimit(int limit) => limit + 1;
 
   /// Variables for [buildAccountEventsQuery] / [buildScheduledReversibleTransfersQuery].
-  static Map<String, dynamic> _pageVariables({
+  @visibleForTesting
+  static Map<String, dynamic> pageVariables({
     required List<String> accountIds,
     required int lookaheadLimit,
     required AccountEventCursor? after,
   }) {
+    if (accountIds.isEmpty) {
+      throw ArgumentError.value(accountIds, 'accountIds', 'Must not be empty');
+    }
     return {
-      'accounts': accountIds,
+      for (var i = 0; i < accountIds.length; i++) 'account$i': accountIds[i],
       'limit': lookaheadLimit,
       if (after != null) 'cursorTimestamp': after.timestamp,
       if (after != null) 'cursorId': after.id,
@@ -485,6 +564,35 @@ ${MultisigGraphql.cancelledMultisigProposalAccountEventSelection}
       throw StateError('account_event row is missing timestamp/id needed for the keyset cursor: $map');
     }
     return AccountEventCursor(timestamp: timestamp, id: id);
+  }
+
+  /// Reassembles the per-account aliases of one response into a single list
+  /// in `(timestamp desc, id desc)` order.
+  ///
+  /// Each alias holds that account's first `limit + 1` rows after the shared
+  /// cursor, so the merged head is exactly what one query over all accounts
+  /// would have returned; [pageFromRows] then trims it to the page.
+  @visibleForTesting
+  static List<dynamic> mergeAccountEventRows(Map<String, dynamic> data, {required int accountCount}) {
+    final merged = <dynamic>[];
+    for (var i = 0; i < accountCount; i++) {
+      final rows = data[_accountAlias(i)];
+      if (rows is! List) {
+        throw StateError('account_event response is missing alias ${_accountAlias(i)}: ${data.keys}');
+      }
+      merged.addAll(rows);
+    }
+    if (accountCount == 1) return merged;
+
+    int compare(dynamic a, dynamic b) {
+      final cursorA = _cursorOf(a);
+      final cursorB = _cursorOf(b);
+      final byTime = DateTime.parse(cursorB.timestamp).compareTo(DateTime.parse(cursorA.timestamp));
+      return byTime != 0 ? byTime : cursorB.id.compareTo(cursorA.id);
+    }
+
+    merged.sort(compare);
+    return merged;
   }
 
   /// Turns the raw `account_event` rows of one lookahead query into a page.
@@ -647,16 +755,20 @@ ${MultisigGraphql.cancelledMultisigProposalAccountEventSelection}
     final sw = Stopwatch()..start();
     try {
       final Map<String, dynamic> data = await _graphQlEndpointService.query(
-        document: buildScheduledReversibleTransfersQuery(filter, withCursor: after != null),
+        document: buildScheduledReversibleTransfersQuery(
+          filter,
+          withCursor: after != null,
+          accountCount: accountIds.length,
+        ),
         variables: {
-          ..._pageVariables(accountIds: accountIds, lookaheadLimit: _lookaheadLimit(limit), after: after),
+          ...pageVariables(accountIds: accountIds, lookaheadLimit: _lookaheadLimit(limit), after: after),
           'after': pendingSince,
         },
       );
       sw.stop();
       printTiming('fetchScheduledTransfers HTTP', sw.elapsedMilliseconds);
 
-      final List<dynamic>? events = data['accountEvents'];
+      final events = mergeAccountEventRows(data, accountCount: accountIds.length);
       return pageFromRows(events, limit, _parseScheduledTransferEvent, previousCursor: after);
     } catch (e, stackTrace) {
       sw.stop();
@@ -677,13 +789,13 @@ ${MultisigGraphql.cancelledMultisigProposalAccountEventSelection}
     final sw = Stopwatch()..start();
     try {
       final Map<String, dynamic> data = await _graphQlEndpointService.query(
-        document: buildAccountEventsQuery(filter, withCursor: after != null),
-        variables: _pageVariables(accountIds: accountIds, lookaheadLimit: _lookaheadLimit(limit), after: after),
+        document: buildAccountEventsQuery(filter, withCursor: after != null, accountCount: accountIds.length),
+        variables: pageVariables(accountIds: accountIds, lookaheadLimit: _lookaheadLimit(limit), after: after),
       );
       sw.stop();
       printTiming('fetchAccountEvents HTTP', sw.elapsedMilliseconds);
 
-      final List<dynamic>? events = data['accountEvents'];
+      final events = mergeAccountEventRows(data, accountCount: accountIds.length);
       final page = pageFromRows(events, limit, tryParseOtherTransferEvent, previousCursor: after);
       return OtherTransfersResult(transfers: page.items, hasMore: page.hasMore, nextCursor: page.nextCursor);
     } catch (e, stackTrace) {

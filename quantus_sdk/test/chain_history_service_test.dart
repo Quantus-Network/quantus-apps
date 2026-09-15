@@ -16,9 +16,21 @@ void main() {
 
   group('account_event queries', () {
     const withoutCursor = false;
-    final all = ChainHistoryService.buildAccountEventsQuery(TransactionFilter.all, withCursor: withoutCursor);
-    final send = ChainHistoryService.buildAccountEventsQuery(TransactionFilter.send, withCursor: withoutCursor);
-    final receive = ChainHistoryService.buildAccountEventsQuery(TransactionFilter.receive, withCursor: withoutCursor);
+    final all = ChainHistoryService.buildAccountEventsQuery(
+      TransactionFilter.all,
+      withCursor: withoutCursor,
+      accountCount: 1,
+    );
+    final send = ChainHistoryService.buildAccountEventsQuery(
+      TransactionFilter.send,
+      withCursor: withoutCursor,
+      accountCount: 1,
+    );
+    final receive = ChainHistoryService.buildAccountEventsQuery(
+      TransactionFilter.receive,
+      withCursor: withoutCursor,
+      accountCount: 1,
+    );
 
     test('send and receive filter on the indexed direction columns', () {
       expect(_whereClause(send), contains('outgoing: {_eq: true}'));
@@ -29,7 +41,7 @@ void main() {
       expect(_whereClause(all), isNot(contains('incoming')));
     });
 
-    test('no variant filters through nested relations, _or, or an extrinsic guard', () {
+    test('no variant filters through nested relations, _or, _in, or an extrinsic guard', () {
       for (final query in [all, send, receive]) {
         final where = _whereClause(query);
         expect(where, isNot(contains('_or')), reason: 'nested OR defeats the (account_id, ..., timestamp, id) index');
@@ -37,23 +49,73 @@ void main() {
         expect(where, isNot(contains('executedReversibleTransfer: {')));
         expect(where, isNot(contains('cancelledReversibleTransfer: {')));
         expect(where, isNot(contains('extrinsic_id')), reason: 'extrinsic-less transfers are no longer indexed rows');
-        expect(where, contains(r'account_id: {_in: $accounts}'));
+        expect(
+          where,
+          contains(r'account_id: {_eq: $account0}'),
+          reason: '`_in` renders as `= ANY(array)`, which the planner would not walk on the composite index',
+        );
+        expect(where, isNot(contains('_in')));
         expect(where, contains('scheduled_reversible_transfer_id: {_is_null: true}'));
       }
+    });
+
+    test('order_by leads with the composite index columns so Postgres never falls back to the timestamp index', () {
+      // Live Planck EXPLAIN: with only (timestamp, id) in ORDER BY the planner
+      // walked the global timestamp index backwards through 1.6M rows to find
+      // 0 incoming rows for a send-only account (14s); leading with the index
+      // prefix turned that into a 4ms index scan.
+      expect(all, contains('order_by: [{account_id: desc}, {timestamp: desc}, {id: desc}]'));
+      expect(send, contains('order_by: [{account_id: desc}, {outgoing: desc}, {timestamp: desc}, {id: desc}]'));
+      expect(receive, contains('order_by: [{account_id: desc}, {incoming: desc}, {timestamp: desc}, {id: desc}]'));
+    });
+
+    test('one aliased selection per account, each on its own _eq variable', () {
+      final twoAccounts = ChainHistoryService.buildAccountEventsQuery(
+        TransactionFilter.all,
+        withCursor: false,
+        accountCount: 2,
+      );
+
+      expect(twoAccounts, contains(r'$account0: String!'));
+      expect(twoAccounts, contains(r'$account1: String!'));
+      expect(twoAccounts, contains('events0: account_event('));
+      expect(twoAccounts, contains('events1: account_event('));
+      expect(twoAccounts, contains(r'account_id: {_eq: $account0}'));
+      expect(twoAccounts, contains(r'account_id: {_eq: $account1}'));
+      expect(twoAccounts, isNot(contains('events2:')));
     });
 
     test('pages by (timestamp, id) keyset instead of OFFSET', () {
       for (final query in [all, send, receive]) {
         expect(query, isNot(contains('offset')));
-        expect(query, contains('order_by: [{timestamp: desc}, {id: desc}]'));
         expect(query, isNot(contains(r'$cursorTimestamp')), reason: 'first page has no cursor');
       }
 
-      final afterCursor = ChainHistoryService.buildAccountEventsQuery(TransactionFilter.all, withCursor: true);
+      final afterCursor = ChainHistoryService.buildAccountEventsQuery(
+        TransactionFilter.all,
+        withCursor: true,
+        accountCount: 1,
+      );
       expect(afterCursor, contains(r'$cursorTimestamp: timestamptz!'));
       expect(afterCursor, contains(r'$cursorId: String!'));
       expect(_whereClause(afterCursor), contains(r'timestamp: {_lte: $cursorTimestamp}'));
       expect(_whereClause(afterCursor), contains(r'_not: {timestamp: {_eq: $cursorTimestamp}, id: {_gte: $cursorId}}'));
+    });
+
+    test('page variables bind one account per alias', () {
+      final variables = ChainHistoryService.pageVariables(
+        accountIds: const ['qz-a', 'qz-b'],
+        lookaheadLimit: 21,
+        after: const AccountEventCursor(timestamp: 't1', id: 'x'),
+      );
+
+      expect(variables, {
+        'account0': 'qz-a',
+        'account1': 'qz-b',
+        'limit': 21,
+        'cursorTimestamp': 't1',
+        'cursorId': 'x',
+      });
     });
 
     test('pending search declares amount as Hasura numeric, not BigInt', () {
@@ -66,26 +128,70 @@ void main() {
       }
     });
 
-    test('scheduled reversible query uses the same direction columns and keyset', () {
+    test('scheduled reversible query uses the same per-account shape, direction columns and keyset', () {
       final scheduledSend = ChainHistoryService.buildScheduledReversibleTransfersQuery(
         TransactionFilter.send,
         withCursor: false,
+        accountCount: 1,
       );
       final scheduledAfter = ChainHistoryService.buildScheduledReversibleTransfersQuery(
         TransactionFilter.receive,
         withCursor: true,
+        accountCount: 2,
       );
 
+      expect(_whereClause(scheduledSend), contains(r'account_id: {_eq: $account0}'));
       expect(_whereClause(scheduledSend), contains('outgoing: {_eq: true}'));
       expect(_whereClause(scheduledSend), isNot(contains('from_id')));
       expect(_whereClause(scheduledSend), contains(r'scheduledReversibleTransfer: {scheduled_at: {_gt: $after}}'));
       expect(scheduledSend, isNot(contains('offset')));
-      expect(scheduledSend, contains('order_by: [{timestamp: desc}, {id: desc}]'));
+      expect(
+        scheduledSend,
+        contains('order_by: [{account_id: desc}, {outgoing: desc}, {timestamp: desc}, {id: desc}]'),
+      );
+      expect(scheduledAfter, contains('events1: account_event('));
       expect(_whereClause(scheduledAfter), contains('incoming: {_eq: true}'));
       expect(_whereClause(scheduledAfter), contains(r'timestamp: {_lte: $cursorTimestamp}'));
       expect(
         _whereClause(scheduledAfter),
         contains(r'_not: {timestamp: {_eq: $cursorTimestamp}, id: {_gte: $cursorId}}'),
+      );
+    });
+  });
+
+  group('mergeAccountEventRows', () {
+    Map<String, dynamic> row(String id, String timestamp) => {'id': id, 'timestamp': timestamp};
+
+    test('interleaves per-account aliases into one (timestamp desc, id desc) stream', () {
+      final data = <String, dynamic>{
+        'events0': [row('a2', '2026-06-02T00:00:00.000+00:00'), row('a1', '2026-06-01T00:00:00.000+00:00')],
+        'events1': [
+          row('b3', '2026-06-03T00:00:00.000+00:00'),
+          row('b2', '2026-06-02T00:00:00.000+00:00'),
+          row('b0', '2026-05-31T00:00:00.000+00:00'),
+        ],
+      };
+
+      final merged = ChainHistoryService.mergeAccountEventRows(data, accountCount: 2);
+
+      expect(merged.map((r) => (r as Map<String, dynamic>)['id']).toList(), ['b3', 'b2', 'a2', 'a1', 'b0']);
+    });
+
+    test('compares timestamps as instants, not strings', () {
+      final data = <String, dynamic>{
+        'events0': [row('short', '2026-06-01T00:00:00.5+00:00')],
+        'events1': [row('long', '2026-06-01T00:00:00.123456+00:00')],
+      };
+
+      final merged = ChainHistoryService.mergeAccountEventRows(data, accountCount: 2);
+
+      expect(merged.map((r) => (r as Map<String, dynamic>)['id']).toList(), ['short', 'long']);
+    });
+
+    test('throws when an alias is missing from the response', () {
+      expect(
+        () => ChainHistoryService.mergeAccountEventRows(<String, dynamic>{'events0': <dynamic>[]}, accountCount: 2),
+        throwsStateError,
       );
     });
   });
