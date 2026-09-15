@@ -1909,4 +1909,75 @@ class AppLocalizationsEn extends AppLocalizations {
   String mainnetMigrationSaveFailed(String error) {
     return 'Could not save your choice: $error';
   }
+
+  @override
+  String get settingsMiningRewards => 'Mining Rewards';
+
+  @override
+  String get settingsMiningRewardsSubtitle => 'Claim your testnet mining rewards';
+
+  @override
+  String get miningRewardsIntro =>
+      'If you mined on a Quantus testnet, check whether this wallet\'s miners earned a reward, then choose where it should be paid.';
+
+  @override
+  String get miningRewardsCheckEligibility => 'Check eligibility';
+
+  @override
+  String miningRewardsEligibilityTitle(String wallet) {
+    return 'Eligibility for $wallet';
+  }
+
+  @override
+  String miningRewardsBlocksMined(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count blocks mined',
+      one: '1 block mined',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get miningRewardsTotal => 'Total reward';
+
+  @override
+  String get miningRewardsNone => 'No testnet mining rewards were found for this wallet.';
+
+  @override
+  String get miningRewardsNotClaimable => 'Claim not available yet';
+
+  @override
+  String get miningRewardsCheckFailed => 'Check failed, tap to retry';
+
+  @override
+  String get miningRewardsClaim => 'Claim';
+
+  @override
+  String get miningRewardsClaimTitle => 'Claim Rewards';
+
+  @override
+  String get miningRewardsBeneficiaryLabel => 'Pay rewards to';
+
+  @override
+  String get miningRewardsYourAccounts => 'Your accounts';
+
+  @override
+  String get miningRewardsPayoutInfo =>
+      'Submitted claims will be processed within 1 week - good luck!\n\nPayouts are 2500 Quan total per testnet chain, split amongst all miners, and weighed by the square root of their total blocks mined. This means bigger miners earn more, but smaller miners still earn a good reward. Quadratic counting equalizes across all miners.';
+
+  @override
+  String get miningRewardsSubmitClaims => 'Submit Claims';
+
+  @override
+  String miningRewardsSubmitFailed(String error) {
+    return 'Claim submission failed: $error';
+  }
+
+  @override
+  String get miningRewardsSubmittedTitle => 'Claims Submitted';
+
+  @override
+  String get miningRewardsSubmittedBody => 'Submission successful, thank you. Claims will be paid out within 1 week';
 }
