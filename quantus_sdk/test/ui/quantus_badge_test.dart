@@ -64,4 +64,17 @@ void main() {
 
     expect(decorationAround(tester, 'BADGE').borderRadius, const AppRadiusV3.standard().xsBorder);
   });
+  testWidgets('dot paints a leading disc in the tone colour', (tester) async {
+    await pumpBadge(tester, const QuantusBadge(label: 'Mainnet', tone: BadgeTone.sage, dot: true));
+
+    final disc = tester.widget<Container>(
+      find.descendant(
+        of: find.ancestor(of: find.text('MAINNET'), matching: find.byType(Row)),
+        matching: find.byWidgetPredicate((w) => w is Container && w.decoration is BoxDecoration),
+      ),
+    );
+    final decoration = disc.decoration! as BoxDecoration;
+    expect(decoration.shape, BoxShape.circle);
+    expect(decoration.color, colors.semanticSage);
+  });
 }

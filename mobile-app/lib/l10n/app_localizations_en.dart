@@ -1808,27 +1808,13 @@ class AppLocalizationsEn extends AppLocalizations {
       'Your encrypted balance changed while reviewing. Please go back and enter the amount again.';
 
   @override
-  String get mainnetMigrationTitle => 'Quantus is now on Mainnet!';
+  String get mainnetMigrationTitle => 'Quantus is live on *mainnet*.';
 
   @override
-  String get mainnetMigrationIntro =>
-      'Testnet has been shut down and mainnet is live. Let\'s see what that means for this wallet.';
+  String get mainnetMigrationChecking => 'Testnet has shut down. Checking what that means for this wallet.';
 
   @override
-  String get mainnetMigrationChecking => 'We are checking this wallet\'s testnet balance and mined blocks.';
-
-  @override
-  String get mainnetMigrationNext => 'Next';
-
-  @override
-  String get mainnetMigrationMinerTitle => 'Dear Testnet Miner';
-
-  @override
-  String get mainnetMigrationMinerThanks => 'Thank you for helping secure testnet!';
-
-  @override
-  String get mainnetMigrationMinerKeep =>
-      'Keep this wallet: you will need it to claim your testnet mining rewards, which are coming soon.';
+  String get mainnetMigrationReadingHistory => 'Reading testnet history';
 
   @override
   String mainnetMigrationBlocksMinedCount(int count) {
@@ -1839,55 +1825,88 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get mainnetMigrationBlocksMined => 'blocks mined on testnet';
+  String get mainnetMigrationBlocksMined => 'Blocks mined on testnet';
 
   @override
-  String mainnetMigrationMinerBalance(String tokenSymbol) {
-    return 'Your mainnet $tokenSymbol balance starts at zero. Testnet tokens do not carry over: mining rewards are based on blocks mined, not on your testnet balance.';
+  String get mainnetMigrationMinerTitle => 'Keep this wallet.';
+
+  @override
+  String get mainnetMigrationMinerBody =>
+      'Your rewards are safe. They\'re tied to it and arrive after launch. Your balance starts at zero because rewards are based on blocks mined, not on your testnet balance.';
+
+  @override
+  String get mainnetMigrationNotMinedTitle => 'Nothing carried over.';
+
+  @override
+  String mainnetMigrationNotMinedBody(String tokenSymbol) {
+    return 'Your testnet balance stayed on testnet. Those coins were only ever for testing, so this wallet starts at zero $tokenSymbol.';
   }
 
   @override
-  String get mainnetMigrationUserTitle => 'Dear Testnet User';
+  String get mainnetMigrationUnreachableBadge => 'Couldn\'t check';
 
   @override
-  String get mainnetMigrationHolderIntro =>
-      'Thank you for testing Quantus. Testnet is shut down, mainnet is live, and testnet balances do not carry over.';
+  String get mainnetMigrationUnreachableTitle => 'We couldn\'t check this wallet.';
 
   @override
-  String get mainnetMigrationHolderMinedTitle => 'Mined on testnet?';
-
-  @override
-  String get mainnetMigrationHolderMinedBody => 'Keep this wallet. Mining rewards are coming soon.';
-
-  @override
-  String get mainnetMigrationHolderNotMinedTitle => 'Did not mine?';
-
-  @override
-  String get mainnetMigrationHolderNotMinedBody => 'Keep your secret phrase or create a new one.';
-
-  @override
-  String get mainnetMigrationNewcomerBody =>
-      'Quantus is now on mainnet. Create a new wallet, or keep using your testnet wallet on mainnet.';
-
-  @override
-  String mainnetMigrationNewcomerZero(String tokenSymbol) {
-    return 'Either way your mainnet $tokenSymbol balance starts at zero. Migrating keeps this wallet exactly as it is: same recovery phrase, same accounts.';
+  String mainnetMigrationUnreachableBody(String tokenSymbol) {
+    return 'Testnet was unreachable, so we don\'t know yet whether you mined. Your balance starts at zero $tokenSymbol either way.';
   }
 
   @override
-  String get mainnetMigrationUnreachableTitle => 'Testnet could not be reached';
+  String get mainnetMigrationUnreachableRewards =>
+      'If you mined, your rewards are safe. They stay tied to this wallet whether we can check today or not.';
 
   @override
-  String get mainnetMigrationUnreachableBody => 'This wallet\'s testnet history could not be checked.';
+  String get mainnetMigrationKeepWallet => 'Keep this wallet';
+
+  @override
+  String get mainnetMigrationCreateWallet => 'Create a new wallet';
+
+  @override
+  String get mainnetMigrationCreateDialogTitle => 'Create a new wallet?';
+
+  @override
+  String get mainnetMigrationCreateDialogBody =>
+      'You\'ll get a new secret phrase to write down and store safely. This wallet stays on the device.';
+
+  @override
+  String get mainnetMigrationCreateDialogUncheckedTitle => 'We couldn\'t check this wallet';
+
+  @override
+  String get mainnetMigrationCreateDialogUncheckedBody => 'So we don\'t know whether you mined on testnet.';
+
+  @override
+  String get mainnetMigrationCreateDialogUncheckedAdvice =>
+      'If you mined, your rewards are tied to this wallet. We\'d suggest keeping it and trying again later.';
+
+  @override
+  String get mainnetMigrationCreateDialogConfirm => 'Create new wallet';
+
+  @override
+  String get mainnetMigrationCreateDialogCancel => 'Keep my wallet';
+
+  @override
+  String get mainnetMigrationAllSetBadge => 'Mainnet';
+
+  @override
+  String get mainnetMigrationAllSetTitle => 'You\'re all set.';
+
+  @override
+  String mainnetMigrationAllSetBody(String tokenSymbol) {
+    return 'Everything from here is real money. Add some $tokenSymbol whenever you\'re ready.';
+  }
+
+  @override
+  String mainnetMigrationGetTokens(String tokenSymbol) {
+    return 'Get $tokenSymbol';
+  }
+
+  @override
+  String get mainnetMigrationGoToWallet => 'Go to wallet';
 
   @override
   String mainnetMigrationSaveFailed(String error) {
     return 'Could not save your choice: $error';
   }
-
-  @override
-  String get mainnetMigrationKeepWallet => 'Keep Wallet';
-
-  @override
-  String get mainnetMigrationMigrateWallet => 'Migrate Old Wallet';
 }

@@ -1,21 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:quantus_sdk/quantus_sdk.dart' hide ScaffoldBase;
 import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/mainnet_migration_provider.dart';
 import 'package:resonance_network_wallet/services/mainnet_migration_service.dart';
 import 'package:resonance_network_wallet/services/telemetry_service.dart';
+import 'package:resonance_network_wallet/services/wallet_creation_service.dart';
 import 'package:resonance_network_wallet/shared/constants/e2e_keys.dart';
 import 'package:resonance_network_wallet/shared/utils/print.dart';
-import 'package:resonance_network_wallet/v2/components/account_badge.dart';
-import 'package:resonance_network_wallet/v2/components/info_card.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
-import 'package:resonance_network_wallet/v2/screens/settings/reset_confirmation_screen.dart';
+import 'package:resonance_network_wallet/v2/screens/receive/receive_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/welcome/onboarding_background.dart';
 
-/// Shown once to wallets that predate mainnet: a branded intro while the
-/// testnet check runs, then a page written for what this wallet did there.
+/// Shown once to wallets that predate mainnet: a checking page while the
+/// testnet lookup runs, the page written for what this wallet did there, and
+/// a closing page once the wallet is kept.
 class MainnetMigrationScreen extends ConsumerStatefulWidget {
   final VoidCallback onFinished;
 
@@ -26,7 +27,16 @@ class MainnetMigrationScreen extends ConsumerStatefulWidget {
 }
 
 class _MainnetMigrationScreenState extends ConsumerState<MainnetMigrationScreen> {
+  /// Keeps the checking page from flashing past when testnet answers at once.
+  static const _checkingMinimum = Duration(milliseconds: 1500);
+  static const _pageTurn = Duration(milliseconds: 450);
+
   final _pages = PageController();
+  final _checkingShown = Future<void>.delayed(_checkingMinimum);
+
+  /// Debug builds hold the checking page until an outcome is picked.
+  late bool _armed = !ref.read(debugMainnetMigrationProvider);
+  bool _creating = false;
 
   @override
   void dispose() {
@@ -34,9 +44,21 @@ class _MainnetMigrationScreenState extends ConsumerState<MainnetMigrationScreen>
     super.dispose();
   }
 
-  void _next() => _pages.animateToPage(1, duration: const Duration(milliseconds: 450), curve: Curves.easeInOutCubic);
+  Future<void> _turnTo(int page) => _pages.animateToPage(page, duration: _pageTurn, curve: Curves.easeInOutCubic);
 
-  Future<void> _finish(TestnetUserKind? kind) async {
+  Future<void> _showOutcome() async {
+    _armed = false;
+    await _checkingShown;
+    if (mounted) await _turnTo(1);
+  }
+
+  void _pickOutcome(String? outcome) {
+    ref.read(forcedTestnetOutcomeProvider.notifier).state = outcome;
+    ref.invalidate(testnetStatusProvider);
+    _armed = true;
+  }
+
+  Future<void> _keep(TestnetUserKind? kind) async {
     try {
       await ref.read(mainnetMigrationServiceProvider).markDone();
     } catch (e) {
@@ -45,276 +67,299 @@ class _MainnetMigrationScreenState extends ConsumerState<MainnetMigrationScreen>
       return;
     }
     TelemetryService().sendEvent('mainnet_migration_done', parameters: {'testnet_user': kind?.name ?? 'unknown'});
+    if (mounted) await _turnTo(2);
+  }
+
+  void _getTokens() {
+    Navigator.push(context, MaterialPageRoute(builder: (_) => const ReceiveScreen()));
     widget.onFinished();
   }
 
-  void _createNewWallet() =>
-      Navigator.push(context, MaterialPageRoute(builder: (_) => const ResetConfirmationScreen()));
+  Future<void> _createNewWallet({required bool checkFailed}) async {
+    final l10n = ref.read(l10nProvider);
+    final confirmed = await showQuantusDialog(
+      context,
+      title: l10n.mainnetMigrationCreateDialogTitle,
+      body: checkFailed ? l10n.mainnetMigrationCreateDialogUncheckedAdvice : l10n.mainnetMigrationCreateDialogBody,
+      banner: checkFailed
+          ? QuantusBanner(
+              tone: BannerTone.glacier,
+              leading: const Text('?'),
+              label: l10n.mainnetMigrationCreateDialogUncheckedTitle,
+              message: l10n.mainnetMigrationCreateDialogUncheckedBody,
+            )
+          : null,
+      actionLabel: l10n.mainnetMigrationCreateDialogConfirm,
+      cancelLabel: l10n.mainnetMigrationCreateDialogCancel,
+      cancelIsPrimary: checkFailed,
+    );
+    if (!confirmed || !mounted) return;
+    TelemetryService().sendEvent('mainnet_migration_new_wallet');
+    setState(() => _creating = true);
+    await createSoftwareWalletFlow(context, ref);
+    if (mounted) setState(() => _creating = false);
+  }
 
   @override
   Widget build(BuildContext context) {
+    ref.listen(testnetStatusProvider, (_, status) {
+      if (_armed && !status.isLoading) _showOutcome();
+    });
     final l10n = ref.watch(l10nProvider);
-    // Watched here so the check runs while the intro page is still showing.
+    // Watched here so the check runs while the checking page is still showing.
     final status = ref.watch(testnetStatusProvider);
-    final forced = ref.watch(forcedTestnetOutcomeProvider);
 
     return PageView(
       key: const Key(E2EKeys.mainnetMigrationScreen),
       controller: _pages,
+      physics: const NeverScrollableScrollPhysics(),
       children: [
-        _IntroPage(
-          l10n: l10n,
-          onNext: _next,
-          debugOutcome: forced,
-          onDebugOutcome: (outcome) => ref.read(forcedTestnetOutcomeProvider.notifier).state = outcome,
-        ),
-        _StatusPage(
+        _CheckingPage(l10n: l10n, onPickOutcome: ref.watch(debugMainnetMigrationProvider) ? _pickOutcome : null),
+        _OutcomePage(
           l10n: l10n,
           status: status,
-          onFinish: _finish,
+          creating: _creating,
+          onKeep: _keep,
           onCreateNewWallet: _createNewWallet,
-          onRetry: () => ref.invalidate(testnetStatusProvider),
+        ),
+        _AllSetPage(l10n: l10n, onGetTokens: _getTokens, onGoToWallet: widget.onFinished),
+      ],
+    );
+  }
+}
+
+class _CheckingPage extends StatelessWidget {
+  final AppLocalizations l10n;
+  final ValueChanged<String?>? onPickOutcome;
+
+  const _CheckingPage({required this.l10n, required this.onPickOutcome});
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
+
+    return _Page(
+      background: const OnboardingBackground(),
+      content: [
+        Text.rich(
+          TextSpan(
+            style: text.titleHero.copyWith(color: colors.textContent),
+            children: [
+              for (final (i, part) in l10n.mainnetMigrationTitle.split('*').indexed)
+                TextSpan(
+                  text: part,
+                  style: i.isOdd ? TextStyle(color: colors.accentFlare) : null,
+                ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+        Text(l10n.mainnetMigrationChecking, style: text.bodyLarge.copyWith(color: colors.textMuted)),
+        if (onPickOutcome != null) ...[
+          const SizedBox(height: 24),
+          Text('DEBUG: pick the testnet outcome', style: text.caption.copyWith(color: colors.textMuted)),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final outcome in [...debugTestnetOutcomes, null])
+                IntrinsicWidth(
+                  child: QuantusButton.simple(
+                    label: outcome ?? 'real',
+                    onTap: () => onPickOutcome!(outcome),
+                    variant: ButtonVariant.staged,
+                    width: null,
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  ),
+                ),
+            ],
+          ),
+        ],
+        const SizedBox(height: 52),
+        LinearProgressIndicator(
+          minHeight: 4,
+          backgroundColor: colors.bgSurface2,
+          color: colors.semanticGlacier,
+          borderRadius: BorderRadius.circular(2),
+        ),
+        const SizedBox(height: 16),
+        Text(
+          l10n.mainnetMigrationReadingHistory.toUpperCase(),
+          style: text.labelData.copyWith(color: colors.textMuted),
         ),
       ],
     );
   }
 }
 
-class _IntroPage extends StatelessWidget {
+class _OutcomePage extends StatelessWidget {
   final AppLocalizations l10n;
-  final VoidCallback onNext;
-  final String? debugOutcome;
-  final ValueChanged<String> onDebugOutcome;
+  final AsyncValue<TestnetStatus> status;
+  final bool creating;
+  final void Function(TestnetUserKind? kind) onKeep;
+  final void Function({required bool checkFailed}) onCreateNewWallet;
 
-  const _IntroPage({
+  const _OutcomePage({
     required this.l10n,
-    required this.onNext,
-    required this.debugOutcome,
-    required this.onDebugOutcome,
+    required this.status,
+    required this.creating,
+    required this.onKeep,
+    required this.onCreateNewWallet,
   });
 
   @override
   Widget build(BuildContext context) {
     final colors = context.colorsV3;
     final text = context.themeTextV3;
+    final title = text.titleHero.copyWith(color: colors.textContent);
+    final body = text.bodyLarge.copyWith(color: colors.textMuted);
+    const symbol = AppConstants.tokenSymbol;
 
-    return ScaffoldBase(
-      backgroundWidget: const OnboardingBackground(),
-      mainContent: Column(
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          Image.asset('assets/v2/quantus_orange_logo.png', height: 32),
-          const SizedBox(height: 16),
-          Text(
-            l10n.mainnetMigrationTitle,
-            textAlign: TextAlign.center,
-            style: text.titleHero.copyWith(color: colors.textWhite),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            l10n.mainnetMigrationIntro,
-            textAlign: TextAlign.center,
-            style: text.body.copyWith(color: colors.textContent),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            l10n.mainnetMigrationChecking,
-            textAlign: TextAlign.center,
-            style: text.caption.copyWith(color: colors.textMuted),
-          ),
-          const SizedBox(height: 56),
-          if (debugOutcome != null) ...[
-            Wrap(
-              spacing: 8,
-              children: [
-                for (final outcome in debugTestnetOutcomes)
-                  ChoiceChip(
-                    label: Text(outcome),
-                    selected: outcome == debugOutcome,
-                    onSelected: (_) => onDebugOutcome(outcome),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 16),
-          ],
-          QuantusButton.simple(
-            key: const Key(E2EKeys.mainnetMigrationNextButton),
-            label: l10n.mainnetMigrationNext,
-            onTap: onNext,
-          ),
-          const SizedBox(height: 40),
-        ],
-      ),
-    );
-  }
-}
-
-class _StatusPage extends StatelessWidget {
-  final AppLocalizations l10n;
-  final AsyncValue<TestnetStatus> status;
-  final void Function(TestnetUserKind? kind) onFinish;
-  final VoidCallback onCreateNewWallet;
-  final VoidCallback onRetry;
-
-  const _StatusPage({
-    required this.l10n,
-    required this.status,
-    required this.onFinish,
-    required this.onCreateNewWallet,
-    required this.onRetry,
-  });
-
-  @override
-  Widget build(BuildContext context) {
     return status.when(
       loading: () => const ScaffoldBase(mainContent: Center(child: Loader())),
-      // Testnet unreachable: the holder page covers both outcomes in its copy.
-      error: (_, _) => _holder(checkFailed: true),
+      error: (_, _) => _outcome(
+        kind: null,
+        content: [
+          QuantusBadge(label: l10n.mainnetMigrationUnreachableBadge, tone: BadgeTone.glacier, dot: true),
+          const SizedBox(height: 16),
+          Text(l10n.mainnetMigrationUnreachableTitle, style: title),
+          const SizedBox(height: 16),
+          Text(l10n.mainnetMigrationUnreachableBody(symbol), style: body),
+          const SizedBox(height: 16),
+          Text(l10n.mainnetMigrationUnreachableRewards, style: body),
+        ],
+      ),
       data: (status) => switch (status.kind) {
-        TestnetUserKind.miner => _Outcome(
-          l10n: l10n,
-          title: l10n.mainnetMigrationMinerTitle,
-          paragraphs: [l10n.mainnetMigrationMinerThanks, l10n.mainnetMigrationMinerKeep],
-          blocksMined: status.blocksMined,
-          trailingParagraphs: [l10n.mainnetMigrationMinerBalance(AppConstants.tokenSymbol)],
-          actions: [_finishButton(l10n.commonDone, TestnetUserKind.miner)],
+        TestnetUserKind.miner => _outcome(
+          kind: TestnetUserKind.miner,
+          content: [
+            Text(
+              l10n.mainnetMigrationBlocksMinedCount(status.blocksMined),
+              style: text.amountHero.copyWith(color: colors.textContent),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              l10n.mainnetMigrationBlocksMined.toUpperCase(),
+              style: text.labelData.copyWith(color: colors.textMuted),
+            ),
+            const SizedBox(height: 34),
+            Text(l10n.mainnetMigrationMinerTitle, style: title),
+            const SizedBox(height: 10),
+            Text(l10n.mainnetMigrationMinerBody, style: body),
+          ],
         ),
-        TestnetUserKind.holder => _holder(),
-        TestnetUserKind.newcomer => _Outcome(
-          l10n: l10n,
-          title: l10n.mainnetMigrationUserTitle,
-          paragraphs: [l10n.mainnetMigrationNewcomerBody, l10n.mainnetMigrationNewcomerZero(AppConstants.tokenSymbol)],
-          actions: [
-            _createWalletButton(primary: true),
+        TestnetUserKind.holder || TestnetUserKind.newcomer => _outcome(
+          kind: status.kind,
+          content: [
+            Text(l10n.mainnetMigrationNotMinedTitle, style: title),
             const SizedBox(height: 16),
-            _finishButton(l10n.mainnetMigrationMigrateWallet, TestnetUserKind.newcomer, primary: false),
+            Text(l10n.mainnetMigrationNotMinedBody(symbol), style: body),
           ],
         ),
       },
     );
   }
 
-  Widget _holder({bool checkFailed = false}) => _Outcome(
-    l10n: l10n,
-    title: l10n.mainnetMigrationUserTitle,
-    paragraphs: [l10n.mainnetMigrationHolderIntro],
-    cards: [
-      InfoCard(
-        leading: const AccountBadge.icon(icon: Icons.memory_rounded),
-        title: l10n.mainnetMigrationHolderMinedTitle,
-        description: l10n.mainnetMigrationHolderMinedBody,
-      ),
-      InfoCard(
-        leading: const AccountBadge.icon(icon: Icons.key_rounded),
-        title: l10n.mainnetMigrationHolderNotMinedTitle,
-        description: l10n.mainnetMigrationHolderNotMinedBody,
-      ),
-    ],
-    warning: checkFailed
-        ? InfoCard(
-            leading: const AccountBadge.icon(icon: Icons.warning_amber_rounded, isActive: true),
-            title: l10n.mainnetMigrationUnreachableTitle,
-            description: l10n.mainnetMigrationUnreachableBody,
-            trailing: QuantusButton.simple(
-              key: const Key(E2EKeys.mainnetMigrationRetryButton),
-              label: l10n.commonRetry,
-              onTap: onRetry,
-              variant: ButtonVariant.underline,
-              width: null,
-              padding: EdgeInsets.zero,
-            ),
-          )
-        : null,
+  /// Miners only keep; everyone else may start over, and an unreachable
+  /// testnet ([kind] null) gets the more careful confirmation.
+  Widget _outcome({required TestnetUserKind? kind, required List<Widget> content}) => _Page(
+    content: content,
     actions: [
-      _finishButton(l10n.mainnetMigrationKeepWallet, checkFailed ? null : TestnetUserKind.holder),
-      const SizedBox(height: 16),
-      _createWalletButton(primary: false),
+      QuantusButton.simple(
+        key: const Key(E2EKeys.mainnetMigrationKeepWalletButton),
+        label: l10n.mainnetMigrationKeepWallet,
+        onTap: () => onKeep(kind),
+        isDisabled: creating,
+      ),
+      if (kind != TestnetUserKind.miner) ...[
+        const SizedBox(height: 10),
+        QuantusButton.simple(
+          key: const Key(E2EKeys.mainnetMigrationCreateWalletButton),
+          label: l10n.mainnetMigrationCreateWallet,
+          onTap: () => onCreateNewWallet(checkFailed: kind == null),
+          variant: ButtonVariant.staged,
+          isLoading: creating,
+        ),
+      ],
     ],
-  );
-
-  Widget _finishButton(String label, TestnetUserKind? kind, {bool primary = true}) => QuantusButton.simple(
-    key: const Key(E2EKeys.mainnetMigrationFinishButton),
-    label: label,
-    onTap: () => onFinish(kind),
-    variant: primary ? ButtonVariant.primary : ButtonVariant.staged,
-  );
-
-  Widget _createWalletButton({required bool primary}) => QuantusButton.simple(
-    key: const Key(E2EKeys.mainnetMigrationCreateWalletButton),
-    label: l10n.welcomeCreateNewWallet,
-    onTap: onCreateNewWallet,
-    variant: primary ? ButtonVariant.primary : ButtonVariant.staged,
   );
 }
 
-class _Outcome extends StatelessWidget {
+class _AllSetPage extends StatelessWidget {
   final AppLocalizations l10n;
-  final String title;
-  final List<String> paragraphs;
-  final int? blocksMined;
-  final List<String> trailingParagraphs;
-  final List<Widget> cards;
-  final Widget? warning;
-  final List<Widget> actions;
+  final VoidCallback onGetTokens;
+  final VoidCallback onGoToWallet;
 
-  const _Outcome({
-    required this.l10n,
-    required this.title,
-    required this.paragraphs,
-    this.blocksMined,
-    this.trailingParagraphs = const [],
-    this.cards = const [],
-    this.warning,
-    required this.actions,
-  });
+  const _AllSetPage({required this.l10n, required this.onGetTokens, required this.onGoToWallet});
 
   @override
   Widget build(BuildContext context) {
     final colors = context.colorsV3;
     final text = context.themeTextV3;
-    final body = text.body.copyWith(color: colors.textContent);
+    const symbol = AppConstants.tokenSymbol;
 
+    return _Page(
+      background: const OnboardingBackground(),
+      content: [
+        QuantusBadge(label: l10n.mainnetMigrationAllSetBadge, tone: BadgeTone.sage, dot: true),
+        const SizedBox(height: 16),
+        Text(l10n.mainnetMigrationAllSetTitle, style: text.titleSuccess.copyWith(color: colors.textContent)),
+        const SizedBox(height: 16),
+        Text(l10n.mainnetMigrationAllSetBody(symbol), style: text.bodyLarge.copyWith(color: colors.textMuted)),
+      ],
+      actions: [
+        QuantusButton.simple(
+          key: const Key(E2EKeys.mainnetMigrationGetTokensButton),
+          label: l10n.mainnetMigrationGetTokens(symbol),
+          onTap: onGetTokens,
+        ),
+        const SizedBox(height: 10),
+        QuantusButton.simple(
+          key: const Key(E2EKeys.mainnetMigrationGoToWalletButton),
+          label: l10n.mainnetMigrationGoToWallet,
+          onTap: onGoToWallet,
+          variant: ButtonVariant.staged,
+        ),
+      ],
+    );
+  }
+}
+
+/// Logo top left, [content] settled at the bottom (scrolling when tall),
+/// [actions] under it.
+class _Page extends StatelessWidget {
+  final Widget? background;
+  final List<Widget> content;
+  final List<Widget> actions;
+
+  const _Page({this.background, required this.content, this.actions = const []});
+
+  @override
+  Widget build(BuildContext context) {
     return ScaffoldBase(
-      mainContent: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 48),
-            Image.asset('assets/v2/quantus_orange_logo.png', height: 32, alignment: Alignment.centerLeft),
-            const SizedBox(height: 32),
-            Text(title, style: text.titleScreen.copyWith(color: colors.textWhite)),
-            if (warning != null) ...[const SizedBox(height: 16), warning!],
-            for (final paragraph in paragraphs) ...[const SizedBox(height: 16), Text(paragraph, style: body)],
-            if (blocksMined != null) ...[
-              const SizedBox(height: 24),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: colors.bgSurface,
-                  borderRadius: context.radiusV3.mdBorder,
-                  border: Border.all(color: colors.borderHairline),
-                ),
+      backgroundWidget: background,
+      mainContent: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: 24),
+          SvgPicture.asset('assets/v2/uppercase_q.svg', width: 30, height: 30),
+          Expanded(
+            child: Align(
+              alignment: Alignment.bottomLeft,
+              child: SingleChildScrollView(
                 child: Column(
-                  children: [
-                    Text(
-                      l10n.mainnetMigrationBlocksMinedCount(blocksMined!),
-                      style: text.amountHero.copyWith(color: colors.accentFlare),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(l10n.mainnetMigrationBlocksMined, style: text.caption.copyWith(color: colors.textMuted)),
-                  ],
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: content,
                 ),
               ),
-            ],
-            for (final paragraph in trailingParagraphs) ...[const SizedBox(height: 16), Text(paragraph, style: body)],
-            for (final (i, card) in cards.indexed) ...[SizedBox(height: i == 0 ? 24 : 14), card],
-            const SizedBox(height: 24),
-          ],
-        ),
-      ),
-      bottomContent: ScaffoldBaseBottomContent(
-        child: Column(mainAxisSize: MainAxisSize.min, children: actions),
+            ),
+          ),
+          if (actions.isNotEmpty) ...[const SizedBox(height: 40), ...actions],
+          const SizedBox(height: 40),
+        ],
       ),
     );
   }

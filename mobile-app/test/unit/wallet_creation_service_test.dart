@@ -9,76 +9,86 @@ import 'wallet_creation_service_test.mocks.dart';
 
 void main() {
   group('WalletCreationService.createNewWallet', () {
-    test('persists mnemonic, adds root account, and submits referral when no root exists', () async {
-      final settings = MockSettingsService();
-      final accounts = MockAccountsService();
+    const mnemonic = 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about';
+    const accountId = 'abc';
+    const name = 'Account 1';
+    final root = isA<Account>().having((a) => a.accountId, 'accountId', accountId);
 
-      final service = WalletCreationService(settingsService: settings, accountsService: accounts);
+    late MockSettingsService settings;
+    late MockAccountsService accounts;
+    late WalletCreationService service;
 
-      const mnemonic = 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about';
-      const accountId = 'abc';
-      const name = 'Account 1';
+    setUp(() {
+      settings = MockSettingsService();
+      accounts = MockAccountsService();
+      service = WalletCreationService(settingsService: settings, accountsService: accounts);
+    });
 
-      final created = await service.createNewWallet(
-        name: name,
-        mnemonic: mnemonic,
-        walletIndex: 0,
-        accountId: accountId,
-        scheme: DilithiumSchemeExtension.current,
-        derivationPath: HdWalletService.pathForIndex(0, DilithiumSchemeExtension.current),
-        existingAccounts: const [],
-      );
+    Future<Account> create() => service.createNewWallet(
+      name: name,
+      mnemonic: mnemonic,
+      walletIndex: 0,
+      accountId: accountId,
+      scheme: DilithiumSchemeExtension.current,
+      derivationPath: HdWalletService.pathForIndex(0, DilithiumSchemeExtension.current),
+    );
 
-      verify(settings.setMnemonic(mnemonic, 0)).called(1);
-      verify(accounts.addAccount(argThat(isA<Account>().having((a) => a.accountId, 'accountId', 'abc')))).called(1);
+    test('persists the mnemonic, inserts the root, then activates it and marks the migration done', () async {
+      final created = await create();
 
+      verifyInOrder([
+        settings.setMnemonic(mnemonic, 0),
+        accounts.addAccount(argThat(root)),
+        settings.setWalletOrigin(0, WalletOrigin.created),
+        settings.setActiveAccount(
+          argThat(isA<RegularAccount>().having((a) => a.account.accountId, 'accountId', accountId)),
+        ),
+        settings.setMainnetMigrationDone(),
+      ]);
+      verifyNever(settings.deleteMnemonic(any));
       expect(created.accountId, accountId);
       expect(created.name, name);
     });
 
-    test('skips add and referral when root account already exists', () async {
-      final settings = MockSettingsService();
-      final accounts = MockAccountsService();
+    test('a failed mnemonic write inserts nothing and leaves the migration pending', () async {
+      when(settings.setMnemonic(any, any)).thenThrow(Exception('secure storage unavailable'));
 
-      final service = WalletCreationService(settingsService: settings, accountsService: accounts);
+      await expectLater(create(), throwsException);
 
-      const existing = Account(walletIndex: 0, index: 0, name: 'Existing', accountId: 'existing_addr');
-
-      final created = await service.createNewWallet(
-        name: 'Account 1',
-        mnemonic: 'word ' * 12,
-        walletIndex: 0,
-        accountId: 'new_derived_addr',
-        scheme: DilithiumSchemeExtension.current,
-        derivationPath: HdWalletService.pathForIndex(0, DilithiumSchemeExtension.current),
-        existingAccounts: const [existing],
-      );
-
-      verify(settings.setMnemonic('word ' * 12, 0)).called(1);
       verifyNever(accounts.addAccount(any));
-      expect(created, same(existing));
+      verifyNever(settings.setMainnetMigrationDone());
+      verifyNever(settings.setActiveAccount(any));
     });
 
-    test('a failed completion write surfaces instead of finishing the wallet', () async {
-      final settings = MockSettingsService();
-      final accounts = MockAccountsService();
+    test('a failed root insert removes the mnemonic again and leaves the migration pending', () async {
+      when(accounts.addAccount(any)).thenThrow(Exception('disk full'));
+
+      await expectLater(create(), throwsException);
+
+      verify(settings.deleteMnemonic(0)).called(1);
+      verifyNever(settings.setWalletOrigin(any, any));
+      verifyNever(settings.setMainnetMigrationDone());
+      verifyNever(settings.setActiveAccount(any));
+    });
+
+    test('a failed activation after the insert still finishes with the created wallet', () async {
+      when(settings.setActiveAccount(any)).thenThrow(Exception('disk full'));
+
+      final created = await create();
+
+      expect(created.accountId, accountId);
+      verify(accounts.addAccount(argThat(root))).called(1);
+      verifyNever(settings.deleteMnemonic(any));
+    });
+
+    test('a failed completion write after the insert still finishes with the created wallet', () async {
       when(settings.setMainnetMigrationDone()).thenThrow(Exception('disk full'));
 
-      final service = WalletCreationService(settingsService: settings, accountsService: accounts);
+      final created = await create();
 
-      await expectLater(
-        service.createNewWallet(
-          name: 'Account 1',
-          mnemonic: 'word ' * 12,
-          walletIndex: 0,
-          accountId: 'abc',
-          scheme: DilithiumSchemeExtension.current,
-          derivationPath: HdWalletService.pathForIndex(0, DilithiumSchemeExtension.current),
-          existingAccounts: const [],
-        ),
-        throwsException,
-      );
-      verifyNever(accounts.addAccount(any));
+      expect(created.accountId, accountId);
+      verify(settings.setActiveAccount(any)).called(1);
+      verifyNever(settings.deleteMnemonic(any));
     });
   });
 }

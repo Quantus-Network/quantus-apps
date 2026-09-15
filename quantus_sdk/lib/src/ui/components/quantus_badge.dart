@@ -14,7 +14,10 @@ class QuantusBadge extends StatelessWidget {
   final String label;
   final BadgeTone tone;
 
-  const QuantusBadge({super.key, required this.label, this.tone = BadgeTone.neutral});
+  /// Leading status dot in the tone colour.
+  final bool dot;
+
+  const QuantusBadge({super.key, required this.label, this.tone = BadgeTone.neutral, this.dot = false});
 
   @override
   Widget build(BuildContext context) {
@@ -26,7 +29,20 @@ class QuantusBadge extends StatelessWidget {
         borderRadius: context.radiusV3.xsBorder,
         border: Border.all(color: color, width: 1),
       ),
-      child: Text(label.toUpperCase(), style: _labelStyle(context, color), maxLines: 1, softWrap: false),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (dot) ...[
+            Container(
+              width: 5,
+              height: 5,
+              decoration: BoxDecoration(shape: BoxShape.circle, color: color),
+            ),
+            const SizedBox(width: 6),
+          ],
+          Text(label.toUpperCase(), style: _labelStyle(context, color), maxLines: 1, softWrap: false),
+        ],
+      ),
     );
   }
 
