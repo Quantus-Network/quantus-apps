@@ -55,4 +55,15 @@ class E2EKeys {
 
   static const String sendTxSubmittedScreen = 'send_tx_submitted_screen';
   static const String sendTxSubmittedDoneButton = 'send_tx_submitted_done_button';
+
+  static const String settingsMiningRewardsRow = 'settings_mining_rewards_row';
+  static const String miningRewardsScreen = 'mining_rewards_screen';
+  static const String miningRewardsCheckEligibilityButton = 'mining_rewards_check_eligibility_button';
+  static const String miningRewardsEligibilityScreen = 'mining_rewards_eligibility_screen';
+  static const String miningRewardsClaimButton = 'mining_rewards_claim_button';
+  static const String miningRewardsClaimScreen = 'mining_rewards_claim_screen';
+  static const String miningRewardsBeneficiaryField = 'mining_rewards_beneficiary_field';
+  static const String miningRewardsSubmitButton = 'mining_rewards_submit_button';
+  static const String miningRewardsSubmittedScreen = 'mining_rewards_submitted_screen';
+  static const String miningRewardsSubmittedDoneButton = 'mining_rewards_submitted_done_button';
 }

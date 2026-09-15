@@ -3553,6 +3553,114 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Could not save your choice: {error}'**
   String mainnetMigrationSaveFailed(String error);
+
+  /// Settings hub row and screen title for testnet mining rewards
+  ///
+  /// In en, this message translates to:
+  /// **'Mining Rewards'**
+  String get settingsMiningRewards;
+
+  /// Settings hub row subtitle for testnet mining rewards
+  ///
+  /// In en, this message translates to:
+  /// **'Claim your testnet mining rewards'**
+  String get settingsMiningRewardsSubtitle;
+
+  /// Explainer on the mining rewards entry screen
+  ///
+  /// In en, this message translates to:
+  /// **'If you mined on a Quantus testnet, check whether this wallet\'s miners earned a reward, then choose where it should be paid.'**
+  String get miningRewardsIntro;
+
+  /// Button starting the mining rewards eligibility check
+  ///
+  /// In en, this message translates to:
+  /// **'Check eligibility'**
+  String get miningRewardsCheckEligibility;
+
+  /// Title of the per-chain eligibility screen
+  ///
+  /// In en, this message translates to:
+  /// **'Eligibility for {wallet}'**
+  String miningRewardsEligibilityTitle(String wallet);
+
+  /// Blocks the wallet mined on one testnet
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 block mined} other{{count} blocks mined}}'**
+  String miningRewardsBlocksMined(int count);
+
+  /// Label of the summed payout across all chains
+  ///
+  /// In en, this message translates to:
+  /// **'Total reward'**
+  String get miningRewardsTotal;
+
+  /// Shown when every chain answered and none of them pays this wallet
+  ///
+  /// In en, this message translates to:
+  /// **'No testnet mining rewards were found for this wallet.'**
+  String get miningRewardsNone;
+
+  /// Shown in a chain row when its eligibility check threw
+  ///
+  /// In en, this message translates to:
+  /// **'Check failed, tap to retry'**
+  String get miningRewardsCheckFailed;
+
+  /// Button opening the claim beneficiary screen
+  ///
+  /// In en, this message translates to:
+  /// **'Claim'**
+  String get miningRewardsClaim;
+
+  /// Title of the claim beneficiary screen
+  ///
+  /// In en, this message translates to:
+  /// **'Claim Rewards'**
+  String get miningRewardsClaimTitle;
+
+  /// Label above the beneficiary address field
+  ///
+  /// In en, this message translates to:
+  /// **'Pay rewards to'**
+  String get miningRewardsBeneficiaryLabel;
+
+  /// Heading of the list of own accounts to pick as beneficiary
+  ///
+  /// In en, this message translates to:
+  /// **'Your accounts'**
+  String get miningRewardsYourAccounts;
+
+  /// Info text above the submit claims button
+  ///
+  /// In en, this message translates to:
+  /// **'Submitted claims will be processed within 1 week - good luck!\n\nPayouts are 2500 Quan total per testnet chain, split amongst all miners, and weighed by the square root of their total blocks mined. This means bigger miners earn more, but smaller miners still earn a good reward. Quadratic counting equalizes across all miners.'**
+  String get miningRewardsPayoutInfo;
+
+  /// Button that proves ownership and submits the claims
+  ///
+  /// In en, this message translates to:
+  /// **'Submit Claims'**
+  String get miningRewardsSubmitClaims;
+
+  /// Toaster when the claim server rejects or proving fails
+  ///
+  /// In en, this message translates to:
+  /// **'Claim submission failed: {error}'**
+  String miningRewardsSubmitFailed(String error);
+
+  /// Title of the screen shown after claims were accepted
+  ///
+  /// In en, this message translates to:
+  /// **'Claims Submitted'**
+  String get miningRewardsSubmittedTitle;
+
+  /// Body of the screen shown after claims were accepted
+  ///
+  /// In en, this message translates to:
+  /// **'Submission successful, thank you. Claims will be paid out within 1 week'**
+  String get miningRewardsSubmittedBody;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

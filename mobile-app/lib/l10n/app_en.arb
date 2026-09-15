@@ -2784,5 +2784,92 @@
           "type": "String"
         }
       }
+    },
+    "settingsMiningRewards": "Mining Rewards",
+    "@settingsMiningRewards": {
+      "description": "Settings hub row and screen title for testnet mining rewards"
+    },
+    "settingsMiningRewardsSubtitle": "Claim your testnet mining rewards",
+    "@settingsMiningRewardsSubtitle": {
+      "description": "Settings hub row subtitle for testnet mining rewards"
+    },
+    "miningRewardsIntro": "If you mined on a Quantus testnet, check whether this wallet's miners earned a reward, then choose where it should be paid.",
+    "@miningRewardsIntro": {
+      "description": "Explainer on the mining rewards entry screen"
+    },
+    "miningRewardsCheckEligibility": "Check eligibility",
+    "@miningRewardsCheckEligibility": {
+      "description": "Button starting the mining rewards eligibility check"
+    },
+    "miningRewardsEligibilityTitle": "Eligibility for {wallet}",
+    "@miningRewardsEligibilityTitle": {
+      "description": "Title of the per-chain eligibility screen",
+      "placeholders": {
+        "wallet": {
+          "type": "String"
+        }
+      }
+    },
+    "miningRewardsBlocksMined": "{count, plural, =1{1 block mined} other{{count} blocks mined}}",
+    "@miningRewardsBlocksMined": {
+      "description": "Blocks the wallet mined on one testnet",
+      "placeholders": {
+        "count": {
+          "type": "int"
+        }
+      }
+    },
+    "miningRewardsTotal": "Total reward",
+    "@miningRewardsTotal": {
+      "description": "Label of the summed payout across all chains"
+    },
+    "miningRewardsNone": "No testnet mining rewards were found for this wallet.",
+    "@miningRewardsNone": {
+      "description": "Shown when every chain answered and none of them pays this wallet"
+    },
+    "miningRewardsCheckFailed": "Check failed, tap to retry",
+    "@miningRewardsCheckFailed": {
+      "description": "Shown in a chain row when its eligibility check threw"
+    },
+    "miningRewardsClaim": "Claim",
+    "@miningRewardsClaim": {
+      "description": "Button opening the claim beneficiary screen"
+    },
+    "miningRewardsClaimTitle": "Claim Rewards",
+    "@miningRewardsClaimTitle": {
+      "description": "Title of the claim beneficiary screen"
+    },
+    "miningRewardsBeneficiaryLabel": "Pay rewards to",
+    "@miningRewardsBeneficiaryLabel": {
+      "description": "Label above the beneficiary address field"
+    },
+    "miningRewardsYourAccounts": "Your accounts",
+    "@miningRewardsYourAccounts": {
+      "description": "Heading of the list of own accounts to pick as beneficiary"
+    },
+    "miningRewardsPayoutInfo": "Submitted claims will be processed within 1 week - good luck!\n\nPayouts are 2500 Quan total per testnet chain, split amongst all miners, and weighed by the square root of their total blocks mined. This means bigger miners earn more, but smaller miners still earn a good reward. Quadratic counting equalizes across all miners.",
+    "@miningRewardsPayoutInfo": {
+      "description": "Info text above the submit claims button"
+    },
+    "miningRewardsSubmitClaims": "Submit Claims",
+    "@miningRewardsSubmitClaims": {
+      "description": "Button that proves ownership and submits the claims"
+    },
+    "miningRewardsSubmitFailed": "Claim submission failed: {error}",
+    "@miningRewardsSubmitFailed": {
+      "description": "Toaster when the claim server rejects or proving fails",
+      "placeholders": {
+        "error": {
+          "type": "String"
+        }
+      }
+    },
+    "miningRewardsSubmittedTitle": "Claims Submitted",
+    "@miningRewardsSubmittedTitle": {
+      "description": "Title of the screen shown after claims were accepted"
+    },
+    "miningRewardsSubmittedBody": "Submission successful, thank you. Claims will be paid out within 1 week",
+    "@miningRewardsSubmittedBody": {
+      "description": "Body of the screen shown after claims were accepted"
     }
 }
