@@ -7,9 +7,9 @@ import '../frb_generated.dart';
 import 'crypto.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-// These functions are ignored because they are not marked as `pub`: `as_slice`, `compact8_decode`, `decode_account`, `derive_dilithium`, `derive_historical_dilithium`, `derive`, `dilithium_keygen_ids`, `hash_felts_rate4_pad10`, `hash_felts`, `hash_padded_legacy`, `hash_padded_v10`, `injective4_secret_words`, `injective4`, `mldsa87_keypair`, `now_unix`, `push`, `rehash`, `sign_dilithium_claim`, `v09_hash_no_pad`, `v09_permutation`, `wipe_bytes`, `wipe_felts`, `with_capacity`
-// These types are ignored because they are neither used by any `pub` functions nor (for structs and enums) marked `#[frb(unignore)]`: `HistoricalKeypair`, `SecretEncoding`, `SecretKeyBytes`, `SensitiveFelts`, `Sponge`, `WormholeSchemeDef`
-// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `assert_receiver_is_total_eq`, `clone`, `clone`, `drop`, `drop`, `eq`, `fmt`, `fmt`
+// These functions are ignored because they are not marked as `pub`: `compact8_decode`, `decode_account`, `derive_dilithium`, `derive_historical_dilithium`, `derive`, `dilithium_keygen_ids`, `hash_felts_rate4_pad10`, `hash_felts`, `hash_padded_legacy`, `hash_padded_v10`, `injective4_secret_words`, `injective4`, `mldsa87_keypair`, `now_unix`, `rehash`, `sign_dilithium_claim`, `v09_hash_no_pad`, `v09_permutation`, `wormhole_scan_paths`
+// These types are ignored because they are neither used by any `pub` functions nor (for structs and enums) marked `#[frb(unignore)]`: `HistoricalKeypair`, `SecretEncoding`, `Sponge`, `WormholeSchemeDef`
+// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `assert_receiver_is_total_eq`, `clone`, `clone`, `eq`, `fmt`, `fmt`
 
 /// Determine which snapshot addresses belong to this wallet.
 ///
@@ -18,7 +18,7 @@ import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 /// `dilithium_public_key` under every historical hash, and — when `mnemonic`
 /// is given — against keypairs re-derived under every historical keygen era
 /// (see `dilithium_keygen_ids`). Wormhole matches are checked for HD-derived
-/// secrets (`m/44'/189189189'/0'/{0..=8}'/{0..=16}'` under both the current
+/// secrets (`m/44'/189189189'/0'/{0..=8}'/{0..=99}'` under both the current
 /// "Dilithium seed" and the pre-2.1.0 "Bitcoin seed" BIP32 masters, plus the
 /// legacy master-node secret) when `mnemonic` is given, plus any
 /// `extra_wormhole_secrets` (32 bytes each).

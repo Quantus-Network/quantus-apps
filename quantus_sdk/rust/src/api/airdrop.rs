@@ -26,11 +26,15 @@ use qp_rusty_crystals_hdwallet::{
 };
 use std::collections::HashMap;
 
+use crate::sensitive::{wipe, SensitiveVec};
+
 const RATE_4: usize = 4;
 const WORMHOLE_SALT: &[u8] = b"wormhole";
 /// Only proofs for the current wormhole scheme are accepted by the claim server.
 const CLAIMABLE_WORMHOLE_SCHEME: &str = "wormhole-rate8-compact";
-const HD_SCAN_INDEXES: u32 = 17;
+/// Address indexes scanned per wormhole HD branch. The shipped wallets never
+/// capped the index, so scan well past any realistic count.
+const HD_SCAN_INDEXES: u32 = 100;
 /// Middle HD path component. The app uses 0 (external) and 1 (dedicated
 /// change branch since July 2026); the CLI's wormhole multiround flow uses it
 /// as a round counter (default 2 rounds), so scan several rounds beyond that.
@@ -75,57 +79,8 @@ fn compact8_decode(bytes: &[u8; 32]) -> [Goldilocks; POSEIDON2_OUTPUT] {
     qp_poseidon_core::serialization::bytes_to_digest_lossy(bytes)
 }
 
-/// Zero field elements, resistant to dead-store elimination: `black_box`
-/// makes the compiler assume the zeros are observed, so the fill cannot be
-/// elided (same construction as qp-poseidon-core's internal state wipe).
-fn wipe_felts(felts: &mut [Goldilocks]) {
-    felts.fill(Goldilocks::ZERO);
-    core::hint::black_box(felts);
-}
-
-/// Zero bytes, resistant to dead-store elimination.
-fn wipe_bytes(bytes: &mut [u8]) {
-    bytes.fill(0);
-    core::hint::black_box(bytes);
-}
-
-/// Heap buffer for secret-bearing field elements. The full capacity must be
-/// reserved before secret material is written (a growing `Vec` frees its old
-/// block unscrubbed); limbs are wiped on drop. Generic so both the current
-/// qp-poseidon-core felts and the v09 p3-goldilocks felts are covered.
-struct SensitiveFelts<F: Copy> {
-    felts: Vec<F>,
-    zero: F,
-}
-
-impl<F: Copy> SensitiveFelts<F> {
-    fn with_capacity(zero: F, capacity: usize) -> Self {
-        Self {
-            felts: Vec::with_capacity(capacity),
-            zero,
-        }
-    }
-
-    fn push(&mut self, felt: F) {
-        debug_assert!(
-            self.felts.len() < self.felts.capacity(),
-            "SensitiveFelts must be pre-sized"
-        );
-        self.felts.push(felt);
-    }
-
-    fn as_slice(&self) -> &[F] {
-        &self.felts
-    }
-}
-
-impl<F: Copy> Drop for SensitiveFelts<F> {
-    fn drop(&mut self) {
-        // Same dead-store-resistant wipe as `wipe_felts`.
-        self.felts.fill(self.zero);
-        core::hint::black_box(self.felts.as_mut_slice());
-    }
-}
+/// Field element of qp-poseidon-core 0.9.5 (plonky3 Goldilocks 0.3.0).
+type V09Felt = p3_goldilocks::Goldilocks;
 
 /// The injective 4-bytes-per-felt encoding of a 32-byte secret, as canonical
 /// limb values: eight little-endian u32 words plus the `1` terminator
@@ -138,9 +93,6 @@ fn injective4_secret_words(secret: &[u8; 32]) -> impl Iterator<Item = u64> + '_ 
         .map(|chunk| u32::from_le_bytes(chunk.try_into().expect("4-byte chunk")) as u64)
         .chain([1u64])
 }
-
-/// Field element of qp-poseidon-core 0.9.5 (plonky3 Goldilocks 0.3.0).
-type V09Felt = p3_goldilocks::Goldilocks;
 
 /// The v0.9.5 Poseidon2 permutation, rebuilt from the same public crates the
 /// historical qp-poseidon-core used: ChaCha8-derived constants with seed
@@ -169,11 +121,6 @@ fn v09_hash_no_pad(input: &[V09Felt]) -> [u8; 32] {
     use p3_symmetric::Permutation;
     const WIDTH: usize = 12;
     const RATE: usize = 4;
-
-    let wipe = |felts: &mut [V09Felt]| {
-        felts.fill(V09Felt::ZERO);
-        core::hint::black_box(felts);
-    };
 
     let poseidon2 = v09_permutation();
     let mut state = [V09Felt::ZERO; WIDTH];
@@ -273,8 +220,8 @@ fn hash_felts_rate4_pad10(x: &[Goldilocks]) -> [u8; 32] {
         .expect("width > output");
     // The absorb buffer holds raw preimage felts and the state is the
     // permuted secret; wipe both before returning.
-    wipe_felts(&mut state);
-    wipe_felts(&mut buf);
+    wipe(&mut state);
+    wipe(&mut buf);
     digest_to_bytes(&digest)
 }
 
@@ -364,10 +311,10 @@ impl WormholeSchemeDef {
     /// allocation containing the secret is ever freed unscrubbed (verified by
     /// the allocator test in `heap_zeroization_tests`).
     fn derive(&self, secret: &[u8; 32]) -> [u8; 32] {
-        use p3_field::{integers::QuotientMap, PrimeCharacteristicRing};
+        use p3_field::integers::QuotientMap;
         if self.sponge == Sponge::V09 {
             let salt = v09::injective_bytes_to_felts(WORMHOLE_SALT);
-            let mut preimage = SensitiveFelts::with_capacity(V09Felt::ZERO, salt.len() + 9);
+            let mut preimage = SensitiveVec::with_capacity(salt.len() + 9);
             for felt in salt {
                 preimage.push(felt);
             }
@@ -384,12 +331,12 @@ impl WormholeSchemeDef {
                     }
                 }
             }
-            let first_hash = v09_hash_no_pad(preimage.as_slice());
+            let first_hash = v09_hash_no_pad(&preimage);
             return v09_hash_no_pad(&v09::digest_bytes_to_felts(&first_hash));
         }
         let salt = injective4(WORMHOLE_SALT);
         // injective4 of a 32-byte secret is exactly 9 felts; compact8 is 4.
-        let mut preimage = SensitiveFelts::with_capacity(Goldilocks::ZERO, salt.len() + 9);
+        let mut preimage = SensitiveVec::with_capacity(salt.len() + 9);
         for felt in salt {
             preimage.push(felt);
         }
@@ -404,10 +351,10 @@ impl WormholeSchemeDef {
                 for felt in digest {
                     preimage.push(felt);
                 }
-                wipe_felts(&mut digest);
+                wipe(&mut digest);
             }
         }
-        let first_hash = self.sponge.hash_felts(preimage.as_slice());
+        let first_hash = self.sponge.hash_felts(&preimage);
         self.sponge.rehash(&first_hash)
     }
 }
@@ -458,22 +405,14 @@ fn derive_dilithium(scheme: &str, public_key: &[u8]) -> [u8; 32] {
 
 /// BIP44 coin type for Dilithium keys (the wormhole coin type is 189189189').
 const DILITHIUM_CHAIN_ID: &str = "189189'";
-/// Account indexes scanned per HD keygen family, same breadth as the
-/// wormhole branch scan.
-const DILITHIUM_SCAN_ACCOUNTS: u32 = 9;
-
-/// Secret-key bytes that wipe themselves on drop.
-struct SecretKeyBytes(Vec<u8>);
-
-impl Drop for SecretKeyBytes {
-    fn drop(&mut self) {
-        wipe_bytes(&mut self.0);
-    }
-}
+/// Account indexes scanned per HD keygen family. The multiple-accounts
+/// wallet never capped the account index, so scan well past any realistic
+/// count.
+const DILITHIUM_SCAN_ACCOUNTS: u32 = 100;
 
 struct HistoricalKeypair {
     public: Vec<u8>,
-    secret: SecretKeyBytes,
+    secret: SensitiveVec<u8>,
 }
 
 /// Every mnemonic→ML-DSA-87-keypair scheme a snapshot key may have used.
@@ -535,7 +474,7 @@ fn derive_historical_dilithium(
             .map_err(|e| format!("BIP32 derivation failed at {path}: {e:?}"))?
             .secret();
         let keypair = mldsa87_keypair(&entropy, v1);
-        wipe_bytes(&mut entropy);
+        wipe(&mut entropy);
         return Ok(keypair);
     }
     if let Some(path) = source.strip_prefix("hd:") {
@@ -547,7 +486,7 @@ fn derive_historical_dilithium(
         let keypair = qp_rusty_crystals_hdwallet::ml_dsa_87::derive_key_from_seed(seed, path)
             .map_err(|e| format!("HD derivation failed at {path}: {e:?}"))?;
         // `to_bytes` returns a `Zeroizing` buffer, wiped when it drops here.
-        let secret = SecretKeyBytes(keypair.secret().to_bytes().to_vec());
+        let secret = SensitiveVec(keypair.secret().to_bytes().to_vec());
         return Ok(HistoricalKeypair {
             public: keypair.public().to_bytes().to_vec(),
             secret,
@@ -580,7 +519,7 @@ fn mldsa87_keypair(seed: &[u8], v1: bool) -> HistoricalKeypair {
         preimage[seed.len()] = K as u8;
         preimage[seed.len() + 1] = L as u8;
         fips202::shake256(&mut seedbuf, &preimage[..seed.len() + 2]);
-        wipe_bytes(&mut preimage);
+        wipe(&mut preimage);
     }
 
     let mut rho = [0u8; SEEDBYTES];
@@ -589,7 +528,7 @@ fn mldsa87_keypair(seed: &[u8], v1: bool) -> HistoricalKeypair {
     rhoprime.copy_from_slice(&seedbuf[SEEDBYTES..SEEDBYTES + CRHBYTES]);
     let mut key = [0u8; SEEDBYTES];
     key.copy_from_slice(&seedbuf[SEEDBYTES + CRHBYTES..]);
-    wipe_bytes(&mut seedbuf);
+    wipe(&mut seedbuf);
 
     let mut s1 = Polyvec::<L>::default();
     for (i, p) in s1.vec.iter_mut().enumerate() {
@@ -599,7 +538,7 @@ fn mldsa87_keypair(seed: &[u8], v1: bool) -> HistoricalKeypair {
     for (i, p) in s2.vec.iter_mut().enumerate() {
         poly::uniform_eta::<ETA>(p, &rhoprime, (L + i) as u16);
     }
-    wipe_bytes(&mut rhoprime);
+    wipe(&mut rhoprime);
 
     let mut s1hat = s1.clone();
     polyvec::ntt(&mut s1hat);
@@ -618,18 +557,31 @@ fn mldsa87_keypair(seed: &[u8], v1: bool) -> HistoricalKeypair {
     fips202::shake256(&mut tr, &pk);
     let mut sk = [0u8; SECRETKEYBYTES];
     packing::pack_sk::<K, L, ETA, SECRETKEYBYTES>(&mut sk, &rho, &tr, &key, &t0, &s1, &s2);
-    wipe_bytes(&mut key);
+    wipe(&mut key);
 
     // s1, s2, t0, and s1hat wipe themselves on drop (Polyvec is
     // ZeroizeOnDrop); the packed sk moves into a self-wiping buffer and its
     // stack copy is scrubbed here.
-    let secret = SecretKeyBytes(sk.to_vec());
-    wipe_bytes(&mut sk);
+    let secret = SensitiveVec(sk.to_vec());
+    wipe(&mut sk);
     HistoricalKeypair {
         public: pk.to_vec(),
         secret,
     }
 }
+
+/// Wormhole HD paths the app and CLI may have used: account 0', every
+/// scanned branch and address index.
+fn wormhole_scan_paths() -> impl Iterator<Item = String> {
+    (0..HD_SCAN_BRANCHES).flat_map(|branch| {
+        (0..HD_SCAN_INDEXES)
+            .map(move |index| format!("m/44'/{QUANTUS_WORMHOLE_CHAIN_ID}/0'/{branch}'/{index}'"))
+    })
+}
+
+/// Scan-buffer entries one mnemonic contributes: the path grid under both
+/// BIP32 masters plus the legacy master-node secret.
+const WORMHOLE_SCAN_SECRETS: usize = 2 * (HD_SCAN_BRANCHES * HD_SCAN_INDEXES) as usize + 1;
 
 // ---------------------------------------------------------------------------
 // FFI surface
@@ -666,7 +618,7 @@ pub struct AirdropMatch {
 /// `dilithium_public_key` under every historical hash, and — when `mnemonic`
 /// is given — against keypairs re-derived under every historical keygen era
 /// (see `dilithium_keygen_ids`). Wormhole matches are checked for HD-derived
-/// secrets (`m/44'/189189189'/0'/{0..=8}'/{0..=16}'` under both the current
+/// secrets (`m/44'/189189189'/0'/{0..=8}'/{0..=99}'` under both the current
 /// "Dilithium seed" and the pre-2.1.0 "Bitcoin seed" BIP32 masters, plus the
 /// legacy master-node secret) when `mnemonic` is given, plus any
 /// `extra_wormhole_secrets` (32 bytes each).
@@ -707,7 +659,12 @@ pub fn find_airdrop_matches(
         }
     }
 
-    let mut secrets: Vec<([u8; 32], String)> = Vec::new();
+    let extra_wormhole_secrets = SensitiveVec(extra_wormhole_secrets);
+    // Every candidate spend secret goes into one pre-sized self-wiping
+    // buffer, so neither growth nor an early return frees it unscrubbed.
+    let mut secrets = SensitiveVec::with_capacity(
+        mnemonic.as_ref().map_or(0, |_| WORMHOLE_SCAN_SECRETS) + extra_wormhole_secrets.len(),
+    );
     if let Some(mnemonic) = mnemonic {
         // Stretch the BIP39 seed once, then walk the HD tree per path.
         // `mnemonic_to_seed` consumes and zeroizes the mnemonic string.
@@ -742,48 +699,31 @@ pub fn find_airdrop_matches(
         }
 
         // Wormhole secrets under the current "Dilithium seed" tree.
-        for branch in 0..HD_SCAN_BRANCHES {
-            for index in 0..HD_SCAN_INDEXES {
-                let path = format!(
-                    "m/44'/{}/0'/{}'/{}'",
-                    QUANTUS_WORMHOLE_CHAIN_ID, branch, index
-                );
-                let pair = generate_wormhole_from_seed(&seed, &path)
-                    .map_err(|e| format!("HD derivation failed at {path}: {e:?}"))?;
-                secrets.push((*pair.secret().as_bytes(), path));
-            }
+        for path in wormhole_scan_paths() {
+            let pair = generate_wormhole_from_seed(&seed, &path)
+                .map_err(|e| format!("HD derivation failed at {path}: {e:?}"))?;
+            secrets.push((*pair.secret().as_bytes(), path));
         }
 
         // Wormhole secrets under the pre-March-2026 "Bitcoin seed" tree:
         // same paths, different master HMAC key, so every entropy differs.
         // The app's first wormhole address also used the master node's own
         // key (hdwallet 1.0.0 `generate_wormhole_pair`), hence path "m".
-        let mut legacy_paths = vec!["m".to_string()];
-        for branch in 0..HD_SCAN_BRANCHES {
-            for index in 0..HD_SCAN_INDEXES {
-                legacy_paths.push(format!(
-                    "m/44'/{}/0'/{}'/{}'",
-                    QUANTUS_WORMHOLE_CHAIN_ID, branch, index
-                ));
-            }
-        }
-        for path in legacy_paths {
+        for path in std::iter::once("m".to_string()).chain(wormhole_scan_paths()) {
             let entropy = ExtendedPrivKey::derive(seed.as_bytes(), path.as_str())
                 .map_err(|e| format!("BIP32 derivation failed at {path}: {e:?}"))?
                 .secret();
             secrets.push((entropy, format!("bitcoin-seed {path}")));
         }
     }
-    let mut extra_wormhole_secrets = extra_wormhole_secrets;
-    for (i, secret) in extra_wormhole_secrets.iter_mut().enumerate() {
-        let copy: Result<[u8; 32], _> = secret.as_slice().try_into();
-        wipe_bytes(secret);
-        let copy = copy.map_err(|_| format!("wormhole secret #{i} must be 32 bytes"))?;
+    for (i, secret) in extra_wormhole_secrets.iter().enumerate() {
+        let copy = <[u8; 32]>::try_from(secret.as_slice())
+            .map_err(|_| format!("wormhole secret #{i} must be 32 bytes"))?;
         secrets.push((copy, format!("provided secret #{i}")));
     }
 
     let mut seen: Vec<([u8; 32], &'static str)> = Vec::new();
-    for (secret, source) in &secrets {
+    for (secret, source) in secrets.iter() {
         for scheme in WORMHOLE_SCHEMES {
             let account = scheme.derive(secret);
             if let Some(address) = by_account.get(&account) {
@@ -804,13 +744,8 @@ pub fn find_airdrop_matches(
         }
     }
 
-    // The scan buffer holds every candidate spend secret; wipe it before the
-    // backing allocation is freed. (Matched secrets intentionally survive in
-    // the returned `AirdropMatch`es — the caller needs them to prove.)
-    for (secret, _) in secrets.iter_mut() {
-        wipe_bytes(secret);
-    }
-
+    // `secrets` wipes itself on drop. Matched secrets intentionally survive
+    // in the returned `AirdropMatch`es — the caller needs them to prove.
     Ok(matches)
 }
 
@@ -872,7 +807,7 @@ pub fn build_airdrop_dilithium_claim_from_mnemonic(
     let mut seed = SensitiveBytes64::zeroed();
     mnemonic_to_seed(mnemonic, None, &mut seed).map_err(|e| format!("invalid mnemonic: {e:?}"))?;
     let keypair = derive_historical_dilithium(&seed, &dilithium_keygen)?;
-    sign_dilithium_claim(&keypair.public, &keypair.secret.0, address, claim_account)
+    sign_dilithium_claim(&keypair.public, &keypair.secret, address, claim_account)
 }
 
 fn sign_dilithium_claim(
@@ -934,7 +869,7 @@ pub fn prove_airdrop_wormhole(
     if valid_len {
         secret_bytes.copy_from_slice(&wormhole_secret);
     }
-    wipe_bytes(&mut wormhole_secret);
+    wipe(&mut wormhole_secret);
     if !valid_len {
         return Err("wormhole secret must be 32 bytes".into());
     }
@@ -1277,12 +1212,12 @@ mod tests {
         // packed sk must be byte-identical to the historical crates' output.
         let v1 = derive_historical_dilithium(&seed, "v1:seed").unwrap();
         assert_eq!(
-            hex::encode(sha2::Sha256::digest(&v1.secret.0)),
+            hex::encode(sha2::Sha256::digest(&v1.secret[..])),
             "fbcb8f8db649111054baddc24f3eaab314c120950d76fdb8df5c1cd6a4102aa9"
         );
         let fips = derive_historical_dilithium(&seed, "fips:seed").unwrap();
         assert_eq!(
-            hex::encode(sha2::Sha256::digest(&fips.secret.0)),
+            hex::encode(sha2::Sha256::digest(&fips.secret[..])),
             "fbe63db6ccf71badbb5a4aea59bead046637065fca38270b1a6361644ecf20d3"
         );
     }
@@ -1383,6 +1318,50 @@ mod tests {
         }
     }
 
+    /// The shipped wallets never capped the HD account or address index, so
+    /// the scan must reach past the old bounds (accounts 0..9, indexes 0..17)
+    /// and cover the whole configured range.
+    #[test]
+    fn hd_scan_reaches_high_account_and_address_indexes() {
+        let seed = test_seed();
+        let keygens: Vec<String> = [9, DILITHIUM_SCAN_ACCOUNTS - 1]
+            .iter()
+            .map(|account| format!("fips:hd:m/44'/{DILITHIUM_CHAIN_ID}/{account}'/0'/0'"))
+            .collect();
+        let paths: Vec<String> = [17, HD_SCAN_INDEXES - 1]
+            .iter()
+            .map(|index| format!("m/44'/{QUANTUS_WORMHOLE_CHAIN_ID}/0'/1'/{index}'"))
+            .collect();
+        let wormhole = WORMHOLE_SCHEMES
+            .iter()
+            .find(|s| s.id == CLAIMABLE_WORMHOLE_SCHEME)
+            .unwrap();
+        let mut snapshot = Vec::new();
+        for keygen in &keygens {
+            let keypair = derive_historical_dilithium(&seed, keygen).unwrap();
+            snapshot.push(to_ss58(&derive_dilithium(
+                "dilithium-rate8-hash-bytes",
+                &keypair.public,
+            )));
+        }
+        for path in &paths {
+            let pair = generate_wormhole_from_seed(&seed, path).unwrap();
+            snapshot.push(to_ss58(&wormhole.derive(pair.secret().as_bytes())));
+        }
+
+        let matches =
+            find_airdrop_matches(snapshot, None, Some(TEST_MNEMONIC.into()), vec![]).unwrap();
+        let mut sources: Vec<String> = matches.iter().map(|m| m.source.clone()).collect();
+        sources.sort();
+        let mut expected: Vec<String> = keygens
+            .iter()
+            .map(|k| format!("mnemonic keygen {k}"))
+            .chain(paths.iter().cloned())
+            .collect();
+        expected.sort();
+        assert_eq!(sources, expected);
+    }
+
     #[test]
     fn hd_scan_finds_wallet_wormhole_address() {
         let mnemonic = "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about";
@@ -1439,7 +1418,7 @@ mod heap_zeroization_tests {
         sync::OnceLock,
     };
 
-    use super::{injective4_secret_words, WORMHOLE_SCHEMES};
+    use super::{find_airdrop_matches, injective4_secret_words, WORMHOLE_SCHEMES};
 
     /// Distinctive all-ASCII 32-byte pattern; see module docs for why ASCII
     /// makes the compact8 felt image identical to the raw bytes.
@@ -1487,23 +1466,44 @@ mod heap_zeroization_tests {
             .collect()
     }
 
+    fn assert_no_secret_freed(what: &str, run: impl FnOnce()) {
+        LEAKED_BLOCK_SIZE.store(0, Ordering::SeqCst);
+        SCANNING.store(true, Ordering::SeqCst);
+        run();
+        SCANNING.store(false, Ordering::SeqCst);
+        let leaked = LEAKED_BLOCK_SIZE.load(Ordering::SeqCst);
+        assert_eq!(
+            leaked, 0,
+            "{what}: a heap block of {leaked} bytes still containing the spend secret was \
+             freed unscrubbed; see SensitiveVec pre-sizing (api/airdrop.rs) and Drop (sensitive.rs)"
+        );
+    }
+
     #[test]
     fn matching_never_frees_heap_memory_containing_the_secret() {
         INJECTIVE4_IMAGE.set(injective4_image()).expect("set once");
 
-        LEAKED_BLOCK_SIZE.store(0, Ordering::SeqCst);
-        SCANNING.store(true, Ordering::SeqCst);
-        for scheme in WORMHOLE_SCHEMES {
-            let address = scheme.derive(&SECRET_PATTERN);
-            core::hint::black_box(address);
-        }
-        SCANNING.store(false, Ordering::SeqCst);
+        assert_no_secret_freed("scheme derivation", || {
+            for scheme in WORMHOLE_SCHEMES {
+                core::hint::black_box(scheme.derive(&SECRET_PATTERN));
+            }
+        });
 
-        let leaked = LEAKED_BLOCK_SIZE.load(Ordering::SeqCst);
-        assert_eq!(
-            leaked, 0,
-            "a heap block of {leaked} bytes still containing the spend secret was freed \
-             unscrubbed; check SensitiveFelts pre-sizing and drop in api/airdrop.rs"
-        );
+        // The public entry point: the scan buffer must not leak through Vec
+        // growth (nine secrets force several reallocations), an early error
+        // return (a bad length after a good secret, with an unvisited secret
+        // left in the input), or the final drop.
+        let nine = vec![SECRET_PATTERN.to_vec(); 9];
+        assert_no_secret_freed("find_airdrop_matches", || {
+            assert!(find_airdrop_matches(vec![], None, None, nine).is_ok());
+        });
+        let bad_length = vec![
+            SECRET_PATTERN.to_vec(),
+            vec![0u8; 31],
+            SECRET_PATTERN.to_vec(),
+        ];
+        assert_no_secret_freed("find_airdrop_matches error path", || {
+            assert!(find_airdrop_matches(vec![], None, None, bad_length).is_err());
+        });
     }
 }
