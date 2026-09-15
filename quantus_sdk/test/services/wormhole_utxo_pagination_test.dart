@@ -6,8 +6,9 @@ const _siblingHeight = 1000;
 
 String _siblingId(int index) => '0000001000-sib-${index.toString().padLeft(6, '0')}';
 
-/// [transferPageSize] + 1 rows so a 3-wide same-height group sits on the OFFSET
-/// boundary (unique-order positions 298, 299, 300).
+/// [WormholeUtxoService.transferPageSize] + 1 rows so a 3-wide same-height
+/// group straddles the page boundary (positions 298, 299, 300 in
+/// `(block_height, id)` order).
 List<WormholeTransfer> _boundarySiblingTransfers() {
   final pageSize = WormholeUtxoService.transferPageSize;
   final total = pageSize + 1;
@@ -31,64 +32,97 @@ List<WormholeTransfer> _boundarySiblingTransfers() {
   ];
 }
 
-bool _queryHasUniqueTransferOrder(String query) {
-  final hasHeight = query.contains('block: {height: asc}');
-  final hasTieBreak = query.contains('{id: asc}') || query.contains('{leaf_index: asc}');
-  return hasHeight && hasTieBreak;
+int _byHeightThenId(WormholeTransfer a, WormholeTransfer b) {
+  final byHeight = a.blockHeight.compareTo(b.blockHeight);
+  return byHeight != 0 ? byHeight : a.id.compareTo(b.id);
 }
 
-/// Hasura/Postgres LIMIT+OFFSET when `order_by` is not unique: each page
-/// independently orders ties, so a sibling can be returned twice and another
-/// omitted. Unique `{height, id}` partitions cleanly.
-List<WormholeTransfer> _pageLikeHasura({
-  required List<WormholeTransfer> rows,
-  required String query,
-  required int limit,
-  required int offset,
-  required int afterBlock,
-}) {
-  final filtered = rows.where((r) => r.blockHeight > afterBlock).toList();
-  final unique = _queryHasUniqueTransferOrder(query);
-  filtered.sort((a, b) {
-    final byHeight = a.blockHeight.compareTo(b.blockHeight);
-    if (byHeight != 0) return byHeight;
-    if (unique) return a.id.compareTo(b.id);
-    return offset == 0 ? a.id.compareTo(b.id) : b.id.compareTo(a.id);
-  });
-  return filtered.skip(offset).take(limit).toList();
-}
+/// In-memory stand-in for Hasura evaluating the keyset query: rows to the
+/// requested addresses above [afterBlock], strictly after the cursor in
+/// `(block_height, id)` order, first [limit] of them.
+class _KeysetIndexer extends WormholeUtxoService {
+  _KeysetIndexer(this.rows);
 
-List<WormholeTransfer> _walkOfficialQuery(List<WormholeTransfer> rows) {
-  final all = <WormholeTransfer>[];
-  var offset = 0;
-  while (true) {
-    final page = _pageLikeHasura(
-      rows: rows,
-      query: WormholeUtxoService.transfersToAddressesQuery,
-      limit: WormholeUtxoService.transferPageSize,
-      offset: offset,
-      afterBlock: 0,
-    );
-    all.addAll(page);
-    if (page.length < WormholeUtxoService.transferPageSize) break;
-    offset += WormholeUtxoService.transferPageSize;
+  final List<WormholeTransfer> rows;
+  final List<WormholeTransferCursor?> requestedCursors = [];
+
+  @override
+  Future<List<WormholeTransfer>> queryTransfersPage({
+    required String toAddress,
+    required int afterBlock,
+    WormholeTransferCursor? after,
+    int limit = WormholeUtxoService.transferPageSize,
+  }) async {
+    requestedCursors.add(after);
+    final matching = rows.where((r) => r.toId == toAddress && r.blockHeight > afterBlock).where((r) {
+      if (after == null) return true;
+      if (r.blockHeight != after.blockHeight) return r.blockHeight > after.blockHeight;
+      return r.id.compareTo(after.id) > 0;
+    }).toList()..sort(_byHeightThenId);
+    return matching.take(limit).toList();
   }
-  return all;
 }
 
 void main() {
-  test('OFFSET walk of the official transfer query keeps same-height siblings', () {
-    final rows = _boundarySiblingTransfers();
-    final siblingIds = [for (var i = 0; i < 3; i++) _siblingId(i)];
-    final walked = _walkOfficialQuery(rows);
-    final ids = walked.map((t) => t.id).toList();
+  group('transfersToAddress queries', () {
+    test('first page filters on indexed scalar columns and orders by (block_height, id)', () {
+      const query = WormholeUtxoService.transfersToAddressQuery;
 
-    expect(ids.toSet(), hasLength(rows.length), reason: 'height-only OFFSET can drop a tied sibling');
-    expect(ids, containsAll(siblingIds));
-    expect(ids.toSet(), hasLength(ids.length), reason: 'pages must not overlap on a tied height');
+      expect(
+        query,
+        contains(r'to_id: {_eq: $to}'),
+        reason:
+            'Hasura renders _in as `= ANY(array)`, which Postgres will not walk in (block_height, id) order; '
+            'on a 1M-row inbox that was a full seq scan + sort instead of a 300-row index range scan',
+      );
+      expect(query, isNot(contains('_in:')));
+      expect(query, contains(r'block_height: {_gt: $afterBlock}'));
+      expect(query, contains('order_by: [{block_height: asc}, {id: asc}]'));
+      expect(query, isNot(contains('offset')), reason: 'OFFSET re-scans every earlier row on each page');
+      expect(query, isNot(contains('to: {')), reason: 'a nested relation filter cannot use (to_id, block_height, id)');
+      expect(query, isNot(contains('block: {')), reason: 'block height is denormalized onto transfer');
+    });
+
+    test('next page continues strictly after the (block_height, id) cursor', () {
+      const query = WormholeUtxoService.transfersToAddressAfterQuery;
+
+      expect(query, contains(r'to_id: {_eq: $to}'));
+      expect(query, contains(r'block_height: {_gte: $cursorHeight}'));
+      expect(query, contains(r'_not: {block_height: {_eq: $cursorHeight}, id: {_lte: $cursorId}}'));
+      expect(query, contains('order_by: [{block_height: asc}, {id: asc}]'));
+      expect(query, isNot(contains('offset')));
+      expect(query, isNot(contains('_or')), reason: '_or keyset predicates plan as BitmapOr + sort');
+    });
   });
 
   test('caches are generation-versioned so a network switch never reads the previous chain', () {
     expect(WormholeUtxoService.cacheVersion, 3);
+  });
+
+  test('keyset walk returns every row once, including same-height siblings on the page boundary', () async {
+    final rows = _boundarySiblingTransfers();
+    final indexer = _KeysetIndexer(rows);
+
+    final walked = await indexer.fetchAllTransfers(toAddress: _dest, afterBlock: 0);
+    final ids = walked.map((t) => t.id).toList();
+
+    expect(ids, hasLength(rows.length));
+    expect(ids.toSet(), hasLength(rows.length), reason: 'no row may be returned twice');
+    expect(ids, containsAll([for (var i = 0; i < 3; i++) _siblingId(i)]));
+
+    final lastOfFirstPage = walked[WormholeUtxoService.transferPageSize - 1];
+    expect(indexer.requestedCursors, hasLength(2));
+    expect(indexer.requestedCursors[0], isNull, reason: 'first page has no cursor');
+    expect(indexer.requestedCursors[1]?.blockHeight, lastOfFirstPage.blockHeight);
+    expect(indexer.requestedCursors[1]?.id, lastOfFirstPage.id);
+  });
+
+  test('a short page ends the walk without another request', () async {
+    final indexer = _KeysetIndexer(_boundarySiblingTransfers().take(5).toList());
+
+    final walked = await indexer.fetchAllTransfers(toAddress: _dest, afterBlock: 0);
+
+    expect(walked, hasLength(5));
+    expect(indexer.requestedCursors, hasLength(1));
   });
 }

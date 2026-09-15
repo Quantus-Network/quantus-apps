@@ -1,5 +1,6 @@
 import 'dart:developer' as developer;
 
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:quantus_sdk/src/services/multisig_graphql.dart';
 import 'package:quantus_sdk/src/utils/timing.dart';
@@ -8,22 +9,23 @@ class OtherTransfersResult {
   final List<TransactionEvent> transfers;
   final bool hasMore;
 
-  /// The number of raw rows consumed from the query result, including skipped
-  /// rows. Use this to advance pagination cursors, not [transfers.length].
-  final int rawRowsConsumed;
+  /// Where the next page starts. Advances past skipped (null-parsed) rows too,
+  /// so paging never re-reads them.
+  final AccountEventCursor? nextCursor;
 
-  const OtherTransfersResult({required this.transfers, required this.hasMore, required this.rawRowsConsumed});
+  const OtherTransfersResult({required this.transfers, required this.hasMore, required this.nextCursor});
 }
 
-class _Page<T> {
+/// One page of parsed `account_event` rows plus the keyset to continue from.
+class AccountEventPage<T> {
   final List<T> items;
   final bool hasMore;
 
-  /// The number of raw rows consumed from the query result, including rows
-  /// that parsed to null. Use this to advance pagination cursors.
-  final int rawRowsConsumed;
+  /// Cursor of the last raw row consumed (parsed or skipped), or the cursor
+  /// this page was requested with when it returned nothing.
+  final AccountEventCursor? nextCursor;
 
-  const _Page({required this.items, required this.hasMore, required this.rawRowsConsumed});
+  const AccountEventPage({required this.items, required this.hasMore, required this.nextCursor});
 }
 
 class ChainHistoryService {
@@ -37,33 +39,87 @@ class ChainHistoryService {
     developer.log(message, name: _logName, error: error, stackTrace: stackTrace);
   }
 
-  String _buildScheduledReversibleTransfersQuery(TransactionFilter filter) {
-    final String whereClause;
+  /// `order_by` for one account's `account_event` selection.
+  ///
+  /// Rows are consumed in `(timestamp desc, id desc)` order; every keyset
+  /// predicate and cursor below assumes it. The leading `account_id` (and the
+  /// direction flag for send / receive) are constants under the `_eq` filters,
+  /// so they do not change the order — they are there so the ORDER BY matches
+  /// the `(account_id[, incoming|outgoing], timestamp, id)` index prefix.
+  /// Without them the planner walks the global `timestamp` index backwards
+  /// filtering row by row; on Planck that was 14s / 1.6M rows to find zero
+  /// incoming rows for a send-only account, versus 4ms on the composite.
+  static String _accountEventOrder(TransactionFilter filter) {
+    final direction = switch (filter) {
+      TransactionFilter.send => '{outgoing: desc}, ',
+      TransactionFilter.receive => '{incoming: desc}, ',
+      TransactionFilter.all => '',
+    };
+    return 'order_by: [{account_id: desc}, $direction{timestamp: desc}, {id: desc}]';
+  }
 
+  /// Variables declared by the cursor variant of a query.
+  static const String _cursorVariables = ', \$cursorTimestamp: timestamptz!, \$cursorId: String!';
+
+  /// Alias of the selection for the account at [index]; the response is
+  /// reassembled by [mergeAccountEventRows].
+  static String _accountAlias(int index) => 'events$index';
+
+  /// `$account0: String!, $account1: String!, ...` for [accountCount] accounts.
+  ///
+  /// Each account gets its own `_eq` selection instead of one `_in` list:
+  /// Hasura renders `_in` as `account_id = ANY(array)`, which Postgres will
+  /// not use as an ordered range scan on the composite index.
+  static String _accountVariables(int accountCount) {
+    if (accountCount < 1) {
+      throw ArgumentError.value(accountCount, 'accountCount', 'Must query at least one account');
+    }
+    return [for (var i = 0; i < accountCount; i++) '\$account$i: String!'].join(', ');
+  }
+
+  /// Keyset predicate for rows strictly after the cursor in [_accountEventOrder].
+  ///
+  /// `ts <= c AND NOT (ts = c AND id >= cid)` keeps a single ordered range scan
+  /// on the `(account_id, ..., timestamp, id)` index; the equivalent `_or`
+  /// form plans as a BitmapOr followed by a sort over the whole history.
+  static const String _cursorPredicate =
+      '{timestamp: {_lte: \$cursorTimestamp}}, {_not: {timestamp: {_eq: \$cursorTimestamp}, id: {_gte: \$cursorId}}}';
+
+  /// Direction column predicate for [filter], or empty for [TransactionFilter.all].
+  ///
+  /// `outgoing` / `incoming` are set by the indexer per (account, event) row
+  /// so send / receive history never has to join the payload relations.
+  static String _directionPredicate(TransactionFilter filter) {
     switch (filter) {
       case TransactionFilter.send:
-        whereClause =
-            '{_and: [{account_id: {_in: \$accounts}}, {scheduled_reversible_transfer_id: {_is_null: false}}, {scheduledReversibleTransfer: {from_id: {_in: \$accounts}, scheduled_at: {_gt: \$after}}}]}';
-        break;
+        return ', {outgoing: {_eq: true}}';
       case TransactionFilter.receive:
-        whereClause =
-            '{_and: [{account_id: {_in: \$accounts}}, {scheduled_reversible_transfer_id: {_is_null: false}}, {scheduledReversibleTransfer: {to_id: {_in: \$accounts}, scheduled_at: {_gt: \$after}}}]}';
-        break;
+        return ', {incoming: {_eq: true}}';
       case TransactionFilter.all:
-        whereClause =
-            '{_and: [{account_id: {_in: \$accounts}}, {scheduled_reversible_transfer_id: {_is_null: false}}, {scheduledReversibleTransfer: {scheduled_at: {_gt: \$after}}}]}';
-        break;
+        return '';
     }
+  }
 
-    return '''
-query ScheduledReversibleTransfersByAccounts(\$accounts: [String!]!, \$limit: Int!, \$offset: Int!, \$after: timestamptz!) {
-  accountEvents: account_event(
-    limit: \$limit, 
-    offset: \$offset, 
-    where: $whereClause, 
-    order_by: {timestamp: desc}
-  ) {
+  /// Builds the pending-scheduled-reversible-transfers query for
+  /// [accountCount] accounts, one aliased selection per account.
+  ///
+  /// With [withCursor], the query declares `$cursorTimestamp` / `$cursorId`
+  /// and only returns rows strictly after that keyset.
+  @visibleForTesting
+  static String buildScheduledReversibleTransfersQuery(
+    TransactionFilter filter, {
+    required bool withCursor,
+    required int accountCount,
+  }) {
+    String whereClause(int index) =>
+        '{_and: [{account_id: {_eq: \$account$index}}, {scheduled_reversible_transfer_id: {_is_null: false}}'
+        '${_directionPredicate(filter)}'
+        ', {scheduledReversibleTransfer: {scheduled_at: {_gt: \$after}}}'
+        '${withCursor ? ', $_cursorPredicate' : ''}]}';
+
+    const selection = '''
     id
+    timestamp
     scheduledReversibleTransfer {
       id
       amount
@@ -83,30 +139,64 @@ query ScheduledReversibleTransfersByAccounts(\$accounts: [String!]!, \$limit: In
       extrinsic {
         id
       }
-    }
+    }''';
+
+    return _accountEventDocument(
+      operationName: 'ScheduledReversibleTransfersByAccounts',
+      extraVariables: ', \$after: timestamptz!',
+      filter: filter,
+      withCursor: withCursor,
+      accountCount: accountCount,
+      whereClause: whereClause,
+      selection: selection,
+    );
   }
+
+  /// One `account_event` selection per account, aliased `events0..N-1`, all
+  /// sharing `$limit` and the optional cursor.
+  static String _accountEventDocument({
+    required String operationName,
+    required String extraVariables,
+    required TransactionFilter filter,
+    required bool withCursor,
+    required int accountCount,
+    required String Function(int index) whereClause,
+    required String selection,
+  }) {
+    final variables =
+        '${_accountVariables(accountCount)}, \$limit: Int!$extraVariables${withCursor ? _cursorVariables : ''}';
+    final selections = [
+      for (var i = 0; i < accountCount; i++)
+        '''
+  ${_accountAlias(i)}: account_event(limit: \$limit, where: ${whereClause(i)}, ${_accountEventOrder(filter)}) {
+$selection
+  }''',
+    ].join('\n');
+
+    return '''
+query $operationName($variables) {
+$selections
 }
 ''';
   }
 
-  /// Builds the account-events (other transfers) query.
+  /// Builds the account-events (other transfers) query for [accountCount]
+  /// accounts, one aliased selection per account.
   ///
-  /// When [filter] is [TransactionFilter.send] or [TransactionFilter.receive],
-  /// a direction-specific condition is injected so the database only returns
-  /// matching rows instead of filtering client-side.
+  /// Every predicate is a plain column on `account_event` so Postgres serves
+  /// the page straight from the `(account_id[, outgoing|incoming], timestamp,
+  /// id)` index in output order. Send / receive use the indexer-maintained
+  /// direction flags; mining rewards are flagged incoming there, so the
+  /// `minerReward` selection is only requested when it can appear.
   ///
-  /// Mining rewards are always a "receive", so they are excluded when the
-  /// filter is [TransactionFilter.send] and included otherwise.
-  String _buildAccountEventsQuery(TransactionFilter filter) {
-    // The base condition that applies to every variant.
-    // Using Hasura's direct foreign key field is cleaner.
-    const String baseCondition = '{scheduled_reversible_transfer_id: {_is_null: true}}';
-
-    // Transfer extrinsic guard — only include on-chain transfers.
-    // Using direct `transfer_id` and `extrinsic_id` relation fields.
-    const String transferGuard =
-        '{_or: [{transfer_id: {_is_null: true}}, {transfer: {extrinsic_id: {_is_null: false}}}]}';
-
+  /// With [withCursor], the query declares `$cursorTimestamp` / `$cursorId`
+  /// and only returns rows strictly after that keyset.
+  @visibleForTesting
+  static String buildAccountEventsQuery(
+    TransactionFilter filter, {
+    required bool withCursor,
+    required int accountCount,
+  }) {
     // Whether to include the minerReward field in the response
     final bool includeMinerReward = filter != TransactionFilter.send;
 
@@ -132,28 +222,12 @@ query ScheduledReversibleTransfersByAccounts(\$accounts: [String!]!, \$limit: In
     final String executedProposalField = MultisigGraphql.executedMultisigProposalAccountEventSelection;
     final String cancelledProposalField = MultisigGraphql.cancelledMultisigProposalAccountEventSelection;
 
-    const String multisigSendClause =
-        ', {multisig_id: {_is_null: false}}, {multisig_proposal_created_id: {_is_null: false}}, {multisig_signer_approved_id: {_is_null: false}}, {executed_multisig_proposal_id: {_is_null: false}}, {cancelled_multisig_proposal_id: {_is_null: false}}';
+    String whereClause(int index) =>
+        '{_and: [{account_id: {_eq: \$account$index}}, {scheduled_reversible_transfer_id: {_is_null: true}}'
+        '${_directionPredicate(filter)}'
+        '${withCursor ? ', $_cursorPredicate' : ''}]}';
 
-    final String whereClause;
-
-    switch (filter) {
-      case TransactionFilter.send:
-        whereClause =
-            '{_and: [{account_id: {_in: \$accounts}}, $baseCondition, $transferGuard, {_or: [{transfer: {from_id: {_in: \$accounts}}}, {executedReversibleTransfer: {scheduledTransfer: {from_id: {_in: \$accounts}}}}, {cancelledReversibleTransfer: {scheduledTransfer: {from_id: {_in: \$accounts}}}}$multisigSendClause]}]}';
-        break;
-      case TransactionFilter.receive:
-        whereClause =
-            '{_and: [{account_id: {_in: \$accounts}}, $baseCondition, $transferGuard, {_or: [{transfer: {to_id: {_in: \$accounts}}}, {executedReversibleTransfer: {scheduledTransfer: {to_id: {_in: \$accounts}}}}, {cancelledReversibleTransfer: {scheduledTransfer: {to_id: {_in: \$accounts}}}}, {miner_reward_id: {_is_null: false}}]}]}';
-        break;
-      case TransactionFilter.all:
-        whereClause = '{_and: [{account_id: {_in: \$accounts}}, $baseCondition, $transferGuard]}';
-        break;
-    }
-
-    return '''
-query AccountEvents(\$accounts: [String!]!, \$limit: Int!, \$offset: Int!) {
-  accountEvents: account_event(limit: \$limit, offset: \$offset, where: $whereClause, order_by: {timestamp: desc}) {
+    final selection = '''
     id
     timestamp
     transfer {
@@ -218,10 +292,17 @@ query AccountEvents(\$accounts: [String!]!, \$limit: Int!, \$offset: Int!) {
         }
         scheduledAt: scheduled_at
       }
-    }$minerRewardField$multisigField$proposalCreatedField$signerApprovedField$executedProposalField$cancelledProposalField
-  }
-}
-''';
+    }$minerRewardField$multisigField$proposalCreatedField$signerApprovedField$executedProposalField$cancelledProposalField''';
+
+    return _accountEventDocument(
+      operationName: 'AccountEvents',
+      extraVariables: '',
+      filter: filter,
+      withCursor: withCursor,
+      accountCount: accountCount,
+      whereClause: whereClause,
+      selection: selection,
+    );
   }
 
   // GraphQL query to fetch transactions by their hash
@@ -253,11 +334,12 @@ query ExecutedReversibleTransferByTxId($txId: String!) {
   // `extrinsic_isNull: false` excludes mining/wormhole transfers which share the
   // transfer entity but have no extrinsic. Limit is 1 because we only ever use
   // the first match.
-  final String _searchPendingTransferQuery = r'''
+  @visibleForTesting
+  static const String searchPendingTransferQuery = r'''
 query SearchPendingTransaction(
   $from: String!,
   $to: String!,
-  $amount: BigInt!,
+  $amount: numeric!,
   $blockHeightAfter: Int!,
 ) {
   events: event(
@@ -297,11 +379,12 @@ query SearchPendingTransaction(
 }
 ''';
 
-  final String _searchPendingReversibleQuery = r'''
+  @visibleForTesting
+  static const String searchPendingReversibleQuery = r'''
 query SearchPendingTransaction(
   $from: String!,
   $to: String!,
-  $amount: BigInt!,
+  $amount: numeric!,
   $blockHeightAfter: Int!,
 ) {
   events: event(
@@ -455,23 +538,89 @@ ${MultisigGraphql.cancelledMultisigProposalAccountEventSelection}
 
   int _lookaheadLimit(int limit) => limit + 1;
 
-  _Page<T> _pageFromEvents<T>(List<dynamic>? events, int limit, T? Function(dynamic event) parseEvent) {
-    if (events == null || events.isEmpty) {
-      return _Page(items: <T>[], hasMore: false, rawRowsConsumed: 0);
+  /// Variables for [buildAccountEventsQuery] / [buildScheduledReversibleTransfersQuery].
+  @visibleForTesting
+  static Map<String, dynamic> pageVariables({
+    required List<String> accountIds,
+    required int lookaheadLimit,
+    required AccountEventCursor? after,
+  }) {
+    if (accountIds.isEmpty) {
+      throw ArgumentError.value(accountIds, 'accountIds', 'Must not be empty');
+    }
+    return {
+      for (var i = 0; i < accountIds.length; i++) 'account$i': accountIds[i],
+      'limit': lookaheadLimit,
+      if (after != null) 'cursorTimestamp': after.timestamp,
+      if (after != null) 'cursorId': after.id,
+    };
+  }
+
+  static AccountEventCursor _cursorOf(dynamic row) {
+    final map = row as Map<String, dynamic>;
+    final timestamp = map['timestamp'];
+    final id = map['id'];
+    if (timestamp is! String || id is! String) {
+      throw StateError('account_event row is missing timestamp/id needed for the keyset cursor: $map');
+    }
+    return AccountEventCursor(timestamp: timestamp, id: id);
+  }
+
+  /// Reassembles the per-account aliases of one response into a single list
+  /// in `(timestamp desc, id desc)` order.
+  ///
+  /// Each alias holds that account's first `limit + 1` rows after the shared
+  /// cursor, so the merged head is exactly what one query over all accounts
+  /// would have returned; [pageFromRows] then trims it to the page.
+  @visibleForTesting
+  static List<dynamic> mergeAccountEventRows(Map<String, dynamic> data, {required int accountCount}) {
+    final merged = <dynamic>[];
+    for (var i = 0; i < accountCount; i++) {
+      final rows = data[_accountAlias(i)];
+      if (rows is! List) {
+        throw StateError('account_event response is missing alias ${_accountAlias(i)}: ${data.keys}');
+      }
+      merged.addAll(rows);
+    }
+    if (accountCount == 1) return merged;
+
+    int compare(dynamic a, dynamic b) {
+      final cursorA = _cursorOf(a);
+      final cursorB = _cursorOf(b);
+      final byTime = DateTime.parse(cursorB.timestamp).compareTo(DateTime.parse(cursorA.timestamp));
+      return byTime != 0 ? byTime : cursorB.id.compareTo(cursorA.id);
     }
 
-    // hasMore is true if the query returned more rows than requested (lookahead).
-    final hasMore = events.length > limit;
+    merged.sort(compare);
+    return merged;
+  }
+
+  /// Turns the raw `account_event` rows of one lookahead query into a page.
+  ///
+  /// Up to [limit] rows are consumed; a row past that means [AccountEventPage.hasMore].
+  /// The cursor advances to the last consumed row even when it parsed to null,
+  /// so skipped rows are never fetched twice. An empty result keeps
+  /// [previousCursor] so an exhausted list stays exhausted while the caller
+  /// keeps paging its sibling list.
+  @visibleForTesting
+  static AccountEventPage<T> pageFromRows<T>(
+    List<dynamic>? rows,
+    int limit,
+    T? Function(dynamic row) parseRow, {
+    required AccountEventCursor? previousCursor,
+  }) {
+    if (rows == null || rows.isEmpty) {
+      return AccountEventPage(items: <T>[], hasMore: false, nextCursor: previousCursor);
+    }
+
+    final hasMore = rows.length > limit;
+    final consumed = rows.take(limit).toList();
     final items = <T>[];
-    var rawRowsConsumed = 0;
-    for (final event in events) {
-      // Stop once we have enough parsed items, but track all consumed rows.
-      if (items.length >= limit) break;
-      rawRowsConsumed++;
-      final parsed = parseEvent(event);
+    for (final row in consumed) {
+      final parsed = parseRow(row);
       if (parsed != null) items.add(parsed);
     }
-    return _Page(items: items, hasMore: hasMore, rawRowsConsumed: rawRowsConsumed);
+    return AccountEventPage(items: items, hasMore: hasMore, nextCursor: _cursorOf(consumed.last));
   }
 
   ReversibleTransferEvent _parseScheduledTransferEvent(dynamic event) {
@@ -595,25 +744,32 @@ ${MultisigGraphql.cancelledMultisigProposalAccountEventSelection}
     }
   }
 
-  Future<_Page<ReversibleTransferEvent>> _fetchScheduledReversibleTransfersPage({
+  Future<AccountEventPage<ReversibleTransferEvent>> _fetchScheduledReversibleTransfersPage({
     required List<String> accountIds,
     int limit = 10,
-    int offset = 0,
+    AccountEventCursor? after,
     required TransactionFilter filter,
   }) async {
-    final after = DateTime.now().subtract(const Duration(minutes: 2)).toUtc().toIso8601String();
+    final pendingSince = DateTime.now().subtract(const Duration(minutes: 2)).toUtc().toIso8601String();
 
     final sw = Stopwatch()..start();
     try {
       final Map<String, dynamic> data = await _graphQlEndpointService.query(
-        document: _buildScheduledReversibleTransfersQuery(filter),
-        variables: {'accounts': accountIds, 'limit': _lookaheadLimit(limit), 'offset': offset, 'after': after},
+        document: buildScheduledReversibleTransfersQuery(
+          filter,
+          withCursor: after != null,
+          accountCount: accountIds.length,
+        ),
+        variables: {
+          ...pageVariables(accountIds: accountIds, lookaheadLimit: _lookaheadLimit(limit), after: after),
+          'after': pendingSince,
+        },
       );
       sw.stop();
       printTiming('fetchScheduledTransfers HTTP', sw.elapsedMilliseconds);
 
-      final List<dynamic>? events = data['accountEvents'];
-      return _pageFromEvents(events, limit, _parseScheduledTransferEvent);
+      final events = mergeAccountEventRows(data, accountCount: accountIds.length);
+      return pageFromRows(events, limit, _parseScheduledTransferEvent, previousCursor: after);
     } catch (e, stackTrace) {
       sw.stop();
       printTiming('fetchScheduledTransfers FAILED', sw.elapsedMilliseconds);
@@ -622,24 +778,26 @@ ${MultisigGraphql.cancelledMultisigProposalAccountEventSelection}
     }
   }
 
+  /// Fetches one page of non-scheduled history for [accountIds], starting
+  /// strictly after [after] (or from the newest row when null).
   Future<OtherTransfersResult> fetchOtherTransfers({
     required List<String> accountIds,
     int limit = 10,
-    int offset = 0,
+    AccountEventCursor? after,
     required TransactionFilter filter,
   }) async {
     final sw = Stopwatch()..start();
     try {
       final Map<String, dynamic> data = await _graphQlEndpointService.query(
-        document: _buildAccountEventsQuery(filter),
-        variables: {'accounts': accountIds, 'limit': _lookaheadLimit(limit), 'offset': offset},
+        document: buildAccountEventsQuery(filter, withCursor: after != null, accountCount: accountIds.length),
+        variables: pageVariables(accountIds: accountIds, lookaheadLimit: _lookaheadLimit(limit), after: after),
       );
       sw.stop();
       printTiming('fetchAccountEvents HTTP', sw.elapsedMilliseconds);
 
-      final List<dynamic>? events = data['accountEvents'];
-      final page = _pageFromEvents(events, limit, tryParseOtherTransferEvent);
-      return OtherTransfersResult(transfers: page.items, hasMore: page.hasMore, rawRowsConsumed: page.rawRowsConsumed);
+      final events = mergeAccountEventRows(data, accountCount: accountIds.length);
+      final page = pageFromRows(events, limit, tryParseOtherTransferEvent, previousCursor: after);
+      return OtherTransfersResult(transfers: page.items, hasMore: page.hasMore, nextCursor: page.nextCursor);
     } catch (e, stackTrace) {
       sw.stop();
       printTiming('fetchOtherTransfers FAILED', sw.elapsedMilliseconds);
@@ -648,11 +806,14 @@ ${MultisigGraphql.cancelledMultisigProposalAccountEventSelection}
     }
   }
 
+  /// Fetches the next page of both history lists. [otherAfter] and
+  /// [scheduledAfter] are the cursors returned by the previous call; leave them
+  /// null for the first page.
   Future<SortedTransactionsList> fetchAllTransactionTypes({
     required List<String> accountIds,
     int limit = 20,
-    int otherOffset = 0,
-    int scheduledOffset = 0,
+    AccountEventCursor? otherAfter,
+    AccountEventCursor? scheduledAfter,
     required TransactionFilter filter,
   }) async {
     try {
@@ -660,25 +821,20 @@ ${MultisigGraphql.cancelledMultisigProposalAccountEventSelection}
         _fetchScheduledReversibleTransfersPage(
           accountIds: accountIds,
           limit: limit,
-          offset: scheduledOffset,
+          after: scheduledAfter,
           filter: filter,
         ),
-        fetchOtherTransfers(accountIds: accountIds, limit: limit, offset: otherOffset, filter: filter),
+        fetchOtherTransfers(accountIds: accountIds, limit: limit, after: otherAfter, filter: filter),
       ]);
 
-      final scheduledReversibleTransfers = results[0] as _Page<ReversibleTransferEvent>;
+      final scheduledReversibleTransfers = results[0] as AccountEventPage<ReversibleTransferEvent>;
       final otherTransfers = results[1] as OtherTransfersResult;
-
-      // Advance offsets by raw rows consumed, not parsed item count, so the
-      // cursor doesn't drift when rows are skipped (null-parsed).
-      final nextOtherOffset = otherOffset + otherTransfers.rawRowsConsumed;
-      final nextScheduledOffset = scheduledOffset + scheduledReversibleTransfers.rawRowsConsumed;
 
       return SortedTransactionsList(
         scheduledReversibleTransfers: scheduledReversibleTransfers.items,
         otherTransfers: otherTransfers.transfers,
-        nextOtherOffset: nextOtherOffset,
-        nextScheduledOffset: nextScheduledOffset,
+        nextOtherCursor: otherTransfers.nextCursor,
+        nextScheduledCursor: scheduledReversibleTransfers.nextCursor,
         hasMore: scheduledReversibleTransfers.hasMore || otherTransfers.hasMore,
       );
     } catch (e, stackTrace) {
@@ -703,7 +859,7 @@ ${MultisigGraphql.cancelledMultisigProposalAccountEventSelection}
       'reversible: $isReversible, after block: $blockHeightAfter',
     );
     return _searchEvent(
-      query: isReversible ? _searchPendingReversibleQuery : _searchPendingTransferQuery,
+      query: isReversible ? searchPendingReversibleQuery : searchPendingTransferQuery,
       variables: {'from': from, 'to': to, 'amount': amount.toString(), 'blockHeightAfter': blockHeightAfter},
       isReversible: isReversible,
     );

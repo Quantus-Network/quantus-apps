@@ -41,6 +41,7 @@ export 'src/models/pending_multisig_creation_event.dart';
 export 'src/models/opted_in_position.dart';
 export 'src/models/pending_transfer_event.dart';
 export 'src/models/reversible_transfer_status.dart';
+export 'src/models/account_event_cursor.dart';
 export 'src/models/sorted_transactions.dart';
 export 'src/models/transaction_event.dart';
 export 'src/models/transaction_filter.dart';

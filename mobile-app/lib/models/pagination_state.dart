@@ -4,8 +4,14 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 class PaginationState {
   final List<TransactionEvent> otherTransfers;
   final List<ReversibleTransferEvent> scheduledReversibleTransfers;
-  final int scheduledOffset;
-  final int otherOffset;
+
+  /// Keyset the next scheduled-reversible page continues from; null until the
+  /// first page has loaded.
+  final AccountEventCursor? scheduledCursor;
+
+  /// Keyset the next other-transfers page continues from; null until the first
+  /// page has loaded.
+  final AccountEventCursor? otherCursor;
   final bool hasMore;
   final bool isFetching;
   final bool isLoading;
@@ -17,8 +23,8 @@ class PaginationState {
   PaginationState({
     required this.otherTransfers,
     required this.scheduledReversibleTransfers,
-    this.scheduledOffset = 0,
-    this.otherOffset = 0,
+    this.scheduledCursor,
+    this.otherCursor,
     required this.hasMore,
     required this.isFetching,
     required this.isLoading,
@@ -36,6 +42,9 @@ class PaginationState {
 
   /// Returns a copy with the given fields replaced.
   ///
+  /// Cursors are always taken from the arguments (a page that returned no rows
+  /// legitimately hands back null), so pass both whenever a page has loaded.
+  ///
   /// For [error] and [stackTrace]: omitted arguments keep the current values.
   /// Pass [error] and/or [stackTrace] to set them. Pass [clearError] true to
   /// set both to null; [clearError] takes precedence over [error] and
@@ -43,8 +52,7 @@ class PaginationState {
   PaginationState copyWith({
     List<TransactionEvent>? otherTransfers,
     List<ReversibleTransferEvent>? scheduledReversibleTransfers,
-    int? scheduledOffset,
-    int? otherOffset,
+    ({AccountEventCursor? scheduled, AccountEventCursor? other})? cursors,
     bool? hasMore,
     bool? isFetching,
     bool? isLoading,
@@ -55,8 +63,8 @@ class PaginationState {
     return PaginationState(
       otherTransfers: otherTransfers ?? this.otherTransfers,
       scheduledReversibleTransfers: scheduledReversibleTransfers ?? this.scheduledReversibleTransfers,
-      scheduledOffset: scheduledOffset ?? this.scheduledOffset,
-      otherOffset: otherOffset ?? this.otherOffset,
+      scheduledCursor: cursors == null ? scheduledCursor : cursors.scheduled,
+      otherCursor: cursors == null ? otherCursor : cursors.other,
       hasMore: hasMore ?? this.hasMore,
       isFetching: isFetching ?? this.isFetching,
       isLoading: isLoading ?? this.isLoading,
