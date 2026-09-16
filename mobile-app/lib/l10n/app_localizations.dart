@@ -3269,7 +3269,7 @@ abstract class AppLocalizations {
   /// Fee label for encrypted sends (wormhole volume fee)
   ///
   /// In en, this message translates to:
-  /// **'Privacy fee'**
+  /// **'Transaction Fee'**
   String get encryptedSendFeeLabel;
 
   /// Shown when an encrypted send amount is not a multiple of 0.01 token

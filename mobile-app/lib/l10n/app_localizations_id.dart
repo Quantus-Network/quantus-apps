@@ -1741,7 +1741,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get redeemClose => 'Tutup';
 
   @override
-  String get encryptedSendFeeLabel => 'Biaya privasi';
+  String get encryptedSendFeeLabel => 'Biaya transaksi';
 
   @override
   String encryptedSendAmountStep(String tokenSymbol) {

@@ -490,7 +490,7 @@
   "commonTryAgain": "Coba Lagi",
   "redeemCancel": "Batal",
   "redeemClose": "Tutup",
-  "encryptedSendFeeLabel": "Biaya privasi",
+  "encryptedSendFeeLabel": "Biaya transaksi",
   "encryptedSendAmountStep": "Gunakan kelipatan 0,01 {tokenSymbol}",
   "encryptedSendMinimum": "Pengiriman terenkripsi minimal 0,1 {tokenSymbol}",
   "encryptedSendProgressTitle": "Mengirim Secara Privat...",

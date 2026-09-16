@@ -1738,7 +1738,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get redeemClose => 'Close';
 
   @override
-  String get encryptedSendFeeLabel => 'Privacy fee';
+  String get encryptedSendFeeLabel => 'Transaction Fee';
 
   @override
   String encryptedSendAmountStep(String tokenSymbol) {
