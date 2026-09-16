@@ -959,7 +959,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sendInputAmountAvailableBalance => 'Available Balance:';
 
   @override
-  String get sendInputAmountNetworkFee => 'Network Fee:';
+  String get sendInputAmountNetworkFee => 'Transaction Fee:';
 
   @override
   String get sendInputAmountMax => 'Max';
@@ -1738,7 +1738,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get redeemClose => 'Close';
 
   @override
-  String get encryptedSendFeeLabel => 'Privacy fee';
+  String get encryptedSendFeeLabel => 'Transaction Fee';
 
   @override
   String encryptedSendAmountStep(String tokenSymbol) {
