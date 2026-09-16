@@ -1,9 +1,5 @@
-import 'dart:convert';
-
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:http/http.dart' as http;
-import 'package:http/testing.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/models/mining_rewards.dart';
 import 'package:resonance_network_wallet/services/mining_rewards_service.dart';
@@ -52,47 +48,40 @@ AirdropMatch _dilithium(String address, {bool claimable = true}) => AirdropMatch
   dilithiumKeygen: 'v1:hd:$address',
 );
 
-AirdropMatch _wormhole(String address) => AirdropMatch(
-  address: address,
-  kind: 'wormhole',
-  scheme: 'wormhole-rate8-compact',
-  claimable: true,
-  source: 'hd',
-  wormholeSecret: Uint8List(32),
-);
+/// Records what the wallet hands to the claim server client.
+class _Claims extends Fake implements AirdropClaimService {
+  List<AirdropMatch>? matches;
+  String? mnemonic;
+  String? claimAccount;
+
+  @override
+  Future<void> submitClaims({
+    required List<AirdropMatch> matches,
+    required String mnemonic,
+    required String claimAccount,
+  }) async {
+    this.matches = matches;
+    this.mnemonic = mnemonic;
+    this.claimAccount = claimAccount;
+  }
+}
 
 MiningRewardsService _service({
   List<AirdropMatch> matches = const [],
   _Bundle? bundle,
   List<String>? snapshotSeen,
-  List<Map<String, dynamic>>? posted,
-  int claimStatus = 200,
+  _Claims? claims,
   _Settings? settings,
 }) => MiningRewardsService(
   settings: settings ?? _Settings(),
   bundle:
       bundle ?? _Bundle({TestnetChain.dirac.rewardsAsset: _diracTable, TestnetChain.planck.rewardsAsset: _planckTable}),
-  client: MockClient((request) async {
-    expect(request.url.path, '/claim');
-    posted?.add(jsonDecode(request.body) as Map<String, dynamic>);
-    return http.Response(jsonEncode({'status': 'recorded'}), claimStatus);
-  }),
+  claims: claims ?? _Claims(),
   findMatches: ({required snapshotAddresses, required mnemonic}) async {
     expect(mnemonic, _mnemonic);
     snapshotSeen?.addAll(snapshotAddresses);
     return matches;
   },
-  buildDilithiumClaim: ({required mnemonic, required dilithiumKeygen, required address, required claimAccount}) async =>
-      DilithiumClaimBody(
-        scheme: 'dilithium-v10-padded',
-        address: address,
-        claimAccount: claimAccount,
-        publicKeyHex: 'pk',
-        signatureHex: 'sig:$dilithiumKeygen',
-        expiryUnix: 123,
-      ),
-  proveWormhole: ({required wormholeSecret, required claimAccount}) async =>
-      WormholeClaimBody(proofKind: 'wormhole_rate8', proofHex: 'proof:$claimAccount'),
 );
 
 void main() {
@@ -140,43 +129,21 @@ void main() {
     expect(_service(settings: _Settings(mnemonic: null)).checkChain(0, TestnetChain.dirac), throwsA(anything));
   });
 
-  test('submits one claim per claimable address in the server body shape', () async {
-    final posted = <Map<String, dynamic>>[];
-    await _service(posted: posted).submitClaims(
-      walletIndex: 0,
-      matches: [_dilithium('qza'), _dilithium('qza'), _wormhole('qzw'), _dilithium('qzold', claimable: false)],
-      claimAccount: _beneficiary,
-    );
-
-    expect(posted, [
-      {
-        'kind': 'dilithium',
-        'scheme': 'dilithium-v10-padded',
-        'address': 'qza',
-        'claim_account': _beneficiary,
-        'public_key': 'pk',
-        'signature': 'sig:v1:hd:qza',
-        'expiry_unix': 123,
-      },
-      {'kind': 'wormhole', 'proof_kind': 'wormhole_rate8', 'proof': 'proof:$_beneficiary'},
-    ]);
+  test('submitting hands the matches, the recovery phrase and the payout address to the claim client', () async {
+    final claims = _Claims();
+    final matches = [_dilithium('qza'), _dilithium('qzold', claimable: false)];
+    await _service(claims: claims).submitClaims(walletIndex: 0, matches: matches, claimAccount: _beneficiary);
+    expect(claims.matches, matches);
+    expect(claims.mnemonic, _mnemonic);
+    expect(claims.claimAccount, _beneficiary);
   });
 
-  test('a rejected claim fails the submission', () {
+  test('a wallet without a recovery phrase cannot submit', () {
     expect(
-      _service(claimStatus: 400).submitClaims(walletIndex: 0, matches: [_dilithium('qza')], claimAccount: _beneficiary),
-      throwsA(anything),
-    );
-  });
-
-  test('nothing claimable fails before the server is contacted', () async {
-    final posted = <Map<String, dynamic>>[];
-    await expectLater(
       _service(
-        posted: posted,
-      ).submitClaims(walletIndex: 0, matches: [_dilithium('qzold', claimable: false)], claimAccount: _beneficiary),
+        settings: _Settings(mnemonic: null),
+      ).submitClaims(walletIndex: 0, matches: [_dilithium('qza')], claimAccount: _beneficiary),
       throwsA(anything),
     );
-    expect(posted, isEmpty);
   });
 }
