@@ -962,7 +962,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get sendInputAmountAvailableBalance => 'Saldo Tersedia:';
 
   @override
-  String get sendInputAmountNetworkFee => 'Biaya Jaringan:';
+  String get sendInputAmountNetworkFee => 'Biaya Transaksi:';
 
   @override
   String get sendInputAmountMax => 'Maks';

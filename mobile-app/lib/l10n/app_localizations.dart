@@ -1829,7 +1829,7 @@ abstract class AppLocalizations {
   /// Network fee label
   ///
   /// In en, this message translates to:
-  /// **'Network Fee:'**
+  /// **'Transaction Fee:'**
   String get sendInputAmountNetworkFee;
 
   /// Max amount button

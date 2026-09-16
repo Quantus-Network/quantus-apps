@@ -959,7 +959,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sendInputAmountAvailableBalance => 'Available Balance:';
 
   @override
-  String get sendInputAmountNetworkFee => 'Network Fee:';
+  String get sendInputAmountNetworkFee => 'Transaction Fee:';
 
   @override
   String get sendInputAmountMax => 'Max';

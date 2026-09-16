@@ -1359,7 +1359,7 @@
     "@sendInputAmountAvailableBalance": {
       "description": "Available balance label"
     },
-    "sendInputAmountNetworkFee": "Network Fee:",
+    "sendInputAmountNetworkFee": "Transaction Fee:",
     "@sendInputAmountNetworkFee": {
       "description": "Network fee label"
     },

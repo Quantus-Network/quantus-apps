@@ -274,7 +274,7 @@
   "sendSelectRecipientContinue": "Lanjutkan",
   "sendInputAmountSendTo": "KIRIM KE",
   "sendInputAmountAvailableBalance": "Saldo Tersedia:",
-  "sendInputAmountNetworkFee": "Biaya Jaringan:",
+  "sendInputAmountNetworkFee": "Biaya Transaksi:",
   "sendInputAmountMax": "Maks",
   "sendInputAmountInvalidAmount": "Masukkan jumlah yang valid",
   "sendInputAmountChecksumRequired": "Checksum penerima diperlukan",
