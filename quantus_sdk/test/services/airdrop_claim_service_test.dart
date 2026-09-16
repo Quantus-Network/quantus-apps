@@ -27,30 +27,37 @@ AirdropMatch _wormhole(String address) => AirdropMatch(
   wormholeSecret: Uint8List(32),
 );
 
-AirdropClaimService _service({List<Map<String, dynamic>>? posted, int status = 200, String body = '{}'}) =>
-    AirdropClaimService(
-      endpoint: 'https://claims.test',
-      client: MockClient((request) async {
-        expect(request.url.toString(), 'https://claims.test/claim');
-        expect(request.headers['Content-Type'], startsWith('application/json'));
-        posted?.add(jsonDecode(request.body) as Map<String, dynamic>);
-        return http.Response(body, status);
-      }),
-      buildDilithiumClaim:
-          ({required mnemonic, required dilithiumKeygen, required address, required claimAccount}) async {
-            expect(mnemonic, _mnemonic);
-            return DilithiumClaimBody(
-              scheme: 'dilithium-v10-padded',
-              address: address,
-              claimAccount: claimAccount,
-              publicKeyHex: 'pk',
-              signatureHex: 'sig:$dilithiumKeygen',
-              expiryUnix: 123,
-            );
-          },
-      proveWormhole: ({required wormholeSecret, required claimAccount}) async =>
-          WormholeClaimBody(proofKind: 'wormhole_rate8', proofHex: 'proof:$claimAccount'),
+AirdropClaimService _service({
+  List<Map<String, dynamic>>? posted,
+  int status = 200,
+  String body = '{}',
+  Set<String> alreadyClaimed = const {},
+}) => AirdropClaimService(
+  endpoint: 'https://claims.test',
+  client: MockClient((request) async {
+    expect(request.url.toString(), 'https://claims.test/claim');
+    expect(request.headers['Content-Type'], startsWith('application/json'));
+    final sent = jsonDecode(request.body) as Map<String, dynamic>;
+    posted?.add(sent);
+    if (alreadyClaimed.contains(sent['address'])) {
+      return http.Response('{"error":"address already claimed"}', 409);
+    }
+    return http.Response(body, status);
+  }),
+  buildDilithiumClaim: ({required mnemonic, required dilithiumKeygen, required address, required claimAccount}) async {
+    expect(mnemonic, _mnemonic);
+    return DilithiumClaimBody(
+      scheme: 'dilithium-v10-padded',
+      address: address,
+      claimAccount: claimAccount,
+      publicKeyHex: 'pk',
+      signatureHex: 'sig:$dilithiumKeygen',
+      expiryUnix: 123,
     );
+  },
+  proveWormhole: ({required wormholeSecret, required claimAccount}) async =>
+      WormholeClaimBody(proofKind: 'wormhole_rate8', proofHex: 'proof:$claimAccount'),
+);
 
 void main() {
   test('posts one claim per claimable address in the server body shape', () async {
@@ -75,13 +82,22 @@ void main() {
     ]);
   });
 
+  test('an address the server already recorded counts as done and the rest still go out', () async {
+    final posted = <Map<String, dynamic>>[];
+    await _service(
+      posted: posted,
+      alreadyClaimed: {'qza'},
+    ).submitClaims(matches: [_dilithium('qza'), _wormhole('qzw')], mnemonic: _mnemonic, claimAccount: _beneficiary);
+    expect(posted.map((p) => p['address'] ?? p['proof']), ['qza', 'proof:$_beneficiary']);
+  });
+
   test("a rejection surfaces the server's error message", () {
     expect(
       _service(
-        status: 409,
-        body: '{"error":"address already claimed"}',
+        status: 404,
+        body: '{"error":"address is not in the snapshot"}',
       ).submitClaims(matches: [_dilithium('qza')], mnemonic: _mnemonic, claimAccount: _beneficiary),
-      throwsA(predicate((e) => '$e' == 'Exception: Claim for qza rejected (409): address already claimed')),
+      throwsA(predicate((e) => '$e' == 'Exception: Claim for qza rejected (404): address is not in the snapshot')),
     );
   });
 

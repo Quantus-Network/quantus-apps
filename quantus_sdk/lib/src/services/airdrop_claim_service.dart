@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:http/http.dart' as http;
 import 'package:quantus_sdk/quantus_sdk.dart';
@@ -34,8 +35,10 @@ class AirdropClaimService {
 
   /// Proves and submits one claim per claimable address in [matches], paid out
   /// to [claimAccount]. Each proof is built right before its request so the
-  /// signed expiry stays inside the server's window. Stops at the first
-  /// rejected claim.
+  /// signed expiry stays inside the server's window. An address the server
+  /// has already recorded counts as done, so a retry after a partial failure
+  /// carries on to the addresses still missing. Stops at the first rejected
+  /// claim.
   Future<void> submitClaims({
     required List<AirdropMatch> matches,
     required String mnemonic,
@@ -50,7 +53,7 @@ class AirdropClaimService {
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(body),
       );
-      if (response.statusCode != 200) {
+      if (response.statusCode != 200 && response.statusCode != HttpStatus.conflict) {
         throw Exception('Claim for ${match.address} rejected (${response.statusCode}): ${_serverError(response)}');
       }
     }

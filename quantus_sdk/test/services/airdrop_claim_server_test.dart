@@ -23,7 +23,7 @@ void main() {
   final bin = Platform.environment['AIRDROP_CHECK_BIN'];
 
   test(
-    'a Dilithium and a wormhole miner are matched, proved, recorded, and refused a second time',
+    'a Dilithium and a wormhole miner are matched, proved, recorded, and a retry changes nothing',
     () async {
       await RustLib.init();
       setDefaultSs58Prefix(prefix: 189);
@@ -69,10 +69,10 @@ void main() {
         for (final r in unpaid['rows']) (r['address'], r['status'], r['claim_account'], r['amount_hundredths']),
       ], unorderedEquals([(miner, 'recorded', beneficiary, 150), (wormhole, 'recorded', beneficiary, 200)]));
 
-      await expectLater(
-        claims.submitClaims(matches: matches, mnemonic: _mnemonic, claimAccount: beneficiary),
-        throwsA(predicate((e) => '$e'.contains('already claimed'))),
-      );
+      // A retry finds both addresses already recorded and neither fails nor re-records.
+      await claims.submitClaims(matches: matches, mnemonic: _mnemonic, claimAccount: beneficiary);
+      final again = jsonDecode((await http.get(_server.resolve('/unpaid'))).body) as Map<String, dynamic>;
+      expect(again['rows'], unpaid['rows']);
     },
     skip: bin == null ? 'set AIRDROP_CHECK_BIN to a built airdrop-check binary' : false,
     timeout: const Timeout(Duration(minutes: 10)),
