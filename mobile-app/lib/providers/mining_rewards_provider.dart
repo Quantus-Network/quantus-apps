@@ -37,6 +37,6 @@ final chainEligibilityProvider = FutureProvider.autoDispose.family<ChainRewards,
 /// The claim this wallet already submitted, if any.
 final airdropClaimRecordProvider = Provider.family<AirdropClaimRecord?, int>((ref, walletIndex) {
   final forced = ref.watch(forcedRewardsOutcomeProvider);
-  if (forced != null) return DebugMiningRewardsService.claimRecord(forced);
+  if (forced != null) return DebugMiningRewardsService.claimRecord(forced, walletIndex);
   return ref.watch(settingsServiceProvider).getAirdropClaim(walletIndex);
 });
