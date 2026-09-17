@@ -2785,7 +2785,7 @@
         }
       }
     },
-    "settingsMiningRewards": "Airdrop",
+    "settingsMiningRewards": "Mining Rewards",
     "@settingsMiningRewards": {
       "description": "Settings hub row and screen title for testnet mining rewards"
     },

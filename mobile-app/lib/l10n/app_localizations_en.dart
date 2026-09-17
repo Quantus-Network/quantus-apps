@@ -1911,7 +1911,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get settingsMiningRewards => 'Airdrop';
+  String get settingsMiningRewards => 'Mining Rewards';
 
   @override
   String get settingsMiningRewardsSubtitle => 'Claim your testnet mining rewards';

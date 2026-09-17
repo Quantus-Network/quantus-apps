@@ -3557,7 +3557,7 @@ abstract class AppLocalizations {
   /// Settings hub row and screen title for testnet mining rewards
   ///
   /// In en, this message translates to:
-  /// **'Airdrop'**
+  /// **'Mining Rewards'**
   String get settingsMiningRewards;
 
   /// Settings hub row subtitle for testnet mining rewards
