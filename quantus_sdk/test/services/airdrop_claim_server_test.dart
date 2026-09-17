@@ -23,7 +23,7 @@ void main() {
   final bin = Platform.environment['AIRDROP_CHECK_BIN'];
 
   test(
-    'a Dilithium and a wormhole miner are matched, proved, recorded; a retry changes nothing; another payout address is refused',
+    'a Dilithium and a wormhole miner are matched, proved, recorded, and resubmitting changes nothing',
     () async {
       await RustLib.init();
       setDefaultSs58Prefix(prefix: 189);
@@ -74,18 +74,12 @@ void main() {
       final again = jsonDecode((await http.get(_server.resolve('/unpaid'))).body) as Map<String, dynamic>;
       expect(again['rows'], unpaid['rows']);
 
-      // Re-claiming to a different payout address is refused, naming the recorded one.
+      // The server keeps the first payout address; sending the batch again to
+      // another one is answered with 409s, which count as submitted.
       final other = hd.keyPairAtIndex(_mnemonic, 2, DilithiumScheme.mlDsa87).ss58Address;
-      await expectLater(
-        claims.submitClaims(matches: matches, mnemonic: _mnemonic, claimAccount: other),
-        throwsA(
-          isA<AirdropClaimFailure>().having(
-            (f) => f.cause,
-            'cause',
-            isA<AirdropClaimTaken>().having((t) => t.recordedTo, 'recordedTo', beneficiary),
-          ),
-        ),
-      );
+      await claims.submitClaims(matches: matches, mnemonic: _mnemonic, claimAccount: other);
+      final still = jsonDecode((await http.get(_server.resolve('/unpaid'))).body) as Map<String, dynamic>;
+      expect(still['rows'], unpaid['rows']);
     },
     skip: bin == null ? 'set AIRDROP_CHECK_BIN to a built airdrop-check binary' : false,
     timeout: const Timeout(Duration(minutes: 10)),

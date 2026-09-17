@@ -7,7 +7,7 @@ import 'package:resonance_network_wallet/shared/utils/miner_stats_csv.dart';
 /// submission that never reaches the server or the stored claim. Picked on the
 /// Airdrop entry screen in debug builds.
 class DebugMiningRewardsService extends MiningRewardsService {
-  static const outcomes = ['mixed', 'some', 'below', 'none', 'claimed', 'fail', 'taken'];
+  static const outcomes = ['mixed', 'some', 'below', 'none', 'claimed', 'fail', 'partial'];
 
   final String outcome;
 
@@ -44,7 +44,7 @@ class DebugMiningRewardsService extends MiningRewardsService {
   @override
   Future<ChainRewards> checkChain(int walletIndex, TestnetChain chain) async {
     await Future<void>.delayed(Duration(milliseconds: 900 * (chain.index + 1)));
-    final rows = _rows[outcome == 'fail' || outcome == 'taken' ? 'mixed' : outcome]?[chain] ?? const [];
+    final rows = _rows[outcome == 'fail' || outcome == 'partial' ? 'mixed' : outcome]?[chain] ?? const [];
     return ChainRewards(
       chain: chain,
       rows: [
@@ -71,17 +71,14 @@ class DebugMiningRewardsService extends MiningRewardsService {
   }) async {
     await Future<void>.delayed(const Duration(seconds: 2));
     if (outcome == 'fail') {
-      throw const AirdropClaimFailure(recorded: 2, total: 5, cause: 'debugMiningRewards: claim server unreachable');
-    }
-    if (outcome == 'taken') {
-      throw AirdropClaimFailure(
-        recorded: 1,
+      throw const AirdropClaimFailure(
+        submitted: 0,
         total: 5,
-        cause: AirdropClaimTaken(
-          address: '${'qzschrodinger0'.padRight(48, 'x')}0',
-          recordedTo: AppConstants.debugTestAddress,
-        ),
+        causes: {'all': 'debugMiningRewards: server unreachable'},
       );
+    }
+    if (outcome == 'partial') {
+      throw const AirdropClaimFailure(submitted: 3, total: 5, causes: {'two': 'debugMiningRewards: timed out'});
     }
   }
 }

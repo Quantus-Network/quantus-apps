@@ -30,13 +30,8 @@ class MiningRewardsConfirmScreen extends ConsumerStatefulWidget {
 }
 
 class _MiningRewardsConfirmScreenState extends ConsumerState<MiningRewardsConfirmScreen> {
-  late ClaimDestination _destination = widget.destination;
   bool _submitting = false;
   AirdropClaimFailure? _failure;
-
-  /// Addresses the server already holds for [_destination]; once any are, the
-  /// payout address is fixed and only a retry can finish the batch.
-  int _recorded = 0;
 
   Future<void> _submit() async {
     setState(() {
@@ -46,15 +41,13 @@ class _MiningRewardsConfirmScreenState extends ConsumerState<MiningRewardsConfir
     try {
       await ref
           .read(miningRewardsServiceProvider)
-          .submitClaims(walletIndex: widget.walletIndex, rewards: widget.rewards, destination: _destination);
+          .submitClaims(walletIndex: widget.walletIndex, rewards: widget.rewards, destination: widget.destination);
     } catch (e) {
       quantusPrint('Mining rewards claim failed: $e');
       if (!mounted) return;
-      final failure = e is AirdropClaimFailure ? e : AirdropClaimFailure(recorded: 0, total: 0, cause: e);
       setState(() {
         _submitting = false;
-        _failure = failure;
-        _recorded = failure.recorded > _recorded ? failure.recorded : _recorded;
+        _failure = e is AirdropClaimFailure ? e : AirdropClaimFailure(submitted: 0, total: 0, causes: {'': e});
       });
       return;
     }
@@ -66,17 +59,10 @@ class _MiningRewardsConfirmScreenState extends ConsumerState<MiningRewardsConfir
         builder: (_) => MiningRewardsSubmittedScreen(
           walletIndex: widget.walletIndex,
           rewardHundredths: totalRewardHundredths(widget.rewards),
-          destination: _destination,
+          destination: widget.destination,
         ),
       ),
     );
-  }
-
-  /// The server recorded part of this wallet's claim to another payout
-  /// address; the rest can only follow it.
-  void _continueWithRecorded(AirdropClaimTaken taken) {
-    setState(() => _destination = ClaimDestination(address: taken.recordedTo));
-    _submit();
   }
 
   @override
@@ -89,7 +75,7 @@ class _MiningRewardsConfirmScreenState extends ConsumerState<MiningRewardsConfir
 
     if (_failure case final failure?) {
       final body = text.bodyLarge.copyWith(color: colors.textMuted);
-      final taken = failure.cause is AirdropClaimTaken ? failure.cause as AirdropClaimTaken : null;
+      final partial = failure.submitted > 0;
       return ScaffoldBase(
         key: const Key(E2EKeys.miningRewardsSubmitFailedScreen),
         appBar: V2AppBar(
@@ -100,38 +86,26 @@ class _MiningRewardsConfirmScreenState extends ConsumerState<MiningRewardsConfir
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              taken == null ? l10n.miningRewardsSubmitFailedTitle : l10n.miningRewardsSubmitTakenTitle,
+              partial ? l10n.miningRewardsSubmitPartialTitle : l10n.miningRewardsSubmitFailedTitle,
               style: text.titleHero.copyWith(color: colors.textContent),
             ),
             const SizedBox(height: 16),
-            Text(
-              taken == null
-                  ? l10n.miningRewardsSubmitFailedBody1
-                  : l10n.miningRewardsSubmitTakenBody(
-                      AddressFormattingService.formatAddress(taken.address),
-                      AddressFormattingService.formatAddress(taken.recordedTo),
-                    ),
-              style: body,
-            ),
+            Text(partial ? l10n.miningRewardsSubmitPartialBody : l10n.miningRewardsSubmitFailedBody1, style: body),
             const SizedBox(height: 16),
             Text(l10n.miningRewardsSubmitFailedBody2, style: body),
-            if (taken == null && failure.recorded > 0) ...[
-              const SizedBox(height: 16),
-              Text(l10n.miningRewardsSubmitPartial(failure.recorded, failure.total), style: body),
-            ],
           ],
         ),
         bottomContent: ScaffoldBaseBottomContent(
           child: QuantusButton.simple(
             key: const Key(E2EKeys.miningRewardsTryAgainButton),
-            label: taken == null ? l10n.commonTryAgain : l10n.miningRewardsUseRecordedAddress,
-            onTap: taken == null ? _submit : () => _continueWithRecorded(taken),
+            label: l10n.commonTryAgain,
+            onTap: _submit,
           ),
         ),
       );
     }
 
-    final checksum = ref.watch(checksumNameProvider(_destination.address));
+    final checksum = ref.watch(checksumNameProvider(widget.destination.address));
     final label = text.labelData.copyWith(color: colors.textMuted);
 
     return ScaffoldBase(
@@ -166,7 +140,7 @@ class _MiningRewardsConfirmScreenState extends ConsumerState<MiningRewardsConfir
                       const SizedBox(height: 12),
                       AddressCheckphraseWithInitial(
                         recipientChecksum: checksum.value ?? '',
-                        recipientAddress: _destination.address,
+                        recipientAddress: widget.destination.address,
                         showFullAddress: true,
                       ),
                     ],
@@ -178,7 +152,7 @@ class _MiningRewardsConfirmScreenState extends ConsumerState<MiningRewardsConfir
           const SizedBox(height: 24),
           DetailSummaryRow(
             label: l10n.sendTxSubmittedToLabel.toUpperCase(),
-            value: AddressFormattingService.formatAddress(_destination.address),
+            value: AddressFormattingService.formatAddress(widget.destination.address),
             monospace: true,
           ),
           DetailSummaryRow(label: l10n.miningRewardsAmountLabel.toUpperCase(), value: amount),
@@ -196,16 +170,14 @@ class _MiningRewardsConfirmScreenState extends ConsumerState<MiningRewardsConfir
               isLoading: _submitting,
               onTap: _submit,
             ),
-            if (_recorded == 0) ...[
-              const SizedBox(height: 10),
-              QuantusButton.simple(
-                key: const Key(E2EKeys.miningRewardsChangeDetailsButton),
-                label: l10n.miningRewardsChangeDetails,
-                variant: ButtonVariant.staged,
-                isDisabled: _submitting,
-                onTap: () => Navigator.pop(context),
-              ),
-            ],
+            const SizedBox(height: 10),
+            QuantusButton.simple(
+              key: const Key(E2EKeys.miningRewardsChangeDetailsButton),
+              label: l10n.miningRewardsChangeDetails,
+              variant: ButtonVariant.staged,
+              isDisabled: _submitting,
+              onTap: () => Navigator.pop(context),
+            ),
           ],
         ),
       ),

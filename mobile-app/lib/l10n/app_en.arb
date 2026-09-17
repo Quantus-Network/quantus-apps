@@ -2944,37 +2944,17 @@
     "@miningRewardsSubmitFailedBody2": {
       "description": "Second paragraph of the submission failed page"
     },
-    "miningRewardsSubmitPartial": "{recorded} of {total} addresses are already recorded for this payout address. Try again to finish the rest.",
-    "@miningRewardsSubmitPartial": {
-      "description": "Extra line on the failed page after part of the batch was accepted",
-      "placeholders": {
-        "recorded": {
-          "type": "int"
-        },
-        "total": {
-          "type": "int"
-        }
-      }
+    "miningRewardsSubmitPartialTitle": "Some claims have been submitted",
+    "@miningRewardsSubmitPartialTitle": {
+      "description": "Heading when part of the batch was accepted and the rest failed"
     },
-    "miningRewardsSubmitTakenTitle": "Already claimed to another address",
-    "@miningRewardsSubmitTakenTitle": {
-      "description": "Heading when the server holds one of the wallet's addresses for a different payout address"
+    "miningRewardsSubmitPartialBody": "Please try again to submit the rest.",
+    "@miningRewardsSubmitPartialBody": {
+      "description": "First paragraph under the partial-submission heading"
     },
-    "miningRewardsSubmitTakenBody": "{address} was already submitted with the payout address {recordedTo}. Rewards go to the address recorded first, so the rest of this claim has to use it too.",
-    "@miningRewardsSubmitTakenBody": {
-      "description": "Explains the conflict; both placeholders are shortened addresses",
-      "placeholders": {
-        "address": {
-          "type": "String"
-        },
-        "recordedTo": {
-          "type": "String"
-        }
-      }
-    },
-    "miningRewardsUseRecordedAddress": "Continue with that address",
-    "@miningRewardsUseRecordedAddress": {
-      "description": "Button that resubmits the claim to the payout address the server already recorded"
+    "miningRewardsSubmittedAll": "All claims have been submitted.",
+    "@miningRewardsSubmittedAll": {
+      "description": "First line of the submitted page"
     },
     "miningRewardsSubmittedPayingTo": "Paying to {destination}.",
     "@miningRewardsSubmittedPayingTo": {

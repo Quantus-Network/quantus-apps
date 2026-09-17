@@ -52,6 +52,8 @@ class MiningRewardsSubmittedScreen extends ConsumerWidget {
               amountColor: colors.semanticSage,
             ),
             const SizedBox(height: 32),
+            Text(l10n.miningRewardsSubmittedAll, style: body),
+            const SizedBox(height: 12),
             Text(l10n.miningRewardsSubmittedPayingTo(destination.label), style: body),
             const SizedBox(height: 12),
             Text(l10n.miningRewardsSubmittedNote, style: body),

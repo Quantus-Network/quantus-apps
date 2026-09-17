@@ -92,7 +92,6 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text(l10n.miningRewardsSubmitFailedTitle), findsOneWidget);
     expect(find.text(l10n.miningRewardsSubmitFailedBody2), findsOneWidget);
-    expect(find.textContaining('already recorded'), findsNothing);
 
     await tester.tap(find.byKey(const Key(E2EKeys.miningRewardsTryAgainButton)));
     await tester.pumpAndSettle();
@@ -100,33 +99,26 @@ void main() {
     expect(find.text('Paying to Account 1.'), findsOneWidget);
   });
 
-  testWidgets('after part of the batch is recorded the payout address is locked', (tester) async {
-    final service = _Service(failures: [const AirdropClaimFailure(recorded: 2, total: 3, cause: 'server unreachable')]);
+  testWidgets('a partial submission says so and keeps Change Details available', (tester) async {
+    final service = _Service(
+      failures: [
+        const AirdropClaimFailure(submitted: 2, total: 3, causes: {'qzc': 'server unreachable'}),
+      ],
+    );
     await pump(tester, service);
     await tester.tap(find.byKey(const Key(E2EKeys.miningRewardsSubmitButton)));
     await tester.pumpAndSettle();
-    expect(find.text(l10n.miningRewardsSubmitPartial(2, 3)), findsOneWidget);
+    expect(find.text(l10n.miningRewardsSubmitPartialTitle), findsOneWidget);
+    expect(find.text(l10n.miningRewardsSubmitPartialBody), findsOneWidget);
 
     await tester.tap(find.byType(AppBackButton));
     await tester.pumpAndSettle();
-    expect(find.text(l10n.miningRewardsConfirmTitle), findsOneWidget);
-    expect(find.byKey(const Key(E2EKeys.miningRewardsChangeDetailsButton)), findsNothing);
-  });
+    expect(find.byKey(const Key(E2EKeys.miningRewardsChangeDetailsButton)), findsOneWidget);
 
-  testWidgets('an address held for another payout address offers to continue with that one', (tester) async {
-    const taken = AirdropClaimTaken(address: 'qzminerxxxxxxxxxxxxxxx', recordedTo: 'qzrecordedxxxxxxxxxxxxxxx');
-    final service = _Service(failures: [const AirdropClaimFailure(recorded: 1, total: 3, cause: taken)]);
-    await pump(tester, service);
     await tester.tap(find.byKey(const Key(E2EKeys.miningRewardsSubmitButton)));
     await tester.pumpAndSettle();
-    expect(find.text(l10n.miningRewardsSubmitTakenTitle), findsOneWidget);
-    expect(find.text(l10n.miningRewardsUseRecordedAddress), findsOneWidget);
-
-    await tester.tap(find.byKey(const Key(E2EKeys.miningRewardsTryAgainButton)));
-    await tester.pumpAndSettle();
     expect(service.calls, 2);
-    expect(service.destination!.address, taken.recordedTo);
-    expect(service.destination!.accountName, isNull);
-    expect(find.text('Paying to ${AddressFormattingService.formatAddress(taken.recordedTo)}.'), findsOneWidget);
+    expect(find.text(l10n.miningRewardsSubmittedAll), findsOneWidget);
+    expect(find.text('Paying to Account 1.'), findsOneWidget);
   });
 }

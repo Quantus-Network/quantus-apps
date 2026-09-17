@@ -27,33 +27,27 @@ AirdropMatch _wormhole(String address) => AirdropMatch(
   wormholeSecret: Uint8List(32),
 );
 
-/// [alreadyClaimed] maps an address the server holds to the payout address it
-/// recorded, or null when it has since been paid out (dropped from /unpaid).
+/// [alreadyClaimed] addresses answer 409; [rejected] ones answer [status] with [body].
 AirdropClaimService _service({
   List<Map<String, dynamic>>? posted,
   int status = 200,
   String body = '{}',
-  Map<String, String?> alreadyClaimed = const {},
+  Set<String> alreadyClaimed = const {},
+  Set<String> rejected = const {},
   List<String>? requests,
 }) => AirdropClaimService(
   endpoint: 'https://claims.test',
   client: MockClient((request) async {
     requests?.add('${request.method} ${request.url.path}');
-    if (request.url.path == '/unpaid') {
-      final rows = [
-        for (final e in alreadyClaimed.entries)
-          if (e.value != null) {'address': e.key, 'claim_account': e.value, 'status': 'recorded'},
-      ];
-      return http.Response(jsonEncode({'rows': rows}), 200);
-    }
     expect(request.url.toString(), 'https://claims.test/claim');
     expect(request.headers['Content-Type'], startsWith('application/json'));
     final sent = jsonDecode(request.body) as Map<String, dynamic>;
     posted?.add(sent);
-    if (alreadyClaimed.containsKey(sent['address'])) {
+    if (alreadyClaimed.contains(sent['address'])) {
       return http.Response('{"error":"address already claimed"}', 409);
     }
-    return http.Response(body, status);
+    if (rejected.isEmpty || rejected.contains(sent['address'])) return http.Response(body, status);
+    return http.Response('{}', 200);
   }),
   buildDilithiumClaim: ({required mnemonic, required dilithiumKeygen, required address, required claimAccount}) async {
     expect(mnemonic, _mnemonic);
@@ -93,62 +87,40 @@ void main() {
     ]);
   });
 
-  test('an address the server already holds for this payout address counts as done', () async {
+  test('an address the server already holds counts as submitted without any further request', () async {
     final posted = <Map<String, dynamic>>[];
     final requests = <String>[];
     await _service(
       posted: posted,
       requests: requests,
-      alreadyClaimed: {'qza': _beneficiary},
+      alreadyClaimed: {'qza'},
     ).submitClaims(matches: [_dilithium('qza'), _wormhole('qzw')], mnemonic: _mnemonic, claimAccount: _beneficiary);
     expect(posted.map((p) => p['address'] ?? p['proof']), ['qza', 'proof:$_beneficiary']);
-    expect(requests, ['POST /claim', 'GET /unpaid', 'POST /claim']);
+    expect(requests, ['POST /claim', 'POST /claim']);
   });
 
-  test('an address already paid out is not in the unpaid list and counts as done', () async {
-    await _service(
-      alreadyClaimed: {'qza': null},
-    ).submitClaims(matches: [_dilithium('qza')], mnemonic: _mnemonic, claimAccount: _beneficiary);
-  });
-
-  test('an address held for another payout address stops the batch as taken', () async {
+  test('a rejected address does not stop the others, and the failure counts what got through', () async {
     final posted = <Map<String, dynamic>>[];
     await expectLater(
-      _service(posted: posted, alreadyClaimed: {'qzb': 'qzsomeoneelse'}).submitClaims(
+      _service(
+        posted: posted,
+        status: 404,
+        body: '{"error":"address is not in the snapshot"}',
+        rejected: {'qzb'},
+      ).submitClaims(
         matches: [_dilithium('qza'), _dilithium('qzb'), _dilithium('qzc')],
         mnemonic: _mnemonic,
         claimAccount: _beneficiary,
       ),
       throwsA(
         isA<AirdropClaimFailure>()
-            .having((f) => f.recorded, 'recorded', 1)
+            .having((f) => f.submitted, 'submitted', 2)
             .having((f) => f.total, 'total', 3)
-            .having(
-              (f) => f.cause,
-              'cause',
-              isA<AirdropClaimTaken>().having((t) => t.recordedTo, 'recordedTo', 'qzsomeoneelse'),
-            ),
+            .having((f) => f.causes.keys, 'failed addresses', ['qzb'])
+            .having((f) => '${f.causes['qzb']}', 'cause', 'Exception: Rejected (404): address is not in the snapshot'),
       ),
     );
-    expect(posted.map((p) => p['address']), ['qza', 'qzb']);
-  });
-
-  test("a rejection surfaces the server's error message and how far the batch got", () {
-    expect(
-      _service(
-        status: 404,
-        body: '{"error":"address is not in the snapshot"}',
-      ).submitClaims(matches: [_dilithium('qza')], mnemonic: _mnemonic, claimAccount: _beneficiary),
-      throwsA(
-        isA<AirdropClaimFailure>()
-            .having((f) => f.recorded, 'recorded', 0)
-            .having(
-              (f) => '${f.cause}',
-              'cause',
-              'Exception: Claim for qza rejected (404): address is not in the snapshot',
-            ),
-      ),
-    );
+    expect(posted.map((p) => p['address']), ['qza', 'qzb', 'qzc']);
   });
 
   test('a rejection without a JSON body is reported verbatim', () {
@@ -157,7 +129,7 @@ void main() {
         status: 502,
         body: 'Bad Gateway',
       ).submitClaims(matches: [_dilithium('qza')], mnemonic: _mnemonic, claimAccount: _beneficiary),
-      throwsA(isA<AirdropClaimFailure>().having((f) => '${f.cause}', 'cause', endsWith('(502): Bad Gateway'))),
+      throwsA(isA<AirdropClaimFailure>().having((f) => '${f.causes['qza']}', 'cause', endsWith('(502): Bad Gateway'))),
     );
   });
 

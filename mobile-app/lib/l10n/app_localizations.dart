@@ -3746,29 +3746,23 @@ abstract class AppLocalizations {
   /// **'Your rewards are safe. Nothing expires and there is no deadline to claim.'**
   String get miningRewardsSubmitFailedBody2;
 
-  /// Extra line on the failed page after part of the batch was accepted
+  /// Heading when part of the batch was accepted and the rest failed
   ///
   /// In en, this message translates to:
-  /// **'{recorded} of {total} addresses are already recorded for this payout address. Try again to finish the rest.'**
-  String miningRewardsSubmitPartial(int recorded, int total);
+  /// **'Some claims have been submitted'**
+  String get miningRewardsSubmitPartialTitle;
 
-  /// Heading when the server holds one of the wallet's addresses for a different payout address
+  /// First paragraph under the partial-submission heading
   ///
   /// In en, this message translates to:
-  /// **'Already claimed to another address'**
-  String get miningRewardsSubmitTakenTitle;
+  /// **'Please try again to submit the rest.'**
+  String get miningRewardsSubmitPartialBody;
 
-  /// Explains the conflict; both placeholders are shortened addresses
+  /// First line of the submitted page
   ///
   /// In en, this message translates to:
-  /// **'{address} was already submitted with the payout address {recordedTo}. Rewards go to the address recorded first, so the rest of this claim has to use it too.'**
-  String miningRewardsSubmitTakenBody(String address, String recordedTo);
-
-  /// Button that resubmits the claim to the payout address the server already recorded
-  ///
-  /// In en, this message translates to:
-  /// **'Continue with that address'**
-  String get miningRewardsUseRecordedAddress;
+  /// **'All claims have been submitted.'**
+  String get miningRewardsSubmittedAll;
 
   /// Destination line on the submitted page: an account name or a short address
   ///
