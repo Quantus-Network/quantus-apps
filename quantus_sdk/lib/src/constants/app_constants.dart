@@ -18,6 +18,9 @@ class AppConstants {
 
   static const String senotiEndpoint = 'https://snt.quantus.com/api';
 
+  // Testnet mining rewards claim server (Quantus-Network/airdrop-claim).
+  static const String miningRewardsClaimEndpoint = 'https://airdrop-claim.quantus.com';
+
   static const String explorerEndpoint = 'https://explorer.quantus.com';
 
   // internal group URL is this (note the /c)
@@ -94,6 +97,10 @@ class AppConstants {
   // outcome picker on its checking page so every flow can be walked through
   // without real testnet data. Flip to false to see the notice only when due.
   static const bool debugMainnetMigration = true;
+
+  // Shows an outcome picker on the Airdrop entry screen in debug builds so
+  // every rewards state can be walked through without a mining wallet.
+  static const bool debugMiningRewards = true;
 
   // Home swap action. Off while app review requires swap gone; flip to true to bring it back.
   static const bool showSwapButton = false;

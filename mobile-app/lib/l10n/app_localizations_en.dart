@@ -1909,4 +1909,172 @@ class AppLocalizationsEn extends AppLocalizations {
   String mainnetMigrationSaveFailed(String error) {
     return 'Could not save your choice: $error';
   }
+
+  @override
+  String get settingsMiningRewards => 'Mining Rewards';
+
+  @override
+  String get settingsMiningRewardsSubtitle => 'Claim your testnet mining rewards';
+
+  @override
+  String miningRewardsHeroTitle(String symbol) {
+    return 'Testnet mining paid out in $symbol.';
+  }
+
+  @override
+  String get miningRewardsHeroBody =>
+      'Rewards are based on the blocks you mined on Resonance, Schrödinger, Dirac, and Planck testnets. Amounts are already set.';
+
+  @override
+  String get settingsSelectWalletSection => 'Wallets on the device';
+
+  @override
+  String miningRewardsCheckingAddresses(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Checking $count addresses',
+      one: 'Checking 1 address',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String miningRewardsProgressOf(int total) {
+    return 'of $total';
+  }
+
+  @override
+  String get miningRewardsTotalRewards => 'Total rewards';
+
+  @override
+  String miningRewardsBlocks(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$countString blocks', one: '1 block');
+    return '$_temp0';
+  }
+
+  @override
+  String get miningRewardsNotMined => 'Not mined';
+
+  @override
+  String get miningRewardsSheetBlocksMined => 'Blocks mined';
+
+  @override
+  String get miningRewardsSheetReward => 'Reward';
+
+  @override
+  String get miningRewardsNoMiningTitle => 'No mining on this wallet';
+
+  @override
+  String get miningRewardsNoMiningBody1 =>
+      'We checked your addresses against Resonance, Schrödinger, Dirac and Planck, and found no blocks.';
+
+  @override
+  String get miningRewardsNoMiningBody2 => 'If you mined with a different wallet, go back and choose it.';
+
+  @override
+  String get miningRewardsTryAnotherWallet => 'Try another wallet';
+
+  @override
+  String get miningRewardsPayToIntro => 'Enter the address we should send the rewards to';
+
+  @override
+  String get miningRewardsUseAnotherAddress => 'Use Another Address';
+
+  @override
+  String get miningRewardsAnotherAddressTitle => 'Another Address';
+
+  @override
+  String get miningRewardsDestinationLabel => 'Destination';
+
+  @override
+  String miningRewardsPasteAddressHint(String symbol) {
+    return 'Paste $symbol Address';
+  }
+
+  @override
+  String get miningRewardsAddressAdvice =>
+      'Use an address you control. Rewards sent to an address you don\'t own can\'t be recovered.';
+
+  @override
+  String miningRewardsAddressInvalid(String symbol) {
+    return 'This isn\'t a valid $symbol address. Check the last few characters.';
+  }
+
+  @override
+  String get miningRewardsConfirmTitle => 'Confirm Destination';
+
+  @override
+  String get miningRewardsClaimingLabel => 'Claiming';
+
+  @override
+  String get miningRewardsAmountLabel => 'Amount';
+
+  @override
+  String get miningRewardsPayoutLabel => 'Payout';
+
+  @override
+  String get miningRewardsPayoutDay => 'Monday';
+
+  @override
+  String get miningRewardsChangeDetails => 'Change Details';
+
+  @override
+  String get miningRewardsSubmitFailedTitle => 'Couldn\'t submit right now';
+
+  @override
+  String get miningRewardsSubmitFailedBody1 => 'Something went wrong reaching the network.';
+
+  @override
+  String get miningRewardsSubmitFailedBody2 =>
+      'Your rewards are safe. Nothing expires and there is no deadline to claim.';
+
+  @override
+  String get miningRewardsSubmitPartialTitle => 'Some claims have been submitted';
+
+  @override
+  String get miningRewardsSubmitPartialBody => 'Please try again to submit the rest.';
+
+  @override
+  String get miningRewardsSubmittedAll => 'All claims have been submitted.';
+
+  @override
+  String miningRewardsSubmittedPayingTo(String destination) {
+    return 'Paying to $destination.';
+  }
+
+  @override
+  String get miningRewardsSubmittedNote => 'Payouts go out on Mondays. Nothing else to do.';
+
+  @override
+  String miningRewardsClaimedOn(String date) {
+    return 'Claimed $date';
+  }
+
+  @override
+  String get miningRewardsPayingTo => 'Paying To';
+
+  @override
+  String get miningRewardsNextPayout => 'Next Payout';
+
+  @override
+  String get miningRewardsCheckAnotherWallet => 'Check another wallet';
+
+  @override
+  String get miningRewardsCheckEligibility => 'Check eligibility';
+
+  @override
+  String get miningRewardsNotClaimable => 'Claim not available yet';
+
+  @override
+  String get miningRewardsCheckFailed => 'Check failed, tap to retry';
+
+  @override
+  String get miningRewardsClaim => 'Claim';
+
+  @override
+  String get miningRewardsSubmitClaims => 'Submit Claim';
 }

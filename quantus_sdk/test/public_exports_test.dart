@@ -9,5 +9,6 @@ void main() {
     expect(buildAirdropDilithiumClaim, isA<Function>());
     expect(buildAirdropDilithiumClaimFromMnemonic, isA<Function>());
     expect(proveAirdropWormhole, isA<Function>());
+    expect(AirdropClaimService.new, isA<Function>());
   });
 }

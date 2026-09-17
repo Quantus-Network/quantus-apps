@@ -5,7 +5,6 @@ import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/shared/constants/e2e_keys.dart';
-import 'package:resonance_network_wallet/shared/utils/account_utils.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/recovery_phrase_confirmation_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/reset_confirmation_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/select_wallet_screen.dart';
@@ -20,23 +19,12 @@ class WalletSettingsScreenV2 extends ConsumerStatefulWidget {
 }
 
 class _WalletSettingsScreenV2State extends ConsumerState<WalletSettingsScreenV2> {
-  void _navigateToRecoveryPhrase(List<Account> accounts) {
-    final l10n = ref.read(l10nProvider);
-    final walletIndices = getNonHardwareWalletIndices(accounts);
-    if (walletIndices.isEmpty) {
-      context.showErrorToaster(message: l10n.settingsWalletNoWalletsFound);
-      return;
-    }
-
-    if (walletIndices.length == 1) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => RecoveryPhraseConfirmationScreen(walletIndex: walletIndices.first)),
-      );
-    } else {
-      Navigator.push(context, MaterialPageRoute(builder: (_) => const SelectWalletScreen()));
-    }
-  }
+  void _navigateToRecoveryPhrase(List<Account> accounts) => pushForSoftwareWallet(
+    context,
+    ref,
+    accounts,
+    destination: (walletIndex) => RecoveryPhraseConfirmationScreen(walletIndex: walletIndex),
+  );
 
   void _showResetConfirmation() {
     Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ResetConfirmationScreen()));

@@ -9,6 +9,7 @@ import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/shared/constants/e2e_keys.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/about_quantus_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/add_account_menu_screen.dart';
+import 'package:resonance_network_wallet/v2/screens/mining_rewards/mining_rewards_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/help_and_support_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/preferences_settings_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/settings_divider.dart';
@@ -76,6 +77,21 @@ List<_SettingsHubItem> _settingsHubItems(BuildContext context, AppLocalizations 
       subtitle: l10n.settingsWalletSubtitle,
       page: const WalletSettingsScreenV2(),
       rowKey: const Key(E2EKeys.settingsWalletMenuRow),
+    ),
+    _SettingsHubItem(
+      leading: _settingsHubIcon(
+        colors,
+        svg: SvgPicture.asset(
+          'assets/v2/hand_arrow_down.svg',
+          width: 18,
+          height: 18,
+          colorFilter: ColorFilter.mode(colors.accentFlare, BlendMode.srcIn),
+        ),
+      ),
+      title: l10n.settingsMiningRewards,
+      subtitle: l10n.settingsMiningRewardsSubtitle,
+      page: const MiningRewardsScreen(),
+      rowKey: const Key(E2EKeys.settingsMiningRewardsRow),
     ),
     _SettingsHubItem(
       leading: _settingsHubIcon(colors, icon: Icons.tune),

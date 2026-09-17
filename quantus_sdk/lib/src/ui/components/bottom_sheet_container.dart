@@ -8,7 +8,10 @@ class BottomSheetContainer extends StatelessWidget {
   final Widget child;
   final double? height;
 
-  const BottomSheetContainer({super.key, required this.title, required this.child, this.height});
+  /// Action at the end of the title row, e.g. a close button.
+  final Widget? trailing;
+
+  const BottomSheetContainer({super.key, required this.title, required this.child, this.height, this.trailing});
 
   @override
   Widget build(BuildContext context) {
@@ -34,7 +37,14 @@ class BottomSheetContainer extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 16),
-            Text(title, style: text.headingRow.copyWith(color: colors.textContent)),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(title, style: text.headingRow.copyWith(color: colors.textContent)),
+                ),
+                ?trailing,
+              ],
+            ),
             const SizedBox(height: 16),
             if (height != null) Expanded(child: child) else Flexible(child: SingleChildScrollView(child: child)),
             // Toasts raised from inside a sheet would otherwise render behind it.

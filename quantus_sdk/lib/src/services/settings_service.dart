@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:quantus_sdk/src/extensions/dilithium_scheme_extension.dart';
 import 'package:quantus_sdk/src/models/account.dart';
+import 'package:quantus_sdk/src/models/airdrop_claim_record.dart';
 import 'package:quantus_sdk/src/models/display_account.dart';
 import 'package:quantus_sdk/src/models/multisig_account.dart';
 import 'package:quantus_sdk/src/rust/api/crypto.dart';
@@ -173,6 +174,7 @@ class SettingsService {
     await _prefs.remove(_walletOriginKey(walletIndex));
     await _prefs.remove(_recoveryPhraseViewedKey(walletIndex));
     await _prefs.remove(_walletNameKey(walletIndex));
+    await _prefs.remove(_airdropClaimKey(walletIndex));
   }
 
   Future<void> setActiveAccount(DisplayAccount account) async {
@@ -526,6 +528,19 @@ class SettingsService {
 
   void setRecoveryPhraseViewed(int walletIndex) {
     _prefs.setBool(_recoveryPhraseViewedKey(walletIndex), true);
+  }
+
+  String _airdropClaimKey(int walletIndex) => 'airdrop_claim_$walletIndex';
+
+  AirdropClaimRecord? getAirdropClaim(int walletIndex) {
+    final json = _prefs.getString(_airdropClaimKey(walletIndex));
+    return json == null ? null : AirdropClaimRecord.fromJson(jsonDecode(json) as Map<String, dynamic>);
+  }
+
+  Future<void> setAirdropClaim(int walletIndex, AirdropClaimRecord record) async {
+    if (!await _prefs.setString(_airdropClaimKey(walletIndex), jsonEncode(record.toJson()))) {
+      throw Exception('Could not save ${_airdropClaimKey(walletIndex)}');
+    }
   }
 
   String _walletOriginKey(int walletIndex) => 'wallet_origin_$walletIndex';

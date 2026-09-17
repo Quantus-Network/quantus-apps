@@ -164,5 +164,17 @@ void main() {
         expect(service.parseWireAmount('20999999.999999999999'), BigInt.parse('20999999999999999999'));
       });
     });
+    group('counts and hundredths', () {
+      test('formatInteger groups thousands', () {
+        expect(service.formatInteger(5279), '5,279');
+        expect(service.formatInteger(7), '7');
+      });
+
+      test('formatHundredths always shows two decimals', () {
+        expect(service.formatHundredths(6539), '65.39');
+        expect(service.formatHundredths(10), '0.10');
+        expect(service.formatHundredths(1218000, addSymbol: true), '12,180.00 ${AppConstants.tokenSymbol}');
+      });
+    });
   });
 }

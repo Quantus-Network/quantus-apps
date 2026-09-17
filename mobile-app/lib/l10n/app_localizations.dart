@@ -3553,6 +3553,282 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Could not save your choice: {error}'**
   String mainnetMigrationSaveFailed(String error);
+
+  /// Settings hub row and screen title for testnet mining rewards
+  ///
+  /// In en, this message translates to:
+  /// **'Mining Rewards'**
+  String get settingsMiningRewards;
+
+  /// Settings hub row subtitle for testnet mining rewards
+  ///
+  /// In en, this message translates to:
+  /// **'Claim your testnet mining rewards'**
+  String get settingsMiningRewardsSubtitle;
+
+  /// Hero heading on the Airdrop entry screen
+  ///
+  /// In en, this message translates to:
+  /// **'Testnet mining paid out in {symbol}.'**
+  String miningRewardsHeroTitle(String symbol);
+
+  /// Explainer under the hero heading on the Airdrop entry screen
+  ///
+  /// In en, this message translates to:
+  /// **'Rewards are based on the blocks you mined on Resonance, Schrödinger, Dirac, and Planck testnets. Amounts are already set.'**
+  String get miningRewardsHeroBody;
+
+  /// Section label above the wallet list
+  ///
+  /// In en, this message translates to:
+  /// **'Wallets on the device'**
+  String get settingsSelectWalletSection;
+
+  /// Label over the chain progress counter while the check runs
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Checking 1 address} other{Checking {count} addresses}}'**
+  String miningRewardsCheckingAddresses(int count);
+
+  /// Unit after the number of chains checked so far
+  ///
+  /// In en, this message translates to:
+  /// **'of {total}'**
+  String miningRewardsProgressOf(int total);
+
+  /// Label over the summed payout
+  ///
+  /// In en, this message translates to:
+  /// **'Total rewards'**
+  String get miningRewardsTotalRewards;
+
+  /// Blocks mined on one testnet, under the chain name
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 block} other{{count} blocks}}'**
+  String miningRewardsBlocks(int count);
+
+  /// Chain row value when the wallet owns no row in that table
+  ///
+  /// In en, this message translates to:
+  /// **'Not mined'**
+  String get miningRewardsNotMined;
+
+  /// First row of the per-chain sheet
+  ///
+  /// In en, this message translates to:
+  /// **'Blocks mined'**
+  String get miningRewardsSheetBlocksMined;
+
+  /// Second row of the per-chain sheet
+  ///
+  /// In en, this message translates to:
+  /// **'Reward'**
+  String get miningRewardsSheetReward;
+
+  /// Heading when every chain answered and none has a row for this wallet
+  ///
+  /// In en, this message translates to:
+  /// **'No mining on this wallet'**
+  String get miningRewardsNoMiningTitle;
+
+  /// First paragraph of the no-mining page
+  ///
+  /// In en, this message translates to:
+  /// **'We checked your addresses against Resonance, Schrödinger, Dirac and Planck, and found no blocks.'**
+  String get miningRewardsNoMiningBody1;
+
+  /// Second paragraph of the no-mining page
+  ///
+  /// In en, this message translates to:
+  /// **'If you mined with a different wallet, go back and choose it.'**
+  String get miningRewardsNoMiningBody2;
+
+  /// Button on the no-mining page
+  ///
+  /// In en, this message translates to:
+  /// **'Try another wallet'**
+  String get miningRewardsTryAnotherWallet;
+
+  /// Explainer under the total on the pay-to screen
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the address we should send the rewards to'**
+  String get miningRewardsPayToIntro;
+
+  /// Secondary button on the pay-to screen
+  ///
+  /// In en, this message translates to:
+  /// **'Use Another Address'**
+  String get miningRewardsUseAnotherAddress;
+
+  /// Title of the typed-address screen
+  ///
+  /// In en, this message translates to:
+  /// **'Another Address'**
+  String get miningRewardsAnotherAddressTitle;
+
+  /// Label above the typed-address field
+  ///
+  /// In en, this message translates to:
+  /// **'Destination'**
+  String get miningRewardsDestinationLabel;
+
+  /// Placeholder of the typed-address field
+  ///
+  /// In en, this message translates to:
+  /// **'Paste {symbol} Address'**
+  String miningRewardsPasteAddressHint(String symbol);
+
+  /// Helper under the typed-address field
+  ///
+  /// In en, this message translates to:
+  /// **'Use an address you control. Rewards sent to an address you don\'t own can\'t be recovered.'**
+  String get miningRewardsAddressAdvice;
+
+  /// Error under the typed-address field
+  ///
+  /// In en, this message translates to:
+  /// **'This isn\'t a valid {symbol} address. Check the last few characters.'**
+  String miningRewardsAddressInvalid(String symbol);
+
+  /// Title of the confirm screen
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm Destination'**
+  String get miningRewardsConfirmTitle;
+
+  /// Label over the amount on the confirm card
+  ///
+  /// In en, this message translates to:
+  /// **'Claiming'**
+  String get miningRewardsClaimingLabel;
+
+  /// Summary row label on the confirm screen
+  ///
+  /// In en, this message translates to:
+  /// **'Amount'**
+  String get miningRewardsAmountLabel;
+
+  /// Summary row label on the confirm screen
+  ///
+  /// In en, this message translates to:
+  /// **'Payout'**
+  String get miningRewardsPayoutLabel;
+
+  /// Weekday payouts go out
+  ///
+  /// In en, this message translates to:
+  /// **'Monday'**
+  String get miningRewardsPayoutDay;
+
+  /// Secondary button on the confirm screen
+  ///
+  /// In en, this message translates to:
+  /// **'Change Details'**
+  String get miningRewardsChangeDetails;
+
+  /// Heading when the claim server rejected or was unreachable
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t submit right now'**
+  String get miningRewardsSubmitFailedTitle;
+
+  /// First paragraph of the submission failed page
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong reaching the network.'**
+  String get miningRewardsSubmitFailedBody1;
+
+  /// Second paragraph of the submission failed page
+  ///
+  /// In en, this message translates to:
+  /// **'Your rewards are safe. Nothing expires and there is no deadline to claim.'**
+  String get miningRewardsSubmitFailedBody2;
+
+  /// Heading when part of the batch was accepted and the rest failed
+  ///
+  /// In en, this message translates to:
+  /// **'Some claims have been submitted'**
+  String get miningRewardsSubmitPartialTitle;
+
+  /// First paragraph under the partial-submission heading
+  ///
+  /// In en, this message translates to:
+  /// **'Please try again to submit the rest.'**
+  String get miningRewardsSubmitPartialBody;
+
+  /// First line of the submitted page
+  ///
+  /// In en, this message translates to:
+  /// **'All claims have been submitted.'**
+  String get miningRewardsSubmittedAll;
+
+  /// Destination line on the submitted page: an account name or a short address
+  ///
+  /// In en, this message translates to:
+  /// **'Paying to {destination}.'**
+  String miningRewardsSubmittedPayingTo(String destination);
+
+  /// Closing line on the submitted page
+  ///
+  /// In en, this message translates to:
+  /// **'Payouts go out on Mondays. Nothing else to do.'**
+  String get miningRewardsSubmittedNote;
+
+  /// Label over the amount when the wallet already submitted its claim
+  ///
+  /// In en, this message translates to:
+  /// **'Claimed {date}'**
+  String miningRewardsClaimedOn(String date);
+
+  /// Row label on the already-claimed page
+  ///
+  /// In en, this message translates to:
+  /// **'Paying To'**
+  String get miningRewardsPayingTo;
+
+  /// Row label on the already-claimed page
+  ///
+  /// In en, this message translates to:
+  /// **'Next Payout'**
+  String get miningRewardsNextPayout;
+
+  /// Button on the already-claimed page
+  ///
+  /// In en, this message translates to:
+  /// **'Check another wallet'**
+  String get miningRewardsCheckAnotherWallet;
+
+  /// Button starting the mining rewards eligibility check
+  ///
+  /// In en, this message translates to:
+  /// **'Check eligibility'**
+  String get miningRewardsCheckEligibility;
+
+  /// Shown next to a matched address whose key era the claim server does not accept yet
+  ///
+  /// In en, this message translates to:
+  /// **'Claim not available yet'**
+  String get miningRewardsNotClaimable;
+
+  /// Shown in a chain row when its eligibility check threw
+  ///
+  /// In en, this message translates to:
+  /// **'Check failed, tap to retry'**
+  String get miningRewardsCheckFailed;
+
+  /// Button opening the claim beneficiary screen
+  ///
+  /// In en, this message translates to:
+  /// **'Claim'**
+  String get miningRewardsClaim;
+
+  /// Button that proves ownership and submits the claims
+  ///
+  /// In en, this message translates to:
+  /// **'Submit Claim'**
+  String get miningRewardsSubmitClaims;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

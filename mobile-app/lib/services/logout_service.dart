@@ -4,6 +4,7 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/currency_display_provider.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
+import 'package:resonance_network_wallet/providers/mining_rewards_provider.dart';
 import 'package:resonance_network_wallet/providers/multisig_providers.dart';
 import 'package:resonance_network_wallet/providers/pending_multisig_approvals_provider.dart';
 import 'package:resonance_network_wallet/providers/pending_multisig_cancellations_provider.dart';
@@ -45,6 +46,7 @@ class LogoutService {
     _ref.read(accountsProvider.notifier).reset();
     _ref.read(activeAccountProvider.notifier).reset();
     _ref.invalidate(recoveryPhraseViewedProvider);
+    _ref.invalidate(airdropClaimRecordProvider);
     _ref.invalidate(walletOriginProvider);
     // Drop encrypted-account Riverpod state so the next session doesn't show
     // the previous wallet's balance while disk caches are already wiped above.

@@ -24,6 +24,7 @@ export 'src/controllers/toast_controller.dart';
 // UI-related exports
 export 'src/ui/index.dart';
 export 'src/models/account.dart';
+export 'src/models/airdrop_claim_record.dart';
 export 'src/models/base_account.dart';
 export 'src/models/high_security_data.dart';
 export 'src/models/account_stats.dart';
@@ -58,6 +59,7 @@ export 'src/utils/ur_qr.dart';
 export 'src/rust/api/airdrop.dart';
 export 'src/rust/api/wormhole.dart';
 export 'src/services/account_discovery_service.dart';
+export 'src/services/airdrop_claim_service.dart';
 export 'src/services/accounts_service.dart';
 export 'src/services/address_formatting_service.dart';
 export 'src/services/balances_service.dart';
