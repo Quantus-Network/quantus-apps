@@ -13,7 +13,9 @@ class DebugMiningRewardsService extends MiningRewardsService {
 
   DebugMiningRewardsService({required super.settings, required this.outcome});
 
-  static AirdropClaimRecord? claimRecord(String outcome) => outcome == 'claimed'
+  /// Under the claimed outcome only the first wallet has claimed, so the entry
+  /// page shows both states side by side.
+  static AirdropClaimRecord? claimRecord(String outcome, int walletIndex) => outcome == 'claimed' && walletIndex == 0
       ? AirdropClaimRecord(
           claimedAt: DateTime(2026, 9, 16),
           rewardHundredths: 12180,

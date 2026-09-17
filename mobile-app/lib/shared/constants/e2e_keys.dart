@@ -59,6 +59,7 @@ class E2EKeys {
   static const String settingsMiningRewardsRow = 'settings_mining_rewards_row';
   static const String miningRewardsScreen = 'mining_rewards_screen';
   static const String miningRewardsCheckEligibilityButton = 'mining_rewards_check_eligibility_button';
+  static String miningRewardsWalletRow(int walletIndex) => 'mining_rewards_wallet_row_$walletIndex';
   static const String miningRewardsWalletScreen = 'mining_rewards_wallet_screen';
   static String miningRewardsChainRow(String chain) => 'mining_rewards_chain_row_$chain';
   static const String miningRewardsChainSheet = 'mining_rewards_chain_sheet';
