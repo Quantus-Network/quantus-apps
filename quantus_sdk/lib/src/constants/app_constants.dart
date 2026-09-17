@@ -60,11 +60,11 @@ class AppConstants {
   static const int maxWholeDigits = 8;
   static const int ss58prefix = 189;
 
-  // Runtime the bundled polkadart metadata (lib/generated/planck) was generated
+  // Runtime the bundled polkadart metadata (lib/generated/mainnet) was generated
   // from. A signing payload declaring a different spec version may decode
   // against shifted pallet/call indices, so signers warn loudly rather than
   // present a decode they cannot vouch for. Bump both when regenerating.
-  static const int bundledSpecVersion = 147;
+  static const int bundledSpecVersion = 152;
   static const int bundledTransactionVersion = 6;
 
   // Runtimes this build's metadata decodes correctly, beyond the one it was

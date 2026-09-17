@@ -2,7 +2,7 @@ import 'dart:developer' as developer;
 
 import 'package:convert/convert.dart';
 import 'package:flutter/foundation.dart';
-import 'package:quantus_sdk/generated/planck/pallets/multisig.dart';
+import 'package:quantus_sdk/generated/mainnet/pallets/multisig.dart';
 import 'package:quantus_sdk/src/chain/call_decoder.dart';
 import 'package:quantus_sdk/src/chain/call_policy.dart';
 import 'package:quantus_sdk/src/chain/decoded_call.dart';

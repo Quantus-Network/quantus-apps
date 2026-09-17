@@ -2,16 +2,16 @@ import 'dart:typed_data';
 
 import 'package:convert/convert.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:quantus_sdk/generated/planck/pallets/balances.dart' as balances_pallet;
-import 'package:quantus_sdk/generated/planck/pallets/multisig.dart' as multisig_pallet;
-import 'package:quantus_sdk/generated/planck/pallets/preimage.dart' as preimage_pallet;
-import 'package:quantus_sdk/generated/planck/pallets/reversible_transfers.dart' as reversible_pallet;
-import 'package:quantus_sdk/generated/planck/pallets/system.dart' as system_pallet;
-import 'package:quantus_sdk/generated/planck/pallets/tech_collective.dart' as collective_pallet;
-import 'package:quantus_sdk/generated/planck/pallets/utility.dart' as utility_pallet;
-import 'package:quantus_sdk/generated/planck/pallets/vesting.dart' as vesting_pallet;
-import 'package:quantus_sdk/generated/planck/types/quantus_runtime/runtime_call.dart';
-import 'package:quantus_sdk/generated/planck/types/sp_runtime/multiaddress/multi_address.dart' as multi_address;
+import 'package:quantus_sdk/generated/mainnet/pallets/balances.dart' as balances_pallet;
+import 'package:quantus_sdk/generated/mainnet/pallets/multisig.dart' as multisig_pallet;
+import 'package:quantus_sdk/generated/mainnet/pallets/preimage.dart' as preimage_pallet;
+import 'package:quantus_sdk/generated/mainnet/pallets/reversible_transfers.dart' as reversible_pallet;
+import 'package:quantus_sdk/generated/mainnet/pallets/system.dart' as system_pallet;
+import 'package:quantus_sdk/generated/mainnet/pallets/tech_collective.dart' as collective_pallet;
+import 'package:quantus_sdk/generated/mainnet/pallets/utility.dart' as utility_pallet;
+import 'package:quantus_sdk/generated/mainnet/pallets/vesting.dart' as vesting_pallet;
+import 'package:quantus_sdk/generated/mainnet/types/quantus_runtime/runtime_call.dart';
+import 'package:quantus_sdk/generated/mainnet/types/sp_runtime/multiaddress/multi_address.dart' as multi_address;
 import 'package:quantus_sdk/src/chain/call_decoder.dart';
 import 'package:quantus_sdk/src/chain/call_policy.dart';
 

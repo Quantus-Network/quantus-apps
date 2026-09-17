@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:quantus_sdk/generated/planck/pallets/balances.dart' as balances_pallet;
-import 'package:quantus_sdk/generated/planck/pallets/system.dart' as system_pallet;
-import 'package:quantus_sdk/generated/planck/types/sp_runtime/multiaddress/multi_address.dart' as multi_address;
+import 'package:quantus_sdk/generated/mainnet/pallets/balances.dart' as balances_pallet;
+import 'package:quantus_sdk/generated/mainnet/pallets/system.dart' as system_pallet;
+import 'package:quantus_sdk/generated/mainnet/types/sp_runtime/multiaddress/multi_address.dart' as multi_address;
 import 'package:quantus_sdk/quantus_sdk.dart';
 
 /// `payment_queryInfo` on a1-planck (spec 144) for a dummy-signed

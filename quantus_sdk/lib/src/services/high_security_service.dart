@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'dart:typed_data';
 
-import 'package:quantus_sdk/generated/planck/planck.dart';
-import 'package:quantus_sdk/generated/planck/types/qp_scheduler/block_number_or_timestamp.dart' as qp;
+import 'package:quantus_sdk/generated/mainnet/mainnet.dart';
+import 'package:quantus_sdk/generated/mainnet/types/qp_scheduler/block_number_or_timestamp.dart' as qp;
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:quantus_sdk/src/extensions/duration_extension.dart';
 import 'package:quantus_sdk/src/rust/api/crypto.dart' as crypto;
@@ -75,7 +75,7 @@ class HighSecurityService {
   }
 
   ReversibleTransfers _getRecoverFundsCall(String lostAccountAddress) {
-    final quantusApi = Planck(_substrateService.provider!);
+    final quantusApi = Mainnet(_substrateService.provider!);
     final lostAccountId = crypto.ss58ToAccountId(s: lostAccountAddress);
 
     return quantusApi.tx.reversibleTransfers.recoverFunds(account: lostAccountId);

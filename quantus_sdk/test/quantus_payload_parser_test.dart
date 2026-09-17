@@ -3,12 +3,12 @@ import 'dart:typed_data';
 import 'package:convert/convert.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:polkadart/scale_codec.dart';
-import 'package:quantus_sdk/generated/planck/pallets/balances.dart' as balances_pallet;
-import 'package:quantus_sdk/generated/planck/pallets/multisig.dart' as multisig_pallet;
-import 'package:quantus_sdk/generated/planck/pallets/preimage.dart' as preimage_pallet;
-import 'package:quantus_sdk/generated/planck/pallets/system.dart' as system_pallet;
-import 'package:quantus_sdk/generated/planck/pallets/tech_collective.dart' as collective_pallet;
-import 'package:quantus_sdk/generated/planck/types/sp_runtime/multiaddress/multi_address.dart' as multi_address;
+import 'package:quantus_sdk/generated/mainnet/pallets/balances.dart' as balances_pallet;
+import 'package:quantus_sdk/generated/mainnet/pallets/multisig.dart' as multisig_pallet;
+import 'package:quantus_sdk/generated/mainnet/pallets/preimage.dart' as preimage_pallet;
+import 'package:quantus_sdk/generated/mainnet/pallets/system.dart' as system_pallet;
+import 'package:quantus_sdk/generated/mainnet/pallets/tech_collective.dart' as collective_pallet;
+import 'package:quantus_sdk/generated/mainnet/types/sp_runtime/multiaddress/multi_address.dart' as multi_address;
 import 'package:quantus_sdk/quantus_sdk.dart';
 
 const planckGenesisHex = '4901bf5c57fd3f9e726af399c763de6670dbdb115a91c0237e173f16eef65e72';

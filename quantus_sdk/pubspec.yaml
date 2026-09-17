@@ -91,7 +91,7 @@ dev_dependencies:
 polkadart:
   output_dir: lib/generated
   chains:
-    planck: wss://a1-planck.quantus.cat
+    mainnet: wss://rpc1-mainnet.quantus.com
 
 flutter:
   assets:

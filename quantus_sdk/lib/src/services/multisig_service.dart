@@ -1,9 +1,9 @@
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
-import 'package:quantus_sdk/generated/planck/pallets/multisig.dart' show Constants, Txs;
-import 'package:quantus_sdk/generated/planck/planck.dart' show Planck;
-import 'package:quantus_sdk/generated/planck/types/quantus_runtime/runtime_call.dart';
+import 'package:quantus_sdk/generated/mainnet/pallets/multisig.dart' show Constants, Txs;
+import 'package:quantus_sdk/generated/mainnet/mainnet.dart' show Mainnet;
+import 'package:quantus_sdk/generated/mainnet/types/quantus_runtime/runtime_call.dart';
 import 'package:quantus_sdk/src/chain/call_decoder.dart';
 import 'package:quantus_sdk/src/chain/call_policy.dart';
 import 'package:quantus_sdk/src/constants/app_constants.dart';
@@ -310,7 +310,7 @@ class MultisigService {
     if (open.isEmpty || provider == null) return proposals;
 
     try {
-      final queries = Planck(provider).query.multisig;
+      final queries = Mainnet(provider).query.multisig;
       final multisigId = getAccountId32(msig.accountId);
       final stored = await Future.wait(open.map((p) => queries.proposals(multisigId, p.id)));
       final callById = <int, Uint8List>{
@@ -410,7 +410,7 @@ class MultisigService {
     final provider = _substrateService.provider;
     if (provider == null) throw Exception('No RPC endpoint available to read multisig proposal $proposalId');
 
-    final stored = await Planck(provider).query.multisig.proposals(getAccountId32(msig.accountId), proposalId);
+    final stored = await Mainnet(provider).query.multisig.proposals(getAccountId32(msig.accountId), proposalId);
     if (stored == null) {
       throw Exception('Multisig proposal $proposalId not found on chain for ${msig.accountId}');
     }

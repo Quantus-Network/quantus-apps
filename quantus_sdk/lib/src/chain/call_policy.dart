@@ -1,12 +1,12 @@
 library;
 
-import 'package:quantus_sdk/generated/planck/pallets/balances.dart' as balances_pallet;
-import 'package:quantus_sdk/generated/planck/pallets/multisig.dart' as multisig_pallet;
-import 'package:quantus_sdk/generated/planck/pallets/reversible_transfers.dart' as reversible_pallet;
-import 'package:quantus_sdk/generated/planck/pallets/utility.dart' as utility_pallet;
-import 'package:quantus_sdk/generated/planck/types/qp_scheduler/block_number_or_timestamp.dart' as qp;
-import 'package:quantus_sdk/generated/planck/types/quantus_runtime/runtime_call.dart' as runtime;
-import 'package:quantus_sdk/generated/planck/types/sp_runtime/multiaddress/multi_address.dart' as multi_address;
+import 'package:quantus_sdk/generated/mainnet/pallets/balances.dart' as balances_pallet;
+import 'package:quantus_sdk/generated/mainnet/pallets/multisig.dart' as multisig_pallet;
+import 'package:quantus_sdk/generated/mainnet/pallets/reversible_transfers.dart' as reversible_pallet;
+import 'package:quantus_sdk/generated/mainnet/pallets/utility.dart' as utility_pallet;
+import 'package:quantus_sdk/generated/mainnet/types/qp_scheduler/block_number_or_timestamp.dart' as qp;
+import 'package:quantus_sdk/generated/mainnet/types/quantus_runtime/runtime_call.dart' as runtime;
+import 'package:quantus_sdk/generated/mainnet/types/sp_runtime/multiaddress/multi_address.dart' as multi_address;
 
 /// A call's runtime identity: the pallet and call index a payload carries.
 ///

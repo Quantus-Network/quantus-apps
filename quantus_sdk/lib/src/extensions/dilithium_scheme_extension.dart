@@ -1,5 +1,5 @@
-import 'package:quantus_sdk/generated/planck/types/qp_dilithium_crypto/types/dilithium65_signature_with_public.dart';
-import 'package:quantus_sdk/generated/planck/types/qp_dilithium_crypto/types/dilithium87_signature_with_public.dart';
+import 'package:quantus_sdk/generated/mainnet/types/qp_dilithium_crypto/types/dilithium65_signature_with_public.dart';
+import 'package:quantus_sdk/generated/mainnet/types/qp_dilithium_crypto/types/dilithium87_signature_with_public.dart';
 import 'package:quantus_sdk/src/rust/api/crypto.dart';
 
 /// Scheme-dependent constants, in one place. Conventions match quantus-cli.
