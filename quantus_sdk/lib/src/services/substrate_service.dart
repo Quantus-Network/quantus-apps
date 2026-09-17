@@ -4,7 +4,7 @@ import 'dart:math';
 import 'package:convert/convert.dart';
 import 'package:flutter/foundation.dart';
 import 'package:polkadart/polkadart.dart';
-import 'package:quantus_sdk/generated/mainnet/mainnet.dart';
+import 'package:quantus_sdk/generated/bell/bell.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:quantus_sdk/src/resonance_extrinsic_payload.dart';
 import 'package:quantus_sdk/src/rust/api/crypto.dart' as crypto;
@@ -108,7 +108,7 @@ class SubstrateService {
 
       final accountInfo = await rpc.providerTask((provider) async {
         final callSw = Stopwatch()..start();
-        final result = await Mainnet(provider).query.system.account(accountID);
+        final result = await Bell(provider).query.system.account(accountID);
         printTiming('queryBalance call', callSw.elapsedMilliseconds);
         return result;
       });

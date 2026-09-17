@@ -6,7 +6,7 @@ import 'package:convert/convert.dart';
 import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:http/http.dart' as http;
 import 'package:polkadart/scale_codec.dart' show ByteOutput, CompactCodec;
-import 'package:quantus_sdk/generated/mainnet/pallets/wormhole.dart' as wormhole_pallet;
+import 'package:quantus_sdk/generated/bell/pallets/wormhole.dart' as wormhole_pallet;
 import 'package:quantus_sdk/src/rust/api/wormhole.dart' as wormhole_ffi;
 import 'package:quantus_sdk/src/services/circuit_manager.dart';
 import 'package:quantus_sdk/src/services/network/redundant_endpoint.dart';

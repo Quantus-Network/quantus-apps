@@ -1,4 +1,4 @@
-import 'package:quantus_sdk/generated/mainnet/pallets/multisig.dart' as multisig_pallet;
+import 'package:quantus_sdk/generated/bell/pallets/multisig.dart' as multisig_pallet;
 import 'package:quantus_sdk/src/models/multisig_account.dart';
 import 'package:quantus_sdk/src/models/multisig_proposal.dart';
 import 'package:quantus_sdk/src/models/transaction_event.dart';

@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:quantus_sdk/generated/mainnet/pallets/multisig.dart' as multisig_pallet;
+import 'package:quantus_sdk/generated/bell/pallets/multisig.dart' as multisig_pallet;
 import 'package:quantus_sdk/quantus_sdk.dart';
 
 /// The `where:` argument of the first `account_event` selection in [query].

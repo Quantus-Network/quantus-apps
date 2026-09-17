@@ -2,10 +2,10 @@ import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:polkadart/scale_codec.dart';
-import 'package:quantus_sdk/generated/mainnet/pallets/balances.dart' as balances_pallet;
-import 'package:quantus_sdk/generated/mainnet/types/pallet_multisig/pallet/call.dart' show Approve, Execute;
-import 'package:quantus_sdk/generated/mainnet/types/quantus_runtime/runtime_call.dart';
-import 'package:quantus_sdk/generated/mainnet/types/sp_runtime/multiaddress/multi_address.dart';
+import 'package:quantus_sdk/generated/bell/pallets/balances.dart' as balances_pallet;
+import 'package:quantus_sdk/generated/bell/types/pallet_multisig/pallet/call.dart' show Approve, Execute;
+import 'package:quantus_sdk/generated/bell/types/quantus_runtime/runtime_call.dart';
+import 'package:quantus_sdk/generated/bell/types/sp_runtime/multiaddress/multi_address.dart';
 import 'package:quantus_sdk/src/chain/call_decoder.dart';
 import 'package:quantus_sdk/src/chain/call_policy.dart';
 import 'package:quantus_sdk/src/models/multisig_account.dart';

@@ -1,4 +1,4 @@
-import 'package:quantus_sdk/generated/mainnet/pallets/balances.dart' as balances;
+import 'package:quantus_sdk/generated/bell/pallets/balances.dart' as balances;
 import 'package:quantus_sdk/quantus_sdk.dart';
 
 import 'e2e_locale.dart';

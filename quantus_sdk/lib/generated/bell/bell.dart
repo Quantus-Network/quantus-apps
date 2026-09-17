@@ -153,21 +153,21 @@ class Registry {
   }
 }
 
-class Mainnet {
-  Mainnet._(this._provider, this.rpc)
+class Bell {
+  Bell._(this._provider, this.rpc)
     : query = Queries(rpc.state),
       constant = Constants(),
       tx = Extrinsics(),
       registry = Registry();
 
-  factory Mainnet(_i1.Provider provider) {
+  factory Bell(_i1.Provider provider) {
     final rpc = Rpc(state: _i1.StateApi(provider), system: _i1.SystemApi(provider));
-    return Mainnet._(provider, rpc);
+    return Bell._(provider, rpc);
   }
 
-  factory Mainnet.url(Uri url) {
+  factory Bell.url(Uri url) {
     final provider = _i1.Provider.fromUri(url);
-    return Mainnet(provider);
+    return Bell(provider);
   }
 
   final _i1.Provider _provider;

@@ -1,4 +1,4 @@
-import 'package:quantus_sdk/generated/mainnet/types/qp_scheduler/block_number_or_timestamp.dart' as qp;
+import 'package:quantus_sdk/generated/bell/types/qp_scheduler/block_number_or_timestamp.dart' as qp;
 
 extension DurationToTimestampExtension on Duration {
   qp.Timestamp get qpTimestamp => qp.Timestamp(BigInt.from(inSeconds) * BigInt.from(1000));
