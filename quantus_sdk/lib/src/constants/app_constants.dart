@@ -19,7 +19,7 @@ class AppConstants {
   static const String senotiEndpoint = 'https://snt.quantus.com/api';
 
   // Testnet mining rewards claim server (Quantus-Network/airdrop-claim).
-  static const String miningRewardsClaimEndpoint = 'https://airdrop.quantus.com';
+  static const String miningRewardsClaimEndpoint = 'https://airdrop-claim.quantus.com';
 
   static const String explorerEndpoint = 'https://explorer.quantus.com';
 

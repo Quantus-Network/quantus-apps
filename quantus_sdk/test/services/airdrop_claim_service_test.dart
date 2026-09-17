@@ -27,19 +27,30 @@ AirdropMatch _wormhole(String address) => AirdropMatch(
   wormholeSecret: Uint8List(32),
 );
 
+/// [alreadyClaimed] maps an address the server holds to the payout address it
+/// recorded, or null when it has since been paid out (dropped from /unpaid).
 AirdropClaimService _service({
   List<Map<String, dynamic>>? posted,
   int status = 200,
   String body = '{}',
-  Set<String> alreadyClaimed = const {},
+  Map<String, String?> alreadyClaimed = const {},
+  List<String>? requests,
 }) => AirdropClaimService(
   endpoint: 'https://claims.test',
   client: MockClient((request) async {
+    requests?.add('${request.method} ${request.url.path}');
+    if (request.url.path == '/unpaid') {
+      final rows = [
+        for (final e in alreadyClaimed.entries)
+          if (e.value != null) {'address': e.key, 'claim_account': e.value, 'status': 'recorded'},
+      ];
+      return http.Response(jsonEncode({'rows': rows}), 200);
+    }
     expect(request.url.toString(), 'https://claims.test/claim');
     expect(request.headers['Content-Type'], startsWith('application/json'));
     final sent = jsonDecode(request.body) as Map<String, dynamic>;
     posted?.add(sent);
-    if (alreadyClaimed.contains(sent['address'])) {
+    if (alreadyClaimed.containsKey(sent['address'])) {
       return http.Response('{"error":"address already claimed"}', 409);
     }
     return http.Response(body, status);
@@ -82,22 +93,61 @@ void main() {
     ]);
   });
 
-  test('an address the server already recorded counts as done and the rest still go out', () async {
+  test('an address the server already holds for this payout address counts as done', () async {
     final posted = <Map<String, dynamic>>[];
+    final requests = <String>[];
     await _service(
       posted: posted,
-      alreadyClaimed: {'qza'},
+      requests: requests,
+      alreadyClaimed: {'qza': _beneficiary},
     ).submitClaims(matches: [_dilithium('qza'), _wormhole('qzw')], mnemonic: _mnemonic, claimAccount: _beneficiary);
     expect(posted.map((p) => p['address'] ?? p['proof']), ['qza', 'proof:$_beneficiary']);
+    expect(requests, ['POST /claim', 'GET /unpaid', 'POST /claim']);
   });
 
-  test("a rejection surfaces the server's error message", () {
+  test('an address already paid out is not in the unpaid list and counts as done', () async {
+    await _service(
+      alreadyClaimed: {'qza': null},
+    ).submitClaims(matches: [_dilithium('qza')], mnemonic: _mnemonic, claimAccount: _beneficiary);
+  });
+
+  test('an address held for another payout address stops the batch as taken', () async {
+    final posted = <Map<String, dynamic>>[];
+    await expectLater(
+      _service(posted: posted, alreadyClaimed: {'qzb': 'qzsomeoneelse'}).submitClaims(
+        matches: [_dilithium('qza'), _dilithium('qzb'), _dilithium('qzc')],
+        mnemonic: _mnemonic,
+        claimAccount: _beneficiary,
+      ),
+      throwsA(
+        isA<AirdropClaimFailure>()
+            .having((f) => f.recorded, 'recorded', 1)
+            .having((f) => f.total, 'total', 3)
+            .having(
+              (f) => f.cause,
+              'cause',
+              isA<AirdropClaimTaken>().having((t) => t.recordedTo, 'recordedTo', 'qzsomeoneelse'),
+            ),
+      ),
+    );
+    expect(posted.map((p) => p['address']), ['qza', 'qzb']);
+  });
+
+  test("a rejection surfaces the server's error message and how far the batch got", () {
     expect(
       _service(
         status: 404,
         body: '{"error":"address is not in the snapshot"}',
       ).submitClaims(matches: [_dilithium('qza')], mnemonic: _mnemonic, claimAccount: _beneficiary),
-      throwsA(predicate((e) => '$e' == 'Exception: Claim for qza rejected (404): address is not in the snapshot')),
+      throwsA(
+        isA<AirdropClaimFailure>()
+            .having((f) => f.recorded, 'recorded', 0)
+            .having(
+              (f) => '${f.cause}',
+              'cause',
+              'Exception: Claim for qza rejected (404): address is not in the snapshot',
+            ),
+      ),
     );
   });
 
@@ -107,7 +157,7 @@ void main() {
         status: 502,
         body: 'Bad Gateway',
       ).submitClaims(matches: [_dilithium('qza')], mnemonic: _mnemonic, claimAccount: _beneficiary),
-      throwsA(predicate((e) => '$e'.endsWith('(502): Bad Gateway'))),
+      throwsA(isA<AirdropClaimFailure>().having((f) => '${f.cause}', 'cause', endsWith('(502): Bad Gateway'))),
     );
   });
 

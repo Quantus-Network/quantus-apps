@@ -2036,6 +2036,22 @@ class AppLocalizationsId extends AppLocalizations {
       'Your rewards are safe. Nothing expires and there is no deadline to claim.';
 
   @override
+  String miningRewardsSubmitPartial(int recorded, int total) {
+    return '$recorded of $total addresses are already recorded for this payout address. Try again to finish the rest.';
+  }
+
+  @override
+  String get miningRewardsSubmitTakenTitle => 'Already claimed to another address';
+
+  @override
+  String miningRewardsSubmitTakenBody(String address, String recordedTo) {
+    return '$address was already submitted with the payout address $recordedTo. Rewards go to the address recorded first, so the rest of this claim has to use it too.';
+  }
+
+  @override
+  String get miningRewardsUseRecordedAddress => 'Continue with that address';
+
+  @override
   String miningRewardsSubmittedPayingTo(String destination) {
     return 'Paying to $destination.';
   }
