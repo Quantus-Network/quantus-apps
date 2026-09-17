@@ -1923,7 +1923,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get miningRewardsHeroBody =>
-      'Rewards are based on the blocks you mined on Resonance, Schrödinger, Dirac and Planck. Amounts are already set.';
+      'Rewards are based on the blocks you mined on Resonance, Schrödinger, Dirac, and Planck testnets. Amounts are already set.';
 
   @override
   String get settingsSelectWalletSection => 'Wallets on the device';

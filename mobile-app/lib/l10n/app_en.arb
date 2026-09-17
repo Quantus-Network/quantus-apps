@@ -2802,7 +2802,7 @@
         }
       }
     },
-    "miningRewardsHeroBody": "Rewards are based on the blocks you mined on Resonance, Schrödinger, Dirac and Planck. Amounts are already set.",
+    "miningRewardsHeroBody": "Rewards are based on the blocks you mined on Resonance, Schrödinger, Dirac, and Planck testnets. Amounts are already set.",
     "@miningRewardsHeroBody": {
       "description": "Explainer under the hero heading on the Airdrop entry screen"
     },

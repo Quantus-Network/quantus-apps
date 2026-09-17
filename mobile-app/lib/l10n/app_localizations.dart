@@ -3575,7 +3575,7 @@ abstract class AppLocalizations {
   /// Explainer under the hero heading on the Airdrop entry screen
   ///
   /// In en, this message translates to:
-  /// **'Rewards are based on the blocks you mined on Resonance, Schrödinger, Dirac and Planck. Amounts are already set.'**
+  /// **'Rewards are based on the blocks you mined on Resonance, Schrödinger, Dirac, and Planck testnets. Amounts are already set.'**
   String get miningRewardsHeroBody;
 
   /// Section label above the wallet list
