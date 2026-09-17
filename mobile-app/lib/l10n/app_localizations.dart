@@ -3800,6 +3800,24 @@ abstract class AppLocalizations {
   /// **'Check another wallet'**
   String get miningRewardsCheckAnotherWallet;
 
+  /// Label over the wallet list on the mining rewards entry page
+  ///
+  /// In en, this message translates to:
+  /// **'Wallets'**
+  String get miningRewardsWalletsLabel;
+
+  /// Caption under the amount a wallet has already claimed
+  ///
+  /// In en, this message translates to:
+  /// **'Claimed'**
+  String get miningRewardsClaimedTag;
+
+  /// Wallet row value on the entry page when nothing was claimed
+  ///
+  /// In en, this message translates to:
+  /// **'Not claimed yet'**
+  String get miningRewardsNotClaimed;
+
   /// Button starting the mining rewards eligibility check
   ///
   /// In en, this message translates to:

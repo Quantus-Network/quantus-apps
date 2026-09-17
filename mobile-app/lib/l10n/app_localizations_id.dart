@@ -2067,6 +2067,15 @@ class AppLocalizationsId extends AppLocalizations {
   String get miningRewardsCheckAnotherWallet => 'Check another wallet';
 
   @override
+  String get miningRewardsWalletsLabel => 'Wallets';
+
+  @override
+  String get miningRewardsClaimedTag => 'Claimed';
+
+  @override
+  String get miningRewardsNotClaimed => 'Not claimed yet';
+
+  @override
   String get miningRewardsCheckEligibility => 'Check eligibility';
 
   @override
