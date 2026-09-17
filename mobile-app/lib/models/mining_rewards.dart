@@ -46,8 +46,16 @@ class ChainRewards {
   bool get isEligible => rows.any((r) => r.claimable);
 
   List<AirdropMatch> get matches => [for (final r in rows) r.match];
-
-  BigInt get rewardTokens => hundredthsToTokens(rewardHundredths);
 }
 
-BigInt hundredthsToTokens(int hundredths) => BigInt.from(hundredths) * BigInt.from(10).pow(AppConstants.decimals - 2);
+int totalRewardHundredths(Iterable<ChainRewards> rewards) => rewards.fold(0, (sum, r) => sum + r.rewardHundredths);
+
+/// Where the rewards are paid: one of the user's own accounts or a typed address.
+class ClaimDestination {
+  final String address;
+  final String? accountName;
+
+  const ClaimDestination({required this.address, this.accountName});
+
+  String get label => accountName ?? AddressFormattingService.formatAddress(address);
+}

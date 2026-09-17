@@ -1914,39 +1914,151 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
-  String get settingsMiningRewards => 'Mining Rewards';
+  String get settingsMiningRewards => 'Airdrop';
 
   @override
   String get settingsMiningRewardsSubtitle => 'Claim your testnet mining rewards';
 
   @override
-  String get miningRewardsIntro =>
-      'If you mined on a Quantus testnet, check whether this wallet\'s miners earned a reward, then choose where it should be paid.';
-
-  @override
-  String get miningRewardsCheckEligibility => 'Check eligibility';
-
-  @override
-  String miningRewardsEligibilityTitle(String wallet) {
-    return 'Eligibility for $wallet';
+  String miningRewardsHeroTitle(String symbol) {
+    return 'Testnet mining paid out in $symbol.';
   }
 
   @override
-  String miningRewardsBlocksMined(int count) {
+  String get miningRewardsHeroBody =>
+      'Rewards are based on the blocks you mined on Resonance, Schrödinger, Dirac and Planck. Amounts are already set.';
+
+  @override
+  String get settingsSelectWalletSection => 'Wallets on the device';
+
+  @override
+  String miningRewardsCheckingAddresses(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count blocks mined',
-      one: '1 block mined',
+      other: 'Checking $count addresses',
+      one: 'Checking 1 address',
     );
     return '$_temp0';
   }
 
   @override
-  String get miningRewardsTotal => 'Total reward';
+  String miningRewardsProgressOf(int total) {
+    return 'of $total';
+  }
 
   @override
-  String get miningRewardsNone => 'No testnet mining rewards were found for this wallet.';
+  String get miningRewardsTotalRewards => 'Total rewards';
+
+  @override
+  String miningRewardsBlocks(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$countString blocks', one: '1 block');
+    return '$_temp0';
+  }
+
+  @override
+  String get miningRewardsNotMined => 'Not mined';
+
+  @override
+  String get miningRewardsSheetBlocksMined => 'Blocks mined';
+
+  @override
+  String get miningRewardsSheetReward => 'Reward';
+
+  @override
+  String get miningRewardsNoMiningTitle => 'No mining on this wallet';
+
+  @override
+  String get miningRewardsNoMiningBody1 =>
+      'We checked your addresses against Resonance, Schrödinger, Dirac and Planck, and found no blocks.';
+
+  @override
+  String get miningRewardsNoMiningBody2 => 'If you mined with a different wallet, go back and choose it.';
+
+  @override
+  String get miningRewardsTryAnotherWallet => 'Try another wallet';
+
+  @override
+  String get miningRewardsPayToIntro => 'Enter the address we should send the rewards to';
+
+  @override
+  String get miningRewardsUseAnotherAddress => 'Use Another Address';
+
+  @override
+  String get miningRewardsAnotherAddressTitle => 'Another Address';
+
+  @override
+  String get miningRewardsDestinationLabel => 'Destination';
+
+  @override
+  String miningRewardsPasteAddressHint(String symbol) {
+    return 'Paste $symbol Address';
+  }
+
+  @override
+  String get miningRewardsAddressAdvice =>
+      'Use an address you control. Rewards sent to an address you don\'t own can\'t be recovered.';
+
+  @override
+  String miningRewardsAddressInvalid(String symbol) {
+    return 'This isn\'t a valid $symbol address. Check the last few characters.';
+  }
+
+  @override
+  String get miningRewardsConfirmTitle => 'Confirm Destination';
+
+  @override
+  String get miningRewardsClaimingLabel => 'Claiming';
+
+  @override
+  String get miningRewardsAmountLabel => 'Amount';
+
+  @override
+  String get miningRewardsPayoutLabel => 'Payout';
+
+  @override
+  String get miningRewardsPayoutDay => 'Monday';
+
+  @override
+  String get miningRewardsChangeDetails => 'Change Details';
+
+  @override
+  String get miningRewardsSubmitFailedTitle => 'Couldn\'t submit right now';
+
+  @override
+  String get miningRewardsSubmitFailedBody1 => 'Something went wrong reaching the network.';
+
+  @override
+  String get miningRewardsSubmitFailedBody2 =>
+      'Your rewards are safe. Nothing expires and there is no deadline to claim.';
+
+  @override
+  String miningRewardsSubmittedPayingTo(String destination) {
+    return 'Paying to $destination.';
+  }
+
+  @override
+  String get miningRewardsSubmittedNote => 'Payouts go out on Mondays. Nothing else to do.';
+
+  @override
+  String miningRewardsClaimedOn(String date) {
+    return 'Claimed $date';
+  }
+
+  @override
+  String get miningRewardsPayingTo => 'Paying To';
+
+  @override
+  String get miningRewardsNextPayout => 'Next Payout';
+
+  @override
+  String get miningRewardsCheckAnotherWallet => 'Check another wallet';
+
+  @override
+  String get miningRewardsCheckEligibility => 'Check eligibility';
 
   @override
   String get miningRewardsNotClaimable => 'Claim not available yet';
@@ -1958,29 +2070,5 @@ class AppLocalizationsId extends AppLocalizations {
   String get miningRewardsClaim => 'Claim';
 
   @override
-  String get miningRewardsClaimTitle => 'Claim Rewards';
-
-  @override
-  String get miningRewardsBeneficiaryLabel => 'Pay rewards to';
-
-  @override
-  String get miningRewardsYourAccounts => 'Your accounts';
-
-  @override
-  String get miningRewardsPayoutInfo =>
-      'Submitted claims will be processed within 1 week - good luck!\n\nPayouts are 2500 Quan total per testnet chain, split amongst all miners, and weighed by the square root of their total blocks mined. This means bigger miners earn more, but smaller miners still earn a good reward. Quadratic counting equalizes across all miners.';
-
-  @override
-  String get miningRewardsSubmitClaims => 'Submit Claims';
-
-  @override
-  String miningRewardsSubmitFailed(String error) {
-    return 'Claim submission failed: $error';
-  }
-
-  @override
-  String get miningRewardsSubmittedTitle => 'Claims Submitted';
-
-  @override
-  String get miningRewardsSubmittedBody => 'Submission successful, thank you. Claims will be paid out within 1 week';
+  String get miningRewardsSubmitClaims => 'Submit Claim';
 }

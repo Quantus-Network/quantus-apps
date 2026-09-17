@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart' hide ScaffoldBase;
+import 'package:resonance_network_wallet/v2/components/account_badge.dart';
+import 'package:resonance_network_wallet/v2/components/account_list_row.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
@@ -57,10 +59,20 @@ class SelectWalletScreen extends ConsumerWidget {
               child: Text(l10n.settingsSelectWalletNoWallets, style: text.body.copyWith(color: colors.textMuted)),
             );
           }
-          return ListView.separated(
-            itemCount: indices.length,
-            separatorBuilder: (_, _) => const SizedBox(height: 12),
-            itemBuilder: (_, i) => _walletItem(context, ref, l10n, indices[i], colors, text),
+          return ListView(
+            padding: EdgeInsets.zero,
+            children: [
+              Text(
+                l10n.settingsSelectWalletSection.toUpperCase(),
+                style: text.labelData.copyWith(color: colors.textMuted),
+              ),
+              const SizedBox(height: 16),
+              for (final walletIndex in indices)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: _walletItem(context, ref, l10n, walletIndex, accounts),
+                ),
+            ],
           );
         },
       ),
@@ -72,26 +84,15 @@ class SelectWalletScreen extends ConsumerWidget {
     WidgetRef ref,
     AppLocalizations l10n,
     int walletIndex,
-    AppColorsV3 colors,
-    AppTextThemeV3 text,
+    List<Account> accounts,
   ) {
-    return GestureDetector(
+    final walletName = walletDisplayName(ref, l10n, walletIndex);
+    return AccountListRow(
+      isSelected: true,
       onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => destination(walletIndex))),
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(color: colors.bgSurface, borderRadius: context.radiusV3.mdBorder),
-        child: Row(
-          children: [
-            Expanded(
-              child: Text(
-                walletDisplayName(ref, l10n, walletIndex),
-                style: text.bodyLarge.copyWith(color: colors.textContent),
-              ),
-            ),
-            QuantusIcon(QuantusIcons.chevronRight, color: colors.textMuted),
-          ],
-        ),
-      ),
+      leading: AccountBadge(name: walletName, isActive: true),
+      title: walletName,
+      subtitle: l10n.accountsScreenAccountCount(accounts.where((a) => a.walletIndex == walletIndex).length),
     );
   }
 }

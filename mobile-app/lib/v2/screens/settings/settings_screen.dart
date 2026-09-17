@@ -79,16 +79,10 @@ List<_SettingsHubItem> _settingsHubItems(BuildContext context, AppLocalizations 
       rowKey: const Key(E2EKeys.settingsWalletMenuRow),
     ),
     _SettingsHubItem(
-      leading: _settingsHubIcon(colors, icon: Icons.tune),
-      title: l10n.settingsPreferencesTitle,
-      subtitle: l10n.settingsPreferencesSubtitle,
-      page: const PreferencesSettingsScreenV2(),
-    ),
-    _SettingsHubItem(
       leading: _settingsHubIcon(
         colors,
         svg: SvgPicture.asset(
-          'assets/v2/axe.svg',
+          'assets/v2/hand_arrow_down.svg',
           width: 18,
           height: 18,
           colorFilter: ColorFilter.mode(colors.accentFlare, BlendMode.srcIn),
@@ -98,6 +92,12 @@ List<_SettingsHubItem> _settingsHubItems(BuildContext context, AppLocalizations 
       subtitle: l10n.settingsMiningRewardsSubtitle,
       page: const MiningRewardsScreen(),
       rowKey: const Key(E2EKeys.settingsMiningRewardsRow),
+    ),
+    _SettingsHubItem(
+      leading: _settingsHubIcon(colors, icon: Icons.tune),
+      title: l10n.settingsPreferencesTitle,
+      subtitle: l10n.settingsPreferencesSubtitle,
+      page: const PreferencesSettingsScreenV2(),
     ),
     _SettingsHubItem(
       leading: _settingsHubIcon(colors, icon: Icons.person_add_outlined),

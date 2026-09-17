@@ -27,6 +27,15 @@ class NumberFormattingService {
   /// chain's full precision for smaller amounts.
   String formatAmount(BigInt amount) => formatBalance(amount, smartDecimals: 4, maxDecimals: AppConstants.decimals);
 
+  /// A whole count with the locale's grouping separators, e.g. 5279 -> "5,279".
+  String formatInteger(int value) => _localeConfig.localize(value.toString());
+
+  /// An amount held in hundredths, always with two decimals, e.g. 6539 -> "65.39".
+  String formatHundredths(int hundredths, {bool addSymbol = false}) {
+    final amount = _localeConfig.localize('${hundredths ~/ 100}.${(hundredths % 100).toString().padLeft(2, '0')}');
+    return addSymbol ? '$amount ${AppConstants.tokenSymbol}' : amount;
+  }
+
   String formatBalance(
     BigInt balance, {
     int smartDecimals = 4,

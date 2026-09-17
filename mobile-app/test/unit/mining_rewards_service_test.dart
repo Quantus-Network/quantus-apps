@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/models/mining_rewards.dart';
 import 'package:resonance_network_wallet/services/mining_rewards_service.dart';
+import 'package:resonance_network_wallet/shared/utils/miner_stats_csv.dart';
 
 import '../fakes.dart';
 
@@ -15,11 +16,15 @@ const _planckTable = 'address,blocks,reward\nqzw,107650,102.53\nqzx,1,0.10\n';
 
 class _Settings extends FakeSettingsService {
   final String? mnemonic;
+  AirdropClaimRecord? stored;
 
   _Settings({this.mnemonic = _mnemonic});
 
   @override
   Future<String?> getMnemonic(int walletIndex) async => mnemonic;
+
+  @override
+  Future<void> setAirdropClaim(int walletIndex, AirdropClaimRecord record) async => stored = record;
 }
 
 /// Serves one CSV per asset path, recording which were read.
@@ -50,9 +55,12 @@ AirdropMatch _dilithium(String address, {bool claimable = true}) => AirdropMatch
 
 /// Records what the wallet hands to the claim server client.
 class _Claims extends Fake implements AirdropClaimService {
+  final bool rejects;
   List<AirdropMatch>? matches;
   String? mnemonic;
   String? claimAccount;
+
+  _Claims({this.rejects = false});
 
   @override
   Future<void> submitClaims({
@@ -63,6 +71,7 @@ class _Claims extends Fake implements AirdropClaimService {
     this.matches = matches;
     this.mnemonic = mnemonic;
     this.claimAccount = claimAccount;
+    if (rejects) throw Exception('rejected');
   }
 }
 
@@ -100,7 +109,6 @@ void main() {
     expect(rewards.rows.map((r) => r.reward.rewardHundredths), [6539, 10]);
     expect(rewards.blocksMined, 89779);
     expect(rewards.rewardHundredths, 6549);
-    expect(rewards.rewardTokens, BigInt.from(6549) * BigInt.from(10).pow(AppConstants.decimals - 2));
     expect(rewards.isEligible, isTrue);
   });
 
@@ -129,20 +137,46 @@ void main() {
     expect(_service(settings: _Settings(mnemonic: null)).checkChain(0, TestnetChain.dirac), throwsA(anything));
   });
 
-  test('submitting hands the matches, the recovery phrase and the payout address to the claim client', () async {
+  final owned = ChainRewards(
+    chain: TestnetChain.dirac,
+    rows: [AddressReward(match: _dilithium('qza'), reward: const MinerReward(blocks: 5, rewardHundredths: 6539))],
+  );
+  const empty = ChainRewards(chain: TestnetChain.planck, rows: []);
+  const destination = ClaimDestination(address: _beneficiary, accountName: 'Account 1');
+
+  test('submitting hands the eligible matches, phrase and payout address on, then remembers the claim', () async {
     final claims = _Claims();
-    final matches = [_dilithium('qza'), _dilithium('qzold', claimable: false)];
-    await _service(claims: claims).submitClaims(walletIndex: 0, matches: matches, claimAccount: _beneficiary);
-    expect(claims.matches, matches);
+    final settings = _Settings();
+    await _service(
+      claims: claims,
+      settings: settings,
+    ).submitClaims(walletIndex: 0, rewards: [owned, empty], destination: destination);
+
+    expect(claims.matches!.map((m) => m.address), ['qza']);
     expect(claims.mnemonic, _mnemonic);
     expect(claims.claimAccount, _beneficiary);
+    expect(settings.stored!.rewardHundredths, 6539);
+    expect(settings.stored!.claimAccount, _beneficiary);
+    expect(settings.stored!.accountName, 'Account 1');
+  });
+
+  test('a rejected submission leaves no claim behind', () async {
+    final settings = _Settings();
+    await expectLater(
+      _service(
+        claims: _Claims(rejects: true),
+        settings: settings,
+      ).submitClaims(walletIndex: 0, rewards: [owned], destination: destination),
+      throwsA(anything),
+    );
+    expect(settings.stored, isNull);
   });
 
   test('a wallet without a recovery phrase cannot submit', () {
     expect(
       _service(
         settings: _Settings(mnemonic: null),
-      ).submitClaims(walletIndex: 0, matches: [_dilithium('qza')], claimAccount: _beneficiary),
+      ).submitClaims(walletIndex: 0, rewards: [owned], destination: destination),
       throwsA(anything),
     );
   });

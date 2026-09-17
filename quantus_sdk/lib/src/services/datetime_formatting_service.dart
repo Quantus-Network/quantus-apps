@@ -150,6 +150,9 @@ class DatetimeFormattingService {
     return '$date, $time';
   }
 
+  /// Day and abbreviated month, e.g. "16 Sep".
+  static String formatDayMonth(DateTime dt, String localeName) => DateFormat('d MMM', localeName).format(dt.toLocal());
+
   static String formatDateGroupLabel(DateTime dt, String localeName) {
     return DateFormat.yMMMd(localeName).format(dt.toLocal());
   }

@@ -2785,7 +2785,7 @@
         }
       }
     },
-    "settingsMiningRewards": "Mining Rewards",
+    "settingsMiningRewards": "Airdrop",
     "@settingsMiningRewards": {
       "description": "Settings hub row and screen title for testnet mining rewards"
     },
@@ -2793,39 +2793,194 @@
     "@settingsMiningRewardsSubtitle": {
       "description": "Settings hub row subtitle for testnet mining rewards"
     },
-    "miningRewardsIntro": "If you mined on a Quantus testnet, check whether this wallet's miners earned a reward, then choose where it should be paid.",
-    "@miningRewardsIntro": {
-      "description": "Explainer on the mining rewards entry screen"
-    },
-    "miningRewardsCheckEligibility": "Check eligibility",
-    "@miningRewardsCheckEligibility": {
-      "description": "Button starting the mining rewards eligibility check"
-    },
-    "miningRewardsEligibilityTitle": "Eligibility for {wallet}",
-    "@miningRewardsEligibilityTitle": {
-      "description": "Title of the per-chain eligibility screen",
+    "miningRewardsHeroTitle": "Testnet mining paid out in {symbol}.",
+    "@miningRewardsHeroTitle": {
+      "description": "Hero heading on the Airdrop entry screen",
       "placeholders": {
-        "wallet": {
+        "symbol": {
           "type": "String"
         }
       }
     },
-    "miningRewardsBlocksMined": "{count, plural, =1{1 block mined} other{{count} blocks mined}}",
-    "@miningRewardsBlocksMined": {
-      "description": "Blocks the wallet mined on one testnet",
+    "miningRewardsHeroBody": "Rewards are based on the blocks you mined on Resonance, Schrödinger, Dirac and Planck. Amounts are already set.",
+    "@miningRewardsHeroBody": {
+      "description": "Explainer under the hero heading on the Airdrop entry screen"
+    },
+    "settingsSelectWalletSection": "Wallets on the device",
+    "@settingsSelectWalletSection": {
+      "description": "Section label above the wallet list"
+    },
+    "miningRewardsCheckingAddresses": "{count, plural, =1{Checking 1 address} other{Checking {count} addresses}}",
+    "@miningRewardsCheckingAddresses": {
+      "description": "Label over the chain progress counter while the check runs",
       "placeholders": {
         "count": {
           "type": "int"
         }
       }
     },
-    "miningRewardsTotal": "Total reward",
-    "@miningRewardsTotal": {
-      "description": "Label of the summed payout across all chains"
+    "miningRewardsProgressOf": "of {total}",
+    "@miningRewardsProgressOf": {
+      "description": "Unit after the number of chains checked so far",
+      "placeholders": {
+        "total": {
+          "type": "int"
+        }
+      }
     },
-    "miningRewardsNone": "No testnet mining rewards were found for this wallet.",
-    "@miningRewardsNone": {
-      "description": "Shown when every chain answered and none of them pays this wallet"
+    "miningRewardsTotalRewards": "Total rewards",
+    "@miningRewardsTotalRewards": {
+      "description": "Label over the summed payout"
+    },
+    "miningRewardsBlocks": "{count, plural, =1{1 block} other{{count} blocks}}",
+    "@miningRewardsBlocks": {
+      "description": "Blocks mined on one testnet, under the chain name",
+      "placeholders": {
+        "count": {
+          "type": "int",
+          "format": "decimalPattern"
+        }
+      }
+    },
+    "miningRewardsNotMined": "Not mined",
+    "@miningRewardsNotMined": {
+      "description": "Chain row value when the wallet owns no row in that table"
+    },
+    "miningRewardsSheetBlocksMined": "Blocks mined",
+    "@miningRewardsSheetBlocksMined": {
+      "description": "First row of the per-chain sheet"
+    },
+    "miningRewardsSheetReward": "Reward",
+    "@miningRewardsSheetReward": {
+      "description": "Second row of the per-chain sheet"
+    },
+    "miningRewardsNoMiningTitle": "No mining on this wallet",
+    "@miningRewardsNoMiningTitle": {
+      "description": "Heading when every chain answered and none has a row for this wallet"
+    },
+    "miningRewardsNoMiningBody1": "We checked your addresses against Resonance, Schrödinger, Dirac and Planck, and found no blocks.",
+    "@miningRewardsNoMiningBody1": {
+      "description": "First paragraph of the no-mining page"
+    },
+    "miningRewardsNoMiningBody2": "If you mined with a different wallet, go back and choose it.",
+    "@miningRewardsNoMiningBody2": {
+      "description": "Second paragraph of the no-mining page"
+    },
+    "miningRewardsTryAnotherWallet": "Try another wallet",
+    "@miningRewardsTryAnotherWallet": {
+      "description": "Button on the no-mining page"
+    },
+    "miningRewardsPayToIntro": "Enter the address we should send the rewards to",
+    "@miningRewardsPayToIntro": {
+      "description": "Explainer under the total on the pay-to screen"
+    },
+    "miningRewardsUseAnotherAddress": "Use Another Address",
+    "@miningRewardsUseAnotherAddress": {
+      "description": "Secondary button on the pay-to screen"
+    },
+    "miningRewardsAnotherAddressTitle": "Another Address",
+    "@miningRewardsAnotherAddressTitle": {
+      "description": "Title of the typed-address screen"
+    },
+    "miningRewardsDestinationLabel": "Destination",
+    "@miningRewardsDestinationLabel": {
+      "description": "Label above the typed-address field"
+    },
+    "miningRewardsPasteAddressHint": "Paste {symbol} Address",
+    "@miningRewardsPasteAddressHint": {
+      "description": "Placeholder of the typed-address field",
+      "placeholders": {
+        "symbol": {
+          "type": "String"
+        }
+      }
+    },
+    "miningRewardsAddressAdvice": "Use an address you control. Rewards sent to an address you don't own can't be recovered.",
+    "@miningRewardsAddressAdvice": {
+      "description": "Helper under the typed-address field"
+    },
+    "miningRewardsAddressInvalid": "This isn't a valid {symbol} address. Check the last few characters.",
+    "@miningRewardsAddressInvalid": {
+      "description": "Error under the typed-address field",
+      "placeholders": {
+        "symbol": {
+          "type": "String"
+        }
+      }
+    },
+    "miningRewardsConfirmTitle": "Confirm Destination",
+    "@miningRewardsConfirmTitle": {
+      "description": "Title of the confirm screen"
+    },
+    "miningRewardsClaimingLabel": "Claiming",
+    "@miningRewardsClaimingLabel": {
+      "description": "Label over the amount on the confirm card"
+    },
+    "miningRewardsAmountLabel": "Amount",
+    "@miningRewardsAmountLabel": {
+      "description": "Summary row label on the confirm screen"
+    },
+    "miningRewardsPayoutLabel": "Payout",
+    "@miningRewardsPayoutLabel": {
+      "description": "Summary row label on the confirm screen"
+    },
+    "miningRewardsPayoutDay": "Monday",
+    "@miningRewardsPayoutDay": {
+      "description": "Weekday payouts go out"
+    },
+    "miningRewardsChangeDetails": "Change Details",
+    "@miningRewardsChangeDetails": {
+      "description": "Secondary button on the confirm screen"
+    },
+    "miningRewardsSubmitFailedTitle": "Couldn't submit right now",
+    "@miningRewardsSubmitFailedTitle": {
+      "description": "Heading when the claim server rejected or was unreachable"
+    },
+    "miningRewardsSubmitFailedBody1": "Something went wrong reaching the network.",
+    "@miningRewardsSubmitFailedBody1": {
+      "description": "First paragraph of the submission failed page"
+    },
+    "miningRewardsSubmitFailedBody2": "Your rewards are safe. Nothing expires and there is no deadline to claim.",
+    "@miningRewardsSubmitFailedBody2": {
+      "description": "Second paragraph of the submission failed page"
+    },
+    "miningRewardsSubmittedPayingTo": "Paying to {destination}.",
+    "@miningRewardsSubmittedPayingTo": {
+      "description": "Destination line on the submitted page: an account name or a short address",
+      "placeholders": {
+        "destination": {
+          "type": "String"
+        }
+      }
+    },
+    "miningRewardsSubmittedNote": "Payouts go out on Mondays. Nothing else to do.",
+    "@miningRewardsSubmittedNote": {
+      "description": "Closing line on the submitted page"
+    },
+    "miningRewardsClaimedOn": "Claimed {date}",
+    "@miningRewardsClaimedOn": {
+      "description": "Label over the amount when the wallet already submitted its claim",
+      "placeholders": {
+        "date": {
+          "type": "String"
+        }
+      }
+    },
+    "miningRewardsPayingTo": "Paying To",
+    "@miningRewardsPayingTo": {
+      "description": "Row label on the already-claimed page"
+    },
+    "miningRewardsNextPayout": "Next Payout",
+    "@miningRewardsNextPayout": {
+      "description": "Row label on the already-claimed page"
+    },
+    "miningRewardsCheckAnotherWallet": "Check another wallet",
+    "@miningRewardsCheckAnotherWallet": {
+      "description": "Button on the already-claimed page"
+    },
+    "miningRewardsCheckEligibility": "Check eligibility",
+    "@miningRewardsCheckEligibility": {
+      "description": "Button starting the mining rewards eligibility check"
     },
     "miningRewardsNotClaimable": "Claim not available yet",
     "@miningRewardsNotClaimable": {
@@ -2839,41 +2994,8 @@
     "@miningRewardsClaim": {
       "description": "Button opening the claim beneficiary screen"
     },
-    "miningRewardsClaimTitle": "Claim Rewards",
-    "@miningRewardsClaimTitle": {
-      "description": "Title of the claim beneficiary screen"
-    },
-    "miningRewardsBeneficiaryLabel": "Pay rewards to",
-    "@miningRewardsBeneficiaryLabel": {
-      "description": "Label above the beneficiary address field"
-    },
-    "miningRewardsYourAccounts": "Your accounts",
-    "@miningRewardsYourAccounts": {
-      "description": "Heading of the list of own accounts to pick as beneficiary"
-    },
-    "miningRewardsPayoutInfo": "Submitted claims will be processed within 1 week - good luck!\n\nPayouts are 2500 Quan total per testnet chain, split amongst all miners, and weighed by the square root of their total blocks mined. This means bigger miners earn more, but smaller miners still earn a good reward. Quadratic counting equalizes across all miners.",
-    "@miningRewardsPayoutInfo": {
-      "description": "Info text above the submit claims button"
-    },
-    "miningRewardsSubmitClaims": "Submit Claims",
+    "miningRewardsSubmitClaims": "Submit Claim",
     "@miningRewardsSubmitClaims": {
       "description": "Button that proves ownership and submits the claims"
-    },
-    "miningRewardsSubmitFailed": "Claim submission failed: {error}",
-    "@miningRewardsSubmitFailed": {
-      "description": "Toaster when the claim server rejects or proving fails",
-      "placeholders": {
-        "error": {
-          "type": "String"
-        }
-      }
-    },
-    "miningRewardsSubmittedTitle": "Claims Submitted",
-    "@miningRewardsSubmittedTitle": {
-      "description": "Title of the screen shown after claims were accepted"
-    },
-    "miningRewardsSubmittedBody": "Submission successful, thank you. Claims will be paid out within 1 week",
-    "@miningRewardsSubmittedBody": {
-      "description": "Body of the screen shown after claims were accepted"
     }
 }

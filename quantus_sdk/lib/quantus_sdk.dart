@@ -24,6 +24,7 @@ export 'src/controllers/toast_controller.dart';
 // UI-related exports
 export 'src/ui/index.dart';
 export 'src/models/account.dart';
+export 'src/models/airdrop_claim_record.dart';
 export 'src/models/base_account.dart';
 export 'src/models/high_security_data.dart';
 export 'src/models/account_stats.dart';

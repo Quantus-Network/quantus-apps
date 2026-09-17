@@ -59,11 +59,24 @@ class E2EKeys {
   static const String settingsMiningRewardsRow = 'settings_mining_rewards_row';
   static const String miningRewardsScreen = 'mining_rewards_screen';
   static const String miningRewardsCheckEligibilityButton = 'mining_rewards_check_eligibility_button';
-  static const String miningRewardsEligibilityScreen = 'mining_rewards_eligibility_screen';
+  static const String miningRewardsWalletScreen = 'mining_rewards_wallet_screen';
+  static String miningRewardsChainRow(String chain) => 'mining_rewards_chain_row_$chain';
+  static const String miningRewardsChainSheet = 'mining_rewards_chain_sheet';
   static const String miningRewardsClaimButton = 'mining_rewards_claim_button';
-  static const String miningRewardsClaimScreen = 'mining_rewards_claim_screen';
-  static const String miningRewardsBeneficiaryField = 'mining_rewards_beneficiary_field';
+  static const String miningRewardsNoMiningScreen = 'mining_rewards_no_mining_screen';
+  static const String miningRewardsTryAnotherWalletButton = 'mining_rewards_try_another_wallet_button';
+  static const String miningRewardsClaimedScreen = 'mining_rewards_claimed_screen';
+  static const String miningRewardsCheckAnotherWalletButton = 'mining_rewards_check_another_wallet_button';
+  static const String miningRewardsPayToScreen = 'mining_rewards_pay_to_screen';
+  static const String miningRewardsContinueButton = 'mining_rewards_continue_button';
+  static const String miningRewardsUseAnotherAddressButton = 'mining_rewards_use_another_address_button';
+  static const String miningRewardsAddressScreen = 'mining_rewards_address_screen';
+  static const String miningRewardsAddressField = 'mining_rewards_address_field';
+  static const String miningRewardsConfirmScreen = 'mining_rewards_confirm_screen';
   static const String miningRewardsSubmitButton = 'mining_rewards_submit_button';
+  static const String miningRewardsChangeDetailsButton = 'mining_rewards_change_details_button';
+  static const String miningRewardsSubmitFailedScreen = 'mining_rewards_submit_failed_screen';
+  static const String miningRewardsTryAgainButton = 'mining_rewards_try_again_button';
   static const String miningRewardsSubmittedScreen = 'mining_rewards_submitted_screen';
   static const String miningRewardsSubmittedDoneButton = 'mining_rewards_submitted_done_button';
 }

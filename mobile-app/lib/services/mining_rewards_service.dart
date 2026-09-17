@@ -39,13 +39,31 @@ class MiningRewardsService {
     );
   }
 
-  /// Proves and submits the wallet's claims, paid out to [claimAccount].
+  /// Proves and submits the wallet's claims, paid out to [destination], and
+  /// remembers the claim so the flow can show it again.
   Future<void> submitClaims({
     required int walletIndex,
-    required List<AirdropMatch> matches,
-    required String claimAccount,
-  }) async =>
-      _claims.submitClaims(matches: matches, mnemonic: await _mnemonic(walletIndex), claimAccount: claimAccount);
+    required List<ChainRewards> rewards,
+    required ClaimDestination destination,
+  }) async {
+    await _claims.submitClaims(
+      matches: [
+        for (final r in rewards)
+          if (r.isEligible) ...r.matches,
+      ],
+      mnemonic: await _mnemonic(walletIndex),
+      claimAccount: destination.address,
+    );
+    await _settings.setAirdropClaim(
+      walletIndex,
+      AirdropClaimRecord(
+        claimedAt: DateTime.now(),
+        rewardHundredths: totalRewardHundredths(rewards),
+        claimAccount: destination.address,
+        accountName: destination.accountName,
+      ),
+    );
+  }
 
   Future<String> _mnemonic(int walletIndex) async {
     final mnemonic = await _settings.getMnemonic(walletIndex);
