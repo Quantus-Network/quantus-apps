@@ -2086,4 +2086,13 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get miningRewardsSubmitClaims => 'Submit Claim';
+
+  @override
+  String get desktopNavHome => 'Beranda';
+
+  @override
+  String get desktopNavActivity => 'Aktivitas';
+
+  @override
+  String get desktopRefreshTooltip => 'Segarkan';
 }

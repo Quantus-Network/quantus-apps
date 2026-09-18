@@ -3017,5 +3017,17 @@
     "miningRewardsSubmitClaims": "Submit Claim",
     "@miningRewardsSubmitClaims": {
       "description": "Button that proves ownership and submits the claims"
+    },
+    "desktopNavHome": "Home",
+    "@desktopNavHome": {
+      "description": "Desktop sidebar navigation label for the Home section"
+    },
+    "desktopNavActivity": "Activity",
+    "@desktopNavActivity": {
+      "description": "Desktop sidebar navigation label for the Activity section"
+    },
+    "desktopRefreshTooltip": "Refresh",
+    "@desktopRefreshTooltip": {
+      "description": "Tooltip for the desktop sidebar manual refresh button"
     }
 }

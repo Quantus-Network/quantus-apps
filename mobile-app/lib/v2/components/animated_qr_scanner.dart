@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
@@ -227,6 +228,39 @@ class _AnimatedQrScannerState extends State<AnimatedQrScanner> {
   }
 
   Widget _cameraView(AppColorsV3 colors, AppRadiusV3 radius) {
+    if (!kIsWeb && (defaultTargetPlatform == TargetPlatform.linux || defaultTargetPlatform == TargetPlatform.windows)) {
+      return Container(
+        decoration: BoxDecoration(
+          border: Border.all(color: colors.borderHairline),
+          borderRadius: radius.mdBorder,
+          color: colors.bgSurface,
+        ),
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.camera_alt_outlined, size: 48, color: colors.textMuted),
+                const SizedBox(height: 16),
+                Text(
+                  'Camera scanner is not supported on this platform.',
+                  textAlign: TextAlign.center,
+                  style: context.themeTextV3.body.copyWith(color: colors.textMuted),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Please use the Quantus mobile app for Keystone hardware wallet signing.',
+                  textAlign: TextAlign.center,
+                  style: context.themeTextV3.caption.copyWith(color: colors.textMuted),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
     return Container(
       decoration: BoxDecoration(
         border: Border.all(color: colors.borderHairline),

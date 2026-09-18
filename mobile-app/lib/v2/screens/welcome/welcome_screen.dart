@@ -33,42 +33,47 @@ class _WelcomeScreenV2State extends ConsumerState<WelcomeScreenV2> {
     return ScaffoldBase(
       key: const Key(E2EKeys.welcomeScreen),
       backgroundWidget: const OnboardingBackground(),
-      mainContent: Column(
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          Image.asset('assets/v2/quantus_orange_logo.png', height: 32),
-          const SizedBox(height: 16),
-          SizedBox(
-            width: 240,
-            child: Text(
-              l10n.welcomeTagline,
-              textAlign: TextAlign.center,
-              style: text.titleHero.copyWith(color: colors.textWhite),
-            ),
-          ),
-          const SizedBox(height: 56),
-          QuantusButton.simple(
-            key: const Key(E2EKeys.welcomeCreateWalletButton),
-            label: l10n.welcomeCreateNewWallet,
-            onTap: _createWallet,
-            isLoading: _isCreating,
-          ),
-          const SizedBox(height: 24),
-          QuantusButton.simple(
-            key: const Key(E2EKeys.welcomeImportWalletButton),
-            label: l10n.welcomeImportWallet,
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                settings: const RouteSettings(name: 'import_wallet'),
-                builder: (_) => const ImportWalletScreenV2(),
+      mainContent: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 440),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              Image.asset('assets/v2/quantus_orange_logo.png', height: 32),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: 240,
+                child: Text(
+                  l10n.welcomeTagline,
+                  textAlign: TextAlign.center,
+                  style: text.titleHero.copyWith(color: colors.textWhite),
+                ),
               ),
-            ),
-            variant: ButtonVariant.staged,
-            isDisabled: _isCreating,
+              const SizedBox(height: 56),
+              QuantusButton.simple(
+                key: const Key(E2EKeys.welcomeCreateWalletButton),
+                label: l10n.welcomeCreateNewWallet,
+                onTap: _createWallet,
+                isLoading: _isCreating,
+              ),
+              const SizedBox(height: 24),
+              QuantusButton.simple(
+                key: const Key(E2EKeys.welcomeImportWalletButton),
+                label: l10n.welcomeImportWallet,
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    settings: const RouteSettings(name: 'import_wallet'),
+                    builder: (_) => const ImportWalletScreenV2(),
+                  ),
+                ),
+                variant: ButtonVariant.staged,
+                isDisabled: _isCreating,
+              ),
+              const SizedBox(height: 40),
+            ],
           ),
-          const SizedBox(height: 40),
-        ],
+        ),
       ),
     );
   }

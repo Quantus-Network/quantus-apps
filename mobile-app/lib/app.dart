@@ -8,6 +8,7 @@ import 'package:resonance_network_wallet/services/local_notifications_service.da
 import 'package:resonance_network_wallet/services/notification_integration_service.dart';
 import 'package:resonance_network_wallet/services/telemetry_navigator_observer.dart';
 import 'package:resonance_network_wallet/services/deep_link_service.dart';
+import 'package:resonance_network_wallet/shared/utils/platform_utils.dart';
 import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 
 class ResonanceWalletApp extends ConsumerStatefulWidget {
@@ -22,11 +23,13 @@ class _ResonanceWalletAppState extends ConsumerState<ResonanceWalletApp> {
   void initState() {
     super.initState();
 
-    ref.read(notificationIntegrationServiceProvider);
-    ref.read(deepLinkServiceProvider).init();
-    final localNotifications = ref.read(localNotificationsServiceProvider);
-    localNotifications.setupNotificationsClickListener();
-    localNotifications.handleLaunchByNotification();
+    if (!isDesktopPlatform) {
+      ref.read(notificationIntegrationServiceProvider);
+      ref.read(deepLinkServiceProvider).init();
+      final localNotifications = ref.read(localNotificationsServiceProvider);
+      localNotifications.setupNotificationsClickListener();
+      localNotifications.handleLaunchByNotification();
+    }
   }
 
   @override

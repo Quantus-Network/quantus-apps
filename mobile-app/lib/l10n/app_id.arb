@@ -537,5 +537,8 @@
   "mainnetMigrationAllSetBody": "Mulai sekarang semuanya adalah uang sungguhan. Tambahkan {tokenSymbol} kapan pun Anda siap.",
   "mainnetMigrationGetTokens": "Dapatkan {tokenSymbol}",
   "mainnetMigrationGoToWallet": "Ke wallet",
-  "mainnetMigrationSaveFailed": "Pilihan Anda tidak dapat disimpan: {error}"
+  "mainnetMigrationSaveFailed": "Pilihan Anda tidak dapat disimpan: {error}",
+  "desktopNavHome": "Beranda",
+  "desktopNavActivity": "Aktivitas",
+  "desktopRefreshTooltip": "Segarkan"
 }

@@ -4,8 +4,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/route_intent_providers.dart';
+import 'package:resonance_network_wallet/shared/utils/platform_utils.dart';
 import 'package:resonance_network_wallet/shared/utils/print.dart';
 
 class QrScannerPage extends ConsumerStatefulWidget {
@@ -18,11 +20,13 @@ class QrScannerPage extends ConsumerStatefulWidget {
 
 class _QrScannerPageState extends ConsumerState<QrScannerPage> {
   final _controller = MobileScannerController();
+  final _textController = TextEditingController();
   bool _scanned = false;
 
   @override
   void dispose() {
     _controller.dispose();
+    _textController.dispose();
     super.dispose();
   }
 
@@ -65,6 +69,10 @@ class _QrScannerPageState extends ConsumerState<QrScannerPage> {
     final radius = context.radiusV3.md;
     final screen = MediaQuery.of(context).size;
     final frameSize = (screen.width - 112).clamp(220.0, 280.0);
+
+    if (isDesktopPlatform) {
+      return _buildDesktopScanner(context, l10n, colors);
+    }
 
     return Scaffold(
       backgroundColor: colors.bgVoid,
@@ -114,6 +122,89 @@ class _QrScannerPageState extends ConsumerState<QrScannerPage> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildDesktopScanner(BuildContext context, AppLocalizations l10n, AppColorsV3 colors) {
+    final text = context.themeTextV3;
+    final radius = context.radiusV3;
+
+    return Scaffold(
+      backgroundColor: colors.bgVoid,
+      body: SafeArea(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 480),
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  V2AppBar(title: l10n.componentQrScannerTitle),
+                  const Spacer(),
+                  Container(
+                    width: 72,
+                    height: 72,
+                    decoration: BoxDecoration(color: colors.bgSurface2, shape: BoxShape.circle),
+                    child: Icon(Icons.qr_code_scanner, size: 36, color: colors.accentFlare),
+                  ),
+                  const SizedBox(height: 24),
+                  Text(l10n.componentQrScannerTitle, style: text.titleHero.copyWith(color: colors.textContent)),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Choose an image file containing a QR code, or paste the text directly.',
+                    textAlign: TextAlign.center,
+                    style: text.body.copyWith(color: colors.textMuted),
+                  ),
+                  const SizedBox(height: 32),
+                  QuantusButton.simple(label: 'Choose QR Image', onTap: _pickImage, variant: ButtonVariant.staged),
+                  const SizedBox(height: 24),
+                  Row(
+                    children: [
+                      Expanded(child: Divider(color: colors.borderHairline)),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        child: Text('OR', style: text.caption.copyWith(color: colors.textMuted)),
+                      ),
+                      Expanded(child: Divider(color: colors.borderHairline)),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  TextField(
+                    controller: _textController,
+                    style: text.body.copyWith(color: colors.textContent),
+                    decoration: InputDecoration(
+                      hintText: 'Paste QR code payload or address...',
+                      hintStyle: text.body.copyWith(color: colors.textMuted),
+                      filled: true,
+                      fillColor: colors.bgSurface,
+                      border: OutlineInputBorder(
+                        borderRadius: radius.mdBorder,
+                        borderSide: BorderSide(color: colors.borderHairline),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: radius.mdBorder,
+                        borderSide: BorderSide(color: colors.borderHairline),
+                      ),
+                      suffixIcon: IconButton(
+                        icon: const Icon(Icons.check),
+                        onPressed: () {
+                          final value = _textController.text.trim();
+                          if (value.isNotEmpty) _handleCode(value);
+                        },
+                      ),
+                    ),
+                    onSubmitted: (value) {
+                      if (value.trim().isNotEmpty) _handleCode(value.trim());
+                    },
+                  ),
+                  const Spacer(),
+                ],
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
