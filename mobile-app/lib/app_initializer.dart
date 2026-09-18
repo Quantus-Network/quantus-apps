@@ -6,6 +6,7 @@ import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
 import 'package:resonance_network_wallet/services/history_polling_manager.dart';
 import 'package:resonance_network_wallet/services/local_notifications_service.dart';
 import 'package:resonance_network_wallet/services/multisig_creation_polling_service.dart';
+import 'package:resonance_network_wallet/shared/utils/platform_utils.dart';
 import 'package:resonance_network_wallet/shared/utils/print.dart';
 
 /// Widget that initializes the polling services for the entire app.
@@ -37,8 +38,10 @@ class _AppInitializerState extends ConsumerState<AppInitializer> {
       ref.read(historyPollingManagerProvider);
       ref.read(multisigCreationPollingServiceProvider);
 
-      final notificationService = ref.read(localNotificationsServiceProvider);
-      await notificationService.init();
+      if (!isDesktopPlatform) {
+        final notificationService = ref.read(localNotificationsServiceProvider);
+        await notificationService.init();
+      }
     } catch (e, stackTrace) {
       quantusPrint('Initialization error: $e\n$stackTrace');
     }

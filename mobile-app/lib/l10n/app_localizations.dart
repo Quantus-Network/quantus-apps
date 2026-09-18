@@ -3841,6 +3841,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Submit Claim'**
   String get miningRewardsSubmitClaims;
+
+  /// Desktop sidebar navigation label for the Home section
+  ///
+  /// In en, this message translates to:
+  /// **'Home'**
+  String get desktopNavHome;
+
+  /// Desktop sidebar navigation label for the Activity section
+  ///
+  /// In en, this message translates to:
+  /// **'Activity'**
+  String get desktopNavActivity;
+
+  /// Tooltip for the desktop sidebar manual refresh button
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh'**
+  String get desktopRefreshTooltip;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

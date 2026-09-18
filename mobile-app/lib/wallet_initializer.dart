@@ -5,6 +5,7 @@ import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/mainnet_migration_provider.dart';
 import 'package:resonance_network_wallet/v2/screens/home/home_screen.dart';
+import 'package:resonance_network_wallet/shell/adaptive_shell.dart';
 import 'package:resonance_network_wallet/v2/screens/welcome/mainnet_migration_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/welcome/welcome_screen.dart';
 import 'package:resonance_network_wallet/services/logout_service.dart';
@@ -82,6 +83,6 @@ class WalletInitializerState extends ConsumerState<WalletInitializer> {
     if (_migrationPending) {
       return MainnetMigrationScreen(onFinished: () => setState(() => _migrationPending = false));
     }
-    return const HomeScreen();
+    return const AdaptiveShell();
   }
 }

@@ -11,6 +11,7 @@ import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
 import 'package:resonance_network_wallet/services/history_polling_manager.dart';
 import 'package:resonance_network_wallet/services/telemetry_service.dart';
 import 'package:resonance_network_wallet/services/transaction_service.dart';
+import 'package:resonance_network_wallet/shared/utils/platform_utils.dart';
 import 'package:resonance_network_wallet/shared/utils/print.dart';
 
 /// Top-level handler for background/terminated FCM messages.
@@ -246,6 +247,7 @@ final firebaseMessagingServiceProvider = Provider<FirebaseMessagingService>((ref
 /// notifications on the existing device; otherwise the device itself is
 /// registered for the first time.
 Future<void> registerForRemoteNotificationsBestEffort(WidgetRef ref, {String? insertAddress}) async {
+  if (isDesktopPlatform) return;
   try {
     if (!ref.read(remoteConfigProvider).enableRemoteNotifications) return;
     final service = ref.read(firebaseMessagingServiceProvider);

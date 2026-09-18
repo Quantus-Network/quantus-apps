@@ -29,3 +29,10 @@ analyzer:
     missing_return: error
     must_be_immutable: error
     asset_does_not_exist: ignore
+  exclude:
+    - build/**
+    - android/**
+    - ios/**
+    - windows/**
+    - macos/**
+    - linux/**

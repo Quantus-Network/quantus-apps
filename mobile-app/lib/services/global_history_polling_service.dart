@@ -5,6 +5,7 @@ import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/connectivity_provider.dart';
 import 'package:resonance_network_wallet/services/pending_transaction_reconciliation_service.dart';
 import 'package:resonance_network_wallet/services/telemetry_service.dart';
+import 'package:resonance_network_wallet/shared/utils/platform_utils.dart';
 import 'package:resonance_network_wallet/shared/utils/polling_refresh_scope.dart';
 import 'package:resonance_network_wallet/shared/utils/print.dart';
 
@@ -57,7 +58,8 @@ class GlobalHistoryPollingService {
   void _scheduleNextPoll() {
     _pollingTimer?.cancel();
 
-    _pollingTimer = Timer(const Duration(minutes: 1), () {
+    final interval = isDesktopPlatform ? const Duration(seconds: 5) : const Duration(minutes: 1);
+    _pollingTimer = Timer(interval, () {
       _performPoll();
     });
   }

@@ -14,7 +14,8 @@ dependencies:
 
   rust_lib_quantus_wallet:
     path: ./rust_builder
-  flutter_rust_bridge: ^2.12.0
+  # Generated bindings and the Dart runtime must use the exact same FRB version.
+  flutter_rust_bridge: 2.12.0
 
   # Shared (canonical versions in melos.yaml)
   # DO NOT UPDATE polkadart - newer versions are incompatible with our ML-DSA

@@ -2083,4 +2083,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get miningRewardsSubmitClaims => 'Submit Claim';
+
+  @override
+  String get desktopNavHome => 'Home';
+
+  @override
+  String get desktopNavActivity => 'Activity';
+
+  @override
+  String get desktopRefreshTooltip => 'Refresh';
 }
