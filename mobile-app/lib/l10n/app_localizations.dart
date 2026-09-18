@@ -3716,11 +3716,11 @@ abstract class AppLocalizations {
   /// **'Payout'**
   String get miningRewardsPayoutLabel;
 
-  /// Weekday payouts go out
+  /// How soon payouts go out, shown as the payout row value
   ///
   /// In en, this message translates to:
-  /// **'Monday'**
-  String get miningRewardsPayoutDay;
+  /// **'Within a week'**
+  String get miningRewardsPayoutWindow;
 
   /// Secondary button on the confirm screen
   ///
@@ -3773,7 +3773,7 @@ abstract class AppLocalizations {
   /// Closing line on the submitted page
   ///
   /// In en, this message translates to:
-  /// **'Payouts go out on Mondays. Nothing else to do.'**
+  /// **'Payouts go out within a week. Nothing else to do.'**
   String get miningRewardsSubmittedNote;
 
   /// Label over the amount when the wallet already submitted its claim
@@ -3787,12 +3787,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Paying To'**
   String get miningRewardsPayingTo;
-
-  /// Row label on the already-claimed page
-  ///
-  /// In en, this message translates to:
-  /// **'Next Payout'**
-  String get miningRewardsNextPayout;
 
   /// Button on the already-claimed page
   ///

@@ -2924,9 +2924,9 @@
     "@miningRewardsPayoutLabel": {
       "description": "Summary row label on the confirm screen"
     },
-    "miningRewardsPayoutDay": "Monday",
-    "@miningRewardsPayoutDay": {
-      "description": "Weekday payouts go out"
+    "miningRewardsPayoutWindow": "Within a week",
+    "@miningRewardsPayoutWindow": {
+      "description": "How soon payouts go out, shown as the payout row value"
     },
     "miningRewardsChangeDetails": "Change Details",
     "@miningRewardsChangeDetails": {
@@ -2965,7 +2965,7 @@
         }
       }
     },
-    "miningRewardsSubmittedNote": "Payouts go out on Mondays. Nothing else to do.",
+    "miningRewardsSubmittedNote": "Payouts go out within a week. Nothing else to do.",
     "@miningRewardsSubmittedNote": {
       "description": "Closing line on the submitted page"
     },
@@ -2980,10 +2980,6 @@
     },
     "miningRewardsPayingTo": "Paying To",
     "@miningRewardsPayingTo": {
-      "description": "Row label on the already-claimed page"
-    },
-    "miningRewardsNextPayout": "Next Payout",
-    "@miningRewardsNextPayout": {
       "description": "Row label on the already-claimed page"
     },
     "miningRewardsCheckAnotherWallet": "Check another wallet",

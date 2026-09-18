@@ -2020,7 +2020,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get miningRewardsPayoutLabel => 'Payout';
 
   @override
-  String get miningRewardsPayoutDay => 'Monday';
+  String get miningRewardsPayoutWindow => 'Within a week';
 
   @override
   String get miningRewardsChangeDetails => 'Change Details';
@@ -2050,7 +2050,7 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
-  String get miningRewardsSubmittedNote => 'Payouts go out on Mondays. Nothing else to do.';
+  String get miningRewardsSubmittedNote => 'Payouts go out within a week. Nothing else to do.';
 
   @override
   String miningRewardsClaimedOn(String date) {
@@ -2059,9 +2059,6 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get miningRewardsPayingTo => 'Paying To';
-
-  @override
-  String get miningRewardsNextPayout => 'Next Payout';
 
   @override
   String get miningRewardsCheckAnotherWallet => 'Check another wallet';

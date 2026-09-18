@@ -226,8 +226,8 @@ class _ClaimedView extends ConsumerWidget {
           ),
           const MenuDivider(),
           DetailSummaryRow(
-            label: l10n.miningRewardsNextPayout,
-            value: l10n.miningRewardsPayoutDay,
+            label: l10n.miningRewardsPayoutLabel,
+            value: l10n.miningRewardsPayoutWindow,
             labelStyle: labelStyle,
             padding: rowPadding,
           ),
