@@ -1,7 +1,7 @@
 /// Decodes any runtime call into a [DecodedCall] display tree.
 ///
 /// Decoding itself is delegated to the generated polkadart codecs
-/// (`lib/generated/planck`), which are pure static Dart — no RPC, no registry —
+/// (`lib/generated/bell`), which are pure static Dart — no RPC, no registry —
 /// so this works air-gapped. That means coverage is automatic: every call the
 /// bundled metadata knows about decodes, and an unknown variant throws rather
 /// than being silently skipped.
@@ -21,22 +21,22 @@ import 'dart:typed_data';
 import 'package:convert/convert.dart';
 import 'package:polkadart/polkadart.dart' show Blake2bHasher;
 import 'package:polkadart/scale_codec.dart';
-import 'package:quantus_sdk/generated/planck/types/frame_support/dispatch/raw_origin.dart' as raw_origin;
-import 'package:quantus_sdk/generated/planck/types/frame_support/traits/preimages/bounded.dart' as bounded;
-import 'package:quantus_sdk/generated/planck/types/frame_support/traits/schedule/dispatch_time.dart' as dispatch_time;
-import 'package:quantus_sdk/generated/planck/types/frame_system/pallet/call.dart' as system;
-import 'package:quantus_sdk/generated/planck/types/pallet_balances/pallet/call.dart' as balances;
-import 'package:quantus_sdk/generated/planck/types/pallet_multisig/pallet/call.dart' as multisig;
-import 'package:quantus_sdk/generated/planck/types/pallet_preimage/pallet/call.dart' as preimage;
-import 'package:quantus_sdk/generated/planck/types/pallet_ranked_collective/pallet/call.dart' as collective;
-import 'package:quantus_sdk/generated/planck/types/pallet_referenda/pallet/call.dart' as referenda;
-import 'package:quantus_sdk/generated/planck/types/pallet_reversible_transfers/pallet/call.dart' as reversible;
-import 'package:quantus_sdk/generated/planck/types/pallet_treasury/pallet/call.dart' as treasury;
-import 'package:quantus_sdk/generated/planck/types/pallet_utility/pallet/call.dart' as utility;
-import 'package:quantus_sdk/generated/planck/types/pallet_vesting/pallet/call.dart' as vesting;
-import 'package:quantus_sdk/generated/planck/types/quantus_runtime/origin_caller.dart' as origin_caller;
-import 'package:quantus_sdk/generated/planck/types/quantus_runtime/runtime_call.dart' as runtime;
-import 'package:quantus_sdk/generated/planck/types/sp_runtime/multiaddress/multi_address.dart' as multi_address;
+import 'package:quantus_sdk/generated/bell/types/frame_support/dispatch/raw_origin.dart' as raw_origin;
+import 'package:quantus_sdk/generated/bell/types/frame_support/traits/preimages/bounded.dart' as bounded;
+import 'package:quantus_sdk/generated/bell/types/frame_support/traits/schedule/dispatch_time.dart' as dispatch_time;
+import 'package:quantus_sdk/generated/bell/types/frame_system/pallet/call.dart' as system;
+import 'package:quantus_sdk/generated/bell/types/pallet_balances/pallet/call.dart' as balances;
+import 'package:quantus_sdk/generated/bell/types/pallet_multisig/pallet/call.dart' as multisig;
+import 'package:quantus_sdk/generated/bell/types/pallet_preimage/pallet/call.dart' as preimage;
+import 'package:quantus_sdk/generated/bell/types/pallet_ranked_collective/pallet/call.dart' as collective;
+import 'package:quantus_sdk/generated/bell/types/pallet_referenda/pallet/call.dart' as referenda;
+import 'package:quantus_sdk/generated/bell/types/pallet_reversible_transfers/pallet/call.dart' as reversible;
+import 'package:quantus_sdk/generated/bell/types/pallet_treasury/pallet/call.dart' as treasury;
+import 'package:quantus_sdk/generated/bell/types/pallet_utility/pallet/call.dart' as utility;
+import 'package:quantus_sdk/generated/bell/types/pallet_vesting/pallet/call.dart' as vesting;
+import 'package:quantus_sdk/generated/bell/types/quantus_runtime/origin_caller.dart' as origin_caller;
+import 'package:quantus_sdk/generated/bell/types/quantus_runtime/runtime_call.dart' as runtime;
+import 'package:quantus_sdk/generated/bell/types/sp_runtime/multiaddress/multi_address.dart' as multi_address;
 import 'package:quantus_sdk/src/chain/call_policy.dart';
 import 'package:quantus_sdk/src/chain/decoded_call.dart';
 import 'package:quantus_sdk/src/extensions/address_extension.dart';
@@ -893,6 +893,7 @@ class CallDecoder {
         _ => raw.toJson().toString(),
       };
     }
+    if (origin is origin_caller.Origins) return 'Custom origin ${origin.value0.variantName}';
     return origin.toJson().toString();
   }
 

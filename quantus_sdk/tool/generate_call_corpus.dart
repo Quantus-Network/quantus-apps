@@ -148,7 +148,7 @@ class Synth {
 }
 
 void main() {
-  final blob = File('test/fixtures/planck_metadata.scale').readAsBytesSync();
+  final blob = File('test/fixtures/mainnet_metadata.scale').readAsBytesSync();
   final metadata = RuntimeMetadataPrefixed.fromBytes(blob).metadata;
   types = {for (final t in metadata.types) t.id: t};
 

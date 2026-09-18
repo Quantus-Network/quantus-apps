@@ -51,6 +51,8 @@ const Map<String, String> callCorpus = {
   'TechCollective.exchange_member':
       '0d0600a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a000a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1',
   'TechReferenda.submit': '0e00000000a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a10045420f00',
+  'TechReferenda.submit [proposal_origin=Origins]':
+      '0e00170000a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a10045420f00',
   'TechReferenda.submit [proposal=Inline]': '0e000000010c0000000045420f00',
   'TechReferenda.submit [proposal=Lookup]':
       '0e00000002a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a144420f000045420f00',

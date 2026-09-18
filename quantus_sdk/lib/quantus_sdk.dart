@@ -5,8 +5,8 @@ import 'package:quantus_sdk/src/services/settings_service.dart';
 
 import 'src/rust/frb_generated.dart';
 
-export 'generated/planck/pallets/balances.dart';
-export 'generated/planck/types/quantus_runtime/runtime_call.dart';
+export 'generated/bell/pallets/balances.dart';
+export 'generated/bell/types/quantus_runtime/runtime_call.dart';
 export 'src/chain/call_decoder.dart';
 export 'src/chain/call_policy.dart';
 export 'src/chain/decoded_call.dart';
