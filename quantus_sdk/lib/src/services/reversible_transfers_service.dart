@@ -3,13 +3,13 @@ import 'dart:typed_data';
 
 import 'package:convert/convert.dart';
 import 'package:polkadart/polkadart.dart';
-import 'package:quantus_sdk/generated/planck/planck.dart';
-import 'package:quantus_sdk/generated/planck/types/pallet_reversible_transfers/high_security_account_data.dart';
-import 'package:quantus_sdk/generated/planck/types/pallet_reversible_transfers/pending_transfer.dart';
-import 'package:quantus_sdk/generated/planck/types/primitive_types/h256.dart';
-import 'package:quantus_sdk/generated/planck/types/qp_scheduler/block_number_or_timestamp.dart' as qp;
-import 'package:quantus_sdk/generated/planck/types/quantus_runtime/runtime_call.dart';
-import 'package:quantus_sdk/generated/planck/types/sp_runtime/multiaddress/multi_address.dart' as multi_address;
+import 'package:quantus_sdk/generated/bell/bell.dart';
+import 'package:quantus_sdk/generated/bell/types/pallet_reversible_transfers/high_security_account_data.dart';
+import 'package:quantus_sdk/generated/bell/types/pallet_reversible_transfers/pending_transfer.dart';
+import 'package:quantus_sdk/generated/bell/types/primitive_types/h256.dart';
+import 'package:quantus_sdk/generated/bell/types/qp_scheduler/block_number_or_timestamp.dart' as qp;
+import 'package:quantus_sdk/generated/bell/types/quantus_runtime/runtime_call.dart';
+import 'package:quantus_sdk/generated/bell/types/sp_runtime/multiaddress/multi_address.dart' as multi_address;
 import 'package:quantus_sdk/src/extensions/duration_extension.dart';
 import 'package:quantus_sdk/src/models/account.dart';
 import 'package:quantus_sdk/src/models/extrinsic_fee_data.dart';
@@ -33,7 +33,7 @@ class ReversibleTransfersService {
     required BigInt amount,
   }) async {
     try {
-      final quantusApi = Planck(_substrateService.provider!);
+      final quantusApi = Bell(_substrateService.provider!);
       final multiDest = const multi_address.$MultiAddress().id(crypto.ss58ToAccountId(s: recipientAddress));
 
       // Create the call
@@ -79,7 +79,7 @@ class ReversibleTransfersService {
     BigInt amount,
     qp.BlockNumberOrTimestamp delay,
   ) {
-    final quantusApi = Planck(_substrateService.provider!);
+    final quantusApi = Bell(_substrateService.provider!);
     final multiDest = const multi_address.$MultiAddress().id(crypto.ss58ToAccountId(s: recipientAddress));
 
     final call = quantusApi.tx.reversibleTransfers.scheduleTransferWithDelay(
@@ -111,7 +111,7 @@ class ReversibleTransfersService {
   /// Cancel a pending reversible transaction (theft deterrence - reverse a transaction)
   Future<Uint8List> cancelReversibleTransfer({required Account account, required H256 transactionId}) async {
     try {
-      final quantusApi = Planck(_substrateService.provider!);
+      final quantusApi = Bell(_substrateService.provider!);
 
       // Create the call
       final call = quantusApi.tx.reversibleTransfers.cancel(txId: transactionId);
@@ -127,7 +127,7 @@ class ReversibleTransfersService {
   Future<HighSecurityAccountData?> getHighSecurityConfig(String address) async {
     quantusPrint('getHighSecurityConfig: $address');
     try {
-      final quantusApi = Planck(_substrateService.provider!);
+      final quantusApi = Bell(_substrateService.provider!);
       final accountId = crypto.ss58ToAccountId(s: address);
 
       return await quantusApi.query.reversibleTransfers.highSecurityAccounts(accountId);
@@ -139,7 +139,7 @@ class ReversibleTransfersService {
   /// Query pending transfer details
   Future<PendingTransfer?> getPendingTransfer(H256 transactionId) async {
     try {
-      final quantusApi = Planck(_substrateService.provider!);
+      final quantusApi = Bell(_substrateService.provider!);
 
       return await quantusApi.query.reversibleTransfers.pendingTransfers(transactionId);
     } catch (e) {
@@ -150,7 +150,7 @@ class ReversibleTransfersService {
   /// Get all pending transfers for an account
   Future<List<PendingTransfer>> getAccountPendingTransfers(String address) async {
     try {
-      final quantusApi = Planck(_substrateService.provider!);
+      final quantusApi = Bell(_substrateService.provider!);
       final accountId = crypto.ss58ToAccountId(s: address);
       final txIds = await quantusApi.query.reversibleTransfers.pendingTransfersBySender(accountId);
 
@@ -178,7 +178,7 @@ class ReversibleTransfersService {
   /// Get constants related to reversible transfers
   Future<Map<String, dynamic>> getConstants() async {
     try {
-      final quantusApi = Planck(_substrateService.provider!);
+      final quantusApi = Bell(_substrateService.provider!);
       final constants = quantusApi.constant.reversibleTransfers;
 
       return {
@@ -209,7 +209,7 @@ class ReversibleTransfersService {
         : delay.toJson().toString();
     quantusPrint('setHighSecurity: ${account.accountId}, $guardianAccountId, $delayValue');
     try {
-      final quantusApi = Planck(_substrateService.provider!);
+      final quantusApi = Bell(_substrateService.provider!);
       final guardianAccountId32 = crypto.ss58ToAccountId(s: guardianAccountId);
 
       // Create the call
@@ -251,7 +251,7 @@ class ReversibleTransfersService {
     Duration safeguardDuration,
   ) async {
     final delay = safeguardDuration.qpTimestamp;
-    final quantusApi = Planck(_substrateService.provider!);
+    final quantusApi = Bell(_substrateService.provider!);
     final call = quantusApi.tx.reversibleTransfers.setHighSecurity(
       delay: delay,
       guardian: crypto.ss58ToAccountId(s: guardianAccountId),

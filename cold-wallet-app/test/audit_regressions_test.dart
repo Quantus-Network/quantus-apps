@@ -3,7 +3,7 @@ import 'package:convert/convert.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:quantus_sdk/generated/planck/pallets/utility.dart' as utility_pallet;
+import 'package:quantus_sdk/generated/bell/pallets/utility.dart' as utility_pallet;
 import 'package:quantus_sdk/quantus_sdk.dart';
 // ignore: implementation_imports — the generated corpus is test data, deliberately not public SDK API.
 import 'package:quantus_sdk/src/testing/call_corpus.dart';

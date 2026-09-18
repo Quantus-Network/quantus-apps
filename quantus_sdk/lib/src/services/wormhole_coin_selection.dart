@@ -1,5 +1,5 @@
-import 'package:quantus_sdk/generated/planck/pallets/vesting.dart' as vesting_pallet;
-import 'package:quantus_sdk/generated/planck/pallets/wormhole.dart' as wormhole_pallet;
+import 'package:quantus_sdk/generated/bell/pallets/vesting.dart' as vesting_pallet;
+import 'package:quantus_sdk/generated/bell/pallets/wormhole.dart' as wormhole_pallet;
 import 'package:quantus_sdk/src/services/wormhole_utxo_service.dart';
 
 /// Wormhole circuit economics, shared by coin selection and the send service.

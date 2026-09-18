@@ -2,11 +2,11 @@ import 'dart:typed_data';
 
 import 'package:convert/convert.dart';
 import 'package:polkadart/scale_codec.dart';
-import 'package:quantus_sdk/generated/planck/pallets/balances.dart' as balances_pallet;
-import 'package:quantus_sdk/generated/planck/pallets/multisig.dart' as multisig_pallet;
-import 'package:quantus_sdk/generated/planck/pallets/tech_collective.dart' as collective_pallet;
-import 'package:quantus_sdk/generated/planck/pallets/utility.dart' as utility_pallet;
-import 'package:quantus_sdk/generated/planck/types/sp_runtime/multiaddress/multi_address.dart' as multi_address;
+import 'package:quantus_sdk/generated/bell/pallets/balances.dart' as balances_pallet;
+import 'package:quantus_sdk/generated/bell/pallets/multisig.dart' as multisig_pallet;
+import 'package:quantus_sdk/generated/bell/pallets/tech_collective.dart' as collective_pallet;
+import 'package:quantus_sdk/generated/bell/pallets/utility.dart' as utility_pallet;
+import 'package:quantus_sdk/generated/bell/types/sp_runtime/multiaddress/multi_address.dart' as multi_address;
 import 'package:quantus_sdk/quantus_sdk.dart';
 // ignore: implementation_imports — the generated corpus is test/debug data, deliberately not public SDK API.
 import 'package:quantus_sdk/src/testing/call_corpus.dart';

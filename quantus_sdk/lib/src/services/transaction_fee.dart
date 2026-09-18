@@ -1,4 +1,4 @@
-import 'package:quantus_sdk/generated/planck/pallets/system.dart' as system_pallet;
+import 'package:quantus_sdk/generated/bell/pallets/system.dart' as system_pallet;
 
 /// Runtime `LENGTH_FEE_MULTIPLIER`: one UNIT per megabyte of extrinsic. The
 /// only fee parameter the metadata does not carry.

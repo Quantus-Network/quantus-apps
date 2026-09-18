@@ -1,4 +1,4 @@
-import 'package:quantus_sdk/generated/planck/pallets/multisig.dart' as multisig_pallet;
+import 'package:quantus_sdk/generated/bell/pallets/multisig.dart' as multisig_pallet;
 import 'package:quantus_sdk/quantus_sdk.dart';
 
 /// Shared multisig-creation fields and cost accounting for pending and indexed events.
