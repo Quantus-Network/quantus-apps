@@ -156,7 +156,7 @@ class _MiningRewardsConfirmScreenState extends ConsumerState<MiningRewardsConfir
             monospace: true,
           ),
           DetailSummaryRow(label: l10n.miningRewardsAmountLabel.toUpperCase(), value: amount),
-          DetailSummaryRow(label: l10n.miningRewardsPayoutLabel.toUpperCase(), value: l10n.miningRewardsPayoutDay),
+          DetailSummaryRow(label: l10n.miningRewardsPayoutLabel.toUpperCase(), value: l10n.miningRewardsPayoutWindow),
         ],
       ),
       bottomContent: ScaffoldBaseBottomContent(

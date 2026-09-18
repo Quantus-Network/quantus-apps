@@ -149,8 +149,8 @@ void main() {
     expect(find.text('121.80'), findsOneWidget);
     expect(find.text(l10n.miningRewardsPayingTo), findsOneWidget);
     expect(find.text(AddressFormattingService.formatAddress(record.claimAccount)), findsOneWidget);
-    expect(find.text(l10n.miningRewardsNextPayout), findsOneWidget);
-    expect(find.text('Monday'), findsOneWidget);
+    expect(find.text(l10n.miningRewardsPayoutLabel), findsOneWidget);
+    expect(find.text('Within a week'), findsOneWidget);
     expect(find.byKey(const Key(E2EKeys.miningRewardsCheckAnotherWalletButton)), findsOneWidget);
     expect(find.byType(Loader), findsNothing);
   });

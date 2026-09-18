@@ -75,7 +75,7 @@ void main() {
     expect(find.text('121.80 QTC'), findsNWidgets(2));
     expect(find.text('CHECK PHRASE'), findsOneWidget);
     expect(find.text(AddressFormattingService.formatAddress(destination.address)), findsOneWidget);
-    expect(find.text('Monday'), findsOneWidget);
+    expect(find.text('Within a week'), findsOneWidget);
 
     await tester.tap(find.byKey(const Key(E2EKeys.miningRewardsSubmitButton)));
     await tester.pumpAndSettle();
