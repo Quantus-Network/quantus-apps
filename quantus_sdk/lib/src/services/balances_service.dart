@@ -10,30 +10,12 @@ class BalancesService {
 
   final SubstrateService _substrateService = SubstrateService();
 
-  /// Every recipient is a `MultiAddress::Id`, so any one sizes a transfer.
-  static final multi_address.MultiAddress _anyDest = const multi_address.$MultiAddress().id(List<int>.filled(32, 0));
-
-  ({int specVersion, BigInt weight})? _transferDispatchWeight;
-
-  /// Ref-time a signed `transfer_allow_death` is charged for (call plus every
-  /// transaction extension). Probed once per runtime version and cached; send
-  /// flows prefetch it on entry so the amount screen never waits on it.
-  Future<BigInt> transferDispatchWeight() async {
-    final specVersion = (await _substrateService.getRuntimeVersion()).specVersion;
-    final cached = _transferDispatchWeight;
-    if (cached != null && cached.specVersion == specVersion) return cached.weight;
-    final weight = await _substrateService.queryDispatchWeight(_transferCall(_anyDest, BigInt.zero));
-    _transferDispatchWeight = (specVersion: specVersion, weight: weight);
-    return weight;
-  }
-
-  /// Fee of a transfer of [amount], computed locally: base and length fee from
-  /// the shipped metadata, [dispatchWeight] from [transferDispatchWeight].
-  /// Only the compact-encoded amount varies the length.
-  BigInt transferFee(BigInt amount, {required BigInt dispatchWeight, required DilithiumScheme scheme}) => inclusionFee(
-    length: _substrateService.signedExtrinsicLength(_transferCall(_anyDest, amount), scheme),
-    dispatchWeight: dispatchWeight,
-  );
+  /// Inclusion fee for a `transfer_allow_death` of [amount] to [targetAddress],
+  /// from `payment_queryInfo` on a dummy-signed extrinsic. Dummy-signed so this
+  /// never prompts for a password or device; the node prices length and weight
+  /// from the encoded extrinsic, not the signature bytes.
+  Future<ExtrinsicFeeData> getBalanceTransferFee(Account account, String targetAddress, BigInt amount) =>
+      _substrateService.getFeeForCall(account, getBalanceTransferCall(targetAddress, amount));
 
   Balances getBalanceTransferCall(String targetAddress, BigInt amount) => _transferCall(_dest(targetAddress), amount);
 

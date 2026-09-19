@@ -40,9 +40,7 @@ void main() {
           effectiveMaxBalanceProviderFamily.overrideWith(
             (ref, accountId) => AsyncValue.data(BigInt.from(5000000000000)),
           ),
-          regularSendFeeProvider.overrideWith(
-            (ref, key) => AsyncValue.data(RegularFee(networkFee: BigInt.from(12964885))),
-          ),
+          regularSendFeeProvider.overrideWith((ref, key) => RegularFee(networkFee: BigInt.from(12964885))),
         ],
         child: Builder(
           builder: (context) => MaterialApp(

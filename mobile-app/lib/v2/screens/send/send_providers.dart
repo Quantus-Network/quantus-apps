@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
@@ -28,19 +26,6 @@ Future<void> startSendFlow(BuildContext context, {required Widget screen}) async
     return;
   }
   container.read(keystoneSignCacheProvider.notifier).startNewSendSession();
-  // Warm the runtime-version (5 min TTL) and transfer-weight caches so the fee
-  // display and payload builds later in the flow skip those round trips.
-  unawaited(
-    container
-        .read(balancesServiceProvider)
-        .transferDispatchWeight()
-        .then<void>(
-          (_) {},
-          onError: (Object e) {
-            quantusPrint('Transfer weight prefetch failed: $e');
-          },
-        ),
-  );
   sendFlow.state = true;
   try {
     await Navigator.push(context, MaterialPageRoute<void>(builder: (_) => screen));
