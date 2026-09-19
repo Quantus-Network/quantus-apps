@@ -46,6 +46,10 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
     super.initState();
     _recipientController.addListener(_onRecipientChanged);
     _loadRecents();
+    final sourceId = widget.strategy.sourceAccountId(ref);
+    if (sourceId != null) {
+      widget.strategy.requestFee(ref, recipient: sourceId, amount: SendStrategy.feeProbeAmount);
+    }
   }
 
   @override

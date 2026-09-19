@@ -69,6 +69,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
         _amountController.text = _amountInputLogic.formatTokenAmount(token);
       }
     }
+    _requestFee(_amount > BigInt.zero ? _amount : SendStrategy.feeProbeAmount);
     _recipientChecksum = widget.recipientChecksum;
     _checksumService.getHumanReadableName(widget.recipientAddress.trim()).then((name) {
       if (!mounted) return;
@@ -83,6 +84,8 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
     super.dispose();
   }
 
+  void _requestFee(BigInt amount) => widget.strategy.requestFee(ref, recipient: _recipient, amount: amount);
+
   void _onAmountChanged(String _) {
     HapticFeedback.mediumImpact();
 
@@ -94,6 +97,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
       context.showErrorToaster(message: l10n.sendInputAmountInvalidAmount);
       return;
     }
+    if (_amount > BigInt.zero) _requestFee(_amount);
   }
 
   void _setMax() {
@@ -105,6 +109,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
     );
     _amountController.text = _amountInputLogic.formatTokenAmount(max);
     setState(() => _amount = max);
+    if (max > BigInt.zero) _requestFee(max);
   }
 
   void _openReview() {

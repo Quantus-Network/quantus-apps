@@ -6,7 +6,6 @@ import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/v2/screens/send/input_amount_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/send/regular_send_strategy.dart';
 import 'package:resonance_network_wallet/v2/screens/send/send_providers.dart';
-import 'package:resonance_network_wallet/v2/screens/send/send_strategy.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../fakes.dart';
@@ -40,9 +39,8 @@ void main() {
           effectiveMaxBalanceProviderFamily.overrideWith(
             (ref, accountId) => AsyncValue.data(BigInt.from(5000000000000)),
           ),
-          regularSendFeeProvider.overrideWith(
-            (ref, key) => AsyncValue.data(RegularFee(networkFee: BigInt.from(12964885))),
-          ),
+          substrateServiceProvider.overrideWithValue(FakeSubstrateService(fee: BigInt.from(12964885))),
+          balancesServiceProvider.overrideWithValue(FakeBalancesService()),
         ],
         child: Builder(
           builder: (context) => MaterialApp(

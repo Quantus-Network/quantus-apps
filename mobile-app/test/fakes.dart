@@ -4,6 +4,8 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:quantus_sdk/generated/bell/pallets/balances.dart' as balances_pallet;
+import 'package:quantus_sdk/generated/bell/types/sp_runtime/multiaddress/multi_address.dart' as multi_address;
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/local_auth_provider.dart';
 import 'package:resonance_network_wallet/services/local_auth_service.dart';
@@ -62,8 +64,19 @@ class TestLocalAuthController extends LocalAuthController {
 }
 
 class FakeSubstrateService extends Fake implements SubstrateService {
+  FakeSubstrateService({BigInt? fee}) : fee = fee ?? BigInt.one;
+
+  final BigInt fee;
+  Account? lastFeeAccount;
+
   @override
   bool isValidSS58Address(String address) => true;
+
+  @override
+  Future<ExtrinsicFeeData> getFeeForCall(Account account, RuntimeCall call) async {
+    lastFeeAccount = account;
+    return ExtrinsicFeeData(fee: fee, blockHash: '0x00', blockNumber: 1);
+  }
 }
 
 class FakeHumanReadableChecksumService extends Fake implements HumanReadableChecksumService {
@@ -76,18 +89,9 @@ class FakeHumanReadableChecksumService extends Fake implements HumanReadableChec
 }
 
 class FakeBalancesService extends Fake implements BalancesService {
-  static final BigInt dispatchWeight = BigInt.from(5551728000);
-  int weightProbes = 0;
-
   @override
-  Future<BigInt> transferDispatchWeight() async {
-    weightProbes++;
-    return dispatchWeight;
-  }
-
-  @override
-  BigInt transferFee(BigInt amount, {required BigInt dispatchWeight, required DilithiumScheme scheme}) =>
-      amount + dispatchWeight;
+  Balances getBalanceTransferCall(String targetAddress, BigInt amount) => const balances_pallet.Txs()
+      .transferAllowDeath(dest: const multi_address.$MultiAddress().id(List<int>.filled(32, 0)), value: amount);
 }
 
 Account makeAccount(int index, {AccountType accountType = AccountType.local}) => Account(

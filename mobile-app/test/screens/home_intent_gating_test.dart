@@ -43,6 +43,7 @@ void main() {
         backupReminderWalletIndexProvider.overrideWithValue(null),
         exchangeRateServiceProvider.overrideWithValue(ExchangeRateService(rates: {})),
         balancesServiceProvider.overrideWithValue(FakeBalancesService()),
+        substrateServiceProvider.overrideWithValue(FakeSubstrateService()),
       ],
     );
     // Let the active account and multisig list finish their async load.

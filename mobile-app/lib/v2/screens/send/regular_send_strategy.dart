@@ -14,33 +14,9 @@ import 'package:resonance_network_wallet/shared/utils/print.dart';
 import 'package:resonance_network_wallet/shared/utils/url_utils.dart';
 import 'package:resonance_network_wallet/v2/screens/send/keystone_sign_cache.dart';
 import 'package:resonance_network_wallet/v2/screens/send/keystone_signing_session.dart';
+import 'package:resonance_network_wallet/v2/screens/send/send_fee_notifier.dart';
 import 'package:resonance_network_wallet/v2/screens/send/send_providers.dart';
 import 'package:resonance_network_wallet/v2/screens/send/send_strategy.dart';
-
-/// Ref-time a signed transfer is charged for, probed once per runtime version
-/// (the metadata carries no call or extension weights).
-final transferDispatchWeightProvider = FutureProvider.autoDispose<BigInt>((ref) async {
-  try {
-    return await ref.watch(balancesServiceProvider).transferDispatchWeight();
-  } catch (e, st) {
-    quantusPrint('Transfer weight probe failed: $e\n$st');
-    rethrow;
-  }
-});
-
-/// Transfer fee for an amount: base and length fee from the shipped metadata,
-/// dispatch weight from [transferDispatchWeightProvider]. Address-independent.
-final regularSendFeeProvider = Provider.autoDispose
-    .family<AsyncValue<SendFee>, ({BigInt amount, DilithiumScheme scheme})>((ref, key) {
-      final balances = ref.watch(balancesServiceProvider);
-      return ref
-          .watch(transferDispatchWeightProvider)
-          .whenData<SendFee>(
-            (weight) => RegularFee(
-              networkFee: balances.transferFee(key.amount, dispatchWeight: weight, scheme: key.scheme),
-            ),
-          );
-    });
 
 /// Standard single-signer transfer from the active account. Signs locally, or
 /// hands off to the Keystone QR flow for hardware accounts.
@@ -78,13 +54,28 @@ class RegularSendStrategy extends SendStrategy {
   @override
   BigInt feeChargedToBalance(SendFee? fee) => (fee as RegularFee?)?.networkFee ?? BigInt.zero;
 
+  /// The chain fee moves with the amount only through its compact encoding, a
+  /// few bytes at most, so the latest value serves every amount until the next
+  /// query lands.
   @override
   ProviderListenable<AsyncValue<SendFee>> feeProvider({required String recipient, required BigInt amount}) =>
-      regularSendFeeProvider((amount: amount, scheme: account.feeSizingScheme));
+      sendFeeProvider;
+
+  @override
+  void requestFee(WidgetRef ref, {required String recipient, required BigInt amount}) =>
+      ref.read(sendFeeProvider.notifier).request(_feeFetcher(ref, recipient, amount));
 
   @override
   void retryFee(WidgetRef ref, {required String recipient, required BigInt amount}) =>
-      ref.invalidate(transferDispatchWeightProvider);
+      ref.read(sendFeeProvider.notifier).retry(_feeFetcher(ref, recipient, amount));
+
+  /// Dummy-signed `payment_queryInfo` probe from the captured account, with
+  /// its inputs resolved now so it can run after the requesting screen is gone.
+  Future<SendFee> Function() _feeFetcher(WidgetRef ref, String recipient, BigInt amount) {
+    final substrate = ref.read(substrateServiceProvider);
+    final call = _transferCall(ref, recipient, amount);
+    return () async => RegularFee(networkFee: (await substrate.getFeeForCall(account, call)).fee);
+  }
 
   @override
   String? affordabilityError(WidgetRef ref, SendFee fee, AppLocalizations l10n) => null;

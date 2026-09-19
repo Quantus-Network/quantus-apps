@@ -43,27 +43,24 @@ void main() {
     expect(ref.read(strategy.spendableBalanceProvider).value, capturedBalance - existentialDeposit);
   });
 
-  test('fee provider prices any amount locally from one probed dispatch weight', () async {
-    final balancesService = FakeBalancesService();
-    final container = ProviderContainer(overrides: [balancesServiceProvider.overrideWithValue(balancesService)]);
-    addTearDown(container.dispose);
+  testWidgets('requestFee asks the chain for the captured account and publishes the fee', (tester) async {
+    final substrate = FakeSubstrateService(fee: BigInt.from(1000000000));
+    final ref = await pumpRef(
+      tester,
+      overrides: [
+        substrateServiceProvider.overrideWithValue(substrate),
+        balancesServiceProvider.overrideWithValue(FakeBalancesService()),
+      ],
+    );
     final strategy = RegularSendStrategy(account: captured);
-    final ten = strategy.feeProvider(recipient: other.accountId, amount: BigInt.from(10));
-    final twenty = strategy.feeProvider(recipient: other.accountId, amount: BigInt.from(20));
-    final subs = [ten, twenty].map((p) => container.listen(p, (_, _) {})).toList();
+    final feeProvider = strategy.feeProvider(recipient: other.accountId, amount: BigInt.from(10));
+    expect(ref.read(feeProvider).isLoading, isTrue);
 
-    expect(subs[0].read().isLoading, isTrue);
-    await container.read(transferDispatchWeightProvider.future);
+    strategy.requestFee(ref, recipient: other.accountId, amount: BigInt.from(10));
+    await tester.pump();
 
-    expect(
-      (subs[0].read().requireValue as RegularFee).networkFee,
-      BigInt.from(10) + FakeBalancesService.dispatchWeight,
-    );
-    expect(
-      (subs[1].read().requireValue as RegularFee).networkFee,
-      BigInt.from(20) + FakeBalancesService.dispatchWeight,
-    );
-    expect(balancesService.weightProbes, 1);
+    expect(substrate.lastFeeAccount?.accountId, captured.accountId);
+    expect((ref.read(feeProvider).requireValue as RegularFee).networkFee, BigInt.from(1000000000));
   });
 
   testWidgets('submit hands the captured keystone account to the signing session after a switch', (tester) async {

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart';
 import 'package:quantus_sdk/quantus_sdk.dart' hide ScaffoldBase;
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/l10n/app_localizations.dart';
@@ -44,6 +45,12 @@ class _ReviewSendScreenState extends ConsumerState<ReviewSendScreen> {
   String? _errorMessage;
   Timer? _prefetchTimer;
 
+  ProviderListenable<AsyncValue<SendFee>> get _feeProvider =>
+      widget.strategy.feeProvider(recipient: widget.recipientAddress.trim(), amount: widget.amount);
+
+  /// Latest fee the flow has, falling back to the one this screen opened with.
+  SendFee get _fee => ref.read(_feeProvider).value ?? widget.fee;
+
   @override
   void initState() {
     super.initState();
@@ -63,12 +70,7 @@ class _ReviewSendScreenState extends ConsumerState<ReviewSendScreen> {
   void _prefetchSignPayload() {
     unawaited(
       widget.strategy
-          .prefetchSignPayload(
-            ref,
-            recipientAddress: widget.recipientAddress.trim(),
-            amount: widget.amount,
-            fee: widget.fee,
-          )
+          .prefetchSignPayload(ref, recipientAddress: widget.recipientAddress.trim(), amount: widget.amount, fee: _fee)
           .catchError((Object e) => quantusPrint('Keystone payload prefetch failed: $e')),
     );
   }
@@ -86,7 +88,7 @@ class _ReviewSendScreenState extends ConsumerState<ReviewSendScreen> {
         recipientAddress: widget.recipientAddress.trim(),
         recipientChecksum: widget.recipientChecksum,
         amount: widget.amount,
-        fee: widget.fee,
+        fee: _fee,
         isPayMode: widget.isPayMode,
       );
     } catch (e, st) {
@@ -139,6 +141,7 @@ class _ReviewSendScreenState extends ConsumerState<ReviewSendScreen> {
     final strings = widget.strategy.strings(l10n);
     final colors = context.colorsV3;
     final text = context.themeTextV3;
+    final fee = ref.watch(_feeProvider).value ?? widget.fee;
     final approxDisplay = ref.watch(txAmountDisplayProvider)(
       widget.amount,
       isSend: true,
@@ -164,7 +167,7 @@ class _ReviewSendScreenState extends ConsumerState<ReviewSendScreen> {
                   ref,
                   recipientAddress: widget.recipientAddress,
                   amount: widget.amount,
-                  fee: widget.fee,
+                  fee: fee,
                 ),
               ),
             ),

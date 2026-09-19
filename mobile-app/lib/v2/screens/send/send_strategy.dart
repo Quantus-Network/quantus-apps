@@ -187,6 +187,9 @@ SendTerminalContent buildSentTerminalContent(
 abstract class SendStrategy {
   const SendStrategy();
 
+  /// Amount a flow's first fee query is sized with, before one is entered.
+  static final BigInt feeProbeAmount = NumberFormattingService.scaleFactorBigInt;
+
   /// Whether the recipient screen shows the "Private Send" notice above the
   /// continue button. Only encrypted (wormhole) sends enable this.
   bool get showPrivateSendNotice => false;
@@ -226,10 +229,14 @@ abstract class SendStrategy {
   /// Label for the fee payer balance line (e.g. "Your Balance:").
   String? feePayerBalanceLabel(AppLocalizations l10n) => null;
 
-  /// Authoritative fee for sending [amount] to [recipient]. Watched by the
-  /// amount screen, so it recomputes as the amount changes; strategies derive
-  /// it from local state wherever the runtime makes that possible.
+  /// Fee for sending [amount] to [recipient]. Watched by the amount and review
+  /// screens; strategies derive it from local state wherever the runtime makes
+  /// that possible, otherwise [requestFee] refreshes it from the chain.
   ProviderListenable<AsyncValue<SendFee>> feeProvider({required String recipient, required BigInt amount});
+
+  /// The amount changed, or a flow started (sized at [feeProbeAmount]).
+  /// No-op for strategies whose [feeProvider] is derived locally.
+  void requestFee(WidgetRef ref, {required String recipient, required BigInt amount}) {}
 
   /// Re-queries whatever source [feeProvider] failed on.
   void retryFee(WidgetRef ref, {required String recipient, required BigInt amount});
