@@ -223,6 +223,10 @@ class PendingTransactionReconciliationService {
   /// Determines if a confirmed transaction matches a pending transaction
   /// Uses the same logic as the transaction tracking service but more lenient on timing
   bool _isMatchingTransaction(PendingTransactionEvent pendingTx, TransactionEvent confirmedTx) {
+    // The hash is exact; a max send's recorded amount is only an estimate.
+    final pendingHash = pendingTx.extrinsicHash;
+    if (pendingHash != null && confirmedTx.extrinsicHash != null) return pendingHash == confirmedTx.extrinsicHash;
+
     // Match by amount (must be exact)
     if (pendingTx.amount != confirmedTx.amount) return false;
 

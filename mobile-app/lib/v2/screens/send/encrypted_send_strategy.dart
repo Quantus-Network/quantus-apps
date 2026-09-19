@@ -82,8 +82,8 @@ class EncryptedSendStrategy extends SendStrategy {
   BigInt feeChargedToBalance(SendFee? fee) => BigInt.zero;
 
   @override
-  ProviderListenable<AsyncValue<SendFee>> feeProvider({required String recipient, required BigInt amount}) =>
-      encryptedSendFeeProvider((account.walletIndex, amount));
+  ProviderListenable<SendFeeState> feeProvider({required String recipient, required BigInt amount}) =>
+      encryptedSendFeeProvider((account.walletIndex, amount)).select(SendFeeState.fromAsync);
 
   @override
   void retryFee(WidgetRef ref, {required String recipient, required BigInt amount}) =>
@@ -105,6 +105,8 @@ class EncryptedSendStrategy extends SendStrategy {
     required String recipientAddress,
     required BigInt amount,
     required SendFee fee,
+    bool feeIsEstimate = false,
+    bool sendAll = false,
   }) {
     final l10n = ref.watch(l10nProvider);
     final fmt = ref.watch(numberFormattingServiceProvider);

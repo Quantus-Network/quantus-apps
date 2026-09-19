@@ -29,12 +29,15 @@ class TransactionSubmissionService {
 
   /// Signs first so the pending record carries the extrinsic's own block
   /// number (the poller's search floor), then broadcasts the signed bytes.
-  Future<String> balanceTransfer(Account account, String targetAddress, BigInt amount, BigInt fee) async {
+  Future<String> balanceTransfer(
+    Account account, {
+    required RuntimeCall call,
+    required String targetAddress,
+    required BigInt amount,
+    required BigInt fee,
+  }) async {
     final substrate = SubstrateService();
-    final signed = await substrate.getExtrinsicPayload(
-      account,
-      BalancesService().getBalanceTransferCall(targetAddress, amount),
-    );
+    final signed = await substrate.getExtrinsicPayload(account, call);
     final pendingTx = createPendingTransaction(
       from: account.accountId,
       to: targetAddress,
