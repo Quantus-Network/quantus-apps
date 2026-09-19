@@ -17,29 +17,19 @@ import 'package:resonance_network_wallet/v2/screens/send/keystone_signing_sessio
 import 'package:resonance_network_wallet/v2/screens/send/send_providers.dart';
 import 'package:resonance_network_wallet/v2/screens/send/send_strategy.dart';
 
-/// Ref-time a signed transfer is charged for, probed once per runtime version
-/// (the metadata carries no call or extension weights).
-final transferDispatchWeightProvider = FutureProvider.autoDispose<BigInt>((ref) async {
-  try {
-    return await ref.watch(balancesServiceProvider).transferDispatchWeight();
-  } catch (e, st) {
-    quantusPrint('Transfer weight probe failed: $e\n$st');
-    rethrow;
-  }
-});
-
-/// Transfer fee for an amount: base and length fee from the shipped metadata,
-/// dispatch weight from [transferDispatchWeightProvider]. Address-independent.
-final regularSendFeeProvider = Provider.autoDispose
-    .family<AsyncValue<SendFee>, ({BigInt amount, DilithiumScheme scheme})>((ref, key) {
-      final balances = ref.watch(balancesServiceProvider);
-      return ref
-          .watch(transferDispatchWeightProvider)
-          .whenData<SendFee>(
-            (weight) => RegularFee(
-              networkFee: balances.transferFee(key.amount, dispatchWeight: weight, scheme: key.scheme),
-            ),
-          );
+/// Transfer fee from `payment_queryInfo` on a dummy-signed extrinsic. Local
+/// length/weight math does not match the fee the chain actually charges.
+final regularSendFeeProvider = FutureProvider.autoDispose
+    .family<SendFee, ({Account account, String recipient, BigInt amount})>((ref, key) async {
+      try {
+        final feeData = await ref
+            .watch(balancesServiceProvider)
+            .getBalanceTransferFee(key.account, key.recipient, key.amount);
+        return RegularFee(networkFee: feeData.fee);
+      } catch (e, st) {
+        quantusPrint('Transfer fee probe failed: $e\n$st');
+        rethrow;
+      }
     });
 
 /// Standard single-signer transfer from the active account. Signs locally, or
@@ -80,11 +70,11 @@ class RegularSendStrategy extends SendStrategy {
 
   @override
   ProviderListenable<AsyncValue<SendFee>> feeProvider({required String recipient, required BigInt amount}) =>
-      regularSendFeeProvider((amount: amount, scheme: account.feeSizingScheme));
+      regularSendFeeProvider((account: account, recipient: recipient, amount: amount));
 
   @override
   void retryFee(WidgetRef ref, {required String recipient, required BigInt amount}) =>
-      ref.invalidate(transferDispatchWeightProvider);
+      ref.invalidate(regularSendFeeProvider((account: account, recipient: recipient, amount: amount)));
 
   @override
   String? affordabilityError(WidgetRef ref, SendFee fee, AppLocalizations l10n) => null;

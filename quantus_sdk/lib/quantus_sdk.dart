@@ -76,7 +76,6 @@ export 'src/services/recent_addresses_service.dart';
 export 'src/services/reversible_transfers_service.dart';
 export 'src/services/settings_service.dart';
 export 'src/services/substrate_service.dart';
-export 'src/services/transaction_fee.dart';
 export 'src/services/swap_service.dart';
 export 'src/services/quersi_service.dart';
 export 'src/services/senoti_service.dart';

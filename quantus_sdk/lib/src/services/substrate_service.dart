@@ -73,17 +73,6 @@ class SubstrateService {
     }
   }
 
-  /// Ref-time the runtime charges for [call] plus its transaction extensions,
-  /// as `payment_queryInfo` reports for a dummy-signed probe. Call and
-  /// extension weights are not part of the metadata and change with the
-  /// runtime, so this is the one fee input that has to be asked from chain.
-  Future<BigInt> queryDispatchWeight(RuntimeCall call) async {
-    final info = await _paymentQueryInfo(
-      _dummySignedExtrinsic(Uint8List(32), call.encode(), scheme: DilithiumSchemeExtension.legacy),
-    );
-    return BigInt.from((info['weight'] as Map<String, dynamic>)['ref_time'] as int);
-  }
-
   Future<crypto.Keypair> _getUserWallet() async {
     final account = (await SettingsService().getActiveRegularAccount())!;
     final keypair = await account.getKeypair();
@@ -285,7 +274,7 @@ class SubstrateService {
     tip: 0,
   ).encodeResonance(Registry(), scheme);
 
-  /// Correctly sized but unsigned extrinsic, for fee probes and length math.
+  /// Correctly sized but unsigned extrinsic, for fee probes.
   Uint8List _dummySignedExtrinsic(
     Uint8List signer,
     Uint8List method, {
@@ -300,12 +289,6 @@ class SubstrateService {
     nonce: nonce,
     scheme: scheme,
   );
-
-  /// Bytes [call] occupies on chain as a signed extrinsic. Address, signature
-  /// and key sizes are fixed per [scheme]; only the compact nonce varies and is
-  /// taken at its 4-byte maximum.
-  int signedExtrinsicLength(RuntimeCall call, DilithiumScheme scheme) =>
-      _dummySignedExtrinsic(Uint8List(32), call.encode(), scheme: scheme).length;
 
   Future<ExtrinsicData> getExtrinsicPayload(Account account, RuntimeCall call, {bool isSigned = true}) async {
     final ctx = await _getSigningContext(account.accountId);

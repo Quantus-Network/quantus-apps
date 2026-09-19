@@ -43,27 +43,25 @@ void main() {
     expect(ref.read(strategy.spendableBalanceProvider).value, capturedBalance - existentialDeposit);
   });
 
-  test('fee provider prices any amount locally from one probed dispatch weight', () async {
+  test('fee provider fetches the chain fee for each amount', () async {
     final balancesService = FakeBalancesService();
     final container = ProviderContainer(overrides: [balancesServiceProvider.overrideWithValue(balancesService)]);
     addTearDown(container.dispose);
     final strategy = RegularSendStrategy(account: captured);
-    final ten = strategy.feeProvider(recipient: other.accountId, amount: BigInt.from(10));
-    final twenty = strategy.feeProvider(recipient: other.accountId, amount: BigInt.from(20));
+    final tenKey = (account: captured, recipient: other.accountId, amount: BigInt.from(10));
+    final twentyKey = (account: captured, recipient: other.accountId, amount: BigInt.from(20));
+    final ten = regularSendFeeProvider(tenKey);
+    final twenty = regularSendFeeProvider(twentyKey);
     final subs = [ten, twenty].map((p) => container.listen(p, (_, _) {})).toList();
 
     expect(subs[0].read().isLoading, isTrue);
-    await container.read(transferDispatchWeightProvider.future);
+    await container.read(ten.future);
+    await container.read(twenty.future);
 
-    expect(
-      (subs[0].read().requireValue as RegularFee).networkFee,
-      BigInt.from(10) + FakeBalancesService.dispatchWeight,
-    );
-    expect(
-      (subs[1].read().requireValue as RegularFee).networkFee,
-      BigInt.from(20) + FakeBalancesService.dispatchWeight,
-    );
-    expect(balancesService.weightProbes, 1);
+    expect((subs[0].read().requireValue as RegularFee).networkFee, BigInt.from(10) + BigInt.from(1000));
+    expect((subs[1].read().requireValue as RegularFee).networkFee, BigInt.from(20) + BigInt.from(1000));
+    expect(balancesService.feeProbes, 2);
+    expect(strategy.feeProvider(recipient: other.accountId, amount: BigInt.from(10)), ten);
   });
 
   testWidgets('submit hands the captured keystone account to the signing session after a switch', (tester) async {

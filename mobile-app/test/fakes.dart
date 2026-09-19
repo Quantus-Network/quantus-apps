@@ -76,18 +76,13 @@ class FakeHumanReadableChecksumService extends Fake implements HumanReadableChec
 }
 
 class FakeBalancesService extends Fake implements BalancesService {
-  static final BigInt dispatchWeight = BigInt.from(5551728000);
-  int weightProbes = 0;
+  int feeProbes = 0;
 
   @override
-  Future<BigInt> transferDispatchWeight() async {
-    weightProbes++;
-    return dispatchWeight;
+  Future<ExtrinsicFeeData> getBalanceTransferFee(Account account, String targetAddress, BigInt amount) async {
+    feeProbes++;
+    return ExtrinsicFeeData(fee: amount + BigInt.from(1000), blockHash: '0x00', blockNumber: 1);
   }
-
-  @override
-  BigInt transferFee(BigInt amount, {required BigInt dispatchWeight, required DilithiumScheme scheme}) =>
-      amount + dispatchWeight;
 }
 
 Account makeAccount(int index, {AccountType accountType = AccountType.local}) => Account(
