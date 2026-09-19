@@ -10,8 +10,8 @@ void main() {
   late SendFeeNotifier notifier;
 
   SendFee fee(int n) => RegularFee(networkFee: BigInt.from(n));
-  AsyncValue<SendFee> state() => container.read(sendFeeProvider);
-  BigInt? shown() => state().value?.displayFee;
+  SendFeeState state() => container.read(sendFeeProvider);
+  BigInt? shown() => state().fee?.displayFee;
 
   setUp(() {
     container = ProviderContainer();
@@ -19,18 +19,24 @@ void main() {
   });
   tearDown(() => container.dispose());
 
-  testWidgets('the first query runs at once and its value ends the loading state', (tester) async {
+  test('retry before any request fails early', () {
+    expect(notifier.retry, throwsStateError);
+  });
+
+  testWidgets('the first query runs at once and its value settles the fee', (tester) async {
     final query = Completer<SendFee>();
     notifier.request(() => query.future);
-    expect(state().isLoading, isTrue);
+    expect(state().fee, isNull);
+    expect(state().pending, isTrue);
 
     query.complete(fee(1));
     await tester.pump();
 
     expect(shown(), BigInt.one);
+    expect(state().settled, isTrue);
   });
 
-  testWidgets('once a fee is known, typing issues one query per pause', (tester) async {
+  testWidgets('once a fee is known, typing marks it an estimate and issues one query per pause', (tester) async {
     notifier.request(() async => fee(1));
     await tester.pump();
 
@@ -44,11 +50,30 @@ void main() {
     }
     expect(calls, 0);
     expect(shown(), BigInt.one);
+    expect(state().pending, isTrue);
+    expect(state().settled, isFalse);
 
     await tester.pump(SendFeeNotifier.debounce);
 
     expect(calls, 1);
     expect(shown(), BigInt.two);
+    expect(state().settled, isTrue);
+  });
+
+  testWidgets('an immediate request skips the debounce', (tester) async {
+    notifier.request(() async => fee(1));
+    await tester.pump();
+
+    var calls = 0;
+    notifier.request(() async {
+      calls++;
+      return fee(2);
+    }, immediate: true);
+    await tester.pump();
+
+    expect(calls, 1);
+    expect(shown(), BigInt.two);
+    expect(state().settled, isTrue);
   });
 
   testWidgets('a slow older query never overwrites a newer fee', (tester) async {
@@ -57,14 +82,16 @@ void main() {
     notifier.request(() async => fee(2));
     await tester.pump(SendFeeNotifier.debounce);
     expect(shown(), BigInt.two);
+    expect(state().settled, isTrue);
 
     slow.complete(fee(1));
     await tester.pump();
 
     expect(shown(), BigInt.two);
+    expect(state().settled, isTrue);
   });
 
-  testWidgets('an older query still fills in while nothing newer has landed', (tester) async {
+  testWidgets('an older query fills in as an estimate while a newer one is in flight', (tester) async {
     final first = Completer<SendFee>();
     final second = Completer<SendFee>();
     notifier.request(() => first.future);
@@ -74,32 +101,73 @@ void main() {
     first.complete(fee(1));
     await tester.pump();
     expect(shown(), BigInt.one);
+    expect(state().pending, isTrue);
 
     second.complete(fee(2));
     await tester.pump();
     expect(shown(), BigInt.two);
+    expect(state().settled, isTrue);
   });
 
-  testWidgets('a failed query keeps the fee already shown', (tester) async {
+  testWidgets('a failed refinement keeps the fee, flags it, and retry re-runs it', (tester) async {
     notifier.request(() async => fee(1));
     await tester.pump();
 
-    notifier.retry(() async => throw Exception('rpc down'));
+    var fail = true;
+    var calls = 0;
+    notifier.request(() async {
+      calls++;
+      if (fail) throw Exception('rpc down');
+      return fee(2);
+    }, immediate: true);
     await tester.pump();
 
     expect(shown(), BigInt.one);
-    expect(state().hasError, isFalse);
+    expect(state().failed, isTrue);
+    expect(state().settled, isFalse);
+
+    fail = false;
+    notifier.retry();
+    await tester.pump();
+
+    expect(calls, 2);
+    expect(shown(), BigInt.two);
+    expect(state().settled, isTrue);
   });
 
-  testWidgets('a failure before any fee shows the error until a retry lands', (tester) async {
-    notifier.request(() async => throw Exception('rpc down'));
+  testWidgets('a failure before any fee is an error until a retry lands', (tester) async {
+    var fail = true;
+    notifier.request(() async {
+      if (fail) throw Exception('rpc down');
+      return fee(1);
+    });
     await tester.pump();
-    expect(state().hasError, isTrue);
+    expect(state().fee, isNull);
+    expect(state().failed, isTrue);
+    expect(state().pending, isFalse);
 
-    notifier.retry(() async => fee(1));
+    fail = false;
+    notifier.retry();
     await tester.pump();
 
     expect(shown(), BigInt.one);
+    expect(state().settled, isTrue);
+  });
+
+  testWidgets('a failure of a superseded query is ignored', (tester) async {
+    notifier.request(() async => fee(1));
+    await tester.pump();
+    final slow = Completer<SendFee>();
+    notifier.request(() => slow.future, immediate: true);
+    notifier.request(() async => fee(3));
+    await tester.pump(SendFeeNotifier.debounce);
+    expect(shown(), BigInt.from(3));
+
+    slow.completeError(Exception('late failure'));
+    await tester.pump();
+
+    expect(shown(), BigInt.from(3));
+    expect(state().settled, isTrue);
   });
 
   testWidgets('reset drops the fee, cancels the pending query and ignores stale results', (tester) async {
@@ -107,17 +175,18 @@ void main() {
     await tester.pump();
     final stale = Completer<SendFee>();
     var cancelledCalls = 0;
-    notifier.retry(() => stale.future);
+    notifier.request(() => stale.future, immediate: true);
     notifier.request(() async {
       cancelledCalls++;
       return fee(3);
     });
 
     notifier.reset();
-    expect(state().isLoading, isTrue);
+    expect(state().fee, isNull);
+    expect(state().pending, isTrue);
     stale.complete(fee(2));
     await tester.pump(SendFeeNotifier.debounce);
-    expect(state().isLoading, isTrue);
+    expect(state().fee, isNull);
     expect(cancelledCalls, 0);
 
     var calls = 0;
@@ -129,5 +198,6 @@ void main() {
 
     expect(calls, 1);
     expect(shown(), BigInt.from(4));
+    expect(state().settled, isTrue);
   });
 }

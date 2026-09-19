@@ -54,13 +54,60 @@ void main() {
     );
     final strategy = RegularSendStrategy(account: captured);
     final feeProvider = strategy.feeProvider(recipient: other.accountId, amount: BigInt.from(10));
-    expect(ref.read(feeProvider).isLoading, isTrue);
+    expect(ref.read(feeProvider).fee, isNull);
 
     strategy.requestFee(ref, recipient: other.accountId, amount: BigInt.from(10));
     await tester.pump();
 
     expect(substrate.lastFeeAccount?.accountId, captured.accountId);
-    expect((ref.read(feeProvider).requireValue as RegularFee).networkFee, BigInt.from(1000000000));
+    expect(isTransferAll(substrate.lastFeeCall!, keepAlive: true), isFalse);
+    final fee = ref.read(feeProvider);
+    expect((fee.fee as RegularFee).networkFee, BigInt.from(1000000000));
+    expect(fee.settled, isTrue);
+  });
+
+  testWidgets('a max send prices transfer_all that keeps the existential deposit', (tester) async {
+    final substrate = FakeSubstrateService(fee: BigInt.from(7));
+    final ref = await pumpRef(
+      tester,
+      overrides: [
+        substrateServiceProvider.overrideWithValue(substrate),
+        balancesServiceProvider.overrideWithValue(FakeBalancesService()),
+      ],
+    );
+    final strategy = RegularSendStrategy(account: captured);
+
+    strategy.requestFee(ref, recipient: other.accountId, amount: BigInt.from(10), sendAll: true, immediate: true);
+    await tester.pump();
+
+    expect(isTransferAll(substrate.lastFeeCall!, keepAlive: true), isTrue);
+    final fee = ref.read(strategy.feeProvider(recipient: other.accountId, amount: BigInt.from(10))).fee as RegularFee;
+    expect(fee.sendAll, isTrue);
+    expect(fee.networkFee, BigInt.from(7));
+  });
+
+  testWidgets('a max send hands transfer_all to the keystone signing session', (tester) async {
+    final keystone = makeAccount(3, accountType: AccountType.keystone);
+    final ref = await pumpRef(
+      tester,
+      overrides: [
+        settingsServiceProvider.overrideWithValue(FakeSettingsService(activeAccount: RegularAccount(keystone))),
+        balancesServiceProvider.overrideWithValue(FakeBalancesService()),
+      ],
+    );
+    final strategy = RegularSendStrategy(account: keystone);
+
+    final outcome = await strategy.submit(
+      ref,
+      recipientAddress: other.accountId,
+      recipientChecksum: 'checksum',
+      amount: BigInt.from(1000),
+      fee: RegularFee(networkFee: BigInt.from(10), sendAll: true),
+      isPayMode: false,
+    );
+
+    final session = (outcome as SendNeedsHardwareSignature).session;
+    expect(isTransferAll(session.buildCall(), keepAlive: true), isTrue);
   });
 
   testWidgets('submit hands the captured keystone account to the signing session after a switch', (tester) async {

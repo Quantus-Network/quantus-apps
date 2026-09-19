@@ -97,8 +97,8 @@ class MultisigProposeStrategy extends SendStrategy {
   String? feePayerBalanceLabel(AppLocalizations l10n) => l10n.multisigProposeFeePayerBalanceLabel;
 
   @override
-  ProviderListenable<AsyncValue<SendFee>> feeProvider({required String recipient, required BigInt amount}) =>
-      multisigProposeFeeProvider((msig, recipient.trim()));
+  ProviderListenable<SendFeeState> feeProvider({required String recipient, required BigInt amount}) =>
+      multisigProposeFeeProvider((msig, recipient.trim())).select(SendFeeState.fromAsync);
 
   @override
   void retryFee(WidgetRef ref, {required String recipient, required BigInt amount}) =>
@@ -118,6 +118,8 @@ class MultisigProposeStrategy extends SendStrategy {
     required String recipientAddress,
     required BigInt amount,
     required SendFee fee,
+    bool feeIsEstimate = false,
+    bool sendAll = false,
   }) {
     final l10n = ref.watch(l10nProvider);
     final fmt = ref.watch(numberFormattingServiceProvider);
