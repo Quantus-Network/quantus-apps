@@ -53,6 +53,14 @@ void main() {
   String fieldText(WidgetTester tester) =>
       tester.widget<TextField>(find.byKey(const Key(E2EKeys.sendAmountField))).controller!.text;
 
+  Future<void> tapContinue(WidgetTester tester) async {
+    expect(tester.widget<QuantusButton>(find.byKey(const Key(E2EKeys.sendReviewButton))).isDisabled, isFalse);
+    await tester.tap(find.byKey(const Key(E2EKeys.sendReviewButton)));
+    await tester.pump();
+    await tester.pump();
+    expect(find.byKey(const Key(E2EKeys.sendReviewScreen)), findsOneWidget);
+  }
+
   String formatted(ProviderContainer container, BigInt amount) => AmountInputLogic(
     exchangeRateService: container.read(exchangeRateServiceProvider),
     selectedFiat: container.read(selectedFiatCurrencyProvider),
@@ -95,9 +103,7 @@ void main() {
     await tester.pump();
     expect(substrate.feeCalls, 1);
 
-    await tester.tap(find.byKey(const Key(E2EKeys.sendReviewButton)));
-    await tester.pump();
-    await tester.pump();
+    await tapContinue(tester);
 
     expect(substrate.feeCalls, 1);
   });
@@ -111,9 +117,7 @@ void main() {
     await tester.pump();
     expect(substrate.feeCalls, 1);
 
-    await tester.tap(find.byKey(const Key(E2EKeys.sendReviewButton)));
-    await tester.pump();
-    await tester.pump();
+    await tapContinue(tester);
 
     expect(substrate.feeCalls, 2);
     expect(isTransferAll(substrate.lastFeeCall!, keepAlive: true), isFalse);

@@ -13,6 +13,7 @@ import 'package:resonance_network_wallet/v2/screens/send/regular_send_strategy.d
 import 'package:resonance_network_wallet/v2/screens/send/review_send_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/send/send_fee_notifier.dart';
 import 'package:resonance_network_wallet/v2/screens/send/send_providers.dart';
+import 'package:resonance_network_wallet/v2/screens/send/send_screen_logic.dart';
 import 'package:resonance_network_wallet/v2/screens/send/send_strategy.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -40,6 +41,7 @@ void main() {
     required BigInt amount,
     required SendFee fee,
     bool sendAll = false,
+    BigInt? balance,
   }) async {
     await tester.pumpApp(
       ReviewSendScreen(
@@ -52,7 +54,7 @@ void main() {
       ),
       overrides: [
         settingsServiceProvider.overrideWithValue(FakeSettingsService(activeAccount: RegularAccount(sender))),
-        effectiveMaxBalanceProviderFamily.overrideWith((ref, accountId) => AsyncValue.data(spendable)),
+        effectiveMaxBalanceProviderFamily.overrideWith((ref, accountId) => AsyncValue.data(balance ?? spendable)),
         exchangeRateServiceProvider.overrideWithValue(ExchangeRateService(rates: {})),
         substrateServiceProvider.overrideWithValue(FakeSubstrateService()),
         balancesServiceProvider.overrideWithValue(FakeBalancesService()),
@@ -131,6 +133,31 @@ void main() {
     expect(confirmDisabled(tester), isFalse);
     expect(find.text(l10n.multisigProposeFeeFetchFailed), findsNothing);
     expect(find.text(amt(container, spendable - highFee)), findsNWidgets(2));
+  });
+
+  testWidgets('a max send whose settled fee leaves less than the minimum stays blocked', (tester) async {
+    final minimum = SendScreenLogic.minimumSendAmount;
+    final estimate = minimum ~/ BigInt.from(4);
+    final container = await pumpReview(
+      tester,
+      amount: minimum,
+      fee: RegularFee(networkFee: estimate),
+      sendAll: true,
+      balance: minimum + estimate,
+    );
+    final notifier = container.read(sendFeeProvider.notifier);
+    expect(confirmDisabled(tester), isTrue);
+
+    notifier.request(() async => RegularFee(networkFee: estimate * BigInt.two, sendAll: true), immediate: true);
+    await settle(tester);
+    expect(confirmDisabled(tester), isTrue);
+    final l10n = container.read(l10nProvider);
+    final fmt = container.read(numberFormattingServiceProvider);
+    expect(find.text(l10n.sendLogicBelowMinimum(fmt.formatAmount(minimum), AppConstants.tokenSymbol)), findsOneWidget);
+
+    notifier.request(() async => RegularFee(networkFee: estimate, sendAll: true), immediate: true);
+    await settle(tester);
+    expect(confirmDisabled(tester), isFalse);
   });
 
   testWidgets('an ordinary send with fee headroom is not blocked by an unsettled fee', (tester) async {

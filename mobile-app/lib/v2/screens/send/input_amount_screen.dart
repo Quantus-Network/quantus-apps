@@ -39,7 +39,6 @@ class InputAmountScreen extends ConsumerStatefulWidget {
 class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
   final _amountController = TextEditingController();
   final _amountFocus = FocusNode();
-  final _checksumService = HumanReadableChecksumService();
 
   String? _recipientChecksum;
   BigInt _amount = BigInt.zero;
@@ -72,7 +71,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
       }
     }
     _recipientChecksum = widget.recipientChecksum;
-    _checksumService.getHumanReadableName(widget.recipientAddress.trim()).then((name) {
+    ref.read(humanReadableChecksumServiceProvider).getHumanReadableName(widget.recipientAddress.trim()).then((name) {
       if (!mounted) return;
       setState(() => _recipientChecksum = name);
     });

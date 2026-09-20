@@ -8,6 +8,7 @@ import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/currency_display_provider.dart';
+import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/shared/constants/e2e_keys.dart';
 import 'package:resonance_network_wallet/shared/utils/print.dart';
 import 'package:resonance_network_wallet/v2/components/address_checkphrase_with_initial.dart';
@@ -91,12 +92,11 @@ class _ReviewSendScreenState extends ConsumerState<ReviewSendScreen> {
 
   bool get _waitingForFee => _needsExactFee && !_feeApplies;
 
-  bool get _insufficient {
-    final spendable = _spendable;
-    return _feeApplies && spendable != null && _amount + _feeCharged > spendable;
-  }
+  /// Re-checked here because a max amount is recomputed from the settled fee
+  /// and can fall below the minimum, and the balance can move.
+  AmountStatus get _amountStatus => SendScreenLogic.getAmountStatus(_amount, _spendable ?? BigInt.zero, _feeCharged);
 
-  bool get _confirmBlocked => _waitingForFee || _insufficient;
+  bool get _confirmBlocked => _waitingForFee || _amountStatus != AmountStatus.valid;
 
   @override
   void initState() {
@@ -201,10 +201,18 @@ class _ReviewSendScreenState extends ConsumerState<ReviewSendScreen> {
     final amount = _amount;
     final feeApplies = _feeApplies;
     final waitingForFee = _waitingForFee;
-    final insufficient = _insufficient;
+    final amountStatus = _amountStatus;
     final feeFailed = waitingForFee && feeState.failed;
-    final message = insufficient
-        ? l10n.sendLogicInsufficientBalance
+    final message = amountStatus != AmountStatus.valid
+        ? SendScreenLogic.getButtonText(
+            l10n: l10n,
+            hasAddressError: false,
+            amountStatus: amountStatus,
+            recipientText: _recipient,
+            amount: amount,
+            activeAccountId: widget.strategy.sourceAccountId ?? '',
+            formattingService: ref.watch(numberFormattingServiceProvider),
+          )
         : feeFailed
         ? strings.feeFetchFailedMessage
         : _errorMessage;
