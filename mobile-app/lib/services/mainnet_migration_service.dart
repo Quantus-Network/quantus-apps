@@ -36,17 +36,17 @@ query TestnetStats($ids: [String!]!) {
   static final _testnetRpc = RpcEndpointService.forUrls([_testnetRpcUrl]);
 
   final SettingsService _settings;
-  final HdWalletService _hdWallet;
+  final WormholeAddressBook _addressBook;
   final GraphQlEndpointService _indexer;
   final Future<BigInt> Function(String address) _balanceOf;
 
   MainnetMigrationService({
     required SettingsService settings,
-    HdWalletService? hdWallet,
+    WormholeAddressBook? addressBook,
     GraphQlEndpointService? indexer,
     Future<BigInt> Function(String address)? balanceOf,
   }) : _settings = settings,
-       _hdWallet = hdWallet ?? HdWalletService(),
+       _addressBook = addressBook ?? WormholeAddressBook(),
        _indexer = indexer ?? GraphQlEndpointService.forUrls([_testnetIndexerUrl]),
        _balanceOf = balanceOf ?? _testnetBalance;
 
@@ -62,8 +62,7 @@ query TestnetStats($ids: [String!]!) {
     final accounts = await _settings.getAccounts();
     final ids = <String>{for (final a in accounts) a.accountId};
     for (final walletIndex in accounts.map((a) => a.walletIndex).toSet()) {
-      final mnemonic = await _settings.getMnemonic(walletIndex);
-      if (mnemonic != null) ids.add(_hdWallet.deriveWormholeKeyPair(mnemonic: mnemonic).address);
+      if (await _settings.hasMnemonic(walletIndex)) ids.add(await _addressBook.addressAt(walletIndex, 0));
     }
     return ids.toList();
   }

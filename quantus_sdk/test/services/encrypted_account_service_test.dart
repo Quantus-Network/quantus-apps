@@ -7,7 +7,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_sdk/src/services/account_discovery_service.dart';
 import 'package:quantus_sdk/src/services/encrypted_account_service.dart';
+import 'package:quantus_sdk/src/rust/api/crypto.dart' show WormholeAddresses;
 import 'package:quantus_sdk/src/services/hd_wallet_service.dart';
+import 'package:quantus_sdk/src/services/wormhole_address_book.dart';
 import 'package:quantus_sdk/src/services/wormhole_coin_selection.dart';
 import 'package:quantus_sdk/src/services/wormhole_send_service.dart';
 import 'package:quantus_sdk/src/services/wormhole_utxo_service.dart';
@@ -40,12 +42,10 @@ WormholeUtxo _utxo(int scaled, {int index = 0, bool isChange = false, String? nu
     leafIndex: BigInt.from(scaled),
     transferCount: BigInt.one,
   ),
-  // secretHex blank like production getUnspentUtxos (M11): spenders re-derive.
   owner: WormholeAddressInfo(
     index: index,
     isChange: isChange,
     address: isChange ? changeAddressAt(index) : addressAt(index),
-    secretHex: '',
   ),
   nullifierHex: nullifierHex ?? '0xn$scaled',
 );
@@ -76,6 +76,16 @@ class _FakeHdWallet extends HdWalletService {
       secretHex: changeSecretAt(index),
     );
   }
+
+  @override
+  Future<WormholeAddresses> deriveWormholeAddresses(String mnemonic, {required int count}) async => WormholeAddresses(
+    external_: [for (var i = 0; i < count; i++) addressAt(i)],
+    change: [for (var i = 0; i < count; i++) changeAddressAt(i)],
+  );
+
+  @override
+  String computeNullifier({required String secretHex, required BigInt transferCount}) =>
+      '0xn${secretHex.substring(2, 4)}_$transferCount';
 }
 
 class _FakeDiscovery extends AccountDiscoveryService {
@@ -85,8 +95,10 @@ class _FakeDiscovery extends AccountDiscoveryService {
   _FakeDiscovery(this.used) : super(_FakeHdWallet());
 
   @override
-  Future<Set<int>> discoverUsedIndices({required String Function(int index) addressAt, int gapLimit = 20}) async =>
-      addressAt(0) == changeAddressAt(0) ? usedChange : used;
+  Future<Set<int>> discoverUsedIndices({
+    required Future<String> Function(int index) addressAt,
+    int gapLimit = 20,
+  }) async => await addressAt(0) == changeAddressAt(0) ? usedChange : used;
 }
 
 class _FakeUtxoService extends WormholeUtxoService {
@@ -101,14 +113,25 @@ class _FakeUtxoService extends WormholeUtxoService {
   /// tests race a slow load() against logout.
   Completer<void>? gate;
 
+  /// When true, asks the resolver for every UTXO's nullifier like production.
+  bool resolveNullifiers = false;
+  int nullifiersResolved = 0;
+
   @override
   Future<WormholeUtxoResult> getUnspentUtxos({
     required List<WormholeAddressInfo> addresses,
+    required NullifierResolver nullifierFor,
     WormholeProgressCallback? onProgress,
     IsCancelledCallback? isCancelled,
   }) async {
     final g = gate;
     if (g != null) await g.future;
+    if (resolveNullifiers) {
+      for (final utxo in result.utxos) {
+        await nullifierFor(utxo.owner, utxo.transfer.transferCount);
+        nullifiersResolved++;
+      }
+    }
     return result;
   }
 }
@@ -167,6 +190,7 @@ void main() {
   late _FakeUtxoService utxoService;
   late _FakeSendService sendService;
   late EncryptedAccountService service;
+  var mnemonicReads = 0;
 
   setUp(() async {
     tempDir = await Directory.systemTemp.createTemp('enc_acct_test');
@@ -178,9 +202,17 @@ void main() {
     discovery = _FakeDiscovery({});
     utxoService = _FakeUtxoService();
     sendService = _FakeSendService();
+    mnemonicReads = 0;
     service = EncryptedAccountService(
       walletIndex: 0,
-      getMnemonic: () async => 'test mnemonic',
+      getMnemonic: () async {
+        mnemonicReads++;
+        return 'test mnemonic';
+      },
+      addressBook: WormholeAddressBook.withDependencies(
+        getMnemonic: (_) async => 'test mnemonic',
+        hdWalletService: hdWallet,
+      ),
       hdWalletService: hdWallet,
       utxoService: utxoService,
       discoveryService: discovery,
@@ -511,17 +543,47 @@ void main() {
   });
 
   group('ownsAddress', () {
-    test('recognizes both branches up to and including their next indices', () async {
-      await seedState(nextIndex: 2, nextChangeIndex: 1);
+    test('recognizes every address of the book on both branches without the seed', () async {
       expect(await service.ownsAddress(addressAt(0)), isTrue);
-      expect(await service.ownsAddress(addressAt(1)), isTrue);
-      expect(await service.ownsAddress(addressAt(2)), isTrue);
-      expect(await service.ownsAddress(addressAt(9)), isFalse);
+      expect(await service.ownsAddress(addressAt(9)), isTrue);
       expect(await service.ownsAddress(changeAddressAt(0)), isTrue);
-      expect(await service.ownsAddress(changeAddressAt(1)), isTrue);
-      expect(await service.ownsAddress(changeAddressAt(9)), isFalse);
+      expect(await service.ownsAddress(changeAddressAt(9)), isTrue);
       final other = Address(prefix: 189, pubkey: Uint8List.fromList(List.filled(32, 0x33))).encode();
       expect(await service.ownsAddress(other), isFalse);
+      expect(mnemonicReads, 0);
+    });
+  });
+
+  group('seed reads', () {
+    test('load, receiveAddress and discardCachedState never read the seed without transfers', () async {
+      await seedState(nextIndex: 2, nextChangeIndex: 1);
+      discovery.used = {0, 1};
+      await service.load();
+      expect(await service.receiveAddress(), addressAt(2));
+      await service.discardCachedState();
+      expect(mnemonicReads, 0);
+      expect(hdWallet.derivations, 0);
+    });
+
+    test('load reads the seed once for unseen transfers and serves known nullifiers from memory', () async {
+      discovery.used = {0, 1};
+      utxoService.resolveNullifiers = true;
+      utxoService.result = WormholeUtxoResult(
+        utxos: [_utxo(300, index: 0), _utxo(500, index: 1)],
+        totalReceivedToken: wormholeTokenFromScaled(800),
+        changeReceivedToken: BigInt.zero,
+        totalSpentToken: BigInt.zero,
+      );
+
+      await service.load();
+      expect(mnemonicReads, 1);
+      expect(hdWallet.derivations, 2);
+      expect(utxoService.nullifiersResolved, 2);
+
+      await service.load();
+      expect(mnemonicReads, 1);
+      expect(hdWallet.derivations, 2);
+      expect(utxoService.nullifiersResolved, 4);
     });
   });
 

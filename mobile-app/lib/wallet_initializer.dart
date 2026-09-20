@@ -9,6 +9,7 @@ import 'package:resonance_network_wallet/v2/screens/welcome/mainnet_migration_sc
 import 'package:resonance_network_wallet/v2/screens/welcome/welcome_screen.dart';
 import 'package:resonance_network_wallet/services/logout_service.dart';
 import 'package:resonance_network_wallet/services/telemetry_service.dart';
+import 'package:resonance_network_wallet/shared/utils/print.dart';
 
 class WalletInitializer extends ConsumerStatefulWidget {
   const WalletInitializer({super.key});
@@ -33,12 +34,12 @@ class WalletInitializerState extends ConsumerState<WalletInitializer> {
     final hasWallet = await _settingsService.getHasWallet();
 
     if (hasWallet) {
-      final mnemonic = await _settingsService.getMnemonic(0);
-      if (mnemonic == null) {
+      if (!await _settingsService.hasMnemonic(0)) {
         TelemetryService().sendEvent('user_lost_mnemonic');
         if (mounted) await _showMnemonicLostDialog();
         return;
       }
+      await _protectSeeds();
     }
 
     setState(() {
@@ -46,6 +47,20 @@ class WalletInitializerState extends ConsumerState<WalletInitializer> {
       _migrationPending = hasWallet && ref.read(mainnetMigrationPendingProvider);
       _loading = false;
     });
+  }
+
+  /// Moves phrases from before user-presence protection into the protected
+  /// store. A dismissed prompt or a store error must not keep the wallet from
+  /// opening; the move is retried on the next launch.
+  Future<void> _protectSeeds() async {
+    try {
+      await _settingsService.protectStoredSeeds();
+    } on SeedAccessCancelled {
+      quantusPrint('Seed protection postponed: prompt dismissed');
+    } catch (e) {
+      quantusPrint('Seed protection failed: $e');
+      TelemetryService().sendError('Seed protection failed', error: e);
+    }
   }
 
   Future<void> _showMnemonicLostDialog() async {

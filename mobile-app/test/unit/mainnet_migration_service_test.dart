@@ -23,7 +23,7 @@ class _Settings extends FakeSettingsService {
   Future<List<Account>> getAccounts() async => accounts;
 
   @override
-  Future<String?> getMnemonic(int walletIndex) async => mnemonic;
+  Future<bool> hasMnemonic(int walletIndex) async => mnemonic != null;
 
   @override
   bool isMainnetMigrationDone() => migrationDone;
@@ -32,10 +32,11 @@ class _Settings extends FakeSettingsService {
   Future<void> setMainnetMigrationDone() async => migrationDone = true;
 }
 
-class _HdWallet extends Fake implements HdWalletService {
+class _Book extends WormholeAddressBook {
+  _Book() : super.withDependencies(getMnemonic: (_) async => fail('the book never reads the seed here'));
+
   @override
-  WormholeKeyPair deriveWormholeKeyPair({required String mnemonic, int index = 0}) =>
-      const WormholeKeyPair(address: _wormhole, addressHex: '', rewardsPreimageHex: '', secretHex: '');
+  Future<String> addressAt(int walletIndex, int index, {bool isChange = false}) async => _wormhole;
 }
 
 /// Testnet indexer answering account_stats for the ids in [blocksById];
@@ -67,7 +68,7 @@ MainnetMigrationService _service({
   int indexerStatus = 200,
 }) => MainnetMigrationService(
   settings: settings,
-  hdWallet: _HdWallet(),
+  addressBook: _Book(),
   indexer: _indexer(blocks, queried: queried, status: indexerStatus),
   balanceOf: (address) async => balances[address] ?? BigInt.zero,
 );

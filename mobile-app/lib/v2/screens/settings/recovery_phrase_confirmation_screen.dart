@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
-import 'package:resonance_network_wallet/services/local_auth_service.dart';
 import 'package:resonance_network_wallet/shared/constants/e2e_keys.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/recovery_phrase_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/settings_caution_scaffold.dart';
@@ -22,19 +20,10 @@ class RecoveryPhraseConfirmationScreen extends ConsumerStatefulWidget {
 }
 
 class _RecoveryPhraseConfirmationScreenState extends ConsumerState<RecoveryPhraseConfirmationScreen> {
-  Future<void> _onContinue() async {
-    final l10n = ref.read(l10nProvider);
-    final authed = await LocalAuthService().authenticate(localizedReason: l10n.settingsRecoveryConfirmAuthReason);
-
-    if (authed && mounted) {
-      Navigator.of(
-        context,
-      ).pushReplacement(MaterialPageRoute(builder: (_) => RecoveryPhraseScreen(walletIndex: widget.walletIndex)));
-    } else {
-      if (mounted) {
-        context.showErrorToaster(message: l10n.settingsRecoveryConfirmAuthRequired);
-      }
-    }
+  void _onContinue() {
+    Navigator.of(
+      context,
+    ).pushReplacement(MaterialPageRoute(builder: (_) => RecoveryPhraseScreen(walletIndex: widget.walletIndex)));
   }
 
   void _onAlreadyBackedUp() {

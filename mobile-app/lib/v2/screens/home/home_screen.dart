@@ -29,7 +29,6 @@ import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/active_account_transactions_provider.dart';
-import 'package:resonance_network_wallet/providers/local_auth_provider.dart';
 import 'package:resonance_network_wallet/providers/multisig_providers.dart';
 import 'package:resonance_network_wallet/providers/route_intent_providers.dart';
 import 'package:resonance_network_wallet/providers/currency_display_provider.dart';
@@ -67,20 +66,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       if (async.value == null) return;
       _onProposalIntent(null, ref.read(proposalIntentProvider));
     });
-    // Intents are only consumed while unlocked: anything arriving beneath the
-    // lock overlay stays queued in its provider and is drained after unlock.
-    ref.listenManual<LocalAuthState>(localAuthProvider, (prev, next) {
-      if (_isAuthStateUnlocked(next) && (prev == null || !_isAuthStateUnlocked(prev))) {
-        _drainPendingIntents();
-      }
-    });
-
     Future.microtask(_drainPendingIntents);
   }
-
-  bool _isAuthStateUnlocked(LocalAuthState auth) => auth.isAuthenticated && !auth.isVisuallyLocked;
-
-  bool get _isUnlocked => _isAuthStateUnlocked(ref.read(localAuthProvider));
 
   /// A send in flight must never be interrupted: intents that would start
   /// another flow or switch the active account are dropped, not queued.
@@ -100,7 +87,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   void _onTransactionIntent(TransactionEvent? _, TransactionEvent? transaction) {
-    if (transaction == null || !mounted || !_isUnlocked) return;
+    if (transaction == null || !mounted) return;
     final active = ref.read(activeAccountProvider).value;
     if (active == null) return;
     ref.read(transactionIntentProvider.notifier).state = null;
@@ -109,7 +96,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   void _onPaymentIntent(PaymentIntent? _, PaymentIntent? payment) {
-    if (payment == null || !mounted || !_isUnlocked) return;
+    if (payment == null || !mounted) return;
     if (_consumeIfSendInFlight(paymentIntentProvider, 'payment')) return;
     final active = ref.read(activeAccountProvider).value;
     // Still loading — the activeAccountProvider listener will retry.
@@ -133,7 +120,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   void _onSharedIntent(String? _, String? shared) {
-    if (shared == null || !mounted || !_isUnlocked) return;
+    if (shared == null || !mounted) return;
     if (_consumeIfSendInFlight(sharedAccountIntentProvider, 'shared account')) return;
     ref.read(sharedAccountIntentProvider.notifier).state = null;
 
@@ -144,7 +131,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   /// the active account, then opens the detail sheet immediately. The sheet
   /// shows a loader while it resolves the proposal by id.
   Future<void> _onProposalIntent(ProposalIntent? _, ProposalIntent? intent) async {
-    if (intent == null || !mounted || !_isUnlocked) return;
+    if (intent == null || !mounted) return;
     if (_consumeIfSendInFlight(proposalIntentProvider, 'proposal')) return;
 
     final multisigAccounts = ref.read(multisigAccountsProvider).value;

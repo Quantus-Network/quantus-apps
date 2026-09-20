@@ -6,9 +6,9 @@
 import 'dart:async' as _i4;
 
 import 'package:mockito/mockito.dart' as _i1;
-import 'package:mockito/src/dummies.dart' as _i8;
 import 'package:quantus_sdk/quantus_sdk.dart' as _i3;
 import 'package:quantus_sdk/src/models/account.dart' as _i2;
+import 'package:quantus_sdk/src/models/airdrop_claim_record.dart' as _i8;
 import 'package:quantus_sdk/src/models/display_account.dart' as _i5;
 import 'package:quantus_sdk/src/models/multisig_account.dart' as _i7;
 import 'package:quantus_sdk/src/rust/api/crypto.dart' as _i6;
@@ -36,6 +36,15 @@ class _FakeAccount_0 extends _i1.SmartFake implements _i2.Account {
 ///
 /// See the documentation for Mockito's code generation for more information.
 class MockSettingsService extends _i1.Mock implements _i3.SettingsService {
+  @override
+  bool get seedAccessInProgress =>
+      (super.noSuchMethod(
+            Invocation.getter(#seedAccessInProgress),
+            returnValue: false,
+            returnValueForMissingStub: false,
+          )
+          as bool);
+
   @override
   _i4.Future<void> initialize() =>
       (super.noSuchMethod(
@@ -244,15 +253,6 @@ class MockSettingsService extends _i1.Mock implements _i3.SettingsService {
           as _i4.Future<bool>);
 
   @override
-  String getMnemonicKey(int? walletIndex) =>
-      (super.noSuchMethod(
-            Invocation.method(#getMnemonicKey, [walletIndex]),
-            returnValue: _i8.dummyValue<String>(this, Invocation.method(#getMnemonicKey, [walletIndex])),
-            returnValueForMissingStub: _i8.dummyValue<String>(this, Invocation.method(#getMnemonicKey, [walletIndex])),
-          )
-          as String);
-
-  @override
   _i4.Future<void> setMnemonic(String? mnemonic, int? walletIndex) =>
       (super.noSuchMethod(
             Invocation.method(#setMnemonic, [mnemonic, walletIndex]),
@@ -271,9 +271,27 @@ class MockSettingsService extends _i1.Mock implements _i3.SettingsService {
           as _i4.Future<String?>);
 
   @override
+  _i4.Future<bool> hasMnemonic(int? walletIndex) =>
+      (super.noSuchMethod(
+            Invocation.method(#hasMnemonic, [walletIndex]),
+            returnValue: _i4.Future<bool>.value(false),
+            returnValueForMissingStub: _i4.Future<bool>.value(false),
+          )
+          as _i4.Future<bool>);
+
+  @override
   _i4.Future<void> deleteMnemonic(int? walletIndex) =>
       (super.noSuchMethod(
             Invocation.method(#deleteMnemonic, [walletIndex]),
+            returnValue: _i4.Future<void>.value(),
+            returnValueForMissingStub: _i4.Future<void>.value(),
+          )
+          as _i4.Future<void>);
+
+  @override
+  _i4.Future<void> protectStoredSeeds() =>
+      (super.noSuchMethod(
+            Invocation.method(#protectStoredSeeds, []),
             returnValue: _i4.Future<void>.value(),
             returnValueForMissingStub: _i4.Future<void>.value(),
           )
@@ -489,6 +507,20 @@ class MockSettingsService extends _i1.Mock implements _i3.SettingsService {
   @override
   void setRecoveryPhraseViewed(int? walletIndex) =>
       super.noSuchMethod(Invocation.method(#setRecoveryPhraseViewed, [walletIndex]), returnValueForMissingStub: null);
+
+  @override
+  _i8.AirdropClaimRecord? getAirdropClaim(int? walletIndex) =>
+      (super.noSuchMethod(Invocation.method(#getAirdropClaim, [walletIndex]), returnValueForMissingStub: null)
+          as _i8.AirdropClaimRecord?);
+
+  @override
+  _i4.Future<void> setAirdropClaim(int? walletIndex, _i8.AirdropClaimRecord? record) =>
+      (super.noSuchMethod(
+            Invocation.method(#setAirdropClaim, [walletIndex, record]),
+            returnValue: _i4.Future<void>.value(),
+            returnValueForMissingStub: _i4.Future<void>.value(),
+          )
+          as _i4.Future<void>);
 
   @override
   _i2.WalletOrigin? getWalletOrigin(int? walletIndex) =>

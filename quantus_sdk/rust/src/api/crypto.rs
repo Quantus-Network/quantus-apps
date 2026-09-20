@@ -1,8 +1,10 @@
+use crate::sensitive::SensitiveString;
 use crate::signing_context;
 use qp_poseidon_core::{hash_bytes, hash_to_bytes, serialization::bytes_to_digest};
 pub use qp_rusty_crystals_hdwallet::HDLatticeError;
 use qp_rusty_crystals_hdwallet::{
-    derive_wormhole_from_mnemonic, mnemonic_to_seed, SensitiveBytes32, SensitiveBytes64,
+    derive_wormhole_from_mnemonic, generate_wormhole_from_seed, mnemonic_to_seed,
+    SensitiveBytes32, SensitiveBytes64,
 };
 use sp_core::crypto::{AccountId32, Ss58Codec};
 use std::convert::AsRef;
@@ -119,8 +121,9 @@ pub fn generate_derived_keypair(
     path: &str,
     scheme: DilithiumScheme,
 ) -> Result<Keypair, HDLatticeError> {
+    let mnemonic = SensitiveString::new(mnemonic_str);
     dispatch!(scheme, dsa, hd, {
-        let keypair = hd::derive_key_from_mnemonic(&mnemonic_str, None, path)?;
+        let keypair = hd::derive_key_from_mnemonic(mnemonic.as_str(), None, path)?;
         Ok(Keypair::new(
             scheme,
             keypair.public().to_bytes(),
@@ -138,12 +141,42 @@ pub struct WormholeResult {
 
 #[flutter_rust_bridge::frb(sync)]
 pub fn derive_wormhole(mnemonic_str: String, path: &str) -> Result<WormholeResult, HDLatticeError> {
-    let pair = derive_wormhole_from_mnemonic(&mnemonic_str, None, path)?;
+    let mnemonic = SensitiveString::new(mnemonic_str);
+    let pair = derive_wormhole_from_mnemonic(mnemonic.as_str(), None, path)?;
     let account = AccountId32::new(*pair.address());
     Ok(WormholeResult {
         address: account.to_ss58check(),
         first_hash: pair.first_hash().to_vec(),
         secret: pair.secret().as_bytes().to_vec(),
+    })
+}
+
+/// SS58 addresses of the first `count` wormhole indices on the external
+/// (change 0) and change (change 1) branches. The BIP39 seed is stretched
+/// once and wiped with the mnemonic when this returns.
+pub struct WormholeAddresses {
+    pub external: Vec<String>,
+    pub change: Vec<String>,
+}
+
+pub fn derive_wormhole_addresses(
+    mnemonic_str: String,
+    count: u32,
+) -> Result<WormholeAddresses, HDLatticeError> {
+    let mut seed = SensitiveBytes64::zeroed();
+    mnemonic_to_seed(mnemonic_str, None, &mut seed)?;
+    let branch = |change: u32| -> Result<Vec<String>, HDLatticeError> {
+        (0..count)
+            .map(|index| {
+                let path = format!("m/44'/189189189'/0'/{change}'/{index}'");
+                let pair = generate_wormhole_from_seed(&seed, &path)?;
+                Ok(AccountId32::new(*pair.address()).to_ss58check())
+            })
+            .collect()
+    };
+    Ok(WormholeAddresses {
+        external: branch(0)?,
+        change: branch(1)?,
     })
 }
 
@@ -289,6 +322,21 @@ mod tests {
 
     fn derived(path: &str, scheme: DilithiumScheme) -> Keypair {
         generate_derived_keypair(TEST_MNEMONIC.to_string(), path, scheme).expect("derive")
+    }
+
+    #[test]
+    fn test_wormhole_address_book_matches_single_derivation() {
+        set_prefix();
+        let book = derive_wormhole_addresses(TEST_MNEMONIC.to_string(), 3).expect("book");
+        assert_eq!(book.external.len(), 3);
+        assert_eq!(book.change.len(), 3);
+        for index in 0..3u32 {
+            for (change, addresses) in [(0, &book.external), (1, &book.change)] {
+                let path = format!("m/44'/189189189'/0'/{change}'/{index}'");
+                let single = derive_wormhole(TEST_MNEMONIC.to_string(), &path).expect("derive");
+                assert_eq!(addresses[index as usize], single.address);
+            }
+        }
     }
 
     #[test]

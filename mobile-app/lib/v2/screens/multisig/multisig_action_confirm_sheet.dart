@@ -9,7 +9,6 @@ import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/multisig_providers.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
-import 'package:resonance_network_wallet/services/local_auth_service.dart';
 import 'package:resonance_network_wallet/shared/utils/account_utils.dart';
 import 'package:resonance_network_wallet/shared/utils/print.dart';
 import 'package:resonance_network_wallet/v2/components/decoded_call_view.dart';
@@ -260,16 +259,6 @@ class _MultisigActionConfirmSheetState extends ConsumerState<MultisigActionConfi
       return;
     }
 
-    final authed = await LocalAuthService().authenticate(localizedReason: widget.labels.authReason(l10n));
-    if (!mounted) return;
-    if (!authed) {
-      setState(() {
-        _submitting = false;
-        _errorMessage = l10n.multisigAuthRequired;
-      });
-      return;
-    }
-
     try {
       await widget.submit(ref, signer, _networkFee, _callBytes);
 
@@ -277,6 +266,12 @@ class _MultisigActionConfirmSheetState extends ConsumerState<MultisigActionConfi
       ref.invalidate(multisigOpenProposalsProvider(widget.msig));
       ref.invalidate(multisigCurrentBlockProvider);
       Navigator.pop(context);
+    } on SeedAccessCancelled {
+      if (!mounted) return;
+      setState(() {
+        _submitting = false;
+        _errorMessage = l10n.multisigAuthRequired;
+      });
     } catch (e, st) {
       quantusPrint('${widget.logPrefix} submit error: $e $st');
       if (!mounted) return;

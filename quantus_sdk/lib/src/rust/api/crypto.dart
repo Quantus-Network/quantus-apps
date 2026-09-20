@@ -29,6 +29,9 @@ Keypair generateDerivedKeypair({required String mnemonicStr, required String pat
 WormholeResult deriveWormhole({required String mnemonicStr, required String path}) =>
     RustLib.instance.api.crateApiCryptoDeriveWormhole(mnemonicStr: mnemonicStr, path: path);
 
+Future<WormholeAddresses> deriveWormholeAddresses({required String mnemonicStr, required int count}) =>
+    RustLib.instance.api.crateApiCryptoDeriveWormholeAddresses(mnemonicStr: mnemonicStr, count: count);
+
 /// Convert a first_hash (rewards preimage) to its corresponding wormhole address.
 ///
 /// Mirrors how the chain and ZK circuit derive the address from the preimage:
@@ -131,6 +134,27 @@ class U8Array32 extends NonGrowableListView<int> {
   U8Array32(this._inner) : assert(_inner.length == arraySize), super(_inner);
 
   U8Array32.init() : this(Uint8List(arraySize));
+}
+
+/// SS58 addresses of the first `count` wormhole indices on the external
+/// (change 0) and change (change 1) branches. The BIP39 seed is stretched
+/// once and wiped with the mnemonic when this returns.
+class WormholeAddresses {
+  final List<String> external_;
+  final List<String> change;
+
+  const WormholeAddresses({required this.external_, required this.change});
+
+  @override
+  int get hashCode => external_.hashCode ^ change.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WormholeAddresses &&
+          runtimeType == other.runtimeType &&
+          external_ == other.external_ &&
+          change == other.change;
 }
 
 class WormholeResult {

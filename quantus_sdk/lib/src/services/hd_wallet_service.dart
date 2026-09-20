@@ -84,6 +84,11 @@ class HdWalletService {
   WormholeKeyPair deriveWormholeChangeAddressKeyPair({required String mnemonic, int index = 0}) =>
       WormholeKeyPair.fromResult(_deriveWormhole(mnemonic, change: 1, addressIndex: index));
 
+  /// Addresses of wormhole indices `0..count` on both branches, from one seed
+  /// stretch. Runs off the UI thread.
+  Future<crypto.WormholeAddresses> deriveWormholeAddresses(String mnemonic, {required int count}) =>
+      crypto.deriveWormholeAddresses(mnemonicStr: mnemonic, count: count);
+
   /// Compute the on-chain wormhole address for a rewards preimage (first_hash hex).
   String preimageToAddress(String preimageHex) => crypto.firstHashToAddress(firstHashHex: preimageHex);
 

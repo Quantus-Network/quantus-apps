@@ -6,7 +6,6 @@ import 'package:resonance_network_wallet/models/combined_transactions_list.dart'
 import 'package:resonance_network_wallet/models/fiat_currency.dart';
 import 'package:resonance_network_wallet/providers/active_account_transactions_provider.dart';
 import 'package:resonance_network_wallet/providers/currency_display_provider.dart';
-import 'package:resonance_network_wallet/providers/local_auth_provider.dart';
 import 'package:resonance_network_wallet/providers/route_intent_providers.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/services/exchange_rate_service.dart';
@@ -20,16 +19,11 @@ import '../extensions.dart';
 import '../fakes.dart';
 
 void main() {
-  Future<ProviderContainer> pumpHome(
-    WidgetTester tester, {
-    required FakeSettingsService settings,
-    required TestLocalAuthController auth,
-  }) async {
+  Future<ProviderContainer> pumpHome(WidgetTester tester, {required FakeSettingsService settings}) async {
     await tester.pumpApp(
       const HomeScreen(),
       overrides: [
         settingsServiceProvider.overrideWithValue(settings),
-        localAuthProvider.overrideWith((ref) => auth),
         activeAccountTransactionsProvider.overrideWith(
           (ref, filter) => AsyncValue.data(CombinedTransactionsList.empty),
         ),
@@ -52,38 +46,17 @@ void main() {
 
   testWidgets('home actions show receive and send, and swap per the flag', (tester) async {
     final settings = FakeSettingsService(activeAccount: RegularAccount(makeAccount(1)));
-    final auth = TestLocalAuthController(authenticated: true);
-    await pumpHome(tester, settings: settings, auth: auth);
+    await pumpHome(tester, settings: settings);
 
     expect(find.text('Receive'), findsOneWidget);
     expect(find.text('Send'), findsOneWidget);
     expect(find.text('Swap'), AppConstants.showSwapButton ? findsOneWidget : findsNothing);
   });
 
-  testWidgets('intent arriving while locked stays queued and drains on unlock', (tester) async {
-    final settings = FakeSettingsService(activeAccount: RegularAccount(makeAccount(1)));
-    final auth = TestLocalAuthController(authenticated: false);
-    final container = await pumpHome(tester, settings: settings, auth: auth);
-
-    container.read(proposalIntentProvider.notifier).state = const ProposalIntent(
-      multisigAddress: 'unknown-msig',
-      proposalId: 1,
-    );
-    await tester.pump();
-    expect(container.read(proposalIntentProvider), isNotNull);
-
-    auth.setAuthenticated(true);
-    await tester.pump();
-    expect(container.read(proposalIntentProvider), isNull);
-  });
-
-  testWidgets('payment intent queued while locked opens the send flow bound to the active account on unlock', (
-    tester,
-  ) async {
+  testWidgets('payment intent opens the send flow bound to the active account', (tester) async {
     final active = makeAccount(1);
     final settings = FakeSettingsService(activeAccount: RegularAccount(active));
-    final auth = TestLocalAuthController(authenticated: false);
-    final container = await pumpHome(tester, settings: settings, auth: auth);
+    final container = await pumpHome(tester, settings: settings);
 
     // A cached QR from an earlier flow must not survive into the new session.
     container
@@ -100,11 +73,6 @@ void main() {
 
     container.read(paymentIntentProvider.notifier).state = PaymentIntent(to: makeAccount(9).accountId, amount: '1.5');
     await tester.pump();
-    expect(find.byType(InputAmountScreen), findsNothing);
-    expect(container.read(paymentIntentProvider), isNotNull);
-
-    auth.setAuthenticated(true);
-    await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
 
     expect(container.read(paymentIntentProvider), isNull);
@@ -115,31 +83,9 @@ void main() {
     expect(container.read(keystoneSignCacheProvider), isNull);
   });
 
-  testWidgets('payment intent stays queued until the visual lock clears', (tester) async {
-    final active = makeAccount(1);
-    final settings = FakeSettingsService(activeAccount: RegularAccount(active));
-    final auth = TestLocalAuthController(authenticated: true)..setVisuallyLocked(true);
-    final container = await pumpHome(tester, settings: settings, auth: auth);
-
-    container.read(paymentIntentProvider.notifier).state = PaymentIntent(to: makeAccount(9).accountId, amount: '1.5');
-    await tester.pump();
-
-    expect(container.read(paymentIntentProvider), isNotNull);
-    expect(find.byType(InputAmountScreen), findsNothing);
-
-    auth.setVisuallyLocked(false);
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 400));
-
-    expect(container.read(paymentIntentProvider), isNull);
-    expect(find.byType(InputAmountScreen), findsOneWidget);
-    expect(container.read(sendFlowActiveProvider), isTrue);
-  });
-
   testWidgets('intent arriving during a send flow is dropped', (tester) async {
     final settings = FakeSettingsService(activeAccount: RegularAccount(makeAccount(1)));
-    final auth = TestLocalAuthController(authenticated: true);
-    final container = await pumpHome(tester, settings: settings, auth: auth);
+    final container = await pumpHome(tester, settings: settings);
 
     container.read(paymentIntentProvider.notifier).state = PaymentIntent(to: makeAccount(9).accountId, amount: '1.5');
     await tester.pump();

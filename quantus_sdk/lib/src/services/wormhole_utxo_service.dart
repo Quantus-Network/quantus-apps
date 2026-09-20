@@ -4,11 +4,11 @@ import 'dart:typed_data';
 
 import 'package:convert/convert.dart';
 import 'package:flutter/foundation.dart' show protected, visibleForTesting;
-import 'package:path_provider/path_provider.dart';
 import 'package:quantus_sdk/src/rust/api/wormhole.dart' as wormhole_ffi;
 import 'package:quantus_sdk/src/services/hd_wallet_service.dart';
 import 'package:quantus_sdk/src/services/network/redundant_endpoint.dart';
 import 'package:quantus_sdk/src/services/substrate_service.dart';
+import 'package:quantus_sdk/src/utils/app_support_files.dart';
 import 'package:quantus_sdk/src/utils/print.dart';
 
 class WormholeTransfer {
@@ -78,26 +78,20 @@ class WormholeTransferCursor {
 }
 
 /// One HD-derived wormhole address (index in the wormhole derivation sequence,
-/// with [isChange] selecting the change branch of the derivation path) together
-/// with the secret needed to compute nullifiers and spend proofs.
-///
-/// [secretHex] is required on input to [WormholeUtxoService.getUnspentUtxos]
-/// (nullifier computation) but is always blanked on the [WormholeUtxo.owner]
-/// of returned UTXOs: UTXOs are kept in long-lived app state, and secrets are
-/// never cached — spenders re-derive from [index]/[isChange] when needed (M11).
+/// with [isChange] selecting the change branch of the derivation path). Carries
+/// no secret: UTXOs are kept in long-lived app state, and spenders re-derive
+/// from [index]/[isChange] when needed (M11).
 class WormholeAddressInfo {
   final int index;
   final bool isChange;
   final String address;
-  final String secretHex;
 
-  const WormholeAddressInfo({
-    required this.index,
-    this.isChange = false,
-    required this.address,
-    required this.secretHex,
-  });
+  const WormholeAddressInfo({required this.index, this.isChange = false, required this.address});
 }
+
+/// Nullifier of the [transferCount]-th transfer to [owner]. Needs the owner's
+/// secret, so the caller decides when the seed is read.
+typedef NullifierResolver = Future<String> Function(WormholeAddressInfo owner, BigInt transferCount);
 
 /// An unspent wormhole transfer together with the address that owns it.
 class WormholeUtxo {
@@ -256,13 +250,8 @@ $_transferSelection
     '^wormhole_(cache|nullifiers)_v${cacheVersion}_[0-9a-fA-F]{$_idLength}_[0-9a-fA-F]{$_idLength}\\.json\$',
   );
 
-  static String _fileName(FileSystemEntity entity) =>
-      entity.uri.pathSegments.isEmpty ? entity.path : entity.uri.pathSegments.last;
-
-  Future<File> _cacheFile(String kind, String addressHash) async {
-    final dir = await getApplicationSupportDirectory();
-    return File('${dir.path}/${_cacheName(kind, await networkId(), _cachePrefix(addressHash))}');
-  }
+  Future<File> _cacheFile(String kind, String addressHash) async =>
+      appSupportFile(_cacheName(kind, await networkId(), _cachePrefix(addressHash)));
 
   /// Deletes every cache file of [addressHash] from an earlier generation.
   /// Current-generation files of other networks stay, so switching chains
@@ -271,16 +260,10 @@ $_transferSelection
   static Future<void> deleteStaleCaches(String addressHash) async {
     try {
       final prefix = _cachePrefix(addressHash);
-      final dir = await getApplicationSupportDirectory();
-      if (!await dir.exists()) return;
-      await for (final entity in dir.list()) {
-        if (entity is! File) continue;
-        final name = _fileName(entity);
-        if (_isCacheFileFor(name, prefix) && !_currentGeneration.hasMatch(name)) {
-          await entity.delete();
-          _log('Deleted stale cache: $name');
-        }
-      }
+      final deleted = await deleteAppSupportFiles(
+        (name) => _isCacheFileFor(name, prefix) && !_currentGeneration.hasMatch(name),
+      );
+      if (deleted > 0) _log('Deleted $deleted stale cache file(s) for $prefix');
     } catch (e) {
       _log('Stale cache delete failed (non-fatal): $e');
     }
@@ -341,17 +324,7 @@ $_transferSelection
   static Future<void> clearCachesForAddresses(List<String> addresses) async {
     try {
       final prefixes = addresses.map((a) => _cachePrefix(_addressHashOf(a))).toSet();
-      final dir = await getApplicationSupportDirectory();
-      if (!await dir.exists()) return;
-      var deleted = 0;
-      await for (final entity in dir.list()) {
-        if (entity is! File) continue;
-        final name = _fileName(entity);
-        if (prefixes.any((p) => _isCacheFileFor(name, p))) {
-          await entity.delete();
-          deleted++;
-        }
-      }
+      final deleted = await deleteAppSupportFiles((name) => prefixes.any((p) => _isCacheFileFor(name, p)));
       _log('clearCachesForAddresses: deleted $deleted file(s) for ${addresses.length} addresses');
     } catch (e) {
       _log('clearCachesForAddresses failed (non-fatal): $e');
@@ -362,17 +335,9 @@ $_transferSelection
   /// so a new wallet never reuses another wallet's UTXO discovery state.
   static Future<void> clearAllCaches() async {
     try {
-      final dir = await getApplicationSupportDirectory();
-      if (!await dir.exists()) return;
-      var deleted = 0;
-      await for (final entity in dir.list()) {
-        if (entity is! File) continue;
-        final name = _fileName(entity);
-        if (name.startsWith('wormhole_cache_') || name.startsWith('wormhole_nullifiers')) {
-          await entity.delete();
-          deleted++;
-        }
-      }
+      final deleted = await deleteAppSupportFiles(
+        (name) => name.startsWith('wormhole_cache_') || name.startsWith('wormhole_nullifiers'),
+      );
       _log('clearAllCaches: deleted $deleted file(s)');
     } catch (e) {
       _log('clearAllCaches failed (non-fatal): $e');
@@ -678,6 +643,7 @@ query SpentNullifiers($hashes: [String!]!) {
   /// received and spent amounts across all addresses.
   Future<WormholeUtxoResult> getUnspentUtxos({
     required List<WormholeAddressInfo> addresses,
+    required NullifierResolver nullifierFor,
     WormholeProgressCallback? onProgress,
     IsCancelledCallback? isCancelled,
   }) async {
@@ -708,7 +674,6 @@ query SpentNullifiers($hashes: [String!]!) {
       }
     }
 
-    final hdWalletService = HdWalletService();
     final uncheckedPairs = <(String, String)>[];
     final nullifierToUtxo = <String, WormholeUtxo>{};
     final cachedSpentByOwner = <String, Set<String>>{};
@@ -724,23 +689,8 @@ query SpentNullifiers($hashes: [String!]!) {
 
       for (final transfer in fetched.byAddress[owner.address]!) {
         _throwIfCancelled(isCancelled);
-        final nullifierHex = hdWalletService.computeNullifier(
-          secretHex: owner.secretHex,
-          transferCount: transfer.transferCount,
-        );
-        // The secret is used only for the nullifier above — the returned UTXO
-        // carries a blanked owner so no secret is retained in app state (M11).
-        final redactedOwner = WormholeAddressInfo(
-          index: owner.index,
-          isChange: owner.isChange,
-          address: owner.address,
-          secretHex: '',
-        );
-        nullifierToUtxo[nullifierHex] = WormholeUtxo(
-          transfer: transfer,
-          owner: redactedOwner,
-          nullifierHex: nullifierHex,
-        );
+        final nullifierHex = await nullifierFor(owner, transfer.transferCount);
+        nullifierToUtxo[nullifierHex] = WormholeUtxo(transfer: transfer, owner: owner, nullifierHex: nullifierHex);
         if (cachedSpent.contains(nullifierHex)) {
           skipped++;
         } else {
@@ -802,7 +752,9 @@ query SpentNullifiers($hashes: [String!]!) {
     IsCancelledCallback? isCancelled,
   }) async {
     final result = await getUnspentUtxos(
-      addresses: [WormholeAddressInfo(index: 0, address: wormholeAddress, secretHex: secretHex)],
+      addresses: [WormholeAddressInfo(index: 0, address: wormholeAddress)],
+      nullifierFor: (_, transferCount) async =>
+          HdWalletService().computeNullifier(secretHex: secretHex, transferCount: transferCount),
       onProgress: onProgress,
       isCancelled: isCancelled,
     );

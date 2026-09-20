@@ -7,7 +7,6 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
-import 'package:resonance_network_wallet/services/local_auth_service.dart';
 import 'package:resonance_network_wallet/services/transaction_submission_service.dart';
 import 'package:resonance_network_wallet/shared/utils/account_utils.dart';
 import 'package:resonance_network_wallet/shared/utils/print.dart';
@@ -205,9 +204,6 @@ class RegularSendStrategy extends SendStrategy {
       );
     }
 
-    final authed = await LocalAuthService().authenticate(localizedReason: l10n.sendReviewAuthReason);
-    if (!authed) return SendFailed(l10n.sendReviewAuthRequired);
-
     try {
       final hash = await ref
           .read(transactionSubmissionServiceProvider)
@@ -218,6 +214,8 @@ class RegularSendStrategy extends SendStrategy {
             .catchError((Object e) => quantusPrint('Failed to save recent address: $e')),
       );
       return SendSubmitted(terminal.copyWith(explorerUrl: explorerImmediateTransactionUrl(hash)));
+    } on SeedAccessCancelled {
+      return SendFailed(l10n.sendReviewAuthRequired);
     } catch (e) {
       quantusPrint('Transfer failed: $e');
       return SendFailed(l10n.sendReviewSubmitFailed);

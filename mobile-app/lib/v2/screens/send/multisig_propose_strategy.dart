@@ -9,7 +9,6 @@ import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/multisig_providers.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
-import 'package:resonance_network_wallet/services/local_auth_service.dart';
 import 'package:resonance_network_wallet/services/transaction_submission_service.dart';
 import 'package:resonance_network_wallet/shared/utils/account_utils.dart';
 import 'package:resonance_network_wallet/shared/utils/print.dart';
@@ -277,9 +276,6 @@ class MultisigProposeStrategy extends SendStrategy {
       );
     }
 
-    final authed = await LocalAuthService().authenticate(localizedReason: l10n.multisigProposeAuthReason);
-    if (!authed) return SendFailed(l10n.multisigProposeAuthRequired);
-
     try {
       await ref
           .read(transactionSubmissionServiceProvider)
@@ -293,6 +289,8 @@ class MultisigProposeStrategy extends SendStrategy {
           );
       _afterProposed(ref, recipient);
       return SendSubmitted(terminal);
+    } on SeedAccessCancelled {
+      return SendFailed(l10n.multisigProposeAuthRequired);
     } catch (e, st) {
       quantusPrint('Propose submit error: $e $st');
       return SendFailed(l10n.multisigProposeSubmitFailed);

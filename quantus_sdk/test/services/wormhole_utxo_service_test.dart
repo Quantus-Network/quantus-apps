@@ -67,7 +67,7 @@ void main() {
     await tempDir.delete(recursive: true);
   });
 
-  test('getUnspentUtxos blanks owner secretHex on every returned UTXO (M11)', () async {
+  test('getUnspentUtxos takes nullifiers from the resolver and keeps owners secret-free', () async {
     final hd = HdWalletService();
     final pairs = [for (var i = 0; i < 2; i++) hd.deriveWormholeKeyPair(mnemonic: _mnemonic, index: i)];
     final changePair = hd.deriveWormholeChangeAddressKeyPair(mnemonic: _mnemonic);
@@ -77,20 +77,29 @@ void main() {
         pairs[1].address: [_transfer(toId: pairs[1].address, count: 2)],
         changePair.address: [_transfer(toId: changePair.address, count: 3)],
       };
+    WormholeKeyPair pairOf(WormholeAddressInfo owner) => owner.isChange ? changePair : pairs[owner.index];
+    final resolved = <String>[];
 
     final result = await service.getUnspentUtxos(
       addresses: [
-        for (var i = 0; i < 2; i++)
-          WormholeAddressInfo(index: i, address: pairs[i].address, secretHex: pairs[i].secretHex),
-        WormholeAddressInfo(index: 0, isChange: true, address: changePair.address, secretHex: changePair.secretHex),
+        for (var i = 0; i < 2; i++) WormholeAddressInfo(index: i, address: pairs[i].address),
+        WormholeAddressInfo(index: 0, isChange: true, address: changePair.address),
       ],
+      nullifierFor: (owner, transferCount) async {
+        resolved.add('${owner.address}:$transferCount');
+        return hd.computeNullifier(secretHex: pairOf(owner).secretHex, transferCount: transferCount);
+      },
     );
 
     expect(result.utxos, hasLength(3));
+    expect(resolved, hasLength(3));
     for (final utxo in result.utxos) {
-      expect(utxo.owner.secretHex, isEmpty);
+      expect(
+        utxo.nullifierHex,
+        hd.computeNullifier(secretHex: pairOf(utxo.owner).secretHex, transferCount: utxo.transfer.transferCount),
+      );
     }
-    // Index, branch and address survive the redaction so spenders can re-derive.
+    // Index, branch and address survive so spenders can re-derive.
     expect(result.utxos.map((u) => u.owner.address).toSet(), {pairs[0].address, pairs[1].address, changePair.address});
     final changeUtxo = result.utxos.singleWhere((u) => u.owner.address == changePair.address);
     expect(changeUtxo.owner.isChange, isTrue);

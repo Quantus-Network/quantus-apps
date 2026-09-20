@@ -7,10 +7,7 @@ import 'package:resonance_network_wallet/services/mainnet_migration_service.dart
 import 'package:resonance_network_wallet/shared/utils/print.dart';
 
 final mainnetMigrationServiceProvider = Provider<MainnetMigrationService>(
-  (ref) => MainnetMigrationService(
-    settings: ref.watch(settingsServiceProvider),
-    hdWallet: ref.watch(hdWalletServiceProvider),
-  ),
+  (ref) => MainnetMigrationService(settings: ref.watch(settingsServiceProvider)),
 );
 
 /// Debug builds show the notice on every launch; its checking page then picks

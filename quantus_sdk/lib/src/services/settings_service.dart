@@ -1,6 +1,5 @@
 import 'dart:convert';
 
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:quantus_sdk/src/extensions/dilithium_scheme_extension.dart';
 import 'package:quantus_sdk/src/models/account.dart';
 import 'package:quantus_sdk/src/models/airdrop_claim_record.dart';
@@ -8,6 +7,8 @@ import 'package:quantus_sdk/src/models/display_account.dart';
 import 'package:quantus_sdk/src/models/multisig_account.dart';
 import 'package:quantus_sdk/src/rust/api/crypto.dart';
 import 'package:quantus_sdk/src/services/hd_wallet_service.dart';
+import 'package:quantus_sdk/src/services/seed_vault.dart';
+import 'package:quantus_sdk/src/services/wormhole_address_book.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SettingsService {
@@ -16,10 +17,7 @@ class SettingsService {
   SettingsService._internal();
 
   late SharedPreferences _prefs;
-  final _secureStorage = const FlutterSecureStorage(
-    iOptions: IOSOptions(accessibility: KeychainAccessibility.unlocked_this_device),
-    mOptions: MacOsOptions(usesDataProtectionKeychain: false),
-  );
+  late SeedVault _seedVault;
 
   // New keys for multi-account support
   static const String _accountsKey = 'accounts_v5';
@@ -41,29 +39,9 @@ class SettingsService {
   static const String existingUserSeenPromoVideoKey = 'existing_user_seen_promo_video';
   static const String mainnetMigrationDoneKey = 'mainnet_migration_done';
 
-  static const _legacyStorage = FlutterSecureStorage(mOptions: MacOsOptions(usesDataProtectionKeychain: false));
-  static const _migratedKeychainKey = 'keychain_migrated_to_this_device';
-  bool _keychainMigrated = false;
-
   Future<void> initialize() async {
     _prefs = await SharedPreferences.getInstance();
-    _keychainMigrated = _prefs.getBool(_migratedKeychainKey) == true;
-  }
-
-  Future<void> _ensureKeychainMigrated() async {
-    if (_keychainMigrated) return;
-    _keychainMigrated = true;
-    try {
-      for (int i = 0; i < 10; i++) {
-        final key = getMnemonicKey(i);
-        final value = await _legacyStorage.read(key: key);
-        if (value != null) {
-          await _legacyStorage.delete(key: key);
-          await _secureStorage.write(key: key, value: value);
-        }
-      }
-    } catch (_) {}
-    await _prefs.setBool(_migratedKeychainKey, true);
+    _seedVault = SeedVault(_prefs);
   }
 
   // --- Multi-Account Methods ---
@@ -360,21 +338,39 @@ class SettingsService {
     return accounts.isEmpty;
   }
 
-  String getMnemonicKey(int walletIndex) => walletIndex == 0 ? 'mnemonic' : 'mnemonic_$walletIndex';
-
-  // Mnemonic Settings - Using secure storage
+  /// Stores the phrase and derives the wallet's wormhole address book while
+  /// the phrase is in hand, so later address lookups never need the seed.
   Future<void> setMnemonic(String mnemonic, int walletIndex) async {
-    await _ensureKeychainMigrated();
-    await _secureStorage.write(key: getMnemonicKey(walletIndex), value: mnemonic);
+    await _seedVault.store(mnemonic, walletIndex);
+    if (!HdWalletService.isDevAccount(mnemonic)) await WormholeAddressBook().build(walletIndex, mnemonic);
   }
 
-  Future<String?> getMnemonic(int walletIndex) async {
-    await _ensureKeychainMigrated();
-    return await _secureStorage.read(key: getMnemonicKey(walletIndex));
-  }
+  /// Reads the phrase. On a device with a lock this shows the system prompt
+  /// (Face ID, Touch ID, fingerprint or passcode) and throws
+  /// [SeedAccessCancelled] when the user dismisses it.
+  Future<String?> getMnemonic(int walletIndex) => _seedVault.read(walletIndex);
+
+  Future<bool> hasMnemonic(int walletIndex) => _seedVault.exists(walletIndex);
+
+  /// True while the seed store's system prompt may be on screen.
+  bool get seedAccessInProgress => _seedVault.promptInProgress;
 
   Future<void> deleteMnemonic(int walletIndex) async {
-    await _secureStorage.delete(key: getMnemonicKey(walletIndex));
+    await _seedVault.delete(walletIndex);
+    await WormholeAddressBook().delete(walletIndex);
+  }
+
+  /// Moves phrases stored before user-presence protection existed into the
+  /// protected store. Call at startup; a cancelled prompt leaves the phrase
+  /// where it is until the next launch.
+  Future<void> protectStoredSeeds() async {
+    final walletIndexes = (await getAccounts()).map((a) => a.walletIndex).toSet();
+    await _seedVault.protectStoredSeeds(
+      walletIndexes,
+      beforeMove: (walletIndex, mnemonic) async {
+        if (!HdWalletService.isDevAccount(mnemonic)) await WormholeAddressBook().ensureBuilt(walletIndex, mnemonic);
+      },
+    );
   }
 
   // Reversible Transaction Settings
@@ -474,8 +470,9 @@ class SettingsService {
 
   // Clear all settings
   Future<void> clearAll() async {
+    await _seedVault.deleteAll();
+    await WormholeAddressBook().deleteAll();
     await _prefs.clear();
-    await _secureStorage.deleteAll();
   }
 
   bool referralCheckCompleted() {
