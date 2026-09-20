@@ -1,272 +1,209 @@
 import 'dart:convert';
-import 'dart:math';
 
-import 'package:collection/collection.dart';
 import 'package:http/http.dart' as http;
 import 'package:quantus_sdk/src/constants/app_constants.dart';
+import 'package:quantus_sdk/src/models/swap_order.dart';
+import 'package:quantus_sdk/src/models/swap_quote.dart';
+import 'package:quantus_sdk/src/models/swap_token.dart';
+import 'package:quantus_sdk/src/utils/print.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-enum SwapStatus { pending, depositing, processing, complete, failed, expired }
+/// 1Click answered [statusCode] with [message].
+class SwapApiException implements Exception {
+  final int statusCode;
+  final String message;
 
-class SwapToken {
-  final String symbol;
-  final String name;
-  final String network;
-  final int decimals;
-  final String? iconUrl;
-  final String? networkIconUrl;
-
-  const SwapToken({
-    required this.symbol,
-    required this.name,
-    required this.network,
-    this.decimals = 18,
-    this.iconUrl,
-    this.networkIconUrl,
-  });
+  const SwapApiException(this.statusCode, this.message);
 
   @override
-  bool operator ==(Object other) => other is SwapToken && symbol == other.symbol && network == other.network;
-
-  @override
-  int get hashCode => Object.hash(symbol, network);
+  String toString() => 'SwapApiException($statusCode): $message';
 }
 
-class SwapQuote {
-  final String quoteId;
-  final SwapToken fromToken;
-  final SwapToken toToken;
-  final double fromAmount;
-  final double toAmount;
-  final double rate;
-  final double networkFee;
-  final double totalAmount;
-  final double slippageTolerance;
-  final Duration expiresIn;
-
-  const SwapQuote({
-    required this.quoteId,
-    required this.fromToken,
-    required this.toToken,
-    required this.fromAmount,
-    required this.toAmount,
-    required this.rate,
-    required this.networkFee,
-    required this.totalAmount,
-    required this.slippageTolerance,
-    required this.expiresIn,
-  });
-}
-
-class SwapOrder {
-  final String orderId;
-  final SwapQuote quote;
-  final String depositAddress;
-  final SwapStatus status;
-  final DateTime createdAt;
-
-  const SwapOrder({
-    required this.orderId,
-    required this.quote,
-    required this.depositAddress,
-    required this.status,
-    required this.createdAt,
-  });
-
-  SwapOrder copyWith({SwapStatus? status}) => SwapOrder(
-    orderId: orderId,
-    quote: quote,
-    depositAddress: depositAddress,
-    status: status ?? this.status,
-    createdAt: createdAt,
-  );
-}
-
+/// Client for the NEAR Intents 1Click API. A quote names a deposit address on
+/// the origin chain; whatever the user sends there before the deadline is
+/// swapped by solvers and paid out to the recipient, or refunded. Nothing in
+/// the app ever holds or signs the swapped funds.
 class SwapService {
-  static final SwapService _instance = SwapService._();
-  factory SwapService() => _instance;
-  SwapService._();
-
+  static const defaultSlippageBps = 100;
+  static const depositWindow = Duration(minutes: 20);
+  static const quoteWaitingTime = Duration(seconds: 3);
+  static const statusPollInterval = Duration(seconds: 5);
   static const _refundAddressKey = 'recent_refund_addresses';
   static const _maxRefundAddresses = 50;
-  static const _intentsTokensUrl = 'https://1click.chaindefuser.com/v0/tokens';
   static const _coinGeckoTopUrl =
       'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=150&page=1&sparkline=false';
   static const _tokensCacheTtl = Duration(minutes: 10);
-  final _orders = <String, SwapOrder>{};
+
+  final http.Client _client;
+  final Uri _base;
+  final String? _apiKey;
   List<SwapToken>? _cachedFromTokens;
   DateTime? _cachedFromTokensAt;
-  Map<String, double> _liveUsdPriceBySymbol = {};
 
-  static const availableTokens = [
-    SwapToken(symbol: 'USDC', name: 'USD Coin', network: 'Ethereum'),
-    SwapToken(symbol: 'USDT', name: 'Tether', network: 'Ethereum'),
-    SwapToken(symbol: 'ETH', name: 'Ethereum', network: 'Ethereum'),
-    SwapToken(symbol: 'BTC', name: 'Bitcoin', network: 'Bitcoin', decimals: 8),
-    SwapToken(symbol: 'SOL', name: 'Solana', network: 'Solana', decimals: 9),
-    _quToken,
-  ];
+  SwapService({http.Client? client, String endpoint = AppConstants.oneClickEndpoint, String? apiKey})
+    : _client = client ?? http.Client(),
+      _base = Uri.parse(endpoint),
+      _apiKey = apiKey;
 
-  static const _quToken = SwapToken(symbol: AppConstants.tokenSymbol, name: 'Quantus', network: 'Quantus');
+  static SwapToken quantusToken({required double usdPrice}) => SwapToken(
+    assetId: AppConstants.quantusIntentsAssetId,
+    symbol: AppConstants.tokenSymbol,
+    network: 'Quantus',
+    decimals: AppConstants.decimals,
+    usdPrice: usdPrice,
+  );
 
   Future<List<SwapToken>> getFromTokens({int limit = 10, bool forceRefresh = false}) async {
     final now = DateTime.now();
-    if (!forceRefresh &&
-        _cachedFromTokens != null &&
-        _cachedFromTokensAt != null &&
-        now.difference(_cachedFromTokensAt!) < _tokensCacheTtl) {
-      return _cachedFromTokens!.take(limit).toList();
+    final cached = _cachedFromTokens;
+    if (!forceRefresh && cached != null && now.difference(_cachedFromTokensAt!) < _tokensCacheTtl) {
+      return cached.take(limit).toList();
     }
-
-    try {
-      final intentTokens = await _fetchNearIntentsTokens();
-      if (intentTokens.isNotEmpty) {
-        final ranked = await _rankByCoinGecko(intentTokens);
-        _cachedFromTokens = ranked;
-        _cachedFromTokensAt = now;
-        _liveUsdPriceBySymbol = {for (final token in ranked) token.symbol.toUpperCase(): token.price};
-        return ranked.take(limit).toList();
-      }
-    } catch (_) {}
-
-    final fallback = availableTokens.where((t) => t.symbol != AppConstants.tokenSymbol).take(limit).toList();
-    _cachedFromTokens = fallback;
+    final tokens = await _rankByCoinGecko(await _fetchIntentsTokens());
+    _cachedFromTokens = tokens;
     _cachedFromTokensAt = now;
-    return fallback;
+    return tokens.take(limit).toList();
   }
 
-  SwapToken getQuToken() => _quToken;
-
-  static String formatTokenAmount(double amount, SwapToken token) {
-    if (amount == 0) return '0';
-    final decimals = token.decimals.clamp(0, 12);
-    var s = amount.toStringAsFixed(decimals).replaceAll(RegExp(r'0+$'), '');
-    if (s.endsWith('.')) s = s.substring(0, s.length - 1);
-    return s;
+  /// Asks solvers for a price on [amount] base units of [from]. A dry quote is
+  /// a preview; a live one reserves a deposit address until its deadline.
+  Future<SwapQuote> getQuote({
+    required SwapToken from,
+    required SwapToken to,
+    required BigInt amount,
+    required String refundAddress,
+    required String recipient,
+    int slippageBps = defaultSlippageBps,
+    bool dry = true,
+  }) async {
+    final json = await _send(
+      'POST',
+      '/v0/quote',
+      body: {
+        'dry': dry,
+        'swapType': 'EXACT_INPUT',
+        'slippageTolerance': slippageBps,
+        'originAsset': from.assetId,
+        'depositType': 'ORIGIN_CHAIN',
+        'destinationAsset': to.assetId,
+        'amount': amount.toString(),
+        'refundTo': refundAddress,
+        'refundType': 'ORIGIN_CHAIN',
+        'recipient': recipient,
+        'recipientType': 'DESTINATION_CHAIN',
+        'deadline': DateTime.now().toUtc().add(depositWindow).toIso8601String(),
+        'quoteWaitingTimeMs': quoteWaitingTime.inMilliseconds,
+      },
+    );
+    return SwapQuote.fromJson(json as Map<String, dynamic>, fromToken: from, toToken: to);
   }
 
-  static String formatTokenAmountHint(SwapToken token) {
-    if (token.decimals == 0) return '0';
-    return '0.${'0' * token.decimals.clamp(1, 8)}';
+  /// Re-quotes [quote] live so 1Click reserves a deposit address for it.
+  Future<SwapOrder> createSwap(SwapQuote quote) async {
+    final live = await getQuote(
+      from: quote.fromToken,
+      to: quote.toToken,
+      amount: quote.amountIn,
+      refundAddress: quote.refundAddress,
+      recipient: quote.recipient,
+      slippageBps: quote.slippageBps,
+      dry: false,
+    );
+    if (live.depositAddress == null) throw StateError('Live quote ${live.correlationId} has no deposit address');
+    return SwapOrder(quote: live, status: SwapStatus.pendingDeposit);
   }
 
-  String? getTokenIconUrl(SwapToken token) {
-    final cached = _cachedFromTokens?.where((t) => t.symbol == token.symbol && t.network == token.network).firstOrNull;
-    if (cached?.iconUrl != null && cached!.iconUrl!.isNotEmpty) return cached.iconUrl;
-    return _fallbackTokenIconUrl(token.symbol);
+  Future<SwapOrder> getSwapStatus(SwapOrder order) async {
+    final memo = order.quote.depositMemo;
+    final json = await _send(
+      'GET',
+      '/v0/status',
+      query: {'depositAddress': order.depositAddress, 'depositMemo': ?memo},
+    );
+    return SwapOrder.fromStatusJson(json as Map<String, dynamic>, quote: order.quote);
   }
 
-  String? getNetworkIconUrl(SwapToken token) {
-    final cached = _cachedFromTokens?.where((t) => t.symbol == token.symbol && t.network == token.network).firstOrNull;
-    if (cached?.networkIconUrl != null && cached!.networkIconUrl!.isNotEmpty) return cached.networkIconUrl;
-    return _networkIconUrl(token.network);
-  }
-
-  double getRate(SwapToken from) {
-    final fromUsd = getUsdPrice(from);
-    final toUsd = getUsdPrice(_quToken);
-    if (fromUsd <= 0 || toUsd <= 0) return 1.0;
-    return fromUsd / toUsd;
-  }
-
-  double getUsdPrice(SwapToken token) {
-    final livePrice = _liveUsdPriceBySymbol[token.symbol.toUpperCase()];
-    if (livePrice != null && livePrice > 0) return livePrice;
-    switch (token.symbol.toUpperCase()) {
-      case 'USDC':
-      case 'USDT':
-        return 1.0;
-      case 'ETH':
-        return 2500.0;
-      case 'BTC':
-        return 60000.0;
-      case 'SOL':
-        return 150.0;
-      case AppConstants.tokenSymbol:
-        return 1.0;
-      default:
-        return 0.0;
+  Future<Object?> _send(String method, String path, {Map<String, Object>? body, Map<String, String>? query}) async {
+    final uri = _base.replace(path: path, queryParameters: query);
+    final headers = {'Content-Type': 'application/json', 'X-API-Key': ?_apiKey};
+    final response = method == 'GET'
+        ? await _client.get(uri, headers: headers)
+        : await _client.post(uri, headers: headers, body: jsonEncode(body));
+    final ok = response.statusCode >= 200 && response.statusCode < 300;
+    Object? json;
+    try {
+      json = jsonDecode(response.body);
+    } on FormatException {
+      if (ok) rethrow;
     }
+    if (!ok) {
+      final message = json is Map ? json['message'] : null;
+      throw SwapApiException(response.statusCode, switch (message) {
+        String s => s,
+        List l => l.join(', '),
+        _ => response.body,
+      });
+    }
+    return json;
   }
 
-  Future<List<_IntentToken>> _fetchNearIntentsTokens() async {
-    final response = await http.get(Uri.parse(_intentsTokensUrl));
-    if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw Exception('Failed to fetch intents tokens');
-    }
-    final data = jsonDecode(response.body);
-    if (data is! List) return const [];
-
-    final bySymbol = <String, _IntentToken>{};
-    for (final item in data) {
-      if (item is! Map<String, dynamic>) continue;
-      final symbolRaw = item['symbol'];
-      final blockchainRaw = item['blockchain'];
-      final decimalsRaw = item['decimals'];
-      final priceRaw = item['price'];
-      if (symbolRaw is! String || symbolRaw.isEmpty) continue;
-      if (blockchainRaw is! String || blockchainRaw.isEmpty) continue;
-      final symbol = symbolRaw.toUpperCase();
-      if (symbol == AppConstants.tokenSymbol) continue;
-      final price = (priceRaw as num?)?.toDouble() ?? 0;
+  Future<List<SwapToken>> _fetchIntentsTokens() async {
+    final data = await _send('GET', '/v0/tokens') as List<dynamic>;
+    final bySymbol = <String, SwapToken>{};
+    for (final item in data.cast<Map<String, dynamic>>()) {
+      final price = (item['price'] as num?)?.toDouble() ?? 0;
       if (price <= 0) continue;
-      final decimals = (decimalsRaw as num?)?.toInt() ?? 18;
-      final token = _IntentToken(
-        symbol: symbol,
-        network: blockchainRaw.toUpperCase(),
-        decimals: decimals,
-        price: price,
-        networkIconUrl: _networkIconUrl(blockchainRaw.toUpperCase()),
+      final network = (item['blockchain'] as String).toUpperCase();
+      final token = SwapToken(
+        assetId: item['assetId'] as String,
+        symbol: (item['symbol'] as String).toUpperCase(),
+        network: network,
+        decimals: (item['decimals'] as num).toInt(),
+        usdPrice: price,
+        networkIconUrl: _networkIconUrl(network),
       );
-      final existing = bySymbol[symbol];
+      if (token.symbol == AppConstants.tokenSymbol) continue;
+      final existing = bySymbol[token.symbol];
       if (existing == null || _networkPriority(token.network) < _networkPriority(existing.network)) {
-        bySymbol[symbol] = token;
+        bySymbol[token.symbol] = token;
       }
     }
     return bySymbol.values.toList();
   }
 
-  Future<List<_IntentToken>> _rankByCoinGecko(List<_IntentToken> tokens) async {
+  /// Orders [tokens] by CoinGecko market cap and picks up their icons. A
+  /// CoinGecko failure only costs the ordering, so it is logged, not thrown.
+  Future<List<SwapToken>> _rankByCoinGecko(List<SwapToken> tokens) async {
+    final rankBySymbol = <String, int>{};
+    final iconBySymbol = <String, String>{};
     try {
-      final response = await http.get(Uri.parse(_coinGeckoTopUrl));
+      final response = await _client.get(Uri.parse(_coinGeckoTopUrl));
       if (response.statusCode < 200 || response.statusCode >= 300) {
-        return _sortByPrice(tokens);
+        throw SwapApiException(response.statusCode, response.body);
       }
-      final payload = jsonDecode(response.body);
-      if (payload is! List) return _sortByPrice(tokens);
-      final rankBySymbol = <String, int>{};
-      final iconBySymbol = <String, String>{};
+      final payload = jsonDecode(response.body) as List<dynamic>;
       for (var i = 0; i < payload.length; i++) {
-        final item = payload[i];
-        if (item is! Map<String, dynamic>) continue;
-        final symbol = (item['symbol'] as String?)?.toUpperCase();
-        if (symbol == null || symbol.isEmpty || rankBySymbol.containsKey(symbol)) {
-          continue;
-        }
+        final item = payload[i] as Map<String, dynamic>;
+        final symbol = (item['symbol'] as String).toUpperCase();
+        if (rankBySymbol.containsKey(symbol)) continue;
         rankBySymbol[symbol] = i;
         final icon = item['image'] as String?;
         if (icon != null && icon.isNotEmpty) iconBySymbol[symbol] = icon;
       }
-      final ranked = [
-        for (final token in tokens)
-          token.copyWith(iconUrl: iconBySymbol[token.symbol] ?? token.iconUrl ?? _fallbackTokenIconUrl(token.symbol)),
-      ];
-      ranked.sort((a, b) {
-        final ar = rankBySymbol[a.symbol] ?? 99999;
-        final br = rankBySymbol[b.symbol] ?? 99999;
-        if (ar != br) return ar.compareTo(br);
-        return b.price.compareTo(a.price);
-      });
-      return ranked;
-    } catch (_) {
-      return _sortByPrice(tokens);
+    } catch (e) {
+      quantusPrint('CoinGecko ranking failed, sorting swap tokens by price: $e');
     }
-  }
-
-  List<_IntentToken> _sortByPrice(List<_IntentToken> tokens) {
-    final sorted = [...tokens];
-    sorted.sort((a, b) => b.price.compareTo(a.price));
-    return sorted;
+    final ranked = [
+      for (final token in tokens)
+        token.copyWith(iconUrl: iconBySymbol[token.symbol] ?? _fallbackTokenIconUrl(token.symbol)),
+    ];
+    ranked.sort((a, b) {
+      final ar = rankBySymbol[a.symbol] ?? 99999;
+      final br = rankBySymbol[b.symbol] ?? 99999;
+      if (ar != br) return ar.compareTo(br);
+      return b.usdPrice.compareTo(a.usdPrice);
+    });
+    return ranked;
   }
 
   int _networkPriority(String network) {
@@ -334,65 +271,6 @@ class SwapService {
     }
   }
 
-  Future<SwapQuote> getQuote({required SwapToken fromToken, required double fromAmount, double slippage = 0.01}) async {
-    await Future.delayed(const Duration(milliseconds: 500));
-    final rate = getRate(fromToken);
-    final toAmount = fromAmount * rate;
-    final networkFee = fromAmount * 0.005;
-    final totalAmount = fromAmount + networkFee;
-
-    return SwapQuote(
-      quoteId: 'quote_${DateTime.now().millisecondsSinceEpoch}',
-      fromToken: fromToken,
-      toToken: _quToken,
-      fromAmount: fromAmount,
-      toAmount: toAmount,
-      rate: rate,
-      networkFee: networkFee,
-      totalAmount: totalAmount,
-      slippageTolerance: slippage,
-      expiresIn: const Duration(minutes: 5),
-    );
-  }
-
-  Future<SwapOrder> createSwap(SwapQuote quote) async {
-    await Future.delayed(const Duration(milliseconds: 300));
-    final rng = Random();
-    final hex = List.generate(40, (_) => rng.nextInt(16).toRadixString(16)).join();
-    final order = SwapOrder(
-      orderId: 'swap_${DateTime.now().millisecondsSinceEpoch}',
-      quote: quote,
-      depositAddress: '0x$hex',
-      status: SwapStatus.depositing,
-      createdAt: DateTime.now(),
-    );
-    _orders[order.orderId] = order;
-    return order;
-  }
-
-  Future<SwapOrder> getSwapStatus(String orderId) async {
-    await Future.delayed(const Duration(milliseconds: 200));
-    final order = _orders[orderId];
-    if (order == null) throw Exception('Order not found');
-    return order;
-  }
-
-  Future<SwapOrder> confirmFundsSent(String orderId) async {
-    await Future.delayed(const Duration(milliseconds: 300));
-    final order = _orders[orderId];
-    if (order == null) throw Exception('Order not found');
-    final updated = order.copyWith(status: SwapStatus.processing);
-    _orders[orderId] = updated;
-
-    Future.delayed(const Duration(seconds: 5), () {
-      if (_orders.containsKey(orderId)) {
-        _orders[orderId] = _orders[orderId]!.copyWith(status: SwapStatus.complete);
-      }
-    });
-
-    return updated;
-  }
-
   Future<void> addRefundAddress(String network, String address) async {
     final prefs = await SharedPreferences.getInstance();
     final key = '${_refundAddressKey}_${network.toLowerCase()}';
@@ -409,28 +287,5 @@ class SwapService {
     final prefs = await SharedPreferences.getInstance();
     final key = '${_refundAddressKey}_${network.toLowerCase()}';
     return prefs.getStringList(key) ?? [];
-  }
-}
-
-class _IntentToken extends SwapToken {
-  final double price;
-  const _IntentToken({
-    required super.symbol,
-    required super.network,
-    required super.decimals,
-    required this.price,
-    super.iconUrl,
-    super.networkIconUrl,
-  }) : super(name: symbol);
-
-  _IntentToken copyWith({String? iconUrl, String? networkIconUrl}) {
-    return _IntentToken(
-      symbol: symbol,
-      network: network,
-      decimals: decimals,
-      price: price,
-      iconUrl: iconUrl ?? this.iconUrl,
-      networkIconUrl: networkIconUrl ?? this.networkIconUrl,
-    );
   }
 }
