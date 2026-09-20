@@ -3032,29 +3032,47 @@ abstract class AppLocalizations {
   /// **'Failed to load tokens'**
   String get swapTokenPickerLoadError;
 
+  /// Toast when 1Click rejects a quote or a swap cannot be created
+  ///
+  /// In en, this message translates to:
+  /// **'Quote failed: {message}'**
+  String swapQuoteError(String message);
+
   /// Title on review quote sheet
   ///
   /// In en, this message translates to:
   /// **'Review Quote'**
   String get swapReviewTitle;
 
-  /// Total fees row on review quote sheet
+  /// Least amount the quote guarantees, on review quote sheet
   ///
   /// In en, this message translates to:
-  /// **'Total fees'**
-  String get swapReviewTotalFees;
+  /// **'Minimum received'**
+  String get swapReviewMinimumReceived;
 
-  /// Total amount row on review quote sheet
+  /// Row label for how long 1Click expects the swap to take
   ///
   /// In en, this message translates to:
-  /// **'Total Amount'**
-  String get swapReviewTotalAmount;
+  /// **'Estimated time'**
+  String get swapReviewEstimatedTime;
 
-  /// Slippage warning on review quote sheet
+  /// Swap time estimate under a minute
   ///
   /// In en, this message translates to:
-  /// **'You could receive up to \${amount} less based on the {percent}% slippage you set'**
-  String swapReviewSlippageWarning(String amount, String percent);
+  /// **'About {seconds} seconds'**
+  String swapReviewTimeSeconds(int seconds);
+
+  /// Swap time estimate of a minute or more
+  ///
+  /// In en, this message translates to:
+  /// **'About {minutes} minutes'**
+  String swapReviewTimeMinutes(int minutes);
+
+  /// Slippage note on review quote sheet
+  ///
+  /// In en, this message translates to:
+  /// **'The rate locks in when your deposit arrives. With the {percent}% slippage you set, you receive at least the minimum above.'**
+  String swapReviewSlippageWarning(String percent);
 
   /// Confirm button on review quote sheet
   ///
@@ -3074,11 +3092,23 @@ abstract class AppLocalizations {
   /// **'Deposit amount copied to clipboard'**
   String get swapDepositAmountCopied;
 
-  /// Demo warning on deposit screen
+  /// Toast when the deposit address is copied
   ///
   /// In en, this message translates to:
-  /// **'For demo purposes only - do not send funds!'**
-  String get swapDepositDemoWarning;
+  /// **'Deposit address copied to clipboard'**
+  String get swapDepositAddressCopied;
+
+  /// Shown while 1Click has not seen a deposit yet
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for your deposit…'**
+  String get swapDepositWaiting;
+
+  /// Local time by which the deposit must arrive
+  ///
+  /// In en, this message translates to:
+  /// **'Send before {time} or the quote expires'**
+  String swapDepositDeadline(String time);
 
   /// Share QR button on deposit screen
   ///
@@ -3122,23 +3152,65 @@ abstract class AppLocalizations {
   /// **'Your swap for {amount} {tokenSymbol} is complete.'**
   String swapDepositCompleteBody(String amount, String tokenSymbol);
 
-  /// Large banner making clear the swap flow is a demo and nothing is swapped
+  /// Body while 1Click has seen the deposit transaction but not yet confirmed it
   ///
   /// In en, this message translates to:
-  /// **'Demo Only'**
-  String get swapDemoOnly;
+  /// **'Your deposit was seen on {network}. The swap starts once it is confirmed.'**
+  String swapDepositDetectedBody(String network);
 
-  /// Subtitle under the Demo Only banner
+  /// Title when 1Click refunded the deposit
   ///
   /// In en, this message translates to:
-  /// **'No real swap was performed.'**
-  String get swapDemoOnlyBody;
+  /// **'Swap Refunded'**
+  String get swapDepositRefundedTitle;
 
-  /// Button to confirm funds sent
+  /// Body when 1Click refunded the deposit
   ///
   /// In en, this message translates to:
-  /// **'I\'ve sent the funds'**
-  String get swapDepositSentFunds;
+  /// **'The swap did not complete. {amount} {symbol} was returned to your refund address.'**
+  String swapDepositRefundedBody(String amount, String symbol);
+
+  /// Refund reason reported by 1Click
+  ///
+  /// In en, this message translates to:
+  /// **'Reason: {reason}'**
+  String swapDepositRefundReason(String reason);
+
+  /// Title when 1Click reports the swap failed
+  ///
+  /// In en, this message translates to:
+  /// **'Swap Failed'**
+  String get swapDepositFailedTitle;
+
+  /// Body when 1Click reports the swap failed
+  ///
+  /// In en, this message translates to:
+  /// **'The swap did not complete. Contact support and quote this deposit address: {address}'**
+  String swapDepositFailedBody(String address);
+
+  /// Title when less than the quoted amount arrived
+  ///
+  /// In en, this message translates to:
+  /// **'Deposit Too Small'**
+  String get swapDepositIncompleteTitle;
+
+  /// Body when less than the quoted amount arrived
+  ///
+  /// In en, this message translates to:
+  /// **'Less than the quoted amount arrived. It will be refunded to your refund address after the deadline.'**
+  String get swapDepositIncompleteBody;
+
+  /// Title when the deadline passed with no deposit
+  ///
+  /// In en, this message translates to:
+  /// **'Quote Expired'**
+  String get swapDepositExpiredTitle;
+
+  /// Body when the deadline passed with no deposit
+  ///
+  /// In en, this message translates to:
+  /// **'No deposit arrived before the deadline. Do not send funds to this address anymore. Get a new quote to try again.'**
+  String get swapDepositExpiredBody;
 
   /// Done button after swap completes
   ///

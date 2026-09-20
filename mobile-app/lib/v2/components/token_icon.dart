@@ -12,9 +12,8 @@ class TokenIcon extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.colorsV3;
     final text = context.themeTextV3;
-    final swapService = SwapService();
-    final iconUrl = token.iconUrl ?? swapService.getTokenIconUrl(token);
-    final networkIconUrl = token.networkIconUrl ?? swapService.getNetworkIconUrl(token);
+    final iconUrl = token.iconUrl;
+    final networkIconUrl = token.networkIconUrl;
 
     return SizedBox(
       width: size,

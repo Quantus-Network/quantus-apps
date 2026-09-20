@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
+import 'package:resonance_network_wallet/v2/screens/swap/swap_providers.dart';
 
 Future<String?> showRefundAddressPickerSheet(BuildContext context, String network) {
   return BottomSheetContainer.show<String>(context, builder: (_) => _RefundAddressPickerContent(network: network));
@@ -25,7 +26,7 @@ class _RefundAddressPickerContentState extends ConsumerState<_RefundAddressPicke
   }
 
   Future<void> _load() async {
-    final addresses = await SwapService().getRefundAddresses(widget.network);
+    final addresses = await ref.read(swapServiceProvider).getRefundAddresses(widget.network);
     if (mounted) setState(() => _addresses = addresses);
   }
 

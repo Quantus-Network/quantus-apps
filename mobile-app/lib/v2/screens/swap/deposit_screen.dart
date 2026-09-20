@@ -1,16 +1,22 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:quantus_sdk/quantus_sdk.dart' hide ScaffoldBase;
-import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
+import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
+import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
+import 'package:resonance_network_wallet/shared/utils/print.dart';
 import 'package:resonance_network_wallet/shared/utils/share_utils.dart';
+import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/success_check.dart';
 import 'package:resonance_network_wallet/v2/components/token_icon.dart';
-import 'package:resonance_network_wallet/l10n/app_localizations.dart';
-import 'package:resonance_network_wallet/shared/utils/print.dart';
+import 'package:resonance_network_wallet/v2/screens/swap/swap_providers.dart';
 
+/// Shows where to send the origin-chain funds and follows the swap from
+/// 1Click's status endpoint until it settles, refunds, or fails.
 class DepositScreen extends ConsumerStatefulWidget {
   final SwapOrder order;
   const DepositScreen({super.key, required this.order});
@@ -20,65 +26,83 @@ class DepositScreen extends ConsumerStatefulWidget {
 }
 
 class _DepositScreenState extends ConsumerState<DepositScreen> {
-  final _swapService = SwapService();
   late SwapOrder _order;
-  bool _confirming = false;
-
-  /// This swap flow is demo-only — no real deposit is ever expected. To make it
-  /// impossible to accidentally send funds, the QR code, the on-screen address,
-  /// and the copy/share actions all surface this warning instead of the real
-  /// deposit address. Scanning the QR decodes to this plain text, not an
-  /// address, so no wallet can act on it.
-  static const String _demoWarningPayload = 'demo only - do not send funds';
+  Timer? _timer;
+  bool _polling = false;
 
   @override
   void initState() {
     super.initState();
     _order = widget.order;
+    _timer = Timer.periodic(SwapService.statusPollInterval, (_) => _poll());
   }
 
-  Future<void> _confirmSent() async {
-    setState(() => _confirming = true);
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _poll() async {
+    if (_polling) return;
+    _polling = true;
     try {
-      final updated = await _swapService.confirmFundsSent(_order.orderId);
+      final updated = await ref.read(swapServiceProvider).getSwapStatus(_order);
       if (!mounted) return;
-      setState(() {
-        _order = updated;
-        _confirming = false;
-      });
-      _pollStatus();
+      setState(() => _order = updated);
+      if (updated.status.isFinal) _timer?.cancel();
     } catch (e) {
-      quantusPrint('Confirm funds sent failed: $e');
-      setState(() => _confirming = false);
+      quantusPrint('Swap status poll failed: $e');
+    } finally {
+      _polling = false;
     }
   }
 
-  Future<void> _pollStatus() async {
-    while (mounted && _order.status == SwapStatus.processing) {
-      await Future.delayed(const Duration(seconds: 2));
-      if (!mounted) return;
-      try {
-        final updated = await _swapService.getSwapStatus(_order.orderId);
-        if (!mounted) return;
-        setState(() => _order = updated);
-      } catch (e) {
-        quantusPrint('Swap status poll failed: $e');
-      }
-    }
-  }
-
-  void _copyAddress(AppLocalizations l10n) {
-    // Demo-only: never expose the real deposit address (see _demoWarningPayload).
-    context.copyTextWithToaster(_demoWarningPayload);
-  }
+  bool get _expired => _order.status == SwapStatus.pendingDeposit && DateTime.now().isAfter(_order.quote.deadline);
 
   @override
   Widget build(BuildContext context) {
     final l10n = ref.watch(l10nProvider);
     final colors = context.colorsV3;
     final text = context.themeTextV3;
+    final fmt = ref.watch(numberFormattingServiceProvider);
     final quote = _order.quote;
-    final usd = quote.fromAmount * _swapService.getUsdPrice(quote.fromToken);
+    final from = quote.fromToken;
+
+    final body = switch (_order.status) {
+      SwapStatus.pendingDeposit when _expired => _outcome(
+        colors,
+        text,
+        icon: Icon(Icons.timer_off_outlined, color: colors.textMuted, size: 64),
+        title: l10n.swapDepositExpiredTitle,
+        body: l10n.swapDepositExpiredBody,
+      ),
+      SwapStatus.pendingDeposit => _depositBody(l10n, colors, text, fmt),
+      SwapStatus.knownDepositTx => _processingBody(l10n, colors, text, l10n.swapDepositDetectedBody(from.network)),
+      SwapStatus.processing => _processingBody(l10n, colors, text, l10n.swapDepositProcessingBody),
+      SwapStatus.incompleteDeposit => _outcome(
+        colors,
+        text,
+        icon: Icon(Icons.warning_amber_rounded, color: colors.semanticSand, size: 64),
+        title: l10n.swapDepositIncompleteTitle,
+        body: l10n.swapDepositIncompleteBody,
+      ),
+      SwapStatus.success => _completedBody(l10n, colors, text, fmt),
+      SwapStatus.refunded => _outcome(
+        colors,
+        text,
+        icon: Icon(Icons.undo, color: colors.semanticSand, size: 64),
+        title: l10n.swapDepositRefundedTitle,
+        body: _refundedText(l10n, fmt),
+      ),
+      SwapStatus.failed => _outcome(
+        colors,
+        text,
+        icon: Icon(Icons.error_outline, color: colors.semanticEmber, size: 64),
+        title: l10n.swapDepositFailedTitle,
+        body: l10n.swapDepositFailedBody(_order.depositAddress),
+      ),
+    };
 
     return ScaffoldBase(
       appBar: V2AppBar(
@@ -87,22 +111,27 @@ class _DepositScreenState extends ConsumerState<DepositScreen> {
       ),
       mainContent: Column(
         children: [
-          if (_order.status == SwapStatus.complete)
-            _completedBody(l10n, colors, text)
-          else if (_order.status == SwapStatus.processing)
-            _processingBody(l10n, colors, text)
-          else
-            _depositBody(l10n, colors, text, quote, usd),
-          const Spacer(),
-          if (_order.status == SwapStatus.depositing) _sentButton(l10n),
-          if (_order.status == SwapStatus.complete) _doneButton(l10n),
+          Expanded(child: SingleChildScrollView(child: body)),
+          if (_order.status.isFinal || _expired) ...[const SizedBox(height: 16), _doneButton(l10n)],
           const SizedBox(height: 24),
         ],
       ),
     );
   }
 
-  Widget _depositBody(AppLocalizations l10n, AppColorsV3 colors, AppTextThemeV3 text, SwapQuote quote, double usd) {
+  String _refundedText(AppLocalizations l10n, NumberFormattingService fmt) {
+    final from = _order.quote.fromToken;
+    final amount = fmt.formatAmount(_order.refundedAmount ?? _order.quote.amountIn, decimals: from.decimals);
+    final reason = _order.refundReason;
+    final body = l10n.swapDepositRefundedBody(amount, from.symbol);
+    return reason == null ? body : '$body\n\n${l10n.swapDepositRefundReason(reason)}';
+  }
+
+  Widget _depositBody(AppLocalizations l10n, AppColorsV3 colors, AppTextThemeV3 text, NumberFormattingService fmt) {
+    final quote = _order.quote;
+    final from = quote.fromToken;
+    final address = _order.depositAddress;
+    final deadline = TimeOfDay.fromDateTime(quote.deadline.toLocal()).format(context);
     return Column(
       children: [
         Row(
@@ -112,7 +141,7 @@ class _DepositScreenState extends ConsumerState<DepositScreen> {
             const SizedBox(width: 6),
             GestureDetector(
               onTap: () => context.copyTextWithToaster(
-                SwapService.formatTokenAmount(quote.totalAmount, quote.fromToken),
+                fmt.formatWireAmount(quote.amountIn, decimals: from.decimals),
                 message: l10n.swapDepositAmountCopied,
               ),
               child: Container(
@@ -128,58 +157,46 @@ class _DepositScreenState extends ConsumerState<DepositScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            TokenIcon(token: quote.fromToken, size: 28, networkBadgeSize: 11),
+            TokenIcon(token: from, size: 28, networkBadgeSize: 11),
             const SizedBox(width: 8),
             Text(
-              SwapService.formatTokenAmount(quote.totalAmount, quote.fromToken),
+              fmt.formatAmount(quote.amountIn, decimals: from.decimals),
               style: text.amountHero.copyWith(color: colors.textContent),
             ),
           ],
         ),
         const SizedBox(height: 8),
-        Text('\$${usd.toStringAsFixed(2)}', style: text.body.copyWith(color: colors.textMuted)),
-        const SizedBox(height: 40),
+        Text('\$${quote.amountInUsd.toStringAsFixed(2)}', style: text.body.copyWith(color: colors.textMuted)),
+        const SizedBox(height: 24),
         ClipRRect(
           borderRadius: context.radiusV3.smBorder,
           child: Container(
             color: colors.textWhite,
             padding: const EdgeInsets.all(8),
-            child: QrImageView(data: _demoWarningPayload, version: QrVersions.auto, size: 184),
+            child: QrImageView(data: address, version: QrVersions.auto, size: 184),
           ),
         ),
         const SizedBox(height: 16),
-        // SizedBox(
-        //   width: 264,
-        //   child: Stack(
-        //     children: [
-        //       Text(
-        //         _demoWarningPayload,
-        //         style: text.smallParagraph?.copyWith(
-        //           color: colors.textPrimary,
-        //           fontWeight: FontWeight.w500,
-        //           height: 1.35,
-        //         ),
-        //         textAlign: TextAlign.center,
-        //       ),
-        //       Positioned(
-        //         right: 0,
-        //         top: 19,
-        //         child: GestureDetector(
-        //           onTap: () => _copyAddress(l10n),
-        //           child: Container(
-        //             width: 20,
-        //             height: 20,
-        //             decoration: BoxDecoration(color: colors.surfaceGlass, borderRadius: BorderRadius.circular(4)),
-        //             child: Center(child: Icon(Icons.copy, color: colors.textPrimary, size: 12)),
-        //           ),
-        //         ),
-        //       ),
-        //     ],
-        //   ),
-        // ),
+        GestureDetector(
+          onTap: () => context.copyTextWithToaster(address, message: l10n.swapDepositAddressCopied),
+          child: Text(
+            address,
+            style: text.dataAddress.copyWith(color: colors.textContent),
+            textAlign: TextAlign.center,
+          ),
+        ),
         const SizedBox(height: 16),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Loader(color: colors.semanticSage, size: 14),
+            const SizedBox(width: 8),
+            Text(l10n.swapDepositWaiting, style: text.caption.copyWith(color: colors.textMuted)),
+          ],
+        ),
+        const SizedBox(height: 8),
         Text(
-          l10n.swapDepositDemoWarning,
+          l10n.swapDepositDeadline(deadline),
           style: text.bodyEmphasis.copyWith(color: colors.accentFlare),
           textAlign: TextAlign.center,
         ),
@@ -190,7 +207,7 @@ class _DepositScreenState extends ConsumerState<DepositScreen> {
               child: QuantusButton.simple(
                 label: l10n.receiveCopy,
                 variant: ButtonVariant.staged,
-                onTap: () => _copyAddress(l10n),
+                onTap: () => context.copyTextWithToaster(address, message: l10n.swapDepositAddressCopied),
                 icon: Icon(Icons.copy, color: colors.textContent, size: 20),
                 iconPlacement: IconPlacement.leading,
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
@@ -204,23 +221,14 @@ class _DepositScreenState extends ConsumerState<DepositScreen> {
                 iconPlacement: IconPlacement.leading,
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                 variant: ButtonVariant.staged,
-                onTap: () {
-                  shareText(
-                    context,
-                    l10n.swapDepositShareContent(
-                      _order.quote.fromToken.network,
-                      _order.quote.fromToken.symbol,
-                      _demoWarningPayload,
-                    ),
-                  );
-                },
+                onTap: () => shareText(context, l10n.swapDepositShareContent(from.network, from.symbol, address)),
               ),
             ),
           ],
         ),
-        const SizedBox(height: 40),
+        const SizedBox(height: 24),
         Text(
-          l10n.swapDepositNotice(quote.fromToken.symbol, quote.fromToken.network),
+          l10n.swapDepositNotice(from.symbol, from.network),
           style: text.caption.copyWith(color: colors.textMuted),
           textAlign: TextAlign.center,
         ),
@@ -228,7 +236,7 @@ class _DepositScreenState extends ConsumerState<DepositScreen> {
     );
   }
 
-  Widget _processingBody(AppLocalizations l10n, AppColorsV3 colors, AppTextThemeV3 text) {
+  Widget _processingBody(AppLocalizations l10n, AppColorsV3 colors, AppTextThemeV3 text, String body) {
     return Column(
       children: [
         const SizedBox(height: 80),
@@ -236,14 +244,18 @@ class _DepositScreenState extends ConsumerState<DepositScreen> {
         const SizedBox(height: 32),
         Text(l10n.swapDepositProcessingTitle, style: text.titleScreen.copyWith(color: colors.textContent)),
         const SizedBox(height: 12),
-        Text(l10n.swapDepositProcessingBody, style: text.bodyLarge.copyWith(color: colors.textMuted)),
+        Text(
+          body,
+          style: text.bodyLarge.copyWith(color: colors.textMuted),
+          textAlign: TextAlign.center,
+        ),
       ],
     );
   }
 
-  Widget _completedBody(AppLocalizations l10n, AppColorsV3 colors, AppTextThemeV3 text) {
-    final amount = SwapService.formatTokenAmount(_order.quote.toAmount, _order.quote.toToken);
-
+  Widget _completedBody(AppLocalizations l10n, AppColorsV3 colors, AppTextThemeV3 text, NumberFormattingService fmt) {
+    final to = _order.quote.toToken;
+    final amount = fmt.formatAmount(_order.amountOut ?? _order.quote.amountOut, decimals: to.decimals);
     return Column(
       children: [
         const SizedBox(height: 80),
@@ -252,19 +264,7 @@ class _DepositScreenState extends ConsumerState<DepositScreen> {
         Text(l10n.swapDepositCompleteTitle, style: text.titleSuccess.copyWith(color: colors.textContent)),
         const SizedBox(height: 12),
         Text(
-          l10n.swapDepositCompleteBody(amount, AppConstants.tokenSymbol),
-          style: text.bodyLarge.copyWith(color: colors.textMuted),
-          textAlign: TextAlign.center,
-        ),
-        const SizedBox(height: 40),
-        Text(
-          l10n.swapDemoOnly,
-          style: text.titleHero.copyWith(color: colors.accentFlare),
-          textAlign: TextAlign.center,
-        ),
-        const SizedBox(height: 8),
-        Text(
-          l10n.swapDemoOnlyBody,
+          l10n.swapDepositCompleteBody(amount, to.symbol),
           style: text.bodyLarge.copyWith(color: colors.textMuted),
           textAlign: TextAlign.center,
         ),
@@ -272,12 +272,30 @@ class _DepositScreenState extends ConsumerState<DepositScreen> {
     );
   }
 
-  Widget _sentButton(AppLocalizations l10n) {
-    return QuantusButton.simple(
-      label: l10n.swapDepositSentFunds,
-      onTap: _confirmSent,
-      variant: ButtonVariant.staged,
-      isLoading: _confirming,
+  Widget _outcome(
+    AppColorsV3 colors,
+    AppTextThemeV3 text, {
+    required Widget icon,
+    required String title,
+    required String body,
+  }) {
+    return Column(
+      children: [
+        const SizedBox(height: 80),
+        icon,
+        const SizedBox(height: 32),
+        Text(
+          title,
+          style: text.titleScreen.copyWith(color: colors.textContent),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 12),
+        Text(
+          body,
+          style: text.bodyLarge.copyWith(color: colors.textMuted),
+          textAlign: TextAlign.center,
+        ),
+      ],
     );
   }
 

@@ -2337,26 +2337,50 @@
     "@swapTokenPickerLoadError": {
       "description": "Error when token list fails to load"
     },
+    "swapQuoteError": "Quote failed: {message}",
+    "@swapQuoteError": {
+      "description": "Toast when 1Click rejects a quote or a swap cannot be created",
+      "placeholders": {
+        "message": {
+          "type": "String"
+        }
+      }
+    },
 
     "swapReviewTitle": "Review Quote",
     "@swapReviewTitle": {
       "description": "Title on review quote sheet"
     },
-    "swapReviewTotalFees": "Total fees",
-    "@swapReviewTotalFees": {
-      "description": "Total fees row on review quote sheet"
+    "swapReviewMinimumReceived": "Minimum received",
+    "@swapReviewMinimumReceived": {
+      "description": "Least amount the quote guarantees, on review quote sheet"
     },
-    "swapReviewTotalAmount": "Total Amount",
-    "@swapReviewTotalAmount": {
-      "description": "Total amount row on review quote sheet"
+    "swapReviewEstimatedTime": "Estimated time",
+    "@swapReviewEstimatedTime": {
+      "description": "Row label for how long 1Click expects the swap to take"
     },
-    "swapReviewSlippageWarning": "You could receive up to ${amount} less based on the {percent}% slippage you set",
-    "@swapReviewSlippageWarning": {
-      "description": "Slippage warning on review quote sheet",
+    "swapReviewTimeSeconds": "About {seconds} seconds",
+    "@swapReviewTimeSeconds": {
+      "description": "Swap time estimate under a minute",
       "placeholders": {
-        "amount": {
-          "type": "String"
-        },
+        "seconds": {
+          "type": "int"
+        }
+      }
+    },
+    "swapReviewTimeMinutes": "About {minutes} minutes",
+    "@swapReviewTimeMinutes": {
+      "description": "Swap time estimate of a minute or more",
+      "placeholders": {
+        "minutes": {
+          "type": "int"
+        }
+      }
+    },
+    "swapReviewSlippageWarning": "The rate locks in when your deposit arrives. With the {percent}% slippage you set, you receive at least the minimum above.",
+    "@swapReviewSlippageWarning": {
+      "description": "Slippage note on review quote sheet",
+      "placeholders": {
         "percent": {
           "type": "String"
         }
@@ -2375,9 +2399,22 @@
     "@swapDepositAmountCopied": {
       "description": "Toast when deposit amount is copied"
     },
-    "swapDepositDemoWarning": "For demo purposes only - do not send funds!",
-    "@swapDepositDemoWarning": {
-      "description": "Demo warning on deposit screen"
+    "swapDepositAddressCopied": "Deposit address copied to clipboard",
+    "@swapDepositAddressCopied": {
+      "description": "Toast when the deposit address is copied"
+    },
+    "swapDepositWaiting": "Waiting for your deposit…",
+    "@swapDepositWaiting": {
+      "description": "Shown while 1Click has not seen a deposit yet"
+    },
+    "swapDepositDeadline": "Send before {time} or the quote expires",
+    "@swapDepositDeadline": {
+      "description": "Local time by which the deposit must arrive",
+      "placeholders": {
+        "time": {
+          "type": "String"
+        }
+      }
     },
     "swapDepositShareQr": "Share QR",
     "@swapDepositShareQr": {
@@ -2434,17 +2471,68 @@
         }
       }
     },
-    "swapDemoOnly": "Demo Only",
-    "@swapDemoOnly": {
-      "description": "Large banner making clear the swap flow is a demo and nothing is swapped"
+    "swapDepositDetectedBody": "Your deposit was seen on {network}. The swap starts once it is confirmed.",
+    "@swapDepositDetectedBody": {
+      "description": "Body while 1Click has seen the deposit transaction but not yet confirmed it",
+      "placeholders": {
+        "network": {
+          "type": "String"
+        }
+      }
     },
-    "swapDemoOnlyBody": "No real swap was performed.",
-    "@swapDemoOnlyBody": {
-      "description": "Subtitle under the Demo Only banner"
+    "swapDepositRefundedTitle": "Swap Refunded",
+    "@swapDepositRefundedTitle": {
+      "description": "Title when 1Click refunded the deposit"
     },
-    "swapDepositSentFunds": "I've sent the funds",
-    "@swapDepositSentFunds": {
-      "description": "Button to confirm funds sent"
+    "swapDepositRefundedBody": "The swap did not complete. {amount} {symbol} was returned to your refund address.",
+    "@swapDepositRefundedBody": {
+      "description": "Body when 1Click refunded the deposit",
+      "placeholders": {
+        "amount": {
+          "type": "String"
+        },
+        "symbol": {
+          "type": "String"
+        }
+      }
+    },
+    "swapDepositRefundReason": "Reason: {reason}",
+    "@swapDepositRefundReason": {
+      "description": "Refund reason reported by 1Click",
+      "placeholders": {
+        "reason": {
+          "type": "String"
+        }
+      }
+    },
+    "swapDepositFailedTitle": "Swap Failed",
+    "@swapDepositFailedTitle": {
+      "description": "Title when 1Click reports the swap failed"
+    },
+    "swapDepositFailedBody": "The swap did not complete. Contact support and quote this deposit address: {address}",
+    "@swapDepositFailedBody": {
+      "description": "Body when 1Click reports the swap failed",
+      "placeholders": {
+        "address": {
+          "type": "String"
+        }
+      }
+    },
+    "swapDepositIncompleteTitle": "Deposit Too Small",
+    "@swapDepositIncompleteTitle": {
+      "description": "Title when less than the quoted amount arrived"
+    },
+    "swapDepositIncompleteBody": "Less than the quoted amount arrived. It will be refunded to your refund address after the deadline.",
+    "@swapDepositIncompleteBody": {
+      "description": "Body when less than the quoted amount arrived"
+    },
+    "swapDepositExpiredTitle": "Quote Expired",
+    "@swapDepositExpiredTitle": {
+      "description": "Title when the deadline passed with no deposit"
+    },
+    "swapDepositExpiredBody": "No deposit arrived before the deadline. Do not send funds to this address anymore. Get a new quote to try again.",
+    "@swapDepositExpiredBody": {
+      "description": "Body when the deadline passed with no deposit"
     },
     "swapDepositDone": "Done",
     "@swapDepositDone": {

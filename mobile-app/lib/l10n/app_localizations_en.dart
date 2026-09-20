@@ -1611,17 +1611,32 @@ class AppLocalizationsEn extends AppLocalizations {
   String get swapTokenPickerLoadError => 'Failed to load tokens';
 
   @override
+  String swapQuoteError(String message) {
+    return 'Quote failed: $message';
+  }
+
+  @override
   String get swapReviewTitle => 'Review Quote';
 
   @override
-  String get swapReviewTotalFees => 'Total fees';
+  String get swapReviewMinimumReceived => 'Minimum received';
 
   @override
-  String get swapReviewTotalAmount => 'Total Amount';
+  String get swapReviewEstimatedTime => 'Estimated time';
 
   @override
-  String swapReviewSlippageWarning(String amount, String percent) {
-    return 'You could receive up to \$$amount less based on the $percent% slippage you set';
+  String swapReviewTimeSeconds(int seconds) {
+    return 'About $seconds seconds';
+  }
+
+  @override
+  String swapReviewTimeMinutes(int minutes) {
+    return 'About $minutes minutes';
+  }
+
+  @override
+  String swapReviewSlippageWarning(String percent) {
+    return 'The rate locks in when your deposit arrives. With the $percent% slippage you set, you receive at least the minimum above.';
   }
 
   @override
@@ -1634,7 +1649,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get swapDepositAmountCopied => 'Deposit amount copied to clipboard';
 
   @override
-  String get swapDepositDemoWarning => 'For demo purposes only - do not send funds!';
+  String get swapDepositAddressCopied => 'Deposit address copied to clipboard';
+
+  @override
+  String get swapDepositWaiting => 'Waiting for your deposit…';
+
+  @override
+  String swapDepositDeadline(String time) {
+    return 'Send before $time or the quote expires';
+  }
 
   @override
   String get swapDepositShareQr => 'Share QR';
@@ -1664,13 +1687,44 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get swapDemoOnly => 'Demo Only';
+  String swapDepositDetectedBody(String network) {
+    return 'Your deposit was seen on $network. The swap starts once it is confirmed.';
+  }
 
   @override
-  String get swapDemoOnlyBody => 'No real swap was performed.';
+  String get swapDepositRefundedTitle => 'Swap Refunded';
 
   @override
-  String get swapDepositSentFunds => 'I\'ve sent the funds';
+  String swapDepositRefundedBody(String amount, String symbol) {
+    return 'The swap did not complete. $amount $symbol was returned to your refund address.';
+  }
+
+  @override
+  String swapDepositRefundReason(String reason) {
+    return 'Reason: $reason';
+  }
+
+  @override
+  String get swapDepositFailedTitle => 'Swap Failed';
+
+  @override
+  String swapDepositFailedBody(String address) {
+    return 'The swap did not complete. Contact support and quote this deposit address: $address';
+  }
+
+  @override
+  String get swapDepositIncompleteTitle => 'Deposit Too Small';
+
+  @override
+  String get swapDepositIncompleteBody =>
+      'Less than the quoted amount arrived. It will be refunded to your refund address after the deadline.';
+
+  @override
+  String get swapDepositExpiredTitle => 'Quote Expired';
+
+  @override
+  String get swapDepositExpiredBody =>
+      'No deposit arrived before the deadline. Do not send funds to this address anymore. Get a new quote to try again.';
 
   @override
   String get swapDepositDone => 'Done';
