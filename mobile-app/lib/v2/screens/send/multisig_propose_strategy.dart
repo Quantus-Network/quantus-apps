@@ -64,7 +64,7 @@ class MultisigProposeStrategy extends SendStrategy {
   static final BigInt _estimateFeeAmount = BigInt.from(1000) * NumberFormattingService.scaleFactorBigInt;
 
   @override
-  String? sourceAccountId(WidgetRef ref) => msig.accountId;
+  String? get sourceAccountId => msig.accountId;
 
   @override
   SendStrings strings(AppLocalizations l10n) => SendStrings(
@@ -207,6 +207,7 @@ class MultisigProposeStrategy extends SendStrategy {
     required String recipientAddress,
     required BigInt amount,
     required SendFee fee,
+    bool sendAll = false,
   }) async {
     final signer = _signer(ref);
     if (!signer.signsWithHardware) return;
@@ -228,6 +229,7 @@ class MultisigProposeStrategy extends SendStrategy {
     required BigInt amount,
     required SendFee fee,
     required bool isPayMode,
+    bool sendAll = false,
   }) async {
     final l10n = ref.read(l10nProvider);
     final fmt = ref.read(numberFormattingServiceProvider);

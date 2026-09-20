@@ -62,7 +62,7 @@ void main() {
     return ProviderScope.containerOf(tester.element(find.byType(ReviewSendScreen)));
   }
 
-  /// The notifier publishes on microtasks; a second pump draws the frame they schedule.
+  /// A quote lands on its fetch future; a second pump draws the frame that schedules.
   Future<void> settle(WidgetTester tester) async {
     await tester.pump();
     await tester.pump();
@@ -133,7 +133,7 @@ void main() {
     expect(find.text(amt(container, spendable - highFee)), findsNWidgets(2));
   });
 
-  testWidgets('an ordinary send is not blocked by an unsettled fee', (tester) async {
+  testWidgets('an ordinary send with fee headroom is not blocked by an unsettled fee', (tester) async {
     final container = await pumpReview(
       tester,
       amount: lowFee * BigInt.from(100),
@@ -144,16 +144,41 @@ void main() {
     expect(find.text('~${amt(container, lowFee)}'), findsOneWidget);
   });
 
-  testWidgets('an ordinary send near the balance is blocked once the settled fee no longer fits', (tester) async {
+  testWidgets('an ordinary send near the balance waits for its exact fee, then blocks or allows on it', (tester) async {
+    final amount = spendable - lowFee;
     final container = await pumpReview(
       tester,
-      amount: spendable - lowFee,
-      fee: RegularFee(networkFee: lowFee),
+      amount: amount,
+      fee: RegularFee(networkFee: lowFee, amount: amount),
     );
-    container.read(sendFeeProvider.notifier).request(() async => RegularFee(networkFee: highFee), immediate: true);
-    await settle(tester);
+    final notifier = container.read(sendFeeProvider.notifier);
+    expect(confirmDisabled(tester), isTrue);
+    expect(find.text('~${amt(container, lowFee)}'), findsOneWidget);
 
+    notifier.request(() async => RegularFee(networkFee: highFee, amount: amount), immediate: true);
+    await settle(tester);
     expect(confirmDisabled(tester), isTrue);
     expect(find.text(container.read(l10nProvider).sendLogicInsufficientBalance), findsOneWidget);
+
+    notifier.request(() async => RegularFee(networkFee: lowFee, amount: amount), immediate: true);
+    await settle(tester);
+    expect(confirmDisabled(tester), isFalse);
+    expect(find.textContaining('~'), findsNothing);
+  });
+
+  testWidgets('a quote for another amount never satisfies a near-balance send', (tester) async {
+    final amount = spendable - lowFee;
+    final container = await pumpReview(
+      tester,
+      amount: amount,
+      fee: RegularFee(networkFee: lowFee, amount: amount),
+    );
+    container
+        .read(sendFeeProvider.notifier)
+        .request(() async => RegularFee(networkFee: lowFee, amount: SendStrategy.feeProbeAmount), immediate: true);
+    await settle(tester);
+
+    expect(container.read(sendFeeProvider).settled, isTrue);
+    expect(confirmDisabled(tester), isTrue);
   });
 }

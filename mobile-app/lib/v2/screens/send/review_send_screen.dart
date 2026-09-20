@@ -73,6 +73,31 @@ class _ReviewSendScreenState extends ConsumerState<ReviewSendScreen> {
     );
   }
 
+  BigInt get _feeCharged => widget.strategy.feeChargedToBalance(_fee);
+
+  /// The settled fee priced exactly this send.
+  bool get _feeApplies =>
+      _feeState.settled && widget.strategy.feeApplies(_fee, amount: _amount, sendAll: widget.sendAll);
+
+  /// A max send is sized by its fee. An ordinary send only needs its exact fee
+  /// when the amount leaves less than one more fee of headroom: a quote for a
+  /// nearby amount differs from the exact fee by a few bytes' worth, far less
+  /// than a whole fee, so anything with that headroom cannot fail on the fee.
+  bool get _needsExactFee {
+    if (widget.sendAll) return true;
+    final spendable = _spendable;
+    return spendable != null && _amount + _feeCharged * BigInt.two > spendable;
+  }
+
+  bool get _waitingForFee => _needsExactFee && !_feeApplies;
+
+  bool get _insufficient {
+    final spendable = _spendable;
+    return _feeApplies && spendable != null && _amount + _feeCharged > spendable;
+  }
+
+  bool get _confirmBlocked => _waitingForFee || _insufficient;
+
   @override
   void initState() {
     super.initState();
@@ -92,12 +117,16 @@ class _ReviewSendScreenState extends ConsumerState<ReviewSendScreen> {
   void _prefetchSignPayload() {
     unawaited(
       widget.strategy
-          .prefetchSignPayload(ref, recipientAddress: _recipient, amount: _amount, fee: _fee)
+          .prefetchSignPayload(ref, recipientAddress: _recipient, amount: _amount, fee: _fee, sendAll: widget.sendAll)
           .catchError((Object e) => quantusPrint('Keystone payload prefetch failed: $e')),
     );
   }
 
   Future<void> _confirmSend() async {
+    if (_confirmBlocked) {
+      quantusPrint('Confirm ignored: the fee no longer allows this send');
+      return;
+    }
     setState(() {
       _submitting = true;
       _errorMessage = null;
@@ -112,6 +141,7 @@ class _ReviewSendScreenState extends ConsumerState<ReviewSendScreen> {
         amount: _amount,
         fee: _fee,
         isPayMode: widget.isPayMode,
+        sendAll: widget.sendAll,
       );
     } catch (e, st) {
       quantusPrint('Send submit error: $e\n$st');
@@ -169,15 +199,9 @@ class _ReviewSendScreenState extends ConsumerState<ReviewSendScreen> {
     final feeState = _feeState;
     final fee = _fee;
     final amount = _amount;
-    final spendable = _spendable;
-    final waitingForFee = widget.sendAll && !feeState.settled;
-    // A fee that settled higher than the estimate can push an amount typed
-    // near the balance over it; the chain would charge the fee and fail.
-    final insufficient =
-        !widget.sendAll &&
-        feeState.settled &&
-        spendable != null &&
-        amount + widget.strategy.feeChargedToBalance(fee) > spendable;
+    final feeApplies = _feeApplies;
+    final waitingForFee = _waitingForFee;
+    final insufficient = _insufficient;
     final feeFailed = waitingForFee && feeState.failed;
     final message = insufficient
         ? l10n.sendLogicInsufficientBalance
@@ -191,7 +215,7 @@ class _ReviewSendScreenState extends ConsumerState<ReviewSendScreen> {
       withTokenSymbol: false,
       tokenDecimals: 4,
     );
-    if (waitingForFee) {
+    if (widget.sendAll && !feeApplies) {
       approxDisplay = approxDisplay.copyWith(primaryAmount: estimateLabel(approxDisplay.primaryAmount, estimate: true));
     }
 
@@ -213,7 +237,7 @@ class _ReviewSendScreenState extends ConsumerState<ReviewSendScreen> {
                   recipientAddress: widget.recipientAddress,
                   amount: amount,
                   fee: fee,
-                  feeIsEstimate: !feeState.settled,
+                  feeIsEstimate: !feeApplies,
                   sendAll: widget.sendAll,
                 ),
               ),
@@ -238,7 +262,7 @@ class _ReviewSendScreenState extends ConsumerState<ReviewSendScreen> {
           label: strings.reviewConfirmLabel,
           variant: ButtonVariant.primary,
           isLoading: _submitting,
-          isDisabled: _submitting || waitingForFee || insufficient,
+          isDisabled: _submitting || _confirmBlocked,
           onTap: _confirmSend,
         ),
       ),

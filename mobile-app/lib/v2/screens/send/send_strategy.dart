@@ -41,10 +41,13 @@ sealed class SendFee {
 class RegularFee extends SendFee {
   final BigInt networkFee;
 
+  /// Transfer amount this fee priced; zero when unknown or for a max send.
+  final BigInt amount;
+
   /// Priced a `transfer_all`: the chain sizes the amount at inclusion.
   final bool sendAll;
 
-  const RegularFee({required this.networkFee, this.sendAll = false});
+  RegularFee({required this.networkFee, BigInt? amount, this.sendAll = false}) : amount = amount ?? BigInt.zero;
 
   @override
   BigInt get displayFee => networkFee;
@@ -91,9 +94,17 @@ class SendFeeState {
 
   bool get settled => fee != null && !pending && !failed;
 
-  SendFeeState copyWith({SendFee? fee, bool? pending, bool? failed}) =>
-      SendFeeState(fee: fee ?? this.fee, pending: pending ?? this.pending, failed: failed ?? this.failed);
+  @override
+  bool operator ==(Object other) =>
+      other is SendFeeState && other.fee == fee && other.pending == pending && other.failed == failed;
+
+  @override
+  int get hashCode => Object.hash(fee, pending, failed);
 }
+
+/// `ref.read` or `container.read`, so a strategy can be driven from a screen
+/// or from the tap that starts the flow.
+typedef ProviderReader = T Function<T>(ProviderListenable<T> provider);
 
 /// Prefixes a figure that depends on an unsettled fee with `~`.
 String estimateLabel(String text, {required bool estimate}) => estimate ? '~$text' : text;
@@ -224,13 +235,13 @@ abstract class SendStrategy {
   bool get showPrivateSendNotice => false;
 
   /// Account the funds leave from; the recipient must differ (self-guard) and
-  /// it is excluded from the recents list. Resolved via `ref.read`.
-  String? sourceAccountId(WidgetRef ref);
+  /// it is excluded from the recents list.
+  String? get sourceAccountId;
 
   /// Self-send guard: whether [address] belongs to the sending account itself.
   /// Defaults to comparing against [sourceAccountId]; encrypted sends also
   /// treat every derived wormhole address of the wallet as self.
-  Future<bool> isSelfRecipient(WidgetRef ref, String address) async => address == sourceAccountId(ref);
+  Future<bool> isSelfRecipient(WidgetRef ref, String address) async => address == sourceAccountId;
 
   SendStrings strings(AppLocalizations l10n);
 
@@ -263,16 +274,21 @@ abstract class SendStrategy {
   /// that possible, otherwise [requestFee] refreshes it from the chain.
   ProviderListenable<SendFeeState> feeProvider({required String recipient, required BigInt amount});
 
-  /// The amount changed, or a flow started (sized at [feeProbeAmount]). Max
-  /// sends pass [sendAll] and skip the debounce with [immediate]. No-op for
-  /// strategies whose [feeProvider] is derived locally.
+  /// Prices a send of [amount] to [recipient], or of the whole balance when
+  /// [sendAll]. Called from event handlers only: the flow-start tap (sized at
+  /// [feeProbeAmount]), typing, Max and Continue; [immediate] skips the
+  /// debounce. No-op for strategies whose [feeProvider] is derived locally.
   void requestFee(
-    WidgetRef ref, {
+    ProviderReader read, {
     required String recipient,
     required BigInt amount,
     bool sendAll = false,
     bool immediate = false,
   }) {}
+
+  /// Whether [fee] priced exactly this send: the `transfer_all` call for a max
+  /// send, otherwise a transfer of [amount]. Locally derived fees always do.
+  bool feeApplies(SendFee fee, {required BigInt amount, required bool sendAll}) => true;
 
   /// Re-queries whatever source [feeProvider] failed on.
   void retryFee(WidgetRef ref, {required String recipient, required BigInt amount});
@@ -304,9 +320,11 @@ abstract class SendStrategy {
     required String recipientAddress,
     required BigInt amount,
     required SendFee fee,
+    bool sendAll = false,
   }) async {}
 
-  /// Authenticates and submits. Uses `ref.read`. Never navigates.
+  /// Authenticates and submits. Uses `ref.read`. Never navigates. The call is
+  /// built from [sendAll], never from what [fee] happened to price.
   Future<SendOutcome> submit(
     WidgetRef ref, {
     required String recipientAddress,
@@ -314,5 +332,6 @@ abstract class SendStrategy {
     required BigInt amount,
     required SendFee fee,
     required bool isPayMode,
+    bool sendAll = false,
   });
 }

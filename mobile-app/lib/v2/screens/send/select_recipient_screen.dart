@@ -46,10 +46,6 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
     super.initState();
     _recipientController.addListener(_onRecipientChanged);
     _loadRecents();
-    final sourceId = widget.strategy.sourceAccountId(ref);
-    if (sourceId != null) {
-      widget.strategy.requestFee(ref, recipient: sourceId, amount: SendStrategy.feeProbeAmount);
-    }
   }
 
   @override
@@ -67,7 +63,7 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
 
     try {
       final all = await recentAddressesService.getAddresses();
-      final currentId = widget.strategy.sourceAccountId(ref);
+      final currentId = widget.strategy.sourceAccountId;
       final addresses = all.where((a) => a != currentId).toList();
       if (!mounted) return;
       setState(() {

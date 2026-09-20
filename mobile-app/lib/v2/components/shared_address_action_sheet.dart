@@ -72,12 +72,11 @@ class _SharedAddressActionSheetState extends State<SharedAddressActionSheet> {
       return;
     }
     Navigator.of(context).pop();
+    final strategy = RegularSendStrategy(account: active.account);
     startSendFlow(
       context,
-      screen: InputAmountScreen(
-        strategy: RegularSendStrategy(account: active.account),
-        recipientAddress: widget.address,
-      ),
+      strategy: strategy,
+      screen: InputAmountScreen(strategy: strategy, recipientAddress: widget.address),
     );
   }
 

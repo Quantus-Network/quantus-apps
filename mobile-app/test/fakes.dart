@@ -69,6 +69,7 @@ class FakeSubstrateService extends Fake implements SubstrateService {
   FakeSubstrateService({BigInt? fee}) : fee = fee ?? BigInt.one;
 
   BigInt fee;
+  int feeCalls = 0;
   Account? lastFeeAccount;
   RuntimeCall? lastFeeCall;
 
@@ -77,6 +78,7 @@ class FakeSubstrateService extends Fake implements SubstrateService {
 
   @override
   Future<ExtrinsicFeeData> getFeeForCall(Account account, RuntimeCall call) async {
+    feeCalls++;
     lastFeeAccount = account;
     lastFeeCall = call;
     return ExtrinsicFeeData(fee: fee, blockHash: '0x00', blockNumber: 1);

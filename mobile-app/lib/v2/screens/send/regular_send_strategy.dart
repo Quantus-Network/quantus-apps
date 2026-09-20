@@ -30,7 +30,7 @@ class RegularSendStrategy extends SendStrategy {
   const RegularSendStrategy({required this.account});
 
   @override
-  String? sourceAccountId(WidgetRef ref) => account.accountId;
+  String? get sourceAccountId => account.accountId;
 
   @override
   SendStrings strings(AppLocalizations l10n) => SendStrings(
@@ -65,25 +65,40 @@ class RegularSendStrategy extends SendStrategy {
 
   @override
   void requestFee(
-    WidgetRef ref, {
+    ProviderReader read, {
     required String recipient,
     required BigInt amount,
     bool sendAll = false,
     bool immediate = false,
-  }) => ref
-      .read(sendFeeProvider.notifier)
-      .request(_feeFetcher(ref, recipient, amount, sendAll: sendAll), immediate: immediate);
+  }) => read(
+    sendFeeProvider.notifier,
+  ).request(_feeFetcher(read, recipient, amount, sendAll: sendAll), immediate: immediate);
 
   @override
   void retryFee(WidgetRef ref, {required String recipient, required BigInt amount}) =>
       ref.read(sendFeeProvider.notifier).retry();
 
+  @override
+  bool feeApplies(SendFee fee, {required BigInt amount, required bool sendAll}) {
+    final regularFee = fee as RegularFee;
+    return regularFee.sendAll == sendAll && (sendAll || regularFee.amount == amount);
+  }
+
   /// Dummy-signed `payment_queryInfo` probe from the captured account, with
   /// its inputs resolved now so it can run after the requesting screen is gone.
-  Future<SendFee> Function() _feeFetcher(WidgetRef ref, String recipient, BigInt amount, {required bool sendAll}) {
-    final substrate = ref.read(substrateServiceProvider);
-    final call = _transferCall(ref, recipient, amount, sendAll: sendAll);
-    return () async => RegularFee(networkFee: (await substrate.getFeeForCall(account, call)).fee, sendAll: sendAll);
+  Future<SendFee> Function() _feeFetcher(
+    ProviderReader read,
+    String recipient,
+    BigInt amount, {
+    required bool sendAll,
+  }) {
+    final substrate = read(substrateServiceProvider);
+    final call = _transferCall(read, recipient, amount, sendAll: sendAll);
+    return () async => RegularFee(
+      networkFee: (await substrate.getFeeForCall(account, call)).fee,
+      amount: sendAll ? null : amount,
+      sendAll: sendAll,
+    );
   }
 
   @override
@@ -92,10 +107,10 @@ class RegularSendStrategy extends SendStrategy {
   /// Max sends use `transfer_all`: the chain sizes the amount at inclusion, so
   /// the fee can never make them fail, and the fee itself is fixed because the
   /// call carries no amount.
-  RuntimeCall _transferCall(WidgetRef ref, String recipient, BigInt amount, {required bool sendAll}) {
-    final balances = ref.read(balancesServiceProvider);
+  RuntimeCall _transferCall(ProviderReader read, String recipient, BigInt amount, {required bool sendAll}) {
+    final balances = read(balancesServiceProvider);
     return sendAll
-        ? balances.getTransferAllCall(recipient, keepAlive: ref.read(existentialDepositToggleProvider))
+        ? balances.getTransferAllCall(recipient, keepAlive: read(existentialDepositToggleProvider))
         : balances.getBalanceTransferCall(recipient, amount);
   }
 
@@ -109,14 +124,14 @@ class RegularSendStrategy extends SendStrategy {
     required String recipientAddress,
     required BigInt amount,
     required SendFee fee,
+    bool sendAll = false,
   }) async {
     if (!account.signsWithHardware) return;
     final recipient = recipientAddress.trim();
-    final sendAll = (fee as RegularFee).sendAll;
     await ensureKeystoneSignPayload(
       ref,
       account: account,
-      buildCall: () => _transferCall(ref, recipient, amount, sendAll: sendAll),
+      buildCall: () => _transferCall(ref.read, recipient, amount, sendAll: sendAll),
       cacheKey: _hardwareCacheKey(recipient, amount, sendAll: sendAll),
     );
   }
@@ -174,11 +189,14 @@ class RegularSendStrategy extends SendStrategy {
     required BigInt amount,
     required SendFee fee,
     required bool isPayMode,
+    bool sendAll = false,
   }) async {
     final l10n = ref.read(l10nProvider);
     final fmt = ref.read(numberFormattingServiceProvider);
     final regularFee = fee as RegularFee;
-    final sendAll = regularFee.sendAll;
+    if (sendAll && !regularFee.sendAll) {
+      throw StateError('Max send reached submit with a fee that did not price transfer_all');
+    }
     final recipient = recipientAddress.trim();
     // Sign from the account captured when the flow started, not whichever
     // account happens to be active at submit time.
@@ -198,7 +216,7 @@ class RegularSendStrategy extends SendStrategy {
       return SendNeedsHardwareSignature(
         session: KeystoneSigningSession(
           account: account,
-          buildCall: () => _transferCall(ref, recipient, amount, sendAll: sendAll),
+          buildCall: () => _transferCall(ref.read, recipient, amount, sendAll: sendAll),
           primaryDetail: l10n.commonAmountBalance(
             fmt.formatBalance(amount, smartDecimals: 4),
             AppConstants.tokenSymbol,
@@ -239,7 +257,7 @@ class RegularSendStrategy extends SendStrategy {
           .read(transactionSubmissionServiceProvider)
           .balanceTransfer(
             account,
-            call: _transferCall(ref, recipient, amount, sendAll: sendAll),
+            call: _transferCall(ref.read, recipient, amount, sendAll: sendAll),
             targetAddress: recipient,
             amount: amount,
             fee: regularFee.networkFee,

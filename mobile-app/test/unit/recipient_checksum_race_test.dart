@@ -43,7 +43,7 @@ class _FakeSendStrategy extends Fake implements SendStrategy {
   bool get showPrivateSendNotice => false;
 
   @override
-  String? sourceAccountId(WidgetRef ref) => null;
+  String? get sourceAccountId => null;
 
   @override
   Future<bool> isSelfRecipient(WidgetRef ref, String address) async => false;

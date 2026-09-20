@@ -46,7 +46,7 @@ class EncryptedSendStrategy extends SendStrategy {
   bool get showPrivateSendNotice => true;
 
   @override
-  String? sourceAccountId(WidgetRef ref) => account.accountId;
+  String? get sourceAccountId => account.accountId;
 
   /// All derived wormhole addresses (receive and change rotate through the HD
   /// sequence) are this account — not just the index-0 [Account.accountId].
@@ -136,6 +136,7 @@ class EncryptedSendStrategy extends SendStrategy {
     required BigInt amount,
     required SendFee fee,
     required bool isPayMode,
+    bool sendAll = false,
   }) async {
     final l10n = ref.read(l10nProvider);
     final plan = (fee as EncryptedFee).plan;

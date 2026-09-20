@@ -71,7 +71,6 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
         _amountController.text = _amountInputLogic.formatTokenAmount(token);
       }
     }
-    _requestFee(_amount > BigInt.zero ? _amount : SendStrategy.feeProbeAmount);
     _recipientChecksum = widget.recipientChecksum;
     _checksumService.getHumanReadableName(widget.recipientAddress.trim()).then((name) {
       if (!mounted) return;
@@ -86,8 +85,18 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
     super.dispose();
   }
 
-  void _requestFee(BigInt amount, {bool immediate = false}) =>
-      widget.strategy.requestFee(ref, recipient: _recipient, amount: amount, sendAll: _sendAll, immediate: immediate);
+  void _requestFee(BigInt amount, {bool immediate = false}) => widget.strategy.requestFee(
+    ref.read,
+    recipient: _recipient,
+    amount: amount,
+    sendAll: _sendAll,
+    immediate: immediate,
+  );
+
+  bool _feeApplies(SendFeeState feeState) {
+    final fee = feeState.fee;
+    return fee != null && feeState.settled && widget.strategy.feeApplies(fee, amount: _amount, sendAll: _sendAll);
+  }
 
   void _setAmount(BigInt amount) {
     if (amount == _amount) return;
@@ -130,7 +139,8 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
   }
 
   void _openReview() {
-    final fee = ref.read(_feeProvider(_amount)).fee;
+    final feeState = ref.read(_feeProvider(_amount));
+    final fee = feeState.fee;
     final l10n = ref.read(l10nProvider);
     if (_recipientChecksum == null) {
       context.showErrorToaster(message: l10n.sendInputAmountChecksumRequired);
@@ -140,6 +150,8 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
       context.showErrorToaster(message: widget.strategy.strings(l10n).feeFetchFailedMessage);
       return;
     }
+    // Review prices the exact send; a debounced quote may still be queued.
+    if (!_feeApplies(feeState)) _requestFee(_amount, immediate: true);
 
     FocusScope.of(context).unfocus();
     Navigator.push(
@@ -166,7 +178,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
     final text = context.themeTextV3;
     final balance = ref.watch(widget.strategy.spendableBalanceProvider);
     final displayBalance = ref.watch(widget.strategy.displayBalanceProvider);
-    final sourceId = widget.strategy.sourceAccountId(ref) ?? '';
+    final sourceId = widget.strategy.sourceAccountId ?? '';
     final recipient = _recipient;
     final formattingService = ref.read(numberFormattingServiceProvider);
     ref.listen(_feeProvider(_amount), (_, next) {
@@ -354,7 +366,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
           Text(
             estimateLabel(
               l10n.commonAmountBalance(fmt.formatBalance(fee.displayFee, smartDecimals: 5), AppConstants.tokenSymbol),
-              estimate: !feeState.settled,
+              estimate: !_feeApplies(feeState),
             ),
             style: text.body.copyWith(color: colors.textMuted),
           ),

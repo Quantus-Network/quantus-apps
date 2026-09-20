@@ -154,6 +154,23 @@ void main() {
     expect(state().settled, isTrue);
   });
 
+  testWidgets('a newer failure survives an older success', (tester) async {
+    final slow = Completer<SendFee>();
+    notifier.request(() => slow.future);
+    notifier.request(() async => throw Exception('rpc down'), immediate: true);
+    await tester.pump();
+    expect(state().failed, isTrue);
+    expect(state().pending, isFalse);
+
+    slow.complete(fee(1));
+    await tester.pump();
+
+    expect(shown(), BigInt.one);
+    expect(state().failed, isTrue);
+    expect(state().pending, isFalse);
+    expect(state().settled, isFalse);
+  });
+
   testWidgets('a failure of a superseded query is ignored', (tester) async {
     notifier.request(() async => fee(1));
     await tester.pump();
@@ -182,8 +199,7 @@ void main() {
     });
 
     notifier.reset();
-    expect(state().fee, isNull);
-    expect(state().pending, isTrue);
+    expect(state(), const SendFeeState());
     stale.complete(fee(2));
     await tester.pump(SendFeeNotifier.debounce);
     expect(state().fee, isNull);

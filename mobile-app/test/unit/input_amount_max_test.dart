@@ -12,6 +12,7 @@ import 'package:resonance_network_wallet/v2/screens/send/input_amount_screen.dar
 import 'package:resonance_network_wallet/v2/screens/send/regular_send_strategy.dart';
 import 'package:resonance_network_wallet/v2/screens/send/send_fee_notifier.dart';
 import 'package:resonance_network_wallet/v2/screens/send/send_providers.dart';
+import 'package:resonance_network_wallet/v2/screens/send/send_strategy.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../extensions.dart';
@@ -62,7 +63,7 @@ void main() {
   testWidgets('Max prices transfer_all at once and sizes the amount from that fee', (tester) async {
     final substrate = FakeSubstrateService(fee: transferFee);
     final container = await pumpAmountScreen(tester, substrate);
-    expect(isTransferAll(substrate.lastFeeCall!, keepAlive: true), isFalse);
+    expect(substrate.lastFeeCall, isNull);
 
     substrate.fee = transferAllFee;
     await tester.tap(find.text(container.read(l10nProvider).sendInputAmountMax));
@@ -85,5 +86,39 @@ void main() {
 
     expect(isTransferAll(substrate.lastFeeCall!, keepAlive: true), isFalse);
     expect(fieldText(tester), '1');
+  });
+
+  testWidgets('Continue keeps a settled quote that already priced this send', (tester) async {
+    final substrate = FakeSubstrateService(fee: transferFee);
+    final container = await pumpAmountScreen(tester, substrate);
+    await tester.tap(find.text(container.read(l10nProvider).sendInputAmountMax));
+    await tester.pump();
+    expect(substrate.feeCalls, 1);
+
+    await tester.tap(find.byKey(const Key(E2EKeys.sendReviewButton)));
+    await tester.pump();
+    await tester.pump();
+
+    expect(substrate.feeCalls, 1);
+  });
+
+  testWidgets('Continue prices the exact amount at once while a typed quote is still queued', (tester) async {
+    final substrate = FakeSubstrateService(fee: transferFee);
+    final container = await pumpAmountScreen(tester, substrate);
+    await tester.tap(find.text(container.read(l10nProvider).sendInputAmountMax));
+    await tester.pump();
+    await tester.enterText(find.byKey(const Key(E2EKeys.sendAmountField)), '1');
+    await tester.pump();
+    expect(substrate.feeCalls, 1);
+
+    await tester.tap(find.byKey(const Key(E2EKeys.sendReviewButton)));
+    await tester.pump();
+    await tester.pump();
+
+    expect(substrate.feeCalls, 2);
+    expect(isTransferAll(substrate.lastFeeCall!, keepAlive: true), isFalse);
+    final fee = container.read(sendFeeProvider);
+    expect(fee.settled, isTrue);
+    expect((fee.fee as RegularFee).amount, NumberFormattingService.scaleFactorBigInt);
   });
 }
