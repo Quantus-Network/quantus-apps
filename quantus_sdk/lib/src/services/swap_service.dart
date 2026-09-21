@@ -183,7 +183,7 @@ class SwapService {
       case 'SOL':
         return 150.0;
       case AppConstants.tokenSymbol:
-        return 1.0;
+        return 50.0;
       default:
         return 0.0;
     }
