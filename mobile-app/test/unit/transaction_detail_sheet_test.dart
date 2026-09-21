@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/models/fiat_currency.dart';
@@ -69,5 +70,22 @@ void main() {
 
     expect(isSend, isTrue);
     expect(find.textContaining('-300'), findsOneWidget);
+  });
+
+  testWidgets('the share button hands the explorer link to the system share sheet', (tester) async {
+    String? shared;
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      const MethodChannel('dev.fluttercommunity.plus/share'),
+      (call) async {
+        shared = (call.arguments as Map)['text'] as String;
+        return '';
+      },
+    );
+    await openSheet(tester, transfer(from: me.accountId, to: other.accountId));
+
+    await tester.tap(find.byIcon(Icons.ios_share));
+    await tester.pump();
+
+    expect(shared, '${AppConstants.explorerEndpoint}/immediate-transactions/0x9cbe');
   });
 }

@@ -10,8 +10,7 @@ class AddressFormattingService {
       formatAddress(address, prefix: 7, ellipses: '.......', postFix: 6);
 
   /// Short extrinsic hash style used on activity transaction detail rows.
-  static String formatActivityDetailExtrinsicHash(String hash) =>
-      formatAddress(hash, prefix: 6, ellipses: '...', postFix: 4);
+  static String formatActivityDetailExtrinsicHash(String hash) => formatAddress(hash);
 
   static List<String> splitIntoChunks(String text, {int chunkSize = 5}) {
     if (chunkSize <= 0) {
