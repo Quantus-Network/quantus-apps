@@ -1575,6 +1575,9 @@ class AppLocalizationsId extends AppLocalizations {
   String get swapTitle => 'Tukar';
 
   @override
+  String get swapPoweredBy => 'Didukung Oleh';
+
+  @override
   String get swapFrom => 'Dari';
 
   @override

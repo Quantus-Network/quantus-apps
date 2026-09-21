@@ -1572,6 +1572,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get swapTitle => 'Swap';
 
   @override
+  String get swapPoweredBy => 'Powered By';
+
+  @override
   String get swapFrom => 'From';
 
   @override

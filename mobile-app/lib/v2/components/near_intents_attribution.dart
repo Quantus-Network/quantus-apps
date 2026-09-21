@@ -1,28 +1,35 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 
-/// "Powered by / near Intents" lockup, tinted with the theme's muted text colour.
-class NearIntentsAttribution extends StatelessWidget {
+/// "Powered By / near Intents" lockup from the swap header design: white at 32%, right-aligned.
+class NearIntentsAttribution extends ConsumerWidget {
+  static const double width = 90;
+
   const NearIntentsAttribution({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final colorFilter = ColorFilter.mode(context.colorsV3.textMuted, BlendMode.srcIn);
-    return Semantics(
-      label: 'Powered by NEAR Intents',
+  Widget build(BuildContext context, WidgetRef ref) {
+    final color = context.colorsV3.textWhite.useOpacity(0.32);
+    return MergeSemantics(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          SvgPicture.asset(
-            'assets/v2/near_intents_powered_by.svg',
-            width: 64.3,
-            height: 10.3,
-            colorFilter: colorFilter,
+          Text(
+            ref.watch(l10nProvider).swapPoweredBy,
+            style: context.themeTextV3.labelChip.copyWith(fontSize: 10, height: 1.2, color: color),
           ),
-          const SizedBox(height: 6),
-          SvgPicture.asset('assets/v2/near_intents_wordmark.svg', width: 90, height: 11, colorFilter: colorFilter),
+          const SizedBox(height: 4),
+          Image.asset(
+            'assets/v2/near_intents_logo.png',
+            width: width,
+            height: 11,
+            color: color,
+            colorBlendMode: BlendMode.srcIn,
+            semanticLabel: 'NEAR Intents',
+          ),
         ],
       ),
     );

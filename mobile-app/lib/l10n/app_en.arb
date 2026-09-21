@@ -2268,6 +2268,10 @@
     "@swapTitle": {
       "description": "App bar title on swap screens"
     },
+    "swapPoweredBy": "Powered By",
+    "@swapPoweredBy": {
+      "description": "Label above the NEAR Intents logo in the swap app bar"
+    },
     "swapFrom": "From",
     "@swapFrom": {
       "description": "From token section label on swap screen"

@@ -107,8 +107,7 @@ flutter:
     - assets/v2/keystone_lock_simple_open.svg
     - assets/v2/keystone_qr_code.svg
     - assets/v2/keystone_warning.svg
-    - assets/v2/near_intents_powered_by.svg
-    - assets/v2/near_intents_wordmark.svg
+    - assets/v2/near_intents_logo.png
 
 
   fonts:

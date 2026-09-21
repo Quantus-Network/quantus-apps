@@ -127,7 +127,8 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
     return ScaffoldBase(
       appBar: V2AppBar(
         title: l10n.swapTitle,
-        trailing: Icon(Icons.info_outline, color: colors.textContent, size: 24),
+        slotWidth: NearIntentsAttribution.width,
+        trailing: const NearIntentsAttribution(),
       ),
       mainContent: Column(
         children: [
@@ -146,8 +147,6 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
                   _toSection(l10n, colors, text),
                   const SizedBox(height: 32),
                   _infoSection(l10n, colors, text),
-                  const SizedBox(height: 32),
-                  const Center(child: NearIntentsAttribution()),
                 ],
               ),
             ),
