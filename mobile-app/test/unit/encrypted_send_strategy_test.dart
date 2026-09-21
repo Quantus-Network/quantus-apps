@@ -53,12 +53,13 @@ void main() {
     final strategy = EncryptedSendStrategy(account: account);
     final sub = container.listen(strategy.feeProvider(recipient: 'qz', amount: tenTokens), (_, _) {});
 
-    expect(sub.read().isLoading, isTrue);
+    expect(sub.read().pending, isTrue);
     await container.read(encryptedStateProvider(account.walletIndex).future);
-    expect((sub.read().requireValue as EncryptedFee).plan?.feeToken, wormholeTokenFromScaled(1));
+    expect((sub.read().fee as EncryptedFee).plan?.feeToken, wormholeTokenFromScaled(1));
+    expect(sub.read().settled, isTrue);
 
     container.invalidate(encryptedStateProvider(account.walletIndex));
-    expect(sub.read().value?.displayFee, wormholeTokenFromScaled(1));
+    expect(sub.read().fee?.displayFee, wormholeTokenFromScaled(1));
     expect(loads, 2);
   });
 

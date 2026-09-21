@@ -46,7 +46,7 @@ class EncryptedSendStrategy extends SendStrategy {
   bool get showPrivateSendNotice => true;
 
   @override
-  String? sourceAccountId(WidgetRef ref) => account.accountId;
+  String? get sourceAccountId => account.accountId;
 
   /// All derived wormhole addresses (receive and change rotate through the HD
   /// sequence) are this account — not just the index-0 [Account.accountId].
@@ -82,8 +82,8 @@ class EncryptedSendStrategy extends SendStrategy {
   BigInt feeChargedToBalance(SendFee? fee) => BigInt.zero;
 
   @override
-  ProviderListenable<AsyncValue<SendFee>> feeProvider({required String recipient, required BigInt amount}) =>
-      encryptedSendFeeProvider((account.walletIndex, amount));
+  ProviderListenable<SendFeeState> feeProvider({required String recipient, required BigInt amount}) =>
+      encryptedSendFeeProvider((account.walletIndex, amount)).select(SendFeeState.fromAsync);
 
   @override
   void retryFee(WidgetRef ref, {required String recipient, required BigInt amount}) =>
@@ -105,6 +105,8 @@ class EncryptedSendStrategy extends SendStrategy {
     required String recipientAddress,
     required BigInt amount,
     required SendFee fee,
+    bool feeIsEstimate = false,
+    bool sendAll = false,
   }) {
     final l10n = ref.watch(l10nProvider);
     final fmt = ref.watch(numberFormattingServiceProvider);
@@ -134,6 +136,7 @@ class EncryptedSendStrategy extends SendStrategy {
     required BigInt amount,
     required SendFee fee,
     required bool isPayMode,
+    bool sendAll = false,
   }) async {
     final l10n = ref.read(l10nProvider);
     final plan = (fee as EncryptedFee).plan;

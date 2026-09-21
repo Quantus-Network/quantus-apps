@@ -121,10 +121,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       return;
     }
 
+    final strategy = RegularSendStrategy(account: active.account);
     startSendFlow(
       context,
+      strategy: strategy,
       screen: InputAmountScreen(
-        strategy: RegularSendStrategy(account: active.account),
+        strategy: strategy,
         recipientAddress: payment.to,
         initialAmount: payment.amount,
         isPayMode: true,
@@ -354,7 +356,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       key: const Key(E2EKeys.homeSendButton),
       iconAsset: 'assets/v2/action_send.svg',
       label: l10n.homeSend,
-      onTap: () => startSendFlow(context, screen: SelectRecipientScreen(strategy: sendStrategy)),
+      onTap: () => startSendFlow(
+        context,
+        strategy: sendStrategy,
+        screen: SelectRecipientScreen(strategy: sendStrategy),
+      ),
     );
 
     final swapCard = _actionCard(
@@ -381,10 +387,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         _actionCard(
           iconAsset: 'assets/v2/action_send.svg',
           label: l10n.multisigProposeTitle,
-          onTap: () => startSendFlow(
-            context,
-            screen: SelectRecipientScreen(strategy: MultisigProposeStrategy(msig: msig)),
-          ),
+          onTap: () {
+            final strategy = MultisigProposeStrategy(msig: msig);
+            startSendFlow(
+              context,
+              strategy: strategy,
+              screen: SelectRecipientScreen(strategy: strategy),
+            );
+          },
         ),
       ],
     );

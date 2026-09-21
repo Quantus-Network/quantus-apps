@@ -64,7 +64,7 @@ class MultisigProposeStrategy extends SendStrategy {
   static final BigInt _estimateFeeAmount = BigInt.from(1000) * NumberFormattingService.scaleFactorBigInt;
 
   @override
-  String? sourceAccountId(WidgetRef ref) => msig.accountId;
+  String? get sourceAccountId => msig.accountId;
 
   @override
   SendStrings strings(AppLocalizations l10n) => SendStrings(
@@ -97,8 +97,8 @@ class MultisigProposeStrategy extends SendStrategy {
   String? feePayerBalanceLabel(AppLocalizations l10n) => l10n.multisigProposeFeePayerBalanceLabel;
 
   @override
-  ProviderListenable<AsyncValue<SendFee>> feeProvider({required String recipient, required BigInt amount}) =>
-      multisigProposeFeeProvider((msig, recipient.trim()));
+  ProviderListenable<SendFeeState> feeProvider({required String recipient, required BigInt amount}) =>
+      multisigProposeFeeProvider((msig, recipient.trim())).select(SendFeeState.fromAsync);
 
   @override
   void retryFee(WidgetRef ref, {required String recipient, required BigInt amount}) =>
@@ -118,6 +118,8 @@ class MultisigProposeStrategy extends SendStrategy {
     required String recipientAddress,
     required BigInt amount,
     required SendFee fee,
+    bool feeIsEstimate = false,
+    bool sendAll = false,
   }) {
     final l10n = ref.watch(l10nProvider);
     final fmt = ref.watch(numberFormattingServiceProvider);
@@ -205,6 +207,7 @@ class MultisigProposeStrategy extends SendStrategy {
     required String recipientAddress,
     required BigInt amount,
     required SendFee fee,
+    bool sendAll = false,
   }) async {
     final signer = _signer(ref);
     if (!signer.signsWithHardware) return;
@@ -226,6 +229,7 @@ class MultisigProposeStrategy extends SendStrategy {
     required BigInt amount,
     required SendFee fee,
     required bool isPayMode,
+    bool sendAll = false,
   }) async {
     final l10n = ref.read(l10nProvider);
     final fmt = ref.read(numberFormattingServiceProvider);

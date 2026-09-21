@@ -4,6 +4,10 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:quantus_sdk/generated/bell/pallets/balances.dart' as balances_pallet;
+import 'package:quantus_sdk/generated/bell/types/pallet_balances/pallet/call.dart' as balances_call;
+import 'package:quantus_sdk/generated/bell/types/quantus_runtime/runtime_call.dart' as runtime_call;
+import 'package:quantus_sdk/generated/bell/types/sp_runtime/multiaddress/multi_address.dart' as multi_address;
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/local_auth_provider.dart';
 import 'package:resonance_network_wallet/services/local_auth_service.dart';
@@ -62,8 +66,23 @@ class TestLocalAuthController extends LocalAuthController {
 }
 
 class FakeSubstrateService extends Fake implements SubstrateService {
+  FakeSubstrateService({BigInt? fee}) : fee = fee ?? BigInt.one;
+
+  BigInt fee;
+  int feeCalls = 0;
+  Account? lastFeeAccount;
+  RuntimeCall? lastFeeCall;
+
   @override
   bool isValidSS58Address(String address) => true;
+
+  @override
+  Future<ExtrinsicFeeData> getFeeForCall(Account account, RuntimeCall call) async {
+    feeCalls++;
+    lastFeeAccount = account;
+    lastFeeCall = call;
+    return ExtrinsicFeeData(fee: fee, blockHash: '0x00', blockNumber: 1);
+  }
 }
 
 class FakeHumanReadableChecksumService extends Fake implements HumanReadableChecksumService {
@@ -76,18 +95,22 @@ class FakeHumanReadableChecksumService extends Fake implements HumanReadableChec
 }
 
 class FakeBalancesService extends Fake implements BalancesService {
-  static final BigInt dispatchWeight = BigInt.from(5551728000);
-  int weightProbes = 0;
+  static final _anyDest = const multi_address.$MultiAddress().id(List<int>.filled(32, 0));
 
   @override
-  Future<BigInt> transferDispatchWeight() async {
-    weightProbes++;
-    return dispatchWeight;
-  }
+  Balances getBalanceTransferCall(String targetAddress, BigInt amount) =>
+      const balances_pallet.Txs().transferAllowDeath(dest: _anyDest, value: amount);
 
   @override
-  BigInt transferFee(BigInt amount, {required BigInt dispatchWeight, required DilithiumScheme scheme}) =>
-      amount + dispatchWeight;
+  Balances getTransferAllCall(String targetAddress, {bool keepAlive = false}) =>
+      const balances_pallet.Txs().transferAll(dest: _anyDest, keepAlive: keepAlive);
+}
+
+/// Whether [call] is `Balances.transfer_all` with the given [keepAlive].
+bool isTransferAll(RuntimeCall call, {required bool keepAlive}) {
+  if (call is! runtime_call.Balances) return false;
+  final inner = call.value0;
+  return inner is balances_call.TransferAll && inner.keepAlive == keepAlive;
 }
 
 Account makeAccount(int index, {AccountType accountType = AccountType.local}) => Account(

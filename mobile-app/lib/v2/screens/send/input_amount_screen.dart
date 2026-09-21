@@ -9,6 +9,7 @@ import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/currency_display_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/shared/constants/e2e_keys.dart';
+import 'package:resonance_network_wallet/v2/components/link_button.dart';
 import 'package:resonance_network_wallet/v2/screens/send/review_send_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/send/send_screen_logic.dart';
 import 'package:resonance_network_wallet/v2/screens/send/send_strategy.dart';
@@ -38,14 +39,14 @@ class InputAmountScreen extends ConsumerStatefulWidget {
 class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
   final _amountController = TextEditingController();
   final _amountFocus = FocusNode();
-  final _checksumService = HumanReadableChecksumService();
 
   String? _recipientChecksum;
   BigInt _amount = BigInt.zero;
+  bool _sendAll = false;
 
   String get _recipient => widget.recipientAddress.trim();
 
-  ProviderListenable<AsyncValue<SendFee>> _feeProvider(BigInt amount) =>
+  ProviderListenable<SendFeeState> _feeProvider(BigInt amount) =>
       widget.strategy.feeProvider(recipient: _recipient, amount: amount);
 
   AmountInputLogic get _amountInputLogic => AmountInputLogic(
@@ -70,7 +71,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
       }
     }
     _recipientChecksum = widget.recipientChecksum;
-    _checksumService.getHumanReadableName(widget.recipientAddress.trim()).then((name) {
+    ref.read(humanReadableChecksumServiceProvider).getHumanReadableName(widget.recipientAddress.trim()).then((name) {
       if (!mounted) return;
       setState(() => _recipientChecksum = name);
     });
@@ -83,32 +84,62 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
     super.dispose();
   }
 
+  void _requestFee(BigInt amount, {bool immediate = false}) => widget.strategy.requestFee(
+    ref.read,
+    recipient: _recipient,
+    amount: amount,
+    sendAll: _sendAll,
+    immediate: immediate,
+  );
+
+  bool _feeApplies(SendFeeState feeState) {
+    final fee = feeState.fee;
+    return fee != null && feeState.settled && widget.strategy.feeApplies(fee, amount: _amount, sendAll: _sendAll);
+  }
+
+  void _setAmount(BigInt amount) {
+    if (amount == _amount) return;
+    _amountController.text = _amountInputLogic.formatTokenAmount(amount);
+    setState(() => _amount = amount);
+  }
+
+  BigInt get _spendable => ref.read(widget.strategy.spendableBalanceProvider).value ?? BigInt.zero;
+
+  BigInt _maxSendable(SendFee? fee) => SendScreenLogic.calculateMaxSendableAmount(
+    balance: _spendable,
+    networkFee: widget.strategy.feeChargedToBalance(fee),
+  );
+
   void _onAmountChanged(String _) {
     HapticFeedback.mediumImpact();
 
     try {
-      setState(() => _amount = _amountInputLogic.parseTokenAmount(_amountController.text));
+      final amount = _amountInputLogic.parseTokenAmount(_amountController.text);
+      setState(() {
+        _amount = amount;
+        _sendAll = false;
+      });
     } on InvalidNumberInputException catch (e, stack) {
       quantusPrint('Amount parse failed: $e\n$stack');
       final l10n = ref.read(l10nProvider);
       context.showErrorToaster(message: l10n.sendInputAmountInvalidAmount);
       return;
     }
+    if (_amount > BigInt.zero) _requestFee(_amount);
   }
 
+  /// Max sends the whole spendable balance. Strategies that support it price
+  /// `transfer_all` at once, and the amount follows that fee as it lands.
   void _setMax() {
-    final spendable = ref.read(widget.strategy.spendableBalanceProvider).value ?? BigInt.zero;
-    final feeAtMax = ref.read(_feeProvider(spendable)).value;
-    final max = SendScreenLogic.calculateMaxSendableAmount(
-      balance: spendable,
-      networkFee: widget.strategy.feeChargedToBalance(feeAtMax),
-    );
-    _amountController.text = _amountInputLogic.formatTokenAmount(max);
-    setState(() => _amount = max);
+    final max = _maxSendable(ref.read(_feeProvider(_spendable)).fee);
+    setState(() => _sendAll = widget.strategy.supportsSendAll);
+    _setAmount(max);
+    if (max > BigInt.zero) _requestFee(max, immediate: _sendAll);
   }
 
   void _openReview() {
-    final fee = ref.read(_feeProvider(_amount)).value;
+    final feeState = ref.read(_feeProvider(_amount));
+    final fee = feeState.fee;
     final l10n = ref.read(l10nProvider);
     if (_recipientChecksum == null) {
       context.showErrorToaster(message: l10n.sendInputAmountChecksumRequired);
@@ -118,6 +149,8 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
       context.showErrorToaster(message: widget.strategy.strings(l10n).feeFetchFailedMessage);
       return;
     }
+    // Review prices the exact send; a debounced quote may still be queued.
+    if (!_feeApplies(feeState)) _requestFee(_amount, immediate: true);
 
     FocusScope.of(context).unfocus();
     Navigator.push(
@@ -130,6 +163,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
           fee: fee,
           recipientChecksum: _recipientChecksum!,
           isPayMode: widget.isPayMode,
+          sendAll: _sendAll,
         ),
       ),
     );
@@ -143,11 +177,14 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
     final text = context.themeTextV3;
     final balance = ref.watch(widget.strategy.spendableBalanceProvider);
     final displayBalance = ref.watch(widget.strategy.displayBalanceProvider);
-    final sourceId = widget.strategy.sourceAccountId(ref) ?? '';
+    final sourceId = widget.strategy.sourceAccountId ?? '';
     final recipient = _recipient;
     final formattingService = ref.read(numberFormattingServiceProvider);
-    final feeAsync = ref.watch(_feeProvider(_amount));
-    final fee = feeAsync.value;
+    ref.listen(_feeProvider(_amount), (_, next) {
+      if (_sendAll && next.fee != null) _setAmount(_maxSendable(next.fee));
+    });
+    final feeState = ref.watch(_feeProvider(_amount));
+    final fee = feeState.fee;
 
     final amountStatus = SendScreenLogic.getAmountStatus(
       _amount,
@@ -203,7 +240,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
           ),
         ),
       ),
-      bottomContent: _bottomSection(colors, text, l10n, strings, btnText, displayBalance, feeAsync, btnDisabled),
+      bottomContent: _bottomSection(colors, text, l10n, strings, btnText, displayBalance, feeState, btnDisabled),
     );
   }
 
@@ -309,38 +346,37 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
     AppLocalizations l10n,
     SendStrings strings,
     NumberFormattingService fmt,
-    AsyncValue<SendFee> feeAsync,
+    SendFeeState feeState,
   ) {
-    return feeAsync.when(
-      data: (fee) => Text(
-        l10n.commonAmountBalance(fmt.formatBalance(fee.displayFee, smartDecimals: 5), AppConstants.tokenSymbol),
-        style: text.body.copyWith(color: colors.textMuted),
-      ),
-      error: (_, _) => Column(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
+    final fee = feeState.fee;
+    if (fee == null && !feeState.failed) {
+      return const Align(alignment: Alignment.centerRight, child: Loader());
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        if (fee == null)
           Text(
             strings.feeFetchFailedMessage,
             style: text.body.copyWith(color: colors.semanticEmber),
             textAlign: TextAlign.right,
-          ),
-          const SizedBox(height: 4),
-          IntrinsicWidth(
-            child: QuantusButton.simple(
-              label: l10n.homeActivityRetry,
-              onTap: () => widget.strategy.retryFee(ref, recipient: _recipient, amount: _amount),
-              padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 0),
-              variant: ButtonVariant.ghost,
-              textStyle: text.body.copyWith(
-                color: colors.accentFlare,
-                decoration: TextDecoration.underline,
-                decorationColor: colors.accentFlare,
-              ),
+          )
+        else
+          Text(
+            estimateLabel(
+              l10n.commonAmountBalance(fmt.formatBalance(fee.displayFee, smartDecimals: 5), AppConstants.tokenSymbol),
+              estimate: !_feeApplies(feeState),
             ),
+            style: text.body.copyWith(color: colors.textMuted),
+          ),
+        if (feeState.failed) ...[
+          const SizedBox(height: 4),
+          LinkButton(
+            label: l10n.homeActivityRetry,
+            onTap: () => widget.strategy.retryFee(ref, recipient: _recipient, amount: _amount),
           ),
         ],
-      ),
-      loading: () => const Align(alignment: Alignment.centerRight, child: Loader()),
+      ],
     );
   }
 
@@ -351,7 +387,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
     SendStrings strings,
     String btnText,
     AsyncValue<BigInt> balance,
-    AsyncValue<SendFee> feeAsync,
+    SendFeeState feeState,
     bool btnDisabled,
   ) {
     final formattingService = ref.read(numberFormattingServiceProvider);
@@ -394,7 +430,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
                       children: [
                         Text(strings.feeLabel, style: mutedBody),
                         const SizedBox(height: 4),
-                        _feeValue(colors, text, l10n, strings, formattingService, feeAsync),
+                        _feeValue(colors, text, l10n, strings, formattingService, feeState),
                       ],
                     ),
                   ),
@@ -408,19 +444,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
                 ),
               ],
               const SizedBox(height: 4),
-              IntrinsicWidth(
-                child: QuantusButton.simple(
-                  label: l10n.sendInputAmountMax,
-                  onTap: _setMax,
-                  padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 0),
-                  variant: ButtonVariant.ghost,
-                  textStyle: text.body.copyWith(
-                    color: colors.accentFlare,
-                    decoration: TextDecoration.underline,
-                    decorationColor: colors.accentFlare,
-                  ),
-                ),
-              ),
+              LinkButton(label: l10n.sendInputAmountMax, onTap: _setMax),
             ],
           ),
           const SizedBox(height: 32),

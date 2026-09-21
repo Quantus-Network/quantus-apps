@@ -41,7 +41,13 @@ sealed class SendFee {
 class RegularFee extends SendFee {
   final BigInt networkFee;
 
-  const RegularFee({required this.networkFee});
+  /// Transfer amount this fee priced; zero when unknown or for a max send.
+  final BigInt amount;
+
+  /// Priced a `transfer_all`: the chain sizes the amount at inclusion.
+  final bool sendAll;
+
+  RegularFee({required this.networkFee, BigInt? amount, this.sendAll = false}) : amount = amount ?? BigInt.zero;
 
   @override
   BigInt get displayFee => networkFee;
@@ -71,6 +77,37 @@ class EncryptedFee extends SendFee {
   @override
   BigInt get displayFee => plan?.feeToken ?? BigInt.zero;
 }
+
+/// What the screens know about a flow's fee right now. [fee] is the latest
+/// result and stays put once known; [pending] means a newer query is queued or
+/// in flight, [failed] that the latest query failed. Only a [settled] fee is
+/// exact; anything else is shown as an estimate.
+class SendFeeState {
+  final SendFee? fee;
+  final bool pending;
+  final bool failed;
+
+  const SendFeeState({this.fee, this.pending = false, this.failed = false});
+
+  factory SendFeeState.fromAsync(AsyncValue<SendFee> value) =>
+      SendFeeState(fee: value.value, pending: value.isLoading, failed: value.hasError);
+
+  bool get settled => fee != null && !pending && !failed;
+
+  @override
+  bool operator ==(Object other) =>
+      other is SendFeeState && other.fee == fee && other.pending == pending && other.failed == failed;
+
+  @override
+  int get hashCode => Object.hash(fee, pending, failed);
+}
+
+/// `ref.read` or `container.read`, so a strategy can be driven from a screen
+/// or from the tap that starts the flow.
+typedef ProviderReader = T Function<T>(ProviderListenable<T> provider);
+
+/// Prefixes a figure that depends on an unsettled fee with `~`.
+String estimateLabel(String text, {required bool estimate}) => estimate ? '~$text' : text;
 
 /// Content for the shared terminal (success) screen. All strings are resolved
 /// up front so it can be built without a [BuildContext].
@@ -187,18 +224,24 @@ SendTerminalContent buildSentTerminalContent(
 abstract class SendStrategy {
   const SendStrategy();
 
+  /// Amount a flow's first fee query is sized with, before one is entered.
+  static final BigInt feeProbeAmount = NumberFormattingService.scaleFactorBigInt;
+
+  /// Whether Max sends the whole spendable balance with `transfer_all`.
+  bool get supportsSendAll => false;
+
   /// Whether the recipient screen shows the "Private Send" notice above the
   /// continue button. Only encrypted (wormhole) sends enable this.
   bool get showPrivateSendNotice => false;
 
   /// Account the funds leave from; the recipient must differ (self-guard) and
-  /// it is excluded from the recents list. Resolved via `ref.read`.
-  String? sourceAccountId(WidgetRef ref);
+  /// it is excluded from the recents list.
+  String? get sourceAccountId;
 
   /// Self-send guard: whether [address] belongs to the sending account itself.
   /// Defaults to comparing against [sourceAccountId]; encrypted sends also
   /// treat every derived wormhole address of the wallet as self.
-  Future<bool> isSelfRecipient(WidgetRef ref, String address) async => address == sourceAccountId(ref);
+  Future<bool> isSelfRecipient(WidgetRef ref, String address) async => address == sourceAccountId;
 
   SendStrings strings(AppLocalizations l10n);
 
@@ -226,10 +269,26 @@ abstract class SendStrategy {
   /// Label for the fee payer balance line (e.g. "Your Balance:").
   String? feePayerBalanceLabel(AppLocalizations l10n) => null;
 
-  /// Authoritative fee for sending [amount] to [recipient]. Watched by the
-  /// amount screen, so it recomputes as the amount changes; strategies derive
-  /// it from local state wherever the runtime makes that possible.
-  ProviderListenable<AsyncValue<SendFee>> feeProvider({required String recipient, required BigInt amount});
+  /// Fee for sending [amount] to [recipient]. Watched by the amount and review
+  /// screens; strategies derive it from local state wherever the runtime makes
+  /// that possible, otherwise [requestFee] refreshes it from the chain.
+  ProviderListenable<SendFeeState> feeProvider({required String recipient, required BigInt amount});
+
+  /// Prices a send of [amount] to [recipient], or of the whole balance when
+  /// [sendAll]. Called from event handlers only: the flow-start tap (sized at
+  /// [feeProbeAmount]), typing, Max and Continue; [immediate] skips the
+  /// debounce. No-op for strategies whose [feeProvider] is derived locally.
+  void requestFee(
+    ProviderReader read, {
+    required String recipient,
+    required BigInt amount,
+    bool sendAll = false,
+    bool immediate = false,
+  }) {}
+
+  /// Whether [fee] priced exactly this send: the `transfer_all` call for a max
+  /// send, otherwise a transfer of [amount]. Locally derived fees always do.
+  bool feeApplies(SendFee fee, {required BigInt amount, required bool sendAll}) => true;
 
   /// Re-queries whatever source [feeProvider] failed on.
   void retryFee(WidgetRef ref, {required String recipient, required BigInt amount});
@@ -239,13 +298,17 @@ abstract class SendStrategy {
   /// still loading. Watched in `build`.
   String? affordabilityError(WidgetRef ref, SendFee fee, AppLocalizations l10n);
 
-  /// Review-screen summary rows (already spaced). Built in `build`.
+  /// Review-screen summary rows (already spaced). Built in `build`. Figures
+  /// that depend on an unsettled [fee] are marked when [feeIsEstimate]; for a
+  /// max send ([sendAll]) that is the amount, otherwise the total.
   List<Widget> reviewRows(
     BuildContext context,
     WidgetRef ref, {
     required String recipientAddress,
     required BigInt amount,
     required SendFee fee,
+    bool feeIsEstimate = false,
+    bool sendAll = false,
   });
 
   /// Called while the user is on the review screen (and periodically until it
@@ -257,9 +320,11 @@ abstract class SendStrategy {
     required String recipientAddress,
     required BigInt amount,
     required SendFee fee,
+    bool sendAll = false,
   }) async {}
 
-  /// Authenticates and submits. Uses `ref.read`. Never navigates.
+  /// Authenticates and submits. Uses `ref.read`. Never navigates. The call is
+  /// built from [sendAll], never from what [fee] happened to price.
   Future<SendOutcome> submit(
     WidgetRef ref, {
     required String recipientAddress,
@@ -267,5 +332,6 @@ abstract class SendStrategy {
     required BigInt amount,
     required SendFee fee,
     required bool isPayMode,
+    bool sendAll = false,
   });
 }

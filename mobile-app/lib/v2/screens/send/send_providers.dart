@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
@@ -7,6 +5,8 @@ import 'package:quantus_sdk/generated/bell/pallets/balances.dart' as balances;
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/shared/utils/print.dart';
 import 'package:resonance_network_wallet/v2/screens/send/keystone_sign_cache.dart';
+import 'package:resonance_network_wallet/v2/screens/send/send_fee_notifier.dart';
+import 'package:resonance_network_wallet/v2/screens/send/send_strategy.dart';
 
 // Local provider for existential deposit toggle in send screen
 final existentialDepositToggleProvider = StateProvider<bool>((ref) => true);
@@ -18,9 +18,13 @@ final sendFlowActiveProvider = StateProvider<bool>((_) => false);
 
 /// Single entry point for send flows: refuses to start a second flow, starts a
 /// fresh Keystone signing session (a QR cached by an earlier flow may carry a
-/// stale nonce), and clears the in-flight flag when [screen]'s route leaves
-/// the stack — by pop, replacement, or removal.
-Future<void> startSendFlow(BuildContext context, {required Widget screen}) async {
+/// stale nonce), replaces the previous flow's fee with a first quote for
+/// [strategy], and clears the in-flight flag when [screen]'s route leaves the
+/// stack — by pop, replacement, or removal.
+///
+/// The first quote is requested here, from the tap that starts the flow: a
+/// screen must not write a provider from its own lifecycle.
+Future<void> startSendFlow(BuildContext context, {required SendStrategy strategy, required Widget screen}) async {
   final container = ProviderScope.containerOf(context);
   final sendFlow = container.read(sendFlowActiveProvider.notifier);
   if (sendFlow.state) {
@@ -28,19 +32,11 @@ Future<void> startSendFlow(BuildContext context, {required Widget screen}) async
     return;
   }
   container.read(keystoneSignCacheProvider.notifier).startNewSendSession();
-  // Warm the runtime-version (5 min TTL) and transfer-weight caches so the fee
-  // display and payload builds later in the flow skip those round trips.
-  unawaited(
-    container
-        .read(balancesServiceProvider)
-        .transferDispatchWeight()
-        .then<void>(
-          (_) {},
-          onError: (Object e) {
-            quantusPrint('Transfer weight prefetch failed: $e');
-          },
-        ),
-  );
+  container.read(sendFeeProvider.notifier).reset();
+  final source = strategy.sourceAccountId;
+  if (source != null) {
+    strategy.requestFee(container.read, recipient: source, amount: SendStrategy.feeProbeAmount);
+  }
   sendFlow.state = true;
   try {
     await Navigator.push(context, MaterialPageRoute<void>(builder: (_) => screen));
