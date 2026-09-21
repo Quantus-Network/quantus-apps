@@ -38,7 +38,6 @@ dependencies:
 
   # Auth, sharing, links
   url_launcher: ^6.3.2
-  local_auth: ^3.0.1
   share_plus: ^13.1.0
   app_links: ^7.0.0
 

@@ -12,10 +12,13 @@ class _FakeDiscovery extends AccountDiscoveryService {
   _FakeDiscovery(super.hd, this.onChain);
 
   @override
-  Future<Set<int>> discoverUsedIndices({required String Function(int index) addressAt, int gapLimit = 20}) async {
+  Future<Set<int>> discoverUsedIndices({
+    required Future<String> Function(int index) addressAt,
+    int gapLimit = 20,
+  }) async {
     final used = <int>{};
     for (var i = 0; i < 8; i++) {
-      if (onChain.contains(addressAt(i))) used.add(i);
+      if (onChain.contains(await addressAt(i))) used.add(i);
     }
     return used;
   }

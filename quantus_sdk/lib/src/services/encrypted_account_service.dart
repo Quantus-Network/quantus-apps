@@ -4,13 +4,14 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:convert/convert.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:quantus_sdk/src/services/account_discovery_service.dart';
 import 'package:quantus_sdk/src/services/hd_wallet_service.dart';
 import 'package:quantus_sdk/src/services/substrate_service.dart' show getAccountId32;
+import 'package:quantus_sdk/src/services/wormhole_address_book.dart';
 import 'package:quantus_sdk/src/services/wormhole_coin_selection.dart';
 import 'package:quantus_sdk/src/services/wormhole_send_service.dart';
 import 'package:quantus_sdk/src/services/wormhole_utxo_service.dart';
+import 'package:quantus_sdk/src/utils/app_support_files.dart';
 import 'package:quantus_sdk/src/utils/print.dart';
 
 typedef MnemonicGetter = Future<String?> Function();
@@ -59,8 +60,9 @@ class EncryptedAccountState {
 /// whose next unused index is shown for receiving, and a change branch
 /// (`m/44'/189189189'/0'/1'/n'`) whose next unused index is consumed as the
 /// fresh change address of each send. Both branches are gap-limit scanned
-/// (same algorithm as transparent accounts) so all funds are rediscovered
-/// from the mnemonic alone, and keeping change off the external branch lets
+/// (same algorithm as transparent accounts) over the wallet's
+/// [WormholeAddressBook], so discovery never reads the seed, and keeping change
+/// off the external branch lets
 /// externally received funds be reported separately from returning change.
 /// Spent inputs are excluded via on-chain nullifiers; in-flight sends are
 /// bridged by locally persisted pending-spend records until the indexer
@@ -72,12 +74,15 @@ class EncryptedAccountState {
 /// zeroized immediately after use; the FRB API hands secrets back as
 /// immutable Dart Strings, which cannot be overwritten in place, so their
 /// lifetime is kept function-local (no fields, no caches) — that is the best
-/// Dart allows.
+/// Dart allows. Nullifiers are not secrets (public once spent, and they reveal
+/// nothing about the secret) and are cached for the life of the instance, so a
+/// balance refresh reads the seed only for transfers it has not seen.
 class EncryptedAccountService {
   static const Duration _pendingSpendExpiry = Duration(hours: 1);
 
   final int walletIndex;
   final MnemonicGetter _getMnemonic;
+  final WormholeAddressBook _addressBook;
   final HdWalletService _hdWalletService;
   final WormholeUtxoService _utxoService;
   final AccountDiscoveryService _discoveryService;
@@ -90,6 +95,9 @@ class EncryptedAccountService {
   /// (by then a change-bearing batch has bumped the persisted nextIndex).
   final Set<int> _reservedChangeIndices = {};
 
+  /// `e<index>:<transferCount>` / `c<index>:<transferCount>` -> nullifier hex.
+  final Map<String, String> _nullifiers = {};
+
   /// Every not-yet-disposed instance, so logout can quiesce all in-flight
   /// encrypted work ([disposeAll]) before session state is wiped.
   static final Set<EncryptedAccountService> _live = {};
@@ -99,11 +107,13 @@ class EncryptedAccountService {
   EncryptedAccountService({
     required this.walletIndex,
     required MnemonicGetter getMnemonic,
+    WormholeAddressBook? addressBook,
     HdWalletService? hdWalletService,
     WormholeUtxoService? utxoService,
     AccountDiscoveryService? discoveryService,
     WormholeSendService? sendService,
   }) : _getMnemonic = getMnemonic,
+       _addressBook = addressBook ?? WormholeAddressBook(),
        _hdWalletService = hdWalletService ?? HdWalletService(),
        _utxoService = utxoService ?? WormholeUtxoService(),
        _discoveryService = discoveryService ?? AccountDiscoveryService(hdWalletService ?? HdWalletService()),
@@ -163,25 +173,17 @@ class EncryptedAccountService {
 
   Future<WormholeKeyPair> keyPairAt(int index) async => _deriveKeyPair(await _mnemonic(), index);
 
-  /// The address to show on the Receive screen: next unused index from the
-  /// last persisted state (cheap — no network). [load] keeps it current.
+  /// The key pair behind [receiveAddress]. Reads the seed; only the inner hash
+  /// screen needs it.
   Future<WormholeKeyPair> receiveKeyPair() async => keyPairAt((await _readStateLocked()).nextIndex);
 
-  /// Whether [address] is one of this wallet's derived wormhole addresses —
-  /// external indices `0..nextIndex` and change indices `0..nextChangeIndex`
-  /// cover every address ever shown for receiving or allocated for change.
-  /// Used to block self-sends from the encrypted account.
-  Future<bool> ownsAddress(String address) async {
-    final state = await _readStateLocked();
-    final mnemonic = await _mnemonic();
-    for (int i = 0; i <= state.nextIndex; i++) {
-      if (_deriveKeyPair(mnemonic, i).address == address) return true;
-    }
-    for (int i = 0; i <= state.nextChangeIndex; i++) {
-      if (_deriveKeyPair(mnemonic, i, isChange: true).address == address) return true;
-    }
-    return false;
-  }
+  /// The address to show on the Receive screen: next unused index from the
+  /// last persisted state (cheap — no network, no seed). [load] keeps it current.
+  Future<String> receiveAddress() async => _addressBook.addressAt(walletIndex, (await _readStateLocked()).nextIndex);
+
+  /// Whether [address] is one of this wallet's wormhole addresses on either
+  /// branch. Used to block self-sends from the encrypted account.
+  Future<bool> ownsAddress(String address) => _addressBook.owns(walletIndex, address);
 
   /// Drops on-disk transfer/nullifier caches for this wallet's known addresses
   /// so the next [load] re-queries from chain. Preserves pending-spend records
@@ -189,13 +191,11 @@ class EncryptedAccountService {
   /// the 1-hour expiry, never by a refresh.
   Future<void> discardCachedState() async {
     _log('discardCachedState: wallet $walletIndex');
-    // Derive every index that can have an on-disk cache (addresses only —
-    // the secret half of each pair is discarded immediately).
+    // Every index that can have an on-disk cache.
     final state = await _readStateLocked();
-    final mnemonic = await _mnemonic();
     final addresses = [
-      for (int i = 0; i <= state.nextIndex; i++) _deriveKeyPair(mnemonic, i).address,
-      for (int i = 0; i <= state.nextChangeIndex; i++) _deriveKeyPair(mnemonic, i, isChange: true).address,
+      for (int i = 0; i <= state.nextIndex; i++) await _addressBook.addressAt(walletIndex, i),
+      for (int i = 0; i <= state.nextChangeIndex; i++) await _addressBook.addressAt(walletIndex, i, isChange: true),
     ];
     if (addresses.isNotEmpty) {
       await WormholeUtxoService.clearCachesForAddresses(addresses);
@@ -216,31 +216,29 @@ class EncryptedAccountService {
   Future<EncryptedAccountState> load({WormholeProgressCallback? onProgress, IsCancelledCallback? isCancelled}) async {
     _checkNotDisposed();
     final sw = Stopwatch()..start();
-    final mnemonic = await _mnemonic();
 
     final [usedIndices, usedChangeIndices] = await Future.wait([
-      _discoveryService.discoverUsedIndices(addressAt: (i) => _deriveKeyPair(mnemonic, i).address),
-      _discoveryService.discoverUsedIndices(addressAt: (i) => _deriveKeyPair(mnemonic, i, isChange: true).address),
+      _discoveryService.discoverUsedIndices(addressAt: (i) => _addressBook.addressAt(walletIndex, i)),
+      _discoveryService.discoverUsedIndices(addressAt: (i) => _addressBook.addressAt(walletIndex, i, isChange: true)),
     ]);
     _log('Discovery: used indices $usedIndices, used change indices $usedChangeIndices');
 
-    WormholeAddressInfo infoAt(int i, {bool isChange = false}) {
-      final keyPair = _deriveKeyPair(mnemonic, i, isChange: isChange);
-      return WormholeAddressInfo(index: i, isChange: isChange, address: keyPair.address, secretHex: keyPair.secretHex);
-    }
+    Future<WormholeAddressInfo> infoAt(int i, {bool isChange = false}) async => WormholeAddressInfo(
+      index: i,
+      isChange: isChange,
+      address: await _addressBook.addressAt(walletIndex, i, isChange: isChange),
+    );
 
     final scanIndices = {0, ...usedIndices}.toList()..sort();
     final changeScanIndices = usedChangeIndices.toList()..sort();
-    // Secrets live only inside this list for the duration of the UTXO fetch
-    // (needed there for nullifier computation); the returned UTXOs carry no
-    // secrets and this list is dropped when load() returns.
     final addresses = [
-      for (final i in scanIndices) infoAt(i),
-      for (final i in changeScanIndices) infoAt(i, isChange: true),
+      for (final i in scanIndices) await infoAt(i),
+      for (final i in changeScanIndices) await infoAt(i, isChange: true),
     ];
 
     final utxoResult = await _utxoService.getUnspentUtxos(
       addresses: addresses,
+      nullifierFor: _nullifierResolver(),
       onProgress: onProgress,
       isCancelled: isCancelled,
     );
@@ -294,6 +292,23 @@ class EncryptedAccountService {
       nextIndex: state.nextIndex,
       nextChangeIndex: state.nextChangeIndex,
     );
+  }
+
+  /// Serves nullifiers from [_nullifiers]; reads the seed at most once per
+  /// [load], and only when a transfer is seen for the first time.
+  NullifierResolver _nullifierResolver() {
+    Future<String>? mnemonic;
+    return (owner, transferCount) async {
+      final key = '${owner.isChange ? 'c' : 'e'}${owner.index}:$transferCount';
+      final cached = _nullifiers[key];
+      if (cached != null) return cached;
+      mnemonic ??= _mnemonic();
+      final keyPair = _deriveKeyPair(await mnemonic!, owner.index, isChange: owner.isChange);
+      return _nullifiers[key] = _hdWalletService.computeNullifier(
+        secretHex: keyPair.secretHex,
+        transferCount: transferCount,
+      );
+    };
   }
 
   /// Proves and submits a [plan] (from [selectWormholeInputs]) paying
@@ -390,10 +405,7 @@ class EncryptedAccountService {
 
   // --- Persistent state ---
 
-  Future<File> _stateFile() async {
-    final dir = await getApplicationSupportDirectory();
-    return File('${dir.path}/encrypted_account_w$walletIndex.json');
-  }
+  Future<File> _stateFile() => appSupportFile('encrypted_account_w$walletIndex.json');
 
   /// Deletes every wallet's encrypted-account state file (next-index / pending
   /// spends). Call on logout; otherwise a new wallet at the same index inherits
@@ -404,17 +416,9 @@ class EncryptedAccountService {
     // right after it is deleted below.
     await disposeAll();
     try {
-      final dir = await getApplicationSupportDirectory();
-      if (!await dir.exists()) return;
-      var deleted = 0;
-      await for (final entity in dir.list()) {
-        if (entity is! File) continue;
-        final name = entity.uri.pathSegments.isEmpty ? entity.path : entity.uri.pathSegments.last;
-        if (name.startsWith('encrypted_account_w') && (name.endsWith('.json') || name.endsWith('.json.tmp'))) {
-          await entity.delete();
-          deleted++;
-        }
-      }
+      final deleted = await deleteAppSupportFiles(
+        (name) => name.startsWith('encrypted_account_w') && (name.endsWith('.json') || name.endsWith('.json.tmp')),
+      );
       _log('clearAllPersistedState: deleted $deleted file(s)');
     } catch (e) {
       _log('clearAllPersistedState failed (non-fatal): $e');

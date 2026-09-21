@@ -153,16 +153,22 @@ class EncryptedSendController extends Notifier<EncryptedSendState> {
       );
       state = state.copyWith(phase: EncryptedSendPhase.succeeded);
     } on ClaimCancelled {
-      // Nothing was submitted.
-      if (!ref.mounted) return;
-      ref.invalidate(encryptedStateProvider(walletIndex));
-      state = state.copyWith(phase: EncryptedSendPhase.cancelled);
+      _cancelledBeforeSubmitting(walletIndex);
+    } on SeedAccessCancelled {
+      _cancelledBeforeSubmitting(walletIndex);
     } catch (e) {
       quantusPrint('[EncryptedSend] Send failed: $e');
       if (!ref.mounted) return;
       ref.invalidate(encryptedStateProvider(walletIndex));
       state = state.copyWith(phase: EncryptedSendPhase.failed, errorMessage: e.toString());
     }
+  }
+
+  /// Nothing was submitted.
+  void _cancelledBeforeSubmitting(int walletIndex) {
+    if (!ref.mounted) return;
+    ref.invalidate(encryptedStateProvider(walletIndex));
+    state = state.copyWith(phase: EncryptedSendPhase.cancelled);
   }
 
   /// Requests cancellation and waits for the operation to actually stop. The

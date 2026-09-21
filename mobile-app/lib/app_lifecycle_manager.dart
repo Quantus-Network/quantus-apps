@@ -6,7 +6,7 @@ import 'package:flutter_riverpod/legacy.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/connectivity_provider.dart';
 import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
-import 'package:resonance_network_wallet/providers/local_auth_provider.dart';
+import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/services/history_polling_manager.dart';
 import 'package:resonance_network_wallet/shared/utils/print.dart';
 
@@ -38,12 +38,10 @@ class _AppLifecycleManagerState extends ConsumerState<AppLifecycleManager> with 
     _isBackgrounded = currentState != AppLifecycleState.resumed;
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final localAuthNotifier = ref.read(localAuthProvider.notifier);
       ref.read(appLifecycleStateProvider.notifier).state =
           WidgetsBinding.instance.lifecycleState ?? AppLifecycleState.resumed;
 
       _setupConnectivityListener();
-      localAuthNotifier.checkAuthentication();
     });
   }
 
@@ -80,7 +78,6 @@ class _AppLifecycleManagerState extends ConsumerState<AppLifecycleManager> with 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     ref.read(appLifecycleStateProvider.notifier).state = state;
-    final localAuthNotifier = ref.read(localAuthProvider.notifier);
     final pollingManager = ref.read(historyPollingManagerProvider);
     final isOnline = ref.read(isOnlineProvider);
 
@@ -98,30 +95,19 @@ class _AppLifecycleManagerState extends ConsumerState<AppLifecycleManager> with 
           quantusPrint('App resumed but offline - polling paused');
         }
 
-        // Check authentication ONLY on resume from background.
-        // This prevents flicker from transient backgrounds (FaceID, system overlays)
-        // that briefly pause/resume the app.
-        localAuthNotifier.checkAuthentication();
-
         // Sync remote config on background resume
         unawaited(ref.read(remoteConfigProvider.notifier).syncConfig());
       }
     } else {
-      // Handle background states (inactive, paused, hidden, detached)
-      // Skip if an auth dialog caused this lifecycle change — the system prompt
-      // pushes the app into inactive/paused, and treating that as a real
-      // backgrounding re-triggers auth on resume (a double prompt). Check the
-      // service flag too, not just the controller: the send, multisig and
-      // settings flows authenticate through LocalAuthService directly and never
-      // set the controller's isAuthenticating.
-      final authInProgress =
-          ref.read(localAuthProvider).isAuthenticating || ref.read(localAuthServiceProvider).isAuthenticating;
-      if (!_isBackgrounded && !authInProgress) {
-        quantusPrint('$state - pausing (update pause time only)');
+      // Handle background states (inactive, paused, hidden, detached). The seed
+      // store's system prompt pushes the app through inactive too; that is not
+      // a backgrounding, and treating it as one would refresh everything on
+      // resume.
+      if (!_isBackgrounded && !ref.read(settingsServiceProvider).seedAccessInProgress) {
+        quantusPrint('$state - pausing');
         _isBackgrounded = true;
 
         pollingManager.pausePolling();
-        localAuthNotifier.recordBackgroundTime();
       } else {
         quantusPrint('$state - already backgrounded, skipping actions');
       }

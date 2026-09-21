@@ -37,7 +37,7 @@ class _ReceiveScreenState extends ConsumerState<ReceiveScreen> {
       final base = account.account;
       if (isEncryptedAccount(base)) {
         final service = ref.read(encryptedAccountServiceProvider((base as Account).walletIndex));
-        accountId = (await service.receiveKeyPair()).address;
+        accountId = await service.receiveAddress();
       }
       // Degrade to a blank checkphrase on lookup failure so the address/QR
       // still renders instead of an unbounded loader.

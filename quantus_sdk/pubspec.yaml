@@ -49,7 +49,7 @@ dependencies:
       ref: 0_7_3_quantus_2
       path: packages/ss58
   intl: ^0.20.2
-  flutter_secure_storage: ^10.1.0
+  flutter_secure_storage: ^10.3.1
   connectivity_plus: ^7.1.1
   path_provider: ^2.1.5
 
@@ -61,6 +61,8 @@ dependencies:
 
   qr_flutter: ^4.1.0
   flutter_svg: ^2.3.0
+  local_auth: ^3.0.1
+  device_info_plus: ^13.2.0
 
 dev_dependencies:
   flutter_test:
@@ -88,6 +90,7 @@ dev_dependencies:
       url: https://github.com/Quantus-Network/polkadart.git
       ref: 0_7_3_quantus_2
       path: packages/polkadart_cli
+  flutter_secure_storage_platform_interface: ^2.0.1
 polkadart:
   output_dir: lib/generated
   chains:

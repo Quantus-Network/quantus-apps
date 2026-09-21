@@ -126,6 +126,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   BigInt dco_decode_usize(dynamic raw);
 
   @protected
+  WormholeAddresses dco_decode_wormhole_addresses(dynamic raw);
+
+  @protected
   WormholeClaimBody dco_decode_wormhole_claim_body(dynamic raw);
 
   @protected
@@ -230,6 +233,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   BigInt sse_decode_usize(SseDeserializer deserializer);
+
+  @protected
+  WormholeAddresses sse_decode_wormhole_addresses(SseDeserializer deserializer);
 
   @protected
   WormholeClaimBody sse_decode_wormhole_claim_body(SseDeserializer deserializer);
@@ -338,6 +344,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void sse_encode_usize(BigInt self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_wormhole_addresses(WormholeAddresses self, SseSerializer serializer);
 
   @protected
   void sse_encode_wormhole_claim_body(WormholeClaimBody self, SseSerializer serializer);

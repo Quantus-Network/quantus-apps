@@ -13,7 +13,6 @@ import 'package:resonance_network_wallet/providers/pending_multisig_creations_pr
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/shared/utils/account_utils.dart';
 import 'package:resonance_network_wallet/shared/utils/print.dart';
-import 'package:resonance_network_wallet/services/local_auth_service.dart';
 import 'package:resonance_network_wallet/services/multisig_submission_service.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/accounts_navigation.dart';
 import 'package:resonance_network_wallet/v2/screens/send/keystone_sign_cache.dart';
@@ -233,17 +232,13 @@ class _AddMultisigScreenState extends ConsumerState<AddMultisigScreen> {
       return;
     }
 
-    final authed = await LocalAuthService().authenticate(localizedReason: l10n.multisigCreateAuthReason);
-    if (!authed) {
-      if (mounted) setState(() => _isLoading = false);
-      return;
-    }
-
     try {
       await submissionService.startMultisigCreation(preflight: preflight, creator: creator);
 
       if (!mounted) return;
       returnToAccountsScreen(context, ref, highlightAccountId: preflight.draft.accountId);
+    } on SeedAccessCancelled {
+      if (mounted) setState(() => _isLoading = false);
     } catch (e) {
       quantusPrint('[AddMultisigScreen] createMultisig error: $e');
       _failCreation(l10n.multisigCreateErrorCouldNotCreate);

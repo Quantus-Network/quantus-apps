@@ -19,12 +19,14 @@ class _RecoveryPhraseScreenState extends ConsumerState<RecoveryPhraseScreen> {
   final _settingsService = SettingsService();
   List<String> _words = [];
 
-  void _loadMnemonic() async {
-    final mnemonic = await _settingsService.getMnemonic(widget.walletIndex);
-    if (mnemonic != null && mounted) {
-      setState(() {
-        _words = mnemonic.split(' ');
-      });
+  /// The read shows the device's unlock prompt; a dismissed prompt returns to
+  /// the previous screen.
+  Future<void> _loadMnemonic() async {
+    try {
+      final mnemonic = await _settingsService.getMnemonic(widget.walletIndex);
+      if (mnemonic != null && mounted) setState(() => _words = mnemonic.split(' '));
+    } on SeedAccessCancelled {
+      if (mounted) Navigator.of(context).pop();
     }
   }
 

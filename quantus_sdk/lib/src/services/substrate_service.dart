@@ -84,20 +84,6 @@ class SubstrateService {
     return BigInt.from((info['weight'] as Map<String, dynamic>)['ref_time'] as int);
   }
 
-  Future<crypto.Keypair> _getUserWallet() async {
-    final account = (await SettingsService().getActiveRegularAccount())!;
-    final keypair = await account.getKeypair();
-    return keypair;
-  }
-
-  // Fetch balance of current user
-  Future<BigInt> queryUserBalance() async {
-    final keyPair = await _getUserWallet();
-    final balance = await queryBalance(keyPair.ss58Address);
-    quantusPrint('user balance: $balance');
-    return balance;
-  }
-
   Future<BigInt> queryBalance(String address) => queryBalanceOn(_rpcEndpointService, address);
 
   /// Free balance of [address] on the chain behind [rpc].
@@ -324,13 +310,12 @@ class SubstrateService {
         tip: 0,
       ).encode(Registry());
       final senderWallet = await account.getKeypair();
+      final signature = senderWallet.sign(payload, specVersion: ctx.runtimeVersion.specVersion);
+      senderWallet.secretKey.fillRange(0, senderWallet.secretKey.length, 0);
       extrinsic = _encodeSignedExtrinsic(
         signer: Uint8List.fromList(senderWallet.addressBytes),
         method: encodedCall,
-        signature: _combineSignatureAndPubkey(
-          senderWallet.sign(payload, specVersion: ctx.runtimeVersion.specVersion),
-          senderWallet.publicKey,
-        ),
+        signature: _combineSignatureAndPubkey(signature, senderWallet.publicKey),
         blockNumber: ctx.blockNumber,
         nonce: ctx.nonce,
         scheme: senderWallet.scheme,

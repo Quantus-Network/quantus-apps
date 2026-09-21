@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
-import 'package:resonance_network_wallet/services/local_auth_service.dart';
 import 'package:resonance_network_wallet/services/logout_service.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/settings_caution_scaffold.dart';
 
@@ -21,19 +20,15 @@ class _ResetConfirmationScreenState extends ConsumerState<ResetConfirmationScree
     final l10n = ref.read(l10nProvider);
     setState(() => _isResetting = true);
 
-    final authed = await LocalAuthService().authenticate(localizedReason: l10n.settingsResetAuthReason);
-
-    if (authed && mounted) {
-      try {
-        ref.read(logoutServiceProvider).logout(context);
-      } catch (e) {
-        if (mounted) {
-          context.showErrorToaster(message: l10n.settingsResetFailed('$e'));
-        }
-        setState(() => _isResetting = false);
-      }
-    } else if (mounted) {
+    try {
+      await ref.read(logoutServiceProvider).logout(context);
+    } on SeedAccessCancelled {
+      if (!mounted) return;
       context.showErrorToaster(message: l10n.settingsResetAuthRequired);
+      setState(() => _isResetting = false);
+    } catch (e) {
+      if (!mounted) return;
+      context.showErrorToaster(message: l10n.settingsResetFailed('$e'));
       setState(() => _isResetting = false);
     }
   }

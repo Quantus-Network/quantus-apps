@@ -5,7 +5,6 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
-import 'package:resonance_network_wallet/services/local_auth_service.dart';
 import 'package:resonance_network_wallet/v2/screens/send/send_strategy.dart';
 
 /// Spend plan — and so the fee — for an amount from the wallet's current
@@ -148,9 +147,6 @@ class EncryptedSendStrategy extends SendStrategy {
     if (plan.amountToken != amount) {
       throw StateError('Encrypted send plan amount ${plan.amountToken} does not match confirmed amount $amount');
     }
-
-    final authed = await LocalAuthService().authenticate(localizedReason: l10n.sendReviewAuthReason);
-    if (!authed) return SendFailed(l10n.sendReviewAuthRequired);
 
     return SendNeedsProving(
       account: account,

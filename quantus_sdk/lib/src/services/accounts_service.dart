@@ -44,20 +44,13 @@ class AccountsService {
     );
   }
 
-  Future<Account> createEncryptedAccount({required int walletIndex, required String name}) async {
-    final mnemonic = await _settingsService.getMnemonic(walletIndex);
-    if (mnemonic == null) {
-      throw Exception('Mnemonic not found. Cannot create encrypted account.');
-    }
-    final keyPair = HdWalletService().deriveWormholeKeyPair(mnemonic: mnemonic);
-    return Account(
-      walletIndex: walletIndex,
-      index: AppConstants.encryptedAccountIndex,
-      name: name,
-      accountId: keyPair.address,
-      accountType: AccountType.encrypted,
-    );
-  }
+  Future<Account> createEncryptedAccount({required int walletIndex, required String name}) async => Account(
+    walletIndex: walletIndex,
+    index: AppConstants.encryptedAccountIndex,
+    name: name,
+    accountId: await WormholeAddressBook().addressAt(walletIndex, 0),
+    accountType: AccountType.encrypted,
+  );
 
   /// Ensures every software (non-hardware) wallet has its single encrypted
   /// (wormhole) account persisted. Idempotent; returns true if any were added.

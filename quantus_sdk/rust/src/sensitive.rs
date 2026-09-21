@@ -83,3 +83,17 @@ impl<T: Wipe> Drop for SensitiveVec<T> {
         wipe(&mut self.0);
     }
 }
+
+/// Owned secret text (a mnemonic) wiped on drop. Takes the `String`'s heap
+/// buffer without copying it.
+pub(crate) struct SensitiveString(SensitiveVec<u8>);
+
+impl SensitiveString {
+    pub(crate) fn new(s: String) -> Self {
+        Self(SensitiveVec(s.into_bytes()))
+    }
+
+    pub(crate) fn as_str(&self) -> &str {
+        std::str::from_utf8(&self.0).expect("String bytes are UTF-8")
+    }
+}

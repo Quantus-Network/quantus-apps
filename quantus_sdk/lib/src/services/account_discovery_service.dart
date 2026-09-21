@@ -39,7 +39,7 @@ class AccountDiscoveryService {
   }) async {
     final addressByIndex = <int, String>{};
     final used = await discoverUsedIndices(
-      addressAt: (i) => addressByIndex[i] ??= _hdWalletService.keyPairAtIndex(mnemonic, i, scheme).ss58Address,
+      addressAt: (i) async => addressByIndex[i] ??= _hdWalletService.keyPairAtIndex(mnemonic, i, scheme).ss58Address,
       gapLimit: gapLimit,
     );
     return [
@@ -58,13 +58,16 @@ class AccountDiscoveryService {
   /// Gap-limit scan over an arbitrary address sequence: derives addresses via
   /// [addressAt] in batches and returns the indices that exist on-chain,
   /// stopping once [gapLimit] consecutive indices are unused.
-  Future<Set<int>> discoverUsedIndices({required String Function(int index) addressAt, int gapLimit = 20}) async {
+  Future<Set<int>> discoverUsedIndices({
+    required Future<String> Function(int index) addressAt,
+    int gapLimit = 20,
+  }) async {
     final used = <int>{};
 
     var consecutiveMissing = 0;
     var index = 0;
     while (consecutiveMissing < gapLimit) {
-      final batch = {for (var i = index; i < index + gapLimit; i++) i: addressAt(i)};
+      final batch = {for (var i = index; i < index + gapLimit; i++) i: await addressAt(i)};
       final existingIds = await _findExistingAccountIds(batch.values.toList());
 
       for (final entry in batch.entries) {

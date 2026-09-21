@@ -20,7 +20,7 @@ WormholeUtxo _utxo(int scaled) => WormholeUtxo(
     leafIndex: BigInt.from(scaled),
     transferCount: BigInt.one,
   ),
-  owner: const WormholeAddressInfo(index: 0, address: 'addr', secretHex: '0x00'),
+  owner: const WormholeAddressInfo(index: 0, address: 'addr'),
   nullifierHex: '0xn$scaled',
 );
 

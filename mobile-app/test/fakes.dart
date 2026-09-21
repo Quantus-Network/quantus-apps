@@ -9,8 +9,6 @@ import 'package:quantus_sdk/generated/bell/types/pallet_balances/pallet/call.dar
 import 'package:quantus_sdk/generated/bell/types/quantus_runtime/runtime_call.dart' as runtime_call;
 import 'package:quantus_sdk/generated/bell/types/sp_runtime/multiaddress/multi_address.dart' as multi_address;
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/providers/local_auth_provider.dart';
-import 'package:resonance_network_wallet/services/local_auth_service.dart';
 
 class FakeSettingsService extends Fake implements SettingsService {
   DisplayAccount? activeAccount;
@@ -47,22 +45,6 @@ class FakeSettingsService extends Fake implements SettingsService {
 
   @override
   String? getString(String key) => null;
-}
-
-/// Drives [LocalAuthState] directly so tests can lock/unlock without the
-/// platform auth dialog.
-class TestLocalAuthController extends LocalAuthController {
-  TestLocalAuthController({required bool authenticated}) : super(LocalAuthService()) {
-    setAuthenticated(authenticated);
-  }
-
-  void setAuthenticated(bool value) {
-    state = state.copyWith(isAuthenticated: value);
-  }
-
-  void setVisuallyLocked(bool value) {
-    state = state.copyWith(isVisuallyLocked: value);
-  }
 }
 
 class FakeSubstrateService extends Fake implements SubstrateService {
