@@ -23,9 +23,10 @@ final forcedTestnetOutcomeProvider = StateProvider<String?>((_) => null);
 const debugTestnetOutcomes = ['miner', 'holder', 'newcomer', 'error'];
 
 /// Whether the notice is still due.
-final mainnetMigrationPendingProvider = Provider<bool>(
-  (ref) => ref.watch(debugMainnetMigrationProvider) || ref.watch(mainnetMigrationServiceProvider).isPending(),
-);
+final mainnetMigrationPendingProvider = Provider<bool>((ref) {
+  if (AppConstants.runOnTestnet) return false;
+  return ref.watch(debugMainnetMigrationProvider) || ref.watch(mainnetMigrationServiceProvider).isPending();
+});
 
 /// The one-shot check is not retried: the unreachable page is written for it,
 /// and a retry would flip it back to the checking page.
