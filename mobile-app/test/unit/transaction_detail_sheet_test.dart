@@ -73,11 +73,11 @@ void main() {
   });
 
   testWidgets('the share button hands the explorer link to the system share sheet', (tester) async {
-    String? shared;
+    Map? shared;
     tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
       const MethodChannel('dev.fluttercommunity.plus/share'),
       (call) async {
-        shared = (call.arguments as Map)['text'] as String;
+        shared = call.arguments as Map;
         return '';
       },
     );
@@ -86,6 +86,11 @@ void main() {
     await tester.tap(find.byIcon(Icons.ios_share));
     await tester.pump();
 
-    expect(shared, '${AppConstants.explorerEndpoint}/immediate-transactions/0x9cbe');
+    final button = tester.getRect(find.byType(IconButton));
+    expect(shared?['text'], '${AppConstants.explorerEndpoint}/immediate-transactions/0x9cbe');
+    expect(shared?['originX'], button.left);
+    expect(shared?['originY'], button.top);
+    expect(shared?['originWidth'], button.width);
+    expect(shared?['originHeight'], button.height);
   });
 }

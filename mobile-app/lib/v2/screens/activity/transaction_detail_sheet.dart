@@ -142,9 +142,11 @@ class _TransactionDetailSheet extends ConsumerWidget {
 
     return BottomSheetContainer(
       title: _title(l10n, isPrivate: isPrivate),
-      trailing: IconButton(
-        onPressed: canShareExplorer ? () => shareText(context, explorerUrl) : null,
-        icon: Icon(Icons.ios_share, color: canShareExplorer ? colors.textContent : colors.textMuted),
+      trailing: Builder(
+        builder: (buttonContext) => IconButton(
+          onPressed: canShareExplorer ? () => shareText(buttonContext, explorerUrl) : null,
+          icon: Icon(Icons.ios_share, color: canShareExplorer ? colors.textContent : colors.textMuted),
+        ),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
