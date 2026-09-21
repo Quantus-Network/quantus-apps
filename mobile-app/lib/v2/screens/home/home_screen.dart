@@ -33,6 +33,7 @@ import 'package:resonance_network_wallet/providers/local_auth_provider.dart';
 import 'package:resonance_network_wallet/providers/multisig_providers.dart';
 import 'package:resonance_network_wallet/providers/route_intent_providers.dart';
 import 'package:resonance_network_wallet/providers/currency_display_provider.dart';
+import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/v2/screens/send/send_providers.dart';
 import 'package:resonance_network_wallet/v2/components/global_toast_listener.dart';
@@ -372,7 +373,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SwapScreen())),
     );
 
-    return Row(spacing: 20, children: [receiveCard, sendCard, if (AppConstants.showSwapButton) swapCard]);
+    return Row(
+      spacing: 20,
+      children: [receiveCard, sendCard, if (ref.watch(remoteConfigProvider).enableSwap) swapCard],
+    );
   }
 
   Widget _buildMultisigActionButtons(AppLocalizations l10n, MultisigAccount msig) {
