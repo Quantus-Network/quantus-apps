@@ -33,16 +33,6 @@ class ShowKeyScreen extends ConsumerWidget {
                   const SizedBox(height: 24),
                   Center(child: QuantusQr(accountId: address)),
                   const SizedBox(height: 24),
-                  checkphrase.when(
-                    data: (phrase) => Text(
-                      phrase,
-                      style: text.headingRow.copyWith(color: colors.semanticLilac),
-                      textAlign: TextAlign.center,
-                    ),
-                    loading: () => const Loader(size: 16),
-                    error: (_, _) => const SizedBox.shrink(),
-                  ),
-                  const SizedBox(height: 16),
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(color: colors.bgSurface, borderRadius: context.radiusV3.mdBorder),
@@ -51,6 +41,16 @@ class ShowKeyScreen extends ConsumerWidget {
                       style: text.dataAddressLarge.copyWith(color: colors.textContent),
                       textAlign: TextAlign.center,
                     ),
+                  ),
+                  const SizedBox(height: 16),
+                  checkphrase.when(
+                    data: (phrase) => Text(
+                      phrase,
+                      style: text.headingRow.copyWith(color: colors.semanticLilac),
+                      textAlign: TextAlign.center,
+                    ),
+                    loading: () => const Loader(size: 16),
+                    error: (_, _) => const SizedBox.shrink(),
                   ),
                   const SizedBox(height: 24),
                 ],

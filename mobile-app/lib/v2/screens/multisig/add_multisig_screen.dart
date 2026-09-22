@@ -478,11 +478,13 @@ class _PredictedAddressSectionState extends ConsumerState<_PredictedAddressSecti
           const SizedBox(height: 12),
           if (widget.isLoading)
             const Skeleton(height: 20)
-          else if (isReady) ...[
-            Text(_checksum!, style: text.body.copyWith(color: colors.semanticLilac)),
-            const SizedBox(height: 4),
-            Text(widget.address!, style: text.dataAddressLarge.copyWith(color: colors.textContent)),
-          ] else
+          else if (isReady)
+            AddressCheckphrase(
+              address: widget.address!,
+              checkphrase: _checksum,
+              addressStyle: text.dataAddressLarge.copyWith(color: colors.textContent),
+            )
+          else
             Text(
               widget.l10n.multisigCreatePredictedAddressPlaceholder,
               style: text.caption.copyWith(color: colors.textMuted),

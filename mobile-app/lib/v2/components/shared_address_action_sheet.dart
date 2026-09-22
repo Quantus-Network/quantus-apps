@@ -95,6 +95,28 @@ class _SharedAddressActionSheetState extends State<SharedAddressActionSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            spacing: 8,
+            children: [
+              Container(
+                width: context.isTablet ? 386 : 271,
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: colors.bgSurface2,
+                  borderRadius: context.radiusV3.mdBorder,
+                  border: Border.all(color: colors.borderHairline),
+                ),
+                child: Text(
+                  '${_splittedAddress?.join(" ")}',
+                  textAlign: TextAlign.left,
+                  style: text.dataAddressLarge.copyWith(color: colors.textContent),
+                ),
+              ),
+              InkWell(onTap: _copyAddress, child: _copyIcon(colors)),
+            ],
+          ),
+          const SizedBox(height: 26),
           FutureBuilder<String?>(
             future: _checksumFuture,
             builder: (context, snapshot) {
@@ -157,28 +179,6 @@ class _SharedAddressActionSheetState extends State<SharedAddressActionSheet> {
                 );
               }
             },
-          ),
-          const SizedBox(height: 26),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            spacing: 8,
-            children: [
-              Container(
-                width: context.isTablet ? 386 : 271,
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: colors.bgSurface2,
-                  borderRadius: context.radiusV3.mdBorder,
-                  border: Border.all(color: colors.borderHairline),
-                ),
-                child: Text(
-                  '${_splittedAddress?.join(" ")}',
-                  textAlign: TextAlign.left,
-                  style: text.dataAddressLarge.copyWith(color: colors.textContent),
-                ),
-              ),
-              InkWell(onTap: _copyAddress, child: _copyIcon(colors)),
-            ],
           ),
           const SizedBox(height: 26),
           SizedBox(

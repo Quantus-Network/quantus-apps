@@ -46,27 +46,12 @@ class _MultisigSignerListTileState extends ConsumerState<MultisigSignerListTile>
     }
   }
 
-  String get _primaryLabel {
-    if (widget.displayName != null && widget.displayName!.isNotEmpty) {
-      return widget.displayName!;
-    }
-    return _checksum ?? '…';
-  }
-
-  Color _primaryColor(AppColorsV3 colors) {
-    if (widget.displayName != null && widget.displayName!.isNotEmpty) {
-      return colors.textContent;
-    }
-    if (_checksum != null) {
-      return colors.semanticLilac;
-    }
-    return colors.textMuted;
-  }
-
   @override
   Widget build(BuildContext context) {
     final colors = context.colorsV3;
     final text = context.themeTextV3;
+    final name = widget.displayName;
+    final hasName = name != null && name.isNotEmpty;
     final showYou = widget.isYou && widget.youLabel != null;
     final showCreator = widget.isCreator && widget.creatorLabel != null;
 
@@ -76,23 +61,14 @@ class _MultisigSignerListTileState extends ConsumerState<MultisigSignerListTile>
         children: [
           if (widget.leading != null) ...[widget.leading!, const SizedBox(width: 12)],
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Flexible(
-                      child: Text(_primaryLabel, style: text.body.copyWith(color: _primaryColor(colors))),
-                    ),
-                    if (showCreator) ...[const SizedBox(width: 8), QuantusBadge(label: widget.creatorLabel!)],
-                    if (showYou) ...[const SizedBox(width: 8), QuantusBadge(label: widget.youLabel!)],
-                  ],
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  AddressFormattingService.formatAddress(widget.accountId),
-                  style: text.dataAddress.copyWith(color: colors.textContent),
-                ),
+            child: AddressCheckphrase(
+              address: AddressFormattingService.formatAddress(widget.accountId),
+              checkphrase: hasName ? name : _checksum,
+              checkphraseStyle: hasName ? text.body.copyWith(color: colors.textContent) : null,
+              placeholder: Text('…', style: text.body.copyWith(color: colors.textMuted)),
+              badges: [
+                if (showCreator) QuantusBadge(label: widget.creatorLabel!),
+                if (showYou) QuantusBadge(label: widget.youLabel!),
               ],
             ),
           ),

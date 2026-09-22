@@ -209,12 +209,11 @@ class _DiscoverMultisigRowState extends ConsumerState<_DiscoverMultisigRow> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  _checksum ?? l10n.commonLoading,
-                  style: text.body.copyWith(color: _checksum == null ? colors.textMuted : colors.semanticLilac),
+                AddressCheckphrase(
+                  address: address,
+                  checkphrase: _checksum,
+                  placeholder: Text(l10n.commonLoading, style: text.body.copyWith(color: colors.textMuted)),
                 ),
-                const SizedBox(height: 4),
-                Text(address, style: text.dataAddress.copyWith(color: colors.textContent)),
                 const SizedBox(height: 4),
                 Text(widget.thresholdLabel, style: text.caption.copyWith(color: colors.textMuted)),
               ],

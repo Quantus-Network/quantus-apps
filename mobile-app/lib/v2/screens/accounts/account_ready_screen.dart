@@ -47,6 +47,7 @@ class AccountReadyScreen extends ConsumerWidget {
     final appBarTitle = _appBarTitle(l10n);
     final headline = isWalletRelated ? appBarTitle : accountName;
     final ctaLabel = _showTwoAccountCards ? l10n.accountReadyGoToWallet : l10n.accountReadyDone;
+    final checkphrase = ref.watch(checksumNameProvider(accountId));
 
     return PopScope(
       canPop: false,
@@ -111,27 +112,17 @@ class AccountReadyScreen extends ConsumerWidget {
                           padding: const EdgeInsets.symmetric(horizontal: 4),
                           child: Column(
                             children: [
-                              ref
-                                  .watch(checksumNameProvider(accountId))
-                                  .when(
-                                    data: (checksum) => Text(
-                                      checksum,
-                                      textAlign: TextAlign.center,
-                                      style: text.body.copyWith(color: colors.semanticLilac),
-                                    ),
-                                    loading: () => const Loader(size: 14),
-                                    error: (_, _) => const SizedBox.shrink(),
-                                  ),
-                              const SizedBox(height: 4),
-                              Text(
-                                AddressFormattingService.formatAddress(
+                              AddressCheckphrase(
+                                address: AddressFormattingService.formatAddress(
                                   accountId,
                                   prefix: 8,
                                   ellipses: '.......',
                                   postFix: 10,
                                 ).toLowerCase(),
+                                checkphrase: checkphrase.value,
+                                addressStyle: text.dataAddressLarge.copyWith(color: colors.textContent),
                                 textAlign: TextAlign.center,
-                                style: text.dataAddressLarge.copyWith(color: colors.textContent),
+                                placeholder: checkphrase.isLoading ? const Loader(size: 14) : null,
                               ),
                             ],
                           ),

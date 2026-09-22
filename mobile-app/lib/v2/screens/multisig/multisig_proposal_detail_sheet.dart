@@ -257,11 +257,6 @@ class _MultisigProposalDetailSheet extends ConsumerWidget {
     );
   }
 
-  String? _checkphrase(WidgetRef ref, String address) {
-    final phrase = ref.watch(checksumNameProvider(address)).value;
-    return phrase == null || phrase.isEmpty ? null : phrase;
-  }
-
   Widget _summary(
     WidgetRef ref,
     AppLocalizations l10n,
@@ -294,7 +289,7 @@ class _MultisigProposalDetailSheet extends ConsumerWidget {
           DetailSummaryRow(
             label: l10n.activityDetailTo,
             value: recipient,
-            checkphrase: _checkphrase(ref, liveProposal.recipient),
+            checkphrase: ref.watch(checksumNameProvider(liveProposal.recipient)).value,
           ),
         if (isTerminal)
           DetailSummaryRow(
@@ -310,7 +305,7 @@ class _MultisigProposalDetailSheet extends ConsumerWidget {
         DetailSummaryRow(
           label: l10n.multisigProposalProposerLabel,
           value: AddressFormattingService.formatActivityDetailAddress(liveProposal.proposer),
-          checkphrase: _checkphrase(ref, liveProposal.proposer),
+          checkphrase: ref.watch(checksumNameProvider(liveProposal.proposer)).value,
         ),
         DetailSummaryRow(
           label: l10n.multisigProposalThresholdLabel,

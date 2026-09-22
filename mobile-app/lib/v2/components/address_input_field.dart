@@ -70,23 +70,14 @@ class AddressInputField extends StatelessWidget {
                   borderRadius: context.radiusV3.mdBorder,
                   border: Border.all(color: colors.borderHairline),
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      AddressFormattingService.formatAddress(
-                        controller.text.trim(),
-                        prefix: addressPrefix,
-                        postFix: addressPostfix,
-                      ),
-                      style: text.dataAddressLarge.copyWith(color: colors.textContent),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    if (recipientChecksum != null)
-                      Text(recipientChecksum!, style: text.body.copyWith(color: colors.semanticLilac)),
-                  ],
+                child: AddressCheckphrase(
+                  address: AddressFormattingService.formatAddress(
+                    controller.text.trim(),
+                    prefix: addressPrefix,
+                    postFix: addressPostfix,
+                  ),
+                  checkphrase: recipientChecksum,
+                  addressStyle: text.dataAddressLarge.copyWith(color: colors.textContent),
                 ),
               ),
             ),
