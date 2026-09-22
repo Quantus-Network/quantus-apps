@@ -10,6 +10,7 @@ import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/routes.dart';
 import 'package:resonance_network_wallet/shared/extensions/current_route_extensions.dart';
 import 'package:resonance_network_wallet/shared/extensions/transaction_event_extension.dart';
+import 'package:resonance_network_wallet/shared/utils/share_utils.dart';
 import 'package:resonance_network_wallet/v2/components/amount_display_with_conversion.dart';
 import 'package:resonance_network_wallet/v2/components/explorer_link.dart';
 
@@ -53,6 +54,12 @@ class _TransactionDetailSheet extends ConsumerWidget {
   bool get _isPendingMultisigProposal => tx.isPendingMultisigProposal;
   bool get _isPendingMultisigExecution => tx.isPendingMultisigExecution;
   bool get _isPendingMultisigCancellation => tx.isPendingMultisigCancellation;
+  bool get _isInProcess =>
+      _isPending ||
+      _isPendingMultisigCreation ||
+      _isPendingMultisigProposal ||
+      _isPendingMultisigExecution ||
+      _isPendingMultisigCancellation;
 
   String _title(AppLocalizations l10n, {required bool isPrivate}) {
     if (_isPendingMultisigProposal) return l10n.activityDetailTitleProposing;
@@ -76,27 +83,53 @@ class _TransactionDetailSheet extends ConsumerWidget {
   }
 
   String _statusLabel(AppLocalizations l10n) {
-    if (_isPending ||
-        _isPendingMultisigCreation ||
-        _isPendingMultisigProposal ||
-        _isPendingMultisigExecution ||
-        _isPendingMultisigCancellation) {
-      return l10n.activityDetailStatusInProcess;
-    }
+    if (_isInProcess) return l10n.activityDetailStatusInProcess;
     if (tx.isReversibleScheduled) return l10n.activityDetailStatusScheduled;
     return l10n.activityDetailStatusCompleted;
   }
 
-  Color _statusColor(AppColorsV3 colors) {
-    if (_isPending ||
-        _isPendingMultisigCreation ||
-        _isPendingMultisigProposal ||
-        _isPendingMultisigExecution ||
-        _isPendingMultisigCancellation ||
-        tx.isReversibleScheduled) {
-      return colors.semanticGlacier;
+  Color _statusColor(AppColorsV3 colors) =>
+      _isInProcess || tx.isReversibleScheduled ? colors.semanticGlacier : colors.semanticSage;
+
+  String? _explorerUrl() {
+    final isMinerReward = tx.isMinerReward;
+    final isMultisigCreated = tx.isMultisigCreated;
+    final isProposalCreated = tx.isProposalCreation;
+    final isProposalApproved = tx.isMultisigProposalApproved;
+    final isProposalExecuted = tx.isMultisigProposalExecuted;
+    final isProposalCancelled = tx.isMultisigProposalCancelled;
+
+    String transactionType;
+    if (isProposalExecuted) {
+      transactionType = 'multisig-proposal-executed';
+    } else if (isProposalCancelled) {
+      transactionType = 'multisig-proposal-cancelled';
+    } else if (isProposalApproved) {
+      transactionType = 'multisig-signer-approved';
+    } else if (isProposalCreated) {
+      transactionType = 'multisig-proposal-created';
+    } else if (isMultisigCreated) {
+      transactionType = 'multisig-created';
+    } else if (isMinerReward) {
+      transactionType = 'miner-rewards';
+    } else if (tx.isReversibleScheduled) {
+      transactionType = 'scheduled-reversible-transactions';
+    } else if (tx.isReversibleExecuted) {
+      transactionType = 'executed-reversible-transactions';
+    } else if (tx.isReversibleCancelled) {
+      transactionType = 'cancelled-reversible-transactions';
+    } else {
+      transactionType = 'immediate-transactions';
     }
-    return colors.semanticSage;
+
+    String? path;
+    if (tx.extrinsicHash != null) {
+      path = '$transactionType/${tx.extrinsicHash}';
+    } else if (isMinerReward && tx.blockHash != null) {
+      path = '$transactionType/${tx.blockHash}';
+    }
+
+    return path == null ? null : '${AppConstants.explorerEndpoint}/$path';
   }
 
   @override
@@ -104,9 +137,17 @@ class _TransactionDetailSheet extends ConsumerWidget {
     final l10n = ref.watch(l10nProvider);
     final colors = context.colorsV3;
     final isPrivate = isEncryptedAccount(ref.watch(activeAccountProvider).value?.account);
+    final explorerUrl = _explorerUrl();
+    final canShareExplorer = explorerUrl != null && !_isInProcess;
 
     return BottomSheetContainer(
       title: _title(l10n, isPrivate: isPrivate),
+      trailing: Builder(
+        builder: (buttonContext) => IconButton(
+          onPressed: canShareExplorer ? () => shareText(buttonContext, explorerUrl) : null,
+          icon: Icon(Icons.ios_share, color: canShareExplorer ? colors.textContent : colors.textMuted),
+        ),
+      ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -124,7 +165,9 @@ class _TransactionDetailSheet extends ConsumerWidget {
           const SizedBox(height: 8),
           _DetailsSection(tx: tx, isSend: _isSend, activeAccountId: activeAccountId),
           const SizedBox(height: 24),
-          Center(child: _ExplorerLink(tx: tx)),
+          Center(
+            child: ExplorerLink(url: explorerUrl, enabled: !_isInProcess),
+          ),
           const SizedBox(height: 8),
         ],
       ),
@@ -609,64 +652,5 @@ class _StatusRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return _labelValueRow(context, label, Text(value, style: context.themeTextV3.labelChip.copyWith(color: color)));
-  }
-}
-
-class _ExplorerLink extends StatelessWidget {
-  final TransactionEvent tx;
-
-  const _ExplorerLink({required this.tx});
-
-  @override
-  Widget build(BuildContext context) {
-    final isPending =
-        tx is PendingTransactionEvent ||
-        tx is PendingMultisigCreationEvent ||
-        tx is PendingMultisigProposalEvent ||
-        tx is PendingMultisigExecutionEvent ||
-        tx is PendingMultisigCancellationEvent;
-
-    return ExplorerLink(url: _explorerUrl(), enabled: !isPending);
-  }
-
-  String? _explorerUrl() {
-    final isMinerReward = tx.isMinerReward;
-    final isMultisigCreated = tx.isMultisigCreated;
-    final isProposalCreated = tx.isProposalCreation;
-    final isProposalApproved = tx.isMultisigProposalApproved;
-    final isProposalExecuted = tx.isMultisigProposalExecuted;
-    final isProposalCancelled = tx.isMultisigProposalCancelled;
-
-    String transactionType;
-    if (isProposalExecuted) {
-      transactionType = 'multisig-proposal-executed';
-    } else if (isProposalCancelled) {
-      transactionType = 'multisig-proposal-cancelled';
-    } else if (isProposalApproved) {
-      transactionType = 'multisig-signer-approved';
-    } else if (isProposalCreated) {
-      transactionType = 'multisig-proposal-created';
-    } else if (isMultisigCreated) {
-      transactionType = 'multisig-created';
-    } else if (isMinerReward) {
-      transactionType = 'miner-rewards';
-    } else if (tx.isReversibleScheduled) {
-      transactionType = 'scheduled-reversible-transactions';
-    } else if (tx.isReversibleExecuted) {
-      transactionType = 'executed-reversible-transactions';
-    } else if (tx.isReversibleCancelled) {
-      transactionType = 'cancelled-reversible-transactions';
-    } else {
-      transactionType = 'immediate-transactions';
-    }
-
-    String? path;
-    if (tx.extrinsicHash != null) {
-      path = '$transactionType/${tx.extrinsicHash}';
-    } else if (isMinerReward && tx.blockHash != null) {
-      path = '$transactionType/${tx.blockHash}';
-    }
-
-    return path == null ? null : '${AppConstants.explorerEndpoint}/$path';
   }
 }

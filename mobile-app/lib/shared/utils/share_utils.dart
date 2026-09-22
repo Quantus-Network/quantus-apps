@@ -6,17 +6,11 @@ String buildAccountShareText(String accountId, {required String checksum}) {
   return accountId;
 }
 
-void shareAccountDetails(BuildContext context, String accountId, {required String checksum}) {
-  SharePlus.instance.share(
-    ShareParams(
-      text: buildAccountShareText(accountId, checksum: checksum),
-      subject: 'Shared Address',
-      title: 'Shared Address',
-      sharePositionOrigin: context.sharePositionRect(),
-    ),
-  );
-}
+void shareAccountDetails(BuildContext context, String accountId, {required String checksum}) =>
+    shareText(context, buildAccountShareText(accountId, checksum: checksum), subject: 'Shared Address');
 
-void shareText(BuildContext context, String text) {
-  SharePlus.instance.share(ShareParams(text: text));
+void shareText(BuildContext context, String text, {String? subject}) {
+  SharePlus.instance.share(
+    ShareParams(text: text, subject: subject, title: subject, sharePositionOrigin: context.sharePositionRect()),
+  );
 }
