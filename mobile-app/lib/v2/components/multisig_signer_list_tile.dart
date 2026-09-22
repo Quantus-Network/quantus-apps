@@ -14,6 +14,7 @@ class MultisigSignerListTile extends ConsumerStatefulWidget {
     this.creatorLabel,
     this.isYou = false,
     this.youLabel,
+    this.leading,
     this.onRemove,
   });
 
@@ -24,6 +25,7 @@ class MultisigSignerListTile extends ConsumerStatefulWidget {
   final String? creatorLabel;
   final bool isYou;
   final String? youLabel;
+  final Widget? leading;
   final VoidCallback? onRemove;
 
   @override
@@ -72,6 +74,7 @@ class _MultisigSignerListTileState extends ConsumerState<MultisigSignerListTile>
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
         children: [
+          if (widget.leading != null) ...[widget.leading!, const SizedBox(width: 12)],
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
