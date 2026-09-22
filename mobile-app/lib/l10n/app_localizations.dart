@@ -2966,6 +2966,12 @@ abstract class AppLocalizations {
   /// **'Swap'**
   String get swapTitle;
 
+  /// Label above the NEAR Intents logo in the swap app bar
+  ///
+  /// In en, this message translates to:
+  /// **'Powered By'**
+  String get swapPoweredBy;
+
   /// From token section label on swap screen
   ///
   /// In en, this message translates to:

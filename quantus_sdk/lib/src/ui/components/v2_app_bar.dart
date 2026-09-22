@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 
-/// Title bar with equal [AppBackButton.hitSize] side slots so the title stays
-/// centred whatever sits in them. Default padding keeps the bar 76pt tall.
+/// Title bar with equal [slotWidth] side slots so the title stays centred
+/// whatever sits in them. Default padding keeps the bar 76pt tall.
 class V2AppBar extends StatelessWidget {
   final String title;
   final Widget? leading;
   final Widget? trailing;
   final bool showBackButton;
+  final double slotWidth;
   final EdgeInsetsGeometry padding;
 
   const V2AppBar({
@@ -16,11 +17,12 @@ class V2AppBar extends StatelessWidget {
     this.leading,
     this.trailing,
     this.showBackButton = true,
+    this.slotWidth = AppBackButton.hitSize,
     this.padding = const EdgeInsets.only(top: 6.0, bottom: 22.0),
   });
 
   Widget _slot(Widget? child, Alignment alignment) => SizedBox(
-    width: AppBackButton.hitSize,
+    width: slotWidth,
     height: AppBackButton.hitSize,
     child: child == null ? null : Align(alignment: alignment, child: child),
   );

@@ -108,7 +108,13 @@ class _ReviewQuoteContent extends ConsumerWidget {
             ],
           ),
           const SizedBox(height: 6),
-          Text(SwapService.formatTokenAmount(amount, token), style: text.amountRow.copyWith(color: colors.textContent)),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              SwapService.formatTokenAmount(amount, token),
+              style: text.amountRow.copyWith(color: colors.textContent),
+            ),
+          ),
           Text('\$${usd.toStringAsFixed(2)}', style: text.caption.copyWith(color: colors.textMuted)),
         ],
       ),

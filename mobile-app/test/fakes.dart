@@ -10,6 +10,7 @@ import 'package:quantus_sdk/generated/bell/types/quantus_runtime/runtime_call.da
 import 'package:quantus_sdk/generated/bell/types/sp_runtime/multiaddress/multi_address.dart' as multi_address;
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/local_auth_provider.dart';
+import 'package:resonance_network_wallet/services/remote_config_service.dart';
 import 'package:resonance_network_wallet/services/local_auth_service.dart';
 
 class FakeSettingsService extends Fake implements SettingsService {
@@ -168,4 +169,18 @@ Future<WidgetRef> pumpRef(WidgetTester tester, {List<Override> overrides = const
     ),
   );
   return widgetRef;
+}
+
+class FakeRemoteConfigService extends RemoteConfigService {
+  FakeRemoteConfigService(this.config);
+  final RemoteConfigModel config;
+
+  @override
+  RemoteConfigModel readLocalConfig() => config;
+
+  @override
+  Future<RemoteConfigModel?> readRemoteConfig() async => null;
+
+  @override
+  Future<void> cacheConfig(Object json) async {}
 }

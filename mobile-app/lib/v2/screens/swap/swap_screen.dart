@@ -7,6 +7,7 @@ import 'package:resonance_network_wallet/v2/components/qr_scanner_page.dart';
 import 'package:quantus_sdk/quantus_sdk.dart' hide ScaffoldBase;
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/shared/utils/print.dart';
+import 'package:resonance_network_wallet/v2/components/near_intents_attribution.dart';
 import 'package:resonance_network_wallet/v2/components/token_icon.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/refund_address_picker_sheet.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/review_quote_sheet.dart';
@@ -126,7 +127,8 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
     return ScaffoldBase(
       appBar: V2AppBar(
         title: l10n.swapTitle,
-        trailing: Icon(Icons.info_outline, color: colors.textContent, size: 24),
+        slotWidth: NearIntentsAttribution.width,
+        trailing: const NearIntentsAttribution(),
       ),
       mainContent: Column(
         children: [

@@ -177,13 +177,13 @@ class SwapService {
       case 'USDT':
         return 1.0;
       case 'ETH':
-        return 2500.0;
+        return 2750.0;
       case 'BTC':
-        return 60000.0;
+        return 86000.0;
       case 'SOL':
-        return 150.0;
+        return 118.0;
       case AppConstants.tokenSymbol:
-        return 1.0;
+        return 50.0;
       default:
         return 0.0;
     }

@@ -440,6 +440,7 @@
   "settingsAboutWebsiteSubtitle": "quantus.com",
   "settingsAboutVersion": "Versi {version} ({build})",
   "swapTitle": "Tukar",
+  "swapPoweredBy": "Didukung Oleh",
   "swapFrom": "Dari",
   "swapTo": "Ke",
   "swapRefundAddress": "Alamat Refund",

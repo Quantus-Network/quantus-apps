@@ -115,9 +115,6 @@ class AppConstants {
   // every rewards state can be walked through without a mining wallet.
   static const bool debugMiningRewards = true;
 
-  // Home swap action. Off while app review requires swap gone; flip to true to bring it back.
-  static const bool showSwapButton = false;
-
   // Valid SS58 address returned/filled by debug buttons so address-entry flows
   // (send, swap, add hardware account) can be exercised in the simulator where
   // the camera is unavailable.
