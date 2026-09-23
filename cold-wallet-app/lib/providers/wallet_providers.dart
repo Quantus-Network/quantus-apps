@@ -171,12 +171,31 @@ class WalletController extends Notifier<WalletState> {
   }
 
   /// Adds an account derived from the seed already in the vault.
-  Future<void> addAccount(ColdAccount account) async {
+  Future<void> addAccount(ColdAccount account) => _saveAccounts([...state.accounts, account]);
+
+  Future<void> renameAccount(ColdAccount account, String label) {
+    _requireHeld(account);
+    return _saveAccounts([for (final a in state.accounts) a.derivesSameKey(account) ? a.withLabel(label) : a]);
+  }
+
+  /// Drops [account] from the vault. The seed still derives it, so adding the
+  /// same derivation path again brings it back.
+  Future<void> removeAccount(ColdAccount account) {
+    _requireHeld(account);
+    final accounts = state.accounts.where((a) => !a.derivesSameKey(account)).toList();
+    if (accounts.isEmpty) throw StateError('The last account cannot be removed');
+    return _saveAccounts(accounts);
+  }
+
+  void _requireHeld(ColdAccount account) {
+    if (!state.accounts.any(account.derivesSameKey)) throw StateError('Account ${account.label} is not in this wallet');
+  }
+
+  Future<void> _saveAccounts(List<ColdAccount> accounts) async {
     final mnemonic = state.mnemonic;
     final keyBytes = _keyBytes;
     if (mnemonic == null || keyBytes == null) throw StateError('Wallet is locked');
 
-    final accounts = [...state.accounts, account];
     await _vault.replaceContents(
       keyBytes: keyBytes,
       contents: VaultContents(mnemonic: mnemonic, accounts: accounts),

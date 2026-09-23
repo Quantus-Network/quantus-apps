@@ -24,6 +24,11 @@ class ColdAccount {
 
   String get derivationPath => path ?? HdWalletService.pathForIndex(index!, scheme);
 
+  /// Whether [other] derives the same key, whatever either is called.
+  bool derivesSameKey(ColdAccount other) => derivationPath == other.derivationPath && scheme == other.scheme;
+
+  ColdAccount withLabel(String label) => ColdAccount(label: label, index: index, path: path, scheme: scheme);
+
   /// The slot this account derives from: its index, or the index its path
   /// names when that path follows the wallet's own template for [scheme]. Null
   /// for a path from somewhere else, which the wallet's numbering says nothing

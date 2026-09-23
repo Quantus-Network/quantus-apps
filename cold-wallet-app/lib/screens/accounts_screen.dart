@@ -4,6 +4,7 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:quantus_cold_wallet/components/address_with_checkphrase.dart';
 import 'package:quantus_cold_wallet/providers/wallet_providers.dart';
 import 'package:quantus_cold_wallet/screens/add_account_screen.dart';
+import 'package:quantus_cold_wallet/screens/edit_account_screen.dart';
 import 'package:quantus_cold_wallet/screens/show_key_screen.dart';
 
 class AccountsScreen extends ConsumerWidget {
@@ -43,7 +44,26 @@ class AccountsScreen extends ConsumerWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Text(entry.value.label, style: text.headingRow.copyWith(color: colors.textContent)),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(entry.value.label, style: text.headingRow.copyWith(color: colors.textContent)),
+                          ),
+                          GestureDetector(
+                            behavior: HitTestBehavior.opaque,
+                            onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => EditAccountScreen(address: entry.key, account: entry.value),
+                              ),
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.all(4),
+                              child: Icon(Icons.edit_outlined, size: 20, color: colors.textMuted),
+                            ),
+                          ),
+                        ],
+                      ),
                       Text(entry.value.derivationPath, style: text.caption.copyWith(color: colors.textMuted)),
                       AddressWithCheckphrase(label: 'Address', address: entry.key),
                     ],

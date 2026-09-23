@@ -111,10 +111,7 @@ class _AddAccountScreenState extends ConsumerState<AddAccountScreen> {
   ColdAccount? get _duplicate {
     final target = _account;
     if (target == null) return null;
-    for (final account in ref.read(accountsProvider)) {
-      if (account.derivationPath == target.derivationPath && account.scheme == target.scheme) return account;
-    }
-    return null;
+    return ref.read(accountsProvider).where(target.derivesSameKey).firstOrNull;
   }
 
   void _onInputChanged() {
