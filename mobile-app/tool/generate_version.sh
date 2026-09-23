@@ -1,5 +1,5 @@
 #!/bin/sh
-cd "$(dirname "$0")/.."
+cd "${1:-$(dirname "$0")/..}"
 LINE=$(grep '^version:' pubspec.yaml)
 RAW=$(echo "$LINE" | sed 's/version: *//')
 VER=$(echo "$RAW" | cut -d'+' -f1)

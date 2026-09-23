@@ -501,4 +501,29 @@ void main() {
       expect(approve.displayTitleChain, 'Multisig · approve → Balances · transfer_allow_death');
     });
   });
+
+  group('a call the bundled metadata does not declare', () {
+    final transfer = const balances_pallet.Txs().transferAllowDeath(dest: dest(aliceId), value: BigInt.zero).encode();
+
+    test('an unknown pallet index names the pallet and call', () {
+      expect(
+        () => CallDecoder.decodeBytes([250, 3], policy: const FullCallPolicy()),
+        throwsA(isA<UnknownCallException>().having((e) => (e.pallet, e.call), 'indices', (250, 3))),
+      );
+    });
+
+    test('an unknown call in a known pallet names the pallet and call', () {
+      expect(
+        () => CallDecoder.decodeBytes([transfer[0], 99, ...transfer.sublist(2)], policy: const FullCallPolicy()),
+        throwsA(isA<UnknownCallException>().having((e) => (e.pallet, e.call), 'indices', (transfer[0], 99))),
+      );
+    });
+
+    test('a known call with broken arguments is not reported as unknown', () {
+      expect(
+        () => CallDecoder.decodeBytes(transfer.sublist(0, 5), policy: const FullCallPolicy()),
+        throwsA(allOf(isA<FormatException>(), isNot(isA<UnknownCallException>()))),
+      );
+    });
+  });
 }

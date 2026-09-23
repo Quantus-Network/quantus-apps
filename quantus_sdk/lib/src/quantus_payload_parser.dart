@@ -151,6 +151,8 @@ class QuantusPayloadParser {
   static T _section<T>(String section, T Function() decode) {
     try {
       return decode();
+    } on UnknownCallException {
+      rethrow;
     } on FormatException catch (e) {
       throw FormatException('$section: ${e.message}');
     } catch (e) {

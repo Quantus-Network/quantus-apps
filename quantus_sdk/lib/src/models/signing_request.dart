@@ -5,6 +5,15 @@ import 'package:convert/convert.dart';
 import 'package:quantus_sdk/src/quantus_payload_parser.dart';
 import 'package:ss58/ss58.dart';
 
+/// A signing request in an envelope version this app does not read, usually
+/// because the hot wallet is newer than this app.
+class UnsupportedSigningRequestVersionException extends FormatException {
+  final Object? requested;
+
+  UnsupportedSigningRequestVersionException(this.requested)
+    : super('Signing request version $requested is not supported, this app reads version ${SigningRequest.version}');
+}
+
 /// A signing payload together with the account that must sign it.
 ///
 /// The payload alone says nothing about which key it belongs to, so a signer
@@ -37,9 +46,7 @@ class SigningRequest {
     if (!actual.containsAll(keys) || actual.length != keys.length) {
       throw FormatException('Signing request keys ${actual.toList()..sort()} are not ${keys.toList()..sort()}');
     }
-    if (json['v'] != version) {
-      throw FormatException('Unsupported signing request version: ${json['v']}');
-    }
+    if (json['v'] != version) throw UnsupportedSigningRequestVersionException(json['v']);
 
     final signer = json['signer'];
     if (signer is! String) throw const FormatException('Signing request signer is not a string');

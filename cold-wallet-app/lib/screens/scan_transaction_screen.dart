@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:quantus_cold_wallet/app_version.dart';
 import 'package:quantus_cold_wallet/debug/debug_calls_screen.dart';
 import 'package:quantus_cold_wallet/screens/sign_transaction_screen.dart';
 
@@ -84,10 +85,15 @@ class _ScanTransactionScreenState extends State<ScanTransactionScreen> {
       if (!mounted) return;
       Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => SignTransactionScreen(request: request)));
     } catch (e) {
+      debugPrint('Rejected signing request QR: $e');
       // Keeping the parts would make every replayed frame a duplicate, so the
       // decode is never retried and the screen stays stuck on this error.
       _done = false;
-      _restartAccumulation('Failed to decode QR: $e');
+      _restartAccumulation(switch (e) {
+        UnsupportedSigningRequestVersionException() => '${e.message}. $updateAppHint $currentAppVersion',
+        FormatException() => 'Not a Quantus signing request: ${e.message}',
+        _ => 'Failed to decode QR: $e',
+      });
     }
   }
 
