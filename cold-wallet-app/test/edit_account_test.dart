@@ -94,11 +94,8 @@ void main() {
       await controller.removeAccount(legacy65);
       expect(container.read(addressesProvider).containsKey(address), isFalse);
 
-      final back = ColdAccount.atPath(
-        legacy65.derivationPath,
-        label: 'Back',
-        defaultScheme: ColdAccount.newAccountScheme,
-      )!;
+      final path = legacy65.derivationPath;
+      final back = ColdAccount.atPath(path, label: 'Back', scheme: ColdAccount.schemeOfPath(path)!)!;
       await controller.addAccount(back);
       final readded = container.read(addressesProvider)[address];
       expect(readded, isNotNull, reason: 'the path the disconnect dialog shows must derive the same key');
@@ -106,8 +103,8 @@ void main() {
       expect(readded.derivesSameKey(legacy65), isTrue);
     });
 
-    test('a custom-path ML-DSA-65 account added back by its path keeps its scheme and key', () async {
-      final custom65 = ColdAccount(label: 'Elsewhere', path: "m/44'/1'/1'", scheme: DilithiumScheme.mlDsa65);
+    test('a custom-path ML-DSA-65 account added back by its path and signature type keeps its key', () async {
+      final custom65 = ColdAccount(label: 'Elsewhere', path: "m/44'/1'/0'", scheme: DilithiumScheme.mlDsa65);
       final container = await walletWith([one, custom65]);
       final controller = container.read(walletControllerProvider.notifier);
       final address = fakeAddress(custom65);
@@ -115,11 +112,7 @@ void main() {
       await controller.removeAccount(custom65);
       expect(container.read(addressesProvider).containsKey(address), isFalse);
 
-      final back = ColdAccount.atPath(
-        custom65.derivationPath,
-        label: 'Back',
-        defaultScheme: ColdAccount.newAccountScheme,
-      )!;
+      final back = ColdAccount.atPath(custom65.derivationPath, label: 'Back', scheme: DilithiumScheme.mlDsa65)!;
       await controller.addAccount(back);
       expect(container.read(addressesProvider)[address]?.derivesSameKey(custom65), isTrue);
     });

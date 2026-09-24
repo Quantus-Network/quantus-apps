@@ -73,4 +73,20 @@ void main() {
     expect(tester.widget<SchemePicker>(find.byType(SchemePicker)).value, DilithiumScheme.mlDsa65);
     expect(find.text("m/44'/1'/1'"), findsWidgets);
   });
+
+  testWidgets('ML-DSA-65 picked after typing a path ending in 0\' keeps the path', (tester) async {
+    await pumpScreen(tester, [ColdAccount(label: 'Account 1', index: 0, scheme: DilithiumScheme.mlDsa87)]);
+
+    await tester.tap(find.text('Derivation path'));
+    await settle(tester);
+    await tester.enterText(find.byType(TextField), "m/44'/1'/0'");
+    await settle(tester);
+    expect(tester.widget<SchemePicker>(find.byType(SchemePicker)).value, DilithiumScheme.mlDsa87);
+
+    await tester.tap(find.text('ML-DSA-65'));
+    await settle(tester);
+
+    expect(tester.widget<SchemePicker>(find.byType(SchemePicker)).value, DilithiumScheme.mlDsa65);
+    expect(tester.widget<TextField>(find.byType(TextField)).controller!.text, "m/44'/1'/0'");
+  });
 }

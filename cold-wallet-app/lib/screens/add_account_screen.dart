@@ -91,7 +91,7 @@ class _AddAccountScreenState extends ConsumerState<AddAccountScreen> {
 
   ColdAccount? get _account => switch (_mode) {
     _Derivation.accountIndex => _indexedAccount,
-    _Derivation.fullPath => ColdAccount.atPath(_path.text, label: _nextFreeLabel(), defaultScheme: _scheme),
+    _Derivation.fullPath => ColdAccount.atPath(_path.text, label: _nextFreeLabel(), scheme: _scheme),
   };
 
   /// Labelled by its index unless that name is taken, as it is once the wallet
@@ -111,12 +111,7 @@ class _AddAccountScreenState extends ConsumerState<AddAccountScreen> {
   }
 
   void _onInputChanged() {
-    // A typed path whose last element names a scheme snaps the picker to it.
-    final named = _mode == _Derivation.fullPath ? ColdAccount.schemeOfPath(_path.text) : null;
-    setState(() {
-      _error = null;
-      if (named != null) _scheme = named;
-    });
+    setState(() => _error = null);
     _previewDebounce?.cancel();
     _previewDebounce = Timer(_previewDelay, () {
       if (mounted) setState(() => _previewPath = _account?.derivationPath);
@@ -128,12 +123,9 @@ class _AddAccountScreenState extends ConsumerState<AddAccountScreen> {
     setState(() => _scheme = scheme);
     // The index moves to the first slot free at the new scheme, and a path not
     // typed by hand follows it, so the preview never offers an account that
-    // cannot be added. A typed path keeps its shape; only its scheme element
-    // moves, if it has one.
+    // cannot be added. A typed path is left as typed.
     _index.text = '${_firstFreeIndex()}';
-    _path.text = _userChangedPath
-        ? ColdAccount.pathAtScheme(_path.text, scheme)
-        : ColdAccount.atIndexText(_index.text, scheme: _scheme)?.derivationPath ?? '';
+    if (!_userChangedPath) _path.text = ColdAccount.atIndexText(_index.text, scheme: _scheme)?.derivationPath ?? '';
     _onInputChanged();
   }
 
@@ -294,7 +286,13 @@ class _AddAccountScreenState extends ConsumerState<AddAccountScreen> {
           const SizedBox(height: 6),
           TextField(
             controller: _path,
-            onChanged: (_) => _userChangedPath = true,
+            onChanged: (path) {
+              _userChangedPath = true;
+              // Typing a path whose last element names a scheme snaps the picker
+              // to it; picking afterwards overrides it.
+              final named = ColdAccount.schemeOfPath(path);
+              if (named != null) setState(() => _scheme = named);
+            },
             autocorrect: false,
             enableSuggestions: false,
             textInputAction: TextInputAction.done,

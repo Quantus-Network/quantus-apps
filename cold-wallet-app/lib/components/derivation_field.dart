@@ -29,14 +29,7 @@ class _DerivationFieldState extends State<DerivationField> {
   void initState() {
     super.initState();
     _index.addListener(_emit);
-    _path.addListener(_onPathChanged);
-  }
-
-  /// A typed path whose last element names a scheme snaps the picker to it.
-  void _onPathChanged() {
-    final named = ColdAccount.schemeOfPath(_path.text);
-    if (named != null && named != _scheme) setState(() => _scheme = named);
-    _emit();
+    _path.addListener(_emit);
   }
 
   @override
@@ -47,7 +40,7 @@ class _DerivationFieldState extends State<DerivationField> {
   }
 
   ColdAccount? get _account => _useFullPath
-      ? ColdAccount.atPath(_path.text, label: 'Account 1', defaultScheme: _scheme)
+      ? ColdAccount.atPath(_path.text, label: 'Account 1', scheme: _scheme)
       : ColdAccount.atIndexText(_index.text, scheme: _scheme);
 
   void _emit() => widget.onChanged(_account);
@@ -59,9 +52,8 @@ class _DerivationFieldState extends State<DerivationField> {
   void _setScheme(DilithiumScheme scheme) {
     setState(() {
       _scheme = scheme;
-      // A path the user has not hand-edited follows the chosen level; one they
-      // typed keeps its shape and only its scheme element moves, if it has one.
-      if (_useFullPath) _path.text = _userEditedPath ? ColdAccount.pathAtScheme(_path.text, scheme) : _templatePath;
+      // A path the user has not hand-edited follows the chosen level.
+      if (_useFullPath && !_userEditedPath) _path.text = _templatePath;
     });
     _emit();
   }
@@ -105,7 +97,15 @@ class _DerivationFieldState extends State<DerivationField> {
                 controller: _path,
                 autocorrect: false,
                 enableSuggestions: false,
-                onChanged: (_) => _userEditedPath = true,
+                onChanged: (path) {
+                  _userEditedPath = true;
+                  // Typing a path whose last element names a scheme snaps the picker
+                  // to it; picking afterwards overrides it.
+                  final named = ColdAccount.schemeOfPath(path);
+                  if (named == null || named == _scheme) return;
+                  setState(() => _scheme = named);
+                  _emit();
+                },
                 style: text.body.copyWith(color: colors.textContent),
                 decoration: InputDecoration(
                   labelText: 'Derivation path',

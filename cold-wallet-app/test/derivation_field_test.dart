@@ -65,9 +65,7 @@ void main() {
     expect(emitted!.scheme, DilithiumScheme.mlDsa65);
   });
 
-  testWidgets('a typed path snaps the picker to the scheme its last element names, and the picker moves the path', (
-    tester,
-  ) async {
+  testWidgets('a typed path snaps the picker, and picking afterwards keeps the path', (tester) async {
     await pumpField(tester);
     await openAdvanced(tester);
     await tester.tap(find.text('Use a full derivation path'));
@@ -80,7 +78,7 @@ void main() {
 
     await tester.tap(find.text('ML-DSA-87'));
     await tester.pumpAndSettle();
-    expect(emitted!.derivationPath, "m/44'/1'/0'");
+    expect(emitted!.derivationPath, "m/44'/1'/1'");
     expect(emitted!.scheme, DilithiumScheme.mlDsa87);
   });
 
