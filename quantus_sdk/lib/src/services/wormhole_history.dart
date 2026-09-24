@@ -7,10 +7,6 @@ import 'package:quantus_sdk/src/models/transaction_event.dart';
 import 'package:quantus_sdk/src/services/wormhole_utxo_service.dart';
 import 'package:quantus_sdk/src/utils/print.dart';
 
-/// The batches of one send are proved and submitted back to back; spends to
-/// the same recipient further apart than this are separate sends.
-const Duration wormholeSendMergeWindow = Duration(minutes: 30);
-
 /// Address the chain mints wormhole exits and mining rewards from.
 final String wormholeMintingAddress = AddressExtension.ss58AddressFromBytes(
   Uint8List.fromList(wormhole_pallet.Constants().mintingAccount),
@@ -31,36 +27,29 @@ class WormholeTransferEvent extends TransferEvent {
   }) : super(blockHash: null);
 
   /// True for a spend whose proof settled together with other transfers, so
-  /// the indexer cannot say which exit was ours: [amount] is what left the
-  /// account and [to] is empty.
+  /// the indexer cannot say which exit was ours: [amount] is what our inputs
+  /// contributed and [to] is empty.
   bool get recipientUnknown => to.isEmpty;
 }
 
-/// One proof extrinsic that consumed inputs of this wallet: how its exits
-/// split between the recipient and the wallet's own change. [recipient] is
-/// null when the exits cannot be attributed.
+/// One proof extrinsic that consumed inputs of this wallet. [recipient] is
+/// null when its exits cannot be attributed to this wallet.
 class _Batch {
   final WormholeSpend spend;
   final String? recipient;
   final BigInt sentToken;
-  final BigInt changeToken;
   final BigInt feeToken;
 
-  const _Batch({
-    required this.spend,
-    required this.recipient,
-    required this.sentToken,
-    required this.changeToken,
-    required this.feeToken,
-  });
+  const _Batch({required this.spend, required this.recipient, required this.sentToken, required this.feeToken});
 
-  bool get hasChange => changeToken > BigInt.zero;
+  bool get attributed => recipient != null;
 }
 
 /// A send of this wallet exits to exactly one address that is not its own,
-/// plus optional change; anything else (an aggregated proof carrying other
+/// plus optional change. Anything else (an aggregated proof carrying other
 /// users' inputs and exits, or an exit larger than our inputs) is reported by
-/// the amount our inputs contributed, with no recipient.
+/// the full amount our inputs contributed, with no recipient; nothing in such
+/// a proof is taken for change, so a payment to us inside it stays a receipt.
 _Batch _batch(WormholeSpend spend, BigInt inputsToken, Set<String> ownAddresses) {
   final change = spend.outputs
       .where((o) => ownAddresses.contains(o.exitAccountId))
@@ -72,7 +61,6 @@ _Batch _batch(WormholeSpend spend, BigInt inputsToken, Set<String> ownAddresses)
       spend: spend,
       recipient: foreign.single.exitAccountId,
       sentToken: sent,
-      changeToken: change,
       feeToken: inputsToken - sent - change,
     );
   }
@@ -80,27 +68,15 @@ _Batch _batch(WormholeSpend spend, BigInt inputsToken, Set<String> ownAddresses)
     '[WormholeHistory] Spend ${spend.extrinsicId} is not a single send of this wallet '
     '(${foreign.length} exits to other addresses, $inputsToken of inputs): reporting it without a recipient',
   );
-  return _Batch(
-    spend: spend,
-    recipient: null,
-    sentToken: inputsToken - change,
-    changeToken: change,
-    feeToken: BigInt.zero,
-  );
+  return _Batch(spend: spend, recipient: null, sentToken: inputsToken, feeToken: BigInt.zero);
 }
 
-/// Coin selection puts change only on a send's last batch, so a batch without
-/// change followed closely by one to the same recipient is the same send.
-bool _continuesSend(_Batch previous, _Batch next) =>
-    previous.recipient != null &&
-    previous.recipient == next.recipient &&
-    !previous.hasChange &&
-    next.spend.timestamp.difference(previous.spend.timestamp) <= wormholeSendMergeWindow;
-
 /// Rebuilds an encrypted account's activity from the indexer alone: one
-/// outgoing row per send (its batches merged, change hidden) and one incoming
-/// row per transfer to any of the account's addresses that is not its own
-/// change. Newest first.
+/// outgoing row per proof extrinsic that consumed the account's inputs (a send
+/// of more than seven inputs is several extrinsics and shows as several rows —
+/// nothing on chain ties them together) and one incoming row per transfer to
+/// any of the account's addresses that is not the change of one of those
+/// sends. Newest first, in chain order.
 List<TransactionEvent> buildWormholeHistory({
   required String accountId,
   required Set<String> ownAddresses,
@@ -115,60 +91,58 @@ List<TransactionEvent> buildWormholeHistory({
     spendByExtrinsic[spend.extrinsicId] = spend;
     inputsByExtrinsic.update(spend.extrinsicId, (sum) => sum + utxo.amount, ifAbsent: () => utxo.amount);
   }
+  final batches = [
+    for (final spend in spendByExtrinsic.values) _batch(spend, inputsByExtrinsic[spend.extrinsicId]!, ownAddresses),
+  ];
+  final changeExtrinsics = {
+    for (final batch in batches)
+      if (batch.attributed) batch.spend.extrinsicId,
+  };
 
-  final batches = spendByExtrinsic.values
-      .map((spend) => _batch(spend, inputsByExtrinsic[spend.extrinsicId]!, ownAddresses))
-      .sorted((a, b) => a.spend.position.compareTo(b.spend.position));
-  final sends = <List<_Batch>>[];
-  for (final batch in batches) {
-    final current = sends.lastOrNull;
-    if (current != null && _continuesSend(current.last, batch)) {
-      current.add(batch);
-    } else {
-      sends.add([batch]);
-    }
-  }
-
-  final events = <TransactionEvent>[
-    for (final send in sends)
-      WormholeTransferEvent(
-        id: send.last.spend.extrinsicId,
-        from: accountId,
-        to: send.first.recipient ?? '',
-        amount: send.fold(BigInt.zero, (sum, b) => sum + b.sentToken),
-        fee: send.fold(BigInt.zero, (sum, b) => sum + b.feeToken),
-        timestamp: send.last.spend.timestamp,
-        extrinsicHash: send.last.spend.extrinsicId,
-        blockNumber: send.last.spend.blockHeight,
+  // Exit and transfer ids are `<block>-<hash>-<event index>`, zero-padded, so
+  // they place every row at its position on chain.
+  final rows = <(String position, TransactionEvent event)>[
+    for (final batch in batches)
+      (
+        batch.spend.position,
+        WormholeTransferEvent(
+          id: batch.spend.extrinsicId,
+          from: accountId,
+          to: batch.recipient ?? '',
+          amount: batch.sentToken,
+          fee: batch.feeToken,
+          timestamp: batch.spend.timestamp,
+          extrinsicHash: batch.spend.extrinsicId,
+          blockNumber: batch.spend.blockHeight,
+        ),
       ),
     for (final WormholeUtxo(:transfer) in received)
-      if (!spendByExtrinsic.containsKey(transfer.extrinsicId))
-        if (transfer.fromId == wormholeMintingAddress && transfer.extrinsicId.isNotEmpty)
-          WormholeTransferEvent(
-            id: transfer.id,
-            from: transfer.fromId,
-            to: accountId,
-            amount: transfer.amount,
-            fee: BigInt.zero,
-            timestamp: transfer.timestamp,
-            extrinsicHash: transfer.extrinsicId,
-            blockNumber: transfer.blockHeight,
-          )
-        else
-          TransferEvent(
-            id: transfer.id,
-            from: transfer.fromId,
-            to: accountId,
-            amount: transfer.amount,
-            fee: BigInt.zero,
-            timestamp: transfer.timestamp,
-            extrinsicHash: transfer.extrinsicId.isEmpty ? null : transfer.extrinsicId,
-            blockNumber: transfer.blockHeight,
-            blockHash: null,
-          ),
+      if (!changeExtrinsics.contains(transfer.extrinsicId))
+        (
+          transfer.id,
+          transfer.fromId == wormholeMintingAddress && transfer.extrinsicId.isNotEmpty
+              ? WormholeTransferEvent(
+                  id: transfer.id,
+                  from: transfer.fromId,
+                  to: accountId,
+                  amount: transfer.amount,
+                  fee: BigInt.zero,
+                  timestamp: transfer.timestamp,
+                  extrinsicHash: transfer.extrinsicId,
+                  blockNumber: transfer.blockHeight,
+                )
+              : TransferEvent(
+                  id: transfer.id,
+                  from: transfer.fromId,
+                  to: accountId,
+                  amount: transfer.amount,
+                  fee: BigInt.zero,
+                  timestamp: transfer.timestamp,
+                  extrinsicHash: transfer.extrinsicId.isEmpty ? null : transfer.extrinsicId,
+                  blockNumber: transfer.blockHeight,
+                  blockHash: null,
+                ),
+        ),
   ];
-  return events.sorted((a, b) {
-    final byTime = b.timestamp.compareTo(a.timestamp);
-    return byTime != 0 ? byTime : b.id.compareTo(a.id);
-  });
+  return rows.sorted((a, b) => b.$1.compareTo(a.$1)).map((row) => row.$2).toList();
 }

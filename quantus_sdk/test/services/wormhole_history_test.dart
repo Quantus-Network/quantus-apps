@@ -139,80 +139,51 @@ void main() {
     expect(history.single.to, _account);
   });
 
-  test('the batches of one send merge into one row carrying the last batch', () {
-    final first = _spend('0xs1', block: 10, at: _t0, outputs: {_alice: 700});
-    final last = _spend(
-      '0xs2',
-      block: 11,
-      at: _t0.add(const Duration(minutes: 2)),
-      outputs: {_alice: 300, _change0: 50},
+  test('each extrinsic of a multi-batch send is its own row, newest first, with its change hidden', () {
+    final history = _history(
+      [
+        _received('r1', scaled: 701),
+        _received('r2', scaled: 351),
+        _received('c1', to: _change0, scaled: 50, from: wormholeMintingAddress, extrinsicId: '0xs2', block: 11),
+      ],
+      {
+        'nr1': _spend('0xs1', block: 10, outputs: {_alice: 700}),
+        'nr2': _spend('0xs2', block: 11, outputs: {_alice: 300, _change0: 50}),
+      },
     );
-    final history = _history([_received('r1', scaled: 701), _received('r2', scaled: 351)], {'nr1': first, 'nr2': last});
 
-    final sent = history.whereType<WormholeTransferEvent>().single;
-    expect(sent.amount, _scaled(1000));
-    expect(sent.fee, _scaled(2));
-    expect(sent.extrinsicHash, '0xs2');
-    expect(sent.timestamp, last.timestamp);
-    expect(sent.blockNumber, 11);
+    final sent = history.whereType<WormholeTransferEvent>().toList();
+    expect(sent.map((e) => e.extrinsicHash), ['0xs2', '0xs1']);
+    expect(sent.map((e) => e.amount), [_scaled(300), _scaled(700)]);
+    expect(sent.map((e) => e.fee), [_scaled(1), _scaled(1)]);
+    expect(history.map((e) => e.id), isNot(contains('c1')));
   });
 
-  test('batches landing in one block merge in event order, whatever their hashes', () {
+  test('rows in one block follow event order, whatever their hashes', () {
     final history = _history(
       [_received('r1', scaled: 701), _received('r2', scaled: 351)],
       {
         'nr1': _spend('0xff', block: 10, event: 2, outputs: {_alice: 700}),
-        'nr2': _spend('0x00', block: 10, event: 7, outputs: {_alice: 300, _change0: 50}),
+        'nr2': _spend('0x00', block: 10, event: 7, outputs: {_alice: 350}),
       },
     );
 
-    final sent = history.whereType<WormholeTransferEvent>().single;
-    expect(sent.amount, _scaled(1000));
-    expect(sent.extrinsicHash, '0x00');
-  });
-
-  test('sends to the same recipient further apart than the merge window stay separate', () {
-    final history = _history(
-      [_received('r1', scaled: 701), _received('r2', scaled: 351)],
-      {
-        'nr1': _spend('0xs1', block: 10, at: _t0, outputs: {_alice: 700}),
-        'nr2': _spend(
-          '0xs2',
-          block: 500,
-          at: _t0.add(wormholeSendMergeWindow + const Duration(seconds: 1)),
-          outputs: {_alice: 350},
-        ),
-      },
-    );
-
-    expect(history.whereType<WormholeTransferEvent>().map((e) => e.id), ['0xs2', '0xs1']);
-  });
-
-  test('a send that returned change ends the merge', () {
-    final history = _history(
-      [_received('r1', scaled: 701), _received('r2', scaled: 351)],
-      {
-        'nr1': _spend('0xs1', block: 10, at: _t0, outputs: {_alice: 600, _change0: 100}),
-        'nr2': _spend('0xs2', block: 11, at: _t0.add(const Duration(minutes: 1)), outputs: {_alice: 350}),
-      },
-    );
-
-    expect(history.whereType<WormholeTransferEvent>().map((e) => e.amount), [_scaled(350), _scaled(600)]);
+    expect(history.whereType<WormholeTransferEvent>().map((e) => e.id), ['0x00', '0xff']);
   });
 
   test('a receipt from another encrypted send is a wormhole event; a mining reward is not', () {
     final history = _history([
-      _received('w1', scaled: 100, from: wormholeMintingAddress, extrinsicId: '0xw', at: _t0),
+      _received('m1', scaled: 100, from: wormholeMintingAddress, extrinsicId: '', at: _t0),
       _received(
-        'm1',
+        'w2',
         scaled: 100,
         from: wormholeMintingAddress,
-        extrinsicId: '',
+        extrinsicId: '0xw',
         at: _t0.add(const Duration(hours: 1)),
       ),
     ], {});
 
-    final [reward, receipt] = history;
+    final [receipt, reward] = history;
     expect(receipt, isA<WormholeTransferEvent>().having((e) => e.extrinsicHash, 'extrinsicHash', '0xw'));
     expect(reward, isNot(isA<WormholeTransferEvent>()));
     expect(reward.extrinsicHash, isNull);
@@ -261,19 +232,23 @@ void main() {
     test('paying only itself', () {
       final row = sent({_change0: 99}, inputs: 100);
       expect(row.recipientUnknown, isTrue);
-      expect(row.amount, _scaled(1));
+      expect(row.amount, _scaled(100));
     });
 
-    test('never merges with a neighbouring send', () {
+    test('keeps a payment to this wallet inside the proof as a receipt', () {
       final history = _history(
-        [_received('r1', scaled: 1000), _received('r2', scaled: 500)],
+        [
+          _received('r1', scaled: 1000),
+          _received('p1', to: _external1, scaled: 100, from: wormholeMintingAddress, extrinsicId: '0xs1', block: 5),
+        ],
         {
-          'nr1': _spend('0xs1', block: 5, at: _t0, outputs: {_alice: 600, _bob: 100}),
-          'nr2': _spend('0xs2', block: 6, at: _t0.add(const Duration(minutes: 1)), outputs: {_alice: 499}),
+          'nr1': _spend('0xs1', block: 5, outputs: {_alice: 600, _bob: 100, _external1: 100}),
         },
       );
 
-      expect(history.whereType<WormholeTransferEvent>().map((e) => e.recipientUnknown), [false, true]);
+      final receipt = history.singleWhere((e) => e.id == 'p1');
+      expect(receipt, isA<WormholeTransferEvent>().having((e) => e.to, 'to', _account));
+      expect(history.whereType<WormholeTransferEvent>().singleWhere((e) => e.recipientUnknown).amount, _scaled(1000));
     });
   });
 }
