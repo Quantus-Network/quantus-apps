@@ -227,6 +227,25 @@ void main() {
       expect(_sends(history).map((e) => e.id), ['0xs2', '0xs1']);
     });
 
+    test('not when further apart than the merge window, even from old funds', () {
+      // A miner's equal leaves let an amount consume whole batches exactly, so
+      // repeated sends to one recipient can all be change-free.
+      final history = _history(
+        [_received('n1', scaled: 701, event: 0), _received('n2', scaled: 351, event: 1)],
+        {
+          'n1': _spend('0xs1', block: 10, at: _t0, outputs: {_alice: 700}),
+          'n2': _spend(
+            '0xs2',
+            block: 500,
+            at: _t0.add(wormholeSendMergeWindow + const Duration(seconds: 1)),
+            outputs: {_alice: 350},
+          ),
+        },
+      );
+
+      expect(_sends(history).map((e) => e.id), ['0xs2', '0xs1']);
+    });
+
     test('not after a batch that returned change', () {
       final history = _history(
         [_received('n1', scaled: 701, event: 0), _received('n2', scaled: 351, event: 1)],

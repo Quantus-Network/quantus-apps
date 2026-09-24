@@ -7,6 +7,10 @@ import 'package:quantus_sdk/src/models/transaction_event.dart';
 import 'package:quantus_sdk/src/services/wormhole_utxo_service.dart';
 import 'package:quantus_sdk/src/utils/print.dart';
 
+/// The batches of one send are proved and submitted back to back, a couple of
+/// minutes apart; batches further apart than this belong to different sends.
+const Duration wormholeSendMergeWindow = Duration(minutes: 5);
+
 /// Address the chain mints wormhole exits and mining rewards from.
 final String wormholeMintingAddress = AddressExtension.ss58AddressFromBytes(
   Uint8List.fromList(wormhole_pallet.Constants().mintingAccount),
@@ -101,15 +105,18 @@ _Batch _batch(WormholeSpend spend, BigInt inputsToken, String newestInput, Set<S
 
 /// Coin selection runs once per send and returns change only on its last
 /// batch, so [next] continues the send of [previous] when it pays the same
-/// recipient, [previous] returned no change, and every input of [next] already
-/// existed when [previous] was submitted. A send without change spent
-/// everything the wallet had, so a later send to the same recipient can only
-/// consume funds received afterwards and never merges into it.
+/// recipient, [previous] returned no change, every input of [next] already
+/// existed when [previous] was submitted, and they landed within
+/// [wormholeSendMergeWindow]. The age test keeps a send-max (no change,
+/// everything spent) apart from a later send funded by new receipts; the
+/// window keeps apart repeated sends whose amounts happen to consume whole
+/// batches exactly, common for a miner with thousands of equal leaves.
 bool _continuesSend(_Batch previous, _Batch next) =>
     previous.attributed &&
     previous.recipient == next.recipient &&
     !previous.hasChange &&
-    next.newestInput.compareTo(previous.spend.position) < 0;
+    next.newestInput.compareTo(previous.spend.position) < 0 &&
+    next.spend.timestamp.difference(previous.spend.timestamp) <= wormholeSendMergeWindow;
 
 /// Rebuilds an encrypted account's activity from the indexer alone: one
 /// outgoing row per send (a send of more than seven inputs is several proof
