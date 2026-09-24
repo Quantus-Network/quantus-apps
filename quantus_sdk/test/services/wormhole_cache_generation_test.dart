@@ -27,7 +27,7 @@ final _spend = WormholeSpend(
   blockHeight: 1,
   timestamp: DateTime.utc(2026),
   outputs: const [],
-  nullifierCount: 1,
+  call: WormholeSpend.privateBatchCall,
 );
 final _spendJson = jsonEncode(_spend.toJson());
 

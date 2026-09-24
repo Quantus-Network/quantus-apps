@@ -139,21 +139,23 @@ class WormholeOutput {
   Map<String, dynamic> toJson() => {'id': id, 'exitAccountId': exitAccountId, 'amount': amount.toString()};
 }
 
-/// The proof extrinsic that consumed a nullifier, with every exit it paid and
-/// the number of nullifiers it consumed in total — compared with the wallet's
-/// own, it tells whether the proof also carried other users' inputs.
+/// The proof extrinsic that consumed a nullifier, with every exit it paid.
+/// [call] is the pallet call that settled it: a private batch is one client's
+/// proof, a public batch bundles several clients' private batches.
 class WormholeSpend {
+  static const String privateBatchCall = 'verify_private_batch';
+
   final String extrinsicId;
   final int blockHeight;
   final DateTime timestamp;
-  final int nullifierCount;
+  final String call;
   final List<WormholeOutput> outputs;
 
   const WormholeSpend({
     required this.extrinsicId,
     required this.blockHeight,
     required this.timestamp,
-    required this.nullifierCount,
+    required this.call,
     required this.outputs,
   });
 
@@ -165,7 +167,7 @@ class WormholeSpend {
     extrinsicId: json['extrinsicId'] as String,
     blockHeight: json['blockHeight'] as int,
     timestamp: DateTime.parse(json['timestamp'] as String),
-    nullifierCount: json['nullifierCount'] as int,
+    call: json['call'] as String,
     outputs: [for (final o in json['outputs'] as List<dynamic>) WormholeOutput.fromJson(o as Map<String, dynamic>)],
   );
 
@@ -173,7 +175,7 @@ class WormholeSpend {
     'extrinsicId': extrinsicId,
     'blockHeight': blockHeight,
     'timestamp': timestamp.toIso8601String(),
-    'nullifierCount': nullifierCount,
+    'call': call,
     'outputs': outputs.map((o) => o.toJson()).toList(),
   };
 }
@@ -208,10 +210,10 @@ class WormholeUtxoService {
 
   /// Generation of both on-disk caches; bump on any format change. v3 keys the
   /// files by network as well as address, so Planck-era files are dropped
-  /// instead of being read against mainnet; v5 records each transfer's
+  /// instead of being read against mainnet; v6 records each transfer's
   /// timestamp and extrinsic and each spent nullifier's spend.
   @visibleForTesting
-  static const int cacheVersion = 5;
+  static const int cacheVersion = 6;
   static const int _nullifierBatchSize = 300;
   static const int _reorgDepth = 180;
 
@@ -574,45 +576,27 @@ query SpentNullifiers($hashes: [String!]!) {
     extrinsicId: wormhole_extrinsic_id
     timestamp
     block { height }
-    wormholeExtrinsic { outputs { id exitAccountId: exit_account_id amount } }
+    wormholeExtrinsic { extrinsic { call } outputs { id exitAccountId: exit_account_id amount } }
   }
 }''';
 
     _log('nullifiers query: ${nullifierHashes.length} hashes');
     final rows = await _graphQlRows('nullifiers', query, {'hashes': nullifierHashes}, 'wormholeNullifiers');
-    final counts = await _queryNullifierCounts(rows.map((m) => m['extrinsicId'] as String).toSet().toList());
     final found = <String, WormholeSpend>{};
     for (final m in rows) {
-      final extrinsicId = m['extrinsicId'] as String;
-      final outputs = (m['wormholeExtrinsic'] as Map<String, dynamic>)['outputs'] as List<dynamic>;
+      final extrinsic = m['wormholeExtrinsic'] as Map<String, dynamic>;
       found[m['nullifierHash'] as String] = WormholeSpend(
-        extrinsicId: extrinsicId,
+        extrinsicId: m['extrinsicId'] as String,
         blockHeight: (m['block'] as Map<String, dynamic>)['height'] as int,
         timestamp: DateTime.parse(m['timestamp'] as String),
-        nullifierCount: counts[extrinsicId]!,
-        outputs: [for (final o in outputs) WormholeOutput.fromJson(o as Map<String, dynamic>)],
+        call: (extrinsic['extrinsic'] as Map<String, dynamic>)['call'] as String,
+        outputs: [
+          for (final o in extrinsic['outputs'] as List<dynamic>) WormholeOutput.fromJson(o as Map<String, dynamic>),
+        ],
       );
     }
     _log('nullifiers query: ${found.length} spent out of ${nullifierHashes.length} queried');
     return found;
-  }
-
-  /// Total nullifiers consumed by each of [extrinsicIds], the wallet's and
-  /// anyone else's whose proof was bundled into the same extrinsic.
-  Future<Map<String, int>> _queryNullifierCounts(List<String> extrinsicIds) async {
-    if (extrinsicIds.isEmpty) return {};
-    const query = r'''
-query NullifierCounts($ids: [String!]!) {
-  wormholeNullifiers: wormhole_nullifier(where: { wormhole_extrinsic_id: {_in: $ids} }, limit: 10000) {
-    extrinsicId: wormhole_extrinsic_id
-  }
-}''';
-    final rows = await _graphQlRows('nullifier counts', query, {'ids': extrinsicIds}, 'wormholeNullifiers');
-    final counts = <String, int>{};
-    for (final m in rows) {
-      counts.update(m['extrinsicId'] as String, (n) => n + 1, ifAbsent: () => 1);
-    }
-    return counts;
   }
 
   /// Returns a map from nullifier hex to the spend that consumed it. Callers

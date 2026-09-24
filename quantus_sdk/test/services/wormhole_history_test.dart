@@ -37,21 +37,21 @@ WormholeUtxo _received(
 );
 
 /// A proof extrinsic exiting [outputs] (address → scaled amount), with exit
-/// ids in the indexer's `<block>-<hash>-<event index>` form starting at [event]
-/// and [nullifierCount] inputs consumed in total (one, this wallet's, unless
-/// the proof also carried someone else's).
+/// ids in the indexer's `<block>-<hash>-<event index>` form starting at
+/// [event], settled by [call] (a private batch of this wallet's unless told
+/// otherwise).
 WormholeSpend _spend(
   String extrinsicId, {
   required int block,
   DateTime? at,
   required Map<String, int> outputs,
   int event = 0,
-  int nullifierCount = 1,
+  String call = WormholeSpend.privateBatchCall,
 }) => WormholeSpend(
   extrinsicId: extrinsicId,
   blockHeight: block,
   timestamp: at ?? _t0,
-  nullifierCount: nullifierCount,
+  call: call,
   outputs: [
     for (final (i, e) in outputs.entries.indexed)
       WormholeOutput(
@@ -227,9 +227,9 @@ void main() {
       expect(row.fee, BigInt.zero);
     });
 
-    test('carrying another user\'s input, even when its exits look like one of our sends', () {
-      // Our 1000 in, 600 to alice, 399 change — and a stranger's segment pays
-      // 1 unit into our address. Outputs alone would pass as our send.
+    test('a public batch, even when its exits look like one of our sends', () {
+      // Our 1000 in, 600 to alice, 399 change — and another client's segment
+      // pays 1 unit into our address. Outputs alone would pass as our send.
       final history = _history(
         [
           _received('r1', scaled: 1000),
@@ -237,7 +237,12 @@ void main() {
           _received('p1', to: _external1, scaled: 1, from: wormholeMintingAddress, extrinsicId: '0xs1', block: 5),
         ],
         {
-          'nr1': _spend('0xs1', block: 5, nullifierCount: 2, outputs: {_alice: 600, _change0: 399, _external1: 1}),
+          'nr1': _spend(
+            '0xs1',
+            block: 5,
+            call: 'verify_public_batch',
+            outputs: {_alice: 600, _change0: 399, _external1: 1},
+          ),
         },
       );
 
