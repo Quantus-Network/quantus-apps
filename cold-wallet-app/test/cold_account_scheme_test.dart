@@ -42,13 +42,5 @@ void main() {
       expect(account!.scheme, DilithiumScheme.mlDsa65);
       expect(account.templateIndex, isNull);
     });
-
-    test('at one index, current scheme sorts before legacy', () {
-      final accounts = [
-        ColdAccount(label: 'legacy', index: 0, scheme: DilithiumScheme.mlDsa87),
-        ColdAccount(label: 'current', index: 0, scheme: DilithiumScheme.mlDsa65),
-      ]..sort(ColdAccount.compareByDerivation);
-      expect(accounts.map((a) => a.label), ['current', 'legacy']);
-    });
   });
 }

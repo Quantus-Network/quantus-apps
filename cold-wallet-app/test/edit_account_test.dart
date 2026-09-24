@@ -56,6 +56,14 @@ Future<List<String>> storedLabels() async =>
 
 void main() {
   group('WalletController', () {
+    test('lists accounts in the order they were added, whatever they derive from', () async {
+      final container = await walletWith([two, legacy65]);
+      await container.read(walletControllerProvider.notifier).addAccount(one);
+
+      expect(container.read(accountsProvider).map((a) => a.label), ['Account 2', 'Old account', 'Account 1']);
+      expect(await storedLabels(), ['Account 2', 'Old account', 'Account 1']);
+    });
+
     test('renames an account and keeps its derivation', () async {
       final container = await walletWith([one, two]);
       await container.read(walletControllerProvider.notifier).renameAccount(two, 'Savings');

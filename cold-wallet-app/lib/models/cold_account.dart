@@ -46,27 +46,6 @@ class ColdAccount {
     return null;
   }
 
-  /// Orders accounts by the slot they derive from, then scheme (current first),
-  /// so a list reads as the seed's own sequence rather than the order the
-  /// accounts happened to be added. A path this wallet does not number claims
-  /// no slot, and sorts after the ones that do.
-  static int compareByDerivation(ColdAccount a, ColdAccount b) {
-    final left = a.templateIndex;
-    final right = b.templateIndex;
-    if (left != null && right != null) {
-      final byIndex = left.compareTo(right);
-      if (byIndex != 0) return byIndex;
-      return _schemeSortOrder(a.scheme).compareTo(_schemeSortOrder(b.scheme));
-    }
-    if (left != null) return -1;
-    if (right != null) return 1;
-    return a.derivationPath.compareTo(b.derivationPath);
-  }
-
-  /// Sort position by scheme (current first). This is an ordering key, not the
-  /// derivation path index (which is 0 for 87, 1 for 65).
-  static int _schemeSortOrder(DilithiumScheme scheme) => scheme == DilithiumSchemeExtension.current ? 0 : 1;
-
   /// Scheme the signature type choice opens on for a new wallet or account.
   static const DilithiumScheme newAccountScheme = DilithiumScheme.mlDsa87;
 
