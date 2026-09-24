@@ -122,6 +122,8 @@ Future<Account> _createSoftwareWallet(WidgetRef ref) async {
   invalidateAccountProviders(ref);
   ref.invalidate(walletOriginProvider(walletIndex));
   ref.invalidate(recoveryPhraseViewedProvider(walletIndex));
-  unawaited(registerForRemoteNotificationsBestEffort(ref, insertAddress: walletIndex > 0 ? account.accountId : null));
+  unawaited(
+    registerForRemoteNotificationsBestEffort(ref.read, insertAddress: walletIndex > 0 ? account.accountId : null),
+  );
   return account;
 }

@@ -1,3 +1,4 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -6,6 +7,7 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/app.dart';
 import 'package:resonance_network_wallet/app_initializer.dart';
 import 'package:resonance_network_wallet/app_lifecycle_manager.dart';
+import 'package:resonance_network_wallet/firebase_options.dart';
 import 'package:telemetrydecksdk/telemetrydecksdk.dart';
 
 bool _initialized = false;
@@ -30,6 +32,7 @@ Future<void> bootstrap() async {
   );
 
   await dotenv.load();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.getOptionsForEnvironment());
 
   await QuantusSdk.init();
 

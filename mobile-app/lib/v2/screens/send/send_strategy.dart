@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/misc.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/v2/screens/send/keystone_signing_session.dart';
+import 'package:resonance_network_wallet/shared/utils/provider_reader.dart';
 
 /// Per-step labels that differ between the send flows (regular transfer vs
 /// multisig proposal). Built once from [AppLocalizations] by each strategy so
@@ -104,7 +105,6 @@ class SendFeeState {
 
 /// `ref.read` or `container.read`, so a strategy can be driven from a screen
 /// or from the tap that starts the flow.
-typedef ProviderReader = T Function<T>(ProviderListenable<T> provider);
 
 /// Prefixes a figure that depends on an unsettled fee with `~`.
 String estimateLabel(String text, {required bool estimate}) => estimate ? '~$text' : text;

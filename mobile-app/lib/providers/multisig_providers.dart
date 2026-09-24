@@ -28,7 +28,7 @@ class MultisigAccountsNotifier extends StateNotifier<AsyncValue<List<MultisigAcc
 
   Future<void> add(MultisigAccount account) async {
     await _settingsService.addMultisigAccount(account);
-    await _ref.read(firebaseMessagingServiceProvider).insertNewAddress(account.accountId);
+    await registerForRemoteNotificationsBestEffort(_ref.read, insertAddress: account.accountId);
 
     final current = state.value ?? [];
     state = AsyncValue.data([...current, account]);
