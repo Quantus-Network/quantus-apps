@@ -89,36 +89,38 @@ class _DiscoverMultisigScreenState extends ConsumerState<DiscoverMultisigScreen>
             );
           }
 
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(l10n.multisigAddDiscoveredTitle, style: text.labelData.copyWith(color: colors.textMuted)),
-              const SizedBox(height: 8),
-              Text(l10n.multisigAddDiscoveredSubtitle, style: text.caption.copyWith(color: colors.textMuted)),
-              const SizedBox(height: 24),
-              ListView.separated(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: sorted.length,
-                separatorBuilder: (_, _) => const SizedBox(height: 12),
-                itemBuilder: (context, index) {
-                  final account = sorted[index];
-                  final isAdded = savedIds.contains(account.accountId);
-                  final isAdding = _addingIds.contains(account.accountId);
+          return SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(l10n.multisigAddDiscoveredTitle, style: text.labelData.copyWith(color: colors.textMuted)),
+                const SizedBox(height: 8),
+                Text(l10n.multisigAddDiscoveredSubtitle, style: text.caption.copyWith(color: colors.textMuted)),
+                const SizedBox(height: 24),
+                ListView.separated(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: sorted.length,
+                  separatorBuilder: (_, _) => const SizedBox(height: 12),
+                  itemBuilder: (context, index) {
+                    final account = sorted[index];
+                    final isAdded = savedIds.contains(account.accountId);
+                    final isAdding = _addingIds.contains(account.accountId);
 
-                  return _DiscoverMultisigRow(
-                    key: ValueKey(account.accountId),
-                    account: account,
-                    isAdded: isAdded,
-                    isAdding: isAdding,
-                    addLabel: l10n.multisigAddButton,
-                    addedLabel: l10n.multisigAddedButton,
-                    thresholdLabel: l10n.multisigThresholdOf(account.threshold, account.signers.length),
-                    onAdd: () => _addMultisig(account),
-                  );
-                },
-              ),
-            ],
+                    return _DiscoverMultisigRow(
+                      key: ValueKey(account.accountId),
+                      account: account,
+                      isAdded: isAdded,
+                      isAdding: isAdding,
+                      addLabel: l10n.multisigAddButton,
+                      addedLabel: l10n.multisigAddedButton,
+                      thresholdLabel: l10n.multisigThresholdOf(account.threshold, account.signers.length),
+                      onAdd: () => _addMultisig(account),
+                    );
+                  },
+                ),
+              ],
+            ),
           );
         },
       ),
