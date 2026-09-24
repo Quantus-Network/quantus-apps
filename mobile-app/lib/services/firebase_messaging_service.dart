@@ -28,6 +28,7 @@ class FirebaseMessagingService {
 
   bool _isInitialized = false;
   bool _permissionRequested = false;
+  bool _authorized = false;
   bool _hasRegisteredHandlers = false;
   String? _cachedToken;
 
@@ -35,8 +36,11 @@ class FirebaseMessagingService {
 
   String get _platform => Platform.operatingSystem;
 
-  /// Returns the cached FCM device token, fetching from Firebase if not yet available.
+  /// Returns the cached FCM device token, fetching from Firebase if not yet
+  /// available. Null until the user has granted notifications: without that
+  /// consent no token is requested and no address reaches the push backend.
   Future<String?> getDeviceToken() async {
+    if (!_authorized) return null;
     if (_cachedToken != null) return _cachedToken;
 
     try {
@@ -54,8 +58,8 @@ class FirebaseMessagingService {
   Future<void> init() async {
     if (_isInitialized) return;
 
-    final authorizationStatus = await _authorizationStatus();
-    if (authorizationStatus != AuthorizationStatus.authorized) {
+    _authorized = await _authorizationStatus() == AuthorizationStatus.authorized;
+    if (!_authorized) {
       quantusPrint('FCM permission not authorized');
       return;
     }
