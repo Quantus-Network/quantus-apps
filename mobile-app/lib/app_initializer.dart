@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
+import 'package:resonance_network_wallet/services/firebase_messaging_service.dart';
 import 'package:resonance_network_wallet/services/history_polling_manager.dart';
 import 'package:resonance_network_wallet/services/local_notifications_service.dart';
 import 'package:resonance_network_wallet/services/multisig_creation_polling_service.dart';
@@ -30,8 +30,6 @@ class _AppInitializerState extends ConsumerState<AppInitializer> {
 
   Future<void> _initialize() async {
     try {
-      ref.read(remoteConfigProvider.notifier).registerRemoteRefreshListener(ref);
-
       // Register polling services early so their listeners are attached before/while accounts load.
       // This must happen even if later steps (e.g. notifications) fail.
       ref.read(historyPollingManagerProvider);
@@ -39,6 +37,7 @@ class _AppInitializerState extends ConsumerState<AppInitializer> {
 
       final notificationService = ref.read(localNotificationsServiceProvider);
       await notificationService.init();
+      await enableRemoteNotifications(ref.read);
     } catch (e, stackTrace) {
       quantusPrint('Initialization error: $e\n$stackTrace');
     }

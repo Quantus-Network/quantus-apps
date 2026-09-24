@@ -242,15 +242,21 @@ final firebaseMessagingServiceProvider = Provider<FirebaseMessagingService>((ref
   return FirebaseMessagingService(ref);
 });
 
-/// Best-effort push-notification registration for onboarding entry points.
-///
-/// This must never block or abort wallet creation/import. Reading
-/// [firebaseMessagingServiceProvider] constructs a [FirebaseMessagingService],
-/// whose field initializer touches `FirebaseMessaging.instance` synchronously;
-/// that throws when Firebase has not been initialized yet (it is initialized
-/// lazily once remote notifications are enabled). Tapping immediately after
-/// launch could therefore throw and skip navigation, so the provider read and
-/// every subsequent call are wrapped here and all failures are swallowed.
+/// Requests the permission, registers the device and wires the message and
+/// tap handlers. Idempotent; failures are logged, never thrown.
+Future<void> enableRemoteNotifications(ProviderReader read) async {
+  try {
+    final service = read(firebaseMessagingServiceProvider);
+    await service.init();
+    service.setupNotificationTapHandlers();
+  } catch (e) {
+    quantusPrint('Failed to enable remote notifications: $e');
+    TelemetryService().sendError('fcm_enable_remote_notifications_failed', error: e);
+  }
+}
+
+/// Registers this device (or one new address) for push notifications, and
+/// never throws: registration must not fail the account flow that calls it.
 ///
 /// When [insertAddress] is non-null, the address is registered for push
 /// notifications on the existing device; otherwise the device itself is
