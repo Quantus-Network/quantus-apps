@@ -163,7 +163,7 @@ void main() {
       );
 
       expect(find.text('Sign'), findsOneWidget);
-      expect(find.textContaining('does not hold'), findsNothing);
+      expect(find.textContaining('does not exist in this cold wallet'), findsNothing);
     });
 
     testWidgets('refuses when the wallet does not hold the signer', (tester) async {
@@ -173,7 +173,7 @@ void main() {
         held: {signerAddress: ColdAccount(label: 'One', index: 0, scheme: DilithiumSchemeExtension.legacy)},
       );
 
-      expect(find.textContaining('does not hold'), findsOneWidget);
+      expect(find.textContaining('does not exist in this cold wallet'), findsOneWidget);
       expect(find.text('Sign'), findsNothing);
     });
   });

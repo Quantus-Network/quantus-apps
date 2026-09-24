@@ -4,6 +4,7 @@ import 'package:convert/convert.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart' hide CallFieldView;
+import 'package:quantus_cold_wallet/app_version.dart';
 import 'package:quantus_cold_wallet/components/address_with_checkphrase.dart';
 import 'package:quantus_cold_wallet/components/call_detail_view.dart';
 import 'package:quantus_cold_wallet/components/qr_tuning_controls.dart';
@@ -27,7 +28,7 @@ class SignTransactionScreen extends ConsumerStatefulWidget {
 
 class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> {
   ParsedPayload? _parsed;
-  String? _parseError;
+  FormatException? _parseError;
   Uint8List? _signed;
   List<String>? _urParts;
   int? _urPartsBytes;
@@ -40,9 +41,9 @@ class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> {
     super.initState();
     try {
       _parsed = QuantusPayloadParser.parsePayload(widget.request.payload, policy: const FullCallPolicy());
-    } catch (e) {
+    } on FormatException catch (e) {
       debugPrint('Rejected signing payload: $e');
-      _parseError = e is FormatException ? e.message : e.toString();
+      _parseError = e;
     }
   }
 
@@ -87,40 +88,91 @@ class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (_parseError != null) return _errorView(context, _parseError!);
+    final parseError = _parseError;
+    if (parseError != null) return _parseErrorView(context, parseError);
     if (!ref.watch(addressesProvider).containsKey(widget.request.signer)) {
-      return _errorView(context, 'This transaction is for ${widget.request.signer}, which this wallet does not hold.');
+      return _errorView(
+        context,
+        title: 'Account not in this wallet',
+        message: 'The requested signer account does not exist in this cold wallet.',
+        detail: AddressWithCheckphrase(label: 'Requested signer', address: widget.request.signer),
+      );
     }
     if (_signed != null) return _signatureView(context, _signed!);
     return _reviewView(context, _parsed!);
   }
 
-  Widget _errorView(BuildContext context, String reason) {
+  Widget _parseErrorView(BuildContext context, FormatException error) {
+    final text = context.themeTextV3;
+    final muted = text.body.copyWith(color: context.colorsV3.textMuted);
+    return switch (error) {
+      UnknownCallException(:final pallet, :final call) => _errorView(
+        context,
+        title: 'Unsupported transaction',
+        message: 'Pallet $pallet call $call not found. $updateAppHint',
+        detail: Text(currentAppVersion, style: muted, textAlign: TextAlign.center),
+      ),
+      CallNestingLimitException() => _errorView(
+        context,
+        title: 'Transaction too complex',
+        message: 'This transaction nests calls deeper than this wallet can show in full.',
+        detail: Text(error.message, style: muted, textAlign: TextAlign.center),
+      ),
+      _ => _errorView(
+        context,
+        title: 'Could not read transaction',
+        message: 'This QR code is not a transaction this wallet can read in full.',
+        detail: Text(error.message, style: muted, textAlign: TextAlign.center),
+      ),
+    };
+  }
+
+  Widget _errorView(BuildContext context, {required String title, required String message, required Widget detail}) {
     final colors = context.colorsV3;
     final text = context.themeTextV3;
     return ScaffoldBase(
       appBar: const V2AppBar(title: 'Sign Transaction'),
-      // The reason is as long as the decoder's message, which no layout can
+      // The detail can be as long as the decoder's message, which no layout can
       // bound, so this column scrolls rather than overflowing on a small screen.
       mainContent: Center(
         child: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Icon(Icons.error_outline, size: 64, color: colors.semanticEmber),
+              Center(
+                child: Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(color: colors.semanticEmber.useOpacity(0.12), shape: BoxShape.circle),
+                  child: Icon(Icons.error_outline, size: 72, color: colors.semanticEmber),
+                ),
+              ),
               const SizedBox(height: 24),
-              Text('Could not read transaction', style: text.titleScreen.copyWith(color: colors.textContent)),
-              const SizedBox(height: 12),
               Text(
-                'This QR code is not a transaction this wallet can read in full, so it will not be signed. '
-                'Nothing was signed.',
-                style: text.body.copyWith(color: colors.textMuted),
+                title,
+                style: text.titleHero.copyWith(color: colors.semanticEmber),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 16),
               Text(
-                reason,
-                style: text.caption.copyWith(color: colors.textMuted2),
+                message,
+                style: text.bodyLarge.copyWith(color: colors.textContent),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 20),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: colors.semanticEmber.useOpacity(0.08),
+                  borderRadius: context.radiusV3.mdBorder,
+                  border: Border.all(color: colors.semanticEmber),
+                ),
+                child: detail,
+              ),
+              const SizedBox(height: 20),
+              Text(
+                'Nothing was signed.',
+                style: text.bodyEmphasis.copyWith(color: colors.textMuted),
                 textAlign: TextAlign.center,
               ),
             ],

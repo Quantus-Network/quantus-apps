@@ -34,7 +34,7 @@ void main() {
     test('an unknown version', () {
       expect(
         () => SigningRequest.decode(envelope({'v': 2, 'signer': signer, 'payload': '0x0000'})),
-        throwsFormatException,
+        throwsA(isA<UnsupportedSigningRequestVersionException>().having((e) => e.requested, 'requested', 2)),
       );
     });
 

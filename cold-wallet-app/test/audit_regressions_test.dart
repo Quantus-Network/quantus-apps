@@ -7,6 +7,7 @@ import 'package:quantus_sdk/generated/bell/pallets/utility.dart' as utility_pall
 import 'package:quantus_sdk/quantus_sdk.dart';
 // ignore: implementation_imports — the generated corpus is test data, deliberately not public SDK API.
 import 'package:quantus_sdk/src/testing/call_corpus.dart';
+import 'package:quantus_cold_wallet/app_version.dart';
 import 'package:quantus_cold_wallet/components/address_with_checkphrase.dart';
 import 'package:quantus_cold_wallet/debug/debug_payloads.dart';
 import 'package:quantus_cold_wallet/models/cold_account.dart';
@@ -55,7 +56,7 @@ Future<void> pumpRequest(WidgetTester tester, SigningRequest request) async {
 /// and offer no way to sign it.
 void expectFailedClosed(WidgetTester tester) {
   expect(tester.takeException(), isNull);
-  expect(find.text('Could not read transaction'), findsOneWidget);
+  expect(find.text('Nothing was signed.'), findsOneWidget);
   expect(
     find.widgetWithText(QuantusButton, 'Sign'),
     findsNothing,
@@ -128,7 +129,7 @@ void main() {
       await expectRefused(
         tester,
         'second call cannot be decoded',
-        because: 'Invalid variant index',
+        because: 'Pallet 250 call 0 not found',
         nothingReads: ['UTILITY BATCH ALL', 'BATCH', 'CALL 1', 'SEND'],
       );
     });
@@ -136,21 +137,11 @@ void main() {
 
   group('#88914 / #88348 — a call whose headline comes from a branch that will not run', () {
     testWidgets('if_else is refused rather than headlined by its main branch', (tester) async {
-      await expectRefused(
-        tester,
-        'if_else headlining',
-        because: 'Utility: invalid call index',
-        nothingReads: ['IF ELSE', 'SEND', 'QTC'],
-      );
+      await expectRefused(tester, 'if_else headlining', because: 'not found', nothingReads: ['IF ELSE', 'SEND', 'QTC']);
     });
 
     testWidgets('force_batch, which continues past a failing call, is refused', (tester) async {
-      await expectRefused(
-        tester,
-        'force_batch',
-        because: 'Utility: invalid call index',
-        nothingReads: ['FORCE BATCH', 'SEND'],
-      );
+      await expectRefused(tester, 'force_batch', because: 'not found', nothingReads: ['FORCE BATCH', 'SEND']);
     });
 
     test('the only Utility call this wallet reads is batch_all', () {
@@ -162,7 +153,7 @@ void main() {
         if (index == batchAll[1]) continue;
         expect(
           () => CallDecoder.decodeBytes([batchAll[0], index, 0, 0, 0], policy: const FullCallPolicy()),
-          throwsA(isA<FormatException>().having((e) => e.message, 'message', contains('invalid call index'))),
+          throwsA(isA<UnknownCallException>().having((e) => e.call, 'call', index)),
           reason: 'Utility call index $index was read instead of refused',
         );
       }
@@ -177,7 +168,7 @@ void main() {
       await expectRefused(
         tester,
         'cross-schema payload',
-        because: 'Utility: invalid call index',
+        because: 'not found',
         nothingReads: ['ADD MEMBER', 'TECH COLLECTIVE', 'WORMHOLE', 'SEND', 'TRANSFER ALL'],
       );
     });
@@ -232,8 +223,28 @@ void main() {
       await pumpRequest(tester, SigningRequest(signer: call.signer!, payload: DebugPayloads.payloadForCall(call.call)));
 
       expect(tester.takeException(), isNull);
-      expect(find.textContaining('which this wallet does not hold'), findsOneWidget);
+      expect(find.textContaining('does not exist in this cold wallet'), findsOneWidget);
       expect(find.widgetWithText(QuantusButton, 'Sign'), findsNothing);
+    });
+  });
+
+  group('the refusal says why', () {
+    testWidgets('an unknown signer shows the address and its checkphrase', (tester) async {
+      final call = attack('addressed to another account');
+      await pumpRequest(tester, SigningRequest(signer: call.signer!, payload: DebugPayloads.payloadForCall(call.call)));
+
+      expect(find.text('Account not in this wallet'), findsOneWidget);
+      expect(find.text(call.signer!), findsOneWidget);
+      expect(find.text('check phrase'), findsOneWidget);
+    });
+
+    testWidgets('an unknown call names its indices and the app version', (tester) async {
+      await pumpRequest(tester, SigningRequest(signer: wallet, payload: DebugPayloads.payloadForCall([250, 0])));
+
+      expect(find.text('Unsupported transaction'), findsOneWidget);
+      expect(find.textContaining('Pallet 250 call 0 not found. $updateAppHint'), findsOneWidget);
+      expect(find.text(currentAppVersion), findsOneWidget);
+      expectFailedClosed(tester);
     });
   });
 
