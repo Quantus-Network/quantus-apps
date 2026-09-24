@@ -16,9 +16,34 @@ final String wormholeMintingAddress = AddressExtension.ss58AddressFromBytes(
   Uint8List.fromList(wormhole_pallet.Constants().mintingAccount),
 );
 
+/// One proof extrinsic of a send: the wallet's [inputs] it consumed (each
+/// carrying the nullifier that spent it) and how their value was exited.
+class WormholeSendBatch {
+  final String extrinsicId;
+  final int blockHeight;
+  final DateTime timestamp;
+  final List<WormholeUtxo> inputs;
+  final BigInt sentToken;
+  final BigInt changeToken;
+  final BigInt feeToken;
+
+  const WormholeSendBatch({
+    required this.extrinsicId,
+    required this.blockHeight,
+    required this.timestamp,
+    required this.inputs,
+    required this.sentToken,
+    required this.changeToken,
+    required this.feeToken,
+  });
+}
+
 /// A transfer settled by a wormhole proof: an encrypted send, or a receipt paid
 /// out of someone else's. The explorer shows these under `wormhole/<extrinsic>`.
 class WormholeTransferEvent extends TransferEvent {
+  /// The proof extrinsics of a send, in chain order; empty for a receipt.
+  final List<WormholeSendBatch> batches;
+
   WormholeTransferEvent({
     required super.id,
     required super.from,
@@ -28,6 +53,7 @@ class WormholeTransferEvent extends TransferEvent {
     required super.fee,
     required super.extrinsicHash,
     required super.blockNumber,
+    this.batches = const [],
   }) : super(blockHash: null);
 
   /// True for a spend whose proof settled together with other transfers, so
@@ -40,26 +66,37 @@ class WormholeTransferEvent extends TransferEvent {
 /// null when its exits cannot be attributed to this wallet.
 class _Batch {
   final WormholeSpend spend;
+  final List<WormholeUtxo> inputs;
   final String? recipient;
   final BigInt sentToken;
   final BigInt changeToken;
   final BigInt feeToken;
 
-  /// Chain position of the newest input this batch consumed.
-  final String newestInput;
-
   const _Batch({
     required this.spend,
+    required this.inputs,
     required this.recipient,
     required this.sentToken,
     required this.changeToken,
     required this.feeToken,
-    required this.newestInput,
   });
 
   bool get attributed => recipient != null;
 
   bool get hasChange => changeToken > BigInt.zero;
+
+  /// Chain position of the newest input this batch consumed.
+  String get newestInput => inputs.map((u) => u.transfer.id).reduce((a, b) => a.compareTo(b) >= 0 ? a : b);
+
+  WormholeSendBatch get detail => WormholeSendBatch(
+    extrinsicId: spend.extrinsicId,
+    blockHeight: spend.blockHeight,
+    timestamp: spend.timestamp,
+    inputs: inputs,
+    sentToken: sentToken,
+    changeToken: changeToken,
+    feeToken: feeToken,
+  );
 }
 
 /// A send of this wallet is a private batch — one client's proof, and only
@@ -70,7 +107,8 @@ class _Batch {
 /// larger than our inputs) is reported by the full amount our inputs
 /// contributed, with no recipient; nothing in such a proof is taken for
 /// change, so a payment to us inside it stays a receipt.
-_Batch _batch(WormholeSpend spend, BigInt inputsToken, String newestInput, Set<String> ownAddresses) {
+_Batch _batch(WormholeSpend spend, List<WormholeUtxo> inputs, Set<String> ownAddresses) {
+  final inputsToken = inputs.fold(BigInt.zero, (sum, u) => sum + u.amount);
   final change = spend.outputs
       .where((o) => ownAddresses.contains(o.exitAccountId))
       .fold(BigInt.zero, (sum, o) => sum + o.amount);
@@ -81,11 +119,11 @@ _Batch _batch(WormholeSpend spend, BigInt inputsToken, String newestInput, Set<S
     final sent = foreign.single.amount;
     return _Batch(
       spend: spend,
+      inputs: inputs,
       recipient: foreign.single.exitAccountId,
       sentToken: sent,
       changeToken: change,
       feeToken: inputsToken - sent - change,
-      newestInput: newestInput,
     );
   }
   quantusPrint(
@@ -95,11 +133,11 @@ _Batch _batch(WormholeSpend spend, BigInt inputsToken, String newestInput, Set<S
   );
   return _Batch(
     spend: spend,
+    inputs: inputs,
     recipient: null,
     sentToken: inputsToken,
     changeToken: BigInt.zero,
     feeToken: BigInt.zero,
-    newestInput: newestInput,
   );
 }
 
@@ -130,24 +168,15 @@ List<TransactionEvent> buildWormholeHistory({
   required Map<String, WormholeSpend> spends,
 }) {
   final spendByExtrinsic = <String, WormholeSpend>{};
-  final inputsByExtrinsic = <String, BigInt>{};
-  final newestInputByExtrinsic = <String, String>{};
-  for (final WormholeUtxo(:transfer, :nullifierHex) in received) {
-    final spend = spends[nullifierHex];
+  final inputsByExtrinsic = <String, List<WormholeUtxo>>{};
+  for (final utxo in received) {
+    final spend = spends[utxo.nullifierHex];
     if (spend == null) continue;
     spendByExtrinsic[spend.extrinsicId] = spend;
-    inputsByExtrinsic.update(spend.extrinsicId, (sum) => sum + transfer.amount, ifAbsent: () => transfer.amount);
-    newestInputByExtrinsic.update(
-      spend.extrinsicId,
-      (newest) => transfer.id.compareTo(newest) > 0 ? transfer.id : newest,
-      ifAbsent: () => transfer.id,
-    );
+    inputsByExtrinsic.putIfAbsent(spend.extrinsicId, () => []).add(utxo);
   }
   final batches = spendByExtrinsic.values
-      .map((spend) {
-        final id = spend.extrinsicId;
-        return _batch(spend, inputsByExtrinsic[id]!, newestInputByExtrinsic[id]!, ownAddresses);
-      })
+      .map((spend) => _batch(spend, inputsByExtrinsic[spend.extrinsicId]!, ownAddresses))
       .sorted((a, b) => a.spend.position.compareTo(b.spend.position));
   final sends = <List<_Batch>>[];
   for (final batch in batches) {
@@ -178,6 +207,7 @@ List<TransactionEvent> buildWormholeHistory({
           timestamp: send.last.spend.timestamp,
           extrinsicHash: send.last.spend.extrinsicId,
           blockNumber: send.last.spend.blockHeight,
+          batches: [for (final batch in send) batch.detail],
         ),
       ),
     for (final WormholeUtxo(:transfer) in received)

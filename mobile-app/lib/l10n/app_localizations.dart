@@ -2498,6 +2498,36 @@ abstract class AppLocalizations {
   /// **'NETWORK FEE'**
   String get activityDetailNetworkFee;
 
+  /// Row in a private send's detail sheet, and title of the page listing its proof batches and nullifiers
+  ///
+  /// In en, this message translates to:
+  /// **'Wormhole details'**
+  String get activityDetailWormholeDetails;
+
+  /// Heading of one proof extrinsic of a private send
+  ///
+  /// In en, this message translates to:
+  /// **'Batch {index} of {count}'**
+  String wormholeDetailsBatch(int index, int count);
+
+  /// Amount one batch of a private send paid the recipient
+  ///
+  /// In en, this message translates to:
+  /// **'SENT'**
+  String get wormholeDetailsSent;
+
+  /// Amount one batch of a private send returned to the wallet
+  ///
+  /// In en, this message translates to:
+  /// **'CHANGE'**
+  String get wormholeDetailsChange;
+
+  /// Number of the wallet's leaves one batch consumed; each is listed by nullifier below
+  ///
+  /// In en, this message translates to:
+  /// **'INPUTS'**
+  String get wormholeDetailsInputs;
+
   /// Transaction hash row label on detail sheet
   ///
   /// In en, this message translates to:

@@ -1320,6 +1320,23 @@ class AppLocalizationsEn extends AppLocalizations {
   String get activityDetailNetworkFee => 'NETWORK FEE';
 
   @override
+  String get activityDetailWormholeDetails => 'Wormhole details';
+
+  @override
+  String wormholeDetailsBatch(int index, int count) {
+    return 'Batch $index of $count';
+  }
+
+  @override
+  String get wormholeDetailsSent => 'SENT';
+
+  @override
+  String get wormholeDetailsChange => 'CHANGE';
+
+  @override
+  String get wormholeDetailsInputs => 'INPUTS';
+
+  @override
   String get activityDetailTxHash => 'TX HASH';
 
   @override

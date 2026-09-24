@@ -83,6 +83,57 @@ void main() {
     expect(find.text('Aggregated batch, recipient not recorded'), findsOneWidget);
   });
 
+  testWidgets('a multi-batch private send opens a page listing every batch with its nullifiers', (tester) async {
+    WormholeUtxo input(String nullifier) => WormholeUtxo(
+      transfer: WormholeTransfer(
+        id: nullifier,
+        blockHeight: 1,
+        timestamp: DateTime(2026, 9, 6),
+        fromId: 'qzmint',
+        toId: me.accountId,
+        amount: BigInt.from(500),
+        toHash: '',
+        leafIndex: BigInt.zero,
+        transferCount: BigInt.zero,
+        extrinsicId: '',
+      ),
+      owner: WormholeAddressInfo(index: 0, address: me.accountId, secretHex: ''),
+      nullifierHex: nullifier,
+    );
+    WormholeSendBatch batch(String hash, String nullifier) => WormholeSendBatch(
+      extrinsicId: hash,
+      blockHeight: 1,
+      timestamp: DateTime(2026, 9, 6),
+      inputs: [input(nullifier)],
+      sentToken: BigInt.from(400),
+      changeToken: BigInt.zero,
+      feeToken: BigInt.from(100),
+    );
+    await openSheet(
+      tester,
+      WormholeTransferEvent(
+        id: '0xsecondbatch0000',
+        from: me.accountId,
+        to: other.accountId,
+        amount: BigInt.from(800),
+        timestamp: DateTime(2026, 9, 6),
+        fee: BigInt.from(200),
+        extrinsicHash: '0xsecondbatch0000',
+        blockNumber: 1,
+        batches: [batch('0xfirstbatch00000', '0xnullifier111111'), batch('0xsecondbatch0000', '0xnullifier222222')],
+      ),
+    );
+
+    await tester.tap(find.text('Wormhole details'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Batch 1 of 2'), findsOneWidget);
+    expect(find.text('Batch 2 of 2'), findsOneWidget);
+    for (final shown in ['0xfirstbatch00000', '0xnullifier111111', '0xnullifier222222']) {
+      expect(find.text(AddressFormattingService.formatActivityDetailExtrinsicHash(shown)), findsOneWidget);
+    }
+  });
+
   testWidgets('a sent transfer is formatted as an outflow', (tester) async {
     final isSend = await openSheet(tester, transfer(from: me.accountId, to: other.accountId));
 
