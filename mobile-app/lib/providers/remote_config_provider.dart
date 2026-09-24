@@ -54,7 +54,7 @@ class RemoteConfigNotifier extends StateNotifier<RemoteConfigModel> {
     ref.listenManual<RemoteConfigModel>(remoteConfigProvider, (previous, next) {
       if (!next.enableRemoteNotifications) return;
       unawaited(_enableRemoteNotificationsIfNeeded(ref));
-    });
+    }, fireImmediately: true);
   }
 
   Future<void> _enableRemoteNotificationsIfNeeded(WidgetRef ref) async {

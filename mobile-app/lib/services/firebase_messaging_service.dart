@@ -12,6 +12,7 @@ import 'package:resonance_network_wallet/services/history_polling_manager.dart';
 import 'package:resonance_network_wallet/services/telemetry_service.dart';
 import 'package:resonance_network_wallet/services/transaction_service.dart';
 import 'package:resonance_network_wallet/shared/utils/print.dart';
+import 'package:resonance_network_wallet/shared/utils/provider_reader.dart';
 
 /// Top-level handler for background/terminated FCM messages.
 /// Must be a top-level function (not a class method) for Firebase.
@@ -22,7 +23,7 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 
 class FirebaseMessagingService {
   final Ref _ref;
-  final FirebaseMessaging _messaging = FirebaseMessaging.instance;
+  FirebaseMessaging get _messaging => FirebaseMessaging.instance;
   final SenotiService _senotiService = SenotiService();
 
   bool _isInitialized = false;
@@ -254,10 +255,10 @@ final firebaseMessagingServiceProvider = Provider<FirebaseMessagingService>((ref
 /// When [insertAddress] is non-null, the address is registered for push
 /// notifications on the existing device; otherwise the device itself is
 /// registered for the first time.
-Future<void> registerForRemoteNotificationsBestEffort(WidgetRef ref, {String? insertAddress}) async {
+Future<void> registerForRemoteNotificationsBestEffort(ProviderReader read, {String? insertAddress}) async {
   try {
-    if (!ref.read(remoteConfigProvider).enableRemoteNotifications) return;
-    final service = ref.read(firebaseMessagingServiceProvider);
+    if (!read(remoteConfigProvider).enableRemoteNotifications) return;
+    final service = read(firebaseMessagingServiceProvider);
     if (insertAddress != null) {
       await service.insertNewAddress(insertAddress);
     } else {

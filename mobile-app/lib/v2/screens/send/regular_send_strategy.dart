@@ -17,6 +17,7 @@ import 'package:resonance_network_wallet/v2/screens/send/keystone_signing_sessio
 import 'package:resonance_network_wallet/v2/screens/send/send_fee_notifier.dart';
 import 'package:resonance_network_wallet/v2/screens/send/send_providers.dart';
 import 'package:resonance_network_wallet/v2/screens/send/send_strategy.dart';
+import 'package:resonance_network_wallet/shared/utils/provider_reader.dart';
 
 /// Standard single-signer transfer from the active account. Signs locally, or
 /// hands off to the Keystone QR flow for hardware accounts.
