@@ -103,8 +103,9 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                 ],
               ),
             ),
-            error: (e, _) => Center(
-              child: Text(l10n.activityError(e.toString()), style: text.caption.copyWith(color: colors.semanticEmber)),
+            error: (e, _) => _scrollableMessage(
+              l10n.activityError(e.toString()),
+              text.caption.copyWith(color: colors.semanticEmber),
             ),
             data: (data) {
               final txService = ref.read(transactionServiceProvider);
@@ -119,22 +120,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                 otherTransfers: data.otherTransfers,
               );
               if (all.isEmpty) {
-                return _buildRefreshableContent(
-                  child: LayoutBuilder(
-                    builder: (context, constraints) => ListView(
-                      controller: _scrollController,
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      children: [
-                        ConstrainedBox(
-                          constraints: BoxConstraints(minHeight: constraints.maxHeight),
-                          child: Center(
-                            child: Text(l10n.activityEmpty, style: text.bodyLarge.copyWith(color: colors.textMuted)),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
+                return _scrollableMessage(l10n.activityEmpty, text.bodyLarge.copyWith(color: colors.textMuted));
               }
               final grouped = _groupByDate(all, l10n, appLocale.numberFormatLocale);
               final showLoadMoreFooter = pagination != null && pagination.isLoading && pagination.hasMore;
@@ -193,6 +179,22 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
       ),
     );
   }
+
+  /// A centred message that can still be pulled to refresh.
+  Widget _scrollableMessage(String message, TextStyle style) => _buildRefreshableContent(
+    child: LayoutBuilder(
+      builder: (context, constraints) => ListView(
+        controller: _scrollController,
+        physics: const AlwaysScrollableScrollPhysics(),
+        children: [
+          ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
+            child: Center(child: Text(message, style: style)),
+          ),
+        ],
+      ),
+    ),
+  );
 
   Widget _buildRefreshableContent({required Widget child}) {
     return RefreshIndicator(

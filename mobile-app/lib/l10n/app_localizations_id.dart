@@ -1213,7 +1213,10 @@ class AppLocalizationsId extends AppLocalizations {
   String get activityTxFrom => 'Dari';
 
   @override
-  String get activityTxCounterpartyUnknown => 'Tidak diketahui';
+  String get activityTxAggregatedBatch => 'Batch teragregasi';
+
+  @override
+  String get activityDetailAggregatedBatch => 'Batch teragregasi, penerima tidak tercatat';
 
   @override
   String get activityTxTimeNow => 'sekarang';

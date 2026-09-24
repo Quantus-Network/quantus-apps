@@ -1210,7 +1210,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get activityTxFrom => 'From';
 
   @override
-  String get activityTxCounterpartyUnknown => 'Unknown';
+  String get activityTxAggregatedBatch => 'Aggregated batch';
+
+  @override
+  String get activityDetailAggregatedBatch => 'Aggregated batch, recipient not recorded';
 
   @override
   String get activityTxTimeNow => 'now';

@@ -1727,9 +1727,13 @@
     "@activityTxFrom": {
       "description": "Counterparty direction label for receive"
     },
-    "activityTxCounterpartyUnknown": "Unknown",
-    "@activityTxCounterpartyUnknown": {
-      "description": "Shown instead of an address when the chain cannot say who received a private send"
+    "activityTxAggregatedBatch": "Aggregated batch",
+    "@activityTxAggregatedBatch": {
+      "description": "Counterparty line of a private send whose proof was bundled with other transfers, so the chain cannot say who received it"
+    },
+    "activityDetailAggregatedBatch": "Aggregated batch, recipient not recorded",
+    "@activityDetailAggregatedBatch": {
+      "description": "Detail sheet 'To' value of a private send whose proof was bundled with other transfers"
     },
     "activityTxTimeNow": "now",
     "@activityTxTimeNow": {

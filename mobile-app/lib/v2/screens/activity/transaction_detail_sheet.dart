@@ -284,7 +284,7 @@ class _DetailsSection extends ConsumerWidget {
 
     final counterparty = isSend ? tx.to : tx.from;
     final address = counterparty.isEmpty
-        ? l10n.activityTxCounterpartyUnknown
+        ? l10n.activityDetailAggregatedBatch
         : AddressFormattingService.formatActivityDetailAddress(counterparty);
     final dateTime = DatetimeFormattingService.formatTxDateTime(tx.timestamp);
 
@@ -622,7 +622,7 @@ Widget _labelValueRow(BuildContext context, String label, Widget value) {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(label, style: context.themeTextV3.dataAddress.copyWith(color: context.colorsV3.textMuted)),
-        value,
+        Flexible(child: value),
       ],
     ),
   );
@@ -642,7 +642,15 @@ class _DetailRow extends StatelessWidget {
       _DetailValueKind.mono => text.dataAddress,
       _DetailValueKind.caption => text.caption,
     };
-    return _labelValueRow(context, label, Text(value, style: style.copyWith(color: context.colorsV3.textContent)));
+    return _labelValueRow(
+      context,
+      label,
+      Text(
+        value,
+        textAlign: TextAlign.end,
+        style: style.copyWith(color: context.colorsV3.textContent),
+      ),
+    );
   }
 }
 

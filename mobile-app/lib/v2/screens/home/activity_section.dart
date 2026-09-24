@@ -37,6 +37,20 @@ class ActivitySection extends ConsumerStatefulWidget {
 }
 
 class _ActivitySectionState extends ConsumerState<ActivitySection> {
+  /// True while a tap on Retry is reloading, so the section shows the
+  /// skeleton instead of the stale error until the reload settles.
+  bool _retrying = false;
+
+  Future<void> _retry() async {
+    setState(() => _retrying = true);
+    try {
+      ref.invalidate(activeAccountTransactionsProvider);
+      await widget.onRetry?.call();
+    } finally {
+      if (mounted) setState(() => _retrying = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = ref.watch(l10nProvider);
@@ -44,6 +58,7 @@ class _ActivitySectionState extends ConsumerState<ActivitySection> {
     final colors = context.colorsV3;
     final text = context.themeTextV3;
 
+    if (_retrying) return _loading(l10n, colors);
     return widget.txAsync.when(
       data: (data) {
         final txService = ref.read(transactionServiceProvider);
@@ -101,20 +116,7 @@ class _ActivitySectionState extends ConsumerState<ActivitySection> {
           ],
         );
       },
-      loading: () => Padding(
-        padding: const EdgeInsets.only(top: 40),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _header(l10n),
-            const SizedBox(height: 24),
-            for (var i = 0; i < 3; i++) ...[
-              const TxItemSkeleton(),
-              if (i < 2) Divider(color: colors.borderHairline, height: 24),
-            ],
-          ],
-        ),
-      ),
+      loading: () => _loading(l10n, colors),
       error: (e, _) => Padding(
         padding: const EdgeInsets.only(top: 40),
         child: Column(
@@ -123,10 +125,7 @@ class _ActivitySectionState extends ConsumerState<ActivitySection> {
             const SizedBox(height: 12),
             GestureDetector(
               behavior: HitTestBehavior.opaque,
-              onTap: () {
-                ref.invalidate(activeAccountTransactionsProvider);
-                widget.onRetry?.call();
-              },
+              onTap: _retry,
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                 child: Text(
@@ -140,6 +139,21 @@ class _ActivitySectionState extends ConsumerState<ActivitySection> {
       ),
     );
   }
+
+  Widget _loading(AppLocalizations l10n, AppColorsV3 colors) => Padding(
+    padding: const EdgeInsets.only(top: 40),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _header(l10n),
+        const SizedBox(height: 24),
+        for (var i = 0; i < 3; i++) ...[
+          const TxItemSkeleton(),
+          if (i < 2) Divider(color: colors.borderHairline, height: 24),
+        ],
+      ],
+    ),
+  );
 
   Widget _emptyState(AppLocalizations l10n) {
     final colors = context.colorsV3;

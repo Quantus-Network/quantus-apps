@@ -2294,11 +2294,17 @@ abstract class AppLocalizations {
   /// **'From'**
   String get activityTxFrom;
 
-  /// Shown instead of an address when the chain cannot say who received a private send
+  /// Counterparty line of a private send whose proof was bundled with other transfers, so the chain cannot say who received it
   ///
   /// In en, this message translates to:
-  /// **'Unknown'**
-  String get activityTxCounterpartyUnknown;
+  /// **'Aggregated batch'**
+  String get activityTxAggregatedBatch;
+
+  /// Detail sheet 'To' value of a private send whose proof was bundled with other transfers
+  ///
+  /// In en, this message translates to:
+  /// **'Aggregated batch, recipient not recorded'**
+  String get activityDetailAggregatedBatch;
 
   /// Time label for just now
   ///
