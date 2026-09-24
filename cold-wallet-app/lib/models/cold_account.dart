@@ -36,11 +36,12 @@ class ColdAccount {
   ///
   /// Read by rebuilding the template rather than matching a pattern, so the
   /// template stays defined in exactly one place.
-  int? get templateIndex {
-    if (index != null) return index;
-    for (final segment in derivationPath.split('/')) {
+  int? get templateIndex => index ?? _templateIndexOf(derivationPath, scheme);
+
+  static int? _templateIndexOf(String path, DilithiumScheme scheme) {
+    for (final segment in path.split('/')) {
       final candidate = int.tryParse(segment.replaceAll("'", ''));
-      if (candidate != null && HdWalletService.pathForIndex(candidate, scheme) == derivationPath) return candidate;
+      if (candidate != null && HdWalletService.pathForIndex(candidate, scheme) == path) return candidate;
     }
     return null;
   }
@@ -78,12 +79,20 @@ class ColdAccount {
     return ColdAccount(label: 'Account ${index + 1}', index: index, scheme: newAccountScheme);
   }
 
-  /// The new account at [path], or null when [path] is not a derivation path.
+  /// The account at [path], or null when [path] is not a derivation path.
+  ///
+  /// A path that follows a scheme's template names that scheme (`.../1'` is
+  /// ML-DSA-65, `.../0'` is ML-DSA-87), so an existing account can be added
+  /// back by its path and derive the same key. Any other path is a new account
+  /// at [newAccountScheme].
   static ColdAccount? atPath(String path, {required String label}) {
     final trimmed = path.trim();
     if (!HdWalletService.isValidPath(trimmed)) return null;
-    return ColdAccount(label: label, path: trimmed, scheme: newAccountScheme);
+    return ColdAccount(label: label, path: trimmed, scheme: _schemeForPath(trimmed) ?? newAccountScheme);
   }
+
+  static DilithiumScheme? _schemeForPath(String path) =>
+      DilithiumScheme.values.where((scheme) => _templateIndexOf(path, scheme) != null).firstOrNull;
 
   factory ColdAccount.fromJson(Map<String, dynamic> json) => ColdAccount(
     label: json['label'] as String,

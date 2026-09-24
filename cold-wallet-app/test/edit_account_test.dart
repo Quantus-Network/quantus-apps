@@ -10,16 +10,19 @@ import 'package:quantus_cold_wallet/services/vault_service.dart';
 
 import 'multi_account_test.dart' show mnemonic;
 
-final one = ColdAccount(label: 'Account 1', index: 0, scheme: DilithiumSchemeExtension.legacy);
-final two = ColdAccount(label: 'Account 2', index: 1, scheme: DilithiumSchemeExtension.legacy);
+final one = ColdAccount(label: 'Account 1', index: 0, scheme: DilithiumScheme.mlDsa87);
+final two = ColdAccount(label: 'Account 2', index: 1, scheme: DilithiumScheme.mlDsa87);
+final legacy65 = ColdAccount(label: 'Old account', index: 1, scheme: DilithiumScheme.mlDsa65);
+
+String fakeAddress(ColdAccount a) => '${a.scheme.storageName}:${a.derivationPath}';
 
 Future<ProviderContainer> walletWith(List<ColdAccount> accounts) async {
   FlutterSecureStorage.setMockInitialValues({});
   // Key derivation needs the native library, which unit tests do not load, so
-  // each account stands in for its address by its derivation path.
+  // each account stands in for its address by what the key derives from.
   final container = ProviderContainer(
     overrides: [
-      addressesProvider.overrideWith((ref) => {for (final a in ref.watch(accountsProvider)) a.derivationPath: a}),
+      addressesProvider.overrideWith((ref) => {for (final a in ref.watch(accountsProvider)) fakeAddress(a): a}),
       checksumNameProvider.overrideWith((ref, address) async => 'phrase'),
     ],
   );
@@ -65,7 +68,7 @@ void main() {
     test('removes an account, and adding its path again brings it back', () async {
       final container = await walletWith([one, two]);
       final controller = container.read(walletControllerProvider.notifier);
-      final address = two.derivationPath;
+      final address = fakeAddress(two);
 
       await controller.removeAccount(two);
       expect(await storedLabels(), ['Account 1']);
@@ -73,6 +76,21 @@ void main() {
 
       await controller.addAccount(two);
       expect(container.read(addressesProvider).containsKey(address), isTrue);
+    });
+
+    test('an ML-DSA-65 account added back by the path the dialog shows derives the same key', () async {
+      final container = await walletWith([one, legacy65]);
+      final controller = container.read(walletControllerProvider.notifier);
+      final address = fakeAddress(legacy65);
+
+      await controller.removeAccount(legacy65);
+      expect(container.read(addressesProvider).containsKey(address), isFalse);
+
+      await controller.addAccount(ColdAccount.atPath(legacy65.derivationPath, label: 'Back')!);
+      final readded = container.read(addressesProvider)[address];
+      expect(readded, isNotNull, reason: 'the path the disconnect dialog shows must derive the same key');
+      expect(readded!.scheme, DilithiumScheme.mlDsa65);
+      expect(readded.derivesSameKey(legacy65), isTrue);
     });
 
     test('refuses to remove the last account', () async {

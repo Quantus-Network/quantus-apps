@@ -5,7 +5,7 @@ import 'package:quantus_cold_wallet/models/cold_account.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 
 /// The derivation field's ADVANCED section: accounts are ML-DSA-87 by index or
-/// by a custom path.
+/// by a custom path, and an ML-DSA-65 template path restores that scheme.
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -48,5 +48,19 @@ void main() {
 
     expect(emitted!.derivationPath, customPath);
     expect(emitted!.scheme, DilithiumScheme.mlDsa87);
+  });
+
+  testWidgets('an ML-DSA-65 template path restores an ML-DSA-65 account', (tester) async {
+    await pumpField(tester);
+
+    await tester.tap(find.text('Use a full derivation path'));
+    await tester.pumpAndSettle();
+
+    final path65 = HdWalletService.pathForIndex(0, DilithiumScheme.mlDsa65);
+    await tester.enterText(find.byType(TextField), path65);
+    await tester.pumpAndSettle();
+
+    expect(emitted!.derivationPath, path65);
+    expect(emitted!.scheme, DilithiumScheme.mlDsa65);
   });
 }
