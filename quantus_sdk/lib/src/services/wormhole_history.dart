@@ -58,7 +58,7 @@ _Batch _batch(WormholeSpend spend, BigInt inputsToken, Set<String> ownAddresses)
       .where((o) => ownAddresses.contains(o.exitAccountId))
       .fold(BigInt.zero, (sum, o) => sum + o.amount);
   final foreign = spend.outputs.where((o) => !ownAddresses.contains(o.exitAccountId)).toList();
-  if (spend.call == WormholeSpend.privateBatchCall &&
+  if (WormholeSpend.privateBatchCalls.contains(spend.call) &&
       foreign.length == 1 &&
       inputsToken - foreign.single.amount - change >= BigInt.zero) {
     final sent = foreign.single.amount;

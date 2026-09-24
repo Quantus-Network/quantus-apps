@@ -252,6 +252,21 @@ void main() {
       expect(row.amount, _scaled(1000));
     });
 
+    test('the private batch under its pre-rename call name is our send too', () {
+      final history = _history(
+        [
+          _received('r1', scaled: 1000),
+          _received('c1', to: _change0, scaled: 399, from: wormholeMintingAddress, extrinsicId: '0xs1', block: 5),
+        ],
+        {
+          'nr1': _spend('0xs1', block: 5, call: 'verify_aggregated_proof', outputs: {_alice: 600, _change0: 399}),
+        },
+      );
+
+      expect(history.map((e) => e.id), unorderedEquals(['0xs1', 'r1']));
+      expect(history.whereType<WormholeTransferEvent>().single.to, _alice);
+    });
+
     test('a proof of only our inputs is our send, whatever it splits change into', () {
       final history = _history(
         [

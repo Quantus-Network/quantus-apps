@@ -145,6 +145,10 @@ class WormholeOutput {
 class WormholeSpend {
   static const String privateBatchCall = 'verify_private_batch';
 
+  /// [privateBatchCall] and its name before the public batch existed
+  /// (renamed in the runtime on 2026-07-22; only testnet history has it).
+  static const Set<String> privateBatchCalls = {privateBatchCall, 'verify_aggregated_proof'};
+
   final String extrinsicId;
   final int blockHeight;
   final DateTime timestamp;
