@@ -66,40 +66,23 @@ class ColdAccount {
   /// derivation path index (which is 0 for 87, 1 for 65).
   static int _schemeSortOrder(DilithiumScheme scheme) => scheme == DilithiumSchemeExtension.current ? 0 : 1;
 
-  /// Scheme new accounts of this wallet open on: the current scheme once the
-  /// wallet holds any account of it, otherwise the legacy one, so pre-existing
-  /// wallets stay uniform unless the other scheme is chosen for an account.
-  static DilithiumScheme walletScheme(Iterable<ColdAccount> accounts) =>
-      accounts.any((a) => a.scheme == DilithiumSchemeExtension.current)
-      ? DilithiumSchemeExtension.current
-      : DilithiumSchemeExtension.legacy;
+  /// Scheme every new cold wallet account uses.
+  static const DilithiumScheme newAccountScheme = DilithiumScheme.mlDsa87;
 
-  /// The account [text] names as an index at [scheme], or null when it is not an
-  /// index. The label follows the index, so the wallet's own numbering stays
+  /// The new account [text] names as an index, or null when it is not an index.
+  /// The label follows the index, so the wallet's own numbering stays
   /// predictable.
-  static ColdAccount? atIndexText(String text, {required DilithiumScheme scheme}) {
+  static ColdAccount? atIndexText(String text) {
     final index = int.tryParse(text.trim());
     if (index == null || index < 0) return null;
-    return ColdAccount(label: 'Account ${index + 1}', index: index, scheme: scheme);
+    return ColdAccount(label: 'Account ${index + 1}', index: index, scheme: newAccountScheme);
   }
 
-  /// The account at [path], or null when [path] is not a derivation path. The
-  /// scheme is read from the path when it follows a template ([`.../1'`] for
-  /// ML-DSA-65, [`.../0'`] for ML-DSA-87), otherwise [defaultScheme].
-  static ColdAccount? atPath(String path, {required String label, required DilithiumScheme defaultScheme}) {
+  /// The new account at [path], or null when [path] is not a derivation path.
+  static ColdAccount? atPath(String path, {required String label}) {
     final trimmed = path.trim();
     if (!HdWalletService.isValidPath(trimmed)) return null;
-    return ColdAccount(label: label, path: trimmed, scheme: _schemeForPath(trimmed, defaultScheme));
-  }
-
-  static DilithiumScheme _schemeForPath(String path, DilithiumScheme fallback) {
-    for (final scheme in DilithiumScheme.values) {
-      for (final segment in path.split('/')) {
-        final candidate = int.tryParse(segment.replaceAll("'", ''));
-        if (candidate != null && HdWalletService.pathForIndex(candidate, scheme) == path) return scheme;
-      }
-    }
-    return fallback;
+    return ColdAccount(label: label, path: trimmed, scheme: newAccountScheme);
   }
 
   factory ColdAccount.fromJson(Map<String, dynamic> json) => ColdAccount(

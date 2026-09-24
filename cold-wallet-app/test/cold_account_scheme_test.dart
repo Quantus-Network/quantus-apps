@@ -25,23 +25,13 @@ void main() {
       expect(a65.derivationPath, isNot(a87.derivationPath));
     });
 
-    test('atPath infers the scheme from a template path', () {
+    test('new accounts are ML-DSA-87 by index and by path', () {
+      expect(ColdAccount.atIndexText('3')!.scheme, DilithiumScheme.mlDsa87);
       final p65 = HdWalletService.pathForIndex(3, DilithiumScheme.mlDsa65);
-      final p87 = HdWalletService.pathForIndex(3, DilithiumScheme.mlDsa87);
-      expect(
-        ColdAccount.atPath(p65, label: 'x', defaultScheme: DilithiumScheme.mlDsa87)!.scheme,
-        DilithiumScheme.mlDsa65,
-      );
-      expect(
-        ColdAccount.atPath(p87, label: 'x', defaultScheme: DilithiumScheme.mlDsa65)!.scheme,
-        DilithiumScheme.mlDsa87,
-      );
-    });
-
-    test('atPath falls back to the default scheme for a foreign path', () {
-      final account = ColdAccount.atPath("m/44'/1'/0'", label: 'x', defaultScheme: DilithiumScheme.mlDsa65);
-      expect(account!.scheme, DilithiumScheme.mlDsa65);
-      expect(account.templateIndex, isNull);
+      expect(ColdAccount.atPath(p65, label: 'x')!.scheme, DilithiumScheme.mlDsa87);
+      final foreign = ColdAccount.atPath("m/44'/1'/0'", label: 'x')!;
+      expect(foreign.scheme, DilithiumScheme.mlDsa87);
+      expect(foreign.templateIndex, isNull);
     });
 
     test('at one index, current scheme sorts before legacy', () {
@@ -50,20 +40,6 @@ void main() {
         ColdAccount(label: 'current', index: 0, scheme: DilithiumScheme.mlDsa65),
       ]..sort(ColdAccount.compareByDerivation);
       expect(accounts.map((a) => a.label), ['current', 'legacy']);
-    });
-
-    test('walletScheme grows current once any current account is held', () {
-      expect(
-        ColdAccount.walletScheme([ColdAccount(label: 'a', index: 0, scheme: DilithiumScheme.mlDsa87)]),
-        DilithiumScheme.mlDsa87,
-      );
-      expect(
-        ColdAccount.walletScheme([
-          ColdAccount(label: 'a', index: 0, scheme: DilithiumScheme.mlDsa87),
-          ColdAccount(label: 'b', index: 0, scheme: DilithiumScheme.mlDsa65),
-        ]),
-        DilithiumScheme.mlDsa65,
-      );
     });
   });
 }

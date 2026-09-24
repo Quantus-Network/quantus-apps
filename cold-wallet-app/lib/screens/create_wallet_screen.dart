@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:quantus_cold_wallet/components/advanced_section.dart';
-import 'package:quantus_cold_wallet/components/scheme_picker.dart';
 import 'package:quantus_cold_wallet/models/cold_account.dart';
 import 'package:quantus_cold_wallet/screens/set_password_screen.dart';
 
@@ -14,7 +12,6 @@ class CreateWalletScreen extends StatefulWidget {
 
 class _CreateWalletScreenState extends State<CreateWalletScreen> {
   List<String>? _words;
-  DilithiumScheme _scheme = DilithiumSchemeExtension.current;
 
   @override
   void initState() {
@@ -36,7 +33,7 @@ class _CreateWalletScreenState extends State<CreateWalletScreen> {
       MaterialPageRoute(
         builder: (_) => SetPasswordScreen(
           mnemonic: words.join(' '),
-          accounts: [ColdAccount(label: 'Account 1', index: 0, scheme: _scheme)],
+          accounts: [ColdAccount(label: 'Account 1', index: 0, scheme: ColdAccount.newAccountScheme)],
         ),
       ),
     );
@@ -62,30 +59,13 @@ class _CreateWalletScreenState extends State<CreateWalletScreen> {
                 ),
                 const SizedBox(height: 24),
                 Expanded(
-                  child: SingleChildScrollView(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        MnemonicGrid(words: words, isRevealed: true),
-                        const SizedBox(height: 24),
-                        _advancedSection(context),
-                      ],
-                    ),
-                  ),
+                  child: SingleChildScrollView(child: MnemonicGrid(words: words, isRevealed: true)),
                 ),
               ],
             ),
       bottomContent: ScaffoldBaseBottomContent(
         child: QuantusButton.simple(label: "I've written it down", onTap: words == null ? null : _continue),
       ),
-    );
-  }
-
-  /// Signature-scheme choice, collapsed by default so ordinary users never see
-  /// it. New wallets stay ML-DSA-65 unless the user opts into ML-DSA-87 here.
-  Widget _advancedSection(BuildContext context) {
-    return AdvancedSection(
-      children: [SchemePicker(value: _scheme, onChanged: (scheme) => setState(() => _scheme = scheme))],
     );
   }
 }

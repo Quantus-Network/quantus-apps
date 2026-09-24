@@ -2,11 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:quantus_cold_wallet/components/advanced_section.dart';
-import 'package:quantus_cold_wallet/components/scheme_picker.dart';
 import 'package:quantus_cold_wallet/models/cold_account.dart';
 
-/// Chooses which account a seed phrase derives: the signature scheme (which sets
-/// the derivation path's trailing index), an account index that fills the
+/// Chooses which account a seed phrase derives: an account index that fills the
 /// wallet's template, or a full path typed out for a seed created elsewhere.
 class DerivationField extends StatefulWidget {
   final ValueChanged<ColdAccount?> onChanged;
@@ -19,10 +17,9 @@ class DerivationField extends StatefulWidget {
 
 class _DerivationFieldState extends State<DerivationField> {
   final _index = TextEditingController(text: '0');
-  final _path = TextEditingController(text: HdWalletService.pathForIndex(0, DilithiumSchemeExtension.current));
+  final _path = TextEditingController(text: HdWalletService.pathForIndex(0, ColdAccount.newAccountScheme));
   bool _useFullPath = false;
   bool _userEditedPath = false;
-  DilithiumScheme _scheme = DilithiumSchemeExtension.current;
 
   @override
   void initState() {
@@ -38,29 +35,18 @@ class _DerivationFieldState extends State<DerivationField> {
     super.dispose();
   }
 
-  ColdAccount? get _account => _useFullPath
-      ? ColdAccount.atPath(_path.text, label: 'Account 1', defaultScheme: _scheme)
-      : ColdAccount.atIndexText(_index.text, scheme: _scheme);
+  ColdAccount? get _account =>
+      _useFullPath ? ColdAccount.atPath(_path.text, label: 'Account 1') : ColdAccount.atIndexText(_index.text);
 
   void _emit() => widget.onChanged(_account);
 
-  /// The path an untouched full-path field shows: the current index at the
-  /// current scheme, so the field always reflects the chosen crypto level.
-  String get _templatePath => ColdAccount.atIndexText(_index.text, scheme: _scheme)?.derivationPath ?? _path.text;
-
-  void _setScheme(DilithiumScheme scheme) {
-    setState(() {
-      _scheme = scheme;
-      // A path the user has not hand-edited follows the chosen level.
-      if (_useFullPath && !_userEditedPath) _path.text = _templatePath;
-    });
-    _emit();
-  }
+  /// The path an untouched full-path field shows: the current index.
+  String get _templatePath => ColdAccount.atIndexText(_index.text)?.derivationPath ?? _path.text;
 
   void _toggleFullPath() {
     setState(() {
       _useFullPath = !_useFullPath;
-      // Entering path mode opens on the index/scheme currently on screen so the
+      // Entering path mode opens on the index currently on screen so the
       // two never disagree; a hand-edited path is left alone.
       if (_useFullPath && !_userEditedPath) _path.text = _templatePath;
     });
@@ -75,8 +61,6 @@ class _DerivationFieldState extends State<DerivationField> {
 
     return AdvancedSection(
       children: [
-        SchemePicker(value: _scheme, onChanged: _setScheme),
-        const SizedBox(height: 16),
         if (!_useFullPath)
           TextField(
             controller: _index,
