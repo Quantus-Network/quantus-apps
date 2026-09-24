@@ -106,6 +106,24 @@ void main() {
       expect(readded.derivesSameKey(legacy65), isTrue);
     });
 
+    test('a custom-path ML-DSA-65 account added back by its path keeps its scheme and key', () async {
+      final custom65 = ColdAccount(label: 'Elsewhere', path: "m/44'/1'/1'", scheme: DilithiumScheme.mlDsa65);
+      final container = await walletWith([one, custom65]);
+      final controller = container.read(walletControllerProvider.notifier);
+      final address = fakeAddress(custom65);
+
+      await controller.removeAccount(custom65);
+      expect(container.read(addressesProvider).containsKey(address), isFalse);
+
+      final back = ColdAccount.atPath(
+        custom65.derivationPath,
+        label: 'Back',
+        defaultScheme: ColdAccount.newAccountScheme,
+      )!;
+      await controller.addAccount(back);
+      expect(container.read(addressesProvider)[address]?.derivesSameKey(custom65), isTrue);
+    });
+
     test('refuses to remove the last account', () async {
       final container = await walletWith([one]);
       expect(() => container.read(walletControllerProvider.notifier).removeAccount(one), throwsStateError);
@@ -156,8 +174,9 @@ void main() {
       await openEditor(tester, 1);
       await tester.tap(find.text('Disconnect account'));
       await tester.pumpAndSettle();
-      expect(find.textContaining('adding an account with the same derivation path'), findsOneWidget);
+      expect(find.textContaining('the same derivation path and signature type'), findsOneWidget);
       expect(find.textContaining(two.derivationPath), findsWidgets);
+      expect(find.textContaining('ML-DSA-87'), findsWidgets);
 
       await tester.tap(find.text('Cancel'));
       await tester.pumpAndSettle();

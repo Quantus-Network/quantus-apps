@@ -29,7 +29,14 @@ class _DerivationFieldState extends State<DerivationField> {
   void initState() {
     super.initState();
     _index.addListener(_emit);
-    _path.addListener(_emit);
+    _path.addListener(_onPathChanged);
+  }
+
+  /// A typed path whose last element names a scheme snaps the picker to it.
+  void _onPathChanged() {
+    final named = ColdAccount.schemeOfPath(_path.text);
+    if (named != null && named != _scheme) setState(() => _scheme = named);
+    _emit();
   }
 
   @override
@@ -52,8 +59,9 @@ class _DerivationFieldState extends State<DerivationField> {
   void _setScheme(DilithiumScheme scheme) {
     setState(() {
       _scheme = scheme;
-      // A path the user has not hand-edited follows the chosen level.
-      if (_useFullPath && !_userEditedPath) _path.text = _templatePath;
+      // A path the user has not hand-edited follows the chosen level; one they
+      // typed keeps its shape and only its scheme element moves, if it has one.
+      if (_useFullPath) _path.text = _userEditedPath ? ColdAccount.pathAtScheme(_path.text, scheme) : _templatePath;
     });
     _emit();
   }

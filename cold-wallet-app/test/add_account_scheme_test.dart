@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:quantus_cold_wallet/components/scheme_picker.dart';
 import 'package:quantus_cold_wallet/models/cold_account.dart';
 import 'package:quantus_cold_wallet/providers/wallet_providers.dart';
 import 'package:quantus_cold_wallet/screens/add_account_screen.dart';
@@ -59,5 +60,17 @@ void main() {
 
     expect(find.text(HdWalletService.pathForIndex(1, DilithiumScheme.mlDsa65)), findsOneWidget);
     expect(find.text('Account 2'), findsOneWidget);
+  });
+
+  testWidgets('a typed path ending in 1\' snaps the picker to ML-DSA-65', (tester) async {
+    await pumpScreen(tester, [ColdAccount(label: 'Account 1', index: 0, scheme: DilithiumScheme.mlDsa87)]);
+
+    await tester.tap(find.text('Derivation path'));
+    await settle(tester);
+    await tester.enterText(find.byType(TextField), "m/44'/1'/1'");
+    await settle(tester);
+
+    expect(tester.widget<SchemePicker>(find.byType(SchemePicker)).value, DilithiumScheme.mlDsa65);
+    expect(find.text("m/44'/1'/1'"), findsWidgets);
   });
 }

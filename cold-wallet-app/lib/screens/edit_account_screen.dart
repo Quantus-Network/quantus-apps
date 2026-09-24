@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:quantus_cold_wallet/components/address_with_checkphrase.dart';
+import 'package:quantus_cold_wallet/components/scheme_picker.dart';
 import 'package:quantus_cold_wallet/models/cold_account.dart';
 import 'package:quantus_cold_wallet/providers/wallet_providers.dart';
 
@@ -75,8 +76,8 @@ class _EditAccountScreenState extends ConsumerState<EditAccountScreen> {
       title: 'Disconnect ${widget.account.label}?',
       message:
           'This removes the account from this cold wallet. Your seed phrase and funds are not affected.\n\n'
-          'You can always add the account back by adding an account with the same derivation path:\n'
-          '${widget.account.derivationPath}',
+          'You can always add the account back by adding an account with the same derivation path '
+          'and signature type:\n${widget.account.derivationPath}\n${schemeLabel(widget.account.scheme)}',
       confirmLabel: 'Disconnect',
       cancelLabel: 'Cancel',
       isDestructive: true,

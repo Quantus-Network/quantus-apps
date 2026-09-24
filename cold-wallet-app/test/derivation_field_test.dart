@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:quantus_cold_wallet/components/scheme_picker.dart';
 import 'package:quantus_cold_wallet/components/derivation_field.dart';
 import 'package:quantus_cold_wallet/models/cold_account.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
@@ -62,6 +63,25 @@ void main() {
 
     expect(emitted!.derivationPath, path65);
     expect(emitted!.scheme, DilithiumScheme.mlDsa65);
+  });
+
+  testWidgets('a typed path snaps the picker to the scheme its last element names, and the picker moves the path', (
+    tester,
+  ) async {
+    await pumpField(tester);
+    await openAdvanced(tester);
+    await tester.tap(find.text('Use a full derivation path'));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextField), "m/44'/1'/1'");
+    await tester.pumpAndSettle();
+    expect(tester.widget<SchemePicker>(find.byType(SchemePicker)).value, DilithiumScheme.mlDsa65);
+    expect(emitted!.scheme, DilithiumScheme.mlDsa65);
+
+    await tester.tap(find.text('ML-DSA-87'));
+    await tester.pumpAndSettle();
+    expect(emitted!.derivationPath, "m/44'/1'/0'");
+    expect(emitted!.scheme, DilithiumScheme.mlDsa87);
   });
 
   testWidgets('a custom full path is still accepted', (tester) async {

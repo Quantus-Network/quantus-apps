@@ -111,7 +111,12 @@ class _AddAccountScreenState extends ConsumerState<AddAccountScreen> {
   }
 
   void _onInputChanged() {
-    setState(() => _error = null);
+    // A typed path whose last element names a scheme snaps the picker to it.
+    final named = _mode == _Derivation.fullPath ? ColdAccount.schemeOfPath(_path.text) : null;
+    setState(() {
+      _error = null;
+      if (named != null) _scheme = named;
+    });
     _previewDebounce?.cancel();
     _previewDebounce = Timer(_previewDelay, () {
       if (mounted) setState(() => _previewPath = _account?.derivationPath);
@@ -123,9 +128,12 @@ class _AddAccountScreenState extends ConsumerState<AddAccountScreen> {
     setState(() => _scheme = scheme);
     // The index moves to the first slot free at the new scheme, and a path not
     // typed by hand follows it, so the preview never offers an account that
-    // cannot be added.
+    // cannot be added. A typed path keeps its shape; only its scheme element
+    // moves, if it has one.
     _index.text = '${_firstFreeIndex()}';
-    if (!_userChangedPath) _path.text = ColdAccount.atIndexText(_index.text, scheme: _scheme)?.derivationPath ?? '';
+    _path.text = _userChangedPath
+        ? ColdAccount.pathAtScheme(_path.text, scheme)
+        : ColdAccount.atIndexText(_index.text, scheme: _scheme)?.derivationPath ?? '';
     _onInputChanged();
   }
 

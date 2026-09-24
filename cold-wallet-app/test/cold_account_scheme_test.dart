@@ -37,10 +37,27 @@ void main() {
       );
     });
 
-    test('atPath falls back to the default scheme for a foreign path', () {
-      final account = ColdAccount.atPath("m/44'/1'/0'", label: 'x', defaultScheme: DilithiumScheme.mlDsa65);
+    test('atPath reads the scheme from the last element of any path', () {
+      expect(
+        ColdAccount.atPath("m/44'/1'/1'", label: 'x', defaultScheme: DilithiumScheme.mlDsa87)!.scheme,
+        DilithiumScheme.mlDsa65,
+      );
+      expect(
+        ColdAccount.atPath("m/44'/1'/0'", label: 'x', defaultScheme: DilithiumScheme.mlDsa65)!.scheme,
+        DilithiumScheme.mlDsa87,
+      );
+    });
+
+    test('atPath falls back to the chosen scheme when the last element names none', () {
+      final account = ColdAccount.atPath("m/44'/1'/2'", label: 'x', defaultScheme: DilithiumScheme.mlDsa65);
       expect(account!.scheme, DilithiumScheme.mlDsa65);
       expect(account.templateIndex, isNull);
+    });
+
+    test('pathAtScheme moves only a scheme-naming last element', () {
+      expect(ColdAccount.pathAtScheme("m/44'/1'/0'", DilithiumScheme.mlDsa65), "m/44'/1'/1'");
+      expect(ColdAccount.pathAtScheme("m/44'/1'/1'", DilithiumScheme.mlDsa87), "m/44'/1'/0'");
+      expect(ColdAccount.pathAtScheme("m/44'/1'/2'", DilithiumScheme.mlDsa65), "m/44'/1'/2'");
     });
   });
 }

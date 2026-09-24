@@ -58,17 +58,29 @@ class ColdAccount {
     return ColdAccount(label: 'Account ${index + 1}', index: index, scheme: scheme);
   }
 
-  /// The account at [path], or null when [path] is not a derivation path. The
-  /// scheme is read from the path when it follows a template ([`.../1'`] for
-  /// ML-DSA-65, [`.../0'`] for ML-DSA-87), otherwise [defaultScheme].
+  /// The account at [path], or null when [path] is not a derivation path. A
+  /// last element of `0'` or `1'` names the scheme ([schemeOfPath]); any other
+  /// path takes [defaultScheme], the user's own choice.
   static ColdAccount? atPath(String path, {required String label, required DilithiumScheme defaultScheme}) {
     final trimmed = path.trim();
     if (!HdWalletService.isValidPath(trimmed)) return null;
-    return ColdAccount(label: label, path: trimmed, scheme: _schemeForPath(trimmed, defaultScheme));
+    return ColdAccount(label: label, path: trimmed, scheme: schemeOfPath(trimmed) ?? defaultScheme);
   }
 
-  static DilithiumScheme _schemeForPath(String path, DilithiumScheme fallback) =>
-      DilithiumScheme.values.where((scheme) => _templateIndexOf(path, scheme) != null).firstOrNull ?? fallback;
+  static const _schemeElements = {DilithiumScheme.mlDsa87: "0'", DilithiumScheme.mlDsa65: "1'"};
+
+  /// The scheme a path's last element names — `0'` ML-DSA-87, `1'` ML-DSA-65,
+  /// the convention of the wallet's own templates — or null for any other.
+  static DilithiumScheme? schemeOfPath(String path) =>
+      _schemeElements.entries.where((e) => e.value == path.trim().split('/').last).firstOrNull?.key;
+
+  /// [path] rewritten to name [scheme] in its last element, when that element
+  /// names a scheme at all; any other path is returned unchanged.
+  static String pathAtScheme(String path, DilithiumScheme scheme) {
+    if (schemeOfPath(path) == null) return path;
+    final trimmed = path.trim();
+    return '${trimmed.substring(0, trimmed.lastIndexOf('/') + 1)}${_schemeElements[scheme]}';
+  }
 
   factory ColdAccount.fromJson(Map<String, dynamic> json) => ColdAccount(
     label: json['label'] as String,
