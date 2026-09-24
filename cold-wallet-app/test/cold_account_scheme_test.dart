@@ -25,22 +25,22 @@ void main() {
       expect(a65.derivationPath, isNot(a87.derivationPath));
     });
 
-    test('new accounts are ML-DSA-87 by index and by a path outside the templates', () {
-      expect(ColdAccount.atIndexText('3')!.scheme, DilithiumScheme.mlDsa87);
+    test('atPath infers the scheme from a template path', () {
+      final p65 = HdWalletService.pathForIndex(3, DilithiumScheme.mlDsa65);
       final p87 = HdWalletService.pathForIndex(3, DilithiumScheme.mlDsa87);
-      expect(ColdAccount.atPath(p87, label: 'x')!.scheme, DilithiumScheme.mlDsa87);
-      final foreign = ColdAccount.atPath("m/44'/1'/0'", label: 'x')!;
-      expect(foreign.scheme, DilithiumScheme.mlDsa87);
-      expect(foreign.templateIndex, isNull);
+      final readded65 = ColdAccount.atPath(p65, label: 'x', defaultScheme: DilithiumScheme.mlDsa87)!;
+      expect(readded65.scheme, DilithiumScheme.mlDsa65);
+      expect(readded65.derivesSameKey(ColdAccount(label: 'y', index: 3, scheme: DilithiumScheme.mlDsa65)), isTrue);
+      expect(
+        ColdAccount.atPath(p87, label: 'x', defaultScheme: DilithiumScheme.mlDsa65)!.scheme,
+        DilithiumScheme.mlDsa87,
+      );
     });
 
-    test('an ML-DSA-65 template path adds back the same ML-DSA-65 key', () {
-      final existing = ColdAccount(label: 'Account 4', index: 3, scheme: DilithiumScheme.mlDsa65);
-      final readded = ColdAccount.atPath(existing.derivationPath, label: 'x')!;
-      expect(readded.scheme, DilithiumScheme.mlDsa65);
-      expect(readded.derivationPath, existing.derivationPath);
-      expect(readded.derivesSameKey(existing), isTrue);
-      expect(readded.templateIndex, 3);
+    test('atPath falls back to the default scheme for a foreign path', () {
+      final account = ColdAccount.atPath("m/44'/1'/0'", label: 'x', defaultScheme: DilithiumScheme.mlDsa65);
+      expect(account!.scheme, DilithiumScheme.mlDsa65);
+      expect(account.templateIndex, isNull);
     });
 
     test('at one index, current scheme sorts before legacy', () {

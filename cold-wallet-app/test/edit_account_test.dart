@@ -86,7 +86,12 @@ void main() {
       await controller.removeAccount(legacy65);
       expect(container.read(addressesProvider).containsKey(address), isFalse);
 
-      await controller.addAccount(ColdAccount.atPath(legacy65.derivationPath, label: 'Back')!);
+      final back = ColdAccount.atPath(
+        legacy65.derivationPath,
+        label: 'Back',
+        defaultScheme: ColdAccount.newAccountScheme,
+      )!;
+      await controller.addAccount(back);
       final readded = container.read(addressesProvider)[address];
       expect(readded, isNotNull, reason: 'the path the disconnect dialog shows must derive the same key');
       expect(readded!.scheme, DilithiumScheme.mlDsa65);

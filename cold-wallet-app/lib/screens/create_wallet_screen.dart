@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:quantus_cold_wallet/components/scheme_picker.dart';
 import 'package:quantus_cold_wallet/models/cold_account.dart';
 import 'package:quantus_cold_wallet/screens/set_password_screen.dart';
 
@@ -12,6 +13,7 @@ class CreateWalletScreen extends StatefulWidget {
 
 class _CreateWalletScreenState extends State<CreateWalletScreen> {
   List<String>? _words;
+  DilithiumScheme _scheme = ColdAccount.newAccountScheme;
 
   @override
   void initState() {
@@ -33,7 +35,7 @@ class _CreateWalletScreenState extends State<CreateWalletScreen> {
       MaterialPageRoute(
         builder: (_) => SetPasswordScreen(
           mnemonic: words.join(' '),
-          accounts: [ColdAccount(label: 'Account 1', index: 0, scheme: ColdAccount.newAccountScheme)],
+          accounts: [ColdAccount(label: 'Account 1', index: 0, scheme: _scheme)],
         ),
       ),
     );
@@ -59,7 +61,16 @@ class _CreateWalletScreenState extends State<CreateWalletScreen> {
                 ),
                 const SizedBox(height: 24),
                 Expanded(
-                  child: SingleChildScrollView(child: MnemonicGrid(words: words, isRevealed: true)),
+                  child: SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        MnemonicGrid(words: words, isRevealed: true),
+                        const SizedBox(height: 24),
+                        SchemePicker(value: _scheme, onChanged: (scheme) => setState(() => _scheme = scheme)),
+                      ],
+                    ),
+                  ),
                 ),
               ],
             ),

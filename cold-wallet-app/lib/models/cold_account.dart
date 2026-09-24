@@ -67,32 +67,29 @@ class ColdAccount {
   /// derivation path index (which is 0 for 87, 1 for 65).
   static int _schemeSortOrder(DilithiumScheme scheme) => scheme == DilithiumSchemeExtension.current ? 0 : 1;
 
-  /// Scheme every new cold wallet account uses.
+  /// Scheme the signature type choice opens on for a new wallet or account.
   static const DilithiumScheme newAccountScheme = DilithiumScheme.mlDsa87;
 
-  /// The new account [text] names as an index, or null when it is not an index.
-  /// The label follows the index, so the wallet's own numbering stays
+  /// The account [text] names as an index at [scheme], or null when it is not an
+  /// index. The label follows the index, so the wallet's own numbering stays
   /// predictable.
-  static ColdAccount? atIndexText(String text) {
+  static ColdAccount? atIndexText(String text, {required DilithiumScheme scheme}) {
     final index = int.tryParse(text.trim());
     if (index == null || index < 0) return null;
-    return ColdAccount(label: 'Account ${index + 1}', index: index, scheme: newAccountScheme);
+    return ColdAccount(label: 'Account ${index + 1}', index: index, scheme: scheme);
   }
 
-  /// The account at [path], or null when [path] is not a derivation path.
-  ///
-  /// A path that follows a scheme's template names that scheme (`.../1'` is
-  /// ML-DSA-65, `.../0'` is ML-DSA-87), so an existing account can be added
-  /// back by its path and derive the same key. Any other path is a new account
-  /// at [newAccountScheme].
-  static ColdAccount? atPath(String path, {required String label}) {
+  /// The account at [path], or null when [path] is not a derivation path. The
+  /// scheme is read from the path when it follows a template ([`.../1'`] for
+  /// ML-DSA-65, [`.../0'`] for ML-DSA-87), otherwise [defaultScheme].
+  static ColdAccount? atPath(String path, {required String label, required DilithiumScheme defaultScheme}) {
     final trimmed = path.trim();
     if (!HdWalletService.isValidPath(trimmed)) return null;
-    return ColdAccount(label: label, path: trimmed, scheme: _schemeForPath(trimmed) ?? newAccountScheme);
+    return ColdAccount(label: label, path: trimmed, scheme: _schemeForPath(trimmed, defaultScheme));
   }
 
-  static DilithiumScheme? _schemeForPath(String path) =>
-      DilithiumScheme.values.where((scheme) => _templateIndexOf(path, scheme) != null).firstOrNull;
+  static DilithiumScheme _schemeForPath(String path, DilithiumScheme fallback) =>
+      DilithiumScheme.values.where((scheme) => _templateIndexOf(path, scheme) != null).firstOrNull ?? fallback;
 
   factory ColdAccount.fromJson(Map<String, dynamic> json) => ColdAccount(
     label: json['label'] as String,

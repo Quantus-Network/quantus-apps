@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:quantus_cold_wallet/components/address_with_checkphrase.dart';
+import 'package:quantus_cold_wallet/components/scheme_picker.dart';
 import 'package:quantus_cold_wallet/models/cold_account.dart';
 import 'package:quantus_cold_wallet/providers/wallet_providers.dart';
 
@@ -31,6 +32,8 @@ class _AddAccountScreenState extends ConsumerState<AddAccountScreen> {
   final _path = TextEditingController();
 
   _Derivation _mode = _Derivation.accountIndex;
+
+  DilithiumScheme _scheme = ColdAccount.newAccountScheme;
 
   /// Set once the path has been typed in rather than seeded, so the index stops
   /// writing over it. Lives with the screen: leaving and coming back is a fresh
@@ -62,12 +65,13 @@ class _AddAccountScreenState extends ConsumerState<AddAccountScreen> {
     super.dispose();
   }
 
-  /// The lowest index this wallet does not already hold at the new account
-  /// scheme, so the field opens on an account that can actually be added.
+  /// The lowest index this wallet does not already hold at [_scheme], so the
+  /// field opens on an account that can actually be added.
   int _firstFreeIndex() {
+    final scheme = _scheme;
     final taken = {
       for (final account in ref.read(accountsProvider))
-        if (account.scheme == ColdAccount.newAccountScheme) account.templateIndex,
+        if (account.scheme == scheme) account.templateIndex,
     };
     for (var index = 0; ; index++) {
       if (!taken.contains(index)) return index;
@@ -87,13 +91,13 @@ class _AddAccountScreenState extends ConsumerState<AddAccountScreen> {
 
   ColdAccount? get _account => switch (_mode) {
     _Derivation.accountIndex => _indexedAccount,
-    _Derivation.fullPath => ColdAccount.atPath(_path.text, label: _nextFreeLabel()),
+    _Derivation.fullPath => ColdAccount.atPath(_path.text, label: _nextFreeLabel(), defaultScheme: _scheme),
   };
 
   /// Labelled by its index unless that name is taken, as it is once the wallet
   /// holds the same index at the other scheme.
   ColdAccount? get _indexedAccount {
-    final account = ColdAccount.atIndexText(_index.text);
+    final account = ColdAccount.atIndexText(_index.text, scheme: _scheme);
     if (account == null || !_takenLabels.contains(account.label)) return account;
     return account.withLabel(_nextFreeLabel());
   }
@@ -114,6 +118,17 @@ class _AddAccountScreenState extends ConsumerState<AddAccountScreen> {
     });
   }
 
+  void _setScheme(DilithiumScheme scheme) {
+    if (scheme == _scheme) return;
+    setState(() => _scheme = scheme);
+    // The index moves to the first slot free at the new scheme, and a path not
+    // typed by hand follows it, so the preview never offers an account that
+    // cannot be added.
+    _index.text = '${_firstFreeIndex()}';
+    if (!_userChangedPath) _path.text = ColdAccount.atIndexText(_index.text, scheme: _scheme)?.derivationPath ?? '';
+    _onInputChanged();
+  }
+
   void _setMode(_Derivation mode) {
     if (mode == _mode) return;
     FocusScope.of(context).unfocus();
@@ -121,7 +136,7 @@ class _AddAccountScreenState extends ConsumerState<AddAccountScreen> {
     // disagree about which account is being added. A path typed by hand follows
     // no template and is left alone.
     if (mode == _Derivation.fullPath && !_userChangedPath) {
-      _path.text = ColdAccount.atIndexText(_index.text)?.derivationPath ?? '';
+      _path.text = ColdAccount.atIndexText(_index.text, scheme: _scheme)?.derivationPath ?? '';
     }
     setState(() {
       _mode = mode;
@@ -193,6 +208,8 @@ class _AddAccountScreenState extends ConsumerState<AddAccountScreen> {
               ),
               const SizedBox(height: 24),
               if (_mode == _Derivation.accountIndex) _indexField(context) else _pathField(context),
+              const SizedBox(height: 24),
+              SchemePicker(value: _scheme, onChanged: _setScheme),
               const SizedBox(height: 24),
               _preview(context, account, duplicate),
               if (_error != null) ...[
@@ -285,7 +302,7 @@ class _AddAccountScreenState extends ConsumerState<AddAccountScreen> {
             decoration: InputDecoration(
               border: InputBorder.none,
               isCollapsed: true,
-              hintText: HdWalletService.pathForIndex(0, ColdAccount.newAccountScheme),
+              hintText: HdWalletService.pathForIndex(0, _scheme),
               hintStyle: text.dataAddressLarge.copyWith(
                 color: colors.textMuted,
                 fontFamily: AppTextThemeV3.fontFamilySecondary,
