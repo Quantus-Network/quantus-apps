@@ -133,12 +133,14 @@ void main() {
     final transfer = WormholeTransfer(
       id: 't1',
       blockHeight: 1,
+      timestamp: DateTime(2026),
       fromId: 'from',
       toId: 'wormhole_addr',
       amount: wormholeTokenFromScaled(1000),
       toHash: '0x00',
       leafIndex: BigInt.one,
       transferCount: BigInt.one,
+      extrinsicId: '',
     );
 
     Future<_StubProvingSendService> runClaim({Object? proveError, List<WormholeTransfer>? transfers}) async {
@@ -180,12 +182,14 @@ void main() {
           WormholeTransfer(
             id: 't$i',
             blockHeight: i,
+            timestamp: DateTime(2026),
             fromId: 'from',
             toId: 'wormhole_addr',
             amount: wormholeTokenFromScaled(50),
             toHash: '0x00',
             leafIndex: BigInt.from(i + 1),
             transferCount: BigInt.one,
+            extrinsicId: '',
           ),
       ];
 

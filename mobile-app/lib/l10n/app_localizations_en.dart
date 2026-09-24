@@ -1153,12 +1153,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get activityEmpty => 'No transactions yet';
 
   @override
-  String get activityPrivateTotalReceived => 'Total Received';
-
-  @override
-  String get activityPrivateTotalSent => 'Total Sent';
-
-  @override
   String get activityFilterAll => 'All';
 
   @override
@@ -1214,6 +1208,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get activityTxFrom => 'From';
+
+  @override
+  String get activityTxAggregatedBatch => 'Aggregated batch';
+
+  @override
+  String get activityDetailAggregatedBatch => 'Aggregated batch, recipient not recorded';
 
   @override
   String get activityTxTimeNow => 'now';

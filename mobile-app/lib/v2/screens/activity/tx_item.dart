@@ -18,6 +18,9 @@ class TxItemData {
   final String counterpartyAddr;
   final bool hideAmount;
   final IconData? customIcon;
+
+  /// Prefix of the counterparty line: null for To/From by direction, empty
+  /// to show [counterpartyAddr] on its own.
   final String? counterpartyDirectionLabel;
 
   const TxItemData({
@@ -312,6 +315,7 @@ class TxItemData {
       return colors.borderHairline;
     }
 
+    final counterparty = isSend ? tx.to : tx.from;
     return TxItemData(
       label: getLabel(),
       timeLabel: getTimeLabel(),
@@ -322,7 +326,12 @@ class TxItemData {
       borderColor: getBorderColor(),
       isSend: isSend,
       amount: tx.amount,
-      counterpartyAddr: AddressFormattingService.formatAddress(isSend ? tx.to : tx.from, prefix: 5, postFix: 3),
+      // A private send whose proof settled with other transfers has no known
+      // recipient: name the batch instead, with no "To:" prefix.
+      counterpartyAddr: counterparty.isEmpty
+          ? l10n.activityTxAggregatedBatch
+          : AddressFormattingService.formatAddress(counterparty, prefix: 5, postFix: 3),
+      counterpartyDirectionLabel: counterparty.isEmpty ? '' : null,
     );
   }
 }
@@ -394,7 +403,7 @@ Widget buildTxItem(
                   Text(formattedAmount, style: text.bodyLarge.copyWith(color: data.amountColor)),
                   const SizedBox(height: 8),
                   Text(
-                    '$directionLabel: ${data.counterpartyAddr}',
+                    directionLabel.isEmpty ? data.counterpartyAddr : '$directionLabel: ${data.counterpartyAddr}',
                     style: text.caption.copyWith(color: colors.textMuted),
                   ),
                 ],

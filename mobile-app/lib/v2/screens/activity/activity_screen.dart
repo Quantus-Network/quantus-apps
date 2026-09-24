@@ -10,6 +10,7 @@ import 'package:resonance_network_wallet/providers/active_account_transactions_p
 import 'package:resonance_network_wallet/providers/currency_display_provider.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
+import 'package:resonance_network_wallet/services/global_history_polling_service.dart';
 import 'package:resonance_network_wallet/services/transaction_service.dart';
 import 'package:resonance_network_wallet/v2/screens/activity/tx_item.dart';
 import 'package:resonance_network_wallet/v2/screens/activity/transaction_detail_sheet.dart';
@@ -53,6 +54,9 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
   }
 
   Future<void> _refresh() async {
+    if (isEncryptedAccount(ref.read(activeAccountProvider).value?.account)) {
+      return ref.read(globalHistoryPollingServiceProvider).triggerManualRefresh();
+    }
     final pagination = ref.read(activeAccountPaginationProvider(_filterOption));
     if (pagination == null || pagination.isFetching) return;
 
@@ -83,9 +87,6 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
               child: Text(l10n.activityNoAccount, style: text.body.copyWith(color: colors.textMuted)),
             );
           }
-          if (isEncryptedAccount(active.account)) {
-            return _buildEncryptedActivitySummary(active.account as Account, colors, text, l10n);
-          }
           return txAsync.when(
             loading: () => ListView.builder(
               itemCount: 3,
@@ -102,8 +103,9 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                 ],
               ),
             ),
-            error: (e, _) => Center(
-              child: Text(l10n.activityError(e.toString()), style: text.caption.copyWith(color: colors.semanticEmber)),
+            error: (e, _) => _scrollableMessage(
+              l10n.activityError(e.toString()),
+              text.caption.copyWith(color: colors.semanticEmber),
             ),
             data: (data) {
               final txService = ref.read(transactionServiceProvider);
@@ -118,22 +120,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                 otherTransfers: data.otherTransfers,
               );
               if (all.isEmpty) {
-                return _buildRefreshableContent(
-                  child: LayoutBuilder(
-                    builder: (context, constraints) => ListView(
-                      controller: _scrollController,
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      children: [
-                        ConstrainedBox(
-                          constraints: BoxConstraints(minHeight: constraints.maxHeight),
-                          child: Center(
-                            child: Text(l10n.activityEmpty, style: text.bodyLarge.copyWith(color: colors.textMuted)),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
+                return _scrollableMessage(l10n.activityEmpty, text.bodyLarge.copyWith(color: colors.textMuted));
               }
               final grouped = _groupByDate(all, l10n, appLocale.numberFormatLocale);
               final showLoadMoreFooter = pagination != null && pagination.isLoading && pagination.hasMore;
@@ -193,43 +180,21 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
     );
   }
 
-  Widget _buildEncryptedActivitySummary(
-    Account account,
-    AppColorsV3 colors,
-    AppTextThemeV3 text,
-    AppLocalizations l10n,
-  ) {
-    final fmt = ref.watch(numberFormattingServiceProvider);
-    final received = ref.watch(encryptedTotalReceivedProvider(account.walletIndex));
-    final spent = ref.watch(encryptedTotalSpentProvider(account.walletIndex));
-
-    String formatAmount(AsyncValue<BigInt> value) =>
-        value.whenOrNull(data: (v) => fmt.formatBalance(v, maxDecimals: 2, addSymbol: true)) ?? '—';
-
-    return Padding(
-      padding: const EdgeInsets.only(top: 16),
-      child: Column(
+  /// A centred message that can still be pulled to refresh.
+  Widget _scrollableMessage(String message, TextStyle style) => _buildRefreshableContent(
+    child: LayoutBuilder(
+      builder: (context, constraints) => ListView(
+        controller: _scrollController,
+        physics: const AlwaysScrollableScrollPhysics(),
         children: [
-          _encryptedSummaryRow(l10n.activityPrivateTotalReceived, formatAmount(received), colors, text),
-          Divider(color: colors.borderHairline, height: 24),
-          _encryptedSummaryRow(l10n.activityPrivateTotalSent, formatAmount(spent), colors, text),
+          ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
+            child: Center(child: Text(message, style: style)),
+          ),
         ],
       ),
-    );
-  }
-
-  Widget _encryptedSummaryRow(String label, String amount, AppColorsV3 colors, AppTextThemeV3 text) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(label, style: text.body.copyWith(color: colors.textMuted)),
-          Text(amount, style: text.body.copyWith(color: colors.textContent)),
-        ],
-      ),
-    );
-  }
+    ),
+  );
 
   Widget _buildRefreshableContent({required Widget child}) {
     return RefreshIndicator(

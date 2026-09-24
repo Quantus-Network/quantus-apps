@@ -83,6 +83,7 @@ export 'src/services/senoti_service.dart';
 export 'src/services/circuit_manager.dart';
 export 'src/services/encrypted_account_service.dart';
 export 'src/services/wormhole_coin_selection.dart';
+export 'src/services/wormhole_history.dart';
 export 'src/services/wormhole_send_service.dart';
 export 'src/services/wormhole_utxo_service.dart';
 export 'src/extensions/account_extension.dart';

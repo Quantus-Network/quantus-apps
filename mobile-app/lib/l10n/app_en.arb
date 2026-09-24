@@ -1650,14 +1650,6 @@
     "@activityEmpty": {
       "description": "Empty state on activity screen"
     },
-    "activityPrivateTotalReceived": "Total Received",
-    "@activityPrivateTotalReceived": {
-      "description": "Label for total received in encrypted account activity summary"
-    },
-    "activityPrivateTotalSent": "Total Sent",
-    "@activityPrivateTotalSent": {
-      "description": "Label for total sent in encrypted account activity summary"
-    },
     "activityFilterAll": "All",
     "@activityFilterAll": {
       "description": "Filter button for all transactions"
@@ -1734,6 +1726,14 @@
     "activityTxFrom": "From",
     "@activityTxFrom": {
       "description": "Counterparty direction label for receive"
+    },
+    "activityTxAggregatedBatch": "Aggregated batch",
+    "@activityTxAggregatedBatch": {
+      "description": "Counterparty line of a private send whose proof was bundled with other transfers, so the chain cannot say who received it"
+    },
+    "activityDetailAggregatedBatch": "Aggregated batch, recipient not recorded",
+    "@activityDetailAggregatedBatch": {
+      "description": "Detail sheet 'To' value of a private send whose proof was bundled with other transfers"
     },
     "activityTxTimeNow": "now",
     "@activityTxTimeNow": {

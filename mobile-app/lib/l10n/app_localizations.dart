@@ -2180,18 +2180,6 @@ abstract class AppLocalizations {
   /// **'No transactions yet'**
   String get activityEmpty;
 
-  /// Label for total received in encrypted account activity summary
-  ///
-  /// In en, this message translates to:
-  /// **'Total Received'**
-  String get activityPrivateTotalReceived;
-
-  /// Label for total sent in encrypted account activity summary
-  ///
-  /// In en, this message translates to:
-  /// **'Total Sent'**
-  String get activityPrivateTotalSent;
-
   /// Filter button for all transactions
   ///
   /// In en, this message translates to:
@@ -2305,6 +2293,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'From'**
   String get activityTxFrom;
+
+  /// Counterparty line of a private send whose proof was bundled with other transfers, so the chain cannot say who received it
+  ///
+  /// In en, this message translates to:
+  /// **'Aggregated batch'**
+  String get activityTxAggregatedBatch;
+
+  /// Detail sheet 'To' value of a private send whose proof was bundled with other transfers
+  ///
+  /// In en, this message translates to:
+  /// **'Aggregated batch, recipient not recorded'**
+  String get activityDetailAggregatedBatch;
 
   /// Time label for just now
   ///

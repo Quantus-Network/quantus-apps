@@ -65,6 +65,24 @@ void main() {
     expect(find.textContaining('+300'), findsOneWidget);
   });
 
+  testWidgets('a private send without an attributable recipient names the aggregated batch', (tester) async {
+    await openSheet(
+      tester,
+      WormholeTransferEvent(
+        id: '0xbundle',
+        from: me.accountId,
+        to: '',
+        amount: BigInt.from(300),
+        timestamp: DateTime(2026, 9, 6),
+        fee: BigInt.zero,
+        extrinsicHash: '0xbundle',
+        blockNumber: 1,
+      ),
+    );
+
+    expect(find.text('Aggregated batch, recipient not recorded'), findsOneWidget);
+  });
+
   testWidgets('a sent transfer is formatted as an outflow', (tester) async {
     final isSend = await openSheet(tester, transfer(from: me.accountId, to: other.accountId));
 

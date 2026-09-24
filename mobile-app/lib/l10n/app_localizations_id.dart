@@ -1156,12 +1156,6 @@ class AppLocalizationsId extends AppLocalizations {
   String get activityEmpty => 'Belum ada transaksi';
 
   @override
-  String get activityPrivateTotalReceived => 'Total Diterima';
-
-  @override
-  String get activityPrivateTotalSent => 'Total Terkirim';
-
-  @override
   String get activityFilterAll => 'Semua';
 
   @override
@@ -1217,6 +1211,12 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get activityTxFrom => 'Dari';
+
+  @override
+  String get activityTxAggregatedBatch => 'Batch teragregasi';
+
+  @override
+  String get activityDetailAggregatedBatch => 'Batch teragregasi, penerima tidak tercatat';
 
   @override
   String get activityTxTimeNow => 'sekarang';

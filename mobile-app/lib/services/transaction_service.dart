@@ -1,3 +1,4 @@
+import 'package:collection/collection.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/models/transaction_role.dart';
@@ -99,8 +100,9 @@ class TransactionService {
       }
     }
 
-    // Add other transfers (lowest priority)
-    otherTransfers.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+    // Add other transfers (lowest priority). Stable, so rows sharing a block
+    // (same timestamp) keep the chain order they arrived in.
+    mergeSort(otherTransfers, compare: (a, b) => b.timestamp.compareTo(a.timestamp));
     for (final transaction in otherTransfers) {
       if (transaction is MultisigProposalCreatedEvent) {
         final key = transaction.activityDedupKey;
