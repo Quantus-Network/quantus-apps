@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 
-/// Signature-scheme choice for an account: ML-DSA-65 (current) or ML-DSA-87.
+/// Signature-scheme choice for an account: ML-DSA-87 (the default for new
+/// accounts, first) or ML-DSA-65.
 class SchemePicker extends StatelessWidget {
   final DilithiumScheme value;
   final ValueChanged<DilithiumScheme> onChanged;
@@ -22,8 +23,8 @@ class SchemePicker extends StatelessWidget {
           selectedValue: value,
           onChanged: onChanged,
           items: const [
-            SegmentedControlItem(value: DilithiumSchemeExtension.current, label: 'ML-DSA-65'),
             SegmentedControlItem(value: DilithiumSchemeExtension.legacy, label: 'ML-DSA-87'),
+            SegmentedControlItem(value: DilithiumSchemeExtension.current, label: 'ML-DSA-65'),
           ],
         ),
       ],

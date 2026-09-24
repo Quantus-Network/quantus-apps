@@ -34,6 +34,8 @@ void main() {
 
     expect(find.text('ML-DSA-87'), findsOneWidget);
     expect(find.text('Account index'), findsNothing);
+    // The default sits first.
+    expect(tester.getTopLeft(find.text('ML-DSA-87')).dx, lessThan(tester.getTopLeft(find.text('ML-DSA-65')).dx));
 
     await tester.tap(find.text('ML-DSA-65'));
     await tester.pumpAndSettle();
