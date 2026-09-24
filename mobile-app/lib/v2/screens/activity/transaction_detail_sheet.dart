@@ -12,7 +12,9 @@ import 'package:resonance_network_wallet/shared/extensions/current_route_extensi
 import 'package:resonance_network_wallet/shared/extensions/transaction_event_extension.dart';
 import 'package:resonance_network_wallet/shared/utils/share_utils.dart';
 import 'package:resonance_network_wallet/v2/components/amount_display_with_conversion.dart';
+import 'package:resonance_network_wallet/v2/components/detail_row.dart';
 import 'package:resonance_network_wallet/v2/components/explorer_link.dart';
+import 'package:resonance_network_wallet/v2/screens/activity/wormhole_details_screen.dart';
 
 void showTransactionDetailSheet(BuildContext context, TransactionEvent tx, String activeAccountId) {
   if (context.peekTopRouteName == transactionDetailSheetRouteSettings.name) Navigator.pop(context);
@@ -131,7 +133,7 @@ class _TransactionDetailSheet extends ConsumerWidget {
       path = '$transactionType/${tx.blockHash}';
     }
 
-    return path == null ? null : '${AppConstants.explorerEndpoint}/$path';
+    return path == null ? null : explorerUrl(path);
   }
 
   @override
@@ -233,13 +235,6 @@ class _DetailsSection extends ConsumerWidget {
 
   const _DetailsSection({required this.tx, required this.isSend, required this.activeAccountId});
 
-  String _formatBalance(AppLocalizations l10n, NumberFormattingService formattingService, BigInt value) {
-    return l10n.commonAmountBalance(
-      formattingService.formatBalance(value, smartDecimals: AppConstants.decimals),
-      AppConstants.tokenSymbol,
-    );
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = ref.watch(l10nProvider);
@@ -291,12 +286,7 @@ class _DetailsSection extends ConsumerWidget {
     BigInt? fee;
     if (tx is TransferEvent) fee = (tx as TransferEvent).fee;
     if (tx is PendingTransactionEvent) fee = (tx as PendingTransactionEvent).fee;
-    final feeStr = (fee != null && fee != BigInt.zero)
-        ? l10n.commonAmountBalance(
-            formattingService.formatBalance(fee, smartDecimals: AppConstants.decimals),
-            AppConstants.tokenSymbol,
-          )
-        : null;
+    final feeStr = (fee != null && fee != BigInt.zero) ? formatTokenAmount(l10n, formattingService, fee) : null;
 
     final txHash = tx.extrinsicHash != null
         ? AddressFormattingService.formatActivityDetailExtrinsicHash(tx.extrinsicHash!)
@@ -304,15 +294,24 @@ class _DetailsSection extends ConsumerWidget {
 
     return Column(
       children: [
-        _DetailRow(
+        DetailRow(
           label: isSend ? l10n.activityDetailTo : l10n.activityDetailFrom,
           value: address,
-          valueKind: _DetailValueKind.mono,
+          valueKind: DetailValueKind.mono,
         ),
-        _DetailRow(label: l10n.activityDetailDate, value: dateTime),
-        if (feeStr != null) _DetailRow(label: l10n.activityDetailNetworkFee, value: feeStr),
-        if (txHash != null)
-          _DetailRow(label: l10n.activityDetailTxHash, value: txHash, valueKind: _DetailValueKind.mono),
+        DetailRow(label: l10n.activityDetailDate, value: dateTime),
+        if (feeStr != null) DetailRow(label: l10n.activityDetailNetworkFee, value: feeStr),
+        if (txHash != null) DetailRow(label: l10n.activityDetailTxHash, value: txHash, valueKind: DetailValueKind.mono),
+        if (tx case final WormholeTransferEvent send when send.batches.isNotEmpty)
+          GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => WormholeDetailsScreen(send: send))),
+            child: labelValueRow(
+              context,
+              l10n.activityDetailWormholeDetails,
+              Icon(Icons.chevron_right, size: 20, color: context.colorsV3.textMuted),
+            ),
+          ),
       ],
     );
   }
@@ -343,9 +342,9 @@ class _DetailsSection extends ConsumerWidget {
     final multisig = AddressFormattingService.formatActivityDetailAddress(event.multisigAddress);
     final recipientAddress = AddressFormattingService.formatActivityDetailAddress(event.recipient);
     final dateTime = DatetimeFormattingService.formatTxDateTime(event.timestamp);
-    final transferAmount = _formatBalance(l10n, formattingService, event.amount);
+    final transferAmount = formatTokenAmount(l10n, formattingService, event.amount);
     final networkFeeValue = event.networkFee != BigInt.zero
-        ? _formatBalance(l10n, formattingService, event.networkFee)
+        ? formatTokenAmount(l10n, formattingService, event.networkFee)
         : null;
     final txHash = event.extrinsicHash != null
         ? AddressFormattingService.formatActivityDetailExtrinsicHash(event.extrinsicHash!)
@@ -354,14 +353,13 @@ class _DetailsSection extends ConsumerWidget {
 
     return Column(
       children: [
-        _DetailRow(label: l10n.activityDetailMultisigAddress, value: multisig, valueKind: _DetailValueKind.mono),
-        _DetailRow(label: l10n.activityDetailTo, value: recipientAddress, valueKind: _DetailValueKind.mono),
-        _DetailRow(label: l10n.activityDetailProposalTransferAmount, value: transferAmount),
-        _DetailRow(label: l10n.multisigProposalApprovalsLabel, value: approvalsLabel),
-        if (networkFeeValue != null) _DetailRow(label: l10n.activityDetailNetworkFee, value: networkFeeValue),
-        _DetailRow(label: l10n.activityDetailDate, value: dateTime),
-        if (txHash != null)
-          _DetailRow(label: l10n.activityDetailTxHash, value: txHash, valueKind: _DetailValueKind.mono),
+        DetailRow(label: l10n.activityDetailMultisigAddress, value: multisig, valueKind: DetailValueKind.mono),
+        DetailRow(label: l10n.activityDetailTo, value: recipientAddress, valueKind: DetailValueKind.mono),
+        DetailRow(label: l10n.activityDetailProposalTransferAmount, value: transferAmount),
+        DetailRow(label: l10n.multisigProposalApprovalsLabel, value: approvalsLabel),
+        if (networkFeeValue != null) DetailRow(label: l10n.activityDetailNetworkFee, value: networkFeeValue),
+        DetailRow(label: l10n.activityDetailDate, value: dateTime),
+        if (txHash != null) DetailRow(label: l10n.activityDetailTxHash, value: txHash, valueKind: DetailValueKind.mono),
       ],
     );
   }
@@ -373,9 +371,9 @@ class _DetailsSection extends ConsumerWidget {
   ) {
     final multisig = AddressFormattingService.formatActivityDetailAddress(event.multisigAddress);
     final recipientAddress = AddressFormattingService.formatActivityDetailAddress(event.recipient);
-    final transferAmount = _formatBalance(l10n, formattingService, event.amount);
+    final transferAmount = formatTokenAmount(l10n, formattingService, event.amount);
     final networkFeeValue = event.fee != null && event.fee != BigInt.zero
-        ? _formatBalance(l10n, formattingService, event.fee!)
+        ? formatTokenAmount(l10n, formattingService, event.fee!)
         : null;
     final txHash = event.extrinsicHash != null
         ? AddressFormattingService.formatActivityDetailExtrinsicHash(event.extrinsicHash!)
@@ -383,12 +381,11 @@ class _DetailsSection extends ConsumerWidget {
 
     return Column(
       children: [
-        _DetailRow(label: l10n.activityDetailMultisigAddress, value: multisig, valueKind: _DetailValueKind.mono),
-        _DetailRow(label: l10n.activityDetailTo, value: recipientAddress, valueKind: _DetailValueKind.mono),
-        _DetailRow(label: l10n.activityDetailProposalTransferAmount, value: transferAmount),
-        if (networkFeeValue != null) _DetailRow(label: l10n.activityDetailNetworkFee, value: networkFeeValue),
-        if (txHash != null)
-          _DetailRow(label: l10n.activityDetailTxHash, value: txHash, valueKind: _DetailValueKind.mono),
+        DetailRow(label: l10n.activityDetailMultisigAddress, value: multisig, valueKind: DetailValueKind.mono),
+        DetailRow(label: l10n.activityDetailTo, value: recipientAddress, valueKind: DetailValueKind.mono),
+        DetailRow(label: l10n.activityDetailProposalTransferAmount, value: transferAmount),
+        if (networkFeeValue != null) DetailRow(label: l10n.activityDetailNetworkFee, value: networkFeeValue),
+        if (txHash != null) DetailRow(label: l10n.activityDetailTxHash, value: txHash, valueKind: DetailValueKind.mono),
       ],
     );
   }
@@ -400,9 +397,9 @@ class _DetailsSection extends ConsumerWidget {
   ) {
     final multisig = AddressFormattingService.formatActivityDetailAddress(event.multisigAddress);
     final recipientAddress = AddressFormattingService.formatActivityDetailAddress(event.recipient);
-    final transferAmount = _formatBalance(l10n, formattingService, event.amount);
+    final transferAmount = formatTokenAmount(l10n, formattingService, event.amount);
     final networkFeeValue = event.fee != null && event.fee != BigInt.zero
-        ? _formatBalance(l10n, formattingService, event.fee!)
+        ? formatTokenAmount(l10n, formattingService, event.fee!)
         : null;
     final txHash = event.extrinsicHash != null
         ? AddressFormattingService.formatActivityDetailExtrinsicHash(event.extrinsicHash!)
@@ -410,12 +407,11 @@ class _DetailsSection extends ConsumerWidget {
 
     return Column(
       children: [
-        _DetailRow(label: l10n.activityDetailMultisigAddress, value: multisig, valueKind: _DetailValueKind.mono),
-        _DetailRow(label: l10n.activityDetailTo, value: recipientAddress, valueKind: _DetailValueKind.mono),
-        _DetailRow(label: l10n.activityDetailProposalTransferAmount, value: transferAmount),
-        if (networkFeeValue != null) _DetailRow(label: l10n.activityDetailNetworkFee, value: networkFeeValue),
-        if (txHash != null)
-          _DetailRow(label: l10n.activityDetailTxHash, value: txHash, valueKind: _DetailValueKind.mono),
+        DetailRow(label: l10n.activityDetailMultisigAddress, value: multisig, valueKind: DetailValueKind.mono),
+        DetailRow(label: l10n.activityDetailTo, value: recipientAddress, valueKind: DetailValueKind.mono),
+        DetailRow(label: l10n.activityDetailProposalTransferAmount, value: transferAmount),
+        if (networkFeeValue != null) DetailRow(label: l10n.activityDetailNetworkFee, value: networkFeeValue),
+        if (txHash != null) DetailRow(label: l10n.activityDetailTxHash, value: txHash, valueKind: DetailValueKind.mono),
       ],
     );
   }
@@ -428,9 +424,9 @@ class _DetailsSection extends ConsumerWidget {
     final multisig = AddressFormattingService.formatActivityDetailAddress(event.multisigAddress);
     final recipientAddress = AddressFormattingService.formatActivityDetailAddress(event.recipient);
     final dateTime = DatetimeFormattingService.formatTxDateTime(event.timestamp);
-    final transferAmount = _formatBalance(l10n, formattingService, event.amount);
+    final transferAmount = formatTokenAmount(l10n, formattingService, event.amount);
     final networkFeeValue = event.networkFee != BigInt.zero
-        ? _formatBalance(l10n, formattingService, event.networkFee)
+        ? formatTokenAmount(l10n, formattingService, event.networkFee)
         : null;
     final txHash = event.extrinsicHash != null
         ? AddressFormattingService.formatActivityDetailExtrinsicHash(event.extrinsicHash!)
@@ -438,13 +434,12 @@ class _DetailsSection extends ConsumerWidget {
 
     return Column(
       children: [
-        _DetailRow(label: l10n.activityDetailMultisigAddress, value: multisig, valueKind: _DetailValueKind.mono),
-        _DetailRow(label: l10n.activityDetailTo, value: recipientAddress, valueKind: _DetailValueKind.mono),
-        _DetailRow(label: l10n.activityDetailProposalTransferAmount, value: transferAmount),
-        if (networkFeeValue != null) _DetailRow(label: l10n.activityDetailNetworkFee, value: networkFeeValue),
-        _DetailRow(label: l10n.activityDetailDate, value: dateTime),
-        if (txHash != null)
-          _DetailRow(label: l10n.activityDetailTxHash, value: txHash, valueKind: _DetailValueKind.mono),
+        DetailRow(label: l10n.activityDetailMultisigAddress, value: multisig, valueKind: DetailValueKind.mono),
+        DetailRow(label: l10n.activityDetailTo, value: recipientAddress, valueKind: DetailValueKind.mono),
+        DetailRow(label: l10n.activityDetailProposalTransferAmount, value: transferAmount),
+        if (networkFeeValue != null) DetailRow(label: l10n.activityDetailNetworkFee, value: networkFeeValue),
+        DetailRow(label: l10n.activityDetailDate, value: dateTime),
+        if (txHash != null) DetailRow(label: l10n.activityDetailTxHash, value: txHash, valueKind: DetailValueKind.mono),
       ],
     );
   }
@@ -457,9 +452,9 @@ class _DetailsSection extends ConsumerWidget {
     final multisig = AddressFormattingService.formatActivityDetailAddress(event.multisigAddress);
     final recipientAddress = AddressFormattingService.formatActivityDetailAddress(event.recipient);
     final dateTime = DatetimeFormattingService.formatTxDateTime(event.timestamp);
-    final transferAmount = _formatBalance(l10n, formattingService, event.amount);
+    final transferAmount = formatTokenAmount(l10n, formattingService, event.amount);
     final networkFeeValue = event.networkFee != BigInt.zero
-        ? _formatBalance(l10n, formattingService, event.networkFee)
+        ? formatTokenAmount(l10n, formattingService, event.networkFee)
         : null;
     final txHash = event.extrinsicHash != null
         ? AddressFormattingService.formatActivityDetailExtrinsicHash(event.extrinsicHash!)
@@ -467,13 +462,12 @@ class _DetailsSection extends ConsumerWidget {
 
     return Column(
       children: [
-        _DetailRow(label: l10n.activityDetailMultisigAddress, value: multisig, valueKind: _DetailValueKind.mono),
-        _DetailRow(label: l10n.activityDetailTo, value: recipientAddress, valueKind: _DetailValueKind.mono),
-        _DetailRow(label: l10n.activityDetailProposalTransferAmount, value: transferAmount),
-        if (networkFeeValue != null) _DetailRow(label: l10n.activityDetailNetworkFee, value: networkFeeValue),
-        _DetailRow(label: l10n.activityDetailDate, value: dateTime),
-        if (txHash != null)
-          _DetailRow(label: l10n.activityDetailTxHash, value: txHash, valueKind: _DetailValueKind.mono),
+        DetailRow(label: l10n.activityDetailMultisigAddress, value: multisig, valueKind: DetailValueKind.mono),
+        DetailRow(label: l10n.activityDetailTo, value: recipientAddress, valueKind: DetailValueKind.mono),
+        DetailRow(label: l10n.activityDetailProposalTransferAmount, value: transferAmount),
+        if (networkFeeValue != null) DetailRow(label: l10n.activityDetailNetworkFee, value: networkFeeValue),
+        DetailRow(label: l10n.activityDetailDate, value: dateTime),
+        if (txHash != null) DetailRow(label: l10n.activityDetailTxHash, value: txHash, valueKind: DetailValueKind.mono),
       ],
     );
   }
@@ -510,23 +504,22 @@ class _DetailsSection extends ConsumerWidget {
     final multisig = AddressFormattingService.formatActivityDetailAddress(multisigAddress);
     final recipientAddress = AddressFormattingService.formatActivityDetailAddress(recipient);
     final dateTime = DatetimeFormattingService.formatTxDateTime(timestamp);
-    final palletFeeValue = _formatBalance(l10n, formattingService, palletFee);
-    final depositValue = _formatBalance(l10n, formattingService, deposit);
-    final networkFeeValue = fee != null && fee != BigInt.zero ? _formatBalance(l10n, formattingService, fee) : null;
+    final palletFeeValue = formatTokenAmount(l10n, formattingService, palletFee);
+    final depositValue = formatTokenAmount(l10n, formattingService, deposit);
+    final networkFeeValue = fee != null && fee != BigInt.zero ? formatTokenAmount(l10n, formattingService, fee) : null;
     final txHash = extrinsicHash != null
         ? AddressFormattingService.formatActivityDetailExtrinsicHash(extrinsicHash)
         : null;
 
     return Column(
       children: [
-        _DetailRow(label: l10n.activityDetailMultisigAddress, value: multisig, valueKind: _DetailValueKind.mono),
-        _DetailRow(label: l10n.activityDetailTo, value: recipientAddress, valueKind: _DetailValueKind.mono),
-        _DetailRow(label: l10n.multisigProposalFeeRowLabel, value: palletFeeValue),
-        _DetailRow(label: l10n.multisigProposalDepositLabel, value: depositValue),
-        if (networkFeeValue != null) _DetailRow(label: l10n.activityDetailNetworkFee, value: networkFeeValue),
-        _DetailRow(label: l10n.activityDetailDate, value: dateTime),
-        if (txHash != null)
-          _DetailRow(label: l10n.activityDetailTxHash, value: txHash, valueKind: _DetailValueKind.mono),
+        DetailRow(label: l10n.activityDetailMultisigAddress, value: multisig, valueKind: DetailValueKind.mono),
+        DetailRow(label: l10n.activityDetailTo, value: recipientAddress, valueKind: DetailValueKind.mono),
+        DetailRow(label: l10n.multisigProposalFeeRowLabel, value: palletFeeValue),
+        DetailRow(label: l10n.multisigProposalDepositLabel, value: depositValue),
+        if (networkFeeValue != null) DetailRow(label: l10n.activityDetailNetworkFee, value: networkFeeValue),
+        DetailRow(label: l10n.activityDetailDate, value: dateTime),
+        if (txHash != null) DetailRow(label: l10n.activityDetailTxHash, value: txHash, valueKind: DetailValueKind.mono),
       ],
     );
   }
@@ -587,69 +580,27 @@ class _DetailsSection extends ConsumerWidget {
     final formattedMultisigAddress = AddressFormattingService.formatActivityDetailAddress(multisigAddress);
     final creatorAddress = AddressFormattingService.formatActivityDetailAddress(creatorId);
     final dateTime = DatetimeFormattingService.formatTxDateTime(timestamp);
-    final palletFeeValue = _formatBalance(l10n, formattingService, palletFee);
-    final networkFeeValue = _formatBalance(l10n, formattingService, networkFee);
+    final palletFeeValue = formatTokenAmount(l10n, formattingService, palletFee);
+    final networkFeeValue = formatTokenAmount(l10n, formattingService, networkFee);
 
     return Column(
       children: [
-        _DetailRow(
+        DetailRow(
           label: l10n.activityDetailMultisigAddress,
           value: formattedMultisigAddress,
-          valueKind: _DetailValueKind.mono,
+          valueKind: DetailValueKind.mono,
         ),
-        _DetailRow(
+        DetailRow(
           label: l10n.activityDetailMultisigThreshold,
           value: l10n.activityDetailMultisigThresholdValue(threshold, signers.length),
         ),
-        _DetailRow(label: l10n.activityDetailMultisigSignerCount, value: '${signers.length}'),
-        _DetailRow(label: l10n.activityDetailMultisigCreator, value: creatorAddress, valueKind: _DetailValueKind.mono),
-        _DetailRow(label: l10n.activityDetailMultisigCreationFee, value: palletFeeValue),
-        _DetailRow(label: l10n.activityDetailNetworkFee, value: networkFeeValue),
-        _DetailRow(label: l10n.activityDetailDate, value: dateTime),
-        if (txHash != null)
-          _DetailRow(label: l10n.activityDetailTxHash, value: txHash, valueKind: _DetailValueKind.mono),
+        DetailRow(label: l10n.activityDetailMultisigSignerCount, value: '${signers.length}'),
+        DetailRow(label: l10n.activityDetailMultisigCreator, value: creatorAddress, valueKind: DetailValueKind.mono),
+        DetailRow(label: l10n.activityDetailMultisigCreationFee, value: palletFeeValue),
+        DetailRow(label: l10n.activityDetailNetworkFee, value: networkFeeValue),
+        DetailRow(label: l10n.activityDetailDate, value: dateTime),
+        if (txHash != null) DetailRow(label: l10n.activityDetailTxHash, value: txHash, valueKind: DetailValueKind.mono),
       ],
-    );
-  }
-}
-
-enum _DetailValueKind { caption, mono }
-
-Widget _labelValueRow(BuildContext context, String label, Widget value) {
-  return Padding(
-    padding: const EdgeInsets.symmetric(vertical: 8),
-    child: Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(label, style: context.themeTextV3.dataAddress.copyWith(color: context.colorsV3.textMuted)),
-        Flexible(child: value),
-      ],
-    ),
-  );
-}
-
-class _DetailRow extends StatelessWidget {
-  final String label;
-  final String value;
-  final _DetailValueKind valueKind;
-
-  const _DetailRow({required this.label, required this.value, this.valueKind = _DetailValueKind.caption});
-
-  @override
-  Widget build(BuildContext context) {
-    final text = context.themeTextV3;
-    final style = switch (valueKind) {
-      _DetailValueKind.mono => text.dataAddress,
-      _DetailValueKind.caption => text.caption,
-    };
-    return _labelValueRow(
-      context,
-      label,
-      Text(
-        value,
-        textAlign: TextAlign.end,
-        style: style.copyWith(color: context.colorsV3.textContent),
-      ),
     );
   }
 }
@@ -663,6 +614,6 @@ class _StatusRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return _labelValueRow(context, label, Text(value, style: context.themeTextV3.labelChip.copyWith(color: color)));
+    return labelValueRow(context, label, Text(value, style: context.themeTextV3.labelChip.copyWith(color: color)));
   }
 }
