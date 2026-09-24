@@ -283,7 +283,9 @@ class _DetailsSection extends ConsumerWidget {
     }
 
     final counterparty = isSend ? tx.to : tx.from;
-    final address = AddressFormattingService.formatActivityDetailAddress(counterparty);
+    final address = counterparty.isEmpty
+        ? l10n.activityTxCounterpartyUnknown
+        : AddressFormattingService.formatActivityDetailAddress(counterparty);
     final dateTime = DatetimeFormattingService.formatTxDateTime(tx.timestamp);
 
     BigInt? fee;

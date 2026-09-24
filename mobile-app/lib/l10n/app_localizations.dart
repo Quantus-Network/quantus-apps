@@ -2294,6 +2294,12 @@ abstract class AppLocalizations {
   /// **'From'**
   String get activityTxFrom;
 
+  /// Shown instead of an address when the chain cannot say who received a private send
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown'**
+  String get activityTxCounterpartyUnknown;
+
   /// Time label for just now
   ///
   /// In en, this message translates to:

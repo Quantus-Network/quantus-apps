@@ -153,6 +153,10 @@ class WormholeSpend {
     required this.outputs,
   });
 
+  /// Chain order of this spend: exit ids are `<block>-<hash>-<event index>`,
+  /// zero-padded, so the earliest one sorts spends across and within blocks.
+  String get position => outputs.map((o) => o.id).reduce((a, b) => a.compareTo(b) <= 0 ? a : b);
+
   factory WormholeSpend.fromJson(Map<String, dynamic> json) => WormholeSpend(
     extrinsicId: json['extrinsicId'] as String,
     blockHeight: json['blockHeight'] as int,

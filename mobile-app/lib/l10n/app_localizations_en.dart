@@ -1210,6 +1210,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get activityTxFrom => 'From';
 
   @override
+  String get activityTxCounterpartyUnknown => 'Unknown';
+
+  @override
   String get activityTxTimeNow => 'now';
 
   @override

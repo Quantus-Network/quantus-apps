@@ -322,10 +322,15 @@ class TxItemData {
       borderColor: getBorderColor(),
       isSend: isSend,
       amount: tx.amount,
-      counterpartyAddr: AddressFormattingService.formatAddress(isSend ? tx.to : tx.from, prefix: 5, postFix: 3),
+      counterpartyAddr: _counterpartyLabel(isSend ? tx.to : tx.from, l10n),
     );
   }
 }
+
+/// A private send whose proof settled with other transfers has no known recipient.
+String _counterpartyLabel(String address, AppLocalizations l10n) => address.isEmpty
+    ? l10n.activityTxCounterpartyUnknown
+    : AddressFormattingService.formatAddress(address, prefix: 5, postFix: 3);
 
 /// Amount text for a transaction row.
 ///

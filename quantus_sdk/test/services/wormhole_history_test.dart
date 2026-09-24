@@ -36,17 +36,27 @@ WormholeUtxo _received(
   nullifierHex: 'n$id',
 );
 
-/// A proof extrinsic exiting [outputs] (address → scaled amount).
-WormholeSpend _spend(String extrinsicId, {required int block, DateTime? at, required Map<String, int> outputs}) =>
-    WormholeSpend(
-      extrinsicId: extrinsicId,
-      blockHeight: block,
-      timestamp: at ?? _t0,
-      outputs: [
-        for (final e in outputs.entries)
-          WormholeOutput(id: '$extrinsicId-${e.key}', exitAccountId: e.key, amount: wormholeTokenFromScaled(e.value)),
-      ],
-    );
+/// A proof extrinsic exiting [outputs] (address → scaled amount), with exit
+/// ids in the indexer's `<block>-<hash>-<event index>` form starting at [event].
+WormholeSpend _spend(
+  String extrinsicId, {
+  required int block,
+  DateTime? at,
+  required Map<String, int> outputs,
+  int event = 0,
+}) => WormholeSpend(
+  extrinsicId: extrinsicId,
+  blockHeight: block,
+  timestamp: at ?? _t0,
+  outputs: [
+    for (final (i, e) in outputs.entries.indexed)
+      WormholeOutput(
+        id: '${block.toString().padLeft(10, '0')}-00000-${(event + i).toString().padLeft(6, '0')}',
+        exitAccountId: e.key,
+        amount: wormholeTokenFromScaled(e.value),
+      ),
+  ],
+);
 
 List<TransactionEvent> _history(List<WormholeUtxo> received, Map<String, WormholeSpend> spends) => buildWormholeHistory(
   accountId: _account,
@@ -147,6 +157,20 @@ void main() {
     expect(sent.blockNumber, 11);
   });
 
+  test('batches landing in one block merge in event order, whatever their hashes', () {
+    final history = _history(
+      [_received('r1', scaled: 701), _received('r2', scaled: 351)],
+      {
+        'nr1': _spend('0xff', block: 10, event: 2, outputs: {_alice: 700}),
+        'nr2': _spend('0x00', block: 10, event: 7, outputs: {_alice: 300, _change0: 50}),
+      },
+    );
+
+    final sent = history.whereType<WormholeTransferEvent>().single;
+    expect(sent.amount, _scaled(1000));
+    expect(sent.extrinsicHash, '0x00');
+  });
+
   test('sends to the same recipient further apart than the merge window stay separate', () {
     final history = _history(
       [_received('r1', scaled: 701), _received('r2', scaled: 351)],
@@ -215,41 +239,41 @@ void main() {
     expect(incoming - outgoing, unspent.fold(BigInt.zero, (sum, u) => sum + u.amount));
   });
 
-  group('rejects a spend that is not one of this wallet\'s sends', () {
+  group('a spend that is not one of this wallet\'s sends is reported by its inputs, without a recipient', () {
+    WormholeTransferEvent sent(Map<String, int> outputs, {int inputs = 1000}) => _history(
+      [_received('r1', scaled: inputs)],
+      {'nr1': _spend('0xs1', block: 5, outputs: outputs)},
+    ).whereType<WormholeTransferEvent>().single;
+
     test('bundled with another user\'s exit', () {
-      expect(
-        () => _history(
-          [_received('r1', scaled: 1000)],
-          {
-            'nr1': _spend('0xs1', block: 5, outputs: {_alice: 600, _bob: 100}),
-          },
-        ),
-        throwsStateError,
-      );
+      final row = sent({_alice: 600, _bob: 100});
+      expect(row.recipientUnknown, isTrue);
+      expect(row.amount, _scaled(1000));
+      expect(row.fee, BigInt.zero);
     });
 
     test('exiting more than its inputs', () {
-      expect(
-        () => _history(
-          [_received('r1', scaled: 100)],
-          {
-            'nr1': _spend('0xs1', block: 5, outputs: {_alice: 600}),
-          },
-        ),
-        throwsStateError,
-      );
+      final row = sent({_alice: 600}, inputs: 100);
+      expect(row.recipientUnknown, isTrue);
+      expect(row.amount, _scaled(100));
     });
 
     test('paying only itself', () {
-      expect(
-        () => _history(
-          [_received('r1', scaled: 100)],
-          {
-            'nr1': _spend('0xs1', block: 5, outputs: {_change0: 99}),
-          },
-        ),
-        throwsStateError,
+      final row = sent({_change0: 99}, inputs: 100);
+      expect(row.recipientUnknown, isTrue);
+      expect(row.amount, _scaled(1));
+    });
+
+    test('never merges with a neighbouring send', () {
+      final history = _history(
+        [_received('r1', scaled: 1000), _received('r2', scaled: 500)],
+        {
+          'nr1': _spend('0xs1', block: 5, at: _t0, outputs: {_alice: 600, _bob: 100}),
+          'nr2': _spend('0xs2', block: 6, at: _t0.add(const Duration(minutes: 1)), outputs: {_alice: 499}),
+        },
       );
+
+      expect(history.whereType<WormholeTransferEvent>().map((e) => e.recipientUnknown), [false, true]);
     });
   });
 }

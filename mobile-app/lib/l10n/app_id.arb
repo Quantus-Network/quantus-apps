@@ -328,6 +328,7 @@
   "activityTxMultisigLabel": "Multisig",
   "activityTxTo": "Ke",
   "activityTxFrom": "Dari",
+  "activityTxCounterpartyUnknown": "Tidak diketahui",
   "activityTxTimeNow": "sekarang",
   "activityTxTimeMinutesAgo": "{minutes}m lalu",
   "activityTxTimeHoursAgo": "{hours}j lalu",

@@ -1213,6 +1213,9 @@ class AppLocalizationsId extends AppLocalizations {
   String get activityTxFrom => 'Dari';
 
   @override
+  String get activityTxCounterpartyUnknown => 'Tidak diketahui';
+
+  @override
   String get activityTxTimeNow => 'sekarang';
 
   @override

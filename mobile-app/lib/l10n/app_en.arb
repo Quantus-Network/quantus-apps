@@ -1727,6 +1727,10 @@
     "@activityTxFrom": {
       "description": "Counterparty direction label for receive"
     },
+    "activityTxCounterpartyUnknown": "Unknown",
+    "@activityTxCounterpartyUnknown": {
+      "description": "Shown instead of an address when the chain cannot say who received a private send"
+    },
     "activityTxTimeNow": "now",
     "@activityTxTimeNow": {
       "description": "Time label for just now"
