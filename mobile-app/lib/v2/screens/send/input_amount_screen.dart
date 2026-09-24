@@ -260,16 +260,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
               children: [
                 Text(strings.amountRecipientCardLabel, style: text.labelData.copyWith(color: colors.textMuted)),
                 const SizedBox(height: 16),
-                if (_recipientChecksum != null) ...[
-                  Text(
-                    _recipientChecksum!,
-                    style: text.body.copyWith(color: colors.semanticLilac),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 4),
-                ],
-                Text(shortAddr, style: text.dataAddress.copyWith(color: colors.textContent)),
+                AddressCheckphrase(address: shortAddr, checkphrase: _recipientChecksum),
               ],
             ),
           ),

@@ -89,36 +89,38 @@ class _DiscoverMultisigScreenState extends ConsumerState<DiscoverMultisigScreen>
             );
           }
 
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(l10n.multisigAddDiscoveredTitle, style: text.labelData.copyWith(color: colors.textMuted)),
-              const SizedBox(height: 8),
-              Text(l10n.multisigAddDiscoveredSubtitle, style: text.caption.copyWith(color: colors.textMuted)),
-              const SizedBox(height: 24),
-              ListView.separated(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: sorted.length,
-                separatorBuilder: (_, _) => const SizedBox(height: 12),
-                itemBuilder: (context, index) {
-                  final account = sorted[index];
-                  final isAdded = savedIds.contains(account.accountId);
-                  final isAdding = _addingIds.contains(account.accountId);
+          return SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(l10n.multisigAddDiscoveredTitle, style: text.labelData.copyWith(color: colors.textMuted)),
+                const SizedBox(height: 8),
+                Text(l10n.multisigAddDiscoveredSubtitle, style: text.caption.copyWith(color: colors.textMuted)),
+                const SizedBox(height: 24),
+                ListView.separated(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: sorted.length,
+                  separatorBuilder: (_, _) => const SizedBox(height: 12),
+                  itemBuilder: (context, index) {
+                    final account = sorted[index];
+                    final isAdded = savedIds.contains(account.accountId);
+                    final isAdding = _addingIds.contains(account.accountId);
 
-                  return _DiscoverMultisigRow(
-                    key: ValueKey(account.accountId),
-                    account: account,
-                    isAdded: isAdded,
-                    isAdding: isAdding,
-                    addLabel: l10n.multisigAddButton,
-                    addedLabel: l10n.multisigAddedButton,
-                    thresholdLabel: l10n.multisigThresholdOf(account.threshold, account.signers.length),
-                    onAdd: () => _addMultisig(account),
-                  );
-                },
-              ),
-            ],
+                    return _DiscoverMultisigRow(
+                      key: ValueKey(account.accountId),
+                      account: account,
+                      isAdded: isAdded,
+                      isAdding: isAdding,
+                      addLabel: l10n.multisigAddButton,
+                      addedLabel: l10n.multisigAddedButton,
+                      thresholdLabel: l10n.multisigThresholdOf(account.threshold, account.signers.length),
+                      onAdd: () => _addMultisig(account),
+                    );
+                  },
+                ),
+              ],
+            ),
           );
         },
       ),
@@ -209,12 +211,11 @@ class _DiscoverMultisigRowState extends ConsumerState<_DiscoverMultisigRow> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  _checksum ?? l10n.commonLoading,
-                  style: text.body.copyWith(color: _checksum == null ? colors.textMuted : colors.semanticLilac),
+                AddressCheckphrase(
+                  address: address,
+                  checkphrase: _checksum,
+                  placeholder: Text(l10n.commonLoading, style: text.body.copyWith(color: colors.textMuted)),
                 ),
-                const SizedBox(height: 4),
-                Text(address, style: text.dataAddress.copyWith(color: colors.textContent)),
                 const SizedBox(height: 4),
                 Text(widget.thresholdLabel, style: text.caption.copyWith(color: colors.textMuted)),
               ],
