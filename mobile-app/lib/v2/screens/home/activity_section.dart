@@ -6,6 +6,7 @@ import 'package:resonance_network_wallet/v2/components/skeleton.dart';
 import 'package:resonance_network_wallet/models/combined_transactions_list.dart';
 import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/providers/active_account_transactions_provider.dart';
+import 'package:resonance_network_wallet/providers/connectivity_provider.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/currency_display_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
@@ -123,17 +124,19 @@ class _ActivitySectionState extends ConsumerState<ActivitySection> {
           children: [
             Text(l10n.homeActivityErrorLoading, style: text.caption.copyWith(color: colors.semanticEmber)),
             const SizedBox(height: 12),
-            GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: _retry,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                child: Text(
-                  l10n.homeActivityRetry,
-                  style: text.body.copyWith(color: colors.textContent, decoration: TextDecoration.underline),
+            // Offline, a refresh is skipped outright and the banner says why.
+            if (ref.watch(isOnlineProvider))
+              GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: _retry,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  child: Text(
+                    l10n.homeActivityRetry,
+                    style: text.body.copyWith(color: colors.textContent, decoration: TextDecoration.underline),
+                  ),
                 ),
               ),
-            ),
           ],
         ),
       ),
