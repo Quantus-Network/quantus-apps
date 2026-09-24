@@ -309,8 +309,6 @@
   "activityError": "Gagal: {error}",
   "activityNoAccount": "Tidak ada akun",
   "activityEmpty": "Belum ada transaksi",
-  "activityPrivateTotalReceived": "Total Diterima",
-  "activityPrivateTotalSent": "Total Terkirim",
   "activityFilterAll": "Semua",
   "activityFilterSend": "Kirim",
   "activityFilterReceive": "Terima",

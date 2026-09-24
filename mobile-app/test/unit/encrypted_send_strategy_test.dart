@@ -13,23 +13,26 @@ WormholeUtxo _utxo(int scaled) => WormholeUtxo(
   transfer: WormholeTransfer(
     id: 't$scaled',
     blockHeight: 1,
+    timestamp: DateTime(2026),
     fromId: 'from',
     toId: 'to',
     amount: wormholeTokenFromScaled(scaled),
     toHash: '0x00',
     leafIndex: BigInt.from(scaled),
     transferCount: BigInt.one,
+    extrinsicId: '',
   ),
   owner: const WormholeAddressInfo(index: 0, address: 'addr', secretHex: '0x00'),
   nullifierHex: '0xn$scaled',
 );
 
 EncryptedAccountState _state(List<WormholeUtxo> utxos) => EncryptedAccountState(
+  accountId: 'addr',
+  ownAddresses: const {'addr'},
+  received: utxos,
+  spends: const {},
   utxos: utxos,
   pendingChangeToken: BigInt.zero,
-  totalReceivedToken: BigInt.zero,
-  changeReceivedToken: BigInt.zero,
-  totalSpentToken: BigInt.zero,
   nextIndex: 0,
   nextChangeIndex: 0,
 );

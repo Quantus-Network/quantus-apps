@@ -2180,18 +2180,6 @@ abstract class AppLocalizations {
   /// **'No transactions yet'**
   String get activityEmpty;
 
-  /// Label for total received in encrypted account activity summary
-  ///
-  /// In en, this message translates to:
-  /// **'Total Received'**
-  String get activityPrivateTotalReceived;
-
-  /// Label for total sent in encrypted account activity summary
-  ///
-  /// In en, this message translates to:
-  /// **'Total Sent'**
-  String get activityPrivateTotalSent;
-
   /// Filter button for all transactions
   ///
   /// In en, this message translates to:

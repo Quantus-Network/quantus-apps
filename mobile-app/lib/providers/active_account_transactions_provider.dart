@@ -7,9 +7,12 @@ import 'package:resonance_network_wallet/providers/account_id_list_cache.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/controllers/unified_pagination_controller.dart';
 import 'package:resonance_network_wallet/providers/filtered_all_transactions_provider.dart';
+import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 
+/// Null for encrypted accounts: their history is rebuilt whole from the
+/// wormhole scan ([encryptedHistoryProvider]) and never paged.
 FilteredTransactionsParams? activeAccountFilteredParams(DisplayAccount? activeAccount, TransactionFilter filter) {
-  if (activeAccount == null) return null;
+  if (activeAccount == null || isEncryptedAccount(activeAccount.account)) return null;
   return FilteredTransactionsParams(
     accountIds: AccountIdListCache.get([activeAccount.account.accountId]),
     filter: filter,
@@ -51,6 +54,12 @@ final activeAccountTransactionsProvider = Provider.family<AsyncValue<CombinedTra
     data: (activeAccount) {
       if (activeAccount == null) {
         return AsyncValue.data(CombinedTransactionsList.empty);
+      }
+      final account = activeAccount.account;
+      if (isEncryptedAccount(account)) {
+        return ref
+            .watch(encryptedHistoryProvider((account as Account).walletIndex))
+            .whenData((history) => CombinedTransactionsList.empty.copyWith(otherTransfers: history));
       }
       final params = activeAccountFilteredParams(activeAccount, filter)!;
       return ref.watch(filteredTransactionsProviderFamily(params));

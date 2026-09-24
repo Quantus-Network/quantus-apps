@@ -33,12 +33,14 @@ WormholeUtxo _utxo(int scaled, {int index = 0, bool isChange = false, String? nu
   transfer: WormholeTransfer(
     id: 't$scaled',
     blockHeight: 1,
+    timestamp: DateTime(2026),
     fromId: 'from',
     toId: isChange ? changeAddressAt(index) : addressAt(index),
     amount: wormholeTokenFromScaled(scaled),
     toHash: '0x00',
     leafIndex: BigInt.from(scaled),
     transferCount: BigInt.one,
+    extrinsicId: '',
   ),
   // secretHex blank like production getUnspentUtxos (M11): spenders re-derive.
   owner: WormholeAddressInfo(
@@ -89,13 +91,11 @@ class _FakeDiscovery extends AccountDiscoveryService {
       addressAt(0) == changeAddressAt(0) ? usedChange : used;
 }
 
+WormholeSpend _spend() =>
+    WormholeSpend(extrinsicId: '0xe', blockHeight: 2, timestamp: DateTime(2026), outputs: const []);
+
 class _FakeUtxoService extends WormholeUtxoService {
-  WormholeUtxoResult result = WormholeUtxoResult(
-    utxos: const [],
-    totalReceivedToken: BigInt.zero,
-    changeReceivedToken: BigInt.zero,
-    totalSpentToken: BigInt.zero,
-  );
+  WormholeUtxoResult result = const WormholeUtxoResult(received: [], spends: {});
 
   /// When set, [getUnspentUtxos] blocks until the completer resolves — lets
   /// tests race a slow load() against logout.
@@ -253,18 +253,19 @@ void main() {
       discovery.used = {0};
       discovery.usedChange = {0};
       utxoService.result = WormholeUtxoResult(
-        utxos: [_utxo(500, nullifierHex: '0xc')],
-        totalReceivedToken: wormholeTokenFromScaled(500),
-        changeReceivedToken: BigInt.zero,
-        totalSpentToken: BigInt.zero,
+        received: [
+          _utxo(100, nullifierHex: '0xa'),
+          _utxo(500, nullifierHex: '0xc'),
+        ],
+        spends: {'0xa': _spend()},
       );
       await seedState(
         nextIndex: 1,
         nextChangeIndex: 1,
         pendingSpends: [
           PendingSpend(
-            // '0xa' is absent from the unspent set (spent on-chain) and the
-            // change address (change index 0) is discovered: fully confirmed.
+            // '0xa' is reported spent on-chain and the change address (change
+            // index 0) is discovered: fully confirmed.
             nullifiers: ['0xa'],
             changeAddress: changeAddressAt(0),
             changeAmountToken: wormholeTokenFromScaled(100),
@@ -285,13 +286,11 @@ void main() {
       utxoService.result = WormholeUtxoResult(
         // '0xb' is still reported unspent by the indexer (the spend hasn't
         // been indexed yet) so the record must be kept and '0xb' hidden.
-        utxos: [
+        received: [
           _utxo(300, nullifierHex: '0xb'),
           _utxo(500, nullifierHex: '0xc'),
         ],
-        totalReceivedToken: wormholeTokenFromScaled(800),
-        changeReceivedToken: BigInt.zero,
-        totalSpentToken: BigInt.zero,
+        spends: const {},
       );
       await seedState(
         nextIndex: 1,
@@ -315,10 +314,8 @@ void main() {
     test('drops an expired pending spend even when unconfirmed', () async {
       discovery.used = {0};
       utxoService.result = WormholeUtxoResult(
-        utxos: [_utxo(300, nullifierHex: '0xb')],
-        totalReceivedToken: wormholeTokenFromScaled(300),
-        changeReceivedToken: BigInt.zero,
-        totalSpentToken: BigInt.zero,
+        received: [_utxo(300, nullifierHex: '0xb')],
+        spends: const {},
       );
       await seedState(
         nextIndex: 1,
@@ -569,21 +566,17 @@ void main() {
   });
 
   group('EncryptedAccountState', () {
-    EncryptedAccountState stateWith({
-      List<WormholeUtxo> utxos = const [],
-      BigInt? pendingChangeToken,
-      BigInt? totalReceivedToken,
-      BigInt? changeReceivedToken,
-      BigInt? totalSpentToken,
-    }) => EncryptedAccountState(
-      utxos: utxos,
-      pendingChangeToken: pendingChangeToken ?? BigInt.zero,
-      totalReceivedToken: totalReceivedToken ?? BigInt.zero,
-      changeReceivedToken: changeReceivedToken ?? BigInt.zero,
-      totalSpentToken: totalSpentToken ?? BigInt.zero,
-      nextIndex: 2,
-      nextChangeIndex: 1,
-    );
+    EncryptedAccountState stateWith({List<WormholeUtxo> utxos = const [], BigInt? pendingChangeToken}) =>
+        EncryptedAccountState(
+          accountId: addressAt(0),
+          ownAddresses: {addressAt(0)},
+          received: utxos,
+          spends: const {},
+          utxos: utxos,
+          pendingChangeToken: pendingChangeToken ?? BigInt.zero,
+          nextIndex: 2,
+          nextChangeIndex: 1,
+        );
 
     test('balance includes pending change', () {
       final state = stateWith(utxos: [_utxo(100), _utxo(200)], pendingChangeToken: wormholeTokenFromScaled(50));
@@ -596,34 +589,18 @@ void main() {
       final state = stateWith(utxos: utxos, pendingChangeToken: wormholeTokenFromScaled(50));
       expect(state.maxSendable, wormholeMaxSendable(utxos));
     });
-
-    test('incomingToken excludes change received and balances against spent', () {
-      // Received 1000 externally + 300 as returning change, 400 nullified:
-      // the indexed balance identity is incoming + change - spent.
-      final state = stateWith(
-        utxos: [_utxo(900)],
-        totalReceivedToken: wormholeTokenFromScaled(1300),
-        changeReceivedToken: wormholeTokenFromScaled(300),
-        totalSpentToken: wormholeTokenFromScaled(400),
-      );
-      expect(state.incomingToken, wormholeTokenFromScaled(1000));
-      expect(state.incomingToken + state.changeReceivedToken - state.totalSpentToken, state.balance);
-    });
   });
 
   group('WormholeUtxoResult', () {
-    test('carries totals alongside utxos', () {
-      final utxos = [_utxo(100), _utxo(200)];
+    test('utxos are the received transfers without a spend', () {
       final result = WormholeUtxoResult(
-        utxos: utxos,
-        totalReceivedToken: wormholeTokenFromScaled(500),
-        changeReceivedToken: wormholeTokenFromScaled(120),
-        totalSpentToken: wormholeTokenFromScaled(200),
+        received: [
+          _utxo(100, nullifierHex: '0xa'),
+          _utxo(200, nullifierHex: '0xb'),
+        ],
+        spends: {'0xa': _spend()},
       );
-      expect(result.utxos.length, 2);
-      expect(result.totalReceivedToken, wormholeTokenFromScaled(500));
-      expect(result.changeReceivedToken, wormholeTokenFromScaled(120));
-      expect(result.totalSpentToken, wormholeTokenFromScaled(200));
+      expect(result.utxos.map((u) => u.nullifierHex), ['0xb']);
     });
   });
 }

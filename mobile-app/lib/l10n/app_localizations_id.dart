@@ -1156,12 +1156,6 @@ class AppLocalizationsId extends AppLocalizations {
   String get activityEmpty => 'Belum ada transaksi';
 
   @override
-  String get activityPrivateTotalReceived => 'Total Diterima';
-
-  @override
-  String get activityPrivateTotalSent => 'Total Terkirim';
-
-  @override
   String get activityFilterAll => 'Semua';
 
   @override

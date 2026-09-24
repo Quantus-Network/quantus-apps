@@ -112,6 +112,8 @@ class _TransactionDetailSheet extends ConsumerWidget {
       transactionType = 'multisig-created';
     } else if (isMinerReward) {
       transactionType = 'miner-rewards';
+    } else if (tx.isWormhole) {
+      transactionType = 'wormhole';
     } else if (tx.isReversibleScheduled) {
       transactionType = 'scheduled-reversible-transactions';
     } else if (tx.isReversibleExecuted) {

@@ -1153,12 +1153,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get activityEmpty => 'No transactions yet';
 
   @override
-  String get activityPrivateTotalReceived => 'Total Received';
-
-  @override
-  String get activityPrivateTotalSent => 'Total Sent';
-
-  @override
   String get activityFilterAll => 'All';
 
   @override
