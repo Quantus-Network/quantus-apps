@@ -4,12 +4,17 @@ import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 
 enum DetailValueKind { caption, mono }
 
-/// An amount with the token symbol, as detail rows show it.
-String formatTokenAmount(AppLocalizations l10n, NumberFormattingService formattingService, BigInt value) =>
-    l10n.commonAmountBalance(
-      formattingService.formatBalance(value, smartDecimals: AppConstants.decimals),
-      AppConstants.tokenSymbol,
-    );
+/// An amount with the token symbol, as detail rows show it: full precision
+/// unless [smartDecimals] trims it.
+String formatTokenAmount(
+  AppLocalizations l10n,
+  NumberFormattingService formattingService,
+  BigInt value, {
+  int smartDecimals = AppConstants.decimals,
+}) => l10n.commonAmountBalance(
+  formattingService.formatBalance(value, smartDecimals: smartDecimals),
+  AppConstants.tokenSymbol,
+);
 
 /// A muted mono [label] on the left and [value] on the right.
 Widget labelValueRow(BuildContext context, String label, Widget value) {

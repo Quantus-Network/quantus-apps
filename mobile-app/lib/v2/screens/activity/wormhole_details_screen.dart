@@ -22,7 +22,7 @@ class WormholeDetailsScreen extends ConsumerWidget {
     final text = context.themeTextV3;
     final batches = send.batches;
 
-    String amount(BigInt value) => formatTokenAmount(l10n, formattingService, value);
+    String amount(BigInt value) => formatTokenAmount(l10n, formattingService, value, smartDecimals: 4);
 
     return ScaffoldBase(
       appBar: V2AppBar(title: l10n.activityDetailWormholeDetails),
