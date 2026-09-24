@@ -92,7 +92,7 @@ class _FakeDiscovery extends AccountDiscoveryService {
 }
 
 WormholeSpend _spend() =>
-    WormholeSpend(extrinsicId: '0xe', blockHeight: 2, timestamp: DateTime(2026), outputs: const []);
+    WormholeSpend(extrinsicId: '0xe', blockHeight: 2, timestamp: DateTime(2026), outputs: const [], nullifierCount: 1);
 
 class _FakeUtxoService extends WormholeUtxoService {
   WormholeUtxoResult result = const WormholeUtxoResult(received: [], spends: {});

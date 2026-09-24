@@ -139,17 +139,21 @@ class WormholeOutput {
   Map<String, dynamic> toJson() => {'id': id, 'exitAccountId': exitAccountId, 'amount': amount.toString()};
 }
 
-/// The proof extrinsic that consumed a nullifier, with every exit it paid.
+/// The proof extrinsic that consumed a nullifier, with every exit it paid and
+/// the number of nullifiers it consumed in total — compared with the wallet's
+/// own, it tells whether the proof also carried other users' inputs.
 class WormholeSpend {
   final String extrinsicId;
   final int blockHeight;
   final DateTime timestamp;
+  final int nullifierCount;
   final List<WormholeOutput> outputs;
 
   const WormholeSpend({
     required this.extrinsicId,
     required this.blockHeight,
     required this.timestamp,
+    required this.nullifierCount,
     required this.outputs,
   });
 
@@ -161,6 +165,7 @@ class WormholeSpend {
     extrinsicId: json['extrinsicId'] as String,
     blockHeight: json['blockHeight'] as int,
     timestamp: DateTime.parse(json['timestamp'] as String),
+    nullifierCount: json['nullifierCount'] as int,
     outputs: [for (final o in json['outputs'] as List<dynamic>) WormholeOutput.fromJson(o as Map<String, dynamic>)],
   );
 
@@ -168,6 +173,7 @@ class WormholeSpend {
     'extrinsicId': extrinsicId,
     'blockHeight': blockHeight,
     'timestamp': timestamp.toIso8601String(),
+    'nullifierCount': nullifierCount,
     'outputs': outputs.map((o) => o.toJson()).toList(),
   };
 }
@@ -202,10 +208,10 @@ class WormholeUtxoService {
 
   /// Generation of both on-disk caches; bump on any format change. v3 keys the
   /// files by network as well as address, so Planck-era files are dropped
-  /// instead of being read against mainnet; v4 records each transfer's
+  /// instead of being read against mainnet; v5 records each transfer's
   /// timestamp and extrinsic and each spent nullifier's spend.
   @visibleForTesting
-  static const int cacheVersion = 4;
+  static const int cacheVersion = 5;
   static const int _nullifierBatchSize = 300;
   static const int _reorgDepth = 180;
 
@@ -469,6 +475,30 @@ $_transferSelection
 
   // --- GraphQL queries ---
 
+  /// Posts [query] and returns the rows of its [field]; HTTP and GraphQL
+  /// errors throw.
+  Future<List<Map<String, dynamic>>> _graphQlRows(
+    String label,
+    String query,
+    Map<String, dynamic> variables,
+    String field,
+  ) async {
+    final sw = Stopwatch()..start();
+    final response = await _graphQlEndpoint.post(body: jsonEncode({'query': query, 'variables': variables}));
+    _log('$label query: status=${response.statusCode} elapsed=${sw.elapsedMilliseconds}ms');
+    if (response.statusCode != 200) {
+      _log('$label query FAILED: ${response.body}');
+      throw Exception('Subsquid $label request failed ${response.statusCode}: ${response.body}');
+    }
+    final parsed = jsonDecode(response.body) as Map<String, dynamic>;
+    if (parsed['errors'] != null) {
+      final msgs = (parsed['errors'] as List).map((e) => (e as Map)['message']).join('; ');
+      _log('$label query GraphQL errors: $msgs');
+      throw Exception('GraphQL errors: $msgs');
+    }
+    return ((parsed['data']?[field] as List<dynamic>?) ?? const []).cast<Map<String, dynamic>>();
+  }
+
   /// One page of transfers to [toAddress] above [afterBlock], in
   /// `(block_height, id)` order. With [after] set, only rows strictly after
   /// that cursor are returned.
@@ -491,36 +521,10 @@ $_transferSelection
       variables['cursorId'] = after.id;
     }
 
-    final body = jsonEncode({'query': document, 'variables': variables});
-
-    _log(
-      '=== TRANSFERS QUERY ===\n'
-      'limit=$limit afterBlock=$afterBlock cursor=$after',
-    );
-
-    final sw = Stopwatch()..start();
-    final response = await _graphQlEndpoint.post(body: body);
-    final elapsed = sw.elapsedMilliseconds;
-    _log('transfers query: status=${response.statusCode} cursor=$after elapsed=${elapsed}ms');
-
-    if (response.statusCode != 200) {
-      _log('transfers query FAILED: ${response.body}');
-      throw Exception('Subsquid request failed ${response.statusCode}: ${response.body}');
-    }
-
-    final parsed = jsonDecode(response.body) as Map<String, dynamic>;
-    if (parsed['errors'] != null) {
-      final msgs = (parsed['errors'] as List).map((e) => (e as Map)['message']).join('; ');
-      _log('transfers query GraphQL errors: $msgs');
-      throw Exception('GraphQL errors: $msgs');
-    }
-
-    final transfers = parsed['data']?['transfers'] as List<dynamic>?;
-    final count = transfers?.length ?? 0;
-    _log('transfers query: received $count transfers (${elapsed}ms)');
-    if (transfers == null || transfers.isEmpty) return [];
-
-    return transfers.map((t) => WormholeTransfer.fromJson(t as Map<String, dynamic>)).toList();
+    _log('transfers query: limit=$limit afterBlock=$afterBlock cursor=$after');
+    final rows = await _graphQlRows('transfers', document, variables, 'transfers');
+    _log('transfers query: received ${rows.length} transfers');
+    return rows.map(WormholeTransfer.fromJson).toList();
   }
 
   /// Walks every transfer to [toAddress] above [afterBlock] by following the
@@ -574,43 +578,41 @@ query SpentNullifiers($hashes: [String!]!) {
   }
 }''';
 
-    final body = jsonEncode({
-      'query': query,
-      'variables': {'hashes': nullifierHashes},
-    });
-
     _log('nullifiers query: ${nullifierHashes.length} hashes');
-    final sw = Stopwatch()..start();
-    final response = await _graphQlEndpoint.post(body: body);
-    final elapsed = sw.elapsedMilliseconds;
-    _log('nullifiers query: status=${response.statusCode} elapsed=${elapsed}ms');
-
-    if (response.statusCode != 200) {
-      _log('nullifiers query FAILED: ${response.body}');
-      throw Exception('Subsquid nullifiers request failed ${response.statusCode}: ${response.body}');
-    }
-
-    final parsed = jsonDecode(response.body) as Map<String, dynamic>;
-    if (parsed['errors'] != null) {
-      final msgs = (parsed['errors'] as List).map((e) => (e as Map)['message']).join('; ');
-      _log('nullifiers query GraphQL errors: $msgs');
-      throw Exception('GraphQL errors: $msgs');
-    }
-
-    final results = parsed['data']?['wormholeNullifiers'] as List<dynamic>?;
+    final rows = await _graphQlRows('nullifiers', query, {'hashes': nullifierHashes}, 'wormholeNullifiers');
+    final counts = await _queryNullifierCounts(rows.map((m) => m['extrinsicId'] as String).toSet().toList());
     final found = <String, WormholeSpend>{};
-    for (final r in results ?? const []) {
-      final m = r as Map<String, dynamic>;
+    for (final m in rows) {
+      final extrinsicId = m['extrinsicId'] as String;
       final outputs = (m['wormholeExtrinsic'] as Map<String, dynamic>)['outputs'] as List<dynamic>;
       found[m['nullifierHash'] as String] = WormholeSpend(
-        extrinsicId: m['extrinsicId'] as String,
+        extrinsicId: extrinsicId,
         blockHeight: (m['block'] as Map<String, dynamic>)['height'] as int,
         timestamp: DateTime.parse(m['timestamp'] as String),
+        nullifierCount: counts[extrinsicId]!,
         outputs: [for (final o in outputs) WormholeOutput.fromJson(o as Map<String, dynamic>)],
       );
     }
-    _log('nullifiers query: ${found.length} spent out of ${nullifierHashes.length} queried (${elapsed}ms)');
+    _log('nullifiers query: ${found.length} spent out of ${nullifierHashes.length} queried');
     return found;
+  }
+
+  /// Total nullifiers consumed by each of [extrinsicIds], the wallet's and
+  /// anyone else's whose proof was bundled into the same extrinsic.
+  Future<Map<String, int>> _queryNullifierCounts(List<String> extrinsicIds) async {
+    if (extrinsicIds.isEmpty) return {};
+    const query = r'''
+query NullifierCounts($ids: [String!]!) {
+  wormholeNullifiers: wormhole_nullifier(where: { wormhole_extrinsic_id: {_in: $ids} }, limit: 10000) {
+    extrinsicId: wormhole_extrinsic_id
+  }
+}''';
+    final rows = await _graphQlRows('nullifier counts', query, {'ids': extrinsicIds}, 'wormholeNullifiers');
+    final counts = <String, int>{};
+    for (final m in rows) {
+      counts.update(m['extrinsicId'] as String, (n) => n + 1, ifAbsent: () => 1);
+    }
+    return counts;
   }
 
   /// Returns a map from nullifier hex to the spend that consumed it. Callers

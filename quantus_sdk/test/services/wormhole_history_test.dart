@@ -37,17 +37,21 @@ WormholeUtxo _received(
 );
 
 /// A proof extrinsic exiting [outputs] (address → scaled amount), with exit
-/// ids in the indexer's `<block>-<hash>-<event index>` form starting at [event].
+/// ids in the indexer's `<block>-<hash>-<event index>` form starting at [event]
+/// and [nullifierCount] inputs consumed in total (one, this wallet's, unless
+/// the proof also carried someone else's).
 WormholeSpend _spend(
   String extrinsicId, {
   required int block,
   DateTime? at,
   required Map<String, int> outputs,
   int event = 0,
+  int nullifierCount = 1,
 }) => WormholeSpend(
   extrinsicId: extrinsicId,
   blockHeight: block,
   timestamp: at ?? _t0,
+  nullifierCount: nullifierCount,
   outputs: [
     for (final (i, e) in outputs.entries.indexed)
       WormholeOutput(
@@ -221,6 +225,44 @@ void main() {
       expect(row.recipientUnknown, isTrue);
       expect(row.amount, _scaled(1000));
       expect(row.fee, BigInt.zero);
+    });
+
+    test('carrying another user\'s input, even when its exits look like one of our sends', () {
+      // Our 1000 in, 600 to alice, 399 change — and a stranger's segment pays
+      // 1 unit into our address. Outputs alone would pass as our send.
+      final history = _history(
+        [
+          _received('r1', scaled: 1000),
+          _received('c1', to: _change0, scaled: 399, from: wormholeMintingAddress, extrinsicId: '0xs1', block: 5),
+          _received('p1', to: _external1, scaled: 1, from: wormholeMintingAddress, extrinsicId: '0xs1', block: 5),
+        ],
+        {
+          'nr1': _spend('0xs1', block: 5, nullifierCount: 2, outputs: {_alice: 600, _change0: 399, _external1: 1}),
+        },
+      );
+
+      expect(history.map((e) => e.id), unorderedEquals(['0xs1', 'r1', 'c1', 'p1']));
+      final row = history.whereType<WormholeTransferEvent>().singleWhere((e) => e.from == _account);
+      expect(row.recipientUnknown, isTrue);
+      expect(row.amount, _scaled(1000));
+    });
+
+    test('a proof of only our inputs is our send, whatever it splits change into', () {
+      final history = _history(
+        [
+          _received('r1', scaled: 1000),
+          _received('c1', to: _change0, scaled: 399, from: wormholeMintingAddress, extrinsicId: '0xs1', block: 5),
+          _received('c2', to: _external1, scaled: 1, from: wormholeMintingAddress, extrinsicId: '0xs1', block: 5),
+        ],
+        {
+          'nr1': _spend('0xs1', block: 5, outputs: {_alice: 600, _change0: 399, _external1: 1}),
+        },
+      );
+
+      expect(history.map((e) => e.id), unorderedEquals(['0xs1', 'r1']));
+      final sent = history.whereType<WormholeTransferEvent>().single;
+      expect(sent.to, _alice);
+      expect(sent.fee, BigInt.zero);
     });
 
     test('exiting more than its inputs', () {

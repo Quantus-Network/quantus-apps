@@ -98,7 +98,7 @@ void main() {
   });
 
   test('caches are generation-versioned so a network switch never reads the previous chain', () {
-    expect(WormholeUtxoService.cacheVersion, 4);
+    expect(WormholeUtxoService.cacheVersion, 5);
   });
 
   test('keyset walk returns every row once, including same-height siblings on the page boundary', () async {

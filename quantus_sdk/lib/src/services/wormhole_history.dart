@@ -45,17 +45,22 @@ class _Batch {
   bool get attributed => recipient != null;
 }
 
-/// A send of this wallet exits to exactly one address that is not its own,
-/// plus optional change. Anything else (an aggregated proof carrying other
-/// users' inputs and exits, or an exit larger than our inputs) is reported by
-/// the full amount our inputs contributed, with no recipient; nothing in such
-/// a proof is taken for change, so a payment to us inside it stays a receipt.
-_Batch _batch(WormholeSpend spend, BigInt inputsToken, Set<String> ownAddresses) {
+/// A send of this wallet is a proof that consumed only this wallet's inputs
+/// ([ownNullifiers] of them) and exits to exactly one address that is not its
+/// own, plus optional change — every exit then came from our inputs, so the
+/// ones to our own addresses are change. Anything else (a proof that also
+/// carried other users' inputs, or an exit larger than our inputs) is
+/// reported by the full amount our inputs contributed, with no recipient;
+/// nothing in such a proof is taken for change, so a payment to us inside it
+/// stays a receipt.
+_Batch _batch(WormholeSpend spend, int ownNullifiers, BigInt inputsToken, Set<String> ownAddresses) {
   final change = spend.outputs
       .where((o) => ownAddresses.contains(o.exitAccountId))
       .fold(BigInt.zero, (sum, o) => sum + o.amount);
   final foreign = spend.outputs.where((o) => !ownAddresses.contains(o.exitAccountId)).toList();
-  if (foreign.length == 1 && inputsToken - foreign.single.amount - change >= BigInt.zero) {
+  if (spend.nullifierCount == ownNullifiers &&
+      foreign.length == 1 &&
+      inputsToken - foreign.single.amount - change >= BigInt.zero) {
     final sent = foreign.single.amount;
     return _Batch(
       spend: spend,
@@ -66,7 +71,8 @@ _Batch _batch(WormholeSpend spend, BigInt inputsToken, Set<String> ownAddresses)
   }
   quantusPrint(
     '[WormholeHistory] Spend ${spend.extrinsicId} is not a single send of this wallet '
-    '(${foreign.length} exits to other addresses, $inputsToken of inputs): reporting it without a recipient',
+    '($ownNullifiers of ${spend.nullifierCount} inputs ours, ${foreign.length} exits to other addresses, '
+    '$inputsToken of inputs): reporting it without a recipient',
   );
   return _Batch(spend: spend, recipient: null, sentToken: inputsToken, feeToken: BigInt.zero);
 }
@@ -85,14 +91,17 @@ List<TransactionEvent> buildWormholeHistory({
 }) {
   final spendByExtrinsic = <String, WormholeSpend>{};
   final inputsByExtrinsic = <String, BigInt>{};
+  final ownNullifiersByExtrinsic = <String, int>{};
   for (final utxo in received) {
     final spend = spends[utxo.nullifierHex];
     if (spend == null) continue;
     spendByExtrinsic[spend.extrinsicId] = spend;
     inputsByExtrinsic.update(spend.extrinsicId, (sum) => sum + utxo.amount, ifAbsent: () => utxo.amount);
+    ownNullifiersByExtrinsic.update(spend.extrinsicId, (n) => n + 1, ifAbsent: () => 1);
   }
   final batches = [
-    for (final spend in spendByExtrinsic.values) _batch(spend, inputsByExtrinsic[spend.extrinsicId]!, ownAddresses),
+    for (final MapEntry(key: id, value: spend) in spendByExtrinsic.entries)
+      _batch(spend, ownNullifiersByExtrinsic[id]!, inputsByExtrinsic[id]!, ownAddresses),
   ];
   final changeExtrinsics = {
     for (final batch in batches)

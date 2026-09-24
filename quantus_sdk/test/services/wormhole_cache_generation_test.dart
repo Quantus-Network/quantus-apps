@@ -22,7 +22,13 @@ const _prefix = '0123456789abcdef';
 const _planck = 'aaaaaaaaaaaaaaaa';
 const _mainnet = 'bbbbbbbbbbbbbbbb';
 final _v = WormholeUtxoService.cacheVersion;
-final _spend = WormholeSpend(extrinsicId: '0xe', blockHeight: 1, timestamp: DateTime.utc(2026), outputs: const []);
+final _spend = WormholeSpend(
+  extrinsicId: '0xe',
+  blockHeight: 1,
+  timestamp: DateTime.utc(2026),
+  outputs: const [],
+  nullifierCount: 1,
+);
 final _spendJson = jsonEncode(_spend.toJson());
 
 /// Discovery bound to a chain whose genesis hash starts with [networkId]. The
