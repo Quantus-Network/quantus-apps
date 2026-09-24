@@ -34,7 +34,7 @@ class _ImportWalletScreenState extends State<ImportWalletScreen> {
   final _buttonKey = GlobalKey();
   bool _isLoading = false;
   String? _error;
-  ColdAccount? _account = ColdAccount(label: 'Account 1', index: 0, scheme: DilithiumSchemeExtension.current);
+  ColdAccount? _account = ColdAccount(label: 'Account 1', index: 0, scheme: ColdAccount.newAccountScheme);
 
   @override
   void initState() {

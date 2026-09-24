@@ -6,8 +6,9 @@ import 'package:quantus_cold_wallet/components/scheme_picker.dart';
 import 'package:quantus_cold_wallet/models/cold_account.dart';
 
 /// Chooses which account a seed phrase derives: the signature scheme (which sets
-/// the derivation path's trailing index), an account index that fills the
-/// wallet's template, or a full path typed out for a seed created elsewhere.
+/// the derivation path's trailing index) on screen, and under ADVANCED an
+/// account index that fills the wallet's template, or a full path typed out for
+/// a seed created elsewhere.
 class DerivationField extends StatefulWidget {
   final ValueChanged<ColdAccount?> onChanged;
 
@@ -19,10 +20,10 @@ class DerivationField extends StatefulWidget {
 
 class _DerivationFieldState extends State<DerivationField> {
   final _index = TextEditingController(text: '0');
-  final _path = TextEditingController(text: HdWalletService.pathForIndex(0, DilithiumSchemeExtension.current));
+  final _path = TextEditingController(text: HdWalletService.pathForIndex(0, ColdAccount.newAccountScheme));
   bool _useFullPath = false;
   bool _userEditedPath = false;
-  DilithiumScheme _scheme = DilithiumSchemeExtension.current;
+  DilithiumScheme _scheme = ColdAccount.newAccountScheme;
 
   @override
   void initState() {
@@ -39,7 +40,7 @@ class _DerivationFieldState extends State<DerivationField> {
   }
 
   ColdAccount? get _account => _useFullPath
-      ? ColdAccount.atPath(_path.text, label: 'Account 1', defaultScheme: _scheme)
+      ? ColdAccount.atPath(_path.text, label: 'Account 1', scheme: _scheme)
       : ColdAccount.atIndexText(_index.text, scheme: _scheme);
 
   void _emit() => widget.onChanged(_account);
@@ -73,46 +74,59 @@ class _DerivationFieldState extends State<DerivationField> {
     final text = context.themeTextV3;
     final account = _account;
 
-    return AdvancedSection(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         SchemePicker(value: _scheme, onChanged: _setScheme),
         const SizedBox(height: 16),
-        if (!_useFullPath)
-          TextField(
-            controller: _index,
-            keyboardType: TextInputType.number,
-            inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(9)],
-            style: text.body.copyWith(color: colors.textContent),
-            decoration: InputDecoration(
-              labelText: 'Account index',
-              labelStyle: text.caption.copyWith(color: colors.textMuted),
+        AdvancedSection(
+          children: [
+            if (!_useFullPath)
+              TextField(
+                controller: _index,
+                keyboardType: TextInputType.number,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(9)],
+                style: text.body.copyWith(color: colors.textContent),
+                decoration: InputDecoration(
+                  labelText: 'Account index',
+                  labelStyle: text.caption.copyWith(color: colors.textMuted),
+                ),
+              )
+            else
+              TextField(
+                controller: _path,
+                autocorrect: false,
+                enableSuggestions: false,
+                onChanged: (path) {
+                  _userEditedPath = true;
+                  // Typing a path whose last element names a scheme snaps the picker
+                  // to it; picking afterwards overrides it.
+                  final named = ColdAccount.schemeOfPath(path);
+                  if (named == null || named == _scheme) return;
+                  setState(() => _scheme = named);
+                  _emit();
+                },
+                style: text.body.copyWith(color: colors.textContent),
+                decoration: InputDecoration(
+                  labelText: 'Derivation path',
+                  labelStyle: text.caption.copyWith(color: colors.textMuted),
+                ),
+              ),
+            const SizedBox(height: 8),
+            Text(
+              account == null ? 'Not a valid derivation' : account.derivationPath,
+              style: text.caption.copyWith(color: account == null ? colors.semanticEmber : colors.textMuted),
             ),
-          )
-        else
-          TextField(
-            controller: _path,
-            autocorrect: false,
-            enableSuggestions: false,
-            onChanged: (_) => _userEditedPath = true,
-            style: text.body.copyWith(color: colors.textContent),
-            decoration: InputDecoration(
-              labelText: 'Derivation path',
-              labelStyle: text.caption.copyWith(color: colors.textMuted),
+            const SizedBox(height: 8),
+            GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: _toggleFullPath,
+              child: Text(
+                _useFullPath ? 'Use an account index instead' : 'Use a full derivation path',
+                style: text.caption.copyWith(color: colors.accentFlare),
+              ),
             ),
-          ),
-        const SizedBox(height: 8),
-        Text(
-          account == null ? 'Not a valid derivation' : account.derivationPath,
-          style: text.caption.copyWith(color: account == null ? colors.semanticEmber : colors.textMuted),
-        ),
-        const SizedBox(height: 8),
-        GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: _toggleFullPath,
-          child: Text(
-            _useFullPath ? 'Use an account index instead' : 'Use a full derivation path',
-            style: text.caption.copyWith(color: colors.accentFlare),
-          ),
+          ],
         ),
       ],
     );

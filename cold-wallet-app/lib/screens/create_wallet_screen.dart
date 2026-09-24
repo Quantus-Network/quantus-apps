@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:quantus_cold_wallet/components/advanced_section.dart';
 import 'package:quantus_cold_wallet/components/scheme_picker.dart';
 import 'package:quantus_cold_wallet/models/cold_account.dart';
 import 'package:quantus_cold_wallet/screens/set_password_screen.dart';
@@ -14,7 +13,7 @@ class CreateWalletScreen extends StatefulWidget {
 
 class _CreateWalletScreenState extends State<CreateWalletScreen> {
   List<String>? _words;
-  DilithiumScheme _scheme = DilithiumSchemeExtension.current;
+  DilithiumScheme _scheme = ColdAccount.newAccountScheme;
 
   @override
   void initState() {
@@ -68,7 +67,7 @@ class _CreateWalletScreenState extends State<CreateWalletScreen> {
                       children: [
                         MnemonicGrid(words: words, isRevealed: true),
                         const SizedBox(height: 24),
-                        _advancedSection(context),
+                        SchemePicker(value: _scheme, onChanged: (scheme) => setState(() => _scheme = scheme)),
                       ],
                     ),
                   ),
@@ -78,14 +77,6 @@ class _CreateWalletScreenState extends State<CreateWalletScreen> {
       bottomContent: ScaffoldBaseBottomContent(
         child: QuantusButton.simple(label: "I've written it down", onTap: words == null ? null : _continue),
       ),
-    );
-  }
-
-  /// Signature-scheme choice, collapsed by default so ordinary users never see
-  /// it. New wallets stay ML-DSA-65 unless the user opts into ML-DSA-87 here.
-  Widget _advancedSection(BuildContext context) {
-    return AdvancedSection(
-      children: [SchemePicker(value: _scheme, onChanged: (scheme) => setState(() => _scheme = scheme))],
     );
   }
 }

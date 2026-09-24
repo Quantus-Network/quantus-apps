@@ -45,7 +45,11 @@ class SegmentedControls<T> extends StatelessWidget {
                   bottom: 0,
                   width: segmentWidth,
                   child: Container(
-                    decoration: BoxDecoration(color: colors.bgSurface2, borderRadius: radius.smBorder),
+                    decoration: BoxDecoration(
+                      color: colors.bgSurface2,
+                      borderRadius: radius.smBorder,
+                      border: Border.all(color: colors.borderEmphasis),
+                    ),
                   ),
                 ),
                 Row(

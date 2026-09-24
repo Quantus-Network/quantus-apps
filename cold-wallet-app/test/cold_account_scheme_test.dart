@@ -25,45 +25,19 @@ void main() {
       expect(a65.derivationPath, isNot(a87.derivationPath));
     });
 
-    test('atPath infers the scheme from a template path', () {
+    test('atPath uses the chosen scheme whatever the path ends in', () {
       final p65 = HdWalletService.pathForIndex(3, DilithiumScheme.mlDsa65);
-      final p87 = HdWalletService.pathForIndex(3, DilithiumScheme.mlDsa87);
-      expect(
-        ColdAccount.atPath(p65, label: 'x', defaultScheme: DilithiumScheme.mlDsa87)!.scheme,
-        DilithiumScheme.mlDsa65,
-      );
-      expect(
-        ColdAccount.atPath(p87, label: 'x', defaultScheme: DilithiumScheme.mlDsa65)!.scheme,
-        DilithiumScheme.mlDsa87,
-      );
+      expect(ColdAccount.atPath(p65, label: 'x', scheme: DilithiumScheme.mlDsa87)!.scheme, DilithiumScheme.mlDsa87);
+      final custom = ColdAccount.atPath("m/44'/1'/0'", label: 'x', scheme: DilithiumScheme.mlDsa65)!;
+      expect(custom.scheme, DilithiumScheme.mlDsa65);
+      expect(custom.derivationPath, "m/44'/1'/0'");
+      expect(custom.templateIndex, isNull);
     });
 
-    test('atPath falls back to the default scheme for a foreign path', () {
-      final account = ColdAccount.atPath("m/44'/1'/0'", label: 'x', defaultScheme: DilithiumScheme.mlDsa65);
-      expect(account!.scheme, DilithiumScheme.mlDsa65);
-      expect(account.templateIndex, isNull);
-    });
-
-    test('at one index, current scheme sorts before legacy', () {
-      final accounts = [
-        ColdAccount(label: 'legacy', index: 0, scheme: DilithiumScheme.mlDsa87),
-        ColdAccount(label: 'current', index: 0, scheme: DilithiumScheme.mlDsa65),
-      ]..sort(ColdAccount.compareByDerivation);
-      expect(accounts.map((a) => a.label), ['current', 'legacy']);
-    });
-
-    test('walletScheme grows current once any current account is held', () {
-      expect(
-        ColdAccount.walletScheme([ColdAccount(label: 'a', index: 0, scheme: DilithiumScheme.mlDsa87)]),
-        DilithiumScheme.mlDsa87,
-      );
-      expect(
-        ColdAccount.walletScheme([
-          ColdAccount(label: 'a', index: 0, scheme: DilithiumScheme.mlDsa87),
-          ColdAccount(label: 'b', index: 0, scheme: DilithiumScheme.mlDsa65),
-        ]),
-        DilithiumScheme.mlDsa65,
-      );
+    test('schemeOfPath reads the scheme a last element names', () {
+      expect(ColdAccount.schemeOfPath("m/44'/1'/1'"), DilithiumScheme.mlDsa65);
+      expect(ColdAccount.schemeOfPath("m/44'/1'/0'"), DilithiumScheme.mlDsa87);
+      expect(ColdAccount.schemeOfPath("m/44'/1'/2'"), isNull);
     });
   });
 }
