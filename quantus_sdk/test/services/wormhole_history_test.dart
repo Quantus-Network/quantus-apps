@@ -197,6 +197,13 @@ void main() {
       expect(sent.timestamp, last.timestamp);
       expect(sent.blockNumber, 11);
       expect(history.map((e) => e.id), unorderedEquals(['0xs2', _id(1, 0), _id(1, 1)]));
+      // Every batch stays inspectable: its extrinsic, the inputs it consumed
+      // and how it split them.
+      expect(sent.batches.map((b) => b.extrinsicId), ['0xs1', '0xs2']);
+      expect(sent.batches.map((b) => b.inputs.single.nullifierHex), ['n1', 'n2']);
+      expect(sent.batches.map((b) => b.sentToken), [_scaled(700), _scaled(300)]);
+      expect(sent.batches.last.changeToken, _scaled(50));
+      expect(sent.batches.map((b) => b.feeToken), [_scaled(1), _scaled(1)]);
     });
 
     test('landing in one block, in event order whatever their hashes', () {

@@ -1323,6 +1323,23 @@ class AppLocalizationsId extends AppLocalizations {
   String get activityDetailNetworkFee => 'BIAYA JARINGAN';
 
   @override
+  String get activityDetailWormholeDetails => 'Detail wormhole';
+
+  @override
+  String wormholeDetailsBatch(int index, int count) {
+    return 'Batch $index dari $count';
+  }
+
+  @override
+  String get wormholeDetailsSent => 'TERKIRIM';
+
+  @override
+  String get wormholeDetailsChange => 'KEMBALIAN';
+
+  @override
+  String get wormholeDetailsInputs => 'INPUT';
+
+  @override
   String get activityDetailTxHash => 'HASH TX';
 
   @override

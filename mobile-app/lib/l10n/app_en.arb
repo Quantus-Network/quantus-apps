@@ -1890,6 +1890,34 @@
     "@activityDetailNetworkFee": {
       "description": "Network fee row label on detail sheet"
     },
+    "activityDetailWormholeDetails": "Wormhole details",
+    "@activityDetailWormholeDetails": {
+      "description": "Row in a private send's detail sheet, and title of the page listing its proof batches and nullifiers"
+    },
+    "wormholeDetailsBatch": "Batch {index} of {count}",
+    "@wormholeDetailsBatch": {
+      "description": "Heading of one proof extrinsic of a private send",
+      "placeholders": {
+        "index": {
+          "type": "int"
+        },
+        "count": {
+          "type": "int"
+        }
+      }
+    },
+    "wormholeDetailsSent": "SENT",
+    "@wormholeDetailsSent": {
+      "description": "Amount one batch of a private send paid the recipient"
+    },
+    "wormholeDetailsChange": "CHANGE",
+    "@wormholeDetailsChange": {
+      "description": "Amount one batch of a private send returned to the wallet"
+    },
+    "wormholeDetailsInputs": "INPUTS",
+    "@wormholeDetailsInputs": {
+      "description": "Number of the wallet's leaves one batch consumed; each is listed by nullifier below"
+    },
     "activityDetailTxHash": "TX HASH",
     "@activityDetailTxHash": {
       "description": "Transaction hash row label on detail sheet"
