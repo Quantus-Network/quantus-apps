@@ -26,6 +26,7 @@ class FirebaseMessagingService {
   final SenotiService _senotiService = SenotiService();
 
   bool _isInitialized = false;
+  bool _permissionRequested = false;
   bool _hasRegisteredHandlers = false;
   String? _cachedToken;
 
@@ -52,7 +53,7 @@ class FirebaseMessagingService {
   Future<void> init() async {
     if (_isInitialized) return;
 
-    final authorizationStatus = await _requestPermission();
+    final authorizationStatus = await _authorizationStatus();
     if (authorizationStatus != AuthorizationStatus.authorized) {
       quantusPrint('FCM permission not authorized');
       return;
@@ -66,6 +67,14 @@ class FirebaseMessagingService {
     _setupBackgroundMessageListener();
 
     _isInitialized = true;
+  }
+
+  /// Prompts once per process; later calls only read the setting, so a config
+  /// sync never re-prompts while a grant made in system settings still lands.
+  Future<AuthorizationStatus> _authorizationStatus() async {
+    if (_permissionRequested) return (await _messaging.getNotificationSettings()).authorizationStatus;
+    _permissionRequested = true;
+    return _requestPermission();
   }
 
   /// Request notification permissions (required for iOS, Android 13+).

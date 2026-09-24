@@ -172,14 +172,15 @@ Future<WidgetRef> pumpRef(WidgetTester tester, {List<Override> overrides = const
 }
 
 class FakeRemoteConfigService extends RemoteConfigService {
-  FakeRemoteConfigService(this.config);
+  FakeRemoteConfigService(this.config, {this.remote});
   final RemoteConfigModel config;
+  final RemoteConfigModel? remote;
 
   @override
   RemoteConfigModel readLocalConfig() => config;
 
   @override
-  Future<RemoteConfigModel?> readRemoteConfig() async => null;
+  Future<RemoteConfigModel?> readRemoteConfig() async => remote;
 
   @override
   Future<void> cacheConfig(Object json) async {}

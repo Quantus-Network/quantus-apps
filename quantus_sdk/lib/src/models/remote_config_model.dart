@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 class RemoteConfigModel {
   final bool enableTestButtons;
   final bool enableKeystoneHardwareWallet;
@@ -76,39 +78,9 @@ class RemoteConfigModel {
     );
   }
 
-  bool compare(RemoteConfigModel other) {
-    return match(
-      fn:
-          (
-            enableTestButtons,
-            enableKeystoneHardwareWallet,
-            enableHighSecurity,
-            enableRemoteNotifications,
-            enableSwap,
-            enableEncryptedAccount,
-            enableMultisig,
-          ) {
-            return other.match(
-              fn:
-                  (
-                    otherEnableTestButtons,
-                    otherEnableKeystoneHardwareWallet,
-                    otherEnableHighSecurity,
-                    otherEnableRemoteNotifications,
-                    otherEnableSwap,
-                    otherEnableEncryptedAccount,
-                    otherEnableMultisig,
-                  ) {
-                    return enableTestButtons == otherEnableTestButtons &&
-                        enableKeystoneHardwareWallet == otherEnableKeystoneHardwareWallet &&
-                        enableHighSecurity == otherEnableHighSecurity &&
-                        enableRemoteNotifications == otherEnableRemoteNotifications &&
-                        enableSwap == otherEnableSwap &&
-                        enableEncryptedAccount == otherEnableEncryptedAccount &&
-                        enableMultisig == otherEnableMultisig;
-                  },
-            );
-          },
-    );
-  }
+  @override
+  bool operator ==(Object other) => other is RemoteConfigModel && mapEquals(toCacheJson(), other.toCacheJson());
+
+  @override
+  int get hashCode => Object.hashAll(toCacheJson().values);
 }
