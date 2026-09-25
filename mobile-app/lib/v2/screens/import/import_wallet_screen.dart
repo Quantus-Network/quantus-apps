@@ -132,31 +132,33 @@ class _ImportWalletScreenV2State extends ConsumerState<ImportWalletScreenV2> {
     } catch (e) {
       quantusPrint('error discovering accounts: $e');
       TelemetryService().sendError('Error discovering accounts', error: e);
-      // Discovery is best-effort, but an old ML-DSA-87 seed must still yield its
-      // funded root account even when the indexer is unreachable.
-      await _addLegacyRootFallback(mnemonic);
+      // Discovery is best-effort, but a seed whose root was created under
+      // another scheme must still yield that funded root account even when the
+      // indexer is unreachable.
+      await _addOtherSchemeRootsFallback(mnemonic);
     }
   }
 
-  Future<void> _addLegacyRootFallback(String mnemonic) async {
+  Future<void> _addOtherSchemeRootsFallback(String mnemonic) async {
     try {
-      const legacy = DilithiumSchemeExtension.legacy;
-      final path = HdWalletService.pathForIndex(0, legacy);
-      final key = HdWalletService().keyPairAtPath(mnemonic, path, legacy);
       final existing = (await _accountsService.getAccounts()).map((e) => e.accountId).toSet();
-      if (existing.contains(key.ss58Address)) return;
-      await _accountsService.addAccount(
-        Account.derived(
-          walletIndex: widget.walletIndex,
-          index: 0,
-          name: 'Account ${existing.length + 1}',
-          keypair: key,
-          derivationPath: path,
-        ),
-      );
+      for (final scheme in DilithiumScheme.values.where((s) => s != DilithiumSchemeExtension.current)) {
+        final path = HdWalletService.pathForIndex(0, scheme);
+        final key = HdWalletService().keyPairAtPath(mnemonic, path, scheme);
+        if (!existing.add(key.ss58Address)) continue;
+        await _accountsService.addAccount(
+          Account.derived(
+            walletIndex: widget.walletIndex,
+            index: 0,
+            name: 'Account ${existing.length}',
+            keypair: key,
+            derivationPath: path,
+          ),
+        );
+      }
       invalidateAccountProviders(ref);
     } catch (e) {
-      quantusPrint('legacy root fallback failed: $e');
+      quantusPrint('other-scheme root fallback failed: $e');
     }
   }
 

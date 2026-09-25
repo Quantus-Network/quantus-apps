@@ -46,11 +46,11 @@ void main() {
       onChain,
     ).discoverAccounts(mnemonic: mnemonic, walletIndex: 0);
 
-    // Current scheme first (65 at index 0), then legacy by index (87 at 0 and 2).
+    // Current scheme first by index (87 at 0 and 2), then the other scheme (65 at 0).
     expect(discovered.map((a) => (a.scheme, a.index)).toList(), [
-      (DilithiumScheme.mlDsa65, 0),
       (DilithiumScheme.mlDsa87, 0),
       (DilithiumScheme.mlDsa87, 2),
+      (DilithiumScheme.mlDsa65, 0),
     ]);
     for (final account in discovered) {
       expect(account.accountId, address(account.index, account.scheme!));
@@ -58,15 +58,15 @@ void main() {
     }
   });
 
-  test('discovery finds legacy accounts even when the current-scheme root is empty', () async {
-    final onChain = {address(1, DilithiumScheme.mlDsa87)};
+  test('discovery finds ML-DSA-65 accounts even when the current-scheme root is empty', () async {
+    final onChain = {address(1, DilithiumScheme.mlDsa65)};
     final discovered = await _FakeDiscovery(
       HdWalletService(),
       onChain,
     ).discoverAccounts(mnemonic: mnemonic, walletIndex: 0);
 
     expect(discovered, hasLength(1));
-    expect(discovered.single.scheme, DilithiumScheme.mlDsa87);
+    expect(discovered.single.scheme, DilithiumScheme.mlDsa65);
     expect(discovered.single.index, 1);
   });
 }
