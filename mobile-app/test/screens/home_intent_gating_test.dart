@@ -7,6 +7,7 @@ import 'package:resonance_network_wallet/models/fiat_currency.dart';
 import 'package:resonance_network_wallet/providers/active_account_transactions_provider.dart';
 import 'package:resonance_network_wallet/providers/currency_display_provider.dart';
 import 'package:resonance_network_wallet/providers/local_auth_provider.dart';
+import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
 import 'package:resonance_network_wallet/providers/route_intent_providers.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/services/exchange_rate_service.dart';
@@ -24,6 +25,7 @@ void main() {
     WidgetTester tester, {
     required FakeSettingsService settings,
     required TestLocalAuthController auth,
+    bool enableSwap = true,
   }) async {
     await tester.pumpApp(
       const HomeScreen(),
@@ -43,6 +45,11 @@ void main() {
         backupReminderWalletIndexProvider.overrideWithValue(null),
         exchangeRateServiceProvider.overrideWithValue(ExchangeRateService(rates: {})),
         balancesServiceProvider.overrideWithValue(FakeBalancesService()),
+        substrateServiceProvider.overrideWithValue(FakeSubstrateService()),
+        remoteConfigProvider.overrideWith(
+          (ref) =>
+              RemoteConfigNotifier(FakeRemoteConfigService(RemoteConfigModel.fromJson({'enableSwap': enableSwap}))),
+        ),
       ],
     );
     // Let the active account and multisig list finish their async load.
@@ -50,15 +57,19 @@ void main() {
     return ProviderScope.containerOf(tester.element(find.byType(HomeScreen)));
   }
 
-  testWidgets('home actions show receive and send, and swap per the flag', (tester) async {
-    final settings = FakeSettingsService(activeAccount: RegularAccount(makeAccount(1)));
-    final auth = TestLocalAuthController(authenticated: true);
-    await pumpHome(tester, settings: settings, auth: auth);
+  for (final enableSwap in [true, false]) {
+    testWidgets('home actions show receive and send, and swap when remote config enableSwap is $enableSwap', (
+      tester,
+    ) async {
+      final settings = FakeSettingsService(activeAccount: RegularAccount(makeAccount(1)));
+      final auth = TestLocalAuthController(authenticated: true);
+      await pumpHome(tester, settings: settings, auth: auth, enableSwap: enableSwap);
 
-    expect(find.text('Receive'), findsOneWidget);
-    expect(find.text('Send'), findsOneWidget);
-    expect(find.text('Swap'), AppConstants.showSwapButton ? findsOneWidget : findsNothing);
-  });
+      expect(find.text('Receive'), findsOneWidget);
+      expect(find.text('Send'), findsOneWidget);
+      expect(find.text('Swap'), enableSwap ? findsOneWidget : findsNothing);
+    });
+  }
 
   testWidgets('intent arriving while locked stays queued and drains on unlock', (tester) async {
     final settings = FakeSettingsService(activeAccount: RegularAccount(makeAccount(1)));

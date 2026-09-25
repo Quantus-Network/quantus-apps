@@ -2,12 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:quantus_cold_wallet/components/scheme_picker.dart';
 import 'package:quantus_cold_wallet/models/cold_account.dart';
 import 'package:quantus_cold_wallet/providers/wallet_providers.dart';
 import 'package:quantus_cold_wallet/screens/add_account_screen.dart';
 
-/// The Add Account screen opens on the wallet's own scheme, and ADVANCED lets
-/// each new account pick the other one; the index and label follow the choice.
+/// The Add Account screen opens on ML-DSA-87 with the signature type choice on
+/// screen; picking ML-DSA-65 moves the index and label with it.
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -36,12 +37,11 @@ void main() {
   testWidgets('an ML-DSA-87 wallet opens on 87 and can add a 65 account', (tester) async {
     await pumpScreen(tester, [ColdAccount(label: 'Account 1', index: 0, scheme: DilithiumScheme.mlDsa87)]);
 
-    expect(find.text('ML-DSA-65'), findsNothing);
+    expect(find.text('ADVANCED'), findsNothing);
+    expect(find.text('ML-DSA-65'), findsOneWidget);
     expect(find.text(HdWalletService.pathForIndex(1, DilithiumScheme.mlDsa87)), findsOneWidget);
     expect(find.text('Account 2'), findsOneWidget);
 
-    await tester.tap(find.text('ADVANCED'));
-    await settle(tester);
     await tester.tap(find.text('ML-DSA-65'));
     await settle(tester);
 
@@ -50,16 +50,43 @@ void main() {
     expect(find.text('Account 2'), findsOneWidget);
   });
 
-  testWidgets('an ML-DSA-65 wallet opens on 65 and can add an 87 account', (tester) async {
+  testWidgets('an ML-DSA-65 wallet still opens on 87 and can add another 65 account', (tester) async {
     await pumpScreen(tester, [ColdAccount(label: 'Account 1', index: 0, scheme: DilithiumScheme.mlDsa65)]);
 
-    expect(find.text(HdWalletService.pathForIndex(1, DilithiumScheme.mlDsa65)), findsOneWidget);
-
-    await tester.tap(find.text('ADVANCED'));
-    await settle(tester);
-    await tester.tap(find.text('ML-DSA-87'));
-    await settle(tester);
-
     expect(find.text(HdWalletService.pathForIndex(0, DilithiumScheme.mlDsa87)), findsOneWidget);
+
+    await tester.tap(find.text('ML-DSA-65'));
+    await settle(tester);
+
+    expect(find.text(HdWalletService.pathForIndex(1, DilithiumScheme.mlDsa65)), findsOneWidget);
+    expect(find.text('Account 2'), findsOneWidget);
+  });
+
+  testWidgets('a typed path ending in 1\' snaps the picker to ML-DSA-65', (tester) async {
+    await pumpScreen(tester, [ColdAccount(label: 'Account 1', index: 0, scheme: DilithiumScheme.mlDsa87)]);
+
+    await tester.tap(find.text('Derivation path'));
+    await settle(tester);
+    await tester.enterText(find.byType(TextField), "m/44'/1'/1'");
+    await settle(tester);
+
+    expect(tester.widget<SchemePicker>(find.byType(SchemePicker)).value, DilithiumScheme.mlDsa65);
+    expect(find.text("m/44'/1'/1'"), findsWidgets);
+  });
+
+  testWidgets('ML-DSA-65 picked after typing a path ending in 0\' keeps the path', (tester) async {
+    await pumpScreen(tester, [ColdAccount(label: 'Account 1', index: 0, scheme: DilithiumScheme.mlDsa87)]);
+
+    await tester.tap(find.text('Derivation path'));
+    await settle(tester);
+    await tester.enterText(find.byType(TextField), "m/44'/1'/0'");
+    await settle(tester);
+    expect(tester.widget<SchemePicker>(find.byType(SchemePicker)).value, DilithiumScheme.mlDsa87);
+
+    await tester.tap(find.text('ML-DSA-65'));
+    await settle(tester);
+
+    expect(tester.widget<SchemePicker>(find.byType(SchemePicker)).value, DilithiumScheme.mlDsa65);
+    expect(tester.widget<TextField>(find.byType(TextField)).controller!.text, "m/44'/1'/0'");
   });
 }

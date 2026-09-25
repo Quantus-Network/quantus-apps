@@ -11,8 +11,21 @@ class AppConstants {
   // static const List<String> rpcEndpoints = ['http://127.0.0.1:9944']; // local testing
   // static const List<String> graphQlEndpoints = ['http://127.0.0.1:4350/v1/graphql']; // local testing
 
-  static const List<String> rpcEndpoints = ['https://rpc1-mainnet.quantus.com', 'https://rpc2-mainnet.quantus.com'];
-  static const List<String> graphQlEndpoints = ['https://sqm.quantus.com/v1/graphql'];
+  // Points the wallet at the Planck testnet instead of mainnet, for local
+  // testing only: `flutter run --dart-define=RUN_ON_TESTNET=true`, or flip the
+  // default while testing. Never check in `true`.
+  static const bool runOnTestnet = bool.fromEnvironment('RUN_ON_TESTNET');
+
+  static const List<String> mainnetRpcEndpoints = [
+    'https://rpc1-mainnet.quantus.com',
+    'https://rpc2-mainnet.quantus.com',
+  ];
+  static const List<String> mainnetGraphQlEndpoints = ['https://sqm.quantus.com/v1/graphql'];
+  static const List<String> testnetRpcEndpoints = ['https://a1-planck.quantus.cat', 'https://a2-planck.quantus.cat'];
+  static const List<String> testnetGraphQlEndpoints = ['https://sub2.quantus.com/v1/graphql'];
+
+  static const List<String> rpcEndpoints = runOnTestnet ? testnetRpcEndpoints : mainnetRpcEndpoints;
+  static const List<String> graphQlEndpoints = runOnTestnet ? testnetGraphQlEndpoints : mainnetGraphQlEndpoints;
 
   static const String quersiEndpoint = 'https://qrc-1.quantus.com/api';
 
@@ -108,9 +121,6 @@ class AppConstants {
   // Shows an outcome picker on the Airdrop entry screen in debug builds so
   // every rewards state can be walked through without a mining wallet.
   static const bool debugMiningRewards = true;
-
-  // Home swap action. Off while app review requires swap gone; flip to true to bring it back.
-  static const bool showSwapButton = false;
 
   // Valid SS58 address returned/filled by debug buttons so address-entry flows
   // (send, swap, add hardware account) can be exercised in the simulator where

@@ -1153,12 +1153,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get activityEmpty => 'No transactions yet';
 
   @override
-  String get activityPrivateTotalReceived => 'Total Received';
-
-  @override
-  String get activityPrivateTotalSent => 'Total Sent';
-
-  @override
   String get activityFilterAll => 'All';
 
   @override
@@ -1214,6 +1208,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get activityTxFrom => 'From';
+
+  @override
+  String get activityTxAggregatedBatch => 'Aggregated batch';
+
+  @override
+  String get activityDetailAggregatedBatch => 'Aggregated batch, recipient not recorded';
 
   @override
   String get activityTxTimeNow => 'now';
@@ -1318,6 +1318,23 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get activityDetailNetworkFee => 'NETWORK FEE';
+
+  @override
+  String get activityDetailWormholeDetails => 'Wormhole details';
+
+  @override
+  String wormholeDetailsBatch(int index, int count) {
+    return 'Batch $index of $count';
+  }
+
+  @override
+  String get wormholeDetailsSent => 'SENT';
+
+  @override
+  String get wormholeDetailsChange => 'CHANGE';
+
+  @override
+  String get wormholeDetailsInputs => 'INPUTS';
 
   @override
   String get activityDetailTxHash => 'TX HASH';
@@ -1570,6 +1587,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get swapTitle => 'Swap';
+
+  @override
+  String get swapPoweredBy => 'Powered By';
 
   @override
   String get swapFrom => 'From';

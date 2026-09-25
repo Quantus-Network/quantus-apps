@@ -99,12 +99,12 @@ final encryptedSpendableProvider = Provider.family<AsyncValue<BigInt>, int>((ref
   return ref.watch(encryptedStateProvider(walletIndex)).whenData((s) => s.maxSendable);
 });
 
-final encryptedTotalReceivedProvider = Provider.family<AsyncValue<BigInt>, int>((ref, walletIndex) {
-  return ref.watch(encryptedStateProvider(walletIndex)).whenData((s) => s.totalReceivedToken);
-});
-
-final encryptedTotalSpentProvider = Provider.family<AsyncValue<BigInt>, int>((ref, walletIndex) {
-  return ref.watch(encryptedStateProvider(walletIndex)).whenData((s) => s.totalSpentToken);
+/// Activity of a wallet's encrypted account, newest first. A poll reload keeps
+/// the last snapshot on screen instead of flashing the loading state.
+final encryptedHistoryProvider = Provider.family<AsyncValue<List<TransactionEvent>>, int>((ref, walletIndex) {
+  final state = ref.watch(encryptedStateProvider(walletIndex));
+  final settled = state.isLoading && state.hasValue ? AsyncValue.data(state.requireValue) : state;
+  return settled.whenData((s) => s.history());
 });
 
 bool isEncryptedAccount(BaseAccount? account) => account is Account && account.accountType == AccountType.encrypted;

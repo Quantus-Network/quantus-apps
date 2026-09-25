@@ -156,11 +156,7 @@ class _EncryptedSendProgressScreenState extends ConsumerState<EncryptedSendProgr
           const SizedBox(height: 16),
           Text(amountLabel, style: text.amountHero.copyWith(color: colors.textContent)),
           const SizedBox(height: 16),
-          if (widget.terminal.recipientChecksum != null) ...[
-            Text(widget.terminal.recipientChecksum!, style: text.body.copyWith(color: colors.semanticLilac)),
-            const SizedBox(height: 4),
-          ],
-          Text(shortAddr, style: text.dataAddress.copyWith(color: colors.textContent)),
+          AddressCheckphrase(address: shortAddr, checkphrase: widget.terminal.recipientChecksum),
         ],
       ),
     );

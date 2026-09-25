@@ -75,18 +75,11 @@ class SendTerminalScreen extends ConsumerWidget {
                     style: text.bodyEmphasis.copyWith(color: colors.textContent),
                   ),
                   const SizedBox(height: 16),
-                  if (checksum != null && checksum.isNotEmpty) ...[
-                    Text(
-                      checksum,
-                      textAlign: TextAlign.center,
-                      style: text.body.copyWith(color: colors.semanticLilac),
-                    ),
-                    const SizedBox(height: 4),
-                  ],
-                  Text(
-                    shortAddr,
+                  AddressCheckphrase(
+                    address: shortAddr,
+                    checkphrase: checksum,
+                    addressStyle: text.dataAddressLarge.copyWith(color: colors.textContent),
                     textAlign: TextAlign.center,
-                    style: text.dataAddressLarge.copyWith(color: colors.textContent),
                   ),
                   if (signaturesLabel != null) ...[
                     const SizedBox(height: 32),

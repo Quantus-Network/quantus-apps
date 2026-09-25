@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart' hide ScaffoldBase;
@@ -48,7 +50,7 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
       await _accountsService.addAccount(accountToSave);
 
       invalidateAccountProviders(ref);
-      ref.read(firebaseMessagingServiceProvider).insertNewAddress(accountToSave.accountId);
+      unawaited(registerForRemoteNotificationsBestEffort(ref.read, insertAddress: accountToSave.accountId));
 
       if (mounted) returnToAccountsScreen(context, ref, highlightAccountId: accountToSave.accountId);
     } catch (e, st) {

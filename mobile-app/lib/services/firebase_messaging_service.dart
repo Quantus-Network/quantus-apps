@@ -12,6 +12,7 @@ import 'package:resonance_network_wallet/services/history_polling_manager.dart';
 import 'package:resonance_network_wallet/services/telemetry_service.dart';
 import 'package:resonance_network_wallet/services/transaction_service.dart';
 import 'package:resonance_network_wallet/shared/utils/print.dart';
+import 'package:resonance_network_wallet/shared/utils/provider_reader.dart';
 
 /// Top-level handler for background/terminated FCM messages.
 /// Must be a top-level function (not a class method) for Firebase.
@@ -22,10 +23,12 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 
 class FirebaseMessagingService {
   final Ref _ref;
-  final FirebaseMessaging _messaging = FirebaseMessaging.instance;
+  FirebaseMessaging get _messaging => FirebaseMessaging.instance;
   final SenotiService _senotiService = SenotiService();
 
   bool _isInitialized = false;
+  bool _permissionRequested = false;
+  bool _authorized = false;
   bool _hasRegisteredHandlers = false;
   String? _cachedToken;
 
@@ -33,8 +36,11 @@ class FirebaseMessagingService {
 
   String get _platform => Platform.operatingSystem;
 
-  /// Returns the cached FCM device token, fetching from Firebase if not yet available.
+  /// Returns the cached FCM device token, fetching from Firebase if not yet
+  /// available. Null until the user has granted notifications: without that
+  /// consent no token is requested and no address reaches the push backend.
   Future<String?> getDeviceToken() async {
+    if (!_authorized) return null;
     if (_cachedToken != null) return _cachedToken;
 
     try {
@@ -52,8 +58,8 @@ class FirebaseMessagingService {
   Future<void> init() async {
     if (_isInitialized) return;
 
-    final authorizationStatus = await _requestPermission();
-    if (authorizationStatus != AuthorizationStatus.authorized) {
+    _authorized = await _authorizationStatus() == AuthorizationStatus.authorized;
+    if (!_authorized) {
       quantusPrint('FCM permission not authorized');
       return;
     }
@@ -66,6 +72,14 @@ class FirebaseMessagingService {
     _setupBackgroundMessageListener();
 
     _isInitialized = true;
+  }
+
+  /// Prompts once per process; later calls only read the setting, so a config
+  /// sync never re-prompts while a grant made in system settings still lands.
+  Future<AuthorizationStatus> _authorizationStatus() async {
+    if (_permissionRequested) return (await _messaging.getNotificationSettings()).authorizationStatus;
+    _permissionRequested = true;
+    return _requestPermission();
   }
 
   /// Request notification permissions (required for iOS, Android 13+).
@@ -232,23 +246,29 @@ final firebaseMessagingServiceProvider = Provider<FirebaseMessagingService>((ref
   return FirebaseMessagingService(ref);
 });
 
-/// Best-effort push-notification registration for onboarding entry points.
-///
-/// This must never block or abort wallet creation/import. Reading
-/// [firebaseMessagingServiceProvider] constructs a [FirebaseMessagingService],
-/// whose field initializer touches `FirebaseMessaging.instance` synchronously;
-/// that throws when Firebase has not been initialized yet (it is initialized
-/// lazily once remote notifications are enabled). Tapping immediately after
-/// launch could therefore throw and skip navigation, so the provider read and
-/// every subsequent call are wrapped here and all failures are swallowed.
+/// Requests the permission, registers the device and wires the message and
+/// tap handlers. Idempotent; failures are logged, never thrown.
+Future<void> enableRemoteNotifications(ProviderReader read) async {
+  try {
+    final service = read(firebaseMessagingServiceProvider);
+    await service.init();
+    service.setupNotificationTapHandlers();
+  } catch (e) {
+    quantusPrint('Failed to enable remote notifications: $e');
+    TelemetryService().sendError('fcm_enable_remote_notifications_failed', error: e);
+  }
+}
+
+/// Registers this device (or one new address) for push notifications, and
+/// never throws: registration must not fail the account flow that calls it.
 ///
 /// When [insertAddress] is non-null, the address is registered for push
 /// notifications on the existing device; otherwise the device itself is
 /// registered for the first time.
-Future<void> registerForRemoteNotificationsBestEffort(WidgetRef ref, {String? insertAddress}) async {
+Future<void> registerForRemoteNotificationsBestEffort(ProviderReader read, {String? insertAddress}) async {
   try {
-    if (!ref.read(remoteConfigProvider).enableRemoteNotifications) return;
-    final service = ref.read(firebaseMessagingServiceProvider);
+    if (!read(remoteConfigProvider).enableRemoteNotifications) return;
+    final service = read(firebaseMessagingServiceProvider);
     if (insertAddress != null) {
       await service.insertNewAddress(insertAddress);
     } else {

@@ -22,12 +22,14 @@ List<WormholeTransfer> _boundarySiblingTransfers() {
         blockHeight: (i >= firstSibling && i <= firstSibling + 2)
             ? _siblingHeight
             : (i < firstSibling ? i + 1 : _siblingHeight + 1 + (i - firstSibling - 3)),
+        timestamp: DateTime(2026),
         fromId: 'from',
         toId: _dest,
         amount: BigInt.from(1000000000000),
         toHash: '',
         leafIndex: BigInt.from(i),
         transferCount: BigInt.from(i),
+        extrinsicId: '',
       ),
   ];
 }
@@ -96,7 +98,7 @@ void main() {
   });
 
   test('caches are generation-versioned so a network switch never reads the previous chain', () {
-    expect(WormholeUtxoService.cacheVersion, 3);
+    expect(WormholeUtxoService.cacheVersion, 6);
   });
 
   test('keyset walk returns every row once, including same-height siblings on the page boundary', () async {

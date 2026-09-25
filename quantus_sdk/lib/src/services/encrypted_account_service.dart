@@ -5,26 +5,33 @@ import 'dart:typed_data';
 
 import 'package:convert/convert.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:quantus_sdk/src/models/transaction_event.dart';
 import 'package:quantus_sdk/src/services/account_discovery_service.dart';
 import 'package:quantus_sdk/src/services/hd_wallet_service.dart';
 import 'package:quantus_sdk/src/services/substrate_service.dart' show getAccountId32;
 import 'package:quantus_sdk/src/services/wormhole_coin_selection.dart';
+import 'package:quantus_sdk/src/services/wormhole_history.dart';
 import 'package:quantus_sdk/src/services/wormhole_send_service.dart';
 import 'package:quantus_sdk/src/services/wormhole_utxo_service.dart';
 import 'package:quantus_sdk/src/utils/print.dart';
 
 typedef MnemonicGetter = Future<String?> Function();
 
-/// Snapshot of an encrypted account: spendable UTXOs across all discovered
-/// wormhole addresses, plus change that has been submitted but not yet indexed.
+/// Snapshot of an encrypted account: everything the indexer holds for its
+/// wormhole addresses, the spendable remainder, and change that has been
+/// submitted but not yet indexed.
 class EncryptedAccountState {
+  /// External index 0 — the address the account is known by.
+  final String accountId;
+
+  /// Every address of this account a spend of its own may have paid change to.
+  final Set<String> ownAddresses;
+  final List<WormholeUtxo> received;
+  final Map<String, WormholeSpend> spends;
+
+  /// [received] minus on-chain spends and in-flight pending spends.
   final List<WormholeUtxo> utxos;
   final BigInt pendingChangeToken;
-  final BigInt totalReceivedToken;
-
-  /// Slice of [totalReceivedToken] that arrived on change-branch addresses.
-  final BigInt changeReceivedToken;
-  final BigInt totalSpentToken;
 
   /// Next unused external index — shown as the receive address.
   final int nextIndex;
@@ -34,24 +41,23 @@ class EncryptedAccountState {
   final int nextChangeIndex;
 
   const EncryptedAccountState({
+    required this.accountId,
+    required this.ownAddresses,
+    required this.received,
+    required this.spends,
     required this.utxos,
     required this.pendingChangeToken,
-    required this.totalReceivedToken,
-    required this.changeReceivedToken,
-    required this.totalSpentToken,
     required this.nextIndex,
     required this.nextChangeIndex,
   });
 
   BigInt get balance => utxos.fold(BigInt.zero, (sum, u) => sum + u.amount) + pendingChangeToken;
 
-  /// Externally received funds only: change outputs return to the change
-  /// branch and are excluded, so the indexed (non-pending) balance equals
-  /// `incomingToken + changeReceivedToken - totalSpentToken`.
-  BigInt get incomingToken => totalReceivedToken - changeReceivedToken;
-
   /// Max amount sendable right now (post volume fee, excluding pending change).
   BigInt get maxSendable => wormholeMaxSendable(utxos);
+
+  List<TransactionEvent> history() =>
+      buildWormholeHistory(accountId: accountId, ownAddresses: ownAddresses, received: received, spends: spends);
 }
 
 /// An encrypted account: two HD sequences of wormhole addresses treated as a
@@ -245,7 +251,7 @@ class EncryptedAccountService {
       isCancelled: isCancelled,
     );
 
-    final unspentNullifiers = utxoResult.utxos.map((u) => u.nullifierHex).toSet();
+    final spends = utxoResult.spends;
     // Change-branch entries are all discovered-used by construction; external
     // entries include index 0 even when unused, so filter those.
     final usedAddresses = {
@@ -259,7 +265,7 @@ class EncryptedAccountService {
     final state = await _mutateState((s) {
       final kept = <PendingSpend>[];
       for (final record in s.pendingSpends) {
-        final allSpent = record.nullifiers.every((n) => !unspentNullifiers.contains(n));
+        final allSpent = record.nullifiers.every(spends.containsKey);
         final changeArrived = record.changeAddress == null || usedAddresses.contains(record.changeAddress);
         final age = DateTime.now().difference(DateTime.fromMillisecondsSinceEpoch(record.createdAtMs));
         if (allSpent && changeArrived) {
@@ -280,17 +286,24 @@ class EncryptedAccountService {
     final pendingNullifiers = state.pendingSpends.expand((r) => r.nullifiers).toSet();
     final spendable = utxoResult.utxos.where((u) => !pendingNullifiers.contains(u.nullifierHex)).toList();
     final pendingChange = state.pendingSpends.fold(BigInt.zero, (sum, r) => sum + r.changeAmountToken);
+    // Change addresses allocated locally may have been paid before discovery
+    // saw them; a spend of ours landing mid-load must still classify as change.
+    final ownAddresses = {
+      for (final a in addresses) a.address,
+      for (int i = 0; i < state.nextChangeIndex; i++) _deriveKeyPair(mnemonic, i, isChange: true).address,
+    };
 
     _log(
       'load DONE: ${spendable.length} spendable UTXOs, pendingChange=$pendingChange, '
       'nextIndex=${state.nextIndex}, nextChangeIndex=${state.nextChangeIndex} (${sw.elapsedMilliseconds}ms)',
     );
     return EncryptedAccountState(
+      accountId: addresses.first.address,
+      ownAddresses: ownAddresses,
+      received: utxoResult.received,
+      spends: spends,
       utxos: spendable,
       pendingChangeToken: pendingChange,
-      totalReceivedToken: utxoResult.totalReceivedToken,
-      changeReceivedToken: utxoResult.changeReceivedToken,
-      totalSpentToken: utxoResult.totalSpentToken,
       nextIndex: state.nextIndex,
       nextChangeIndex: state.nextChangeIndex,
     );

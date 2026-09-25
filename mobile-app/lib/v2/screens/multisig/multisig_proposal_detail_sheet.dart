@@ -18,6 +18,7 @@ import 'package:resonance_network_wallet/v2/components/amount_display_with_conve
 import 'package:resonance_network_wallet/v2/components/decoded_call_view.dart';
 import 'package:resonance_network_wallet/v2/components/explorer_link.dart';
 import 'package:resonance_network_wallet/v2/components/multisig_expiry_value.dart';
+import 'package:resonance_network_wallet/v2/components/multisig_signer_list_tile.dart';
 import 'package:resonance_network_wallet/v2/screens/multisig/multisig_approve_confirm_sheet.dart';
 import 'package:resonance_network_wallet/v2/screens/multisig/multisig_cancel_confirm_sheet.dart';
 import 'package:resonance_network_wallet/v2/screens/multisig/multisig_execute_confirm_sheet.dart';
@@ -209,7 +210,7 @@ class _MultisigProposalDetailSheet extends ConsumerWidget {
             child: const SizedBox(width: double.infinity, height: 1),
           ),
           const SizedBox(height: 8),
-          _summary(l10n, fmt, multisigService, currentBlock, liveProposal),
+          _summary(ref, l10n, fmt, multisigService, currentBlock, liveProposal),
           const SizedBox(height: 24),
           _signers(context, l10n, liveProposal, localSignerIds),
           const SizedBox(height: 24),
@@ -257,6 +258,7 @@ class _MultisigProposalDetailSheet extends ConsumerWidget {
   }
 
   Widget _summary(
+    WidgetRef ref,
     AppLocalizations l10n,
     NumberFormattingService fmt,
     MultisigService multisigService,
@@ -284,7 +286,11 @@ class _MultisigProposalDetailSheet extends ConsumerWidget {
             child: DecodedCallView(call: decoded),
           )
         else if (!liveProposal.hasUndecodableCall)
-          DetailSummaryRow(label: l10n.activityDetailTo, value: recipient),
+          DetailSummaryRow(
+            label: l10n.activityDetailTo,
+            value: recipient,
+            checkphrase: ref.watch(checksumNameProvider(liveProposal.recipient)).value,
+          ),
         if (isTerminal)
           DetailSummaryRow(
             label: l10n.multisigProposalAtLabel,
@@ -299,6 +305,7 @@ class _MultisigProposalDetailSheet extends ConsumerWidget {
         DetailSummaryRow(
           label: l10n.multisigProposalProposerLabel,
           value: AddressFormattingService.formatActivityDetailAddress(liveProposal.proposer),
+          checkphrase: ref.watch(checksumNameProvider(liveProposal.proposer)).value,
         ),
         DetailSummaryRow(
           label: l10n.multisigProposalThresholdLabel,
@@ -344,27 +351,14 @@ class _MultisigProposalDetailSheet extends ConsumerWidget {
           const SizedBox(height: 12),
           ...msig.signers.map((s) {
             final approved = liveProposal.approvals.contains(s);
-            final isYou = localSignerIds.contains(s);
-            return Padding(
-              padding: const EdgeInsets.symmetric(vertical: 6),
-              child: Row(
-                children: [
-                  Icon(
-                    approved ? Icons.check_circle : Icons.radio_button_unchecked,
-                    size: 18,
-                    color: approved ? colors.semanticSage : colors.textMuted,
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      AddressFormattingService.formatAddress(s),
-                      style: text.dataAddress.copyWith(color: colors.textContent),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  if (isYou) QuantusBadge(label: l10n.multisigYouLabel),
-                ],
+            return MultisigSignerListTile(
+              accountId: s,
+              isYou: localSignerIds.contains(s),
+              youLabel: l10n.multisigYouLabel,
+              leading: Icon(
+                approved ? Icons.check_circle : Icons.radio_button_unchecked,
+                size: 18,
+                color: approved ? colors.semanticSage : colors.textMuted,
               ),
             );
           }),

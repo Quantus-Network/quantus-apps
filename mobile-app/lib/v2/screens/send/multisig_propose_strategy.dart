@@ -64,7 +64,7 @@ class MultisigProposeStrategy extends SendStrategy {
   static final BigInt _estimateFeeAmount = BigInt.from(1000) * NumberFormattingService.scaleFactorBigInt;
 
   @override
-  String? sourceAccountId(WidgetRef ref) => msig.accountId;
+  String? get sourceAccountId => msig.accountId;
 
   @override
   SendStrings strings(AppLocalizations l10n) => SendStrings(
@@ -97,8 +97,8 @@ class MultisigProposeStrategy extends SendStrategy {
   String? feePayerBalanceLabel(AppLocalizations l10n) => l10n.multisigProposeFeePayerBalanceLabel;
 
   @override
-  ProviderListenable<AsyncValue<SendFee>> feeProvider({required String recipient, required BigInt amount}) =>
-      multisigProposeFeeProvider((msig, recipient.trim()));
+  ProviderListenable<SendFeeState> feeProvider({required String recipient, required BigInt amount}) =>
+      multisigProposeFeeProvider((msig, recipient.trim())).select(SendFeeState.fromAsync);
 
   @override
   void retryFee(WidgetRef ref, {required String recipient, required BigInt amount}) =>
@@ -118,13 +118,15 @@ class MultisigProposeStrategy extends SendStrategy {
     required String recipientAddress,
     required BigInt amount,
     required SendFee fee,
+    bool feeIsEstimate = false,
+    bool sendAll = false,
   }) {
     final l10n = ref.watch(l10nProvider);
     final fmt = ref.watch(numberFormattingServiceProvider);
     final multisigService = ref.watch(multisigServiceProvider);
     final currentBlock = ref.watch(multisigCurrentBlockProvider).value;
     final breakdown = (fee as ProposeFee).breakdown;
-    final proposerChecksum = ref.watch(checksumNameProvider(msig.myMemberAccountId)).value ?? '';
+    final proposerChecksum = ref.watch(checksumNameProvider(msig.myMemberAccountId)).value;
 
     String amt(BigInt v) =>
         l10n.commonAmountBalance(fmt.formatBalance(v, smartDecimals: AppConstants.decimals), AppConstants.tokenSymbol);
@@ -133,7 +135,8 @@ class MultisigProposeStrategy extends SendStrategy {
       const SizedBox(height: 4),
       DetailSummaryRow.review(
         label: l10n.multisigProposeProposerLabel,
-        valueWidget: _ProposerValue(address: msig.myMemberAccountId, checkphrase: proposerChecksum),
+        value: msig.myMemberAccountId,
+        checkphrase: proposerChecksum,
         valueFlex: 4,
       ),
       const SizedBox(height: 4),
@@ -205,6 +208,7 @@ class MultisigProposeStrategy extends SendStrategy {
     required String recipientAddress,
     required BigInt amount,
     required SendFee fee,
+    bool sendAll = false,
   }) async {
     final signer = _signer(ref);
     if (!signer.signsWithHardware) return;
@@ -226,6 +230,7 @@ class MultisigProposeStrategy extends SendStrategy {
     required BigInt amount,
     required SendFee fee,
     required bool isPayMode,
+    bool sendAll = false,
   }) async {
     final l10n = ref.read(l10nProvider);
     final fmt = ref.read(numberFormattingServiceProvider);
@@ -326,38 +331,6 @@ class MultisigProposeStrategy extends SendStrategy {
       recipientChecksum: checksum,
       signaturesLabel: l10n.multisigSignaturesCount(1, msig.threshold),
       doneLabel: l10n.multisigDone,
-    );
-  }
-}
-
-class _ProposerValue extends StatelessWidget {
-  const _ProposerValue({required this.address, required this.checkphrase});
-
-  final String address;
-  final String checkphrase;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = context.colorsV3;
-    final text = context.themeTextV3;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.end,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        if (checkphrase.isNotEmpty)
-          Text(
-            checkphrase,
-            style: text.caption.copyWith(color: colors.semanticLilac),
-            textAlign: TextAlign.right,
-          ),
-        const SizedBox(height: 2),
-        Text(
-          address,
-          style: text.body.copyWith(color: colors.textContent),
-          textAlign: TextAlign.right,
-          softWrap: true,
-        ),
-      ],
     );
   }
 }

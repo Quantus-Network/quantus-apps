@@ -29,18 +29,10 @@ class AddressCheckphraseWithInitial extends StatelessWidget {
         AccountBadge(name: recipientChecksum.replaceAll('-', ' ')),
         const SizedBox(width: 14),
         Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                recipientChecksum,
-                style: text.body.copyWith(color: colors.semanticLilac),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: 4),
-              Text(displayAddress, style: addressStyle.copyWith(color: colors.textContent), softWrap: true),
-            ],
+          child: AddressCheckphrase(
+            address: displayAddress,
+            checkphrase: recipientChecksum,
+            addressStyle: addressStyle.copyWith(color: colors.textContent),
           ),
         ),
       ],

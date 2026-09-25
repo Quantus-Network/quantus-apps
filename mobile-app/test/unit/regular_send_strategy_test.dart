@@ -23,7 +23,7 @@ void main() {
     await tester.pump();
     expect(ref.read(activeAccountProvider).value?.account.accountId, other.accountId);
 
-    expect(strategy.sourceAccountId(ref), captured.accountId);
+    expect(strategy.sourceAccountId, captured.accountId);
     expect(strategy.spendableBalanceProvider, effectiveMaxBalanceProviderFamily(captured.accountId));
   });
 
@@ -43,27 +43,112 @@ void main() {
     expect(ref.read(strategy.spendableBalanceProvider).value, capturedBalance - existentialDeposit);
   });
 
-  test('fee provider prices any amount locally from one probed dispatch weight', () async {
-    final balancesService = FakeBalancesService();
-    final container = ProviderContainer(overrides: [balancesServiceProvider.overrideWithValue(balancesService)]);
-    addTearDown(container.dispose);
+  testWidgets('requestFee asks the chain for the captured account and publishes the fee', (tester) async {
+    final substrate = FakeSubstrateService(fee: BigInt.from(1000000000));
+    final ref = await pumpRef(
+      tester,
+      overrides: [
+        substrateServiceProvider.overrideWithValue(substrate),
+        balancesServiceProvider.overrideWithValue(FakeBalancesService()),
+      ],
+    );
     final strategy = RegularSendStrategy(account: captured);
-    final ten = strategy.feeProvider(recipient: other.accountId, amount: BigInt.from(10));
-    final twenty = strategy.feeProvider(recipient: other.accountId, amount: BigInt.from(20));
-    final subs = [ten, twenty].map((p) => container.listen(p, (_, _) {})).toList();
+    final feeProvider = strategy.feeProvider(recipient: other.accountId, amount: BigInt.from(10));
+    expect(ref.read(feeProvider).fee, isNull);
 
-    expect(subs[0].read().isLoading, isTrue);
-    await container.read(transferDispatchWeightProvider.future);
+    strategy.requestFee(ref.read, recipient: other.accountId, amount: BigInt.from(10));
+    await tester.pump();
 
-    expect(
-      (subs[0].read().requireValue as RegularFee).networkFee,
-      BigInt.from(10) + FakeBalancesService.dispatchWeight,
+    expect(substrate.lastFeeAccount?.accountId, captured.accountId);
+    expect(isTransferAll(substrate.lastFeeCall!, keepAlive: true), isFalse);
+    final fee = ref.read(feeProvider);
+    expect((fee.fee as RegularFee).networkFee, BigInt.from(1000000000));
+    expect(fee.settled, isTrue);
+    expect(strategy.feeApplies(fee.fee!, amount: BigInt.from(10), sendAll: false), isTrue);
+    expect(strategy.feeApplies(fee.fee!, amount: BigInt.from(11), sendAll: false), isFalse);
+    expect(strategy.feeApplies(fee.fee!, amount: BigInt.from(10), sendAll: true), isFalse);
+  });
+
+  testWidgets('a max send prices transfer_all that keeps the existential deposit', (tester) async {
+    final substrate = FakeSubstrateService(fee: BigInt.from(7));
+    final ref = await pumpRef(
+      tester,
+      overrides: [
+        substrateServiceProvider.overrideWithValue(substrate),
+        balancesServiceProvider.overrideWithValue(FakeBalancesService()),
+      ],
     );
-    expect(
-      (subs[1].read().requireValue as RegularFee).networkFee,
-      BigInt.from(20) + FakeBalancesService.dispatchWeight,
+    final strategy = RegularSendStrategy(account: captured);
+
+    strategy.requestFee(ref.read, recipient: other.accountId, amount: BigInt.from(10), sendAll: true, immediate: true);
+    await tester.pump();
+
+    expect(isTransferAll(substrate.lastFeeCall!, keepAlive: true), isTrue);
+    final fee = ref.read(strategy.feeProvider(recipient: other.accountId, amount: BigInt.from(10))).fee as RegularFee;
+    expect(fee.sendAll, isTrue);
+    expect(fee.networkFee, BigInt.from(7));
+    expect(strategy.feeApplies(fee, amount: BigInt.from(999), sendAll: true), isTrue);
+  });
+
+  testWidgets('a max send hands transfer_all to the keystone signing session', (tester) async {
+    final keystone = makeAccount(3, accountType: AccountType.keystone);
+    final ref = await pumpRef(
+      tester,
+      overrides: [
+        settingsServiceProvider.overrideWithValue(FakeSettingsService(activeAccount: RegularAccount(keystone))),
+        balancesServiceProvider.overrideWithValue(FakeBalancesService()),
+      ],
     );
-    expect(balancesService.weightProbes, 1);
+    final strategy = RegularSendStrategy(account: keystone);
+
+    final outcome = await strategy.submit(
+      ref,
+      recipientAddress: other.accountId,
+      recipientChecksum: 'checksum',
+      amount: BigInt.from(1000),
+      fee: RegularFee(networkFee: BigInt.from(10), sendAll: true),
+      isPayMode: false,
+      sendAll: true,
+    );
+
+    final session = (outcome as SendNeedsHardwareSignature).session;
+    expect(isTransferAll(session.buildCall(), keepAlive: true), isTrue);
+  });
+
+  testWidgets('the signed call follows the send mode, not the fee that happens to be retained', (tester) async {
+    final keystone = makeAccount(3, accountType: AccountType.keystone);
+    final ref = await pumpRef(
+      tester,
+      overrides: [
+        settingsServiceProvider.overrideWithValue(FakeSettingsService(activeAccount: RegularAccount(keystone))),
+        balancesServiceProvider.overrideWithValue(FakeBalancesService()),
+      ],
+    );
+    final strategy = RegularSendStrategy(account: keystone);
+    final staleMaxFee = RegularFee(networkFee: BigInt.from(10), sendAll: true);
+
+    final outcome = await strategy.submit(
+      ref,
+      recipientAddress: other.accountId,
+      recipientChecksum: 'checksum',
+      amount: BigInt.from(1000),
+      fee: staleMaxFee,
+      isPayMode: false,
+    );
+    expect(isTransferAll((outcome as SendNeedsHardwareSignature).session.buildCall(), keepAlive: true), isFalse);
+
+    await expectLater(
+      strategy.submit(
+        ref,
+        recipientAddress: other.accountId,
+        recipientChecksum: 'checksum',
+        amount: BigInt.from(1000),
+        fee: RegularFee(networkFee: BigInt.from(10), amount: BigInt.from(1000)),
+        isPayMode: false,
+        sendAll: true,
+      ),
+      throwsStateError,
+    );
   });
 
   testWidgets('submit hands the captured keystone account to the signing session after a switch', (tester) async {

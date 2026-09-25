@@ -56,6 +56,15 @@ class CallNestingLimitException extends FormatException {
     : super('Cannot parse transaction: call nesting depth $depth exceeds the limit of $maxCallNestingDepth');
 }
 
+/// A pallet or call index the bundled metadata does not declare, usually because
+/// the payload was built for a newer runtime than this app bundles.
+class UnknownCallException extends FormatException {
+  final int pallet;
+  final int call;
+
+  UnknownCallException(this.pallet, this.call) : super('Pallet $pallet call $call not found');
+}
+
 class CallDecoder {
   const CallDecoder._();
 
@@ -184,6 +193,7 @@ class CallDecoder {
     final call = _readIndex(input);
     final id = CallId.wire(pallet, call);
     policy.check(id, path);
+    if (!_declares(pallet, call)) throw UnknownCallException(pallet, call);
     input.offset -= 2;
 
     if (pallet == _utilityPalletIndex) {
@@ -227,6 +237,18 @@ class CallDecoder {
       throw FormatException('Batch claims $count calls but only $remaining bytes remain');
     }
     return [for (var i = 0; i < count; i++) _decodeCall(input, policy, path)];
+  }
+
+  /// Whether the generated codec knows [pallet] and [call]. With only the two
+  /// index bytes to read, an unknown index is the one failure that names a
+  /// variant; a known call fails later, on its first missing argument byte.
+  static bool _declares(int pallet, int call) {
+    try {
+      runtime.RuntimeCall.codec.decode(Input.fromBytes(Uint8List.fromList([pallet, call])));
+      return true;
+    } catch (e) {
+      return !'$e'.contains('Invalid variant index');
+    }
   }
 
   /// The next pallet or call index byte. A call that ends here is truncated.

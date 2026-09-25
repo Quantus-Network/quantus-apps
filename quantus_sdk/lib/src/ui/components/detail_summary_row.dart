@@ -60,6 +60,7 @@ class DetailSummaryRow extends StatelessWidget {
     Widget? valueWidget,
     int valueFlex = 3,
     TextStyle? valueStyle,
+    String? checkphrase,
   }) {
     return DetailSummaryRow(
       key: key,
@@ -69,6 +70,7 @@ class DetailSummaryRow extends StatelessWidget {
       valueFlex: valueFlex,
       valueStyle: valueStyle,
       padding: EdgeInsets.zero,
+      checkphrase: checkphrase,
     );
   }
 
@@ -131,18 +133,13 @@ class DetailSummaryRow extends StatelessWidget {
   }
 
   Widget _compactValue(TextStyle valueStyle, AppTextThemeV3 text, AppColorsV3 colors) {
-    final valueText = Text(value!, style: valueStyle, textAlign: TextAlign.right, softWrap: true);
-    if (checkphrase == null) return valueText;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: [
-        valueText,
-        Text(
-          checkphrase!,
-          style: text.caption.copyWith(color: colors.semanticLilac),
-          textAlign: TextAlign.right,
-        ),
-      ],
+    if (checkphrase == null) return Text(value!, style: valueStyle, textAlign: TextAlign.right, softWrap: true);
+    return AddressCheckphrase(
+      address: value!,
+      checkphrase: checkphrase,
+      addressStyle: valueStyle,
+      checkphraseStyle: text.caption.copyWith(color: colors.semanticLilac),
+      textAlign: TextAlign.right,
     );
   }
 

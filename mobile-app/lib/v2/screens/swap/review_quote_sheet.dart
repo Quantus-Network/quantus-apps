@@ -135,10 +135,12 @@ class _ReviewQuoteContentState extends ConsumerState<_ReviewQuoteContent> {
             ],
           ),
           const SizedBox(height: 6),
-          Text(
-            fmt.formatAmount(amount, decimals: token.decimals),
-            style: text.amountRow.copyWith(color: colors.textContent),
-            overflow: TextOverflow.ellipsis,
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              fmt.formatAmount(amount, decimals: token.decimals),
+              style: text.amountRow.copyWith(color: colors.textContent),
+            ),
           ),
           Text('\$${usd.toStringAsFixed(2)}', style: text.caption.copyWith(color: colors.textMuted)),
         ],

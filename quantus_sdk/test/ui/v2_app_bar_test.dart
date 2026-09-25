@@ -34,6 +34,22 @@ void main() {
     expect(title.style?.height, text.titleScreen.height);
   });
 
+  testWidgets('wider slots keep the title centred and the trailing widget flush right', (tester) async {
+    const trailingKey = Key('trailing');
+    await pump(
+      tester,
+      const V2AppBar(
+        title: 'Swap',
+        slotWidth: 90,
+        trailing: SizedBox(key: trailingKey, width: 90, height: 27),
+      ),
+    );
+
+    final bar = tester.getRect(find.byType(V2AppBar));
+    expect(tester.getCenter(find.text('Swap')).dx, bar.center.dx);
+    expect(tester.getTopRight(find.byKey(trailingKey)).dx, bar.right);
+  });
+
   testWidgets('default back button uses v3 chevron and content color', (tester) async {
     await pump(tester, const AppBackButton());
 

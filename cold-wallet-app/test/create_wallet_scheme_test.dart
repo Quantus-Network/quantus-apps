@@ -15,7 +15,7 @@ class _NoBiometrics extends ColdAuthService {
 }
 
 /// The signature-scheme choice on the create flow. New cold wallets default to
-/// ML-DSA-65; ML-DSA-87 is available behind the ADVANCED disclosure.
+/// ML-DSA-87; ML-DSA-65 is a tap away on the same screen.
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -40,28 +40,12 @@ void main() {
     return screen.accounts.single;
   }
 
-  testWidgets('defaults to ML-DSA-65 with the scheme choice hidden', (tester) async {
+  testWidgets('defaults to ML-DSA-87 with the scheme choice on screen', (tester) async {
     await pumpCreate(tester);
 
-    // The toggle lives behind ADVANCED and is not shown until expanded.
-    expect(find.text('ML-DSA-87'), findsNothing);
-
-    await tester.tap(find.text("I've written it down"));
-    await tester.pump();
-    await tester.pump(const Duration(seconds: 1));
-
-    expect(pushedAccount(tester).scheme, DilithiumScheme.mlDsa65);
-  });
-
-  testWidgets('creates an ML-DSA-87 wallet when chosen under ADVANCED', (tester) async {
-    await pumpCreate(tester);
-
-    await tester.ensureVisible(find.text('ADVANCED'));
-    await tester.tap(find.text('ADVANCED'));
-    await tester.pump();
-    await tester.ensureVisible(find.text('ML-DSA-87'));
-    await tester.tap(find.text('ML-DSA-87'));
-    await tester.pump();
+    expect(find.text('ADVANCED'), findsNothing);
+    expect(find.text('ML-DSA-65'), findsOneWidget);
+    expect(find.text('ML-DSA-87'), findsOneWidget);
 
     await tester.tap(find.text("I've written it down"));
     await tester.pump();
@@ -70,5 +54,21 @@ void main() {
     final account = pushedAccount(tester);
     expect(account.scheme, DilithiumScheme.mlDsa87);
     expect(account.derivationPath, endsWith("/0'"));
+  });
+
+  testWidgets('creates an ML-DSA-65 wallet when chosen', (tester) async {
+    await pumpCreate(tester);
+
+    await tester.ensureVisible(find.text('ML-DSA-65'));
+    await tester.tap(find.text('ML-DSA-65'));
+    await tester.pump();
+
+    await tester.tap(find.text("I've written it down"));
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+
+    final account = pushedAccount(tester);
+    expect(account.scheme, DilithiumScheme.mlDsa65);
+    expect(account.derivationPath, endsWith("/1'"));
   });
 }

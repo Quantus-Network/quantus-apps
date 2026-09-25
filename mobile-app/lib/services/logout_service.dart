@@ -54,7 +54,7 @@ class LogoutService {
     _ref.invalidate(encryptedStateProvider);
     _ref.invalidate(encryptedBalanceProvider);
     _ref.invalidate(encryptedSpendableProvider);
-    _ref.invalidate(encryptedTotalSpentProvider);
+    _ref.invalidate(encryptedHistoryProvider);
     _ref.read(multisigAccountsProvider.notifier).reset();
     _ref.invalidate(discoveredMultisigsProvider);
     _ref.read(keystoneSignCacheProvider.notifier).reset();

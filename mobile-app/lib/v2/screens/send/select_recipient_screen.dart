@@ -63,7 +63,7 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
 
     try {
       final all = await recentAddressesService.getAddresses();
-      final currentId = widget.strategy.sourceAccountId(ref);
+      final currentId = widget.strategy.sourceAccountId;
       final addresses = all.where((a) => a != currentId).toList();
       if (!mounted) return;
       setState(() {

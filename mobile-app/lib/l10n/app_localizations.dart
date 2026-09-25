@@ -2180,18 +2180,6 @@ abstract class AppLocalizations {
   /// **'No transactions yet'**
   String get activityEmpty;
 
-  /// Label for total received in encrypted account activity summary
-  ///
-  /// In en, this message translates to:
-  /// **'Total Received'**
-  String get activityPrivateTotalReceived;
-
-  /// Label for total sent in encrypted account activity summary
-  ///
-  /// In en, this message translates to:
-  /// **'Total Sent'**
-  String get activityPrivateTotalSent;
-
   /// Filter button for all transactions
   ///
   /// In en, this message translates to:
@@ -2305,6 +2293,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'From'**
   String get activityTxFrom;
+
+  /// Counterparty line of a private send whose proof was bundled with other transfers, so the chain cannot say who received it
+  ///
+  /// In en, this message translates to:
+  /// **'Aggregated batch'**
+  String get activityTxAggregatedBatch;
+
+  /// Detail sheet 'To' value of a private send whose proof was bundled with other transfers
+  ///
+  /// In en, this message translates to:
+  /// **'Aggregated batch, recipient not recorded'**
+  String get activityDetailAggregatedBatch;
 
   /// Time label for just now
   ///
@@ -2497,6 +2497,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'NETWORK FEE'**
   String get activityDetailNetworkFee;
+
+  /// Row in a private send's detail sheet, and title of the page listing its proof batches and nullifiers
+  ///
+  /// In en, this message translates to:
+  /// **'Wormhole details'**
+  String get activityDetailWormholeDetails;
+
+  /// Heading of one proof extrinsic of a private send
+  ///
+  /// In en, this message translates to:
+  /// **'Batch {index} of {count}'**
+  String wormholeDetailsBatch(int index, int count);
+
+  /// Amount one batch of a private send paid the recipient
+  ///
+  /// In en, this message translates to:
+  /// **'SENT'**
+  String get wormholeDetailsSent;
+
+  /// Amount one batch of a private send returned to the wallet
+  ///
+  /// In en, this message translates to:
+  /// **'CHANGE'**
+  String get wormholeDetailsChange;
+
+  /// Number of the wallet's leaves one batch consumed; each is listed by nullifier below
+  ///
+  /// In en, this message translates to:
+  /// **'INPUTS'**
+  String get wormholeDetailsInputs;
 
   /// Transaction hash row label on detail sheet
   ///
@@ -2965,6 +2995,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Swap'**
   String get swapTitle;
+
+  /// Label above the NEAR Intents logo in the swap app bar
+  ///
+  /// In en, this message translates to:
+  /// **'Powered By'**
+  String get swapPoweredBy;
 
   /// From token section label on swap screen
   ///

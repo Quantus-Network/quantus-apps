@@ -22,6 +22,14 @@ const _prefix = '0123456789abcdef';
 const _planck = 'aaaaaaaaaaaaaaaa';
 const _mainnet = 'bbbbbbbbbbbbbbbb';
 final _v = WormholeUtxoService.cacheVersion;
+final _spend = WormholeSpend(
+  extrinsicId: '0xe',
+  blockHeight: 1,
+  timestamp: DateTime.utc(2026),
+  outputs: const [],
+  call: WormholeSpend.privateBatchCall,
+);
+final _spendJson = jsonEncode(_spend.toJson());
 
 /// Discovery bound to a chain whose genesis hash starts with [networkId]. The
 /// indexer is never consulted here.
@@ -64,7 +72,7 @@ void main() {
   });
 
   test('current-generation files of every network survive stale cleanup', () async {
-    write('wormhole_nullifiers_v${_v}_${_planck}_$_prefix.json', '["0x02"]');
+    write('wormhole_nullifiers_v${_v}_${_planck}_$_prefix.json', '{"0x02": $_spendJson}');
     write('wormhole_cache_v${_v}_${_mainnet}_$_prefix.json', '{"cachedUpToBlock":7,"transfers":[]}');
 
     await WormholeUtxoService.deleteStaleCaches(_hash);
@@ -73,13 +81,15 @@ void main() {
       'wormhole_nullifiers_v${_v}_${_planck}_$_prefix.json',
       'wormhole_cache_v${_v}_${_mainnet}_$_prefix.json',
     });
-    expect(await _serviceOn(_planck).loadSpentNullifiers(_hash), {'0x02'});
+    final spent = await _serviceOn(_planck).loadSpentNullifiers(_hash);
+    expect(spent.keys, ['0x02']);
+    expect(spent['0x02']!.toJson(), _spend.toJson());
   });
 
   test(
     'switching chains within one generation reads neither the other chain\'s scan height nor its nullifiers',
     () async {
-      await _serviceOn(_planck).saveSpentNullifiers(_hash, {'0xspent-on-planck'});
+      await _serviceOn(_planck).saveSpentNullifiers(_hash, {'0xspent-on-planck': _spend});
       write('wormhole_cache_v${_v}_${_planck}_$_prefix.json', '{"cachedUpToBlock":123456,"transfers":[]}');
 
       final mainnet = _serviceOn(_mainnet);
@@ -88,7 +98,7 @@ void main() {
 
       // Planck's files were namespaced, not cleared: switching back does not rescan.
       final planck = _serviceOn(_planck);
-      expect(await planck.loadSpentNullifiers(_hash), {'0xspent-on-planck'});
+      expect((await planck.loadSpentNullifiers(_hash)).keys, ['0xspent-on-planck']);
       expect(await planck.cachedTransferHeight(_hash), 123456);
       expect(names(), {
         'wormhole_nullifiers_v${_v}_${_planck}_$_prefix.json',

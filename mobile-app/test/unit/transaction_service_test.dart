@@ -340,6 +340,41 @@ void main() {
       expect(result.first, same(pending));
     });
 
+    test('keeps the arrival order of transfers that share a timestamp', () {
+      final service = container.read(transactionServiceProvider);
+      final blockTime = DateTime.utc(2026, 9, 8, 4, 44, 54);
+      TransferEvent row(String id, {Duration offset = Duration.zero}) => TransferEvent(
+        id: id,
+        from: 'sender',
+        to: 'recipient',
+        amount: BigInt.one,
+        timestamp: blockTime.add(offset),
+        fee: BigInt.zero,
+        blockNumber: 1,
+        blockHash: null,
+      );
+      // Newest first, as the SDK orders it, with one block's worth of rows at
+      // the same timestamp in chain order.
+      final rows = [
+        row('later', offset: const Duration(seconds: 6)),
+        for (var i = 0; i < 100; i++) row('block-$i'),
+        row('earlier', offset: const Duration(seconds: -6)),
+      ];
+
+      final result = service.combineAndDeduplicateTransactions(
+        pendingCancellationIds: {},
+        pendingTransactions: [],
+        pendingMultisigCreations: [],
+        pendingMultisigProposals: [],
+        pendingMultisigExecutions: [],
+        pendingMultisigCancellations: [],
+        scheduledReversibleTransfers: [],
+        otherTransfers: List.of(rows),
+      );
+
+      expect(result.map((e) => e.id), rows.map((e) => e.id));
+    });
+
     test('replaces pending proposal with indexed event for same activity key', () {
       final service = container.read(transactionServiceProvider);
       const hash = '0xshared-hash';

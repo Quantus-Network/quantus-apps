@@ -13,23 +13,26 @@ WormholeUtxo _utxo(int scaled) => WormholeUtxo(
   transfer: WormholeTransfer(
     id: 't$scaled',
     blockHeight: 1,
+    timestamp: DateTime(2026),
     fromId: 'from',
     toId: 'to',
     amount: wormholeTokenFromScaled(scaled),
     toHash: '0x00',
     leafIndex: BigInt.from(scaled),
     transferCount: BigInt.one,
+    extrinsicId: '',
   ),
   owner: const WormholeAddressInfo(index: 0, address: 'addr', secretHex: '0x00'),
   nullifierHex: '0xn$scaled',
 );
 
 EncryptedAccountState _state(List<WormholeUtxo> utxos) => EncryptedAccountState(
+  accountId: 'addr',
+  ownAddresses: const {'addr'},
+  received: utxos,
+  spends: const {},
   utxos: utxos,
   pendingChangeToken: BigInt.zero,
-  totalReceivedToken: BigInt.zero,
-  changeReceivedToken: BigInt.zero,
-  totalSpentToken: BigInt.zero,
   nextIndex: 0,
   nextChangeIndex: 0,
 );
@@ -53,12 +56,13 @@ void main() {
     final strategy = EncryptedSendStrategy(account: account);
     final sub = container.listen(strategy.feeProvider(recipient: 'qz', amount: tenTokens), (_, _) {});
 
-    expect(sub.read().isLoading, isTrue);
+    expect(sub.read().pending, isTrue);
     await container.read(encryptedStateProvider(account.walletIndex).future);
-    expect((sub.read().requireValue as EncryptedFee).plan?.feeToken, wormholeTokenFromScaled(1));
+    expect((sub.read().fee as EncryptedFee).plan?.feeToken, wormholeTokenFromScaled(1));
+    expect(sub.read().settled, isTrue);
 
     container.invalidate(encryptedStateProvider(account.walletIndex));
-    expect(sub.read().value?.displayFee, wormholeTokenFromScaled(1));
+    expect(sub.read().fee?.displayFee, wormholeTokenFromScaled(1));
     expect(loads, 2);
   });
 

@@ -7,7 +7,10 @@ import 'package:quantus_sdk/generated/bell/pallets/balances.dart' as balances_pa
 import 'package:quantus_sdk/generated/bell/types/sp_runtime/multiaddress/multi_address.dart' as multi_address;
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/l10n/app_localizations.dart';
+import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/multisig_providers.dart';
+import 'package:resonance_network_wallet/providers/wallet_providers.dart';
+import 'package:resonance_network_wallet/v2/components/multisig_signer_list_tile.dart';
 import 'package:resonance_network_wallet/v2/components/proposal_list_tile.dart';
 import 'package:resonance_network_wallet/v2/screens/multisig/multisig_proposal_detail_sheet.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -77,7 +80,11 @@ void main() {
 
   Widget wrap(Widget child) {
     return ProviderScope(
-      overrides: [multisigServiceProvider.overrideWithValue(FakeMultisigService())],
+      overrides: [
+        multisigServiceProvider.overrideWithValue(FakeMultisigService()),
+        humanReadableChecksumServiceProvider.overrideWithValue(FakeHumanReadableChecksumService()),
+        accountsProvider.overrideWith((ref) => AccountsNotifier(AccountsService(), initialAccounts: [makeAccount(1)])),
+      ],
       child: MediaQuery(
         data: const MediaQueryData(size: Size(800, 1400)),
         child: Builder(
@@ -235,6 +242,20 @@ void main() {
       expect(find.text(l10n.multisigProposalInvalid), findsNothing);
       expect(find.text(l10n.multisigApproveButton), findsOneWidget);
       expect(find.text(l10n.multisigDone), findsNothing);
+    });
+
+    testWidgets('shows the checkphrase under the recipient, proposer and every signer', (tester) async {
+      await pumpSheet(tester, callRaw: transferBytes);
+
+      const phrase = 'Stand-Envelope-Topic-Term-Help';
+      final rows = tester.widgetList<DetailSummaryRow>(find.byType(DetailSummaryRow));
+      expect(rows.where((r) => r.checkphrase == phrase).map((r) => r.label), [
+        l10n.activityDetailTo,
+        l10n.multisigProposalProposerLabel,
+      ]);
+      expect(find.byType(MultisigSignerListTile), findsOneWidget);
+      expect(find.text(phrase), findsNWidgets(3));
+      expect(find.text(l10n.multisigYouLabel), findsOneWidget);
     });
   });
 }

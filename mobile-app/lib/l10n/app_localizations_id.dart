@@ -1156,12 +1156,6 @@ class AppLocalizationsId extends AppLocalizations {
   String get activityEmpty => 'Belum ada transaksi';
 
   @override
-  String get activityPrivateTotalReceived => 'Total Diterima';
-
-  @override
-  String get activityPrivateTotalSent => 'Total Terkirim';
-
-  @override
   String get activityFilterAll => 'Semua';
 
   @override
@@ -1217,6 +1211,12 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get activityTxFrom => 'Dari';
+
+  @override
+  String get activityTxAggregatedBatch => 'Batch teragregasi';
+
+  @override
+  String get activityDetailAggregatedBatch => 'Batch teragregasi, penerima tidak tercatat';
 
   @override
   String get activityTxTimeNow => 'sekarang';
@@ -1321,6 +1321,23 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get activityDetailNetworkFee => 'BIAYA JARINGAN';
+
+  @override
+  String get activityDetailWormholeDetails => 'Detail wormhole';
+
+  @override
+  String wormholeDetailsBatch(int index, int count) {
+    return 'Batch $index dari $count';
+  }
+
+  @override
+  String get wormholeDetailsSent => 'TERKIRIM';
+
+  @override
+  String get wormholeDetailsChange => 'KEMBALIAN';
+
+  @override
+  String get wormholeDetailsInputs => 'INPUT';
 
   @override
   String get activityDetailTxHash => 'HASH TX';
@@ -1573,6 +1590,9 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get swapTitle => 'Tukar';
+
+  @override
+  String get swapPoweredBy => 'Didukung Oleh';
 
   @override
   String get swapFrom => 'Dari';

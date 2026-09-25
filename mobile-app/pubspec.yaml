@@ -2,7 +2,7 @@ name: resonance_network_wallet
 description: A Flutter wallet for the Quantus blockchain.
 publish_to: "none"
 
-version: 1.6.3+140
+version: 1.7.1+144
 
 environment:
   sdk: ">=3.8.0 <4.0.0"
@@ -107,6 +107,7 @@ flutter:
     - assets/v2/keystone_lock_simple_open.svg
     - assets/v2/keystone_qr_code.svg
     - assets/v2/keystone_warning.svg
+    - assets/v2/near_intents_logo.png
 
 
   fonts:

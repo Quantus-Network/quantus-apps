@@ -69,6 +69,14 @@ kotlin {
     }
 }
 
+val generateVersion = tasks.register<Exec>("generateVersion") {
+    commandLine("/bin/sh", "${rootProject.projectDir}/../../mobile-app/tool/generate_version.sh", "${rootProject.projectDir}/..")
+}
+
+afterEvaluate {
+    tasks.matching { it.name.startsWith("compileFlutterBuild") }.configureEach { dependsOn(generateVersion) }
+}
+
 flutter {
     source = "../.."
 }

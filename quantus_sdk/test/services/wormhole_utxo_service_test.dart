@@ -14,12 +14,14 @@ const _mnemonic = 'abandon abandon abandon abandon abandon abandon abandon aband
 WormholeTransfer _transfer({required String toId, required int count}) => WormholeTransfer(
   id: 't$count',
   blockHeight: 1,
+  timestamp: DateTime(2026),
   fromId: 'from',
   toId: toId,
   amount: BigInt.from(1000000000000),
   toHash: '0x00',
   leafIndex: BigInt.from(count),
   transferCount: BigInt.from(count),
+  extrinsicId: '',
 );
 
 /// Runs the real [WormholeUtxoService.getUnspentUtxos] over canned transfers:
@@ -35,7 +37,7 @@ class _OfflineUtxoService extends WormholeUtxoService {
   }) async => (byAddress: {for (final a in addresses) a: transfersByAddress[a] ?? []}, safeCutoff: 1000);
 
   @override
-  Future<Map<String, int>> checkNullifiersSpent(
+  Future<Map<String, WormholeSpend>> checkNullifiersSpent(
     List<(String, String)> nullifiers, {
     WormholeProgressCallback? onProgress,
     IsCancelledCallback? isCancelled,
@@ -95,8 +97,7 @@ void main() {
     final changeUtxo = result.utxos.singleWhere((u) => u.owner.address == changePair.address);
     expect(changeUtxo.owner.isChange, isTrue);
     expect(changeUtxo.owner.index, 0);
-    // Change-branch receipts are totalled separately from external receipts.
-    expect(result.changeReceivedToken, changeUtxo.amount);
-    expect(result.totalReceivedToken, result.utxos.fold(BigInt.zero, (sum, u) => sum + u.amount));
+    expect(result.received, hasLength(3));
+    expect(result.spends, isEmpty);
   });
 }

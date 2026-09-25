@@ -14,6 +14,7 @@ import 'package:quantus_sdk/src/utils/print.dart';
 class WormholeTransfer {
   final String id;
   final int blockHeight;
+  final DateTime timestamp;
   final String fromId;
   final String toId;
   final BigInt amount;
@@ -21,39 +22,49 @@ class WormholeTransfer {
   final BigInt leafIndex;
   final BigInt transferCount;
 
+  /// Hash of the extrinsic that paid this transfer; empty for mining rewards
+  /// and genesis leaves, which no extrinsic produces.
+  final String extrinsicId;
+
   const WormholeTransfer({
     required this.id,
     required this.blockHeight,
+    required this.timestamp,
     required this.fromId,
     required this.toId,
     required this.amount,
     required this.toHash,
     required this.leafIndex,
     required this.transferCount,
+    required this.extrinsicId,
   });
 
   factory WormholeTransfer.fromJson(Map<String, dynamic> json) {
     return WormholeTransfer(
       id: json['id'] as String,
       blockHeight: json['blockHeight'] as int,
+      timestamp: DateTime.parse(json['timestamp'] as String),
       fromId: json['fromId'] as String? ?? '',
       toId: json['toId'] as String? ?? '',
       amount: BigInt.parse(json['amount'] as String),
       toHash: json['toHash'] as String? ?? '',
       leafIndex: BigInt.parse(json['leafIndex'] as String),
       transferCount: BigInt.parse(json['transferCount'] as String),
+      extrinsicId: json['extrinsicId'] as String? ?? '',
     );
   }
 
   Map<String, dynamic> toJson() => {
     'id': id,
     'blockHeight': blockHeight,
+    'timestamp': timestamp.toIso8601String(),
     'fromId': fromId,
     'toId': toId,
     'amount': amount.toString(),
     'toHash': toHash,
     'leafIndex': leafIndex.toString(),
     'transferCount': transferCount.toString(),
+    'extrinsicId': extrinsicId,
   };
 
   @override
@@ -99,7 +110,7 @@ class WormholeAddressInfo {
   });
 }
 
-/// An unspent wormhole transfer together with the address that owns it.
+/// A wormhole transfer together with the address that owns it.
 class WormholeUtxo {
   final WormholeTransfer transfer;
   final WormholeAddressInfo owner;
@@ -110,21 +121,79 @@ class WormholeUtxo {
   BigInt get amount => transfer.amount;
 }
 
-class WormholeUtxoResult {
-  final List<WormholeUtxo> utxos;
-  final BigInt totalReceivedToken;
+/// One exit of a wormhole proof. [id] is also the id of the [WormholeTransfer]
+/// the exit created for its recipient.
+class WormholeOutput {
+  final String id;
+  final String exitAccountId;
+  final BigInt amount;
 
-  /// Slice of [totalReceivedToken] received on change-branch addresses, so
-  /// callers can report externally received funds separately from change.
-  final BigInt changeReceivedToken;
-  final BigInt totalSpentToken;
+  const WormholeOutput({required this.id, required this.exitAccountId, required this.amount});
 
-  const WormholeUtxoResult({
-    required this.utxos,
-    required this.totalReceivedToken,
-    required this.changeReceivedToken,
-    required this.totalSpentToken,
+  factory WormholeOutput.fromJson(Map<String, dynamic> json) => WormholeOutput(
+    id: json['id'] as String,
+    exitAccountId: json['exitAccountId'] as String,
+    amount: BigInt.parse(json['amount'] as String),
+  );
+
+  Map<String, dynamic> toJson() => {'id': id, 'exitAccountId': exitAccountId, 'amount': amount.toString()};
+}
+
+/// The proof extrinsic that consumed a nullifier, with every exit it paid.
+/// [call] is the pallet call that settled it: a private batch is one client's
+/// proof, a public batch bundles several clients' private batches.
+class WormholeSpend {
+  static const String privateBatchCall = 'verify_private_batch';
+
+  /// [privateBatchCall] and its name before the public batch existed
+  /// (renamed in the runtime on 2026-07-22; only testnet history has it).
+  static const Set<String> privateBatchCalls = {privateBatchCall, 'verify_aggregated_proof'};
+
+  final String extrinsicId;
+  final int blockHeight;
+  final DateTime timestamp;
+  final String call;
+  final List<WormholeOutput> outputs;
+
+  const WormholeSpend({
+    required this.extrinsicId,
+    required this.blockHeight,
+    required this.timestamp,
+    required this.call,
+    required this.outputs,
   });
+
+  /// Chain order of this spend: exit ids are `<block>-<hash>-<event index>`,
+  /// zero-padded, so the earliest one sorts spends across and within blocks.
+  String get position => outputs.map((o) => o.id).reduce((a, b) => a.compareTo(b) <= 0 ? a : b);
+
+  factory WormholeSpend.fromJson(Map<String, dynamic> json) => WormholeSpend(
+    extrinsicId: json['extrinsicId'] as String,
+    blockHeight: json['blockHeight'] as int,
+    timestamp: DateTime.parse(json['timestamp'] as String),
+    call: json['call'] as String,
+    outputs: [for (final o in json['outputs'] as List<dynamic>) WormholeOutput.fromJson(o as Map<String, dynamic>)],
+  );
+
+  Map<String, dynamic> toJson() => {
+    'extrinsicId': extrinsicId,
+    'blockHeight': blockHeight,
+    'timestamp': timestamp.toIso8601String(),
+    'call': call,
+    'outputs': outputs.map((o) => o.toJson()).toList(),
+  };
+}
+
+/// Everything the indexer knows about a set of wormhole addresses: every
+/// transfer they ever received and, for each spent one, the spend that
+/// consumed it (keyed by nullifier hex).
+class WormholeUtxoResult {
+  final List<WormholeUtxo> received;
+  final Map<String, WormholeSpend> spends;
+
+  const WormholeUtxoResult({required this.received, required this.spends});
+
+  List<WormholeUtxo> get utxos => received.where((u) => !spends.containsKey(u.nullifierHex)).toList();
 }
 
 typedef WormholeProgressCallback = void Function(int phase, int completed, {int? total});
@@ -145,21 +214,24 @@ class WormholeUtxoService {
 
   /// Generation of both on-disk caches; bump on any format change. v3 keys the
   /// files by network as well as address, so Planck-era files are dropped
-  /// instead of being read against mainnet.
+  /// instead of being read against mainnet; v6 records each transfer's
+  /// timestamp and extrinsic and each spent nullifier's spend.
   @visibleForTesting
-  static const int cacheVersion = 3;
+  static const int cacheVersion = 6;
   static const int _nullifierBatchSize = 300;
   static const int _reorgDepth = 180;
 
   static const String _transferSelection = r'''
     id
     blockHeight: block_height
+    timestamp
     fromId: from_id
     toId: to_id
     amount
     toHash: to_hash
     leafIndex: leaf_index
-    transferCount: transfer_count''';
+    transferCount: transfer_count
+    extrinsicId: extrinsic_id''';
 
   /// First page of inbound wormhole transfers to one address above [afterBlock].
   ///
@@ -313,13 +385,13 @@ $_transferSelection
   }
 
   @visibleForTesting
-  Future<Set<String>> loadSpentNullifiers(String addressHash) async {
+  Future<Map<String, WormholeSpend>> loadSpentNullifiers(String addressHash) async {
     await deleteStaleCaches(addressHash);
     try {
       final file = await _cacheFile('nullifiers', addressHash);
       if (!await file.exists()) return {};
-      final list = jsonDecode(await file.readAsString()) as List<dynamic>;
-      return list.cast<String>().toSet();
+      final json = jsonDecode(await file.readAsString()) as Map<String, dynamic>;
+      return json.map((nullifier, spend) => MapEntry(nullifier, WormholeSpend.fromJson(spend as Map<String, dynamic>)));
     } catch (e) {
       _log('Nullifier cache load failed: $e');
       return {};
@@ -327,10 +399,10 @@ $_transferSelection
   }
 
   @visibleForTesting
-  Future<void> saveSpentNullifiers(String addressHash, Set<String> spent) async {
+  Future<void> saveSpentNullifiers(String addressHash, Map<String, WormholeSpend> spent) async {
     try {
       final file = await _cacheFile('nullifiers', addressHash);
-      await file.writeAsString(jsonEncode(spent.toList()));
+      await file.writeAsString(jsonEncode(spent.map((nullifier, spend) => MapEntry(nullifier, spend.toJson()))));
       _log('Nullifier cache saved: ${spent.length} spent nullifiers');
     } catch (e) {
       _log('Nullifier cache save failed: $e');
@@ -409,6 +481,30 @@ $_transferSelection
 
   // --- GraphQL queries ---
 
+  /// Posts [query] and returns the rows of its [field]; HTTP and GraphQL
+  /// errors throw.
+  Future<List<Map<String, dynamic>>> _graphQlRows(
+    String label,
+    String query,
+    Map<String, dynamic> variables,
+    String field,
+  ) async {
+    final sw = Stopwatch()..start();
+    final response = await _graphQlEndpoint.post(body: jsonEncode({'query': query, 'variables': variables}));
+    _log('$label query: status=${response.statusCode} elapsed=${sw.elapsedMilliseconds}ms');
+    if (response.statusCode != 200) {
+      _log('$label query FAILED: ${response.body}');
+      throw Exception('Subsquid $label request failed ${response.statusCode}: ${response.body}');
+    }
+    final parsed = jsonDecode(response.body) as Map<String, dynamic>;
+    if (parsed['errors'] != null) {
+      final msgs = (parsed['errors'] as List).map((e) => (e as Map)['message']).join('; ');
+      _log('$label query GraphQL errors: $msgs');
+      throw Exception('GraphQL errors: $msgs');
+    }
+    return ((parsed['data']?[field] as List<dynamic>?) ?? const []).cast<Map<String, dynamic>>();
+  }
+
   /// One page of transfers to [toAddress] above [afterBlock], in
   /// `(block_height, id)` order. With [after] set, only rows strictly after
   /// that cursor are returned.
@@ -431,36 +527,10 @@ $_transferSelection
       variables['cursorId'] = after.id;
     }
 
-    final body = jsonEncode({'query': document, 'variables': variables});
-
-    _log(
-      '=== TRANSFERS QUERY ===\n'
-      'limit=$limit afterBlock=$afterBlock cursor=$after',
-    );
-
-    final sw = Stopwatch()..start();
-    final response = await _graphQlEndpoint.post(body: body);
-    final elapsed = sw.elapsedMilliseconds;
-    _log('transfers query: status=${response.statusCode} cursor=$after elapsed=${elapsed}ms');
-
-    if (response.statusCode != 200) {
-      _log('transfers query FAILED: ${response.body}');
-      throw Exception('Subsquid request failed ${response.statusCode}: ${response.body}');
-    }
-
-    final parsed = jsonDecode(response.body) as Map<String, dynamic>;
-    if (parsed['errors'] != null) {
-      final msgs = (parsed['errors'] as List).map((e) => (e as Map)['message']).join('; ');
-      _log('transfers query GraphQL errors: $msgs');
-      throw Exception('GraphQL errors: $msgs');
-    }
-
-    final transfers = parsed['data']?['transfers'] as List<dynamic>?;
-    final count = transfers?.length ?? 0;
-    _log('transfers query: received $count transfers (${elapsed}ms)');
-    if (transfers == null || transfers.isEmpty) return [];
-
-    return transfers.map((t) => WormholeTransfer.fromJson(t as Map<String, dynamic>)).toList();
+    _log('transfers query: limit=$limit afterBlock=$afterBlock cursor=$after');
+    final rows = await _graphQlRows('transfers', document, variables, 'transfers');
+    _log('transfers query: received ${rows.length} transfers');
+    return rows.map(WormholeTransfer.fromJson).toList();
   }
 
   /// Walks every transfer to [toAddress] above [afterBlock] by following the
@@ -500,57 +570,44 @@ $_transferSelection
   // --- Nullifiers ---
 
   /// Looks up which of [nullifierHashes] are already spent on-chain. Returns a
-  /// map from nullifier hash to the block height the nullifier was recorded in,
-  /// so callers can decide whether the entry is reorg-safe to persist.
-  Future<Map<String, int>> _querySpentNullifierHashes(List<String> nullifierHashes) async {
+  /// map from nullifier hash to the spend that consumed it; its block height
+  /// lets callers decide whether the entry is reorg-safe to persist.
+  Future<Map<String, WormholeSpend>> _querySpentNullifierHashes(List<String> nullifierHashes) async {
     const query = r'''
 query SpentNullifiers($hashes: [String!]!) {
   wormholeNullifiers: wormhole_nullifier(where: { nullifier_hash: {_in: $hashes } }, limit: 1000) {
     nullifierHash: nullifier_hash
+    extrinsicId: wormhole_extrinsic_id
+    timestamp
     block { height }
+    wormholeExtrinsic { extrinsic { call } outputs { id exitAccountId: exit_account_id amount } }
   }
 }''';
 
-    final body = jsonEncode({
-      'query': query,
-      'variables': {'hashes': nullifierHashes},
-    });
-
     _log('nullifiers query: ${nullifierHashes.length} hashes');
-    final sw = Stopwatch()..start();
-    final response = await _graphQlEndpoint.post(body: body);
-    final elapsed = sw.elapsedMilliseconds;
-    _log('nullifiers query: status=${response.statusCode} elapsed=${elapsed}ms');
-
-    if (response.statusCode != 200) {
-      _log('nullifiers query FAILED: ${response.body}');
-      throw Exception('Subsquid nullifiers request failed ${response.statusCode}: ${response.body}');
+    final rows = await _graphQlRows('nullifiers', query, {'hashes': nullifierHashes}, 'wormholeNullifiers');
+    final found = <String, WormholeSpend>{};
+    for (final m in rows) {
+      final extrinsic = m['wormholeExtrinsic'] as Map<String, dynamic>;
+      found[m['nullifierHash'] as String] = WormholeSpend(
+        extrinsicId: m['extrinsicId'] as String,
+        blockHeight: (m['block'] as Map<String, dynamic>)['height'] as int,
+        timestamp: DateTime.parse(m['timestamp'] as String),
+        call: (extrinsic['extrinsic'] as Map<String, dynamic>)['call'] as String,
+        outputs: [
+          for (final o in extrinsic['outputs'] as List<dynamic>) WormholeOutput.fromJson(o as Map<String, dynamic>),
+        ],
+      );
     }
-
-    final parsed = jsonDecode(response.body) as Map<String, dynamic>;
-    if (parsed['errors'] != null) {
-      final msgs = (parsed['errors'] as List).map((e) => (e as Map)['message']).join('; ');
-      _log('nullifiers query GraphQL errors: $msgs');
-      throw Exception('GraphQL errors: $msgs');
-    }
-
-    final results = parsed['data']?['wormholeNullifiers'] as List<dynamic>?;
-    final found = <String, int>{};
-    for (final r in results ?? const []) {
-      final m = r as Map<String, dynamic>;
-      final hash = m['nullifierHash'] as String;
-      final height = (m['block'] as Map<String, dynamic>)['height'] as int;
-      found[hash] = height;
-    }
-    _log('nullifiers query: ${found.length} spent out of ${nullifierHashes.length} queried (${elapsed}ms)');
+    _log('nullifiers query: ${found.length} spent out of ${nullifierHashes.length} queried');
     return found;
   }
 
-  /// Returns a map from nullifier hex to the block height where it was spent.
-  /// Callers are responsible for deciding which entries are reorg-safe to
-  /// persist (see `getUnspentUtxos`).
+  /// Returns a map from nullifier hex to the spend that consumed it. Callers
+  /// are responsible for deciding which entries are reorg-safe to persist
+  /// (see `getUnspentUtxos`).
   @visibleForTesting
-  Future<Map<String, int>> checkNullifiersSpent(
+  Future<Map<String, WormholeSpend>> checkNullifiersSpent(
     List<(String nullifierHex, String nullifierHash)> nullifiers, {
     WormholeProgressCallback? onProgress,
     IsCancelledCallback? isCancelled,
@@ -564,7 +621,7 @@ query SpentNullifiers($hashes: [String!]!) {
     }
 
     final allHashes = hashToNullifier.keys.toList();
-    final spent = <String, int>{};
+    final spent = <String, WormholeSpend>{};
     onProgress?.call(3, 0, total: nullifiers.length);
 
     for (int i = 0; i < allHashes.length; i += _nullifierBatchSize) {
@@ -673,9 +730,10 @@ query SpentNullifiers($hashes: [String!]!) {
     return (transfers: fetched.byAddress[wormholeAddress]!, safeCutoff: fetched.safeCutoff);
   }
 
-  /// Returns the unspent transfers across all [addresses], each attributed to
-  /// its owning address (whose secret is needed to spend it), along with total
-  /// received and spent amounts across all addresses.
+  /// Scans every transfer ever received on [addresses] and looks up which of
+  /// them are spent. Each transfer is attributed to its owning address (whose
+  /// secret is needed to spend it); each spend carries the consuming extrinsic
+  /// and its exits so callers can reconstruct the account's history.
   Future<WormholeUtxoResult> getUnspentUtxos({
     required List<WormholeAddressInfo> addresses,
     WormholeProgressCallback? onProgress,
@@ -691,28 +749,15 @@ query SpentNullifiers($hashes: [String!]!) {
     final totalTransfers = fetched.byAddress.values.fold<int>(0, (sum, l) => sum + l.length);
     if (totalTransfers == 0) {
       _log('getUnspentUtxos: no transfers found');
-      return WormholeUtxoResult(
-        utxos: const [],
-        totalReceivedToken: BigInt.zero,
-        changeReceivedToken: BigInt.zero,
-        totalSpentToken: BigInt.zero,
-      );
-    }
-
-    BigInt totalReceivedToken = BigInt.zero;
-    BigInt changeReceivedToken = BigInt.zero;
-    for (final owner in addresses) {
-      for (final t in fetched.byAddress[owner.address]!) {
-        totalReceivedToken += t.amount;
-        if (owner.isChange) changeReceivedToken += t.amount;
-      }
+      return const WormholeUtxoResult(received: [], spends: {});
     }
 
     final hdWalletService = HdWalletService();
     final uncheckedPairs = <(String, String)>[];
-    final nullifierToUtxo = <String, WormholeUtxo>{};
-    final cachedSpentByOwner = <String, Set<String>>{};
-    final allSpent = <String>{};
+    final received = <WormholeUtxo>[];
+    final ownerHashByNullifier = <String, String>{};
+    final cachedSpentByOwner = <String, Map<String, WormholeSpend>>{};
+    final spends = <String, WormholeSpend>{};
     int processed = 0;
     int skipped = 0;
 
@@ -720,7 +765,7 @@ query SpentNullifiers($hashes: [String!]!) {
       final ownerHash = _addressHashOf(owner.address);
       final cachedSpent = await loadSpentNullifiers(ownerHash);
       cachedSpentByOwner[ownerHash] = cachedSpent;
-      allSpent.addAll(cachedSpent);
+      spends.addAll(cachedSpent);
 
       for (final transfer in fetched.byAddress[owner.address]!) {
         _throwIfCancelled(isCancelled);
@@ -736,12 +781,9 @@ query SpentNullifiers($hashes: [String!]!) {
           address: owner.address,
           secretHex: '',
         );
-        nullifierToUtxo[nullifierHex] = WormholeUtxo(
-          transfer: transfer,
-          owner: redactedOwner,
-          nullifierHex: nullifierHex,
-        );
-        if (cachedSpent.contains(nullifierHex)) {
+        received.add(WormholeUtxo(transfer: transfer, owner: redactedOwner, nullifierHex: nullifierHex));
+        ownerHashByNullifier[nullifierHex] = ownerHash;
+        if (cachedSpent.containsKey(nullifierHex)) {
           skipped++;
         } else {
           final nullifierBytes = hex.decode(nullifierHex.replaceFirst('0x', ''));
@@ -758,21 +800,20 @@ query SpentNullifiers($hashes: [String!]!) {
       final newSpent = await checkNullifiersSpent(uncheckedPairs, onProgress: onProgress, isCancelled: isCancelled);
       // In-memory: every spent nullifier we've seen, including ones in
       // unfinalized blocks — must not be re-claimed in this call.
-      allSpent.addAll(newSpent.keys);
+      spends.addAll(newSpent);
       // Persist: only entries from finalized blocks (height <= safeCutoff),
       // each in its owning address's cache. Unfinalized ones get re-queried
       // next call so a reorg can correct them.
       var unfinalizedCount = 0;
-      final toPersistByOwner = <String, Set<String>>{
+      final toPersistByOwner = <String, Map<String, WormholeSpend>>{
         for (final e in cachedSpentByOwner.entries) e.key: {...e.value},
       };
       for (final entry in newSpent.entries) {
-        if (entry.value > safeCutoff) {
+        if (entry.value.blockHeight > safeCutoff) {
           unfinalizedCount++;
           continue;
         }
-        final ownerHash = _addressHashOf(nullifierToUtxo[entry.key]!.owner.address);
-        toPersistByOwner[ownerHash]!.add(entry.key);
+        toPersistByOwner[ownerHashByNullifier[entry.key]!]![entry.key] = entry.value;
       }
       for (final entry in toPersistByOwner.entries) {
         if (entry.value.length != cachedSpentByOwner[entry.key]!.length) {
@@ -782,17 +823,9 @@ query SpentNullifiers($hashes: [String!]!) {
       _log('Nullifier persistence: skipped $unfinalizedCount above cutoff $safeCutoff');
     }
 
-    final unspent = nullifierToUtxo.entries.where((e) => !allSpent.contains(e.key)).map((e) => e.value).toList();
-    final totalSpentToken = nullifierToUtxo.entries
-        .where((e) => allSpent.contains(e.key))
-        .fold(BigInt.zero, (sum, e) => sum + e.value.amount);
-    _log('getUnspentUtxos: ${unspent.length} unspent out of $totalTransfers total');
-    return WormholeUtxoResult(
-      utxos: unspent,
-      totalReceivedToken: totalReceivedToken,
-      changeReceivedToken: changeReceivedToken,
-      totalSpentToken: totalSpentToken,
-    );
+    final result = WormholeUtxoResult(received: received, spends: spends);
+    _log('getUnspentUtxos: ${result.utxos.length} unspent out of $totalTransfers total');
+    return result;
   }
 
   Future<List<WormholeTransfer>> getUnspentTransfers({
