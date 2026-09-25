@@ -1601,31 +1601,38 @@ class AppLocalizationsId extends AppLocalizations {
   String get swapTo => 'Ke';
 
   @override
-  String get swapRefundAddress => 'Alamat Refund';
-
-  @override
-  String swapRefundAddressHint(String network) {
-    return 'Alamat $network';
-  }
-
-  @override
-  String get swapSlippageTolerance => 'Toleransi Slippage';
+  String get swapExternalWallet => 'Dompet yang Anda kendalikan';
 
   @override
   String get swapRate => 'Kurs';
 
   @override
-  String get swapGetQuote => 'Dapatkan Penawaran';
-
-  @override
-  String swapRateLabel(String amount, String symbol, String tokenSymbol) {
-    return '1 $tokenSymbol = $amount $symbol';
+  String swapRateLabel(String fromSymbol, String rate, String toSymbol) {
+    return '1 $fromSymbol = $rate $toSymbol';
   }
 
   @override
-  String swapRateZero(String symbol, String tokenSymbol) {
-    return '1 $tokenSymbol = 0 $symbol';
+  String swapSlippageLabel(String percent) {
+    return 'Slippage $percent%';
   }
+
+  @override
+  String get swapSlippageTitle => 'Toleransi Slippage';
+
+  @override
+  String get swapSlippageBody =>
+      'Jika harga bergerak lebih dari ini sebelum swap Anda terisi, dana dikembalikan. Toleransi lebih tinggi lebih sering terisi tetapi hasilnya bisa lebih sedikit.';
+
+  @override
+  String swapSlippagePercent(String percent) {
+    return '$percent%';
+  }
+
+  @override
+  String get swapAddRecipientAddress => 'Tambahkan Alamat Penerima';
+
+  @override
+  String get swapAddRefundAddress => 'Tambahkan Alamat Refund';
 
   @override
   String get swapTokenPickerTitle => 'Pilih Token';
@@ -1639,31 +1646,190 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
-  String get swapReviewTitle => 'Tinjau Penawaran';
+  String get swapRecipientAddressTitle => 'Alamat Penerima';
 
   @override
-  String get swapReviewMinimumReceived => 'Minimum diterima';
+  String get swapRefundAddressTitle => 'Alamat Refund';
 
   @override
-  String get swapReviewEstimatedTime => 'Perkiraan waktu';
-
-  @override
-  String swapReviewTimeSeconds(int seconds) {
-    return 'Sekitar $seconds detik';
+  String swapAddressLabel(String symbol) {
+    return 'Alamat $symbol';
   }
 
   @override
-  String swapReviewTimeMinutes(int minutes) {
-    return 'Sekitar $minutes menit';
+  String swapAddressHint(String network) {
+    return 'Alamat $network';
   }
 
   @override
-  String swapReviewSlippageWarning(String percent) {
-    return 'Kurs dikunci saat deposit Anda tiba. Dengan slippage $percent% yang Anda atur, Anda menerima setidaknya minimum di atas.';
+  String swapRecipientAddressNotice(String symbol) {
+    return '$symbol Anda akan tiba di alamat ini. Periksa kembali, swap tidak dapat dibatalkan.';
   }
 
   @override
-  String get swapReviewConfirm => 'Konfirmasi';
+  String swapRefundAddressNotice(String symbol, String network) {
+    return 'Jika swap tidak dapat diselesaikan, $symbol Anda dikembalikan ke alamat ini di $network. Periksa kembali.';
+  }
+
+  @override
+  String get swapSaveAddress => 'Simpan untuk swap berikutnya';
+
+  @override
+  String get swapContinue => 'Lanjutkan ke Swap';
+
+  @override
+  String get swapSavedAddressesTitle => 'Alamat Tersimpan';
+
+  @override
+  String get swapSavedAddressesEmpty => 'Belum ada alamat tersimpan';
+
+  @override
+  String get swapReviewTitle => 'Tinjau Swap';
+
+  @override
+  String get swapYouPay => 'Anda bayar';
+
+  @override
+  String get swapYouReceive => 'Anda terima';
+
+  @override
+  String get swapReviewRecipient => 'Penerima';
+
+  @override
+  String get swapReviewRefundAddress => 'Alamat refund';
+
+  @override
+  String get swapReviewNetworkFee => 'Biaya jaringan';
+
+  @override
+  String get swapReviewFeeUnavailable => 'Tidak tersedia';
+
+  @override
+  String get swapReviewFeeFailed => 'Tidak dapat mengambil biaya jaringan.';
+
+  @override
+  String get swapReviewSlippage => 'Toleransi slippage';
+
+  @override
+  String swapReviewSlippageValue(String amount, String percent) {
+    return '$amount ($percent%)';
+  }
+
+  @override
+  String get swapReviewGuaranteedMinimum => 'Minimum terjamin';
+
+  @override
+  String swapReviewInsufficient(String symbol) {
+    return '$symbol tidak cukup untuk jumlah ini ditambah biaya jaringan.';
+  }
+
+  @override
+  String get swapReviewPriceMoved => 'Harga berubah. Periksa jumlah baru dan konfirmasi lagi.';
+
+  @override
+  String get swapReviewConfirm => 'Konfirmasi swap';
+
+  @override
+  String get swapInProgressTitle => 'Swap Sedang Berjalan';
+
+  @override
+  String get swapYourePaying => 'Anda membayar';
+
+  @override
+  String get swapYoureReceiving => 'Anda menerima';
+
+  @override
+  String swapStepSent(String symbol) {
+    return '$symbol terkirim';
+  }
+
+  @override
+  String swapStepConfirming(String network) {
+    return 'Mengonfirmasi di $network';
+  }
+
+  @override
+  String get swapStepSwapping => 'Menukar';
+
+  @override
+  String swapStepSending(String symbol, String recipient) {
+    return 'Mengirim $symbol ke $recipient';
+  }
+
+  @override
+  String get swapProgressFooter =>
+      'Biasanya beberapa menit. Swap tetap selesai meskipun Anda meninggalkan layar ini. · via NEAR Intents';
+
+  @override
+  String get swapDetailsTitle => 'Detail Swap';
+
+  @override
+  String get swapDetailsRecipient => 'Alamat penerima';
+
+  @override
+  String get swapDetailsAmountSent => 'Jumlah dikirim';
+
+  @override
+  String get swapDetailsExpected => 'Perkiraan';
+
+  @override
+  String get swapDetailsTransaction => 'Transaksi';
+
+  @override
+  String get swapCompleteTitle => 'Swap Selesai';
+
+  @override
+  String get swapCompleteReceived => 'Diterima';
+
+  @override
+  String get swapCompleteTo => 'Ke:';
+
+  @override
+  String get swapFailedTitle => 'Swap Gagal';
+
+  @override
+  String get swapRefundedLabel => 'Dikembalikan';
+
+  @override
+  String get swapYouPaid => 'Anda telah membayar';
+
+  @override
+  String get swapYouWereReceiving => 'Anda akan menerima';
+
+  @override
+  String swapRefundedBody(String amount, String destination, String symbol) {
+    return 'Swap tidak dapat diselesaikan, jadi $amount Anda telah dikembalikan ke $destination, dikurangi biaya jaringan. $symbol tidak pernah dikirim.';
+  }
+
+  @override
+  String swapDepositRefundReason(String reason) {
+    return 'Alasan: $reason';
+  }
+
+  @override
+  String swapDepositFailedBody(String address) {
+    return 'Swap tidak selesai. Hubungi dukungan dan sebutkan alamat deposit ini: $address';
+  }
+
+  @override
+  String get swapDepositIncompleteTitle => 'Deposit Terlalu Kecil';
+
+  @override
+  String get swapDepositIncompleteBody =>
+      'Jumlah yang tiba kurang dari penawaran. Dana akan dikembalikan ke alamat refund Anda setelah tenggat waktu.';
+
+  @override
+  String get swapDepositExpiredTitle => 'Penawaran Kedaluwarsa';
+
+  @override
+  String get swapDepositExpiredBody =>
+      'Tidak ada deposit yang tiba sebelum tenggat waktu. Jangan kirim dana ke alamat ini lagi. Minta penawaran baru untuk mencoba lagi.';
+
+  @override
+  String get swapStartNew => 'Mulai Swap Baru';
+
+  @override
+  String get swapContactSupport => 'Hubungi Dukungan';
 
   @override
   String get swapDepositAmount => 'Jumlah Deposit';
@@ -1694,69 +1860,6 @@ class AppLocalizationsId extends AppLocalizations {
   String swapDepositNotice(String symbol, String network) {
     return 'Gunakan dompet $symbol atau $network Anda untuk deposit. Menyetor aset lain dapat mengakibatkan kehilangan dana.';
   }
-
-  @override
-  String get swapDepositProcessingTitle => 'Memproses Swap';
-
-  @override
-  String get swapDepositProcessingBody => 'Ini mungkin memakan waktu beberapa menit...';
-
-  @override
-  String get swapDepositCompleteTitle => 'Swap Selesai';
-
-  @override
-  String swapDepositCompleteBody(String amount, String tokenSymbol) {
-    return 'Swap Anda untuk $amount $tokenSymbol telah selesai.';
-  }
-
-  @override
-  String swapDepositDetectedBody(String network) {
-    return 'Deposit Anda terlihat di $network. Swap dimulai setelah dikonfirmasi.';
-  }
-
-  @override
-  String get swapDepositRefundedTitle => 'Swap Dikembalikan';
-
-  @override
-  String swapDepositRefundedBody(String amount, String symbol) {
-    return 'Swap tidak selesai. $amount $symbol dikembalikan ke alamat refund Anda.';
-  }
-
-  @override
-  String swapDepositRefundReason(String reason) {
-    return 'Alasan: $reason';
-  }
-
-  @override
-  String get swapDepositFailedTitle => 'Swap Gagal';
-
-  @override
-  String swapDepositFailedBody(String address) {
-    return 'Swap tidak selesai. Hubungi dukungan dan sebutkan alamat deposit ini: $address';
-  }
-
-  @override
-  String get swapDepositIncompleteTitle => 'Deposit Terlalu Kecil';
-
-  @override
-  String get swapDepositIncompleteBody =>
-      'Jumlah yang tiba kurang dari penawaran. Dana akan dikembalikan ke alamat refund Anda setelah tenggat waktu.';
-
-  @override
-  String get swapDepositExpiredTitle => 'Penawaran Kedaluwarsa';
-
-  @override
-  String get swapDepositExpiredBody =>
-      'Tidak ada deposit yang tiba sebelum tenggat waktu. Jangan kirim dana ke alamat ini lagi. Minta penawaran baru untuk mencoba lagi.';
-
-  @override
-  String get swapDepositDone => 'Selesai';
-
-  @override
-  String get swapRefundPickerTitle => 'Alamat Refund';
-
-  @override
-  String get swapRefundPickerEmpty => 'Tidak ada alamat refund terbaru';
 
   @override
   String get componentQrScannerTitle => 'Pindai Kode QR';

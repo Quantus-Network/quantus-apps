@@ -2302,65 +2302,69 @@
     },
     "swapFrom": "From",
     "@swapFrom": {
-      "description": "From token section label on swap screen"
+      "description": "Label of the side the swapped funds come from"
     },
     "swapTo": "To",
     "@swapTo": {
-      "description": "To token section label on swap screen"
+      "description": "Label of the side the swapped funds go to"
     },
-    "swapRefundAddress": "Refund Address",
-    "@swapRefundAddress": {
-      "description": "Refund address field label on swap screen"
-    },
-    "swapRefundAddressHint": "{network} Address",
-    "@swapRefundAddressHint": {
-      "description": "Refund address field hint",
-      "placeholders": {
-        "network": {
-          "type": "String"
-        }
-      }
-    },
-    "swapSlippageTolerance": "Slippage Tolerance",
-    "@swapSlippageTolerance": {
-      "description": "Slippage tolerance label on swap screen"
+    "swapExternalWallet": "A wallet you control",
+    "@swapExternalWallet": {
+      "description": "Owner of the external token side of the swap form"
     },
     "swapRate": "Rate",
     "@swapRate": {
       "description": "Exchange rate label on swap screen"
     },
-    "swapGetQuote": "Get a Quote",
-    "@swapGetQuote": {
-      "description": "Get quote button on swap screen"
-    },
-    "swapRateLabel": "1 {tokenSymbol} = {amount} {symbol}",
+    "swapRateLabel": "1 {fromSymbol} = {rate} {toSymbol}",
     "@swapRateLabel": {
-      "description": "Exchange rate display",
+      "description": "Exchange rate: what one input token buys",
       "placeholders": {
-        "amount": {
+        "fromSymbol": {
           "type": "String"
         },
-        "symbol": {
+        "rate": {
           "type": "String"
         },
-        "tokenSymbol": {
+        "toSymbol": {
           "type": "String"
         }
       }
     },
-    "swapRateZero": "1 {tokenSymbol} = 0 {symbol}",
-    "@swapRateZero": {
-      "description": "Exchange rate when amount is zero",
+    "swapSlippageLabel": "Slippage {percent}%",
+    "@swapSlippageLabel": {
+      "description": "Slippage tolerance under the swap form",
       "placeholders": {
-        "symbol": {
-          "type": "String"
-        },
-        "tokenSymbol": {
+        "percent": {
           "type": "String"
         }
       }
     },
-
+    "swapSlippageTitle": "Slippage Tolerance",
+    "@swapSlippageTitle": {
+      "description": "Title of the slippage tolerance sheet"
+    },
+    "swapSlippageBody": "If the price moves further than this before your swap fills, it is refunded instead. A higher tolerance fills more often but can pay out less.",
+    "@swapSlippageBody": {
+      "description": "Explanation on the slippage tolerance sheet"
+    },
+    "swapSlippagePercent": "{percent}%",
+    "@swapSlippagePercent": {
+      "description": "A slippage tolerance option",
+      "placeholders": {
+        "percent": {
+          "type": "String"
+        }
+      }
+    },
+    "swapAddRecipientAddress": "Add Recipient Address",
+    "@swapAddRecipientAddress": {
+      "description": "Swap form button for a swap out of QTC"
+    },
+    "swapAddRefundAddress": "Add Refund Address",
+    "@swapAddRefundAddress": {
+      "description": "Swap form button for a swap into QTC"
+    },
     "swapTokenPickerTitle": "Select Token",
     "@swapTokenPickerTitle": {
       "description": "Title on token picker sheet"
@@ -2378,51 +2382,293 @@
         }
       }
     },
-
-    "swapReviewTitle": "Review Quote",
+    "swapRecipientAddressTitle": "Recipient Address",
+    "@swapRecipientAddressTitle": {
+      "description": "Title of the sheet asking where the swapped funds go"
+    },
+    "swapRefundAddressTitle": "Refund Address",
+    "@swapRefundAddressTitle": {
+      "description": "Title of the sheet asking where a failed swap is refunded"
+    },
+    "swapAddressLabel": "{symbol} Address",
+    "@swapAddressLabel": {
+      "description": "Address field label in the swap address sheet",
+      "placeholders": {
+        "symbol": {
+          "type": "String"
+        }
+      }
+    },
+    "swapAddressHint": "{network} Address",
+    "@swapAddressHint": {
+      "description": "Address field hint in the swap address sheet",
+      "placeholders": {
+        "network": {
+          "type": "String"
+        }
+      }
+    },
+    "swapRecipientAddressNotice": "Your {symbol} will arrive at this address. Double-check it, swaps cannot be reversed.",
+    "@swapRecipientAddressNotice": {
+      "description": "Warning under the recipient address field",
+      "placeholders": {
+        "symbol": {
+          "type": "String"
+        }
+      }
+    },
+    "swapRefundAddressNotice": "If the swap cannot complete, your {symbol} returns to this address on {network}. Double-check it.",
+    "@swapRefundAddressNotice": {
+      "description": "Warning under the refund address field",
+      "placeholders": {
+        "symbol": {
+          "type": "String"
+        },
+        "network": {
+          "type": "String"
+        }
+      }
+    },
+    "swapSaveAddress": "Save for future swaps",
+    "@swapSaveAddress": {
+      "description": "Checkbox that saves the entered address"
+    },
+    "swapContinue": "Continue to Swap",
+    "@swapContinue": {
+      "description": "Button that quotes the swap with the entered address"
+    },
+    "swapSavedAddressesTitle": "Saved Addresses",
+    "@swapSavedAddressesTitle": {
+      "description": "Title of the saved swap addresses sheet"
+    },
+    "swapSavedAddressesEmpty": "No saved addresses yet",
+    "@swapSavedAddressesEmpty": {
+      "description": "Empty saved swap addresses sheet"
+    },
+    "swapReviewTitle": "Review Swap",
     "@swapReviewTitle": {
-      "description": "Title on review quote sheet"
+      "description": "Title of the swap review screen"
     },
-    "swapReviewMinimumReceived": "Minimum received",
-    "@swapReviewMinimumReceived": {
-      "description": "Least amount the quote guarantees, on review quote sheet"
+    "swapYouPay": "You pay",
+    "@swapYouPay": {
+      "description": "Pay side of the swap review card"
     },
-    "swapReviewEstimatedTime": "Estimated time",
-    "@swapReviewEstimatedTime": {
-      "description": "Row label for how long 1Click expects the swap to take"
+    "swapYouReceive": "You receive",
+    "@swapYouReceive": {
+      "description": "Receive side of the swap review card"
     },
-    "swapReviewTimeSeconds": "About {seconds} seconds",
-    "@swapReviewTimeSeconds": {
-      "description": "Swap time estimate under a minute",
+    "swapReviewRecipient": "Recipient",
+    "@swapReviewRecipient": {
+      "description": "Review row: external address receiving the swap"
+    },
+    "swapReviewRefundAddress": "Refund address",
+    "@swapReviewRefundAddress": {
+      "description": "Review row: external address a failed swap is refunded to"
+    },
+    "swapReviewNetworkFee": "Network fee",
+    "@swapReviewNetworkFee": {
+      "description": "Review row and details row: chain fee of the QTC deposit"
+    },
+    "swapReviewFeeUnavailable": "Unavailable",
+    "@swapReviewFeeUnavailable": {
+      "description": "Network fee value when it could not be fetched"
+    },
+    "swapReviewFeeFailed": "Could not get the network fee.",
+    "@swapReviewFeeFailed": {
+      "description": "Error under the review rows when the fee failed"
+    },
+    "swapReviewSlippage": "Slippage allowance",
+    "@swapReviewSlippage": {
+      "description": "Review row: how far below the quote the output may land"
+    },
+    "swapReviewSlippageValue": "{amount} ({percent}%)",
+    "@swapReviewSlippageValue": {
+      "description": "Slippage allowance value",
       "placeholders": {
-        "seconds": {
-          "type": "int"
-        }
-      }
-    },
-    "swapReviewTimeMinutes": "About {minutes} minutes",
-    "@swapReviewTimeMinutes": {
-      "description": "Swap time estimate of a minute or more",
-      "placeholders": {
-        "minutes": {
-          "type": "int"
-        }
-      }
-    },
-    "swapReviewSlippageWarning": "The rate locks in when your deposit arrives. With the {percent}% slippage you set, you receive at least the minimum above.",
-    "@swapReviewSlippageWarning": {
-      "description": "Slippage note on review quote sheet",
-      "placeholders": {
+        "amount": {
+          "type": "String"
+        },
         "percent": {
           "type": "String"
         }
       }
     },
-    "swapReviewConfirm": "Confirm",
-    "@swapReviewConfirm": {
-      "description": "Confirm button on review quote sheet"
+    "swapReviewGuaranteedMinimum": "Guaranteed minimum",
+    "@swapReviewGuaranteedMinimum": {
+      "description": "Review row: least the swap pays out"
     },
-
+    "swapReviewInsufficient": "Not enough {symbol} for this amount plus the network fee.",
+    "@swapReviewInsufficient": {
+      "description": "Review error when the balance cannot cover the deposit",
+      "placeholders": {
+        "symbol": {
+          "type": "String"
+        }
+      }
+    },
+    "swapReviewPriceMoved": "The price moved. Check the new amounts and confirm again.",
+    "@swapReviewPriceMoved": {
+      "description": "Toast when the live quote guarantees less than the one reviewed"
+    },
+    "swapReviewConfirm": "Confirm swap",
+    "@swapReviewConfirm": {
+      "description": "Confirm button on the swap review screen"
+    },
+    "swapInProgressTitle": "Swap In Progress",
+    "@swapInProgressTitle": {
+      "description": "Title while the swap is running"
+    },
+    "swapYourePaying": "You're paying",
+    "@swapYourePaying": {
+      "description": "Pay side of the swap progress card"
+    },
+    "swapYoureReceiving": "You're receiving",
+    "@swapYoureReceiving": {
+      "description": "Receive side of the swap progress card"
+    },
+    "swapStepSent": "{symbol} sent",
+    "@swapStepSent": {
+      "description": "Progress step: deposit sent",
+      "placeholders": {
+        "symbol": {
+          "type": "String"
+        }
+      }
+    },
+    "swapStepConfirming": "Confirming on {network}",
+    "@swapStepConfirming": {
+      "description": "Progress step: deposit confirming",
+      "placeholders": {
+        "network": {
+          "type": "String"
+        }
+      }
+    },
+    "swapStepSwapping": "Swapping",
+    "@swapStepSwapping": {
+      "description": "Progress step: solvers swapping"
+    },
+    "swapStepSending": "Sending {symbol} to {recipient}",
+    "@swapStepSending": {
+      "description": "Progress step: payout",
+      "placeholders": {
+        "symbol": {
+          "type": "String"
+        },
+        "recipient": {
+          "type": "String"
+        }
+      }
+    },
+    "swapProgressFooter": "Usually a few minutes. The swap finishes even if you leave this screen. · via NEAR Intents",
+    "@swapProgressFooter": {
+      "description": "Footer under the swap progress bar"
+    },
+    "swapDetailsTitle": "Swap Details",
+    "@swapDetailsTitle": {
+      "description": "Title of the swap details sheet"
+    },
+    "swapDetailsRecipient": "Recipient address",
+    "@swapDetailsRecipient": {
+      "description": "Details row: address receiving the swap"
+    },
+    "swapDetailsAmountSent": "Amount sent",
+    "@swapDetailsAmountSent": {
+      "description": "Details row: deposit amount"
+    },
+    "swapDetailsExpected": "Expected",
+    "@swapDetailsExpected": {
+      "description": "Details row: quoted payout"
+    },
+    "swapDetailsTransaction": "Transaction",
+    "@swapDetailsTransaction": {
+      "description": "Details row: deposit transaction hash"
+    },
+    "swapCompleteTitle": "Swap Complete",
+    "@swapCompleteTitle": {
+      "description": "Title when the swap paid out"
+    },
+    "swapCompleteReceived": "Received",
+    "@swapCompleteReceived": {
+      "description": "Caption under the paid-out amount"
+    },
+    "swapCompleteTo": "To:",
+    "@swapCompleteTo": {
+      "description": "Label above where the swap paid out"
+    },
+    "swapFailedTitle": "Swap Failed",
+    "@swapFailedTitle": {
+      "description": "Title when the swap did not pay out"
+    },
+    "swapRefundedLabel": "Refunded",
+    "@swapRefundedLabel": {
+      "description": "Status label on a refunded swap"
+    },
+    "swapYouPaid": "You paid",
+    "@swapYouPaid": {
+      "description": "Pay side of a failed swap card"
+    },
+    "swapYouWereReceiving": "You were receiving",
+    "@swapYouWereReceiving": {
+      "description": "Receive side of a failed swap card"
+    },
+    "swapRefundedBody": "The swap could not be completed, so your {amount} has been returned to {destination}, minus the network fee. The {symbol} was never sent.",
+    "@swapRefundedBody": {
+      "description": "Banner on a refunded swap",
+      "placeholders": {
+        "amount": {
+          "type": "String"
+        },
+        "destination": {
+          "type": "String"
+        },
+        "symbol": {
+          "type": "String"
+        }
+      }
+    },
+    "swapDepositRefundReason": "Reason: {reason}",
+    "@swapDepositRefundReason": {
+      "description": "Refund reason reported by 1Click",
+      "placeholders": {
+        "reason": {
+          "type": "String"
+        }
+      }
+    },
+    "swapDepositFailedBody": "The swap did not complete. Contact support and quote this deposit address: {address}",
+    "@swapDepositFailedBody": {
+      "description": "Body when 1Click reports the swap failed",
+      "placeholders": {
+        "address": {
+          "type": "String"
+        }
+      }
+    },
+    "swapDepositIncompleteTitle": "Deposit Too Small",
+    "@swapDepositIncompleteTitle": {
+      "description": "Title when less than the quoted amount arrived"
+    },
+    "swapDepositIncompleteBody": "Less than the quoted amount arrived. It will be refunded to your refund address after the deadline.",
+    "@swapDepositIncompleteBody": {
+      "description": "Body when less than the quoted amount arrived"
+    },
+    "swapDepositExpiredTitle": "Quote Expired",
+    "@swapDepositExpiredTitle": {
+      "description": "Title when the deadline passed with no deposit"
+    },
+    "swapDepositExpiredBody": "No deposit arrived before the deadline. Do not send funds to this address anymore. Get a new quote to try again.",
+    "@swapDepositExpiredBody": {
+      "description": "Body when the deadline passed with no deposit"
+    },
+    "swapStartNew": "Start a New Swap",
+    "@swapStartNew": {
+      "description": "Button on a failed swap"
+    },
+    "swapContactSupport": "Contact Support",
+    "@swapContactSupport": {
+      "description": "Link on a failed swap"
+    },
     "swapDepositAmount": "Deposit Amount",
     "@swapDepositAmount": {
       "description": "Deposit amount label on deposit screen"
@@ -2478,106 +2724,6 @@
           "type": "String"
         }
       }
-    },
-    "swapDepositProcessingTitle": "Processing Swap",
-    "@swapDepositProcessingTitle": {
-      "description": "Title while swap is processing"
-    },
-    "swapDepositProcessingBody": "This may take a few minutes...",
-    "@swapDepositProcessingBody": {
-      "description": "Body while swap is processing"
-    },
-    "swapDepositCompleteTitle": "Swap Complete",
-    "@swapDepositCompleteTitle": {
-      "description": "Title when swap is complete"
-    },
-    "swapDepositCompleteBody": "Your swap for {amount} {tokenSymbol} is complete.",
-    "@swapDepositCompleteBody": {
-      "description": "Body when swap is complete",
-      "placeholders": {
-        "amount": {
-          "type": "String"
-        },
-        "tokenSymbol": {
-          "type": "String"
-        }
-      }
-    },
-    "swapDepositDetectedBody": "Your deposit was seen on {network}. The swap starts once it is confirmed.",
-    "@swapDepositDetectedBody": {
-      "description": "Body while 1Click has seen the deposit transaction but not yet confirmed it",
-      "placeholders": {
-        "network": {
-          "type": "String"
-        }
-      }
-    },
-    "swapDepositRefundedTitle": "Swap Refunded",
-    "@swapDepositRefundedTitle": {
-      "description": "Title when 1Click refunded the deposit"
-    },
-    "swapDepositRefundedBody": "The swap did not complete. {amount} {symbol} was returned to your refund address.",
-    "@swapDepositRefundedBody": {
-      "description": "Body when 1Click refunded the deposit",
-      "placeholders": {
-        "amount": {
-          "type": "String"
-        },
-        "symbol": {
-          "type": "String"
-        }
-      }
-    },
-    "swapDepositRefundReason": "Reason: {reason}",
-    "@swapDepositRefundReason": {
-      "description": "Refund reason reported by 1Click",
-      "placeholders": {
-        "reason": {
-          "type": "String"
-        }
-      }
-    },
-    "swapDepositFailedTitle": "Swap Failed",
-    "@swapDepositFailedTitle": {
-      "description": "Title when 1Click reports the swap failed"
-    },
-    "swapDepositFailedBody": "The swap did not complete. Contact support and quote this deposit address: {address}",
-    "@swapDepositFailedBody": {
-      "description": "Body when 1Click reports the swap failed",
-      "placeholders": {
-        "address": {
-          "type": "String"
-        }
-      }
-    },
-    "swapDepositIncompleteTitle": "Deposit Too Small",
-    "@swapDepositIncompleteTitle": {
-      "description": "Title when less than the quoted amount arrived"
-    },
-    "swapDepositIncompleteBody": "Less than the quoted amount arrived. It will be refunded to your refund address after the deadline.",
-    "@swapDepositIncompleteBody": {
-      "description": "Body when less than the quoted amount arrived"
-    },
-    "swapDepositExpiredTitle": "Quote Expired",
-    "@swapDepositExpiredTitle": {
-      "description": "Title when the deadline passed with no deposit"
-    },
-    "swapDepositExpiredBody": "No deposit arrived before the deadline. Do not send funds to this address anymore. Get a new quote to try again.",
-    "@swapDepositExpiredBody": {
-      "description": "Body when the deadline passed with no deposit"
-    },
-    "swapDepositDone": "Done",
-    "@swapDepositDone": {
-      "description": "Done button after swap completes"
-    },
-
-    "swapRefundPickerTitle": "Refund Addresses",
-    "@swapRefundPickerTitle": {
-      "description": "Title on refund address picker sheet"
-    },
-    "swapRefundPickerEmpty": "No recent refund addresses",
-    "@swapRefundPickerEmpty": {
-      "description": "Empty state on refund address picker"
     },
 
     "componentQrScannerTitle": "Scan QR Code",

@@ -1598,31 +1598,38 @@ class AppLocalizationsEn extends AppLocalizations {
   String get swapTo => 'To';
 
   @override
-  String get swapRefundAddress => 'Refund Address';
-
-  @override
-  String swapRefundAddressHint(String network) {
-    return '$network Address';
-  }
-
-  @override
-  String get swapSlippageTolerance => 'Slippage Tolerance';
+  String get swapExternalWallet => 'A wallet you control';
 
   @override
   String get swapRate => 'Rate';
 
   @override
-  String get swapGetQuote => 'Get a Quote';
-
-  @override
-  String swapRateLabel(String amount, String symbol, String tokenSymbol) {
-    return '1 $tokenSymbol = $amount $symbol';
+  String swapRateLabel(String fromSymbol, String rate, String toSymbol) {
+    return '1 $fromSymbol = $rate $toSymbol';
   }
 
   @override
-  String swapRateZero(String symbol, String tokenSymbol) {
-    return '1 $tokenSymbol = 0 $symbol';
+  String swapSlippageLabel(String percent) {
+    return 'Slippage $percent%';
   }
+
+  @override
+  String get swapSlippageTitle => 'Slippage Tolerance';
+
+  @override
+  String get swapSlippageBody =>
+      'If the price moves further than this before your swap fills, it is refunded instead. A higher tolerance fills more often but can pay out less.';
+
+  @override
+  String swapSlippagePercent(String percent) {
+    return '$percent%';
+  }
+
+  @override
+  String get swapAddRecipientAddress => 'Add Recipient Address';
+
+  @override
+  String get swapAddRefundAddress => 'Add Refund Address';
 
   @override
   String get swapTokenPickerTitle => 'Select Token';
@@ -1636,31 +1643,190 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get swapReviewTitle => 'Review Quote';
+  String get swapRecipientAddressTitle => 'Recipient Address';
 
   @override
-  String get swapReviewMinimumReceived => 'Minimum received';
+  String get swapRefundAddressTitle => 'Refund Address';
 
   @override
-  String get swapReviewEstimatedTime => 'Estimated time';
-
-  @override
-  String swapReviewTimeSeconds(int seconds) {
-    return 'About $seconds seconds';
+  String swapAddressLabel(String symbol) {
+    return '$symbol Address';
   }
 
   @override
-  String swapReviewTimeMinutes(int minutes) {
-    return 'About $minutes minutes';
+  String swapAddressHint(String network) {
+    return '$network Address';
   }
 
   @override
-  String swapReviewSlippageWarning(String percent) {
-    return 'The rate locks in when your deposit arrives. With the $percent% slippage you set, you receive at least the minimum above.';
+  String swapRecipientAddressNotice(String symbol) {
+    return 'Your $symbol will arrive at this address. Double-check it, swaps cannot be reversed.';
   }
 
   @override
-  String get swapReviewConfirm => 'Confirm';
+  String swapRefundAddressNotice(String symbol, String network) {
+    return 'If the swap cannot complete, your $symbol returns to this address on $network. Double-check it.';
+  }
+
+  @override
+  String get swapSaveAddress => 'Save for future swaps';
+
+  @override
+  String get swapContinue => 'Continue to Swap';
+
+  @override
+  String get swapSavedAddressesTitle => 'Saved Addresses';
+
+  @override
+  String get swapSavedAddressesEmpty => 'No saved addresses yet';
+
+  @override
+  String get swapReviewTitle => 'Review Swap';
+
+  @override
+  String get swapYouPay => 'You pay';
+
+  @override
+  String get swapYouReceive => 'You receive';
+
+  @override
+  String get swapReviewRecipient => 'Recipient';
+
+  @override
+  String get swapReviewRefundAddress => 'Refund address';
+
+  @override
+  String get swapReviewNetworkFee => 'Network fee';
+
+  @override
+  String get swapReviewFeeUnavailable => 'Unavailable';
+
+  @override
+  String get swapReviewFeeFailed => 'Could not get the network fee.';
+
+  @override
+  String get swapReviewSlippage => 'Slippage allowance';
+
+  @override
+  String swapReviewSlippageValue(String amount, String percent) {
+    return '$amount ($percent%)';
+  }
+
+  @override
+  String get swapReviewGuaranteedMinimum => 'Guaranteed minimum';
+
+  @override
+  String swapReviewInsufficient(String symbol) {
+    return 'Not enough $symbol for this amount plus the network fee.';
+  }
+
+  @override
+  String get swapReviewPriceMoved => 'The price moved. Check the new amounts and confirm again.';
+
+  @override
+  String get swapReviewConfirm => 'Confirm swap';
+
+  @override
+  String get swapInProgressTitle => 'Swap In Progress';
+
+  @override
+  String get swapYourePaying => 'You\'re paying';
+
+  @override
+  String get swapYoureReceiving => 'You\'re receiving';
+
+  @override
+  String swapStepSent(String symbol) {
+    return '$symbol sent';
+  }
+
+  @override
+  String swapStepConfirming(String network) {
+    return 'Confirming on $network';
+  }
+
+  @override
+  String get swapStepSwapping => 'Swapping';
+
+  @override
+  String swapStepSending(String symbol, String recipient) {
+    return 'Sending $symbol to $recipient';
+  }
+
+  @override
+  String get swapProgressFooter =>
+      'Usually a few minutes. The swap finishes even if you leave this screen. · via NEAR Intents';
+
+  @override
+  String get swapDetailsTitle => 'Swap Details';
+
+  @override
+  String get swapDetailsRecipient => 'Recipient address';
+
+  @override
+  String get swapDetailsAmountSent => 'Amount sent';
+
+  @override
+  String get swapDetailsExpected => 'Expected';
+
+  @override
+  String get swapDetailsTransaction => 'Transaction';
+
+  @override
+  String get swapCompleteTitle => 'Swap Complete';
+
+  @override
+  String get swapCompleteReceived => 'Received';
+
+  @override
+  String get swapCompleteTo => 'To:';
+
+  @override
+  String get swapFailedTitle => 'Swap Failed';
+
+  @override
+  String get swapRefundedLabel => 'Refunded';
+
+  @override
+  String get swapYouPaid => 'You paid';
+
+  @override
+  String get swapYouWereReceiving => 'You were receiving';
+
+  @override
+  String swapRefundedBody(String amount, String destination, String symbol) {
+    return 'The swap could not be completed, so your $amount has been returned to $destination, minus the network fee. The $symbol was never sent.';
+  }
+
+  @override
+  String swapDepositRefundReason(String reason) {
+    return 'Reason: $reason';
+  }
+
+  @override
+  String swapDepositFailedBody(String address) {
+    return 'The swap did not complete. Contact support and quote this deposit address: $address';
+  }
+
+  @override
+  String get swapDepositIncompleteTitle => 'Deposit Too Small';
+
+  @override
+  String get swapDepositIncompleteBody =>
+      'Less than the quoted amount arrived. It will be refunded to your refund address after the deadline.';
+
+  @override
+  String get swapDepositExpiredTitle => 'Quote Expired';
+
+  @override
+  String get swapDepositExpiredBody =>
+      'No deposit arrived before the deadline. Do not send funds to this address anymore. Get a new quote to try again.';
+
+  @override
+  String get swapStartNew => 'Start a New Swap';
+
+  @override
+  String get swapContactSupport => 'Contact Support';
 
   @override
   String get swapDepositAmount => 'Deposit Amount';
@@ -1691,69 +1857,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String swapDepositNotice(String symbol, String network) {
     return 'Use your $symbol or $network wallet to deposit funds. Depositing other assets may result in loss of funds.';
   }
-
-  @override
-  String get swapDepositProcessingTitle => 'Processing Swap';
-
-  @override
-  String get swapDepositProcessingBody => 'This may take a few minutes...';
-
-  @override
-  String get swapDepositCompleteTitle => 'Swap Complete';
-
-  @override
-  String swapDepositCompleteBody(String amount, String tokenSymbol) {
-    return 'Your swap for $amount $tokenSymbol is complete.';
-  }
-
-  @override
-  String swapDepositDetectedBody(String network) {
-    return 'Your deposit was seen on $network. The swap starts once it is confirmed.';
-  }
-
-  @override
-  String get swapDepositRefundedTitle => 'Swap Refunded';
-
-  @override
-  String swapDepositRefundedBody(String amount, String symbol) {
-    return 'The swap did not complete. $amount $symbol was returned to your refund address.';
-  }
-
-  @override
-  String swapDepositRefundReason(String reason) {
-    return 'Reason: $reason';
-  }
-
-  @override
-  String get swapDepositFailedTitle => 'Swap Failed';
-
-  @override
-  String swapDepositFailedBody(String address) {
-    return 'The swap did not complete. Contact support and quote this deposit address: $address';
-  }
-
-  @override
-  String get swapDepositIncompleteTitle => 'Deposit Too Small';
-
-  @override
-  String get swapDepositIncompleteBody =>
-      'Less than the quoted amount arrived. It will be refunded to your refund address after the deadline.';
-
-  @override
-  String get swapDepositExpiredTitle => 'Quote Expired';
-
-  @override
-  String get swapDepositExpiredBody =>
-      'No deposit arrived before the deadline. Do not send funds to this address anymore. Get a new quote to try again.';
-
-  @override
-  String get swapDepositDone => 'Done';
-
-  @override
-  String get swapRefundPickerTitle => 'Refund Addresses';
-
-  @override
-  String get swapRefundPickerEmpty => 'No recent refund addresses';
 
   @override
   String get componentQrScannerTitle => 'Scan QR Code';

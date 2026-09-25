@@ -9,6 +9,7 @@ import 'package:resonance_network_wallet/v2/components/shared_address_action_she
 import 'package:resonance_network_wallet/services/global_history_polling_service.dart';
 import 'package:resonance_network_wallet/services/telemetry_service.dart';
 import 'package:resonance_network_wallet/shared/constants/e2e_keys.dart';
+import 'package:resonance_network_wallet/shared/utils/account_utils.dart';
 import 'package:resonance_network_wallet/shared/utils/print.dart';
 import 'package:resonance_network_wallet/v2/components/amount_display_with_conversion.dart';
 import 'package:resonance_network_wallet/v2/components/private_activity_notice.dart';
@@ -367,10 +368,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final swapCard = _actionCard(
       iconAsset: 'assets/v2/action_swap.svg',
       label: l10n.homeSwap,
-      // Swap is not available for encrypted accounts; keep the button visible
-      // but disabled so the layout doesn't change between account types.
-      isDisabled: isEncrypted,
-      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SwapScreen())),
+      // Swap signs the deposit locally, so only transparent accounts with a key
+      // here can swap; keep the button visible but disabled for the others so
+      // the layout doesn't change between account types.
+      isDisabled: !account.signsLocally,
+      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => SwapScreen(account: account))),
     );
 
     return Row(
