@@ -4,7 +4,8 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 
 /// Icon-over-label action tile from the app design (home Receive / Send / Swap,
 /// POS Charge). Not a design-system Button type: gradient fill, hairline border,
-/// 20/16 padding. Rows use a 20 gap for two cards and 15 for three.
+/// 20/8 padding. Rows use a 20 gap for two cards and 15 for three. The label
+/// never wraps; it only scales down if it still doesn't fit (large system font).
 class ActionCard extends StatelessWidget {
   final String iconAsset;
   final String label;
@@ -29,7 +30,7 @@ class ActionCard extends StatelessWidget {
         onTap: isDisabled ? null : onTap,
         borderRadius: radius,
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 20),
           decoration: ShapeDecoration(
             gradient: LinearGradient(
               begin: Alignment.topCenter,
@@ -51,7 +52,14 @@ class ActionCard extends StatelessWidget {
                 height: 24,
                 colorFilter: ColorFilter.mode(colors.accentFlare, BlendMode.srcIn),
               ),
-              Text(label, style: context.themeTextV3.bodyLarge.copyWith(color: colors.textWhite.useOpacity(0.8))),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  style: context.themeTextV3.bodyLarge.copyWith(color: colors.textWhite.useOpacity(0.8)),
+                ),
+              ),
             ],
           ),
         ),
