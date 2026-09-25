@@ -113,11 +113,6 @@ class AppConstants {
   // Always show the home backup nudge regardless of viewed state and balance
   static const bool debugAlwaysShowBackupNudge = false;
 
-  // Shows the one-time mainnet migration notice on every debug launch, with an
-  // outcome picker on its checking page so every flow can be walked through
-  // without real testnet data. Flip to false to see the notice only when due.
-  static const bool debugMainnetMigration = true;
-
   // Shows an outcome picker on the Airdrop entry screen in debug builds so
   // every rewards state can be walked through without a mining wallet.
   static const bool debugMiningRewards = true;
