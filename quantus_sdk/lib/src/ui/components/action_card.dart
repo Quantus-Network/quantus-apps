@@ -24,6 +24,7 @@ class ActionCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.colorsV3;
     final radius = context.radiusV3.mdBorder;
+    final labelStyle = context.themeTextV3.bodyLarge.copyWith(color: colors.textWhite.useOpacity(0.8));
     return Opacity(
       opacity: isDisabled ? 0.4 : 1,
       child: InkWell(
@@ -52,12 +53,11 @@ class ActionCard extends StatelessWidget {
                 height: 24,
                 colorFilter: ColorFilter.mode(colors.accentFlare, BlendMode.srcIn),
               ),
-              FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Text(
-                  label,
-                  maxLines: 1,
-                  style: context.themeTextV3.bodyLarge.copyWith(color: colors.textWhite.useOpacity(0.8)),
+              SizedBox(
+                height: MediaQuery.textScalerOf(context).scale(labelStyle.fontSize!) * labelStyle.height!,
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(label, maxLines: 1, style: labelStyle),
                 ),
               ),
             ],
