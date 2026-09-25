@@ -32,6 +32,10 @@ class NumberFormattingService {
   String formatAmount(BigInt amount, {int decimals = AppConstants.decimals}) =>
       formatBalance(amount, decimals: decimals, smartDecimals: 4, maxDecimals: decimals);
 
+  /// Every significant digit of [amount], for an amount someone must send exactly.
+  String formatExactAmount(BigInt amount, {int decimals = AppConstants.decimals}) =>
+      formatBalance(amount, decimals: decimals, smartDecimals: decimals, maxDecimals: decimals);
+
   /// A whole count with the locale's grouping separators, e.g. 5279 -> "5,279".
   String formatInteger(int value) => _localeConfig.localize(value.toString());
 
@@ -148,7 +152,7 @@ class NumberFormattingService {
     }
 
     try {
-      final decimalAmount = _localeConfig.parseDecimal(formattedAmount);
+      final decimalAmount = _localeConfig.parseDecimal(formattedAmount, decimals: decimals);
       if (decimalAmount.scale > decimals) {
         quantusPrint('Warning: Input amount $formattedAmount exceeds $decimals decimals, will be truncated.');
       }

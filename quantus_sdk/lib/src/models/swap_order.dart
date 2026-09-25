@@ -25,6 +25,7 @@ class SwapOrder {
   final BigInt? amountOut;
   final BigInt? refundedAmount;
   final String? refundReason;
+  final List<String> originTxHashes;
   final List<String> destinationTxHashes;
 
   const SwapOrder({
@@ -33,6 +34,7 @@ class SwapOrder {
     this.amountOut,
     this.refundedAmount,
     this.refundReason,
+    this.originTxHashes = const [],
     this.destinationTxHashes = const [],
   });
 
@@ -45,14 +47,18 @@ class SwapOrder {
       return raw == null || raw.isEmpty ? null : BigInt.parse(raw);
     }
 
-    final destination = details?['destinationChainTxHashes'] as List<dynamic>? ?? const [];
+    List<String> hashes(String key) => [
+      for (final tx in details?[key] as List<dynamic>? ?? const []) (tx as Map<String, dynamic>)['hash'] as String,
+    ];
+
     return SwapOrder(
       quote: quote,
       status: SwapStatus.parse(json['status'] as String),
       amountOut: amount('amountOut'),
       refundedAmount: amount('refundedAmount'),
       refundReason: details?['refundReason'] as String?,
-      destinationTxHashes: [for (final tx in destination) (tx as Map<String, dynamic>)['hash'] as String],
+      originTxHashes: hashes('originChainTxHashes'),
+      destinationTxHashes: hashes('destinationChainTxHashes'),
     );
   }
 }

@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 const _usdcEth = SwapToken(
   assetId: 'nep141:eth-0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48.omft.near',
@@ -216,7 +217,7 @@ void main() {
       }
     });
 
-    test('reads the settled amounts, refund reason and destination hashes', () async {
+    test('reads the settled amounts, refund reason and transaction hashes', () async {
       final service = _service(
         (_) async => http.Response(
           jsonEncode(
@@ -225,6 +226,9 @@ void main() {
               details: {
                 'amountOut': '2850000000000000000000000',
                 'refundedAmount': '',
+                'originChainTxHashes': [
+                  {'hash': '0xorigin', 'explorerUrl': 'https://x/0xorigin'},
+                ],
                 'destinationChainTxHashes': [
                   {'hash': '0xabc', 'explorerUrl': 'https://x/0xabc'},
                 ],
@@ -237,6 +241,7 @@ void main() {
       final updated = await service.getSwapStatus(order);
       expect(updated.amountOut, BigInt.parse('2850000000000000000000000'));
       expect(updated.refundedAmount, isNull);
+      expect(updated.originTxHashes, ['0xorigin']);
       expect(updated.destinationTxHashes, ['0xabc']);
 
       final refunded = await _service(
@@ -249,6 +254,18 @@ void main() {
       ).getSwapStatus(order);
       expect(refunded.refundedAmount, BigInt.from(9700000));
       expect(refunded.refundReason, 'Quote expired');
+    });
+
+    test('submits the deposit transaction hash for its deposit address', () async {
+      late http.Request request;
+      final service = _service((r) async {
+        request = r;
+        return http.Response(jsonEncode(_statusResponse('KNOWN_DEPOSIT_TX')), 200);
+      });
+      await service.submitDeposit(order, '0xtx');
+      expect(request.method, 'POST');
+      expect(request.url.toString(), 'https://oneclick.test/v0/deposit/submit');
+      expect(jsonDecode(request.body), {'txHash': '0xtx', 'depositAddress': '0xdeposit'});
     });
 
     test('rejects a status it does not know', () async {
@@ -264,6 +281,31 @@ void main() {
         service.getSwapStatus(order),
         throwsA(isA<SwapApiException>().having((e) => e.statusCode, 'statusCode', 404)),
       );
+    });
+  });
+
+  group('saved addresses', () {
+    test('keeps addresses per network, most recent first, without duplicates', () async {
+      SharedPreferences.setMockInitialValues({});
+      final service = _service((_) async => throw StateError('no HTTP expected'));
+      await service.saveAddress('ETH', '0xa');
+      await service.saveAddress('ETH', '0xb');
+      await service.saveAddress('ETH', '0xa');
+      await service.saveAddress('SOL', 'sol1');
+      expect(await service.getSavedAddresses('ETH'), ['0xa', '0xb']);
+      expect(await service.getSavedAddresses('SOL'), ['sol1']);
+      expect(await service.getSavedAddresses('BTC'), isEmpty);
+    });
+  });
+
+  group('SwapToken', () {
+    test('names known networks and recognises the Quantus token', () {
+      expect(_usdcEth.networkName, 'Ethereum');
+      expect(_wnear.networkName, 'NEAR');
+      expect(_usdcEth.isQuantus, isFalse);
+      final quantus = SwapService.quantusToken(usdPrice: 1);
+      expect(quantus.isQuantus, isTrue);
+      expect(quantus.networkName, 'Quantus');
     });
   });
 

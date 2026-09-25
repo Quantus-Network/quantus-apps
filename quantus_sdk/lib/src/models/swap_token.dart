@@ -1,4 +1,29 @@
+import 'package:quantus_sdk/src/constants/app_constants.dart';
+
 class SwapToken {
+  static const _networkNames = {
+    'ARB': 'Arbitrum',
+    'AVAX': 'Avalanche',
+    'BASE': 'Base',
+    'BCH': 'Bitcoin Cash',
+    'BERA': 'Berachain',
+    'BSC': 'BNB Chain',
+    'BTC': 'Bitcoin',
+    'CARDANO': 'Cardano',
+    'DOGE': 'Dogecoin',
+    'ETH': 'Ethereum',
+    'GNOSIS': 'Gnosis',
+    'LTC': 'Litecoin',
+    'MONAD': 'Monad',
+    'OP': 'Optimism',
+    'POL': 'Polygon',
+    'SOL': 'Solana',
+    'STELLAR': 'Stellar',
+    'SUI': 'Sui',
+    'TRON': 'Tron',
+    'ZEC': 'Zcash',
+  };
+
   final String assetId;
   final String symbol;
   final String network;
@@ -16,6 +41,11 @@ class SwapToken {
     this.iconUrl,
     this.networkIconUrl,
   });
+
+  bool get isQuantus => assetId == AppConstants.quantusIntentsAssetId;
+
+  /// Human name of [network], e.g. "Ethereum" for ETH; the code itself when unknown.
+  String get networkName => _networkNames[network] ?? network;
 
   SwapToken copyWith({String? iconUrl, String? networkIconUrl}) => SwapToken(
     assetId: assetId,

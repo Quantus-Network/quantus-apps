@@ -28,8 +28,8 @@ class SwapService {
   static const depositWindow = Duration(minutes: 20);
   static const quoteWaitingTime = Duration(seconds: 3);
   static const statusPollInterval = Duration(seconds: 5);
-  static const _refundAddressKey = 'recent_refund_addresses';
-  static const _maxRefundAddresses = 50;
+  static const _savedAddressesKey = 'swap_saved_addresses';
+  static const _maxSavedAddresses = 50;
   static const _coinGeckoTopUrl =
       'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=150&page=1&sparkline=false';
   static const _tokensCacheTtl = Duration(minutes: 10);
@@ -111,6 +111,17 @@ class SwapService {
     );
     if (live.depositAddress == null) throw StateError('Live quote ${live.correlationId} has no deposit address');
     return SwapOrder(quote: live, status: SwapStatus.pendingDeposit);
+  }
+
+  /// Tells 1Click which transaction paid [order]'s deposit address, so it
+  /// does not have to wait for its own chain scan to notice the deposit.
+  Future<void> submitDeposit(SwapOrder order, String txHash) async {
+    final memo = order.quote.depositMemo;
+    await _send(
+      'POST',
+      '/v0/deposit/submit',
+      body: {'txHash': txHash, 'depositAddress': order.depositAddress, 'memo': ?memo},
+    );
   }
 
   Future<SwapOrder> getSwapStatus(SwapOrder order) async {
@@ -271,21 +282,18 @@ class SwapService {
     }
   }
 
-  Future<void> addRefundAddress(String network, String address) async {
+  /// Remembers [address] on [network] for future swaps, most recent first.
+  Future<void> saveAddress(String network, String address) async {
     final prefs = await SharedPreferences.getInstance();
-    final key = '${_refundAddressKey}_${network.toLowerCase()}';
-    var addresses = prefs.getStringList(key) ?? [];
-    addresses.remove(address);
-    addresses.insert(0, address);
-    if (addresses.length > _maxRefundAddresses) {
-      addresses = addresses.sublist(0, _maxRefundAddresses);
-    }
-    await prefs.setStringList(key, addresses);
+    final key = _savedAddressesStorageKey(network);
+    final addresses = [address, ...?prefs.getStringList(key)?.where((a) => a != address)];
+    await prefs.setStringList(key, addresses.take(_maxSavedAddresses).toList());
   }
 
-  Future<List<String>> getRefundAddresses(String network) async {
+  Future<List<String>> getSavedAddresses(String network) async {
     final prefs = await SharedPreferences.getInstance();
-    final key = '${_refundAddressKey}_${network.toLowerCase()}';
-    return prefs.getStringList(key) ?? [];
+    return prefs.getStringList(_savedAddressesStorageKey(network)) ?? [];
   }
+
+  static String _savedAddressesStorageKey(String network) => '${_savedAddressesKey}_${network.toLowerCase()}';
 }
