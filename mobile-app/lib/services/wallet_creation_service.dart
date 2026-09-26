@@ -68,18 +68,21 @@ class WalletCreationService {
   }
 
   /// Adds every on-chain account of [mnemonic] to [walletIndex]: both
-  /// signature schemes, any derivation index. When the root at
-  /// [defaultAccountId] has no history but funded accounts were found, the
-  /// first of them becomes active so a returning user lands on it.
+  /// signature schemes, any derivation index. When [defaultAccountId] is given
+  /// and has no history but funded accounts were found, the first of them
+  /// becomes active so a returning user lands on it.
   ///
   /// A failed scan is handed to [onScanFailed]; the scan runs again while it
-  /// answers true and stops once it answers false.
+  /// answers true and stops once it answers false. The wallet's scan stays
+  /// marked pending until a scan finishes, so [resumePendingAccountScans] can
+  /// complete it later.
   Future<void> discoverImportedAccounts({
     required String mnemonic,
     required int walletIndex,
-    required String defaultAccountId,
+    String? defaultAccountId,
     required Future<bool> Function(Object error) onScanFailed,
   }) async {
+    await _settings.setAccountScanPending(walletIndex, true);
     while (true) {
       try {
         final discovered = await _discovery.discoverAccounts(mnemonic: mnemonic, walletIndex: walletIndex);
@@ -88,14 +91,39 @@ class WalletCreationService {
         for (final account in discovered.where((a) => !existing.contains(a.accountId))) {
           await _accounts.addAccount(account.copyWith(name: 'Account ${++count}'));
         }
-        if (discovered.isNotEmpty && !discovered.any((a) => a.accountId == defaultAccountId)) {
+        if (defaultAccountId != null &&
+            discovered.isNotEmpty &&
+            !discovered.any((a) => a.accountId == defaultAccountId)) {
           await _settings.setActiveAccount(RegularAccount(discovered.first));
         }
+        await _settings.setAccountScanPending(walletIndex, false);
         return;
       } catch (e) {
         if (!await onScanFailed(e)) return;
       }
     }
+  }
+
+  /// Finishes the import scan of every wallet in [accounts] whose scan was
+  /// skipped or interrupted, so accounts missed while the indexer was
+  /// unreachable still appear. Returns whether any scan finished. A scan that
+  /// fails again stays pending for the next call.
+  Future<bool> resumePendingAccountScans(Iterable<Account> accounts) async {
+    var finished = false;
+    for (final walletIndex in accounts.map((a) => a.walletIndex).toSet().where(_settings.isAccountScanPending)) {
+      final mnemonic = await _settings.getMnemonic(walletIndex);
+      if (mnemonic == null) throw StateError('Wallet $walletIndex has a pending account scan but no mnemonic');
+      await discoverImportedAccounts(
+        mnemonic: mnemonic,
+        walletIndex: walletIndex,
+        onScanFailed: (e) async {
+          quantusPrint('Resumed account scan of wallet $walletIndex failed: $e');
+          return false;
+        },
+      );
+      finished = finished || !_settings.isAccountScanPending(walletIndex);
+    }
+    return finished;
   }
 }
 

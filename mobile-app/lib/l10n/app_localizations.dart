@@ -299,7 +299,7 @@ abstract class AppLocalizations {
   /// Body of the dialog shown when looking up the imported wallet's accounts fails
   ///
   /// In en, this message translates to:
-  /// **'We could not reach the network to look for your accounts. Try again?'**
+  /// **'We could not reach the network to look for your accounts. Try again now, or skip and the app will scan again the next time it starts.'**
   String get importWalletScanFailedBody;
 
   /// Button that runs the account scan again

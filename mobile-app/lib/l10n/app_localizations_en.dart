@@ -115,7 +115,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get importWalletScanFailedTitle => 'Account scan failed';
 
   @override
-  String get importWalletScanFailedBody => 'We could not reach the network to look for your accounts. Try again?';
+  String get importWalletScanFailedBody =>
+      'We could not reach the network to look for your accounts. Try again now, or skip and the app will scan again the next time it starts.';
 
   @override
   String get importWalletScanRetry => 'Try again';

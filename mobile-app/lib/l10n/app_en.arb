@@ -147,7 +147,7 @@
     "@importWalletScanFailedTitle": {
       "description": "Title of the dialog shown when looking up the imported wallet's accounts fails"
     },
-    "importWalletScanFailedBody": "We could not reach the network to look for your accounts. Try again?",
+    "importWalletScanFailedBody": "We could not reach the network to look for your accounts. Try again now, or skip and the app will scan again the next time it starts.",
     "@importWalletScanFailedBody": {
       "description": "Body of the dialog shown when looking up the imported wallet's accounts fails"
     },

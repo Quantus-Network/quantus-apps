@@ -154,11 +154,13 @@ void main() {
 
         expect(failures, isEmpty);
         verifyInOrder([
+          settings.setAccountScanPending(0, true),
           accounts.addAccount(argThat(account('ml-dsa-87_3', name: 'Account 2'))),
           accounts.addAccount(argThat(account('ml-dsa-65_0', name: 'Account 3'))),
           settings.setActiveAccount(
             argThat(isA<RegularAccount>().having((a) => a.account.accountId, 'accountId', 'ml-dsa-87_3')),
           ),
+          settings.setAccountScanPending(0, false),
         ]);
       },
     );
@@ -203,6 +205,44 @@ void main() {
       expect(asked, 1);
       verifyNever(accounts.addAccount(any));
       verifyNever(settings.setActiveAccount(any));
+      verify(settings.setAccountScanPending(0, true)).called(1);
+      verifyNever(settings.setAccountScanPending(0, false));
+    });
+
+    test('a skipped scan finishes on a later start and restores the ML-DSA-65 account', () async {
+      var pending = false;
+      when(settings.setAccountScanPending(any, any)).thenAnswer((i) async {
+        pending = i.positionalArguments[1] as bool;
+      });
+      when(settings.isAccountScanPending(0)).thenAnswer((_) => pending);
+      when(settings.getMnemonic(0)).thenAnswer((_) async => mnemonic);
+      var online = false;
+      scanReturns(() async => online ? [found.last] : throw Exception('indexer unreachable'));
+
+      await discover((_) async => false);
+      expect(pending, isTrue);
+      verifyNever(accounts.addAccount(any));
+
+      online = true;
+      expect(await service.resumePendingAccountScans([root]), isTrue);
+
+      expect(pending, isFalse);
+      verify(accounts.addAccount(argThat(account('ml-dsa-65_0', name: 'Account 2')))).called(1);
+      verifyNever(settings.setActiveAccount(any));
+    });
+
+    test('resume leaves wallets whose scan finished alone', () async {
+      when(settings.isAccountScanPending(0)).thenReturn(false);
+
+      expect(await service.resumePendingAccountScans([root]), isFalse);
+
+      verifyNever(
+        discovery.discoverAccounts(
+          mnemonic: anyNamed('mnemonic'),
+          walletIndex: anyNamed('walletIndex'),
+          gapLimit: anyNamed('gapLimit'),
+        ),
+      );
     });
   });
 }

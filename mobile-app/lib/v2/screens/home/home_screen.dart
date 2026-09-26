@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -39,6 +41,7 @@ import 'package:resonance_network_wallet/v2/screens/send/send_providers.dart';
 import 'package:resonance_network_wallet/v2/components/global_toast_listener.dart';
 import 'package:resonance_network_wallet/v2/screens/home/activity_section.dart';
 import 'package:resonance_network_wallet/v2/screens/home/backup_reminder_banner.dart';
+import 'package:resonance_network_wallet/services/wallet_creation_service.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -48,6 +51,8 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
+  bool _resumedAccountScans = false;
+
   @override
   void initState() {
     super.initState();
@@ -76,7 +81,29 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       }
     });
 
+    // An import scan skipped or interrupted while the indexer was unreachable
+    // is finished here, once the accounts are known.
+    ref.listenManual<AsyncValue<List<Account>>>(
+      accountsProvider,
+      (_, async) => _resumePendingAccountScans(async.value),
+    );
+
     Future.microtask(_drainPendingIntents);
+    Future.microtask(() => _resumePendingAccountScans(ref.read(accountsProvider).value));
+  }
+
+  Future<void> _resumePendingAccountScans(List<Account>? accounts) async {
+    if (accounts == null || _resumedAccountScans) return;
+    _resumedAccountScans = true;
+    try {
+      final service = WalletCreationService(
+        settingsService: ref.read(settingsServiceProvider),
+        accountsService: ref.read(accountsServiceProvider),
+      );
+      if (await service.resumePendingAccountScans(accounts) && mounted) invalidateAccountProviders(ref);
+    } catch (e) {
+      quantusPrint('Resuming pending account scans failed: $e');
+    }
   }
 
   bool _isAuthStateUnlocked(LocalAuthState auth) => auth.isAuthenticated && !auth.isVisuallyLocked;

@@ -172,6 +172,7 @@ class SettingsService {
     await saveAccounts(remaining);
     await deleteMnemonic(walletIndex);
     await _prefs.remove(_walletOriginKey(walletIndex));
+    await _prefs.remove(_accountScanPendingKey(walletIndex));
     await _prefs.remove(_recoveryPhraseViewedKey(walletIndex));
     await _prefs.remove(_walletNameKey(walletIndex));
     await _prefs.remove(_airdropClaimKey(walletIndex));
@@ -544,6 +545,20 @@ class SettingsService {
   }
 
   String _walletOriginKey(int walletIndex) => 'wallet_origin_$walletIndex';
+
+  String _accountScanPendingKey(int walletIndex) => 'account_scan_pending_$walletIndex';
+
+  /// Whether the account scan of an imported wallet has not finished yet.
+  bool isAccountScanPending(int walletIndex) => _prefs.getBool(_accountScanPendingKey(walletIndex)) ?? false;
+
+  Future<void> setAccountScanPending(int walletIndex, bool pending) async {
+    final key = _accountScanPendingKey(walletIndex);
+    if (pending) {
+      await _prefs.setBool(key, true);
+    } else {
+      await _prefs.remove(key);
+    }
+  }
 
   WalletOrigin? getWalletOrigin(int walletIndex) {
     final value = _prefs.getString(_walletOriginKey(walletIndex));

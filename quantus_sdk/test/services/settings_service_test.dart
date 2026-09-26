@@ -267,5 +267,14 @@ void main() {
       // Assert: transparent indices stay contiguous (1), not 1025.
       expect(nextIndex, 1);
     });
+
+    test('account scan pending flag is set, read back and cleared per wallet', () async {
+      expect(settingsService.isAccountScanPending(1), isFalse);
+      await settingsService.setAccountScanPending(1, true);
+      expect(settingsService.isAccountScanPending(1), isTrue);
+      expect(settingsService.isAccountScanPending(0), isFalse);
+      await settingsService.setAccountScanPending(1, false);
+      expect(settingsService.isAccountScanPending(1), isFalse);
+    });
   });
 }
