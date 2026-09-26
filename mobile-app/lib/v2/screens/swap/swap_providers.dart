@@ -16,7 +16,8 @@ const swapSlippageOptionsBps = [50, 100, 200, 300];
 /// Slippage tolerance the next quote asks for, in basis points.
 final swapSlippageBpsProvider = StateProvider<int>((_) => SwapService.defaultSlippageBps);
 
-/// QTC as a swap token, priced with the same rate the rest of the app uses.
+/// QTC from the app's own metadata, priced with the rate the rest of the app
+/// uses. Stands in until 1Click lists QTC; the listing then takes over.
 final quantusSwapTokenProvider = Provider<SwapToken>(
   (ref) => SwapService.quantusToken(usdPrice: ref.watch(exchangeRateServiceProvider).tokenToUsdRate.toDouble()),
 );
@@ -66,9 +67,18 @@ BigInt swapEstimateOut(BigInt amountIn, SwapToken from, SwapToken to) {
 BigInt swapQuoteRate(SwapQuote quote) =>
     quote.amountOut * BigInt.from(10).pow(quote.fromToken.decimals) ~/ quote.amountIn;
 
-/// [value] base units of [token] with its symbol, e.g. "24.86 USDC".
-String formatSwapAmount(AppLocalizations l10n, NumberFormattingService fmt, BigInt value, SwapToken token) =>
-    l10n.commonAmountBalance(fmt.formatAmount(value, decimals: token.decimals), token.symbol);
+/// [value] base units of [token] with its symbol, e.g. "24.86 USDC". An
+/// [exact] amount keeps every digit: what is sent must read as what is shown.
+String formatSwapAmount(
+  AppLocalizations l10n,
+  NumberFormattingService fmt,
+  BigInt value,
+  SwapToken token, {
+  bool exact = false,
+}) => l10n.commonAmountBalance(
+  exact ? fmt.formatExactAmount(value, decimals: token.decimals) : fmt.formatAmount(value, decimals: token.decimals),
+  token.symbol,
+);
 
 String describeSwapError(Object error) => error is SwapApiException ? error.message : error.toString();
 

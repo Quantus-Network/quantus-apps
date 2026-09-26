@@ -169,7 +169,7 @@ class _SwapDetailsSheet extends ConsumerWidget {
           ),
           SwapDetailRow(
             label: l10n.swapDetailsAmountSent,
-            value: formatSwapAmount(l10n, fmt, quote.amountIn, quote.fromToken),
+            value: formatSwapAmount(l10n, fmt, quote.amountIn, quote.fromToken, exact: true),
           ),
           if (fee != null)
             SwapDetailRow(label: l10n.swapReviewNetworkFee, value: formatSwapAmount(l10n, fmt, fee, quote.fromToken)),
@@ -357,8 +357,12 @@ class _SwapDeposit extends ConsumerWidget {
     final quote = order.quote;
     final from = quote.fromToken;
     final address = order.depositAddress;
+    final memo = quote.depositMemo;
     final deadline = TimeOfDay.fromDateTime(quote.deadline.toLocal()).format(context);
     Future<void> copyAddress() => context.copyTextWithToaster(address, message: l10n.swapDepositAddressCopied);
+    final shareContent = memo == null
+        ? l10n.swapDepositShareContent(from.networkName, from.symbol, address)
+        : l10n.swapDepositShareContentMemo(from.networkName, from.symbol, address, memo);
 
     return ScaffoldBase(
       appBar: V2AppBar(title: l10n.swapTitle),
@@ -422,6 +426,29 @@ class _SwapDeposit extends ConsumerWidget {
                 textAlign: TextAlign.center,
               ),
             ),
+            if (memo != null) ...[
+              const SizedBox(height: 16),
+              GestureDetector(
+                onTap: () => context.copyTextWithToaster(memo, message: l10n.swapDepositMemoCopied),
+                behavior: HitTestBehavior.opaque,
+                child: Column(
+                  children: [
+                    Text(
+                      l10n.swapDepositMemo.toUpperCase(),
+                      style: text.labelMonogram.copyWith(color: colors.textMuted),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      memo,
+                      style: text.dataAddressLarge.copyWith(color: colors.textContent),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+              QuantusBanner(tone: BannerTone.sand, message: l10n.swapDepositMemoNotice),
+            ],
             const SizedBox(height: 16),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -458,8 +485,7 @@ class _SwapDeposit extends ConsumerWidget {
                     iconPlacement: IconPlacement.leading,
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                     variant: ButtonVariant.staged,
-                    onTap: () =>
-                        shareText(context, l10n.swapDepositShareContent(from.networkName, from.symbol, address)),
+                    onTap: () => shareText(context, shareContent),
                   ),
                 ),
               ],

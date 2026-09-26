@@ -34,6 +34,7 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
 
   final _amountController = TextEditingController();
   SwapToken? _foreign;
+  SwapToken? _listedQuantus;
   bool _loadingTokens = true;
   bool _swapOut = true;
 
@@ -53,9 +54,14 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
   Future<void> _loadTokens({bool forceRefresh = false}) async {
     setState(() => _loadingTokens = true);
     try {
-      final tokens = await ref.read(swapServiceProvider).getFromTokens(forceRefresh: forceRefresh);
+      final service = ref.read(swapServiceProvider);
+      final tokens = await service.getFromTokens(forceRefresh: forceRefresh);
+      final listedQuantus = await service.getListedQuantusToken();
       if (!mounted) return;
-      setState(() => _foreign ??= tokens.first);
+      setState(() {
+        _foreign ??= tokens.first;
+        _listedQuantus = listedQuantus;
+      });
     } catch (e) {
       quantusPrint('Swap tokens failed to load: $e');
     } finally {
@@ -120,7 +126,7 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
     final colors = context.colorsV3;
     final text = context.themeTextV3;
     final foreign = _foreign;
-    final quantus = ref.watch(quantusSwapTokenProvider);
+    final SwapToken quantus = _listedQuantus ?? ref.watch(quantusSwapTokenProvider);
 
     return ScaffoldBase(
       appBar: V2AppBar(

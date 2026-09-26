@@ -2713,6 +2713,36 @@
         }
       }
     },
+    "swapDepositMemo": "Memo",
+    "@swapDepositMemo": {
+      "description": "Label of the deposit memo some chains require"
+    },
+    "swapDepositMemoCopied": "Deposit memo copied to clipboard",
+    "@swapDepositMemoCopied": {
+      "description": "Toast when the deposit memo is copied"
+    },
+    "swapDepositMemoNotice": "Include this memo with your deposit. A deposit without it is not processed.",
+    "@swapDepositMemoNotice": {
+      "description": "Warning under a deposit memo"
+    },
+    "swapDepositShareContentMemo": "Network: {network}\nToken: {token}\nAddress: {address}\nMemo: {memo}",
+    "@swapDepositShareContentMemo": {
+      "description": "Share text for deposit details with a memo",
+      "placeholders": {
+        "network": {
+          "type": "String"
+        },
+        "token": {
+          "type": "String"
+        },
+        "address": {
+          "type": "String"
+        },
+        "memo": {
+          "type": "String"
+        }
+      }
+    },
     "swapDepositNotice": "Use your {symbol} or {network} wallet to deposit funds. Depositing other assets may result in loss of funds.",
     "@swapDepositNotice": {
       "description": "Deposit wallet notice on deposit screen",

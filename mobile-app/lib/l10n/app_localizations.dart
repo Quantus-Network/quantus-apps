@@ -3446,6 +3446,30 @@ abstract class AppLocalizations {
   /// **'Network: {network}\nToken: {token}\nAddress: {address}'**
   String swapDepositShareContent(String network, String token, String address);
 
+  /// Label of the deposit memo some chains require
+  ///
+  /// In en, this message translates to:
+  /// **'Memo'**
+  String get swapDepositMemo;
+
+  /// Toast when the deposit memo is copied
+  ///
+  /// In en, this message translates to:
+  /// **'Deposit memo copied to clipboard'**
+  String get swapDepositMemoCopied;
+
+  /// Warning under a deposit memo
+  ///
+  /// In en, this message translates to:
+  /// **'Include this memo with your deposit. A deposit without it is not processed.'**
+  String get swapDepositMemoNotice;
+
+  /// Share text for deposit details with a memo
+  ///
+  /// In en, this message translates to:
+  /// **'Network: {network}\nToken: {token}\nAddress: {address}\nMemo: {memo}'**
+  String swapDepositShareContentMemo(String network, String token, String address, String memo);
+
   /// Deposit wallet notice on deposit screen
   ///
   /// In en, this message translates to:

@@ -26,6 +26,11 @@ class SwapApiException implements Exception {
 class SwapService {
   static const defaultSlippageBps = 100;
   static const depositWindow = Duration(minutes: 20);
+
+  /// Chains whose blocks take minutes and need several confirmations, so a
+  /// correctly sent deposit can take an hour to count.
+  static const _slowNetworks = {'BTC', 'LTC', 'DOGE', 'BCH', 'DASH', 'ZEC'};
+  static const _slowDepositWindow = Duration(hours: 2);
   static const quoteWaitingTime = Duration(seconds: 3);
   static const statusPollInterval = Duration(seconds: 5);
   static const _savedAddressesKey = 'swap_saved_addresses';
@@ -39,12 +44,18 @@ class SwapService {
   final String? _apiKey;
   List<SwapToken>? _cachedFromTokens;
   DateTime? _cachedFromTokensAt;
+  SwapToken? _listedQuantus;
 
   SwapService({http.Client? client, String endpoint = AppConstants.oneClickEndpoint, String? apiKey})
     : _client = client ?? http.Client(),
       _base = Uri.parse(endpoint),
       _apiKey = apiKey;
 
+  /// How long a deposit on [network] has before its quote expires.
+  static Duration depositWindowFor(String network) =>
+      _slowNetworks.contains(network) ? _slowDepositWindow : depositWindow;
+
+  /// QTC from the app's own metadata, for use until 1Click lists it.
   static SwapToken quantusToken({required double usdPrice}) => SwapToken(
     assetId: AppConstants.quantusIntentsAssetId,
     symbol: AppConstants.tokenSymbol,
@@ -53,16 +64,31 @@ class SwapService {
     usdPrice: usdPrice,
   );
 
-  Future<List<SwapToken>> getFromTokens({int limit = 10, bool forceRefresh = false}) async {
+  Future<List<SwapToken>> getFromTokens({int limit = 10, bool forceRefresh = false}) async =>
+      (await _tokens(forceRefresh: forceRefresh)).take(limit).toList();
+
+  /// QTC as 1Click lists it, with its asset id, decimals and price; null until
+  /// it is listed. A listing whose decimals differ from the chain's would make
+  /// every quoted amount wrong on chain, so it is refused.
+  Future<SwapToken?> getListedQuantusToken({bool forceRefresh = false}) async {
+    await _tokens(forceRefresh: forceRefresh);
+    final listed = _listedQuantus;
+    if (listed != null && listed.decimals != AppConstants.decimals) {
+      throw StateError(
+        '1Click lists ${listed.assetId} with ${listed.decimals} decimals, the chain has ${AppConstants.decimals}',
+      );
+    }
+    return listed;
+  }
+
+  Future<List<SwapToken>> _tokens({required bool forceRefresh}) async {
     final now = DateTime.now();
     final cached = _cachedFromTokens;
-    if (!forceRefresh && cached != null && now.difference(_cachedFromTokensAt!) < _tokensCacheTtl) {
-      return cached.take(limit).toList();
-    }
+    if (!forceRefresh && cached != null && now.difference(_cachedFromTokensAt!) < _tokensCacheTtl) return cached;
     final tokens = await _rankByCoinGecko(await _fetchIntentsTokens());
     _cachedFromTokens = tokens;
     _cachedFromTokensAt = now;
-    return tokens.take(limit).toList();
+    return tokens;
   }
 
   /// Asks solvers for a price on [amount] base units of [from]. A dry quote is
@@ -91,7 +117,7 @@ class SwapService {
         'refundType': 'ORIGIN_CHAIN',
         'recipient': recipient,
         'recipientType': 'DESTINATION_CHAIN',
-        'deadline': DateTime.now().toUtc().add(depositWindow).toIso8601String(),
+        'deadline': DateTime.now().toUtc().add(depositWindowFor(from.network)).toIso8601String(),
         'quoteWaitingTimeMs': quoteWaitingTime.inMilliseconds,
       },
     );
@@ -161,19 +187,22 @@ class SwapService {
   Future<List<SwapToken>> _fetchIntentsTokens() async {
     final data = await _send('GET', '/v0/tokens') as List<dynamic>;
     final bySymbol = <String, SwapToken>{};
+    _listedQuantus = null;
     for (final item in data.cast<Map<String, dynamic>>()) {
-      final price = (item['price'] as num?)?.toDouble() ?? 0;
-      if (price <= 0) continue;
       final network = (item['blockchain'] as String).toUpperCase();
       final token = SwapToken(
         assetId: item['assetId'] as String,
         symbol: (item['symbol'] as String).toUpperCase(),
         network: network,
         decimals: (item['decimals'] as num).toInt(),
-        usdPrice: price,
+        usdPrice: (item['price'] as num?)?.toDouble() ?? 0,
         networkIconUrl: _networkIconUrl(network),
       );
-      if (token.symbol == AppConstants.tokenSymbol) continue;
+      if (token.isQuantus) {
+        _listedQuantus = token;
+        continue;
+      }
+      if (token.usdPrice <= 0 || token.symbol == AppConstants.tokenSymbol) continue;
       final existing = bySymbol[token.symbol];
       if (existing == null || _networkPriority(token.network) < _networkPriority(existing.network)) {
         bySymbol[token.symbol] = token;

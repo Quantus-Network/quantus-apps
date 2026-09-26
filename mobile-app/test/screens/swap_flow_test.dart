@@ -108,6 +108,7 @@ SwapQuote _quote({
   required String refund,
   required String recipient,
   String? depositAddress,
+  String? depositMemo,
 }) => SwapQuote(
   fromToken: from,
   toToken: to,
@@ -123,6 +124,7 @@ SwapQuote _quote({
   timeEstimate: const Duration(minutes: 1),
   correlationId: 'c',
   depositAddress: depositAddress,
+  depositMemo: depositMemo,
 );
 
 void main() {
@@ -279,6 +281,25 @@ void main() {
       await tester.pump(const Duration(seconds: 3));
     });
 
+    testWidgets('shows every digit of the amount that will be sent', (tester) async {
+      final oneClick = _OneClick(dryOut: outQuote.amountOut);
+      final quote = _quote(
+        from: _qtc,
+        to: _usdc,
+        amountIn: _unit + BigInt.from(90000000),
+        amountOut: outQuote.amountOut,
+        refund: account.accountId,
+        recipient: _external,
+      );
+      await tester.pumpApp(
+        ReviewSwapScreen(account: account, quote: quote),
+        overrides: overrides(oneClick.service()),
+      );
+      await settle(tester);
+
+      expect(find.text('1.00009 QTC'), findsOneWidget);
+    });
+
     testWidgets('blocks a swap out the balance cannot cover with its fee', (tester) async {
       final oneClick = _OneClick(dryOut: outQuote.amountOut);
       await tester.pumpApp(
@@ -332,6 +353,25 @@ void main() {
 
       expect(find.text('bc1qdeposit'), findsOneWidget);
       expect(find.text('0.12345678'), findsOneWidget);
+      expect(find.text(l10n.swapDepositMemoNotice), findsNothing);
+    });
+
+    testWidgets('shows the memo a deposit must carry', (tester) async {
+      final inQuote = _quote(
+        from: const SwapToken(assetId: 'nep245:xlm', symbol: 'XLM', network: 'STELLAR', decimals: 7, usdPrice: 0.2),
+        to: _qtc,
+        amountIn: BigInt.from(50000000),
+        amountOut: _unit * BigInt.from(10),
+        refund: 'GREFUND',
+        recipient: account.accountId,
+        depositAddress: 'GDEPOSIT',
+        depositMemo: '4183920',
+      );
+      await pumpOrder(tester, SwapOrder(quote: inQuote, status: SwapStatus.pendingDeposit));
+
+      expect(find.text('MEMO'), findsOneWidget);
+      expect(find.text('4183920'), findsOneWidget);
+      expect(find.text(l10n.swapDepositMemoNotice), findsOneWidget);
     });
   });
 }

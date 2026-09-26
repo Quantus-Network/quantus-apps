@@ -17,6 +17,7 @@ class SwapToken {
     'MONAD': 'Monad',
     'OP': 'Optimism',
     'POL': 'Polygon',
+    'QUANTUS': 'Quantus',
     'SOL': 'Solana',
     'STELLAR': 'Stellar',
     'SUI': 'Sui',

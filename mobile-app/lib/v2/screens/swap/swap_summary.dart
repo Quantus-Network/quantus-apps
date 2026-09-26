@@ -37,7 +37,7 @@ class SwapAmountsCard extends ConsumerWidget {
         children: [
           Column(
             children: [
-              _row(context, ref, quote.fromToken, quote.amountIn, payLabel, dimmed: false),
+              _row(context, ref, quote.fromToken, quote.amountIn, payLabel, dimmed: false, exact: true),
               Container(height: 4, color: colors.bgVoid),
               _row(context, ref, quote.toToken, amountOut ?? quote.amountOut, receiveLabel, dimmed: receiveDimmed),
             ],
@@ -61,6 +61,7 @@ class SwapAmountsCard extends ConsumerWidget {
     BigInt amount,
     String label, {
     required bool dimmed,
+    bool exact = false,
   }) {
     final colors = context.colorsV3;
     final text = context.themeTextV3;
@@ -86,6 +87,7 @@ class SwapAmountsCard extends ConsumerWidget {
                       ref.watch(numberFormattingServiceProvider),
                       amount,
                       token,
+                      exact: exact,
                     ),
                     style: text.amountHero.copyWith(color: dimmed ? colors.textMuted2 : colors.textContent),
                   ),

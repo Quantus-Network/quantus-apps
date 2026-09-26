@@ -121,6 +121,21 @@ void main() {
       expect(quote.depositAddress, isNull);
     });
 
+    test('gives a deposit from a slow chain two hours', () async {
+      late Map<String, dynamic> sent;
+      final before = DateTime.now().toUtc();
+      final service = _service((r) async {
+        sent = jsonDecode(r.body) as Map<String, dynamic>;
+        return http.Response(jsonEncode(_quoteResponse()), 200);
+      });
+      const btc = SwapToken(assetId: 'nep141:btc.omft.near', symbol: 'BTC', network: 'BTC', decimals: 8, usdPrice: 1);
+      await service.getQuote(from: btc, to: _wnear, amount: BigInt.one, refundAddress: _refund, recipient: _recipient);
+      final deadline = DateTime.parse(sent['deadline'] as String);
+      expect(SwapService.depositWindowFor('BTC'), const Duration(hours: 2));
+      expect(deadline.difference(before), greaterThanOrEqualTo(const Duration(hours: 2)));
+      expect(deadline.difference(before), lessThan(const Duration(hours: 2, seconds: 10)));
+    });
+
     test('sends no API key header when none is configured', () async {
       late http.Request request;
       final service = _service((r) async {
@@ -322,8 +337,37 @@ void main() {
       {'assetId': _usdcEth.assetId, 'decimals': 6, 'blockchain': 'eth', 'symbol': 'USDC', 'price': 0.99966},
       {'assetId': 'nep141:btc.omft.near', 'decimals': 8, 'blockchain': 'btc', 'symbol': 'BTC', 'price': 80496},
       {'assetId': 'nep141:dead.omft.near', 'decimals': 18, 'blockchain': 'eth', 'symbol': 'DEAD', 'price': 0},
-      {'assetId': 'nep141:qtc.omft.near', 'decimals': 12, 'blockchain': 'eth', 'symbol': 'QTC', 'price': 1},
+      {'assetId': 'nep141:qtc.omft.near', 'decimals': 12, 'blockchain': 'quantus', 'symbol': 'QTC', 'price': 1.5},
+      {'assetId': 'nep141:other-qtc.omft.near', 'decimals': 18, 'blockchain': 'eth', 'symbol': 'QTC', 'price': 9},
     ];
+
+    SwapService listing(List<Map<String, dynamic>> list) => _service((r) async {
+      if (r.url.host == 'api.coingecko.com') return http.Response('down', 503);
+      return http.Response(jsonEncode(list), 200);
+    });
+
+    test('takes QTC from the listing by asset id and keeps it out of the other tokens', () async {
+      final service = listing(tokens);
+      final quantus = await service.getListedQuantusToken();
+      expect(quantus, isNotNull);
+      expect(quantus!.assetId, AppConstants.quantusIntentsAssetId);
+      expect(quantus.isQuantus, isTrue);
+      expect(quantus.networkName, 'Quantus');
+      expect(quantus.usdPrice, 1.5);
+      expect((await service.getFromTokens()).map((t) => t.symbol), isNot(contains('QTC')));
+    });
+
+    test('has no listed QTC until 1Click adds it', () async {
+      final service = listing(tokens.where((t) => t['symbol'] != 'QTC').toList());
+      expect(await service.getListedQuantusToken(), isNull);
+    });
+
+    test('refuses a QTC listing whose decimals differ from the chain', () async {
+      final service = listing([
+        {'assetId': 'nep141:qtc.omft.near', 'decimals': 18, 'blockchain': 'quantus', 'symbol': 'QTC', 'price': 1},
+      ]);
+      await expectLater(service.getListedQuantusToken(), throwsA(isA<StateError>()));
+    });
 
     test('keeps one asset per symbol, preferring the main network, ranked by CoinGecko', () async {
       final service = _service((r) async {

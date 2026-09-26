@@ -1854,6 +1854,20 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get swapDepositMemo => 'Memo';
+
+  @override
+  String get swapDepositMemoCopied => 'Deposit memo copied to clipboard';
+
+  @override
+  String get swapDepositMemoNotice => 'Include this memo with your deposit. A deposit without it is not processed.';
+
+  @override
+  String swapDepositShareContentMemo(String network, String token, String address, String memo) {
+    return 'Network: $network\nToken: $token\nAddress: $address\nMemo: $memo';
+  }
+
+  @override
   String swapDepositNotice(String symbol, String network) {
     return 'Use your $symbol or $network wallet to deposit funds. Depositing other assets may result in loss of funds.';
   }

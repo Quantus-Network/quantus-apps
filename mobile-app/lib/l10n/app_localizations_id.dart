@@ -1857,6 +1857,20 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
+  String get swapDepositMemo => 'Memo';
+
+  @override
+  String get swapDepositMemoCopied => 'Memo deposit disalin ke clipboard';
+
+  @override
+  String get swapDepositMemoNotice => 'Sertakan memo ini pada deposit Anda. Deposit tanpa memo tidak akan diproses.';
+
+  @override
+  String swapDepositShareContentMemo(String network, String token, String address, String memo) {
+    return 'Jaringan: $network\nToken: $token\nAlamat: $address\nMemo: $memo';
+  }
+
+  @override
   String swapDepositNotice(String symbol, String network) {
     return 'Gunakan dompet $symbol atau $network Anda untuk deposit. Menyetor aset lain dapat mengakibatkan kehilangan dana.';
   }
