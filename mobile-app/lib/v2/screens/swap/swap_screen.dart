@@ -1,121 +1,123 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:quantus_sdk/quantus_sdk.dart' hide ScaffoldBase;
 import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
-import 'package:resonance_network_wallet/v2/components/qr_scanner_page.dart';
-import 'package:quantus_sdk/quantus_sdk.dart' hide ScaffoldBase;
-import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
+import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/shared/utils/print.dart';
 import 'package:resonance_network_wallet/v2/components/near_intents_attribution.dart';
+import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/token_icon.dart';
-import 'package:resonance_network_wallet/v2/screens/swap/refund_address_picker_sheet.dart';
-import 'package:resonance_network_wallet/v2/screens/swap/review_quote_sheet.dart';
+import 'package:resonance_network_wallet/v2/screens/send/send_providers.dart';
+import 'package:resonance_network_wallet/v2/screens/swap/review_swap_screen.dart';
+import 'package:resonance_network_wallet/v2/screens/swap/swap_address_sheet.dart';
+import 'package:resonance_network_wallet/v2/screens/swap/swap_providers.dart';
+import 'package:resonance_network_wallet/v2/screens/swap/swap_slippage_sheet.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/token_picker_sheet.dart';
 
+/// Swaps between QTC in [account] and a token on another chain, either way.
 class SwapScreen extends ConsumerStatefulWidget {
-  const SwapScreen({super.key});
+  final Account account;
+
+  const SwapScreen({super.key, required this.account});
 
   @override
   ConsumerState<SwapScreen> createState() => _SwapScreenState();
 }
 
 class _SwapScreenState extends ConsumerState<SwapScreen> {
-  static const _qrIconAsset = 'assets/v2/swap_qr_code.svg';
-  static const _historyIconAsset = 'assets/v2/swap_clock_counter_clockwise.svg';
-  static const _swapDirectionIconAsset = 'assets/v2/swap_arrows_down_up.svg';
+  static const _directionIconAsset = 'assets/v2/swap_arrows_down_up.svg';
+  static const _slippageIconAsset = 'assets/v2/swap_pencil.svg';
+  static const _amountBoxWidth = 125.0;
+  static const _rowHeight = 44.0;
 
-  final _swapService = SwapService();
-  final _fromController = TextEditingController();
-  final _addressController = TextEditingController();
-  SwapToken _fromToken = SwapService.availableTokens.first;
-  double _toAmount = 0;
-  double _fromUsd = 0;
-  double _toUsd = 0;
-  bool _loading = false;
-
-  double get _rate => _swapService.getRate(_fromToken);
-
-  String _rateLabel(AppLocalizations l10n) {
-    final val = 1 / _rate;
-    if (val == 0) return l10n.swapRateZero(_fromToken.symbol, AppConstants.tokenSymbol);
-    final decimals = val >= 100
-        ? 2
-        : val >= 1
-        ? 4
-        : val >= 0.01
-        ? 6
-        : val >= 0.0001
-        ? 8
-        : 10;
-    var formatted = val.toStringAsFixed(decimals).replaceAll(RegExp(r'0+$'), '');
-    if (formatted.endsWith('.')) formatted = formatted.substring(0, formatted.length - 1);
-    return l10n.swapRateLabel(formatted, _fromToken.symbol, AppConstants.tokenSymbol);
-  }
+  final _amountController = TextEditingController();
+  SwapToken? _foreign;
+  SwapToken? _listedQuantus;
+  bool _loadingTokens = true;
+  bool _swapOut = true;
 
   @override
   void initState() {
     super.initState();
-    _fromController.addListener(_recalculate);
+    _amountController.addListener(() => setState(() {}));
+    _loadTokens();
   }
 
   @override
   void dispose() {
-    _fromController.dispose();
-    _addressController.dispose();
+    _amountController.dispose();
     super.dispose();
   }
 
-  void _recalculate() {
-    final amount = double.tryParse(_fromController.text) ?? 0;
-    setState(() {
-      _toAmount = amount * _rate;
-      _fromUsd = amount * _swapService.getUsdPrice(_fromToken);
-      _toUsd = _toAmount * _swapService.getUsdPrice(_swapService.getQuToken());
-    });
-  }
-
-  bool get _canGetQuote =>
-      _fromController.text.isNotEmpty &&
-      (double.tryParse(_fromController.text) ?? 0) > 0 &&
-      _addressController.text.isNotEmpty;
-
-  Future<void> _getQuote() async {
-    final amount = double.tryParse(_fromController.text) ?? 0;
-    if (amount <= 0 || _addressController.text.isEmpty) return;
-
-    setState(() => _loading = true);
+  Future<void> _loadTokens({bool forceRefresh = false}) async {
+    setState(() => _loadingTokens = true);
     try {
-      final quote = await _swapService.getQuote(fromToken: _fromToken, fromAmount: amount);
+      final service = ref.read(swapServiceProvider);
+      final tokens = await service.getFromTokens(forceRefresh: forceRefresh);
+      final listedQuantus = await service.getListedQuantusToken();
       if (!mounted) return;
-      setState(() => _loading = false);
-      _swapService.addRefundAddress(_fromToken.network, _addressController.text.trim());
-      showReviewQuoteSheet(context, quote, _addressController.text);
+      setState(() {
+        _foreign ??= tokens.first;
+        _listedQuantus = listedQuantus;
+      });
     } catch (e) {
-      quantusPrint('Swap quote failed: $e');
-      setState(() => _loading = false);
+      quantusPrint('Swap tokens failed to load: $e');
+    } finally {
+      if (mounted) setState(() => _loadingTokens = false);
     }
   }
 
-  void _pickToken() async {
+  BigInt _amountIn(SwapToken from) =>
+      ref.read(numberFormattingServiceProvider).parseAmount(_amountController.text, decimals: from.decimals) ??
+      BigInt.zero;
+
+  void _setDirection({required bool swapOut}) {
+    if (swapOut == _swapOut) return;
+    setState(() => _swapOut = swapOut);
+    _amountController.clear();
+  }
+
+  /// Picks the external token. Picking from the QTC side moves QTC to the other side.
+  Future<void> _pickToken(SwapToken tapped) async {
+    final service = ref.read(swapServiceProvider);
+    final foreign = _foreign!;
     final token = await showTokenPickerSheet(
       context,
-      current: _fromToken,
-      loadTokens: ({bool forceRefresh = false}) => _swapService.getFromTokens(limit: 10, forceRefresh: forceRefresh),
+      current: foreign,
+      loadTokens: ({bool forceRefresh = false}) => service.getFromTokens(limit: 10, forceRefresh: forceRefresh),
     );
-    if (!mounted) return;
-    if (token != null && token != _fromToken) {
-      setState(() => _fromToken = token);
-      _recalculate();
-    }
+    if (token == null || !mounted) return;
+    setState(() => _foreign = token);
+    if (tapped.isQuantus) _setDirection(swapOut: !_swapOut);
   }
 
-  void _scanQr() async {
-    final address = await Navigator.push<String>(context, MaterialPageRoute(builder: (_) => const QrScannerPage()));
-    if (address != null && mounted) {
-      _addressController.text = address;
-      setState(() {});
-    }
+  Future<void> _addAddress(SwapToken from, SwapToken to, SwapToken foreign) async {
+    final service = ref.read(swapServiceProvider);
+    final account = widget.account;
+    final amount = _amountIn(from);
+    final swapOut = _swapOut;
+    final quote = await showSwapAddressSheet(
+      context,
+      token: foreign,
+      role: swapOut ? SwapAddressRole.recipient : SwapAddressRole.refund,
+      quote: (address) => service.getQuote(
+        from: from,
+        to: to,
+        amount: amount,
+        refundAddress: swapOut ? account.accountId : address,
+        recipient: swapOut ? address : account.accountId,
+        slippageBps: ref.read(swapSlippageBpsProvider),
+      ),
+    );
+    if (quote == null || !mounted) return;
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ReviewSwapScreen(account: account, quote: quote),
+      ),
+    );
   }
 
   @override
@@ -123,6 +125,8 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
     final l10n = ref.watch(l10nProvider);
     final colors = context.colorsV3;
     final text = context.themeTextV3;
+    final foreign = _foreign;
+    final SwapToken quantus = _listedQuantus ?? ref.watch(quantusSwapTokenProvider);
 
     return ScaffoldBase(
       appBar: V2AppBar(
@@ -130,288 +134,277 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
         slotWidth: NearIntentsAttribution.width,
         trailing: const NearIntentsAttribution(),
       ),
-      mainContent: Column(
+      mainContent: foreign == null
+          ? _tokensState(l10n, colors, text)
+          : _form(l10n, colors, text, _swapOut ? quantus : foreign, _swapOut ? foreign : quantus),
+      bottomContent: foreign == null
+          ? null
+          : _cta(l10n, _swapOut ? quantus : foreign, _swapOut ? foreign : quantus, foreign),
+    );
+  }
+
+  Widget _tokensState(AppLocalizations l10n, AppColorsV3 colors, AppTextThemeV3 text) {
+    if (_loadingTokens) return const Center(child: Loader());
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          const SizedBox(height: 24),
-          Expanded(
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _fromSection(l10n, colors, text),
-                  const SizedBox(height: 32),
-                  _refundAddressSection(l10n, colors, text),
-                  const SizedBox(height: 32),
-                  _swapDivider(colors),
-                  const SizedBox(height: 32),
-                  _toSection(l10n, colors, text),
-                  const SizedBox(height: 32),
-                  _infoSection(l10n, colors, text),
-                ],
-              ),
-            ),
+          Text(l10n.swapTokenPickerLoadError, style: text.body.copyWith(color: colors.textMuted)),
+          const SizedBox(height: 12),
+          GestureDetector(
+            onTap: () => _loadTokens(forceRefresh: true),
+            child: Text(l10n.commonTryAgain, style: text.body.copyWith(color: colors.accentFlare)),
           ),
-          const SizedBox(height: 16),
-          _quoteButton(l10n),
-          const SizedBox(height: 24),
         ],
       ),
     );
   }
 
-  Widget _fromSection(AppLocalizations l10n, AppColorsV3 colors, AppTextThemeV3 text) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(l10n.swapFrom, style: text.body.copyWith(color: colors.textContent)),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: Container(
-                height: 56,
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                decoration: BoxDecoration(color: colors.bgSurface, borderRadius: context.radiusV3.mdBorder),
-                alignment: Alignment.centerLeft,
-                child: TextField(
-                  controller: _fromController,
-                  style: text.amountHero.copyWith(color: colors.textContent),
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  decoration: InputDecoration(
-                    hintText: SwapService.formatTokenAmountHint(_fromToken),
-                    hintStyle: text.amountHero.copyWith(color: colors.textMuted2),
-                    border: InputBorder.none,
-                    isDense: true,
-                    contentPadding: EdgeInsets.zero,
-                    filled: true,
-                    fillColor: Colors.transparent,
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 16),
-            SizedBox(
-              width: 119,
-              height: 56,
-              child: QuantusButton(
-                centered: false,
-                variant: ButtonVariant.glass,
-                onTap: _pickToken,
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                borderRadius: context.radiusV3.mdBorder,
-                child: Row(
+  Widget _cta(AppLocalizations l10n, SwapToken from, SwapToken to, SwapToken foreign) {
+    final amountIn = _amountIn(from);
+    final spendable = _swapOut ? ref.watch(effectiveMaxBalanceProviderFamily(widget.account.accountId)).value : null;
+    final insufficient = spendable != null && amountIn > spendable;
+    return ScaffoldBaseBottomContent(
+      child: QuantusButton.simple(
+        label: insufficient
+            ? l10n.sendLogicInsufficientBalance
+            : _swapOut
+            ? l10n.swapAddRecipientAddress
+            : l10n.swapAddRefundAddress,
+        onTap: () => _addAddress(from, to, foreign),
+        isDisabled: amountIn == BigInt.zero || insufficient,
+      ),
+    );
+  }
+
+  Widget _form(AppLocalizations l10n, AppColorsV3 colors, AppTextThemeV3 text, SwapToken from, SwapToken to) {
+    final fmt = ref.watch(numberFormattingServiceProvider);
+    final amountIn = _amountIn(from);
+    final estimateOut = swapEstimateOut(amountIn, from, to);
+    final oneFrom = BigInt.from(10).pow(from.decimals);
+    final priced = from.usdPrice > 0 && to.usdPrice > 0;
+    final wallet = widget.account.name;
+    final external = l10n.swapExternalWallet;
+
+    return SingleChildScrollView(
+      child: Column(
+        children: [
+          const SizedBox(height: 24),
+          Container(
+            decoration: BoxDecoration(color: colors.bgSurface, borderRadius: context.radiusV3.pillBorder),
+            clipBehavior: Clip.antiAlias,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                Column(
                   children: [
-                    TokenIcon(token: _fromToken, size: 25, networkBadgeSize: 10),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            _fromToken.symbol,
-                            style: text.caption.copyWith(color: colors.textContent),
-                            overflow: TextOverflow.ellipsis,
+                    _section(
+                      colors,
+                      text,
+                      label: l10n.swapFrom,
+                      owner: _swapOut ? wallet : external,
+                      token: from,
+                      usd: swapUsdValue(amountIn, from),
+                      amount: _amountField(colors, text, from),
+                    ),
+                    Container(height: 4, color: colors.bgVoid),
+                    _section(
+                      colors,
+                      text,
+                      label: l10n.swapTo,
+                      owner: _swapOut ? external : wallet,
+                      token: to,
+                      usd: swapUsdValue(estimateOut, to),
+                      amount: _amountBox(
+                        colors,
+                        Text(
+                          fmt.formatAmount(estimateOut, decimals: to.decimals),
+                          style: text.amountInline.copyWith(
+                            color: estimateOut > BigInt.zero ? colors.textContent : colors.textMuted2,
                           ),
-                          Text(
-                            _fromToken.network,
-                            style: text.caption.copyWith(color: colors.textMuted),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
                     ),
-                    const SizedBox(width: 4),
-                    QuantusIcon(QuantusIcons.caretDown, color: colors.textMuted, size: 16),
+                  ],
+                ),
+                GestureDetector(
+                  onTap: () => _setDirection(swapOut: !_swapOut),
+                  child: Container(
+                    width: 48,
+                    height: 48,
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(color: colors.bgVoid, shape: BoxShape.circle),
+                    child: SvgPicture.asset(
+                      _directionIconAsset,
+                      colorFilter: ColorFilter.mode(colors.textContent, BlendMode.srcIn),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              if (priced)
+                Expanded(
+                  child: Text(
+                    l10n.swapRateLabel(
+                      from.symbol,
+                      fmt.formatAmount(swapEstimateOut(oneFrom, from, to), decimals: to.decimals),
+                      to.symbol,
+                    ),
+                    style: text.bodyEmphasis.copyWith(color: colors.textMuted2),
+                  ),
+                )
+              else
+                const Spacer(),
+              GestureDetector(
+                onTap: () => showSwapSlippageSheet(context),
+                behavior: HitTestBehavior.opaque,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      l10n.swapSlippageLabel(slippagePercentLabel(ref.watch(swapSlippageBpsProvider))),
+                      style: text.bodyEmphasis.copyWith(color: colors.textMuted2),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      width: 20,
+                      height: 20,
+                      padding: const EdgeInsets.all(5),
+                      decoration: BoxDecoration(
+                        color: colors.bgVoid,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: colors.borderHairline),
+                      ),
+                      child: SvgPicture.asset(
+                        _slippageIconAsset,
+                        colorFilter: ColorFilter.mode(colors.textContent, BlendMode.srcIn),
+                      ),
+                    ),
                   ],
                 ),
               ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 4),
-        Row(
-          children: [
-            Text('\$${_fromUsd.toStringAsFixed(2)}', style: text.caption.copyWith(color: colors.textMuted)),
-            const SizedBox(width: 4),
-            QuantusIcon(QuantusIcons.swapVertical, color: colors.textMuted, size: 12),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _refundAddressSection(AppLocalizations l10n, AppColorsV3 colors, AppTextThemeV3 text) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Text(l10n.swapRefundAddress, style: text.body.copyWith(color: colors.textContent)),
-            const SizedBox(width: 4),
-            Icon(Icons.info_outline, color: colors.textMuted, size: 14),
-          ],
-        ),
-        const SizedBox(height: 12),
-        Container(
-          decoration: BoxDecoration(color: colors.bgSurface, borderRadius: context.radiusV3.mdBorder),
-          padding: const EdgeInsets.only(left: 12, right: 8, top: 8, bottom: 8),
-          child: Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: _addressController,
-                  style: text.dataAddressLarge.copyWith(color: colors.textContent),
-                  decoration: InputDecoration(
-                    hintText: l10n.swapRefundAddressHint(_fromToken.network),
-                    hintStyle: text.dataAddressLarge.copyWith(color: colors.textMuted),
-                    border: InputBorder.none,
-                    isDense: true,
-                    contentPadding: EdgeInsets.zero,
-                    filled: true,
-                    fillColor: Colors.transparent,
-                  ),
-                  onChanged: (_) => setState(() {}),
-                ),
-              ),
-              const SizedBox(width: 8),
-              _smallIconButton(colors: colors, iconAsset: _qrIconAsset, onTap: _scanQr),
-              const SizedBox(width: 8),
-              _smallIconButton(
-                colors: colors,
-                iconAsset: _historyIconAsset,
-                onTap: () async {
-                  final address = await showRefundAddressPickerSheet(context, _fromToken.network);
-                  if (address != null) {
-                    _addressController.text = address;
-                    setState(() {});
-                  }
-                },
-              ),
             ],
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
-  Widget _swapDivider(AppColorsV3 colors) {
-    return Row(
-      children: [
-        const Expanded(child: MenuDivider()),
-        SizedBox(
-          width: 40,
-          height: 40,
-          child: _smallIconButton(colors: colors, iconAsset: _swapDirectionIconAsset, onTap: () {}),
-        ),
-        const Expanded(child: MenuDivider()),
-      ],
-    );
-  }
-
-  Widget _smallIconButton({required AppColorsV3 colors, required String iconAsset, VoidCallback? onTap}) {
-    return SizedBox(
-      width: 40,
-      height: 40,
-      child: QuantusButton(
-        onTap: onTap,
-        variant: ButtonVariant.glass,
-        padding: EdgeInsets.zero,
-        borderRadius: context.radiusV3.smBorder,
-        child: Center(
-          child: SvgPicture.asset(
-            iconAsset,
-            width: 20,
-            height: 20,
-            colorFilter: ColorFilter.mode(colors.textContent, BlendMode.srcIn),
+  Widget _section(
+    AppColorsV3 colors,
+    AppTextThemeV3 text, {
+    required String label,
+    required String owner,
+    required SwapToken token,
+    required double usd,
+    required Widget amount,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(label.toUpperCase(), style: text.labelData.copyWith(color: colors.textMuted)),
+              Text(owner, style: text.caption.copyWith(color: colors.textMuted)),
+            ],
           ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: Align(alignment: Alignment.centerLeft, child: _tokenPill(colors, text, token)),
+              ),
+              const SizedBox(width: 12),
+              amount,
+            ],
+          ),
+          const SizedBox(height: 12),
+          Align(
+            alignment: Alignment.centerRight,
+            child: Text('\$${usd.toStringAsFixed(2)}', style: text.body.copyWith(color: colors.textMuted)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _tokenPill(AppColorsV3 colors, AppTextThemeV3 text, SwapToken token) {
+    return SizedBox(
+      height: _rowHeight,
+      child: QuantusButton(
+        width: null,
+        centered: false,
+        variant: ButtonVariant.glass,
+        onTap: () => _pickToken(token),
+        padding: const EdgeInsets.only(left: 6, right: 12),
+        borderRadius: context.radiusV3.pillBorder,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TokenIcon(token: token, size: 32, networkBadgeSize: 12),
+            const SizedBox(width: 8),
+            Flexible(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    token.symbol,
+                    style: text.bodyEmphasis.copyWith(color: colors.textContent),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  Text(
+                    token.networkName,
+                    style: text.caption.copyWith(color: colors.textMuted),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            QuantusIcon(QuantusIcons.caretDown, color: colors.textMuted, size: 14),
+          ],
         ),
       ),
     );
   }
 
-  Widget _toSection(AppLocalizations l10n, AppColorsV3 colors, AppTextThemeV3 text) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(l10n.swapTo, style: text.body.copyWith(color: colors.textContent)),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: Container(
-                height: 56,
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                decoration: BoxDecoration(color: colors.bgSurface, borderRadius: context.radiusV3.mdBorder),
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  SwapService.formatTokenAmount(_toAmount, _swapService.getQuToken()),
-                  style: text.amountHero.copyWith(color: _toAmount > 0 ? colors.textContent : colors.textMuted2),
-                ),
-              ),
-            ),
-            const SizedBox(width: 16),
-            SizedBox(
-              width: 119,
-              height: 56,
-              child: QuantusButton(
-                centered: false,
-                variant: ButtonVariant.glass,
-                onTap: () {},
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                borderRadius: context.radiusV3.mdBorder,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    TokenIcon(token: _swapService.getQuToken(), size: 25, networkBadgeSize: 10),
-                    const SizedBox(width: 8),
-                    Text(AppConstants.tokenSymbol, style: text.body.copyWith(color: colors.textContent)),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 4),
-        Text('\$${_toUsd.toStringAsFixed(2)}', style: text.caption.copyWith(color: colors.textMuted)),
-      ],
+  Widget _amountBox(AppColorsV3 colors, Widget child) {
+    return Container(
+      width: _amountBoxWidth,
+      height: _rowHeight,
+      padding: const EdgeInsets.only(left: 12, right: 8),
+      alignment: Alignment.centerRight,
+      decoration: BoxDecoration(color: colors.textWhite.useOpacity(0.05), borderRadius: context.radiusV3.smBorder),
+      child: child,
     );
   }
 
-  Widget _infoSection(AppLocalizations l10n, AppColorsV3 colors, AppTextThemeV3 text) {
-    return Column(
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(l10n.swapSlippageTolerance, style: text.caption.copyWith(color: colors.textMuted)),
-            Row(
-              children: [
-                Text('1%', style: text.caption.copyWith(color: colors.textMuted)),
-                const SizedBox(width: 4),
-                Icon(Icons.settings, color: colors.textMuted, size: 12),
-              ],
-            ),
-          ],
+  Widget _amountField(AppColorsV3 colors, AppTextThemeV3 text, SwapToken from) {
+    return _amountBox(
+      colors,
+      TextField(
+        controller: _amountController,
+        textAlign: TextAlign.right,
+        style: text.amountInline.copyWith(color: colors.textContent),
+        cursorColor: colors.accentFlare,
+        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+        inputFormatters: [
+          DecimalInputFilter(localeConfig: ref.watch(localeNumberConfigProvider), maxDecimalPlaces: from.decimals),
+        ],
+        decoration: InputDecoration.collapsed(
+          hintText: '0',
+          hintStyle: text.amountInline.copyWith(color: colors.textMuted2),
         ),
-        const SizedBox(height: 16),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(l10n.swapRate, style: text.caption.copyWith(color: colors.textMuted)),
-            Text(_rateLabel(l10n), style: text.caption.copyWith(color: colors.textMuted)),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _quoteButton(AppLocalizations l10n) {
-    final enabled = _canGetQuote && !_loading;
-    return QuantusButton.simple(
-      label: l10n.swapGetQuote,
-      onTap: _getQuote,
-      isDisabled: !enabled,
-      variant: ButtonVariant.staged,
+      ),
     );
   }
 }

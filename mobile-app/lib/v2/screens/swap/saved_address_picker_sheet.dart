@@ -2,20 +2,22 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
+import 'package:resonance_network_wallet/v2/screens/swap/swap_providers.dart';
 
-Future<String?> showRefundAddressPickerSheet(BuildContext context, String network) {
-  return BottomSheetContainer.show<String>(context, builder: (_) => _RefundAddressPickerContent(network: network));
+/// Addresses saved for [token]'s network; pops the one picked.
+Future<String?> showSavedAddressPickerSheet(BuildContext context, SwapToken token) {
+  return BottomSheetContainer.show<String>(context, builder: (_) => _SavedAddressPickerContent(token: token));
 }
 
-class _RefundAddressPickerContent extends ConsumerStatefulWidget {
-  final String network;
-  const _RefundAddressPickerContent({required this.network});
+class _SavedAddressPickerContent extends ConsumerStatefulWidget {
+  final SwapToken token;
+  const _SavedAddressPickerContent({required this.token});
 
   @override
-  ConsumerState<_RefundAddressPickerContent> createState() => _RefundAddressPickerContentState();
+  ConsumerState<_SavedAddressPickerContent> createState() => _SavedAddressPickerContentState();
 }
 
-class _RefundAddressPickerContentState extends ConsumerState<_RefundAddressPickerContent> {
+class _SavedAddressPickerContentState extends ConsumerState<_SavedAddressPickerContent> {
   List<String> _addresses = [];
 
   @override
@@ -25,7 +27,7 @@ class _RefundAddressPickerContentState extends ConsumerState<_RefundAddressPicke
   }
 
   Future<void> _load() async {
-    final addresses = await SwapService().getRefundAddresses(widget.network);
+    final addresses = await ref.read(swapServiceProvider).getSavedAddresses(widget.token.network);
     if (mounted) setState(() => _addresses = addresses);
   }
 
@@ -36,19 +38,19 @@ class _RefundAddressPickerContentState extends ConsumerState<_RefundAddressPicke
     final text = context.themeTextV3;
 
     return BottomSheetContainer(
-      title: l10n.swapRefundPickerTitle,
+      title: l10n.swapSavedAddressesTitle,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Align(
             alignment: Alignment.centerLeft,
-            child: Text(widget.network, style: text.caption.copyWith(color: colors.textMuted)),
+            child: Text(widget.token.networkName, style: text.caption.copyWith(color: colors.textMuted)),
           ),
           const SizedBox(height: 24),
           if (_addresses.isEmpty)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 32),
-              child: Text(l10n.swapRefundPickerEmpty, style: text.caption.copyWith(color: colors.textMuted)),
+              child: Text(l10n.swapSavedAddressesEmpty, style: text.caption.copyWith(color: colors.textMuted)),
             )
           else
             ConstrainedBox(

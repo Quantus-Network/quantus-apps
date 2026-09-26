@@ -41,6 +41,9 @@ dependencies:
   path: ^1.9.1
   flash: ^3.1.1
   collection: ^1.19.1
+  crypto: ^3.0.7
+  ed25519_edwards: ^0.3.1
+  base_x: ^2.0.1
 
   # SDK-only
   ss58:

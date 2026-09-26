@@ -3002,35 +3002,23 @@ abstract class AppLocalizations {
   /// **'Powered By'**
   String get swapPoweredBy;
 
-  /// From token section label on swap screen
+  /// Label of the side the swapped funds come from
   ///
   /// In en, this message translates to:
   /// **'From'**
   String get swapFrom;
 
-  /// To token section label on swap screen
+  /// Label of the side the swapped funds go to
   ///
   /// In en, this message translates to:
   /// **'To'**
   String get swapTo;
 
-  /// Refund address field label on swap screen
+  /// Owner of the external token side of the swap form
   ///
   /// In en, this message translates to:
-  /// **'Refund Address'**
-  String get swapRefundAddress;
-
-  /// Refund address field hint
-  ///
-  /// In en, this message translates to:
-  /// **'{network} Address'**
-  String swapRefundAddressHint(String network);
-
-  /// Slippage tolerance label on swap screen
-  ///
-  /// In en, this message translates to:
-  /// **'Slippage Tolerance'**
-  String get swapSlippageTolerance;
+  /// **'A wallet you control'**
+  String get swapExternalWallet;
 
   /// Exchange rate label on swap screen
   ///
@@ -3038,23 +3026,47 @@ abstract class AppLocalizations {
   /// **'Rate'**
   String get swapRate;
 
-  /// Get quote button on swap screen
+  /// Exchange rate: what one input token buys
   ///
   /// In en, this message translates to:
-  /// **'Get a Quote'**
-  String get swapGetQuote;
+  /// **'1 {fromSymbol} = {rate} {toSymbol}'**
+  String swapRateLabel(String fromSymbol, String rate, String toSymbol);
 
-  /// Exchange rate display
+  /// Slippage tolerance under the swap form
   ///
   /// In en, this message translates to:
-  /// **'1 {tokenSymbol} = {amount} {symbol}'**
-  String swapRateLabel(String amount, String symbol, String tokenSymbol);
+  /// **'Slippage {percent}%'**
+  String swapSlippageLabel(String percent);
 
-  /// Exchange rate when amount is zero
+  /// Title of the slippage tolerance sheet
   ///
   /// In en, this message translates to:
-  /// **'1 {tokenSymbol} = 0 {symbol}'**
-  String swapRateZero(String symbol, String tokenSymbol);
+  /// **'Slippage Tolerance'**
+  String get swapSlippageTitle;
+
+  /// Explanation on the slippage tolerance sheet
+  ///
+  /// In en, this message translates to:
+  /// **'If the price moves further than this before your swap fills, it is refunded instead. A higher tolerance fills more often but can pay out less.'**
+  String get swapSlippageBody;
+
+  /// A slippage tolerance option
+  ///
+  /// In en, this message translates to:
+  /// **'{percent}%'**
+  String swapSlippagePercent(String percent);
+
+  /// Swap form button for a swap out of QTC
+  ///
+  /// In en, this message translates to:
+  /// **'Add Recipient Address'**
+  String get swapAddRecipientAddress;
+
+  /// Swap form button for a swap into QTC
+  ///
+  /// In en, this message translates to:
+  /// **'Add Refund Address'**
+  String get swapAddRefundAddress;
 
   /// Title on token picker sheet
   ///
@@ -3068,35 +3080,329 @@ abstract class AppLocalizations {
   /// **'Failed to load tokens'**
   String get swapTokenPickerLoadError;
 
-  /// Title on review quote sheet
+  /// Toast when 1Click rejects a quote or a swap cannot be created
   ///
   /// In en, this message translates to:
-  /// **'Review Quote'**
+  /// **'Quote failed: {message}'**
+  String swapQuoteError(String message);
+
+  /// Title of the sheet asking where the swapped funds go
+  ///
+  /// In en, this message translates to:
+  /// **'Recipient Address'**
+  String get swapRecipientAddressTitle;
+
+  /// Title of the sheet asking where a failed swap is refunded
+  ///
+  /// In en, this message translates to:
+  /// **'Refund Address'**
+  String get swapRefundAddressTitle;
+
+  /// Address field label in the swap address sheet
+  ///
+  /// In en, this message translates to:
+  /// **'{symbol} Address'**
+  String swapAddressLabel(String symbol);
+
+  /// Address field hint in the swap address sheet
+  ///
+  /// In en, this message translates to:
+  /// **'{network} Address'**
+  String swapAddressHint(String network);
+
+  /// Warning under the recipient address field
+  ///
+  /// In en, this message translates to:
+  /// **'Your {symbol} will arrive at this address. Double-check it, swaps cannot be reversed.'**
+  String swapRecipientAddressNotice(String symbol);
+
+  /// Warning under the refund address field
+  ///
+  /// In en, this message translates to:
+  /// **'If the swap cannot complete, your {symbol} returns to this address on {network}. Double-check it.'**
+  String swapRefundAddressNotice(String symbol, String network);
+
+  /// Checkbox that saves the entered address
+  ///
+  /// In en, this message translates to:
+  /// **'Save for future swaps'**
+  String get swapSaveAddress;
+
+  /// Button that quotes the swap with the entered address
+  ///
+  /// In en, this message translates to:
+  /// **'Continue to Swap'**
+  String get swapContinue;
+
+  /// Title of the saved swap addresses sheet
+  ///
+  /// In en, this message translates to:
+  /// **'Saved Addresses'**
+  String get swapSavedAddressesTitle;
+
+  /// Empty saved swap addresses sheet
+  ///
+  /// In en, this message translates to:
+  /// **'No saved addresses yet'**
+  String get swapSavedAddressesEmpty;
+
+  /// Title of the swap review screen
+  ///
+  /// In en, this message translates to:
+  /// **'Review Swap'**
   String get swapReviewTitle;
 
-  /// Total fees row on review quote sheet
+  /// Pay side of the swap review card
   ///
   /// In en, this message translates to:
-  /// **'Total fees'**
-  String get swapReviewTotalFees;
+  /// **'You pay'**
+  String get swapYouPay;
 
-  /// Total amount row on review quote sheet
+  /// Receive side of the swap review card
   ///
   /// In en, this message translates to:
-  /// **'Total Amount'**
-  String get swapReviewTotalAmount;
+  /// **'You receive'**
+  String get swapYouReceive;
 
-  /// Slippage warning on review quote sheet
+  /// Review row: external address receiving the swap
   ///
   /// In en, this message translates to:
-  /// **'You could receive up to \${amount} less based on the {percent}% slippage you set'**
-  String swapReviewSlippageWarning(String amount, String percent);
+  /// **'Recipient'**
+  String get swapReviewRecipient;
 
-  /// Confirm button on review quote sheet
+  /// Review row: external address a failed swap is refunded to
   ///
   /// In en, this message translates to:
-  /// **'Confirm'**
+  /// **'Refund address'**
+  String get swapReviewRefundAddress;
+
+  /// Review row and details row: chain fee of the QTC deposit
+  ///
+  /// In en, this message translates to:
+  /// **'Network fee'**
+  String get swapReviewNetworkFee;
+
+  /// Network fee value when it could not be fetched
+  ///
+  /// In en, this message translates to:
+  /// **'Unavailable'**
+  String get swapReviewFeeUnavailable;
+
+  /// Error under the review rows when the fee failed
+  ///
+  /// In en, this message translates to:
+  /// **'Could not get the network fee.'**
+  String get swapReviewFeeFailed;
+
+  /// Review row: how far below the quote the output may land
+  ///
+  /// In en, this message translates to:
+  /// **'Slippage allowance'**
+  String get swapReviewSlippage;
+
+  /// Slippage allowance value
+  ///
+  /// In en, this message translates to:
+  /// **'{amount} ({percent}%)'**
+  String swapReviewSlippageValue(String amount, String percent);
+
+  /// Review row: least the swap pays out
+  ///
+  /// In en, this message translates to:
+  /// **'Guaranteed minimum'**
+  String get swapReviewGuaranteedMinimum;
+
+  /// Review error when the balance cannot cover the deposit
+  ///
+  /// In en, this message translates to:
+  /// **'Not enough {symbol} for this amount plus the network fee.'**
+  String swapReviewInsufficient(String symbol);
+
+  /// Toast when the live quote guarantees less than the one reviewed
+  ///
+  /// In en, this message translates to:
+  /// **'The price moved. Check the new amounts and confirm again.'**
+  String get swapReviewPriceMoved;
+
+  /// Confirm button on the swap review screen
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm swap'**
   String get swapReviewConfirm;
+
+  /// Title while the swap is running
+  ///
+  /// In en, this message translates to:
+  /// **'Swap In Progress'**
+  String get swapInProgressTitle;
+
+  /// Pay side of the swap progress card
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re paying'**
+  String get swapYourePaying;
+
+  /// Receive side of the swap progress card
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re receiving'**
+  String get swapYoureReceiving;
+
+  /// Progress step: deposit sent
+  ///
+  /// In en, this message translates to:
+  /// **'{symbol} sent'**
+  String swapStepSent(String symbol);
+
+  /// Progress step: deposit confirming
+  ///
+  /// In en, this message translates to:
+  /// **'Confirming on {network}'**
+  String swapStepConfirming(String network);
+
+  /// Progress step: solvers swapping
+  ///
+  /// In en, this message translates to:
+  /// **'Swapping'**
+  String get swapStepSwapping;
+
+  /// Progress step: payout
+  ///
+  /// In en, this message translates to:
+  /// **'Sending {symbol} to {recipient}'**
+  String swapStepSending(String symbol, String recipient);
+
+  /// Footer under the swap progress bar
+  ///
+  /// In en, this message translates to:
+  /// **'Usually a few minutes. The swap finishes even if you leave this screen. · via NEAR Intents'**
+  String get swapProgressFooter;
+
+  /// Title of the swap details sheet
+  ///
+  /// In en, this message translates to:
+  /// **'Swap Details'**
+  String get swapDetailsTitle;
+
+  /// Details row: address receiving the swap
+  ///
+  /// In en, this message translates to:
+  /// **'Recipient address'**
+  String get swapDetailsRecipient;
+
+  /// Details row: deposit amount
+  ///
+  /// In en, this message translates to:
+  /// **'Amount sent'**
+  String get swapDetailsAmountSent;
+
+  /// Details row: quoted payout
+  ///
+  /// In en, this message translates to:
+  /// **'Expected'**
+  String get swapDetailsExpected;
+
+  /// Details row: deposit transaction hash
+  ///
+  /// In en, this message translates to:
+  /// **'Transaction'**
+  String get swapDetailsTransaction;
+
+  /// Title when the swap paid out
+  ///
+  /// In en, this message translates to:
+  /// **'Swap Complete'**
+  String get swapCompleteTitle;
+
+  /// Caption under the paid-out amount
+  ///
+  /// In en, this message translates to:
+  /// **'Received'**
+  String get swapCompleteReceived;
+
+  /// Label above where the swap paid out
+  ///
+  /// In en, this message translates to:
+  /// **'To:'**
+  String get swapCompleteTo;
+
+  /// Title when the swap did not pay out
+  ///
+  /// In en, this message translates to:
+  /// **'Swap Failed'**
+  String get swapFailedTitle;
+
+  /// Status label on a refunded swap
+  ///
+  /// In en, this message translates to:
+  /// **'Refunded'**
+  String get swapRefundedLabel;
+
+  /// Pay side of a failed swap card
+  ///
+  /// In en, this message translates to:
+  /// **'You paid'**
+  String get swapYouPaid;
+
+  /// Receive side of a failed swap card
+  ///
+  /// In en, this message translates to:
+  /// **'You were receiving'**
+  String get swapYouWereReceiving;
+
+  /// Banner on a refunded swap
+  ///
+  /// In en, this message translates to:
+  /// **'The swap could not be completed, so your {amount} has been returned to {destination}, minus the network fee. The {symbol} was never sent.'**
+  String swapRefundedBody(String amount, String destination, String symbol);
+
+  /// Refund reason reported by 1Click
+  ///
+  /// In en, this message translates to:
+  /// **'Reason: {reason}'**
+  String swapDepositRefundReason(String reason);
+
+  /// Body when 1Click reports the swap failed
+  ///
+  /// In en, this message translates to:
+  /// **'The swap did not complete. Contact support and quote this deposit address: {address}'**
+  String swapDepositFailedBody(String address);
+
+  /// Title when less than the quoted amount arrived
+  ///
+  /// In en, this message translates to:
+  /// **'Deposit Too Small'**
+  String get swapDepositIncompleteTitle;
+
+  /// Body when less than the quoted amount arrived
+  ///
+  /// In en, this message translates to:
+  /// **'Less than the quoted amount arrived. It will be refunded to your refund address after the deadline.'**
+  String get swapDepositIncompleteBody;
+
+  /// Title when the deadline passed with no deposit
+  ///
+  /// In en, this message translates to:
+  /// **'Quote Expired'**
+  String get swapDepositExpiredTitle;
+
+  /// Body when the deadline passed with no deposit
+  ///
+  /// In en, this message translates to:
+  /// **'No deposit arrived before the deadline. Do not send funds to this address anymore. Get a new quote to try again.'**
+  String get swapDepositExpiredBody;
+
+  /// Button on a failed swap
+  ///
+  /// In en, this message translates to:
+  /// **'Start a New Swap'**
+  String get swapStartNew;
+
+  /// Link on a failed swap
+  ///
+  /// In en, this message translates to:
+  /// **'Contact Support'**
+  String get swapContactSupport;
 
   /// Deposit amount label on deposit screen
   ///
@@ -3110,11 +3416,23 @@ abstract class AppLocalizations {
   /// **'Deposit amount copied to clipboard'**
   String get swapDepositAmountCopied;
 
-  /// Demo warning on deposit screen
+  /// Toast when the deposit address is copied
   ///
   /// In en, this message translates to:
-  /// **'For demo purposes only - do not send funds!'**
-  String get swapDepositDemoWarning;
+  /// **'Deposit address copied to clipboard'**
+  String get swapDepositAddressCopied;
+
+  /// Shown while 1Click has not seen a deposit yet
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for your deposit…'**
+  String get swapDepositWaiting;
+
+  /// Local time by which the deposit must arrive
+  ///
+  /// In en, this message translates to:
+  /// **'Send before {time} or the quote expires'**
+  String swapDepositDeadline(String time);
 
   /// Share QR button on deposit screen
   ///
@@ -3128,71 +3446,35 @@ abstract class AppLocalizations {
   /// **'Network: {network}\nToken: {token}\nAddress: {address}'**
   String swapDepositShareContent(String network, String token, String address);
 
+  /// Label of the deposit memo some chains require
+  ///
+  /// In en, this message translates to:
+  /// **'Memo'**
+  String get swapDepositMemo;
+
+  /// Toast when the deposit memo is copied
+  ///
+  /// In en, this message translates to:
+  /// **'Deposit memo copied to clipboard'**
+  String get swapDepositMemoCopied;
+
+  /// Warning under a deposit memo
+  ///
+  /// In en, this message translates to:
+  /// **'Include this memo with your deposit. A deposit without it is not processed.'**
+  String get swapDepositMemoNotice;
+
+  /// Share text for deposit details with a memo
+  ///
+  /// In en, this message translates to:
+  /// **'Network: {network}\nToken: {token}\nAddress: {address}\nMemo: {memo}'**
+  String swapDepositShareContentMemo(String network, String token, String address, String memo);
+
   /// Deposit wallet notice on deposit screen
   ///
   /// In en, this message translates to:
   /// **'Use your {symbol} or {network} wallet to deposit funds. Depositing other assets may result in loss of funds.'**
   String swapDepositNotice(String symbol, String network);
-
-  /// Title while swap is processing
-  ///
-  /// In en, this message translates to:
-  /// **'Processing Swap'**
-  String get swapDepositProcessingTitle;
-
-  /// Body while swap is processing
-  ///
-  /// In en, this message translates to:
-  /// **'This may take a few minutes...'**
-  String get swapDepositProcessingBody;
-
-  /// Title when swap is complete
-  ///
-  /// In en, this message translates to:
-  /// **'Swap Complete'**
-  String get swapDepositCompleteTitle;
-
-  /// Body when swap is complete
-  ///
-  /// In en, this message translates to:
-  /// **'Your swap for {amount} {tokenSymbol} is complete.'**
-  String swapDepositCompleteBody(String amount, String tokenSymbol);
-
-  /// Large banner making clear the swap flow is a demo and nothing is swapped
-  ///
-  /// In en, this message translates to:
-  /// **'Demo Only'**
-  String get swapDemoOnly;
-
-  /// Subtitle under the Demo Only banner
-  ///
-  /// In en, this message translates to:
-  /// **'No real swap was performed.'**
-  String get swapDemoOnlyBody;
-
-  /// Button to confirm funds sent
-  ///
-  /// In en, this message translates to:
-  /// **'I\'ve sent the funds'**
-  String get swapDepositSentFunds;
-
-  /// Done button after swap completes
-  ///
-  /// In en, this message translates to:
-  /// **'Done'**
-  String get swapDepositDone;
-
-  /// Title on refund address picker sheet
-  ///
-  /// In en, this message translates to:
-  /// **'Refund Addresses'**
-  String get swapRefundPickerTitle;
-
-  /// Empty state on refund address picker
-  ///
-  /// In en, this message translates to:
-  /// **'No recent refund addresses'**
-  String get swapRefundPickerEmpty;
 
   /// Text for app bar or button label on QR scanner component
   ///

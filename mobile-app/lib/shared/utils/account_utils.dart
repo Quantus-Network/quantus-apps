@@ -18,6 +18,9 @@ int walletIndexForActiveAccount(List<Account> accounts, DisplayAccount? activeDi
 /// that path for testing.
 extension AccountSigning on Account {
   bool get signsWithHardware => accountType == AccountType.keystone || AppConstants.debugHardwareWallet;
+
+  /// A transparent account whose key signs in this app.
+  bool get signsLocally => accountType == AccountType.local && !signsWithHardware;
 }
 
 List<int> getNonHardwareWalletIndices(List<Account> accounts) {

@@ -87,7 +87,7 @@ class RegularSendStrategy extends SendStrategy {
 
   /// Dummy-signed `payment_queryInfo` probe from the captured account, with
   /// its inputs resolved now so it can run after the requesting screen is gone.
-  Future<SendFee> Function() _feeFetcher(
+  Future<RegularFee> Function() _feeFetcher(
     ProviderReader read,
     String recipient,
     BigInt amount, {
@@ -101,6 +101,10 @@ class RegularSendStrategy extends SendStrategy {
       sendAll: sendAll,
     );
   }
+
+  /// Chain fee for a transfer of [amount] to [recipient].
+  Future<RegularFee> fetchFee(ProviderReader read, {required String recipient, required BigInt amount}) =>
+      _feeFetcher(read, recipient, amount, sendAll: false)();
 
   @override
   String? affordabilityError(WidgetRef ref, SendFee fee, AppLocalizations l10n) => null;
@@ -250,19 +254,15 @@ class RegularSendStrategy extends SendStrategy {
       );
     }
 
-    final authed = await LocalAuthService().authenticate(localizedReason: l10n.sendReviewAuthReason);
-    if (!authed) return SendFailed(l10n.sendReviewAuthRequired);
-
     try {
-      final hash = await ref
-          .read(transactionSubmissionServiceProvider)
-          .balanceTransfer(
-            account,
-            call: _transferCall(ref.read, recipient, amount, sendAll: sendAll),
-            targetAddress: recipient,
-            amount: amount,
-            fee: regularFee.networkFee,
-          );
+      final hash = await submitLocal(
+        ref,
+        recipient: recipient,
+        amount: amount,
+        networkFee: regularFee.networkFee,
+        sendAll: sendAll,
+      );
+      if (hash == null) return SendFailed(l10n.sendReviewAuthRequired);
       unawaited(
         RecentAddressesService()
             .addAddress(recipient)
@@ -273,5 +273,28 @@ class RegularSendStrategy extends SendStrategy {
       quantusPrint('Transfer failed: $e');
       return SendFailed(l10n.sendReviewSubmitFailed);
     }
+  }
+
+  /// Authenticates the user and submits a transfer signed with the local key.
+  /// Returns the extrinsic hash, or null when authentication was declined.
+  Future<String?> submitLocal(
+    WidgetRef ref, {
+    required String recipient,
+    required BigInt amount,
+    required BigInt networkFee,
+    bool sendAll = false,
+  }) async {
+    if (account.signsWithHardware) throw StateError('Account ${account.accountId} signs with hardware');
+    final authed = await LocalAuthService().authenticate(localizedReason: ref.read(l10nProvider).sendReviewAuthReason);
+    if (!authed) return null;
+    return ref
+        .read(transactionSubmissionServiceProvider)
+        .balanceTransfer(
+          account,
+          call: _transferCall(ref.read, recipient, amount, sendAll: sendAll),
+          targetAddress: recipient,
+          amount: amount,
+          fee: networkFee,
+        );
   }
 }

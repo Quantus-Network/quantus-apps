@@ -57,6 +57,7 @@ dependencies:
   async: ^2.13.1
 
 dev_dependencies:
+  ed25519_edwards: ^0.3.1
   flutter_test:
     sdk: flutter
   integration_test:
@@ -95,8 +96,12 @@ flutter:
     - assets/v2/uppercase_q.png
     - assets/v2/hand_arrow_down.svg
     - assets/v2/swap_arrows_down_up.svg
-    - assets/v2/swap_clock_counter_clockwise.svg
     - assets/v2/swap_qr_code.svg
+    - assets/v2/swap_arrow_down.svg
+    - assets/v2/swap_list.svg
+    - assets/v2/swap_address_book.svg
+    - assets/v2/swap_pencil.svg
+    - assets/v2/token_qtc.svg
     - assets/v2/auth_wrapper_bracket.png
     - assets/v2/splash_background.jpg
     - assets/v2/ascii_background.png

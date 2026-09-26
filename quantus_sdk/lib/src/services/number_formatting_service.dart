@@ -7,6 +7,10 @@ class NumberFormattingService {
   static final BigInt scaleFactorBigInt = BigInt.from(10).pow(decimals);
   static final Decimal scaleFactorDecimal = Decimal.fromBigInt(scaleFactorBigInt);
 
+  static Decimal _scale(int decimals) => decimals == NumberFormattingService.decimals
+      ? scaleFactorDecimal
+      : Decimal.fromBigInt(BigInt.from(10).pow(decimals));
+
   final LocaleNumberConfig _localeConfig;
 
   NumberFormattingService({LocaleNumberConfig? localeConfig})
@@ -24,8 +28,13 @@ class NumberFormattingService {
   /// Example: 1234500000000 -> "1.2345" (smartDecimals = 4, US locale)
   /// Example: 100000000      -> "0.0001" (smartDecimals = 2, extended)
   /// Standard token-amount display: 4 smart decimals, extending to the
-  /// chain's full precision for smaller amounts.
-  String formatAmount(BigInt amount) => formatBalance(amount, smartDecimals: 4, maxDecimals: AppConstants.decimals);
+  /// token's full precision for smaller amounts.
+  String formatAmount(BigInt amount, {int decimals = AppConstants.decimals}) =>
+      formatBalance(amount, decimals: decimals, smartDecimals: 4, maxDecimals: decimals);
+
+  /// Every significant digit of [amount], for an amount someone must send exactly.
+  String formatExactAmount(BigInt amount, {int decimals = AppConstants.decimals}) =>
+      formatBalance(amount, decimals: decimals, smartDecimals: decimals, maxDecimals: decimals);
 
   /// A whole count with the locale's grouping separators, e.g. 5279 -> "5,279".
   String formatInteger(int value) => _localeConfig.localize(value.toString());
@@ -38,6 +47,7 @@ class NumberFormattingService {
 
   String formatBalance(
     BigInt balance, {
+    int decimals = AppConstants.decimals,
     int smartDecimals = 4,
     int maxDecimals = 6,
     bool addThousandsSeparators = true,
@@ -49,7 +59,7 @@ class NumberFormattingService {
       return addSymbol ? '$resultString ${AppConstants.tokenSymbol}' : resultString;
     }
 
-    final decimalBalance = (Decimal.fromBigInt(balance) / scaleFactorDecimal).toDecimal(
+    final decimalBalance = (Decimal.fromBigInt(balance) / _scale(decimals)).toDecimal(
       scaleOnInfinitePrecision: decimals,
     );
 
@@ -98,10 +108,10 @@ class NumberFormattingService {
   /// Formats a balance for payment URL wire transport: dot decimal, no grouping.
   ///
   /// Wire amounts are locale-neutral and must be parsed with [parseWireAmount].
-  String formatWireAmount(BigInt balance) {
+  String formatWireAmount(BigInt balance, {int decimals = AppConstants.decimals}) {
     return NumberFormattingService(
       localeConfig: LocaleNumberConfig.dotDecimal,
-    ).formatBalance(balance, smartDecimals: decimals, addThousandsSeparators: false);
+    ).formatBalance(balance, decimals: decimals, smartDecimals: decimals, addThousandsSeparators: false);
   }
 
   /// Wire amount shape: NNN[.NNN], dot as the decimal separator, no grouping,
@@ -131,22 +141,22 @@ class NumberFormattingService {
   }
 
   /// Parses a user-entered formatted string amount into a raw BigInt amount
-  /// scaled by the chain's decimals.
+  /// scaled by [decimals], the chain's by default.
   ///
   /// The input is interpreted using the [LocaleNumberConfig] supplied at
   /// construction (decimal/grouping separators come from the user's locale).
   /// Returns [BigInt.zero] for an empty string and `null` for unparseable input.
-  BigInt? parseAmount(String formattedAmount) {
+  BigInt? parseAmount(String formattedAmount, {int decimals = AppConstants.decimals}) {
     if (formattedAmount.isEmpty) {
       return BigInt.zero;
     }
 
     try {
-      final decimalAmount = _localeConfig.parseDecimal(formattedAmount);
+      final decimalAmount = _localeConfig.parseDecimal(formattedAmount, decimals: decimals);
       if (decimalAmount.scale > decimals) {
         quantusPrint('Warning: Input amount $formattedAmount exceeds $decimals decimals, will be truncated.');
       }
-      final rawDecimalAmount = decimalAmount * scaleFactorDecimal;
+      final rawDecimalAmount = decimalAmount * _scale(decimals);
       return rawDecimalAmount.toBigInt();
     } catch (e) {
       quantusPrint('Error parsing amount $formattedAmount: $e');

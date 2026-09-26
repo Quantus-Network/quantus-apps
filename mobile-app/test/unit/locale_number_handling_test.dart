@@ -539,6 +539,17 @@ void main() {
         expect(usService.parseAmount('abc'), isNull);
       });
 
+      test('a token with more decimals than the chain parses at full precision', () {
+        final expected = BigInt.parse('1123456789012345678901234');
+        expect(usService.parseAmount('1.123456789012345678901234', decimals: 24), expected);
+        expect(idService.parseAmount('1,123456789012345678901234', decimals: 24), expected);
+      });
+
+      test('formatExactAmount keeps every significant digit', () {
+        expect(usService.formatExactAmount(BigInt.from(12345678), decimals: 8), '0.12345678');
+        expect(idService.formatExactAmount(BigInt.from(1234567890), decimals: 8), '12,3456789');
+      });
+
       test('Indonesian locale: integer without separators', () {
         expect(idService.parseAmount('1500'), scaleFactor * BigInt.from(1500));
       });
