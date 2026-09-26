@@ -10,6 +10,7 @@ import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/services/firebase_messaging_service.dart';
 import 'package:resonance_network_wallet/services/telemetry_service.dart';
+import 'package:resonance_network_wallet/services/wallet_creation_service.dart';
 import 'package:resonance_network_wallet/shared/constants/e2e_keys.dart';
 import 'package:resonance_network_wallet/shared/utils/print.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/wallet_name_screen.dart';
@@ -34,7 +35,10 @@ class _ImportWalletScreenV2State extends ConsumerState<ImportWalletScreenV2> {
   final _buttonKey = GlobalKey();
   final _settingsService = SettingsService();
   final _accountsService = AccountsService();
-  final _discoveryService = AccountDiscoveryService(HdWalletService());
+  late final _walletCreationService = WalletCreationService(
+    settingsService: _settingsService,
+    accountsService: _accountsService,
+  );
   bool _isLoading = false;
   String? _error;
 
@@ -62,9 +66,9 @@ class _ImportWalletScreenV2State extends ConsumerState<ImportWalletScreenV2> {
       const scheme = DilithiumSchemeExtension.current;
       final path = HdWalletService.pathForIndex(0, scheme);
       final key = HdWalletService().keyPairAtPath(mnemonic, path, scheme);
-      await _settingsService.setMnemonic(mnemonic, widget.walletIndex);
-      await _accountsService.addAccount(
-        Account.derived(
+      await _walletCreationService.importWallet(
+        mnemonic: mnemonic,
+        root: Account.derived(
           walletIndex: widget.walletIndex,
           index: 0,
           name: 'Account ${accounts.length + 1}',
@@ -108,56 +112,33 @@ class _ImportWalletScreenV2State extends ConsumerState<ImportWalletScreenV2> {
     }
   }
 
-  /// Discovers on-chain HD accounts across both signature schemes. Multisigs
-  /// are added manually via Add Account → Discover Multisig.
-  ///
-  /// [defaultAccountId] is the current-scheme account 0 added before discovery.
-  /// When it has no on-chain history but discovery finds funded accounts, the
-  /// first funded one is made active so a returning user lands on it.
+  /// Adds the on-chain accounts of both signature schemes. Multisigs are added
+  /// manually via Add Account → Discover Multisig. [defaultAccountId] is the
+  /// current-scheme account 0 added before the scan.
   Future<void> _discoverAccounts(String mnemonic, {required String defaultAccountId}) async {
-    try {
-      final discovered = await _discoveryService.discoverAccounts(mnemonic: mnemonic, walletIndex: widget.walletIndex);
-      final current = await _accountsService.getAccounts();
-      final existing = current.map((e) => e.accountId).toSet();
-      var count = current.length;
-      for (final account in discovered) {
-        if (existing.contains(account.accountId)) continue;
-        await _accountsService.addAccount(account.copyWith(name: 'Account ${++count}'));
-      }
-      if (!discovered.any((a) => a.accountId == defaultAccountId) && discovered.isNotEmpty) {
-        await _settingsService.setActiveAccount(RegularAccount(discovered.first));
-      }
-      invalidateAccountProviders(ref);
-      unawaited(_discoverEncryptedAccount());
-    } catch (e) {
-      quantusPrint('error discovering accounts: $e');
-      TelemetryService().sendError('Error discovering accounts', error: e);
-      // Discovery is best-effort, but an old ML-DSA-87 seed must still yield its
-      // funded root account even when the indexer is unreachable.
-      await _addLegacyRootFallback(mnemonic);
-    }
+    await _walletCreationService.discoverImportedAccounts(
+      mnemonic: mnemonic,
+      walletIndex: widget.walletIndex,
+      rootAccountId: defaultAccountId,
+      onScanFailed: _askRetryScan,
+    );
+    invalidateAccountProviders(ref);
+    unawaited(_discoverEncryptedAccount());
   }
 
-  Future<void> _addLegacyRootFallback(String mnemonic) async {
-    try {
-      const legacy = DilithiumSchemeExtension.legacy;
-      final path = HdWalletService.pathForIndex(0, legacy);
-      final key = HdWalletService().keyPairAtPath(mnemonic, path, legacy);
-      final existing = (await _accountsService.getAccounts()).map((e) => e.accountId).toSet();
-      if (existing.contains(key.ss58Address)) return;
-      await _accountsService.addAccount(
-        Account.derived(
-          walletIndex: widget.walletIndex,
-          index: 0,
-          name: 'Account ${existing.length + 1}',
-          keypair: key,
-          derivationPath: path,
-        ),
-      );
-      invalidateAccountProviders(ref);
-    } catch (e) {
-      quantusPrint('legacy root fallback failed: $e');
-    }
+  Future<bool> _askRetryScan(Object error) async {
+    quantusPrint('error discovering accounts: $error');
+    TelemetryService().sendError('Error discovering accounts', error: error);
+    if (!mounted) return false;
+    final l10n = ref.read(l10nProvider);
+    return showQuantusDialog(
+      context,
+      title: l10n.importWalletScanFailedTitle,
+      body: l10n.importWalletScanFailedBody,
+      actionLabel: l10n.importWalletScanRetry,
+      cancelLabel: l10n.importWalletScanSkip,
+      barrierDismissible: false,
+    );
   }
 
   /// Restores the wallet's encrypted account and warms its wormhole address

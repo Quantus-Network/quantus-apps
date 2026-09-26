@@ -44,6 +44,9 @@ class FakeSettingsService extends Fake implements SettingsService {
   String? getWalletName(int walletIndex) => null;
 
   @override
+  String? pendingAccountScan(int walletIndex) => null;
+
+  @override
   AirdropClaimRecord? getAirdropClaim(int walletIndex) => null;
 
   @override

@@ -164,6 +164,8 @@ class SettingsService {
     if (remaining.isEmpty) {
       throw Exception('Cant remove last wallet!');
     }
+    // First, so an account scan finishing later sees the wallet is gone.
+    await _prefs.remove(_pendingAccountScanKey(walletIndex));
     final activeId = await _getActiveAccountId();
     final activeRemoved = accounts.any((a) => a.walletIndex == walletIndex && a.accountId == activeId);
     if (activeRemoved) {
@@ -544,6 +546,22 @@ class SettingsService {
   }
 
   String _walletOriginKey(int walletIndex) => 'wallet_origin_$walletIndex';
+
+  String _pendingAccountScanKey(int walletIndex) => 'pending_account_scan_$walletIndex';
+
+  /// Root account of an imported wallet whose account scan has not finished
+  /// yet, or null. The root identifies the scan: a wallet imported later at the
+  /// same index from another seed has a different one.
+  String? pendingAccountScan(int walletIndex) => _prefs.getString(_pendingAccountScanKey(walletIndex));
+
+  Future<void> setPendingAccountScan(int walletIndex, String? rootAccountId) async {
+    final key = _pendingAccountScanKey(walletIndex);
+    if (rootAccountId != null) {
+      await _prefs.setString(key, rootAccountId);
+    } else {
+      await _prefs.remove(key);
+    }
+  }
 
   WalletOrigin? getWalletOrigin(int walletIndex) {
     final value = _prefs.getString(_walletOriginKey(walletIndex));

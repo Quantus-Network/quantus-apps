@@ -143,6 +143,22 @@
     "@importWalletValidationError": {
       "description": "Validation error when recovery phrase word count is invalid"
     },
+    "importWalletScanFailedTitle": "Account scan failed",
+    "@importWalletScanFailedTitle": {
+      "description": "Title of the dialog shown when looking up the imported wallet's accounts fails"
+    },
+    "importWalletScanFailedBody": "We could not reach the network to look for your accounts. Try again now, or skip and the app will scan again the next time it starts.",
+    "@importWalletScanFailedBody": {
+      "description": "Body of the dialog shown when looking up the imported wallet's accounts fails"
+    },
+    "importWalletScanRetry": "Try again",
+    "@importWalletScanRetry": {
+      "description": "Button that runs the account scan again"
+    },
+    "importWalletScanSkip": "Skip",
+    "@importWalletScanSkip": {
+      "description": "Button that finishes the import without scanning for accounts"
+    },
 
     "homeError": "Error: {error}",
     "@homeError": {

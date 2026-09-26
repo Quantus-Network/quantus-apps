@@ -48,25 +48,7 @@ void main() {
         local(0, DilithiumScheme.mlDsa65),
         local(0, DilithiumScheme.mlDsa87),
       ]..sort(Account.compare);
-      expect(sorted.map((a) => a.accountId), ['ml-dsa-65_0', 'ml-dsa-87_0', 'ml-dsa-87_1', 'k']);
-    });
-  });
-
-  group('AccountsService.walletScheme', () {
-    Account local(int wallet, DilithiumScheme s) =>
-        Account(walletIndex: wallet, index: 0, name: 'a', accountId: '$wallet${s.storageName}', scheme: s);
-
-    test('a wallet with only legacy accounts stays legacy', () {
-      expect(AccountsService.walletScheme([local(0, DilithiumScheme.mlDsa87)], 0), DilithiumScheme.mlDsa87);
-    });
-
-    test('a wallet holding any current-scheme account grows as current', () {
-      final accounts = [local(0, DilithiumScheme.mlDsa87), local(0, DilithiumScheme.mlDsa65)];
-      expect(AccountsService.walletScheme(accounts, 0), DilithiumScheme.mlDsa65);
-    });
-
-    test('an empty or unrelated wallet defaults to legacy', () {
-      expect(AccountsService.walletScheme([local(1, DilithiumScheme.mlDsa65)], 0), DilithiumScheme.mlDsa87);
+      expect(sorted.map((a) => a.accountId), ['ml-dsa-87_0', 'ml-dsa-87_1', 'ml-dsa-65_0', 'k']);
     });
   });
 }

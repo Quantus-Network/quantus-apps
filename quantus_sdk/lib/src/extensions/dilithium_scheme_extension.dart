@@ -5,9 +5,10 @@ import 'package:quantus_sdk/src/rust/api/crypto.dart';
 /// Scheme-dependent constants, in one place. Conventions match quantus-cli.
 extension DilithiumSchemeExtension on DilithiumScheme {
   /// Scheme new wallets and accounts use.
-  static const DilithiumScheme current = DilithiumScheme.mlDsa65;
+  static const DilithiumScheme current = DilithiumScheme.mlDsa87;
 
-  /// Scheme of accounts stored before the scheme was recorded.
+  /// Scheme of accounts stored before the scheme was recorded, when ML-DSA-87
+  /// was the only one.
   static const DilithiumScheme legacy = DilithiumScheme.mlDsa87;
 
   /// Variant index of the chain's `DilithiumSignatureScheme`, written into every signed extrinsic.

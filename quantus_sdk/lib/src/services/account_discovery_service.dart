@@ -18,17 +18,18 @@ class AccountDiscoveryService {
   /// Discovers on-chain HD accounts of every signature scheme using the BIP-44
   /// gap-limit algorithm per scheme: scan HD indices in batches and keep going
   /// as long as accounts exist, stopping once [gapLimit] consecutive indices
-  /// have no on-chain account. Current-scheme accounts come first, by index.
+  /// have no on-chain account. Accounts come in [Account.compare] order:
+  /// current scheme first, then by index.
   Future<List<Account>> discoverAccounts({
     required String mnemonic,
     required int walletIndex,
     int gapLimit = 20,
   }) async {
     final perScheme = await Future.wait([
-      for (final scheme in [DilithiumSchemeExtension.current, DilithiumSchemeExtension.legacy])
+      for (final scheme in DilithiumScheme.values)
         _discoverScheme(mnemonic: mnemonic, walletIndex: walletIndex, scheme: scheme, gapLimit: gapLimit),
     ]);
-    return perScheme.expand((accounts) => accounts).toList();
+    return perScheme.expand((accounts) => accounts).toList()..sort(Account.compare);
   }
 
   Future<List<Account>> _discoverScheme({
