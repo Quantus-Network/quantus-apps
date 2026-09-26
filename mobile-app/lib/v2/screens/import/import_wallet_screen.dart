@@ -66,9 +66,9 @@ class _ImportWalletScreenV2State extends ConsumerState<ImportWalletScreenV2> {
       const scheme = DilithiumSchemeExtension.current;
       final path = HdWalletService.pathForIndex(0, scheme);
       final key = HdWalletService().keyPairAtPath(mnemonic, path, scheme);
-      await _settingsService.setMnemonic(mnemonic, widget.walletIndex);
-      await _accountsService.addAccount(
-        Account.derived(
+      await _walletCreationService.importWallet(
+        mnemonic: mnemonic,
+        root: Account.derived(
           walletIndex: widget.walletIndex,
           index: 0,
           name: 'Account ${accounts.length + 1}',

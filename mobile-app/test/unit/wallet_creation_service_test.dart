@@ -92,7 +92,7 @@ void main() {
     });
   });
 
-  group('WalletCreationService.discoverImportedAccounts', () {
+  group('WalletCreationService import scan', () {
     const mnemonic = 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about';
     Account at(int index, DilithiumScheme scheme) => Account(
       walletIndex: 0,
@@ -134,7 +134,7 @@ void main() {
         accountsService: accounts,
         discoveryService: discovery,
       );
-      pending = null;
+      pending = root.accountId;
       when(settings.setPendingAccountScan(any, any)).thenAnswer((i) async {
         pending = i.positionalArguments[1] as String?;
       });
@@ -172,7 +172,6 @@ void main() {
 
         expect(failures, isEmpty);
         verifyInOrder([
-          settings.setPendingAccountScan(0, root.accountId),
           accounts.addAccount(argThat(account('ml-dsa-87_3', name: 'Account 2'))),
           accounts.addAccount(argThat(account('ml-dsa-65_0', name: 'Account 3'))),
           settings.setActiveAccount(
@@ -223,7 +222,7 @@ void main() {
       expect(asked, 1);
       verifyNever(accounts.addAccount(any));
       verifyNever(settings.setActiveAccount(any));
-      verify(settings.setPendingAccountScan(0, root.accountId)).called(1);
+      expect(pending, root.accountId);
       verifyNever(settings.setPendingAccountScan(0, null));
     });
 
@@ -325,7 +324,53 @@ void main() {
       expect(pending, replacementRoot);
     });
 
+    test('import saves the mnemonic, records the pending scan, then inserts the root', () async {
+      pending = null;
+
+      await service.importWallet(mnemonic: mnemonic, root: root);
+
+      verifyInOrder([
+        settings.setMnemonic(mnemonic, 0),
+        settings.setPendingAccountScan(0, root.accountId),
+        accounts.addAccount(argThat(account(root.accountId))),
+      ]);
+      expect(pending, root.accountId);
+    });
+
+    test('a dev seed is imported without a pending scan', () async {
+      pending = null;
+
+      await service.importWallet(mnemonic: AppConstants.crystalAlice, root: root);
+
+      verify(accounts.addAccount(argThat(account(root.accountId)))).called(1);
+      verifyNever(settings.setPendingAccountScan(any, any));
+    });
+
+    test('a failed root insert on import leaves no pending scan behind', () async {
+      pending = null;
+      when(accounts.addAccount(any)).thenThrow(Exception('disk full'));
+
+      await expectLater(service.importWallet(mnemonic: mnemonic, root: root), throwsException);
+
+      expect(pending, isNull);
+    });
+
+    test('a selection made while a resumed scan reads its mnemonic is kept', () async {
+      when(settings.getMnemonic(0)).thenAnswer((_) async {
+        activeIs(encrypted);
+        return mnemonic;
+      });
+      scanReturns(() async => found);
+
+      await service.resumePendingAccountScans([root]);
+
+      verify(accounts.addAccount(any)).called(2);
+      verifyNever(settings.setActiveAccount(any));
+    });
+
     test('resume leaves wallets whose scan finished alone', () async {
+      pending = null;
+
       expect(await service.resumePendingAccountScans([root]), isFalse);
 
       verifyNever(
