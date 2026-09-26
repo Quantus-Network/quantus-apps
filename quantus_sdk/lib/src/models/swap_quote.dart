@@ -17,6 +17,9 @@ class SwapQuote {
   final DateTime deadline;
   final Duration timeEstimate;
   final String correlationId;
+
+  /// 1Click's signature over the request and response; what settles a dispute.
+  final String signature;
   final String? depositAddress;
   final String? depositMemo;
 
@@ -34,6 +37,7 @@ class SwapQuote {
     required this.deadline,
     required this.timeEstimate,
     required this.correlationId,
+    required this.signature,
     this.depositAddress,
     this.depositMemo,
   });
@@ -55,6 +59,7 @@ class SwapQuote {
       deadline: DateTime.parse((quote['deadline'] ?? request['deadline']) as String),
       timeEstimate: Duration(seconds: (quote['timeEstimate'] as num).round()),
       correlationId: json['correlationId'] as String,
+      signature: json['signature'] as String,
       depositAddress: quote['depositAddress'] as String?,
       depositMemo: quote['depositMemo'] as String?,
     );

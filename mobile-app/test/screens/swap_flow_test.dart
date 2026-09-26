@@ -96,6 +96,8 @@ class _OneClick {
         'deadline': request['deadline'],
       },
       'correlationId': dry ? 'dry' : 'live',
+      'signature': 'ed25519:sig',
+      'timestamp': DateTime.now().toUtc().toIso8601String(),
     };
   }
 }
@@ -123,6 +125,7 @@ SwapQuote _quote({
   deadline: DateTime.now().add(const Duration(minutes: 20)),
   timeEstimate: const Duration(minutes: 1),
   correlationId: 'c',
+  signature: 'ed25519:sig',
   depositAddress: depositAddress,
   depositMemo: depositMemo,
 );

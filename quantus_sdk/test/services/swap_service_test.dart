@@ -70,6 +70,8 @@ Future<SwapQuote> _quote(SwapService service, {bool dry = true}) => service.getQ
 );
 
 void main() {
+  setUp(() => SharedPreferences.setMockInitialValues({}));
+
   group('getQuote', () {
     test('posts the 1Click quote request and parses the quote', () async {
       late Map<String, dynamic> sent;
@@ -92,6 +94,7 @@ void main() {
         'slippageTolerance': 100,
         'originAsset': _usdcEth.assetId,
         'depositType': 'ORIGIN_CHAIN',
+        'depositMode': 'SIMPLE',
         'destinationAsset': _wnear.assetId,
         'amount': '10000000',
         'refundTo': _refund,
@@ -100,6 +103,7 @@ void main() {
         'recipientType': 'DESTINATION_CHAIN',
         'deadline': isA<String>(),
         'quoteWaitingTimeMs': 3000,
+        'referral': 'quantus',
       });
       final deadline = DateTime.parse(sent['deadline'] as String);
       expect(deadline.difference(before), greaterThanOrEqualTo(SwapService.depositWindow));
@@ -118,7 +122,25 @@ void main() {
       expect(quote.deadline, DateTime.utc(2026, 9, 20, 6, 0, 50));
       expect(quote.timeEstimate, const Duration(seconds: 45));
       expect(quote.correlationId, 'corr-1');
+      expect(quote.signature, 'ed25519:sig');
       expect(quote.depositAddress, isNull);
+    });
+
+    test('asks for a memo deposit on chains that need one', () async {
+      late Map<String, dynamic> sent;
+      final service = _service((r) async {
+        sent = jsonDecode(r.body) as Map<String, dynamic>;
+        return http.Response(jsonEncode(_quoteResponse()), 200);
+      });
+      const xlm = SwapToken(assetId: 'nep245:xlm', symbol: 'XLM', network: 'STELLAR', decimals: 7, usdPrice: 0.2);
+      await service.getQuote(
+        from: xlm,
+        to: _wnear,
+        amount: BigInt.one,
+        refundAddress: 'GREFUND',
+        recipient: _recipient,
+      );
+      expect(sent['depositMode'], 'MEMO');
     });
 
     test('gives a deposit from a slow chain two hours', () async {
@@ -198,6 +220,11 @@ void main() {
       expect(order.status, SwapStatus.pendingDeposit);
       expect(order.depositAddress, '0xdeposit');
       expect(order.quote.deadline, DateTime.utc(2026, 9, 20, 6, 10, 50));
+
+      final saved = await service.getSavedLiveQuotes();
+      expect(saved, hasLength(1));
+      expect(saved.single['signature'], 'ed25519:sig');
+      expect((saved.single['quote'] as Map)['depositAddress'], '0xdeposit');
       expect(order.amountOut, isNull);
     });
 

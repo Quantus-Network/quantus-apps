@@ -31,6 +31,12 @@ class SwapService {
   /// correctly sent deposit can take an hour to count.
   static const _slowNetworks = {'BTC', 'LTC', 'DOGE', 'BCH', 'DASH', 'ZEC'};
   static const _slowDepositWindow = Duration(hours: 2);
+
+  /// Chains whose deposits carry a memo; 1Click rejects a plain deposit
+  /// address for them and a memo request for every other chain.
+  static const _memoNetworks = {'STELLAR'};
+  static const _liveQuotesKey = 'swap_live_quotes';
+  static const _maxLiveQuotes = 50;
   static const quoteWaitingTime = Duration(seconds: 3);
   static const statusPollInterval = Duration(seconds: 5);
   static const _savedAddressesKey = 'swap_saved_addresses';
@@ -102,6 +108,58 @@ class SwapService {
     int slippageBps = defaultSlippageBps,
     bool dry = true,
   }) async {
+    final json = await _quoteJson(
+      from: from,
+      to: to,
+      amount: amount,
+      refundAddress: refundAddress,
+      recipient: recipient,
+      slippageBps: slippageBps,
+      dry: dry,
+    );
+    return SwapQuote.fromJson(json, fromToken: from, toToken: to);
+  }
+
+  /// Re-quotes [quote] live so 1Click reserves a deposit address for it. The
+  /// signed response is kept on the device: 1Click settles any dispute about
+  /// a deposit address from it.
+  Future<SwapOrder> createSwap(SwapQuote quote) async {
+    final json = await _quoteJson(
+      from: quote.fromToken,
+      to: quote.toToken,
+      amount: quote.amountIn,
+      refundAddress: quote.refundAddress,
+      recipient: quote.recipient,
+      slippageBps: quote.slippageBps,
+      dry: false,
+    );
+    final live = SwapQuote.fromJson(json, fromToken: quote.fromToken, toToken: quote.toToken);
+    if (live.depositAddress == null) throw StateError('Live quote ${live.correlationId} has no deposit address');
+    await _saveLiveQuote(json);
+    return SwapOrder(quote: live, status: SwapStatus.pendingDeposit);
+  }
+
+  /// Signed live quote responses, most recent first.
+  Future<List<Map<String, dynamic>>> getSavedLiveQuotes() async {
+    final prefs = await SharedPreferences.getInstance();
+    return [for (final s in prefs.getStringList(_liveQuotesKey) ?? []) jsonDecode(s) as Map<String, dynamic>];
+  }
+
+  Future<void> _saveLiveQuote(Map<String, dynamic> json) async {
+    final prefs = await SharedPreferences.getInstance();
+    final saved = [jsonEncode(json), ...?prefs.getStringList(_liveQuotesKey)];
+    await prefs.setStringList(_liveQuotesKey, saved.take(_maxLiveQuotes).toList());
+  }
+
+  Future<Map<String, dynamic>> _quoteJson({
+    required SwapToken from,
+    required SwapToken to,
+    required BigInt amount,
+    required String refundAddress,
+    required String recipient,
+    required int slippageBps,
+    required bool dry,
+  }) async {
     final json = await _send(
       'POST',
       '/v0/quote',
@@ -111,6 +169,7 @@ class SwapService {
         'slippageTolerance': slippageBps,
         'originAsset': from.assetId,
         'depositType': 'ORIGIN_CHAIN',
+        'depositMode': _memoNetworks.contains(from.network) ? 'MEMO' : 'SIMPLE',
         'destinationAsset': to.assetId,
         'amount': amount.toString(),
         'refundTo': refundAddress,
@@ -119,24 +178,10 @@ class SwapService {
         'recipientType': 'DESTINATION_CHAIN',
         'deadline': DateTime.now().toUtc().add(depositWindowFor(from.network)).toIso8601String(),
         'quoteWaitingTimeMs': quoteWaitingTime.inMilliseconds,
+        'referral': AppConstants.oneClickReferral,
       },
     );
-    return SwapQuote.fromJson(json as Map<String, dynamic>, fromToken: from, toToken: to);
-  }
-
-  /// Re-quotes [quote] live so 1Click reserves a deposit address for it.
-  Future<SwapOrder> createSwap(SwapQuote quote) async {
-    final live = await getQuote(
-      from: quote.fromToken,
-      to: quote.toToken,
-      amount: quote.amountIn,
-      refundAddress: quote.refundAddress,
-      recipient: quote.recipient,
-      slippageBps: quote.slippageBps,
-      dry: false,
-    );
-    if (live.depositAddress == null) throw StateError('Live quote ${live.correlationId} has no deposit address');
-    return SwapOrder(quote: live, status: SwapStatus.pendingDeposit);
+    return json as Map<String, dynamic>;
   }
 
   /// Tells 1Click which transaction paid [order]'s deposit address, so it

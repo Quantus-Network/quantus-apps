@@ -116,7 +116,7 @@ The app never blocks on anything but its own HTTP calls and, swapping out, the Q
 | Call | App sends | App reads back |
 | --- | --- | --- |
 | `GET /v0/tokens` | nothing | `assetId`, `symbol`, `blockchain`, `decimals`, `price`. One asset per symbol is kept, main network first. The entry whose `assetId` is `AppConstants.quantusIntentsAssetId` is QTC as 1Click lists it and takes over from the app's own QTC metadata; it is refused if its decimals differ from the chain's. |
-| `POST /v0/quote` | `dry`, `swapType: EXACT_INPUT`, `slippageTolerance` (the picked 0.5, 1, 2 or 3%, 100 basis points by default), `originAsset`, `destinationAsset`, `amount` in base units, `refundTo` and `refundType: ORIGIN_CHAIN`, `recipient` and `recipientType: DESTINATION_CHAIN`, `deadline`, `quoteWaitingTimeMs: 3000`. `X-API-Key` header when a partner key is configured. | `quote.amountIn`, `amountOut`, `minAmountOut`, `amountInUsd`, `amountOutUsd`, `timeEstimate`, `deadline`, `depositAddress` (live only), `depositMemo` (chains such as Stellar need it on the deposit; the deposit screen shows it with its own copy action and a warning), `correlationId`. The request is echoed back in `quoteRequest`. |
+| `POST /v0/quote` | `dry`, `swapType: EXACT_INPUT`, `slippageTolerance` (the picked 0.5, 1, 2 or 3%, 100 basis points by default), `originAsset`, `destinationAsset`, `amount` in base units, `depositType: ORIGIN_CHAIN`, `depositMode` (`MEMO` for a Stellar origin, which 1Click refuses to quote otherwise, `SIMPLE` everywhere else), `refundTo` and `refundType: ORIGIN_CHAIN`, `recipient` and `recipientType: DESTINATION_CHAIN`, `deadline`, `quoteWaitingTimeMs: 3000`, `referral: quantus`. `X-API-Key` header when a partner key is configured. | `quote.amountIn`, `amountOut`, `minAmountOut`, `amountInUsd`, `amountOutUsd`, `timeEstimate`, `deadline`, `depositAddress` (live only), `depositMemo` (chains such as Stellar need it on the deposit; the deposit screen shows it with its own copy action and a warning), `correlationId`, `signature`. The signed response of every live quote is kept on the device (`SwapService.getSavedLiveQuotes`, last 50): 1Click settles a dispute about a deposit address from it. The request is echoed back in `quoteRequest`. |
 | `POST /v0/deposit/submit` | `txHash` of the QTC transfer, `depositAddress`, `memo` if any. Swapping out only. | nothing the app uses |
 | `GET /v0/status` | `depositAddress`, `depositMemo` if the quote had one | `status`, `swapDetails.amountOut`, `refundedAmount`, `refundReason`, `originChainTxHashes[].hash`, `destinationChainTxHashes[].hash`. |
 
@@ -153,7 +153,7 @@ stateDiagram-v2
 
 ## Fees
 
-- Without a partner key 1Click adds 25 basis points to every quote. The live probe echoed `appFees: [{recipient: 5880ad2b..., fee: 25}]` on a request that sent none.
+- Without a partner key 1Click adds its platform fee to every quote: 25 basis points per the docs, 20 in the live probes of 2026-09-26, echoed as `appFees: [{recipient: 5880ad2b..., fee: 20}]` on a request that sent none.
 - With a partner key from partners.near-intents.org the platform fee is 20 basis points, 1 basis point on stablecoin and same-asset routes. Pass it as `SwapService(apiKey:)`; it goes out as `X-API-Key`.
 - Fees are inside `amountOut`. Nothing is charged on top of `amountIn`.
 - `refundFee` and `withdrawFee` in the quote are in base units of the origin asset.

@@ -39,6 +39,9 @@ class AppConstants {
   // NEAR Intents 1Click swap API (docs.near-intents.org).
   static const String oneClickEndpoint = 'https://1click.chaindefuser.com';
 
+  // Distribution channel id 1Click records on every quote.
+  static const String oneClickReferral = 'quantus';
+
   // Quantus is not listed on NEAR Intents yet, so every quote into it is
   // rejected as "tokenOut is not valid". Replace with the listed asset id.
   static const String quantusIntentsAssetId = 'nep141:qtc.omft.near';
