@@ -119,7 +119,7 @@ class _ImportWalletScreenV2State extends ConsumerState<ImportWalletScreenV2> {
     await _walletCreationService.discoverImportedAccounts(
       mnemonic: mnemonic,
       walletIndex: widget.walletIndex,
-      defaultAccountId: defaultAccountId,
+      rootAccountId: defaultAccountId,
       onScanFailed: _askRetryScan,
     );
     invalidateAccountProviders(ref);

@@ -269,23 +269,23 @@ void main() {
       expect(nextIndex, 1);
     });
 
-    test('account scan pending flag is set, read back and cleared per wallet', () async {
-      expect(settingsService.isAccountScanPending(1), isFalse);
-      await settingsService.setAccountScanPending(1, true);
-      expect(settingsService.isAccountScanPending(1), isTrue);
-      expect(settingsService.isAccountScanPending(0), isFalse);
-      await settingsService.setAccountScanPending(1, false);
-      expect(settingsService.isAccountScanPending(1), isFalse);
+    test('pending account scan is set, read back and cleared per wallet', () async {
+      expect(settingsService.pendingAccountScan(1), isNull);
+      await settingsService.setPendingAccountScan(1, 'root_w1');
+      expect(settingsService.pendingAccountScan(1), 'root_w1');
+      expect(settingsService.pendingAccountScan(0), isNull);
+      await settingsService.setPendingAccountScan(1, null);
+      expect(settingsService.pendingAccountScan(1), isNull);
     });
 
     test('removing a wallet clears its pending account scan', () async {
       FlutterSecureStorage.setMockInitialValues({});
       await settingsService.saveAccounts([account1, account1.copyWith(walletIndex: 1, accountId: 'id_w1')]);
-      await settingsService.setAccountScanPending(1, true);
+      await settingsService.setPendingAccountScan(1, 'id_w1');
 
       await settingsService.removeWallet(1);
 
-      expect(settingsService.isAccountScanPending(1), isFalse);
+      expect(settingsService.pendingAccountScan(1), isNull);
     });
   });
 }

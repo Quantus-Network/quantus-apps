@@ -506,18 +506,14 @@ class MockSettingsService extends _i1.Mock implements _i3.SettingsService {
           as _i4.Future<void>);
 
   @override
-  bool isAccountScanPending(int? walletIndex) =>
-      (super.noSuchMethod(
-            Invocation.method(#isAccountScanPending, [walletIndex]),
-            returnValue: false,
-            returnValueForMissingStub: false,
-          )
-          as bool);
+  String? pendingAccountScan(int? walletIndex) =>
+      (super.noSuchMethod(Invocation.method(#pendingAccountScan, [walletIndex]), returnValueForMissingStub: null)
+          as String?);
 
   @override
-  _i4.Future<void> setAccountScanPending(int? walletIndex, bool? pending) =>
+  _i4.Future<void> setPendingAccountScan(int? walletIndex, String? rootAccountId) =>
       (super.noSuchMethod(
-            Invocation.method(#setAccountScanPending, [walletIndex, pending]),
+            Invocation.method(#setPendingAccountScan, [walletIndex, rootAccountId]),
             returnValue: _i4.Future<void>.value(),
             returnValueForMissingStub: _i4.Future<void>.value(),
           )

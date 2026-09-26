@@ -120,7 +120,7 @@ void main() {
     late MockAccountsService accounts;
     late MockAccountDiscoveryService discovery;
     late WalletCreationService service;
-    late bool pending;
+    late String? pending;
 
     void activeIs(Account? active) =>
         when(settings.getActiveAccount()).thenAnswer((_) async => active == null ? null : RegularAccount(active));
@@ -134,11 +134,11 @@ void main() {
         accountsService: accounts,
         discoveryService: discovery,
       );
-      pending = false;
-      when(settings.setAccountScanPending(any, any)).thenAnswer((i) async {
-        pending = i.positionalArguments[1] as bool;
+      pending = null;
+      when(settings.setPendingAccountScan(any, any)).thenAnswer((i) async {
+        pending = i.positionalArguments[1] as String?;
       });
-      when(settings.isAccountScanPending(0)).thenAnswer((_) => pending);
+      when(settings.pendingAccountScan(0)).thenAnswer((_) => pending);
       when(settings.getMnemonic(0)).thenAnswer((_) async => mnemonic);
       when(accounts.getAccounts()).thenAnswer((_) async => [root]);
       activeIs(root);
@@ -155,7 +155,7 @@ void main() {
     Future<void> discover(Future<bool> Function(Object error) onScanFailed) => service.discoverImportedAccounts(
       mnemonic: mnemonic,
       walletIndex: 0,
-      defaultAccountId: root.accountId,
+      rootAccountId: root.accountId,
       onScanFailed: onScanFailed,
     );
 
@@ -172,13 +172,13 @@ void main() {
 
         expect(failures, isEmpty);
         verifyInOrder([
-          settings.setAccountScanPending(0, true),
+          settings.setPendingAccountScan(0, root.accountId),
           accounts.addAccount(argThat(account('ml-dsa-87_3', name: 'Account 2'))),
           accounts.addAccount(argThat(account('ml-dsa-65_0', name: 'Account 3'))),
           settings.setActiveAccount(
             argThat(isA<RegularAccount>().having((a) => a.account.accountId, 'accountId', 'ml-dsa-87_3')),
           ),
-          settings.setAccountScanPending(0, false),
+          settings.setPendingAccountScan(0, null),
         ]);
       },
     );
@@ -223,8 +223,8 @@ void main() {
       expect(asked, 1);
       verifyNever(accounts.addAccount(any));
       verifyNever(settings.setActiveAccount(any));
-      verify(settings.setAccountScanPending(0, true)).called(1);
-      verifyNever(settings.setAccountScanPending(0, false));
+      verify(settings.setPendingAccountScan(0, root.accountId)).called(1);
+      verifyNever(settings.setPendingAccountScan(0, null));
     });
 
     test('a skipped scan finishes on a later start, restores the ML-DSA-65 account and makes it active', () async {
@@ -232,13 +232,13 @@ void main() {
       scanReturns(() async => online ? [found.last] : throw Exception('indexer unreachable'));
 
       await discover((_) async => false);
-      expect(pending, isTrue);
+      expect(pending, root.accountId);
       verifyNever(accounts.addAccount(any));
 
       online = true;
       expect(await service.resumePendingAccountScans([root]), isTrue);
 
-      expect(pending, isFalse);
+      expect(pending, isNull);
       verify(accounts.addAccount(argThat(account('ml-dsa-65_0', name: 'Account 2')))).called(1);
       verify(
         settings.setActiveAccount(
@@ -250,7 +250,7 @@ void main() {
     test("a resumed scan leaves an active account outside the wallet's transparent accounts alone", () async {
       final otherWallet = at(0, DilithiumScheme.mlDsa87).copyWith(walletIndex: 1, accountId: 'other_wallet');
       for (final active in [encrypted, otherWallet]) {
-        pending = true;
+        pending = root.accountId;
         activeIs(active);
         scanReturns(() async => [found.last]);
 
@@ -275,7 +275,7 @@ void main() {
 
     test('a wallet removed while the scan runs is not written back', () async {
       scanReturns(() async {
-        pending = false;
+        pending = null;
         return found;
       });
 
@@ -286,29 +286,43 @@ void main() {
     });
 
     test('a wallet removed while a resumed scan reads its mnemonic is not written back', () async {
-      pending = true;
+      pending = root.accountId;
       when(settings.getMnemonic(0)).thenAnswer((_) async {
-        pending = false;
+        pending = null;
         return mnemonic;
       });
       scanReturns(() async => found);
 
       await service.resumePendingAccountScans([root]);
 
-      verifyNever(settings.setAccountScanPending(0, true));
+      verifyNever(settings.setPendingAccountScan(any, any));
       verifyNever(accounts.addAccount(any));
       verifyNever(settings.setActiveAccount(any));
     });
 
     test('a wallet removed after discovery returns gets no further writes', () async {
       scanReturns(() async => found);
-      when(accounts.addAccount(any)).thenAnswer((_) async => pending = false);
+      when(accounts.addAccount(any)).thenAnswer((_) async => pending = null);
 
       await discover((_) async => false);
 
       verify(accounts.addAccount(any)).called(1);
       verifyNever(settings.setActiveAccount(any));
-      verifyNever(settings.setAccountScanPending(0, false));
+      verifyNever(settings.setPendingAccountScan(0, null));
+    });
+
+    test('a late scan of a removed wallet leaves a replacement wallet at the same index alone', () async {
+      const replacementRoot = 'replacement_root';
+      scanReturns(() async {
+        pending = replacementRoot;
+        return found;
+      });
+
+      await discover((_) async => false);
+
+      verifyNever(accounts.addAccount(any));
+      verifyNever(settings.setActiveAccount(any));
+      expect(pending, replacementRoot);
     });
 
     test('resume leaves wallets whose scan finished alone', () async {
