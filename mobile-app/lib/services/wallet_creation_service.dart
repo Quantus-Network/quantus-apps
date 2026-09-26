@@ -106,16 +106,21 @@ class WalletCreationService {
 
   /// Finishes the import scan of every wallet in [accounts] whose scan was
   /// skipped or interrupted, so accounts missed while the indexer was
-  /// unreachable still appear. Returns whether any scan finished. A scan that
-  /// fails again stays pending for the next call.
+  /// unreachable still appear. As on import, an active transparent account of
+  /// that wallet with no history gives way to the first funded account found.
+  /// Returns whether any scan finished. A scan that fails again stays pending
+  /// for the next call.
   Future<bool> resumePendingAccountScans(Iterable<Account> accounts) async {
     var finished = false;
+    final active = await _settings.getActiveRegularAccount();
     for (final walletIndex in accounts.map((a) => a.walletIndex).toSet().where(_settings.isAccountScanPending)) {
       final mnemonic = await _settings.getMnemonic(walletIndex);
       if (mnemonic == null) throw StateError('Wallet $walletIndex has a pending account scan but no mnemonic');
+      final activeHere = active != null && active.walletIndex == walletIndex && active.accountType == AccountType.local;
       await discoverImportedAccounts(
         mnemonic: mnemonic,
         walletIndex: walletIndex,
+        defaultAccountId: activeHere ? active.accountId : null,
         onScanFailed: (e) async {
           quantusPrint('Resumed account scan of wallet $walletIndex failed: $e');
           return false;

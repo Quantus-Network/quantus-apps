@@ -209,13 +209,14 @@ void main() {
       verifyNever(settings.setAccountScanPending(0, false));
     });
 
-    test('a skipped scan finishes on a later start and restores the ML-DSA-65 account', () async {
+    test('a skipped scan finishes on a later start, restores the ML-DSA-65 account and makes it active', () async {
       var pending = false;
       when(settings.setAccountScanPending(any, any)).thenAnswer((i) async {
         pending = i.positionalArguments[1] as bool;
       });
       when(settings.isAccountScanPending(0)).thenAnswer((_) => pending);
       when(settings.getMnemonic(0)).thenAnswer((_) async => mnemonic);
+      when(settings.getActiveRegularAccount()).thenAnswer((_) async => root);
       var online = false;
       scanReturns(() async => online ? [found.last] : throw Exception('indexer unreachable'));
 
@@ -228,6 +229,32 @@ void main() {
 
       expect(pending, isFalse);
       verify(accounts.addAccount(argThat(account('ml-dsa-65_0', name: 'Account 2')))).called(1);
+      verify(
+        settings.setActiveAccount(
+          argThat(isA<RegularAccount>().having((a) => a.account.accountId, 'accountId', 'ml-dsa-65_0')),
+        ),
+      ).called(1);
+    });
+
+    test("a resumed scan leaves an active account outside the wallet's transparent accounts alone", () async {
+      const encrypted = Account(
+        walletIndex: 0,
+        index: AppConstants.encryptedAccountIndex,
+        name: 'Encrypted',
+        accountId: 'encrypted',
+        accountType: AccountType.encrypted,
+      );
+      final otherWallet = at(0, DilithiumScheme.mlDsa87).copyWith(walletIndex: 1, accountId: 'other_wallet');
+      for (final active in [encrypted, otherWallet]) {
+        when(settings.isAccountScanPending(0)).thenReturn(true);
+        when(settings.getMnemonic(0)).thenAnswer((_) async => mnemonic);
+        when(settings.getActiveRegularAccount()).thenAnswer((_) async => active);
+        scanReturns(() async => [found.last]);
+
+        await service.resumePendingAccountScans([root]);
+      }
+
+      verify(accounts.addAccount(argThat(account('ml-dsa-65_0')))).called(2);
       verifyNever(settings.setActiveAccount(any));
     });
 
