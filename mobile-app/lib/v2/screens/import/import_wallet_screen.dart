@@ -132,33 +132,6 @@ class _ImportWalletScreenV2State extends ConsumerState<ImportWalletScreenV2> {
     } catch (e) {
       quantusPrint('error discovering accounts: $e');
       TelemetryService().sendError('Error discovering accounts', error: e);
-      // Discovery is best-effort, but a seed whose root was created under
-      // another scheme must still yield that funded root account even when the
-      // indexer is unreachable.
-      await _addOtherSchemeRootsFallback(mnemonic);
-    }
-  }
-
-  Future<void> _addOtherSchemeRootsFallback(String mnemonic) async {
-    try {
-      final existing = (await _accountsService.getAccounts()).map((e) => e.accountId).toSet();
-      for (final scheme in DilithiumScheme.values.where((s) => s != DilithiumSchemeExtension.current)) {
-        final path = HdWalletService.pathForIndex(0, scheme);
-        final key = HdWalletService().keyPairAtPath(mnemonic, path, scheme);
-        if (!existing.add(key.ss58Address)) continue;
-        await _accountsService.addAccount(
-          Account.derived(
-            walletIndex: widget.walletIndex,
-            index: 0,
-            name: 'Account ${existing.length}',
-            keypair: key,
-            derivationPath: path,
-          ),
-        );
-      }
-      invalidateAccountProviders(ref);
-    } catch (e) {
-      quantusPrint('other-scheme root fallback failed: $e');
     }
   }
 
