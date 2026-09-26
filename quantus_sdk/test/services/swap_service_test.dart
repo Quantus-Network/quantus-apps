@@ -31,39 +31,45 @@ Map<String, dynamic> _signed(Map<String, dynamic> response) {
   };
 }
 
+final _liveDeadline = DateTime.now().toUtc().add(const Duration(minutes: 30)).toIso8601String();
+
 /// A quote answering the fixture request, or [request] when given.
-Map<String, dynamic> _quoteResponse({bool dry = true, String? depositAddress, Map<String, dynamic>? request}) =>
-    _signed({
-      'quote': {
-        'depositAddress': ?depositAddress,
-        'amountIn': '10000000',
-        'amountInFormatted': '10.0',
-        'amountInUsd': '9.996620000000',
-        'minAmountIn': '10000000',
-        'amountOut': '2861051688077884367566500',
-        'amountOutFormatted': '2.8610516880778843675665',
-        'amountOutUsd': '9.956459874511',
-        'minAmountOut': '2832441171197105523890835',
-        if (!dry) 'deadline': '2026-09-20T06:10:50.000Z',
-        'timeEstimate': 45,
-        'refundFee': '300000',
-        'withdrawFee': '0',
-      },
-      'quoteRequest': {
-        'dry': dry,
-        'swapType': 'EXACT_INPUT',
-        'slippageTolerance': 100,
-        'originAsset': _usdcEth.assetId,
-        'destinationAsset': _wnear.assetId,
-        'amount': '10000000',
-        'refundTo': _refund,
-        'recipient': _recipient,
-        'deadline': '2026-09-20T06:00:50.000Z',
-        ...?request,
-      },
-      'timestamp': '2026-09-20T05:50:50.975Z',
-      'correlationId': 'corr-1',
-    });
+Map<String, dynamic> _quoteResponse({
+  bool dry = true,
+  String? depositAddress,
+  Map<String, dynamic>? request,
+  String? liveDeadline,
+}) => _signed({
+  'quote': {
+    'depositAddress': ?depositAddress,
+    'amountIn': request?['amount'] ?? '10000000',
+    'amountInFormatted': '10.0',
+    'amountInUsd': '9.996620000000',
+    'minAmountIn': request?['amount'] ?? '10000000',
+    'amountOut': '2861051688077884367566500',
+    'amountOutFormatted': '2.8610516880778843675665',
+    'amountOutUsd': '9.956459874511',
+    'minAmountOut': '2832441171197105523890835',
+    if (!dry) 'deadline': liveDeadline ?? _liveDeadline,
+    'timeEstimate': 45,
+    'refundFee': '300000',
+    'withdrawFee': '0',
+  },
+  'quoteRequest': {
+    'dry': dry,
+    'swapType': 'EXACT_INPUT',
+    'slippageTolerance': 100,
+    'originAsset': _usdcEth.assetId,
+    'destinationAsset': _wnear.assetId,
+    'amount': '10000000',
+    'refundTo': _refund,
+    'recipient': _recipient,
+    'deadline': '2026-09-20T06:00:50.000Z',
+    ...?request,
+  },
+  'timestamp': '2026-09-20T05:50:50.975Z',
+  'correlationId': 'corr-1',
+});
 
 Map<String, dynamic> _statusResponse(String status, {Map<String, dynamic>? details}) => {
   'correlationId': 'corr-2',
@@ -102,7 +108,7 @@ void main() {
       final service = _service((r) async {
         request = r;
         sent = jsonDecode(r.body) as Map<String, dynamic>;
-        return http.Response(jsonEncode(_quoteResponse()), 200);
+        return http.Response(jsonEncode(_quoteResponse(request: _sentRequest(r))), 200);
       }, apiKey: 'jwt-token');
 
       final quote = await _quote(service);
@@ -128,7 +134,8 @@ void main() {
         'referral': 'quantus',
       });
       final deadline = DateTime.parse(sent['deadline'] as String);
-      expect(deadline.difference(before), greaterThanOrEqualTo(SwapService.depositWindow));
+      // The request deadline is sent at millisecond precision.
+      expect(deadline.difference(before), greaterThan(SwapService.depositWindow - const Duration(seconds: 1)));
       expect(deadline.difference(before), lessThan(SwapService.depositWindow + const Duration(seconds: 10)));
 
       expect(quote.fromToken, _usdcEth);
@@ -141,7 +148,7 @@ void main() {
       expect(quote.slippageBps, 100);
       expect(quote.refundAddress, _refund);
       expect(quote.recipient, _recipient);
-      expect(quote.deadline, DateTime.utc(2026, 9, 20, 6, 0, 50));
+      expect(quote.deadline, DateTime.parse(sent['deadline'] as String));
       expect(quote.timeEstimate, const Duration(seconds: 45));
       expect(quote.correlationId, 'corr-1');
       expect(quote.signature, startsWith('ed25519:'));
@@ -176,13 +183,13 @@ void main() {
       await service.getQuote(from: btc, to: _wnear, amount: BigInt.one, refundAddress: _refund, recipient: _recipient);
       final deadline = DateTime.parse(sent['deadline'] as String);
       expect(SwapService.depositWindowFor('BTC'), const Duration(hours: 2));
-      expect(deadline.difference(before), greaterThanOrEqualTo(const Duration(hours: 2)));
+      expect(deadline.difference(before), greaterThan(const Duration(hours: 2) - const Duration(seconds: 1)));
       expect(deadline.difference(before), lessThan(const Duration(hours: 2, seconds: 10)));
     });
 
     test('rejects a quote whose signature does not cover its deposit address', () async {
-      final service = _service((_) async {
-        final tampered = _quoteResponse(dry: false, depositAddress: '0xdeposit');
+      final service = _service((r) async {
+        final tampered = _quoteResponse(depositAddress: '0xdeposit', request: _sentRequest(r));
         (tampered['quote'] as Map<String, dynamic>)['depositAddress'] = '0xattacker';
         return http.Response(jsonEncode(tampered), 200);
       });
@@ -193,10 +200,37 @@ void main() {
     });
 
     test('rejects a signed quote that answers a different request', () async {
-      final service = _service((_) async => http.Response(jsonEncode(_quoteResponse(request: {'amount': '999'})), 200));
+      final service = _service(
+        (r) async => http.Response(jsonEncode(_quoteResponse(request: {..._sentRequest(r), 'amount': '999'})), 200),
+      );
       await expectLater(
         _quote(service),
         throwsA(isA<SwapQuoteIntegrityException>().having((e) => e.message, 'message', contains('amount'))),
+      );
+    });
+
+    test('rejects a quote that prices a different input amount', () async {
+      final service = _service((r) async {
+        final response = _quoteResponse(request: _sentRequest(r));
+        (response['quote'] as Map<String, dynamic>)['amountIn'] = '999';
+        return http.Response(jsonEncode(_signed(response)), 200);
+      });
+      await expectLater(
+        _quote(service),
+        throwsA(isA<SwapQuoteIntegrityException>().having((e) => e.message, 'message', contains('999'))),
+      );
+    });
+
+    test('rejects a quote that echoes another deadline', () async {
+      final service = _service(
+        (r) async => http.Response(
+          jsonEncode(_quoteResponse(request: {..._sentRequest(r), 'deadline': '2026-01-01T00:00:00.000Z'})),
+          200,
+        ),
+      );
+      await expectLater(
+        _quote(service),
+        throwsA(isA<SwapQuoteIntegrityException>().having((e) => e.message, 'message', contains('deadline'))),
       );
     });
 
@@ -204,7 +238,7 @@ void main() {
       late http.Request request;
       final service = _service((r) async {
         request = r;
-        return http.Response(jsonEncode(_quoteResponse()), 200);
+        return http.Response(jsonEncode(_quoteResponse(request: _sentRequest(r))), 200);
       });
       await _quote(service);
       expect(request.headers.containsKey('X-API-Key'), isFalse);
@@ -253,7 +287,10 @@ void main() {
       final service = _service((r) async {
         final dry = (jsonDecode(r.body) as Map<String, dynamic>)['dry'] as bool;
         sentDry.add(dry);
-        return http.Response(jsonEncode(_quoteResponse(dry: dry, depositAddress: dry ? null : '0xdeposit')), 200);
+        return http.Response(
+          jsonEncode(_quoteResponse(dry: dry, depositAddress: dry ? null : '0xdeposit', request: _sentRequest(r))),
+          200,
+        );
       });
 
       final order = await service.createSwap(await _quote(service));
@@ -261,13 +298,31 @@ void main() {
       expect(sentDry, [true, false]);
       expect(order.status, SwapStatus.pendingDeposit);
       expect(order.depositAddress, '0xdeposit');
-      expect(order.quote.deadline, DateTime.utc(2026, 9, 20, 6, 10, 50));
+      expect(order.quote.deadline.difference(DateTime.now()), greaterThan(const Duration(minutes: 29)));
 
       final saved = await service.getSavedLiveQuotes();
       expect(saved, hasLength(1));
       expect(saved.single['signature'], startsWith('ed25519:'));
       expect((saved.single['quote'] as Map)['depositAddress'], '0xdeposit');
       expect(order.amountOut, isNull);
+    });
+
+    test('refuses a live quote whose deposit deadline is too near', () async {
+      final service = _service((r) async {
+        final sent = _sentRequest(r);
+        final dry = sent['dry'] as bool;
+        final soon = DateTime.now().toUtc().add(const Duration(minutes: 1)).toIso8601String();
+        return http.Response(
+          jsonEncode(
+            _quoteResponse(dry: dry, depositAddress: dry ? null : '0xdeposit', liveDeadline: soon, request: sent),
+          ),
+          200,
+        );
+      });
+      await expectLater(
+        service.createSwap(await _quote(service)),
+        throwsA(isA<SwapQuoteIntegrityException>().having((e) => e.message, 'message', contains('deadline'))),
+      );
     });
 
     test('refuses a live quote without a deposit address', () async {

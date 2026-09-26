@@ -30,8 +30,6 @@ class ReviewSwapScreen extends ConsumerStatefulWidget {
 }
 
 class _ReviewSwapScreenState extends ConsumerState<ReviewSwapScreen> {
-  static const _deadlineMargin = Duration(minutes: 2);
-
   late SwapQuote _quote = widget.quote;
   SwapOrder? _order;
   bool _confirming = false;
@@ -67,7 +65,7 @@ class _ReviewSwapScreenState extends ConsumerState<ReviewSwapScreen> {
   /// so a retry reuses its deposit address.
   Future<SwapOrder?> _liveOrder(AppLocalizations l10n) async {
     final kept = _order;
-    if (kept != null && kept.quote.deadline.isAfter(DateTime.now().add(_deadlineMargin))) return kept;
+    if (kept != null && kept.quote.deadline.isAfter(DateTime.now().add(SwapService.minimumDepositLead))) return kept;
     try {
       final order = await ref.read(swapServiceProvider).createSwap(_quote);
       _order = order;

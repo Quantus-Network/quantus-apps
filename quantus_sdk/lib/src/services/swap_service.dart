@@ -45,6 +45,10 @@ class SwapService {
   static const _slowNetworks = {'BTC', 'LTC', 'DOGE', 'BCH', 'DASH', 'ZEC'};
   static const _slowDepositWindow = Duration(hours: 2);
 
+  /// Least time a live quote's deposit address must stay valid, so a deposit
+  /// signed now still lands before the address goes cold.
+  static const minimumDepositLead = Duration(minutes: 5);
+
   /// Chains whose deposits carry a memo; 1Click rejects a plain deposit
   /// address for them and a memo request for every other chain.
   static const _memoNetworks = {'STELLAR'};
@@ -166,6 +170,13 @@ class SwapService {
     );
     final live = SwapQuote.fromJson(json, fromToken: quote.fromToken, toToken: quote.toToken);
     if (live.depositAddress == null) throw StateError('Live quote ${live.correlationId} has no deposit address');
+    final lead = live.deadline.difference(DateTime.now());
+    if (lead < minimumDepositLead) {
+      throw SwapQuoteIntegrityException(
+        'Deposit deadline ${live.deadline.toIso8601String()} leaves ${lead.inSeconds}s, need $minimumDepositLead',
+        correlationId: live.correlationId,
+      );
+    }
     await _saveLiveQuote(json);
     return SwapOrder(quote: live, status: SwapStatus.pendingDeposit);
   }
@@ -191,6 +202,11 @@ class SwapService {
     required int slippageBps,
     required bool dry,
   }) async {
+    final now = DateTime.now().toUtc();
+    final deadline = DateTime.fromMillisecondsSinceEpoch(
+      now.add(depositWindowFor(from.network)).millisecondsSinceEpoch,
+      isUtc: true,
+    );
     final body = {
       'dry': dry,
       'swapType': 'EXACT_INPUT',
@@ -204,7 +220,7 @@ class SwapService {
       'refundType': 'ORIGIN_CHAIN',
       'recipient': recipient,
       'recipientType': 'DESTINATION_CHAIN',
-      'deadline': DateTime.now().toUtc().add(depositWindowFor(from.network)).toIso8601String(),
+      'deadline': deadline.toIso8601String(),
       'quoteWaitingTimeMs': quoteWaitingTime.inMilliseconds,
       'referral': AppConstants.oneClickReferral,
     };
@@ -221,6 +237,19 @@ class SwapService {
           correlationId: correlationId,
         );
       }
+    }
+    if (!DateTime.parse(echoed['deadline'] as String).isAtSameMomentAs(deadline)) {
+      throw SwapQuoteIntegrityException(
+        'Quote answers a different request: deadline is ${echoed['deadline']}, sent ${body['deadline']}',
+        correlationId: correlationId,
+      );
+    }
+    final amountIn = (json['quote'] as Map<String, dynamic>)['amountIn'];
+    if (amountIn != body['amount']) {
+      throw SwapQuoteIntegrityException(
+        'Quote prices $amountIn of the origin asset, sent ${body['amount']}',
+        correlationId: correlationId,
+      );
     }
     return json;
   }
