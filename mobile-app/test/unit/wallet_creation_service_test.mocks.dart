@@ -9,6 +9,7 @@ import 'package:mockito/mockito.dart' as _i1;
 import 'package:mockito/src/dummies.dart' as _i8;
 import 'package:quantus_sdk/quantus_sdk.dart' as _i3;
 import 'package:quantus_sdk/src/models/account.dart' as _i2;
+import 'package:quantus_sdk/src/models/airdrop_claim_record.dart' as _i9;
 import 'package:quantus_sdk/src/models/display_account.dart' as _i5;
 import 'package:quantus_sdk/src/models/multisig_account.dart' as _i7;
 import 'package:quantus_sdk/src/rust/api/crypto.dart' as _i6;
@@ -29,7 +30,8 @@ import 'package:quantus_sdk/src/rust/api/crypto.dart' as _i6;
 // ignore_for_file: invalid_use_of_internal_member
 
 class _FakeAccount_0 extends _i1.SmartFake implements _i2.Account {
-  _FakeAccount_0(Object parent, Invocation parentInvocation) : super(parent, parentInvocation);
+  _FakeAccount_0(Object parent, Invocation parentInvocation)
+    : super(parent, parentInvocation);
 }
 
 /// A class which mocks [SettingsService].
@@ -50,7 +52,9 @@ class MockSettingsService extends _i1.Mock implements _i3.SettingsService {
       (super.noSuchMethod(
             Invocation.method(#getAccounts, []),
             returnValue: _i4.Future<List<_i2.Account>>.value(<_i2.Account>[]),
-            returnValueForMissingStub: _i4.Future<List<_i2.Account>>.value(<_i2.Account>[]),
+            returnValueForMissingStub: _i4.Future<List<_i2.Account>>.value(
+              <_i2.Account>[],
+            ),
           )
           as _i4.Future<List<_i2.Account>>);
 
@@ -136,9 +140,16 @@ class MockSettingsService extends _i1.Mock implements _i3.SettingsService {
           as _i4.Future<_i2.Account?>);
 
   @override
-  _i4.Future<int> getNextFreeAccountIndex(int? walletIndex, {_i6.DilithiumScheme? scheme}) =>
+  _i4.Future<int> getNextFreeAccountIndex(
+    int? walletIndex, {
+    _i6.DilithiumScheme? scheme,
+  }) =>
       (super.noSuchMethod(
-            Invocation.method(#getNextFreeAccountIndex, [walletIndex], {#scheme: scheme}),
+            Invocation.method(
+              #getNextFreeAccountIndex,
+              [walletIndex],
+              {#scheme: scheme},
+            ),
             returnValue: _i4.Future<int>.value(0),
             returnValueForMissingStub: _i4.Future<int>.value(0),
           )
@@ -148,8 +159,13 @@ class MockSettingsService extends _i1.Mock implements _i3.SettingsService {
   _i4.Future<List<_i7.MultisigAccount>> getMultisigAccounts() =>
       (super.noSuchMethod(
             Invocation.method(#getMultisigAccounts, []),
-            returnValue: _i4.Future<List<_i7.MultisigAccount>>.value(<_i7.MultisigAccount>[]),
-            returnValueForMissingStub: _i4.Future<List<_i7.MultisigAccount>>.value(<_i7.MultisigAccount>[]),
+            returnValue: _i4.Future<List<_i7.MultisigAccount>>.value(
+              <_i7.MultisigAccount>[],
+            ),
+            returnValueForMissingStub:
+                _i4.Future<List<_i7.MultisigAccount>>.value(
+                  <_i7.MultisigAccount>[],
+                ),
           )
           as _i4.Future<List<_i7.MultisigAccount>>);
 
@@ -184,8 +200,12 @@ class MockSettingsService extends _i1.Mock implements _i3.SettingsService {
   _i4.Future<Map<String, String>> getAddressBook() =>
       (super.noSuchMethod(
             Invocation.method(#getAddressBook, []),
-            returnValue: _i4.Future<Map<String, String>>.value(<String, String>{}),
-            returnValueForMissingStub: _i4.Future<Map<String, String>>.value(<String, String>{}),
+            returnValue: _i4.Future<Map<String, String>>.value(
+              <String, String>{},
+            ),
+            returnValueForMissingStub: _i4.Future<Map<String, String>>.value(
+              <String, String>{},
+            ),
           )
           as _i4.Future<Map<String, String>>);
 
@@ -247,8 +267,14 @@ class MockSettingsService extends _i1.Mock implements _i3.SettingsService {
   String getMnemonicKey(int? walletIndex) =>
       (super.noSuchMethod(
             Invocation.method(#getMnemonicKey, [walletIndex]),
-            returnValue: _i8.dummyValue<String>(this, Invocation.method(#getMnemonicKey, [walletIndex])),
-            returnValueForMissingStub: _i8.dummyValue<String>(this, Invocation.method(#getMnemonicKey, [walletIndex])),
+            returnValue: _i8.dummyValue<String>(
+              this,
+              Invocation.method(#getMnemonicKey, [walletIndex]),
+            ),
+            returnValueForMissingStub: _i8.dummyValue<String>(
+              this,
+              Invocation.method(#getMnemonicKey, [walletIndex]),
+            ),
           )
           as String);
 
@@ -326,7 +352,11 @@ class MockSettingsService extends _i1.Mock implements _i3.SettingsService {
 
   @override
   bool isBalanceHidden() =>
-      (super.noSuchMethod(Invocation.method(#isBalanceHidden, []), returnValue: false, returnValueForMissingStub: false)
+      (super.noSuchMethod(
+            Invocation.method(#isBalanceHidden, []),
+            returnValue: false,
+            returnValueForMissingStub: false,
+          )
           as bool);
 
   @override
@@ -385,7 +415,11 @@ class MockSettingsService extends _i1.Mock implements _i3.SettingsService {
 
   @override
   bool? getBool(String? key) =>
-      (super.noSuchMethod(Invocation.method(#getBool, [key]), returnValueForMissingStub: null) as bool?);
+      (super.noSuchMethod(
+            Invocation.method(#getBool, [key]),
+            returnValueForMissingStub: null,
+          )
+          as bool?);
 
   @override
   _i4.Future<void> setBool(String? key, bool? value) =>
@@ -398,7 +432,11 @@ class MockSettingsService extends _i1.Mock implements _i3.SettingsService {
 
   @override
   String? getString(String? key) =>
-      (super.noSuchMethod(Invocation.method(#getString, [key]), returnValueForMissingStub: null) as String?);
+      (super.noSuchMethod(
+            Invocation.method(#getString, [key]),
+            returnValueForMissingStub: null,
+          )
+          as String?);
 
   @override
   _i4.Future<void> setString(String? key, String? value) =>
@@ -410,7 +448,10 @@ class MockSettingsService extends _i1.Mock implements _i3.SettingsService {
           as _i4.Future<void>);
 
   @override
-  void resetForTest() => super.noSuchMethod(Invocation.method(#resetForTest, []), returnValueForMissingStub: null);
+  void resetForTest() => super.noSuchMethod(
+    Invocation.method(#resetForTest, []),
+    returnValueForMissingStub: null,
+  );
 
   @override
   _i4.Future<void> clearAll() =>
@@ -431,8 +472,10 @@ class MockSettingsService extends _i1.Mock implements _i3.SettingsService {
           as bool);
 
   @override
-  void setReferralCheckCompleted() =>
-      super.noSuchMethod(Invocation.method(#setReferralCheckCompleted, []), returnValueForMissingStub: null);
+  void setReferralCheckCompleted() => super.noSuchMethod(
+    Invocation.method(#setReferralCheckCompleted, []),
+    returnValueForMissingStub: null,
+  );
 
   @override
   bool isMainnetMigrationDone() =>
@@ -453,12 +496,16 @@ class MockSettingsService extends _i1.Mock implements _i3.SettingsService {
           as _i4.Future<void>);
 
   @override
-  void clearReferralCheckCompletedFlag() =>
-      super.noSuchMethod(Invocation.method(#clearReferralCheckCompletedFlag, []), returnValueForMissingStub: null);
+  void clearReferralCheckCompletedFlag() => super.noSuchMethod(
+    Invocation.method(#clearReferralCheckCompletedFlag, []),
+    returnValueForMissingStub: null,
+  );
 
   @override
-  void setReferralCode(String? code) =>
-      super.noSuchMethod(Invocation.method(#setReferralCode, [code]), returnValueForMissingStub: null);
+  void setReferralCode(String? code) => super.noSuchMethod(
+    Invocation.method(#setReferralCode, [code]),
+    returnValueForMissingStub: null,
+  );
 
   @override
   bool hasWatchedQuestsPromo() =>
@@ -470,12 +517,16 @@ class MockSettingsService extends _i1.Mock implements _i3.SettingsService {
           as bool);
 
   @override
-  void setQuestsPromoWatched() =>
-      super.noSuchMethod(Invocation.method(#setQuestsPromoWatched, []), returnValueForMissingStub: null);
+  void setQuestsPromoWatched() => super.noSuchMethod(
+    Invocation.method(#setQuestsPromoWatched, []),
+    returnValueForMissingStub: null,
+  );
 
   @override
-  void clearQuestsPromoWatchedFlag() =>
-      super.noSuchMethod(Invocation.method(#clearQuestsPromoWatchedFlag, []), returnValueForMissingStub: null);
+  void clearQuestsPromoWatchedFlag() => super.noSuchMethod(
+    Invocation.method(#clearQuestsPromoWatchedFlag, []),
+    returnValueForMissingStub: null,
+  );
 
   @override
   bool recoveryPhraseViewed(int? walletIndex) =>
@@ -487,21 +538,52 @@ class MockSettingsService extends _i1.Mock implements _i3.SettingsService {
           as bool);
 
   @override
-  void setRecoveryPhraseViewed(int? walletIndex) =>
-      super.noSuchMethod(Invocation.method(#setRecoveryPhraseViewed, [walletIndex]), returnValueForMissingStub: null);
+  void setRecoveryPhraseViewed(int? walletIndex) => super.noSuchMethod(
+    Invocation.method(#setRecoveryPhraseViewed, [walletIndex]),
+    returnValueForMissingStub: null,
+  );
+
+  @override
+  _i9.AirdropClaimRecord? getAirdropClaim(int? walletIndex) =>
+      (super.noSuchMethod(
+            Invocation.method(#getAirdropClaim, [walletIndex]),
+            returnValueForMissingStub: null,
+          )
+          as _i9.AirdropClaimRecord?);
+
+  @override
+  _i4.Future<void> setAirdropClaim(
+    int? walletIndex,
+    _i9.AirdropClaimRecord? record,
+  ) =>
+      (super.noSuchMethod(
+            Invocation.method(#setAirdropClaim, [walletIndex, record]),
+            returnValue: _i4.Future<void>.value(),
+            returnValueForMissingStub: _i4.Future<void>.value(),
+          )
+          as _i4.Future<void>);
 
   @override
   _i2.WalletOrigin? getWalletOrigin(int? walletIndex) =>
-      (super.noSuchMethod(Invocation.method(#getWalletOrigin, [walletIndex]), returnValueForMissingStub: null)
+      (super.noSuchMethod(
+            Invocation.method(#getWalletOrigin, [walletIndex]),
+            returnValueForMissingStub: null,
+          )
           as _i2.WalletOrigin?);
 
   @override
   void setWalletOrigin(int? walletIndex, _i2.WalletOrigin? origin) =>
-      super.noSuchMethod(Invocation.method(#setWalletOrigin, [walletIndex, origin]), returnValueForMissingStub: null);
+      super.noSuchMethod(
+        Invocation.method(#setWalletOrigin, [walletIndex, origin]),
+        returnValueForMissingStub: null,
+      );
 
   @override
   String? getWalletName(int? walletIndex) =>
-      (super.noSuchMethod(Invocation.method(#getWalletName, [walletIndex]), returnValueForMissingStub: null)
+      (super.noSuchMethod(
+            Invocation.method(#getWalletName, [walletIndex]),
+            returnValueForMissingStub: null,
+          )
           as String?);
 
   @override
@@ -523,12 +605,16 @@ class MockSettingsService extends _i1.Mock implements _i3.SettingsService {
           as bool);
 
   @override
-  void setExistingUserSeenPromoVideo() =>
-      super.noSuchMethod(Invocation.method(#setExistingUserSeenPromoVideo, []), returnValueForMissingStub: null);
+  void setExistingUserSeenPromoVideo() => super.noSuchMethod(
+    Invocation.method(#setExistingUserSeenPromoVideo, []),
+    returnValueForMissingStub: null,
+  );
 
   @override
-  void clearExistingUserSeenPromoVideoFlag() =>
-      super.noSuchMethod(Invocation.method(#clearExistingUserSeenPromoVideoFlag, []), returnValueForMissingStub: null);
+  void clearExistingUserSeenPromoVideoFlag() => super.noSuchMethod(
+    Invocation.method(#clearExistingUserSeenPromoVideoFlag, []),
+    returnValueForMissingStub: null,
+  );
 }
 
 /// A class which mocks [AccountsService].
@@ -536,45 +622,75 @@ class MockSettingsService extends _i1.Mock implements _i3.SettingsService {
 /// See the documentation for Mockito's code generation for more information.
 class MockAccountsService extends _i1.Mock implements _i3.AccountsService {
   @override
-  set onAccountsChanged(void Function()? value) =>
-      super.noSuchMethod(Invocation.setter(#onAccountsChanged, value), returnValueForMissingStub: null);
+  set onAccountsChanged(void Function()? value) => super.noSuchMethod(
+    Invocation.setter(#onAccountsChanged, value),
+    returnValueForMissingStub: null,
+  );
 
   @override
   _i4.Future<_i2.Account> createNewAccount({required int? walletIndex}) =>
       (super.noSuchMethod(
-            Invocation.method(#createNewAccount, [], {#walletIndex: walletIndex}),
-            returnValue: _i4.Future<_i2.Account>.value(
-              _FakeAccount_0(this, Invocation.method(#createNewAccount, [], {#walletIndex: walletIndex})),
-            ),
-            returnValueForMissingStub: _i4.Future<_i2.Account>.value(
-              _FakeAccount_0(this, Invocation.method(#createNewAccount, [], {#walletIndex: walletIndex})),
-            ),
-          )
-          as _i4.Future<_i2.Account>);
-
-  @override
-  _i4.Future<_i2.Account> createEncryptedAccount({required int? walletIndex, required String? name}) =>
-      (super.noSuchMethod(
-            Invocation.method(#createEncryptedAccount, [], {#walletIndex: walletIndex, #name: name}),
+            Invocation.method(#createNewAccount, [], {
+              #walletIndex: walletIndex,
+            }),
             returnValue: _i4.Future<_i2.Account>.value(
               _FakeAccount_0(
                 this,
-                Invocation.method(#createEncryptedAccount, [], {#walletIndex: walletIndex, #name: name}),
+                Invocation.method(#createNewAccount, [], {
+                  #walletIndex: walletIndex,
+                }),
               ),
             ),
             returnValueForMissingStub: _i4.Future<_i2.Account>.value(
               _FakeAccount_0(
                 this,
-                Invocation.method(#createEncryptedAccount, [], {#walletIndex: walletIndex, #name: name}),
+                Invocation.method(#createNewAccount, [], {
+                  #walletIndex: walletIndex,
+                }),
               ),
             ),
           )
           as _i4.Future<_i2.Account>);
 
   @override
-  _i4.Future<bool> ensureEncryptedAccountsForSoftwareWallets({required String? name}) =>
+  _i4.Future<_i2.Account> createEncryptedAccount({
+    required int? walletIndex,
+    required String? name,
+  }) =>
       (super.noSuchMethod(
-            Invocation.method(#ensureEncryptedAccountsForSoftwareWallets, [], {#name: name}),
+            Invocation.method(#createEncryptedAccount, [], {
+              #walletIndex: walletIndex,
+              #name: name,
+            }),
+            returnValue: _i4.Future<_i2.Account>.value(
+              _FakeAccount_0(
+                this,
+                Invocation.method(#createEncryptedAccount, [], {
+                  #walletIndex: walletIndex,
+                  #name: name,
+                }),
+              ),
+            ),
+            returnValueForMissingStub: _i4.Future<_i2.Account>.value(
+              _FakeAccount_0(
+                this,
+                Invocation.method(#createEncryptedAccount, [], {
+                  #walletIndex: walletIndex,
+                  #name: name,
+                }),
+              ),
+            ),
+          )
+          as _i4.Future<_i2.Account>);
+
+  @override
+  _i4.Future<bool> ensureEncryptedAccountsForSoftwareWallets({
+    required String? name,
+  }) =>
+      (super.noSuchMethod(
+            Invocation.method(#ensureEncryptedAccountsForSoftwareWallets, [], {
+              #name: name,
+            }),
             returnValue: _i4.Future<bool>.value(false),
             returnValueForMissingStub: _i4.Future<bool>.value(false),
           )
@@ -603,7 +719,9 @@ class MockAccountsService extends _i1.Mock implements _i3.AccountsService {
       (super.noSuchMethod(
             Invocation.method(#getAccounts, []),
             returnValue: _i4.Future<List<_i2.Account>>.value(<_i2.Account>[]),
-            returnValueForMissingStub: _i4.Future<List<_i2.Account>>.value(<_i2.Account>[]),
+            returnValueForMissingStub: _i4.Future<List<_i2.Account>>.value(
+              <_i2.Account>[],
+            ),
           )
           as _i4.Future<List<_i2.Account>>);
 
@@ -624,4 +742,44 @@ class MockAccountsService extends _i1.Mock implements _i3.AccountsService {
             returnValueForMissingStub: _i4.Future<void>.value(),
           )
           as _i4.Future<void>);
+}
+
+/// A class which mocks [AccountDiscoveryService].
+///
+/// See the documentation for Mockito's code generation for more information.
+class MockAccountDiscoveryService extends _i1.Mock
+    implements _i3.AccountDiscoveryService {
+  @override
+  _i4.Future<List<_i2.Account>> discoverAccounts({
+    required String? mnemonic,
+    required int? walletIndex,
+    int? gapLimit = 20,
+  }) =>
+      (super.noSuchMethod(
+            Invocation.method(#discoverAccounts, [], {
+              #mnemonic: mnemonic,
+              #walletIndex: walletIndex,
+              #gapLimit: gapLimit,
+            }),
+            returnValue: _i4.Future<List<_i2.Account>>.value(<_i2.Account>[]),
+            returnValueForMissingStub: _i4.Future<List<_i2.Account>>.value(
+              <_i2.Account>[],
+            ),
+          )
+          as _i4.Future<List<_i2.Account>>);
+
+  @override
+  _i4.Future<Set<int>> discoverUsedIndices({
+    required String Function(int)? addressAt,
+    int? gapLimit = 20,
+  }) =>
+      (super.noSuchMethod(
+            Invocation.method(#discoverUsedIndices, [], {
+              #addressAt: addressAt,
+              #gapLimit: gapLimit,
+            }),
+            returnValue: _i4.Future<Set<int>>.value(<int>{}),
+            returnValueForMissingStub: _i4.Future<Set<int>>.value(<int>{}),
+          )
+          as _i4.Future<Set<int>>);
 }

@@ -14,10 +14,15 @@ import 'package:resonance_network_wallet/v2/screens/accounts/account_ready_scree
 class WalletCreationService {
   final SettingsService _settings;
   final AccountsService _accounts;
+  final AccountDiscoveryService _discovery;
 
-  WalletCreationService({SettingsService? settingsService, AccountsService? accountsService})
-    : _settings = settingsService ?? SettingsService(),
-      _accounts = accountsService ?? AccountsService();
+  WalletCreationService({
+    SettingsService? settingsService,
+    AccountsService? accountsService,
+    AccountDiscoveryService? discoveryService,
+  }) : _settings = settingsService ?? SettingsService(),
+       _accounts = accountsService ?? AccountsService(),
+       _discovery = discoveryService ?? AccountDiscoveryService(HdWalletService());
 
   /// Saves [mnemonic] for [walletIndex], inserts its root account and makes
   /// that the active account.
@@ -60,6 +65,37 @@ class WalletCreationService {
       quantusPrint('Wallet $walletIndex was created but finishing its setup failed: $e');
     }
     return account;
+  }
+
+  /// Adds every on-chain account of [mnemonic] to [walletIndex]: both
+  /// signature schemes, any derivation index. When the root at
+  /// [defaultAccountId] has no history but funded accounts were found, the
+  /// first of them becomes active so a returning user lands on it.
+  ///
+  /// A failed scan is handed to [onScanFailed]; the scan runs again while it
+  /// answers true and stops once it answers false.
+  Future<void> discoverImportedAccounts({
+    required String mnemonic,
+    required int walletIndex,
+    required String defaultAccountId,
+    required Future<bool> Function(Object error) onScanFailed,
+  }) async {
+    while (true) {
+      try {
+        final discovered = await _discovery.discoverAccounts(mnemonic: mnemonic, walletIndex: walletIndex);
+        final existing = (await _accounts.getAccounts()).map((a) => a.accountId).toSet();
+        var count = existing.length;
+        for (final account in discovered.where((a) => !existing.contains(a.accountId))) {
+          await _accounts.addAccount(account.copyWith(name: 'Account ${++count}'));
+        }
+        if (discovered.isNotEmpty && !discovered.any((a) => a.accountId == defaultAccountId)) {
+          await _settings.setActiveAccount(RegularAccount(discovered.first));
+        }
+        return;
+      } catch (e) {
+        if (!await onScanFailed(e)) return;
+      }
+    }
   }
 }
 

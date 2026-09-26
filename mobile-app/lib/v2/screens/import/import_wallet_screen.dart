@@ -10,6 +10,7 @@ import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/services/firebase_messaging_service.dart';
 import 'package:resonance_network_wallet/services/telemetry_service.dart';
+import 'package:resonance_network_wallet/services/wallet_creation_service.dart';
 import 'package:resonance_network_wallet/shared/constants/e2e_keys.dart';
 import 'package:resonance_network_wallet/shared/utils/print.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/wallet_name_screen.dart';
@@ -34,7 +35,10 @@ class _ImportWalletScreenV2State extends ConsumerState<ImportWalletScreenV2> {
   final _buttonKey = GlobalKey();
   final _settingsService = SettingsService();
   final _accountsService = AccountsService();
-  final _discoveryService = AccountDiscoveryService(HdWalletService());
+  late final _walletCreationService = WalletCreationService(
+    settingsService: _settingsService,
+    accountsService: _accountsService,
+  );
   bool _isLoading = false;
   String? _error;
 
@@ -108,31 +112,33 @@ class _ImportWalletScreenV2State extends ConsumerState<ImportWalletScreenV2> {
     }
   }
 
-  /// Discovers on-chain HD accounts across both signature schemes. Multisigs
-  /// are added manually via Add Account → Discover Multisig.
-  ///
-  /// [defaultAccountId] is the current-scheme account 0 added before discovery.
-  /// When it has no on-chain history but discovery finds funded accounts, the
-  /// first funded one is made active so a returning user lands on it.
+  /// Adds the on-chain accounts of both signature schemes. Multisigs are added
+  /// manually via Add Account → Discover Multisig. [defaultAccountId] is the
+  /// current-scheme account 0 added before the scan.
   Future<void> _discoverAccounts(String mnemonic, {required String defaultAccountId}) async {
-    try {
-      final discovered = await _discoveryService.discoverAccounts(mnemonic: mnemonic, walletIndex: widget.walletIndex);
-      final current = await _accountsService.getAccounts();
-      final existing = current.map((e) => e.accountId).toSet();
-      var count = current.length;
-      for (final account in discovered) {
-        if (existing.contains(account.accountId)) continue;
-        await _accountsService.addAccount(account.copyWith(name: 'Account ${++count}'));
-      }
-      if (!discovered.any((a) => a.accountId == defaultAccountId) && discovered.isNotEmpty) {
-        await _settingsService.setActiveAccount(RegularAccount(discovered.first));
-      }
-      invalidateAccountProviders(ref);
-      unawaited(_discoverEncryptedAccount());
-    } catch (e) {
-      quantusPrint('error discovering accounts: $e');
-      TelemetryService().sendError('Error discovering accounts', error: e);
-    }
+    await _walletCreationService.discoverImportedAccounts(
+      mnemonic: mnemonic,
+      walletIndex: widget.walletIndex,
+      defaultAccountId: defaultAccountId,
+      onScanFailed: _askRetryScan,
+    );
+    invalidateAccountProviders(ref);
+    unawaited(_discoverEncryptedAccount());
+  }
+
+  Future<bool> _askRetryScan(Object error) async {
+    quantusPrint('error discovering accounts: $error');
+    TelemetryService().sendError('Error discovering accounts', error: error);
+    if (!mounted) return false;
+    final l10n = ref.read(l10nProvider);
+    return showQuantusDialog(
+      context,
+      title: l10n.importWalletScanFailedTitle,
+      body: l10n.importWalletScanFailedBody,
+      actionLabel: l10n.importWalletScanRetry,
+      cancelLabel: l10n.importWalletScanSkip,
+      barrierDismissible: false,
+    );
   }
 
   /// Restores the wallet's encrypted account and warms its wormhole address

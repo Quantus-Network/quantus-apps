@@ -4,7 +4,7 @@ import 'package:mockito/mockito.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/services/wallet_creation_service.dart';
 
-@GenerateNiceMocks([MockSpec<SettingsService>(), MockSpec<AccountsService>()])
+@GenerateNiceMocks([MockSpec<SettingsService>(), MockSpec<AccountsService>(), MockSpec<AccountDiscoveryService>()])
 import 'wallet_creation_service_test.mocks.dart';
 
 void main() {
@@ -89,6 +89,120 @@ void main() {
       expect(created.accountId, accountId);
       verify(settings.setActiveAccount(any)).called(1);
       verifyNever(settings.deleteMnemonic(any));
+    });
+  });
+
+  group('WalletCreationService.discoverImportedAccounts', () {
+    const mnemonic = 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about';
+    Account at(int index, DilithiumScheme scheme) => Account(
+      walletIndex: 0,
+      index: index,
+      name: 'Account ${index + 1}',
+      accountId: '${scheme.storageName}_$index',
+      scheme: scheme,
+      derivationPath: HdWalletService.pathForIndex(index, scheme),
+    );
+    final root = at(0, DilithiumScheme.mlDsa87);
+    final found = [at(3, DilithiumScheme.mlDsa87), at(0, DilithiumScheme.mlDsa65)];
+    Matcher account(String accountId, {String? name}) {
+      var m = isA<Account>().having((a) => a.accountId, 'accountId', accountId);
+      return name == null ? m : m.having((a) => a.name, 'name', name);
+    }
+
+    late MockSettingsService settings;
+    late MockAccountsService accounts;
+    late MockAccountDiscoveryService discovery;
+    late WalletCreationService service;
+
+    setUp(() {
+      settings = MockSettingsService();
+      accounts = MockAccountsService();
+      discovery = MockAccountDiscoveryService();
+      service = WalletCreationService(
+        settingsService: settings,
+        accountsService: accounts,
+        discoveryService: discovery,
+      );
+      when(accounts.getAccounts()).thenAnswer((_) async => [root]);
+    });
+
+    void scanReturns(Future<List<Account>> Function() answer) => when(
+      discovery.discoverAccounts(
+        mnemonic: anyNamed('mnemonic'),
+        walletIndex: anyNamed('walletIndex'),
+        gapLimit: anyNamed('gapLimit'),
+      ),
+    ).thenAnswer((_) => answer());
+
+    Future<void> discover(Future<bool> Function(Object error) onScanFailed) => service.discoverImportedAccounts(
+      mnemonic: mnemonic,
+      walletIndex: 0,
+      defaultAccountId: root.accountId,
+      onScanFailed: onScanFailed,
+    );
+
+    test(
+      'adds every account found, whatever its scheme or index, and activates the first when the root is empty',
+      () async {
+        scanReturns(() async => found);
+        final failures = <Object>[];
+
+        await discover((e) async {
+          failures.add(e);
+          return false;
+        });
+
+        expect(failures, isEmpty);
+        verifyInOrder([
+          accounts.addAccount(argThat(account('ml-dsa-87_3', name: 'Account 2'))),
+          accounts.addAccount(argThat(account('ml-dsa-65_0', name: 'Account 3'))),
+          settings.setActiveAccount(
+            argThat(isA<RegularAccount>().having((a) => a.account.accountId, 'accountId', 'ml-dsa-87_3')),
+          ),
+        ]);
+      },
+    );
+
+    test('keeps the root active and does not re-add it when the scan finds it', () async {
+      scanReturns(() async => [root, found.first]);
+
+      await discover((_) async => false);
+
+      verify(accounts.addAccount(argThat(account('ml-dsa-87_3')))).called(1);
+      verifyNever(accounts.addAccount(argThat(account(root.accountId))));
+      verifyNever(settings.setActiveAccount(any));
+    });
+
+    test('a failed scan is retried when asked and adds the accounts on the second attempt', () async {
+      var scans = 0;
+      scanReturns(() async {
+        if (scans++ == 0) throw Exception('indexer unreachable');
+        return found;
+      });
+      final failures = <Object>[];
+
+      await discover((e) async {
+        failures.add(e);
+        return true;
+      });
+
+      expect(failures, hasLength(1));
+      expect(scans, 2);
+      verify(accounts.addAccount(any)).called(2);
+    });
+
+    test('declining the retry ends the scan without adding anything', () async {
+      scanReturns(() async => throw Exception('indexer unreachable'));
+      var asked = 0;
+
+      await discover((_) async {
+        asked++;
+        return false;
+      });
+
+      expect(asked, 1);
+      verifyNever(accounts.addAccount(any));
+      verifyNever(settings.setActiveAccount(any));
     });
   });
 }
