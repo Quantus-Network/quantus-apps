@@ -5,6 +5,7 @@ import 'package:quantus_sdk/src/constants/app_constants.dart';
 import 'package:quantus_sdk/src/models/swap_order.dart';
 import 'package:quantus_sdk/src/models/swap_quote.dart';
 import 'package:quantus_sdk/src/models/swap_token.dart';
+import 'package:quantus_sdk/src/services/one_click_quote_signature.dart';
 import 'package:quantus_sdk/src/utils/print.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -17,6 +18,18 @@ class SwapApiException implements Exception {
 
   @override
   String toString() => 'SwapApiException($statusCode): $message';
+}
+
+/// A quote response whose signature is not 1Click's, or which answers a
+/// different request than the one sent.
+class SwapQuoteIntegrityException implements Exception {
+  final String message;
+  final String? correlationId;
+
+  const SwapQuoteIntegrityException(this.message, {this.correlationId});
+
+  @override
+  String toString() => 'SwapQuoteIntegrityException($correlationId): $message';
 }
 
 /// Client for the NEAR Intents 1Click API. A quote names a deposit address on
@@ -37,6 +50,18 @@ class SwapService {
   static const _memoNetworks = {'STELLAR'};
   static const _liveQuotesKey = 'swap_live_quotes';
   static const _maxLiveQuotes = 50;
+
+  /// Request fields 1Click echoes back that must match what was sent, so a
+  /// signed quote is a quote for this swap and not another.
+  static const _echoedFields = [
+    'dry',
+    'originAsset',
+    'destinationAsset',
+    'amount',
+    'refundTo',
+    'recipient',
+    'slippageTolerance',
+  ];
   static const quoteWaitingTime = Duration(seconds: 3);
   static const statusPollInterval = Duration(seconds: 5);
   static const _savedAddressesKey = 'swap_saved_addresses';
@@ -48,14 +73,20 @@ class SwapService {
   final http.Client _client;
   final Uri _base;
   final String? _apiKey;
+  final String _managerPublicKey;
   List<SwapToken>? _cachedFromTokens;
   DateTime? _cachedFromTokensAt;
   SwapToken? _listedQuantus;
 
-  SwapService({http.Client? client, String endpoint = AppConstants.oneClickEndpoint, String? apiKey})
-    : _client = client ?? http.Client(),
-      _base = Uri.parse(endpoint),
-      _apiKey = apiKey;
+  SwapService({
+    http.Client? client,
+    String endpoint = AppConstants.oneClickEndpoint,
+    String? apiKey,
+    String managerPublicKey = AppConstants.oneClickManagerPublicKey,
+  }) : _client = client ?? http.Client(),
+       _base = Uri.parse(endpoint),
+       _apiKey = apiKey,
+       _managerPublicKey = managerPublicKey;
 
   /// How long a deposit on [network] has before its quote expires.
   static Duration depositWindowFor(String network) =>
@@ -160,28 +191,38 @@ class SwapService {
     required int slippageBps,
     required bool dry,
   }) async {
-    final json = await _send(
-      'POST',
-      '/v0/quote',
-      body: {
-        'dry': dry,
-        'swapType': 'EXACT_INPUT',
-        'slippageTolerance': slippageBps,
-        'originAsset': from.assetId,
-        'depositType': 'ORIGIN_CHAIN',
-        'depositMode': _memoNetworks.contains(from.network) ? 'MEMO' : 'SIMPLE',
-        'destinationAsset': to.assetId,
-        'amount': amount.toString(),
-        'refundTo': refundAddress,
-        'refundType': 'ORIGIN_CHAIN',
-        'recipient': recipient,
-        'recipientType': 'DESTINATION_CHAIN',
-        'deadline': DateTime.now().toUtc().add(depositWindowFor(from.network)).toIso8601String(),
-        'quoteWaitingTimeMs': quoteWaitingTime.inMilliseconds,
-        'referral': AppConstants.oneClickReferral,
-      },
-    );
-    return json as Map<String, dynamic>;
+    final body = {
+      'dry': dry,
+      'swapType': 'EXACT_INPUT',
+      'slippageTolerance': slippageBps,
+      'originAsset': from.assetId,
+      'depositType': 'ORIGIN_CHAIN',
+      'depositMode': _memoNetworks.contains(from.network) ? 'MEMO' : 'SIMPLE',
+      'destinationAsset': to.assetId,
+      'amount': amount.toString(),
+      'refundTo': refundAddress,
+      'refundType': 'ORIGIN_CHAIN',
+      'recipient': recipient,
+      'recipientType': 'DESTINATION_CHAIN',
+      'deadline': DateTime.now().toUtc().add(depositWindowFor(from.network)).toIso8601String(),
+      'quoteWaitingTimeMs': quoteWaitingTime.inMilliseconds,
+      'referral': AppConstants.oneClickReferral,
+    };
+    final json = await _send('POST', '/v0/quote', body: body) as Map<String, dynamic>;
+    final correlationId = json['correlationId'] as String?;
+    if (!OneClickQuoteSignature.verify(json, managerPublicKey: _managerPublicKey)) {
+      throw SwapQuoteIntegrityException('Quote signature is not from 1Click', correlationId: correlationId);
+    }
+    final echoed = json['quoteRequest'] as Map<String, dynamic>;
+    for (final field in _echoedFields) {
+      if (echoed[field] != body[field]) {
+        throw SwapQuoteIntegrityException(
+          'Quote answers a different request: $field is ${echoed[field]}, sent ${body[field]}',
+          correlationId: correlationId,
+        );
+      }
+    }
+    return json;
   }
 
   /// Tells 1Click which transaction paid [order]'s deposit address, so it

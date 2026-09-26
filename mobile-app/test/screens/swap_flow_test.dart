@@ -1,5 +1,7 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
+import 'package:ed25519_edwards/ed25519_edwards.dart' as ed25519;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart';
@@ -27,6 +29,8 @@ const _usdc = SwapToken(assetId: 'nep141:usdc.omft.near', symbol: 'USDC', networ
 const _external = '0xa5f3c2b1d4e8a7c9f2b5e6d7c8b9a0f1e2d3c7b9';
 final _deposit = 'qzdeposit${'y' * 40}';
 final _qtc = SwapService.quantusToken(usdPrice: 0.1);
+final _managerKeyPair = ed25519.generateKey();
+final _managerPublicKey = OneClickQuoteSignature.encodeKey(Uint8List.fromList(_managerKeyPair.publicKey.bytes));
 final _unit = BigInt.from(10).pow(AppConstants.decimals);
 
 class _FakeSubmission extends Fake implements TransactionSubmissionService {
@@ -57,7 +61,8 @@ class _OneClick {
   Iterable<http.Request> get liveQuotes =>
       requests.where((r) => r.url.path == '/v0/quote' && (jsonDecode(r.body) as Map)['dry'] == false);
 
-  SwapService service() => SwapService(endpoint: 'https://oneclick.test', client: MockClient(_handle));
+  SwapService service() =>
+      SwapService(endpoint: 'https://oneclick.test', client: MockClient(_handle), managerPublicKey: _managerPublicKey);
 
   Future<http.Response> _handle(http.Request request) async {
     requests.add(request);
@@ -78,7 +83,7 @@ class _OneClick {
   Map<String, dynamic> _quoteJson(Map<String, dynamic> request) {
     final dry = request['dry'] as bool;
     final out = dry ? dryOut : liveOut;
-    return {
+    final response = {
       'quote': {
         if (!dry) 'depositAddress': _deposit,
         'amountIn': request['amount'],
@@ -90,14 +95,25 @@ class _OneClick {
         'timeEstimate': 60,
       },
       'quoteRequest': {
-        'slippageTolerance': request['slippageTolerance'],
-        'refundTo': request['refundTo'],
-        'recipient': request['recipient'],
-        'deadline': request['deadline'],
+        for (final k in const [
+          'dry',
+          'originAsset',
+          'destinationAsset',
+          'amount',
+          'slippageTolerance',
+          'refundTo',
+          'recipient',
+          'deadline',
+        ])
+          k: request[k],
       },
       'correlationId': dry ? 'dry' : 'live',
-      'signature': 'ed25519:sig',
       'timestamp': DateTime.now().toUtc().toIso8601String(),
+    };
+    final message = utf8.encode(OneClickQuoteSignature.hash(response));
+    return {
+      ...response,
+      'signature': OneClickQuoteSignature.encodeKey(ed25519.sign(_managerKeyPair.privateKey, message)),
     };
   }
 }

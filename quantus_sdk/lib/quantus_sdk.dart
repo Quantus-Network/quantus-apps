@@ -78,6 +78,7 @@ export 'src/services/settings_service.dart';
 export 'src/services/substrate_service.dart';
 export 'src/services/transaction_fee.dart';
 export 'src/services/swap_service.dart';
+export 'src/services/one_click_quote_signature.dart';
 export 'src/models/swap_token.dart';
 export 'src/models/swap_quote.dart';
 export 'src/models/swap_order.dart';
