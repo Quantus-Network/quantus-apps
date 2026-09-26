@@ -164,6 +164,8 @@ class SettingsService {
     if (remaining.isEmpty) {
       throw Exception('Cant remove last wallet!');
     }
+    // First, so an account scan finishing later sees the wallet is gone.
+    await _prefs.remove(_accountScanPendingKey(walletIndex));
     final activeId = await _getActiveAccountId();
     final activeRemoved = accounts.any((a) => a.walletIndex == walletIndex && a.accountId == activeId);
     if (activeRemoved) {
@@ -172,7 +174,6 @@ class SettingsService {
     await saveAccounts(remaining);
     await deleteMnemonic(walletIndex);
     await _prefs.remove(_walletOriginKey(walletIndex));
-    await _prefs.remove(_accountScanPendingKey(walletIndex));
     await _prefs.remove(_recoveryPhraseViewedKey(walletIndex));
     await _prefs.remove(_walletNameKey(walletIndex));
     await _prefs.remove(_airdropClaimKey(walletIndex));

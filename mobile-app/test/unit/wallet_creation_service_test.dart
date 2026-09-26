@@ -104,6 +104,13 @@ void main() {
     );
     final root = at(0, DilithiumScheme.mlDsa87);
     final found = [at(3, DilithiumScheme.mlDsa87), at(0, DilithiumScheme.mlDsa65)];
+    const encrypted = Account(
+      walletIndex: 0,
+      index: AppConstants.encryptedAccountIndex,
+      name: 'Encrypted',
+      accountId: 'encrypted',
+      accountType: AccountType.encrypted,
+    );
     Matcher account(String accountId, {String? name}) {
       var m = isA<Account>().having((a) => a.accountId, 'accountId', accountId);
       return name == null ? m : m.having((a) => a.name, 'name', name);
@@ -113,6 +120,10 @@ void main() {
     late MockAccountsService accounts;
     late MockAccountDiscoveryService discovery;
     late WalletCreationService service;
+    late bool pending;
+
+    void activeIs(Account? active) =>
+        when(settings.getActiveAccount()).thenAnswer((_) async => active == null ? null : RegularAccount(active));
 
     setUp(() {
       settings = MockSettingsService();
@@ -123,7 +134,14 @@ void main() {
         accountsService: accounts,
         discoveryService: discovery,
       );
+      pending = false;
+      when(settings.setAccountScanPending(any, any)).thenAnswer((i) async {
+        pending = i.positionalArguments[1] as bool;
+      });
+      when(settings.isAccountScanPending(0)).thenAnswer((_) => pending);
+      when(settings.getMnemonic(0)).thenAnswer((_) async => mnemonic);
       when(accounts.getAccounts()).thenAnswer((_) async => [root]);
+      activeIs(root);
     });
 
     void scanReturns(Future<List<Account>> Function() answer) => when(
@@ -210,13 +228,6 @@ void main() {
     });
 
     test('a skipped scan finishes on a later start, restores the ML-DSA-65 account and makes it active', () async {
-      var pending = false;
-      when(settings.setAccountScanPending(any, any)).thenAnswer((i) async {
-        pending = i.positionalArguments[1] as bool;
-      });
-      when(settings.isAccountScanPending(0)).thenAnswer((_) => pending);
-      when(settings.getMnemonic(0)).thenAnswer((_) async => mnemonic);
-      when(settings.getActiveRegularAccount()).thenAnswer((_) async => root);
       var online = false;
       scanReturns(() async => online ? [found.last] : throw Exception('indexer unreachable'));
 
@@ -237,18 +248,10 @@ void main() {
     });
 
     test("a resumed scan leaves an active account outside the wallet's transparent accounts alone", () async {
-      const encrypted = Account(
-        walletIndex: 0,
-        index: AppConstants.encryptedAccountIndex,
-        name: 'Encrypted',
-        accountId: 'encrypted',
-        accountType: AccountType.encrypted,
-      );
       final otherWallet = at(0, DilithiumScheme.mlDsa87).copyWith(walletIndex: 1, accountId: 'other_wallet');
       for (final active in [encrypted, otherWallet]) {
-        when(settings.isAccountScanPending(0)).thenReturn(true);
-        when(settings.getMnemonic(0)).thenAnswer((_) async => mnemonic);
-        when(settings.getActiveRegularAccount()).thenAnswer((_) async => active);
+        pending = true;
+        activeIs(active);
         scanReturns(() async => [found.last]);
 
         await service.resumePendingAccountScans([root]);
@@ -258,9 +261,31 @@ void main() {
       verifyNever(settings.setActiveAccount(any));
     });
 
-    test('resume leaves wallets whose scan finished alone', () async {
-      when(settings.isAccountScanPending(0)).thenReturn(false);
+    test('an account selected while the scan runs stays selected', () async {
+      scanReturns(() async {
+        activeIs(encrypted);
+        return found;
+      });
 
+      await discover((_) async => false);
+
+      verify(accounts.addAccount(any)).called(2);
+      verifyNever(settings.setActiveAccount(any));
+    });
+
+    test('a wallet removed while the scan runs is not written back', () async {
+      scanReturns(() async {
+        pending = false;
+        return found;
+      });
+
+      await discover((_) async => false);
+
+      verifyNever(accounts.addAccount(any));
+      verifyNever(settings.setActiveAccount(any));
+    });
+
+    test('resume leaves wallets whose scan finished alone', () async {
       expect(await service.resumePendingAccountScans([root]), isFalse);
 
       verifyNever(

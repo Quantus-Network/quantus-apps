@@ -76,6 +76,10 @@ class WalletCreationService {
   /// answers true and stops once it answers false. The wallet's scan stays
   /// marked pending until a scan finishes, so [resumePendingAccountScans] can
   /// complete it later.
+  ///
+  /// The scan runs in the background, so nothing is written when the wallet
+  /// was removed meanwhile, and the active account is only switched when it
+  /// has not changed since the scan started.
   Future<void> discoverImportedAccounts({
     required String mnemonic,
     required int walletIndex,
@@ -83,9 +87,14 @@ class WalletCreationService {
     required Future<bool> Function(Object error) onScanFailed,
   }) async {
     await _settings.setAccountScanPending(walletIndex, true);
+    final activeBefore = await _activeAccountId();
     while (true) {
       try {
         final discovered = await _discovery.discoverAccounts(mnemonic: mnemonic, walletIndex: walletIndex);
+        if (!_settings.isAccountScanPending(walletIndex)) {
+          quantusPrint('Wallet $walletIndex was removed during its account scan');
+          return;
+        }
         final existing = (await _accounts.getAccounts()).map((a) => a.accountId).toSet();
         var count = existing.length;
         for (final account in discovered.where((a) => !existing.contains(a.accountId))) {
@@ -93,7 +102,8 @@ class WalletCreationService {
         }
         if (defaultAccountId != null &&
             discovered.isNotEmpty &&
-            !discovered.any((a) => a.accountId == defaultAccountId)) {
+            !discovered.any((a) => a.accountId == defaultAccountId) &&
+            await _activeAccountId() == activeBefore) {
           await _settings.setActiveAccount(RegularAccount(discovered.first));
         }
         await _settings.setAccountScanPending(walletIndex, false);
@@ -104,6 +114,8 @@ class WalletCreationService {
     }
   }
 
+  Future<String?> _activeAccountId() async => (await _settings.getActiveAccount())?.account.accountId;
+
   /// Finishes the import scan of every wallet in [accounts] whose scan was
   /// skipped or interrupted, so accounts missed while the indexer was
   /// unreachable still appear. As on import, an active transparent account of
@@ -112,11 +124,12 @@ class WalletCreationService {
   /// for the next call.
   Future<bool> resumePendingAccountScans(Iterable<Account> accounts) async {
     var finished = false;
-    final active = await _settings.getActiveRegularAccount();
+    final active = (await _settings.getActiveAccount())?.account;
     for (final walletIndex in accounts.map((a) => a.walletIndex).toSet().where(_settings.isAccountScanPending)) {
       final mnemonic = await _settings.getMnemonic(walletIndex);
       if (mnemonic == null) throw StateError('Wallet $walletIndex has a pending account scan but no mnemonic');
-      final activeHere = active != null && active.walletIndex == walletIndex && active.accountType == AccountType.local;
+      final activeHere =
+          active is Account && active.walletIndex == walletIndex && active.accountType == AccountType.local;
       await discoverImportedAccounts(
         mnemonic: mnemonic,
         walletIndex: walletIndex,
