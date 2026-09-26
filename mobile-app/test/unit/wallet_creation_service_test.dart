@@ -285,6 +285,32 @@ void main() {
       verifyNever(settings.setActiveAccount(any));
     });
 
+    test('a wallet removed while a resumed scan reads its mnemonic is not written back', () async {
+      pending = true;
+      when(settings.getMnemonic(0)).thenAnswer((_) async {
+        pending = false;
+        return mnemonic;
+      });
+      scanReturns(() async => found);
+
+      await service.resumePendingAccountScans([root]);
+
+      verifyNever(settings.setAccountScanPending(0, true));
+      verifyNever(accounts.addAccount(any));
+      verifyNever(settings.setActiveAccount(any));
+    });
+
+    test('a wallet removed after discovery returns gets no further writes', () async {
+      scanReturns(() async => found);
+      when(accounts.addAccount(any)).thenAnswer((_) async => pending = false);
+
+      await discover((_) async => false);
+
+      verify(accounts.addAccount(any)).called(1);
+      verifyNever(settings.setActiveAccount(any));
+      verifyNever(settings.setAccountScanPending(0, false));
+    });
+
     test('resume leaves wallets whose scan finished alone', () async {
       expect(await service.resumePendingAccountScans([root]), isFalse);
 

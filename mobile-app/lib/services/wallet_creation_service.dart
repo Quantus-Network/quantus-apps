@@ -73,13 +73,9 @@ class WalletCreationService {
   /// becomes active so a returning user lands on it.
   ///
   /// A failed scan is handed to [onScanFailed]; the scan runs again while it
-  /// answers true and stops once it answers false. The wallet's scan stays
+  /// answers true and stops once it answers false. The wallet's scan is
   /// marked pending until a scan finishes, so [resumePendingAccountScans] can
   /// complete it later.
-  ///
-  /// The scan runs in the background, so nothing is written when the wallet
-  /// was removed meanwhile, and the active account is only switched when it
-  /// has not changed since the scan started.
   Future<void> discoverImportedAccounts({
     required String mnemonic,
     required int walletIndex,
@@ -87,23 +83,45 @@ class WalletCreationService {
     required Future<bool> Function(Object error) onScanFailed,
   }) async {
     await _settings.setAccountScanPending(walletIndex, true);
+    await _finishPendingScan(
+      mnemonic: mnemonic,
+      walletIndex: walletIndex,
+      defaultAccountId: defaultAccountId,
+      onScanFailed: onScanFailed,
+    );
+  }
+
+  /// The scan runs while the user can act, so the pending flag, which wallet
+  /// removal clears first, is checked before every write, and the active
+  /// account is only switched when it has not changed since the scan started.
+  Future<void> _finishPendingScan({
+    required String mnemonic,
+    required int walletIndex,
+    required String? defaultAccountId,
+    required Future<bool> Function(Object error) onScanFailed,
+  }) async {
     final activeBefore = await _activeAccountId();
+    bool removed() {
+      if (_settings.isAccountScanPending(walletIndex)) return false;
+      quantusPrint('Wallet $walletIndex was removed during its account scan');
+      return true;
+    }
+
     while (true) {
       try {
         final discovered = await _discovery.discoverAccounts(mnemonic: mnemonic, walletIndex: walletIndex);
-        if (!_settings.isAccountScanPending(walletIndex)) {
-          quantusPrint('Wallet $walletIndex was removed during its account scan');
-          return;
-        }
+        if (removed()) return;
         final existing = (await _accounts.getAccounts()).map((a) => a.accountId).toSet();
         var count = existing.length;
         for (final account in discovered.where((a) => !existing.contains(a.accountId))) {
+          if (removed()) return;
           await _accounts.addAccount(account.copyWith(name: 'Account ${++count}'));
         }
         if (defaultAccountId != null &&
             discovered.isNotEmpty &&
             !discovered.any((a) => a.accountId == defaultAccountId) &&
             await _activeAccountId() == activeBefore) {
+          if (removed()) return;
           await _settings.setActiveAccount(RegularAccount(discovered.first));
         }
         await _settings.setAccountScanPending(walletIndex, false);
@@ -130,7 +148,7 @@ class WalletCreationService {
       if (mnemonic == null) throw StateError('Wallet $walletIndex has a pending account scan but no mnemonic');
       final activeHere =
           active is Account && active.walletIndex == walletIndex && active.accountType == AccountType.local;
-      await discoverImportedAccounts(
+      await _finishPendingScan(
         mnemonic: mnemonic,
         walletIndex: walletIndex,
         defaultAccountId: activeHere ? active.accountId : null,
