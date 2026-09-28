@@ -7,10 +7,6 @@ extension DilithiumSchemeExtension on DilithiumScheme {
   /// Scheme new wallets and accounts use.
   static const DilithiumScheme current = DilithiumScheme.mlDsa87;
 
-  /// Scheme of accounts stored before the scheme was recorded, when ML-DSA-87
-  /// was the only one.
-  static const DilithiumScheme legacy = DilithiumScheme.mlDsa87;
-
   /// Variant index of the chain's `DilithiumSignatureScheme`, written into every signed extrinsic.
   int get signatureTypeByte => switch (this) {
     DilithiumScheme.mlDsa87 => 0,
@@ -29,8 +25,9 @@ extension DilithiumSchemeExtension on DilithiumScheme {
     DilithiumScheme.mlDsa87 => 'ml-dsa-87',
   };
 
+  /// Accounts stored before the scheme was recorded are ML-DSA-87.
   static DilithiumScheme fromStorageName(String? name) {
-    if (name == null) return legacy;
+    if (name == null) return DilithiumScheme.mlDsa87;
     return DilithiumScheme.values.firstWhere(
       (s) => s.storageName == name,
       orElse: () => throw FormatException('Unknown signature scheme: $name'),

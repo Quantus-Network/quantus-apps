@@ -33,7 +33,7 @@ Future<void> pumpAt(WidgetTester tester, Uint8List payload, Size size, double sc
     ProviderScope(
       overrides: [
         addressesProvider.overrideWith(
-          (ref) => {signerAddress: ColdAccount(label: 'Account 1', index: 0, scheme: DilithiumSchemeExtension.legacy)},
+          (ref) => {signerAddress: ColdAccount(label: 'Account 1', index: 0, scheme: DilithiumScheme.mlDsa87)},
         ),
         checksumNameProvider.overrideWith((ref, address) async => 'check phrase'),
       ],

@@ -1,7 +1,6 @@
 import 'dart:convert';
 
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:quantus_sdk/src/extensions/dilithium_scheme_extension.dart';
 import 'package:quantus_sdk/src/models/account.dart';
 import 'package:quantus_sdk/src/models/airdrop_claim_record.dart';
 import 'package:quantus_sdk/src/models/display_account.dart';
@@ -78,14 +77,14 @@ class SettingsService {
     final oldAccountId = _prefs.getString('account_id');
     if (oldAccountId != null) {
       final oldWalletName = _prefs.getString('wallet_name') ?? 'Account 1';
-      const legacy = DilithiumSchemeExtension.legacy;
+      const scheme = DilithiumScheme.mlDsa87;
       final account = Account(
         walletIndex: 0,
         index: 0,
         name: oldWalletName,
         accountId: oldAccountId,
-        scheme: legacy,
-        derivationPath: HdWalletService.pathForIndex(0, legacy),
+        scheme: scheme,
+        derivationPath: HdWalletService.pathForIndex(0, scheme),
       );
       await saveAccounts([account]);
       await setActiveAccount(RegularAccount(account));
@@ -164,7 +163,6 @@ class SettingsService {
     if (remaining.isEmpty) {
       throw Exception('Cant remove last wallet!');
     }
-    // First, so an account scan finishing later sees the wallet is gone.
     await _prefs.remove(_pendingAccountScanKey(walletIndex));
     final activeId = await _getActiveAccountId();
     final activeRemoved = accounts.any((a) => a.walletIndex == walletIndex && a.accountId == activeId);

@@ -33,7 +33,7 @@ class VaultContents {
     if (!plaintext.startsWith('{')) {
       return VaultContents(
         mnemonic: plaintext,
-        accounts: [ColdAccount(label: 'Account 1', index: 0, scheme: DilithiumSchemeExtension.legacy)],
+        accounts: [ColdAccount(label: 'Account 1', index: 0, scheme: DilithiumScheme.mlDsa87)],
       );
     }
     final m = jsonDecode(plaintext) as Map<String, dynamic>;

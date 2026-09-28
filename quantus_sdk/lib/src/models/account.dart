@@ -107,7 +107,7 @@ class Account implements BaseAccount {
   /// account is the sender. Hardware (keystone) accounts hold no local key and
   /// their scheme is only known once the device signs, so the larger ML-DSA-87
   /// is used to avoid ever understating the fee.
-  DilithiumScheme get feeSizingScheme => scheme ?? DilithiumSchemeExtension.legacy;
+  DilithiumScheme get feeSizingScheme => scheme ?? DilithiumScheme.mlDsa87;
 
   /// Wallet, then scheme (current first, keyless accounts last), then derivation index.
   static int compare(Account a, Account b) {

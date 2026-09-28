@@ -35,7 +35,7 @@ Future<void> pumpRequest(WidgetTester tester, SigningRequest request) async {
     ProviderScope(
       overrides: [
         addressesProvider.overrideWith(
-          (ref) => {wallet: ColdAccount(label: 'Account 1', index: 0, scheme: DilithiumSchemeExtension.legacy)},
+          (ref) => {wallet: ColdAccount(label: 'Account 1', index: 0, scheme: DilithiumScheme.mlDsa87)},
         ),
         checksumNameProvider.overrideWith((ref, address) async => 'check phrase'),
       ],

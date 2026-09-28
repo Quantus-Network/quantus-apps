@@ -24,7 +24,7 @@ class _FaultInjectingStorage extends TestFlutterSecureStoragePlatform {
   }
 }
 
-final _accounts = [ColdAccount(label: 'Account 1', index: 0, scheme: DilithiumSchemeExtension.legacy)];
+final _accounts = [ColdAccount(label: 'Account 1', index: 0, scheme: DilithiumScheme.mlDsa87)];
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -101,7 +101,7 @@ void main() {
     await vault.createVault(
       mnemonic: _mnemonic,
       password: 'beta',
-      accounts: [ColdAccount(label: 'Account 1', index: 0, scheme: DilithiumSchemeExtension.legacy)],
+      accounts: [ColdAccount(label: 'Account 1', index: 0, scheme: DilithiumScheme.mlDsa87)],
     );
 
     final fresh = ProviderContainer();
@@ -128,7 +128,7 @@ void main() {
     await vault.createVault(
       mnemonic: _mnemonic,
       password: 'beta',
-      accounts: [ColdAccount(label: 'Account 1', index: 0, scheme: DilithiumSchemeExtension.legacy)],
+      accounts: [ColdAccount(label: 'Account 1', index: 0, scheme: DilithiumScheme.mlDsa87)],
     );
     expect(await vault.isBiometricEnabled(), isTrue, reason: 'a bare key carries no pairing to check at startup');
     await expectLater(vault.unlockWithBiometricKey(), throwsA(isA<SecretBoxAuthenticationError>()));
