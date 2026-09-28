@@ -18,6 +18,9 @@ class QuantusTextField extends StatefulWidget {
   final bool autocorrect;
   final ValueChanged<String>? onSubmitted;
   final Widget? trailing;
+
+  /// Width kept clear for a [trailing] that is not a single [QuantusIconButton].
+  final double? trailingWidth;
   final int? maxLines;
   final bool expands;
   final double? height;
@@ -39,6 +42,7 @@ class QuantusTextField extends StatefulWidget {
     this.autocorrect = true,
     this.onSubmitted,
     this.trailing,
+    this.trailingWidth,
     this.maxLines = 1,
     this.expands = false,
     this.height,
@@ -97,7 +101,8 @@ class _QuantusTextFieldState extends State<QuantusTextField> {
   void _rebuild() => setState(() {});
 
   /// Keep the editable area clear of the trailing widget, whatever its size.
-  double _trailingReserve(Widget extra) => 4 + (extra is QuantusIconButton ? extra.buttonSize : 36);
+  double _trailingReserve(Widget extra) =>
+      4 + (extra is QuantusIconButton ? extra.buttonSize : widget.trailingWidth ?? 36);
 
   Color _borderColor(AppColorsV3 colors) {
     if (_hasError) return colors.semanticEmber.useOpacity(0.55);

@@ -85,10 +85,12 @@ class LocaleNumberConfig {
   /// Hard cap on raw input length, applied before normalization so it must
   /// admit locale grouping: the widest legitimate amount is
   /// [AppConstants.maxWholeDigits] whole digits, two grouping separators, one
-  /// decimal separator, and [AppConstants.decimals] fractional digits
-  /// (`20,999,999.999999999999`). External input is attacker-controlled —
-  /// reject anything wider before any parsing work happens.
-  static const int maxInputLength = AppConstants.maxWholeDigits + 2 + 1 + AppConstants.decimals;
+  /// decimal separator, and [decimals] fractional digits
+  /// (`20,999,999.999999999999` for the chain's own token). External input is
+  /// attacker-controlled — reject anything wider before any parsing work happens.
+  static int maxInputLengthFor(int decimals) => AppConstants.maxWholeDigits + 2 + 1 + decimals;
+
+  static final int maxInputLength = maxInputLengthFor(AppConstants.decimals);
 
   /// The only numeric shape we accept after normalization: digits with an
   /// optional single decimal separator, plus the mid-typing `.5` form.
@@ -108,8 +110,8 @@ class LocaleNumberConfig {
   /// Throws [InvalidNumberInputException] when the input cannot be parsed.
   /// Empty input also throws — callers that want to treat empty as zero should
   /// short-circuit before calling.
-  Decimal parseDecimal(String input) {
-    if (input.length > maxInputLength) {
+  Decimal parseDecimal(String input, {int decimals = AppConstants.decimals}) {
+    if (input.length > maxInputLengthFor(decimals)) {
       throw InvalidNumberInputException(rawInput: input, normalized: input);
     }
     final normalized = normalize(input);

@@ -27,12 +27,6 @@ class _Settings extends FakeSettingsService {
   }
 }
 
-/// Never answers, so only a picked outcome can move the debug flow along.
-class _SilentService extends Fake implements MainnetMigrationService {
-  @override
-  Future<TestnetStatus> checkTestnetStatus() => Completer<TestnetStatus>().future;
-}
-
 final _miner = TestnetStatus(blocksMined: 1234, balance: BigInt.zero);
 final _holder = TestnetStatus(blocksMined: 0, balance: BigInt.from(7));
 final _newcomer = TestnetStatus(blocksMined: 0, balance: BigInt.zero);
@@ -53,7 +47,6 @@ void main() {
     WidgetTester tester,
     Future<TestnetStatus> Function() status, {
     bool failWrite = false,
-    bool debugPicker = false,
   }) async {
     final settings = _Settings()..failWrite = failWrite;
     final finished = <bool>[];
@@ -61,11 +54,7 @@ void main() {
       MainnetMigrationScreen(onFinished: () => finished.add(true)),
       overrides: [
         settingsServiceProvider.overrideWithValue(settings),
-        debugMainnetMigrationProvider.overrideWithValue(debugPicker),
-        if (debugPicker)
-          mainnetMigrationServiceProvider.overrideWithValue(_SilentService())
-        else
-          testnetStatusProvider.overrideWith((ref) => status()),
+        testnetStatusProvider.overrideWith((ref) => status()),
       ],
     );
     await tester.pump();
@@ -185,19 +174,5 @@ void main() {
     await tester.pump(const Duration(seconds: 3));
     expect(find.text('READING TESTNET HISTORY'), findsOneWidget);
     expect(keep, findsNothing);
-  });
-
-  testWidgets('debug builds hold the checking page until an outcome is picked', (tester) async {
-    await pumpFlow(tester, () async => _miner, debugPicker: true);
-    await tester.pump(const Duration(seconds: 3));
-    expect(keep, findsNothing);
-    for (final outcome in debugTestnetOutcomes) {
-      expect(find.text(outcome), findsOneWidget);
-    }
-
-    await tester.tap(find.text('error'));
-    await tester.pump();
-    await turnPage(tester);
-    expect(find.text("We couldn't check this wallet."), findsOneWidget);
   });
 }

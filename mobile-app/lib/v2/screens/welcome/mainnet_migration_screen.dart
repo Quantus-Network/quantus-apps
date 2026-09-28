@@ -34,8 +34,8 @@ class _MainnetMigrationScreenState extends ConsumerState<MainnetMigrationScreen>
   final _pages = PageController();
   final _checkingShown = Future<void>.delayed(_checkingMinimum);
 
-  /// Debug builds hold the checking page until an outcome is picked.
-  late bool _armed = !ref.read(debugMainnetMigrationProvider);
+  /// Turns to the outcome page once, when the check first settles.
+  bool _armed = true;
   bool _creating = false;
 
   @override
@@ -50,12 +50,6 @@ class _MainnetMigrationScreenState extends ConsumerState<MainnetMigrationScreen>
     _armed = false;
     await _checkingShown;
     if (mounted) await _turnTo(1);
-  }
-
-  void _pickOutcome(String? outcome) {
-    ref.read(forcedTestnetOutcomeProvider.notifier).state = outcome;
-    ref.invalidate(testnetStatusProvider);
-    _armed = true;
   }
 
   Future<void> _keep(TestnetUserKind? kind) async {
@@ -114,7 +108,7 @@ class _MainnetMigrationScreenState extends ConsumerState<MainnetMigrationScreen>
       controller: _pages,
       physics: const NeverScrollableScrollPhysics(),
       children: [
-        _CheckingPage(l10n: l10n, onPickOutcome: ref.watch(debugMainnetMigrationProvider) ? _pickOutcome : null),
+        _CheckingPage(l10n: l10n),
         _OutcomePage(
           l10n: l10n,
           status: status,
@@ -130,9 +124,8 @@ class _MainnetMigrationScreenState extends ConsumerState<MainnetMigrationScreen>
 
 class _CheckingPage extends StatelessWidget {
   final AppLocalizations l10n;
-  final ValueChanged<String?>? onPickOutcome;
 
-  const _CheckingPage({required this.l10n, required this.onPickOutcome});
+  const _CheckingPage({required this.l10n});
 
   @override
   Widget build(BuildContext context) {
@@ -156,27 +149,6 @@ class _CheckingPage extends StatelessWidget {
         ),
         const SizedBox(height: 16),
         Text(l10n.mainnetMigrationChecking, style: text.bodyLarge.copyWith(color: colors.textMuted)),
-        if (onPickOutcome != null) ...[
-          const SizedBox(height: 24),
-          Text('DEBUG: pick the testnet outcome', style: text.caption.copyWith(color: colors.textMuted)),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              for (final outcome in [...debugTestnetOutcomes, null])
-                IntrinsicWidth(
-                  child: QuantusButton.simple(
-                    label: outcome ?? 'real',
-                    onTap: () => onPickOutcome!(outcome),
-                    variant: ButtonVariant.staged,
-                    width: null,
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  ),
-                ),
-            ],
-          ),
-        ],
         const SizedBox(height: 52),
         LinearProgressIndicator(
           minHeight: 4,

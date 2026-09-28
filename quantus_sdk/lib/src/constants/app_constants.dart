@@ -36,6 +36,19 @@ class AppConstants {
 
   static const String explorerEndpoint = 'https://explorer.quantus.com';
 
+  // NEAR Intents 1Click swap API (docs.near-intents.org).
+  static const String oneClickEndpoint = 'https://1click.chaindefuser.com';
+
+  // Distribution channel id 1Click records on every quote.
+  static const String oneClickReferral = 'quantus';
+
+  // Key 1Click signs quotes with; from @defuse-protocol/one-click-sdk-typescript.
+  static const String oneClickManagerPublicKey = 'ed25519:reYaWhvwu8Jzo3WUM3zhn6VrhuMEF4eADL17qtRVifc';
+
+  // Quantus is not listed on NEAR Intents yet, so every quote into it is
+  // rejected as "tokenOut is not valid". Replace with the listed asset id.
+  static const String quantusIntentsAssetId = 'nep141:qtc.omft.near';
+
   // internal group URL is this (note the /c)
   // https://t.me/c/quantusnetwork/2457
   // removing the c, we get a better preview page though so we use it without c...
@@ -105,11 +118,6 @@ class AppConstants {
 
   // Always show the home backup nudge regardless of viewed state and balance
   static const bool debugAlwaysShowBackupNudge = false;
-
-  // Shows the one-time mainnet migration notice on every debug launch, with an
-  // outcome picker on its checking page so every flow can be walked through
-  // without real testnet data. Flip to false to see the notice only when due.
-  static const bool debugMainnetMigration = true;
 
   // Shows an outcome picker on the Airdrop entry screen in debug builds so
   // every rewards state can be walked through without a mining wallet.

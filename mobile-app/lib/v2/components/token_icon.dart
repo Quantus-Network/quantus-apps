@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 
 class TokenIcon extends StatelessWidget {
+  static const _quantusAsset = 'assets/v2/token_qtc.svg';
+
   final SwapToken token;
   final double size;
   final double networkBadgeSize;
@@ -12,9 +15,18 @@ class TokenIcon extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.colorsV3;
     final text = context.themeTextV3;
-    final swapService = SwapService();
-    final iconUrl = token.iconUrl ?? swapService.getTokenIconUrl(token);
-    final networkIconUrl = token.networkIconUrl ?? swapService.getNetworkIconUrl(token);
+    final iconUrl = token.iconUrl;
+    final networkIconUrl = token.networkIconUrl;
+
+    if (token.isQuantus) {
+      return Container(
+        width: size,
+        height: size,
+        padding: EdgeInsets.all(size * 0.18),
+        decoration: BoxDecoration(color: colors.bgVoid, shape: BoxShape.circle),
+        child: SvgPicture.asset(_quantusAsset),
+      );
+    }
 
     return SizedBox(
       width: size,
