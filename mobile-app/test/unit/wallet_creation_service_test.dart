@@ -235,7 +235,7 @@ void main() {
       verifyNever(accounts.addAccount(any));
 
       online = true;
-      expect(await service.resumePendingAccountScans([root]), isTrue);
+      expect(await service.resumePendingAccountScans(), isTrue);
 
       expect(pending, isNull);
       verify(accounts.addAccount(argThat(account('ml-dsa-65_0', name: 'Account 2')))).called(1);
@@ -253,7 +253,7 @@ void main() {
         activeIs(active);
         scanReturns(() async => [found.last]);
 
-        await service.resumePendingAccountScans([root]);
+        await service.resumePendingAccountScans();
       }
 
       verify(accounts.addAccount(argThat(account('ml-dsa-65_0')))).called(2);
@@ -292,7 +292,7 @@ void main() {
       });
       scanReturns(() async => found);
 
-      await service.resumePendingAccountScans([root]);
+      await service.resumePendingAccountScans();
 
       verifyNever(settings.setPendingAccountScan(any, any));
       verifyNever(accounts.addAccount(any));
@@ -362,7 +362,7 @@ void main() {
       });
       scanReturns(() async => found);
 
-      await service.resumePendingAccountScans([root]);
+      await service.resumePendingAccountScans();
 
       verify(accounts.addAccount(any)).called(2);
       verifyNever(settings.setActiveAccount(any));
@@ -371,7 +371,7 @@ void main() {
     test('resume leaves wallets whose scan finished alone', () async {
       pending = null;
 
-      expect(await service.resumePendingAccountScans([root]), isFalse);
+      expect(await service.resumePendingAccountScans(), isFalse);
 
       verifyNever(
         discovery.discoverAccounts(

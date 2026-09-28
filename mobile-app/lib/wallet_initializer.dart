@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart' hide ScaffoldBase;
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
+import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/mainnet_migration_provider.dart';
 import 'package:resonance_network_wallet/v2/screens/home/home_screen.dart';
@@ -9,6 +12,8 @@ import 'package:resonance_network_wallet/v2/screens/welcome/mainnet_migration_sc
 import 'package:resonance_network_wallet/v2/screens/welcome/welcome_screen.dart';
 import 'package:resonance_network_wallet/services/logout_service.dart';
 import 'package:resonance_network_wallet/services/telemetry_service.dart';
+import 'package:resonance_network_wallet/services/wallet_creation_service.dart';
+import 'package:resonance_network_wallet/shared/utils/print.dart';
 
 class WalletInitializer extends ConsumerStatefulWidget {
   const WalletInitializer({super.key});
@@ -39,6 +44,7 @@ class WalletInitializerState extends ConsumerState<WalletInitializer> {
         if (mounted) await _showMnemonicLostDialog();
         return;
       }
+      unawaited(_resumePendingAccountScans());
     }
 
     setState(() {
@@ -46,6 +52,15 @@ class WalletInitializerState extends ConsumerState<WalletInitializer> {
       _migrationPending = hasWallet && ref.read(mainnetMigrationPendingProvider);
       _loading = false;
     });
+  }
+
+  Future<void> _resumePendingAccountScans() async {
+    try {
+      if (await WalletCreationService().resumePendingAccountScans() && mounted) invalidateAccountProviders(ref);
+    } catch (e) {
+      quantusPrint('Resuming pending account scans failed: $e');
+      TelemetryService().sendError('Resuming pending account scans failed', error: e);
+    }
   }
 
   Future<void> _showMnemonicLostDialog() async {
