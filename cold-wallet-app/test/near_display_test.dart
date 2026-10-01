@@ -49,6 +49,18 @@ void main() {
     expect(NearDisplay.argsText(Uint8List(0)), '(none)');
   });
 
+  test('text that could reorder or hide what is shown falls back to hex', () {
+    expect(NearDisplay.safeText('ft_transfer'), 'ft_transfer');
+    expect(NearDisplay.safeText('a\u202Eb'), '0x61e280ae62');
+    expect(NearDisplay.safeText('a\u200Bb'), '0x61e2808b62');
+    expect(NearDisplay.safeText('a\x1bb'), '0x611b62');
+    // JSON strings carrying a bidi override are shown as the raw bytes.
+    final args = Uint8List.fromList(utf8.encode('{"to":"bob\u202Eten.tset"}'));
+    expect(NearDisplay.argsText(args), '0x${args.map((b) => b.toRadixString(16).padLeft(2, '0')).join()}');
+    // Pretty-printed JSON keeps its newlines; escaped controls inside strings stay escaped.
+    expect(NearDisplay.argsText(Uint8List.fromList(utf8.encode('{"a":"x\\ny"}'))), '{\n  "a": "x\\ny"\n}');
+  });
+
   test('headline names a single action and counts several', () {
     expect(NearDisplay.headline(_tx(actions: [_action(NearActionKind.transfer)])), 'SEND');
     expect(

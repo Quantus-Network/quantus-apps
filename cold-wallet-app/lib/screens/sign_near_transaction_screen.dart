@@ -332,7 +332,7 @@ class _SignNearTransactionScreenState extends ConsumerState<SignNearTransactionS
     final rows = switch (action.kind) {
       NearActionKind.transfer => [DetailSummaryRow.stacked(label: 'Amount', value: near(action.amount))],
       NearActionKind.functionCall => [
-        DetailSummaryRow.stacked(label: 'Method', value: action.target ?? '', monospace: true),
+        DetailSummaryRow.stacked(label: 'Method', value: NearDisplay.safeText(action.target ?? ''), monospace: true),
         DetailSummaryRow.stacked(label: 'Attached deposit', value: near(action.amount)),
         DetailSummaryRow.stacked(label: 'Gas', value: NearDisplay.formatGas(action.gas ?? BigInt.zero)),
         DetailSummaryRow.stacked(
@@ -369,7 +369,7 @@ class _SignNearTransactionScreenState extends ConsumerState<SignNearTransactionS
           DetailSummaryRow.stacked(label: 'May call', value: action.target ?? '', monospace: true),
           DetailSummaryRow.stacked(
             label: 'Methods',
-            value: action.methodNames.isEmpty ? 'Any method' : action.methodNames.join(', '),
+            value: action.methodNames.isEmpty ? 'Any method' : action.methodNames.map(NearDisplay.safeText).join(', '),
             monospace: action.methodNames.isNotEmpty,
           ),
           DetailSummaryRow.stacked(

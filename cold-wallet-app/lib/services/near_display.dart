@@ -32,11 +32,30 @@ class NearDisplay {
     if (args.isEmpty) return '(none)';
     try {
       final decoded = json.decode(utf8.decode(args, allowMalformed: false));
-      return const JsonEncoder.withIndent('  ').convert(decoded);
+      final pretty = const JsonEncoder.withIndent('  ').convert(decoded);
+      return isDisplaySafe(pretty, allowNewlines: true) ? pretty : '0x${hex.encode(args)}';
     } on FormatException {
       return '0x${hex.encode(args)}';
     }
   }
+
+  /// A string from the transaction — a method name, a key's method list —
+  /// shown only when nothing in it can reorder or hide what is rendered;
+  /// otherwise its bytes, as hex.
+  static String safeText(String text) => isDisplaySafe(text) ? text : '0x${hex.encode(utf8.encode(text))}';
+
+  /// Whether every character renders in place: no control characters, and
+  /// none of the bidi or zero-width format characters that could reverse,
+  /// join or hide the text around them.
+  static bool isDisplaySafe(String text, {bool allowNewlines = false}) => text.runes.every((r) {
+    if (allowNewlines && r == 0x0A) return true;
+    if (r < 0x20 || (r >= 0x7F && r <= 0x9F)) return false;
+    return !((r >= 0x200B && r <= 0x200F) ||
+        (r >= 0x202A && r <= 0x202E) ||
+        (r >= 0x2060 && r <= 0x2064) ||
+        (r >= 0x2066 && r <= 0x2069) ||
+        r == 0xFEFF);
+  });
 
   static String actionTitle(NearAction action) => switch (action.kind) {
     NearActionKind.transfer => 'SEND',
