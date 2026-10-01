@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:quantus_cold_wallet/components/address_with_checkphrase.dart';
 import 'package:quantus_cold_wallet/components/signature_qr_view.dart';
+import 'package:quantus_cold_wallet/components/signing_refusal_view.dart';
 import 'package:quantus_cold_wallet/providers/wallet_providers.dart';
 import 'package:quantus_cold_wallet/services/near_display.dart';
 
@@ -107,61 +108,8 @@ class _SignNearTransactionScreenState extends ConsumerState<SignNearTransactionS
     return colon < 0 ? 'different' : publicKey.substring(0, colon);
   }
 
-  Widget _errorView(BuildContext context, {required String title, required String message, required Widget detail}) {
-    final colors = context.colorsV3;
-    final text = context.themeTextV3;
-    return ScaffoldBase(
-      appBar: const V2AppBar(title: 'Sign NEAR Transaction'),
-      mainContent: Center(
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Center(
-                child: Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(color: colors.semanticEmber.useOpacity(0.12), shape: BoxShape.circle),
-                  child: Icon(Icons.error_outline, size: 72, color: colors.semanticEmber),
-                ),
-              ),
-              const SizedBox(height: 24),
-              Text(
-                title,
-                style: text.titleHero.copyWith(color: colors.semanticEmber),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                message,
-                style: text.bodyLarge.copyWith(color: colors.textContent),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 20),
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: colors.semanticEmber.useOpacity(0.08),
-                  borderRadius: context.radiusV3.mdBorder,
-                  border: Border.all(color: colors.semanticEmber),
-                ),
-                child: detail,
-              ),
-              const SizedBox(height: 20),
-              Text(
-                'Nothing was signed.',
-                style: text.bodyEmphasis.copyWith(color: colors.textMuted),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
-        ),
-      ),
-      bottomContent: ScaffoldBaseBottomContent(
-        child: QuantusButton.simple(label: 'Back to home', onTap: () => Navigator.popUntil(context, (r) => r.isFirst)),
-      ),
-    );
-  }
+  Widget _errorView(BuildContext context, {required String title, required String message, required Widget detail}) =>
+      SigningRefusalView(appBarTitle: 'Sign NEAR Transaction', title: title, message: message, detail: detail);
 
   Widget _reviewView(BuildContext context, String owner) {
     final colors = context.colorsV3;
@@ -182,7 +130,7 @@ class _SignNearTransactionScreenState extends ConsumerState<SignNearTransactionS
             if (dangerous)
               _warningBanner(
                 context,
-                title: 'This changes control of ${tx.signerId}',
+                title: 'This changes control of ${tx.receiverId}',
                 body:
                     'Keys, code or the account itself are being changed, not just funds moved. Only sign this if '
                     'you asked for exactly these actions.',

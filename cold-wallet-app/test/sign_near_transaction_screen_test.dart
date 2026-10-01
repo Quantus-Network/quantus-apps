@@ -109,10 +109,29 @@ void main() {
     final headline = tester.widget<Text>(find.text('ADD FULL ACCESS KEY'));
     expect(headline.style?.color, colors.semanticEmber);
     expect(find.text('This changes control of alice.testnet'), findsOneWidget);
+    expect(find.text('Nothing was signed.'), findsNothing);
     expect(find.text('1. ADD FULL ACCESS KEY'), findsOneWidget);
     expect(find.text('ed25519:4rN'), findsOneWidget);
     expect(find.text('Full access'), findsOneWidget);
     expect(find.text('Sign'), findsOneWidget);
+  });
+
+  testWidgets('a key added to a sub-account names that account, not the signer, in the warning', (tester) async {
+    await pump(
+      tester,
+      _tx(
+        receiver: 'vault.alice.testnet',
+        actions: [
+          const NearAction(kind: NearActionKind.createAccount, fullAccess: false, methodNames: []),
+          const NearAction(kind: NearActionKind.addKey, publicKey: 'ed25519:4rN', fullAccess: true, methodNames: []),
+        ],
+      ),
+    );
+
+    expect(find.text('This changes control of vault.alice.testnet'), findsOneWidget);
+    expect(find.textContaining('control of alice.testnet'), findsNothing);
+    expect(find.text('1. CREATE ACCOUNT'), findsOneWidget);
+    expect(find.text('2. ADD FULL ACCESS KEY'), findsOneWidget);
   });
 
   testWidgets('a contract deployment identifies the code by its hash, not just its size', (tester) async {
