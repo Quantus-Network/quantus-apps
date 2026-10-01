@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:quantus_cold_wallet/providers/wallet_providers.dart';
-import 'package:quantus_cold_wallet/screens/near_key_export_screen.dart';
+import 'package:quantus_cold_wallet/screens/public_key_export_screen.dart';
 
 class ShowKeyScreen extends ConsumerWidget {
   /// The account to show; defaults to the wallet's first.
@@ -55,16 +55,18 @@ class ShowKeyScreen extends ConsumerWidget {
                     error: (_, _) => const SizedBox.shrink(),
                   ),
                   const SizedBox(height: 24),
-                  if (account?.scheme == DilithiumScheme.mlDsa65) _nearSection(context, ref, address),
+                  if (account?.scheme == DilithiumScheme.mlDsa65) _publicKeySection(context, ref, address),
                 ],
               ),
             ),
     );
   }
 
-  /// ML-DSA-65 is the one scheme NEAR accepts, so only those accounts offer
-  /// their key in NEAR's form. The key pair is derived on tap, not on build.
-  Widget _nearSection(BuildContext context, WidgetRef ref, String address) {
+  /// The full key is only useful where a key is registered directly rather
+  /// than by Quantus address, and ML-DSA-65 is the one scheme such a system
+  /// (NEAR) accepts today, so only those accounts offer it. The key pair is
+  /// derived on tap, not on build.
+  Widget _publicKeySection(BuildContext context, WidgetRef ref, String address) {
     final colors = context.colorsV3;
     final text = context.themeTextV3;
     return Container(
@@ -73,11 +75,11 @@ class ShowKeyScreen extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text('NEAR', style: text.labelMonogram.copyWith(color: colors.accentFlare, letterSpacing: 1.2)),
+          Text('PUBLIC KEY', style: text.labelMonogram.copyWith(color: colors.accentFlare, letterSpacing: 1.2)),
           const SizedBox(height: 8),
           Text(
-            'This key can also hold a NEAR account. Export it in NEAR\'s form to add it there; NEAR transactions '
-            'for that account are then reviewed and signed on this device.',
+            'The address above is a hash of this account\'s key. Systems that register the key itself, such as '
+            'NEAR, need the full public key; transactions they send for it are then reviewed and signed here.',
             style: text.caption.copyWith(color: colors.textMuted),
           ),
           const SizedBox(height: 16),
@@ -90,7 +92,7 @@ class ShowKeyScreen extends ConsumerWidget {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => NearKeyExportScreen(
+                  builder: (_) => PublicKeyExportScreen(
                     export: NearPublicKeyExport(
                       address: address,
                       nearPublicKey: nearPublicKeyText(keypair: keypair),
