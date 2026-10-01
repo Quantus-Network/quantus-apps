@@ -11,12 +11,5 @@ import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 /// Predicts the on-chain multisig address for the given signers, threshold, and nonce.
 ///
 /// Address is computed as: hash(pallet_id || sorted_signers || threshold || nonce)
-String predictMultisigAddress({
-  required List<String> signers,
-  required int threshold,
-  required BigInt nonce,
-}) => RustLib.instance.api.crateApiMultisigPredictMultisigAddress(
-  signers: signers,
-  threshold: threshold,
-  nonce: nonce,
-);
+String predictMultisigAddress({required List<String> signers, required int threshold, required BigInt nonce}) =>
+    RustLib.instance.api.crateApiMultisigPredictMultisigAddress(signers: signers, threshold: threshold, nonce: nonce);

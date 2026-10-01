@@ -8,34 +8,23 @@ import '../lib.dart';
 import 'crypto.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-// These functions are ignored because they are not marked as `pub`: `bytes`, `decode_wire`, `require_ml_dsa_65`, `text`
+// These functions are ignored because they are not marked as `pub`: `bytes`, `check_account_id`, `decode_wire`, `require_ml_dsa_65`, `text`
 // These types are ignored because they are neither used by any `pub` functions nor (for structs and enums) marked `#[frb(unignore)]`: `WireAccessKeyPermission`, `WireAccessKey`, `WireAction`, `WireFunctionCallPermission`, `WirePublicKey`, `WireTransaction`
 // These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `assert_receiver_is_total_eq`, `assert_receiver_is_total_eq`, `assert_receiver_is_total_eq`, `assert_receiver_is_total_eq`, `assert_receiver_is_total_eq`, `assert_receiver_is_total_eq`, `assert_receiver_is_total_eq`, `assert_receiver_is_total_eq`, `assert_receiver_is_total_eq`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `deserialize_reader`, `deserialize_reader`, `deserialize_reader`, `deserialize_reader`, `deserialize_reader`, `deserialize_reader`, `deserialize_variant`, `deserialize_variant`, `deserialize_variant`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `from`, `serialize`, `serialize`, `serialize`, `serialize`, `serialize`, `serialize`
 
 /// Decode a borsh `TransactionV0`. Refuses trailing bytes.
 NearTransaction decodeNearTransaction({required List<int> transaction}) =>
-    RustLib.instance.api.crateApiNearDecodeNearTransaction(
-      transaction: transaction,
-    );
+    RustLib.instance.api.crateApiNearDecodeNearTransaction(transaction: transaction);
 
 /// SHA-256 of the transaction bytes: the message NEAR signs and verifies.
-Uint8List nearTransactionHash({required List<int> transaction}) => RustLib
-    .instance
-    .api
-    .crateApiNearNearTransactionHash(transaction: transaction);
+Uint8List nearTransactionHash({required List<int> transaction}) =>
+    RustLib.instance.api.crateApiNearNearTransactionHash(transaction: transaction);
 
 /// Sign a borsh `TransactionV0` for NEAR. Refuses unless `keypair` is
 /// ML-DSA-65 *and* is the key the transaction declares. Returns
 /// `signature ‖ public_key` (3309 + 1952 bytes).
-Uint8List signNearTransaction({
-  required Keypair keypair,
-  required List<int> transaction,
-  U8Array32? entropy,
-}) => RustLib.instance.api.crateApiNearSignNearTransaction(
-  keypair: keypair,
-  transaction: transaction,
-  entropy: entropy,
-);
+Uint8List signNearTransaction({required Keypair keypair, required List<int> transaction, U8Array32? entropy}) =>
+    RustLib.instance.api.crateApiNearSignNearTransaction(keypair: keypair, transaction: transaction, entropy: entropy);
 
 /// Whether `signature` is a valid pure ML-DSA-65 signature by `public_key`
 /// over the transaction, as the NEAR runtime checks it.
@@ -106,8 +95,7 @@ class NearAction {
     this.codeLen,
   });
 
-  static Future<NearAction> default_() =>
-      RustLib.instance.api.crateApiNearNearActionDefault();
+  static Future<NearAction> default_() => RustLib.instance.api.crateApiNearNearActionDefault();
 
   @override
   int get hashCode =>
@@ -149,8 +137,7 @@ enum NearActionKind {
   deleteKey,
   deleteAccount;
 
-  static Future<NearActionKind> default_() =>
-      RustLib.instance.api.crateApiNearNearActionKindDefault();
+  static Future<NearActionKind> default_() => RustLib.instance.api.crateApiNearNearActionKindDefault();
 }
 
 /// A decoded NEAR transaction, ready to display.
