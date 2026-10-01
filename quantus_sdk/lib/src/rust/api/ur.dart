@@ -12,9 +12,14 @@ int maxUrParts() => RustLib.instance.api.crateApiUrMaxUrParts();
 
 int maxUrPartChars() => RustLib.instance.api.crateApiUrMaxUrPartChars();
 
-Uint8List decodeUr({required List<String> urParts}) => RustLib.instance.api.crateApiUrDecodeUr(urParts: urParts);
+Uint8List decodeUr({required List<String> urParts}) =>
+    RustLib.instance.api.crateApiUrDecodeUr(urParts: urParts);
 
 List<String> encodeUr({required List<int> data, int? maxFragmentLength}) =>
-    RustLib.instance.api.crateApiUrEncodeUr(data: data, maxFragmentLength: maxFragmentLength);
+    RustLib.instance.api.crateApiUrEncodeUr(
+      data: data,
+      maxFragmentLength: maxFragmentLength,
+    );
 
-bool isCompleteUr({required List<String> urParts}) => RustLib.instance.api.crateApiUrIsCompleteUr(urParts: urParts);
+bool isCompleteUr({required List<String> urParts}) =>
+    RustLib.instance.api.crateApiUrIsCompleteUr(urParts: urParts);

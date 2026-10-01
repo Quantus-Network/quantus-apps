@@ -27,6 +27,13 @@ parity-scale-codec = { version = "3.7.5", default-features = false, features = [
 sp-runtime = { version = "48.0.0", default-features = false, features = ["std"] }
 quantus_ur = { git = "https://github.com/Quantus-Network/quantus_ur.git", tag = "1.6.0" }
 
+# NEAR transactions (borsh wire format, base58 key text, SHA-256 signing hash,
+# SHA3-256 access-key handle). Aligned with quantus-cli's near module.
+borsh = { version = "1.5", features = ["derive"] }
+bs58 = "0.5"
+sha2 = "0.10"
+sha3 = "0.10"
+
 # ZK proof generation (aligned with quantus-cli / chain)
 anyhow = "1.0"
 blake3 = "1.8"
@@ -51,7 +58,6 @@ qp-zk-circuits-common = { version = "4.4.0", default-features = false, features 
 qp-wormhole-circuit-builder = { version = "4.4.0" }
 
 [dev-dependencies]
-sha2 = "0.10"
 tempfile = "3"
 
 # Circuit generation is CPU-intensive; without this it takes ~10min instead of ~30s.

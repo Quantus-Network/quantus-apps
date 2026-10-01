@@ -4,7 +4,7 @@
 // ignore_for_file: invalid_use_of_internal_member, unused_import, unnecessary_import
 
 import '../frb_generated.dart';
-import 'package:collection/collection.dart';
+import '../lib.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
 // These functions are ignored because they are not marked as `pub`: `ml_dsa_87_from_entropy`, `new`
@@ -14,28 +14,44 @@ void setDefaultSs58Prefix({required int prefix}) =>
     RustLib.instance.api.crateApiCryptoSetDefaultSs58Prefix(prefix: prefix);
 
 /// Convert public key to accountId32 in ss58check format
-String toAccountId({required Keypair obj}) => RustLib.instance.api.crateApiCryptoToAccountId(obj: obj);
+String toAccountId({required Keypair obj}) =>
+    RustLib.instance.api.crateApiCryptoToAccountId(obj: obj);
 
 /// Convert key in ss58check format to accountId32
-Uint8List ss58ToAccountId({required String s}) => RustLib.instance.api.crateApiCryptoSs58ToAccountId(s: s);
+Uint8List ss58ToAccountId({required String s}) =>
+    RustLib.instance.api.crateApiCryptoSs58ToAccountId(s: s);
 
 /// Legacy non-HD ML-DSA-87 keypair straight from the mnemonic seed (early CLI and miner accounts).
-Keypair generateKeypair({required String mnemonicStr}) =>
-    RustLib.instance.api.crateApiCryptoGenerateKeypair(mnemonicStr: mnemonicStr);
+Keypair generateKeypair({required String mnemonicStr}) => RustLib.instance.api
+    .crateApiCryptoGenerateKeypair(mnemonicStr: mnemonicStr);
 
-Keypair generateDerivedKeypair({required String mnemonicStr, required String path, required DilithiumScheme scheme}) =>
-    RustLib.instance.api.crateApiCryptoGenerateDerivedKeypair(mnemonicStr: mnemonicStr, path: path, scheme: scheme);
+Keypair generateDerivedKeypair({
+  required String mnemonicStr,
+  required String path,
+  required DilithiumScheme scheme,
+}) => RustLib.instance.api.crateApiCryptoGenerateDerivedKeypair(
+  mnemonicStr: mnemonicStr,
+  path: path,
+  scheme: scheme,
+);
 
-WormholeResult deriveWormhole({required String mnemonicStr, required String path}) =>
-    RustLib.instance.api.crateApiCryptoDeriveWormhole(mnemonicStr: mnemonicStr, path: path);
+WormholeResult deriveWormhole({
+  required String mnemonicStr,
+  required String path,
+}) => RustLib.instance.api.crateApiCryptoDeriveWormhole(
+  mnemonicStr: mnemonicStr,
+  path: path,
+);
 
 /// Convert a first_hash (rewards preimage) to its corresponding wormhole address.
 ///
 /// Mirrors how the chain and ZK circuit derive the address from the preimage:
 /// - Convert 32 bytes → 4 Poseidon field elements (8 bytes each)
 /// - Hash once without padding
-String firstHashToAddress({required String firstHashHex}) =>
-    RustLib.instance.api.crateApiCryptoFirstHashToAddress(firstHashHex: firstHashHex);
+String firstHashToAddress({required String firstHashHex}) => RustLib
+    .instance
+    .api
+    .crateApiCryptoFirstHashToAddress(firstHashHex: firstHashHex);
 
 /// ML-DSA-87 keypair from a raw 32-byte seed (dev accounts).
 Keypair generateKeypairFromSeed({required List<int> seed}) =>
@@ -106,7 +122,11 @@ class Keypair {
   final Uint8List secretKey;
   final DilithiumScheme scheme;
 
-  const Keypair({required this.publicKey, required this.secretKey, required this.scheme});
+  const Keypair({
+    required this.publicKey,
+    required this.secretKey,
+    required this.scheme,
+  });
 
   @override
   int get hashCode => publicKey.hashCode ^ secretKey.hashCode ^ scheme.hashCode;
@@ -121,24 +141,16 @@ class Keypair {
           scheme == other.scheme;
 }
 
-class U8Array32 extends NonGrowableListView<int> {
-  static const arraySize = 32;
-
-  @internal
-  Uint8List get inner => _inner;
-  final Uint8List _inner;
-
-  U8Array32(this._inner) : assert(_inner.length == arraySize), super(_inner);
-
-  U8Array32.init() : this(Uint8List(arraySize));
-}
-
 class WormholeResult {
   final String address;
   final Uint8List firstHash;
   final Uint8List secret;
 
-  const WormholeResult({required this.address, required this.firstHash, required this.secret});
+  const WormholeResult({
+    required this.address,
+    required this.firstHash,
+    required this.secret,
+  });
 
   @override
   int get hashCode => address.hashCode ^ firstHash.hashCode ^ secret.hashCode;
