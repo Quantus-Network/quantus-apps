@@ -82,7 +82,7 @@ class ShowKeyScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 16),
           QuantusButton.simple(
-            label: 'Show NEAR public key',
+            label: 'Show public key',
             variant: ButtonVariant.staged,
             onTap: () {
               final keypair = keypairFor(ref, address);
