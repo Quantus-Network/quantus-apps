@@ -28,15 +28,90 @@ class NearDisplay {
   }
 
   /// Function-call arguments are JSON by convention; anything else is shown as hex.
+  ///
+  /// The JSON is re-indented from its own text, never decoded and re-encoded:
+  /// a Dart `num` cannot hold every JSON number, and an amount the signer
+  /// reads must be the amount the contract receives, digit for digit.
   static String argsText(Uint8List args) {
     if (args.isEmpty) return '(none)';
+    final String text;
     try {
-      final decoded = json.decode(utf8.decode(args, allowMalformed: false));
-      final pretty = const JsonEncoder.withIndent('  ').convert(decoded);
-      return isDisplaySafe(pretty, allowNewlines: true) ? pretty : '0x${hex.encode(args)}';
+      text = utf8.decode(args, allowMalformed: false);
+      json.decode(text);
     } on FormatException {
       return '0x${hex.encode(args)}';
     }
+    final pretty = reindentJson(text);
+    return isDisplaySafe(pretty, allowNewlines: true) ? pretty : '0x${hex.encode(args)}';
+  }
+
+  /// Re-indents [text], which must already be valid JSON, copying every token
+  /// through verbatim. Only whitespace outside strings is changed.
+  static String reindentJson(String text) {
+    final out = StringBuffer();
+    var depth = 0;
+    var inString = false;
+    var escaped = false;
+    void newline() => out.write('\n${'  ' * depth}');
+
+    for (var i = 0; i < text.length; i++) {
+      final c = text[i];
+      if (inString) {
+        out.write(c);
+        if (escaped) {
+          escaped = false;
+        } else if (c == r'\') {
+          escaped = true;
+        } else if (c == '"') {
+          inString = false;
+        }
+        continue;
+      }
+      switch (c) {
+        case '"':
+          inString = true;
+          out.write(c);
+        case '{' || '[':
+          out.write(c);
+          if (_closesImmediately(text, i)) {
+            out.write(text[_nextNonSpace(text, i + 1)]);
+            i = _nextNonSpace(text, i + 1);
+          } else {
+            depth++;
+            newline();
+          }
+        case '}' || ']':
+          depth--;
+          newline();
+          out.write(c);
+        case ',':
+          out.write(c);
+          newline();
+        case ':':
+          out.write(': ');
+        case ' ' || '\t' || '\n' || '\r':
+          break;
+        default:
+          out.write(c);
+      }
+    }
+    return out.toString();
+  }
+
+  static int _nextNonSpace(String text, int from) {
+    var i = from;
+    while (i < text.length && ' \t\n\r'.contains(text[i])) {
+      i++;
+    }
+    return i;
+  }
+
+  /// Whether the bracket at [open] is followed by its closer, so `{}` and
+  /// `[]` stay on one line.
+  static bool _closesImmediately(String text, int open) {
+    final next = _nextNonSpace(text, open + 1);
+    if (next >= text.length) return false;
+    return (text[open] == '{' && text[next] == '}') || (text[open] == '[' && text[next] == ']');
   }
 
   /// A string from the transaction — a method name, a key's method list —

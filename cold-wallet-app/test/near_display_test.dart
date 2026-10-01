@@ -61,6 +61,26 @@ void main() {
     expect(NearDisplay.argsText(Uint8List.fromList(utf8.encode('{"a":"x\\ny"}'))), '{\n  "a": "x\\ny"\n}');
   });
 
+  test('argsText keeps every numeric token exactly as the contract will read it', () {
+    String shown(String json) => NearDisplay.argsText(Uint8List.fromList(utf8.encode(json)));
+    // Beyond 2^53 and beyond double precision: a decode/encode round trip
+    // would show 18446744073709552000.0 and 0.12345678901234568.
+    expect(shown('{"amount":18446744073709551617}'), '{\n  "amount": 18446744073709551617\n}');
+    expect(shown('{"limit":0.123456789012345678901234}'), '{\n  "limit": 0.123456789012345678901234\n}');
+    expect(
+      shown('{"e":1E+400,"n":-0,"s":"18446744073709551617"}'),
+      contains('"e": 1E+400,\n  "n": -0,\n  "s": "18446744073709551617"'),
+    );
+    // Nesting, empty containers, and escapes inside strings survive untouched.
+    expect(
+      shown('{"a":[1,{"b":[]},{}],"c":"x{y}\\"z,:[]"}'),
+      '{\n  "a": [\n    1,\n    {\n      "b": []\n    },\n    {}\n  ],\n  "c": "x{y}\\"z,:[]"\n}',
+    );
+    expect(shown(' [ 1 , 2 ] '), '[\n  1,\n  2\n]');
+    expect(shown('"just a string"'), '"just a string"');
+    expect(shown('{"a":1'), startsWith('0x'));
+  });
+
   test('headline names a single action and counts several', () {
     expect(NearDisplay.headline(_tx(actions: [_action(NearActionKind.transfer)])), 'SEND');
     expect(
