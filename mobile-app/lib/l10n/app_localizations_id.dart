@@ -113,6 +113,19 @@ class AppLocalizationsId extends AppLocalizations {
   String get importWalletValidationError => 'Recovery phrase harus 12 atau 24 kata';
 
   @override
+  String get importWalletScanFailedTitle => 'Pemindaian akun gagal';
+
+  @override
+  String get importWalletScanFailedBody =>
+      'Kami tidak dapat terhubung ke jaringan untuk mencari akun Anda. Coba lagi sekarang, atau lewati dan aplikasi akan memindai lagi saat dibuka berikutnya.';
+
+  @override
+  String get importWalletScanRetry => 'Coba lagi';
+
+  @override
+  String get importWalletScanSkip => 'Lewati';
+
+  @override
   String homeError(String error) {
     return 'Gagal: $error';
   }

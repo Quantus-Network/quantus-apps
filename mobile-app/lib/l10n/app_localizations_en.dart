@@ -112,6 +112,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get importWalletValidationError => 'Recovery phrase must be 12 or 24 words';
 
   @override
+  String get importWalletScanFailedTitle => 'Account scan failed';
+
+  @override
+  String get importWalletScanFailedBody =>
+      'We could not reach the network to look for your accounts. Try again now, or skip and the app will scan again the next time it starts.';
+
+  @override
+  String get importWalletScanRetry => 'Try again';
+
+  @override
+  String get importWalletScanSkip => 'Skip';
+
+  @override
   String homeError(String error) {
     return 'Error: $error';
   }

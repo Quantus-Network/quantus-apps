@@ -107,7 +107,7 @@ class Account implements BaseAccount {
   /// account is the sender. Hardware (keystone) accounts hold no local key and
   /// their scheme is only known once the device signs, so the larger ML-DSA-87
   /// is used to avoid ever understating the fee.
-  DilithiumScheme get feeSizingScheme => scheme ?? DilithiumSchemeExtension.legacy;
+  DilithiumScheme get feeSizingScheme => scheme ?? DilithiumScheme.mlDsa87;
 
   /// Wallet, then scheme (current first, keyless accounts last), then derivation index.
   static int compare(Account a, Account b) {
@@ -117,11 +117,11 @@ class Account implements BaseAccount {
     return s != 0 ? s : a.index.compareTo(b.index);
   }
 
-  /// Sort position by scheme (current first, legacy next, keyless last). This is
-  /// an ordering key, not the derivation path index (which is 0 for 87, 1 for 65).
+  /// Sort position by scheme (current first, other schemes next, keyless last).
+  /// This is an ordering key, not the derivation path index (which is 0 for 87, 1 for 65).
   static int _schemeSortOrder(DilithiumScheme? scheme) => switch (scheme) {
-    DilithiumSchemeExtension.current => 0,
-    DilithiumSchemeExtension.legacy => 1,
     null => 2,
+    DilithiumSchemeExtension.current => 0,
+    _ => 1,
   };
 }

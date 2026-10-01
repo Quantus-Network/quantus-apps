@@ -18,21 +18,13 @@ class AccountsService {
   final SettingsService _settingsService = SettingsService();
   void Function()? onAccountsChanged;
 
-  /// Scheme new accounts of [walletIndex] use: the current scheme once the
-  /// wallet holds any account of it, otherwise the legacy one, so pre-existing
-  /// wallets stay uniform.
-  static DilithiumScheme walletScheme(Iterable<Account> accounts, int walletIndex) =>
-      accounts.any((a) => a.walletIndex == walletIndex && a.scheme == DilithiumSchemeExtension.current)
-      ? DilithiumSchemeExtension.current
-      : DilithiumSchemeExtension.legacy;
-
   Future<Account> createNewAccount({required int walletIndex}) async {
     final mnemonic = await _settingsService.getMnemonic(walletIndex);
     if (mnemonic == null) {
       throw Exception('Mnemonic not found. Cannot create new account.');
     }
     final accounts = await getAccounts();
-    final scheme = walletScheme(accounts, walletIndex);
+    const scheme = DilithiumSchemeExtension.current;
     final nextIndex = await _settingsService.getNextFreeAccountIndex(walletIndex, scheme: scheme);
     final path = HdWalletService.pathForIndex(nextIndex, scheme);
     return Account.derived(

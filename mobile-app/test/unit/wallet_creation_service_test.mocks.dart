@@ -9,6 +9,7 @@ import 'package:mockito/mockito.dart' as _i1;
 import 'package:mockito/src/dummies.dart' as _i8;
 import 'package:quantus_sdk/quantus_sdk.dart' as _i3;
 import 'package:quantus_sdk/src/models/account.dart' as _i2;
+import 'package:quantus_sdk/src/models/airdrop_claim_record.dart' as _i9;
 import 'package:quantus_sdk/src/models/display_account.dart' as _i5;
 import 'package:quantus_sdk/src/models/multisig_account.dart' as _i7;
 import 'package:quantus_sdk/src/rust/api/crypto.dart' as _i6;
@@ -491,6 +492,34 @@ class MockSettingsService extends _i1.Mock implements _i3.SettingsService {
       super.noSuchMethod(Invocation.method(#setRecoveryPhraseViewed, [walletIndex]), returnValueForMissingStub: null);
 
   @override
+  _i9.AirdropClaimRecord? getAirdropClaim(int? walletIndex) =>
+      (super.noSuchMethod(Invocation.method(#getAirdropClaim, [walletIndex]), returnValueForMissingStub: null)
+          as _i9.AirdropClaimRecord?);
+
+  @override
+  _i4.Future<void> setAirdropClaim(int? walletIndex, _i9.AirdropClaimRecord? record) =>
+      (super.noSuchMethod(
+            Invocation.method(#setAirdropClaim, [walletIndex, record]),
+            returnValue: _i4.Future<void>.value(),
+            returnValueForMissingStub: _i4.Future<void>.value(),
+          )
+          as _i4.Future<void>);
+
+  @override
+  String? pendingAccountScan(int? walletIndex) =>
+      (super.noSuchMethod(Invocation.method(#pendingAccountScan, [walletIndex]), returnValueForMissingStub: null)
+          as String?);
+
+  @override
+  _i4.Future<void> setPendingAccountScan(int? walletIndex, String? rootAccountId) =>
+      (super.noSuchMethod(
+            Invocation.method(#setPendingAccountScan, [walletIndex, rootAccountId]),
+            returnValue: _i4.Future<void>.value(),
+            returnValueForMissingStub: _i4.Future<void>.value(),
+          )
+          as _i4.Future<void>);
+
+  @override
   _i2.WalletOrigin? getWalletOrigin(int? walletIndex) =>
       (super.noSuchMethod(Invocation.method(#getWalletOrigin, [walletIndex]), returnValueForMissingStub: null)
           as _i2.WalletOrigin?);
@@ -624,4 +653,35 @@ class MockAccountsService extends _i1.Mock implements _i3.AccountsService {
             returnValueForMissingStub: _i4.Future<void>.value(),
           )
           as _i4.Future<void>);
+}
+
+/// A class which mocks [AccountDiscoveryService].
+///
+/// See the documentation for Mockito's code generation for more information.
+class MockAccountDiscoveryService extends _i1.Mock implements _i3.AccountDiscoveryService {
+  @override
+  _i4.Future<List<_i2.Account>> discoverAccounts({
+    required String? mnemonic,
+    required int? walletIndex,
+    int? gapLimit = 20,
+  }) =>
+      (super.noSuchMethod(
+            Invocation.method(#discoverAccounts, [], {
+              #mnemonic: mnemonic,
+              #walletIndex: walletIndex,
+              #gapLimit: gapLimit,
+            }),
+            returnValue: _i4.Future<List<_i2.Account>>.value(<_i2.Account>[]),
+            returnValueForMissingStub: _i4.Future<List<_i2.Account>>.value(<_i2.Account>[]),
+          )
+          as _i4.Future<List<_i2.Account>>);
+
+  @override
+  _i4.Future<Set<int>> discoverUsedIndices({required String Function(int)? addressAt, int? gapLimit = 20}) =>
+      (super.noSuchMethod(
+            Invocation.method(#discoverUsedIndices, [], {#addressAt: addressAt, #gapLimit: gapLimit}),
+            returnValue: _i4.Future<Set<int>>.value(<int>{}),
+            returnValueForMissingStub: _i4.Future<Set<int>>.value(<int>{}),
+          )
+          as _i4.Future<Set<int>>);
 }

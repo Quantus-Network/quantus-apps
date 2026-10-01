@@ -79,7 +79,7 @@ class SubstrateService {
   /// runtime, so this is the one fee input that has to be asked from chain.
   Future<BigInt> queryDispatchWeight(RuntimeCall call) async {
     final info = await _paymentQueryInfo(
-      _dummySignedExtrinsic(Uint8List(32), call.encode(), scheme: DilithiumSchemeExtension.legacy),
+      _dummySignedExtrinsic(Uint8List(32), call.encode(), scheme: DilithiumScheme.mlDsa87),
     );
     return BigInt.from((info['weight'] as Map<String, dynamic>)['ref_time'] as int);
   }

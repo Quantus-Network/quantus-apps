@@ -290,6 +290,30 @@ abstract class AppLocalizations {
   /// **'Recovery phrase must be 12 or 24 words'**
   String get importWalletValidationError;
 
+  /// Title of the dialog shown when looking up the imported wallet's accounts fails
+  ///
+  /// In en, this message translates to:
+  /// **'Account scan failed'**
+  String get importWalletScanFailedTitle;
+
+  /// Body of the dialog shown when looking up the imported wallet's accounts fails
+  ///
+  /// In en, this message translates to:
+  /// **'We could not reach the network to look for your accounts. Try again now, or skip and the app will scan again the next time it starts.'**
+  String get importWalletScanFailedBody;
+
+  /// Button that runs the account scan again
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get importWalletScanRetry;
+
+  /// Button that finishes the import without scanning for accounts
+  ///
+  /// In en, this message translates to:
+  /// **'Skip'**
+  String get importWalletScanSkip;
+
   /// Error message on the home screen
   ///
   /// In en, this message translates to:

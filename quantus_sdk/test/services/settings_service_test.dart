@@ -1,3 +1,4 @@
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -266,6 +267,25 @@ void main() {
 
       // Assert: transparent indices stay contiguous (1), not 1025.
       expect(nextIndex, 1);
+    });
+
+    test('pending account scan is set, read back and cleared per wallet', () async {
+      expect(settingsService.pendingAccountScan(1), isNull);
+      await settingsService.setPendingAccountScan(1, 'root_w1');
+      expect(settingsService.pendingAccountScan(1), 'root_w1');
+      expect(settingsService.pendingAccountScan(0), isNull);
+      await settingsService.setPendingAccountScan(1, null);
+      expect(settingsService.pendingAccountScan(1), isNull);
+    });
+
+    test('removing a wallet clears its pending account scan', () async {
+      FlutterSecureStorage.setMockInitialValues({});
+      await settingsService.saveAccounts([account1, account1.copyWith(walletIndex: 1, accountId: 'id_w1')]);
+      await settingsService.setPendingAccountScan(1, 'id_w1');
+
+      await settingsService.removeWallet(1);
+
+      expect(settingsService.pendingAccountScan(1), isNull);
     });
   });
 }

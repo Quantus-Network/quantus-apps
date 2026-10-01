@@ -64,14 +64,14 @@ void main() {
         mnemonic: mnemonic,
         password: 'alpha',
         enableBiometric: false,
-        accounts: [ColdAccount(label: 'One', index: 0, scheme: DilithiumSchemeExtension.legacy)],
+        accounts: [ColdAccount(label: 'One', index: 0, scheme: DilithiumScheme.mlDsa87)],
       );
 
       expect(
         await controller.changePassword(currentPassword: 'alpha', newPassword: 'beta'),
         PasswordChangeResult.changed,
       );
-      await controller.addAccount(ColdAccount(label: 'Two', index: 1, scheme: DilithiumSchemeExtension.legacy));
+      await controller.addAccount(ColdAccount(label: 'Two', index: 1, scheme: DilithiumScheme.mlDsa87));
 
       final reopened = await VaultService().unlockWithPassword('beta');
       expect(reopened.mnemonic, mnemonic);
@@ -89,12 +89,12 @@ void main() {
         mnemonic: mnemonic,
         password: 'alpha',
         enableBiometric: true,
-        accounts: [ColdAccount(label: 'One', index: 0, scheme: DilithiumSchemeExtension.legacy)],
+        accounts: [ColdAccount(label: 'One', index: 0, scheme: DilithiumScheme.mlDsa87)],
       );
       biometric.lock();
 
       expect(await biometric.unlockWithBiometric(), isTrue);
-      await biometric.addAccount(ColdAccount(label: 'Two', index: 1, scheme: DilithiumSchemeExtension.legacy));
+      await biometric.addAccount(ColdAccount(label: 'Two', index: 1, scheme: DilithiumScheme.mlDsa87));
 
       expect(container.read(accountsProvider), hasLength(2));
       expect((await VaultService().unlockWithPassword('alpha')).accounts, hasLength(2));
@@ -104,29 +104,26 @@ void main() {
   group('ColdAccount', () {
     test('an index fills the wallet template', () {
       expect(
-        ColdAccount(label: 'a', index: 3, scheme: DilithiumSchemeExtension.legacy).derivationPath,
-        HdWalletService.pathForIndex(3, DilithiumSchemeExtension.legacy),
+        ColdAccount(label: 'a', index: 3, scheme: DilithiumScheme.mlDsa87).derivationPath,
+        HdWalletService.pathForIndex(3, DilithiumScheme.mlDsa87),
       );
     });
 
     test('a path is taken verbatim', () {
       expect(
-        ColdAccount(label: 'a', path: "m/44'/189189'/9'/0'/0'", scheme: DilithiumSchemeExtension.legacy).derivationPath,
+        ColdAccount(label: 'a', path: "m/44'/189189'/9'/0'/0'", scheme: DilithiumScheme.mlDsa87).derivationPath,
         "m/44'/189189'/9'/0'/0'",
       );
     });
 
     test('needs exactly one of index or path', () {
-      expect(() => ColdAccount(label: 'a', scheme: DilithiumSchemeExtension.legacy), throwsArgumentError);
+      expect(() => ColdAccount(label: 'a', scheme: DilithiumScheme.mlDsa87), throwsArgumentError);
       expect(
-        () => ColdAccount(label: 'a', index: 0, path: "m/44'", scheme: DilithiumSchemeExtension.legacy),
+        () => ColdAccount(label: 'a', index: 0, path: "m/44'", scheme: DilithiumScheme.mlDsa87),
         throwsArgumentError,
       );
-      expect(() => ColdAccount(label: 'a', index: -1, scheme: DilithiumSchemeExtension.legacy), throwsArgumentError);
-      expect(
-        () => ColdAccount(label: 'a', path: 'not a path', scheme: DilithiumSchemeExtension.legacy),
-        throwsArgumentError,
-      );
+      expect(() => ColdAccount(label: 'a', index: -1, scheme: DilithiumScheme.mlDsa87), throwsArgumentError);
+      expect(() => ColdAccount(label: 'a', path: 'not a path', scheme: DilithiumScheme.mlDsa87), throwsArgumentError);
     });
   });
 
@@ -135,8 +132,8 @@ void main() {
       final contents = VaultContents(
         mnemonic: mnemonic,
         accounts: [
-          ColdAccount(label: 'One', index: 0, scheme: DilithiumSchemeExtension.legacy),
-          ColdAccount(label: 'Two', path: "m/44'/189189'/7'/0'/0'", scheme: DilithiumSchemeExtension.legacy),
+          ColdAccount(label: 'One', index: 0, scheme: DilithiumScheme.mlDsa87),
+          ColdAccount(label: 'Two', path: "m/44'/189189'/7'/0'/0'", scheme: DilithiumScheme.mlDsa87),
         ],
       );
       final decoded = VaultContents.decode(contents.encode());
@@ -159,7 +156,7 @@ void main() {
       await pumpFor(
         tester,
         signerAddress,
-        held: {signerAddress: ColdAccount(label: 'One', index: 0, scheme: DilithiumSchemeExtension.legacy)},
+        held: {signerAddress: ColdAccount(label: 'One', index: 0, scheme: DilithiumScheme.mlDsa87)},
       );
 
       expect(find.text('Sign'), findsOneWidget);
@@ -170,7 +167,7 @@ void main() {
       await pumpFor(
         tester,
         otherAddress,
-        held: {signerAddress: ColdAccount(label: 'One', index: 0, scheme: DilithiumSchemeExtension.legacy)},
+        held: {signerAddress: ColdAccount(label: 'One', index: 0, scheme: DilithiumScheme.mlDsa87)},
       );
 
       expect(find.textContaining('does not exist in this cold wallet'), findsOneWidget);

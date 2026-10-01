@@ -37,7 +37,7 @@ void main() {
             mnemonic: _mnemonic,
             password: 'alpha',
             enableBiometric: false,
-            accounts: [ColdAccount(label: 'Account 1', index: 0, scheme: DilithiumSchemeExtension.legacy)],
+            accounts: [ColdAccount(label: 'Account 1', index: 0, scheme: DilithiumScheme.mlDsa87)],
           ),
     );
 
@@ -94,7 +94,7 @@ void main() {
         mnemonic: _mnemonic,
         password: 'alpha',
         enableBiometric: false,
-        accounts: [ColdAccount(label: 'Account 1', index: 0, scheme: DilithiumSchemeExtension.legacy)],
+        accounts: [ColdAccount(label: 'Account 1', index: 0, scheme: DilithiumScheme.mlDsa87)],
       ),
     );
 

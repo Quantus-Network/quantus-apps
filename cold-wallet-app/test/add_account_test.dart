@@ -7,15 +7,15 @@ import 'package:quantus_cold_wallet/models/cold_account.dart';
 void main() {
   group('the slot an account derives from', () {
     test('an indexed account sits at its index', () {
-      expect(ColdAccount(label: 'Account 1', index: 0, scheme: DilithiumSchemeExtension.legacy).templateIndex, 0);
-      expect(ColdAccount(label: 'Account 13', index: 12, scheme: DilithiumSchemeExtension.legacy).templateIndex, 12);
+      expect(ColdAccount(label: 'Account 1', index: 0, scheme: DilithiumScheme.mlDsa87).templateIndex, 0);
+      expect(ColdAccount(label: 'Account 13', index: 12, scheme: DilithiumScheme.mlDsa87).templateIndex, 12);
     });
 
     test('a path following the wallet template counts as the index it names', () {
       final typed = ColdAccount(
         label: 'Typed',
-        path: ColdAccount(label: 'x', index: 9, scheme: DilithiumSchemeExtension.legacy).derivationPath,
-        scheme: DilithiumSchemeExtension.legacy,
+        path: ColdAccount(label: 'x', index: 9, scheme: DilithiumScheme.mlDsa87).derivationPath,
+        scheme: DilithiumScheme.mlDsa87,
       );
 
       expect(typed.templateIndex, 9);
@@ -23,15 +23,11 @@ void main() {
 
     test('a path from another wallet claims no slot', () {
       expect(
-        ColdAccount(label: 'Elsewhere', path: "m/44'/1'/0'", scheme: DilithiumSchemeExtension.legacy).templateIndex,
+        ColdAccount(label: 'Elsewhere', path: "m/44'/1'/0'", scheme: DilithiumScheme.mlDsa87).templateIndex,
         isNull,
       );
       expect(
-        ColdAccount(
-          label: 'Deeper',
-          path: "m/44'/189189'/7'/1'/2'",
-          scheme: DilithiumSchemeExtension.legacy,
-        ).templateIndex,
+        ColdAccount(label: 'Deeper', path: "m/44'/189189'/7'/1'/2'", scheme: DilithiumScheme.mlDsa87).templateIndex,
         isNull,
       );
     });
