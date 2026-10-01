@@ -1835,6 +1835,7 @@ impl SseDecode for crate::api::near::NearAction {
         let mut var_fullAccess = <bool>::sse_decode(deserializer);
         let mut var_methodNames = <Vec<String>>::sse_decode(deserializer);
         let mut var_codeLen = <Option<u32>>::sse_decode(deserializer);
+        let mut var_codeHash = <Option<Vec<u8>>>::sse_decode(deserializer);
         return crate::api::near::NearAction {
             kind: var_kind,
             target: var_target,
@@ -1845,6 +1846,7 @@ impl SseDecode for crate::api::near::NearAction {
             full_access: var_fullAccess,
             method_names: var_methodNames,
             code_len: var_codeLen,
+            code_hash: var_codeHash,
         };
     }
 }
@@ -2340,6 +2342,7 @@ impl flutter_rust_bridge::IntoDart for crate::api::near::NearAction {
             self.full_access.into_into_dart().into_dart(),
             self.method_names.into_into_dart().into_dart(),
             self.code_len.into_into_dart().into_dart(),
+            self.code_hash.into_into_dart().into_dart(),
         ]
         .into_dart()
     }
@@ -2683,6 +2686,7 @@ impl SseEncode for crate::api::near::NearAction {
         <bool>::sse_encode(self.full_access, serializer);
         <Vec<String>>::sse_encode(self.method_names, serializer);
         <Option<u32>>::sse_encode(self.code_len, serializer);
+        <Option<Vec<u8>>>::sse_encode(self.code_hash, serializer);
     }
 }
 

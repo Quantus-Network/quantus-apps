@@ -115,6 +115,29 @@ void main() {
     expect(find.text('Sign'), findsOneWidget);
   });
 
+  testWidgets('a contract deployment identifies the code by its hash, not just its size', (tester) async {
+    final hash = Uint8List.fromList(List<int>.generate(32, (i) => i));
+    await pump(
+      tester,
+      _tx(
+        receiver: 'alice.testnet',
+        actions: [
+          NearAction(
+            kind: NearActionKind.deployContract,
+            codeLen: 4096,
+            codeHash: hash,
+            fullAccess: false,
+            methodNames: const [],
+          ),
+        ],
+      ),
+    );
+
+    expect(tester.widget<Text>(find.text('DEPLOY CONTRACT')).style?.color, colors.semanticEmber);
+    expect(find.text('4096 bytes'), findsOneWidget);
+    expect(find.text('000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f'), findsOneWidget);
+  });
+
   testWidgets('every action of a multi-action call is listed with its own parameters', (tester) async {
     await pump(
       tester,

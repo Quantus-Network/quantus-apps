@@ -170,6 +170,9 @@ pub struct NearAction {
     pub method_names: Vec<String>,
     /// `DeployContract`: size of the code blob.
     pub code_len: Option<u32>,
+    /// `DeployContract`: SHA-256 of the code, how NEAR identifies contract
+    /// code, so a signer can compare it with the artifact they meant to deploy.
+    pub code_hash: Option<Vec<u8>>,
 }
 
 impl From<&WireAction> for NearAction {
@@ -182,6 +185,7 @@ impl From<&WireAction> for NearAction {
             WireAction::DeployContract { code } => NearAction {
                 kind: NearActionKind::DeployContract,
                 code_len: Some(code.len() as u32),
+                code_hash: Some(Sha256::digest(code).to_vec()),
                 ..Default::default()
             },
             WireAction::FunctionCall {
@@ -609,6 +613,10 @@ mod tests {
             ]
         );
         assert_eq!(tx.actions[1].code_len, Some(10));
+        assert_eq!(
+            tx.actions[1].code_hash.as_deref(),
+            Some(Sha256::digest([0u8; 10]).as_slice())
+        );
         assert_eq!(tx.actions[2].amount, Some(5));
         assert_eq!(
             (tx.actions[3].amount, tx.actions[3].public_key.as_deref()),

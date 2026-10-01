@@ -83,6 +83,10 @@ class NearAction {
   /// `DeployContract`: size of the code blob.
   final int? codeLen;
 
+  /// `DeployContract`: SHA-256 of the code, how NEAR identifies contract
+  /// code, so a signer can compare it with the artifact they meant to deploy.
+  final Uint8List? codeHash;
+
   const NearAction({
     required this.kind,
     this.target,
@@ -93,6 +97,7 @@ class NearAction {
     required this.fullAccess,
     required this.methodNames,
     this.codeLen,
+    this.codeHash,
   });
 
   static Future<NearAction> default_() => RustLib.instance.api.crateApiNearNearActionDefault();
@@ -107,7 +112,8 @@ class NearAction {
       publicKey.hashCode ^
       fullAccess.hashCode ^
       methodNames.hashCode ^
-      codeLen.hashCode;
+      codeLen.hashCode ^
+      codeHash.hashCode;
 
   @override
   bool operator ==(Object other) =>
@@ -122,7 +128,8 @@ class NearAction {
           publicKey == other.publicKey &&
           fullAccess == other.fullAccess &&
           methodNames == other.methodNames &&
-          codeLen == other.codeLen;
+          codeLen == other.codeLen &&
+          codeHash == other.codeHash;
 }
 
 /// The kind of a [`NearAction`]. Everything but `Transfer` and

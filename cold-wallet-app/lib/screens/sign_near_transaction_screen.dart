@@ -346,10 +346,12 @@ class _SignNearTransactionScreenState extends ConsumerState<SignNearTransactionS
       ],
       NearActionKind.deployContract => [
         DetailSummaryRow.stacked(label: 'Deploys to', value: tx.receiverId, monospace: true),
+        DetailSummaryRow.stacked(label: 'Code size', value: '${action.codeLen ?? 0} bytes'),
         DetailSummaryRow.stacked(
-          label: 'Code size',
-          value: '${action.codeLen ?? 0} bytes',
-          note: 'The code itself cannot be reviewed here.',
+          label: 'Code SHA-256',
+          value: hex.encode(action.codeHash ?? Uint8List(0)),
+          monospace: true,
+          note: 'Compare with the hash of the contract you meant to deploy; the code itself cannot be shown here.',
         ),
       ],
       NearActionKind.stake => [

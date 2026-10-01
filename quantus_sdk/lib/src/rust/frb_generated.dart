@@ -1481,7 +1481,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   NearAction dco_decode_near_action(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
-    if (arr.length != 9) throw Exception('unexpected arr length: expect 9 but see ${arr.length}');
+    if (arr.length != 10) throw Exception('unexpected arr length: expect 10 but see ${arr.length}');
     return NearAction(
       kind: dco_decode_near_action_kind(arr[0]),
       target: dco_decode_opt_String(arr[1]),
@@ -1492,6 +1492,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       fullAccess: dco_decode_bool(arr[6]),
       methodNames: dco_decode_list_String(arr[7]),
       codeLen: dco_decode_opt_box_autoadd_u_32(arr[8]),
+      codeHash: dco_decode_opt_list_prim_u_8_strict(arr[9]),
     );
   }
 
@@ -1866,6 +1867,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     var var_fullAccess = sse_decode_bool(deserializer);
     var var_methodNames = sse_decode_list_String(deserializer);
     var var_codeLen = sse_decode_opt_box_autoadd_u_32(deserializer);
+    var var_codeHash = sse_decode_opt_list_prim_u_8_strict(deserializer);
     return NearAction(
       kind: var_kind,
       target: var_target,
@@ -1876,6 +1878,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       fullAccess: var_fullAccess,
       methodNames: var_methodNames,
       codeLen: var_codeLen,
+      codeHash: var_codeHash,
     );
   }
 
@@ -2267,6 +2270,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     sse_encode_bool(self.fullAccess, serializer);
     sse_encode_list_String(self.methodNames, serializer);
     sse_encode_opt_box_autoadd_u_32(self.codeLen, serializer);
+    sse_encode_opt_list_prim_u_8_strict(self.codeHash, serializer);
   }
 
   @protected
