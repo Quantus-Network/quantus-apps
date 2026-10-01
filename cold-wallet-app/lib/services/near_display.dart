@@ -171,6 +171,15 @@ class NearDisplay {
     return '${tx.actions.length} ACTIONS';
   }
 
+  /// Shown on every review beside the network label: the label is the
+  /// requesting wallet's word, and nothing in the signed bytes contradicts
+  /// or confirms it, so a signature made under a wrong label is still a
+  /// valid signature on whichever network the account and nonce exist.
+  static String networkDisclaimer(String network) =>
+      'Network as stated by the requesting wallet. The transaction bytes do not name a network, so this '
+      'cannot be checked here: the signature will be valid wherever the signer account and nonce exist. '
+      'Confirm your hot wallet is on $network before signing.';
+
   /// A naming-convention hint, not a verdict on the request. NEAR account IDs
   /// do not encode a network: the `network` label comes from the requesting
   /// wallet, and this only notices when a sub-account's top-level name is the

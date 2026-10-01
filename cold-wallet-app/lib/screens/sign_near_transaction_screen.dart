@@ -189,18 +189,35 @@ class _SignNearTransactionScreenState extends ConsumerState<SignNearTransactionS
     );
   }
 
+  /// The network label with its provenance. It is never shown bare: a
+  /// signer must not read it as something this device established.
   Widget _networkChip(BuildContext context) {
     final colors = context.colorsV3;
     final text = context.themeTextV3;
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-        decoration: BoxDecoration(color: colors.bgSurface2, borderRadius: context.radiusV3.xsBorder),
-        child: Text(
-          'NEAR · ${widget.request.network.toUpperCase()}',
-          style: text.labelMonogram.copyWith(color: colors.textContent, letterSpacing: 1.2),
-        ),
+    final network = widget.request.network;
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: colors.bgSurface2,
+        borderRadius: context.radiusV3.mdBorder,
+        border: Border.all(color: colors.textMuted.useOpacity(0.4)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text(
+                'NEAR · ${network.toUpperCase()}',
+                style: text.labelMonogram.copyWith(color: colors.textContent, letterSpacing: 1.2),
+              ),
+              const SizedBox(width: 8),
+              Text('UNVERIFIED', style: text.labelMonogram.copyWith(color: colors.semanticEmber, letterSpacing: 1.2)),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(NearDisplay.networkDisclaimer(network), style: text.caption.copyWith(color: colors.textMuted)),
+        ],
       ),
     );
   }

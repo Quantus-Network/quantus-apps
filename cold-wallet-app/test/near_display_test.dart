@@ -136,6 +136,13 @@ void main() {
     );
   });
 
+  test('the network disclaimer attributes the label and names the network to confirm', () {
+    final text = NearDisplay.networkDisclaimer('mainnet');
+    expect(text, startsWith('Network as stated by the requesting wallet.'));
+    expect(text, contains('do not name a network'));
+    expect(text, endsWith('Confirm your hot wallet is on mainnet before signing.'));
+  });
+
   group('NearDisplay.networkMismatch', () {
     test('is silent when names use the labelled network\'s suffix', () {
       expect(NearDisplay.networkMismatch(_tx(), 'testnet'), isNull);

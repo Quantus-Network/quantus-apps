@@ -80,6 +80,9 @@ void main() {
     await pump(tester, _tx(actions: [_transfer(_near * BigInt.from(15) ~/ BigInt.from(10))]));
 
     expect(find.text('NEAR · TESTNET'), findsOneWidget);
+    expect(find.text('UNVERIFIED'), findsOneWidget);
+    expect(find.textContaining('Network as stated by the requesting wallet'), findsOneWidget);
+    expect(find.textContaining('Confirm your hot wallet is on testnet'), findsOneWidget);
     final headline = tester.widget<Text>(find.text('SEND'));
     expect(headline.style?.color, colors.accentFlare);
     expect(find.textContaining('1.5', findRichText: true), findsOneWidget);
@@ -220,6 +223,23 @@ void main() {
     expect(find.text('Sign'), findsOneWidget);
   });
 
+  testWidgets('network-neutral account IDs still see the network marked as the wallet\'s claim', (tester) async {
+    // An implicit signer and an ETH-implicit receiver exist on every network:
+    // the suffix hint has nothing to say, so the standing notice is all there is.
+    await pump(
+      tester,
+      _tx(signer: 'a' * 64, receiver: '0x${'b' * 40}', actions: [_transfer(_near)]),
+      network: 'testnet',
+    );
+
+    expect(find.text('NEAR · TESTNET'), findsOneWidget);
+    expect(find.text('UNVERIFIED'), findsOneWidget);
+    expect(find.textContaining('The transaction bytes do not name a network'), findsOneWidget);
+    expect(find.textContaining('Confirm your hot wallet is on testnet'), findsOneWidget);
+    expect(find.text('Check the network'), findsNothing);
+    expect(find.text('Sign'), findsOneWidget);
+  });
+
   testWidgets('a mainnet transfer labelled mainnet is reviewed without a mismatch warning', (tester) async {
     await pump(
       tester,
@@ -228,6 +248,7 @@ void main() {
     );
 
     expect(find.text('NEAR · MAINNET'), findsOneWidget);
+    expect(find.text('UNVERIFIED'), findsOneWidget);
     expect(find.text('Check the network'), findsNothing);
   });
 
