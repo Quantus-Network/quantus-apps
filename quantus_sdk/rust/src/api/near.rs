@@ -130,11 +130,12 @@ struct WireTransaction {
 
 /// The kind of a [`NearAction`]. Everything but `Transfer` and
 /// `FunctionCall` changes who controls the account or what code it runs.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum NearActionKind {
     CreateAccount,
     DeployContract,
     FunctionCall,
+    #[default]
     Transfer,
     Stake,
     AddKey,
@@ -169,12 +170,6 @@ pub struct NearAction {
     pub method_names: Vec<String>,
     /// `DeployContract`: size of the code blob.
     pub code_len: Option<u32>,
-}
-
-impl Default for NearActionKind {
-    fn default() -> Self {
-        NearActionKind::Transfer
-    }
 }
 
 impl From<&WireAction> for NearAction {
@@ -269,7 +264,48 @@ pub struct NearTransaction {
 }
 
 fn decode_wire(bytes: &[u8]) -> Result<WireTransaction, String> {
-    borsh::from_slice(bytes).map_err(|e| format!("Not a borsh NEAR transaction: {e}"))
+    let wire: WireTransaction =
+        borsh::from_slice(bytes).map_err(|e| format!("Not a borsh NEAR transaction: {e}"))?;
+    check_account_id("signer", &wire.signer_id)?;
+    check_account_id("receiver", &wire.receiver_id)?;
+    for action in &wire.actions {
+        match action {
+            WireAction::DeleteAccount { beneficiary_id } => {
+                check_account_id("beneficiary", beneficiary_id)?
+            }
+            WireAction::AddKey { access_key, .. } => {
+                if let WireAccessKeyPermission::FunctionCall(p) = &access_key.permission {
+                    check_account_id("key receiver", &p.receiver_id)?
+                }
+            }
+            _ => {}
+        }
+    }
+    Ok(wire)
+}
+
+/// NEAR's account id rules: 2–64 chars of `a-z 0-9 _ - .`, separators never
+/// doubled or at either end of a part. The chain refuses anything else, and
+/// the check also keeps every account id shown to a signer plain ASCII.
+fn check_account_id(role: &str, id: &str) -> Result<(), String> {
+    let valid = (2..=64).contains(&id.len())
+        && id.split('.').all(|part| {
+            !part.is_empty()
+                && !part.starts_with(['-', '_'])
+                && !part.ends_with(['-', '_'])
+                && !part.contains("--")
+                && !part.contains("__")
+                && !part.contains("-_")
+                && !part.contains("_-")
+                && part
+                    .bytes()
+                    .all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || b == b'-' || b == b'_')
+        });
+    if valid {
+        Ok(())
+    } else {
+        Err(format!("Not a NEAR account id ({role}): {id:?}"))
+    }
 }
 
 /// Decode a borsh `TransactionV0`. Refuses trailing bytes.
@@ -465,6 +501,35 @@ mod tests {
             }]
         );
         assert_eq!(near_transaction_hash(bytes), tx.hash);
+    }
+
+    #[test]
+    fn rejects_account_ids_the_chain_would_refuse() {
+        for good in ["alice.testnet", "a1", "sub.a-b_c.near", &"a".repeat(64)] {
+            assert!(check_account_id("t", good).is_ok(), "{good}");
+        }
+        for bad in [
+            "a",
+            "Alice.testnet",
+            "alice..testnet",
+            ".alice",
+            "alice.",
+            "-alice",
+            "alice-",
+            "ali--ce",
+            "ali_-ce",
+            "alice\u{202E}testnet",
+            "alice testnet",
+            &"a".repeat(65),
+        ] {
+            assert!(check_account_id("t", bad).is_err(), "{bad:?}");
+        }
+
+        let mut bytes = b64(NEAR_CLI_UNSIGNED_B64);
+        // Flip the first byte of "alice.testnet" to an uppercase 'A'.
+        bytes[4] = b'A';
+        let err = decode_near_transaction(bytes).unwrap_err();
+        assert!(err.contains("signer"), "{err}");
     }
 
     #[test]
