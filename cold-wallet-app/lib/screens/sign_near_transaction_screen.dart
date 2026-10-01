@@ -126,7 +126,7 @@ class _SignNearTransactionScreenState extends ConsumerState<SignNearTransactionS
           children: [
             const SizedBox(height: 8),
             _networkChip(context),
-            if (mismatch != null) _warningBanner(context, title: 'Network does not match', body: mismatch),
+            if (mismatch != null) _warningBanner(context, title: 'Check the network', body: mismatch),
             if (dangerous)
               _warningBanner(
                 context,

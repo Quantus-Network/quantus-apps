@@ -91,7 +91,7 @@ void main() {
     expect(find.text(owner), findsOneWidget);
     expect(find.text('amber glacier quartz'), findsOneWidget);
     expect(find.text('Sign'), findsOneWidget);
-    expect(find.textContaining('Network does not match'), findsNothing);
+    expect(find.textContaining('Check the network'), findsNothing);
     expect(find.textContaining('changes control'), findsNothing);
   });
 
@@ -187,12 +187,12 @@ void main() {
     expect(find.text('ref-finance.testnet'), findsOneWidget);
   });
 
-  testWidgets('warns when the account names do not belong to the labelled network', (tester) async {
+  testWidgets('hints when the account names use the other network\'s suffix', (tester) async {
     await pump(tester, _tx(actions: [_transfer(_near)]), network: 'mainnet');
 
     expect(find.text('NEAR · MAINNET'), findsOneWidget);
-    expect(find.text('Network does not match'), findsOneWidget);
-    expect(find.textContaining('alice.testnet and bob.testnet are not mainnet'), findsOneWidget);
+    expect(find.text('Check the network'), findsOneWidget);
+    expect(find.textContaining('alice.testnet and bob.testnet end in .testnet'), findsOneWidget);
     expect(find.text('Sign'), findsOneWidget);
   });
 
@@ -204,7 +204,7 @@ void main() {
     );
 
     expect(find.text('NEAR · MAINNET'), findsOneWidget);
-    expect(find.text('Network does not match'), findsNothing);
+    expect(find.text('Check the network'), findsNothing);
   });
 
   testWidgets('refuses a key no account here holds, and offers no Sign', (tester) async {

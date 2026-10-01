@@ -110,19 +110,40 @@ void main() {
   });
 
   group('NearDisplay.networkMismatch', () {
-    test('is silent when names match the network or are implicit', () {
+    test('is silent when names use the labelled network\'s suffix', () {
       expect(NearDisplay.networkMismatch(_tx(), 'testnet'), isNull);
       expect(NearDisplay.networkMismatch(_tx(signer: 'alice.near', receiver: 'bob.near'), 'mainnet'), isNull);
+    });
+
+    test('never flags accounts whose names carry no network convention', () {
+      // Top-level accounts exist on every network and are created by the registrar.
+      expect(NearDisplay.networkMismatch(_tx(signer: 'near', receiver: 'alice.near'), 'mainnet'), isNull);
+      expect(NearDisplay.networkMismatch(_tx(signer: 'registrar', receiver: 'com'), 'testnet'), isNull);
+      // NEAR-implicit, ETH-implicit and NEAR-deterministic account IDs.
       expect(NearDisplay.networkMismatch(_tx(signer: 'a' * 64, receiver: '0x${'b' * 40}'), 'mainnet'), isNull);
+      expect(NearDisplay.networkMismatch(_tx(signer: '0s${'c' * 40}', receiver: 'a' * 64), 'testnet'), isNull);
+      // Other sub-account hierarchies (e.g. .com, .aurora, .tg) say nothing about the network.
+      expect(NearDisplay.networkMismatch(_tx(signer: 'alice.aurora', receiver: 'bob.tg'), 'mainnet'), isNull);
+      expect(NearDisplay.networkMismatch(_tx(signer: 'alice.aurora', receiver: 'bob.tg'), 'testnet'), isNull);
+    });
+
+    test('rejects a label the request envelope should never have let through', () {
       expect(() => NearDisplay.networkMismatch(_tx(), 'localnet'), throwsArgumentError);
       expect(() => NearDisplay.networkMismatch(_tx(), 'testnet '), throwsArgumentError);
     });
 
-    test('names each account that does not belong to the network', () {
-      expect(NearDisplay.networkMismatch(_tx(), 'mainnet'), contains('alice.testnet and bob.testnet are not mainnet'));
+    test('names each account that uses the other network\'s suffix, as a hint', () {
+      final both = NearDisplay.networkMismatch(_tx(), 'mainnet')!;
+      expect(both, contains('The requesting wallet labelled this mainnet'));
+      expect(both, contains('alice.testnet and bob.testnet end in .testnet, the name usually used on testnet'));
+      expect(both, contains('Account names do not prove a network'));
       expect(
         NearDisplay.networkMismatch(_tx(signer: 'alice.near'), 'mainnet'),
-        contains('bob.testnet is not a mainnet account name'),
+        contains('bob.testnet ends in .testnet'),
+      );
+      expect(
+        NearDisplay.networkMismatch(_tx(signer: 'alice.near', receiver: 'bob.testnet'), 'testnet'),
+        contains('alice.near ends in .near, the name usually used on mainnet'),
       );
     });
   });

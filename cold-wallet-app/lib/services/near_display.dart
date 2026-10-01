@@ -158,24 +158,28 @@ class NearDisplay {
     return '${tx.actions.length} ACTIONS';
   }
 
-  /// The envelope's network is only a label the hot wallet attached; the
-  /// account names are what the chain will see. Named accounts end in the
-  /// network's top-level name, so a mismatch means one side is wrong. Only
-  /// the labels [NearSigningRequest.supportedNetworks] admits reach here;
-  /// anything else is a bug upstream and is reported, never passed over.
+  /// A naming-convention hint, not a verdict on the request. NEAR account IDs
+  /// do not encode a network: the `network` label comes from the requesting
+  /// wallet, and this only notices when a sub-account's top-level name is the
+  /// *other* network's customary one (`.near` on mainnet, `.testnet` on
+  /// testnet). Top-level accounts (`near`, `registrar`), implicit accounts
+  /// (64 hex, `0x` + 40 hex) and deterministic accounts (`0s` + 40 hex) carry
+  /// no such convention and are never flagged. Only the labels
+  /// [NearSigningRequest.supportedNetworks] admits reach here; anything else
+  /// is a bug upstream and is reported, never passed over.
   static String? networkMismatch(NearTransaction tx, String network) {
-    final tld = switch (network) {
-      'mainnet' => '.near',
-      'testnet' => '.testnet',
+    final otherTld = switch (network) {
+      'mainnet' => '.testnet',
+      'testnet' => '.near',
       _ => throw ArgumentError.value(network, 'network', 'not a supported NEAR network'),
     };
-    final mismatched = [tx.signerId, tx.receiverId].where((id) => _isNamed(id) && !id.endsWith(tld)).toList();
-    if (mismatched.isEmpty) return null;
-    return 'This request says $network, but ${mismatched.join(' and ')} '
-        '${mismatched.length == 1 ? 'is not a' : 'are not'} $network account name'
-        '${mismatched.length == 1 ? '' : 's'}. Check which network your hot wallet is on before signing.';
+    final suspicious = [tx.signerId, tx.receiverId].where((id) => id.endsWith(otherTld)).toList();
+    if (suspicious.isEmpty) return null;
+    final plural = suspicious.length > 1;
+    return 'The requesting wallet labelled this $network, but ${suspicious.join(' and ')} '
+        '${plural ? 'end' : 'ends'} in $otherTld, the name usually used on ${_networkOf(otherTld)}. '
+        'Account names do not prove a network; check which one your hot wallet is on before signing.';
   }
 
-  /// Implicit accounts (64 hex, or `0x` + 40 hex) belong to every network.
-  static bool _isNamed(String accountId) => !RegExp(r'^([0-9a-f]{64}|0x[0-9a-f]{40})$').hasMatch(accountId);
+  static String _networkOf(String tld) => tld == '.near' ? 'mainnet' : 'testnet';
 }
