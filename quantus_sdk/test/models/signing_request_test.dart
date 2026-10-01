@@ -75,4 +75,75 @@ void main() {
       );
     });
   });
+
+  group('NearSigningRequest (version 2)', () {
+    final transaction = Uint8List.fromList([0x0d, 0, 0, 0, 0x61]);
+    final nearJson = {'v': 2, 'chain': 'near', 'network': 'mainnet', 'payload': '0x0d00000061'};
+
+    test('round-trips the network and the transaction', () {
+      final decoded = NearSigningRequest.decode(
+        NearSigningRequest(network: 'testnet', transaction: transaction).encode(),
+      );
+
+      expect(decoded.network, 'testnet');
+      expect(decoded.transaction, transaction);
+    });
+
+    test('carries exactly the keys the CLI writes', () {
+      final json = jsonDecode(utf8.decode(NearSigningRequest(network: 'mainnet', transaction: transaction).encode()));
+
+      expect(json, nearJson);
+    });
+
+    test('is what AnySigningRequest.decode returns for v2, and v1 stays v1', () {
+      final near = AnySigningRequest.decode(envelope(nearJson));
+      expect(near, isA<NearSigningRequest>().having((r) => r.network, 'network', 'mainnet'));
+
+      final quantus = AnySigningRequest.decode(SigningRequest(signer: signer, payload: payload).encode());
+      expect(quantus, isA<SigningRequest>().having((r) => r.signer, 'signer', signer));
+
+      expect(
+        () => AnySigningRequest.decode(envelope({'v': 3, 'payload': '0x00'})),
+        throwsA(isA<UnsupportedSigningRequestVersionException>().having((e) => e.requested, 'requested', 3)),
+      );
+      expect(() => AnySigningRequest.decode(payload), throwsFormatException);
+    });
+
+    test('rejects another chain, version 1, an empty network, a signer key, a missing key', () {
+      expect(() => NearSigningRequest.decode(envelope({...nearJson, 'chain': 'solana'})), throwsFormatException);
+      expect(
+        () => NearSigningRequest.decode(envelope({...nearJson, 'v': 1})),
+        throwsA(isA<UnsupportedSigningRequestVersionException>()),
+      );
+      expect(() => NearSigningRequest.decode(envelope({...nearJson, 'network': ''})), throwsFormatException);
+      expect(() => NearSigningRequest.decode(envelope({...nearJson, 'signer': signer})), throwsFormatException);
+      expect(() => NearSigningRequest.decode(envelope({...nearJson}..remove('network'))), throwsFormatException);
+      expect(() => NearSigningRequest.decode(envelope({...nearJson, 'payload': '0x'})), throwsFormatException);
+      expect(() => NearSigningRequest.decode(envelope({...nearJson, 'payload': 'abcd'})), throwsFormatException);
+    });
+
+    test('accepts only the exact supported network labels, never a lookalike', () {
+      for (final network in NearSigningRequest.supportedNetworks) {
+        expect(NearSigningRequest.decode(envelope({...nearJson, 'network': network})).network, network);
+      }
+      // A trailing space, different case, or a zero-width character would
+      // read as "testnet" on screen while disabling the testnet checks.
+      for (final lookalike in [
+        'testnet ',
+        ' testnet',
+        'Testnet',
+        'TESTNET',
+        'test\u200Bnet',
+        'mainnet\n',
+        'localnet',
+      ]) {
+        expect(
+          () => NearSigningRequest.decode(envelope({...nearJson, 'network': lookalike})),
+          throwsFormatException,
+          reason: jsonEncode(lookalike),
+        );
+      }
+      expect(() => NearSigningRequest.decode(envelope({...nearJson, 'network': 1})), throwsFormatException);
+    });
+  });
 }

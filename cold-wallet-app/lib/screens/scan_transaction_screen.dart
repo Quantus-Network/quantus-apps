@@ -4,6 +4,7 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:quantus_cold_wallet/app_version.dart';
 import 'package:quantus_cold_wallet/debug/debug_calls_screen.dart';
+import 'package:quantus_cold_wallet/screens/sign_near_transaction_screen.dart';
 import 'package:quantus_cold_wallet/screens/sign_transaction_screen.dart';
 
 /// Scans a (possibly multi-part / animated) UR QR code, accumulating parts
@@ -80,10 +81,16 @@ class _ScanTransactionScreenState extends State<ScanTransactionScreen> {
 
     _done = true;
     try {
-      final request = SigningRequest.decode(decodeUr(urParts: parts));
+      final screen = switch (AnySigningRequest.decode(decodeUr(urParts: parts))) {
+        final SigningRequest request => SignTransactionScreen(request: request),
+        final NearSigningRequest request => SignNearTransactionScreen(
+          request: request,
+          transaction: decodeNearTransaction(transaction: request.transaction),
+        ),
+      };
       _controller.stop();
       if (!mounted) return;
-      Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => SignTransactionScreen(request: request)));
+      Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => screen));
     } catch (e) {
       debugPrint('Rejected signing request QR: $e');
       // Keeping the parts would make every replayed frame a duplicate, so the
@@ -92,6 +99,8 @@ class _ScanTransactionScreenState extends State<ScanTransactionScreen> {
       _restartAccumulation(switch (e) {
         UnsupportedSigningRequestVersionException() => '${e.message}. $updateAppHint $currentAppVersion',
         FormatException() => 'Not a Quantus signing request: ${e.message}',
+        // decodeNearTransaction reports a malformed transaction as a bare string.
+        String() => 'Could not read the NEAR transaction: $e',
         _ => 'Failed to decode QR: $e',
       });
     }

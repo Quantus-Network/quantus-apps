@@ -4,7 +4,7 @@
 // ignore_for_file: invalid_use_of_internal_member, unused_import, unnecessary_import
 
 import '../frb_generated.dart';
-import 'package:collection/collection.dart';
+import '../lib.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
 // These functions are ignored because they are not marked as `pub`: `ml_dsa_87_from_entropy`, `new`
@@ -119,18 +119,6 @@ class Keypair {
           publicKey == other.publicKey &&
           secretKey == other.secretKey &&
           scheme == other.scheme;
-}
-
-class U8Array32 extends NonGrowableListView<int> {
-  static const arraySize = 32;
-
-  @internal
-  Uint8List get inner => _inner;
-  final Uint8List _inner;
-
-  U8Array32(this._inner) : assert(_inner.length == arraySize), super(_inner);
-
-  U8Array32.init() : this(Uint8List(arraySize));
 }
 
 class WormholeResult {

@@ -39,7 +39,7 @@ flutter_rust_bridge::frb_generated_boilerplate!(
     default_rust_auto_opaque = RustAutoOpaqueMoi,
 );
 pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_VERSION: &str = "2.12.0";
-pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = -1962506674;
+pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = -91816623;
 
 // Section: executor
 
@@ -463,6 +463,36 @@ fn wire__crate__api__wormhole__decode_leaf_transfer_count_impl(
             deserializer.end();
             transform_result_sse::<_, String>((move || {
                 let output_ok = crate::api::wormhole::decode_leaf_transfer_count(api_leaf_data)?;
+                Ok(output_ok)
+            })())
+        },
+    )
+}
+fn wire__crate__api__near__decode_near_transaction_impl(
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) -> flutter_rust_bridge::for_generated::WireSyncRust2DartSse {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_sync::<flutter_rust_bridge::for_generated::SseCodec, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "decode_near_transaction",
+            port: None,
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Sync,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_transaction = <Vec<u8>>::sse_decode(&mut deserializer);
+            deserializer.end();
+            transform_result_sse::<_, String>((move || {
+                let output_ok = crate::api::near::decode_near_transaction(api_transaction)?;
                 Ok(output_ok)
             })())
         },
@@ -922,6 +952,162 @@ fn wire__crate__api__ur__max_ur_parts_impl(
         },
     )
 }
+fn wire__crate__api__near__near_action_default_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "near_action_default",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, ()>((move || {
+                    let output_ok = Result::<_, ()>::Ok(crate::api::near::NearAction::default())?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__api__near__near_action_kind_default_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "near_action_kind_default",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, ()>((move || {
+                    let output_ok =
+                        Result::<_, ()>::Ok(crate::api::near::NearActionKind::default())?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__api__near__near_public_key_handle_impl(
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) -> flutter_rust_bridge::for_generated::WireSyncRust2DartSse {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_sync::<flutter_rust_bridge::for_generated::SseCodec, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "near_public_key_handle",
+            port: None,
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Sync,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_keypair = <crate::api::crypto::Keypair>::sse_decode(&mut deserializer);
+            deserializer.end();
+            transform_result_sse::<_, String>((move || {
+                let output_ok = crate::api::near::near_public_key_handle(&api_keypair)?;
+                Ok(output_ok)
+            })())
+        },
+    )
+}
+fn wire__crate__api__near__near_public_key_text_impl(
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) -> flutter_rust_bridge::for_generated::WireSyncRust2DartSse {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_sync::<flutter_rust_bridge::for_generated::SseCodec, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "near_public_key_text",
+            port: None,
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Sync,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_keypair = <crate::api::crypto::Keypair>::sse_decode(&mut deserializer);
+            deserializer.end();
+            transform_result_sse::<_, String>((move || {
+                let output_ok = crate::api::near::near_public_key_text(&api_keypair)?;
+                Ok(output_ok)
+            })())
+        },
+    )
+}
+fn wire__crate__api__near__near_transaction_hash_impl(
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) -> flutter_rust_bridge::for_generated::WireSyncRust2DartSse {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_sync::<flutter_rust_bridge::for_generated::SseCodec, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "near_transaction_hash",
+            port: None,
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Sync,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_transaction = <Vec<u8>>::sse_decode(&mut deserializer);
+            deserializer.end();
+            transform_result_sse::<_, ()>((move || {
+                let output_ok =
+                    Result::<_, ()>::Ok(crate::api::near::near_transaction_hash(api_transaction))?;
+                Ok(output_ok)
+            })())
+        },
+    )
+}
 fn wire__crate__api__multisig__predict_multisig_address_impl(
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -1165,6 +1351,42 @@ fn wire__crate__api__crypto__sign_message_with_pubkey_impl(
         },
     )
 }
+fn wire__crate__api__near__sign_near_transaction_impl(
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) -> flutter_rust_bridge::for_generated::WireSyncRust2DartSse {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_sync::<flutter_rust_bridge::for_generated::SseCodec, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "sign_near_transaction",
+            port: None,
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Sync,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_keypair = <crate::api::crypto::Keypair>::sse_decode(&mut deserializer);
+            let api_transaction = <Vec<u8>>::sse_decode(&mut deserializer);
+            let api_entropy = <Option<[u8; 32]>>::sse_decode(&mut deserializer);
+            deserializer.end();
+            transform_result_sse::<_, String>((move || {
+                let output_ok = crate::api::near::sign_near_transaction(
+                    &api_keypair,
+                    api_transaction,
+                    api_entropy,
+                )?;
+                Ok(output_ok)
+            })())
+        },
+    )
+}
 fn wire__crate__api__crypto__signature_bytes_impl(
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -1294,6 +1516,42 @@ fn wire__crate__api__crypto__verify_message_impl(
         },
     )
 }
+fn wire__crate__api__near__verify_near_signature_impl(
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) -> flutter_rust_bridge::for_generated::WireSyncRust2DartSse {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_sync::<flutter_rust_bridge::for_generated::SseCodec, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "verify_near_signature",
+            port: None,
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Sync,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_public_key = <Vec<u8>>::sse_decode(&mut deserializer);
+            let api_transaction = <Vec<u8>>::sse_decode(&mut deserializer);
+            let api_signature = <Vec<u8>>::sse_decode(&mut deserializer);
+            deserializer.end();
+            transform_result_sse::<_, ()>((move || {
+                let output_ok = Result::<_, ()>::Ok(crate::api::near::verify_near_signature(
+                    api_public_key,
+                    api_transaction,
+                    api_signature,
+                ))?;
+                Ok(output_ok)
+            })())
+        },
+    )
+}
 fn wire__crate__api__wormhole__wormhole_compute_output_amount_impl(
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -1391,6 +1649,14 @@ impl SseDecode for String {
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut inner = <Vec<u8>>::sse_decode(deserializer);
         return String::from_utf8(inner).unwrap();
+    }
+}
+
+impl SseDecode for u128 {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut inner = <String>::sse_decode(deserializer);
+        return inner.parse().unwrap();
     }
 }
 
@@ -1521,6 +1787,18 @@ impl SseDecode for Vec<Vec<u8>> {
     }
 }
 
+impl SseDecode for Vec<crate::api::near::NearAction> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut len_ = <i32>::sse_decode(deserializer);
+        let mut ans_ = Vec::with_capacity(len_ as usize);
+        for idx_ in 0..len_ {
+            ans_.push(<crate::api::near::NearAction>::sse_decode(deserializer));
+        }
+        return ans_;
+    }
+}
+
 impl SseDecode for Vec<u8> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
@@ -1545,6 +1823,78 @@ impl SseDecode for crate::api::wormhole::MerkleProcessed {
     }
 }
 
+impl SseDecode for crate::api::near::NearAction {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_kind = <crate::api::near::NearActionKind>::sse_decode(deserializer);
+        let mut var_target = <Option<String>>::sse_decode(deserializer);
+        let mut var_args = <Option<Vec<u8>>>::sse_decode(deserializer);
+        let mut var_gas = <Option<u64>>::sse_decode(deserializer);
+        let mut var_amount = <Option<u128>>::sse_decode(deserializer);
+        let mut var_publicKey = <Option<String>>::sse_decode(deserializer);
+        let mut var_fullAccess = <bool>::sse_decode(deserializer);
+        let mut var_methodNames = <Vec<String>>::sse_decode(deserializer);
+        let mut var_codeLen = <Option<u32>>::sse_decode(deserializer);
+        let mut var_codeHash = <Option<Vec<u8>>>::sse_decode(deserializer);
+        return crate::api::near::NearAction {
+            kind: var_kind,
+            target: var_target,
+            args: var_args,
+            gas: var_gas,
+            amount: var_amount,
+            public_key: var_publicKey,
+            full_access: var_fullAccess,
+            method_names: var_methodNames,
+            code_len: var_codeLen,
+            code_hash: var_codeHash,
+        };
+    }
+}
+
+impl SseDecode for crate::api::near::NearActionKind {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut inner = <i32>::sse_decode(deserializer);
+        return match inner {
+            0 => crate::api::near::NearActionKind::CreateAccount,
+            1 => crate::api::near::NearActionKind::DeployContract,
+            2 => crate::api::near::NearActionKind::FunctionCall,
+            3 => crate::api::near::NearActionKind::Transfer,
+            4 => crate::api::near::NearActionKind::Stake,
+            5 => crate::api::near::NearActionKind::AddKey,
+            6 => crate::api::near::NearActionKind::DeleteKey,
+            7 => crate::api::near::NearActionKind::DeleteAccount,
+            _ => unreachable!("Invalid variant for NearActionKind: {}", inner),
+        };
+    }
+}
+
+impl SseDecode for crate::api::near::NearTransaction {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_signerId = <String>::sse_decode(deserializer);
+        let mut var_publicKey = <String>::sse_decode(deserializer);
+        let mut var_publicKeyBytes = <Vec<u8>>::sse_decode(deserializer);
+        let mut var_signsWithMlDsa65 = <bool>::sse_decode(deserializer);
+        let mut var_nonce = <u64>::sse_decode(deserializer);
+        let mut var_receiverId = <String>::sse_decode(deserializer);
+        let mut var_blockHash = <String>::sse_decode(deserializer);
+        let mut var_hash = <Vec<u8>>::sse_decode(deserializer);
+        let mut var_actions = <Vec<crate::api::near::NearAction>>::sse_decode(deserializer);
+        return crate::api::near::NearTransaction {
+            signer_id: var_signerId,
+            public_key: var_publicKey,
+            public_key_bytes: var_publicKeyBytes,
+            signs_with_ml_dsa_65: var_signsWithMlDsa65,
+            nonce: var_nonce,
+            receiver_id: var_receiverId,
+            block_hash: var_blockHash,
+            hash: var_hash,
+            actions: var_actions,
+        };
+    }
+}
+
 impl SseDecode for Option<String> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
@@ -1556,11 +1906,33 @@ impl SseDecode for Option<String> {
     }
 }
 
+impl SseDecode for Option<u128> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        if (<bool>::sse_decode(deserializer)) {
+            return Some(<u128>::sse_decode(deserializer));
+        } else {
+            return None;
+        }
+    }
+}
+
 impl SseDecode for Option<u32> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         if (<bool>::sse_decode(deserializer)) {
             return Some(<u32>::sse_decode(deserializer));
+        } else {
+            return None;
+        }
+    }
+}
+
+impl SseDecode for Option<u64> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        if (<bool>::sse_decode(deserializer)) {
+            return Some(<u64>::sse_decode(deserializer));
         } else {
             return None;
         }
@@ -1743,18 +2115,22 @@ fn pde_ffi_dispatcher_primary_impl(
             rust_vec_len,
             data_len,
         ),
-        17 => wire__crate__api__wormhole__ensure_circuit_binaries_impl(
+        18 => wire__crate__api__wormhole__ensure_circuit_binaries_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        18 => {
+        19 => {
             wire__crate__api__airdrop__find_airdrop_matches_impl(port, ptr, rust_vec_len, data_len)
         }
-        23 => wire__crate__api__wormhole__generate_proof_impl(port, ptr, rust_vec_len, data_len),
-        24 => wire__crate__api__crypto__init_app_impl(port, ptr, rust_vec_len, data_len),
-        29 => wire__crate__api__airdrop__prove_airdrop_wormhole_impl(
+        24 => wire__crate__api__wormhole__generate_proof_impl(port, ptr, rust_vec_len, data_len),
+        25 => wire__crate__api__crypto__init_app_impl(port, ptr, rust_vec_len, data_len),
+        29 => wire__crate__api__near__near_action_default_impl(port, ptr, rust_vec_len, data_len),
+        30 => {
+            wire__crate__api__near__near_action_kind_default_impl(port, ptr, rust_vec_len, data_len)
+        }
+        35 => wire__crate__api__airdrop__prove_airdrop_wormhole_impl(
             port,
             ptr,
             rust_vec_len,
@@ -1784,36 +2160,42 @@ fn pde_ffi_dispatcher_sync_impl(
         13 => {
             wire__crate__api__wormhole__decode_leaf_transfer_count_impl(ptr, rust_vec_len, data_len)
         }
-        14 => wire__crate__api__ur__decode_ur_impl(ptr, rust_vec_len, data_len),
-        15 => wire__crate__api__crypto__derive_wormhole_impl(ptr, rust_vec_len, data_len),
-        16 => wire__crate__api__ur__encode_ur_impl(ptr, rust_vec_len, data_len),
-        19 => wire__crate__api__crypto__first_hash_to_address_impl(ptr, rust_vec_len, data_len),
-        20 => wire__crate__api__crypto__generate_derived_keypair_impl(ptr, rust_vec_len, data_len),
-        21 => wire__crate__api__crypto__generate_keypair_impl(ptr, rust_vec_len, data_len),
-        22 => {
+        14 => wire__crate__api__near__decode_near_transaction_impl(ptr, rust_vec_len, data_len),
+        15 => wire__crate__api__ur__decode_ur_impl(ptr, rust_vec_len, data_len),
+        16 => wire__crate__api__crypto__derive_wormhole_impl(ptr, rust_vec_len, data_len),
+        17 => wire__crate__api__ur__encode_ur_impl(ptr, rust_vec_len, data_len),
+        20 => wire__crate__api__crypto__first_hash_to_address_impl(ptr, rust_vec_len, data_len),
+        21 => wire__crate__api__crypto__generate_derived_keypair_impl(ptr, rust_vec_len, data_len),
+        22 => wire__crate__api__crypto__generate_keypair_impl(ptr, rust_vec_len, data_len),
+        23 => {
             wire__crate__api__crypto__generate_keypair_from_seed_impl(ptr, rust_vec_len, data_len)
         }
-        25 => wire__crate__api__ur__is_complete_ur_impl(ptr, rust_vec_len, data_len),
-        26 => wire__crate__api__ur__max_ur_part_chars_impl(ptr, rust_vec_len, data_len),
-        27 => wire__crate__api__ur__max_ur_parts_impl(ptr, rust_vec_len, data_len),
-        28 => {
+        26 => wire__crate__api__ur__is_complete_ur_impl(ptr, rust_vec_len, data_len),
+        27 => wire__crate__api__ur__max_ur_part_chars_impl(ptr, rust_vec_len, data_len),
+        28 => wire__crate__api__ur__max_ur_parts_impl(ptr, rust_vec_len, data_len),
+        31 => wire__crate__api__near__near_public_key_handle_impl(ptr, rust_vec_len, data_len),
+        32 => wire__crate__api__near__near_public_key_text_impl(ptr, rust_vec_len, data_len),
+        33 => wire__crate__api__near__near_transaction_hash_impl(ptr, rust_vec_len, data_len),
+        34 => {
             wire__crate__api__multisig__predict_multisig_address_impl(ptr, rust_vec_len, data_len)
         }
-        30 => wire__crate__api__crypto__public_key_bytes_impl(ptr, rust_vec_len, data_len),
-        31 => wire__crate__api__crypto__secret_key_bytes_impl(ptr, rust_vec_len, data_len),
-        32 => wire__crate__api__crypto__set_default_ss58_prefix_impl(ptr, rust_vec_len, data_len),
-        33 => wire__crate__api__crypto__sign_message_impl(ptr, rust_vec_len, data_len),
-        34 => wire__crate__api__crypto__sign_message_with_pubkey_impl(ptr, rust_vec_len, data_len),
-        35 => wire__crate__api__crypto__signature_bytes_impl(ptr, rust_vec_len, data_len),
-        36 => wire__crate__api__crypto__ss58_to_account_id_impl(ptr, rust_vec_len, data_len),
-        37 => wire__crate__api__crypto__to_account_id_impl(ptr, rust_vec_len, data_len),
-        38 => wire__crate__api__crypto__verify_message_impl(ptr, rust_vec_len, data_len),
-        39 => wire__crate__api__wormhole__wormhole_compute_output_amount_impl(
+        36 => wire__crate__api__crypto__public_key_bytes_impl(ptr, rust_vec_len, data_len),
+        37 => wire__crate__api__crypto__secret_key_bytes_impl(ptr, rust_vec_len, data_len),
+        38 => wire__crate__api__crypto__set_default_ss58_prefix_impl(ptr, rust_vec_len, data_len),
+        39 => wire__crate__api__crypto__sign_message_impl(ptr, rust_vec_len, data_len),
+        40 => wire__crate__api__crypto__sign_message_with_pubkey_impl(ptr, rust_vec_len, data_len),
+        41 => wire__crate__api__near__sign_near_transaction_impl(ptr, rust_vec_len, data_len),
+        42 => wire__crate__api__crypto__signature_bytes_impl(ptr, rust_vec_len, data_len),
+        43 => wire__crate__api__crypto__ss58_to_account_id_impl(ptr, rust_vec_len, data_len),
+        44 => wire__crate__api__crypto__to_account_id_impl(ptr, rust_vec_len, data_len),
+        45 => wire__crate__api__crypto__verify_message_impl(ptr, rust_vec_len, data_len),
+        46 => wire__crate__api__near__verify_near_signature_impl(ptr, rust_vec_len, data_len),
+        47 => wire__crate__api__wormhole__wormhole_compute_output_amount_impl(
             ptr,
             rust_vec_len,
             data_len,
         ),
-        40 => wire__crate__api__wormhole__zk_circuits_version_impl(ptr, rust_vec_len, data_len),
+        48 => wire__crate__api__wormhole__zk_circuits_version_impl(ptr, rust_vec_len, data_len),
         _ => unreachable!(),
     }
 }
@@ -1948,6 +2330,87 @@ impl flutter_rust_bridge::IntoIntoDart<crate::api::wormhole::MerkleProcessed>
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::api::near::NearAction {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.kind.into_into_dart().into_dart(),
+            self.target.into_into_dart().into_dart(),
+            self.args.into_into_dart().into_dart(),
+            self.gas.into_into_dart().into_dart(),
+            self.amount.into_into_dart().into_dart(),
+            self.public_key.into_into_dart().into_dart(),
+            self.full_access.into_into_dart().into_dart(),
+            self.method_names.into_into_dart().into_dart(),
+            self.code_len.into_into_dart().into_dart(),
+            self.code_hash.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::api::near::NearAction {}
+impl flutter_rust_bridge::IntoIntoDart<crate::api::near::NearAction>
+    for crate::api::near::NearAction
+{
+    fn into_into_dart(self) -> crate::api::near::NearAction {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::api::near::NearActionKind {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        match self {
+            Self::CreateAccount => 0.into_dart(),
+            Self::DeployContract => 1.into_dart(),
+            Self::FunctionCall => 2.into_dart(),
+            Self::Transfer => 3.into_dart(),
+            Self::Stake => 4.into_dart(),
+            Self::AddKey => 5.into_dart(),
+            Self::DeleteKey => 6.into_dart(),
+            Self::DeleteAccount => 7.into_dart(),
+            _ => unreachable!(),
+        }
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::api::near::NearActionKind
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::api::near::NearActionKind>
+    for crate::api::near::NearActionKind
+{
+    fn into_into_dart(self) -> crate::api::near::NearActionKind {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::api::near::NearTransaction {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.signer_id.into_into_dart().into_dart(),
+            self.public_key.into_into_dart().into_dart(),
+            self.public_key_bytes.into_into_dart().into_dart(),
+            self.signs_with_ml_dsa_65.into_into_dart().into_dart(),
+            self.nonce.into_into_dart().into_dart(),
+            self.receiver_id.into_into_dart().into_dart(),
+            self.block_hash.into_into_dart().into_dart(),
+            self.hash.into_into_dart().into_dart(),
+            self.actions.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::api::near::NearTransaction
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::api::near::NearTransaction>
+    for crate::api::near::NearTransaction
+{
+    fn into_into_dart(self) -> crate::api::near::NearTransaction {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
 impl flutter_rust_bridge::IntoDart for crate::api::wormhole::ProofInput {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
@@ -2075,6 +2538,13 @@ impl SseEncode for String {
     }
 }
 
+impl SseEncode for u128 {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <String>::sse_encode(self.to_string(), serializer);
+    }
+}
+
 impl SseEncode for crate::api::airdrop::AirdropMatch {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
@@ -2176,6 +2646,16 @@ impl SseEncode for Vec<Vec<u8>> {
     }
 }
 
+impl SseEncode for Vec<crate::api::near::NearAction> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <i32>::sse_encode(self.len() as _, serializer);
+        for item in self {
+            <crate::api::near::NearAction>::sse_encode(item, serializer);
+        }
+    }
+}
+
 impl SseEncode for Vec<u8> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
@@ -2194,6 +2674,59 @@ impl SseEncode for crate::api::wormhole::MerkleProcessed {
     }
 }
 
+impl SseEncode for crate::api::near::NearAction {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <crate::api::near::NearActionKind>::sse_encode(self.kind, serializer);
+        <Option<String>>::sse_encode(self.target, serializer);
+        <Option<Vec<u8>>>::sse_encode(self.args, serializer);
+        <Option<u64>>::sse_encode(self.gas, serializer);
+        <Option<u128>>::sse_encode(self.amount, serializer);
+        <Option<String>>::sse_encode(self.public_key, serializer);
+        <bool>::sse_encode(self.full_access, serializer);
+        <Vec<String>>::sse_encode(self.method_names, serializer);
+        <Option<u32>>::sse_encode(self.code_len, serializer);
+        <Option<Vec<u8>>>::sse_encode(self.code_hash, serializer);
+    }
+}
+
+impl SseEncode for crate::api::near::NearActionKind {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <i32>::sse_encode(
+            match self {
+                crate::api::near::NearActionKind::CreateAccount => 0,
+                crate::api::near::NearActionKind::DeployContract => 1,
+                crate::api::near::NearActionKind::FunctionCall => 2,
+                crate::api::near::NearActionKind::Transfer => 3,
+                crate::api::near::NearActionKind::Stake => 4,
+                crate::api::near::NearActionKind::AddKey => 5,
+                crate::api::near::NearActionKind::DeleteKey => 6,
+                crate::api::near::NearActionKind::DeleteAccount => 7,
+                _ => {
+                    unimplemented!("");
+                }
+            },
+            serializer,
+        );
+    }
+}
+
+impl SseEncode for crate::api::near::NearTransaction {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <String>::sse_encode(self.signer_id, serializer);
+        <String>::sse_encode(self.public_key, serializer);
+        <Vec<u8>>::sse_encode(self.public_key_bytes, serializer);
+        <bool>::sse_encode(self.signs_with_ml_dsa_65, serializer);
+        <u64>::sse_encode(self.nonce, serializer);
+        <String>::sse_encode(self.receiver_id, serializer);
+        <String>::sse_encode(self.block_hash, serializer);
+        <Vec<u8>>::sse_encode(self.hash, serializer);
+        <Vec<crate::api::near::NearAction>>::sse_encode(self.actions, serializer);
+    }
+}
+
 impl SseEncode for Option<String> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
@@ -2204,12 +2737,32 @@ impl SseEncode for Option<String> {
     }
 }
 
+impl SseEncode for Option<u128> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <bool>::sse_encode(self.is_some(), serializer);
+        if let Some(value) = self {
+            <u128>::sse_encode(value, serializer);
+        }
+    }
+}
+
 impl SseEncode for Option<u32> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         <bool>::sse_encode(self.is_some(), serializer);
         if let Some(value) = self {
             <u32>::sse_encode(value, serializer);
+        }
+    }
+}
+
+impl SseEncode for Option<u64> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <bool>::sse_encode(self.is_some(), serializer);
+        if let Some(value) = self {
+            <u64>::sse_encode(value, serializer);
         }
     }
 }

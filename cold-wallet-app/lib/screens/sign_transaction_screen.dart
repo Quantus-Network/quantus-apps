@@ -7,8 +7,8 @@ import 'package:quantus_sdk/quantus_sdk.dart' hide CallFieldView;
 import 'package:quantus_cold_wallet/app_version.dart';
 import 'package:quantus_cold_wallet/components/address_with_checkphrase.dart';
 import 'package:quantus_cold_wallet/components/call_detail_view.dart';
-import 'package:quantus_cold_wallet/components/qr_tuning_controls.dart';
-import 'package:quantus_cold_wallet/providers/settings_providers.dart';
+import 'package:quantus_cold_wallet/components/signature_qr_view.dart';
+import 'package:quantus_cold_wallet/components/signing_refusal_view.dart';
 import 'package:quantus_cold_wallet/providers/wallet_providers.dart';
 
 /// Reviews a scanned signing payload and, on approval, produces the signature QR.
@@ -30,9 +30,6 @@ class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> {
   ParsedPayload? _parsed;
   FormatException? _parseError;
   Uint8List? _signed;
-  List<String>? _urParts;
-  int? _urPartsBytes;
-  bool _qrPaused = false;
   bool _signing = false;
   String? _error;
 
@@ -98,7 +95,12 @@ class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> {
         detail: AddressWithCheckphrase(label: 'Requested signer', address: widget.request.signer),
       );
     }
-    if (_signed != null) return _signatureView(context, _signed!);
+    if (_signed != null) {
+      return SignatureQrView(
+        signed: _signed!,
+        instruction: 'Scan this with your hot wallet to broadcast the transaction.',
+      );
+    }
     return _reviewView(context, _parsed!);
   }
 
@@ -127,63 +129,8 @@ class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> {
     };
   }
 
-  Widget _errorView(BuildContext context, {required String title, required String message, required Widget detail}) {
-    final colors = context.colorsV3;
-    final text = context.themeTextV3;
-    return ScaffoldBase(
-      appBar: const V2AppBar(title: 'Sign Transaction'),
-      // The detail can be as long as the decoder's message, which no layout can
-      // bound, so this column scrolls rather than overflowing on a small screen.
-      mainContent: Center(
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Center(
-                child: Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(color: colors.semanticEmber.useOpacity(0.12), shape: BoxShape.circle),
-                  child: Icon(Icons.error_outline, size: 72, color: colors.semanticEmber),
-                ),
-              ),
-              const SizedBox(height: 24),
-              Text(
-                title,
-                style: text.titleHero.copyWith(color: colors.semanticEmber),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                message,
-                style: text.bodyLarge.copyWith(color: colors.textContent),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 20),
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: colors.semanticEmber.useOpacity(0.08),
-                  borderRadius: context.radiusV3.mdBorder,
-                  border: Border.all(color: colors.semanticEmber),
-                ),
-                child: detail,
-              ),
-              const SizedBox(height: 20),
-              Text(
-                'Nothing was signed.',
-                style: text.bodyEmphasis.copyWith(color: colors.textMuted),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
-        ),
-      ),
-      bottomContent: ScaffoldBaseBottomContent(
-        child: QuantusButton.simple(label: 'Back to home', onTap: () => Navigator.popUntil(context, (r) => r.isFirst)),
-      ),
-    );
-  }
+  Widget _errorView(BuildContext context, {required String title, required String message, required Widget detail}) =>
+      SigningRefusalView(appBarTitle: 'Sign Transaction', title: title, message: message, detail: detail);
 
   Widget _reviewView(BuildContext context, ParsedPayload parsed) {
     final colors = context.colorsV3;
@@ -345,80 +292,6 @@ class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> {
     return BottomSheetContainer.show<void>(
       context,
       builder: (ctx) => BottomSheetContainer(title: title, child: child),
-    );
-  }
-
-  /// Pauses the animation and opens the tuning sheet; resumes when it closes.
-  Future<void> _pauseAndTune() async {
-    setState(() => _qrPaused = true);
-    await _showSheet(title: 'QR display options', child: const QrTuningControls());
-    if (mounted) setState(() => _qrPaused = false);
-  }
-
-  Widget _signatureView(BuildContext context, Uint8List signed) {
-    final colors = context.colorsV3;
-    final text = context.themeTextV3;
-    final settings = ref.watch(coldSettingsProvider);
-
-    if (_urParts == null || _urPartsBytes != settings.qrBytes) {
-      _urParts = encodeUrForQr(data: signed, maxFragmentLength: settings.qrBytes);
-      _urPartsBytes = settings.qrBytes;
-    }
-    final parts = _urParts!;
-
-    return ScaffoldBase(
-      appBar: const V2AppBar(title: 'Signature', showBackButton: false),
-      mainContent: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            const SizedBox(height: 8),
-            Text(
-              'Scan this with your hot wallet to broadcast the transaction.',
-              style: text.body.copyWith(color: colors.textMuted),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 24),
-            Center(
-              child: AnimatedUrQr(parts: parts, fps: settings.qrFps, paused: _qrPaused),
-            ),
-            const SizedBox(height: 12),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  '${parts.length} ${parts.length == 1 ? 'frame' : 'frames'} · ${settings.qrFps} FPS · '
-                  '${settings.qrBytes} bytes',
-                  style: text.caption.copyWith(color: colors.textMuted),
-                ),
-                if (parts.length > 1) ...[
-                  const SizedBox(width: 12),
-                  GestureDetector(
-                    onTap: _pauseAndTune,
-                    child: Container(
-                      width: 32,
-                      height: 32,
-                      decoration: BoxDecoration(color: colors.bgSurface2, shape: BoxShape.circle),
-                      child: Icon(Icons.pause_rounded, size: 20, color: colors.textContent),
-                    ),
-                  ),
-                ],
-              ],
-            ),
-            if (parts.length > 1) ...[
-              const SizedBox(height: 16),
-              Text(
-                'Animated QR — keep both devices steady until the hot wallet finishes scanning.',
-                style: text.caption.copyWith(color: colors.textMuted),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ],
-        ),
-      ),
-      bottomContent: ScaffoldBaseBottomContent(
-        child: QuantusButton.simple(label: 'Done', onTap: () => Navigator.popUntil(context, (r) => r.isFirst)),
-      ),
     );
   }
 }

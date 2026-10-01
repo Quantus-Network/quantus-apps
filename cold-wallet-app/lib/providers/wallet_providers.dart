@@ -1,3 +1,4 @@
+import 'package:convert/convert.dart';
 import 'package:cryptography/cryptography.dart' show SecretBoxAuthenticationError;
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -240,6 +241,23 @@ Keypair? keypairFor(WidgetRef ref, String address) {
   if (mnemonic == null || account == null) return null;
   return HdWalletService().keyPairAtPath(mnemonic, account.derivationPath, account.scheme);
 }
+
+/// The address of the account whose ML-DSA-65 public key is [publicKeyHex],
+/// or null when no account in this wallet holds it. A NEAR transaction names
+/// its key rather than a Quantus address, and the address is a hash of the
+/// key, so each ML-DSA-65 account's key pair is derived and compared. Keyed
+/// by hex so equal keys resolve to the same provider instance.
+final nearKeyOwnerProvider = Provider.family<String?, String>((ref, publicKeyHex) {
+  final mnemonic = ref.watch(walletControllerProvider).mnemonic;
+  if (mnemonic == null) return null;
+  final service = HdWalletService();
+  for (final entry in ref.watch(addressesProvider).entries) {
+    if (entry.value.scheme != DilithiumScheme.mlDsa65) continue;
+    final keypair = service.keyPairAtPath(mnemonic, entry.value.derivationPath, entry.value.scheme);
+    if (hex.encode(keypair.publicKey) == publicKeyHex) return entry.key;
+  }
+  return null;
+});
 
 /// The first account, which the home screen leads with.
 final addressProvider = Provider<String?>((ref) => ref.watch(addressesProvider).keys.firstOrNull);
