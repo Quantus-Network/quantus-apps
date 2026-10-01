@@ -143,13 +143,26 @@ class NearDisplay {
     NearActionKind.deleteAccount => 'DELETE ACCOUNT',
   };
 
-  /// Actions that change who controls the account or what code runs under it,
-  /// rather than moving a stated amount. Shown in warning colour.
+  /// Actions that change which accounts exist, who controls them or what code
+  /// runs under them, rather than moving a stated amount. Shown in warning
+  /// colour.
   static bool isDangerous(NearAction action) => switch (action.kind) {
-    NearActionKind.addKey || NearActionKind.deleteKey || NearActionKind.deleteAccount => true,
+    NearActionKind.createAccount || NearActionKind.deleteAccount => true,
+    NearActionKind.addKey || NearActionKind.deleteKey => true,
     NearActionKind.deployContract || NearActionKind.stake => true,
-    NearActionKind.transfer || NearActionKind.functionCall || NearActionKind.createAccount => false,
+    NearActionKind.transfer || NearActionKind.functionCall => false,
   };
+
+  /// Title of the account-change warning, or null when nothing in [tx] is
+  /// [isDangerous]. Creating the receiver is called out by name, since the
+  /// signer is bringing a new account into existence; anything else that
+  /// is dangerous changes control of an account that already exists.
+  static String? accountChangeTitle(NearTransaction tx) {
+    final dangerous = tx.actions.where(isDangerous).toList();
+    if (dangerous.isEmpty) return null;
+    if (dangerous.every((a) => a.kind == NearActionKind.createAccount)) return 'This creates ${tx.receiverId}';
+    return 'This changes control of ${tx.receiverId}';
+  }
 
   /// What the whole transaction does, in one line: the single action's title,
   /// or the count when there are several.

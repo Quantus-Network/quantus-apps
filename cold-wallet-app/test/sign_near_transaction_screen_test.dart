@@ -134,6 +134,30 @@ void main() {
     expect(find.text('2. ADD FULL ACCESS KEY'), findsOneWidget);
   });
 
+  testWidgets('creating an account with no key action is still warned about, by name', (tester) async {
+    await pump(
+      tester,
+      _tx(
+        receiver: 'vault.alice.testnet',
+        actions: [
+          const NearAction(kind: NearActionKind.createAccount, fullAccess: false, methodNames: []),
+          _transfer(_near),
+        ],
+      ),
+    );
+
+    expect(find.text('This creates vault.alice.testnet'), findsOneWidget);
+    expect(find.textContaining('changes control'), findsNothing);
+    final headline = tester.widget<Text>(find.text('2 ACTIONS'));
+    expect(headline.style?.color, colors.semanticEmber);
+    final row = tester.widget<Text>(find.text('1. CREATE ACCOUNT'));
+    expect(row.style?.color, colors.semanticEmber);
+    final sendRow = tester.widget<Text>(find.text('2. SEND'));
+    expect(sendRow.style?.color, colors.semanticLilac);
+    expect(find.text('1 NEAR'), findsOneWidget);
+    expect(find.text('Sign'), findsOneWidget);
+  });
+
   testWidgets('a contract deployment identifies the code by its hash, not just its size', (tester) async {
     final hash = Uint8List.fromList(List<int>.generate(32, (i) => i));
     await pump(

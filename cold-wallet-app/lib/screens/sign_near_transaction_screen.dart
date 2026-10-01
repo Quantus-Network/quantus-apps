@@ -114,7 +114,8 @@ class _SignNearTransactionScreenState extends ConsumerState<SignNearTransactionS
   Widget _reviewView(BuildContext context, String owner) {
     final colors = context.colorsV3;
     final text = context.themeTextV3;
-    final dangerous = tx.actions.any(NearDisplay.isDangerous);
+    final accountChange = NearDisplay.accountChangeTitle(tx);
+    final dangerous = accountChange != null;
     final mismatch = NearDisplay.networkMismatch(tx, widget.request.network);
     final soleTransfer = tx.actions.length == 1 && tx.actions.single.kind == NearActionKind.transfer;
 
@@ -127,12 +128,12 @@ class _SignNearTransactionScreenState extends ConsumerState<SignNearTransactionS
             const SizedBox(height: 8),
             _networkChip(context),
             if (mismatch != null) _warningBanner(context, title: 'Check the network', body: mismatch),
-            if (dangerous)
+            if (accountChange != null)
               _warningBanner(
                 context,
-                title: 'This changes control of ${tx.receiverId}',
+                title: accountChange,
                 body:
-                    'Keys, code or the account itself are being changed, not just funds moved. Only sign this if '
+                    'An account, its keys or its code are being changed, not just funds moved. Only sign this if '
                     'you asked for exactly these actions.',
               ),
             const SizedBox(height: 8),

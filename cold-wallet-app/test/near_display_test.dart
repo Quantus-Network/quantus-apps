@@ -94,8 +94,9 @@ void main() {
     );
   });
 
-  test('key, code and account changes are dangerous; sends and calls are not', () {
+  test('account, key and code changes are dangerous; sends and calls are not', () {
     for (final kind in [
+      NearActionKind.createAccount,
       NearActionKind.addKey,
       NearActionKind.deleteKey,
       NearActionKind.deleteAccount,
@@ -104,9 +105,35 @@ void main() {
     ]) {
       expect(NearDisplay.isDangerous(_action(kind)), isTrue, reason: '$kind');
     }
-    for (final kind in [NearActionKind.transfer, NearActionKind.functionCall, NearActionKind.createAccount]) {
+    for (final kind in [NearActionKind.transfer, NearActionKind.functionCall]) {
       expect(NearDisplay.isDangerous(_action(kind)), isFalse, reason: '$kind');
     }
+  });
+
+  test('the account-change title names creation apart from control changes', () {
+    expect(NearDisplay.accountChangeTitle(_tx()), isNull);
+    expect(
+      NearDisplay.accountChangeTitle(
+        _tx(
+          receiver: 'vault.alice.testnet',
+          actions: [_action(NearActionKind.createAccount), _action(NearActionKind.transfer)],
+        ),
+      ),
+      'This creates vault.alice.testnet',
+    );
+    expect(
+      NearDisplay.accountChangeTitle(
+        _tx(
+          receiver: 'vault.alice.testnet',
+          actions: [_action(NearActionKind.createAccount), _action(NearActionKind.addKey)],
+        ),
+      ),
+      'This changes control of vault.alice.testnet',
+    );
+    expect(
+      NearDisplay.accountChangeTitle(_tx(actions: [_action(NearActionKind.deleteKey)])),
+      'This changes control of bob.testnet',
+    );
   });
 
   group('NearDisplay.networkMismatch', () {
