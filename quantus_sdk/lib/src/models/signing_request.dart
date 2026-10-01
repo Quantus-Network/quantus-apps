@@ -90,6 +90,11 @@ class NearSigningRequest extends AnySigningRequest {
   static const int version = 2;
   static const String chain = 'near';
 
+  /// The only network labels a request may carry, spelled exactly. The label
+  /// drives what the signer is told and which account-name check runs, so a
+  /// lookalike such as `"testnet "` must be refused rather than shown.
+  static const Set<String> supportedNetworks = {'mainnet', 'testnet'};
+
   final String network;
   final Uint8List transaction;
 
@@ -109,8 +114,8 @@ class NearSigningRequest extends AnySigningRequest {
     if (json['chain'] != chain) throw FormatException('Signing request is for chain ${json['chain']}, not NEAR');
 
     final network = json['network'];
-    if (network is! String || network.isEmpty) {
-      throw const FormatException('Signing request names no NEAR network');
+    if (network is! String || !supportedNetworks.contains(network)) {
+      throw FormatException('Signing request NEAR network ${jsonEncode(network)} is not one of $supportedNetworks');
     }
 
     return NearSigningRequest(network: network, transaction: _decodePayload(json['payload']));

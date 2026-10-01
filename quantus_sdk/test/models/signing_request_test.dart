@@ -121,5 +121,29 @@ void main() {
       expect(() => NearSigningRequest.decode(envelope({...nearJson, 'payload': '0x'})), throwsFormatException);
       expect(() => NearSigningRequest.decode(envelope({...nearJson, 'payload': 'abcd'})), throwsFormatException);
     });
+
+    test('accepts only the exact supported network labels, never a lookalike', () {
+      for (final network in NearSigningRequest.supportedNetworks) {
+        expect(NearSigningRequest.decode(envelope({...nearJson, 'network': network})).network, network);
+      }
+      // A trailing space, different case, or a zero-width character would
+      // read as "testnet" on screen while disabling the testnet checks.
+      for (final lookalike in [
+        'testnet ',
+        ' testnet',
+        'Testnet',
+        'TESTNET',
+        'test\u200Bnet',
+        'mainnet\n',
+        'localnet',
+      ]) {
+        expect(
+          () => NearSigningRequest.decode(envelope({...nearJson, 'network': lookalike})),
+          throwsFormatException,
+          reason: jsonEncode(lookalike),
+        );
+      }
+      expect(() => NearSigningRequest.decode(envelope({...nearJson, 'network': 1})), throwsFormatException);
+    });
   });
 }

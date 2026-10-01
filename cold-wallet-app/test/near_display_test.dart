@@ -94,7 +94,8 @@ void main() {
       expect(NearDisplay.networkMismatch(_tx(), 'testnet'), isNull);
       expect(NearDisplay.networkMismatch(_tx(signer: 'alice.near', receiver: 'bob.near'), 'mainnet'), isNull);
       expect(NearDisplay.networkMismatch(_tx(signer: 'a' * 64, receiver: '0x${'b' * 40}'), 'mainnet'), isNull);
-      expect(NearDisplay.networkMismatch(_tx(), 'localnet'), isNull);
+      expect(() => NearDisplay.networkMismatch(_tx(), 'localnet'), throwsArgumentError);
+      expect(() => NearDisplay.networkMismatch(_tx(), 'testnet '), throwsArgumentError);
     });
 
     test('names each account that does not belong to the network', () {

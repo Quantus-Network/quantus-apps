@@ -85,14 +85,15 @@ class NearDisplay {
 
   /// The envelope's network is only a label the hot wallet attached; the
   /// account names are what the chain will see. Named accounts end in the
-  /// network's top-level name, so a mismatch means one side is wrong.
+  /// network's top-level name, so a mismatch means one side is wrong. Only
+  /// the labels [NearSigningRequest.supportedNetworks] admits reach here;
+  /// anything else is a bug upstream and is reported, never passed over.
   static String? networkMismatch(NearTransaction tx, String network) {
     final tld = switch (network) {
       'mainnet' => '.near',
       'testnet' => '.testnet',
-      _ => null,
+      _ => throw ArgumentError.value(network, 'network', 'not a supported NEAR network'),
     };
-    if (tld == null) return null;
     final mismatched = [tx.signerId, tx.receiverId].where((id) => _isNamed(id) && !id.endsWith(tld)).toList();
     if (mismatched.isEmpty) return null;
     return 'This request says $network, but ${mismatched.join(' and ')} '

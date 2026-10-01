@@ -154,6 +154,17 @@ void main() {
     expect(find.text('Sign'), findsOneWidget);
   });
 
+  testWidgets('a mainnet transfer labelled mainnet is reviewed without a mismatch warning', (tester) async {
+    await pump(
+      tester,
+      _tx(signer: 'alice.near', receiver: 'bob.near', actions: [_transfer(_near)]),
+      network: 'mainnet',
+    );
+
+    expect(find.text('NEAR · MAINNET'), findsOneWidget);
+    expect(find.text('Network does not match'), findsNothing);
+  });
+
   testWidgets('refuses a key no account here holds, and offers no Sign', (tester) async {
     await pump(tester, _tx(actions: [_transfer(_near)]), keyOwner: null);
 
