@@ -45,9 +45,11 @@ class AppConstants {
   // Key 1Click signs quotes with; from @defuse-protocol/one-click-sdk-typescript.
   static const String oneClickManagerPublicKey = 'ed25519:reYaWhvwu8Jzo3WUM3zhn6VrhuMEF4eADL17qtRVifc';
 
-  // Quantus is not listed on NEAR Intents yet, so every quote into it is
-  // rejected as "tokenOut is not valid". Replace with the listed asset id.
-  static const String quantusIntentsAssetId = 'nep141:qtc.omft.near';
+  // QTC as 1Click is expected to list it: a chain's native coin is listed as
+  // nep141:<chain code>.omft.near (btc, zec, sui, aptos, cardano...). A guess
+  // until the listing exists; the app then takes the asset id from the listing
+  // itself, and the remote config key swapQuantusAssetId overrides both.
+  static const String quantusIntentsAssetId = 'nep141:quantus.omft.near';
 
   // internal group URL is this (note the /c)
   // https://t.me/c/quantusnetwork/2457

@@ -126,7 +126,13 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
     final colors = context.colorsV3;
     final text = context.themeTextV3;
     final foreign = _foreign;
-    final SwapToken quantus = _listedQuantus ?? ref.watch(quantusSwapTokenProvider);
+    final own = ref.watch(quantusSwapTokenProvider);
+    final listed = _listedQuantus;
+    final quantus = listed == null
+        ? own
+        : listed.usdPrice > 0
+        ? listed
+        : listed.copyWith(usdPrice: own.usdPrice);
 
     return ScaffoldBase(
       appBar: V2AppBar(

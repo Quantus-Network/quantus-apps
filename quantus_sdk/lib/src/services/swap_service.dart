@@ -78,29 +78,37 @@ class SwapService {
   final Uri _base;
   final String? _apiKey;
   final String _managerPublicKey;
+  final String? _configuredQuantusAssetId;
   List<SwapToken>? _cachedFromTokens;
   DateTime? _cachedFromTokensAt;
   SwapToken? _listedQuantus;
 
+  /// [quantusAssetId] names the listing that is QTC when its chain code does
+  /// not; it comes from remote config so a surprising listing needs no update.
   SwapService({
     http.Client? client,
     String endpoint = AppConstants.oneClickEndpoint,
     String? apiKey,
     String managerPublicKey = AppConstants.oneClickManagerPublicKey,
+    String? quantusAssetId,
   }) : _client = client ?? http.Client(),
        _base = Uri.parse(endpoint),
        _apiKey = apiKey,
-       _managerPublicKey = managerPublicKey;
+       _managerPublicKey = managerPublicKey,
+       _configuredQuantusAssetId = quantusAssetId;
 
   /// How long a deposit on [network] has before its quote expires.
   static Duration depositWindowFor(String network) =>
       _slowNetworks.contains(network) ? _slowDepositWindow : depositWindow;
 
+  /// Asset id QTC is quoted under until the listing says otherwise.
+  String get quantusAssetId => _configuredQuantusAssetId ?? AppConstants.quantusIntentsAssetId;
+
   /// QTC from the app's own metadata, for use until 1Click lists it.
-  static SwapToken quantusToken({required double usdPrice}) => SwapToken(
-    assetId: AppConstants.quantusIntentsAssetId,
+  SwapToken quantusToken({required double usdPrice}) => SwapToken(
+    assetId: quantusAssetId,
     symbol: AppConstants.tokenSymbol,
-    network: 'Quantus',
+    network: SwapToken.quantusNetwork,
     decimals: AppConstants.decimals,
     usdPrice: usdPrice,
   );
@@ -109,27 +117,22 @@ class SwapService {
       (await _tokens(forceRefresh: forceRefresh)).take(limit).toList();
 
   /// QTC as 1Click lists it, with its asset id, decimals and price; null until
-  /// it is listed. A listing whose decimals differ from the chain's would make
-  /// every quoted amount wrong on chain, so it is refused.
+  /// it is listed.
   Future<SwapToken?> getListedQuantusToken({bool forceRefresh = false}) async {
     await _tokens(forceRefresh: forceRefresh);
-    final listed = _listedQuantus;
-    if (listed != null && listed.decimals != AppConstants.decimals) {
-      throw StateError(
-        '1Click lists ${listed.assetId} with ${listed.decimals} decimals, the chain has ${AppConstants.decimals}',
-      );
-    }
-    return listed;
+    return _listedQuantus;
   }
 
   Future<List<SwapToken>> _tokens({required bool forceRefresh}) async {
     final now = DateTime.now();
     final cached = _cachedFromTokens;
     if (!forceRefresh && cached != null && now.difference(_cachedFromTokensAt!) < _tokensCacheTtl) return cached;
-    final tokens = await _rankByCoinGecko(await _fetchIntentsTokens());
-    _cachedFromTokens = tokens;
+    final (tokens, quantus) = await _fetchIntentsTokens();
+    final ranked = await _rankByCoinGecko(tokens);
+    _cachedFromTokens = ranked;
+    _listedQuantus = quantus;
     _cachedFromTokensAt = now;
-    return tokens;
+    return ranked;
   }
 
   /// Asks solvers for a price on [amount] base units of [from]. A dry quote is
@@ -299,14 +302,20 @@ class SwapService {
     return json;
   }
 
-  Future<List<SwapToken>> _fetchIntentsTokens() async {
+  /// The tokens to swap with, one per symbol, and QTC as listed. A token is on
+  /// Quantus when 1Click says so or when its asset id is the configured one.
+  Future<(List<SwapToken>, SwapToken?)> _fetchIntentsTokens() async {
     final data = await _send('GET', '/v0/tokens') as List<dynamic>;
     final bySymbol = <String, SwapToken>{};
-    _listedQuantus = null;
+    final onQuantus = <SwapToken>[];
     for (final item in data.cast<Map<String, dynamic>>()) {
-      final network = (item['blockchain'] as String).toUpperCase();
+      final assetId = item['assetId'] as String;
+      final chain = (item['blockchain'] as String).toUpperCase();
+      final network = chain == SwapToken.quantusNetwork || assetId == _configuredQuantusAssetId
+          ? SwapToken.quantusNetwork
+          : chain;
       final token = SwapToken(
-        assetId: item['assetId'] as String,
+        assetId: assetId,
         symbol: (item['symbol'] as String).toUpperCase(),
         network: network,
         decimals: (item['decimals'] as num).toInt(),
@@ -314,7 +323,7 @@ class SwapService {
         networkIconUrl: _networkIconUrl(network),
       );
       if (token.isQuantus) {
-        _listedQuantus = token;
+        onQuantus.add(token);
         continue;
       }
       if (token.usdPrice <= 0 || token.symbol == AppConstants.tokenSymbol) continue;
@@ -323,7 +332,35 @@ class SwapService {
         bySymbol[token.symbol] = token;
       }
     }
-    return bySymbol.values.toList();
+    return (bySymbol.values.toList(), _listedQuantusAmong(onQuantus));
+  }
+
+  /// QTC among the tokens 1Click lists on Quantus: the configured asset id when
+  /// there is one, else the only token, or the only one with QTC's symbol. More
+  /// than one candidate is refused rather than guessed, as is a listing whose
+  /// decimals differ from the chain's: every quoted amount would be wrong.
+  SwapToken? _listedQuantusAmong(List<SwapToken> onQuantus) {
+    final configured = _configuredQuantusAssetId;
+    final SwapToken? listed;
+    if (configured != null) {
+      listed = onQuantus.where((t) => t.assetId == configured).singleOrNull;
+      if (listed == null) quantusPrint('1Click does not list the configured Quantus asset $configured');
+    } else if (onQuantus.length <= 1) {
+      listed = onQuantus.singleOrNull;
+    } else {
+      listed = onQuantus.where((t) => t.symbol == AppConstants.tokenSymbol).singleOrNull;
+      if (listed == null) {
+        throw StateError(
+          '1Click lists ${onQuantus.map((t) => t.assetId).join(', ')} on Quantus; set swapQuantusAssetId',
+        );
+      }
+    }
+    if (listed != null && listed.decimals != AppConstants.decimals) {
+      throw StateError(
+        '1Click lists ${listed.assetId} with ${listed.decimals} decimals, the chain has ${AppConstants.decimals}',
+      );
+    }
+    return listed;
   }
 
   /// Orders [tokens] by CoinGecko market cap and picks up their icons. A

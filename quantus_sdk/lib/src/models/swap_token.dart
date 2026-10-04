@@ -1,6 +1,7 @@
-import 'package:quantus_sdk/src/constants/app_constants.dart';
-
 class SwapToken {
+  /// Network code 1Click gives the Quantus chain; the token listed on it is QTC.
+  static const quantusNetwork = 'QUANTUS';
+
   static const _networkNames = {
     'ARB': 'Arbitrum',
     'AVAX': 'Avalanche',
@@ -43,17 +44,17 @@ class SwapToken {
     this.networkIconUrl,
   });
 
-  bool get isQuantus => assetId == AppConstants.quantusIntentsAssetId;
+  bool get isQuantus => network == quantusNetwork;
 
   /// Human name of [network], e.g. "Ethereum" for ETH; the code itself when unknown.
   String get networkName => _networkNames[network] ?? network;
 
-  SwapToken copyWith({String? iconUrl, String? networkIconUrl}) => SwapToken(
+  SwapToken copyWith({double? usdPrice, String? iconUrl, String? networkIconUrl}) => SwapToken(
     assetId: assetId,
     symbol: symbol,
     network: network,
     decimals: decimals,
-    usdPrice: usdPrice,
+    usdPrice: usdPrice ?? this.usdPrice,
     iconUrl: iconUrl ?? this.iconUrl,
     networkIconUrl: networkIconUrl ?? this.networkIconUrl,
   );

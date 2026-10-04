@@ -28,7 +28,14 @@ import '../fakes.dart';
 const _usdc = SwapToken(assetId: 'nep141:usdc.omft.near', symbol: 'USDC', network: 'ETH', decimals: 6, usdPrice: 1);
 const _external = '0xa5f3c2b1d4e8a7c9f2b5e6d7c8b9a0f1e2d3c7b9';
 final _deposit = 'qzdeposit${'y' * 40}';
-final _qtc = SwapService.quantusToken(usdPrice: 0.1);
+final _qtc = SwapService(client: MockClient((_) async => throw StateError('offline'))).quantusToken(usdPrice: 0.1);
+const _listedQtc = {
+  'assetId': 'nep141:qtc.omft.near',
+  'decimals': 12,
+  'blockchain': 'quantus',
+  'symbol': 'QTC',
+  'price': 0,
+};
 final _managerKeyPair = ed25519.generateKey();
 final _managerPublicKey = OneClickQuoteSignature.encodeKey(Uint8List.fromList(_managerKeyPair.publicKey.bytes));
 final _unit = BigInt.from(10).pow(AppConstants.decimals);
@@ -54,9 +61,10 @@ class _FakeSubmission extends Fake implements TransactionSubmissionService {
 class _OneClick {
   final BigInt dryOut;
   final BigInt liveOut;
+  final List<Map<String, dynamic>> listed;
   final requests = <http.Request>[];
 
-  _OneClick({required this.dryOut, BigInt? liveOut}) : liveOut = liveOut ?? dryOut;
+  _OneClick({required this.dryOut, BigInt? liveOut, this.listed = const []}) : liveOut = liveOut ?? dryOut;
 
   Iterable<http.Request> get liveQuotes =>
       requests.where((r) => r.url.path == '/v0/quote' && (jsonDecode(r.body) as Map)['dry'] == false);
@@ -70,6 +78,7 @@ class _OneClick {
       '/v0/tokens' => http.Response(
         jsonEncode([
           {'assetId': _usdc.assetId, 'decimals': 6, 'blockchain': 'eth', 'symbol': 'USDC', 'price': 1},
+          ...listed,
         ]),
         200,
       ),
@@ -220,6 +229,31 @@ void main() {
       expect(button(tester, l10n.swapAddRefundAddress).isDisabled, isTrue);
       final fromHeader = tester.getTopLeft(find.text('FROM')).dy;
       expect(tester.getTopLeft(find.text(l10n.swapExternalWallet)).dy, closeTo(fromHeader, 4));
+    });
+
+    testWidgets('quotes QTC under the asset id 1Click lists it with, priced by the app when the listing has no price', (
+      tester,
+    ) async {
+      final oneClick = _OneClick(dryOut: BigInt.from(1000000), listed: [_listedQtc]);
+      await tester.pumpApp(SwapScreen(account: account), overrides: overrides(oneClick.service()));
+      await settle(tester);
+
+      await tester.enterText(find.byType(TextField), '10');
+      await tester.pump();
+      expect(find.text('\$1.00'), findsNWidgets(2));
+      expect(find.text('1'), findsOneWidget);
+
+      await tester.tap(find.text(l10n.swapAddRecipientAddress));
+      await settle(tester);
+      await tester.enterText(find.byType(TextField).last, _external);
+      await tester.pump();
+      await tester.tap(find.text(l10n.swapContinue));
+      await settle(tester);
+
+      final quote = oneClick.requests.singleWhere((r) => r.url.path == '/v0/quote');
+      expect((jsonDecode(quote.body) as Map)['originAsset'], _listedQtc['assetId']);
+      expect(_listedQtc['assetId'], isNot(_qtc.assetId));
+      expect(find.text(l10n.swapReviewTitle), findsOneWidget);
     });
   });
 

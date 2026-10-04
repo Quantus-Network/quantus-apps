@@ -5,10 +5,13 @@ import 'package:flutter_riverpod/legacy.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/providers/currency_display_provider.dart';
+import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
 import 'package:resonance_network_wallet/shared/utils/print.dart';
 import 'package:resonance_network_wallet/v2/screens/send/regular_send_strategy.dart';
 
-final swapServiceProvider = Provider<SwapService>((_) => SwapService());
+final swapServiceProvider = Provider<SwapService>(
+  (ref) => SwapService(quantusAssetId: ref.watch(remoteConfigProvider.select((c) => c.swapQuantusAssetId))),
+);
 
 /// Slippage tolerances offered for a quote, in basis points.
 const swapSlippageOptionsBps = [50, 100, 200, 300];
@@ -19,7 +22,9 @@ final swapSlippageBpsProvider = StateProvider<int>((_) => SwapService.defaultSli
 /// QTC from the app's own metadata, priced with the rate the rest of the app
 /// uses. Stands in until 1Click lists QTC; the listing then takes over.
 final quantusSwapTokenProvider = Provider<SwapToken>(
-  (ref) => SwapService.quantusToken(usdPrice: ref.watch(exchangeRateServiceProvider).tokenToUsdRate.toDouble()),
+  (ref) => ref
+      .watch(swapServiceProvider)
+      .quantusToken(usdPrice: ref.watch(exchangeRateServiceProvider).tokenToUsdRate.toDouble()),
 );
 
 /// Chain fee for sending [amount] QTC from the account into a deposit address.

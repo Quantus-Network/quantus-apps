@@ -4,7 +4,7 @@ How the wallet swaps between QTC and another chain's token, in either direction,
 
 The origin chain is where the deposit goes in: the other chain when swapping into QTC, Quantus when swapping out of it. The destination chain is where the payout lands.
 
-Verified against the live API on 2026-09-20. There is no testnet for NEAR Intents.
+Verified against the live API on 2026-09-20; token list checked again on 2026-10-04. There is no testnet for NEAR Intents.
 
 ## What NEAR Intents is
 
@@ -115,7 +115,7 @@ The app never blocks on anything but its own HTTP calls and, swapping out, the Q
 
 | Call | App sends | App reads back |
 | --- | --- | --- |
-| `GET /v0/tokens` | nothing | `assetId`, `symbol`, `blockchain`, `decimals`, `price`. One asset per symbol is kept, main network first. The entry whose `assetId` is `AppConstants.quantusIntentsAssetId` is QTC as 1Click lists it and takes over from the app's own QTC metadata; it is refused if its decimals differ from the chain's. |
+| `GET /v0/tokens` | nothing | `assetId`, `symbol`, `blockchain`, `decimals`, `price`. One asset per symbol is kept, main network first. The entry on the `quantus` chain is QTC as 1Click lists it, whatever its asset id, and takes over from the app's own QTC metadata. The remote config key `swapQuantusAssetId` names the entry instead when 1Click files it under another chain code or lists several assets on Quantus. A listing is refused if its decimals differ from the chain's or if it leaves more than one candidate for QTC. The app's own QTC price stands in while the listing has none. |
 | `POST /v0/quote` | `dry`, `swapType: EXACT_INPUT`, `slippageTolerance` (the picked 0.5, 1, 2 or 3%, 100 basis points by default), `originAsset`, `destinationAsset`, `amount` in base units, `depositType: ORIGIN_CHAIN`, `depositMode` (`MEMO` for a Stellar origin, which 1Click refuses to quote otherwise, `SIMPLE` everywhere else), `refundTo` and `refundType: ORIGIN_CHAIN`, `recipient` and `recipientType: DESTINATION_CHAIN`, `deadline`, `quoteWaitingTimeMs: 3000`, `referral: quantus`. `X-API-Key` header when a partner key is configured. | `quote.amountIn`, `amountOut`, `minAmountOut`, `amountInUsd`, `amountOutUsd`, `timeEstimate`, `deadline`, `depositAddress` (live only), `depositMemo` (chains such as Stellar need it on the deposit; the deposit screen shows it with its own copy action and a warning), `correlationId`, `signature`. Every quote's signature is checked before it is used (`OneClickQuoteSignature`, a port of `verifyQuoteSignature` from the 1Click TypeScript SDK: Ed25519 over the base58 SHA-256 of a key-sorted JSON of the signed request and quote fields plus `timestamp`, against `AppConstants.oneClickManagerPublicKey`), the echoed `quoteRequest` must repeat the amount, assets, addresses, slippage, `dry` flag and deadline that were sent, and `quote.amountIn` must be the amount sent, so the reviewed input is what a swap out transfers. A live quote whose deposit deadline is under `SwapService.minimumDepositLead` (5 minutes) away is refused before anything is sent. Any of these failing is a `SwapQuoteIntegrityException`. The signed response of every live quote is kept on the device (`SwapService.getSavedLiveQuotes`, last 50): 1Click settles a dispute about a deposit address from it. |
 | `POST /v0/deposit/submit` | `txHash` of the QTC transfer, `depositAddress`, `memo` if any. Swapping out only. | nothing the app uses |
 | `GET /v0/status` | `depositAddress`, `depositMemo` if the quote had one | `status`, `swapDetails.amountOut`, `refundedAmount`, `refundReason`, `originChainTxHashes[].hash`, `destinationChainTxHashes[].hash`. |
@@ -168,13 +168,19 @@ stateDiagram-v2
 | `SwapProgressScreen` | `mobile-app/lib/v2/screens/swap/swap_progress_screen.dart` | Status every 5 s through `swapOrderProvider`: the deposit address while a swap in waits, then progress steps, complete, or failed and refunded. |
 | `SwapService` | `quantus_sdk/lib/src/services/swap_service.dart` | The HTTP client. `SwapApiException` carries the server message. |
 | `SwapToken`, `SwapQuote`, `SwapOrder` | `quantus_sdk/lib/src/models/swap_*.dart` | Asset ids and BigInt base-unit amounts. |
-| Endpoints | `quantus_sdk/lib/src/constants/app_constants.dart` | `oneClickEndpoint`, `quantusIntentsAssetId`. |
+| Endpoints | `quantus_sdk/lib/src/constants/app_constants.dart` | `oneClickEndpoint`, `quantusIntentsAssetId` (the asset id QTC is quoted under until the listing or remote config names one). |
 
 Tests: `quantus_sdk/test/services/swap_service_test.dart` covers the request shape, response parsing, every status, deposit submission, error handling, and signature checks against a mock HTTP client that signs its responses; the 1Click SDK's staging fixtures are verified byte for byte against its staging key. `mobile-app/test/screens/swap_flow_test.dart` drives the form, the swap-out confirmation, the price-moved re-confirmation and the outcome screens.
 
 ## Blockers
 
-1. **QTC is not listed on NEAR Intents.** The token list has 197 assets on 36 chains and none is Quantus. `AppConstants.quantusIntentsAssetId` is a placeholder, and every quote fails with `tokenOut is not valid` swapping in and `tokenIn is not valid` swapping out. Listing needs NEAR Intents to bridge the Quantus chain; that is a conversation with the NEAR Intents team. Once they list it, set `quantusIntentsAssetId` to the real id: the app then reads QTC's decimals and price from the listing instead of its own metadata. Swap stays behind the `enableSwap` remote config flag until swaps have been tested against the live listing.
+1. **QTC is not listed on NEAR Intents.** The token list has 202 assets on 36 chains (2026-10-04) and none is Quantus, so every quote fails with `tokenOut is not valid` swapping in and `tokenIn is not valid` swapping out. Listing needs NEAR Intents to bridge the Quantus chain; that is a conversation with the NEAR Intents team. No app update is needed once they do: the app finds QTC in the token list by its chain code (`blockchain: quantus`) and takes its asset id, decimals and price from there. If 1Click files it under another chain code, or lists several assets on Quantus, name the asset id in the quersi `wallet_config.json` (hot reloaded by quersi, read by the app at launch and on every return to the foreground):
+
+   ```json
+   "swapQuantusAssetId": "nep141:quantus.omft.near"
+   ```
+
+   Until then QTC is quoted under `AppConstants.quantusIntentsAssetId`, which follows the `nep141:<chain code>.omft.near` pattern of the other native coins. Swap stays behind the `enableSwap` remote config flag until swaps have been tested against the live listing.
 2. **No partner key**, so every quote carries the extra 25 basis points.
 3. **Orders are not persisted.** If the progress screen is closed, the app has no record of the swap. A swap in's deposit address stays in the user's other wallet, a swap out's deposit shows as an ordinary transfer in activity, and 1Click keeps processing both.
 4. The home swap button follows the `enableSwap` remote config flag and is enabled only for transparent accounts that sign in the app.
