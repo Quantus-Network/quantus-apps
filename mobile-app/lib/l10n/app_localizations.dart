@@ -3128,6 +3128,12 @@ abstract class AppLocalizations {
   /// **'The swap\'s terms changed. Review it again.'**
   String get swapReviewListingChanged;
 
+  /// Banner on the swap form in the debug-only preflight mode, naming the listed token standing in for QTC
+  ///
+  /// In en, this message translates to:
+  /// **'Preflight: {symbol} on {network} stands in for QTC. Real funds move.'**
+  String swapPreflightBanner(String symbol, String network);
+
   /// Toast when 1Click rejects a quote or a swap cannot be created
   ///
   /// In en, this message translates to:

@@ -34,6 +34,9 @@ class SwapToken {
   final String? iconUrl;
   final String? networkIconUrl;
 
+  /// QTC's side of a swap: the token that is QTC, or stands in for it.
+  final bool isQuantus;
+
   const SwapToken({
     required this.assetId,
     required this.symbol,
@@ -42,9 +45,8 @@ class SwapToken {
     required this.usdPrice,
     this.iconUrl,
     this.networkIconUrl,
+    this.isQuantus = false,
   });
-
-  bool get isQuantus => network == quantusNetwork;
 
   /// Human name of [network], e.g. "Ethereum" for ETH; the code itself when unknown.
   String get networkName => _networkNames[network] ?? network;
@@ -57,6 +59,7 @@ class SwapToken {
     usdPrice: usdPrice,
     iconUrl: iconUrl ?? this.iconUrl,
     networkIconUrl: networkIconUrl ?? this.networkIconUrl,
+    isQuantus: isQuantus,
   );
 
   @override

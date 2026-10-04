@@ -4,16 +4,23 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/l10n/app_localizations.dart';
+import 'package:resonance_network_wallet/models/swap_preflight.dart';
 import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
 import 'package:resonance_network_wallet/shared/utils/print.dart';
 import 'package:resonance_network_wallet/v2/screens/send/regular_send_strategy.dart';
 
-final swapServiceProvider = Provider<SwapService>(
-  (ref) => SwapService(
+/// The stand-in for QTC this build was started with; null in every real build.
+final swapPreflightProvider = Provider<SwapPreflight?>((_) => SwapPreflight.fromEnvironment);
+
+final swapServiceProvider = Provider<SwapService>((ref) {
+  final preflight = ref.watch(swapPreflightProvider);
+  final apiKey = ref.watch(remoteConfigProvider.select((c) => c.nearPartnerJwt));
+  if (preflight != null) return SwapService(quantusAssetId: preflight.assetId, preflight: true, apiKey: apiKey);
+  return SwapService(
     quantusAssetId: ref.watch(remoteConfigProvider.select((c) => c.swapQuantusAssetId)),
-    apiKey: ref.watch(remoteConfigProvider.select((c) => c.nearPartnerJwt)),
-  ),
-);
+    apiKey: apiKey,
+  );
+});
 
 /// Slippage tolerances offered for a quote, in basis points.
 const swapSlippageOptionsBps = [50, 100, 200, 300];

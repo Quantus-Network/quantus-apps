@@ -45,6 +45,15 @@ class AppConstants {
   // Key 1Click signs quotes with; from @defuse-protocol/one-click-sdk-typescript.
   static const String oneClickManagerPublicKey = 'ed25519:reYaWhvwu8Jzo3WUM3zhn6VrhuMEF4eADL17qtRVifc';
 
+  // Swap preflight: another listed 1Click asset stands in for QTC so the whole
+  // swap flow can be exercised with small real amounts before QTC is listed.
+  // Debug builds only; the app refuses to start otherwise. Example:
+  //   flutter run --dart-define=SWAP_PREFLIGHT_ASSET=nep141:wrap.near \
+  //     --dart-define=SWAP_PREFLIGHT_ADDRESS=tester.near
+  static const String swapPreflightAssetId = String.fromEnvironment('SWAP_PREFLIGHT_ASSET');
+  static const String swapPreflightAddress = String.fromEnvironment('SWAP_PREFLIGHT_ADDRESS');
+  static const bool swapPreflight = swapPreflightAssetId != '';
+
   // internal group URL is this (note the /c)
   // https://t.me/c/quantusnetwork/2457
   // removing the c, we get a better preview page though so we use it without c...

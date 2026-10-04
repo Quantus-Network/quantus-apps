@@ -1666,6 +1666,11 @@ class AppLocalizationsId extends AppLocalizations {
   String get swapReviewListingChanged => 'Ketentuan swap berubah. Tinjau kembali.';
 
   @override
+  String swapPreflightBanner(String symbol, String network) {
+    return 'Preflight: $symbol di $network menggantikan QTC. Dana sungguhan berpindah.';
+  }
+
+  @override
   String swapQuoteError(String message) {
     return 'Penawaran gagal: $message';
   }

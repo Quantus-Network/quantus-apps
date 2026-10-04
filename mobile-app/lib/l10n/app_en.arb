@@ -2405,6 +2405,18 @@
     "@swapReviewListingChanged": {
       "description": "Toast when the configured QTC asset changed while a swap was being confirmed; the confirmation stops"
     },
+    "swapPreflightBanner": "Preflight: {symbol} on {network} stands in for QTC. Real funds move.",
+    "@swapPreflightBanner": {
+      "description": "Banner on the swap form in the debug-only preflight mode, naming the listed token standing in for QTC",
+      "placeholders": {
+        "symbol": {
+          "type": "String"
+        },
+        "network": {
+          "type": "String"
+        }
+      }
+    },
     "swapQuoteError": "Quote failed: {message}",
     "@swapQuoteError": {
       "description": "Toast when 1Click rejects a quote or a swap cannot be created",
