@@ -101,23 +101,11 @@ class SwapService {
   static Duration depositWindowFor(String network) =>
       _slowNetworks.contains(network) ? _slowDepositWindow : depositWindow;
 
-  /// Asset id QTC is quoted under until the listing says otherwise.
-  String get quantusAssetId => _configuredQuantusAssetId ?? AppConstants.quantusIntentsAssetId;
-
-  /// QTC from the app's own metadata, for use until 1Click lists it.
-  SwapToken quantusToken({required double usdPrice}) => SwapToken(
-    assetId: quantusAssetId,
-    symbol: AppConstants.tokenSymbol,
-    network: SwapToken.quantusNetwork,
-    decimals: AppConstants.decimals,
-    usdPrice: usdPrice,
-  );
-
   Future<List<SwapToken>> getFromTokens({int limit = 10, bool forceRefresh = false}) async =>
       (await _tokens(forceRefresh: forceRefresh)).take(limit).toList();
 
   /// QTC as 1Click lists it, with its asset id, decimals and price; null until
-  /// it is listed.
+  /// it is listed with a price, and swaps are unavailable until then.
   Future<SwapToken?> getListedQuantusToken({bool forceRefresh = false}) async {
     await _tokens(forceRefresh: forceRefresh);
     return _listedQuantus;
@@ -338,7 +326,8 @@ class SwapService {
   /// QTC among the tokens 1Click lists on Quantus: the configured asset id when
   /// there is one, else the only token, or the only one with QTC's symbol. More
   /// than one candidate is refused rather than guessed, as is a listing whose
-  /// decimals differ from the chain's: every quoted amount would be wrong.
+  /// decimals differ from the chain's: every quoted amount would be wrong. A
+  /// listing without a price does not count as listed.
   SwapToken? _listedQuantusAmong(List<SwapToken> onQuantus) {
     final configured = _configuredQuantusAssetId;
     final SwapToken? listed;
@@ -355,10 +344,15 @@ class SwapService {
         );
       }
     }
-    if (listed != null && listed.decimals != AppConstants.decimals) {
+    if (listed == null) return null;
+    if (listed.decimals != AppConstants.decimals) {
       throw StateError(
         '1Click lists ${listed.assetId} with ${listed.decimals} decimals, the chain has ${AppConstants.decimals}',
       );
+    }
+    if (listed.usdPrice <= 0) {
+      quantusPrint('1Click lists ${listed.assetId} without a price, swaps stay unavailable');
+      return null;
     }
     return listed;
   }

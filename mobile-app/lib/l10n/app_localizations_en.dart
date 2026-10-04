@@ -1651,6 +1651,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get swapTokenPickerLoadError => 'Failed to load tokens';
 
   @override
+  String get swapUnavailableTitle => 'Swap unavailable';
+
+  @override
+  String get swapDisabledTitle => 'Swap disabled';
+
+  @override
+  String get swapUnavailableUnreachable => 'NEAR Intents could not be reached.';
+
+  @override
   String swapQuoteError(String message) {
     return 'Quote failed: $message';
   }

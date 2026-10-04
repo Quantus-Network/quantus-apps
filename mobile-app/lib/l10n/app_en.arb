@@ -2389,6 +2389,18 @@
     "@swapTokenPickerLoadError": {
       "description": "Error when token list fails to load"
     },
+    "swapUnavailableTitle": "Swap unavailable",
+    "@swapUnavailableTitle": {
+      "description": "Title of the notice that replaces the swap form while swaps cannot be made"
+    },
+    "swapDisabledTitle": "Swap disabled",
+    "@swapDisabledTitle": {
+      "description": "Notice that replaces the swap form while NEAR Intents does not list QTC with a price; says nothing about why or when"
+    },
+    "swapUnavailableUnreachable": "NEAR Intents could not be reached.",
+    "@swapUnavailableUnreachable": {
+      "description": "Body of the swap unavailable notice when the 1Click token list fails to load; shown with a retry"
+    },
     "swapQuoteError": "Quote failed: {message}",
     "@swapQuoteError": {
       "description": "Toast when 1Click rejects a quote or a swap cannot be created",

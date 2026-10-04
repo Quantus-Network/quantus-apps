@@ -91,9 +91,6 @@ SwapService _service(
   quantusAssetId: quantusAssetId,
 );
 
-SwapService _offline({String? quantusAssetId}) =>
-    _service((_) async => throw StateError('no HTTP expected'), quantusAssetId: quantusAssetId);
-
 Map<String, dynamic> _sentRequest(http.Request r) => jsonDecode(r.body) as Map<String, dynamic>;
 
 Future<SwapQuote> _quote(SwapService service, {bool dry = true}) => service.getQuote(
@@ -435,7 +432,7 @@ void main() {
   group('saved addresses', () {
     test('keeps addresses per network, most recent first, without duplicates', () async {
       SharedPreferences.setMockInitialValues({});
-      final service = _offline();
+      final service = _service((_) async => throw StateError('no HTTP expected'));
       await service.saveAddress('ETH', '0xa');
       await service.saveAddress('ETH', '0xb');
       await service.saveAddress('ETH', '0xa');
@@ -447,20 +444,19 @@ void main() {
   });
 
   group('SwapToken', () {
-    test('names known networks and recognises the Quantus token', () {
+    test('names known networks and recognises the Quantus token by its network', () {
       expect(_usdcEth.networkName, 'Ethereum');
       expect(_wnear.networkName, 'NEAR');
       expect(_usdcEth.isQuantus, isFalse);
-      final quantus = _offline().quantusToken(usdPrice: 1);
+      const quantus = SwapToken(
+        assetId: 'nep141:qtc.omft.near',
+        symbol: 'QTC',
+        network: SwapToken.quantusNetwork,
+        decimals: 12,
+        usdPrice: 1,
+      );
       expect(quantus.isQuantus, isTrue);
-      expect(quantus.assetId, AppConstants.quantusIntentsAssetId);
       expect(quantus.networkName, 'Quantus');
-    });
-
-    test('a configured asset id replaces the assumed one', () {
-      final quantus = _offline(quantusAssetId: 'nep141:qtc.omft.near').quantusToken(usdPrice: 1);
-      expect(quantus.assetId, 'nep141:qtc.omft.near');
-      expect(quantus.isQuantus, isTrue);
     });
   });
 
@@ -599,7 +595,6 @@ void main() {
         final quantus = await service.getListedQuantusToken();
         expect(quantus, isNotNull);
         expect(quantus!.assetId, 'nep141:qtc.omft.near');
-        expect(quantus.assetId, isNot(AppConstants.quantusIntentsAssetId));
         expect(quantus.isQuantus, isTrue);
         expect(quantus.networkName, 'Quantus');
         expect(quantus.decimals, AppConstants.decimals);
@@ -648,7 +643,6 @@ void main() {
     test('a configured asset id 1Click does not list leaves QTC unlisted', () async {
       final service = listing(tokens, quantusAssetId: 'nep141:elsewhere.omft.near');
       expect(await service.getListedQuantusToken(), isNull);
-      expect(service.quantusToken(usdPrice: 1).assetId, 'nep141:elsewhere.omft.near');
     });
 
     test('refuses a QTC listing whose decimals differ from the chain', () async {
@@ -656,6 +650,13 @@ void main() {
         {'assetId': 'nep141:qtc.omft.near', 'decimals': 18, 'blockchain': 'quantus', 'symbol': 'QTC', 'price': 1},
       ]);
       await expectLater(service.getListedQuantusToken(), throwsA(isA<StateError>()));
+    });
+
+    test('a QTC listing without a price leaves swaps unavailable', () async {
+      final service = listing([
+        {'assetId': 'nep141:qtc.omft.near', 'decimals': 12, 'blockchain': 'quantus', 'symbol': 'QTC', 'price': 0},
+      ]);
+      expect(await service.getListedQuantusToken(), isNull);
     });
 
     test('keeps one asset per symbol, preferring the main network, ranked by CoinGecko', () async {

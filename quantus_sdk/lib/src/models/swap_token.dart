@@ -49,12 +49,12 @@ class SwapToken {
   /// Human name of [network], e.g. "Ethereum" for ETH; the code itself when unknown.
   String get networkName => _networkNames[network] ?? network;
 
-  SwapToken copyWith({double? usdPrice, String? iconUrl, String? networkIconUrl}) => SwapToken(
+  SwapToken copyWith({String? iconUrl, String? networkIconUrl}) => SwapToken(
     assetId: assetId,
     symbol: symbol,
     network: network,
     decimals: decimals,
-    usdPrice: usdPrice ?? this.usdPrice,
+    usdPrice: usdPrice,
     iconUrl: iconUrl ?? this.iconUrl,
     networkIconUrl: networkIconUrl ?? this.networkIconUrl,
   );
