@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
@@ -60,13 +58,17 @@ final swapOrderProvider = StreamProvider.autoDispose.family<SwapOrder, SwapOrder
   }
 });
 
+/// One whole token of [decimals] in base units, as a double. An int `pow`
+/// overflows past 18 decimals, and wNEAR has 24.
+double _unit(int decimals) => BigInt.from(10).pow(decimals).toDouble();
+
 /// USD value of [amount] base units of [token] at its listed price.
-double swapUsdValue(BigInt amount, SwapToken token) => amount.toDouble() / pow(10, token.decimals) * token.usdPrice;
+double swapUsdValue(BigInt amount, SwapToken token) => amount.toDouble() / _unit(token.decimals) * token.usdPrice;
 
 /// Base units of [to] that [amountIn] of [from] is worth at listed prices.
 BigInt swapEstimateOut(BigInt amountIn, SwapToken from, SwapToken to) {
   if (to.usdPrice <= 0) return BigInt.zero;
-  return BigInt.from(swapUsdValue(amountIn, from) / to.usdPrice * pow(10, to.decimals));
+  return BigInt.from(swapUsdValue(amountIn, from) / to.usdPrice * _unit(to.decimals));
 }
 
 /// Base units of [quote]'s output token that one whole input token buys.
