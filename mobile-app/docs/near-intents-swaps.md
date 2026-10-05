@@ -4,7 +4,7 @@ How the wallet swaps between QTC and another chain's token, in either direction,
 
 The origin chain is where the deposit goes in: the other chain when swapping into QTC, Quantus when swapping out of it. The destination chain is where the payout lands.
 
-Verified against the live API on 2026-09-20; token list checked again on 2026-10-04. There is no testnet for NEAR Intents.
+Verified against the live API on 2026-09-20; token list checked again on 2026-10-05. There is no testnet for NEAR Intents.
 
 ## What NEAR Intents is
 
@@ -174,11 +174,13 @@ Tests: `quantus_sdk/test/services/swap_service_test.dart` covers the request sha
 
 ## Blockers
 
-1. **QTC is not listed on NEAR Intents.** The token list has 202 assets on 36 chains (2026-10-04) and none is Quantus, so every quote fails with `tokenOut is not valid` swapping in and `tokenIn is not valid` swapping out. Listing needs NEAR Intents to bridge the Quantus chain; that is a conversation with the NEAR Intents team. No app update is needed once they do: the app finds QTC in the token list by its chain code (`blockchain: quantus`) and takes its asset id, decimals and price from there. If 1Click files it under another chain code, or lists several assets on Quantus, name the asset id in the quersi `wallet_config.json` (hot reloaded by quersi, read by the app at launch and on every return to the foreground):
+1. **QTC has no swap route on NEAR Intents.** Since 2026-10-04 20:55 UTC the token list carries `nep141:qtc.omft.near` (QTC, 12 decimals), but only as the NEAR-side token: its `blockchain` is `near`, its price is 0, no Quantus chain is among the deposit chains, and dry quotes in either direction fail with an internal server error. Nothing has moved on the contract. The app treats this as unlisted, since it looks for a `quantus` chain and refuses a listing without a price, so the swap screen says "Swap disabled" and nothing more. The route needs NEAR Intents to bridge the Quantus chain; that is a conversation with their team. No app update is needed once they do: the app finds QTC by its chain code (`blockchain: quantus`) and takes its asset id, decimals and price from the listing. If the entry stays filed under `near` once it has a route and a price, or several assets appear on Quantus, name the asset id in the quersi `wallet_config.json` (hot reloaded by quersi, read by the app at launch and on every return to the foreground):
 
    ```json
-   "swapQuantusAssetId": "nep141:quantus.omft.near"
+   "swapQuantusAssetId": "nep141:qtc.omft.near"
    ```
+
+   Do not set it before the route exists: a price alone would open the form while every quote still fails.
 
    Until then the swap screen says "Swap disabled" and nothing more, so the swap button can ship enabled and does nothing it should not. Swap also stays behind the `enableSwap` remote config flag until swaps have been tested against the live listing.
 2. **No partner key**, so every quote carries the extra 25 basis points.
