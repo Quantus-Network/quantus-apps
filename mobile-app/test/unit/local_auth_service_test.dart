@@ -1,36 +1,10 @@
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:local_auth/local_auth.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/local_auth_provider.dart';
 import 'package:resonance_network_wallet/services/local_auth_service.dart';
 
-class FakeLocalAuthentication extends Fake implements LocalAuthentication {
-  bool deviceSupported = true;
-  bool authenticateResult = true;
-  int authenticateCalls = 0;
-
-  /// Invoked from inside [authenticate], i.e. while the "prompt" is on screen.
-  /// Lets a test observe transient state (e.g. isAuthenticating) mid-call, or
-  /// throw to simulate a platform failure.
-  void Function()? onAuthenticate;
-
-  @override
-  Future<bool> isDeviceSupported() async => deviceSupported;
-
-  @override
-  Future<bool> authenticate({
-    required String localizedReason,
-    Iterable<dynamic> authMessages = const <dynamic>[],
-    bool biometricOnly = false,
-    bool sensitiveTransaction = true,
-    bool persistAcrossBackgrounding = false,
-  }) async {
-    authenticateCalls++;
-    onAuthenticate?.call();
-    return authenticateResult;
-  }
-}
+import '../fakes.dart' show FakeLocalAuthentication;
 
 class FakeSettingsService extends Fake implements SettingsService {
   bool hasWallet = true;

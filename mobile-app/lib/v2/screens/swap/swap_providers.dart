@@ -9,7 +9,10 @@ import 'package:resonance_network_wallet/shared/utils/print.dart';
 import 'package:resonance_network_wallet/v2/screens/send/regular_send_strategy.dart';
 
 final swapServiceProvider = Provider<SwapService>(
-  (ref) => SwapService(quantusAssetId: ref.watch(remoteConfigProvider.select((c) => c.swapQuantusAssetId))),
+  (ref) => SwapService(
+    quantusAssetId: ref.watch(remoteConfigProvider.select((c) => c.swapQuantusAssetId)),
+    apiKey: ref.watch(remoteConfigProvider.select((c) => c.nearPartnerJwt)),
+  ),
 );
 
 /// Slippage tolerances offered for a quote, in basis points.

@@ -7,12 +7,15 @@ import 'package:resonance_network_wallet/shared/utils/print.dart';
 const String remoteConfigCacheKey = 'remote_config_cache_v1';
 
 class RemoteConfigService {
+  /// A request that hangs would keep swap hidden and block later refreshes.
+  static const _remoteTimeout = Duration(seconds: 15);
+
   final QuersiService _quersiService = QuersiService();
   final SettingsService _settingsService = SettingsService();
 
   Future<RemoteConfigModel?> readRemoteConfig() async {
     try {
-      final remoteData = await _quersiService.getRemoteConfig();
+      final remoteData = await _quersiService.getRemoteConfig().timeout(_remoteTimeout);
       return remoteData;
     } catch (error) {
       quantusPrint('Remote config remote read failed: $error');

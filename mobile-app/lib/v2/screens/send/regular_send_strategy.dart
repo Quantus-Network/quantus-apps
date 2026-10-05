@@ -285,12 +285,12 @@ class RegularSendStrategy extends SendStrategy {
     required BigInt amount,
     required BigInt networkFee,
     bool sendAll = false,
-    bool Function()? proceed,
+    FutureOr<bool> Function()? proceed,
   }) async {
     if (account.signsWithHardware) throw StateError('Account ${account.accountId} signs with hardware');
     final authed = await LocalAuthService().authenticate(localizedReason: ref.read(l10nProvider).sendReviewAuthReason);
     if (!authed) return null;
-    final stillWantedAfterAuth = proceed?.call() ?? true;
+    final stillWantedAfterAuth = proceed == null || await proceed();
     if (!stillWantedAfterAuth) return null;
     return ref
         .read(transactionSubmissionServiceProvider)

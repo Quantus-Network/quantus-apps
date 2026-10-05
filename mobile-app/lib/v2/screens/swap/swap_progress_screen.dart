@@ -5,6 +5,7 @@ import 'package:qr_flutter/qr_flutter.dart';
 import 'package:quantus_sdk/quantus_sdk.dart' hide ScaffoldBase;
 import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
+import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
 import 'package:resonance_network_wallet/shared/utils/open_external_url.dart';
@@ -323,6 +324,7 @@ class _SwapFailed extends ConsumerWidget {
           children: [
             QuantusButton.simple(
               label: l10n.swapStartNew,
+              isDisabled: !ref.watch(remoteConfigProvider.select((c) => c.swapAvailable)),
               onTap: () => Navigator.pushAndRemoveUntil(
                 context,
                 MaterialPageRoute(builder: (_) => SwapScreen(account: account)),

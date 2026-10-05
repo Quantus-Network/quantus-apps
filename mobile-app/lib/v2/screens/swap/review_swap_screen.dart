@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart' hide ScaffoldBase;
 import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
+import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/shared/utils/print.dart';
 import 'package:resonance_network_wallet/v2/components/link_button.dart';
@@ -75,7 +76,7 @@ class _ReviewSwapScreenState extends ConsumerState<ReviewSwapScreen> {
     if (kept != null && kept.quote.deadline.isAfter(DateTime.now().add(SwapService.minimumDepositLead))) return kept;
     try {
       final order = await ref.read(swapServiceProvider).createSwap(_quote);
-      if (_stale(generation, l10n)) return null;
+      if (await _stale(generation, l10n)) return null;
       _order = order;
       if (order.quote.minAmountOut >= _quote.minAmountOut) return order;
       if (mounted) {
@@ -89,27 +90,46 @@ class _ReviewSwapScreenState extends ConsumerState<ReviewSwapScreen> {
     return null;
   }
 
-  /// Whether the service was rebuilt since [generation]; says so when it was.
-  bool _stale(int generation, AppLocalizations l10n) {
-    if (generation == _generation) return false;
-    if (mounted) context.showErrorToaster(message: l10n.swapReviewListingChanged);
+  /// Whether a confirmation started under [generation] may go on: nothing was
+  /// rebuilt since, and the location, once any refresh in flight has answered,
+  /// still allows swaps.
+  Future<bool> _proceeds(int generation) async {
+    if (!mounted) return false;
+    await ref.read(remoteConfigProvider.notifier).settled;
+    return mounted && generation == _generation && ref.read(remoteConfigProvider).swapAvailable;
+  }
+
+  /// The opposite of [_proceeds], saying why on screen.
+  Future<bool> _stale(int generation, AppLocalizations l10n) async {
+    if (await _proceeds(generation)) return false;
+    if (mounted) {
+      final available = ref.read(remoteConfigProvider).swapAvailable;
+      context.showErrorToaster(message: available ? l10n.swapReviewListingChanged : l10n.swapDisabledTitle);
+    }
     return true;
   }
 
   /// Sends the quoted QTC into the deposit address; null when nothing was sent.
-  /// The service generation is checked again once the user has authenticated.
+  /// Once the user has authenticated the location is checked afresh, since the
+  /// prompt can hide a move elsewhere; the deposit goes out only on an
+  /// allowance that postdates it.
   Future<String?> _sendDeposit(SwapOrder order, BigInt fee, AppLocalizations l10n, int generation) async {
-    if (_stale(generation, l10n)) return null;
+    if (await _stale(generation, l10n)) return null;
     try {
       final hash = await RegularSendStrategy(account: widget.account).submitLocal(
         ref,
         recipient: order.depositAddress,
         amount: order.quote.amountIn,
         networkFee: fee,
-        proceed: () => generation == _generation,
+        proceed: () async {
+          if (!mounted) return false;
+          await ref.read(remoteConfigProvider.notifier).syncConfig();
+          return _proceeds(generation);
+        },
       );
       if (hash == null) {
-        if (mounted && !_stale(generation, l10n)) context.showErrorToaster(message: l10n.sendReviewAuthRequired);
+        final stale = await _stale(generation, l10n);
+        if (!stale && mounted) context.showErrorToaster(message: l10n.sendReviewAuthRequired);
         return null;
       }
       unawaited(
@@ -147,7 +167,8 @@ class _ReviewSwapScreenState extends ConsumerState<ReviewSwapScreen> {
     final spendable = _swapOut ? ref.watch(effectiveMaxBalanceProviderFamily(widget.account.accountId)).value : null;
     final feeValue = fee?.value;
     final insufficient = feeValue != null && spendable != null && quote.amountIn + feeValue > spendable;
-    final blocked = _swapOut && (feeValue == null || spendable == null || insufficient);
+    final available = ref.watch(remoteConfigProvider.select((c) => c.swapAvailable));
+    final blocked = !available || _swapOut && (feeValue == null || spendable == null || insufficient);
 
     return ScaffoldBase(
       appBar: V2AppBar(title: l10n.swapReviewTitle),
@@ -197,6 +218,10 @@ class _ReviewSwapScreenState extends ConsumerState<ReviewSwapScreen> {
             if (insufficient) ...[
               const SizedBox(height: 16),
               Text(l10n.swapReviewInsufficient(from.symbol), style: text.caption.copyWith(color: colors.semanticEmber)),
+            ],
+            if (!available) ...[
+              const SizedBox(height: 16),
+              Text(l10n.swapDisabledTitle, style: text.caption.copyWith(color: colors.semanticEmber)),
             ],
           ],
         ),

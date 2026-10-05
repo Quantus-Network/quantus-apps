@@ -28,6 +28,11 @@ class _AppLifecycleManagerState extends ConsumerState<AppLifecycleManager> with 
   // as the OS can cycle through multiple states (inactive -> hidden -> paused)
   bool _isBackgrounded = false;
 
+  // A real backgrounding during a system auth prompt is kept from the unlock
+  // logic (no double prompt), but the device may have moved meanwhile, so the
+  // location verdict is still re-checked on resume.
+  bool _locationStale = false;
+
   @override
   void initState() {
     super.initState();
@@ -85,6 +90,8 @@ class _AppLifecycleManagerState extends ConsumerState<AppLifecycleManager> with 
     final isOnline = ref.read(isOnlineProvider);
 
     if (state == AppLifecycleState.resumed) {
+      final recheckLocation = _isBackgrounded || _locationStale;
+      _locationStale = false;
       // Only resume if we were previously backgrounded
       if (_isBackgrounded) {
         quantusPrint('AppLifecycleState.resumed - resuming from background');
@@ -102,10 +109,8 @@ class _AppLifecycleManagerState extends ConsumerState<AppLifecycleManager> with 
         // This prevents flicker from transient backgrounds (FaceID, system overlays)
         // that briefly pause/resume the app.
         localAuthNotifier.checkAuthentication();
-
-        // Sync remote config on background resume
-        unawaited(ref.read(remoteConfigProvider.notifier).syncConfig());
       }
+      if (recheckLocation) unawaited(ref.read(remoteConfigProvider.notifier).syncConfig());
     } else {
       // Handle background states (inactive, paused, hidden, detached)
       // Skip if an auth dialog caused this lifecycle change — the system prompt
@@ -123,6 +128,7 @@ class _AppLifecycleManagerState extends ConsumerState<AppLifecycleManager> with 
         pollingManager.pausePolling();
         localAuthNotifier.recordBackgroundTime();
       } else {
+        if (authInProgress && state != AppLifecycleState.inactive) _locationStale = true;
         quantusPrint('$state - already backgrounded, skipping actions');
       }
     }

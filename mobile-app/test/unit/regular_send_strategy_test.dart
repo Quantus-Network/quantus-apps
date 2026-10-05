@@ -4,9 +4,11 @@ import 'package:quantus_sdk/generated/bell/pallets/balances.dart' as balances;
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
+import 'package:resonance_network_wallet/services/transaction_submission_service.dart';
 import 'package:resonance_network_wallet/v2/screens/send/regular_send_strategy.dart';
 import 'package:resonance_network_wallet/v2/screens/send/send_providers.dart';
 import 'package:resonance_network_wallet/v2/screens/send/send_strategy.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../fakes.dart';
 
@@ -149,6 +151,33 @@ void main() {
       ),
       throwsStateError,
     );
+  });
+
+  testWidgets('a local send submits nothing when its post-authentication check says no', (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    await SettingsService().initialize();
+    final submission = FakeTransactionSubmissionService();
+    final ref = await pumpRef(
+      tester,
+      overrides: [
+        settingsServiceProvider.overrideWithValue(FakeSettingsService(activeAccount: RegularAccount(captured))),
+        balancesServiceProvider.overrideWithValue(FakeBalancesService()),
+        transactionSubmissionServiceProvider.overrideWithValue(submission),
+      ],
+    );
+    final strategy = RegularSendStrategy(account: captured);
+    Future<String?> send({required bool Function() proceed}) => strategy.submitLocal(
+      ref,
+      recipient: other.accountId,
+      amount: BigInt.from(1000),
+      networkFee: BigInt.from(10),
+      proceed: proceed,
+    );
+
+    expect(await send(proceed: () => false), isNull);
+    expect(submission.transfers, isEmpty);
+    expect(await send(proceed: () => true), '0xtxhash');
+    expect(submission.transfers, [(other.accountId, BigInt.from(1000), BigInt.from(10))]);
   });
 
   testWidgets('submit hands the captured keystone account to the signing session after a switch', (tester) async {

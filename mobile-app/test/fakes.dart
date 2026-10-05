@@ -4,20 +4,27 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:local_auth/local_auth.dart';
 import 'package:quantus_sdk/generated/bell/pallets/balances.dart' as balances_pallet;
 import 'package:quantus_sdk/generated/bell/types/pallet_balances/pallet/call.dart' as balances_call;
 import 'package:quantus_sdk/generated/bell/types/quantus_runtime/runtime_call.dart' as runtime_call;
 import 'package:quantus_sdk/generated/bell/types/sp_runtime/multiaddress/multi_address.dart' as multi_address;
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/local_auth_provider.dart';
+import 'package:resonance_network_wallet/services/history_polling_manager.dart';
 import 'package:resonance_network_wallet/services/remote_config_service.dart';
 import 'package:resonance_network_wallet/services/local_auth_service.dart';
+import 'package:resonance_network_wallet/services/transaction_submission_service.dart';
 
 class FakeSettingsService extends Fake implements SettingsService {
   DisplayAccount? activeAccount;
   List<MultisigAccount> multisigs;
+  bool hasWallet = true;
 
   FakeSettingsService({this.activeAccount, this.multisigs = const []});
+
+  @override
+  Future<bool> getHasWallet() async => hasWallet;
 
   @override
   Future<DisplayAccount?> getActiveAccount() async => activeAccount;
@@ -48,6 +55,47 @@ class FakeSettingsService extends Fake implements SettingsService {
 
   @override
   String? getString(String key) => null;
+}
+
+/// The platform auth plugin without a platform: answers [authenticateResult],
+/// or waits for [hold] when a test needs the prompt to stay up.
+class FakeLocalAuthentication extends Fake implements LocalAuthentication {
+  bool deviceSupported = true;
+  bool authenticateResult = true;
+  int authenticateCalls = 0;
+  Future<bool>? hold;
+
+  /// Invoked from inside [authenticate], i.e. while the "prompt" is on screen.
+  /// Lets a test observe transient state (e.g. isAuthenticating) mid-call, or
+  /// throw to simulate a platform failure.
+  void Function()? onAuthenticate;
+
+  @override
+  Future<bool> isDeviceSupported() async => deviceSupported;
+
+  @override
+  Future<bool> authenticate({
+    required String localizedReason,
+    Iterable<dynamic> authMessages = const <dynamic>[],
+    bool biometricOnly = false,
+    bool sensitiveTransaction = true,
+    bool persistAcrossBackgrounding = false,
+  }) async {
+    authenticateCalls++;
+    onAuthenticate?.call();
+    return hold ?? authenticateResult;
+  }
+}
+
+class FakeHistoryPollingManager extends Fake implements HistoryPollingManager {
+  @override
+  void pausePolling() {}
+
+  @override
+  void resumePolling() {}
+
+  @override
+  Future<void> triggerSilentRefresh() async {}
 }
 
 /// Drives [LocalAuthState] directly so tests can lock/unlock without the
@@ -171,10 +219,27 @@ Future<WidgetRef> pumpRef(WidgetTester tester, {List<Override> overrides = const
   return widgetRef;
 }
 
+/// Records every local transfer instead of signing and submitting it.
+class FakeTransactionSubmissionService extends Fake implements TransactionSubmissionService {
+  final transfers = <(String, BigInt, BigInt)>[];
+
+  @override
+  Future<String> balanceTransfer(
+    Account account, {
+    required RuntimeCall call,
+    required String targetAddress,
+    required BigInt amount,
+    required BigInt fee,
+  }) async {
+    transfers.add((targetAddress, amount, fee));
+    return '0xtxhash';
+  }
+}
+
 class FakeRemoteConfigService extends RemoteConfigService {
   FakeRemoteConfigService(this.config, {this.remote});
   final RemoteConfigModel config;
-  final RemoteConfigModel? remote;
+  RemoteConfigModel? remote;
 
   @override
   RemoteConfigModel readLocalConfig() => config;

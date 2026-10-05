@@ -4,6 +4,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:quantus_sdk/quantus_sdk.dart' hide ScaffoldBase;
 import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
+import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/shared/utils/print.dart';
 import 'package:resonance_network_wallet/v2/components/near_intents_attribution.dart';
@@ -17,8 +18,9 @@ import 'package:resonance_network_wallet/v2/screens/swap/swap_slippage_sheet.dar
 import 'package:resonance_network_wallet/v2/screens/swap/token_picker_sheet.dart';
 
 /// Swaps between QTC in [account] and a token on another chain, either way.
-/// Until 1Click lists QTC with a price, or when 1Click cannot be reached, the
-/// form gives way to a notice that swaps are unavailable.
+/// Where NEAR Intents is not allowed, until 1Click lists QTC with a price, or
+/// when 1Click cannot be reached, the form gives way to a notice that swaps
+/// are unavailable.
 class SwapScreen extends ConsumerStatefulWidget {
   final Account account;
 
@@ -144,7 +146,8 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
     final text = context.themeTextV3;
     final foreign = _foreign;
     final quantus = _quantus;
-    final ready = foreign != null && quantus != null;
+    final available = ref.watch(remoteConfigProvider.select((c) => c.swapAvailable));
+    final ready = available && foreign != null && quantus != null;
 
     return ScaffoldBase(
       appBar: V2AppBar(
@@ -154,16 +157,17 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
       ),
       mainContent: ready
           ? _form(l10n, colors, text, _swapOut ? quantus : foreign, _swapOut ? foreign : quantus)
-          : _unavailable(l10n, colors, text),
+          : _unavailable(l10n, colors, text, disabled: !available),
       bottomContent: ready ? _cta(l10n, _swapOut ? quantus : foreign, _swapOut ? foreign : quantus, foreign) : null,
     );
   }
 
-  /// In place of the form: "Swap disabled" while 1Click does not list QTC with
-  /// a price, saying nothing about why or when; an unreachable 1Click names
-  /// itself and offers a retry.
-  Widget _unavailable(AppLocalizations l10n, AppColorsV3 colors, AppTextThemeV3 text) {
-    if (_loadingTokens) return const Center(child: Loader());
+  /// In place of the form: "Swap disabled" where swaps are [disabled] for this
+  /// location or while 1Click does not list QTC with a price, saying nothing
+  /// about why or when; an unreachable 1Click names itself and offers a retry.
+  Widget _unavailable(AppLocalizations l10n, AppColorsV3 colors, AppTextThemeV3 text, {required bool disabled}) {
+    final unreachable = _loadFailed && !disabled;
+    if (_loadingTokens && !disabled) return const Center(child: Loader());
     return Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -183,10 +187,10 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
             ),
             const SizedBox(height: 24),
             Text(
-              _loadFailed ? l10n.swapUnavailableTitle : l10n.swapDisabledTitle,
+              unreachable ? l10n.swapUnavailableTitle : l10n.swapDisabledTitle,
               style: text.titleScreen.copyWith(color: colors.textContent),
             ),
-            if (_loadFailed) ...[
+            if (unreachable) ...[
               const SizedBox(height: 8),
               Text(
                 l10n.swapUnavailableUnreachable,

@@ -154,9 +154,13 @@ stateDiagram-v2
 ## Fees
 
 - Without a partner key 1Click adds its platform fee to every quote: 25 basis points per the docs, 20 in the live probes of 2026-09-26, echoed as `appFees: [{recipient: 5880ad2b..., fee: 20}]` on a request that sent none.
-- With a partner key from partners.near-intents.org the platform fee is 20 basis points, 1 basis point on stablecoin and same-asset routes. Pass it as `SwapService(apiKey:)`; it goes out as `X-API-Key`.
+- With a partner key from partners.near-intents.org the platform fee is 20 basis points, 1 basis point on stablecoin and same-asset routes. It is served by quersi under the remote config key `near.partner.jwt` and reaches `SwapService(apiKey:)` through `swapServiceProvider`; it goes out as `X-API-Key`, and no header is sent while the key is absent, so a build can ship before the key exists.
 - Fees are inside `amountOut`. Nothing is charged on top of `amountIn`.
 - `refundFee` and `withdrawFee` in the quote are in base units of the origin asset.
+
+## Geo gate
+
+NEAR Intents is not available in every country, so the swap button is only shown where it is. Quersi decides: it runs behind Cloudflare, reads the visitor's country from the `CF-IPCountry` header, checks it against the blocked countries and ranges in its hot-reloaded `geo_config.json`, and adds the verdict to the wallet config it already serves as `geoNearAllowed`. The app's `RemoteConfigModel.swapAvailable` is `enableSwap && geoNearAllowed`, and the home screen shows the swap card on that. The gate fails closed: `geoNearAllowed` defaults to false, so a device that has never heard from quersi, or one talking to a quersi without the gate, does not offer swap. A cached verdict is never trusted either: at launch, and again at every return to the foreground, the allowance is revoked before the config request goes out and only a fresh answer grants it, so a device that moved into a blocked country does not keep an old allowance. The request is given 15 seconds, so one that hangs cannot preserve an allowance or block later refreshes, and an answer to a request that was still in flight when the app came back to the foreground is discarded while a fresh request follows. The verdict refreshes with the remote config, at launch and on every return to the foreground. Every place a new swap can start or be confirmed checks it: the home card, the swap form (which shows "Swap disabled"), the review's confirm button and the "Start a New Swap" button after a failed swap. A confirmation already awaiting its live quote stops too, and one at the authentication prompt refreshes the location once the user has authenticated and sends only on a fresh allowance, since the prompt can hide a move elsewhere. A backgrounding during that prompt is kept from the unlock logic to avoid a double prompt, but the resume that follows still re-checks the location. The status of a swap already in flight stays reachable. `GET https://qrc-1.quantus.com/api/geo/near-allowed` shows what the gate saw for the caller. The block list itself lives in the quersi repo (`geo_config.example.json` and its README).
 
 ## Where this lives in the wallet
 
@@ -185,6 +189,6 @@ Tests: `quantus_sdk/test/services/swap_service_test.dart` covers the request sha
    Until then the swap screen says "Swap disabled" and nothing more, so the swap button can ship enabled and does nothing it should not. Swap also stays behind the `enableSwap` remote config flag until swaps have been tested against the live listing.
 2. **No partner key**, so every quote carries the extra 25 basis points.
 3. **Orders are not persisted.** If the progress screen is closed, the app has no record of the swap. A swap in's deposit address stays in the user's other wallet, a swap out's deposit shows as an ordinary transfer in activity, and 1Click keeps processing both.
-4. The home swap button follows the `enableSwap` remote config flag and is enabled only for transparent accounts that sign in the app.
+4. The home swap button follows the `enableSwap` remote config flag and the geo gate (see below), and is enabled only for transparent accounts that sign in the app.
 5. Only `EXACT_INPUT` with origin-chain deposits and destination-chain payout. Signed-intent execution would need the wallet to sign NEP-413 or similar payloads.
 6. Slippage is picked from four presets (0.5, 1, 2, 3%); there is no custom value, and the pick is not persisted between launches.
