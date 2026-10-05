@@ -24,34 +24,26 @@ class RemoteConfigNotifier extends StateNotifier<RemoteConfigModel> {
     syncConfig();
   }
 
+  /// Refreshes the flags in the background. The location verdict is revoked
+  /// before the request goes out: the device may have moved since the last
+  /// answer, so swap waits for this one. The other flags keep their values.
   Future<void> syncConfig() async {
-    // Fetch remote in the background. This should not block startup feel.
     if (_isRefreshingRemote) return;
     _isRefreshingRemote = true;
+    if (state.geoNearAllowed) state = state.copyWith(geoNearAllowed: false);
 
     unawaited(() async {
       try {
         final remote = await _service.readRemoteConfig();
-        if (remote == null) {
-          _revokeGeo();
-          return;
-        }
-        if (remote != state) {
+        if (remote != null && remote != state) {
           _service.cacheConfig(remote.toCacheJson());
           state = remote;
         }
       } catch (e) {
         quantusPrint('Remote config remote refresh failed: $e');
-        _revokeGeo();
       } finally {
         _isRefreshingRemote = false;
       }
     }());
-  }
-
-  /// A refresh that did not reach the server leaves the location unknown, and
-  /// unknown means no swap. The other flags keep their last known values.
-  void _revokeGeo() {
-    if (state.geoNearAllowed) state = state.copyWith(geoNearAllowed: false);
   }
 }

@@ -1,8 +1,24 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
 
 import '../fakes.dart';
+
+/// Answers each remote read only when the test completes it.
+class _SlowRemoteConfigService extends FakeRemoteConfigService {
+  _SlowRemoteConfigService(super.config);
+
+  final responses = <Completer<RemoteConfigModel?>>[];
+
+  @override
+  Future<RemoteConfigModel?> readRemoteConfig() {
+    final response = Completer<RemoteConfigModel?>();
+    responses.add(response);
+    return response.future;
+  }
+}
 
 void main() {
   test('remote config models compare by their flags', () {
@@ -64,6 +80,29 @@ void main() {
     await Future<void>.delayed(Duration.zero);
     expect(notifier.state.geoNearAllowed, isFalse);
     expect(notifier.state.enableMultisig, isFalse);
+  });
+
+  test('a foreground refresh revokes the allowance while its answer is pending', () async {
+    final allowed = RemoteConfigModel.fromJson(const {'geoNearAllowed': true, 'enableMultisig': false});
+    final service = _SlowRemoteConfigService(allowed);
+    final notifier = RemoteConfigNotifier(service);
+    service.responses.single.complete(allowed);
+    await Future<void>.delayed(Duration.zero);
+    expect(notifier.state.swapAvailable, isTrue);
+
+    unawaited(notifier.syncConfig());
+    expect(notifier.state.geoNearAllowed, isFalse);
+    expect(notifier.state.enableMultisig, isFalse);
+    expect(service.responses, hasLength(2));
+
+    service.responses.last.complete(allowed);
+    await Future<void>.delayed(Duration.zero);
+    expect(notifier.state.swapAvailable, isTrue);
+
+    unawaited(notifier.syncConfig());
+    service.responses.last.complete(allowed.copyWith(geoNearAllowed: false));
+    await Future<void>.delayed(Duration.zero);
+    expect(notifier.state.geoNearAllowed, isFalse);
   });
 
   test('syncing an unchanged remote config does not notify listeners', () async {
