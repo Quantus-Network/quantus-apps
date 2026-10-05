@@ -46,6 +46,15 @@ void main() {
     expect(named, isNot(RemoteConfigModel.defaults));
   });
 
+  test('the 1Click partner JWT is null unless the remote config serves near.partner.jwt', () {
+    expect(RemoteConfigModel.defaults.nearPartnerJwt, isNull);
+    expect(RemoteConfigModel.fromJson(const {'near.partner.jwt': ''}).nearPartnerJwt, isNull);
+    final keyed = RemoteConfigModel.fromJson(const {'near.partner.jwt': 'eyJhbGciOiJIUzI1NiJ9.partner'});
+    expect(keyed.nearPartnerJwt, 'eyJhbGciOiJIUzI1NiJ9.partner');
+    expect(RemoteConfigModel.fromJson(keyed.toCacheJson()), keyed);
+    expect(keyed, isNot(RemoteConfigModel.defaults));
+  });
+
   Future<int> changesAfterSync(RemoteConfigModel? remote) async {
     final notifier = RemoteConfigNotifier(FakeRemoteConfigService(RemoteConfigModel.defaults, remote: remote));
     var changes = 0;

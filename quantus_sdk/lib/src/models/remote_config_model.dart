@@ -19,6 +19,10 @@ class RemoteConfigModel {
   /// trusted, the device may have moved, so the gate fails closed.
   final bool geoNearAllowed;
 
+  /// 1Click partner JWT, sent as X-API-Key to attribute volume and lower the
+  /// platform fee; null sends no key. Served under `near.partner.jwt`.
+  final String? nearPartnerJwt;
+
   const RemoteConfigModel({
     required this.enableTestButtons,
     required this.enableKeystoneHardwareWallet,
@@ -29,6 +33,7 @@ class RemoteConfigModel {
     required this.enableMultisig,
     this.swapQuantusAssetId,
     required this.geoNearAllowed,
+    this.nearPartnerJwt,
   });
 
   /// Swap is offered when the flag is on and the location allows NEAR Intents.
@@ -57,6 +62,7 @@ class RemoteConfigModel {
       bool enableMultisig,
       String? swapQuantusAssetId,
       bool geoNearAllowed,
+      String? nearPartnerJwt,
     )
     fn,
   }) {
@@ -70,6 +76,7 @@ class RemoteConfigModel {
       enableMultisig,
       swapQuantusAssetId,
       geoNearAllowed,
+      nearPartnerJwt,
     );
   }
 
@@ -86,22 +93,36 @@ class RemoteConfigModel {
 
   Map<String, dynamic> toCacheJson() {
     return match(
-      fn: (test, keystone, security, notifications, swap, encrypted, multisig, swapQuantusAssetId, geoNearAllowed) => {
-        'enableTestButtons': test,
-        'enableKeystoneHardwareWallet': keystone,
-        'enableHighSecurity': security,
-        'enableRemoteNotifications': notifications,
-        'enableSwap': swap,
-        'enableEncryptedAccount': encrypted,
-        'enableMultisig': multisig,
-        'swapQuantusAssetId': swapQuantusAssetId,
-        'geoNearAllowed': geoNearAllowed,
-      },
+      fn:
+          (
+            test,
+            keystone,
+            security,
+            notifications,
+            swap,
+            encrypted,
+            multisig,
+            swapQuantusAssetId,
+            geoNearAllowed,
+            nearPartnerJwt,
+          ) => {
+            'enableTestButtons': test,
+            'enableKeystoneHardwareWallet': keystone,
+            'enableHighSecurity': security,
+            'enableRemoteNotifications': notifications,
+            'enableSwap': swap,
+            'enableEncryptedAccount': encrypted,
+            'enableMultisig': multisig,
+            'swapQuantusAssetId': swapQuantusAssetId,
+            'geoNearAllowed': geoNearAllowed,
+            'near.partner.jwt': nearPartnerJwt,
+          },
     );
   }
 
+  static String? _optionalString(Object? value) => value is String && value.isNotEmpty ? value : null;
+
   factory RemoteConfigModel.fromJson(Map<String, dynamic> json) {
-    final swapQuantusAssetId = json['swapQuantusAssetId'] as String?;
     return RemoteConfigModel(
       enableTestButtons: json['enableTestButtons'] ?? defaults.enableTestButtons,
       enableKeystoneHardwareWallet: json['enableKeystoneHardwareWallet'] ?? defaults.enableKeystoneHardwareWallet,
@@ -110,8 +131,9 @@ class RemoteConfigModel {
       enableSwap: json['enableSwap'] ?? defaults.enableSwap,
       enableEncryptedAccount: json['enableEncryptedAccount'] ?? defaults.enableEncryptedAccount,
       enableMultisig: json['enableMultisig'] ?? defaults.enableMultisig,
-      swapQuantusAssetId: swapQuantusAssetId == null || swapQuantusAssetId.isEmpty ? null : swapQuantusAssetId,
+      swapQuantusAssetId: _optionalString(json['swapQuantusAssetId']),
       geoNearAllowed: json['geoNearAllowed'] ?? defaults.geoNearAllowed,
+      nearPartnerJwt: _optionalString(json['near.partner.jwt']),
     );
   }
 
