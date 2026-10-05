@@ -13,6 +13,11 @@ class RemoteConfigModel {
   /// its chain code; null leaves that to the listing.
   final String? swapQuantusAssetId;
 
+  /// Whether this device's location may use NEAR Intents. Quersi decides it
+  /// from the request's country and adds it to the config it serves; false
+  /// until a server has said otherwise, so the gate fails closed.
+  final bool geoNearAllowed;
+
   const RemoteConfigModel({
     required this.enableTestButtons,
     required this.enableKeystoneHardwareWallet,
@@ -22,7 +27,11 @@ class RemoteConfigModel {
     required this.enableEncryptedAccount,
     required this.enableMultisig,
     this.swapQuantusAssetId,
+    required this.geoNearAllowed,
   });
+
+  /// Swap is offered when the flag is on and the location allows NEAR Intents.
+  bool get swapAvailable => enableSwap && geoNearAllowed;
 
   R match<R>({
     required R Function(
@@ -34,6 +43,7 @@ class RemoteConfigModel {
       bool enableEncryptedAccount,
       bool enableMultisig,
       String? swapQuantusAssetId,
+      bool geoNearAllowed,
     )
     fn,
   }) {
@@ -46,6 +56,7 @@ class RemoteConfigModel {
       enableEncryptedAccount,
       enableMultisig,
       swapQuantusAssetId,
+      geoNearAllowed,
     );
   }
 
@@ -57,11 +68,12 @@ class RemoteConfigModel {
     enableSwap: true,
     enableEncryptedAccount: true,
     enableMultisig: true,
+    geoNearAllowed: false,
   );
 
   Map<String, dynamic> toCacheJson() {
     return match(
-      fn: (test, keystone, security, notifications, swap, encrypted, multisig, swapQuantusAssetId) => {
+      fn: (test, keystone, security, notifications, swap, encrypted, multisig, swapQuantusAssetId, geoNearAllowed) => {
         'enableTestButtons': test,
         'enableKeystoneHardwareWallet': keystone,
         'enableHighSecurity': security,
@@ -70,6 +82,7 @@ class RemoteConfigModel {
         'enableEncryptedAccount': encrypted,
         'enableMultisig': multisig,
         'swapQuantusAssetId': swapQuantusAssetId,
+        'geoNearAllowed': geoNearAllowed,
       },
     );
   }
@@ -85,6 +98,7 @@ class RemoteConfigModel {
       enableEncryptedAccount: json['enableEncryptedAccount'] ?? defaults.enableEncryptedAccount,
       enableMultisig: json['enableMultisig'] ?? defaults.enableMultisig,
       swapQuantusAssetId: swapQuantusAssetId == null || swapQuantusAssetId.isEmpty ? null : swapQuantusAssetId,
+      geoNearAllowed: json['geoNearAllowed'] ?? defaults.geoNearAllowed,
     );
   }
 

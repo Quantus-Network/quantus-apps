@@ -26,6 +26,7 @@ void main() {
     required FakeSettingsService settings,
     required TestLocalAuthController auth,
     bool enableSwap = true,
+    bool geoNearAllowed = true,
   }) async {
     await tester.pumpApp(
       const HomeScreen(),
@@ -47,8 +48,11 @@ void main() {
         balancesServiceProvider.overrideWithValue(FakeBalancesService()),
         substrateServiceProvider.overrideWithValue(FakeSubstrateService()),
         remoteConfigProvider.overrideWith(
-          (ref) =>
-              RemoteConfigNotifier(FakeRemoteConfigService(RemoteConfigModel.fromJson({'enableSwap': enableSwap}))),
+          (ref) => RemoteConfigNotifier(
+            FakeRemoteConfigService(
+              RemoteConfigModel.fromJson({'enableSwap': enableSwap, 'geoNearAllowed': geoNearAllowed}),
+            ),
+          ),
         ),
       ],
     );
@@ -57,18 +61,19 @@ void main() {
     return ProviderScope.containerOf(tester.element(find.byType(HomeScreen)));
   }
 
-  for (final enableSwap in [true, false]) {
-    testWidgets('home actions show receive and send, and swap when remote config enableSwap is $enableSwap', (
-      tester,
-    ) async {
-      final settings = FakeSettingsService(activeAccount: RegularAccount(makeAccount(1)));
-      final auth = TestLocalAuthController(authenticated: true);
-      await pumpHome(tester, settings: settings, auth: auth, enableSwap: enableSwap);
+  for (final (enableSwap, geoNearAllowed) in [(true, true), (false, true), (true, false)]) {
+    testWidgets(
+      'home actions show receive and send, and swap when enableSwap is $enableSwap and the location allows NEAR is $geoNearAllowed',
+      (tester) async {
+        final settings = FakeSettingsService(activeAccount: RegularAccount(makeAccount(1)));
+        final auth = TestLocalAuthController(authenticated: true);
+        await pumpHome(tester, settings: settings, auth: auth, enableSwap: enableSwap, geoNearAllowed: geoNearAllowed);
 
-      expect(find.text('Receive'), findsOneWidget);
-      expect(find.text('Send'), findsOneWidget);
-      expect(find.text('Swap'), enableSwap ? findsOneWidget : findsNothing);
-    });
+        expect(find.text('Receive'), findsOneWidget);
+        expect(find.text('Send'), findsOneWidget);
+        expect(find.text('Swap'), enableSwap && geoNearAllowed ? findsOneWidget : findsNothing);
+      },
+    );
   }
 
   testWidgets('intent arriving while locked stays queued and drains on unlock', (tester) async {

@@ -158,6 +158,10 @@ stateDiagram-v2
 - Fees are inside `amountOut`. Nothing is charged on top of `amountIn`.
 - `refundFee` and `withdrawFee` in the quote are in base units of the origin asset.
 
+## Geo gate
+
+NEAR Intents is not available in every country, so the swap button is only shown where it is. Quersi decides: it runs behind Cloudflare, reads the visitor's country from the `CF-IPCountry` header, checks it against the blocked countries and ranges in its hot-reloaded `geo_config.json`, and adds the verdict to the wallet config it already serves as `geoNearAllowed`. The app's `RemoteConfigModel.swapAvailable` is `enableSwap && geoNearAllowed`, and the home screen shows the swap card on that. The gate fails closed: `geoNearAllowed` defaults to false, so a device that has never heard from quersi, or one talking to a quersi without the gate, does not offer swap. The verdict refreshes with the remote config, at launch and on every return to the foreground. `GET https://qrc-1.quantus.com/api/geo/near-allowed` shows what the gate saw for the caller. The block list itself lives in the quersi repo (`geo_config.example.json` and its README).
+
 ## Where this lives in the wallet
 
 | Screen or class | File | 1Click call |
@@ -185,6 +189,6 @@ Tests: `quantus_sdk/test/services/swap_service_test.dart` covers the request sha
    Until then the swap screen says "Swap disabled" and nothing more, so the swap button can ship enabled and does nothing it should not. Swap also stays behind the `enableSwap` remote config flag until swaps have been tested against the live listing.
 2. **No partner key**, so every quote carries the extra 25 basis points.
 3. **Orders are not persisted.** If the progress screen is closed, the app has no record of the swap. A swap in's deposit address stays in the user's other wallet, a swap out's deposit shows as an ordinary transfer in activity, and 1Click keeps processing both.
-4. The home swap button follows the `enableSwap` remote config flag and is enabled only for transparent accounts that sign in the app.
+4. The home swap button follows the `enableSwap` remote config flag and the geo gate (see below), and is enabled only for transparent accounts that sign in the app.
 5. Only `EXACT_INPUT` with origin-chain deposits and destination-chain payout. Signed-intent execution would need the wallet to sign NEP-413 or similar payloads.
 6. Slippage is picked from four presets (0.5, 1, 2, 3%); there is no custom value, and the pick is not persisted between launches.

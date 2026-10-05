@@ -377,7 +377,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     return Row(
       spacing: 20,
-      children: [receiveCard, sendCard, if (ref.watch(remoteConfigProvider).enableSwap) swapCard],
+      children: [receiveCard, sendCard, if (ref.watch(remoteConfigProvider).swapAvailable) swapCard],
     );
   }
 

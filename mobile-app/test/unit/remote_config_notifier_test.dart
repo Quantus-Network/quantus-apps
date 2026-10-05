@@ -11,6 +11,16 @@ void main() {
     expect(RemoteConfigModel.fromJson(const {'enableSwap': false}), isNot(RemoteConfigModel.defaults));
   });
 
+  test('swap is offered only where the server says NEAR Intents is allowed', () {
+    expect(RemoteConfigModel.defaults.geoNearAllowed, isFalse);
+    expect(RemoteConfigModel.fromJson(const {'enableSwap': true}).swapAvailable, isFalse);
+    expect(RemoteConfigModel.fromJson(const {'enableSwap': true, 'geoNearAllowed': true}).swapAvailable, isTrue);
+    expect(RemoteConfigModel.fromJson(const {'enableSwap': false, 'geoNearAllowed': true}).swapAvailable, isFalse);
+    final allowed = RemoteConfigModel.fromJson(const {'geoNearAllowed': true});
+    expect(RemoteConfigModel.fromJson(allowed.toCacheJson()), allowed);
+    expect(allowed, isNot(RemoteConfigModel.defaults));
+  });
+
   test('the Quantus swap asset id is null unless the remote config names one', () {
     expect(RemoteConfigModel.defaults.swapQuantusAssetId, isNull);
     expect(RemoteConfigModel.fromJson(const {'swapQuantusAssetId': ''}).swapQuantusAssetId, isNull);
