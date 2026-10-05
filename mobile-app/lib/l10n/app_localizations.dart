@@ -3104,6 +3104,30 @@ abstract class AppLocalizations {
   /// **'Failed to load tokens'**
   String get swapTokenPickerLoadError;
 
+  /// Title of the notice that replaces the swap form while swaps cannot be made
+  ///
+  /// In en, this message translates to:
+  /// **'Swap unavailable'**
+  String get swapUnavailableTitle;
+
+  /// Notice that replaces the swap form while NEAR Intents does not list QTC with a price; says nothing about why or when
+  ///
+  /// In en, this message translates to:
+  /// **'Swap disabled'**
+  String get swapDisabledTitle;
+
+  /// Body of the swap unavailable notice when the 1Click token list fails to load; shown with a retry
+  ///
+  /// In en, this message translates to:
+  /// **'NEAR Intents could not be reached.'**
+  String get swapUnavailableUnreachable;
+
+  /// Toast when the configured QTC asset changed while a swap was being confirmed; the confirmation stops
+  ///
+  /// In en, this message translates to:
+  /// **'The swap\'s terms changed. Review it again.'**
+  String get swapReviewListingChanged;
+
   /// Toast when 1Click rejects a quote or a swap cannot be created
   ///
   /// In en, this message translates to:

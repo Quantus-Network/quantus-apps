@@ -45,10 +45,6 @@ class AppConstants {
   // Key 1Click signs quotes with; from @defuse-protocol/one-click-sdk-typescript.
   static const String oneClickManagerPublicKey = 'ed25519:reYaWhvwu8Jzo3WUM3zhn6VrhuMEF4eADL17qtRVifc';
 
-  // Quantus is not listed on NEAR Intents yet, so every quote into it is
-  // rejected as "tokenOut is not valid". Replace with the listed asset id.
-  static const String quantusIntentsAssetId = 'nep141:qtc.omft.near';
-
   // internal group URL is this (note the /c)
   // https://t.me/c/quantusnetwork/2457
   // removing the c, we get a better preview page though so we use it without c...

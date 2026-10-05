@@ -1654,6 +1654,18 @@ class AppLocalizationsId extends AppLocalizations {
   String get swapTokenPickerLoadError => 'Gagal memuat token';
 
   @override
+  String get swapUnavailableTitle => 'Swap tidak tersedia';
+
+  @override
+  String get swapDisabledTitle => 'Swap dinonaktifkan';
+
+  @override
+  String get swapUnavailableUnreachable => 'NEAR Intents tidak dapat dijangkau.';
+
+  @override
+  String get swapReviewListingChanged => 'Ketentuan swap berubah. Tinjau kembali.';
+
+  @override
   String swapQuoteError(String message) {
     return 'Penawaran gagal: $message';
   }

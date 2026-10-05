@@ -17,6 +17,8 @@ import 'package:resonance_network_wallet/v2/screens/swap/swap_slippage_sheet.dar
 import 'package:resonance_network_wallet/v2/screens/swap/token_picker_sheet.dart';
 
 /// Swaps between QTC in [account] and a token on another chain, either way.
+/// Until 1Click lists QTC with a price, or when 1Click cannot be reached, the
+/// form gives way to a notice that swaps are unavailable.
 class SwapScreen extends ConsumerStatefulWidget {
   final Account account;
 
@@ -34,9 +36,11 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
 
   final _amountController = TextEditingController();
   SwapToken? _foreign;
-  SwapToken? _listedQuantus;
+  SwapToken? _quantus;
   bool _loadingTokens = true;
+  bool _loadFailed = false;
   bool _swapOut = true;
+  int _loads = 0;
 
   @override
   void initState() {
@@ -51,21 +55,30 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
     super.dispose();
   }
 
+  /// Loads the tokens from the current service. The form waits for the
+  /// result, and a load that a newer one has overtaken is dropped, so a
+  /// listing fetched before a config change can never come back.
   Future<void> _loadTokens({bool forceRefresh = false}) async {
-    setState(() => _loadingTokens = true);
+    final load = ++_loads;
+    setState(() {
+      _loadingTokens = true;
+      _loadFailed = false;
+      _quantus = null;
+    });
     try {
       final service = ref.read(swapServiceProvider);
       final tokens = await service.getFromTokens(forceRefresh: forceRefresh);
-      final listedQuantus = await service.getListedQuantusToken();
-      if (!mounted) return;
+      final quantus = await service.getListedQuantusToken();
+      if (!mounted || load != _loads) return;
       setState(() {
         _foreign ??= tokens.first;
-        _listedQuantus = listedQuantus;
+        _quantus = quantus;
       });
     } catch (e) {
       quantusPrint('Swap tokens failed to load: $e');
+      if (mounted && load == _loads) setState(() => _loadFailed = true);
     } finally {
-      if (mounted) setState(() => _loadingTokens = false);
+      if (mounted && load == _loads) setState(() => _loadingTokens = false);
     }
   }
 
@@ -93,8 +106,9 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
     if (tapped.isQuantus) _setDirection(swapOut: !_swapOut);
   }
 
+  /// The sheet quotes with the service of the moment, so a config change
+  /// while it is open is seen: the service then refuses the stale QTC token.
   Future<void> _addAddress(SwapToken from, SwapToken to, SwapToken foreign) async {
-    final service = ref.read(swapServiceProvider);
     final account = widget.account;
     final amount = _amountIn(from);
     final swapOut = _swapOut;
@@ -102,14 +116,16 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
       context,
       token: foreign,
       role: swapOut ? SwapAddressRole.recipient : SwapAddressRole.refund,
-      quote: (address) => service.getQuote(
-        from: from,
-        to: to,
-        amount: amount,
-        refundAddress: swapOut ? account.accountId : address,
-        recipient: swapOut ? address : account.accountId,
-        slippageBps: ref.read(swapSlippageBpsProvider),
-      ),
+      quote: (address) => ref
+          .read(swapServiceProvider)
+          .getQuote(
+            from: from,
+            to: to,
+            amount: amount,
+            refundAddress: swapOut ? account.accountId : address,
+            recipient: swapOut ? address : account.accountId,
+            slippageBps: ref.read(swapSlippageBpsProvider),
+          ),
     );
     if (quote == null || !mounted) return;
     Navigator.push(
@@ -122,11 +138,13 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen(swapServiceProvider, (_, _) => _loadTokens());
     final l10n = ref.watch(l10nProvider);
     final colors = context.colorsV3;
     final text = context.themeTextV3;
     final foreign = _foreign;
-    final SwapToken quantus = _listedQuantus ?? ref.watch(quantusSwapTokenProvider);
+    final quantus = _quantus;
+    final ready = foreign != null && quantus != null;
 
     return ScaffoldBase(
       appBar: V2AppBar(
@@ -134,28 +152,55 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
         slotWidth: NearIntentsAttribution.width,
         trailing: const NearIntentsAttribution(),
       ),
-      mainContent: foreign == null
-          ? _tokensState(l10n, colors, text)
-          : _form(l10n, colors, text, _swapOut ? quantus : foreign, _swapOut ? foreign : quantus),
-      bottomContent: foreign == null
-          ? null
-          : _cta(l10n, _swapOut ? quantus : foreign, _swapOut ? foreign : quantus, foreign),
+      mainContent: ready
+          ? _form(l10n, colors, text, _swapOut ? quantus : foreign, _swapOut ? foreign : quantus)
+          : _unavailable(l10n, colors, text),
+      bottomContent: ready ? _cta(l10n, _swapOut ? quantus : foreign, _swapOut ? foreign : quantus, foreign) : null,
     );
   }
 
-  Widget _tokensState(AppLocalizations l10n, AppColorsV3 colors, AppTextThemeV3 text) {
+  /// In place of the form: "Swap disabled" while 1Click does not list QTC with
+  /// a price, saying nothing about why or when; an unreachable 1Click names
+  /// itself and offers a retry.
+  Widget _unavailable(AppLocalizations l10n, AppColorsV3 colors, AppTextThemeV3 text) {
     if (_loadingTokens) return const Center(child: Loader());
     return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(l10n.swapTokenPickerLoadError, style: text.body.copyWith(color: colors.textMuted)),
-          const SizedBox(height: 12),
-          GestureDetector(
-            onTap: () => _loadTokens(forceRefresh: true),
-            child: Text(l10n.commonTryAgain, style: text.body.copyWith(color: colors.accentFlare)),
-          ),
-        ],
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 72,
+              height: 72,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: colors.bgSurface,
+                shape: BoxShape.circle,
+                border: Border.all(color: colors.borderHairline),
+              ),
+              child: QuantusIcon(QuantusIcons.swapVertical, size: 28, color: colors.textMuted),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              _loadFailed ? l10n.swapUnavailableTitle : l10n.swapDisabledTitle,
+              style: text.titleScreen.copyWith(color: colors.textContent),
+            ),
+            if (_loadFailed) ...[
+              const SizedBox(height: 8),
+              Text(
+                l10n.swapUnavailableUnreachable,
+                textAlign: TextAlign.center,
+                style: text.body.copyWith(color: colors.textMuted),
+              ),
+              const SizedBox(height: 16),
+              GestureDetector(
+                onTap: () => _loadTokens(forceRefresh: true),
+                child: Text(l10n.commonTryAgain, style: text.body.copyWith(color: colors.accentFlare)),
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }

@@ -11,6 +11,15 @@ void main() {
     expect(RemoteConfigModel.fromJson(const {'enableSwap': false}), isNot(RemoteConfigModel.defaults));
   });
 
+  test('the Quantus swap asset id is null unless the remote config names one', () {
+    expect(RemoteConfigModel.defaults.swapQuantusAssetId, isNull);
+    expect(RemoteConfigModel.fromJson(const {'swapQuantusAssetId': ''}).swapQuantusAssetId, isNull);
+    final named = RemoteConfigModel.fromJson(const {'swapQuantusAssetId': 'nep141:qtc.omft.near'});
+    expect(named.swapQuantusAssetId, 'nep141:qtc.omft.near');
+    expect(RemoteConfigModel.fromJson(named.toCacheJson()), named);
+    expect(named, isNot(RemoteConfigModel.defaults));
+  });
+
   Future<int> changesAfterSync(RemoteConfigModel? remote) async {
     final notifier = RemoteConfigNotifier(FakeRemoteConfigService(RemoteConfigModel.defaults, remote: remote));
     var changes = 0;
