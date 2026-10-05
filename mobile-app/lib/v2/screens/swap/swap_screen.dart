@@ -40,6 +40,7 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
   bool _loadingTokens = true;
   bool _loadFailed = false;
   bool _swapOut = true;
+  int _loads = 0;
 
   @override
   void initState() {
@@ -54,25 +55,30 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
     super.dispose();
   }
 
+  /// Loads the tokens from the current service. The form waits for the
+  /// result, and a load that a newer one has overtaken is dropped, so a
+  /// listing fetched before a config change can never come back.
   Future<void> _loadTokens({bool forceRefresh = false}) async {
+    final load = ++_loads;
     setState(() {
       _loadingTokens = true;
       _loadFailed = false;
+      _quantus = null;
     });
     try {
       final service = ref.read(swapServiceProvider);
       final tokens = await service.getFromTokens(forceRefresh: forceRefresh);
       final quantus = await service.getListedQuantusToken();
-      if (!mounted) return;
+      if (!mounted || load != _loads) return;
       setState(() {
         _foreign ??= tokens.first;
         _quantus = quantus;
       });
     } catch (e) {
       quantusPrint('Swap tokens failed to load: $e');
-      if (mounted) setState(() => _loadFailed = true);
+      if (mounted && load == _loads) setState(() => _loadFailed = true);
     } finally {
-      if (mounted) setState(() => _loadingTokens = false);
+      if (mounted && load == _loads) setState(() => _loadingTokens = false);
     }
   }
 
@@ -129,6 +135,7 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen(swapServiceProvider, (_, _) => _loadTokens());
     final l10n = ref.watch(l10nProvider);
     final colors = context.colorsV3;
     final text = context.themeTextV3;

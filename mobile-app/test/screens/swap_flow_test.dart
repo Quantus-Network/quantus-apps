@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:ed25519_edwards/ed25519_edwards.dart' as ed25519;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -183,11 +184,19 @@ void main() {
     await SettingsService().initialize();
   });
 
-  List<Override> overrides(SwapService service, {BigInt? balance, _FakeSubmission? submission}) => [
+  /// [services] stands in for the remote config rebuilding the service.
+  List<Override> overrides(
+    SwapService service, {
+    BigInt? balance,
+    _FakeSubmission? submission,
+    StateProvider<SwapService>? services,
+  }) => [
     settingsServiceProvider.overrideWithValue(FakeSettingsService(activeAccount: RegularAccount(account))),
     isOnlineProvider.overrideWith((ref) => true),
     l10nProvider.overrideWithValue(l10n),
-    swapServiceProvider.overrideWithValue(service),
+    services == null
+        ? swapServiceProvider.overrideWithValue(service)
+        : swapServiceProvider.overrideWith((ref) => ref.watch(services)),
     effectiveMaxBalanceProviderFamily.overrideWith((ref, _) => AsyncValue.data(balance ?? _unit * BigInt.from(1000))),
     swapDepositFeeProvider.overrideWith((ref, _) async => _unit ~/ BigInt.from(50)),
     balancesServiceProvider.overrideWithValue(FakeBalancesService()),
@@ -262,6 +271,41 @@ void main() {
       final quote = oneClick.requests.singleWhere((r) => r.url.path == '/v0/quote');
       expect((jsonDecode(quote.body) as Map)['originAsset'], listedId);
       expect(find.text(l10n.swapReviewTitle), findsOneWidget);
+    });
+
+    testWidgets('reloads the listing when the remote asset id changes while the screen is open', (tester) async {
+      const otherId = 'nep141:quantus.omft.near';
+      final before = _OneClick(dryOut: BigInt.from(1000000));
+      final after = _OneClick(
+        dryOut: BigInt.from(1000000),
+        listed: [
+          {..._listedQtc, 'assetId': otherId},
+        ],
+      );
+      final services = StateProvider<SwapService>((_) => before.service());
+      await tester.pumpApp(
+        SwapScreen(account: account),
+        overrides: overrides(before.service(), services: services),
+      );
+      await settle(tester);
+      expect(find.text('FROM'), findsOneWidget);
+
+      ProviderScope.containerOf(tester.element(find.byType(SwapScreen))).read(services.notifier).state = after
+          .service();
+      await settle(tester);
+
+      await tester.enterText(find.byType(TextField), '10');
+      await tester.pump();
+      await tester.tap(find.text(l10n.swapAddRecipientAddress));
+      await settle(tester);
+      await tester.enterText(find.byType(TextField).last, _external);
+      await tester.pump();
+      await tester.tap(find.text(l10n.swapContinue));
+      await settle(tester);
+
+      final quote = after.requests.singleWhere((r) => r.url.path == '/v0/quote');
+      expect((jsonDecode(quote.body) as Map)['originAsset'], otherId);
+      expect(before.requests.where((r) => r.url.path == '/v0/quote'), isEmpty);
     });
 
     testWidgets('shows swaps as unavailable while 1Click does not list QTC, or lists it without a price', (
