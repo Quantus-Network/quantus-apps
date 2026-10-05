@@ -105,6 +105,30 @@ void main() {
     expect(notifier.state.geoNearAllowed, isFalse);
   });
 
+  test('a refresh overlapping an earlier one discards the earlier answer and asks again', () async {
+    final allowed = RemoteConfigModel.fromJson(const {'geoNearAllowed': true, 'enableMultisig': false});
+    final service = _SlowRemoteConfigService(allowed);
+    final notifier = RemoteConfigNotifier(service);
+    unawaited(notifier.syncConfig());
+    expect(service.responses, hasLength(1));
+
+    service.responses.single.complete(allowed);
+    await Future<void>.delayed(Duration.zero);
+    expect(notifier.state.geoNearAllowed, isFalse);
+    expect(service.responses, hasLength(2));
+
+    service.responses.last.complete(allowed.copyWith(geoNearAllowed: false));
+    await Future<void>.delayed(Duration.zero);
+    expect(notifier.state.geoNearAllowed, isFalse);
+    expect(notifier.state.enableMultisig, isFalse);
+
+    unawaited(notifier.syncConfig());
+    expect(service.responses, hasLength(3));
+    service.responses.last.complete(allowed);
+    await Future<void>.delayed(Duration.zero);
+    expect(notifier.state.swapAvailable, isTrue);
+  });
+
   test('syncing an unchanged remote config does not notify listeners', () async {
     expect(await changesAfterSync(RemoteConfigModel.fromJson(const {})), 0);
   });
