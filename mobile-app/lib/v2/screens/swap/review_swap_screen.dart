@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart' hide ScaffoldBase;
 import 'package:resonance_network_wallet/l10n/app_localizations.dart';
+import 'package:resonance_network_wallet/models/swap_preflight.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
@@ -19,7 +20,8 @@ import 'package:resonance_network_wallet/v2/screens/swap/swap_summary.dart';
 /// Shows a dry quote's terms. Confirming takes a live quote; when its
 /// guaranteed minimum is below the one shown, the live terms replace the shown
 /// ones and need a second confirmation. A swap out of QTC then sends the
-/// deposit from [account].
+/// deposit from [account]; in preflight the stand-in's deposit is made by hand
+/// from the deposit screen, as the app cannot sign on its chain.
 class ReviewSwapScreen extends ConsumerStatefulWidget {
   final Account account;
   final SwapQuote quote;
@@ -41,6 +43,8 @@ class _ReviewSwapScreenState extends ConsumerState<ReviewSwapScreen> {
 
   bool get _swapOut => _quote.fromToken.isQuantus;
 
+  bool _sendsDeposit(SwapPreflight? preflight) => _swapOut && preflight == null;
+
   (Account, BigInt) get _feeKey => (widget.account, _quote.amountIn);
 
   Future<void> _confirm() async {
@@ -50,7 +54,9 @@ class _ReviewSwapScreenState extends ConsumerState<ReviewSwapScreen> {
     try {
       final order = await _liveOrder(l10n, generation);
       if (order == null || !mounted) return;
-      final fee = _swapOut ? ref.read(swapDepositFeeProvider(_feeKey)).requireValue : null;
+      final fee = _sendsDeposit(ref.read(swapPreflightProvider))
+          ? ref.read(swapDepositFeeProvider(_feeKey)).requireValue
+          : null;
       final txHash = fee != null ? await _sendDeposit(order, fee, l10n, generation) : null;
       if ((fee != null && txHash == null) || !mounted) return;
       Navigator.pushAndRemoveUntil(
@@ -163,12 +169,15 @@ class _ReviewSwapScreenState extends ConsumerState<ReviewSwapScreen> {
     Widget row(String label, String value, {bool mono = false}) =>
         SwapDetailRow(label: label, value: value, monoLabel: true, monoValue: mono);
 
-    final fee = _swapOut ? ref.watch(swapDepositFeeProvider(_feeKey)) : null;
-    final spendable = _swapOut ? ref.watch(effectiveMaxBalanceProviderFamily(widget.account.accountId)).value : null;
+    final sendsDeposit = _sendsDeposit(ref.watch(swapPreflightProvider));
+    final fee = sendsDeposit ? ref.watch(swapDepositFeeProvider(_feeKey)) : null;
+    final spendable = sendsDeposit
+        ? ref.watch(effectiveMaxBalanceProviderFamily(widget.account.accountId)).value
+        : null;
     final feeValue = fee?.value;
     final insufficient = feeValue != null && spendable != null && quote.amountIn + feeValue > spendable;
     final available = ref.watch(remoteConfigProvider.select((c) => c.swapAvailable));
-    final blocked = !available || _swapOut && (feeValue == null || spendable == null || insufficient);
+    final blocked = !available || sendsDeposit && (feeValue == null || spendable == null || insufficient);
 
     return ScaffoldBase(
       appBar: V2AppBar(title: l10n.swapReviewTitle),

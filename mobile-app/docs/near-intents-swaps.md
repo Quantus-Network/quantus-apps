@@ -162,6 +162,35 @@ stateDiagram-v2
 
 NEAR Intents is not available in every country, so the swap button is only shown where it is. Quersi decides: it runs behind Cloudflare, reads the visitor's country from the `CF-IPCountry` header, checks it against the blocked countries and ranges in its hot-reloaded `geo_config.json`, and adds the verdict to the wallet config it already serves as `geoNearAllowed`. The app's `RemoteConfigModel.swapAvailable` is `enableSwap && geoNearAllowed`, and the home screen shows the swap card on that. The gate fails closed: `geoNearAllowed` defaults to false, so a device that has never heard from quersi, or one talking to a quersi without the gate, does not offer swap. A cached verdict is never trusted either: at launch, and again at every return to the foreground, the allowance is revoked before the config request goes out and only a fresh answer grants it, so a device that moved into a blocked country does not keep an old allowance. The request is given 15 seconds, so one that hangs cannot preserve an allowance or block later refreshes, and an answer to a request that was still in flight when the app came back to the foreground is discarded while a fresh request follows. The verdict refreshes with the remote config, at launch and on every return to the foreground. Every place a new swap can start or be confirmed checks it: the home card, the swap form (which shows "Swap disabled"), the review's confirm button and the "Start a New Swap" button after a failed swap. A confirmation already awaiting its live quote stops too, and one at the authentication prompt refreshes the location once the user has authenticated and sends only on a fresh allowance, since the prompt can hide a move elsewhere. A backgrounding during that prompt is kept from the unlock logic to avoid a double prompt, but the resume that follows still re-checks the location. The status of a swap already in flight stays reachable. `GET https://qrc-1.quantus.com/api/geo/near-allowed` shows what the gate saw for the caller. The block list itself lives in the quersi repo (`geo_config.example.json` and its README).
 
+## Authentication
+
+1Click has no accounts and no login. The token list, quotes, deposit submission and status are public endpoints, and every call this app makes goes out unauthenticated. A swap's only authorization is its deposit address: whoever sends funds to it has swapped. The tester's own wallets (MetaMask, a NEAR wallet, an exchange withdrawal) hold and move the funds on the other chains; the app never signs anything there. There is no login to NEAR or NEAR Intents anywhere in the flow.
+
+The one optional credential is a partner JWT from the Partner Dashboard at https://partners.near-intents.org/home. It is sent as `X-API-Key: <jwt>` (`Authorization: Bearer <jwt>` is also accepted), identifies the integrator for volume attribution and fee sharing, and drops 1Click's platform fee from 25 to 20 basis points. Without it 1Click adds 0.25% to every quote and nothing else changes. It reaches `SwapService(apiKey:)` from the remote config key `near.partner.jwt` (see Fees); no header goes out while the key is unset.
+
+## Preflight: testing the flow before QTC is listed
+
+1Click has no testnet and no sandbox. `dry: true` only prices a quote and leaves out the deposit address and deadline, so it exercises nothing after the quote. Deposit, confirmation, settlement, payout and refund only happen with real funds; small amounts are the only way to test them.
+
+A debug build can stand another listed asset in for QTC:
+
+```bash
+flutter run \
+  --dart-define=SWAP_PREFLIGHT_ASSET=nep141:wrap.near \
+  --dart-define=SWAP_PREFLIGHT_ADDRESS=tester.near
+```
+
+- `SWAP_PREFLIGHT_ASSET` is any asset id from `GET /v0/tokens`. The app treats it as QTC's side of the swap: it leaves the token picker, takes QTC's place on the form, and keeps its own symbol, network and decimals.
+- `SWAP_PREFLIGHT_ADDRESS` is the tester's account on that asset's chain. It takes the place of the Quantus account as the recipient of a swap in and the refund address of a swap out.
+- The form carries a banner naming the stand-in. `bootstrap()` refuses to start a non-debug build that has the flag set, so no user can ever see this mode. `SwapPreflight.fromEnvironment` (`mobile-app/lib/models/swap_preflight.dart`) is the only place the flags are read; `swapPreflightProvider` hands them to the screens, and tests override it.
+
+What it covers, with USDC on Ethereum and wNEAR as the pair:
+
+- Swap in (USDC → wNEAR): the whole real flow. Dry quote, live quote, deposit screen with address and QR, deposit from an external wallet, status polling, payout to `SWAP_PREFLIGHT_ADDRESS`, the expired and refunded paths. Nothing is simulated.
+- Swap out (wNEAR → USDC): dry quote, review without the network fee and balance rows, live quote, then the deposit screen in place of the in-app transfer. The app cannot sign on NEAR, so the tester sends the deposit by hand from a NEAR wallet; `/v0/deposit/submit` is not called and 1Click finds the deposit on its own. The one step of a real swap out this leaves untested is the QTC transfer to the deposit address, which is the ordinary send path with the deposit address as recipient.
+
+Amounts: 1Click answers `Failed to get quote` when no solver bids, which it does for amounts too small to be worth filling; 10 to 20 USD has worked in probes. The platform fee, the solver's spread and the origin chain's gas come out of each test. Any other listed asset works the same way as wNEAR, for example USDC on Base with the tester's Base address when that wallet is at hand; the stand-in only has to be on a chain the tester can send from and receive on.
+
 ## Where this lives in the wallet
 
 | Screen or class | File | 1Click call |
@@ -172,9 +201,10 @@ NEAR Intents is not available in every country, so the swap button is only shown
 | `SwapProgressScreen` | `mobile-app/lib/v2/screens/swap/swap_progress_screen.dart` | Status every 5 s through `swapOrderProvider`: the deposit address while a swap in waits, then progress steps, complete, or failed and refunded. |
 | `SwapService` | `quantus_sdk/lib/src/services/swap_service.dart` | The HTTP client. `SwapApiException` carries the server message. |
 | `SwapToken`, `SwapQuote`, `SwapOrder` | `quantus_sdk/lib/src/models/swap_*.dart` | Asset ids and BigInt base-unit amounts. |
+| `SwapPreflight` | `mobile-app/lib/models/swap_preflight.dart` | The stand-in for QTC from the preflight dart-defines, null in real builds. |
 | Endpoints | `quantus_sdk/lib/src/constants/app_constants.dart` | `oneClickEndpoint`. |
 
-Tests: `quantus_sdk/test/services/swap_service_test.dart` covers the request shape, response parsing, every status, deposit submission, error handling, and signature checks against a mock HTTP client that signs its responses; the 1Click SDK's staging fixtures are verified byte for byte against its staging key. `mobile-app/test/screens/swap_flow_test.dart` drives the form, the swap-out confirmation, the price-moved re-confirmation and the outcome screens.
+Tests: `quantus_sdk/test/services/swap_service_test.dart` covers the request shape, response parsing, every status, deposit submission, error handling, and signature checks against a mock HTTP client that signs its responses; the 1Click SDK's staging fixtures are verified byte for byte against its staging key. `mobile-app/test/screens/swap_flow_test.dart` drives the form, the swap-out confirmation, the price-moved re-confirmation and the outcome screens, plus the preflight stand-in: the tester address on QTC's side in both directions, and the deposit screen in place of the transfer for a swap out.
 
 ## Blockers
 

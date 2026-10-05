@@ -1663,6 +1663,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get swapReviewListingChanged => 'The swap\'s terms changed. Review it again.';
 
   @override
+  String swapPreflightBanner(String symbol, String network) {
+    return 'Preflight: $symbol on $network stands in for QTC. Real funds move.';
+  }
+
+  @override
   String swapQuoteError(String message) {
     return 'Quote failed: $message';
   }

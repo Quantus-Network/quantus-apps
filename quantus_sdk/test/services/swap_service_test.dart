@@ -83,12 +83,14 @@ SwapService _service(
   Future<http.Response> Function(http.Request request) handler, {
   String? apiKey,
   String? quantusAssetId,
+  bool preflight = false,
 }) => SwapService(
   endpoint: 'https://oneclick.test',
   apiKey: apiKey,
   client: MockClient(handler),
   managerPublicKey: _managerPublicKey,
   quantusAssetId: quantusAssetId,
+  preflight: preflight,
 );
 
 Map<String, dynamic> _sentRequest(http.Request r) => jsonDecode(r.body) as Map<String, dynamic>;
@@ -444,7 +446,7 @@ void main() {
   });
 
   group('SwapToken', () {
-    test('names known networks and recognises the Quantus token by its network', () {
+    test('names known networks, Quantus included', () {
       expect(_usdcEth.networkName, 'Ethereum');
       expect(_wnear.networkName, 'NEAR');
       expect(_usdcEth.isQuantus, isFalse);
@@ -454,9 +456,10 @@ void main() {
         network: SwapToken.quantusNetwork,
         decimals: 12,
         usdPrice: 1,
+        isQuantus: true,
       );
-      expect(quantus.isQuantus, isTrue);
       expect(quantus.networkName, 'Quantus');
+      expect(quantus.copyWith(iconUrl: 'x').isQuantus, isTrue);
     });
   });
 
@@ -583,10 +586,14 @@ void main() {
       {'assetId': 'nep141:other-qtc.omft.near', 'decimals': 18, 'blockchain': 'eth', 'symbol': 'QTC', 'price': 9},
     ];
 
-    SwapService listing(List<Map<String, dynamic>> list, {String? quantusAssetId}) => _service((r) async {
-      if (r.url.host == 'api.coingecko.com') return http.Response('down', 503);
-      return http.Response(jsonEncode(list), 200);
-    }, quantusAssetId: quantusAssetId);
+    SwapService listing(List<Map<String, dynamic>> list, {String? quantusAssetId, bool preflight = false}) => _service(
+      (r) async {
+        if (r.url.host == 'api.coingecko.com') return http.Response('down', 503);
+        return http.Response(jsonEncode(list), 200);
+      },
+      quantusAssetId: quantusAssetId,
+      preflight: preflight,
+    );
 
     test(
       'takes QTC from the listing by its chain, whatever its asset id, and keeps it out of the other tokens',
@@ -660,6 +667,7 @@ void main() {
         network: SwapToken.quantusNetwork,
         decimals: 12,
         usdPrice: 1,
+        isQuantus: true,
       );
       for (final (from, to) in [(stale, _usdcEth), (_usdcEth, stale)]) {
         await expectLater(
@@ -667,6 +675,16 @@ void main() {
           throwsA(isA<SwapQuoteIntegrityException>()),
         );
       }
+    });
+
+    test('a preflight stand-in keeps its own network and decimals and leaves the other tokens', () async {
+      final service = listing(tokens, quantusAssetId: 'nep141:wrap.near', preflight: true);
+      final standIn = await service.getListedQuantusToken();
+      expect(standIn!.isQuantus, isTrue);
+      expect(standIn.symbol, 'WNEAR');
+      expect(standIn.network, 'NEAR');
+      expect(standIn.decimals, 24);
+      expect((await service.getFromTokens()).map((t) => t.symbol), ['BTC', 'USDC']);
     });
 
     test('a QTC listing without a price leaves swaps unavailable', () async {

@@ -13,6 +13,7 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/l10n/app_localizations.dart';
+import 'package:resonance_network_wallet/models/swap_preflight.dart';
 import 'package:resonance_network_wallet/providers/connectivity_provider.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
@@ -37,6 +38,24 @@ const _qtc = SwapToken(
   network: SwapToken.quantusNetwork,
   decimals: AppConstants.decimals,
   usdPrice: 0.1,
+  isQuantus: true,
+);
+const _wnear = <String, dynamic>{
+  'assetId': 'nep141:wrap.near',
+  'decimals': 24,
+  'blockchain': 'near',
+  'symbol': 'wNEAR',
+  'price': 5,
+};
+const _tester = 'tester.near';
+const _preflight = SwapPreflight(assetId: 'nep141:wrap.near', address: _tester);
+const _wnearStandIn = SwapToken(
+  assetId: 'nep141:wrap.near',
+  symbol: 'WNEAR',
+  network: 'NEAR',
+  decimals: 24,
+  usdPrice: 5,
+  isQuantus: true,
 );
 const _listedQtc = <String, dynamic>{
   'assetId': 'nep141:qtc.omft.near',
@@ -86,8 +105,13 @@ class _OneClick {
   Iterable<http.Request> get liveQuotes =>
       requests.where((r) => r.url.path == '/v0/quote' && (jsonDecode(r.body) as Map)['dry'] == false);
 
-  SwapService service() =>
-      SwapService(endpoint: 'https://oneclick.test', client: MockClient(_handle), managerPublicKey: _managerPublicKey);
+  SwapService service({bool preflight = false}) => SwapService(
+    endpoint: 'https://oneclick.test',
+    client: MockClient(_handle),
+    managerPublicKey: _managerPublicKey,
+    quantusAssetId: preflight ? _preflight.assetId : null,
+    preflight: preflight,
+  );
 
   Future<http.Response> _handle(http.Request request) async {
     requests.add(request);
@@ -204,11 +228,13 @@ void main() {
     FakeTransactionSubmissionService? submission,
     StateProvider<SwapService>? services,
     _SwapConfig? config,
+    SwapPreflight? preflight,
   }) => [
     settingsServiceProvider.overrideWithValue(FakeSettingsService(activeAccount: RegularAccount(account))),
     isOnlineProvider.overrideWith((ref) => true),
     l10nProvider.overrideWithValue(l10n),
     remoteConfigProvider.overrideWith((ref) => config ?? _SwapConfig()),
+    swapPreflightProvider.overrideWithValue(preflight),
     services == null
         ? swapServiceProvider.overrideWithValue(service)
         : swapServiceProvider.overrideWith((ref) => ref.watch(services)),
@@ -671,6 +697,84 @@ void main() {
         expect(button(tester, l10n.swapStartNew).isDisabled, isTrue);
       },
     );
+  });
+
+  group('preflight', () {
+    Future<Map<String, dynamic>> quoteWith(WidgetTester tester, _OneClick oneClick, String cta) async {
+      await tester.enterText(find.byType(TextField), '1');
+      await tester.pump();
+      await tester.tap(find.text(cta));
+      await settle(tester);
+      await tester.enterText(find.byType(TextField).last, _external);
+      await tester.pump();
+      await tester.tap(find.text(l10n.swapContinue));
+      await settle(tester);
+      return jsonDecode(oneClick.requests.singleWhere((r) => r.url.path == '/v0/quote').body) as Map<String, dynamic>;
+    }
+
+    testWidgets('stands the configured asset in for QTC, with the tester address on its side', (tester) async {
+      final oneClick = _OneClick(dryOut: BigInt.from(1000000), listed: [_wnear]);
+      await tester.pumpApp(
+        SwapScreen(account: account),
+        overrides: overrides(oneClick.service(preflight: true), preflight: _preflight),
+      );
+      await settle(tester);
+
+      expect(find.text(l10n.swapPreflightBanner('WNEAR', 'NEAR')), findsOneWidget);
+      expect(find.text('WNEAR'), findsOneWidget);
+      expect(find.text('QTC'), findsNothing);
+
+      final out = await quoteWith(tester, oneClick, l10n.swapAddRecipientAddress);
+      expect(out['originAsset'], _preflight.assetId);
+      expect(out['destinationAsset'], _usdc.assetId);
+      expect(out['amount'], BigInt.from(10).pow(24).toString());
+      expect(out['refundTo'], _tester);
+      expect(out['recipient'], _external);
+    });
+
+    testWidgets('a swap in pays out to the tester address', (tester) async {
+      final oneClick = _OneClick(dryOut: BigInt.from(10).pow(23), listed: [_wnear]);
+      await tester.pumpApp(
+        SwapScreen(account: account),
+        overrides: overrides(oneClick.service(preflight: true), preflight: _preflight),
+      );
+      await settle(tester);
+      await tester.tap(svg('assets/v2/swap_arrows_down_up.svg'));
+      await tester.pump();
+
+      final into = await quoteWith(tester, oneClick, l10n.swapAddRefundAddress);
+      expect(into['originAsset'], _usdc.assetId);
+      expect(into['destinationAsset'], _preflight.assetId);
+      expect(into['refundTo'], _external);
+      expect(into['recipient'], _tester);
+    });
+
+    testWidgets('a swap out shows the deposit address instead of sending', (tester) async {
+      final quote = _quote(
+        from: _wnearStandIn,
+        to: _usdc,
+        amountIn: BigInt.from(10).pow(24),
+        amountOut: BigInt.from(4900000),
+        refund: _tester,
+        recipient: _external,
+      );
+      final oneClick = _OneClick(dryOut: quote.amountOut, listed: [_wnear]);
+      final submission = FakeTransactionSubmissionService();
+      await tester.pumpApp(
+        ReviewSwapScreen(account: account, quote: quote),
+        overrides: overrides(oneClick.service(preflight: true), submission: submission, preflight: _preflight),
+      );
+      await settle(tester);
+      expect(find.text('NETWORK FEE'), findsNothing);
+
+      await tester.tap(find.text(l10n.swapReviewConfirm));
+      await settle(tester);
+
+      expect(submission.transfers, isEmpty);
+      expect(oneClick.requests.where((r) => r.url.path == '/v0/deposit/submit'), isEmpty);
+      expect(find.text(_deposit), findsOneWidget);
+      expect(find.text(l10n.swapDepositNotice('WNEAR', 'NEAR')), findsOneWidget);
+    });
   });
 
   group('SwapProgressScreen', () {

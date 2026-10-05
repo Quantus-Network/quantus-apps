@@ -18,8 +18,8 @@ import 'package:resonance_network_wallet/v2/screens/swap/swap_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/swap_summary.dart';
 
 /// Follows a live swap through 1Click's status endpoint: the deposit address
-/// while a swap into QTC waits for its deposit, then progress, and finally
-/// the completed or failed swap.
+/// while a swap into QTC (or, in preflight, any swap) waits for its deposit,
+/// then progress, and finally the completed or failed swap.
 class SwapProgressScreen extends ConsumerWidget {
   final Account account;
   final SwapOrder order;
@@ -39,7 +39,8 @@ class SwapProgressScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final current = ref.watch(swapOrderProvider(order)).value ?? order;
-    final awaitingDeposit = current.status == SwapStatus.pendingDeposit && !current.quote.fromToken.isQuantus;
+    final byHand = !current.quote.fromToken.isQuantus || ref.watch(swapPreflightProvider) != null;
+    final awaitingDeposit = current.status == SwapStatus.pendingDeposit && byHand;
     final expired = awaitingDeposit && DateTime.now().isAfter(current.quote.deadline);
     return switch (current.status) {
       SwapStatus.success => _SwapComplete(order: current),
@@ -71,7 +72,9 @@ class _SwapInProgress extends ConsumerWidget {
     final quote = order.quote;
     final from = quote.fromToken;
     final to = quote.toToken;
-    final receiver = from.isQuantus ? AddressFormattingService.formatAddress(quote.recipient) : account.name;
+    final receiver = from.isQuantus || ref.watch(swapPreflightProvider) != null
+        ? AddressFormattingService.formatAddress(quote.recipient)
+        : account.name;
     final steps = [
       l10n.swapStepSent(from.symbol),
       l10n.swapStepConfirming(from.networkName),
@@ -258,7 +261,7 @@ class _SwapFailed extends ConsumerWidget {
 
   const _SwapFailed({required this.order, required this.account, this.expired = false});
 
-  String _message(AppLocalizations l10n, NumberFormattingService fmt) {
+  String _message(AppLocalizations l10n, NumberFormattingService fmt, {required bool preflight}) {
     final quote = order.quote;
     final from = quote.fromToken;
     if (expired) return l10n.swapDepositExpiredBody;
@@ -266,7 +269,7 @@ class _SwapFailed extends ConsumerWidget {
       SwapStatus.refunded => [
         l10n.swapRefundedBody(
           formatSwapAmount(l10n, fmt, order.refundedAmount ?? quote.amountIn, from),
-          from.isQuantus ? account.name : AddressFormattingService.formatAddress(quote.refundAddress),
+          from.isQuantus && !preflight ? account.name : AddressFormattingService.formatAddress(quote.refundAddress),
           quote.toToken.symbol,
         ),
         if (order.refundReason != null) l10n.swapDepositRefundReason(order.refundReason!),
@@ -314,7 +317,10 @@ class _SwapFailed extends ConsumerWidget {
               ),
               const SizedBox(height: 32),
             ],
-            QuantusBanner(tone: warning ? BannerTone.sand : BannerTone.ember, message: _message(l10n, fmt)),
+            QuantusBanner(
+              tone: warning ? BannerTone.sand : BannerTone.ember,
+              message: _message(l10n, fmt, preflight: ref.watch(swapPreflightProvider) != null),
+            ),
           ],
         ),
       ),
@@ -344,7 +350,8 @@ class _SwapFailed extends ConsumerWidget {
   }
 }
 
-/// Where to send the external token for a swap into QTC.
+/// Where to send the external token for a swap into QTC, or the stand-in for
+/// a swap out of it in preflight.
 class _SwapDeposit extends ConsumerWidget {
   final SwapOrder order;
 

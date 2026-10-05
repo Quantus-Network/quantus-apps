@@ -79,23 +79,28 @@ class SwapService {
   final String? _apiKey;
   final String _managerPublicKey;
   final String? _configuredQuantusAssetId;
+  final bool _preflight;
   List<SwapToken>? _cachedFromTokens;
   DateTime? _cachedFromTokensAt;
   SwapToken? _listedQuantus;
 
   /// [quantusAssetId] names the listing that is QTC when its chain code does
   /// not; it comes from remote config so a surprising listing needs no update.
+  /// In [preflight] it names another listed asset standing in for QTC, which
+  /// keeps its own network and decimals.
   SwapService({
     http.Client? client,
     String endpoint = AppConstants.oneClickEndpoint,
     String? apiKey,
     String managerPublicKey = AppConstants.oneClickManagerPublicKey,
     String? quantusAssetId,
+    bool preflight = false,
   }) : _client = client ?? http.Client(),
        _base = Uri.parse(endpoint),
        _apiKey = apiKey,
        _managerPublicKey = managerPublicKey,
-       _configuredQuantusAssetId = quantusAssetId;
+       _configuredQuantusAssetId = quantusAssetId,
+       _preflight = preflight;
 
   /// How long a deposit on [network] has before its quote expires.
   static Duration depositWindowFor(String network) =>
@@ -313,9 +318,8 @@ class SwapService {
     for (final item in data.cast<Map<String, dynamic>>()) {
       final assetId = item['assetId'] as String;
       final chain = (item['blockchain'] as String).toUpperCase();
-      final network = chain == SwapToken.quantusNetwork || assetId == _configuredQuantusAssetId
-          ? SwapToken.quantusNetwork
-          : chain;
+      final ours = chain == SwapToken.quantusNetwork || assetId == _configuredQuantusAssetId;
+      final network = ours && !_preflight ? SwapToken.quantusNetwork : chain;
       final token = SwapToken(
         assetId: assetId,
         symbol: (item['symbol'] as String).toUpperCase(),
@@ -323,8 +327,9 @@ class SwapService {
         decimals: (item['decimals'] as num).toInt(),
         usdPrice: (item['price'] as num?)?.toDouble() ?? 0,
         networkIconUrl: _networkIconUrl(network),
+        isQuantus: ours,
       );
-      if (token.isQuantus) {
+      if (ours) {
         onQuantus.add(token);
         continue;
       }
@@ -359,7 +364,7 @@ class SwapService {
       }
     }
     if (listed == null) return null;
-    if (listed.decimals != AppConstants.decimals) {
+    if (!_preflight && listed.decimals != AppConstants.decimals) {
       throw StateError(
         '1Click lists ${listed.assetId} with ${listed.decimals} decimals, the chain has ${AppConstants.decimals}',
       );

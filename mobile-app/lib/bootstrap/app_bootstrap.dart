@@ -1,4 +1,5 @@
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -21,6 +22,10 @@ bool _initialized = false;
 Future<void> bootstrap() async {
   WidgetsFlutterBinding.ensureInitialized();
   if (_initialized) return;
+  if (AppConstants.swapPreflight && !kDebugMode) throw StateError('SWAP_PREFLIGHT_ASSET is for debug builds only');
+  if (AppConstants.swapPreflight && AppConstants.swapPreflightAddress.isEmpty) {
+    throw StateError('SWAP_PREFLIGHT_ASSET needs SWAP_PREFLIGHT_ADDRESS');
+  }
 
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   SystemChrome.setSystemUIOverlayStyle(

@@ -112,6 +112,7 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
   /// while it is open is seen: the service then refuses the stale QTC token.
   Future<void> _addAddress(SwapToken from, SwapToken to, SwapToken foreign) async {
     final account = widget.account;
+    final own = ref.read(swapPreflightProvider)?.address ?? account.accountId;
     final amount = _amountIn(from);
     final swapOut = _swapOut;
     final quote = await showSwapAddressSheet(
@@ -124,8 +125,8 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
             from: from,
             to: to,
             amount: amount,
-            refundAddress: swapOut ? account.accountId : address,
-            recipient: swapOut ? address : account.accountId,
+            refundAddress: swapOut ? own : address,
+            recipient: swapOut ? address : own,
             slippageBps: ref.read(swapSlippageBpsProvider),
           ),
     );
@@ -211,7 +212,9 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
 
   Widget _cta(AppLocalizations l10n, SwapToken from, SwapToken to, SwapToken foreign) {
     final amountIn = _amountIn(from);
-    final spendable = _swapOut ? ref.watch(effectiveMaxBalanceProviderFamily(widget.account.accountId)).value : null;
+    final spendable = _swapOut && ref.watch(swapPreflightProvider) == null
+        ? ref.watch(effectiveMaxBalanceProviderFamily(widget.account.accountId)).value
+        : null;
     final insufficient = spendable != null && amountIn > spendable;
     return ScaffoldBaseBottomContent(
       child: QuantusButton.simple(
@@ -234,11 +237,19 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
     final priced = from.usdPrice > 0 && to.usdPrice > 0;
     final wallet = widget.account.name;
     final external = l10n.swapExternalWallet;
+    final standIn = ref.watch(swapPreflightProvider) == null ? null : (from.isQuantus ? from : to);
 
     return SingleChildScrollView(
       child: Column(
         children: [
           const SizedBox(height: 24),
+          if (standIn != null) ...[
+            QuantusBanner(
+              tone: BannerTone.sand,
+              message: l10n.swapPreflightBanner(standIn.symbol, standIn.networkName),
+            ),
+            const SizedBox(height: 16),
+          ],
           Container(
             decoration: BoxDecoration(color: colors.bgSurface, borderRadius: context.radiusV3.pillBorder),
             clipBehavior: Clip.antiAlias,

@@ -467,6 +467,7 @@
   "swapDisabledTitle": "Swap dinonaktifkan",
   "swapUnavailableUnreachable": "NEAR Intents tidak dapat dijangkau.",
   "swapReviewListingChanged": "Ketentuan swap berubah. Tinjau kembali.",
+  "swapPreflightBanner": "Preflight: {symbol} di {network} menggantikan QTC. Dana sungguhan berpindah.",
   "swapQuoteError": "Penawaran gagal: {message}",
   "swapRecipientAddressTitle": "Alamat Penerima",
   "swapRefundAddressTitle": "Alamat Refund",
