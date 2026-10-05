@@ -129,6 +129,34 @@ void main() {
     expect(notifier.state.swapAvailable, isTrue);
   });
 
+  test('syncConfig and settled complete only once the latest answer is in', () async {
+    final allowed = RemoteConfigModel.fromJson(const {'geoNearAllowed': true});
+    final service = _SlowRemoteConfigService(allowed);
+    final notifier = RemoteConfigNotifier(service);
+    var synced = false;
+    var settled = false;
+    unawaited(notifier.syncConfig().then((_) => synced = true));
+    unawaited(notifier.settled.then((_) => settled = true));
+    await Future<void>.delayed(Duration.zero);
+    expect(synced, isFalse);
+    expect(settled, isFalse);
+
+    service.responses.first.complete(allowed);
+    await Future<void>.delayed(Duration.zero);
+    expect(synced, isFalse);
+    expect(service.responses, hasLength(2));
+
+    service.responses.last.complete(allowed);
+    await Future<void>.delayed(Duration.zero);
+    expect(synced, isTrue);
+    expect(settled, isTrue);
+    expect(notifier.state.swapAvailable, isTrue);
+    var idle = false;
+    unawaited(notifier.settled.then((_) => idle = true));
+    await Future<void>.delayed(Duration.zero);
+    expect(idle, isTrue);
+  });
+
   test('syncing an unchanged remote config does not notify listeners', () async {
     expect(await changesAfterSync(RemoteConfigModel.fromJson(const {})), 0);
   });

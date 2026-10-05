@@ -51,14 +51,20 @@ final _unit = BigInt.from(10).pow(AppConstants.decimals);
 
 /// Remote config as the swap screens see it; [allowed] is the geo verdict.
 class _SwapConfig extends RemoteConfigNotifier {
-  _SwapConfig({bool allowed = true}) : super(_service(allowed));
+  _SwapConfig._(this.service) : super(service);
 
-  static FakeRemoteConfigService _service(bool allowed) {
+  factory _SwapConfig({bool allowed = true}) {
     final model = RemoteConfigModel.fromJson({'enableSwap': true, 'geoNearAllowed': allowed});
-    return FakeRemoteConfigService(model, remote: model);
+    return _SwapConfig._(FakeRemoteConfigService(model, remote: model));
   }
 
+  final FakeRemoteConfigService service;
+
   void revokeGeo() => state = state.copyWith(geoNearAllowed: false);
+
+  /// The next refresh, such as the one after authentication, finds the
+  /// location no longer allowed.
+  void denyNextRefresh() => service.remote = state.copyWith(geoNearAllowed: false);
 }
 
 /// 1Click stand-in: a dry quote pays [dryOut], a live one [liveOut] with a
@@ -612,6 +618,29 @@ void main() {
       oneClick.holdLive!.complete();
       await settle(tester);
 
+      expect(submission.transfers, isEmpty);
+      expect(oneClick.requests.where((r) => r.url.path == '/v0/deposit/submit'), isEmpty);
+      expect(find.text(l10n.swapReviewTitle), findsOneWidget);
+      expect(button(tester, l10n.swapReviewConfirm).isDisabled, isTrue);
+      await tester.pump(const Duration(seconds: 10));
+    });
+
+    testWidgets('a location found blocked by the refresh after authentication sends nothing', (tester) async {
+      final oneClick = _OneClick(dryOut: outQuote.amountOut);
+      final config = _SwapConfig();
+      final submission = FakeTransactionSubmissionService();
+      await tester.pumpApp(
+        ReviewSwapScreen(account: account, quote: outQuote),
+        overrides: overrides(oneClick.service(), submission: submission, config: config),
+      );
+      await settle(tester);
+      expect(button(tester, l10n.swapReviewConfirm).isDisabled, isFalse);
+
+      config.denyNextRefresh();
+      await tester.tap(find.text(l10n.swapReviewConfirm));
+      await settle(tester);
+
+      expect(oneClick.liveQuotes, hasLength(1));
       expect(submission.transfers, isEmpty);
       expect(oneClick.requests.where((r) => r.url.path == '/v0/deposit/submit'), isEmpty);
       expect(find.text(l10n.swapReviewTitle), findsOneWidget);
