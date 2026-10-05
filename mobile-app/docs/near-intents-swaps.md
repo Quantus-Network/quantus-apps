@@ -154,7 +154,7 @@ stateDiagram-v2
 ## Fees
 
 - Without a partner key 1Click adds its platform fee to every quote: 25 basis points per the docs, 20 in the live probes of 2026-09-26, echoed as `appFees: [{recipient: 5880ad2b..., fee: 20}]` on a request that sent none.
-- With a partner key from partners.near-intents.org the platform fee is 20 basis points, 1 basis point on stablecoin and same-asset routes. Pass it as `SwapService(apiKey:)`; it goes out as `X-API-Key`.
+- With a partner key from partners.near-intents.org the platform fee is 20 basis points, 1 basis point on stablecoin and same-asset routes. It is served by quersi under the remote config key `near.partner.jwt` and reaches `SwapService(apiKey:)` through `swapServiceProvider`; it goes out as `X-API-Key`, and no header is sent while the key is absent, so a build can ship before the key exists.
 - Fees are inside `amountOut`. Nothing is charged on top of `amountIn`.
 - `refundFee` and `withdrawFee` in the quote are in base units of the origin asset.
 
