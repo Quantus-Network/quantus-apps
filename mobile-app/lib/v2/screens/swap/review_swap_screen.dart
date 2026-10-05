@@ -35,8 +35,8 @@ class _ReviewSwapScreenState extends ConsumerState<ReviewSwapScreen> {
   SwapOrder? _order;
   bool _confirming = false;
 
-  /// Bumped when the swap service is rebuilt; a confirmation that started
-  /// under an older one stops where it is.
+  /// Bumped when the swap service is rebuilt or swaps stop being offered
+  /// here; a confirmation that started under an older one stops where it is.
   int _generation = 0;
 
   bool get _swapOut => _quote.fromToken.isQuantus;
@@ -90,15 +90,22 @@ class _ReviewSwapScreenState extends ConsumerState<ReviewSwapScreen> {
     return null;
   }
 
-  /// Whether the service was rebuilt since [generation]; says so when it was.
+  /// Whether a confirmation started under [generation] may go on: nothing was
+  /// rebuilt since, and swaps are still offered here.
+  bool _proceeds(int generation) => generation == _generation && ref.read(remoteConfigProvider).swapAvailable;
+
+  /// The opposite of [_proceeds], saying why on screen.
   bool _stale(int generation, AppLocalizations l10n) {
-    if (generation == _generation) return false;
-    if (mounted) context.showErrorToaster(message: l10n.swapReviewListingChanged);
+    if (_proceeds(generation)) return false;
+    if (mounted) {
+      final available = ref.read(remoteConfigProvider).swapAvailable;
+      context.showErrorToaster(message: available ? l10n.swapReviewListingChanged : l10n.swapDisabledTitle);
+    }
     return true;
   }
 
   /// Sends the quoted QTC into the deposit address; null when nothing was sent.
-  /// The service generation is checked again once the user has authenticated.
+  /// Whether to go on is asked again once the user has authenticated.
   Future<String?> _sendDeposit(SwapOrder order, BigInt fee, AppLocalizations l10n, int generation) async {
     if (_stale(generation, l10n)) return null;
     try {
@@ -107,7 +114,7 @@ class _ReviewSwapScreenState extends ConsumerState<ReviewSwapScreen> {
         recipient: order.depositAddress,
         amount: order.quote.amountIn,
         networkFee: fee,
-        proceed: () => generation == _generation,
+        proceed: () => _proceeds(generation),
       );
       if (hash == null) {
         if (mounted && !_stale(generation, l10n)) context.showErrorToaster(message: l10n.sendReviewAuthRequired);
@@ -132,6 +139,9 @@ class _ReviewSwapScreenState extends ConsumerState<ReviewSwapScreen> {
     ref.listen(swapServiceProvider, (_, _) {
       _generation++;
       _order = null;
+    });
+    ref.listen(remoteConfigProvider.select((c) => c.swapAvailable), (_, available) {
+      if (!available) _generation++;
     });
     final l10n = ref.watch(l10nProvider);
     final colors = context.colorsV3;

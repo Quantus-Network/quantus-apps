@@ -61,22 +61,6 @@ class _SwapConfig extends RemoteConfigNotifier {
   void revokeGeo() => state = state.copyWith(geoNearAllowed: false);
 }
 
-class _FakeSubmission extends Fake implements TransactionSubmissionService {
-  final transfers = <(String, BigInt, BigInt)>[];
-
-  @override
-  Future<String> balanceTransfer(
-    Account account, {
-    required RuntimeCall call,
-    required String targetAddress,
-    required BigInt amount,
-    required BigInt fee,
-  }) async {
-    transfers.add((targetAddress, amount, fee));
-    return '0xtxhash';
-  }
-}
-
 /// 1Click stand-in: a dry quote pays [dryOut], a live one [liveOut] with a
 /// deposit address, both with 1% slippage. The token list has USDC on
 /// Ethereum plus [listed], and answers [tokensStatus].
@@ -211,7 +195,7 @@ void main() {
   List<Override> overrides(
     SwapService service, {
     BigInt? balance,
-    _FakeSubmission? submission,
+    FakeTransactionSubmissionService? submission,
     StateProvider<SwapService>? services,
     _SwapConfig? config,
   }) => [
@@ -225,7 +209,7 @@ void main() {
     effectiveMaxBalanceProviderFamily.overrideWith((ref, _) => AsyncValue.data(balance ?? _unit * BigInt.from(1000))),
     swapDepositFeeProvider.overrideWith((ref, _) async => _unit ~/ BigInt.from(50)),
     balancesServiceProvider.overrideWithValue(FakeBalancesService()),
-    transactionSubmissionServiceProvider.overrideWithValue(submission ?? _FakeSubmission()),
+    transactionSubmissionServiceProvider.overrideWithValue(submission ?? FakeTransactionSubmissionService()),
     swapOrderProvider.overrideWith((ref, order) => Stream.value(order)),
   ];
 
@@ -437,7 +421,7 @@ void main() {
   group('ReviewSwapScreen', () {
     testWidgets('a swap out sends the QTC to the live deposit address and follows the swap', (tester) async {
       final oneClick = _OneClick(dryOut: outQuote.amountOut);
-      final submission = _FakeSubmission();
+      final submission = FakeTransactionSubmissionService();
       await tester.pumpApp(
         ReviewSwapScreen(account: account, quote: outQuote),
         overrides: overrides(oneClick.service(), submission: submission),
@@ -461,7 +445,7 @@ void main() {
 
     testWidgets('a worse live quote replaces the terms and needs a second confirm', (tester) async {
       final oneClick = _OneClick(dryOut: outQuote.amountOut, liveOut: BigInt.from(20000000));
-      final submission = _FakeSubmission();
+      final submission = FakeTransactionSubmissionService();
       await tester.pumpApp(
         ReviewSwapScreen(account: account, quote: outQuote),
         overrides: overrides(oneClick.service(), submission: submission),
@@ -492,7 +476,7 @@ void main() {
         ],
       );
       final services = StateProvider<SwapService>((_) => before.service());
-      final submission = _FakeSubmission();
+      final submission = FakeTransactionSubmissionService();
       await tester.pumpApp(
         ReviewSwapScreen(account: account, quote: outQuote),
         overrides: overrides(before.service(), submission: submission, services: services),
@@ -526,7 +510,7 @@ void main() {
         ],
       );
       final services = StateProvider<SwapService>((_) => before.service());
-      final submission = _FakeSubmission();
+      final submission = FakeTransactionSubmissionService();
       await tester.pumpApp(
         ReviewSwapScreen(account: account, quote: outQuote),
         overrides: overrides(before.service(), submission: submission, services: services),
@@ -608,6 +592,31 @@ void main() {
 
       expect(find.text(l10n.swapDisabledTitle), findsOneWidget);
       expect(find.text('FROM'), findsNothing);
+    });
+
+    testWidgets('a confirmation awaiting its live quote stops when the location allowance is revoked', (tester) async {
+      final oneClick = _OneClick(dryOut: outQuote.amountOut)..holdLive = Completer<void>();
+      final config = _SwapConfig();
+      final submission = FakeTransactionSubmissionService();
+      await tester.pumpApp(
+        ReviewSwapScreen(account: account, quote: outQuote),
+        overrides: overrides(oneClick.service(), submission: submission, config: config),
+      );
+      await settle(tester);
+      await tester.tap(find.text(l10n.swapReviewConfirm));
+      await settle(tester);
+      expect(oneClick.liveQuotes, hasLength(1));
+
+      config.revokeGeo();
+      await tester.pump();
+      oneClick.holdLive!.complete();
+      await settle(tester);
+
+      expect(submission.transfers, isEmpty);
+      expect(oneClick.requests.where((r) => r.url.path == '/v0/deposit/submit'), isEmpty);
+      expect(find.text(l10n.swapReviewTitle), findsOneWidget);
+      expect(button(tester, l10n.swapReviewConfirm).isDisabled, isTrue);
+      await tester.pump(const Duration(seconds: 10));
     });
 
     testWidgets(

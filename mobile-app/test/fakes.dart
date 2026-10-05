@@ -12,6 +12,7 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/local_auth_provider.dart';
 import 'package:resonance_network_wallet/services/remote_config_service.dart';
 import 'package:resonance_network_wallet/services/local_auth_service.dart';
+import 'package:resonance_network_wallet/services/transaction_submission_service.dart';
 
 class FakeSettingsService extends Fake implements SettingsService {
   DisplayAccount? activeAccount;
@@ -169,6 +170,23 @@ Future<WidgetRef> pumpRef(WidgetTester tester, {List<Override> overrides = const
     ),
   );
   return widgetRef;
+}
+
+/// Records every local transfer instead of signing and submitting it.
+class FakeTransactionSubmissionService extends Fake implements TransactionSubmissionService {
+  final transfers = <(String, BigInt, BigInt)>[];
+
+  @override
+  Future<String> balanceTransfer(
+    Account account, {
+    required RuntimeCall call,
+    required String targetAddress,
+    required BigInt amount,
+    required BigInt fee,
+  }) async {
+    transfers.add((targetAddress, amount, fee));
+    return '0xtxhash';
+  }
 }
 
 class FakeRemoteConfigService extends RemoteConfigService {
