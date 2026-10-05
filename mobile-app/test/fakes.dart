@@ -174,7 +174,7 @@ Future<WidgetRef> pumpRef(WidgetTester tester, {List<Override> overrides = const
 class FakeRemoteConfigService extends RemoteConfigService {
   FakeRemoteConfigService(this.config, {this.remote});
   final RemoteConfigModel config;
-  final RemoteConfigModel? remote;
+  RemoteConfigModel? remote;
 
   @override
   RemoteConfigModel readLocalConfig() => config;

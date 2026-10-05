@@ -17,7 +17,10 @@ class RemoteConfigNotifier extends StateNotifier<RemoteConfigModel> {
   final RemoteConfigService _service;
   bool _isRefreshingRemote = false;
 
-  RemoteConfigNotifier(this._service) : super(_service.readLocalConfig()) {
+  /// The cached flags, except the location verdict: the device may have moved
+  /// since it was cached, so swap stays hidden until this launch's server
+  /// answer allows it.
+  RemoteConfigNotifier(this._service) : super(_service.readLocalConfig().copyWith(geoNearAllowed: false)) {
     syncConfig();
   }
 
@@ -29,17 +32,26 @@ class RemoteConfigNotifier extends StateNotifier<RemoteConfigModel> {
     unawaited(() async {
       try {
         final remote = await _service.readRemoteConfig();
-        if (remote == null) return;
-
+        if (remote == null) {
+          _revokeGeo();
+          return;
+        }
         if (remote != state) {
           _service.cacheConfig(remote.toCacheJson());
           state = remote;
         }
       } catch (e) {
         quantusPrint('Remote config remote refresh failed: $e');
+        _revokeGeo();
       } finally {
         _isRefreshingRemote = false;
       }
     }());
+  }
+
+  /// A refresh that did not reach the server leaves the location unknown, and
+  /// unknown means no swap. The other flags keep their last known values.
+  void _revokeGeo() {
+    if (state.geoNearAllowed) state = state.copyWith(geoNearAllowed: false);
   }
 }

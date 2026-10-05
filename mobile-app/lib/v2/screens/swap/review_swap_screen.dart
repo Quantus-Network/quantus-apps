@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart' hide ScaffoldBase;
 import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
+import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/shared/utils/print.dart';
 import 'package:resonance_network_wallet/v2/components/link_button.dart';
@@ -147,7 +148,8 @@ class _ReviewSwapScreenState extends ConsumerState<ReviewSwapScreen> {
     final spendable = _swapOut ? ref.watch(effectiveMaxBalanceProviderFamily(widget.account.accountId)).value : null;
     final feeValue = fee?.value;
     final insufficient = feeValue != null && spendable != null && quote.amountIn + feeValue > spendable;
-    final blocked = _swapOut && (feeValue == null || spendable == null || insufficient);
+    final available = ref.watch(remoteConfigProvider.select((c) => c.swapAvailable));
+    final blocked = !available || _swapOut && (feeValue == null || spendable == null || insufficient);
 
     return ScaffoldBase(
       appBar: V2AppBar(title: l10n.swapReviewTitle),
@@ -197,6 +199,10 @@ class _ReviewSwapScreenState extends ConsumerState<ReviewSwapScreen> {
             if (insufficient) ...[
               const SizedBox(height: 16),
               Text(l10n.swapReviewInsufficient(from.symbol), style: text.caption.copyWith(color: colors.semanticEmber)),
+            ],
+            if (!available) ...[
+              const SizedBox(height: 16),
+              Text(l10n.swapDisabledTitle, style: text.caption.copyWith(color: colors.semanticEmber)),
             ],
           ],
         ),

@@ -15,6 +15,7 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/providers/connectivity_provider.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
+import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/services/transaction_submission_service.dart';
 import 'package:resonance_network_wallet/v2/screens/send/send_providers.dart';
@@ -47,6 +48,18 @@ const _listedQtc = <String, dynamic>{
 final _managerKeyPair = ed25519.generateKey();
 final _managerPublicKey = OneClickQuoteSignature.encodeKey(Uint8List.fromList(_managerKeyPair.publicKey.bytes));
 final _unit = BigInt.from(10).pow(AppConstants.decimals);
+
+/// Remote config as the swap screens see it; [allowed] is the geo verdict.
+class _SwapConfig extends RemoteConfigNotifier {
+  _SwapConfig({bool allowed = true}) : super(_service(allowed));
+
+  static FakeRemoteConfigService _service(bool allowed) {
+    final model = RemoteConfigModel.fromJson({'enableSwap': true, 'geoNearAllowed': allowed});
+    return FakeRemoteConfigService(model, remote: model);
+  }
+
+  void revokeGeo() => state = state.copyWith(geoNearAllowed: false);
+}
 
 class _FakeSubmission extends Fake implements TransactionSubmissionService {
   final transfers = <(String, BigInt, BigInt)>[];
@@ -200,10 +213,12 @@ void main() {
     BigInt? balance,
     _FakeSubmission? submission,
     StateProvider<SwapService>? services,
+    _SwapConfig? config,
   }) => [
     settingsServiceProvider.overrideWithValue(FakeSettingsService(activeAccount: RegularAccount(account))),
     isOnlineProvider.overrideWith((ref) => true),
     l10nProvider.overrideWithValue(l10n),
+    remoteConfigProvider.overrideWith((ref) => config ?? _SwapConfig()),
     services == null
         ? swapServiceProvider.overrideWithValue(service)
         : swapServiceProvider.overrideWith((ref) => ref.watch(services)),
@@ -563,6 +578,61 @@ void main() {
       expect(find.text(l10n.swapReviewInsufficient('QTC')), findsOneWidget);
       expect(button(tester, l10n.swapReviewConfirm).isDisabled, isTrue);
     });
+  });
+
+  group('geo gate', () {
+    testWidgets('where NEAR Intents is not allowed the swap screen says swap is disabled', (tester) async {
+      final oneClick = _OneClick(dryOut: BigInt.one);
+      await tester.pumpApp(
+        SwapScreen(account: account),
+        overrides: overrides(oneClick.service(), config: _SwapConfig(allowed: false)),
+      );
+      await settle(tester);
+
+      expect(find.text(l10n.swapDisabledTitle), findsOneWidget);
+      expect(find.text('FROM'), findsNothing);
+      expect(find.text(l10n.commonTryAgain), findsNothing);
+    });
+
+    testWidgets('a verdict revoked while the form is open takes the form away', (tester) async {
+      final config = _SwapConfig();
+      await tester.pumpApp(
+        SwapScreen(account: account),
+        overrides: overrides(_OneClick(dryOut: BigInt.one).service(), config: config),
+      );
+      await settle(tester);
+      expect(find.text('FROM'), findsOneWidget);
+
+      config.revokeGeo();
+      await tester.pump();
+
+      expect(find.text(l10n.swapDisabledTitle), findsOneWidget);
+      expect(find.text('FROM'), findsNothing);
+    });
+
+    testWidgets(
+      'where NEAR Intents is not allowed a review cannot be confirmed and a failed swap cannot start another',
+      (tester) async {
+        await tester.pumpApp(
+          ReviewSwapScreen(account: account, quote: outQuote),
+          overrides: overrides(_OneClick(dryOut: outQuote.amountOut).service(), config: _SwapConfig(allowed: false)),
+        );
+        await settle(tester);
+        expect(button(tester, l10n.swapReviewConfirm).isDisabled, isTrue);
+        expect(find.text(l10n.swapDisabledTitle), findsOneWidget);
+
+        await tester.pumpApp(
+          SwapProgressScreen(
+            account: account,
+            order: SwapOrder(quote: outQuote, status: SwapStatus.refunded),
+          ),
+          overrides: overrides(_OneClick(dryOut: BigInt.one).service(), config: _SwapConfig(allowed: false)),
+        );
+        await settle(tester);
+        expect(find.text('REFUNDED'), findsOneWidget);
+        expect(button(tester, l10n.swapStartNew).isDisabled, isTrue);
+      },
+    );
   });
 
   group('SwapProgressScreen', () {

@@ -47,16 +47,15 @@ void main() {
         exchangeRateServiceProvider.overrideWithValue(ExchangeRateService(rates: {})),
         balancesServiceProvider.overrideWithValue(FakeBalancesService()),
         substrateServiceProvider.overrideWithValue(FakeSubstrateService()),
-        remoteConfigProvider.overrideWith(
-          (ref) => RemoteConfigNotifier(
-            FakeRemoteConfigService(
-              RemoteConfigModel.fromJson({'enableSwap': enableSwap, 'geoNearAllowed': geoNearAllowed}),
-            ),
-          ),
-        ),
+        remoteConfigProvider.overrideWith((ref) {
+          final config = RemoteConfigModel.fromJson({'enableSwap': enableSwap, 'geoNearAllowed': geoNearAllowed});
+          return RemoteConfigNotifier(FakeRemoteConfigService(config, remote: config));
+        }),
       ],
     );
-    // Let the active account and multisig list finish their async load.
+    // Let the active account and multisig list finish their async load, then
+    // the remote config sync that grants the location verdict.
+    await tester.pump();
     await tester.pump();
     return ProviderScope.containerOf(tester.element(find.byType(HomeScreen)));
   }

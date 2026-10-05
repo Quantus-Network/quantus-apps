@@ -38,6 +38,34 @@ void main() {
     return changes;
   }
 
+  test('a cached location allowance is not trusted until this launch hears from the server', () async {
+    final allowed = RemoteConfigModel.fromJson(const {'geoNearAllowed': true});
+    final offline = RemoteConfigNotifier(FakeRemoteConfigService(allowed));
+    expect(offline.state.geoNearAllowed, isFalse);
+    await Future<void>.delayed(Duration.zero);
+    expect(offline.state.geoNearAllowed, isFalse);
+    expect(offline.state.enableSwap, isTrue);
+
+    final online = RemoteConfigNotifier(FakeRemoteConfigService(allowed, remote: allowed));
+    expect(online.state.geoNearAllowed, isFalse);
+    await Future<void>.delayed(Duration.zero);
+    expect(online.state.geoNearAllowed, isTrue);
+  });
+
+  test('a refresh that fails revokes the location allowance and keeps the other flags', () async {
+    final allowed = RemoteConfigModel.fromJson(const {'geoNearAllowed': true, 'enableMultisig': false});
+    final service = FakeRemoteConfigService(allowed, remote: allowed);
+    final notifier = RemoteConfigNotifier(service);
+    await Future<void>.delayed(Duration.zero);
+    expect(notifier.state.swapAvailable, isTrue);
+
+    service.remote = null;
+    await notifier.syncConfig();
+    await Future<void>.delayed(Duration.zero);
+    expect(notifier.state.geoNearAllowed, isFalse);
+    expect(notifier.state.enableMultisig, isFalse);
+  });
+
   test('syncing an unchanged remote config does not notify listeners', () async {
     expect(await changesAfterSync(RemoteConfigModel.fromJson(const {})), 0);
   });

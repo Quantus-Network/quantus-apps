@@ -14,8 +14,9 @@ class RemoteConfigModel {
   final String? swapQuantusAssetId;
 
   /// Whether this device's location may use NEAR Intents. Quersi decides it
-  /// from the request's country and adds it to the config it serves; false
-  /// until a server has said otherwise, so the gate fails closed.
+  /// from the request's country and adds it to the config it serves. False
+  /// until this launch's server answer allows it: a cached verdict is never
+  /// trusted, the device may have moved, so the gate fails closed.
   final bool geoNearAllowed;
 
   const RemoteConfigModel({
@@ -32,6 +33,18 @@ class RemoteConfigModel {
 
   /// Swap is offered when the flag is on and the location allows NEAR Intents.
   bool get swapAvailable => enableSwap && geoNearAllowed;
+
+  RemoteConfigModel copyWith({bool? geoNearAllowed}) => RemoteConfigModel(
+    enableTestButtons: enableTestButtons,
+    enableKeystoneHardwareWallet: enableKeystoneHardwareWallet,
+    enableHighSecurity: enableHighSecurity,
+    enableRemoteNotifications: enableRemoteNotifications,
+    enableSwap: enableSwap,
+    enableEncryptedAccount: enableEncryptedAccount,
+    enableMultisig: enableMultisig,
+    swapQuantusAssetId: swapQuantusAssetId,
+    geoNearAllowed: geoNearAllowed ?? this.geoNearAllowed,
+  );
 
   R match<R>({
     required R Function(
