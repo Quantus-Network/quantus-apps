@@ -106,8 +106,9 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
     if (tapped.isQuantus) _setDirection(swapOut: !_swapOut);
   }
 
+  /// The sheet quotes with the service of the moment, so a config change
+  /// while it is open is seen: the service then refuses the stale QTC token.
   Future<void> _addAddress(SwapToken from, SwapToken to, SwapToken foreign) async {
-    final service = ref.read(swapServiceProvider);
     final account = widget.account;
     final amount = _amountIn(from);
     final swapOut = _swapOut;
@@ -115,14 +116,16 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
       context,
       token: foreign,
       role: swapOut ? SwapAddressRole.recipient : SwapAddressRole.refund,
-      quote: (address) => service.getQuote(
-        from: from,
-        to: to,
-        amount: amount,
-        refundAddress: swapOut ? account.accountId : address,
-        recipient: swapOut ? address : account.accountId,
-        slippageBps: ref.read(swapSlippageBpsProvider),
-      ),
+      quote: (address) => ref
+          .read(swapServiceProvider)
+          .getQuote(
+            from: from,
+            to: to,
+            amount: amount,
+            refundAddress: swapOut ? account.accountId : address,
+            recipient: swapOut ? address : account.accountId,
+            slippageBps: ref.read(swapSlippageBpsProvider),
+          ),
     );
     if (quote == null || !mounted) return;
     Navigator.push(

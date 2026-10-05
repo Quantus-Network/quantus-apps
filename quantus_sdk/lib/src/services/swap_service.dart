@@ -193,6 +193,7 @@ class SwapService {
     required int slippageBps,
     required bool dry,
   }) async {
+    await _requireCurrentQuantus(from, to);
     final now = DateTime.now().toUtc();
     final deadline = DateTime.fromMillisecondsSinceEpoch(
       now.add(depositWindowFor(from.network)).millisecondsSinceEpoch,
@@ -243,6 +244,19 @@ class SwapService {
       );
     }
     return json;
+  }
+
+  /// A token standing for QTC must be QTC as listed right now. A flow that
+  /// kept its tokens from before a config change is refused, not quoted.
+  Future<void> _requireCurrentQuantus(SwapToken from, SwapToken to) async {
+    for (final token in [from, to].where((t) => t.isQuantus)) {
+      final listed = await getListedQuantusToken();
+      if (listed?.assetId != token.assetId) {
+        throw SwapQuoteIntegrityException(
+          'QTC is listed as ${listed?.assetId ?? 'nothing'}, this swap was prepared for ${token.assetId}',
+        );
+      }
+    }
   }
 
   /// Tells 1Click which transaction paid [order]'s deposit address, so it

@@ -62,7 +62,8 @@ class _ReviewSwapScreenState extends ConsumerState<ReviewSwapScreen> {
 
   /// A live order at least as good as the terms on screen, or null when the
   /// terms on screen changed. A live order is kept until close to its deadline,
-  /// so a retry reuses its deposit address.
+  /// so a retry reuses its deposit address, unless the service was rebuilt
+  /// meanwhile: the fresh service then checks the quote's QTC token itself.
   Future<SwapOrder?> _liveOrder(AppLocalizations l10n) async {
     final kept = _order;
     if (kept != null && kept.quote.deadline.isAfter(DateTime.now().add(SwapService.minimumDepositLead))) return kept;
@@ -107,6 +108,7 @@ class _ReviewSwapScreenState extends ConsumerState<ReviewSwapScreen> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen(swapServiceProvider, (_, _) => _order = null);
     final l10n = ref.watch(l10nProvider);
     final colors = context.colorsV3;
     final text = context.themeTextV3;

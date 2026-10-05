@@ -652,6 +652,23 @@ void main() {
       await expectLater(service.getListedQuantusToken(), throwsA(isA<StateError>()));
     });
 
+    test('refuses to quote or create a swap for a QTC token that is not the current listing', () async {
+      final service = listing(tokens);
+      const stale = SwapToken(
+        assetId: 'nep141:old-qtc.omft.near',
+        symbol: 'QTC',
+        network: SwapToken.quantusNetwork,
+        decimals: 12,
+        usdPrice: 1,
+      );
+      for (final (from, to) in [(stale, _usdcEth), (_usdcEth, stale)]) {
+        await expectLater(
+          service.getQuote(from: from, to: to, amount: BigInt.one, refundAddress: _refund, recipient: _recipient),
+          throwsA(isA<SwapQuoteIntegrityException>()),
+        );
+      }
+    });
+
     test('a QTC listing without a price leaves swaps unavailable', () async {
       final service = listing([
         {'assetId': 'nep141:qtc.omft.near', 'decimals': 12, 'blockchain': 'quantus', 'symbol': 'QTC', 'price': 0},

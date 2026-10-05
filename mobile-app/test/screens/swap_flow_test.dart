@@ -308,6 +308,39 @@ void main() {
       expect(before.requests.where((r) => r.url.path == '/v0/quote'), isEmpty);
     });
 
+    testWidgets('an address sheet open across the asset id change cannot quote the old QTC', (tester) async {
+      final before = _OneClick(dryOut: BigInt.from(1000000));
+      final after = _OneClick(
+        dryOut: BigInt.from(1000000),
+        listed: [
+          {..._listedQtc, 'assetId': 'nep141:quantus.omft.near'},
+        ],
+      );
+      final services = StateProvider<SwapService>((_) => before.service());
+      await tester.pumpApp(
+        SwapScreen(account: account),
+        overrides: overrides(before.service(), services: services),
+      );
+      await settle(tester);
+      await tester.enterText(find.byType(TextField), '10');
+      await tester.pump();
+      await tester.tap(find.text(l10n.swapAddRecipientAddress));
+      await settle(tester);
+
+      ProviderScope.containerOf(tester.element(find.byType(SwapScreen))).read(services.notifier).state = after
+          .service();
+      await settle(tester);
+      await tester.enterText(find.byType(TextField).last, _external);
+      await tester.pump();
+      await tester.tap(find.text(l10n.swapContinue));
+      await settle(tester);
+
+      expect([...before.requests, ...after.requests].where((r) => r.url.path == '/v0/quote'), isEmpty);
+      expect(find.text(l10n.swapReviewTitle), findsNothing);
+      expect(find.text(l10n.swapContinue), findsOneWidget);
+      await tester.pump(const Duration(seconds: 10));
+    });
+
     testWidgets('shows swaps as unavailable while 1Click does not list QTC, or lists it without a price', (
       tester,
     ) async {
@@ -423,6 +456,38 @@ void main() {
       expect(submission.transfers.single.$1, _deposit);
       expect(oneClick.liveQuotes, hasLength(1));
       await tester.pump(const Duration(seconds: 3));
+    });
+
+    testWidgets('a review open across the asset id change neither reuses its live order nor sends', (tester) async {
+      final before = _OneClick(dryOut: outQuote.amountOut, liveOut: BigInt.from(20000000));
+      final after = _OneClick(
+        dryOut: outQuote.amountOut,
+        listed: [
+          {..._listedQtc, 'assetId': 'nep141:quantus.omft.near'},
+        ],
+      );
+      final services = StateProvider<SwapService>((_) => before.service());
+      final submission = _FakeSubmission();
+      await tester.pumpApp(
+        ReviewSwapScreen(account: account, quote: outQuote),
+        overrides: overrides(before.service(), submission: submission, services: services),
+      );
+      await settle(tester);
+      await tester.tap(find.text(l10n.swapReviewConfirm));
+      await settle(tester);
+      expect(find.text('19.8 USDC'), findsOneWidget);
+      expect(before.liveQuotes, hasLength(1));
+
+      ProviderScope.containerOf(tester.element(find.byType(ReviewSwapScreen))).read(services.notifier).state = after
+          .service();
+      await settle(tester);
+      await tester.tap(find.text(l10n.swapReviewConfirm));
+      await settle(tester);
+
+      expect(submission.transfers, isEmpty);
+      expect(after.liveQuotes, isEmpty);
+      expect(find.text(l10n.swapReviewTitle), findsOneWidget);
+      await tester.pump(const Duration(seconds: 10));
     });
 
     testWidgets('shows every digit of the amount that will be sent', (tester) async {
