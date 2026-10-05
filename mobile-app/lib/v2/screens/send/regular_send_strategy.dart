@@ -289,7 +289,9 @@ class RegularSendStrategy extends SendStrategy {
   }) async {
     if (account.signsWithHardware) throw StateError('Account ${account.accountId} signs with hardware');
     final authed = await LocalAuthService().authenticate(localizedReason: ref.read(l10nProvider).sendReviewAuthReason);
-    if (!authed || !(proceed?.call() ?? true)) return null;
+    if (!authed) return null;
+    final stillWantedAfterAuth = proceed?.call() ?? true;
+    if (!stillWantedAfterAuth) return null;
     return ref
         .read(transactionSubmissionServiceProvider)
         .balanceTransfer(
