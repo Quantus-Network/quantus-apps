@@ -1660,6 +1660,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get swapUnavailableUnreachable => 'NEAR Intents could not be reached.';
 
   @override
+  String get swapReviewListingChanged => 'The swap\'s terms changed. Review it again.';
+
+  @override
   String swapQuoteError(String message) {
     return 'Quote failed: $message';
   }

@@ -3122,6 +3122,12 @@ abstract class AppLocalizations {
   /// **'NEAR Intents could not be reached.'**
   String get swapUnavailableUnreachable;
 
+  /// Toast when the configured QTC asset changed while a swap was being confirmed; the confirmation stops
+  ///
+  /// In en, this message translates to:
+  /// **'The swap\'s terms changed. Review it again.'**
+  String get swapReviewListingChanged;
+
   /// Toast when 1Click rejects a quote or a swap cannot be created
   ///
   /// In en, this message translates to:

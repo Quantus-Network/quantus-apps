@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
@@ -73,6 +74,9 @@ class _OneClick {
   int tokensStatus;
   final requests = <http.Request>[];
 
+  /// Holds every live quote answer until completed.
+  Completer<void>? holdLive;
+
   _OneClick({required this.dryOut, BigInt? liveOut, this.listed = const [_listedQtc], this.tokensStatus = 200})
     : liveOut = liveOut ?? dryOut;
 
@@ -92,11 +96,17 @@ class _OneClick {
         ]),
         tokensStatus,
       ),
-      '/v0/quote' => http.Response(jsonEncode(_quoteJson(jsonDecode(request.body) as Map<String, dynamic>)), 200),
+      '/v0/quote' => await _quote(request),
       '/v0/deposit/submit' => http.Response('{}', 200),
       '/v0/status' => http.Response(jsonEncode({'status': 'PENDING_DEPOSIT'}), 200),
       _ => http.Response('down', 503),
     };
+  }
+
+  Future<http.Response> _quote(http.Request request) async {
+    final body = jsonDecode(request.body) as Map<String, dynamic>;
+    if (body['dry'] == false && holdLive != null) await holdLive!.future;
+    return http.Response(jsonEncode(_quoteJson(body)), 200);
   }
 
   Map<String, dynamic> _quoteJson(Map<String, dynamic> request) {
@@ -482,6 +492,39 @@ void main() {
           .service();
       await settle(tester);
       await tester.tap(find.text(l10n.swapReviewConfirm));
+      await settle(tester);
+
+      expect(submission.transfers, isEmpty);
+      expect(after.liveQuotes, isEmpty);
+      expect(find.text(l10n.swapReviewTitle), findsOneWidget);
+      await tester.pump(const Duration(seconds: 10));
+    });
+
+    testWidgets('a live quote still pending when the asset id changes is discarded and nothing is sent', (
+      tester,
+    ) async {
+      final before = _OneClick(dryOut: outQuote.amountOut)..holdLive = Completer<void>();
+      final after = _OneClick(
+        dryOut: outQuote.amountOut,
+        listed: [
+          {..._listedQtc, 'assetId': 'nep141:quantus.omft.near'},
+        ],
+      );
+      final services = StateProvider<SwapService>((_) => before.service());
+      final submission = _FakeSubmission();
+      await tester.pumpApp(
+        ReviewSwapScreen(account: account, quote: outQuote),
+        overrides: overrides(before.service(), submission: submission, services: services),
+      );
+      await settle(tester);
+      await tester.tap(find.text(l10n.swapReviewConfirm));
+      await settle(tester);
+      expect(before.liveQuotes, hasLength(1));
+
+      ProviderScope.containerOf(tester.element(find.byType(ReviewSwapScreen))).read(services.notifier).state = after
+          .service();
+      await settle(tester);
+      before.holdLive!.complete();
       await settle(tester);
 
       expect(submission.transfers, isEmpty);

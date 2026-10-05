@@ -34,18 +34,23 @@ class _ReviewSwapScreenState extends ConsumerState<ReviewSwapScreen> {
   SwapOrder? _order;
   bool _confirming = false;
 
+  /// Bumped when the swap service is rebuilt; a confirmation that started
+  /// under an older one stops where it is.
+  int _generation = 0;
+
   bool get _swapOut => _quote.fromToken.isQuantus;
 
   (Account, BigInt) get _feeKey => (widget.account, _quote.amountIn);
 
   Future<void> _confirm() async {
     final l10n = ref.read(l10nProvider);
+    final generation = _generation;
     setState(() => _confirming = true);
     try {
-      final order = await _liveOrder(l10n);
+      final order = await _liveOrder(l10n, generation);
       if (order == null || !mounted) return;
       final fee = _swapOut ? ref.read(swapDepositFeeProvider(_feeKey)).requireValue : null;
-      final txHash = fee != null ? await _sendDeposit(order, fee, l10n) : null;
+      final txHash = fee != null ? await _sendDeposit(order, fee, l10n, generation) : null;
       if ((fee != null && txHash == null) || !mounted) return;
       Navigator.pushAndRemoveUntil(
         context,
@@ -63,12 +68,14 @@ class _ReviewSwapScreenState extends ConsumerState<ReviewSwapScreen> {
   /// A live order at least as good as the terms on screen, or null when the
   /// terms on screen changed. A live order is kept until close to its deadline,
   /// so a retry reuses its deposit address, unless the service was rebuilt
-  /// meanwhile: the fresh service then checks the quote's QTC token itself.
-  Future<SwapOrder?> _liveOrder(AppLocalizations l10n) async {
+  /// meanwhile: the fresh service then checks the quote's QTC token itself,
+  /// and an answer the old service was still owed is discarded.
+  Future<SwapOrder?> _liveOrder(AppLocalizations l10n, int generation) async {
     final kept = _order;
     if (kept != null && kept.quote.deadline.isAfter(DateTime.now().add(SwapService.minimumDepositLead))) return kept;
     try {
       final order = await ref.read(swapServiceProvider).createSwap(_quote);
+      if (_stale(generation, l10n)) return null;
       _order = order;
       if (order.quote.minAmountOut >= _quote.minAmountOut) return order;
       if (mounted) {
@@ -82,14 +89,27 @@ class _ReviewSwapScreenState extends ConsumerState<ReviewSwapScreen> {
     return null;
   }
 
+  /// Whether the service was rebuilt since [generation]; says so when it was.
+  bool _stale(int generation, AppLocalizations l10n) {
+    if (generation == _generation) return false;
+    if (mounted) context.showErrorToaster(message: l10n.swapReviewListingChanged);
+    return true;
+  }
+
   /// Sends the quoted QTC into the deposit address; null when nothing was sent.
-  Future<String?> _sendDeposit(SwapOrder order, BigInt fee, AppLocalizations l10n) async {
+  /// The service generation is checked again once the user has authenticated.
+  Future<String?> _sendDeposit(SwapOrder order, BigInt fee, AppLocalizations l10n, int generation) async {
+    if (_stale(generation, l10n)) return null;
     try {
-      final hash = await RegularSendStrategy(
-        account: widget.account,
-      ).submitLocal(ref, recipient: order.depositAddress, amount: order.quote.amountIn, networkFee: fee);
+      final hash = await RegularSendStrategy(account: widget.account).submitLocal(
+        ref,
+        recipient: order.depositAddress,
+        amount: order.quote.amountIn,
+        networkFee: fee,
+        proceed: () => generation == _generation,
+      );
       if (hash == null) {
-        if (mounted) context.showErrorToaster(message: l10n.sendReviewAuthRequired);
+        if (mounted && !_stale(generation, l10n)) context.showErrorToaster(message: l10n.sendReviewAuthRequired);
         return null;
       }
       unawaited(
@@ -108,7 +128,10 @@ class _ReviewSwapScreenState extends ConsumerState<ReviewSwapScreen> {
 
   @override
   Widget build(BuildContext context) {
-    ref.listen(swapServiceProvider, (_, _) => _order = null);
+    ref.listen(swapServiceProvider, (_, _) {
+      _generation++;
+      _order = null;
+    });
     final l10n = ref.watch(l10nProvider);
     final colors = context.colorsV3;
     final text = context.themeTextV3;

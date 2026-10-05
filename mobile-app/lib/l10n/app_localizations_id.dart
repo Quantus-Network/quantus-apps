@@ -1663,6 +1663,9 @@ class AppLocalizationsId extends AppLocalizations {
   String get swapUnavailableUnreachable => 'NEAR Intents tidak dapat dijangkau.';
 
   @override
+  String get swapReviewListingChanged => 'Ketentuan swap berubah. Tinjau kembali.';
+
+  @override
   String swapQuoteError(String message) {
     return 'Penawaran gagal: $message';
   }

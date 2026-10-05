@@ -2401,6 +2401,10 @@
     "@swapUnavailableUnreachable": {
       "description": "Body of the swap unavailable notice when the 1Click token list fails to load; shown with a retry"
     },
+    "swapReviewListingChanged": "The swap's terms changed. Review it again.",
+    "@swapReviewListingChanged": {
+      "description": "Toast when the configured QTC asset changed while a swap was being confirmed; the confirmation stops"
+    },
     "swapQuoteError": "Quote failed: {message}",
     "@swapQuoteError": {
       "description": "Toast when 1Click rejects a quote or a swap cannot be created",

@@ -466,6 +466,7 @@
   "swapUnavailableTitle": "Swap tidak tersedia",
   "swapDisabledTitle": "Swap dinonaktifkan",
   "swapUnavailableUnreachable": "NEAR Intents tidak dapat dijangkau.",
+  "swapReviewListingChanged": "Ketentuan swap berubah. Tinjau kembali.",
   "swapQuoteError": "Penawaran gagal: {message}",
   "swapRecipientAddressTitle": "Alamat Penerima",
   "swapRefundAddressTitle": "Alamat Refund",

@@ -276,17 +276,20 @@ class RegularSendStrategy extends SendStrategy {
   }
 
   /// Authenticates the user and submits a transfer signed with the local key.
-  /// Returns the extrinsic hash, or null when authentication was declined.
+  /// Returns the extrinsic hash, or null when authentication was declined or
+  /// [proceed], asked once the user has authenticated, no longer wants the
+  /// transfer: the prompt can be up for a while and terms can change under it.
   Future<String?> submitLocal(
     WidgetRef ref, {
     required String recipient,
     required BigInt amount,
     required BigInt networkFee,
     bool sendAll = false,
+    bool Function()? proceed,
   }) async {
     if (account.signsWithHardware) throw StateError('Account ${account.accountId} signs with hardware');
     final authed = await LocalAuthService().authenticate(localizedReason: ref.read(l10nProvider).sendReviewAuthReason);
-    if (!authed) return null;
+    if (!authed || !(proceed?.call() ?? true)) return null;
     return ref
         .read(transactionSubmissionServiceProvider)
         .balanceTransfer(
