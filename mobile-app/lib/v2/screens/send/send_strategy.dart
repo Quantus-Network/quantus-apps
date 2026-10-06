@@ -66,6 +66,29 @@ class ProposeFee extends SendFee {
 /// Why an encrypted send can't be built for the entered amount.
 enum EncryptedSendBlocker { notQuantized, insufficient }
 
+/// The recipient could not be checked against 1Click's deposit addresses.
+/// The send may go on: a plan of a single input is safe, and one of several
+/// is checked again at confirm. Every other failure of the recipient check
+/// keeps the send closed.
+class RecipientLookupUnavailable implements Exception {
+  final Object cause;
+
+  const RecipientLookupUnavailable(this.cause);
+
+  @override
+  String toString() => 'RecipientLookupUnavailable: $cause';
+}
+
+/// Why an address can't receive a send.
+enum RecipientBlock {
+  /// The sending account itself, or one of its own addresses.
+  self,
+
+  /// A single-use NEAR Intents deposit address; only a transparent account
+  /// may fund it.
+  oneClickDeposit,
+}
+
 /// Fee for an encrypted (wormhole) send: the in-circuit volume fee plus
 /// quantization dust, carried with the coin-selection [plan] that produced it.
 /// When the amount can't be planned, [blocker] says why.
@@ -238,10 +261,12 @@ abstract class SendStrategy {
   /// it is excluded from the recents list.
   String? get sourceAccountId;
 
-  /// Self-send guard: whether [address] belongs to the sending account itself.
-  /// Defaults to comparing against [sourceAccountId]; encrypted sends also
-  /// treat every derived wormhole address of the wallet as self.
-  Future<bool> isSelfRecipient(WidgetRef ref, String address) async => address == sourceAccountId;
+  /// Why [address] can't be the recipient, or null when it can. Defaults to
+  /// the self-send guard against [sourceAccountId]; encrypted sends also treat
+  /// every derived wormhole address of the wallet as self and refuse 1Click
+  /// deposit addresses.
+  Future<RecipientBlock?> recipientBlock(WidgetRef ref, String address) async =>
+      address == sourceAccountId ? RecipientBlock.self : null;
 
   SendStrings strings(AppLocalizations l10n);
 

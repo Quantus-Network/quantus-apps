@@ -11,7 +11,6 @@ import 'package:resonance_network_wallet/shared/utils/amount_input_logic.dart';
 import 'package:resonance_network_wallet/v2/screens/send/input_amount_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/send/regular_send_strategy.dart';
 import 'package:resonance_network_wallet/v2/screens/send/send_fee_notifier.dart';
-import 'package:resonance_network_wallet/v2/screens/send/send_providers.dart';
 import 'package:resonance_network_wallet/v2/screens/send/send_strategy.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -40,7 +39,7 @@ void main() {
       overrides: [
         settingsServiceProvider.overrideWithValue(FakeSettingsService(activeAccount: RegularAccount(sender))),
         humanReadableChecksumServiceProvider.overrideWithValue(FakeHumanReadableChecksumService()),
-        effectiveMaxBalanceProviderFamily.overrideWith((ref, accountId) => AsyncValue.data(spendable)),
+        effectiveBalanceProviderFamily.overrideWith((ref, accountId) => AsyncValue.data(spendable)),
         exchangeRateServiceProvider.overrideWithValue(ExchangeRateService(rates: {})),
         substrateServiceProvider.overrideWithValue(substrate),
         balancesServiceProvider.overrideWithValue(FakeBalancesService()),
@@ -77,7 +76,7 @@ void main() {
     await tester.tap(find.text(container.read(l10nProvider).sendInputAmountMax));
     await tester.pump();
 
-    expect(isTransferAll(substrate.lastFeeCall!, keepAlive: true), isTrue);
+    expect(isTransferAll(substrate.lastFeeCall!), isTrue);
     expect(fieldText(tester), formatted(container, spendable - transferAllFee));
     expect(container.read(sendFeeProvider).settled, isTrue);
   });
@@ -87,12 +86,12 @@ void main() {
     final container = await pumpAmountScreen(tester, substrate);
     await tester.tap(find.text(container.read(l10nProvider).sendInputAmountMax));
     await tester.pump();
-    expect(isTransferAll(substrate.lastFeeCall!, keepAlive: true), isTrue);
+    expect(isTransferAll(substrate.lastFeeCall!), isTrue);
 
     await tester.enterText(find.byKey(const Key(E2EKeys.sendAmountField)), '1');
     await tester.pump(SendFeeNotifier.debounce);
 
-    expect(isTransferAll(substrate.lastFeeCall!, keepAlive: true), isFalse);
+    expect(isTransferAll(substrate.lastFeeCall!), isFalse);
     expect(fieldText(tester), '1');
   });
 
@@ -120,7 +119,7 @@ void main() {
     await tapContinue(tester);
 
     expect(substrate.feeCalls, 2);
-    expect(isTransferAll(substrate.lastFeeCall!, keepAlive: true), isFalse);
+    expect(isTransferAll(substrate.lastFeeCall!), isFalse);
     final fee = container.read(sendFeeProvider);
     expect(fee.settled, isTrue);
     expect((fee.fee as RegularFee).amount, NumberFormattingService.scaleFactorBigInt);

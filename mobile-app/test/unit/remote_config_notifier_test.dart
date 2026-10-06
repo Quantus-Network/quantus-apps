@@ -24,11 +24,12 @@ void main() {
   test('remote config models compare by their flags', () {
     expect(RemoteConfigModel.fromJson(const {}), RemoteConfigModel.defaults);
     expect(RemoteConfigModel.fromJson(const {}).hashCode, RemoteConfigModel.defaults.hashCode);
-    expect(RemoteConfigModel.fromJson(const {'enableSwap': false}), isNot(RemoteConfigModel.defaults));
+    expect(RemoteConfigModel.fromJson(const {'enableSwap': true}), isNot(RemoteConfigModel.defaults));
   });
 
   test('swap is offered only where the server says NEAR Intents is allowed', () {
     expect(RemoteConfigModel.defaults.geoNearAllowed, isFalse);
+    expect(RemoteConfigModel.defaults.enableSwap, isFalse);
     expect(RemoteConfigModel.fromJson(const {'enableSwap': true}).swapAvailable, isFalse);
     expect(RemoteConfigModel.fromJson(const {'enableSwap': true, 'geoNearAllowed': true}).swapAvailable, isTrue);
     expect(RemoteConfigModel.fromJson(const {'enableSwap': false, 'geoNearAllowed': true}).swapAvailable, isFalse);
@@ -44,6 +45,20 @@ void main() {
     expect(named.swapQuantusAssetId, 'nep141:qtc.omft.near');
     expect(RemoteConfigModel.fromJson(named.toCacheJson()), named);
     expect(named, isNot(RemoteConfigModel.defaults));
+  });
+
+  test('revoking the location verdict keeps the cached partner JWT', () {
+    final cached = RemoteConfigModel.fromJson(const {'near.partner.jwt': 'partner-jwt', 'geoNearAllowed': true});
+    final revoked = cached.copyWith(geoNearAllowed: false);
+    expect(revoked.geoNearAllowed, isFalse);
+    expect(revoked.nearPartnerJwt, 'partner-jwt');
+  });
+
+  test('the NEAR Intents recipient check is on unless the remote config turns it off', () {
+    expect(RemoteConfigModel.fromJson(const {}).enableOneClickNearWarning, isTrue);
+    final off = RemoteConfigModel.fromJson(const {'enableOneClickNearWarning': false});
+    expect(off.enableOneClickNearWarning, isFalse);
+    expect(RemoteConfigModel.fromJson(off.toCacheJson()), off);
   });
 
   test('the 1Click partner JWT is null unless the remote config serves near.partner.jwt', () {
@@ -64,7 +79,7 @@ void main() {
   }
 
   test('a cached location allowance is not trusted until this launch hears from the server', () async {
-    final allowed = RemoteConfigModel.fromJson(const {'geoNearAllowed': true});
+    final allowed = RemoteConfigModel.fromJson(const {'enableSwap': true, 'geoNearAllowed': true});
     final offline = RemoteConfigNotifier(FakeRemoteConfigService(allowed));
     expect(offline.state.geoNearAllowed, isFalse);
     await Future<void>.delayed(Duration.zero);
@@ -78,7 +93,11 @@ void main() {
   });
 
   test('a refresh that fails revokes the location allowance and keeps the other flags', () async {
-    final allowed = RemoteConfigModel.fromJson(const {'geoNearAllowed': true, 'enableMultisig': false});
+    final allowed = RemoteConfigModel.fromJson(const {
+      'enableSwap': true,
+      'geoNearAllowed': true,
+      'enableMultisig': false,
+    });
     final service = FakeRemoteConfigService(allowed, remote: allowed);
     final notifier = RemoteConfigNotifier(service);
     await Future<void>.delayed(Duration.zero);
@@ -92,7 +111,11 @@ void main() {
   });
 
   test('a foreground refresh revokes the allowance while its answer is pending', () async {
-    final allowed = RemoteConfigModel.fromJson(const {'geoNearAllowed': true, 'enableMultisig': false});
+    final allowed = RemoteConfigModel.fromJson(const {
+      'enableSwap': true,
+      'geoNearAllowed': true,
+      'enableMultisig': false,
+    });
     final service = _SlowRemoteConfigService(allowed);
     final notifier = RemoteConfigNotifier(service);
     service.responses.single.complete(allowed);
@@ -115,7 +138,11 @@ void main() {
   });
 
   test('a refresh overlapping an earlier one discards the earlier answer and asks again', () async {
-    final allowed = RemoteConfigModel.fromJson(const {'geoNearAllowed': true, 'enableMultisig': false});
+    final allowed = RemoteConfigModel.fromJson(const {
+      'enableSwap': true,
+      'geoNearAllowed': true,
+      'enableMultisig': false,
+    });
     final service = _SlowRemoteConfigService(allowed);
     final notifier = RemoteConfigNotifier(service);
     unawaited(notifier.syncConfig());
@@ -139,7 +166,7 @@ void main() {
   });
 
   test('syncConfig and settled complete only once the latest answer is in', () async {
-    final allowed = RemoteConfigModel.fromJson(const {'geoNearAllowed': true});
+    final allowed = RemoteConfigModel.fromJson(const {'enableSwap': true, 'geoNearAllowed': true});
     final service = _SlowRemoteConfigService(allowed);
     final notifier = RemoteConfigNotifier(service);
     var synced = false;
@@ -171,6 +198,6 @@ void main() {
   });
 
   test('syncing a changed remote config notifies listeners once', () async {
-    expect(await changesAfterSync(RemoteConfigModel.fromJson(const {'enableSwap': false})), 1);
+    expect(await changesAfterSync(RemoteConfigModel.fromJson(const {'enableSwap': true})), 1);
   });
 }

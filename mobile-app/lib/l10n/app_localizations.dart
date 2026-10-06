@@ -3752,6 +3752,42 @@ abstract class AppLocalizations {
   /// **'Hides the link between your account and the recipient'**
   String get privateSendSubtitle;
 
+  /// Title of the warning on the encrypted send recipient screen when the address is a 1Click (NEAR Intents) swap deposit address
+  ///
+  /// In en, this message translates to:
+  /// **'NEAR Intents address detected'**
+  String get encryptedSendNearIntentsTitle;
+
+  /// Body of that warning: encrypted sends to 1Click deposit addresses are refused because each address takes exactly one deposit
+  ///
+  /// In en, this message translates to:
+  /// **'This is a single-use NEAR Intents deposit address. Use a transparent account to send to NEAR Intents.'**
+  String get encryptedSendNearIntentsDescription;
+
+  /// Disabled continue button label while the recipient is a NEAR Intents deposit address
+  ///
+  /// In en, this message translates to:
+  /// **'Can\'t Send to NEAR Intents'**
+  String get encryptedSendNearIntentsButton;
+
+  /// Disabled continue button label while the recipient check (self-send, NEAR Intents) is in flight
+  ///
+  /// In en, this message translates to:
+  /// **'Verifying Address…'**
+  String get sendRecipientChecking;
+
+  /// Disabled continue button label when the recipient's self-send check failed; entering the address again retries it
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t Verify Address'**
+  String get sendRecipientCheckFailed;
+
+  /// Toast on the recipient screen, and error at confirm, when the NEAR Intents lookup failed, e.g. offline
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t verify the address. Check your connection and try again.'**
+  String get sendRecipientCheckFailedMessage;
+
   /// Error shown when the planned inputs of an encrypted send were spent between review and confirm
   ///
   /// In en, this message translates to:

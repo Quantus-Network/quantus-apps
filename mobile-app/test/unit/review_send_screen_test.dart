@@ -12,7 +12,6 @@ import 'package:resonance_network_wallet/shared/constants/e2e_keys.dart';
 import 'package:resonance_network_wallet/v2/screens/send/regular_send_strategy.dart';
 import 'package:resonance_network_wallet/v2/screens/send/review_send_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/send/send_fee_notifier.dart';
-import 'package:resonance_network_wallet/v2/screens/send/send_providers.dart';
 import 'package:resonance_network_wallet/v2/screens/send/send_screen_logic.dart';
 import 'package:resonance_network_wallet/v2/screens/send/send_strategy.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -54,7 +53,7 @@ void main() {
       ),
       overrides: [
         settingsServiceProvider.overrideWithValue(FakeSettingsService(activeAccount: RegularAccount(sender))),
-        effectiveMaxBalanceProviderFamily.overrideWith((ref, accountId) => AsyncValue.data(balance ?? spendable)),
+        effectiveBalanceProviderFamily.overrideWith((ref, accountId) => AsyncValue.data(balance ?? spendable)),
         exchangeRateServiceProvider.overrideWithValue(ExchangeRateService(rates: {})),
         substrateServiceProvider.overrideWithValue(FakeSubstrateService()),
         balancesServiceProvider.overrideWithValue(FakeBalancesService()),

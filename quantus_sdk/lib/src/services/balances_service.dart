@@ -37,8 +37,9 @@ class BalancesService {
 
   Balances getBalanceTransferCall(String targetAddress, BigInt amount) => _transferCall(_dest(targetAddress), amount);
 
-  Balances getTransferAllCall(String targetAddress, {bool keepAlive = false}) =>
-      const balances_pallet.Txs().transferAll(dest: _dest(targetAddress), keepAlive: keepAlive);
+  /// Moves the whole reducible balance and reaps the sender.
+  Balances getTransferAllCall(String targetAddress) =>
+      const balances_pallet.Txs().transferAll(dest: _dest(targetAddress), keepAlive: false);
 
   multi_address.MultiAddress _dest(String targetAddress) =>
       const multi_address.$MultiAddress().id(crypto.ss58ToAccountId(s: targetAddress));

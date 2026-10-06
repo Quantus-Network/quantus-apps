@@ -2978,6 +2978,30 @@
     "@privateSendSubtitle": {
       "description": "Subtitle of the private-send notice on encrypted send recipient screen. Must not overstate the guarantee: the recipient and amount are still visible on chain, only the source linkage is hidden."
     },
+    "encryptedSendNearIntentsTitle": "NEAR Intents address detected",
+    "@encryptedSendNearIntentsTitle": {
+      "description": "Title of the warning on the encrypted send recipient screen when the address is a 1Click (NEAR Intents) swap deposit address"
+    },
+    "encryptedSendNearIntentsDescription": "This is a single-use NEAR Intents deposit address. Use a transparent account to send to NEAR Intents.",
+    "@encryptedSendNearIntentsDescription": {
+      "description": "Body of that warning: encrypted sends to 1Click deposit addresses are refused because each address takes exactly one deposit"
+    },
+    "encryptedSendNearIntentsButton": "Can't Send to NEAR Intents",
+    "@encryptedSendNearIntentsButton": {
+      "description": "Disabled continue button label while the recipient is a NEAR Intents deposit address"
+    },
+    "sendRecipientChecking": "Verifying Address…",
+    "@sendRecipientChecking": {
+      "description": "Disabled continue button label while the recipient check (self-send, NEAR Intents) is in flight"
+    },
+    "sendRecipientCheckFailed": "Couldn't Verify Address",
+    "@sendRecipientCheckFailed": {
+      "description": "Disabled continue button label when the recipient's self-send check failed; entering the address again retries it"
+    },
+    "sendRecipientCheckFailedMessage": "Couldn't verify the address. Check your connection and try again.",
+    "@sendRecipientCheckFailedMessage": {
+      "description": "Toast on the recipient screen, and error at confirm, when the NEAR Intents lookup failed, e.g. offline"
+    },
     "encryptedSendPlanStale": "Your encrypted balance changed while reviewing. Please go back and enter the amount again.",
     "@encryptedSendPlanStale": {
       "description": "Error shown when the planned inputs of an encrypted send were spent between review and confirm"

@@ -4,8 +4,10 @@ import 'package:flutter_riverpod/misc.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
+import 'package:resonance_network_wallet/providers/one_click_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/services/local_auth_service.dart';
+import 'package:resonance_network_wallet/shared/utils/print.dart';
 import 'package:resonance_network_wallet/v2/screens/send/send_strategy.dart';
 
 /// Spend plan — and so the fee — for an amount from the wallet's current
@@ -50,10 +52,21 @@ class EncryptedSendStrategy extends SendStrategy {
 
   /// All derived wormhole addresses (receive and change rotate through the HD
   /// sequence) are this account — not just the index-0 [Account.accountId].
+  /// A 1Click deposit address is refused: it takes one deposit, the one its
+  /// quote expects, and a private send to it strands the funds.
   @override
-  Future<bool> isSelfRecipient(WidgetRef ref, String address) async {
-    if (address == account.accountId) return true;
-    return ref.read(encryptedAccountServiceProvider(account.walletIndex)).ownsAddress(address);
+  Future<RecipientBlock?> recipientBlock(WidgetRef ref, String address) async {
+    if (address == account.accountId ||
+        await ref.read(encryptedAccountServiceProvider(account.walletIndex)).ownsAddress(address)) {
+      return RecipientBlock.self;
+    }
+    final bool deposit;
+    try {
+      deposit = await isOneClickDepositAddress(ref, address);
+    } catch (e) {
+      throw RecipientLookupUnavailable(e);
+    }
+    return deposit ? RecipientBlock.oneClickDeposit : null;
   }
 
   @override
@@ -147,6 +160,20 @@ class EncryptedSendStrategy extends SendStrategy {
     // recipient is provably paid — it must match the confirmed amount.
     if (plan.amountToken != amount) {
       throw StateError('Encrypted send plan amount ${plan.amountToken} does not match confirmed amount $amount');
+    }
+    // Every input leaf pays the recipient through its own exit, so a plan of
+    // several inputs makes several deposits, which a single-use 1Click
+    // deposit address cannot take; asked again here since the recipient
+    // screen lets an unanswered lookup through.
+    if (plan.inputCount > 1) {
+      try {
+        if (await isOneClickDepositAddress(ref, recipientAddress.trim())) {
+          return SendFailed(l10n.encryptedSendNearIntentsDescription);
+        }
+      } catch (e) {
+        quantusPrint('Encrypted send 1Click check: $e');
+        return SendFailed(l10n.sendRecipientCheckFailedMessage);
+      }
     }
 
     final authed = await LocalAuthService().authenticate(localizedReason: l10n.sendReviewAuthReason);
