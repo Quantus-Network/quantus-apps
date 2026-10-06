@@ -10,7 +10,6 @@ import 'package:resonance_network_wallet/shared/utils/print.dart';
 import 'package:resonance_network_wallet/v2/components/near_intents_attribution.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/token_icon.dart';
-import 'package:resonance_network_wallet/v2/screens/send/send_providers.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/review_swap_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/swap_address_sheet.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/swap_providers.dart';
@@ -213,7 +212,7 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
   Widget _cta(AppLocalizations l10n, SwapToken from, SwapToken to, SwapToken foreign) {
     final amountIn = _amountIn(from);
     final spendable = _swapOut && ref.watch(swapPreflightProvider) == null
-        ? ref.watch(effectiveMaxBalanceProviderFamily(widget.account.accountId)).value
+        ? ref.watch(effectiveBalanceProviderFamily(widget.account.accountId)).value
         : null;
     final insufficient = spendable != null && amountIn > spendable;
     return ScaffoldBaseBottomContent(

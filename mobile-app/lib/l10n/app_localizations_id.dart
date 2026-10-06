@@ -2028,6 +2028,23 @@ class AppLocalizationsId extends AppLocalizations {
   String get privateSendSubtitle => 'Menyembunyikan kaitan antara akun Anda dan penerima';
 
   @override
+  String get encryptedSendNearIntentsTitle => 'Alamat NEAR Intents terdeteksi';
+
+  @override
+  String get encryptedSendNearIntentsDescription =>
+      'Ini adalah alamat deposit NEAR Intents sekali pakai. Gunakan akun transparan untuk mengirim ke NEAR Intents.';
+
+  @override
+  String get encryptedSendNearIntentsButton => 'Tidak Bisa Kirim ke NEAR Intents';
+
+  @override
+  String get sendRecipientCheckFailed => 'Tidak Bisa Memverifikasi Alamat';
+
+  @override
+  String get sendRecipientCheckFailedMessage =>
+      'Alamat tidak dapat diverifikasi. Periksa koneksi Anda dan masukkan lagi.';
+
+  @override
   String get encryptedSendPlanStale =>
       'Saldo terenkripsi Anda berubah saat meninjau. Silakan kembali dan masukkan jumlahnya lagi.';
 

@@ -1,12 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:quantus_sdk/generated/bell/pallets/balances.dart' as balances;
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/services/transaction_submission_service.dart';
 import 'package:resonance_network_wallet/v2/screens/send/regular_send_strategy.dart';
-import 'package:resonance_network_wallet/v2/screens/send/send_providers.dart';
 import 'package:resonance_network_wallet/v2/screens/send/send_strategy.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -26,12 +24,11 @@ void main() {
     expect(ref.read(activeAccountProvider).value?.account.accountId, other.accountId);
 
     expect(strategy.sourceAccountId, captured.accountId);
-    expect(strategy.spendableBalanceProvider, effectiveMaxBalanceProviderFamily(captured.accountId));
+    expect(strategy.spendableBalanceProvider, effectiveBalanceProviderFamily(captured.accountId));
   });
 
-  testWidgets('validates against the captured account balance, not the active one', (tester) async {
-    final existentialDeposit = balances.Constants().existentialDeposit;
-    final capturedBalance = existentialDeposit * BigInt.from(100);
+  testWidgets('validates against the whole captured account balance, not the active one', (tester) async {
+    final capturedBalance = BigInt.from(100000000000);
     final ref = await pumpRef(
       tester,
       overrides: [
@@ -42,7 +39,7 @@ void main() {
     );
     final strategy = RegularSendStrategy(account: captured);
 
-    expect(ref.read(strategy.spendableBalanceProvider).value, capturedBalance - existentialDeposit);
+    expect(ref.read(strategy.spendableBalanceProvider).value, capturedBalance);
   });
 
   testWidgets('requestFee asks the chain for the captured account and publishes the fee', (tester) async {
@@ -62,7 +59,7 @@ void main() {
     await tester.pump();
 
     expect(substrate.lastFeeAccount?.accountId, captured.accountId);
-    expect(isTransferAll(substrate.lastFeeCall!, keepAlive: true), isFalse);
+    expect(isTransferAll(substrate.lastFeeCall!), isFalse);
     final fee = ref.read(feeProvider);
     expect((fee.fee as RegularFee).networkFee, BigInt.from(1000000000));
     expect(fee.settled, isTrue);
@@ -85,7 +82,7 @@ void main() {
     strategy.requestFee(ref.read, recipient: other.accountId, amount: BigInt.from(10), sendAll: true, immediate: true);
     await tester.pump();
 
-    expect(isTransferAll(substrate.lastFeeCall!, keepAlive: true), isTrue);
+    expect(isTransferAll(substrate.lastFeeCall!), isTrue);
     final fee = ref.read(strategy.feeProvider(recipient: other.accountId, amount: BigInt.from(10))).fee as RegularFee;
     expect(fee.sendAll, isTrue);
     expect(fee.networkFee, BigInt.from(7));
@@ -114,7 +111,7 @@ void main() {
     );
 
     final session = (outcome as SendNeedsHardwareSignature).session;
-    expect(isTransferAll(session.buildCall(), keepAlive: true), isTrue);
+    expect(isTransferAll(session.buildCall()), isTrue);
   });
 
   testWidgets('the signed call follows the send mode, not the fee that happens to be retained', (tester) async {
@@ -137,7 +134,7 @@ void main() {
       fee: staleMaxFee,
       isPayMode: false,
     );
-    expect(isTransferAll((outcome as SendNeedsHardwareSignature).session.buildCall(), keepAlive: true), isFalse);
+    expect(isTransferAll((outcome as SendNeedsHardwareSignature).session.buildCall()), isFalse);
 
     await expectLater(
       strategy.submit(

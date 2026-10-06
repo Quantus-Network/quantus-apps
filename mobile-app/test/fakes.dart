@@ -134,6 +134,11 @@ class FakeSubstrateService extends Fake implements SubstrateService {
   }
 }
 
+class FakeRecentAddressesService extends Fake implements RecentAddressesService {
+  @override
+  Future<List<String>> getAddresses() async => [];
+}
+
 class FakeHumanReadableChecksumService extends Fake implements HumanReadableChecksumService {
   FakeHumanReadableChecksumService({this.phrase = 'Stand-Envelope-Topic-Term-Help'});
 
@@ -151,15 +156,15 @@ class FakeBalancesService extends Fake implements BalancesService {
       const balances_pallet.Txs().transferAllowDeath(dest: _anyDest, value: amount);
 
   @override
-  Balances getTransferAllCall(String targetAddress, {bool keepAlive = false}) =>
-      const balances_pallet.Txs().transferAll(dest: _anyDest, keepAlive: keepAlive);
+  Balances getTransferAllCall(String targetAddress) =>
+      const balances_pallet.Txs().transferAll(dest: _anyDest, keepAlive: false);
 }
 
-/// Whether [call] is `Balances.transfer_all` with the given [keepAlive].
-bool isTransferAll(RuntimeCall call, {required bool keepAlive}) {
+/// Whether [call] is `Balances.transfer_all` reaping the sender.
+bool isTransferAll(RuntimeCall call) {
   if (call is! runtime_call.Balances) return false;
   final inner = call.value0;
-  return inner is balances_call.TransferAll && inner.keepAlive == keepAlive;
+  return inner is balances_call.TransferAll && !inner.keepAlive;
 }
 
 Account makeAccount(int index, {AccountType accountType = AccountType.local}) => Account(

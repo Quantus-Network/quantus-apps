@@ -13,6 +13,8 @@ import 'package:resonance_network_wallet/shared/constants/e2e_keys.dart';
 import 'package:resonance_network_wallet/shared/utils/print.dart';
 import 'package:resonance_network_wallet/v2/components/address_checkphrase_with_initial.dart';
 import 'package:resonance_network_wallet/v2/components/address_input_field.dart';
+import 'package:resonance_network_wallet/v2/components/icon_badge.dart';
+import 'package:resonance_network_wallet/v2/components/info_card.dart';
 import 'package:resonance_network_wallet/v2/components/private_activity_notice.dart';
 import 'package:resonance_network_wallet/v2/components/qr_scanner_page.dart';
 import 'package:resonance_network_wallet/v2/screens/send/input_amount_screen.dart';
@@ -38,7 +40,8 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
   bool _loadingRecents = true;
   bool _isPayMode = false;
   bool _canContinue = false;
-  bool _isSelfSend = false;
+  RecipientBlock? _block;
+  bool _checkFailed = false;
   String? _recipientChecksum;
 
   @override
@@ -90,7 +93,8 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
         _recipientChecksum = null;
         _isPayMode = false;
         _canContinue = false;
-        _isSelfSend = false;
+        _block = null;
+        _checkFailed = false;
       });
       return;
     }
@@ -101,31 +105,36 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
     final checksumService = ref.read(humanReadableChecksumServiceProvider);
     final substrate = ref.read(substrateServiceProvider);
     final isValid = substrate.isValidSS58Address(address);
-    final wasSelfSend = _isSelfSend;
+    final wasSelfSend = _block == RecipientBlock.self;
     setState(() {
       _hasAddressError = !isValid;
-      _isSelfSend = false;
+      _block = null;
+      _checkFailed = false;
       _recipientChecksum = null;
       _canContinue = false;
     });
     if (!isValid) return;
     // Async: encrypted sends check the address against every derived wormhole
-    // address, not just the account id. Continue stays disabled until resolved.
+    // address and against 1Click's deposit addresses. Continue stays disabled
+    // until resolved.
     widget.strategy
-        .isSelfRecipient(ref, address)
-        .then((isSelf) {
+        .recipientBlock(ref, address)
+        .then((block) {
           if (!mounted || _recipientController.text.trim() != address) return;
           setState(() {
-            _isSelfSend = isSelf;
-            _canContinue = !isSelf;
+            _block = block;
+            _canContinue = block == null;
           });
-          if (isSelf && !wasSelfSend) {
+          if (block == RecipientBlock.self && !wasSelfSend) {
             context.showWarningToaster(message: ref.read(l10nProvider).sendLogicCantSelfTransfer);
           }
         })
         .catchError((Object e) {
-          // Fail closed: without a verdict the send can't proceed anyway.
-          quantusPrint('SelectRecipientScreen self-send check: $e');
+          // Fail closed: without a verdict the send can't proceed.
+          quantusPrint('SelectRecipientScreen recipient check: $e');
+          if (!mounted || _recipientController.text.trim() != address) return;
+          setState(() => _checkFailed = true);
+          context.showWarningToaster(message: ref.read(l10nProvider).sendRecipientCheckFailedMessage);
         });
     checksumService.getHumanReadableName(address).then((checksum) {
       if (!mounted || _recipientController.text.trim() != address) return;
@@ -188,7 +197,8 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
         _recipientChecksum = null;
         _hasAddressError = true;
         _canContinue = false;
-        _isSelfSend = false;
+        _block = null;
+        _checkFailed = false;
       });
     });
   }
@@ -288,9 +298,6 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
   }
 
   Widget _buildScanRow(AppColorsV3 colors, AppTextThemeV3 text, AppLocalizations l10n) {
-    final iconContainerSize = 44.0;
-    final iconSize = 24.0;
-
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -298,16 +305,7 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
         borderRadius: context.radiusV3.mdBorder,
         child: Row(
           children: [
-            Container(
-              width: iconContainerSize,
-              height: iconContainerSize,
-              decoration: BoxDecoration(
-                color: colors.bgSurface2,
-                borderRadius: BorderRadius.circular(iconContainerSize / 2),
-                border: Border.all(color: colors.borderHairline),
-              ),
-              child: Icon(Icons.qr_code_scanner, size: iconSize, color: colors.textContent),
-            ),
+            IconBadge(size: 44, child: Icon(Icons.qr_code_scanner, size: 24, color: colors.textContent)),
             const SizedBox(width: 16),
             Expanded(
               child: Column(
@@ -347,9 +345,11 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
   Widget _buildBottomButton(AppLocalizations l10n) {
     final btnText = _canContinue
         ? l10n.sendSelectRecipientContinue
-        : _isSelfSend
-        ? l10n.sendLogicCantSelfTransfer
-        : l10n.sendEnterAddress;
+        : switch (_block) {
+            RecipientBlock.self => l10n.sendLogicCantSelfTransfer,
+            RecipientBlock.oneClickDeposit => l10n.encryptedSendNearIntentsButton,
+            null => _checkFailed ? l10n.sendRecipientCheckFailed : l10n.sendEnterAddress,
+          };
 
     final button = QuantusButton.simple(
       key: const Key(E2EKeys.sendContinueButton),
@@ -359,19 +359,25 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
       onTap: _continue,
     );
 
-    if (!widget.strategy.showPrivateSendNotice) {
-      return ScaffoldBaseBottomContent(child: button);
-    }
+    final Widget? notice = _block == RecipientBlock.oneClickDeposit
+        ? InfoCard(
+            leading: IconBadge(
+              child: Icon(Icons.warning_amber_rounded, size: 20, color: context.colorsV3.semanticSand),
+            ),
+            title: l10n.encryptedSendNearIntentsTitle,
+            description: l10n.encryptedSendNearIntentsDescription,
+          )
+        : widget.strategy.showPrivateSendNotice
+        ? PrivateActivityNotice(title: l10n.privateSendTitle, subtitle: l10n.privateSendSubtitle)
+        : null;
+
+    if (notice == null) return ScaffoldBaseBottomContent(child: button);
 
     return ScaffoldBaseBottomContent(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          PrivateActivityNotice(title: l10n.privateSendTitle, subtitle: l10n.privateSendSubtitle),
-          const SizedBox(height: 32),
-          button,
-        ],
+        children: [notice, const SizedBox(height: 32), button],
       ),
     );
   }

@@ -2025,6 +2025,23 @@ class AppLocalizationsEn extends AppLocalizations {
   String get privateSendSubtitle => 'Hides the link between your account and the recipient';
 
   @override
+  String get encryptedSendNearIntentsTitle => 'NEAR Intents address detected';
+
+  @override
+  String get encryptedSendNearIntentsDescription =>
+      'This is a single-use NEAR Intents deposit address. Use a transparent account to send to NEAR Intents.';
+
+  @override
+  String get encryptedSendNearIntentsButton => 'Can\'t Send to NEAR Intents';
+
+  @override
+  String get sendRecipientCheckFailed => 'Couldn\'t Verify Address';
+
+  @override
+  String get sendRecipientCheckFailedMessage =>
+      'Couldn\'t verify the address. Check your connection and enter it again.';
+
+  @override
   String get encryptedSendPlanStale =>
       'Your encrypted balance changed while reviewing. Please go back and enter the amount again.';
 

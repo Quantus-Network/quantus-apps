@@ -15,7 +15,6 @@ import 'package:resonance_network_wallet/shared/utils/url_utils.dart';
 import 'package:resonance_network_wallet/v2/screens/send/keystone_sign_cache.dart';
 import 'package:resonance_network_wallet/v2/screens/send/keystone_signing_session.dart';
 import 'package:resonance_network_wallet/v2/screens/send/send_fee_notifier.dart';
-import 'package:resonance_network_wallet/v2/screens/send/send_providers.dart';
 import 'package:resonance_network_wallet/v2/screens/send/send_strategy.dart';
 import 'package:resonance_network_wallet/shared/utils/provider_reader.dart';
 
@@ -45,9 +44,11 @@ class RegularSendStrategy extends SendStrategy {
     reviewConfirmLabel: l10n.sendReviewConfirm,
   );
 
+  /// The whole effective balance, bound to the account captured at flow start
+  /// so a mid-flow account switch cannot change what is validated against.
   @override
   ProviderListenable<AsyncValue<BigInt>> get spendableBalanceProvider =>
-      effectiveMaxBalanceProviderFamily(account.accountId);
+      effectiveBalanceProviderFamily(account.accountId);
 
   @override
   bool extraBalancesLoading(WidgetRef ref) => false;
@@ -109,14 +110,13 @@ class RegularSendStrategy extends SendStrategy {
   @override
   String? affordabilityError(WidgetRef ref, SendFee fee, AppLocalizations l10n) => null;
 
-  /// Max sends use `transfer_all`: the chain sizes the amount at inclusion, so
-  /// the fee can never make them fail, and the fee itself is fixed because the
-  /// call carries no amount.
+  /// Max sends use `transfer_all` with keep-alive off: the chain sizes the
+  /// amount at inclusion and reaps the account, so the fee can never make
+  /// them fail and nothing is left behind. The fee itself is fixed because
+  /// the call carries no amount.
   RuntimeCall _transferCall(ProviderReader read, String recipient, BigInt amount, {required bool sendAll}) {
     final balances = read(balancesServiceProvider);
-    return sendAll
-        ? balances.getTransferAllCall(recipient, keepAlive: read(existentialDepositToggleProvider))
-        : balances.getBalanceTransferCall(recipient, amount);
+    return sendAll ? balances.getTransferAllCall(recipient) : balances.getBalanceTransferCall(recipient, amount);
   }
 
   KeystoneSignCacheKey _hardwareCacheKey(String recipient, BigInt amount, {required bool sendAll}) => sendAll

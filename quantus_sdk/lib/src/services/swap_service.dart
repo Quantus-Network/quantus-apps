@@ -6,19 +6,9 @@ import 'package:quantus_sdk/src/models/swap_order.dart';
 import 'package:quantus_sdk/src/models/swap_quote.dart';
 import 'package:quantus_sdk/src/models/swap_token.dart';
 import 'package:quantus_sdk/src/services/one_click_quote_signature.dart';
+import 'package:quantus_sdk/src/services/one_click_service.dart';
 import 'package:quantus_sdk/src/utils/print.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
-/// 1Click answered [statusCode] with [message].
-class SwapApiException implements Exception {
-  final int statusCode;
-  final String message;
-
-  const SwapApiException(this.statusCode, this.message);
-
-  @override
-  String toString() => 'SwapApiException($statusCode): $message';
-}
 
 /// A quote response whose signature is not 1Click's, or which answers a
 /// different request than the one sent.
@@ -75,8 +65,7 @@ class SwapService {
   static const _tokensCacheTtl = Duration(minutes: 10);
 
   final http.Client _client;
-  final Uri _base;
-  final String? _apiKey;
+  final OneClickService _api;
   final String _managerPublicKey;
   final String? _configuredQuantusAssetId;
   final bool _preflight;
@@ -96,8 +85,7 @@ class SwapService {
     String? quantusAssetId,
     bool preflight = false,
   }) : _client = client ?? http.Client(),
-       _base = Uri.parse(endpoint),
-       _apiKey = apiKey,
+       _api = OneClickService(client: client, endpoint: endpoint, apiKey: apiKey),
        _managerPublicKey = managerPublicKey,
        _configuredQuantusAssetId = quantusAssetId,
        _preflight = preflight;
@@ -221,7 +209,7 @@ class SwapService {
       'quoteWaitingTimeMs': quoteWaitingTime.inMilliseconds,
       'referral': AppConstants.oneClickReferral,
     };
-    final json = await _send('POST', '/v0/quote', body: body) as Map<String, dynamic>;
+    final json = await _api.send('POST', '/v0/quote', body: body) as Map<String, dynamic>;
     final correlationId = json['correlationId'] as String?;
     if (!OneClickQuoteSignature.verify(json, managerPublicKey: _managerPublicKey)) {
       throw SwapQuoteIntegrityException('Quote signature is not from 1Click', correlationId: correlationId);
@@ -268,7 +256,7 @@ class SwapService {
   /// does not have to wait for its own chain scan to notice the deposit.
   Future<void> submitDeposit(SwapOrder order, String txHash) async {
     final memo = order.quote.depositMemo;
-    await _send(
+    await _api.send(
       'POST',
       '/v0/deposit/submit',
       body: {'txHash': txHash, 'depositAddress': order.depositAddress, 'memo': ?memo},
@@ -277,7 +265,7 @@ class SwapService {
 
   Future<SwapOrder> getSwapStatus(SwapOrder order) async {
     final memo = order.quote.depositMemo;
-    final json = await _send(
+    final json = await _api.send(
       'GET',
       '/v0/status',
       query: {'depositAddress': order.depositAddress, 'depositMemo': ?memo},
@@ -285,34 +273,10 @@ class SwapService {
     return SwapOrder.fromStatusJson(json as Map<String, dynamic>, quote: order.quote);
   }
 
-  Future<Object?> _send(String method, String path, {Map<String, Object>? body, Map<String, String>? query}) async {
-    final uri = _base.replace(path: path, queryParameters: query);
-    final headers = {'Content-Type': 'application/json', 'X-API-Key': ?_apiKey};
-    final response = method == 'GET'
-        ? await _client.get(uri, headers: headers)
-        : await _client.post(uri, headers: headers, body: jsonEncode(body));
-    final ok = response.statusCode >= 200 && response.statusCode < 300;
-    Object? json;
-    try {
-      json = jsonDecode(response.body);
-    } on FormatException {
-      if (ok) rethrow;
-    }
-    if (!ok) {
-      final message = json is Map ? json['message'] : null;
-      throw SwapApiException(response.statusCode, switch (message) {
-        String s => s,
-        List l => l.join(', '),
-        _ => response.body,
-      });
-    }
-    return json;
-  }
-
   /// The tokens to swap with, one per symbol, and QTC as listed. A token is on
   /// Quantus when 1Click says so or when its asset id is the configured one.
   Future<(List<SwapToken>, SwapToken?)> _fetchIntentsTokens() async {
-    final data = await _send('GET', '/v0/tokens') as List<dynamic>;
+    final data = await _api.send('GET', '/v0/tokens') as List<dynamic>;
     final bySymbol = <String, SwapToken>{};
     final onQuantus = <SwapToken>[];
     for (final item in data.cast<Map<String, dynamic>>()) {

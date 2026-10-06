@@ -12,7 +12,6 @@ import 'package:resonance_network_wallet/shared/utils/print.dart';
 import 'package:resonance_network_wallet/v2/components/link_button.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/screens/send/regular_send_strategy.dart';
-import 'package:resonance_network_wallet/v2/screens/send/send_providers.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/swap_progress_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/swap_providers.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/swap_summary.dart';
@@ -171,9 +170,7 @@ class _ReviewSwapScreenState extends ConsumerState<ReviewSwapScreen> {
 
     final sendsDeposit = _sendsDeposit(ref.watch(swapPreflightProvider));
     final fee = sendsDeposit ? ref.watch(swapDepositFeeProvider(_feeKey)) : null;
-    final spendable = sendsDeposit
-        ? ref.watch(effectiveMaxBalanceProviderFamily(widget.account.accountId)).value
-        : null;
+    final spendable = sendsDeposit ? ref.watch(effectiveBalanceProviderFamily(widget.account.accountId)).value : null;
     final feeValue = fee?.value;
     final insufficient = feeValue != null && spendable != null && quote.amountIn + feeValue > spendable;
     final available = ref.watch(remoteConfigProvider.select((c) => c.swapAvailable));

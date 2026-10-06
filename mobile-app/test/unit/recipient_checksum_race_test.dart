@@ -33,11 +33,6 @@ class _DelayedAChecksumService extends Fake implements HumanReadableChecksumServ
   }
 }
 
-class _EmptyRecentsService extends Fake implements RecentAddressesService {
-  @override
-  Future<List<String>> getAddresses() async => [];
-}
-
 class _FakeSendStrategy extends Fake implements SendStrategy {
   @override
   bool get showPrivateSendNotice => false;
@@ -46,7 +41,7 @@ class _FakeSendStrategy extends Fake implements SendStrategy {
   String? get sourceAccountId => null;
 
   @override
-  Future<bool> isSelfRecipient(WidgetRef ref, String address) async => false;
+  Future<RecipientBlock?> recipientBlock(WidgetRef ref, String address) async => null;
 
   @override
   SendStrings strings(AppLocalizations l10n) => const SendStrings(
@@ -98,7 +93,7 @@ void main() {
         overrides: [
           humanReadableChecksumServiceProvider.overrideWithValue(checksum),
           substrateServiceProvider.overrideWithValue(FakeSubstrateService()),
-          recentAddressesServiceProvider.overrideWithValue(_EmptyRecentsService()),
+          recentAddressesServiceProvider.overrideWithValue(FakeRecentAddressesService()),
         ],
       );
 
