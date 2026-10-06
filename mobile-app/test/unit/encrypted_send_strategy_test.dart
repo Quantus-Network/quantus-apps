@@ -82,7 +82,7 @@ void main() {
     expect(planEncryptedFee(utxos, BigInt.zero).plan, isNull);
   });
 
-  group('submit asks 1Click again for a plan of several batches', () {
+  group('submit asks 1Click again for a plan of several inputs', () {
     final lookedUp = <String>[];
     var oneClickDown = false;
 
@@ -119,8 +119,13 @@ void main() {
       ],
     );
 
-    WormholeSpendPlan plan(int batches) => WormholeSpendPlan(
-      batches: List.filled(batches, const []),
+    WormholeSpendPlan plan(int inputs) => WormholeSpendPlan(
+      batches: [
+        [
+          for (var i = 1; i <= inputs; i++)
+            WormholeLeafAssignment(utxo: _utxo(500 * i), recipientScaled: 1000 ~/ inputs, changeScaled: 0),
+        ],
+      ],
       amountToken: tenTokens,
       changeToken: BigInt.zero,
       feeToken: BigInt.zero,
@@ -135,19 +140,19 @@ void main() {
       isPayMode: false,
     );
 
-    testWidgets('a single batch goes on without a lookup', (tester) async {
+    testWidgets('a single input goes on without a lookup', (tester) async {
       final outcome = await submit(await pumpStrategyRef(tester), plan(1));
       expect(outcome, isA<SendNeedsProving>());
       expect(lookedUp, isEmpty);
     });
 
-    testWidgets('several batches to a deposit address are refused', (tester) async {
+    testWidgets('several inputs to a deposit address are refused', (tester) async {
       final outcome = await submit(await pumpStrategyRef(tester), plan(2));
       expect((outcome as SendFailed).message, contains('single-use NEAR Intents deposit address'));
       expect(lookedUp, [_depositAddress]);
     });
 
-    testWidgets('several batches with 1Click unreachable are refused', (tester) async {
+    testWidgets('several inputs with 1Click unreachable are refused', (tester) async {
       oneClickDown = true;
       final outcome = await submit(await pumpStrategyRef(tester), plan(2));
       expect((outcome as SendFailed).message, contains("Couldn't verify the address"));

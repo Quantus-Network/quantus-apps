@@ -139,7 +139,7 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
           }
         })
         .catchError((Object e) {
-          // The send goes on without a verdict: a plan of a single batch is
+          // The send goes on without a verdict: a plan of a single input is
           // safe, and one of several is checked again at confirm.
           quantusPrint('SelectRecipientScreen recipient check: $e');
           if (!mounted || _recipientController.text.trim() != address) return;
