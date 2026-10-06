@@ -6,13 +6,15 @@ final oneClickServiceProvider = Provider<OneClickService>(
   (ref) => OneClickService(apiKey: ref.watch(remoteConfigProvider.select((c) => c.nearPartnerJwt))),
 );
 
-/// The 1Click client once the partner key has had its chance to arrive. The
-/// history route is invite-only, so a lookup that races the remote-config
-/// fetch, or follows a failed one, is refused: this waits for the refresh in
-/// flight and, when the key is still missing, asks quersi once more.
-Future<OneClickService> partnerOneClickService(WidgetRef ref) async {
+/// Whether [address] is a 1Click deposit address, once remote config has had
+/// its say: false without a lookup when `enableOneClickNearWarning` is off.
+/// The history route is invite-only, so a lookup that races the config fetch,
+/// or follows a failed one, is refused: this waits for the refresh in flight
+/// and, when the partner key is still missing, asks quersi once more.
+Future<bool> isOneClickDepositAddress(WidgetRef ref, String address) async {
   final config = ref.read(remoteConfigProvider.notifier);
   await config.settled;
+  if (!ref.read(remoteConfigProvider).enableOneClickNearWarning) return false;
   if (ref.read(remoteConfigProvider).nearPartnerJwt == null) await config.syncConfig();
-  return ref.read(oneClickServiceProvider);
+  return ref.read(oneClickServiceProvider).isDepositAddress(address);
 }

@@ -7,6 +7,7 @@ import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/one_click_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/services/local_auth_service.dart';
+import 'package:resonance_network_wallet/shared/utils/print.dart';
 import 'package:resonance_network_wallet/v2/screens/send/send_strategy.dart';
 
 /// Spend plan — and so the fee — for an amount from the wallet's current
@@ -59,8 +60,7 @@ class EncryptedSendStrategy extends SendStrategy {
         await ref.read(encryptedAccountServiceProvider(account.walletIndex)).ownsAddress(address)) {
       return RecipientBlock.self;
     }
-    final oneClick = await partnerOneClickService(ref);
-    return await oneClick.isDepositAddress(address) ? RecipientBlock.oneClickDeposit : null;
+    return await isOneClickDepositAddress(ref, address) ? RecipientBlock.oneClickDeposit : null;
   }
 
   @override
@@ -154,6 +154,19 @@ class EncryptedSendStrategy extends SendStrategy {
     // recipient is provably paid — it must match the confirmed amount.
     if (plan.amountToken != amount) {
       throw StateError('Encrypted send plan amount ${plan.amountToken} does not match confirmed amount $amount');
+    }
+    // Several batches pay the recipient in several extrinsics, which a
+    // single-use 1Click deposit address cannot take; asked again here since
+    // the recipient screen lets an unanswered lookup through.
+    if (plan.batches.length > 1) {
+      try {
+        if (await isOneClickDepositAddress(ref, recipientAddress.trim())) {
+          return SendFailed(l10n.encryptedSendNearIntentsDescription);
+        }
+      } catch (e) {
+        quantusPrint('Encrypted send 1Click check: $e');
+        return SendFailed(l10n.sendRecipientCheckFailedMessage);
+      }
     }
 
     final authed = await LocalAuthService().authenticate(localizedReason: l10n.sendReviewAuthReason);

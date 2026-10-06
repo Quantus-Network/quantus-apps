@@ -1,13 +1,22 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/providers/one_click_provider.dart';
+import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/v2/screens/send/encrypted_send_strategy.dart';
 import 'package:resonance_network_wallet/v2/screens/send/send_strategy.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../fakes.dart';
+
+const _depositAddress = 'qznt5jvuXdh4ZMnTPDnHo4Xq3KwjZPDRqwmd4AW3nDGmuEACG';
+final _configWithKey = RemoteConfigModel.fromJson(const {'near.partner.jwt': 'partner-jwt'});
 
 WormholeUtxo _utxo(int scaled) => WormholeUtxo(
   transfer: WormholeTransfer(
@@ -71,5 +80,77 @@ void main() {
     expect(planEncryptedFee(utxos, tenTokens + BigInt.one).blocker, EncryptedSendBlocker.notQuantized);
     expect(planEncryptedFee(utxos, tenTokens).blocker, EncryptedSendBlocker.insufficient);
     expect(planEncryptedFee(utxos, BigInt.zero).plan, isNull);
+  });
+
+  group('submit asks 1Click again for a plan of several batches', () {
+    final lookedUp = <String>[];
+    var oneClickDown = false;
+
+    setUp(() async {
+      lookedUp.clear();
+      oneClickDown = false;
+      SharedPreferences.setMockInitialValues({});
+      await SettingsService().initialize();
+    });
+
+    Future<WidgetRef> pumpStrategyRef(WidgetTester tester) => pumpRef(
+      tester,
+      overrides: [
+        remoteConfigProvider.overrideWith(
+          (ref) => RemoteConfigNotifier(FakeRemoteConfigService(_configWithKey, remote: _configWithKey)),
+        ),
+        oneClickServiceProvider.overrideWithValue(
+          OneClickService(
+            apiKey: 'partner-jwt',
+            client: MockClient((request) async {
+              lookedUp.add(request.url.queryParameters['depositAddress']!);
+              if (oneClickDown) throw http.ClientException('connection refused');
+              return http.Response(
+                jsonEncode({
+                  'items': [
+                    {'depositAddress': _depositAddress},
+                  ],
+                }),
+                200,
+              );
+            }),
+          ),
+        ),
+      ],
+    );
+
+    WormholeSpendPlan plan(int batches) => WormholeSpendPlan(
+      batches: List.filled(batches, const []),
+      amountToken: tenTokens,
+      changeToken: BigInt.zero,
+      feeToken: BigInt.zero,
+    );
+
+    Future<SendOutcome> submit(WidgetRef ref, WormholeSpendPlan plan) => EncryptedSendStrategy(account: account).submit(
+      ref,
+      recipientAddress: _depositAddress,
+      recipientChecksum: 'Zest-Fabulous',
+      amount: tenTokens,
+      fee: EncryptedFee(plan: plan),
+      isPayMode: false,
+    );
+
+    testWidgets('a single batch goes on without a lookup', (tester) async {
+      final outcome = await submit(await pumpStrategyRef(tester), plan(1));
+      expect(outcome, isA<SendNeedsProving>());
+      expect(lookedUp, isEmpty);
+    });
+
+    testWidgets('several batches to a deposit address are refused', (tester) async {
+      final outcome = await submit(await pumpStrategyRef(tester), plan(2));
+      expect((outcome as SendFailed).message, contains('single-use NEAR Intents deposit address'));
+      expect(lookedUp, [_depositAddress]);
+    });
+
+    testWidgets('several batches with 1Click unreachable are refused', (tester) async {
+      oneClickDown = true;
+      final outcome = await submit(await pumpStrategyRef(tester), plan(2));
+      expect((outcome as SendFailed).message, contains("Couldn't verify the address"));
+    });
   });
 }

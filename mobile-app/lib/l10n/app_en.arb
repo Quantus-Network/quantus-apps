@@ -2994,13 +2994,9 @@
     "@sendRecipientChecking": {
       "description": "Disabled continue button label while the recipient check (self-send, NEAR Intents) is in flight"
     },
-    "sendRecipientCheckFailed": "Couldn't Verify Address",
-    "@sendRecipientCheckFailed": {
-      "description": "Disabled continue button label when the recipient check (self-send, NEAR Intents) failed, e.g. offline"
-    },
-    "sendRecipientCheckFailedMessage": "Couldn't verify the address. Check your connection and enter it again.",
+    "sendRecipientCheckFailedMessage": "Couldn't verify the address. Check your connection and try again.",
     "@sendRecipientCheckFailedMessage": {
-      "description": "Toast shown when the recipient check failed; entering the address again retries it"
+      "description": "Toast on the recipient screen, and error at confirm, when the NEAR Intents lookup failed, e.g. offline"
     },
     "encryptedSendPlanStale": "Your encrypted balance changed while reviewing. Please go back and enter the amount again.",
     "@encryptedSendPlanStale": {

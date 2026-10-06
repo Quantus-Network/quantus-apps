@@ -46,6 +46,20 @@ void main() {
     expect(named, isNot(RemoteConfigModel.defaults));
   });
 
+  test('revoking the location verdict keeps the cached partner JWT', () {
+    final cached = RemoteConfigModel.fromJson(const {'near.partner.jwt': 'partner-jwt', 'geoNearAllowed': true});
+    final revoked = cached.copyWith(geoNearAllowed: false);
+    expect(revoked.geoNearAllowed, isFalse);
+    expect(revoked.nearPartnerJwt, 'partner-jwt');
+  });
+
+  test('the NEAR Intents recipient check is on unless the remote config turns it off', () {
+    expect(RemoteConfigModel.fromJson(const {}).enableOneClickNearWarning, isTrue);
+    final off = RemoteConfigModel.fromJson(const {'enableOneClickNearWarning': false});
+    expect(off.enableOneClickNearWarning, isFalse);
+    expect(RemoteConfigModel.fromJson(off.toCacheJson()), off);
+  });
+
   test('the 1Click partner JWT is null unless the remote config serves near.partner.jwt', () {
     expect(RemoteConfigModel.defaults.nearPartnerJwt, isNull);
     expect(RemoteConfigModel.fromJson(const {'near.partner.jwt': ''}).nearPartnerJwt, isNull);

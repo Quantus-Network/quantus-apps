@@ -3776,16 +3776,10 @@ abstract class AppLocalizations {
   /// **'Verifying Address…'**
   String get sendRecipientChecking;
 
-  /// Disabled continue button label when the recipient check (self-send, NEAR Intents) failed, e.g. offline
+  /// Toast on the recipient screen, and error at confirm, when the NEAR Intents lookup failed, e.g. offline
   ///
   /// In en, this message translates to:
-  /// **'Couldn\'t Verify Address'**
-  String get sendRecipientCheckFailed;
-
-  /// Toast shown when the recipient check failed; entering the address again retries it
-  ///
-  /// In en, this message translates to:
-  /// **'Couldn\'t verify the address. Check your connection and enter it again.'**
+  /// **'Couldn\'t verify the address. Check your connection and try again.'**
   String get sendRecipientCheckFailedMessage;
 
   /// Error shown when the planned inputs of an encrypted send were spent between review and confirm

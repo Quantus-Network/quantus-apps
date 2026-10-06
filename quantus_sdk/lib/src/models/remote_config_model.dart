@@ -9,6 +9,10 @@ class RemoteConfigModel {
   final bool enableEncryptedAccount;
   final bool enableMultisig;
 
+  /// Whether an encrypted send checks its recipient against 1Click's deposit
+  /// addresses. Off, the check always lets the send through.
+  final bool enableOneClickNearWarning;
+
   /// Asset id 1Click lists QTC under, when the listing cannot be told apart by
   /// its chain code; null leaves that to the listing.
   final String? swapQuantusAssetId;
@@ -31,6 +35,7 @@ class RemoteConfigModel {
     required this.enableSwap,
     required this.enableEncryptedAccount,
     required this.enableMultisig,
+    required this.enableOneClickNearWarning,
     this.swapQuantusAssetId,
     required this.geoNearAllowed,
     this.nearPartnerJwt,
@@ -47,8 +52,10 @@ class RemoteConfigModel {
     enableSwap: enableSwap,
     enableEncryptedAccount: enableEncryptedAccount,
     enableMultisig: enableMultisig,
+    enableOneClickNearWarning: enableOneClickNearWarning,
     swapQuantusAssetId: swapQuantusAssetId,
     geoNearAllowed: geoNearAllowed ?? this.geoNearAllowed,
+    nearPartnerJwt: nearPartnerJwt,
   );
 
   R match<R>({
@@ -60,6 +67,7 @@ class RemoteConfigModel {
       bool enableSwap,
       bool enableEncryptedAccount,
       bool enableMultisig,
+      bool enableOneClickNearWarning,
       String? swapQuantusAssetId,
       bool geoNearAllowed,
       String? nearPartnerJwt,
@@ -74,6 +82,7 @@ class RemoteConfigModel {
       enableSwap,
       enableEncryptedAccount,
       enableMultisig,
+      enableOneClickNearWarning,
       swapQuantusAssetId,
       geoNearAllowed,
       nearPartnerJwt,
@@ -88,6 +97,7 @@ class RemoteConfigModel {
     enableSwap: true,
     enableEncryptedAccount: true,
     enableMultisig: true,
+    enableOneClickNearWarning: true,
     geoNearAllowed: false,
   );
 
@@ -102,6 +112,7 @@ class RemoteConfigModel {
             swap,
             encrypted,
             multisig,
+            oneClickWarning,
             swapQuantusAssetId,
             geoNearAllowed,
             nearPartnerJwt,
@@ -113,6 +124,7 @@ class RemoteConfigModel {
             'enableSwap': swap,
             'enableEncryptedAccount': encrypted,
             'enableMultisig': multisig,
+            'enableOneClickNearWarning': oneClickWarning,
             'swapQuantusAssetId': swapQuantusAssetId,
             'geoNearAllowed': geoNearAllowed,
             'near.partner.jwt': nearPartnerJwt,
@@ -131,6 +143,7 @@ class RemoteConfigModel {
       enableSwap: json['enableSwap'] ?? defaults.enableSwap,
       enableEncryptedAccount: json['enableEncryptedAccount'] ?? defaults.enableEncryptedAccount,
       enableMultisig: json['enableMultisig'] ?? defaults.enableMultisig,
+      enableOneClickNearWarning: json['enableOneClickNearWarning'] ?? defaults.enableOneClickNearWarning,
       swapQuantusAssetId: _optionalString(json['swapQuantusAssetId']),
       geoNearAllowed: json['geoNearAllowed'] ?? defaults.geoNearAllowed,
       nearPartnerJwt: _optionalString(json['near.partner.jwt']),

@@ -2038,11 +2038,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sendRecipientChecking => 'Verifying Address…';
 
   @override
-  String get sendRecipientCheckFailed => 'Couldn\'t Verify Address';
-
-  @override
-  String get sendRecipientCheckFailedMessage =>
-      'Couldn\'t verify the address. Check your connection and enter it again.';
+  String get sendRecipientCheckFailedMessage => 'Couldn\'t verify the address. Check your connection and try again.';
 
   @override
   String get encryptedSendPlanStale =>
