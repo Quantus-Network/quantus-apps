@@ -122,6 +122,9 @@ class FakeSubstrateService extends Fake implements SubstrateService {
 
   /// When set, prices a plain transfer by its amount instead of [fee].
   BigInt Function(BigInt amount)? feeForAmount;
+
+  /// When set, every fee answer waits for this first.
+  Future<void>? hold;
   int feeCalls = 0;
   Account? lastFeeAccount;
   RuntimeCall? lastFeeCall;
@@ -134,6 +137,7 @@ class FakeSubstrateService extends Fake implements SubstrateService {
     feeCalls++;
     lastFeeAccount = account;
     lastFeeCall = call;
+    await hold;
     final amount = transferAmount(call);
     final priced = amount != null && feeForAmount != null ? feeForAmount!(amount) : fee;
     return ExtrinsicFeeData(fee: priced, blockHash: '0x00', blockNumber: 1);

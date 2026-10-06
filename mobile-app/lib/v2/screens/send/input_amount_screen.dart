@@ -182,6 +182,9 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
     }
     // Review prices the exact send; a debounced quote may still be queued.
     if (!_feeApplies(feeState)) _requestFee(_amount, immediate: true);
+    // A fee-sized max is final once reviewed: Review holds this amount, so
+    // the fee that lands for it must not re-size the screen underneath.
+    if (!_sendAll) _max = false;
 
     FocusScope.of(context).unfocus();
     Navigator.push(
@@ -221,8 +224,12 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
       widget.strategy.feeChargedToBalance(fee),
     );
     final affordabilityError = fee == null ? null : widget.strategy.affordabilityError(ref, fee, l10n);
+    // A fee-sized max waits for the fee of its final amount; Review would
+    // otherwise hold an amount whose quote is still moving.
+    final maxSettling = _max && !_sendAll && !_feeApplies(feeState);
     final btnDisabled =
         fee == null ||
+        maxSettling ||
         _recipientChecksum == null ||
         !balance.hasValue ||
         widget.strategy.extraBalancesLoading(ref) ||

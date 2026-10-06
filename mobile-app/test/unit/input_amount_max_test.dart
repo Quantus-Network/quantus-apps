@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -123,6 +125,35 @@ void main() {
     expect(boundary + fee.fee!.displayFee <= spendable, isTrue);
     expect(substrate.feeCalls, 4);
     expect(tester.widget<QuantusButton>(find.byKey(const Key(E2EKeys.sendReviewButton))).isDisabled, isFalse);
+  });
+
+  testWidgets('Review waits for a fee-sized max to settle, then holds the settled amount', (tester) async {
+    final boundary = spendable - transferFee * BigInt.two;
+    final substrate = FakeSubstrateService(fee: transferFee)
+      ..feeForAmount = (amount) => amount > boundary ? transferFee * BigInt.two : transferFee;
+    final container = await pumpAmountScreen(tester, substrate, transferAll: false);
+    await tester.enterText(find.byKey(const Key(E2EKeys.sendAmountField)), '1');
+    await tester.pump(SendFeeNotifier.debounce);
+    await tester.pump();
+    expect(container.read(sendFeeProvider).settled, isTrue);
+
+    final answers = Completer<void>();
+    substrate.hold = answers.future;
+    await tapMax(tester, container);
+    expect(fieldText(tester), formatted(container, spendable - transferFee));
+    expect(tester.widget<QuantusButton>(find.byKey(const Key(E2EKeys.sendReviewButton))).isDisabled, isTrue);
+
+    answers.complete();
+    for (var i = 0; i < 8; i++) {
+      await tester.pump();
+    }
+    expect(fieldText(tester), formatted(container, boundary));
+
+    await tapContinue(tester);
+    await tester.pump();
+
+    expect(tester.widget<QuantusButton>(find.byKey(const Key(E2EKeys.sendConfirmButton))).isDisabled, isFalse);
+    expect((container.read(sendFeeProvider).fee as RegularFee).amount, boundary);
   });
 
   testWidgets('typing after Max goes back to pricing a plain transfer', (tester) async {
