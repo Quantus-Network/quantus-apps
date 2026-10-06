@@ -54,6 +54,13 @@ void main() {
     expect(revoked.nearPartnerJwt, 'partner-jwt');
   });
 
+  test('transfer_all stays off unless the remote config turns it on', () {
+    expect(RemoteConfigModel.fromJson(const {}).enableTransferAllCall, isFalse);
+    final on = RemoteConfigModel.fromJson(const {'enableTransferAllCall': true});
+    expect(on.enableTransferAllCall, isTrue);
+    expect(RemoteConfigModel.fromJson(on.toCacheJson()), on);
+  });
+
   test('the NEAR Intents recipient check is on unless the remote config turns it off', () {
     expect(RemoteConfigModel.fromJson(const {}).enableOneClickNearWarning, isTrue);
     final off = RemoteConfigModel.fromJson(const {'enableOneClickNearWarning': false});

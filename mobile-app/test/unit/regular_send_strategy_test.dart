@@ -49,6 +49,7 @@ void main() {
       overrides: [
         substrateServiceProvider.overrideWithValue(substrate),
         balancesServiceProvider.overrideWithValue(FakeBalancesService()),
+        remoteConfigOverride(transferAllOn),
       ],
     );
     final strategy = RegularSendStrategy(account: captured);
@@ -68,13 +69,14 @@ void main() {
     expect(strategy.feeApplies(fee.fee!, amount: BigInt.from(10), sendAll: true), isFalse);
   });
 
-  testWidgets('a max send prices transfer_all that keeps the existential deposit', (tester) async {
+  testWidgets('a max send prices transfer_all', (tester) async {
     final substrate = FakeSubstrateService(fee: BigInt.from(7));
     final ref = await pumpRef(
       tester,
       overrides: [
         substrateServiceProvider.overrideWithValue(substrate),
         balancesServiceProvider.overrideWithValue(FakeBalancesService()),
+        remoteConfigOverride(transferAllOn),
       ],
     );
     final strategy = RegularSendStrategy(account: captured);
@@ -89,6 +91,23 @@ void main() {
     expect(strategy.feeApplies(fee, amount: BigInt.from(999), sendAll: true), isTrue);
   });
 
+  testWidgets('transfer_all stays off until remote config allows it', (tester) async {
+    final ref = await pumpRef(
+      tester,
+      overrides: [
+        balancesServiceProvider.overrideWithValue(FakeBalancesService()),
+        remoteConfigOverride(RemoteConfigModel.defaults),
+      ],
+    );
+    final strategy = RegularSendStrategy(account: captured);
+
+    expect(strategy.supportsSendAll(ref), isFalse);
+    expect(
+      () => strategy.requestFee(ref.read, recipient: other.accountId, amount: BigInt.one, sendAll: true),
+      throwsStateError,
+    );
+  });
+
   testWidgets('a max send hands transfer_all to the keystone signing session', (tester) async {
     final keystone = makeAccount(3, accountType: AccountType.keystone);
     final ref = await pumpRef(
@@ -96,6 +115,7 @@ void main() {
       overrides: [
         settingsServiceProvider.overrideWithValue(FakeSettingsService(activeAccount: RegularAccount(keystone))),
         balancesServiceProvider.overrideWithValue(FakeBalancesService()),
+        remoteConfigOverride(transferAllOn),
       ],
     );
     final strategy = RegularSendStrategy(account: keystone);
@@ -121,6 +141,7 @@ void main() {
       overrides: [
         settingsServiceProvider.overrideWithValue(FakeSettingsService(activeAccount: RegularAccount(keystone))),
         balancesServiceProvider.overrideWithValue(FakeBalancesService()),
+        remoteConfigOverride(transferAllOn),
       ],
     );
     final strategy = RegularSendStrategy(account: keystone);
@@ -159,6 +180,7 @@ void main() {
       overrides: [
         settingsServiceProvider.overrideWithValue(FakeSettingsService(activeAccount: RegularAccount(captured))),
         balancesServiceProvider.overrideWithValue(FakeBalancesService()),
+        remoteConfigOverride(transferAllOn),
         transactionSubmissionServiceProvider.overrideWithValue(submission),
       ],
     );

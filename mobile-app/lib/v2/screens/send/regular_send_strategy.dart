@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/misc.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
+import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/services/local_auth_service.dart';
 import 'package:resonance_network_wallet/services/transaction_submission_service.dart';
@@ -56,8 +57,12 @@ class RegularSendStrategy extends SendStrategy {
   @override
   BigInt feeChargedToBalance(SendFee? fee) => (fee as RegularFee?)?.networkFee ?? BigInt.zero;
 
+  /// `transfer_all` only while remote config allows it: NEAR Intents cannot
+  /// credit such a deposit yet.
   @override
-  bool get supportsSendAll => true;
+  bool supportsSendAll(WidgetRef ref) => _transferAllAllowed(ref.read);
+
+  static bool _transferAllAllowed(ProviderReader read) => read(remoteConfigProvider).enableTransferAllCall;
 
   /// The chain fee moves with the amount only through its compact encoding, a
   /// few bytes at most, so the latest value serves every amount until the next
@@ -116,7 +121,9 @@ class RegularSendStrategy extends SendStrategy {
   /// the call carries no amount.
   RuntimeCall _transferCall(ProviderReader read, String recipient, BigInt amount, {required bool sendAll}) {
     final balances = read(balancesServiceProvider);
-    return sendAll ? balances.getTransferAllCall(recipient) : balances.getBalanceTransferCall(recipient, amount);
+    if (!sendAll) return balances.getBalanceTransferCall(recipient, amount);
+    if (!_transferAllAllowed(read)) throw StateError('transfer_all is off in remote config');
+    return balances.getTransferAllCall(recipient);
   }
 
   KeystoneSignCacheKey _hardwareCacheKey(String recipient, BigInt amount, {required bool sendAll}) => sendAll

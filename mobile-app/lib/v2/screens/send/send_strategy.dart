@@ -251,7 +251,8 @@ abstract class SendStrategy {
   static final BigInt feeProbeAmount = NumberFormattingService.scaleFactorBigInt;
 
   /// Whether Max sends the whole spendable balance with `transfer_all`.
-  bool get supportsSendAll => false;
+  /// Otherwise Max is sized from the fee and sent as a plain transfer.
+  bool supportsSendAll(WidgetRef ref) => false;
 
   /// Whether the recipient screen shows the "Private Send" notice above the
   /// continue button. Only encrypted (wormhole) sends enable this.

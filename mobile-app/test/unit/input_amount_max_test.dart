@@ -30,7 +30,11 @@ void main() {
     await SettingsService().initialize();
   });
 
-  Future<ProviderContainer> pumpAmountScreen(WidgetTester tester, FakeSubstrateService substrate) async {
+  Future<ProviderContainer> pumpAmountScreen(
+    WidgetTester tester,
+    FakeSubstrateService substrate, {
+    bool transferAll = true,
+  }) async {
     await tester.pumpApp(
       InputAmountScreen(
         strategy: RegularSendStrategy(account: sender),
@@ -43,10 +47,18 @@ void main() {
         exchangeRateServiceProvider.overrideWithValue(ExchangeRateService(rates: {})),
         substrateServiceProvider.overrideWithValue(substrate),
         balancesServiceProvider.overrideWithValue(FakeBalancesService()),
+        remoteConfigOverride(transferAll ? transferAllOn : RemoteConfigModel.defaults),
       ],
     );
     await tester.pump();
     return ProviderScope.containerOf(tester.element(find.byType(InputAmountScreen)));
+  }
+
+  Future<void> tapMax(WidgetTester tester, ProviderContainer container, {int rounds = 1}) async {
+    await tester.tap(find.text(container.read(l10nProvider).sendInputAmountMax));
+    for (var i = 0; i < rounds; i++) {
+      await tester.pump();
+    }
   }
 
   String fieldText(WidgetTester tester) =>
@@ -79,6 +91,38 @@ void main() {
     expect(isTransferAll(substrate.lastFeeCall!), isTrue);
     expect(fieldText(tester), formatted(container, spendable - transferAllFee));
     expect(container.read(sendFeeProvider).settled, isTrue);
+  });
+
+  testWidgets('Max without transfer_all is sized from the fee for that very amount', (tester) async {
+    final substrate = FakeSubstrateService(fee: transferFee);
+    final container = await pumpAmountScreen(tester, substrate, transferAll: false);
+
+    await tapMax(tester, container, rounds: 3);
+
+    expect(isTransferAll(substrate.lastFeeCall!), isFalse);
+    expect(fieldText(tester), formatted(container, spendable - transferFee));
+    final fee = container.read(sendFeeProvider);
+    expect(fee.settled, isTrue);
+    expect((fee.fee as RegularFee).amount, spendable - transferFee);
+    expect(substrate.feeCalls, 2);
+    expect(tester.widget<QuantusButton>(find.byKey(const Key(E2EKeys.sendReviewButton))).isDisabled, isFalse);
+  });
+
+  testWidgets('a fee that grows with the amount settles the max on the lower size', (tester) async {
+    final boundary = spendable - transferFee * BigInt.two;
+    final substrate = FakeSubstrateService(fee: transferFee)
+      ..feeForAmount = (amount) => amount > boundary ? transferFee * BigInt.two : transferFee;
+    final container = await pumpAmountScreen(tester, substrate, transferAll: false);
+
+    await tapMax(tester, container, rounds: 8);
+
+    expect(fieldText(tester), formatted(container, boundary));
+    final fee = container.read(sendFeeProvider);
+    expect(fee.settled, isTrue);
+    expect((fee.fee as RegularFee).amount, boundary);
+    expect(boundary + fee.fee!.displayFee <= spendable, isTrue);
+    expect(substrate.feeCalls, 4);
+    expect(tester.widget<QuantusButton>(find.byKey(const Key(E2EKeys.sendReviewButton))).isDisabled, isFalse);
   });
 
   testWidgets('typing after Max goes back to pricing a plain transfer', (tester) async {

@@ -54,6 +54,7 @@ void main() {
       overrides: [
         settingsServiceProvider.overrideWithValue(FakeSettingsService(activeAccount: RegularAccount(sender))),
         effectiveBalanceProviderFamily.overrideWith((ref, accountId) => AsyncValue.data(balance ?? spendable)),
+        remoteConfigOverride(transferAllOn),
         exchangeRateServiceProvider.overrideWithValue(ExchangeRateService(rates: {})),
         substrateServiceProvider.overrideWithValue(FakeSubstrateService()),
         balancesServiceProvider.overrideWithValue(FakeBalancesService()),

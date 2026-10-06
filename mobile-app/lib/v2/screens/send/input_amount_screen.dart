@@ -44,6 +44,12 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
   BigInt _amount = BigInt.zero;
   bool _sendAll = false;
 
+  /// Max was tapped and nothing typed since: the amount follows the fee.
+  bool _max = false;
+
+  /// Amounts this max send has been priced at.
+  final _maxTried = <BigInt>{};
+
   String get _recipient => widget.recipientAddress.trim();
 
   ProviderListenable<SendFeeState> _feeProvider(BigInt amount) =>
@@ -118,6 +124,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
       setState(() {
         _amount = amount;
         _sendAll = false;
+        _max = false;
       });
     } on InvalidNumberInputException catch (e, stack) {
       quantusPrint('Amount parse failed: $e\n$stack');
@@ -128,13 +135,37 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
     if (_amount > BigInt.zero) _requestFee(_amount);
   }
 
-  /// Max sends the whole spendable balance. Strategies that support it price
-  /// `transfer_all` at once, and the amount follows that fee as it lands.
+  /// Max sends the whole spendable balance, sized from the latest fee and
+  /// re-sized by [_followFee] as the fee for that send lands.
   void _setMax() {
     final max = _maxSendable(ref.read(_feeProvider(_spendable)).fee);
-    setState(() => _sendAll = widget.strategy.supportsSendAll);
+    setState(() {
+      _sendAll = widget.strategy.supportsSendAll(ref);
+      _max = true;
+    });
+    _maxTried
+      ..clear()
+      ..add(max);
     _setAmount(max);
-    if (max > BigInt.zero) _requestFee(max, immediate: _sendAll);
+    if (max > BigInt.zero) _requestFee(max, immediate: true);
+  }
+
+  /// Keeps a max amount sized by its fee. A `transfer_all` fee is fixed, so
+  /// the amount simply follows it. A plain transfer's fee moves with the
+  /// amount's encoding, so the amount is re-priced until the two agree. An
+  /// amount already priced is never returned to, which keeps a fee that
+  /// changes at an encoding boundary from bouncing the amount: the lower
+  /// size wins, leaving the difference as dust.
+  void _followFee(SendFeeState next) {
+    final fee = next.fee;
+    if (!_max || fee == null) return;
+    final sized = _maxSendable(fee);
+    if (_sendAll || sized <= BigInt.zero) return _setAmount(sized);
+    if (sized == _amount || !next.settled || !widget.strategy.feeApplies(fee, amount: _amount, sendAll: false)) return;
+    final down = sized < _amount;
+    if (!_maxTried.add(sized) && !down) return;
+    _setAmount(sized);
+    _requestFee(sized, immediate: true);
   }
 
   void _openReview() {
@@ -180,9 +211,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
     final sourceId = widget.strategy.sourceAccountId ?? '';
     final recipient = _recipient;
     final formattingService = ref.read(numberFormattingServiceProvider);
-    ref.listen(_feeProvider(_amount), (_, next) {
-      if (_sendAll && next.fee != null) _setAmount(_maxSendable(next.fee));
-    });
+    ref.listen(_feeProvider(_amount), (_, next) => _followFee(next));
     final feeState = ref.watch(_feeProvider(_amount));
     final fee = feeState.fee;
 

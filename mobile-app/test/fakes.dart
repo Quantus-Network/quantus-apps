@@ -11,6 +11,7 @@ import 'package:quantus_sdk/generated/bell/types/quantus_runtime/runtime_call.da
 import 'package:quantus_sdk/generated/bell/types/sp_runtime/multiaddress/multi_address.dart' as multi_address;
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/local_auth_provider.dart';
+import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
 import 'package:resonance_network_wallet/services/history_polling_manager.dart';
 import 'package:resonance_network_wallet/services/remote_config_service.dart';
 import 'package:resonance_network_wallet/services/local_auth_service.dart';
@@ -118,6 +119,9 @@ class FakeSubstrateService extends Fake implements SubstrateService {
   FakeSubstrateService({BigInt? fee}) : fee = fee ?? BigInt.one;
 
   BigInt fee;
+
+  /// When set, prices a plain transfer by its amount instead of [fee].
+  BigInt Function(BigInt amount)? feeForAmount;
   int feeCalls = 0;
   Account? lastFeeAccount;
   RuntimeCall? lastFeeCall;
@@ -130,9 +134,25 @@ class FakeSubstrateService extends Fake implements SubstrateService {
     feeCalls++;
     lastFeeAccount = account;
     lastFeeCall = call;
-    return ExtrinsicFeeData(fee: fee, blockHash: '0x00', blockNumber: 1);
+    final amount = transferAmount(call);
+    final priced = amount != null && feeForAmount != null ? feeForAmount!(amount) : fee;
+    return ExtrinsicFeeData(fee: priced, blockHash: '0x00', blockNumber: 1);
   }
 }
+
+/// Amount of a `Balances.transfer_allow_death` [call]; null for any other call.
+BigInt? transferAmount(RuntimeCall call) {
+  if (call is! runtime_call.Balances) return null;
+  final inner = call.value0;
+  return inner is balances_call.TransferAllowDeath ? inner.value : null;
+}
+
+/// Remote config that allows Max to send with `transfer_all`.
+final transferAllOn = RemoteConfigModel.fromJson(const {'enableTransferAllCall': true});
+
+/// The remote config as the app sees it: [config] cached and served again.
+Override remoteConfigOverride(RemoteConfigModel config) =>
+    remoteConfigProvider.overrideWith((ref) => RemoteConfigNotifier(FakeRemoteConfigService(config, remote: config)));
 
 class FakeRecentAddressesService extends Fake implements RecentAddressesService {
   @override
