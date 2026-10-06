@@ -26,6 +26,7 @@ const _derivedAddress = 'qzDERIVED';
 const _depositAddress = 'qznt5jvuXdh4ZMnTPDnHo4Xq3KwjZPDRqwmd4AW3nDGmuEACG';
 const _plainAddress = 'qzmTAz3UUw1WGUuVh8nbFmPwcftomduwy6twq6NDR6y9qqtEs';
 const _unreachableAddress = 'qzUNREACHABLE';
+const _unreadableAddress = 'qzUNREADABLE';
 
 /// Lets the warning toast a refusal raises expire before the tree is torn down.
 const _toastLifetime = Duration(seconds: 3);
@@ -37,9 +38,13 @@ final _configCheckOff = RemoteConfigModel.fromJson(const {
   'enableOneClickNearWarning': false,
 });
 
+/// Owns [_derivedAddress]; the secure-storage read fails for [_unreadableAddress].
 class _FakeEncryptedAccountService extends Fake implements EncryptedAccountService {
   @override
-  Future<bool> ownsAddress(String address) async => address == _derivedAddress;
+  Future<bool> ownsAddress(String address) async {
+    if (address == _unreadableAddress) throw StateError('mnemonic unavailable');
+    return address == _derivedAddress;
+  }
 }
 
 void main() {
@@ -157,6 +162,16 @@ void main() {
 
       expectContinue(tester, disabled: false, label: 'Continue');
       expect(find.text('NEAR Intents address detected'), findsNothing);
+      await tester.pump(_toastLifetime);
+    });
+
+    testWidgets('a failed self-send check keeps continue disabled', (tester) async {
+      await pumpRecipient(tester, strategy);
+      await enterRecipient(tester, _unreadableAddress);
+
+      expectContinue(tester, disabled: true, label: "Couldn't Verify Address");
+      expect(find.text('NEAR Intents address detected'), findsNothing);
+      expect(lookedUp, isEmpty);
       await tester.pump(_toastLifetime);
     });
 

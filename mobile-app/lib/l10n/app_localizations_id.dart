@@ -2041,6 +2041,9 @@ class AppLocalizationsId extends AppLocalizations {
   String get sendRecipientChecking => 'Memverifikasi Alamat…';
 
   @override
+  String get sendRecipientCheckFailed => 'Tidak Bisa Memverifikasi Alamat';
+
+  @override
   String get sendRecipientCheckFailedMessage => 'Alamat tidak dapat diverifikasi. Periksa koneksi Anda dan coba lagi.';
 
   @override

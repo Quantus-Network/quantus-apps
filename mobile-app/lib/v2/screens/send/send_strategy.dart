@@ -66,6 +66,19 @@ class ProposeFee extends SendFee {
 /// Why an encrypted send can't be built for the entered amount.
 enum EncryptedSendBlocker { notQuantized, insufficient }
 
+/// The recipient could not be checked against 1Click's deposit addresses.
+/// The send may go on: a plan of a single input is safe, and one of several
+/// is checked again at confirm. Every other failure of the recipient check
+/// keeps the send closed.
+class RecipientLookupUnavailable implements Exception {
+  final Object cause;
+
+  const RecipientLookupUnavailable(this.cause);
+
+  @override
+  String toString() => 'RecipientLookupUnavailable: $cause';
+}
+
 /// Why an address can't receive a send.
 enum RecipientBlock {
   /// The sending account itself, or one of its own addresses.

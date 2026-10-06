@@ -2994,6 +2994,10 @@
     "@sendRecipientChecking": {
       "description": "Disabled continue button label while the recipient check (self-send, NEAR Intents) is in flight"
     },
+    "sendRecipientCheckFailed": "Couldn't Verify Address",
+    "@sendRecipientCheckFailed": {
+      "description": "Disabled continue button label when the recipient's self-send check failed; entering the address again retries it"
+    },
     "sendRecipientCheckFailedMessage": "Couldn't verify the address. Check your connection and try again.",
     "@sendRecipientCheckFailedMessage": {
       "description": "Toast on the recipient screen, and error at confirm, when the NEAR Intents lookup failed, e.g. offline"

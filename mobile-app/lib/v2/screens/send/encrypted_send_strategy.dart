@@ -60,7 +60,13 @@ class EncryptedSendStrategy extends SendStrategy {
         await ref.read(encryptedAccountServiceProvider(account.walletIndex)).ownsAddress(address)) {
       return RecipientBlock.self;
     }
-    return await isOneClickDepositAddress(ref, address) ? RecipientBlock.oneClickDeposit : null;
+    final bool deposit;
+    try {
+      deposit = await isOneClickDepositAddress(ref, address);
+    } catch (e) {
+      throw RecipientLookupUnavailable(e);
+    }
+    return deposit ? RecipientBlock.oneClickDeposit : null;
   }
 
   @override

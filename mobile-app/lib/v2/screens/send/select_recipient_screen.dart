@@ -139,14 +139,14 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
           }
         })
         .catchError((Object e) {
-          // The send goes on without a verdict: a plan of a single input is
-          // safe, and one of several is checked again at confirm.
+          // Only an unanswered 1Click lookup lets the send go on; a failed
+          // self-send check keeps it closed.
           quantusPrint('SelectRecipientScreen recipient check: $e');
           if (!mounted || _recipientController.text.trim() != address) return;
           setState(() {
             _checking = false;
             _checkFailed = true;
-            _canContinue = true;
+            _canContinue = e is RecipientLookupUnavailable;
           });
           context.showWarningToaster(message: ref.read(l10nProvider).sendRecipientCheckFailedMessage);
         });
@@ -364,6 +364,7 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
             RecipientBlock.self => l10n.sendLogicCantSelfTransfer,
             RecipientBlock.oneClickDeposit => l10n.encryptedSendNearIntentsButton,
             null when _checking => l10n.sendRecipientChecking,
+            null when _checkFailed => l10n.sendRecipientCheckFailed,
             null => l10n.sendEnterAddress,
           };
 
