@@ -15,17 +15,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../fakes.dart';
 
 /// Counts the config refreshes the lifecycle manager asks for.
-class _CountingRemoteConfigService extends FakeRemoteConfigService {
-  _CountingRemoteConfigService(super.config);
-
-  int reads = 0;
-
-  @override
-  Future<RemoteConfigModel?> readRemoteConfig() async {
-    reads++;
-    return config;
-  }
-}
+final _geoAllowed = RemoteConfigModel.fromJson(const {'geoNearAllowed': true});
 
 void main() {
   setUp(() async {
@@ -37,7 +27,7 @@ void main() {
   /// authentication prompt; the config is read once, as the home screen would.
   Future<LocalAuthService> pumpManager(
     WidgetTester tester,
-    _CountingRemoteConfigService remote, {
+    FakeRemoteConfigService remote, {
     required Future<bool> prompt,
   }) async {
     final authService = LocalAuthService.withDependencies(
@@ -64,7 +54,7 @@ void main() {
   }
 
   testWidgets('a backgrounding during the auth prompt still re-checks the location on resume', (tester) async {
-    final remote = _CountingRemoteConfigService(RemoteConfigModel.fromJson(const {'geoNearAllowed': true}));
+    final remote = FakeRemoteConfigService(_geoAllowed, remote: _geoAllowed);
     final prompt = Completer<bool>();
     final authService = await pumpManager(tester, remote, prompt: prompt.future);
 
@@ -87,7 +77,7 @@ void main() {
   });
 
   testWidgets('a prompt that only makes the app inactive does not re-check the location', (tester) async {
-    final remote = _CountingRemoteConfigService(RemoteConfigModel.fromJson(const {'geoNearAllowed': true}));
+    final remote = FakeRemoteConfigService(_geoAllowed, remote: _geoAllowed);
     final authService = await pumpManager(tester, remote, prompt: Completer<bool>().future);
     unawaited(authService.authenticate());
     await tester.pump();

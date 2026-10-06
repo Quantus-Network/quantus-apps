@@ -3770,6 +3770,12 @@ abstract class AppLocalizations {
   /// **'Can\'t Send to NEAR Intents'**
   String get encryptedSendNearIntentsButton;
 
+  /// Disabled continue button label while the recipient check (self-send, NEAR Intents) is in flight
+  ///
+  /// In en, this message translates to:
+  /// **'Verifying Address…'**
+  String get sendRecipientChecking;
+
   /// Disabled continue button label when the recipient check (self-send, NEAR Intents) failed, e.g. offline
   ///
   /// In en, this message translates to:

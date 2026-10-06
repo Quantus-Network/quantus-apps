@@ -2035,6 +2035,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get encryptedSendNearIntentsButton => 'Can\'t Send to NEAR Intents';
 
   @override
+  String get sendRecipientChecking => 'Verifying Address…';
+
+  @override
   String get sendRecipientCheckFailed => 'Couldn\'t Verify Address';
 
   @override

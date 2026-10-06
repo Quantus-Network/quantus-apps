@@ -24,6 +24,10 @@ class OneClickService {
   final Uri _base;
   final String? _apiKey;
 
+  /// Answers so far. A deposit address is one for good, and 1Click never
+  /// issues an address that already exists, so neither answer goes stale.
+  final _depositAddresses = <String, bool>{};
+
   OneClickService({http.Client? client, String endpoint = AppConstants.oneClickEndpoint, String? apiKey})
     : _client = client ?? http.Client(),
       _base = Uri.parse(endpoint),
@@ -31,15 +35,19 @@ class OneClickService {
 
   /// Whether 1Click issued [address] as the deposit address of a swap funded
   /// on its origin chain. Such an address takes exactly the one deposit its
-  /// quote expects. The history route is invite-only: without the partner
-  /// key 1Click answers 403, which is thrown, never read as "not a deposit".
+  /// quote expects. Each address is asked about once. The history route is
+  /// invite-only: a lookup without the partner key is refused before any
+  /// request, and a 403 from 1Click is thrown, never read as "not a deposit".
   Future<bool> isDepositAddress(String address) async {
+    final known = _depositAddresses[address];
+    if (known != null) return known;
+    if (_apiKey == null) throw StateError('1Click history is invite-only and no partner key is configured');
     final json = await send(
       'GET',
       '/v0/account/history',
       query: {'depositAddress': address, 'depositType': 'ORIGIN_CHAIN', 'limit': '1'},
     ).timeout(depositLookupTimeout);
-    return ((json as Map<String, dynamic>)['items'] as List<dynamic>).isNotEmpty;
+    return _depositAddresses[address] = ((json as Map<String, dynamic>)['items'] as List<dynamic>).isNotEmpty;
   }
 
   Future<Object?> send(String method, String path, {Map<String, Object>? body, Map<String, String>? query}) async {

@@ -246,11 +246,18 @@ class FakeRemoteConfigService extends RemoteConfigService {
   final RemoteConfigModel config;
   RemoteConfigModel? remote;
 
+  /// When set, a remote read answers with this instead of [remote].
+  Future<RemoteConfigModel?>? hold;
+  int reads = 0;
+
   @override
   RemoteConfigModel readLocalConfig() => config;
 
   @override
-  Future<RemoteConfigModel?> readRemoteConfig() async => remote;
+  Future<RemoteConfigModel?> readRemoteConfig() {
+    reads++;
+    return hold ?? Future.value(remote);
+  }
 
   @override
   Future<void> cacheConfig(Object json) async {}

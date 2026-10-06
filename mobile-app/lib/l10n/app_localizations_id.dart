@@ -2038,6 +2038,9 @@ class AppLocalizationsId extends AppLocalizations {
   String get encryptedSendNearIntentsButton => 'Tidak Bisa Kirim ke NEAR Intents';
 
   @override
+  String get sendRecipientChecking => 'Memverifikasi Alamat…';
+
+  @override
   String get sendRecipientCheckFailed => 'Tidak Bisa Memverifikasi Alamat';
 
   @override

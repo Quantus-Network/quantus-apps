@@ -9,14 +9,18 @@ const _address = 'qznt5jvuXdh4ZMnTPDnHo4Xq3KwjZPDRqwmd4AW3nDGmuEACG';
 
 void main() {
   http.Request? captured;
+  var requests = 0;
 
   OneClickService service(int status, Object body) => OneClickService(
     apiKey: 'partner-jwt',
     client: MockClient((request) async {
       captured = request;
+      requests++;
       return http.Response(jsonEncode(body), status);
     }),
   );
+
+  setUp(() => requests = 0);
 
   test('an address with origin-chain deposit history is a 1Click deposit address', () async {
     final history = {
@@ -33,6 +37,33 @@ void main() {
 
   test('an address without history is not a deposit address', () async {
     expect(await service(200, {'items': []}).isDepositAddress(_address), isFalse);
+  });
+
+  test('each address is asked about once, whatever the answer', () async {
+    final deposits = service(200, {
+      'items': [
+        {'depositAddress': _address},
+      ],
+    });
+    expect(await deposits.isDepositAddress(_address), isTrue);
+    expect(await deposits.isDepositAddress(_address), isTrue);
+    expect(requests, 1);
+
+    final plain = service(200, {'items': []});
+    expect(await plain.isDepositAddress('qzOther'), isFalse);
+    expect(await plain.isDepositAddress('qzOther'), isFalse);
+    expect(requests, 2);
+  });
+
+  test('a lookup without a partner key is refused before any request', () async {
+    final keyless = OneClickService(
+      client: MockClient((_) async {
+        requests++;
+        return http.Response('{"items": []}', 200);
+      }),
+    );
+    await expectLater(keyless.isDepositAddress(_address), throwsStateError);
+    expect(requests, 0);
   });
 
   test('a refused lookup throws instead of answering', () async {

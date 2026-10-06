@@ -41,7 +41,9 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
   bool _isPayMode = false;
   bool _canContinue = false;
   RecipientBlock? _block;
+  bool _checking = false;
   bool _checkFailed = false;
+  String _lastRecipientText = '';
   String? _recipientChecksum;
 
   @override
@@ -84,8 +86,12 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
     }
   }
 
+  /// The controller also notifies for selection and focus changes, so an
+  /// unchanged address is only looked up again when its last check failed.
   void _onRecipientChanged() {
     final text = _recipientController.text.trim();
+    if (text == _lastRecipientText && !_checkFailed) return;
+    _lastRecipientText = text;
     if (text.isEmpty) {
       _amountController.clear();
       setState(() {
@@ -94,6 +100,7 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
         _isPayMode = false;
         _canContinue = false;
         _block = null;
+        _checking = false;
         _checkFailed = false;
       });
       return;
@@ -109,6 +116,7 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
     setState(() {
       _hasAddressError = !isValid;
       _block = null;
+      _checking = isValid;
       _checkFailed = false;
       _recipientChecksum = null;
       _canContinue = false;
@@ -123,6 +131,7 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
           if (!mounted || _recipientController.text.trim() != address) return;
           setState(() {
             _block = block;
+            _checking = false;
             _canContinue = block == null;
           });
           if (block == RecipientBlock.self && !wasSelfSend) {
@@ -133,7 +142,10 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
           // Fail closed: without a verdict the send can't proceed.
           quantusPrint('SelectRecipientScreen recipient check: $e');
           if (!mounted || _recipientController.text.trim() != address) return;
-          setState(() => _checkFailed = true);
+          setState(() {
+            _checking = false;
+            _checkFailed = true;
+          });
           context.showWarningToaster(message: ref.read(l10nProvider).sendRecipientCheckFailedMessage);
         });
     checksumService.getHumanReadableName(address).then((checksum) {
@@ -198,6 +210,7 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
         _hasAddressError = true;
         _canContinue = false;
         _block = null;
+        _checking = false;
         _checkFailed = false;
       });
     });
@@ -348,7 +361,9 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
         : switch (_block) {
             RecipientBlock.self => l10n.sendLogicCantSelfTransfer,
             RecipientBlock.oneClickDeposit => l10n.encryptedSendNearIntentsButton,
-            null => _checkFailed ? l10n.sendRecipientCheckFailed : l10n.sendEnterAddress,
+            null when _checking => l10n.sendRecipientChecking,
+            null when _checkFailed => l10n.sendRecipientCheckFailed,
+            null => l10n.sendEnterAddress,
           };
 
     final button = QuantusButton.simple(

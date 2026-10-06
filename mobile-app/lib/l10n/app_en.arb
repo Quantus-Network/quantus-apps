@@ -2990,6 +2990,10 @@
     "@encryptedSendNearIntentsButton": {
       "description": "Disabled continue button label while the recipient is a NEAR Intents deposit address"
     },
+    "sendRecipientChecking": "Verifying Address…",
+    "@sendRecipientChecking": {
+      "description": "Disabled continue button label while the recipient check (self-send, NEAR Intents) is in flight"
+    },
     "sendRecipientCheckFailed": "Couldn't Verify Address",
     "@sendRecipientCheckFailed": {
       "description": "Disabled continue button label when the recipient check (self-send, NEAR Intents) failed, e.g. offline"

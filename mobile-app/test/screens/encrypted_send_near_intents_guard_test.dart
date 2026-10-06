@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -7,8 +8,11 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/one_click_provider.dart';
+import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
+import 'package:resonance_network_wallet/services/remote_config_service.dart';
 import 'package:resonance_network_wallet/shared/constants/e2e_keys.dart';
+import 'package:resonance_network_wallet/v2/components/address_input_field.dart';
 import 'package:resonance_network_wallet/v2/screens/send/encrypted_send_strategy.dart';
 import 'package:resonance_network_wallet/v2/screens/send/regular_send_strategy.dart';
 import 'package:resonance_network_wallet/v2/screens/send/select_recipient_screen.dart';
@@ -26,6 +30,9 @@ const _unreachableAddress = 'qzUNREACHABLE';
 /// Lets the warning toast a refusal raises expire before the tree is torn down.
 const _toastLifetime = Duration(seconds: 3);
 
+final _configWithKey = RemoteConfigModel.fromJson(const {'near.partner.jwt': 'partner-jwt'});
+final _configWithoutKey = RemoteConfigModel.fromJson(const {});
+
 class _FakeEncryptedAccountService extends Fake implements EncryptedAccountService {
   @override
   Future<bool> ownsAddress(String address) async => address == _derivedAddress;
@@ -37,28 +44,40 @@ void main() {
   final lookedUp = <String>[];
 
   /// 1Click as the guard sees it: history for [_depositAddress], none for any
-  /// other address, and no answer at all for [_unreachableAddress].
-  final oneClick = OneClickService(
-    client: MockClient((request) async {
-      final address = request.url.queryParameters['depositAddress']!;
-      lookedUp.add(address);
-      if (address == _unreachableAddress) throw http.ClientException('connection refused');
-      final items = address == _depositAddress
-          ? [
-              {'depositAddress': address},
-            ]
-          : [];
-      return http.Response(jsonEncode({'items': items}), 200);
-    }),
-  );
+  /// other address, and no answer at all for [_unreachableAddress]. Built per
+  /// test, since the service remembers every answer.
+  late OneClickService oneClick;
 
   setUp(() async {
     lookedUp.clear();
+    oneClick = OneClickService(
+      apiKey: 'partner-jwt',
+      client: MockClient((request) async {
+        final address = request.url.queryParameters['depositAddress']!;
+        lookedUp.add(address);
+        if (address == _unreachableAddress) throw http.ClientException('connection refused');
+        final items = address == _depositAddress
+            ? [
+                {'depositAddress': address},
+              ]
+            : [];
+        return http.Response(jsonEncode({'items': items}), 200);
+      }),
+    );
     SharedPreferences.setMockInitialValues({});
     await SettingsService().initialize();
   });
 
-  Future<void> pumpRecipient(WidgetTester tester, SendStrategy strategy) async {
+  /// [remoteConfig] defaults to a config that already carries the partner key.
+  /// Without [withOneClick] the real client is built from that config, so a
+  /// missing key refuses the lookup before any request.
+  Future<void> pumpRecipient(
+    WidgetTester tester,
+    SendStrategy strategy, {
+    RemoteConfigService? remoteConfig,
+    bool withOneClick = true,
+  }) async {
+    final config = remoteConfig ?? FakeRemoteConfigService(_configWithKey, remote: _configWithKey);
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
@@ -66,7 +85,8 @@ void main() {
           substrateServiceProvider.overrideWithValue(FakeSubstrateService()),
           recentAddressesServiceProvider.overrideWithValue(FakeRecentAddressesService()),
           encryptedAccountServiceProvider.overrideWith((ref, walletIndex) => _FakeEncryptedAccountService()),
-          oneClickServiceProvider.overrideWithValue(oneClick),
+          remoteConfigProvider.overrideWith((ref) => RemoteConfigNotifier(config)),
+          if (withOneClick) oneClickServiceProvider.overrideWithValue(oneClick),
         ],
         child: MediaQuery(
           data: const MediaQueryData(size: Size(800, 900)),
@@ -133,6 +153,58 @@ void main() {
 
       expectContinue(tester, disabled: true, label: "Couldn't Verify Address");
       expect(find.text('NEAR Intents address detected'), findsNothing);
+      await tester.pump(_toastLifetime);
+    });
+
+    testWidgets('waits for the remote config before asking 1Click', (tester) async {
+      final answer = Completer<RemoteConfigModel?>();
+      await pumpRecipient(
+        tester,
+        strategy,
+        remoteConfig: FakeRemoteConfigService(_configWithoutKey)..hold = answer.future,
+      );
+      await enterRecipient(tester, _plainAddress);
+
+      expect(lookedUp, isEmpty);
+      expectContinue(tester, disabled: true, label: 'Verifying Address…');
+
+      answer.complete(_configWithKey);
+      await tester.pump();
+      await tester.pump();
+
+      expect(lookedUp, [_plainAddress]);
+      expectContinue(tester, disabled: false, label: 'Continue');
+    });
+
+    testWidgets('without a partner key asks quersi once more, then fails closed', (tester) async {
+      final remoteConfig = FakeRemoteConfigService(_configWithoutKey);
+      await pumpRecipient(tester, strategy, remoteConfig: remoteConfig, withOneClick: false);
+      await enterRecipient(tester, _plainAddress);
+
+      expect(remoteConfig.reads, 2);
+      expect(lookedUp, isEmpty);
+      expectContinue(tester, disabled: true, label: "Couldn't Verify Address");
+      await tester.pump(_toastLifetime);
+    });
+
+    testWidgets('a selection change re-checks the address only after a failed lookup', (tester) async {
+      await pumpRecipient(tester, strategy);
+      await enterRecipient(tester, _plainAddress);
+      final controller = tester.widget<AddressInputField>(find.byType(AddressInputField)).controller;
+
+      controller.value = const TextEditingValue(text: _plainAddress, selection: TextSelection.collapsed(offset: 0));
+      await tester.pump();
+      await tester.pump();
+      expect(lookedUp, [_plainAddress]);
+
+      await enterRecipient(tester, _unreachableAddress);
+      controller.value = const TextEditingValue(
+        text: _unreachableAddress,
+        selection: TextSelection.collapsed(offset: 0),
+      );
+      await tester.pump();
+      await tester.pump();
+      expect(lookedUp, [_plainAddress, _unreachableAddress, _unreachableAddress]);
       await tester.pump(_toastLifetime);
     });
   });
