@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
@@ -28,6 +29,8 @@ void main() {
   });
 
   test('swap is offered only where the server says NEAR Intents is allowed', () {
+    debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+    addTearDown(() => debugDefaultTargetPlatformOverride = null);
     expect(RemoteConfigModel.defaults.geoNearAllowed, isFalse);
     expect(RemoteConfigModel.defaults.enableSwap, isFalse);
     expect(RemoteConfigModel.fromJson(const {'enableSwap': true}).swapAvailable, isFalse);
@@ -52,6 +55,39 @@ void main() {
     final revoked = cached.copyWith(geoNearAllowed: false);
     expect(revoked.geoNearAllowed, isFalse);
     expect(revoked.nearPartnerJwt, 'partner-jwt');
+  });
+
+  test('Android offers swap on its own flag, on by default', () {
+    debugDefaultTargetPlatformOverride = TargetPlatform.android;
+    addTearDown(() => debugDefaultTargetPlatformOverride = null);
+    expect(RemoteConfigModel.defaults.enableSwapAndroid, isTrue);
+    expect(RemoteConfigModel.fromJson(const {'geoNearAllowed': true}).swapAvailable, isTrue);
+    expect(RemoteConfigModel.fromJson(const {'enableSwapAndroid': true}).swapAvailable, isFalse);
+    expect(
+      RemoteConfigModel.fromJson(const {
+        'enableSwap': true,
+        'enableSwapAndroid': false,
+        'geoNearAllowed': true,
+      }).swapAvailable,
+      isFalse,
+    );
+    final off = RemoteConfigModel.fromJson(const {'enableSwapAndroid': false});
+    expect(RemoteConfigModel.fromJson(off.toCacheJson()), off);
+    expect(off, isNot(RemoteConfigModel.defaults));
+  });
+
+  test('iOS keeps its own swap flag and ignores the Android one', () {
+    debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+    addTearDown(() => debugDefaultTargetPlatformOverride = null);
+    expect(RemoteConfigModel.fromJson(const {'geoNearAllowed': true}).swapAvailable, isFalse);
+    expect(
+      RemoteConfigModel.fromJson(const {
+        'enableSwap': true,
+        'enableSwapAndroid': false,
+        'geoNearAllowed': true,
+      }).swapAvailable,
+      isTrue,
+    );
   });
 
   test('the NEAR Intents recipient check is on unless the remote config turns it off', () {

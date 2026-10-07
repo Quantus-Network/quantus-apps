@@ -48,7 +48,11 @@ void main() {
         balancesServiceProvider.overrideWithValue(FakeBalancesService()),
         substrateServiceProvider.overrideWithValue(FakeSubstrateService()),
         remoteConfigProvider.overrideWith((ref) {
-          final config = RemoteConfigModel.fromJson({'enableSwap': enableSwap, 'geoNearAllowed': geoNearAllowed});
+          final config = RemoteConfigModel.fromJson({
+            'enableSwap': enableSwap,
+            'enableSwapAndroid': enableSwap,
+            'geoNearAllowed': geoNearAllowed,
+          });
           return RemoteConfigNotifier(FakeRemoteConfigService(config, remote: config));
         }),
       ],
