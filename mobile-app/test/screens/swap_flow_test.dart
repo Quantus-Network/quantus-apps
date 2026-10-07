@@ -59,7 +59,7 @@ const _wnearStandIn = SwapToken(
 const _listedQtc = <String, dynamic>{
   'assetId': 'nep141:qtc.omft.near',
   'decimals': AppConstants.decimals,
-  'blockchain': 'quantus',
+  'blockchain': 'qtc',
   'symbol': 'QTC',
   'price': 0.1,
 };

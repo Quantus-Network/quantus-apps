@@ -582,7 +582,14 @@ void main() {
       {'assetId': _usdcEth.assetId, 'decimals': 6, 'blockchain': 'eth', 'symbol': 'USDC', 'price': 0.99966},
       {'assetId': 'nep141:btc.omft.near', 'decimals': 8, 'blockchain': 'btc', 'symbol': 'BTC', 'price': 80496},
       {'assetId': 'nep141:dead.omft.near', 'decimals': 18, 'blockchain': 'eth', 'symbol': 'DEAD', 'price': 0},
-      {'assetId': 'nep141:qtc.omft.near', 'decimals': 12, 'blockchain': 'quantus', 'symbol': 'QTC', 'price': 1.5},
+      {'assetId': 'nep141:qtc.omft.near', 'decimals': 12, 'blockchain': 'qtc', 'symbol': 'QTC', 'price': 1.5},
+      {
+        'assetId': '1cs_v1:near:nep141:qtc.omft.near',
+        'decimals': 12,
+        'blockchain': 'near',
+        'symbol': 'QTC',
+        'price': 1.5,
+      },
       {'assetId': 'nep141:other-qtc.omft.near', 'decimals': 18, 'blockchain': 'eth', 'symbol': 'QTC', 'price': 9},
     ];
 
@@ -618,7 +625,7 @@ void main() {
     test('a configured asset id names QTC when 1Click lists it under another chain code', () async {
       const listedId = 'nep141:quantus-network.omft.near';
       final service = listing([
-        ...tokens.where((t) => t['blockchain'] != 'quantus'),
+        ...tokens.where((t) => t['blockchain'] != 'qtc'),
         {'assetId': listedId, 'decimals': 12, 'blockchain': 'qntm', 'symbol': 'QTC', 'price': 2},
       ], quantusAssetId: listedId);
       final quantus = await service.getListedQuantusToken();
@@ -632,7 +639,7 @@ void main() {
     test('a configured asset id picks QTC out of several tokens on Quantus', () async {
       final crowded = [
         ...tokens,
-        {'assetId': 'nep141:wqtc.omft.near', 'decimals': 12, 'blockchain': 'quantus', 'symbol': 'QTC', 'price': 1.4},
+        {'assetId': 'nep141:wqtc.omft.near', 'decimals': 12, 'blockchain': 'qtc', 'symbol': 'QTC', 'price': 1.4},
       ];
       await expectLater(listing(crowded).getListedQuantusToken(), throwsA(isA<StateError>()));
       final quantus = await listing(crowded, quantusAssetId: 'nep141:wqtc.omft.near').getListedQuantusToken();
@@ -642,7 +649,7 @@ void main() {
     test('the only QTC among several tokens on Quantus is the listed one', () async {
       final service = listing([
         ...tokens,
-        {'assetId': 'nep141:usdc-q.omft.near', 'decimals': 6, 'blockchain': 'quantus', 'symbol': 'USDC', 'price': 1},
+        {'assetId': 'nep141:usdc-q.omft.near', 'decimals': 6, 'blockchain': 'qtc', 'symbol': 'USDC', 'price': 1},
       ]);
       expect((await service.getListedQuantusToken())!.assetId, 'nep141:qtc.omft.near');
     });
@@ -654,7 +661,7 @@ void main() {
 
     test('refuses a QTC listing whose decimals differ from the chain', () async {
       final service = listing([
-        {'assetId': 'nep141:qtc.omft.near', 'decimals': 18, 'blockchain': 'quantus', 'symbol': 'QTC', 'price': 1},
+        {'assetId': 'nep141:qtc.omft.near', 'decimals': 18, 'blockchain': 'qtc', 'symbol': 'QTC', 'price': 1},
       ]);
       await expectLater(service.getListedQuantusToken(), throwsA(isA<StateError>()));
     });
@@ -689,7 +696,7 @@ void main() {
 
     test('a QTC listing without a price leaves swaps unavailable', () async {
       final service = listing([
-        {'assetId': 'nep141:qtc.omft.near', 'decimals': 12, 'blockchain': 'quantus', 'symbol': 'QTC', 'price': 0},
+        {'assetId': 'nep141:qtc.omft.near', 'decimals': 12, 'blockchain': 'qtc', 'symbol': 'QTC', 'price': 0},
       ]);
       expect(await service.getListedQuantusToken(), isNull);
     });
