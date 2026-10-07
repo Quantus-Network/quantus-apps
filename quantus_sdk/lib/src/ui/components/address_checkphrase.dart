@@ -6,11 +6,8 @@ class AddressCheckphrase extends StatelessWidget {
   final String address;
   final String? checkphrase;
 
-  /// Characters kept at each end of a shortened address; the whole address is
-  /// shown when neither is set.
-  final int? prefix;
-  final int? postfix;
-  final String ellipsis;
+  /// Whether the address is shown in its short form.
+  final bool shorten;
   final TextStyle? addressStyle;
   final TextStyle? checkphraseStyle;
 
@@ -28,25 +25,21 @@ class AddressCheckphrase extends StatelessWidget {
     super.key,
     required this.address,
     required this.checkphrase,
-    this.prefix,
-    this.postfix,
-    this.ellipsis = '...',
+    this.shorten = false,
     this.addressStyle,
     this.checkphraseStyle,
     this.checkphraseColor,
     this.textAlign = TextAlign.start,
     this.placeholder,
     this.badges = const [],
-  }) : assert((prefix == null) == (postfix == null), 'prefix and postfix go together');
+  });
 
   @override
   Widget build(BuildContext context) {
     final text = context.themeTextV3;
     final colors = context.colorsV3;
     final phrase = checkphrase;
-    final shown = prefix == null
-        ? address
-        : AddressFormattingService.formatAddress(address, prefix: prefix!, ellipses: ellipsis, postFix: postfix!);
+    final shown = shorten ? AddressFormattingService.formatAddress(address) : address;
     final addressText = Text(
       shown,
       style: addressStyle ?? text.dataAddress.copyWith(color: colors.textContent),

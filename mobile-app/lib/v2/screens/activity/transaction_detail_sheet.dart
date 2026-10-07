@@ -286,9 +286,7 @@ class _DetailsSection extends ConsumerWidget {
     if (tx is PendingTransactionEvent) fee = (tx as PendingTransactionEvent).fee;
     final feeStr = (fee != null && fee != BigInt.zero) ? formatTokenAmount(l10n, formattingService, fee) : null;
 
-    final txHash = tx.extrinsicHash != null
-        ? AddressFormattingService.formatActivityDetailExtrinsicHash(tx.extrinsicHash!)
-        : null;
+    final txHash = tx.extrinsicHash != null ? AddressFormattingService.formatAddress(tx.extrinsicHash!) : null;
 
     return Column(
       children: [
@@ -347,9 +345,7 @@ class _DetailsSection extends ConsumerWidget {
     final networkFeeValue = event.networkFee != BigInt.zero
         ? formatTokenAmount(l10n, formattingService, event.networkFee)
         : null;
-    final txHash = event.extrinsicHash != null
-        ? AddressFormattingService.formatActivityDetailExtrinsicHash(event.extrinsicHash!)
-        : null;
+    final txHash = event.extrinsicHash != null ? AddressFormattingService.formatAddress(event.extrinsicHash!) : null;
     final approvalsLabel = event.approvalsOfSignersLabel(l10n.multisigApprovalsOf) ?? event.approvalsCount.toString();
 
     return Column(
@@ -376,9 +372,7 @@ class _DetailsSection extends ConsumerWidget {
     final networkFeeValue = event.fee != null && event.fee != BigInt.zero
         ? formatTokenAmount(l10n, formattingService, event.fee!)
         : null;
-    final txHash = event.extrinsicHash != null
-        ? AddressFormattingService.formatActivityDetailExtrinsicHash(event.extrinsicHash!)
-        : null;
+    final txHash = event.extrinsicHash != null ? AddressFormattingService.formatAddress(event.extrinsicHash!) : null;
 
     return Column(
       children: [
@@ -402,9 +396,7 @@ class _DetailsSection extends ConsumerWidget {
     final networkFeeValue = event.fee != null && event.fee != BigInt.zero
         ? formatTokenAmount(l10n, formattingService, event.fee!)
         : null;
-    final txHash = event.extrinsicHash != null
-        ? AddressFormattingService.formatActivityDetailExtrinsicHash(event.extrinsicHash!)
-        : null;
+    final txHash = event.extrinsicHash != null ? AddressFormattingService.formatAddress(event.extrinsicHash!) : null;
 
     return Column(
       children: [
@@ -429,9 +421,7 @@ class _DetailsSection extends ConsumerWidget {
     final networkFeeValue = event.networkFee != BigInt.zero
         ? formatTokenAmount(l10n, formattingService, event.networkFee)
         : null;
-    final txHash = event.extrinsicHash != null
-        ? AddressFormattingService.formatActivityDetailExtrinsicHash(event.extrinsicHash!)
-        : null;
+    final txHash = event.extrinsicHash != null ? AddressFormattingService.formatAddress(event.extrinsicHash!) : null;
 
     return Column(
       children: [
@@ -457,9 +447,7 @@ class _DetailsSection extends ConsumerWidget {
     final networkFeeValue = event.networkFee != BigInt.zero
         ? formatTokenAmount(l10n, formattingService, event.networkFee)
         : null;
-    final txHash = event.extrinsicHash != null
-        ? AddressFormattingService.formatActivityDetailExtrinsicHash(event.extrinsicHash!)
-        : null;
+    final txHash = event.extrinsicHash != null ? AddressFormattingService.formatAddress(event.extrinsicHash!) : null;
 
     return Column(
       children: [
@@ -508,9 +496,7 @@ class _DetailsSection extends ConsumerWidget {
     final palletFeeValue = formatTokenAmount(l10n, formattingService, palletFee);
     final depositValue = formatTokenAmount(l10n, formattingService, deposit);
     final networkFeeValue = fee != null && fee != BigInt.zero ? formatTokenAmount(l10n, formattingService, fee) : null;
-    final txHash = extrinsicHash != null
-        ? AddressFormattingService.formatActivityDetailExtrinsicHash(extrinsicHash)
-        : null;
+    final txHash = extrinsicHash != null ? AddressFormattingService.formatAddress(extrinsicHash) : null;
 
     return Column(
       children: [
@@ -548,9 +534,7 @@ class _DetailsSection extends ConsumerWidget {
     AppLocalizations l10n,
     NumberFormattingService formattingService,
   ) {
-    final txHash = event.extrinsicHash != null
-        ? AddressFormattingService.formatActivityDetailExtrinsicHash(event.extrinsicHash!)
-        : null;
+    final txHash = event.extrinsicHash != null ? AddressFormattingService.formatAddress(event.extrinsicHash!) : null;
 
     return _multisigFeeDetails(
       l10n: l10n,

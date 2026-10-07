@@ -47,7 +47,7 @@ class TxItemData {
     bool isPrivate = false,
   }) {
     if (tx is PendingMultisigProposalEvent) {
-      final recipient = AddressFormattingService.formatAddress(tx.recipient, prefix: 5, postFix: 3);
+      final recipient = AddressFormattingService.formatAddress(tx.recipient);
       return TxItemData(
         label: l10n.activityTxProposing,
         timeLabel: l10n.activityTxTimeNow,
@@ -64,7 +64,7 @@ class TxItemData {
     }
 
     if (tx is MultisigProposalCreatedEvent) {
-      final recipient = AddressFormattingService.formatAddress(tx.recipient, prefix: 5, postFix: 3);
+      final recipient = AddressFormattingService.formatAddress(tx.recipient);
       return TxItemData(
         label: l10n.activityTxProposalCreated,
         timeLabel: _timeAgo(tx.timestamp, l10n),
@@ -81,7 +81,7 @@ class TxItemData {
     }
 
     if (tx is MultisigProposalApprovedEvent) {
-      final recipient = AddressFormattingService.formatAddress(tx.recipient, prefix: 5, postFix: 3);
+      final recipient = AddressFormattingService.formatAddress(tx.recipient);
       final fee = tx.networkFee;
       return TxItemData(
         label: l10n.activityTxProposalApproved,
@@ -100,7 +100,7 @@ class TxItemData {
     }
 
     if (tx is PendingMultisigExecutionEvent) {
-      final recipient = AddressFormattingService.formatAddress(tx.recipient, prefix: 5, postFix: 3);
+      final recipient = AddressFormattingService.formatAddress(tx.recipient);
       final fee = tx.memberCost;
       return TxItemData(
         label: l10n.activityTxExecuting,
@@ -119,7 +119,7 @@ class TxItemData {
     }
 
     if (tx is MultisigProposalExecutedEvent) {
-      final recipient = AddressFormattingService.formatAddress(tx.recipient, prefix: 5, postFix: 3);
+      final recipient = AddressFormattingService.formatAddress(tx.recipient);
       final fee = tx.networkFee;
       return TxItemData(
         label: l10n.activityTxProposalExecuted,
@@ -138,7 +138,7 @@ class TxItemData {
     }
 
     if (tx is PendingMultisigCancellationEvent) {
-      final recipient = AddressFormattingService.formatAddress(tx.recipient, prefix: 5, postFix: 3);
+      final recipient = AddressFormattingService.formatAddress(tx.recipient);
       final fee = tx.memberCost;
       return TxItemData(
         label: l10n.activityTxCancelling,
@@ -157,7 +157,7 @@ class TxItemData {
     }
 
     if (tx is MultisigProposalCancelledEvent) {
-      final recipient = AddressFormattingService.formatAddress(tx.recipient, prefix: 5, postFix: 3);
+      final recipient = AddressFormattingService.formatAddress(tx.recipient);
       final fee = tx.networkFee;
       return TxItemData(
         label: l10n.activityTxProposalCancelled,
@@ -186,13 +186,13 @@ class TxItemData {
         borderColor: colors.borderHairline,
         isSend: true,
         amount: tx.amount,
-        counterpartyAddr: AddressFormattingService.formatAddress(tx.to, prefix: 5, postFix: 3),
+        counterpartyAddr: AddressFormattingService.formatAddress(tx.to),
         customIcon: Icons.how_to_vote_outlined,
       );
     }
 
     if (tx is PendingMultisigCreationEvent) {
-      final address = AddressFormattingService.formatAddress(tx.multisigAddress, prefix: 5, postFix: 3);
+      final address = AddressFormattingService.formatAddress(tx.multisigAddress);
       return TxItemData(
         label: l10n.activityTxMultisigCreating,
         timeLabel: l10n.activityTxTimeNow,
@@ -210,7 +210,7 @@ class TxItemData {
     }
 
     if (tx is MultisigCreatedEvent) {
-      final address = AddressFormattingService.formatAddress(tx.multisigAddress, prefix: 5, postFix: 3);
+      final address = AddressFormattingService.formatAddress(tx.multisigAddress);
       return TxItemData(
         label: l10n.activityTxMultisigCreated,
         timeLabel: _timeAgo(tx.timestamp, l10n),
@@ -330,7 +330,7 @@ class TxItemData {
       // recipient: name the batch instead, with no "To:" prefix.
       counterpartyAddr: counterparty.isEmpty
           ? l10n.activityTxAggregatedBatch
-          : AddressFormattingService.formatAddress(counterparty, prefix: 5, postFix: 3),
+          : AddressFormattingService.formatAddress(counterparty),
       counterpartyDirectionLabel: counterparty.isEmpty ? '' : null,
     );
   }

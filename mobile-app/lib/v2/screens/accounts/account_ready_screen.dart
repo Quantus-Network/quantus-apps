@@ -113,12 +113,7 @@ class AccountReadyScreen extends ConsumerWidget {
                           child: Column(
                             children: [
                               AddressCheckphrase(
-                                address: AddressFormattingService.formatAddress(
-                                  accountId,
-                                  prefix: 8,
-                                  ellipses: '.......',
-                                  postFix: 10,
-                                ).toLowerCase(),
+                                address: AddressFormattingService.formatAddress(accountId).toLowerCase(),
                                 checkphrase: checkphrase.value,
                                 addressStyle: text.dataAddressLarge.copyWith(color: colors.textContent),
                                 textAlign: TextAlign.center,

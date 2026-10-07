@@ -134,7 +134,7 @@ void main() {
     expect(find.text('Batch 1 of 2'), findsOneWidget);
     expect(find.text('Batch 2 of 2'), findsOneWidget);
     for (final shown in ['0xfirstbatch00000', '0xnullifier111111', '0xnullifier222222']) {
-      expect(find.text(AddressFormattingService.formatActivityDetailExtrinsicHash(shown)), findsOneWidget);
+      expect(find.text(AddressFormattingService.formatAddress(shown)), findsOneWidget);
     }
   });
 

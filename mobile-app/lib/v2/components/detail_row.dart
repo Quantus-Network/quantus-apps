@@ -34,7 +34,7 @@ Widget labelValueRow(BuildContext context, String label, Widget value) {
   );
 }
 
-/// A detail line whose value is an address, shortened to its ends, with its
+/// A detail line whose value is an address in its short form with its
 /// checkphrase in the text colour underneath.
 class AddressDetailRow extends ConsumerWidget {
   final String label;
@@ -48,8 +48,7 @@ class AddressDetailRow extends ConsumerWidget {
     label,
     AddressCheckphrase(
       address: address,
-      prefix: 6,
-      postfix: 6,
+      shorten: true,
       checkphrase: ref.watch(checksumNameProvider(address)).value,
       checkphraseColor: context.colorsV3.textContent,
       textAlign: TextAlign.end,

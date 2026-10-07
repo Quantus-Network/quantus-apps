@@ -71,8 +71,7 @@ class AddressInputField extends StatelessWidget {
                   border: Border.all(color: colors.borderHairline),
                 ),
                 child: AddressCheckphrase(
-                  address: AddressFormattingService.formatAddress(
-                    controller.text.trim(),
+                  address: controller.text.trim().shortenedCryptoAddress(
                     prefix: addressPrefix,
                     postFix: addressPostfix,
                   ),
