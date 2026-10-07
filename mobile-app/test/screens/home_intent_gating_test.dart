@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -26,6 +27,7 @@ void main() {
     required FakeSettingsService settings,
     required TestLocalAuthController auth,
     bool enableSwap = true,
+    bool enableSwapAndroid = true,
     bool geoNearAllowed = true,
   }) async {
     await tester.pumpApp(
@@ -50,7 +52,7 @@ void main() {
         remoteConfigProvider.overrideWith((ref) {
           final config = RemoteConfigModel.fromJson({
             'enableSwap': enableSwap,
-            'enableSwapAndroid': enableSwap,
+            'enableSwapAndroid': enableSwapAndroid,
             'geoNearAllowed': geoNearAllowed,
           });
           return RemoteConfigNotifier(FakeRemoteConfigService(config, remote: config));
@@ -64,18 +66,29 @@ void main() {
     return ProviderScope.containerOf(tester.element(find.byType(HomeScreen)));
   }
 
-  for (final (enableSwap, geoNearAllowed) in [(true, true), (false, true), (true, false)]) {
+  // Each platform follows its own flag; the other platform's flag is set to
+  // the opposite so it visibly has no say.
+  for (final (enabled, geoNearAllowed) in [(true, true), (false, true), (true, false)]) {
     testWidgets(
-      'home actions show receive and send, and swap when enableSwap is $enableSwap and the location allows NEAR is $geoNearAllowed',
+      'home actions show receive and send, and swap when the platform swap flag is $enabled and the location allows NEAR is $geoNearAllowed',
       (tester) async {
+        final android = defaultTargetPlatform == TargetPlatform.android;
         final settings = FakeSettingsService(activeAccount: RegularAccount(makeAccount(1)));
         final auth = TestLocalAuthController(authenticated: true);
-        await pumpHome(tester, settings: settings, auth: auth, enableSwap: enableSwap, geoNearAllowed: geoNearAllowed);
+        await pumpHome(
+          tester,
+          settings: settings,
+          auth: auth,
+          enableSwap: android ? !enabled : enabled,
+          enableSwapAndroid: android ? enabled : !enabled,
+          geoNearAllowed: geoNearAllowed,
+        );
 
         expect(find.text('Receive'), findsOneWidget);
         expect(find.text('Send'), findsOneWidget);
-        expect(find.text('Swap'), enableSwap && geoNearAllowed ? findsOneWidget : findsNothing);
+        expect(find.text('Swap'), enabled && geoNearAllowed ? findsOneWidget : findsNothing);
       },
+      variant: const TargetPlatformVariant({TargetPlatform.iOS, TargetPlatform.android}),
     );
   }
 
