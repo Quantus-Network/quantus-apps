@@ -5,17 +5,8 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 class AddressCheckphrase extends StatelessWidget {
   final String address;
   final String? checkphrase;
-
-  /// Characters kept at each end of a shortened address; the whole address is
-  /// shown when neither is set.
-  final int? prefix;
-  final int? postfix;
-  final String ellipsis;
   final TextStyle? addressStyle;
   final TextStyle? checkphraseStyle;
-
-  /// Colour of the checkphrase in the default style; lilac unless set.
-  final Color? checkphraseColor;
   final TextAlign textAlign;
 
   /// Shown in place of the checkphrase while it is null or empty.
@@ -28,27 +19,20 @@ class AddressCheckphrase extends StatelessWidget {
     super.key,
     required this.address,
     required this.checkphrase,
-    this.prefix,
-    this.postfix,
-    this.ellipsis = '...',
     this.addressStyle,
     this.checkphraseStyle,
-    this.checkphraseColor,
     this.textAlign = TextAlign.start,
     this.placeholder,
     this.badges = const [],
-  }) : assert((prefix == null) == (postfix == null), 'prefix and postfix go together');
+  });
 
   @override
   Widget build(BuildContext context) {
     final text = context.themeTextV3;
     final colors = context.colorsV3;
     final phrase = checkphrase;
-    final shown = prefix == null
-        ? address
-        : AddressFormattingService.formatAddress(address, prefix: prefix!, ellipses: ellipsis, postFix: postfix!);
     final addressText = Text(
-      shown,
+      address,
       style: addressStyle ?? text.dataAddress.copyWith(color: colors.textContent),
       textAlign: textAlign,
     );
@@ -71,7 +55,7 @@ class AddressCheckphrase extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             phrase,
-            style: checkphraseStyle ?? text.body.copyWith(color: checkphraseColor ?? colors.semanticLilac),
+            style: checkphraseStyle ?? text.body.copyWith(color: colors.semanticLilac),
             textAlign: textAlign,
           ),
         ] else if (placeholder != null) ...[
