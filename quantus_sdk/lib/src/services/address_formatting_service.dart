@@ -1,10 +1,16 @@
 import 'package:quantus_sdk/quantus_sdk.dart';
 
 class AddressFormattingService {
-  /// The one short form of an address or hash: six characters at each end.
-  /// Shown next to its checkphrase wherever a wrong address would matter.
-  static String formatAddress(String address) =>
-      address.shortenedCryptoAddress(prefix: 6, ellipses: '.......', postFix: 6);
+  static String formatAddress(String address, {int prefix = 6, String ellipses = '...', int postFix = 6}) {
+    return address.shortenedCryptoAddress(prefix: prefix, ellipses: ellipses, postFix: postFix);
+  }
+
+  /// Short address style used on activity transaction detail rows.
+  static String formatActivityDetailAddress(String address) =>
+      formatAddress(address, prefix: 7, ellipses: '.......', postFix: 6);
+
+  /// Short extrinsic hash style used on activity transaction detail rows.
+  static String formatActivityDetailExtrinsicHash(String hash) => formatAddress(hash);
 
   static List<String> splitIntoChunks(String text, {int chunkSize = 5}) {
     if (chunkSize <= 0) {

@@ -46,7 +46,7 @@ class WormholeDetailsScreen extends ConsumerWidget {
               ),
               DetailRow(
                 label: l10n.activityDetailTxHash,
-                value: AddressFormattingService.formatAddress(batch.extrinsicId),
+                value: AddressFormattingService.formatActivityDetailExtrinsicHash(batch.extrinsicId),
                 valueKind: DetailValueKind.mono,
               ),
               if (!send.recipientUnknown) DetailRow(label: l10n.wormholeDetailsSent, value: amount(batch.sentToken)),
@@ -57,7 +57,7 @@ class WormholeDetailsScreen extends ConsumerWidget {
               DetailRow(label: l10n.wormholeDetailsInputs, value: '${batch.inputs.length}'),
               for (final input in batch.inputs)
                 DetailRow(
-                  label: AddressFormattingService.formatAddress(input.nullifierHex),
+                  label: AddressFormattingService.formatActivityDetailExtrinsicHash(input.nullifierHex),
                   value: amount(input.amount),
                 ),
               const SizedBox(height: 8),

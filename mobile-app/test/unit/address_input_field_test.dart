@@ -109,7 +109,7 @@ void main() {
 
     await pump(tester, _Harness(controller: controller, focusNode: focusNode, onPaste: () {}));
 
-    await tester.tap(find.text(validAddress.shortenedCryptoAddress(prefix: 16, postFix: 16)));
+    await tester.tap(find.text(AddressFormattingService.formatAddress(validAddress, prefix: 16, postFix: 16)));
     await tester.pumpAndSettle();
 
     expect(controller.text, isEmpty);
