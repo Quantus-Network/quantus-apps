@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
@@ -64,7 +65,12 @@ class BottomSheetContainer extends StatelessWidget {
       isDismissible: true,
       constraints: BoxConstraints(maxWidth: MediaQuery.sizeOf(context).width),
       builder: (ctx) {
-        final maxSheetHeight = MediaQuery.sizeOf(ctx).height * 0.85;
+        final height = MediaQuery.sizeOf(ctx).height;
+        // The keyboard would cover the sheet: the sheet sits above it and
+        // scrolls within what is left. The system inset below the keyboard
+        // is no longer the sheet's to pad.
+        final keyboard = MediaQuery.viewInsetsOf(ctx).bottom;
+        final maxSheetHeight = math.min(height * 0.85, height - keyboard);
         // Full-screen blur covers the modal barrier; tap above the sheet to pop.
         return BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 2, sigmaY: 2),
@@ -79,9 +85,16 @@ class BottomSheetContainer extends StatelessWidget {
               ),
               Align(
                 alignment: Alignment.bottomCenter,
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(maxHeight: maxSheetHeight),
-                  child: builder(ctx),
+                child: Padding(
+                  padding: EdgeInsets.only(bottom: keyboard),
+                  child: MediaQuery.removePadding(
+                    context: ctx,
+                    removeBottom: keyboard > 0,
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(maxHeight: maxSheetHeight),
+                      child: builder(ctx),
+                    ),
+                  ),
                 ),
               ),
             ],
