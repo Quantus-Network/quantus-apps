@@ -65,6 +65,7 @@ Map<String, dynamic> _quoteResponse({
     'refundTo': _refund,
     'recipient': _recipient,
     'deadline': '2026-09-20T06:00:50.000Z',
+    'confidentiality': 'basic',
     ...?request,
   },
   'timestamp': '2026-09-20T05:50:50.975Z',
@@ -139,6 +140,7 @@ void main() {
         'deadline': isA<String>(),
         'quoteWaitingTimeMs': 3000,
         'referral': 'quantus',
+        'confidentiality': 'basic',
       });
       final deadline = DateTime.parse(sent['deadline'] as String);
       // The request deadline is sent at millisecond precision.

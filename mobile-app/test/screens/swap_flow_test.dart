@@ -159,6 +159,7 @@ class _OneClick {
           'refundTo',
           'recipient',
           'deadline',
+          'confidentiality',
         ])
           k: request[k],
       },
