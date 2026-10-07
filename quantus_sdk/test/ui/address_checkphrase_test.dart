@@ -33,6 +33,22 @@ void main() {
     expect(tester.widget<Text>(find.text('qzAddr')).style?.fontFamily, AppTextThemeV3.fontFamilySecondary);
   });
 
+  testWidgets('shortens the address to its ends on request and takes a checkphrase colour', (tester) async {
+    await pump(
+      tester,
+      AddressCheckphrase(
+        address: 'qzmTAz3UUw1WGUuVh8nbFmPwcftomduwy6twq6NDR6y9qqtEs',
+        checkphrase: 'alpha bravo',
+        prefix: 6,
+        postfix: 6,
+        checkphraseColor: colors.textContent,
+      ),
+    );
+
+    expect(find.text('qzmTAz...9qqtEs'), findsOneWidget);
+    expect(tester.widget<Text>(find.text('alpha bravo')).style?.color, colors.textContent);
+  });
+
   testWidgets('shows the placeholder until the checkphrase resolves', (tester) async {
     await pump(tester, const AddressCheckphrase(address: 'qzAddr', checkphrase: '', placeholder: Text('loading')));
 

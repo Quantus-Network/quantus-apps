@@ -64,8 +64,9 @@ void main() {
 
     expect(isSend, isFalse);
     expect(find.textContaining('+300'), findsOneWidget);
-    expect(find.text(other.accountId), findsOneWidget);
-    expect(find.text('Stand-Envelope-Topic-Term-Help'), findsOneWidget);
+    expect(find.text(AddressFormattingService.formatAddress(other.accountId)), findsOneWidget);
+    final phrase = tester.widget<Text>(find.text('Stand-Envelope-Topic-Term-Help'));
+    expect(phrase.style?.color, const AppColorsV3.dark().textContent);
   });
 
   testWidgets('a private send without an attributable recipient names the aggregated batch', (tester) async {

@@ -265,7 +265,7 @@ class _MultisigProposalDetailSheet extends ConsumerWidget {
     int? currentBlock,
     MultisigProposal liveProposal,
   ) {
-    final recipient = liveProposal.recipient;
+    final recipient = AddressFormattingService.formatAddress(liveProposal.recipient);
     final expiryParts = resolveMultisigExpiryParts(
       l10n: l10n,
       expiryBlock: liveProposal.expiryBlock,
@@ -304,7 +304,7 @@ class _MultisigProposalDetailSheet extends ConsumerWidget {
           ),
         DetailSummaryRow(
           label: l10n.multisigProposalProposerLabel,
-          value: liveProposal.proposer,
+          value: AddressFormattingService.formatAddress(liveProposal.proposer),
           checkphrase: ref.watch(checksumNameProvider(liveProposal.proposer)).value,
         ),
         DetailSummaryRow(
