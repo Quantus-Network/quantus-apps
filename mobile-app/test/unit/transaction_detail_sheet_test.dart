@@ -64,7 +64,7 @@ void main() {
 
     expect(isSend, isFalse);
     expect(find.textContaining('+300'), findsOneWidget);
-    expect(find.text(other.accountId), findsOneWidget);
+    expect(find.text(AddressFormattingService.formatAddress(other.accountId, ellipses: '.......')), findsOneWidget);
     expect(find.text('Stand-Envelope-Topic-Term-Help'), findsOneWidget);
   });
 

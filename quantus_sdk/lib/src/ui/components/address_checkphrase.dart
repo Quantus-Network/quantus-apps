@@ -34,7 +34,7 @@ class AddressCheckphrase extends StatelessWidget {
     final colors = context.colorsV3;
     final phrase = checkphrase;
     final addressText = Text(
-      shortenAddress ? AddressFormattingService.formatAddress(address, ellipses: '.......', prefix: 6, postFix: 6) : address,
+      shortenAddress ? AddressFormattingService.formatAddress(address, ellipses: '.......') : address,
       style: addressStyle ?? text.dataAddress.copyWith(color: colors.textContent),
       textAlign: textAlign,
     );
