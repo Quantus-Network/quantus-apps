@@ -826,6 +826,10 @@ void main() {
       );
       await pumpOrder(tester, SwapOrder(quote: inQuote, status: SwapStatus.pendingDeposit));
 
+      expect(find.text(l10n.swapDepositToken), findsOneWidget);
+      expect(find.text('BTC'), findsOneWidget);
+      expect(find.text(l10n.swapDepositNetwork), findsOneWidget);
+      expect(find.text('Bitcoin'), findsOneWidget);
       expect(find.text('bc1qdeposit'), findsOneWidget);
       expect(find.text('0.12345678'), findsOneWidget);
       expect(find.text(l10n.swapDepositMemoNotice), findsNothing);

@@ -1862,6 +1862,12 @@ class AppLocalizationsId extends AppLocalizations {
   String get swapContactSupport => 'Hubungi Dukungan';
 
   @override
+  String get swapDepositToken => 'Token';
+
+  @override
+  String get swapDepositNetwork => 'Jaringan';
+
+  @override
   String get swapDepositAmount => 'Jumlah Deposit';
 
   @override

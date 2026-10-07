@@ -1859,6 +1859,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get swapContactSupport => 'Contact Support';
 
   @override
+  String get swapDepositToken => 'Token';
+
+  @override
+  String get swapDepositNetwork => 'Network';
+
+  @override
   String get swapDepositAmount => 'Deposit Amount';
 
   @override
