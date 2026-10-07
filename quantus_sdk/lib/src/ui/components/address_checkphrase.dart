@@ -8,6 +8,7 @@ class AddressCheckphrase extends StatelessWidget {
   final TextStyle? addressStyle;
   final TextStyle? checkphraseStyle;
   final TextAlign textAlign;
+  final bool shortenAddress;
 
   /// Shown in place of the checkphrase while it is null or empty.
   final Widget? placeholder;
@@ -22,6 +23,7 @@ class AddressCheckphrase extends StatelessWidget {
     this.addressStyle,
     this.checkphraseStyle,
     this.textAlign = TextAlign.start,
+    this.shortenAddress = false,
     this.placeholder,
     this.badges = const [],
   });
@@ -32,7 +34,7 @@ class AddressCheckphrase extends StatelessWidget {
     final colors = context.colorsV3;
     final phrase = checkphrase;
     final addressText = Text(
-      address,
+      shortenAddress ? AddressFormattingService.formatAddress(address, ellipses: '.......', prefix: 6, postFix: 6) : address,
       style: addressStyle ?? text.dataAddress.copyWith(color: colors.textContent),
       textAlign: textAlign,
     );

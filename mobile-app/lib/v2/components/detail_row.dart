@@ -47,8 +47,10 @@ class AddressDetailRow extends ConsumerWidget {
     label,
     AddressCheckphrase(
       address: address,
+      shortenAddress: true,
       checkphrase: ref.watch(checksumNameProvider(address)).value,
       textAlign: TextAlign.end,
+      checkphraseStyle: context.themeTextV3.body.copyWith(color: context.colorsV3.textContent.useOpacity(0.5)),
     ),
   );
 }
