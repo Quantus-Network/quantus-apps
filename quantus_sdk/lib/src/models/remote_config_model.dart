@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:quantus_sdk/src/constants/app_constants.dart';
 
 class RemoteConfigModel {
   final bool enableTestButtons;
@@ -46,9 +47,11 @@ class RemoteConfigModel {
   });
 
   /// Swap is offered when the platform's flag is on and the location allows
-  /// NEAR Intents.
+  /// NEAR Intents; a debug build started with [AppConstants.swapIgnoreGeo]
+  /// skips the location.
   bool get swapAvailable =>
-      (defaultTargetPlatform == TargetPlatform.android ? enableSwapAndroid : enableSwap) && geoNearAllowed;
+      (defaultTargetPlatform == TargetPlatform.android ? enableSwapAndroid : enableSwap) &&
+      (geoNearAllowed || (kDebugMode && AppConstants.swapIgnoreGeo));
 
   RemoteConfigModel copyWith({bool? geoNearAllowed}) => RemoteConfigModel(
     enableTestButtons: enableTestButtons,
