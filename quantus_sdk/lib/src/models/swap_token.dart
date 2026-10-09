@@ -34,6 +34,11 @@ class SwapToken {
   final int decimals;
   final double usdPrice;
 
+  /// The listing on NEAR whose token metadata carries this symbol's logo: this
+  /// one when it has a NEAR contract, else another listing of the symbol that
+  /// does; null when none does.
+  final String? iconAssetId;
+
   /// QTC's side of a swap: the token that is QTC, or stands in for it.
   final bool isQuantus;
 
@@ -43,8 +48,12 @@ class SwapToken {
     required this.network,
     required this.decimals,
     required this.usdPrice,
+    this.iconAssetId,
     this.isQuantus = false,
   });
+
+  /// Whether [assetId] names a token contract on NEAR (NEP-141 or NEP-245).
+  static bool hasNearContract(String assetId) => assetId.startsWith('nep141:') || assetId.startsWith('nep245:');
 
   /// Human name of [network], e.g. "Ethereum" for ETH; the code itself when unknown.
   String get networkName => _networkNames[network] ?? network;

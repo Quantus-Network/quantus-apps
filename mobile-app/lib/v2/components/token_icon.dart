@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/v2/screens/swap/swap_providers.dart';
 
-class TokenIcon extends StatelessWidget {
+class TokenIcon extends ConsumerWidget {
   static const _quantusAsset = 'assets/v2/token_qtc.svg';
 
   final SwapToken token;
@@ -12,7 +14,7 @@ class TokenIcon extends StatelessWidget {
   const TokenIcon({super.key, required this.token, this.size = 31, this.networkBadgeSize = 12});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final colors = context.colorsV3;
     final text = context.themeTextV3;
 
@@ -26,13 +28,15 @@ class TokenIcon extends StatelessWidget {
       );
     }
 
+    final icon = ref.watch(swapTokenIconProvider(token)).value;
+    final monogram = _monogram(token, colors, text);
     return SizedBox(
       width: size,
       height: size,
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-          Positioned.fill(child: _monogram(token, colors, text)),
+          Positioned.fill(child: icon == null ? monogram : ClipOval(child: _logo(icon, monogram))),
           Positioned(
             right: -2,
             bottom: -2,
@@ -46,6 +50,10 @@ class TokenIcon extends StatelessWidget {
       ),
     );
   }
+
+  Widget _logo(SwapTokenIcon icon, Widget fallback) => icon.isSvg
+      ? SvgPicture.memory(icon.bytes, fit: BoxFit.cover, errorBuilder: (_, _, _) => fallback)
+      : Image.memory(icon.bytes, fit: BoxFit.cover, errorBuilder: (_, _, _) => fallback);
 
   Widget _monogram(SwapToken token, AppColorsV3 colors, AppTextThemeV3 text) {
     return Container(

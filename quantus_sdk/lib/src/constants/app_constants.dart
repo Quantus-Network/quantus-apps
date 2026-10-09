@@ -39,6 +39,9 @@ class AppConstants {
   // NEAR Intents 1Click swap API (docs.near-intents.org).
   static const String oneClickEndpoint = 'https://1click.chaindefuser.com';
 
+  /// NEAR JSON-RPC, for reading swap token logos off the token contracts.
+  static const String nearRpcEndpoint = 'https://free.rpc.fastnear.com';
+
   // Distribution channel id 1Click records on every quote.
   static const String oneClickReferral = 'quantus';
 

@@ -20,6 +20,19 @@ final swapServiceProvider = Provider<SwapService>((ref) {
   );
 });
 
+final swapTokenIconServiceProvider = Provider<SwapTokenIconService>((ref) => SwapTokenIconService());
+
+/// [token]'s logo from its token contract on NEAR; null while it loads, when
+/// there is none, or when the fetch failed (logged, retried on the next build).
+final swapTokenIconProvider = FutureProvider.autoDispose.family<SwapTokenIcon?, SwapToken>((ref, token) async {
+  try {
+    return await ref.watch(swapTokenIconServiceProvider).iconFor(token);
+  } catch (e) {
+    quantusPrint('Logo for ${token.symbol} failed: $e');
+    return null;
+  }
+});
+
 /// Slippage tolerances offered for a quote, in basis points.
 const swapSlippageOptionsBps = [50, 100, 200, 300];
 
