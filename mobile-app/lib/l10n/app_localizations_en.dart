@@ -200,12 +200,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String accountsSheetKeystoneWallet(int number) {
-    String _temp0 = intl.Intl.pluralLogic(
-      number,
-      locale: localeName,
-      other: 'Keystone Hardware Wallet $number',
-      one: 'Keystone Hardware Wallet',
-    );
+    String _temp0 = intl.Intl.pluralLogic(number, locale: localeName, other: 'Cold Wallet $number', one: 'Cold Wallet');
     return '$_temp0';
   }
 
@@ -241,7 +236,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get addAccountMenuMoreTitle => 'Advanced';
 
   @override
-  String get addAccountMenuImportKeystoneTitle => 'Add Keystone Wallet';
+  String get addAccountMenuImportKeystoneTitle => 'Add Cold Wallet';
 
   @override
   String get addAccountMenuImportKeystoneSubtitle => 'Air-gapped signing via QR code';
@@ -889,23 +884,20 @@ class AppLocalizationsEn extends AppLocalizations {
   String get innerHashLoadError => 'Couldn\'t load inner hash';
 
   @override
-  String get addKeystoneAppBarTitle => 'Add Keystone Wallet';
+  String get addKeystoneAppBarTitle => 'Add Cold Wallet';
 
   @override
-  String get addKeystoneIntroTitle => 'Keystone Hardware Wallet';
+  String get addKeystoneIntroTitle => 'Cold Wallet';
 
   @override
   String get addKeystoneIntroSubtitle =>
-      'Air-gapped signing for QTC. Keys stay on the device, signing happens over QR.';
+      'An air-gapped wallet that talks to this app only through QR codes. Keys never leave the device.';
 
   @override
-  String get addKeystoneConnectButton => 'Connect Hardware Wallet';
+  String get addKeystoneConnectButton => 'Connect Cold Wallet';
 
   @override
-  String get addKeystoneGetOneLink => 'Don\'t have one? Get a Keystone ↗';
-
-  @override
-  String get addKeystoneConnectTitle => 'Connect Hardware Wallet';
+  String get addKeystoneConnectTitle => 'Connect Cold Wallet';
 
   @override
   String get addKeystoneConnectSubtitle => 'Scan your device\'s QR code to connect.';
@@ -914,19 +906,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get addKeystoneBeforeYouStart => 'BEFORE YOU START';
 
   @override
-  String get addKeystoneFirmwareTitle => 'Update to the latest Keystone firmware';
+  String get addKeystoneFirmwareTitle => 'Update your device to the latest firmware';
 
   @override
   String get addKeystoneFirmwareSubtitle => 'Required for QTC signing';
 
   @override
-  String get addKeystoneOnYourKeystone => 'ON YOUR KEYSTONE';
+  String get addKeystoneOnYourKeystone => 'ON YOUR COLD WALLET';
 
   @override
-  String get addKeystoneStepUnlock => 'Unlock your Keystone';
+  String get addKeystoneStepUnlock => 'Unlock your cold wallet';
 
   @override
-  String get addKeystoneStepSelectQuantus => 'Select Quantus and scan the QR code';
+  String get addKeystoneStepSelectQuantus => 'Show your account QR code';
 
   @override
   String get addKeystoneReadyToScan => 'Ready to Scan';
@@ -1033,7 +1025,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sendTxSubmittedDone => 'Done';
 
   @override
-  String get keystoneSignScreenTitle => 'Sign with Keystone';
+  String get keystoneSignScreenTitle => 'Sign with Cold Wallet';
 
   @override
   String keystoneSignStep(int current, int total) {
@@ -1041,10 +1033,10 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get keystoneSignTitle => 'Scan with your Keystone';
+  String get keystoneSignTitle => 'Scan with your cold wallet';
 
   @override
-  String get keystoneSignInstruction => 'Open your Keystone and scan this QR code to load the transaction.';
+  String get keystoneSignInstruction => 'Open your cold wallet and scan this QR code to load the transaction.';
 
   @override
   String get keystoneSignActionLabel => 'ACTION';
@@ -1062,14 +1054,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get keystoneSignError => 'Failed to prepare the transaction. Please try again.';
 
   @override
-  String get keystoneVerifyTitle => 'Check your Keystone Screen';
+  String get keystoneVerifyTitle => 'Check your Cold Wallet Screen';
 
   @override
-  String get keystoneVerifyInstruction => 'Before approving on your Keystone, make sure its screen shows exactly this:';
+  String get keystoneVerifyInstruction =>
+      'Before approving on your cold wallet, make sure its screen shows exactly this:';
 
   @override
   String get keystoneVerifyWarning =>
-      'If the amount or address on your Keystone screen is different from what\'s shown here, reject the transaction on your device.';
+      'If the amount or address on your cold wallet screen is different from what\'s shown here, reject the transaction on your device.';
 
   @override
   String get keystoneVerifyMismatch => 'It doesn\'t match';
@@ -1079,7 +1072,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get keystoneScanInstruction =>
-      'Your Keystone is now showing an animated QR. Hold your phone up to it, this takes a moment.';
+      'Your cold wallet is now showing an animated QR. Hold your phone up to it, this takes a moment.';
 
   @override
   String get keystoneScanReceiving => 'RECEIVING SIGNATURE';
@@ -1108,7 +1101,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get keystoneRejectTitle => 'Don\'t approve this transaction';
 
   @override
-  String get keystoneRejectStep1Title => 'Reject the transaction on your Keystone.';
+  String get keystoneRejectStep1Title => 'Reject the transaction on your cold wallet.';
 
   @override
   String get keystoneRejectStep1Body => 'Nothing is signed or sent until you approve there.';
@@ -1120,13 +1113,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get keystoneRejectStep2Body => 'If it\'s compromised, retrying gives the attacker another chance.';
 
   @override
-  String get keystoneRejectStep3Title => 'Your funds are safe on the Keystone.';
+  String get keystoneRejectStep3Title => 'Your funds are safe on the cold wallet.';
 
   @override
   String get keystoneRejectStep3Body => 'Keys never left the device. Move to a trusted phone before sending again.';
 
   @override
-  String get keystoneRejectConfirm => 'I rejected it on Keystone';
+  String get keystoneRejectConfirm => 'I rejected it on the cold wallet';
 
   @override
   String get keystoneRejectContactSupport => 'Contact Support';

@@ -9,8 +9,8 @@ import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/v2/components/qr_scanner_page.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/account_menu_screen.dart';
 
-/// Second add-Keystone screen: on-device instructions, then scans the device's
-/// QR code to read the account address and saves the Keystone account.
+/// Second add-cold-wallet screen: on-device instructions, then scans the device's
+/// QR code to read the account address and saves the account.
 class ConnectKeystoneScreen extends ConsumerStatefulWidget {
   const ConnectKeystoneScreen({super.key, required this.walletIndex, this.isNewWallet = false});
 
@@ -54,7 +54,7 @@ class _ConnectKeystoneScreenState extends ConsumerState<ConnectKeystoneScreen> {
       final account = Account(
         walletIndex: widget.walletIndex,
         index: nextIndex,
-        name: 'Keystone Wallet',
+        name: 'Cold Wallet',
         accountId: address,
         accountType: AccountType.keystone,
       );
@@ -86,8 +86,6 @@ class _ConnectKeystoneScreenState extends ConsumerState<ConnectKeystoneScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Image.asset('assets/v2/keystone_logo.png', width: 142, height: 32),
-            const SizedBox(height: 24),
             Text(l10n.addKeystoneConnectTitle, style: text.titleHero.copyWith(color: colors.textContent)),
             const SizedBox(height: 8),
             Text(l10n.addKeystoneConnectSubtitle, style: text.body.copyWith(color: colors.textMuted)),

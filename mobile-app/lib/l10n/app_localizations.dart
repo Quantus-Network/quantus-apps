@@ -449,7 +449,7 @@ abstract class AppLocalizations {
   /// Keystone hardware wallet segment header in accounts sheet; the first wallet omits the number
   ///
   /// In en, this message translates to:
-  /// **'{number, plural, =1{Keystone Hardware Wallet} other{Keystone Hardware Wallet {number}}}'**
+  /// **'{number, plural, =1{Cold Wallet} other{Cold Wallet {number}}}'**
   String accountsSheetKeystoneWallet(int number);
 
   /// Badge on the wallet header containing the active account; rendered uppercase
@@ -509,7 +509,7 @@ abstract class AppLocalizations {
   /// Add keystone hardware account menu row title
   ///
   /// In en, this message translates to:
-  /// **'Add Keystone Wallet'**
+  /// **'Add Cold Wallet'**
   String get addAccountMenuImportKeystoneTitle;
 
   /// Add keystone hardware account menu row subtitle
@@ -1697,37 +1697,31 @@ abstract class AppLocalizations {
   /// App bar title for the add Keystone wallet screens
   ///
   /// In en, this message translates to:
-  /// **'Add Keystone Wallet'**
+  /// **'Add Cold Wallet'**
   String get addKeystoneAppBarTitle;
 
   /// Headline on the add Keystone intro screen
   ///
   /// In en, this message translates to:
-  /// **'Keystone Hardware Wallet'**
+  /// **'Cold Wallet'**
   String get addKeystoneIntroTitle;
 
   /// Subtitle on the add Keystone intro screen
   ///
   /// In en, this message translates to:
-  /// **'Air-gapped signing for QTC. Keys stay on the device, signing happens over QR.'**
+  /// **'An air-gapped wallet that talks to this app only through QR codes. Keys never leave the device.'**
   String get addKeystoneIntroSubtitle;
 
   /// Primary button on the add Keystone intro screen
   ///
   /// In en, this message translates to:
-  /// **'Connect Hardware Wallet'**
+  /// **'Connect Cold Wallet'**
   String get addKeystoneConnectButton;
-
-  /// Link to the Keystone store on the add Keystone intro screen
-  ///
-  /// In en, this message translates to:
-  /// **'Don\'t have one? Get a Keystone ↗'**
-  String get addKeystoneGetOneLink;
 
   /// Headline on the Keystone connect instructions screen
   ///
   /// In en, this message translates to:
-  /// **'Connect Hardware Wallet'**
+  /// **'Connect Cold Wallet'**
   String get addKeystoneConnectTitle;
 
   /// Subtitle on the Keystone connect instructions screen
@@ -1745,7 +1739,7 @@ abstract class AppLocalizations {
   /// Firmware reminder title on the Keystone connect instructions screen
   ///
   /// In en, this message translates to:
-  /// **'Update to the latest Keystone firmware'**
+  /// **'Update your device to the latest firmware'**
   String get addKeystoneFirmwareTitle;
 
   /// Firmware reminder subtitle on the Keystone connect instructions screen
@@ -1757,19 +1751,19 @@ abstract class AppLocalizations {
   /// Section label for the on-device steps
   ///
   /// In en, this message translates to:
-  /// **'ON YOUR KEYSTONE'**
+  /// **'ON YOUR COLD WALLET'**
   String get addKeystoneOnYourKeystone;
 
   /// On-device step: unlock
   ///
   /// In en, this message translates to:
-  /// **'Unlock your Keystone'**
+  /// **'Unlock your cold wallet'**
   String get addKeystoneStepUnlock;
 
   /// On-device step: select Quantus and scan
   ///
   /// In en, this message translates to:
-  /// **'Select Quantus and scan the QR code'**
+  /// **'Show your account QR code'**
   String get addKeystoneStepSelectQuantus;
 
   /// Primary button opening the QR scanner on the Keystone connect instructions screen
@@ -1967,7 +1961,7 @@ abstract class AppLocalizations {
   /// App bar title shared by the Keystone signing screens
   ///
   /// In en, this message translates to:
-  /// **'Sign with Keystone'**
+  /// **'Sign with Cold Wallet'**
   String get keystoneSignScreenTitle;
 
   /// Step indicator on the Keystone signing screens
@@ -1979,13 +1973,13 @@ abstract class AppLocalizations {
   /// Title on the Keystone sign screen showing the unsigned transaction QR
   ///
   /// In en, this message translates to:
-  /// **'Scan with your Keystone'**
+  /// **'Scan with your cold wallet'**
   String get keystoneSignTitle;
 
   /// Instruction on the Keystone sign screen
   ///
   /// In en, this message translates to:
-  /// **'Open your Keystone and scan this QR code to load the transaction.'**
+  /// **'Open your cold wallet and scan this QR code to load the transaction.'**
   String get keystoneSignInstruction;
 
   /// Label for a non-transfer action on the Keystone sign and verify screens
@@ -2021,19 +2015,19 @@ abstract class AppLocalizations {
   /// Title on the Keystone verification screen
   ///
   /// In en, this message translates to:
-  /// **'Check your Keystone Screen'**
+  /// **'Check your Cold Wallet Screen'**
   String get keystoneVerifyTitle;
 
   /// Instruction on the Keystone verification screen
   ///
   /// In en, this message translates to:
-  /// **'Before approving on your Keystone, make sure its screen shows exactly this:'**
+  /// **'Before approving on your cold wallet, make sure its screen shows exactly this:'**
   String get keystoneVerifyInstruction;
 
   /// Warning shown when asking the user to compare the Keystone screen
   ///
   /// In en, this message translates to:
-  /// **'If the amount or address on your Keystone screen is different from what\'s shown here, reject the transaction on your device.'**
+  /// **'If the amount or address on your cold wallet screen is different from what\'s shown here, reject the transaction on your device.'**
   String get keystoneVerifyWarning;
 
   /// Link opening the mismatch help screen
@@ -2051,7 +2045,7 @@ abstract class AppLocalizations {
   /// Instruction on the Keystone signature scanner screen
   ///
   /// In en, this message translates to:
-  /// **'Your Keystone is now showing an animated QR. Hold your phone up to it, this takes a moment.'**
+  /// **'Your cold wallet is now showing an animated QR. Hold your phone up to it, this takes a moment.'**
   String get keystoneScanInstruction;
 
   /// Label next to the scan progress on the Keystone signature scanner screen
@@ -2099,7 +2093,7 @@ abstract class AppLocalizations {
   /// First step title on the Keystone mismatch help screen
   ///
   /// In en, this message translates to:
-  /// **'Reject the transaction on your Keystone.'**
+  /// **'Reject the transaction on your cold wallet.'**
   String get keystoneRejectStep1Title;
 
   /// First step body on the Keystone mismatch help screen
@@ -2123,7 +2117,7 @@ abstract class AppLocalizations {
   /// Third step title on the Keystone mismatch help screen
   ///
   /// In en, this message translates to:
-  /// **'Your funds are safe on the Keystone.'**
+  /// **'Your funds are safe on the cold wallet.'**
   String get keystoneRejectStep3Title;
 
   /// Third step body on the Keystone mismatch help screen
@@ -2135,7 +2129,7 @@ abstract class AppLocalizations {
   /// Button confirming the transaction was rejected on the device
   ///
   /// In en, this message translates to:
-  /// **'I rejected it on Keystone'**
+  /// **'I rejected it on the cold wallet'**
   String get keystoneRejectConfirm;
 
   /// Link to contact support from the Keystone mismatch help screen
