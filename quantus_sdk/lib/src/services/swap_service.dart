@@ -283,8 +283,9 @@ class SwapService {
     final nearBySymbol = <String, String>{};
     for (final item in data) {
       final assetId = item['assetId'] as String;
-      if (SwapToken.hasNearContract(assetId))
+      if (SwapToken.hasNearContract(assetId)) {
         nearBySymbol.putIfAbsent((item['symbol'] as String).toUpperCase(), () => assetId);
+      }
     }
     final bySymbol = <String, SwapToken>{};
     final onQuantus = <SwapToken>[];
