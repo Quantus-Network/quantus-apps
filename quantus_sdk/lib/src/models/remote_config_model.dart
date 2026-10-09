@@ -47,11 +47,10 @@ class RemoteConfigModel {
   });
 
   /// Swap is offered when the platform's flag is on and the location allows
-  /// NEAR Intents; a debug build started with [AppConstants.swapIgnoreGeo]
-  /// skips the location.
+  /// NEAR Intents, or always in a [AppConstants.swapAllowOverride] build.
   bool get swapAvailable =>
-      (defaultTargetPlatform == TargetPlatform.android ? enableSwapAndroid : enableSwap) &&
-      (geoNearAllowed || (kDebugMode && AppConstants.swapIgnoreGeo));
+      AppConstants.swapAllowOverride ||
+      ((defaultTargetPlatform == TargetPlatform.android ? enableSwapAndroid : enableSwap) && geoNearAllowed);
 
   RemoteConfigModel copyWith({bool? geoNearAllowed}) => RemoteConfigModel(
     enableTestButtons: enableTestButtons,

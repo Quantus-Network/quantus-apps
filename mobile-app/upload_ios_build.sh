@@ -5,6 +5,7 @@
 set -eu
 
 cd "$(dirname "$0")"
+. ./build_defines.sh
 
 # Ensure Xcode export uses Apple's rsync implementation.
 # In case user installed custom rsync in homebrew for example
@@ -16,7 +17,7 @@ echo "Cleaning build folder"
 rm -rf build
 
 echo "Building the app"
-flutter build ipa --release
+flutter build ipa --release $DEFINES
 
 echo "Opening Transporter"
 open -a "Transporter" "build/ios/ipa/Quantus.ipa"
