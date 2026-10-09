@@ -906,15 +906,6 @@ class AppLocalizationsId extends AppLocalizations {
   String get addKeystoneConnectSubtitle => 'Scan your device\'s QR code to connect.';
 
   @override
-  String get addKeystoneBeforeYouStart => 'BEFORE YOU START';
-
-  @override
-  String get addKeystoneFirmwareTitle => 'Update your device to the latest firmware';
-
-  @override
-  String get addKeystoneFirmwareSubtitle => 'Required for QTC signing';
-
-  @override
   String get addKeystoneOnYourKeystone => 'ON YOUR COLD WALLET';
 
   @override

@@ -1730,24 +1730,6 @@ abstract class AppLocalizations {
   /// **'Scan your device\'s QR code to connect.'**
   String get addKeystoneConnectSubtitle;
 
-  /// Section label on the Keystone connect instructions screen
-  ///
-  /// In en, this message translates to:
-  /// **'BEFORE YOU START'**
-  String get addKeystoneBeforeYouStart;
-
-  /// Firmware reminder title on the Keystone connect instructions screen
-  ///
-  /// In en, this message translates to:
-  /// **'Update your device to the latest firmware'**
-  String get addKeystoneFirmwareTitle;
-
-  /// Firmware reminder subtitle on the Keystone connect instructions screen
-  ///
-  /// In en, this message translates to:
-  /// **'Required for QTC signing'**
-  String get addKeystoneFirmwareSubtitle;
-
   /// Section label for the on-device steps
   ///
   /// In en, this message translates to:
