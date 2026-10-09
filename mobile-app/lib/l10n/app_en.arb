@@ -273,7 +273,7 @@
         }
       }
     },
-    "accountsSheetKeystoneWallet": "{number, plural, =1{Keystone Hardware Wallet} other{Keystone Hardware Wallet {number}}}",
+    "accountsSheetKeystoneWallet": "{number, plural, =1{Cold Wallet} other{Cold Wallet {number}}}",
     "@accountsSheetKeystoneWallet": {
       "description": "Keystone hardware wallet segment header in accounts sheet; the first wallet omits the number",
       "placeholders": {
@@ -324,7 +324,7 @@
     "@addAccountMenuMoreTitle": {
       "description": "Title of the add account more options action sheet"
     },
-    "addAccountMenuImportKeystoneTitle": "Add Keystone Wallet",
+    "addAccountMenuImportKeystoneTitle": "Add Cold Wallet",
     "@addAccountMenuImportKeystoneTitle": {
       "description": "Add keystone hardware account menu row title"
     },
@@ -1257,27 +1257,23 @@
       "description": "Toaster shown when deriving the inner hash fails"
     },
 
-    "addKeystoneAppBarTitle": "Add Keystone Wallet",
+    "addKeystoneAppBarTitle": "Add Cold Wallet",
     "@addKeystoneAppBarTitle": {
       "description": "App bar title for the add Keystone wallet screens"
     },
-    "addKeystoneIntroTitle": "Keystone Hardware Wallet",
+    "addKeystoneIntroTitle": "Cold Wallet",
     "@addKeystoneIntroTitle": {
       "description": "Headline on the add Keystone intro screen"
     },
-    "addKeystoneIntroSubtitle": "Air-gapped signing for QTC. Keys stay on the device, signing happens over QR.",
+    "addKeystoneIntroSubtitle": "An air-gapped wallet that talks to this app only through QR codes. Keys never leave the device.",
     "@addKeystoneIntroSubtitle": {
       "description": "Subtitle on the add Keystone intro screen"
     },
-    "addKeystoneConnectButton": "Connect Hardware Wallet",
+    "addKeystoneConnectButton": "Connect Cold Wallet",
     "@addKeystoneConnectButton": {
       "description": "Primary button on the add Keystone intro screen"
     },
-    "addKeystoneGetOneLink": "Don't have one? Get a Keystone ↗",
-    "@addKeystoneGetOneLink": {
-      "description": "Link to the Keystone store on the add Keystone intro screen"
-    },
-    "addKeystoneConnectTitle": "Connect Hardware Wallet",
+    "addKeystoneConnectTitle": "Connect Cold Wallet",
     "@addKeystoneConnectTitle": {
       "description": "Headline on the Keystone connect instructions screen"
     },
@@ -1289,7 +1285,7 @@
     "@addKeystoneBeforeYouStart": {
       "description": "Section label on the Keystone connect instructions screen"
     },
-    "addKeystoneFirmwareTitle": "Update to the latest Keystone firmware",
+    "addKeystoneFirmwareTitle": "Update your device to the latest firmware",
     "@addKeystoneFirmwareTitle": {
       "description": "Firmware reminder title on the Keystone connect instructions screen"
     },
@@ -1297,15 +1293,15 @@
     "@addKeystoneFirmwareSubtitle": {
       "description": "Firmware reminder subtitle on the Keystone connect instructions screen"
     },
-    "addKeystoneOnYourKeystone": "ON YOUR KEYSTONE",
+    "addKeystoneOnYourKeystone": "ON YOUR COLD WALLET",
     "@addKeystoneOnYourKeystone": {
       "description": "Section label for the on-device steps"
     },
-    "addKeystoneStepUnlock": "Unlock your Keystone",
+    "addKeystoneStepUnlock": "Unlock your cold wallet",
     "@addKeystoneStepUnlock": {
       "description": "On-device step: unlock"
     },
-    "addKeystoneStepSelectQuantus": "Select Quantus and scan the QR code",
+    "addKeystoneStepSelectQuantus": "Show your account QR code",
     "@addKeystoneStepSelectQuantus": {
       "description": "On-device step: select Quantus and scan"
     },
@@ -1470,7 +1466,7 @@
       "description": "Done button on transaction submitted screen"
     },
 
-    "keystoneSignScreenTitle": "Sign with Keystone",
+    "keystoneSignScreenTitle": "Sign with Cold Wallet",
     "@keystoneSignScreenTitle": {
       "description": "App bar title shared by the Keystone signing screens"
     },
@@ -1486,11 +1482,11 @@
         }
       }
     },
-    "keystoneSignTitle": "Scan with your Keystone",
+    "keystoneSignTitle": "Scan with your cold wallet",
     "@keystoneSignTitle": {
       "description": "Title on the Keystone sign screen showing the unsigned transaction QR"
     },
-    "keystoneSignInstruction": "Open your Keystone and scan this QR code to load the transaction.",
+    "keystoneSignInstruction": "Open your cold wallet and scan this QR code to load the transaction.",
     "@keystoneSignInstruction": {
       "description": "Instruction on the Keystone sign screen"
     },
@@ -1514,15 +1510,15 @@
     "@keystoneSignError": {
       "description": "Error when building the unsigned transaction payload fails"
     },
-    "keystoneVerifyTitle": "Check your Keystone Screen",
+    "keystoneVerifyTitle": "Check your Cold Wallet Screen",
     "@keystoneVerifyTitle": {
       "description": "Title on the Keystone verification screen"
     },
-    "keystoneVerifyInstruction": "Before approving on your Keystone, make sure its screen shows exactly this:",
+    "keystoneVerifyInstruction": "Before approving on your cold wallet, make sure its screen shows exactly this:",
     "@keystoneVerifyInstruction": {
       "description": "Instruction on the Keystone verification screen"
     },
-    "keystoneVerifyWarning": "If the amount or address on your Keystone screen is different from what's shown here, reject the transaction on your device.",
+    "keystoneVerifyWarning": "If the amount or address on your cold wallet screen is different from what's shown here, reject the transaction on your device.",
     "@keystoneVerifyWarning": {
       "description": "Warning shown when asking the user to compare the Keystone screen"
     },
@@ -1534,7 +1530,7 @@
     "@keystoneScanTitle": {
       "description": "Title on the Keystone signature scanner screen"
     },
-    "keystoneScanInstruction": "Your Keystone is now showing an animated QR. Hold your phone up to it, this takes a moment.",
+    "keystoneScanInstruction": "Your cold wallet is now showing an animated QR. Hold your phone up to it, this takes a moment.",
     "@keystoneScanInstruction": {
       "description": "Instruction on the Keystone signature scanner screen"
     },
@@ -1579,7 +1575,7 @@
     "@keystoneRejectTitle": {
       "description": "Headline on the Keystone mismatch help screen"
     },
-    "keystoneRejectStep1Title": "Reject the transaction on your Keystone.",
+    "keystoneRejectStep1Title": "Reject the transaction on your cold wallet.",
     "@keystoneRejectStep1Title": {
       "description": "First step title on the Keystone mismatch help screen"
     },
@@ -1595,7 +1591,7 @@
     "@keystoneRejectStep2Body": {
       "description": "Second step body on the Keystone mismatch help screen"
     },
-    "keystoneRejectStep3Title": "Your funds are safe on the Keystone.",
+    "keystoneRejectStep3Title": "Your funds are safe on the cold wallet.",
     "@keystoneRejectStep3Title": {
       "description": "Third step title on the Keystone mismatch help screen"
     },
@@ -1603,7 +1599,7 @@
     "@keystoneRejectStep3Body": {
       "description": "Third step body on the Keystone mismatch help screen"
     },
-    "keystoneRejectConfirm": "I rejected it on Keystone",
+    "keystoneRejectConfirm": "I rejected it on the cold wallet",
     "@keystoneRejectConfirm": {
       "description": "Button confirming the transaction was rejected on the device"
     },
