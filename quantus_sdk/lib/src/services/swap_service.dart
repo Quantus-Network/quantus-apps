@@ -74,9 +74,9 @@ class SwapService {
   final String _managerPublicKey;
   final String? _configuredQuantusAssetId;
   final bool _preflight;
+  (List<SwapToken>, SwapToken?)? _cachedListing;
+  DateTime? _cachedListingAt;
   List<SwapToken>? _cachedFromTokens;
-  DateTime? _cachedFromTokensAt;
-  SwapToken? _listedQuantus;
 
   /// [quantusAssetId] names the listing that is QTC when its chain code does
   /// not; it comes from remote config so a surprising listing needs no update.
@@ -99,26 +99,27 @@ class SwapService {
   static Duration depositWindowFor(String network) =>
       _slowNetworks.contains(network) ? _slowDepositWindow : depositWindow;
 
-  Future<List<SwapToken>> getFromTokens({int limit = 10, bool forceRefresh = false}) async =>
-      (await _tokens(forceRefresh: forceRefresh)).take(limit).toList();
-
-  /// QTC as 1Click lists it, with its asset id, decimals and price; null until
-  /// it is listed with a price, and swaps are unavailable until then.
-  Future<SwapToken?> getListedQuantusToken({bool forceRefresh = false}) async {
-    await _tokens(forceRefresh: forceRefresh);
-    return _listedQuantus;
+  Future<List<SwapToken>> getFromTokens({int limit = 10, bool forceRefresh = false}) async {
+    final (tokens, _) = await _listing(forceRefresh: forceRefresh);
+    final ranked = _cachedFromTokens ??= await _rankByCoinGecko(tokens);
+    return ranked.take(limit).toList();
   }
 
-  Future<List<SwapToken>> _tokens({required bool forceRefresh}) async {
+  /// QTC as 1Click lists it, with its asset id, decimals and price; null until
+  /// it is listed with a price, and swaps are unavailable until then. Costs
+  /// the listing alone, never the CoinGecko ranking.
+  Future<SwapToken?> getListedQuantusToken({bool forceRefresh = false}) async =>
+      (await _listing(forceRefresh: forceRefresh)).$2;
+
+  Future<(List<SwapToken>, SwapToken?)> _listing({required bool forceRefresh}) async {
     final now = DateTime.now();
-    final cached = _cachedFromTokens;
-    if (!forceRefresh && cached != null && now.difference(_cachedFromTokensAt!) < _tokensCacheTtl) return cached;
-    final (tokens, quantus) = await _fetchIntentsTokens();
-    final ranked = await _rankByCoinGecko(tokens);
-    _cachedFromTokens = ranked;
-    _listedQuantus = quantus;
-    _cachedFromTokensAt = now;
-    return ranked;
+    final cached = _cachedListing;
+    if (!forceRefresh && cached != null && now.difference(_cachedListingAt!) < _tokensCacheTtl) return cached;
+    final listing = await _fetchIntentsTokens();
+    _cachedListing = listing;
+    _cachedListingAt = now;
+    _cachedFromTokens = null;
+    return listing;
   }
 
   /// Asks solvers for a price on [amount] base units of [from]. A dry quote is

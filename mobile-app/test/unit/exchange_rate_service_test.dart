@@ -10,7 +10,7 @@ void main() {
   late ExchangeRateService service;
 
   setUp(() {
-    service = ExchangeRateService(rates: rates);
+    service = ExchangeRateService(rates: rates, tokenToUsdRate: Decimal.one);
   });
 
   group('ExchangeRateService.getRate', () {
@@ -36,6 +36,13 @@ void main() {
 
     test('converts 0.5 tokens to MYR (0.5 × 3.97 = 1.99)', () {
       expect(service.convert(Decimal.parse('0.5'), FiatCurrency.myr), Decimal.parse('1.99'));
+    });
+
+    test('throws while the token price is unknown', () {
+      final unpriced = ExchangeRateService(rates: rates);
+      expect(unpriced.hasTokenPrice, isFalse);
+      expect(() => unpriced.convert(Decimal.one, FiatCurrency.usd), throwsStateError);
+      expect(() => unpriced.fiatToToken(Decimal.one, FiatCurrency.usd, 12), throwsStateError);
     });
 
     test('applies tokenToUsdRate when set', () {
@@ -103,7 +110,7 @@ void main() {
       // we ensure that the round-tripped tokens value is the canonical tokens
       // representation of that specific fiat amount.
       const tokenDecimals = 12;
-      final lossyService = ExchangeRateService(rates: {'MYR': Decimal.parse('3.971')});
+      final lossyService = ExchangeRateService(rates: {'MYR': Decimal.parse('3.971')}, tokenToUsdRate: Decimal.one);
       final original = BigInt.from(1_500_000_000_000); // 1.5 tokens
 
       // 1.5 * 3.971 = 5.9565 -> rounded to 5.96 MYR

@@ -619,6 +619,35 @@ void main() {
       },
     );
 
+    test('the listed QTC costs the listing alone, never CoinGecko', () async {
+      final service = _service((r) async {
+        if (r.url.host == 'api.coingecko.com') fail('CoinGecko was asked for the price of QTC');
+        return http.Response(jsonEncode(tokens), 200);
+      });
+      expect((await service.getListedQuantusToken())!.usdPrice, 1.5);
+    });
+
+    test('revalidates the listing by its ETag and keeps the body on a 304', () async {
+      final sent = <String?>[];
+      var price = 1.5;
+      var version = 'W/"v1"';
+      final service = _service((r) async {
+        if (r.url.host == 'api.coingecko.com') return http.Response('down', 503);
+        sent.add(r.headers['If-None-Match']);
+        if (r.headers['If-None-Match'] == version) return http.Response('', 304);
+        final body = [
+          for (final t in tokens) t['symbol'] == 'QTC' ? {...t, 'price': price} : t,
+        ];
+        return http.Response(jsonEncode(body), 200, headers: {'etag': version});
+      });
+      expect((await service.getListedQuantusToken())!.usdPrice, 1.5);
+      expect((await service.getListedQuantusToken(forceRefresh: true))!.usdPrice, 1.5);
+      price = 2;
+      version = 'W/"v2"';
+      expect((await service.getListedQuantusToken(forceRefresh: true))!.usdPrice, 2);
+      expect(sent, [null, 'W/"v1"', 'W/"v1"']);
+    });
+
     test('has no listed QTC until 1Click adds it', () async {
       final service = listing(tokens.where((t) => t['symbol'] != 'QTC').toList());
       expect(await service.getListedQuantusToken(), isNull);

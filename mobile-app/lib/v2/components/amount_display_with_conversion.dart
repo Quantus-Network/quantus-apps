@@ -13,7 +13,7 @@ class AmountDisplayWithConversion extends StatelessWidget {
   final Color? amountColor;
   final bool useTokenLogo;
 
-  /// Masks the amount with [hiddenAmountText]. Owned by the screen that
+  /// Masks the amounts with [hiddenAmountText]. Owned by the screen that
   /// offers the hide toggle — never read from a global setting here.
   final bool isHidden;
 
@@ -36,41 +36,55 @@ class AmountDisplayWithConversion extends StatelessWidget {
     const tokenLogoPrimarySize = 32.0;
 
     final primaryAmount = isHidden ? hiddenAmountText : amountDisplay.primaryAmount;
+    final secondaryAmount = amountDisplay.secondaryAmount;
 
     final MainAxisAlignment mainAxisAlignment = switch (alignment) {
       CrossAxisAlignment.center => MainAxisAlignment.center,
       _ => MainAxisAlignment.start,
     };
 
-    return Row(
-      mainAxisAlignment: mainAxisAlignment,
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: alignment,
       children: [
-        if (useTokenLogo) ...[
-          SvgPicture.asset(
-            'assets/v2/uppercase_q.svg',
-            width: tokenLogoPrimarySize,
-            height: tokenLogoPrimarySize,
-            colorFilter: ColorFilter.mode(colors.textContent, BlendMode.srcIn),
-          ),
-          const SizedBox(width: 4),
-        ],
-        Text.rich(
-          TextSpan(
-            children: [
-              TextSpan(
-                text: primaryAmount,
-                style: text.displayBalance.copyWith(color: primaryAmountColor),
+        Row(
+          mainAxisAlignment: mainAxisAlignment,
+          children: [
+            if (useTokenLogo) ...[
+              SvgPicture.asset(
+                'assets/v2/uppercase_q.svg',
+                width: tokenLogoPrimarySize,
+                height: tokenLogoPrimarySize,
+                colorFilter: ColorFilter.mode(colors.textContent, BlendMode.srcIn),
               ),
-              if (!useTokenLogo) ...[
-                const TextSpan(text: ' '),
-                TextSpan(
-                  text: AppConstants.tokenSymbol,
-                  style: text.amountHero.copyWith(color: primaryAmountColor),
-                ),
-              ],
+              const SizedBox(width: 4),
             ],
-          ),
+            Text.rich(
+              TextSpan(
+                children: [
+                  TextSpan(
+                    text: primaryAmount,
+                    style: text.displayBalance.copyWith(color: primaryAmountColor),
+                  ),
+                  if (!useTokenLogo) ...[
+                    const TextSpan(text: ' '),
+                    TextSpan(
+                      text: AppConstants.tokenSymbol,
+                      style: text.amountHero.copyWith(color: primaryAmountColor),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
         ),
+        if (secondaryAmount != null) ...[
+          const SizedBox(height: 8),
+          Text(
+            '≈ ${isHidden ? hiddenAmountText : secondaryAmount}',
+            style: text.body.copyWith(color: colors.textMuted),
+          ),
+        ],
       ],
     );
   }

@@ -6,8 +6,8 @@ import 'package:resonance_network_wallet/models/fiat_currency.dart';
 /// Constructed with a live [rates] map (ISO-4217 code → value in that currency
 /// per 1 USD). Falls back to [fallbackRates] for any code not present.
 ///
-/// [tokenToUsdRate] defaults to `1` (1 token = 1 USD). Wire a dedicated tokens
-/// price feed into this field when one becomes available.
+/// [tokenToUsdRate] is the token's USD price, null while none is known;
+/// converting without one throws.
 class ExchangeRateService {
   /// Static rates used before any live or cached data is available (e.g. on
   /// fresh install with no network). Values are approximate and intentionally
@@ -23,11 +23,13 @@ class ExchangeRateService {
   };
 
   final Map<String, Decimal> _rates;
-  final Decimal tokenToUsdRate;
+  final Decimal? tokenToUsdRate;
 
-  ExchangeRateService({required Map<String, Decimal> rates, Decimal? tokenToUsdRate})
-    : _rates = rates,
-      tokenToUsdRate = tokenToUsdRate ?? Decimal.one;
+  ExchangeRateService({required Map<String, Decimal> rates, this.tokenToUsdRate}) : _rates = rates;
+
+  bool get hasTokenPrice => tokenToUsdRate != null;
+
+  Decimal get _tokenPrice => tokenToUsdRate ?? (throw StateError('Token price unknown'));
 
   /// Returns the exchange rate for [fiat] (units per 1 USD).
   Decimal getRate(FiatCurrency fiat) {
@@ -39,7 +41,7 @@ class ExchangeRateService {
 
   /// Converts [tokenAmount] to [fiat] using the current rates.
   Decimal convert(Decimal tokenAmount, FiatCurrency fiat) {
-    final result = (tokenAmount * tokenToUsdRate * getRate(fiat));
+    final result = (tokenAmount * _tokenPrice * getRate(fiat));
     // Round to fiat precision to ensure stable round-trips
     return Decimal.parse(result.toStringAsFixed(fiat.decimals));
   }
@@ -59,7 +61,7 @@ class ExchangeRateService {
   /// Uses the inverse of [convert]: fiat / (tokenToUsdRate × rate).
   /// Returns [BigInt.zero] when the effective rate is zero.
   BigInt fiatToToken(Decimal fiatAmount, FiatCurrency fiat, int tokenDecimals) {
-    final effectiveRate = tokenToUsdRate * getRate(fiat);
+    final effectiveRate = _tokenPrice * getRate(fiat);
     if (effectiveRate == Decimal.zero) return BigInt.zero;
     final scaleFactor = Decimal.fromBigInt(BigInt.from(10).pow(tokenDecimals));
     final tokenDecimal = (fiatAmount / effectiveRate).toDecimal(scaleOnInfinitePrecision: tokenDecimals);
