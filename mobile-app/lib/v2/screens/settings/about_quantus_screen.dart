@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart' hide ScaffoldBase;
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/generated/version.g.dart';
+import 'package:resonance_network_wallet/shared/utils/build_label.dart';
 import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/shared/utils/open_external_url.dart';
@@ -62,7 +63,7 @@ class AboutQuantusScreenV2 extends ConsumerWidget {
               Image.asset('assets/v2/quantus_orange_logo.png', height: 40),
               const SizedBox(height: 14),
               Text(
-                l10n.settingsAboutVersion(appVersion, appBuildNumber),
+                l10n.settingsAboutVersion(appVersion, shownBuildNumber),
                 textAlign: TextAlign.center,
                 style: text.caption.copyWith(color: colors.textMuted),
               ),
