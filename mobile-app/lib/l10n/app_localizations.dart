@@ -3458,6 +3458,18 @@ abstract class AppLocalizations {
   /// **'Contact Support'**
   String get swapContactSupport;
 
+  /// Label of the row naming the token to deposit, at the top of the deposit screen
+  ///
+  /// In en, this message translates to:
+  /// **'Token'**
+  String get swapDepositToken;
+
+  /// Label of the row naming the network to deposit on, at the top of the deposit screen
+  ///
+  /// In en, this message translates to:
+  /// **'Network'**
+  String get swapDepositNetwork;
+
   /// Deposit amount label on deposit screen
   ///
   /// In en, this message translates to:

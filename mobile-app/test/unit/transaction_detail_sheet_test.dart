@@ -37,6 +37,7 @@ void main() {
       ),
       overrides: [
         settingsServiceProvider.overrideWithValue(FakeSettingsService(activeAccount: RegularAccount(me))),
+        humanReadableChecksumServiceProvider.overrideWithValue(FakeHumanReadableChecksumService()),
         txAmountDisplayProvider.overrideWithValue((
           BigInt amount, {
           required bool isSend,
@@ -63,6 +64,8 @@ void main() {
 
     expect(isSend, isFalse);
     expect(find.textContaining('+300'), findsOneWidget);
+    expect(find.text(AddressFormattingService.formatAddress(other.accountId, ellipses: '.......')), findsOneWidget);
+    expect(find.text('Stand-Envelope-Topic-Term-Help'), findsOneWidget);
   });
 
   testWidgets('a private send without an attributable recipient names the aggregated batch', (tester) async {

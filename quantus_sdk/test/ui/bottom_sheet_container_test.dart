@@ -23,10 +23,14 @@ void main() {
     await tester.pump();
   }
 
-  Future<void> showViaApi(WidgetTester tester, {EdgeInsets padding = EdgeInsets.zero}) async {
+  Future<void> showViaApi(
+    WidgetTester tester, {
+    EdgeInsets padding = EdgeInsets.zero,
+    EdgeInsets viewInsets = EdgeInsets.zero,
+  }) async {
     await tester.pumpWidget(
       MediaQuery(
-        data: MediaQueryData(size: const Size(375, 667), padding: padding),
+        data: MediaQueryData(size: const Size(375, 667), padding: padding, viewInsets: viewInsets),
         child: Builder(
           builder: (context) => MaterialApp(
             theme: AppTheme.darkTheme(context),
@@ -162,6 +166,19 @@ void main() {
 
     expect(find.text('Locked'), findsOneWidget);
     expect(find.text('body'), findsOneWidget);
+  });
+
+  testWidgets('rises above the keyboard, dropping the system inset it covers', (tester) async {
+    await showViaApi(
+      tester,
+      padding: const EdgeInsets.only(bottom: 48),
+      viewInsets: const EdgeInsets.only(bottom: 250),
+    );
+
+    final screenBottom = tester.getBottomLeft(find.byType(MaterialApp)).dy;
+    expect(tester.getBottomLeft(find.byType(BottomSheetContainer)).dy, closeTo(screenBottom - 250, 0.01));
+    expect(tester.getBottomLeft(find.text('body')).dy, closeTo(screenBottom - 250 - 32, 0.01));
+    expect(tester.getSize(find.byType(BottomSheetContainer)).height, lessThanOrEqualTo(667 - 250));
   });
 
   testWidgets('keeps content above the bottom system inset', (tester) async {

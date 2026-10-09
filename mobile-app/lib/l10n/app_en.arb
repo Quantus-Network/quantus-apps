@@ -2713,6 +2713,14 @@
     "@swapContactSupport": {
       "description": "Link on a failed swap"
     },
+    "swapDepositToken": "Token",
+    "@swapDepositToken": {
+      "description": "Label of the row naming the token to deposit, at the top of the deposit screen"
+    },
+    "swapDepositNetwork": "Network",
+    "@swapDepositNetwork": {
+      "description": "Label of the row naming the network to deposit on, at the top of the deposit screen"
+    },
     "swapDepositAmount": "Deposit Amount",
     "@swapDepositAmount": {
       "description": "Deposit amount label on deposit screen"

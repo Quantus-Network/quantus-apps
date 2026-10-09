@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:quantus_sdk/src/constants/app_constants.dart';
 
 class RemoteConfigModel {
   final bool enableTestButtons;
@@ -6,6 +7,9 @@ class RemoteConfigModel {
   final bool enableHighSecurity;
   final bool enableRemoteNotifications;
   final bool enableSwap;
+
+  /// Android's own swap flag, so the two stores can be switched apart.
+  final bool enableSwapAndroid;
   final bool enableEncryptedAccount;
   final bool enableMultisig;
 
@@ -33,6 +37,7 @@ class RemoteConfigModel {
     required this.enableHighSecurity,
     required this.enableRemoteNotifications,
     required this.enableSwap,
+    required this.enableSwapAndroid,
     required this.enableEncryptedAccount,
     required this.enableMultisig,
     required this.enableOneClickNearWarning,
@@ -41,8 +46,12 @@ class RemoteConfigModel {
     this.nearPartnerJwt,
   });
 
-  /// Swap is offered when the flag is on and the location allows NEAR Intents.
-  bool get swapAvailable => enableSwap && geoNearAllowed;
+  /// Swap is offered when the platform's flag is on and the location allows
+  /// NEAR Intents; a debug build started with [AppConstants.swapIgnoreGeo]
+  /// skips the location.
+  bool get swapAvailable =>
+      (defaultTargetPlatform == TargetPlatform.android ? enableSwapAndroid : enableSwap) &&
+      (geoNearAllowed || (kDebugMode && AppConstants.swapIgnoreGeo));
 
   RemoteConfigModel copyWith({bool? geoNearAllowed}) => RemoteConfigModel(
     enableTestButtons: enableTestButtons,
@@ -50,6 +59,7 @@ class RemoteConfigModel {
     enableHighSecurity: enableHighSecurity,
     enableRemoteNotifications: enableRemoteNotifications,
     enableSwap: enableSwap,
+    enableSwapAndroid: enableSwapAndroid,
     enableEncryptedAccount: enableEncryptedAccount,
     enableMultisig: enableMultisig,
     enableOneClickNearWarning: enableOneClickNearWarning,
@@ -65,6 +75,7 @@ class RemoteConfigModel {
       bool enableHighSecurity,
       bool enableRemoteNotifications,
       bool enableSwap,
+      bool enableSwapAndroid,
       bool enableEncryptedAccount,
       bool enableMultisig,
       bool enableOneClickNearWarning,
@@ -80,6 +91,7 @@ class RemoteConfigModel {
       enableHighSecurity,
       enableRemoteNotifications,
       enableSwap,
+      enableSwapAndroid,
       enableEncryptedAccount,
       enableMultisig,
       enableOneClickNearWarning,
@@ -95,6 +107,7 @@ class RemoteConfigModel {
     enableHighSecurity: false,
     enableRemoteNotifications: true,
     enableSwap: false,
+    enableSwapAndroid: true,
     enableEncryptedAccount: true,
     enableMultisig: true,
     enableOneClickNearWarning: true,
@@ -110,6 +123,7 @@ class RemoteConfigModel {
             security,
             notifications,
             swap,
+            swapAndroid,
             encrypted,
             multisig,
             oneClickWarning,
@@ -122,6 +136,7 @@ class RemoteConfigModel {
             'enableHighSecurity': security,
             'enableRemoteNotifications': notifications,
             'enableSwap': swap,
+            'enableSwapAndroid': swapAndroid,
             'enableEncryptedAccount': encrypted,
             'enableMultisig': multisig,
             'enableOneClickNearWarning': oneClickWarning,
@@ -141,6 +156,7 @@ class RemoteConfigModel {
       enableHighSecurity: json['enableHighSecurity'] ?? defaults.enableHighSecurity,
       enableRemoteNotifications: json['enableRemoteNotifications'] ?? defaults.enableRemoteNotifications,
       enableSwap: json['enableSwap'] ?? defaults.enableSwap,
+      enableSwapAndroid: json['enableSwapAndroid'] ?? defaults.enableSwapAndroid,
       enableEncryptedAccount: json['enableEncryptedAccount'] ?? defaults.enableEncryptedAccount,
       enableMultisig: json['enableMultisig'] ?? defaults.enableMultisig,
       enableOneClickNearWarning: json['enableOneClickNearWarning'] ?? defaults.enableOneClickNearWarning,

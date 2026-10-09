@@ -40,7 +40,9 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
   SwapToken? _quantus;
   bool _loadingTokens = true;
   bool _loadFailed = false;
-  bool _swapOut = true;
+
+  /// Starts as a purchase of QTC: the other token on top, QTC below.
+  bool _swapOut = false;
   int _loads = 0;
 
   @override

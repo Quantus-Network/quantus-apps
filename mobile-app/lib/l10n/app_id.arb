@@ -522,6 +522,8 @@
   "swapDepositExpiredBody": "Tidak ada deposit yang tiba sebelum tenggat waktu. Jangan kirim dana ke alamat ini lagi. Minta penawaran baru untuk mencoba lagi.",
   "swapStartNew": "Mulai Swap Baru",
   "swapContactSupport": "Hubungi Dukungan",
+  "swapDepositToken": "Token",
+  "swapDepositNetwork": "Jaringan",
   "swapDepositAmount": "Jumlah Deposit",
   "swapDepositAmountCopied": "Jumlah deposit disalin ke clipboard",
   "swapDepositAddressCopied": "Alamat deposit disalin ke clipboard",

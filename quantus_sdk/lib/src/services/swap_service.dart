@@ -45,6 +45,10 @@ class SwapService {
   static const _liveQuotesKey = 'swap_live_quotes';
   static const _maxLiveQuotes = 50;
 
+  /// QTC is quoted only as a Confidential Intents swap: a public quote
+  /// answers "No liquidity available" whatever the market holds.
+  static const confidentiality = 'basic';
+
   /// Request fields 1Click echoes back that must match what was sent, so a
   /// signed quote is a quote for this swap and not another.
   static const _echoedFields = [
@@ -55,6 +59,7 @@ class SwapService {
     'refundTo',
     'recipient',
     'slippageTolerance',
+    'confidentiality',
   ];
   static const quoteWaitingTime = Duration(seconds: 3);
   static const statusPollInterval = Duration(seconds: 5);
@@ -208,6 +213,7 @@ class SwapService {
       'deadline': deadline.toIso8601String(),
       'quoteWaitingTimeMs': quoteWaitingTime.inMilliseconds,
       'referral': AppConstants.oneClickReferral,
+      'confidentiality': confidentiality,
     };
     final json = await _api.send('POST', '/v0/quote', body: body) as Map<String, dynamic>;
     final correlationId = json['correlationId'] as String?;

@@ -1,6 +1,8 @@
 class SwapToken {
-  /// Network code 1Click gives the Quantus chain; the token listed on it is QTC.
-  static const quantusNetwork = 'QUANTUS';
+  /// Network code 1Click gives the Quantus chain (`qtc`, upper-cased here);
+  /// the token listed on it is QTC. QTC is also listed on NEAR itself, which
+  /// is neither Quantus nor a token to swap with.
+  static const quantusNetwork = 'QTC';
 
   static const _networkNames = {
     'ARB': 'Arbitrum',
@@ -18,7 +20,7 @@ class SwapToken {
     'MONAD': 'Monad',
     'OP': 'Optimism',
     'POL': 'Polygon',
-    'QUANTUS': 'Quantus',
+    'QTC': 'Quantus',
     'SOL': 'Solana',
     'STELLAR': 'Stellar',
     'SUI': 'Sui',

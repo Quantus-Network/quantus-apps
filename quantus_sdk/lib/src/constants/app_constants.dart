@@ -54,6 +54,11 @@ class AppConstants {
   static const String swapPreflightAddress = String.fromEnvironment('SWAP_PREFLIGHT_ADDRESS');
   static const bool swapPreflight = swapPreflightAssetId != '';
 
+  // Debug builds only: skips the NEAR Intents location verdict so swap can be
+  // tried from anywhere.
+  //   flutter run --dart-define=SWAP_IGNORE_GEO=true
+  static const bool swapIgnoreGeo = bool.fromEnvironment('SWAP_IGNORE_GEO');
+
   // internal group URL is this (note the /c)
   // https://t.me/c/quantusnetwork/2457
   // removing the c, we get a better preview page though so we use it without c...

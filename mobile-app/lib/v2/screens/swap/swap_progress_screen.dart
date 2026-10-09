@@ -378,6 +378,9 @@ class _SwapDeposit extends ConsumerWidget {
       mainContent: SingleChildScrollView(
         child: Column(
           children: [
+            const SizedBox(height: 16),
+            SwapDetailRow(label: l10n.swapDepositToken, value: from.symbol),
+            SwapDetailRow(label: l10n.swapDepositNetwork, value: from.networkName),
             const SizedBox(height: 24),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,

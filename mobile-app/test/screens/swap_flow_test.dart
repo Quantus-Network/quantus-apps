@@ -59,7 +59,7 @@ const _wnearStandIn = SwapToken(
 const _listedQtc = <String, dynamic>{
   'assetId': 'nep141:qtc.omft.near',
   'decimals': AppConstants.decimals,
-  'blockchain': 'quantus',
+  'blockchain': 'qtc',
   'symbol': 'QTC',
   'price': 0.1,
 };
@@ -159,6 +159,7 @@ class _OneClick {
           'refundTo',
           'recipient',
           'deadline',
+          'confidentiality',
         ])
           k: request[k],
       },
@@ -253,11 +254,17 @@ void main() {
   Finder svg(String asset) =>
       find.byWidgetPredicate((w) => w is SvgPicture && (w.bytesLoader as SvgAssetLoader).assetName == asset);
 
+  /// Turns the form around to swap out of QTC; it opens as a purchase.
+  Future<void> swapOut(WidgetTester tester) async {
+    await tester.tap(svg('assets/v2/swap_arrows_down_up.svg'));
+    await tester.pump();
+  }
+
   QuantusButton button(WidgetTester tester, String label) =>
       tester.widget<QuantusButton>(find.ancestor(of: find.text(label), matching: find.byType(QuantusButton)));
 
   group('SwapScreen', () {
-    testWidgets('swaps out of QTC by default and flips direction with the arrows', (tester) async {
+    testWidgets('opens as a purchase of QTC and flips direction with the arrows', (tester) async {
       final oneClick = _OneClick(dryOut: BigInt.from(24860000));
       await tester.pumpApp(
         SwapScreen(account: account),
@@ -268,7 +275,17 @@ void main() {
       expect(find.text('FROM'), findsOneWidget);
       expect(find.text(account.name), findsOneWidget);
       expect(find.text(l10n.swapExternalWallet), findsOneWidget);
+      final fromHeader = tester.getTopLeft(find.text('FROM')).dy;
+      expect(tester.getTopLeft(find.text(l10n.swapExternalWallet)).dy, closeTo(fromHeader, 4));
+      expect(button(tester, l10n.swapAddRefundAddress).isDisabled, isTrue);
+
+      await tester.enterText(find.byType(TextField), '10');
+      await tester.pump();
+      expect(button(tester, l10n.swapAddRefundAddress).isDisabled, isFalse);
+
+      await swapOut(tester);
       expect(button(tester, l10n.swapAddRecipientAddress).isDisabled, isTrue);
+      expect(tester.getTopLeft(find.text(account.name)).dy, closeTo(fromHeader, 4));
 
       await tester.enterText(find.byType(TextField), '1000');
       await tester.pump();
@@ -278,14 +295,6 @@ void main() {
       await tester.pump();
       expect(button(tester, l10n.swapAddRecipientAddress).isDisabled, isFalse);
       expect(find.text('1'), findsOneWidget);
-
-      final arrows = svg('assets/v2/swap_arrows_down_up.svg');
-      await tester.tap(arrows);
-      await tester.pump();
-
-      expect(button(tester, l10n.swapAddRefundAddress).isDisabled, isTrue);
-      final fromHeader = tester.getTopLeft(find.text('FROM')).dy;
-      expect(tester.getTopLeft(find.text(l10n.swapExternalWallet)).dy, closeTo(fromHeader, 4));
     });
 
     testWidgets('quotes QTC under the asset id 1Click lists it with', (tester) async {
@@ -299,6 +308,7 @@ void main() {
       await tester.pumpApp(SwapScreen(account: account), overrides: overrides(oneClick.service()));
       await settle(tester);
 
+      await swapOut(tester);
       await tester.enterText(find.byType(TextField), '10');
       await tester.pump();
       await tester.tap(find.text(l10n.swapAddRecipientAddress));
@@ -334,6 +344,7 @@ void main() {
           .service();
       await settle(tester);
 
+      await swapOut(tester);
       await tester.enterText(find.byType(TextField), '10');
       await tester.pump();
       await tester.tap(find.text(l10n.swapAddRecipientAddress));
@@ -362,6 +373,7 @@ void main() {
         overrides: overrides(before.service(), services: services),
       );
       await settle(tester);
+      await swapOut(tester);
       await tester.enterText(find.byType(TextField), '10');
       await tester.pump();
       await tester.tap(find.text(l10n.swapAddRecipientAddress));
@@ -434,6 +446,7 @@ void main() {
       await settle(tester);
       expect(find.text(l10n.swapSlippageLabel('2')), findsOneWidget);
 
+      await swapOut(tester);
       await tester.enterText(find.byType(TextField), '10');
       await tester.pump();
       await tester.tap(find.text(l10n.swapAddRecipientAddress));
@@ -723,6 +736,7 @@ void main() {
       expect(find.text('WNEAR'), findsOneWidget);
       expect(find.text('QTC'), findsNothing);
 
+      await swapOut(tester);
       final out = await quoteWith(tester, oneClick, l10n.swapAddRecipientAddress);
       expect(out['originAsset'], _preflight.assetId);
       expect(out['destinationAsset'], _usdc.assetId);
@@ -738,8 +752,6 @@ void main() {
         overrides: overrides(oneClick.service(preflight: true), preflight: _preflight),
       );
       await settle(tester);
-      await tester.tap(svg('assets/v2/swap_arrows_down_up.svg'));
-      await tester.pump();
 
       final into = await quoteWith(tester, oneClick, l10n.swapAddRefundAddress);
       expect(into['originAsset'], _usdc.assetId);
@@ -814,6 +826,10 @@ void main() {
       );
       await pumpOrder(tester, SwapOrder(quote: inQuote, status: SwapStatus.pendingDeposit));
 
+      expect(find.text(l10n.swapDepositToken), findsOneWidget);
+      expect(find.text('BTC'), findsOneWidget);
+      expect(find.text(l10n.swapDepositNetwork), findsOneWidget);
+      expect(find.text('Bitcoin'), findsOneWidget);
       expect(find.text('bc1qdeposit'), findsOneWidget);
       expect(find.text('0.12345678'), findsOneWidget);
       expect(find.text(l10n.swapDepositMemoNotice), findsNothing);
