@@ -726,6 +726,26 @@ void main() {
       expect(await service.getListedQuantusToken(), isNull);
     });
 
+    test("prefers a coin's own chain, else the main networks, and names where each logo lives", () async {
+      final service = listing([
+        ...tokens,
+        {'assetId': '1cs_v1:sol:spl:A7bd', 'decimals': 8, 'blockchain': 'sol', 'symbol': 'ZEC', 'price': 50},
+        {'assetId': 'nep141:zec.omft.near', 'decimals': 8, 'blockchain': 'zec', 'symbol': 'ZEC', 'price': 50},
+        {'assetId': '1cs_v1:sol:spl:3ZLe', 'decimals': 24, 'blockchain': 'sol', 'symbol': 'wNEAR', 'price': 4},
+        {'assetId': '1cs_v1:sol:spl:8SMM', 'decimals': 9, 'blockchain': 'sol', 'symbol': 'RHEA', 'price': 1},
+        {'assetId': 'nep141:rhea.near', 'decimals': 18, 'blockchain': 'near', 'symbol': 'RHEA', 'price': 1},
+        {'assetId': '1cs_v1:aptos:aptos-fa:0x1', 'decimals': 8, 'blockchain': 'aptos', 'symbol': 'AAVE', 'price': 200},
+      ]);
+      final bySymbol = {for (final t in await service.getFromTokens(limit: 20)) t.symbol: t};
+      expect(bySymbol['ZEC']!.assetId, 'nep141:zec.omft.near');
+      expect(bySymbol['ZEC']!.iconAssetId, 'nep141:zec.omft.near');
+      expect(bySymbol['WNEAR']!.assetId, 'nep141:wrap.near');
+      expect(bySymbol['RHEA']!.assetId, '1cs_v1:sol:spl:8SMM');
+      expect(bySymbol['RHEA']!.iconAssetId, 'nep141:rhea.near');
+      expect(bySymbol['AAVE']!.iconAssetId, isNull);
+      expect(bySymbol['USDC']!.iconAssetId, _usdcEth.assetId);
+    });
+
     test('lists QTC first, USDC second and the rest as 1Click orders them, one asset per symbol', () async {
       final service = _service((r) async {
         expect(r.url.toString(), 'https://oneclick.test/v0/tokens');

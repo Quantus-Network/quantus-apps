@@ -279,20 +279,28 @@ class SwapService {
   /// listed. A token is on Quantus when 1Click says so or when its asset id is
   /// the configured one.
   Future<(List<SwapToken>, SwapToken?)> _fetchIntentsTokens() async {
-    final data = await _api.send('GET', '/v0/tokens') as List<dynamic>;
+    final data = (await _api.send('GET', '/v0/tokens') as List<dynamic>).cast<Map<String, dynamic>>();
+    final nearBySymbol = <String, String>{};
+    for (final item in data) {
+      final assetId = item['assetId'] as String;
+      if (SwapToken.hasNearContract(assetId))
+        nearBySymbol.putIfAbsent((item['symbol'] as String).toUpperCase(), () => assetId);
+    }
     final bySymbol = <String, SwapToken>{};
     final onQuantus = <SwapToken>[];
-    for (final item in data.cast<Map<String, dynamic>>()) {
+    for (final item in data) {
       final assetId = item['assetId'] as String;
+      final symbol = (item['symbol'] as String).toUpperCase();
       final chain = (item['blockchain'] as String).toUpperCase();
       final ours = chain == SwapToken.quantusNetwork || assetId == _configuredQuantusAssetId;
       final network = ours && !_preflight ? SwapToken.quantusNetwork : chain;
       final token = SwapToken(
         assetId: assetId,
-        symbol: (item['symbol'] as String).toUpperCase(),
+        symbol: symbol,
         network: network,
         decimals: (item['decimals'] as num).toInt(),
         usdPrice: (item['price'] as num?)?.toDouble() ?? 0,
+        iconAssetId: SwapToken.hasNearContract(assetId) ? assetId : nearBySymbol[symbol],
         isQuantus: ours,
       );
       if (ours) {
@@ -301,7 +309,7 @@ class SwapService {
       }
       if (token.usdPrice <= 0 || token.symbol == AppConstants.tokenSymbol) continue;
       final existing = bySymbol[token.symbol];
-      if (existing == null || _networkPriority(token.network) < _networkPriority(existing.network)) {
+      if (existing == null || _networkPriority(token) < _networkPriority(existing)) {
         bySymbol[token.symbol] = token;
       }
     }
@@ -342,23 +350,19 @@ class SwapService {
     return listed;
   }
 
-  int _networkPriority(String network) {
-    switch (network) {
-      case 'ETH':
-        return 0;
-      case 'BTC':
-        return 1;
-      case 'SOL':
-        return 2;
-      case 'NEAR':
-        return 3;
-      case 'BASE':
-        return 4;
-      case 'ARB':
-        return 5;
-      default:
-        return 100;
-    }
+  /// Which listing of a symbol to swap with: the coin's own chain first (ZEC
+  /// on Zcash, wNEAR on NEAR), then the main networks in order.
+  int _networkPriority(SwapToken token) {
+    if (token.symbol == token.network || token.symbol == 'W${token.network}') return -1;
+    return switch (token.network) {
+      'ETH' => 0,
+      'BTC' => 1,
+      'SOL' => 2,
+      'NEAR' => 3,
+      'BASE' => 4,
+      'ARB' => 5,
+      _ => 100,
+    };
   }
 
   /// Remembers [address] on [network] for future swaps, most recent first.
