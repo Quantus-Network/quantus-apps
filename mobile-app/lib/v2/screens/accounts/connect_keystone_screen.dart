@@ -78,8 +78,6 @@ class _ConnectKeystoneScreenState extends ConsumerState<ConnectKeystoneScreen> {
     final colors = context.colorsV3;
     final text = context.themeTextV3;
 
-    final sectionLabelStyle = text.labelData.copyWith(color: colors.textMuted);
-
     return ScaffoldBase(
       appBar: V2AppBar(title: l10n.addKeystoneAppBarTitle),
       mainContent: SingleChildScrollView(
@@ -90,17 +88,7 @@ class _ConnectKeystoneScreenState extends ConsumerState<ConnectKeystoneScreen> {
             const SizedBox(height: 8),
             Text(l10n.addKeystoneConnectSubtitle, style: text.body.copyWith(color: colors.textMuted)),
             const SizedBox(height: 40),
-            Text(l10n.addKeystoneBeforeYouStart, style: sectionLabelStyle),
-            const SizedBox(height: 12),
-            _InstructionRow(
-              iconAsset: 'assets/v2/keystone_arrow_line_down.svg',
-              title: l10n.addKeystoneFirmwareTitle,
-              subtitle: l10n.addKeystoneFirmwareSubtitle,
-            ),
-            const SizedBox(height: 24),
-            const MenuDivider(),
-            const SizedBox(height: 24),
-            Text(l10n.addKeystoneOnYourKeystone, style: sectionLabelStyle),
+            Text(l10n.addKeystoneOnYourKeystone, style: text.labelData.copyWith(color: colors.textMuted)),
             const SizedBox(height: 12),
             _InstructionRow(iconAsset: 'assets/v2/keystone_lock_simple_open.svg', title: l10n.addKeystoneStepUnlock),
             const Padding(padding: EdgeInsets.symmetric(vertical: 12), child: MenuDivider()),
@@ -138,9 +126,8 @@ class _ConnectKeystoneScreenState extends ConsumerState<ConnectKeystoneScreen> {
 class _InstructionRow extends StatelessWidget {
   final String iconAsset;
   final String title;
-  final String? subtitle;
 
-  const _InstructionRow({required this.iconAsset, required this.title, this.subtitle});
+  const _InstructionRow({required this.iconAsset, required this.title});
 
   @override
   Widget build(BuildContext context) {
@@ -159,16 +146,7 @@ class _InstructionRow extends StatelessWidget {
         ),
         const SizedBox(width: 12),
         Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(title, style: text.bodyLarge.copyWith(color: colors.textContent)),
-              if (subtitle != null) ...[
-                const SizedBox(height: 8),
-                Text(subtitle!, style: text.caption.copyWith(color: colors.textMuted)),
-              ],
-            ],
-          ),
+          child: Text(title, style: text.bodyLarge.copyWith(color: colors.textContent)),
         ),
       ],
     );
