@@ -28,6 +28,10 @@ class OneClickService {
   /// issues an address that already exists, so neither answer goes stale.
   final _depositAddresses = <String, bool>{};
 
+  /// The last answer to each GET with its ETag, so asking again costs a 304
+  /// and no body while the resource is unchanged.
+  final _etagged = <Uri, (String, Object?)>{};
+
   OneClickService({http.Client? client, String endpoint = AppConstants.oneClickEndpoint, String? apiKey})
     : _client = client ?? http.Client(),
       _base = Uri.parse(endpoint),
@@ -52,10 +56,12 @@ class OneClickService {
 
   Future<Object?> send(String method, String path, {Map<String, Object>? body, Map<String, String>? query}) async {
     final uri = _base.replace(path: path, queryParameters: query);
-    final headers = {'Content-Type': 'application/json', 'X-API-Key': ?_apiKey};
+    final cached = method == 'GET' ? _etagged[uri] : null;
+    final headers = {'Content-Type': 'application/json', 'X-API-Key': ?_apiKey, 'If-None-Match': ?cached?.$1};
     final response = method == 'GET'
         ? await _client.get(uri, headers: headers)
         : await _client.post(uri, headers: headers, body: jsonEncode(body));
+    if (response.statusCode == 304 && cached != null) return cached.$2;
     final ok = response.statusCode >= 200 && response.statusCode < 300;
     Object? json;
     try {
@@ -71,6 +77,8 @@ class OneClickService {
         _ => response.body,
       });
     }
+    final etag = response.headers['etag'];
+    if (method == 'GET' && etag != null) _etagged[uri] = (etag, json);
     return json;
   }
 }

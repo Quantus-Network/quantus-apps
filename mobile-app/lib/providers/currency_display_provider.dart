@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:decimal/decimal.dart';
@@ -9,6 +10,7 @@ import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/services/exchange_rate_service.dart';
 import 'package:resonance_network_wallet/shared/utils/print.dart';
+import 'package:resonance_network_wallet/v2/screens/swap/swap_providers.dart';
 
 // ---------------------------------------------------------------------------
 // Exchange rate caching helpers
@@ -110,6 +112,38 @@ final exchangeRatesProvider = FutureProvider<Map<String, Decimal>>((ref) async {
 });
 
 // ---------------------------------------------------------------------------
+// Token price provider
+// ---------------------------------------------------------------------------
+
+/// How often 1Click is asked for QTC's price; an unchanged listing costs a 304.
+const tokenPriceRefreshInterval = Duration(minutes: 5);
+
+/// QTC's USD price as 1Click lists it, refreshed every
+/// [tokenPriceRefreshInterval]. A failed refresh is logged and the last price
+/// stands; there is none until the first lands.
+final tokenUsdPriceProvider = StreamProvider<Decimal>((ref) {
+  final swap = ref.watch(swapServiceProvider);
+  final prices = StreamController<Decimal>();
+
+  Future<void> refresh() async {
+    try {
+      final listed = await swap.getListedQuantusToken(forceRefresh: true);
+      if (listed != null && !prices.isClosed) prices.add(Decimal.parse(listed.usdPrice.toString()));
+    } catch (e) {
+      quantusPrint('QTC price refresh failed: $e');
+    }
+  }
+
+  final timer = Timer.periodic(tokenPriceRefreshInterval, (_) => refresh());
+  ref.onDispose(() {
+    timer.cancel();
+    prices.close();
+  });
+  unawaited(refresh());
+  return prices.stream;
+});
+
+// ---------------------------------------------------------------------------
 // Exchange rate service provider
 // ---------------------------------------------------------------------------
 
@@ -118,14 +152,19 @@ final exchangeRatesProvider = FutureProvider<Map<String, Decimal>>((ref) async {
 /// • While [exchangeRatesProvider] is loading, uses the last persisted rates
 ///   (any age) so the UI always shows something meaningful.
 /// • Once live rates arrive, rebuilds with the fresh data.
+/// • Carries QTC's USD price once [tokenUsdPriceProvider] has one.
 final exchangeRateServiceProvider = Provider<ExchangeRateService>((ref) {
   final ratesAsync = ref.watch(exchangeRatesProvider);
   final settings = ref.read(settingsServiceProvider);
+  final tokenToUsdRate = ref.watch(tokenUsdPriceProvider).value;
+
+  ExchangeRateService service(Map<String, Decimal> rates) =>
+      ExchangeRateService(rates: rates, tokenToUsdRate: tokenToUsdRate);
 
   return ratesAsync.when(
-    data: (rates) => ExchangeRateService(rates: rates),
-    loading: () => ExchangeRateService(rates: _readRatesCacheAnyAge(settings)),
-    error: (_, _) => ExchangeRateService(rates: _readRatesCacheAnyAge(settings)),
+    data: service,
+    loading: () => service(_readRatesCacheAnyAge(settings)),
+    error: (_, _) => service(_readRatesCacheAnyAge(settings)),
   );
 });
 
@@ -178,10 +217,12 @@ class SelectedFiatCurrencyNotifier extends StateNotifier<FiatCurrency> {
 /// No conversion math belongs in widgets.
 class CurrencyDisplayState {
   final String primaryAmount;
-  final String secondaryAmount;
+
+  /// The amount in [selectedFiat]; null when it is not to be shown or no token price is known.
+  final String? secondaryAmount;
   final FiatCurrency selectedFiat;
 
-  const CurrencyDisplayState({required this.primaryAmount, required this.secondaryAmount, required this.selectedFiat});
+  const CurrencyDisplayState({required this.primaryAmount, this.secondaryAmount, required this.selectedFiat});
 
   CurrencyDisplayState copyWith({String? primaryAmount, String? secondaryAmount, FiatCurrency? selectedFiat}) =>
       CurrencyDisplayState(
@@ -214,18 +255,17 @@ final balanceDisplayProvider = Provider<AsyncValue<CurrencyDisplayState>>((ref) 
   return balanceAsync.when(
     loading: () => const AsyncValue.loading(),
     error: (err, stack) => AsyncValue.error(err, stack),
-    data: (balance) {
-      CurrencyDisplayState data = _toFiatDisplayState(
+    data: (balance) => AsyncValue.data(
+      _toFiatDisplayState(
         balance,
         selectedFiat,
-        xRate,
         fmt,
         tokenDecimals: 3,
         withTokenSymbol: false,
         localeConfig: localeConfig,
-      );
-      return AsyncValue.data(data);
-    },
+        fiatRate: xRate,
+      ),
+    ),
   );
 });
 
@@ -244,7 +284,6 @@ typedef TxAmountFormatter =
 
 final txAmountDisplayProvider = Provider<TxAmountFormatter>((ref) {
   final selectedFiat = ref.watch(selectedFiatCurrencyProvider);
-  final xRate = ref.watch(exchangeRateServiceProvider);
   final fmt = ref.watch(numberFormattingServiceProvider);
   final localeConfig = ref.watch(localeNumberConfigProvider);
 
@@ -260,7 +299,6 @@ final txAmountDisplayProvider = Provider<TxAmountFormatter>((ref) {
     CurrencyDisplayState data = _toFiatDisplayState(
       amount,
       selectedFiat,
-      xRate,
       fmt,
       tokenDecimals: tokenDecimals,
       withTokenSymbol: withTokenSymbol,
@@ -294,21 +332,24 @@ String _toFiatNumeric(
   return localeConfig.localize(canonical);
 }
 
+/// [fiatRate] adds the fiat amount; it stays out while no token price is known.
 CurrencyDisplayState _toFiatDisplayState(
   BigInt amount,
   FiatCurrency selectedFiat,
-  ExchangeRateService xRate,
   NumberFormattingService fmt, {
   required int tokenDecimals,
   required bool withTokenSymbol,
   required LocaleNumberConfig localeConfig,
+  ExchangeRateService? fiatRate,
 }) {
   final tokenFormatted = fmt.formatBalance(amount, smartDecimals: tokenDecimals, addSymbol: withTokenSymbol);
-  final fiatFormatted = selectedFiat.format(_toFiatNumeric(amount, selectedFiat, xRate, localeConfig: localeConfig));
+  final withFiat = fiatRate != null && fiatRate.hasTokenPrice;
 
   return CurrencyDisplayState(
     primaryAmount: tokenFormatted,
-    secondaryAmount: fiatFormatted,
+    secondaryAmount: withFiat
+        ? selectedFiat.format(_toFiatNumeric(amount, selectedFiat, fiatRate, localeConfig: localeConfig))
+        : null,
     selectedFiat: selectedFiat,
   );
 }

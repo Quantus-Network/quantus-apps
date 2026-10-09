@@ -12,7 +12,7 @@ void main() {
     late NumberFormattingService formattingService;
 
     setUp(() {
-      exchangeRateService = ExchangeRateService(rates: {'USD': Decimal.one});
+      exchangeRateService = ExchangeRateService(rates: {'USD': Decimal.one}, tokenToUsdRate: Decimal.one);
       localeConfig = LocaleNumberConfig.dotDecimal;
       formattingService = NumberFormattingService(localeConfig: localeConfig);
     });

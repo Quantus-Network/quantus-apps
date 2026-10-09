@@ -461,7 +461,7 @@ void main() {
         isQuantus: true,
       );
       expect(quantus.networkName, 'Quantus');
-      expect(quantus.copyWith(iconUrl: 'x').isQuantus, isTrue);
+      expect(quantus.isQuantus, isTrue);
     });
   });
 
@@ -596,10 +596,7 @@ void main() {
     ];
 
     SwapService listing(List<Map<String, dynamic>> list, {String? quantusAssetId, bool preflight = false}) => _service(
-      (r) async {
-        if (r.url.host == 'api.coingecko.com') return http.Response('down', 503);
-        return http.Response(jsonEncode(list), 200);
-      },
+      (r) async => http.Response(jsonEncode(list), 200),
       quantusAssetId: quantusAssetId,
       preflight: preflight,
     );
@@ -615,9 +612,31 @@ void main() {
         expect(quantus.networkName, 'Quantus');
         expect(quantus.decimals, AppConstants.decimals);
         expect(quantus.usdPrice, 1.5);
-        expect((await service.getFromTokens()).map((t) => t.symbol), isNot(contains('QTC')));
+        final listed = await service.getFromTokens();
+        expect(listed.first, quantus);
+        expect(listed.where((t) => t.symbol == 'QTC'), [quantus]);
       },
     );
+
+    test('revalidates the listing by its ETag and keeps the body on a 304', () async {
+      final sent = <String?>[];
+      var price = 1.5;
+      var version = 'W/"v1"';
+      final service = _service((r) async {
+        sent.add(r.headers['If-None-Match']);
+        if (r.headers['If-None-Match'] == version) return http.Response('', 304);
+        final body = [
+          for (final t in tokens) t['symbol'] == 'QTC' ? {...t, 'price': price} : t,
+        ];
+        return http.Response(jsonEncode(body), 200, headers: {'etag': version});
+      });
+      expect((await service.getListedQuantusToken())!.usdPrice, 1.5);
+      expect((await service.getListedQuantusToken(forceRefresh: true))!.usdPrice, 1.5);
+      price = 2;
+      version = 'W/"v2"';
+      expect((await service.getListedQuantusToken(forceRefresh: true))!.usdPrice, 2);
+      expect(sent, [null, 'W/"v1"', 'W/"v1"']);
+    });
 
     test('has no listed QTC until 1Click adds it', () async {
       final service = listing(tokens.where((t) => t['symbol'] != 'QTC').toList());
@@ -635,7 +654,9 @@ void main() {
       expect(quantus.isQuantus, isTrue);
       expect(quantus.network, SwapToken.quantusNetwork);
       expect(quantus.usdPrice, 2);
-      expect((await service.getFromTokens()).map((t) => t.assetId), isNot(contains(listedId)));
+      final listed = await service.getFromTokens();
+      expect(listed.first.assetId, listedId);
+      expect(listed.skip(1).map((t) => t.assetId), isNot(contains(listedId)));
     });
 
     test('a configured asset id picks QTC out of several tokens on Quantus', () async {
@@ -693,7 +714,9 @@ void main() {
       expect(standIn.symbol, 'WNEAR');
       expect(standIn.network, 'NEAR');
       expect(standIn.decimals, 24);
-      expect((await service.getFromTokens()).map((t) => t.symbol), ['BTC', 'USDC']);
+      final listed = await service.getFromTokens();
+      expect(listed.first, standIn);
+      expect(listed.map((t) => t.symbol), ['WNEAR', 'USDC', 'BTC']);
     });
 
     test('a QTC listing without a price leaves swaps unavailable', () async {
@@ -703,44 +726,32 @@ void main() {
       expect(await service.getListedQuantusToken(), isNull);
     });
 
-    test('keeps one asset per symbol, preferring the main network, ranked by CoinGecko', () async {
+    test('lists QTC first, USDC second and the rest as 1Click orders them, one asset per symbol', () async {
       final service = _service((r) async {
-        if (r.url.host == 'api.coingecko.com') {
-          return http.Response(
-            jsonEncode([
-              {'symbol': 'btc', 'image': 'https://img/btc.png'},
-              {'symbol': 'usdc', 'image': 'https://img/usdc.png'},
-            ]),
-            200,
-          );
-        }
         expect(r.url.toString(), 'https://oneclick.test/v0/tokens');
         return http.Response(jsonEncode(tokens), 200);
       });
 
       final result = await service.getFromTokens();
 
-      expect(result.map((t) => t.symbol), ['BTC', 'USDC', 'WNEAR']);
+      expect(result.map((t) => t.symbol), ['QTC', 'USDC', 'WNEAR', 'BTC']);
+      expect(result.first.isQuantus, isTrue);
       final usdc = result[1];
       expect(usdc.assetId, _usdcEth.assetId);
       expect(usdc.network, 'ETH');
       expect(usdc.decimals, 6);
       expect(usdc.usdPrice, 0.99966);
-      expect(usdc.iconUrl, 'https://img/usdc.png');
-      expect(usdc.networkIconUrl, isNotNull);
-      expect(result[2].iconUrl, contains('near'));
     });
 
-    test('falls back to price order when CoinGecko is down, and caches', () async {
+    test("keeps 1Click's order when USDC is not listed, and caches the listing", () async {
       var tokenCalls = 0;
       final service = _service((r) async {
-        if (r.url.host == 'api.coingecko.com') return http.Response('down', 503);
         tokenCalls++;
-        return http.Response(jsonEncode(tokens), 200);
+        return http.Response(jsonEncode(tokens.where((t) => t['symbol'] != 'USDC').toList()), 200);
       });
 
-      expect((await service.getFromTokens()).map((t) => t.symbol), ['BTC', 'WNEAR', 'USDC']);
-      expect((await service.getFromTokens(limit: 2)).map((t) => t.symbol), ['BTC', 'WNEAR']);
+      expect((await service.getFromTokens()).map((t) => t.symbol), ['QTC', 'WNEAR', 'BTC']);
+      expect((await service.getFromTokens(limit: 2)).map((t) => t.symbol), ['QTC', 'WNEAR']);
       expect(tokenCalls, 1);
       await service.getFromTokens(forceRefresh: true);
       expect(tokenCalls, 2);

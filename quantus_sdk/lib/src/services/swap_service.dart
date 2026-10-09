@@ -65,18 +65,14 @@ class SwapService {
   static const statusPollInterval = Duration(seconds: 5);
   static const _savedAddressesKey = 'swap_saved_addresses';
   static const _maxSavedAddresses = 50;
-  static const _coinGeckoTopUrl =
-      'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=150&page=1&sparkline=false';
   static const _tokensCacheTtl = Duration(minutes: 10);
 
-  final http.Client _client;
   final OneClickService _api;
   final String _managerPublicKey;
   final String? _configuredQuantusAssetId;
   final bool _preflight;
-  List<SwapToken>? _cachedFromTokens;
-  DateTime? _cachedFromTokensAt;
-  SwapToken? _listedQuantus;
+  (List<SwapToken>, SwapToken?)? _cachedListing;
+  DateTime? _cachedListingAt;
 
   /// [quantusAssetId] names the listing that is QTC when its chain code does
   /// not; it comes from remote config so a surprising listing needs no update.
@@ -89,8 +85,7 @@ class SwapService {
     String managerPublicKey = AppConstants.oneClickManagerPublicKey,
     String? quantusAssetId,
     bool preflight = false,
-  }) : _client = client ?? http.Client(),
-       _api = OneClickService(client: client, endpoint: endpoint, apiKey: apiKey),
+  }) : _api = OneClickService(client: client, endpoint: endpoint, apiKey: apiKey),
        _managerPublicKey = managerPublicKey,
        _configuredQuantusAssetId = quantusAssetId,
        _preflight = preflight;
@@ -99,26 +94,27 @@ class SwapService {
   static Duration depositWindowFor(String network) =>
       _slowNetworks.contains(network) ? _slowDepositWindow : depositWindow;
 
-  Future<List<SwapToken>> getFromTokens({int limit = 10, bool forceRefresh = false}) async =>
-      (await _tokens(forceRefresh: forceRefresh)).take(limit).toList();
+  /// The tokens to swap between: QTC first, USDC second, the rest as 1Click
+  /// orders them, one asset per symbol.
+  Future<List<SwapToken>> getFromTokens({int limit = 10, bool forceRefresh = false}) async {
+    final (tokens, quantus) = await _listing(forceRefresh: forceRefresh);
+    final usdc = tokens.where((t) => t.symbol == 'USDC').firstOrNull;
+    return [?quantus, ?usdc, ...tokens.where((t) => t != usdc)].take(limit).toList();
+  }
 
   /// QTC as 1Click lists it, with its asset id, decimals and price; null until
   /// it is listed with a price, and swaps are unavailable until then.
-  Future<SwapToken?> getListedQuantusToken({bool forceRefresh = false}) async {
-    await _tokens(forceRefresh: forceRefresh);
-    return _listedQuantus;
-  }
+  Future<SwapToken?> getListedQuantusToken({bool forceRefresh = false}) async =>
+      (await _listing(forceRefresh: forceRefresh)).$2;
 
-  Future<List<SwapToken>> _tokens({required bool forceRefresh}) async {
+  Future<(List<SwapToken>, SwapToken?)> _listing({required bool forceRefresh}) async {
     final now = DateTime.now();
-    final cached = _cachedFromTokens;
-    if (!forceRefresh && cached != null && now.difference(_cachedFromTokensAt!) < _tokensCacheTtl) return cached;
-    final (tokens, quantus) = await _fetchIntentsTokens();
-    final ranked = await _rankByCoinGecko(tokens);
-    _cachedFromTokens = ranked;
-    _listedQuantus = quantus;
-    _cachedFromTokensAt = now;
-    return ranked;
+    final cached = _cachedListing;
+    if (!forceRefresh && cached != null && now.difference(_cachedListingAt!) < _tokensCacheTtl) return cached;
+    final listing = await _fetchIntentsTokens();
+    _cachedListing = listing;
+    _cachedListingAt = now;
+    return listing;
   }
 
   /// Asks solvers for a price on [amount] base units of [from]. A dry quote is
@@ -279,8 +275,9 @@ class SwapService {
     return SwapOrder.fromStatusJson(json as Map<String, dynamic>, quote: order.quote);
   }
 
-  /// The tokens to swap with, one per symbol, and QTC as listed. A token is on
-  /// Quantus when 1Click says so or when its asset id is the configured one.
+  /// The tokens to swap with, one per symbol in 1Click's order, and QTC as
+  /// listed. A token is on Quantus when 1Click says so or when its asset id is
+  /// the configured one.
   Future<(List<SwapToken>, SwapToken?)> _fetchIntentsTokens() async {
     final data = await _api.send('GET', '/v0/tokens') as List<dynamic>;
     final bySymbol = <String, SwapToken>{};
@@ -296,7 +293,6 @@ class SwapService {
         network: network,
         decimals: (item['decimals'] as num).toInt(),
         usdPrice: (item['price'] as num?)?.toDouble() ?? 0,
-        networkIconUrl: _networkIconUrl(network),
         isQuantus: ours,
       );
       if (ours) {
@@ -346,41 +342,6 @@ class SwapService {
     return listed;
   }
 
-  /// Orders [tokens] by CoinGecko market cap and picks up their icons. A
-  /// CoinGecko failure only costs the ordering, so it is logged, not thrown.
-  Future<List<SwapToken>> _rankByCoinGecko(List<SwapToken> tokens) async {
-    final rankBySymbol = <String, int>{};
-    final iconBySymbol = <String, String>{};
-    try {
-      final response = await _client.get(Uri.parse(_coinGeckoTopUrl));
-      if (response.statusCode < 200 || response.statusCode >= 300) {
-        throw SwapApiException(response.statusCode, response.body);
-      }
-      final payload = jsonDecode(response.body) as List<dynamic>;
-      for (var i = 0; i < payload.length; i++) {
-        final item = payload[i] as Map<String, dynamic>;
-        final symbol = (item['symbol'] as String).toUpperCase();
-        if (rankBySymbol.containsKey(symbol)) continue;
-        rankBySymbol[symbol] = i;
-        final icon = item['image'] as String?;
-        if (icon != null && icon.isNotEmpty) iconBySymbol[symbol] = icon;
-      }
-    } catch (e) {
-      quantusPrint('CoinGecko ranking failed, sorting swap tokens by price: $e');
-    }
-    final ranked = [
-      for (final token in tokens)
-        token.copyWith(iconUrl: iconBySymbol[token.symbol] ?? _fallbackTokenIconUrl(token.symbol)),
-    ];
-    ranked.sort((a, b) {
-      final ar = rankBySymbol[a.symbol] ?? 99999;
-      final br = rankBySymbol[b.symbol] ?? 99999;
-      if (ar != br) return ar.compareTo(br);
-      return b.usdPrice.compareTo(a.usdPrice);
-    });
-    return ranked;
-  }
-
   int _networkPriority(String network) {
     switch (network) {
       case 'ETH':
@@ -397,52 +358,6 @@ class SwapService {
         return 5;
       default:
         return 100;
-    }
-  }
-
-  String? _fallbackTokenIconUrl(String symbol) {
-    switch (symbol) {
-      case 'USDC':
-        return 'https://assets.coingecko.com/coins/images/6319/large/usdc.png';
-      case 'USDT':
-        return 'https://assets.coingecko.com/coins/images/325/large/Tether.png';
-      case 'ETH':
-      case 'WETH':
-        return 'https://assets.coingecko.com/coins/images/279/large/ethereum.png';
-      case 'BTC':
-      case 'WBTC':
-      case 'XBTC':
-        return 'https://assets.coingecko.com/coins/images/1/large/bitcoin.png';
-      case 'SOL':
-        return 'https://assets.coingecko.com/coins/images/4128/large/solana.png';
-      case 'NEAR':
-      case 'WNEAR':
-        return 'https://assets.coingecko.com/coins/images/10365/large/near.jpg';
-      default:
-        return null;
-    }
-  }
-
-  String? _networkIconUrl(String network) {
-    switch (network) {
-      case 'ETH':
-      case 'BASE':
-      case 'ARB':
-      case 'OP':
-      case 'GNOSIS':
-      case 'AVAX':
-      case 'POL':
-      case 'MONAD':
-      case 'BSC':
-        return 'https://assets.coingecko.com/coins/images/279/large/ethereum.png';
-      case 'BTC':
-        return 'https://assets.coingecko.com/coins/images/1/large/bitcoin.png';
-      case 'SOL':
-        return 'https://assets.coingecko.com/coins/images/4128/large/solana.png';
-      case 'NEAR':
-        return 'https://assets.coingecko.com/coins/images/10365/large/near.jpg';
-      default:
-        return null;
     }
   }
 
