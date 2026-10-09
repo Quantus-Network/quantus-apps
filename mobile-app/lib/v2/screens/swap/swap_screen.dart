@@ -74,7 +74,7 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
       final quantus = await service.getListedQuantusToken();
       if (!mounted || load != _loads) return;
       setState(() {
-        _foreign ??= tokens.first;
+        _foreign ??= tokens.firstWhere((t) => !t.isQuantus);
         _quantus = quantus;
       });
     } catch (e) {
@@ -95,18 +95,18 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
     _amountController.clear();
   }
 
-  /// Picks the external token. Picking from the QTC side moves QTC to the other side.
+  /// Picks a side's token. QTC heads the list: picking it for the other side
+  /// moves QTC there, as does picking a foreign token for QTC's side.
   Future<void> _pickToken(SwapToken tapped) async {
     final service = ref.read(swapServiceProvider);
-    final foreign = _foreign!;
     final token = await showTokenPickerSheet(
       context,
-      current: foreign,
+      current: tapped,
       loadTokens: ({bool forceRefresh = false}) => service.getFromTokens(limit: 10, forceRefresh: forceRefresh),
     );
-    if (token == null || !mounted) return;
-    setState(() => _foreign = token);
-    if (tapped.isQuantus) _setDirection(swapOut: !_swapOut);
+    if (token == null || !mounted || token == tapped) return;
+    if (!token.isQuantus) setState(() => _foreign = token);
+    if (token.isQuantus != tapped.isQuantus) _setDirection(swapOut: !_swapOut);
   }
 
   /// The sheet quotes with the service of the moment, so a config change

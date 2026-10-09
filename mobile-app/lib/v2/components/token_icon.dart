@@ -15,8 +15,6 @@ class TokenIcon extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.colorsV3;
     final text = context.themeTextV3;
-    final iconUrl = token.iconUrl;
-    final networkIconUrl = token.networkIconUrl;
 
     if (token.isQuantus) {
       return Container(
@@ -34,28 +32,14 @@ class TokenIcon extends StatelessWidget {
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-          Positioned.fill(
-            child: ClipOval(
-              child: iconUrl != null
-                  ? Image.network(iconUrl, fit: BoxFit.cover, errorBuilder: (_, _, _) => _fallback(token, colors, text))
-                  : _fallback(token, colors, text),
-            ),
-          ),
+          Positioned.fill(child: _monogram(token, colors, text)),
           Positioned(
             right: -2,
             bottom: -2,
             child: SizedBox(
               width: networkBadgeSize,
               height: networkBadgeSize,
-              child: ClipOval(
-                child: networkIconUrl != null
-                    ? Image.network(
-                        networkIconUrl,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, _, _) => _networkFallback(token, colors, text),
-                      )
-                    : _networkFallback(token, colors, text),
-              ),
+              child: _networkMonogram(token, colors, text),
             ),
           ),
         ],
@@ -63,7 +47,7 @@ class TokenIcon extends StatelessWidget {
     );
   }
 
-  Widget _fallback(SwapToken token, AppColorsV3 colors, AppTextThemeV3 text) {
+  Widget _monogram(SwapToken token, AppColorsV3 colors, AppTextThemeV3 text) {
     return Container(
       decoration: BoxDecoration(
         color: colors.bgSurface2,
@@ -81,7 +65,7 @@ class TokenIcon extends StatelessWidget {
     );
   }
 
-  Widget _networkFallback(SwapToken token, AppColorsV3 colors, AppTextThemeV3 text) {
+  Widget _networkMonogram(SwapToken token, AppColorsV3 colors, AppTextThemeV3 text) {
     return Container(
       decoration: BoxDecoration(
         color: colors.bgVoid,

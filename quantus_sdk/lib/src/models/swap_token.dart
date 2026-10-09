@@ -33,8 +33,6 @@ class SwapToken {
   final String network;
   final int decimals;
   final double usdPrice;
-  final String? iconUrl;
-  final String? networkIconUrl;
 
   /// QTC's side of a swap: the token that is QTC, or stands in for it.
   final bool isQuantus;
@@ -45,24 +43,11 @@ class SwapToken {
     required this.network,
     required this.decimals,
     required this.usdPrice,
-    this.iconUrl,
-    this.networkIconUrl,
     this.isQuantus = false,
   });
 
   /// Human name of [network], e.g. "Ethereum" for ETH; the code itself when unknown.
   String get networkName => _networkNames[network] ?? network;
-
-  SwapToken copyWith({String? iconUrl, String? networkIconUrl}) => SwapToken(
-    assetId: assetId,
-    symbol: symbol,
-    network: network,
-    decimals: decimals,
-    usdPrice: usdPrice,
-    iconUrl: iconUrl ?? this.iconUrl,
-    networkIconUrl: networkIconUrl ?? this.networkIconUrl,
-    isQuantus: isQuantus,
-  );
 
   @override
   bool operator ==(Object other) => other is SwapToken && assetId == other.assetId;
