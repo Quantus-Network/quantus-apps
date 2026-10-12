@@ -128,6 +128,15 @@ void main() {
       }
     });
 
+    test('transfer lookups fetch the pallet that tells a wormhole receipt apart', () {
+      for (final query in [
+        ChainHistoryService.searchPendingTransferQuery,
+        ChainHistoryService.searchByExtrinsicHashTransferQuery,
+      ]) {
+        expect(query, contains('pallet'));
+      }
+    });
+
     test('scheduled reversible query uses the same per-account shape, direction columns and keyset', () {
       final scheduledSend = ChainHistoryService.buildScheduledReversibleTransfersQuery(
         TransactionFilter.send,
