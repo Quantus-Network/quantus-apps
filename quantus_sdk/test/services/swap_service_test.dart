@@ -80,15 +80,28 @@ Map<String, dynamic> _statusResponse(String status, {Map<String, dynamic>? detai
   'swapDetails': ?details,
 };
 
+/// CoinGecko's markets answer for the listing fixtures.
+final _marketCaps = jsonEncode([
+  {'id': 'bitcoin', 'symbol': 'btc', 'market_cap': 1.6e12, 'image': 'https://img.test/bitcoin.png'},
+  {'id': 'usd-coin', 'symbol': 'usdc', 'market_cap': 7.3e10, 'image': 'https://img.test/usdc.png'},
+  {'id': 'wrapped-near', 'symbol': 'wnear', 'market_cap': 1.2e8, 'image': null},
+]);
+
+/// [handler] answers 1Click; CoinGecko answers [marketCaps].
 SwapService _service(
   Future<http.Response> Function(http.Request request) handler, {
   String? apiKey,
   String? quantusAssetId,
   bool preflight = false,
+  Future<http.Response> Function(http.Request request)? marketCaps,
 }) => SwapService(
   endpoint: 'https://oneclick.test',
   apiKey: apiKey,
-  client: MockClient(handler),
+  client: MockClient(
+    (r) => r.url.host == 'api.coingecko.com'
+        ? (marketCaps ?? (_) async => http.Response(_marketCaps, 200))(r)
+        : handler(r),
+  ),
   managerPublicKey: _managerPublicKey,
   quantusAssetId: quantusAssetId,
   preflight: preflight,
@@ -579,10 +592,31 @@ void main() {
 
   group('getFromTokens', () {
     final tokens = [
-      {'assetId': 'nep141:wrap.near', 'decimals': 24, 'blockchain': 'near', 'symbol': 'wNEAR', 'price': 3.47},
+      {
+        'assetId': 'nep141:wrap.near',
+        'decimals': 24,
+        'blockchain': 'near',
+        'symbol': 'wNEAR',
+        'price': 3.47,
+        'coingeckoId': 'wrapped-near',
+      },
       {'assetId': 'nep141:base-usdc.omft.near', 'decimals': 6, 'blockchain': 'base', 'symbol': 'USDC', 'price': 1.0},
-      {'assetId': _usdcEth.assetId, 'decimals': 6, 'blockchain': 'eth', 'symbol': 'USDC', 'price': 0.99966},
-      {'assetId': 'nep141:btc.omft.near', 'decimals': 8, 'blockchain': 'btc', 'symbol': 'BTC', 'price': 80496},
+      {
+        'assetId': _usdcEth.assetId,
+        'decimals': 6,
+        'blockchain': 'eth',
+        'symbol': 'USDC',
+        'price': 0.99966,
+        'coingeckoId': 'usd-coin',
+      },
+      {
+        'assetId': 'nep141:btc.omft.near',
+        'decimals': 8,
+        'blockchain': 'btc',
+        'symbol': 'BTC',
+        'price': 80496,
+        'coingeckoId': 'bitcoin',
+      },
       {'assetId': 'nep141:dead.omft.near', 'decimals': 18, 'blockchain': 'eth', 'symbol': 'DEAD', 'price': 0},
       {'assetId': 'nep141:qtc.omft.near', 'decimals': 12, 'blockchain': 'qtc', 'symbol': 'QTC', 'price': 1.5},
       {
@@ -736,7 +770,7 @@ void main() {
         {'assetId': 'nep141:rhea.near', 'decimals': 18, 'blockchain': 'near', 'symbol': 'RHEA', 'price': 1},
         {'assetId': '1cs_v1:aptos:aptos-fa:0x1', 'decimals': 8, 'blockchain': 'aptos', 'symbol': 'AAVE', 'price': 200},
       ]);
-      final bySymbol = {for (final t in await service.getFromTokens(limit: 20)) t.symbol: t};
+      final bySymbol = {for (final t in await service.getFromTokens()) t.symbol: t};
       expect(bySymbol['ZEC']!.assetId, 'nep141:zec.omft.near');
       expect(bySymbol['ZEC']!.iconAssetId, 'nep141:zec.omft.near');
       expect(bySymbol['WNEAR']!.assetId, 'nep141:wrap.near');
@@ -746,15 +780,25 @@ void main() {
       expect(bySymbol['USDC']!.iconAssetId, _usdcEth.assetId);
     });
 
-    test('lists QTC first, USDC second and the rest as 1Click orders them, one asset per symbol', () async {
-      final service = _service((r) async {
-        expect(r.url.toString(), 'https://oneclick.test/v0/tokens');
-        return http.Response(jsonEncode(tokens), 200);
-      });
+    test('lists QTC first, USDC second and the rest by market cap, one asset per symbol', () async {
+      final asked = <String>[];
+      final service = _service(
+        (r) async {
+          expect(r.url.toString(), 'https://oneclick.test/v0/tokens');
+          return http.Response(jsonEncode(tokens), 200);
+        },
+        marketCaps: (r) async {
+          expect(r.url.path, '/api/v3/coins/markets');
+          expect(r.url.queryParameters['vs_currency'], 'usd');
+          asked.addAll(r.url.queryParameters['ids']!.split(','));
+          return http.Response(_marketCaps, 200);
+        },
+      );
 
       final result = await service.getFromTokens();
 
-      expect(result.map((t) => t.symbol), ['QTC', 'USDC', 'WNEAR', 'BTC']);
+      expect(result.map((t) => t.symbol), ['QTC', 'USDC', 'BTC', 'WNEAR']);
+      expect(asked, unorderedEquals(['wrapped-near', 'usd-coin', 'bitcoin']));
       expect(result.first.isQuantus, isTrue);
       final usdc = result[1];
       expect(usdc.assetId, _usdcEth.assetId);
@@ -763,15 +807,48 @@ void main() {
       expect(usdc.usdPrice, 0.99966);
     });
 
-    test("keeps 1Click's order when USDC is not listed, and caches the listing", () async {
+    test('ranks a bridged stand-in or a coin without a market cap after the ranked ones, in 1Click order', () async {
+      final service = listing([
+        {'assetId': 'nep141:new.near', 'decimals': 18, 'blockchain': 'near', 'symbol': 'NEW', 'price': 2},
+        {
+          'assetId': '1cs_v1:sol:spl:xbtc',
+          'decimals': 8,
+          'blockchain': 'sol',
+          'symbol': 'xBTC',
+          'price': 80000,
+          'coingeckoId': 'bitcoin',
+        },
+        ...tokens,
+      ]);
+      final listed = await service.getFromTokens();
+      expect(listed.map((t) => t.symbol), ['QTC', 'USDC', 'BTC', 'WNEAR', 'NEW', 'XBTC']);
+      expect(listed.map((t) => t.imageUrl), [
+        null,
+        'https://img.test/usdc.png',
+        'https://img.test/bitcoin.png',
+        null,
+        null,
+        'https://img.test/bitcoin.png',
+      ]);
+    });
+
+    test("keeps 1Click's order when CoinGecko fails", () async {
+      final service = _service(
+        (r) async => http.Response(jsonEncode(tokens), 200),
+        marketCaps: (_) async => http.Response('{"status":{"error_code":429}}', 429),
+      );
+      expect((await service.getFromTokens()).map((t) => t.symbol), ['QTC', 'USDC', 'WNEAR', 'BTC']);
+    });
+
+    test('lists every token when USDC is not listed, and caches the listing', () async {
       var tokenCalls = 0;
       final service = _service((r) async {
         tokenCalls++;
         return http.Response(jsonEncode(tokens.where((t) => t['symbol'] != 'USDC').toList()), 200);
       });
 
-      expect((await service.getFromTokens()).map((t) => t.symbol), ['QTC', 'WNEAR', 'BTC']);
-      expect((await service.getFromTokens(limit: 2)).map((t) => t.symbol), ['QTC', 'WNEAR']);
+      expect((await service.getFromTokens()).map((t) => t.symbol), ['QTC', 'BTC', 'WNEAR']);
+      expect((await service.getFromTokens()).map((t) => t.symbol), ['QTC', 'BTC', 'WNEAR']);
       expect(tokenCalls, 1);
       await service.getFromTokens(forceRefresh: true);
       expect(tokenCalls, 2);

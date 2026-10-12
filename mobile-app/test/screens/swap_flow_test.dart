@@ -19,6 +19,7 @@ import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/services/transaction_submission_service.dart';
+import 'package:resonance_network_wallet/v2/components/search_field.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/review_swap_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/swap_progress_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/swap_providers.dart';
@@ -295,6 +296,40 @@ void main() {
       await tester.pump();
       expect(button(tester, l10n.swapAddRecipientAddress).isDisabled, isFalse);
       expect(find.text('1'), findsOneWidget);
+    });
+
+    testWidgets('the token picker fills the screen, lists every token and filters them by search', (tester) async {
+      final oneClick = _OneClick(
+        dryOut: BigInt.one,
+        listed: [
+          _listedQtc,
+          for (var i = 1; i <= 12; i++)
+            {'assetId': 'nep141:coin$i.near', 'decimals': 18, 'blockchain': 'near', 'symbol': 'coin$i', 'price': 1},
+        ],
+      );
+      await tester.pumpApp(SwapScreen(account: account), overrides: overrides(oneClick.service()));
+      await settle(tester);
+
+      await tester.tap(find.text('USDC'));
+      await settle(tester);
+      expect(tester.getTopLeft(find.byType(BottomSheetContainer)).dy, 0);
+
+      final search = find.descendant(of: find.byType(SearchField), matching: find.byType(TextField));
+      await tester.enterText(search, 'coin12');
+      await tester.pump();
+      expect(find.text('COIN12'), findsOneWidget);
+      expect(find.text('COIN1'), findsNothing);
+
+      await tester.enterText(search, 'nothing');
+      await tester.pump();
+      expect(find.text(l10n.swapTokenPickerNoMatch), findsOneWidget);
+
+      await tester.enterText(search, 'coin12');
+      await tester.pump();
+      await tester.tap(find.text('COIN12'));
+      await settle(tester);
+      expect(find.byType(BottomSheetContainer), findsNothing);
+      expect(find.text('COIN12'), findsOneWidget);
     });
 
     testWidgets('quotes QTC under the asset id 1Click lists it with', (tester) async {

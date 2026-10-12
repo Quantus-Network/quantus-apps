@@ -1641,6 +1641,12 @@ class AppLocalizationsId extends AppLocalizations {
   String get swapTokenPickerLoadError => 'Gagal memuat token';
 
   @override
+  String get swapTokenPickerSearchHint => 'Cari';
+
+  @override
+  String get swapTokenPickerNoMatch => 'Tidak ada token yang cocok dengan pencarian Anda';
+
+  @override
   String get swapUnavailableTitle => 'Swap tidak tersedia';
 
   @override

@@ -99,11 +99,7 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
   /// moves QTC there, as does picking a foreign token for QTC's side.
   Future<void> _pickToken(SwapToken tapped) async {
     final service = ref.read(swapServiceProvider);
-    final token = await showTokenPickerSheet(
-      context,
-      current: tapped,
-      loadTokens: ({bool forceRefresh = false}) => service.getFromTokens(limit: 10, forceRefresh: forceRefresh),
-    );
+    final token = await showTokenPickerSheet(context, current: tapped, loadTokens: service.getFromTokens);
     if (token == null || !mounted || token == tapped) return;
     if (!token.isQuantus) setState(() => _foreign = token);
     if (token.isQuantus != tapped.isQuantus) _setDirection(swapOut: !_swapOut);

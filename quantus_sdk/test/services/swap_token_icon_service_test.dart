@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -100,6 +101,33 @@ void main() {
     expect(await service.iconFor(_token('nep245:v2_1.omni.hot.tg:143_1')), isNull);
     expect(near.calls, hasLength(2));
     expect(near.gets, isEmpty);
+  });
+
+  test("downloads CoinGecko's logo once, keeps it on disk, and never asks NEAR", () async {
+    final dir = await Directory.systemTemp.createTemp('icons');
+    addTearDown(() => dir.delete(recursive: true));
+    final near = _Near({
+      'eth.omft.near.ft_metadata': {'icon': 'data:image/svg+xml;base64,${base64Encode(utf8.encode(_svg))}'},
+    });
+    const token = SwapToken(
+      assetId: 'nep141:eth.omft.near',
+      symbol: 'ETH',
+      network: 'ETH',
+      decimals: 18,
+      usdPrice: 1,
+      iconAssetId: 'nep141:eth.omft.near',
+      imageUrl: 'https://img.test/eth.png?1',
+    );
+    SwapTokenIconService service() =>
+        SwapTokenIconService(client: MockClient(near.handle), cacheDirectory: () async => dir);
+
+    for (final fresh in [service(), service()]) {
+      final icon = await fresh.iconFor(token);
+      expect(icon!.mimeType, 'image/png');
+      expect(icon.bytes, _png);
+    }
+    expect(near.gets.single.toString(), 'https://img.test/eth.png?1');
+    expect(near.calls, isEmpty);
   });
 
   test('fetches each listing once and forgets a failed fetch', () async {

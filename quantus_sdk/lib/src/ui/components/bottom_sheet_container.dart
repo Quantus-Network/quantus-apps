@@ -56,7 +56,14 @@ class BottomSheetContainer extends StatelessWidget {
     );
   }
 
-  static Future<T?> show<T>(BuildContext context, {required WidgetBuilder builder, RouteSettings? routeSettings}) {
+  /// A [fullScreen] sheet reaches up to the status bar; give its container
+  /// `height: double.infinity` to fill that.
+  static Future<T?> show<T>(
+    BuildContext context, {
+    required WidgetBuilder builder,
+    RouteSettings? routeSettings,
+    bool fullScreen = false,
+  }) {
     return showModalBottomSheet<T>(
       context: context,
       routeSettings: routeSettings,
@@ -70,7 +77,8 @@ class BottomSheetContainer extends StatelessWidget {
         // scrolls within what is left. The system inset below the keyboard
         // is no longer the sheet's to pad.
         final keyboard = MediaQuery.viewInsetsOf(ctx).bottom;
-        final maxSheetHeight = math.min(height * 0.85, height - keyboard);
+        final statusBar = MediaQueryData.fromView(View.of(ctx)).padding.top;
+        final maxSheetHeight = fullScreen ? height - statusBar - keyboard : math.min(height * 0.85, height - keyboard);
         // Full-screen blur covers the modal barrier; tap above the sheet to pop.
         return BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 2, sigmaY: 2),

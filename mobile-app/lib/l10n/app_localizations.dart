@@ -3086,6 +3086,18 @@ abstract class AppLocalizations {
   /// **'Failed to load tokens'**
   String get swapTokenPickerLoadError;
 
+  /// Search field hint on token picker sheet
+  ///
+  /// In en, this message translates to:
+  /// **'Search'**
+  String get swapTokenPickerSearchHint;
+
+  /// Empty state when the token picker search matches nothing
+  ///
+  /// In en, this message translates to:
+  /// **'No tokens match your search'**
+  String get swapTokenPickerNoMatch;
+
   /// Title of the notice that replaces the swap form while swaps cannot be made
   ///
   /// In en, this message translates to:

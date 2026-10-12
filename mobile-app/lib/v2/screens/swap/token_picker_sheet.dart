@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
+import 'package:resonance_network_wallet/v2/components/search_field.dart';
 import 'package:resonance_network_wallet/v2/components/token_icon.dart';
 import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/shared/utils/print.dart';
@@ -15,6 +16,7 @@ Future<SwapToken?> showTokenPickerSheet(
 }) {
   return BottomSheetContainer.show<SwapToken>(
     context,
+    fullScreen: true,
     builder: (_) => _TokenPickerContent(loadTokens: loadTokens, current: current),
   );
 }
@@ -30,6 +32,7 @@ class _TokenPickerContent extends ConsumerStatefulWidget {
 
 class _TokenPickerContentState extends ConsumerState<_TokenPickerContent> {
   final _scrollController = ScrollController();
+  final _searchController = TextEditingController();
   List<SwapToken> _tokens = const [];
   bool _loading = true;
   String? _error;
@@ -37,14 +40,18 @@ class _TokenPickerContentState extends ConsumerState<_TokenPickerContent> {
   @override
   void initState() {
     super.initState();
+    _searchController.addListener(_onSearchChanged);
     _loadTokens();
   }
 
   @override
   void dispose() {
+    _searchController.dispose();
     _scrollController.dispose();
     super.dispose();
   }
+
+  void _onSearchChanged() => setState(() {});
 
   Future<void> _loadTokens({bool forceRefresh = false}) async {
     setState(() {
@@ -73,13 +80,10 @@ class _TokenPickerContentState extends ConsumerState<_TokenPickerContent> {
     final l10n = ref.watch(l10nProvider);
     final colors = context.colorsV3;
     final text = context.themeTextV3;
-    final size = MediaQuery.of(context).size;
-    final height = size.height;
-    final cardHeight = (height - 120).clamp(360.0, 506.0);
 
     return BottomSheetContainer(
       title: l10n.swapTokenPickerTitle,
-      height: cardHeight,
+      height: double.infinity,
       child: DefaultTextStyle(
         style: const TextStyle(decoration: TextDecoration.none),
         child: _content(l10n, colors, text),
@@ -106,8 +110,12 @@ class _TokenPickerContentState extends ConsumerState<_TokenPickerContent> {
         ),
       );
     }
+    final query = _searchController.text.trim().toUpperCase();
+    final tokens = _tokens.where((t) => t.symbol.contains(query)).toList();
     return Column(
       children: [
+        SearchField(controller: _searchController, hintText: l10n.swapTokenPickerSearchHint),
+        const SizedBox(height: 16),
         if (_error != null) ...[
           Row(
             children: [
@@ -122,24 +130,28 @@ class _TokenPickerContentState extends ConsumerState<_TokenPickerContent> {
           ),
           const SizedBox(height: 10),
         ],
-        Expanded(
-          child: RefreshIndicator(
-            color: colors.accentFlare,
-            onRefresh: () => _loadTokens(forceRefresh: true),
-            child: Scrollbar(
-              controller: _scrollController,
-              thumbVisibility: true,
-              radius: Radius.circular(context.radiusV3.md),
-              thickness: 4,
-              child: ListView.builder(
+        if (tokens.isEmpty)
+          Text(l10n.swapTokenPickerNoMatch, style: text.caption.copyWith(color: colors.textMuted))
+        else
+          Expanded(
+            child: RefreshIndicator(
+              color: colors.accentFlare,
+              onRefresh: () => _loadTokens(forceRefresh: true),
+              child: Scrollbar(
                 controller: _scrollController,
-                physics: const AlwaysScrollableScrollPhysics(),
-                itemCount: _tokens.length,
-                itemBuilder: (_, index) => _tokenRow(context, _tokens[index], colors, text),
+                thumbVisibility: true,
+                radius: Radius.circular(context.radiusV3.md),
+                thickness: 4,
+                child: ListView.builder(
+                  controller: _scrollController,
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+                  itemCount: tokens.length,
+                  itemBuilder: (_, index) => _tokenRow(context, tokens[index], colors, text),
+                ),
               ),
             ),
           ),
-        ),
       ],
     );
   }

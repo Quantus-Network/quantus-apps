@@ -2377,6 +2377,14 @@
     "@swapTokenPickerLoadError": {
       "description": "Error when token list fails to load"
     },
+    "swapTokenPickerSearchHint": "Search",
+    "@swapTokenPickerSearchHint": {
+      "description": "Search field hint on token picker sheet"
+    },
+    "swapTokenPickerNoMatch": "No tokens match your search",
+    "@swapTokenPickerNoMatch": {
+      "description": "Empty state when the token picker search matches nothing"
+    },
     "swapUnavailableTitle": "Swap unavailable",
     "@swapUnavailableTitle": {
       "description": "Title of the notice that replaces the swap form while swaps cannot be made"

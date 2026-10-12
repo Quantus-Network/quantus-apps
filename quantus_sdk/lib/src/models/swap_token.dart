@@ -39,6 +39,9 @@ class SwapToken {
   /// does; null when none does.
   final String? iconAssetId;
 
+  /// CoinGecko's logo of this token's coin; null when CoinGecko has none.
+  final String? imageUrl;
+
   /// QTC's side of a swap: the token that is QTC, or stands in for it.
   final bool isQuantus;
 
@@ -49,6 +52,7 @@ class SwapToken {
     required this.decimals,
     required this.usdPrice,
     this.iconAssetId,
+    this.imageUrl,
     this.isQuantus = false,
   });
 

@@ -1638,6 +1638,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get swapTokenPickerLoadError => 'Failed to load tokens';
 
   @override
+  String get swapTokenPickerSearchHint => 'Search';
+
+  @override
+  String get swapTokenPickerNoMatch => 'No tokens match your search';
+
+  @override
   String get swapUnavailableTitle => 'Swap unavailable';
 
   @override

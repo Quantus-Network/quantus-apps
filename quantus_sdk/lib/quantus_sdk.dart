@@ -83,6 +83,7 @@ export 'src/services/transaction_fee.dart';
 export 'src/services/swap_service.dart';
 export 'src/services/one_click_quote_signature.dart';
 export 'src/services/one_click_service.dart';
+export 'src/services/coin_gecko_service.dart';
 export 'src/services/near_rpc_service.dart';
 export 'src/services/swap_token_icon_service.dart';
 export 'src/models/swap_token.dart';
