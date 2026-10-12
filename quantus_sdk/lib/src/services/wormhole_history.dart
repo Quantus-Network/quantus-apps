@@ -31,7 +31,8 @@ class WormholeSendBatch {
 }
 
 /// A transfer settled by a wormhole proof: an encrypted send, or a receipt paid
-/// out of someone else's. The explorer shows these under `wormhole/<extrinsic>`.
+/// out of someone else's. The explorer shows these under
+/// `transactions/wormhole/<extrinsic>`.
 class WormholeTransferEvent extends TransferEvent {
   /// The proof extrinsics of a send, in chain order; empty for a receipt.
   final List<WormholeSendBatch> batches;

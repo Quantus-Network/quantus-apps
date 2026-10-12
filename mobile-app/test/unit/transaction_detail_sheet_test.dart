@@ -179,7 +179,7 @@ void main() {
     await tester.pump();
 
     final button = tester.getRect(find.byType(IconButton));
-    expect(shared?['text'], '${AppConstants.explorerEndpoint}/immediate-transactions/0x9cbe');
+    expect(shared?['text'], '${AppConstants.explorerEndpoint}/transactions/0x9cbe');
     expect(shared?['originX'], button.left);
     expect(shared?['originY'], button.top);
     expect(shared?['originWidth'], button.width);
