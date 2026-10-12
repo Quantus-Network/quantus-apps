@@ -97,6 +97,9 @@ class _OneClick {
   int tokensStatus;
   final requests = <http.Request>[];
 
+  /// CoinGecko takes the request and never answers.
+  bool coinGeckoHangs = false;
+
   /// Holds every live quote answer until completed.
   Completer<void>? holdLive;
 
@@ -116,6 +119,9 @@ class _OneClick {
 
   Future<http.Response> _handle(http.Request request) async {
     requests.add(request);
+    if (coinGeckoHangs && request.url.host == Uri.parse(AppConstants.coingeckoMarketsEndpoint).host) {
+      return Completer<http.Response>().future;
+    }
     return switch (request.url.path) {
       '/v0/tokens' => http.Response(
         jsonEncode([
@@ -453,6 +459,25 @@ void main() {
         expect(find.text('FROM'), findsNothing);
         expect(find.text(l10n.swapAddRecipientAddress), findsNothing);
       }
+    });
+
+    testWidgets('opens the form in 1Click order once a CoinGecko request that never answers times out', (tester) async {
+      final oneClick = _OneClick(
+        dryOut: BigInt.one,
+        listed: [
+          _listedQtc,
+          {..._wnear, 'coingeckoId': 'wrapped-near'},
+        ],
+      )..coinGeckoHangs = true;
+      await tester.pumpApp(SwapScreen(account: account), overrides: overrides(oneClick.service()));
+      await settle(tester);
+      expect(oneClick.requests.where((r) => r.url.path == '/api/v3/coins/markets'), hasLength(1));
+      expect(find.text('FROM'), findsNothing);
+
+      await tester.pump(CoinGeckoService.requestTimeout);
+      await settle(tester);
+      expect(find.text('FROM'), findsOneWidget);
+      expect(find.text('USDC'), findsOneWidget);
     });
 
     testWidgets('shows swaps as unavailable with a retry while 1Click cannot be reached', (tester) async {

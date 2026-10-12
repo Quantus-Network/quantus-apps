@@ -13,6 +13,9 @@ typedef CoinMarket = ({String symbol, double marketCapUsd, String? imageUrl});
 /// every coin asked about.
 class CoinGeckoService {
   static const cacheTtl = Duration(hours: 24);
+
+  /// Longest one markets request may hold up the swap token listing.
+  static const requestTimeout = Duration(seconds: 10);
   static const _cacheKey = 'coingecko_markets';
   static const _pageSize = 250;
   static const _keptFields = ['id', 'symbol', 'market_cap', 'image'];
@@ -42,7 +45,7 @@ class CoinGeckoService {
       final uri = _endpoint.replace(
         queryParameters: {'vs_currency': 'usd', 'ids': page.join(','), 'per_page': '$_pageSize'},
       );
-      final response = await _client.get(uri);
+      final response = await _client.get(uri).timeout(requestTimeout);
       if (response.statusCode != 200) throw http.ClientException('HTTP ${response.statusCode}: ${response.body}', uri);
       for (final coin in (jsonDecode(response.body) as List<dynamic>).cast<Map<String, dynamic>>()) {
         coins.add({for (final field in _keptFields) field: coin[field]});
