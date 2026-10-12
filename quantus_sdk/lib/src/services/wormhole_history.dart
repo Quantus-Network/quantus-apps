@@ -1,4 +1,5 @@
 import 'package:collection/collection.dart';
+import 'package:quantus_sdk/src/models/event_type.dart';
 import 'package:quantus_sdk/src/models/transaction_event.dart';
 import 'package:quantus_sdk/src/services/wormhole_utxo_service.dart';
 import 'package:quantus_sdk/src/utils/print.dart';
@@ -59,6 +60,17 @@ class WormholeTransferEvent extends TransferEvent {
         extrinsicHash: transfer.extrinsicHash,
         blockNumber: transfer.blockNumber,
       );
+
+  /// The inverse of [toJson].
+  factory WormholeTransferEvent.fromJson(Map<String, dynamic> json) =>
+      WormholeTransferEvent.receipt(TransferEvent.fromJson(json));
+
+  /// Only a receipt serialises: a send's batches carry its inputs' secrets.
+  @override
+  Map<String, dynamic> toJson() {
+    if (batches.isNotEmpty) throw StateError('a wormhole send is not serialisable');
+    return {...super.toJson(), 'type': EventType.WORMHOLE_TRANSFER.name};
+  }
 
   /// True for a spend whose proof settled together with other transfers, so
   /// the indexer cannot say which exit was ours: [amount] is what our inputs

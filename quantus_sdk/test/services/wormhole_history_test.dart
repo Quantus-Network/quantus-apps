@@ -379,4 +379,20 @@ void main() {
       expect(_sends(history).map((e) => e.recipientUnknown), [false, true]);
     });
   });
+
+  test('a receipt reads back from its JSON as a wormhole event; a send does not serialise', () {
+    final receipt = _history([_received('w1', scaled: 100, viaWormhole: true, extrinsicId: '0xw')], {}).single;
+    final restored = WormholeTransferEvent.fromJson((receipt as WormholeTransferEvent).toJson());
+    expect(restored, isA<WormholeTransferEvent>().having((e) => e.extrinsicHash, 'extrinsicHash', '0xw'));
+
+    final send = _sends(
+      _history(
+        [_received('n1', scaled: 1000)],
+        {
+          'n1': _spend('0xs1', block: 5, outputs: {_alice: 999}),
+        },
+      ),
+    ).single;
+    expect(send.toJson, throwsStateError);
+  });
 }

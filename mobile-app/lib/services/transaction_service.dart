@@ -249,6 +249,8 @@ class TransactionService {
     try {
       if (txType == EventType.TRANSFER.name) {
         event = TransferEvent.fromJson(json);
+      } else if (txType == EventType.WORMHOLE_TRANSFER.name) {
+        event = WormholeTransferEvent.fromJson(json);
       } else if (txType == EventType.REVERSIBLE_TRANSFER.name) {
         event = ReversibleTransferEvent.deserializeFromJson(json);
       } else if (txType == EventType.PENDING_TRANSACTION.name) {
