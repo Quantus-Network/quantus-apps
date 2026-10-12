@@ -55,6 +55,7 @@ class SwapService {
   /// signed quote is a quote for this swap and not another.
   static const _echoedFields = [
     'dry',
+    'swapType',
     'originAsset',
     'destinationAsset',
     'amount',
@@ -121,20 +122,23 @@ class SwapService {
     return listing;
   }
 
-  /// Asks solvers for a price on [amount] base units of [from]. A dry quote is
-  /// a preview; a live one reserves a deposit address until its deadline.
+  /// Asks solvers for a price on [amount] base units of [from], or of [to] for
+  /// an exact output. A dry quote is a preview; a live one reserves a deposit
+  /// address until its deadline.
   Future<SwapQuote> getQuote({
     required SwapToken from,
     required SwapToken to,
     required BigInt amount,
     required String refundAddress,
     required String recipient,
+    SwapType swapType = SwapType.exactInput,
     int slippageBps = defaultSlippageBps,
     bool dry = true,
   }) async {
     final json = await _quoteJson(
       from: from,
       to: to,
+      swapType: swapType,
       amount: amount,
       refundAddress: refundAddress,
       recipient: recipient,
@@ -151,7 +155,8 @@ class SwapService {
     final json = await _quoteJson(
       from: quote.fromToken,
       to: quote.toToken,
-      amount: quote.amountIn,
+      swapType: quote.swapType,
+      amount: quote.swapType == SwapType.exactOutput ? quote.amountOut : quote.amountIn,
       refundAddress: quote.refundAddress,
       recipient: quote.recipient,
       slippageBps: quote.slippageBps,
@@ -185,6 +190,7 @@ class SwapService {
   Future<Map<String, dynamic>> _quoteJson({
     required SwapToken from,
     required SwapToken to,
+    required SwapType swapType,
     required BigInt amount,
     required String refundAddress,
     required String recipient,
@@ -199,7 +205,7 @@ class SwapService {
     );
     final body = {
       'dry': dry,
-      'swapType': 'EXACT_INPUT',
+      'swapType': swapType.wire,
       'slippageTolerance': slippageBps,
       'originAsset': from.assetId,
       'depositType': 'ORIGIN_CHAIN',
@@ -235,10 +241,11 @@ class SwapService {
         correlationId: correlationId,
       );
     }
-    final amountIn = (json['quote'] as Map<String, dynamic>)['amountIn'];
-    if (amountIn != body['amount']) {
+    final fixedField = swapType == SwapType.exactOutput ? 'amountOut' : 'amountIn';
+    final fixed = (json['quote'] as Map<String, dynamic>)[fixedField];
+    if (fixed != body['amount']) {
       throw SwapQuoteIntegrityException(
-        'Quote prices $amountIn of the origin asset, sent ${body['amount']}',
+        'Quote prices $fixed as $fixedField, sent ${body['amount']}',
         correlationId: correlationId,
       );
     }

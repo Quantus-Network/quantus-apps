@@ -72,6 +72,20 @@ Map<String, dynamic> _quoteResponse({
   'correlationId': 'corr-1',
 });
 
+/// An exact-output quote answering [request]: [amountOut] arrives, or what was
+/// asked for, for a payment with a 1% buffer over what the swap needs.
+Map<String, dynamic> _exactOutputResponse(Map<String, dynamic> request, {String? amountOut}) {
+  final dry = request['dry'] as bool;
+  final response = _quoteResponse(dry: dry, depositAddress: dry ? null : '0xdeposit', request: request);
+  (response['quote'] as Map<String, dynamic>).addAll({
+    'amountIn': '57143717',
+    'minAmountIn': '56572279',
+    'amountOut': amountOut ?? request['amount'],
+    'minAmountOut': amountOut ?? request['amount'],
+  });
+  return _signed(response);
+}
+
 Map<String, dynamic> _statusResponse(String status, {Map<String, dynamic>? details}) => {
   'correlationId': 'corr-2',
   'status': status,
@@ -162,7 +176,9 @@ void main() {
 
       expect(quote.fromToken, _usdcEth);
       expect(quote.toToken, _wnear);
+      expect(quote.swapType, SwapType.exactInput);
       expect(quote.amountIn, BigInt.from(10000000));
+      expect(quote.minAmountIn, BigInt.from(10000000));
       expect(quote.amountOut, BigInt.parse('2861051688077884367566500'));
       expect(quote.minAmountOut, BigInt.parse('2832441171197105523890835'));
       expect(quote.amountInUsd, closeTo(9.99662, 1e-9));
@@ -240,6 +256,54 @@ void main() {
       await expectLater(
         _quote(service),
         throwsA(isA<SwapQuoteIntegrityException>().having((e) => e.message, 'message', contains('999'))),
+      );
+    });
+
+    test('quotes an exact output: the amount arrives, the payment holds the slippage buffer', () async {
+      final sent = <Map<String, dynamic>>[];
+      final service = _service((r) async {
+        sent.add(_sentRequest(r));
+        return http.Response(jsonEncode(_exactOutputResponse(sent.last)), 200);
+      });
+      final tenNear = BigInt.parse('10000000000000000000000000');
+
+      final quote = await service.getQuote(
+        from: _usdcEth,
+        to: _wnear,
+        amount: tenNear,
+        swapType: SwapType.exactOutput,
+        refundAddress: _refund,
+        recipient: _recipient,
+      );
+      expect(sent.single['swapType'], 'EXACT_OUTPUT');
+      expect(sent.single['amount'], '$tenNear');
+      expect(quote.swapType, SwapType.exactOutput);
+      expect(quote.amountOut, tenNear);
+      expect(quote.minAmountOut, tenNear);
+      expect(quote.amountIn, BigInt.from(57143717));
+      expect(quote.minAmountIn, BigInt.from(56572279));
+
+      final order = await service.createSwap(quote);
+      expect(sent.last, containsPair('dry', false));
+      expect(sent.last, containsPair('swapType', 'EXACT_OUTPUT'));
+      expect(sent.last, containsPair('amount', '$tenNear'));
+      expect(order.quote.amountIn, BigInt.from(57143717));
+    });
+
+    test('rejects an exact-output quote that pays out a different amount', () async {
+      final service = _service(
+        (r) async => http.Response(jsonEncode(_exactOutputResponse(_sentRequest(r), amountOut: '999')), 200),
+      );
+      await expectLater(
+        service.getQuote(
+          from: _usdcEth,
+          to: _wnear,
+          amount: BigInt.from(1000),
+          swapType: SwapType.exactOutput,
+          refundAddress: _refund,
+          recipient: _recipient,
+        ),
+        throwsA(isA<SwapQuoteIntegrityException>().having((e) => e.message, 'message', contains('amountOut'))),
       );
     });
 

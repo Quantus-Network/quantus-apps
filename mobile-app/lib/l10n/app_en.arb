@@ -2550,6 +2550,10 @@
     "@swapReviewGuaranteedMinimum": {
       "description": "Review row: least the swap pays out"
     },
+    "swapReviewUnusedRefunded": "The payment includes the slippage allowance. Whatever the swap does not use is refunded.",
+    "@swapReviewUnusedRefunded": {
+      "description": "Review note on a swap for an exact amount out, whose payment holds a refundable buffer"
+    },
     "swapReviewInsufficient": "Not enough {symbol} for this amount plus the network fee.",
     "@swapReviewInsufficient": {
       "description": "Review error when the balance cannot cover the deposit",

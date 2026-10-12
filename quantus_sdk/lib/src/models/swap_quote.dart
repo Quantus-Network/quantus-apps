@@ -1,12 +1,26 @@
 import 'package:quantus_sdk/src/models/swap_token.dart';
 
+/// Which side of a swap its amount fixes. An exact output pays [SwapQuote.amountIn],
+/// which holds a slippage buffer over [SwapQuote.minAmountIn]; whatever the swap
+/// does not use is refunded.
+enum SwapType {
+  exactInput('EXACT_INPUT'),
+  exactOutput('EXACT_OUTPUT');
+
+  final String wire;
+
+  const SwapType(this.wire);
+}
+
 /// A 1Click quote. Amounts are base units of their token. [depositAddress] is
 /// only set on a live (non-dry) quote; funds sent there before [deadline] are
 /// swapped, anything else is refunded to [refundAddress].
 class SwapQuote {
   final SwapToken fromToken;
   final SwapToken toToken;
+  final SwapType swapType;
   final BigInt amountIn;
+  final BigInt minAmountIn;
   final BigInt amountOut;
   final BigInt minAmountOut;
   final double amountInUsd;
@@ -26,7 +40,9 @@ class SwapQuote {
   const SwapQuote({
     required this.fromToken,
     required this.toToken,
+    this.swapType = SwapType.exactInput,
     required this.amountIn,
+    required this.minAmountIn,
     required this.amountOut,
     required this.minAmountOut,
     required this.amountInUsd,
@@ -48,7 +64,9 @@ class SwapQuote {
     return SwapQuote(
       fromToken: fromToken,
       toToken: toToken,
+      swapType: SwapType.values.singleWhere((t) => t.wire == request['swapType']),
       amountIn: BigInt.parse(quote['amountIn'] as String),
+      minAmountIn: BigInt.parse(quote['minAmountIn'] as String),
       amountOut: BigInt.parse(quote['amountOut'] as String),
       minAmountOut: BigInt.parse(quote['minAmountOut'] as String),
       amountInUsd: double.parse(quote['amountInUsd'] as String),

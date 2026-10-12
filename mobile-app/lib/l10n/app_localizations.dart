@@ -3272,6 +3272,12 @@ abstract class AppLocalizations {
   /// **'Guaranteed minimum'**
   String get swapReviewGuaranteedMinimum;
 
+  /// Review note on a swap for an exact amount out, whose payment holds a refundable buffer
+  ///
+  /// In en, this message translates to:
+  /// **'The payment includes the slippage allowance. Whatever the swap does not use is refunded.'**
+  String get swapReviewUnusedRefunded;
+
   /// Review error when the balance cannot cover the deposit
   ///
   /// In en, this message translates to:

@@ -87,7 +87,8 @@ class _SwapConfig extends RemoteConfigNotifier {
 }
 
 /// 1Click stand-in: a dry quote pays [dryOut], a live one [liveOut] with a
-/// deposit address, both with 1% slippage. The token list has USDC on
+/// deposit address, both with 1% slippage. An exact-output quote pays out what
+/// it was asked for and costs [dryOut] or [liveOut] instead, 1% of it buffer. The token list has USDC on
 /// Ethereum plus [listed], and answers [tokensStatus].
 class _OneClick {
   final BigInt dryOut;
@@ -139,12 +140,15 @@ class _OneClick {
   Map<String, dynamic> _quoteJson(Map<String, dynamic> request) {
     final dry = request['dry'] as bool;
     final out = dry ? dryOut : liveOut;
+    final buffered = '${out * BigInt.from(99) ~/ BigInt.from(100)}';
+    final exactOutput = request['swapType'] == 'EXACT_OUTPUT';
     final response = {
       'quote': {
         if (!dry) 'depositAddress': _deposit,
-        'amountIn': request['amount'],
-        'amountOut': '$out',
-        'minAmountOut': '${out * BigInt.from(99) ~/ BigInt.from(100)}',
+        'amountIn': exactOutput ? '$out' : request['amount'],
+        'minAmountIn': exactOutput ? buffered : request['amount'],
+        'amountOut': exactOutput ? request['amount'] : '$out',
+        'minAmountOut': exactOutput ? request['amount'] : buffered,
         'amountInUsd': '25.0',
         'amountOutUsd': '24.86',
         if (!dry) 'deadline': DateTime.now().toUtc().add(const Duration(minutes: 20)).toIso8601String(),
@@ -153,6 +157,7 @@ class _OneClick {
       'quoteRequest': {
         for (final k in const [
           'dry',
+          'swapType',
           'originAsset',
           'destinationAsset',
           'amount',
@@ -188,6 +193,7 @@ SwapQuote _quote({
   fromToken: from,
   toToken: to,
   amountIn: amountIn,
+  minAmountIn: amountIn,
   amountOut: amountOut,
   minAmountOut: amountOut * BigInt.from(99) ~/ BigInt.from(100),
   amountInUsd: 25,
@@ -494,6 +500,54 @@ void main() {
       final quote = oneClick.requests.singleWhere((r) => r.url.path == '/v0/quote');
       expect((jsonDecode(quote.body) as Map)['slippageTolerance'], 200);
       expect(find.text(l10n.swapReviewTitle), findsOneWidget);
+    });
+  });
+
+  group('exact output', () {
+    testWidgets('typing what arrives prices the payment and quotes that exact amount out', (tester) async {
+      final oneClick = _OneClick(dryOut: _unit * BigInt.from(202));
+      await tester.pumpApp(SwapScreen(account: account), overrides: overrides(oneClick.service()));
+      await settle(tester);
+      await swapOut(tester);
+
+      await tester.tap(find.text('0').last);
+      await tester.pump();
+      await tester.enterText(find.byType(TextField), '20');
+      await tester.pump();
+      expect(find.text('200'), findsOneWidget);
+
+      await tester.tap(find.text(l10n.swapAddRecipientAddress));
+      await settle(tester);
+      await tester.enterText(find.byType(TextField).last, _external);
+      await tester.pump();
+      await tester.tap(find.text(l10n.swapContinue));
+      await settle(tester);
+
+      final quote = jsonDecode(oneClick.requests.singleWhere((r) => r.url.path == '/v0/quote').body) as Map;
+      expect(quote['swapType'], 'EXACT_OUTPUT');
+      expect(quote['originAsset'], _listedQtc['assetId']);
+      expect(quote['amount'], '20000000');
+      expect(find.text(l10n.swapReviewTitle), findsOneWidget);
+      expect(find.text(l10n.commonAmountBalance('202', 'QTC')), findsOneWidget);
+      expect(find.text(l10n.swapReviewUnusedRefunded), findsOneWidget);
+    });
+
+    testWidgets('tapping the paying side again types there, starting from its estimate', (tester) async {
+      final oneClick = _OneClick(dryOut: BigInt.one);
+      await tester.pumpApp(SwapScreen(account: account), overrides: overrides(oneClick.service()));
+      await settle(tester);
+      await swapOut(tester);
+      await tester.tap(find.text('0').last);
+      await tester.pump();
+      await tester.enterText(find.byType(TextField), '20');
+      await tester.pump();
+
+      await tester.tap(find.text('200'));
+      await tester.pump();
+      final field = tester.widget<TextField>(find.byType(TextField));
+      expect(field.controller!.text, '200');
+      expect(field.controller!.selection, const TextSelection(baseOffset: 0, extentOffset: 3));
+      expect(find.text('20'), findsOneWidget);
     });
   });
 

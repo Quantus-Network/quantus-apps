@@ -16,9 +16,9 @@ import 'package:resonance_network_wallet/v2/screens/swap/swap_progress_screen.da
 import 'package:resonance_network_wallet/v2/screens/swap/swap_providers.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/swap_summary.dart';
 
-/// Shows a dry quote's terms. Confirming takes a live quote; when its
-/// guaranteed minimum is below the one shown, the live terms replace the shown
-/// ones and need a second confirmation. A swap out of QTC then sends the
+/// Shows a dry quote's terms. Confirming takes a live quote; when it
+/// guarantees less or asks more than the one shown, the live terms replace
+/// the shown ones and need a second confirmation. A swap out of QTC then sends the
 /// deposit from [account]; in preflight the stand-in's deposit is made by hand
 /// from the deposit screen, as the app cannot sign on its chain.
 class ReviewSwapScreen extends ConsumerStatefulWidget {
@@ -83,7 +83,8 @@ class _ReviewSwapScreenState extends ConsumerState<ReviewSwapScreen> {
       final order = await ref.read(swapServiceProvider).createSwap(_quote);
       if (await _stale(generation, l10n)) return null;
       _order = order;
-      if (order.quote.minAmountOut >= _quote.minAmountOut) return order;
+      final live = order.quote;
+      if (live.minAmountOut >= _quote.minAmountOut && live.amountIn <= _quote.amountIn) return order;
       if (mounted) {
         setState(() => _quote = order.quote);
         context.showWarningToaster(message: l10n.swapReviewPriceMoved);
@@ -164,6 +165,7 @@ class _ReviewSwapScreenState extends ConsumerState<ReviewSwapScreen> {
     final quote = _quote;
     final from = quote.fromToken;
     final to = quote.toToken;
+    final exactOutput = quote.swapType == SwapType.exactOutput;
     String amount(BigInt value, SwapToken token) => formatSwapAmount(l10n, fmt, value, token);
     Widget row(String label, String value, {bool mono = false}) =>
         SwapDetailRow(label: label, value: value, monoLabel: true, monoValue: mono);
@@ -205,11 +207,17 @@ class _ReviewSwapScreenState extends ConsumerState<ReviewSwapScreen> {
             row(
               l10n.swapReviewSlippage,
               l10n.swapReviewSlippageValue(
-                amount(quote.amountOut - quote.minAmountOut, to),
+                exactOutput
+                    ? amount(quote.amountIn - quote.minAmountIn, from)
+                    : amount(quote.amountOut - quote.minAmountOut, to),
                 slippagePercentLabel(quote.slippageBps),
               ),
             ),
             row(l10n.swapReviewGuaranteedMinimum, amount(quote.minAmountOut, to)),
+            if (exactOutput) ...[
+              const SizedBox(height: 16),
+              Text(l10n.swapReviewUnusedRefunded, style: text.caption.copyWith(color: colors.textMuted)),
+            ],
             if (fee != null && fee.hasError) ...[
               const SizedBox(height: 16),
               Row(

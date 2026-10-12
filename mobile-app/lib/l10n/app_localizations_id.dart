@@ -1750,6 +1750,10 @@ class AppLocalizationsId extends AppLocalizations {
   String get swapReviewGuaranteedMinimum => 'Minimum terjamin';
 
   @override
+  String get swapReviewUnusedRefunded =>
+      'Pembayaran sudah termasuk toleransi slippage. Bagian yang tidak terpakai oleh swap akan dikembalikan.';
+
+  @override
   String swapReviewInsufficient(String symbol) {
     return '$symbol tidak cukup untuk jumlah ini ditambah biaya jaringan.';
   }

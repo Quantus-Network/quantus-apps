@@ -495,6 +495,7 @@
   "swapReviewSlippage": "Toleransi slippage",
   "swapReviewSlippageValue": "{amount} ({percent}%)",
   "swapReviewGuaranteedMinimum": "Minimum terjamin",
+  "swapReviewUnusedRefunded": "Pembayaran sudah termasuk toleransi slippage. Bagian yang tidak terpakai oleh swap akan dikembalikan.",
   "swapReviewInsufficient": "{symbol} tidak cukup untuk jumlah ini ditambah biaya jaringan.",
   "swapReviewPriceMoved": "Harga berubah. Periksa jumlah baru dan konfirmasi lagi.",
   "swapReviewConfirm": "Konfirmasi swap",

@@ -1747,6 +1747,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get swapReviewGuaranteedMinimum => 'Guaranteed minimum';
 
   @override
+  String get swapReviewUnusedRefunded =>
+      'The payment includes the slippage allowance. Whatever the swap does not use is refunded.';
+
+  @override
   String swapReviewInsufficient(String symbol) {
     return 'Not enough $symbol for this amount plus the network fee.';
   }
