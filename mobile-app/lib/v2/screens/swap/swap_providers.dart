@@ -36,6 +36,9 @@ final swapTokenIconProvider = FutureProvider.autoDispose.family<SwapTokenIcon?, 
 /// Slippage tolerances offered for a quote, in basis points.
 const swapSlippageOptionsBps = [50, 100, 200, 300];
 
+/// Highest custom slippage tolerance, in basis points.
+const swapSlippageMaxBps = 9900;
+
 /// Slippage tolerance the next quote asks for, in basis points.
 final swapSlippageBpsProvider = StateProvider<int>((_) => SwapService.defaultSlippageBps);
 
@@ -84,9 +87,10 @@ BigInt swapEstimateOut(BigInt amountIn, SwapToken from, SwapToken to) {
   return BigInt.from(swapUsdValue(amountIn, from) / to.usdPrice * _unit(to.decimals));
 }
 
-/// Base units of [quote]'s output token that one whole input token buys.
+/// Base units of [quote]'s output token that one whole input token buys, at
+/// the input the swap needs: an exact output's payment holds a buffer on top.
 BigInt swapQuoteRate(SwapQuote quote) =>
-    quote.amountOut * BigInt.from(10).pow(quote.fromToken.decimals) ~/ quote.amountIn;
+    quote.amountOut * BigInt.from(10).pow(quote.fromToken.decimals) ~/ quote.minAmountIn;
 
 /// [value] base units of [token] with its symbol, e.g. "24.86 USDC". An
 /// [exact] amount keeps every digit: what is sent must read as what is shown.

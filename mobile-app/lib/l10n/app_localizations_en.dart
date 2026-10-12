@@ -1621,6 +1621,14 @@ class AppLocalizationsEn extends AppLocalizations {
       'If the price moves further than this before your swap fills, it is refunded instead. A higher tolerance fills more often but can pay out less.';
 
   @override
+  String get swapSlippageCustom => 'Custom';
+
+  @override
+  String swapSlippageCustomMax(String percent) {
+    return 'Slippage can be at most $percent%';
+  }
+
+  @override
   String swapSlippagePercent(String percent) {
     return '$percent%';
   }
@@ -1636,6 +1644,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get swapTokenPickerLoadError => 'Failed to load tokens';
+
+  @override
+  String get swapTokenPickerSearchHint => 'Search';
+
+  @override
+  String get swapTokenPickerNoMatch => 'No tokens match your search';
 
   @override
   String get swapUnavailableTitle => 'Swap unavailable';
@@ -1731,6 +1745,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get swapReviewGuaranteedMinimum => 'Guaranteed minimum';
+
+  @override
+  String get swapReviewUnusedRefunded =>
+      'The payment includes the slippage allowance. Whatever the swap does not use is refunded.';
 
   @override
   String swapReviewInsufficient(String symbol) {

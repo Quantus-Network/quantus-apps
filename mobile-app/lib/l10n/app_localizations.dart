@@ -3056,6 +3056,18 @@ abstract class AppLocalizations {
   /// **'If the price moves further than this before your swap fills, it is refunded instead. A higher tolerance fills more often but can pay out less.'**
   String get swapSlippageBody;
 
+  /// Slippage tolerance option that opens a field for any tolerance
+  ///
+  /// In en, this message translates to:
+  /// **'Custom'**
+  String get swapSlippageCustom;
+
+  /// Error under the custom slippage field when the tolerance is too high
+  ///
+  /// In en, this message translates to:
+  /// **'Slippage can be at most {percent}%'**
+  String swapSlippageCustomMax(String percent);
+
   /// A slippage tolerance option
   ///
   /// In en, this message translates to:
@@ -3085,6 +3097,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Failed to load tokens'**
   String get swapTokenPickerLoadError;
+
+  /// Search field hint on token picker sheet
+  ///
+  /// In en, this message translates to:
+  /// **'Search'**
+  String get swapTokenPickerSearchHint;
+
+  /// Empty state when the token picker search matches nothing
+  ///
+  /// In en, this message translates to:
+  /// **'No tokens match your search'**
+  String get swapTokenPickerNoMatch;
 
   /// Title of the notice that replaces the swap form while swaps cannot be made
   ///
@@ -3247,6 +3271,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Guaranteed minimum'**
   String get swapReviewGuaranteedMinimum;
+
+  /// Review note on a swap for an exact amount out, whose payment holds a refundable buffer
+  ///
+  /// In en, this message translates to:
+  /// **'The payment includes the slippage allowance. Whatever the swap does not use is refunded.'**
+  String get swapReviewUnusedRefunded;
 
   /// Review error when the balance cannot cover the deposit
   ///

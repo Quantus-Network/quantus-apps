@@ -19,6 +19,7 @@ import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/services/transaction_submission_service.dart';
+import 'package:resonance_network_wallet/v2/components/search_field.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/review_swap_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/swap_progress_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/swap_providers.dart';
@@ -86,7 +87,8 @@ class _SwapConfig extends RemoteConfigNotifier {
 }
 
 /// 1Click stand-in: a dry quote pays [dryOut], a live one [liveOut] with a
-/// deposit address, both with 1% slippage. The token list has USDC on
+/// deposit address, both with 1% slippage. An exact-output quote pays out what
+/// it was asked for and costs [dryOut] or [liveOut] instead, 1% of it buffer. The token list has USDC on
 /// Ethereum plus [listed], and answers [tokensStatus].
 class _OneClick {
   final BigInt dryOut;
@@ -94,6 +96,9 @@ class _OneClick {
   final List<Map<String, dynamic>> listed;
   int tokensStatus;
   final requests = <http.Request>[];
+
+  /// CoinGecko takes the request and never answers.
+  bool coinGeckoHangs = false;
 
   /// Holds every live quote answer until completed.
   Completer<void>? holdLive;
@@ -114,6 +119,9 @@ class _OneClick {
 
   Future<http.Response> _handle(http.Request request) async {
     requests.add(request);
+    if (coinGeckoHangs && request.url.host == Uri.parse(AppConstants.coingeckoMarketsEndpoint).host) {
+      return Completer<http.Response>().future;
+    }
     return switch (request.url.path) {
       '/v0/tokens' => http.Response(
         jsonEncode([
@@ -138,12 +146,15 @@ class _OneClick {
   Map<String, dynamic> _quoteJson(Map<String, dynamic> request) {
     final dry = request['dry'] as bool;
     final out = dry ? dryOut : liveOut;
+    final buffered = '${out * BigInt.from(99) ~/ BigInt.from(100)}';
+    final exactOutput = request['swapType'] == 'EXACT_OUTPUT';
     final response = {
       'quote': {
         if (!dry) 'depositAddress': _deposit,
-        'amountIn': request['amount'],
-        'amountOut': '$out',
-        'minAmountOut': '${out * BigInt.from(99) ~/ BigInt.from(100)}',
+        'amountIn': exactOutput ? '$out' : request['amount'],
+        'minAmountIn': exactOutput ? buffered : request['amount'],
+        'amountOut': exactOutput ? request['amount'] : '$out',
+        'minAmountOut': exactOutput ? request['amount'] : buffered,
         'amountInUsd': '25.0',
         'amountOutUsd': '24.86',
         if (!dry) 'deadline': DateTime.now().toUtc().add(const Duration(minutes: 20)).toIso8601String(),
@@ -152,6 +163,7 @@ class _OneClick {
       'quoteRequest': {
         for (final k in const [
           'dry',
+          'swapType',
           'originAsset',
           'destinationAsset',
           'amount',
@@ -187,6 +199,7 @@ SwapQuote _quote({
   fromToken: from,
   toToken: to,
   amountIn: amountIn,
+  minAmountIn: amountIn,
   amountOut: amountOut,
   minAmountOut: amountOut * BigInt.from(99) ~/ BigInt.from(100),
   amountInUsd: 25,
@@ -295,6 +308,40 @@ void main() {
       await tester.pump();
       expect(button(tester, l10n.swapAddRecipientAddress).isDisabled, isFalse);
       expect(find.text('1'), findsOneWidget);
+    });
+
+    testWidgets('the token picker fills the screen, lists every token and filters them by search', (tester) async {
+      final oneClick = _OneClick(
+        dryOut: BigInt.one,
+        listed: [
+          _listedQtc,
+          for (var i = 1; i <= 12; i++)
+            {'assetId': 'nep141:coin$i.near', 'decimals': 18, 'blockchain': 'near', 'symbol': 'coin$i', 'price': 1},
+        ],
+      );
+      await tester.pumpApp(SwapScreen(account: account), overrides: overrides(oneClick.service()));
+      await settle(tester);
+
+      await tester.tap(find.text('USDC'));
+      await settle(tester);
+      expect(tester.getTopLeft(find.byType(BottomSheetContainer)).dy, 0);
+
+      final search = find.descendant(of: find.byType(SearchField), matching: find.byType(TextField));
+      await tester.enterText(search, 'coin12');
+      await tester.pump();
+      expect(find.text('COIN12'), findsOneWidget);
+      expect(find.text('COIN1'), findsNothing);
+
+      await tester.enterText(search, 'nothing');
+      await tester.pump();
+      expect(find.text(l10n.swapTokenPickerNoMatch), findsOneWidget);
+
+      await tester.enterText(search, 'coin12');
+      await tester.pump();
+      await tester.tap(find.text('COIN12'));
+      await settle(tester);
+      expect(find.byType(BottomSheetContainer), findsNothing);
+      expect(find.text('COIN12'), findsOneWidget);
     });
 
     testWidgets('quotes QTC under the asset id 1Click lists it with', (tester) async {
@@ -414,6 +461,25 @@ void main() {
       }
     });
 
+    testWidgets('opens the form in 1Click order once a CoinGecko request that never answers times out', (tester) async {
+      final oneClick = _OneClick(
+        dryOut: BigInt.one,
+        listed: [
+          _listedQtc,
+          {..._wnear, 'coingeckoId': 'wrapped-near'},
+        ],
+      )..coinGeckoHangs = true;
+      await tester.pumpApp(SwapScreen(account: account), overrides: overrides(oneClick.service()));
+      await settle(tester);
+      expect(oneClick.requests.where((r) => r.url.path == '/api/v3/coins/markets'), hasLength(1));
+      expect(find.text('FROM'), findsNothing);
+
+      await tester.pump(CoinGeckoService.requestTimeout);
+      await settle(tester);
+      expect(find.text('FROM'), findsOneWidget);
+      expect(find.text('USDC'), findsOneWidget);
+    });
+
     testWidgets('shows swaps as unavailable with a retry while 1Click cannot be reached', (tester) async {
       final oneClick = _OneClick(dryOut: BigInt.one, tokensStatus: 503);
       await tester.pumpApp(SwapScreen(account: account), overrides: overrides(oneClick.service()));
@@ -459,6 +525,102 @@ void main() {
       final quote = oneClick.requests.singleWhere((r) => r.url.path == '/v0/quote');
       expect((jsonDecode(quote.body) as Map)['slippageTolerance'], 200);
       expect(find.text(l10n.swapReviewTitle), findsOneWidget);
+    });
+  });
+
+  group('exact output', () {
+    testWidgets('typing what arrives prices the payment and quotes that exact amount out', (tester) async {
+      final oneClick = _OneClick(dryOut: _unit * BigInt.from(202));
+      await tester.pumpApp(SwapScreen(account: account), overrides: overrides(oneClick.service()));
+      await settle(tester);
+      await swapOut(tester);
+
+      await tester.tap(find.text('0').last);
+      await tester.pump();
+      await tester.enterText(find.byType(TextField), '20');
+      await tester.pump();
+      expect(find.text('200'), findsOneWidget);
+
+      await tester.tap(find.text(l10n.swapAddRecipientAddress));
+      await settle(tester);
+      await tester.enterText(find.byType(TextField).last, _external);
+      await tester.pump();
+      await tester.tap(find.text(l10n.swapContinue));
+      await settle(tester);
+
+      final quote = jsonDecode(oneClick.requests.singleWhere((r) => r.url.path == '/v0/quote').body) as Map;
+      expect(quote['swapType'], 'EXACT_OUTPUT');
+      expect(quote['originAsset'], _listedQtc['assetId']);
+      expect(quote['amount'], '20000000');
+      expect(find.text(l10n.swapReviewTitle), findsOneWidget);
+      expect(find.text(l10n.commonAmountBalance('202', 'QTC')), findsOneWidget);
+      expect(find.text(l10n.swapReviewUnusedRefunded), findsOneWidget);
+    });
+
+    testWidgets('tapping the paying side again types there, starting from its estimate', (tester) async {
+      final oneClick = _OneClick(dryOut: BigInt.one);
+      await tester.pumpApp(SwapScreen(account: account), overrides: overrides(oneClick.service()));
+      await settle(tester);
+      await swapOut(tester);
+      await tester.tap(find.text('0').last);
+      await tester.pump();
+      await tester.enterText(find.byType(TextField), '20');
+      await tester.pump();
+
+      await tester.tap(find.text('200'));
+      await tester.pump();
+      final field = tester.widget<TextField>(find.byType(TextField));
+      expect(field.controller!.text, '200');
+      expect(field.controller!.selection, const TextSelection(baseOffset: 0, extentOffset: 3));
+      expect(find.text('20'), findsOneWidget);
+    });
+  });
+
+  group('custom slippage', () {
+    testWidgets('takes any tolerance up to 99% and quotes with it', (tester) async {
+      tester.view.physicalSize = const Size(402 * 3, 874 * 3);
+      tester.view.devicePixelRatio = 3;
+      addTearDown(tester.view.reset);
+      final oneClick = _OneClick(dryOut: BigInt.from(24860000));
+      await tester.pumpApp(SwapScreen(account: account), overrides: overrides(oneClick.service()));
+      await settle(tester);
+
+      await tester.tap(svg('assets/v2/swap_pencil.svg'));
+      await settle(tester);
+      expect(tester.getSize(find.text(l10n.swapSlippageCustom)).height, tester.getSize(find.text('1%')).height);
+      await tester.tap(find.text(l10n.swapSlippageCustom));
+      await settle(tester);
+      final field = find.descendant(of: find.byType(QuantusTextField), matching: find.byType(TextField));
+
+      await tester.enterText(field, '99.5');
+      await tester.pump();
+      expect(find.text(l10n.swapSlippageCustomMax('99')), findsOneWidget);
+      expect(button(tester, l10n.commonDone).isDisabled, isTrue);
+
+      await tester.enterText(field, '7.5');
+      await tester.pump();
+      expect(find.text(l10n.swapSlippageCustomMax('99')), findsNothing);
+      await tester.tap(find.text(l10n.commonDone));
+      await settle(tester);
+      expect(find.text(l10n.swapSlippageLabel('7.5')), findsOneWidget);
+
+      await tester.tap(svg('assets/v2/swap_pencil.svg'));
+      await settle(tester);
+      expect(tester.widget<TextField>(field).controller!.text, '7.5');
+      await tester.tap(find.byIcon(Icons.close));
+      await settle(tester);
+
+      await swapOut(tester);
+      await tester.enterText(find.byType(TextField), '10');
+      await tester.pump();
+      await tester.tap(find.text(l10n.swapAddRecipientAddress));
+      await settle(tester);
+      await tester.enterText(find.byType(TextField).last, _external);
+      await tester.pump();
+      await tester.tap(find.text(l10n.swapContinue));
+      await settle(tester);
+      final quote = oneClick.requests.singleWhere((r) => r.url.path == '/v0/quote');
+      expect((jsonDecode(quote.body) as Map)['slippageTolerance'], 750);
     });
   });
 

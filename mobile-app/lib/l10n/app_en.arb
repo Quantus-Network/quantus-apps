@@ -2352,6 +2352,19 @@
     "@swapSlippageBody": {
       "description": "Explanation on the slippage tolerance sheet"
     },
+    "swapSlippageCustom": "Custom",
+    "@swapSlippageCustom": {
+      "description": "Slippage tolerance option that opens a field for any tolerance"
+    },
+    "swapSlippageCustomMax": "Slippage can be at most {percent}%",
+    "@swapSlippageCustomMax": {
+      "description": "Error under the custom slippage field when the tolerance is too high",
+      "placeholders": {
+        "percent": {
+          "type": "String"
+        }
+      }
+    },
     "swapSlippagePercent": "{percent}%",
     "@swapSlippagePercent": {
       "description": "A slippage tolerance option",
@@ -2376,6 +2389,14 @@
     "swapTokenPickerLoadError": "Failed to load tokens",
     "@swapTokenPickerLoadError": {
       "description": "Error when token list fails to load"
+    },
+    "swapTokenPickerSearchHint": "Search",
+    "@swapTokenPickerSearchHint": {
+      "description": "Search field hint on token picker sheet"
+    },
+    "swapTokenPickerNoMatch": "No tokens match your search",
+    "@swapTokenPickerNoMatch": {
+      "description": "Empty state when the token picker search matches nothing"
     },
     "swapUnavailableTitle": "Swap unavailable",
     "@swapUnavailableTitle": {
@@ -2528,6 +2549,10 @@
     "swapReviewGuaranteedMinimum": "Guaranteed minimum",
     "@swapReviewGuaranteedMinimum": {
       "description": "Review row: least the swap pays out"
+    },
+    "swapReviewUnusedRefunded": "The payment includes the slippage allowance. Whatever the swap does not use is refunded.",
+    "@swapReviewUnusedRefunded": {
+      "description": "Review note on a swap for an exact amount out, whose payment holds a refundable buffer"
     },
     "swapReviewInsufficient": "Not enough {symbol} for this amount plus the network fee.",
     "@swapReviewInsufficient": {

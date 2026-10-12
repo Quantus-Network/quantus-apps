@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart' hide ScaffoldBase;
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
+import 'package:resonance_network_wallet/v2/components/search_field.dart';
 import 'package:resonance_network_wallet/shared/utils/print.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/settings_picker_widgets.dart';
 
@@ -74,7 +75,7 @@ class _SettingsPickerScreenState<T> extends State<SettingsPickerScreen<T>> {
       mainContent: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          SettingsPickerSearchField(controller: _searchController, hintText: widget.searchHint),
+          SearchField(controller: _searchController, hintText: widget.searchHint),
           const SizedBox(height: 24),
           Expanded(
             child: Container(

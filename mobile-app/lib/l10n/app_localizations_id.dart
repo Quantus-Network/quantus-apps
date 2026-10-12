@@ -1624,6 +1624,14 @@ class AppLocalizationsId extends AppLocalizations {
       'Jika harga bergerak lebih dari ini sebelum swap Anda terisi, dana dikembalikan. Toleransi lebih tinggi lebih sering terisi tetapi hasilnya bisa lebih sedikit.';
 
   @override
+  String get swapSlippageCustom => 'Kustom';
+
+  @override
+  String swapSlippageCustomMax(String percent) {
+    return 'Slippage maksimal $percent%';
+  }
+
+  @override
   String swapSlippagePercent(String percent) {
     return '$percent%';
   }
@@ -1639,6 +1647,12 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get swapTokenPickerLoadError => 'Gagal memuat token';
+
+  @override
+  String get swapTokenPickerSearchHint => 'Cari';
+
+  @override
+  String get swapTokenPickerNoMatch => 'Tidak ada token yang cocok dengan pencarian Anda';
 
   @override
   String get swapUnavailableTitle => 'Swap tidak tersedia';
@@ -1734,6 +1748,10 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get swapReviewGuaranteedMinimum => 'Minimum terjamin';
+
+  @override
+  String get swapReviewUnusedRefunded =>
+      'Pembayaran sudah termasuk toleransi slippage. Bagian yang tidak terpakai oleh swap akan dikembalikan.';
 
   @override
   String swapReviewInsufficient(String symbol) {

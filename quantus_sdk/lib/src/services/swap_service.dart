@@ -1,10 +1,12 @@
 import 'dart:convert';
 
+import 'package:collection/collection.dart';
 import 'package:http/http.dart' as http;
 import 'package:quantus_sdk/src/constants/app_constants.dart';
 import 'package:quantus_sdk/src/models/swap_order.dart';
 import 'package:quantus_sdk/src/models/swap_quote.dart';
 import 'package:quantus_sdk/src/models/swap_token.dart';
+import 'package:quantus_sdk/src/services/coin_gecko_service.dart';
 import 'package:quantus_sdk/src/services/one_click_quote_signature.dart';
 import 'package:quantus_sdk/src/services/one_click_service.dart';
 import 'package:quantus_sdk/src/utils/print.dart';
@@ -53,6 +55,7 @@ class SwapService {
   /// signed quote is a quote for this swap and not another.
   static const _echoedFields = [
     'dry',
+    'swapType',
     'originAsset',
     'destinationAsset',
     'amount',
@@ -68,6 +71,7 @@ class SwapService {
   static const _tokensCacheTtl = Duration(minutes: 10);
 
   final OneClickService _api;
+  final CoinGeckoService _coinGecko;
   final String _managerPublicKey;
   final String? _configuredQuantusAssetId;
   final bool _preflight;
@@ -86,6 +90,7 @@ class SwapService {
     String? quantusAssetId,
     bool preflight = false,
   }) : _api = OneClickService(client: client, endpoint: endpoint, apiKey: apiKey),
+       _coinGecko = CoinGeckoService(client: client),
        _managerPublicKey = managerPublicKey,
        _configuredQuantusAssetId = quantusAssetId,
        _preflight = preflight;
@@ -94,12 +99,12 @@ class SwapService {
   static Duration depositWindowFor(String network) =>
       _slowNetworks.contains(network) ? _slowDepositWindow : depositWindow;
 
-  /// The tokens to swap between: QTC first, USDC second, the rest as 1Click
-  /// orders them, one asset per symbol.
-  Future<List<SwapToken>> getFromTokens({int limit = 10, bool forceRefresh = false}) async {
+  /// The tokens to swap between: QTC first, USDC second, the rest by market
+  /// cap, one asset per symbol.
+  Future<List<SwapToken>> getFromTokens({bool forceRefresh = false}) async {
     final (tokens, quantus) = await _listing(forceRefresh: forceRefresh);
     final usdc = tokens.where((t) => t.symbol == 'USDC').firstOrNull;
-    return [?quantus, ?usdc, ...tokens.where((t) => t != usdc)].take(limit).toList();
+    return [?quantus, ?usdc, ...tokens.where((t) => t != usdc)];
   }
 
   /// QTC as 1Click lists it, with its asset id, decimals and price; null until
@@ -117,20 +122,23 @@ class SwapService {
     return listing;
   }
 
-  /// Asks solvers for a price on [amount] base units of [from]. A dry quote is
-  /// a preview; a live one reserves a deposit address until its deadline.
+  /// Asks solvers for a price on [amount] base units of [from], or of [to] for
+  /// an exact output. A dry quote is a preview; a live one reserves a deposit
+  /// address until its deadline.
   Future<SwapQuote> getQuote({
     required SwapToken from,
     required SwapToken to,
     required BigInt amount,
     required String refundAddress,
     required String recipient,
+    SwapType swapType = SwapType.exactInput,
     int slippageBps = defaultSlippageBps,
     bool dry = true,
   }) async {
     final json = await _quoteJson(
       from: from,
       to: to,
+      swapType: swapType,
       amount: amount,
       refundAddress: refundAddress,
       recipient: recipient,
@@ -147,7 +155,8 @@ class SwapService {
     final json = await _quoteJson(
       from: quote.fromToken,
       to: quote.toToken,
-      amount: quote.amountIn,
+      swapType: quote.swapType,
+      amount: quote.swapType == SwapType.exactOutput ? quote.amountOut : quote.amountIn,
       refundAddress: quote.refundAddress,
       recipient: quote.recipient,
       slippageBps: quote.slippageBps,
@@ -181,6 +190,7 @@ class SwapService {
   Future<Map<String, dynamic>> _quoteJson({
     required SwapToken from,
     required SwapToken to,
+    required SwapType swapType,
     required BigInt amount,
     required String refundAddress,
     required String recipient,
@@ -195,7 +205,7 @@ class SwapService {
     );
     final body = {
       'dry': dry,
-      'swapType': 'EXACT_INPUT',
+      'swapType': swapType.wire,
       'slippageTolerance': slippageBps,
       'originAsset': from.assetId,
       'depositType': 'ORIGIN_CHAIN',
@@ -231,10 +241,11 @@ class SwapService {
         correlationId: correlationId,
       );
     }
-    final amountIn = (json['quote'] as Map<String, dynamic>)['amountIn'];
-    if (amountIn != body['amount']) {
+    final fixedField = swapType == SwapType.exactOutput ? 'amountOut' : 'amountIn';
+    final fixed = (json['quote'] as Map<String, dynamic>)[fixedField];
+    if (fixed != body['amount']) {
       throw SwapQuoteIntegrityException(
-        'Quote prices $amountIn of the origin asset, sent ${body['amount']}',
+        'Quote prices $fixed as $fixedField, sent ${body['amount']}',
         correlationId: correlationId,
       );
     }
@@ -275,11 +286,14 @@ class SwapService {
     return SwapOrder.fromStatusJson(json as Map<String, dynamic>, quote: order.quote);
   }
 
-  /// The tokens to swap with, one per symbol in 1Click's order, and QTC as
+  /// The tokens to swap with, one per symbol by market cap, and QTC as
   /// listed. A token is on Quantus when 1Click says so or when its asset id is
-  /// the configured one.
+  /// the configured one. A token ranks by the market cap of the CoinGecko coin
+  /// 1Click names for it only when that coin carries its symbol: a bridged BTC
+  /// listed under bitcoin follows the ranked tokens, in 1Click's order.
   Future<(List<SwapToken>, SwapToken?)> _fetchIntentsTokens() async {
     final data = (await _api.send('GET', '/v0/tokens') as List<dynamic>).cast<Map<String, dynamic>>();
+    final coins = await _coinMarkets({for (final item in data) ?item['coingeckoId'] as String?});
     final nearBySymbol = <String, String>{};
     for (final item in data) {
       final assetId = item['assetId'] as String;
@@ -288,6 +302,7 @@ class SwapService {
       }
     }
     final bySymbol = <String, SwapToken>{};
+    final marketCaps = <SwapToken, double>{};
     final onQuantus = <SwapToken>[];
     for (final item in data) {
       final assetId = item['assetId'] as String;
@@ -295,6 +310,7 @@ class SwapService {
       final chain = (item['blockchain'] as String).toUpperCase();
       final ours = chain == SwapToken.quantusNetwork || assetId == _configuredQuantusAssetId;
       final network = ours && !_preflight ? SwapToken.quantusNetwork : chain;
+      final coin = coins[item['coingeckoId']];
       final token = SwapToken(
         assetId: assetId,
         symbol: symbol,
@@ -302,8 +318,10 @@ class SwapService {
         decimals: (item['decimals'] as num).toInt(),
         usdPrice: (item['price'] as num?)?.toDouble() ?? 0,
         iconAssetId: SwapToken.hasNearContract(assetId) ? assetId : nearBySymbol[symbol],
+        imageUrl: coin?.imageUrl,
         isQuantus: ours,
       );
+      if (coin != null && coin.symbol.toUpperCase() == symbol) marketCaps[token] = coin.marketCapUsd;
       if (ours) {
         onQuantus.add(token);
         continue;
@@ -314,7 +332,19 @@ class SwapService {
         bySymbol[token.symbol] = token;
       }
     }
-    return (bySymbol.values.toList(), _listedQuantusAmong(onQuantus));
+    final quantus = _listedQuantusAmong(onQuantus);
+    return (bySymbol.values.sortedBy<num>((t) => -(marketCaps[t] ?? 0)), quantus);
+  }
+
+  /// CoinGecko's coins among [ids]; none when CoinGecko fails, which leaves
+  /// the tokens in 1Click's order with their logos from NEAR.
+  Future<Map<String, CoinMarket>> _coinMarkets(Set<String> ids) async {
+    try {
+      return await _coinGecko.markets(ids);
+    } catch (e) {
+      quantusPrint('CoinGecko markets failed, swap tokens stay in 1Click order: $e');
+      return const {};
+    }
   }
 
   /// QTC among the tokens 1Click lists on Quantus: the configured asset id when

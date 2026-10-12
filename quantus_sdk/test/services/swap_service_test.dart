@@ -72,6 +72,20 @@ Map<String, dynamic> _quoteResponse({
   'correlationId': 'corr-1',
 });
 
+/// An exact-output quote answering [request]: [amountOut] arrives, or what was
+/// asked for, for a payment with a 1% buffer over what the swap needs.
+Map<String, dynamic> _exactOutputResponse(Map<String, dynamic> request, {String? amountOut}) {
+  final dry = request['dry'] as bool;
+  final response = _quoteResponse(dry: dry, depositAddress: dry ? null : '0xdeposit', request: request);
+  (response['quote'] as Map<String, dynamic>).addAll({
+    'amountIn': '57143717',
+    'minAmountIn': '56572279',
+    'amountOut': amountOut ?? request['amount'],
+    'minAmountOut': amountOut ?? request['amount'],
+  });
+  return _signed(response);
+}
+
 Map<String, dynamic> _statusResponse(String status, {Map<String, dynamic>? details}) => {
   'correlationId': 'corr-2',
   'status': status,
@@ -80,15 +94,28 @@ Map<String, dynamic> _statusResponse(String status, {Map<String, dynamic>? detai
   'swapDetails': ?details,
 };
 
+/// CoinGecko's markets answer for the listing fixtures.
+final _marketCaps = jsonEncode([
+  {'id': 'bitcoin', 'symbol': 'btc', 'market_cap': 1.6e12, 'image': 'https://img.test/bitcoin.png'},
+  {'id': 'usd-coin', 'symbol': 'usdc', 'market_cap': 7.3e10, 'image': 'https://img.test/usdc.png'},
+  {'id': 'wrapped-near', 'symbol': 'wnear', 'market_cap': 1.2e8, 'image': null},
+]);
+
+/// [handler] answers 1Click; CoinGecko answers [marketCaps].
 SwapService _service(
   Future<http.Response> Function(http.Request request) handler, {
   String? apiKey,
   String? quantusAssetId,
   bool preflight = false,
+  Future<http.Response> Function(http.Request request)? marketCaps,
 }) => SwapService(
   endpoint: 'https://oneclick.test',
   apiKey: apiKey,
-  client: MockClient(handler),
+  client: MockClient(
+    (r) => r.url.host == 'api.coingecko.com'
+        ? (marketCaps ?? (_) async => http.Response(_marketCaps, 200))(r)
+        : handler(r),
+  ),
   managerPublicKey: _managerPublicKey,
   quantusAssetId: quantusAssetId,
   preflight: preflight,
@@ -149,7 +176,9 @@ void main() {
 
       expect(quote.fromToken, _usdcEth);
       expect(quote.toToken, _wnear);
+      expect(quote.swapType, SwapType.exactInput);
       expect(quote.amountIn, BigInt.from(10000000));
+      expect(quote.minAmountIn, BigInt.from(10000000));
       expect(quote.amountOut, BigInt.parse('2861051688077884367566500'));
       expect(quote.minAmountOut, BigInt.parse('2832441171197105523890835'));
       expect(quote.amountInUsd, closeTo(9.99662, 1e-9));
@@ -227,6 +256,54 @@ void main() {
       await expectLater(
         _quote(service),
         throwsA(isA<SwapQuoteIntegrityException>().having((e) => e.message, 'message', contains('999'))),
+      );
+    });
+
+    test('quotes an exact output: the amount arrives, the payment holds the slippage buffer', () async {
+      final sent = <Map<String, dynamic>>[];
+      final service = _service((r) async {
+        sent.add(_sentRequest(r));
+        return http.Response(jsonEncode(_exactOutputResponse(sent.last)), 200);
+      });
+      final tenNear = BigInt.parse('10000000000000000000000000');
+
+      final quote = await service.getQuote(
+        from: _usdcEth,
+        to: _wnear,
+        amount: tenNear,
+        swapType: SwapType.exactOutput,
+        refundAddress: _refund,
+        recipient: _recipient,
+      );
+      expect(sent.single['swapType'], 'EXACT_OUTPUT');
+      expect(sent.single['amount'], '$tenNear');
+      expect(quote.swapType, SwapType.exactOutput);
+      expect(quote.amountOut, tenNear);
+      expect(quote.minAmountOut, tenNear);
+      expect(quote.amountIn, BigInt.from(57143717));
+      expect(quote.minAmountIn, BigInt.from(56572279));
+
+      final order = await service.createSwap(quote);
+      expect(sent.last, containsPair('dry', false));
+      expect(sent.last, containsPair('swapType', 'EXACT_OUTPUT'));
+      expect(sent.last, containsPair('amount', '$tenNear'));
+      expect(order.quote.amountIn, BigInt.from(57143717));
+    });
+
+    test('rejects an exact-output quote that pays out a different amount', () async {
+      final service = _service(
+        (r) async => http.Response(jsonEncode(_exactOutputResponse(_sentRequest(r), amountOut: '999')), 200),
+      );
+      await expectLater(
+        service.getQuote(
+          from: _usdcEth,
+          to: _wnear,
+          amount: BigInt.from(1000),
+          swapType: SwapType.exactOutput,
+          refundAddress: _refund,
+          recipient: _recipient,
+        ),
+        throwsA(isA<SwapQuoteIntegrityException>().having((e) => e.message, 'message', contains('amountOut'))),
       );
     });
 
@@ -579,10 +656,31 @@ void main() {
 
   group('getFromTokens', () {
     final tokens = [
-      {'assetId': 'nep141:wrap.near', 'decimals': 24, 'blockchain': 'near', 'symbol': 'wNEAR', 'price': 3.47},
+      {
+        'assetId': 'nep141:wrap.near',
+        'decimals': 24,
+        'blockchain': 'near',
+        'symbol': 'wNEAR',
+        'price': 3.47,
+        'coingeckoId': 'wrapped-near',
+      },
       {'assetId': 'nep141:base-usdc.omft.near', 'decimals': 6, 'blockchain': 'base', 'symbol': 'USDC', 'price': 1.0},
-      {'assetId': _usdcEth.assetId, 'decimals': 6, 'blockchain': 'eth', 'symbol': 'USDC', 'price': 0.99966},
-      {'assetId': 'nep141:btc.omft.near', 'decimals': 8, 'blockchain': 'btc', 'symbol': 'BTC', 'price': 80496},
+      {
+        'assetId': _usdcEth.assetId,
+        'decimals': 6,
+        'blockchain': 'eth',
+        'symbol': 'USDC',
+        'price': 0.99966,
+        'coingeckoId': 'usd-coin',
+      },
+      {
+        'assetId': 'nep141:btc.omft.near',
+        'decimals': 8,
+        'blockchain': 'btc',
+        'symbol': 'BTC',
+        'price': 80496,
+        'coingeckoId': 'bitcoin',
+      },
       {'assetId': 'nep141:dead.omft.near', 'decimals': 18, 'blockchain': 'eth', 'symbol': 'DEAD', 'price': 0},
       {'assetId': 'nep141:qtc.omft.near', 'decimals': 12, 'blockchain': 'qtc', 'symbol': 'QTC', 'price': 1.5},
       {
@@ -736,7 +834,7 @@ void main() {
         {'assetId': 'nep141:rhea.near', 'decimals': 18, 'blockchain': 'near', 'symbol': 'RHEA', 'price': 1},
         {'assetId': '1cs_v1:aptos:aptos-fa:0x1', 'decimals': 8, 'blockchain': 'aptos', 'symbol': 'AAVE', 'price': 200},
       ]);
-      final bySymbol = {for (final t in await service.getFromTokens(limit: 20)) t.symbol: t};
+      final bySymbol = {for (final t in await service.getFromTokens()) t.symbol: t};
       expect(bySymbol['ZEC']!.assetId, 'nep141:zec.omft.near');
       expect(bySymbol['ZEC']!.iconAssetId, 'nep141:zec.omft.near');
       expect(bySymbol['WNEAR']!.assetId, 'nep141:wrap.near');
@@ -746,15 +844,25 @@ void main() {
       expect(bySymbol['USDC']!.iconAssetId, _usdcEth.assetId);
     });
 
-    test('lists QTC first, USDC second and the rest as 1Click orders them, one asset per symbol', () async {
-      final service = _service((r) async {
-        expect(r.url.toString(), 'https://oneclick.test/v0/tokens');
-        return http.Response(jsonEncode(tokens), 200);
-      });
+    test('lists QTC first, USDC second and the rest by market cap, one asset per symbol', () async {
+      final asked = <String>[];
+      final service = _service(
+        (r) async {
+          expect(r.url.toString(), 'https://oneclick.test/v0/tokens');
+          return http.Response(jsonEncode(tokens), 200);
+        },
+        marketCaps: (r) async {
+          expect(r.url.path, '/api/v3/coins/markets');
+          expect(r.url.queryParameters['vs_currency'], 'usd');
+          asked.addAll(r.url.queryParameters['ids']!.split(','));
+          return http.Response(_marketCaps, 200);
+        },
+      );
 
       final result = await service.getFromTokens();
 
-      expect(result.map((t) => t.symbol), ['QTC', 'USDC', 'WNEAR', 'BTC']);
+      expect(result.map((t) => t.symbol), ['QTC', 'USDC', 'BTC', 'WNEAR']);
+      expect(asked, unorderedEquals(['wrapped-near', 'usd-coin', 'bitcoin']));
       expect(result.first.isQuantus, isTrue);
       final usdc = result[1];
       expect(usdc.assetId, _usdcEth.assetId);
@@ -763,15 +871,48 @@ void main() {
       expect(usdc.usdPrice, 0.99966);
     });
 
-    test("keeps 1Click's order when USDC is not listed, and caches the listing", () async {
+    test('ranks a bridged stand-in or a coin without a market cap after the ranked ones, in 1Click order', () async {
+      final service = listing([
+        {'assetId': 'nep141:new.near', 'decimals': 18, 'blockchain': 'near', 'symbol': 'NEW', 'price': 2},
+        {
+          'assetId': '1cs_v1:sol:spl:xbtc',
+          'decimals': 8,
+          'blockchain': 'sol',
+          'symbol': 'xBTC',
+          'price': 80000,
+          'coingeckoId': 'bitcoin',
+        },
+        ...tokens,
+      ]);
+      final listed = await service.getFromTokens();
+      expect(listed.map((t) => t.symbol), ['QTC', 'USDC', 'BTC', 'WNEAR', 'NEW', 'XBTC']);
+      expect(listed.map((t) => t.imageUrl), [
+        null,
+        'https://img.test/usdc.png',
+        'https://img.test/bitcoin.png',
+        null,
+        null,
+        'https://img.test/bitcoin.png',
+      ]);
+    });
+
+    test("keeps 1Click's order when CoinGecko fails", () async {
+      final service = _service(
+        (r) async => http.Response(jsonEncode(tokens), 200),
+        marketCaps: (_) async => http.Response('{"status":{"error_code":429}}', 429),
+      );
+      expect((await service.getFromTokens()).map((t) => t.symbol), ['QTC', 'USDC', 'WNEAR', 'BTC']);
+    });
+
+    test('lists every token when USDC is not listed, and caches the listing', () async {
       var tokenCalls = 0;
       final service = _service((r) async {
         tokenCalls++;
         return http.Response(jsonEncode(tokens.where((t) => t['symbol'] != 'USDC').toList()), 200);
       });
 
-      expect((await service.getFromTokens()).map((t) => t.symbol), ['QTC', 'WNEAR', 'BTC']);
-      expect((await service.getFromTokens(limit: 2)).map((t) => t.symbol), ['QTC', 'WNEAR']);
+      expect((await service.getFromTokens()).map((t) => t.symbol), ['QTC', 'BTC', 'WNEAR']);
+      expect((await service.getFromTokens()).map((t) => t.symbol), ['QTC', 'BTC', 'WNEAR']);
       expect(tokenCalls, 1);
       await service.getFromTokens(forceRefresh: true);
       expect(tokenCalls, 2);

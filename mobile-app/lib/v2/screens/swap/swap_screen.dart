@@ -6,6 +6,7 @@ import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
+import 'package:resonance_network_wallet/shared/utils/account_utils.dart';
 import 'package:resonance_network_wallet/shared/utils/print.dart';
 import 'package:resonance_network_wallet/v2/components/near_intents_attribution.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
@@ -17,6 +18,8 @@ import 'package:resonance_network_wallet/v2/screens/swap/swap_slippage_sheet.dar
 import 'package:resonance_network_wallet/v2/screens/swap/token_picker_sheet.dart';
 
 /// Swaps between QTC in [account] and a token on another chain, either way.
+/// Only a transparent account whose key signs here swaps: QTC is refunded to
+/// and paid out at its own address, which a wormhole address could not take.
 /// Where NEAR Intents is not allowed, until 1Click lists QTC with a price, or
 /// when 1Click cannot be reached, the form gives way to a notice that swaps
 /// are unavailable.
@@ -36,6 +39,7 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
   static const _rowHeight = 44.0;
 
   final _amountController = TextEditingController();
+  final _amountFocus = FocusNode();
   SwapToken? _foreign;
   SwapToken? _quantus;
   bool _loadingTokens = true;
@@ -43,6 +47,10 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
 
   /// Starts as a purchase of QTC: the other token on top, QTC below.
   bool _swapOut = false;
+
+  /// Whether the amount typed is what the lower side receives, the upper
+  /// side then paying what it costs, rather than what the upper side pays.
+  bool _exactOutput = false;
   int _loads = 0;
 
   @override
@@ -55,6 +63,7 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
   @override
   void dispose() {
     _amountController.dispose();
+    _amountFocus.dispose();
     super.dispose();
   }
 
@@ -85,25 +94,55 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
     }
   }
 
-  BigInt _amountIn(SwapToken from) =>
-      ref.read(numberFormattingServiceProvider).parseAmount(_amountController.text, decimals: from.decimals) ??
-      BigInt.zero;
+  /// What [from] pays and [to] receives: the amount typed on its side, and
+  /// the other at listed prices.
+  (BigInt, BigInt) _amounts(SwapToken from, SwapToken to) {
+    final typed =
+        ref
+            .read(numberFormattingServiceProvider)
+            .parseAmount(_amountController.text, decimals: (_exactOutput ? to : from).decimals) ??
+        BigInt.zero;
+    return _exactOutput ? (swapEstimateOut(typed, to, from), typed) : (typed, swapEstimateOut(typed, from, to));
+  }
 
   void _setDirection({required bool swapOut}) {
     if (swapOut == _swapOut) return;
-    setState(() => _swapOut = swapOut);
+    setState(() {
+      _swapOut = swapOut;
+      _exactOutput = false;
+    });
     _amountController.clear();
+  }
+
+  /// Moves typing to the other side, starting from its estimate, selected so
+  /// that typing replaces it.
+  void _typeOtherSide(SwapToken from, SwapToken to) {
+    final (amountIn, amountOut) = _amounts(from, to);
+    final token = _exactOutput ? from : to;
+    final estimate = _exactOutput ? amountIn : amountOut;
+    final text = estimate == BigInt.zero
+        ? ''
+        : ref
+              .read(numberFormattingServiceProvider)
+              .formatBalance(
+                estimate,
+                decimals: token.decimals,
+                maxDecimals: token.decimals,
+                addThousandsSeparators: false,
+              );
+    setState(() => _exactOutput = !_exactOutput);
+    _amountController.value = TextEditingValue(
+      text: text,
+      selection: TextSelection(baseOffset: 0, extentOffset: text.length),
+    );
+    _amountFocus.requestFocus();
   }
 
   /// Picks a side's token. QTC heads the list: picking it for the other side
   /// moves QTC there, as does picking a foreign token for QTC's side.
   Future<void> _pickToken(SwapToken tapped) async {
     final service = ref.read(swapServiceProvider);
-    final token = await showTokenPickerSheet(
-      context,
-      current: tapped,
-      loadTokens: ({bool forceRefresh = false}) => service.getFromTokens(limit: 10, forceRefresh: forceRefresh),
-    );
+    final token = await showTokenPickerSheet(context, current: tapped, loadTokens: service.getFromTokens);
     if (token == null || !mounted || token == tapped) return;
     if (!token.isQuantus) setState(() => _foreign = token);
     if (token.isQuantus != tapped.isQuantus) _setDirection(swapOut: !_swapOut);
@@ -113,8 +152,12 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
   /// while it is open is seen: the service then refuses the stale QTC token.
   Future<void> _addAddress(SwapToken from, SwapToken to, SwapToken foreign) async {
     final account = widget.account;
+    if (!account.signsLocally) {
+      throw StateError('Swaps need a transparent account, ${account.name} is ${account.accountType.name}');
+    }
     final own = ref.read(swapPreflightProvider)?.address ?? account.accountId;
-    final amount = _amountIn(from);
+    final (amountIn, amountOut) = _amounts(from, to);
+    final exactOutput = _exactOutput;
     final swapOut = _swapOut;
     final quote = await showSwapAddressSheet(
       context,
@@ -125,7 +168,8 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
           .getQuote(
             from: from,
             to: to,
-            amount: amount,
+            amount: exactOutput ? amountOut : amountIn,
+            swapType: exactOutput ? SwapType.exactOutput : SwapType.exactInput,
             refundAddress: swapOut ? own : address,
             recipient: swapOut ? address : own,
             slippageBps: ref.read(swapSlippageBpsProvider),
@@ -212,7 +256,7 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
   }
 
   Widget _cta(AppLocalizations l10n, SwapToken from, SwapToken to, SwapToken foreign) {
-    final amountIn = _amountIn(from);
+    final (amountIn, amountOut) = _amounts(from, to);
     final spendable = _swapOut && ref.watch(swapPreflightProvider) == null
         ? ref.watch(effectiveBalanceProviderFamily(widget.account.accountId)).value
         : null;
@@ -225,15 +269,14 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
             ? l10n.swapAddRecipientAddress
             : l10n.swapAddRefundAddress,
         onTap: () => _addAddress(from, to, foreign),
-        isDisabled: amountIn == BigInt.zero || insufficient,
+        isDisabled: amountIn == BigInt.zero || amountOut == BigInt.zero || insufficient,
       ),
     );
   }
 
   Widget _form(AppLocalizations l10n, AppColorsV3 colors, AppTextThemeV3 text, SwapToken from, SwapToken to) {
     final fmt = ref.watch(numberFormattingServiceProvider);
-    final amountIn = _amountIn(from);
-    final estimateOut = swapEstimateOut(amountIn, from, to);
+    final (amountIn, amountOut) = _amounts(from, to);
     final oneFrom = BigInt.from(10).pow(from.decimals);
     final priced = from.usdPrice > 0 && to.usdPrice > 0;
     final wallet = widget.account.name;
@@ -266,7 +309,9 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
                       owner: _swapOut ? wallet : external,
                       token: from,
                       usd: swapUsdValue(amountIn, from),
-                      amount: _amountField(colors, text, from),
+                      amount: _exactOutput
+                          ? _estimateBox(colors, text, fmt, from, amountIn, onTap: () => _typeOtherSide(from, to))
+                          : _amountField(colors, text, from),
                     ),
                     Container(height: 4, color: colors.bgVoid),
                     _section(
@@ -275,18 +320,10 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
                       label: l10n.swapTo,
                       owner: _swapOut ? external : wallet,
                       token: to,
-                      usd: swapUsdValue(estimateOut, to),
-                      amount: _amountBox(
-                        colors,
-                        Text(
-                          fmt.formatAmount(estimateOut, decimals: to.decimals),
-                          style: text.amountInline.copyWith(
-                            color: estimateOut > BigInt.zero ? colors.textContent : colors.textMuted2,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
+                      usd: swapUsdValue(amountOut, to),
+                      amount: _exactOutput
+                          ? _amountField(colors, text, to)
+                          : _estimateBox(colors, text, fmt, to, amountOut, onTap: () => _typeOtherSide(from, to)),
                     ),
                   ],
                 ),
@@ -449,17 +486,41 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
     );
   }
 
-  Widget _amountField(AppColorsV3 colors, AppTextThemeV3 text, SwapToken from) {
+  /// The side not typed on: its amount at listed prices; a tap types there.
+  Widget _estimateBox(
+    AppColorsV3 colors,
+    AppTextThemeV3 text,
+    NumberFormattingService fmt,
+    SwapToken token,
+    BigInt estimate, {
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: _amountBox(
+        colors,
+        Text(
+          fmt.formatAmount(estimate, decimals: token.decimals),
+          style: text.amountInline.copyWith(color: estimate > BigInt.zero ? colors.textContent : colors.textMuted2),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+      ),
+    );
+  }
+
+  Widget _amountField(AppColorsV3 colors, AppTextThemeV3 text, SwapToken token) {
     return _amountBox(
       colors,
       TextField(
         controller: _amountController,
+        focusNode: _amountFocus,
         textAlign: TextAlign.right,
         style: text.amountInline.copyWith(color: colors.textContent),
         cursorColor: colors.accentFlare,
         keyboardType: const TextInputType.numberWithOptions(decimal: true),
         inputFormatters: [
-          DecimalInputFilter(localeConfig: ref.watch(localeNumberConfigProvider), maxDecimalPlaces: from.decimals),
+          DecimalInputFilter(localeConfig: ref.watch(localeNumberConfigProvider), maxDecimalPlaces: token.decimals),
         ],
         decoration: InputDecoration.collapsed(
           hintText: '0',
