@@ -3056,6 +3056,18 @@ abstract class AppLocalizations {
   /// **'If the price moves further than this before your swap fills, it is refunded instead. A higher tolerance fills more often but can pay out less.'**
   String get swapSlippageBody;
 
+  /// Slippage tolerance option that opens a field for any tolerance
+  ///
+  /// In en, this message translates to:
+  /// **'Custom'**
+  String get swapSlippageCustom;
+
+  /// Error under the custom slippage field when the tolerance is too high
+  ///
+  /// In en, this message translates to:
+  /// **'Slippage can be at most {percent}%'**
+  String swapSlippageCustomMax(String percent);
+
   /// A slippage tolerance option
   ///
   /// In en, this message translates to:

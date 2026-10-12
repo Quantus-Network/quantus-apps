@@ -1624,6 +1624,14 @@ class AppLocalizationsId extends AppLocalizations {
       'Jika harga bergerak lebih dari ini sebelum swap Anda terisi, dana dikembalikan. Toleransi lebih tinggi lebih sering terisi tetapi hasilnya bisa lebih sedikit.';
 
   @override
+  String get swapSlippageCustom => 'Kustom';
+
+  @override
+  String swapSlippageCustomMax(String percent) {
+    return 'Slippage maksimal $percent%';
+  }
+
+  @override
   String swapSlippagePercent(String percent) {
     return '$percent%';
   }

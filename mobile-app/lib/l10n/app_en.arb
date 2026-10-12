@@ -2352,6 +2352,19 @@
     "@swapSlippageBody": {
       "description": "Explanation on the slippage tolerance sheet"
     },
+    "swapSlippageCustom": "Custom",
+    "@swapSlippageCustom": {
+      "description": "Slippage tolerance option that opens a field for any tolerance"
+    },
+    "swapSlippageCustomMax": "Slippage can be at most {percent}%",
+    "@swapSlippageCustomMax": {
+      "description": "Error under the custom slippage field when the tolerance is too high",
+      "placeholders": {
+        "percent": {
+          "type": "String"
+        }
+      }
+    },
     "swapSlippagePercent": "{percent}%",
     "@swapSlippagePercent": {
       "description": "A slippage tolerance option",

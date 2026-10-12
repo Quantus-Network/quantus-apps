@@ -459,6 +459,8 @@
   "swapSlippageLabel": "Slippage {percent}%",
   "swapSlippageTitle": "Toleransi Slippage",
   "swapSlippageBody": "Jika harga bergerak lebih dari ini sebelum swap Anda terisi, dana dikembalikan. Toleransi lebih tinggi lebih sering terisi tetapi hasilnya bisa lebih sedikit.",
+  "swapSlippageCustom": "Kustom",
+  "swapSlippageCustomMax": "Slippage maksimal {percent}%",
   "swapSlippagePercent": "{percent}%",
   "swapAddRecipientAddress": "Tambahkan Alamat Penerima",
   "swapAddRefundAddress": "Tambahkan Alamat Refund",

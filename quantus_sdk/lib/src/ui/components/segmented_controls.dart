@@ -66,13 +66,16 @@ class SegmentedControls<T> extends StatelessWidget {
                           child: SizedBox(
                             height: double.infinity,
                             child: Center(
-                              child: AnimatedDefaultTextStyle(
-                                duration: _duration,
-                                curve: Curves.easeInOut,
-                                style: text.headingRow.copyWith(
-                                  color: isSelected ? colors.textContent : colors.textMuted,
+                              child: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: AnimatedDefaultTextStyle(
+                                  duration: _duration,
+                                  curve: Curves.easeInOut,
+                                  style: text.headingRow.copyWith(
+                                    color: isSelected ? colors.textContent : colors.textMuted,
+                                  ),
+                                  child: Text(item.label, textAlign: TextAlign.center),
                                 ),
-                                child: Text(item.label, textAlign: TextAlign.center),
                               ),
                             ),
                           ),

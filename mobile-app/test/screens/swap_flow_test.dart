@@ -497,6 +497,54 @@ void main() {
     });
   });
 
+  group('custom slippage', () {
+    testWidgets('takes any tolerance up to 99% and quotes with it', (tester) async {
+      tester.view.physicalSize = const Size(402 * 3, 874 * 3);
+      tester.view.devicePixelRatio = 3;
+      addTearDown(tester.view.reset);
+      final oneClick = _OneClick(dryOut: BigInt.from(24860000));
+      await tester.pumpApp(SwapScreen(account: account), overrides: overrides(oneClick.service()));
+      await settle(tester);
+
+      await tester.tap(svg('assets/v2/swap_pencil.svg'));
+      await settle(tester);
+      expect(tester.getSize(find.text(l10n.swapSlippageCustom)).height, tester.getSize(find.text('1%')).height);
+      await tester.tap(find.text(l10n.swapSlippageCustom));
+      await settle(tester);
+      final field = find.descendant(of: find.byType(QuantusTextField), matching: find.byType(TextField));
+
+      await tester.enterText(field, '99.5');
+      await tester.pump();
+      expect(find.text(l10n.swapSlippageCustomMax('99')), findsOneWidget);
+      expect(button(tester, l10n.commonDone).isDisabled, isTrue);
+
+      await tester.enterText(field, '7.5');
+      await tester.pump();
+      expect(find.text(l10n.swapSlippageCustomMax('99')), findsNothing);
+      await tester.tap(find.text(l10n.commonDone));
+      await settle(tester);
+      expect(find.text(l10n.swapSlippageLabel('7.5')), findsOneWidget);
+
+      await tester.tap(svg('assets/v2/swap_pencil.svg'));
+      await settle(tester);
+      expect(tester.widget<TextField>(field).controller!.text, '7.5');
+      await tester.tap(find.byIcon(Icons.close));
+      await settle(tester);
+
+      await swapOut(tester);
+      await tester.enterText(find.byType(TextField), '10');
+      await tester.pump();
+      await tester.tap(find.text(l10n.swapAddRecipientAddress));
+      await settle(tester);
+      await tester.enterText(find.byType(TextField).last, _external);
+      await tester.pump();
+      await tester.tap(find.text(l10n.swapContinue));
+      await settle(tester);
+      final quote = oneClick.requests.singleWhere((r) => r.url.path == '/v0/quote');
+      expect((jsonDecode(quote.body) as Map)['slippageTolerance'], 750);
+    });
+  });
+
   group('ReviewSwapScreen', () {
     testWidgets('a swap out sends the QTC to the live deposit address and follows the swap', (tester) async {
       final oneClick = _OneClick(dryOut: outQuote.amountOut);

@@ -36,6 +36,9 @@ final swapTokenIconProvider = FutureProvider.autoDispose.family<SwapTokenIcon?, 
 /// Slippage tolerances offered for a quote, in basis points.
 const swapSlippageOptionsBps = [50, 100, 200, 300];
 
+/// Highest custom slippage tolerance, in basis points.
+const swapSlippageMaxBps = 9900;
+
 /// Slippage tolerance the next quote asks for, in basis points.
 final swapSlippageBpsProvider = StateProvider<int>((_) => SwapService.defaultSlippageBps);
 

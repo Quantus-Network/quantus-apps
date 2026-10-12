@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 
 /// Shared v3 text field: default, focus, and inline error chrome.
@@ -13,6 +14,7 @@ class QuantusTextField extends StatefulWidget {
   final bool obscureText;
   final bool enableSuggestions;
   final TextInputType? keyboardType;
+  final List<TextInputFormatter>? inputFormatters;
   final TextInputAction? textInputAction;
   final TextCapitalization textCapitalization;
   final bool autocorrect;
@@ -37,6 +39,7 @@ class QuantusTextField extends StatefulWidget {
     this.obscureText = false,
     this.enableSuggestions = true,
     this.keyboardType,
+    this.inputFormatters,
     this.textInputAction,
     this.textCapitalization = TextCapitalization.none,
     this.autocorrect = true,
@@ -146,6 +149,7 @@ class _QuantusTextFieldState extends State<QuantusTextField> {
                 obscureText: widget.obscureText,
                 enableSuggestions: widget.enableSuggestions,
                 keyboardType: widget.keyboardType,
+                inputFormatters: widget.inputFormatters,
                 textInputAction: widget.textInputAction,
                 textCapitalization: widget.textCapitalization,
                 autocorrect: widget.autocorrect,
