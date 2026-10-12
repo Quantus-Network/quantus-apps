@@ -30,6 +30,7 @@ WormholeUtxo _utxo(int scaled) => WormholeUtxo(
     leafIndex: BigInt.from(scaled),
     transferCount: BigInt.one,
     extrinsicId: '',
+    viaWormhole: false,
   ),
   owner: const WormholeAddressInfo(index: 0, address: 'addr', secretHex: '0x00'),
   nullifierHex: '0xn$scaled',

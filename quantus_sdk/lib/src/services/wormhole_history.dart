@@ -1,8 +1,4 @@
-import 'dart:typed_data';
-
 import 'package:collection/collection.dart';
-import 'package:quantus_sdk/generated/bell/pallets/wormhole.dart' as wormhole_pallet;
-import 'package:quantus_sdk/src/extensions/address_extension.dart';
 import 'package:quantus_sdk/src/models/transaction_event.dart';
 import 'package:quantus_sdk/src/services/wormhole_utxo_service.dart';
 import 'package:quantus_sdk/src/utils/print.dart';
@@ -10,11 +6,6 @@ import 'package:quantus_sdk/src/utils/print.dart';
 /// The batches of one send are proved and submitted back to back, a couple of
 /// minutes apart; batches further apart than this belong to different sends.
 const Duration wormholeSendMergeWindow = Duration(minutes: 5);
-
-/// Address the chain mints wormhole exits and mining rewards from.
-final String wormholeMintingAddress = AddressExtension.ss58AddressFromBytes(
-  Uint8List.fromList(wormhole_pallet.Constants().mintingAccount),
-);
 
 /// One proof extrinsic of a send: the wallet's [inputs] it consumed (each
 /// carrying the nullifier that spent it) and how their value was exited.
@@ -55,6 +46,19 @@ class WormholeTransferEvent extends TransferEvent {
     required super.blockNumber,
     this.batches = const [],
   }) : super(blockHash: null);
+
+  /// A payout of someone else's proof, as chain history lists it.
+  WormholeTransferEvent.receipt(TransferEvent transfer)
+    : this(
+        id: transfer.id,
+        from: transfer.from,
+        to: transfer.to,
+        amount: transfer.amount,
+        timestamp: transfer.timestamp,
+        fee: transfer.fee,
+        extrinsicHash: transfer.extrinsicHash,
+        blockNumber: transfer.blockNumber,
+      );
 
   /// True for a spend whose proof settled together with other transfers, so
   /// the indexer cannot say which exit was ours: [amount] is what our inputs
@@ -214,7 +218,7 @@ List<TransactionEvent> buildWormholeHistory({
       if (!changeExtrinsics.contains(transfer.extrinsicId))
         (
           transfer.id,
-          transfer.fromId == wormholeMintingAddress && transfer.extrinsicId.isNotEmpty
+          transfer.viaWormhole
               ? WormholeTransferEvent(
                   id: transfer.id,
                   from: transfer.fromId,

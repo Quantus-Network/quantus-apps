@@ -2,6 +2,7 @@ import 'dart:developer' as developer;
 
 import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:quantus_sdk/src/models/json_dynamic_parse.dart';
 import 'package:quantus_sdk/src/services/multisig_graphql.dart';
 import 'package:quantus_sdk/src/utils/timing.dart';
 
@@ -246,6 +247,7 @@ $selections
       }
       extrinsic {
         id
+        pallet
       }
       fee
       executedBy {
@@ -649,7 +651,9 @@ ${MultisigGraphql.cancelledMultisigProposalAccountEventSelection}
       );
     }
     if (eventMap['transfer'] != null) {
-      return TransferEvent.fromJson(eventMap['transfer']);
+      final transfer = TransferEvent.fromJson(eventMap['transfer']);
+      final pallet = jsonMapOrNull(eventMap['transfer']['extrinsic'])?['pallet'];
+      return pallet == wormholePallet ? WormholeTransferEvent.receipt(transfer) : transfer;
     }
     if (eventMap['minerReward'] != null) {
       return MinerRewardEvent.fromJson(eventMap['minerReward']);

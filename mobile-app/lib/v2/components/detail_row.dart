@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/l10n/app_localizations.dart';
-import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 
 enum DetailValueKind { caption, mono }
 
@@ -34,24 +32,18 @@ Widget labelValueRow(BuildContext context, String label, Widget value) {
   );
 }
 
-/// A detail line whose value is a whole address with its checkphrase.
-class AddressDetailRow extends ConsumerWidget {
+/// A detail line whose value is a shortened address.
+class AddressDetailRow extends StatelessWidget {
   final String label;
   final String address;
 
   const AddressDetailRow({super.key, required this.label, required this.address});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) => labelValueRow(
-    context,
-    label,
-    AddressCheckphrase(
-      address: address,
-      shortenAddress: true,
-      checkphrase: ref.watch(checksumNameProvider(address)).value,
-      textAlign: TextAlign.end,
-      checkphraseStyle: context.themeTextV3.body.copyWith(color: context.colorsV3.textContent.useOpacity(0.5)),
-    ),
+  Widget build(BuildContext context) => DetailRow(
+    label: label,
+    value: AddressFormattingService.formatAddress(address, ellipses: '.......'),
+    valueKind: DetailValueKind.mono,
   );
 }
 

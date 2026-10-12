@@ -1882,6 +1882,10 @@
     "@activityDetailFrom": {
       "description": "From row label on detail sheet"
     },
+    "activitySenderEncrypted": "Encrypted",
+    "@activitySenderEncrypted": {
+      "description": "Shown in place of the sender of a wormhole receipt, in the activity list and detail sheet"
+    },
     "activityDetailDate": "DATE",
     "@activityDetailDate": {
       "description": "Date row label on detail sheet"

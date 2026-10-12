@@ -1311,6 +1311,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get activityDetailFrom => 'FROM';
 
   @override
+  String get activitySenderEncrypted => 'Encrypted';
+
+  @override
   String get activityDetailDate => 'DATE';
 
   @override

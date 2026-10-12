@@ -1314,6 +1314,9 @@ class AppLocalizationsId extends AppLocalizations {
   String get activityDetailFrom => 'DARI';
 
   @override
+  String get activitySenderEncrypted => 'Terenkripsi';
+
+  @override
   String get activityDetailDate => 'TANGGAL';
 
   @override

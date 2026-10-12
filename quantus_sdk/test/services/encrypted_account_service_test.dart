@@ -41,6 +41,7 @@ WormholeUtxo _utxo(int scaled, {int index = 0, bool isChange = false, String? nu
     leafIndex: BigInt.from(scaled),
     transferCount: BigInt.one,
     extrinsicId: '',
+    viaWormhole: false,
   ),
   // secretHex blank like production getUnspentUtxos (M11): spenders re-derive.
   owner: WormholeAddressInfo(

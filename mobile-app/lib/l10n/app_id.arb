@@ -364,6 +364,7 @@
   "activityDetailStatus": "STATUS",
   "activityDetailTo": "KE",
   "activityDetailFrom": "DARI",
+  "activitySenderEncrypted": "Terenkripsi",
   "activityDetailDate": "TANGGAL",
   "activityDetailNetworkFee": "BIAYA JARINGAN",
   "activityDetailWormholeDetails": "Detail wormhole",

@@ -21,6 +21,7 @@ void main() {
       leafIndex: BigInt.zero,
       transferCount: BigInt.zero,
       extrinsicId: '0xpay',
+      viaWormhole: false,
     ),
     owner: WormholeAddressInfo(index: 0, address: account.accountId, secretHex: ''),
     nullifierHex: '0xn1',

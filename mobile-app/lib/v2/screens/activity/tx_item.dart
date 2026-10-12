@@ -330,6 +330,8 @@ class TxItemData {
       // recipient: name the batch instead, with no "To:" prefix.
       counterpartyAddr: counterparty.isEmpty
           ? l10n.activityTxAggregatedBatch
+          : !isSend && tx.isWormhole
+          ? l10n.activitySenderEncrypted
           : AddressFormattingService.formatAddress(counterparty, prefix: 5, postFix: 3),
       counterpartyDirectionLabel: counterparty.isEmpty ? '' : null,
     );

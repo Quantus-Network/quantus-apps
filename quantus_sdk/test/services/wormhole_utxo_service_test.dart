@@ -22,6 +22,7 @@ WormholeTransfer _transfer({required String toId, required int count}) => Wormho
   leafIndex: BigInt.from(count),
   transferCount: BigInt.from(count),
   extrinsicId: '',
+  viaWormhole: false,
 );
 
 /// Runs the real [WormholeUtxoService.getUnspentUtxos] over canned transfers:
