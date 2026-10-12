@@ -11,7 +11,7 @@ import 'package:resonance_network_wallet/services/local_auth_service.dart';
 import 'package:resonance_network_wallet/services/transaction_submission_service.dart';
 import 'package:resonance_network_wallet/shared/utils/account_utils.dart';
 import 'package:resonance_network_wallet/shared/utils/print.dart';
-import 'package:resonance_network_wallet/shared/utils/url_utils.dart';
+import 'package:resonance_network_wallet/v2/components/explorer_link.dart';
 import 'package:resonance_network_wallet/v2/screens/send/keystone_sign_cache.dart';
 import 'package:resonance_network_wallet/v2/screens/send/keystone_signing_session.dart';
 import 'package:resonance_network_wallet/v2/screens/send/send_fee_notifier.dart';
@@ -250,7 +250,7 @@ class RegularSendStrategy extends SendStrategy {
             return hash;
           },
         ),
-        terminalForHash: (hash) => terminal.copyWith(explorerUrl: explorerImmediateTransactionUrl(hash)),
+        terminalForHash: (hash) => terminal.copyWith(explorerUrl: explorerUrl('transactions/$hash')),
       );
     }
 
@@ -268,7 +268,7 @@ class RegularSendStrategy extends SendStrategy {
             .addAddress(recipient)
             .catchError((Object e) => quantusPrint('Failed to save recent address: $e')),
       );
-      return SendSubmitted(terminal.copyWith(explorerUrl: explorerImmediateTransactionUrl(hash)));
+      return SendSubmitted(terminal.copyWith(explorerUrl: explorerUrl('transactions/$hash')));
     } catch (e) {
       quantusPrint('Transfer failed: $e');
       return SendFailed(l10n.sendReviewSubmitFailed);

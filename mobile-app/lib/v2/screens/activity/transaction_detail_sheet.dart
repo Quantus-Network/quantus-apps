@@ -115,19 +115,21 @@ class _TransactionDetailSheet extends ConsumerWidget {
     } else if (isMinerReward) {
       transactionType = 'miner-rewards';
     } else if (tx.isWormhole) {
-      transactionType = 'wormhole';
+      transactionType = 'transactions/wormhole';
     } else if (tx.isReversibleScheduled) {
-      transactionType = 'scheduled-reversible-transactions';
+      transactionType = 'transactions/scheduled-reversible';
     } else if (tx.isReversibleExecuted) {
-      transactionType = 'executed-reversible-transactions';
+      transactionType = 'transactions/executed-reversible';
     } else if (tx.isReversibleCancelled) {
-      transactionType = 'cancelled-reversible-transactions';
+      transactionType = 'transactions/cancelled-reversible';
     } else {
-      transactionType = 'immediate-transactions';
+      transactionType = 'transactions';
     }
 
     String? path;
-    if (tx.extrinsicHash != null) {
+    if (tx is ReversibleTransferEvent) {
+      path = '$transactionType/${(tx as ReversibleTransferEvent).txId}';
+    } else if (tx.extrinsicHash != null) {
       path = '$transactionType/${tx.extrinsicHash}';
     } else if (isMinerReward && tx.blockHash != null) {
       path = '$transactionType/${tx.blockHash}';
