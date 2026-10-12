@@ -128,6 +128,15 @@ void main() {
       }
     });
 
+    test('transfer lookups fetch the pallet that tells a wormhole receipt apart', () {
+      for (final query in [
+        ChainHistoryService.searchPendingTransferQuery,
+        ChainHistoryService.searchByExtrinsicHashTransferQuery,
+      ]) {
+        expect(query, contains('pallet'));
+      }
+    });
+
     test('scheduled reversible query uses the same per-account shape, direction columns and keyset', () {
       final scheduledSend = ChainHistoryService.buildScheduledReversibleTransfersQuery(
         TransactionFilter.send,
@@ -413,6 +422,37 @@ void main() {
   group('ChainHistoryService.tryParseOtherTransferEvent', () {
     test('returns null for unhandled multisig indexer account events', () {
       expect(service.tryParseOtherTransferEvent({'id': 'ae-ms-proposal-ready-0000000256-qzk1'}), isNull);
+    });
+
+    Map<String, dynamic> transferEvent(String pallet) => {
+      'id': 'ae-transfer-0000209976-55036-000015',
+      'transfer': {
+        'id': '0000209976-55036-000015',
+        'amount': '870000000000',
+        'timestamp': '2026-10-09T02:27:00.000Z',
+        'from': {'id': 'qzjUYyuN4L3HKmBPMxHvK2n8HYnaLZcQvLSQTgdwB2nQ1g2mc'},
+        'to': {'id': 'qzo4QjZzBFC4gL72EjtG7kQkemGmP67wWmruLLN9sgMNAQSzb'},
+        'block': {'height': 209976, 'hash': '0xblock'},
+        'extrinsic': {'id': '0x34a4fb8c3d63a975c38d06d4a6445fa96241c1892165bf19d8b2184de693669c', 'pallet': pallet},
+        'fee': '0',
+      },
+    };
+
+    test('a transfer the wormhole pallet paid out is a wormhole receipt', () {
+      final result = service.tryParseOtherTransferEvent(transferEvent('Wormhole'));
+      expect(result, isA<WormholeTransferEvent>());
+
+      final event = result! as WormholeTransferEvent;
+      expect(event.to, 'qzo4QjZzBFC4gL72EjtG7kQkemGmP67wWmruLLN9sgMNAQSzb');
+      expect(event.amount, BigInt.parse('870000000000'));
+      expect(event.extrinsicHash, '0x34a4fb8c3d63a975c38d06d4a6445fa96241c1892165bf19d8b2184de693669c');
+      expect(event.batches, isEmpty);
+    });
+
+    test('a transfer of any other pallet stays a plain transfer', () {
+      final result = service.tryParseOtherTransferEvent(transferEvent('Balances'));
+      expect(result, isA<TransferEvent>());
+      expect(result, isNot(isA<WormholeTransferEvent>()));
     });
 
     test('parses multisig proposal executed account events', () {

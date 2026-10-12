@@ -19,8 +19,8 @@ WormholeUtxo _received(
   String nullifier, {
   String to = _account,
   required int scaled,
-  String from = _bob,
   String extrinsicId = '0xpay',
+  bool viaWormhole = false,
   int block = 1,
   int event = 0,
   DateTime? at,
@@ -29,13 +29,14 @@ WormholeUtxo _received(
     id: _id(block, event),
     blockHeight: block,
     timestamp: at ?? _t0,
-    fromId: from,
+    fromId: _bob,
     toId: to,
     amount: wormholeTokenFromScaled(scaled),
     toHash: '',
     leafIndex: BigInt.zero,
     transferCount: BigInt.zero,
     extrinsicId: extrinsicId,
+    viaWormhole: viaWormhole,
   ),
   owner: WormholeAddressInfo(index: 0, address: to, secretHex: ''),
   nullifierHex: nullifier,
@@ -95,15 +96,7 @@ void main() {
     final history = _history(
       [
         _received('n1', scaled: 1000),
-        _received(
-          'c1',
-          to: _change0,
-          scaled: 399,
-          from: wormholeMintingAddress,
-          extrinsicId: '0xs1',
-          block: 5,
-          event: 1,
-        ),
+        _received('c1', to: _change0, scaled: 399, viaWormhole: true, extrinsicId: '0xs1', block: 5, event: 1),
       ],
       {
         'n1': _spend('0xs1', block: 5, outputs: {_alice: 600, _change0: 399}),
@@ -136,15 +129,7 @@ void main() {
     final history = _history(
       [
         _received('n1', scaled: 1000),
-        _received(
-          'c1',
-          to: _external1,
-          scaled: 399,
-          from: wormholeMintingAddress,
-          extrinsicId: '0xs1',
-          block: 5,
-          event: 1,
-        ),
+        _received('c1', to: _external1, scaled: 399, viaWormhole: true, extrinsicId: '0xs1', block: 5, event: 1),
       ],
       {
         'n1': _spend('0xs1', block: 5, outputs: {_alice: 600, _external1: 399}),
@@ -174,15 +159,7 @@ void main() {
         [
           _received('n1', scaled: 701, event: 0),
           _received('n2', scaled: 351, event: 1),
-          _received(
-            'c1',
-            to: _change0,
-            scaled: 50,
-            from: wormholeMintingAddress,
-            extrinsicId: '0xs2',
-            block: 11,
-            event: 1,
-          ),
+          _received('c1', to: _change0, scaled: 50, viaWormhole: true, extrinsicId: '0xs2', block: 11, event: 1),
         ],
         {
           'n1': _spend('0xs1', block: 10, outputs: {_alice: 700}),
@@ -280,8 +257,8 @@ void main() {
 
   test('a receipt from another encrypted send is a wormhole event; a mining reward is not', () {
     final history = _history([
-      _received('m1', scaled: 100, from: wormholeMintingAddress, extrinsicId: '', block: 1),
-      _received('w2', scaled: 100, from: wormholeMintingAddress, extrinsicId: '0xw', block: 2),
+      _received('m1', scaled: 100, extrinsicId: '', block: 1),
+      _received('w2', scaled: 100, viaWormhole: true, extrinsicId: '0xw', block: 2),
     ], {});
 
     final [receipt, reward] = history;
@@ -295,7 +272,7 @@ void main() {
       _received('n1', scaled: 701, event: 0),
       _received('n2', scaled: 351, event: 1),
       _received('n3', scaled: 500, event: 2),
-      _received('c1', to: _change0, scaled: 50, from: wormholeMintingAddress, extrinsicId: '0xs2', block: 11, event: 1),
+      _received('c1', to: _change0, scaled: 50, viaWormhole: true, extrinsicId: '0xs2', block: 11, event: 1),
     ];
     final spends = {
       'n1': _spend('0xs1', block: 10, outputs: {_alice: 700}),
@@ -338,24 +315,8 @@ void main() {
       final history = _history(
         [
           _received('n1', scaled: 1000),
-          _received(
-            'c1',
-            to: _change0,
-            scaled: 399,
-            from: wormholeMintingAddress,
-            extrinsicId: '0xs1',
-            block: 5,
-            event: 1,
-          ),
-          _received(
-            'p1',
-            to: _external1,
-            scaled: 1,
-            from: wormholeMintingAddress,
-            extrinsicId: '0xs1',
-            block: 5,
-            event: 2,
-          ),
+          _received('c1', to: _change0, scaled: 399, viaWormhole: true, extrinsicId: '0xs1', block: 5, event: 1),
+          _received('p1', to: _external1, scaled: 1, viaWormhole: true, extrinsicId: '0xs1', block: 5, event: 2),
         ],
         {
           'n1': _spend(
@@ -377,15 +338,7 @@ void main() {
       final history = _history(
         [
           _received('n1', scaled: 1000),
-          _received(
-            'c1',
-            to: _change0,
-            scaled: 399,
-            from: wormholeMintingAddress,
-            extrinsicId: '0xs1',
-            block: 5,
-            event: 1,
-          ),
+          _received('c1', to: _change0, scaled: 399, viaWormhole: true, extrinsicId: '0xs1', block: 5, event: 1),
         ],
         {
           'n1': _spend('0xs1', block: 5, call: 'verify_aggregated_proof', outputs: {_alice: 600, _change0: 399}),
@@ -400,24 +353,8 @@ void main() {
       final history = _history(
         [
           _received('n1', scaled: 1000),
-          _received(
-            'c1',
-            to: _change0,
-            scaled: 399,
-            from: wormholeMintingAddress,
-            extrinsicId: '0xs1',
-            block: 5,
-            event: 1,
-          ),
-          _received(
-            'c2',
-            to: _external1,
-            scaled: 1,
-            from: wormholeMintingAddress,
-            extrinsicId: '0xs1',
-            block: 5,
-            event: 2,
-          ),
+          _received('c1', to: _change0, scaled: 399, viaWormhole: true, extrinsicId: '0xs1', block: 5, event: 1),
+          _received('c2', to: _external1, scaled: 1, viaWormhole: true, extrinsicId: '0xs1', block: 5, event: 2),
         ],
         {
           'n1': _spend('0xs1', block: 5, outputs: {_alice: 600, _change0: 399, _external1: 1}),
@@ -441,5 +378,21 @@ void main() {
 
       expect(_sends(history).map((e) => e.recipientUnknown), [false, true]);
     });
+  });
+
+  test('a receipt reads back from its JSON as a wormhole event; a send does not serialise', () {
+    final receipt = _history([_received('w1', scaled: 100, viaWormhole: true, extrinsicId: '0xw')], {}).single;
+    final restored = WormholeTransferEvent.fromJson((receipt as WormholeTransferEvent).toJson());
+    expect(restored, isA<WormholeTransferEvent>().having((e) => e.extrinsicHash, 'extrinsicHash', '0xw'));
+
+    final send = _sends(
+      _history(
+        [_received('n1', scaled: 1000)],
+        {
+          'n1': _spend('0xs1', block: 5, outputs: {_alice: 999}),
+        },
+      ),
+    ).single;
+    expect(send.toJson, throwsStateError);
   });
 }

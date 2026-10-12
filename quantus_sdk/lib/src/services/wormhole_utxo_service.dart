@@ -11,6 +11,11 @@ import 'package:quantus_sdk/src/services/network/redundant_endpoint.dart';
 import 'package:quantus_sdk/src/services/substrate_service.dart';
 import 'package:quantus_sdk/src/utils/print.dart';
 
+/// Pallet the indexer records on the extrinsic of a transfer a proof paid out.
+const String wormholePallet = 'Wormhole';
+
+/// A transfer into one of the wallet's addresses: a leaf of the wormhole trie,
+/// whatever paid it.
 class WormholeTransfer {
   final String id;
   final int blockHeight;
@@ -26,6 +31,10 @@ class WormholeTransfer {
   /// and genesis leaves, which no extrinsic produces.
   final String extrinsicId;
 
+  /// True when a wormhole proof paid it: the receipt of an encrypted send, or
+  /// change from one of this wallet's own.
+  final bool viaWormhole;
+
   const WormholeTransfer({
     required this.id,
     required this.blockHeight,
@@ -37,8 +46,11 @@ class WormholeTransfer {
     required this.leafIndex,
     required this.transferCount,
     required this.extrinsicId,
+    required this.viaWormhole,
   });
 
+  /// Reads an indexer row (which nests the pallet under `extrinsic`) or a
+  /// cached one (which stores the flag).
   factory WormholeTransfer.fromJson(Map<String, dynamic> json) {
     return WormholeTransfer(
       id: json['id'] as String,
@@ -51,6 +63,8 @@ class WormholeTransfer {
       leafIndex: BigInt.parse(json['leafIndex'] as String),
       transferCount: BigInt.parse(json['transferCount'] as String),
       extrinsicId: json['extrinsicId'] as String? ?? '',
+      viaWormhole:
+          json['viaWormhole'] as bool? ?? (json['extrinsic'] as Map<String, dynamic>?)?['pallet'] == wormholePallet,
     );
   }
 
@@ -65,6 +79,7 @@ class WormholeTransfer {
     'leafIndex': leafIndex.toString(),
     'transferCount': transferCount.toString(),
     'extrinsicId': extrinsicId,
+    'viaWormhole': viaWormhole,
   };
 
   @override
@@ -215,9 +230,10 @@ class WormholeUtxoService {
   /// Generation of both on-disk caches; bump on any format change. v3 keys the
   /// files by network as well as address, so Planck-era files are dropped
   /// instead of being read against mainnet; v6 records each transfer's
-  /// timestamp and extrinsic and each spent nullifier's spend.
+  /// timestamp and extrinsic and each spent nullifier's spend; v7 flags the
+  /// transfers a wormhole proof paid.
   @visibleForTesting
-  static const int cacheVersion = 6;
+  static const int cacheVersion = 7;
   static const int _nullifierBatchSize = 300;
   static const int _reorgDepth = 180;
 
@@ -231,9 +247,10 @@ class WormholeUtxoService {
     toHash: to_hash
     leafIndex: leaf_index
     transferCount: transfer_count
-    extrinsicId: extrinsic_id''';
+    extrinsicId: extrinsic_id
+    extrinsic { pallet }''';
 
-  /// First page of inbound wormhole transfers to one address above [afterBlock].
+  /// First page of transfers into one address above [afterBlock].
   ///
   /// Filters and orders on scalar columns only so Postgres can walk the
   /// `(to_id, block_height, id)` index in output order; a nested `to { id }`

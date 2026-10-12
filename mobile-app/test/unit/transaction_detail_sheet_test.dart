@@ -65,7 +65,26 @@ void main() {
     expect(isSend, isFalse);
     expect(find.textContaining('+300'), findsOneWidget);
     expect(find.text(AddressFormattingService.formatAddress(other.accountId, ellipses: '.......')), findsOneWidget);
-    expect(find.text('Stand-Envelope-Topic-Term-Help'), findsOneWidget);
+    expect(find.text('Stand-Envelope-Topic-Term-Help'), findsNothing);
+  });
+
+  testWidgets('a wormhole receipt names its sender as encrypted', (tester) async {
+    await openSheet(
+      tester,
+      WormholeTransferEvent(
+        id: '0xexit',
+        from: other.accountId,
+        to: me.accountId,
+        amount: BigInt.from(300),
+        timestamp: DateTime(2026, 9, 6),
+        fee: BigInt.zero,
+        extrinsicHash: '0xexit',
+        blockNumber: 1,
+      ),
+    );
+
+    expect(find.text('Encrypted'), findsOneWidget);
+    expect(find.text(AddressFormattingService.formatAddress(other.accountId, ellipses: '.......')), findsNothing);
   });
 
   testWidgets('a private send without an attributable recipient names the aggregated batch', (tester) async {
@@ -99,6 +118,7 @@ void main() {
         leafIndex: BigInt.zero,
         transferCount: BigInt.zero,
         extrinsicId: '',
+        viaWormhole: true,
       ),
       owner: WormholeAddressInfo(index: 0, address: me.accountId, secretHex: ''),
       nullifierHex: nullifier,

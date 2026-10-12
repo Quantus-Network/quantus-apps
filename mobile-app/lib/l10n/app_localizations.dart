@@ -2486,6 +2486,12 @@ abstract class AppLocalizations {
   /// **'FROM'**
   String get activityDetailFrom;
 
+  /// Shown in place of the sender of a wormhole receipt, in the activity list and detail sheet
+  ///
+  /// In en, this message translates to:
+  /// **'Encrypted'**
+  String get activitySenderEncrypted;
+
   /// Date row label on detail sheet
   ///
   /// In en, this message translates to:

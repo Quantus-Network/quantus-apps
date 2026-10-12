@@ -109,6 +109,17 @@ void main() {
       expect(service.deserializeTxEventFromJsonIfPossible(json), isNull);
     });
 
+    test('a wormhole receipt survives the notification metadata round trip', () {
+      final service = container.read(transactionServiceProvider);
+      final receipt = WormholeTransferEvent.receipt(TransferEvent.fromJson(transferPayloadFromSample()));
+
+      final event = service.deserializeTxEventFromJsonIfPossible(receipt.toJson());
+
+      expect(event, isA<WormholeTransferEvent>());
+      expect(event!.to, receipt.to);
+      expect(event.extrinsicHash, receipt.extrinsicHash);
+    });
+
     test('parses FCM-style TRANSFER (JSON string block/senders, int amounts, '
         'top-level extrinsicHash)', () {
       final service = container.read(transactionServiceProvider);

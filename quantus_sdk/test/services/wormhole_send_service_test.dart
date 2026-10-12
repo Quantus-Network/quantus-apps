@@ -141,6 +141,7 @@ void main() {
       leafIndex: BigInt.one,
       transferCount: BigInt.one,
       extrinsicId: '',
+      viaWormhole: false,
     );
 
     Future<_StubProvingSendService> runClaim({Object? proveError, List<WormholeTransfer>? transfers}) async {
@@ -190,6 +191,7 @@ void main() {
             leafIndex: BigInt.from(i + 1),
             transferCount: BigInt.one,
             extrinsicId: '',
+            viaWormhole: false,
           ),
       ];
 

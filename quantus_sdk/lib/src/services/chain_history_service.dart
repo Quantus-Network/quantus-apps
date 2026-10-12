@@ -2,6 +2,7 @@ import 'dart:developer' as developer;
 
 import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:quantus_sdk/src/models/json_dynamic_parse.dart';
 import 'package:quantus_sdk/src/services/multisig_graphql.dart';
 import 'package:quantus_sdk/src/utils/timing.dart';
 
@@ -246,6 +247,7 @@ $selections
       }
       extrinsic {
         id
+        pallet
       }
       fee
       executedBy {
@@ -371,6 +373,7 @@ query SearchPendingTransaction(
       block { height hash }
       extrinsic {
         id
+        pallet
       }
       timestamp
       fee
@@ -425,7 +428,8 @@ query SearchPendingTransaction(
 }
 ''';
 
-  final String _searchByExtrinsicHashTransferQuery = r'''
+  @visibleForTesting
+  static const String searchByExtrinsicHashTransferQuery = r'''
 query SearchByExtrinsicHash($extrinsicHash: String!) {
   events: event(
     limit: 1
@@ -442,7 +446,7 @@ query SearchByExtrinsicHash($extrinsicHash: String!) {
       from { id }
       to { id }
       block { height hash }
-      extrinsic { id }
+      extrinsic { id pallet }
       timestamp
       fee
     }
@@ -649,7 +653,7 @@ ${MultisigGraphql.cancelledMultisigProposalAccountEventSelection}
       );
     }
     if (eventMap['transfer'] != null) {
-      return TransferEvent.fromJson(eventMap['transfer']);
+      return _transferEvent(eventMap['transfer'] as Map<String, dynamic>);
     }
     if (eventMap['minerReward'] != null) {
       return MinerRewardEvent.fromJson(eventMap['minerReward']);
@@ -872,7 +876,7 @@ ${MultisigGraphql.cancelledMultisigProposalAccountEventSelection}
   Future<TransactionEvent?> searchByExtrinsicHash({required String extrinsicHash, required bool isReversible}) {
     _log('Searching by extrinsic hash: $extrinsicHash, reversible: $isReversible');
     return _searchEvent(
-      query: isReversible ? _searchByExtrinsicHashReversibleQuery : _searchByExtrinsicHashTransferQuery,
+      query: isReversible ? _searchByExtrinsicHashReversibleQuery : searchByExtrinsicHashTransferQuery,
       variables: {'extrinsicHash': extrinsicHash},
       isReversible: isReversible,
     );
@@ -951,6 +955,14 @@ ${MultisigGraphql.cancelledMultisigProposalAccountEventSelection}
     }
   }
 
+  /// A transfer the wormhole pallet paid out is the receipt of a private send.
+  static TransactionEvent _transferEvent(Map<String, dynamic> json) {
+    final transfer = TransferEvent.fromJson(json);
+    return jsonMapOrNull(json['extrinsic'])?['pallet'] == wormholePallet
+        ? WormholeTransferEvent.receipt(transfer)
+        : transfer;
+  }
+
   Future<TransactionEvent?> _searchEvent({
     required String query,
     required Map<String, dynamic> variables,
@@ -975,8 +987,7 @@ ${MultisigGraphql.cancelledMultisigProposalAccountEventSelection}
           status: ReversibleTransferStatus.SCHEDULED,
         );
       } else {
-        final transferData = eventJson['transfer'] as Map<String, dynamic>;
-        transaction = TransferEvent.fromJson(transferData);
+        transaction = _transferEvent(eventJson['transfer'] as Map<String, dynamic>);
       }
 
       _log('Found matching transaction at block ${transaction.blockNumber}');

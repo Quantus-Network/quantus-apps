@@ -298,6 +298,8 @@ class _DetailsSection extends ConsumerWidget {
             value: l10n.activityDetailAggregatedBatch,
             valueKind: DetailValueKind.mono,
           )
+        else if (!isSend && tx.isWormhole)
+          DetailRow(label: counterpartyLabel, value: l10n.activitySenderEncrypted)
         else
           AddressDetailRow(label: counterpartyLabel, address: counterparty),
         DetailRow(label: l10n.activityDetailDate, value: dateTime),

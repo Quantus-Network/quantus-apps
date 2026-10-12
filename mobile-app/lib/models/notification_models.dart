@@ -345,6 +345,7 @@ class NotificationTemplates {
 
   static NotificationData tokenReceived({required Account? account, required TransferEvent transactionData}) {
     final tokenString = _formatAmount(transactionData.amount);
+    final sender = transactionData is WormholeTransferEvent ? 'an encrypted sender' : transactionData.from;
 
     return NotificationData(
       id: 'token_received_${transactionData.id}_${DateTime.now().millisecondsSinceEpoch}',
@@ -353,7 +354,7 @@ class NotificationTemplates {
       intent: NotificationIntent.receivedTokens,
       source: NotificationSource.local,
       title: '$tokenString Received',
-      message: 'You just received $tokenString from ${transactionData.from}',
+      message: 'You just received $tokenString from $sender',
       accountName: account?.name ?? 'Undefined',
       timestamp: DateTime.now(),
       persistent: true,
