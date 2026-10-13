@@ -66,6 +66,7 @@ class SwapService {
   ];
   static const quoteWaitingTime = Duration(seconds: 3);
   static const statusPollInterval = Duration(seconds: 5);
+  static const _appFee = {'recipient': AppConstants.oneClickFeeRecipient, 'fee': AppConstants.oneClickFeeBps};
   static const _savedAddressesKey = 'swap_saved_addresses';
   static const _maxSavedAddresses = 50;
   static const _tokensCacheTtl = Duration(minutes: 10);
@@ -220,6 +221,7 @@ class SwapService {
       'quoteWaitingTimeMs': quoteWaitingTime.inMilliseconds,
       'referral': AppConstants.oneClickReferral,
       'confidentiality': confidentiality,
+      'appFees': [_appFee],
     };
     final json = await _api.send('POST', '/v0/quote', body: body) as Map<String, dynamic>;
     final correlationId = json['correlationId'] as String?;
@@ -234,6 +236,15 @@ class SwapService {
           correlationId: correlationId,
         );
       }
+    }
+    // 1Click adds its own fee to the echoed list, and the signature does not
+    // cover it, so the list must hold our fee as sent.
+    final fees = (echoed['appFees'] as List<dynamic>).cast<Map<String, dynamic>>();
+    if (!fees.any((f) => f['recipient'] == _appFee['recipient'] && f['fee'] == _appFee['fee'])) {
+      throw SwapQuoteIntegrityException(
+        'Quote answers a different request: appFees are $fees, sent $_appFee',
+        correlationId: correlationId,
+      );
     }
     if (!DateTime.parse(echoed['deadline'] as String).isAtSameMomentAs(deadline)) {
       throw SwapQuoteIntegrityException(

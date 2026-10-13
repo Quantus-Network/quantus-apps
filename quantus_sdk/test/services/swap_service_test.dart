@@ -17,6 +17,10 @@ const _usdcEth = SwapToken(
 );
 const _wnear = SwapToken(assetId: 'nep141:wrap.near', symbol: 'WNEAR', network: 'NEAR', decimals: 24, usdPrice: 3.47);
 const _refund = '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045';
+
+/// The fee 1Click adds to the echoed request of a confidential quote.
+const _oneClickFee = {'recipient': '2238fd089f1c92b206c218cd16b8676cb98964e0d50f8ab729c6396a81e07805', 'fee': 20};
+const _ourFee = {'recipient': AppConstants.oneClickFeeRecipient, 'fee': AppConstants.oneClickFeeBps};
 const _recipient = 'qznQKhufTDfU3szAzfgCny7wMhxUN3qjEqneiRUNgC7MjSDyG';
 
 /// Stands in for 1Click's signing key; responses the mock serves are signed with it.
@@ -67,6 +71,7 @@ Map<String, dynamic> _quoteResponse({
     'deadline': '2026-09-20T06:00:50.000Z',
     'confidentiality': 'basic',
     ...?request,
+    'appFees': [...?request?['appFees'] as List<dynamic>?, _oneClickFee],
   },
   'timestamp': '2026-09-20T05:50:50.975Z',
   'correlationId': 'corr-1',
@@ -182,6 +187,7 @@ void main() {
         'quoteWaitingTimeMs': 3000,
         'referral': 'quantus',
         'confidentiality': 'basic',
+        'appFees': [_ourFee],
       });
       final deadline = DateTime.parse(sent['deadline'] as String);
       // The request deadline is sent at millisecond precision.
@@ -318,6 +324,18 @@ void main() {
           recipient: _recipient,
         ),
         throwsA(isA<SwapQuoteIntegrityException>().having((e) => e.message, 'message', contains('amountOut'))),
+      );
+    });
+
+    test('rejects a quote whose echoed fees leave ours out', () async {
+      final service = _service((r) async {
+        final response = _quoteResponse(request: _sentRequest(r));
+        (response['quoteRequest'] as Map<String, dynamic>)['appFees'] = [_oneClickFee];
+        return http.Response(jsonEncode(_signed(response)), 200);
+      });
+      await expectLater(
+        _quote(service),
+        throwsA(isA<SwapQuoteIntegrityException>().having((e) => e.message, 'message', contains('appFees'))),
       );
     });
 
