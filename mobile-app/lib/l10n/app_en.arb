@@ -2390,7 +2390,7 @@
     "@swapTokenPickerLoadError": {
       "description": "Error when token list fails to load"
     },
-    "swapTokenPickerSearchHint": "Search",
+    "swapTokenPickerSearchHint": "Search token or chain",
     "@swapTokenPickerSearchHint": {
       "description": "Search field hint on token picker sheet"
     },

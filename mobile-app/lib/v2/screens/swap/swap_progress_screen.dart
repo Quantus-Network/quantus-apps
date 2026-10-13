@@ -405,7 +405,7 @@ class _SwapDeposit extends ConsumerWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                TokenIcon(token: from, size: 28, networkBadgeSize: 11),
+                TokenIcon(token: from, size: 28),
                 const SizedBox(width: 8),
                 Flexible(
                   child: FittedBox(

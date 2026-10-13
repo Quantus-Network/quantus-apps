@@ -48,4 +48,39 @@ void main() {
     expect(find.byType(Image), findsOneWidget);
     expect(find.text('U'), findsNothing);
   });
+
+  group('chain badge', () {
+    const onSolana = SwapToken(
+      assetId: 'nep141:sol-usdc',
+      symbol: 'USDC',
+      network: 'SOL',
+      decimals: 6,
+      usdPrice: 1,
+      networkImageUrl: 'https://img.test/solana.png',
+    );
+
+    Future<void> pumpBadge(WidgetTester tester, SwapTokenIcon? chainLogo) async {
+      await tester.pumpApp(
+        const TokenIcon(token: onSolana),
+        overrides: [
+          swapTokenIconProvider.overrideWith((ref, token) async => null),
+          swapImageProvider.overrideWith((ref, url) async => url == onSolana.networkImageUrl ? chainLogo : null),
+        ],
+      );
+      await tester.pump();
+      await tester.pump();
+    }
+
+    testWidgets("shows the chain's letter until its logo is there", (tester) async {
+      await pumpBadge(tester, null);
+      expect(find.text('S'), findsOneWidget);
+      expect(find.byType(Image), findsNothing);
+    });
+
+    testWidgets("shows the chain's logo", (tester) async {
+      await pumpBadge(tester, SwapTokenIcon(base64Decode(_onePixelPng), 'image/png'));
+      expect(find.text('S'), findsNothing);
+      expect(find.byType(Image), findsOneWidget);
+    });
+  });
 }

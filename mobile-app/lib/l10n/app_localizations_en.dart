@@ -1646,7 +1646,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get swapTokenPickerLoadError => 'Failed to load tokens';
 
   @override
-  String get swapTokenPickerSearchHint => 'Search';
+  String get swapTokenPickerSearchHint => 'Search token or chain';
 
   @override
   String get swapTokenPickerNoMatch => 'No tokens match your search';

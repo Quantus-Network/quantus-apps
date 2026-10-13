@@ -9,9 +9,8 @@ class TokenIcon extends ConsumerWidget {
 
   final SwapToken token;
   final double size;
-  final double networkBadgeSize;
 
-  const TokenIcon({super.key, required this.token, this.size = 31, this.networkBadgeSize = 12});
+  const TokenIcon({super.key, required this.token, this.size = 32});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -30,6 +29,10 @@ class TokenIcon extends ConsumerWidget {
 
     final icon = ref.watch(swapTokenIconProvider(token)).value;
     final monogram = _monogram(token, colors, text);
+    final networkUrl = token.networkImageUrl;
+    final networkLogo = networkUrl == null ? null : ref.watch(swapImageProvider(networkUrl)).value;
+    final networkMonogram = _networkMonogram(token, colors, text);
+    final badgeSize = size / 2;
     return SizedBox(
       width: size,
       height: size,
@@ -41,9 +44,17 @@ class TokenIcon extends ConsumerWidget {
             right: -2,
             bottom: -2,
             child: SizedBox(
-              width: networkBadgeSize,
-              height: networkBadgeSize,
-              child: _networkMonogram(token, colors, text),
+              width: badgeSize,
+              height: badgeSize,
+              child: networkLogo == null
+                  ? networkMonogram
+                  : Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(color: colors.bgVoid),
+                      ),
+                      child: ClipOval(child: _logo(networkLogo, networkMonogram)),
+                    ),
             ),
           ),
         ],

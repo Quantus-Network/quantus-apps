@@ -40,11 +40,15 @@ class SwapTokenIconService {
   /// symbol on NEAR carries one.
   Future<SwapTokenIcon?> iconFor(SwapToken token) {
     final imageUrl = token.imageUrl;
-    if (imageUrl != null) return _once(imageUrl, () => _kept(Uri.parse(imageUrl)));
+    if (imageUrl != null) return imageAt(imageUrl);
     final assetId = token.iconAssetId;
     if (assetId == null) return Future.value();
     return _once(assetId, () => _nearIcon(assetId));
   }
+
+  /// The image at [url], such as a chain's logo, kept on disk like CoinGecko's
+  /// token logos.
+  Future<SwapTokenIcon?> imageAt(String url) => _once(url, () => _kept(Uri.parse(url)));
 
   Future<SwapTokenIcon?> _once(String key, Future<SwapTokenIcon?> Function() fetch) => _icons[key] ??= () async {
     try {

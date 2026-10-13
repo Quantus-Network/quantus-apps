@@ -447,7 +447,7 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            TokenIcon(token: token, size: 32, networkBadgeSize: 12),
+            TokenIcon(token: token),
             const SizedBox(width: 8),
             Flexible(
               child: Column(

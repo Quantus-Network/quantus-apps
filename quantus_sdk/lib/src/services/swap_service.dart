@@ -99,8 +99,8 @@ class SwapService {
   static Duration depositWindowFor(String network) =>
       _slowNetworks.contains(network) ? _slowDepositWindow : depositWindow;
 
-  /// The tokens to swap between: QTC first, USDC second, the rest by market
-  /// cap, one asset per symbol.
+  /// The tokens to swap between: QTC first, USDC second, then each token's
+  /// main listing by market cap, then its listings on other chains.
   Future<List<SwapToken>> getFromTokens({bool forceRefresh = false}) async {
     final (tokens, quantus) = await _listing(forceRefresh: forceRefresh);
     final usdc = tokens.where((t) => t.symbol == 'USDC').firstOrNull;
@@ -286,14 +286,21 @@ class SwapService {
     return SwapOrder.fromStatusJson(json as Map<String, dynamic>, quote: order.quote);
   }
 
-  /// The tokens to swap with, one per symbol by market cap, and QTC as
-  /// listed. A token is on Quantus when 1Click says so or when its asset id is
-  /// the configured one. A token ranks by the market cap of the CoinGecko coin
-  /// 1Click names for it only when that coin carries its symbol: a bridged BTC
-  /// listed under bitcoin follows the ranked tokens, in 1Click's order.
+  /// The tokens to swap with, one per symbol and chain, and QTC as listed. A
+  /// token is on Quantus when 1Click says so or when its asset id is the
+  /// configured one. Each symbol's main listing comes first, by market cap,
+  /// then its listings on other chains, by market cap and chain. A token ranks
+  /// by the market cap of the CoinGecko coin 1Click names for it only when
+  /// that coin carries its symbol: a bridged BTC listed under bitcoin follows
+  /// the ranked tokens, in 1Click's order. Listings 1Click marks deprecated
+  /// are left out, as is a second listing of a symbol on the same chain.
   Future<(List<SwapToken>, SwapToken?)> _fetchIntentsTokens() async {
     final data = (await _api.send('GET', '/v0/tokens') as List<dynamic>).cast<Map<String, dynamic>>();
-    final coins = await _coinMarkets({for (final item in data) ?item['coingeckoId'] as String?});
+    final logoIds = {for (final item in data) ?SwapToken.networkLogoId((item['blockchain'] as String).toUpperCase())};
+    final (coins, platformLogos) = await (
+      _coinMarkets({for (final item in data) ?item['coingeckoId'] as String?, ...logoIds}),
+      _platformLogos(logoIds),
+    ).wait;
     final nearBySymbol = <String, String>{};
     for (final item in data) {
       final assetId = item['assetId'] as String;
@@ -301,7 +308,7 @@ class SwapService {
         nearBySymbol.putIfAbsent((item['symbol'] as String).toUpperCase(), () => assetId);
       }
     }
-    final bySymbol = <String, SwapToken>{};
+    final listings = <(String, String), SwapToken>{};
     final marketCaps = <SwapToken, double>{};
     final onQuantus = <SwapToken>[];
     for (final item in data) {
@@ -311,6 +318,7 @@ class SwapService {
       final ours = chain == SwapToken.quantusNetwork || assetId == _configuredQuantusAssetId;
       final network = ours && !_preflight ? SwapToken.quantusNetwork : chain;
       final coin = coins[item['coingeckoId']];
+      final logoId = SwapToken.networkLogoId(network);
       final token = SwapToken(
         assetId: assetId,
         symbol: symbol,
@@ -319,6 +327,7 @@ class SwapService {
         usdPrice: (item['price'] as num?)?.toDouble() ?? 0,
         iconAssetId: SwapToken.hasNearContract(assetId) ? assetId : nearBySymbol[symbol],
         imageUrl: coin?.imageUrl,
+        networkImageUrl: platformLogos[logoId] ?? coins[logoId]?.imageUrl,
         isQuantus: ours,
       );
       if (coin != null && coin.symbol.toUpperCase() == symbol) marketCaps[token] = coin.marketCapUsd;
@@ -326,14 +335,19 @@ class SwapService {
         onQuantus.add(token);
         continue;
       }
-      if (token.usdPrice <= 0 || token.symbol == AppConstants.tokenSymbol) continue;
-      final existing = bySymbol[token.symbol];
-      if (existing == null || _networkPriority(token) < _networkPriority(existing)) {
-        bySymbol[token.symbol] = token;
-      }
+      if (token.usdPrice <= 0 || token.symbol == AppConstants.tokenSymbol || symbol.contains('DEPRECATED')) continue;
+      listings.putIfAbsent((symbol, network), () => token);
     }
+    final main = <String, SwapToken>{};
+    for (final token in listings.values) {
+      final existing = main[token.symbol];
+      if (existing == null || _networkPriority(token) < _networkPriority(existing)) main[token.symbol] = token;
+    }
+    final mains = main.values.toSet();
+    num byMarketCap(SwapToken t) => -(marketCaps[t] ?? 0);
+    final others = listings.values.where((t) => !mains.contains(t)).sortedBy<num>(_networkPriority);
     final quantus = _listedQuantusAmong(onQuantus);
-    return (bySymbol.values.sortedBy<num>((t) => -(marketCaps[t] ?? 0)), quantus);
+    return ([...mains.sortedBy<num>(byMarketCap), ...others.sortedBy<num>(byMarketCap)], quantus);
   }
 
   /// CoinGecko's coins among [ids]; none when CoinGecko fails, which leaves
@@ -343,6 +357,17 @@ class SwapService {
       return await _coinGecko.markets(ids);
     } catch (e) {
       quantusPrint('CoinGecko markets failed, swap tokens stay in 1Click order: $e');
+      return const {};
+    }
+  }
+
+  /// CoinGecko's chain logos among [ids]; none when CoinGecko fails, which
+  /// leaves each chain to its letter.
+  Future<Map<String, String>> _platformLogos(Set<String> ids) async {
+    try {
+      return await _coinGecko.platformLogos(ids);
+    } catch (e) {
+      quantusPrint('CoinGecko chain logos failed, chains show their letter: $e');
       return const {};
     }
   }
@@ -381,17 +406,22 @@ class SwapService {
     return listed;
   }
 
-  /// Which listing of a symbol to swap with: the coin's own chain first (ZEC
-  /// on Zcash, wNEAR on NEAR), then the main networks in order.
+  /// Which listing of a symbol comes first: the coin's own chain (ZEC on
+  /// Zcash, wNEAR on NEAR), then the main networks in order.
   int _networkPriority(SwapToken token) {
     if (token.symbol == token.network || token.symbol == 'W${token.network}') return -1;
     return switch (token.network) {
       'ETH' => 0,
       'BTC' => 1,
       'SOL' => 2,
-      'NEAR' => 3,
-      'BASE' => 4,
-      'ARB' => 5,
+      'TRON' => 3,
+      'BSC' => 4,
+      'NEAR' => 5,
+      'BASE' => 6,
+      'ARB' => 7,
+      'POL' => 8,
+      'OP' => 9,
+      'AVAX' => 10,
       _ => 100,
     };
   }
