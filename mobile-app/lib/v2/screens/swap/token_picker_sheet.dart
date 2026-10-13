@@ -111,7 +111,11 @@ class _TokenPickerContentState extends ConsumerState<_TokenPickerContent> {
       );
     }
     final query = _searchController.text.trim().toUpperCase();
-    final tokens = _tokens.where((t) => t.symbol.contains(query)).toList();
+    final tokens = _tokens
+        .where(
+          (t) => t.symbol.contains(query) || t.network.contains(query) || t.networkName.toUpperCase().contains(query),
+        )
+        .toList();
     return Column(
       children: [
         SearchField(controller: _searchController, hintText: l10n.swapTokenPickerSearchHint),
@@ -178,7 +182,7 @@ class _TokenPickerContentState extends ConsumerState<_TokenPickerContent> {
                 children: [
                   Text(token.symbol, style: text.headingRow.copyWith(color: colors.textContent)),
                   const SizedBox(height: 4),
-                  Text(token.network, style: text.body.copyWith(color: colors.textMuted)),
+                  Text(token.networkName, style: text.body.copyWith(color: colors.textMuted)),
                 ],
               ),
             ),

@@ -466,7 +466,7 @@
   "swapAddRefundAddress": "Tambahkan Alamat Refund",
   "swapTokenPickerTitle": "Pilih Token",
   "swapTokenPickerLoadError": "Gagal memuat token",
-  "swapTokenPickerSearchHint": "Cari",
+  "swapTokenPickerSearchHint": "Cari token atau jaringan",
   "swapTokenPickerNoMatch": "Tidak ada token yang cocok dengan pencarian Anda",
   "swapUnavailableTitle": "Swap tidak tersedia",
   "swapDisabledTitle": "Swap dinonaktifkan",

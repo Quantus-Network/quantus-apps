@@ -42,8 +42,9 @@ class AppConstants {
   /// NEAR JSON-RPC, for reading swap token logos off the token contracts.
   static const String nearRpcEndpoint = 'https://free.rpc.fastnear.com';
 
-  /// CoinGecko markets, for ranking swap tokens by market cap and their logos.
-  static const String coingeckoMarketsEndpoint = 'https://api.coingecko.com/api/v3/coins/markets';
+  /// CoinGecko's public API, for ranking swap tokens by market cap and the
+  /// logos of tokens and chains.
+  static const String coingeckoEndpoint = 'https://api.coingecko.com/api/v3';
 
   // Distribution channel id 1Click records on every quote.
   static const String oneClickReferral = 'quantus';

@@ -30,6 +30,9 @@ class TokenIcon extends ConsumerWidget {
 
     final icon = ref.watch(swapTokenIconProvider(token)).value;
     final monogram = _monogram(token, colors, text);
+    final networkUrl = token.networkImageUrl;
+    final networkLogo = networkUrl == null ? null : ref.watch(swapImageProvider(networkUrl)).value;
+    final networkMonogram = _networkMonogram(token, colors, text);
     return SizedBox(
       width: size,
       height: size,
@@ -43,7 +46,15 @@ class TokenIcon extends ConsumerWidget {
             child: SizedBox(
               width: networkBadgeSize,
               height: networkBadgeSize,
-              child: _networkMonogram(token, colors, text),
+              child: networkLogo == null
+                  ? networkMonogram
+                  : Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(color: colors.bgVoid),
+                      ),
+                      child: ClipOval(child: _logo(networkLogo, networkMonogram)),
+                    ),
             ),
           ),
         ],

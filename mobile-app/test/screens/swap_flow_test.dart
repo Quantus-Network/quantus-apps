@@ -119,7 +119,7 @@ class _OneClick {
 
   Future<http.Response> _handle(http.Request request) async {
     requests.add(request);
-    if (coinGeckoHangs && request.url.host == Uri.parse(AppConstants.coingeckoMarketsEndpoint).host) {
+    if (coinGeckoHangs && request.url.host == Uri.parse(AppConstants.coingeckoEndpoint).host) {
       return Completer<http.Response>().future;
     }
     return switch (request.url.path) {
@@ -315,6 +315,7 @@ void main() {
         dryOut: BigInt.one,
         listed: [
           _listedQtc,
+          {'assetId': 'nep141:sol-usdc.omft.near', 'decimals': 6, 'blockchain': 'sol', 'symbol': 'USDC', 'price': 1},
           for (var i = 1; i <= 12; i++)
             {'assetId': 'nep141:coin$i.near', 'decimals': 18, 'blockchain': 'near', 'symbol': 'coin$i', 'price': 1},
         ],
@@ -331,6 +332,17 @@ void main() {
       await tester.pump();
       expect(find.text('COIN12'), findsOneWidget);
       expect(find.text('COIN1'), findsNothing);
+
+      await tester.enterText(search, 'usdc');
+      await tester.pump();
+      expect(find.text('Solana'), findsOneWidget);
+      expect(find.text('Ethereum'), findsNWidgets(2));
+
+      await tester.enterText(search, 'solana');
+      await tester.pump();
+      expect(find.text('Solana'), findsOneWidget);
+      expect(find.text('Ethereum'), findsOneWidget);
+      expect(find.text('COIN12'), findsNothing);
 
       await tester.enterText(search, 'nothing');
       await tester.pump();

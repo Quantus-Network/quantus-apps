@@ -3101,7 +3101,7 @@ abstract class AppLocalizations {
   /// Search field hint on token picker sheet
   ///
   /// In en, this message translates to:
-  /// **'Search'**
+  /// **'Search token or chain'**
   String get swapTokenPickerSearchHint;
 
   /// Empty state when the token picker search matches nothing
