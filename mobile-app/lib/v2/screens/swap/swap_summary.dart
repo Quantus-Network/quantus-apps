@@ -70,7 +70,7 @@ class SwapAmountsCard extends ConsumerWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          TokenIcon(token: token, size: 32),
+          TokenIcon(token: token),
           const SizedBox(width: 12),
           Expanded(
             child: Column(

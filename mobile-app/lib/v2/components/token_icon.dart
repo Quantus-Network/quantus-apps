@@ -10,7 +10,7 @@ class TokenIcon extends ConsumerWidget {
   final SwapToken token;
   final double size;
 
-  const TokenIcon({super.key, required this.token, this.size = 31});
+  const TokenIcon({super.key, required this.token, this.size = 32});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
