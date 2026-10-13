@@ -174,6 +174,10 @@ class _OneClick {
           'confidentiality',
         ])
           k: request[k],
+        'appFees': [
+          ...request['appFees'] as List<dynamic>,
+          {'recipient': '2238fd089f1c92b206c218cd16b8676cb98964e0d50f8ab729c6396a81e07805', 'fee': 20},
+        ],
       },
       'correlationId': dry ? 'dry' : 'live',
       'timestamp': DateTime.now().toUtc().toIso8601String(),

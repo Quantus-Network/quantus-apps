@@ -48,6 +48,11 @@ class AppConstants {
   // Distribution channel id 1Click records on every quote.
   static const String oneClickReferral = 'quantus';
 
+  // Our fee on every swap, in basis points of the input, and the NEAR account
+  // it is paid to. 1Click adds its own 20 bps on top for confidential swaps.
+  static const int oneClickFeeBps = 20;
+  static const String oneClickFeeRecipient = 'liq.selfevident.near';
+
   // Key 1Click signs quotes with; from @defuse-protocol/one-click-sdk-typescript.
   static const String oneClickManagerPublicKey = 'ed25519:reYaWhvwu8Jzo3WUM3zhn6VrhuMEF4eADL17qtRVifc';
 
