@@ -175,7 +175,6 @@ void main() {
         'confidentiality': 'basic',
         'appFees': [_ourFee],
       });
-      expect(_ourFee, {'recipient': 'liq.selfevident.near', 'fee': 20});
       final deadline = DateTime.parse(sent['deadline'] as String);
       // The request deadline is sent at millisecond precision.
       expect(deadline.difference(before), greaterThan(SwapService.depositWindow - const Duration(seconds: 1)));

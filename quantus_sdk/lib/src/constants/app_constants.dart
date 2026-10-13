@@ -49,9 +49,10 @@ class AppConstants {
   static const String oneClickReferral = 'quantus';
 
   // Our fee on every swap, in basis points of the input, and the NEAR account
-  // it is paid to. 1Click adds its own 20 bps on top for confidential swaps.
+  // it is paid to (a temporary implicit account for now). 1Click adds its own
+  // 20 bps on top for confidential swaps.
   static const int oneClickFeeBps = 20;
-  static const String oneClickFeeRecipient = 'b370d8d27a7f8710cedd7958dceacea55e1813f3dcf284ecb4cc38232380b097'; // temp account
+  static const String oneClickFeeRecipient = 'b370d8d27a7f8710cedd7958dceacea55e1813f3dcf284ecb4cc38232380b097';
 
   // Key 1Click signs quotes with; from @defuse-protocol/one-click-sdk-typescript.
   static const String oneClickManagerPublicKey = 'ed25519:reYaWhvwu8Jzo3WUM3zhn6VrhuMEF4eADL17qtRVifc';
