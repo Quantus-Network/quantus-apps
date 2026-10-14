@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:quantus_cold_wallet/components/outcome_view.dart';
+import 'package:quantus_cold_wallet/screens/rejected_screen.dart';
+import 'package:quantus_cold_wallet/ui/cold_theme.dart';
 
-/// Why a signing request was refused, with the one detail that identifies it
-/// (the account, the key, the decoder's message) and a way back to home.
-/// Shared by every signing screen so a refusal looks the same whatever the
-/// chain.
+/// Why a signing request was refused (Figma Cold Wallet / Unreadable), with
+/// the one detail that identifies it (the account, the key, the decoder's
+/// message). Shared by every signing screen so a refusal looks the same
+/// whatever the chain; Reject leads to the Rejected screen.
 class SigningRefusalView extends StatelessWidget {
   final String appBarTitle;
   final String title;
@@ -22,59 +25,34 @@ class SigningRefusalView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.colorsV3;
-    final text = context.themeTextV3;
-    return ScaffoldBase(
-      appBar: V2AppBar(title: appBarTitle),
-      // The detail can be as long as a decoder's message, which no layout can
-      // bound, so this column scrolls rather than overflowing on a small screen.
-      mainContent: Center(
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Center(
-                child: Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(color: colors.semanticEmber.useOpacity(0.12), shape: BoxShape.circle),
-                  child: Icon(Icons.error_outline, size: 72, color: colors.semanticEmber),
-                ),
-              ),
-              const SizedBox(height: 24),
-              Text(
-                title,
-                style: text.titleHero.copyWith(color: colors.semanticEmber),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                message,
-                style: text.bodyLarge.copyWith(color: colors.textContent),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 20),
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: colors.semanticEmber.useOpacity(0.08),
-                  borderRadius: context.radiusV3.mdBorder,
-                  border: Border.all(color: colors.semanticEmber),
-                ),
-                child: detail,
-              ),
-              const SizedBox(height: 20),
-              Text(
-                'Nothing was signed.',
-                style: text.bodyEmphasis.copyWith(color: colors.textMuted),
-                textAlign: TextAlign.center,
-              ),
-            ],
+    return OutcomeView(
+      appBarTitle: appBarTitle,
+      glyph: QuantusIcons.warningCircle,
+      glyphColor: colors.semanticEmber,
+      title: title,
+      body: message,
+      bottom: QuantusButton.simple(
+        label: 'Reject',
+        padding: coldButtonPadding,
+        onTap: () => Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const RejectedScreen())),
+      ),
+      children: [
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: colors.bgSurface,
+            borderRadius: context.radiusV3.mdBorder,
+            border: Border.all(color: colors.borderHairline),
           ),
+          child: detail,
         ),
-      ),
-      bottomContent: ScaffoldBaseBottomContent(
-        child: QuantusButton.simple(label: 'Back to home', onTap: () => Navigator.popUntil(context, (r) => r.isFirst)),
-      ),
+        const SizedBox(height: 20),
+        Text(
+          'Nothing was signed.',
+          style: context.themeTextV3.bodyEmphasis.copyWith(color: colors.textMuted),
+          textAlign: TextAlign.center,
+        ),
+      ],
     );
   }
 }

@@ -29,7 +29,8 @@ void main() {
     );
     await tester.pump();
 
-    final icon = tester.widget<Icon>(find.byIcon(Icons.error_outline));
+    final icon = tester.widget<QuantusIcon>(find.byType(QuantusIcon));
+    expect(icon.icon, QuantusIcons.warningCircle);
     expect(icon.color, colors.semanticEmber);
 
     final title = tester.widget<Text>(find.text('Storage error'));

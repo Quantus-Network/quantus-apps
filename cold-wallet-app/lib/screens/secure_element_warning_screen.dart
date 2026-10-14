@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:quantus_cold_wallet/ui/cold_theme.dart';
 
-/// Shown during setup when the device reports no biometrics / device lock,
-/// which we treat as a proxy for a missing hardware-backed secure element.
-/// Returns `true` if the user chooses to proceed anyway.
+/// Shown by the unlock-method step when the device has no lock, so the
+/// signing key would be stored without user presence. Returns `true` if the
+/// user chooses to proceed anyway.
 class SecureElementWarningScreen extends StatelessWidget {
   const SecureElementWarningScreen({super.key});
 
@@ -13,33 +14,42 @@ class SecureElementWarningScreen extends StatelessWidget {
     final text = context.themeTextV3;
 
     return ScaffoldBase(
-      appBar: const V2AppBar(title: 'Security warning', leading: SizedBox(width: 24)),
-      mainContent: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const SizedBox(height: 20),
-            Icon(Icons.warning_amber_rounded, size: 64, color: colors.semanticSand),
-            const SizedBox(height: 24),
-            Text('No secure element detected', style: text.titleScreen.copyWith(color: colors.textContent)),
-            const SizedBox(height: 16),
-            Text(
-              'This device has no biometrics or device lock configured, so your wallet key cannot be stored in a '
-              'hardware-backed secure element. Your encrypted key will be protected only by your password.\n\n'
-              'For a cold wallet we strongly recommend a device with a secure element and a device lock.',
-              style: text.body.copyWith(color: colors.textMuted),
-            ),
-          ],
-        ),
+      appBar: const V2AppBar(title: 'Security warning', showBackButton: false),
+      mainContent: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Spacer(flex: 2),
+          Center(child: QuantusIcon(QuantusIcons.warning, size: 60, color: colors.semanticSand)),
+          const SizedBox(height: 24),
+          Text(
+            'No device lock',
+            style: text.titleHero.copyWith(color: colors.textContent),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'This phone has no passcode or biometrics, so the signing key is stored without user presence. '
+            'Anyone who picks up this phone can sign with it.\n\n'
+            'Set a device lock first, or continue at your own risk.',
+            style: text.bodyLarge.copyWith(color: colors.textMuted),
+            textAlign: TextAlign.center,
+          ),
+          const Spacer(flex: 3),
+        ],
       ),
       bottomContent: ScaffoldBaseBottomContent(
         child: Column(
           children: [
-            QuantusButton.simple(label: 'Go back', onTap: () => Navigator.pop(context, false)),
+            QuantusButton.simple(
+              label: 'Go back',
+              padding: coldButtonPadding,
+              onTap: () => Navigator.pop(context, false),
+            ),
             const SizedBox(height: 12),
             QuantusButton.simple(
               label: 'Continue anyway',
-              variant: ButtonVariant.staged,
+              variant: ButtonVariant.secondary,
+              padding: coldButtonPadding,
               onTap: () => Navigator.pop(context, true),
             ),
           ],

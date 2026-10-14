@@ -3,23 +3,20 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:quantus_cold_wallet/components/account_avatar.dart';
 import 'package:quantus_cold_wallet/models/cold_account.dart';
 import 'package:quantus_cold_wallet/providers/wallet_providers.dart';
 import 'package:quantus_cold_wallet/screens/accounts_screen.dart';
+import 'package:quantus_cold_wallet/screens/add_account_screen.dart';
+import 'package:quantus_cold_wallet/screens/rename_account_screen.dart';
+import 'package:quantus_cold_wallet/screens/show_key_screen.dart';
 import 'package:quantus_cold_wallet/services/vault_service.dart';
 
-import 'multi_account_test.dart' show mnemonic;
+import 'fakes/account_fixtures.dart';
 
-final one = ColdAccount(label: 'Account 1', index: 0, scheme: DilithiumScheme.mlDsa87);
-final two = ColdAccount(label: 'Account 2', index: 1, scheme: DilithiumScheme.mlDsa87);
-final legacy65 = ColdAccount(label: 'Old account', index: 1, scheme: DilithiumScheme.mlDsa65);
-
-String fakeAddress(ColdAccount a) => '${a.scheme.storageName}:${a.derivationPath}';
-
+/// An unlocked wallet holding [accounts], backed by mocked secure storage.
 Future<ProviderContainer> walletWith(List<ColdAccount> accounts) async {
   FlutterSecureStorage.setMockInitialValues({});
-  // Key derivation needs the native library, which unit tests do not load, so
-  // each account stands in for its address by what the key derives from.
   final container = ProviderContainer(
     overrides: [
       addressesProvider.overrideWith((ref) => {for (final a in ref.watch(accountsProvider)) fakeAddress(a): a}),
@@ -29,30 +26,26 @@ Future<ProviderContainer> walletWith(List<ColdAccount> accounts) async {
   addTearDown(container.dispose);
   await container
       .read(walletControllerProvider.notifier)
-      .createWallet(mnemonic: mnemonic, password: 'alpha', enableBiometric: false, accounts: accounts);
+      .createWallet(mnemonic: testMnemonic, accounts: accounts, protected: false);
   return container;
 }
 
-Future<void> pumpAccounts(WidgetTester tester, ProviderContainer container) async {
-  await tester.pumpWidget(
-    UncontrolledProviderScope(
-      container: container,
-      child: MaterialApp(
-        builder: (context, child) => Theme(data: AppTheme.darkTheme(context), child: child!),
-        home: const AccountsScreen(),
-      ),
-    ),
-  );
+Future<void> pumpWithWallet(WidgetTester tester, ProviderContainer container, Widget home) async {
+  await tester.pumpWidget(UncontrolledProviderScope(container: container, child: coldApp(home)));
   await tester.pumpAndSettle();
 }
 
-Future<void> openEditor(WidgetTester tester, int row) async {
-  await tester.tap(find.byIcon(Icons.edit_outlined).at(row));
+/// Lets a vault write finish: the cipher runs outside the test's fake clock.
+Future<void> tapAndAwait(WidgetTester tester, Finder finder) async {
+  await tester.runAsync(() async {
+    await tester.tap(finder);
+    await Future<void>.delayed(const Duration(milliseconds: 200));
+  });
   await tester.pumpAndSettle();
 }
 
 Future<List<String>> storedLabels() async =>
-    (await VaultService().unlockWithPassword('alpha')).accounts.map((a) => a.label).toList();
+    (await VaultService().unlockWithBiometricKey()).accounts.map((a) => a.label).toList();
 
 void main() {
   group('WalletController', () {
@@ -86,7 +79,7 @@ void main() {
       expect(container.read(addressesProvider).containsKey(address), isTrue);
     });
 
-    test('an ML-DSA-65 account added back by the path the dialog shows derives the same key', () async {
+    test('an ML-DSA-65 account added back by its template path derives the same key', () async {
       final container = await walletWith([one, legacy65]);
       final controller = container.read(walletControllerProvider.notifier);
       final address = fakeAddress(legacy65);
@@ -98,7 +91,7 @@ void main() {
       final back = ColdAccount.atPath(path, label: 'Back', scheme: ColdAccount.schemeOfPath(path)!)!;
       await controller.addAccount(back);
       final readded = container.read(addressesProvider)[address];
-      expect(readded, isNotNull, reason: 'the path the disconnect dialog shows must derive the same key');
+      expect(readded, isNotNull, reason: 'the path the dialog shows must derive the same key');
       expect(readded!.scheme, DilithiumScheme.mlDsa65);
       expect(readded.derivesSameKey(legacy65), isTrue);
     });
@@ -130,71 +123,121 @@ void main() {
     });
   });
 
-  group('the edit screen', () {
-    testWidgets('renames from the pencil icon', (tester) async {
-      final container = (await tester.runAsync(() => walletWith([one, two])))!;
-      await pumpAccounts(tester, container);
+  group('Accounts screen', () {
+    Future<ProviderContainer> pumpAccounts(WidgetTester tester, List<ColdAccount> accounts) async {
+      final container = (await tester.runAsync(() => walletWith(accounts)))!;
+      await pumpWithWallet(tester, container, const AccountsScreen());
+      return container;
+    }
 
-      await openEditor(tester, 1);
-      await tester.enterText(find.byType(TextField), 'My special account');
-      await tester.pump();
-      await tester.runAsync(() async {
-        await tester.tap(find.text('Save'));
-        await Future<void>.delayed(const Duration(milliseconds: 200));
-      });
+    Future<void> openMenu(WidgetTester tester, int row) async {
+      await tester.tap(find.byType(KebabButton).at(row));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('rows show initials, label and short address; a row opens the pairing screen', (tester) async {
+      await pumpAccounts(tester, [one, two]);
+
+      expect(find.byType(AccountAvatar), findsNWidgets(2));
+      expect(find.text('Account 1'), findsOneWidget);
+      expect(find.text('Account 2'), findsOneWidget);
+      expect(find.text(shortAddress(fakeAddress(two))), findsOneWidget);
+      expect(find.widgetWithText(QuantusButton, 'Add Account'), findsOneWidget);
+
+      await tester.tap(find.text('Account 2'));
       await tester.pumpAndSettle();
 
-      expect(find.text('My special account'), findsOneWidget);
-      expect(find.text('Account 2'), findsNothing);
+      expect(tester.widget<ShowKeyScreen>(find.byType(ShowKeyScreen)).address, fakeAddress(two));
     });
 
-    testWidgets('does not save a name another account already has', (tester) async {
-      final container = (await tester.runAsync(() => walletWith([one, two])))!;
-      await pumpAccounts(tester, container);
+    testWidgets('the kebab offers Show address, Rename and Disconnect account', (tester) async {
+      await pumpAccounts(tester, [one, two]);
 
-      await openEditor(tester, 1);
-      await tester.enterText(find.byType(TextField), 'Account 1');
-      await tester.pump();
+      await openMenu(tester, 1);
 
-      expect(find.text('Another account is already named Account 1.'), findsOneWidget);
-      expect(tester.widget<QuantusButton>(find.widgetWithText(QuantusButton, 'Save')).isDisabled, isTrue);
+      expect(find.text('Show address'), findsOneWidget);
+      expect(find.text('Rename'), findsOneWidget);
+      expect(find.text('Disconnect account'), findsOneWidget);
+
+      await tester.tap(find.text('Rename'));
+      await tester.pumpAndSettle();
+
+      expect(tester.widget<RenameAccountScreen>(find.byType(RenameAccountScreen)).account.label, 'Account 2');
     });
 
-    testWidgets('disconnects only after confirming, and says how to add it back', (tester) async {
-      final container = (await tester.runAsync(() => walletWith([one, two])))!;
-      await pumpAccounts(tester, container);
+    testWidgets('Show address opens the pairing screen', (tester) async {
+      await pumpAccounts(tester, [one, two]);
 
-      await openEditor(tester, 1);
+      await openMenu(tester, 1);
+      await tester.tap(find.text('Show address'));
+      await tester.pumpAndSettle();
+
+      expect(tester.widget<ShowKeyScreen>(find.byType(ShowKeyScreen)).address, fakeAddress(two));
+    });
+
+    testWidgets('disconnects only after confirming, then says so in a toast', (tester) async {
+      final container = await pumpAccounts(tester, [one, two]);
+
+      await openMenu(tester, 1);
       await tester.tap(find.text('Disconnect account'));
       await tester.pumpAndSettle();
-      expect(find.textContaining('the same derivation path and signature type'), findsOneWidget);
-      expect(find.textContaining(two.derivationPath), findsWidgets);
-      expect(find.textContaining('ML-DSA-87'), findsWidgets);
+
+      expect(find.text('Disconnect Account 2?'), findsOneWidget);
+      expect(find.textContaining('your 12 words bring it back'), findsOneWidget);
 
       await tester.tap(find.text('Cancel'));
       await tester.pumpAndSettle();
       expect(container.read(accountsProvider), hasLength(2));
 
+      await openMenu(tester, 1);
       await tester.tap(find.text('Disconnect account'));
       await tester.pumpAndSettle();
-      await tester.runAsync(() async {
-        await tester.tap(find.widgetWithText(QuantusButton, 'Disconnect'));
-        await Future<void>.delayed(const Duration(milliseconds: 200));
-      });
-      await tester.pumpAndSettle();
+      await tapAndAwait(tester, find.widgetWithText(QuantusButton, 'Disconnect'));
 
       expect(container.read(accountsProvider).map((a) => a.label), ['Account 1']);
       expect(find.text('Account 2'), findsNothing);
+      expect(find.text('Account 2 disconnected'), findsOneWidget);
+      await tester.pump(const Duration(seconds: 3));
     });
 
-    testWidgets('does not offer to disconnect the only account', (tester) async {
-      final container = (await tester.runAsync(() => walletWith([one])))!;
-      await pumpAccounts(tester, container);
+    testWidgets('disconnecting from the pairing screen returns here with the toast', (tester) async {
+      final container = await pumpAccounts(tester, [one, two]);
 
-      await openEditor(tester, 0);
+      await tester.tap(find.text('Account 2'));
+      await tester.pumpAndSettle();
+      await openMenu(tester, 0);
+      await tester.tap(find.text('Disconnect account'));
+      await tester.pumpAndSettle();
+      await tapAndAwait(tester, find.widgetWithText(QuantusButton, 'Disconnect'));
 
-      expect(find.text('Disconnect account'), findsNothing);
+      expect(find.byType(ShowKeyScreen), findsNothing);
+      expect(find.byType(AccountsScreen), findsOneWidget);
+      expect(container.read(accountsProvider).map((a) => a.label), ['Account 1']);
+      expect(find.text('Account 2 disconnected'), findsOneWidget);
+      await tester.pump(const Duration(seconds: 3));
+    });
+
+    testWidgets('the only account cannot be disconnected', (tester) async {
+      final container = await pumpAccounts(tester, [one]);
+
+      await openMenu(tester, 0);
       expect(find.textContaining('cannot be disconnected'), findsOneWidget);
+
+      await tester.tap(find.text('Disconnect account'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Disconnect Account 1?'), findsNothing);
+      expect(find.text('Disconnect account'), findsOneWidget);
+      expect(container.read(accountsProvider), hasLength(1));
+    });
+
+    testWidgets('Add Account opens the add screen', (tester) async {
+      await pumpAccounts(tester, [one]);
+
+      await tester.tap(find.text('Add Account'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(AddAccountScreen), findsOneWidget);
     });
   });
 }

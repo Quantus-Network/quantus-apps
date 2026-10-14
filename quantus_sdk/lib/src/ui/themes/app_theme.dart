@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 
 class AppTheme {
-  static ThemeData darkTheme(BuildContext context) {
-    const colors = AppColorsV3.dark();
+  /// [colors] lets an app swap tokens, e.g. the cold wallet's glacier accent.
+  static ThemeData darkTheme(BuildContext context, {AppColorsV3 colors = const AppColorsV3.dark()}) {
     const text = AppTextThemeV3.standard();
     const radius = AppRadiusV3.standard();
 
@@ -42,7 +42,7 @@ class AppTheme {
         filled: true,
         fillColor: Colors.transparent,
       ),
-      extensions: const [colors, text, radius],
+      extensions: [colors, text, radius],
     );
   }
 }

@@ -9,9 +9,14 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 /// [showQuantusDialog].
 class QuantusDialog extends StatelessWidget {
   final String title;
+
+  /// Defaults to [AppColorsV3.textContent].
+  final Color? titleColor;
   final String body;
   final String actionLabel;
-  final String cancelLabel;
+
+  /// Null hides Cancel, leaving a single action such as "Done".
+  final String? cancelLabel;
   final bool isDestructive;
 
   /// Recommends Cancel: it takes the primary chrome and the action steps back
@@ -26,6 +31,7 @@ class QuantusDialog extends StatelessWidget {
   const QuantusDialog({
     super.key,
     required this.title,
+    this.titleColor,
     required this.body,
     required this.actionLabel,
     this.cancelLabel = 'Cancel',
@@ -35,6 +41,9 @@ class QuantusDialog extends StatelessWidget {
     this.onAction,
     this.onCancel,
   });
+
+  /// Narrower than the button default so a long label fits the dialog width.
+  static const _buttonPadding = EdgeInsets.symmetric(horizontal: 16, vertical: 16);
 
   @override
   Widget build(BuildContext context) {
@@ -61,19 +70,22 @@ class QuantusDialog extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(title, style: text.titleScreen.copyWith(color: colors.textContent)),
+            Text(title, style: text.titleScreen.copyWith(color: titleColor ?? colors.textContent)),
             const SizedBox(height: 10),
             ?banner,
             const SizedBox(height: 12),
             Text(body, style: text.body.copyWith(color: colors.textMuted, height: 1.55)),
             const SizedBox(height: 20),
-            QuantusButton.simple(label: actionLabel, variant: actionVariant, onTap: onAction),
-            const SizedBox(height: 10),
-            QuantusButton.simple(
-              label: cancelLabel,
-              variant: cancelIsPrimary ? ButtonVariant.primary : ButtonVariant.staged,
-              onTap: onCancel,
-            ),
+            QuantusButton.simple(label: actionLabel, variant: actionVariant, onTap: onAction, padding: _buttonPadding),
+            if (cancelLabel != null) ...[
+              const SizedBox(height: 10),
+              QuantusButton.simple(
+                label: cancelLabel!,
+                variant: cancelIsPrimary ? ButtonVariant.primary : ButtonVariant.staged,
+                onTap: onCancel,
+                padding: _buttonPadding,
+              ),
+            ],
           ],
         ),
       ),
@@ -88,9 +100,10 @@ class QuantusDialog extends StatelessWidget {
 Future<bool> showQuantusDialog(
   BuildContext context, {
   required String title,
+  Color? titleColor,
   required String body,
   required String actionLabel,
-  String cancelLabel = 'Cancel',
+  String? cancelLabel = 'Cancel',
   bool isDestructive = false,
   bool cancelIsPrimary = false,
   Widget? banner,
@@ -106,6 +119,7 @@ Future<bool> showQuantusDialog(
         insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
         child: QuantusDialog(
           title: title,
+          titleColor: titleColor,
           body: body,
           actionLabel: actionLabel,
           cancelLabel: cancelLabel,

@@ -16,8 +16,18 @@ class AnimatedUrQr extends StatefulWidget {
   final bool paused;
   final double size;
 
-  const AnimatedUrQr({super.key, required this.parts, this.fps = 15, this.paused = false, this.size = 280})
-    : assert(fps > 0, 'AnimatedUrQr fps must be positive');
+  /// Called with the index of each frame as it is shown, so a caller can draw
+  /// progress. Not called for the initial frame 0.
+  final ValueChanged<int>? onFrameChanged;
+
+  const AnimatedUrQr({
+    super.key,
+    required this.parts,
+    this.fps = 15,
+    this.paused = false,
+    this.size = 280,
+    this.onFrameChanged,
+  }) : assert(fps > 0, 'AnimatedUrQr fps must be positive');
 
   @override
   State<AnimatedUrQr> createState() => _AnimatedUrQrState();
@@ -68,6 +78,7 @@ class _AnimatedUrQrState extends State<AnimatedUrQr> {
     if (widget.paused || widget.parts.length <= 1) return;
     _timer = Timer.periodic(Duration(milliseconds: (1000 / widget.fps).round()), (_) {
       setState(() => _index = (_index + 1) % widget.parts.length);
+      widget.onFrameChanged?.call(_index);
     });
   }
 

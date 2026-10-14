@@ -1,3 +1,6 @@
+import 'dart:io';
+
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:local_auth/local_auth.dart';
@@ -26,6 +29,24 @@ class ColdAuthService {
       return (await _auth.getAvailableBiometrics()).isNotEmpty;
     } catch (e) {
       debugPrint('canUseBiometrics error: $e');
+      return false;
+    }
+  }
+
+  /// Whether the OS can keep the signing key behind user presence: a device
+  /// lock exists, and on Android the Keystore can show the prompt (API 28+),
+  /// which below API 30 is biometric-only and so needs an enrolled biometric.
+  Future<bool> deviceCanProtect() async {
+    try {
+      if (!Platform.isIOS && !Platform.isAndroid) return false;
+      if (!await _auth.isDeviceSupported()) return false;
+      if (!Platform.isAndroid) return true;
+      final sdk = (await DeviceInfoPlugin().androidInfo).version.sdkInt;
+      if (sdk < 28) return false;
+      if (sdk < 30) return (await _auth.getAvailableBiometrics()).isNotEmpty;
+      return true;
+    } catch (e) {
+      debugPrint('deviceCanProtect error: $e');
       return false;
     }
   }

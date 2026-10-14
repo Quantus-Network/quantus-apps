@@ -10,6 +10,9 @@ enum ButtonVariant {
   /// Not-yet-ready primary: surface fill and emphasis border.
   staged,
 
+  /// Second choice beside a primary: card gradient fill and emphasis border.
+  secondary,
+
   /// Escape route: no fill or border, muted label.
   ghost,
 }
@@ -94,6 +97,7 @@ class QuantusButton extends StatelessWidget {
           padding: padding,
           decoration: ShapeDecoration(
             color: chrome.color,
+            gradient: chrome.gradient,
             shape: RoundedRectangleBorder(borderRadius: borderRadius, side: chrome.borderSide),
           ),
           child: buttonContent,
@@ -106,7 +110,8 @@ class QuantusButton extends StatelessWidget {
     final colors = context.colorsV3;
     final basicBorder = BorderSide(color: colors.borderEmphasis, width: 1);
 
-    if (disabled && (variant == ButtonVariant.primary || variant == ButtonVariant.staged)) {
+    if (disabled &&
+        (variant == ButtonVariant.primary || variant == ButtonVariant.staged || variant == ButtonVariant.secondary)) {
       return _ButtonChrome(color: colors.bgSurface2, textColor: colors.textMuted2);
     }
 
@@ -114,6 +119,15 @@ class QuantusButton extends StatelessWidget {
       ButtonVariant.primary => _ButtonChrome(color: colors.accentFlare, textColor: colors.textVoid),
       ButtonVariant.staged => _ButtonChrome(
         color: colors.bgSurface,
+        borderSide: basicBorder,
+        textColor: colors.textContent,
+      ),
+      ButtonVariant.secondary => _ButtonChrome(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [colors.bgCardGradientTop, colors.bgCardGradientBottom],
+        ),
         borderSide: basicBorder,
         textColor: colors.textContent,
       ),
@@ -125,7 +139,7 @@ class QuantusButton extends StatelessWidget {
       ButtonVariant.danger => _ButtonChrome(
         color: colors.semanticEmber.useOpacity(0.10),
         borderSide: BorderSide(color: colors.semanticEmber.useOpacity(0.25), width: 1),
-        textColor: colors.textContent,
+        textColor: colors.semanticEmber,
       ),
       ButtonVariant.underline => _ButtonChrome(
         color: Colors.transparent,
@@ -138,6 +152,7 @@ class QuantusButton extends StatelessWidget {
         disabled &&
         variant != ButtonVariant.primary &&
         variant != ButtonVariant.staged &&
+        variant != ButtonVariant.secondary &&
         variant != ButtonVariant.ghost &&
         variant != ButtonVariant.underline;
     if (usesLegacyDisabled) {
@@ -209,9 +224,16 @@ class QuantusButton extends StatelessWidget {
 
 class _ButtonChrome {
   final Color? color;
+  final Gradient? gradient;
   final BorderSide borderSide;
   final double opacity;
   final Color textColor;
 
-  const _ButtonChrome({this.color, this.borderSide = BorderSide.none, this.opacity = 1.0, required this.textColor});
+  const _ButtonChrome({
+    this.color,
+    this.gradient,
+    this.borderSide = BorderSide.none,
+    this.opacity = 1.0,
+    required this.textColor,
+  });
 }

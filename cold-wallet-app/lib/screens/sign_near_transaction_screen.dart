@@ -5,10 +5,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:quantus_cold_wallet/components/address_with_checkphrase.dart';
+import 'package:quantus_cold_wallet/components/review_card.dart';
 import 'package:quantus_cold_wallet/components/signature_qr_view.dart';
 import 'package:quantus_cold_wallet/components/signing_refusal_view.dart';
+import 'package:quantus_cold_wallet/components/step_header.dart';
 import 'package:quantus_cold_wallet/providers/wallet_providers.dart';
+import 'package:quantus_cold_wallet/screens/rejected_screen.dart';
 import 'package:quantus_cold_wallet/services/near_display.dart';
+import 'package:quantus_cold_wallet/ui/cold_theme.dart';
 
 /// Reviews a NEAR transaction a hot wallet asked this device to sign, and on
 /// approval produces the `signature ‖ public key` QR.
@@ -32,11 +36,14 @@ class SignNearTransactionScreen extends ConsumerStatefulWidget {
 }
 
 class _SignNearTransactionScreenState extends ConsumerState<SignNearTransactionScreen> {
-  Uint8List? _signed;
   bool _signing = false;
   String? _error;
 
   NearTransaction get tx => widget.transaction;
+
+  bool get _soleTransfer => tx.actions.length == 1 && tx.actions.single.kind == NearActionKind.transfer;
+
+  String _near(BigInt? yocto) => '${NearDisplay.formatNear(yocto ?? BigInt.zero)} NEAR';
 
   void _sign(String owner) {
     final keypair = keypairFor(ref, owner);
@@ -52,10 +59,8 @@ class _SignNearTransactionScreenState extends ConsumerState<SignNearTransactionS
       // Pure ML-DSA-65 over SHA-256 of the transaction, no Quantus context:
       // this is what the NEAR runtime verifies. Returns signature ++ public key.
       final signed = keypair.signNear(widget.request.transaction);
-      setState(() {
-        _signing = false;
-        _signed = signed;
-      });
+      setState(() => _signing = false);
+      SignatureQrView.push(context, signed);
     } catch (e) {
       setState(() {
         _signing = false;
@@ -63,6 +68,8 @@ class _SignNearTransactionScreenState extends ConsumerState<SignNearTransactionS
       });
     }
   }
+
+  void _reject() => Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const RejectedScreen()));
 
   @override
   Widget build(BuildContext context) {
@@ -94,12 +101,6 @@ class _SignNearTransactionScreenState extends ConsumerState<SignNearTransactionS
         detail: DetailSummaryRow.stacked(label: 'Requested key', value: tx.publicKey, monospace: true),
       );
     }
-    if (_signed != null) {
-      return SignatureQrView(
-        signed: _signed!,
-        instruction: 'Scan this with your hot wallet to broadcast the NEAR transaction.',
-      );
-    }
     return _reviewView(context, owner);
   }
 
@@ -109,7 +110,7 @@ class _SignNearTransactionScreenState extends ConsumerState<SignNearTransactionS
   }
 
   Widget _errorView(BuildContext context, {required String title, required String message, required Widget detail}) =>
-      SigningRefusalView(appBarTitle: 'Sign NEAR Transaction', title: title, message: message, detail: detail);
+      SigningRefusalView(appBarTitle: 'Sign', title: title, message: message, detail: detail);
 
   Widget _reviewView(BuildContext context, String owner) {
     final colors = context.colorsV3;
@@ -117,41 +118,65 @@ class _SignNearTransactionScreenState extends ConsumerState<SignNearTransactionS
     final accountChange = NearDisplay.accountChangeTitle(tx);
     final dangerous = accountChange != null;
     final mismatch = NearDisplay.networkMismatch(tx, widget.request.network);
-    final soleTransfer = tx.actions.length == 1 && tx.actions.single.kind == NearActionKind.transfer;
 
     return ScaffoldBase(
-      appBar: const V2AppBar(title: 'Review & Sign'),
+      appBar: const V2AppBar(title: 'Sign'),
       mainContent: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const SizedBox(height: 8),
+            const StepHeader(
+              step: 2,
+              total: 3,
+              title: "Check your phone's screen",
+              subtitle: 'Before approving here, make sure your phone shows exactly this:',
+            ),
+            const SizedBox(height: 24),
             _networkChip(context),
-            if (mismatch != null) _warningBanner(context, title: 'Check the network', body: mismatch),
-            if (accountChange != null)
-              _warningBanner(
-                context,
-                title: accountChange,
-                body:
+            if (mismatch != null) ...[
+              const SizedBox(height: 16),
+              QuantusBanner(tone: BannerTone.ember, label: 'Check the network', message: mismatch),
+            ],
+            if (accountChange != null) ...[
+              const SizedBox(height: 16),
+              QuantusBanner(
+                tone: BannerTone.ember,
+                label: accountChange,
+                message:
                     'An account, its keys or its code are being changed, not just funds moved. Only sign this if '
                     'you asked for exactly these actions.',
               ),
-            const SizedBox(height: 8),
-            Text(
-              NearDisplay.headline(tx),
-              style: text.titleScreen.copyWith(color: dangerous ? colors.semanticEmber : colors.accentFlare),
-            ),
-            if (soleTransfer) ...[
-              _amountHero(context, tx.actions.single.amount ?? BigInt.zero),
-              DetailSummaryRow.stacked(label: 'To', value: tx.receiverId, monospace: true),
-              DetailSummaryRow.stacked(label: 'From', value: tx.signerId, monospace: true),
-            ] else ...[
-              DetailSummaryRow.stacked(label: 'Receiver', value: tx.receiverId, monospace: true),
-              DetailSummaryRow.stacked(label: 'Signed by', value: tx.signerId, monospace: true),
-              for (final (i, action) in tx.actions.indexed) ..._actionBody(context, action, i),
             ],
-            AddressWithCheckphrase(label: 'Signing key held by', address: owner),
-            const SizedBox(height: 20),
+            const SizedBox(height: 24),
+            ReviewCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    NearDisplay.headline(tx),
+                    style: text.titleScreen.copyWith(color: dangerous ? colors.semanticEmber : colors.accentFlare),
+                  ),
+                  if (_soleTransfer) ...[
+                    _amountHero(context, tx.actions.single.amount ?? BigInt.zero),
+                    DetailSummaryRow.stacked(label: 'To', value: tx.receiverId, monospace: true),
+                    DetailSummaryRow.stacked(label: 'From', value: tx.signerId, monospace: true),
+                  ] else ...[
+                    DetailSummaryRow.stacked(label: 'Receiver', value: tx.receiverId, monospace: true),
+                    DetailSummaryRow.stacked(label: 'Signed by', value: tx.signerId, monospace: true),
+                    for (final (i, action) in tx.actions.indexed) ..._actionBody(context, action, i),
+                  ],
+                  AddressWithCheckphrase(label: 'Signing key held by', address: owner),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            const QuantusBanner(
+              tone: BannerTone.ember,
+              message:
+                  "If the amount or address on your phone is different from what's shown here, reject it on this "
+                  'device.',
+            ),
+            const SizedBox(height: 24),
             _advancedSection(context),
             if (_error != null) ...[
               const SizedBox(height: 16),
@@ -166,22 +191,22 @@ class _SignNearTransactionScreenState extends ConsumerState<SignNearTransactionS
         ),
       ),
       bottomContent: ScaffoldBaseBottomContent(
-        child: Row(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Expanded(
-              child: QuantusButton.simple(
-                label: 'Cancel',
-                variant: ButtonVariant.staged,
-                onTap: () => Navigator.popUntil(context, (r) => r.isFirst),
-              ),
+            QuantusButton.simple(
+              label: 'Approve and Sign',
+              padding: coldButtonPadding,
+              isLoading: _signing,
+              onTap: _signing ? null : () => _sign(owner),
             ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: QuantusButton.simple(
-                label: 'Sign',
-                isLoading: _signing,
-                onTap: _signing ? null : () => _sign(owner),
-              ),
+            const SizedBox(height: 8),
+            QuantusButton.simple(
+              label: "It doesn't match",
+              variant: ButtonVariant.underline,
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              textStyle: text.bodyEmphasis.copyWith(color: colors.semanticEmber),
+              onTap: _reject,
             ),
           ],
         ),
@@ -217,37 +242,6 @@ class _SignNearTransactionScreenState extends ConsumerState<SignNearTransactionS
           ),
           const SizedBox(height: 6),
           Text(NearDisplay.networkDisclaimer(network), style: text.caption.copyWith(color: colors.textMuted)),
-        ],
-      ),
-    );
-  }
-
-  Widget _warningBanner(BuildContext context, {required String title, required String body}) {
-    final colors = context.colorsV3;
-    final text = context.themeTextV3;
-    return Container(
-      margin: const EdgeInsets.only(top: 16),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: colors.semanticEmber.useOpacity(0.12),
-        borderRadius: context.radiusV3.mdBorder,
-        border: Border.all(color: colors.semanticEmber),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(Icons.warning_amber_rounded, color: colors.semanticEmber, size: 22),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: text.bodyEmphasis.copyWith(color: colors.semanticEmber)),
-                const SizedBox(height: 4),
-                Text(body, style: text.caption.copyWith(color: colors.textMuted)),
-              ],
-            ),
-          ),
         ],
       ),
     );
@@ -293,13 +287,12 @@ class _SignNearTransactionScreenState extends ConsumerState<SignNearTransactionS
         style: text.headingRow.copyWith(color: danger ? colors.semanticEmber : colors.semanticLilac),
       ),
     );
-    String near(BigInt? yocto) => '${NearDisplay.formatNear(yocto ?? BigInt.zero)} NEAR';
 
     final rows = switch (action.kind) {
-      NearActionKind.transfer => [DetailSummaryRow.stacked(label: 'Amount', value: near(action.amount))],
+      NearActionKind.transfer => [DetailSummaryRow.stacked(label: 'Amount', value: _near(action.amount))],
       NearActionKind.functionCall => [
         DetailSummaryRow.stacked(label: 'Method', value: NearDisplay.safeText(action.target ?? ''), monospace: true),
-        DetailSummaryRow.stacked(label: 'Attached deposit', value: near(action.amount)),
+        DetailSummaryRow.stacked(label: 'Attached deposit', value: _near(action.amount)),
         DetailSummaryRow.stacked(label: 'Gas', value: NearDisplay.formatGas(action.gas ?? BigInt.zero)),
         DetailSummaryRow.stacked(
           label: 'Arguments',
@@ -321,7 +314,7 @@ class _SignNearTransactionScreenState extends ConsumerState<SignNearTransactionS
         ),
       ],
       NearActionKind.stake => [
-        DetailSummaryRow.stacked(label: 'Amount', value: near(action.amount)),
+        DetailSummaryRow.stacked(label: 'Amount', value: _near(action.amount)),
         DetailSummaryRow.stacked(label: 'Validator key', value: action.publicKey ?? '', monospace: true),
       ],
       NearActionKind.addKey => [
@@ -342,7 +335,7 @@ class _SignNearTransactionScreenState extends ConsumerState<SignNearTransactionS
           ),
           DetailSummaryRow.stacked(
             label: 'Gas allowance',
-            value: action.amount == null ? 'Unlimited' : near(action.amount),
+            value: action.amount == null ? 'Unlimited' : _near(action.amount),
           ),
         ],
       ],
@@ -373,7 +366,7 @@ class _SignNearTransactionScreenState extends ConsumerState<SignNearTransactionS
         children: [
           Text('ADVANCED', style: text.labelData.copyWith(color: colors.textMuted)),
           const SizedBox(width: 6),
-          Icon(Icons.chevron_right, size: 18, color: colors.textMuted),
+          QuantusIcon(QuantusIcons.chevronRight, size: 18, color: colors.textMuted),
         ],
       ),
     );

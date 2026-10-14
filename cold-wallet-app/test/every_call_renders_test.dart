@@ -169,7 +169,11 @@ void main() {
 
         expect(tester.takeException(), isNull);
         expect(find.text('Could not read transaction'), findsOneWidget);
-        expect(find.text('Sign'), findsNothing, reason: '${nameOf(call)} offered a Sign button');
+        expect(
+          find.widgetWithText(QuantusButton, 'Approve and Sign'),
+          findsNothing,
+          reason: '${nameOf(call)} offered a Sign button',
+        );
       });
     }
   });

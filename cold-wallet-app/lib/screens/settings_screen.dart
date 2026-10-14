@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:quantus_cold_wallet/components/change_password_sheet.dart';
+import 'package:quantus_cold_wallet/components/lock_screen.dart';
 import 'package:quantus_cold_wallet/components/qr_tuning_controls.dart';
-import 'package:quantus_cold_wallet/components/verify_password_sheet.dart';
 import 'package:quantus_cold_wallet/providers/settings_providers.dart';
 import 'package:quantus_cold_wallet/providers/wallet_providers.dart';
 import 'package:quantus_cold_wallet/screens/show_secret_phrase_screen.dart';
@@ -19,6 +18,7 @@ class SettingsScreen extends ConsumerWidget {
     final confirmed = await showQuantusDialog(
       context,
       title: 'Override network lock?',
+      titleColor: context.colorsV3.semanticEmber,
       body:
           'A cold wallet is only safe while fully offline — override the lock for testing only, never with a '
           'wallet that holds real funds.',
@@ -28,26 +28,21 @@ class SettingsScreen extends ConsumerWidget {
     if (confirmed) await ref.read(coldSettingsProvider.notifier).setWifiOverrideEnabled(true);
   }
 
-  Future<void> _showSecretPhrase(BuildContext context) async {
-    final verified = await showVerifyPasswordSheet(
-      context,
-      message: 'Your password is required to show the secret phrase.',
-    );
-    if (!verified || !context.mounted) return;
+  Future<void> _showSecretPhrase(BuildContext context, WidgetRef ref) async {
+    final bool confirmed;
+    try {
+      confirmed = await ref.read(walletControllerProvider.notifier).confirmPresence();
+    } catch (e, st) {
+      debugPrint('Show secret phrase: presence check failed: $e\n$st');
+      if (context.mounted) context.showErrorToaster(message: 'Could not read the signing key: $e');
+      return;
+    }
+    if (!context.mounted) return;
+    if (!confirmed) {
+      context.showInfoToaster(message: 'Could not confirm it is you.');
+      return;
+    }
     await Navigator.push(context, MaterialPageRoute(builder: (_) => const ShowSecretPhraseScreen()));
-  }
-
-  Future<void> _confirmReset(BuildContext context, WidgetRef ref) async {
-    final confirmed = await showQuantusDialog(
-      context,
-      title: 'Reset wallet?',
-      body: 'This erases the encrypted key from this device. You can only restore it with your recovery phrase.',
-      actionLabel: 'Reset',
-      isDestructive: true,
-    );
-    if (!confirmed) return;
-    await ref.read(walletControllerProvider.notifier).wipe();
-    if (context.mounted) Navigator.popUntil(context, (r) => r.isFirst);
   }
 
   @override
@@ -55,6 +50,7 @@ class SettingsScreen extends ConsumerWidget {
     final colors = context.colorsV3;
     final text = context.themeTextV3;
     final settings = ref.watch(coldSettingsProvider);
+    final canProtect = ref.watch(deviceCanProtectProvider).value;
 
     return ScaffoldBase(
       appBar: const V2AppBar(title: 'Settings'),
@@ -63,80 +59,56 @@ class SettingsScreen extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const SizedBox(height: 8),
-            Text('SECURITY', style: text.labelMonogram.copyWith(color: colors.textMuted)),
-            const SizedBox(height: 8),
-            _navRow(
-              context,
-              title: 'Change password',
-              subtitle: 'Set or change the password that encrypts the wallet key on this device.',
-              onTap: () => showChangePasswordSheet(context),
+            const _SectionLabel('SECURITY'),
+            _SettingsCard(
+              title: 'Unlock method',
+              subtitle: switch (canProtect) {
+                null => 'Checking the device lock…',
+                true => 'Face ID or passcode. This device releases the signing key only after you confirm it is you.',
+                false => 'None. This phone has no device lock, so the signing key is stored without user presence.',
+              },
             ),
-            const SizedBox(height: 24),
-            _navRow(
-              context,
+            const SizedBox(height: 12),
+            _SettingsCard(
               title: 'Show secret phrase',
-              subtitle: 'Reveal the recovery phrase for this wallet. Your password is required.',
-              onTap: () => _showSecretPhrase(context),
+              subtitle: 'Reveal the recovery phrase for this wallet. Confirm it is you first.',
+              onTap: () => _showSecretPhrase(context, ref),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 12),
             // INTENTIONAL: this override ships in RELEASE builds. The cold wallet is
             // not yet distributed through app stores, and testing release builds on
             // real devices without it means toggling Wi-Fi/airplane mode for every
             // flow. The lock stays fail-closed by default: enabling the override —
             // here or from the network lock screen — always passes through an
-            // explicit danger warning, and while it is active the home screen shows
-            // a red re-lock button that switches it back off. Do not "fix" this by
-            // compiling it out of release builds; revisit only when the app ships
-            // to app-store users.
-            Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Wi-Fi Lock Override (debugging only)',
-                        style: text.body.copyWith(color: colors.textContent),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'For debugging only — disables the network lock so the signer can be used while online. '
-                        'Not safe: never use this with a wallet that holds real funds.',
-                        style: text.caption.copyWith(color: colors.textMuted),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Switch(
-                  value: settings.wifiOverrideEnabled,
-                  activeTrackColor: colors.accentFlare,
-                  onChanged: (v) => _setWifiOverride(context, ref, v),
-                ),
-              ],
+            // explicit danger warning, and it is switched off again here or by
+            // going offline. Do not "fix" this by compiling it out of release
+            // builds; revisit only when the app ships to app-store users.
+            _SettingsCard(
+              title: 'Wi-Fi Lock Override (debugging only)',
+              subtitle:
+                  'For debugging only — disables the network lock so the signer can be used while online. '
+                  'Not safe: never use this with a wallet that holds real funds.',
+              trailing: Switch(
+                value: settings.wifiOverrideEnabled,
+                activeTrackColor: colors.accentFlare,
+                onChanged: (v) => _setWifiOverride(context, ref, v),
+              ),
             ),
-            const SizedBox(height: 24),
-            Divider(color: colors.borderHairline),
-            const SizedBox(height: 16),
-            Text('SIGNATURE QR', style: text.labelMonogram.copyWith(color: colors.textMuted)),
-            const SizedBox(height: 8),
+            const SizedBox(height: 32),
+            const _SectionLabel('SIGNATURE QR'),
             Text(
               'How the animated signature QR is displayed. Higher values transfer faster but are harder to scan.',
               style: text.caption.copyWith(color: colors.textMuted),
             ),
             const SizedBox(height: 16),
             const QrTuningControls(),
-            const SizedBox(height: 24),
-            Divider(color: colors.borderHairline),
-            const SizedBox(height: 16),
-            Text('DANGER ZONE', style: text.labelMonogram.copyWith(color: colors.textMuted)),
-            const SizedBox(height: 8),
-            _navRow(
-              context,
+            const SizedBox(height: 32),
+            const _SectionLabel('DANGER ZONE'),
+            _SettingsCard(
               title: 'Reset wallet',
-              subtitle: 'Erase the encrypted key from this device.',
+              subtitle: 'Erase the encrypted key and its device-protected unlock key from this phone.',
               titleColor: colors.semanticEmber,
-              onTap: () => _confirmReset(context, ref),
+              onTap: () => confirmResetWallet(context, ref),
             ),
             const SizedBox(height: 16),
           ],
@@ -144,33 +116,64 @@ class SettingsScreen extends ConsumerWidget {
       ),
     );
   }
+}
 
-  Widget _navRow(
-    BuildContext context, {
-    required String title,
-    required String subtitle,
-    required VoidCallback onTap,
-    Color? titleColor,
-  }) {
+class _SectionLabel extends StatelessWidget {
+  final String label;
+
+  const _SectionLabel(this.label);
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.only(bottom: 12),
+    child: Text(label, style: context.themeTextV3.labelMonogram.copyWith(color: context.colorsV3.textMuted)),
+  );
+}
+
+/// One settings row on a surface card: a title, its explanation and either a
+/// chevron (tappable), a control, or nothing (read-only).
+class _SettingsCard extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final Color? titleColor;
+  final VoidCallback? onTap;
+  final Widget? trailing;
+
+  const _SettingsCard({required this.title, required this.subtitle, this.titleColor, this.onTap, this.trailing});
+
+  @override
+  Widget build(BuildContext context) {
     final colors = context.colorsV3;
     final text = context.themeTextV3;
     return GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: text.body.copyWith(color: titleColor ?? colors.textContent)),
-                const SizedBox(height: 4),
-                Text(subtitle, style: text.caption.copyWith(color: colors.textMuted)),
-              ],
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: colors.bgSurface,
+          borderRadius: context.radiusV3.mdBorder,
+          border: Border.all(color: colors.borderHairline),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: text.headingRow.copyWith(color: titleColor ?? colors.textContent)),
+                  const SizedBox(height: 4),
+                  Text(subtitle, style: text.caption.copyWith(color: colors.textMuted)),
+                ],
+              ),
             ),
-          ),
-          Icon(Icons.chevron_right, color: colors.textMuted, size: 22),
-        ],
+            if (trailing != null) ...[const SizedBox(width: 16), trailing!],
+            if (onTap != null) ...[
+              const SizedBox(width: 12),
+              QuantusIcon(QuantusIcons.chevronRight, size: 20, color: colors.textMuted),
+            ],
+          ],
+        ),
       ),
     );
   }

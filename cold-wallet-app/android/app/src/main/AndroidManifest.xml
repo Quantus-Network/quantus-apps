@@ -14,6 +14,7 @@
 
     <application
         android:label="Quantus Cold Wallet"
+        android:allowBackup="false"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

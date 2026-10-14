@@ -30,7 +30,10 @@ class _AdvancedSectionState extends State<AdvancedSection> {
             children: [
               Text('ADVANCED', style: text.labelMonogram.copyWith(color: colors.textMuted)),
               const SizedBox(width: 6),
-              Icon(_expanded ? Icons.expand_less : Icons.chevron_right, size: 18, color: colors.textMuted),
+              RotatedBox(
+                quarterTurns: _expanded ? 3 : 0,
+                child: QuantusIcon(QuantusIcons.chevronRight, size: 18, color: colors.textMuted),
+              ),
             ],
           ),
         ),

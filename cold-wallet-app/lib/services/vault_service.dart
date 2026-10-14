@@ -3,9 +3,20 @@ import 'dart:math';
 
 import 'package:cryptography/cryptography.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:quantus_cold_wallet/models/cold_account.dart';
+
+/// The user dismissed the system prompt that releases the device key.
+class VaultAccessCancelled implements Exception {
+  final PlatformException cause;
+
+  const VaultAccessCancelled(this.cause);
+
+  @override
+  String toString() => 'Vault access cancelled: ${cause.message}';
+}
 
 /// Decrypted result of a successful unlock: the vault contents plus the derived
 /// key bytes (so the caller can optionally persist them for biometric unlock).
@@ -46,12 +57,17 @@ class VaultContents {
 
 /// Encrypts the wallet mnemonic with a password-derived key (Argon2id +
 /// AES-GCM) and stores the ciphertext in the platform secure element via
-/// [FlutterSecureStorage]. Biometric unlock stores the derived key under a
-/// separate secure-storage entry, gated by a [local_auth] check at the app
-/// layer.
+/// [FlutterSecureStorage]. The derived key is kept in a second entry so the
+/// vault opens without the password: behind OS-enforced user presence (Face
+/// ID, fingerprint or passcode) on a device with a lock, in a plain entry on a
+/// device without one.
 class VaultService {
   static const _vaultKey = 'cold_vault';
+  static const _backupKey = 'cold_vault_backup';
   static const _bioKeyKey = 'cold_unlock_key';
+  static const _protectedBioKeyKey = 'cold_unlock_key_protected';
+  static const _iosUserCanceled = -128;
+  static final _androidCancelCodes = RegExp(r'error \[(5|10|13)\]');
 
   static const _storage = FlutterSecureStorage(
     iOptions: IOSOptions(accessibility: KeychainAccessibility.unlocked_this_device),
@@ -60,10 +76,37 @@ class VaultService {
     iOptions: IOSOptions(accessibility: KeychainAccessibility.first_unlock_this_device),
   );
 
+  /// iOS prompts on every read of the entry. Android prompts once per process
+  /// when the store is first touched, whatever the operation, and serves the
+  /// rest of that process silently.
+  static const _protectedStorage = FlutterSecureStorage(
+    iOptions: IOSOptions(
+      accountName: 'quantus_cold_key',
+      accessibility: KeychainAccessibility.unlocked_this_device,
+      accessControlFlags: [AccessControlFlag.userPresence],
+    ),
+    aOptions: AndroidOptions.biometric(
+      storageNamespace: 'quantus_cold_key',
+      enforceBiometrics: true,
+      resetOnError: false,
+      biometricPromptTitle: 'Unlock your cold wallet',
+      biometricPromptSubtitle: 'Confirm it is you to use your signing key',
+    ),
+  );
+
   static final Argon2id _kdf = Argon2id(memory: 8192, parallelism: 1, iterations: 3, hashLength: 32);
   final AesGcm _aead = AesGcm.with256bits();
 
   bool _keychainMigrated = false;
+  int _protectedOps = 0;
+
+  /// True while the protected store may be showing its system prompt, which
+  /// sends the app through inactive (iOS) or paused (Android) and back.
+  bool get promptInProgress => _protectedOps > 0;
+
+  /// The internal vault password: never shown, never stored, used once to call
+  /// the password APIs before the derived key is kept in the device key entry.
+  static String randomSecret() => base64Encode(_randomBytes(32));
 
   Future<void> _ensureKeychainMigrated() async {
     if (_keychainMigrated) return;
@@ -77,18 +120,33 @@ class VaultService {
     }
   }
 
+  Future<T> _guarded<T>(Future<T> Function() op) async {
+    _protectedOps++;
+    try {
+      return await op();
+    } on PlatformException catch (e) {
+      if (e.details == _iosUserCanceled || _androidCancelCodes.hasMatch(e.message ?? '')) {
+        throw VaultAccessCancelled(e);
+      }
+      debugPrint('Protected key store failed: ${e.code} ${e.message}');
+      rethrow;
+    } finally {
+      _protectedOps--;
+    }
+  }
+
   Future<bool> hasWallet() async {
     await _ensureKeychainMigrated();
     return (await _storage.read(key: _vaultKey)) != null;
   }
 
-  /// True only when the stored biometric key belongs to the current vault
+  /// True only when the plain key entry belongs to the current vault
   /// (matched via the vault salt it was paired with). A key orphaned by a
   /// rotation that died between the vault write and the re-store is deleted
   /// here, so startup never advertises an unlock option that cannot work.
   /// Pre-pairing entries (bare base64) carry no salt and are instead
-  /// validated at use in [unlockWithBiometricKey].
-  Future<bool> isBiometricEnabled() async {
+  /// validated at use in [unlockWithBiometricKey]. Never prompts.
+  Future<bool> hasPlainKey() async {
     final raw = await _storage.read(key: _bioKeyKey);
     if (raw == null) return false;
     final vaultSalt = await _vaultSaltB64();
@@ -99,6 +157,14 @@ class VaultService {
     await _storage.delete(key: _bioKeyKey);
     return false;
   }
+
+  /// Whether the protected entry exists, by attributes only: iOS does not
+  /// prompt for that. Its salt pairing is checked at use, since reading the
+  /// value is what the OS gates.
+  Future<bool> hasProtectedKey() => _guarded(() => _protectedStorage.containsKey(key: _protectedBioKeyKey));
+
+  /// A device key entry exists in either store.
+  Future<bool> isBiometricEnabled() async => await hasPlainKey() || await hasProtectedKey();
 
   Future<String?> _vaultSaltB64() async {
     final raw = await _storage.read(key: _vaultKey);
@@ -185,18 +251,49 @@ class VaultService {
     return UnlockResult(mnemonic: contents.mnemonic, accounts: contents.accounts, keyBytes: await key.extractBytes());
   }
 
-  /// Pairs the key with the current vault via its salt, so a key orphaned by
-  /// an interrupted rotation is detectable at the next launch.
-  Future<void> storeBiometricKey(List<int> keyBytes) async {
+  /// Keeps the derived key in the store [protected] selects, paired with the
+  /// current vault via its salt so a key orphaned by an interrupted rotation is
+  /// detectable at the next launch. The entry is read back and compared: on
+  /// iOS that read is the user-presence confirmation, on Android the write
+  /// already prompted. A cancelled read-back removes what was written and
+  /// throws [VaultAccessCancelled].
+  ///
+  /// The protected branch removes the plain entry. The plain branch leaves a
+  /// protected entry alone: it is only taken on a device without a lock, where
+  /// the protected store cannot be opened, and reads try the plain entry first.
+  Future<void> storeBiometricKey(List<int> keyBytes, {required bool protected}) async {
     final vaultSalt = await _vaultSaltB64();
     if (vaultSalt == null) throw StateError('No wallet vault found');
-    await _storage.write(key: _bioKeyKey, value: jsonEncode({'salt': vaultSalt, 'key': base64Encode(keyBytes)}));
+    final value = jsonEncode({'salt': vaultSalt, 'key': base64Encode(keyBytes)});
+    if (!protected) {
+      await _storage.write(key: _bioKeyKey, value: value);
+      _verifyReadBack(await _storage.read(key: _bioKeyKey), value);
+      return;
+    }
+    await _guarded(() => _protectedStorage.write(key: _protectedBioKeyKey, value: value));
+    final String? readBack;
+    try {
+      readBack = await _guarded(() => _protectedStorage.read(key: _protectedBioKeyKey));
+    } on VaultAccessCancelled {
+      await _guarded(() => _protectedStorage.delete(key: _protectedBioKeyKey));
+      rethrow;
+    }
+    _verifyReadBack(readBack, value);
+    await _storage.delete(key: _bioKeyKey);
   }
 
-  Future<void> disableBiometric() async => _storage.delete(key: _bioKeyKey);
+  void _verifyReadBack(String? readBack, String written) {
+    if (readBack != written) throw StateError('The key store returned a different entry than was written');
+  }
 
+  Future<void> deleteKeyEntry({required bool protected}) =>
+      protected ? _guarded(() => _protectedStorage.delete(key: _protectedBioKeyKey)) : _storage.delete(key: _bioKeyKey);
+
+  /// Opens the vault with the stored key: the plain entry first (no prompt),
+  /// then the protected one.
   Future<UnlockResult> unlockWithBiometricKey() async {
-    final raw = await _storage.read(key: _bioKeyKey);
+    final plain = await _storage.read(key: _bioKeyKey);
+    final raw = plain ?? await _guarded(() => _protectedStorage.read(key: _protectedBioKeyKey));
     if (raw == null) throw StateError('Biometric unlock not set up');
     final keyBytes = base64Decode(_decodeBioEntry(raw).key);
     try {
@@ -206,17 +303,50 @@ class VaultService {
       // The key cannot authenticate this vault, so it belongs to a previous
       // one; drop it so the broken unlock option disappears.
       debugPrint('Biometric key failed to decrypt the vault; removing it');
-      await _storage.delete(key: _bioKeyKey);
+      await deleteKeyEntry(protected: plain == null);
       rethrow;
     }
   }
 
+  /// Copies the vault blob aside so a migration can be undone until its new
+  /// key entry is verified readable.
+  Future<void> backupVaultForMigration() async {
+    final raw = await _storage.read(key: _vaultKey);
+    if (raw == null) throw StateError('No wallet vault found');
+    await _storage.write(key: _backupKey, value: raw);
+  }
+
+  /// Puts a backup back over the vault and removes it. Returns whether one
+  /// was present.
+  Future<bool> restoreVaultBackupIfPresent() async {
+    final raw = await _storage.read(key: _backupKey);
+    if (raw == null) return false;
+    await _storage.write(key: _vaultKey, value: raw);
+    await _storage.delete(key: _backupKey);
+    return true;
+  }
+
+  Future<void> deleteVaultBackup() => _storage.delete(key: _backupKey);
+
+  /// Removes everything. The protected entry goes first so a cancelled prompt
+  /// leaves the wallet intact. A protected store the OS can no longer open
+  /// (Android after the device lock was removed or the key invalidated) is
+  /// logged and skipped: that entry can unlock nothing once the vault is gone,
+  /// and this wipe is the user's only way out.
   Future<void> wipe() async {
+    try {
+      await _guarded(() => _protectedStorage.delete(key: _protectedBioKeyKey));
+    } on VaultAccessCancelled {
+      rethrow;
+    } catch (e, st) {
+      debugPrint('Protected key entry could not be deleted during wipe: $e\n$st');
+    }
     await _storage.delete(key: _vaultKey);
+    await _storage.delete(key: _backupKey);
     await _storage.delete(key: _bioKeyKey);
   }
 
-  Uint8List _randomBytes(int n) {
+  static Uint8List _randomBytes(int n) {
     final r = Random.secure();
     return Uint8List.fromList(List<int>.generate(n, (_) => r.nextInt(256)));
   }

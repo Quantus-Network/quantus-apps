@@ -21,3 +21,11 @@ final networkStatusProvider = StreamProvider<NetworkStatus>((ref) async* {
 final isOnlineProvider = Provider<bool>((ref) {
   return ref.watch(networkStatusProvider).maybeWhen(data: (s) => s == NetworkStatus.online, orElse: () => true);
 });
+
+/// Every interface the platform reports, seeded with the service's current
+/// list, so the offline gate can name which radios are still on.
+final connectivityResultsProvider = StreamProvider<List<ConnectivityResult>>((ref) async* {
+  final service = ref.watch(connectivityServiceProvider);
+  yield service.currentResults;
+  yield* service.resultsStream;
+});
