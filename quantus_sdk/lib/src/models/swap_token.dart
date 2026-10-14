@@ -67,6 +67,10 @@ class SwapToken {
   /// CoinGecko's logo of [network]; null when it has none.
   final String? networkImageUrl;
 
+  /// Market cap in USD of the coin CoinGecko ranks this token as; 0 when it
+  /// ranks none, which lists the token after every ranked one.
+  final double marketCapUsd;
+
   /// QTC's side of a swap: the token that is QTC, or stands in for it.
   final bool isQuantus;
 
@@ -79,6 +83,7 @@ class SwapToken {
     this.iconAssetId,
     this.imageUrl,
     this.networkImageUrl,
+    this.marketCapUsd = 0,
     this.isQuantus = false,
   });
 

@@ -1,0 +1,560 @@
+[
+ {
+  "id": "bitcoin",
+  "symbol": "btc",
+  "market_cap": 1675101792428,
+  "image": "https://coin-images.coingecko.com/coins/images/1/large/bitcoin.png?1696501400"
+ },
+ {
+  "id": "ethereum",
+  "symbol": "eth",
+  "market_cap": 305530276154,
+  "image": "https://coin-images.coingecko.com/coins/images/279/large/ethereum.png?1696501628"
+ },
+ {
+  "id": "tether",
+  "symbol": "usdt",
+  "market_cap": 184024168413,
+  "image": "https://coin-images.coingecko.com/coins/images/325/large/Tether.png?1696501661"
+ },
+ {
+  "id": "binancecoin",
+  "symbol": "bnb",
+  "market_cap": 98765993927,
+  "image": "https://coin-images.coingecko.com/coins/images/825/large/bnb-icon2_2x.png?1696501970"
+ },
+ {
+  "id": "ripple",
+  "symbol": "xrp",
+  "market_cap": 86566965149,
+  "image": "https://coin-images.coingecko.com/coins/images/44/large/xrp-symbol-white-128.png?1696501442"
+ },
+ {
+  "id": "usd-coin",
+  "symbol": "usdc",
+  "market_cap": 72902652584,
+  "image": "https://coin-images.coingecko.com/coins/images/6319/large/USDC.png?1769615602"
+ },
+ {
+  "id": "solana",
+  "symbol": "sol",
+  "market_cap": 63033907058,
+  "image": "https://coin-images.coingecko.com/coins/images/4128/large/solana.png?1718769756"
+ },
+ {
+  "id": "tron",
+  "symbol": "trx",
+  "market_cap": 31648130658,
+  "image": "https://coin-images.coingecko.com/coins/images/1094/large/photo_2026-04-13_09-59-16.png?1776048311"
+ },
+ {
+  "id": "zcash",
+  "symbol": "zec",
+  "market_cap": 21104472548,
+  "image": "https://coin-images.coingecko.com/coins/images/486/large/Brandmark-Yellow_%281%29.png?1785810558"
+ },
+ {
+  "id": "dogecoin",
+  "symbol": "doge",
+  "market_cap": 13174359050,
+  "image": "https://coin-images.coingecko.com/coins/images/5/large/dogecoin.png?1696501409"
+ },
+ {
+  "id": "wrapped-steth",
+  "symbol": "wsteth",
+  "market_cap": 11509642615,
+  "image": "https://coin-images.coingecko.com/coins/images/18834/large/wstETH.png?1696518295"
+ },
+ {
+  "id": "chainlink",
+  "symbol": "link",
+  "market_cap": 9898556227,
+  "image": "https://coin-images.coingecko.com/coins/images/877/large/Chainlink_Logo_500.png?1760023405"
+ },
+ {
+  "id": "wrapped-bitcoin",
+  "symbol": "wbtc",
+  "market_cap": 9662578138,
+  "image": "https://coin-images.coingecko.com/coins/images/7598/large/WBTCLOGO.png?1764496367"
+ },
+ {
+  "id": "cardano",
+  "symbol": "ada",
+  "market_cap": 8817640733,
+  "image": "https://coin-images.coingecko.com/coins/images/975/large/cardano.png?1696502090"
+ },
+ {
+  "id": "coinbase-wrapped-btc",
+  "symbol": "cbbtc",
+  "market_cap": 7907582739,
+  "image": "https://coin-images.coingecko.com/coins/images/40143/large/cbbtc.webp?1726136727"
+ },
+ {
+  "id": "stellar",
+  "symbol": "xlm",
+  "market_cap": 6645215885,
+  "image": "https://coin-images.coingecko.com/coins/images/100/large/fmpFRHHQ_400x400.jpg?1735231350"
+ },
+ {
+  "id": "near",
+  "symbol": "near",
+  "market_cap": 6635810664,
+  "image": "https://coin-images.coingecko.com/coins/images/10365/large/near.jpg?1696510367"
+ },
+ {
+  "id": "bitcoin-cash",
+  "symbol": "bch",
+  "market_cap": 5590261117,
+  "image": "https://coin-images.coingecko.com/coins/images/780/large/bitcoin-cash-circle.png?1696501932"
+ },
+ {
+  "id": "litecoin",
+  "symbol": "ltc",
+  "market_cap": 4785402095,
+  "image": "https://coin-images.coingecko.com/coins/images/2/large/litecoin.png?1696501400"
+ },
+ {
+  "id": "ethena-usde",
+  "symbol": "usde",
+  "market_cap": 4780101260,
+  "image": "https://coin-images.coingecko.com/coins/images/33613/large/usde.png?1733810059"
+ },
+ {
+  "id": "uniswap",
+  "symbol": "uni",
+  "market_cap": 4594135833,
+  "image": "https://coin-images.coingecko.com/coins/images/12504/large/uniswap-logo.png?1720676669"
+ },
+ {
+  "id": "dai",
+  "symbol": "dai",
+  "market_cap": 4534583296,
+  "image": "https://coin-images.coingecko.com/coins/images/9956/large/Badge_Dai.png?1696509996"
+ },
+ {
+  "id": "avalanche-2",
+  "symbol": "avax",
+  "market_cap": 4526353497,
+  "image": "https://coin-images.coingecko.com/coins/images/12559/large/Avalanche_Circle_RedWhite_Trans.png?1696512369"
+ },
+ {
+  "id": "sui",
+  "symbol": "sui",
+  "market_cap": 4325301427,
+  "image": "https://coin-images.coingecko.com/coins/images/26375/large/sui-ocean-square.png?1727791290"
+ },
+ {
+  "id": "usd1-wlfi",
+  "symbol": "usd1",
+  "market_cap": 4145727922,
+  "image": "https://coin-images.coingecko.com/coins/images/54977/large/USD1_1000x1000_transparent.png?1749297002"
+ },
+ {
+  "id": "usdt0",
+  "symbol": "usdt0",
+  "market_cap": 4060841633,
+  "image": "https://coin-images.coingecko.com/coins/images/53705/large/usdt0.jpg?1737086183"
+ },
+ {
+  "id": "the-open-network",
+  "symbol": "gram",
+  "market_cap": 3877382938,
+  "image": "https://coin-images.coingecko.com/coins/images/17980/large/Gram_Circular_Badge.png?1781524778"
+ },
+ {
+  "id": "tether-gold",
+  "symbol": "xaut",
+  "market_cap": 3351316238,
+  "image": "https://coin-images.coingecko.com/coins/images/10481/large/logo.png?1774627372"
+ },
+ {
+  "id": "global-dollar",
+  "symbol": "usdg",
+  "market_cap": 3114952520,
+  "image": "https://coin-images.coingecko.com/coins/images/51281/large/GDN_USDG_Token_200x200.png?1730484111"
+ },
+ {
+  "id": "shiba-inu",
+  "symbol": "shib",
+  "market_cap": 3031682066,
+  "image": "https://coin-images.coingecko.com/coins/images/11939/large/shiba.png?1696511800"
+ },
+ {
+  "id": "okb",
+  "symbol": "okb",
+  "market_cap": 2577234815,
+  "image": "https://coin-images.coingecko.com/coins/images/4463/large/WeChat_Image_20220118095654.png?1696505053"
+ },
+ {
+  "id": "aave",
+  "symbol": "aave",
+  "market_cap": 2468098129,
+  "image": "https://coin-images.coingecko.com/coins/images/12645/large/aave-token-round.png?1720472354"
+ },
+ {
+  "id": "aster-2",
+  "symbol": "aster",
+  "market_cap": 1898813285,
+  "image": "https://coin-images.coingecko.com/coins/images/69040/large/_ASTER.png?1757326782"
+ },
+ {
+  "id": "falcon-finance",
+  "symbol": "usdf",
+  "market_cap": 1806986923,
+  "image": "https://coin-images.coingecko.com/coins/images/54558/large/ff_200_X_200.png?1740741076"
+ },
+ {
+  "id": "pepe",
+  "symbol": "pepe",
+  "market_cap": 1758913547,
+  "image": "https://coin-images.coingecko.com/coins/images/29850/large/pepe-token.jpeg?1696528776"
+ },
+ {
+  "id": "arbitrum",
+  "symbol": "arb",
+  "market_cap": 1272615879,
+  "image": "https://coin-images.coingecko.com/coins/images/16547/large/arb.jpg?1721358242"
+ },
+ {
+  "id": "venice-token",
+  "symbol": "vvv",
+  "market_cap": 1115051105,
+  "image": "https://coin-images.coingecko.com/coins/images/54023/large/VVV_Token_Transparent.png?1741856877"
+ },
+ {
+  "id": "polygon-ecosystem-token",
+  "symbol": "pol",
+  "market_cap": 1048769419,
+  "image": "https://coin-images.coingecko.com/coins/images/32440/large/pol.png?1759114181"
+ },
+ {
+  "id": "aptos",
+  "symbol": "apt",
+  "market_cap": 722510925,
+  "image": "https://coin-images.coingecko.com/coins/images/26455/large/Aptos-Network-Profile-Picture_%281%29.png?1788259511"
+ },
+ {
+  "id": "dash",
+  "symbol": "dash",
+  "market_cap": 642963523,
+  "image": "https://coin-images.coingecko.com/coins/images/19/large/dash-logo.png?1696501423"
+ },
+ {
+  "id": "starknet",
+  "symbol": "strk",
+  "market_cap": 584477187,
+  "image": "https://coin-images.coingecko.com/coins/images/26433/large/starknet.png?1696525507"
+ },
+ {
+  "id": "official-trump",
+  "symbol": "trump",
+  "market_cap": 533303115,
+  "image": "https://coin-images.coingecko.com/coins/images/53746/large/trump.png?1737171561"
+ },
+ {
+  "id": "pudgy-penguins",
+  "symbol": "pengu",
+  "market_cap": 487217960,
+  "image": "https://coin-images.coingecko.com/coins/images/52622/large/PUDGY_PENGUINS_PENGU_PFP.png?1733809110"
+ },
+ {
+  "id": "plasma",
+  "symbol": "xpl",
+  "market_cap": 368930869,
+  "image": "https://coin-images.coingecko.com/coins/images/66489/large/Plasma-symbol-green-1.png?1755142558"
+ },
+ {
+  "id": "optimism",
+  "symbol": "op",
+  "market_cap": 344047043,
+  "image": "https://coin-images.coingecko.com/coins/images/25244/large/Token.png?1774456081"
+ },
+ {
+  "id": "spx6900",
+  "symbol": "spx",
+  "market_cap": 336802211,
+  "image": "https://coin-images.coingecko.com/coins/images/31401/large/centeredcoin_%281%29.png?1737048493"
+ },
+ {
+  "id": "gnosis",
+  "symbol": "gno",
+  "market_cap": 306743501,
+  "image": "https://coin-images.coingecko.com/coins/images/662/large/logo_square_simple_300px.png?1696501854"
+ },
+ {
+  "id": "monad",
+  "symbol": "mon",
+  "market_cap": 290979257,
+  "image": "https://coin-images.coingecko.com/coins/images/38927/large/mon.png?1766029057"
+ },
+ {
+  "id": "pons",
+  "symbol": "pons",
+  "market_cap": 226125993,
+  "image": "https://coin-images.coingecko.com/coins/images/102174571/large/jhitvkisdq8fhxvimdkpcw7y3dx5.?1784093932"
+ },
+ {
+  "id": "frax",
+  "symbol": "frax",
+  "market_cap": 217144913,
+  "image": "https://coin-images.coingecko.com/coins/images/13422/large/LFRAX.png?1751911193"
+ },
+ {
+  "id": "dogwifcoin",
+  "symbol": "wif",
+  "market_cap": 205716367,
+  "image": "https://coin-images.coingecko.com/coins/images/33566/large/dogwifhat.jpg?1702499428"
+ },
+ {
+  "id": "cash-cat",
+  "symbol": "cashcat",
+  "market_cap": 118397434,
+  "image": "https://coin-images.coingecko.com/coins/images/102174280/large/cashcat-logo.jpg?1782922765"
+ },
+ {
+  "id": "wrapped-near",
+  "symbol": "wnear",
+  "market_cap": 96791467,
+  "image": "https://coin-images.coingecko.com/coins/images/18280/large/EX4mrWMW_400x400.jpg?1696517773"
+ },
+ {
+  "id": "safe",
+  "symbol": "safe",
+  "market_cap": 96521571,
+  "image": "https://coin-images.coingecko.com/coins/images/27032/large/Artboard_1_copy_8circle-1.png?1696526084"
+ },
+ {
+  "id": "gmx",
+  "symbol": "gmx",
+  "market_cap": 90219499,
+  "image": "https://coin-images.coingecko.com/coins/images/18323/large/arbit.png?1696517814"
+ },
+ {
+  "id": "melania-meme",
+  "symbol": "melania",
+  "market_cap": 89013174,
+  "image": "https://coin-images.coingecko.com/coins/images/53775/large/melania-meme.png?1737329885"
+ },
+ {
+  "id": "cow-protocol",
+  "symbol": "cow",
+  "market_cap": 81818633,
+  "image": "https://coin-images.coingecko.com/coins/images/24384/large/CoW-token_logo.png?1719524382"
+ },
+ {
+  "id": "berachain-bera",
+  "symbol": "bera",
+  "market_cap": 81685502,
+  "image": "https://coin-images.coingecko.com/coins/images/25235/large/BERA.png?1738822008"
+ },
+ {
+  "id": "adi-token",
+  "symbol": "adi",
+  "market_cap": 79168935,
+  "image": "https://coin-images.coingecko.com/coins/images/68846/large/ADI_Token-min.png?1765296433"
+ },
+ {
+  "id": "kaito",
+  "symbol": "kaito",
+  "market_cap": 73347981,
+  "image": "https://coin-images.coingecko.com/coins/images/54411/large/Qm4DW488_400x400.jpg?1739552780"
+ },
+ {
+  "id": "turbo",
+  "symbol": "turbo",
+  "market_cap": 64219625,
+  "image": "https://coin-images.coingecko.com/coins/images/30117/large/TurboMark-QL_200.png?1708079597"
+ },
+ {
+  "id": "aleo",
+  "symbol": "aleo",
+  "market_cap": 60587049,
+  "image": "https://coin-images.coingecko.com/coins/images/27916/large/secondary-icon-dark.png?1726770428"
+ },
+ {
+  "id": "book-of-meme",
+  "symbol": "bome",
+  "market_cap": 54101641,
+  "image": "https://coin-images.coingecko.com/coins/images/36071/large/bome.png?1710407255"
+ },
+ {
+  "id": "based-brett",
+  "symbol": "brett",
+  "market_cap": 50982145,
+  "image": "https://coin-images.coingecko.com/coins/images/35529/large/1000050750.png?1709031995"
+ },
+ {
+  "id": "xdai",
+  "symbol": "xdai",
+  "market_cap": 44458450,
+  "image": "https://coin-images.coingecko.com/coins/images/11062/large/Identity-Primary-DarkBG.png?1696511004"
+ },
+ {
+  "id": "mog-coin",
+  "symbol": "mog",
+  "market_cap": 40806656,
+  "image": "https://coin-images.coingecko.com/coins/images/31059/large/MOG_LOGO_200x200.png?1696529893"
+ },
+ {
+  "id": "aurora-near",
+  "symbol": "aurora",
+  "market_cap": 40135597,
+  "image": "https://coin-images.coingecko.com/coins/images/20582/large/aurora.jpeg?1696519989"
+ },
+ {
+  "id": "movement",
+  "symbol": "move",
+  "market_cap": 39474792,
+  "image": "https://coin-images.coingecko.com/coins/images/39345/large/movement-testnet-token.png?1721878759"
+ },
+ {
+  "id": "rhea-2",
+  "symbol": "rhea",
+  "market_cap": 34044290,
+  "image": "https://coin-images.coingecko.com/coins/images/67682/large/RHEA_Logo.png?1753517263"
+ },
+ {
+  "id": "monerium-eur-money-2",
+  "symbol": "eure",
+  "market_cap": 32107050,
+  "image": "https://coin-images.coingecko.com/coins/images/54303/large/eure.jpg?1739167959"
+ },
+ {
+  "id": "kyber-network-crystal",
+  "symbol": "knc",
+  "market_cap": 26959883,
+  "image": "https://coin-images.coingecko.com/coins/images/14899/large/RwdVsGcw_400x400.jpg?1696514562"
+ },
+ {
+  "id": "fogo",
+  "symbol": "fogo",
+  "market_cap": 24253969,
+  "image": "https://coin-images.coingecko.com/coins/images/68100/large/fogo_AppIcon.png?1767721208"
+ },
+ {
+  "id": "infinex-2",
+  "symbol": "inx",
+  "market_cap": 8998273,
+  "image": "https://coin-images.coingecko.com/coins/images/70868/large/infinex.png?1764322875"
+ },
+ {
+  "id": "hemi-bitcoin",
+  "symbol": "hemibtc",
+  "market_cap": 4013986,
+  "image": "https://coin-images.coingecko.com/coins/images/67027/large/hemibtc.jpg?1751514905"
+ },
+ {
+  "id": "evaa-protocol",
+  "symbol": "evaa",
+  "market_cap": 4012403,
+  "image": "https://coin-images.coingecko.com/coins/images/69601/large/evaa.png?1759214696"
+ },
+ {
+  "id": "nearkat-2",
+  "symbol": "nearkat",
+  "market_cap": 3903504,
+  "image": "https://coin-images.coingecko.com/coins/images/102176913/large/nearkat.jpg?1789019515"
+ },
+ {
+  "id": "publicai",
+  "symbol": "public",
+  "market_cap": 1524043,
+  "image": "https://coin-images.coingecko.com/coins/images/67977/large/publicai.jpg?1754478612"
+ },
+ {
+  "id": "sweatcoin",
+  "symbol": "sweat",
+  "market_cap": 1091074,
+  "image": "https://coin-images.coingecko.com/coins/images/25057/large/Sweat_-_logo-nov-2025.png?1762411781"
+ },
+ {
+  "id": "black-dragon",
+  "symbol": "blackdragon",
+  "market_cap": 967660,
+  "image": "https://coin-images.coingecko.com/coins/images/35502/large/Untitled-8.png?1709390396"
+ },
+ {
+  "id": "forgive-me-father",
+  "symbol": "$purge",
+  "market_cap": 924654,
+  "image": "https://coin-images.coingecko.com/coins/images/51666/large/nZLzDdNi_400x400.jpg?1731729029"
+ },
+ {
+  "id": "npro",
+  "symbol": "npro",
+  "market_cap": 763166,
+  "image": "https://coin-images.coingecko.com/coins/images/70983/large/npro_coin_squared_2x.png?1765013426"
+ },
+ {
+  "id": "shitzu",
+  "symbol": "shitzu",
+  "market_cap": 694412,
+  "image": "https://coin-images.coingecko.com/coins/images/24857/large/sFChtaUA_400x400.jpg?1696524017"
+ },
+ {
+  "id": "monerium-gbp-emoney",
+  "symbol": "gbpe",
+  "market_cap": 672978,
+  "image": "https://coin-images.coingecko.com/coins/images/39004/large/gbp.png?1719840784"
+ },
+ {
+  "id": "usdcx-movement",
+  "symbol": "usdcx",
+  "market_cap": 636386,
+  "image": "https://coin-images.coingecko.com/coins/images/102172636/large/Circle_USDCx.png?1778309418"
+ },
+ {
+  "id": "thor-wallet",
+  "symbol": "titn",
+  "market_cap": 383512,
+  "image": "https://coin-images.coingecko.com/coins/images/70474/large/TITNToken%281%29.png?1764103345"
+ },
+ {
+  "id": "jambo-2",
+  "symbol": "jambo",
+  "market_cap": 356186,
+  "image": "https://coin-images.coingecko.com/coins/images/68744/large/jambo.png?1756450646"
+ },
+ {
+  "id": "loud",
+  "symbol": "loud",
+  "market_cap": 231942,
+  "image": "https://coin-images.coingecko.com/coins/images/66211/large/loud-logo.jpg?1748759689"
+ },
+ {
+  "id": "nearkat",
+  "symbol": "kat",
+  "market_cap": 187404,
+  "image": "https://coin-images.coingecko.com/coins/images/51737/large/nkimage.png?1753240872"
+ },
+ {
+  "id": "hapi",
+  "symbol": "hapi",
+  "market_cap": 165281,
+  "image": "https://coin-images.coingecko.com/coins/images/14298/large/Hapi_logo_square_%281%29.png?1696513995"
+ },
+ {
+  "id": "consumerfi-protocol",
+  "symbol": "cfi",
+  "market_cap": 134788,
+  "image": "https://coin-images.coingecko.com/coins/images/70993/large/o6dyoqfbdes0qabkk4p6ed9ighgz.?1765019681"
+ },
+ {
+  "id": "meta-pool",
+  "symbol": "mpdao",
+  "market_cap": 0.0,
+  "image": "https://coin-images.coingecko.com/coins/images/24249/large/aB2d0Nmn_400x400.png?1696523434"
+ },
+ {
+  "id": "staked-near",
+  "symbol": "stnear",
+  "market_cap": 0.0,
+  "image": "https://coin-images.coingecko.com/coins/images/24250/large/st-NEAR-token-white-dark-purple-circle.png?1696523435"
+ },
+ {
+  "id": "coca",
+  "symbol": "coca",
+  "market_cap": 0.0,
+  "image": "https://coin-images.coingecko.com/coins/images/52379/large/_COCA_Token_1.png?1733257913"
+ }
+]
