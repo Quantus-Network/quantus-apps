@@ -68,7 +68,6 @@ export 'src/services/address_formatting_service.dart';
 export 'src/services/balances_service.dart';
 export 'src/services/chain_history_service.dart';
 export 'src/services/connectivity_service.dart';
-export 'package:connectivity_plus/connectivity_plus.dart' show ConnectivityResult;
 export 'src/services/datetime_formatting_service.dart';
 export 'src/services/hd_wallet_service.dart';
 export 'src/services/high_security_service.dart';

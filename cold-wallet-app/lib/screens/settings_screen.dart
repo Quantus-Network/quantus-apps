@@ -6,6 +6,7 @@ import 'package:quantus_cold_wallet/components/qr_tuning_controls.dart';
 import 'package:quantus_cold_wallet/providers/settings_providers.dart';
 import 'package:quantus_cold_wallet/providers/wallet_providers.dart';
 import 'package:quantus_cold_wallet/screens/show_secret_phrase_screen.dart';
+import 'package:quantus_cold_wallet/components/cold_dialog.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -15,7 +16,7 @@ class SettingsScreen extends ConsumerWidget {
       await ref.read(coldSettingsProvider.notifier).setWifiOverrideEnabled(false);
       return;
     }
-    final confirmed = await showQuantusDialog(
+    final confirmed = await showColdDialog(
       context,
       title: 'Override network lock?',
       titleColor: context.colorsV3.semanticEmber,

@@ -6,6 +6,7 @@ import 'package:quantus_cold_wallet/components/password_field.dart';
 import 'package:quantus_cold_wallet/providers/wallet_providers.dart';
 import 'package:quantus_cold_wallet/services/vault_service.dart';
 import 'package:quantus_cold_wallet/ui/cold_theme.dart';
+import 'package:quantus_cold_wallet/components/cold_icon.dart';
 
 /// The one-time step for a wallet created with an app password: the password
 /// moves the vault behind the device key and is never asked again.
@@ -58,7 +59,7 @@ class _MigrateVaultScreenState extends ConsumerState<MigrateVaultScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const SizedBox(height: 32),
-            Center(child: QuantusIcon(QuantusIcons.key, size: 60, color: colors.accentFlare)),
+            Center(child: ColdIcon(ColdIcons.key, size: 60, color: colors.accentFlare)),
             const SizedBox(height: 24),
             Text(
               'One last password',

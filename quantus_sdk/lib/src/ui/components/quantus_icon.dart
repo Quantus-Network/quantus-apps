@@ -10,15 +10,7 @@ enum QuantusIcons {
   caretDown('assets/icons/caret_down.svg'),
   plus('assets/icons/plus.svg'),
   swapVertical('assets/icons/swap_vertical.svg'),
-  lock('assets/icons/lock.svg'),
-  wifiSlash('assets/icons/wifi_slash.svg'),
-  scan('assets/icons/scan.svg'),
-  gear('assets/icons/gear.svg'),
-  faceId('assets/icons/face_id.svg'),
-  checkCircle('assets/icons/check_circle.svg'),
-  key('assets/icons/key.svg'),
-  warning('assets/icons/warning.svg'),
-  warningCircle('assets/icons/warning_circle.svg');
+  lock('assets/icons/lock.svg');
 
   const QuantusIcons(this.assetPath);
 

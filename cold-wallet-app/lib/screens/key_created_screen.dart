@@ -3,6 +3,7 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:quantus_cold_wallet/components/outcome_view.dart';
 import 'package:quantus_cold_wallet/models/cold_account.dart';
 import 'package:quantus_cold_wallet/ui/cold_theme.dart';
+import 'package:quantus_cold_wallet/components/cold_icon.dart';
 
 /// Key Created (Figma 798:6225). The wallet already exists, so there is no
 /// way back; "Go To Wallet" unwinds to the root, which is Home now.
@@ -21,7 +22,7 @@ class KeyCreatedScreen extends StatelessWidget {
       child: OutcomeView(
         appBarTitle: 'New Key',
         showBackButton: false,
-        glyph: QuantusIcons.checkCircle,
+        glyph: ColdIcons.checkCircle,
         glyphColor: colors.semanticSage,
         title: 'Key Created',
         body: 'One account was created on this device.',
@@ -44,7 +45,7 @@ class KeyCreatedScreen extends StatelessWidget {
                   width: 52,
                   height: 52,
                   decoration: BoxDecoration(color: colors.bgSurface2, borderRadius: context.radiusV3.smBorder),
-                  child: Center(child: QuantusIcon(QuantusIcons.key, size: 24, color: colors.accentFlare)),
+                  child: Center(child: ColdIcon(ColdIcons.key, size: 24, color: colors.accentFlare)),
                 ),
                 const SizedBox(width: 16),
                 Expanded(

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:quantus_cold_wallet/ui/cold_theme.dart';
+import 'package:quantus_cold_wallet/components/cold_icon.dart';
+import 'package:quantus_cold_wallet/components/cold_button.dart';
 
 /// Shown by the unlock-method step when the device has no lock, so the
 /// signing key would be stored without user presence. Returns `true` if the
@@ -19,7 +21,7 @@ class SecureElementWarningScreen extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const Spacer(flex: 2),
-          Center(child: QuantusIcon(QuantusIcons.warning, size: 60, color: colors.semanticSand)),
+          Center(child: ColdIcon(ColdIcons.warning, size: 60, color: colors.semanticSand)),
           const SizedBox(height: 24),
           Text(
             'No device lock',
@@ -46,12 +48,7 @@ class SecureElementWarningScreen extends StatelessWidget {
               onTap: () => Navigator.pop(context, false),
             ),
             const SizedBox(height: 12),
-            QuantusButton.simple(
-              label: 'Continue anyway',
-              variant: ButtonVariant.secondary,
-              padding: coldButtonPadding,
-              onTap: () => Navigator.pop(context, true),
-            ),
+            ColdButton.secondary(label: 'Continue anyway', onTap: () => Navigator.pop(context, true)),
           ],
         ),
       ),

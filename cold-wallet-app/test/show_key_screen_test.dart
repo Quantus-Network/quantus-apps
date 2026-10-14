@@ -9,6 +9,7 @@ import 'package:quantus_cold_wallet/ui/cold_theme.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 
 import 'fakes/account_fixtures.dart';
+import 'package:quantus_cold_wallet/components/cold_button.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -54,7 +55,7 @@ void main() {
     await pumpShowKey(tester, [one, legacy65], legacy65);
 
     expect(find.text('PUBLIC KEY'), findsOneWidget);
-    expect(find.widgetWithText(QuantusButton, 'Show public key'), findsOneWidget);
+    expect(find.widgetWithText(ColdButton, 'Show public key'), findsOneWidget);
   });
 
   testWidgets('the kebab lists the four options', (tester) async {

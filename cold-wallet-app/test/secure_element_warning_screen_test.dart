@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_cold_wallet/screens/secure_element_warning_screen.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:quantus_cold_wallet/components/cold_icon.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -37,7 +38,7 @@ void main() {
   testWidgets('names the missing lock and what it means', (tester) async {
     await pumpWarning(tester, (_) {});
 
-    expect(find.byType(QuantusIcon), findsOneWidget);
+    expect(find.byType(ColdIcon), findsOneWidget);
     final title = tester.widget<Text>(find.text('No device lock'));
     expect(title.style?.color, colors.textContent);
     expect(title.style?.fontSize, text.titleHero.fontSize);

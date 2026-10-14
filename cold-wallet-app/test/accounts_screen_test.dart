@@ -13,6 +13,7 @@ import 'package:quantus_cold_wallet/screens/show_key_screen.dart';
 import 'package:quantus_cold_wallet/services/vault_service.dart';
 
 import 'fakes/account_fixtures.dart';
+import 'package:quantus_cold_wallet/components/cold_button.dart';
 
 /// An unlocked wallet holding [accounts], backed by mocked secure storage.
 Future<ProviderContainer> walletWith(List<ColdAccount> accounts) async {
@@ -192,7 +193,7 @@ void main() {
       await openMenu(tester, 1);
       await tester.tap(find.text('Disconnect account'));
       await tester.pumpAndSettle();
-      await tapAndAwait(tester, find.widgetWithText(QuantusButton, 'Disconnect'));
+      await tapAndAwait(tester, find.widgetWithText(ColdButton, 'Disconnect'));
 
       expect(container.read(accountsProvider).map((a) => a.label), ['Account 1']);
       expect(find.text('Account 2'), findsNothing);
@@ -208,7 +209,7 @@ void main() {
       await openMenu(tester, 0);
       await tester.tap(find.text('Disconnect account'));
       await tester.pumpAndSettle();
-      await tapAndAwait(tester, find.widgetWithText(QuantusButton, 'Disconnect'));
+      await tapAndAwait(tester, find.widgetWithText(ColdButton, 'Disconnect'));
 
       expect(find.byType(ShowKeyScreen), findsNothing);
       expect(find.byType(AccountsScreen), findsOneWidget);

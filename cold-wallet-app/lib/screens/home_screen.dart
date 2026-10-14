@@ -11,6 +11,7 @@ import 'package:quantus_cold_wallet/screens/scan_transaction_screen.dart';
 import 'package:quantus_cold_wallet/screens/settings_screen.dart';
 import 'package:quantus_cold_wallet/screens/show_key_screen.dart';
 import 'package:quantus_cold_wallet/ui/cold_theme.dart';
+import 'package:quantus_cold_wallet/components/cold_icon.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -43,7 +44,7 @@ class HomeScreen extends ConsumerWidget {
             _HeaderPill(
               width: 44,
               onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen())),
-              child: QuantusIcon(QuantusIcons.gear, size: 20, color: colors.textContent),
+              child: ColdIcon(ColdIcons.gear, size: 20, color: colors.textContent),
             ),
           ],
         ),
@@ -55,11 +56,7 @@ class HomeScreen extends ConsumerWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  QuantusIcon(
-                    QuantusIcons.wifiSlash,
-                    size: 54,
-                    color: online ? colors.semanticEmber : colors.semanticSage,
-                  ),
+                  ColdIcon(ColdIcons.wifiSlash, size: 54, color: online ? colors.semanticEmber : colors.semanticSage),
                   const SizedBox(height: 28),
                   Text(
                     online ? 'Not Safe to Sign' : 'Ready to sign',
@@ -85,7 +82,7 @@ class HomeScreen extends ConsumerWidget {
       bottomContent: ScaffoldBaseBottomContent(
         child: QuantusButton.simple(
           label: 'Scan Transaction',
-          icon: QuantusIcon(QuantusIcons.scan, size: 20, color: colors.textVoid),
+          icon: ColdIcon(ColdIcons.scan, size: 20, color: colors.textVoid),
           iconPlacement: IconPlacement.leading,
           padding: coldButtonPadding,
           onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ScanTransactionScreen())),

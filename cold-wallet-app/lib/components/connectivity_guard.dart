@@ -1,3 +1,4 @@
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
@@ -5,7 +6,9 @@ import 'package:quantus_cold_wallet/components/radio_status_panel.dart';
 import 'package:quantus_cold_wallet/providers/connectivity_provider.dart';
 import 'package:quantus_cold_wallet/providers/settings_providers.dart';
 import 'package:quantus_cold_wallet/providers/wallet_providers.dart';
-import 'package:quantus_cold_wallet/ui/cold_theme.dart';
+import 'package:quantus_cold_wallet/components/cold_icon.dart';
+import 'package:quantus_cold_wallet/components/cold_button.dart';
+import 'package:quantus_cold_wallet/components/cold_dialog.dart';
 
 /// Full-screen blocker shown whenever any network is reachable (Figma Offline
 /// gate). A cold wallet must stay air-gapped, so this overlays everything and
@@ -62,7 +65,7 @@ class _ConnectivityGuardState extends ConsumerState<ConnectivityGuard> {
                   child: Center(
                     child: Padding(
                       padding: ScaffoldBase.defaultPadding,
-                      child: QuantusDialog(
+                      child: ColdDialog(
                         title: 'Sign while online?',
                         titleColor: colors.semanticEmber,
                         body:
@@ -116,7 +119,7 @@ class _Gate extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   const SizedBox(height: 83),
-                  Center(child: QuantusIcon(QuantusIcons.wifiSlash, size: 60, color: colors.accentFlare)),
+                  Center(child: ColdIcon(ColdIcons.wifiSlash, size: 60, color: colors.accentFlare)),
                   const SizedBox(height: 24),
                   Text(
                     onboarding ? 'Go offline to continue' : 'Waiting for you to go offline',
@@ -145,12 +148,7 @@ class _Gate extends ConsumerWidget {
             ),
           ),
           ScaffoldBaseBottomContent(
-            child: QuantusButton.simple(
-              label: 'Override for Testing',
-              variant: ButtonVariant.secondary,
-              padding: coldButtonPadding,
-              onTap: onOverride,
-            ),
+            child: ColdButton.secondary(label: 'Override for Testing', onTap: onOverride),
           ),
         ],
       ),

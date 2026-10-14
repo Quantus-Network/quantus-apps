@@ -7,7 +7,8 @@ import 'package:quantus_cold_wallet/providers/wallet_providers.dart';
 import 'package:quantus_cold_wallet/screens/enlarged_qr_screen.dart';
 import 'package:quantus_cold_wallet/screens/public_key_export_screen.dart';
 import 'package:quantus_cold_wallet/screens/rename_account_screen.dart';
-import 'package:quantus_cold_wallet/ui/cold_theme.dart';
+import 'package:quantus_cold_wallet/components/cold_button.dart';
+import 'package:quantus_cold_wallet/components/cold_dialog.dart';
 
 /// Account Pairing (Figma Cold Wallet): the QR a hot wallet scans to add this
 /// account, with its address and checkphrase.
@@ -42,7 +43,7 @@ class ShowKeyScreen extends ConsumerWidget {
 
   void _showDerivationPath(BuildContext context, ColdAccount account) {
     final colors = context.colorsV3;
-    showQuantusDialog(
+    showColdDialog(
       context,
       title: 'Derivation Path',
       titleColor: colors.accentFlare,
@@ -135,10 +136,8 @@ class ShowKeyScreen extends ConsumerWidget {
           style: text.caption.copyWith(color: colors.textMuted),
         ),
         const SizedBox(height: 16),
-        QuantusButton.simple(
+        ColdButton.secondary(
           label: 'Show public key',
-          variant: ButtonVariant.secondary,
-          padding: coldButtonPadding,
           onTap: () {
             final keypair = keypairFor(ref, address);
             if (keypair == null) return;
@@ -232,7 +231,7 @@ Future<void> confirmDisconnect(
 }) async {
   final mnemonic = ref.read(walletControllerProvider).mnemonic ?? (throw StateError('Wallet is locked'));
   final words = mnemonic.split(' ').length;
-  final confirmed = await showQuantusDialog(
+  final confirmed = await showColdDialog(
     context,
     title: 'Disconnect ${account.label}?',
     titleColor: context.colorsV3.semanticEmber,

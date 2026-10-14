@@ -1,3 +1,4 @@
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -11,6 +12,7 @@ import 'package:quantus_cold_wallet/providers/settings_providers.dart';
 import 'package:quantus_cold_wallet/providers/wallet_providers.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:quantus_cold_wallet/components/cold_dialog.dart';
 
 class _StatusController extends WalletController {
   final WalletStatus status;
@@ -109,7 +111,7 @@ void main() {
     expect(find.text('Cancel'), findsOneWidget);
     expect(find.text('Network Detected'), findsOneWidget);
     final scrim = tester.widget<ColoredBox>(
-      find.ancestor(of: find.byType(QuantusDialog), matching: find.byType(ColoredBox)).first,
+      find.ancestor(of: find.byType(ColdDialog), matching: find.byType(ColoredBox)).first,
     );
     expect(scrim.color, colors.bgVoid.useOpacity(0.8));
 

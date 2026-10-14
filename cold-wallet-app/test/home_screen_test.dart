@@ -10,6 +10,7 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'fakes/account_fixtures.dart';
+import 'package:quantus_cold_wallet/components/cold_icon.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -34,7 +35,7 @@ void main() {
     expect(find.text('Ready to sign'), findsOneWidget);
     expect(find.text('Offline. Nothing can reach this device.'), findsOneWidget);
     expect(find.byType(OfflinePill), findsOneWidget);
-    expect(tester.widget<QuantusIcon>(quantusIcon(QuantusIcons.wifiSlash).first).color, coldColors.semanticSage);
+    expect(tester.widget<ColdIcon>(coldIcon(ColdIcons.wifiSlash).first).color, coldColors.semanticSage);
     expect(find.widgetWithText(QuantusButton, 'Scan Transaction'), findsOneWidget);
     expect(find.textContaining('re-lock'), findsNothing);
     expect(quantusIcon(QuantusIcons.lock), findsNothing);
@@ -50,14 +51,14 @@ void main() {
     expect(find.text('Not Safe to Sign'), findsOneWidget);
     expect(find.text('You overrode the network lock. Switch your connections off.'), findsOneWidget);
     expect(find.byType(OfflinePill), findsNothing);
-    expect(tester.widget<QuantusIcon>(quantusIcon(QuantusIcons.wifiSlash)).color, coldColors.semanticEmber);
+    expect(tester.widget<ColdIcon>(coldIcon(ColdIcons.wifiSlash)).color, coldColors.semanticEmber);
     expect(find.widgetWithText(QuantusButton, 'Scan Transaction'), findsOneWidget);
   });
 
   testWidgets('the gear opens Settings', (tester) async {
     await pumpHome(tester, online: false);
 
-    await tester.tap(quantusIcon(QuantusIcons.gear));
+    await tester.tap(coldIcon(ColdIcons.gear));
     await tester.pumpAndSettle();
 
     expect(find.byType(SettingsScreen), findsOneWidget);

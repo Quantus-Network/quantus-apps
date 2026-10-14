@@ -6,6 +6,7 @@ import 'package:quantus_cold_wallet/screens/home_screen.dart';
 import 'package:quantus_cold_wallet/screens/migrate_vault_screen.dart';
 import 'package:quantus_cold_wallet/screens/welcome_screen.dart';
 import 'package:quantus_cold_wallet/ui/cold_theme.dart';
+import 'package:quantus_cold_wallet/components/cold_icon.dart';
 
 /// Routes the app to setup, lock, or home based on the wallet status.
 class RootGate extends ConsumerWidget {
@@ -51,7 +52,7 @@ class _InitError extends ConsumerWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                QuantusIcon(QuantusIcons.warningCircle, size: 64, color: colors.semanticEmber),
+                ColdIcon(ColdIcons.warningCircle, size: 64, color: colors.semanticEmber),
                 const SizedBox(height: 24),
                 Text(
                   'Storage error',

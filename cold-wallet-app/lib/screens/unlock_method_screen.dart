@@ -7,6 +7,8 @@ import 'package:quantus_cold_wallet/screens/key_created_screen.dart';
 import 'package:quantus_cold_wallet/screens/secure_element_warning_screen.dart';
 import 'package:quantus_cold_wallet/services/vault_service.dart';
 import 'package:quantus_cold_wallet/ui/cold_theme.dart';
+import 'package:quantus_cold_wallet/components/cold_icon.dart';
+import 'package:quantus_cold_wallet/components/cold_button.dart';
 
 enum _Method {
   /// Biometrics enrolled: the user picks (Figma 798:6205). Both choices store
@@ -111,15 +113,11 @@ class _UnlockMethodScreenState extends ConsumerState<UnlockMethodScreen> {
               children: [
                 const Spacer(flex: 2),
                 Center(
-                  child: QuantusIcon(
-                    switch (method) {
-                      _Method.faceId => QuantusIcons.faceId,
-                      _Method.passcode => QuantusIcons.lock,
-                      _Method.none => QuantusIcons.warning,
-                    },
-                    size: 60,
-                    color: method == _Method.none ? colors.semanticSand : colors.accentFlare,
-                  ),
+                  child: switch (method) {
+                    _Method.faceId => ColdIcon(ColdIcons.faceId, size: 60, color: colors.accentFlare),
+                    _Method.passcode => QuantusIcon(QuantusIcons.lock, size: 60, color: colors.accentFlare),
+                    _Method.none => ColdIcon(ColdIcons.warning, size: 60, color: colors.semanticSand),
+                  },
                 ),
                 const SizedBox(height: 24),
                 Text(
@@ -175,12 +173,7 @@ class _UnlockMethodScreenState extends ConsumerState<UnlockMethodScreen> {
                   ),
                   if (method == _Method.faceId) ...[
                     const SizedBox(height: 12),
-                    QuantusButton.simple(
-                      label: 'Use Passcode only',
-                      variant: ButtonVariant.secondary,
-                      padding: coldButtonPadding,
-                      onTap: _busy ? null : _create,
-                    ),
+                    ColdButton.secondary(label: 'Use Passcode only', onTap: _busy ? null : _create),
                     const SizedBox(height: 12),
                     Text(
                       'Your device may still offer Face ID first in the system prompt.',

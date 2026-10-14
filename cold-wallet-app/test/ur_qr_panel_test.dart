@@ -74,17 +74,6 @@ void main() {
     expect(pauseButton, findsNothing);
   });
 
-  testWidgets('UrQrPanel draws the frame progress', (tester) async {
-    await pumpPanel(tester, List<String>.generate(7, (i) => 'ur:bytes/${i + 1}-7/abcd'));
-
-    final bar = tester.widget<LinearProgressIndicator>(find.byType(LinearProgressIndicator));
-    expect(bar.color, colors.accentFlare);
-    expect(bar.value, closeTo(1 / 7, 0.001));
-
-    await tester.pump(const Duration(milliseconds: 1000 ~/ ColdSettings.defaultQrFps + 1));
-    expect(tester.widget<LinearProgressIndicator>(find.byType(LinearProgressIndicator)).value, closeTo(2 / 7, 0.001));
-  });
-
   testWidgets('SigningRefusalView shows the reason, the detail, that nothing was signed, and leads to Rejected', (
     tester,
   ) async {

@@ -3,11 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:quantus_cold_wallet/providers/wallet_providers.dart';
 import 'package:quantus_cold_wallet/ui/cold_theme.dart';
+import 'package:quantus_cold_wallet/components/cold_button.dart';
+import 'package:quantus_cold_wallet/components/cold_dialog.dart';
 
 /// Destructive confirmation, then the wipe and a return to the first route,
 /// which RootGate turns into Welcome.
 Future<void> confirmResetWallet(BuildContext context, WidgetRef ref) async {
-  final confirmed = await showQuantusDialog(
+  final confirmed = await showColdDialog(
     context,
     title: 'Reset wallet?',
     titleColor: context.colorsV3.semanticEmber,
@@ -127,12 +129,7 @@ class _LockScreenState extends ConsumerState<LockScreen> with WidgetsBindingObse
             ),
             if (failed) ...[
               const SizedBox(height: 12),
-              QuantusButton.simple(
-                label: 'Reset wallet…',
-                variant: ButtonVariant.danger,
-                padding: coldButtonPadding,
-                onTap: _busy ? null : () => confirmResetWallet(context, ref),
-              ),
+              ColdButton.danger(label: 'Reset wallet…', onTap: _busy ? null : () => confirmResetWallet(context, ref)),
             ],
           ],
         ),

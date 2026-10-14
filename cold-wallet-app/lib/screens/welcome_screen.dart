@@ -6,6 +6,7 @@ import 'package:quantus_cold_wallet/providers/connectivity_provider.dart';
 import 'package:quantus_cold_wallet/screens/create_wallet_screen.dart';
 import 'package:quantus_cold_wallet/screens/import_wallet_screen.dart';
 import 'package:quantus_cold_wallet/ui/cold_theme.dart';
+import 'package:quantus_cold_wallet/components/cold_button.dart';
 
 /// Create or Import (Figma 798:6187).
 class WelcomeScreen extends ConsumerWidget {
@@ -51,12 +52,7 @@ class WelcomeScreen extends ConsumerWidget {
               onTap: () => _push(context, const CreateWalletScreen()),
             ),
             const SizedBox(height: 12),
-            QuantusButton.simple(
-              label: 'Import Key',
-              variant: ButtonVariant.secondary,
-              padding: coldButtonPadding,
-              onTap: () => _push(context, const ImportWalletScreen()),
-            ),
+            ColdButton.secondary(label: 'Import Key', onTap: () => _push(context, const ImportWalletScreen())),
           ],
         ),
       ),

@@ -5,6 +5,7 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:quantus_cold_wallet/models/cold_account.dart';
 import 'package:quantus_cold_wallet/providers/wallet_providers.dart';
 import 'package:quantus_cold_wallet/ui/cold_theme.dart';
+import 'package:quantus_cold_wallet/components/cold_icon.dart';
 
 const testMnemonic = 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about';
 
@@ -43,3 +44,5 @@ Widget launcher(Widget screen) => Builder(
 );
 
 Finder quantusIcon(QuantusIcons icon) => find.byWidgetPredicate((w) => w is QuantusIcon && w.icon == icon);
+
+Finder coldIcon(ColdIcons icon) => find.byWidgetPredicate((w) => w is ColdIcon && w.icon == icon);

@@ -33,6 +33,7 @@ dependencies:
   qr_flutter: ^4.1.0
   mobile_scanner: ^7.2.0
   flutter_svg: ^2.3.0
+  connectivity_plus: ^7.1.1
 
   # Security: biometric unlock + secure-element storage + password KDF/AEAD
   local_auth: ^3.0.1
@@ -58,6 +59,7 @@ flutter:
   assets:
     - assets/v2/
     - assets/text/
+    - assets/icons/
 
   fonts:
     - family: Geist

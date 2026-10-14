@@ -9,7 +9,8 @@ import 'package:quantus_cold_wallet/components/step_header.dart';
 import 'package:quantus_cold_wallet/debug/debug_calls_screen.dart';
 import 'package:quantus_cold_wallet/screens/sign_near_transaction_screen.dart';
 import 'package:quantus_cold_wallet/screens/sign_transaction_screen.dart';
-import 'package:quantus_cold_wallet/ui/cold_theme.dart';
+import 'package:quantus_cold_wallet/components/cold_icon.dart';
+import 'package:quantus_cold_wallet/components/cold_button.dart';
 
 /// Step 1 of signing (Figma Cold Wallet / Receiving, Stalled): scans a
 /// (possibly multi-part / animated) UR QR code, accumulating parts until
@@ -179,7 +180,7 @@ class _ScanTransactionScreenState extends State<ScanTransactionScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              QuantusIcon(QuantusIcons.warningCircle, size: 64, color: colors.textMuted),
+              ColdIcon(ColdIcons.warningCircle, size: 64, color: colors.textMuted),
               const SizedBox(height: 24),
               Text(
                 'Camera unavailable',
@@ -195,12 +196,7 @@ class _ScanTransactionScreenState extends State<ScanTransactionScreen> {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 24),
-              QuantusButton.simple(
-                label: 'Try again',
-                variant: ButtonVariant.secondary,
-                padding: coldButtonPadding,
-                onTap: _restartCamera,
-              ),
+              ColdButton.secondary(label: 'Try again', onTap: _restartCamera),
             ],
           ),
         ),

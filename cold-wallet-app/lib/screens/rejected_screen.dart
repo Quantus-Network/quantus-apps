@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:quantus_cold_wallet/components/outcome_view.dart';
 import 'package:quantus_cold_wallet/ui/cold_theme.dart';
+import 'package:quantus_cold_wallet/components/cold_icon.dart';
 
 /// Where every refused or rejected transaction ends (Figma Cold Wallet /
 /// Rejected): what happened on this device, and what to do with the phone.
@@ -13,7 +14,7 @@ class RejectedScreen extends StatelessWidget {
     final colors = context.colorsV3;
     return OutcomeView(
       appBarTitle: 'Sign',
-      glyph: QuantusIcons.warningCircle,
+      glyph: ColdIcons.warningCircle,
       glyphColor: colors.semanticEmber,
       title: 'Nothing was signed',
       body: 'The transaction was discarded on this device. Your keys never left it and no funds moved.',

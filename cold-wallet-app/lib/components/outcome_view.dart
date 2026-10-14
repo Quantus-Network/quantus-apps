@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:quantus_cold_wallet/components/cold_icon.dart';
 
 /// Terminal screen layout shared by Key Created, Unreadable and Rejected
 /// (Figma Cold Wallet): a glyph, a title, a body, then
@@ -7,7 +8,7 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 class OutcomeView extends StatelessWidget {
   final String appBarTitle;
   final bool showBackButton;
-  final QuantusIcons glyph;
+  final ColdIcons glyph;
   final Color glyphColor;
   final String title;
   final String body;
@@ -39,7 +40,7 @@ class OutcomeView extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const SizedBox(height: 72),
-            Center(child: QuantusIcon(glyph, size: 80, color: glyphColor)),
+            Center(child: ColdIcon(glyph, size: 80, color: glyphColor)),
             const SizedBox(height: 32),
             Text(
               title,

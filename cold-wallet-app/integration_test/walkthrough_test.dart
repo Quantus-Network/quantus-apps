@@ -9,6 +9,7 @@ import 'package:quantus_cold_wallet/screens/show_key_screen.dart';
 import 'package:quantus_cold_wallet/services/vault_service.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:quantus_cold_wallet/components/cold_icon.dart';
 
 /// Walks every screen of the redesign on a device or simulator and saves a
 /// screenshot of each, named after the Figma frame it implements. Run with:
@@ -186,7 +187,7 @@ void main() {
     await tapText('Reject', then: 'Nothing was signed');
     await tapText('Back to Home', then: 'Ready to sign');
 
-    await tap(find.byWidgetPredicate((w) => w is QuantusIcon && w.icon == QuantusIcons.gear));
+    await tap(find.byWidgetPredicate((w) => w is ColdIcon && w.icon == ColdIcons.gear));
     await waitFor('Settings');
     await shot('x-settings');
     await tapText('Show secret phrase');

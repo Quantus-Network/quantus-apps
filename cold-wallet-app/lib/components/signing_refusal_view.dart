@@ -3,6 +3,7 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:quantus_cold_wallet/components/outcome_view.dart';
 import 'package:quantus_cold_wallet/screens/rejected_screen.dart';
 import 'package:quantus_cold_wallet/ui/cold_theme.dart';
+import 'package:quantus_cold_wallet/components/cold_icon.dart';
 
 /// Why a signing request was refused (Figma Cold Wallet / Unreadable), with
 /// the one detail that identifies it (the account, the key, the decoder's
@@ -27,7 +28,7 @@ class SigningRefusalView extends StatelessWidget {
     final colors = context.colorsV3;
     return OutcomeView(
       appBarTitle: appBarTitle,
-      glyph: QuantusIcons.warningCircle,
+      glyph: ColdIcons.warningCircle,
       glyphColor: colors.semanticEmber,
       title: title,
       body: message,

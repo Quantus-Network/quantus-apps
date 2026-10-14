@@ -7,20 +7,12 @@ enum NetworkStatus { online, offline }
 class ConnectivityService {
   final Connectivity _connectivity = Connectivity();
   final StreamController<NetworkStatus> _statusController = StreamController<NetworkStatus>.broadcast();
-  final StreamController<List<ConnectivityResult>> _resultsController =
-      StreamController<List<ConnectivityResult>>.broadcast();
   StreamSubscription<List<ConnectivityResult>>? _subscription;
   NetworkStatus _currentStatus = NetworkStatus.online;
-  List<ConnectivityResult> _currentResults = const [];
   bool _initialized = false;
 
   Stream<NetworkStatus> get statusStream => _statusController.stream;
   NetworkStatus get currentStatus => _currentStatus;
-
-  /// Every interface the platform reports, so a caller can name which radio is
-  /// still on. Empty until the first platform answer.
-  Stream<List<ConnectivityResult>> get resultsStream => _resultsController.stream;
-  List<ConnectivityResult> get currentResults => _currentResults;
 
   ConnectivityService() {
     _initialize();
@@ -46,8 +38,6 @@ class ConnectivityService {
   }
 
   void _updateStatus(List<ConnectivityResult> results, {bool emitInitial = false}) {
-    _currentResults = results;
-    _resultsController.add(results);
     final newStatus = results.contains(ConnectivityResult.none) ? NetworkStatus.offline : NetworkStatus.online;
 
     if (emitInitial || newStatus != _currentStatus) {
@@ -60,6 +50,5 @@ class ConnectivityService {
   void dispose() {
     _subscription?.cancel();
     _statusController.close();
-    _resultsController.close();
   }
 }

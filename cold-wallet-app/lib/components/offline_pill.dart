@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:quantus_cold_wallet/components/cold_icon.dart';
 
 /// "Offline · ready to sign" status pill (Figma Cold Wallet / Toast): sage
 /// gradient and border, wifi-slash glyph, one line of label.
@@ -29,7 +30,7 @@ class OfflinePill extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         spacing: 8,
         children: [
-          QuantusIcon(QuantusIcons.wifiSlash, size: 14, color: sage),
+          ColdIcon(ColdIcons.wifiSlash, size: 14, color: sage),
           Text(label, style: context.themeTextV3.labelChip.copyWith(color: sage)),
         ],
       ),
