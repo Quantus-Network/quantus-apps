@@ -300,11 +300,13 @@ class SwapService {
   /// The tokens to swap with, one per symbol and chain, and QTC as listed. A
   /// token is on Quantus when 1Click says so or when its asset id is the
   /// configured one. Each symbol's main listing comes first, by market cap,
-  /// then its listings on other chains, by market cap and chain. A token ranks
-  /// by the market cap of the CoinGecko coin 1Click names for it only when
-  /// that coin carries its symbol: a bridged BTC listed under bitcoin follows
-  /// the ranked tokens, in 1Click's order. Listings 1Click marks deprecated
-  /// are left out, as is a second listing of a symbol on the same chain.
+  /// then its listings on other chains, by market cap and chain, then the
+  /// tokens without a market cap, by chain and in 1Click's order. A token
+  /// ranks by the market cap of the CoinGecko coin 1Click names for it only
+  /// when that coin carries its symbol: a bridged BTC listed under bitcoin, or
+  /// a vault's sUSDC listed under usd-coin, has none. Listings 1Click marks
+  /// deprecated are left out, as is a second listing of a symbol on the same
+  /// chain.
   Future<(List<SwapToken>, SwapToken?)> _fetchIntentsTokens() async {
     final data = (await _api.send('GET', '/v0/tokens') as List<dynamic>).cast<Map<String, dynamic>>();
     final logoIds = {for (final item in data) ?SwapToken.networkLogoId((item['blockchain'] as String).toUpperCase())};
@@ -320,7 +322,6 @@ class SwapService {
       }
     }
     final listings = <(String, String), SwapToken>{};
-    final marketCaps = <SwapToken, double>{};
     final onQuantus = <SwapToken>[];
     for (final item in data) {
       final assetId = item['assetId'] as String;
@@ -339,9 +340,9 @@ class SwapService {
         iconAssetId: SwapToken.hasNearContract(assetId) ? assetId : nearBySymbol[symbol],
         imageUrl: coin?.imageUrl,
         networkImageUrl: platformLogos[logoId] ?? coins[logoId]?.imageUrl,
+        marketCapUsd: coin != null && coin.symbol.toUpperCase() == symbol ? coin.marketCapUsd : 0,
         isQuantus: ours,
       );
-      if (coin != null && coin.symbol.toUpperCase() == symbol) marketCaps[token] = coin.marketCapUsd;
       if (ours) {
         onQuantus.add(token);
         continue;
@@ -355,10 +356,42 @@ class SwapService {
       if (existing == null || _networkPriority(token) < _networkPriority(existing)) main[token.symbol] = token;
     }
     final mains = main.values.toSet();
-    num byMarketCap(SwapToken t) => -(marketCaps[t] ?? 0);
-    final others = listings.values.where((t) => !mains.contains(t)).sortedBy<num>(_networkPriority);
-    final quantus = _listedQuantusAmong(onQuantus);
-    return ([...mains.sortedBy<num>(byMarketCap), ...others.sortedBy<num>(byMarketCap)], quantus);
+    int tier(SwapToken t) => t.marketCapUsd == 0
+        ? 2
+        : mains.contains(t)
+        ? 0
+        : 1;
+    final tokens = _ordered(listings.values, (t) => [tier(t), -t.marketCapUsd, _networkPriority(t)]);
+    return (tokens, _listedQuantusAmong(onQuantus));
+  }
+
+  /// The tokens among [tokens] whose symbol, chain code or chain name contains
+  /// [query], QTC first, then by market cap and as listed: a search for USDC
+  /// shows USDC on every chain before the vault tokens that merely carry its
+  /// name. An empty query is the listing itself.
+  static List<SwapToken> search(List<SwapToken> tokens, String query) {
+    final q = query.trim().toUpperCase();
+    if (q.isEmpty) return tokens;
+    final matches = tokens.where(
+      (t) => t.symbol.contains(q) || t.network.contains(q) || t.networkName.toUpperCase().contains(q),
+    );
+    return _ordered(matches, (t) => [t.isQuantus ? 0 : 1, -t.marketCapUsd]);
+  }
+
+  /// [tokens] by [keys], equal keys as given: a total order, so the sort's
+  /// own instability never shows.
+  static List<SwapToken> _ordered(Iterable<SwapToken> tokens, List<num> Function(SwapToken) keys) {
+    final keyed = [
+      for (final (i, t) in tokens.indexed) (t, [...keys(t), i]),
+    ];
+    keyed.sort((a, b) {
+      for (var i = 0; i < a.$2.length; i++) {
+        final c = a.$2[i].compareTo(b.$2[i]);
+        if (c != 0) return c;
+      }
+      return 0;
+    });
+    return [for (final (t, _) in keyed) t];
   }
 
   /// CoinGecko's coins among [ids]; none when CoinGecko fails, which leaves

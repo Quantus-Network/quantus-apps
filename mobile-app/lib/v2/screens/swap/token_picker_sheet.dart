@@ -110,12 +110,8 @@ class _TokenPickerContentState extends ConsumerState<_TokenPickerContent> {
         ),
       );
     }
-    final query = _searchController.text.trim().toUpperCase();
-    final tokens = _tokens
-        .where(
-          (t) => t.symbol.contains(query) || t.network.contains(query) || t.networkName.toUpperCase().contains(query),
-        )
-        .toList();
+    final tokens = SwapService.search(_tokens, _searchController.text);
+    final ranked = _tokens.any((t) => t.marketCapUsd > 0);
     return Column(
       children: [
         SearchField(controller: _searchController, hintText: l10n.swapTokenPickerSearchHint),
@@ -151,7 +147,7 @@ class _TokenPickerContentState extends ConsumerState<_TokenPickerContent> {
                   physics: const AlwaysScrollableScrollPhysics(),
                   keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
                   itemCount: tokens.length,
-                  itemBuilder: (_, index) => _tokenRow(context, tokens[index], colors, text),
+                  itemBuilder: (_, index) => _tokenRow(context, tokens[index], colors, text, ranked: ranked),
                 ),
               ),
             ),
@@ -160,8 +156,17 @@ class _TokenPickerContentState extends ConsumerState<_TokenPickerContent> {
     );
   }
 
-  Widget _tokenRow(BuildContext context, SwapToken token, AppColorsV3 colors, AppTextThemeV3 text) {
+  /// A token with no market cap is muted when the listing is ranked at all;
+  /// it then sits at the end, and the colour says why.
+  Widget _tokenRow(
+    BuildContext context,
+    SwapToken token,
+    AppColorsV3 colors,
+    AppTextThemeV3 text, {
+    required bool ranked,
+  }) {
     final selected = token == widget.current;
+    final unranked = ranked && token.marketCapUsd == 0 && !token.isQuantus;
     return GestureDetector(
       onTap: () => Navigator.pop(context, token),
       behavior: HitTestBehavior.opaque,
@@ -180,7 +185,10 @@ class _TokenPickerContentState extends ConsumerState<_TokenPickerContent> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(token.symbol, style: text.headingRow.copyWith(color: colors.textContent)),
+                  Text(
+                    token.symbol,
+                    style: text.headingRow.copyWith(color: unranked ? colors.textMuted : colors.textContent),
+                  ),
                   const SizedBox(height: 4),
                   Text(token.networkName, style: text.body.copyWith(color: colors.textMuted)),
                 ],

@@ -919,7 +919,7 @@ void main() {
       expect(usdc.usdPrice, 0.99966);
     });
 
-    test('ranks a bridged stand-in or a coin without a market cap after the ranked ones, in 1Click order', () async {
+    test('ranks a bridged stand-in or a coin without a market cap after the ranked ones, by chain', () async {
       final service = listing([
         {'assetId': 'nep141:new.near', 'decimals': 18, 'blockchain': 'near', 'symbol': 'NEW', 'price': 2},
         {
@@ -933,14 +933,23 @@ void main() {
         ...tokens,
       ]);
       final listed = await service.getFromTokens();
-      expect(listed.map((t) => t.symbol), ['QTC', 'USDC', 'BTC', 'WNEAR', 'NEW', 'XBTC', 'USDC']);
+      expect(listed.map((t) => '${t.symbol}-${t.network}'), [
+        'QTC-QTC',
+        'USDC-ETH',
+        'BTC-BTC',
+        'WNEAR-NEAR',
+        'XBTC-SOL',
+        'NEW-NEAR',
+        'USDC-BASE',
+      ]);
+      expect(listed.map((t) => t.marketCapUsd), [0, 7.3e10, 1.6e12, 1.2e8, 0, 0, 0]);
       expect(listed.map((t) => t.imageUrl), [
         null,
         'https://img.test/usdc.png',
         'https://img.test/bitcoin.png',
         null,
-        null,
         'https://img.test/bitcoin.png',
+        null,
         null,
       ]);
     });
