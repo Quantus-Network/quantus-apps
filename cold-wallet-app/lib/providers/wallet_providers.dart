@@ -103,14 +103,24 @@ class WalletController extends Notifier<WalletState> {
         state = const WalletState(status: WalletStatus.locked, biometricEnabled: true);
         return;
       }
+      if (auth.storeAuthenticatesOncePerProcess) {
+        // Even an existence check opens the store and prompts there; the
+        // first unlock opens it instead, and one that finds no entry moves
+        // the wallet to migration.
+        state = const WalletState(status: WalletStatus.locked, biometricEnabled: true);
+        return;
+      }
       final bool protectedKey;
       try {
         protectedKey = await _vault.hasProtectedKey();
       } on VaultAccessCancelled {
-        // Android prompts to open the store even for this check. The lock
-        // screen prompts again, and an unlock that finds no entry re-reads
-        // the wallet state.
         state = const WalletState(status: WalletStatus.locked, biometricEnabled: true);
+        return;
+      } catch (e, st) {
+        // The OS can no longer open the store (lock removed, key invalidated).
+        // The vault stays; the lock screen offers the reset.
+        debugPrint('Protected key store unavailable at startup: $e\n$st');
+        state = const WalletState(status: WalletStatus.locked, biometricEnabled: true, error: _keyLostMessage);
         return;
       }
       state = WalletState(
@@ -164,6 +174,14 @@ class WalletController extends Notifier<WalletState> {
     }
   }
 
+  /// Android's store answers silently once it has prompted in this process,
+  /// so a protected read there gets a fresh prompt first. The first read in a
+  /// process is gated by the store's own prompt, a plain entry by nothing.
+  Future<bool> _gateProtectedRead(String reason) async {
+    if (await _vault.hasPlainKey() || !_vault.protectedStoreOpened) return true;
+    return auth.gateProtectedRead(reason);
+  }
+
   /// Opens the vault with the device key; the protected read is where the OS
   /// prompts. A plain entry on a device that can protect is moved behind user
   /// presence before the unlock counts, so that prompt gates it. Returns false
@@ -171,6 +189,10 @@ class WalletController extends Notifier<WalletState> {
   /// prompt, a message for a key this device can no longer release.
   Future<bool> unlockWithBiometric() async {
     try {
+      if (!await _gateProtectedRead('Unlock your cold wallet')) {
+        state = state.copyWith(error: unlockCancelledError);
+        return false;
+      }
       final result = await _vault.unlockWithBiometricKey();
       if (_upgradeToProtected) {
         await _vault.storeBiometricKey(result.keyBytes, protected: true);
@@ -189,8 +211,9 @@ class WalletController extends Notifier<WalletState> {
       state = state.copyWith(biometricEnabled: false, error: _keyLostMessage);
       return false;
     } on StateError catch (e) {
-      debugPrint('Biometric unlock found nothing to unlock with, re-reading the wallet state: $e');
-      await _init();
+      // A vault with no key entry is a password wallet.
+      debugPrint('Biometric unlock found nothing to unlock with: $e');
+      state = const WalletState(status: WalletStatus.needsMigration);
       return false;
     } catch (e, st) {
       debugPrint('Biometric unlock failed: $e\n$st');
@@ -281,14 +304,15 @@ class WalletController extends Notifier<WalletState> {
     return true;
   }
 
-  /// A fresh read of the device key entry, compared with the key this session
-  /// unlocked with. iOS prompts; Android serves it silently inside a process
-  /// that already authenticated; a plain entry answers at once. False when
-  /// the prompt was dismissed.
+  /// A fresh user-presence check: the OS prompt on iOS's read, a platform
+  /// prompt in front of Android's silent read, nothing for a plain entry. The
+  /// key read back must be the one this session unlocked with. False when the
+  /// prompt was dismissed.
   Future<bool> confirmPresence() async {
     final keyBytes = _keyBytes;
     if (keyBytes == null) throw StateError('Wallet is locked');
     try {
+      if (!await _gateProtectedRead('Confirm it is you to show the recovery phrase')) return false;
       return listEquals((await _vault.unlockWithBiometricKey()).keyBytes, keyBytes);
     } on VaultAccessCancelled {
       return false;
@@ -337,7 +361,7 @@ class WalletController extends Notifier<WalletState> {
   /// The lifecycle re-lock. Android's system prompt for the protected store
   /// pauses the activity; that is not the user leaving the app.
   void lockOnBackground() {
-    if (_vault.promptInProgress) return;
+    if (_vault.promptInProgress || auth.promptInProgress) return;
     lock();
   }
 

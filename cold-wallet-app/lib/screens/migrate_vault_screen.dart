@@ -4,6 +4,7 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:quantus_cold_wallet/components/lock_screen.dart';
 import 'package:quantus_cold_wallet/components/password_field.dart';
 import 'package:quantus_cold_wallet/providers/wallet_providers.dart';
+import 'package:quantus_cold_wallet/screens/secure_element_warning_screen.dart';
 import 'package:quantus_cold_wallet/services/vault_service.dart';
 import 'package:quantus_cold_wallet/ui/cold_theme.dart';
 import 'package:quantus_cold_wallet/components/cold_icon.dart';
@@ -28,8 +29,21 @@ class _MigrateVaultScreenState extends ConsumerState<MigrateVaultScreen> {
     super.dispose();
   }
 
+  /// Without a device lock the rotation would leave the wallet open to anyone
+  /// holding the phone, so it needs the same acceptance as creating one.
+  Future<bool> _acceptUnprotected() async {
+    if (await ref.read(coldAuthServiceProvider).deviceCanProtect()) return true;
+    if (!mounted) return false;
+    final proceed = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(builder: (_) => const SecureElementWarningScreen()),
+    );
+    return proceed == true;
+  }
+
   Future<void> _submit() async {
     if (_busy) return;
+    if (!await _acceptUnprotected() || !mounted) return;
     setState(() {
       _busy = true;
       _error = null;
@@ -68,7 +82,7 @@ class _MigrateVaultScreenState extends ConsumerState<MigrateVaultScreen> {
             ),
             const SizedBox(height: 12),
             Text(
-              'Enter your password once to move this wallet to Face ID. You will not need it again.',
+              'Enter your password once to move this wallet behind your device lock. You will not need it again.',
               style: text.bodyLarge.copyWith(color: colors.textMuted),
               textAlign: TextAlign.center,
             ),

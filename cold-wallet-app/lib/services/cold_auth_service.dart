@@ -51,7 +51,34 @@ class ColdAuthService {
     }
   }
 
+  int _prompts = 0;
+
+  /// True while the platform prompt is up. On Android it pauses the activity,
+  /// which must not count as the user leaving the app.
+  bool get promptInProgress => _prompts > 0;
+
+  /// Android's protected store authenticates once per process and serves
+  /// later reads silently, so a read there proves nothing on its own. iOS
+  /// prompts on every read of a user-presence item.
+  bool get storeAuthenticatesOncePerProcess => Platform.isAndroid;
+
+  /// A fresh user-presence check in front of a protected read the store would
+  /// otherwise answer silently. True without a prompt where the read prompts.
+  Future<bool> gateProtectedRead(String reason) async =>
+      storeAuthenticatesOncePerProcess ? await authenticate(reason) : true;
+
   Future<bool> authenticate(String reason) async {
+    _prompts++;
+    try {
+      return await promptUser(reason);
+    } finally {
+      _prompts--;
+    }
+  }
+
+  /// The platform prompt itself; a test stands in here.
+  @protected
+  Future<bool> promptUser(String reason) async {
     try {
       return await _auth.authenticate(
         localizedReason: reason,

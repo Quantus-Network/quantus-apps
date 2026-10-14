@@ -39,7 +39,8 @@ dependencies:
   local_auth: ^3.0.1
   flutter_secure_storage: ^10.3.1
   cryptography: ^2.7.0
-  device_info_plus: ^13.2.0
+  # Pinned below 13.3.0 until it clears the 30-day dependency cooldown.
+  device_info_plus: ">=13.2.0 <13.3.0"
 
 dev_dependencies:
   flutter_test:

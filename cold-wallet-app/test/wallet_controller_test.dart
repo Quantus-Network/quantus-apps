@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage_platform_interface/flutter_secure_storage_platform_interface.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -28,6 +30,14 @@ void main() {
 
   Future<void> createProtected() =>
       controller.createWallet(mnemonic: testMnemonic, accounts: testAccounts, protected: true);
+
+  /// A new process over the same storage: its own controller and vault.
+  Future<(ProviderContainer, WalletController)> fresh(FakeColdAuth auth) async {
+    final c = ProviderContainer(overrides: [coldAuthServiceProvider.overrideWithValue(auth)]);
+    addTearDown(c.dispose);
+    await awaitInit(c);
+    return (c, c.read(walletControllerProvider.notifier));
+  }
 
   test('starts in needsSetup without a vault', () {
     expect(state().status, WalletStatus.needsSetup);
@@ -132,5 +142,89 @@ void main() {
     expect(await presence, isTrue);
     controller.lockOnBackground();
     expect(state().status, WalletStatus.locked);
+  });
+
+  group('a store that stays authenticated for the process', () {
+    test('needs a fresh prompt before every later unlock', () async {
+      final auth = FakeColdAuth(storePromptsOnce: true);
+      final (c, ctl) = await fresh(auth);
+      await ctl.createWallet(mnemonic: testMnemonic, accounts: testAccounts, protected: true);
+      ctl.lock();
+
+      auth.promptResult = false;
+      final reads = storage.readsOf(protectedKeyEntry);
+      expect(await ctl.unlockWithBiometric(), isFalse);
+      expect(c.read(walletControllerProvider).status, WalletStatus.locked);
+      expect(c.read(walletControllerProvider).error, unlockCancelledError);
+      expect(storage.readsOf(protectedKeyEntry), reads, reason: 'a dismissed prompt must not reach the key');
+
+      auth.promptResult = true;
+      expect(await ctl.unlockWithBiometric(), isTrue);
+      expect(auth.prompts, 2);
+    });
+
+    test('lets the store itself prompt for the first unlock of a process', () async {
+      await createProtected();
+      final auth = FakeColdAuth(storePromptsOnce: true);
+      final (c, ctl) = await fresh(auth);
+
+      expect(c.read(walletControllerProvider).status, WalletStatus.locked);
+      expect(await ctl.unlockWithBiometric(), isTrue);
+      expect(auth.prompts, 0);
+    });
+
+    test('needs a fresh prompt to confirm presence', () async {
+      final auth = FakeColdAuth(storePromptsOnce: true);
+      final (_, ctl) = await fresh(auth);
+      await ctl.createWallet(mnemonic: testMnemonic, accounts: testAccounts, protected: true);
+
+      auth.promptResult = false;
+      final reads = storage.readsOf(protectedKeyEntry);
+      expect(await ctl.confirmPresence(), isFalse);
+      expect(storage.readsOf(protectedKeyEntry), reads);
+
+      auth.promptResult = true;
+      expect(await ctl.confirmPresence(), isTrue);
+    });
+
+    test('is not locked by the pause its own prompt causes', () async {
+      final auth = FakeColdAuth(storePromptsOnce: true)..pendingPrompt = Completer<bool>();
+      final (c, ctl) = await fresh(auth);
+      await ctl.createWallet(mnemonic: testMnemonic, accounts: testAccounts, protected: true);
+
+      final presence = ctl.confirmPresence();
+      await Future<void>.delayed(const Duration(milliseconds: 5));
+      ctl.lockOnBackground();
+      expect(c.read(walletControllerProvider).status, WalletStatus.unlocked);
+
+      auth.pendingPrompt!.complete(true);
+      expect(await presence, isTrue);
+    });
+
+    test('moves a wallet with no key entry to migration at the first unlock', () async {
+      await vault.createVault(mnemonic: testMnemonic, password: 'alpha', accounts: testAccounts);
+      final (c, ctl) = await fresh(FakeColdAuth(storePromptsOnce: true));
+
+      expect(c.read(walletControllerProvider).status, WalletStatus.locked);
+      expect(await ctl.unlockWithBiometric(), isFalse);
+      expect(c.read(walletControllerProvider).status, WalletStatus.needsMigration);
+    });
+  });
+
+  test('a protected store the OS can no longer open leaves the wallet locked with the reset', () async {
+    await createProtected();
+    storage.failContainsKeyOf = protectedKeyEntry;
+    storage.failReadsOf = protectedKeyEntry;
+    storage.failReadsWith = keyInvalidated;
+    final (c, ctl) = await fresh(FakeColdAuth());
+
+    expect(c.read(walletControllerProvider).status, WalletStatus.locked);
+    expect(c.read(walletControllerProvider).error, contains('can no longer open'));
+    expect(await ctl.unlockWithBiometric(), isFalse);
+    expect(storage.data.containsKey(vaultEntry), isTrue, reason: 'the vault is kept until the user resets');
+
+    await ctl.wipe();
+    expect(c.read(walletControllerProvider).status, WalletStatus.needsSetup);
+    expect(storage.data.containsKey(vaultEntry), isFalse);
   });
 }

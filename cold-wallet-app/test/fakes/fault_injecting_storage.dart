@@ -18,6 +18,10 @@ class FaultInjectingStorage extends TestFlutterSecureStoragePlatform {
   String? failReadsOf;
   Object Function() failReadsWith = () => Exception('injected read failure');
 
+  /// Existence checks of this key throw what [failReadsWith] builds: a store
+  /// the OS can no longer open fails before any value is read.
+  String? failContainsKeyOf;
+
   /// Reads of this key wait [delay], so an operation in flight can be observed.
   String? delayReadsOf;
   Duration delay = const Duration(milliseconds: 50);
@@ -39,7 +43,18 @@ class FaultInjectingStorage extends TestFlutterSecureStoragePlatform {
     if (key == failReadsOf) throw failReadsWith();
     return super.read(key: key, options: options);
   }
+
+  @override
+  Future<bool> containsKey({required String key, required Map<String, String> options}) {
+    if (key == failContainsKeyOf) throw failReadsWith();
+    return super.containsKey(key: key, options: options);
+  }
 }
+
+/// What the Android plugin throws once the OS has invalidated the key, for
+/// example after the device lock was removed.
+PlatformException keyInvalidated() =>
+    PlatformException(code: 'Exception encountered', message: 'KeyPermanentlyInvalidatedException');
 
 /// What the darwin plugin throws when the user dismisses the Face ID sheet.
 PlatformException iosCancel() =>

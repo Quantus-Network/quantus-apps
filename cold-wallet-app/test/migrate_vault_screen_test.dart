@@ -8,6 +8,8 @@ import 'package:quantus_cold_wallet/screens/migrate_vault_screen.dart';
 import 'package:quantus_cold_wallet/services/vault_service.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 
+import 'fakes/wallet_fakes.dart';
+
 class _MigrationController extends WalletController {
   _MigrationController({this.failure});
 
@@ -40,11 +42,14 @@ void main() {
   const colors = AppColorsV3.dark();
   const text = AppTextThemeV3.standard();
 
-  Future<void> pump(WidgetTester tester, _MigrationController controller) async {
+  Future<void> pump(WidgetTester tester, _MigrationController controller, {FakeColdAuth? auth}) async {
     FlutterSecureStorage.setMockInitialValues({});
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [walletControllerProvider.overrideWith(() => controller)],
+        overrides: [
+          walletControllerProvider.overrideWith(() => controller),
+          coldAuthServiceProvider.overrideWithValue(auth ?? FakeColdAuth()),
+        ],
         child: Builder(
           builder: (context) => MaterialApp(theme: AppTheme.darkTheme(context), home: const MigrateVaultScreen()),
         ),
@@ -100,6 +105,28 @@ void main() {
     await submit(tester, 'alpha');
 
     expect(find.text('Secure storage failed. Nothing was changed.'), findsOneWidget);
+  });
+
+  testWidgets('without a device lock the rotation needs the explicit acceptance', (tester) async {
+    final controller = _MigrationController();
+    await pump(tester, controller, auth: FakeColdAuth(canProtect: false));
+    await tester.enterText(find.byType(TextField), 'alpha');
+
+    await tester.tap(find.text('Continue'));
+    await tester.pumpAndSettle();
+    expect(find.text('No device lock'), findsOneWidget);
+    expect(controller.passwords, isEmpty);
+
+    await tester.tap(find.text('Go back'));
+    await tester.pumpAndSettle();
+    expect(find.text('One last password'), findsOneWidget);
+    expect(controller.passwords, isEmpty, reason: 'declining leaves the password vault as it is');
+
+    await tester.tap(find.text('Continue'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Continue anyway'));
+    await tester.pumpAndSettle();
+    expect(controller.passwords, ['alpha']);
   });
 
   testWidgets('reset is offered for a forgotten password', (tester) async {

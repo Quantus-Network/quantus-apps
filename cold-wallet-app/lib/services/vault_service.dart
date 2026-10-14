@@ -104,6 +104,12 @@ class VaultService {
   /// sends the app through inactive (iOS) or paused (Android) and back.
   bool get promptInProgress => _protectedOps > 0;
 
+  bool _protectedOpened = false;
+
+  /// Whether this process has opened the protected store. Android prompts
+  /// once at that point and serves the rest of the process silently.
+  bool get protectedStoreOpened => _protectedOpened;
+
   /// The internal vault password: never shown, never stored, used once to call
   /// the password APIs before the derived key is kept in the device key entry.
   static String randomSecret() => base64Encode(_randomBytes(32));
@@ -123,7 +129,9 @@ class VaultService {
   Future<T> _guarded<T>(Future<T> Function() op) async {
     _protectedOps++;
     try {
-      return await op();
+      final result = await op();
+      _protectedOpened = true;
+      return result;
     } on PlatformException catch (e) {
       if (e.details == _iosUserCanceled || _androidCancelCodes.hasMatch(e.message ?? '')) {
         throw VaultAccessCancelled(e);
