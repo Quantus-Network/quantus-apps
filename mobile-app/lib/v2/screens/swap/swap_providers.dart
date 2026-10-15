@@ -13,10 +13,14 @@ final swapPreflightProvider = Provider<SwapPreflight?>((_) => SwapPreflight.from
 final swapServiceProvider = Provider<SwapService>((ref) {
   final preflight = ref.watch(swapPreflightProvider);
   final apiKey = ref.watch(remoteConfigProvider.select((c) => c.nearPartnerJwt));
-  if (preflight != null) return SwapService(quantusAssetId: preflight.assetId, preflight: true, apiKey: apiKey);
+  final feeBips = ref.watch(remoteConfigProvider.select((c) => c.swapFeeBips));
+  if (preflight != null) {
+    return SwapService(quantusAssetId: preflight.assetId, preflight: true, apiKey: apiKey, feeBips: feeBips);
+  }
   return SwapService(
     quantusAssetId: ref.watch(remoteConfigProvider.select((c) => c.swapQuantusAssetId)),
     apiKey: apiKey,
+    feeBips: feeBips,
   );
 });
 

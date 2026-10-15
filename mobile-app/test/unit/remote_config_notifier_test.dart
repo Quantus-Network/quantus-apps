@@ -50,6 +50,15 @@ void main() {
     expect(named, isNot(RemoteConfigModel.defaults));
   });
 
+  test('the swap fee is zero unless the remote config sets it', () {
+    expect(RemoteConfigModel.defaults.swapFeeBips, 0);
+    expect(RemoteConfigModel.fromJson(const {}).swapFeeBips, 0);
+    final charged = RemoteConfigModel.fromJson(const {'swapFeeBips': 20});
+    expect(charged.swapFeeBips, 20);
+    expect(RemoteConfigModel.fromJson(charged.toCacheJson()), charged);
+    expect(charged, isNot(RemoteConfigModel.defaults));
+  });
+
   test('revoking the location verdict keeps the cached partner JWT', () {
     final cached = RemoteConfigModel.fromJson(const {'near.partner.jwt': 'partner-jwt', 'geoNearAllowed': true});
     final revoked = cached.copyWith(geoNearAllowed: false);

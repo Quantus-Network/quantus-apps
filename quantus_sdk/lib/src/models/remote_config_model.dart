@@ -31,6 +31,10 @@ class RemoteConfigModel {
   /// platform fee; null sends no key. Served under `near.partner.jwt`.
   final String? nearPartnerJwt;
 
+  /// The app's own fee on every swap, in basis points of the input, paid to
+  /// [AppConstants.oneClickFeeRecipient]; 0 sends no fee.
+  final int swapFeeBips;
+
   const RemoteConfigModel({
     required this.enableTestButtons,
     required this.enableKeystoneHardwareWallet,
@@ -44,6 +48,7 @@ class RemoteConfigModel {
     this.swapQuantusAssetId,
     required this.geoNearAllowed,
     this.nearPartnerJwt,
+    required this.swapFeeBips,
   });
 
   /// Swap is offered when the platform's flag is on and the location allows
@@ -65,6 +70,7 @@ class RemoteConfigModel {
     swapQuantusAssetId: swapQuantusAssetId,
     geoNearAllowed: geoNearAllowed ?? this.geoNearAllowed,
     nearPartnerJwt: nearPartnerJwt,
+    swapFeeBips: swapFeeBips,
   );
 
   R match<R>({
@@ -81,6 +87,7 @@ class RemoteConfigModel {
       String? swapQuantusAssetId,
       bool geoNearAllowed,
       String? nearPartnerJwt,
+      int swapFeeBips,
     )
     fn,
   }) {
@@ -97,6 +104,7 @@ class RemoteConfigModel {
       swapQuantusAssetId,
       geoNearAllowed,
       nearPartnerJwt,
+      swapFeeBips,
     );
   }
 
@@ -111,6 +119,7 @@ class RemoteConfigModel {
     enableMultisig: true,
     enableOneClickNearWarning: true,
     geoNearAllowed: false,
+    swapFeeBips: 0,
   );
 
   Map<String, dynamic> toCacheJson() {
@@ -129,6 +138,7 @@ class RemoteConfigModel {
             swapQuantusAssetId,
             geoNearAllowed,
             nearPartnerJwt,
+            swapFeeBips,
           ) => {
             'enableTestButtons': test,
             'enableKeystoneHardwareWallet': keystone,
@@ -142,6 +152,7 @@ class RemoteConfigModel {
             'swapQuantusAssetId': swapQuantusAssetId,
             'geoNearAllowed': geoNearAllowed,
             'near.partner.jwt': nearPartnerJwt,
+            'swapFeeBips': swapFeeBips,
           },
     );
   }
@@ -162,6 +173,7 @@ class RemoteConfigModel {
       swapQuantusAssetId: _optionalString(json['swapQuantusAssetId']),
       geoNearAllowed: json['geoNearAllowed'] ?? defaults.geoNearAllowed,
       nearPartnerJwt: _optionalString(json['near.partner.jwt']),
+      swapFeeBips: (json['swapFeeBips'] as num?)?.toInt() ?? defaults.swapFeeBips,
     );
   }
 

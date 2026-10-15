@@ -20,7 +20,8 @@ const _refund = '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045';
 
 /// The fee 1Click adds to the echoed request of a confidential quote.
 const _oneClickFee = {'recipient': '2238fd089f1c92b206c218cd16b8676cb98964e0d50f8ab729c6396a81e07805', 'fee': 20};
-const _ourFee = {'recipient': AppConstants.oneClickFeeRecipient, 'fee': AppConstants.oneClickFeeBps};
+const _feeBips = 20;
+const _ourFee = {'recipient': AppConstants.oneClickFeeRecipient, 'fee': _feeBips};
 const _recipient = 'qznQKhufTDfU3szAzfgCny7wMhxUN3qjEqneiRUNgC7MjSDyG';
 
 /// Stands in for 1Click's signing key; responses the mock serves are signed with it.
@@ -124,10 +125,12 @@ SwapService _service(
   String? apiKey,
   String? quantusAssetId,
   bool preflight = false,
+  int feeBips = _feeBips,
   Future<http.Response> Function(http.Request request)? marketCaps,
 }) => SwapService(
   endpoint: 'https://oneclick.test',
   apiKey: apiKey,
+  feeBips: feeBips,
   client: MockClient(
     (r) => r.url.host != 'api.coingecko.com'
         ? handler(r)
@@ -325,6 +328,16 @@ void main() {
         ),
         throwsA(isA<SwapQuoteIntegrityException>().having((e) => e.message, 'message', contains('amountOut'))),
       );
+    });
+
+    test('sends no app fee at zero bips and accepts an echo without one', () async {
+      Map<String, dynamic>? sent;
+      final service = _service((r) async {
+        sent = _sentRequest(r);
+        return http.Response(jsonEncode(_signed(_quoteResponse(request: sent))), 200);
+      }, feeBips: 0);
+      await _quote(service);
+      expect(sent, isNot(contains('appFees')));
     });
 
     test('rejects a quote whose echoed fees leave ours out', () async {

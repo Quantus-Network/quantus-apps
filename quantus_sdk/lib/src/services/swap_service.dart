@@ -66,7 +66,6 @@ class SwapService {
   ];
   static const quoteWaitingTime = Duration(seconds: 3);
   static const statusPollInterval = Duration(seconds: 5);
-  static const _appFee = {'recipient': AppConstants.oneClickFeeRecipient, 'fee': AppConstants.oneClickFeeBps};
   static const _savedAddressesKey = 'swap_saved_addresses';
   static const _maxSavedAddresses = 50;
   static const _tokensCacheTtl = Duration(minutes: 10);
@@ -76,13 +75,15 @@ class SwapService {
   final String _managerPublicKey;
   final String? _configuredQuantusAssetId;
   final bool _preflight;
+  final int _feeBips;
   (List<SwapToken>, SwapToken?)? _cachedListing;
   DateTime? _cachedListingAt;
 
   /// [quantusAssetId] names the listing that is QTC when its chain code does
   /// not; it comes from remote config so a surprising listing needs no update.
   /// In [preflight] it names another listed asset standing in for QTC, which
-  /// keeps its own network and decimals.
+  /// keeps its own network and decimals. [feeBips] is the app's fee on each
+  /// swap, in basis points of the input; 0 sends none.
   SwapService({
     http.Client? client,
     String endpoint = AppConstants.oneClickEndpoint,
@@ -90,11 +91,16 @@ class SwapService {
     String managerPublicKey = AppConstants.oneClickManagerPublicKey,
     String? quantusAssetId,
     bool preflight = false,
+    required int feeBips,
   }) : _api = OneClickService(client: client, endpoint: endpoint, apiKey: apiKey),
        _coinGecko = CoinGeckoService(client: client),
        _managerPublicKey = managerPublicKey,
        _configuredQuantusAssetId = quantusAssetId,
-       _preflight = preflight;
+       _preflight = preflight,
+       _feeBips = feeBips;
+
+  Map<String, Object>? get _appFee =>
+      _feeBips > 0 ? {'recipient': AppConstants.oneClickFeeRecipient, 'fee': _feeBips} : null;
 
   /// How long a deposit on [network] has before its quote expires.
   static Duration depositWindowFor(String network) =>
@@ -204,6 +210,7 @@ class SwapService {
       now.add(depositWindowFor(from.network)).millisecondsSinceEpoch,
       isUtc: true,
     );
+    final fee = _appFee;
     final body = {
       'dry': dry,
       'swapType': swapType.wire,
@@ -221,7 +228,7 @@ class SwapService {
       'quoteWaitingTimeMs': quoteWaitingTime.inMilliseconds,
       'referral': AppConstants.oneClickReferral,
       'confidentiality': confidentiality,
-      'appFees': [_appFee],
+      if (fee != null) 'appFees': [fee],
     };
     final json = await _api.send('POST', '/v0/quote', body: body) as Map<String, dynamic>;
     final correlationId = json['correlationId'] as String?;
@@ -239,12 +246,14 @@ class SwapService {
     }
     // 1Click adds its own fee to the echoed list, and the signature does not
     // cover it, so the list must hold our fee as sent.
-    final fees = (echoed['appFees'] as List<dynamic>).cast<Map<String, dynamic>>();
-    if (!fees.any((f) => f['recipient'] == _appFee['recipient'] && f['fee'] == _appFee['fee'])) {
-      throw SwapQuoteIntegrityException(
-        'Quote answers a different request: appFees are $fees, sent $_appFee',
-        correlationId: correlationId,
-      );
+    if (fee != null) {
+      final fees = (echoed['appFees'] as List<dynamic>? ?? const []).cast<Map<String, dynamic>>();
+      if (!fees.any((f) => f['recipient'] == fee['recipient'] && f['fee'] == fee['fee'])) {
+        throw SwapQuoteIntegrityException(
+          'Quote answers a different request: appFees are $fees, sent $fee',
+          correlationId: correlationId,
+        );
+      }
     }
     if (!DateTime.parse(echoed['deadline'] as String).isAtSameMomentAs(deadline)) {
       throw SwapQuoteIntegrityException(

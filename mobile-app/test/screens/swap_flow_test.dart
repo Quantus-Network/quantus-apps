@@ -124,6 +124,7 @@ class _OneClick {
     managerPublicKey: _managerPublicKey,
     quantusAssetId: preflight ? _preflight.assetId : null,
     preflight: preflight,
+    feeBips: 0,
   );
 
   Future<http.Response> _handle(http.Request request) async {
@@ -189,7 +190,7 @@ class _OneClick {
         ])
           k: request[k],
         'appFees': [
-          ...request['appFees'] as List<dynamic>,
+          ...?request['appFees'] as List<dynamic>?,
           {'recipient': '2238fd089f1c92b206c218cd16b8676cb98964e0d50f8ab729c6396a81e07805', 'fee': 20},
         ],
       },
