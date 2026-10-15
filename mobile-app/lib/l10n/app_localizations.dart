@@ -3554,6 +3554,12 @@ abstract class AppLocalizations {
   /// **'Use your {symbol} or {network} wallet to deposit funds. Depositing other assets may result in loss of funds.'**
   String swapDepositNotice(String symbol, String network);
 
+  /// Why a 1Click request failed when no answer came within the time allowed
+  ///
+  /// In en, this message translates to:
+  /// **'The request timed out'**
+  String get swapRequestTimedOut;
+
   /// Notice on the progress screen while the 1Click status poll fails
   ///
   /// In en, this message translates to:

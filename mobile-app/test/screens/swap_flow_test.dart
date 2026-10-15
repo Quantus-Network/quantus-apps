@@ -722,6 +722,43 @@ void main() {
       expect(kept.depositFee, _unit ~/ BigInt.from(50));
     });
 
+    testWidgets('a deposit still in flight when the review is left is followed once it is out', (tester) async {
+      final oneClick = _OneClick(dryOut: outQuote.amountOut);
+      final submission = FakeTransactionSubmissionService()..holdTransfer = Completer<void>();
+      final settings = FakeSettingsService(activeAccount: RegularAccount(account));
+      await tester.pumpApp(
+        Builder(
+          builder: (context) => TextButton(
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => ReviewSwapScreen(account: account, quote: outQuote),
+              ),
+            ),
+            child: const Text('open'),
+          ),
+        ),
+        overrides: overrides(oneClick.service(), submission: submission, settings: settings),
+      );
+      await tester.tap(find.text('open'));
+      await settle(tester);
+      final container = ProviderScope.containerOf(tester.element(find.byType(ReviewSwapScreen)));
+
+      await tester.tap(find.text(l10n.swapReviewConfirm));
+      await settle(tester);
+      await tester.tap(find.text(l10n.commonCancel));
+      await settle(tester);
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(find.byType(ReviewSwapScreen), findsNothing);
+
+      submission.holdTransfer!.complete();
+      await settle(tester);
+      expect(submission.transfers.single.$1, _deposit);
+      expect(oneClick.requests.where((r) => r.url.path == '/v0/deposit/submit'), hasLength(1));
+      expect(container.read(activeSwapProvider)?.depositTxHash, '0xtxhash');
+      expect(settings.activeSwap?.depositTxHash, '0xtxhash');
+    });
+
     testWidgets('a worse live quote replaces the terms and needs a second confirm', (tester) async {
       final oneClick = _OneClick(dryOut: outQuote.amountOut, liveOut: BigInt.from(20000000));
       final submission = FakeTransactionSubmissionService();
@@ -1218,6 +1255,31 @@ void main() {
       await settle(tester);
       expect(find.text(l10n.swapInProgressTitle), findsOneWidget);
       expect(stepState(tester, l10n.swapStepConfirming('Ethereum')), StepRowState.active);
+      expect(banner(l10n.swapProgressStatusUnavailable('')), findsNothing);
+    });
+
+    testWidgets('a status request that never answers times out, shows the notice and is polled again', (tester) async {
+      final oneClick = _OneClick(dryOut: BigInt.one)
+        ..status = 'PROCESSING'
+        ..holdStatus = Completer<void>();
+      await pumpSwap(
+        tester,
+        activeSwap(SwapOrder(quote: liveQuote, status: SwapStatus.processing)),
+        oneClick: oneClick,
+      );
+      Iterable<http.Request> polls() => oneClick.requests.where((r) => r.url.path == '/v0/status');
+
+      await tester.pump(SwapService.statusPollInterval);
+      expect(polls(), hasLength(1));
+      await tester.pump(OneClickService.requestTimeout);
+      await settle(tester);
+      expect(banner(l10n.swapProgressStatusUnavailable(l10n.swapRequestTimedOut)), findsOneWidget);
+      expect(find.text(l10n.commonRetry), findsOneWidget);
+
+      await tester.pump(SwapService.statusPollInterval);
+      expect(polls(), hasLength(2));
+      oneClick.holdStatus!.complete();
+      await settle(tester);
       expect(banner(l10n.swapProgressStatusUnavailable('')), findsNothing);
     });
 

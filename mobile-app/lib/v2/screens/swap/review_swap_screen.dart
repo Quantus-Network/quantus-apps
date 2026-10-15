@@ -58,21 +58,22 @@ class _ReviewSwapScreenState extends ConsumerState<ReviewSwapScreen> {
       final fee = _sendsDeposit(ref.read(swapPreflightProvider))
           ? ref.read(swapDepositFeeProvider(_feeKey)).requireValue
           : null;
+      final swaps = ref.read(activeSwapProvider.notifier);
       final txHash = fee != null ? await _sendDeposit(order, fee, l10n, generation) : null;
-      if ((fee != null && txHash == null) || !mounted) return;
-      ref
-          .read(activeSwapProvider.notifier)
-          .start(
-            ActiveSwap(
-              order: order,
-              accountId: widget.account.accountId,
-              accountName: widget.account.name,
-              startedAt: clock.now(),
-              depositByHand: fee == null,
-              depositTxHash: txHash,
-              depositFee: fee,
-            ),
-          );
+      if (fee != null && txHash == null) return;
+      // The deposit is out, so the swap is followed even if the screen is gone.
+      swaps.start(
+        ActiveSwap(
+          order: order,
+          accountId: widget.account.accountId,
+          accountName: widget.account.name,
+          startedAt: clock.now(),
+          depositByHand: fee == null,
+          depositTxHash: txHash,
+          depositFee: fee,
+        ),
+      );
+      if (!mounted) return;
       Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(builder: (_) => SwapProgressScreen(account: widget.account)),
@@ -103,7 +104,7 @@ class _ReviewSwapScreenState extends ConsumerState<ReviewSwapScreen> {
       }
     } catch (e) {
       quantusPrint('Swap create failed: $e');
-      if (mounted) context.showErrorToaster(message: l10n.swapQuoteError(describeSwapError(e)));
+      if (mounted) context.showErrorToaster(message: l10n.swapQuoteError(describeSwapError(l10n, e)));
     }
     return null;
   }
@@ -134,6 +135,7 @@ class _ReviewSwapScreenState extends ConsumerState<ReviewSwapScreen> {
   Future<String?> _sendDeposit(SwapOrder order, BigInt fee, AppLocalizations l10n, int generation) async {
     if (await _stale(generation, l10n)) return null;
     try {
+      final service = ref.read(swapServiceProvider);
       final hash = await RegularSendStrategy(account: widget.account).submitLocal(
         ref,
         recipient: order.depositAddress,
@@ -151,10 +153,7 @@ class _ReviewSwapScreenState extends ConsumerState<ReviewSwapScreen> {
         return null;
       }
       unawaited(
-        ref
-            .read(swapServiceProvider)
-            .submitDeposit(order, hash)
-            .catchError((Object e) => quantusPrint('Swap deposit submit failed: $e')),
+        service.submitDeposit(order, hash).catchError((Object e) => quantusPrint('Swap deposit submit failed: $e')),
       );
       return hash;
     } catch (e) {

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:clock/clock.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/shared/utils/print.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/swap_providers.dart';
@@ -90,7 +91,7 @@ class ActiveSwapNotifier extends Notifier<ActiveSwap?> {
     } catch (e) {
       quantusPrint('Swap status poll failed: $e');
       if (generation != _generation) return;
-      _set(current.withPollError(describeSwapError(e)));
+      _set(current.withPollError(describeSwapError(ref.read(l10nProvider), e)));
     }
     final next = state;
     if (next != null) _schedule(next);

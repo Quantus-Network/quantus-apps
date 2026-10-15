@@ -1914,6 +1914,9 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get swapRequestTimedOut => 'The request timed out';
+
+  @override
   String swapProgressStatusUnavailable(String error) {
     return 'The swap status can\'t be checked right now: $error';
   }

@@ -542,6 +542,7 @@
   "swapDepositMemoNotice": "Sertakan memo ini pada deposit Anda. Deposit tanpa memo tidak akan diproses.",
   "swapDepositShareContentMemo": "Jaringan: {network}\nToken: {token}\nAlamat: {address}\nMemo: {memo}",
   "swapDepositNotice": "Gunakan dompet {symbol} atau {network} Anda untuk deposit. Menyetor aset lain dapat mengakibatkan kehilangan dana.",
+  "swapRequestTimedOut": "Permintaan melebihi batas waktu",
   "swapProgressStatusUnavailable": "Status swap tidak dapat diperiksa saat ini: {error}",
   "swapProgressDepositNotSeen": "Deposit tidak terlihat sebelum tenggat. Jika tiba terlambat, dana dikembalikan ke {refund}.",
   "swapStopTracking": "Berhenti melacak swap",

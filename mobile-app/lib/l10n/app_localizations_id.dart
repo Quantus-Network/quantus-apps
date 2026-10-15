@@ -1917,6 +1917,9 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
+  String get swapRequestTimedOut => 'Permintaan melebihi batas waktu';
+
+  @override
   String swapProgressStatusUnavailable(String error) {
     return 'Status swap tidak dapat diperiksa saat ini: $error';
   }

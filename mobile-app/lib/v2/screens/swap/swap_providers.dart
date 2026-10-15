@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
@@ -103,7 +105,11 @@ String formatSwapAmount(
   token.symbol,
 );
 
-String describeSwapError(Object error) => error is SwapApiException ? error.message : error.toString();
+String describeSwapError(AppLocalizations l10n, Object error) => switch (error) {
+  SwapApiException e => e.message,
+  TimeoutException _ => l10n.swapRequestTimedOut,
+  _ => error.toString(),
+};
 
 String slippagePercentLabel(int bps) {
   final percent = bps / 100;

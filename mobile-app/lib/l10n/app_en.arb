@@ -2820,6 +2820,10 @@
         }
       }
     },
+    "swapRequestTimedOut": "The request timed out",
+    "@swapRequestTimedOut": {
+      "description": "Why a 1Click request failed when no answer came within the time allowed"
+    },
     "swapProgressStatusUnavailable": "The swap status can't be checked right now: {error}",
     "@swapProgressStatusUnavailable": {
       "description": "Notice on the progress screen while the 1Click status poll fails",

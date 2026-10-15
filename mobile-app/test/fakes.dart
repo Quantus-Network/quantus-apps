@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter/widgets.dart';
@@ -238,6 +239,9 @@ Future<WidgetRef> pumpRef(WidgetTester tester, {List<Override> overrides = const
 class FakeTransactionSubmissionService extends Fake implements TransactionSubmissionService {
   final transfers = <(String, BigInt, BigInt)>[];
 
+  /// When set, a transfer waits for it before going out.
+  Completer<void>? holdTransfer;
+
   @override
   Future<String> balanceTransfer(
     Account account, {
@@ -246,6 +250,7 @@ class FakeTransactionSubmissionService extends Fake implements TransactionSubmis
     required BigInt amount,
     required BigInt fee,
   }) async {
+    await holdTransfer?.future;
     transfers.add((targetAddress, amount, fee));
     return '0xtxhash';
   }

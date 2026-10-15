@@ -65,7 +65,8 @@ class _SwapAddressSheetState extends ConsumerState<_SwapAddressSheet> {
     } catch (e) {
       quantusPrint('Swap quote failed: $e');
       if (!mounted) return;
-      context.showErrorToaster(message: ref.read(l10nProvider).swapQuoteError(describeSwapError(e)));
+      final l10n = ref.read(l10nProvider);
+      context.showErrorToaster(message: l10n.swapQuoteError(describeSwapError(l10n, e)));
     } finally {
       if (mounted) setState(() => _quoting = false);
     }
