@@ -1261,6 +1261,44 @@ void main() {
       expect(oneClick.requests.where((r) => r.url.path == '/v0/status'), hasLength(1));
     });
 
+    testWidgets('a swap started while the dismissed one still awaits its answer is polled on its own', (tester) async {
+      final oneClick = _OneClick(dryOut: BigInt.one)
+        ..status = 'PROCESSING'
+        ..holdStatus = Completer<void>();
+      await pumpSwap(
+        tester,
+        activeSwap(SwapOrder(quote: liveQuote, status: SwapStatus.processing)),
+        oneClick: oneClick,
+      );
+      final notifier = containerOf(tester).read(activeSwapProvider.notifier);
+      unawaited(notifier.refresh());
+      await notifier.clear();
+
+      final other = _quote(
+        from: _qtc,
+        to: _usdc,
+        amountIn: liveQuote.amountIn,
+        amountOut: liveQuote.amountOut,
+        refund: account.accountId,
+        recipient: _external,
+        depositAddress: 'qzother',
+      );
+      notifier.start(activeSwap(SwapOrder(quote: other, status: SwapStatus.processing)));
+      await tester.pump(SwapService.statusPollInterval);
+      Iterable<String> polled() => oneClick.requests
+          .where((r) => r.url.path == '/v0/status')
+          .map((r) => r.url.queryParameters['depositAddress']!);
+      expect(polled(), [_deposit, 'qzother']);
+
+      oneClick.holdStatus!.complete();
+      await settle(tester);
+      expect(containerOf(tester).read(activeSwapProvider)!.order.depositAddress, 'qzother');
+
+      await tester.pump(SwapService.statusPollInterval);
+      await settle(tester);
+      expect(polled(), [_deposit, 'qzother', 'qzother']);
+    });
+
     testWidgets('Done on a completed swap and Start new on a failed one put the swap away', (tester) async {
       await pumpOrder(tester, SwapOrder(quote: liveQuote, status: SwapStatus.success));
       var container = containerOf(tester);

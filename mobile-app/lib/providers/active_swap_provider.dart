@@ -34,7 +34,7 @@ class ActiveSwapNotifier extends Notifier<ActiveSwap?> {
   }
 
   void start(ActiveSwap swap) {
-    _generation++;
+    _supersede();
     _set(swap);
     _schedule(swap);
   }
@@ -42,8 +42,7 @@ class ActiveSwapNotifier extends Notifier<ActiveSwap?> {
   /// Puts the swap away. Once it has settled it is done with; before that the
   /// user gives up on it.
   Future<void> clear() {
-    _generation++;
-    _poll?.cancel();
+    _supersede();
     state = null;
     return ref.read(settingsServiceProvider).remove(storageKey);
   }
@@ -51,7 +50,22 @@ class ActiveSwapNotifier extends Notifier<ActiveSwap?> {
   /// Polls now instead of at the next interval, or joins the poll in flight.
   Future<void> refresh() {
     _poll?.cancel();
-    return _inFlight ??= _refresh().whenComplete(() => _inFlight = null);
+    final inFlight = _inFlight;
+    if (inFlight != null) return inFlight;
+    late final Future<void> poll;
+    poll = _refresh().whenComplete(() {
+      if (identical(_inFlight, poll)) _inFlight = null;
+    });
+    return _inFlight = poll;
+  }
+
+  /// Disowns the swap being followed: its timer stops and its poll in
+  /// flight, if any, is left to answer into the void, so the next swap polls
+  /// on its own.
+  void _supersede() {
+    _generation++;
+    _poll?.cancel();
+    _inFlight = null;
   }
 
   void _set(ActiveSwap swap) {
