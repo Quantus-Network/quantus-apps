@@ -61,4 +61,20 @@ class SwapOrder {
       destinationTxHashes: hashes('destinationChainTxHashes'),
     );
   }
+
+  /// The order in 1Click's status shape, so [fromStatusJson] reads it back.
+  Map<String, dynamic> toJson() => {
+    'status': status.wire,
+    'swapDetails': {
+      'amountOut': ?amountOut?.toString(),
+      'refundedAmount': ?refundedAmount?.toString(),
+      'refundReason': ?refundReason,
+      'originChainTxHashes': [
+        for (final hash in originTxHashes) {'hash': hash},
+      ],
+      'destinationChainTxHashes': [
+        for (final hash in destinationTxHashes) {'hash': hash},
+      ],
+    },
+  };
 }

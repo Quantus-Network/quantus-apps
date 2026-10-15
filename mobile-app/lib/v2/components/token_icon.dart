@@ -50,6 +50,7 @@ class TokenIcon extends ConsumerWidget {
                   ? networkMonogram
                   : Container(
                       decoration: BoxDecoration(
+                        color: colors.textWhite,
                         shape: BoxShape.circle,
                         border: Border.all(color: colors.bgVoid),
                       ),

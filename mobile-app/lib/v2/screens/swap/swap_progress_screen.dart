@@ -1,96 +1,112 @@
+import 'package:clock/clock.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:quantus_sdk/quantus_sdk.dart' hide ScaffoldBase;
 import 'package:resonance_network_wallet/l10n/app_localizations.dart';
+import 'package:resonance_network_wallet/models/active_swap.dart';
+import 'package:resonance_network_wallet/providers/active_swap_provider.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
 import 'package:resonance_network_wallet/shared/utils/open_external_url.dart';
 import 'package:resonance_network_wallet/shared/utils/share_utils.dart';
+import 'package:resonance_network_wallet/v2/components/copy_icon_button.dart';
+import 'package:resonance_network_wallet/v2/components/link_button.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/success_check.dart';
 import 'package:resonance_network_wallet/v2/components/token_icon.dart';
+import 'package:resonance_network_wallet/v2/screens/swap/swap_progress.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/swap_providers.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/swap_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/swap_summary.dart';
 
-/// Follows a live swap through 1Click's status endpoint: the deposit address
-/// while a swap into QTC (or, in preflight, any swap) waits for its deposit,
-/// then progress, and finally the completed or failed swap.
-class SwapProgressScreen extends ConsumerWidget {
+/// Follows the active swap: the deposit address while a swap into QTC (or,
+/// in preflight, any swap) waits for its deposit, then progress, and finally
+/// the completed or failed swap. Leaving by Done, Dismiss, Cancel or Start
+/// new puts the swap away, so the next tap on Swap starts a fresh one.
+class SwapProgressScreen extends ConsumerStatefulWidget {
   final Account account;
-  final SwapOrder order;
 
-  /// Hash and fee of the QTC transfer that paid a swap out of QTC.
-  final String? depositTxHash;
-  final BigInt? depositFee;
-
-  const SwapProgressScreen({
-    super.key,
-    required this.account,
-    required this.order,
-    this.depositTxHash,
-    this.depositFee,
-  });
+  const SwapProgressScreen({super.key, required this.account});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final current = ref.watch(swapOrderProvider(order)).value ?? order;
-    final byHand = !current.quote.fromToken.isQuantus || ref.watch(swapPreflightProvider) != null;
-    final awaitingDeposit = current.status == SwapStatus.pendingDeposit && byHand;
-    final expired = awaitingDeposit && DateTime.now().isAfter(current.quote.deadline);
-    return switch (current.status) {
-      SwapStatus.success => _SwapComplete(order: current),
+  ConsumerState<SwapProgressScreen> createState() => _SwapProgressScreenState();
+}
+
+class _SwapProgressScreenState extends ConsumerState<SwapProgressScreen> {
+  /// What was shown last: it stays on screen while the route leaves after
+  /// the swap was put away.
+  ActiveSwap? _shown;
+
+  @override
+  Widget build(BuildContext context) {
+    final swap = _shown = ref.watch(activeSwapProvider) ?? _shown;
+    if (swap == null) throw StateError('No active swap to show');
+    ref.watch(swapElapsedProvider);
+    final now = clock.now();
+    final order = swap.order;
+    final awaitingDeposit = order.status == SwapStatus.pendingDeposit && swap.depositByHand;
+    final expired = awaitingDeposit && now.isAfter(order.quote.deadline);
+    return switch (order.status) {
+      SwapStatus.success => _SwapComplete(swap: swap),
       SwapStatus.refunded ||
       SwapStatus.failed ||
-      SwapStatus.incompleteDeposit => _SwapFailed(order: current, account: account),
-      _ when expired => _SwapFailed(order: current, account: account, expired: true),
-      _ when awaitingDeposit => _SwapDeposit(order: current),
-      _ => _SwapInProgress(order: current, account: account, depositTxHash: depositTxHash, depositFee: depositFee),
+      SwapStatus.incompleteDeposit => _SwapFailed(swap: swap, account: widget.account),
+      _ when expired => _SwapFailed(swap: swap, account: widget.account, expired: true),
+      _ when awaitingDeposit => _SwapDeposit(swap: swap),
+      _ => _SwapInProgress(swap: swap, now: now),
     };
   }
+}
+
+/// Puts the swap away and returns home.
+void _finish(BuildContext context, WidgetRef ref) {
+  Navigator.popUntil(context, (route) => route.isFirst);
+  ref.read(activeSwapProvider.notifier).clear();
+}
+
+/// Puts the swap away and opens the form for another.
+void _startNew(BuildContext context, WidgetRef ref, Account account) {
+  Navigator.pushAndRemoveUntil(
+    context,
+    MaterialPageRoute(builder: (_) => SwapScreen(account: account)),
+    (route) => route.isFirst,
+  );
+  ref.read(activeSwapProvider.notifier).clear();
 }
 
 class _SwapInProgress extends ConsumerWidget {
   static const _listAsset = 'assets/v2/swap_list.svg';
 
-  final SwapOrder order;
-  final Account account;
-  final String? depositTxHash;
-  final BigInt? depositFee;
+  final ActiveSwap swap;
+  final DateTime now;
 
-  const _SwapInProgress({required this.order, required this.account, this.depositTxHash, this.depositFee});
+  const _SwapInProgress({required this.swap, required this.now});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = ref.watch(l10nProvider);
     final colors = context.colorsV3;
     final text = context.themeTextV3;
+    final order = swap.order;
     final quote = order.quote;
-    final from = quote.fromToken;
-    final to = quote.toToken;
-    final receiver = from.isQuantus || ref.watch(swapPreflightProvider) != null
+    final receiver = quote.fromToken.isQuantus || ref.watch(swapPreflightProvider) != null
         ? AddressFormattingService.formatAddress(quote.recipient)
-        : account.name;
-    final steps = [
-      l10n.swapStepSent(from.symbol),
-      l10n.swapStepConfirming(from.networkName),
-      l10n.swapStepSwapping,
-      l10n.swapStepSending(to.symbol, receiver),
-    ];
-    final stage = order.status == SwapStatus.processing ? 2 : 1;
+        : swap.accountName;
+    final steps = swapStepLabels(l10n, quote, receiver);
+    final stage = swapStage(order, depositByHand: swap.depositByHand);
+    final pollError = swap.pollError;
+    final deadlinePassed = swap.deadlinePassed(now);
+    final stuck = deadlinePassed || swap.isStale(now);
 
     return ScaffoldBase(
       appBar: V2AppBar(
         title: l10n.swapInProgressTitle,
         trailing: GestureDetector(
-          onTap: () => BottomSheetContainer.show(
-            context,
-            builder: (_) => _SwapDetailsSheet(order: order, depositTxHash: depositTxHash, depositFee: depositFee),
-          ),
+          onTap: () => BottomSheetContainer.show(context, builder: (_) => _SwapDetailsSheet(swap: swap)),
           child: SvgPicture.asset(
             _listAsset,
             width: 20,
@@ -101,6 +117,7 @@ class _SwapInProgress extends ConsumerWidget {
       ),
       mainContent: SingleChildScrollView(
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const SizedBox(height: 24),
             SwapAmountsCard(quote: quote, payLabel: l10n.swapYourePaying, receiveLabel: l10n.swapYoureReceiving),
@@ -114,6 +131,26 @@ class _SwapInProgress extends ConsumerWidget {
                     : StepRowState.pending,
                 label: label,
               ),
+            if (pollError != null) ...[
+              const SizedBox(height: 16),
+              QuantusBanner(tone: BannerTone.sand, message: l10n.swapProgressStatusUnavailable(pollError)),
+              const SizedBox(height: 8),
+              Align(
+                alignment: Alignment.centerRight,
+                child: LinkButton(
+                  label: l10n.commonRetry,
+                  onTap: () => ref.read(activeSwapProvider.notifier).refresh(),
+                ),
+              ),
+            ],
+            if (deadlinePassed) ...[
+              const SizedBox(height: 16),
+              QuantusBanner(tone: BannerTone.sand, message: l10n.swapProgressDepositNotSeen(swap.accountName)),
+            ],
+            if (swap.isStale(now)) ...[
+              const SizedBox(height: 16),
+              QuantusBanner(tone: BannerTone.sand, message: l10n.swapProgressDelayed),
+            ],
           ],
         ),
       ),
@@ -134,6 +171,20 @@ class _SwapInProgress extends ConsumerWidget {
               textAlign: TextAlign.center,
               style: text.body.copyWith(color: colors.textMuted2),
             ),
+            if (stuck) ...[
+              const SizedBox(height: 24),
+              QuantusButton.simple(
+                label: l10n.swapDismiss,
+                variant: ButtonVariant.staged,
+                onTap: () => _finish(context, ref),
+              ),
+              const SizedBox(height: 4),
+              QuantusButton.simple(
+                label: l10n.swapContactSupport,
+                variant: ButtonVariant.underline,
+                onTap: () => openUrl(AppConstants.techSupportUrl),
+              ),
+            ],
           ],
         ),
       ),
@@ -142,19 +193,17 @@ class _SwapInProgress extends ConsumerWidget {
 }
 
 class _SwapDetailsSheet extends ConsumerWidget {
-  final SwapOrder order;
-  final String? depositTxHash;
-  final BigInt? depositFee;
+  final ActiveSwap swap;
 
-  const _SwapDetailsSheet({required this.order, this.depositTxHash, this.depositFee});
+  const _SwapDetailsSheet({required this.swap});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = ref.watch(l10nProvider);
     final fmt = ref.watch(numberFormattingServiceProvider);
-    final quote = order.quote;
-    final fee = depositFee;
-    final tx = depositTxHash ?? order.originTxHashes.firstOrNull;
+    final quote = swap.order.quote;
+    final fee = swap.depositFee;
+    final tx = swap.depositTxHash ?? swap.order.originTxHashes.firstOrNull;
 
     return BottomSheetContainer(
       title: l10n.swapDetailsTitle,
@@ -202,9 +251,9 @@ class _SwapDetailsSheet extends ConsumerWidget {
 }
 
 class _SwapComplete extends ConsumerWidget {
-  final SwapOrder order;
+  final ActiveSwap swap;
 
-  const _SwapComplete({required this.order});
+  const _SwapComplete({required this.swap});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -212,6 +261,7 @@ class _SwapComplete extends ConsumerWidget {
     final colors = context.colorsV3;
     final text = context.themeTextV3;
     final fmt = ref.watch(numberFormattingServiceProvider);
+    final order = swap.order;
     final quote = order.quote;
     final to = quote.toToken;
 
@@ -243,10 +293,7 @@ class _SwapComplete extends ConsumerWidget {
         ),
       ),
       bottomContent: ScaffoldBaseBottomContent(
-        child: QuantusButton.simple(
-          label: l10n.commonDone,
-          onTap: () => Navigator.popUntil(context, (route) => route.isFirst),
-        ),
+        child: QuantusButton.simple(label: l10n.commonDone, onTap: () => _finish(context, ref)),
       ),
     );
   }
@@ -255,13 +302,14 @@ class _SwapComplete extends ConsumerWidget {
 /// A swap that ended without paying out: refunded, failed, short-paid, or a
 /// deposit window that closed with nothing sent.
 class _SwapFailed extends ConsumerWidget {
-  final SwapOrder order;
+  final ActiveSwap swap;
   final Account account;
   final bool expired;
 
-  const _SwapFailed({required this.order, required this.account, this.expired = false});
+  const _SwapFailed({required this.swap, required this.account, this.expired = false});
 
   String _message(AppLocalizations l10n, NumberFormattingService fmt, {required bool preflight}) {
+    final order = swap.order;
     final quote = order.quote;
     final from = quote.fromToken;
     if (expired) return l10n.swapDepositExpiredBody;
@@ -269,7 +317,7 @@ class _SwapFailed extends ConsumerWidget {
       SwapStatus.refunded => [
         l10n.swapRefundedBody(
           formatSwapAmount(l10n, fmt, order.refundedAmount ?? quote.amountIn, from),
-          from.isQuantus && !preflight ? account.name : AddressFormattingService.formatAddress(quote.refundAddress),
+          from.isQuantus && !preflight ? swap.accountName : AddressFormattingService.formatAddress(quote.refundAddress),
           quote.toToken.symbol,
         ),
         if (order.refundReason != null) l10n.swapDepositRefundReason(order.refundReason!),
@@ -285,6 +333,7 @@ class _SwapFailed extends ConsumerWidget {
     final colors = context.colorsV3;
     final text = context.themeTextV3;
     final fmt = ref.watch(numberFormattingServiceProvider);
+    final order = swap.order;
     final refunded = order.status == SwapStatus.refunded;
     final warning = expired || order.status == SwapStatus.incompleteDeposit;
 
@@ -331,11 +380,7 @@ class _SwapFailed extends ConsumerWidget {
             QuantusButton.simple(
               label: l10n.swapStartNew,
               isDisabled: !ref.watch(remoteConfigProvider.select((c) => c.swapAvailable)),
-              onTap: () => Navigator.pushAndRemoveUntil(
-                context,
-                MaterialPageRoute(builder: (_) => SwapScreen(account: account)),
-                (route) => route.isFirst,
-              ),
+              onTap: () => _startNew(context, ref, account),
             ),
             const SizedBox(height: 4),
             QuantusButton.simple(
@@ -353,9 +398,9 @@ class _SwapFailed extends ConsumerWidget {
 /// Where to send the external token for a swap into QTC, or the stand-in for
 /// a swap out of it in preflight.
 class _SwapDeposit extends ConsumerWidget {
-  final SwapOrder order;
+  final ActiveSwap swap;
 
-  const _SwapDeposit({required this.order});
+  const _SwapDeposit({required this.swap});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -363,6 +408,7 @@ class _SwapDeposit extends ConsumerWidget {
     final colors = context.colorsV3;
     final text = context.themeTextV3;
     final fmt = ref.watch(numberFormattingServiceProvider);
+    final order = swap.order;
     final quote = order.quote;
     final from = quote.fromToken;
     final address = order.depositAddress;
@@ -387,17 +433,9 @@ class _SwapDeposit extends ConsumerWidget {
               children: [
                 Text(l10n.swapDepositAmount, style: text.body.copyWith(color: colors.textContent)),
                 const SizedBox(width: 6),
-                GestureDetector(
-                  onTap: () => context.copyTextWithToaster(
-                    fmt.formatWireAmount(quote.amountIn, decimals: from.decimals),
-                    message: l10n.swapDepositAmountCopied,
-                  ),
-                  child: Container(
-                    width: 20,
-                    height: 20,
-                    decoration: BoxDecoration(color: colors.bgSurface, borderRadius: context.radiusV3.xsBorder),
-                    child: Center(child: Icon(Icons.copy, color: colors.textContent, size: 12)),
-                  ),
+                CopyIconButton(
+                  text: fmt.formatWireAmount(quote.amountIn, decimals: from.decimals),
+                  copiedMessage: l10n.swapDepositAmountCopied,
                 ),
               ],
             ),
@@ -508,7 +546,13 @@ class _SwapDeposit extends ConsumerWidget {
               style: text.caption.copyWith(color: colors.textMuted),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 8),
+            QuantusButton.simple(
+              label: l10n.swapDepositCancel,
+              variant: ButtonVariant.underline,
+              onTap: () => _finish(context, ref),
+            ),
+            const SizedBox(height: 16),
           ],
         ),
       ),

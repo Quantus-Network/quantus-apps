@@ -25,9 +25,12 @@ import 'package:resonance_network_wallet/v2/screens/send/regular_send_strategy.d
 import 'package:resonance_network_wallet/v2/screens/send/select_recipient_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/send/send_strategy.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/settings_screen.dart';
+import 'package:resonance_network_wallet/v2/screens/swap/swap_progress.dart';
+import 'package:resonance_network_wallet/v2/screens/swap/swap_progress_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/swap_screen.dart';
 import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
+import 'package:resonance_network_wallet/providers/active_swap_provider.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/active_account_transactions_provider.dart';
 import 'package:resonance_network_wallet/providers/local_auth_provider.dart';
@@ -365,19 +368,28 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ),
     );
 
+    // A swap being followed shows its progress on the button and opens it,
+    // even where swaps are no longer offered or the account could not start one.
+    final swap = ref.watch(activeSwapProvider);
     final swapCard = _actionCard(
       iconAsset: 'assets/v2/action_swap.svg',
       label: l10n.homeSwap,
       // Swap signs the deposit locally, so only transparent accounts with a key
       // here can swap; keep the button visible but disabled for the others so
       // the layout doesn't change between account types.
-      isDisabled: !account.signsLocally,
-      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => SwapScreen(account: account))),
+      isDisabled: !account.signsLocally && swap == null,
+      overlay: swap == null ? null : SwapProgressBadge(swap: swap),
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => swap == null ? SwapScreen(account: account) : SwapProgressScreen(account: account),
+        ),
+      ),
     );
 
     return Row(
       spacing: 20,
-      children: [receiveCard, sendCard, if (ref.watch(remoteConfigProvider).swapAvailable) swapCard],
+      children: [receiveCard, sendCard, if (ref.watch(remoteConfigProvider).swapAvailable || swap != null) swapCard],
     );
   }
 
@@ -412,9 +424,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     required String label,
     required VoidCallback onTap,
     bool isDisabled = false,
+    Widget? overlay,
   }) {
     return Expanded(
-      child: ActionCard(key: key, iconAsset: iconAsset, label: label, onTap: onTap, isDisabled: isDisabled),
+      child: ActionCard(
+        key: key,
+        iconAsset: iconAsset,
+        label: label,
+        onTap: onTap,
+        isDisabled: isDisabled,
+        overlay: overlay,
+      ),
     );
   }
 }

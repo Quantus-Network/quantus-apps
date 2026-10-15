@@ -2540,6 +2540,12 @@ abstract class AppLocalizations {
   /// **'TX HASH'**
   String get activityDetailTxHash;
 
+  /// Toast after copying a transaction hash from the activity detail sheet
+  ///
+  /// In en, this message translates to:
+  /// **'Transaction hash copied to clipboard'**
+  String get activityDetailTxHashCopied;
+
   /// Link to view transaction in explorer
   ///
   /// In en, this message translates to:
@@ -3553,6 +3559,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Use your {symbol} or {network} wallet to deposit funds. Depositing other assets may result in loss of funds.'**
   String swapDepositNotice(String symbol, String network);
+
+  /// Notice on the progress screen while the 1Click status poll fails
+  ///
+  /// In en, this message translates to:
+  /// **'The swap status can\'t be checked right now: {error}'**
+  String swapProgressStatusUnavailable(String error);
+
+  /// Notice on the progress screen once the deposit window closed with the deposit unseen
+  ///
+  /// In en, this message translates to:
+  /// **'The deposit was not seen before the deadline. If it arrives late, it is refunded to {refund}.'**
+  String swapProgressDepositNotSeen(String refund);
+
+  /// Notice on the progress screen once a swap has run for over ten minutes
+  ///
+  /// In en, this message translates to:
+  /// **'This swap is taking longer than usual. You can keep waiting, or dismiss it and start another. Funds already sent are still swapped or refunded by NEAR Intents.'**
+  String get swapProgressDelayed;
+
+  /// Button that puts a stuck swap away so another can start
+  ///
+  /// In en, this message translates to:
+  /// **'Dismiss swap'**
+  String get swapDismiss;
+
+  /// Button on the deposit screen that puts the swap away before anything was sent
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel swap'**
+  String get swapDepositCancel;
 
   /// Text for app bar or button label on QR scanner component
   ///

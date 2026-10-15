@@ -21,6 +21,9 @@ class FakeSettingsService extends Fake implements SettingsService {
   List<MultisigAccount> multisigs;
   bool hasWallet = true;
 
+  /// What [setString] stored, by key.
+  final strings = <String, String>{};
+
   FakeSettingsService({this.activeAccount, this.multisigs = const []});
 
   @override
@@ -54,7 +57,13 @@ class FakeSettingsService extends Fake implements SettingsService {
   AirdropClaimRecord? getAirdropClaim(int walletIndex) => null;
 
   @override
-  String? getString(String key) => null;
+  String? getString(String key) => strings[key];
+
+  @override
+  Future<void> setString(String key, String value) async => strings[key] = value;
+
+  @override
+  Future<void> remove(String key) async => strings.remove(key);
 }
 
 /// The platform auth plugin without a platform: answers [authenticateResult],

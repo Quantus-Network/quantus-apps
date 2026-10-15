@@ -464,6 +464,10 @@ class SettingsService {
     await _prefs.setString(key, value);
   }
 
+  Future<void> remove(String key) async {
+    await _prefs.remove(key);
+  }
+
   // Test-only helper to reset initialization between tests
   void resetForTest() {
     assert(() {

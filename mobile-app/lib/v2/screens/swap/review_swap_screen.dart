@@ -1,10 +1,13 @@
 import 'dart:async';
 
+import 'package:clock/clock.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart' hide ScaffoldBase;
 import 'package:resonance_network_wallet/l10n/app_localizations.dart';
+import 'package:resonance_network_wallet/models/active_swap.dart';
 import 'package:resonance_network_wallet/models/swap_preflight.dart';
+import 'package:resonance_network_wallet/providers/active_swap_provider.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
@@ -58,12 +61,22 @@ class _ReviewSwapScreenState extends ConsumerState<ReviewSwapScreen> {
           : null;
       final txHash = fee != null ? await _sendDeposit(order, fee, l10n, generation) : null;
       if ((fee != null && txHash == null) || !mounted) return;
+      ref
+          .read(activeSwapProvider.notifier)
+          .start(
+            ActiveSwap(
+              order: order,
+              accountId: widget.account.accountId,
+              accountName: widget.account.name,
+              startedAt: clock.now(),
+              depositByHand: fee == null,
+              depositTxHash: txHash,
+              depositFee: fee,
+            ),
+          );
       Navigator.pushAndRemoveUntil(
         context,
-        MaterialPageRoute(
-          builder: (_) =>
-              SwapProgressScreen(account: widget.account, order: order, depositTxHash: txHash, depositFee: fee),
-        ),
+        MaterialPageRoute(builder: (_) => SwapProgressScreen(account: widget.account)),
         (route) => route.isFirst,
       );
     } finally {
@@ -78,7 +91,7 @@ class _ReviewSwapScreenState extends ConsumerState<ReviewSwapScreen> {
   /// and an answer the old service was still owed is discarded.
   Future<SwapOrder?> _liveOrder(AppLocalizations l10n, int generation) async {
     final kept = _order;
-    if (kept != null && kept.quote.deadline.isAfter(DateTime.now().add(SwapService.minimumDepositLead))) return kept;
+    if (kept != null && kept.quote.deadline.isAfter(clock.now().add(SwapService.minimumDepositLead))) return kept;
     try {
       final order = await ref.read(swapServiceProvider).createSwap(_quote);
       if (await _stale(generation, l10n)) return null;

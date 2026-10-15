@@ -1926,6 +1926,10 @@
     "@activityDetailTxHash": {
       "description": "Transaction hash row label on detail sheet"
     },
+    "activityDetailTxHashCopied": "Transaction hash copied to clipboard",
+    "@activityDetailTxHashCopied": {
+      "description": "Toast after copying a transaction hash from the activity detail sheet"
+    },
     "activityDetailViewExplorer": "View in Explorer ↗",
     "@activityDetailViewExplorer": {
       "description": "Link to view transaction in explorer"
@@ -2819,6 +2823,36 @@
           "type": "String"
         }
       }
+    },
+    "swapProgressStatusUnavailable": "The swap status can't be checked right now: {error}",
+    "@swapProgressStatusUnavailable": {
+      "description": "Notice on the progress screen while the 1Click status poll fails",
+      "placeholders": {
+        "error": {
+          "type": "String"
+        }
+      }
+    },
+    "swapProgressDepositNotSeen": "The deposit was not seen before the deadline. If it arrives late, it is refunded to {refund}.",
+    "@swapProgressDepositNotSeen": {
+      "description": "Notice on the progress screen once the deposit window closed with the deposit unseen",
+      "placeholders": {
+        "refund": {
+          "type": "String"
+        }
+      }
+    },
+    "swapProgressDelayed": "This swap is taking longer than usual. You can keep waiting, or dismiss it and start another. Funds already sent are still swapped or refunded by NEAR Intents.",
+    "@swapProgressDelayed": {
+      "description": "Notice on the progress screen once a swap has run for over ten minutes"
+    },
+    "swapDismiss": "Dismiss swap",
+    "@swapDismiss": {
+      "description": "Button that puts a stuck swap away so another can start"
+    },
+    "swapDepositCancel": "Cancel swap",
+    "@swapDepositCancel": {
+      "description": "Button on the deposit screen that puts the swap away before anything was sent"
     },
 
     "componentQrScannerTitle": "Scan QR Code",

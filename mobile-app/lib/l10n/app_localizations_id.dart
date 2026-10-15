@@ -1343,6 +1343,9 @@ class AppLocalizationsId extends AppLocalizations {
   String get activityDetailTxHash => 'HASH TX';
 
   @override
+  String get activityDetailTxHashCopied => 'Hash transaksi disalin ke papan klip';
+
+  @override
   String get activityDetailViewExplorer => 'Lihat di Explorer ↗';
 
   @override
@@ -1915,6 +1918,26 @@ class AppLocalizationsId extends AppLocalizations {
   String swapDepositNotice(String symbol, String network) {
     return 'Gunakan dompet $symbol atau $network Anda untuk deposit. Menyetor aset lain dapat mengakibatkan kehilangan dana.';
   }
+
+  @override
+  String swapProgressStatusUnavailable(String error) {
+    return 'Status swap tidak dapat diperiksa saat ini: $error';
+  }
+
+  @override
+  String swapProgressDepositNotSeen(String refund) {
+    return 'Deposit tidak terlihat sebelum tenggat. Jika tiba terlambat, dana dikembalikan ke $refund.';
+  }
+
+  @override
+  String get swapProgressDelayed =>
+      'Swap ini memakan waktu lebih lama dari biasanya. Anda dapat terus menunggu, atau menutupnya dan memulai swap lain. Dana yang sudah dikirim tetap di-swap atau dikembalikan oleh NEAR Intents.';
+
+  @override
+  String get swapDismiss => 'Tutup swap';
+
+  @override
+  String get swapDepositCancel => 'Batalkan swap';
 
   @override
   String get componentQrScannerTitle => 'Pindai Kode QR';

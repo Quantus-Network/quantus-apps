@@ -68,23 +68,6 @@ final swapDepositFeeProvider = FutureProvider.autoDispose.family<BigInt, (Accoun
   }
 }, retry: (_, _) => null);
 
-/// [order] followed through 1Click's status endpoint until it settles.
-final swapOrderProvider = StreamProvider.autoDispose.family<SwapOrder, SwapOrder>((ref, order) async* {
-  final service = ref.watch(swapServiceProvider);
-  var current = order;
-  yield current;
-  while (!current.status.isFinal) {
-    await Future<void>.delayed(SwapService.statusPollInterval);
-    if (!ref.mounted) return;
-    try {
-      current = await service.getSwapStatus(current);
-      yield current;
-    } catch (e) {
-      quantusPrint('Swap status poll failed: $e');
-    }
-  }
-});
-
 /// One whole token of [decimals] in base units, as a double. An int `pow`
 /// overflows past 18 decimals, and wNEAR has 24.
 double _unit(int decimals) => BigInt.from(10).pow(decimals).toDouble();

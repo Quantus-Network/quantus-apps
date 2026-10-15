@@ -77,10 +77,17 @@ void main() {
       expect(find.byType(Image), findsNothing);
     });
 
-    testWidgets("shows the chain's logo", (tester) async {
+    testWidgets("shows the chain's logo on white, so a transparent logo does not show the card through", (
+      tester,
+    ) async {
       await pumpBadge(tester, SwapTokenIcon(base64Decode(_onePixelPng), 'image/png'));
       expect(find.text('S'), findsNothing);
       expect(find.byType(Image), findsOneWidget);
+
+      final badge = tester.widget<Container>(
+        find.ancestor(of: find.byType(Image), matching: find.byType(Container)).first,
+      );
+      expect((badge.decoration as BoxDecoration).color, tester.element(find.byType(Image)).colorsV3.textWhite);
     });
   });
 }
