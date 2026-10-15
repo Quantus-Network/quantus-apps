@@ -1187,20 +1187,24 @@ void main() {
       expect(find.text(l10n.swapDismiss), findsOneWidget);
     });
 
-    testWidgets('an account that cannot sign may put a failed swap away but not start another', (tester) async {
-      final keystone = makeAccount(2, accountType: AccountType.keystone);
-      await tester.pumpApp(
-        SwapProgressScreen(account: keystone),
-        overrides: overrides(
-          _OneClick(dryOut: BigInt.one).service(),
-          settings: settingsWith(activeSwap(SwapOrder(quote: liveQuote, status: SwapStatus.failed))),
-        ),
-      );
-      await settle(tester);
+    for (final (who, account) in [
+      ('a Keystone account', makeAccount(2, accountType: AccountType.keystone)),
+      ('an account without a key here', null),
+    ]) {
+      testWidgets('opened from $who, a failed swap can be put away but not replaced', (tester) async {
+        await tester.pumpApp(
+          SwapProgressScreen(account: account),
+          overrides: overrides(
+            _OneClick(dryOut: BigInt.one).service(),
+            settings: settingsWith(activeSwap(SwapOrder(quote: liveQuote, status: SwapStatus.failed))),
+          ),
+        );
+        await settle(tester);
 
-      expect(button(tester, l10n.swapStartNew).isDisabled, isTrue);
-      expect(button(tester, l10n.commonDone).isDisabled, isFalse);
-    });
+        expect(button(tester, l10n.swapStartNew).isDisabled, isTrue);
+        expect(button(tester, l10n.commonDone).isDisabled, isFalse);
+      });
+    }
 
     testWidgets('a poll failure shows on the deposit screen too, and Retry moves it on', (tester) async {
       final inQuote = _quote(

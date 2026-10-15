@@ -29,9 +29,11 @@ import 'package:resonance_network_wallet/v2/screens/swap/swap_summary.dart';
 /// the completed or failed swap. Leaving by Done, Dismiss, Cancel or Start
 /// new puts the swap away, so the next tap on Swap starts a fresh one.
 class SwapProgressScreen extends ConsumerStatefulWidget {
-  final Account account;
+  /// The account a new swap would start from; none when the selected
+  /// account cannot swap.
+  final Account? account;
 
-  const SwapProgressScreen({super.key, required this.account});
+  const SwapProgressScreen({super.key, this.account});
 
   @override
   ConsumerState<SwapProgressScreen> createState() => _SwapProgressScreenState();
@@ -317,10 +319,10 @@ class _SwapComplete extends ConsumerWidget {
 /// deposit window that closed with nothing sent.
 class _SwapFailed extends ConsumerWidget {
   final ActiveSwap swap;
-  final Account account;
+  final Account? account;
   final bool expired;
 
-  const _SwapFailed({required this.swap, required this.account, this.expired = false});
+  const _SwapFailed({required this.swap, this.account, this.expired = false});
 
   String _message(AppLocalizations l10n, NumberFormattingService fmt, {required bool preflight}) {
     final order = swap.order;
@@ -351,6 +353,8 @@ class _SwapFailed extends ConsumerWidget {
     final refunded = order.status == SwapStatus.refunded;
     final warning = expired || order.status == SwapStatus.incompleteDeposit;
     final pollError = swap.isFinal ? null : swap.pollError;
+    final starter = account;
+    final swapsOffered = ref.watch(remoteConfigProvider.select((c) => c.swapAvailable));
 
     return ScaffoldBase(
       appBar: V2AppBar(
@@ -395,8 +399,8 @@ class _SwapFailed extends ConsumerWidget {
           children: [
             QuantusButton.simple(
               label: l10n.swapStartNew,
-              isDisabled: !ref.watch(remoteConfigProvider.select((c) => c.swapAvailable)) || !account.signsLocally,
-              onTap: () => _startNew(context, ref, account),
+              isDisabled: starter == null || !starter.signsLocally || !swapsOffered,
+              onTap: starter == null ? null : () => _startNew(context, ref, starter),
             ),
             const SizedBox(height: 4),
             QuantusButton.simple(

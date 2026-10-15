@@ -29,6 +29,7 @@ import 'package:resonance_network_wallet/v2/screens/swap/swap_progress.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/swap_progress_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/swap_screen.dart';
 import 'package:resonance_network_wallet/l10n/app_localizations.dart';
+import 'package:resonance_network_wallet/models/active_swap.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/active_swap_provider.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
@@ -193,6 +194,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final accountAsync = ref.watch(activeAccountProvider);
     final txAsync = ref.watch(activeAccountTransactionsProvider(TransactionFilter.all));
     final isBalanceHidden = ref.watch(isBalanceHiddenProvider);
+    // Watched before the account is known, so a swap saved on the device is
+    // picked up and polled again whichever account is selected.
+    final swap = ref.watch(activeSwapProvider);
     final colors = context.colorsV3;
     final text = context.themeTextV3;
 
@@ -216,7 +220,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           return ScaffoldBase.refreshable(
             onRefresh: _refresh,
             slivers: [
-              _buildContent(active, colors, text, l10n, isBalanceHidden),
+              _buildContent(active, swap, colors, text, l10n, isBalanceHidden),
               if (active is MultisigDisplayAccount)
                 MultisigActivitySection(
                   msig: active.account,
@@ -242,12 +246,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   Widget _buildContent(
     DisplayAccount active,
+    ActiveSwap? swap,
     AppColorsV3 colors,
     AppTextThemeV3 text,
     AppLocalizations l10n,
     bool isBalanceHidden,
   ) {
     final backupWalletIndex = ref.watch(backupReminderWalletIndexProvider);
+    final actions = _buildActionButtons(l10n, active, swap);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -257,11 +263,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         const SizedBox(height: 52),
         _buildBalance(colors, text, l10n, isBalanceHidden),
         const SizedBox(height: 52),
-        if (active is MultisigDisplayAccount) ...[
-          _buildMultisigActionButtons(l10n, active.account),
-          const SizedBox(height: 40),
-        ],
-        if (active is RegularAccount) ...[_buildActionButtons(l10n, active.account), const SizedBox(height: 40)],
+        if (actions != null) ...[actions, const SizedBox(height: 40)],
         if (backupWalletIndex != null) ...[
           BackupReminderBanner(walletIndex: backupWalletIndex),
           const SizedBox(height: 40),
@@ -345,76 +347,76 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Widget _buildActionButtons(AppLocalizations l10n, Account account) {
-    final isEncrypted = isEncryptedAccount(account);
-    final SendStrategy sendStrategy = isEncrypted
+  Widget? _buildActionButtons(AppLocalizations l10n, DisplayAccount active, ActiveSwap? swap) {
+    final cards = [
+      ...switch (active) {
+        RegularAccount(:final account) => [_receiveCard(l10n), _sendCard(l10n, account)],
+        MultisigDisplayAccount(:final account) => [_receiveCard(l10n), _proposeCard(l10n, account)],
+        EntrustedDisplayAccount() => const <Widget>[],
+      },
+      ?_swapCard(l10n, active, swap),
+    ];
+    return cards.isEmpty ? null : Row(spacing: 20, children: cards);
+  }
+
+  Widget _receiveCard(AppLocalizations l10n) => _actionCard(
+    iconAsset: 'assets/v2/action_receive.svg',
+    label: l10n.homeReceive,
+    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ReceiveScreen())),
+  );
+
+  Widget _sendCard(AppLocalizations l10n, Account account) {
+    final SendStrategy strategy = isEncryptedAccount(account)
         ? EncryptedSendStrategy(account: account)
         : RegularSendStrategy(account: account);
-
-    final receiveCard = _actionCard(
-      iconAsset: 'assets/v2/action_receive.svg',
-      label: l10n.homeReceive,
-      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ReceiveScreen())),
-    );
-
-    final sendCard = _actionCard(
+    return _actionCard(
       key: const Key(E2EKeys.homeSendButton),
       iconAsset: 'assets/v2/action_send.svg',
       label: l10n.homeSend,
       onTap: () => startSendFlow(
         context,
-        strategy: sendStrategy,
-        screen: SelectRecipientScreen(strategy: sendStrategy),
+        strategy: strategy,
+        screen: SelectRecipientScreen(strategy: strategy),
       ),
-    );
-
-    // A swap being followed shows its progress on the button and opens it,
-    // even where swaps are no longer offered or the account could not start one.
-    final swap = ref.watch(activeSwapProvider);
-    final swapCard = _actionCard(
-      iconAsset: 'assets/v2/action_swap.svg',
-      label: l10n.homeSwap,
-      // Swap signs the deposit locally, so only transparent accounts with a key
-      // here can swap; keep the button visible but disabled for the others so
-      // the layout doesn't change between account types.
-      isDisabled: !account.signsLocally && swap == null,
-      overlay: swap == null ? null : SwapProgressBadge(swap: swap),
-      onTap: () => Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => swap == null ? SwapScreen(account: account) : SwapProgressScreen(account: account),
-        ),
-      ),
-    );
-
-    return Row(
-      spacing: 20,
-      children: [receiveCard, sendCard, if (ref.watch(remoteConfigProvider).swapAvailable || swap != null) swapCard],
     );
   }
 
-  Widget _buildMultisigActionButtons(AppLocalizations l10n, MultisigAccount msig) {
-    return Row(
-      spacing: 20,
-      children: [
-        _actionCard(
-          iconAsset: 'assets/v2/action_receive.svg',
-          label: l10n.homeReceive,
-          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ReceiveScreen())),
-        ),
-        _actionCard(
-          iconAsset: 'assets/v2/action_send.svg',
-          label: l10n.multisigProposeTitle,
-          onTap: () {
-            final strategy = MultisigProposeStrategy(msig: msig);
-            startSendFlow(
-              context,
-              strategy: strategy,
-              screen: SelectRecipientScreen(strategy: strategy),
-            );
-          },
-        ),
-      ],
+  Widget _proposeCard(AppLocalizations l10n, MultisigAccount msig) => _actionCard(
+    iconAsset: 'assets/v2/action_send.svg',
+    label: l10n.multisigProposeTitle,
+    onTap: () {
+      final strategy = MultisigProposeStrategy(msig: msig);
+      startSendFlow(
+        context,
+        strategy: strategy,
+        screen: SelectRecipientScreen(strategy: strategy),
+      );
+    },
+  );
+
+  /// The one swap being followed shows its progress on the button and opens
+  /// from any account, even where swaps are no longer offered. Otherwise only
+  /// a transparent account with a key here can swap; the button stays,
+  /// disabled, for the other regular accounts so the layout doesn't change
+  /// between them.
+  Widget? _swapCard(AppLocalizations l10n, DisplayAccount active, ActiveSwap? swap) {
+    final starter = active is RegularAccount ? active.account : null;
+    final Widget Function() screen;
+    var isDisabled = false;
+    if (swap != null) {
+      screen = () => SwapProgressScreen(account: starter);
+    } else if (starter != null && ref.watch(remoteConfigProvider).swapAvailable) {
+      screen = () => SwapScreen(account: starter);
+      isDisabled = !starter.signsLocally;
+    } else {
+      return null;
+    }
+    return _actionCard(
+      iconAsset: 'assets/v2/action_swap.svg',
+      label: l10n.homeSwap,
+      isDisabled: isDisabled,
+      overlay: swap == null ? null : SwapProgressBadge(swap: swap),
+      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => screen())),
     );
   }
 

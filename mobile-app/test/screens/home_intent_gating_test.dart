@@ -166,6 +166,45 @@ void main() {
     expect(find.text('3:07'), findsOneWidget);
   });
 
+  // The swap being followed belongs to the wallet, not the selected account:
+  // it shows and opens from any home, while only an account with a key here
+  // may start the next one.
+  final entrusted = EntrustedAccount(
+    parentAccountId: makeAccount(1).accountId,
+    index: 0,
+    name: 'Entrusted',
+    accountId: 'qzentrusted${'x' * 40}',
+  );
+  for (final (kind, active) in [
+    ('multisig', MultisigDisplayAccount(makeMultisigAccount())),
+    ('entrusted', EntrustedDisplayAccount(entrusted)),
+  ]) {
+    testWidgets('a swap being followed shows on a $kind home and opens, though no swap can start there', (
+      tester,
+    ) async {
+      final account = makeAccount(1);
+      final settings = settingsFollowing(account, swapOf(account, SwapStatus.failed))
+        ..activeAccount = active
+        ..multisigs = [makeMultisigAccount()];
+      await pumpHome(tester, settings: settings, auth: TestLocalAuthController(authenticated: true));
+
+      expect(find.text('Send'), findsNothing);
+      expect(find.text('Propose'), kind == 'multisig' ? findsOneWidget : findsNothing);
+      expect(find.byType(SwapProgressBadge), findsOneWidget);
+      expect(find.text('3:07'), findsOneWidget);
+      expect(dotColor(tester, 2), tester.element(find.byType(SwapProgressBadge)).colorsV3.semanticEmber);
+
+      await tester.tap(find.text('Swap'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(find.byType(SwapProgressScreen), findsOneWidget);
+      QuantusButton button(String label) =>
+          tester.widget<QuantusButton>(find.ancestor(of: find.text(label), matching: find.byType(QuantusButton)));
+      expect(button('Start a New Swap').isDisabled, isTrue);
+      expect(button('Done').isDisabled, isFalse);
+    });
+  }
+
   // Each platform follows its own flag; the other platform's flag is set to
   // the opposite so it visibly has no say.
   for (final (enabled, geoNearAllowed) in [(true, true), (false, true), (true, false)]) {
