@@ -2726,10 +2726,6 @@
     "@swapStartNew": {
       "description": "Button on a failed swap"
     },
-    "swapContactSupport": "Contact Support",
-    "@swapContactSupport": {
-      "description": "Link on a failed swap"
-    },
     "swapDepositToken": "Token",
     "@swapDepositToken": {
       "description": "Label of the row naming the token to deposit, at the top of the deposit screen"
@@ -2842,17 +2838,9 @@
         }
       }
     },
-    "swapProgressDelayed": "This swap is taking longer than usual. You can keep waiting, or dismiss it and start another. Funds already sent are still swapped or refunded by NEAR Intents.",
-    "@swapProgressDelayed": {
-      "description": "Notice on the progress screen once a swap has run for over ten minutes"
-    },
-    "swapDismiss": "Dismiss swap",
-    "@swapDismiss": {
-      "description": "Button that puts a stuck swap away so another can start"
-    },
-    "swapDepositCancel": "Cancel swap",
-    "@swapDepositCancel": {
-      "description": "Button on the deposit screen that puts the swap away before anything was sent"
+    "swapStopTracking": "Stop tracking swap",
+    "@swapStopTracking": {
+      "description": "Link at the bottom of a running swap that puts it away so another can start; the swap still settles on its own"
     },
 
     "componentQrScannerTitle": "Scan QR Code",

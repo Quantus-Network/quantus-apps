@@ -123,11 +123,6 @@ class SwapDebugScreen extends ConsumerWidget {
         () => swap('PENDING_DEPOSIT', pollError: 'SwapApiException(503): Service unavailable'),
       ),
       _Scenario(
-        'Taking too long',
-        'Still swapping after more than ten minutes',
-        () => swap('PROCESSING', age: const Duration(minutes: 11)),
-      ),
-      _Scenario(
         'Deposit not seen by deadline',
         'The window closed with QTC unseen',
         () => swap('PENDING_DEPOSIT', deadline: closed, age: const Duration(minutes: 22)),

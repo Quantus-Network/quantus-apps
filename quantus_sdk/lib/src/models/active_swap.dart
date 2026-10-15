@@ -5,10 +5,6 @@ import 'package:quantus_sdk/src/models/swap_token.dart';
 /// The swap the app is following: its live order from the moment it is
 /// confirmed until the user puts it away. At most one at a time.
 class ActiveSwap {
-  /// How long an unsettled swap may run before the user may put it away and
-  /// start another, assuming it did not work.
-  static const staleAfter = Duration(minutes: 10);
-
   final SwapOrder order;
   final String accountId;
   final String accountName;
@@ -47,9 +43,6 @@ class ActiveSwap {
   bool get isFinal => order.status.isFinal;
 
   Duration elapsedAt(DateTime now) => (settledAt ?? now).difference(startedAt);
-
-  /// Unsettled for longer than [staleAfter].
-  bool isStale(DateTime now) => !isFinal && now.difference(startedAt) >= staleAfter;
 
   /// The deposit window closed with 1Click still waiting for the deposit.
   bool deadlinePassed(DateTime now) => order.status == SwapStatus.pendingDeposit && now.isAfter(order.quote.deadline);

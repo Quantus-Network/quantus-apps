@@ -1092,7 +1092,7 @@ void main() {
       await settle(tester);
       expect(banner(l10n.swapProgressStatusUnavailable('')), findsOneWidget);
       expect(stepState(tester, l10n.swapStepSwapping), StepRowState.active);
-      expect(find.text(l10n.swapDismiss), findsNothing);
+      expect(find.text(l10n.swapStopTracking), findsOneWidget);
 
       oneClick.statusCode = 200;
       oneClick.status = 'SUCCESS';
@@ -1123,24 +1123,11 @@ void main() {
       expect(find.text(l10n.swapCompleteTitle), findsOneWidget);
     });
 
-    testWidgets('after ten minutes an unsettled swap can be dismissed', (tester) async {
-      await pumpSwap(
-        tester,
-        activeSwap(
-          SwapOrder(quote: liveQuote, status: SwapStatus.processing),
-          age: const Duration(minutes: 9),
-        ),
-      );
-      expect(banner(l10n.swapProgressDelayed), findsNothing);
-      expect(find.text(l10n.swapDismiss), findsNothing);
-
-      await tester.pump(const Duration(minutes: 1));
-      await settle(tester);
-      expect(banner(l10n.swapProgressDelayed), findsOneWidget);
-      expect(find.text(l10n.swapContactSupport), findsOneWidget);
+    testWidgets('a running swap can be put away at any time', (tester) async {
+      await pumpSwap(tester, activeSwap(SwapOrder(quote: liveQuote, status: SwapStatus.processing)));
 
       final container = containerOf(tester);
-      await tester.tap(find.text(l10n.swapDismiss));
+      await tester.tap(find.text(l10n.swapStopTracking));
       await settle(tester);
       expect(container.read(activeSwapProvider), isNull);
       expect(container.read(settingsServiceProvider).getActiveSwap(), isNull);
@@ -1178,7 +1165,7 @@ void main() {
 
       expect(find.text(l10n.swapInProgressTitle), findsOneWidget);
       expect(banner(l10n.swapProgressDepositNotSeen(account.name)), findsOneWidget);
-      expect(find.text(l10n.swapDismiss), findsOneWidget);
+      expect(find.text(l10n.swapStopTracking), findsOneWidget);
     });
 
     for (final (who, account) in [
@@ -1333,8 +1320,8 @@ void main() {
       expect(find.text(l10n.swapDepositMemoNotice), findsNothing);
 
       final container = containerOf(tester);
-      await tester.scrollUntilVisible(find.text(l10n.swapDepositCancel), 200);
-      await tester.tap(find.text(l10n.swapDepositCancel));
+      await tester.scrollUntilVisible(find.text(l10n.swapStopTracking), 200);
+      await tester.tap(find.text(l10n.swapStopTracking));
       await settle(tester);
       expect(container.read(activeSwapProvider), isNull);
     });

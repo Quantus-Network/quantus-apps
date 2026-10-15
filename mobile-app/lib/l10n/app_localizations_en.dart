@@ -1864,9 +1864,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get swapStartNew => 'Start a New Swap';
 
   @override
-  String get swapContactSupport => 'Contact Support';
-
-  @override
   String get swapDepositToken => 'Token';
 
   @override
@@ -1927,14 +1924,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get swapProgressDelayed =>
-      'This swap is taking longer than usual. You can keep waiting, or dismiss it and start another. Funds already sent are still swapped or refunded by NEAR Intents.';
-
-  @override
-  String get swapDismiss => 'Dismiss swap';
-
-  @override
-  String get swapDepositCancel => 'Cancel swap';
+  String get swapStopTracking => 'Stop tracking swap';
 
   @override
   String get componentQrScannerTitle => 'Scan QR Code';

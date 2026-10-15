@@ -34,7 +34,7 @@ class ActiveSwapNotifier extends Notifier<ActiveSwap?> {
   }
 
   /// Puts the swap away. Once it has settled it is done with; before that the
-  /// user gives up on it.
+  /// user stops following it, and it settles on its own.
   Future<void> clear() {
     _supersede();
     state = null;

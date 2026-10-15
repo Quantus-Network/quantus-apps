@@ -1867,9 +1867,6 @@ class AppLocalizationsId extends AppLocalizations {
   String get swapStartNew => 'Mulai Swap Baru';
 
   @override
-  String get swapContactSupport => 'Hubungi Dukungan';
-
-  @override
   String get swapDepositToken => 'Token';
 
   @override
@@ -1930,14 +1927,7 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
-  String get swapProgressDelayed =>
-      'Swap ini memakan waktu lebih lama dari biasanya. Anda dapat terus menunggu, atau menutupnya dan memulai swap lain. Dana yang sudah dikirim tetap di-swap atau dikembalikan oleh NEAR Intents.';
-
-  @override
-  String get swapDismiss => 'Tutup swap';
-
-  @override
-  String get swapDepositCancel => 'Batalkan swap';
+  String get swapStopTracking => 'Berhenti melacak swap';
 
   @override
   String get componentQrScannerTitle => 'Pindai Kode QR';

@@ -3470,12 +3470,6 @@ abstract class AppLocalizations {
   /// **'Start a New Swap'**
   String get swapStartNew;
 
-  /// Link on a failed swap
-  ///
-  /// In en, this message translates to:
-  /// **'Contact Support'**
-  String get swapContactSupport;
-
   /// Label of the row naming the token to deposit, at the top of the deposit screen
   ///
   /// In en, this message translates to:
@@ -3572,23 +3566,11 @@ abstract class AppLocalizations {
   /// **'The deposit was not seen before the deadline. If it arrives late, it is refunded to {refund}.'**
   String swapProgressDepositNotSeen(String refund);
 
-  /// Notice on the progress screen once a swap has run for over ten minutes
+  /// Link at the bottom of a running swap that puts it away so another can start; the swap still settles on its own
   ///
   /// In en, this message translates to:
-  /// **'This swap is taking longer than usual. You can keep waiting, or dismiss it and start another. Funds already sent are still swapped or refunded by NEAR Intents.'**
-  String get swapProgressDelayed;
-
-  /// Button that puts a stuck swap away so another can start
-  ///
-  /// In en, this message translates to:
-  /// **'Dismiss swap'**
-  String get swapDismiss;
-
-  /// Button on the deposit screen that puts the swap away before anything was sent
-  ///
-  /// In en, this message translates to:
-  /// **'Cancel swap'**
-  String get swapDepositCancel;
+  /// **'Stop tracking swap'**
+  String get swapStopTracking;
 
   /// Text for app bar or button label on QR scanner component
   ///

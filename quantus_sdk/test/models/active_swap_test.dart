@@ -68,12 +68,7 @@ void main() {
     expect(ActiveSwap.fromJson(jsonDecode(jsonEncode(done.toJson()))).settledAt, done.settledAt);
   });
 
-  test('is stale ten minutes in unless settled, and a pending deposit past its deadline is unseen', () {
-    final late = now.add(const Duration(minutes: 10));
-    expect(swap(SwapStatus.processing).isStale(late), isTrue);
-    expect(swap(SwapStatus.processing).isStale(now.add(const Duration(minutes: 9))), isFalse);
-    expect(swap(SwapStatus.success).isStale(late), isFalse);
-
+  test('a pending deposit past its deadline is unseen', () {
     final past = deadline.add(const Duration(seconds: 1));
     expect(swap(SwapStatus.pendingDeposit).deadlinePassed(past), isTrue);
     expect(swap(SwapStatus.pendingDeposit).deadlinePassed(deadline.subtract(const Duration(seconds: 1))), isFalse);

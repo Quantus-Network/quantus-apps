@@ -10,7 +10,6 @@ import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
-import 'package:resonance_network_wallet/shared/utils/open_external_url.dart';
 import 'package:resonance_network_wallet/shared/utils/share_utils.dart';
 import 'package:resonance_network_wallet/v2/components/copy_icon_button.dart';
 import 'package:resonance_network_wallet/v2/components/link_button.dart';
@@ -25,8 +24,8 @@ import 'package:resonance_network_wallet/v2/screens/swap/swap_summary.dart';
 
 /// Follows the active swap: the deposit address while a swap into QTC (or,
 /// in preflight, any swap) waits for its deposit, then progress, and finally
-/// the completed or failed swap. Leaving by Done, Dismiss, Cancel or Start
-/// new puts the swap away, so the next tap on Swap starts a fresh one.
+/// the completed or failed swap. Leaving by Done, Stop tracking or Start new
+/// puts the swap away, so the next tap on Swap starts a fresh one.
 class SwapProgressScreen extends ConsumerStatefulWidget {
   /// The account a new swap would start from; none when the selected
   /// account cannot swap.
@@ -126,7 +125,6 @@ class _SwapInProgress extends ConsumerWidget {
     final stage = swapStage(order, depositByHand: swap.depositByHand);
     final pollError = swap.pollError;
     final deadlinePassed = swap.deadlinePassed(now);
-    final stuck = deadlinePassed || swap.isStale(now);
 
     return ScaffoldBase(
       appBar: V2AppBar(
@@ -162,10 +160,6 @@ class _SwapInProgress extends ConsumerWidget {
               const SizedBox(height: 16),
               QuantusBanner(tone: BannerTone.sand, message: l10n.swapProgressDepositNotSeen(swap.accountName)),
             ],
-            if (swap.isStale(now)) ...[
-              const SizedBox(height: 16),
-              QuantusBanner(tone: BannerTone.sand, message: l10n.swapProgressDelayed),
-            ],
           ],
         ),
       ),
@@ -186,20 +180,12 @@ class _SwapInProgress extends ConsumerWidget {
               textAlign: TextAlign.center,
               style: text.body.copyWith(color: colors.textMuted2),
             ),
-            if (stuck) ...[
-              const SizedBox(height: 24),
-              QuantusButton.simple(
-                label: l10n.swapDismiss,
-                variant: ButtonVariant.staged,
-                onTap: () => _finish(context, ref),
-              ),
-              const SizedBox(height: 4),
-              QuantusButton.simple(
-                label: l10n.swapContactSupport,
-                variant: ButtonVariant.underline,
-                onTap: () => openUrl(AppConstants.techSupportUrl),
-              ),
-            ],
+            const SizedBox(height: 8),
+            QuantusButton.simple(
+              label: l10n.swapStopTracking,
+              variant: ButtonVariant.underline,
+              onTap: () => _finish(context, ref),
+            ),
           ],
         ),
       ),
@@ -407,12 +393,6 @@ class _SwapFailed extends ConsumerWidget {
               variant: ButtonVariant.staged,
               onTap: () => _finish(context, ref),
             ),
-            const SizedBox(height: 4),
-            QuantusButton.simple(
-              label: l10n.swapContactSupport,
-              variant: ButtonVariant.underline,
-              onTap: () => openUrl(AppConstants.techSupportUrl),
-            ),
           ],
         ),
       ),
@@ -574,7 +554,7 @@ class _SwapDeposit extends ConsumerWidget {
             ),
             const SizedBox(height: 8),
             QuantusButton.simple(
-              label: l10n.swapDepositCancel,
+              label: l10n.swapStopTracking,
               variant: ButtonVariant.underline,
               onTap: () => _finish(context, ref),
             ),
