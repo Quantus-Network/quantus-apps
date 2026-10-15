@@ -1,15 +1,11 @@
-import 'dart:convert';
-
 import 'package:clock/clock.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/models/active_swap.dart';
 import 'package:resonance_network_wallet/models/combined_transactions_list.dart';
 import 'package:resonance_network_wallet/models/fiat_currency.dart';
-import 'package:resonance_network_wallet/providers/active_swap_provider.dart';
 import 'package:resonance_network_wallet/providers/active_account_transactions_provider.dart';
 import 'package:resonance_network_wallet/providers/currency_display_provider.dart';
 import 'package:resonance_network_wallet/providers/local_auth_provider.dart';
@@ -118,8 +114,7 @@ void main() {
   }
 
   FakeSettingsService settingsFollowing(Account account, ActiveSwap swap) =>
-      FakeSettingsService(activeAccount: RegularAccount(account))
-        ..strings[ActiveSwapNotifier.storageKey] = jsonEncode(swap.toJson());
+      FakeSettingsService(activeAccount: RegularAccount(account), activeSwap: swap);
 
   Color dotColor(WidgetTester tester, int index) {
     final dots = find.descendant(of: find.byType(SwapProgressDots), matching: find.byType(Container));

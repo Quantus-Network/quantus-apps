@@ -89,6 +89,7 @@ export 'src/services/swap_token_icon_service.dart';
 export 'src/models/swap_token.dart';
 export 'src/models/swap_quote.dart';
 export 'src/models/swap_order.dart';
+export 'src/models/active_swap.dart';
 export 'src/services/quersi_service.dart';
 export 'src/services/senoti_service.dart';
 export 'src/services/circuit_manager.dart';

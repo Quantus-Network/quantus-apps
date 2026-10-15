@@ -1,4 +1,6 @@
-import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:quantus_sdk/src/models/swap_order.dart';
+import 'package:quantus_sdk/src/models/swap_quote.dart';
+import 'package:quantus_sdk/src/models/swap_token.dart';
 
 /// The swap the app is following: its live order from the moment it is
 /// confirmed until the user puts it away. At most one at a time.

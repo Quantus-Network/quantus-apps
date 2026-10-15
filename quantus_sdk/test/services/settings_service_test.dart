@@ -3,6 +3,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../fixtures/active_swap_fixture.dart';
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -286,6 +288,19 @@ void main() {
       await settingsService.removeWallet(1);
 
       expect(settingsService.pendingAccountScan(1), isNull);
+    });
+
+    test('active swap is set, read back and cleared', () async {
+      expect(settingsService.getActiveSwap(), isNull);
+      final now = DateTime.utc(2026, 10, 15, 12);
+      await settingsService.setActiveSwap(
+        activeSwapIn(SwapStatus.processing, startedAt: now, deadline: now.add(const Duration(minutes: 20))),
+      );
+      final kept = settingsService.getActiveSwap()!;
+      expect(kept.order.status, SwapStatus.processing);
+      expect(kept.startedAt.isAtSameMomentAs(now), isTrue);
+      await settingsService.clearActiveSwap();
+      expect(settingsService.getActiveSwap(), isNull);
     });
   });
 }

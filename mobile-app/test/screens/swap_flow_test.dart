@@ -14,7 +14,6 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/l10n/app_localizations.dart';
-import 'package:resonance_network_wallet/models/active_swap.dart';
 import 'package:resonance_network_wallet/models/swap_preflight.dart';
 import 'package:resonance_network_wallet/providers/active_swap_provider.dart';
 import 'package:resonance_network_wallet/providers/connectivity_provider.dart';
@@ -305,8 +304,7 @@ void main() {
 
   /// Settings with [swap] kept on the device, as a restart finds it.
   FakeSettingsService settingsWith(ActiveSwap swap) =>
-      FakeSettingsService(activeAccount: RegularAccount(account))
-        ..strings[ActiveSwapNotifier.storageKey] = jsonEncode(swap.toJson());
+      FakeSettingsService(activeAccount: RegularAccount(account), activeSwap: swap);
 
   ProviderContainer containerOf(WidgetTester tester) =>
       ProviderScope.containerOf(tester.element(find.byType(SwapProgressScreen)));
@@ -718,9 +716,7 @@ void main() {
       expect(swap.depositTxHash, '0xtxhash');
       expect(swap.depositByHand, isFalse);
       expect(swap.order.depositAddress, _deposit);
-      final kept = ActiveSwap.fromJson(
-        jsonDecode(settings.strings[ActiveSwapNotifier.storageKey]!) as Map<String, dynamic>,
-      );
+      final kept = settings.activeSwap!;
       expect(kept.order.depositAddress, _deposit);
       expect(kept.depositFee, _unit ~/ BigInt.from(50));
     });
@@ -1088,9 +1084,7 @@ void main() {
       await settle(tester);
       expect(stepState(tester, l10n.swapStepConfirming('Quantus')), StepRowState.done);
       expect(stepState(tester, l10n.swapStepSwapping), StepRowState.active);
-      final kept = ActiveSwap.fromJson(
-        jsonDecode(settings.strings[ActiveSwapNotifier.storageKey]!) as Map<String, dynamic>,
-      );
+      final kept = settings.activeSwap!;
       expect(kept.order.status, SwapStatus.processing);
 
       oneClick.statusCode = 503;
@@ -1149,7 +1143,7 @@ void main() {
       await tester.tap(find.text(l10n.swapDismiss));
       await settle(tester);
       expect(container.read(activeSwapProvider), isNull);
-      expect(container.read(settingsServiceProvider).getString(ActiveSwapNotifier.storageKey), isNull);
+      expect(container.read(settingsServiceProvider).getActiveSwap(), isNull);
     });
 
     testWidgets('a deposit the app sent that was not seen by the deadline says so and can be dismissed', (
@@ -1261,7 +1255,7 @@ void main() {
       oneClick.holdStatus!.complete();
       await settle(tester);
       expect(containerOf(tester).read(activeSwapProvider), isNull);
-      expect(settings.strings[ActiveSwapNotifier.storageKey], isNull);
+      expect(settings.activeSwap, isNull);
       expect(oneClick.requests.where((r) => r.url.path == '/v0/status'), hasLength(1));
     });
 

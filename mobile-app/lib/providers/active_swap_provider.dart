@@ -1,10 +1,8 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:clock/clock.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/models/active_swap.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/shared/utils/print.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/swap_providers.dart';
@@ -17,8 +15,6 @@ import 'package:resonance_network_wallet/v2/screens/swap/swap_providers.dart';
 final activeSwapProvider = NotifierProvider<ActiveSwapNotifier, ActiveSwap?>(ActiveSwapNotifier.new);
 
 class ActiveSwapNotifier extends Notifier<ActiveSwap?> {
-  static const storageKey = 'active_swap_v1';
-
   Timer? _poll;
   Future<void>? _inFlight;
   int _generation = 0;
@@ -26,10 +22,8 @@ class ActiveSwapNotifier extends Notifier<ActiveSwap?> {
   @override
   ActiveSwap? build() {
     ref.onDispose(() => _poll?.cancel());
-    final stored = ref.watch(settingsServiceProvider).getString(storageKey);
-    if (stored == null) return null;
-    final swap = ActiveSwap.fromJson(jsonDecode(stored) as Map<String, dynamic>);
-    _schedule(swap);
+    final swap = ref.watch(settingsServiceProvider).getActiveSwap();
+    if (swap != null) _schedule(swap);
     return swap;
   }
 
@@ -44,7 +38,7 @@ class ActiveSwapNotifier extends Notifier<ActiveSwap?> {
   Future<void> clear() {
     _supersede();
     state = null;
-    return ref.read(settingsServiceProvider).remove(storageKey);
+    return ref.read(settingsServiceProvider).clearActiveSwap();
   }
 
   /// Polls now instead of at the next interval, or joins the poll in flight.
@@ -74,7 +68,7 @@ class ActiveSwapNotifier extends Notifier<ActiveSwap?> {
     unawaited(
       ref
           .read(settingsServiceProvider)
-          .setString(storageKey, jsonEncode(swap.toJson()))
+          .setActiveSwap(swap)
           .catchError((Object e) => quantusPrint('Active swap save failed: $e')),
     );
   }
