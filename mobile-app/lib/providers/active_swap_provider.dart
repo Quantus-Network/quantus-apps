@@ -12,13 +12,15 @@ import 'package:resonance_network_wallet/v2/screens/swap/swap_providers.dart';
 /// The swap being followed, kept on the device so it survives a restart and
 /// polled through 1Click's status endpoint until it settles. A poll that
 /// fails is recorded on the swap and tried again at the next interval; the
-/// error leaves it once a poll succeeds.
+/// error leaves it once a poll succeeds. One poll runs at a time, so an
+/// older answer can never overwrite a newer one.
 final activeSwapProvider = NotifierProvider<ActiveSwapNotifier, ActiveSwap?>(ActiveSwapNotifier.new);
 
 class ActiveSwapNotifier extends Notifier<ActiveSwap?> {
   static const storageKey = 'active_swap_v1';
 
   Timer? _poll;
+  Future<void>? _inFlight;
   int _generation = 0;
 
   @override
@@ -46,10 +48,10 @@ class ActiveSwapNotifier extends Notifier<ActiveSwap?> {
     return ref.read(settingsServiceProvider).remove(storageKey);
   }
 
-  /// Polls now instead of at the next interval.
+  /// Polls now instead of at the next interval, or joins the poll in flight.
   Future<void> refresh() {
     _poll?.cancel();
-    return _refresh();
+    return _inFlight ??= _refresh().whenComplete(() => _inFlight = null);
   }
 
   void _set(ActiveSwap swap) {
@@ -66,7 +68,7 @@ class ActiveSwapNotifier extends Notifier<ActiveSwap?> {
   void _schedule(ActiveSwap swap) {
     _poll?.cancel();
     if (swap.simulated || swap.isFinal) return;
-    _poll = Timer(SwapService.statusPollInterval, _refresh);
+    _poll = Timer(SwapService.statusPollInterval, refresh);
   }
 
   Future<void> _refresh() async {

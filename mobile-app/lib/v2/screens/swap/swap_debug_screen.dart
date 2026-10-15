@@ -5,6 +5,7 @@ import 'package:quantus_sdk/quantus_sdk.dart' hide ScaffoldBase;
 import 'package:resonance_network_wallet/models/active_swap.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/active_swap_provider.dart';
+import 'package:resonance_network_wallet/shared/utils/account_utils.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/settings_divider.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/settings_tappable_row.dart';
@@ -155,7 +156,7 @@ class SwapDebugScreen extends ConsumerWidget {
     final colors = context.colorsV3;
     final text = context.themeTextV3;
     final active = ref.watch(activeAccountProvider).value;
-    final account = active is RegularAccount ? active.account : null;
+    final account = active is RegularAccount && active.account.signsLocally ? active.account : null;
     final swap = ref.watch(activeSwapProvider);
     final current = swap == null
         ? 'No active swap'
@@ -165,7 +166,7 @@ class SwapDebugScreen extends ConsumerWidget {
       appBar: const V2AppBar(title: title),
       mainContent: account == null
           ? Center(
-              child: Text('Select a regular account first', style: text.body.copyWith(color: colors.textMuted)),
+              child: Text('Select an account that can swap first', style: text.body.copyWith(color: colors.textMuted)),
             )
           : ListView(
               children: [

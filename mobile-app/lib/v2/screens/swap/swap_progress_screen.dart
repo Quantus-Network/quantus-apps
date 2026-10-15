@@ -15,6 +15,7 @@ import 'package:resonance_network_wallet/shared/utils/open_external_url.dart';
 import 'package:resonance_network_wallet/shared/utils/share_utils.dart';
 import 'package:resonance_network_wallet/v2/components/copy_icon_button.dart';
 import 'package:resonance_network_wallet/v2/components/link_button.dart';
+import 'package:resonance_network_wallet/shared/utils/account_utils.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/success_check.dart';
 import 'package:resonance_network_wallet/v2/components/token_icon.dart';
@@ -59,6 +60,30 @@ class _SwapProgressScreenState extends ConsumerState<SwapProgressScreen> {
       _ when awaitingDeposit => _SwapDeposit(swap: swap),
       _ => _SwapInProgress(swap: swap, now: now),
     };
+  }
+}
+
+/// Why the status cannot be checked, with a retry; shown on every screen of
+/// a swap that is still being polled.
+class _PollErrorNotice extends ConsumerWidget {
+  final String error;
+
+  const _PollErrorNotice({required this.error});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = ref.watch(l10nProvider);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        QuantusBanner(tone: BannerTone.sand, message: l10n.swapProgressStatusUnavailable(error)),
+        const SizedBox(height: 8),
+        Align(
+          alignment: Alignment.centerRight,
+          child: LinkButton(label: l10n.commonRetry, onTap: () => ref.read(activeSwapProvider.notifier).refresh()),
+        ),
+      ],
+    );
   }
 }
 
@@ -131,18 +156,7 @@ class _SwapInProgress extends ConsumerWidget {
                     : StepRowState.pending,
                 label: label,
               ),
-            if (pollError != null) ...[
-              const SizedBox(height: 16),
-              QuantusBanner(tone: BannerTone.sand, message: l10n.swapProgressStatusUnavailable(pollError)),
-              const SizedBox(height: 8),
-              Align(
-                alignment: Alignment.centerRight,
-                child: LinkButton(
-                  label: l10n.commonRetry,
-                  onTap: () => ref.read(activeSwapProvider.notifier).refresh(),
-                ),
-              ),
-            ],
+            if (pollError != null) ...[const SizedBox(height: 16), _PollErrorNotice(error: pollError)],
             if (deadlinePassed) ...[
               const SizedBox(height: 16),
               QuantusBanner(tone: BannerTone.sand, message: l10n.swapProgressDepositNotSeen(swap.accountName)),
@@ -336,6 +350,7 @@ class _SwapFailed extends ConsumerWidget {
     final order = swap.order;
     final refunded = order.status == SwapStatus.refunded;
     final warning = expired || order.status == SwapStatus.incompleteDeposit;
+    final pollError = swap.isFinal ? null : swap.pollError;
 
     return ScaffoldBase(
       appBar: V2AppBar(
@@ -370,6 +385,7 @@ class _SwapFailed extends ConsumerWidget {
               tone: warning ? BannerTone.sand : BannerTone.ember,
               message: _message(l10n, fmt, preflight: ref.watch(swapPreflightProvider) != null),
             ),
+            if (pollError != null) ...[const SizedBox(height: 16), _PollErrorNotice(error: pollError)],
           ],
         ),
       ),
@@ -379,8 +395,14 @@ class _SwapFailed extends ConsumerWidget {
           children: [
             QuantusButton.simple(
               label: l10n.swapStartNew,
-              isDisabled: !ref.watch(remoteConfigProvider.select((c) => c.swapAvailable)),
+              isDisabled: !ref.watch(remoteConfigProvider.select((c) => c.swapAvailable)) || !account.signsLocally,
               onTap: () => _startNew(context, ref, account),
+            ),
+            const SizedBox(height: 4),
+            QuantusButton.simple(
+              label: l10n.commonDone,
+              variant: ButtonVariant.staged,
+              onTap: () => _finish(context, ref),
             ),
             const SizedBox(height: 4),
             QuantusButton.simple(
@@ -514,6 +536,7 @@ class _SwapDeposit extends ConsumerWidget {
               style: text.bodyEmphasis.copyWith(color: colors.accentFlare),
               textAlign: TextAlign.center,
             ),
+            if (swap.pollError case final error?) ...[const SizedBox(height: 16), _PollErrorNotice(error: error)],
             const SizedBox(height: 24),
             Row(
               children: [
