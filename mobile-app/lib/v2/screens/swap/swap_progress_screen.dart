@@ -461,19 +461,30 @@ class _SwapDeposit extends ConsumerWidget {
                 border: Border.all(color: colors.borderHairline),
                 borderRadius: BorderRadius.vertical(bottom: corner),
               ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  TokenIcon(token: from, size: 28),
-                  const SizedBox(width: 8),
-                  Flexible(
-                    child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      child: Text(
-                        formatSwapAmount(l10n, fmt, quote.amountIn, from, exact: true),
-                        style: text.amountHero.copyWith(color: colors.textContent),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      TokenIcon(token: from, size: 28),
+                      const SizedBox(width: 8),
+                      Flexible(
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            formatSwapAmount(l10n, fmt, quote.amountIn, from, exact: true),
+                            style: text.amountHero.copyWith(color: colors.textContent),
+                          ),
+                        ),
                       ),
-                    ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    l10n.swapDepositNetwork(from.networkName),
+                    textAlign: TextAlign.center,
+                    style: text.headingRow.copyWith(color: colors.textContent),
                   ),
                 ],
               ),

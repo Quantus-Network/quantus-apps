@@ -1546,6 +1546,7 @@ void main() {
       expect(find.text('bc1qdeposit'), findsOneWidget);
       expect(find.text(l10n.commonAmountBalance('0.12345678', 'BTC')), findsOneWidget);
       expect(find.text(l10n.swapDepositNotice('BTC', 'Bitcoin')), findsOneWidget);
+      expect(find.text(l10n.swapDepositNetwork('Bitcoin')), findsOneWidget);
       expect(find.text(l10n.swapDepositMemoNotice), findsNothing);
       expect(find.text(l10n.swapInProgressTitle), findsNothing);
 

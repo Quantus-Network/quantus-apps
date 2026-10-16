@@ -2771,6 +2771,15 @@
     "@swapDepositMemoNotice": {
       "description": "Warning under a deposit memo"
     },
+    "swapDepositNetwork": "{network} network",
+    "@swapDepositNetwork": {
+      "description": "Under the amount on the deposit card: the network the deposit must be sent on",
+      "placeholders": {
+        "network": {
+          "type": "String"
+        }
+      }
+    },
     "swapDepositNotice": "Send only {symbol} on {network} to this address. We'll detect your deposit automatically and start the swap. Sending other assets may result in loss of funds.",
     "@swapDepositNotice": {
       "description": "Deposit wallet notice on deposit screen",

@@ -1896,6 +1896,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get swapDepositMemoNotice => 'Include this memo with your deposit. A deposit without it is not processed.';
 
   @override
+  String swapDepositNetwork(String network) {
+    return '$network network';
+  }
+
+  @override
   String swapDepositNotice(String symbol, String network) {
     return 'Send only $symbol on $network to this address. We\'ll detect your deposit automatically and start the swap. Sending other assets may result in loss of funds.';
   }

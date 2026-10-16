@@ -3530,6 +3530,12 @@ abstract class AppLocalizations {
   /// **'Include this memo with your deposit. A deposit without it is not processed.'**
   String get swapDepositMemoNotice;
 
+  /// Under the amount on the deposit card: the network the deposit must be sent on
+  ///
+  /// In en, this message translates to:
+  /// **'{network} network'**
+  String swapDepositNetwork(String network);
+
   /// Deposit wallet notice on deposit screen
   ///
   /// In en, this message translates to:

@@ -539,6 +539,7 @@
   "swapDepositMemo": "Memo",
   "swapDepositMemoCopied": "Memo deposit disalin ke clipboard",
   "swapDepositMemoNotice": "Sertakan memo ini pada deposit Anda. Deposit tanpa memo tidak akan diproses.",
+  "swapDepositNetwork": "Jaringan {network}",
   "swapDepositNotice": "Kirim hanya {symbol} di {network} ke alamat ini. Kami akan mendeteksi deposit Anda secara otomatis dan memulai swap. Mengirim aset lain dapat menyebabkan kehilangan dana.",
   "swapRequestTimedOut": "Permintaan melebihi batas waktu",
   "swapProgressStatusUnavailable": "Status swap tidak dapat diperiksa saat ini: {error}",

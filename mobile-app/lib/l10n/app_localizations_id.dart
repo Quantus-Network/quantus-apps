@@ -1899,6 +1899,11 @@ class AppLocalizationsId extends AppLocalizations {
   String get swapDepositMemoNotice => 'Sertakan memo ini pada deposit Anda. Deposit tanpa memo tidak akan diproses.';
 
   @override
+  String swapDepositNetwork(String network) {
+    return 'Jaringan $network';
+  }
+
+  @override
   String swapDepositNotice(String symbol, String network) {
     return 'Kirim hanya $symbol di $network ke alamat ini. Kami akan mendeteksi deposit Anda secara otomatis dan memulai swap. Mengirim aset lain dapat menyebabkan kehilangan dana.';
   }
