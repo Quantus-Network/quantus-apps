@@ -7,10 +7,10 @@ import 'package:quantus_cold_wallet/models/cold_account.dart';
 import 'package:quantus_cold_wallet/providers/wallet_providers.dart';
 import 'package:quantus_cold_wallet/screens/sign_transaction_screen.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:quantus_cold_wallet/services/cold_auth_service.dart';
 import 'package:quantus_cold_wallet/services/vault_service.dart';
 
 import 'call_display_test.dart' show signerAddress;
+import 'fakes/wallet_fakes.dart';
 
 const otherAddress = 'qzmNaLjPU7hcvkjHpGmrVDPD9y12vdAFimCSrP1GkhVFJMaUq';
 const mnemonic = 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about';
@@ -40,64 +40,51 @@ Future<void> pumpFor(WidgetTester tester, String signer, {required Map<String, C
   await tester.pumpAndSettle();
 }
 
-class _AlwaysAuthenticates extends ColdAuthService {
-  @override
-  Future<bool> authenticate(String reason) async => true;
-
-  @override
-  Future<bool> canUseBiometrics() async => true;
-}
-
 void main() {
   group('the vault stays openable across a session', () {
+    late ProviderContainer container;
     late WalletController controller;
 
-    setUp(() {
+    setUp(() async {
       FlutterSecureStorage.setMockInitialValues({});
-      final container = ProviderContainer();
+      container = ProviderContainer(overrides: [coldAuthServiceProvider.overrideWithValue(FakeColdAuth())]);
       addTearDown(container.dispose);
       controller = container.read(walletControllerProvider.notifier);
+      await awaitInit(container);
     });
 
-    test('rotating the password then adding an account leaves the vault openable', () async {
-      await controller.createWallet(
+    test('moving a password vault to the device key then adding an account leaves the vault openable', () async {
+      await VaultService().createVault(
         mnemonic: mnemonic,
         password: 'alpha',
-        enableBiometric: false,
         accounts: [ColdAccount(label: 'One', index: 0, scheme: DilithiumScheme.mlDsa87)],
       );
+      final migrated = ProviderContainer(overrides: [coldAuthServiceProvider.overrideWithValue(FakeColdAuth())]);
+      addTearDown(migrated.dispose);
+      final legacy = migrated.read(walletControllerProvider.notifier);
+      await awaitInit(migrated);
 
-      expect(
-        await controller.changePassword(currentPassword: 'alpha', newPassword: 'beta'),
-        PasswordChangeResult.changed,
-      );
-      await controller.addAccount(ColdAccount(label: 'Two', index: 1, scheme: DilithiumScheme.mlDsa87));
+      expect(await legacy.migrateLegacy('alpha'), isTrue);
+      await legacy.addAccount(ColdAccount(label: 'Two', index: 1, scheme: DilithiumScheme.mlDsa87));
 
-      final reopened = await VaultService().unlockWithPassword('beta');
+      final reopened = await VaultService().unlockWithBiometricKey();
       expect(reopened.mnemonic, mnemonic);
       expect(reopened.accounts, hasLength(2));
     });
 
-    test('an account can be added after a biometric unlock', () async {
-      final container = ProviderContainer(
-        overrides: [coldAuthServiceProvider.overrideWithValue(_AlwaysAuthenticates())],
-      );
-      addTearDown(container.dispose);
-      final biometric = container.read(walletControllerProvider.notifier);
-
-      await biometric.createWallet(
+    test('an account can be added after a device-key unlock', () async {
+      await controller.createWallet(
         mnemonic: mnemonic,
-        password: 'alpha',
-        enableBiometric: true,
         accounts: [ColdAccount(label: 'One', index: 0, scheme: DilithiumScheme.mlDsa87)],
+        protected: true,
       );
-      biometric.lock();
+      controller.lock();
 
-      expect(await biometric.unlockWithBiometric(), isTrue);
-      await biometric.addAccount(ColdAccount(label: 'Two', index: 1, scheme: DilithiumScheme.mlDsa87));
+      expect(await controller.unlockWithBiometric(), isTrue);
+      await controller.addAccount(ColdAccount(label: 'Two', index: 1, scheme: DilithiumScheme.mlDsa87));
 
       expect(container.read(accountsProvider), hasLength(2));
-      expect((await VaultService().unlockWithPassword('alpha')).accounts, hasLength(2));
+      expect((await VaultService().unlockWithBiometricKey()).accounts, hasLength(2));
     });
   });
 
@@ -159,7 +146,7 @@ void main() {
         held: {signerAddress: ColdAccount(label: 'One', index: 0, scheme: DilithiumScheme.mlDsa87)},
       );
 
-      expect(find.text('Sign'), findsOneWidget);
+      expect(find.widgetWithText(QuantusButton, 'Approve and Sign'), findsOneWidget);
       expect(find.textContaining('does not exist in this cold wallet'), findsNothing);
     });
 
@@ -171,7 +158,7 @@ void main() {
       );
 
       expect(find.textContaining('does not exist in this cold wallet'), findsOneWidget);
-      expect(find.text('Sign'), findsNothing);
+      expect(find.widgetWithText(QuantusButton, 'Approve and Sign'), findsNothing);
     });
   });
 }

@@ -1,12 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:quantus_cold_wallet/components/account_avatar.dart';
+import 'package:quantus_cold_wallet/components/anchored_menu.dart';
+import 'package:quantus_cold_wallet/components/offline_pill.dart';
 import 'package:quantus_cold_wallet/providers/connectivity_provider.dart';
-import 'package:quantus_cold_wallet/providers/settings_providers.dart';
 import 'package:quantus_cold_wallet/providers/wallet_providers.dart';
 import 'package:quantus_cold_wallet/screens/accounts_screen.dart';
 import 'package:quantus_cold_wallet/screens/scan_transaction_screen.dart';
 import 'package:quantus_cold_wallet/screens/settings_screen.dart';
+import 'package:quantus_cold_wallet/screens/show_key_screen.dart';
+import 'package:quantus_cold_wallet/ui/cold_theme.dart';
+import 'package:quantus_cold_wallet/components/cold_icon.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -15,101 +20,125 @@ class HomeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = context.colorsV3;
     final text = context.themeTextV3;
+    final online = ref.watch(isOnlineProvider);
 
     return ScaffoldBase(
-      appBar: V2AppBar(
-        title: 'Quantus Cold Wallet',
-        leading: GestureDetector(
-          onTap: () => ref.read(walletControllerProvider.notifier).lock(),
-          child: Icon(Icons.lock_outline, color: colors.textContent, size: 22),
-        ),
-        trailing: GestureDetector(
-          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen())),
-          child: Icon(Icons.settings_outlined, color: colors.textContent, size: 22),
+      appBar: Padding(
+        padding: const EdgeInsets.only(top: 6, bottom: 22),
+        child: Row(
+          children: [
+            Builder(
+              builder: (anchor) => _HeaderPill(
+                onTap: () => _openSwitcher(context, anchor, ref),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  spacing: 8,
+                  children: [
+                    Image.asset('assets/v2/uppercase_q.png', width: 32, height: 32),
+                    QuantusIcon(QuantusIcons.caretDown, size: 20, color: colors.textContent),
+                  ],
+                ),
+              ),
+            ),
+            const Spacer(),
+            _HeaderPill(
+              width: 44,
+              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen())),
+              child: ColdIcon(ColdIcons.gear, size: 20, color: colors.textContent),
+            ),
+          ],
         ),
       ),
       mainContent: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const SizedBox(height: 8),
-          Text(
-            'Choose an action. This signer stays offline at all times.',
-            style: text.body.copyWith(color: colors.textMuted),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 32),
-          _actionCard(
-            context,
-            icon: Icons.qr_code_2_rounded,
-            title: 'Show Key',
-            subtitle: 'Display your public address for a hot wallet to scan.',
-            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AccountsScreen())),
-          ),
-          const SizedBox(height: 16),
-          _actionCard(
-            context,
-            icon: Icons.qr_code_scanner_rounded,
-            title: 'Sign Transaction',
-            subtitle: 'Scan a transaction, review it, and produce a signature.',
-            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ScanTransactionScreen())),
-          ),
-        ],
-      ),
-      bottomContent:
-          !(ref.watch(coldSettingsProvider.select((s) => s.wifiOverrideEnabled)) && ref.watch(isOnlineProvider))
-          ? null
-          : ScaffoldBaseBottomContent(
-              child: QuantusButton.simple(
-                label: 'Online — tap to re-lock',
-                icon: Icon(Icons.wifi_rounded, size: 18, color: colors.textContent),
-                iconPlacement: IconPlacement.leading,
-                variant: ButtonVariant.danger,
-                onTap: () => ref.read(coldSettingsProvider.notifier).setWifiOverrideEnabled(false),
-              ),
-            ),
-    );
-  }
-
-  Widget _actionCard(
-    BuildContext context, {
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required VoidCallback onTap,
-  }) {
-    final colors = context.colorsV3;
-    final text = context.themeTextV3;
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: colors.bgSurface,
-          borderRadius: context.radiusV3.mdBorder,
-          border: Border.all(color: colors.borderHairline, width: 1),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 52,
-              height: 52,
-              decoration: BoxDecoration(color: colors.bgSurface2, borderRadius: context.radiusV3.smBorder),
-              child: Icon(icon, color: colors.accentFlare, size: 28),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
+          Expanded(
+            child: Center(
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(title, style: text.headingRow.copyWith(color: colors.textContent)),
-                  const SizedBox(height: 4),
-                  Text(subtitle, style: text.caption.copyWith(color: colors.textMuted)),
+                  ColdIcon(ColdIcons.wifiSlash, size: 54, color: online ? colors.semanticEmber : colors.semanticSage),
+                  const SizedBox(height: 28),
+                  Text(
+                    online ? 'Not Safe to Sign' : 'Ready to sign',
+                    style: text.titleHero.copyWith(color: colors.textContent),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    online
+                        ? 'You overrode the network lock. Switch your connections off.'
+                        : 'Offline. Nothing can reach this device.',
+                    style: text.bodyLarge.copyWith(color: colors.textMuted),
+                    textAlign: TextAlign.center,
+                  ),
                 ],
               ),
             ),
-            Icon(Icons.chevron_right, color: colors.textMuted, size: 22),
-          ],
+          ),
+          if (!online) const OfflinePill(),
+          const SizedBox(height: 92),
+        ],
+      ),
+      bottomContent: ScaffoldBaseBottomContent(
+        child: QuantusButton.simple(
+          label: 'Scan Transaction',
+          icon: ColdIcon(ColdIcons.scan, size: 20, color: colors.textVoid),
+          iconPlacement: IconPlacement.leading,
+          padding: coldButtonPadding,
+          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ScanTransactionScreen())),
         ),
+      ),
+    );
+  }
+
+  void _openSwitcher(BuildContext context, BuildContext anchor, WidgetRef ref) {
+    final addresses = ref.read(addressesProvider);
+    showAnchoredMenu(
+      context,
+      anchor: anchor,
+      groups: [
+        [
+          for (final (index, entry) in addresses.entries.indexed)
+            AnchoredMenuItem(
+              label: entry.value.label,
+              subtitle: shortAddress(entry.key),
+              leading: AccountAvatar(label: entry.value.label, size: 30),
+              isSelected: index == 0,
+              onTap: () =>
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => ShowKeyScreen(address: entry.key))),
+            ),
+        ],
+        [
+          AnchoredMenuItem(
+            label: 'Manage accounts',
+            isMuted: true,
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AccountsScreen())),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+/// 44pt glass pill (Figma Home header): the account switcher and the gear.
+class _HeaderPill extends StatelessWidget {
+  final Widget child;
+  final VoidCallback onTap;
+  final double? width;
+
+  const _HeaderPill({required this.child, required this.onTap, this.width});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: GlassButtonBase(
+        buttonHeight: 44,
+        buttonWidth: width,
+        borderRadius: BorderRadius.circular(22),
+        padding: EdgeInsets.symmetric(horizontal: width == null ? 12 : 0),
+        child: Center(child: child),
       ),
     );
   }

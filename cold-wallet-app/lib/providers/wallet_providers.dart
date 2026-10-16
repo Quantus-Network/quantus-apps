@@ -7,7 +7,7 @@ import 'package:quantus_cold_wallet/models/cold_account.dart';
 import 'package:quantus_cold_wallet/services/cold_auth_service.dart';
 import 'package:quantus_cold_wallet/services/vault_service.dart';
 
-enum WalletStatus { initializing, needsSetup, locked, unlocked }
+enum WalletStatus { initializing, needsSetup, needsMigration, locked, unlocked }
 
 /// Outcome of a password rotation. The vault write is the commit point:
 /// [changed] and [changedBiometricDisabled] both mean the new password is in
@@ -15,11 +15,16 @@ enum WalletStatus { initializing, needsSetup, locked, unlocked }
 /// and biometric unlock was turned off.
 enum PasswordChangeResult { wrongPassword, changed, changedBiometricDisabled }
 
+/// [WalletState.error] after the user dismissed the device prompt.
+const unlockCancelledError = 'cancelled';
+
 @immutable
 class WalletState {
   final WalletStatus status;
   final String? mnemonic;
   final List<ColdAccount> accounts;
+
+  /// A device key entry exists, so the vault opens without a password.
   final bool biometricEnabled;
   final String? error;
 
@@ -31,22 +36,41 @@ class WalletState {
     this.error,
   });
 
-  WalletState copyWith({WalletStatus? status, String? mnemonic, List<ColdAccount>? accounts, bool? biometricEnabled}) =>
-      WalletState(
-        status: status ?? this.status,
-        mnemonic: mnemonic ?? this.mnemonic,
-        accounts: accounts ?? this.accounts,
-        biometricEnabled: biometricEnabled ?? this.biometricEnabled,
-      );
+  WalletState copyWith({
+    WalletStatus? status,
+    String? mnemonic,
+    List<ColdAccount>? accounts,
+    bool? biometricEnabled,
+    String? error,
+  }) => WalletState(
+    status: status ?? this.status,
+    mnemonic: mnemonic ?? this.mnemonic,
+    accounts: accounts ?? this.accounts,
+    biometricEnabled: biometricEnabled ?? this.biometricEnabled,
+    error: error,
+  );
 }
 
 /// Injectable so a test can stand in for the platform biometric prompt.
 final coldAuthServiceProvider = Provider<ColdAuthService>((ref) => ColdAuthService());
 
+/// Injectable so a test can stand in for the Rust key derivation.
+final hdWalletServiceProvider = Provider<HdWalletService>((ref) => HdWalletService());
+
+/// Read fresh each time a screen watches it: the user can add or remove the
+/// device lock between visits.
+final deviceCanProtectProvider = FutureProvider.autoDispose<bool>(
+  (ref) => ref.watch(coldAuthServiceProvider).deviceCanProtect(),
+);
+
 class WalletController extends Notifier<WalletState> {
+  static const _keyLostMessage =
+      'This device can no longer open the wallet. Reset it and restore the key from your recovery phrase.';
+
   final VaultService _vault = VaultService();
 
   List<int>? _keyBytes;
+  bool _upgradeToProtected = false;
 
   VaultService get vault => _vault;
   ColdAuthService get auth => ref.read(coldAuthServiceProvider);
@@ -59,11 +83,49 @@ class WalletController extends Notifier<WalletState> {
 
   Future<void> _init() async {
     try {
-      final hasWallet = await _vault.hasWallet();
-      final biometric = await _vault.isBiometricEnabled();
+      if (!await _vault.hasWallet()) {
+        state = const WalletState(status: WalletStatus.needsSetup);
+        return;
+      }
+      final canProtect = await auth.deviceCanProtect();
+      if (await _vault.restoreVaultBackupIfPresent()) {
+        // A migration died between its vault write and a verified key entry:
+        // the password vault is back, so any entry it left is for a vault
+        // that no longer exists.
+        debugPrint('Restored the vault backup of an interrupted migration');
+        await _vault.deleteKeyEntry(protected: false);
+        if (canProtect) await _vault.deleteKeyEntry(protected: true);
+        state = const WalletState(status: WalletStatus.needsMigration);
+        return;
+      }
+      if (await _vault.hasPlainKey()) {
+        _upgradeToProtected = canProtect;
+        state = const WalletState(status: WalletStatus.locked, biometricEnabled: true);
+        return;
+      }
+      if (auth.storeAuthenticatesOncePerProcess) {
+        // Even an existence check opens the store and prompts there; the
+        // first unlock opens it instead, and one that finds no entry moves
+        // the wallet to migration.
+        state = const WalletState(status: WalletStatus.locked, biometricEnabled: true);
+        return;
+      }
+      final bool protectedKey;
+      try {
+        protectedKey = await _vault.hasProtectedKey();
+      } on VaultAccessCancelled {
+        state = const WalletState(status: WalletStatus.locked, biometricEnabled: true);
+        return;
+      } catch (e, st) {
+        // The OS can no longer open the store (lock removed, key invalidated).
+        // The vault stays; the lock screen offers the reset.
+        debugPrint('Protected key store unavailable at startup: $e\n$st');
+        state = const WalletState(status: WalletStatus.locked, biometricEnabled: true, error: _keyLostMessage);
+        return;
+      }
       state = WalletState(
-        status: hasWallet ? WalletStatus.locked : WalletStatus.needsSetup,
-        biometricEnabled: biometric,
+        status: protectedKey ? WalletStatus.locked : WalletStatus.needsMigration,
+        biometricEnabled: protectedKey,
       );
     } catch (e, st) {
       debugPrint('Wallet init failed reading secure storage: $e\n$st');
@@ -76,27 +138,28 @@ class WalletController extends Notifier<WalletState> {
     await _init();
   }
 
+  /// Creates the vault under an internal random secret and keeps its derived
+  /// key in the device key entry, [protected] by user presence or plain. If
+  /// the entry cannot be stored (cancelled prompt or storage error) the vault
+  /// is removed again and the error rethrown, so a vault without a readable
+  /// key never survives creation.
   Future<void> createWallet({
     required String mnemonic,
-    required String password,
-    required bool enableBiometric,
     required List<ColdAccount> accounts,
+    required bool protected,
   }) async {
-    await _vault.createVault(mnemonic: mnemonic, password: password, accounts: accounts);
-    if (enableBiometric) {
-      final result = await _vault.unlockWithPassword(password);
-      await _vault.storeBiometricKey(result.keyBytes);
-    } else {
-      // A biometric key left over from an earlier vault must not survive.
-      await _vault.disableBiometric();
+    final secret = VaultService.randomSecret();
+    await _vault.createVault(mnemonic: mnemonic, password: secret, accounts: accounts);
+    final result = await _vault.unlockWithPassword(secret);
+    try {
+      await _vault.storeBiometricKey(result.keyBytes, protected: protected);
+    } catch (e, st) {
+      debugPrint('Create wallet: device key could not be stored, removing the vault: $e\n$st');
+      await _vault.wipe();
+      rethrow;
     }
-    _keyBytes = (await _vault.unlockWithPassword(password)).keyBytes;
-    state = WalletState(
-      status: WalletStatus.unlocked,
-      mnemonic: mnemonic,
-      accounts: accounts,
-      biometricEnabled: enableBiometric,
-    );
+    _keyBytes = result.keyBytes;
+    state = WalletState(status: WalletStatus.unlocked, mnemonic: mnemonic, accounts: accounts, biometricEnabled: true);
   }
 
   Future<bool> unlockWithPassword(String password) async {
@@ -111,22 +174,50 @@ class WalletController extends Notifier<WalletState> {
     }
   }
 
+  /// Android's store answers silently once it has prompted in this process,
+  /// so a protected read there gets a fresh prompt first. The first read in a
+  /// process is gated by the store's own prompt, a plain entry by nothing.
+  Future<bool> _gateProtectedRead(String reason) async {
+    if (await _vault.hasPlainKey() || !_vault.protectedStoreOpened) return true;
+    return auth.gateProtectedRead(reason);
+  }
+
+  /// Opens the vault with the device key; the protected read is where the OS
+  /// prompts. A plain entry on a device that can protect is moved behind user
+  /// presence before the unlock counts, so that prompt gates it. Returns false
+  /// with [WalletState.error] set: [unlockCancelledError] for a dismissed
+  /// prompt, a message for a key this device can no longer release.
   Future<bool> unlockWithBiometric() async {
-    final authenticated = await auth.authenticate('Unlock your cold wallet');
-    if (!authenticated) return false;
     try {
+      if (!await _gateProtectedRead('Unlock your cold wallet')) {
+        state = state.copyWith(error: unlockCancelledError);
+        return false;
+      }
       final result = await _vault.unlockWithBiometricKey();
+      if (_upgradeToProtected) {
+        await _vault.storeBiometricKey(result.keyBytes, protected: true);
+        _upgradeToProtected = false;
+      }
       _keyBytes = result.keyBytes;
       state = state.copyWith(status: WalletStatus.unlocked, mnemonic: result.mnemonic, accounts: result.accounts);
       return true;
-    } on SecretBoxAuthenticationError {
-      // The vault removed a key that belonged to a previous vault; stop
-      // offering biometric unlock and let the user fall back to the password.
-      debugPrint('Biometric unlock failed with a stale key; biometric unlock disabled');
-      state = state.copyWith(biometricEnabled: false);
+    } on VaultAccessCancelled {
+      state = state.copyWith(error: unlockCancelledError);
       return false;
-    } catch (e) {
-      debugPrint('Biometric unlock failed: $e');
+    } on SecretBoxAuthenticationError {
+      // The vault removed a key that belonged to a previous vault; nothing
+      // else can open this vault.
+      debugPrint('Biometric unlock failed with a stale key; biometric unlock disabled');
+      state = state.copyWith(biometricEnabled: false, error: _keyLostMessage);
+      return false;
+    } on StateError catch (e) {
+      // A vault with no key entry is a password wallet.
+      debugPrint('Biometric unlock found nothing to unlock with: $e');
+      state = const WalletState(status: WalletStatus.needsMigration);
+      return false;
+    } catch (e, st) {
+      debugPrint('Biometric unlock failed: $e\n$st');
+      state = state.copyWith(error: '$_keyLostMessage\n$e');
       return false;
     }
   }
@@ -144,7 +235,8 @@ class WalletController extends Notifier<WalletState> {
       debugPrint('Change password: current password rejected');
       return PasswordChangeResult.wrongPassword;
     }
-    final biometric = await _vault.isBiometricEnabled();
+    final plainKey = await _vault.hasPlainKey();
+    final biometric = plainKey || await _vault.hasProtectedKey();
     await _vault.createVault(mnemonic: result.mnemonic, password: newPassword, accounts: result.accounts);
 
     // The vault is now under a key the old one cannot open, so anything that
@@ -154,7 +246,7 @@ class WalletController extends Notifier<WalletState> {
 
     if (!biometric) return PasswordChangeResult.changed;
     try {
-      await _vault.storeBiometricKey(fresh.keyBytes);
+      await _vault.storeBiometricKey(fresh.keyBytes, protected: !plainKey);
       return PasswordChangeResult.changed;
     } catch (e, st) {
       debugPrint('Change password: biometric key re-store failed, biometric unlock disabled: $e\n$st');
@@ -162,12 +254,68 @@ class WalletController extends Notifier<WalletState> {
         // The stored key still belongs to the old vault and can no longer
         // decrypt anything; leaving it would offer a biometric unlock that
         // always fails.
-        await _vault.disableBiometric();
+        await _vault.deleteKeyEntry(protected: !plainKey);
       } catch (e2, st2) {
         debugPrint('Change password: stale biometric key could not be removed: $e2\n$st2');
       }
       state = state.copyWith(biometricEnabled: false);
       return PasswordChangeResult.changedBiometricDisabled;
+    }
+  }
+
+  /// Moves a password vault to the device key: the existing rotation to an
+  /// internal secret, then the key entry, with the old blob kept aside until
+  /// the entry is verified readable. Returns false for a wrong password before
+  /// anything is written. A cancelled prompt or a storage failure after the
+  /// rotation puts the password vault back and rethrows, so the old password
+  /// keeps working.
+  Future<bool> migrateLegacy(String password) async {
+    final UnlockResult legacy;
+    try {
+      legacy = await _vault.unlockWithPassword(password);
+    } on SecretBoxAuthenticationError {
+      debugPrint('Migration: password rejected');
+      return false;
+    }
+    final protected = await auth.deviceCanProtect();
+    await _vault.backupVaultForMigration();
+    var keyAttempted = false;
+    try {
+      final result = await changePassword(currentPassword: password, newPassword: VaultService.randomSecret());
+      if (result != PasswordChangeResult.changed) throw StateError('Migration rotation reported $result');
+      final keyBytes = _keyBytes;
+      if (keyBytes == null) throw StateError('Migration rotation left no key');
+      keyAttempted = true;
+      await _vault.storeBiometricKey(keyBytes, protected: protected);
+    } catch (e, st) {
+      debugPrint('Migration failed, restoring the password vault: $e\n$st');
+      _keyBytes = null;
+      await _vault.restoreVaultBackupIfPresent();
+      if (keyAttempted) await _vault.deleteKeyEntry(protected: protected);
+      rethrow;
+    }
+    await _vault.deleteVaultBackup();
+    state = WalletState(
+      status: WalletStatus.unlocked,
+      mnemonic: legacy.mnemonic,
+      accounts: legacy.accounts,
+      biometricEnabled: true,
+    );
+    return true;
+  }
+
+  /// A fresh user-presence check: the OS prompt on iOS's read, a platform
+  /// prompt in front of Android's silent read, nothing for a plain entry. The
+  /// key read back must be the one this session unlocked with. False when the
+  /// prompt was dismissed.
+  Future<bool> confirmPresence() async {
+    final keyBytes = _keyBytes;
+    if (keyBytes == null) throw StateError('Wallet is locked');
+    try {
+      if (!await _gateProtectedRead('Confirm it is you to show the recovery phrase')) return false;
+      return listEquals((await _vault.unlockWithBiometricKey()).keyBytes, keyBytes);
+    } on VaultAccessCancelled {
+      return false;
     }
   }
 
@@ -210,8 +358,16 @@ class WalletController extends Notifier<WalletState> {
     state = WalletState(status: WalletStatus.locked, biometricEnabled: state.biometricEnabled);
   }
 
+  /// The lifecycle re-lock. Android's system prompt for the protected store
+  /// pauses the activity; that is not the user leaving the app.
+  void lockOnBackground() {
+    if (_vault.promptInProgress || auth.promptInProgress) return;
+    lock();
+  }
+
   Future<void> wipe() async {
     _keyBytes = null;
+    _upgradeToProtected = false;
     await _vault.wipe();
     state = const WalletState(status: WalletStatus.needsSetup);
   }

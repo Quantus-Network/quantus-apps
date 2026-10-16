@@ -58,7 +58,7 @@ void expectFailedClosed(WidgetTester tester) {
   expect(tester.takeException(), isNull);
   expect(find.text('Nothing was signed.'), findsOneWidget);
   expect(
-    find.widgetWithText(QuantusButton, 'Sign'),
+    find.widgetWithText(QuantusButton, 'Approve and Sign'),
     findsNothing,
     reason: 'the screen offered a way to sign a payload it could not read',
   );
@@ -224,7 +224,7 @@ void main() {
 
       expect(tester.takeException(), isNull);
       expect(find.textContaining('does not exist in this cold wallet'), findsOneWidget);
-      expect(find.widgetWithText(QuantusButton, 'Sign'), findsNothing);
+      expect(find.widgetWithText(QuantusButton, 'Approve and Sign'), findsNothing);
     });
   });
 
@@ -258,7 +258,7 @@ void main() {
 
         expect(tester.takeException(), isNull);
         expect(
-          find.widgetWithText(QuantusButton, 'Sign'),
+          find.widgetWithText(QuantusButton, 'Approve and Sign'),
           findsNothing,
           reason: '${call.label} reached a signable screen',
         );

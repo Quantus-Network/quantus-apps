@@ -1,16 +1,27 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:quantus_cold_wallet/app_version.dart';
+import 'package:quantus_cold_wallet/components/step_header.dart';
 import 'package:quantus_cold_wallet/debug/debug_calls_screen.dart';
 import 'package:quantus_cold_wallet/screens/sign_near_transaction_screen.dart';
 import 'package:quantus_cold_wallet/screens/sign_transaction_screen.dart';
+import 'package:quantus_cold_wallet/components/cold_icon.dart';
+import 'package:quantus_cold_wallet/components/cold_button.dart';
 
-/// Scans a (possibly multi-part / animated) UR QR code, accumulating parts
-/// until [isCompleteUr] is satisfied, then decodes to the raw payload bytes
-/// and hands them to the signing screen. Fails loudly on decode errors.
+/// Step 1 of signing (Figma Cold Wallet / Receiving, Stalled): scans a
+/// (possibly multi-part / animated) UR QR code, accumulating parts until
+/// [isCompleteUr] is satisfied, then decodes to the raw payload bytes and
+/// hands them to the signing screen. Fails loudly on decode errors.
 class ScanTransactionScreen extends StatefulWidget {
+  /// How long without a new frame before the header swaps in the scanning
+  /// tips. Scanning never stops: the frames already collected stay, the
+  /// counter keeps going, and only the back button or Cancel leaves.
+  static const stallTimeout = Duration(seconds: 3);
+
   const ScanTransactionScreen({super.key});
 
   @override
@@ -31,6 +42,8 @@ class _ScanTransactionScreenState extends State<ScanTransactionScreen> {
   int? _expectedParts;
   bool _done = false;
   String? _error;
+  Timer? _stallTimer;
+  bool _stalled = false;
 
   /// The last camera failure written to the log, so a rebuild of the same
   /// error state does not repeat it.
@@ -38,17 +51,35 @@ class _ScanTransactionScreenState extends State<ScanTransactionScreen> {
 
   @override
   void dispose() {
+    _stallTimer?.cancel();
     _controller.dispose();
     super.dispose();
   }
 
-  /// Reports [reason] and drops the accumulated parts. A set that can't
-  /// complete or decode never will, and keeping it makes every replayed frame
-  /// look like a duplicate, so scanning has to start from empty.
-  void _restartAccumulation(String reason) {
+  /// Every new frame restarts the clock; when it runs out the header shows
+  /// the tips. Armed only once a frame has arrived: with nothing received yet
+  /// there is nothing to hint about.
+  void _armStallTimer() {
+    _stallTimer?.cancel();
+    _stalled = false;
+    _stallTimer = Timer(ScanTransactionScreen.stallTimeout, () {
+      if (mounted && !_done) setState(() => _stalled = true);
+    });
+  }
+
+  void _clearStall() {
+    _stallTimer?.cancel();
+    _stalled = false;
+  }
+
+  /// Drops the accumulated parts, reporting [reason] when there is one. A set
+  /// that can't complete or decode never will, and keeping it makes every
+  /// replayed frame look like a duplicate, so scanning has to start from empty.
+  void _restartAccumulation(String? reason) {
     _parts.clear();
     _seenSeq.clear();
     _expectedParts = null;
+    _clearStall();
     setState(() => _error = reason);
   }
 
@@ -66,6 +97,7 @@ class _ScanTransactionScreenState extends State<ScanTransactionScreen> {
       return;
     }
     if (!_parts.add(code)) return; // already seen this exact frame
+    _armStallTimer();
 
     final sequence = urSequenceFor(code);
     if (sequence != null) {
@@ -141,14 +173,14 @@ class _ScanTransactionScreenState extends State<ScanTransactionScreen> {
     }
 
     return ColoredBox(
-      color: colors.bgVoid,
+      color: colors.bgSurface,
       child: Center(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 32),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.no_photography_outlined, color: colors.textMuted, size: 64),
+              ColdIcon(ColdIcons.warningCircle, size: 64, color: colors.textMuted),
               const SizedBox(height: 24),
               Text(
                 'Camera unavailable',
@@ -164,7 +196,7 @@ class _ScanTransactionScreenState extends State<ScanTransactionScreen> {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 24),
-              QuantusButton.simple(label: 'Try again', width: 240, onTap: _restartCamera),
+              ColdButton.secondary(label: 'Try again', onTap: _restartCamera),
             ],
           ),
         ),
@@ -177,89 +209,144 @@ class _ScanTransactionScreenState extends State<ScanTransactionScreen> {
     final colors = context.colorsV3;
     final text = context.themeTextV3;
     final radius = context.radiusV3;
-    final size = MediaQuery.of(context).size;
-    final frame = (size.width - 96).clamp(220.0, 300.0);
+    final expected = _expectedParts;
+    final progress = expected == null ? 0.0 : (_seenSeq.length / expected).clamp(0.0, 1.0);
 
-    final progress = _expectedParts == null ? null : (_seenSeq.length / _expectedParts!).clamp(0.0, 1.0);
-
-    return Scaffold(
-      backgroundColor: colors.bgVoid,
-      body: Stack(
+    return ScaffoldBase(
+      appBar: V2AppBar(
+        title: 'Sign',
+        trailing: QuantusButton.simple(
+          label: 'Torch',
+          variant: ButtonVariant.underline,
+          width: null,
+          padding: EdgeInsets.zero,
+          onTap: _controller.toggleTorch,
+        ),
+      ),
+      mainContent: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          MobileScanner(controller: _controller, onDetect: _onDetect, errorBuilder: _cameraError),
-          ValueListenableBuilder<MobileScannerState>(
-            valueListenable: _controller,
-            builder: (context, state, child) => state.error == null ? child! : const SizedBox.shrink(),
-            child: Center(
-              child: Container(
-                width: frame,
-                height: frame,
-                decoration: BoxDecoration(
-                  border: Border.all(color: colors.accentFlare, width: 2),
-                  borderRadius: radius.mdBorder,
-                ),
-              ),
-            ),
+          StepHeader(
+            step: 1,
+            total: 3,
+            title: _stalled ? 'Not picking up new frames' : 'Scan the transaction',
+            subtitle: _stalled
+                ? "Move the two screens further apart, turn your phone's brightness up, and avoid glare."
+                : "Hold this device over your phone's screen to load the transaction.",
           ),
-          Positioned(
-            top: 20,
-            left: 16,
-            right: 16,
-            child: SafeArea(
-              child: Row(
+          const SizedBox(height: 24),
+          Expanded(
+            child: ClipRRect(
+              borderRadius: radius.lgBorder,
+              child: Stack(
+                fit: StackFit.expand,
                 children: [
-                  IconButton(
-                    onPressed: () => Navigator.pop(context),
-                    icon: Icon(Icons.arrow_back, color: colors.textContent),
-                  ),
-                  const Spacer(),
-                  IconButton(
-                    onPressed: _controller.toggleTorch,
-                    icon: Icon(Icons.flash_on, color: colors.textContent),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          Positioned(
-            left: 24,
-            right: 24,
-            bottom: 48,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (kDebugMode) ...[
-                  QuantusButton.simple(label: 'Debug calls', width: null, onTap: _openDebugCalls),
-                  const SizedBox(height: 20),
-                ],
-                Text(
-                  _error ?? 'Scan the transaction QR from your hot wallet',
-                  style: text.body.copyWith(color: _error != null ? colors.semanticEmber : colors.textContent),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 16),
-                if (progress != null) ...[
-                  ClipRRect(
-                    borderRadius: radius.xsBorder,
-                    child: LinearProgressIndicator(
-                      value: progress,
-                      minHeight: 6,
-                      backgroundColor: colors.bgSurface,
-                      color: colors.accentFlare,
+                  MobileScanner(controller: _controller, onDetect: _onDetect, errorBuilder: _cameraError),
+                  ValueListenableBuilder<MobileScannerState>(
+                    valueListenable: _controller,
+                    builder: (context, state, child) => state.error == null ? child! : const SizedBox.shrink(),
+                    child: IgnorePointer(
+                      child: CustomPaint(
+                        painter: ScanFramePainter(accent: colors.accentFlare, scrim: colors.bgVoid.useOpacity(0.45)),
+                      ),
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    '${_seenSeq.length} / ${_expectedParts!} parts',
-                    style: text.caption.copyWith(color: colors.textMuted),
-                  ),
-                ] else if (_parts.isNotEmpty)
-                  Text('${_parts.length} parts scanned', style: text.caption.copyWith(color: colors.textMuted)),
-              ],
+                ],
+              ),
             ),
           ),
+          const SizedBox(height: 24),
         ],
+      ),
+      bottomContent: ScaffoldBaseBottomContent(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (_error != null) ...[
+              Text(_error!, style: text.caption.copyWith(color: colors.semanticEmber)),
+              const SizedBox(height: 12),
+            ],
+            Row(
+              children: [
+                Text(
+                  'RECEIVING TRANSACTION',
+                  style: text.labelMonogram.copyWith(fontSize: 10, letterSpacing: 1, color: colors.textMuted),
+                ),
+                const Spacer(),
+                if (expected != null)
+                  Text('${_seenSeq.length}/$expected', style: text.dataAddress.copyWith(color: colors.textContent)),
+              ],
+            ),
+            const SizedBox(height: 12),
+            ClipRRect(
+              borderRadius: radius.xsBorder,
+              child: LinearProgressIndicator(
+                value: progress,
+                minHeight: 4,
+                backgroundColor: colors.bgSurface2,
+                color: colors.accentFlare,
+              ),
+            ),
+            const SizedBox(height: 20),
+            QuantusButton.simple(
+              label: 'Cancel Transaction',
+              variant: ButtonVariant.underline,
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              onTap: () => Navigator.pop(context),
+            ),
+            if (kDebugMode)
+              QuantusButton.simple(
+                label: 'Debug calls',
+                variant: ButtonVariant.underline,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                onTap: _openDebugCalls,
+              ),
+          ],
+        ),
       ),
     );
   }
+}
+
+/// Dims the preview outside a centred square and marks its four corners with
+/// rounded L brackets in the accent colour, as the Figma scanner frame does.
+class ScanFramePainter extends CustomPainter {
+  final Color accent;
+  final Color scrim;
+
+  const ScanFramePainter({required this.accent, required this.scrim});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final side = size.shortestSide * 0.8;
+    final frame = Rect.fromCenter(center: size.center(Offset.zero), width: side, height: side);
+    const cornerRadius = 12.0;
+    final arm = side * 0.16;
+
+    final window = Path()..addRRect(RRect.fromRectAndRadius(frame, const Radius.circular(cornerRadius)));
+    final outside = Path.combine(PathOperation.difference, Path()..addRect(Offset.zero & size), window);
+    canvas.drawPath(outside, Paint()..color = scrim);
+
+    final stroke = Paint()
+      ..color = accent
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 3
+      ..strokeCap = StrokeCap.round;
+    for (final (corner, dx, dy) in [
+      (frame.topLeft, 1.0, 1.0),
+      (frame.topRight, -1.0, 1.0),
+      (frame.bottomLeft, 1.0, -1.0),
+      (frame.bottomRight, -1.0, -1.0),
+    ]) {
+      final bracket = Path()
+        ..moveTo(corner.dx + dx * arm, corner.dy)
+        ..lineTo(corner.dx + dx * cornerRadius, corner.dy)
+        ..quadraticBezierTo(corner.dx, corner.dy, corner.dx, corner.dy + dy * cornerRadius)
+        ..lineTo(corner.dx, corner.dy + dy * arm);
+      canvas.drawPath(bracket, stroke);
+    }
+  }
+
+  @override
+  bool shouldRepaint(ScanFramePainter oldDelegate) => oldDelegate.accent != accent || oldDelegate.scrim != scrim;
 }
