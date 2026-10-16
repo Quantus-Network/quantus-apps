@@ -2540,6 +2540,12 @@ abstract class AppLocalizations {
   /// **'TX HASH'**
   String get activityDetailTxHash;
 
+  /// Toast after copying a transaction hash from the activity detail sheet
+  ///
+  /// In en, this message translates to:
+  /// **'Transaction hash copied to clipboard'**
+  String get activityDetailTxHashCopied;
+
   /// Link to view transaction in explorer
   ///
   /// In en, this message translates to:
@@ -3464,12 +3470,6 @@ abstract class AppLocalizations {
   /// **'Start a New Swap'**
   String get swapStartNew;
 
-  /// Link on a failed swap
-  ///
-  /// In en, this message translates to:
-  /// **'Contact Support'**
-  String get swapContactSupport;
-
   /// Label of the row naming the token to deposit, at the top of the deposit screen
   ///
   /// In en, this message translates to:
@@ -3553,6 +3553,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Use your {symbol} or {network} wallet to deposit funds. Depositing other assets may result in loss of funds.'**
   String swapDepositNotice(String symbol, String network);
+
+  /// Why a 1Click request failed when no answer came within the time allowed
+  ///
+  /// In en, this message translates to:
+  /// **'The request timed out'**
+  String get swapRequestTimedOut;
+
+  /// Notice on the progress screen while the 1Click status poll fails
+  ///
+  /// In en, this message translates to:
+  /// **'The swap status can\'t be checked right now: {error}'**
+  String swapProgressStatusUnavailable(String error);
+
+  /// Notice on the progress screen once the deposit window closed with the deposit unseen
+  ///
+  /// In en, this message translates to:
+  /// **'The deposit was not seen before the deadline. If it arrives late, it is refunded to {refund}.'**
+  String swapProgressDepositNotSeen(String refund);
+
+  /// Link at the bottom of a running swap that puts it away so another can start; the swap still settles on its own
+  ///
+  /// In en, this message translates to:
+  /// **'Stop tracking swap'**
+  String get swapStopTracking;
 
   /// Text for app bar or button label on QR scanner component
   ///

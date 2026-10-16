@@ -288,9 +288,7 @@ class _DetailsSection extends ConsumerWidget {
     if (tx is PendingTransactionEvent) fee = (tx as PendingTransactionEvent).fee;
     final feeStr = (fee != null && fee != BigInt.zero) ? formatTokenAmount(l10n, formattingService, fee) : null;
 
-    final txHash = tx.extrinsicHash != null
-        ? AddressFormattingService.formatActivityDetailExtrinsicHash(tx.extrinsicHash!)
-        : null;
+    final txHash = tx.extrinsicHash;
 
     return Column(
       children: [
@@ -306,7 +304,7 @@ class _DetailsSection extends ConsumerWidget {
           AddressDetailRow(label: counterpartyLabel, address: counterparty),
         DetailRow(label: l10n.activityDetailDate, value: dateTime),
         if (feeStr != null) DetailRow(label: l10n.activityDetailNetworkFee, value: feeStr),
-        if (txHash != null) DetailRow(label: l10n.activityDetailTxHash, value: txHash, valueKind: DetailValueKind.mono),
+        if (txHash != null) TxHashDetailRow(hash: txHash),
         if (tx case final WormholeTransferEvent send when send.batches.isNotEmpty)
           GestureDetector(
             behavior: HitTestBehavior.opaque,
@@ -351,9 +349,7 @@ class _DetailsSection extends ConsumerWidget {
     final networkFeeValue = event.networkFee != BigInt.zero
         ? formatTokenAmount(l10n, formattingService, event.networkFee)
         : null;
-    final txHash = event.extrinsicHash != null
-        ? AddressFormattingService.formatActivityDetailExtrinsicHash(event.extrinsicHash!)
-        : null;
+    final txHash = event.extrinsicHash;
     final approvalsLabel = event.approvalsOfSignersLabel(l10n.multisigApprovalsOf) ?? event.approvalsCount.toString();
 
     return Column(
@@ -364,7 +360,7 @@ class _DetailsSection extends ConsumerWidget {
         DetailRow(label: l10n.multisigProposalApprovalsLabel, value: approvalsLabel),
         if (networkFeeValue != null) DetailRow(label: l10n.activityDetailNetworkFee, value: networkFeeValue),
         DetailRow(label: l10n.activityDetailDate, value: dateTime),
-        if (txHash != null) DetailRow(label: l10n.activityDetailTxHash, value: txHash, valueKind: DetailValueKind.mono),
+        if (txHash != null) TxHashDetailRow(hash: txHash),
       ],
     );
   }
@@ -380,9 +376,7 @@ class _DetailsSection extends ConsumerWidget {
     final networkFeeValue = event.fee != null && event.fee != BigInt.zero
         ? formatTokenAmount(l10n, formattingService, event.fee!)
         : null;
-    final txHash = event.extrinsicHash != null
-        ? AddressFormattingService.formatActivityDetailExtrinsicHash(event.extrinsicHash!)
-        : null;
+    final txHash = event.extrinsicHash;
 
     return Column(
       children: [
@@ -390,7 +384,7 @@ class _DetailsSection extends ConsumerWidget {
         AddressDetailRow(label: l10n.activityDetailTo, address: recipientAddress),
         DetailRow(label: l10n.activityDetailProposalTransferAmount, value: transferAmount),
         if (networkFeeValue != null) DetailRow(label: l10n.activityDetailNetworkFee, value: networkFeeValue),
-        if (txHash != null) DetailRow(label: l10n.activityDetailTxHash, value: txHash, valueKind: DetailValueKind.mono),
+        if (txHash != null) TxHashDetailRow(hash: txHash),
       ],
     );
   }
@@ -406,9 +400,7 @@ class _DetailsSection extends ConsumerWidget {
     final networkFeeValue = event.fee != null && event.fee != BigInt.zero
         ? formatTokenAmount(l10n, formattingService, event.fee!)
         : null;
-    final txHash = event.extrinsicHash != null
-        ? AddressFormattingService.formatActivityDetailExtrinsicHash(event.extrinsicHash!)
-        : null;
+    final txHash = event.extrinsicHash;
 
     return Column(
       children: [
@@ -416,7 +408,7 @@ class _DetailsSection extends ConsumerWidget {
         AddressDetailRow(label: l10n.activityDetailTo, address: recipientAddress),
         DetailRow(label: l10n.activityDetailProposalTransferAmount, value: transferAmount),
         if (networkFeeValue != null) DetailRow(label: l10n.activityDetailNetworkFee, value: networkFeeValue),
-        if (txHash != null) DetailRow(label: l10n.activityDetailTxHash, value: txHash, valueKind: DetailValueKind.mono),
+        if (txHash != null) TxHashDetailRow(hash: txHash),
       ],
     );
   }
@@ -433,9 +425,7 @@ class _DetailsSection extends ConsumerWidget {
     final networkFeeValue = event.networkFee != BigInt.zero
         ? formatTokenAmount(l10n, formattingService, event.networkFee)
         : null;
-    final txHash = event.extrinsicHash != null
-        ? AddressFormattingService.formatActivityDetailExtrinsicHash(event.extrinsicHash!)
-        : null;
+    final txHash = event.extrinsicHash;
 
     return Column(
       children: [
@@ -444,7 +434,7 @@ class _DetailsSection extends ConsumerWidget {
         DetailRow(label: l10n.activityDetailProposalTransferAmount, value: transferAmount),
         if (networkFeeValue != null) DetailRow(label: l10n.activityDetailNetworkFee, value: networkFeeValue),
         DetailRow(label: l10n.activityDetailDate, value: dateTime),
-        if (txHash != null) DetailRow(label: l10n.activityDetailTxHash, value: txHash, valueKind: DetailValueKind.mono),
+        if (txHash != null) TxHashDetailRow(hash: txHash),
       ],
     );
   }
@@ -461,9 +451,7 @@ class _DetailsSection extends ConsumerWidget {
     final networkFeeValue = event.networkFee != BigInt.zero
         ? formatTokenAmount(l10n, formattingService, event.networkFee)
         : null;
-    final txHash = event.extrinsicHash != null
-        ? AddressFormattingService.formatActivityDetailExtrinsicHash(event.extrinsicHash!)
-        : null;
+    final txHash = event.extrinsicHash;
 
     return Column(
       children: [
@@ -472,7 +460,7 @@ class _DetailsSection extends ConsumerWidget {
         DetailRow(label: l10n.activityDetailProposalTransferAmount, value: transferAmount),
         if (networkFeeValue != null) DetailRow(label: l10n.activityDetailNetworkFee, value: networkFeeValue),
         DetailRow(label: l10n.activityDetailDate, value: dateTime),
-        if (txHash != null) DetailRow(label: l10n.activityDetailTxHash, value: txHash, valueKind: DetailValueKind.mono),
+        if (txHash != null) TxHashDetailRow(hash: txHash),
       ],
     );
   }
@@ -512,9 +500,7 @@ class _DetailsSection extends ConsumerWidget {
     final palletFeeValue = formatTokenAmount(l10n, formattingService, palletFee);
     final depositValue = formatTokenAmount(l10n, formattingService, deposit);
     final networkFeeValue = fee != null && fee != BigInt.zero ? formatTokenAmount(l10n, formattingService, fee) : null;
-    final txHash = extrinsicHash != null
-        ? AddressFormattingService.formatActivityDetailExtrinsicHash(extrinsicHash)
-        : null;
+    final txHash = extrinsicHash;
 
     return Column(
       children: [
@@ -524,7 +510,7 @@ class _DetailsSection extends ConsumerWidget {
         DetailRow(label: l10n.multisigProposalDepositLabel, value: depositValue),
         if (networkFeeValue != null) DetailRow(label: l10n.activityDetailNetworkFee, value: networkFeeValue),
         DetailRow(label: l10n.activityDetailDate, value: dateTime),
-        if (txHash != null) DetailRow(label: l10n.activityDetailTxHash, value: txHash, valueKind: DetailValueKind.mono),
+        if (txHash != null) TxHashDetailRow(hash: txHash),
       ],
     );
   }
@@ -552,9 +538,7 @@ class _DetailsSection extends ConsumerWidget {
     AppLocalizations l10n,
     NumberFormattingService formattingService,
   ) {
-    final txHash = event.extrinsicHash != null
-        ? AddressFormattingService.formatActivityDetailExtrinsicHash(event.extrinsicHash!)
-        : null;
+    final txHash = event.extrinsicHash;
 
     return _multisigFeeDetails(
       l10n: l10n,
@@ -582,7 +566,6 @@ class _DetailsSection extends ConsumerWidget {
     required DateTime timestamp,
     String? txHash,
   }) {
-    final formattedMultisigAddress = multisigAddress;
     final creatorAddress = creatorId;
     final dateTime = DatetimeFormattingService.formatTxDateTime(timestamp);
     final palletFeeValue = formatTokenAmount(l10n, formattingService, palletFee);
@@ -592,8 +575,10 @@ class _DetailsSection extends ConsumerWidget {
       children: [
         DetailRow(
           label: l10n.activityDetailMultisigAddress,
-          value: formattedMultisigAddress,
+          value: multisigAddress,
           valueKind: DetailValueKind.mono,
+          copyText: multisigAddress,
+          copiedMessage: l10n.receiveCopiedMessage,
         ),
         DetailRow(
           label: l10n.activityDetailMultisigThreshold,
@@ -604,7 +589,7 @@ class _DetailsSection extends ConsumerWidget {
         DetailRow(label: l10n.activityDetailMultisigCreationFee, value: palletFeeValue),
         DetailRow(label: l10n.activityDetailNetworkFee, value: networkFeeValue),
         DetailRow(label: l10n.activityDetailDate, value: dateTime),
-        if (txHash != null) DetailRow(label: l10n.activityDetailTxHash, value: txHash, valueKind: DetailValueKind.mono),
+        if (txHash != null) TxHashDetailRow(hash: txHash),
       ],
     );
   }

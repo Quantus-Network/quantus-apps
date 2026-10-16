@@ -17,6 +17,9 @@ class SwapApiException implements Exception {
 /// Transport for the NEAR Intents 1Click API: every request carries the
 /// partner key, and an answer outside 2xx becomes a [SwapApiException].
 class OneClickService {
+  /// Longest any request may take before it fails.
+  static const requestTimeout = Duration(seconds: 30);
+
   /// Longest a recipient lookup may hold up the send flow.
   static const depositLookupTimeout = Duration(seconds: 10);
 
@@ -58,9 +61,11 @@ class OneClickService {
     final uri = _base.replace(path: path, queryParameters: query);
     final cached = method == 'GET' ? _etagged[uri] : null;
     final headers = {'Content-Type': 'application/json', 'X-API-Key': ?_apiKey, 'If-None-Match': ?cached?.$1};
-    final response = method == 'GET'
-        ? await _client.get(uri, headers: headers)
-        : await _client.post(uri, headers: headers, body: jsonEncode(body));
+    final response =
+        await (method == 'GET'
+                ? _client.get(uri, headers: headers)
+                : _client.post(uri, headers: headers, body: jsonEncode(body)))
+            .timeout(requestTimeout);
     if (response.statusCode == 304 && cached != null) return cached.$2;
     final ok = response.statusCode >= 200 && response.statusCode < 300;
     Object? json;

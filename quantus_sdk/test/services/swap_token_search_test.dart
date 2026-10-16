@@ -11,6 +11,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 String _fixture(String name) => File('test/fixtures/swap/$name').readAsStringSync();
 
 Future<List<SwapToken>> _liveListing() => SwapService(
+  feeBips: 0,
   endpoint: 'https://oneclick.test',
   client: MockClient((r) async {
     if (r.url.host != 'api.coingecko.com') return http.Response(_fixture('one_click_tokens.json'), 200);

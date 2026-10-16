@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:clock/clock.dart';
 import 'package:ed25519_edwards/ed25519_edwards.dart' as ed25519;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -14,6 +15,7 @@ import 'package:http/testing.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/models/swap_preflight.dart';
+import 'package:resonance_network_wallet/providers/active_swap_provider.dart';
 import 'package:resonance_network_wallet/providers/connectivity_provider.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
@@ -95,6 +97,13 @@ class _OneClick {
   final BigInt liveOut;
   final List<Map<String, dynamic>> listed;
   int tokensStatus;
+
+  /// What the status endpoint answers, and with which HTTP status.
+  String status = 'PENDING_DEPOSIT';
+  int statusCode = 200;
+
+  /// Holds every status answer until completed.
+  Completer<void>? holdStatus;
   final requests = <http.Request>[];
 
   /// CoinGecko takes the request and never answers.
@@ -115,6 +124,7 @@ class _OneClick {
     managerPublicKey: _managerPublicKey,
     quantusAssetId: preflight ? _preflight.assetId : null,
     preflight: preflight,
+    feeBips: 0,
   );
 
   Future<http.Response> _handle(http.Request request) async {
@@ -132,9 +142,14 @@ class _OneClick {
       ),
       '/v0/quote' => await _quote(request),
       '/v0/deposit/submit' => http.Response('{}', 200),
-      '/v0/status' => http.Response(jsonEncode({'status': 'PENDING_DEPOSIT'}), 200),
+      '/v0/status' => await _status(),
       _ => http.Response('down', 503),
     };
+  }
+
+  Future<http.Response> _status() async {
+    if (holdStatus != null) await holdStatus!.future;
+    return http.Response(jsonEncode({'status': status}), statusCode);
   }
 
   Future<http.Response> _quote(http.Request request) async {
@@ -175,7 +190,7 @@ class _OneClick {
         ])
           k: request[k],
         'appFees': [
-          ...request['appFees'] as List<dynamic>,
+          ...?request['appFees'] as List<dynamic>?,
           {'recipient': '2238fd089f1c92b206c218cd16b8676cb98964e0d50f8ab729c6396a81e07805', 'fee': 20},
         ],
       },
@@ -211,7 +226,7 @@ SwapQuote _quote({
   slippageBps: 100,
   refundAddress: refund,
   recipient: recipient,
-  deadline: DateTime.now().add(const Duration(minutes: 20)),
+  deadline: clock.now().add(const Duration(minutes: 20)),
   timeEstimate: const Duration(minutes: 1),
   correlationId: 'c',
   signature: 'ed25519:sig',
@@ -233,6 +248,17 @@ void main() {
     recipient: _external,
   );
 
+  /// [outQuote] as 1Click reserved it: with the deposit address a status poll needs.
+  final liveQuote = _quote(
+    from: _qtc,
+    to: _usdc,
+    amountIn: _unit * BigInt.from(250),
+    amountOut: BigInt.from(24860000),
+    refund: account.accountId,
+    recipient: _external,
+    depositAddress: _deposit,
+  );
+
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
     await SettingsService().initialize();
@@ -246,8 +272,9 @@ void main() {
     StateProvider<SwapService>? services,
     _SwapConfig? config,
     SwapPreflight? preflight,
+    FakeSettingsService? settings,
   }) => [
-    settingsServiceProvider.overrideWithValue(FakeSettingsService(activeAccount: RegularAccount(account))),
+    settingsServiceProvider.overrideWithValue(settings ?? FakeSettingsService(activeAccount: RegularAccount(account))),
     isOnlineProvider.overrideWith((ref) => true),
     l10nProvider.overrideWithValue(l10n),
     remoteConfigProvider.overrideWith((ref) => config ?? _SwapConfig()),
@@ -259,8 +286,29 @@ void main() {
     swapDepositFeeProvider.overrideWith((ref, _) async => _unit ~/ BigInt.from(50)),
     balancesServiceProvider.overrideWithValue(FakeBalancesService()),
     transactionSubmissionServiceProvider.overrideWithValue(submission ?? FakeTransactionSubmissionService()),
-    swapOrderProvider.overrideWith((ref, order) => Stream.value(order)),
   ];
+
+  /// [order] as the swap the app follows, started [age] ago; the app sent the
+  /// deposit of a swap out of QTC, a swap in waits for one from elsewhere.
+  ActiveSwap activeSwap(SwapOrder order, {Duration age = const Duration(minutes: 1)}) {
+    final swapOut = order.quote.fromToken.isQuantus;
+    return ActiveSwap(
+      order: order,
+      accountId: account.accountId,
+      accountName: account.name,
+      startedAt: clock.now().subtract(age),
+      depositByHand: !swapOut,
+      depositTxHash: swapOut ? '0xtxhash' : null,
+      depositFee: swapOut ? _unit ~/ BigInt.from(50) : null,
+    );
+  }
+
+  /// Settings with [swap] kept on the device, as a restart finds it.
+  FakeSettingsService settingsWith(ActiveSwap swap) =>
+      FakeSettingsService(activeAccount: RegularAccount(account), activeSwap: swap);
+
+  ProviderContainer containerOf(WidgetTester tester) =>
+      ProviderScope.containerOf(tester.element(find.byType(SwapProgressScreen)));
 
   Future<void> settle(WidgetTester tester) async {
     for (var i = 0; i < 5; i++) {
@@ -644,9 +692,10 @@ void main() {
     testWidgets('a swap out sends the QTC to the live deposit address and follows the swap', (tester) async {
       final oneClick = _OneClick(dryOut: outQuote.amountOut);
       final submission = FakeTransactionSubmissionService();
+      final settings = FakeSettingsService(activeAccount: RegularAccount(account));
       await tester.pumpApp(
         ReviewSwapScreen(account: account, quote: outQuote),
-        overrides: overrides(oneClick.service(), submission: submission),
+        overrides: overrides(oneClick.service(), submission: submission, settings: settings),
       );
       await settle(tester);
 
@@ -663,6 +712,91 @@ void main() {
       expect(jsonDecode(submit.body), {'txHash': '0xtxhash', 'depositAddress': _deposit});
       expect(find.text(l10n.swapInProgressTitle), findsOneWidget);
       expect(find.text(l10n.swapStepSent('QTC')), findsOneWidget);
+
+      final swap = containerOf(tester).read(activeSwapProvider)!;
+      expect(swap.depositTxHash, '0xtxhash');
+      expect(swap.depositByHand, isFalse);
+      expect(swap.order.depositAddress, _deposit);
+      final kept = settings.activeSwap!;
+      expect(kept.order.depositAddress, _deposit);
+      expect(kept.depositFee, _unit ~/ BigInt.from(50));
+    });
+
+    /// The review pushed over a page, so it can be left while a deposit is
+    /// held in flight.
+    Future<ProviderContainer> openReview(WidgetTester tester, List<Override> overrides) async {
+      await tester.pumpApp(
+        Builder(
+          builder: (context) => TextButton(
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => ReviewSwapScreen(account: account, quote: outQuote),
+              ),
+            ),
+            child: const Text('open'),
+          ),
+        ),
+        overrides: overrides,
+      );
+      await tester.tap(find.text('open'));
+      await settle(tester);
+      return ProviderScope.containerOf(tester.element(find.byType(ReviewSwapScreen)));
+    }
+
+    Future<void> confirmAndLeave(WidgetTester tester) async {
+      await tester.tap(find.text(l10n.swapReviewConfirm));
+      await settle(tester);
+      await tester.tap(find.text(l10n.commonCancel));
+      await settle(tester);
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(find.byType(ReviewSwapScreen), findsNothing);
+    }
+
+    testWidgets('a deposit still in flight when the review is left is followed once it is out', (tester) async {
+      final oneClick = _OneClick(dryOut: outQuote.amountOut);
+      final submission = FakeTransactionSubmissionService()..holdTransfer = Completer<void>();
+      final settings = FakeSettingsService(activeAccount: RegularAccount(account));
+      final container = await openReview(
+        tester,
+        overrides(oneClick.service(), submission: submission, settings: settings),
+      );
+      await confirmAndLeave(tester);
+
+      submission.holdTransfer!.complete();
+      await settle(tester);
+      expect(submission.transfers.single.$1, _deposit);
+      expect(oneClick.requests.where((r) => r.url.path == '/v0/deposit/submit'), hasLength(1));
+      expect(container.read(activeSwapProvider)?.depositTxHash, '0xtxhash');
+      expect(settings.activeSwap?.depositTxHash, '0xtxhash');
+    });
+
+    testWidgets('a deposit that lands after the wallet logged out or moved on is not followed', (tester) async {
+      final other = activeSwap(SwapOrder(quote: liveQuote, status: SwapStatus.processing));
+      final movedOn = <(String, Future<void> Function(ActiveSwapNotifier), ActiveSwap?)>[
+        ('logged out', (swaps) => swaps.clear(), null),
+        ('started another', (swaps) async => swaps.start(other), other),
+      ];
+      for (final (name, moveOn, kept) in movedOn) {
+        final oneClick = _OneClick(dryOut: outQuote.amountOut);
+        final submission = FakeTransactionSubmissionService()..holdTransfer = Completer<void>();
+        final settings = FakeSettingsService(activeAccount: RegularAccount(account));
+        final container = await openReview(
+          tester,
+          overrides(oneClick.service(), submission: submission, settings: settings),
+        );
+        await confirmAndLeave(tester);
+        await moveOn(container.read(activeSwapProvider.notifier));
+
+        submission.holdTransfer!.complete();
+        await settle(tester);
+        final asKept = kept == null ? isNull : same(kept);
+        expect(submission.transfers.single.$1, _deposit, reason: name);
+        expect(oneClick.requests.where((r) => r.url.path == '/v0/deposit/submit'), hasLength(1), reason: name);
+        expect(container.read(activeSwapProvider), asKept, reason: name);
+        expect(settings.activeSwap, asKept, reason: name);
+        expect(find.byType(SwapProgressScreen), findsNothing, reason: name);
+      }
     });
 
     testWidgets('a worse live quote replaces the terms and needs a second confirm', (tester) async {
@@ -876,15 +1010,22 @@ void main() {
         expect(find.text(l10n.swapDisabledTitle), findsOneWidget);
 
         await tester.pumpApp(
-          SwapProgressScreen(
-            account: account,
-            order: SwapOrder(quote: outQuote, status: SwapStatus.refunded),
+          SwapProgressScreen(account: account),
+          overrides: overrides(
+            _OneClick(dryOut: BigInt.one).service(),
+            config: _SwapConfig(allowed: false),
+            settings: settingsWith(activeSwap(SwapOrder(quote: liveQuote, status: SwapStatus.refunded))),
           ),
-          overrides: overrides(_OneClick(dryOut: BigInt.one).service(), config: _SwapConfig(allowed: false)),
         );
         await settle(tester);
         expect(find.text('REFUNDED'), findsOneWidget);
         expect(button(tester, l10n.swapStartNew).isDisabled, isTrue);
+        expect(button(tester, l10n.commonDone).isDisabled, isFalse);
+
+        final container = containerOf(tester);
+        await tester.tap(find.text(l10n.commonDone));
+        await settle(tester);
+        expect(container.read(activeSwapProvider), isNull);
       },
     );
   });
@@ -967,16 +1108,29 @@ void main() {
   });
 
   group('SwapProgressScreen', () {
-    Future<void> pumpOrder(WidgetTester tester, SwapOrder order) async {
+    /// Opens the screen on [swap] as kept on the device, with 1Click answering [oneClick].
+    Future<FakeSettingsService> pumpSwap(WidgetTester tester, ActiveSwap swap, {_OneClick? oneClick}) async {
+      final settings = settingsWith(swap);
       await tester.pumpApp(
-        SwapProgressScreen(account: account, order: order),
-        overrides: overrides(_OneClick(dryOut: BigInt.one).service()),
+        SwapProgressScreen(account: account),
+        overrides: overrides((oneClick ?? _OneClick(dryOut: BigInt.one)).service(), settings: settings),
       );
       await settle(tester);
+      return settings;
     }
 
+    Future<void> pumpOrder(WidgetTester tester, SwapOrder order) => pumpSwap(tester, activeSwap(order));
+
+    StepRowState stepState(WidgetTester tester, String label) =>
+        tester.widget<QuantusStepRow>(find.widgetWithText(QuantusStepRow, label)).state;
+
+    Finder banner(String prefix) => find.byWidgetPredicate((w) => w is QuantusBanner && w.message.startsWith(prefix));
+
     testWidgets('shows what arrived where once the swap succeeds', (tester) async {
-      await pumpOrder(tester, SwapOrder(quote: outQuote, status: SwapStatus.success, amountOut: BigInt.from(24900000)));
+      await pumpOrder(
+        tester,
+        SwapOrder(quote: liveQuote, status: SwapStatus.success, amountOut: BigInt.from(24900000)),
+      );
 
       expect(find.text(l10n.swapCompleteTitle), findsOneWidget);
       expect(find.text('24.9 USDC'), findsOneWidget);
@@ -984,12 +1138,268 @@ void main() {
     });
 
     testWidgets('tells a refunded swap out that the QTC went back to the account', (tester) async {
-      await pumpOrder(tester, SwapOrder(quote: outQuote, status: SwapStatus.refunded));
+      await pumpOrder(tester, SwapOrder(quote: liveQuote, status: SwapStatus.refunded));
 
       expect(find.text(l10n.swapFailedTitle), findsOneWidget);
       expect(find.text('REFUNDED'), findsOneWidget);
       expect(find.text(l10n.swapRefundedBody('250 QTC', account.name, 'USDC')), findsOneWidget);
       expect(find.text(l10n.swapStartNew), findsOneWidget);
+    });
+
+    testWidgets('follows the status through the steps, says so when a poll fails, and retries', (tester) async {
+      final oneClick = _OneClick(dryOut: BigInt.one);
+      final settings = await pumpSwap(
+        tester,
+        activeSwap(SwapOrder(quote: liveQuote, status: SwapStatus.pendingDeposit)),
+        oneClick: oneClick,
+      );
+      expect(stepState(tester, l10n.swapStepSent('QTC')), StepRowState.done);
+      expect(stepState(tester, l10n.swapStepConfirming('Quantus')), StepRowState.active);
+      expect(stepState(tester, l10n.swapStepSwapping), StepRowState.pending);
+
+      oneClick.status = 'PROCESSING';
+      await tester.pump(SwapService.statusPollInterval);
+      await settle(tester);
+      expect(stepState(tester, l10n.swapStepConfirming('Quantus')), StepRowState.done);
+      expect(stepState(tester, l10n.swapStepSwapping), StepRowState.active);
+      final kept = settings.activeSwap!;
+      expect(kept.order.status, SwapStatus.processing);
+
+      oneClick.statusCode = 503;
+      await tester.pump(SwapService.statusPollInterval);
+      await settle(tester);
+      expect(banner(l10n.swapProgressStatusUnavailable('')), findsOneWidget);
+      expect(stepState(tester, l10n.swapStepSwapping), StepRowState.active);
+      expect(find.text(l10n.swapStopTracking), findsOneWidget);
+
+      oneClick.statusCode = 200;
+      oneClick.status = 'SUCCESS';
+      await tester.ensureVisible(find.text(l10n.commonRetry));
+      await tester.tap(find.text(l10n.commonRetry));
+      await settle(tester);
+      expect(find.text(l10n.swapCompleteTitle), findsOneWidget);
+      expect(containerOf(tester).read(activeSwapProvider)!.settledAt, isNotNull);
+      expect(oneClick.requests.where((r) => r.url.path == '/v0/status'), hasLength(3));
+    });
+
+    testWidgets('an unknown status is reported and polled past', (tester) async {
+      final oneClick = _OneClick(dryOut: BigInt.one)..status = 'SETTLING';
+      await pumpSwap(
+        tester,
+        activeSwap(SwapOrder(quote: liveQuote, status: SwapStatus.processing)),
+        oneClick: oneClick,
+      );
+
+      await tester.pump(SwapService.statusPollInterval);
+      await settle(tester);
+      expect(banner(l10n.swapProgressStatusUnavailable('')), findsOneWidget);
+      expect(find.textContaining('SETTLING'), findsOneWidget);
+
+      oneClick.status = 'SUCCESS';
+      await tester.pump(SwapService.statusPollInterval);
+      await settle(tester);
+      expect(find.text(l10n.swapCompleteTitle), findsOneWidget);
+    });
+
+    testWidgets('a running swap can be put away at any time', (tester) async {
+      await pumpSwap(tester, activeSwap(SwapOrder(quote: liveQuote, status: SwapStatus.processing)));
+
+      final container = containerOf(tester);
+      await tester.tap(find.text(l10n.swapStopTracking));
+      await settle(tester);
+      expect(container.read(activeSwapProvider), isNull);
+      expect(container.read(settingsServiceProvider).getActiveSwap(), isNull);
+    });
+
+    testWidgets('a deposit the app sent that was not seen by the deadline says so and can be dismissed', (
+      tester,
+    ) async {
+      final quote = liveQuote;
+      final late = SwapQuote(
+        fromToken: quote.fromToken,
+        toToken: quote.toToken,
+        amountIn: quote.amountIn,
+        minAmountIn: quote.minAmountIn,
+        amountOut: quote.amountOut,
+        minAmountOut: quote.minAmountOut,
+        amountInUsd: quote.amountInUsd,
+        amountOutUsd: quote.amountOutUsd,
+        slippageBps: quote.slippageBps,
+        refundAddress: quote.refundAddress,
+        recipient: quote.recipient,
+        deadline: clock.now().subtract(const Duration(minutes: 1)),
+        timeEstimate: quote.timeEstimate,
+        correlationId: quote.correlationId,
+        signature: quote.signature,
+        depositAddress: quote.depositAddress,
+      );
+      await pumpSwap(
+        tester,
+        activeSwap(
+          SwapOrder(quote: late, status: SwapStatus.pendingDeposit),
+          age: const Duration(minutes: 5),
+        ),
+      );
+
+      expect(find.text(l10n.swapInProgressTitle), findsOneWidget);
+      expect(banner(l10n.swapProgressDepositNotSeen(account.name)), findsOneWidget);
+      expect(find.text(l10n.swapStopTracking), findsOneWidget);
+    });
+
+    for (final (who, account) in [
+      ('a Keystone account', makeAccount(2, accountType: AccountType.keystone)),
+      ('an account without a key here', null),
+    ]) {
+      testWidgets('opened from $who, a failed swap can be put away but not replaced', (tester) async {
+        await tester.pumpApp(
+          SwapProgressScreen(account: account),
+          overrides: overrides(
+            _OneClick(dryOut: BigInt.one).service(),
+            settings: settingsWith(activeSwap(SwapOrder(quote: liveQuote, status: SwapStatus.failed))),
+          ),
+        );
+        await settle(tester);
+
+        expect(button(tester, l10n.swapStartNew).isDisabled, isTrue);
+        expect(button(tester, l10n.commonDone).isDisabled, isFalse);
+      });
+    }
+
+    testWidgets('a poll failure shows on the deposit screen too, and Retry moves it on', (tester) async {
+      final inQuote = _quote(
+        from: _usdc,
+        to: _qtc,
+        amountIn: BigInt.from(25000000),
+        amountOut: _unit * BigInt.from(248),
+        refund: _external,
+        recipient: account.accountId,
+        depositAddress: _external,
+      );
+      final oneClick = _OneClick(dryOut: BigInt.one)..statusCode = 503;
+      await pumpSwap(
+        tester,
+        activeSwap(SwapOrder(quote: inQuote, status: SwapStatus.pendingDeposit)),
+        oneClick: oneClick,
+      );
+      expect(find.text(l10n.swapDepositWaiting), findsOneWidget);
+
+      await tester.pump(SwapService.statusPollInterval);
+      await settle(tester);
+      expect(banner(l10n.swapProgressStatusUnavailable('')), findsOneWidget);
+      expect(find.text(l10n.swapDepositWaiting), findsOneWidget);
+
+      oneClick.statusCode = 200;
+      oneClick.status = 'KNOWN_DEPOSIT_TX';
+      await tester.ensureVisible(find.text(l10n.commonRetry));
+      await tester.tap(find.text(l10n.commonRetry));
+      await settle(tester);
+      expect(find.text(l10n.swapInProgressTitle), findsOneWidget);
+      expect(stepState(tester, l10n.swapStepConfirming('Ethereum')), StepRowState.active);
+      expect(banner(l10n.swapProgressStatusUnavailable('')), findsNothing);
+    });
+
+    testWidgets('a status request that never answers times out, shows the notice and is polled again', (tester) async {
+      final oneClick = _OneClick(dryOut: BigInt.one)
+        ..status = 'PROCESSING'
+        ..holdStatus = Completer<void>();
+      await pumpSwap(
+        tester,
+        activeSwap(SwapOrder(quote: liveQuote, status: SwapStatus.processing)),
+        oneClick: oneClick,
+      );
+      Iterable<http.Request> polls() => oneClick.requests.where((r) => r.url.path == '/v0/status');
+
+      await tester.pump(SwapService.statusPollInterval);
+      expect(polls(), hasLength(1));
+      await tester.pump(OneClickService.requestTimeout);
+      await settle(tester);
+      expect(banner(l10n.swapProgressStatusUnavailable(l10n.swapRequestTimedOut)), findsOneWidget);
+      expect(find.text(l10n.commonRetry), findsOneWidget);
+
+      await tester.pump(SwapService.statusPollInterval);
+      expect(polls(), hasLength(2));
+      oneClick.holdStatus!.complete();
+      await settle(tester);
+      expect(banner(l10n.swapProgressStatusUnavailable('')), findsNothing);
+    });
+
+    testWidgets('polls run one at a time, and an answer that arrives after the swap was put away is dropped', (
+      tester,
+    ) async {
+      final oneClick = _OneClick(dryOut: BigInt.one)
+        ..status = 'SUCCESS'
+        ..holdStatus = Completer<void>();
+      final settings = await pumpSwap(
+        tester,
+        activeSwap(SwapOrder(quote: liveQuote, status: SwapStatus.processing)),
+        oneClick: oneClick,
+      );
+      final notifier = containerOf(tester).read(activeSwapProvider.notifier);
+      final first = notifier.refresh();
+      final second = notifier.refresh();
+      await tester.pump(SwapService.statusPollInterval);
+      expect(identical(first, second), isTrue);
+      expect(oneClick.requests.where((r) => r.url.path == '/v0/status'), hasLength(1));
+
+      await notifier.clear();
+      oneClick.holdStatus!.complete();
+      await settle(tester);
+      expect(containerOf(tester).read(activeSwapProvider), isNull);
+      expect(settings.activeSwap, isNull);
+      expect(oneClick.requests.where((r) => r.url.path == '/v0/status'), hasLength(1));
+    });
+
+    testWidgets('a swap started while the dismissed one still awaits its answer is polled on its own', (tester) async {
+      final oneClick = _OneClick(dryOut: BigInt.one)
+        ..status = 'PROCESSING'
+        ..holdStatus = Completer<void>();
+      await pumpSwap(
+        tester,
+        activeSwap(SwapOrder(quote: liveQuote, status: SwapStatus.processing)),
+        oneClick: oneClick,
+      );
+      final notifier = containerOf(tester).read(activeSwapProvider.notifier);
+      unawaited(notifier.refresh());
+      await notifier.clear();
+
+      final other = _quote(
+        from: _qtc,
+        to: _usdc,
+        amountIn: liveQuote.amountIn,
+        amountOut: liveQuote.amountOut,
+        refund: account.accountId,
+        recipient: _external,
+        depositAddress: 'qzother',
+      );
+      notifier.start(activeSwap(SwapOrder(quote: other, status: SwapStatus.processing)));
+      await tester.pump(SwapService.statusPollInterval);
+      Iterable<String> polled() => oneClick.requests
+          .where((r) => r.url.path == '/v0/status')
+          .map((r) => r.url.queryParameters['depositAddress']!);
+      expect(polled(), [_deposit, 'qzother']);
+
+      oneClick.holdStatus!.complete();
+      await settle(tester);
+      expect(containerOf(tester).read(activeSwapProvider)!.order.depositAddress, 'qzother');
+
+      await tester.pump(SwapService.statusPollInterval);
+      await settle(tester);
+      expect(polled(), [_deposit, 'qzother', 'qzother']);
+    });
+
+    testWidgets('Done on a completed swap and Start new on a failed one put the swap away', (tester) async {
+      await pumpOrder(tester, SwapOrder(quote: liveQuote, status: SwapStatus.success));
+      var container = containerOf(tester);
+      await tester.tap(find.text(l10n.commonDone));
+      await settle(tester);
+      expect(container.read(activeSwapProvider), isNull);
+
+      await pumpOrder(tester, SwapOrder(quote: liveQuote, status: SwapStatus.failed));
+      container = containerOf(tester);
+      await tester.tap(find.text(l10n.swapStartNew));
+      await settle(tester);
+      expect(container.read(activeSwapProvider), isNull);
+      expect(find.byType(SwapScreen), findsOneWidget);
     });
 
     testWidgets('shows the deposit address and exact amount while a swap in waits', (tester) async {
@@ -1011,6 +1421,12 @@ void main() {
       expect(find.text('bc1qdeposit'), findsOneWidget);
       expect(find.text('0.12345678'), findsOneWidget);
       expect(find.text(l10n.swapDepositMemoNotice), findsNothing);
+
+      final container = containerOf(tester);
+      await tester.scrollUntilVisible(find.text(l10n.swapStopTracking), 200);
+      await tester.tap(find.text(l10n.swapStopTracking));
+      await settle(tester);
+      expect(container.read(activeSwapProvider), isNull);
     });
 
     testWidgets('shows the memo a deposit must carry', (tester) async {

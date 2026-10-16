@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter/widgets.dart';
@@ -20,8 +21,9 @@ class FakeSettingsService extends Fake implements SettingsService {
   DisplayAccount? activeAccount;
   List<MultisigAccount> multisigs;
   bool hasWallet = true;
+  ActiveSwap? activeSwap;
 
-  FakeSettingsService({this.activeAccount, this.multisigs = const []});
+  FakeSettingsService({this.activeAccount, this.multisigs = const [], this.activeSwap});
 
   @override
   Future<bool> getHasWallet() async => hasWallet;
@@ -55,6 +57,15 @@ class FakeSettingsService extends Fake implements SettingsService {
 
   @override
   String? getString(String key) => null;
+
+  @override
+  ActiveSwap? getActiveSwap() => activeSwap;
+
+  @override
+  Future<void> setActiveSwap(ActiveSwap swap) async => activeSwap = swap;
+
+  @override
+  Future<void> clearActiveSwap() async => activeSwap = null;
 }
 
 /// The platform auth plugin without a platform: answers [authenticateResult],
@@ -228,6 +239,9 @@ Future<WidgetRef> pumpRef(WidgetTester tester, {List<Override> overrides = const
 class FakeTransactionSubmissionService extends Fake implements TransactionSubmissionService {
   final transfers = <(String, BigInt, BigInt)>[];
 
+  /// When set, a transfer waits for it before going out.
+  Completer<void>? holdTransfer;
+
   @override
   Future<String> balanceTransfer(
     Account account, {
@@ -236,6 +250,7 @@ class FakeTransactionSubmissionService extends Fake implements TransactionSubmis
     required BigInt amount,
     required BigInt fee,
   }) async {
+    await holdTransfer?.future;
     transfers.add((targetAddress, amount, fee));
     return '0xtxhash';
   }

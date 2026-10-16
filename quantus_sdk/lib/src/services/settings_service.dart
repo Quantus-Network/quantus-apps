@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:quantus_sdk/src/models/account.dart';
+import 'package:quantus_sdk/src/models/active_swap.dart';
 import 'package:quantus_sdk/src/models/airdrop_claim_record.dart';
 import 'package:quantus_sdk/src/models/display_account.dart';
 import 'package:quantus_sdk/src/models/multisig_account.dart';
@@ -32,6 +33,7 @@ class SettingsService {
   static const String _currencyFlippedKey = 'currency_flipped';
   static const String _selectedFiatCurrencyKey = 'selected_fiat_currency';
   static const String _selectedAppLocaleKey = 'selected_app_locale';
+  static const String _activeSwapKey = 'active_swap_v1';
 
   // referral status
   static const String hasCheckedReferralKey = 'referral_check';
@@ -440,6 +442,20 @@ class SettingsService {
   /// preference has been saved yet (caller should fall back to English).
   String? getSelectedAppLocale() {
     return _prefs.getString(_selectedAppLocaleKey);
+  }
+
+  // Active Swap: the one swap the app follows until the user puts it away
+  Future<void> setActiveSwap(ActiveSwap swap) async {
+    await _prefs.setString(_activeSwapKey, jsonEncode(swap.toJson()));
+  }
+
+  Future<void> clearActiveSwap() async {
+    await _prefs.remove(_activeSwapKey);
+  }
+
+  ActiveSwap? getActiveSwap() {
+    final json = _prefs.getString(_activeSwapKey);
+    return json == null ? null : ActiveSwap.fromJson(jsonDecode(json) as Map<String, dynamic>);
   }
 
   // --- Primitive Accessors for General Use ---

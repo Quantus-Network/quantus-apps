@@ -1340,6 +1340,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get activityDetailTxHash => 'TX HASH';
 
   @override
+  String get activityDetailTxHashCopied => 'Transaction hash copied to clipboard';
+
+  @override
   String get activityDetailViewExplorer => 'View in Explorer ↗';
 
   @override
@@ -1861,9 +1864,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get swapStartNew => 'Start a New Swap';
 
   @override
-  String get swapContactSupport => 'Contact Support';
-
-  @override
   String get swapDepositToken => 'Token';
 
   @override
@@ -1912,6 +1912,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String swapDepositNotice(String symbol, String network) {
     return 'Use your $symbol or $network wallet to deposit funds. Depositing other assets may result in loss of funds.';
   }
+
+  @override
+  String get swapRequestTimedOut => 'The request timed out';
+
+  @override
+  String swapProgressStatusUnavailable(String error) {
+    return 'The swap status can\'t be checked right now: $error';
+  }
+
+  @override
+  String swapProgressDepositNotSeen(String refund) {
+    return 'The deposit was not seen before the deadline. If it arrives late, it is refunded to $refund.';
+  }
+
+  @override
+  String get swapStopTracking => 'Stop tracking swap';
 
   @override
   String get componentQrScannerTitle => 'Scan QR Code';

@@ -12,12 +12,17 @@ class ActionCard extends StatelessWidget {
   final VoidCallback onTap;
   final bool isDisabled;
 
+  /// Laid over the card's top edge, above the icon: a live status such as a
+  /// progress badge.
+  final Widget? overlay;
+
   const ActionCard({
     super.key,
     required this.iconAsset,
     required this.label,
     required this.onTap,
     this.isDisabled = false,
+    this.overlay,
   });
 
   @override
@@ -30,39 +35,49 @@ class ActionCard extends StatelessWidget {
       child: InkWell(
         onTap: isDisabled ? null : onTap,
         borderRadius: radius,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 20),
-          decoration: ShapeDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [colors.bgCardGradientTop, colors.bgCardGradientBottom],
-            ),
-            shape: RoundedRectangleBorder(
-              borderRadius: radius,
-              side: BorderSide(color: colors.borderHairline),
-            ),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            spacing: 8,
-            children: [
-              SvgPicture.asset(
-                iconAsset,
-                width: 24,
-                height: 24,
-                colorFilter: ColorFilter.mode(colors.accentFlare, BlendMode.srcIn),
-              ),
-              SizedBox(
-                height: MediaQuery.textScalerOf(context).scale(labelStyle.fontSize!) * labelStyle.height!,
-                child: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Text(label, maxLines: 1, style: labelStyle),
-                ),
-              ),
-            ],
-          ),
+        child: Stack(
+          fit: StackFit.passthrough,
+          children: [
+            _card(context, colors, radius, labelStyle),
+            if (overlay != null) Positioned(top: 4, left: 0, right: 0, child: Center(child: overlay)),
+          ],
         ),
+      ),
+    );
+  }
+
+  Widget _card(BuildContext context, AppColorsV3 colors, BorderRadius radius, TextStyle labelStyle) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 20),
+      decoration: ShapeDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [colors.bgCardGradientTop, colors.bgCardGradientBottom],
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: radius,
+          side: BorderSide(color: colors.borderHairline),
+        ),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        spacing: 8,
+        children: [
+          SvgPicture.asset(
+            iconAsset,
+            width: 24,
+            height: 24,
+            colorFilter: ColorFilter.mode(colors.accentFlare, BlendMode.srcIn),
+          ),
+          SizedBox(
+            height: MediaQuery.textScalerOf(context).scale(labelStyle.fontSize!) * labelStyle.height!,
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(label, maxLines: 1, style: labelStyle),
+            ),
+          ),
+        ],
       ),
     );
   }

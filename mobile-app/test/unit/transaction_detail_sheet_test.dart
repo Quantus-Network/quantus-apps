@@ -5,6 +5,7 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/models/fiat_currency.dart';
 import 'package:resonance_network_wallet/providers/currency_display_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
+import 'package:resonance_network_wallet/v2/components/copy_icon_button.dart';
 import 'package:resonance_network_wallet/v2/screens/activity/transaction_detail_sheet.dart';
 
 import '../extensions.dart';
@@ -155,6 +156,27 @@ void main() {
     for (final shown in ['0xfirstbatch00000', '0xnullifier111111', '0xnullifier222222']) {
       expect(find.text(AddressFormattingService.formatActivityDetailExtrinsicHash(shown)), findsOneWidget);
     }
+  });
+
+  testWidgets('the counterparty address and the transaction hash copy whole', (tester) async {
+    final copied = <String>[];
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
+      if (call.method == 'Clipboard.setData') copied.add((call.arguments as Map)['text'] as String);
+      return null;
+    });
+    await openSheet(tester, transfer(from: other.accountId, to: me.accountId));
+
+    final buttons = find.byType(CopyIconButton);
+    expect(buttons, findsNWidgets(2));
+    expect(tester.widget<CopyIconButton>(buttons.first).text, other.accountId);
+    expect(tester.widget<CopyIconButton>(buttons.last).text, '0x9cbe');
+
+    await tester.tap(buttons.first);
+    await tester.pump();
+    await tester.tap(buttons.last);
+    await tester.pump();
+    expect(copied, [other.accountId, '0x9cbe']);
+    await tester.pump(const Duration(seconds: 10));
   });
 
   testWidgets('a sent transfer is formatted as an outflow', (tester) async {

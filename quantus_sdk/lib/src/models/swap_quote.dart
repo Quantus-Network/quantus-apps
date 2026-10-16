@@ -82,4 +82,32 @@ class SwapQuote {
       depositMemo: quote['depositMemo'] as String?,
     );
   }
+
+  /// The quote in 1Click's response shape, so [fromJson] reads it back.
+  Map<String, dynamic> toJson() {
+    final deadline = this.deadline.toUtc().toIso8601String();
+    return {
+      'quote': {
+        'amountIn': '$amountIn',
+        'minAmountIn': '$minAmountIn',
+        'amountOut': '$amountOut',
+        'minAmountOut': '$minAmountOut',
+        'amountInUsd': '$amountInUsd',
+        'amountOutUsd': '$amountOutUsd',
+        'deadline': deadline,
+        'timeEstimate': timeEstimate.inSeconds,
+        'depositAddress': ?depositAddress,
+        'depositMemo': ?depositMemo,
+      },
+      'quoteRequest': {
+        'swapType': swapType.wire,
+        'slippageTolerance': slippageBps,
+        'refundTo': refundAddress,
+        'recipient': recipient,
+        'deadline': deadline,
+      },
+      'correlationId': correlationId,
+      'signature': signature,
+    };
+  }
 }

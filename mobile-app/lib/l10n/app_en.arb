@@ -1926,6 +1926,10 @@
     "@activityDetailTxHash": {
       "description": "Transaction hash row label on detail sheet"
     },
+    "activityDetailTxHashCopied": "Transaction hash copied to clipboard",
+    "@activityDetailTxHashCopied": {
+      "description": "Toast after copying a transaction hash from the activity detail sheet"
+    },
     "activityDetailViewExplorer": "View in Explorer ↗",
     "@activityDetailViewExplorer": {
       "description": "Link to view transaction in explorer"
@@ -2722,10 +2726,6 @@
     "@swapStartNew": {
       "description": "Button on a failed swap"
     },
-    "swapContactSupport": "Contact Support",
-    "@swapContactSupport": {
-      "description": "Link on a failed swap"
-    },
     "swapDepositToken": "Token",
     "@swapDepositToken": {
       "description": "Label of the row naming the token to deposit, at the top of the deposit screen"
@@ -2819,6 +2819,32 @@
           "type": "String"
         }
       }
+    },
+    "swapRequestTimedOut": "The request timed out",
+    "@swapRequestTimedOut": {
+      "description": "Why a 1Click request failed when no answer came within the time allowed"
+    },
+    "swapProgressStatusUnavailable": "The swap status can't be checked right now: {error}",
+    "@swapProgressStatusUnavailable": {
+      "description": "Notice on the progress screen while the 1Click status poll fails",
+      "placeholders": {
+        "error": {
+          "type": "String"
+        }
+      }
+    },
+    "swapProgressDepositNotSeen": "The deposit was not seen before the deadline. If it arrives late, it is refunded to {refund}.",
+    "@swapProgressDepositNotSeen": {
+      "description": "Notice on the progress screen once the deposit window closed with the deposit unseen",
+      "placeholders": {
+        "refund": {
+          "type": "String"
+        }
+      }
+    },
+    "swapStopTracking": "Stop tracking swap",
+    "@swapStopTracking": {
+      "description": "Link at the bottom of a running swap that puts it away so another can start; the swap still settles on its own"
     },
 
     "componentQrScannerTitle": "Scan QR Code",

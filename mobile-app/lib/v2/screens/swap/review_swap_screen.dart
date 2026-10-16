@@ -1,10 +1,12 @@
 import 'dart:async';
 
+import 'package:clock/clock.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart' hide ScaffoldBase;
 import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/models/swap_preflight.dart';
+import 'package:resonance_network_wallet/providers/active_swap_provider.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
@@ -56,14 +58,28 @@ class _ReviewSwapScreenState extends ConsumerState<ReviewSwapScreen> {
       final fee = _sendsDeposit(ref.read(swapPreflightProvider))
           ? ref.read(swapDepositFeeProvider(_feeKey)).requireValue
           : null;
+      final swaps = ref.read(activeSwapProvider.notifier);
+      final ticket = swaps.ticket;
       final txHash = fee != null ? await _sendDeposit(order, fee, l10n, generation) : null;
-      if ((fee != null && txHash == null) || !mounted) return;
+      if (fee != null && txHash == null) return;
+      // The deposit is out, so the swap is followed even if the screen is gone,
+      // unless the wallet logged out or moved on meanwhile.
+      final followed = swaps.start(
+        ActiveSwap(
+          order: order,
+          accountId: widget.account.accountId,
+          accountName: widget.account.name,
+          startedAt: clock.now(),
+          depositByHand: fee == null,
+          depositTxHash: txHash,
+          depositFee: fee,
+        ),
+        ticket: ticket,
+      );
+      if (!followed || !mounted) return;
       Navigator.pushAndRemoveUntil(
         context,
-        MaterialPageRoute(
-          builder: (_) =>
-              SwapProgressScreen(account: widget.account, order: order, depositTxHash: txHash, depositFee: fee),
-        ),
+        MaterialPageRoute(builder: (_) => SwapProgressScreen(account: widget.account)),
         (route) => route.isFirst,
       );
     } finally {
@@ -78,7 +94,7 @@ class _ReviewSwapScreenState extends ConsumerState<ReviewSwapScreen> {
   /// and an answer the old service was still owed is discarded.
   Future<SwapOrder?> _liveOrder(AppLocalizations l10n, int generation) async {
     final kept = _order;
-    if (kept != null && kept.quote.deadline.isAfter(DateTime.now().add(SwapService.minimumDepositLead))) return kept;
+    if (kept != null && kept.quote.deadline.isAfter(clock.now().add(SwapService.minimumDepositLead))) return kept;
     try {
       final order = await ref.read(swapServiceProvider).createSwap(_quote);
       if (await _stale(generation, l10n)) return null;
@@ -91,7 +107,7 @@ class _ReviewSwapScreenState extends ConsumerState<ReviewSwapScreen> {
       }
     } catch (e) {
       quantusPrint('Swap create failed: $e');
-      if (mounted) context.showErrorToaster(message: l10n.swapQuoteError(describeSwapError(e)));
+      if (mounted) context.showErrorToaster(message: l10n.swapQuoteError(describeSwapError(l10n, e)));
     }
     return null;
   }
@@ -122,6 +138,7 @@ class _ReviewSwapScreenState extends ConsumerState<ReviewSwapScreen> {
   Future<String?> _sendDeposit(SwapOrder order, BigInt fee, AppLocalizations l10n, int generation) async {
     if (await _stale(generation, l10n)) return null;
     try {
+      final service = ref.read(swapServiceProvider);
       final hash = await RegularSendStrategy(account: widget.account).submitLocal(
         ref,
         recipient: order.depositAddress,
@@ -139,10 +156,7 @@ class _ReviewSwapScreenState extends ConsumerState<ReviewSwapScreen> {
         return null;
       }
       unawaited(
-        ref
-            .read(swapServiceProvider)
-            .submitDeposit(order, hash)
-            .catchError((Object e) => quantusPrint('Swap deposit submit failed: $e')),
+        service.submitDeposit(order, hash).catchError((Object e) => quantusPrint('Swap deposit submit failed: $e')),
       );
       return hash;
     } catch (e) {

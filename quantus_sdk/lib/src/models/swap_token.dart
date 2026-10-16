@@ -87,6 +87,32 @@ class SwapToken {
     this.isQuantus = false,
   });
 
+  factory SwapToken.fromJson(Map<String, dynamic> json) => SwapToken(
+    assetId: json['assetId'] as String,
+    symbol: json['symbol'] as String,
+    network: json['network'] as String,
+    decimals: json['decimals'] as int,
+    usdPrice: (json['usdPrice'] as num).toDouble(),
+    iconAssetId: json['iconAssetId'] as String?,
+    imageUrl: json['imageUrl'] as String?,
+    networkImageUrl: json['networkImageUrl'] as String?,
+    marketCapUsd: (json['marketCapUsd'] as num).toDouble(),
+    isQuantus: json['isQuantus'] as bool,
+  );
+
+  Map<String, dynamic> toJson() => {
+    'assetId': assetId,
+    'symbol': symbol,
+    'network': network,
+    'decimals': decimals,
+    'usdPrice': usdPrice,
+    'iconAssetId': iconAssetId,
+    'imageUrl': imageUrl,
+    'networkImageUrl': networkImageUrl,
+    'marketCapUsd': marketCapUsd,
+    'isQuantus': isQuantus,
+  };
+
   /// Whether [assetId] names a token contract on NEAR (NEP-141 or NEP-245).
   static bool hasNearContract(String assetId) => assetId.startsWith('nep141:') || assetId.startsWith('nep245:');
 

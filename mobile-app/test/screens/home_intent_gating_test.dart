@@ -1,3 +1,4 @@
+import 'package:clock/clock.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -17,6 +18,9 @@ import 'package:resonance_network_wallet/v2/screens/send/input_amount_screen.dar
 import 'package:resonance_network_wallet/v2/screens/send/keystone_sign_cache.dart';
 import 'package:resonance_network_wallet/v2/screens/send/regular_send_strategy.dart';
 import 'package:resonance_network_wallet/v2/screens/send/send_providers.dart';
+import 'package:resonance_network_wallet/v2/screens/swap/swap_progress.dart';
+import 'package:resonance_network_wallet/v2/screens/swap/swap_progress_screen.dart';
+import 'package:resonance_network_wallet/v2/screens/swap/swap_screen.dart';
 
 import '../extensions.dart';
 import '../fakes.dart';
@@ -64,6 +68,136 @@ void main() {
     await tester.pump();
     await tester.pump();
     return ProviderScope.containerOf(tester.element(find.byType(HomeScreen)));
+  }
+
+  /// A swap out of [account] into USDC, as the app follows it, [age] old.
+  ActiveSwap swapOf(Account account, SwapStatus status, {Duration age = const Duration(minutes: 3, seconds: 7)}) {
+    const usdc = SwapToken(assetId: 'nep141:usdc.omft.near', symbol: 'USDC', network: 'ETH', decimals: 6, usdPrice: 1);
+    const qtc = SwapToken(
+      assetId: 'nep141:qtc.omft.near',
+      symbol: 'QTC',
+      network: SwapToken.quantusNetwork,
+      decimals: AppConstants.decimals,
+      usdPrice: 0.1,
+      isQuantus: true,
+    );
+    final now = clock.now();
+    return ActiveSwap(
+      order: SwapOrder(
+        quote: SwapQuote(
+          fromToken: qtc,
+          toToken: usdc,
+          amountIn: BigInt.from(10).pow(AppConstants.decimals),
+          minAmountIn: BigInt.from(10).pow(AppConstants.decimals),
+          amountOut: BigInt.from(100000),
+          minAmountOut: BigInt.from(99000),
+          amountInUsd: 0.1,
+          amountOutUsd: 0.1,
+          slippageBps: 100,
+          refundAddress: account.accountId,
+          recipient: '0xrecipient',
+          deadline: now.add(const Duration(minutes: 20)),
+          timeEstimate: const Duration(minutes: 1),
+          correlationId: 'c',
+          signature: 's',
+          depositAddress: 'qzdeposit',
+        ),
+        status: status,
+      ),
+      accountId: account.accountId,
+      accountName: account.name,
+      startedAt: now.subtract(age),
+      settledAt: status.isFinal ? now : null,
+      depositByHand: false,
+      depositTxHash: '0xtx',
+    );
+  }
+
+  FakeSettingsService settingsFollowing(Account account, ActiveSwap swap) =>
+      FakeSettingsService(activeAccount: RegularAccount(account), activeSwap: swap);
+
+  Color dotColor(WidgetTester tester, int index) {
+    final dots = find.descendant(of: find.byType(SwapProgressDots), matching: find.byType(Container));
+    return (tester.widget<Container>(dots.at(index)).decoration as BoxDecoration).color!;
+  }
+
+  testWidgets('the swap button shows the steps reached and the clock while a swap runs, and opens it', (tester) async {
+    final account = makeAccount(1);
+    final settings = settingsFollowing(account, swapOf(account, SwapStatus.processing));
+    await pumpHome(tester, settings: settings, auth: TestLocalAuthController(authenticated: true));
+
+    expect(find.byType(SwapProgressBadge), findsOneWidget);
+    expect(find.text('3:07'), findsOneWidget);
+    final colors = tester.element(find.byType(SwapProgressBadge)).colorsV3;
+    expect(
+      [for (var i = 0; i < swapStepCount; i++) dotColor(tester, i)],
+      [colors.semanticSage, colors.semanticSage, colors.semanticSage, colors.bgSurface2],
+    );
+
+    await tester.pump(const Duration(seconds: 1));
+    expect(find.text('3:08'), findsOneWidget);
+
+    await tester.tap(find.text('Swap'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.byType(SwapProgressScreen), findsOneWidget);
+    expect(find.byType(SwapScreen), findsNothing);
+  });
+
+  testWidgets('a failed swap shows ember dots and a stopped clock, and the button stays where swaps are off', (
+    tester,
+  ) async {
+    final account = makeAccount(1);
+    final settings = settingsFollowing(account, swapOf(account, SwapStatus.refunded));
+    await pumpHome(tester, settings: settings, auth: TestLocalAuthController(authenticated: true), enableSwap: false);
+
+    expect(find.text('Swap'), findsOneWidget);
+    expect(find.text('3:07'), findsOneWidget);
+    final colors = tester.element(find.byType(SwapProgressBadge)).colorsV3;
+    expect(dotColor(tester, 2), colors.semanticEmber);
+    expect(dotColor(tester, 3), colors.bgSurface2);
+
+    await tester.pump(const Duration(seconds: 2));
+    expect(find.text('3:07'), findsOneWidget);
+  });
+
+  // The swap being followed belongs to the wallet, not the selected account:
+  // it shows and opens from any home, while only an account with a key here
+  // may start the next one.
+  final entrusted = EntrustedAccount(
+    parentAccountId: makeAccount(1).accountId,
+    index: 0,
+    name: 'Entrusted',
+    accountId: 'qzentrusted${'x' * 40}',
+  );
+  for (final (kind, active) in [
+    ('multisig', MultisigDisplayAccount(makeMultisigAccount())),
+    ('entrusted', EntrustedDisplayAccount(entrusted)),
+  ]) {
+    testWidgets('a swap being followed shows on a $kind home and opens, though no swap can start there', (
+      tester,
+    ) async {
+      final account = makeAccount(1);
+      final settings = settingsFollowing(account, swapOf(account, SwapStatus.failed))
+        ..activeAccount = active
+        ..multisigs = [makeMultisigAccount()];
+      await pumpHome(tester, settings: settings, auth: TestLocalAuthController(authenticated: true));
+
+      expect(find.text('Send'), findsNothing);
+      expect(find.text('Propose'), kind == 'multisig' ? findsOneWidget : findsNothing);
+      expect(find.byType(SwapProgressBadge), findsOneWidget);
+      expect(find.text('3:07'), findsOneWidget);
+      expect(dotColor(tester, 2), tester.element(find.byType(SwapProgressBadge)).colorsV3.semanticEmber);
+
+      await tester.tap(find.text('Swap'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(find.byType(SwapProgressScreen), findsOneWidget);
+      QuantusButton button(String label) =>
+          tester.widget<QuantusButton>(find.ancestor(of: find.text(label), matching: find.byType(QuantusButton)));
+      expect(button('Start a New Swap').isDisabled, isTrue);
+      expect(button('Done').isDisabled, isFalse);
+    });
   }
 
   // Each platform follows its own flag; the other platform's flag is set to

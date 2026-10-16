@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -16,6 +17,7 @@ import 'package:resonance_network_wallet/v2/screens/settings/preferences_setting
 import 'package:resonance_network_wallet/v2/screens/settings/settings_divider.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/settings_tappable_row.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/wallet_settings_screen.dart';
+import 'package:resonance_network_wallet/v2/screens/swap/swap_debug_screen.dart';
 
 class SettingsScreenV2 extends ConsumerStatefulWidget {
   const SettingsScreenV2({super.key});
@@ -126,6 +128,13 @@ List<_SettingsHubItem> _settingsHubItems(BuildContext context, AppLocalizations 
       subtitle: l10n.settingsAboutHubSubtitle(appVersion, shownBuildNumber),
       page: const AboutQuantusScreenV2(),
     ),
+    if (kDebugMode)
+      _SettingsHubItem(
+        leading: _settingsHubIcon(colors, icon: Icons.science_outlined),
+        title: SwapDebugScreen.title,
+        subtitle: SwapDebugScreen.subtitle,
+        page: const SwapDebugScreen(),
+      ),
   ];
 }
 
