@@ -2114,12 +2114,6 @@ abstract class AppLocalizations {
   /// **'I rejected it on the cold wallet'**
   String get keystoneRejectConfirm;
 
-  /// Link to contact support from the Keystone mismatch help screen
-  ///
-  /// In en, this message translates to:
-  /// **'Contact Support'**
-  String get keystoneRejectContactSupport;
-
   /// Button label when sending to own address
   ///
   /// In en, this message translates to:
@@ -3053,7 +3047,7 @@ abstract class AppLocalizations {
   /// Title of the slippage tolerance sheet
   ///
   /// In en, this message translates to:
-  /// **'Slippage Tolerance'**
+  /// **'Slippage'**
   String get swapSlippageTitle;
 
   /// Explanation on the slippage tolerance sheet
@@ -3074,12 +3068,6 @@ abstract class AppLocalizations {
   /// **'Slippage can be at most {percent}%'**
   String swapSlippageCustomMax(String percent);
 
-  /// A slippage tolerance option
-  ///
-  /// In en, this message translates to:
-  /// **'{percent}%'**
-  String swapSlippagePercent(String percent);
-
   /// Swap form button for a swap out of QTC
   ///
   /// In en, this message translates to:
@@ -3098,11 +3086,17 @@ abstract class AppLocalizations {
   /// **'Refund to'**
   String get swapRefundTo;
 
-  /// Title on token picker sheet
+  /// Title of the token picker for the side that pays
   ///
   /// In en, this message translates to:
-  /// **'Select Token'**
-  String get swapTokenPickerTitle;
+  /// **'Pay with'**
+  String get swapTokenPickerPayWith;
+
+  /// Title of the token picker for the side that receives
+  ///
+  /// In en, this message translates to:
+  /// **'Receive'**
+  String get swapTokenPickerReceive;
 
   /// Error when token list fails to load
   ///
@@ -3353,7 +3347,7 @@ abstract class AppLocalizations {
   /// Footer under the swap progress bar
   ///
   /// In en, this message translates to:
-  /// **'Usually a few minutes. The swap finishes even if you leave this screen. · via NEAR Intents'**
+  /// **'Usually a few minutes. You can leave the app, we\'ll notify you when it arrives. · via NEAR Intents'**
   String get swapProgressFooter;
 
   /// Title of the swap details sheet
@@ -3560,12 +3554,6 @@ abstract class AppLocalizations {
   /// **'The deposit was not seen before the deadline. If it arrives late, it is refunded to {refund}.'**
   String swapProgressDepositNotSeen(String refund);
 
-  /// Link at the bottom of a running swap that puts it away so another can start; the swap still settles on its own
-  ///
-  /// In en, this message translates to:
-  /// **'Stop tracking swap'**
-  String get swapStopTracking;
-
   /// Text for app bar or button label on QR scanner component
   ///
   /// In en, this message translates to:
@@ -3649,6 +3637,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Done'**
   String get commonDone;
+
+  /// Save button on sheets that apply a pick
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get commonSave;
+
+  /// A percentage, as a slippage option or a share of the balance
+  ///
+  /// In en, this message translates to:
+  /// **'{percent}%'**
+  String commonPercent(String percent);
+
+  /// Link to support from a failed swap or the Keystone mismatch screen
+  ///
+  /// In en, this message translates to:
+  /// **'Contact Support'**
+  String get commonContactSupport;
 
   /// Retry action on various screens
   ///

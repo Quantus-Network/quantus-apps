@@ -15,6 +15,7 @@ import 'package:resonance_network_wallet/shared/utils/account_utils.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/success_check.dart';
 import 'package:resonance_network_wallet/v2/components/token_icon.dart';
+import 'package:resonance_network_wallet/v2/screens/settings/help_and_support_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/swap_progress.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/swap_providers.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/swap_screen.dart';
@@ -22,8 +23,9 @@ import 'package:resonance_network_wallet/v2/screens/swap/swap_summary.dart';
 
 /// Follows the active swap: the deposit address while a swap into QTC (or,
 /// in preflight, any swap) waits for its deposit, then progress, and finally
-/// the completed or failed swap. Leaving by Done, Stop tracking or Start new
-/// puts the swap away, so the next tap on Swap starts a fresh one.
+/// the completed or failed swap. Leaving by Done or Start new, or a failed
+/// swap by going back, puts the swap away, so the next tap on Swap starts a
+/// fresh one; a running swap left by going back is still followed.
 class SwapProgressScreen extends ConsumerStatefulWidget {
   /// The account a new swap would start from; none when the selected
   /// account cannot swap.
@@ -178,12 +180,6 @@ class _SwapInProgress extends ConsumerWidget {
               textAlign: TextAlign.center,
               style: text.body.copyWith(color: colors.textMuted2),
             ),
-            const SizedBox(height: 8),
-            QuantusButton.simple(
-              label: l10n.swapStopTracking,
-              variant: ButtonVariant.underline,
-              onTap: () => _finish(context, ref),
-            ),
           ],
         ),
       ),
@@ -317,7 +313,8 @@ class _SwapComplete extends ConsumerWidget {
 }
 
 /// A swap that ended without paying out: refunded, failed, short-paid, or a
-/// deposit window that closed with nothing sent.
+/// deposit window that closed with nothing sent. Going back puts it away;
+/// Contact Support opens Help & Support.
 class _SwapFailed extends ConsumerWidget {
   final ActiveSwap swap;
   final Account? account;
@@ -357,59 +354,64 @@ class _SwapFailed extends ConsumerWidget {
     final starter = account;
     final swapsOffered = ref.watch(remoteConfigProvider.select((c) => c.swapAvailable));
 
-    return ScaffoldBase(
-      appBar: V2AppBar(
-        title: expired
-            ? l10n.swapDepositExpiredTitle
-            : order.status == SwapStatus.incompleteDeposit
-            ? l10n.swapDepositIncompleteTitle
-            : l10n.swapFailedTitle,
-      ),
-      mainContent: SingleChildScrollView(
-        child: Column(
-          children: [
-            const SizedBox(height: 24),
-            if (refunded) ...[
-              Text(
-                l10n.swapRefundedLabel.toUpperCase(),
-                style: text.labelMonogram.copyWith(color: colors.semanticSand),
-              ),
-              const SizedBox(height: 12),
-            ],
-            if (!expired) ...[
-              SwapAmountsCard(
-                quote: order.quote,
-                payLabel: l10n.swapYouPaid,
-                receiveLabel: l10n.swapYouWereReceiving,
-                amountOut: order.amountOut,
-                receiveDimmed: true,
-              ),
-              const SizedBox(height: 32),
-            ],
-            QuantusBanner(
-              tone: warning ? BannerTone.sand : BannerTone.ember,
-              message: _message(l10n, fmt, preflight: ref.watch(swapPreflightProvider) != null),
-            ),
-            if (pollError != null) ...[const SizedBox(height: 16), _PollErrorNotice(error: pollError)],
-          ],
+    return PopScope(
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) ref.read(activeSwapProvider.notifier).clear();
+      },
+      child: ScaffoldBase(
+        appBar: V2AppBar(
+          title: expired
+              ? l10n.swapDepositExpiredTitle
+              : order.status == SwapStatus.incompleteDeposit
+              ? l10n.swapDepositIncompleteTitle
+              : l10n.swapFailedTitle,
         ),
-      ),
-      bottomContent: ScaffoldBaseBottomContent(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            QuantusButton.simple(
-              label: l10n.swapStartNew,
-              isDisabled: starter == null || !starter.signsLocally || !swapsOffered,
-              onTap: starter == null ? null : () => _startNew(context, ref, starter),
-            ),
-            const SizedBox(height: 4),
-            QuantusButton.simple(
-              label: l10n.commonDone,
-              variant: ButtonVariant.staged,
-              onTap: () => _finish(context, ref),
-            ),
-          ],
+        mainContent: SingleChildScrollView(
+          child: Column(
+            children: [
+              const SizedBox(height: 24),
+              if (refunded) ...[
+                Text(
+                  l10n.swapRefundedLabel.toUpperCase(),
+                  style: text.labelMonogram.copyWith(color: colors.semanticSand),
+                ),
+                const SizedBox(height: 12),
+              ],
+              if (!expired) ...[
+                SwapAmountsCard(
+                  quote: order.quote,
+                  payLabel: l10n.swapYouPaid,
+                  receiveLabel: l10n.swapYouWereReceiving,
+                  amountOut: order.amountOut,
+                  receiveDimmed: true,
+                ),
+                const SizedBox(height: 32),
+              ],
+              QuantusBanner(
+                tone: warning ? BannerTone.sand : BannerTone.ember,
+                message: _message(l10n, fmt, preflight: ref.watch(swapPreflightProvider) != null),
+              ),
+              if (pollError != null) ...[const SizedBox(height: 16), _PollErrorNotice(error: pollError)],
+            ],
+          ),
+        ),
+        bottomContent: ScaffoldBaseBottomContent(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              QuantusButton.simple(
+                label: l10n.swapStartNew,
+                isDisabled: starter == null || !starter.signsLocally || !swapsOffered,
+                onTap: starter == null ? null : () => _startNew(context, ref, starter),
+              ),
+              const SizedBox(height: 4),
+              QuantusButton.simple(
+                label: l10n.commonContactSupport,
+                variant: ButtonVariant.underline,
+                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const HelpAndSupportScreenV2())),
+              ),
+            ],
+          ),
         ),
       ),
     );

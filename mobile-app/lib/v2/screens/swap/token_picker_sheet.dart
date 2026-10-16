@@ -9,22 +9,25 @@ import 'package:resonance_network_wallet/shared/utils/print.dart';
 
 typedef SwapTokenLoader = Future<List<SwapToken>> Function({bool forceRefresh});
 
+/// Lists the tokens 1Click swaps, two thirds of the screen high; [paying]
+/// titles the sheet for the side that pays rather than the one that receives.
 Future<SwapToken?> showTokenPickerSheet(
   BuildContext context, {
   required SwapTokenLoader loadTokens,
-  required SwapToken current,
+  required bool paying,
 }) {
   return BottomSheetContainer.show<SwapToken>(
     context,
-    fullScreen: true,
-    builder: (_) => _TokenPickerContent(loadTokens: loadTokens, current: current),
+    builder: (_) => _TokenPickerContent(loadTokens: loadTokens, paying: paying),
   );
 }
 
 class _TokenPickerContent extends ConsumerStatefulWidget {
+  static const heightFraction = 2 / 3;
+
   final SwapTokenLoader loadTokens;
-  final SwapToken current;
-  const _TokenPickerContent({required this.loadTokens, required this.current});
+  final bool paying;
+  const _TokenPickerContent({required this.loadTokens, required this.paying});
 
   @override
   ConsumerState<_TokenPickerContent> createState() => _TokenPickerContentState();
@@ -82,8 +85,13 @@ class _TokenPickerContentState extends ConsumerState<_TokenPickerContent> {
     final text = context.themeTextV3;
 
     return BottomSheetContainer(
-      title: l10n.swapTokenPickerTitle,
-      height: double.infinity,
+      title: widget.paying ? l10n.swapTokenPickerPayWith : l10n.swapTokenPickerReceive,
+      height: MediaQuery.sizeOf(context).height * _TokenPickerContent.heightFraction,
+      trailing: QuantusIconButton.ghost(
+        icon: Icons.close,
+        onTap: () => Navigator.pop(context),
+        size: IconButtonSize.small,
+      ),
       child: DefaultTextStyle(
         style: const TextStyle(decoration: TextDecoration.none),
         child: _content(l10n, colors, text),
@@ -165,18 +173,12 @@ class _TokenPickerContentState extends ConsumerState<_TokenPickerContent> {
     AppTextThemeV3 text, {
     required bool ranked,
   }) {
-    final selected = token == widget.current;
     final unranked = ranked && token.marketCapUsd == 0 && !token.isQuantus;
     return GestureDetector(
       onTap: () => Navigator.pop(context, token),
       behavior: HitTestBehavior.opaque,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 8),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          borderRadius: context.radiusV3.mdBorder,
-          border: selected ? Border.all(color: colors.borderEmphasis) : null,
-        ),
+      child: Padding(
+        padding: const EdgeInsets.only(top: 12, bottom: 12, right: 16),
         child: Row(
           children: [
             TokenIcon(token: token),

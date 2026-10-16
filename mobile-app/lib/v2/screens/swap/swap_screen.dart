@@ -8,6 +8,7 @@ import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/shared/utils/account_utils.dart';
 import 'package:resonance_network_wallet/shared/utils/print.dart';
+import 'package:resonance_network_wallet/v2/components/amount_box.dart';
 import 'package:resonance_network_wallet/v2/components/near_intents_attribution.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/token_icon.dart';
@@ -45,6 +46,7 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
   static const _slippageIconAsset = 'assets/v2/swap_pencil.svg';
   static const _amountBoxWidth = 125.0;
   static const _rowHeight = 44.0;
+  static const _chipShares = [25, 50, 75];
 
   final _amountController = TextEditingController();
   final _amountFocus = FocusNode();
@@ -69,6 +71,7 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
   void initState() {
     super.initState();
     _amountController.addListener(() => setState(() {}));
+    _amountFocus.addListener(() => setState(() {}));
     _loadTokens();
   }
 
@@ -146,10 +149,10 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
       .read(numberFormattingServiceProvider)
       .formatBalance(amount, decimals: token.decimals, maxDecimals: token.decimals, addThousandsSeparators: false);
 
-  /// Types the most the account can put in, as what it pays.
-  void _setMax(BigInt max, SwapToken from) {
+  /// Types [amount] as what the account pays.
+  void _setAmount(BigInt amount, SwapToken from) {
     setState(() => _exactOutput = false);
-    _amountController.text = _amountText(max, from);
+    _amountController.text = _amountText(amount, from);
   }
 
   /// Null when the other side pays, as in a swap in or when the preflight
@@ -173,7 +176,11 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
   /// moves QTC there, as does picking a foreign token for QTC's side.
   Future<void> _pickToken(SwapToken tapped) async {
     final service = ref.read(swapServiceProvider);
-    final token = await showTokenPickerSheet(context, current: tapped, loadTokens: service.getFromTokens);
+    final token = await showTokenPickerSheet(
+      context,
+      loadTokens: service.getFromTokens,
+      paying: tapped.isQuantus == _swapOut,
+    );
     if (token == null || !mounted || token == tapped) return;
     if (!token.isQuantus) {
       setState(() {
@@ -260,13 +267,7 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
           ? _form(l10n, colors, text, _swapOut ? quantus : foreign, _swapOut ? foreign : quantus, funds)
           : _unavailable(l10n, colors, text, disabled: !available),
       bottomContent: ready
-          ? _cta(
-              l10n,
-              _swapOut ? quantus : foreign,
-              _swapOut ? foreign : quantus,
-              foreign,
-              canPay: funds?.max ?? funds?.balance.value,
-            )
+          ? _cta(l10n, colors, text, _swapOut ? quantus : foreign, _swapOut ? foreign : quantus, foreign, funds)
           : null,
     );
   }
@@ -318,25 +319,73 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
     );
   }
 
-  /// [canPay] is the most the account can put in, the whole balance until the
-  /// fee is known, or null when the other side pays.
-  Widget _cta(AppLocalizations l10n, SwapToken from, SwapToken to, SwapToken foreign, {required BigInt? canPay}) {
+  /// The account can pay up to the most it can put in, or its whole balance
+  /// until the fee is known; nothing is checked when the other side pays.
+  /// While the amount is typed and that most is known, chips above the
+  /// button type a share of it.
+  Widget _cta(
+    AppLocalizations l10n,
+    AppColorsV3 colors,
+    AppTextThemeV3 text,
+    SwapToken from,
+    SwapToken to,
+    SwapToken foreign,
+    _Funds? funds,
+  ) {
+    final max = funds?.max;
+    final canPay = max ?? funds?.balance.value;
     final (amountIn, amountOut) = _amounts(from, to);
     final insufficient = canPay != null && amountIn > canPay;
     final address = _address;
     return ScaffoldBaseBottomContent(
-      child: QuantusButton.simple(
-        label: insufficient
-            ? l10n.sendLogicInsufficientBalance
-            : address != null
-            ? l10n.swapReviewTitle
-            : _swapOut
-            ? l10n.swapAddRecipientAddress
-            : l10n.swapAddRefundAddress,
-        onTap: address == null ? () => _addAddress(from, to, foreign) : () => _review(from, to, address),
-        isLoading: _quoting,
-        isDisabled: insufficient || address != null && (amountIn == BigInt.zero || amountOut == BigInt.zero),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (max != null && _amountFocus.hasFocus) ...[
+            Row(
+              children: [
+                for (final share in _chipShares) ...[
+                  Expanded(
+                    child: _chip(
+                      colors,
+                      text,
+                      label: l10n.commonPercent('$share'),
+                      onTap: () => _setAmount(max * BigInt.from(share) ~/ BigInt.from(100), from),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                ],
+                Expanded(
+                  child: _chip(colors, text, label: l10n.sendInputAmountMax, onTap: () => _setAmount(max, from)),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+          ],
+          QuantusButton.simple(
+            label: insufficient
+                ? l10n.sendLogicInsufficientBalance
+                : address != null
+                ? l10n.swapReviewTitle
+                : _swapOut
+                ? l10n.swapAddRecipientAddress
+                : l10n.swapAddRefundAddress,
+            onTap: address == null ? () => _addAddress(from, to, foreign) : () => _review(from, to, address),
+            isLoading: _quoting,
+            isDisabled: insufficient || address != null && (amountIn == BigInt.zero || amountOut == BigInt.zero),
+          ),
+        ],
       ),
+    );
+  }
+
+  Widget _chip(AppColorsV3 colors, AppTextThemeV3 text, {required String label, required VoidCallback onTap}) {
+    return QuantusButton.simple(
+      label: label,
+      variant: ButtonVariant.staged,
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      textStyle: text.caption.copyWith(color: colors.textContent),
+      onTap: onTap,
     );
   }
 
@@ -387,7 +436,7 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
                       usd: swapUsdValue(amountIn, from),
                       amount: _exactOutput
                           ? _estimateBox(colors, text, fmt, from, amountIn, onTap: () => _typeOtherSide(from, to))
-                          : _amountField(colors, text, from),
+                          : _amountField(text, from),
                       caret: true,
                       onTypeOtherSide: _exactOutput ? null : () => _typeOtherSide(from, to),
                       aside: funds == null ? null : _balanceRow(l10n, colors, text, fmt, from, funds),
@@ -401,7 +450,7 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
                       token: to,
                       usd: swapUsdValue(amountOut, to),
                       amount: _exactOutput
-                          ? _amountField(colors, text, to)
+                          ? _amountField(text, to)
                           : _estimateBox(colors, text, fmt, to, amountOut, onTap: () => _typeOtherSide(from, to)),
                       caret: false,
                       onTypeOtherSide: _exactOutput ? () => _typeOtherSide(from, to) : null,
@@ -531,7 +580,7 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
         ? '—'
         : '…';
     return GestureDetector(
-      onTap: max == null ? null : () => _setMax(max, from),
+      onTap: max == null ? null : () => _setAmount(max, from),
       behavior: HitTestBehavior.opaque,
       child: Text.rich(
         TextSpan(
@@ -669,17 +718,6 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
     );
   }
 
-  Widget _amountBox(AppColorsV3 colors, Widget child) {
-    return Container(
-      width: _amountBoxWidth,
-      height: _rowHeight,
-      padding: const EdgeInsets.only(left: 12, right: 8),
-      alignment: Alignment.centerRight,
-      decoration: BoxDecoration(color: colors.textWhite.useOpacity(0.05), borderRadius: context.radiusV3.smBorder),
-      child: child,
-    );
-  }
-
   /// The side not typed on: its amount at listed prices; a tap types there.
   Widget _estimateBox(
     AppColorsV3 colors,
@@ -691,9 +729,10 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
   }) {
     return GestureDetector(
       onTap: onTap,
-      child: _amountBox(
-        colors,
-        Text(
+      child: AmountBox(
+        width: _amountBoxWidth,
+        height: _rowHeight,
+        child: Text(
           fmt.formatAmount(estimate, decimals: token.decimals),
           style: text.amountInline.copyWith(color: estimate > BigInt.zero ? colors.textContent : colors.textMuted2),
           maxLines: 1,
@@ -703,23 +742,15 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
     );
   }
 
-  Widget _amountField(AppColorsV3 colors, AppTextThemeV3 text, SwapToken token) {
-    return _amountBox(
-      colors,
-      TextField(
+  Widget _amountField(AppTextThemeV3 text, SwapToken token) {
+    return AmountBox(
+      width: _amountBoxWidth,
+      height: _rowHeight,
+      child: AmountBoxField(
         controller: _amountController,
         focusNode: _amountFocus,
-        textAlign: TextAlign.right,
-        style: text.amountInline.copyWith(color: colors.textContent),
-        cursorColor: colors.accentFlare,
-        keyboardType: const TextInputType.numberWithOptions(decimal: true),
-        inputFormatters: [
-          DecimalInputFilter(localeConfig: ref.watch(localeNumberConfigProvider), maxDecimalPlaces: token.decimals),
-        ],
-        decoration: InputDecoration.collapsed(
-          hintText: '0',
-          hintStyle: text.amountInline.copyWith(color: colors.textMuted2),
-        ),
+        style: text.amountInline,
+        maxDecimalPlaces: token.decimals,
       ),
     );
   }

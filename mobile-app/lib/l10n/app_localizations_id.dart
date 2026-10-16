@@ -1116,9 +1116,6 @@ class AppLocalizationsId extends AppLocalizations {
   String get keystoneRejectConfirm => 'I rejected it on the cold wallet';
 
   @override
-  String get keystoneRejectContactSupport => 'Contact Support';
-
-  @override
   String get sendLogicCantSelfTransfer => 'Tidak Bisa Transfer ke Diri Sendiri';
 
   @override
@@ -1620,7 +1617,7 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
-  String get swapSlippageTitle => 'Toleransi Slippage';
+  String get swapSlippageTitle => 'Slippage';
 
   @override
   String get swapSlippageBody =>
@@ -1635,11 +1632,6 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
-  String swapSlippagePercent(String percent) {
-    return '$percent%';
-  }
-
-  @override
   String get swapAddRecipientAddress => 'Tambahkan Alamat Penerima';
 
   @override
@@ -1649,7 +1641,10 @@ class AppLocalizationsId extends AppLocalizations {
   String get swapRefundTo => 'Refund ke';
 
   @override
-  String get swapTokenPickerTitle => 'Pilih Token';
+  String get swapTokenPickerPayWith => 'Bayar dengan';
+
+  @override
+  String get swapTokenPickerReceive => 'Terima';
 
   @override
   String get swapTokenPickerLoadError => 'Gagal memuat token';
@@ -1801,7 +1796,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get swapProgressFooter =>
-      'Biasanya beberapa menit. Swap tetap selesai meskipun Anda meninggalkan layar ini. · via NEAR Intents';
+      'Biasanya beberapa menit. Anda boleh meninggalkan aplikasi, kami akan memberi tahu saat dananya tiba. · via NEAR Intents';
 
   @override
   String get swapDetailsTitle => 'Detail Swap';
@@ -1922,9 +1917,6 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
-  String get swapStopTracking => 'Berhenti melacak swap';
-
-  @override
   String get componentQrScannerTitle => 'Pindai Kode QR';
 
   @override
@@ -1967,6 +1959,17 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get commonDone => 'Selesai';
+
+  @override
+  String get commonSave => 'Simpan';
+
+  @override
+  String commonPercent(String percent) {
+    return '$percent%';
+  }
+
+  @override
+  String get commonContactSupport => 'Hubungi Dukungan';
 
   @override
   String get commonRetry => 'Coba Lagi';

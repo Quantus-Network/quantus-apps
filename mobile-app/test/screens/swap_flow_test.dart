@@ -22,6 +22,7 @@ import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/services/transaction_submission_service.dart';
 import 'package:resonance_network_wallet/v2/components/search_field.dart';
+import 'package:resonance_network_wallet/v2/screens/settings/help_and_support_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/review_swap_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/swap_progress_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/swap_providers.dart';
@@ -329,6 +330,13 @@ void main() {
   QuantusButton button(WidgetTester tester, String label) =>
       tester.widget<QuantusButton>(find.ancestor(of: find.text(label), matching: find.byType(QuantusButton)));
 
+  /// A phone-sized view, so that a tall sheet's button is on screen.
+  void phoneView(WidgetTester tester) {
+    tester.view.physicalSize = const Size(402 * 3, 874 * 3);
+    tester.view.devicePixelRatio = 3;
+    addTearDown(tester.view.reset);
+  }
+
   group('SwapScreen', () {
     testWidgets('opens as a purchase of QTC and flips direction with the arrows', (tester) async {
       final oneClick = _OneClick(dryOut: BigInt.from(24860000));
@@ -400,7 +408,37 @@ void main() {
       expect(max, findsNothing);
     });
 
-    testWidgets('the token picker fills the screen, lists every token and filters them by search', (tester) async {
+    testWidgets('while the amount is typed, chips put a share of the most the account can pay in', (tester) async {
+      final oneClick = _OneClick(dryOut: BigInt.from(24860000));
+      await tester.pumpApp(
+        SwapScreen(account: account),
+        overrides: overrides(oneClick.service(), balance: _unit * BigInt.from(100)),
+      );
+      await settle(tester);
+      await swapOut(tester);
+      await settle(tester);
+      final half = find.text(l10n.commonPercent('50'));
+      expect(half, findsNothing);
+
+      await tester.enterText(find.byType(TextField), '1');
+      await tester.pump();
+      expect(half, findsOneWidget);
+      await tester.tap(half);
+      await tester.pump();
+      expect(tester.widget<TextField>(find.byType(TextField)).controller!.text, '49.9895');
+      expect(half, findsOneWidget);
+
+      await tester.tap(find.text(l10n.sendInputAmountMax));
+      await tester.pump();
+      expect(tester.widget<TextField>(find.byType(TextField)).controller!.text, '99.979');
+
+      await swapOut(tester);
+      await tester.enterText(find.byType(TextField), '1');
+      await tester.pump();
+      expect(half, findsNothing);
+    });
+
+    testWidgets('the token picker opens two thirds high, lists every token and filters them by search', (tester) async {
       final oneClick = _OneClick(
         dryOut: BigInt.one,
         listed: [
@@ -415,7 +453,11 @@ void main() {
 
       await tester.tap(find.text('USDC'));
       await settle(tester);
-      expect(tester.getTopLeft(find.byType(BottomSheetContainer)).dy, 0);
+      expect(find.text(l10n.swapTokenPickerPayWith), findsOneWidget);
+      expect(
+        tester.getTopLeft(find.byType(BottomSheetContainer)).dy,
+        tester.getSize(find.byType(MaterialApp)).height / 3,
+      );
 
       final search = find.descendant(of: find.byType(SearchField), matching: find.byType(TextField));
       await tester.enterText(search, 'coin12');
@@ -443,6 +485,14 @@ void main() {
       await tester.tap(find.text('COIN12'));
       await settle(tester);
       expect(find.byType(BottomSheetContainer), findsNothing);
+
+      await tester.tap(find.text('QTC'));
+      await settle(tester);
+      expect(find.text(l10n.swapTokenPickerReceive), findsOneWidget);
+      await tester.tap(find.byIcon(Icons.close));
+      await settle(tester);
+      expect(find.byType(BottomSheetContainer), findsNothing);
+      expect(find.text(l10n.swapAddRefundAddress), findsOneWidget);
       expect(find.text('COIN12'), findsOneWidget);
     });
 
@@ -632,6 +682,7 @@ void main() {
 
   group('slippage', () {
     testWidgets('the picked tolerance shows on the form and goes into the quote', (tester) async {
+      phoneView(tester);
       final oneClick = _OneClick(dryOut: BigInt.from(24860000));
       await tester.pumpApp(SwapScreen(account: account), overrides: overrides(oneClick.service()));
       await settle(tester);
@@ -640,6 +691,9 @@ void main() {
       await tester.tap(svg('assets/v2/swap_pencil.svg'));
       await settle(tester);
       await tester.tap(find.text('2%'));
+      await tester.pump();
+      expect(find.text(l10n.swapSlippageLabel('1')), findsOneWidget);
+      await tester.tap(find.text(l10n.commonSave));
       await settle(tester);
       expect(find.text(l10n.swapSlippageLabel('2')), findsOneWidget);
 
@@ -709,9 +763,7 @@ void main() {
 
   group('custom slippage', () {
     testWidgets('takes any tolerance up to 99% and quotes with it', (tester) async {
-      tester.view.physicalSize = const Size(402 * 3, 874 * 3);
-      tester.view.devicePixelRatio = 3;
-      addTearDown(tester.view.reset);
+      phoneView(tester);
       final oneClick = _OneClick(dryOut: BigInt.from(24860000));
       await tester.pumpApp(SwapScreen(account: account), overrides: overrides(oneClick.service()));
       await settle(tester);
@@ -721,17 +773,17 @@ void main() {
       expect(tester.getSize(find.text(l10n.swapSlippageCustom)).height, tester.getSize(find.text('1%')).height);
       await tester.tap(find.text(l10n.swapSlippageCustom));
       await settle(tester);
-      final field = find.descendant(of: find.byType(QuantusTextField), matching: find.byType(TextField));
+      final field = find.descendant(of: find.byType(BottomSheetContainer), matching: find.byType(TextField));
 
       await tester.enterText(field, '99.5');
       await tester.pump();
       expect(find.text(l10n.swapSlippageCustomMax('99')), findsOneWidget);
-      expect(button(tester, l10n.commonDone).isDisabled, isTrue);
+      expect(button(tester, l10n.commonSave).isDisabled, isTrue);
 
       await tester.enterText(field, '7.5');
       await tester.pump();
       expect(find.text(l10n.swapSlippageCustomMax('99')), findsNothing);
-      await tester.tap(find.text(l10n.commonDone));
+      await tester.tap(find.text(l10n.commonSave));
       await settle(tester);
       expect(find.text(l10n.swapSlippageLabel('7.5')), findsOneWidget);
 
@@ -1087,10 +1139,9 @@ void main() {
         await settle(tester);
         expect(find.text('REFUNDED'), findsOneWidget);
         expect(button(tester, l10n.swapStartNew).isDisabled, isTrue);
-        expect(button(tester, l10n.commonDone).isDisabled, isFalse);
 
         final container = containerOf(tester);
-        await tester.tap(find.text(l10n.commonDone));
+        await tester.tap(find.byType(AppBackButton));
         await settle(tester);
         expect(container.read(activeSwapProvider), isNull);
       },
@@ -1237,7 +1288,7 @@ void main() {
       await settle(tester);
       expect(banner(l10n.swapProgressStatusUnavailable('')), findsOneWidget);
       expect(stepState(tester, l10n.swapStepSwapping), StepRowState.active);
-      expect(find.text(l10n.swapStopTracking), findsOneWidget);
+      expect(find.text(l10n.swapProgressFooter), findsOneWidget);
 
       oneClick.statusCode = 200;
       oneClick.status = 'SUCCESS';
@@ -1268,14 +1319,14 @@ void main() {
       expect(find.text(l10n.swapCompleteTitle), findsOneWidget);
     });
 
-    testWidgets('a running swap can be put away at any time', (tester) async {
+    testWidgets('leaving a running swap keeps following it', (tester) async {
       await pumpSwap(tester, activeSwap(SwapOrder(quote: liveQuote, status: SwapStatus.processing)));
 
       final container = containerOf(tester);
-      await tester.tap(find.text(l10n.swapStopTracking));
+      await tester.tap(find.byType(AppBackButton));
       await settle(tester);
-      expect(container.read(activeSwapProvider), isNull);
-      expect(container.read(settingsServiceProvider).getActiveSwap(), isNull);
+      expect(container.read(activeSwapProvider), isNotNull);
+      expect(container.read(settingsServiceProvider).getActiveSwap(), isNotNull);
     });
 
     testWidgets('a deposit the app sent that was not seen by the deadline says so and can be dismissed', (
@@ -1310,7 +1361,7 @@ void main() {
 
       expect(find.text(l10n.swapInProgressTitle), findsOneWidget);
       expect(banner(l10n.swapProgressDepositNotSeen(account.name)), findsOneWidget);
-      expect(find.text(l10n.swapStopTracking), findsOneWidget);
+      expect(find.text(l10n.swapProgressFooter), findsOneWidget);
     });
 
     for (final (who, account) in [
@@ -1328,7 +1379,10 @@ void main() {
         await settle(tester);
 
         expect(button(tester, l10n.swapStartNew).isDisabled, isTrue);
-        expect(button(tester, l10n.commonDone).isDisabled, isFalse);
+        final container = containerOf(tester);
+        await tester.tap(find.byType(AppBackButton));
+        await settle(tester);
+        expect(container.read(activeSwapProvider), isNull);
       });
     }
 
@@ -1467,6 +1521,13 @@ void main() {
       await settle(tester);
       expect(container.read(activeSwapProvider), isNull);
       expect(find.byType(SwapScreen), findsOneWidget);
+    });
+
+    testWidgets('Contact Support on a failed swap opens Help & Support', (tester) async {
+      await pumpOrder(tester, SwapOrder(quote: liveQuote, status: SwapStatus.failed));
+      await tester.tap(find.text(l10n.commonContactSupport));
+      await settle(tester);
+      expect(find.byType(HelpAndSupportScreenV2), findsOneWidget);
     });
 
     testWidgets('shows the deposit address and exact amount while a swap in waits', (tester) async {

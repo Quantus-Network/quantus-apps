@@ -1,16 +1,20 @@
+import 'dart:convert';
 import 'dart:math';
 
 import 'package:clock/clock.dart';
 import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/services/swap_harness_tokens.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/swap_providers.dart';
 
 /// Debug builds only: 1Click as the swap test harness sees it, so every swap
-/// screen can be walked without the network. Lists a few tokens at fixed
-/// prices, quotes at those prices, reserves a made-up deposit address for a
-/// swap into QTC, and walks each order through the statuses a real one passes,
-/// one step every [pollsPerStep] polls, to success. A swap out of QTC is not
-/// confirmed: the harness never sends real QTC anywhere.
+/// screen can be walked without the network. Lists the tokens 1Click listed
+/// when [oneClickTokensJson] was captured, with QTC priced, quotes at the
+/// listed prices, reserves a made-up deposit address for a swap into QTC, and
+/// walks each order through the statuses a real one passes, one step every
+/// [pollsPerStep] polls, to success. A swap out of QTC is not confirmed: the
+/// harness never sends real QTC anywhere.
 class SwapHarnessService extends SwapService {
   static const usdc = SwapToken(
     assetId: 'nep141:eth-0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48.omft.near',
@@ -30,55 +34,6 @@ class SwapHarnessService extends SwapService {
     usdPrice: 0.1005,
     isQuantus: true,
   );
-  static const _others = [
-    SwapToken(
-      assetId: 'nep141:eth.omft.near',
-      symbol: 'ETH',
-      network: 'ETH',
-      decimals: 18,
-      usdPrice: 3400,
-      imageUrl: 'https://coin-images.coingecko.com/coins/images/279/large/ethereum.png',
-      networkImageUrl: 'https://coin-images.coingecko.com/coins/images/279/large/ethereum.png',
-      marketCapUsd: 400e9,
-    ),
-    SwapToken(
-      assetId: 'nep141:btc.omft.near',
-      symbol: 'BTC',
-      network: 'BTC',
-      decimals: 8,
-      usdPrice: 95000,
-      imageUrl: 'https://coin-images.coingecko.com/coins/images/1/large/bitcoin.png',
-      marketCapUsd: 1900e9,
-    ),
-    SwapToken(
-      assetId: 'nep141:sol.omft.near',
-      symbol: 'SOL',
-      network: 'SOL',
-      decimals: 9,
-      usdPrice: 180,
-      imageUrl: 'https://coin-images.coingecko.com/coins/images/4128/large/solana.png',
-      marketCapUsd: 90e9,
-    ),
-    SwapToken(
-      assetId: 'nep141:wrap.near',
-      symbol: 'NEAR',
-      network: 'NEAR',
-      decimals: 24,
-      usdPrice: 5,
-      imageUrl: 'https://coin-images.coingecko.com/coins/images/10365/large/near.jpg',
-      marketCapUsd: 6e9,
-    ),
-    SwapToken(
-      assetId: 'nep141:usdt.tether-token.near',
-      symbol: 'USDT',
-      network: 'ETH',
-      decimals: 6,
-      usdPrice: 1,
-      imageUrl: 'https://coin-images.coingecko.com/coins/images/325/large/Tether.png',
-      networkImageUrl: 'https://coin-images.coingecko.com/coins/images/279/large/ethereum.png',
-      marketCapUsd: 140e9,
-    ),
-  ];
 
   /// An address on the foreign token's chain, and the deposit address a swap
   /// into QTC is given.
@@ -96,7 +51,7 @@ class SwapHarnessService extends SwapService {
 
   final _polls = <String, int>{};
 
-  SwapHarnessService() : super(feeBips: 0) {
+  SwapHarnessService() : super(client: _HarnessClient(), feeBips: 0) {
     if (!kDebugMode) throw StateError('SwapHarnessService is for debug builds only');
   }
 
@@ -140,7 +95,10 @@ class SwapHarnessService extends SwapService {
   }
 
   @override
-  Future<List<SwapToken>> getFromTokens({bool forceRefresh = false}) async => const [qtc, usdc, ..._others];
+  Future<List<SwapToken>> getFromTokens({bool forceRefresh = false}) async {
+    final listed = await super.getFromTokens(forceRefresh: forceRefresh);
+    return [qtc, ...listed.where((t) => !t.isQuantus)];
+  }
 
   @override
   Future<SwapToken?> getListedQuantusToken({bool forceRefresh = false}) async => qtc;
@@ -202,6 +160,24 @@ class SwapHarnessService extends SwapService {
       amountOut: done ? order.quote.amountOut : null,
       originTxHashes: status == SwapStatus.pendingDeposit ? const [] : const [txHash],
       destinationTxHashes: done ? const [txHash] : const [],
+    );
+  }
+}
+
+/// Answers 1Click's token listing from [oneClickTokensJson]; everything else,
+/// as CoinGecko's logos and market caps, goes to the network.
+class _HarnessClient extends http.BaseClient {
+  final _network = http.Client();
+
+  @override
+  Future<http.StreamedResponse> send(http.BaseRequest request) {
+    if (!request.url.path.endsWith('/v0/tokens')) return _network.send(request);
+    return Future.value(
+      http.StreamedResponse(
+        Stream.value(utf8.encode(oneClickTokensJson)),
+        200,
+        headers: const {'content-type': 'application/json'},
+      ),
     );
   }
 }

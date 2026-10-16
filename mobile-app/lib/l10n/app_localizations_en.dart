@@ -1113,9 +1113,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get keystoneRejectConfirm => 'I rejected it on the cold wallet';
 
   @override
-  String get keystoneRejectContactSupport => 'Contact Support';
-
-  @override
   String get sendLogicCantSelfTransfer => 'Can\'t Self Transfer';
 
   @override
@@ -1617,7 +1614,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get swapSlippageTitle => 'Slippage Tolerance';
+  String get swapSlippageTitle => 'Slippage';
 
   @override
   String get swapSlippageBody =>
@@ -1632,11 +1629,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String swapSlippagePercent(String percent) {
-    return '$percent%';
-  }
-
-  @override
   String get swapAddRecipientAddress => 'Add Recipient Address';
 
   @override
@@ -1646,7 +1638,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get swapRefundTo => 'Refund to';
 
   @override
-  String get swapTokenPickerTitle => 'Select Token';
+  String get swapTokenPickerPayWith => 'Pay with';
+
+  @override
+  String get swapTokenPickerReceive => 'Receive';
 
   @override
   String get swapTokenPickerLoadError => 'Failed to load tokens';
@@ -1798,7 +1793,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get swapProgressFooter =>
-      'Usually a few minutes. The swap finishes even if you leave this screen. · via NEAR Intents';
+      'Usually a few minutes. You can leave the app, we\'ll notify you when it arrives. · via NEAR Intents';
 
   @override
   String get swapDetailsTitle => 'Swap Details';
@@ -1919,9 +1914,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get swapStopTracking => 'Stop tracking swap';
-
-  @override
   String get componentQrScannerTitle => 'Scan QR Code';
 
   @override
@@ -1964,6 +1956,17 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get commonDone => 'Done';
+
+  @override
+  String get commonSave => 'Save';
+
+  @override
+  String commonPercent(String percent) {
+    return '$percent%';
+  }
+
+  @override
+  String get commonContactSupport => 'Contact Support';
 
   @override
   String get commonRetry => 'Retry';

@@ -1591,10 +1591,6 @@
     "@keystoneRejectConfirm": {
       "description": "Button confirming the transaction was rejected on the device"
     },
-    "keystoneRejectContactSupport": "Contact Support",
-    "@keystoneRejectContactSupport": {
-      "description": "Link to contact support from the Keystone mismatch help screen"
-    },
 
     "sendLogicCantSelfTransfer": "Can't Self Transfer",
     "@sendLogicCantSelfTransfer": {
@@ -2348,7 +2344,7 @@
         }
       }
     },
-    "swapSlippageTitle": "Slippage Tolerance",
+    "swapSlippageTitle": "Slippage",
     "@swapSlippageTitle": {
       "description": "Title of the slippage tolerance sheet"
     },
@@ -2369,15 +2365,6 @@
         }
       }
     },
-    "swapSlippagePercent": "{percent}%",
-    "@swapSlippagePercent": {
-      "description": "A slippage tolerance option",
-      "placeholders": {
-        "percent": {
-          "type": "String"
-        }
-      }
-    },
     "swapAddRecipientAddress": "Add Recipient Address",
     "@swapAddRecipientAddress": {
       "description": "Swap form button for a swap out of QTC"
@@ -2390,9 +2377,13 @@
     "@swapRefundTo": {
       "description": "Label of the swap form row holding the refund address of a swap into QTC"
     },
-    "swapTokenPickerTitle": "Select Token",
-    "@swapTokenPickerTitle": {
-      "description": "Title on token picker sheet"
+    "swapTokenPickerPayWith": "Pay with",
+    "@swapTokenPickerPayWith": {
+      "description": "Title of the token picker for the side that pays"
+    },
+    "swapTokenPickerReceive": "Receive",
+    "@swapTokenPickerReceive": {
+      "description": "Title of the token picker for the side that receives"
     },
     "swapTokenPickerLoadError": "Failed to load tokens",
     "@swapTokenPickerLoadError": {
@@ -2630,7 +2621,7 @@
         }
       }
     },
-    "swapProgressFooter": "Usually a few minutes. The swap finishes even if you leave this screen. · via NEAR Intents",
+    "swapProgressFooter": "Usually a few minutes. You can leave the app, we'll notify you when it arrives. · via NEAR Intents",
     "@swapProgressFooter": {
       "description": "Footer under the swap progress bar"
     },
@@ -2814,10 +2805,6 @@
         }
       }
     },
-    "swapStopTracking": "Stop tracking swap",
-    "@swapStopTracking": {
-      "description": "Link at the bottom of a running swap that puts it away so another can start; the swap still settles on its own"
-    },
 
     "componentQrScannerTitle": "Scan QR Code",
     "@componentQrScannerTitle": {
@@ -2883,6 +2870,23 @@
     "commonDone": "Done",
     "@commonDone": {
       "description": "Done button on various screens"
+    },
+    "commonSave": "Save",
+    "@commonSave": {
+      "description": "Save button on sheets that apply a pick"
+    },
+    "commonPercent": "{percent}%",
+    "@commonPercent": {
+      "description": "A percentage, as a slippage option or a share of the balance",
+      "placeholders": {
+        "percent": {
+          "type": "String"
+        }
+      }
+    },
+    "commonContactSupport": "Contact Support",
+    "@commonContactSupport": {
+      "description": "Link to support from a failed swap or the Keystone mismatch screen"
     },
     "commonRetry": "Retry",
     "@commonRetry": {
