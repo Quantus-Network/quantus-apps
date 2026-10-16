@@ -198,8 +198,8 @@ Amounts: 1Click answers `Failed to get quote` when no solver bids, which it does
 | --- | --- | --- |
 | `SwapScreen` | `mobile-app/lib/v2/screens/swap/swap_screen.dart` | Tokens on open. One form for both directions; the arrows flip it. "Swap disabled" in place of the form until QTC is listed with a price; "Swap unavailable" with a retry when 1Click cannot be reached. |
 | Address sheet | `mobile-app/lib/v2/screens/swap/swap_address_sheet.dart` | Recipient (out) or refund (in) address, then the dry quote. Saved addresses are per network. |
-| `ReviewSwapScreen` | `mobile-app/lib/v2/screens/swap/review_swap_screen.dart` | Live quote on Confirm, checked against the reviewed minimum. Swapping out, it also signs and sends the deposit and calls `/v0/deposit/submit`. |
-| `SwapProgressScreen` | `mobile-app/lib/v2/screens/swap/swap_progress_screen.dart` | Status every 5 s through `swapOrderProvider`: the deposit address while a swap in waits, then progress steps, complete, or failed and refunded. |
+| `ReviewSwapScreen` | `mobile-app/lib/v2/screens/swap/review_swap_screen.dart` | Live quote on Confirm, checked against the reviewed minimum. Swapping out, it also signs and sends the deposit and calls `/v0/deposit/submit`. A deposit that lands after the review was left is still followed, unless the wallet logged out or started another swap meanwhile (`ActiveSwapNotifier.ticket`). |
+| `SwapProgressScreen` | `mobile-app/lib/v2/screens/swap/swap_progress_screen.dart` | The one swap kept on the device, polled every 5 s through `activeSwapProvider`: the deposit address while a swap in waits, then progress steps, complete, or failed and refunded. |
 | `SwapService` | `quantus_sdk/lib/src/services/swap_service.dart` | The HTTP client. `SwapApiException` carries the server message. |
 | `SwapToken`, `SwapQuote`, `SwapOrder` | `quantus_sdk/lib/src/models/swap_*.dart` | Asset ids and BigInt base-unit amounts. |
 | `SwapPreflight` | `mobile-app/lib/models/swap_preflight.dart` | The stand-in for QTC from the preflight dart-defines, null in real builds. |

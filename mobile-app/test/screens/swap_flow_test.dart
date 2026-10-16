@@ -722,10 +722,9 @@ void main() {
       expect(kept.depositFee, _unit ~/ BigInt.from(50));
     });
 
-    testWidgets('a deposit still in flight when the review is left is followed once it is out', (tester) async {
-      final oneClick = _OneClick(dryOut: outQuote.amountOut);
-      final submission = FakeTransactionSubmissionService()..holdTransfer = Completer<void>();
-      final settings = FakeSettingsService(activeAccount: RegularAccount(account));
+    /// The review pushed over a page, so it can be left while a deposit is
+    /// held in flight.
+    Future<ProviderContainer> openReview(WidgetTester tester, List<Override> overrides) async {
       await tester.pumpApp(
         Builder(
           builder: (context) => TextButton(
@@ -738,18 +737,31 @@ void main() {
             child: const Text('open'),
           ),
         ),
-        overrides: overrides(oneClick.service(), submission: submission, settings: settings),
+        overrides: overrides,
       );
       await tester.tap(find.text('open'));
       await settle(tester);
-      final container = ProviderScope.containerOf(tester.element(find.byType(ReviewSwapScreen)));
+      return ProviderScope.containerOf(tester.element(find.byType(ReviewSwapScreen)));
+    }
 
+    Future<void> confirmAndLeave(WidgetTester tester) async {
       await tester.tap(find.text(l10n.swapReviewConfirm));
       await settle(tester);
       await tester.tap(find.text(l10n.commonCancel));
       await settle(tester);
       await tester.pump(const Duration(milliseconds: 400));
       expect(find.byType(ReviewSwapScreen), findsNothing);
+    }
+
+    testWidgets('a deposit still in flight when the review is left is followed once it is out', (tester) async {
+      final oneClick = _OneClick(dryOut: outQuote.amountOut);
+      final submission = FakeTransactionSubmissionService()..holdTransfer = Completer<void>();
+      final settings = FakeSettingsService(activeAccount: RegularAccount(account));
+      final container = await openReview(
+        tester,
+        overrides(oneClick.service(), submission: submission, settings: settings),
+      );
+      await confirmAndLeave(tester);
 
       submission.holdTransfer!.complete();
       await settle(tester);
@@ -757,6 +769,34 @@ void main() {
       expect(oneClick.requests.where((r) => r.url.path == '/v0/deposit/submit'), hasLength(1));
       expect(container.read(activeSwapProvider)?.depositTxHash, '0xtxhash');
       expect(settings.activeSwap?.depositTxHash, '0xtxhash');
+    });
+
+    testWidgets('a deposit that lands after the wallet logged out or moved on is not followed', (tester) async {
+      final other = activeSwap(SwapOrder(quote: liveQuote, status: SwapStatus.processing));
+      final movedOn = <(String, Future<void> Function(ActiveSwapNotifier), ActiveSwap?)>[
+        ('logged out', (swaps) => swaps.clear(), null),
+        ('started another', (swaps) async => swaps.start(other), other),
+      ];
+      for (final (name, moveOn, kept) in movedOn) {
+        final oneClick = _OneClick(dryOut: outQuote.amountOut);
+        final submission = FakeTransactionSubmissionService()..holdTransfer = Completer<void>();
+        final settings = FakeSettingsService(activeAccount: RegularAccount(account));
+        final container = await openReview(
+          tester,
+          overrides(oneClick.service(), submission: submission, settings: settings),
+        );
+        await confirmAndLeave(tester);
+        await moveOn(container.read(activeSwapProvider.notifier));
+
+        submission.holdTransfer!.complete();
+        await settle(tester);
+        final asKept = kept == null ? isNull : same(kept);
+        expect(submission.transfers.single.$1, _deposit, reason: name);
+        expect(oneClick.requests.where((r) => r.url.path == '/v0/deposit/submit'), hasLength(1), reason: name);
+        expect(container.read(activeSwapProvider), asKept, reason: name);
+        expect(settings.activeSwap, asKept, reason: name);
+        expect(find.byType(SwapProgressScreen), findsNothing, reason: name);
+      }
     });
 
     testWidgets('a worse live quote replaces the terms and needs a second confirm', (tester) async {

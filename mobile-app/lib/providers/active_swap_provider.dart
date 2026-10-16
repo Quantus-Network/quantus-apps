@@ -28,10 +28,21 @@ class ActiveSwapNotifier extends Notifier<ActiveSwap?> {
     return swap;
   }
 
-  void start(ActiveSwap swap) {
+  /// Taken before a deposit goes out: [start] follows a swap on it only while
+  /// nothing was started or cleared since, so a deposit that lands after a
+  /// logout, or after the user moved on to another swap, is not followed.
+  int get ticket => _generation;
+
+  /// Follows [swap], or leaves things as they are when [ticket] has lapsed.
+  bool start(ActiveSwap swap, {int? ticket}) {
+    if (ticket != null && ticket != _generation) {
+      quantusPrint('Swap deposit to ${swap.order.depositAddress} landed after the wallet moved on, not followed');
+      return false;
+    }
     _supersede();
     _set(swap);
     _schedule(swap);
+    return true;
   }
 
   /// Puts the swap away. Once it has settled it is done with; before that the

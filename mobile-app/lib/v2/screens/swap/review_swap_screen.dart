@@ -59,10 +59,12 @@ class _ReviewSwapScreenState extends ConsumerState<ReviewSwapScreen> {
           ? ref.read(swapDepositFeeProvider(_feeKey)).requireValue
           : null;
       final swaps = ref.read(activeSwapProvider.notifier);
+      final ticket = swaps.ticket;
       final txHash = fee != null ? await _sendDeposit(order, fee, l10n, generation) : null;
       if (fee != null && txHash == null) return;
-      // The deposit is out, so the swap is followed even if the screen is gone.
-      swaps.start(
+      // The deposit is out, so the swap is followed even if the screen is gone,
+      // unless the wallet logged out or moved on meanwhile.
+      final followed = swaps.start(
         ActiveSwap(
           order: order,
           accountId: widget.account.accountId,
@@ -72,8 +74,9 @@ class _ReviewSwapScreenState extends ConsumerState<ReviewSwapScreen> {
           depositTxHash: txHash,
           depositFee: fee,
         ),
+        ticket: ticket,
       );
-      if (!mounted) return;
+      if (!followed || !mounted) return;
       Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(builder: (_) => SwapProgressScreen(account: widget.account)),
