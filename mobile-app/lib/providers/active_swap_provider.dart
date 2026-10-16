@@ -53,6 +53,14 @@ class ActiveSwapNotifier extends Notifier<ActiveSwap?> {
     return ref.read(settingsServiceProvider).clearActiveSwap();
   }
 
+  /// Records that the user has sent a deposit by hand; the swap is then
+  /// followed as a sent one.
+  void markDepositSent() {
+    final current = state;
+    if (current == null) throw StateError('No active swap to mark sent');
+    _set(current.withDepositSent());
+  }
+
   /// Polls now instead of at the next interval, or joins the poll in flight.
   Future<void> refresh() {
     _poll?.cancel();

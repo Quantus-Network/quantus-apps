@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
+import 'package:quantus_sdk/generated/bell/pallets/balances.dart' as balances;
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/models/swap_preflight.dart';
@@ -12,7 +13,14 @@ import 'package:resonance_network_wallet/v2/screens/send/regular_send_strategy.d
 /// The stand-in for QTC this build was started with; null in every real build.
 final swapPreflightProvider = Provider<SwapPreflight?>((_) => SwapPreflight.fromEnvironment);
 
+/// Debug builds only: a stand-in for 1Click the swap test harness puts in
+/// place, so every swap screen can be walked without the network; null in
+/// real use.
+final swapHarnessServiceProvider = StateProvider<SwapService?>((_) => null);
+
 final swapServiceProvider = Provider<SwapService>((ref) {
+  final harness = ref.watch(swapHarnessServiceProvider);
+  if (harness != null) return harness;
   final preflight = ref.watch(swapPreflightProvider);
   final apiKey = ref.watch(remoteConfigProvider.select((c) => c.nearPartnerJwt));
   final feeBips = ref.watch(remoteConfigProvider.select((c) => c.swapFeeBips));
@@ -74,6 +82,14 @@ final swapDepositFeeProvider = FutureProvider.autoDispose.family<BigInt, (Accoun
   }
 }, retry: (_, _) => null);
 
+/// The most QTC a balance of [spendable] can put into a swap: the deposit's
+/// chain [fee] stays behind, and the existential deposit that keeps the
+/// account alive.
+BigInt swapMaxIn(BigInt spendable, BigInt fee) {
+  final max = spendable - fee - balances.Constants().existentialDeposit;
+  return max > BigInt.zero ? max : BigInt.zero;
+}
+
 /// One whole token of [decimals] in base units, as a double. An int `pow`
 /// overflows past 18 decimals, and wNEAR has 24.
 double _unit(int decimals) => BigInt.from(10).pow(decimals).toDouble();
@@ -87,10 +103,12 @@ BigInt swapEstimateOut(BigInt amountIn, SwapToken from, SwapToken to) {
   return BigInt.from(swapUsdValue(amountIn, from) / to.usdPrice * _unit(to.decimals));
 }
 
-/// Base units of [quote]'s output token that one whole input token buys, at
-/// the input the swap needs: an exact output's payment holds a buffer on top.
-BigInt swapQuoteRate(SwapQuote quote) =>
-    quote.amountOut * BigInt.from(10).pow(quote.fromToken.decimals) ~/ quote.minAmountIn;
+/// Base units of [quote]'s foreign token that one whole QTC buys or sells
+/// for, at the input the swap needs: an exact output's payment holds a buffer
+/// on top.
+BigInt swapQuoteRate(SwapQuote quote) => quote.fromToken.isQuantus
+    ? quote.amountOut * BigInt.from(10).pow(quote.fromToken.decimals) ~/ quote.minAmountIn
+    : quote.minAmountIn * BigInt.from(10).pow(quote.toToken.decimals) ~/ quote.amountOut;
 
 /// [value] base units of [token] with its symbol, e.g. "24.86 USDC". An
 /// [exact] amount keeps every digit: what is sent must read as what is shown.

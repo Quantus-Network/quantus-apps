@@ -11,7 +11,6 @@ import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/shared/utils/print.dart';
-import 'package:resonance_network_wallet/v2/components/link_button.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/screens/send/regular_send_strategy.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/swap_progress_screen.dart';
@@ -179,6 +178,8 @@ class _ReviewSwapScreenState extends ConsumerState<ReviewSwapScreen> {
     final quote = _quote;
     final from = quote.fromToken;
     final to = quote.toToken;
+    final quantus = from.isQuantus ? from : to;
+    final foreign = from.isQuantus ? to : from;
     final exactOutput = quote.swapType == SwapType.exactOutput;
     String amount(BigInt value, SwapToken token) => formatSwapAmount(l10n, fmt, value, token);
     Widget row(String label, String value, {bool mono = false}) =>
@@ -188,7 +189,7 @@ class _ReviewSwapScreenState extends ConsumerState<ReviewSwapScreen> {
     final fee = sendsDeposit ? ref.watch(swapDepositFeeProvider(_feeKey)) : null;
     final spendable = sendsDeposit ? ref.watch(effectiveBalanceProviderFamily(widget.account.accountId)).value : null;
     final feeValue = fee?.value;
-    final insufficient = feeValue != null && spendable != null && quote.amountIn + feeValue > spendable;
+    final insufficient = feeValue != null && spendable != null && quote.amountIn > swapMaxIn(spendable, feeValue);
     final available = ref.watch(remoteConfigProvider.select((c) => c.swapAvailable));
     final blocked = !available || sendsDeposit && (feeValue == null || spendable == null || insufficient);
 
@@ -203,16 +204,16 @@ class _ReviewSwapScreenState extends ConsumerState<ReviewSwapScreen> {
             const SizedBox(height: 32),
             row(
               l10n.swapRate,
-              l10n.swapRateLabel(from.symbol, fmt.formatAmount(swapQuoteRate(quote), decimals: to.decimals), to.symbol),
+              l10n.swapRateLabel(
+                quantus.symbol,
+                fmt.formatAmount(swapQuoteRate(quote), decimals: foreign.decimals),
+                foreign.symbol,
+              ),
             ),
             if (_swapOut)
               row(l10n.swapReviewRecipient, AddressFormattingService.formatAddress(quote.recipient), mono: true)
             else
-              row(
-                l10n.swapReviewRefundAddress,
-                AddressFormattingService.formatAddress(quote.refundAddress),
-                mono: true,
-              ),
+              row(l10n.swapRefundTo, AddressFormattingService.formatAddress(quote.refundAddress), mono: true),
             if (fee != null)
               row(
                 l10n.swapReviewNetworkFee,
@@ -234,14 +235,7 @@ class _ReviewSwapScreenState extends ConsumerState<ReviewSwapScreen> {
             ],
             if (fee != null && fee.hasError) ...[
               const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(l10n.swapReviewFeeFailed, style: text.caption.copyWith(color: colors.semanticEmber)),
-                  ),
-                  LinkButton(label: l10n.commonRetry, onTap: () => ref.invalidate(swapDepositFeeProvider(_feeKey))),
-                ],
-              ),
+              SwapFeeFailedRow(onRetry: () => ref.invalidate(swapDepositFeeProvider(_feeKey))),
             ],
             if (insufficient) ...[
               const SizedBox(height: 16),
@@ -259,7 +253,7 @@ class _ReviewSwapScreenState extends ConsumerState<ReviewSwapScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             QuantusButton.simple(
-              label: l10n.swapReviewConfirm,
+              label: _swapOut ? l10n.swapReviewConfirm : l10n.swapContinue,
               onTap: _confirm,
               isLoading: _confirming,
               isDisabled: blocked,

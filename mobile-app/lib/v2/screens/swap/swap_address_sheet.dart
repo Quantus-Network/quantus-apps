@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
-import 'package:resonance_network_wallet/shared/utils/print.dart';
 import 'package:resonance_network_wallet/v2/components/qr_scanner_page.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/settings_checkbox.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/saved_address_picker_sheet.dart';
@@ -12,26 +11,20 @@ import 'package:resonance_network_wallet/v2/screens/swap/swap_providers.dart';
 /// Whether the external address receives the swapped funds or gets them back.
 enum SwapAddressRole { recipient, refund }
 
-/// Asks for the external address on [token]'s network, then [quote]s the swap
-/// with it. Pops the quote, or null when dismissed.
-Future<SwapQuote?> showSwapAddressSheet(
-  BuildContext context, {
-  required SwapToken token,
-  required SwapAddressRole role,
-  required Future<SwapQuote> Function(String address) quote,
-}) {
-  return BottomSheetContainer.show<SwapQuote>(
+/// Asks for the external address on [token]'s network. Pops it, or null when
+/// dismissed.
+Future<String?> showSwapAddressSheet(BuildContext context, {required SwapToken token, required SwapAddressRole role}) {
+  return BottomSheetContainer.show<String>(
     context,
-    builder: (_) => _SwapAddressSheet(token: token, role: role, quote: quote),
+    builder: (_) => _SwapAddressSheet(token: token, role: role),
   );
 }
 
 class _SwapAddressSheet extends ConsumerStatefulWidget {
   final SwapToken token;
   final SwapAddressRole role;
-  final Future<SwapQuote> Function(String address) quote;
 
-  const _SwapAddressSheet({required this.token, required this.role, required this.quote});
+  const _SwapAddressSheet({required this.token, required this.role});
 
   @override
   ConsumerState<_SwapAddressSheet> createState() => _SwapAddressSheetState();
@@ -44,7 +37,6 @@ class _SwapAddressSheetState extends ConsumerState<_SwapAddressSheet> {
 
   final _controller = TextEditingController();
   bool _save = false;
-  bool _quoting = false;
 
   String get _address => _controller.text.trim();
 
@@ -57,19 +49,8 @@ class _SwapAddressSheetState extends ConsumerState<_SwapAddressSheet> {
   Future<void> _continue() async {
     final navigator = Navigator.of(context);
     final address = _address;
-    setState(() => _quoting = true);
-    try {
-      final quote = await widget.quote(address);
-      if (_save) await ref.read(swapServiceProvider).saveAddress(widget.token.network, address);
-      navigator.pop(quote);
-    } catch (e) {
-      quantusPrint('Swap quote failed: $e');
-      if (!mounted) return;
-      final l10n = ref.read(l10nProvider);
-      context.showErrorToaster(message: l10n.swapQuoteError(describeSwapError(l10n, e)));
-    } finally {
-      if (mounted) setState(() => _quoting = false);
-    }
+    if (_save) await ref.read(swapServiceProvider).saveAddress(widget.token.network, address);
+    navigator.pop(address);
   }
 
   Future<void> _fill(Future<String?> source) async {
@@ -129,12 +110,7 @@ class _SwapAddressSheetState extends ConsumerState<_SwapAddressSheet> {
           const SizedBox(height: 12),
           SettingsCheckbox(checked: _save, label: l10n.swapSaveAddress, onTap: () => setState(() => _save = !_save)),
           const SizedBox(height: 32),
-          QuantusButton.simple(
-            label: l10n.swapContinue,
-            onTap: _continue,
-            isDisabled: _address.isEmpty,
-            isLoading: _quoting,
-          ),
+          QuantusButton.simple(label: l10n.swapContinue, onTap: _continue, isDisabled: _address.isEmpty),
           const SizedBox(height: 4),
           QuantusButton.simple(
             label: l10n.commonCancel,

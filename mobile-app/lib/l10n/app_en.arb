@@ -2386,6 +2386,10 @@
     "@swapAddRefundAddress": {
       "description": "Swap form button for a swap into QTC"
     },
+    "swapRefundTo": "Refund to",
+    "@swapRefundTo": {
+      "description": "Label of the swap form row holding the refund address of a swap into QTC"
+    },
     "swapTokenPickerTitle": "Select Token",
     "@swapTokenPickerTitle": {
       "description": "Title on token picker sheet"
@@ -2518,10 +2522,6 @@
     "@swapReviewRecipient": {
       "description": "Review row: external address receiving the swap"
     },
-    "swapReviewRefundAddress": "Refund address",
-    "@swapReviewRefundAddress": {
-      "description": "Review row: external address a failed swap is refunded to"
-    },
     "swapReviewNetworkFee": "Network fee",
     "@swapReviewNetworkFee": {
       "description": "Review row and details row: chain fee of the QTC deposit"
@@ -2587,6 +2587,15 @@
     "@swapYoureReceiving": {
       "description": "Receive side of the swap progress card"
     },
+    "swapStepDeposited": "{symbol} deposited",
+    "@swapStepDeposited": {
+      "description": "First swap progress step when the user deposits from another wallet",
+      "placeholders": {
+        "symbol": {
+          "type": "String"
+        }
+      }
+    },
     "swapStepSent": "{symbol} sent",
     "@swapStepSent": {
       "description": "Progress step: deposit sent",
@@ -2640,6 +2649,26 @@
     "swapDetailsExpected": "Expected",
     "@swapDetailsExpected": {
       "description": "Details row: quoted payout"
+    },
+    "swapDetailsDepositAddress": "Deposit address",
+    "@swapDetailsDepositAddress": {
+      "description": "Swap details row: where a swap into QTC was to be deposited"
+    },
+    "swapDetailsRequiredDeposit": "Required deposit",
+    "@swapDetailsRequiredDeposit": {
+      "description": "Swap details row: the amount a swap into QTC needed deposited"
+    },
+    "swapDetailsDepositWindowEnds": "Deposit window ends",
+    "@swapDetailsDepositWindowEnds": {
+      "description": "Swap details row: when the deposit address of a swap into QTC expires"
+    },
+    "swapDepositTitle": "Send Your Deposit",
+    "@swapDepositTitle": {
+      "description": "Title of the screen showing where to send the deposit of a swap into QTC"
+    },
+    "swapDepositSent": "I've Sent It",
+    "@swapDepositSent": {
+      "description": "Button on the deposit screen once the user has sent the deposit"
     },
     "swapDetailsTransaction": "Transaction",
     "@swapDetailsTransaction": {
@@ -2726,54 +2755,15 @@
     "@swapStartNew": {
       "description": "Button on a failed swap"
     },
-    "swapDepositToken": "Token",
-    "@swapDepositToken": {
-      "description": "Label of the row naming the token to deposit, at the top of the deposit screen"
-    },
-    "swapDepositNetwork": "Network",
-    "@swapDepositNetwork": {
-      "description": "Label of the row naming the network to deposit on, at the top of the deposit screen"
-    },
-    "swapDepositAmount": "Deposit Amount",
-    "@swapDepositAmount": {
-      "description": "Deposit amount label on deposit screen"
-    },
-    "swapDepositAmountCopied": "Deposit amount copied to clipboard",
-    "@swapDepositAmountCopied": {
-      "description": "Toast when deposit amount is copied"
-    },
     "swapDepositAddressCopied": "Deposit address copied to clipboard",
     "@swapDepositAddressCopied": {
       "description": "Toast when the deposit address is copied"
-    },
-    "swapDepositWaiting": "Waiting for your deposit…",
-    "@swapDepositWaiting": {
-      "description": "Shown while 1Click has not seen a deposit yet"
     },
     "swapDepositDeadline": "Send before {time} or the quote expires",
     "@swapDepositDeadline": {
       "description": "Local time by which the deposit must arrive",
       "placeholders": {
         "time": {
-          "type": "String"
-        }
-      }
-    },
-    "swapDepositShareQr": "Share QR",
-    "@swapDepositShareQr": {
-      "description": "Share QR button on deposit screen"
-    },
-    "swapDepositShareContent": "Network: {network}\nToken: {token}\nAddress: {address}",
-    "@swapDepositShareContent": {
-      "description": "Share text for deposit details",
-      "placeholders": {
-        "network": {
-          "type": "String"
-        },
-        "token": {
-          "type": "String"
-        },
-        "address": {
           "type": "String"
         }
       }
@@ -2790,25 +2780,7 @@
     "@swapDepositMemoNotice": {
       "description": "Warning under a deposit memo"
     },
-    "swapDepositShareContentMemo": "Network: {network}\nToken: {token}\nAddress: {address}\nMemo: {memo}",
-    "@swapDepositShareContentMemo": {
-      "description": "Share text for deposit details with a memo",
-      "placeholders": {
-        "network": {
-          "type": "String"
-        },
-        "token": {
-          "type": "String"
-        },
-        "address": {
-          "type": "String"
-        },
-        "memo": {
-          "type": "String"
-        }
-      }
-    },
-    "swapDepositNotice": "Use your {symbol} or {network} wallet to deposit funds. Depositing other assets may result in loss of funds.",
+    "swapDepositNotice": "Send only {symbol} on {network} to this address. We'll detect your deposit automatically and start the swap. Sending other assets may result in loss of funds.",
     "@swapDepositNotice": {
       "description": "Deposit wallet notice on deposit screen",
       "placeholders": {

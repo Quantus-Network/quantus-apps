@@ -1643,6 +1643,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get swapAddRefundAddress => 'Add Refund Address';
 
   @override
+  String get swapRefundTo => 'Refund to';
+
+  @override
   String get swapTokenPickerTitle => 'Select Token';
 
   @override
@@ -1727,9 +1730,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get swapReviewRecipient => 'Recipient';
 
   @override
-  String get swapReviewRefundAddress => 'Refund address';
-
-  @override
   String get swapReviewNetworkFee => 'Network fee';
 
   @override
@@ -1774,6 +1774,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get swapYoureReceiving => 'You\'re receiving';
 
   @override
+  String swapStepDeposited(String symbol) {
+    return '$symbol deposited';
+  }
+
+  @override
   String swapStepSent(String symbol) {
     return '$symbol sent';
   }
@@ -1806,6 +1811,21 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get swapDetailsExpected => 'Expected';
+
+  @override
+  String get swapDetailsDepositAddress => 'Deposit address';
+
+  @override
+  String get swapDetailsRequiredDeposit => 'Required deposit';
+
+  @override
+  String get swapDetailsDepositWindowEnds => 'Deposit window ends';
+
+  @override
+  String get swapDepositTitle => 'Send Your Deposit';
+
+  @override
+  String get swapDepositSent => 'I\'ve Sent It';
 
   @override
   String get swapDetailsTransaction => 'Transaction';
@@ -1864,34 +1884,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get swapStartNew => 'Start a New Swap';
 
   @override
-  String get swapDepositToken => 'Token';
-
-  @override
-  String get swapDepositNetwork => 'Network';
-
-  @override
-  String get swapDepositAmount => 'Deposit Amount';
-
-  @override
-  String get swapDepositAmountCopied => 'Deposit amount copied to clipboard';
-
-  @override
   String get swapDepositAddressCopied => 'Deposit address copied to clipboard';
-
-  @override
-  String get swapDepositWaiting => 'Waiting for your deposit…';
 
   @override
   String swapDepositDeadline(String time) {
     return 'Send before $time or the quote expires';
-  }
-
-  @override
-  String get swapDepositShareQr => 'Share QR';
-
-  @override
-  String swapDepositShareContent(String network, String token, String address) {
-    return 'Network: $network\nToken: $token\nAddress: $address';
   }
 
   @override
@@ -1904,13 +1901,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get swapDepositMemoNotice => 'Include this memo with your deposit. A deposit without it is not processed.';
 
   @override
-  String swapDepositShareContentMemo(String network, String token, String address, String memo) {
-    return 'Network: $network\nToken: $token\nAddress: $address\nMemo: $memo';
-  }
-
-  @override
   String swapDepositNotice(String symbol, String network) {
-    return 'Use your $symbol or $network wallet to deposit funds. Depositing other assets may result in loss of funds.';
+    return 'Send only $symbol on $network to this address. We\'ll detect your deposit automatically and start the swap. Sending other assets may result in loss of funds.';
   }
 
   @override

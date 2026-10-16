@@ -3092,6 +3092,12 @@ abstract class AppLocalizations {
   /// **'Add Refund Address'**
   String get swapAddRefundAddress;
 
+  /// Label of the swap form row holding the refund address of a swap into QTC
+  ///
+  /// In en, this message translates to:
+  /// **'Refund to'**
+  String get swapRefundTo;
+
   /// Title on token picker sheet
   ///
   /// In en, this message translates to:
@@ -3236,12 +3242,6 @@ abstract class AppLocalizations {
   /// **'Recipient'**
   String get swapReviewRecipient;
 
-  /// Review row: external address a failed swap is refunded to
-  ///
-  /// In en, this message translates to:
-  /// **'Refund address'**
-  String get swapReviewRefundAddress;
-
   /// Review row and details row: chain fee of the QTC deposit
   ///
   /// In en, this message translates to:
@@ -3320,6 +3320,12 @@ abstract class AppLocalizations {
   /// **'You\'re receiving'**
   String get swapYoureReceiving;
 
+  /// First swap progress step when the user deposits from another wallet
+  ///
+  /// In en, this message translates to:
+  /// **'{symbol} deposited'**
+  String swapStepDeposited(String symbol);
+
   /// Progress step: deposit sent
   ///
   /// In en, this message translates to:
@@ -3373,6 +3379,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Expected'**
   String get swapDetailsExpected;
+
+  /// Swap details row: where a swap into QTC was to be deposited
+  ///
+  /// In en, this message translates to:
+  /// **'Deposit address'**
+  String get swapDetailsDepositAddress;
+
+  /// Swap details row: the amount a swap into QTC needed deposited
+  ///
+  /// In en, this message translates to:
+  /// **'Required deposit'**
+  String get swapDetailsRequiredDeposit;
+
+  /// Swap details row: when the deposit address of a swap into QTC expires
+  ///
+  /// In en, this message translates to:
+  /// **'Deposit window ends'**
+  String get swapDetailsDepositWindowEnds;
+
+  /// Title of the screen showing where to send the deposit of a swap into QTC
+  ///
+  /// In en, this message translates to:
+  /// **'Send Your Deposit'**
+  String get swapDepositTitle;
+
+  /// Button on the deposit screen once the user has sent the deposit
+  ///
+  /// In en, this message translates to:
+  /// **'I\'ve Sent It'**
+  String get swapDepositSent;
 
   /// Details row: deposit transaction hash
   ///
@@ -3470,59 +3506,17 @@ abstract class AppLocalizations {
   /// **'Start a New Swap'**
   String get swapStartNew;
 
-  /// Label of the row naming the token to deposit, at the top of the deposit screen
-  ///
-  /// In en, this message translates to:
-  /// **'Token'**
-  String get swapDepositToken;
-
-  /// Label of the row naming the network to deposit on, at the top of the deposit screen
-  ///
-  /// In en, this message translates to:
-  /// **'Network'**
-  String get swapDepositNetwork;
-
-  /// Deposit amount label on deposit screen
-  ///
-  /// In en, this message translates to:
-  /// **'Deposit Amount'**
-  String get swapDepositAmount;
-
-  /// Toast when deposit amount is copied
-  ///
-  /// In en, this message translates to:
-  /// **'Deposit amount copied to clipboard'**
-  String get swapDepositAmountCopied;
-
   /// Toast when the deposit address is copied
   ///
   /// In en, this message translates to:
   /// **'Deposit address copied to clipboard'**
   String get swapDepositAddressCopied;
 
-  /// Shown while 1Click has not seen a deposit yet
-  ///
-  /// In en, this message translates to:
-  /// **'Waiting for your deposit…'**
-  String get swapDepositWaiting;
-
   /// Local time by which the deposit must arrive
   ///
   /// In en, this message translates to:
   /// **'Send before {time} or the quote expires'**
   String swapDepositDeadline(String time);
-
-  /// Share QR button on deposit screen
-  ///
-  /// In en, this message translates to:
-  /// **'Share QR'**
-  String get swapDepositShareQr;
-
-  /// Share text for deposit details
-  ///
-  /// In en, this message translates to:
-  /// **'Network: {network}\nToken: {token}\nAddress: {address}'**
-  String swapDepositShareContent(String network, String token, String address);
 
   /// Label of the deposit memo some chains require
   ///
@@ -3542,16 +3536,10 @@ abstract class AppLocalizations {
   /// **'Include this memo with your deposit. A deposit without it is not processed.'**
   String get swapDepositMemoNotice;
 
-  /// Share text for deposit details with a memo
-  ///
-  /// In en, this message translates to:
-  /// **'Network: {network}\nToken: {token}\nAddress: {address}\nMemo: {memo}'**
-  String swapDepositShareContentMemo(String network, String token, String address, String memo);
-
   /// Deposit wallet notice on deposit screen
   ///
   /// In en, this message translates to:
-  /// **'Use your {symbol} or {network} wallet to deposit funds. Depositing other assets may result in loss of funds.'**
+  /// **'Send only {symbol} on {network} to this address. We\'ll detect your deposit automatically and start the swap. Sending other assets may result in loss of funds.'**
   String swapDepositNotice(String symbol, String network);
 
   /// Why a 1Click request failed when no answer came within the time allowed

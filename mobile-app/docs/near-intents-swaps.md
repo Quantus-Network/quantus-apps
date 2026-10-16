@@ -196,8 +196,8 @@ Amounts: 1Click answers `Failed to get quote` when no solver bids, which it does
 
 | Screen or class | File | 1Click call |
 | --- | --- | --- |
-| `SwapScreen` | `mobile-app/lib/v2/screens/swap/swap_screen.dart` | Tokens on open. One form for both directions; the arrows flip it. "Swap disabled" in place of the form until QTC is listed with a price; "Swap unavailable" with a retry when 1Click cannot be reached. |
-| Address sheet | `mobile-app/lib/v2/screens/swap/swap_address_sheet.dart` | Recipient (out) or refund (in) address, then the dry quote. Saved addresses are per network. |
+| `SwapScreen` | `mobile-app/lib/v2/screens/swap/swap_screen.dart` | Tokens on open. One form for both directions; the arrows flip it. Swapping out, the paying side shows the account's balance with a Max that types the most it can put in: the balance less the deposit's fee and the existential deposit (`swapMaxIn`), which is also what the form and the review hold the amount to. "Swap disabled" in place of the form until QTC is listed with a price; "Swap unavailable" with a retry when 1Click cannot be reached. |
+| Address sheet | `mobile-app/lib/v2/screens/swap/swap_address_sheet.dart` | Recipient (out) or refund (in) address, kept on the form; the form quotes once it has both an amount and the address. Saved addresses are per network. |
 | `ReviewSwapScreen` | `mobile-app/lib/v2/screens/swap/review_swap_screen.dart` | Live quote on Confirm, checked against the reviewed minimum. Swapping out, it also signs and sends the deposit and calls `/v0/deposit/submit`. A deposit that lands after the review was left is still followed, unless the wallet logged out or started another swap meanwhile (`ActiveSwapNotifier.ticket`). |
 | `SwapProgressScreen` | `mobile-app/lib/v2/screens/swap/swap_progress_screen.dart` | The one swap kept on the device, polled every 5 s through `activeSwapProvider`: the deposit address while a swap in waits, then progress steps, complete, or failed and refunded. |
 | `SwapService` | `quantus_sdk/lib/src/services/swap_service.dart` | The HTTP client. `SwapApiException` carries the server message. |

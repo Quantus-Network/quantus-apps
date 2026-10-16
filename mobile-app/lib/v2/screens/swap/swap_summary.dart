@@ -4,6 +4,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
+import 'package:resonance_network_wallet/v2/components/link_button.dart';
 import 'package:resonance_network_wallet/v2/components/token_icon.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/swap_providers.dart';
 
@@ -97,6 +98,29 @@ class SwapAmountsCard extends ConsumerWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Says the deposit's chain fee could not be fetched; [onRetry] asks again.
+class SwapFeeFailedRow extends ConsumerWidget {
+  final VoidCallback onRetry;
+
+  const SwapFeeFailedRow({super.key, required this.onRetry});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = ref.watch(l10nProvider);
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            l10n.swapReviewFeeFailed,
+            style: context.themeTextV3.caption.copyWith(color: context.colorsV3.semanticEmber),
+          ),
+        ),
+        LinkButton(label: l10n.commonRetry, onTap: onRetry),
+      ],
     );
   }
 }

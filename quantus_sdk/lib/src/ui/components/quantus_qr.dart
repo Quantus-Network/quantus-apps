@@ -4,8 +4,13 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 
 class QuantusQr extends StatelessWidget {
   final String accountId;
+  final BorderRadius borderRadius;
 
-  const QuantusQr({super.key, required this.accountId});
+  const QuantusQr({
+    super.key,
+    required this.accountId,
+    this.borderRadius = const BorderRadius.all(Radius.circular(16)),
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -15,7 +20,7 @@ class QuantusQr extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         border: Border.all(color: context.colorsV3.borderHairline, width: 1),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: borderRadius,
       ),
       width: qrSize,
       height: qrSize,

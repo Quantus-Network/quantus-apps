@@ -319,9 +319,10 @@ void main() {
   Finder svg(String asset) =>
       find.byWidgetPredicate((w) => w is SvgPicture && (w.bytesLoader as SvgAssetLoader).assetName == asset);
 
-  /// Turns the form around to swap out of QTC; it opens as a purchase.
+  /// Turns the form around to swap out of QTC; it opens as a purchase. The
+  /// arrows between the sides come after the dot by the typed side's USD value.
   Future<void> swapOut(WidgetTester tester) async {
-    await tester.tap(svg('assets/v2/swap_arrows_down_up.svg'));
+    await tester.tap(svg('assets/v2/swap_arrows_down_up.svg').last);
     await tester.pump();
   }
 
@@ -342,14 +343,14 @@ void main() {
       expect(find.text(l10n.swapExternalWallet), findsOneWidget);
       final fromHeader = tester.getTopLeft(find.text('FROM')).dy;
       expect(tester.getTopLeft(find.text(l10n.swapExternalWallet)).dy, closeTo(fromHeader, 4));
-      expect(button(tester, l10n.swapAddRefundAddress).isDisabled, isTrue);
+      expect(button(tester, l10n.swapAddRefundAddress).isDisabled, isFalse);
 
       await tester.enterText(find.byType(TextField), '10');
       await tester.pump();
       expect(button(tester, l10n.swapAddRefundAddress).isDisabled, isFalse);
 
       await swapOut(tester);
-      expect(button(tester, l10n.swapAddRecipientAddress).isDisabled, isTrue);
+      expect(button(tester, l10n.swapAddRecipientAddress).isDisabled, isFalse);
       expect(tester.getTopLeft(find.text(account.name)).dy, closeTo(fromHeader, 4));
 
       await tester.enterText(find.byType(TextField), '1000');
@@ -360,6 +361,43 @@ void main() {
       await tester.pump();
       expect(button(tester, l10n.swapAddRecipientAddress).isDisabled, isFalse);
       expect(find.text('1'), findsOneWidget);
+    });
+
+    testWidgets('a swap out shows the most it can put in, less the fee and the existential deposit; a tap types it', (
+      tester,
+    ) async {
+      final oneClick = _OneClick(dryOut: BigInt.from(24860000));
+      await tester.pumpApp(
+        SwapScreen(account: account),
+        overrides: overrides(oneClick.service(), balance: _unit * BigInt.from(100)),
+      );
+      await settle(tester);
+      final max = find.text('${l10n.sendInputAmountMax} 99.979 QTC');
+      expect(max, findsNothing);
+
+      await swapOut(tester);
+      await settle(tester);
+      expect(max, findsOneWidget);
+      await tester.tap(max);
+      await tester.pump();
+      expect(tester.widget<TextField>(find.byType(TextField)).controller!.text, '99.979');
+      expect(button(tester, l10n.swapAddRecipientAddress).isDisabled, isFalse);
+
+      await tester.enterText(find.byType(TextField), '99.98');
+      await tester.pump();
+      expect(button(tester, l10n.sendLogicInsufficientBalance).isDisabled, isTrue);
+
+      await tester.tap(find.text('9.998'));
+      await tester.pump();
+      expect(tester.getTopLeft(find.byType(TextField)).dy, greaterThan(tester.getTopLeft(find.text('TO')).dy));
+      await tester.tap(max);
+      await tester.pump();
+      expect(tester.getTopLeft(find.byType(TextField)).dy, lessThan(tester.getTopLeft(find.text('TO')).dy));
+      expect(tester.widget<TextField>(find.byType(TextField)).controller!.text, '99.979');
+      expect(button(tester, l10n.swapAddRecipientAddress).isDisabled, isFalse);
+
+      await swapOut(tester);
+      expect(max, findsNothing);
     });
 
     testWidgets('the token picker fills the screen, lists every token and filters them by search', (tester) async {
@@ -431,7 +469,36 @@ void main() {
 
       final quote = oneClick.requests.singleWhere((r) => r.url.path == '/v0/quote');
       expect((jsonDecode(quote.body) as Map)['originAsset'], listedId);
-      expect(find.text(l10n.swapReviewTitle), findsOneWidget);
+      expect(find.byType(ReviewSwapScreen), findsOneWidget);
+    });
+
+    testWidgets('an address given before the amount waits on the form, and Review Swap then quotes', (tester) async {
+      final oneClick = _OneClick(dryOut: BigInt.from(1000000));
+      await tester.pumpApp(SwapScreen(account: account), overrides: overrides(oneClick.service()));
+      await settle(tester);
+
+      await tester.tap(find.text(l10n.swapAddRefundAddress));
+      await settle(tester);
+      await tester.enterText(find.byType(TextField).last, _external);
+      await tester.pump();
+      await tester.tap(find.text(l10n.swapContinue));
+      await settle(tester);
+
+      expect(oneClick.requests.where((r) => r.url.path == '/v0/quote'), isEmpty);
+      expect(find.text(l10n.swapRefundTo.toUpperCase()), findsOneWidget);
+      expect(find.text(AddressFormattingService.formatAddress(_external)), findsOneWidget);
+      expect(button(tester, l10n.swapReviewTitle).isDisabled, isTrue);
+
+      await tester.enterText(find.byType(TextField), '10');
+      await tester.pump();
+      expect(button(tester, l10n.swapReviewTitle).isDisabled, isFalse);
+      await tester.tap(find.text(l10n.swapReviewTitle));
+      await settle(tester);
+
+      final quote = jsonDecode(oneClick.requests.singleWhere((r) => r.url.path == '/v0/quote').body) as Map;
+      expect(quote['refundTo'], _external);
+      expect(quote['recipient'], account.accountId);
+      expect(find.byType(ReviewSwapScreen), findsOneWidget);
     });
 
     testWidgets('reloads the listing when the remote asset id changes while the screen is open', (tester) async {
@@ -499,8 +566,8 @@ void main() {
       await settle(tester);
 
       expect([...before.requests, ...after.requests].where((r) => r.url.path == '/v0/quote'), isEmpty);
-      expect(find.text(l10n.swapReviewTitle), findsNothing);
-      expect(find.text(l10n.swapContinue), findsOneWidget);
+      expect(find.byType(ReviewSwapScreen), findsNothing);
+      expect(find.text(l10n.swapContinue), findsNothing);
       await tester.pump(const Duration(seconds: 10));
     });
 
@@ -588,7 +655,7 @@ void main() {
 
       final quote = oneClick.requests.singleWhere((r) => r.url.path == '/v0/quote');
       expect((jsonDecode(quote.body) as Map)['slippageTolerance'], 200);
-      expect(find.text(l10n.swapReviewTitle), findsOneWidget);
+      expect(find.byType(ReviewSwapScreen), findsOneWidget);
     });
   });
 
@@ -616,7 +683,7 @@ void main() {
       expect(quote['swapType'], 'EXACT_OUTPUT');
       expect(quote['originAsset'], _listedQtc['assetId']);
       expect(quote['amount'], '20000000');
-      expect(find.text(l10n.swapReviewTitle), findsOneWidget);
+      expect(find.byType(ReviewSwapScreen), findsOneWidget);
       expect(find.text(l10n.commonAmountBalance('202', 'QTC')), findsOneWidget);
       expect(find.text(l10n.swapReviewUnusedRefunded), findsOneWidget);
     });
@@ -812,7 +879,7 @@ void main() {
       await settle(tester);
 
       expect(submission.transfers, isEmpty);
-      expect(find.text(l10n.swapReviewTitle), findsOneWidget);
+      expect(find.byType(ReviewSwapScreen), findsOneWidget);
       expect(find.text('19.8 USDC'), findsOneWidget);
 
       await tester.tap(find.text(l10n.swapReviewConfirm));
@@ -851,7 +918,7 @@ void main() {
 
       expect(submission.transfers, isEmpty);
       expect(after.liveQuotes, isEmpty);
-      expect(find.text(l10n.swapReviewTitle), findsOneWidget);
+      expect(find.byType(ReviewSwapScreen), findsOneWidget);
       await tester.pump(const Duration(seconds: 10));
     });
 
@@ -884,7 +951,7 @@ void main() {
 
       expect(submission.transfers, isEmpty);
       expect(after.liveQuotes, isEmpty);
-      expect(find.text(l10n.swapReviewTitle), findsOneWidget);
+      expect(find.byType(ReviewSwapScreen), findsOneWidget);
       await tester.pump(const Duration(seconds: 10));
     });
 
@@ -970,7 +1037,7 @@ void main() {
 
       expect(submission.transfers, isEmpty);
       expect(oneClick.requests.where((r) => r.url.path == '/v0/deposit/submit'), isEmpty);
-      expect(find.text(l10n.swapReviewTitle), findsOneWidget);
+      expect(find.byType(ReviewSwapScreen), findsOneWidget);
       expect(button(tester, l10n.swapReviewConfirm).isDisabled, isTrue);
       await tester.pump(const Duration(seconds: 10));
     });
@@ -993,7 +1060,7 @@ void main() {
       expect(oneClick.liveQuotes, hasLength(1));
       expect(submission.transfers, isEmpty);
       expect(oneClick.requests.where((r) => r.url.path == '/v0/deposit/submit'), isEmpty);
-      expect(find.text(l10n.swapReviewTitle), findsOneWidget);
+      expect(find.byType(ReviewSwapScreen), findsOneWidget);
       expect(button(tester, l10n.swapReviewConfirm).isDisabled, isTrue);
       await tester.pump(const Duration(seconds: 10));
     });
@@ -1281,12 +1348,12 @@ void main() {
         activeSwap(SwapOrder(quote: inQuote, status: SwapStatus.pendingDeposit)),
         oneClick: oneClick,
       );
-      expect(find.text(l10n.swapDepositWaiting), findsOneWidget);
+      expect(find.text(l10n.swapDepositSent), findsOneWidget);
 
       await tester.pump(SwapService.statusPollInterval);
       await settle(tester);
       expect(banner(l10n.swapProgressStatusUnavailable('')), findsOneWidget);
-      expect(find.text(l10n.swapDepositWaiting), findsOneWidget);
+      expect(find.text(l10n.swapDepositSent), findsOneWidget);
 
       oneClick.statusCode = 200;
       oneClick.status = 'KNOWN_DEPOSIT_TX';
@@ -1412,21 +1479,21 @@ void main() {
         recipient: account.accountId,
         depositAddress: 'bc1qdeposit',
       );
-      await pumpOrder(tester, SwapOrder(quote: inQuote, status: SwapStatus.pendingDeposit));
+      final settings = await pumpSwap(tester, activeSwap(SwapOrder(quote: inQuote, status: SwapStatus.pendingDeposit)));
 
-      expect(find.text(l10n.swapDepositToken), findsOneWidget);
-      expect(find.text('BTC'), findsOneWidget);
-      expect(find.text(l10n.swapDepositNetwork), findsOneWidget);
-      expect(find.text('Bitcoin'), findsOneWidget);
+      expect(find.text(l10n.swapDepositTitle), findsOneWidget);
       expect(find.text('bc1qdeposit'), findsOneWidget);
-      expect(find.text('0.12345678'), findsOneWidget);
+      expect(find.text(l10n.commonAmountBalance('0.12345678', 'BTC')), findsOneWidget);
+      expect(find.text(l10n.swapDepositNotice('BTC', 'Bitcoin')), findsOneWidget);
       expect(find.text(l10n.swapDepositMemoNotice), findsNothing);
+      expect(find.text(l10n.swapInProgressTitle), findsNothing);
 
-      final container = containerOf(tester);
-      await tester.scrollUntilVisible(find.text(l10n.swapStopTracking), 200);
-      await tester.tap(find.text(l10n.swapStopTracking));
+      await tester.tap(find.text(l10n.swapDepositSent));
       await settle(tester);
-      expect(container.read(activeSwapProvider), isNull);
+      expect(find.text(l10n.swapInProgressTitle), findsOneWidget);
+      expect(find.text(l10n.swapStepDeposited('BTC')), findsOneWidget);
+      expect(containerOf(tester).read(activeSwapProvider)!.depositSent, isTrue);
+      expect(settings.getActiveSwap()!.depositSent, isTrue);
     });
 
     testWidgets('shows the memo a deposit must carry', (tester) async {

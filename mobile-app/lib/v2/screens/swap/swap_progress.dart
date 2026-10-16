@@ -5,9 +5,10 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/providers/active_swap_provider.dart';
 
-/// The steps a swap goes through, as the progress screen lists them.
-List<String> swapStepLabels(AppLocalizations l10n, SwapQuote quote, String receiver) => [
-  l10n.swapStepSent(quote.fromToken.symbol),
+/// The steps a swap goes through, as the progress screen lists them; a
+/// deposit made [byHand] is deposited rather than sent.
+List<String> swapStepLabels(AppLocalizations l10n, SwapQuote quote, String receiver, {required bool byHand}) => [
+  byHand ? l10n.swapStepDeposited(quote.fromToken.symbol) : l10n.swapStepSent(quote.fromToken.symbol),
   l10n.swapStepConfirming(quote.fromToken.networkName),
   l10n.swapStepSwapping,
   l10n.swapStepSending(quote.toToken.symbol, receiver),
