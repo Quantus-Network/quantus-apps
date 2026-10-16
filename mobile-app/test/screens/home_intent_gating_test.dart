@@ -196,7 +196,13 @@ void main() {
       QuantusButton button(String label) =>
           tester.widget<QuantusButton>(find.ancestor(of: find.text(label), matching: find.byType(QuantusButton)));
       expect(button('Start a New Swap').isDisabled, isTrue);
-      expect(button('Done').isDisabled, isFalse);
+      expect(find.text('Contact Support'), findsOneWidget);
+
+      await tester.tap(find.byType(AppBackButton));
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 1));
+      expect(find.byType(SwapProgressBadge), findsNothing);
+      expect(find.byType(SwapProgressScreen), findsNothing);
     });
   }
 
