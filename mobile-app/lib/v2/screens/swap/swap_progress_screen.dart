@@ -25,7 +25,8 @@ import 'package:resonance_network_wallet/v2/screens/swap/swap_summary.dart';
 /// in preflight, any swap) waits for its deposit, then progress, and finally
 /// the completed or failed swap. Leaving by Done or Start new, or a failed
 /// swap by going back, puts the swap away, so the next tap on Swap starts a
-/// fresh one; a running swap left by going back is still followed.
+/// fresh one; a running swap left by going back is still followed, and one
+/// whose deposit was not seen by its deadline offers to stop tracking.
 class SwapProgressScreen extends ConsumerStatefulWidget {
   /// The account a new swap would start from; none when the selected
   /// account cannot swap.
@@ -121,6 +122,7 @@ class _SwapInProgress extends ConsumerWidget {
     final receiver = quote.fromToken.isQuantus || ref.watch(swapPreflightProvider) != null
         ? AddressFormattingService.formatAddress(quote.recipient)
         : swap.accountName;
+    final refund = swap.depositByHand ? AddressFormattingService.formatAddress(quote.refundAddress) : swap.accountName;
     final steps = swapStepLabels(l10n, quote, receiver, byHand: swap.depositByHand);
     final stage = swapStage(order, depositByHand: swap.depositByHand);
     final pollError = swap.pollError;
@@ -158,7 +160,7 @@ class _SwapInProgress extends ConsumerWidget {
             if (pollError != null) ...[const SizedBox(height: 16), _PollErrorNotice(error: pollError)],
             if (deadlinePassed) ...[
               const SizedBox(height: 16),
-              QuantusBanner(tone: BannerTone.sand, message: l10n.swapProgressDepositNotSeen(swap.accountName)),
+              QuantusBanner(tone: BannerTone.sand, message: l10n.swapProgressDepositNotSeen(refund)),
             ],
           ],
         ),
@@ -180,6 +182,14 @@ class _SwapInProgress extends ConsumerWidget {
               textAlign: TextAlign.center,
               style: text.body.copyWith(color: colors.textMuted2),
             ),
+            if (deadlinePassed) ...[
+              const SizedBox(height: 8),
+              QuantusButton.simple(
+                label: l10n.swapStopTracking,
+                variant: ButtonVariant.underline,
+                onTap: () => _finish(context, ref),
+              ),
+            ],
           ],
         ),
       ),
@@ -422,8 +432,8 @@ class _SwapFailed extends ConsumerWidget {
 /// a swap out of it in preflight. "I've sent it" moves the swap on to its
 /// progress, where 1Click's own sighting of the deposit is awaited.
 class _SwapDeposit extends ConsumerWidget {
-  static const _qrSize = 267.0;
   static const _addressWidth = 186.0;
+  static const _networkLogoSize = 48.0;
 
   final ActiveSwap swap;
 
@@ -452,49 +462,49 @@ class _SwapDeposit extends ConsumerWidget {
             QuantusQr(
               accountId: address,
               borderRadius: BorderRadius.vertical(top: corner),
+              logo: TokenIcon.network(token: from, size: _networkLogoSize),
             ),
             Container(
-              width: _qrSize,
+              width: QuantusQr.size,
               padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 20),
               decoration: BoxDecoration(
                 color: colors.bgSurface,
                 border: Border.all(color: colors.borderHairline),
                 borderRadius: BorderRadius.vertical(bottom: corner),
               ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      TokenIcon(token: from, size: 28),
-                      const SizedBox(width: 8),
-                      Flexible(
-                        child: FittedBox(
-                          fit: BoxFit.scaleDown,
-                          child: Text(
-                            formatSwapAmount(l10n, fmt, quote.amountIn, from, exact: true),
-                            style: text.amountHero.copyWith(color: colors.textContent),
-                          ),
-                        ),
+                  TokenIcon(token: from, size: 28),
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        formatSwapAmount(l10n, fmt, quote.amountIn, from, exact: true),
+                        style: text.amountHero.copyWith(color: colors.textContent),
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    l10n.swapDepositNetwork(from.networkName),
-                    textAlign: TextAlign.center,
-                    style: text.headingRow.copyWith(color: colors.textContent),
+                    ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 40),
+            const SizedBox(height: 32),
+            Text.rich(
+              _emphasised(
+                l10n.swapDepositOnly(from.symbol, from.networkName),
+                [from.symbol, from.networkName],
+                style: text.body.copyWith(color: colors.semanticSand),
+                emphasis: text.bodyEmphasis.copyWith(color: colors.textContent),
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 32),
             Text(
               l10n.swapDetailsDepositAddress.toUpperCase(),
               style: text.labelMonogram.copyWith(color: colors.textMuted),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -544,11 +554,10 @@ class _SwapDeposit extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              l10n.swapDepositNotice(from.symbol, from.networkName),
-              style: text.body.copyWith(color: colors.textMuted2),
+              l10n.swapDepositDeadline(deadline),
+              textAlign: TextAlign.center,
+              style: text.caption.copyWith(color: colors.accentFlare),
             ),
-            const SizedBox(height: 8),
-            Text(l10n.swapDepositDeadline(deadline), style: text.caption.copyWith(color: colors.accentFlare)),
             const SizedBox(height: 16),
             QuantusButton.simple(
               label: l10n.swapDepositSent,
@@ -559,4 +568,29 @@ class _SwapDeposit extends ConsumerWidget {
       ),
     );
   }
+}
+
+/// [sentence] in [style], with each of [words] where it occurs in [emphasis].
+TextSpan _emphasised(String sentence, List<String> words, {required TextStyle style, required TextStyle emphasis}) {
+  final spans = <TextSpan>[];
+  var rest = sentence;
+  while (rest.isNotEmpty) {
+    var at = rest.length;
+    String? word;
+    for (final candidate in words.where((w) => w.isNotEmpty)) {
+      final index = rest.indexOf(candidate);
+      if (index >= 0 && index < at) {
+        at = index;
+        word = candidate;
+      }
+    }
+    if (word == null) {
+      spans.add(TextSpan(text: rest));
+      break;
+    }
+    if (at > 0) spans.add(TextSpan(text: rest.substring(0, at)));
+    spans.add(TextSpan(text: word, style: emphasis));
+    rest = rest.substring(at + word.length);
+  }
+  return TextSpan(style: style, children: spans);
 }

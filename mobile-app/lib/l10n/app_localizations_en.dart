@@ -1882,6 +1882,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get swapDepositAddressCopied => 'Deposit address copied to clipboard';
 
   @override
+  String swapDepositOnly(String symbol, String network) {
+    return 'Send $symbol on $network only';
+  }
+
+  @override
   String swapDepositDeadline(String time) {
     return 'Send before $time or the quote expires';
   }
@@ -1896,22 +1901,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get swapDepositMemoNotice => 'Include this memo with your deposit. A deposit without it is not processed.';
 
   @override
-  String swapDepositNetwork(String network) {
-    return '$network network';
-  }
-
-  @override
-  String swapDepositNotice(String symbol, String network) {
-    return 'Send only $symbol on $network to this address. We\'ll detect your deposit automatically and start the swap. Sending other assets may result in loss of funds.';
-  }
-
-  @override
   String get swapRequestTimedOut => 'The request timed out';
 
   @override
   String swapProgressStatusUnavailable(String error) {
     return 'The swap status can\'t be checked right now: $error';
   }
+
+  @override
+  String get swapStopTracking => 'Stop tracking swap';
 
   @override
   String swapProgressDepositNotSeen(String refund) {

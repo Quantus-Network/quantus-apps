@@ -99,6 +99,8 @@ class ActiveSwapNotifier extends Notifier<ActiveSwap?> {
     _poll = Timer(SwapService.statusPollInterval, refresh);
   }
 
+  /// Polls the swap and merges the answer into the swap as it is by then,
+  /// so a deposit marked sent while the request was out stays sent.
   Future<void> _refresh() async {
     final current = state;
     if (current == null || current.simulated || current.isFinal) return;
@@ -106,11 +108,11 @@ class ActiveSwapNotifier extends Notifier<ActiveSwap?> {
     try {
       final order = await ref.read(swapServiceProvider).getSwapStatus(current.order);
       if (generation != _generation) return;
-      _set(current.withOrder(order, now: clock.now()));
+      _set(state!.withOrder(order, now: clock.now()));
     } catch (e) {
       quantusPrint('Swap status poll failed: $e');
       if (generation != _generation) return;
-      _set(current.withPollError(describeSwapError(ref.read(l10nProvider), e)));
+      _set(state!.withPollError(describeSwapError(ref.read(l10nProvider), e)));
     }
     final next = state;
     if (next != null) _schedule(next);

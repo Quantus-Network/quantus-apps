@@ -1885,6 +1885,11 @@ class AppLocalizationsId extends AppLocalizations {
   String get swapDepositAddressCopied => 'Alamat deposit disalin ke clipboard';
 
   @override
+  String swapDepositOnly(String symbol, String network) {
+    return 'Kirim hanya $symbol di $network';
+  }
+
+  @override
   String swapDepositDeadline(String time) {
     return 'Kirim sebelum $time atau penawaran kedaluwarsa';
   }
@@ -1899,22 +1904,15 @@ class AppLocalizationsId extends AppLocalizations {
   String get swapDepositMemoNotice => 'Sertakan memo ini pada deposit Anda. Deposit tanpa memo tidak akan diproses.';
 
   @override
-  String swapDepositNetwork(String network) {
-    return 'Jaringan $network';
-  }
-
-  @override
-  String swapDepositNotice(String symbol, String network) {
-    return 'Kirim hanya $symbol di $network ke alamat ini. Kami akan mendeteksi deposit Anda secara otomatis dan memulai swap. Mengirim aset lain dapat menyebabkan kehilangan dana.';
-  }
-
-  @override
   String get swapRequestTimedOut => 'Permintaan melebihi batas waktu';
 
   @override
   String swapProgressStatusUnavailable(String error) {
     return 'Status swap tidak dapat diperiksa saat ini: $error';
   }
+
+  @override
+  String get swapStopTracking => 'Berhenti melacak swap';
 
   @override
   String swapProgressDepositNotSeen(String refund) {

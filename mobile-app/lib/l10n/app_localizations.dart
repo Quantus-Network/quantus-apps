@@ -3506,6 +3506,12 @@ abstract class AppLocalizations {
   /// **'Deposit address copied to clipboard'**
   String get swapDepositAddressCopied;
 
+  /// Under the deposit card; the symbol and the network are emphasised
+  ///
+  /// In en, this message translates to:
+  /// **'Send {symbol} on {network} only'**
+  String swapDepositOnly(String symbol, String network);
+
   /// Local time by which the deposit must arrive
   ///
   /// In en, this message translates to:
@@ -3530,18 +3536,6 @@ abstract class AppLocalizations {
   /// **'Include this memo with your deposit. A deposit without it is not processed.'**
   String get swapDepositMemoNotice;
 
-  /// Under the amount on the deposit card: the network the deposit must be sent on
-  ///
-  /// In en, this message translates to:
-  /// **'{network} network'**
-  String swapDepositNetwork(String network);
-
-  /// Deposit wallet notice on deposit screen
-  ///
-  /// In en, this message translates to:
-  /// **'Send only {symbol} on {network} to this address. We\'ll detect your deposit automatically and start the swap. Sending other assets may result in loss of funds.'**
-  String swapDepositNotice(String symbol, String network);
-
   /// Why a 1Click request failed when no answer came within the time allowed
   ///
   /// In en, this message translates to:
@@ -3553,6 +3547,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The swap status can\'t be checked right now: {error}'**
   String swapProgressStatusUnavailable(String error);
+
+  /// Link under a running swap whose deposit was not seen by its deadline; puts the swap away, a late deposit is still refunded
+  ///
+  /// In en, this message translates to:
+  /// **'Stop tracking swap'**
+  String get swapStopTracking;
 
   /// Notice on the progress screen once the deposit window closed with the deposit unseen
   ///

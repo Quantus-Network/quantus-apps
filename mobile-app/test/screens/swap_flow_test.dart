@@ -215,6 +215,7 @@ SwapQuote _quote({
   required String recipient,
   String? depositAddress,
   String? depositMemo,
+  DateTime? deadline,
 }) => SwapQuote(
   fromToken: from,
   toToken: to,
@@ -227,7 +228,7 @@ SwapQuote _quote({
   slippageBps: 100,
   refundAddress: refund,
   recipient: recipient,
-  deadline: clock.now().add(const Duration(minutes: 20)),
+  deadline: deadline ?? clock.now().add(const Duration(minutes: 20)),
   timeEstimate: const Duration(minutes: 1),
   correlationId: 'c',
   signature: 'ed25519:sig',
@@ -1221,7 +1222,7 @@ void main() {
       expect(submission.transfers, isEmpty);
       expect(oneClick.requests.where((r) => r.url.path == '/v0/deposit/submit'), isEmpty);
       expect(find.text(_deposit), findsOneWidget);
-      expect(find.text(l10n.swapDepositNotice('WNEAR', 'NEAR')), findsOneWidget);
+      expect(find.text(l10n.swapDepositOnly('WNEAR', 'NEAR')), findsOneWidget);
     });
   });
 
@@ -1329,27 +1330,19 @@ void main() {
       expect(container.read(settingsServiceProvider).getActiveSwap(), isNotNull);
     });
 
-    testWidgets('a deposit the app sent that was not seen by the deadline says so and can be dismissed', (
+    testWidgets('a deposit not seen by the deadline says so and can be dismissed, sent by the app or by hand', (
       tester,
     ) async {
-      final quote = liveQuote;
-      final late = SwapQuote(
-        fromToken: quote.fromToken,
-        toToken: quote.toToken,
-        amountIn: quote.amountIn,
-        minAmountIn: quote.minAmountIn,
-        amountOut: quote.amountOut,
-        minAmountOut: quote.minAmountOut,
-        amountInUsd: quote.amountInUsd,
-        amountOutUsd: quote.amountOutUsd,
-        slippageBps: quote.slippageBps,
-        refundAddress: quote.refundAddress,
-        recipient: quote.recipient,
-        deadline: clock.now().subtract(const Duration(minutes: 1)),
-        timeEstimate: quote.timeEstimate,
-        correlationId: quote.correlationId,
-        signature: quote.signature,
-        depositAddress: quote.depositAddress,
+      final past = clock.now().subtract(const Duration(minutes: 1));
+      final late = _quote(
+        from: _qtc,
+        to: _usdc,
+        amountIn: _unit * BigInt.from(250),
+        amountOut: BigInt.from(24860000),
+        refund: account.accountId,
+        recipient: _external,
+        depositAddress: _deposit,
+        deadline: past,
       );
       await pumpSwap(
         tester,
@@ -1358,10 +1351,63 @@ void main() {
           age: const Duration(minutes: 5),
         ),
       );
-
       expect(find.text(l10n.swapInProgressTitle), findsOneWidget);
       expect(banner(l10n.swapProgressDepositNotSeen(account.name)), findsOneWidget);
-      expect(find.text(l10n.swapProgressFooter), findsOneWidget);
+      var container = containerOf(tester);
+      await tester.tap(find.text(l10n.swapStopTracking));
+      await settle(tester);
+      expect(container.read(activeSwapProvider), isNull);
+
+      final lateIn = _quote(
+        from: const SwapToken(assetId: 'nep141:btc', symbol: 'BTC', network: 'BTC', decimals: 8, usdPrice: 86000),
+        to: _qtc,
+        amountIn: BigInt.from(12345678),
+        amountOut: _unit * BigInt.from(1000),
+        refund: 'bc1qrefund',
+        recipient: account.accountId,
+        depositAddress: 'bc1qdeposit',
+        deadline: past,
+      );
+      await pumpSwap(tester, activeSwap(SwapOrder(quote: lateIn, status: SwapStatus.pendingDeposit)).withDepositSent());
+      expect(find.text(l10n.swapInProgressTitle), findsOneWidget);
+      expect(banner(l10n.swapProgressDepositNotSeen('bc1qrefund')), findsOneWidget);
+      container = containerOf(tester);
+      await tester.tap(find.text(l10n.swapStopTracking));
+      await settle(tester);
+      expect(container.read(activeSwapProvider), isNull);
+    });
+
+    testWidgets("I've sent it during a status poll stays sent, whatever the poll answers", (tester) async {
+      for (final statusCode in [200, 503]) {
+        final oneClick = _OneClick(dryOut: BigInt.one)
+          ..statusCode = statusCode
+          ..holdStatus = Completer<void>();
+        final inQuote = _quote(
+          from: const SwapToken(assetId: 'nep141:btc', symbol: 'BTC', network: 'BTC', decimals: 8, usdPrice: 86000),
+          to: _qtc,
+          amountIn: BigInt.from(12345678),
+          amountOut: _unit * BigInt.from(1000),
+          refund: 'bc1qrefund',
+          recipient: account.accountId,
+          depositAddress: 'bc1qdeposit',
+        );
+        await pumpSwap(
+          tester,
+          activeSwap(SwapOrder(quote: inQuote, status: SwapStatus.pendingDeposit)),
+          oneClick: oneClick,
+        );
+        await tester.pump(SwapService.statusPollInterval);
+        expect(oneClick.requests.where((r) => r.url.path == '/v0/status'), hasLength(1));
+
+        await tester.tap(find.text(l10n.swapDepositSent));
+        await settle(tester);
+        expect(find.text(l10n.swapInProgressTitle), findsOneWidget);
+
+        oneClick.holdStatus!.complete();
+        await settle(tester);
+        expect(containerOf(tester).read(activeSwapProvider)!.depositSent, isTrue, reason: 'poll answered $statusCode');
+        expect(find.text(l10n.swapInProgressTitle), findsOneWidget);
+      }
     });
 
     for (final (who, account) in [
@@ -1545,8 +1591,7 @@ void main() {
       expect(find.text(l10n.swapDepositTitle), findsOneWidget);
       expect(find.text('bc1qdeposit'), findsOneWidget);
       expect(find.text(l10n.commonAmountBalance('0.12345678', 'BTC')), findsOneWidget);
-      expect(find.text(l10n.swapDepositNotice('BTC', 'Bitcoin')), findsOneWidget);
-      expect(find.text(l10n.swapDepositNetwork('Bitcoin')), findsOneWidget);
+      expect(find.text(l10n.swapDepositOnly('BTC', 'Bitcoin')), findsOneWidget);
       expect(find.text(l10n.swapDepositMemoNotice), findsNothing);
       expect(find.text(l10n.swapInProgressTitle), findsNothing);
 
