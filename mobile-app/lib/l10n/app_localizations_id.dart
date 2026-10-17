@@ -1763,6 +1763,11 @@ class AppLocalizationsId extends AppLocalizations {
   String get swapReviewConfirm => 'Konfirmasi swap';
 
   @override
+  String swapActivityAmounts(String amountIn, String amountOut) {
+    return '$amountIn → $amountOut';
+  }
+
+  @override
   String get swapInProgressTitle => 'Swap Sedang Berjalan';
 
   @override

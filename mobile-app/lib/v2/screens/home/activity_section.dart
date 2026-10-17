@@ -15,6 +15,7 @@ import 'package:resonance_network_wallet/shared/constants/e2e_keys.dart';
 import 'package:resonance_network_wallet/v2/screens/activity/activity_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/activity/transaction_detail_sheet.dart';
 import 'package:resonance_network_wallet/v2/screens/activity/tx_item.dart';
+import 'package:resonance_network_wallet/v2/screens/swap/swap_activity_row.dart';
 
 class ActivitySection extends ConsumerStatefulWidget {
   final AsyncValue<CombinedTransactionsList> txAsync;
@@ -76,8 +77,10 @@ class _ActivitySectionState extends ConsumerState<ActivitySection> {
         final recentTransactions = all.take(5).toList();
         var pendingSendKeyAssigned = false;
 
+        final account = widget.activeAccount;
+        final swapRow = SwapActivityRow(starter: account is Account ? account : null, isHidden: widget.isHidden);
         if (all.isEmpty) {
-          return Column(children: [const SizedBox(height: 40), _header(l10n), _emptyState(l10n)]);
+          return Column(children: [const SizedBox(height: 40), _header(l10n), swapRow, _emptyState(l10n)]);
         }
 
         final isPrivate = isEncryptedAccount(widget.activeAccount);
@@ -87,7 +90,7 @@ class _ActivitySectionState extends ConsumerState<ActivitySection> {
             const SizedBox(height: 40),
             _header(l10n),
             const SizedBox(height: 28),
-
+            swapRow,
             ...recentTransactions.mapIndexed((index, tx) {
               final data = TxItemData.from(tx, widget.activeAccount.accountId, colors, l10n, isPrivate: isPrivate);
               final isLastItem = index == recentTransactions.length - 1;

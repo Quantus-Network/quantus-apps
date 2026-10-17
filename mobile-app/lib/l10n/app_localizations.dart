@@ -3296,6 +3296,12 @@ abstract class AppLocalizations {
   /// **'Confirm swap'**
   String get swapReviewConfirm;
 
+  /// Title of the home activity row for the swap with 1Click; the step it is on is the subtitle
+  ///
+  /// In en, this message translates to:
+  /// **'{amountIn} → {amountOut}'**
+  String swapActivityAmounts(String amountIn, String amountOut);
+
   /// Title while the swap is running
   ///
   /// In en, this message translates to:

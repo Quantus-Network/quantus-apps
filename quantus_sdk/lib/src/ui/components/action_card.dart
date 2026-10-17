@@ -12,17 +12,12 @@ class ActionCard extends StatelessWidget {
   final VoidCallback onTap;
   final bool isDisabled;
 
-  /// Laid over the card's top edge, above the icon: a live status such as a
-  /// progress badge.
-  final Widget? overlay;
-
   const ActionCard({
     super.key,
     required this.iconAsset,
     required this.label,
     required this.onTap,
     this.isDisabled = false,
-    this.overlay,
   });
 
   @override
@@ -35,13 +30,7 @@ class ActionCard extends StatelessWidget {
       child: InkWell(
         onTap: isDisabled ? null : onTap,
         borderRadius: radius,
-        child: Stack(
-          fit: StackFit.passthrough,
-          children: [
-            _card(context, colors, radius, labelStyle),
-            if (overlay != null) Positioned(top: 4, left: 0, right: 0, child: Center(child: overlay)),
-          ],
-        ),
+        child: _card(context, colors, radius, labelStyle),
       ),
     );
   }

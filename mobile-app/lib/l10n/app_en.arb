@@ -2566,6 +2566,18 @@
     "@swapReviewConfirm": {
       "description": "Confirm button on the swap review screen"
     },
+    "swapActivityAmounts": "{amountIn} → {amountOut}",
+    "@swapActivityAmounts": {
+      "description": "Title of the home activity row for the swap with 1Click; the step it is on is the subtitle",
+      "placeholders": {
+        "amountIn": {
+          "type": "String"
+        },
+        "amountOut": {
+          "type": "String"
+        }
+      }
+    },
     "swapInProgressTitle": "Swap In Progress",
     "@swapInProgressTitle": {
       "description": "Title while the swap is running"

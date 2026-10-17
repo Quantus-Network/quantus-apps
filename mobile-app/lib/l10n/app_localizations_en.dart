@@ -1760,6 +1760,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get swapReviewConfirm => 'Confirm swap';
 
   @override
+  String swapActivityAmounts(String amountIn, String amountOut) {
+    return '$amountIn → $amountOut';
+  }
+
+  @override
   String get swapInProgressTitle => 'Swap In Progress';
 
   @override

@@ -50,7 +50,7 @@ class _SwapProgressScreenState extends ConsumerState<SwapProgressScreen> {
     ref.watch(swapElapsedProvider);
     final now = clock.now();
     final order = swap.order;
-    final awaitingDeposit = order.status == SwapStatus.pendingDeposit && swap.depositByHand && !swap.depositSent;
+    final awaitingDeposit = order.status == SwapStatus.pendingDeposit && !swap.depositUnderway;
     final expired = awaitingDeposit && now.isAfter(order.quote.deadline);
     return switch (order.status) {
       SwapStatus.success => _SwapComplete(swap: swap),
@@ -119,9 +119,7 @@ class _SwapInProgress extends ConsumerWidget {
     final text = context.themeTextV3;
     final order = swap.order;
     final quote = order.quote;
-    final receiver = quote.fromToken.isQuantus || ref.watch(swapPreflightProvider) != null
-        ? AddressFormattingService.formatAddress(quote.recipient)
-        : swap.accountName;
+    final receiver = swapReceiver(swap, preflight: ref.watch(swapPreflightProvider) != null);
     final refund = swap.depositByHand ? AddressFormattingService.formatAddress(quote.refundAddress) : swap.accountName;
     final steps = swapStepLabels(l10n, quote, receiver, byHand: swap.depositByHand);
     final stage = swapStage(order, depositByHand: swap.depositByHand);

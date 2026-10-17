@@ -47,6 +47,14 @@ class ActiveSwap {
 
   bool get isFinal => order.status.isFinal;
 
+  /// Whether the deposit is on its way to 1Click: sent by the app, or sent
+  /// by hand and marked so.
+  bool get depositUnderway => !depositByHand || depositSent;
+
+  /// Whether the swap is with 1Click: its deposit was seen there or is on
+  /// its way, and it has not settled.
+  bool get inProgress => !isFinal && (order.status != SwapStatus.pendingDeposit || depositUnderway);
+
   Duration elapsedAt(DateTime now) => (settledAt ?? now).difference(startedAt);
 
   /// The deposit window closed with 1Click still waiting for the deposit.
