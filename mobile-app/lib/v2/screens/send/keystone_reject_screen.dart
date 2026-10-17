@@ -45,7 +45,7 @@ class KeystoneRejectScreen extends ConsumerWidget {
             QuantusButton.simple(label: l10n.keystoneRejectConfirm, onTap: () => Navigator.pop(context, true)),
             const SizedBox(height: 4),
             QuantusButton.simple(
-              label: l10n.keystoneRejectContactSupport,
+              label: l10n.commonContactSupport,
               variant: ButtonVariant.underline,
               onTap: () => launchUrl(_supportUrl),
             ),

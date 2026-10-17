@@ -25,7 +25,6 @@ import 'package:resonance_network_wallet/v2/screens/send/regular_send_strategy.d
 import 'package:resonance_network_wallet/v2/screens/send/select_recipient_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/send/send_strategy.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/settings_screen.dart';
-import 'package:resonance_network_wallet/v2/screens/swap/swap_progress.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/swap_progress_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/swap_screen.dart';
 import 'package:resonance_network_wallet/l10n/app_localizations.dart';
@@ -393,8 +392,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     },
   );
 
-  /// The one swap being followed shows its progress on the button and opens
-  /// from any account, even where swaps are no longer offered. Otherwise only
+  /// The one swap being followed opens from any account, even where swaps are
+  /// no longer offered; while its deposit is with 1Click it is also pinned
+  /// above the activity. Otherwise only
   /// a transparent account with a key here can swap; the button stays,
   /// disabled, for the other regular accounts so the layout doesn't change
   /// between them.
@@ -414,7 +414,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       iconAsset: 'assets/v2/action_swap.svg',
       label: l10n.homeSwap,
       isDisabled: isDisabled,
-      overlay: swap == null ? null : SwapProgressBadge(swap: swap),
       onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => screen())),
     );
   }
@@ -425,17 +424,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     required String label,
     required VoidCallback onTap,
     bool isDisabled = false,
-    Widget? overlay,
   }) {
     return Expanded(
-      child: ActionCard(
-        key: key,
-        iconAsset: iconAsset,
-        label: label,
-        onTap: onTap,
-        isDisabled: isDisabled,
-        overlay: overlay,
-      ),
+      child: ActionCard(key: key, iconAsset: iconAsset, label: label, onTap: onTap, isDisabled: isDisabled),
     );
   }
 }

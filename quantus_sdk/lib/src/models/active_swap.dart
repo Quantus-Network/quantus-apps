@@ -17,6 +17,10 @@ class ActiveSwap {
   /// app sending it from the account.
   final bool depositByHand;
 
+  /// Whether the user has said a deposit by hand is out, so the swap is
+  /// followed as sent rather than still waiting to be paid.
+  final bool depositSent;
+
   /// Hash and fee of the QTC transfer that paid the deposit, when the app sent it.
   final String? depositTxHash;
   final BigInt? depositFee;
@@ -33,6 +37,7 @@ class ActiveSwap {
     required this.accountName,
     required this.startedAt,
     required this.depositByHand,
+    this.depositSent = false,
     this.settledAt,
     this.depositTxHash,
     this.depositFee,
@@ -41,6 +46,14 @@ class ActiveSwap {
   });
 
   bool get isFinal => order.status.isFinal;
+
+  /// Whether the deposit is on its way to 1Click: sent by the app, or sent
+  /// by hand and marked so.
+  bool get depositUnderway => !depositByHand || depositSent;
+
+  /// Whether the swap is with 1Click: its deposit was seen there or is on
+  /// its way, and it has not settled.
+  bool get inProgress => !isFinal && (order.status != SwapStatus.pendingDeposit || depositUnderway);
 
   Duration elapsedAt(DateTime now) => (settledAt ?? now).difference(startedAt);
 
@@ -52,13 +65,21 @@ class ActiveSwap {
 
   ActiveSwap withPollError(String error) => _copy(order: order, settledAt: settledAt, pollError: error);
 
-  ActiveSwap _copy({required SwapOrder order, required DateTime? settledAt, required String? pollError}) => ActiveSwap(
+  ActiveSwap withDepositSent() => _copy(order: order, settledAt: settledAt, pollError: pollError, depositSent: true);
+
+  ActiveSwap _copy({
+    required SwapOrder order,
+    required DateTime? settledAt,
+    required String? pollError,
+    bool? depositSent,
+  }) => ActiveSwap(
     order: order,
     accountId: accountId,
     accountName: accountName,
     startedAt: startedAt,
     settledAt: settledAt,
     depositByHand: depositByHand,
+    depositSent: depositSent ?? this.depositSent,
     depositTxHash: depositTxHash,
     depositFee: depositFee,
     pollError: pollError,
@@ -78,6 +99,7 @@ class ActiveSwap {
       startedAt: DateTime.parse(json['startedAt'] as String),
       settledAt: settledAt == null ? null : DateTime.parse(settledAt),
       depositByHand: json['depositByHand'] as bool,
+      depositSent: json['depositSent'] as bool? ?? false,
       depositTxHash: json['depositTxHash'] as String?,
       depositFee: depositFee == null ? null : BigInt.parse(depositFee),
     );
@@ -93,6 +115,7 @@ class ActiveSwap {
     'startedAt': startedAt.toUtc().toIso8601String(),
     'settledAt': ?settledAt?.toUtc().toIso8601String(),
     'depositByHand': depositByHand,
+    'depositSent': depositSent,
     'depositTxHash': ?depositTxHash,
     'depositFee': ?depositFee?.toString(),
   };

@@ -2,7 +2,6 @@ import 'package:clock/clock.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:qr_flutter/qr_flutter.dart';
 import 'package:quantus_sdk/quantus_sdk.dart' hide ScaffoldBase;
 import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/providers/active_swap_provider.dart';
@@ -10,13 +9,13 @@ import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
-import 'package:resonance_network_wallet/shared/utils/share_utils.dart';
 import 'package:resonance_network_wallet/v2/components/copy_icon_button.dart';
 import 'package:resonance_network_wallet/v2/components/link_button.dart';
 import 'package:resonance_network_wallet/shared/utils/account_utils.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/success_check.dart';
 import 'package:resonance_network_wallet/v2/components/token_icon.dart';
+import 'package:resonance_network_wallet/v2/screens/settings/help_and_support_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/swap_progress.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/swap_providers.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/swap_screen.dart';
@@ -24,8 +23,10 @@ import 'package:resonance_network_wallet/v2/screens/swap/swap_summary.dart';
 
 /// Follows the active swap: the deposit address while a swap into QTC (or,
 /// in preflight, any swap) waits for its deposit, then progress, and finally
-/// the completed or failed swap. Leaving by Done, Stop tracking or Start new
-/// puts the swap away, so the next tap on Swap starts a fresh one.
+/// the completed or failed swap. Leaving by Done or Start new, or a failed
+/// swap by going back, puts the swap away, so the next tap on Swap starts a
+/// fresh one; a running swap left by going back is still followed, and one
+/// whose deposit was not seen by its deadline offers to stop tracking.
 class SwapProgressScreen extends ConsumerStatefulWidget {
   /// The account a new swap would start from; none when the selected
   /// account cannot swap.
@@ -49,7 +50,7 @@ class _SwapProgressScreenState extends ConsumerState<SwapProgressScreen> {
     ref.watch(swapElapsedProvider);
     final now = clock.now();
     final order = swap.order;
-    final awaitingDeposit = order.status == SwapStatus.pendingDeposit && swap.depositByHand;
+    final awaitingDeposit = order.status == SwapStatus.pendingDeposit && !swap.depositUnderway;
     final expired = awaitingDeposit && now.isAfter(order.quote.deadline);
     return switch (order.status) {
       SwapStatus.success => _SwapComplete(swap: swap),
@@ -118,10 +119,9 @@ class _SwapInProgress extends ConsumerWidget {
     final text = context.themeTextV3;
     final order = swap.order;
     final quote = order.quote;
-    final receiver = quote.fromToken.isQuantus || ref.watch(swapPreflightProvider) != null
-        ? AddressFormattingService.formatAddress(quote.recipient)
-        : swap.accountName;
-    final steps = swapStepLabels(l10n, quote, receiver);
+    final receiver = swapReceiver(swap, preflight: ref.watch(swapPreflightProvider) != null);
+    final refund = swap.depositByHand ? AddressFormattingService.formatAddress(quote.refundAddress) : swap.accountName;
+    final steps = swapStepLabels(l10n, quote, receiver, byHand: swap.depositByHand);
     final stage = swapStage(order, depositByHand: swap.depositByHand);
     final pollError = swap.pollError;
     final deadlinePassed = swap.deadlinePassed(now);
@@ -158,7 +158,7 @@ class _SwapInProgress extends ConsumerWidget {
             if (pollError != null) ...[const SizedBox(height: 16), _PollErrorNotice(error: pollError)],
             if (deadlinePassed) ...[
               const SizedBox(height: 16),
-              QuantusBanner(tone: BannerTone.sand, message: l10n.swapProgressDepositNotSeen(swap.accountName)),
+              QuantusBanner(tone: BannerTone.sand, message: l10n.swapProgressDepositNotSeen(refund)),
             ],
           ],
         ),
@@ -180,12 +180,14 @@ class _SwapInProgress extends ConsumerWidget {
               textAlign: TextAlign.center,
               style: text.body.copyWith(color: colors.textMuted2),
             ),
-            const SizedBox(height: 8),
-            QuantusButton.simple(
-              label: l10n.swapStopTracking,
-              variant: ButtonVariant.underline,
-              onTap: () => _finish(context, ref),
-            ),
+            if (deadlinePassed) ...[
+              const SizedBox(height: 8),
+              QuantusButton.simple(
+                label: l10n.swapStopTracking,
+                variant: ButtonVariant.underline,
+                onTap: () => _finish(context, ref),
+              ),
+            ],
           ],
         ),
       ),
@@ -202,9 +204,10 @@ class _SwapDetailsSheet extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = ref.watch(l10nProvider);
     final fmt = ref.watch(numberFormattingServiceProvider);
-    final quote = swap.order.quote;
+    final order = swap.order;
+    final quote = order.quote;
     final fee = swap.depositFee;
-    final tx = swap.depositTxHash ?? swap.order.originTxHashes.firstOrNull;
+    final tx = swap.depositTxHash ?? order.originTxHashes.firstOrNull;
 
     return BottomSheetContainer(
       title: l10n.swapDetailsTitle,
@@ -216,28 +219,44 @@ class _SwapDetailsSheet extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          SwapDetailRow(
-            label: l10n.swapDetailsRecipient,
-            value: AddressFormattingService.formatAddress(quote.recipient),
-            monoValue: true,
-          ),
-          SwapDetailRow(
-            label: l10n.swapDetailsAmountSent,
-            value: formatSwapAmount(l10n, fmt, quote.amountIn, quote.fromToken, exact: true),
-          ),
-          if (fee != null)
-            SwapDetailRow(label: l10n.swapReviewNetworkFee, value: formatSwapAmount(l10n, fmt, fee, quote.fromToken)),
-          SwapDetailRow(
-            label: l10n.swapDetailsExpected,
-            value: formatSwapAmount(l10n, fmt, quote.amountOut, quote.toToken),
-          ),
-          if (tx != null) ...[
-            const MenuDivider(),
+          if (swap.depositByHand) ...[
             SwapDetailRow(
-              label: l10n.swapDetailsTransaction,
-              value: AddressFormattingService.formatAddress(tx),
+              label: l10n.swapDetailsDepositAddress,
+              value: AddressFormattingService.formatAddress(order.depositAddress),
               monoValue: true,
             ),
+            SwapDetailRow(
+              label: l10n.swapDetailsRequiredDeposit,
+              value: formatSwapAmount(l10n, fmt, quote.amountIn, quote.fromToken, exact: true),
+            ),
+            SwapDetailRow(
+              label: l10n.swapDetailsDepositWindowEnds,
+              value: TimeOfDay.fromDateTime(quote.deadline.toLocal()).format(context),
+            ),
+          ] else ...[
+            SwapDetailRow(
+              label: l10n.swapDetailsRecipient,
+              value: AddressFormattingService.formatAddress(quote.recipient),
+              monoValue: true,
+            ),
+            SwapDetailRow(
+              label: l10n.swapDetailsAmountSent,
+              value: formatSwapAmount(l10n, fmt, quote.amountIn, quote.fromToken, exact: true),
+            ),
+            if (fee != null)
+              SwapDetailRow(label: l10n.swapReviewNetworkFee, value: formatSwapAmount(l10n, fmt, fee, quote.fromToken)),
+            SwapDetailRow(
+              label: l10n.swapDetailsExpected,
+              value: formatSwapAmount(l10n, fmt, quote.amountOut, quote.toToken),
+            ),
+            if (tx != null) ...[
+              const MenuDivider(),
+              SwapDetailRow(
+                label: l10n.swapDetailsTransaction,
+                value: AddressFormattingService.formatAddress(tx),
+                monoValue: true,
+              ),
+            ],
           ],
           const SizedBox(height: 32),
           QuantusButton.simple(
@@ -265,6 +284,7 @@ class _SwapComplete extends ConsumerWidget {
     final order = swap.order;
     final quote = order.quote;
     final to = quote.toToken;
+    final receiver = to.isQuantus && ref.watch(swapPreflightProvider) == null ? swap.accountName : to.networkName;
 
     return ScaffoldBase(
       appBar: V2AppBar(title: l10n.swapCompleteTitle),
@@ -284,7 +304,7 @@ class _SwapComplete extends ConsumerWidget {
             const SizedBox(height: 48),
             Text(l10n.swapCompleteTo, style: text.bodyEmphasis.copyWith(color: colors.textContent)),
             const SizedBox(height: 16),
-            Text(to.networkName, style: text.body.copyWith(color: colors.accentFlare)),
+            Text(receiver, style: text.body.copyWith(color: colors.accentFlare)),
             const SizedBox(height: 4),
             Text(
               AddressFormattingService.formatAddress(quote.recipient),
@@ -301,7 +321,8 @@ class _SwapComplete extends ConsumerWidget {
 }
 
 /// A swap that ended without paying out: refunded, failed, short-paid, or a
-/// deposit window that closed with nothing sent.
+/// deposit window that closed with nothing sent. Going back puts it away;
+/// Contact Support opens Help & Support.
 class _SwapFailed extends ConsumerWidget {
   final ActiveSwap swap;
   final Account? account;
@@ -341,59 +362,64 @@ class _SwapFailed extends ConsumerWidget {
     final starter = account;
     final swapsOffered = ref.watch(remoteConfigProvider.select((c) => c.swapAvailable));
 
-    return ScaffoldBase(
-      appBar: V2AppBar(
-        title: expired
-            ? l10n.swapDepositExpiredTitle
-            : order.status == SwapStatus.incompleteDeposit
-            ? l10n.swapDepositIncompleteTitle
-            : l10n.swapFailedTitle,
-      ),
-      mainContent: SingleChildScrollView(
-        child: Column(
-          children: [
-            const SizedBox(height: 24),
-            if (refunded) ...[
-              Text(
-                l10n.swapRefundedLabel.toUpperCase(),
-                style: text.labelMonogram.copyWith(color: colors.semanticSand),
-              ),
-              const SizedBox(height: 12),
-            ],
-            if (!expired) ...[
-              SwapAmountsCard(
-                quote: order.quote,
-                payLabel: l10n.swapYouPaid,
-                receiveLabel: l10n.swapYouWereReceiving,
-                amountOut: order.amountOut,
-                receiveDimmed: true,
-              ),
-              const SizedBox(height: 32),
-            ],
-            QuantusBanner(
-              tone: warning ? BannerTone.sand : BannerTone.ember,
-              message: _message(l10n, fmt, preflight: ref.watch(swapPreflightProvider) != null),
-            ),
-            if (pollError != null) ...[const SizedBox(height: 16), _PollErrorNotice(error: pollError)],
-          ],
+    return PopScope(
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) ref.read(activeSwapProvider.notifier).clear();
+      },
+      child: ScaffoldBase(
+        appBar: V2AppBar(
+          title: expired
+              ? l10n.swapDepositExpiredTitle
+              : order.status == SwapStatus.incompleteDeposit
+              ? l10n.swapDepositIncompleteTitle
+              : l10n.swapFailedTitle,
         ),
-      ),
-      bottomContent: ScaffoldBaseBottomContent(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            QuantusButton.simple(
-              label: l10n.swapStartNew,
-              isDisabled: starter == null || !starter.signsLocally || !swapsOffered,
-              onTap: starter == null ? null : () => _startNew(context, ref, starter),
-            ),
-            const SizedBox(height: 4),
-            QuantusButton.simple(
-              label: l10n.commonDone,
-              variant: ButtonVariant.staged,
-              onTap: () => _finish(context, ref),
-            ),
-          ],
+        mainContent: SingleChildScrollView(
+          child: Column(
+            children: [
+              const SizedBox(height: 24),
+              if (refunded) ...[
+                Text(
+                  l10n.swapRefundedLabel.toUpperCase(),
+                  style: text.labelMonogram.copyWith(color: colors.semanticSand),
+                ),
+                const SizedBox(height: 12),
+              ],
+              if (!expired) ...[
+                SwapAmountsCard(
+                  quote: order.quote,
+                  payLabel: l10n.swapYouPaid,
+                  receiveLabel: l10n.swapYouWereReceiving,
+                  amountOut: order.amountOut,
+                  receiveDimmed: true,
+                ),
+                const SizedBox(height: 32),
+              ],
+              QuantusBanner(
+                tone: warning ? BannerTone.sand : BannerTone.ember,
+                message: _message(l10n, fmt, preflight: ref.watch(swapPreflightProvider) != null),
+              ),
+              if (pollError != null) ...[const SizedBox(height: 16), _PollErrorNotice(error: pollError)],
+            ],
+          ),
+        ),
+        bottomContent: ScaffoldBaseBottomContent(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              QuantusButton.simple(
+                label: l10n.swapStartNew,
+                isDisabled: starter == null || !starter.signsLocally || !swapsOffered,
+                onTap: starter == null ? null : () => _startNew(context, ref, starter),
+              ),
+              const SizedBox(height: 4),
+              QuantusButton.simple(
+                label: l10n.commonContactSupport,
+                variant: ButtonVariant.underline,
+                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const HelpAndSupportScreenV2())),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -401,8 +427,12 @@ class _SwapFailed extends ConsumerWidget {
 }
 
 /// Where to send the external token for a swap into QTC, or the stand-in for
-/// a swap out of it in preflight.
+/// a swap out of it in preflight. "I've sent it" moves the swap on to its
+/// progress, where 1Click's own sighting of the deposit is awaited.
 class _SwapDeposit extends ConsumerWidget {
+  static const _addressWidth = 186.0;
+  static const _networkLogoSize = 48.0;
+
   final ActiveSwap swap;
 
   const _SwapDeposit({required this.swap});
@@ -419,67 +449,74 @@ class _SwapDeposit extends ConsumerWidget {
     final address = order.depositAddress;
     final memo = quote.depositMemo;
     final deadline = TimeOfDay.fromDateTime(quote.deadline.toLocal()).format(context);
-    Future<void> copyAddress() => context.copyTextWithToaster(address, message: l10n.swapDepositAddressCopied);
-    final shareContent = memo == null
-        ? l10n.swapDepositShareContent(from.networkName, from.symbol, address)
-        : l10n.swapDepositShareContentMemo(from.networkName, from.symbol, address, memo);
+    final corner = Radius.circular(context.radiusV3.md);
 
     return ScaffoldBase(
-      appBar: V2AppBar(title: l10n.swapTitle),
+      appBar: V2AppBar(title: l10n.swapDepositTitle),
       mainContent: SingleChildScrollView(
         child: Column(
           children: [
-            const SizedBox(height: 16),
-            SwapDetailRow(label: l10n.swapDepositToken, value: from.symbol),
-            SwapDetailRow(label: l10n.swapDepositNetwork, value: from.networkName),
-            const SizedBox(height: 24),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(l10n.swapDepositAmount, style: text.body.copyWith(color: colors.textContent)),
-                const SizedBox(width: 6),
-                CopyIconButton(
-                  text: fmt.formatWireAmount(quote.amountIn, decimals: from.decimals),
-                  copiedMessage: l10n.swapDepositAmountCopied,
-                ),
-              ],
+            const SizedBox(height: 40),
+            QuantusQr(
+              accountId: address,
+              borderRadius: BorderRadius.vertical(top: corner),
+              logo: TokenIcon.network(token: from, size: _networkLogoSize),
             ),
-            const SizedBox(height: 14),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                TokenIcon(token: from, size: 28),
-                const SizedBox(width: 8),
-                Flexible(
-                  child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: Text(
-                      fmt.formatExactAmount(quote.amountIn, decimals: from.decimals),
-                      style: text.amountHero.copyWith(color: colors.textContent),
+            Container(
+              width: QuantusQr.size,
+              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 20),
+              decoration: BoxDecoration(
+                color: colors.bgSurface,
+                border: Border.all(color: colors.borderHairline),
+                borderRadius: BorderRadius.vertical(bottom: corner),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  TokenIcon(token: from, size: 28),
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        formatSwapAmount(l10n, fmt, quote.amountIn, from, exact: true),
+                        style: text.amountHero.copyWith(color: colors.textContent),
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
+            ),
+            const SizedBox(height: 32),
+            Text.rich(
+              _emphasised(
+                l10n.swapDepositOnly(from.symbol, from.networkName),
+                [from.symbol, from.networkName],
+                style: text.body.copyWith(color: colors.semanticSand),
+                emphasis: text.bodyEmphasis.copyWith(color: colors.textContent),
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 32),
+            Text(
+              l10n.swapDetailsDepositAddress.toUpperCase(),
+              style: text.labelMonogram.copyWith(color: colors.textMuted),
             ),
             const SizedBox(height: 8),
-            Text('\$${quote.amountInUsd.toStringAsFixed(2)}', style: text.body.copyWith(color: colors.textMuted)),
-            const SizedBox(height: 24),
-            ClipRRect(
-              borderRadius: context.radiusV3.smBorder,
-              child: Container(
-                color: colors.textWhite,
-                padding: const EdgeInsets.all(8),
-                child: QrImageView(data: address, version: QrVersions.auto, size: 184),
-              ),
-            ),
-            const SizedBox(height: 16),
-            GestureDetector(
-              onTap: copyAddress,
-              child: Text(
-                address,
-                style: text.dataAddress.copyWith(color: colors.textContent),
-                textAlign: TextAlign.center,
-              ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                SizedBox(
+                  width: _addressWidth,
+                  child: Text(
+                    address,
+                    textAlign: TextAlign.center,
+                    style: text.bodyEmphasis.copyWith(color: colors.textContent),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                CopyIconButton(text: address, copiedMessage: l10n.swapDepositAddressCopied, size: 32, round: true),
+              ],
             ),
             if (memo != null) ...[
               const SizedBox(height: 16),
@@ -504,64 +541,54 @@ class _SwapDeposit extends ConsumerWidget {
               const SizedBox(height: 12),
               QuantusBanner(tone: BannerTone.sand, message: l10n.swapDepositMemoNotice),
             ],
-            const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Loader(color: colors.semanticSage, size: 14),
-                const SizedBox(width: 8),
-                Text(l10n.swapDepositWaiting, style: text.caption.copyWith(color: colors.textMuted)),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Text(
-              l10n.swapDepositDeadline(deadline),
-              style: text.bodyEmphasis.copyWith(color: colors.accentFlare),
-              textAlign: TextAlign.center,
-            ),
             if (swap.pollError case final error?) ...[const SizedBox(height: 16), _PollErrorNotice(error: error)],
             const SizedBox(height: 24),
-            Row(
-              children: [
-                Expanded(
-                  child: QuantusButton.simple(
-                    label: l10n.receiveCopy,
-                    variant: ButtonVariant.staged,
-                    onTap: copyAddress,
-                    icon: Icon(Icons.copy, color: colors.textContent, size: 20),
-                    iconPlacement: IconPlacement.leading,
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: QuantusButton.simple(
-                    label: l10n.swapDepositShareQr,
-                    icon: Icon(Icons.qr_code, color: colors.textContent, size: 20),
-                    iconPlacement: IconPlacement.leading,
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                    variant: ButtonVariant.staged,
-                    onTap: () => shareText(context, shareContent),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
+          ],
+        ),
+      ),
+      bottomContent: ScaffoldBaseBottomContent(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
             Text(
-              l10n.swapDepositNotice(from.symbol, from.networkName),
-              style: text.caption.copyWith(color: colors.textMuted),
+              l10n.swapDepositDeadline(deadline),
               textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 8),
-            QuantusButton.simple(
-              label: l10n.swapStopTracking,
-              variant: ButtonVariant.underline,
-              onTap: () => _finish(context, ref),
+              style: text.caption.copyWith(color: colors.accentFlare),
             ),
             const SizedBox(height: 16),
+            QuantusButton.simple(
+              label: l10n.swapDepositSent,
+              onTap: () => ref.read(activeSwapProvider.notifier).markDepositSent(),
+            ),
           ],
         ),
       ),
     );
   }
+}
+
+/// [sentence] in [style], with each of [words] where it occurs in [emphasis].
+TextSpan _emphasised(String sentence, List<String> words, {required TextStyle style, required TextStyle emphasis}) {
+  final spans = <TextSpan>[];
+  var rest = sentence;
+  while (rest.isNotEmpty) {
+    var at = rest.length;
+    String? word;
+    for (final candidate in words.where((w) => w.isNotEmpty)) {
+      final index = rest.indexOf(candidate);
+      if (index >= 0 && index < at) {
+        at = index;
+        word = candidate;
+      }
+    }
+    if (word == null) {
+      spans.add(TextSpan(text: rest));
+      break;
+    }
+    if (at > 0) spans.add(TextSpan(text: rest.substring(0, at)));
+    spans.add(TextSpan(text: word, style: emphasis));
+    rest = rest.substring(at + word.length);
+  }
+  return TextSpan(style: style, children: spans);
 }

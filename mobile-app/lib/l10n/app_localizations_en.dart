@@ -1113,9 +1113,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get keystoneRejectConfirm => 'I rejected it on the cold wallet';
 
   @override
-  String get keystoneRejectContactSupport => 'Contact Support';
-
-  @override
   String get sendLogicCantSelfTransfer => 'Can\'t Self Transfer';
 
   @override
@@ -1617,7 +1614,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get swapSlippageTitle => 'Slippage Tolerance';
+  String get swapSlippageTitle => 'Slippage';
 
   @override
   String get swapSlippageBody =>
@@ -1632,18 +1629,19 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String swapSlippagePercent(String percent) {
-    return '$percent%';
-  }
-
-  @override
   String get swapAddRecipientAddress => 'Add Recipient Address';
 
   @override
   String get swapAddRefundAddress => 'Add Refund Address';
 
   @override
-  String get swapTokenPickerTitle => 'Select Token';
+  String get swapRefundTo => 'Refund to';
+
+  @override
+  String get swapTokenPickerPayWith => 'Pay with';
+
+  @override
+  String get swapTokenPickerReceive => 'Receive';
 
   @override
   String get swapTokenPickerLoadError => 'Failed to load tokens';
@@ -1727,9 +1725,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get swapReviewRecipient => 'Recipient';
 
   @override
-  String get swapReviewRefundAddress => 'Refund address';
-
-  @override
   String get swapReviewNetworkFee => 'Network fee';
 
   @override
@@ -1765,6 +1760,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get swapReviewConfirm => 'Confirm swap';
 
   @override
+  String swapActivityAmounts(String amountIn, String amountOut) {
+    return '$amountIn → $amountOut';
+  }
+
+  @override
   String get swapInProgressTitle => 'Swap In Progress';
 
   @override
@@ -1772,6 +1772,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get swapYoureReceiving => 'You\'re receiving';
+
+  @override
+  String swapStepDeposited(String symbol) {
+    return '$symbol deposited';
+  }
 
   @override
   String swapStepSent(String symbol) {
@@ -1793,7 +1798,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get swapProgressFooter =>
-      'Usually a few minutes. The swap finishes even if you leave this screen. · via NEAR Intents';
+      'Usually a few minutes. You can leave the app, we\'ll notify you when it arrives. · via NEAR Intents';
 
   @override
   String get swapDetailsTitle => 'Swap Details';
@@ -1806,6 +1811,21 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get swapDetailsExpected => 'Expected';
+
+  @override
+  String get swapDetailsDepositAddress => 'Deposit address';
+
+  @override
+  String get swapDetailsRequiredDeposit => 'Required deposit';
+
+  @override
+  String get swapDetailsDepositWindowEnds => 'Deposit window ends';
+
+  @override
+  String get swapDepositTitle => 'Send Your Deposit';
+
+  @override
+  String get swapDepositSent => 'I\'ve Sent It';
 
   @override
   String get swapDetailsTransaction => 'Transaction';
@@ -1864,34 +1884,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get swapStartNew => 'Start a New Swap';
 
   @override
-  String get swapDepositToken => 'Token';
-
-  @override
-  String get swapDepositNetwork => 'Network';
-
-  @override
-  String get swapDepositAmount => 'Deposit Amount';
-
-  @override
-  String get swapDepositAmountCopied => 'Deposit amount copied to clipboard';
-
-  @override
   String get swapDepositAddressCopied => 'Deposit address copied to clipboard';
 
   @override
-  String get swapDepositWaiting => 'Waiting for your deposit…';
+  String swapDepositOnly(String symbol, String network) {
+    return 'Send $symbol on $network only';
+  }
 
   @override
   String swapDepositDeadline(String time) {
     return 'Send before $time or the quote expires';
-  }
-
-  @override
-  String get swapDepositShareQr => 'Share QR';
-
-  @override
-  String swapDepositShareContent(String network, String token, String address) {
-    return 'Network: $network\nToken: $token\nAddress: $address';
   }
 
   @override
@@ -1904,16 +1906,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get swapDepositMemoNotice => 'Include this memo with your deposit. A deposit without it is not processed.';
 
   @override
-  String swapDepositShareContentMemo(String network, String token, String address, String memo) {
-    return 'Network: $network\nToken: $token\nAddress: $address\nMemo: $memo';
-  }
-
-  @override
-  String swapDepositNotice(String symbol, String network) {
-    return 'Use your $symbol or $network wallet to deposit funds. Depositing other assets may result in loss of funds.';
-  }
-
-  @override
   String get swapRequestTimedOut => 'The request timed out';
 
   @override
@@ -1922,12 +1914,12 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get swapStopTracking => 'Stop tracking swap';
+
+  @override
   String swapProgressDepositNotSeen(String refund) {
     return 'The deposit was not seen before the deadline. If it arrives late, it is refunded to $refund.';
   }
-
-  @override
-  String get swapStopTracking => 'Stop tracking swap';
 
   @override
   String get componentQrScannerTitle => 'Scan QR Code';
@@ -1972,6 +1964,17 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get commonDone => 'Done';
+
+  @override
+  String get commonSave => 'Save';
+
+  @override
+  String commonPercent(String percent) {
+    return '$percent%';
+  }
+
+  @override
+  String get commonContactSupport => 'Contact Support';
 
   @override
   String get commonRetry => 'Retry';

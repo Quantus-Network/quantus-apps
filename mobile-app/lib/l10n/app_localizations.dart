@@ -2114,12 +2114,6 @@ abstract class AppLocalizations {
   /// **'I rejected it on the cold wallet'**
   String get keystoneRejectConfirm;
 
-  /// Link to contact support from the Keystone mismatch help screen
-  ///
-  /// In en, this message translates to:
-  /// **'Contact Support'**
-  String get keystoneRejectContactSupport;
-
   /// Button label when sending to own address
   ///
   /// In en, this message translates to:
@@ -3053,7 +3047,7 @@ abstract class AppLocalizations {
   /// Title of the slippage tolerance sheet
   ///
   /// In en, this message translates to:
-  /// **'Slippage Tolerance'**
+  /// **'Slippage'**
   String get swapSlippageTitle;
 
   /// Explanation on the slippage tolerance sheet
@@ -3074,12 +3068,6 @@ abstract class AppLocalizations {
   /// **'Slippage can be at most {percent}%'**
   String swapSlippageCustomMax(String percent);
 
-  /// A slippage tolerance option
-  ///
-  /// In en, this message translates to:
-  /// **'{percent}%'**
-  String swapSlippagePercent(String percent);
-
   /// Swap form button for a swap out of QTC
   ///
   /// In en, this message translates to:
@@ -3092,11 +3080,23 @@ abstract class AppLocalizations {
   /// **'Add Refund Address'**
   String get swapAddRefundAddress;
 
-  /// Title on token picker sheet
+  /// Label of the swap form row holding the refund address of a swap into QTC
   ///
   /// In en, this message translates to:
-  /// **'Select Token'**
-  String get swapTokenPickerTitle;
+  /// **'Refund to'**
+  String get swapRefundTo;
+
+  /// Title of the token picker for the side that pays
+  ///
+  /// In en, this message translates to:
+  /// **'Pay with'**
+  String get swapTokenPickerPayWith;
+
+  /// Title of the token picker for the side that receives
+  ///
+  /// In en, this message translates to:
+  /// **'Receive'**
+  String get swapTokenPickerReceive;
 
   /// Error when token list fails to load
   ///
@@ -3236,12 +3236,6 @@ abstract class AppLocalizations {
   /// **'Recipient'**
   String get swapReviewRecipient;
 
-  /// Review row: external address a failed swap is refunded to
-  ///
-  /// In en, this message translates to:
-  /// **'Refund address'**
-  String get swapReviewRefundAddress;
-
   /// Review row and details row: chain fee of the QTC deposit
   ///
   /// In en, this message translates to:
@@ -3302,6 +3296,12 @@ abstract class AppLocalizations {
   /// **'Confirm swap'**
   String get swapReviewConfirm;
 
+  /// Title of the home activity row for the swap with 1Click; the step it is on is the subtitle
+  ///
+  /// In en, this message translates to:
+  /// **'{amountIn} → {amountOut}'**
+  String swapActivityAmounts(String amountIn, String amountOut);
+
   /// Title while the swap is running
   ///
   /// In en, this message translates to:
@@ -3319,6 +3319,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'You\'re receiving'**
   String get swapYoureReceiving;
+
+  /// First swap progress step when the user deposits from another wallet
+  ///
+  /// In en, this message translates to:
+  /// **'{symbol} deposited'**
+  String swapStepDeposited(String symbol);
 
   /// Progress step: deposit sent
   ///
@@ -3347,7 +3353,7 @@ abstract class AppLocalizations {
   /// Footer under the swap progress bar
   ///
   /// In en, this message translates to:
-  /// **'Usually a few minutes. The swap finishes even if you leave this screen. · via NEAR Intents'**
+  /// **'Usually a few minutes. You can leave the app, we\'ll notify you when it arrives. · via NEAR Intents'**
   String get swapProgressFooter;
 
   /// Title of the swap details sheet
@@ -3373,6 +3379,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Expected'**
   String get swapDetailsExpected;
+
+  /// Swap details row: where a swap into QTC was to be deposited
+  ///
+  /// In en, this message translates to:
+  /// **'Deposit address'**
+  String get swapDetailsDepositAddress;
+
+  /// Swap details row: the amount a swap into QTC needed deposited
+  ///
+  /// In en, this message translates to:
+  /// **'Required deposit'**
+  String get swapDetailsRequiredDeposit;
+
+  /// Swap details row: when the deposit address of a swap into QTC expires
+  ///
+  /// In en, this message translates to:
+  /// **'Deposit window ends'**
+  String get swapDetailsDepositWindowEnds;
+
+  /// Title of the screen showing where to send the deposit of a swap into QTC
+  ///
+  /// In en, this message translates to:
+  /// **'Send Your Deposit'**
+  String get swapDepositTitle;
+
+  /// Button on the deposit screen once the user has sent the deposit
+  ///
+  /// In en, this message translates to:
+  /// **'I\'ve Sent It'**
+  String get swapDepositSent;
 
   /// Details row: deposit transaction hash
   ///
@@ -3470,59 +3506,23 @@ abstract class AppLocalizations {
   /// **'Start a New Swap'**
   String get swapStartNew;
 
-  /// Label of the row naming the token to deposit, at the top of the deposit screen
-  ///
-  /// In en, this message translates to:
-  /// **'Token'**
-  String get swapDepositToken;
-
-  /// Label of the row naming the network to deposit on, at the top of the deposit screen
-  ///
-  /// In en, this message translates to:
-  /// **'Network'**
-  String get swapDepositNetwork;
-
-  /// Deposit amount label on deposit screen
-  ///
-  /// In en, this message translates to:
-  /// **'Deposit Amount'**
-  String get swapDepositAmount;
-
-  /// Toast when deposit amount is copied
-  ///
-  /// In en, this message translates to:
-  /// **'Deposit amount copied to clipboard'**
-  String get swapDepositAmountCopied;
-
   /// Toast when the deposit address is copied
   ///
   /// In en, this message translates to:
   /// **'Deposit address copied to clipboard'**
   String get swapDepositAddressCopied;
 
-  /// Shown while 1Click has not seen a deposit yet
+  /// Under the deposit card; the symbol and the network are emphasised
   ///
   /// In en, this message translates to:
-  /// **'Waiting for your deposit…'**
-  String get swapDepositWaiting;
+  /// **'Send {symbol} on {network} only'**
+  String swapDepositOnly(String symbol, String network);
 
   /// Local time by which the deposit must arrive
   ///
   /// In en, this message translates to:
   /// **'Send before {time} or the quote expires'**
   String swapDepositDeadline(String time);
-
-  /// Share QR button on deposit screen
-  ///
-  /// In en, this message translates to:
-  /// **'Share QR'**
-  String get swapDepositShareQr;
-
-  /// Share text for deposit details
-  ///
-  /// In en, this message translates to:
-  /// **'Network: {network}\nToken: {token}\nAddress: {address}'**
-  String swapDepositShareContent(String network, String token, String address);
 
   /// Label of the deposit memo some chains require
   ///
@@ -3542,18 +3542,6 @@ abstract class AppLocalizations {
   /// **'Include this memo with your deposit. A deposit without it is not processed.'**
   String get swapDepositMemoNotice;
 
-  /// Share text for deposit details with a memo
-  ///
-  /// In en, this message translates to:
-  /// **'Network: {network}\nToken: {token}\nAddress: {address}\nMemo: {memo}'**
-  String swapDepositShareContentMemo(String network, String token, String address, String memo);
-
-  /// Deposit wallet notice on deposit screen
-  ///
-  /// In en, this message translates to:
-  /// **'Use your {symbol} or {network} wallet to deposit funds. Depositing other assets may result in loss of funds.'**
-  String swapDepositNotice(String symbol, String network);
-
   /// Why a 1Click request failed when no answer came within the time allowed
   ///
   /// In en, this message translates to:
@@ -3566,17 +3554,17 @@ abstract class AppLocalizations {
   /// **'The swap status can\'t be checked right now: {error}'**
   String swapProgressStatusUnavailable(String error);
 
+  /// Link under a running swap whose deposit was not seen by its deadline; puts the swap away, a late deposit is still refunded
+  ///
+  /// In en, this message translates to:
+  /// **'Stop tracking swap'**
+  String get swapStopTracking;
+
   /// Notice on the progress screen once the deposit window closed with the deposit unseen
   ///
   /// In en, this message translates to:
   /// **'The deposit was not seen before the deadline. If it arrives late, it is refunded to {refund}.'**
   String swapProgressDepositNotSeen(String refund);
-
-  /// Link at the bottom of a running swap that puts it away so another can start; the swap still settles on its own
-  ///
-  /// In en, this message translates to:
-  /// **'Stop tracking swap'**
-  String get swapStopTracking;
 
   /// Text for app bar or button label on QR scanner component
   ///
@@ -3661,6 +3649,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Done'**
   String get commonDone;
+
+  /// Save button on sheets that apply a pick
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get commonSave;
+
+  /// A percentage, as a slippage option or a share of the balance
+  ///
+  /// In en, this message translates to:
+  /// **'{percent}%'**
+  String commonPercent(String percent);
+
+  /// Link to support from a failed swap or the Keystone mismatch screen
+  ///
+  /// In en, this message translates to:
+  /// **'Contact Support'**
+  String get commonContactSupport;
 
   /// Retry action on various screens
   ///

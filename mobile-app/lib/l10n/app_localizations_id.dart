@@ -1116,9 +1116,6 @@ class AppLocalizationsId extends AppLocalizations {
   String get keystoneRejectConfirm => 'I rejected it on the cold wallet';
 
   @override
-  String get keystoneRejectContactSupport => 'Contact Support';
-
-  @override
   String get sendLogicCantSelfTransfer => 'Tidak Bisa Transfer ke Diri Sendiri';
 
   @override
@@ -1620,7 +1617,7 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
-  String get swapSlippageTitle => 'Toleransi Slippage';
+  String get swapSlippageTitle => 'Slippage';
 
   @override
   String get swapSlippageBody =>
@@ -1635,18 +1632,19 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
-  String swapSlippagePercent(String percent) {
-    return '$percent%';
-  }
-
-  @override
   String get swapAddRecipientAddress => 'Tambahkan Alamat Penerima';
 
   @override
   String get swapAddRefundAddress => 'Tambahkan Alamat Refund';
 
   @override
-  String get swapTokenPickerTitle => 'Pilih Token';
+  String get swapRefundTo => 'Refund ke';
+
+  @override
+  String get swapTokenPickerPayWith => 'Bayar dengan';
+
+  @override
+  String get swapTokenPickerReceive => 'Terima';
 
   @override
   String get swapTokenPickerLoadError => 'Gagal memuat token';
@@ -1730,9 +1728,6 @@ class AppLocalizationsId extends AppLocalizations {
   String get swapReviewRecipient => 'Penerima';
 
   @override
-  String get swapReviewRefundAddress => 'Alamat refund';
-
-  @override
   String get swapReviewNetworkFee => 'Biaya jaringan';
 
   @override
@@ -1768,6 +1763,11 @@ class AppLocalizationsId extends AppLocalizations {
   String get swapReviewConfirm => 'Konfirmasi swap';
 
   @override
+  String swapActivityAmounts(String amountIn, String amountOut) {
+    return '$amountIn → $amountOut';
+  }
+
+  @override
   String get swapInProgressTitle => 'Swap Sedang Berjalan';
 
   @override
@@ -1775,6 +1775,11 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get swapYoureReceiving => 'Anda menerima';
+
+  @override
+  String swapStepDeposited(String symbol) {
+    return '$symbol didepositkan';
+  }
 
   @override
   String swapStepSent(String symbol) {
@@ -1796,7 +1801,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get swapProgressFooter =>
-      'Biasanya beberapa menit. Swap tetap selesai meskipun Anda meninggalkan layar ini. · via NEAR Intents';
+      'Biasanya beberapa menit. Anda boleh meninggalkan aplikasi, kami akan memberi tahu saat dananya tiba. · via NEAR Intents';
 
   @override
   String get swapDetailsTitle => 'Detail Swap';
@@ -1809,6 +1814,21 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get swapDetailsExpected => 'Perkiraan';
+
+  @override
+  String get swapDetailsDepositAddress => 'Alamat deposit';
+
+  @override
+  String get swapDetailsRequiredDeposit => 'Deposit yang diperlukan';
+
+  @override
+  String get swapDetailsDepositWindowEnds => 'Batas waktu deposit';
+
+  @override
+  String get swapDepositTitle => 'Kirim Deposit Anda';
+
+  @override
+  String get swapDepositSent => 'Sudah Saya Kirim';
 
   @override
   String get swapDetailsTransaction => 'Transaksi';
@@ -1867,34 +1887,16 @@ class AppLocalizationsId extends AppLocalizations {
   String get swapStartNew => 'Mulai Swap Baru';
 
   @override
-  String get swapDepositToken => 'Token';
-
-  @override
-  String get swapDepositNetwork => 'Jaringan';
-
-  @override
-  String get swapDepositAmount => 'Jumlah Deposit';
-
-  @override
-  String get swapDepositAmountCopied => 'Jumlah deposit disalin ke clipboard';
-
-  @override
   String get swapDepositAddressCopied => 'Alamat deposit disalin ke clipboard';
 
   @override
-  String get swapDepositWaiting => 'Menunggu deposit Anda…';
+  String swapDepositOnly(String symbol, String network) {
+    return 'Kirim hanya $symbol di $network';
+  }
 
   @override
   String swapDepositDeadline(String time) {
     return 'Kirim sebelum $time atau penawaran kedaluwarsa';
-  }
-
-  @override
-  String get swapDepositShareQr => 'Bagikan QR';
-
-  @override
-  String swapDepositShareContent(String network, String token, String address) {
-    return 'Jaringan: $network\nToken: $token\nAlamat: $address';
   }
 
   @override
@@ -1907,16 +1909,6 @@ class AppLocalizationsId extends AppLocalizations {
   String get swapDepositMemoNotice => 'Sertakan memo ini pada deposit Anda. Deposit tanpa memo tidak akan diproses.';
 
   @override
-  String swapDepositShareContentMemo(String network, String token, String address, String memo) {
-    return 'Jaringan: $network\nToken: $token\nAlamat: $address\nMemo: $memo';
-  }
-
-  @override
-  String swapDepositNotice(String symbol, String network) {
-    return 'Gunakan dompet $symbol atau $network Anda untuk deposit. Menyetor aset lain dapat mengakibatkan kehilangan dana.';
-  }
-
-  @override
   String get swapRequestTimedOut => 'Permintaan melebihi batas waktu';
 
   @override
@@ -1925,12 +1917,12 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
+  String get swapStopTracking => 'Berhenti melacak swap';
+
+  @override
   String swapProgressDepositNotSeen(String refund) {
     return 'Deposit tidak terlihat sebelum tenggat. Jika tiba terlambat, dana dikembalikan ke $refund.';
   }
-
-  @override
-  String get swapStopTracking => 'Berhenti melacak swap';
 
   @override
   String get componentQrScannerTitle => 'Pindai Kode QR';
@@ -1975,6 +1967,17 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get commonDone => 'Selesai';
+
+  @override
+  String get commonSave => 'Simpan';
+
+  @override
+  String commonPercent(String percent) {
+    return '$percent%';
+  }
+
+  @override
+  String get commonContactSupport => 'Hubungi Dukungan';
 
   @override
   String get commonRetry => 'Coba Lagi';

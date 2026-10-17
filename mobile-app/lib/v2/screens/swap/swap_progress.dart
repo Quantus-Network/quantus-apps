@@ -1,19 +1,26 @@
-import 'package:clock/clock.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/l10n/app_localizations.dart';
-import 'package:resonance_network_wallet/providers/active_swap_provider.dart';
 
-/// The steps a swap goes through, as the progress screen lists them.
-List<String> swapStepLabels(AppLocalizations l10n, SwapQuote quote, String receiver) => [
-  l10n.swapStepSent(quote.fromToken.symbol),
+/// The steps a swap goes through, as the progress screen lists them; a
+/// deposit made [byHand] is deposited rather than sent.
+List<String> swapStepLabels(AppLocalizations l10n, SwapQuote quote, String receiver, {required bool byHand}) => [
+  byHand ? l10n.swapStepDeposited(quote.fromToken.symbol) : l10n.swapStepSent(quote.fromToken.symbol),
   l10n.swapStepConfirming(quote.fromToken.networkName),
   l10n.swapStepSwapping,
   l10n.swapStepSending(quote.toToken.symbol, receiver),
 ];
 
 const swapStepCount = 4;
+
+/// Who the swap pays out to, as the steps name it: the account for a swap
+/// into QTC, else the recipient address, as in [preflight] always.
+String swapReceiver(ActiveSwap swap, {required bool preflight}) {
+  final quote = swap.order.quote;
+  return quote.fromToken.isQuantus || preflight
+      ? AddressFormattingService.formatAddress(quote.recipient)
+      : swap.accountName;
+}
 
 /// Index of the step [order] is on; the steps before it are done. A swap
 /// that succeeded is past them all, one that stopped stays on the step it
@@ -29,42 +36,6 @@ int swapStage(SwapOrder order, {required bool depositByHand}) => switch (order.s
 String formatSwapElapsed(Duration elapsed) {
   final f = DatetimeFormattingService.formatDuration(elapsed);
   return elapsed.inHours == 0 ? '${elapsed.inMinutes}:${f.seconds}' : '${elapsed.inHours}:${f.minutes}:${f.seconds}';
-}
-
-/// Lives on the home swap button while a swap runs: one dot per step, lit
-/// for the steps reached, and how long the swap has been running.
-class SwapProgressBadge extends ConsumerWidget {
-  final ActiveSwap swap;
-
-  const SwapProgressBadge({super.key, required this.swap});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final colors = context.colorsV3;
-    final text = context.themeTextV3;
-    final elapsed = ref.watch(swapElapsedProvider).value ?? swap.elapsedAt(clock.now());
-    final stage = swapStage(swap.order, depositByHand: swap.depositByHand);
-    final failed = swap.isFinal && swap.order.status != SwapStatus.success;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-      decoration: BoxDecoration(
-        color: colors.bgVoid,
-        borderRadius: context.radiusV3.pillBorder,
-        border: Border.all(color: colors.borderHairline),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          SwapProgressDots(stage: stage, failed: failed),
-          const SizedBox(width: 5),
-          Text(
-            formatSwapElapsed(elapsed),
-            style: text.labelMonogram.copyWith(fontSize: 10, height: 1, color: colors.textContent),
-          ),
-        ],
-      ),
-    );
-  }
 }
 
 /// One dot per swap step: sage up to [stage], ember instead when the swap

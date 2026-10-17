@@ -51,11 +51,11 @@ class TxItemData {
       return TxItemData(
         label: l10n.activityTxProposing,
         timeLabel: l10n.activityTxTimeNow,
-        iconBg: _glacierFill(colors),
+        iconBg: glacierFill(colors),
         iconColor: colors.semanticGlacier,
         labelColor: colors.semanticGlacier,
         amountColor: colors.semanticGlacier,
-        borderColor: _glacierStroke(colors),
+        borderColor: glacierStroke(colors),
         isSend: true,
         amount: tx.amount,
         counterpartyAddr: recipient,
@@ -105,11 +105,11 @@ class TxItemData {
       return TxItemData(
         label: l10n.activityTxExecuting,
         timeLabel: l10n.activityTxTimeNow,
-        iconBg: _glacierFill(colors),
+        iconBg: glacierFill(colors),
         iconColor: colors.semanticGlacier,
         labelColor: colors.semanticGlacier,
         amountColor: colors.semanticGlacier,
-        borderColor: _glacierStroke(colors),
+        borderColor: glacierStroke(colors),
         isSend: true,
         amount: fee,
         hideAmount: fee == BigInt.zero,
@@ -143,11 +143,11 @@ class TxItemData {
       return TxItemData(
         label: l10n.activityTxCancelling,
         timeLabel: l10n.activityTxTimeNow,
-        iconBg: _glacierFill(colors),
+        iconBg: glacierFill(colors),
         iconColor: colors.semanticGlacier,
         labelColor: colors.semanticGlacier,
         amountColor: colors.semanticGlacier,
-        borderColor: _glacierStroke(colors),
+        borderColor: glacierStroke(colors),
         isSend: true,
         amount: fee,
         hideAmount: fee == BigInt.zero,
@@ -196,11 +196,11 @@ class TxItemData {
       return TxItemData(
         label: l10n.activityTxMultisigCreating,
         timeLabel: l10n.activityTxTimeNow,
-        iconBg: _glacierFill(colors),
+        iconBg: glacierFill(colors),
         iconColor: colors.semanticGlacier,
         labelColor: colors.semanticGlacier,
         amountColor: colors.semanticGlacier,
-        borderColor: _glacierStroke(colors),
+        borderColor: glacierStroke(colors),
         isSend: true,
         amount: tx.totalCost,
         counterpartyAddr: address,
@@ -267,7 +267,7 @@ class TxItemData {
         return _sageFill(colors);
       }
       if (isHighlighted && isSend) {
-        return _glacierFill(colors);
+        return glacierFill(colors);
       }
       return Colors.transparent;
     }
@@ -310,7 +310,7 @@ class TxItemData {
         return _sageStroke(colors);
       }
       if (isHighlighted && isSend) {
-        return _glacierStroke(colors);
+        return glacierStroke(colors);
       }
       return colors.borderHairline;
     }
@@ -423,9 +423,10 @@ Color _sageFill(AppColorsV3 colors) => colors.semanticSage.useOpacity(0.08);
 
 Color _sageStroke(AppColorsV3 colors) => colors.semanticSage.useOpacity(0.15);
 
-Color _glacierFill(AppColorsV3 colors) => colors.semanticGlacier.useOpacity(0.08);
+/// Fill and stroke of a pending row's icon box, shared with the swap row.
+Color glacierFill(AppColorsV3 colors) => colors.semanticGlacier.useOpacity(0.08);
 
-Color _glacierStroke(AppColorsV3 colors) => colors.semanticGlacier.useOpacity(0.15);
+Color glacierStroke(AppColorsV3 colors) => colors.semanticGlacier.useOpacity(0.15);
 
 String _formatDuration(Duration d, AppLocalizations l10n) {
   final days = d.inDays.toString().padLeft(2, '0');

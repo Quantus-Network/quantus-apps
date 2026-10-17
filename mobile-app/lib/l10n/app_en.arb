@@ -1591,10 +1591,6 @@
     "@keystoneRejectConfirm": {
       "description": "Button confirming the transaction was rejected on the device"
     },
-    "keystoneRejectContactSupport": "Contact Support",
-    "@keystoneRejectContactSupport": {
-      "description": "Link to contact support from the Keystone mismatch help screen"
-    },
 
     "sendLogicCantSelfTransfer": "Can't Self Transfer",
     "@sendLogicCantSelfTransfer": {
@@ -2348,7 +2344,7 @@
         }
       }
     },
-    "swapSlippageTitle": "Slippage Tolerance",
+    "swapSlippageTitle": "Slippage",
     "@swapSlippageTitle": {
       "description": "Title of the slippage tolerance sheet"
     },
@@ -2369,15 +2365,6 @@
         }
       }
     },
-    "swapSlippagePercent": "{percent}%",
-    "@swapSlippagePercent": {
-      "description": "A slippage tolerance option",
-      "placeholders": {
-        "percent": {
-          "type": "String"
-        }
-      }
-    },
     "swapAddRecipientAddress": "Add Recipient Address",
     "@swapAddRecipientAddress": {
       "description": "Swap form button for a swap out of QTC"
@@ -2386,9 +2373,17 @@
     "@swapAddRefundAddress": {
       "description": "Swap form button for a swap into QTC"
     },
-    "swapTokenPickerTitle": "Select Token",
-    "@swapTokenPickerTitle": {
-      "description": "Title on token picker sheet"
+    "swapRefundTo": "Refund to",
+    "@swapRefundTo": {
+      "description": "Label of the swap form row holding the refund address of a swap into QTC"
+    },
+    "swapTokenPickerPayWith": "Pay with",
+    "@swapTokenPickerPayWith": {
+      "description": "Title of the token picker for the side that pays"
+    },
+    "swapTokenPickerReceive": "Receive",
+    "@swapTokenPickerReceive": {
+      "description": "Title of the token picker for the side that receives"
     },
     "swapTokenPickerLoadError": "Failed to load tokens",
     "@swapTokenPickerLoadError": {
@@ -2518,10 +2513,6 @@
     "@swapReviewRecipient": {
       "description": "Review row: external address receiving the swap"
     },
-    "swapReviewRefundAddress": "Refund address",
-    "@swapReviewRefundAddress": {
-      "description": "Review row: external address a failed swap is refunded to"
-    },
     "swapReviewNetworkFee": "Network fee",
     "@swapReviewNetworkFee": {
       "description": "Review row and details row: chain fee of the QTC deposit"
@@ -2575,6 +2566,18 @@
     "@swapReviewConfirm": {
       "description": "Confirm button on the swap review screen"
     },
+    "swapActivityAmounts": "{amountIn} → {amountOut}",
+    "@swapActivityAmounts": {
+      "description": "Title of the home activity row for the swap with 1Click; the step it is on is the subtitle",
+      "placeholders": {
+        "amountIn": {
+          "type": "String"
+        },
+        "amountOut": {
+          "type": "String"
+        }
+      }
+    },
     "swapInProgressTitle": "Swap In Progress",
     "@swapInProgressTitle": {
       "description": "Title while the swap is running"
@@ -2586,6 +2589,15 @@
     "swapYoureReceiving": "You're receiving",
     "@swapYoureReceiving": {
       "description": "Receive side of the swap progress card"
+    },
+    "swapStepDeposited": "{symbol} deposited",
+    "@swapStepDeposited": {
+      "description": "First swap progress step when the user deposits from another wallet",
+      "placeholders": {
+        "symbol": {
+          "type": "String"
+        }
+      }
     },
     "swapStepSent": "{symbol} sent",
     "@swapStepSent": {
@@ -2621,7 +2633,7 @@
         }
       }
     },
-    "swapProgressFooter": "Usually a few minutes. The swap finishes even if you leave this screen. · via NEAR Intents",
+    "swapProgressFooter": "Usually a few minutes. You can leave the app, we'll notify you when it arrives. · via NEAR Intents",
     "@swapProgressFooter": {
       "description": "Footer under the swap progress bar"
     },
@@ -2640,6 +2652,26 @@
     "swapDetailsExpected": "Expected",
     "@swapDetailsExpected": {
       "description": "Details row: quoted payout"
+    },
+    "swapDetailsDepositAddress": "Deposit address",
+    "@swapDetailsDepositAddress": {
+      "description": "Swap details row: where a swap into QTC was to be deposited"
+    },
+    "swapDetailsRequiredDeposit": "Required deposit",
+    "@swapDetailsRequiredDeposit": {
+      "description": "Swap details row: the amount a swap into QTC needed deposited"
+    },
+    "swapDetailsDepositWindowEnds": "Deposit window ends",
+    "@swapDetailsDepositWindowEnds": {
+      "description": "Swap details row: when the deposit address of a swap into QTC expires"
+    },
+    "swapDepositTitle": "Send Your Deposit",
+    "@swapDepositTitle": {
+      "description": "Title of the screen showing where to send the deposit of a swap into QTC"
+    },
+    "swapDepositSent": "I've Sent It",
+    "@swapDepositSent": {
+      "description": "Button on the deposit screen once the user has sent the deposit"
     },
     "swapDetailsTransaction": "Transaction",
     "@swapDetailsTransaction": {
@@ -2726,54 +2758,27 @@
     "@swapStartNew": {
       "description": "Button on a failed swap"
     },
-    "swapDepositToken": "Token",
-    "@swapDepositToken": {
-      "description": "Label of the row naming the token to deposit, at the top of the deposit screen"
-    },
-    "swapDepositNetwork": "Network",
-    "@swapDepositNetwork": {
-      "description": "Label of the row naming the network to deposit on, at the top of the deposit screen"
-    },
-    "swapDepositAmount": "Deposit Amount",
-    "@swapDepositAmount": {
-      "description": "Deposit amount label on deposit screen"
-    },
-    "swapDepositAmountCopied": "Deposit amount copied to clipboard",
-    "@swapDepositAmountCopied": {
-      "description": "Toast when deposit amount is copied"
-    },
     "swapDepositAddressCopied": "Deposit address copied to clipboard",
     "@swapDepositAddressCopied": {
       "description": "Toast when the deposit address is copied"
     },
-    "swapDepositWaiting": "Waiting for your deposit…",
-    "@swapDepositWaiting": {
-      "description": "Shown while 1Click has not seen a deposit yet"
+    "swapDepositOnly": "Send {symbol} on {network} only",
+    "@swapDepositOnly": {
+      "description": "Under the deposit card; the symbol and the network are emphasised",
+      "placeholders": {
+        "symbol": {
+          "type": "String"
+        },
+        "network": {
+          "type": "String"
+        }
+      }
     },
     "swapDepositDeadline": "Send before {time} or the quote expires",
     "@swapDepositDeadline": {
       "description": "Local time by which the deposit must arrive",
       "placeholders": {
         "time": {
-          "type": "String"
-        }
-      }
-    },
-    "swapDepositShareQr": "Share QR",
-    "@swapDepositShareQr": {
-      "description": "Share QR button on deposit screen"
-    },
-    "swapDepositShareContent": "Network: {network}\nToken: {token}\nAddress: {address}",
-    "@swapDepositShareContent": {
-      "description": "Share text for deposit details",
-      "placeholders": {
-        "network": {
-          "type": "String"
-        },
-        "token": {
-          "type": "String"
-        },
-        "address": {
           "type": "String"
         }
       }
@@ -2790,36 +2795,6 @@
     "@swapDepositMemoNotice": {
       "description": "Warning under a deposit memo"
     },
-    "swapDepositShareContentMemo": "Network: {network}\nToken: {token}\nAddress: {address}\nMemo: {memo}",
-    "@swapDepositShareContentMemo": {
-      "description": "Share text for deposit details with a memo",
-      "placeholders": {
-        "network": {
-          "type": "String"
-        },
-        "token": {
-          "type": "String"
-        },
-        "address": {
-          "type": "String"
-        },
-        "memo": {
-          "type": "String"
-        }
-      }
-    },
-    "swapDepositNotice": "Use your {symbol} or {network} wallet to deposit funds. Depositing other assets may result in loss of funds.",
-    "@swapDepositNotice": {
-      "description": "Deposit wallet notice on deposit screen",
-      "placeholders": {
-        "symbol": {
-          "type": "String"
-        },
-        "network": {
-          "type": "String"
-        }
-      }
-    },
     "swapRequestTimedOut": "The request timed out",
     "@swapRequestTimedOut": {
       "description": "Why a 1Click request failed when no answer came within the time allowed"
@@ -2833,6 +2808,10 @@
         }
       }
     },
+    "swapStopTracking": "Stop tracking swap",
+    "@swapStopTracking": {
+      "description": "Link under a running swap whose deposit was not seen by its deadline; puts the swap away, a late deposit is still refunded"
+    },
     "swapProgressDepositNotSeen": "The deposit was not seen before the deadline. If it arrives late, it is refunded to {refund}.",
     "@swapProgressDepositNotSeen": {
       "description": "Notice on the progress screen once the deposit window closed with the deposit unseen",
@@ -2841,10 +2820,6 @@
           "type": "String"
         }
       }
-    },
-    "swapStopTracking": "Stop tracking swap",
-    "@swapStopTracking": {
-      "description": "Link at the bottom of a running swap that puts it away so another can start; the swap still settles on its own"
     },
 
     "componentQrScannerTitle": "Scan QR Code",
@@ -2911,6 +2886,23 @@
     "commonDone": "Done",
     "@commonDone": {
       "description": "Done button on various screens"
+    },
+    "commonSave": "Save",
+    "@commonSave": {
+      "description": "Save button on sheets that apply a pick"
+    },
+    "commonPercent": "{percent}%",
+    "@commonPercent": {
+      "description": "A percentage, as a slippage option or a share of the balance",
+      "placeholders": {
+        "percent": {
+          "type": "String"
+        }
+      }
+    },
+    "commonContactSupport": "Contact Support",
+    "@commonContactSupport": {
+      "description": "Link to support from a failed swap or the Keystone mismatch screen"
     },
     "commonRetry": "Retry",
     "@commonRetry": {
