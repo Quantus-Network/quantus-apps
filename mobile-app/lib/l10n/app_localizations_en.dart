@@ -1917,8 +1917,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get swapStopTracking => 'Stop tracking swap';
 
   @override
-  String swapProgressDepositNotSeen(String refund) {
-    return 'The deposit was not seen before the deadline. If it arrives late, it is refunded to $refund.';
+  String get swapStopTrackingConfirmTitle => 'Stop tracking this swap?';
+
+  @override
+  String get swapStopTrackingConfirmBody =>
+      'It carries on at NEAR Intents: the funds still arrive, or the deposit is refunded. The wallet just stops following it.';
+
+  @override
+  String swapProgressOverdue(String refund) {
+    return 'This swap has not finished in time. If it settles later, the funds still arrive, or the deposit is refunded to $refund.';
   }
 
   @override

@@ -1920,8 +1920,15 @@ class AppLocalizationsId extends AppLocalizations {
   String get swapStopTracking => 'Berhenti melacak swap';
 
   @override
-  String swapProgressDepositNotSeen(String refund) {
-    return 'Deposit tidak terlihat sebelum tenggat. Jika tiba terlambat, dana dikembalikan ke $refund.';
+  String get swapStopTrackingConfirmTitle => 'Berhenti melacak swap ini?';
+
+  @override
+  String get swapStopTrackingConfirmBody =>
+      'Swap tetap berjalan di NEAR Intents: dana tetap tiba, atau deposit dikembalikan. Dompet hanya berhenti mengikutinya.';
+
+  @override
+  String swapProgressOverdue(String refund) {
+    return 'Swap ini belum selesai tepat waktu. Jika selesai nanti, dana tetap tiba, atau deposit dikembalikan ke $refund.';
   }
 
   @override

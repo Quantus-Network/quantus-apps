@@ -1352,7 +1352,7 @@ void main() {
         ),
       );
       expect(find.text(l10n.swapInProgressTitle), findsOneWidget);
-      expect(banner(l10n.swapProgressDepositNotSeen(account.name)), findsOneWidget);
+      expect(banner(l10n.swapProgressOverdue(account.name)), findsOneWidget);
       var container = containerOf(tester);
       await tester.tap(find.text(l10n.swapStopTracking));
       await settle(tester);
@@ -1370,9 +1370,50 @@ void main() {
       );
       await pumpSwap(tester, activeSwap(SwapOrder(quote: lateIn, status: SwapStatus.pendingDeposit)).withDepositSent());
       expect(find.text(l10n.swapInProgressTitle), findsOneWidget);
-      expect(banner(l10n.swapProgressDepositNotSeen('bc1qrefund')), findsOneWidget);
+      expect(banner(l10n.swapProgressOverdue('bc1qrefund')), findsOneWidget);
       container = containerOf(tester);
       await tester.tap(find.text(l10n.swapStopTracking));
+      await settle(tester);
+      expect(container.read(activeSwapProvider), isNull);
+    });
+
+    testWidgets('a swap 1Click has seen but not settled an hour past its deadline is overdue and can be dismissed', (
+      tester,
+    ) async {
+      final late = _quote(
+        from: _qtc,
+        to: _usdc,
+        amountIn: _unit * BigInt.from(250),
+        amountOut: BigInt.from(24860000),
+        refund: account.accountId,
+        recipient: _external,
+        depositAddress: _deposit,
+        deadline: clock.now().subtract(ActiveSwap.finishGrace + const Duration(minutes: 1)),
+      );
+      await pumpSwap(tester, activeSwap(SwapOrder(quote: late, status: SwapStatus.processing)));
+      expect(banner(l10n.swapProgressOverdue(account.name)), findsOneWidget);
+      final container = containerOf(tester);
+      await tester.tap(find.text(l10n.swapStopTracking));
+      await settle(tester);
+      expect(container.read(activeSwapProvider), isNull);
+    });
+
+    testWidgets('the details sheet stops tracking a running swap once confirmed', (tester) async {
+      await pumpSwap(tester, activeSwap(SwapOrder(quote: liveQuote, status: SwapStatus.processing)));
+      final container = containerOf(tester);
+      expect(find.text(l10n.swapStopTracking), findsNothing);
+
+      await tester.tap(svg('assets/v2/swap_list.svg'));
+      await settle(tester);
+      await tester.tap(find.text(l10n.swapStopTracking));
+      await settle(tester);
+      await tester.tap(find.text(l10n.commonCancel));
+      await settle(tester);
+      expect(container.read(activeSwapProvider), isNotNull);
+
+      await tester.tap(find.text(l10n.swapStopTracking));
+      await settle(tester);
+      await tester.tap(find.text(l10n.swapStopTracking).last);
       await settle(tester);
       expect(container.read(activeSwapProvider), isNull);
     });

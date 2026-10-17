@@ -2810,10 +2810,18 @@
     },
     "swapStopTracking": "Stop tracking swap",
     "@swapStopTracking": {
-      "description": "Link under a running swap whose deposit was not seen by its deadline; puts the swap away, a late deposit is still refunded"
+      "description": "Puts a running swap away: in its details sheet, and under its notice once it is overdue"
     },
-    "swapProgressDepositNotSeen": "The deposit was not seen before the deadline. If it arrives late, it is refunded to {refund}.",
-    "@swapProgressDepositNotSeen": {
+    "swapStopTrackingConfirmTitle": "Stop tracking this swap?",
+    "@swapStopTrackingConfirmTitle": {
+      "description": "Confirm sheet title before a running swap is put away"
+    },
+    "swapStopTrackingConfirmBody": "It carries on at NEAR Intents: the funds still arrive, or the deposit is refunded. The wallet just stops following it.",
+    "@swapStopTrackingConfirmBody": {
+      "description": "Confirm sheet body before a running swap is put away"
+    },
+    "swapProgressOverdue": "This swap has not finished in time. If it settles later, the funds still arrive, or the deposit is refunded to {refund}.",
+    "@swapProgressOverdue": {
       "description": "Notice on the progress screen once the deposit window closed with the deposit unseen",
       "placeholders": {
         "refund": {

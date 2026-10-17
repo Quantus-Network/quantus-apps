@@ -26,12 +26,13 @@ class SwapActivityRow extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final swap = ref.watch(activeSwapProvider);
-    if (swap == null || !swap.inProgress) return const SizedBox.shrink();
+    final now = clock.now();
+    if (swap == null || !swap.inProgressAt(now)) return const SizedBox.shrink();
     final l10n = ref.watch(l10nProvider);
     final fmt = ref.watch(numberFormattingServiceProvider);
     final colors = context.colorsV3;
     final text = context.themeTextV3;
-    final elapsed = ref.watch(swapElapsedProvider).value ?? swap.elapsedAt(clock.now());
+    final elapsed = ref.watch(swapElapsedProvider).value ?? swap.elapsedAt(now);
     final quote = swap.order.quote;
     final stage = swapStage(swap.order, depositByHand: swap.depositByHand);
     final receiver = swapReceiver(swap, preflight: ref.watch(swapPreflightProvider) != null);

@@ -25,8 +25,8 @@ import 'package:resonance_network_wallet/v2/screens/swap/swap_summary.dart';
 /// in preflight, any swap) waits for its deposit, then progress, and finally
 /// the completed or failed swap. Leaving by Done or Start new, or a failed
 /// swap by going back, puts the swap away, so the next tap on Swap starts a
-/// fresh one; a running swap left by going back is still followed, and one
-/// whose deposit was not seen by its deadline offers to stop tracking.
+/// fresh one; a running swap left by going back is still followed. Its
+/// details sheet, or the notice once it is overdue, offers to stop tracking.
 class SwapProgressScreen extends ConsumerStatefulWidget {
   /// The account a new swap would start from; none when the selected
   /// account cannot swap.
@@ -124,7 +124,7 @@ class _SwapInProgress extends ConsumerWidget {
     final steps = swapStepLabels(l10n, quote, receiver, byHand: swap.depositByHand);
     final stage = swapStage(order, depositByHand: swap.depositByHand);
     final pollError = swap.pollError;
-    final deadlinePassed = swap.deadlinePassed(now);
+    final overdue = swap.overdue(now);
 
     return ScaffoldBase(
       appBar: V2AppBar(
@@ -156,9 +156,9 @@ class _SwapInProgress extends ConsumerWidget {
                 label: label,
               ),
             if (pollError != null) ...[const SizedBox(height: 16), _PollErrorNotice(error: pollError)],
-            if (deadlinePassed) ...[
+            if (overdue) ...[
               const SizedBox(height: 16),
-              QuantusBanner(tone: BannerTone.sand, message: l10n.swapProgressDepositNotSeen(refund)),
+              QuantusBanner(tone: BannerTone.sand, message: l10n.swapProgressOverdue(refund)),
             ],
           ],
         ),
@@ -180,7 +180,7 @@ class _SwapInProgress extends ConsumerWidget {
               textAlign: TextAlign.center,
               style: text.body.copyWith(color: colors.textMuted2),
             ),
-            if (deadlinePassed) ...[
+            if (overdue) ...[
               const SizedBox(height: 8),
               QuantusButton.simple(
                 label: l10n.swapStopTracking,
@@ -264,10 +264,28 @@ class _SwapDetailsSheet extends ConsumerWidget {
             variant: ButtonVariant.staged,
             onTap: () => Navigator.pop(context),
           ),
+          const SizedBox(height: 4),
+          QuantusButton.simple(
+            label: l10n.swapStopTracking,
+            variant: ButtonVariant.underline,
+            onTap: () => _stopTracking(context, ref, l10n),
+          ),
         ],
       ),
     );
   }
+}
+
+/// Puts the swap away once the user confirms; it carries on at 1Click.
+Future<void> _stopTracking(BuildContext context, WidgetRef ref, AppLocalizations l10n) async {
+  final confirmed = await showConfirmActionSheet(
+    context,
+    title: l10n.swapStopTrackingConfirmTitle,
+    message: l10n.swapStopTrackingConfirmBody,
+    confirmLabel: l10n.swapStopTracking,
+    cancelLabel: l10n.commonCancel,
+  );
+  if (confirmed && context.mounted) _finish(context, ref);
 }
 
 class _SwapComplete extends ConsumerWidget {

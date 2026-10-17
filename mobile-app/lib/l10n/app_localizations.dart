@@ -3554,17 +3554,29 @@ abstract class AppLocalizations {
   /// **'The swap status can\'t be checked right now: {error}'**
   String swapProgressStatusUnavailable(String error);
 
-  /// Link under a running swap whose deposit was not seen by its deadline; puts the swap away, a late deposit is still refunded
+  /// Puts a running swap away: in its details sheet, and under its notice once it is overdue
   ///
   /// In en, this message translates to:
   /// **'Stop tracking swap'**
   String get swapStopTracking;
 
+  /// Confirm sheet title before a running swap is put away
+  ///
+  /// In en, this message translates to:
+  /// **'Stop tracking this swap?'**
+  String get swapStopTrackingConfirmTitle;
+
+  /// Confirm sheet body before a running swap is put away
+  ///
+  /// In en, this message translates to:
+  /// **'It carries on at NEAR Intents: the funds still arrive, or the deposit is refunded. The wallet just stops following it.'**
+  String get swapStopTrackingConfirmBody;
+
   /// Notice on the progress screen once the deposit window closed with the deposit unseen
   ///
   /// In en, this message translates to:
-  /// **'The deposit was not seen before the deadline. If it arrives late, it is refunded to {refund}.'**
-  String swapProgressDepositNotSeen(String refund);
+  /// **'This swap has not finished in time. If it settles later, the funds still arrive, or the deposit is refunded to {refund}.'**
+  String swapProgressOverdue(String refund);
 
   /// Text for app bar or button label on QR scanner component
   ///

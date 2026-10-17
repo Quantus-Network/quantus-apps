@@ -51,14 +51,24 @@ class ActiveSwap {
   /// by hand and marked so.
   bool get depositUnderway => !depositByHand || depositSent;
 
-  /// Whether the swap is with 1Click: its deposit was seen there or is on
-  /// its way, and it has not settled.
-  bool get inProgress => !isFinal && (order.status != SwapStatus.pendingDeposit || depositUnderway);
+  /// Whether the swap is with 1Click and expected to settle: its deposit was
+  /// seen there or is on its way, and it is neither settled nor overdue.
+  bool inProgressAt(DateTime now) =>
+      !isFinal && !overdue(now) && (order.status != SwapStatus.pendingDeposit || depositUnderway);
 
   Duration elapsedAt(DateTime now) => (settledAt ?? now).difference(startedAt);
 
   /// The deposit window closed with 1Click still waiting for the deposit.
-  bool deadlinePassed(DateTime now) => order.status == SwapStatus.pendingDeposit && now.isAfter(order.quote.deadline);
+  /// How long past its deposit deadline a swap whose deposit 1Click has seen
+  /// may take to settle before it counts as overdue.
+  static const finishGrace = Duration(hours: 1);
+
+  /// Whether the swap should have settled by now: its deposit was not seen
+  /// by the deadline, or it was seen and the swap is not settled an hour
+  /// past that.
+  bool overdue(DateTime now) =>
+      !isFinal &&
+      now.isAfter(order.quote.deadline.add(order.status == SwapStatus.pendingDeposit ? Duration.zero : finishGrace));
 
   ActiveSwap withOrder(SwapOrder order, {required DateTime now}) =>
       _copy(order: order, settledAt: order.status.isFinal ? now : null, pollError: null);
