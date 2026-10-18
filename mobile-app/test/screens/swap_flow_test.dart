@@ -122,6 +122,9 @@ class _OneClick {
   /// Holds every address save until completed.
   Completer<void>? holdSave;
 
+  /// Holds every dry quote until completed.
+  Completer<void>? holdQuote;
+
   SwapService service({bool preflight = false}) => _OneClickService(this, preflight: preflight);
 
   Future<http.Response> handle(http.Request request) async {
@@ -152,6 +155,7 @@ class _OneClick {
   Future<http.Response> _quote(http.Request request) async {
     final body = jsonDecode(request.body) as Map<String, dynamic>;
     if (body['dry'] == false && holdLive != null) await holdLive!.future;
+    if (body['dry'] == true && holdQuote != null) await holdQuote!.future;
     return http.Response(jsonEncode(_quoteJson(body)), 200);
   }
 
@@ -695,6 +699,49 @@ void main() {
       expect(find.text(l10n.swapDisabledTitle), findsNothing);
       expect(find.text('FROM'), findsOneWidget);
     });
+  });
+
+  group('quoting', () {
+    for (final swapOutForm in [true, false]) {
+      testWidgets(
+        'swapping ${swapOutForm ? 'out' : 'in'}, a quote out takes no taps and opens nothing once the form moved on',
+        (tester) async {
+          final oneClick = _OneClick(dryOut: BigInt.from(24860000))..holdQuote = Completer<void>();
+          await tester.pumpApp(SwapScreen(account: account), overrides: overrides(oneClick.service()));
+          await settle(tester);
+          if (swapOutForm) await swapOut(tester);
+          final addAddress = swapOutForm ? l10n.swapAddRecipientAddress : l10n.swapAddRefundAddress;
+          await tester.enterText(find.byType(TextField), '10');
+          await tester.pump();
+          await tester.tap(find.text(addAddress));
+          await settle(tester);
+          await tester.enterText(find.byType(TextField).last, _external);
+          await tester.pump();
+          await tester.tap(find.text(l10n.swapContinue));
+          await settle(tester);
+          expect(find.byType(BottomSheetContainer), findsNothing);
+          Iterable<http.Request> quotes() => oneClick.requests.where((r) => r.url.path == '/v0/quote');
+          expect(quotes(), hasLength(1));
+
+          await tester.tap(find.text(AddressFormattingService.formatAddress(_external)), warnIfMissed: false);
+          await settle(tester);
+          expect(find.byType(BottomSheetContainer), findsNothing);
+          expect(quotes(), hasLength(1));
+
+          await tester.enterText(find.byType(TextField), '20');
+          await tester.pump();
+          oneClick.holdQuote!.complete();
+          await settle(tester);
+          expect(find.byType(ReviewSwapScreen), findsNothing);
+
+          oneClick.holdQuote = null;
+          await tester.tap(find.text(l10n.swapReviewTitle));
+          await settle(tester);
+          expect(find.byType(ReviewSwapScreen), findsOneWidget);
+          expect(quotes(), hasLength(2));
+        },
+      );
+    }
   });
 
   group('address sheet', () {
