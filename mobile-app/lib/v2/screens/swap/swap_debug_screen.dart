@@ -18,8 +18,10 @@ import 'package:resonance_network_wallet/v2/screens/swap/swap_screen.dart';
 /// order the design walks them. The form and review rows put a stand-in for
 /// 1Click in place, so the sheets and screens that follow them run on canned
 /// tokens and quotes; the other rows each add a simulated swap in the state
-/// named, with a deposit address of its own, so several swaps can be followed
-/// at once. A simulated swap is neither polled nor kept across restarts.
+/// named, with a deposit address of its own, and open it, so several swaps
+/// can be followed at once; "Follow every state" adds them all without
+/// opening any, for the rows on home. A simulated swap is neither polled nor
+/// kept across restarts.
 class SwapDebugScreen extends ConsumerWidget {
   static const title = 'Swap test harness';
   static const subtitle = 'Debug only: walk every swap screen';
@@ -75,36 +77,58 @@ class SwapDebugScreen extends ConsumerWidget {
       BigInt? amountOut,
       BigInt? refundedAmount,
       String? refundReason,
-    }) => _Step(name, description, (context, ref) {
-      final quote = _quote(swapOut: swapOut, account: account, deadline: deadline ?? open, live: true, seed: ++_seeded);
-      final order = SwapOrder(
-        quote: quote,
-        status: SwapStatus.parse(status),
-        amountOut: amountOut,
-        refundedAmount: refundedAmount,
-        refundReason: refundReason,
-        originTxHashes: swapOut ? const [SwapHarnessService.txHash] : const [],
-      );
-      final swap = ActiveSwap(
-        order: order,
-        accountId: account.accountId,
-        accountName: account.name,
-        startedAt: now.subtract(age),
-        settledAt: order.status.isFinal ? now : null,
-        depositByHand: !swapOut,
-        depositTxHash: swapOut ? SwapHarnessService.txHash : null,
-        depositFee: swapOut ? unit ~/ BigInt.from(50) : null,
-        pollError: pollError,
-        simulated: true,
-      );
-      ref.read(activeSwapsProvider.notifier).start(swap);
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => SwapProgressScreen(swapId: swap.id, account: account),
-        ),
-      );
-    });
+    }) {
+      ActiveSwap seed() {
+        final quote = _quote(
+          swapOut: swapOut,
+          account: account,
+          deadline: deadline ?? open,
+          live: true,
+          seed: ++_seeded,
+        );
+        final order = SwapOrder(
+          quote: quote,
+          status: SwapStatus.parse(status),
+          amountOut: amountOut,
+          refundedAmount: refundedAmount,
+          refundReason: refundReason,
+          originTxHashes: swapOut ? const [SwapHarnessService.txHash] : const [],
+        );
+        return ActiveSwap(
+          order: order,
+          accountId: account.accountId,
+          accountName: account.name,
+          startedAt: now.subtract(age),
+          settledAt: order.status.isFinal ? now : null,
+          depositByHand: !swapOut,
+          depositTxHash: swapOut ? SwapHarnessService.txHash : null,
+          depositFee: swapOut ? unit ~/ BigInt.from(50) : null,
+          pollError: pollError,
+          simulated: true,
+        );
+      }
+
+      return _Step(name, description, (context, ref) {
+        final swap = seed();
+        ref.read(activeSwapsProvider.notifier).start(swap);
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => SwapProgressScreen(swapId: swap.id, account: account),
+          ),
+        );
+      }, seed: seed);
+    }
+
+    /// Adds every swap the [steps] seed, in one go, without opening any.
+    _Step followAll(List<_Step> steps) =>
+        _Step('Follow every state', 'Adds one simulated swap per row below, for the rows on home', (context, ref) {
+          final swaps = ref.read(activeSwapsProvider.notifier);
+          for (final step in steps) {
+            if (step.seed case final seed?) swaps.start(seed());
+          }
+          Navigator.popUntil(context, (route) => route.isFirst);
+        });
 
     final swapIn = [
       screen(
@@ -187,7 +211,7 @@ class SwapDebugScreen extends ConsumerWidget {
         age: const Duration(minutes: 22),
       ),
     ];
-    return (swapIn, swapOut);
+    return ([followAll(swapIn), ...swapIn], [followAll(swapOut), ...swapOut]);
   }
 
   @override
@@ -278,5 +302,8 @@ class _Step {
   final String description;
   final void Function(BuildContext context, WidgetRef ref) open;
 
-  const _Step(this.name, this.description, this.open);
+  /// The simulated swap the step adds, for a step that adds one.
+  final ActiveSwap Function()? seed;
+
+  const _Step(this.name, this.description, this.open, {this.seed});
 }
