@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart' hide ScaffoldBase;
 import 'package:resonance_network_wallet/providers/account_providers.dart';
-import 'package:resonance_network_wallet/providers/active_swap_provider.dart';
+import 'package:resonance_network_wallet/providers/active_swaps_provider.dart';
 import 'package:resonance_network_wallet/services/swap_harness_service.dart';
 import 'package:resonance_network_wallet/shared/utils/account_utils.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
@@ -17,19 +17,24 @@ import 'package:resonance_network_wallet/v2/screens/swap/swap_screen.dart';
 /// Debug builds only: every screen of the swap in and swap out flows, in the
 /// order the design walks them. The form and review rows put a stand-in for
 /// 1Click in place, so the sheets and screens that follow them run on canned
-/// tokens and quotes; the other rows load a simulated swap in the state named,
-/// which is neither polled nor kept across restarts.
+/// tokens and quotes; the other rows each add a simulated swap in the state
+/// named, with a deposit address of its own, so several swaps can be followed
+/// at once. A simulated swap is neither polled nor kept across restarts.
 class SwapDebugScreen extends ConsumerWidget {
   static const title = 'Swap test harness';
   static const subtitle = 'Debug only: walk every swap screen';
 
   const SwapDebugScreen({super.key});
 
+  /// How many swaps the rows have seeded, so each gets a deposit address of its own.
+  static int _seeded = 0;
+
   static SwapQuote _quote({
     required bool swapOut,
     required Account account,
     required DateTime deadline,
     required bool live,
+    int? seed,
   }) {
     final unit = BigInt.from(10).pow(AppConstants.decimals);
     return SwapHarnessService.quoteFor(
@@ -41,9 +46,7 @@ class SwapDebugScreen extends ConsumerWidget {
       deadline: deadline,
       depositAddress: !live
           ? null
-          : swapOut
-          ? account.accountId
-          : SwapHarnessService.externalDeposit,
+          : '${swapOut ? account.accountId : SwapHarnessService.externalDeposit}${seed == null ? '' : '-$seed'}',
     );
   }
 
@@ -73,7 +76,7 @@ class SwapDebugScreen extends ConsumerWidget {
       BigInt? refundedAmount,
       String? refundReason,
     }) => _Step(name, description, (context, ref) {
-      final quote = _quote(swapOut: swapOut, account: account, deadline: deadline ?? open, live: true);
+      final quote = _quote(swapOut: swapOut, account: account, deadline: deadline ?? open, live: true, seed: ++_seeded);
       final order = SwapOrder(
         quote: quote,
         status: SwapStatus.parse(status),
@@ -82,23 +85,25 @@ class SwapDebugScreen extends ConsumerWidget {
         refundReason: refundReason,
         originTxHashes: swapOut ? const [SwapHarnessService.txHash] : const [],
       );
-      ref
-          .read(activeSwapProvider.notifier)
-          .start(
-            ActiveSwap(
-              order: order,
-              accountId: account.accountId,
-              accountName: account.name,
-              startedAt: now.subtract(age),
-              settledAt: order.status.isFinal ? now : null,
-              depositByHand: !swapOut,
-              depositTxHash: swapOut ? SwapHarnessService.txHash : null,
-              depositFee: swapOut ? unit ~/ BigInt.from(50) : null,
-              pollError: pollError,
-              simulated: true,
-            ),
-          );
-      Navigator.push(context, MaterialPageRoute(builder: (_) => SwapProgressScreen(account: account)));
+      final swap = ActiveSwap(
+        order: order,
+        accountId: account.accountId,
+        accountName: account.name,
+        startedAt: now.subtract(age),
+        settledAt: order.status.isFinal ? now : null,
+        depositByHand: !swapOut,
+        depositTxHash: swapOut ? SwapHarnessService.txHash : null,
+        depositFee: swapOut ? unit ~/ BigInt.from(50) : null,
+        pollError: pollError,
+        simulated: true,
+      );
+      ref.read(activeSwapsProvider.notifier).start(swap);
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => SwapProgressScreen(swapId: swap.id, account: account),
+        ),
+      );
     });
 
     final swapIn = [
@@ -191,13 +196,13 @@ class SwapDebugScreen extends ConsumerWidget {
     final text = context.themeTextV3;
     final active = ref.watch(activeAccountProvider).value;
     final account = active is RegularAccount && active.account.signsLocally ? active.account : null;
-    final swap = ref.watch(activeSwapProvider);
+    final swaps = ref.watch(activeSwapsProvider);
     final harness = ref.watch(swapHarnessServiceProvider);
     final current = [
       harness == null ? '1Click: real' : '1Click: stand-in',
-      swap == null
-          ? 'No active swap'
-          : '${swap.order.status.wire}${swap.simulated ? ' (simulated)' : ''}, started ${swap.startedAt}',
+      swaps.isEmpty
+          ? 'No followed swaps'
+          : '${swaps.length} followed: ${swaps.map((s) => '${s.order.status.wire}${s.simulated ? ' (simulated)' : ''}').join(', ')}',
     ].join(' · ');
 
     Widget heading(String label) => Padding(
@@ -242,19 +247,19 @@ class SwapDebugScreen extends ConsumerWidget {
                 );
               },
             ),
-      bottomContent: swap == null && harness == null
+      bottomContent: swaps.isEmpty && harness == null
           ? null
           : ScaffoldBaseBottomContent(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  if (swap != null)
+                  if (swaps.isNotEmpty)
                     QuantusButton.simple(
-                      label: 'Clear active swap',
+                      label: 'Clear all swaps',
                       variant: ButtonVariant.staged,
-                      onTap: () => ref.read(activeSwapProvider.notifier).clear(),
+                      onTap: () => ref.read(activeSwapsProvider.notifier).clearAll(),
                     ),
-                  if (swap != null && harness != null) const SizedBox(height: 8),
+                  if (swaps.isNotEmpty && harness != null) const SizedBox(height: 8),
                   if (harness != null)
                     QuantusButton.simple(
                       label: 'Use real 1Click',

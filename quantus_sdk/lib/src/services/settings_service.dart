@@ -33,7 +33,8 @@ class SettingsService {
   static const String _currencyFlippedKey = 'currency_flipped';
   static const String _selectedFiatCurrencyKey = 'selected_fiat_currency';
   static const String _selectedAppLocaleKey = 'selected_app_locale';
-  static const String _activeSwapKey = 'active_swap_v1';
+  static const String _activeSwapsKey = 'active_swaps_v1';
+  static const String _legacyActiveSwapKey = 'active_swap_v1';
 
   // referral status
   static const String hasCheckedReferralKey = 'referral_check';
@@ -49,6 +50,15 @@ class SettingsService {
   Future<void> initialize() async {
     _prefs = await SharedPreferences.getInstance();
     _keychainMigrated = _prefs.getBool(_migratedKeychainKey) == true;
+    await _migrateActiveSwap();
+  }
+
+  /// Moves the one swap an earlier version kept in its own slot into the list.
+  Future<void> _migrateActiveSwap() async {
+    final json = _prefs.getString(_legacyActiveSwapKey);
+    if (json == null) return;
+    await saveActiveSwap(ActiveSwap.fromJson(jsonDecode(json) as Map<String, dynamic>));
+    await _prefs.remove(_legacyActiveSwapKey);
   }
 
   Future<void> _ensureKeychainMigrated() async {
@@ -444,19 +454,33 @@ class SettingsService {
     return _prefs.getString(_selectedAppLocaleKey);
   }
 
-  // Active Swap: the one swap the app follows until the user puts it away
-  Future<void> setActiveSwap(ActiveSwap swap) async {
-    await _prefs.setString(_activeSwapKey, jsonEncode(swap.toJson()));
+  // Active swaps: the swaps the app follows until the user puts each away
+
+  /// The followed swaps, in order of starting.
+  List<ActiveSwap> getActiveSwaps() {
+    final json = _prefs.getString(_activeSwapsKey);
+    if (json == null) return [];
+    return [for (final item in jsonDecode(json) as List<dynamic>) ActiveSwap.fromJson(item as Map<String, dynamic>)];
   }
 
-  Future<void> clearActiveSwap() async {
-    await _prefs.remove(_activeSwapKey);
+  /// Keeps [swap]: in place of the followed swap with its id, else after the others.
+  Future<void> saveActiveSwap(ActiveSwap swap) {
+    final swaps = getActiveSwaps();
+    final at = swaps.indexWhere((s) => s.id == swap.id);
+    if (at < 0) {
+      swaps.add(swap);
+    } else {
+      swaps[at] = swap;
+    }
+    return _writeActiveSwaps(swaps);
   }
 
-  ActiveSwap? getActiveSwap() {
-    final json = _prefs.getString(_activeSwapKey);
-    return json == null ? null : ActiveSwap.fromJson(jsonDecode(json) as Map<String, dynamic>);
-  }
+  Future<void> removeActiveSwap(String id) => _writeActiveSwaps(getActiveSwaps().where((s) => s.id != id).toList());
+
+  Future<void> clearActiveSwaps() => _prefs.remove(_activeSwapsKey);
+
+  Future<void> _writeActiveSwaps(List<ActiveSwap> swaps) =>
+      _prefs.setString(_activeSwapsKey, jsonEncode([for (final s in swaps) s.toJson()]));
 
   // --- Primitive Accessors for General Use ---
 

@@ -6,7 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart' hide ScaffoldBase;
 import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/models/swap_preflight.dart';
-import 'package:resonance_network_wallet/providers/active_swap_provider.dart';
+import 'package:resonance_network_wallet/providers/active_swaps_provider.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
@@ -49,6 +49,11 @@ class _ReviewSwapScreenState extends ConsumerState<ReviewSwapScreen> {
 
   Future<void> _confirm() async {
     final l10n = ref.read(l10nProvider);
+    final swaps = ref.read(activeSwapsProvider.notifier);
+    if (swaps.full) {
+      context.showErrorToaster(message: l10n.swapTooManyFollowed(ActiveSwapsNotifier.maxFollowed));
+      return;
+    }
     final generation = _generation;
     setState(() => _confirming = true);
     try {
@@ -57,28 +62,26 @@ class _ReviewSwapScreenState extends ConsumerState<ReviewSwapScreen> {
       final fee = _sendsDeposit(ref.read(swapPreflightProvider))
           ? ref.read(swapDepositFeeProvider(_feeKey)).requireValue
           : null;
-      final swaps = ref.read(activeSwapProvider.notifier);
-      final ticket = swaps.ticket;
+      final ticket = swaps.ticket();
       final txHash = fee != null ? await _sendDeposit(order, fee, l10n, generation) : null;
       if (fee != null && txHash == null) return;
       // The deposit is out, so the swap is followed even if the screen is gone,
       // unless the wallet logged out or moved on meanwhile.
-      final followed = swaps.start(
-        ActiveSwap(
-          order: order,
-          accountId: widget.account.accountId,
-          accountName: widget.account.name,
-          startedAt: clock.now(),
-          depositByHand: fee == null,
-          depositTxHash: txHash,
-          depositFee: fee,
-        ),
-        ticket: ticket,
+      final swap = ActiveSwap(
+        order: order,
+        accountId: widget.account.accountId,
+        accountName: widget.account.name,
+        startedAt: clock.now(),
+        depositByHand: fee == null,
+        depositTxHash: txHash,
+        depositFee: fee,
       );
-      if (!followed || !mounted) return;
+      if (!swaps.start(swap, ticket: ticket) || !mounted) return;
       Navigator.pushAndRemoveUntil(
         context,
-        MaterialPageRoute(builder: (_) => SwapProgressScreen(account: widget.account)),
+        MaterialPageRoute(
+          builder: (_) => SwapProgressScreen(swapId: swap.id, account: widget.account),
+        ),
         (route) => route.isFirst,
       );
     } finally {

@@ -1763,6 +1763,14 @@ class AppLocalizationsId extends AppLocalizations {
   String get swapReviewConfirm => 'Konfirmasi swap';
 
   @override
+  String get swapActivityOverdue => 'Belum selesai tepat waktu';
+
+  @override
+  String swapTooManyFollowed(int count) {
+    return 'Paling banyak $count swap berjalan sekaligus. Tunggu salah satunya selesai.';
+  }
+
+  @override
   String swapActivityAmounts(String amountIn, String amountOut) {
     return '$amountIn → $amountOut';
   }

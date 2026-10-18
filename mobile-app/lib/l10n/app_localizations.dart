@@ -3296,6 +3296,18 @@ abstract class AppLocalizations {
   /// **'Confirm swap'**
   String get swapReviewConfirm;
 
+  /// Home activity row state for a followed swap that is overdue
+  ///
+  /// In en, this message translates to:
+  /// **'Not finished in time'**
+  String get swapActivityOverdue;
+
+  /// Toast on Review Swap when as many swaps as can be followed are already running
+  ///
+  /// In en, this message translates to:
+  /// **'Up to {count} swaps can run at once. Wait for one to finish.'**
+  String swapTooManyFollowed(int count);
+
   /// Title of the home activity row for the swap with 1Click; the step it is on is the subtitle
   ///
   /// In en, this message translates to:

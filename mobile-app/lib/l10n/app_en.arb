@@ -2566,6 +2566,19 @@
     "@swapReviewConfirm": {
       "description": "Confirm button on the swap review screen"
     },
+    "swapActivityOverdue": "Not finished in time",
+    "@swapActivityOverdue": {
+      "description": "Home activity row state for a followed swap that is overdue"
+    },
+    "swapTooManyFollowed": "Up to {count} swaps can run at once. Wait for one to finish.",
+    "@swapTooManyFollowed": {
+      "description": "Toast on Review Swap when as many swaps as can be followed are already running",
+      "placeholders": {
+        "count": {
+          "type": "int"
+        }
+      }
+    },
     "swapActivityAmounts": "{amountIn} → {amountOut}",
     "@swapActivityAmounts": {
       "description": "Title of the home activity row for the swap with 1Click; the step it is on is the subtitle",

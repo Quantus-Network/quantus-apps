@@ -500,6 +500,8 @@
   "swapReviewInsufficient": "{symbol} tidak cukup untuk jumlah ini ditambah biaya jaringan.",
   "swapReviewPriceMoved": "Harga berubah. Periksa jumlah baru dan konfirmasi lagi.",
   "swapReviewConfirm": "Konfirmasi swap",
+  "swapActivityOverdue": "Belum selesai tepat waktu",
+  "swapTooManyFollowed": "Paling banyak {count} swap berjalan sekaligus. Tunggu salah satunya selesai.",
   "swapActivityAmounts": "{amountIn} → {amountOut}",
   "swapInProgressTitle": "Swap Sedang Berjalan",
   "swapYourePaying": "Anda membayar",
