@@ -126,50 +126,51 @@ class MultisigActivitySection extends ConsumerWidget {
     final text = context.themeTextV3;
     final formatTxAmount = ref.watch(txAmountDisplayProvider);
 
-    return txAsync.when(
-      loading: () => const Padding(
-        padding: EdgeInsets.only(top: 40),
-        child: Center(child: Loader()),
-      ),
-      error: (e, _) => Padding(
-        padding: const EdgeInsets.only(top: 40),
-        child: Column(
-          children: [
-            Text(l10n.homeActivityErrorLoading, style: text.caption.copyWith(color: colors.semanticEmber)),
-            const SizedBox(height: 12),
-            GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: () => onRetry?.call(),
-              child: Text(
-                l10n.homeActivityRetry,
-                style: text.body.copyWith(color: colors.textContent, decoration: TextDecoration.underline),
-              ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const SizedBox(height: 32),
+        Text(l10n.homeActivityTitle, style: text.headingRow.copyWith(color: colors.textContent)),
+        const SizedBox(height: 12),
+        SwapActivityRows(isHidden: isHidden),
+        txAsync.when(
+          loading: () => const Padding(
+            padding: EdgeInsets.symmetric(vertical: 16),
+            child: Center(child: Loader()),
+          ),
+          error: (e, _) => Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            child: Column(
+              children: [
+                Text(l10n.homeActivityErrorLoading, style: text.caption.copyWith(color: colors.semanticEmber)),
+                const SizedBox(height: 12),
+                GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () => onRetry?.call(),
+                  child: Text(
+                    l10n.homeActivityRetry,
+                    style: text.body.copyWith(color: colors.textContent, decoration: TextDecoration.underline),
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
-      ),
-      data: (data) {
-        final merged = _mergedActivity(ref, data, pastProposalsAsync.value ?? const []);
-        final recent = merged.take(5).toList();
-
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const SizedBox(height: 32),
-            Text(l10n.homeActivityTitle, style: text.headingRow.copyWith(color: colors.textContent)),
-            const SizedBox(height: 12),
-            SwapActivityRows(isHidden: isHidden),
-            if (recent.isEmpty)
-              Padding(
+          ),
+          data: (data) {
+            final merged = _mergedActivity(ref, data, pastProposalsAsync.value ?? const []);
+            final recent = merged.take(5).toList();
+            if (recent.isEmpty) {
+              return Padding(
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 child: Text(
                   l10n.homeActivityEmptyTitle,
                   textAlign: TextAlign.center,
                   style: text.body.copyWith(color: colors.textMuted),
                 ),
-              )
-            else
-              ...recent.mapIndexed((index, tx) {
+              );
+            }
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: recent.mapIndexed((index, tx) {
                 final itemData = TxItemData.from(tx, msig.accountId, context.colorsV3, l10n);
                 return buildTxItem(
                   tx,
@@ -182,10 +183,11 @@ class MultisigActivitySection extends ConsumerWidget {
                   isLastItem: index == recent.length - 1,
                   onTap: () => _onTap(context, tx),
                 );
-              }),
-          ],
-        );
-      },
+              }).toList(),
+            );
+          },
+        ),
+      ],
     );
   }
 

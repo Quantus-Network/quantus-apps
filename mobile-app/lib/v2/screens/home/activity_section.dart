@@ -77,89 +77,82 @@ class _ActivitySectionState extends ConsumerState<ActivitySection> {
         final recentTransactions = all.take(5).toList();
         var pendingSendKeyAssigned = false;
 
-        final account = widget.activeAccount;
-        final swapRows = SwapActivityRows(starter: account is Account ? account : null, isHidden: widget.isHidden);
-        if (all.isEmpty) {
-          return Column(children: [const SizedBox(height: 40), _header(l10n), swapRows, _emptyState(l10n)]);
-        }
+        if (all.isEmpty) return _section(l10n, 0, [_emptyState(l10n)]);
 
         final isPrivate = isEncryptedAccount(widget.activeAccount);
 
-        return Column(
-          children: [
-            const SizedBox(height: 40),
-            _header(l10n),
-            const SizedBox(height: 28),
-            swapRows,
-            ...recentTransactions.mapIndexed((index, tx) {
-              final data = TxItemData.from(tx, widget.activeAccount.accountId, colors, l10n, isPrivate: isPrivate);
-              final isLastItem = index == recentTransactions.length - 1;
-              Key? itemKey;
-              if (!pendingSendKeyAssigned &&
-                  tx is PendingTransactionEvent &&
-                  tx.from == widget.activeAccount.accountId) {
-                itemKey = const Key(E2EKeys.homePendingSendActivityItem);
-                pendingSendKeyAssigned = true;
-              }
+        return _section(
+          l10n,
+          28,
+          recentTransactions.mapIndexed((index, tx) {
+            final data = TxItemData.from(tx, widget.activeAccount.accountId, colors, l10n, isPrivate: isPrivate);
+            final isLastItem = index == recentTransactions.length - 1;
+            Key? itemKey;
+            if (!pendingSendKeyAssigned && tx is PendingTransactionEvent && tx.from == widget.activeAccount.accountId) {
+              itemKey = const Key(E2EKeys.homePendingSendActivityItem);
+              pendingSendKeyAssigned = true;
+            }
 
-              return buildTxItem(
-                tx,
-                data,
-                colors,
-                text,
-                context.radiusV3,
-                l10n,
-                formattedAmount: txItemAmountText(data, formatTxAmount, isHidden: widget.isHidden),
-                isLastItem: isLastItem,
-                itemKey: itemKey,
-                onTap: () {
-                  showTransactionDetailSheet(context, tx, widget.activeAccount.accountId);
-                },
-              );
-            }),
-          ],
+            return buildTxItem(
+              tx,
+              data,
+              colors,
+              text,
+              context.radiusV3,
+              l10n,
+              formattedAmount: txItemAmountText(data, formatTxAmount, isHidden: widget.isHidden),
+              isLastItem: isLastItem,
+              itemKey: itemKey,
+              onTap: () {
+                showTransactionDetailSheet(context, tx, widget.activeAccount.accountId);
+              },
+            );
+          }).toList(),
         );
       },
       loading: () => _loading(l10n, colors),
-      error: (e, _) => Padding(
-        padding: const EdgeInsets.only(top: 40),
-        child: Column(
-          children: [
-            Text(l10n.homeActivityErrorLoading, style: text.caption.copyWith(color: colors.semanticEmber)),
-            const SizedBox(height: 12),
-            // Offline, a refresh is skipped outright and the banner says why.
-            if (ref.watch(isOnlineProvider))
-              GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: _retry,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                  child: Text(
-                    l10n.homeActivityRetry,
-                    style: text.body.copyWith(color: colors.textContent, decoration: TextDecoration.underline),
-                  ),
-                ),
+      error: (e, _) => _section(l10n, 24, [
+        const SizedBox(height: 16),
+        Text(l10n.homeActivityErrorLoading, style: text.caption.copyWith(color: colors.semanticEmber)),
+        const SizedBox(height: 12),
+        // Offline, a refresh is skipped outright and the banner says why.
+        if (ref.watch(isOnlineProvider))
+          GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: _retry,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              child: Text(
+                l10n.homeActivityRetry,
+                style: text.body.copyWith(color: colors.textContent, decoration: TextDecoration.underline),
               ),
-          ],
-        ),
-      ),
+            ),
+          ),
+      ]),
     );
   }
 
-  Widget _loading(AppLocalizations l10n, AppColorsV3 colors) => Padding(
-    padding: const EdgeInsets.only(top: 40),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+  /// The section: its header, then [gap] below it the followed swaps, shown
+  /// whatever the state of the feed, then [children].
+  Widget _section(AppLocalizations l10n, double gap, List<Widget> children) {
+    final account = widget.activeAccount;
+    return Column(
       children: [
+        const SizedBox(height: 40),
         _header(l10n),
-        const SizedBox(height: 24),
-        for (var i = 0; i < 3; i++) ...[
-          const TxItemSkeleton(),
-          if (i < 2) Divider(color: colors.borderHairline, height: 24),
-        ],
+        SizedBox(height: gap),
+        SwapActivityRows(starter: account is Account ? account : null, isHidden: widget.isHidden),
+        ...children,
       ],
-    ),
-  );
+    );
+  }
+
+  Widget _loading(AppLocalizations l10n, AppColorsV3 colors) => _section(l10n, 24, [
+    for (var i = 0; i < 3; i++) ...[
+      const TxItemSkeleton(),
+      if (i < 2) Divider(color: colors.borderHairline, height: 24),
+    ],
+  ]);
 
   Widget _emptyState(AppLocalizations l10n) {
     final colors = context.colorsV3;

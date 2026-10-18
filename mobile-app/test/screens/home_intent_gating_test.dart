@@ -8,6 +8,7 @@ import 'package:resonance_network_wallet/models/combined_transactions_list.dart'
 import 'package:resonance_network_wallet/models/fiat_currency.dart';
 import 'package:resonance_network_wallet/providers/active_account_transactions_provider.dart';
 import 'package:resonance_network_wallet/providers/active_swaps_provider.dart';
+import 'package:resonance_network_wallet/providers/connectivity_provider.dart';
 import 'package:resonance_network_wallet/providers/currency_display_provider.dart';
 import 'package:resonance_network_wallet/providers/local_auth_provider.dart';
 import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
@@ -35,14 +36,16 @@ void main() {
     bool enableSwap = true,
     bool enableSwapAndroid = true,
     bool geoNearAllowed = true,
+    AsyncValue<CombinedTransactionsList>? activity,
   }) async {
     await tester.pumpApp(
       const HomeScreen(),
       overrides: [
         settingsServiceProvider.overrideWithValue(settings),
         localAuthProvider.overrideWith((ref) => auth),
+        isOnlineProvider.overrideWith((ref) => true),
         activeAccountTransactionsProvider.overrideWith(
-          (ref, filter) => AsyncValue.data(CombinedTransactionsList.empty),
+          (ref, filter) => activity ?? AsyncValue.data(CombinedTransactionsList.empty),
         ),
         balanceProvider.overrideWithValue(AsyncValue.data(BigInt.from(10).pow(15))),
         balanceProviderFamily.overrideWith((ref, accountId) async => BigInt.from(10).pow(15)),
@@ -221,6 +224,40 @@ void main() {
     await tester.pump(const Duration(milliseconds: 400));
     expect(find.byType(SwapProgressScreen), findsOneWidget);
   });
+
+  final feeds = <(String, AsyncValue<CombinedTransactionsList>)>[
+    ('fails', AsyncValue.error(StateError('indexer down'), StackTrace.empty)),
+    ('is still loading', const AsyncValue.loading()),
+  ];
+  for (final (state, feed) in feeds) {
+    for (final multisig in [false, true]) {
+      testWidgets(
+        'a followed swap is pinned on a ${multisig ? 'multisig' : 'regular'} home while the activity $state',
+        (tester) async {
+          final account = makeAccount(1);
+          final settings = settingsFollowing(account, swapOf(account, SwapStatus.processing));
+          if (multisig) {
+            settings
+              ..activeAccount = MultisigDisplayAccount(makeMultisigAccount())
+              ..multisigs = [makeMultisigAccount()];
+          }
+          await pumpHome(
+            tester,
+            settings: settings,
+            auth: TestLocalAuthController(authenticated: true),
+            activity: feed,
+          );
+
+          expect(find.text('Swapping'), findsOneWidget);
+          expect(find.text('Error loading transactions'), state == 'fails' ? findsOneWidget : findsNothing);
+          await tester.tap(find.text('3:07'));
+          await tester.pump();
+          await tester.pump(const Duration(milliseconds: 400));
+          expect(find.byType(SwapProgressScreen), findsOneWidget);
+        },
+      );
+    }
+  }
 
   // The swap being followed belongs to the wallet, not the selected account:
   // it shows and opens from any home, while only an account with a key here
