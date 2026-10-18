@@ -933,10 +933,11 @@ void main() {
       }
     });
 
-    testWidgets('the review refuses another swap while as many as can be followed are running', (tester) async {
-      final oneClick = _OneClick(dryOut: outQuote.amountOut);
-      final running = [
-        for (var i = 0; i < ActiveSwapsNotifier.maxFollowed; i++)
+    /// Settings with [count] swaps out of QTC running, as a restart finds them.
+    FakeSettingsService settingsRunning(int count) => FakeSettingsService(
+      activeAccount: RegularAccount(account),
+      activeSwaps: [
+        for (var i = 0; i < count; i++)
           activeSwap(
             SwapOrder(
               quote: _quote(
@@ -951,20 +952,71 @@ void main() {
               status: SwapStatus.processing,
             ),
           ),
-      ];
-      await tester.pumpApp(
-        ReviewSwapScreen(account: account, quote: outQuote),
-        overrides: overrides(
-          oneClick.service(),
-          settings: FakeSettingsService(activeAccount: RegularAccount(account), activeSwaps: running),
-        ),
-      );
-      await settle(tester);
+      ],
+    );
+
+    Future<void> confirmRefused(WidgetTester tester, _OneClick oneClick) async {
       await tester.tap(find.text(l10n.swapReviewConfirm));
       await settle(tester);
       expect(find.text(l10n.swapTooManyFollowed(ActiveSwapsNotifier.maxFollowed)), findsOneWidget);
       expect(find.byType(SwapProgressScreen), findsNothing);
       expect(oneClick.requests.where((r) => r.url.path == '/v0/deposit/submit'), isEmpty);
+    }
+
+    testWidgets('the review refuses another swap while as many as can be followed are running', (tester) async {
+      final oneClick = _OneClick(dryOut: outQuote.amountOut);
+      await tester.pumpApp(
+        ReviewSwapScreen(account: account, quote: outQuote),
+        overrides: overrides(oneClick.service(), settings: settingsRunning(ActiveSwapsNotifier.maxFollowed)),
+      );
+      await settle(tester);
+      await confirmRefused(tester, oneClick);
+      await tester.pump(const Duration(seconds: 11));
+    });
+
+    testWidgets('a confirmation whose deposit is in flight holds the last slot against another review', (tester) async {
+      final oneClick = _OneClick(dryOut: outQuote.amountOut);
+      final submission = FakeTransactionSubmissionService()..holdTransfer = Completer<void>();
+      final settings = settingsRunning(ActiveSwapsNotifier.maxFollowed - 1);
+      final container = await openReview(
+        tester,
+        overrides(oneClick.service(), submission: submission, settings: settings),
+      );
+      await confirmAndLeave(tester);
+
+      await tester.tap(find.text('open'));
+      await settle(tester);
+      await confirmRefused(tester, oneClick);
+
+      submission.holdTransfer!.complete();
+      await settle(tester);
+      expect(submission.transfers, hasLength(1));
+      expect(container.read(activeSwapsProvider), hasLength(ActiveSwapsNotifier.maxFollowed));
+      expect(settings.activeSwaps, hasLength(ActiveSwapsNotifier.maxFollowed));
+      await tester.pump(const Duration(seconds: 11));
+    });
+
+    testWidgets('a confirmation left before its live quote answers gives the slot back', (tester) async {
+      final oneClick = _OneClick(dryOut: outQuote.amountOut)..holdLive = Completer<void>();
+      final submission = FakeTransactionSubmissionService();
+      final settings = settingsRunning(ActiveSwapsNotifier.maxFollowed - 1);
+      final container = await openReview(
+        tester,
+        overrides(oneClick.service(), submission: submission, settings: settings),
+      );
+      await confirmAndLeave(tester);
+      oneClick.holdLive!.complete();
+      oneClick.holdLive = null;
+      await settle(tester);
+      expect(submission.transfers, isEmpty);
+
+      await tester.tap(find.text('open'));
+      await settle(tester);
+      await tester.tap(find.text(l10n.swapReviewConfirm));
+      await settle(tester);
+      expect(find.byType(SwapProgressScreen), findsOneWidget);
+      expect(submission.transfers, hasLength(1));
+      expect(container.read(activeSwapsProvider), hasLength(ActiveSwapsNotifier.maxFollowed));
       await tester.pump(const Duration(seconds: 11));
     });
 

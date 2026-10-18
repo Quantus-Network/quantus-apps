@@ -54,6 +54,7 @@ class _ReviewSwapScreenState extends ConsumerState<ReviewSwapScreen> {
       context.showErrorToaster(message: l10n.swapTooManyFollowed(ActiveSwapsNotifier.maxFollowed));
       return;
     }
+    final ticket = swaps.ticket();
     final generation = _generation;
     setState(() => _confirming = true);
     try {
@@ -62,7 +63,6 @@ class _ReviewSwapScreenState extends ConsumerState<ReviewSwapScreen> {
       final fee = _sendsDeposit(ref.read(swapPreflightProvider))
           ? ref.read(swapDepositFeeProvider(_feeKey)).requireValue
           : null;
-      final ticket = swaps.ticket();
       final txHash = fee != null ? await _sendDeposit(order, fee, l10n, generation) : null;
       if (fee != null && txHash == null) return;
       // The deposit is out, so the swap is followed even if the screen is gone,
@@ -85,6 +85,7 @@ class _ReviewSwapScreenState extends ConsumerState<ReviewSwapScreen> {
         (route) => route.isFirst,
       );
     } finally {
+      swaps.release(ticket);
       if (mounted) setState(() => _confirming = false);
     }
   }

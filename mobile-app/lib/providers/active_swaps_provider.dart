@@ -52,10 +52,12 @@ class ActiveSwapsNotifier extends Notifier<List<ActiveSwap>> {
     return swaps;
   }
 
-  /// Whether no more swaps can start until one settles.
-  bool get full => state.where((s) => !s.isFinal).length >= maxFollowed;
+  /// Whether no more swaps can start until one settles: as many as can be
+  /// followed are running or have a confirmation under way on a ticket.
+  bool get full => state.where((s) => !s.isFinal).length + _tickets.length >= maxFollowed;
 
-  /// Taken before a deposit goes out: [start] follows a swap on it only
+  /// Taken as a confirmation begins, holding a slot until [start] spends the
+  /// ticket or [release] gives it back: [start] follows a swap on it only
   /// while the ticket stands, and a logout voids every ticket, so a deposit
   /// that lands after the wallet logged out is not followed.
   Object ticket() {
@@ -63,6 +65,9 @@ class ActiveSwapsNotifier extends Notifier<List<ActiveSwap>> {
     _tickets.add(ticket);
     return ticket;
   }
+
+  /// Frees the slot of a [ticket] no swap starts on; one spent is left alone.
+  void release(Object ticket) => _tickets.remove(ticket);
 
   /// Follows [swap], in place of a followed swap with its id; not when
   /// [ticket] has lapsed. Beyond [maxFollowed] the oldest settled swap goes.
