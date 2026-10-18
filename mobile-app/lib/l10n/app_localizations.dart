@@ -3353,7 +3353,7 @@ abstract class AppLocalizations {
   /// Footer under the swap progress bar
   ///
   /// In en, this message translates to:
-  /// **'Usually a few minutes. You can leave the app, we\'ll notify you when it arrives. · via NEAR Intents'**
+  /// **'Usually a few minutes. You can leave the app, the swap carries on. · via NEAR Intents'**
   String get swapProgressFooter;
 
   /// Title of the swap details sheet

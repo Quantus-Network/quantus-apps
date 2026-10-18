@@ -509,7 +509,7 @@
   "swapStepConfirming": "Mengonfirmasi di {network}",
   "swapStepSwapping": "Menukar",
   "swapStepSending": "Mengirim {symbol} ke {recipient}",
-  "swapProgressFooter": "Biasanya beberapa menit. Anda boleh meninggalkan aplikasi, kami akan memberi tahu saat dananya tiba. · via NEAR Intents",
+  "swapProgressFooter": "Biasanya beberapa menit. Anda boleh meninggalkan aplikasi, swap tetap berjalan. · via NEAR Intents",
   "swapDetailsTitle": "Detail Swap",
   "swapDetailsRecipient": "Alamat penerima",
   "swapDetailsAmountSent": "Jumlah dikirim",

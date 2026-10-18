@@ -1801,7 +1801,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get swapProgressFooter =>
-      'Biasanya beberapa menit. Anda boleh meninggalkan aplikasi, kami akan memberi tahu saat dananya tiba. · via NEAR Intents';
+      'Biasanya beberapa menit. Anda boleh meninggalkan aplikasi, swap tetap berjalan. · via NEAR Intents';
 
   @override
   String get swapDetailsTitle => 'Detail Swap';

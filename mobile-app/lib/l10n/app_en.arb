@@ -2633,7 +2633,7 @@
         }
       }
     },
-    "swapProgressFooter": "Usually a few minutes. You can leave the app, we'll notify you when it arrives. · via NEAR Intents",
+    "swapProgressFooter": "Usually a few minutes. You can leave the app, the swap carries on. · via NEAR Intents",
     "@swapProgressFooter": {
       "description": "Footer under the swap progress bar"
     },

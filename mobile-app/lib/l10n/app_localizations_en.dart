@@ -1798,7 +1798,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get swapProgressFooter =>
-      'Usually a few minutes. You can leave the app, we\'ll notify you when it arrives. · via NEAR Intents';
+      'Usually a few minutes. You can leave the app, the swap carries on. · via NEAR Intents';
 
   @override
   String get swapDetailsTitle => 'Swap Details';
