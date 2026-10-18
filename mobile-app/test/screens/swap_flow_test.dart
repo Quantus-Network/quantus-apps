@@ -206,13 +206,12 @@ class _OneClick {
 class _OneClickService extends SwapService {
   final _OneClick oneClick;
 
-  _OneClickService(this.oneClick, {required bool preflight})
+  _OneClickService(this.oneClick, {required super.preflight})
     : super(
         endpoint: 'https://oneclick.test',
         client: MockClient(oneClick.handle),
         managerPublicKey: _managerPublicKey,
         quantusAssetId: preflight ? _preflight.assetId : null,
-        preflight: preflight,
         feeBips: 0,
       );
 
