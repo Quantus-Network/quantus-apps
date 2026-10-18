@@ -37,6 +37,7 @@ class _SwapAddressSheetState extends ConsumerState<_SwapAddressSheet> {
 
   final _controller = TextEditingController();
   bool _save = false;
+  bool _saving = false;
 
   String get _address => _controller.text.trim();
 
@@ -46,11 +47,21 @@ class _SwapAddressSheetState extends ConsumerState<_SwapAddressSheet> {
     super.dispose();
   }
 
+  /// Hands the address back, once it is kept when asked. While it is being
+  /// kept Continue is busy, and a sheet dismissed or covered meanwhile pops
+  /// nothing when the save completes.
   Future<void> _continue() async {
-    final navigator = Navigator.of(context);
     final address = _address;
-    if (_save) await ref.read(swapServiceProvider).saveAddress(widget.token.network, address);
-    navigator.pop(address);
+    if (_save) {
+      setState(() => _saving = true);
+      try {
+        await ref.read(swapServiceProvider).saveAddress(widget.token.network, address);
+      } finally {
+        if (mounted) setState(() => _saving = false);
+      }
+      if (!mounted || ModalRoute.of(context)?.isCurrent != true) return;
+    }
+    Navigator.pop(context, address);
   }
 
   Future<void> _fill(Future<String?> source) async {
@@ -110,7 +121,12 @@ class _SwapAddressSheetState extends ConsumerState<_SwapAddressSheet> {
           const SizedBox(height: 12),
           SettingsCheckbox(checked: _save, label: l10n.swapSaveAddress, onTap: () => setState(() => _save = !_save)),
           const SizedBox(height: 32),
-          QuantusButton.simple(label: l10n.swapContinue, onTap: _continue, isDisabled: _address.isEmpty),
+          QuantusButton.simple(
+            label: l10n.swapContinue,
+            onTap: _continue,
+            isLoading: _saving,
+            isDisabled: _address.isEmpty,
+          ),
           const SizedBox(height: 4),
           QuantusButton.simple(
             label: l10n.commonCancel,

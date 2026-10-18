@@ -119,16 +119,12 @@ class _OneClick {
   Iterable<http.Request> get liveQuotes =>
       requests.where((r) => r.url.path == '/v0/quote' && (jsonDecode(r.body) as Map)['dry'] == false);
 
-  SwapService service({bool preflight = false}) => SwapService(
-    endpoint: 'https://oneclick.test',
-    client: MockClient(_handle),
-    managerPublicKey: _managerPublicKey,
-    quantusAssetId: preflight ? _preflight.assetId : null,
-    preflight: preflight,
-    feeBips: 0,
-  );
+  /// Holds every address save until completed.
+  Completer<void>? holdSave;
 
-  Future<http.Response> _handle(http.Request request) async {
+  SwapService service({bool preflight = false}) => _OneClickService(this, preflight: preflight);
+
+  Future<http.Response> handle(http.Request request) async {
     requests.add(request);
     if (coinGeckoHangs && request.url.host == Uri.parse(AppConstants.coingeckoEndpoint).host) {
       return Completer<http.Response>().future;
@@ -203,6 +199,27 @@ class _OneClick {
       ...response,
       'signature': OneClickQuoteSignature.encodeKey(ed25519.sign(_managerKeyPair.privateKey, message)),
     };
+  }
+}
+
+/// [SwapService] on the stand-in, whose address save waits on [_OneClick.holdSave].
+class _OneClickService extends SwapService {
+  final _OneClick oneClick;
+
+  _OneClickService(this.oneClick, {required bool preflight})
+    : super(
+        endpoint: 'https://oneclick.test',
+        client: MockClient(oneClick.handle),
+        managerPublicKey: _managerPublicKey,
+        quantusAssetId: preflight ? _preflight.assetId : null,
+        preflight: preflight,
+        feeBips: 0,
+      );
+
+  @override
+  Future<void> saveAddress(String network, String address) async {
+    await oneClick.holdSave?.future;
+    await super.saveAddress(network, address);
   }
 }
 
@@ -678,6 +695,53 @@ void main() {
       expect(find.text(l10n.swapUnavailableTitle), findsNothing);
       expect(find.text(l10n.swapDisabledTitle), findsNothing);
       expect(find.text('FROM'), findsOneWidget);
+    });
+  });
+
+  group('address sheet', () {
+    /// Opens the recipient sheet for a swap out with an amount typed, fills
+    /// the address, asks to keep it and taps Continue, which [oneClick] holds.
+    Future<void> continueWithHeldSave(WidgetTester tester, _OneClick oneClick) async {
+      await tester.pumpApp(SwapScreen(account: account), overrides: overrides(oneClick.service()));
+      await settle(tester);
+      await swapOut(tester);
+      await tester.enterText(find.byType(TextField), '10');
+      await tester.pump();
+      await tester.tap(find.text(l10n.swapAddRecipientAddress));
+      await settle(tester);
+      await tester.enterText(find.byType(TextField).last, _external);
+      await tester.pump();
+      await tester.tap(find.text(l10n.swapSaveAddress));
+      await tester.pump();
+      await tester.tap(find.text(l10n.swapContinue));
+      await tester.pump();
+    }
+
+    testWidgets('Continue is busy while the address is kept, and pops the sheet once', (tester) async {
+      final oneClick = _OneClick(dryOut: BigInt.from(24860000))..holdSave = Completer<void>();
+      await continueWithHeldSave(tester, oneClick);
+      expect(find.text(l10n.swapContinue), findsNothing);
+      expect(find.descendant(of: find.byType(BottomSheetContainer), matching: find.byType(Loader)), findsOneWidget);
+
+      oneClick.holdSave!.complete();
+      await settle(tester);
+      expect(find.byType(BottomSheetContainer), findsNothing);
+      expect(find.byType(ReviewSwapScreen), findsOneWidget);
+      expect(find.byType(SwapScreen, skipOffstage: false), findsOneWidget);
+    });
+
+    testWidgets('a sheet cancelled while its address is kept pops nothing when the save completes', (tester) async {
+      final oneClick = _OneClick(dryOut: BigInt.from(24860000))..holdSave = Completer<void>();
+      await continueWithHeldSave(tester, oneClick);
+      await tester.tap(find.text(l10n.commonCancel));
+      await settle(tester);
+      expect(find.byType(BottomSheetContainer), findsNothing);
+
+      oneClick.holdSave!.complete();
+      await settle(tester);
+      expect(find.byType(SwapScreen), findsOneWidget);
+      expect(find.byType(ReviewSwapScreen), findsNothing);
+      expect(find.text(l10n.swapAddRecipientAddress), findsOneWidget);
     });
   });
 
