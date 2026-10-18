@@ -26,11 +26,7 @@ class SwapActivityRows extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final swaps = ref
-        .watch(activeSwapsProvider)
-        .where((s) => s.depositUnderway || s.order.status != SwapStatus.pendingDeposit)
-        .toList()
-        .reversed;
+    final swaps = ref.watch(activeSwapsProvider).where((s) => !s.awaitingDeposit).toList().reversed;
     if (swaps.isEmpty) return const SizedBox.shrink();
     final now = ref.watch(swapClockProvider).value ?? clock.now();
     return Column(

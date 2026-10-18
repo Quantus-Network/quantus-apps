@@ -7,6 +7,7 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/models/combined_transactions_list.dart';
 import 'package:resonance_network_wallet/models/fiat_currency.dart';
 import 'package:resonance_network_wallet/providers/active_account_transactions_provider.dart';
+import 'package:resonance_network_wallet/providers/active_swaps_provider.dart';
 import 'package:resonance_network_wallet/providers/currency_display_provider.dart';
 import 'package:resonance_network_wallet/providers/local_auth_provider.dart';
 import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
@@ -153,14 +154,16 @@ void main() {
     expect(find.byType(SwapScreen), findsNothing);
   });
 
-  testWidgets('a swap whose deposit is still to be sent is not pinned, and the swap button opens the form', (
+  testWidgets('a swap whose deposit by hand was never sent is dropped at launch, and the swap button opens the form', (
     tester,
   ) async {
     final account = makeAccount(1);
     final settings = settingsFollowing(account, swapOf(account, SwapStatus.pendingDeposit, byHand: true));
-    await pumpHome(tester, settings: settings, auth: TestLocalAuthController(authenticated: true));
+    final container = await pumpHome(tester, settings: settings, auth: TestLocalAuthController(authenticated: true));
 
     expect(find.byType(SwapProgressDots), findsNothing);
+    expect(container.read(activeSwapsProvider), isEmpty);
+    expect(settings.activeSwaps, isEmpty);
     await tester.tap(find.text('Swap'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));

@@ -1276,13 +1276,31 @@ void main() {
   });
 
   group('SwapProgressScreen', () {
-    /// Opens the screen on [swap] as kept on the device, with 1Click answering [oneClick].
+    /// Opens the screen on [swap], with 1Click answering [oneClick]: a swap
+    /// kept on the device, as a restart finds it, or one still waiting for its
+    /// deposit, started as the review starts it, since a restart drops those.
     Future<FakeSettingsService> pumpSwap(WidgetTester tester, ActiveSwap swap, {_OneClick? oneClick}) async {
-      final settings = settingsWith(swap);
+      final restored = !swap.awaitingDeposit;
+      final settings = restored ? settingsWith(swap) : FakeSettingsService(activeAccount: RegularAccount(account));
+      final screen = SwapProgressScreen(swapId: swap.id, account: account);
+      var started = false;
       await tester.pumpApp(
-        SwapProgressScreen(swapId: swap.id, account: account),
+        restored
+            ? screen
+            : StatefulBuilder(
+                builder: (context, setState) => started
+                    ? screen
+                    : TextButton(
+                        onPressed: () {
+                          ProviderScope.containerOf(context).read(activeSwapsProvider.notifier).start(swap);
+                          setState(() => started = true);
+                        },
+                        child: const Text('open'),
+                      ),
+              ),
         overrides: overrides((oneClick ?? _OneClick(dryOut: BigInt.one)).service(), settings: settings),
       );
+      if (!restored) await tester.tap(find.text('open'));
       await settle(tester);
       return settings;
     }
@@ -1688,8 +1706,8 @@ void main() {
       expect(find.text(l10n.swapCompleteTitle), findsOneWidget);
     });
 
-    testWidgets('a deposit by hand never sent is dropped at launch once its window has closed', (tester) async {
-      final dead = activeSwap(
+    testWidgets('a deposit by hand never sent is dropped at launch, though its window is still open', (tester) async {
+      final unpaid = activeSwap(
         SwapOrder(
           quote: _quote(
             from: const SwapToken(assetId: 'nep141:btc', symbol: 'BTC', network: 'BTC', decimals: 8, usdPrice: 86000),
@@ -1698,14 +1716,13 @@ void main() {
             amountOut: _unit * BigInt.from(1000),
             refund: 'bc1qrefund',
             recipient: account.accountId,
-            depositAddress: 'bc1qdead',
-            deadline: clock.now().subtract(const Duration(minutes: 1)),
+            depositAddress: 'bc1qunpaid',
           ),
           status: SwapStatus.pendingDeposit,
         ),
       );
       final live = activeSwap(SwapOrder(quote: liveQuote, status: SwapStatus.processing));
-      final settings = FakeSettingsService(activeAccount: RegularAccount(account), activeSwaps: [dead, live]);
+      final settings = FakeSettingsService(activeAccount: RegularAccount(account), activeSwaps: [unpaid, live]);
       await tester.pumpApp(
         SwapProgressScreen(swapId: _deposit, account: account),
         overrides: overrides(_OneClick(dryOut: BigInt.one).service(), settings: settings),

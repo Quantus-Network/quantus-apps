@@ -31,18 +31,18 @@ class ActiveSwapsNotifier extends Notifier<List<ActiveSwap>> {
   Future<void>? _inFlight;
   final _tickets = <Object>{};
 
-  /// The swaps kept on the device, less any whose deposit by hand was never
-  /// sent before its window closed: such a swap is dead and is dropped here.
+  /// The swaps kept on the device, less any still waiting for its deposit by
+  /// hand: the deposit screen that pays it went with the last run, so such a
+  /// swap is dropped here as it is when that screen is left.
   @override
   List<ActiveSwap> build() {
     ref.onDispose(() => _timer?.cancel());
     final settings = ref.watch(settingsServiceProvider);
-    final now = clock.now();
     final swaps = <ActiveSwap>[];
     for (final swap in settings.getActiveSwaps()) {
-      if (swap.depositExpiredUnsent(now)) {
+      if (swap.awaitingDeposit) {
         unawaited(
-          settings.removeActiveSwap(swap.id).catchError((Object e) => quantusPrint('Dead swap drop failed: $e')),
+          settings.removeActiveSwap(swap.id).catchError((Object e) => quantusPrint('Unpaid swap drop failed: $e')),
         );
       } else {
         swaps.add(swap);

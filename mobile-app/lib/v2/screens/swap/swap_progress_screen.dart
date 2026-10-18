@@ -52,7 +52,7 @@ class _SwapProgressScreenState extends ConsumerState<SwapProgressScreen> {
     if (swap == null) throw StateError('No followed swap ${widget.swapId} to show');
     final now = ref.watch(swapClockProvider).value ?? clock.now();
     final order = swap.order;
-    final awaitingDeposit = order.status == SwapStatus.pendingDeposit && !swap.depositUnderway;
+    final awaitingDeposit = swap.awaitingDeposit;
     final expired = awaitingDeposit && now.isAfter(order.quote.deadline);
     return switch (order.status) {
       SwapStatus.success => _SwapComplete(swap: swap),
