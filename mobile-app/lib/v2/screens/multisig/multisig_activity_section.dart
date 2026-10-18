@@ -158,7 +158,7 @@ class MultisigActivitySection extends ConsumerWidget {
             const SizedBox(height: 32),
             Text(l10n.homeActivityTitle, style: text.headingRow.copyWith(color: colors.textContent)),
             const SizedBox(height: 12),
-            SwapActivityRow(isHidden: isHidden),
+            SwapActivityRows(isHidden: isHidden),
             if (recent.isEmpty)
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 16),

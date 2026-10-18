@@ -78,9 +78,9 @@ class _ActivitySectionState extends ConsumerState<ActivitySection> {
         var pendingSendKeyAssigned = false;
 
         final account = widget.activeAccount;
-        final swapRow = SwapActivityRow(starter: account is Account ? account : null, isHidden: widget.isHidden);
+        final swapRows = SwapActivityRows(starter: account is Account ? account : null, isHidden: widget.isHidden);
         if (all.isEmpty) {
-          return Column(children: [const SizedBox(height: 40), _header(l10n), swapRow, _emptyState(l10n)]);
+          return Column(children: [const SizedBox(height: 40), _header(l10n), swapRows, _emptyState(l10n)]);
         }
 
         final isPrivate = isEncryptedAccount(widget.activeAccount);
@@ -90,7 +90,7 @@ class _ActivitySectionState extends ConsumerState<ActivitySection> {
             const SizedBox(height: 40),
             _header(l10n),
             const SizedBox(height: 28),
-            swapRow,
+            swapRows,
             ...recentTransactions.mapIndexed((index, tx) {
               final data = TxItemData.from(tx, widget.activeAccount.accountId, colors, l10n, isPrivate: isPrivate);
               final isLastItem = index == recentTransactions.length - 1;

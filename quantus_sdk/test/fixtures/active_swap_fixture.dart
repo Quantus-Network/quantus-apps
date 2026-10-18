@@ -19,7 +19,7 @@ const qtc = SwapToken(
   isQuantus: true,
 );
 
-SwapQuote quoteOutOfQtc({required DateTime deadline}) => SwapQuote(
+SwapQuote quoteOutOfQtc({required DateTime deadline, String depositAddress = 'qzdeposit'}) => SwapQuote(
   fromToken: qtc,
   toToken: usdcEth,
   swapType: SwapType.exactOutput,
@@ -36,7 +36,7 @@ SwapQuote quoteOutOfQtc({required DateTime deadline}) => SwapQuote(
   timeEstimate: const Duration(seconds: 90),
   correlationId: 'corr',
   signature: 'ed25519:sig',
-  depositAddress: 'qzdeposit',
+  depositAddress: depositAddress,
   depositMemo: '4183920',
 );
 
@@ -47,9 +47,10 @@ ActiveSwap activeSwapIn(
   required DateTime startedAt,
   required DateTime deadline,
   bool byHand = false,
+  String depositAddress = 'qzdeposit',
 }) => ActiveSwap(
   order: SwapOrder(
-    quote: quoteOutOfQtc(deadline: deadline),
+    quote: quoteOutOfQtc(deadline: deadline, depositAddress: depositAddress),
     status: status,
     amountOut: BigInt.from(24900000),
     refundedAmount: BigInt.one,

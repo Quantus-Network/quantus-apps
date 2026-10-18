@@ -21,9 +21,9 @@ class FakeSettingsService extends Fake implements SettingsService {
   DisplayAccount? activeAccount;
   List<MultisigAccount> multisigs;
   bool hasWallet = true;
-  ActiveSwap? activeSwap;
+  List<ActiveSwap> activeSwaps;
 
-  FakeSettingsService({this.activeAccount, this.multisigs = const [], this.activeSwap});
+  FakeSettingsService({this.activeAccount, this.multisigs = const [], this.activeSwaps = const []});
 
   @override
   Future<bool> getHasWallet() async => hasWallet;
@@ -59,13 +59,22 @@ class FakeSettingsService extends Fake implements SettingsService {
   String? getString(String key) => null;
 
   @override
-  ActiveSwap? getActiveSwap() => activeSwap;
+  List<ActiveSwap> getActiveSwaps() => activeSwaps;
 
   @override
-  Future<void> setActiveSwap(ActiveSwap swap) async => activeSwap = swap;
+  Future<void> saveActiveSwap(ActiveSwap swap) async {
+    final known = activeSwaps.any((s) => s.id == swap.id);
+    activeSwaps = known ? [for (final s in activeSwaps) s.id == swap.id ? swap : s] : [...activeSwaps, swap];
+  }
 
   @override
-  Future<void> clearActiveSwap() async => activeSwap = null;
+  Future<void> removeActiveSwap(String id) async => activeSwaps = [
+    for (final s in activeSwaps)
+      if (s.id != id) s,
+  ];
+
+  @override
+  Future<void> clearActiveSwaps() async => activeSwaps = const [];
 }
 
 /// The platform auth plugin without a platform: answers [authenticateResult],

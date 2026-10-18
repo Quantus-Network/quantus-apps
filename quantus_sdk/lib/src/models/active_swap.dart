@@ -2,8 +2,9 @@ import 'package:quantus_sdk/src/models/swap_order.dart';
 import 'package:quantus_sdk/src/models/swap_quote.dart';
 import 'package:quantus_sdk/src/models/swap_token.dart';
 
-/// The swap the app is following: its live order from the moment it is
-/// confirmed until the user puts it away. At most one at a time.
+/// A swap the app is following: its live order from the moment it is
+/// confirmed until the user puts it away. Several can be followed at once,
+/// told apart by [id].
 class ActiveSwap {
   final SwapOrder order;
   final String accountId;
@@ -45,11 +46,23 @@ class ActiveSwap {
     this.simulated = false,
   });
 
+  /// What tells the swap apart: its deposit address, with the memo where
+  /// the chain needs one. 1Click never hands the same address out twice.
+  String get id {
+    final memo = order.quote.depositMemo;
+    return memo == null ? order.depositAddress : '${order.depositAddress}#$memo';
+  }
+
   bool get isFinal => order.status.isFinal;
 
   /// Whether the deposit is on its way to 1Click: sent by the app, or sent
   /// by hand and marked so.
   bool get depositUnderway => !depositByHand || depositSent;
+
+  /// Whether a deposit by hand was never sent and its window has closed, so
+  /// nothing will come of the swap.
+  bool depositExpiredUnsent(DateTime now) =>
+      order.status == SwapStatus.pendingDeposit && !depositUnderway && now.isAfter(order.quote.deadline);
 
   /// Whether the swap is with 1Click and expected to settle: its deposit was
   /// seen there or is on its way, and it is neither settled nor overdue.

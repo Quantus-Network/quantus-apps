@@ -78,6 +78,7 @@ void main() {
     SwapStatus status, {
     Duration age = const Duration(minutes: 3, seconds: 7),
     bool byHand = false,
+    String depositAddress = 'qzdeposit',
   }) {
     const usdc = SwapToken(assetId: 'nep141:usdc.omft.near', symbol: 'USDC', network: 'ETH', decimals: 6, usdPrice: 1);
     const qtc = SwapToken(
@@ -107,7 +108,7 @@ void main() {
           timeEstimate: const Duration(minutes: 1),
           correlationId: 'c',
           signature: 's',
-          depositAddress: 'qzdeposit',
+          depositAddress: depositAddress,
         ),
         status: status,
       ),
@@ -121,7 +122,7 @@ void main() {
   }
 
   FakeSettingsService settingsFollowing(Account account, ActiveSwap swap) =>
-      FakeSettingsService(activeAccount: RegularAccount(account), activeSwap: swap);
+      FakeSettingsService(activeAccount: RegularAccount(account), activeSwaps: [swap]);
 
   Color dotColor(WidgetTester tester, int index) {
     final dots = find.descendant(of: find.byType(SwapProgressDots), matching: find.byType(Container));
@@ -136,7 +137,7 @@ void main() {
     expect(find.text('1 QTC → 0.1 USDC'), findsOneWidget);
     expect(find.text('Swapping'), findsOneWidget);
     expect(find.text('3:07'), findsOneWidget);
-    final colors = tester.element(find.byType(SwapActivityRow)).colorsV3;
+    final colors = tester.element(find.byType(SwapActivityRows)).colorsV3;
     expect(
       [for (var i = 0; i < swapStepCount; i++) dotColor(tester, i)],
       [colors.semanticSage, colors.semanticSage, colors.semanticSage, colors.bgSurface2],
@@ -152,24 +153,56 @@ void main() {
     expect(find.byType(SwapScreen), findsNothing);
   });
 
-  for (final (what, status, byHand, title) in [
-    ('a swap whose deposit is still to be sent', SwapStatus.pendingDeposit, true, 'Send Your Deposit'),
-    ('a settled swap', SwapStatus.refunded, false, 'Swap Failed'),
-  ]) {
-    testWidgets('$what is not pinned; the swap button opens it, even where swaps are off', (tester) async {
-      final account = makeAccount(1);
-      final settings = settingsFollowing(account, swapOf(account, status, byHand: byHand));
-      await pumpHome(tester, settings: settings, auth: TestLocalAuthController(authenticated: true), enableSwap: false);
+  testWidgets('a swap whose deposit is still to be sent is not pinned, and the swap button opens the form', (
+    tester,
+  ) async {
+    final account = makeAccount(1);
+    final settings = settingsFollowing(account, swapOf(account, SwapStatus.pendingDeposit, byHand: true));
+    await pumpHome(tester, settings: settings, auth: TestLocalAuthController(authenticated: true));
 
-      expect(find.byType(SwapProgressDots), findsNothing);
-      expect(find.text('3:07'), findsNothing);
-      await tester.tap(find.text('Swap'));
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 400));
-      expect(find.byType(SwapProgressScreen), findsOneWidget);
-      expect(find.text(title), findsOneWidget);
-    });
-  }
+    expect(find.byType(SwapProgressDots), findsNothing);
+    await tester.tap(find.text('Swap'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.byType(SwapScreen), findsOneWidget);
+  });
+
+  testWidgets('a settled swap stays pinned until it is opened', (tester) async {
+    final account = makeAccount(1);
+    final settings = settingsFollowing(account, swapOf(account, SwapStatus.refunded));
+    await pumpHome(tester, settings: settings, auth: TestLocalAuthController(authenticated: true));
+
+    expect(find.text('Swap Failed'), findsOneWidget);
+    expect(find.text('3:07'), findsOneWidget);
+    expect(dotColor(tester, 2), tester.element(find.byType(SwapActivityRows)).colorsV3.semanticEmber);
+
+    await tester.tap(find.text('3:07'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.byType(SwapProgressScreen), findsOneWidget);
+    await tester.tap(find.byType(AppBackButton));
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+    expect(find.byType(SwapProgressDots), findsNothing);
+  });
+
+  testWidgets('every followed swap is pinned, newest first', (tester) async {
+    final account = makeAccount(1);
+    final settings = FakeSettingsService(
+      activeAccount: RegularAccount(account),
+      activeSwaps: [
+        swapOf(account, SwapStatus.processing),
+        swapOf(account, SwapStatus.knownDepositTx, depositAddress: 'qzlater'),
+      ],
+    );
+    await pumpHome(tester, settings: settings, auth: TestLocalAuthController(authenticated: true));
+
+    expect(find.byType(SwapProgressDots), findsNWidgets(2));
+    expect(
+      tester.getTopLeft(find.text('Confirming on Quantus')).dy,
+      lessThan(tester.getTopLeft(find.text('Swapping')).dy),
+    );
+  });
 
   testWidgets('a swap whose hand deposit 1Click has seen is pinned, on a multisig home too', (tester) async {
     final account = makeAccount(1);
@@ -210,10 +243,10 @@ void main() {
 
       expect(find.text('Send'), findsNothing);
       expect(find.text('Propose'), kind == 'multisig' ? findsOneWidget : findsNothing);
-      expect(find.byType(SwapProgressDots), findsNothing);
-      expect(find.text('Swap'), findsOneWidget);
+      expect(find.text('Swap Failed'), findsOneWidget);
+      expect(find.text('Swap'), findsNothing);
 
-      await tester.tap(find.text('Swap'));
+      await tester.tap(find.text('3:07'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 400));
       expect(find.byType(SwapProgressScreen), findsOneWidget);
@@ -226,6 +259,7 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(seconds: 1));
       expect(find.byType(SwapProgressScreen), findsNothing);
+      expect(find.byType(SwapProgressDots), findsNothing);
     });
   }
 

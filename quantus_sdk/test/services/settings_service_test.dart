@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
@@ -290,17 +292,47 @@ void main() {
       expect(settingsService.pendingAccountScan(1), isNull);
     });
 
-    test('active swap is set, read back and cleared', () async {
-      expect(settingsService.getActiveSwap(), isNull);
+    test('followed swaps are kept by id, updated in place, removed and cleared', () async {
+      expect(settingsService.getActiveSwaps(), isEmpty);
       final now = DateTime.utc(2026, 10, 15, 12);
-      await settingsService.setActiveSwap(
-        activeSwapIn(SwapStatus.processing, startedAt: now, deadline: now.add(const Duration(minutes: 20))),
+      final deadline = now.add(const Duration(minutes: 20));
+      final first = activeSwapIn(SwapStatus.processing, startedAt: now, deadline: deadline);
+      final second = activeSwapIn(
+        SwapStatus.pendingDeposit,
+        startedAt: now,
+        deadline: deadline,
+        depositAddress: 'qzother',
       );
-      final kept = settingsService.getActiveSwap()!;
-      expect(kept.order.status, SwapStatus.processing);
-      expect(kept.startedAt.isAtSameMomentAs(now), isTrue);
-      await settingsService.clearActiveSwap();
-      expect(settingsService.getActiveSwap(), isNull);
+      await settingsService.saveActiveSwap(first);
+      await settingsService.saveActiveSwap(second);
+      expect(settingsService.getActiveSwaps().map((s) => s.id), ['qzdeposit#4183920', 'qzother#4183920']);
+
+      await settingsService.saveActiveSwap(
+        first.withOrder(
+          SwapOrder(quote: first.order.quote, status: SwapStatus.success),
+          now: now,
+        ),
+      );
+      final kept = settingsService.getActiveSwaps();
+      expect(kept.map((s) => s.order.status), [SwapStatus.success, SwapStatus.pendingDeposit]);
+      expect(kept.first.startedAt.isAtSameMomentAs(now), isTrue);
+
+      await settingsService.removeActiveSwap(first.id);
+      expect(settingsService.getActiveSwaps().map((s) => s.id), ['qzother#4183920']);
+      await settingsService.clearActiveSwaps();
+      expect(settingsService.getActiveSwaps(), isEmpty);
+    });
+
+    test('the swap an earlier version kept in its own slot is moved into the list', () async {
+      final now = DateTime.utc(2026, 10, 15, 12);
+      final swap = activeSwapIn(SwapStatus.processing, startedAt: now, deadline: now.add(const Duration(minutes: 20)));
+      SharedPreferences.setMockInitialValues({'active_swap_v1': jsonEncode(swap.toJson())});
+      SettingsService().resetForTest();
+      final migrated = SettingsService();
+      await migrated.initialize();
+
+      expect(migrated.getActiveSwaps().map((s) => s.id), [swap.id]);
+      expect((await SharedPreferences.getInstance()).getString('active_swap_v1'), isNull);
     });
   });
 }

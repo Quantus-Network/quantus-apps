@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
-import 'package:resonance_network_wallet/providers/active_swap_provider.dart';
+import 'package:resonance_network_wallet/providers/active_swaps_provider.dart';
 import 'package:resonance_network_wallet/providers/currency_display_provider.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/mining_rewards_provider.dart';
@@ -38,7 +38,7 @@ class LogoutService {
 
     // Before the wipe: a status answer still in flight must not write the
     // old wallet's swap back, and nothing of it may reach the next session.
-    await _ref.read(activeSwapProvider.notifier).clear();
+    await _ref.read(activeSwapsProvider.notifier).clearAll();
     await SubstrateService().logout();
     _stopPollers();
     _ref.read(pendingTransactionsProvider.notifier).clear();
