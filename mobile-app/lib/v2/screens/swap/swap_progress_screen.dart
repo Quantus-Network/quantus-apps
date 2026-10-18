@@ -25,8 +25,9 @@ import 'package:resonance_network_wallet/v2/screens/swap/swap_summary.dart';
 /// in preflight, any swap) waits for its deposit, then progress, and finally
 /// the completed or failed swap. Leaving by Done or Start new, or a failed
 /// swap by going back, puts the swap away, so the next tap on Swap starts a
-/// fresh one; a running swap left by going back is still followed. Its
-/// details sheet, or the notice once it is overdue, offers to stop tracking.
+/// fresh one, as does leaving the deposit screen before the deposit is sent;
+/// a running swap left by going back is still followed. Its details sheet,
+/// or the notice once it is overdue, offers to stop tracking.
 class SwapProgressScreen extends ConsumerStatefulWidget {
   /// The account a new swap would start from; none when the selected
   /// account cannot swap.
@@ -446,7 +447,9 @@ class _SwapFailed extends ConsumerWidget {
 
 /// Where to send the external token for a swap into QTC, or the stand-in for
 /// a swap out of it in preflight. "I've sent it" moves the swap on to its
-/// progress, where 1Click's own sighting of the deposit is awaited.
+/// progress, where 1Click's own sighting of the deposit is awaited. Leaving
+/// before that drops the swap: funds sent to the address later are still
+/// swapped by 1Click and arrive on their own.
 class _SwapDeposit extends ConsumerWidget {
   static const _addressWidth = 186.0;
   static const _networkLogoSize = 48.0;
@@ -469,117 +472,122 @@ class _SwapDeposit extends ConsumerWidget {
     final deadline = TimeOfDay.fromDateTime(quote.deadline.toLocal()).format(context);
     final corner = Radius.circular(context.radiusV3.md);
 
-    return ScaffoldBase(
-      appBar: V2AppBar(title: l10n.swapDepositTitle),
-      mainContent: SingleChildScrollView(
-        child: Column(
-          children: [
-            const SizedBox(height: 40),
-            QuantusQr(
-              accountId: address,
-              borderRadius: BorderRadius.vertical(top: corner),
-              logo: TokenIcon.network(token: from, size: _networkLogoSize),
-            ),
-            Container(
-              width: QuantusQr.size,
-              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 20),
-              decoration: BoxDecoration(
-                color: colors.bgSurface,
-                border: Border.all(color: colors.borderHairline),
-                borderRadius: BorderRadius.vertical(bottom: corner),
+    return PopScope(
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) ref.read(activeSwapProvider.notifier).clear();
+      },
+      child: ScaffoldBase(
+        appBar: V2AppBar(title: l10n.swapDepositTitle),
+        mainContent: SingleChildScrollView(
+          child: Column(
+            children: [
+              const SizedBox(height: 40),
+              QuantusQr(
+                accountId: address,
+                borderRadius: BorderRadius.vertical(top: corner),
+                logo: TokenIcon.network(token: from, size: _networkLogoSize),
               ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  TokenIcon(token: from, size: 28),
-                  const SizedBox(width: 8),
-                  Flexible(
-                    child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      child: Text(
-                        formatSwapAmount(l10n, fmt, quote.amountIn, from, exact: true),
-                        style: text.amountHero.copyWith(color: colors.textContent),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 32),
-            Text.rich(
-              _emphasised(
-                l10n.swapDepositOnly(from.symbol, from.networkName),
-                [from.symbol, from.networkName],
-                style: text.body.copyWith(color: colors.semanticSand),
-                emphasis: text.bodyEmphasis.copyWith(color: colors.textContent),
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 32),
-            Text(
-              l10n.swapDetailsDepositAddress.toUpperCase(),
-              style: text.labelMonogram.copyWith(color: colors.textMuted),
-            ),
-            const SizedBox(height: 8),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                SizedBox(
-                  width: _addressWidth,
-                  child: Text(
-                    address,
-                    textAlign: TextAlign.center,
-                    style: text.bodyEmphasis.copyWith(color: colors.textContent),
-                  ),
+              Container(
+                width: QuantusQr.size,
+                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 20),
+                decoration: BoxDecoration(
+                  color: colors.bgSurface,
+                  border: Border.all(color: colors.borderHairline),
+                  borderRadius: BorderRadius.vertical(bottom: corner),
                 ),
-                const SizedBox(width: 8),
-                CopyIconButton(text: address, copiedMessage: l10n.swapDepositAddressCopied, size: 32, round: true),
-              ],
-            ),
-            if (memo != null) ...[
-              const SizedBox(height: 16),
-              GestureDetector(
-                onTap: () => context.copyTextWithToaster(memo, message: l10n.swapDepositMemoCopied),
-                behavior: HitTestBehavior.opaque,
-                child: Column(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text(
-                      l10n.swapDepositMemo.toUpperCase(),
-                      style: text.labelMonogram.copyWith(color: colors.textMuted),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      memo,
-                      style: text.dataAddressLarge.copyWith(color: colors.textContent),
-                      textAlign: TextAlign.center,
+                    TokenIcon(token: from, size: 28),
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          formatSwapAmount(l10n, fmt, quote.amountIn, from, exact: true),
+                          style: text.amountHero.copyWith(color: colors.textContent),
+                        ),
+                      ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 12),
-              QuantusBanner(tone: BannerTone.sand, message: l10n.swapDepositMemoNotice),
+              const SizedBox(height: 32),
+              Text.rich(
+                _emphasised(
+                  l10n.swapDepositOnly(from.symbol, from.networkName),
+                  [from.symbol, from.networkName],
+                  style: text.body.copyWith(color: colors.semanticSand),
+                  emphasis: text.bodyEmphasis.copyWith(color: colors.textContent),
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 32),
+              Text(
+                l10n.swapDetailsDepositAddress.toUpperCase(),
+                style: text.labelMonogram.copyWith(color: colors.textMuted),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  SizedBox(
+                    width: _addressWidth,
+                    child: Text(
+                      address,
+                      textAlign: TextAlign.center,
+                      style: text.bodyEmphasis.copyWith(color: colors.textContent),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  CopyIconButton(text: address, copiedMessage: l10n.swapDepositAddressCopied, size: 32, round: true),
+                ],
+              ),
+              if (memo != null) ...[
+                const SizedBox(height: 16),
+                GestureDetector(
+                  onTap: () => context.copyTextWithToaster(memo, message: l10n.swapDepositMemoCopied),
+                  behavior: HitTestBehavior.opaque,
+                  child: Column(
+                    children: [
+                      Text(
+                        l10n.swapDepositMemo.toUpperCase(),
+                        style: text.labelMonogram.copyWith(color: colors.textMuted),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        memo,
+                        style: text.dataAddressLarge.copyWith(color: colors.textContent),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+                QuantusBanner(tone: BannerTone.sand, message: l10n.swapDepositMemoNotice),
+              ],
+              if (swap.pollError case final error?) ...[const SizedBox(height: 16), _PollErrorNotice(error: error)],
+              const SizedBox(height: 24),
             ],
-            if (swap.pollError case final error?) ...[const SizedBox(height: 16), _PollErrorNotice(error: error)],
-            const SizedBox(height: 24),
-          ],
+          ),
         ),
-      ),
-      bottomContent: ScaffoldBaseBottomContent(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              l10n.swapDepositDeadline(deadline),
-              textAlign: TextAlign.center,
-              style: text.caption.copyWith(color: colors.accentFlare),
-            ),
-            const SizedBox(height: 16),
-            QuantusButton.simple(
-              label: l10n.swapDepositSent,
-              onTap: () => ref.read(activeSwapProvider.notifier).markDepositSent(),
-            ),
-          ],
+        bottomContent: ScaffoldBaseBottomContent(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                l10n.swapDepositDeadline(deadline),
+                textAlign: TextAlign.center,
+                style: text.caption.copyWith(color: colors.accentFlare),
+              ),
+              const SizedBox(height: 16),
+              QuantusButton.simple(
+                label: l10n.swapDepositSent,
+                onTap: () => ref.read(activeSwapProvider.notifier).markDepositSent(),
+              ),
+            ],
+          ),
         ),
       ),
     );

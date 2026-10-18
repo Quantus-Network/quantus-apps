@@ -1754,6 +1754,24 @@ void main() {
       expect(settings.getActiveSwap()!.depositSent, isTrue);
     });
 
+    testWidgets('leaving the deposit screen before the deposit is sent puts the swap away', (tester) async {
+      final inQuote = _quote(
+        from: const SwapToken(assetId: 'nep141:btc', symbol: 'BTC', network: 'BTC', decimals: 8, usdPrice: 86000),
+        to: _qtc,
+        amountIn: BigInt.from(12345678),
+        amountOut: _unit * BigInt.from(1000),
+        refund: 'bc1qrefund',
+        recipient: account.accountId,
+        depositAddress: 'bc1qdeposit',
+      );
+      final settings = await pumpSwap(tester, activeSwap(SwapOrder(quote: inQuote, status: SwapStatus.pendingDeposit)));
+      final container = containerOf(tester);
+      await tester.tap(find.byType(AppBackButton));
+      await settle(tester);
+      expect(container.read(activeSwapProvider), isNull);
+      expect(settings.activeSwap, isNull);
+    });
+
     testWidgets('shows the memo a deposit must carry', (tester) async {
       final inQuote = _quote(
         from: const SwapToken(assetId: 'nep245:xlm', symbol: 'XLM', network: 'STELLAR', decimals: 7, usdPrice: 0.2),
