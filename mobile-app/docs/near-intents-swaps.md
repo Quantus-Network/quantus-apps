@@ -198,14 +198,24 @@ Amounts: 1Click answers `Failed to get quote` when no solver bids, which it does
 | --- | --- | --- |
 | `SwapScreen` | `mobile-app/lib/v2/screens/swap/swap_screen.dart` | Tokens on open. One form for both directions; the arrows flip it. Swapping out, the paying side shows the account's balance with a Max that types the most it can put in: the balance less the deposit's fee and the existential deposit (`swapMaxIn`), which is also what the form and the review hold the amount to. "Swap disabled" in place of the form until QTC is listed with a price; "Swap unavailable" with a retry when 1Click cannot be reached. |
 | Address sheet | `mobile-app/lib/v2/screens/swap/swap_address_sheet.dart` | Recipient (out) or refund (in) address, kept on the form; the form quotes once it has both an amount and the address. Saved addresses are per network. |
-| `ReviewSwapScreen` | `mobile-app/lib/v2/screens/swap/review_swap_screen.dart` | Live quote on Confirm, checked against the reviewed minimum. Swapping out, it also signs and sends the deposit and calls `/v0/deposit/submit`. A deposit that lands after the review was left is still followed, unless the wallet logged out or started another swap meanwhile (`ActiveSwapNotifier.ticket`). |
-| `SwapProgressScreen` | `mobile-app/lib/v2/screens/swap/swap_progress_screen.dart` | The one swap kept on the device, polled every 5 s through `activeSwapProvider`: the deposit address while a swap in waits, then progress steps, complete, or failed and refunded. |
+| `ReviewSwapScreen` | `mobile-app/lib/v2/screens/swap/review_swap_screen.dart` | Live quote on Confirm, checked against the reviewed minimum. Swapping out, it also signs and sends the deposit and calls `/v0/deposit/submit`. A deposit that lands after the review was left is still followed, unless the wallet logged out meanwhile (`ActiveSwapsNotifier.ticket`). |
+| `SwapProgressScreen` | `mobile-app/lib/v2/screens/swap/swap_progress_screen.dart` | One of the swaps kept on the device, by its deposit address, all polled in turn every 5 s through `activeSwapsProvider`: the deposit address while a swap in waits, then progress steps, complete, or failed and refunded. |
+| `SwapActivityRows` | `mobile-app/lib/v2/screens/swap/swap_activity_row.dart` | One row per followed swap, pinned above the home activity, newest first: the amounts, the step, the dots and the clock. A settled swap keeps its row until it is opened. A swap whose deposit is still to be sent has none. |
+| `ActiveSwapsNotifier` | `mobile-app/lib/providers/active_swaps_provider.dart` | The followed swaps, kept by `SettingsService` as a list keyed by deposit address and polled in one loop; deposit tickets that only a logout voids; at most ten at once. |
 | `SwapService` | `quantus_sdk/lib/src/services/swap_service.dart` | The HTTP client. `SwapApiException` carries the server message. |
 | `SwapToken`, `SwapQuote`, `SwapOrder` | `quantus_sdk/lib/src/models/swap_*.dart` | Asset ids and BigInt base-unit amounts. |
 | `SwapPreflight` | `mobile-app/lib/models/swap_preflight.dart` | The stand-in for QTC from the preflight dart-defines, null in real builds. |
 | Endpoints | `quantus_sdk/lib/src/constants/app_constants.dart` | `oneClickEndpoint`. |
 
 Tests: `quantus_sdk/test/services/swap_service_test.dart` covers the request shape, response parsing, every status, deposit submission, error handling, and signature checks against a mock HTTP client that signs its responses; the 1Click SDK's staging fixtures are verified byte for byte against its staging key. `mobile-app/test/screens/swap_flow_test.dart` drives the form, the swap-out confirmation, the price-moved re-confirmation and the outcome screens, plus the preflight stand-in: the tester address on QTC's side in both directions, and the deposit screen in place of the transfer for a swap out.
+
+## Following several swaps
+
+The wallet follows any number of swaps at once, up to ten. Each is an `ActiveSwap` told apart by its deposit address, with the memo appended where the chain needs one; 1Click never hands the same address out twice. `SettingsService` keeps them as a list under `active_swaps_v1`, in order of starting; the one swap an earlier version kept under `active_swap_v1` is moved into the list on the first launch after the update.
+
+`ActiveSwapsNotifier` holds the list. One timer polls every swap that is neither settled nor simulated, in turn, every 5 s, and merges each answer into that swap as it is when the answer arrives, so "I've Sent It" survives a poll in flight and a swap put away meanwhile is left alone. A deposit ticket is taken before a deposit goes out and voided only by a logout, so a deposit that lands after the review was left is still followed, while starting or dismissing another swap no longer affects it. `swapClockProvider` ticks once a second while any swap runs; rows and screens take their elapsed time from it.
+
+On home, the Swap button always opens the form, and `SwapActivityRows` pins the followed swaps above the activity: running and overdue ones with their step, settled ones as "Swap Complete" or "Swap Failed" until they are opened and put away by Done or back. A swap still waiting for its deposit to be sent is not pinned; leaving its deposit screen drops it, since funds sent to that address later are still swapped by 1Click and arrive on their own. The review refuses an eleventh running swap. The debug harness seeds simulated swaps with deposit addresses of their own, so several can be walked at once, and clears them all.
 
 ## Blockers
 
@@ -219,7 +229,7 @@ Tests: `quantus_sdk/test/services/swap_service_test.dart` covers the request sha
 
    Until then the swap screen says "Swap disabled" and nothing more, so the swap button can ship enabled and does nothing it should not. Swap also stays behind the `enableSwap` remote config flag until swaps have been tested against the live listing.
 2. **No partner key**, so every quote carries the extra 25 basis points.
-3. **Orders are not persisted.** If the progress screen is closed, the app has no record of the swap. A swap in's deposit address stays in the user's other wallet, a swap out's deposit shows as an ordinary transfer in activity, and 1Click keeps processing both.
+3. **Swaps are known only to this device.** The followed swaps are kept on the device and 1Click has no listing per account, so a swap put away, or one started elsewhere, cannot be shown again; a swap out's deposit shows as an ordinary transfer in the activity.
 4. The home swap button follows the `enableSwap` remote config flag and the geo gate (see below), and is enabled only for transparent accounts that sign in the app.
 5. Only `EXACT_INPUT` with origin-chain deposits and destination-chain payout. Signed-intent execution would need the wallet to sign NEP-413 or similar payloads.
-6. Slippage is picked from four presets (0.5, 1, 2, 3%); there is no custom value, and the pick is not persisted between launches.
+6. Slippage is picked from three presets (0.5, 1, 2%) or typed, up to 99%; the pick is not persisted between launches.
