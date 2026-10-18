@@ -59,6 +59,11 @@ class ActiveSwap {
   /// by hand and marked so.
   bool get depositUnderway => !depositByHand || depositSent;
 
+  /// Whether a deposit by hand was never sent and its window has closed, so
+  /// nothing will come of the swap.
+  bool depositExpiredUnsent(DateTime now) =>
+      order.status == SwapStatus.pendingDeposit && !depositUnderway && now.isAfter(order.quote.deadline);
+
   /// Whether the swap is with 1Click and expected to settle: its deposit was
   /// seen there or is on its way, and it is neither settled nor overdue.
   bool inProgressAt(DateTime now) =>

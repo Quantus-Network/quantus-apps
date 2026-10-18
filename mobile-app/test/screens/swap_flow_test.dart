@@ -1688,6 +1688,33 @@ void main() {
       expect(find.text(l10n.swapCompleteTitle), findsOneWidget);
     });
 
+    testWidgets('a deposit by hand never sent is dropped at launch once its window has closed', (tester) async {
+      final dead = activeSwap(
+        SwapOrder(
+          quote: _quote(
+            from: const SwapToken(assetId: 'nep141:btc', symbol: 'BTC', network: 'BTC', decimals: 8, usdPrice: 86000),
+            to: _qtc,
+            amountIn: BigInt.from(12345678),
+            amountOut: _unit * BigInt.from(1000),
+            refund: 'bc1qrefund',
+            recipient: account.accountId,
+            depositAddress: 'bc1qdead',
+            deadline: clock.now().subtract(const Duration(minutes: 1)),
+          ),
+          status: SwapStatus.pendingDeposit,
+        ),
+      );
+      final live = activeSwap(SwapOrder(quote: liveQuote, status: SwapStatus.processing));
+      final settings = FakeSettingsService(activeAccount: RegularAccount(account), activeSwaps: [dead, live]);
+      await tester.pumpApp(
+        SwapProgressScreen(swapId: _deposit, account: account),
+        overrides: overrides(_OneClick(dryOut: BigInt.one).service(), settings: settings),
+      );
+      await settle(tester);
+      expect(containerOf(tester).read(activeSwapsProvider).map((s) => s.id), [_deposit]);
+      expect(settings.activeSwaps.map((s) => s.id), [_deposit]);
+    });
+
     testWidgets('leaving the deposit screen before the deposit is sent drops the swap', (tester) async {
       final inQuote = _quote(
         from: const SwapToken(assetId: 'nep141:btc', symbol: 'BTC', network: 'BTC', decimals: 8, usdPrice: 86000),
