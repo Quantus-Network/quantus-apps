@@ -100,6 +100,14 @@ class EncryptedAccountService {
   /// encrypted work ([disposeAll]) before session state is wiped.
   static final Set<EncryptedAccountService> _live = {};
 
+  /// Addresses derived so far on each branch, by index. Addresses are public
+  /// (they are the `to_id` of on-chain transfers) and deterministic for this
+  /// wallet, so unlike key pairs they may be kept for the session: a load
+  /// derives each address once and [ownsAddress] / [discardCachedState] then
+  /// cost nothing. Holds no secret (M11).
+  final Map<int, String> _externalAddresses = {};
+  final Map<int, String> _changeAddresses = {};
+
   bool _disposed = false;
 
   EncryptedAccountService({
@@ -169,6 +177,30 @@ class EncryptedAccountService {
 
   Future<WormholeKeyPair> keyPairAt(int index) async => _deriveKeyPair(await _mnemonic(), index);
 
+  /// Addresses at [indices] on one branch, in order. Indices not yet in the
+  /// address book are derived together (one seed stretch) and remembered.
+  Future<List<String>> _addressesAt(String mnemonic, List<int> indices, {required bool isChange}) async {
+    final book = isChange ? _changeAddresses : _externalAddresses;
+    final missing = [
+      for (final i in indices)
+        if (!book.containsKey(i)) i,
+    ];
+    if (missing.isNotEmpty) {
+      final derived = await _hdWalletService.deriveWormholeAddresses(
+        mnemonic: mnemonic,
+        indices: missing,
+        isChange: isChange,
+      );
+      for (var k = 0; k < missing.length; k++) {
+        book[missing[k]] = derived[k];
+      }
+    }
+    return [for (final i in indices) book[i]!];
+  }
+
+  Future<List<String>> _addressesUpTo(String mnemonic, int lastIndex, {required bool isChange}) =>
+      _addressesAt(mnemonic, [for (var i = 0; i <= lastIndex; i++) i], isChange: isChange);
+
   /// The address to show on the Receive screen: next unused index from the
   /// last persisted state (cheap — no network). [load] keeps it current.
   Future<WormholeKeyPair> receiveKeyPair() async => keyPairAt((await _readStateLocked()).nextIndex);
@@ -180,13 +212,10 @@ class EncryptedAccountService {
   Future<bool> ownsAddress(String address) async {
     final state = await _readStateLocked();
     final mnemonic = await _mnemonic();
-    for (int i = 0; i <= state.nextIndex; i++) {
-      if (_deriveKeyPair(mnemonic, i).address == address) return true;
-    }
-    for (int i = 0; i <= state.nextChangeIndex; i++) {
-      if (_deriveKeyPair(mnemonic, i, isChange: true).address == address) return true;
-    }
-    return false;
+    final external = await _addressesUpTo(mnemonic, state.nextIndex, isChange: false);
+    if (external.contains(address)) return true;
+    final change = await _addressesUpTo(mnemonic, state.nextChangeIndex, isChange: true);
+    return change.contains(address);
   }
 
   /// Drops on-disk transfer/nullifier caches for this wallet's known addresses
@@ -195,13 +224,12 @@ class EncryptedAccountService {
   /// the 1-hour expiry, never by a refresh.
   Future<void> discardCachedState() async {
     _log('discardCachedState: wallet $walletIndex');
-    // Derive every index that can have an on-disk cache (addresses only —
-    // the secret half of each pair is discarded immediately).
+    // Every index that can have an on-disk cache.
     final state = await _readStateLocked();
     final mnemonic = await _mnemonic();
     final addresses = [
-      for (int i = 0; i <= state.nextIndex; i++) _deriveKeyPair(mnemonic, i).address,
-      for (int i = 0; i <= state.nextChangeIndex; i++) _deriveKeyPair(mnemonic, i, isChange: true).address,
+      ...await _addressesUpTo(mnemonic, state.nextIndex, isChange: false),
+      ...await _addressesUpTo(mnemonic, state.nextChangeIndex, isChange: true),
     ];
     if (addresses.isNotEmpty) {
       await WormholeUtxoService.clearCachesForAddresses(addresses);
@@ -224,25 +252,43 @@ class EncryptedAccountService {
     final sw = Stopwatch()..start();
     final mnemonic = await _mnemonic();
 
+    // Gap-limit discovery of both branches — the only thing that finds
+    // addresses this device has never seen (recovery from the mnemonic), so
+    // it always runs; the address book only makes each batch cheaper.
     final [usedIndices, usedChangeIndices] = await Future.wait([
-      _discoveryService.discoverUsedIndices(addressAt: (i) => _deriveKeyPair(mnemonic, i).address),
-      _discoveryService.discoverUsedIndices(addressAt: (i) => _deriveKeyPair(mnemonic, i, isChange: true).address),
+      _discoveryService.discoverUsedIndicesBatched(
+        addressesAt: (indices) => _addressesAt(mnemonic, indices, isChange: false),
+      ),
+      _discoveryService.discoverUsedIndicesBatched(
+        addressesAt: (indices) => _addressesAt(mnemonic, indices, isChange: true),
+      ),
     ]);
     _log('Discovery: used indices $usedIndices, used change indices $usedChangeIndices');
 
-    WormholeAddressInfo infoAt(int i, {bool isChange = false}) {
-      final keyPair = _deriveKeyPair(mnemonic, i, isChange: isChange);
-      return WormholeAddressInfo(index: i, isChange: isChange, address: keyPair.address, secretHex: keyPair.secretHex);
-    }
-
     final scanIndices = {0, ...usedIndices}.toList()..sort();
     final changeScanIndices = usedChangeIndices.toList()..sort();
-    // Secrets live only inside this list for the duration of the UTXO fetch
-    // (needed there for nullifier computation); the returned UTXOs carry no
-    // secrets and this list is dropped when load() returns.
+    // One seed stretch per branch for the used indices' secrets. Secrets live
+    // only inside this list for the duration of the UTXO fetch (needed there
+    // for nullifier computation); the returned UTXOs carry no secrets and this
+    // list is dropped when load() returns.
+    final [externalPairs, changePairs] = await Future.wait([
+      _hdWalletService.deriveWormholeKeyPairs(mnemonic: mnemonic, indices: scanIndices),
+      _hdWalletService.deriveWormholeKeyPairs(mnemonic: mnemonic, indices: changeScanIndices, isChange: true),
+    ]);
     final addresses = [
-      for (final i in scanIndices) infoAt(i),
-      for (final i in changeScanIndices) infoAt(i, isChange: true),
+      for (var k = 0; k < scanIndices.length; k++)
+        WormholeAddressInfo(
+          index: scanIndices[k],
+          address: externalPairs[k].address,
+          secretHex: externalPairs[k].secretHex,
+        ),
+      for (var k = 0; k < changeScanIndices.length; k++)
+        WormholeAddressInfo(
+          index: changeScanIndices[k],
+          isChange: true,
+          address: changePairs[k].address,
+          secretHex: changePairs[k].secretHex,
+        ),
     ];
 
     final utxoResult = await _utxoService.getUnspentUtxos(
@@ -290,7 +336,7 @@ class EncryptedAccountService {
     // saw them; a spend of ours landing mid-load must still classify as change.
     final ownAddresses = {
       for (final a in addresses) a.address,
-      for (int i = 0; i < state.nextChangeIndex; i++) _deriveKeyPair(mnemonic, i, isChange: true).address,
+      if (state.nextChangeIndex > 0) ...await _addressesUpTo(mnemonic, state.nextChangeIndex - 1, isChange: true),
     };
 
     _log(

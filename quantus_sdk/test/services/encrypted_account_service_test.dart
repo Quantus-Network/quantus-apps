@@ -58,26 +58,61 @@ class _FakeHdWallet extends HdWalletService {
   /// demand instead of served from a session cache (M11).
   int derivations = 0;
 
+  /// Each batched call stretches the seed once, whatever its size.
+  int batchDerivations = 0;
+
+  /// Every index whose address or key pair was derived, per branch.
+  final derivedIndices = <int>[];
+  final derivedChangeIndices = <int>[];
+
+  WormholeKeyPair _pairAt(int index, {required bool isChange}) => isChange
+      ? WormholeKeyPair(
+          address: changeAddressAt(index),
+          addressHex: '0x${'00' * 30}01${(index).toRadixString(16).padLeft(2, '0')}',
+          rewardsPreimageHex: '0x',
+          secretHex: changeSecretAt(index),
+        )
+      : WormholeKeyPair(
+          address: addressAt(index),
+          addressHex: '0x${'00' * 31}${(index).toRadixString(16).padLeft(2, '0')}',
+          rewardsPreimageHex: '0x',
+          secretHex: secretAt(index),
+        );
+
   @override
   WormholeKeyPair deriveWormholeKeyPair({required String mnemonic, int index = 0}) {
     derivations++;
-    return WormholeKeyPair(
-      address: addressAt(index),
-      addressHex: '0x${'00' * 31}${(index).toRadixString(16).padLeft(2, '0')}',
-      rewardsPreimageHex: '0x',
-      secretHex: secretAt(index),
-    );
+    return _pairAt(index, isChange: false);
   }
 
   @override
   WormholeKeyPair deriveWormholeChangeAddressKeyPair({required String mnemonic, int index = 0}) {
     derivations++;
-    return WormholeKeyPair(
-      address: changeAddressAt(index),
-      addressHex: '0x${'00' * 30}01${(index).toRadixString(16).padLeft(2, '0')}',
-      rewardsPreimageHex: '0x',
-      secretHex: changeSecretAt(index),
-    );
+    return _pairAt(index, isChange: true);
+  }
+
+  @override
+  Future<List<String>> deriveWormholeAddresses({
+    required String mnemonic,
+    required List<int> indices,
+    bool isChange = false,
+  }) async {
+    if (indices.isEmpty) return const [];
+    batchDerivations++;
+    (isChange ? derivedChangeIndices : derivedIndices).addAll(indices);
+    return [for (final i in indices) _pairAt(i, isChange: isChange).address];
+  }
+
+  @override
+  Future<List<WormholeKeyPair>> deriveWormholeKeyPairs({
+    required String mnemonic,
+    required List<int> indices,
+    bool isChange = false,
+  }) async {
+    if (indices.isEmpty) return const [];
+    batchDerivations++;
+    (isChange ? derivedChangeIndices : derivedIndices).addAll(indices);
+    return [for (final i in indices) _pairAt(i, isChange: isChange)];
   }
 }
 
@@ -85,11 +120,20 @@ class _FakeDiscovery extends AccountDiscoveryService {
   Set<int> used;
   Set<int> usedChange = const {};
 
+  /// Width of the probe each scan makes through [addressesAt]; the real scan
+  /// derives `gapLimit` indices per batch until the gap closes.
+  int probeWidth = 20;
+
   _FakeDiscovery(this.used) : super(_FakeHdWallet());
 
   @override
-  Future<Set<int>> discoverUsedIndices({required String Function(int index) addressAt, int gapLimit = 20}) async =>
-      addressAt(0) == changeAddressAt(0) ? usedChange : used;
+  Future<Set<int>> discoverUsedIndicesBatched({
+    required Future<List<String>> Function(List<int> indices) addressesAt,
+    int gapLimit = 20,
+  }) async {
+    final probed = await addressesAt([for (var i = 0; i < probeWidth; i++) i]);
+    return probed.first == changeAddressAt(0) ? usedChange : used;
+  }
 }
 
 WormholeSpend _spend() => WormholeSpend(
@@ -387,6 +431,68 @@ void main() {
       expect(pending[0]['changeAddress'], isNull);
       expect(BigInt.parse(pending[0]['changeAmountToken'] as String), BigInt.zero);
       expect(sendService.capturedBatches![0][0].exitAccount2, isNull);
+    });
+  });
+
+  group('address book', () {
+    test('load derives every address at most once and attributes UTXOs to the right branch', () async {
+      discovery.used = {0, 3};
+      discovery.usedChange = {0, 1};
+      final state = await service.load();
+
+      // Discovery probed 0..19 on each branch; the used indices' key pairs
+      // came from one batched call per branch, not a derivation per index.
+      expect(hdWallet.derivations, 0);
+      expect(hdWallet.derivedIndices.toSet(), {for (var i = 0; i < 20; i++) i});
+      expect(hdWallet.derivedChangeIndices.toSet(), {for (var i = 0; i < 20; i++) i});
+      // 2 address probes + 2 key-pair batches.
+      expect(hdWallet.batchDerivations, 4);
+      expect(state.accountId, addressAt(0));
+      expect(state.ownAddresses, containsAll([addressAt(0), addressAt(3), changeAddressAt(0), changeAddressAt(1)]));
+      expect(state.nextIndex, 4);
+      expect(state.nextChangeIndex, 2);
+    });
+
+    test('ownsAddress and discardCachedState reuse addresses a load already derived', () async {
+      discovery.used = {0, 1};
+      discovery.usedChange = {0};
+      await service.load();
+      final before = hdWallet.batchDerivations;
+
+      expect(await service.ownsAddress(addressAt(1)), isTrue);
+      expect(await service.ownsAddress(changeAddressAt(0)), isTrue);
+      expect(await service.ownsAddress(changeAddressAt(7)), isFalse);
+      await service.discardCachedState();
+
+      expect(hdWallet.batchDerivations, before);
+      expect(hdWallet.derivations, 0);
+    });
+
+    test('ownsAddress derives only the indices it has not seen', () async {
+      await seedState(nextIndex: 2, nextChangeIndex: 1);
+      expect(await service.ownsAddress(addressAt(2)), isTrue);
+      expect(hdWallet.derivedIndices, [0, 1, 2]);
+      expect(hdWallet.derivedChangeIndices, isEmpty);
+
+      expect(await service.ownsAddress(changeAddressAt(1)), isTrue);
+      expect(hdWallet.derivedIndices, [0, 1, 2]);
+      expect(hdWallet.derivedChangeIndices, [0, 1]);
+
+      // A later load that pushes nextIndex further derives only the new tail.
+      await seedState(nextIndex: 4, nextChangeIndex: 1);
+      expect(await service.ownsAddress(addressAt(4)), isTrue);
+      expect(hdWallet.derivedIndices, [0, 1, 2, 3, 4]);
+    });
+
+    test('the address book never holds a secret', () async {
+      discovery.used = {0};
+      final state = await service.load();
+      for (final utxo in state.received) {
+        expect(utxo.owner.secretHex, isEmpty);
+      }
+      // Key pairs for receiving still come from a fresh derivation.
+      await service.receiveKeyPair();
+      expect(hdWallet.derivations, 1);
     });
   });
 
