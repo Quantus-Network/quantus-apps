@@ -148,6 +148,31 @@ void main() {
       expect(result.address, knownWormholeAddress);
     });
 
+    test('batched wormhole derivation matches the per-index derivation on both branches', () async {
+      const mnemonic =
+          'orchard answer curve patient visual flower maze noise retreat penalty cage small earth domain scan pitch bottom crunch theme club client swap slice raven';
+      final hd = HdWalletService();
+      const indices = [0, 1, 5, 21];
+      for (final isChange in [false, true]) {
+        final addresses = await hd.deriveWormholeAddresses(mnemonic: mnemonic, indices: indices, isChange: isChange);
+        final pairs = await hd.deriveWormholeKeyPairs(mnemonic: mnemonic, indices: indices, isChange: isChange);
+        expect(addresses, hasLength(indices.length));
+        expect(pairs, hasLength(indices.length));
+        for (var k = 0; k < indices.length; k++) {
+          final single = isChange
+              ? hd.deriveWormholeChangeAddressKeyPair(mnemonic: mnemonic, index: indices[k])
+              : hd.deriveWormholeKeyPair(mnemonic: mnemonic, index: indices[k]);
+          expect(addresses[k], single.address);
+          expect(pairs[k].address, single.address);
+          expect(pairs[k].addressHex, single.addressHex);
+          expect(pairs[k].rewardsPreimageHex, single.rewardsPreimageHex);
+          expect(pairs[k].secretHex, single.secretHex);
+        }
+      }
+      expect(await hd.deriveWormholeAddresses(mnemonic: mnemonic, indices: const []), isEmpty);
+      expect(await hd.deriveWormholeKeyPairs(mnemonic: mnemonic, indices: const []), isEmpty);
+    });
+
     test('ss58ToAccountId rejects foreign ss58 prefixes and invalid input', () {
       // Generic Substrate (42) encoding of the wormhole test account above.
       expect(() => ss58ToAccountId(s: '5H8AGzwKPtKMfKKuKYCoAFApCoy4EVewCqc9k6GrSgqHoaXm'), throwsA(anything));

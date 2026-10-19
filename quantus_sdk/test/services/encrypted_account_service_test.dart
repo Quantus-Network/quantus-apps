@@ -14,16 +14,25 @@ import 'package:quantus_sdk/src/services/wormhole_utxo_service.dart';
 import 'package:ss58/ss58.dart';
 
 /// Deterministic wormhole address for HD index [index] (valid SS58 so
-/// `getAccountId32` can decode it inside `send`).
-String addressAt(int index) => Address(prefix: 189, pubkey: Uint8List(32)..[31] = index).encode();
+/// `getAccountId32` can decode it inside `send`). [seed] stands in for the
+/// mnemonic: a different seed gives unrelated addresses at every index.
+String addressAt(int index, {int seed = 0}) {
+  final pubkey = Uint8List(32)
+    ..[29] = seed
+    ..[31] = index;
+  return Address(prefix: 189, pubkey: pubkey).encode();
+}
 
 /// Change-branch counterpart of [addressAt], distinct at every index.
-String changeAddressAt(int index) {
+String changeAddressAt(int index, {int seed = 0}) {
   final pubkey = Uint8List(32)
+    ..[29] = seed
     ..[30] = 1
     ..[31] = index;
   return Address(prefix: 189, pubkey: pubkey).encode();
 }
+
+const defaultMnemonic = 'test mnemonic';
 
 String secretAt(int index) => '0x${(index + 1).toRadixString(16).padLeft(2, '0') * 32}';
 
@@ -58,38 +67,106 @@ class _FakeHdWallet extends HdWalletService {
   /// demand instead of served from a session cache (M11).
   int derivations = 0;
 
+  /// Each batched call stretches the seed once, whatever its size.
+  int batchDerivations = 0;
+
+  /// Every index whose address or key pair was derived, per branch. The
+  /// service's address-book owner check (external index 0 alone) is counted
+  /// in [ownerChecks] instead.
+  final derivedIndices = <int>[];
+  final derivedChangeIndices = <int>[];
+  int ownerChecks = 0;
+
+  /// Seed per mnemonic; unknown mnemonics derive seed 0 (see [addressAt]).
+  final seeds = <String, int>{};
+
+  int _seedOf(String mnemonic) => seeds[mnemonic] ?? 0;
+
+  WormholeKeyPair _pairAt(int index, {required bool isChange, int seed = 0}) => isChange
+      ? WormholeKeyPair(
+          address: changeAddressAt(index, seed: seed),
+          addressHex: '0x${'00' * 30}01${(index).toRadixString(16).padLeft(2, '0')}',
+          rewardsPreimageHex: '0x',
+          secretHex: changeSecretAt(index),
+        )
+      : WormholeKeyPair(
+          address: addressAt(index, seed: seed),
+          addressHex: '0x${'00' * 31}${(index).toRadixString(16).padLeft(2, '0')}',
+          rewardsPreimageHex: '0x',
+          secretHex: secretAt(index),
+        );
+
   @override
   WormholeKeyPair deriveWormholeKeyPair({required String mnemonic, int index = 0}) {
     derivations++;
-    return WormholeKeyPair(
-      address: addressAt(index),
-      addressHex: '0x${'00' * 31}${(index).toRadixString(16).padLeft(2, '0')}',
-      rewardsPreimageHex: '0x',
-      secretHex: secretAt(index),
-    );
+    return _pairAt(index, isChange: false, seed: _seedOf(mnemonic));
   }
 
   @override
   WormholeKeyPair deriveWormholeChangeAddressKeyPair({required String mnemonic, int index = 0}) {
     derivations++;
-    return WormholeKeyPair(
-      address: changeAddressAt(index),
-      addressHex: '0x${'00' * 30}01${(index).toRadixString(16).padLeft(2, '0')}',
-      rewardsPreimageHex: '0x',
-      secretHex: changeSecretAt(index),
-    );
+    return _pairAt(index, isChange: true, seed: _seedOf(mnemonic));
+  }
+
+  @override
+  Future<List<String>> deriveWormholeAddresses({
+    required String mnemonic,
+    required List<int> indices,
+    bool isChange = false,
+  }) async {
+    if (indices.isEmpty) return const [];
+    final seed = _seedOf(mnemonic);
+    if (!isChange && indices.length == 1 && indices.single == 0) {
+      ownerChecks++;
+      return [addressAt(0, seed: seed)];
+    }
+    batchDerivations++;
+    (isChange ? derivedChangeIndices : derivedIndices).addAll(indices);
+    return [for (final i in indices) _pairAt(i, isChange: isChange, seed: seed).address];
+  }
+
+  @override
+  Future<List<WormholeKeyPair>> deriveWormholeKeyPairs({
+    required String mnemonic,
+    required List<int> indices,
+    bool isChange = false,
+  }) async {
+    if (indices.isEmpty) return const [];
+    batchDerivations++;
+    (isChange ? derivedChangeIndices : derivedIndices).addAll(indices);
+    return [for (final i in indices) _pairAt(i, isChange: isChange, seed: _seedOf(mnemonic))];
   }
 }
 
+/// Stands in for the indexer: knows which addresses of seed [seed] have
+/// been used and reports the probe positions holding one of them, so a probe
+/// made of another seed's addresses finds nothing — just like the real one.
 class _FakeDiscovery extends AccountDiscoveryService {
   Set<int> used;
   Set<int> usedChange = const {};
+  int seed = 0;
+
+  /// Width of the probe each scan makes through [addressesAt]; the real scan
+  /// derives `gapLimit` indices per batch until the gap closes.
+  int probeWidth = 20;
 
   _FakeDiscovery(this.used) : super(_FakeHdWallet());
 
   @override
-  Future<Set<int>> discoverUsedIndices({required String Function(int index) addressAt, int gapLimit = 20}) async =>
-      addressAt(0) == changeAddressAt(0) ? usedChange : used;
+  Future<Set<int>> discoverUsedIndicesBatched({
+    required Future<List<String>> Function(List<int> indices) addressesAt,
+    int gapLimit = 20,
+  }) async {
+    final probed = await addressesAt([for (var i = 0; i < probeWidth; i++) i]);
+    final known = {
+      for (final i in used) addressAt(i, seed: seed),
+      for (final i in usedChange) changeAddressAt(i, seed: seed),
+    };
+    return {
+      for (var i = 0; i < probed.length; i++)
+        if (known.contains(probed[i])) i,
+    };
+  }
 }
 
 WormholeSpend _spend() => WormholeSpend(
@@ -107,12 +184,19 @@ class _FakeUtxoService extends WormholeUtxoService {
   /// tests race a slow load() against logout.
   Completer<void>? gate;
 
+  /// Completes once a scan has reached [gate].
+  final reached = Completer<void>();
+
+  int scans = 0;
+
   @override
   Future<WormholeUtxoResult> getUnspentUtxos({
     required List<WormholeAddressInfo> addresses,
     WormholeProgressCallback? onProgress,
     IsCancelledCallback? isCancelled,
   }) async {
+    scans++;
+    if (!reached.isCompleted) reached.complete();
     final g = gate;
     if (g != null) await g.future;
     return result;
@@ -132,6 +216,9 @@ class _FakeSendService extends WormholeSendService {
   Completer<void>? gate;
   Object? error;
 
+  /// Completes once a send has reached [gate].
+  final reached = Completer<void>();
+
   List<List<WormholeLeafSpend>>? get capturedBatches => capturedBatchesList.isEmpty ? null : capturedBatchesList.last;
 
   @override
@@ -148,6 +235,7 @@ class _FakeSendService extends WormholeSendService {
         capturedSecretCopies.add(Uint8List.fromList(spend.secret));
       }
     }
+    if (!reached.isCompleted) reached.complete();
     final g = gate;
     if (g != null) await g.future;
     final err = error;
@@ -173,8 +261,10 @@ void main() {
   late _FakeUtxoService utxoService;
   late _FakeSendService sendService;
   late EncryptedAccountService service;
+  late String mnemonic;
 
   setUp(() async {
+    mnemonic = defaultMnemonic;
     tempDir = await Directory.systemTemp.createTemp('enc_acct_test');
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
       const MethodChannel('plugins.flutter.io/path_provider'),
@@ -186,7 +276,7 @@ void main() {
     sendService = _FakeSendService();
     service = EncryptedAccountService(
       walletIndex: 0,
-      getMnemonic: () async => 'test mnemonic',
+      getMnemonic: () async => mnemonic,
       hdWalletService: hdWallet,
       utxoService: utxoService,
       discoveryService: discovery,
@@ -208,10 +298,12 @@ void main() {
     required int nextIndex,
     int? nextChangeIndex,
     List<PendingSpend> pendingSpends = const [],
+    String? owner,
   }) async {
     final file = File('${tempDir.path}/encrypted_account_w0.json');
     await file.writeAsString(
       jsonEncode({
+        'owner': ?owner,
         'nextIndex': nextIndex,
         'nextChangeIndex': ?nextChangeIndex,
         'pendingSpends': pendingSpends.map((e) => e.toJson()).toList(),
@@ -390,6 +482,230 @@ void main() {
     });
   });
 
+  group('one scan at a time', () {
+    test('a load started while another is in flight joins it', () async {
+      discovery.used = {0};
+      utxoService.gate = Completer<void>();
+      final first = service.load();
+      final second = service.load();
+      await utxoService.reached.future;
+      expect(utxoService.scans, 1);
+
+      utxoService.gate!.complete();
+      final states = await Future.wait([first, second]);
+      expect(identical(states[0], states[1]), isTrue);
+      expect(utxoService.scans, 1);
+
+      // Once settled, the next load is a fresh scan.
+      utxoService.gate = null;
+      await service.load();
+      expect(utxoService.scans, 2);
+    });
+
+    test('a failed scan is not handed to later callers', () async {
+      discovery.used = {0};
+      utxoService.gate = Completer<void>();
+      final failing = service.load();
+      await utxoService.reached.future;
+      utxoService.gate!.completeError(StateError('indexer down'));
+      await expectLater(failing, throwsA(isA<StateError>()));
+
+      utxoService.gate = null;
+      await service.load();
+      expect(utxoService.scans, 2);
+    });
+
+    test('discardCachedState waits for the scan in flight before wiping', () async {
+      discovery.used = {0};
+      utxoService.gate = Completer<void>();
+      final loading = service.load();
+      var discarded = false;
+      final discarding = service.discardCachedState().then((_) => discarded = true);
+      await utxoService.reached.future;
+      expect(discarded, isFalse);
+
+      utxoService.gate!.complete();
+      await loading;
+      await discarding;
+      expect(discarded, isTrue);
+    });
+  });
+
+  group('address book', () {
+    test('load derives every address at most once and attributes UTXOs to the right branch', () async {
+      discovery.used = {0, 3};
+      discovery.usedChange = {0, 1};
+      final state = await service.load();
+
+      // Discovery probed 0..19 on each branch; the used indices' key pairs
+      // came from one batched call per branch, not a derivation per index.
+      expect(hdWallet.derivations, 0);
+      expect(hdWallet.derivedIndices.toSet(), {for (var i = 0; i < 20; i++) i});
+      expect(hdWallet.derivedChangeIndices.toSet(), {for (var i = 0; i < 20; i++) i});
+      // 2 address probes + 2 key-pair batches.
+      expect(hdWallet.batchDerivations, 4);
+      expect(state.accountId, addressAt(0));
+      expect(state.ownAddresses, containsAll([addressAt(0), addressAt(3), changeAddressAt(0), changeAddressAt(1)]));
+      expect(state.nextIndex, 4);
+      expect(state.nextChangeIndex, 2);
+    });
+
+    test('ownsAddress and discardCachedState reuse addresses a load already derived', () async {
+      discovery.used = {0, 1};
+      discovery.usedChange = {0};
+      await service.load();
+      final before = hdWallet.batchDerivations;
+
+      expect(await service.ownsAddress(addressAt(1)), isTrue);
+      expect(await service.ownsAddress(changeAddressAt(0)), isTrue);
+      expect(await service.ownsAddress(changeAddressAt(7)), isFalse);
+      await service.discardCachedState();
+
+      expect(hdWallet.batchDerivations, before);
+      expect(hdWallet.derivations, 0);
+      // Each entry point re-checks which seed the book belongs to.
+      expect(hdWallet.ownerChecks, 5);
+    });
+
+    test('a different seed in the same wallet slot starts over: address book and persisted state', () async {
+      // The first seed has handed out many receive and change indices and
+      // has a spend in flight.
+      await seedState(
+        nextIndex: 30,
+        nextChangeIndex: 50,
+        pendingSpends: [
+          PendingSpend(
+            nullifiers: const ['0xn_old'],
+            changeAddress: changeAddressAt(49),
+            changeAmountToken: wormholeTokenFromScaled(500),
+            createdAtMs: DateTime.now().millisecondsSinceEpoch,
+          ),
+        ],
+      );
+      discovery.used = {0, 2};
+      discovery.usedChange = {0};
+      await service.load();
+      expect(await service.ownsAddress(addressAt(2)), isTrue);
+      expect((await readStateFile())['owner'], addressAt(0));
+
+      // The wallet is deleted and another seed imported into the same index;
+      // that seed has used external 0 and 1 and change 0 and 1.
+      mnemonic = 'replacement mnemonic';
+      hdWallet.seeds[mnemonic] = 7;
+      discovery
+        ..seed = 7
+        ..used = {0, 1}
+        ..usedChange = {0, 1};
+
+      final state = await service.load();
+
+      expect(state.accountId, addressAt(0, seed: 7));
+      // Inheriting 30 / 50 would put the next receive and change addresses
+      // past the gap limit, where no discovery would ever find the funds.
+      expect(state.nextIndex, 2);
+      expect(state.nextChangeIndex, 2);
+      expect(state.pendingChangeToken, BigInt.zero);
+      expect((await service.receiveKeyPair()).address, addressAt(2, seed: 7));
+      expect((await readStateFile())['owner'], addressAt(0, seed: 7));
+      expect(
+        state.ownAddresses,
+        containsAll([
+          addressAt(0, seed: 7),
+          addressAt(1, seed: 7),
+          changeAddressAt(0, seed: 7),
+          changeAddressAt(1, seed: 7),
+        ]),
+      );
+      expect(state.ownAddresses, isNot(contains(addressAt(0))));
+      expect(await service.ownsAddress(addressAt(1, seed: 7)), isTrue);
+      expect(await service.ownsAddress(changeAddressAt(1, seed: 7)), isTrue);
+      expect(await service.ownsAddress(addressAt(2)), isFalse);
+      expect(await service.ownsAddress(changeAddressAt(0)), isFalse);
+    });
+
+    test('the same seed keeps its address book across loads', () async {
+      discovery.used = {0};
+      await service.load();
+      final before = hdWallet.batchDerivations;
+      await service.load();
+      // Only the key-pair batch for the used index; the probes came from the book.
+      expect(hdWallet.batchDerivations, before + 1);
+    });
+
+    test('a replacement seed does not inherit the change index of a send', () async {
+      await seedState(nextIndex: 1, nextChangeIndex: 40, owner: addressAt(0));
+      mnemonic = 'replacement mnemonic';
+      hdWallet.seeds[mnemonic] = 7;
+      discovery.seed = 7;
+      final recipient = Address(prefix: 189, pubkey: Uint8List.fromList(List.filled(32, 0x22))).encode();
+
+      final plan = selectWormholeInputs(utxos: [_utxo(1000)], amountToken: wormholeTokenFromScaled(400));
+      await service.send(plan: plan, recipientAddress: recipient, circuitBinsDir: '/unused', onProgress: (_) {});
+
+      final exit2 = sendService.capturedBatches!.single.single.exitAccount2!;
+      expect(Address(prefix: 189, pubkey: exit2).encode(), changeAddressAt(0, seed: 7));
+      expect((await readStateFile())['nextChangeIndex'], 1);
+    });
+
+    test('a state file from before owners were recorded is adopted by the current seed', () async {
+      await seedState(nextIndex: 5, nextChangeIndex: 3);
+      discovery.used = {0};
+      final state = await service.load();
+      expect(state.nextIndex, 5);
+      expect(state.nextChangeIndex, 3);
+      expect((await readStateFile())['owner'], addressAt(0));
+    });
+
+    test('a new service instance for the same seed keeps the persisted indices', () async {
+      discovery.used = {0, 1};
+      discovery.usedChange = {0};
+      await service.load();
+
+      final again = EncryptedAccountService(
+        walletIndex: 0,
+        getMnemonic: () async => mnemonic,
+        hdWalletService: hdWallet,
+        utxoService: utxoService,
+        discoveryService: discovery,
+        sendService: sendService,
+      );
+      addTearDown(again.dispose);
+      discovery.used = {0};
+      discovery.usedChange = {};
+      final state = await again.load();
+      expect(state.nextIndex, 2);
+      expect(state.nextChangeIndex, 1);
+    });
+
+    test('ownsAddress derives only the indices it has not seen', () async {
+      await seedState(nextIndex: 2, nextChangeIndex: 1);
+      expect(await service.ownsAddress(addressAt(2)), isTrue);
+      // External 0 comes from the owner check; the probe derives the rest.
+      expect(hdWallet.derivedIndices, [1, 2]);
+      expect(hdWallet.derivedChangeIndices, isEmpty);
+
+      expect(await service.ownsAddress(changeAddressAt(1)), isTrue);
+      expect(hdWallet.derivedIndices, [1, 2]);
+      expect(hdWallet.derivedChangeIndices, [0, 1]);
+
+      // A later load that pushes nextIndex further derives only the new tail.
+      await seedState(nextIndex: 4, nextChangeIndex: 1);
+      expect(await service.ownsAddress(addressAt(4)), isTrue);
+      expect(hdWallet.derivedIndices, [1, 2, 3, 4]);
+    });
+
+    test('the address book never holds a secret', () async {
+      discovery.used = {0};
+      final state = await service.load();
+      for (final utxo in state.received) {
+        expect(utxo.owner.secretHex, isEmpty);
+      }
+      // Key pairs for receiving still come from a fresh derivation.
+      await service.receiveKeyPair();
+      expect(hdWallet.derivations, 1);
+    });
+  });
+
   group('secret hygiene (M11)', () {
     final recipient = Address(prefix: 189, pubkey: Uint8List.fromList(List.filled(32, 0x22))).encode();
 
@@ -455,7 +771,7 @@ void main() {
         circuitBinsDir: '/unused',
         onProgress: (_) {},
       );
-      await Future<void>.delayed(Duration.zero); // let the send reach the gate
+      await sendService.reached.future;
 
       // Logout: quiesces every live instance, then wipes the state files.
       await EncryptedAccountService.clearAllPersistedState();
@@ -472,7 +788,7 @@ void main() {
       discovery.used = {0, 1};
       utxoService.gate = Completer<void>();
       final loadFuture = service.load();
-      await Future<void>.delayed(Duration.zero); // let the load reach the gate
+      await utxoService.reached.future;
 
       await service.dispose();
       utxoService.gate!.complete();
@@ -501,7 +817,7 @@ void main() {
       sendService.gate = Completer<void>();
       final f1 = service.send(plan: plan1, recipientAddress: recipient, circuitBinsDir: '/unused', onProgress: (_) {});
       final f2 = service.send(plan: plan2, recipientAddress: recipient, circuitBinsDir: '/unused', onProgress: (_) {});
-      await Future<void>.delayed(Duration.zero);
+      await sendService.reached.future;
       sendService.gate!.complete();
       await Future.wait([f1, f2]);
 

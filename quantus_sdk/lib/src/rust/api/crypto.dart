@@ -7,7 +7,7 @@ import '../frb_generated.dart';
 import '../lib.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-// These functions are ignored because they are not marked as `pub`: `ml_dsa_87_from_entropy`, `new`
+// These functions are ignored because they are not marked as `pub`: `ml_dsa_87_from_entropy`, `new`, `wormhole_result`
 // These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `assert_receiver_is_total_eq`, `clone`, `eq`, `fmt`
 
 void setDefaultSs58Prefix({required int prefix}) =>
@@ -28,6 +28,18 @@ Keypair generateDerivedKeypair({required String mnemonicStr, required String pat
 
 WormholeResult deriveWormhole({required String mnemonicStr, required String path}) =>
     RustLib.instance.api.crateApiCryptoDeriveWormhole(mnemonicStr: mnemonicStr, path: path);
+
+/// Wormhole key pairs at every path in `paths`, stretching the BIP39 seed
+/// (PBKDF2, 2048 rounds) once instead of once per path. Not `sync`: runs on
+/// the bridge's worker pool so a scan of many addresses never blocks the UI
+/// isolate. `mnemonic_to_seed` consumes and zeroizes the mnemonic.
+Future<List<WormholeResult>> deriveWormholeBatch({required String mnemonicStr, required List<String> paths}) =>
+    RustLib.instance.api.crateApiCryptoDeriveWormholeBatch(mnemonicStr: mnemonicStr, paths: paths);
+
+/// Like [`derive_wormhole_batch`] but returns only the addresses, for
+/// discovery scans that never need the secrets.
+Future<List<String>> deriveWormholeAddresses({required String mnemonicStr, required List<String> paths}) =>
+    RustLib.instance.api.crateApiCryptoDeriveWormholeAddresses(mnemonicStr: mnemonicStr, paths: paths);
 
 /// Convert a first_hash (rewards preimage) to its corresponding wormhole address.
 ///

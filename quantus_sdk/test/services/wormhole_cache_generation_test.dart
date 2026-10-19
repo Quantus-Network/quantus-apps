@@ -107,6 +107,18 @@ void main() {
     },
   );
 
+  test('saves are atomic: a half-written temp file is never read and is swept', () async {
+    final service = _serviceOn(_planck);
+    await service.saveSpentNullifiers(_hash, {'0x01': _spend});
+    final name = 'wormhole_nullifiers_v${_v}_${_planck}_$_prefix.json';
+    expect(names(), {name});
+
+    // An interrupted write of this address's cache.
+    write('$name.tmp', '{"0x02": {"truncated');
+    expect((await service.loadSpentNullifiers(_hash)).keys, ['0x01']);
+    expect(names(), {name});
+  });
+
   test('clearCachesForAddresses removes every generation of that address only', () async {
     write('wormhole_cache_$_prefix.json', '{}');
     write('wormhole_cache_v2_$_prefix.json', '{}');

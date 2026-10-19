@@ -4,8 +4,10 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 
 class AccountDiscoveryService {
   final HdWalletService _hdWalletService;
+  final GraphQlEndpointService? _graphQl;
 
-  AccountDiscoveryService(this._hdWalletService);
+  /// [graphQl] defaults to the app-wide indexer endpoints.
+  AccountDiscoveryService(this._hdWalletService, {GraphQlEndpointService? graphQl}) : _graphQl = graphQl;
 
   static const String _accountsQuery = r'''
     query AccountsQuery($ids: [String!]) {
@@ -59,13 +61,30 @@ class AccountDiscoveryService {
   /// Gap-limit scan over an arbitrary address sequence: derives addresses via
   /// [addressAt] in batches and returns the indices that exist on-chain,
   /// stopping once [gapLimit] consecutive indices are unused.
-  Future<Set<int>> discoverUsedIndices({required String Function(int index) addressAt, int gapLimit = 20}) async {
+  Future<Set<int>> discoverUsedIndices({required String Function(int index) addressAt, int gapLimit = 20}) =>
+      discoverUsedIndicesBatched(
+        addressesAt: (indices) async => [for (final i in indices) addressAt(i)],
+        gapLimit: gapLimit,
+      );
+
+  /// [discoverUsedIndices] for sequences whose addresses are cheaper to derive
+  /// together: [addressesAt] receives each batch of [gapLimit] consecutive
+  /// indices at once and returns their addresses in the same order.
+  Future<Set<int>> discoverUsedIndicesBatched({
+    required Future<List<String>> Function(List<int> indices) addressesAt,
+    int gapLimit = 20,
+  }) async {
     final used = <int>{};
 
     var consecutiveMissing = 0;
     var index = 0;
     while (consecutiveMissing < gapLimit) {
-      final batch = {for (var i = index; i < index + gapLimit; i++) i: addressAt(i)};
+      final indices = [for (var i = index; i < index + gapLimit; i++) i];
+      final addresses = await addressesAt(indices);
+      if (addresses.length != indices.length) {
+        throw StateError('addressesAt returned ${addresses.length} addresses for ${indices.length} indices');
+      }
+      final batch = {for (var k = 0; k < indices.length; k++) indices[k]: addresses[k]};
       final existingIds = await _findExistingAccountIds(batch.values.toList());
 
       for (final entry in batch.entries) {
@@ -87,7 +106,7 @@ class AccountDiscoveryService {
   Future<Set<String>> _findExistingAccountIds(List<String> accountIds) async {
     if (accountIds.isEmpty) return {};
 
-    final graphQlEndpoint = GraphQlEndpointService();
+    final graphQlEndpoint = _graphQl ?? GraphQlEndpointService();
     final Map<String, dynamic> requestBody = {
       'query': _accountsQuery,
       'variables': {'ids': accountIds},
