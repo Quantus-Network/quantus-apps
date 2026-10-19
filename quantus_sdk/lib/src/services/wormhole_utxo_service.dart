@@ -345,8 +345,11 @@ $_transferSelection
   static String _cacheName(String kind, String networkId, String prefix) =>
       'wormhole_${kind}_v${cacheVersion}_${networkId}_$prefix.json';
 
+  /// Matches every generation of [prefix]'s cache files, including a `.tmp`
+  /// left behind by an interrupted [_writeAtomically].
   static bool _isCacheFileFor(String name, String prefix) =>
-      (name.startsWith('wormhole_cache_') || name.startsWith('wormhole_nullifiers')) && name.endsWith('_$prefix.json');
+      (name.startsWith('wormhole_cache_') || name.startsWith('wormhole_nullifiers')) &&
+      (name.endsWith('_$prefix.json') || name.endsWith('_$prefix.json.tmp'));
 
   static final RegExp _currentGeneration = RegExp(
     '^wormhole_(cache|nullifiers)_v${cacheVersion}_[0-9a-fA-F]{$_idLength}_[0-9a-fA-F]{$_idLength}\\.json\$',
@@ -358,6 +361,15 @@ $_transferSelection
   Future<File> _cacheFile(String kind, String addressHash) async {
     final dir = await getApplicationSupportDirectory();
     return File('${dir.path}/${_cacheName(kind, await networkId(), _cachePrefix(addressHash))}');
+  }
+
+  /// Write-then-rename, so a reader (or a second scan of the same wallet)
+  /// never sees a half-written file. A torn cache would be dropped on load
+  /// and silently force a rescan from genesis.
+  static Future<void> _writeAtomically(File file, String contents) async {
+    final tmp = File('${file.path}.tmp');
+    await tmp.writeAsString(contents, flush: true);
+    await tmp.rename(file.path);
   }
 
   /// Deletes every cache file of [addressHash] from an earlier generation.
@@ -409,8 +421,7 @@ $_transferSelection
 
   Future<void> _saveTransferCache(String addressHash, _TransferCache cache) async {
     try {
-      final file = await _cacheFile('cache', addressHash);
-      await file.writeAsString(jsonEncode(cache.toJson()));
+      await _writeAtomically(await _cacheFile('cache', addressHash), jsonEncode(cache.toJson()));
       _log('Transfer cache saved: ${cache.transfers.length} transfers up to block ${cache.cachedUpToBlock}');
     } catch (e) {
       _log('Transfer cache save failed: $e');
@@ -438,8 +449,10 @@ $_transferSelection
   @visibleForTesting
   Future<void> saveSpentNullifiers(String addressHash, Map<String, WormholeSpend> spent) async {
     try {
-      final file = await _cacheFile('nullifiers', addressHash);
-      await file.writeAsString(jsonEncode(spent.map((nullifier, spend) => MapEntry(nullifier, spend.toJson()))));
+      await _writeAtomically(
+        await _cacheFile('nullifiers', addressHash),
+        jsonEncode(spent.map((nullifier, spend) => MapEntry(nullifier, spend.toJson()))),
+      );
       _log('Nullifier cache saved: ${spent.length} spent nullifiers');
     } catch (e) {
       _log('Nullifier cache save failed: $e');

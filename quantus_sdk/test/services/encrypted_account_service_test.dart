@@ -151,12 +151,15 @@ class _FakeUtxoService extends WormholeUtxoService {
   /// tests race a slow load() against logout.
   Completer<void>? gate;
 
+  int scans = 0;
+
   @override
   Future<WormholeUtxoResult> getUnspentUtxos({
     required List<WormholeAddressInfo> addresses,
     WormholeProgressCallback? onProgress,
     IsCancelledCallback? isCancelled,
   }) async {
+    scans++;
     final g = gate;
     if (g != null) await g.future;
     return result;
@@ -431,6 +434,55 @@ void main() {
       expect(pending[0]['changeAddress'], isNull);
       expect(BigInt.parse(pending[0]['changeAmountToken'] as String), BigInt.zero);
       expect(sendService.capturedBatches![0][0].exitAccount2, isNull);
+    });
+  });
+
+  group('one scan at a time', () {
+    test('a load started while another is in flight joins it', () async {
+      discovery.used = {0};
+      utxoService.gate = Completer<void>();
+      final first = service.load();
+      final second = service.load();
+      await Future<void>.delayed(Duration.zero);
+      expect(utxoService.scans, 1);
+
+      utxoService.gate!.complete();
+      final states = await Future.wait([first, second]);
+      expect(identical(states[0], states[1]), isTrue);
+      expect(utxoService.scans, 1);
+
+      // Once settled, the next load is a fresh scan.
+      utxoService.gate = null;
+      await service.load();
+      expect(utxoService.scans, 2);
+    });
+
+    test('a failed scan is not handed to later callers', () async {
+      discovery.used = {0};
+      utxoService.gate = Completer<void>();
+      final failing = service.load();
+      await Future<void>.delayed(Duration.zero); // let the scan reach the gate
+      utxoService.gate!.completeError(StateError('indexer down'));
+      await expectLater(failing, throwsA(isA<StateError>()));
+
+      utxoService.gate = null;
+      await service.load();
+      expect(utxoService.scans, 2);
+    });
+
+    test('discardCachedState waits for the scan in flight before wiping', () async {
+      discovery.used = {0};
+      utxoService.gate = Completer<void>();
+      final loading = service.load();
+      var discarded = false;
+      final discarding = service.discardCachedState().then((_) => discarded = true);
+      await Future<void>.delayed(Duration.zero);
+      expect(discarded, isFalse);
+
+      utxoService.gate!.complete();
+      await loading;
+      await discarding;
+      expect(discarded, isTrue);
     });
   });
 

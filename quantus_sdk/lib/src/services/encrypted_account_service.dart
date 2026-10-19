@@ -91,6 +91,9 @@ class EncryptedAccountService {
 
   Future<void> _stateLock = Future.value();
 
+  /// The scan currently running, if any; see [load].
+  Future<EncryptedAccountState>? _inFlightLoad;
+
   /// Change indices claimed by in-flight sends, so two overlapping sends can
   /// never allocate the same change address. Released when the send finishes
   /// (by then a change-bearing batch has bumped the persisted nextIndex).
@@ -224,6 +227,10 @@ class EncryptedAccountService {
   /// the 1-hour expiry, never by a refresh.
   Future<void> discardCachedState() async {
     _log('discardCachedState: wallet $walletIndex');
+    // A scan in flight would write the caches back right after the wipe;
+    // let it finish first (its outcome is the caller's concern, not ours).
+    final inFlight = _inFlightLoad;
+    if (inFlight != null) await inFlight.then<void>((_) {}, onError: (_) {});
     // Every index that can have an on-disk cache.
     final state = await _readStateLocked();
     final mnemonic = await _mnemonic();
@@ -247,8 +254,29 @@ class EncryptedAccountService {
 
   /// Discovers used addresses, fetches their unspent UTXOs, reconciles
   /// pending-spend records and persists the refreshed state.
+  ///
+  /// One scan at a time: a call made while another is in flight joins it and
+  /// receives the same result, so the poll, a provider rebuild and a send's
+  /// pre-flight check never run the discovery and indexer walk side by side
+  /// (or race each other writing the same cache files). Only the first
+  /// caller's [onProgress] / [isCancelled] are honoured.
   Future<EncryptedAccountState> load({WormholeProgressCallback? onProgress, IsCancelledCallback? isCancelled}) async {
     _checkNotDisposed();
+    final inFlight = _inFlightLoad;
+    if (inFlight != null) {
+      _log('load: joining the scan already in flight');
+      return inFlight;
+    }
+    final run = _load(onProgress: onProgress, isCancelled: isCancelled);
+    _inFlightLoad = run;
+    try {
+      return await run;
+    } finally {
+      if (identical(_inFlightLoad, run)) _inFlightLoad = null;
+    }
+  }
+
+  Future<EncryptedAccountState> _load({WormholeProgressCallback? onProgress, IsCancelledCallback? isCancelled}) async {
     final sw = Stopwatch()..start();
     final mnemonic = await _mnemonic();
 
