@@ -141,6 +141,23 @@ void main() {
       expect(auth.prompts, 0);
     });
 
+    test('a reset cancelled at its prompt keeps the device prompt in front of the key', () async {
+      await legacyVault();
+      await legacyPlainKey();
+      final auth = FakeColdAuth(canProtect: false);
+      final (container, controller) = await bootWith(auth);
+      storage.unavailableKey = protectedKeyEntry;
+      storage.unavailableWith = iosCancel;
+
+      await expectLater(controller.wipe(), throwsA(isA<VaultAccessCancelled>()));
+
+      expect(statusOf(container), WalletStatus.locked);
+      expect(storage.data.containsKey(vaultEntry), isTrue);
+      auth.promptResult = false;
+      expect(await controller.unlockWithBiometric(), isFalse);
+      expect(container.read(walletControllerProvider).error, unlockCancelledError);
+    });
+
     test('on a device that can protect it moves behind user presence at the first unlock', () async {
       await legacyVault();
       await legacyPlainKey();
@@ -149,6 +166,25 @@ void main() {
 
       expect(await controller.unlockWithBiometric(), isTrue);
 
+      expect(storage.data.containsKey(plainKeyEntry), isFalse);
+      expect(storage.data.containsKey(protectedKeyEntry), isTrue);
+    });
+
+    test('a reset cancelled after a failed upgrade leaves the upgrade pending', () async {
+      await legacyVault();
+      await legacyPlainKey();
+      final (container, controller) = await boot();
+      storage.unavailableKey = protectedKeyEntry;
+      expect(await controller.unlockWithBiometric(), isFalse);
+      expect(container.read(walletControllerProvider).error, contains('can no longer open'));
+
+      storage.unavailableWith = iosCancel;
+      await expectLater(controller.wipe(), throwsA(isA<VaultAccessCancelled>()));
+      expect(statusOf(container), WalletStatus.locked);
+      expect(storage.data.containsKey(vaultEntry), isTrue);
+
+      storage.unavailableKey = null;
+      expect(await controller.unlockWithBiometric(), isTrue);
       expect(storage.data.containsKey(plainKeyEntry), isFalse);
       expect(storage.data.containsKey(protectedKeyEntry), isTrue);
     });

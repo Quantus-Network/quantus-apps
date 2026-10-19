@@ -61,17 +61,19 @@ void main() {
     expect(find.text('OFF'), findsNothing);
   });
 
+  Future<void> bluetoothNotReported(WidgetTester tester) async {
+    await pumpPanel(tester, const [ConnectivityResult.wifi]);
+
+    final bluetooth = valueOf(tester, 'BLUETOOTH');
+    expect(bluetooth.data, 'NOT REPORTED');
+    expect(bluetooth.style?.color, colors.textMuted);
+    expect(valueOf(tester, 'WI-FI').data, 'CONNECTED');
+    expect(valueOf(tester, 'CELLULAR').data, 'NOT CONNECTED');
+  }
+
   testWidgets(
     'on iOS, where the platform never reports Bluetooth, the row says so',
-    (tester) async {
-      await pumpPanel(tester, const [ConnectivityResult.wifi]);
-
-      final bluetooth = valueOf(tester, 'BLUETOOTH');
-      expect(bluetooth.data, 'NOT REPORTED');
-      expect(bluetooth.style?.color, colors.textMuted);
-      expect(valueOf(tester, 'WI-FI').data, 'CONNECTED');
-      expect(valueOf(tester, 'CELLULAR').data, 'NOT CONNECTED');
-    },
+    bluetoothNotReported,
     variant: TargetPlatformVariant.only(TargetPlatform.iOS),
   );
 

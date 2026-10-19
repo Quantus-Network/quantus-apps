@@ -34,21 +34,30 @@ class ColdAuthService {
   }
 
   /// Whether the OS can keep the signing key behind user presence: a device
-  /// lock exists, and on Android the Keystore can show the prompt (API 28+),
-  /// which below API 30 is biometric-only and so needs an enrolled biometric.
+  /// lock exists, and on Android the Keystore can show the prompt
+  /// ([androidCanProtect]).
   Future<bool> deviceCanProtect() async {
     try {
       if (!Platform.isIOS && !Platform.isAndroid) return false;
       if (!await _auth.isDeviceSupported()) return false;
       if (!Platform.isAndroid) return true;
       final sdk = (await DeviceInfoPlugin().androidInfo).version.sdkInt;
-      if (sdk < 28) return false;
-      if (sdk < 30) return (await _auth.getAvailableBiometrics()).isNotEmpty;
-      return true;
+      return androidCanProtect(sdk, await _auth.getAvailableBiometrics());
     } catch (e) {
       debugPrint('deviceCanProtect error: $e');
       return false;
     }
+  }
+
+  /// The Keystore prompt exists from API 28. Below API 30 it is biometric-only
+  /// and releases a key only to a strong (class 3) biometric, so one must be
+  /// enrolled; a weak one cannot open the store at all. From API 30 the device
+  /// credential stands in.
+  @visibleForTesting
+  static bool androidCanProtect(int sdk, List<BiometricType> enrolled) {
+    if (sdk < 28) return false;
+    if (sdk < 30) return enrolled.contains(BiometricType.strong);
+    return true;
   }
 
   int _prompts = 0;

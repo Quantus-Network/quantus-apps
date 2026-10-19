@@ -340,11 +340,13 @@ class WalletController extends Notifier<WalletState> {
     lock();
   }
 
+  /// A wipe the user cancels at its system prompt leaves the vault, so what
+  /// guards its key stays in place until the wipe has gone through.
   Future<void> wipe() async {
+    await _vault.wipe();
     _keyBytes = null;
     _upgradeToProtected = false;
     _gateLegacyKey = false;
-    await _vault.wipe();
     state = const WalletState(status: WalletStatus.needsSetup);
   }
 }
