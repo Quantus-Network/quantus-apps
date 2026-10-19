@@ -9,6 +9,7 @@ const _external1 = 'qzExternal1';
 const _change0 = 'qzChange0';
 const _alice = 'qzAlice';
 const _bob = 'qzBob';
+const _miner = 'qzMiner';
 final _t0 = DateTime.utc(2026, 9, 1, 12);
 
 /// A transfer or exit id in the indexer's `<block>-<hash>-<event index>` form.
@@ -52,6 +53,7 @@ WormholeSpend _spend(
   required Map<String, int> outputs,
   int event = 0,
   String call = WormholeSpend.privateBatchCall,
+  String? blockAuthor,
 }) => WormholeSpend(
   extrinsicId: extrinsicId,
   blockHeight: block,
@@ -61,6 +63,7 @@ WormholeSpend _spend(
     for (final (i, e) in outputs.entries.indexed)
       WormholeOutput(id: _id(block, event + i), exitAccountId: e.key, amount: wormholeTokenFromScaled(e.value)),
   ],
+  blockAuthor: blockAuthor,
 );
 
 List<TransactionEvent> _history(List<WormholeUtxo> received, Map<String, WormholeSpend> spends) => buildWormholeHistory(
@@ -138,6 +141,58 @@ void main() {
 
     expect(history.map((e) => e.id), unorderedEquals(['0xs1', _id(1, 0)]));
     expect(_sends(history).single.amount, _scaled(600));
+  });
+
+  group("the block author's share of the volume fee", () {
+    // 50.00 in: the fee is 0.02, half burned and half minted to the miner,
+    // which the indexer lists as a third exit of the proof.
+    const inputs = 5000;
+
+    test('is neither the recipient nor change, and stays inside the fee', () {
+      final history = _history(
+        [
+          _received('n1', scaled: inputs),
+          _received('c1', to: _change0, scaled: 998, viaWormhole: true, extrinsicId: '0xs1', block: 5, event: 1),
+        ],
+        {
+          'n1': _spend('0xs1', block: 5, blockAuthor: _miner, outputs: {_alice: 4000, _change0: 998, _miner: 1}),
+        },
+      );
+
+      // The change is hidden rather than listed as a receipt.
+      expect(history.map((e) => e.id), unorderedEquals(['0xs1', _id(1, 0)]));
+      final sent = _sends(history).single;
+      expect(sent.to, _alice);
+      expect(sent.amount, _scaled(4000));
+      expect(sent.fee, _scaled(2));
+      expect(sent.batches.single.changeToken, _scaled(998));
+    });
+
+    test('is told apart from a real payment to the block author by its size', () {
+      final history = _history(
+        [_received('n1', scaled: inputs)],
+        {
+          'n1': _spend('0xs1', block: 5, blockAuthor: _miner, outputs: {_miner: 4998}),
+        },
+      );
+
+      final sent = _sends(history).single;
+      expect(sent.to, _miner);
+      expect(sent.amount, _scaled(4998));
+    });
+
+    test('cannot be told apart in a spend cached before block authors were recorded', () {
+      final row = _sends(
+        _history(
+          [_received('n1', scaled: inputs)],
+          {
+            'n1': _spend('0xs1', block: 5, outputs: {_alice: 4000, _change0: 998, _miner: 1}),
+          },
+        ),
+      ).single;
+
+      expect(row.recipientUnknown, isTrue);
+    });
   });
 
   test('a third-party payment into a change address is incoming', () {

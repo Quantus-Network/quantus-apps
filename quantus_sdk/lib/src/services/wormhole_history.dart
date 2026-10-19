@@ -1,6 +1,7 @@
 import 'package:collection/collection.dart';
 import 'package:quantus_sdk/src/models/event_type.dart';
 import 'package:quantus_sdk/src/models/transaction_event.dart';
+import 'package:quantus_sdk/src/services/wormhole_coin_selection.dart';
 import 'package:quantus_sdk/src/services/wormhole_utxo_service.dart';
 import 'package:quantus_sdk/src/utils/print.dart';
 
@@ -124,12 +125,24 @@ class _Batch {
 /// larger than our inputs) is reported by the full amount our inputs
 /// contributed, with no recipient; nothing in such a proof is taken for
 /// change, so a payment to us inside it stays a receipt.
+///
+/// The runtime also mints the block author's share of the volume fee, which
+/// the indexer lists as one more exit of the proof. It is neither recipient
+/// nor change: it is set aside before attributing, and it stays inside the
+/// reported fee (inputs minus what reached the recipient and us).
 _Batch _batch(WormholeSpend spend, List<WormholeUtxo> inputs, Set<String> ownAddresses) {
   final inputsToken = inputs.fold(BigInt.zero, (sum, u) => sum + u.amount);
-  final change = spend.outputs
+  // Never more than the whole volume fee, so a real payment to the block
+  // author's account is not mistaken for its fee share.
+  final feeBound =
+      inputsToken -
+      wormholeTokenFromScaled(wormholeBatchNetScaled(inputs.map((u) => wormholeScaledFromToken(u.amount))));
+  bool isFeeShare(WormholeOutput o) => o.exitAccountId == spend.blockAuthor && o.amount <= feeBound;
+  final exits = spend.outputs.where((o) => !isFeeShare(o)).toList();
+  final change = exits
       .where((o) => ownAddresses.contains(o.exitAccountId))
       .fold(BigInt.zero, (sum, o) => sum + o.amount);
-  final foreign = spend.outputs.where((o) => !ownAddresses.contains(o.exitAccountId)).toList();
+  final foreign = exits.where((o) => !ownAddresses.contains(o.exitAccountId)).toList();
   if (WormholeSpend.privateBatchCalls.contains(spend.call) &&
       foreign.length == 1 &&
       inputsToken - foreign.single.amount - change >= BigInt.zero) {
