@@ -75,6 +75,11 @@ class EncryptedSendState {
 /// operation itself, so navigation or session teardown cannot orphan it —
 /// disposal cancels the underlying service operation.
 class EncryptedSendController extends Notifier<EncryptedSendState> {
+  /// A snapshot of [encryptedStateProvider] no older than this is trusted
+  /// for the pre-flight check instead of rescanning: the poll refreshes it on
+  /// the same period, and the plan was selected from it.
+  static const Duration maxStateAge = Duration(minutes: 1);
+
   EncryptedAccountService? _service;
 
   @override
@@ -111,13 +116,11 @@ class EncryptedSendController extends Notifier<EncryptedSendState> {
       }
 
       // The plan was frozen at fee-estimate time; UTXO spendability can have
-      // changed while the user dwelled on review. Re-load and verify every
-      // planned input is still unspent so a stale plan fails fast here
-      // instead of after minutes of proving.
-      final fresh = await service.load();
-      final spendable = fresh.utxos.map((u) => u.nullifierHex).toSet();
-      final planIsStale = plan.batches.any((batch) => batch.any((a) => !spendable.contains(a.utxo.nullifierHex)));
-      if (planIsStale) {
+      // changed while the user dwelled on review. Verify every planned input
+      // is still unspent against a recent snapshot so a stale plan fails fast
+      // here instead of after minutes of proving.
+      final fresh = await _recentState(walletIndex);
+      if (!fresh.canSpend(plan)) {
         if (!ref.mounted) return;
         state = state.copyWith(phase: EncryptedSendPhase.planStale);
         return;
@@ -163,6 +166,21 @@ class EncryptedSendController extends Notifier<EncryptedSendState> {
       ref.invalidate(encryptedStateProvider(walletIndex));
       state = state.copyWith(phase: EncryptedSendPhase.failed, errorMessage: e.toString());
     }
+  }
+
+  /// The provider's snapshot when it is younger than [maxStateAge], the
+  /// reload already running when there is one, otherwise a fresh scan — each
+  /// through the provider, so the UI and the pre-flight check never run two
+  /// scans for the same wallet.
+  Future<EncryptedAccountState> _recentState(int walletIndex) {
+    final provider = encryptedStateProvider(walletIndex);
+    final current = ref.read(provider);
+    final snapshot = current.value;
+    if (snapshot != null && !current.isLoading && DateTime.now().difference(snapshot.loadedAt) <= maxStateAge) {
+      return Future.value(snapshot);
+    }
+    if (current.isLoading) return ref.read(provider.future);
+    return ref.refresh(provider.future);
   }
 
   /// Requests cancellation and waits for the operation to actually stop. The

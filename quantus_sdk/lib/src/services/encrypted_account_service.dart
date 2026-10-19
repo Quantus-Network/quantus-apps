@@ -40,7 +40,10 @@ class EncryptedAccountState {
   /// next send.
   final int nextChangeIndex;
 
-  const EncryptedAccountState({
+  /// When the scan behind this snapshot finished.
+  final DateTime loadedAt;
+
+  EncryptedAccountState({
     required this.accountId,
     required this.ownAddresses,
     required this.received,
@@ -49,7 +52,14 @@ class EncryptedAccountState {
     required this.pendingChangeToken,
     required this.nextIndex,
     required this.nextChangeIndex,
-  });
+    DateTime? loadedAt,
+  }) : loadedAt = loadedAt ?? DateTime.now();
+
+  /// Whether every planned input is still among the spendable UTXOs.
+  bool canSpend(WormholeSpendPlan plan) {
+    final spendable = utxos.map((u) => u.nullifierHex).toSet();
+    return plan.batches.every((batch) => batch.every((a) => spendable.contains(a.utxo.nullifierHex)));
+  }
 
   BigInt get balance => utxos.fold(BigInt.zero, (sum, u) => sum + u.amount) + pendingChangeToken;
 
