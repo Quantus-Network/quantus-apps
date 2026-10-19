@@ -18,10 +18,12 @@ Android only installs an update when it is signed with the same certificate as t
 
 | App | Package | Certificate SHA-256 |
 |-----|---------|---------------------|
-| Quantus Wallet | `com.quantus.wallet` | `a5be802e734e26ee454877e2aea903aef9110a06354607102f6e97461b3fcd5e` |
-| Quantus Cold Wallet | `com.quantus.coldwallet` | `07fa0524105c0a13bde75f7ed55f62b85cd13e06660835d881dc451d0f6cb25c` |
+| Quantus Wallet | `com.quantus.wallet` | `6bbab4184853fbf177d676f6630a3912cce305e3cdcb5e6c0d61d94e2ba15f90` |
+| Quantus Cold Wallet | `com.quantus.coldwallet` | `28f9a43bdf8e305c1ead48f13e66ff9a97b0bb6268148f5b7f291aa1913379a3` |
 
-The certificates are committed as `mobile-app/android/upload_certificate.pem` and `cold-wallet-app/android/upload_certificate.pem`. A copy installed from Google Play under Play App Signing has Google's certificate instead. It cannot be updated with a GitHub APK, and a GitHub install cannot be updated from Play.
+These are the Play upload certificates: the same keystores used to sign AABs for Play Console. The certificates are committed as `mobile-app/android/upload_certificate.pem` and `cold-wallet-app/android/upload_certificate.pem`. A copy installed from Google Play under Play App Signing has Google's certificate instead. It cannot be updated with a GitHub APK, and a GitHub install cannot be updated from Play.
+
+GitHub APKs `wallet-v1.7.0+142` and `cold-wallet-v1.2.0+16` through `+18` were signed with a different key. Those installs cannot take an in-place update from a later GitHub APK.
 
 ## Verify a release
 
