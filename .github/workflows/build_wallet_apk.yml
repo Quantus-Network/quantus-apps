@@ -72,6 +72,11 @@ jobs:
           fi
           VERSION=$(sed -n 's/^version:[[:space:]]*//p' "$DIR/pubspec.yaml")
           [ -n "$VERSION" ] || { echo "Error: could not read version from $DIR/pubspec.yaml" >&2; exit 1; }
+          sh mobile-app/tool/generate_version.sh "$DIR"
+          git diff --exit-code -- "$DIR/lib/generated/version.g.dart" || {
+            echo "Error: $DIR/lib/generated/version.g.dart is stale. Run 'sh mobile-app/tool/generate_version.sh $DIR' and commit it." >&2
+            exit 1
+          }
           {
             echo "dir=$DIR"
             echo "version=$VERSION"
