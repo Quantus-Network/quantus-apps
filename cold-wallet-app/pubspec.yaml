@@ -88,6 +88,8 @@ flutter:
         - asset: assets/fonts/GeistMono-Bold.ttf
           weight: 700
 
+# Release builds ship the committed splash files. After changing this block or its
+# images, run `dart run flutter_native_splash:create` and commit the output.
 flutter_native_splash:
   background_image: assets/v2/splash_background.jpg
   color: "#0E0E0E"

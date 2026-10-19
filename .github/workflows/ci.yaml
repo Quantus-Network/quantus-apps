@@ -23,6 +23,7 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
+          flutter-version-file: .fvmrc
       - name: Install Melos
         run: dart pub global activate melos
       - name: Bootstrap Melos

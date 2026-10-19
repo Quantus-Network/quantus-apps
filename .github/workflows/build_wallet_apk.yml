@@ -1,4 +1,5 @@
-# Builds a signed (or debug) APK for one wallet app.
+# Builds one wallet APK. Release builds compile without signing keys; a separate
+# job that runs no project build code signs, checks and attests the APK.
 # Called by create_wallet_android_build.yml; not meant to be run directly.
 name: Build Wallet APK
 
@@ -6,199 +7,369 @@ on:
   workflow_call:
     inputs:
       app:
-        description: "Which wallet to build"
+        description: "Which wallet to build: mobile or cold"
         required: true
         type: string
       build_mode:
-        description: "Build mode"
+        description: "release or debug"
         required: true
         type: string
-    outputs:
-      version:
-        description: "pubspec version (e.g. 1.5.10+127)"
-        value: ${{ jobs.build.outputs.version }}
-      tag:
-        description: "Git tag for this APK"
-        value: ${{ jobs.build.outputs.tag }}
-      artifact_name:
-        description: "Uploaded artifact name"
-        value: ${{ jobs.build.outputs.artifact_name }}
+      create_release:
+        description: "Publish a GitHub release for the signed APK"
+        required: true
+        type: boolean
 
 permissions:
   contents: read
 
+env:
+  ANDROID_BUILD_TOOLS: "36.0.0"
+
 jobs:
   build:
     name: Build ${{ inputs.app }} APK
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
+      dir: ${{ steps.meta.outputs.dir }}
       version: ${{ steps.meta.outputs.version }}
       tag: ${{ steps.meta.outputs.tag }}
+      title: ${{ steps.meta.outputs.title }}
+      apk_name: ${{ steps.meta.outputs.apk_name }}
+      build_artifact: ${{ steps.meta.outputs.build_artifact }}
       artifact_name: ${{ steps.meta.outputs.artifact_name }}
-    env:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
-      ANDROID_STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
-      ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-      ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
-      COLD_ANDROID_KEYSTORE_BASE64: ${{ secrets.COLD_ANDROID_KEYSTORE_BASE64 }}
-      COLD_ANDROID_STORE_PASSWORD: ${{ secrets.COLD_ANDROID_STORE_PASSWORD }}
-      COLD_ANDROID_KEY_ALIAS: ${{ secrets.COLD_ANDROID_KEY_ALIAS }}
-      COLD_ANDROID_KEY_PASSWORD: ${{ secrets.COLD_ANDROID_KEY_PASSWORD }}
-      MOBILE_APP_ENV: ${{ secrets.MOBILE_APP_ENV }}
-      GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+      apk_sha256: ${{ steps.record.outputs.apk_sha256 }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
 
-      - name: Resolve app paths
+      - name: Resolve app and check inputs
         id: meta
+        env:
+          APP: ${{ inputs.app }}
+          MODE: ${{ inputs.build_mode }}
+          CREATE_RELEASE: ${{ inputs.create_release }}
         run: |
           set -euo pipefail
-          case "${{ inputs.app }}" in
-            mobile)
-              DIR=mobile-app
-              ARTIFACT=quantus_wallet
-              TAG_PREFIX=wallet-v
-              ;;
-            cold)
-              DIR=cold-wallet-app
-              ARTIFACT=quantus_cold_wallet
-              TAG_PREFIX=cold-wallet-v
-              ;;
-            *)
-              echo "Unknown app: ${{ inputs.app }} (expected mobile or cold)" >&2
-              exit 1
-              ;;
+          case "$APP" in
+            mobile) DIR=mobile-app; ARTIFACT=quantus_wallet; TAG_PREFIX=wallet-v; TITLE="Quantus Wallet" ;;
+            cold) DIR=cold-wallet-app; ARTIFACT=quantus_cold_wallet; TAG_PREFIX=cold-wallet-v; TITLE="Quantus Cold Wallet" ;;
+            *) echo "Error: unknown app '$APP' (expected mobile or cold)" >&2; exit 1 ;;
           esac
-          VERSION=$(grep '^version:' "$DIR/pubspec.yaml" | head -1 | sed 's/version:[[:space:]]*//')
-          if [ -z "$VERSION" ]; then
-            echo "Error: could not read version from $DIR/pubspec.yaml" >&2
+          case "$MODE" in
+            release) BUILD_ARTIFACT="${ARTIFACT}-android-release-unsigned" ;;
+            debug) BUILD_ARTIFACT="${ARTIFACT}-android-debug" ;;
+            *) echo "Error: unknown build mode '$MODE' (expected release or debug)" >&2; exit 1 ;;
+          esac
+          if [ "$MODE" = release ] && [ "$GITHUB_REF" != refs/heads/main ]; then
+            echo "Error: signed release builds come from main only, not $GITHUB_REF. Use build_mode debug." >&2
             exit 1
           fi
+          if [ "$CREATE_RELEASE" = true ] && [ "$MODE" != release ]; then
+            echo "Error: create_release needs build_mode release" >&2
+            exit 1
+          fi
+          VERSION=$(sed -n 's/^version:[[:space:]]*//p' "$DIR/pubspec.yaml")
+          [ -n "$VERSION" ] || { echo "Error: could not read version from $DIR/pubspec.yaml" >&2; exit 1; }
           {
             echo "dir=$DIR"
-            echo "artifact=$ARTIFACT"
             echo "version=$VERSION"
             echo "tag=${TAG_PREFIX}${VERSION}"
-            echo "artifact_name=${ARTIFACT}-android-${{ inputs.build_mode }}"
+            echo "title=$TITLE $VERSION"
+            echo "apk_name=${ARTIFACT}_${VERSION}_${MODE}.apk"
+            echo "build_artifact=$BUILD_ARTIFACT"
+            echo "artifact_name=${ARTIFACT}-android-${MODE}"
           } >> "$GITHUB_OUTPUT"
 
-      - name: Cache Rust
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            ~/.rustup/toolchains
-          key: ${{ runner.os }}-rust-nightly-android-${{ hashFiles('quantus_sdk/rust/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-rust-nightly-android-
-            ${{ runner.os }}-rust-
-
       - name: Set up Java 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4.9.1
         with:
           distribution: "zulu"
           java-version: "17"
 
       - name: Set up Flutter
-        uses: subosito/flutter-action@v2
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
         with:
           channel: "stable"
-          cache: true
+          flutter-version-file: .fvmrc
 
       # cargokit.yaml builds with nightly + -Zbuild-std. Installing that
       # toolchain here (once) avoids two parallel Gradle cargokit tasks
       # racing rustup toolchain install nightly, which fails CI with a
       # "could not rename downloaded file" error.
       - name: Set up Rust nightly (Android + rust-src)
-        uses: dtolnay/rust-toolchain@nightly
+        uses: dtolnay/rust-toolchain@7e38f4b43b4db5c8dd498af069a4f6196df1d067 # master 2026-10-01
         with:
+          toolchain: nightly
           components: rust-src
           targets: aarch64-linux-android,armv7-linux-androideabi,x86_64-linux-android,i686-linux-android
 
-      - name: Install Melos
-        run: dart pub global activate melos
-
-      - name: Bootstrap Melos
-        run: melos bootstrap
-
-      - name: Create mobile-app .env
-        if: inputs.app == 'mobile'
-        run: echo "$MOBILE_APP_ENV" > mobile-app/.env
-
-      - name: Create google-services.json
-        if: inputs.app == 'mobile'
-        run: echo "$GOOGLE_SERVICES_JSON" > mobile-app/android/app/google-services.json
-
-      - name: Configure Android signing
-        if: inputs.build_mode == 'release'
-        env:
-          APP_DIR: ${{ steps.meta.outputs.dir }}
+      - name: Bootstrap workspace from lockfiles
         run: |
           set -euo pipefail
-          case "${{ inputs.app }}" in
-            mobile)
-              B64=$ANDROID_KEYSTORE_BASE64
-              STORE=$ANDROID_STORE_PASSWORD
-              ALIAS=$ANDROID_KEY_ALIAS
-              KEY=$ANDROID_KEY_PASSWORD
-              ;;
-            cold)
-              B64=$COLD_ANDROID_KEYSTORE_BASE64
-              STORE=$COLD_ANDROID_STORE_PASSWORD
-              ALIAS=$COLD_ANDROID_KEY_ALIAS
-              KEY=$COLD_ANDROID_KEY_PASSWORD
-              ;;
-            *)
-              echo "Unknown app: ${{ inputs.app }}" >&2
-              exit 1
-              ;;
-          esac
-          for name in B64 STORE ALIAS KEY; do
-            eval "value=\${$name}"
-            if [ -z "$value" ]; then
-              echo "Error: signing secret $name is empty for app '${{ inputs.app }}'" >&2
-              exit 1
-            fi
-          done
-          echo "$B64" | base64 --decode > "$APP_DIR/android/upload-keystore.jks"
-          keytool -list -keystore "$APP_DIR/android/upload-keystore.jks" \
-            -storepass "$STORE" -alias "$ALIAS" > /dev/null
-          cat > "$APP_DIR/android/key.properties" << EOF
-          storeFile=../upload-keystore.jks
-          storePassword=$STORE
-          keyAlias=$ALIAS
-          keyPassword=$KEY
-          EOF
+          dart pub get --enforce-lockfile
+          dart run melos bootstrap --enforce-lockfile
 
-      - name: Generate splash screen
-        working-directory: ${{ steps.meta.outputs.dir }}
+      - name: Write mobile-app build secrets
+        if: inputs.app == 'mobile'
+        env:
+          MOBILE_APP_ENV: ${{ secrets.MOBILE_APP_ENV }}
+          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
         run: |
-          flutter pub get
-          dart run flutter_native_splash:create
+          set -euo pipefail
+          [ -n "$MOBILE_APP_ENV" ] || { echo "Error: secret MOBILE_APP_ENV is empty" >&2; exit 1; }
+          [ -n "$GOOGLE_SERVICES_JSON" ] || { echo "Error: secret GOOGLE_SERVICES_JSON is empty" >&2; exit 1; }
+          echo "$MOBILE_APP_ENV" > mobile-app/.env
+          echo "$GOOGLE_SERVICES_JSON" > mobile-app/android/app/google-services.json
 
       - name: Build APK
         working-directory: ${{ steps.meta.outputs.dir }}
-        run: flutter build apk --${{ inputs.build_mode }}
-
-      - name: Rename APK
-        id: rename_apk
         env:
-          APP_DIR: ${{ steps.meta.outputs.dir }}
-          ARTIFACT: ${{ steps.meta.outputs.artifact }}
-          VERSION: ${{ steps.meta.outputs.version }}
           MODE: ${{ inputs.build_mode }}
         run: |
           set -euo pipefail
-          SRC="$APP_DIR/build/app/outputs/flutter-apk/app-${MODE}.apk"
-          DEST="$APP_DIR/build/app/outputs/flutter-apk/${ARTIFACT}_${VERSION}_${MODE}.apk"
-          mv "$SRC" "$DEST"
-          echo "apk_path=$DEST" >> "$GITHUB_OUTPUT"
+          if [ "$MODE" = release ]; then
+            flutter build apk --release --android-project-arg=unsignedRelease=true
+          else
+            flutter build apk --debug
+          fi
 
-      - name: Upload APK artifact
-        uses: actions/upload-artifact@v4
+      - name: Check the build left tracked files unchanged
+        run: |
+          git diff --exit-code || {
+            echo "Error: the build changed tracked files. Commit the regenerated files so the APK matches the sources." >&2
+            exit 1
+          }
+
+      - name: Record build environment
+        id: record
+        env:
+          DIR: ${{ steps.meta.outputs.dir }}
+          MODE: ${{ inputs.build_mode }}
+          VERSION: ${{ steps.meta.outputs.version }}
+          APK_NAME: ${{ steps.meta.outputs.apk_name }}
+        run: |
+          set -euo pipefail
+          OUT="$RUNNER_TEMP/out"
+          mkdir -p "$OUT"
+          mv "$DIR/build/app/outputs/flutter-apk/app-$MODE.apk" "$OUT/$APK_NAME"
+          SHA=$(sha256sum "$OUT/$APK_NAME" | cut -d' ' -f1)
+          {
+            echo "app_dir=$DIR"
+            echo "version=$VERSION"
+            echo "build_mode=$MODE"
+            echo "commit=$GITHUB_SHA"
+            echo "ref=$GITHUB_REF"
+            echo "workflow_run=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/attempts/$GITHUB_RUN_ATTEMPT"
+            echo "runner_image=$ImageOS $ImageVersion"
+            echo "flutter=$(flutter --version --machine | jq -c '{frameworkVersion, frameworkRevision, engineRevision, dartSdkVersion}')"
+            echo "rustc=$(rustc +nightly --version)"
+            echo "java=$(java -version 2>&1 | head -1)"
+            echo "unsigned_apk_sha256=$SHA"
+          } > "$OUT/build-info.txt"
+          cat "$OUT/build-info.txt"
+          echo "apk_sha256=$SHA" >> "$GITHUB_OUTPUT"
+
+      - name: Upload APK
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: ${{ steps.meta.outputs.artifact_name }}
-          path: ${{ steps.rename_apk.outputs.apk_path }}
+          name: ${{ steps.meta.outputs.build_artifact }}
+          path: ${{ runner.temp }}/out/
+          if-no-files-found: error
+
+  sign:
+    name: Sign ${{ inputs.app }} APK
+    needs: build
+    if: inputs.build_mode == 'release'
+    runs-on: ubuntu-24.04
+    # Holds the signing keys. Restrict it to main with required reviewers in the
+    # repository settings; see ANDROID_RELEASES.md.
+    environment: android-release
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+    outputs:
+      apk_sha256: ${{ steps.verify.outputs.apk_sha256 }}
+      certificate_sha256: ${{ steps.verify.outputs.certificate_sha256 }}
+      sums_sha256: ${{ steps.sums.outputs.sums_sha256 }}
+    env:
+      APK_NAME: ${{ needs.build.outputs.apk_name }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+
+      - name: Download unsigned APK
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: ${{ needs.build.outputs.build_artifact }}
+          path: ${{ runner.temp }}/unsigned
+
+      - name: Check unsigned APK digest
+        env:
+          EXPECTED: ${{ needs.build.outputs.apk_sha256 }}
+        run: echo "$EXPECTED  $RUNNER_TEMP/unsigned/$APK_NAME" | sha256sum -c -
+
+      - name: Install Android build-tools
+        run: |
+          set -euo pipefail
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install "build-tools;$ANDROID_BUILD_TOOLS"
+          echo "$ANDROID_HOME/build-tools/$ANDROID_BUILD_TOOLS" >> "$GITHUB_PATH"
+
+      - name: Sign APK
+        env:
+          APP: ${{ inputs.app }}
+          MOBILE_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          MOBILE_STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
+          MOBILE_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          MOBILE_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          COLD_KEYSTORE_BASE64: ${{ secrets.COLD_ANDROID_KEYSTORE_BASE64 }}
+          COLD_STORE_PASSWORD: ${{ secrets.COLD_ANDROID_STORE_PASSWORD }}
+          COLD_KEY_ALIAS: ${{ secrets.COLD_ANDROID_KEY_ALIAS }}
+          COLD_KEY_PASSWORD: ${{ secrets.COLD_ANDROID_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          case "$APP" in
+            mobile) B64=$MOBILE_KEYSTORE_BASE64; ALIAS=$MOBILE_KEY_ALIAS; export KS_PASS=$MOBILE_STORE_PASSWORD KEY_PASS=$MOBILE_KEY_PASSWORD ;;
+            cold) B64=$COLD_KEYSTORE_BASE64; ALIAS=$COLD_KEY_ALIAS; export KS_PASS=$COLD_STORE_PASSWORD KEY_PASS=$COLD_KEY_PASSWORD ;;
+            *) echo "Error: unknown app '$APP'" >&2; exit 1 ;;
+          esac
+          for name in B64 ALIAS KS_PASS KEY_PASS; do
+            [ -n "${!name}" ] || { echo "Error: signing secret $name is empty for app '$APP'" >&2; exit 1; }
+          done
+          KEYSTORE="$RUNNER_TEMP/release.keystore"
+          trap 'rm -f "$KEYSTORE"' EXIT
+          echo "$B64" | base64 --decode > "$KEYSTORE"
+          mkdir -p "$RUNNER_TEMP/dist"
+          apksigner sign --ks "$KEYSTORE" --ks-key-alias "$ALIAS" \
+            --ks-pass env:KS_PASS --key-pass env:KEY_PASS --v4-signing-enabled false \
+            --out "$RUNNER_TEMP/dist/$APK_NAME" "$RUNNER_TEMP/unsigned/$APK_NAME"
+
+      - name: Check signed APK against sources
+        id: verify
+        env:
+          DIR: ${{ needs.build.outputs.dir }}
+        run: |
+          set -euo pipefail
+          scripts/verify_android_apk.sh "$RUNNER_TEMP/dist/$APK_NAME" "$DIR" | tee -a "$GITHUB_OUTPUT"
+
+      - name: Attest build provenance
+        id: attest
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: ${{ runner.temp }}/dist/${{ needs.build.outputs.apk_name }}
+
+      - name: Write checksums
+        id: sums
+        env:
+          BUNDLE: ${{ steps.attest.outputs.bundle-path }}
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/dist"
+          cp "$BUNDLE" "$APK_NAME.sigstore.json"
+          cp "$RUNNER_TEMP/unsigned/build-info.txt" build-info.txt
+          sha256sum "$APK_NAME" build-info.txt "$APK_NAME.sigstore.json" > SHA256SUMS
+          cat SHA256SUMS
+          echo "sums_sha256=$(sha256sum SHA256SUMS | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+
+      - name: Upload signed APK
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: ${{ needs.build.outputs.artifact_name }}
+          path: ${{ runner.temp }}/dist/
+          if-no-files-found: error
+
+  release:
+    name: Release ${{ inputs.app }}
+    needs: [build, sign]
+    if: inputs.create_release
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TAG: ${{ needs.build.outputs.tag }}
+      APK_NAME: ${{ needs.build.outputs.apk_name }}
+      APK_SHA256: ${{ needs.sign.outputs.apk_sha256 }}
+      SUMS_SHA256: ${{ needs.sign.outputs.sums_sha256 }}
+    steps:
+      - name: Download signed APK
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: ${{ needs.build.outputs.artifact_name }}
+          path: dist
+
+      - name: Check release files match the sign job
+        working-directory: dist
+        run: |
+          set -euo pipefail
+          echo "$SUMS_SHA256  SHA256SUMS" | sha256sum -c -
+          sha256sum -c SHA256SUMS
+          grep -qxF "$APK_SHA256  $APK_NAME" SHA256SUMS
+          EXPECTED=$(printf '%s\n' SHA256SUMS build-info.txt "$APK_NAME" "$APK_NAME.sigstore.json" | sort)
+          ACTUAL=$(find . -mindepth 1 -printf '%P\n' | sort)
+          [ "$ACTUAL" = "$EXPECTED" ] || { echo "Error: unexpected files in the signed artifact: $ACTUAL" >&2; exit 1; }
+
+      - name: Write release notes
+        env:
+          TITLE: ${{ needs.build.outputs.title }}
+          CERT_SHA256: ${{ needs.sign.outputs.certificate_sha256 }}
+        run: |
+          set -euo pipefail
+          REPO_URL="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY"
+          cat > notes.md <<EOF
+          ## $TITLE - Android Release
+
+          **Commit:** [\`$GITHUB_SHA\`]($REPO_URL/commit/$GITHUB_SHA)
+
+          ### Installation
+          1. Download \`$APK_NAME\` below
+          2. Enable "Install from unknown sources"
+          3. Install
+
+          ### Verify the download
+          - APK SHA-256: \`$APK_SHA256\`
+          - Signing certificate SHA-256: \`$CERT_SHA256\`
+
+          GitHub signed a build provenance attestation that ties this APK to the commit above and to this repository's release workflow:
+
+          \`\`\`sh
+          gh attestation verify $APK_NAME --repo $GITHUB_REPOSITORY --signer-workflow $GITHUB_REPOSITORY/.github/workflows/build_wallet_apk.yml --source-ref refs/heads/main --source-digest $GITHUB_SHA
+          \`\`\`
+
+          To check everything at once, run \`scripts/verify_android_release.sh $TAG\` from a clone of this repository. See [ANDROID_RELEASES.md]($REPO_URL/blob/$GITHUB_SHA/ANDROID_RELEASES.md).
+
+          EOF
+          cat notes.md
+
+      - name: Create tag at the built commit
+        env:
+          DIR: ${{ needs.build.outputs.dir }}
+        run: |
+          gh api "repos/$GITHUB_REPOSITORY/git/refs" -f "ref=refs/tags/$TAG" -f "sha=$GITHUB_SHA" > /dev/null || {
+            echo "Error: could not create tag $TAG. If it already exists, bump the version in $DIR/pubspec.yaml." >&2
+            exit 1
+          }
+
+      - name: Publish release
+        env:
+          TITLE: ${{ needs.build.outputs.title }}
+        run: |
+          set -euo pipefail
+          gh release create "$TAG" dist/* --repo "$GITHUB_REPOSITORY" --draft --verify-tag \
+            --title "$TITLE" --notes-file notes.md --generate-notes
+          gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --draft=false
+
+      - name: Check published release
+        run: |
+          set -euo pipefail
+          TAG_COMMIT=$(git ls-remote --exit-code "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY" "refs/tags/$TAG" | cut -f1)
+          [ "$TAG_COMMIT" = "$GITHUB_SHA" ] || { echo "Error: tag $TAG points to $TAG_COMMIT, expected $GITHUB_SHA" >&2; exit 1; }
+          DIGEST=$(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json assets --jq ".assets[] | select(.name == \"$APK_NAME\") | .digest")
+          [ "$DIGEST" = "sha256:$APK_SHA256" ] || { echo "Error: release asset digest '$DIGEST' is not sha256:$APK_SHA256" >&2; exit 1; }
+          if [ "$(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json isImmutable --jq .isImmutable)" != true ]; then
+            echo "::warning::Release $TAG is not immutable. Turn on immutable releases in the repository settings; see ANDROID_RELEASES.md."
+          fi

@@ -46,11 +46,8 @@ android {
 
     buildTypes {
         release {
-            signingConfig = if (keystorePropertiesFile.exists()) {
-                signingConfigs.getByName("release")
-            } else {
-                signingConfigs.getByName("debug")
-            }
+            // CI passes -PunsignedRelease=true and signs in a separate job.
+            signingConfig = if (project.findProperty("unsignedRelease") == "true") null else signingConfigs.getByName("release")
             // AGP shrinks release builds by default. R8 full mode honours ML Kit's
             // `-keep class * implements ComponentRegistrar` rule by keeping the class but
             // dropping its no-arg constructor, which ML Kit instantiates reflectively:
