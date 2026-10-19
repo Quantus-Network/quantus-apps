@@ -68,10 +68,15 @@ void main() {
     expect(ActiveSwap.fromJson(jsonDecode(jsonEncode(done.toJson()))).settledAt, done.settledAt);
   });
 
-  test('a pending deposit past its deadline is unseen', () {
+  test('a swap is overdue once its deposit is unseen at the deadline, or unsettled an hour past it', () {
     final past = deadline.add(const Duration(seconds: 1));
-    expect(swap(SwapStatus.pendingDeposit).deadlinePassed(past), isTrue);
-    expect(swap(SwapStatus.pendingDeposit).deadlinePassed(deadline.subtract(const Duration(seconds: 1))), isFalse);
-    expect(swap(SwapStatus.knownDepositTx).deadlinePassed(past), isFalse);
+    final late = deadline.add(ActiveSwap.finishGrace).add(const Duration(seconds: 1));
+    expect(swap(SwapStatus.pendingDeposit).overdue(past), isTrue);
+    expect(swap(SwapStatus.pendingDeposit).overdue(deadline.subtract(const Duration(seconds: 1))), isFalse);
+    expect(swap(SwapStatus.knownDepositTx).overdue(past), isFalse);
+    expect(swap(SwapStatus.processing).overdue(late), isTrue);
+    expect(swap(SwapStatus.success).overdue(late), isFalse);
+    expect(swap(SwapStatus.processing).inProgressAt(past), isTrue);
+    expect(swap(SwapStatus.processing).inProgressAt(late), isFalse);
   });
 }

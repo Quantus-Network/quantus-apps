@@ -4,7 +4,7 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 /// Underlined inline text action, e.g. Max or Retry next to a value.
 class LinkButton extends StatelessWidget {
   final String label;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   const LinkButton({super.key, required this.label, required this.onTap});
 
