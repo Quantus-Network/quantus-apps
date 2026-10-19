@@ -237,6 +237,13 @@ class WormholeUtxoService {
   static const int _nullifierBatchSize = 300;
   static const int _reorgDepth = 180;
 
+  /// Addresses whose transfers are fetched at the same time. Each address is
+  /// its own `_eq` query (see [transfersToAddressQuery]); an account that has
+  /// sent many times owns one change address per send, so walking them one
+  /// after another made every load pay one indexer round trip per past send.
+  @visibleForTesting
+  static const int transferFetchConcurrency = 6;
+
   static const String _transferSelection = r'''
     id
     blockHeight: block_height
@@ -357,15 +364,19 @@ $_transferSelection
   /// Current-generation files of other networks stay, so switching chains
   /// back and forth does not rescan.
   @visibleForTesting
-  static Future<void> deleteStaleCaches(String addressHash) async {
+  static Future<void> deleteStaleCaches(String addressHash) => deleteStaleCachesFor([addressHash]);
+
+  /// [deleteStaleCaches] for many addresses with a single directory listing.
+  static Future<void> deleteStaleCachesFor(Iterable<String> addressHashes) async {
     try {
-      final prefix = _cachePrefix(addressHash);
+      final prefixes = addressHashes.map(_cachePrefix).toSet();
+      if (prefixes.isEmpty) return;
       final dir = await getApplicationSupportDirectory();
       if (!await dir.exists()) return;
       await for (final entity in dir.list()) {
         if (entity is! File) continue;
         final name = _fileName(entity);
-        if (_isCacheFileFor(name, prefix) && !_currentGeneration.hasMatch(name)) {
+        if (prefixes.any((p) => _isCacheFileFor(name, p)) && !_currentGeneration.hasMatch(name)) {
           await entity.delete();
           _log('Deleted stale cache: $name');
         }
@@ -375,8 +386,10 @@ $_transferSelection
     }
   }
 
+  /// Reads the transfer cache of one address; callers sweep stale
+  /// generations first ([deleteStaleCachesFor]) so a scan of many addresses
+  /// lists the cache directory once rather than once per address.
   Future<_TransferCache> _loadTransferCache(String addressHash) async {
-    await deleteStaleCaches(addressHash);
     try {
       final file = await _cacheFile('cache', addressHash);
       if (!await file.exists()) return _TransferCache.empty();
@@ -389,7 +402,10 @@ $_transferSelection
   }
 
   @visibleForTesting
-  Future<int> cachedTransferHeight(String addressHash) async => (await _loadTransferCache(addressHash)).cachedUpToBlock;
+  Future<int> cachedTransferHeight(String addressHash) async {
+    await deleteStaleCaches(addressHash);
+    return (await _loadTransferCache(addressHash)).cachedUpToBlock;
+  }
 
   Future<void> _saveTransferCache(String addressHash, _TransferCache cache) async {
     try {
@@ -404,6 +420,10 @@ $_transferSelection
   @visibleForTesting
   Future<Map<String, WormholeSpend>> loadSpentNullifiers(String addressHash) async {
     await deleteStaleCaches(addressHash);
+    return _loadSpentNullifiers(addressHash);
+  }
+
+  Future<Map<String, WormholeSpend>> _loadSpentNullifiers(String addressHash) async {
     try {
       final file = await _cacheFile('nullifiers', addressHash);
       if (!await file.exists()) return {};
@@ -669,10 +689,11 @@ query SpentNullifiers($hashes: [String!]!) {
   ///
   /// Each address keeps its own on-disk cache and is paged with its own `_eq`
   /// query (see [transfersToAddressQuery] for why addresses are not batched
-  /// into one `_in`). The cache only advances to
-  /// `safeCutoff = currentHeight - reorgDepth` so we never have to rewrite
-  /// already-persisted entries on a reorg; transfers above `safeCutoff` simply
-  /// aren't cached and are re-queried next time.
+  /// into one `_in`); up to [transferFetchConcurrency] addresses are paged at
+  /// once. The cache only advances to `safeCutoff = currentHeight - reorgDepth`
+  /// so we never have to rewrite already-persisted entries on a reorg;
+  /// transfers above `safeCutoff` simply aren't cached and are re-queried
+  /// next time.
   Future<({Map<String, List<WormholeTransfer>> byAddress, int safeCutoff})> getTransfersToMany(
     List<String> addresses, {
     WormholeProgressCallback? onProgress,
@@ -685,10 +706,12 @@ query SpentNullifiers($hashes: [String!]!) {
     final safeCutoff = (chainHeight - _reorgDepth).clamp(0, chainHeight);
     _log('chainHeight=$chainHeight safeCutoff=$safeCutoff');
 
+    final hashes = {for (final a in addresses) a: _addressHashOf(a)};
+    await deleteStaleCachesFor(hashes.values);
     final caches = <String, _TransferCache>{};
     var cachedCount = 0;
     for (final address in addresses) {
-      final cache = await _loadTransferCache(_addressHashOf(address));
+      final cache = await _loadTransferCache(hashes[address]!);
       caches[address] = cache;
       cachedCount += cache.transfers.length;
     }
@@ -701,41 +724,82 @@ query SpentNullifiers($hashes: [String!]!) {
     // GraphQL filter of `height_gt: cachedUpToBlock` correctly fetches only
     // what we don't already have.
     final newByAddress = <String, List<WormholeTransfer>>{for (final a in addresses) a: []};
-    var fetchedCount = 0;
-    for (final address in addresses) {
-      final upTo = caches[address]!.cachedUpToBlock;
-      if (upTo >= chainHeight) continue;
-      _throwIfCancelled(isCancelled);
-      _log('Querying next address after block $upTo');
-      final addressBase = fetchedCount;
-      final fetched = await fetchAllTransfers(
-        toAddress: address,
-        afterBlock: upTo,
-        onFetched: (n) => onProgress?.call(1, cachedCount + addressBase + n),
-        isCancelled: isCancelled,
-      );
-      fetchedCount += fetched.length;
-      for (final t in fetched) {
-        if (t.toId != address) {
-          throw StateError('Indexer returned transfer to unrequested address ${t.toId}');
+    final fetchedSoFar = <String, int>{for (final a in addresses) a: 0};
+    int fetchedCount() => fetchedSoFar.values.fold(0, (sum, n) => sum + n);
+    await _forEachConcurrently(
+      addresses.where((a) => caches[a]!.cachedUpToBlock < chainHeight),
+      transferFetchConcurrency,
+      (address) async {
+        final upTo = caches[address]!.cachedUpToBlock;
+        _throwIfCancelled(isCancelled);
+        _log('Querying address after block $upTo');
+        final fetched = await fetchAllTransfers(
+          toAddress: address,
+          afterBlock: upTo,
+          onFetched: (n) {
+            fetchedSoFar[address] = n;
+            onProgress?.call(1, cachedCount + fetchedCount());
+          },
+          isCancelled: isCancelled,
+        );
+        for (final t in fetched) {
+          if (t.toId != address) {
+            throw StateError('Indexer returned transfer to unrequested address ${t.toId}');
+          }
         }
-        newByAddress[address]!.add(t);
-      }
-    }
+        fetchedSoFar[address] = fetched.length;
+        newByAddress[address]!.addAll(fetched);
+      },
+    );
 
     final byAddress = <String, List<WormholeTransfer>>{};
     for (final address in addresses) {
-      final all = [...caches[address]!.transfers, ...newByAddress[address]!];
-      byAddress[address] = all;
+      final cache = caches[address]!;
+      final fetched = newByAddress[address]!;
+      byAddress[address] = [...cache.transfers, ...fetched];
       // Cache only the reorg-safe slice; the caller still sees recent
-      // (above-cutoff) transfers so balances / claims include them.
-      final safe = all.where((t) => t.blockHeight <= safeCutoff).toList();
-      await _saveTransferCache(_addressHashOf(address), _TransferCache(cachedUpToBlock: safeCutoff, transfers: safe));
+      // (above-cutoff) transfers so balances / claims include them. Rewrite
+      // the file only when it gains a transfer or its scan height would fall
+      // more than a reorg depth behind — the query window stays bounded while
+      // an idle address (one change output, long ago) is not re-encoded on
+      // every load.
+      final newSafe = fetched.where((t) => t.blockHeight <= safeCutoff).toList();
+      if (newSafe.isEmpty && safeCutoff - cache.cachedUpToBlock < _reorgDepth) continue;
+      await _saveTransferCache(
+        hashes[address]!,
+        _TransferCache(cachedUpToBlock: safeCutoff, transfers: [...cache.transfers, ...newSafe]),
+      );
     }
-    onProgress?.call(1, cachedCount + fetchedCount);
+    onProgress?.call(1, cachedCount + fetchedCount());
 
-    _log('getTransfersToMany DONE: ${cachedCount + fetchedCount} transfers (${sw.elapsedMilliseconds}ms)');
+    _log('getTransfersToMany DONE: ${cachedCount + fetchedCount()} transfers (${sw.elapsedMilliseconds}ms)');
     return (byAddress: byAddress, safeCutoff: safeCutoff);
+  }
+
+  /// Runs [action] over [items] with at most [limit] in flight. After a
+  /// failure no further item is started; the first error is rethrown once the
+  /// actions already running have settled, so nothing is left in flight.
+  static Future<void> _forEachConcurrently<T>(
+    Iterable<T> items,
+    int limit,
+    Future<void> Function(T item) action,
+  ) async {
+    final iterator = items.iterator;
+    Object? firstError;
+    StackTrace? firstStackTrace;
+    Future<void> worker() async {
+      while (firstError == null && iterator.moveNext()) {
+        try {
+          await action(iterator.current);
+        } catch (e, st) {
+          firstError ??= e;
+          firstStackTrace ??= st;
+        }
+      }
+    }
+
+    await Future.wait([for (var i = 0; i < limit; i++) worker()]);
+    if (firstError != null) Error.throwWithStackTrace(firstError!, firstStackTrace!);
   }
 
   Future<({List<WormholeTransfer> transfers, int safeCutoff})> getTransfersTo(
@@ -780,7 +844,7 @@ query SpentNullifiers($hashes: [String!]!) {
 
     for (final owner in addresses) {
       final ownerHash = _addressHashOf(owner.address);
-      final cachedSpent = await loadSpentNullifiers(ownerHash);
+      final cachedSpent = await _loadSpentNullifiers(ownerHash);
       cachedSpentByOwner[ownerHash] = cachedSpent;
       spends.addAll(cachedSpent);
 
