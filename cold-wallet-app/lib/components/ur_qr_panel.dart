@@ -6,9 +6,9 @@ import 'package:quantus_cold_wallet/providers/settings_providers.dart';
 import 'package:quantus_cold_wallet/providers/ur_qr_providers.dart';
 
 /// An animated UR QR of [payload] with its frame/FPS/bytes summary and, for
-/// multi-frame payloads, a pause button that opens the tuning sheet. The
-/// frames and the paused flag live in providers, so every screen that shows
-/// a QR behaves the same and keeps no QR state of its own.
+/// multi-frame payloads, a pause button that opens the tuning sheet. The frames and the paused flag live in providers,
+/// so every screen that shows a QR behaves the same and keeps no QR state of
+/// its own.
 class UrQrPanel extends ConsumerWidget {
   final UrPayload payload;
 
@@ -49,15 +49,7 @@ class UrQrPanel extends ConsumerWidget {
             ),
             if (parts.length > 1) ...[
               const SizedBox(width: 12),
-              GestureDetector(
-                onTap: () => _pauseAndTune(context, ref),
-                child: Container(
-                  width: 32,
-                  height: 32,
-                  decoration: BoxDecoration(color: colors.bgSurface2, shape: BoxShape.circle),
-                  child: Icon(Icons.pause_rounded, size: 20, color: colors.textContent),
-                ),
-              ),
+              _PauseButton(onTap: () => _pauseAndTune(context, ref)),
             ],
           ],
         ),
@@ -70,6 +62,40 @@ class UrQrPanel extends ConsumerWidget {
           ),
         ],
       ],
+    );
+  }
+}
+
+class _PauseButton extends StatelessWidget {
+  final VoidCallback onTap;
+
+  const _PauseButton({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colorsV3;
+    final bar = Container(
+      width: 3,
+      height: 12,
+      decoration: BoxDecoration(color: colors.textContent, borderRadius: BorderRadius.circular(1.5)),
+    );
+    return Semantics(
+      button: true,
+      label: 'Pause and tune',
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          width: 32,
+          height: 32,
+          decoration: BoxDecoration(color: colors.bgSurface2, shape: BoxShape.circle),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            spacing: 3,
+            children: [bar, bar],
+          ),
+        ),
+      ),
     );
   }
 }

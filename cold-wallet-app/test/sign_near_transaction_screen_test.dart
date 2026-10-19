@@ -3,8 +3,12 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:quantus_cold_wallet/components/signature_qr_view.dart';
+import 'package:quantus_cold_wallet/providers/ur_qr_providers.dart';
 import 'package:quantus_cold_wallet/providers/wallet_providers.dart';
+import 'package:quantus_cold_wallet/screens/rejected_screen.dart';
 import 'package:quantus_cold_wallet/screens/sign_near_transaction_screen.dart';
+import 'package:quantus_cold_wallet/screens/signing_review_state.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 
 const owner = 'qzmNaLjPU7hcvkjHpGmrVDPD9y12vdAFimCSrP1GkhVFJMaUq';
@@ -59,15 +63,14 @@ void main() {
           walletControllerProvider.overrideWith(controller),
           nearKeyOwnerProvider.overrideWith((ref, _) => keyOwner),
           checksumNameProvider.overrideWith((ref, _) async => 'amber glacier quartz'),
+          urQrFramesProvider.overrideWith((ref, payload) => const ['ur:bytes/abcd']),
         ],
-        child: MaterialApp(
-          home: Builder(
-            builder: (context) => Theme(
-              data: AppTheme.darkTheme(context),
-              child: SignNearTransactionScreen(
-                request: NearSigningRequest(network: network, transaction: Uint8List.fromList([1, 2, 3])),
-                transaction: tx,
-              ),
+        child: Builder(
+          builder: (context) => MaterialApp(
+            theme: AppTheme.darkTheme(context),
+            home: SignNearTransactionScreen(
+              request: NearSigningRequest(network: network, transaction: Uint8List.fromList([1, 2, 3])),
+              transaction: tx,
             ),
           ),
         ),
@@ -93,7 +96,7 @@ void main() {
     expect(find.text('SIGNING KEY HELD BY'), findsOneWidget);
     expect(find.text(owner), findsOneWidget);
     expect(find.text('amber glacier quartz'), findsOneWidget);
-    expect(find.text('Sign'), findsOneWidget);
+    expect(find.widgetWithText(QuantusButton, 'Approve and Sign'), findsOneWidget);
     expect(find.textContaining('Check the network'), findsNothing);
     expect(find.textContaining('changes control'), findsNothing);
   });
@@ -116,7 +119,7 @@ void main() {
     expect(find.text('1. ADD FULL ACCESS KEY'), findsOneWidget);
     expect(find.text('ed25519:4rN'), findsOneWidget);
     expect(find.text('Full access'), findsOneWidget);
-    expect(find.text('Sign'), findsOneWidget);
+    expect(find.widgetWithText(QuantusButton, 'Approve and Sign'), findsOneWidget);
   });
 
   testWidgets('a key added to a sub-account names that account, not the signer, in the warning', (tester) async {
@@ -158,7 +161,7 @@ void main() {
     final sendRow = tester.widget<Text>(find.text('2. SEND'));
     expect(sendRow.style?.color, colors.semanticLilac);
     expect(find.text('1 NEAR'), findsOneWidget);
-    expect(find.text('Sign'), findsOneWidget);
+    expect(find.widgetWithText(QuantusButton, 'Approve and Sign'), findsOneWidget);
   });
 
   testWidgets('a contract deployment identifies the code by its hash, not just its size', (tester) async {
@@ -220,7 +223,7 @@ void main() {
     expect(find.text('NEAR · MAINNET'), findsOneWidget);
     expect(find.text('Check the network'), findsOneWidget);
     expect(find.textContaining('alice.testnet and bob.testnet end in .testnet'), findsOneWidget);
-    expect(find.text('Sign'), findsOneWidget);
+    expect(find.widgetWithText(QuantusButton, 'Approve and Sign'), findsOneWidget);
   });
 
   testWidgets('network-neutral account IDs still see the network marked as the wallet\'s claim', (tester) async {
@@ -237,7 +240,7 @@ void main() {
     expect(find.textContaining('The transaction bytes do not name a network'), findsOneWidget);
     expect(find.textContaining('Confirm your hot wallet is on testnet'), findsOneWidget);
     expect(find.text('Check the network'), findsNothing);
-    expect(find.text('Sign'), findsOneWidget);
+    expect(find.widgetWithText(QuantusButton, 'Approve and Sign'), findsOneWidget);
   });
 
   testWidgets('a mainnet transfer labelled mainnet is reviewed without a mismatch warning', (tester) async {
@@ -258,7 +261,7 @@ void main() {
     expect(find.text('Key not in this wallet'), findsOneWidget);
     expect(find.text('ml-dsa-65:7Kq'), findsOneWidget);
     expect(find.text('Nothing was signed.'), findsOneWidget);
-    expect(find.text('Sign'), findsNothing);
+    expect(find.widgetWithText(QuantusButton, 'Approve and Sign'), findsNothing);
   });
 
   testWidgets('refuses a transaction for a non-ML-DSA-65 key before looking up any account', (tester) async {
@@ -266,13 +269,31 @@ void main() {
 
     expect(find.text('Not a Quantus key'), findsOneWidget);
     expect(find.textContaining('names a key of type ed25519'), findsOneWidget);
-    expect(find.text('Sign'), findsNothing);
+    expect(find.widgetWithText(QuantusButton, 'Approve and Sign'), findsNothing);
   });
 
   testWidgets('a locked wallet is told to unlock, not shown a review', (tester) async {
     await pump(tester, _tx(actions: [_transfer(_near)]), controller: _LockedController.new);
 
     expect(find.text('Wallet is locked'), findsOneWidget);
-    expect(find.text('Sign'), findsNothing);
+    expect(find.widgetWithText(QuantusButton, 'Approve and Sign'), findsNothing);
+  });
+
+  testWidgets('rejecting after the signature was shown says so', (tester) async {
+    await pump(tester, _tx(actions: [_transfer(_near)]));
+    final review = tester.state(find.byType(SignNearTransactionScreen)) as SigningReviewState;
+    review.showSignature(Uint8List.fromList([1, 2, 3]));
+    await tester.pumpAndSettle();
+    expect(find.byType(SignatureQrView), findsOneWidget);
+
+    await tester.tap(find.byType(AppBackButton));
+    await tester.pumpAndSettle();
+    expect(find.widgetWithText(QuantusButton, 'Approve and Sign'), findsOneWidget);
+
+    await tester.tap(find.text("It doesn't match"));
+    await tester.pumpAndSettle();
+    expect(find.byType(RejectedScreen), findsOneWidget);
+    expect(find.text('The signature was shown'), findsOneWidget);
+    expect(find.text('Nothing was signed'), findsNothing);
   });
 }

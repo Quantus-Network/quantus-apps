@@ -33,14 +33,21 @@ dependencies:
   qr_flutter: ^4.1.0
   mobile_scanner: ^7.2.0
   flutter_svg: ^2.3.0
+  connectivity_plus: ^7.1.1
 
   # Security: biometric unlock + secure-element storage + password KDF/AEAD
   local_auth: ^3.0.1
-  flutter_secure_storage: ^10.1.0
+  flutter_secure_storage: ^10.3.1
   cryptography: ^2.7.0
+  # Pinned below 13.3.0 until it clears the 30-day dependency cooldown.
+  device_info_plus: ">=13.2.0 <13.3.0"
 
 dev_dependencies:
   flutter_test:
+    sdk: flutter
+  flutter_driver:
+    sdk: flutter
+  integration_test:
     sdk: flutter
   # Storage failure injection in tests (kept in lockstep with flutter_secure_storage)
   flutter_secure_storage_platform_interface: ^2.0.1
@@ -53,6 +60,7 @@ flutter:
   assets:
     - assets/v2/
     - assets/text/
+    - assets/icons/
 
   fonts:
     - family: Geist

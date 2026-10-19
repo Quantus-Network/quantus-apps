@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:quantus_cold_wallet/providers/wallet_providers.dart';
 import 'package:quantus_cold_wallet/screens/root_gate.dart';
 import 'package:quantus_cold_wallet/components/connectivity_guard.dart';
 import 'package:quantus_cold_wallet/components/lock_overlay.dart';
+import 'package:quantus_cold_wallet/ui/cold_theme.dart';
 
 class ColdWalletApp extends ConsumerStatefulWidget {
   const ColdWalletApp({super.key});
@@ -14,6 +14,8 @@ class ColdWalletApp extends ConsumerStatefulWidget {
 }
 
 class _ColdWalletAppState extends ConsumerState<ColdWalletApp> with WidgetsBindingObserver {
+  final _navigatorKey = GlobalKey<NavigatorState>();
+
   @override
   void initState() {
     super.initState();
@@ -31,20 +33,27 @@ class _ColdWalletAppState extends ConsumerState<ColdWalletApp> with WidgetsBindi
     // Re-lock whenever the app leaves the foreground so the mnemonic never
     // sits unlocked in the background.
     if (state == AppLifecycleState.paused) {
-      ref.read(walletControllerProvider.notifier).lock();
+      ref.read(walletControllerProvider.notifier).lockOnBackground();
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: _navigatorKey,
       title: 'Quantus Cold Wallet',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.darkTheme(context),
-      darkTheme: AppTheme.darkTheme(context),
+      theme: coldTheme(context),
+      darkTheme: coldTheme(context),
       themeMode: ThemeMode.dark,
       home: const RootGate(),
-      builder: (context, child) => Stack(children: [?child, const LockOverlay(), const ConnectivityGuard()]),
+      builder: (context, child) => Stack(
+        children: [
+          ?child,
+          LockOverlay(navigatorKey: _navigatorKey),
+          const ConnectivityGuard(),
+        ],
+      ),
     );
   }
 }

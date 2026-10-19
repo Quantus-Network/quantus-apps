@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_cold_wallet/providers/wallet_providers.dart';
 import 'package:quantus_cold_wallet/screens/root_gate.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:quantus_cold_wallet/components/cold_icon.dart';
 
 class _InitErrorController extends WalletController {
   @override
@@ -29,7 +30,8 @@ void main() {
     );
     await tester.pump();
 
-    final icon = tester.widget<Icon>(find.byIcon(Icons.error_outline));
+    final icon = tester.widget<ColdIcon>(find.byType(ColdIcon));
+    expect(icon.icon, ColdIcons.warningCircle);
     expect(icon.color, colors.semanticEmber);
 
     final title = tester.widget<Text>(find.text('Storage error'));

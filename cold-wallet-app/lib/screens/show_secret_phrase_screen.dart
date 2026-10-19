@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:quantus_cold_wallet/providers/wallet_providers.dart';
+import 'package:quantus_cold_wallet/ui/cold_theme.dart';
 
 class ShowSecretPhraseScreen extends ConsumerStatefulWidget {
   const ShowSecretPhraseScreen({super.key});
@@ -39,24 +40,19 @@ class _ShowSecretPhraseScreenState extends ConsumerState<ShowSecretPhraseScreen>
           const SizedBox(height: 24),
           Expanded(
             child: SingleChildScrollView(
-              child: GestureDetector(
-                onTap: () => setState(() => _isRevealed = !_isRevealed),
-                behavior: HitTestBehavior.opaque,
-                child: Column(
-                  children: [
-                    Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        MnemonicGrid(words: words, isRevealed: _isRevealed),
-                        if (!_isRevealed)
-                          _tapHint(Icons.visibility_outlined, 'Tap to reveal', colors.textContent, text),
-                      ],
-                    ),
-                    if (_isRevealed) ...[
-                      const SizedBox(height: 16),
-                      _tapHint(Icons.visibility_off_outlined, 'Tap to hide', colors.textMuted, text),
-                    ],
-                  ],
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: colors.bgSurface,
+                  borderRadius: context.radiusV3.mdBorder,
+                  border: Border.all(color: colors.borderHairline),
+                ),
+                child: MnemonicRevealGrid(
+                  words: words,
+                  isRevealed: _isRevealed,
+                  revealHint: 'Tap to reveal',
+                  hideHint: 'Tap to hide',
+                  onToggle: () => setState(() => _isRevealed = !_isRevealed),
                 ),
               ),
             ),
@@ -64,19 +60,8 @@ class _ShowSecretPhraseScreenState extends ConsumerState<ShowSecretPhraseScreen>
         ],
       ),
       bottomContent: ScaffoldBaseBottomContent(
-        child: QuantusButton.simple(label: 'Done', onTap: () => Navigator.pop(context)),
+        child: QuantusButton.simple(label: 'Done', padding: coldButtonPadding, onTap: () => Navigator.pop(context)),
       ),
-    );
-  }
-
-  Widget _tapHint(IconData icon, String label, Color color, AppTextThemeV3 text) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 18, color: color),
-        const SizedBox(width: 8),
-        Text(label, style: text.body.copyWith(color: color)),
-      ],
     );
   }
 }
