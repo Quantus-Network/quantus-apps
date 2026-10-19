@@ -14,16 +14,25 @@ import 'package:quantus_sdk/src/services/wormhole_utxo_service.dart';
 import 'package:ss58/ss58.dart';
 
 /// Deterministic wormhole address for HD index [index] (valid SS58 so
-/// `getAccountId32` can decode it inside `send`).
-String addressAt(int index) => Address(prefix: 189, pubkey: Uint8List(32)..[31] = index).encode();
+/// `getAccountId32` can decode it inside `send`). [seed] stands in for the
+/// mnemonic: a different seed gives unrelated addresses at every index.
+String addressAt(int index, {int seed = 0}) {
+  final pubkey = Uint8List(32)
+    ..[29] = seed
+    ..[31] = index;
+  return Address(prefix: 189, pubkey: pubkey).encode();
+}
 
 /// Change-branch counterpart of [addressAt], distinct at every index.
-String changeAddressAt(int index) {
+String changeAddressAt(int index, {int seed = 0}) {
   final pubkey = Uint8List(32)
+    ..[29] = seed
     ..[30] = 1
     ..[31] = index;
   return Address(prefix: 189, pubkey: pubkey).encode();
 }
+
+const defaultMnemonic = 'test mnemonic';
 
 String secretAt(int index) => '0x${(index + 1).toRadixString(16).padLeft(2, '0') * 32}';
 
@@ -61,19 +70,27 @@ class _FakeHdWallet extends HdWalletService {
   /// Each batched call stretches the seed once, whatever its size.
   int batchDerivations = 0;
 
-  /// Every index whose address or key pair was derived, per branch.
+  /// Every index whose address or key pair was derived, per branch. The
+  /// service's address-book owner check (external index 0 alone) is counted
+  /// in [ownerChecks] instead.
   final derivedIndices = <int>[];
   final derivedChangeIndices = <int>[];
+  int ownerChecks = 0;
 
-  WormholeKeyPair _pairAt(int index, {required bool isChange}) => isChange
+  /// Seed per mnemonic; unknown mnemonics derive seed 0 (see [addressAt]).
+  final seeds = <String, int>{};
+
+  int _seedOf(String mnemonic) => seeds[mnemonic] ?? 0;
+
+  WormholeKeyPair _pairAt(int index, {required bool isChange, int seed = 0}) => isChange
       ? WormholeKeyPair(
-          address: changeAddressAt(index),
+          address: changeAddressAt(index, seed: seed),
           addressHex: '0x${'00' * 30}01${(index).toRadixString(16).padLeft(2, '0')}',
           rewardsPreimageHex: '0x',
           secretHex: changeSecretAt(index),
         )
       : WormholeKeyPair(
-          address: addressAt(index),
+          address: addressAt(index, seed: seed),
           addressHex: '0x${'00' * 31}${(index).toRadixString(16).padLeft(2, '0')}',
           rewardsPreimageHex: '0x',
           secretHex: secretAt(index),
@@ -82,13 +99,13 @@ class _FakeHdWallet extends HdWalletService {
   @override
   WormholeKeyPair deriveWormholeKeyPair({required String mnemonic, int index = 0}) {
     derivations++;
-    return _pairAt(index, isChange: false);
+    return _pairAt(index, isChange: false, seed: _seedOf(mnemonic));
   }
 
   @override
   WormholeKeyPair deriveWormholeChangeAddressKeyPair({required String mnemonic, int index = 0}) {
     derivations++;
-    return _pairAt(index, isChange: true);
+    return _pairAt(index, isChange: true, seed: _seedOf(mnemonic));
   }
 
   @override
@@ -98,9 +115,14 @@ class _FakeHdWallet extends HdWalletService {
     bool isChange = false,
   }) async {
     if (indices.isEmpty) return const [];
+    final seed = _seedOf(mnemonic);
+    if (!isChange && indices.length == 1 && indices.single == 0) {
+      ownerChecks++;
+      return [addressAt(0, seed: seed)];
+    }
     batchDerivations++;
     (isChange ? derivedChangeIndices : derivedIndices).addAll(indices);
-    return [for (final i in indices) _pairAt(i, isChange: isChange).address];
+    return [for (final i in indices) _pairAt(i, isChange: isChange, seed: seed).address];
   }
 
   @override
@@ -112,13 +134,17 @@ class _FakeHdWallet extends HdWalletService {
     if (indices.isEmpty) return const [];
     batchDerivations++;
     (isChange ? derivedChangeIndices : derivedIndices).addAll(indices);
-    return [for (final i in indices) _pairAt(i, isChange: isChange)];
+    return [for (final i in indices) _pairAt(i, isChange: isChange, seed: _seedOf(mnemonic))];
   }
 }
 
+/// Stands in for the indexer: knows which addresses of seed [seed] have
+/// been used and reports the probe positions holding one of them, so a probe
+/// made of another seed's addresses finds nothing — just like the real one.
 class _FakeDiscovery extends AccountDiscoveryService {
   Set<int> used;
   Set<int> usedChange = const {};
+  int seed = 0;
 
   /// Width of the probe each scan makes through [addressesAt]; the real scan
   /// derives `gapLimit` indices per batch until the gap closes.
@@ -132,7 +158,14 @@ class _FakeDiscovery extends AccountDiscoveryService {
     int gapLimit = 20,
   }) async {
     final probed = await addressesAt([for (var i = 0; i < probeWidth; i++) i]);
-    return probed.first == changeAddressAt(0) ? usedChange : used;
+    final known = {
+      for (final i in used) addressAt(i, seed: seed),
+      for (final i in usedChange) changeAddressAt(i, seed: seed),
+    };
+    return {
+      for (var i = 0; i < probed.length; i++)
+        if (known.contains(probed[i])) i,
+    };
   }
 }
 
@@ -220,8 +253,10 @@ void main() {
   late _FakeUtxoService utxoService;
   late _FakeSendService sendService;
   late EncryptedAccountService service;
+  late String mnemonic;
 
   setUp(() async {
+    mnemonic = defaultMnemonic;
     tempDir = await Directory.systemTemp.createTemp('enc_acct_test');
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
       const MethodChannel('plugins.flutter.io/path_provider'),
@@ -233,7 +268,7 @@ void main() {
     sendService = _FakeSendService();
     service = EncryptedAccountService(
       walletIndex: 0,
-      getMnemonic: () async => 'test mnemonic',
+      getMnemonic: () async => mnemonic,
       hdWalletService: hdWallet,
       utxoService: utxoService,
       discoveryService: discovery,
@@ -518,22 +553,68 @@ void main() {
 
       expect(hdWallet.batchDerivations, before);
       expect(hdWallet.derivations, 0);
+      // Each entry point re-checks which seed the book belongs to.
+      expect(hdWallet.ownerChecks, 5);
+    });
+
+    test('a different seed in the same wallet slot gets a fresh address book', () async {
+      discovery.used = {0, 2};
+      discovery.usedChange = {0};
+      await service.load();
+      expect(await service.ownsAddress(addressAt(2)), isTrue);
+
+      // The wallet is deleted and another seed imported into the same index;
+      // that seed has used external 0 and 1 and change 0 and 1.
+      mnemonic = 'replacement mnemonic';
+      hdWallet.seeds[mnemonic] = 7;
+      discovery
+        ..seed = 7
+        ..used = {0, 1}
+        ..usedChange = {0, 1};
+
+      final state = await service.load();
+
+      expect(state.accountId, addressAt(0, seed: 7));
+      expect(
+        state.ownAddresses,
+        containsAll([
+          addressAt(0, seed: 7),
+          addressAt(1, seed: 7),
+          changeAddressAt(0, seed: 7),
+          changeAddressAt(1, seed: 7),
+        ]),
+      );
+      expect(state.ownAddresses, isNot(contains(addressAt(0))));
+      expect(await service.ownsAddress(addressAt(1, seed: 7)), isTrue);
+      expect(await service.ownsAddress(changeAddressAt(1, seed: 7)), isTrue);
+      expect(await service.ownsAddress(addressAt(2)), isFalse);
+      expect(await service.ownsAddress(changeAddressAt(0)), isFalse);
+    });
+
+    test('the same seed keeps its address book across loads', () async {
+      discovery.used = {0};
+      await service.load();
+      final before = hdWallet.batchDerivations;
+      await service.load();
+      // Only the key-pair batch for the used index; the probes came from the book.
+      expect(hdWallet.batchDerivations, before + 1);
     });
 
     test('ownsAddress derives only the indices it has not seen', () async {
       await seedState(nextIndex: 2, nextChangeIndex: 1);
       expect(await service.ownsAddress(addressAt(2)), isTrue);
-      expect(hdWallet.derivedIndices, [0, 1, 2]);
+      // External 0 comes from the owner check; the probe derives the rest.
+      expect(hdWallet.derivedIndices, [1, 2]);
       expect(hdWallet.derivedChangeIndices, isEmpty);
 
       expect(await service.ownsAddress(changeAddressAt(1)), isTrue);
-      expect(hdWallet.derivedIndices, [0, 1, 2]);
+      expect(hdWallet.derivedIndices, [1, 2]);
       expect(hdWallet.derivedChangeIndices, [0, 1]);
 
       // A later load that pushes nextIndex further derives only the new tail.
       await seedState(nextIndex: 4, nextChangeIndex: 1);
       expect(await service.ownsAddress(addressAt(4)), isTrue);
-      expect(hdWallet.derivedIndices, [0, 1, 2, 3, 4]);
+      expect(hdWallet.derivedIndices, [1, 2, 3, 4]);
     });
 
     test('the address book never holds a secret', () async {

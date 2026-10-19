@@ -118,8 +118,14 @@ class EncryptedAccountService {
   /// wallet, so unlike key pairs they may be kept for the session: a load
   /// derives each address once and [ownsAddress] / [discardCachedState] then
   /// cost nothing. Holds no secret (M11).
+  ///
+  /// The book belongs to one seed, identified by its external address 0
+  /// ([_addressBookOwner]). A wallet slot can be reused for a different seed
+  /// (delete a wallet, import another), so every entry point re-checks the
+  /// owner and starts a fresh book when it changed.
   final Map<int, String> _externalAddresses = {};
   final Map<int, String> _changeAddresses = {};
+  String? _addressBookOwner;
 
   bool _disposed = false;
 
@@ -190,8 +196,22 @@ class EncryptedAccountService {
 
   Future<WormholeKeyPair> keyPairAt(int index) async => _deriveKeyPair(await _mnemonic(), index);
 
+  /// Makes the address book the one for [mnemonic], discarding entries
+  /// derived from a seed that previously occupied this wallet slot.
+  Future<void> _bindAddressBook(String mnemonic) async {
+    final owner = (await _hdWalletService.deriveWormholeAddresses(mnemonic: mnemonic, indices: const [0])).single;
+    if (owner == _addressBookOwner) return;
+    if (_addressBookOwner != null) _log('address book: seed changed for wallet $walletIndex, rebuilding');
+    _externalAddresses
+      ..clear()
+      ..[0] = owner;
+    _changeAddresses.clear();
+    _addressBookOwner = owner;
+  }
+
   /// Addresses at [indices] on one branch, in order. Indices not yet in the
   /// address book are derived together (one seed stretch) and remembered.
+  /// Callers bind the book to [mnemonic] first ([_bindAddressBook]).
   Future<List<String>> _addressesAt(String mnemonic, List<int> indices, {required bool isChange}) async {
     final book = isChange ? _changeAddresses : _externalAddresses;
     final missing = [
@@ -225,6 +245,7 @@ class EncryptedAccountService {
   Future<bool> ownsAddress(String address) async {
     final state = await _readStateLocked();
     final mnemonic = await _mnemonic();
+    await _bindAddressBook(mnemonic);
     final external = await _addressesUpTo(mnemonic, state.nextIndex, isChange: false);
     if (external.contains(address)) return true;
     final change = await _addressesUpTo(mnemonic, state.nextChangeIndex, isChange: true);
@@ -244,6 +265,7 @@ class EncryptedAccountService {
     // Every index that can have an on-disk cache.
     final state = await _readStateLocked();
     final mnemonic = await _mnemonic();
+    await _bindAddressBook(mnemonic);
     final addresses = [
       ...await _addressesUpTo(mnemonic, state.nextIndex, isChange: false),
       ...await _addressesUpTo(mnemonic, state.nextChangeIndex, isChange: true),
@@ -289,6 +311,7 @@ class EncryptedAccountService {
   Future<EncryptedAccountState> _load({WormholeProgressCallback? onProgress, IsCancelledCallback? isCancelled}) async {
     final sw = Stopwatch()..start();
     final mnemonic = await _mnemonic();
+    await _bindAddressBook(mnemonic);
 
     // Gap-limit discovery of both branches — the only thing that finds
     // addresses this device has never seen (recovery from the mnemonic), so
