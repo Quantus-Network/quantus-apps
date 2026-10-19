@@ -72,8 +72,11 @@ class HdWalletService {
   Keypair keyPairAtIndex(String mnemonic, int index, DilithiumScheme scheme) =>
       keyPairAtPath(mnemonic, pathForIndex(index, scheme), scheme);
 
+  static String _wormholePath({int account = 0, required bool isChange, required int index}) =>
+      "m/44'/189189189'/$account'/${isChange ? 1 : 0}'/$index'";
+
   crypto.WormholeResult _deriveWormhole(String mnemonic, {int account = 0, int change = 0, int addressIndex = 0}) {
-    final path = "m/44'/189189189'/$account'/$change'/$addressIndex'";
+    final path = _wormholePath(account: account, isChange: change == 1, index: addressIndex);
     return crypto.deriveWormhole(mnemonicStr: mnemonic, path: path);
   }
 
@@ -83,6 +86,38 @@ class HdWalletService {
 
   WormholeKeyPair deriveWormholeChangeAddressKeyPair({required String mnemonic, int index = 0}) =>
       WormholeKeyPair.fromResult(_deriveWormhole(mnemonic, change: 1, addressIndex: index));
+
+  /// Wormhole addresses at [indices] on the external or change branch, in the
+  /// same order. One seed stretch for the whole batch, run off the UI isolate
+  /// — use this for discovery scans, which derive dozens of addresses at once.
+  Future<List<String>> deriveWormholeAddresses({
+    required String mnemonic,
+    required List<int> indices,
+    bool isChange = false,
+  }) {
+    if (indices.isEmpty) return Future.value(const []);
+    return crypto.deriveWormholeAddresses(
+      mnemonicStr: mnemonic,
+      paths: [for (final i in indices) _wormholePath(isChange: isChange, index: i)],
+    );
+  }
+
+  /// Key pairs at [indices] on the external or change branch, in the same
+  /// order; the batched form of [deriveWormholeKeyPair] /
+  /// [deriveWormholeChangeAddressKeyPair]. Same M11 rule as the single-pair
+  /// variants: use the secrets immediately and let the list go out of scope.
+  Future<List<WormholeKeyPair>> deriveWormholeKeyPairs({
+    required String mnemonic,
+    required List<int> indices,
+    bool isChange = false,
+  }) async {
+    if (indices.isEmpty) return const [];
+    final results = await crypto.deriveWormholeBatch(
+      mnemonicStr: mnemonic,
+      paths: [for (final i in indices) _wormholePath(isChange: isChange, index: i)],
+    );
+    return results.map(WormholeKeyPair.fromResult).toList();
+  }
 
   /// Compute the on-chain wormhole address for a rewards preimage (first_hash hex).
   String preimageToAddress(String preimageHex) => crypto.firstHashToAddress(firstHashHex: preimageHex);
