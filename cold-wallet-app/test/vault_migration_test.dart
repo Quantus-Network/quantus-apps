@@ -62,7 +62,7 @@ void main() {
     await legacyVault();
     final (container, controller) = await boot();
 
-    expect(await controller.migrateLegacy('alpha'), isTrue);
+    expect(await controller.migrateLegacy('alpha', protected: true), isTrue);
 
     final state = container.read(walletControllerProvider);
     expect(state.status, WalletStatus.unlocked);
@@ -83,7 +83,7 @@ void main() {
     await legacyVault();
     final (_, controller) = await boot(canProtect: false);
 
-    expect(await controller.migrateLegacy('alpha'), isTrue);
+    expect(await controller.migrateLegacy('alpha', protected: false), isTrue);
 
     expect(await vault.plainKeyKind(), PlainKeyKind.accepted);
     expect(storage.data.containsKey(protectedKeyEntry), isFalse);
@@ -130,7 +130,7 @@ void main() {
       final (container, controller) = await bootWith(FakeColdAuth(canProtect: false, hasLock: false));
       expect(statusOf(container), WalletStatus.needsMigration);
 
-      expect(await controller.migrateLegacy('alpha'), isTrue);
+      expect(await controller.migrateLegacy('alpha', protected: false), isTrue);
 
       expect(statusOf(container), WalletStatus.unlocked);
       expect(await vault.plainKeyKind(), PlainKeyKind.accepted);
@@ -195,7 +195,7 @@ void main() {
     final (container, controller) = await boot();
     final before = Map.of(storage.data);
 
-    expect(await controller.migrateLegacy('nope'), isFalse);
+    expect(await controller.migrateLegacy('nope', protected: true), isFalse);
 
     expect(storage.data, before);
     expect(statusOf(container), WalletStatus.needsMigration);
@@ -206,14 +206,31 @@ void main() {
     final (container, controller) = await boot();
     storage.failWritesTo = protectedKeyEntry;
 
-    await expectLater(controller.migrateLegacy('alpha'), throwsA(isA<Exception>()));
+    await expectLater(controller.migrateLegacy('alpha', protected: true), throwsA(isA<Exception>()));
 
     expectPasswordVaultIntact();
     expect((await vault.unlockWithPassword('alpha')).mnemonic, testMnemonic);
     expect(statusOf(container), WalletStatus.needsMigration);
 
     storage.failWritesTo = null;
-    expect(await controller.migrateLegacy('alpha'), isTrue, reason: 'the same password finishes the move');
+    expect(
+      await controller.migrateLegacy('alpha', protected: true),
+      isTrue,
+      reason: 'the same password finishes the move',
+    );
+  });
+
+  test('a protected store that fails after the protected choice restores the password vault', () async {
+    await legacyVault();
+    final (container, controller) = await boot();
+    storage.unavailableKey = protectedKeyEntry;
+
+    await expectLater(controller.migrateLegacy('alpha', protected: true), throwsA(isA<Exception>()));
+
+    expectPasswordVaultIntact();
+    expect(await vault.plainKeyKind(), PlainKeyKind.none, reason: 'a plain entry is never the fallback');
+    expect((await vault.unlockWithPassword('alpha')).mnemonic, testMnemonic);
+    expect(statusOf(container), WalletStatus.needsMigration);
   });
 
   test('a cancelled prompt at read-back restores the password vault', () async {
@@ -222,7 +239,7 @@ void main() {
     storage.failReadsOf = protectedKeyEntry;
     storage.failReadsWith = iosCancel;
 
-    await expectLater(controller.migrateLegacy('alpha'), throwsA(isA<VaultAccessCancelled>()));
+    await expectLater(controller.migrateLegacy('alpha', protected: true), throwsA(isA<VaultAccessCancelled>()));
 
     expectPasswordVaultIntact();
     expect((await vault.unlockWithPassword('alpha')).mnemonic, testMnemonic);
@@ -273,7 +290,7 @@ void main() {
       await legacyVault();
       final (container, controller) = await bootAndroid();
 
-      expect(await controller.migrateLegacy('alpha'), isTrue);
+      expect(await controller.migrateLegacy('alpha', protected: false), isTrue);
 
       expect(statusOf(container), WalletStatus.unlocked);
       expect(container.read(walletControllerProvider).mnemonic, testMnemonic);
@@ -293,7 +310,7 @@ void main() {
       final (container, controller) = await bootAndroid();
       final before = Map.of(storage.data);
 
-      expect(await controller.migrateLegacy('nope'), isFalse);
+      expect(await controller.migrateLegacy('nope', protected: false), isFalse);
 
       expect(storage.data, before);
       expect(statusOf(container), WalletStatus.needsMigration);

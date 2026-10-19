@@ -242,14 +242,16 @@ class WalletController extends Notifier<WalletState> {
     }
   }
 
-  /// Moves a password vault to the device key: a rotation to an internal
-  /// secret, then the key entry, with the old blob kept aside until the entry
-  /// is verified readable. Returns false for a wrong password before anything
-  /// is written. A cancelled prompt or a storage failure after the rotation
-  /// puts the password vault back and rethrows, so the old password keeps
-  /// working. A legacy vault has no key entry, so the protected store is not
-  /// probed: on a device that cannot protect it cannot even be opened.
-  Future<bool> migrateLegacy(String password) async {
+  /// Moves a password vault to the device key, [protected] by user presence
+  /// or, once the user accepted the no-lock warning, plain: a rotation to an
+  /// internal secret, then the key entry, with the old blob kept aside until
+  /// the entry is verified readable. Returns false for a wrong password
+  /// before anything is written. A cancelled prompt or a storage failure
+  /// after the rotation puts the password vault back and rethrows, so the old
+  /// password keeps working; the plain entry is never a fallback for that.
+  /// A legacy vault has no key entry, so the protected store is not probed:
+  /// on a device that cannot protect it cannot even be opened.
+  Future<bool> migrateLegacy(String password, {required bool protected}) async {
     final UnlockResult legacy;
     try {
       legacy = await _vault.unlockWithPassword(password);
@@ -257,7 +259,6 @@ class WalletController extends Notifier<WalletState> {
       debugPrint('Migration: password rejected');
       return false;
     }
-    final protected = await auth.deviceCanProtect();
     await _vault.backupVaultForMigration();
     var keyAttempted = false;
     try {

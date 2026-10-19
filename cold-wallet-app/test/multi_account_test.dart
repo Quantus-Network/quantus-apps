@@ -64,7 +64,7 @@ void main() {
       final legacy = migrated.read(walletControllerProvider.notifier);
       await awaitInit(migrated);
 
-      expect(await legacy.migrateLegacy('alpha'), isTrue);
+      expect(await legacy.migrateLegacy('alpha', protected: true), isTrue);
       await legacy.addAccount(ColdAccount(label: 'Two', index: 1, scheme: DilithiumScheme.mlDsa87));
 
       final reopened = await VaultService().unlockWithBiometricKey();

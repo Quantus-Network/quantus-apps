@@ -2,12 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:flutter_secure_storage_platform_interface/flutter_secure_storage_platform_interface.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_cold_wallet/providers/wallet_providers.dart';
 import 'package:quantus_cold_wallet/screens/migrate_vault_screen.dart';
 import 'package:quantus_cold_wallet/services/vault_service.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 
+import 'fakes/account_fixtures.dart' show coldApp;
+import 'fakes/fault_injecting_storage.dart';
 import 'fakes/wallet_fakes.dart';
 
 class _MigrationController extends WalletController {
@@ -15,14 +18,16 @@ class _MigrationController extends WalletController {
 
   final Object? failure;
   final passwords = <String>[];
+  final protections = <bool>[];
   bool wiped = false;
 
   @override
   WalletState build() => const WalletState(status: WalletStatus.needsMigration);
 
   @override
-  Future<bool> migrateLegacy(String password) async {
+  Future<bool> migrateLegacy(String password, {required bool protected}) async {
     passwords.add(password);
+    protections.add(protected);
     if (failure != null) throw failure!;
     if (password != 'alpha') return false;
     state = const WalletState(status: WalletStatus.unlocked, mnemonic: 'moved', biometricEnabled: true);
@@ -88,6 +93,7 @@ void main() {
 
     await submit(tester, 'alpha');
     expect(controller.passwords, ['nope', 'alpha']);
+    expect(controller.protections, [true, true]);
     expect(find.text('Incorrect password'), findsNothing);
   });
 
@@ -127,6 +133,41 @@ void main() {
     await tester.tap(find.text('Continue anyway'));
     await tester.pumpAndSettle();
     expect(controller.passwords, ['alpha']);
+    expect(controller.protections, [false], reason: 'the acceptance itself is what selects the plain entry');
+  });
+
+  testWidgets('a protection check that fails after the screen decided still moves behind user presence', (
+    tester,
+  ) async {
+    final storage = FaultInjectingStorage();
+    FlutterSecureStoragePlatform.instance = storage;
+    final vault = VaultService();
+    final container = ProviderContainer(overrides: [coldAuthServiceProvider.overrideWithValue(_FlakyAuth())]);
+    addTearDown(container.dispose);
+    await tester.runAsync(() async {
+      await vault.createVault(mnemonic: testMnemonic, password: 'alpha', accounts: testAccounts);
+      container.read(walletControllerProvider.notifier);
+      await awaitInit(container);
+    });
+    expect(container.read(walletControllerProvider).status, WalletStatus.needsMigration);
+    await tester.pumpWidget(
+      UncontrolledProviderScope(container: container, child: coldApp(const MigrateVaultScreen())),
+    );
+    await tester.pump();
+    await tester.enterText(find.byType(TextField), 'alpha');
+
+    await tester.runAsync(() async {
+      await tester.tap(find.text('Continue'));
+      for (var i = 0; i < 200 && container.read(walletControllerProvider).status != WalletStatus.unlocked; i++) {
+        await Future<void>.delayed(const Duration(milliseconds: 50));
+      }
+    });
+    await tester.pumpAndSettle();
+
+    expect(find.text('No device lock'), findsNothing);
+    expect(container.read(walletControllerProvider).status, WalletStatus.unlocked);
+    expect(await vault.plainKeyKind(), PlainKeyKind.none);
+    expect(storage.data.containsKey(protectedKeyEntry), isTrue);
   });
 
   testWidgets('reset is offered for a forgotten password', (tester) async {
@@ -142,4 +183,13 @@ void main() {
 
     expect(controller.wiped, isTrue);
   });
+}
+
+/// Protection is available for the startup check and the screen's own check,
+/// then a transient platform error reports it unavailable.
+class _FlakyAuth extends FakeColdAuth {
+  int _calls = 0;
+
+  @override
+  Future<bool> deviceCanProtect() async => ++_calls <= 2;
 }

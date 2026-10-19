@@ -29,27 +29,33 @@ class _MigrateVaultScreenState extends ConsumerState<MigrateVaultScreen> {
     super.dispose();
   }
 
-  /// Without a device lock the rotation would leave the wallet open to anyone
-  /// holding the phone, so it needs the same acceptance as creating one.
-  Future<bool> _acceptUnprotected() async {
+  /// What the vault moves behind: user presence where the device offers it,
+  /// otherwise a plain entry, which would leave the wallet open to anyone
+  /// holding the phone and so needs the same acceptance as creating one.
+  /// Null when that warning was declined. The choice is made here, once, and
+  /// carried into the migration.
+  Future<bool?> _chooseProtection() async {
     if (await ref.read(coldAuthServiceProvider).deviceCanProtect()) return true;
-    if (!mounted) return false;
+    if (!mounted) return null;
     final proceed = await Navigator.push<bool>(
       context,
       MaterialPageRoute(builder: (_) => const SecureElementWarningScreen()),
     );
-    return proceed == true;
+    return proceed == true ? false : null;
   }
 
   Future<void> _submit() async {
     if (_busy) return;
-    if (!await _acceptUnprotected() || !mounted) return;
+    final protected = await _chooseProtection();
+    if (protected == null || !mounted) return;
     setState(() {
       _busy = true;
       _error = null;
     });
     try {
-      final moved = await ref.read(walletControllerProvider.notifier).migrateLegacy(_password.text);
+      final moved = await ref
+          .read(walletControllerProvider.notifier)
+          .migrateLegacy(_password.text, protected: protected);
       if (!moved && mounted) setState(() => _error = 'Incorrect password');
     } on VaultAccessCancelled {
       if (mounted) setState(() => _error = 'Face ID is needed to finish moving your wallet.');
