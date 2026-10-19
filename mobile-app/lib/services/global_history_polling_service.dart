@@ -108,9 +108,10 @@ class GlobalHistoryPollingService {
     final active = _ref.read(activeAccountProvider).value;
     if (active != null) {
       // Use the shared helper so encrypted accounts reload wormhole UTXO state
-      // (not the transparent balanceProviderFamily, which is irrelevant for them).
+      // (not the transparent balanceProviderFamily, which is irrelevant for
+      // them). Pull-to-refresh is the one place a full rescan is asked for.
       await Future.wait([
-        refreshActiveAccountBalance(_ref),
+        refreshActiveAccountBalance(_ref, discardCaches: true),
         refreshAccountsPagination(
           _ref,
           accountIds: [active.account.accountId],
