@@ -65,6 +65,7 @@ class WalletController extends Notifier<WalletState> {
 
   List<int>? _keyBytes;
   bool _upgradeToProtected = false;
+  bool _gateLegacyKey = false;
 
   VaultService get vault => _vault;
   ColdAuthService get auth => ref.read(coldAuthServiceProvider);
@@ -92,8 +93,20 @@ class WalletController extends Notifier<WalletState> {
         state = const WalletState(status: WalletStatus.needsMigration);
         return;
       }
-      if (await _vault.hasPlainKey()) {
-        _upgradeToProtected = canProtect;
+      final plainKey = await _vault.plainKeyKind();
+      if (plainKey != PlainKeyKind.none) {
+        if (canProtect) {
+          _upgradeToProtected = true;
+        } else if (plainKey == PlainKeyKind.legacy) {
+          // The previous app version kept this entry behind its own device
+          // prompt, which stays in front of it. Without any device lock the
+          // password and the no-lock warning decide what replaces it.
+          if (!await auth.isDeviceSecure()) {
+            state = const WalletState(status: WalletStatus.needsMigration);
+            return;
+          }
+          _gateLegacyKey = true;
+        }
         state = const WalletState(status: WalletStatus.locked, biometricEnabled: true);
         return;
       }
@@ -176,10 +189,13 @@ class WalletController extends Notifier<WalletState> {
     }
   }
 
-  /// Android's store answers silently once it has prompted in this process,
-  /// so a protected read there gets a fresh prompt first. The first read in a
-  /// process is gated by the store's own prompt, a plain entry by nothing.
-  Future<bool> _gateProtectedRead(String reason) async {
+  /// The prompt in front of a key read the store would otherwise answer
+  /// silently: Android's protected store once it has prompted in this
+  /// process, and a legacy plain entry, which the previous app version kept
+  /// behind the device prompt. The first protected read of a process and an
+  /// accepted plain entry need none.
+  Future<bool> _gateKeyRead(String reason) async {
+    if (_gateLegacyKey) return auth.authenticate(reason);
     if (await _vault.hasPlainKey() || !_vault.protectedStoreOpened) return true;
     return auth.gateProtectedRead(reason);
   }
@@ -191,7 +207,7 @@ class WalletController extends Notifier<WalletState> {
   /// prompt, a message for a key this device can no longer release.
   Future<bool> unlockWithBiometric() async {
     try {
-      if (!await _gateProtectedRead('Unlock your cold wallet')) {
+      if (!await _gateKeyRead('Unlock your cold wallet')) {
         state = state.copyWith(error: unlockCancelledError);
         return false;
       }
@@ -271,7 +287,7 @@ class WalletController extends Notifier<WalletState> {
     final keyBytes = _keyBytes;
     if (keyBytes == null) throw StateError('Wallet is locked');
     try {
-      if (!await _gateProtectedRead('Confirm it is you to show the recovery phrase')) return false;
+      if (!await _gateKeyRead('Confirm it is you to show the recovery phrase')) return false;
       return listEquals((await _vault.unlockWithBiometricKey()).keyBytes, keyBytes);
     } on VaultAccessCancelled {
       return false;
@@ -327,6 +343,7 @@ class WalletController extends Notifier<WalletState> {
   Future<void> wipe() async {
     _keyBytes = null;
     _upgradeToProtected = false;
+    _gateLegacyKey = false;
     await _vault.wipe();
     state = const WalletState(status: WalletStatus.needsSetup);
   }

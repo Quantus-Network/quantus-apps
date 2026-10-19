@@ -77,7 +77,8 @@ void main() {
 
     expect(find.text('Derivation Path'), findsOneWidget);
     expect(find.text(two.derivationPath), findsOneWidget);
-    expect(find.textContaining('not a secret'), findsOneWidget);
+    expect(find.text('ML-DSA-87'), findsOneWidget);
+    expect(find.textContaining('not secrets'), findsOneWidget);
     expect(find.text('Cancel'), findsNothing);
 
     await tester.tap(find.text('Done'));

@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:cryptography/cryptography.dart' show SecretBoxAuthenticationError;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage_platform_interface/flutter_secure_storage_platform_interface.dart';
@@ -23,19 +25,24 @@ void main() {
 
   Future<void> legacyVault() => vault.createVault(mnemonic: testMnemonic, password: 'alpha', accounts: testAccounts);
 
-  Future<(ProviderContainer, WalletController)> boot({bool canProtect = true, bool storePromptsOnce = false}) async {
-    final container = ProviderContainer(
-      overrides: [
-        coldAuthServiceProvider.overrideWithValue(
-          FakeColdAuth(canProtect: canProtect, storePromptsOnce: storePromptsOnce),
-        ),
-      ],
-    );
+  /// The plain entry as the previous app version wrote it: paired with the
+  /// vault salt, or bare from before pairing existed. No acceptance marker.
+  Future<void> legacyPlainKey({bool paired = true}) async {
+    final key = base64Encode((await vault.unlockWithPassword('alpha')).keyBytes);
+    final salt = (jsonDecode(storage.data[vaultEntry]!) as Map<String, dynamic>)['salt'];
+    storage.data[plainKeyEntry] = paired ? jsonEncode({'salt': salt, 'key': key}) : key;
+  }
+
+  Future<(ProviderContainer, WalletController)> bootWith(FakeColdAuth auth) async {
+    final container = ProviderContainer(overrides: [coldAuthServiceProvider.overrideWithValue(auth)]);
     addTearDown(container.dispose);
     final controller = container.read(walletControllerProvider.notifier);
     await awaitInit(container);
     return (container, controller);
   }
+
+  Future<(ProviderContainer, WalletController)> boot({bool canProtect = true, bool storePromptsOnce = false}) =>
+      bootWith(FakeColdAuth(canProtect: canProtect, storePromptsOnce: storePromptsOnce));
 
   WalletStatus statusOf(ProviderContainer c) => c.read(walletControllerProvider).status;
 
@@ -72,14 +79,79 @@ void main() {
     expect(relaunched.read(walletControllerProvider).mnemonic, testMnemonic);
   });
 
-  test('a device without a lock migrates to the plain entry', () async {
+  test('a device without a lock migrates to an accepted plain entry, which is not gated', () async {
     await legacyVault();
     final (_, controller) = await boot(canProtect: false);
 
     expect(await controller.migrateLegacy('alpha'), isTrue);
 
-    expect(storage.data.containsKey(plainKeyEntry), isTrue);
+    expect(await vault.plainKeyKind(), PlainKeyKind.accepted);
     expect(storage.data.containsKey(protectedKeyEntry), isFalse);
+
+    final auth = FakeColdAuth(canProtect: false);
+    final (_, again) = await bootWith(auth);
+    expect(await again.unlockWithBiometric(), isTrue);
+    expect(await again.confirmPresence(), isTrue);
+    expect(auth.prompts, 0);
+  });
+
+  group('a legacy biometric key on a device that cannot protect', () {
+    for (final paired in [true, false]) {
+      test('stays behind the device prompt it had (${paired ? 'paired' : 'bare'} entry)', () async {
+        await legacyVault();
+        await legacyPlainKey(paired: paired);
+        final entry = storage.data[plainKeyEntry];
+        final auth = FakeColdAuth(canProtect: false);
+        final (container, controller) = await bootWith(auth);
+        expect(statusOf(container), WalletStatus.locked);
+
+        auth.promptResult = false;
+        final reads = storage.readsOf(plainKeyEntry);
+        expect(await controller.unlockWithBiometric(), isFalse);
+        expect(container.read(walletControllerProvider).error, unlockCancelledError);
+        expect(storage.readsOf(plainKeyEntry), reads, reason: 'a dismissed prompt must not reach the key');
+
+        auth.promptResult = true;
+        expect(await controller.unlockWithBiometric(), isTrue);
+        expect(container.read(walletControllerProvider).mnemonic, testMnemonic);
+
+        auth.promptResult = false;
+        expect(await controller.confirmPresence(), isFalse);
+        auth.promptResult = true;
+        expect(await controller.confirmPresence(), isTrue);
+        expect(auth.prompts, 4);
+        expect(storage.data[plainKeyEntry], entry, reason: 'nothing converts the entry without the warning');
+      });
+    }
+
+    test('without any device lock it takes the password and the no-lock acceptance first', () async {
+      await legacyVault();
+      await legacyPlainKey();
+      final (container, controller) = await bootWith(FakeColdAuth(canProtect: false, hasLock: false));
+      expect(statusOf(container), WalletStatus.needsMigration);
+
+      expect(await controller.migrateLegacy('alpha'), isTrue);
+
+      expect(statusOf(container), WalletStatus.unlocked);
+      expect(await vault.plainKeyKind(), PlainKeyKind.accepted);
+      final auth = FakeColdAuth(canProtect: false, hasLock: false);
+      final (relaunched, again) = await bootWith(auth);
+      expect(statusOf(relaunched), WalletStatus.locked);
+      expect(await again.unlockWithBiometric(), isTrue);
+      expect(auth.prompts, 0);
+    });
+
+    test('on a device that can protect it moves behind user presence at the first unlock', () async {
+      await legacyVault();
+      await legacyPlainKey();
+      final (container, controller) = await boot();
+      expect(statusOf(container), WalletStatus.locked);
+
+      expect(await controller.unlockWithBiometric(), isTrue);
+
+      expect(storage.data.containsKey(plainKeyEntry), isFalse);
+      expect(storage.data.containsKey(protectedKeyEntry), isTrue);
+    });
   });
 
   test('a wrong password changes nothing', () async {

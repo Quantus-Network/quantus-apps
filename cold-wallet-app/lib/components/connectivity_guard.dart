@@ -130,7 +130,8 @@ class _Gate extends ConsumerWidget {
                   RadioStatusPanel(results: results),
                   const SizedBox(height: 16),
                   Text(
-                    "This clears itself the moment you're fully offline.",
+                    "Switch Wi-Fi, cellular and Bluetooth off in your phone's settings. The list shows active "
+                    "connections, not whether a radio is on. It clears itself the moment you're fully offline.",
                     style: text.caption.copyWith(color: colors.textMuted2, height: 1.6),
                     textAlign: TextAlign.center,
                   ),

@@ -26,7 +26,9 @@ void main() {
   Text valueOf(WidgetTester tester, String label) =>
       tester.widgetList<Text>(find.descendant(of: find.widgetWithText(Row, label), matching: find.byType(Text))).last;
 
-  testWidgets('lists WI-FI, CELLULAR and BLUETOOTH in order with ON in ember and OFF in sage', (tester) async {
+  testWidgets('lists WI-FI, CELLULAR and BLUETOOTH in order, CONNECTED in ember and NOT CONNECTED in sage', (
+    tester,
+  ) async {
     await pumpPanel(tester, const [ConnectivityResult.wifi, ConnectivityResult.mobile]);
 
     final labels = ['WI-FI', 'CELLULAR', 'BLUETOOTH'];
@@ -37,24 +39,41 @@ void main() {
     expect(tester.getTopLeft(find.text('CELLULAR')).dy, lessThan(tester.getTopLeft(find.text('BLUETOOTH')).dy));
 
     final wifi = valueOf(tester, 'WI-FI');
-    expect(wifi.data, 'ON');
+    expect(wifi.data, 'CONNECTED');
     expect(wifi.style?.color, colors.semanticEmber);
     expect(wifi.style?.fontSize, text.dataAddress.fontSize);
     expect(wifi.style?.fontFamily, AppTextThemeV3.fontFamilySecondary);
 
-    expect(valueOf(tester, 'CELLULAR').data, 'ON');
+    expect(valueOf(tester, 'CELLULAR').data, 'CONNECTED');
 
     final bluetooth = valueOf(tester, 'BLUETOOTH');
-    expect(bluetooth.data, 'OFF');
+    expect(bluetooth.data, 'NOT CONNECTED');
     expect(bluetooth.style?.color, colors.semanticSage);
+    expect(find.text('ON'), findsNothing);
+    expect(find.text('OFF'), findsNothing);
   });
 
-  testWidgets('reports every radio off when the platform lists none', (tester) async {
+  testWidgets('says not connected, never off, when the platform lists nothing', (tester) async {
     await pumpPanel(tester, const []);
 
-    expect(find.text('OFF'), findsNWidgets(3));
-    expect(find.text('ON'), findsNothing);
+    expect(find.text('NOT CONNECTED'), findsNWidgets(3));
+    expect(find.text('CONNECTED'), findsNothing);
+    expect(find.text('OFF'), findsNothing);
   });
+
+  testWidgets(
+    'on iOS, where the platform never reports Bluetooth, the row says so',
+    (tester) async {
+      await pumpPanel(tester, const [ConnectivityResult.wifi]);
+
+      final bluetooth = valueOf(tester, 'BLUETOOTH');
+      expect(bluetooth.data, 'NOT REPORTED');
+      expect(bluetooth.style?.color, colors.textMuted);
+      expect(valueOf(tester, 'WI-FI').data, 'CONNECTED');
+      expect(valueOf(tester, 'CELLULAR').data, 'NOT CONNECTED');
+    },
+    variant: TargetPlatformVariant.only(TargetPlatform.iOS),
+  );
 
   testWidgets('uses the surface panel and mono spec label tokens', (tester) async {
     await pumpPanel(tester, const [ConnectivityResult.none]);

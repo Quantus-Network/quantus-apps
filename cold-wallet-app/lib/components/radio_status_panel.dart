@@ -1,12 +1,15 @@
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 
-/// Surface panel listing the radios the platform still reports (Figma Offline
-/// gate): WI-FI, CELLULAR and BLUETOOTH rows, ON in ember or OFF in sage.
+/// Surface panel listing what the platform reports for each transport (Figma
+/// Offline gate): WI-FI, CELLULAR and BLUETOOTH rows, CONNECTED in ember or
+/// NOT CONNECTED in sage.
 ///
-/// BLUETOOTH is connectivity_plus's Bluetooth network result, not the radio
-/// state: reading the radio itself needs a Bluetooth permission.
+/// connectivity_plus reports active network paths, not whether a radio is
+/// powered: a transport can be on without a connection. It never reports
+/// Bluetooth on iOS, so that row says NOT REPORTED there.
 class RadioStatusPanel extends StatelessWidget {
   final List<ConnectivityResult> results;
 
@@ -17,6 +20,9 @@ class RadioStatusPanel extends StatelessWidget {
     ('CELLULAR', ConnectivityResult.mobile),
     ('BLUETOOTH', ConnectivityResult.bluetooth),
   ];
+
+  static bool _reported(ConnectivityResult result) =>
+      result != ConnectivityResult.bluetooth || defaultTargetPlatform != TargetPlatform.iOS;
 
   @override
   Widget build(BuildContext context) {
@@ -30,7 +36,12 @@ class RadioStatusPanel extends StatelessWidget {
       child: Column(
         children: [
           for (final (i, (label, result)) in _rows.indexed)
-            _RadioRow(label: label, on: results.contains(result), divided: i > 0),
+            if (!_reported(result))
+              _RadioRow(label: label, status: 'NOT REPORTED', color: colors.textMuted, divided: i > 0)
+            else if (results.contains(result))
+              _RadioRow(label: label, status: 'CONNECTED', color: colors.semanticEmber, divided: i > 0)
+            else
+              _RadioRow(label: label, status: 'NOT CONNECTED', color: colors.semanticSage, divided: i > 0),
         ],
       ),
     );
@@ -39,10 +50,11 @@ class RadioStatusPanel extends StatelessWidget {
 
 class _RadioRow extends StatelessWidget {
   final String label;
-  final bool on;
+  final String status;
+  final Color color;
   final bool divided;
 
-  const _RadioRow({required this.label, required this.on, required this.divided});
+  const _RadioRow({required this.label, required this.status, required this.color, required this.divided});
 
   @override
   Widget build(BuildContext context) {
@@ -63,10 +75,7 @@ class _RadioRow extends StatelessWidget {
               style: text.labelMonogram.copyWith(fontSize: 10, letterSpacing: 1, color: colors.textMuted2),
             ),
           ),
-          Text(
-            on ? 'ON' : 'OFF',
-            style: text.dataAddress.copyWith(color: on ? colors.semanticEmber : colors.semanticSage),
-          ),
+          Text(status, style: text.dataAddress.copyWith(color: color)),
         ],
       ),
     );

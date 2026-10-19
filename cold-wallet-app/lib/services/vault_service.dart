@@ -18,6 +18,11 @@ class VaultAccessCancelled implements Exception {
   String toString() => 'Vault access cancelled: ${cause.message}';
 }
 
+/// Which plain key entry a vault has: none; a legacy one, written by the app
+/// version that kept it behind its own device prompt and a password; or an
+/// accepted one, written on this version once the no-lock warning was taken.
+enum PlainKeyKind { none, legacy, accepted }
+
 /// Decrypted result of a successful unlock: the vault contents plus the derived
 /// key bytes (so the caller can optionally persist them for biometric unlock).
 class UnlockResult {
@@ -148,23 +153,27 @@ class VaultService {
     return (await _storage.read(key: _vaultKey)) != null;
   }
 
-  /// True only when the plain key entry belongs to the current vault
-  /// (matched via the vault salt it was paired with). A key orphaned by a
-  /// rotation that died between the vault write and the re-store is deleted
-  /// here, so startup never advertises an unlock option that cannot work.
-  /// Pre-pairing entries (bare base64) carry no salt and are instead
-  /// validated at use in [unlockWithBiometricKey]. Never prompts.
-  Future<bool> hasPlainKey() async {
+  /// The plain key entry, when it belongs to the current vault (matched via
+  /// the vault salt it was paired with). A key orphaned by a rotation that
+  /// died between the vault write and the re-store is deleted here, so startup
+  /// never advertises an unlock option that cannot work. Pre-pairing entries
+  /// (bare base64) carry no salt and are instead validated at use in
+  /// [unlockWithBiometricKey]. Never prompts.
+  Future<PlainKeyKind> plainKeyKind() async {
     final raw = await _storage.read(key: _bioKeyKey);
-    if (raw == null) return false;
+    if (raw == null) return PlainKeyKind.none;
     final vaultSalt = await _vaultSaltB64();
-    if (vaultSalt == null) return false;
+    if (vaultSalt == null) return PlainKeyKind.none;
     final entry = _decodeBioEntry(raw);
-    if (entry.salt == null || entry.salt == vaultSalt) return true;
-    debugPrint('Biometric key belongs to a previous vault (interrupted rotation); removing it');
-    await _storage.delete(key: _bioKeyKey);
-    return false;
+    if (entry.salt != null && entry.salt != vaultSalt) {
+      debugPrint('Biometric key belongs to a previous vault (interrupted rotation); removing it');
+      await _storage.delete(key: _bioKeyKey);
+      return PlainKeyKind.none;
+    }
+    return entry.accepted ? PlainKeyKind.accepted : PlainKeyKind.legacy;
   }
+
+  Future<bool> hasPlainKey() async => await plainKeyKind() != PlainKeyKind.none;
 
   /// Whether the protected entry exists, by attributes only: iOS does not
   /// prompt for that. Its salt pairing is checked at use, since reading the
@@ -180,10 +189,10 @@ class VaultService {
     return (jsonDecode(raw) as Map<String, dynamic>)['salt'] as String;
   }
 
-  ({String? salt, String key}) _decodeBioEntry(String raw) {
-    if (!raw.startsWith('{')) return (salt: null, key: raw);
+  ({String? salt, String key, bool accepted}) _decodeBioEntry(String raw) {
+    if (!raw.startsWith('{')) return (salt: null, key: raw, accepted: false);
     final m = jsonDecode(raw) as Map<String, dynamic>;
-    return (salt: m['salt'] as String, key: m['key'] as String);
+    return (salt: m['salt'] as String, key: m['key'] as String, accepted: m['accepted'] == true);
   }
 
   Future<SecretKey> _deriveKey(String password, List<int> salt) =>
@@ -269,10 +278,12 @@ class VaultService {
   /// The protected branch removes the plain entry. The plain branch leaves a
   /// protected entry alone: it is only taken on a device without a lock, where
   /// the protected store cannot be opened, and reads try the plain entry first.
+  /// It marks the entry as accepted on the no-lock warning, which tells it
+  /// from one the previous app version wrote ([PlainKeyKind]).
   Future<void> storeBiometricKey(List<int> keyBytes, {required bool protected}) async {
     final vaultSalt = await _vaultSaltB64();
     if (vaultSalt == null) throw StateError('No wallet vault found');
-    final value = jsonEncode({'salt': vaultSalt, 'key': base64Encode(keyBytes)});
+    final value = jsonEncode({'salt': vaultSalt, 'key': base64Encode(keyBytes), if (!protected) 'accepted': true});
     if (!protected) {
       await _storage.write(key: _bioKeyKey, value: value);
       _verifyReadBack(await _storage.read(key: _bioKeyKey), value);

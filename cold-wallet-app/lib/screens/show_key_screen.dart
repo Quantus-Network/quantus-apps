@@ -9,6 +9,7 @@ import 'package:quantus_cold_wallet/screens/public_key_export_screen.dart';
 import 'package:quantus_cold_wallet/screens/rename_account_screen.dart';
 import 'package:quantus_cold_wallet/components/cold_button.dart';
 import 'package:quantus_cold_wallet/components/cold_dialog.dart';
+import 'package:quantus_cold_wallet/components/scheme_picker.dart';
 
 /// Account Pairing (Figma Cold Wallet): the QR a hot wallet scans to add this
 /// account, with its address and checkphrase.
@@ -42,18 +43,13 @@ class ShowKeyScreen extends ConsumerWidget {
   }
 
   void _showDerivationPath(BuildContext context, ColdAccount account) {
-    final colors = context.colorsV3;
     showColdDialog(
       context,
       title: 'Derivation Path',
-      titleColor: colors.accentFlare,
-      banner: Text(
-        account.derivationPath,
-        style: context.themeTextV3.dataAddressLarge.copyWith(color: colors.textContent),
-        textAlign: TextAlign.center,
-      ),
+      titleColor: context.colorsV3.accentFlare,
+      banner: _derivation(context, account),
       body:
-          'You need this to recreate the account on another wallet. It is not a secret and it is not enough to '
+          'You need both to recreate the account on another wallet. They are not secrets and they are not enough to '
           'spend anything.',
       actionLabel: 'Done',
       cancelLabel: null,
@@ -221,6 +217,30 @@ AnchoredMenuItem disconnectMenuItem(
   );
 }
 
+/// What derives the account from the recovery words: its path and its
+/// signature type. A custom path and a scheme chosen apart from it are
+/// recorded nowhere else, so every dialog about recreating the account shows
+/// them.
+Widget _derivation(BuildContext context, ColdAccount account) {
+  final colors = context.colorsV3;
+  final text = context.themeTextV3;
+  return Column(
+    children: [
+      Text(
+        account.derivationPath,
+        style: text.dataAddressLarge.copyWith(color: colors.textContent),
+        textAlign: TextAlign.center,
+      ),
+      const SizedBox(height: 4),
+      Text(
+        schemeLabel(account.scheme),
+        style: text.caption.copyWith(color: colors.textMuted),
+        textAlign: TextAlign.center,
+      ),
+    ],
+  );
+}
+
 /// Disconnect dialog (Figma Cold Wallet / Disconnect). On confirm the account
 /// is dropped, [afterRemove] runs, and the screen left showing gets the toast.
 Future<void> confirmDisconnect(
@@ -235,7 +255,10 @@ Future<void> confirmDisconnect(
     context,
     title: 'Disconnect ${account.label}?',
     titleColor: context.colorsV3.semanticEmber,
-    body: 'This device forgets the account. Nothing on the network changes, and your $words words bring it back.',
+    banner: _derivation(context, account),
+    body:
+        'This device forgets the account. Nothing on the network changes. Your $words words bring it back only '
+        'with the derivation path and signature type above, so save them first.',
     actionLabel: 'Disconnect',
     isDestructive: true,
   );

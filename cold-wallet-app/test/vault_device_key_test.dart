@@ -47,6 +47,7 @@ void main() {
 
     expect(storage.data.containsKey(plainKeyEntry), isTrue);
     expect(storage.data.containsKey(protectedKeyEntry), isFalse);
+    expect(await vault.plainKeyKind(), PlainKeyKind.accepted);
     expect(await vault.isBiometricEnabled(), isTrue);
     expect((await vault.unlockWithBiometricKey()).mnemonic, testMnemonic);
   });
@@ -148,7 +149,7 @@ void main() {
     final keyBytes = await createVault();
     storage.data[plainKeyEntry] = base64Encode(keyBytes);
 
-    expect(await vault.isBiometricEnabled(), isTrue);
+    expect(await vault.plainKeyKind(), PlainKeyKind.legacy);
     expect((await vault.unlockWithBiometricKey()).mnemonic, testMnemonic);
 
     await vault.createVault(mnemonic: testMnemonic, password: 'beta', accounts: testAccounts);

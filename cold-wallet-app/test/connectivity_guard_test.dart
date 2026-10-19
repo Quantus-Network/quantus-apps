@@ -71,7 +71,8 @@ void main() {
     expect(find.text('Go offline to continue'), findsOneWidget);
     expect(find.text('No key is created while this phone is connected.'), findsOneWidget);
     expect(find.text('Waiting for you to go offline'), findsNothing);
-    expect(find.text("This clears itself the moment you're fully offline."), findsOneWidget);
+    expect(find.textContaining('Switch Wi-Fi, cellular and Bluetooth off'), findsOneWidget);
+    expect(find.textContaining("clears itself the moment you're fully offline"), findsOneWidget);
     expect(find.text('Override for Testing'), findsOneWidget);
     expect(find.byType(AppBackButton), findsNothing);
   });

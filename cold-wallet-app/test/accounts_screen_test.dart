@@ -14,6 +14,7 @@ import 'package:quantus_cold_wallet/services/vault_service.dart';
 
 import 'fakes/account_fixtures.dart';
 import 'package:quantus_cold_wallet/components/cold_button.dart';
+import 'package:quantus_cold_wallet/components/cold_dialog.dart';
 
 /// An unlocked wallet holding [accounts], backed by mocked secure storage.
 Future<ProviderContainer> walletWith(List<ColdAccount> accounts) async {
@@ -98,7 +99,6 @@ void main() {
     });
 
     test('a custom-path ML-DSA-65 account added back by its path and signature type keeps its key', () async {
-      final custom65 = ColdAccount(label: 'Elsewhere', path: "m/44'/1'/0'", scheme: DilithiumScheme.mlDsa65);
       final container = await walletWith([one, custom65]);
       final controller = container.read(walletControllerProvider.notifier);
       final address = fakeAddress(custom65);
@@ -184,7 +184,12 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Disconnect Account 2?'), findsOneWidget);
-      expect(find.textContaining('your 12 words bring it back'), findsOneWidget);
+      expect(
+        find.textContaining('Your 12 words bring it back only with the derivation path and signature type'),
+        findsOneWidget,
+      );
+      expect(find.descendant(of: find.byType(ColdDialog), matching: find.text(two.derivationPath)), findsOneWidget);
+      expect(find.descendant(of: find.byType(ColdDialog), matching: find.text('ML-DSA-87')), findsOneWidget);
 
       await tester.tap(find.text('Cancel'));
       await tester.pumpAndSettle();
@@ -199,6 +204,18 @@ void main() {
       expect(find.text('Account 2'), findsNothing);
       expect(find.text('Account 2 disconnected'), findsOneWidget);
       await tester.pump(const Duration(seconds: 3));
+    });
+
+    testWidgets('the confirmation shows a custom path and its signature type to save first', (tester) async {
+      await pumpAccounts(tester, [one, custom65]);
+
+      await openMenu(tester, 1);
+      await tester.tap(find.text('Disconnect account'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Disconnect Elsewhere?'), findsOneWidget);
+      expect(find.descendant(of: find.byType(ColdDialog), matching: find.text("m/44'/1'/0'")), findsOneWidget);
+      expect(find.descendant(of: find.byType(ColdDialog), matching: find.text('ML-DSA-65')), findsOneWidget);
     });
 
     testWidgets('disconnecting from the pairing screen returns here with the toast', (tester) async {

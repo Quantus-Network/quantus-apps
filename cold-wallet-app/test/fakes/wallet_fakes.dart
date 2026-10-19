@@ -15,6 +15,9 @@ final testAccounts = [ColdAccount(label: 'Main key', index: 0, scheme: Dilithium
 /// and the prompt the controller asks for where the store answers silently.
 class FakeColdAuth extends ColdAuthService {
   final bool canProtect;
+
+  /// A device lock exists, whether or not the OS can keep a key behind it.
+  final bool hasLock;
   final bool biometrics;
 
   /// Android: the store prompts once per process, so later reads need this
@@ -27,10 +30,13 @@ class FakeColdAuth extends ColdAuthService {
   /// When set, prompts wait on it so one in flight can be observed.
   Completer<bool>? pendingPrompt;
 
-  FakeColdAuth({this.canProtect = true, this.biometrics = false, this.storePromptsOnce = false});
+  FakeColdAuth({this.canProtect = true, this.hasLock = true, this.biometrics = false, this.storePromptsOnce = false});
 
   @override
   Future<bool> deviceCanProtect() async => canProtect;
+
+  @override
+  Future<bool> isDeviceSecure() async => hasLock;
 
   @override
   Future<bool> canUseBiometrics() async => biometrics;

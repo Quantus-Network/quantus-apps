@@ -12,6 +12,7 @@ const testMnemonic = 'abandon abandon abandon abandon abandon abandon abandon ab
 final one = ColdAccount(label: 'Account 1', index: 0, scheme: DilithiumScheme.mlDsa87);
 final two = ColdAccount(label: 'Account 2', index: 1, scheme: DilithiumScheme.mlDsa87);
 final legacy65 = ColdAccount(label: 'Old account', index: 1, scheme: DilithiumScheme.mlDsa65);
+final custom65 = ColdAccount(label: 'Elsewhere', path: "m/44'/1'/0'", scheme: DilithiumScheme.mlDsa65);
 
 /// Key derivation needs the native library, which unit tests do not load, so
 /// each account stands in for its address by what the key derives from. The
