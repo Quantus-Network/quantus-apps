@@ -184,6 +184,9 @@ class _FakeUtxoService extends WormholeUtxoService {
   /// tests race a slow load() against logout.
   Completer<void>? gate;
 
+  /// Completes once a scan has reached [gate].
+  final reached = Completer<void>();
+
   int scans = 0;
 
   @override
@@ -193,6 +196,7 @@ class _FakeUtxoService extends WormholeUtxoService {
     IsCancelledCallback? isCancelled,
   }) async {
     scans++;
+    if (!reached.isCompleted) reached.complete();
     final g = gate;
     if (g != null) await g.future;
     return result;
@@ -212,6 +216,9 @@ class _FakeSendService extends WormholeSendService {
   Completer<void>? gate;
   Object? error;
 
+  /// Completes once a send has reached [gate].
+  final reached = Completer<void>();
+
   List<List<WormholeLeafSpend>>? get capturedBatches => capturedBatchesList.isEmpty ? null : capturedBatchesList.last;
 
   @override
@@ -228,6 +235,7 @@ class _FakeSendService extends WormholeSendService {
         capturedSecretCopies.add(Uint8List.fromList(spend.secret));
       }
     }
+    if (!reached.isCompleted) reached.complete();
     final g = gate;
     if (g != null) await g.future;
     final err = error;
@@ -290,10 +298,12 @@ void main() {
     required int nextIndex,
     int? nextChangeIndex,
     List<PendingSpend> pendingSpends = const [],
+    String? owner,
   }) async {
     final file = File('${tempDir.path}/encrypted_account_w0.json');
     await file.writeAsString(
       jsonEncode({
+        'owner': ?owner,
         'nextIndex': nextIndex,
         'nextChangeIndex': ?nextChangeIndex,
         'pendingSpends': pendingSpends.map((e) => e.toJson()).toList(),
@@ -478,7 +488,7 @@ void main() {
       utxoService.gate = Completer<void>();
       final first = service.load();
       final second = service.load();
-      await Future<void>.delayed(Duration.zero);
+      await utxoService.reached.future;
       expect(utxoService.scans, 1);
 
       utxoService.gate!.complete();
@@ -496,7 +506,7 @@ void main() {
       discovery.used = {0};
       utxoService.gate = Completer<void>();
       final failing = service.load();
-      await Future<void>.delayed(Duration.zero); // let the scan reach the gate
+      await utxoService.reached.future;
       utxoService.gate!.completeError(StateError('indexer down'));
       await expectLater(failing, throwsA(isA<StateError>()));
 
@@ -511,7 +521,7 @@ void main() {
       final loading = service.load();
       var discarded = false;
       final discarding = service.discardCachedState().then((_) => discarded = true);
-      await Future<void>.delayed(Duration.zero);
+      await utxoService.reached.future;
       expect(discarded, isFalse);
 
       utxoService.gate!.complete();
@@ -557,11 +567,26 @@ void main() {
       expect(hdWallet.ownerChecks, 5);
     });
 
-    test('a different seed in the same wallet slot gets a fresh address book', () async {
+    test('a different seed in the same wallet slot starts over: address book and persisted state', () async {
+      // The first seed has handed out many receive and change indices and
+      // has a spend in flight.
+      await seedState(
+        nextIndex: 30,
+        nextChangeIndex: 50,
+        pendingSpends: [
+          PendingSpend(
+            nullifiers: const ['0xn_old'],
+            changeAddress: changeAddressAt(49),
+            changeAmountToken: wormholeTokenFromScaled(500),
+            createdAtMs: DateTime.now().millisecondsSinceEpoch,
+          ),
+        ],
+      );
       discovery.used = {0, 2};
       discovery.usedChange = {0};
       await service.load();
       expect(await service.ownsAddress(addressAt(2)), isTrue);
+      expect((await readStateFile())['owner'], addressAt(0));
 
       // The wallet is deleted and another seed imported into the same index;
       // that seed has used external 0 and 1 and change 0 and 1.
@@ -575,6 +600,13 @@ void main() {
       final state = await service.load();
 
       expect(state.accountId, addressAt(0, seed: 7));
+      // Inheriting 30 / 50 would put the next receive and change addresses
+      // past the gap limit, where no discovery would ever find the funds.
+      expect(state.nextIndex, 2);
+      expect(state.nextChangeIndex, 2);
+      expect(state.pendingChangeToken, BigInt.zero);
+      expect((await service.receiveKeyPair()).address, addressAt(2, seed: 7));
+      expect((await readStateFile())['owner'], addressAt(0, seed: 7));
       expect(
         state.ownAddresses,
         containsAll([
@@ -598,6 +630,51 @@ void main() {
       await service.load();
       // Only the key-pair batch for the used index; the probes came from the book.
       expect(hdWallet.batchDerivations, before + 1);
+    });
+
+    test('a replacement seed does not inherit the change index of a send', () async {
+      await seedState(nextIndex: 1, nextChangeIndex: 40, owner: addressAt(0));
+      mnemonic = 'replacement mnemonic';
+      hdWallet.seeds[mnemonic] = 7;
+      discovery.seed = 7;
+      final recipient = Address(prefix: 189, pubkey: Uint8List.fromList(List.filled(32, 0x22))).encode();
+
+      final plan = selectWormholeInputs(utxos: [_utxo(1000)], amountToken: wormholeTokenFromScaled(400));
+      await service.send(plan: plan, recipientAddress: recipient, circuitBinsDir: '/unused', onProgress: (_) {});
+
+      final exit2 = sendService.capturedBatches!.single.single.exitAccount2!;
+      expect(Address(prefix: 189, pubkey: exit2).encode(), changeAddressAt(0, seed: 7));
+      expect((await readStateFile())['nextChangeIndex'], 1);
+    });
+
+    test('a state file from before owners were recorded is adopted by the current seed', () async {
+      await seedState(nextIndex: 5, nextChangeIndex: 3);
+      discovery.used = {0};
+      final state = await service.load();
+      expect(state.nextIndex, 5);
+      expect(state.nextChangeIndex, 3);
+      expect((await readStateFile())['owner'], addressAt(0));
+    });
+
+    test('a new service instance for the same seed keeps the persisted indices', () async {
+      discovery.used = {0, 1};
+      discovery.usedChange = {0};
+      await service.load();
+
+      final again = EncryptedAccountService(
+        walletIndex: 0,
+        getMnemonic: () async => mnemonic,
+        hdWalletService: hdWallet,
+        utxoService: utxoService,
+        discoveryService: discovery,
+        sendService: sendService,
+      );
+      addTearDown(again.dispose);
+      discovery.used = {0};
+      discovery.usedChange = {};
+      final state = await again.load();
+      expect(state.nextIndex, 2);
+      expect(state.nextChangeIndex, 1);
     });
 
     test('ownsAddress derives only the indices it has not seen', () async {
@@ -694,7 +771,7 @@ void main() {
         circuitBinsDir: '/unused',
         onProgress: (_) {},
       );
-      await Future<void>.delayed(Duration.zero); // let the send reach the gate
+      await sendService.reached.future;
 
       // Logout: quiesces every live instance, then wipes the state files.
       await EncryptedAccountService.clearAllPersistedState();
@@ -711,7 +788,7 @@ void main() {
       discovery.used = {0, 1};
       utxoService.gate = Completer<void>();
       final loadFuture = service.load();
-      await Future<void>.delayed(Duration.zero); // let the load reach the gate
+      await utxoService.reached.future;
 
       await service.dispose();
       utxoService.gate!.complete();
@@ -740,7 +817,7 @@ void main() {
       sendService.gate = Completer<void>();
       final f1 = service.send(plan: plan1, recipientAddress: recipient, circuitBinsDir: '/unused', onProgress: (_) {});
       final f2 = service.send(plan: plan2, recipientAddress: recipient, circuitBinsDir: '/unused', onProgress: (_) {});
-      await Future<void>.delayed(Duration.zero);
+      await sendService.reached.future;
       sendService.gate!.complete();
       await Future.wait([f1, f2]);
 
