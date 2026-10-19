@@ -76,6 +76,20 @@ void main() {
     expect(state().status, WalletStatus.needsSetup);
   });
 
+  test('a vault read failure right after its write leaves no vault behind', () async {
+    storage.failReadsOf = vaultEntry;
+
+    await expectLater(createProtected(), throwsA(isA<Exception>()));
+
+    storage.failReadsOf = null;
+    expect(storage.data, isEmpty);
+    expect(await vault.hasWallet(), isFalse);
+    expect(state().status, WalletStatus.needsSetup);
+
+    await createProtected();
+    expect(state().status, WalletStatus.unlocked);
+  });
+
   test('a cancelled unlock reports it and keeps the wallet locked', () async {
     await createProtected();
     controller.lock();
