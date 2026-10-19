@@ -152,7 +152,8 @@ class WalletController extends Notifier<WalletState> {
   /// key in the device key entry, [protected] by user presence or plain. Any
   /// failure after the vault write (its read-back, a cancelled prompt, a
   /// storage error) removes the vault again and rethrows, so a vault without
-  /// a readable key never survives creation.
+  /// a readable key never survives creation, even when the cleanup's own
+  /// prompt is cancelled as well.
   Future<void> createWallet({
     required String mnemonic,
     required List<ColdAccount> accounts,
@@ -164,7 +165,7 @@ class WalletController extends Notifier<WalletState> {
       await _vault.storeBiometricKey(keyBytes, protected: protected);
     } catch (e, st) {
       debugPrint('Create wallet failed, removing the vault: $e\n$st');
-      await _vault.wipe();
+      await _vault.discardIncompleteVault();
       rethrow;
     }
     _keyBytes = keyBytes;

@@ -168,6 +168,30 @@ void main() {
     expect(await vault.isBiometricEnabled(), isFalse);
   });
 
+  test('discarding an incomplete vault removes it even when the protected store cancels', () async {
+    final keyBytes = await createVault();
+    await vault.storeBiometricKey(keyBytes, protected: true);
+    await vault.storeBiometricKey(keyBytes, protected: false);
+    storage.unavailableKey = protectedKeyEntry;
+    storage.unavailableWith = androidCancel;
+
+    await vault.discardIncompleteVault();
+
+    expect(storage.data.containsKey(vaultEntry), isFalse);
+    expect(storage.data.containsKey(plainKeyEntry), isFalse);
+    expect(storage.data.containsKey(protectedKeyEntry), isTrue, reason: 'left for the next creation to overwrite');
+  });
+
+  test('a cancelled wipe keeps the vault', () async {
+    await vault.storeBiometricKey(await createVault(), protected: true);
+    storage.unavailableKey = protectedKeyEntry;
+    storage.unavailableWith = androidCancel;
+
+    await expectLater(vault.wipe(), throwsA(isA<VaultAccessCancelled>()));
+
+    expect(storage.data.containsKey(vaultEntry), isTrue);
+  });
+
   test('wipe removes the vault, the backup and both key entries', () async {
     final keyBytes = await createVault();
     await vault.storeBiometricKey(keyBytes, protected: true);

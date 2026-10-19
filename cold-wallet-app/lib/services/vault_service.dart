@@ -353,13 +353,31 @@ class VaultService {
   /// logged and skipped: that entry can unlock nothing once the vault is gone,
   /// and this wipe is the user's only way out.
   Future<void> wipe() async {
+    await _deleteProtectedEntry(keepOnCancel: true);
+    await _deletePlainEntries();
+  }
+
+  /// Removes a vault whose creation did not finish. Nothing can open it, so
+  /// it goes first; the protected entry follows as far as the store allows,
+  /// since its prompt may be cancelled too, and an entry left behind is
+  /// overwritten by the next creation.
+  Future<void> discardIncompleteVault() async {
+    await _deletePlainEntries();
+    await _deleteProtectedEntry(keepOnCancel: false);
+  }
+
+  Future<void> _deleteProtectedEntry({required bool keepOnCancel}) async {
     try {
       await _guarded(() => _protectedStorage.delete(key: _protectedBioKeyKey));
     } on VaultAccessCancelled {
-      rethrow;
+      if (keepOnCancel) rethrow;
+      debugPrint('Protected key entry deletion cancelled; the next creation overwrites it');
     } catch (e, st) {
       debugPrint('Protected key entry could not be deleted during wipe: $e\n$st');
     }
+  }
+
+  Future<void> _deletePlainEntries() async {
     await _storage.delete(key: _vaultKey);
     await _storage.delete(key: _backupKey);
     await _storage.delete(key: _bioKeyKey);

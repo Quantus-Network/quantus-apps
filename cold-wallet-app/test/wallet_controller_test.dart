@@ -76,6 +76,20 @@ void main() {
     expect(state().status, WalletStatus.needsSetup);
   });
 
+  test('a prompt cancelled at the key write and again at the cleanup leaves no vault behind', () async {
+    storage.unavailableKey = protectedKeyEntry;
+    storage.unavailableWith = androidCancel;
+
+    await expectLater(createProtected(), throwsA(isA<VaultAccessCancelled>()));
+
+    expect(storage.data, isEmpty);
+    expect(state().status, WalletStatus.needsSetup);
+
+    storage.unavailableKey = null;
+    await createProtected();
+    expect(state().status, WalletStatus.unlocked);
+  });
+
   test('a vault read failure right after its write leaves no vault behind', () async {
     storage.failReadsOf = vaultEntry;
 
