@@ -78,3 +78,6 @@ are determined solely by Quantus Network.
 
 Only the latest release is supported; security fixes are delivered in new
 versions. Please keep your installation up to date.
+
+To check that an Android APK was built from this repository, see
+[ANDROID_RELEASES.md](ANDROID_RELEASES.md).

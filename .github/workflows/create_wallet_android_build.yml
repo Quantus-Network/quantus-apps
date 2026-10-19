@@ -21,7 +21,7 @@ on:
           - release
           - debug
       create_release:
-        description: "Create a public GitHub release for each built app"
+        description: "Create a public GitHub release for each built app (main only)"
         required: false
         default: false
         type: boolean
@@ -29,137 +29,24 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
-  build-mobile:
-    name: Build mobile wallet
-    if: ${{ inputs.apps == 'mobile' || inputs.apps == 'both' }}
+  wallet:
+    name: ${{ matrix.app }} wallet
+    strategy:
+      fail-fast: false
+      matrix:
+        app: ${{ fromJSON(inputs.apps == 'both' && '["mobile","cold"]' || format('["{0}"]', inputs.apps)) }}
     uses: ./.github/workflows/build_wallet_apk.yml
-    with:
-      app: mobile
-      build_mode: ${{ inputs.build_mode }}
-    secrets: inherit
-
-  build-cold:
-    name: Build cold wallet
-    if: ${{ inputs.apps == 'cold' || inputs.apps == 'both' }}
-    uses: ./.github/workflows/build_wallet_apk.yml
-    with:
-      app: cold
-      build_mode: ${{ inputs.build_mode }}
-    secrets: inherit
-
-  release-mobile:
-    name: Release mobile wallet
-    if: ${{ inputs.create_release && inputs.build_mode == 'release' && (inputs.apps == 'mobile' || inputs.apps == 'both') }}
-    needs: [build-mobile]
-    runs-on: ubuntu-latest
     permissions:
       contents: write
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Download APK artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: ${{ needs.build-mobile.outputs.artifact_name }}
-          path: ./artifacts
-
-      - name: Create and push git tag
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAG: ${{ needs.build-mobile.outputs.tag }}
-        run: |
-          set -euo pipefail
-          echo "Tag to create: $TAG"
-
-          if git ls-remote --tags origin "$TAG" | grep -q "$TAG"; then
-            echo "Error: Tag $TAG already exists on remote."
-            echo "Please update the version in mobile-app/pubspec.yaml before creating a new release."
-            exit 1
-          fi
-
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git remote set-url origin "https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}"
-          git tag "$TAG" "$GITHUB_SHA"
-          git push origin "$TAG"
-
-      - name: Create Release
-        uses: softprops/action-gh-release@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ needs.build-mobile.outputs.tag }}
-          name: Quantus Wallet ${{ needs.build-mobile.outputs.version }}
-          generate_release_notes: true
-          body: |
-            ## Quantus Wallet - Android Release
-
-            **Version:** ${{ needs.build-mobile.outputs.version }}
-
-            ### Installation
-            1. Download the `.apk` file below
-            2. Enable "Install from unknown sources"
-            3. Install
-          files: ./artifacts/quantus_wallet_*.apk
-          draft: false
-          prerelease: false
-
-  release-cold:
-    name: Release cold wallet
-    if: ${{ inputs.create_release && inputs.build_mode == 'release' && (inputs.apps == 'cold' || inputs.apps == 'both') }}
-    needs: [build-cold]
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Download APK artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: ${{ needs.build-cold.outputs.artifact_name }}
-          path: ./artifacts
-
-      - name: Create and push git tag
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAG: ${{ needs.build-cold.outputs.tag }}
-        run: |
-          set -euo pipefail
-          echo "Tag to create: $TAG"
-
-          if git ls-remote --tags origin "$TAG" | grep -q "$TAG"; then
-            echo "Error: Tag $TAG already exists on remote."
-            echo "Please update the version in cold-wallet-app/pubspec.yaml before creating a new release."
-            exit 1
-          fi
-
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git remote set-url origin "https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}"
-          git tag "$TAG" "$GITHUB_SHA"
-          git push origin "$TAG"
-
-      - name: Create Release
-        uses: softprops/action-gh-release@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ needs.build-cold.outputs.tag }}
-          name: Quantus Cold Wallet ${{ needs.build-cold.outputs.version }}
-          generate_release_notes: true
-          body: |
-            ## Quantus Cold Wallet - Android Release
-
-            **Version:** ${{ needs.build-cold.outputs.version }}
-
-            ### Installation
-            1. Download the `.apk` file below
-            2. Enable "Install from unknown sources"
-            3. Install
-          files: ./artifacts/quantus_cold_wallet_*.apk
-          draft: false
-          prerelease: false
+      id-token: write
+      attestations: write
+    with:
+      app: ${{ matrix.app }}
+      build_mode: ${{ inputs.build_mode }}
+      create_release: ${{ inputs.create_release }}
+    secrets: inherit
