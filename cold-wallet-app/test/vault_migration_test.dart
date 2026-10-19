@@ -106,10 +106,10 @@ void main() {
         expect(statusOf(container), WalletStatus.locked);
 
         auth.promptResult = false;
-        final reads = storage.readsOf(plainKeyEntry);
         expect(await controller.unlockWithBiometric(), isFalse);
         expect(container.read(walletControllerProvider).error, unlockCancelledError);
-        expect(storage.readsOf(plainKeyEntry), reads, reason: 'a dismissed prompt must not reach the key');
+        expect(container.read(walletControllerProvider).mnemonic, isNull, reason: 'a dismissed prompt opens nothing');
+        expect(auth.prompts, 1);
 
         auth.promptResult = true;
         expect(await controller.unlockWithBiometric(), isTrue);

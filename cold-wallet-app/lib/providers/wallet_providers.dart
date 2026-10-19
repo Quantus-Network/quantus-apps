@@ -9,6 +9,13 @@ import 'package:quantus_cold_wallet/services/vault_service.dart';
 
 enum WalletStatus { initializing, needsSetup, needsMigration, locked, unlocked }
 
+/// What the device key entry is behind. [upgradePending] is a plain entry on
+/// a device that can now protect it: the next read moves it behind user
+/// presence, and that move's prompt gates the read. [legacyPrompt] is a plain
+/// entry the previous app version kept behind its own device prompt, which
+/// stays in front of it. [none] was accepted on the no-lock warning.
+enum KeyProtection { userPresence, upgradePending, legacyPrompt, none }
+
 /// [WalletState.error] after the user dismissed the device prompt.
 const unlockCancelledError = 'cancelled';
 
@@ -51,11 +58,13 @@ final coldAuthServiceProvider = Provider<ColdAuthService>((ref) => ColdAuthServi
 /// Injectable so a test can stand in for the Rust key derivation.
 final hdWalletServiceProvider = Provider<HdWalletService>((ref) => HdWalletService());
 
-/// Read fresh each time a screen watches it: the user can add or remove the
-/// device lock between visits.
-final deviceCanProtectProvider = FutureProvider.autoDispose<bool>(
-  (ref) => ref.watch(coldAuthServiceProvider).deviceCanProtect(),
-);
+/// What the stored key is behind, read fresh each time a screen watches it
+/// and again after every change of the wallet's state: the user can add or
+/// remove the device lock between visits.
+final keyProtectionProvider = FutureProvider.autoDispose<KeyProtection>((ref) {
+  ref.watch(walletControllerProvider.select((s) => s.status));
+  return ref.watch(walletControllerProvider.notifier).keyProtection();
+});
 
 class WalletController extends Notifier<WalletState> {
   static const _keyLostMessage =
@@ -64,8 +73,6 @@ class WalletController extends Notifier<WalletState> {
   final VaultService _vault = VaultService();
 
   List<int>? _keyBytes;
-  bool _upgradeToProtected = false;
-  bool _gateLegacyKey = false;
 
   VaultService get vault => _vault;
   ColdAuthService get auth => ref.read(coldAuthServiceProvider);
@@ -95,17 +102,12 @@ class WalletController extends Notifier<WalletState> {
       }
       final plainKey = await _vault.plainKeyKind();
       if (plainKey != PlainKeyKind.none) {
-        if (canProtect) {
-          _upgradeToProtected = true;
-        } else if (plainKey == PlainKeyKind.legacy) {
-          // The previous app version kept this entry behind its own device
-          // prompt, which stays in front of it. Without any device lock the
-          // password and the no-lock warning decide what replaces it.
-          if (!await auth.isDeviceSecure()) {
-            state = const WalletState(status: WalletStatus.needsMigration);
-            return;
-          }
-          _gateLegacyKey = true;
+        // A legacy entry without any device lock has lost the prompt the
+        // previous app version kept it behind; the password and the no-lock
+        // warning decide what replaces it.
+        if (plainKey == PlainKeyKind.legacy && !canProtect && !await auth.isDeviceSecure()) {
+          state = const WalletState(status: WalletStatus.needsMigration);
+          return;
         }
         state = const WalletState(status: WalletStatus.locked, biometricEnabled: true);
         return;
@@ -191,32 +193,47 @@ class WalletController extends Notifier<WalletState> {
     }
   }
 
-  /// The prompt in front of a key read the store would otherwise answer
-  /// silently: Android's protected store once it has prompted in this
-  /// process, and a legacy plain entry, which the previous app version kept
-  /// behind the device prompt. The first protected read of a process and an
-  /// accepted plain entry need none.
-  Future<bool> _gateKeyRead(String reason) async {
-    if (_gateLegacyKey) return auth.authenticate(reason);
-    if (await _vault.hasPlainKey() || !_vault.protectedStoreOpened) return true;
-    return auth.gateProtectedRead(reason);
+  /// What the key entry is behind right now. Decided at each read rather than
+  /// at startup, since the device lock can be added or removed while the app
+  /// runs. Never opens the protected store: a vault without a plain entry
+  /// keeps its key there by construction.
+  Future<KeyProtection> keyProtection() async {
+    final plainKey = await _vault.plainKeyKind();
+    if (plainKey == PlainKeyKind.none) return KeyProtection.userPresence;
+    if (await auth.deviceCanProtect()) return KeyProtection.upgradePending;
+    return plainKey == PlainKeyKind.legacy ? KeyProtection.legacyPrompt : KeyProtection.none;
   }
 
-  /// Opens the vault with the device key; the protected read is where the OS
-  /// prompts. A plain entry on a device that can protect is moved behind user
-  /// presence before the unlock counts, so that prompt gates it. Returns false
-  /// with [WalletState.error] set: [unlockCancelledError] for a dismissed
-  /// prompt, a message for a key this device can no longer release.
+  /// The one way to the key: the prompt its protection needs, the read, and
+  /// for a plain entry the device can now protect, the move behind user
+  /// presence, whose own prompt is what gates that read. Null when a prompt
+  /// was dismissed; throws as the vault does.
+  Future<UnlockResult?> _openWithDeviceKey(String reason) async {
+    final protection = await keyProtection();
+    final passed = switch (protection) {
+      KeyProtection.none => true,
+      KeyProtection.legacyPrompt => await auth.authenticate(reason),
+      // Android's store answers silently once it has prompted in this
+      // process; the first read of a process and every iOS read are gated by
+      // the store itself.
+      KeyProtection.userPresence ||
+      KeyProtection.upgradePending => !_vault.protectedStoreOpened || await auth.gateProtectedRead(reason),
+    };
+    if (!passed) return null;
+    final result = await _vault.unlockWithBiometricKey();
+    if (protection == KeyProtection.upgradePending) await _vault.storeBiometricKey(result.keyBytes, protected: true);
+    return result;
+  }
+
+  /// Opens the vault with the device key ([_openWithDeviceKey]). Returns
+  /// false with [WalletState.error] set: [unlockCancelledError] for a
+  /// dismissed prompt, a message for a key this device can no longer release.
   Future<bool> unlockWithBiometric() async {
     try {
-      if (!await _gateKeyRead('Unlock your cold wallet')) {
+      final result = await _openWithDeviceKey('Unlock your cold wallet');
+      if (result == null) {
         state = state.copyWith(error: unlockCancelledError);
         return false;
-      }
-      final result = await _vault.unlockWithBiometricKey();
-      if (_upgradeToProtected) {
-        await _vault.storeBiometricKey(result.keyBytes, protected: true);
-        _upgradeToProtected = false;
       }
       _keyBytes = result.keyBytes;
       state = state.copyWith(status: WalletStatus.unlocked, mnemonic: result.mnemonic, accounts: result.accounts);
@@ -282,16 +299,16 @@ class WalletController extends Notifier<WalletState> {
     return true;
   }
 
-  /// A fresh user-presence check: the OS prompt on iOS's read, a platform
-  /// prompt in front of Android's silent read, nothing for a plain entry. The
-  /// key read back must be the one this session unlocked with. False when the
-  /// prompt was dismissed.
+  /// A fresh user-presence check through [_openWithDeviceKey], so it prompts
+  /// exactly where an unlock would, nothing for an accepted plain entry. The
+  /// key read back must be the one this session unlocked with. False when
+  /// the prompt was dismissed.
   Future<bool> confirmPresence() async {
     final keyBytes = _keyBytes;
     if (keyBytes == null) throw StateError('Wallet is locked');
     try {
-      if (!await _gateKeyRead('Confirm it is you to show the recovery phrase')) return false;
-      return listEquals((await _vault.unlockWithBiometricKey()).keyBytes, keyBytes);
+      final result = await _openWithDeviceKey('Confirm it is you to show the recovery phrase');
+      return result != null && listEquals(result.keyBytes, keyBytes);
     } on VaultAccessCancelled {
       return false;
     }
@@ -343,13 +360,11 @@ class WalletController extends Notifier<WalletState> {
     lock();
   }
 
-  /// A wipe the user cancels at its system prompt leaves the vault, so what
-  /// guards its key stays in place until the wipe has gone through.
+  /// A wipe the user cancels at its system prompt leaves the vault, and with
+  /// it the key the session holds.
   Future<void> wipe() async {
     await _vault.wipe();
     _keyBytes = null;
-    _upgradeToProtected = false;
-    _gateLegacyKey = false;
     state = const WalletState(status: WalletStatus.needsSetup);
   }
 }

@@ -15,12 +15,16 @@ void main() {
   const colors = AppColorsV3.dark();
   const text = AppTextThemeV3.standard();
 
-  Future<void> pumpSettings(WidgetTester tester, {bool canProtect = true}) async {
+  Future<void> pumpSettings(WidgetTester tester, {KeyProtection protection = KeyProtection.userPresence}) async {
     FlutterSecureStorage.setMockInitialValues({});
     SharedPreferences.setMockInitialValues({});
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [coldAuthServiceProvider.overrideWithValue(FakeColdAuth(canProtect: canProtect))],
+        key: ValueKey(protection),
+        overrides: [
+          coldAuthServiceProvider.overrideWithValue(FakeColdAuth()),
+          keyProtectionProvider.overrideWith((ref) async => protection),
+        ],
         child: Builder(
           builder: (context) => MaterialApp(theme: AppTheme.darkTheme(context), home: const SettingsScreen()),
         ),
@@ -58,13 +62,19 @@ void main() {
     expect(wifiSwitch.activeTrackColor, colors.accentFlare);
   });
 
-  testWidgets('describes the unlock method from the device lock', (tester) async {
+  testWidgets('describes the unlock method from what the stored key is behind', (tester) async {
     await pumpSettings(tester);
     expect(find.text('Unlock method'), findsOneWidget);
     expect(find.textContaining('Face ID or passcode.'), findsOneWidget);
 
-    await pumpSettings(tester, canProtect: false);
+    await pumpSettings(tester, protection: KeyProtection.none);
     expect(find.textContaining('None. This phone has no device lock'), findsOneWidget);
+
+    await pumpSettings(tester, protection: KeyProtection.upgradePending);
+    expect(find.textContaining('moves behind Face ID or passcode at your next unlock'), findsOneWidget);
+
+    await pumpSettings(tester, protection: KeyProtection.legacyPrompt);
+    expect(find.textContaining('Device prompt.'), findsOneWidget);
   });
 
   testWidgets('reset asks before wiping', (tester) async {

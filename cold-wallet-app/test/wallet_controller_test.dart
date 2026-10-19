@@ -172,6 +172,47 @@ void main() {
     expect(state().status, WalletStatus.locked);
   });
 
+  group('a device lock added while the app runs', () {
+    Future<(ProviderContainer, WalletController, FakeColdAuth)> plainWallet() async {
+      final auth = FakeColdAuth(canProtect: false);
+      final (c, ctl) = await fresh(auth);
+      await ctl.createWallet(mnemonic: testMnemonic, accounts: testAccounts, protected: false);
+      expect(await ctl.keyProtection(), KeyProtection.none);
+      auth.canProtect = true;
+      expect(await ctl.keyProtection(), KeyProtection.upgradePending);
+      return (c, ctl, auth);
+    }
+
+    test('moves the key behind user presence at the next unlock', () async {
+      final (c, ctl, _) = await plainWallet();
+      ctl.lock();
+      storage.reads.clear();
+
+      expect(await ctl.unlockWithBiometric(), isTrue);
+
+      expect(c.read(walletControllerProvider).mnemonic, testMnemonic);
+      expect(storage.data.containsKey(plainKeyEntry), isFalse);
+      expect(storage.data.containsKey(protectedKeyEntry), isTrue);
+      expect(storage.readsOf(protectedKeyEntry), 1, reason: 'the read-back is the presence check');
+      expect(await ctl.keyProtection(), KeyProtection.userPresence);
+    });
+
+    test('does so, behind its prompt, before confirming presence', () async {
+      final (_, ctl, _) = await plainWallet();
+      storage.failReadsOf = protectedKeyEntry;
+      storage.failReadsWith = iosCancel;
+
+      expect(await ctl.confirmPresence(), isFalse);
+      expect(storage.data.containsKey(plainKeyEntry), isTrue);
+      expect(storage.data.containsKey(protectedKeyEntry), isFalse);
+
+      storage.failReadsOf = null;
+      expect(await ctl.confirmPresence(), isTrue);
+      expect(storage.data.containsKey(plainKeyEntry), isFalse);
+      expect(storage.data.containsKey(protectedKeyEntry), isTrue);
+    });
+  });
+
   group('a store that stays authenticated for the process', () {
     test('needs a fresh prompt before every later unlock', () async {
       final auth = FakeColdAuth(storePromptsOnce: true);

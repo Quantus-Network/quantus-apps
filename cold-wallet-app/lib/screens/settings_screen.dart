@@ -51,7 +51,7 @@ class SettingsScreen extends ConsumerWidget {
     final colors = context.colorsV3;
     final text = context.themeTextV3;
     final settings = ref.watch(coldSettingsProvider);
-    final canProtect = ref.watch(deviceCanProtectProvider).value;
+    final protection = ref.watch(keyProtectionProvider).value;
 
     return ScaffoldBase(
       appBar: const V2AppBar(title: 'Settings'),
@@ -63,10 +63,18 @@ class SettingsScreen extends ConsumerWidget {
             const _SectionLabel('SECURITY'),
             _SettingsCard(
               title: 'Unlock method',
-              subtitle: switch (canProtect) {
-                null => 'Checking the device lock…',
-                true => 'Face ID or passcode. This device releases the signing key only after you confirm it is you.',
-                false => 'None. This phone has no device lock, so the signing key is stored without user presence.',
+              subtitle: switch (protection) {
+                null => 'Checking the signing key…',
+                KeyProtection.userPresence =>
+                  'Face ID or passcode. This device releases the signing key only after you confirm it is you.',
+                KeyProtection.upgradePending =>
+                  'None yet. This phone has a device lock now, so the signing key moves behind Face ID or passcode '
+                      'at your next unlock.',
+                KeyProtection.legacyPrompt =>
+                  'Device prompt. This phone cannot keep the signing key behind user presence, so the app asks you '
+                      'to confirm it is you before each use.',
+                KeyProtection.none =>
+                  'None. This phone has no device lock, so the signing key is stored without user presence.',
               },
             ),
             const SizedBox(height: 12),

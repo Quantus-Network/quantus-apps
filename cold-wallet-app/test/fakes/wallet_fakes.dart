@@ -14,7 +14,8 @@ final testAccounts = [ColdAccount(label: 'Main key', index: 0, scheme: Dilithium
 /// Stands in for the platform: what the device lock and biometrics report,
 /// and the prompt the controller asks for where the store answers silently.
 class FakeColdAuth extends ColdAuthService {
-  final bool canProtect;
+  /// Mutable: a device lock can be added or removed while the app runs.
+  bool canProtect;
 
   /// A device lock exists, whether or not the OS can keep a key behind it.
   final bool hasLock;
