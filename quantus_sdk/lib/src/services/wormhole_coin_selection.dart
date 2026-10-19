@@ -31,6 +31,21 @@ BigInt wormholeTokenFromScaled(int scaled) => BigInt.from(scaled) * wormholeScal
 /// `(out1 + out2) * 10000 <= input * (10000 - feeBps)`.
 int wormholeNetScaled(int inputScaled) => inputScaled * (10000 - wormholeVolumeFeeBps) ~/ 10000;
 
+/// Share of the volume fee the runtime mints to the block author when a
+/// proof exits [exitsScaled] in total (`pallet_wormhole` settlement): the fee
+/// is `ceil(exits * bps / (10000 - bps))` scaled units, of which
+/// `ceil(VolumeFeesBurnRate * fee)` is burned and the rest minted to the
+/// author. The indexer lists that mint as one more exit of the proof.
+int wormholeMinerFeeShareScaled(int exitsScaled) {
+  final denominator = 10000 - wormholeVolumeFeeBps;
+  if (denominator <= 0) return 0;
+  final fee = (exitsScaled * wormholeVolumeFeeBps + denominator - 1) ~/ denominator;
+  final burned = (fee * _volumeFeesBurnRatePermill + 999999) ~/ 1000000;
+  return fee - burned;
+}
+
+final int _volumeFeesBurnRatePermill = wormhole_pallet.Constants().volumeFeesBurnRate;
+
 int wormholeBatchNetScaled(Iterable<int> inputAmounts) =>
     wormholeNetScaled(inputAmounts.fold(0, (sum, amount) => sum + amount));
 

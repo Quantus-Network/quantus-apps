@@ -168,17 +168,112 @@ void main() {
       expect(sent.batches.single.changeToken, _scaled(998));
     });
 
-    test('is told apart from a real payment to the block author by its size', () {
+    test('is the exit the runtime computes from the other exits, as seen on chain', () {
+      // Two mainnet proofs: exits of 36.61 and 79.85 earned their miners 0.01
+      // and 0.02; exits of 9.98 earn nothing (fee 0.01, all of it burned).
+      WormholeOutput? share(Map<String, int> outputs) =>
+          feeShareOf(_spend('0xs1', block: 5, blockAuthor: _miner, outputs: outputs));
+
+      expect(share({_alice: 3598, _bob: 63, _miner: 1})?.amount, _scaled(1));
+      expect(share({_alice: 7900, _bob: 85, _miner: 2})?.amount, _scaled(2));
+      expect(share({_alice: 7900, _bob: 85, _miner: 1}), isNull);
+      expect(share({_miner: 1, _change0: 998}), isNull);
+    });
+
+    test('a payment to the block author is a payment, large or small', () {
+      final large = _sends(
+        _history(
+          [_received('n1', scaled: inputs)],
+          {
+            'n1': _spend('0xs1', block: 5, blockAuthor: _miner, outputs: {_miner: 4998}),
+          },
+        ),
+      ).single;
+      expect(large.to, _miner);
+      expect(large.amount, _scaled(4998));
+
+      // 10.00 in, 0.01 to the author, 9.98 change: the fee is 0.01 and the
+      // author's share of it rounds to nothing, so the 0.01 is the payment.
       final history = _history(
-        [_received('n1', scaled: inputs)],
+        [
+          _received('n1', scaled: 1000),
+          _received('c1', to: _change0, scaled: 998, viaWormhole: true, extrinsicId: '0xs1', block: 5, event: 1),
+        ],
         {
-          'n1': _spend('0xs1', block: 5, blockAuthor: _miner, outputs: {_miner: 4998}),
+          'n1': _spend('0xs1', block: 5, blockAuthor: _miner, outputs: {_miner: 1, _change0: 998}),
         },
       );
+      expect(history.map((e) => e.id), unorderedEquals(['0xs1', _id(1, 0)]));
+      final small = _sends(history).single;
+      expect(small.to, _miner);
+      expect(small.amount, _scaled(1));
+      expect(small.fee, _scaled(1));
+    });
 
+    test('a small payment next to the fee share is still the payment', () {
+      final toAlice = _sends(
+        _history(
+          [_received('n1', scaled: inputs)],
+          {
+            'n1': _spend('0xs1', block: 5, blockAuthor: _miner, outputs: {_alice: 1, _change0: 4997, _miner: 1}),
+          },
+        ),
+      ).single;
+      expect(toAlice.to, _alice);
+      expect(toAlice.amount, _scaled(1));
+      expect(toAlice.fee, _scaled(2));
+
+      // Both to the author and equal: the share is the leaf minted last.
+      final toMiner = _sends(
+        _history(
+          [_received('n1', scaled: inputs)],
+          {
+            'n1': WormholeSpend(
+              extrinsicId: '0xs1',
+              blockHeight: 5,
+              timestamp: _t0,
+              call: WormholeSpend.privateBatchCall,
+              blockAuthor: _miner,
+              outputs: [
+                WormholeOutput(id: _id(5, 0), exitAccountId: _miner, amount: _scaled(1)),
+                WormholeOutput(id: _id(5, 1), exitAccountId: _change0, amount: _scaled(4997)),
+                WormholeOutput(id: _id(5, 2), exitAccountId: _miner, amount: _scaled(1)),
+              ],
+            ),
+          },
+        ),
+      ).single;
+      expect(toMiner.to, _miner);
+      expect(toMiner.amount, _scaled(1));
+      expect(toMiner.fee, _scaled(2));
+    });
+
+    test('paid to this wallet, because it mined the block, is a receipt beside the hidden change', () {
+      final received = [
+        _received('n1', scaled: inputs),
+        _received('c1', to: _change0, scaled: 998, viaWormhole: true, extrinsicId: '0xs1', block: 5, event: 1),
+        _received('r1', to: _external1, scaled: 1, viaWormhole: true, extrinsicId: '0xs1', block: 5, event: 2),
+      ];
+      final spends = {
+        'n1': _spend('0xs1', block: 5, blockAuthor: _external1, outputs: {_alice: 4000, _change0: 998, _external1: 1}),
+      };
+      final history = _history(received, spends);
+
+      expect(history.map((e) => e.id), unorderedEquals(['0xs1', _id(1, 0), _id(5, 2)]));
       final sent = _sends(history).single;
-      expect(sent.to, _miner);
-      expect(sent.amount, _scaled(4998));
+      expect(sent.to, _alice);
+      expect(sent.amount, _scaled(4000));
+      expect(sent.fee, _scaled(2));
+      expect(sent.batches.single.changeToken, _scaled(998));
+      final reward = history.singleWhere((e) => e.id == _id(5, 2));
+      expect(reward, isA<WormholeTransferEvent>());
+      expect(reward.amount, _scaled(1));
+
+      final incoming = history.where((e) => e.from != _account).fold(BigInt.zero, (sum, e) => sum + e.amount);
+      final outgoing = _sends(history).fold(BigInt.zero, (sum, e) => sum + e.amount + e.fee);
+      final unspent = WormholeUtxoResult(received: received, spends: spends).utxos;
+      expect(incoming - outgoing, unspent.fold(BigInt.zero, (sum, u) => sum + u.amount));
+      expect(incoming - outgoing, _scaled(999));
     });
 
     test('cannot be told apart in a spend cached before block authors were recorded', () {
