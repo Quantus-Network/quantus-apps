@@ -2,9 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:quantus_cold_wallet/app.dart';
 import 'package:quantus_cold_wallet/components/lock_screen.dart';
+import 'package:quantus_cold_wallet/providers/connectivity_provider.dart';
 import 'package:quantus_cold_wallet/providers/wallet_providers.dart';
+import 'package:quantus_cold_wallet/screens/root_gate.dart';
+import 'package:quantus_cold_wallet/screens/welcome_screen.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 enum _Outcome { unlocks, cancelled, keyLost }
 
@@ -49,11 +54,16 @@ void main() {
 
   Future<void> pumpLockScreen(WidgetTester tester, _LockedController controller) async {
     FlutterSecureStorage.setMockInitialValues({});
+    final navigatorKey = GlobalKey<NavigatorState>();
     await tester.pumpWidget(
       ProviderScope(
         overrides: [walletControllerProvider.overrideWith(() => controller)],
         child: Builder(
-          builder: (context) => MaterialApp(theme: AppTheme.darkTheme(context), home: const LockScreen()),
+          builder: (context) => MaterialApp(
+            navigatorKey: navigatorKey,
+            theme: AppTheme.darkTheme(context),
+            home: LockScreen(navigatorKey: navigatorKey),
+          ),
         ),
       ),
     );
@@ -113,5 +123,50 @@ void main() {
     await tester.tap(find.text('Reset'));
     await tester.pumpAndSettle();
     expect(controller.wiped, isTrue);
+  });
+
+  testWidgets('in the app the overlay sits beside the Navigator; reset still confirms and lands on Welcome', (
+    tester,
+  ) async {
+    final controller = _LockedController(_Outcome.keyLost);
+    FlutterSecureStorage.setMockInitialValues({});
+    SharedPreferences.setMockInitialValues({});
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          walletControllerProvider.overrideWith(() => controller),
+          isOnlineProvider.overrideWith((ref) => false),
+        ],
+        child: const ColdWalletApp(),
+      ),
+    );
+    await tester.pump();
+    // The route the wallet was on when it locked, under the overlay.
+    Navigator.push(
+      tester.element(find.byType(RootGate)),
+      MaterialPageRoute<void>(builder: (_) => const Scaffold(body: Text('pushed'))),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('pushed'), findsOneWidget);
+    expect(find.byType(LockScreen), findsOneWidget);
+
+    await tester.tap(find.text('Reset wallet…'));
+    await tester.pumpAndSettle();
+    expect(find.text('Reset wallet?'), findsOneWidget);
+
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
+    expect(find.text('Reset wallet?'), findsNothing);
+    expect(controller.wiped, isFalse);
+
+    await tester.tap(find.text('Reset wallet…'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Reset'));
+    await tester.pumpAndSettle();
+
+    expect(controller.wiped, isTrue);
+    expect(find.byType(LockScreen), findsNothing);
+    expect(find.text('pushed'), findsNothing);
+    expect(find.byType(WelcomeScreen), findsOneWidget);
   });
 }

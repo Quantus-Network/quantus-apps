@@ -14,6 +14,8 @@ class ColdWalletApp extends ConsumerStatefulWidget {
 }
 
 class _ColdWalletAppState extends ConsumerState<ColdWalletApp> with WidgetsBindingObserver {
+  final _navigatorKey = GlobalKey<NavigatorState>();
+
   @override
   void initState() {
     super.initState();
@@ -38,13 +40,20 @@ class _ColdWalletAppState extends ConsumerState<ColdWalletApp> with WidgetsBindi
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: _navigatorKey,
       title: 'Quantus Cold Wallet',
       debugShowCheckedModeBanner: false,
       theme: coldTheme(context),
       darkTheme: coldTheme(context),
       themeMode: ThemeMode.dark,
       home: const RootGate(),
-      builder: (context, child) => Stack(children: [?child, const LockOverlay(), const ConnectivityGuard()]),
+      builder: (context, child) => Stack(
+        children: [
+          ?child,
+          LockOverlay(navigatorKey: _navigatorKey),
+          const ConnectivityGuard(),
+        ],
+      ),
     );
   }
 }

@@ -6,12 +6,11 @@ import 'package:quantus_cold_wallet/app_version.dart';
 import 'package:quantus_cold_wallet/components/address_with_checkphrase.dart';
 import 'package:quantus_cold_wallet/components/call_detail_view.dart';
 import 'package:quantus_cold_wallet/components/review_card.dart';
-import 'package:quantus_cold_wallet/components/signature_qr_view.dart';
 import 'package:quantus_cold_wallet/components/signer_row.dart';
 import 'package:quantus_cold_wallet/components/signing_refusal_view.dart';
 import 'package:quantus_cold_wallet/components/step_header.dart';
 import 'package:quantus_cold_wallet/providers/wallet_providers.dart';
-import 'package:quantus_cold_wallet/screens/rejected_screen.dart';
+import 'package:quantus_cold_wallet/screens/signing_review_state.dart';
 import 'package:quantus_cold_wallet/ui/cold_theme.dart';
 
 /// Reviews a scanned signing payload and, on approval, produces the signature QR.
@@ -29,11 +28,9 @@ class SignTransactionScreen extends ConsumerStatefulWidget {
   ConsumerState<SignTransactionScreen> createState() => _SignTransactionScreenState();
 }
 
-class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> {
+class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> with SigningReviewState {
   ParsedPayload? _parsed;
   FormatException? _parseError;
-  bool _signing = false;
-  String? _error;
 
   @override
   void initState() {
@@ -46,44 +43,16 @@ class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> {
     }
   }
 
-  void _sign() {
-    final keypair = keypairFor(ref, widget.request.signer);
-    if (keypair == null) {
-      setState(() => _error = 'Wallet is locked — unlock and try again. Nothing was signed.');
-      return;
-    }
-    setState(() {
-      _signing = true;
-      _error = null;
-    });
-
-    try {
-      final parsed = _parsed;
-      if (parsed == null) {
-        setState(() {
-          _signing = false;
-          _error = 'Cannot sign an undecoded payload.';
-        });
-        return;
-      }
-      // Returns signature ++ publicKey; the hot wallet reads the scheme off its
-      // length and rebuilds the extrinsic via submitExtrinsicWithExternalSignature.
-      final signed = signMessageWithPubkey(
-        keypair: keypair,
-        message: QuantusSigningPayload.signablePayload(widget.request.payload),
-        specVersion: parsed.extensions.specVersion,
-      );
-      setState(() => _signing = false);
-      SignatureQrView.push(context, signed);
-    } catch (e) {
-      setState(() {
-        _signing = false;
-        _error = 'Signing failed: $e';
-      });
-    }
-  }
-
-  void _reject() => Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const RejectedScreen()));
+  /// Returns signature ++ publicKey; the hot wallet reads the scheme off its
+  /// length and rebuilds the extrinsic via submitExtrinsicWithExternalSignature.
+  void _sign(ParsedPayload parsed) => approve(
+    widget.request.signer,
+    (keypair) => signMessageWithPubkey(
+      keypair: keypair,
+      message: QuantusSigningPayload.signablePayload(widget.request.payload),
+      specVersion: parsed.extensions.specVersion,
+    ),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -168,10 +137,10 @@ class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> {
             ),
             const SizedBox(height: 24),
             _advancedSection(context, parsed),
-            if (_error != null) ...[
+            if (signError != null) ...[
               const SizedBox(height: 16),
               Text(
-                _error!,
+                signError!,
                 style: text.caption.copyWith(color: colors.semanticEmber),
                 textAlign: TextAlign.center,
               ),
@@ -187,8 +156,8 @@ class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> {
             QuantusButton.simple(
               label: 'Approve and Sign',
               padding: coldButtonPadding,
-              isLoading: _signing,
-              onTap: _signing ? null : _sign,
+              isLoading: signing,
+              onTap: signing ? null : () => _sign(parsed),
             ),
             const SizedBox(height: 8),
             QuantusButton.simple(
@@ -196,7 +165,7 @@ class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> {
               variant: ButtonVariant.underline,
               padding: const EdgeInsets.symmetric(vertical: 12),
               textStyle: text.bodyEmphasis.copyWith(color: colors.semanticEmber),
-              onTap: _reject,
+              onTap: reject,
             ),
           ],
         ),

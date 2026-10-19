@@ -9,12 +9,6 @@ import 'package:quantus_cold_wallet/services/vault_service.dart';
 
 enum WalletStatus { initializing, needsSetup, needsMigration, locked, unlocked }
 
-/// Outcome of a password rotation. The vault write is the commit point:
-/// [changed] and [changedBiometricDisabled] both mean the new password is in
-/// effect; the latter means the biometric unlock key could not be re-stored
-/// and biometric unlock was turned off.
-enum PasswordChangeResult { wrongPassword, changed, changedBiometricDisabled }
-
 /// [WalletState.error] after the user dismissed the device prompt.
 const unlockCancelledError = 'cancelled';
 
@@ -106,8 +100,11 @@ class WalletController extends Notifier<WalletState> {
       if (auth.storeAuthenticatesOncePerProcess) {
         // Even an existence check opens the store and prompts there; the
         // first unlock opens it instead, and one that finds no entry moves
-        // the wallet to migration.
-        state = const WalletState(status: WalletStatus.locked, biometricEnabled: true);
+        // the wallet to migration. Without a device lock the store cannot be
+        // opened at all, so only a password can open this vault.
+        state = canProtect
+            ? const WalletState(status: WalletStatus.locked, biometricEnabled: true)
+            : const WalletState(status: WalletStatus.needsMigration);
         return;
       }
       final bool protectedKey;
@@ -148,18 +145,23 @@ class WalletController extends Notifier<WalletState> {
     required List<ColdAccount> accounts,
     required bool protected,
   }) async {
-    final secret = VaultService.randomSecret();
-    await _vault.createVault(mnemonic: mnemonic, password: secret, accounts: accounts);
-    final result = await _vault.unlockWithPassword(secret);
+    final keyBytes = await _writeVault(mnemonic, accounts);
     try {
-      await _vault.storeBiometricKey(result.keyBytes, protected: protected);
+      await _vault.storeBiometricKey(keyBytes, protected: protected);
     } catch (e, st) {
       debugPrint('Create wallet: device key could not be stored, removing the vault: $e\n$st');
       await _vault.wipe();
       rethrow;
     }
-    _keyBytes = result.keyBytes;
+    _keyBytes = keyBytes;
     state = WalletState(status: WalletStatus.unlocked, mnemonic: mnemonic, accounts: accounts, biometricEnabled: true);
+  }
+
+  /// Writes the vault under a fresh internal secret and returns its derived key.
+  Future<List<int>> _writeVault(String mnemonic, List<ColdAccount> accounts) async {
+    final secret = VaultService.randomSecret();
+    await _vault.createVault(mnemonic: mnemonic, password: secret, accounts: accounts);
+    return (await _vault.unlockWithPassword(secret)).keyBytes;
   }
 
   Future<bool> unlockWithPassword(String password) async {
@@ -222,53 +224,13 @@ class WalletController extends Notifier<WalletState> {
     }
   }
 
-  /// Verifies [currentPassword] against the vault, then re-encrypts the
-  /// mnemonic under [newPassword]. The vault write is the commit point: any
-  /// failure before it rethrows with the old password and the old biometric
-  /// key both untouched, while a biometric re-store failure after it keeps
-  /// the committed change and reports biometric unlock as disabled.
-  Future<PasswordChangeResult> changePassword({required String currentPassword, required String newPassword}) async {
-    final UnlockResult result;
-    try {
-      result = await _vault.unlockWithPassword(currentPassword);
-    } on SecretBoxAuthenticationError {
-      debugPrint('Change password: current password rejected');
-      return PasswordChangeResult.wrongPassword;
-    }
-    final plainKey = await _vault.hasPlainKey();
-    final biometric = plainKey || await _vault.hasProtectedKey();
-    await _vault.createVault(mnemonic: result.mnemonic, password: newPassword, accounts: result.accounts);
-
-    // The vault is now under a key the old one cannot open, so anything that
-    // rewrites it in this session - adding an account - must use the new key.
-    final fresh = await _vault.unlockWithPassword(newPassword);
-    _keyBytes = fresh.keyBytes;
-
-    if (!biometric) return PasswordChangeResult.changed;
-    try {
-      await _vault.storeBiometricKey(fresh.keyBytes, protected: !plainKey);
-      return PasswordChangeResult.changed;
-    } catch (e, st) {
-      debugPrint('Change password: biometric key re-store failed, biometric unlock disabled: $e\n$st');
-      try {
-        // The stored key still belongs to the old vault and can no longer
-        // decrypt anything; leaving it would offer a biometric unlock that
-        // always fails.
-        await _vault.deleteKeyEntry(protected: !plainKey);
-      } catch (e2, st2) {
-        debugPrint('Change password: stale biometric key could not be removed: $e2\n$st2');
-      }
-      state = state.copyWith(biometricEnabled: false);
-      return PasswordChangeResult.changedBiometricDisabled;
-    }
-  }
-
-  /// Moves a password vault to the device key: the existing rotation to an
-  /// internal secret, then the key entry, with the old blob kept aside until
-  /// the entry is verified readable. Returns false for a wrong password before
-  /// anything is written. A cancelled prompt or a storage failure after the
-  /// rotation puts the password vault back and rethrows, so the old password
-  /// keeps working.
+  /// Moves a password vault to the device key: a rotation to an internal
+  /// secret, then the key entry, with the old blob kept aside until the entry
+  /// is verified readable. Returns false for a wrong password before anything
+  /// is written. A cancelled prompt or a storage failure after the rotation
+  /// puts the password vault back and rethrows, so the old password keeps
+  /// working. A legacy vault has no key entry, so the protected store is not
+  /// probed: on a device that cannot protect it cannot even be opened.
   Future<bool> migrateLegacy(String password) async {
     final UnlockResult legacy;
     try {
@@ -281,15 +243,12 @@ class WalletController extends Notifier<WalletState> {
     await _vault.backupVaultForMigration();
     var keyAttempted = false;
     try {
-      final result = await changePassword(currentPassword: password, newPassword: VaultService.randomSecret());
-      if (result != PasswordChangeResult.changed) throw StateError('Migration rotation reported $result');
-      final keyBytes = _keyBytes;
-      if (keyBytes == null) throw StateError('Migration rotation left no key');
+      final keyBytes = await _writeVault(legacy.mnemonic, legacy.accounts);
       keyAttempted = true;
       await _vault.storeBiometricKey(keyBytes, protected: protected);
+      _keyBytes = keyBytes;
     } catch (e, st) {
       debugPrint('Migration failed, restoring the password vault: $e\n$st');
-      _keyBytes = null;
       await _vault.restoreVaultBackupIfPresent();
       if (keyAttempted) await _vault.deleteKeyEntry(protected: protected);
       rethrow;

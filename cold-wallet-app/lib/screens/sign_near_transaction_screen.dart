@@ -6,11 +6,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:quantus_cold_wallet/components/address_with_checkphrase.dart';
 import 'package:quantus_cold_wallet/components/review_card.dart';
-import 'package:quantus_cold_wallet/components/signature_qr_view.dart';
 import 'package:quantus_cold_wallet/components/signing_refusal_view.dart';
 import 'package:quantus_cold_wallet/components/step_header.dart';
 import 'package:quantus_cold_wallet/providers/wallet_providers.dart';
-import 'package:quantus_cold_wallet/screens/rejected_screen.dart';
+import 'package:quantus_cold_wallet/screens/signing_review_state.dart';
 import 'package:quantus_cold_wallet/services/near_display.dart';
 import 'package:quantus_cold_wallet/ui/cold_theme.dart';
 
@@ -35,41 +34,16 @@ class SignNearTransactionScreen extends ConsumerStatefulWidget {
   ConsumerState<SignNearTransactionScreen> createState() => _SignNearTransactionScreenState();
 }
 
-class _SignNearTransactionScreenState extends ConsumerState<SignNearTransactionScreen> {
-  bool _signing = false;
-  String? _error;
-
+class _SignNearTransactionScreenState extends ConsumerState<SignNearTransactionScreen> with SigningReviewState {
   NearTransaction get tx => widget.transaction;
 
   bool get _soleTransfer => tx.actions.length == 1 && tx.actions.single.kind == NearActionKind.transfer;
 
   String _near(BigInt? yocto) => '${NearDisplay.formatNear(yocto ?? BigInt.zero)} NEAR';
 
-  void _sign(String owner) {
-    final keypair = keypairFor(ref, owner);
-    if (keypair == null) {
-      setState(() => _error = 'Wallet is locked — unlock and try again. Nothing was signed.');
-      return;
-    }
-    setState(() {
-      _signing = true;
-      _error = null;
-    });
-    try {
-      // Pure ML-DSA-65 over SHA-256 of the transaction, no Quantus context:
-      // this is what the NEAR runtime verifies. Returns signature ++ public key.
-      final signed = keypair.signNear(widget.request.transaction);
-      setState(() => _signing = false);
-      SignatureQrView.push(context, signed);
-    } catch (e) {
-      setState(() {
-        _signing = false;
-        _error = 'Signing failed: $e';
-      });
-    }
-  }
-
-  void _reject() => Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const RejectedScreen()));
+  /// Pure ML-DSA-65 over SHA-256 of the transaction, no Quantus context: this
+  /// is what the NEAR runtime verifies. Returns signature ++ public key.
+  void _sign(String owner) => approve(owner, (keypair) => keypair.signNear(widget.request.transaction));
 
   @override
   Widget build(BuildContext context) {
@@ -178,10 +152,10 @@ class _SignNearTransactionScreenState extends ConsumerState<SignNearTransactionS
             ),
             const SizedBox(height: 24),
             _advancedSection(context),
-            if (_error != null) ...[
+            if (signError != null) ...[
               const SizedBox(height: 16),
               Text(
-                _error!,
+                signError!,
                 style: text.caption.copyWith(color: colors.semanticEmber),
                 textAlign: TextAlign.center,
               ),
@@ -197,8 +171,8 @@ class _SignNearTransactionScreenState extends ConsumerState<SignNearTransactionS
             QuantusButton.simple(
               label: 'Approve and Sign',
               padding: coldButtonPadding,
-              isLoading: _signing,
-              onTap: _signing ? null : () => _sign(owner),
+              isLoading: signing,
+              onTap: signing ? null : () => _sign(owner),
             ),
             const SizedBox(height: 8),
             QuantusButton.simple(
@@ -206,7 +180,7 @@ class _SignNearTransactionScreenState extends ConsumerState<SignNearTransactionS
               variant: ButtonVariant.underline,
               padding: const EdgeInsets.symmetric(vertical: 12),
               textStyle: text.bodyEmphasis.copyWith(color: colors.semanticEmber),
-              onTap: _reject,
+              onTap: reject,
             ),
           ],
         ),

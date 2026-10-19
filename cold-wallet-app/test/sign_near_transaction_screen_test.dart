@@ -3,8 +3,12 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:quantus_cold_wallet/components/signature_qr_view.dart';
+import 'package:quantus_cold_wallet/providers/ur_qr_providers.dart';
 import 'package:quantus_cold_wallet/providers/wallet_providers.dart';
+import 'package:quantus_cold_wallet/screens/rejected_screen.dart';
 import 'package:quantus_cold_wallet/screens/sign_near_transaction_screen.dart';
+import 'package:quantus_cold_wallet/screens/signing_review_state.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 
 const owner = 'qzmNaLjPU7hcvkjHpGmrVDPD9y12vdAFimCSrP1GkhVFJMaUq';
@@ -59,15 +63,14 @@ void main() {
           walletControllerProvider.overrideWith(controller),
           nearKeyOwnerProvider.overrideWith((ref, _) => keyOwner),
           checksumNameProvider.overrideWith((ref, _) async => 'amber glacier quartz'),
+          urQrFramesProvider.overrideWith((ref, payload) => const ['ur:bytes/abcd']),
         ],
-        child: MaterialApp(
-          home: Builder(
-            builder: (context) => Theme(
-              data: AppTheme.darkTheme(context),
-              child: SignNearTransactionScreen(
-                request: NearSigningRequest(network: network, transaction: Uint8List.fromList([1, 2, 3])),
-                transaction: tx,
-              ),
+        child: Builder(
+          builder: (context) => MaterialApp(
+            theme: AppTheme.darkTheme(context),
+            home: SignNearTransactionScreen(
+              request: NearSigningRequest(network: network, transaction: Uint8List.fromList([1, 2, 3])),
+              transaction: tx,
             ),
           ),
         ),
@@ -274,5 +277,23 @@ void main() {
 
     expect(find.text('Wallet is locked'), findsOneWidget);
     expect(find.widgetWithText(QuantusButton, 'Approve and Sign'), findsNothing);
+  });
+
+  testWidgets('rejecting after the signature was shown says so', (tester) async {
+    await pump(tester, _tx(actions: [_transfer(_near)]));
+    final review = tester.state(find.byType(SignNearTransactionScreen)) as SigningReviewState;
+    review.showSignature(Uint8List.fromList([1, 2, 3]));
+    await tester.pumpAndSettle();
+    expect(find.byType(SignatureQrView), findsOneWidget);
+
+    await tester.tap(find.byType(AppBackButton));
+    await tester.pumpAndSettle();
+    expect(find.widgetWithText(QuantusButton, 'Approve and Sign'), findsOneWidget);
+
+    await tester.tap(find.text("It doesn't match"));
+    await tester.pumpAndSettle();
+    expect(find.byType(RejectedScreen), findsOneWidget);
+    expect(find.text('The signature was shown'), findsOneWidget);
+    expect(find.text('Nothing was signed'), findsNothing);
   });
 }

@@ -23,9 +23,13 @@ void main() {
 
   Future<void> legacyVault() => vault.createVault(mnemonic: testMnemonic, password: 'alpha', accounts: testAccounts);
 
-  Future<(ProviderContainer, WalletController)> boot({bool canProtect = true}) async {
+  Future<(ProviderContainer, WalletController)> boot({bool canProtect = true, bool storePromptsOnce = false}) async {
     final container = ProviderContainer(
-      overrides: [coldAuthServiceProvider.overrideWithValue(FakeColdAuth(canProtect: canProtect))],
+      overrides: [
+        coldAuthServiceProvider.overrideWithValue(
+          FakeColdAuth(canProtect: canProtect, storePromptsOnce: storePromptsOnce),
+        ),
+      ],
     );
     addTearDown(container.dispose);
     final controller = container.read(walletControllerProvider.notifier);
@@ -119,14 +123,10 @@ void main() {
 
   test('a kill between the vault write and the key write is undone at the next launch', () async {
     await legacyVault();
-    final (_, controller) = await boot();
     // The interrupted interval: the backup exists, the vault is under the
     // internal secret, no key entry was written.
     await vault.backupVaultForMigration();
-    expect(
-      await controller.changePassword(currentPassword: 'alpha', newPassword: VaultService.randomSecret()),
-      PasswordChangeResult.changed,
-    );
+    await vault.createVault(mnemonic: testMnemonic, password: VaultService.randomSecret(), accounts: testAccounts);
     await expectLater(vault.unlockWithPassword('alpha'), throwsA(isA<SecretBoxAuthenticationError>()));
 
     final (relaunched, _) = await boot();
@@ -134,6 +134,62 @@ void main() {
     expect(statusOf(relaunched), WalletStatus.needsMigration);
     expectPasswordVaultIntact();
     expect((await vault.unlockWithPassword('alpha')).mnemonic, testMnemonic);
+  });
+
+  test('a plain key orphaned by a rotation that died before its re-store is dropped at the next launch', () async {
+    await legacyVault();
+    await vault.storeBiometricKey((await vault.unlockWithPassword('alpha')).keyBytes, protected: false);
+    await vault.createVault(mnemonic: testMnemonic, password: 'beta', accounts: testAccounts);
+
+    final (container, _) = await boot(canProtect: false);
+
+    expect(statusOf(container), WalletStatus.needsMigration);
+    expect(container.read(walletControllerProvider).biometricEnabled, isFalse);
+    expect(storage.data.containsKey(plainKeyEntry), isFalse);
+    expect((await vault.unlockWithPassword('beta')).mnemonic, testMnemonic);
+  });
+
+  group('Android without a device lock', () {
+    // The protected store cannot be opened there, entry or no entry.
+    setUp(() => storage.unavailableKey = protectedKeyEntry);
+
+    Future<(ProviderContainer, WalletController)> bootAndroid() => boot(canProtect: false, storePromptsOnce: true);
+
+    test('a password wallet reaches migration without the protected store', () async {
+      await legacyVault();
+      final (container, _) = await bootAndroid();
+      expect(statusOf(container), WalletStatus.needsMigration);
+    });
+
+    test('migrates to the plain entry and opens from it at the next launch', () async {
+      await legacyVault();
+      final (container, controller) = await bootAndroid();
+
+      expect(await controller.migrateLegacy('alpha'), isTrue);
+
+      expect(statusOf(container), WalletStatus.unlocked);
+      expect(container.read(walletControllerProvider).mnemonic, testMnemonic);
+      expect(storage.data.containsKey(plainKeyEntry), isTrue);
+      expect(storage.data.containsKey(vaultBackupEntry), isFalse);
+      await expectLater(vault.unlockWithPassword('alpha'), throwsA(isA<SecretBoxAuthenticationError>()));
+
+      final (relaunched, again) = await bootAndroid();
+      expect(statusOf(relaunched), WalletStatus.locked);
+      expect(await again.unlockWithBiometric(), isTrue);
+      expect(relaunched.read(walletControllerProvider).mnemonic, testMnemonic);
+      expect(await again.confirmPresence(), isTrue);
+    });
+
+    test('a wrong password changes nothing', () async {
+      await legacyVault();
+      final (container, controller) = await bootAndroid();
+      final before = Map.of(storage.data);
+
+      expect(await controller.migrateLegacy('nope'), isFalse);
+
+      expect(storage.data, before);
+      expect(statusOf(container), WalletStatus.needsMigration);
+    });
   });
 
   group('a plain key on a device that can protect', () {

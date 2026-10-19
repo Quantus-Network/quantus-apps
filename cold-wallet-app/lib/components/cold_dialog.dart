@@ -94,25 +94,57 @@ Future<bool> showColdDialog(
   String? cancelLabel = 'Cancel',
   bool isDestructive = false,
   Widget? banner,
-}) async {
+}) => showColdDialogWith(
+  context,
+  (action, cancel) => ColdDialog(
+    title: title,
+    titleColor: titleColor,
+    body: body,
+    actionLabel: actionLabel,
+    cancelLabel: cancelLabel,
+    isDestructive: isDestructive,
+    banner: banner,
+    onAction: action,
+    onCancel: cancel,
+  ),
+);
+
+/// Shows the dialog [build] returns centered; [action] closes it as true,
+/// [cancel] and a barrier tap as false.
+Future<bool> showColdDialogWith(
+  BuildContext context,
+  ColdDialog Function(VoidCallback action, VoidCallback cancel) build,
+) async {
   final confirmed = await showDialog<bool>(
     context: context,
     builder: (dialogContext) => Dialog(
       backgroundColor: Colors.transparent,
       elevation: 0,
       insetPadding: const EdgeInsets.all(24),
-      child: ColdDialog(
-        title: title,
-        titleColor: titleColor,
-        body: body,
-        actionLabel: actionLabel,
-        cancelLabel: cancelLabel,
-        isDestructive: isDestructive,
-        banner: banner,
-        onAction: () => Navigator.pop(dialogContext, true),
-        onCancel: () => Navigator.pop(dialogContext, false),
-      ),
+      child: build(() => Navigator.pop(dialogContext, true), () => Navigator.pop(dialogContext, false)),
     ),
   );
   return confirmed ?? false;
+}
+
+/// [dialog] over a dimmed backdrop, for the overlays beside the Navigator
+/// (the lock and the offline gate) where a dialog route cannot be shown.
+/// Fills the Stack it is placed in.
+class InlineColdDialog extends StatelessWidget {
+  final ColdDialog dialog;
+
+  const InlineColdDialog({super.key, required this.dialog});
+
+  @override
+  Widget build(BuildContext context) => Positioned.fill(
+    child: Material(
+      type: MaterialType.transparency,
+      child: ColoredBox(
+        color: context.colorsV3.bgVoid.useOpacity(0.8),
+        child: Center(
+          child: Padding(padding: ScaffoldBase.defaultPadding, child: dialog),
+        ),
+      ),
+    ),
+  );
 }

@@ -16,7 +16,7 @@ import 'package:quantus_cold_wallet/components/cold_dialog.dart';
 /// connectivity is unknown it stays blocked. Debug and release builds behave
 /// identically — the Override flow below is the only way past the lock.
 ///
-/// The Override button leads to an inline confirmation step (this widget sits
+/// The Override button leads to an [InlineColdDialog] (this widget sits
 /// above the [Navigator] in the [MaterialApp.builder] stack, so dialog routes
 /// cannot be shown from here); confirming enables the persistent Wi-Fi Lock
 /// Override setting and dismisses the lock. While overridden this guard
@@ -59,25 +59,17 @@ class _ConnectivityGuardState extends ConsumerState<ConnectivityGuard> {
           children: [
             _Gate(onOverride: () => setState(() => _confirming = true)),
             if (_confirming)
-              Positioned.fill(
-                child: ColoredBox(
-                  color: colors.bgVoid.useOpacity(0.8),
-                  child: Center(
-                    child: Padding(
-                      padding: ScaffoldBase.defaultPadding,
-                      child: ColdDialog(
-                        title: 'Sign while online?',
-                        titleColor: colors.semanticEmber,
-                        body:
-                            "A signer is only safe while it's fully offline. Anything you approve from here could be "
-                            'exposed. For testing only, never with a key that holds real funds.',
-                        actionLabel: 'Override, I accept the risk',
-                        isDestructive: true,
-                        onAction: _override,
-                        onCancel: () => setState(() => _confirming = false),
-                      ),
-                    ),
-                  ),
+              InlineColdDialog(
+                dialog: ColdDialog(
+                  title: 'Sign while online?',
+                  titleColor: colors.semanticEmber,
+                  body:
+                      "A signer is only safe while it's fully offline. Anything you approve from here could be "
+                      'exposed. For testing only, never with a key that holds real funds.',
+                  actionLabel: 'Override, I accept the risk',
+                  isDestructive: true,
+                  onAction: _override,
+                  onCancel: () => setState(() => _confirming = false),
                 ),
               ),
           ],

@@ -4,37 +4,54 @@ import 'package:quantus_cold_wallet/components/outcome_view.dart';
 import 'package:quantus_cold_wallet/ui/cold_theme.dart';
 import 'package:quantus_cold_wallet/components/cold_icon.dart';
 
+const _dontRetry = (
+  title: "Don't retry from the same phone",
+  caption: "If it's compromised, retrying gives it another attempt.",
+);
+
 /// Where every refused or rejected transaction ends (Figma Cold Wallet /
 /// Rejected): what happened on this device, and what to do with the phone.
+/// With [signatureShown] the device had already signed and shown the
+/// signature when the user rejected, which it cannot take back.
 class RejectedScreen extends StatelessWidget {
-  const RejectedScreen({super.key});
+  final bool signatureShown;
+
+  const RejectedScreen({super.key, this.signatureShown = false});
 
   @override
   Widget build(BuildContext context) {
     final colors = context.colorsV3;
+    final items = signatureShown
+        ? const [
+            (
+              title: "Check the phone's wallet",
+              caption: 'If the transaction was sent, it shows in the activity there.',
+            ),
+            _dontRetry,
+          ]
+        : const [
+            _dontRetry,
+            (title: 'Your funds are safe here', caption: 'Move to a phone you trust before sending again.'),
+          ];
     return OutcomeView(
       appBarTitle: 'Sign',
       glyph: ColdIcons.warningCircle,
       glyphColor: colors.semanticEmber,
-      title: 'Nothing was signed',
-      body: 'The transaction was discarded on this device. Your keys never left it and no funds moved.',
+      title: signatureShown ? 'The signature was shown' : 'Nothing was signed',
+      body: signatureShown
+          ? 'This device signed the transaction and showed the signature before you rejected it. If your phone '
+                'scanned the code, it can still send the transaction. A signature cannot be taken back.'
+          : 'The transaction was discarded on this device. Your keys never left it and no funds moved.',
       bottom: QuantusButton.simple(
         label: 'Back to Home',
         padding: coldButtonPadding,
         onTap: () => Navigator.popUntil(context, (r) => r.isFirst),
       ),
       children: [
-        const _NumberedItem(
-          number: '01',
-          title: "Don't retry from the same phone",
-          caption: "If it's compromised, retrying gives it another attempt.",
-        ),
-        Container(height: 1, color: colors.borderHairline),
-        const _NumberedItem(
-          number: '02',
-          title: 'Your funds are safe here',
-          caption: 'Move to a phone you trust before sending again.',
-        ),
+        for (final (i, item) in items.indexed) ...[
+          if (i > 0) Container(height: 1, color: colors.borderHairline),
+          _NumberedItem(number: '0${i + 1}', title: item.title, caption: item.caption),
+        ],
         const SizedBox(height: 32),
         const QuantusBanner(
           tone: BannerTone.ember,

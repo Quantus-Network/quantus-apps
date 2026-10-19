@@ -6,28 +6,44 @@ import 'package:quantus_cold_wallet/ui/cold_theme.dart';
 import 'package:quantus_cold_wallet/components/cold_button.dart';
 import 'package:quantus_cold_wallet/components/cold_dialog.dart';
 
-/// Destructive confirmation, then the wipe and a return to the first route,
-/// which RootGate turns into Welcome.
-Future<void> confirmResetWallet(BuildContext context, WidgetRef ref) async {
-  final confirmed = await showColdDialog(
-    context,
-    title: 'Reset wallet?',
-    titleColor: context.colorsV3.semanticEmber,
-    body:
-        'This erases the encrypted key and its device-protected unlock key from this phone. You can only restore '
-        'the key with your recovery phrase.',
-    actionLabel: 'Reset',
-    isDestructive: true,
-  );
-  if (!confirmed) return;
+/// The destructive confirmation every reset goes through.
+ColdDialog resetWalletDialog(BuildContext context, {required VoidCallback onReset, required VoidCallback onCancel}) =>
+    ColdDialog(
+      title: 'Reset wallet?',
+      titleColor: context.colorsV3.semanticEmber,
+      body:
+          'This erases the encrypted key and its device-protected unlock key from this phone. You can only restore '
+          'the key with your recovery phrase.',
+      actionLabel: 'Reset',
+      isDestructive: true,
+      onAction: onReset,
+      onCancel: onCancel,
+    );
+
+/// The wipe, then back to the first route, which RootGate turns into Welcome.
+Future<void> resetWallet(WidgetRef ref, NavigatorState navigator) async {
   await ref.read(walletControllerProvider.notifier).wipe();
-  if (context.mounted) Navigator.popUntil(context, (r) => r.isFirst);
+  navigator.popUntil((r) => r.isFirst);
+}
+
+/// [resetWalletDialog] as a dialog route, for screens inside the Navigator.
+Future<void> confirmResetWallet(BuildContext context, WidgetRef ref) async {
+  final navigator = Navigator.of(context);
+  final confirmed = await showColdDialogWith(
+    context,
+    (action, cancel) => resetWalletDialog(context, onReset: action, onCancel: cancel),
+  );
+  if (confirmed) await resetWallet(ref, navigator);
 }
 
 /// Asks the device to release the signing key as soon as it appears and
 /// again when the app comes back from the background; "Unlock" retries.
+/// It sits beside the Navigator (see [LockOverlay]), so the reset confirms
+/// inline and leaves through [navigatorKey].
 class LockScreen extends ConsumerStatefulWidget {
-  const LockScreen({super.key});
+  final GlobalKey<NavigatorState> navigatorKey;
+
+  const LockScreen({super.key, required this.navigatorKey});
 
   @override
   ConsumerState<LockScreen> createState() => _LockScreenState();
@@ -36,6 +52,7 @@ class LockScreen extends ConsumerStatefulWidget {
 class _LockScreenState extends ConsumerState<LockScreen> with WidgetsBindingObserver {
   bool _busy = false;
   bool _unlockOnResume = false;
+  bool _confirmingReset = false;
 
   @override
   void initState() {
@@ -73,6 +90,18 @@ class _LockScreenState extends ConsumerState<LockScreen> with WidgetsBindingObse
     if (mounted) setState(() => _busy = false);
   }
 
+  Future<void> _reset() async {
+    setState(() {
+      _confirmingReset = false;
+      _busy = true;
+    });
+    try {
+      await resetWallet(ref, widget.navigatorKey.currentState!);
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final colors = context.colorsV3;
@@ -81,7 +110,7 @@ class _LockScreenState extends ConsumerState<LockScreen> with WidgetsBindingObse
     final cancelled = error == unlockCancelledError;
     final failed = error != null && !cancelled;
 
-    return ScaffoldBase(
+    final screen = ScaffoldBase(
       mainContent: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -129,11 +158,28 @@ class _LockScreenState extends ConsumerState<LockScreen> with WidgetsBindingObse
             ),
             if (failed) ...[
               const SizedBox(height: 12),
-              ColdButton.danger(label: 'Reset wallet…', onTap: _busy ? null : () => confirmResetWallet(context, ref)),
+              ColdButton.danger(
+                label: 'Reset wallet…',
+                onTap: _busy ? null : () => setState(() => _confirmingReset = true),
+              ),
             ],
           ],
         ),
       ),
+    );
+
+    return Stack(
+      children: [
+        screen,
+        if (_confirmingReset)
+          InlineColdDialog(
+            dialog: resetWalletDialog(
+              context,
+              onReset: _reset,
+              onCancel: () => setState(() => _confirmingReset = false),
+            ),
+          ),
+      ],
     );
   }
 }

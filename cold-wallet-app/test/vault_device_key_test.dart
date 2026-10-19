@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:cryptography/cryptography.dart' show SecretBoxAuthenticationError;
 import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage_platform_interface/flutter_secure_storage_platform_interface.dart';
@@ -140,6 +142,19 @@ void main() {
     expect(vault.promptInProgress, isTrue);
     await unlock;
     expect(vault.promptInProgress, isFalse);
+  });
+
+  test('a pre-pairing plain key keeps working and is removed once stale', () async {
+    final keyBytes = await createVault();
+    storage.data[plainKeyEntry] = base64Encode(keyBytes);
+
+    expect(await vault.isBiometricEnabled(), isTrue);
+    expect((await vault.unlockWithBiometricKey()).mnemonic, testMnemonic);
+
+    await vault.createVault(mnemonic: testMnemonic, password: 'beta', accounts: testAccounts);
+    expect(await vault.isBiometricEnabled(), isTrue, reason: 'a bare key carries no pairing to check at startup');
+    await expectLater(vault.unlockWithBiometricKey(), throwsA(isA<SecretBoxAuthenticationError>()));
+    expect(storage.data.containsKey(plainKeyEntry), isFalse, reason: 'the failed unlock removes the stale key');
   });
 
   test('a protected key for a previous vault is removed when it fails to unlock', () async {

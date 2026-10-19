@@ -22,6 +22,11 @@ class FaultInjectingStorage extends TestFlutterSecureStoragePlatform {
   /// the OS can no longer open fails before any value is read.
   String? failContainsKeyOf;
 
+  /// Every operation on this key throws what [unavailableWith] builds, entry
+  /// or no entry: a store the OS refuses to open.
+  String? unavailableKey;
+  Object Function() unavailableWith = noDeviceLock;
+
   /// Reads of this key wait [delay], so an operation in flight can be observed.
   String? delayReadsOf;
   Duration delay = const Duration(milliseconds: 50);
@@ -30,14 +35,20 @@ class FaultInjectingStorage extends TestFlutterSecureStoragePlatform {
 
   int readsOf(String key) => reads[key] ?? 0;
 
+  void _open(String key) {
+    if (key == unavailableKey) throw unavailableWith();
+  }
+
   @override
   Future<void> write({required String key, required String value, required Map<String, String> options}) {
+    _open(key);
     if (key == failWritesTo) throw Exception('injected write failure for $key');
     return super.write(key: key, value: value, options: options);
   }
 
   @override
   Future<String?> read({required String key, required Map<String, String> options}) async {
+    _open(key);
     reads[key] = readsOf(key) + 1;
     if (key == delayReadsOf) await Future<void>.delayed(delay);
     if (key == failReadsOf) throw failReadsWith();
@@ -46,10 +57,24 @@ class FaultInjectingStorage extends TestFlutterSecureStoragePlatform {
 
   @override
   Future<bool> containsKey({required String key, required Map<String, String> options}) {
+    _open(key);
     if (key == failContainsKeyOf) throw failReadsWith();
     return super.containsKey(key: key, options: options);
   }
+
+  @override
+  Future<void> delete({required String key, required Map<String, String> options}) {
+    _open(key);
+    return super.delete(key: key, options: options);
+  }
 }
+
+/// What the Android plugin throws on a device without a lock: the protected
+/// store's key cannot even be generated.
+PlatformException noDeviceLock() => PlatformException(
+  code: 'Exception encountered',
+  message: 'Secure lock screen must be enabled to create keys requiring user authentication',
+);
 
 /// What the Android plugin throws once the OS has invalidated the key, for
 /// example after the device lock was removed.

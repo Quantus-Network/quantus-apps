@@ -13,6 +13,7 @@ import 'package:quantus_cold_wallet/providers/ur_qr_providers.dart';
 import 'package:quantus_cold_wallet/providers/wallet_providers.dart';
 import 'package:quantus_cold_wallet/screens/rejected_screen.dart';
 import 'package:quantus_cold_wallet/screens/sign_transaction_screen.dart';
+import 'package:quantus_cold_wallet/screens/signing_review_state.dart';
 
 const signerAddress = AppConstants.debugTestAddress;
 const otherAddress = 'qzmNaLjPU7hcvkjHpGmrVDPD9y12vdAFimCSrP1GkhVFJMaUq';
@@ -119,14 +120,17 @@ void main() {
     expect(find.text('open'), findsOneWidget);
   });
 
-  testWidgets('back from the signature QR returns to the review', (tester) async {
+  testWidgets('back from the signature QR returns to the review; rejecting then says the signature was shown', (
+    tester,
+  ) async {
     await pumpFromHome(
       tester,
       () => SignTransactionScreen(
         request: SigningRequest(signer: signerAddress, payload: DebugPayloads.payloadForCall(transfer.encode())),
       ),
     );
-    SignatureQrView.push(tester.element(find.byType(SignTransactionScreen)), Uint8List.fromList([1, 2, 3]));
+    final review = tester.state(find.byType(SignTransactionScreen)) as SigningReviewState;
+    review.showSignature(Uint8List.fromList([1, 2, 3]));
     await tester.pumpAndSettle();
     expect(find.byType(SignatureQrView), findsOneWidget);
 
@@ -134,5 +138,11 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byType(SignatureQrView), findsNothing);
     expect(find.text('Approve and Sign'), findsOneWidget);
+
+    await tester.tap(find.text("It doesn't match"));
+    await tester.pumpAndSettle();
+    expect(find.byType(RejectedScreen), findsOneWidget);
+    expect(find.text('The signature was shown'), findsOneWidget);
+    expect(find.text('Nothing was signed'), findsNothing);
   });
 }
