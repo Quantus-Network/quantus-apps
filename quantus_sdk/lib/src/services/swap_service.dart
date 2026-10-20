@@ -244,23 +244,6 @@ class SwapService {
         );
       }
     }
-    if (fee != null) {
-      final fees = (echoed['appFees'] as List<dynamic>? ?? const []).cast<Map<String, dynamic>>();
-      final sent = fee['fee'] as int;
-      if (!fees.any(
-        (f) =>
-            f['recipient'] == fee['recipient'] &&
-            switch (f['fee']) {
-              final num share => share >= 1 && share <= sent,
-              _ => false,
-            },
-      )) {
-        throw SwapQuoteIntegrityException(
-          'Quote answers a different request: appFees are $fees, sent $fee',
-          correlationId: correlationId,
-        );
-      }
-    }
     if (!DateTime.parse(echoed['deadline'] as String).isAtSameMomentAs(deadline)) {
       throw SwapQuoteIntegrityException(
         'Quote answers a different request: deadline is ${echoed['deadline']}, sent ${body['deadline']}',

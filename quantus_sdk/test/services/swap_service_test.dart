@@ -343,37 +343,13 @@ void main() {
       expect(sent, isNot(contains('appFees')));
     });
 
-    SwapService echoingFees(List<Map<String, dynamic>> fees) => _service((r) async {
-      final response = _quoteResponse(request: _sentRequest(r));
-      (response['quoteRequest'] as Map<String, dynamic>)['appFees'] = fees;
-      return http.Response(jsonEncode(_signed(response)), 200);
-    });
-
-    test('accepts our fee echoed whole, as without a partner key', () async {
-      await _quote(echoingFees([_ourFee, _oneClickFee]));
-    });
-
-    test('rejects a quote whose echoed fees leave ours out, zero it or exceed what was sent', () async {
-      for (final fees in [
-        [_oneClickFee],
-        [
-          {..._ourFee, 'fee': 0},
-          _oneClickFee,
-        ],
-        [
-          {..._ourFee, 'fee': _feeBips + 1},
-          _oneClickFee,
-        ],
-        [
-          {..._ourFee, 'fee': '10'},
-        ],
-      ]) {
-        await expectLater(
-          _quote(echoingFees(fees)),
-          throwsA(isA<SwapQuoteIntegrityException>().having((e) => e.message, 'message', contains('appFees'))),
-          reason: '$fees',
-        );
-      }
+    test('accepts a quote whatever fees 1Click echoes', () async {
+      final service = _service((r) async {
+        final response = _quoteResponse(request: _sentRequest(r));
+        (response['quoteRequest'] as Map<String, dynamic>)['appFees'] = [_oneClickFee];
+        return http.Response(jsonEncode(_signed(response)), 200);
+      });
+      await _quote(service);
     });
 
     test('rejects a quote that echoes another deadline', () async {
