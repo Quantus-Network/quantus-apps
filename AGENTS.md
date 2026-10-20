@@ -1,6 +1,6 @@
 # quantus-apps
 
-Flutter monorepo managed with [melos](https://melos.invertase.dev). Packages: `mobile-app`, `cold-wallet-app`, `miner-app`, `quantus_sdk`.
+Flutter monorepo managed with [melos](https://melos.invertase.dev). Packages: `mobile-app`, `cold-wallet-app`, `miner-app`, `desktop-wallet`, `quantus_sdk`.
 
 ## Formatting and analysis
 
@@ -19,7 +19,15 @@ Do not run `dart analyze` or `flutter analyze` directly in individual packages; 
 
 Place files where their role belongs: `ui/components/` for widgets only, `services/` for services, `providers/controllers/` for controllers/state, `models/` for data classes. When a feature spans roles (e.g. toast = widget + controller), either colocate in a feature subfolder (`ui/components/toast/`) or split files across the correct role folders — never drop a controller into a widget-only directory.
 
-## UI conventions (mobile-app v2)
+## Shared Riverpod providers
+
+Providers shared between apps live in `quantus_sdk/lib/src/providers/` and are exported from `package:quantus_sdk/quantus_sdk_riverpod.dart`, together with the models and services they carry. The desktop wallet uses them; the mobile app still has its own copies and does not import that entrypoint. Changes to the SDK must be additive: existing behaviour the mobile and cold wallet apps rely on does not change without a separate decision.
+
+## Naming
+
+The desktop wallet takes its usability cues from established hardware-wallet companion apps. Do not name those products in code, comments, assets, strings, commits or docs.
+
+## UI conventions (mobile-app v2 and desktop-wallet)
 
 - **Colors**: never hard-code a `Color(...)` in a widget. Use the theme via `context.colorsV3` (`AppColorsV3` in `quantus_sdk/lib/src/ui/themes/app_colors.dart`), whose tokens map 1:1 to the Figma SYSTEM / Color Tokens table. Do not add a colour that is not in that table — derive a tint of an existing token instead.
 - **Transparency**: derive alpha with the `Color.useOpacity(...)` extension from quantus_sdk. Do not mix in `withValues`/`withOpacity` — one mechanism only.

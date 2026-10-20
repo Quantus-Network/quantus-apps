@@ -42,6 +42,8 @@ jobs:
         run: melos exec --concurrency=1 --scope="quantus_sdk" -- "flutter test --exclude-tags=native"
       - name: Test Cold Wallet App
         run: melos exec --concurrency=1 --scope="quantus_cold_wallet" -- "flutter test"
+      - name: Test Desktop Wallet
+        run: melos exec --concurrency=1 --scope="quantus_desktop_wallet" -- "flutter test"
 
   # build_android:
   #   name: Build Android
