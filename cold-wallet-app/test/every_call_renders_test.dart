@@ -35,7 +35,6 @@ Future<void> pumpAt(WidgetTester tester, Uint8List payload, Size size, double sc
         addressesProvider.overrideWith(
           (ref) => {signerAddress: ColdAccount(label: 'Account 1', index: 0, scheme: DilithiumScheme.mlDsa87)},
         ),
-        checksumNameProvider.overrideWith((ref, address) async => 'check phrase'),
       ],
       child: MediaQuery(
         data: MediaQueryData(size: size, textScaler: TextScaler.linear(scale)),
@@ -70,6 +69,7 @@ final catalogue = [for (final entry in DebugPayloads.byPallet.entries) ...entry.
 String nameOf(DebugCall call) => '${call.pallet}.${call.label}';
 
 void main() {
+  CheckphraseText.resolveOverride = (_) async => 'check phrase';
   group('every call the debug catalogue offers renders on the signing screen', () {
     for (final call in catalogue) {
       testWidgets(nameOf(call), (tester) async {

@@ -135,7 +135,6 @@ void main() {
     Future<SendOutcome> submit(WidgetRef ref, WormholeSpendPlan plan) => EncryptedSendStrategy(account: account).submit(
       ref,
       recipientAddress: _depositAddress,
-      recipientChecksum: 'Zest-Fabulous',
       amount: tenTokens,
       fee: EncryptedFee(plan: plan),
       isPayMode: false,

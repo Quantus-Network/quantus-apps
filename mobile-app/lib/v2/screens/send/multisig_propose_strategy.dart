@@ -126,7 +126,6 @@ class MultisigProposeStrategy extends SendStrategy {
     final multisigService = ref.watch(multisigServiceProvider);
     final currentBlock = ref.watch(multisigCurrentBlockProvider).value;
     final breakdown = (fee as ProposeFee).breakdown;
-    final proposerChecksum = ref.watch(checksumNameProvider(msig.myMemberAccountId)).value;
 
     String amt(BigInt v) =>
         l10n.commonAmountBalance(fmt.formatBalance(v, smartDecimals: AppConstants.decimals), AppConstants.tokenSymbol);
@@ -136,7 +135,7 @@ class MultisigProposeStrategy extends SendStrategy {
       DetailSummaryRow.review(
         label: l10n.multisigProposeProposerLabel,
         value: msig.myMemberAccountId,
-        checkphrase: proposerChecksum,
+        checkphraseAddress: msig.myMemberAccountId,
         valueFlex: 4,
       ),
       const SizedBox(height: 4),
@@ -226,7 +225,6 @@ class MultisigProposeStrategy extends SendStrategy {
   Future<SendOutcome> submit(
     WidgetRef ref, {
     required String recipientAddress,
-    required String recipientChecksum,
     required BigInt amount,
     required SendFee fee,
     required bool isPayMode,
@@ -236,7 +234,7 @@ class MultisigProposeStrategy extends SendStrategy {
     final fmt = ref.read(numberFormattingServiceProvider);
     final breakdown = (fee as ProposeFee).breakdown;
     final recipient = recipientAddress.trim();
-    final terminal = _terminal(l10n, fmt, recipient: recipient, checksum: recipientChecksum, amount: amount);
+    final terminal = _terminal(l10n, fmt, recipient: recipient, amount: amount);
 
     final Account signer;
     try {
@@ -258,7 +256,7 @@ class MultisigProposeStrategy extends SendStrategy {
             AppConstants.tokenSymbol,
           ),
           secondaryDetail: recipient,
-          tertiaryDetail: recipientChecksum,
+          secondaryIsAddress: true,
           cacheKey: _hardwareCacheKey(signer, recipient: recipient, amount: amount, expiryBlock: breakdown.expiryBlock),
           telemetryPrefix: 'multisig_propose_hardware',
           submitSigned: (ref, {required unsignedData, required signatureWithPublicKey}) async {
@@ -319,7 +317,6 @@ class MultisigProposeStrategy extends SendStrategy {
     AppLocalizations l10n,
     NumberFormattingService fmt, {
     required String recipient,
-    required String checksum,
     required BigInt amount,
   }) {
     return SendTerminalContent(
@@ -328,7 +325,6 @@ class MultisigProposeStrategy extends SendStrategy {
       subline: l10n.multisigProposeDoneSubline,
       amountText: l10n.commonAmountBalance(fmt.formatBalance(amount, smartDecimals: 4), AppConstants.tokenSymbol),
       recipientAddress: recipient,
-      recipientChecksum: checksum,
       signaturesLabel: l10n.multisigSignaturesCount(1, msig.threshold),
       doneLabel: l10n.multisigDone,
     );

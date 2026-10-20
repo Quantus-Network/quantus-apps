@@ -13,6 +13,7 @@ import 'package:quantus_cold_wallet/components/cold_button.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  CheckphraseText.resolveOverride = (_) async => 'phrase';
 
   const text = AppTextThemeV3.standard();
 

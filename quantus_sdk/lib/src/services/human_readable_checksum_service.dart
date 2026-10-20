@@ -63,8 +63,13 @@ class HumanReadableChecksumService {
     }
   }
 
+  String _key(String address, bool upperCase) => address + (upperCase ? '#U' : '');
+
+  /// The phrase an earlier lookup produced, without waiting on the isolate.
+  String? cachedHumanReadableName(String address, {upperCase = true}) => _checkPhraseCache[_key(address, upperCase)];
+
   Future<String?> getHumanReadableName(String address, {upperCase = true}) async {
-    final key = address + (upperCase ? '#U' : '');
+    final key = _key(address, upperCase);
     try {
       if (_checkPhraseCache.containsKey(key)) {
         return _checkPhraseCache[key]!;

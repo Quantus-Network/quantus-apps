@@ -13,6 +13,7 @@ import '../fakes.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  CheckphraseText.resolveOverride = (_) async => 'Stand-Envelope-Topic-Term-Help';
 
   const colors = AppColorsV3.dark();
   final l10n = lookupAppLocalizations(const Locale('en'));
@@ -28,7 +29,6 @@ void main() {
       const ReceiveScreen(),
       overrides: [
         settingsServiceProvider.overrideWithValue(FakeSettingsService(activeAccount: RegularAccount(account))),
-        humanReadableChecksumServiceProvider.overrideWithValue(FakeHumanReadableChecksumService()),
         isOnlineProvider.overrideWith((ref) => true),
         l10nProvider.overrideWithValue(l10n),
       ],

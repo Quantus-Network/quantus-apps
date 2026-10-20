@@ -42,15 +42,6 @@ final numberFormattingServiceProvider = Provider<NumberFormattingService>((ref) 
   return NumberFormattingService(localeConfig: localeConfig);
 });
 
-final humanReadableChecksumServiceProvider = Provider<HumanReadableChecksumService>((ref) {
-  return HumanReadableChecksumService();
-});
-
-final checksumNameProvider = FutureProvider.family<String, String>((ref, address) async {
-  final name = await ref.watch(humanReadableChecksumServiceProvider).getHumanReadableName(address);
-  return name ?? '';
-});
-
 final reversibleTransfersServiceProvider = Provider<ReversibleTransfersService>((ref) {
   return ReversibleTransfersService();
 });

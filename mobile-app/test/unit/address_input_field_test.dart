@@ -35,7 +35,6 @@ class _HarnessState extends State<_Harness> {
       controller: widget.controller,
       focusNode: widget.focusNode,
       hasValid: widget.controller.text.isNotEmpty,
-      recipientChecksum: null,
       hintText: 'Address',
       trailing: QuantusIconButton.ghost(icon: Icons.paste, onTap: widget.onPaste),
     );
@@ -44,6 +43,7 @@ class _HarnessState extends State<_Harness> {
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  CheckphraseText.resolveOverride = (_) async => 'Stand-Envelope-Topic-Term-Help';
 
   const validAddress = 'qzrecipientxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx';
 

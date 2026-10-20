@@ -18,7 +18,6 @@ class SignerRow extends ConsumerWidget {
     final text = context.themeTextV3;
     final account =
         ref.watch(addressesProvider)[address] ?? (throw StateError('Signer $address is not in this wallet'));
-    final phrase = ref.watch(checksumNameProvider(address)).asData?.value;
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 10),
@@ -44,10 +43,8 @@ class SignerRow extends ConsumerWidget {
                       AddressFormattingService.formatAddress(address, prefix: 7, ellipses: '…', postFix: 6),
                       style: text.dataAddressLarge.copyWith(fontWeight: FontWeight.w500, color: colors.textWhite),
                     ),
-                    if (phrase != null && phrase.isNotEmpty) ...[
-                      const SizedBox(height: 4),
-                      Text(phrase, style: text.body.copyWith(color: colors.semanticLilac)),
-                    ],
+                    const SizedBox(height: 4),
+                    CheckphraseText(address, style: text.body.copyWith(color: colors.semanticLilac)),
                   ],
                 ),
               ),

@@ -190,7 +190,6 @@ class RegularSendStrategy extends SendStrategy {
   Future<SendOutcome> submit(
     WidgetRef ref, {
     required String recipientAddress,
-    required String recipientChecksum,
     required BigInt amount,
     required SendFee fee,
     required bool isPayMode,
@@ -206,14 +205,7 @@ class RegularSendStrategy extends SendStrategy {
     // Sign from the account captured when the flow started, not whichever
     // account happens to be active at submit time.
     final account = this.account;
-    final terminal = buildSentTerminalContent(
-      l10n,
-      fmt,
-      recipient: recipient,
-      checksum: recipientChecksum,
-      amount: amount,
-      isPayMode: isPayMode,
-    );
+    final terminal = buildSentTerminalContent(l10n, fmt, recipient: recipient, amount: amount, isPayMode: isPayMode);
 
     // Keystone (hardware) accounts sign off-device: hand off to the QR flow
     // instead of signing locally. The debug flag forces this path for testing.
@@ -227,7 +219,7 @@ class RegularSendStrategy extends SendStrategy {
             AppConstants.tokenSymbol,
           ),
           secondaryDetail: recipient,
-          tertiaryDetail: recipientChecksum,
+          secondaryIsAddress: true,
           cacheKey: _hardwareCacheKey(recipient, amount, sendAll: sendAll),
           telemetryPrefix: 'send_transfer_hardware',
           submitSigned: (ref, {required unsignedData, required signatureWithPublicKey}) async {

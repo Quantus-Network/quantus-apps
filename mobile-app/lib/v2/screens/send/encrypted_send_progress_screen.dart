@@ -144,7 +144,7 @@ class _EncryptedSendProgressScreenState extends ConsumerState<EncryptedSendProgr
   Widget _buildStatusHeader(AppColorsV3 colors, AppTextThemeV3 text, AppLocalizations l10n) {
     final fmt = ref.watch(numberFormattingServiceProvider);
     final amountLabel = fmt.formatBalance(widget.plan.amountToken, maxDecimals: 2, addSymbol: true);
-    final shortAddr = AddressFormattingService.formatAddress(widget.recipientAddress.trim());
+    final recipient = widget.recipientAddress.trim();
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
@@ -156,7 +156,7 @@ class _EncryptedSendProgressScreenState extends ConsumerState<EncryptedSendProgr
           const SizedBox(height: 16),
           Text(amountLabel, style: text.amountHero.copyWith(color: colors.textContent)),
           const SizedBox(height: 16),
-          AddressCheckphrase(address: shortAddr, checkphrase: widget.terminal.recipientChecksum),
+          AddressCheckphrase(address: recipient, displayAddress: AddressFormattingService.formatAddress(recipient)),
         ],
       ),
     );

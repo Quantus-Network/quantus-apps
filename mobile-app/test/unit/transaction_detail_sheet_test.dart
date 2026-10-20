@@ -12,6 +12,7 @@ import '../extensions.dart';
 import '../fakes.dart';
 
 void main() {
+  CheckphraseText.resolveOverride = (_) async => 'Stand-Envelope-Topic-Term-Help';
   final me = makeAccount(1);
   final other = makeAccount(2);
 
@@ -38,7 +39,6 @@ void main() {
       ),
       overrides: [
         settingsServiceProvider.overrideWithValue(FakeSettingsService(activeAccount: RegularAccount(me))),
-        humanReadableChecksumServiceProvider.overrideWithValue(FakeHumanReadableChecksumService()),
         txAmountDisplayProvider.overrideWithValue((
           BigInt amount, {
           required bool isSend,

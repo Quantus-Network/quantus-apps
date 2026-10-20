@@ -15,13 +15,9 @@ import 'package:resonance_network_wallet/v2/screens/mining_rewards/mining_reward
 import '../extensions.dart';
 import '../fakes.dart';
 
-class _Checksums extends Fake implements HumanReadableChecksumService {
-  @override
-  Future<String?> getHumanReadableName(String address, {upperCase = true}) async => 'CHECK PHRASE';
-}
-
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  CheckphraseText.resolveOverride = (_) async => 'CHECK PHRASE';
   final l10n = lookupAppLocalizations(const Locale('en'));
   final encrypted = Account(
     walletIndex: 0,
@@ -53,7 +49,6 @@ void main() {
         settingsServiceProvider.overrideWithValue(settings),
         accountsProvider.overrideWith((ref) => AccountsNotifier(AccountsService(), initialAccounts: accounts)),
         activeAccountProvider.overrideWith((ref) => ActiveAccountNotifier(settings)),
-        humanReadableChecksumServiceProvider.overrideWithValue(_Checksums()),
       ],
     );
     await tester.pump();

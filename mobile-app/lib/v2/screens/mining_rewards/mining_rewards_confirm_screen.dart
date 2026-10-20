@@ -105,7 +105,6 @@ class _MiningRewardsConfirmScreenState extends ConsumerState<MiningRewardsConfir
       );
     }
 
-    final checksum = ref.watch(checksumNameProvider(widget.destination.address));
     final label = text.labelData.copyWith(color: colors.textMuted);
 
     return ScaffoldBase(
@@ -138,11 +137,7 @@ class _MiningRewardsConfirmScreenState extends ConsumerState<MiningRewardsConfir
                     children: [
                       Text(l10n.sendTxSubmittedToLabel.toUpperCase(), style: label),
                       const SizedBox(height: 12),
-                      AddressCheckphraseWithInitial(
-                        recipientChecksum: checksum.value ?? '',
-                        recipientAddress: widget.destination.address,
-                        showFullAddress: true,
-                      ),
+                      AddressCheckphraseWithInitial(address: widget.destination.address, showFullAddress: true),
                     ],
                   ),
                 ),

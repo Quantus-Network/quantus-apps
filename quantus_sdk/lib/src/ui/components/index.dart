@@ -23,6 +23,7 @@ export 'menu_divider.dart';
 export 'confirm_action_sheet.dart';
 export 'base_background.dart';
 export 'address_checkphrase.dart';
+export 'checkphrase_text.dart';
 export 'detail_summary_row.dart';
 export 'decoded_call_view.dart';
 export 'quantus_qr.dart';

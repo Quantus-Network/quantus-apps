@@ -36,13 +36,9 @@ class _Service extends Fake implements MiningRewardsService {
   }
 }
 
-class _Checksums extends Fake implements HumanReadableChecksumService {
-  @override
-  Future<String?> getHumanReadableName(String address, {upperCase = true}) async => 'CHECK PHRASE';
-}
-
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  CheckphraseText.resolveOverride = (_) async => 'CHECK PHRASE';
   final l10n = lookupAppLocalizations(const Locale('en'));
   const rewards = [
     ChainRewards(
@@ -63,7 +59,6 @@ void main() {
       isOnlineProvider.overrideWith((ref) => true),
       l10nProvider.overrideWithValue(l10n),
       settingsServiceProvider.overrideWithValue(FakeSettingsService()),
-      humanReadableChecksumServiceProvider.overrideWithValue(_Checksums()),
       miningRewardsServiceProvider.overrideWithValue(service),
     ],
   );

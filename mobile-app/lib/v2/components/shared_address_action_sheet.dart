@@ -22,30 +22,7 @@ class SharedAddressActionSheet extends StatefulWidget {
 
 class _SharedAddressActionSheetState extends State<SharedAddressActionSheet> {
   String? _checksum;
-  Future<String?>? _checksumFuture;
-  List<String>? _splittedAddress;
-
-  final HumanReadableChecksumService _checksumService = HumanReadableChecksumService();
-
-  @override
-  void initState() {
-    super.initState();
-    _loadAccountData();
-  }
-
-  Future<void> _loadAccountData() async {
-    try {
-      setState(() {
-        _checksumFuture = _checksumService.getHumanReadableName(widget.address);
-        _splittedAddress = AddressFormattingService.splitIntoChunks(widget.address);
-      });
-    } catch (e) {
-      quantusPrint('Error loading account data: $e');
-      if (mounted) {
-        setState(() {});
-      }
-    }
-  }
+  late final List<String> _splittedAddress = AddressFormattingService.splitIntoChunks(widget.address);
 
   void _copyAddress() {
     context.copyTextWithToaster(widget.address);
@@ -108,7 +85,7 @@ class _SharedAddressActionSheetState extends State<SharedAddressActionSheet> {
                   border: Border.all(color: colors.borderHairline),
                 ),
                 child: Text(
-                  '${_splittedAddress?.join(" ")}',
+                  _splittedAddress.join(' '),
                   textAlign: TextAlign.left,
                   style: text.dataAddressLarge.copyWith(color: colors.textContent),
                 ),
@@ -117,68 +94,20 @@ class _SharedAddressActionSheetState extends State<SharedAddressActionSheet> {
             ],
           ),
           const SizedBox(height: 26),
-          FutureBuilder<String?>(
-            future: _checksumFuture,
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return SizedBox(
-                  height: 18,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      SizedBox(
-                        width: 12,
-                        height: 12,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: colors.accentFlare),
-                      ),
-                      const SizedBox(width: 8),
-                      Text('Loading checkphrase...', style: text.caption.copyWith(color: colors.textMuted)),
-                    ],
-                  ),
-                );
-              } else if (snapshot.hasError || !snapshot.hasData || snapshot.data == null || snapshot.data!.isEmpty) {
-                quantusPrint(
-                  'Error loading checksum name for ${widget.address}: '
-                  '${snapshot.error}',
-                );
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  if (_checksum != null) {
-                    setState(() {
-                      _checksum = null;
-                    });
-                  }
-                });
-
-                return Text(
-                  'Name not found',
-                  style: text.body.copyWith(color: colors.textMuted),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            spacing: 7,
+            children: [
+              Flexible(
+                child: CheckphraseText(
+                  widget.address,
+                  style: text.body.copyWith(color: colors.semanticLilac),
                   textAlign: TextAlign.center,
-                );
-              } else {
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  if (_checksum != snapshot.data) {
-                    setState(() {
-                      _checksum = snapshot.data!;
-                    });
-                  }
-                });
-
-                return Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  spacing: 7,
-                  children: [
-                    Flexible(
-                      child: Text(
-                        snapshot.data!,
-                        style: text.body.copyWith(color: colors.semanticLilac),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                    InkWell(onTap: _copyChecksum, child: _copyIcon(colors)),
-                  ],
-                );
-              }
-            },
+                  onResolved: (phrase) => setState(() => _checksum = phrase),
+                ),
+              ),
+              InkWell(onTap: _copyChecksum, child: _copyIcon(colors)),
+            ],
           ),
           const SizedBox(height: 26),
           SizedBox(

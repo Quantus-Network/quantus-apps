@@ -9,21 +9,40 @@ class AccountBadge extends StatelessWidget {
   final TextStyle? textStyle;
   final IconData? icon;
 
-  const AccountBadge({super.key, required this.name, this.isActive = false, this.size = 40, this.textStyle, this.icon});
+  /// Initials come from this address's checkphrase instead of [name].
+  final String? checkphraseAddress;
+
+  const AccountBadge({super.key, required this.name, this.isActive = false, this.size = 40, this.textStyle, this.icon})
+    : checkphraseAddress = null;
 
   AccountBadge.account({super.key, required Account account, this.isActive = false, this.size = 40, this.textStyle})
     : name = account.name,
-      icon = null;
+      icon = null,
+      checkphraseAddress = null;
 
   const AccountBadge.icon({super.key, required this.icon, this.isActive = false, this.size = 40})
     : name = '',
-      textStyle = null;
+      textStyle = null,
+      checkphraseAddress = null;
+
+  const AccountBadge.checkphrase({
+    super.key,
+    required String address,
+    this.isActive = false,
+    this.size = 40,
+    this.textStyle,
+  }) : name = '',
+       icon = null,
+       checkphraseAddress = address;
+
+  static String _initials(String name) => getAccountBadgeInitials(name, separator: ' ');
 
   @override
   Widget build(BuildContext context) {
     final colors = context.colorsV3;
     final foreground = isActive ? colors.accentFlare : colors.textMuted;
-    final effectiveTextStyle = textStyle ?? context.themeTextV3.labelMonogram;
+    final style = (textStyle ?? context.themeTextV3.labelMonogram).copyWith(color: foreground);
+    final address = checkphraseAddress;
 
     return Container(
       width: size,
@@ -36,10 +55,9 @@ class AccountBadge extends StatelessWidget {
       ),
       child: icon != null
           ? Icon(icon, size: size * 0.5, color: foreground)
-          : Text(
-              getAccountBadgeInitials(name, separator: ' '),
-              style: effectiveTextStyle.copyWith(color: foreground),
-            ),
+          : address != null
+          ? CheckphraseText(address, transform: (phrase) => _initials(phrase.replaceAll('-', ' ')), style: style)
+          : Text(_initials(name), style: style),
     );
   }
 }

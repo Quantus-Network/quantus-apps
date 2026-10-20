@@ -12,6 +12,7 @@ import 'fakes/account_fixtures.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  CheckphraseText.resolveOverride = (_) async => 'phrase';
 
   Future<void> openSwitcher(WidgetTester tester) async {
     SharedPreferences.setMockInitialValues({});

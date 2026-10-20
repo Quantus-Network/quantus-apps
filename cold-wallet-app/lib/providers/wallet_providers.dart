@@ -424,16 +424,3 @@ final derivedAddressProvider = FutureProvider.autoDispose.family<String, ({Strin
   if (mnemonic == null) throw StateError('Wallet is locked');
   return HdWalletService().keyPairAtPath(mnemonic, key.path, key.scheme).ss58Address;
 });
-
-/// Resolves human checkphrases for every address on screen, not just the
-/// wallet's own — an approval or a governance call can name several accounts,
-/// and each one needs to be verifiable by eye.
-final checksumNameProvider = FutureProvider.family<String, String>((ref, address) async {
-  return (await HumanReadableChecksumService().getHumanReadableName(address)) ?? '';
-});
-
-final checkphraseProvider = FutureProvider<String>((ref) async {
-  final address = ref.watch(addressProvider);
-  if (address == null) return '';
-  return ref.watch(checksumNameProvider(address).future);
-});

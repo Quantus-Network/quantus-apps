@@ -14,6 +14,7 @@ import 'package:quantus_cold_wallet/components/cold_icon.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  CheckphraseText.resolveOverride = (_) async => 'phrase';
 
   Future<void> pumpHome(WidgetTester tester, {required bool online}) async {
     SharedPreferences.setMockInitialValues({});

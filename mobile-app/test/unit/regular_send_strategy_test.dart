@@ -103,7 +103,6 @@ void main() {
     final outcome = await strategy.submit(
       ref,
       recipientAddress: other.accountId,
-      recipientChecksum: 'checksum',
       amount: BigInt.from(1000),
       fee: RegularFee(networkFee: BigInt.from(10), sendAll: true),
       isPayMode: false,
@@ -129,7 +128,6 @@ void main() {
     final outcome = await strategy.submit(
       ref,
       recipientAddress: other.accountId,
-      recipientChecksum: 'checksum',
       amount: BigInt.from(1000),
       fee: staleMaxFee,
       isPayMode: false,
@@ -140,7 +138,6 @@ void main() {
       strategy.submit(
         ref,
         recipientAddress: other.accountId,
-        recipientChecksum: 'checksum',
         amount: BigInt.from(1000),
         fee: RegularFee(networkFee: BigInt.from(10), amount: BigInt.from(1000)),
         isPayMode: false,
@@ -190,7 +187,6 @@ void main() {
     final outcome = await strategy.submit(
       ref,
       recipientAddress: other.accountId,
-      recipientChecksum: 'checksum',
       amount: BigInt.from(1000),
       fee: RegularFee(networkFee: BigInt.from(10)),
       isPayMode: false,

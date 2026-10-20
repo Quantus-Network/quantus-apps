@@ -281,7 +281,6 @@
   "sendInputAmountNetworkFee": "Biaya Transaksi:",
   "sendInputAmountMax": "Maks",
   "sendInputAmountInvalidAmount": "Masukkan jumlah yang valid",
-  "sendInputAmountChecksumRequired": "Checksum penerima diperlukan",
   "sendReviewSending": "MENGIRIM",
   "sendReviewTo": "KE",
   "sendReviewAmount": "JUMLAH",

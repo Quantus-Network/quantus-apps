@@ -53,7 +53,6 @@ Future<void> pumpSignScreen(WidgetTester tester, Uint8List payload) async {
         addressesProvider.overrideWith(
           (ref) => {signerAddress: ColdAccount(label: 'Account 1', index: 0, scheme: DilithiumScheme.mlDsa87)},
         ),
-        checksumNameProvider.overrideWith((ref, address) async => 'check phrase'),
       ],
       child: MaterialApp(
         home: Builder(
@@ -73,6 +72,7 @@ SignerRow signerRow(WidgetTester tester) => tester.widget<SignerRow>(
 );
 
 void main() {
+  CheckphraseText.resolveOverride = (_) async => 'check phrase';
   group('every field reaches the screen exactly once', () {
     final fixtures = <String, RuntimeCall>{
       'plain transfer': const balances_pallet.Txs().transferAllowDeath(dest: account(bobId), value: oneToken),

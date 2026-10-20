@@ -19,6 +19,7 @@ import '../fakes.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  CheckphraseText.resolveOverride = (_) async => 'Stand-Envelope-Topic-Term-Help';
   final sender = makeAccount(1);
   final recipient = makeAccount(2);
   final spendable = BigInt.from(5) * NumberFormattingService.scaleFactorBigInt;
@@ -38,7 +39,6 @@ void main() {
       ),
       overrides: [
         settingsServiceProvider.overrideWithValue(FakeSettingsService(activeAccount: RegularAccount(sender))),
-        humanReadableChecksumServiceProvider.overrideWithValue(FakeHumanReadableChecksumService()),
         effectiveBalanceProviderFamily.overrideWith((ref, accountId) => AsyncValue.data(spendable)),
         exchangeRateServiceProvider.overrideWithValue(ExchangeRateService(rates: {})),
         substrateServiceProvider.overrideWithValue(substrate),

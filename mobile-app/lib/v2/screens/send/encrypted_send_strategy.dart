@@ -145,7 +145,6 @@ class EncryptedSendStrategy extends SendStrategy {
   Future<SendOutcome> submit(
     WidgetRef ref, {
     required String recipientAddress,
-    required String recipientChecksum,
     required BigInt amount,
     required SendFee fee,
     required bool isPayMode,
@@ -187,7 +186,6 @@ class EncryptedSendStrategy extends SendStrategy {
         l10n,
         ref.read(numberFormattingServiceProvider),
         recipient: recipientAddress.trim(),
-        checksum: recipientChecksum,
         amount: amount,
         isPayMode: isPayMode,
       ),
