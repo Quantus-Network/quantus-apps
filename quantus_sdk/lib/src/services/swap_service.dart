@@ -244,11 +244,21 @@ class SwapService {
         );
       }
     }
-    // 1Click adds its own fee to the echoed list, and the signature does not
-    // cover it, so the list must hold our fee as sent.
+    // 1Click keeps a share of the fee under the partner terms (half by default,
+    // with a floor for its own cut) and lists its cut separately, and the
+    // signature covers none of it. Our recipient must be there with a share
+    // between one basis point and the fee as sent.
     if (fee != null) {
       final fees = (echoed['appFees'] as List<dynamic>? ?? const []).cast<Map<String, dynamic>>();
-      if (!fees.any((f) => f['recipient'] == fee['recipient'] && f['fee'] == fee['fee'])) {
+      final sent = fee['fee'] as int;
+      if (!fees.any(
+        (f) =>
+            f['recipient'] == fee['recipient'] &&
+            switch (f['fee']) {
+              final num share => share >= 1 && share <= sent,
+              _ => false,
+            },
+      )) {
         throw SwapQuoteIntegrityException(
           'Quote answers a different request: appFees are $fees, sent $fee',
           correlationId: correlationId,
