@@ -1,12 +1,16 @@
 @Tags(['native'])
 library;
 
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 import 'package:quantus_sdk/src/rust/frb_generated.dart';
 import 'package:quantus_sdk/src/services/hd_wallet_service.dart';
+import 'package:quantus_sdk/src/services/network/redundant_endpoint.dart';
 import 'package:quantus_sdk/src/services/wormhole_utxo_service.dart';
 
 const _mnemonic = 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about';
@@ -26,9 +30,30 @@ WormholeTransfer _transfer({required String toId, required int count}) => Wormho
 );
 
 /// Runs the real [WormholeUtxoService.getUnspentUtxos] over canned transfers:
-/// no indexer or RPC calls, every nullifier reported unspent.
+/// no indexer calls, every nullifier reported unspent unless [spent] says
+/// otherwise. The only RPC answered is the genesis hash that names the caches.
 class _OfflineUtxoService extends WormholeUtxoService {
+  _OfflineUtxoService()
+    : super(
+        graphQl: GraphQlEndpointService.forUrls([
+          'https://indexer.test',
+        ], client: MockClient((_) async => throw StateError('offline'))),
+        rpc: RpcEndpointService.forUrls(
+          ['https://rpc.test'],
+          client: MockClient((request) async {
+            if (jsonDecode(request.body)['method'] != 'chain_getBlockHash') throw StateError('offline');
+            return http.Response(jsonEncode({'jsonrpc': '2.0', 'id': 1, 'result': '0x${'ab' * 32}'}), 200);
+          }),
+        ),
+      );
+
   Map<String, List<WormholeTransfer>> transfersByAddress = {};
+
+  /// Answer for every nullifier the indexer is asked about.
+  WormholeSpend? spent;
+
+  /// Nullifier hexes asked about, per call.
+  final queried = <List<String>>[];
 
   @override
   Future<({Map<String, List<WormholeTransfer>> byAddress, int safeCutoff})> getTransfersToMany(
@@ -42,8 +67,21 @@ class _OfflineUtxoService extends WormholeUtxoService {
     List<(String, String)> nullifiers, {
     WormholeProgressCallback? onProgress,
     IsCancelledCallback? isCancelled,
-  }) async => {};
+  }) async {
+    queried.add([for (final (hex, _) in nullifiers) hex]);
+    final s = spent;
+    return s == null ? {} : {for (final (hex, _) in nullifiers) hex: s};
+  }
 }
+
+WormholeSpend _spend({String? blockAuthor}) => WormholeSpend(
+  extrinsicId: '0xs',
+  blockHeight: 5,
+  timestamp: DateTime(2026),
+  call: WormholeSpend.privateBatchCall,
+  outputs: [WormholeOutput(id: '0000000005-00000-000001', exitAccountId: 'qzAlice', amount: BigInt.zero)],
+  blockAuthor: blockAuthor,
+);
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -100,5 +138,30 @@ void main() {
     expect(changeUtxo.owner.index, 0);
     expect(result.received, hasLength(3));
     expect(result.spends, isEmpty);
+  });
+
+  test('a spent nullifier cached without its block author is asked about again until the author is known', () async {
+    final pair = HdWalletService().deriveWormholeKeyPair(mnemonic: _mnemonic);
+    final owner = WormholeAddressInfo(index: 0, address: pair.address, secretHex: pair.secretHex);
+    final service = _OfflineUtxoService()
+      ..transfersByAddress = {
+        pair.address: [_transfer(toId: pair.address, count: 1)],
+      };
+
+    // An indexer that does not report block authors: the spend is cached as is.
+    service.spent = _spend();
+    final first = await service.getUnspentUtxos(addresses: [owner]);
+    expect(first.utxos, isEmpty);
+    expect(service.queried, hasLength(1));
+
+    // Asked again on the next scan, and the completed entry replaces it.
+    service.spent = _spend(blockAuthor: 'qzMiner');
+    final second = await service.getUnspentUtxos(addresses: [owner]);
+    expect(service.queried, hasLength(2));
+    expect(second.spends.values.single.blockAuthor, 'qzMiner');
+
+    // Now served from the cache.
+    await service.getUnspentUtxos(addresses: [owner]);
+    expect(service.queried, hasLength(2));
   });
 }

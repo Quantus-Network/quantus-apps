@@ -170,12 +170,19 @@ class WormholeSpend {
   final String call;
   final List<WormholeOutput> outputs;
 
+  /// Author of the block that settled the proof. The runtime mints the
+  /// miner's share of the volume fee to this account, and the indexer lists
+  /// that mint among [outputs] like any exit. Null when the spend was cached
+  /// before this was recorded; such entries are re-queried on the next scan.
+  final String? blockAuthor;
+
   const WormholeSpend({
     required this.extrinsicId,
     required this.blockHeight,
     required this.timestamp,
     required this.call,
     required this.outputs,
+    this.blockAuthor,
   });
 
   /// Chain order of this spend: exit ids are `<block>-<hash>-<event index>`,
@@ -188,6 +195,7 @@ class WormholeSpend {
     timestamp: DateTime.parse(json['timestamp'] as String),
     call: json['call'] as String,
     outputs: [for (final o in json['outputs'] as List<dynamic>) WormholeOutput.fromJson(o as Map<String, dynamic>)],
+    blockAuthor: json['blockAuthor'] as String?,
   );
 
   Map<String, dynamic> toJson() => {
@@ -196,6 +204,7 @@ class WormholeSpend {
     'timestamp': timestamp.toIso8601String(),
     'call': call,
     'outputs': outputs.map((o) => o.toJson()).toList(),
+    'blockAuthor': ?blockAuthor,
   };
 }
 
@@ -629,7 +638,7 @@ query SpentNullifiers($hashes: [String!]!) {
     nullifierHash: nullifier_hash
     extrinsicId: wormhole_extrinsic_id
     timestamp
-    block { height }
+    block { height minedBy: mined_by_id }
     wormholeExtrinsic { extrinsic { call } outputs { id exitAccountId: exit_account_id amount } }
   }
 }''';
@@ -639,14 +648,16 @@ query SpentNullifiers($hashes: [String!]!) {
     final found = <String, WormholeSpend>{};
     for (final m in rows) {
       final extrinsic = m['wormholeExtrinsic'] as Map<String, dynamic>;
+      final block = m['block'] as Map<String, dynamic>;
       found[m['nullifierHash'] as String] = WormholeSpend(
         extrinsicId: m['extrinsicId'] as String,
-        blockHeight: (m['block'] as Map<String, dynamic>)['height'] as int,
+        blockHeight: block['height'] as int,
         timestamp: DateTime.parse(m['timestamp'] as String),
         call: (extrinsic['extrinsic'] as Map<String, dynamic>)['call'] as String,
         outputs: [
           for (final o in extrinsic['outputs'] as List<dynamic>) WormholeOutput.fromJson(o as Map<String, dynamic>),
         ],
+        blockAuthor: block['minedBy'] as String?,
       );
     }
     _log('nullifiers query: ${found.length} spent out of ${nullifierHashes.length} queried');
@@ -877,7 +888,9 @@ query SpentNullifiers($hashes: [String!]!) {
         );
         received.add(WormholeUtxo(transfer: transfer, owner: redactedOwner, nullifierHex: nullifierHex));
         ownerHashByNullifier[nullifierHex] = ownerHash;
-        if (cachedSpent.containsKey(nullifierHex)) {
+        // A cached spend without its block author predates that field; ask
+        // again so the fee-share exit can be told apart from the recipient.
+        if (cachedSpent[nullifierHex]?.blockAuthor != null) {
           skipped++;
         } else {
           final nullifierBytes = hex.decode(nullifierHex.replaceFirst('0x', ''));
@@ -902,17 +915,19 @@ query SpentNullifiers($hashes: [String!]!) {
       final toPersistByOwner = <String, Map<String, WormholeSpend>>{
         for (final e in cachedSpentByOwner.entries) e.key: {...e.value},
       };
+      final changedOwners = <String>{};
       for (final entry in newSpent.entries) {
         if (entry.value.blockHeight > safeCutoff) {
           unfinalizedCount++;
           continue;
         }
-        toPersistByOwner[ownerHashByNullifier[entry.key]!]![entry.key] = entry.value;
+        final ownerHash = ownerHashByNullifier[entry.key]!;
+        final cached = cachedSpentByOwner[ownerHash]![entry.key];
+        if (cached == null || cached.blockAuthor != entry.value.blockAuthor) changedOwners.add(ownerHash);
+        toPersistByOwner[ownerHash]![entry.key] = entry.value;
       }
-      for (final entry in toPersistByOwner.entries) {
-        if (entry.value.length != cachedSpentByOwner[entry.key]!.length) {
-          await saveSpentNullifiers(entry.key, entry.value);
-        }
+      for (final ownerHash in changedOwners) {
+        await saveSpentNullifiers(ownerHash, toPersistByOwner[ownerHash]!);
       }
       _log('Nullifier persistence: skipped $unfinalizedCount above cutoff $safeCutoff');
     }

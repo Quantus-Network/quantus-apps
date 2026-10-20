@@ -1,6 +1,8 @@
 import 'package:collection/collection.dart';
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:quantus_sdk/src/models/event_type.dart';
 import 'package:quantus_sdk/src/models/transaction_event.dart';
+import 'package:quantus_sdk/src/services/wormhole_coin_selection.dart';
 import 'package:quantus_sdk/src/services/wormhole_utxo_service.dart';
 import 'package:quantus_sdk/src/utils/print.dart';
 
@@ -87,6 +89,10 @@ class _Batch {
   final String? recipient;
   final BigInt sentToken;
   final BigInt changeToken;
+
+  /// Exits that returned change to us; a transfer with one of these ids is
+  /// that change, not a receipt.
+  final Set<String> changeExitIds;
   final BigInt feeToken;
 
   const _Batch({
@@ -95,6 +101,7 @@ class _Batch {
     required this.recipient,
     required this.sentToken,
     required this.changeToken,
+    required this.changeExitIds,
     required this.feeToken,
   });
 
@@ -116,6 +123,29 @@ class _Batch {
   );
 }
 
+/// The exit of [spend] that is the block author's share of the volume fee,
+/// or null when there is none (the share rounded to nothing, the mint was
+/// skipped, or the spend was cached before block authors were recorded).
+///
+/// The runtime computes the share from the other exits alone
+/// ([wormholeMinerFeeShareScaled]), so an exit to the author is the share
+/// exactly when its amount is what the remaining exits call for. A payment
+/// to the author's account of any other size is a payment. The share is the
+/// last leaf the runtime inserts, so among equal candidates the latest wins.
+@visibleForTesting
+WormholeOutput? feeShareOf(WormholeSpend spend) {
+  final author = spend.blockAuthor;
+  if (author == null) return null;
+  final total = spend.outputs.fold(BigInt.zero, (sum, o) => sum + o.amount);
+  WormholeOutput? share;
+  for (final o in spend.outputs) {
+    if (o.exitAccountId != author) continue;
+    final expected = wormholeTokenFromScaled(wormholeMinerFeeShareScaled(wormholeScaledFromToken(total - o.amount)));
+    if (expected > BigInt.zero && o.amount == expected && (share == null || o.id.compareTo(share.id) > 0)) share = o;
+  }
+  return share;
+}
+
 /// A send of this wallet is a private batch — one client's proof, and only
 /// the holder of our secrets can put our leaves in one — that exits to exactly
 /// one address that is not our own, plus optional change: every exit then
@@ -124,12 +154,19 @@ class _Batch {
 /// larger than our inputs) is reported by the full amount our inputs
 /// contributed, with no recipient; nothing in such a proof is taken for
 /// change, so a payment to us inside it stays a receipt.
+///
+/// The block author's share of the volume fee ([feeShareOf]) is neither
+/// recipient nor change: it is set aside before attributing and stays inside
+/// the reported fee (inputs minus what reached the recipient and us). When
+/// this wallet authored the block, that share is a receipt of ours, which
+/// [buildWormholeHistory] keeps visible.
 _Batch _batch(WormholeSpend spend, List<WormholeUtxo> inputs, Set<String> ownAddresses) {
   final inputsToken = inputs.fold(BigInt.zero, (sum, u) => sum + u.amount);
-  final change = spend.outputs
-      .where((o) => ownAddresses.contains(o.exitAccountId))
-      .fold(BigInt.zero, (sum, o) => sum + o.amount);
-  final foreign = spend.outputs.where((o) => !ownAddresses.contains(o.exitAccountId)).toList();
+  final feeShare = feeShareOf(spend);
+  final exits = spend.outputs.where((o) => !identical(o, feeShare)).toList();
+  final changeExits = exits.where((o) => ownAddresses.contains(o.exitAccountId)).toList();
+  final change = changeExits.fold(BigInt.zero, (sum, o) => sum + o.amount);
+  final foreign = exits.where((o) => !ownAddresses.contains(o.exitAccountId)).toList();
   if (WormholeSpend.privateBatchCalls.contains(spend.call) &&
       foreign.length == 1 &&
       inputsToken - foreign.single.amount - change >= BigInt.zero) {
@@ -140,6 +177,7 @@ _Batch _batch(WormholeSpend spend, List<WormholeUtxo> inputs, Set<String> ownAdd
       recipient: foreign.single.exitAccountId,
       sentToken: sent,
       changeToken: change,
+      changeExitIds: {for (final o in changeExits) o.id},
       feeToken: inputsToken - sent - change,
     );
   }
@@ -154,6 +192,7 @@ _Batch _batch(WormholeSpend spend, List<WormholeUtxo> inputs, Set<String> ownAdd
     recipient: null,
     sentToken: inputsToken,
     changeToken: BigInt.zero,
+    changeExitIds: const {},
     feeToken: BigInt.zero,
   );
 }
@@ -204,10 +243,10 @@ List<TransactionEvent> buildWormholeHistory({
       sends.add([batch]);
     }
   }
-  final changeExtrinsics = {
-    for (final batch in batches)
-      if (batch.attributed) batch.spend.extrinsicId,
-  };
+  // An exit and the transfer it created share an id, so this names exactly
+  // the change of our sends; anything else a send paid us — the block
+  // author's fee share when we mined the block — stays a receipt.
+  final changeTransferIds = {for (final batch in batches) ...batch.changeExitIds};
 
   // Exit and transfer ids are `<block>-<hash>-<event index>`, zero-padded, so
   // they place every row at its position on chain.
@@ -228,7 +267,7 @@ List<TransactionEvent> buildWormholeHistory({
         ),
       ),
     for (final WormholeUtxo(:transfer) in received)
-      if (!changeExtrinsics.contains(transfer.extrinsicId))
+      if (!changeTransferIds.contains(transfer.id))
         (
           transfer.id,
           transfer.viaWormhole
