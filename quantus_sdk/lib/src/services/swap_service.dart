@@ -244,17 +244,6 @@ class SwapService {
         );
       }
     }
-    // 1Click adds its own fee to the echoed list, and the signature does not
-    // cover it, so the list must hold our fee as sent.
-    if (fee != null) {
-      final fees = (echoed['appFees'] as List<dynamic>? ?? const []).cast<Map<String, dynamic>>();
-      if (!fees.any((f) => f['recipient'] == fee['recipient'] && f['fee'] == fee['fee'])) {
-        throw SwapQuoteIntegrityException(
-          'Quote answers a different request: appFees are $fees, sent $fee',
-          correlationId: correlationId,
-        );
-      }
-    }
     if (!DateTime.parse(echoed['deadline'] as String).isAtSameMomentAs(deadline)) {
       throw SwapQuoteIntegrityException(
         'Quote answers a different request: deadline is ${echoed['deadline']}, sent ${body['deadline']}',

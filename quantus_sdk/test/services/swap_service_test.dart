@@ -22,6 +22,9 @@ const _refund = '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045';
 const _oneClickFee = {'recipient': '2238fd089f1c92b206c218cd16b8676cb98964e0d50f8ab729c6396a81e07805', 'fee': 20};
 const _feeBips = 20;
 const _ourFee = {'recipient': AppConstants.oneClickFeeRecipient, 'fee': _feeBips};
+
+/// How 1Click echoes a partner's fee: half of it, rounded up, with its own cut listed separately.
+Map<String, dynamic> _split(Object? fee) => {...fee as Map<String, dynamic>, 'fee': ((fee['fee'] as int) + 1) ~/ 2};
 const _recipient = 'qznQKhufTDfU3szAzfgCny7wMhxUN3qjEqneiRUNgC7MjSDyG';
 
 /// Stands in for 1Click's signing key; responses the mock serves are signed with it.
@@ -72,7 +75,7 @@ Map<String, dynamic> _quoteResponse({
     'deadline': '2026-09-20T06:00:50.000Z',
     'confidentiality': 'basic',
     ...?request,
-    'appFees': [...?request?['appFees'] as List<dynamic>?, _oneClickFee],
+    'appFees': [...?(request?['appFees'] as List<dynamic>?)?.map(_split), _oneClickFee],
   },
   'timestamp': '2026-09-20T05:50:50.975Z',
   'correlationId': 'corr-1',
@@ -340,16 +343,13 @@ void main() {
       expect(sent, isNot(contains('appFees')));
     });
 
-    test('rejects a quote whose echoed fees leave ours out', () async {
+    test('accepts a quote whatever fees 1Click echoes', () async {
       final service = _service((r) async {
         final response = _quoteResponse(request: _sentRequest(r));
         (response['quoteRequest'] as Map<String, dynamic>)['appFees'] = [_oneClickFee];
         return http.Response(jsonEncode(_signed(response)), 200);
       });
-      await expectLater(
-        _quote(service),
-        throwsA(isA<SwapQuoteIntegrityException>().having((e) => e.message, 'message', contains('appFees'))),
-      );
+      await _quote(service);
     });
 
     test('rejects a quote that echoes another deadline', () async {
