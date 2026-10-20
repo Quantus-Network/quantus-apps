@@ -1,6 +1,32 @@
 import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 
+/// The chrome every centered dialog shares: surface, border, radius, padding.
+class QuantusDialogFrame extends StatelessWidget {
+  static const double defaultMaxWidth = 326;
+
+  final Widget child;
+  final double maxWidth;
+
+  const QuantusDialogFrame({super.key, required this.child, this.maxWidth = defaultMaxWidth});
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colorsV3;
+    return Container(
+      width: double.infinity,
+      constraints: BoxConstraints(maxWidth: maxWidth),
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: colors.bgSurface,
+        borderRadius: context.radiusV3.lgBorder,
+        border: Border.all(color: colors.borderEmphasis, width: 1),
+      ),
+      child: child,
+    );
+  }
+}
+
 /// Shared v3 centered dialog: title, optional banner, plain-consequence body,
 /// action, Cancel.
 ///
@@ -22,6 +48,7 @@ class QuantusDialog extends StatelessWidget {
   final Widget? banner;
   final VoidCallback? onAction;
   final VoidCallback? onCancel;
+  final double maxWidth;
 
   const QuantusDialog({
     super.key,
@@ -34,6 +61,7 @@ class QuantusDialog extends StatelessWidget {
     this.banner,
     this.onAction,
     this.onCancel,
+    this.maxWidth = QuantusDialogFrame.defaultMaxWidth,
   });
 
   @override
@@ -46,16 +74,8 @@ class QuantusDialog extends StatelessWidget {
         ? ButtonVariant.staged
         : ButtonVariant.primary;
 
-    return Container(
-      width: double.infinity,
-      constraints: const BoxConstraints(maxWidth: 326),
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: colors.bgSurface,
-        borderRadius: context.radiusV3.lgBorder,
-        border: Border.all(color: colors.borderEmphasis, width: 1),
-      ),
-      // Scrolls rather than overflows on short screens and large type.
+    return QuantusDialogFrame(
+      maxWidth: maxWidth,
       child: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -95,6 +115,7 @@ Future<bool> showQuantusDialog(
   bool cancelIsPrimary = false,
   Widget? banner,
   bool barrierDismissible = true,
+  double maxWidth = QuantusDialogFrame.defaultMaxWidth,
 }) async {
   final confirmed = await showDialog<bool>(
     context: context,
@@ -112,6 +133,7 @@ Future<bool> showQuantusDialog(
           isDestructive: isDestructive,
           cancelIsPrimary: cancelIsPrimary,
           banner: banner,
+          maxWidth: maxWidth,
           onAction: () => Navigator.pop(dialogContext, true),
           onCancel: () => Navigator.pop(dialogContext, false),
         ),

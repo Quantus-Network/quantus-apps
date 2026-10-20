@@ -1,0 +1,335 @@
+import 'package:flutter/foundation.dart' show listEquals;
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
+import 'package:flutter_riverpod/misc.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:quantus_sdk/src/models/filtered_transactions_params.dart';
+import 'package:quantus_sdk/src/models/pagination_state.dart';
+import 'package:quantus_sdk/src/utils/account_id_list_cache.dart';
+import 'package:quantus_sdk/src/providers/account_providers.dart';
+import 'package:quantus_sdk/src/providers/connectivity_provider.dart';
+import 'package:quantus_sdk/src/providers/service_providers.dart';
+import 'package:quantus_sdk/src/utils/print.dart';
+
+/// Unified pagination controller that handles both all-accounts and
+/// filtered-accounts scenarios
+class UnifiedPaginationController extends StateNotifier<PaginationState> {
+  UnifiedPaginationController(
+    this.ref, {
+    this.accountIds,
+    int pageLimit = 20,
+    TransactionFilter filter = TransactionFilter.all,
+  }) : _limit = pageLimit,
+       _filter = filter,
+       super(PaginationState.initial()) {
+    if (accountIds == null) {
+      _listenToAccounts();
+    }
+    _init();
+  }
+
+  final Ref ref;
+  final List<String>? accountIds; // If null, load all accounts from provider
+  final int _limit;
+  final TransactionFilter _filter;
+
+  Future<void>? _inFlight;
+  List<String>? _inFlightIds;
+
+  /// Runs [load] for [ids], joining a running load only when it is fetching the
+  /// same accounts.
+  ///
+  /// `_init` and the accounts listener both fire when accounts settle, and
+  /// `loadingRefresh` resets `isFetching` before it fetches, so the state flag
+  /// alone cannot keep them from hitting the indexer twice. A load for a
+  /// *different* scope is queued behind the running one instead of joining it:
+  /// the account set can change mid-flight, and the newer scope has to win the
+  /// final state write or the list keeps showing the previous account.
+  Future<void> _once(List<String> ids, Future<void> Function() load) {
+    final running = _inFlight;
+    if (running != null && listEquals(_inFlightIds, ids)) return running;
+
+    final task = running == null ? load() : _queueAfter(running, load);
+    _inFlight = task;
+    _inFlightIds = List<String>.unmodifiable(ids);
+
+    return task.whenComplete(() {
+      if (identical(_inFlight, task)) {
+        _inFlight = null;
+        _inFlightIds = null;
+      }
+    });
+  }
+
+  Future<void> _queueAfter(Future<void> running, Future<void> Function() load) async {
+    try {
+      await running;
+    } catch (_) {
+      // Reported by whoever started that load; this scope still has to load.
+    }
+    await load();
+  }
+
+  void _listenToAccounts() {
+    ref.listen(accountsProvider, (previous, next) {
+      if (next != previous && !next.isLoading) {
+        loadingRefresh();
+      }
+    });
+  }
+
+  Future<void> _init() async {
+    List<String> ids;
+    try {
+      ids = await _getAccountIdsAsync();
+    } catch (e, st) {
+      quantusPrint('Initialization failed: $e\n$st');
+      state = state.copyWith(error: e, stackTrace: st, isLoading: false);
+      return;
+    }
+
+    if (ids.isEmpty) {
+      state = state.copyWith(hasMore: false, isFetching: false, isLoading: false);
+      return;
+    }
+
+    await _once(ids, () => _fetchPage(ids));
+  }
+
+  Future<List<String>> _getAccountIdsAsync() async {
+    if (accountIds != null) {
+      return accountIds!;
+    }
+
+    final accountsState = await ref.read(accountsProvider.notifier).stream.firstWhere((state) => !state.isLoading);
+
+    return accountsState.maybeWhen(
+      data: (accounts) => AccountIdListCache.get(accounts.map((e) => e.accountId).toList()),
+      orElse: () => throw Exception('Failed to load accounts'),
+    );
+  }
+
+  List<String> _getAccountIds() {
+    if (accountIds != null) return accountIds!;
+    final accounts = ref.read(accountsProvider).value;
+    final List<String> filteredAccountIds = accounts?.map((e) => e.accountId).toList() ?? [];
+    return AccountIdListCache.get(filteredAccountIds);
+  }
+
+  Future<void> _fetchPage(List<String> targetAccountIds) async {
+    try {
+      state = state.copyWith(isFetching: true, isLoading: true, clearError: true);
+      final newTransactions = await ref
+          .read(chainHistoryServiceProvider)
+          .fetchAllTransactionTypes(
+            accountIds: targetAccountIds,
+            limit: _limit,
+            otherAfter: state.otherCursor,
+            scheduledAfter: state.scheduledCursor,
+            filter: _filter,
+          );
+
+      final newOtherTransfers = newTransactions.otherTransfers;
+      final newScheduledReversibleTransfers = newTransactions.scheduledReversibleTransfers;
+
+      state = state.copyWith(
+        otherTransfers: [...state.otherTransfers, ...newOtherTransfers],
+        scheduledReversibleTransfers: [...state.scheduledReversibleTransfers, ...newScheduledReversibleTransfers],
+        cursors: (scheduled: newTransactions.nextScheduledCursor, other: newTransactions.nextOtherCursor),
+        hasMore: newTransactions.hasMore,
+        isFetching: false,
+        isLoading: false,
+        clearError: true,
+      );
+    } catch (e, st) {
+      quantusPrint('Fetch page failed: $e\n$st');
+      state = state.copyWith(error: e, stackTrace: st, isFetching: false, isLoading: false);
+    }
+  }
+
+  Future<void> fetchMore() async {
+    quantusPrint('UnifiedPaginationController: Fetch more');
+
+    if (state.isFetching || !state.hasMore) return;
+
+    final targetAccountIds = _getAccountIds();
+    if (targetAccountIds.isEmpty) return;
+
+    await _once(targetAccountIds, () => _fetchPage(targetAccountIds));
+  }
+
+  /// Refresh data silently without showing loading indicators.
+  /// Used for automatic polling to update data in background.
+  Future<void> silentRefresh() async {
+    quantusPrint('UnifiedPaginationController: Silent refresh called');
+
+    final targetAccountIds = _getAccountIds();
+    if (targetAccountIds.isEmpty) return;
+
+    // The poller can fire before `_init` runs; a silent fetch would then win the
+    // dedup and never clear `isLoading`, leaving empty accounts on the skeleton.
+    if (state.isLoading) return _once(targetAccountIds, () => _fetchPage(targetAccountIds));
+
+    await _once(targetAccountIds, () async {
+      state = state.copyWith(isFetching: true);
+      try {
+        await _silentFetchFirstPage(targetAccountIds);
+      } finally {
+        state = state.copyWith(isFetching: false);
+      }
+    });
+  }
+
+  /// Refresh data with loading indicators.
+  /// Used for user-initiated refreshes like pull-to-refresh.
+  Future<void> loadingRefresh() async {
+    quantusPrint('UnifiedPaginationController: Loading Refresh');
+
+    // Check connectivity before refreshing
+    final isOnline = ref.read(isOnlineProvider);
+    if (!isOnline) {
+      quantusPrint('Skipping refresh - offline');
+      return;
+    }
+
+    final targetAccountIds = _getAccountIds();
+    if (targetAccountIds.isEmpty) {
+      state = PaginationState.initial().copyWith(hasMore: false, isLoading: false);
+      return;
+    }
+
+    await _once(targetAccountIds, () {
+      // Reset to initial state to show loading
+      state = PaginationState.initial();
+      return _fetchPage(targetAccountIds);
+    });
+  }
+
+  Future<void> _silentFetchFirstPage(List<String> targetAccountIds) async {
+    try {
+      final newTransactions = await ref
+          .read(chainHistoryServiceProvider)
+          .fetchAllTransactionTypes(accountIds: targetAccountIds, limit: _limit, filter: _filter);
+
+      final newOtherTransfers = newTransactions.otherTransfers;
+      final newScheduledReversibleTransfers = newTransactions.scheduledReversibleTransfers;
+
+      state = state.copyWith(
+        otherTransfers: newOtherTransfers,
+        scheduledReversibleTransfers: newScheduledReversibleTransfers,
+        cursors: (scheduled: newTransactions.nextScheduledCursor, other: newTransactions.nextOtherCursor),
+        hasMore: newTransactions.hasMore,
+        clearError: true,
+      );
+    } catch (e, st) {
+      quantusPrint('Silent refresh failed: $e, $st');
+    }
+  }
+
+  /// Update a reversible transfer status to executed inline without full
+  /// refresh.
+  /// Moves the transfer from reversibleTransfers to the top of items list.
+  void updateReversibleTransferToExecuted(String txId, ReversibleTransferStatus newStatus) {
+    quantusPrint('Updating reversible transfer to executed: $txId');
+
+    // Find the reversible transfer with the matching hash
+    final reversibleTransfer = state.scheduledReversibleTransfers
+        .where((transfer) => transfer.txId == txId)
+        .firstOrNull;
+
+    if (reversibleTransfer == null) {
+      quantusPrint('Reversible transfer not found for txId: $txId');
+      return;
+    }
+
+    // Create executed version by copying with EXECUTED status
+    final executedTransfer = ReversibleTransferEvent(
+      id: reversibleTransfer.id,
+      amount: reversibleTransfer.amount,
+      timestamp: reversibleTransfer.timestamp,
+      from: reversibleTransfer.from,
+      to: reversibleTransfer.to,
+      txId: reversibleTransfer.txId,
+      scheduledAt: reversibleTransfer.scheduledAt,
+      status: newStatus,
+      blockNumber: reversibleTransfer.blockNumber,
+      blockHash: reversibleTransfer.blockHash,
+      extrinsicHash: reversibleTransfer.extrinsicHash,
+    );
+
+    // Remove from reversible transfers
+    final updatedScheduledReversibleTransfers = state.scheduledReversibleTransfers
+        .where((transfer) => transfer.txId != txId)
+        .toList();
+
+    // Add executed transfer to the top of items list
+    final updatedOtherTransfers = [executedTransfer, ...state.otherTransfers];
+
+    // Update state
+    state = state.copyWith(
+      otherTransfers: updatedOtherTransfers,
+      scheduledReversibleTransfers: updatedScheduledReversibleTransfers,
+    );
+
+    quantusPrint('Successfully moved transfer from reversible to executed');
+  }
+
+  /// Adds a newly found transaction to the top of the history list.
+  /// This is used when a broadcast transaction is found in blockchain history.
+  void addTransactionToHistory(TransactionEvent transaction) {
+    quantusPrint('Adding transaction to history: ${transaction.id}');
+
+    // Check if transaction already exists to avoid duplicates
+    final multisigAddress = transaction is MultisigCreatedEvent ? transaction.multisigAddress : null;
+    final existsInOtherTransfers = state.otherTransfers.any(
+      (item) =>
+          item.id == transaction.id ||
+          (multisigAddress != null && item is MultisigCreatedEvent && item.multisigAddress == multisigAddress),
+    );
+    final existsInScheduledReversibleTransfers = state.scheduledReversibleTransfers.any(
+      (item) => item.id == transaction.id,
+    );
+
+    if (existsInOtherTransfers || existsInScheduledReversibleTransfers) {
+      quantusPrint('Transaction ${transaction.id} already exists in history');
+      return;
+    }
+
+    if (transaction is ReversibleTransferEvent) {
+      // Add to reversible transfers list
+      final updatedScheduledReversibleTransfers = [transaction, ...state.scheduledReversibleTransfers];
+      state = state.copyWith(scheduledReversibleTransfers: updatedScheduledReversibleTransfers);
+    } else {
+      // Add to regular transactions list at the top
+      final updatedOtherTransfers = [transaction, ...state.otherTransfers];
+      state = state.copyWith(otherTransfers: updatedOtherTransfers);
+    }
+
+    quantusPrint('Successfully added transaction ${transaction.id} to history');
+  }
+}
+
+/// One [UnifiedPaginationController] per (accountIds, filter), each with its
+/// own cached pages.
+final filteredPaginationControllerProviderFamily =
+    StateNotifierProvider.family<UnifiedPaginationController, PaginationState, FilteredTransactionsParams>(
+      (ref, params) => UnifiedPaginationController(ref, accountIds: params.accountIds, filter: params.filter),
+    );
+
+/// Runs [action] on the controller of every [filters] entry for [targetIds].
+void updatePaginationFiltersFor(
+  T Function<T>(ProviderListenable<T> provider) read,
+  List<String> targetIds,
+  void Function(UnifiedPaginationController notifier, TransactionFilter filter) action, {
+  Iterable<TransactionFilter> filters = TransactionFilter.values,
+}) {
+  final cachedIds = AccountIdListCache.get(targetIds);
+  for (final filter in filters) {
+    final notifier = read(
+      filteredPaginationControllerProviderFamily(
+        FilteredTransactionsParams(accountIds: cachedIds, filter: filter),
+      ).notifier,
+    );
+    action(notifier, filter);
+  }
+}

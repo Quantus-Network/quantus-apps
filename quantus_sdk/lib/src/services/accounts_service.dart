@@ -10,6 +10,15 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 // Bip44 describes account discovery from seed phrase - it keeps looking by increasing acocunt index, for accounts with activity.
 // It defines the max allowed account gap as 20, if there's 20 addresses in a row where there's no activity, it assumes the highest index has been reached.
 
+class DuplicateAccountException implements Exception {
+  final String accountId;
+
+  const DuplicateAccountException(this.accountId);
+
+  @override
+  String toString() => 'Account already exists: $accountId';
+}
+
 class AccountsService {
   static final AccountsService _instance = AccountsService._internal();
   factory AccountsService() => _instance;
@@ -80,6 +89,24 @@ class AccountsService {
     final updatedAccount = account.copyWith(name: name);
     await _settingsService.updateAccount(updatedAccount);
     onAccountsChanged?.call();
+  }
+
+  /// Adds a watch-only account signed by an air-gapped device. Throws
+  /// [FormatException] for a bad address and [DuplicateAccountException] when
+  /// the address is already in the wallet.
+  Future<Account> importColdWalletAccount({required String address, required String name, int walletIndex = 0}) async {
+    final trimmed = address.trim();
+    if (!SubstrateService().isValidSS58Address(trimmed)) throw FormatException('Not a Quantus address', address);
+    if ((await getAccounts()).any((a) => a.accountId == trimmed)) throw DuplicateAccountException(trimmed);
+    final account = Account(
+      walletIndex: walletIndex,
+      index: await _settingsService.getNextFreeAccountIndex(walletIndex),
+      name: name,
+      accountId: trimmed,
+      accountType: AccountType.keystone,
+    );
+    await addAccount(account);
+    return account;
   }
 
   Future<void> addAccount(Account newAccount) async {
