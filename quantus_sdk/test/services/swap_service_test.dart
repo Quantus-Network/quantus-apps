@@ -350,7 +350,7 @@ void main() {
     });
 
     test('accepts our fee echoed whole, as without a partner key', () async {
-      await _quote(_echoingFees([_ourFee, _oneClickFee]));
+      await _quote(echoingFees([_ourFee, _oneClickFee]));
     });
 
     test('rejects a quote whose echoed fees leave ours out, zero it or exceed what was sent', () async {
@@ -369,7 +369,7 @@ void main() {
         ],
       ]) {
         await expectLater(
-          _quote(_echoingFees(fees)),
+          _quote(echoingFees(fees)),
           throwsA(isA<SwapQuoteIntegrityException>().having((e) => e.message, 'message', contains('appFees'))),
           reason: '$fees',
         );
