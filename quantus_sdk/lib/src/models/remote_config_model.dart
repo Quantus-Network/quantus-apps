@@ -27,14 +27,6 @@ class RemoteConfigModel {
   /// trusted, the device may have moved, so the gate fails closed.
   final bool geoNearAllowed;
 
-  /// 1Click partner JWT, sent as X-API-Key to attribute volume and lower the
-  /// platform fee; null sends no key. Served under `near.partner.jwt`.
-  final String? nearPartnerJwt;
-
-  /// The app's own fee on every swap, in basis points of the input, paid to
-  /// [AppConstants.oneClickFeeRecipient]; 0 sends no fee.
-  final int swapFeeBips;
-
   const RemoteConfigModel({
     required this.enableTestButtons,
     required this.enableKeystoneHardwareWallet,
@@ -47,8 +39,6 @@ class RemoteConfigModel {
     required this.enableOneClickNearWarning,
     this.swapQuantusAssetId,
     required this.geoNearAllowed,
-    this.nearPartnerJwt,
-    required this.swapFeeBips,
   });
 
   /// Swap is offered when the platform's flag is on and the location allows
@@ -69,8 +59,6 @@ class RemoteConfigModel {
     enableOneClickNearWarning: enableOneClickNearWarning,
     swapQuantusAssetId: swapQuantusAssetId,
     geoNearAllowed: geoNearAllowed ?? this.geoNearAllowed,
-    nearPartnerJwt: nearPartnerJwt,
-    swapFeeBips: swapFeeBips,
   );
 
   R match<R>({
@@ -86,8 +74,6 @@ class RemoteConfigModel {
       bool enableOneClickNearWarning,
       String? swapQuantusAssetId,
       bool geoNearAllowed,
-      String? nearPartnerJwt,
-      int swapFeeBips,
     )
     fn,
   }) {
@@ -103,8 +89,6 @@ class RemoteConfigModel {
       enableOneClickNearWarning,
       swapQuantusAssetId,
       geoNearAllowed,
-      nearPartnerJwt,
-      swapFeeBips,
     );
   }
 
@@ -119,7 +103,6 @@ class RemoteConfigModel {
     enableMultisig: true,
     enableOneClickNearWarning: true,
     geoNearAllowed: false,
-    swapFeeBips: 0,
   );
 
   Map<String, dynamic> toCacheJson() {
@@ -137,8 +120,6 @@ class RemoteConfigModel {
             oneClickWarning,
             swapQuantusAssetId,
             geoNearAllowed,
-            nearPartnerJwt,
-            swapFeeBips,
           ) => {
             'enableTestButtons': test,
             'enableKeystoneHardwareWallet': keystone,
@@ -151,8 +132,6 @@ class RemoteConfigModel {
             'enableOneClickNearWarning': oneClickWarning,
             'swapQuantusAssetId': swapQuantusAssetId,
             'geoNearAllowed': geoNearAllowed,
-            'near.partner.jwt': nearPartnerJwt,
-            'swapFeeBips': swapFeeBips,
           },
     );
   }
@@ -172,8 +151,6 @@ class RemoteConfigModel {
       enableOneClickNearWarning: json['enableOneClickNearWarning'] ?? defaults.enableOneClickNearWarning,
       swapQuantusAssetId: _optionalString(json['swapQuantusAssetId']),
       geoNearAllowed: json['geoNearAllowed'] ?? defaults.geoNearAllowed,
-      nearPartnerJwt: _optionalString(json['near.partner.jwt']),
-      swapFeeBips: (json['swapFeeBips'] as num?)?.toInt() ?? defaults.swapFeeBips,
     );
   }
 

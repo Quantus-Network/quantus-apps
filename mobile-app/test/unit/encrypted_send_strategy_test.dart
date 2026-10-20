@@ -16,7 +16,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../fakes.dart';
 
 const _depositAddress = 'qznt5jvuXdh4ZMnTPDnHo4Xq3KwjZPDRqwmd4AW3nDGmuEACG';
-final _configWithKey = RemoteConfigModel.fromJson(const {'near.partner.jwt': 'partner-jwt'});
+final _config = RemoteConfigModel.fromJson(const {});
 
 WormholeUtxo _utxo(int scaled) => WormholeUtxo(
   transfer: WormholeTransfer(
@@ -98,11 +98,10 @@ void main() {
       tester,
       overrides: [
         remoteConfigProvider.overrideWith(
-          (ref) => RemoteConfigNotifier(FakeRemoteConfigService(_configWithKey, remote: _configWithKey)),
+          (ref) => RemoteConfigNotifier(FakeRemoteConfigService(_config, remote: _config)),
         ),
         oneClickServiceProvider.overrideWithValue(
           OneClickService(
-            apiKey: 'partner-jwt',
             client: MockClient((request) async {
               lookedUp.add(request.url.queryParameters['depositAddress']!);
               if (oneClickDown) throw http.ClientException('connection refused');

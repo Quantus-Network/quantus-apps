@@ -14,8 +14,8 @@ class SwapApiException implements Exception {
   String toString() => 'SwapApiException($statusCode): $message';
 }
 
-/// Transport for the NEAR Intents 1Click API: every request carries the
-/// partner key, and an answer outside 2xx becomes a [SwapApiException].
+/// Transport for the NEAR Intents 1Click API, through our proxy, which adds
+/// the partner key; an answer outside 2xx becomes a [SwapApiException].
 class OneClickService {
   /// Longest any request may take before it fails.
   static const requestTimeout = Duration(seconds: 30);
@@ -25,7 +25,6 @@ class OneClickService {
 
   final http.Client _client;
   final Uri _base;
-  final String? _apiKey;
 
   /// Answers so far. A deposit address is one for good, and 1Click never
   /// issues an address that already exists, so neither answer goes stale.
@@ -35,20 +34,17 @@ class OneClickService {
   /// and no body while the resource is unchanged.
   final _etagged = <Uri, (String, Object?)>{};
 
-  OneClickService({http.Client? client, String endpoint = AppConstants.oneClickEndpoint, String? apiKey})
+  OneClickService({http.Client? client, String endpoint = AppConstants.oneClickEndpoint})
     : _client = client ?? http.Client(),
-      _base = Uri.parse(endpoint),
-      _apiKey = apiKey;
+      _base = Uri.parse(endpoint);
 
   /// Whether 1Click issued [address] as the deposit address of a swap funded
   /// on its origin chain. Such an address takes exactly the one deposit its
   /// quote expects. Each address is asked about once. The history route is
-  /// invite-only: a lookup without the partner key is refused before any
-  /// request, and a 403 from 1Click is thrown, never read as "not a deposit".
+  /// invite-only: a 403 from 1Click is thrown, never read as "not a deposit".
   Future<bool> isDepositAddress(String address) async {
     final known = _depositAddresses[address];
     if (known != null) return known;
-    if (_apiKey == null) throw StateError('1Click history is invite-only and no partner key is configured');
     final json = await send(
       'GET',
       '/v0/account/history',
@@ -60,7 +56,7 @@ class OneClickService {
   Future<Object?> send(String method, String path, {Map<String, Object>? body, Map<String, String>? query}) async {
     final uri = _base.replace(path: path, queryParameters: query);
     final cached = method == 'GET' ? _etagged[uri] : null;
-    final headers = {'Content-Type': 'application/json', 'X-API-Key': ?_apiKey, 'If-None-Match': ?cached?.$1};
+    final headers = {'Content-Type': 'application/json', 'If-None-Match': ?cached?.$1};
     final response =
         await (method == 'GET'
                 ? _client.get(uri, headers: headers)

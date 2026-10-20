@@ -191,7 +191,6 @@ class _OneClick {
         ])
           k: request[k],
         'appFees': [
-          ...?request['appFees'] as List<dynamic>?,
           {'recipient': '2238fd089f1c92b206c218cd16b8676cb98964e0d50f8ab729c6396a81e07805', 'fee': 20},
         ],
       },
@@ -216,7 +215,6 @@ class _OneClickService extends SwapService {
         client: MockClient(oneClick.handle),
         managerPublicKey: _managerPublicKey,
         quantusAssetId: preflight ? _preflight.assetId : null,
-        feeBips: 0,
       );
 
   @override
