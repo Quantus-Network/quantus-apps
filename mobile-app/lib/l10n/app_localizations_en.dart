@@ -323,6 +323,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get multisigCreateInvalidSigner => 'Enter a valid signer address.';
 
   @override
+  String get multisigCreateSignerCheckFailed => 'Could not check this signer. Check your connection and try again.';
+
+  @override
+  String get multisigCreateSignerIsMultisigTitle => 'This signer is a multisig';
+
+  @override
+  String get multisigCreateSignerIsMultisigMessage =>
+      'A multisig account has no key, so it cannot approve proposals in this app. Its approval has to be proposed and executed on that multisig, which this app cannot do yet. Add it only if you control that multisig and can approve from it another way.';
+
+  @override
+  String get multisigCreateSignerIsMultisigConfirm => 'Add anyway';
+
+  @override
   String get multisigCreateThresholdLabel => 'THRESHOLD';
 
   @override

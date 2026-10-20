@@ -442,6 +442,22 @@
     "@multisigCreateInvalidSigner": {
       "description": "Error when signer address is invalid"
     },
+    "multisigCreateSignerCheckFailed": "Could not check this signer. Check your connection and try again.",
+    "@multisigCreateSignerCheckFailed": {
+      "description": "Error when the multisig lookup for a new signer address fails"
+    },
+    "multisigCreateSignerIsMultisigTitle": "This signer is a multisig",
+    "@multisigCreateSignerIsMultisigTitle": {
+      "description": "Title of the sheet shown when an added signer address is itself a multisig account"
+    },
+    "multisigCreateSignerIsMultisigMessage": "A multisig account has no key, so it cannot approve proposals in this app. Its approval has to be proposed and executed on that multisig, which this app cannot do yet. Add it only if you control that multisig and can approve from it another way.",
+    "@multisigCreateSignerIsMultisigMessage": {
+      "description": "Explains why a multisig account cannot vote as a signer from the wallet"
+    },
+    "multisigCreateSignerIsMultisigConfirm": "Add anyway",
+    "@multisigCreateSignerIsMultisigConfirm": {
+      "description": "Confirm button to add a multisig account as a signer after the warning"
+    },
     "multisigCreateThresholdLabel": "THRESHOLD",
     "@multisigCreateThresholdLabel": {
       "description": "Threshold slider section label on create multisig"
