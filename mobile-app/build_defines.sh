@@ -1,4 +1,4 @@
-# Sourced by the upload scripts, which build with --no-pub so pubspec.lock is never rewritten.
+# Sourced by the upload scripts. Fails instead of rewriting pubspec.lock when it doesn't fit pubspec.yaml or the SDK.
 # --swap-test: internal test build that offers swap regardless of flags and location;
 # never ship it to a store's production track.
 flutter pub get --enforce-lockfile
