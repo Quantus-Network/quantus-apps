@@ -3,15 +3,14 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 
 /// Dual-state address input shared by every flow where the user enters a
 /// destination address (send, redeem, ...). When the controller holds a valid
-/// SS58 address (`hasValid`) it shows a pill with the truncated address and the
-/// optional human checksum; otherwise it shows an editable field with an
+/// SS58 address (`hasValid`) it shows a pill with the truncated address and its
+/// checkphrase; otherwise it shows an editable field with an
 /// optional [trailing] action (e.g. a paste button). Tapping the pill clears
 /// the field and refocuses it for re-entry.
 class AddressInputField extends StatelessWidget {
   final TextEditingController controller;
   final FocusNode focusNode;
   final bool hasValid;
-  final String? recipientChecksum;
   final String hintText;
   final Widget? trailing;
   final int addressPrefix;
@@ -23,7 +22,6 @@ class AddressInputField extends StatelessWidget {
     required this.controller,
     required this.focusNode,
     required this.hasValid,
-    required this.recipientChecksum,
     required this.hintText,
     this.trailing,
     this.addressPrefix = 16,
@@ -36,6 +34,7 @@ class AddressInputField extends StatelessWidget {
     final colors = context.colorsV3;
     final text = context.themeTextV3;
     final hiddenSafeTrailing = hasValid && trailing != null ? ExcludeFocus(child: trailing!) : trailing;
+    final address = controller.text.trim();
 
     return Stack(
       children: [
@@ -71,12 +70,12 @@ class AddressInputField extends StatelessWidget {
                   border: Border.all(color: colors.borderHairline),
                 ),
                 child: AddressCheckphrase(
-                  address: AddressFormattingService.formatAddress(
-                    controller.text.trim(),
+                  address: address,
+                  displayAddress: AddressFormattingService.formatAddress(
+                    address,
                     prefix: addressPrefix,
                     postFix: addressPostfix,
                   ),
-                  checkphrase: recipientChecksum,
                   addressStyle: text.dataAddressLarge.copyWith(color: colors.textContent),
                 ),
               ),

@@ -286,11 +286,7 @@ class _MultisigProposalDetailSheet extends ConsumerWidget {
             child: DecodedCallView(call: decoded),
           )
         else if (!liveProposal.hasUndecodableCall)
-          DetailSummaryRow(
-            label: l10n.activityDetailTo,
-            value: recipient,
-            checkphrase: ref.watch(checksumNameProvider(liveProposal.recipient)).value,
-          ),
+          DetailSummaryRow(label: l10n.activityDetailTo, value: recipient, checkphraseAddress: liveProposal.recipient),
         if (isTerminal)
           DetailSummaryRow(
             label: l10n.multisigProposalAtLabel,
@@ -305,7 +301,7 @@ class _MultisigProposalDetailSheet extends ConsumerWidget {
         DetailSummaryRow(
           label: l10n.multisigProposalProposerLabel,
           value: liveProposal.proposer,
-          checkphrase: ref.watch(checksumNameProvider(liveProposal.proposer)).value,
+          checkphraseAddress: liveProposal.proposer,
         ),
         DetailSummaryRow(
           label: l10n.multisigProposalThresholdLabel,

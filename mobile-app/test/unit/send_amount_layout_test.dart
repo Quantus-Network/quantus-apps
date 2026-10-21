@@ -13,6 +13,7 @@ import '../fakes.dart';
 /// viewport: a short phone scrolls rather than overflowing.
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  CheckphraseText.resolveOverride = (_) async => 'Stand-Envelope-Topic-Term-Help';
 
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
@@ -34,7 +35,6 @@ void main() {
       ProviderScope(
         overrides: [
           settingsServiceProvider.overrideWithValue(FakeSettingsService(activeAccount: RegularAccount(makeAccount(1)))),
-          humanReadableChecksumServiceProvider.overrideWithValue(FakeHumanReadableChecksumService()),
           effectiveBalanceProviderFamily.overrideWith((ref, accountId) => AsyncValue.data(BigInt.from(5000000000000))),
           substrateServiceProvider.overrideWithValue(FakeSubstrateService(fee: BigInt.from(12964885))),
           balancesServiceProvider.overrideWithValue(FakeBalancesService()),

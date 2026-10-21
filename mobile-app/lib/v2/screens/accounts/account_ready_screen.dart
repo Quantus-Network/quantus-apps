@@ -4,7 +4,6 @@ import 'package:quantus_sdk/quantus_sdk.dart' hide ScaffoldBase;
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
-import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/shared/constants/e2e_keys.dart';
 import 'package:resonance_network_wallet/v2/components/account_badge.dart';
 import 'package:resonance_network_wallet/v2/components/info_card.dart';
@@ -47,7 +46,6 @@ class AccountReadyScreen extends ConsumerWidget {
     final appBarTitle = _appBarTitle(l10n);
     final headline = isWalletRelated ? appBarTitle : accountName;
     final ctaLabel = _showTwoAccountCards ? l10n.accountReadyGoToWallet : l10n.accountReadyDone;
-    final checkphrase = ref.watch(checksumNameProvider(accountId));
 
     return PopScope(
       canPop: false,
@@ -113,16 +111,15 @@ class AccountReadyScreen extends ConsumerWidget {
                           child: Column(
                             children: [
                               AddressCheckphrase(
-                                address: AddressFormattingService.formatAddress(
+                                address: accountId,
+                                displayAddress: AddressFormattingService.formatAddress(
                                   accountId,
                                   prefix: 8,
                                   ellipses: '.......',
                                   postFix: 10,
                                 ).toLowerCase(),
-                                checkphrase: checkphrase.value,
                                 addressStyle: text.dataAddressLarge.copyWith(color: colors.textContent),
                                 textAlign: TextAlign.center,
-                                placeholder: checkphrase.isLoading ? const Loader(size: 14) : null,
                               ),
                             ],
                           ),

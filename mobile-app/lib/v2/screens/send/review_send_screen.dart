@@ -26,7 +26,6 @@ class ReviewSendScreen extends ConsumerStatefulWidget {
   final String recipientAddress;
   final BigInt amount;
   final SendFee fee;
-  final String recipientChecksum;
   final bool isPayMode;
 
   /// Max send: the amount is whatever the settled fee leaves of the spendable
@@ -39,7 +38,6 @@ class ReviewSendScreen extends ConsumerStatefulWidget {
     required this.recipientAddress,
     required this.amount,
     required this.fee,
-    required this.recipientChecksum,
     this.isPayMode = false,
     this.sendAll = false,
   });
@@ -137,7 +135,6 @@ class _ReviewSendScreenState extends ConsumerState<ReviewSendScreen> {
       outcome = await widget.strategy.submit(
         ref,
         recipientAddress: _recipient,
-        recipientChecksum: widget.recipientChecksum,
         amount: _amount,
         fee: _fee,
         isPayMode: widget.isPayMode,
@@ -296,11 +293,7 @@ class _ReviewSendScreenState extends ConsumerState<ReviewSendScreen> {
         children: [
           Text(l10n.sendReviewTo, style: sectionLabelStyle),
           const SizedBox(height: 16),
-          AddressCheckphraseWithInitial(
-            recipientChecksum: widget.recipientChecksum,
-            recipientAddress: widget.recipientAddress,
-            showFullAddress: true,
-          ),
+          AddressCheckphraseWithInitial(address: widget.recipientAddress, showFullAddress: true),
         ],
       ),
     );

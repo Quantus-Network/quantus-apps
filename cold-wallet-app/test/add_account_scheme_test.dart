@@ -11,6 +11,7 @@ import 'package:quantus_cold_wallet/screens/add_account_screen.dart';
 /// ML-DSA-87; picking ML-DSA-65 moves the index with it.
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  CheckphraseText.resolveOverride = (_) async => 'check phrase';
 
   Future<void> settle(WidgetTester tester) async {
     await tester.pumpAndSettle();
@@ -24,7 +25,6 @@ void main() {
         overrides: [
           accountsProvider.overrideWith((ref) => held),
           derivedAddressProvider.overrideWith((ref, key) async => 'qzaddress'),
-          checksumNameProvider.overrideWith((ref, address) async => 'check phrase'),
         ],
         child: Builder(
           builder: (context) => MaterialApp(theme: AppTheme.darkTheme(context), home: const AddAccountScreen()),

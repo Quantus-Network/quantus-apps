@@ -964,9 +964,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sendInputAmountInvalidAmount => 'Please enter a valid amount';
 
   @override
-  String get sendInputAmountChecksumRequired => 'Recipient checksum is required';
-
-  @override
   String get sendReviewSending => 'SENDING';
 
   @override

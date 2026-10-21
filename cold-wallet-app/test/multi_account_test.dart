@@ -18,10 +18,7 @@ const mnemonic = 'abandon abandon abandon abandon abandon abandon abandon abando
 Future<void> pumpFor(WidgetTester tester, String signer, {required Map<String, ColdAccount> held}) async {
   await tester.pumpWidget(
     ProviderScope(
-      overrides: [
-        addressesProvider.overrideWith((ref) => held),
-        checksumNameProvider.overrideWith((ref, address) async => 'check phrase'),
-      ],
+      overrides: [addressesProvider.overrideWith((ref) => held)],
       child: MaterialApp(
         home: Builder(
           builder: (context) => Theme(
@@ -41,6 +38,7 @@ Future<void> pumpFor(WidgetTester tester, String signer, {required Map<String, C
 }
 
 void main() {
+  CheckphraseText.resolveOverride = (_) async => 'check phrase';
   group('the vault stays openable across a session', () {
     late ProviderContainer container;
     late WalletController controller;

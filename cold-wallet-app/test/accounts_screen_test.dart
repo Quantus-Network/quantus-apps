@@ -22,7 +22,6 @@ Future<ProviderContainer> walletWith(List<ColdAccount> accounts) async {
   final container = ProviderContainer(
     overrides: [
       addressesProvider.overrideWith((ref) => {for (final a in ref.watch(accountsProvider)) fakeAddress(a): a}),
-      checksumNameProvider.overrideWith((ref, address) async => 'phrase'),
     ],
   );
   addTearDown(container.dispose);
@@ -50,6 +49,7 @@ Future<List<String>> storedLabels() async =>
     (await VaultService().unlockWithBiometricKey()).accounts.map((a) => a.label).toList();
 
 void main() {
+  CheckphraseText.resolveOverride = (_) async => 'phrase';
   group('WalletController', () {
     test('lists accounts in the order they were added, whatever they derive from', () async {
       final container = await walletWith([two, legacy65]);

@@ -1844,12 +1844,6 @@ abstract class AppLocalizations {
   /// **'Please enter a valid amount'**
   String get sendInputAmountInvalidAmount;
 
-  /// Error when recipient checksum is missing
-  ///
-  /// In en, this message translates to:
-  /// **'Recipient checksum is required'**
-  String get sendInputAmountChecksumRequired;
-
   /// Sending section label on review screen
   ///
   /// In en, this message translates to:

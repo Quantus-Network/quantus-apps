@@ -17,7 +17,6 @@ class ReceiveScreen extends ConsumerStatefulWidget {
 
 class _ReceiveScreenState extends ConsumerState<ReceiveScreen> {
   String? _accountId;
-  String? _checksum;
 
   @override
   void initState() {
@@ -27,7 +26,6 @@ class _ReceiveScreenState extends ConsumerState<ReceiveScreen> {
 
   Future<void> _loadAccountData() async {
     final settingsService = ref.read(settingsServiceProvider);
-    final checksumService = ref.read(humanReadableChecksumServiceProvider);
 
     try {
       final account = (await settingsService.getActiveAccount())!;
@@ -39,14 +37,8 @@ class _ReceiveScreenState extends ConsumerState<ReceiveScreen> {
         final service = ref.read(encryptedAccountServiceProvider((base as Account).walletIndex));
         accountId = (await service.receiveKeyPair()).address;
       }
-      // Degrade to a blank checkphrase on lookup failure so the address/QR
-      // still renders instead of an unbounded loader.
-      final checksum = await checksumService.getHumanReadableName(accountId) ?? '';
       if (!mounted) return;
-      setState(() {
-        _accountId = accountId;
-        _checksum = checksum;
-      });
+      setState(() => _accountId = accountId);
     } catch (e) {
       quantusPrint('Error loading account data: $e');
 
@@ -58,9 +50,7 @@ class _ReceiveScreenState extends ConsumerState<ReceiveScreen> {
   }
 
   void _share() {
-    if (_accountId != null && _checksum != null) {
-      shareAccountDetails(context, _accountId!, checksum: _checksum!);
-    }
+    if (_accountId != null) shareAccountDetails(context, _accountId!);
   }
 
   void _copyAddress(BuildContext context) {
@@ -71,7 +61,7 @@ class _ReceiveScreenState extends ConsumerState<ReceiveScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = ref.watch(l10nProvider);
-    final isLoading = _accountId == null || _checksum == null;
+    final isLoading = _accountId == null;
 
     return ScaffoldBase(
       appBar: V2AppBar(title: l10n.receiveTitle),
@@ -80,7 +70,6 @@ class _ReceiveScreenState extends ConsumerState<ReceiveScreen> {
           : SingleChildScrollView(
               child: _ReceiveDetails(
                 accountId: _accountId!,
-                checksum: _checksum!,
                 addressLabel: l10n.receiveYourAddressLabel,
                 checkphraseLabel: l10n.componentCheckphraseLabel,
                 footnote: l10n.receiveCheckphraseFootnote,
@@ -104,14 +93,12 @@ class _ReceiveScreenState extends ConsumerState<ReceiveScreen> {
 class _ReceiveDetails extends StatelessWidget {
   const _ReceiveDetails({
     required this.accountId,
-    required this.checksum,
     required this.addressLabel,
     required this.checkphraseLabel,
     required this.footnote,
   });
 
   final String accountId;
-  final String checksum;
   final String addressLabel;
   final String checkphraseLabel;
   final String footnote;
@@ -129,15 +116,21 @@ class _ReceiveDetails extends StatelessWidget {
           width: 240,
           child: _LabeledValue(
             label: addressLabel,
-            value: accountId,
-            valueStyle: text.dataAddressLarge.copyWith(color: colors.textWhite),
+            value: Text(
+              accountId,
+              style: text.dataAddressLarge.copyWith(color: colors.textWhite),
+              textAlign: TextAlign.center,
+            ),
           ),
         ),
         const SizedBox(height: 20),
         _LabeledValue(
           label: checkphraseLabel,
-          value: checksum,
-          valueStyle: text.dataAddressLarge.copyWith(color: colors.semanticLilac),
+          value: CheckphraseText(
+            accountId,
+            style: text.dataAddressLarge.copyWith(color: colors.semanticLilac),
+            textAlign: TextAlign.center,
+          ),
           footnote: footnote,
         ),
         const SizedBox(height: 40),
@@ -147,11 +140,10 @@ class _ReceiveDetails extends StatelessWidget {
 }
 
 class _LabeledValue extends StatelessWidget {
-  const _LabeledValue({required this.label, required this.value, required this.valueStyle, this.footnote});
+  const _LabeledValue({required this.label, required this.value, this.footnote});
 
   final String label;
-  final String value;
-  final TextStyle valueStyle;
+  final Widget value;
   final String? footnote;
 
   @override
@@ -167,7 +159,7 @@ class _LabeledValue extends StatelessWidget {
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 9),
-        Text(value, style: valueStyle, textAlign: TextAlign.center),
+        value,
         if (footnote != null) ...[
           const SizedBox(height: 9),
           SizedBox(

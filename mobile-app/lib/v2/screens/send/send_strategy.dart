@@ -140,7 +140,6 @@ class SendTerminalContent {
   final String subline;
   final String? amountText;
   final String recipientAddress;
-  final String? recipientChecksum;
   final String? signaturesLabel;
   final String doneLabel;
   final double topSpacing;
@@ -154,7 +153,6 @@ class SendTerminalContent {
     required this.headline,
     required this.subline,
     required this.recipientAddress,
-    required this.recipientChecksum,
     required this.doneLabel,
     this.amountText,
     this.signaturesLabel,
@@ -167,7 +165,6 @@ class SendTerminalContent {
     headline: headline,
     subline: subline,
     recipientAddress: recipientAddress,
-    recipientChecksum: recipientChecksum,
     doneLabel: doneLabel,
     amountText: amountText,
     signaturesLabel: signaturesLabel,
@@ -224,7 +221,6 @@ SendTerminalContent buildSentTerminalContent(
   AppLocalizations l10n,
   NumberFormattingService fmt, {
   required String recipient,
-  required String checksum,
   required BigInt amount,
   required bool isPayMode,
 }) {
@@ -236,7 +232,6 @@ SendTerminalContent buildSentTerminalContent(
         : l10n.sendTxSubmittedHeadlineSent(n, AppConstants.tokenSymbol),
     subline: l10n.sendTxSubmittedOnItsWay,
     recipientAddress: recipient,
-    recipientChecksum: checksum,
     doneLabel: l10n.sendTxSubmittedDone,
     topSpacing: 70,
   );
@@ -353,7 +348,6 @@ abstract class SendStrategy {
   Future<SendOutcome> submit(
     WidgetRef ref, {
     required String recipientAddress,
-    required String recipientChecksum,
     required BigInt amount,
     required SendFee fee,
     required bool isPayMode,

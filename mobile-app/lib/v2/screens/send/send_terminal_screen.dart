@@ -28,8 +28,7 @@ class SendTerminalScreen extends ConsumerWidget {
     final l10n = ref.watch(l10nProvider);
     final colors = context.colorsV3;
     final text = context.themeTextV3;
-    final shortAddr = AddressFormattingService.formatAddress(content.recipientAddress.trim());
-    final checksum = content.recipientChecksum;
+    final recipient = content.recipientAddress.trim();
     final signaturesLabel = content.signaturesLabel;
 
     return PopScope(
@@ -76,8 +75,8 @@ class SendTerminalScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 16),
                   AddressCheckphrase(
-                    address: shortAddr,
-                    checkphrase: checksum,
+                    address: recipient,
+                    displayAddress: AddressFormattingService.formatAddress(recipient),
                     addressStyle: text.dataAddressLarge.copyWith(color: colors.textContent),
                     textAlign: TextAlign.center,
                   ),

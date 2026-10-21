@@ -159,7 +159,7 @@ class _KeystoneSignScreenState extends ConsumerState<KeystoneSignScreen> {
     final colors = context.colorsV3;
     final text = context.themeTextV3;
     final secondary = session.secondaryDetail?.trim();
-    final displaySecondary = secondary != null && SubstrateService().isValidSS58Address(secondary)
+    final displaySecondary = secondary != null && session.secondaryIsAddress
         ? AddressFormattingService.formatAddress(secondary)
         : secondary;
 
@@ -179,7 +179,7 @@ class _KeystoneSignScreenState extends ConsumerState<KeystoneSignScreen> {
           DetailSummaryRow(
             label: (session.secondaryLabel ?? l10n.sendReviewTo).toUpperCase(),
             value: displaySecondary!,
-            checkphrase: session.tertiaryDetail,
+            checkphraseAddress: session.secondaryIsAddress ? secondary : null,
             monospace: true,
           ),
       ],

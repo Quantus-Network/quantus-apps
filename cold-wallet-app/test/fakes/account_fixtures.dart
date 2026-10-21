@@ -26,7 +26,6 @@ String fakeAddress(ColdAccount a) {
 List<Override> accountOverrides(List<ColdAccount> accounts) => [
   accountsProvider.overrideWith((ref) => accounts),
   addressesProvider.overrideWith((ref) => {for (final a in ref.watch(accountsProvider)) fakeAddress(a): a}),
-  checksumNameProvider.overrideWith((ref, address) async => 'phrase'),
 ];
 
 Widget coldApp(Widget home) => Builder(

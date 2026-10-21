@@ -19,7 +19,6 @@ import 'package:resonance_network_wallet/shared/utils/print.dart';
 class InputAmountScreen extends ConsumerStatefulWidget {
   final SendStrategy strategy;
   final String recipientAddress;
-  final String? recipientChecksum;
   final String? initialAmount;
   final bool isPayMode;
 
@@ -27,7 +26,6 @@ class InputAmountScreen extends ConsumerStatefulWidget {
     super.key,
     required this.strategy,
     required this.recipientAddress,
-    this.recipientChecksum,
     this.initialAmount,
     this.isPayMode = false,
   });
@@ -40,7 +38,6 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
   final _amountController = TextEditingController();
   final _amountFocus = FocusNode();
 
-  String? _recipientChecksum;
   BigInt _amount = BigInt.zero;
   bool _sendAll = false;
 
@@ -70,11 +67,6 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
         _amountController.text = _amountInputLogic.formatTokenAmount(token);
       }
     }
-    _recipientChecksum = widget.recipientChecksum;
-    ref.read(humanReadableChecksumServiceProvider).getHumanReadableName(widget.recipientAddress.trim()).then((name) {
-      if (!mounted) return;
-      setState(() => _recipientChecksum = name);
-    });
   }
 
   @override
@@ -141,10 +133,6 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
     final feeState = ref.read(_feeProvider(_amount));
     final fee = feeState.fee;
     final l10n = ref.read(l10nProvider);
-    if (_recipientChecksum == null) {
-      context.showErrorToaster(message: l10n.sendInputAmountChecksumRequired);
-      return;
-    }
     if (fee == null) {
       context.showErrorToaster(message: widget.strategy.strings(l10n).feeFetchFailedMessage);
       return;
@@ -161,7 +149,6 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
           recipientAddress: widget.recipientAddress,
           amount: _amount,
           fee: fee,
-          recipientChecksum: _recipientChecksum!,
           isPayMode: widget.isPayMode,
           sendAll: _sendAll,
         ),
@@ -194,7 +181,6 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
     final affordabilityError = fee == null ? null : widget.strategy.affordabilityError(ref, fee, l10n);
     final btnDisabled =
         fee == null ||
-        _recipientChecksum == null ||
         !balance.hasValue ||
         widget.strategy.extraBalancesLoading(ref) ||
         affordabilityError != null ||
@@ -260,7 +246,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
               children: [
                 Text(strings.amountRecipientCardLabel, style: text.labelData.copyWith(color: colors.textMuted)),
                 const SizedBox(height: 16),
-                AddressCheckphrase(address: shortAddr, checkphrase: _recipientChecksum),
+                AddressCheckphrase(address: addr, displayAddress: shortAddr),
               ],
             ),
           ),

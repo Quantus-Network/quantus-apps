@@ -32,7 +32,6 @@ Future<void> pumpFromHome(WidgetTester tester, Widget Function() screen) async {
         addressesProvider.overrideWith(
           (ref) => {signerAddress: ColdAccount(label: 'Main key', index: 0, scheme: DilithiumScheme.mlDsa87)},
         ),
-        checksumNameProvider.overrideWith((ref, address) async => 'check phrase'),
         urQrFramesProvider.overrideWith((ref, payload) => const ['ur:bytes/abcd']),
       ],
       child: Builder(
@@ -56,6 +55,7 @@ Future<void> pumpFromHome(WidgetTester tester, Widget Function() screen) async {
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  CheckphraseText.resolveOverride = (_) async => 'check phrase';
 
   testWidgets('Approve shows the transfer card, and It doesn\'t match ends on Rejected', (tester) async {
     await pumpFromHome(

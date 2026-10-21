@@ -82,7 +82,6 @@ class KeystoneVerifyScreen extends ConsumerWidget {
   Widget _summaryCard(BuildContext context, AppLocalizations l10n, AppColorsV3 colors, AppTextThemeV3 text) {
     final labelStyle = text.labelData.copyWith(color: colors.textMuted);
     final address = session.secondaryDetail?.trim();
-    final checksum = session.tertiaryDetail;
 
     return Container(
       padding: const EdgeInsets.all(24),
@@ -101,8 +100,8 @@ class KeystoneVerifyScreen extends ConsumerWidget {
           if (address != null) ...[
             Text((session.secondaryLabel ?? l10n.sendReviewTo).toUpperCase(), style: labelStyle),
             const SizedBox(height: 16),
-            if (checksum != null)
-              AddressCheckphraseWithInitial(recipientChecksum: checksum, recipientAddress: address)
+            if (session.secondaryIsAddress)
+              AddressCheckphraseWithInitial(address: address)
             else
               Text(address, style: text.dataAddressLarge.copyWith(color: colors.textContent)),
           ],

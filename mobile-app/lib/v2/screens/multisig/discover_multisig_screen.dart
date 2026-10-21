@@ -4,8 +4,6 @@ import 'package:quantus_sdk/quantus_sdk.dart' hide ScaffoldBase;
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/multisig_providers.dart';
-import 'package:resonance_network_wallet/providers/wallet_providers.dart';
-import 'package:resonance_network_wallet/shared/utils/print.dart';
 
 class DiscoverMultisigScreen extends ConsumerStatefulWidget {
   const DiscoverMultisigScreen({super.key});
@@ -151,7 +149,7 @@ class _DiscoverError extends StatelessWidget {
   }
 }
 
-class _DiscoverMultisigRow extends ConsumerStatefulWidget {
+class _DiscoverMultisigRow extends ConsumerWidget {
   const _DiscoverMultisigRow({
     super.key,
     required this.account,
@@ -172,34 +170,9 @@ class _DiscoverMultisigRow extends ConsumerStatefulWidget {
   final VoidCallback onAdd;
 
   @override
-  ConsumerState<_DiscoverMultisigRow> createState() => _DiscoverMultisigRowState();
-}
-
-class _DiscoverMultisigRowState extends ConsumerState<_DiscoverMultisigRow> {
-  String? _checksum;
-
-  @override
-  void initState() {
-    super.initState();
-
-    ref
-        .read(humanReadableChecksumServiceProvider)
-        .getHumanReadableName(widget.account.accountId)
-        .then((name) {
-          if (mounted) setState(() => _checksum = name);
-        })
-        .catchError((Object e) {
-          quantusPrint('DiscoverMultisigRow: checksum lookup error: $e');
-          if (mounted) setState(() => _checksum = 'Error getting checksum');
-        });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = ref.watch(l10nProvider);
+  Widget build(BuildContext context, WidgetRef ref) {
     final colors = context.colorsV3;
     final text = context.themeTextV3;
-    final address = AddressFormattingService.formatAddress(widget.account.accountId);
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -212,22 +185,21 @@ class _DiscoverMultisigRowState extends ConsumerState<_DiscoverMultisigRow> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 AddressCheckphrase(
-                  address: address,
-                  checkphrase: _checksum,
-                  placeholder: Text(l10n.commonLoading, style: text.body.copyWith(color: colors.textMuted)),
+                  address: account.accountId,
+                  displayAddress: AddressFormattingService.formatAddress(account.accountId),
                 ),
                 const SizedBox(height: 4),
-                Text(widget.thresholdLabel, style: text.caption.copyWith(color: colors.textMuted)),
+                Text(thresholdLabel, style: text.caption.copyWith(color: colors.textMuted)),
               ],
             ),
           ),
           const SizedBox(width: 12),
           QuantusButton.simple(
-            label: widget.isAdded ? widget.addedLabel : widget.addLabel,
-            variant: widget.isAdded ? ButtonVariant.staged : ButtonVariant.primary,
-            isDisabled: widget.isAdded,
-            isLoading: widget.isAdding,
-            onTap: widget.isAdded ? null : widget.onAdd,
+            label: isAdded ? addedLabel : addLabel,
+            variant: isAdded ? ButtonVariant.staged : ButtonVariant.primary,
+            isDisabled: isAdded,
+            isLoading: isAdding,
+            onTap: isAdded ? null : onAdd,
             width: null,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           ),

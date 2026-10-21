@@ -34,7 +34,6 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
   final _recipientController = TextEditingController();
   final _recipientFocus = FocusNode();
 
-  final Map<String, String> _checksums = {};
   List<String> _recents = [];
   bool _hasAddressError = true;
   bool _loadingRecents = true;
@@ -44,7 +43,6 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
   bool _checking = false;
   bool _checkFailed = false;
   String _lastRecipientText = '';
-  String? _recipientChecksum;
 
   @override
   void initState() {
@@ -63,7 +61,6 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
   }
 
   Future<void> _loadRecents() async {
-    final checksumService = ref.read(humanReadableChecksumServiceProvider);
     final recentAddressesService = ref.read(recentAddressesServiceProvider);
 
     try {
@@ -75,11 +72,6 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
         _recents = addresses;
         _loadingRecents = false;
       });
-      for (final addr in addresses) {
-        checksumService.getHumanReadableName(addr).then((name) {
-          if (mounted && name != null) setState(() => _checksums[addr] = name);
-        });
-      }
     } catch (e) {
       quantusPrint('SelectRecipientScreen recents: $e');
       if (mounted) setState(() => _loadingRecents = false);
@@ -96,7 +88,6 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
       _amountController.clear();
       setState(() {
         _hasAddressError = true;
-        _recipientChecksum = null;
         _isPayMode = false;
         _canContinue = false;
         _block = null;
@@ -109,7 +100,6 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
   }
 
   void _lookupAddress(String address) {
-    final checksumService = ref.read(humanReadableChecksumServiceProvider);
     final substrate = ref.read(substrateServiceProvider);
     final isValid = substrate.isValidSS58Address(address);
     final wasSelfSend = _block == RecipientBlock.self;
@@ -118,7 +108,6 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
       _block = null;
       _checking = isValid;
       _checkFailed = false;
-      _recipientChecksum = null;
       _canContinue = false;
     });
     if (!isValid) return;
@@ -150,10 +139,6 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
           });
           context.showWarningToaster(message: ref.read(l10nProvider).sendRecipientCheckFailedMessage);
         });
-    checksumService.getHumanReadableName(address).then((checksum) {
-      if (!mounted || _recipientController.text.trim() != address) return;
-      setState(() => _recipientChecksum = checksum);
-    });
   }
 
   /// Single entry point for every way a recipient is supplied (scan, paste,
@@ -196,7 +181,6 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
         builder: (_) => InputAmountScreen(
           strategy: widget.strategy,
           recipientAddress: address,
-          recipientChecksum: _recipientChecksum,
           initialAmount: _amountController.text,
           isPayMode: _isPayMode,
         ),
@@ -208,7 +192,6 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
       _isPayMode = false;
 
       setState(() {
-        _recipientChecksum = null;
         _hasAddressError = true;
         _canContinue = false;
         _block = null;
@@ -306,7 +289,6 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
       focusNode: _recipientFocus,
       fieldKey: const Key(E2EKeys.sendRecipientField),
       hasValid: hasValid,
-      recipientChecksum: _recipientChecksum,
       hintText: l10n.sendSelectRecipientSearchHint(AppConstants.tokenSymbol),
       trailing: QuantusIconButton.ghost(onTap: _pasteRecipient, icon: Icons.paste, size: IconButtonSize.large),
     );
@@ -343,16 +325,12 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
   }
 
   Widget _recentRow(String address) {
-    final checksum = _checksums[address];
-
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: () => _onRecentTap(address),
         borderRadius: context.radiusV3.mdBorder,
-        child: checksum != null
-            ? AddressCheckphraseWithInitial(recipientChecksum: checksum, recipientAddress: address)
-            : const Skeleton(height: 36),
+        child: AddressCheckphraseWithInitial(address: address),
       ),
     );
   }

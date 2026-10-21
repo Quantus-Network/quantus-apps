@@ -967,9 +967,6 @@ class AppLocalizationsId extends AppLocalizations {
   String get sendInputAmountInvalidAmount => 'Masukkan jumlah yang valid';
 
   @override
-  String get sendInputAmountChecksumRequired => 'Checksum penerima diperlukan';
-
-  @override
   String get sendReviewSending => 'MENGIRIM';
 
   @override

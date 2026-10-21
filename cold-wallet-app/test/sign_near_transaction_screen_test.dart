@@ -47,6 +47,7 @@ NearAction _transfer(BigInt amount) =>
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  CheckphraseText.resolveOverride = (_) async => 'amber glacier quartz';
 
   const colors = AppColorsV3.dark();
 
@@ -62,7 +63,6 @@ void main() {
         overrides: [
           walletControllerProvider.overrideWith(controller),
           nearKeyOwnerProvider.overrideWith((ref, _) => keyOwner),
-          checksumNameProvider.overrideWith((ref, _) async => 'amber glacier quartz'),
           urQrFramesProvider.overrideWith((ref, payload) => const ['ur:bytes/abcd']),
         ],
         child: Builder(

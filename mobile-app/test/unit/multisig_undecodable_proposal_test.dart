@@ -9,7 +9,6 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/multisig_providers.dart';
-import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/v2/components/multisig_signer_list_tile.dart';
 import 'package:resonance_network_wallet/v2/components/proposal_list_tile.dart';
 import 'package:resonance_network_wallet/v2/screens/multisig/multisig_proposal_detail_sheet.dart';
@@ -69,6 +68,7 @@ class FakeMultisigService extends Fake implements MultisigService {
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  CheckphraseText.resolveOverride = (_) async => 'Stand-Envelope-Topic-Term-Help';
 
   const colors = AppColorsV3.dark();
   const text = AppTextThemeV3.standard();
@@ -82,7 +82,6 @@ void main() {
     return ProviderScope(
       overrides: [
         multisigServiceProvider.overrideWithValue(FakeMultisigService()),
-        humanReadableChecksumServiceProvider.overrideWithValue(FakeHumanReadableChecksumService()),
         accountsProvider.overrideWith((ref) => AccountsNotifier(AccountsService(), initialAccounts: [makeAccount(1)])),
       ],
       child: MediaQuery(
@@ -249,7 +248,7 @@ void main() {
 
       const phrase = 'Stand-Envelope-Topic-Term-Help';
       final rows = tester.widgetList<DetailSummaryRow>(find.byType(DetailSummaryRow));
-      expect(rows.where((r) => r.checkphrase == phrase).map((r) => r.label), [
+      expect(rows.where((r) => r.checkphraseAddress != null).map((r) => r.label), [
         l10n.activityDetailTo,
         l10n.multisigProposalProposerLabel,
       ]);

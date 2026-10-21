@@ -49,6 +49,7 @@ class _FakeEncryptedAccountService extends Fake implements EncryptedAccountServi
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  CheckphraseText.resolveOverride = (_) async => 'Stand-Envelope-Topic-Term-Help';
 
   final lookedUp = <String>[];
 
@@ -90,7 +91,6 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          humanReadableChecksumServiceProvider.overrideWithValue(FakeHumanReadableChecksumService()),
           substrateServiceProvider.overrideWithValue(FakeSubstrateService()),
           recentAddressesServiceProvider.overrideWithValue(FakeRecentAddressesService()),
           encryptedAccountServiceProvider.overrideWith((ref, walletIndex) => _FakeEncryptedAccountService()),

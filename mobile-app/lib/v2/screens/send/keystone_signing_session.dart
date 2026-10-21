@@ -30,7 +30,9 @@ class KeystoneSigningSession {
   final String? primaryDetail;
   final String? secondaryLabel;
   final String? secondaryDetail;
-  final String? tertiaryDetail;
+
+  /// [secondaryDetail] is a full address: shown shortened, with its checkphrase.
+  final bool secondaryIsAddress;
   final KeystoneSignCacheKey? cacheKey;
   final KeystoneSignatureSubmitter submitSigned;
   final String telemetryPrefix;
@@ -43,7 +45,7 @@ class KeystoneSigningSession {
     this.primaryDetail,
     this.secondaryLabel,
     this.secondaryDetail,
-    this.tertiaryDetail,
+    this.secondaryIsAddress = false,
     this.cacheKey,
     this.telemetryPrefix = 'keystone_signing',
   });

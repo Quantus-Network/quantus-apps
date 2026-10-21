@@ -18,13 +18,9 @@ class _Substrate extends Fake implements SubstrateService {
   bool isValidSS58Address(String address) => address == _valid;
 }
 
-class _Checksums extends Fake implements HumanReadableChecksumService {
-  @override
-  Future<String?> getHumanReadableName(String address, {upperCase = true}) async => 'CHECK PHRASE';
-}
-
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  CheckphraseText.resolveOverride = (_) async => 'CHECK PHRASE';
   final l10n = lookupAppLocalizations(const Locale('en'));
 
   Future<void> pump(WidgetTester tester) => tester.pumpApp(
@@ -34,7 +30,6 @@ void main() {
       l10nProvider.overrideWithValue(l10n),
       settingsServiceProvider.overrideWithValue(FakeSettingsService()),
       substrateServiceProvider.overrideWithValue(_Substrate()),
-      humanReadableChecksumServiceProvider.overrideWithValue(_Checksums()),
     ],
   );
 

@@ -62,7 +62,6 @@ class ShowKeyScreen extends ConsumerWidget {
     final text = context.themeTextV3;
     final account = ref.watch(addressesProvider)[address];
     if (account == null) return const ScaffoldBase(mainContent: SizedBox.shrink());
-    final checkphrase = ref.watch(checksumNameProvider(address));
 
     return ScaffoldBase(
       appBar: V2AppBar(
@@ -85,22 +84,12 @@ class ShowKeyScreen extends ConsumerWidget {
             _Card(
               children: [
                 DetailSummaryRow.stacked(label: 'Address', value: address, monospace: true),
-                checkphrase.when(
-                  data: (phrase) => DetailSummaryRow.stacked(
-                    label: 'Checkphrase',
-                    value: phrase,
-                    monospace: true,
-                    valueColor: colors.semanticLilac,
+                DetailSummaryRow.stacked(
+                  label: 'Checkphrase',
+                  valueWidget: CheckphraseText(
+                    address,
+                    style: text.dataAddressLarge.copyWith(color: colors.semanticLilac),
                   ),
-                  loading: () => const Padding(padding: EdgeInsets.symmetric(vertical: 10), child: Loader(size: 16)),
-                  error: (e, _) {
-                    debugPrint('Checkphrase failed for $address: $e');
-                    return DetailSummaryRow.stacked(
-                      label: 'Checkphrase',
-                      value: 'Could not derive the checkphrase.',
-                      valueColor: colors.semanticEmber,
-                    );
-                  },
                 ),
               ],
             ),

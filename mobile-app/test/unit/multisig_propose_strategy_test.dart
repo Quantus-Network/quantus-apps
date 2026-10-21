@@ -35,14 +35,9 @@ void main() {
         accountsProvider.overrideWith((ref) => AccountsNotifier(AccountsService(), initialAccounts: accounts)),
       ],
     );
-    return MultisigProposeStrategy(msig: msig).submit(
-      ref,
-      recipientAddress: other.accountId,
-      recipientChecksum: 'checksum',
-      amount: BigInt.from(1000),
-      fee: fee,
-      isPayMode: false,
-    );
+    return MultisigProposeStrategy(
+      msig: msig,
+    ).submit(ref, recipientAddress: other.accountId, amount: BigInt.from(1000), fee: fee, isPayMode: false);
   }
 
   testWidgets('a keystone member is handed to the signing session instead of signing locally', (tester) async {

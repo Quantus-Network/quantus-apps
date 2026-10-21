@@ -150,15 +150,6 @@ class FakeRecentAddressesService extends Fake implements RecentAddressesService 
   Future<List<String>> getAddresses() async => [];
 }
 
-class FakeHumanReadableChecksumService extends Fake implements HumanReadableChecksumService {
-  FakeHumanReadableChecksumService({this.phrase = 'Stand-Envelope-Topic-Term-Help'});
-
-  final String phrase;
-
-  @override
-  Future<String?> getHumanReadableName(String address, {upperCase = true}) async => phrase;
-}
-
 class FakeBalancesService extends Fake implements BalancesService {
   static final _anyDest = const multi_address.$MultiAddress().id(List<int>.filled(32, 0));
 

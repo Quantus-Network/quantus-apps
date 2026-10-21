@@ -1371,10 +1371,6 @@
     "@sendInputAmountInvalidAmount": {
       "description": "Error when amount input is invalid"
     },
-    "sendInputAmountChecksumRequired": "Recipient checksum is required",
-    "@sendInputAmountChecksumRequired": {
-      "description": "Error when recipient checksum is missing"
-    },
 
     "sendReviewSending": "SENDING",
     "@sendReviewSending": {

@@ -24,6 +24,7 @@ import '../fakes.dart';
 /// settled fee no longer fits the balance.
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  CheckphraseText.resolveOverride = (_) async => 'Stand-Envelope-Topic-Term-Help';
   final sender = makeAccount(1);
   final recipient = makeAccount(2);
   final spendable = BigInt.from(5) * NumberFormattingService.scaleFactorBigInt;
@@ -48,7 +49,6 @@ void main() {
         recipientAddress: recipient.accountId,
         amount: amount,
         fee: fee,
-        recipientChecksum: 'Stand-Envelope-Topic-Term-Help',
         sendAll: sendAll,
       ),
       overrides: [
