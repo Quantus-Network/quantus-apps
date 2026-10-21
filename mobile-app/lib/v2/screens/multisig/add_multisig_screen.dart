@@ -12,7 +12,6 @@ import 'package:resonance_network_wallet/providers/multisig_providers.dart';
 import 'package:resonance_network_wallet/providers/pending_multisig_creations_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/shared/utils/account_utils.dart';
-import 'package:resonance_network_wallet/shared/utils/multisig_signer_check.dart';
 import 'package:resonance_network_wallet/shared/utils/print.dart';
 import 'package:resonance_network_wallet/services/local_auth_service.dart';
 import 'package:resonance_network_wallet/services/multisig_submission_service.dart';
@@ -31,18 +30,16 @@ class AddMultisigScreen extends ConsumerStatefulWidget {
 class _AddMultisigScreenState extends ConsumerState<AddMultisigScreen> {
   final _accountName = TextEditingController();
   final _signerAddressController = TextEditingController();
-  late final _checksumService = ref.read(humanReadableChecksumServiceProvider);
+  final _checksumService = HumanReadableChecksumService();
 
   List<String> _additionalSigners = [];
   late int _threshold;
   bool _isLoading = false;
   bool _isPredictingAddress = false;
-  bool _isCheckingSigner = false;
   String? _predictedAddress;
   BigInt? _resolvedNonce;
   String? _signerFieldError;
   int _predictSeq = 0;
-  int _signerCheckSeq = 0;
 
   Account? _creator;
   String? _creatorChecksum;
@@ -106,8 +103,7 @@ class _AddMultisigScreenState extends ConsumerState<AddMultisigScreen> {
     });
   }
 
-  Future<void> _addSigner() async {
-    if (_isCheckingSigner) return;
+  void _addSigner() {
     final l10n = ref.read(l10nProvider);
     final substrate = ref.read(substrateServiceProvider);
     final address = _signerAddressController.text.trim();
@@ -120,43 +116,11 @@ class _AddMultisigScreenState extends ConsumerState<AddMultisigScreen> {
       setState(() => _signerFieldError = l10n.multisigCreateDuplicateSigner);
       return;
     }
-
-    // A multisig account holds no key, so it can never sign a vote from this
-    // app. Block it unless the user confirms they will approve from it some
-    // other way.
-    final seq = ++_signerCheckSeq;
-    setState(() => _isCheckingSigner = true);
-    final bool isMultisig;
-    try {
-      isMultisig = await isMultisigSigner(
-        address,
-        knownMultisigs: _reservedAddresses(),
-        isOnChainMultisig: ref.read(multisigServiceProvider).isMultisigAccount,
-      );
-    } catch (e) {
-      quantusPrint('[AddMultisigScreen] signer multisig check failed: $e');
-      if (!mounted || seq != _signerCheckSeq) return;
-      setState(() {
-        _isCheckingSigner = false;
-        _signerFieldError = l10n.multisigCreateSignerCheckFailed;
-      });
+    // A multisig has no key and cannot sign, so a multisig listing it as a
+    // signer could never execute from this wallet.
+    if (_reservedAddresses().contains(address)) {
+      setState(() => _signerFieldError = l10n.multisigCreateSignerIsMultisig);
       return;
-    }
-    if (!mounted || seq != _signerCheckSeq) return;
-    setState(() => _isCheckingSigner = false);
-    if (_signerAddressController.text.trim() != address) return;
-
-    if (isMultisig) {
-      final confirmed = await showConfirmActionSheet(
-        context,
-        title: l10n.multisigCreateSignerIsMultisigTitle,
-        message: l10n.multisigCreateSignerIsMultisigMessage,
-        confirmLabel: l10n.multisigCreateSignerIsMultisigConfirm,
-        cancelLabel: l10n.commonCancel,
-        isDestructive: true,
-      );
-      if (!confirmed || !mounted) return;
-      if (_signerAddressController.text.trim() != address || _additionalSigners.contains(address)) return;
     }
 
     setState(() {
@@ -357,7 +321,6 @@ class _AddMultisigScreenState extends ConsumerState<AddMultisigScreen> {
               additionalSigners: _additionalSigners,
               signerAddressController: _signerAddressController,
               signerFieldError: _signerFieldError,
-              isCheckingSigner: _isCheckingSigner,
               onAddSigner: _addSigner,
               onRemoveSigner: _removeSigner,
             ),
@@ -394,7 +357,6 @@ class _SignersSection extends StatelessWidget {
     required this.additionalSigners,
     required this.signerAddressController,
     required this.signerFieldError,
-    required this.isCheckingSigner,
     required this.onAddSigner,
     required this.onRemoveSigner,
   });
@@ -405,7 +367,6 @@ class _SignersSection extends StatelessWidget {
   final List<String> additionalSigners;
   final TextEditingController signerAddressController;
   final String? signerFieldError;
-  final bool isCheckingSigner;
   final VoidCallback onAddSigner;
   final ValueChanged<String> onRemoveSigner;
 
@@ -456,8 +417,7 @@ class _SignersSection extends StatelessWidget {
             child: QuantusButton.simple(
               label: l10n.multisigCreateAddSignerButton,
               variant: ButtonVariant.staged,
-              isLoading: isCheckingSigner,
-              isDisabled: !_canAddSigner || isCheckingSigner,
+              isDisabled: !_canAddSigner,
               onTap: onAddSigner,
               width: null,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),

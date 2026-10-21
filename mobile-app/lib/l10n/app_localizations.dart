@@ -674,29 +674,11 @@ abstract class AppLocalizations {
   /// **'Enter a valid signer address.'**
   String get multisigCreateInvalidSigner;
 
-  /// Error when the multisig lookup for a new signer address fails
+  /// Error when an added signer address is one of this wallet's multisig accounts
   ///
   /// In en, this message translates to:
-  /// **'Could not check this signer. Check your connection and try again.'**
-  String get multisigCreateSignerCheckFailed;
-
-  /// Title of the sheet shown when an added signer address is itself a multisig account
-  ///
-  /// In en, this message translates to:
-  /// **'This signer is a multisig'**
-  String get multisigCreateSignerIsMultisigTitle;
-
-  /// Explains why a multisig account cannot vote as a signer from the wallet
-  ///
-  /// In en, this message translates to:
-  /// **'A multisig account has no key, so it cannot approve proposals in this app. Its approval has to be proposed and executed on that multisig, which this app cannot do yet. Add it only if you control that multisig and can approve from it another way.'**
-  String get multisigCreateSignerIsMultisigMessage;
-
-  /// Confirm button to add a multisig account as a signer after the warning
-  ///
-  /// In en, this message translates to:
-  /// **'Add anyway'**
-  String get multisigCreateSignerIsMultisigConfirm;
+  /// **'This address is a multisig account. A multisig cannot sign, so a multisig that lists it as a signer can never execute from this wallet, and funds in that multisig would need recovery through the CLI.'**
+  String get multisigCreateSignerIsMultisig;
 
   /// Threshold slider section label on create multisig
   ///

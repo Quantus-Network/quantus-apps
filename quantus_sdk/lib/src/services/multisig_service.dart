@@ -127,20 +127,6 @@ class MultisigService {
     return record != null;
   }
 
-  /// Returns whether [address] is a multisig account.
-  ///
-  /// Reads `Multisig.Multisigs`, the pallet's registry of created multisigs.
-  /// The pallet never removes entries, so a hit is authoritative. A multisig
-  /// that has only been predicted and not yet created is not in storage and
-  /// reads as false. Falls back to the indexer when no RPC endpoint is
-  /// available. Throws when the lookup fails.
-  Future<bool> isMultisigAccount(String address) async {
-    final provider = _substrateService.provider;
-    if (provider == null) return isMultisigIndexed(address);
-    final data = await Bell(provider).query.multisig.multisigs(getAccountId32(address));
-    return data != null;
-  }
-
   /// Fetches multisig metadata from the indexer by primary key ([address]).
   Future<Map<String, dynamic>?> fetchMultisigFromIndexer(String address) async {
     final data = await _postGraphQl({
