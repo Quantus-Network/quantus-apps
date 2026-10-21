@@ -1,5 +1,7 @@
-# Sourced by the upload scripts. --swap-test: internal test build that offers swap regardless of flags and location;
+# Sourced by the upload scripts, which build with --no-pub so pubspec.lock is never rewritten.
+# --swap-test: internal test build that offers swap regardless of flags and location;
 # never ship it to a store's production track.
+flutter pub get --enforce-lockfile
 DEFINES=""
 [ $# -le 1 ] || { echo "Too many options: $* (only --swap-test is supported)" >&2; exit 1; }
 case "${1:-}" in

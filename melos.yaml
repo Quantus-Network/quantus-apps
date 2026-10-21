@@ -14,6 +14,8 @@ command:
     # Parallel pub get races on checking out shared git dependencies
     # (human_checksum) into the cold pub cache in CI: dart-lang/pub#3404.
     runPubGetInParallel: false
+    # Fail instead of rewriting pubspec.lock; changing dependencies takes an explicit --no-enforce-lockfile.
+    enforceLockfile: true
 
 # Only path-based overrides go here. Melos 6.x propagates these to each
 # package's pubspec_overrides.yaml during bootstrap. Hosted-package version

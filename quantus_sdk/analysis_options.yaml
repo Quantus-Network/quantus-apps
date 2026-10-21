@@ -19,6 +19,7 @@ analyzer:
     - "**/*.freezed.dart"
     - "lib/generated/**"
     - "rust_builder/**"
+    - build/**
   errors:
     avoid_print: ignore # print is the most reliable way to debug the app
     missing_required_param: error

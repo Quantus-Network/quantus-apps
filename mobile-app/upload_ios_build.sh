@@ -17,7 +17,7 @@ echo "Cleaning build folder"
 rm -rf build
 
 echo "Building the app"
-flutter build ipa --release $DEFINES
+flutter build ipa --release --no-pub $DEFINES
 
 echo "Opening Transporter"
 open -a "Transporter" "build/ios/ipa/Quantus.ipa"
