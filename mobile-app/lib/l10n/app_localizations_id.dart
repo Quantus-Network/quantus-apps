@@ -325,6 +325,10 @@ class AppLocalizationsId extends AppLocalizations {
   String get multisigCreateInvalidSigner => 'Masukkan alamat penandatangan yang valid.';
 
   @override
+  String get multisigCreateSignerIsMultisig =>
+      'Alamat ini adalah akun multisig. Multisig tidak dapat menandatangani, sehingga multisig yang mencantumkannya sebagai penandatangan tidak akan pernah dapat dieksekusi dari dompet ini, dan dana di multisig itu harus dipulihkan melalui CLI.';
+
+  @override
   String get multisigCreateThresholdLabel => 'AMBANG BATAS';
 
   @override
