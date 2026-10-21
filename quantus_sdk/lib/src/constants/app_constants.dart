@@ -36,8 +36,8 @@ class AppConstants {
 
   static const String explorerEndpoint = 'https://explorer.quantus.com';
 
-  // NEAR Intents 1Click swap API (docs.near-intents.org).
-  static const String oneClickEndpoint = 'https://1click.chaindefuser.com';
+  // Our proxy in front of the NEAR Intents 1Click swap API (1click.chaindefuser.com); it adds the partner key and the app fee.
+  static const String oneClickEndpoint = 'https://oneclick.quantus.com';
 
   /// NEAR JSON-RPC, for reading swap token logos off the token contracts.
   static const String nearRpcEndpoint = 'https://free.rpc.fastnear.com';
@@ -48,8 +48,6 @@ class AppConstants {
 
   // Distribution channel id 1Click records on every quote.
   static const String oneClickReferral = 'quantus';
-
-  static const String oneClickFeeRecipient = 'b370d8d27a7f8710cedd7958dceacea55e1813f3dcf284ecb4cc38232380b097';
 
   // Key 1Click signs quotes with; from @defuse-protocol/one-click-sdk-typescript.
   static const String oneClickManagerPublicKey = 'ed25519:reYaWhvwu8Jzo3WUM3zhn6VrhuMEF4eADL17qtRVifc';

@@ -31,12 +31,8 @@ const _unreadableAddress = 'qzUNREADABLE';
 /// Lets the warning toast a refusal raises expire before the tree is torn down.
 const _toastLifetime = Duration(seconds: 3);
 
-final _configWithKey = RemoteConfigModel.fromJson(const {'near.partner.jwt': 'partner-jwt'});
-final _configWithoutKey = RemoteConfigModel.fromJson(const {});
-final _configCheckOff = RemoteConfigModel.fromJson(const {
-  'near.partner.jwt': 'partner-jwt',
-  'enableOneClickNearWarning': false,
-});
+final _config = RemoteConfigModel.fromJson(const {});
+final _configCheckOff = RemoteConfigModel.fromJson(const {'enableOneClickNearWarning': false});
 
 /// Owns [_derivedAddress]; the secure-storage read fails for [_unreadableAddress].
 class _FakeEncryptedAccountService extends Fake implements EncryptedAccountService {
@@ -61,7 +57,6 @@ void main() {
   setUp(() async {
     lookedUp.clear();
     oneClick = OneClickService(
-      apiKey: 'partner-jwt',
       client: MockClient((request) async {
         final address = request.url.queryParameters['depositAddress']!;
         lookedUp.add(address);
@@ -78,16 +73,8 @@ void main() {
     await SettingsService().initialize();
   });
 
-  /// [remoteConfig] defaults to a config that already carries the partner key.
-  /// Without [withOneClick] the real client is built from that config, so a
-  /// missing key refuses the lookup before any request.
-  Future<void> pumpRecipient(
-    WidgetTester tester,
-    SendStrategy strategy, {
-    RemoteConfigService? remoteConfig,
-    bool withOneClick = true,
-  }) async {
-    final config = remoteConfig ?? FakeRemoteConfigService(_configWithKey, remote: _configWithKey);
+  Future<void> pumpRecipient(WidgetTester tester, SendStrategy strategy, {RemoteConfigService? remoteConfig}) async {
+    final config = remoteConfig ?? FakeRemoteConfigService(_config, remote: _config);
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
@@ -95,7 +82,7 @@ void main() {
           recentAddressesServiceProvider.overrideWithValue(FakeRecentAddressesService()),
           encryptedAccountServiceProvider.overrideWith((ref, walletIndex) => _FakeEncryptedAccountService()),
           remoteConfigProvider.overrideWith((ref) => RemoteConfigNotifier(config)),
-          if (withOneClick) oneClickServiceProvider.overrideWithValue(oneClick),
+          oneClickServiceProvider.overrideWithValue(oneClick),
         ],
         child: MediaQuery(
           data: const MediaQueryData(size: Size(800, 900)),
@@ -190,17 +177,13 @@ void main() {
 
     testWidgets('waits for the remote config before asking 1Click', (tester) async {
       final answer = Completer<RemoteConfigModel?>();
-      await pumpRecipient(
-        tester,
-        strategy,
-        remoteConfig: FakeRemoteConfigService(_configWithoutKey)..hold = answer.future,
-      );
+      await pumpRecipient(tester, strategy, remoteConfig: FakeRemoteConfigService(_config)..hold = answer.future);
       await enterRecipient(tester, _plainAddress);
 
       expect(lookedUp, isEmpty);
       expectContinue(tester, disabled: true, label: 'Verifying Address…');
 
-      answer.complete(_configWithKey);
+      answer.complete(_config);
       await tester.pump();
       await tester.pump();
 
@@ -208,8 +191,8 @@ void main() {
       expectContinue(tester, disabled: false, label: 'Continue');
     });
 
-    testWidgets('a cached partner key serves the lookup while quersi is down', (tester) async {
-      final remoteConfig = FakeRemoteConfigService(_configWithKey);
+    testWidgets('a cached config serves the lookup while quersi is down', (tester) async {
+      final remoteConfig = FakeRemoteConfigService(_config);
       await pumpRecipient(tester, strategy, remoteConfig: remoteConfig);
       await enterRecipient(tester, _depositAddress);
 
@@ -217,17 +200,6 @@ void main() {
       expect(lookedUp, [_depositAddress]);
       expect(find.text('NEAR Intents address detected'), findsOneWidget);
       expectContinue(tester, disabled: true, label: "Can't Send to NEAR Intents");
-    });
-
-    testWidgets('without a partner key asks quersi once more, then lets the send go on', (tester) async {
-      final remoteConfig = FakeRemoteConfigService(_configWithoutKey);
-      await pumpRecipient(tester, strategy, remoteConfig: remoteConfig, withOneClick: false);
-      await enterRecipient(tester, _plainAddress);
-
-      expect(remoteConfig.reads, 2);
-      expect(lookedUp, isEmpty);
-      expectContinue(tester, disabled: false, label: 'Continue');
-      await tester.pump(_toastLifetime);
     });
 
     testWidgets('a selection change re-checks the address only after a failed lookup', (tester) async {

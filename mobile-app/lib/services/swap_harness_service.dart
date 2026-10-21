@@ -51,7 +51,7 @@ class SwapHarnessService extends SwapService {
 
   final _polls = <String, int>{};
 
-  SwapHarnessService() : super(client: _HarnessClient(), feeBips: 0) {
+  SwapHarnessService() : super(client: _HarnessClient()) {
     if (!kDebugMode) throw StateError('SwapHarnessService is for debug builds only');
   }
 

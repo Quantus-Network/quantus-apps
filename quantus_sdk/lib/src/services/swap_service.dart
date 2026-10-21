@@ -75,32 +75,24 @@ class SwapService {
   final String _managerPublicKey;
   final String? _configuredQuantusAssetId;
   final bool _preflight;
-  final int _feeBips;
   (List<SwapToken>, SwapToken?)? _cachedListing;
   DateTime? _cachedListingAt;
 
   /// [quantusAssetId] names the listing that is QTC when its chain code does
   /// not; it comes from remote config so a surprising listing needs no update.
   /// In [preflight] it names another listed asset standing in for QTC, which
-  /// keeps its own network and decimals. [feeBips] is the app's fee on each
-  /// swap, in basis points of the input; 0 sends none.
+  /// keeps its own network and decimals.
   SwapService({
     http.Client? client,
     String endpoint = AppConstants.oneClickEndpoint,
-    String? apiKey,
     String managerPublicKey = AppConstants.oneClickManagerPublicKey,
     String? quantusAssetId,
     bool preflight = false,
-    required int feeBips,
-  }) : _api = OneClickService(client: client, endpoint: endpoint, apiKey: apiKey),
+  }) : _api = OneClickService(client: client, endpoint: endpoint),
        _coinGecko = CoinGeckoService(client: client),
        _managerPublicKey = managerPublicKey,
        _configuredQuantusAssetId = quantusAssetId,
-       _preflight = preflight,
-       _feeBips = feeBips;
-
-  Map<String, Object>? get _appFee =>
-      _feeBips > 0 ? {'recipient': AppConstants.oneClickFeeRecipient, 'fee': _feeBips} : null;
+       _preflight = preflight;
 
   /// How long a deposit on [network] has before its quote expires.
   static Duration depositWindowFor(String network) =>
@@ -210,7 +202,6 @@ class SwapService {
       now.add(depositWindowFor(from.network)).millisecondsSinceEpoch,
       isUtc: true,
     );
-    final fee = _appFee;
     final body = {
       'dry': dry,
       'swapType': swapType.wire,
@@ -228,7 +219,6 @@ class SwapService {
       'quoteWaitingTimeMs': quoteWaitingTime.inMilliseconds,
       'referral': AppConstants.oneClickReferral,
       'confidentiality': confidentiality,
-      if (fee != null) 'appFees': [fee],
     };
     final json = await _api.send('POST', '/v0/quote', body: body) as Map<String, dynamic>;
     final correlationId = json['correlationId'] as String?;
