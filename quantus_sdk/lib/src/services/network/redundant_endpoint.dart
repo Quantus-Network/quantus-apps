@@ -157,7 +157,7 @@ class RedundantEndpointService {
   }
 
   bool get _connectivityIsOffline {
-    return ConnectivityService().currentStatus == NetworkStatus.offline;
+    return ConnectivityService.instance.currentStatus == NetworkStatus.offline;
   }
 
   Future<T> _executeTask<T>(Future<T> Function(String url) task) async {
