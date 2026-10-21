@@ -10,7 +10,7 @@ Verified against the live API on 2026-09-20; token list checked again on 2026-10
 
 An intent is a signed statement of an outcome: "I give X of asset A on chain P and want at least Y of asset B on chain Q." Solvers, which are market makers, compete to fill it. The fill settles on NEAR inside the Intents Verifier contract, and bridged representations of the assets (`nep141:*.omft.near`) move in and out over NEAR's bridges.
 
-The 1Click API (`https://1click.chaindefuser.com`) is the REST front door to all of that. It runs the price auction, hands out one deposit address per quote, watches the origin chain, drives execution, pays out and refunds. The wallet only talks to 1Click. It never signs or holds any of the swapped funds.
+The 1Click API (`https://1click.chaindefuser.com`) is the REST front door to all of that. It runs the price auction, hands out one deposit address per quote, watches the origin chain, drives execution, pays out and refunds. The wallet only talks to 1Click, through our proxy at `https://oneclick.quantus.com` (`AppConstants.oneClickEndpoint`, the [one-click-proxy](https://github.com/Quantus-Network/one-click-proxy) Worker), which forwards every `/v0` call as it is and adds the partner key and the app fee. It never signs or holds any of the swapped funds.
 
 ## Actors
 
