@@ -49,7 +49,7 @@ class DebugPayloads {
   static Map<String, List<DebugCall>> _grouped() {
     final grouped = <String, List<DebugCall>>{};
     final seen = <String>{};
-    for (final call in [...callCorpus.entries.map(_fromCorpus), ..._composed]) {
+    for (final call in [...callCorpus.entries.map(fromCorpus), ..._composed]) {
       // The corpus repeats an identical encoding once per nested-call variant
       // (every `execute [call=…]` is the same bytes); one row is enough.
       if (!seen.add(hex.encode(call.call))) continue;
@@ -61,7 +61,7 @@ class DebugPayloads {
     return {'Balances': balances, ...grouped};
   }
 
-  static DebugCall _fromCorpus(MapEntry<String, String> entry) {
+  static DebugCall fromCorpus(MapEntry<String, String> entry) {
     final dot = entry.key.indexOf('.');
     if (dot < 0) throw StateError('Corpus key "${entry.key}" is not Pallet.call');
     return DebugCall(
