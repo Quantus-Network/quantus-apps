@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# Regenerates README.txt, the QR codes in qr/ and app-review.pdf from
+# Regenerates README.txt, the QR codes in qr/ and the PDFs from
 # generate_review_qr.dart. Needs the SDK's Rust library, built once with
-# quantus_sdk/test/build_library.sh, and Chrome or Brave to print the PDF.
+# quantus_sdk/test/build_library.sh, and Chrome or Brave to print the PDFs.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -15,7 +15,10 @@ if [ -z "$browser" ]; then
 	exit 69
 fi
 
-html="$(mktemp -d)/app-review.html"
-FRB_DART_LOAD_EXTERNAL_LIBRARY_NATIVE_LIB_DIR="$PWD/../quantus_sdk/rust/target/release/" REVIEW_HTML="$html" \
+html_dir="$(mktemp -d)"
+FRB_DART_LOAD_EXTERNAL_LIBRARY_NATIVE_LIB_DIR="$PWD/../quantus_sdk/rust/target/release/" HTML_DIR="$html_dir" \
 	flutter test tests/generate_review_qr.dart
-"$browser" --headless --disable-gpu --no-pdf-header-footer --print-to-pdf="$PWD/tests/app-review.pdf" "file://$html"
+for html in "$html_dir"/*.html; do
+	"$browser" --headless --disable-gpu --no-pdf-header-footer \
+		--print-to-pdf="$PWD/tests/$(basename "$html" .html).pdf" "file://$html"
+done

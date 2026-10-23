@@ -11,16 +11,16 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 // ignore: implementation_imports — QuantusSdk.init also opens device storage, which a test host does not have.
 import 'package:quantus_sdk/src/rust/frb_generated.dart';
 
-/// Writes the demo account's README, a static QR code per signing request
-/// addressed to it, and the HTML that generate.sh prints to the App Review PDF.
-/// Run through generate.sh, which points the Rust bridge at the SDK's library.
+/// Writes the demo account's README, a static QR code per debug catalogue call
+/// addressed to it, and the HTML that generate.sh prints to the PDFs. Run
+/// through generate.sh, which points the Rust bridge at the SDK's library.
 
 /// Public on purpose so App Review can import it. Never fund this account.
 const _mnemonic =
     'dismiss decline gasp pulse orchard distance isolate inflict derive tiger glad used '
     'humor quarter capital clinic ride hour host purity night steel transfer proud';
 
-/// The calls the App Review PDF carries, by pallet and debug catalogue label.
+/// The calls app-review.pdf carries, by pallet and debug catalogue label.
 const _reviewCalls = [
   ('Balances', 'transfer_allow_death'),
   ('Balances', 'transfer_all'),
@@ -37,11 +37,14 @@ const _reviewCalls = [
 final _dir = Directory('tests');
 
 class _Request {
+  final DebugCall call;
   final String file;
   final ParsedPayload parsed;
   final List<String> parts;
 
-  _Request(this.file, this.parsed, this.parts);
+  _Request(this.call, this.file, this.parsed, this.parts);
+
+  (String, String) get key => (call.pallet, call.label);
 
   String get headline {
     final summary = parsed.call.summary;
@@ -52,6 +55,20 @@ class _Request {
 
   String? get recipient => parsed.call.summary?.recipient;
 
+  /// [DecodedCall.displayTitleChain] with runs of one call counted, so a
+  /// batch of sixteen transfers stays one line.
+  String get chain {
+    final runs = <(String, int)>[];
+    for (final title in parsed.call.displayTitleChain.split(' → ')) {
+      if (runs.isNotEmpty && runs.last.$1 == title) {
+        runs.last = (title, runs.last.$2 + 1);
+      } else {
+        runs.add((title, 1));
+      }
+    }
+    return [for (final (title, count) in runs) count == 1 ? title : '$count × $title'].join(' → ');
+  }
+
   String partFile(int index) => parts.length == 1 ? '$file.png' : '$file-part${index + 1}of${parts.length}.png';
 }
 
@@ -61,8 +78,8 @@ void main() {
   test('writes the demo account and its signing request QR codes', () async {
     await RustLib.init();
     setDefaultSs58Prefix(prefix: 189);
-    final htmlPath = Platform.environment['REVIEW_HTML'];
-    if (htmlPath == null) throw StateError('REVIEW_HTML is not set; run tests/generate.sh');
+    final htmlDir = Platform.environment['HTML_DIR'];
+    if (htmlDir == null) throw StateError('HTML_DIR is not set; run tests/generate.sh');
 
     final account = ColdAccount(label: 'Main key', index: 0, scheme: ColdAccount.newAccountScheme);
     final signer = HdWalletService().keyPairAtPath(_mnemonic, account.derivationPath, account.scheme).ss58Address;
@@ -74,18 +91,18 @@ void main() {
     qrDir.createSync();
 
     final requests = <_Request>[];
-    for (final (i, (pallet, label)) in _reviewCalls.indexed) {
-      final call = DebugPayloads.byPallet[pallet]?.where((c) => c.label == label).firstOrNull;
-      if (call == null) throw StateError('No debug call $pallet $label');
-      final request = _encode(signer, call, '${(i + 1).toString().padLeft(2, '0')}-${_slug('$pallet $label')}');
+    for (final (i, call) in DebugPayloads.byPallet.values.expand((calls) => calls).indexed) {
+      final request = _encode(signer, call, '${'${i + 1}'.padLeft(2, '0')}-${_slug('${call.pallet} ${call.label}')}');
       for (final (index, part) in request.parts.indexed) {
         File('${qrDir.path}/${request.partFile(index)}').writeAsBytesSync(await _png(part));
       }
       requests.add(request);
     }
+    final review = [for (final key in _reviewCalls) requests.firstWhere((r) => r.key == key)];
 
     File('${_dir.path}/README.txt').writeAsStringSync(_readme(account, signer, checkphrase, requests));
-    File(htmlPath).writeAsStringSync(_html(signer, checkphrase, requests, qrDir));
+    File('$htmlDir/app-review.html').writeAsStringSync(_html('App Review demo', signer, checkphrase, review, qrDir));
+    File('$htmlDir/all-calls.html').writeAsStringSync(_html('every call', signer, checkphrase, requests, qrDir));
   });
 }
 
@@ -96,7 +113,12 @@ _Request _encode(String signer, DebugCall call, String file) {
   final parts = encodeUrForQr(data: bytes, maxFragmentLength: maxUrScanPartChars);
   final decoded = AnySigningRequest.decode(Uint8List.fromList(decodeUr(urParts: parts)));
   if (decoded is! SigningRequest || decoded.signer != signer) throw StateError('$file does not decode for $signer');
-  return _Request(file, QuantusPayloadParser.parsePayload(decoded.payload, policy: const FullCallPolicy()), parts);
+  return _Request(
+    call,
+    file,
+    QuantusPayloadParser.parsePayload(decoded.payload, policy: const FullCallPolicy()),
+    parts,
+  );
 }
 
 String _slug(String text) => text.toLowerCase().replaceAll(RegExp(r'[^a-z0-9_]+'), '-').replaceAll(RegExp(r'-$'), '');
@@ -132,9 +154,11 @@ String _readme(ColdAccount account, String signer, String checkphrase, List<_Req
 Quantus Cold Wallet: demo account and test QR codes
 ===================================================
 
-A demo account for the Quantus Cold Wallet and signing requests addressed to
-it, for App Store review and manual testing. app-review.pdf is the document
-for Apple: the import steps below and every QR code in qr/.
+A demo account for the Quantus Cold Wallet and a signing request addressed to
+it for every call the wallet can review, for App Store review and manual
+testing. app-review.pdf is the document for Apple: the import steps below and
+the ten codes marked * in the list at the end. all-calls.pdf has the same
+steps and every code in qr/.
 
 The recovery phrase is public. Never send funds to this account.
 
@@ -173,7 +197,7 @@ The requests are for the Planck test network and are never broadcast.
 
 QR codes
 --------
-${[for (final r in requests) '${r.parts.length == 1 ? '${r.file}.png' : '${r.file}-part*.png'}\n    ${r.headline}${r.recipient == null ? '' : ' to ${r.recipient}'}\n    ${r.parsed.call.displayTitleChain}'].join('\n')}
+${[for (final r in requests) '${_reviewCalls.contains(r.key) ? '*' : ' '} ${r.parts.length == 1 ? '${r.file}.png' : '${r.file}-part*.png'}\n      ${r.headline}${r.recipient == null ? '' : ' to ${r.recipient}'}\n      ${r.chain}'].join('\n')}
 
 Regenerate
 ----------
@@ -183,8 +207,9 @@ generate_review_qr.dart.
 ''';
 }
 
-String _html(String signer, String checkphrase, List<_Request> requests, Directory qrDir) {
+String _html(String subject, String signer, String checkphrase, List<_Request> requests, Directory qrDir) {
   const esc = HtmlEscape();
+  final title = 'Quantus Cold Wallet: $subject';
   String img(String file) => 'data:image/png;base64,${base64Encode(File('${qrDir.path}/$file').readAsBytesSync())}';
   final words = [for (final (i, w) in _words.indexed) '<li><span>${i + 1}</span>${esc.convert(w)}</li>'].join();
   final codes = [
@@ -193,14 +218,14 @@ String _html(String signer, String checkphrase, List<_Request> requests, Directo
         '''
 <section class="code">
   <h2>${i + 1}. ${esc.convert(r.headline)}${r.parts.length == 1 ? '' : ' <small>part ${p + 1} of ${r.parts.length}</small>'}</h2>
-  <p>${r.recipient == null ? '' : 'To ${esc.convert(r.recipient!)}<br>'}${esc.convert(r.parsed.call.displayTitleChain)}</p>
+  <p>${r.recipient == null ? '' : 'To ${esc.convert(r.recipient!)}<br>'}${esc.convert(r.chain)}</p>
   <img src="${img(r.partFile(p))}">
 </section>''',
   ].join();
 
   return '''
 <!doctype html>
-<html><head><meta charset="utf-8"><title>Quantus Cold Wallet: App Review demo</title>
+<html><head><meta charset="utf-8"><title>$title</title>
 <style>
 @page { size: Letter; margin: 16mm; }
 body { font: 11pt/1.45 -apple-system, Helvetica, Arial, sans-serif; color: #111; }
@@ -218,7 +243,7 @@ ol.words span { display: inline-block; width: 7mm; color: #888; }
 .code img { width: 92mm; height: 92mm; image-rendering: pixelated; }
 .codes { break-before: page; }
 </style></head><body>
-<h1>Quantus Cold Wallet: App Review demo</h1>
+<h1>$title</h1>
 <p>Quantus Cold Wallet is an offline signer. It holds a key, reads a transaction from a QR code shown by the
 Quantus hot wallet, shows what is about to be signed, and returns the signature as a QR code. It never sends
 anything over a network. This document has a demo key and ${requests.length} transactions to sign with it.</p>
@@ -239,7 +264,7 @@ on the "Network Detected" screen lifts this lock.</p>
 <h2>3. Sign a transaction</h2>
 <ol class="steps">
 <li>Tap <b>Scan Transaction</b> and allow camera access.</li>
-<li>Point the camera at any QR code on the following pages, on screen or printed.</li>
+<li>Point the camera at any QR code on the following pages, on screen or printed.${requests.any((r) => r.parts.length > 1) ? ' A transaction marked "part 1 of 2" is in two codes: scan both, one after the other.' : ''}</li>
 <li>The review screen shows the transaction in the heading of its code. Tap <b>Approve and Sign</b> and confirm
 with Face ID or the passcode.</li>
 <li>The signature appears as a QR code, which the hot wallet would scan to submit the transaction. Tap <b>Done</b>.
