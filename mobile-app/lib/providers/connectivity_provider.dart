@@ -1,18 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 
-final connectivityServiceProvider = Provider<ConnectivityService>((ref) {
-  final service = ConnectivityService();
+final connectivityServiceProvider = Provider<ConnectivityService>((ref) => ConnectivityService.instance);
 
-  ref.onDispose(() => service.dispose());
-
-  return service;
-});
-
-final networkStatusProvider = StreamProvider<NetworkStatus>((ref) {
-  final service = ref.watch(connectivityServiceProvider);
-  return service.statusStream;
-});
+final networkStatusProvider = StreamProvider<NetworkStatus>(
+  (ref) => ref.watch(connectivityServiceProvider).statusStream,
+);
 
 final isOnlineProvider = Provider<bool>((ref) {
   final statusAsync = ref.watch(networkStatusProvider);

@@ -9,7 +9,9 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 ///
 /// connectivity_plus reports active network paths, not whether a radio is
 /// powered: a transport can be on without a connection. It never reports
-/// Bluetooth on iOS, so that row says NOT REPORTED there.
+/// Bluetooth on iOS, so that row says NOT REPORTED there. A path over anything
+/// else (VPN, Ethernet, satellite, unknown) gets a fourth row, since it keeps
+/// the gate up while the three radio rows all read NOT CONNECTED.
 class RadioStatusPanel extends StatelessWidget {
   final List<ConnectivityResult> results;
 
@@ -24,9 +26,14 @@ class RadioStatusPanel extends StatelessWidget {
   static bool _reported(ConnectivityResult result) =>
       result != ConnectivityResult.bluetooth || defaultTargetPlatform != TargetPlatform.iOS;
 
+  static String _otherName(ConnectivityResult result) =>
+      result == ConnectivityResult.other ? 'UNKNOWN' : result.name.toUpperCase();
+
   @override
   Widget build(BuildContext context) {
     final colors = context.colorsV3;
+    final radios = _rows.map((row) => row.$2).toSet()..add(ConnectivityResult.none);
+    final others = results.where((r) => !radios.contains(r)).map(_otherName).join(', ');
     return Container(
       decoration: BoxDecoration(
         color: colors.bgSurface,
@@ -42,6 +49,7 @@ class RadioStatusPanel extends StatelessWidget {
               _RadioRow(label: label, status: 'CONNECTED', color: colors.semanticEmber, divided: i > 0)
             else
               _RadioRow(label: label, status: 'NOT CONNECTED', color: colors.semanticSage, divided: i > 0),
+          if (others.isNotEmpty) _RadioRow(label: 'OTHER', status: others, color: colors.semanticEmber, divided: true),
         ],
       ),
     );
