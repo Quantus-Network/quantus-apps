@@ -1,11 +1,18 @@
 Quantus Cold Wallet: demo account and test QR codes
 ===================================================
 
-A demo account for the Quantus Cold Wallet and a signing request addressed to
-it for every call the wallet can review, for App Store review and manual
-testing. app-review.pdf is the document for Apple: the import steps below and
-the ten codes marked * in the list at the end. all-calls.pdf has the same
-steps and every code in qr/.
+A demo account for the Quantus Cold Wallet and signing requests addressed to
+it, for App Store review and manual testing:
+
+  qr/          every call the wallet can review
+  qr/refused/  requests the wallet must refuse: calls it cannot show in full,
+               the payloads from past audit reports, an account it does not
+               hold
+  qr/near/     NEAR transactions, for the ML-DSA-65 account further down
+
+app-review.pdf is the document for Apple: the import steps below and the ten
+codes marked * in the list at the end. all-calls.pdf has the same steps and
+every code in qr/ itself. The refused and NEAR codes are images only.
 
 The recovery phrase is public. Never send funds to this account.
 
@@ -45,10 +52,26 @@ large for one code has one image per part; scan the parts one after the
 other. Check the review screen, tap Approve and Sign, and the wallet shows the
 signature as a QR code for the hot wallet to scan. Tap Done.
 
+A code in qr/refused/ opens a screen saying why the wallet will not sign it,
+with the reason listed below.
+
 The requests are for the Planck test network and are never broadcast.
+
+NEAR account
+------------
+The codes in qr/near/ are NEAR testnet transactions, which only an ML-DSA-65
+key signs. Add one from the same phrase: tap the Q at the top left, then
+Manage accounts, Add Account. Open Advanced, choose ML-DSA-65 under Signature
+type, check the index reads 0, and tap Create Account.
+
+Signature scheme:  ML-DSA-65
+Derivation path:   m/44'/189189'/0'/0'/1'
+Address:           qzoT1TSZ9GjQDqJYGdiMWGkZKgQKWiSnWi7pbvxBqjBVMLtUf
+Checkphrase:       Marble-Cotton-Float-Donkey-Host
 
 QR codes
 --------
+qr/ (* = in app-review.pdf)
 * 01-balances-transfer_allow_death.png
       SEND 1.5 QTC to qzo5r1kCyoaxTdBTksX2sxhBmCVKioCLQ2hKFNdQXUQ6d3Ymq
       Balances · transfer_allow_death
@@ -265,6 +288,202 @@ QR codes
   72-vesting-retarget_schedule.png
       VESTING RETARGET SCHEDULE
       Vesting · retarget_schedule
+
+qr/refused/
+  refused/01-multisig-propose-3-one-level-past-the-limit.png
+      Multisig · propose × 3 [one level past the limit]
+      Refused: call: Cannot parse transaction: call nesting depth 3 exceeds the limit of 2
+  refused/02-multisig-propose-10-ten-levels-deep.png
+      Multisig · propose × 10 [ten levels deep]
+      Refused: call: Cannot parse transaction: call nesting depth 3 exceeds the limit of 2
+  refused/03-utility-batch_all-inside-a-batch_all.png
+      Utility · batch_all inside a batch_all
+      Refused: call: Utility: batch_all cannot be nested inside another batch_all
+  refused/04-utility-batch_all-of-multisigs-carrying-batch_alls.png
+      Utility · batch_all of multisigs carrying batch_alls
+      Refused: call: Utility: batch_all cannot be nested inside another batch_all
+  refused/05-multisig-approve-inner-call-padded-with-a-trailing-byte-88483.png
+      Multisig · approve, inner call padded with a trailing byte [#88483]
+      Refused: call: 1 trailing bytes after nested call
+  refused/06-balances-transfer-padded-with-a-trailing-byte-88483.png
+      Balances · transfer padded with a trailing byte [#88483]
+      Refused: extensions: Invalid Option byte for metadata hash: 17
+  refused/07-utility-batch-whose-second-call-cannot-be-decoded-89008.png
+      Utility · batch whose second call cannot be decoded [#89008]
+      Refused: Pallet 250 call 0 not found
+  refused/08-utility-if_else-headlining-1-qtc-over-a-999999-qtc-fallback-88914.png
+      Utility · if_else headlining 1 QTC over a 999999 QTC fallback [#88914]
+      Refused: Pallet 9 call 6 not found
+  refused/09-utility-force_batch-hiding-calls-after-a-failing-one-88730.png
+      Utility · force_batch hiding calls after a failing one [#88730]
+      Refused: Pallet 9 call 4 not found
+  refused/10-utility-cross-schema-payload-hiding-transfer_all-88730.png
+      Utility · cross-schema payload hiding transfer_all [#88730]
+      Refused: Pallet 9 call 6 not found
+  refused/11-balances-transfer-to-an-index-address-88730.png
+      Balances · transfer to an Index address [#88730]
+      Refused: call: Destination: only a plain account id is accepted, got Index
+  refused/12-balances-transfer-to-an-address20-destination-88730.png
+      Balances · transfer to an Address20 destination [#88730]
+      Refused: call: Destination: only a plain account id is accepted, got Address20
+  refused/13-balances-a-transfer-addressed-to-another-account.png
+      Balances · a transfer addressed to another account
+      Refused: account not in this wallet
+  refused/14-balances-transfer_allow_death-dest-raw.png
+      Balances · transfer_allow_death [dest=Raw]
+      Refused: call: Destination: only a plain account id is accepted, got Raw
+  refused/15-balances-transfer_allow_death-dest-address32.png
+      Balances · transfer_allow_death [dest=Address32]
+      Refused: call: Destination: only a plain account id is accepted, got Address32
+  refused/16-balances-transfer_keep_alive-dest-index.png
+      Balances · transfer_keep_alive [dest=Index]
+      Refused: call: Destination: only a plain account id is accepted, got Index
+  refused/17-balances-transfer_keep_alive-dest-raw.png
+      Balances · transfer_keep_alive [dest=Raw]
+      Refused: call: Destination: only a plain account id is accepted, got Raw
+  refused/18-balances-transfer_keep_alive-dest-address32.png
+      Balances · transfer_keep_alive [dest=Address32]
+      Refused: call: Destination: only a plain account id is accepted, got Address32
+  refused/19-balances-transfer_keep_alive-dest-address20.png
+      Balances · transfer_keep_alive [dest=Address20]
+      Refused: call: Destination: only a plain account id is accepted, got Address20
+  refused/20-balances-transfer_all-dest-index.png
+      Balances · transfer_all [dest=Index]
+      Refused: call: Destination: only a plain account id is accepted, got Index
+  refused/21-balances-transfer_all-dest-raw.png
+      Balances · transfer_all [dest=Raw]
+      Refused: call: Destination: only a plain account id is accepted, got Raw
+  refused/22-balances-transfer_all-dest-address32.png
+      Balances · transfer_all [dest=Address32]
+      Refused: call: Destination: only a plain account id is accepted, got Address32
+  refused/23-balances-transfer_all-dest-address20.png
+      Balances · transfer_all [dest=Address20]
+      Refused: call: Destination: only a plain account id is accepted, got Address20
+  refused/24-reversibletransfers-schedule_transfer-dest-index.png
+      ReversibleTransfers · schedule_transfer [dest=Index]
+      Refused: call: Destination: only a plain account id is accepted, got Index
+  refused/25-reversibletransfers-schedule_transfer-dest-raw.png
+      ReversibleTransfers · schedule_transfer [dest=Raw]
+      Refused: call: Destination: only a plain account id is accepted, got Raw
+  refused/26-reversibletransfers-schedule_transfer-dest-address32.png
+      ReversibleTransfers · schedule_transfer [dest=Address32]
+      Refused: call: Destination: only a plain account id is accepted, got Address32
+  refused/27-reversibletransfers-schedule_transfer-dest-address20.png
+      ReversibleTransfers · schedule_transfer [dest=Address20]
+      Refused: call: Destination: only a plain account id is accepted, got Address20
+  refused/28-reversibletransfers-schedule_transfer_with_delay-dest-index.png
+      ReversibleTransfers · schedule_transfer_with_delay [dest=Index]
+      Refused: call: Destination: only a plain account id is accepted, got Index
+  refused/29-reversibletransfers-schedule_transfer_with_delay-dest-raw.png
+      ReversibleTransfers · schedule_transfer_with_delay [dest=Raw]
+      Refused: call: Destination: only a plain account id is accepted, got Raw
+  refused/30-reversibletransfers-schedule_transfer_with_delay-dest-address32.png
+      ReversibleTransfers · schedule_transfer_with_delay [dest=Address32]
+      Refused: call: Destination: only a plain account id is accepted, got Address32
+  refused/31-reversibletransfers-schedule_transfer_with_delay-dest-address20.png
+      ReversibleTransfers · schedule_transfer_with_delay [dest=Address20]
+      Refused: call: Destination: only a plain account id is accepted, got Address20
+  refused/32-techcollective-add_member-who-index.png
+      TechCollective · add_member [who=Index]
+      Refused: call: Member: only a plain account id is accepted, got Index
+  refused/33-techcollective-add_member-who-raw.png
+      TechCollective · add_member [who=Raw]
+      Refused: call: Member: only a plain account id is accepted, got Raw
+  refused/34-techcollective-add_member-who-address32.png
+      TechCollective · add_member [who=Address32]
+      Refused: call: Member: only a plain account id is accepted, got Address32
+  refused/35-techcollective-add_member-who-address20.png
+      TechCollective · add_member [who=Address20]
+      Refused: call: Member: only a plain account id is accepted, got Address20
+  refused/36-techcollective-promote_member-who-index.png
+      TechCollective · promote_member [who=Index]
+      Refused: call: Member: only a plain account id is accepted, got Index
+  refused/37-techcollective-promote_member-who-raw.png
+      TechCollective · promote_member [who=Raw]
+      Refused: call: Member: only a plain account id is accepted, got Raw
+  refused/38-techcollective-promote_member-who-address32.png
+      TechCollective · promote_member [who=Address32]
+      Refused: call: Member: only a plain account id is accepted, got Address32
+  refused/39-techcollective-promote_member-who-address20.png
+      TechCollective · promote_member [who=Address20]
+      Refused: call: Member: only a plain account id is accepted, got Address20
+  refused/40-techcollective-demote_member-who-index.png
+      TechCollective · demote_member [who=Index]
+      Refused: call: Member: only a plain account id is accepted, got Index
+  refused/41-techcollective-demote_member-who-raw.png
+      TechCollective · demote_member [who=Raw]
+      Refused: call: Member: only a plain account id is accepted, got Raw
+  refused/42-techcollective-demote_member-who-address32.png
+      TechCollective · demote_member [who=Address32]
+      Refused: call: Member: only a plain account id is accepted, got Address32
+  refused/43-techcollective-demote_member-who-address20.png
+      TechCollective · demote_member [who=Address20]
+      Refused: call: Member: only a plain account id is accepted, got Address20
+  refused/44-techcollective-remove_member-who-index.png
+      TechCollective · remove_member [who=Index]
+      Refused: call: Member: only a plain account id is accepted, got Index
+  refused/45-techcollective-remove_member-who-raw.png
+      TechCollective · remove_member [who=Raw]
+      Refused: call: Member: only a plain account id is accepted, got Raw
+  refused/46-techcollective-remove_member-who-address32.png
+      TechCollective · remove_member [who=Address32]
+      Refused: call: Member: only a plain account id is accepted, got Address32
+  refused/47-techcollective-remove_member-who-address20.png
+      TechCollective · remove_member [who=Address20]
+      Refused: call: Member: only a plain account id is accepted, got Address20
+  refused/48-techcollective-exchange_member-who-index.png
+      TechCollective · exchange_member [who=Index]
+      Refused: call: Existing member: only a plain account id is accepted, got Index
+  refused/49-techcollective-exchange_member-who-raw.png
+      TechCollective · exchange_member [who=Raw]
+      Refused: call: Existing member: only a plain account id is accepted, got Raw
+  refused/50-techcollective-exchange_member-who-address32.png
+      TechCollective · exchange_member [who=Address32]
+      Refused: call: Existing member: only a plain account id is accepted, got Address32
+  refused/51-techcollective-exchange_member-who-address20.png
+      TechCollective · exchange_member [who=Address20]
+      Refused: call: Existing member: only a plain account id is accepted, got Address20
+  refused/52-techcollective-exchange_member-new_who-index.png
+      TechCollective · exchange_member [new_who=Index]
+      Refused: call: Replacement member: only a plain account id is accepted, got Index
+  refused/53-techcollective-exchange_member-new_who-raw.png
+      TechCollective · exchange_member [new_who=Raw]
+      Refused: call: Replacement member: only a plain account id is accepted, got Raw
+  refused/54-techcollective-exchange_member-new_who-address32.png
+      TechCollective · exchange_member [new_who=Address32]
+      Refused: call: Replacement member: only a plain account id is accepted, got Address32
+  refused/55-techcollective-exchange_member-new_who-address20.png
+      TechCollective · exchange_member [new_who=Address20]
+      Refused: call: Replacement member: only a plain account id is accepted, got Address20
+
+qr/near/
+  near/01-send-1-5-near-part*.png
+      send 1.5 NEAR
+      Signs with the ML-DSA-65 account
+  near/02-ft_transfer-on-a-token-contract-part*.png
+      ft_transfer on a token contract
+      Signs with the ML-DSA-65 account
+  near/03-swap-ft_transfer_call-then-storage_deposit-two-actions-part*.png
+      swap: ft_transfer_call then storage_deposit [two actions]
+      Signs with the ML-DSA-65 account
+  near/04-add-a-full-access-key-dangerous-part*.png
+      add a full access key [dangerous]
+      Signs with the ML-DSA-65 account
+  near/05-add-a-function-call-key-limited-to-one-contract-part*.png
+      add a function call key limited to one contract
+      Signs with the ML-DSA-65 account
+  near/06-delete-the-account-balance-to-bob-dangerous-part*.png
+      delete the account, balance to bob [dangerous]
+      Signs with the ML-DSA-65 account
+  near/07-mainnet-label-on-testnet-account-names-mismatch-part*.png
+      mainnet label on testnet account names [mismatch]
+      Signs with the ML-DSA-65 account
+  near/08-signed-by-an-ed25519-key-refused.png
+      signed by an ed25519 key [refused]
+      Refused: not a Quantus key
+  near/09-signed-by-an-ml-dsa-65-key-this-wallet-does-not-hold-refused-part*.png
+      signed by an ML-DSA-65 key this wallet does not hold [refused]
+      Refused: key not in this wallet
 
 Regenerate
 ----------

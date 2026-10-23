@@ -1,19 +1,26 @@
 import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data';
 import 'dart:ui' as ui;
 
+import 'package:convert/convert.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+import 'package:quantus_cold_wallet/components/scheme_picker.dart';
+import 'package:quantus_cold_wallet/debug/debug_near_payloads.dart';
 import 'package:quantus_cold_wallet/debug/debug_payloads.dart';
 import 'package:quantus_cold_wallet/models/cold_account.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 // ignore: implementation_imports — QuantusSdk.init also opens device storage, which a test host does not have.
 import 'package:quantus_sdk/src/rust/frb_generated.dart';
+// ignore: implementation_imports — the generated corpus is test/debug data, deliberately not public SDK API.
+import 'package:quantus_sdk/src/testing/call_corpus.dart';
 
-/// Writes the demo account's README, a static QR code per debug catalogue call
-/// addressed to it, and the HTML that generate.sh prints to the PDFs. Run
-/// through generate.sh, which points the Rust bridge at the SDK's library.
+/// Writes the demo account's README, a static QR code per debug catalogue
+/// request addressed to it (every call the wallet reviews, every one it must
+/// refuse, and the NEAR samples), and the HTML that generate.sh prints to the
+/// PDFs. Run through generate.sh, which points the Rust bridge at the SDK's
+/// library.
 
 /// Public on purpose so App Review can import it. Never fund this account.
 const _mnemonic =
@@ -36,13 +43,28 @@ const _reviewCalls = [
 
 final _dir = Directory('tests');
 
-class _Request {
-  final DebugCall call;
+typedef _Account = ({ColdAccount account, Keypair keypair, String checkphrase});
+
+/// A request as the static QR frames it is printed in.
+abstract class _Code {
   final String file;
-  final ParsedPayload parsed;
   final List<String> parts;
 
-  _Request(this.call, this.file, this.parsed, this.parts);
+  _Code(this.file, this.parts);
+
+  /// What the wallet shows for it, one README line each.
+  List<String> get notes;
+
+  String partFile(int index) => parts.length == 1 ? '$file.png' : '$file-part${index + 1}of${parts.length}.png';
+
+  String get files => parts.length == 1 ? '$file.png' : '$file-part*.png';
+}
+
+class _Request extends _Code {
+  final DebugCall call;
+  final ParsedPayload parsed;
+
+  _Request(this.call, super.file, super.parts, this.parsed);
 
   (String, String) get key => (call.pallet, call.label);
 
@@ -69,7 +91,15 @@ class _Request {
     return [for (final (title, count) in runs) count == 1 ? title : '$count × $title'].join(' → ');
   }
 
-  String partFile(int index) => parts.length == 1 ? '$file.png' : '$file-part${index + 1}of${parts.length}.png';
+  @override
+  List<String> get notes => ['$headline${recipient == null ? '' : ' to $recipient'}', chain];
+}
+
+class _Sample extends _Code {
+  @override
+  final List<String> notes;
+
+  _Sample(super.file, super.parts, this.notes);
 }
 
 void main() {
@@ -81,45 +111,110 @@ void main() {
     final htmlDir = Platform.environment['HTML_DIR'];
     if (htmlDir == null) throw StateError('HTML_DIR is not set; run tests/generate.sh');
 
-    final account = ColdAccount(label: 'Main key', index: 0, scheme: ColdAccount.newAccountScheme);
-    final signer = HdWalletService().keyPairAtPath(_mnemonic, account.derivationPath, account.scheme).ss58Address;
-    final checkphrase = await HumanReadableChecksumService().getHumanReadableName(signer);
-    if (checkphrase == null) throw StateError('No checkphrase for $signer');
+    final demo = await _derive(ColdAccount(label: 'Main key', index: 0, scheme: ColdAccount.newAccountScheme));
+    final near = await _derive(ColdAccount(label: 'Account 2', index: 0, scheme: DilithiumScheme.mlDsa65));
+    final signer = demo.keypair.ss58Address;
+
+    final requests = [
+      for (final (i, call) in DebugPayloads.byPallet.values.expand((calls) => calls).indexed)
+        _valid(signer, call, _file(i, '${call.pallet} ${call.label}')),
+    ];
+    final seen = <String>{};
+    final refused = [
+      for (final (i, call) in [
+        ...DebugPayloads.refused,
+        ...DebugPayloads.invalidQrData,
+        ...refusedCallCorpus.entries.map(DebugPayloads.fromCorpus),
+      ].where((call) => seen.add('${call.signer} ${hex.encode(call.call)}')).indexed)
+        _refused(signer, call, 'refused/${_file(i, '${call.pallet} ${call.label}')}'),
+    ];
+    final nearRequests = [
+      for (final (i, call) in DebugNearPayloads.samples(near.keypair.publicKey).indexed)
+        _near(near.keypair.publicKey, call, 'near/${_file(i, call.label)}'),
+    ];
 
     final qrDir = Directory('${_dir.path}/qr');
     if (qrDir.existsSync()) qrDir.deleteSync(recursive: true);
-    qrDir.createSync();
-
-    final requests = <_Request>[];
-    for (final (i, call) in DebugPayloads.byPallet.values.expand((calls) => calls).indexed) {
-      final request = _encode(signer, call, '${'${i + 1}'.padLeft(2, '0')}-${_slug('${call.pallet} ${call.label}')}');
-      for (final (index, part) in request.parts.indexed) {
-        File('${qrDir.path}/${request.partFile(index)}').writeAsBytesSync(await _png(part));
+    for (final code in [...requests, ...refused, ...nearRequests]) {
+      for (final (index, part) in code.parts.indexed) {
+        (File('${qrDir.path}/${code.partFile(index)}')..createSync(recursive: true)).writeAsBytesSync(await _png(part));
       }
-      requests.add(request);
     }
     final review = [for (final key in _reviewCalls) requests.firstWhere((r) => r.key == key)];
 
-    File('${_dir.path}/README.txt').writeAsStringSync(_readme(account, signer, checkphrase, requests));
-    File('$htmlDir/app-review.html').writeAsStringSync(_html('App Review demo', signer, checkphrase, review, qrDir));
-    File('$htmlDir/all-calls.html').writeAsStringSync(_html('every call', signer, checkphrase, requests, qrDir));
+    File('${_dir.path}/README.txt').writeAsStringSync(_readme(demo, near, requests, review, refused, nearRequests));
+    File(
+      '$htmlDir/app-review.html',
+    ).writeAsStringSync(_html('App Review demo', signer, demo.checkphrase, review, qrDir));
+    File('$htmlDir/all-calls.html').writeAsStringSync(_html('every call', signer, demo.checkphrase, requests, qrDir));
   });
 }
 
-/// The request [call] makes of [signer], checked to decode back to exactly
-/// what the wallet will show before any image is written.
-_Request _encode(String signer, DebugCall call, String file) {
-  final bytes = SigningRequest(signer: signer, payload: DebugPayloads.payloadForCall(call.call)).encode();
-  final parts = encodeUrForQr(data: bytes, maxFragmentLength: maxUrScanPartChars);
-  final decoded = AnySigningRequest.decode(Uint8List.fromList(decodeUr(urParts: parts)));
-  if (decoded is! SigningRequest || decoded.signer != signer) throw StateError('$file does not decode for $signer');
+Future<_Account> _derive(ColdAccount account) async {
+  final keypair = HdWalletService().keyPairAtPath(_mnemonic, account.derivationPath, account.scheme);
+  final checkphrase = await HumanReadableChecksumService().getHumanReadableName(keypair.ss58Address);
+  if (checkphrase == null) throw StateError('No checkphrase for ${keypair.ss58Address}');
+  return (account: account, keypair: keypair, checkphrase: checkphrase);
+}
+
+/// [request] as static QR frames, and what the scanner reads back from them.
+(List<String>, AnySigningRequest) _frames(Uint8List request) {
+  final parts = encodeUrForQr(data: request, maxFragmentLength: maxUrScanPartChars);
+  return (parts, AnySigningRequest.decode(Uint8List.fromList(decodeUr(urParts: parts))));
+}
+
+/// The request [call] makes of [signer] in static QR frames, checked to
+/// decode back to exactly that request.
+(List<String>, SigningRequest) _quantusFrames(String signer, DebugCall call, String file) {
+  final (parts, request) = _frames(
+    SigningRequest(signer: signer, payload: DebugPayloads.payloadForCall(call.call)).encode(),
+  );
+  if (request is! SigningRequest || request.signer != signer) throw StateError('$file does not decode for $signer');
+  return (parts, request);
+}
+
+_Request _valid(String signer, DebugCall call, String file) {
+  final (parts, request) = _quantusFrames(signer, call, file);
   return _Request(
     call,
     file,
-    QuantusPayloadParser.parsePayload(decoded.payload, policy: const FullCallPolicy()),
     parts,
+    QuantusPayloadParser.parsePayload(request.payload, policy: const FullCallPolicy()),
   );
 }
+
+/// A request the wallet holding [signer] must refuse, with the reason its
+/// review screen gives.
+_Sample _refused(String signer, DebugCall call, String file) {
+  final (parts, request) = _quantusFrames(call.signer ?? signer, call, file);
+  final label = '${call.pallet} · ${call.label}';
+  if (request.signer != signer) return _Sample(file, parts, [label, 'Refused: account not in this wallet']);
+  try {
+    QuantusPayloadParser.parsePayload(request.payload, policy: const FullCallPolicy());
+  } on FormatException catch (e) {
+    return _Sample(file, parts, [label, 'Refused: ${e.message}']);
+  }
+  throw StateError('$file parses, but the wallet must refuse it');
+}
+
+/// A NEAR request, and what the wallet holding the ML-DSA-65 [key] does with it.
+_Sample _near(Uint8List key, DebugNearCall call, String file) {
+  final (parts, request) = _frames(call.request.encode());
+  if (request is! NearSigningRequest || !listEquals(request.transaction, call.request.transaction)) {
+    throw StateError('$file does not decode to its transaction');
+  }
+  final tx = decodeNearTransaction(transaction: request.transaction);
+  return _Sample(file, parts, [
+    call.label,
+    !tx.signsWithMlDsa65
+        ? 'Refused: not a Quantus key'
+        : listEquals(tx.publicKeyBytes, key)
+        ? 'Signs with the ML-DSA-65 account'
+        : 'Refused: key not in this wallet',
+  ]);
+}
+
+String _file(int index, String label) => '${'${index + 1}'.padLeft(2, '0')}-${_slug(label)}';
 
 String _slug(String text) => text.toLowerCase().replaceAll(RegExp(r'[^a-z0-9_]+'), '-').replaceAll(RegExp(r'-$'), '');
 
@@ -148,17 +243,42 @@ Future<Uint8List> _png(String data) async {
 
 List<String> get _words => _mnemonic.split(' ');
 
-String _readme(ColdAccount account, String signer, String checkphrase, List<_Request> requests) {
+String _accountLines(_Account a) =>
+    '''
+Signature scheme:  ${schemeLabel(a.account.scheme)}
+Derivation path:   ${a.account.derivationPath}
+Address:           ${a.keypair.ss58Address}
+Checkphrase:       ${a.checkphrase}''';
+
+String _list(List<_Code> codes, [Set<_Code> starred = const {}]) => [
+  for (final c in codes) '${starred.contains(c) ? '*' : ' '} ${c.files}\n${c.notes.map((n) => '      $n').join('\n')}',
+].join('\n');
+
+String _readme(
+  _Account demo,
+  _Account near,
+  List<_Request> requests,
+  List<_Request> review,
+  List<_Code> refused,
+  List<_Code> nearRequests,
+) {
   final words = [for (final (i, w) in _words.indexed) '${'${i + 1}'.padLeft(2)}. ${w.padRight(10)}'];
   return '''
 Quantus Cold Wallet: demo account and test QR codes
 ===================================================
 
-A demo account for the Quantus Cold Wallet and a signing request addressed to
-it for every call the wallet can review, for App Store review and manual
-testing. app-review.pdf is the document for Apple: the import steps below and
-the ten codes marked * in the list at the end. all-calls.pdf has the same
-steps and every code in qr/.
+A demo account for the Quantus Cold Wallet and signing requests addressed to
+it, for App Store review and manual testing:
+
+  qr/          every call the wallet can review
+  qr/refused/  requests the wallet must refuse: calls it cannot show in full,
+               the payloads from past audit reports, an account it does not
+               hold
+  qr/near/     NEAR transactions, for the ML-DSA-65 account further down
+
+app-review.pdf is the document for Apple: the import steps below and the ten
+codes marked * in the list at the end. all-calls.pdf has the same steps and
+every code in qr/ itself. The refused and NEAR codes are images only.
 
 The recovery phrase is public. Never send funds to this account.
 
@@ -170,10 +290,7 @@ $_mnemonic
 
 Account
 -------
-Signature scheme:  ML-DSA-87
-Derivation path:   ${account.derivationPath}
-Address:           $signer
-Checkphrase:       $checkphrase
+${_accountLines(demo)}
 
 Import the account
 ------------------
@@ -193,11 +310,30 @@ large for one code has one image per part; scan the parts one after the
 other. Check the review screen, tap Approve and Sign, and the wallet shows the
 signature as a QR code for the hot wallet to scan. Tap Done.
 
+A code in qr/refused/ opens a screen saying why the wallet will not sign it,
+with the reason listed below.
+
 The requests are for the Planck test network and are never broadcast.
+
+NEAR account
+------------
+The codes in qr/near/ are NEAR testnet transactions, which only an ML-DSA-65
+key signs. Add one from the same phrase: tap the Q at the top left, then
+Manage accounts, Add Account. Open Advanced, choose ML-DSA-65 under Signature
+type, check the index reads 0, and tap Create Account.
+
+${_accountLines(near)}
 
 QR codes
 --------
-${[for (final r in requests) '${_reviewCalls.contains(r.key) ? '*' : ' '} ${r.parts.length == 1 ? '${r.file}.png' : '${r.file}-part*.png'}\n      ${r.headline}${r.recipient == null ? '' : ' to ${r.recipient}'}\n      ${r.chain}'].join('\n')}
+qr/ (* = in app-review.pdf)
+${_list(requests, review.toSet())}
+
+qr/refused/
+${_list(refused)}
+
+qr/near/
+${_list(nearRequests)}
 
 Regenerate
 ----------
