@@ -76,7 +76,11 @@ class _SwapConfig extends RemoteConfigNotifier {
   _SwapConfig._(this.service) : super(service);
 
   factory _SwapConfig({bool allowed = true}) {
-    final model = RemoteConfigModel.fromJson({'enableSwap': true, 'geoNearAllowed': allowed});
+    final model = RemoteConfigModel.fromJson({
+      'enableSwap': true,
+      'geoNearAllowed': allowed,
+      'oneClickEndpoint': 'https://oneclick.test',
+    });
     return _SwapConfig._(FakeRemoteConfigService(model, remote: model));
   }
 

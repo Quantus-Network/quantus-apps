@@ -102,6 +102,7 @@ void main() {
         ),
         oneClickServiceProvider.overrideWithValue(
           OneClickService(
+            endpoint: 'https://oneclick.test',
             client: MockClient((request) async {
               lookedUp.add(request.url.queryParameters['depositAddress']!);
               if (oneClickDown) throw http.ClientException('connection refused');

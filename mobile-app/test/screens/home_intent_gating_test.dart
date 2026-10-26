@@ -59,6 +59,7 @@ void main() {
             'enableSwap': enableSwap,
             'enableSwapAndroid': enableSwapAndroid,
             'geoNearAllowed': geoNearAllowed,
+            'oneClickEndpoint': 'https://oneclick.test',
           });
           return RemoteConfigNotifier(FakeRemoteConfigService(config, remote: config));
         }),

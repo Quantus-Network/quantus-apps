@@ -51,7 +51,7 @@ class SwapHarnessService extends SwapService {
 
   final _polls = <String, int>{};
 
-  SwapHarnessService() : super(client: _HarnessClient()) {
+  SwapHarnessService() : super(client: _HarnessClient(), endpoint: 'https://oneclick.harness.invalid') {
     if (!kDebugMode) throw StateError('SwapHarnessService is for debug builds only');
   }
 

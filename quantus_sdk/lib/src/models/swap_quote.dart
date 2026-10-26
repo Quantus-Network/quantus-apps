@@ -1,5 +1,9 @@
 import 'package:quantus_sdk/src/models/swap_token.dart';
 
+/// The app's fee on a swap: [bips] basis points of the input, paid to the
+/// NEAR account [recipient]. Goes out as 1Click's `appFees` entry.
+typedef SwapAppFee = ({String recipient, int bips});
+
 /// Which side of a swap its amount fixes. An exact output pays [SwapQuote.amountIn],
 /// which holds a slippage buffer over [SwapQuote.minAmountIn]; whatever the swap
 /// does not use is refunded.

@@ -21,6 +21,8 @@ class _SlowRemoteConfigService extends FakeRemoteConfigService {
   }
 }
 
+const _endpoint = 'https://oneclick.test';
+
 void main() {
   test('remote config models compare by their flags', () {
     expect(RemoteConfigModel.fromJson(const {}), RemoteConfigModel.defaults);
@@ -33,9 +35,27 @@ void main() {
     addTearDown(() => debugDefaultTargetPlatformOverride = null);
     expect(RemoteConfigModel.defaults.geoNearAllowed, isFalse);
     expect(RemoteConfigModel.defaults.enableSwap, isFalse);
-    expect(RemoteConfigModel.fromJson(const {'enableSwap': true}).swapAvailable, isFalse);
-    expect(RemoteConfigModel.fromJson(const {'enableSwap': true, 'geoNearAllowed': true}).swapAvailable, isTrue);
-    expect(RemoteConfigModel.fromJson(const {'enableSwap': false, 'geoNearAllowed': true}).swapAvailable, isFalse);
+    expect(
+      RemoteConfigModel.fromJson(const {'enableSwap': true, 'oneClickEndpoint': _endpoint}).swapAvailable,
+      isFalse,
+    );
+    expect(
+      RemoteConfigModel.fromJson(const {
+        'enableSwap': true,
+        'geoNearAllowed': true,
+        'oneClickEndpoint': _endpoint,
+      }).swapAvailable,
+      isTrue,
+    );
+    expect(
+      RemoteConfigModel.fromJson(const {
+        'enableSwap': false,
+        'geoNearAllowed': true,
+        'oneClickEndpoint': _endpoint,
+      }).swapAvailable,
+      isFalse,
+    );
+    expect(RemoteConfigModel.fromJson(const {'enableSwap': true, 'geoNearAllowed': true}).swapAvailable, isFalse);
     final allowed = RemoteConfigModel.fromJson(const {'geoNearAllowed': true});
     expect(RemoteConfigModel.fromJson(allowed.toCacheJson()), allowed);
     expect(allowed, isNot(RemoteConfigModel.defaults));
@@ -50,24 +70,87 @@ void main() {
     expect(named, isNot(RemoteConfigModel.defaults));
   });
 
+  test('the 1Click endpoint, partner key and fee come from the remote config alone', () {
+    final unserved = RemoteConfigModel.fromJson(const {});
+    expect(unserved.oneClickEndpoint, isNull);
+    expect(unserved.nearPartnerJwt, isNull);
+    expect(unserved.swapAppFee, isNull);
+    expect(RemoteConfigModel.fromJson(const {'oneClickEndpoint': '', 'swapFeeRecipient': 'liq.test'}), unserved);
+
+    final served = RemoteConfigModel.fromJson(const {
+      'oneClickEndpoint': _endpoint,
+      'near.partner.jwt': 'partner-jwt',
+      'swapFeeBips': 40,
+      'swapFeeRecipient': 'liq.test',
+    });
+    expect(served.oneClickEndpoint, _endpoint);
+    expect(served.nearPartnerJwt, 'partner-jwt');
+    expect(served.swapAppFee, (recipient: 'liq.test', bips: 40));
+    expect(RemoteConfigModel.fromJson(served.toCacheJson()), served);
+    expect(served, isNot(unserved));
+  });
+
+  test('swap is not offered without a 1Click endpoint, whatever the flags or the build', () {
+    for (final platform in [TargetPlatform.android, TargetPlatform.iOS]) {
+      debugDefaultTargetPlatformOverride = platform;
+      addTearDown(() => debugDefaultTargetPlatformOverride = null);
+      final flagsOn = RemoteConfigModel.fromJson(const {
+        'enableSwap': true,
+        'enableSwapAndroid': true,
+        'geoNearAllowed': true,
+      });
+      expect(flagsOn.swapAvailable, isFalse, reason: '$platform');
+      expect(
+        RemoteConfigModel.fromJson({...flagsOn.toCacheJson(), 'oneClickEndpoint': _endpoint}).swapAvailable,
+        isTrue,
+      );
+    }
+  });
+
+  test('a 1Click config that cannot be acted on is refused', () {
+    for (final json in const [
+      {'oneClickEndpoint': 'oneclick.test'},
+      {'oneClickEndpoint': 'ftp://oneclick.test'},
+      {'swapFeeBips': 40},
+      {'swapFeeBips': -1, 'swapFeeRecipient': 'liq.near'},
+    ]) {
+      expect(() => RemoteConfigModel.fromJson(json), throwsFormatException, reason: '$json');
+    }
+  });
+
   test('revoking the location verdict keeps the rest of the config', () {
-    final cached = RemoteConfigModel.fromJson(const {'swapQuantusAssetId': 'nep141:qtc.near', 'geoNearAllowed': true});
+    final cached = RemoteConfigModel.fromJson(const {
+      'swapQuantusAssetId': 'nep141:qtc.near',
+      'geoNearAllowed': true,
+      'oneClickEndpoint': _endpoint,
+      'near.partner.jwt': 'partner-jwt',
+      'swapFeeBips': 40,
+      'swapFeeRecipient': 'liq.test',
+    });
     final revoked = cached.copyWith(geoNearAllowed: false);
     expect(revoked.geoNearAllowed, isFalse);
-    expect(revoked.swapQuantusAssetId, 'nep141:qtc.near');
+    expect(revoked, cached.copyWith(geoNearAllowed: false));
+    expect(revoked.toCacheJson(), {...cached.toCacheJson(), 'geoNearAllowed': false});
   });
 
   test('Android offers swap on its own flag, on by default', () {
     debugDefaultTargetPlatformOverride = TargetPlatform.android;
     addTearDown(() => debugDefaultTargetPlatformOverride = null);
     expect(RemoteConfigModel.defaults.enableSwapAndroid, isTrue);
-    expect(RemoteConfigModel.fromJson(const {'geoNearAllowed': true}).swapAvailable, isTrue);
-    expect(RemoteConfigModel.fromJson(const {'enableSwapAndroid': true}).swapAvailable, isFalse);
+    expect(
+      RemoteConfigModel.fromJson(const {'geoNearAllowed': true, 'oneClickEndpoint': _endpoint}).swapAvailable,
+      isTrue,
+    );
+    expect(
+      RemoteConfigModel.fromJson(const {'enableSwapAndroid': true, 'oneClickEndpoint': _endpoint}).swapAvailable,
+      isFalse,
+    );
     expect(
       RemoteConfigModel.fromJson(const {
         'enableSwap': true,
         'enableSwapAndroid': false,
         'geoNearAllowed': true,
+        'oneClickEndpoint': _endpoint,
       }).swapAvailable,
       isFalse,
     );
@@ -79,12 +162,16 @@ void main() {
   test('iOS keeps its own swap flag and ignores the Android one', () {
     debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
     addTearDown(() => debugDefaultTargetPlatformOverride = null);
-    expect(RemoteConfigModel.fromJson(const {'geoNearAllowed': true}).swapAvailable, isFalse);
+    expect(
+      RemoteConfigModel.fromJson(const {'geoNearAllowed': true, 'oneClickEndpoint': _endpoint}).swapAvailable,
+      isFalse,
+    );
     expect(
       RemoteConfigModel.fromJson(const {
         'enableSwap': true,
         'enableSwapAndroid': false,
         'geoNearAllowed': true,
+        'oneClickEndpoint': _endpoint,
       }).swapAvailable,
       isTrue,
     );
@@ -106,7 +193,11 @@ void main() {
   }
 
   test('a cached location allowance is not trusted until this launch hears from the server', () async {
-    final allowed = RemoteConfigModel.fromJson(const {'enableSwap': true, 'geoNearAllowed': true});
+    final allowed = RemoteConfigModel.fromJson(const {
+      'enableSwap': true,
+      'geoNearAllowed': true,
+      'oneClickEndpoint': _endpoint,
+    });
     final offline = RemoteConfigNotifier(FakeRemoteConfigService(allowed));
     expect(offline.state.geoNearAllowed, isFalse);
     await Future<void>.delayed(Duration.zero);
@@ -124,6 +215,7 @@ void main() {
       'enableSwap': true,
       'geoNearAllowed': true,
       'enableMultisig': false,
+      'oneClickEndpoint': _endpoint,
     });
     final service = FakeRemoteConfigService(allowed, remote: allowed);
     final notifier = RemoteConfigNotifier(service);
@@ -142,6 +234,7 @@ void main() {
       'enableSwap': true,
       'geoNearAllowed': true,
       'enableMultisig': false,
+      'oneClickEndpoint': _endpoint,
     });
     final service = _SlowRemoteConfigService(allowed);
     final notifier = RemoteConfigNotifier(service);
@@ -169,6 +262,7 @@ void main() {
       'enableSwap': true,
       'geoNearAllowed': true,
       'enableMultisig': false,
+      'oneClickEndpoint': _endpoint,
     });
     final service = _SlowRemoteConfigService(allowed);
     final notifier = RemoteConfigNotifier(service);
@@ -193,7 +287,11 @@ void main() {
   });
 
   test('syncConfig and settled complete only once the latest answer is in', () async {
-    final allowed = RemoteConfigModel.fromJson(const {'enableSwap': true, 'geoNearAllowed': true});
+    final allowed = RemoteConfigModel.fromJson(const {
+      'enableSwap': true,
+      'geoNearAllowed': true,
+      'oneClickEndpoint': _endpoint,
+    });
     final service = _SlowRemoteConfigService(allowed);
     final notifier = RemoteConfigNotifier(service);
     var synced = false;

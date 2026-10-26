@@ -1,7 +1,6 @@
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
-import 'package:quantus_sdk/src/constants/app_constants.dart';
 
 /// 1Click answered [statusCode] with [message].
 class SwapApiException implements Exception {
@@ -14,8 +13,11 @@ class SwapApiException implements Exception {
   String toString() => 'SwapApiException($statusCode): $message';
 }
 
-/// Transport for the NEAR Intents 1Click API, through our proxy, which adds
-/// the partner key; an answer outside 2xx becomes a [SwapApiException].
+/// Transport for the NEAR Intents 1Click API at [endpoint]: our proxy, which
+/// adds the partner key itself, or 1Click directly with [apiKey] sent as
+/// X-API-Key. Both come from remote config and nowhere else; until an
+/// endpoint is served every request fails. An answer outside 2xx becomes a
+/// [SwapApiException].
 class OneClickService {
   /// Longest any request may take before it fails.
   static const requestTimeout = Duration(seconds: 30);
@@ -24,7 +26,8 @@ class OneClickService {
   static const depositLookupTimeout = Duration(seconds: 10);
 
   final http.Client _client;
-  final Uri _base;
+  final Uri? _base;
+  final String? _apiKey;
 
   /// Answers so far. A deposit address is one for good, and 1Click never
   /// issues an address that already exists, so neither answer goes stale.
@@ -34,9 +37,10 @@ class OneClickService {
   /// and no body while the resource is unchanged.
   final _etagged = <Uri, (String, Object?)>{};
 
-  OneClickService({http.Client? client, String endpoint = AppConstants.oneClickEndpoint})
+  OneClickService({http.Client? client, required String? endpoint, String? apiKey})
     : _client = client ?? http.Client(),
-      _base = Uri.parse(endpoint);
+      _base = endpoint == null ? null : Uri.parse(endpoint.replaceFirst(RegExp(r'/+$'), '')),
+      _apiKey = apiKey;
 
   /// Whether 1Click issued [address] as the deposit address of a swap funded
   /// on its origin chain. Such an address takes exactly the one deposit its
@@ -54,9 +58,11 @@ class OneClickService {
   }
 
   Future<Object?> send(String method, String path, {Map<String, Object>? body, Map<String, String>? query}) async {
-    final uri = _base.replace(path: path, queryParameters: query);
+    final base = _base;
+    if (base == null) throw StateError('No 1Click endpoint is configured');
+    final uri = base.replace(path: '${base.path}$path', queryParameters: query);
     final cached = method == 'GET' ? _etagged[uri] : null;
-    final headers = {'Content-Type': 'application/json', 'If-None-Match': ?cached?.$1};
+    final headers = {'Content-Type': 'application/json', 'X-API-Key': ?_apiKey, 'If-None-Match': ?cached?.$1};
     final response =
         await (method == 'GET'
                 ? _client.get(uri, headers: headers)

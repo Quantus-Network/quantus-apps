@@ -57,6 +57,7 @@ void main() {
   setUp(() async {
     lookedUp.clear();
     oneClick = OneClickService(
+      endpoint: 'https://oneclick.test',
       client: MockClient((request) async {
         final address = request.url.queryParameters['depositAddress']!;
         lookedUp.add(address);

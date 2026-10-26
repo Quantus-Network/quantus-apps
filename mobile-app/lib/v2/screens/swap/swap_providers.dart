@@ -22,8 +22,16 @@ final swapServiceProvider = Provider<SwapService>((ref) {
   final harness = ref.watch(swapHarnessServiceProvider);
   if (harness != null) return harness;
   final preflight = ref.watch(swapPreflightProvider);
-  if (preflight != null) return SwapService(quantusAssetId: preflight.assetId, preflight: true);
-  return SwapService(quantusAssetId: ref.watch(remoteConfigProvider.select((c) => c.swapQuantusAssetId)));
+  final (endpoint, apiKey, appFee, assetId) = ref.watch(
+    remoteConfigProvider.select((c) => (c.oneClickEndpoint, c.nearPartnerJwt, c.swapAppFee, c.swapQuantusAssetId)),
+  );
+  return SwapService(
+    endpoint: endpoint,
+    apiKey: apiKey,
+    appFee: appFee,
+    quantusAssetId: preflight?.assetId ?? assetId,
+    preflight: preflight != null,
+  );
 });
 
 final swapTokenIconServiceProvider = Provider<SwapTokenIconService>((ref) => SwapTokenIconService());

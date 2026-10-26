@@ -36,9 +36,6 @@ class AppConstants {
 
   static const String explorerEndpoint = 'https://explorer.quantus.com';
 
-  // Our proxy in front of the NEAR Intents 1Click swap API (1click.chaindefuser.com); it adds the partner key and the app fee.
-  static const String oneClickEndpoint = 'https://oneclick.quantus.com';
-
   /// NEAR JSON-RPC, for reading swap token logos off the token contracts.
   static const String nearRpcEndpoint = 'https://free.rpc.fastnear.com';
 

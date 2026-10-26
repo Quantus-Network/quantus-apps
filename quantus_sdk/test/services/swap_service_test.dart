@@ -120,11 +120,15 @@ final _platforms = jsonEncode([
 /// [handler] answers 1Click; CoinGecko answers [marketCaps] and [_platforms].
 SwapService _service(
   Future<http.Response> Function(http.Request request) handler, {
+  String? apiKey,
+  SwapAppFee? appFee,
   String? quantusAssetId,
   bool preflight = false,
   Future<http.Response> Function(http.Request request)? marketCaps,
 }) => SwapService(
   endpoint: 'https://oneclick.test',
+  apiKey: apiKey,
+  appFee: appFee,
   client: MockClient(
     (r) => r.url.host != 'api.coingecko.com'
         ? handler(r)
@@ -335,7 +339,7 @@ void main() {
       );
     });
 
-    test('sends no API key header: the proxy adds it', () async {
+    test('sends neither a partner key nor an app fee unless configured: the proxy adds them', () async {
       late http.Request request;
       final service = _service((r) async {
         request = r;
@@ -343,6 +347,24 @@ void main() {
       });
       await _quote(service);
       expect(request.headers.containsKey('X-API-Key'), isFalse);
+      expect(_sentRequest(request), isNot(contains('appFees')));
+    });
+
+    test('sends the partner key and the app fee from remote config, and accepts any echo of the fee', () async {
+      late http.Request request;
+      final service = _service(
+        (r) async {
+          request = r;
+          return http.Response(jsonEncode(_quoteResponse(request: _sentRequest(r))), 200);
+        },
+        apiKey: 'partner-jwt',
+        appFee: (recipient: 'liq.selfevident.near', bips: 40),
+      );
+      await _quote(service);
+      expect(request.headers['X-API-Key'], 'partner-jwt');
+      expect(_sentRequest(request)['appFees'], [
+        {'recipient': 'liq.selfevident.near', 'fee': 40},
+      ]);
     });
 
     test('surfaces the server message on a rejected quote', () async {

@@ -75,24 +75,33 @@ class SwapService {
   final String _managerPublicKey;
   final String? _configuredQuantusAssetId;
   final bool _preflight;
+  final SwapAppFee? _appFee;
   (List<SwapToken>, SwapToken?)? _cachedListing;
   DateTime? _cachedListingAt;
 
-  /// [quantusAssetId] names the listing that is QTC when its chain code does
-  /// not; it comes from remote config so a surprising listing needs no update.
-  /// In [preflight] it names another listed asset standing in for QTC, which
-  /// keeps its own network and decimals.
+  /// [endpoint], [apiKey] and [appFee] come from remote config and nowhere
+  /// else: through our proxy they are the proxy's address and nothing more,
+  /// since it adds the partner key and replaces any fee with its own; against
+  /// 1Click directly the app sends the key and the fee itself; with no
+  /// endpoint served every call fails. [quantusAssetId] names the
+  /// listing that is QTC when its chain code does not; it comes from remote
+  /// config so a surprising listing needs no update. In [preflight] it names
+  /// another listed asset standing in for QTC, which keeps its own network and
+  /// decimals.
   SwapService({
     http.Client? client,
-    String endpoint = AppConstants.oneClickEndpoint,
+    required String? endpoint,
+    String? apiKey,
+    SwapAppFee? appFee,
     String managerPublicKey = AppConstants.oneClickManagerPublicKey,
     String? quantusAssetId,
     bool preflight = false,
-  }) : _api = OneClickService(client: client, endpoint: endpoint),
+  }) : _api = OneClickService(client: client, endpoint: endpoint, apiKey: apiKey),
        _coinGecko = CoinGeckoService(client: client),
        _managerPublicKey = managerPublicKey,
        _configuredQuantusAssetId = quantusAssetId,
-       _preflight = preflight;
+       _preflight = preflight,
+       _appFee = appFee;
 
   /// How long a deposit on [network] has before its quote expires.
   static Duration depositWindowFor(String network) =>
@@ -219,6 +228,10 @@ class SwapService {
       'quoteWaitingTimeMs': quoteWaitingTime.inMilliseconds,
       'referral': AppConstants.oneClickReferral,
       'confidentiality': confidentiality,
+      if (_appFee case final fee?)
+        'appFees': [
+          {'recipient': fee.recipient, 'fee': fee.bips},
+        ],
     };
     final json = await _api.send('POST', '/v0/quote', body: body) as Map<String, dynamic>;
     final correlationId = json['correlationId'] as String?;

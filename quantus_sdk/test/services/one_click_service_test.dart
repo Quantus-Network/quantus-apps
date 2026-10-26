@@ -11,12 +11,14 @@ void main() {
   http.Request? captured;
   var requests = 0;
 
-  OneClickService service(int status, Object body) => OneClickService(
+  OneClickService service(int status, Object body, {String? endpoint, String? apiKey}) => OneClickService(
     client: MockClient((request) async {
       captured = request;
       requests++;
       return http.Response(jsonEncode(body), status);
     }),
+    endpoint: endpoint ?? 'https://oneclick.test',
+    apiKey: apiKey,
   );
 
   setUp(() => requests = 0);
@@ -29,8 +31,32 @@ void main() {
     };
     expect(await service(200, history).isDepositAddress(_address), isTrue);
     final uri = captured!.url;
-    expect(uri.toString(), startsWith('https://oneclick.quantus.com/v0/account/history?'));
+    expect(uri.toString(), startsWith('https://oneclick.test/v0/account/history?'));
     expect(uri.queryParameters, {'depositAddress': _address, 'depositType': 'ORIGIN_CHAIN', 'limit': '1'});
+    expect(captured!.headers.containsKey('X-API-Key'), isFalse);
+  });
+
+  test('without an endpoint from remote config a lookup fails before any request', () async {
+    final unserved = OneClickService(
+      endpoint: null,
+      client: MockClient((_) async {
+        requests++;
+        return http.Response('{"items": []}', 200);
+      }),
+    );
+    await expectLater(unserved.isDepositAddress(_address), throwsStateError);
+    expect(requests, 0);
+  });
+
+  test('sends the partner key when it has one, to the endpoint it was given', () async {
+    final direct = service(200, {'items': []}, endpoint: 'https://direct.test/', apiKey: 'partner-jwt');
+    expect(await direct.isDepositAddress(_address), isFalse);
+    expect(captured!.url.toString(), startsWith('https://direct.test/v0/account/history?'));
+    expect(captured!.headers['X-API-Key'], 'partner-jwt');
+
+    final prefixed = service(200, {'items': []}, endpoint: 'https://api.test/oneclick');
+    expect(await prefixed.isDepositAddress(_address), isFalse);
+    expect(captured!.url.toString(), startsWith('https://api.test/oneclick/v0/account/history?'));
   });
 
   test('an address without history is not a deposit address', () async {
