@@ -7,8 +7,9 @@ class AppBackButton extends StatelessWidget {
   static const double hitSize = 48;
 
   final VoidCallback? onTap;
+  final QuantusIcons icon;
 
-  const AppBackButton({super.key, this.onTap});
+  const AppBackButton({super.key, this.onTap, this.icon = QuantusIcons.chevronLeft});
 
   @override
   Widget build(BuildContext context) {
@@ -28,7 +29,7 @@ class AppBackButton extends StatelessWidget {
             buttonWidth: containerSize,
             borderRadius: BorderRadius.circular(containerSize / 2),
             padding: const EdgeInsets.all(2),
-            child: QuantusIcon(QuantusIcons.chevronLeft, size: iconSize, color: context.colorsV3.textContent),
+            child: QuantusIcon(icon, size: iconSize, color: context.colorsV3.textContent),
           ),
         ),
       ),

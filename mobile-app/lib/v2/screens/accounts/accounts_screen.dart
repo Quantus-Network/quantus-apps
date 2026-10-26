@@ -112,7 +112,10 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
     final activeAccountId = activeDisplayAccountAsync.value?.account.accountId;
 
     return ScaffoldBase(
-      appBar: V2AppBar(title: l10n.accountsSheetTitle),
+      appBar: V2AppBar(
+        title: l10n.accountsSheetTitle,
+        leading: const AppBackButton(icon: QuantusIcons.caretDown),
+      ),
       mainContent: _buildContent(
         l10n: l10n,
         accountsAsync: accountsAsync,
