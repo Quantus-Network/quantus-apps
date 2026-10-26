@@ -674,6 +674,12 @@ abstract class AppLocalizations {
   /// **'Enter a valid signer address.'**
   String get multisigCreateInvalidSigner;
 
+  /// Error when an added signer address is one of this wallet's multisig accounts
+  ///
+  /// In en, this message translates to:
+  /// **'This address is a multisig account. A multisig cannot sign, so this signer cannot approve in this wallet. If the remaining members cannot meet the threshold, funds in that multisig may need recovery through the CLI.'**
+  String get multisigCreateSignerIsMultisig;
+
   /// Threshold slider section label on create multisig
   ///
   /// In en, this message translates to:
