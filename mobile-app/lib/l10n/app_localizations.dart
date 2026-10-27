@@ -672,18 +672,23 @@ abstract class AppLocalizations {
   ///
   /// In en, this message translates to:
   /// **'Enter a valid signer address.'**
+  /// Error when signer address is invalid
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid signer address.'**
   String get multisigCreateInvalidSigner;
+
+  /// Error when trying to add a multisig account as a signer
+  ///
+  /// In en, this message translates to:
+  /// **'Multisig accounts cannot be used as signers'**
+  String get multisigCreateCannotUseMultisig;
 
   /// Threshold slider section label on create multisig
   ///
   /// In en, this message translates to:
   /// **'THRESHOLD'**
   String get multisigCreateThresholdLabel;
-
-  /// Threshold slider value label
-  ///
-  /// In en, this message translates to:
-  /// **'{count} of {total}'**
   String multisigCreateThresholdValue(int count, int total);
 
   /// What a Keystone creator is signing, shown on the Keystone sign and verify screens

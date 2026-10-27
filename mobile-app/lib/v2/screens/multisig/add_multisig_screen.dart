@@ -35,6 +35,7 @@ class _AddMultisigScreenState extends ConsumerState<AddMultisigScreen> {
   late int _threshold;
   bool _isLoading = false;
   bool _isPredictingAddress = false;
+  bool _isAddingSigner = false;
   String? _predictedAddress;
   BigInt? _resolvedNonce;
   String? _signerFieldError;
@@ -93,7 +94,8 @@ class _AddMultisigScreenState extends ConsumerState<AddMultisigScreen> {
     });
   }
 
-  void _addSigner() {
+  Future<void> _addSigner() async {
+    if (_isAddingSigner) return;
     final l10n = ref.read(l10nProvider);
     final substrate = ref.read(substrateServiceProvider);
     final address = _signerAddressController.text.trim();
@@ -107,10 +109,35 @@ class _AddMultisigScreenState extends ConsumerState<AddMultisigScreen> {
       return;
     }
 
+    setState(() => _isAddingSigner = true);
+
+    try {
+      final isMultisig = await ref.read(multisigServiceProvider).isMultisigIndexed(address);
+      if (isMultisig) {
+        if (!mounted) return;
+        setState(() {
+          _signerFieldError = l10n.multisigCreateCannotUseMultisig;
+          _isAddingSigner = false;
+        });
+        return;
+      }
+    } catch (e) {
+      quantusPrint('[AddMultisigScreen] isMultisigIndexed error: $e');
+      if (!mounted) return;
+      setState(() {
+        // Fallback to invalid signer if the network check fails
+        _signerFieldError = l10n.multisigCreateInvalidSigner; 
+        _isAddingSigner = false;
+      });
+      return;
+    }
+
+    if (!mounted) return;
     setState(() {
       _additionalSigners = [..._additionalSigners, address];
       _signerAddressController.clear();
       _signerFieldError = null;
+      _isAddingSigner = false;
       _threshold = MultisigService.defaultThreshold(_allSigners.length);
     });
     _refreshPredictedAddress();
@@ -302,6 +329,7 @@ class _AddMultisigScreenState extends ConsumerState<AddMultisigScreen> {
               additionalSigners: _additionalSigners,
               signerAddressController: _signerAddressController,
               signerFieldError: _signerFieldError,
+              isAddingSigner: _isAddingSigner,
               onAddSigner: _addSigner,
               onRemoveSigner: _removeSigner,
             ),
@@ -337,6 +365,7 @@ class _SignersSection extends StatelessWidget {
     required this.additionalSigners,
     required this.signerAddressController,
     required this.signerFieldError,
+    required this.isAddingSigner,
     required this.onAddSigner,
     required this.onRemoveSigner,
   });
@@ -346,12 +375,13 @@ class _SignersSection extends StatelessWidget {
   final List<String> additionalSigners;
   final TextEditingController signerAddressController;
   final String? signerFieldError;
-  final VoidCallback onAddSigner;
+  final bool isAddingSigner;
+  final Future<void> Function() onAddSigner;
   final ValueChanged<String> onRemoveSigner;
 
   bool get _canAddSigner {
     final address = signerAddressController.text.trim();
-    return address.isNotEmpty;
+    return address.isNotEmpty && !isAddingSigner;
   }
 
   @override
@@ -392,7 +422,8 @@ class _SignersSection extends StatelessWidget {
               label: l10n.multisigCreateAddSignerButton,
               variant: ButtonVariant.staged,
               isDisabled: !_canAddSigner,
-              onTap: onAddSigner,
+              isLoading: isAddingSigner,
+              onTap: () => onAddSigner(),
               width: null,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             ),

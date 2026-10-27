@@ -323,6 +323,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get multisigCreateInvalidSigner => 'Enter a valid signer address.';
 
   @override
+  String get multisigCreateCannotUseMultisig => 'Multisig accounts cannot be used as signers';
+
+  @override
   String get multisigCreateThresholdLabel => 'THRESHOLD';
 
   @override
