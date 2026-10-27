@@ -16,7 +16,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../fakes.dart';
 
 const _depositAddress = 'qznt5jvuXdh4ZMnTPDnHo4Xq3KwjZPDRqwmd4AW3nDGmuEACG';
-final _config = RemoteConfigModel.fromJson(const {});
+final _config = RemoteConfigModel.fromJson(const {'oneClickEndpoint': 'https://oneclick.test'});
+final _configUnserved = RemoteConfigModel.fromJson(const {});
 
 WormholeUtxo _utxo(int scaled) => WormholeUtxo(
   transfer: WormholeTransfer(
@@ -94,29 +95,32 @@ void main() {
       await SettingsService().initialize();
     });
 
-    Future<WidgetRef> pumpStrategyRef(WidgetTester tester) => pumpRef(
+    /// With [_configUnserved] the production [oneClickServiceProvider] is
+    /// left in place, as the app has it before quersi serves an endpoint.
+    Future<WidgetRef> pumpStrategyRef(WidgetTester tester, {RemoteConfigModel? config}) => pumpRef(
       tester,
       overrides: [
         remoteConfigProvider.overrideWith(
-          (ref) => RemoteConfigNotifier(FakeRemoteConfigService(_config, remote: _config)),
+          (ref) => RemoteConfigNotifier(FakeRemoteConfigService(config ?? _config, remote: config ?? _config)),
         ),
-        oneClickServiceProvider.overrideWithValue(
-          OneClickService(
-            endpoint: 'https://oneclick.test',
-            client: MockClient((request) async {
-              lookedUp.add(request.url.queryParameters['depositAddress']!);
-              if (oneClickDown) throw http.ClientException('connection refused');
-              return http.Response(
-                jsonEncode({
-                  'items': [
-                    {'depositAddress': _depositAddress},
-                  ],
-                }),
-                200,
-              );
-            }),
+        if (config == null)
+          oneClickServiceProvider.overrideWithValue(
+            OneClickService(
+              endpoint: 'https://oneclick.test',
+              client: MockClient((request) async {
+                lookedUp.add(request.url.queryParameters['depositAddress']!);
+                if (oneClickDown) throw http.ClientException('connection refused');
+                return http.Response(
+                  jsonEncode({
+                    'items': [
+                      {'depositAddress': _depositAddress},
+                    ],
+                  }),
+                  200,
+                );
+              }),
+            ),
           ),
-        ),
       ],
     );
 
@@ -156,6 +160,12 @@ void main() {
       oneClickDown = true;
       final outcome = await submit(await pumpStrategyRef(tester), plan(2));
       expect((outcome as SendFailed).message, contains("Couldn't verify the address"));
+    });
+
+    testWidgets('several inputs go on unasked while no 1Click endpoint is served', (tester) async {
+      final outcome = await submit(await pumpStrategyRef(tester, config: _configUnserved), plan(2));
+      expect(outcome, isA<SendNeedsProving>());
+      expect(lookedUp, isEmpty);
     });
   });
 }

@@ -31,8 +31,12 @@ const _unreadableAddress = 'qzUNREADABLE';
 /// Lets the warning toast a refusal raises expire before the tree is torn down.
 const _toastLifetime = Duration(seconds: 3);
 
-final _config = RemoteConfigModel.fromJson(const {});
-final _configCheckOff = RemoteConfigModel.fromJson(const {'enableOneClickNearWarning': false});
+final _config = RemoteConfigModel.fromJson(const {'oneClickEndpoint': 'https://oneclick.test'});
+final _configCheckOff = RemoteConfigModel.fromJson(const {
+  'oneClickEndpoint': 'https://oneclick.test',
+  'enableOneClickNearWarning': false,
+});
+final _configUnserved = RemoteConfigModel.fromJson(const {});
 
 /// Owns [_derivedAddress]; the secure-storage read fails for [_unreadableAddress].
 class _FakeEncryptedAccountService extends Fake implements EncryptedAccountService {
@@ -74,7 +78,14 @@ void main() {
     await SettingsService().initialize();
   });
 
-  Future<void> pumpRecipient(WidgetTester tester, SendStrategy strategy, {RemoteConfigService? remoteConfig}) async {
+  /// [productionOneClick] leaves [oneClickServiceProvider] to build from the
+  /// remote config, as the app does.
+  Future<void> pumpRecipient(
+    WidgetTester tester,
+    SendStrategy strategy, {
+    RemoteConfigService? remoteConfig,
+    bool productionOneClick = false,
+  }) async {
     final config = remoteConfig ?? FakeRemoteConfigService(_config, remote: _config);
     await tester.pumpWidget(
       ProviderScope(
@@ -83,7 +94,7 @@ void main() {
           recentAddressesServiceProvider.overrideWithValue(FakeRecentAddressesService()),
           encryptedAccountServiceProvider.overrideWith((ref, walletIndex) => _FakeEncryptedAccountService()),
           remoteConfigProvider.overrideWith((ref) => RemoteConfigNotifier(config)),
-          oneClickServiceProvider.overrideWithValue(oneClick),
+          if (!productionOneClick) oneClickServiceProvider.overrideWithValue(oneClick),
         ],
         child: MediaQuery(
           data: const MediaQueryData(size: Size(800, 900)),
@@ -173,6 +184,21 @@ void main() {
 
       expectContinue(tester, disabled: false, label: 'Continue');
       expect(find.text('NEAR Intents address detected'), findsNothing);
+      expect(lookedUp, isEmpty);
+    });
+
+    testWidgets('without a 1Click endpoint served the recipient passes unasked', (tester) async {
+      await pumpRecipient(
+        tester,
+        strategy,
+        remoteConfig: FakeRemoteConfigService(_configUnserved, remote: _configUnserved),
+        productionOneClick: true,
+      );
+      await enterRecipient(tester, _depositAddress);
+
+      expectContinue(tester, disabled: false, label: 'Continue');
+      expect(find.text('NEAR Intents address detected'), findsNothing);
+      expect(find.text('Private Send'), findsOneWidget);
       expect(lookedUp, isEmpty);
     });
 

@@ -15,7 +15,7 @@ class RemoteConfigModel {
   final bool enableMultisig;
 
   /// Whether an encrypted send checks its recipient against 1Click's deposit
-  /// addresses. Off, the check always lets the send through.
+  /// addresses, given a 1Click to ask: see [checksOneClickDeposits].
   final bool enableOneClickNearWarning;
 
   /// Asset id 1Click lists QTC under, when the listing cannot be told apart by
@@ -66,6 +66,11 @@ class RemoteConfigModel {
       oneClickEndpoint != null &&
       (AppConstants.swapAllowOverride ||
           ((defaultTargetPlatform == TargetPlatform.android ? enableSwapAndroid : enableSwap) && geoNearAllowed));
+
+  /// An encrypted send's recipient is checked against 1Click's deposit
+  /// addresses while the flag is on and an endpoint is served to ask; with
+  /// neither, every recipient passes without a lookup.
+  bool get checksOneClickDeposits => enableOneClickNearWarning && oneClickEndpoint != null;
 
   RemoteConfigModel copyWith({bool? geoNearAllowed}) => RemoteConfigModel(
     enableTestButtons: enableTestButtons,
@@ -178,7 +183,7 @@ class RemoteConfigModel {
     final endpoint = _optionalString(value);
     if (endpoint == null) return null;
     final uri = Uri.tryParse(endpoint);
-    if (uri == null || !uri.hasAuthority || !(uri.isScheme('https') || uri.isScheme('http'))) {
+    if (uri == null || uri.host.isEmpty || !(uri.isScheme('https') || uri.isScheme('http'))) {
       throw FormatException('oneClickEndpoint is not a URL: $endpoint');
     }
     return endpoint;

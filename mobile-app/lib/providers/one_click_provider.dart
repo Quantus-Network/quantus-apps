@@ -8,11 +8,11 @@ final oneClickServiceProvider = Provider<OneClickService>((ref) {
 });
 
 /// Whether [address] is a 1Click deposit address, once remote config has had
-/// its say: false without a lookup when `enableOneClickNearWarning` is off;
+/// its say: false without a lookup unless it [RemoteConfigModel.checksOneClickDeposits];
 /// a refresh in flight is waited for.
 Future<bool> isOneClickDepositAddress(WidgetRef ref, String address) async {
   final config = ref.read(remoteConfigProvider.notifier);
   await config.settled;
-  if (!ref.read(remoteConfigProvider).enableOneClickNearWarning) return false;
+  if (!ref.read(remoteConfigProvider).checksOneClickDeposits) return false;
   return ref.read(oneClickServiceProvider).isDepositAddress(address);
 }

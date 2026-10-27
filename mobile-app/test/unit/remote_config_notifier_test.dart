@@ -111,6 +111,8 @@ void main() {
     for (final json in const [
       {'oneClickEndpoint': 'oneclick.test'},
       {'oneClickEndpoint': 'ftp://oneclick.test'},
+      {'oneClickEndpoint': 'https://'},
+      {'oneClickEndpoint': 'https:///v0'},
       {'swapFeeBips': 40},
       {'swapFeeBips': -1, 'swapFeeRecipient': 'liq.near'},
     ]) {
@@ -182,6 +184,18 @@ void main() {
     final off = RemoteConfigModel.fromJson(const {'enableOneClickNearWarning': false});
     expect(off.enableOneClickNearWarning, isFalse);
     expect(RemoteConfigModel.fromJson(off.toCacheJson()), off);
+  });
+
+  test('the recipient check needs a 1Click endpoint to ask as well as its flag', () {
+    expect(RemoteConfigModel.fromJson(const {}).checksOneClickDeposits, isFalse);
+    expect(RemoteConfigModel.fromJson(const {'oneClickEndpoint': _endpoint}).checksOneClickDeposits, isTrue);
+    expect(
+      RemoteConfigModel.fromJson(const {
+        'oneClickEndpoint': _endpoint,
+        'enableOneClickNearWarning': false,
+      }).checksOneClickDeposits,
+      isFalse,
+    );
   });
 
   Future<int> changesAfterSync(RemoteConfigModel? remote) async {
