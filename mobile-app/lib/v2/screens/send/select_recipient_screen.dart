@@ -123,6 +123,7 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
         .recipientBlock(ref, address)
         .listen(
           (block) {
+            if (!mounted) return;
             setState(() {
               _block = block;
               _checking = false;
@@ -133,6 +134,7 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
             }
           },
           onError: (Object e) {
+            if (!mounted) return;
             // A failed self-send check keeps the send closed.
             quantusPrint('SelectRecipientScreen recipient check: $e');
             setState(() {
