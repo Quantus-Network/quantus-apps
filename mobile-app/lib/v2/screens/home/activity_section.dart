@@ -89,7 +89,7 @@ class _ActivitySectionState extends ConsumerState<ActivitySection> {
           children: [
             const SizedBox(height: 40),
             _header(l10n),
-            const SizedBox(height: 28),
+            const SizedBox(height: 40),
             swapRow,
             ...recentTransactions.mapIndexed((index, tx) {
               final data = TxItemData.from(tx, widget.activeAccount.accountId, colors, l10n, isPrivate: isPrivate);

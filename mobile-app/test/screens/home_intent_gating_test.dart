@@ -13,6 +13,7 @@ import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
 import 'package:resonance_network_wallet/providers/route_intent_providers.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/services/exchange_rate_service.dart';
+import 'package:resonance_network_wallet/v2/screens/accounts/open_accounts_management_button.dart';
 import 'package:resonance_network_wallet/v2/screens/home/home_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/send/input_amount_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/send/keystone_sign_cache.dart';
@@ -356,5 +357,39 @@ void main() {
 
     expect(find.byType(InputAmountScreen), findsNothing);
     expect(container.read(sendFlowActiveProvider), isFalse);
+  });
+
+  group('top bar', () {
+    testWidgets('the account pill names the active account and offers the switcher caret', (tester) async {
+      final account = makeAccount(1);
+      final settings = FakeSettingsService(activeAccount: RegularAccount(account));
+      await pumpHome(tester, settings: settings, auth: TestLocalAuthController(authenticated: true));
+
+      final pill = find.byType(OpenAccountsManagementButton);
+      expect(find.descendant(of: pill, matching: find.text(account.name)), findsOneWidget);
+      expect(
+        find.descendant(
+          of: pill,
+          matching: find.byWidgetPredicate((w) => w is QuantusIcon && w.icon == QuantusIcons.caretUpDown),
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('the eye hides the balance and turns into a crossed eye', (tester) async {
+      final settings = FakeSettingsService(activeAccount: RegularAccount(makeAccount(1)));
+      await pumpHome(tester, settings: settings, auth: TestLocalAuthController(authenticated: true));
+
+      Finder glyph(QuantusIcons icon) => find.byWidgetPredicate((w) => w is QuantusIcon && w.icon == icon);
+      expect(glyph(QuantusIcons.eye), findsOneWidget);
+      expect(glyph(QuantusIcons.gear), findsOneWidget);
+      expect(find.text('1,250'), findsNothing);
+      expect(find.text('10'), findsOneWidget);
+
+      await tester.tap(glyph(QuantusIcons.eye));
+      await tester.pump();
+      expect(glyph(QuantusIcons.eyeSlash), findsOneWidget);
+      expect(find.text('10'), findsNothing);
+    });
   });
 }

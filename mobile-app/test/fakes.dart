@@ -43,8 +43,13 @@ class FakeSettingsService extends Fake implements SettingsService {
   @override
   String? getSelectedFiatCurrency() => null;
 
+  bool balanceHidden = false;
+
   @override
-  bool isBalanceHidden() => false;
+  bool isBalanceHidden() => balanceHidden;
+
+  @override
+  Future<void> setBalanceHidden(bool value) async => balanceHidden = value;
 
   @override
   bool isCurrencyFlipped() => false;
