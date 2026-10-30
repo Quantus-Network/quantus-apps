@@ -51,15 +51,18 @@ class EncryptedSendStrategy extends SendStrategy {
 
   /// All derived wormhole addresses (receive and change rotate through the HD
   /// sequence) are this account — not just the index-0 [Account.accountId].
-  /// A 1Click deposit address is refused: it takes one deposit, the one its
-  /// quote expects, and a private send to it strands the funds.
+  /// A 1Click deposit address is refused once 1Click confirms it: it takes
+  /// one deposit, the one its quote expects, and a private send to it strands
+  /// the funds. The lookup never holds the send up.
   @override
-  Future<RecipientBlock?> recipientBlock(WidgetRef ref, String address) async {
+  Stream<RecipientBlock?> recipientBlock(WidgetRef ref, String address) async* {
     if (address == account.accountId ||
         await ref.read(encryptedAccountServiceProvider(account.walletIndex)).ownsAddress(address)) {
-      return RecipientBlock.self;
+      yield RecipientBlock.self;
+      return;
     }
-    return await isOneClickDepositAddress(ref, address) ? RecipientBlock.oneClickDeposit : null;
+    yield null;
+    if (await isOneClickDepositAddress(ref, address)) yield RecipientBlock.oneClickDeposit;
   }
 
   @override
@@ -155,9 +158,9 @@ class EncryptedSendStrategy extends SendStrategy {
     }
     // Every input leaf pays the recipient through its own exit, so a plan of
     // several inputs makes several deposits, which a single-use 1Click
-    // deposit address cannot take; asked again here in case the lookup at
-    // the recipient step went unanswered.
-    if (plan.inputCount > 1 && await isOneClickDepositAddress(ref, recipientAddress.trim())) {
+    // deposit address cannot take. Only an answer 1Click has given by now
+    // counts; it is never waited for.
+    if (plan.inputCount > 1 && isKnownOneClickDepositAddress(ref, recipientAddress.trim())) {
       return SendFailed(l10n.encryptedSendNearIntentsDescription);
     }
 

@@ -53,6 +53,23 @@ void main() {
     expect(requests, 2);
   });
 
+  test('a known deposit address is one that was confirmed, never asked for', () async {
+    final deposits = service(200, {
+      'items': [
+        {'depositAddress': _address},
+      ],
+    });
+    expect(deposits.isKnownDepositAddress(_address), isFalse);
+    await deposits.isDepositAddress(_address);
+    expect(deposits.isKnownDepositAddress(_address), isTrue);
+    expect(deposits.isKnownDepositAddress('qzOther'), isFalse);
+    expect(requests, 1);
+
+    final refused = service(403, {'message': 'History is invite-only for now'});
+    await expectLater(refused.isDepositAddress(_address), throwsA(isA<SwapApiException>()));
+    expect(refused.isKnownDepositAddress(_address), isFalse);
+  });
+
   test('a refused lookup throws instead of answering', () async {
     expect(
       service(403, {'message': 'History is invite-only for now'}).isDepositAddress(_address),

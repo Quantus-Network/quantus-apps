@@ -83,7 +83,7 @@ void main() {
     expect(planEncryptedFee(utxos, BigInt.zero).plan, isNull);
   });
 
-  group('submit asks 1Click again for a plan of several inputs', () {
+  group('submit refuses several inputs to a deposit address 1Click has confirmed', () {
     final lookedUp = <String>[];
     var oneClickDown = false;
 
@@ -145,16 +145,25 @@ void main() {
       expect(lookedUp, isEmpty);
     });
 
-    testWidgets('several inputs to a deposit address are refused', (tester) async {
-      final outcome = await submit(await pumpStrategyRef(tester), plan(2));
+    testWidgets('several inputs to a confirmed deposit address are refused', (tester) async {
+      final ref = await pumpStrategyRef(tester);
+      expect(await isOneClickDepositAddress(ref, _depositAddress), isTrue);
+      final outcome = await submit(ref, plan(2));
       expect((outcome as SendFailed).message, contains('single-use NEAR Intents deposit address'));
       expect(lookedUp, [_depositAddress]);
     });
 
-    testWidgets('several inputs with 1Click unreachable go on', (tester) async {
-      oneClickDown = true;
+    testWidgets('several inputs go on without waiting when 1Click has not answered', (tester) async {
       final outcome = await submit(await pumpStrategyRef(tester), plan(2));
       expect(outcome, isA<SendNeedsProving>());
+      expect(lookedUp, isEmpty);
+    });
+
+    testWidgets('several inputs go on when 1Click was unreachable', (tester) async {
+      oneClickDown = true;
+      final ref = await pumpStrategyRef(tester);
+      expect(await isOneClickDepositAddress(ref, _depositAddress), isFalse);
+      expect(await submit(ref, plan(2)), isA<SendNeedsProving>());
       expect(lookedUp, [_depositAddress]);
     });
   });

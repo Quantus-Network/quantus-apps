@@ -27,6 +27,7 @@ const _depositAddress = 'qznt5jvuXdh4ZMnTPDnHo4Xq3KwjZPDRqwmd4AW3nDGmuEACG';
 const _plainAddress = 'qzmTAz3UUw1WGUuVh8nbFmPwcftomduwy6twq6NDR6y9qqtEs';
 const _unreachableAddress = 'qzUNREACHABLE';
 const _unreadableAddress = 'qzUNREADABLE';
+const _slowAddress = 'qzSLOW';
 
 /// Lets the warning toast a refusal raises expire before the tree is torn down.
 const _toastLifetime = Duration(seconds: 3);
@@ -56,10 +57,13 @@ void main() {
   final lookedUp = <String>[];
   final selfChecked = <String>[];
 
-  /// 1Click as the guard sees it: history for [_depositAddress], none for any
-  /// other address, and no answer at all for [_unreachableAddress]. Built per
-  /// test, since the service remembers every answer.
+  /// 1Click as the guard sees it: history for [_depositAddress] and, once
+  /// [holdLookup] completes, for [_slowAddress]; none for any other address,
+  /// and no answer at all for [_unreachableAddress]. Built per test, since the
+  /// service remembers every answer. A test that holds a lookup creates
+  /// [holdLookup] in its own body, inside the fake-async zone.
   late OneClickService oneClick;
+  late Completer<void> holdLookup;
 
   setUp(() async {
     lookedUp.clear();
@@ -69,7 +73,8 @@ void main() {
         final address = request.url.queryParameters['depositAddress']!;
         lookedUp.add(address);
         if (address == _unreachableAddress) throw http.ClientException('connection refused');
-        final items = address == _depositAddress
+        if (address == _slowAddress) await holdLookup.future;
+        final items = address == _depositAddress || address == _slowAddress
             ? [
                 {'depositAddress': address},
               ]
@@ -186,20 +191,52 @@ void main() {
       expect(lookedUp, isEmpty);
     });
 
-    testWidgets('waits for the remote config before asking 1Click', (tester) async {
+    testWidgets('a lookup waiting for the remote config does not hold up continue', (tester) async {
       final answer = Completer<RemoteConfigModel?>();
       await pumpRecipient(tester, strategy, remoteConfig: FakeRemoteConfigService(_config)..hold = answer.future);
-      await enterRecipient(tester, _plainAddress);
+      await enterRecipient(tester, _depositAddress);
 
       expect(lookedUp, isEmpty);
-      expectContinue(tester, disabled: true, label: 'Verifying Address…');
+      expectContinue(tester, disabled: false, label: 'Continue');
 
       answer.complete(_config);
       await tester.pump();
       await tester.pump();
 
-      expect(lookedUp, [_plainAddress]);
+      expect(lookedUp, [_depositAddress]);
+      expectContinue(tester, disabled: true, label: "Can't Send to NEAR Intents");
+    });
+
+    testWidgets('a slow 1Click answer does not hold up continue and blocks once it lands', (tester) async {
+      holdLookup = Completer<void>();
+      await pumpRecipient(tester, strategy);
+      await enterRecipient(tester, _slowAddress);
+
+      expect(lookedUp, [_slowAddress]);
       expectContinue(tester, disabled: false, label: 'Continue');
+      expect(find.text('Private Send'), findsOneWidget);
+
+      holdLookup.complete();
+      await tester.pump();
+      await tester.pump();
+
+      expectContinue(tester, disabled: true, label: "Can't Send to NEAR Intents");
+      expect(find.text('NEAR Intents address detected'), findsOneWidget);
+    });
+
+    testWidgets('an answer landing after an edit is dropped', (tester) async {
+      holdLookup = Completer<void>();
+      await pumpRecipient(tester, strategy);
+      await enterRecipient(tester, _slowAddress);
+      await enterRecipient(tester, _plainAddress);
+      expectContinue(tester, disabled: false, label: 'Continue');
+
+      holdLookup.complete();
+      await tester.pump();
+      await tester.pump();
+
+      expectContinue(tester, disabled: false, label: 'Continue');
+      expect(find.text('NEAR Intents address detected'), findsNothing);
     });
 
     testWidgets('a cached config serves the lookup while quersi is down', (tester) async {

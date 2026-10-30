@@ -21,3 +21,9 @@ Future<bool> isOneClickDepositAddress(WidgetRef ref, String address) async {
     return false;
   }
 }
+
+/// Whether an earlier [isOneClickDepositAddress] got a yes for [address];
+/// never asks or waits.
+bool isKnownOneClickDepositAddress(WidgetRef ref, String address) =>
+    ref.read(remoteConfigProvider).enableOneClickNearWarning &&
+    ref.read(oneClickServiceProvider).isKnownDepositAddress(address);
