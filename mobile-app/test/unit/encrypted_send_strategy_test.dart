@@ -6,9 +6,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/providers/local_auth_provider.dart';
 import 'package:resonance_network_wallet/providers/one_click_provider.dart';
 import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
+import 'package:resonance_network_wallet/services/local_auth_service.dart';
 import 'package:resonance_network_wallet/v2/screens/send/encrypted_send_strategy.dart';
 import 'package:resonance_network_wallet/v2/screens/send/send_strategy.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -16,6 +18,13 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../fakes.dart';
 
 const _depositAddress = 'qznt5jvuXdh4ZMnTPDnHo4Xq3KwjZPDRqwmd4AW3nDGmuEACG';
+
+/// Makes device authentication a real prompt instead of the no-wallet pass.
+class _WalletPresent extends Fake implements SettingsService {
+  @override
+  Future<bool> getHasWallet() async => true;
+}
+
 final _config = RemoteConfigModel.fromJson(const {});
 
 WormholeUtxo _utxo(int scaled) => WormholeUtxo(
@@ -83,20 +92,23 @@ void main() {
     expect(planEncryptedFee(utxos, BigInt.zero).plan, isNull);
   });
 
-  group('submit asks 1Click again for a plan of several inputs', () {
+  group('submit refuses several inputs to a deposit address 1Click has confirmed', () {
     final lookedUp = <String>[];
     var oneClickDown = false;
+    Completer<void>? holdLookup;
 
     setUp(() async {
       lookedUp.clear();
       oneClickDown = false;
+      holdLookup = null;
       SharedPreferences.setMockInitialValues({});
       await SettingsService().initialize();
     });
 
-    Future<WidgetRef> pumpStrategyRef(WidgetTester tester) => pumpRef(
+    Future<WidgetRef> pumpStrategyRef(WidgetTester tester, {LocalAuthService? auth}) => pumpRef(
       tester,
       overrides: [
+        if (auth != null) localAuthServiceProvider.overrideWithValue(auth),
         remoteConfigProvider.overrideWith(
           (ref) => RemoteConfigNotifier(FakeRemoteConfigService(_config, remote: _config)),
         ),
@@ -105,6 +117,7 @@ void main() {
             client: MockClient((request) async {
               lookedUp.add(request.url.queryParameters['depositAddress']!);
               if (oneClickDown) throw http.ClientException('connection refused');
+              await holdLookup?.future;
               return http.Response(
                 jsonEncode({
                   'items': [
@@ -145,16 +158,46 @@ void main() {
       expect(lookedUp, isEmpty);
     });
 
-    testWidgets('several inputs to a deposit address are refused', (tester) async {
-      final outcome = await submit(await pumpStrategyRef(tester), plan(2));
+    testWidgets('several inputs to a confirmed deposit address are refused', (tester) async {
+      final ref = await pumpStrategyRef(tester);
+      expect(await isOneClickDepositAddress(ref, _depositAddress), isTrue);
+      final outcome = await submit(ref, plan(2));
       expect((outcome as SendFailed).message, contains('single-use NEAR Intents deposit address'));
       expect(lookedUp, [_depositAddress]);
     });
 
-    testWidgets('several inputs with 1Click unreachable are refused', (tester) async {
-      oneClickDown = true;
+    testWidgets('several inputs go on without waiting when 1Click has not answered', (tester) async {
       final outcome = await submit(await pumpStrategyRef(tester), plan(2));
-      expect((outcome as SendFailed).message, contains("Couldn't verify the address"));
+      expect(outcome, isA<SendNeedsProving>());
+      expect(lookedUp, isEmpty);
+    });
+
+    testWidgets('several inputs go on when 1Click was unreachable', (tester) async {
+      oneClickDown = true;
+      final ref = await pumpStrategyRef(tester);
+      expect(await isOneClickDepositAddress(ref, _depositAddress), isFalse);
+      expect(await submit(ref, plan(2)), isA<SendNeedsProving>());
+      expect(lookedUp, [_depositAddress]);
+    });
+
+    testWidgets('a yes landing while the device prompt is open still refuses several inputs', (tester) async {
+      holdLookup = Completer<void>();
+      final prompt = Completer<bool>();
+      final device = FakeLocalAuthentication()..hold = prompt.future;
+      final ref = await pumpStrategyRef(
+        tester,
+        auth: LocalAuthService.withDependencies(localAuth: device, settingsService: _WalletPresent()),
+      );
+      final lookup = isOneClickDepositAddress(ref, _depositAddress);
+      final outcome = submit(ref, plan(2));
+      await tester.pump();
+      expect(device.authenticateCalls, 1);
+
+      holdLookup!.complete();
+      expect(await lookup, isTrue);
+      prompt.complete(true);
+
+      expect(((await outcome) as SendFailed).message, contains('single-use NEAR Intents deposit address'));
     });
   });
 }

@@ -4,10 +4,9 @@ import 'package:flutter_riverpod/misc.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
+import 'package:resonance_network_wallet/providers/local_auth_provider.dart';
 import 'package:resonance_network_wallet/providers/one_click_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
-import 'package:resonance_network_wallet/services/local_auth_service.dart';
-import 'package:resonance_network_wallet/shared/utils/print.dart';
 import 'package:resonance_network_wallet/v2/screens/send/send_strategy.dart';
 
 /// Spend plan — and so the fee — for an amount from the wallet's current
@@ -52,21 +51,18 @@ class EncryptedSendStrategy extends SendStrategy {
 
   /// All derived wormhole addresses (receive and change rotate through the HD
   /// sequence) are this account — not just the index-0 [Account.accountId].
-  /// A 1Click deposit address is refused: it takes one deposit, the one its
-  /// quote expects, and a private send to it strands the funds.
+  /// A 1Click deposit address is refused once 1Click confirms it: it takes
+  /// one deposit, the one its quote expects, and a private send to it strands
+  /// the funds. The lookup never holds the send up.
   @override
-  Future<RecipientBlock?> recipientBlock(WidgetRef ref, String address) async {
+  Stream<RecipientBlock?> recipientBlock(WidgetRef ref, String address) async* {
     if (address == account.accountId ||
         await ref.read(encryptedAccountServiceProvider(account.walletIndex)).ownsAddress(address)) {
-      return RecipientBlock.self;
+      yield RecipientBlock.self;
+      return;
     }
-    final bool deposit;
-    try {
-      deposit = await isOneClickDepositAddress(ref, address);
-    } catch (e) {
-      throw RecipientLookupUnavailable(e);
-    }
-    return deposit ? RecipientBlock.oneClickDeposit : null;
+    yield null;
+    if (await isOneClickDepositAddress(ref, address)) yield RecipientBlock.oneClickDeposit;
   }
 
   @override
@@ -162,21 +158,16 @@ class EncryptedSendStrategy extends SendStrategy {
     }
     // Every input leaf pays the recipient through its own exit, so a plan of
     // several inputs makes several deposits, which a single-use 1Click
-    // deposit address cannot take; asked again here since the recipient
-    // screen lets an unanswered lookup through.
-    if (plan.inputCount > 1) {
-      try {
-        if (await isOneClickDepositAddress(ref, recipientAddress.trim())) {
-          return SendFailed(l10n.encryptedSendNearIntentsDescription);
-        }
-      } catch (e) {
-        quantusPrint('Encrypted send 1Click check: $e');
-        return SendFailed(l10n.sendRecipientCheckFailedMessage);
-      }
-    }
+    // deposit address cannot take. Only an answer 1Click has given by now
+    // counts; it is never waited for, and read again once the user has
+    // authenticated, since it may land while the prompt is open.
+    final recipient = recipientAddress.trim();
+    bool refused() => plan.inputCount > 1 && isKnownOneClickDepositAddress(ref, recipient);
+    if (refused()) return SendFailed(l10n.encryptedSendNearIntentsDescription);
 
-    final authed = await LocalAuthService().authenticate(localizedReason: l10n.sendReviewAuthReason);
+    final authed = await ref.read(localAuthServiceProvider).authenticate(localizedReason: l10n.sendReviewAuthReason);
     if (!authed) return SendFailed(l10n.sendReviewAuthRequired);
+    if (refused()) return SendFailed(l10n.encryptedSendNearIntentsDescription);
 
     return SendNeedsProving(
       account: account,
@@ -185,7 +176,7 @@ class EncryptedSendStrategy extends SendStrategy {
       terminal: buildSentTerminalContent(
         l10n,
         ref.read(numberFormattingServiceProvider),
-        recipient: recipientAddress.trim(),
+        recipient: recipient,
         amount: amount,
         isPayMode: isPayMode,
       ),
