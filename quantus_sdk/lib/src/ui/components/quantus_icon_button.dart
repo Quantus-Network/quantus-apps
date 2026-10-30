@@ -8,7 +8,9 @@ enum IconButtonStyle { glass, flat, ghost }
 enum IconButtonSize { small, medium, large }
 
 class QuantusIconButton extends StatelessWidget {
-  final IconData icon;
+  /// One of [icon] (a font glyph) or [quantusIcon] (an SVG from the icon set).
+  final IconData? icon;
+  final QuantusIcons? quantusIcon;
   final VoidCallback? onTap;
   final IconButtonSize size;
   final IconButtonShape shape;
@@ -24,7 +26,8 @@ class QuantusIconButton extends StatelessWidget {
 
   const QuantusIconButton.rounded({
     super.key,
-    required this.icon,
+    this.icon,
+    this.quantusIcon,
     this.size = IconButtonSize.medium,
     this.onTap,
     this.isActive = false,
@@ -33,11 +36,13 @@ class QuantusIconButton extends StatelessWidget {
     this.radius,
     this.style = IconButtonStyle.flat,
     this.canRequestFocus = true,
-  }) : shape = IconButtonShape.rounded;
+  }) : assert((icon == null) != (quantusIcon == null)),
+       shape = IconButtonShape.rounded;
 
   const QuantusIconButton.circular({
     super.key,
-    required this.icon,
+    this.icon,
+    this.quantusIcon,
     this.size = IconButtonSize.medium,
     this.onTap,
     this.isActive = false,
@@ -46,11 +51,13 @@ class QuantusIconButton extends StatelessWidget {
     this.radius,
     this.style = IconButtonStyle.flat,
     this.canRequestFocus = true,
-  }) : shape = IconButtonShape.circular;
+  }) : assert((icon == null) != (quantusIcon == null)),
+       shape = IconButtonShape.circular;
 
   const QuantusIconButton.ghost({
     super.key,
-    required this.icon,
+    this.icon,
+    this.quantusIcon,
     this.size = IconButtonSize.medium,
     this.onTap,
     this.isActive = false,
@@ -59,7 +66,8 @@ class QuantusIconButton extends StatelessWidget {
     this.radius,
     this.shape = IconButtonShape.rounded,
     this.canRequestFocus = true,
-  }) : style = IconButtonStyle.ghost;
+  }) : assert((icon == null) != (quantusIcon == null)),
+       style = IconButtonStyle.ghost;
 
   double get buttonSize {
     switch (size) {
@@ -113,6 +121,8 @@ class QuantusIconButton extends StatelessWidget {
               height: iconSize,
               child: CircularProgressIndicator(color: iconColor, strokeWidth: 1.5),
             )
+          : quantusIcon != null
+          ? QuantusIcon(quantusIcon!, size: iconSize, color: iconColor)
           : Icon(icon, color: iconColor, size: iconSize),
     );
 
