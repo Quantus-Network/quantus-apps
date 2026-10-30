@@ -114,12 +114,7 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
     return ScaffoldBase(
       appBar: V2AppBar(
         title: l10n.accountsSheetTitle,
-        showBackButton: false,
-        trailing: QuantusIconButton.ghost(
-          icon: Icons.close,
-          onTap: () => Navigator.pop(context),
-          size: IconButtonSize.small,
-        ),
+        leading: const AppBackButton(icon: QuantusIcons.close),
       ),
       mainContent: _buildContent(
         l10n: l10n,
