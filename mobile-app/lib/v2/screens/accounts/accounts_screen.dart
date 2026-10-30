@@ -15,7 +15,8 @@ import 'package:resonance_network_wallet/v2/components/account_badge.dart';
 import 'package:resonance_network_wallet/v2/components/account_list_row.dart';
 import 'package:resonance_network_wallet/v2/components/multisig_tag.dart';
 import 'package:resonance_network_wallet/v2/components/private_activity_notice.dart';
-import 'package:resonance_network_wallet/v2/screens/accounts/account_actions.dart';
+import 'package:resonance_network_wallet/v2/screens/accounts/account_menu_screen.dart';
+import 'package:resonance_network_wallet/v2/screens/accounts/multisig_account_menu_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/wallet_name_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/add_account_menu_screen.dart';
 
@@ -97,23 +98,32 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
       groups: [
         [
           if (isEncrypted)
-            AnchoredMenuItem(label: l10n.accountMenuInnerHash, onTap: () => openInnerHash(context, account))
+            AnchoredMenuItem(
+              label: l10n.accountMenuInnerHash,
+              onTap: () => AccountMenuScreen.openInnerHash(context, account),
+            )
           else ...[
-            AnchoredMenuItem(label: l10n.accountMenuShowAddress, onTap: () => openAddressDetails(context, account)),
-            AnchoredMenuItem(label: l10n.accountMenuRename, onTap: () => openAccountNameEditor(context, ref, account)),
+            AnchoredMenuItem(
+              label: l10n.accountMenuShowAddress,
+              onTap: () => AccountMenuScreen.openAddressDetails(context, account),
+            ),
+            AnchoredMenuItem(
+              label: l10n.accountMenuRename,
+              onTap: () => AccountMenuScreen.openNameEditor(context, ref, account),
+            ),
           ],
           if (account.accountType == AccountType.local)
             AnchoredMenuItem(
               label: l10n.accountMenuShowRecoveryPhrase,
-              onTap: () => openRecoveryPhrase(context, account),
+              onTap: () => AccountMenuScreen.openRecoveryPhrase(context, account),
             ),
         ],
-        if (canDisconnectAccount(ref, account))
+        if (AccountMenuScreen.canDisconnect(ref, account))
           [
             AnchoredMenuItem(
               label: l10n.accountMenuDisconnectAccount,
               isDestructive: true,
-              onTap: () => disconnectAccount(context, ref, account),
+              onTap: () => AccountMenuScreen.disconnect(context, ref, account),
             ),
           ],
       ],
@@ -128,15 +138,24 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
       width: _menuWidth,
       groups: [
         [
-          AnchoredMenuItem(label: l10n.accountMenuShowAddress, onTap: () => openAddressDetails(context, account)),
-          AnchoredMenuItem(label: l10n.accountMenuRename, onTap: () => openMultisigNameEditor(context, ref, account)),
-          AnchoredMenuItem(label: l10n.multisigAccountMenuDetails, onTap: () => openMultisigDetails(context, account)),
+          AnchoredMenuItem(
+            label: l10n.accountMenuShowAddress,
+            onTap: () => MultisigAccountMenuScreen.openAddressDetails(context, account),
+          ),
+          AnchoredMenuItem(
+            label: l10n.accountMenuRename,
+            onTap: () => MultisigAccountMenuScreen.openNameEditor(context, ref, account),
+          ),
+          AnchoredMenuItem(
+            label: l10n.multisigAccountMenuDetails,
+            onTap: () => MultisigAccountMenuScreen.openDetails(context, account),
+          ),
         ],
         [
           AnchoredMenuItem(
             label: l10n.accountMenuDisconnectAccount,
             isDestructive: true,
-            onTap: () => disconnectMultisig(context, ref, account),
+            onTap: () => MultisigAccountMenuScreen.disconnect(context, ref, account),
           ),
         ],
       ],
