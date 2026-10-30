@@ -151,10 +151,11 @@ void main() {
       expect(lookedUp, [_depositAddress]);
     });
 
-    testWidgets('several inputs with 1Click unreachable are refused', (tester) async {
+    testWidgets('several inputs with 1Click unreachable go on', (tester) async {
       oneClickDown = true;
       final outcome = await submit(await pumpStrategyRef(tester), plan(2));
-      expect((outcome as SendFailed).message, contains("Couldn't verify the address"));
+      expect(outcome, isA<SendNeedsProving>());
+      expect(lookedUp, [_depositAddress]);
     });
   });
 }

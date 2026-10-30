@@ -128,14 +128,13 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
           }
         })
         .catchError((Object e) {
-          // Only an unanswered 1Click lookup lets the send go on; a failed
-          // self-send check keeps it closed.
+          // A failed self-send check keeps the send closed; the 1Click lookup
+          // fails open on its own.
           quantusPrint('SelectRecipientScreen recipient check: $e');
           if (!mounted || _recipientController.text.trim() != address) return;
           setState(() {
             _checking = false;
             _checkFailed = true;
-            _canContinue = e is RecipientLookupUnavailable;
           });
           context.showWarningToaster(message: ref.read(l10nProvider).sendRecipientCheckFailedMessage);
         });
