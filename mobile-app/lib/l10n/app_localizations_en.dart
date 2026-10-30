@@ -809,6 +809,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get accountMenuShowRecoveryPhrase => 'Show Recovery Phrase';
 
   @override
+  String get accountMenuShowAddress => 'Show address';
+
+  @override
+  String get accountMenuRename => 'Rename';
+
+  @override
+  String get accountMenuDisconnectAccount => 'Disconnect account';
+
+  @override
   String get accountMenuNotFound => 'Account not found';
 
   @override

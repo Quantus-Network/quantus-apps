@@ -1568,6 +1568,24 @@ abstract class AppLocalizations {
   /// **'Show Recovery Phrase'**
   String get accountMenuShowRecoveryPhrase;
 
+  /// Account row menu item opening the address details
+  ///
+  /// In en, this message translates to:
+  /// **'Show address'**
+  String get accountMenuShowAddress;
+
+  /// Account and wallet row menu item opening the name editor
+  ///
+  /// In en, this message translates to:
+  /// **'Rename'**
+  String get accountMenuRename;
+
+  /// Destructive account row menu item
+  ///
+  /// In en, this message translates to:
+  /// **'Disconnect account'**
+  String get accountMenuDisconnectAccount;
+
   /// When account is not found on menu screen
   ///
   /// In en, this message translates to:

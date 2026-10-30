@@ -33,6 +33,8 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
   final GlobalKey _scrollTargetKey = GlobalKey();
   bool _scrolledToTarget = false;
   String? _highlightAccountId;
+  static const double _menuWidth = 236;
+
   final Set<int> _expandedWallets = {};
 
   @override
@@ -86,14 +88,90 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
     }
   }
 
-  void _openAccountMenu(Account account) {
-    Navigator.of(context).push<void>(MaterialPageRoute(builder: (_) => AccountMenuScreen(initialAccount: account)));
+  void _openAccountMenu(BuildContext anchor, Account account) {
+    final l10n = ref.read(l10nProvider);
+    final isEncrypted = account.accountType == AccountType.encrypted;
+    showAnchoredMenu(
+      context,
+      anchor: anchor,
+      width: _menuWidth,
+      groups: [
+        [
+          if (isEncrypted)
+            AnchoredMenuItem(
+              label: l10n.accountMenuInnerHash,
+              onTap: () => AccountMenuScreen.openInnerHash(context, account),
+            )
+          else ...[
+            AnchoredMenuItem(
+              label: l10n.accountMenuShowAddress,
+              onTap: () => AccountMenuScreen.openAddressDetails(context, account),
+            ),
+            AnchoredMenuItem(
+              label: l10n.accountMenuRename,
+              onTap: () => AccountMenuScreen.openNameEditor(context, ref, account),
+            ),
+          ],
+          if (account.accountType == AccountType.local)
+            AnchoredMenuItem(
+              label: l10n.accountMenuShowRecoveryPhrase,
+              onTap: () => AccountMenuScreen.openRecoveryPhrase(context, account),
+            ),
+        ],
+        if (AccountMenuScreen.canDisconnect(ref, account))
+          [
+            AnchoredMenuItem(
+              label: l10n.accountMenuDisconnectAccount,
+              isDestructive: true,
+              onTap: () => AccountMenuScreen.disconnect(context, ref, account),
+            ),
+          ],
+      ],
+    );
   }
 
-  void _openMultisigAccountMenu(MultisigAccount account) {
-    Navigator.of(
+  void _openMultisigAccountMenu(BuildContext anchor, MultisigAccount account) {
+    final l10n = ref.read(l10nProvider);
+    showAnchoredMenu(
       context,
-    ).push<void>(MaterialPageRoute(builder: (_) => MultisigAccountMenuScreen(initialAccount: account)));
+      anchor: anchor,
+      width: _menuWidth,
+      groups: [
+        [
+          AnchoredMenuItem(
+            label: l10n.accountMenuShowAddress,
+            onTap: () => MultisigAccountMenuScreen.openAddressDetails(context, account),
+          ),
+          AnchoredMenuItem(
+            label: l10n.accountMenuRename,
+            onTap: () => MultisigAccountMenuScreen.openNameEditor(context, ref, account),
+          ),
+          AnchoredMenuItem(
+            label: l10n.multisigAccountMenuDetails,
+            onTap: () => MultisigAccountMenuScreen.openDetails(context, account),
+          ),
+        ],
+        [
+          AnchoredMenuItem(
+            label: l10n.accountMenuDisconnectAccount,
+            isDestructive: true,
+            onTap: () => MultisigAccountMenuScreen.disconnect(context, ref, account),
+          ),
+        ],
+      ],
+    );
+  }
+
+  void _openWalletMenu(BuildContext anchor, WalletGroup wallet) {
+    final l10n = ref.read(l10nProvider);
+    showAnchoredMenu(
+      context,
+      anchor: anchor,
+      width: _menuWidth,
+      groups: [
+        [AnchoredMenuItem(label: l10n.accountMenuRename, onTap: () => _openWalletNameEditor(wallet.walletIndex))],
+      ],
+    );
   }
 
   void _openWalletNameEditor(int walletIndex) {
@@ -114,7 +192,7 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
     return ScaffoldBase(
       appBar: V2AppBar(
         title: l10n.accountsSheetTitle,
-        leading: const AppBackButton(icon: QuantusIcons.close),
+        leading: const AppBackButton(icon: QuantusIcons.caretDown, size: 44, iconSize: 20),
       ),
       mainContent: _buildContent(
         l10n: l10n,
@@ -256,30 +334,39 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
   Widget _buildWalletHeader(AppLocalizations l10n, WalletGroup wallet, String? activeAccountId) {
     return Row(
       children: [
-        Expanded(child: _buildWalletNameAndEdit(l10n, wallet)),
+        Expanded(child: _buildWalletNameAndMenu(l10n, wallet)),
         if (_containsAccount(wallet, activeAccountId)) _ActiveWalletTag(label: l10n.accountsScreenActiveWallet),
       ],
     );
   }
 
-  Widget _buildWalletNameAndEdit(AppLocalizations l10n, WalletGroup wallet) {
-    return Row(
-      children: [
-        Flexible(
-          child: Text(
-            _walletDisplayName(l10n, wallet),
-            style: context.themeTextV3.bodyLarge.copyWith(color: context.colorsV3.textContent),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
+  Widget _buildWalletNameAndMenu(AppLocalizations l10n, WalletGroup wallet) {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Builder(
+        builder: (anchor) => GestureDetector(
+          onTap: () => _openWalletMenu(anchor, wallet),
+          behavior: HitTestBehavior.opaque,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Flexible(
+                  child: Text(
+                    _walletDisplayName(l10n, wallet),
+                    style: context.themeTextV3.bodyLarge.copyWith(color: context.colorsV3.textContent),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                const SizedBox(width: 4),
+                QuantusIcon(QuantusIcons.caretDown, color: context.colorsV3.textMuted),
+              ],
+            ),
           ),
         ),
-        const SizedBox(width: 4),
-        QuantusIconButton.ghost(
-          icon: Icons.edit_outlined,
-          onTap: () => _openWalletNameEditor(wallet.walletIndex),
-          size: IconButtonSize.small,
-        ),
-      ],
+      ),
     );
   }
 
@@ -365,7 +452,7 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
   Widget _buildExpandedWalletHeader(AppLocalizations l10n, WalletGroup wallet, String? activeAccountId) {
     return Row(
       children: [
-        Expanded(child: _buildWalletNameAndEdit(l10n, wallet)),
+        Expanded(child: _buildWalletNameAndMenu(l10n, wallet)),
         if (_containsAccount(wallet, activeAccountId)) ...[
           _ActiveWalletTag(label: l10n.accountsScreenActiveWallet),
           const SizedBox(width: 8),
@@ -417,7 +504,7 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
       leading: AccountBadge.account(account: account, isActive: true),
       title: account.name,
       subtitle: _balanceText(l10n, account),
-      trailing: _MenuKebab(onTap: () => _openAccountMenu(account)),
+      trailing: Builder(builder: (anchor) => KebabButton(onTap: () => _openAccountMenu(anchor, account))),
     );
   }
 
@@ -437,7 +524,7 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
       leading: const EncryptedLockBadge(),
       title: account.name,
       subtitle: _balanceText(l10n, account),
-      trailing: _MenuKebab(onTap: () => _openAccountMenu(account)),
+      trailing: Builder(builder: (anchor) => KebabButton(onTap: () => _openAccountMenu(anchor, account))),
     );
   }
 
@@ -458,26 +545,7 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
       title: account.name,
       subtitle: _balanceText(l10n, account),
       tag: MultisigTag(label: l10n.multisigTag),
-      trailing: _MenuKebab(onTap: () => _openMultisigAccountMenu(account)),
-    );
-  }
-}
-
-/// Opens the account menu; tapping the row itself switches account.
-class _MenuKebab extends StatelessWidget {
-  final VoidCallback onTap;
-
-  const _MenuKebab({required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: Padding(
-        padding: const EdgeInsets.all(10),
-        child: QuantusIcon(QuantusIcons.kebab, color: context.colorsV3.textContent),
-      ),
+      trailing: Builder(builder: (anchor) => KebabButton(onTap: () => _openMultisigAccountMenu(anchor, account))),
     );
   }
 }

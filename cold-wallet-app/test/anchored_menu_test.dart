@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:quantus_cold_wallet/components/anchored_menu.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:quantus_cold_wallet/ui/cold_theme.dart';
 
 import 'fakes/account_fixtures.dart';
