@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:quantus_cold_wallet/components/anchored_menu.dart';
 import 'package:quantus_cold_wallet/models/cold_account.dart';
 import 'package:quantus_cold_wallet/providers/wallet_providers.dart';
 import 'package:quantus_cold_wallet/screens/enlarged_qr_screen.dart';
@@ -161,26 +160,6 @@ class _Card extends StatelessWidget {
         border: Border.all(color: colors.borderHairline),
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: children),
-    );
-  }
-}
-
-/// Kebab glyph with a 44pt target, for an app bar slot or a list row.
-class KebabButton extends StatelessWidget {
-  final VoidCallback onTap;
-
-  const KebabButton({super.key, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: SizedBox(
-        width: 44,
-        height: 44,
-        child: Center(child: QuantusIcon(QuantusIcons.kebab, size: 20, color: context.colorsV3.textContent)),
-      ),
     );
   }
 }

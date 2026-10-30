@@ -1137,6 +1137,18 @@
     "@accountMenuShowRecoveryPhrase": {
       "description": "Show recovery phrase menu row label"
     },
+    "accountMenuShowAddress": "Show address",
+    "@accountMenuShowAddress": {
+      "description": "Account row menu item opening the address details"
+    },
+    "accountMenuRename": "Rename",
+    "@accountMenuRename": {
+      "description": "Account and wallet row menu item opening the name editor"
+    },
+    "accountMenuDisconnectAccount": "Disconnect account",
+    "@accountMenuDisconnectAccount": {
+      "description": "Destructive account row menu item"
+    },
     "accountMenuNotFound": "Account not found",
     "@accountMenuNotFound": {
       "description": "When account is not found on menu screen"

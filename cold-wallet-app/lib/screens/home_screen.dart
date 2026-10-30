@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:quantus_cold_wallet/components/account_avatar.dart';
-import 'package:quantus_cold_wallet/components/anchored_menu.dart';
 import 'package:quantus_cold_wallet/components/offline_pill.dart';
 import 'package:quantus_cold_wallet/providers/connectivity_provider.dart';
 import 'package:quantus_cold_wallet/providers/wallet_providers.dart';
