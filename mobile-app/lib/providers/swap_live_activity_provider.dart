@@ -195,7 +195,12 @@ class SwapProgressVisible extends Notifier<bool> {
   @override
   bool build() => false;
 
-  void set(bool visible) => state = visible;
+  /// Records [visible]. A write that lands after the app has gone away is dropped:
+  /// the provider, and anything listening to it, is already gone.
+  void set(bool visible) {
+    if (!ref.mounted) return;
+    state = visible;
+  }
 }
 
 final swapLiveActivityClientProvider = Provider<SwapLiveActivityClient>((ref) {

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:clock/clock.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -47,16 +49,32 @@ class _SwapProgressScreenState extends ConsumerState<SwapProgressScreen> {
   /// the swap was put away.
   ActiveSwap? _shown;
 
+  late final SwapProgressVisible _progressVisible;
+
   @override
   void initState() {
     super.initState();
-    ref.read(swapProgressVisibleProvider.notifier).set(true);
+    _progressVisible = ref.read(swapProgressVisibleProvider.notifier);
+    _setProgressVisible(true);
   }
 
   @override
   void dispose() {
-    ref.read(swapProgressVisibleProvider.notifier).set(false);
+    _setProgressVisible(false);
     super.dispose();
+  }
+
+  /// Applies [visible] once the current build or unmount has finished.
+  /// Riverpod rejects a provider write from initState or dispose, and [ref]
+  /// is already unsafe once dispose starts.
+  void _setProgressVisible(bool visible) {
+    final progressVisible = _progressVisible;
+    unawaited(
+      Future<void>.microtask(() {
+        if (visible && !mounted) return;
+        progressVisible.set(visible);
+      }),
+    );
   }
 
   @override
