@@ -44,6 +44,10 @@ object SwapLiveNotifications {
     private var pendingDismiss = false
     private var ignoreDelete = false
 
+    /// Serializes push read-compare-write. The Dart path and [SwapLivePushReceiver]
+    /// both deliver FCM, and the two can be interleaved on the main thread.
+    private val revisionLock = Any()
+
     fun bind(messenger: BinaryMessenger, context: Context) {
         MethodChannel(messenger, METHOD_CHANNEL).setMethodCallHandler { call, result ->
             handle(context, call, result)
@@ -94,25 +98,63 @@ object SwapLiveNotifications {
                     result.success(null)
                 }
             }
+            "replace" -> {
+                val args = call.arguments as? Map<*, *>
+                if (args == null) {
+                    result.error("bad_args", "Expected the swap push payload", null)
+                } else {
+                    replace(app, jsonOf(args))
+                    result.success(null)
+                }
+            }
             else -> result.notImplemented()
         }
     }
 
     /// The stored card, so a push can tell a matching live card from a dismissed one.
-    fun card(context: Context): Map<String, String> {
-        val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-        return mapOf(
-            "key" to storedKey(prefs).orEmpty(),
-            "dismissedKey" to prefs.getString(PREF_DISMISSED, null).orEmpty(),
-        )
+    fun card(context: Context): Map<String, Any> {
+        val stored = synchronized(revisionLock) {
+            storedSwapCard(context.getSharedPreferences(PREFS, Context.MODE_PRIVATE))
+        }
+        val card = HashMap<String, Any>()
+        card["key"] = stored.key.orEmpty()
+        card["dismissedKey"] = stored.dismissedKey.orEmpty()
+        card["phase"] = stored.phase.orEmpty()
+        stored.failure?.let { card["failure"] = it }
+        stored.updatedAt?.let { card["updatedAt"] = it }
+        return card
     }
 
     /// Draws [data] when it is a `swap_live_activity` update for the card on screen.
-    /// Same rules as `swapLiveActivityPushUpdate`: matching key, and not dismissed.
+    /// Same rules as `swapLiveActivityPushUpdate`.
     fun apply(context: Context, data: Map<*, *>) {
-        val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-        val update = swapLivePushUpdate(data, storedKey(prefs), prefs.getString(PREF_DISMISSED, null)) ?: return
-        show(context, update, stale = false)
+        commitPush(context, data)
+    }
+
+    /// Parsed card from the Dart path. Compared again under [revisionLock] so it
+    /// cannot replace a revision that landed after Dart read [card].
+    fun replace(context: Context, json: JSONObject) {
+        commitPush(context, pushData(json))
+    }
+
+    private fun commitPush(context: Context, data: Map<*, *>) {
+        synchronized(revisionLock) {
+            val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            val stored = storedSwapCard(prefs)
+            val update = swapLivePushUpdate(data, stored.key, stored.dismissedKey, stored.revision) ?: return
+            show(context, update, stale = false)
+        }
+    }
+
+    private fun pushData(json: JSONObject): Map<String, Any?> {
+        val data = HashMap<String, Any?>()
+        data["type"] = MESSAGE_TYPE
+        val keys = json.keys()
+        while (keys.hasNext()) {
+            val key = keys.next()
+            data[key] = if (json.isNull(key)) null else json.get(key)
+        }
+        return data
     }
 
     fun show(context: Context, json: JSONObject, stale: Boolean) {
@@ -330,10 +372,30 @@ object SwapLiveNotifications {
         }
     }
 
-    private fun storedKey(prefs: android.content.SharedPreferences): String? {
-        val raw = prefs.getString(PREF_PAYLOAD, null) ?: return null
-        val key = runCatching { JSONObject(raw).optString("key") }.getOrNull()
-        return key?.takeIf { it.isNotEmpty() }
+    private class StoredSwapCard(
+        val key: String?,
+        val dismissedKey: String?,
+        val updatedAt: Long?,
+        val phase: String?,
+        val failure: String?,
+    ) {
+        val revision = SwapLiveCardRevision(updatedAt, phase, failure)
+    }
+
+    private fun storedKey(prefs: android.content.SharedPreferences): String? = storedSwapCard(prefs).key
+
+    private fun storedSwapCard(prefs: android.content.SharedPreferences): StoredSwapCard {
+        val dismissed = prefs.getString(PREF_DISMISSED, null)
+        val raw = prefs.getString(PREF_PAYLOAD, null) ?: return StoredSwapCard(null, dismissed, null, null, null)
+        val json = runCatching { JSONObject(raw) }.getOrNull()
+        if (json == null) return StoredSwapCard(null, dismissed, null, null, null)
+        return StoredSwapCard(
+            json.optString("key").takeIf { it.isNotEmpty() },
+            dismissed,
+            if (json.isNull("updatedAt")) null else epochOf(json.opt("updatedAt")),
+            json.optString("phase").takeIf { it.isNotEmpty() },
+            if (json.isNull("failure")) null else textOrNull(json.opt("failure")),
+        )
     }
 
     private fun cancelStale(context: Context) {
@@ -440,6 +502,33 @@ private fun fcmData(extras: Bundle): Map<String, String> {
 
 /// Keep in step with `swapLiveActivityPushUpdate`. A push updates only the card
 /// already on screen for the same swap, and never one the user dismissed.
+/// An older revision is dropped, and a finished card does not return to in progress.
+
+internal data class SwapLiveCardRevision(
+    val updatedAt: Long?,
+    val phase: String?,
+    val failure: String?,
+)
+
+/// Order for an FCM data message. Incomplete deposits stay open.
+internal fun swapLiveRevisionAllows(
+    incomingUpdatedAt: Long?,
+    incomingPhase: String,
+    incomingFailure: String?,
+    stored: SwapLiveCardRevision,
+): Boolean {
+    if (incomingUpdatedAt == null) return false
+    val storedAt = stored.updatedAt
+    if (storedAt != null && incomingUpdatedAt < storedAt) return false
+    val finished = swapLiveTerminal(stored.phase, stored.failure)
+    return !finished || swapLiveTerminal(incomingPhase, incomingFailure)
+}
+
+internal fun swapLiveTerminal(phase: String?, failure: String?): Boolean {
+    if (phase == "swapped") return true
+    return phase == "failed" && failure != "incomplete"
+}
+
 private val pushStringFields = listOf(
     "phase",
     "headline",
@@ -461,16 +550,48 @@ private val pushStringFields = listOf(
 
 private val pushValueFields = listOf("failure", "progress", "showProgress", "endsAt", "updatedAt", "staleAt", "holdsProcess")
 
-internal fun swapLivePushUpdate(data: Map<*, *>, shownKey: String?, dismissedKey: String?): JSONObject? {
+internal fun swapLivePushFields(
+    data: Map<*, *>,
+    shownKey: String?,
+    dismissedKey: String?,
+    stored: SwapLiveCardRevision,
+): Map<String, Any?>? {
     if (data["type"]?.toString() != SwapLiveNotifications.MESSAGE_TYPE) return null
     val fields = pushFields(data)
     val key = fields["key"]?.toString().orEmpty()
     val phase = fields["phase"]?.toString().orEmpty()
     if (key.isEmpty() || phase.isEmpty() || shownKey != key || dismissedKey == key) return null
+    val allowed = swapLiveRevisionAllows(epochOf(fields["updatedAt"]), phase, textOrNull(fields["failure"]), stored)
+    if (!allowed) return null
+    return fields
+}
+
+internal fun swapLivePushUpdate(
+    data: Map<*, *>,
+    shownKey: String?,
+    dismissedKey: String?,
+    stored: SwapLiveCardRevision,
+): JSONObject? {
+    val fields = swapLivePushFields(data, shownKey, dismissedKey, stored) ?: return null
     val json = JSONObject()
     for (name in pushStringFields) json.put(name, fields[name]?.toString() ?: "")
     for (name in pushValueFields) json.put(name, pushValue(name, fields[name]))
     return json
+}
+
+private fun epochOf(value: Any?): Long? {
+    if (value == null) return null
+    if (value is Number) return value.toLong()
+    val text = value as? String ?: return null
+    if (text.isEmpty() || text == "null") return null
+    return text.toLongOrNull()
+}
+
+private fun textOrNull(value: Any?): String? {
+    if (value == null) return null
+    val text = value.toString()
+    if (text.isEmpty() || text == "null") return null
+    return text
 }
 
 private fun pushFields(data: Map<*, *>): Map<String, Any?> {
