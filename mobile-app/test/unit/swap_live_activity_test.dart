@@ -228,6 +228,26 @@ void main() {
     expect(push.unregister('abc'), throwsException);
   });
 
+  testWidgets('Senoti stops waiting when the connection is accepted and not answered', (tester) async {
+    final content = decide(swap(SwapStatus.pendingDeposit)).content!;
+    final push = SwapLiveActivityPush(
+      client: MockClient((_) => Completer<http.Response>().future),
+      endpoint: 'https://snt.test/api',
+      timeout: const Duration(milliseconds: 30),
+    );
+
+    final registered = expectLater(
+      push.register(token: 'abc', platform: 'ios', content: content),
+      throwsA(isA<TimeoutException>()),
+    );
+    await tester.pump(const Duration(milliseconds: 30));
+    await registered;
+
+    final removed = expectLater(push.unregister('abc'), throwsA(isA<TimeoutException>()));
+    await tester.pump(const Duration(milliseconds: 30));
+    await removed;
+  });
+
   group('SwapLiveActivityController', () {
     late _Client card;
     late _Registrar registrar;
@@ -478,6 +498,85 @@ void main() {
       expect(poster.cancelled, 1);
       expect(live.ended, 1);
     });
+
+    test('a stuck Senoti registration does not block removing the card', () async {
+      final gate = Completer<void>();
+      registrar.gate = () => gate.future;
+      final started = controller.sync();
+      await pumpEventQueue();
+      expect(registrar.calls, hasLength(1));
+      expect(card.shown, hasLength(1));
+
+      current = null;
+      final removed = controller.sync();
+      try {
+        await pumpEventQueue();
+        expect(card.ended, 1);
+        expect(registrar.removed, isEmpty);
+      } finally {
+        if (!gate.isCompleted) gate.complete();
+        await started;
+        await removed;
+      }
+      expect(registrar.calls, hasLength(1));
+      expect(registrar.removed, isNotEmpty);
+      expect(registrar.removed, everyElement('fcm-token'));
+    });
+
+    test('a stuck Senoti unregister does not block the next card', () async {
+      await controller.sync();
+      final gate = Completer<void>();
+      registrar.unregisterGate = () => gate.future;
+      current = null;
+      final ending = controller.sync();
+      await pumpEventQueue();
+      expect(card.ended, 1);
+
+      current = swap(SwapStatus.knownDepositTx);
+      now = now.add(const Duration(minutes: 2));
+      final again = controller.sync();
+      try {
+        await pumpEventQueue();
+        expect(card.shown, hasLength(2));
+      } finally {
+        if (!gate.isCompleted) gate.complete();
+        await ending;
+        await again;
+      }
+      expect(registrar.ops, ['register', 'unregister', 'register']);
+    });
+
+    test('a stuck Senoti unregister does not block the notification fallback', () async {
+      await controller.dispose();
+      final live = _CapabilitiesClient(const SwapLiveCapabilities(available: true, authorized: true));
+      final poster = _Poster();
+      controller = SwapLiveActivityController(
+        client: live,
+        push: registrar,
+        isIOS: () => true,
+        notifications: poster,
+        snapshot: () =>
+            SwapLiveSnapshot(swap: current, l10n: l10n, formatAmount: format, now: now, progressVisible: visible),
+      );
+
+      await controller.sync();
+      live.emit(SwapLiveToken('activity-token'));
+      await pumpEventQueue();
+      expect(registrar.calls.map((call) => call.$1), contains('activity-token'));
+
+      final gate = Completer<void>();
+      registrar.unregisterGate = () => gate.future;
+      live.reported = const SwapLiveCapabilities(available: true, authorized: false);
+      now = now.add(const Duration(minutes: 2));
+      final fallback = controller.sync();
+      try {
+        await pumpEventQueue();
+        expect(poster.shown, hasLength(1));
+      } finally {
+        if (!gate.isCompleted) gate.complete();
+        await fallback;
+      }
+    });
   });
 }
 
@@ -563,14 +662,28 @@ class _FailingClient extends _CapabilitiesClient {
 
 class _Registrar implements SwapLiveActivityRegistrar {
   final calls = <(String, String, SwapLivePhase)>[];
+  final removed = <String>[];
+  final ops = <String>[];
+  Future<void> Function()? gate;
+  Future<void> Function()? unregisterGate;
 
   @override
   Future<void> register({
     required String token,
     required String platform,
     required SwapLiveActivityContent content,
-  }) async => calls.add((token, platform, content.phase));
+  }) async {
+    calls.add((token, platform, content.phase));
+    ops.add('register');
+    final pending = gate?.call();
+    if (pending != null) await pending;
+  }
 
   @override
-  Future<void> unregister(String token) async {}
+  Future<void> unregister(String token) async {
+    final pending = unregisterGate?.call();
+    if (pending != null) await pending;
+    removed.add(token);
+    ops.add('unregister');
+  }
 }

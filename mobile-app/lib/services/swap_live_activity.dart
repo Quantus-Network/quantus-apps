@@ -83,6 +83,10 @@ const swapLiveStaleAfter = Duration(minutes: 2);
 /// ahead of the clock while the phase itself has not changed.
 const swapLiveRefreshAfter = Duration(seconds: 45);
 
+/// How long a Senoti register or unregister may go unanswered. The lock-screen
+/// card does not wait on this; a silent connection must not hold it open.
+const swapLiveRemoteTimeout = Duration(seconds: 15);
+
 enum SwapLivePhase { submitted, confirming, settling, swapped, failed }
 
 enum SwapLiveFailure { failed, refunded, incomplete }

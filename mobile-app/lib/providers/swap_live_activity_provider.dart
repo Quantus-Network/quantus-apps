@@ -54,6 +54,19 @@ class SwapLiveActivityController {
   StreamSubscription<SwapLiveActivityEvent>? _events;
   Future<void> _tail = Future<void>.value();
 
+  /// Register and unregister. Kept off [_tail] so a silent Senoti cannot delay
+  /// showing or removing the card. Calls stay ordered with each other.
+  Future<void> _remote = Future<void>.value();
+
+  /// Bumped when the card is removed or the activity is replaced by the
+  /// fallback notification. A registration that finishes for an older value
+  /// is dropped instead of being kept.
+  int _epoch = 0;
+
+  /// Tokens whose register call has not been confirmed. Removed with the card
+  /// so a request that times out can still be deleted.
+  final Set<String> _attempted = {};
+
   bool _foreground = true;
   bool _unsupported = false;
   bool _shown = false;
@@ -94,9 +107,14 @@ class SwapLiveActivityController {
   }
 
   Future<void> sync() {
-    final run = _tail.then((_) => _sync());
-    _tail = run.catchError((Object e) => quantusPrint('Swap live activity sync failed: $e'));
-    return run;
+    final presented = _tail.then((_) => _sync());
+    _tail = presented.catchError((Object error) => quantusPrint('Swap live activity sync failed: $error'));
+    return presented.then((_) => _remote);
+  }
+
+  void _enqueueRemote(Future<void> Function() action) {
+    final run = _remote.then((_) => action());
+    _remote = run.catchError((Object error) => quantusPrint('Swap live activity remote failed: $error'));
   }
 
   Future<void> _sync() async {
@@ -128,7 +146,10 @@ class SwapLiveActivityController {
     _identity = content.identity;
     _deliveredAt = snap.now;
     _shownContent = content;
-    if (changed || _registeredToken == null) await _register(content);
+    if (changed || _registeredToken == null) {
+      final epoch = _epoch;
+      _enqueueRemote(() => _register(content, epoch));
+    }
   }
 
   Future<bool> _useNotification() async {
@@ -180,20 +201,13 @@ class SwapLiveActivityController {
       _notification = true;
       _activityShown = false;
       _activityToken = null;
-      final token = _registeredToken;
-      _registeredToken = null;
+      final tokens = _takeTokens();
       try {
         await _client.endQuietly();
       } on MissingPluginException {
         quantusPrint('Swap live activity end had no native handler');
       }
-      if (token != null) {
-        try {
-          await _push.unregister(token);
-        } catch (error) {
-          quantusPrint('Swap live activity unregister failed: $error');
-        }
-      }
+      _dropAll(tokens);
     }
     await poster.show(content);
     _notification = true;
@@ -205,49 +219,99 @@ class SwapLiveActivityController {
     return delivered != null && now.difference(delivered) < swapLiveRefreshAfter;
   }
 
-  Future<void> _register(SwapLiveActivityContent content) async {
-    if (content.simulated) return;
-    final activity = _activityToken;
-    if (activity != null) await _registerToken(activity, 'ios', content);
-    final platform = _devicePushPlatform;
-    final deviceToken = _deviceToken;
-    if (platform == null || deviceToken == null) return;
-    final token = await deviceToken();
-    if (token == null) return;
-    await _registerToken(token, platform, content);
+  bool _tracks(int epoch, String key) => epoch == _epoch && _shown && _shownKey == key;
+
+  Set<String> _takeTokens() {
+    final tokens = <String>{..._attempted, if (_registeredToken != null) _registeredToken!};
+    _attempted.clear();
+    _registeredToken = null;
+    _epoch++;
+    return tokens;
   }
 
-  Future<void> _registerToken(String token, String platform, SwapLiveActivityContent content) async {
-    try {
-      await _push.register(token: token, platform: platform, content: content);
-      _registeredToken = token;
-    } catch (e) {
-      quantusPrint('Swap live activity registration failed: $e');
+  void _dropAll(Set<String> tokens) {
+    for (final token in tokens) {
+      _enqueueRemote(() => _dropToken(token));
     }
   }
 
+  Future<void> _dropToken(String token) async {
+    try {
+      await _push.unregister(token);
+    } catch (error) {
+      quantusPrint('Swap live activity unregister failed: $error');
+    }
+  }
+
+  /// Unregister [token] and forget it locally. Used when a register call
+  /// finishes after this swap is no longer the one on the card.
+  Future<void> _forget(String token) async {
+    _attempted.remove(token);
+    if (_registeredToken == token) _registeredToken = null;
+    await _dropToken(token);
+  }
+
+  Future<void> _register(SwapLiveActivityContent content, int epoch) async {
+    if (content.simulated) return;
+    if (!_tracks(epoch, content.key)) return;
+    final activity = _activityToken;
+    if (activity != null) await _registerToken(activity, 'ios', content, epoch);
+    if (!_tracks(epoch, content.key)) return;
+    final platform = _devicePushPlatform;
+    final deviceToken = _deviceToken;
+    if (platform == null || deviceToken == null) return;
+    final String? token;
+    try {
+      token = await deviceToken().timeout(swapLiveRemoteTimeout);
+    } on TimeoutException {
+      quantusPrint('Swap live activity device token timed out');
+      return;
+    } catch (error) {
+      quantusPrint('Swap live activity device token failed: $error');
+      return;
+    }
+    if (token == null || !_tracks(epoch, content.key)) return;
+    await _registerToken(token, platform, content, epoch);
+  }
+
+  Future<void> _registerToken(String token, String platform, SwapLiveActivityContent content, int epoch) async {
+    if (!_tracks(epoch, content.key)) return;
+    _attempted.add(token);
+    try {
+      await _push.register(token: token, platform: platform, content: content);
+    } on TimeoutException {
+      quantusPrint('Swap live activity registration timed out');
+      if (!_tracks(epoch, content.key)) await _forget(token);
+      return;
+    } catch (error) {
+      quantusPrint('Swap live activity registration failed: $error');
+      if (!_tracks(epoch, content.key)) await _forget(token);
+      return;
+    }
+    if (!_tracks(epoch, content.key)) {
+      await _forget(token);
+      return;
+    }
+    _attempted.remove(token);
+    _registeredToken = token;
+  }
+
   Future<void> _end() async {
-    if (!_shown && _registeredToken == null && _cleared && !_notification) return;
+    if (!_shown && _registeredToken == null && _attempted.isEmpty && _cleared && !_notification) return;
     if (_notification) {
       await _notifications?.cancel();
       _notification = false;
     }
     _activityShown = false;
     _cleared = true;
-    final token = _registeredToken;
+    final tokens = _takeTokens();
     _shown = false;
     _shownKey = null;
     _identity = null;
     _deliveredAt = null;
     _shownContent = null;
-    _registeredToken = null;
     await _client.end();
-    if (token == null) return;
-    try {
-      await _push.unregister(token);
-    } catch (e) {
-      quantusPrint('Swap live activity unregister failed: $e');
-    }
+    _dropAll(tokens);
   }
 
   void _onEvent(SwapLiveActivityEvent event) {
@@ -261,7 +325,9 @@ class SwapLiveActivityController {
         if (_notification) return;
         _activityToken = token;
         final content = _shownContent;
-        if (content != null) unawaited(_registerToken(token, 'ios', content));
+        if (content == null) return;
+        final epoch = _epoch;
+        _enqueueRemote(() => _registerToken(token, 'ios', content, epoch));
     }
   }
 
