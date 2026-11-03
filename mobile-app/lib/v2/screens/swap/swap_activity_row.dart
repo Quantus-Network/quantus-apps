@@ -45,7 +45,13 @@ class SwapActivityRow extends ConsumerWidget {
           );
 
     return GestureDetector(
-      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => SwapProgressScreen(account: starter))),
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(
+          settings: const RouteSettings(name: SwapProgressScreen.routeName),
+          builder: (_) => SwapProgressScreen(account: starter),
+        ),
+      ),
       behavior: HitTestBehavior.opaque,
       child: Column(
         children: [

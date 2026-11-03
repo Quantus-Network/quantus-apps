@@ -44,6 +44,12 @@ void main() {
       expect(container.read(paymentIntentProvider), isNull);
     });
 
+    test('a swap live activity link asks home to open the swap', () {
+      handle('quantus://swap');
+
+      expect(container.read(swapProgressIntentProvider), isTrue);
+    });
+
     test('ignores unrelated links', () {
       handle('https://www.quantus.com/unknown?to=whatever&amount=1');
 

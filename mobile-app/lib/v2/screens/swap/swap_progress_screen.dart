@@ -7,6 +7,7 @@ import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/providers/active_swap_provider.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
+import 'package:resonance_network_wallet/providers/swap_live_activity_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
 import 'package:resonance_network_wallet/v2/components/copy_icon_button.dart';
@@ -29,6 +30,8 @@ import 'package:resonance_network_wallet/v2/screens/swap/swap_summary.dart';
 /// a running swap left by going back is still followed. Its details sheet,
 /// or the notice once it is overdue, offers to stop tracking.
 class SwapProgressScreen extends ConsumerStatefulWidget {
+  static const routeName = 'swap-progress';
+
   /// The account a new swap would start from; none when the selected
   /// account cannot swap.
   final Account? account;
@@ -43,6 +46,18 @@ class _SwapProgressScreenState extends ConsumerState<SwapProgressScreen> {
   /// What was shown last: it stays on screen while the route leaves after
   /// the swap was put away.
   ActiveSwap? _shown;
+
+  @override
+  void initState() {
+    super.initState();
+    ref.read(swapProgressVisibleProvider.notifier).set(true);
+  }
+
+  @override
+  void dispose() {
+    ref.read(swapProgressVisibleProvider.notifier).set(false);
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {

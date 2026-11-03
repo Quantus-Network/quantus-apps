@@ -87,5 +87,10 @@ import FirebaseMessaging
     if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "SecureClipboard") {
       setupSecureClipboardChannel(messenger: registrar.messenger())
     }
+    if #available(iOS 16.2, *) {
+      if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "SwapLiveActivity") {
+        SwapLiveActivityBridge.shared.register(messenger: registrar.messenger())
+      }
+    }
   }
 }

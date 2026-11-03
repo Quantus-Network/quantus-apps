@@ -2633,6 +2633,55 @@
     "@swapProgressFooter": {
       "description": "Footer under the swap progress bar"
     },
+    "swapLiveBrand": "Swapping",
+    "@swapLiveBrand": {
+      "description": "Lock screen header while a swap is underway or complete"
+    },
+    "swapLiveBrandIdle": "Swap",
+    "@swapLiveBrandIdle": {
+      "description": "Lock screen header when the swap card is stale or failed"
+    },
+    "swapLiveSubmitted": "Swap submitted",
+    "@swapLiveSubmitted": {
+      "description": "Lock screen headline after the deposit is sent"
+    },
+    "swapLiveSettling": "Settling on {network}",
+    "@swapLiveSettling": {
+      "description": "Lock screen headline while the swap pays out on the destination chain",
+      "placeholders": {
+        "network": {
+          "type": "String"
+        }
+      }
+    },
+    "swapLiveSwapped": "Swapped",
+    "@swapLiveSwapped": {
+      "description": "Lock screen headline when the swap has paid out"
+    },
+    "swapLiveFrom": "From",
+    "@swapLiveFrom": {
+      "description": "Lock screen label for the amount paid"
+    },
+    "swapLiveTo": "To",
+    "@swapLiveTo": {
+      "description": "Lock screen label for the amount received"
+    },
+    "swapLiveChain": "Chain",
+    "@swapLiveChain": {
+      "description": "Lock screen label for the source chain"
+    },
+    "swapLiveOpenToCheck": "Open Quantus to check",
+    "@swapLiveOpenToCheck": {
+      "description": "Lock screen footer when the swap card could not be updated"
+    },
+    "swapLiveAgo": "ago",
+    "@swapLiveAgo": {
+      "description": "Lock screen suffix after how long the card has been stale"
+    },
+    "swapLiveChannel": "Swap progress",
+    "@swapLiveChannel": {
+      "description": "Android notification channel for the swap lock screen card"
+    },
     "swapDetailsTitle": "Swap Details",
     "@swapDetailsTitle": {
       "description": "Title of the swap details sheet"
