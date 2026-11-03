@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -167,6 +168,53 @@ void main() {
     expect(body.containsKey('recipient'), isFalse);
   });
 
+  group('selectSwapLivePresentation', () {
+    test('uses a Live Activity only when one can run and the user allowed it', () {
+      expect(
+        selectSwapLivePresentation(const SwapLiveCapabilities(available: true, authorized: true)),
+        SwapLivePresentation.activity,
+      );
+    });
+
+    test('uses a notification when Live Activities are missing or turned off', () {
+      expect(
+        selectSwapLivePresentation(const SwapLiveCapabilities(available: false, authorized: true)),
+        SwapLivePresentation.notification,
+      );
+      expect(
+        selectSwapLivePresentation(const SwapLiveCapabilities(available: true, authorized: false)),
+        SwapLivePresentation.notification,
+      );
+      expect(
+        selectSwapLivePresentation(const SwapLiveCapabilities(available: false, authorized: false)),
+        SwapLivePresentation.notification,
+      );
+    });
+  });
+
+  test('capabilities that omit a flag are rejected', () {
+    expect(() => parseSwapLiveCapabilities({'available': true}), throwsFormatException);
+    expect(parseSwapLiveCapabilities({'available': true, 'authorized': false}).authorized, isFalse);
+  });
+
+  test('the fallback notification names the swap and the amounts', () {
+    final content = decide(swap(SwapStatus.pendingDeposit)).content!;
+    final copy = swapLiveNotificationCopy(content);
+
+    expect(copy.title, 'Swap submitted');
+    expect(copy.subtitle, 'Ethereum');
+    expect(copy.body, '${quote.amountIn} USDC · ${quote.amountOut} QTC');
+  });
+
+  test('a swap notification tap is the quantus://swap route, other taps stay transactions', () {
+    expect(routeLocalNotificationTap('quantus://swap'), isA<LocalNotificationSwapTap>());
+
+    final transaction = routeLocalNotificationTap('{"kind":"transfer"}');
+    expect(transaction, isA<LocalNotificationTransactionTap>());
+    expect((transaction as LocalNotificationTransactionTap).json, {'kind': 'transfer'});
+    expect(() => routeLocalNotificationTap('not-json'), throwsFormatException);
+  });
+
   test('Senoti registration accepts 202 and rejects anything else', () async {
     final content = decide(swap(SwapStatus.pendingDeposit)).content!;
     final client = MockClient((request) async {
@@ -258,6 +306,178 @@ void main() {
 
       expect(registrar.calls.map((call) => (call.$1, call.$2)), contains(('activity-token', 'ios')));
     });
+
+    test('Android does not ask whether Live Activities are allowed', () async {
+      await controller.dispose();
+      final probe = _CapabilitiesProbe();
+      controller = SwapLiveActivityController(
+        client: probe,
+        push: registrar,
+        isIOS: () => false,
+        notifications: _Poster(),
+        snapshot: () =>
+            SwapLiveSnapshot(swap: current, l10n: l10n, formatAmount: format, now: now, progressVisible: visible),
+      );
+
+      await controller.sync();
+
+      expect(probe.capabilityReads, 0);
+      expect(probe.shown, hasLength(1));
+    });
+
+    test('iOS with Live Activities allowed keeps the activity and skips the notification', () async {
+      await controller.dispose();
+      final live = _CapabilitiesClient(const SwapLiveCapabilities(available: true, authorized: true));
+      final poster = _Poster();
+      controller = SwapLiveActivityController(
+        client: live,
+        push: registrar,
+        isIOS: () => true,
+        notifications: poster,
+        snapshot: () =>
+            SwapLiveSnapshot(swap: current, l10n: l10n, formatAmount: format, now: now, progressVisible: visible),
+      );
+
+      await controller.sync();
+
+      expect(live.shown, hasLength(1));
+      expect(poster.shown, isEmpty);
+    });
+
+    test('iOS without Live Activities posts a notification and keeps updating it', () async {
+      await controller.dispose();
+      final live = _CapabilitiesClient(const SwapLiveCapabilities(available: false, authorized: false));
+      final poster = _Poster();
+      controller = SwapLiveActivityController(
+        client: live,
+        push: registrar,
+        isIOS: () => true,
+        notifications: poster,
+        snapshot: () =>
+            SwapLiveSnapshot(swap: current, l10n: l10n, formatAmount: format, now: now, progressVisible: visible),
+      );
+
+      await controller.sync();
+      expect(live.shown, isEmpty);
+      expect(poster.shown.single.headline, 'Swap submitted');
+
+      now = now.add(const Duration(minutes: 2));
+      current = swap(SwapStatus.knownDepositTx);
+      await controller.sync();
+
+      expect(poster.shown, hasLength(2));
+      expect(poster.shown.last.headline, 'Confirming on Ethereum');
+      expect(poster.cancelled, 0);
+    });
+
+    test('a missing iOS plugin posts a notification instead of stopping updates', () async {
+      await controller.dispose();
+      final live = _MissingPluginClient();
+      final poster = _Poster();
+      controller = SwapLiveActivityController(
+        client: live,
+        push: registrar,
+        isIOS: () => true,
+        notifications: poster,
+        snapshot: () =>
+            SwapLiveSnapshot(swap: current, l10n: l10n, formatAmount: format, now: now, progressVisible: visible),
+      );
+
+      await controller.sync();
+      expect(poster.shown, hasLength(1));
+
+      now = now.add(const Duration(minutes: 2));
+      current = swap(SwapStatus.processing);
+      await controller.sync();
+
+      expect(poster.shown, hasLength(2));
+      expect(poster.shown.last.headline, 'Settling on Quantus');
+    });
+
+    test('Live Activities turning off falls back to a notification', () async {
+      await controller.dispose();
+      final live = _DeniedClient();
+      final poster = _Poster();
+      controller = SwapLiveActivityController(
+        client: live,
+        push: registrar,
+        isIOS: () => true,
+        notifications: poster,
+        snapshot: () =>
+            SwapLiveSnapshot(swap: current, l10n: l10n, formatAmount: format, now: now, progressVisible: visible),
+      );
+
+      await controller.sync();
+
+      expect(live.shown, hasLength(1));
+      expect(poster.shown, hasLength(1));
+    });
+
+    test('a Live Activity error other than availability does not post a notification', () async {
+      await controller.dispose();
+      final live = _FailingClient(PlatformException(code: 'activity_failed', message: 'bad payload'));
+      final poster = _Poster();
+      controller = SwapLiveActivityController(
+        client: live,
+        push: registrar,
+        isIOS: () => true,
+        notifications: poster,
+        snapshot: () =>
+            SwapLiveSnapshot(swap: current, l10n: l10n, formatAmount: format, now: now, progressVisible: visible),
+      );
+
+      await expectLater(controller.sync(), throwsA(isA<PlatformException>()));
+      expect(poster.shown, isEmpty);
+
+      await expectLater(controller.sync(), throwsA(isA<PlatformException>()));
+    });
+
+    test('disabling Live Activities replaces the activity with a notification', () async {
+      await controller.dispose();
+      final live = _CapabilitiesClient(const SwapLiveCapabilities(available: true, authorized: true));
+      final poster = _Poster();
+      controller = SwapLiveActivityController(
+        client: live,
+        push: registrar,
+        isIOS: () => true,
+        notifications: poster,
+        snapshot: () =>
+            SwapLiveSnapshot(swap: current, l10n: l10n, formatAmount: format, now: now, progressVisible: visible),
+      );
+
+      await controller.sync();
+      expect(live.shown, hasLength(1));
+      expect(poster.shown, isEmpty);
+
+      live.reported = const SwapLiveCapabilities(available: true, authorized: false);
+      now = now.add(const Duration(minutes: 2));
+      await controller.sync();
+
+      expect(live.ended, 1);
+      expect(poster.shown, hasLength(1));
+      expect(poster.cancelled, 0);
+    });
+
+    test('ending the swap removes the fallback notification', () async {
+      await controller.dispose();
+      final live = _CapabilitiesClient(const SwapLiveCapabilities(available: true, authorized: false));
+      final poster = _Poster();
+      controller = SwapLiveActivityController(
+        client: live,
+        push: registrar,
+        isIOS: () => true,
+        notifications: poster,
+        snapshot: () =>
+            SwapLiveSnapshot(swap: current, l10n: l10n, formatAmount: format, now: now, progressVisible: visible),
+      );
+
+      await controller.sync();
+      current = null;
+      await controller.sync();
+
+      expect(poster.cancelled, 1);
+      expect(live.ended, 1);
+    });
   });
 }
 
@@ -276,6 +496,69 @@ class _Client implements SwapLiveActivityClient {
 
   @override
   Future<void> end() async => ended++;
+
+  @override
+  Future<void> endQuietly() => end();
+
+  @override
+  Future<SwapLiveCapabilities> capabilities() async => const SwapLiveCapabilities(available: true, authorized: true);
+}
+
+class _Poster implements SwapLiveNotificationPoster {
+  final shown = <SwapLiveActivityContent>[];
+  var cancelled = 0;
+
+  @override
+  Future<void> show(SwapLiveActivityContent content) async => shown.add(content);
+
+  @override
+  Future<void> cancel() async => cancelled++;
+}
+
+class _CapabilitiesProbe extends _Client {
+  var capabilityReads = 0;
+
+  @override
+  Future<SwapLiveCapabilities> capabilities() async {
+    capabilityReads++;
+    return const SwapLiveCapabilities(available: true, authorized: true);
+  }
+}
+
+class _CapabilitiesClient extends _Client {
+  SwapLiveCapabilities reported;
+
+  _CapabilitiesClient(this.reported);
+
+  @override
+  Future<SwapLiveCapabilities> capabilities() async => reported;
+}
+
+class _MissingPluginClient extends _Client {
+  @override
+  Future<SwapLiveCapabilities> capabilities() async => throw MissingPluginException();
+
+  @override
+  Future<void> show(Map<String, Object?> payload) async => throw MissingPluginException();
+}
+
+class _DeniedClient extends _CapabilitiesClient {
+  _DeniedClient() : super(const SwapLiveCapabilities(available: true, authorized: true));
+
+  @override
+  Future<void> show(Map<String, Object?> payload) async {
+    shown.add(payload);
+    throw PlatformException(code: 'activities_unavailable', message: 'turned off');
+  }
+}
+
+class _FailingClient extends _CapabilitiesClient {
+  final PlatformException error;
+
+  _FailingClient(this.error) : super(const SwapLiveCapabilities(available: true, authorized: true));
+
+  @override
+  Future<void> show(Map<String, Object?> payload) async => throw error;
 }
 
 class _Registrar implements SwapLiveActivityRegistrar {

@@ -4,6 +4,8 @@ import 'dart:io';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:resonance_network_wallet/models/notification_models.dart';
+import 'package:resonance_network_wallet/providers/route_intent_providers.dart';
+import 'package:resonance_network_wallet/services/swap_live_activity.dart';
 import 'package:resonance_network_wallet/services/telemetry_service.dart';
 import 'package:resonance_network_wallet/services/transaction_service.dart';
 import 'package:timezone/timezone.dart' as tz;
@@ -91,15 +93,55 @@ class LocalNotificationsService {
     if (notificationAppLaunchDetails?.didNotificationLaunchApp != true) return;
 
     final payload = notificationAppLaunchDetails!.notificationResponse?.payload;
-    if (payload == null || payload.isEmpty) return;
+    _dispatchNotificationPayload(
+      payload,
+      logLabel: 'Error decoding payload handle launch by notification',
+      failureEvent: 'Error decoding notification launch payload',
+    );
+  }
 
-    final txService = _ref.read(transactionServiceProvider);
+  /// Shows the swap as a normal notification. The same id replaces the previous
+  /// one, and a tap carries [swapLiveNotificationPayload].
+  Future<void> showSwapProgress(SwapLiveActivityContent content) async {
+    await init();
+    final copy = swapLiveNotificationCopy(content);
+    await _notificationPlugin.show(
+      id: swapLiveNotificationId,
+      title: copy.title,
+      body: copy.body,
+      notificationDetails: NotificationDetails(
+        iOS: DarwinNotificationDetails(
+          presentAlert: true,
+          presentBanner: false,
+          presentList: true,
+          presentSound: false,
+          presentBadge: false,
+          subtitle: copy.subtitle,
+          threadIdentifier: 'swap_live_activity',
+          interruptionLevel: InterruptionLevel.passive,
+        ),
+      ),
+      payload: swapLiveNotificationPayload,
+    );
+  }
+
+  Future<void> cancelSwapProgress() async {
+    await init();
+    await _notificationPlugin.cancel(id: swapLiveNotificationId);
+  }
+
+  void _dispatchNotificationPayload(String? payload, {required String logLabel, required String failureEvent}) {
+    if (payload == null || payload.isEmpty) return;
     try {
-      final json = jsonDecode(payload);
-      txService.navigateToTransactionFromPayloadIfPossible(json);
+      switch (routeLocalNotificationTap(payload)) {
+        case LocalNotificationSwapTap():
+          _ref.read(swapProgressIntentProvider.notifier).state = true;
+        case LocalNotificationTransactionTap(:final json):
+          _ref.read(transactionServiceProvider).navigateToTransactionFromPayloadIfPossible(json);
+      }
     } catch (e) {
-      quantusPrint('Error decoding payload handle launch by notification: $e');
-      TelemetryService().sendError('Error decoding notification launch payload', error: e);
+      quantusPrint('$logLabel: $e');
+      TelemetryService().sendError(failureEvent, error: e);
     }
   }
 
@@ -148,17 +190,11 @@ class LocalNotificationsService {
 
   void setupNotificationsClickListener() {
     _onNotificationClick.stream.listen((payload) {
-      if (payload == null || payload.isEmpty) return;
-
-      final txService = _ref.read(transactionServiceProvider);
-
-      try {
-        final json = jsonDecode(payload);
-        txService.navigateToTransactionFromPayloadIfPossible(json);
-      } catch (e) {
-        quantusPrint('Error decoding payload setup notifications click listener: $e');
-        TelemetryService().sendError('Error decoding notification click payload', error: e);
-      }
+      _dispatchNotificationPayload(
+        payload,
+        logLabel: 'Error decoding payload setup notifications click listener',
+        failureEvent: 'Error decoding notification click payload',
+      );
     });
   }
 
@@ -178,3 +214,16 @@ class LocalNotificationsService {
 final localNotificationsServiceProvider = Provider<LocalNotificationsService>((ref) {
   return LocalNotificationsService(ref);
 });
+
+/// The iOS notification used when a Live Activity cannot run.
+class LocalSwapLiveNotificationPoster implements SwapLiveNotificationPoster {
+  final LocalNotificationsService _service;
+
+  LocalSwapLiveNotificationPoster(this._service);
+
+  @override
+  Future<void> show(SwapLiveActivityContent content) => _service.showSwapProgress(content);
+
+  @override
+  Future<void> cancel() => _service.cancelSwapProgress();
+}

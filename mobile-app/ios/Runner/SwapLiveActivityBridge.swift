@@ -3,37 +3,44 @@ import Flutter
 import Foundation
 
 /// Starts and updates the swap Live Activity, and reports its push token.
-@available(iOS 16.2, *)
+///
+/// The channel is registered on every iOS version the app supports. A Live
+/// Activity is started only on iOS 16.2 when the user has allowed Live
+/// Activities. Otherwise `show` reports `activities_unavailable` and the app
+/// posts a normal notification.
 final class SwapLiveActivityBridge: NSObject, FlutterStreamHandler {
   static let shared = SwapLiveActivityBridge()
 
   private var eventSink: FlutterEventSink?
   private var tokenTasks: [String: Task<Void, Never>] = [:]
   private var stateTasks: [String: Task<Void, Never>] = [:]
+  private var suppressDismiss: Set<String> = []
 
   func register(messenger: FlutterBinaryMessenger) {
     let methods = FlutterMethodChannel(name: "app.quantus/swap_live_activity", binaryMessenger: messenger)
     methods.setMethodCallHandler { [weak self] call, result in
       guard let self else { return }
       switch call.method {
+      case "capabilities":
+        result(self.capabilities())
       case "show":
         guard let args = call.arguments as? [String: Any] else {
           result(FlutterError(code: "bad_args", message: "Expected the swap card payload", details: nil))
           return
         }
-        Task { @MainActor in
-          do {
-            try await self.show(args)
-            result(nil)
-          } catch {
-            result(FlutterError(code: "activity_failed", message: error.localizedDescription, details: nil))
-          }
+        guard #available(iOS 16.2, *) else {
+          result(FlutterError(code: "activities_unavailable", message: "Live Activities are unavailable", details: nil))
+          return
         }
+        guard ActivityAuthorizationInfo().areActivitiesEnabled else {
+          result(FlutterError(code: "activities_unavailable", message: "Live Activities are unavailable", details: nil))
+          return
+        }
+        self.showActivity(args, result: result)
       case "end":
-        Task { @MainActor in
-          await self.endAll()
-          result(nil)
-        }
+        self.end(quiet: false, result: result)
+      case "endQuietly":
+        self.end(quiet: true, result: result)
       default:
         result(FlutterMethodNotImplemented)
       }
@@ -53,6 +60,56 @@ final class SwapLiveActivityBridge: NSObject, FlutterStreamHandler {
     return nil
   }
 
+  private var liveActivitiesAuthorized: Bool {
+    guard #available(iOS 16.2, *) else { return false }
+    return ActivityAuthorizationInfo().areActivitiesEnabled
+  }
+
+  private func capabilities() -> [String: Bool] {
+    ["available": iosSupportsLiveActivities, "authorized": liveActivitiesAuthorized]
+  }
+
+  private var iosSupportsLiveActivities: Bool {
+    if #available(iOS 16.2, *) {
+      return true
+    }
+    return false
+  }
+
+  @available(iOS 16.2, *)
+  private func activityError(_ error: ActivityAuthorizationError) -> FlutterError {
+    switch error {
+    case .denied, .unsupported, .visibility:
+      return FlutterError(code: "activities_unavailable", message: error.localizedDescription, details: nil)
+    default:
+      return FlutterError(code: "activity_failed", message: error.localizedDescription, details: nil)
+    }
+  }
+
+  private func end(quiet: Bool, result: @escaping FlutterResult) {
+    Task { @MainActor in
+      if #available(iOS 16.2, *) {
+        await self.endAll(quiet: quiet)
+      }
+      result(nil)
+    }
+  }
+
+  @available(iOS 16.2, *)
+  private func showActivity(_ args: [String: Any], result: @escaping FlutterResult) {
+    Task { @MainActor in
+      do {
+        try await self.show(args)
+        result(nil)
+      } catch let error as ActivityAuthorizationError {
+        result(self.activityError(error))
+      } catch {
+        result(FlutterError(code: "activity_failed", message: error.localizedDescription, details: nil))
+      }
+    }
+  }
+
+  @available(iOS 16.2, *)
   @MainActor
   private func show(_ args: [String: Any]) async throws {
     let state = try contentState(args)
@@ -66,13 +123,18 @@ final class SwapLiveActivityBridge: NSObject, FlutterStreamHandler {
     watch(activity)
   }
 
+  @available(iOS 16.2, *)
   @MainActor
-  private func endAll() async {
+  private func endAll(quiet: Bool) async {
     for activity in Activity<SwapActivityAttributes>.activities {
+      if quiet {
+        suppressDismiss.insert(activity.id)
+      }
       await activity.end(nil, dismissalPolicy: .immediate)
     }
   }
 
+  @available(iOS 16.2, *)
   @MainActor
   private func watch(_ activity: Activity<SwapActivityAttributes>) {
     let id = activity.id
@@ -86,6 +148,9 @@ final class SwapLiveActivityBridge: NSObject, FlutterStreamHandler {
     stateTasks[id] = Task { @MainActor in
       for await state in activity.activityStateUpdates {
         if state == .dismissed {
+          if self.suppressDismiss.remove(id) != nil {
+            continue
+          }
           self.emit(["type": "dismissed"])
         }
       }

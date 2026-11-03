@@ -1,5 +1,73 @@
+import 'dart:convert';
+
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/l10n/app_localizations.dart';
+
+/// iOS notification used when a Live Activity cannot run.
+///
+/// Distinct from Android's swap card id (71041), so cancelling this fallback
+/// cannot remove the Android card.
+const swapLiveNotificationId = 71042;
+
+/// Payload on that notification. Tapping it follows the same `quantus://swap`
+/// route as the Live Activity.
+const swapLiveNotificationPayload = 'quantus://swap';
+
+/// Whether this device can show the swap as a Live Activity.
+class SwapLiveCapabilities {
+  final bool available;
+  final bool authorized;
+
+  const SwapLiveCapabilities({required this.available, required this.authorized});
+}
+
+enum SwapLivePresentation { activity, notification }
+
+/// A Live Activity only when the OS can run one and the user has allowed it.
+/// Otherwise the swap is a normal notification.
+SwapLivePresentation selectSwapLivePresentation(SwapLiveCapabilities capabilities) {
+  if (capabilities.available && capabilities.authorized) return SwapLivePresentation.activity;
+  return SwapLivePresentation.notification;
+}
+
+/// Where a local-notification tap should go.
+sealed class LocalNotificationTap {
+  const LocalNotificationTap();
+}
+
+class LocalNotificationSwapTap extends LocalNotificationTap {
+  const LocalNotificationSwapTap();
+}
+
+class LocalNotificationTransactionTap extends LocalNotificationTap {
+  final Map<String, dynamic> json;
+
+  const LocalNotificationTransactionTap(this.json);
+}
+
+/// Swap taps open the swap. Every other payload stays a transaction notification.
+LocalNotificationTap routeLocalNotificationTap(String payload) {
+  if (payload == swapLiveNotificationPayload) return const LocalNotificationSwapTap();
+  final json = jsonDecode(payload);
+  if (json is! Map) {
+    throw const FormatException('Notification payload was not a JSON object');
+  }
+  return LocalNotificationTransactionTap(Map<String, dynamic>.from(json));
+}
+
+/// Title, subtitle, and body for the fallback notification.
+({String title, String subtitle, String body}) swapLiveNotificationCopy(SwapLiveActivityContent content) => (
+  title: content.headline,
+  subtitle: content.chain,
+  body: '${content.fromAmount} ${content.fromSymbol} · ${content.toAmount} ${content.toSymbol}',
+);
+
+/// Posts and removes the fallback notification.
+abstract class SwapLiveNotificationPoster {
+  Future<void> show(SwapLiveActivityContent content);
+
+  Future<void> cancel();
+}
 
 /// How far along the lock-screen bar sits. The ticks divide it into quarters;
 /// each phase rests inside its own quarter, and a finished swap fills the bar.
