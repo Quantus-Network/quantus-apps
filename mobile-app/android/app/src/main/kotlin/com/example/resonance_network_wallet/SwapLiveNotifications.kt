@@ -1,6 +1,7 @@
 package com.example.resonance_network_wallet
 
 import android.app.AlarmManager
+import androidx.annotation.RequiresApi
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -167,6 +168,63 @@ object SwapLiveNotifications {
     }
 
     fun build(context: Context, json: JSONObject): Notification {
+        if (Build.VERSION.SDK_INT >= 36 && shouldPostLiveUpdate(context, json)) {
+            return buildLiveUpdate(context, json)
+        }
+        return buildCustom(context, json)
+    }
+
+    /// A standard progress notification that meets the Live Update rules.
+    /// Custom content views are intentionally absent: they disqualify promotion.
+    @RequiresApi(36)
+    private fun buildLiveUpdate(context: Context, json: JSONObject): Notification {
+        val builder = Notification.Builder(context, CHANNEL_ID)
+        builder
+            .setSmallIcon(R.drawable.ic_swap_live)
+            .setContentTitle(json.optString("brand"))
+            .setContentText(json.optString("headline"))
+            .setColor(0xFFFF6B35.toInt())
+            .setVisibility(Notification.VISIBILITY_PUBLIC)
+            .setCategory(Notification.CATEGORY_PROGRESS)
+            .setOnlyAlertOnce(true)
+            .setOngoing(true)
+            .setContentIntent(openApp(context))
+            .setDeleteIntent(broadcast(context, ACTION_DISMISSED, 2))
+            .setStyle(Notification.ProgressStyle().setProgress((json.optDouble("progress") * 100).toInt()))
+            .addExtras(Bundle().apply { putBoolean(EXTRA_REQUEST_PROMOTED_ONGOING, true) })
+        swapPair(json)?.let(builder::setSubText)
+        return builder.build()
+    }
+
+    private fun shouldPostLiveUpdate(context: Context, json: JSONObject): Boolean {
+        if (Build.VERSION.SDK_INT < 36) return false
+        val stale = json.optBoolean("stale")
+        val ongoing = json.optBoolean("holdsProcess") && !stale
+        val showProgress = json.optBoolean("showProgress") && !stale
+        val hasTitle = json.optString("brand").isNotEmpty()
+        if (Build.VERSION.SDK_INT_FULL < LIVE_UPDATE_MIN_SDK_FULL || !ongoing || !showProgress || !hasTitle) {
+            return false
+        }
+        return liveUpdateEligible(
+            sdkInt = Build.VERSION.SDK_INT,
+            sdkFull = Build.VERSION.SDK_INT_FULL,
+            authorized = context.getSystemService(NotificationManager::class.java).canPostPromotedNotifications(),
+            ongoing = ongoing,
+            showProgress = showProgress,
+            hasTitle = hasTitle,
+        )
+    }
+
+    private fun swapPair(json: JSONObject): String? {
+        val fromAmount = json.optString("fromAmount")
+        val fromSymbol = json.optString("fromSymbol")
+        val toAmount = json.optString("toAmount")
+        val toSymbol = json.optString("toSymbol")
+        if (fromAmount.isEmpty() && fromSymbol.isEmpty() && toAmount.isEmpty() && toSymbol.isEmpty()) return null
+        return "$fromAmount $fromSymbol → $toAmount $toSymbol".replace(Regex("\\s+"), " ").trim()
+    }
+
+    private fun buildCustom(context: Context, json: JSONObject): Notification {
         val views = RemoteViews(context.packageName, R.layout.swap_live_activity)
         val stale = json.optBoolean("stale")
         val brand = if (stale) json.optString("idleBrand") else json.optString("brand")
@@ -425,6 +483,29 @@ private fun pushFields(data: Map<*, *>): Map<String, Any?> {
         else -> null
     } ?: data
     return source.entries.mapNotNull { (key, value) -> if (key is String) key to value else null }.toMap()
+}
+
+/// API 36.1, the first release that promotes an ongoing notification.
+internal const val LIVE_UPDATE_MIN_SDK_FULL = 3_600_001
+
+/// Value of Notification.EXTRA_REQUEST_PROMOTED_ONGOING. That constant is not in the API 36 SDK.
+internal const val EXTRA_REQUEST_PROMOTED_ONGOING = "android.requestPromotedOngoing"
+
+/// Whether this card can be posted as a Live Update.
+///
+/// Promotion starts at API 36.1. The card has to be ongoing, show progress, and
+/// have a title, and the user has to still allow promoted notifications.
+/// Custom RemoteViews cannot be promoted, so that card stays the fallback.
+internal fun liveUpdateEligible(
+    sdkInt: Int,
+    sdkFull: Int,
+    authorized: Boolean,
+    ongoing: Boolean,
+    showProgress: Boolean,
+    hasTitle: Boolean,
+): Boolean {
+    if (sdkInt < 36 || sdkFull < LIVE_UPDATE_MIN_SDK_FULL) return false
+    return authorized && ongoing && showProgress && hasTitle
 }
 
 private fun pushValue(name: String, value: Any?): Any {
