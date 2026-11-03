@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/services.dart';
 import 'package:resonance_network_wallet/shared/utils/print.dart';
+import 'package:swap_live_activity_channel/swap_live_activity_channel.dart';
 
 /// A signal from the native card: the user dismissed it, or iOS issued the
 /// push token Senoti needs in order to update the card after the app sleeps.
@@ -25,7 +26,7 @@ abstract class SwapLiveActivityClient {
 }
 
 class MethodChannelSwapLiveActivity implements SwapLiveActivityClient {
-  static const _methods = MethodChannel('app.quantus/swap_live_activity');
+  static const _methods = MethodChannel(swapLiveActivityChannel);
   static const _events = EventChannel('app.quantus/swap_live_activity_events');
 
   final StreamController<SwapLiveActivityEvent> _controller = StreamController<SwapLiveActivityEvent>.broadcast();

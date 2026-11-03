@@ -12,11 +12,14 @@ import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.net.Uri
 import android.os.Build
+import android.os.Bundle
 import android.os.SystemClock
+import android.util.Log
 import android.view.View
 import android.widget.RemoteViews
 import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.EventChannel
+import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import org.json.JSONObject
 
@@ -27,9 +30,12 @@ object SwapLiveNotifications {
     const val EXTRA_PAYLOAD = "payload"
     const val ACTION_STALE = "com.quantus.wallet.SWAP_LIVE_STALE"
     const val ACTION_DISMISSED = "com.quantus.wallet.SWAP_LIVE_DISMISSED"
+    const val MESSAGE_TYPE = "swap_live_activity"
 
     private const val PREFS = "swap_live_activity"
     private const val PREF_PAYLOAD = "payload"
+    private const val PREF_DISMISSED = "dismissed_key"
+    private const val TAG = "SwapLive"
     private const val METHOD_CHANNEL = "app.quantus/swap_live_activity"
     private const val EVENT_CHANNEL = "app.quantus/swap_live_activity_events"
 
@@ -39,22 +45,7 @@ object SwapLiveNotifications {
 
     fun bind(messenger: BinaryMessenger, context: Context) {
         MethodChannel(messenger, METHOD_CHANNEL).setMethodCallHandler { call, result ->
-            when (call.method) {
-                "show" -> {
-                    val args = call.arguments as? Map<*, *>
-                    if (args == null) {
-                        result.error("bad_args", "Expected the swap card payload", null)
-                    } else {
-                        show(context.applicationContext, jsonOf(args), stale = false)
-                        result.success(null)
-                    }
-                }
-                "end" -> {
-                    end(context.applicationContext)
-                    result.success(null)
-                }
-                else -> result.notImplemented()
-            }
+            handle(context, call, result)
         }
         EventChannel(messenger, EVENT_CHANNEL).setStreamHandler(
             object : EventChannel.StreamHandler {
@@ -73,25 +64,72 @@ object SwapLiveNotifications {
         )
     }
 
+    /// Method channel entry used by the activity engine and, through
+    /// [com.quantus.wallet.swap_live_channel.SwapLiveActivityHost], by the
+    /// background engine that receives FCM after the UI is gone.
+    fun handle(context: Context, call: MethodCall, result: MethodChannel.Result) {
+        val app = context.applicationContext
+        when (call.method) {
+            "show" -> {
+                val args = call.arguments as? Map<*, *>
+                if (args == null) {
+                    result.error("bad_args", "Expected the swap card payload", null)
+                } else {
+                    show(app, jsonOf(args), stale = false)
+                    result.success(null)
+                }
+            }
+            "end" -> {
+                end(app)
+                result.success(null)
+            }
+            "card" -> result.success(card(app))
+            "apply" -> {
+                val args = call.arguments as? Map<*, *>
+                if (args == null) {
+                    result.error("bad_args", "Expected the swap push payload", null)
+                } else {
+                    apply(app, args)
+                    result.success(null)
+                }
+            }
+            else -> result.notImplemented()
+        }
+    }
+
+    /// The stored card, so a push can tell a matching live card from a dismissed one.
+    fun card(context: Context): Map<String, String> {
+        val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        return mapOf(
+            "key" to storedKey(prefs).orEmpty(),
+            "dismissedKey" to prefs.getString(PREF_DISMISSED, null).orEmpty(),
+        )
+    }
+
+    /// Draws [data] when it is a `swap_live_activity` update for the card on screen.
+    /// Same rules as `swapLiveActivityPushUpdate`: matching key, and not dismissed.
+    fun apply(context: Context, data: Map<*, *>) {
+        val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        val update = swapLivePushUpdate(data, storedKey(prefs), prefs.getString(PREF_DISMISSED, null)) ?: return
+        show(context, update, stale = false)
+    }
+
     fun show(context: Context, json: JSONObject, stale: Boolean) {
         ignoreDelete = false
         val card = if (stale) json.put("stale", true) else json
         ensureChannel(context, card.optString("channelName", "Swap progress"))
-        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putString(PREF_PAYLOAD, card.toString()).apply()
+        val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        val editor = prefs.edit().putString(PREF_PAYLOAD, card.toString())
+        val dismissed = prefs.getString(PREF_DISMISSED, null)
+        val key = card.optString("key")
+        if (!dismissed.isNullOrEmpty() && dismissed != key) editor.remove(PREF_DISMISSED)
+        editor.apply()
         val holds = card.optBoolean("holdsProcess") && !stale
-        val launch = Intent(context, SwapLiveActivityService::class.java).putExtra(EXTRA_PAYLOAD, card.toString())
-        if (holds) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                context.startForegroundService(launch)
-            } else {
-                context.startService(launch)
-            }
-        } else if (!stale) {
-            context.startService(launch)
-        } else {
+        if (stale) {
             // The alarm can fire with the app suspended, which may not start a service.
-            val manager = context.getSystemService(NotificationManager::class.java)
-            manager.notify(NOTIFICATION_ID, build(context, card))
+            context.getSystemService(NotificationManager::class.java).notify(NOTIFICATION_ID, build(context, card))
+        } else {
+            launch(context, card, holds)
         }
         if (!stale) scheduleStale(context, card)
     }
@@ -111,11 +149,15 @@ object SwapLiveNotifications {
         context.stopService(Intent(context, SwapLiveActivityService::class.java))
     }
 
-    fun onDeleted() {
+    fun onDeleted(context: Context) {
         if (ignoreDelete) {
             ignoreDelete = false
             return
         }
+        val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        val key = storedKey(prefs)
+        if (!key.isNullOrEmpty()) prefs.edit().putString(PREF_DISMISSED, key).apply()
+        cancelStale(context)
         val sink = events
         if (sink == null) {
             pendingDismiss = true
@@ -206,10 +248,34 @@ object SwapLiveNotifications {
     }
 
     private fun scheduleStale(context: Context, json: JSONObject) {
-        val staleAt = json.optLong("staleAt", 0L)
-        if (staleAt <= 0L) return
+        val staleAt = if (json.isNull("staleAt")) 0L else json.optLong("staleAt", 0L)
+        if (staleAt <= 0L) {
+            cancelStale(context)
+            return
+        }
         val alarm = context.getSystemService(AlarmManager::class.java)
         alarm.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, staleAt, broadcast(context, ACTION_STALE, 1))
+    }
+
+    private fun launch(context: Context, card: JSONObject, holds: Boolean) {
+        val launch = Intent(context, SwapLiveActivityService::class.java).putExtra(EXTRA_PAYLOAD, card.toString())
+        try {
+            if (holds && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                context.startForegroundService(launch)
+            } else {
+                context.startService(launch)
+            }
+        } catch (error: IllegalStateException) {
+            // A push can arrive while the process is backgrounded and not allowed to start a service.
+            Log.w(TAG, "Updating the swap card without a service", error)
+            context.getSystemService(NotificationManager::class.java).notify(NOTIFICATION_ID, build(context, card))
+        }
+    }
+
+    private fun storedKey(prefs: android.content.SharedPreferences): String? {
+        val raw = prefs.getString(PREF_PAYLOAD, null) ?: return null
+        val key = runCatching { JSONObject(raw).optString("key") }.getOrNull()
+        return key?.takeIf { it.isNotEmpty() }
     }
 
     private fun cancelStale(context: Context) {
@@ -285,7 +351,107 @@ class SwapLiveActivityReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         when (intent.action) {
             SwapLiveNotifications.ACTION_STALE -> SwapLiveNotifications.showStale(context)
-            SwapLiveNotifications.ACTION_DISMISSED -> SwapLiveNotifications.onDeleted()
+            SwapLiveNotifications.ACTION_DISMISSED -> SwapLiveNotifications.onDeleted(context)
         }
+    }
+}
+
+/// FCM data messages for the swap card. Runs when the process is started for a
+/// push, including after the UI and its method channel are gone.
+class SwapLivePushReceiver : BroadcastReceiver() {
+    override fun onReceive(context: Context, intent: Intent) {
+        if (intent.action != "com.google.android.c2dm.intent.RECEIVE") return
+        val extras = intent.extras ?: return
+        val data = fcmData(extras)
+        if (data["type"] != SwapLiveNotifications.MESSAGE_TYPE) return
+        SwapLiveNotifications.apply(context.applicationContext, data)
+    }
+}
+
+/// Data fields of an FCM message. Play Services puts them on the broadcast extras
+/// next to its own `google.` and `gcm.` keys.
+private fun fcmData(extras: Bundle): Map<String, String> {
+    val data = HashMap<String, String>()
+    for (key in extras.keySet()) {
+        if (key.startsWith("google.") || key.startsWith("gcm.")) continue
+        val value = extras.get(key)
+        if (value is String) data[key] = value
+    }
+    return data
+}
+
+/// Keep in step with `swapLiveActivityPushUpdate`. A push updates only the card
+/// already on screen for the same swap, and never one the user dismissed.
+private val pushStringFields = listOf(
+    "phase",
+    "headline",
+    "brand",
+    "idleBrand",
+    "fromAmount",
+    "fromSymbol",
+    "toAmount",
+    "toSymbol",
+    "chain",
+    "fromLabel",
+    "toLabel",
+    "chainLabel",
+    "openToCheck",
+    "agoLabel",
+    "key",
+    "channelName",
+)
+
+private val pushValueFields = listOf("failure", "progress", "showProgress", "endsAt", "updatedAt", "staleAt", "holdsProcess")
+
+internal fun swapLivePushUpdate(data: Map<*, *>, shownKey: String?, dismissedKey: String?): JSONObject? {
+    if (data["type"]?.toString() != SwapLiveNotifications.MESSAGE_TYPE) return null
+    val fields = pushFields(data)
+    val key = fields["key"]?.toString().orEmpty()
+    val phase = fields["phase"]?.toString().orEmpty()
+    if (key.isEmpty() || phase.isEmpty() || shownKey != key || dismissedKey == key) return null
+    val json = JSONObject()
+    for (name in pushStringFields) json.put(name, fields[name]?.toString() ?: "")
+    for (name in pushValueFields) json.put(name, pushValue(name, fields[name]))
+    return json
+}
+
+private fun pushFields(data: Map<*, *>): Map<String, Any?> {
+    val nested = data["content_state"]
+    val source = when (nested) {
+        is Map<*, *> -> nested
+        is String -> runCatching { JSONObject(nested) }.getOrNull()?.let { json ->
+            json.keys().asSequence().associateWith { key -> if (json.isNull(key)) null else json.opt(key) }
+        }
+        else -> null
+    } ?: data
+    return source.entries.mapNotNull { (key, value) -> if (key is String) key to value else null }.toMap()
+}
+
+private fun pushValue(name: String, value: Any?): Any {
+    if (value == null) return JSONObject.NULL
+    val text = value as? String
+    return when (name) {
+        "showProgress", "holdsProcess" -> when (value) {
+            is Boolean -> value
+            is String -> value == "true"
+            is Number -> value.toInt() != 0
+            else -> false
+        }
+        "progress" -> when (value) {
+            is Number -> value.toDouble()
+            is String -> value.toDoubleOrNull() ?: 0.0
+            else -> 0.0
+        }
+        "endsAt", "updatedAt", "staleAt" -> when {
+            text != null && (text.isEmpty() || text == "null") -> JSONObject.NULL
+            value is Number -> value.toLong()
+            text != null -> text.toLongOrNull() ?: JSONObject.NULL
+            else -> JSONObject.NULL
+        }
+        "failure" -> when {
+            text != null && (text.isEmpty() || text == "null") -> JSONObject.NULL
+            else -> value
+        }
+        else -> value
     }
 }

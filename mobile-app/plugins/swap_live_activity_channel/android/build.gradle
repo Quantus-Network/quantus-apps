@@ -1,0 +1,41 @@
+group = "com.quantus.wallet.swap_live_channel"
+version = "1.0-SNAPSHOT"
+
+buildscript {
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        classpath "com.android.tools.build:gradle:9.2.1"
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:2.3.21"
+    }
+}
+
+apply plugin: "com.android.library"
+apply plugin: "kotlin-android"
+
+// Repositories for this library live on the app project. Do not call
+// rootProject.allprojects from here: this file is applied as a subproject.
+
+android {
+    namespace = "com.quantus.wallet.swap_live_channel"
+    compileSdk = 36
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
+    }
+
+    kotlinOptions {
+        jvmTarget = "11"
+    }
+
+    sourceSets {
+        main.java.srcDirs += "src/main/kotlin"
+    }
+
+    defaultConfig {
+        minSdk = 24
+    }
+}
