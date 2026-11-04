@@ -36,14 +36,14 @@ WormholeTransfer _transfer(String to, int height, int n) => WormholeTransfer(
   viaWormhole: false,
 );
 
-/// Serves canned rows per address, recording how many fetches overlap, and
-/// optionally failing one address.
+/// Serves canned rows per address, recording each request's addresses and
+/// how many requests overlap, and optionally failing one address.
 class _Indexer extends WormholeUtxoService {
   _Indexer({required int chainHeight, this.failing})
     : super(
         graphQl: GraphQlEndpointService.forUrls([
           'https://indexer.test',
-        ], client: MockClient((_) async => throw StateError('transfers go through queryTransfersPage'))),
+        ], client: MockClient((_) async => throw StateError('transfers go through queryTransferPages'))),
         rpc: RpcEndpointService.forUrls(
           ['https://rpc.test'],
           client: MockClient((request) async {
@@ -60,25 +60,34 @@ class _Indexer extends WormholeUtxoService {
 
   final Map<String, List<WormholeTransfer>> rows = {};
   final String? failing;
-  final List<String> queried = [];
+
+  /// Addresses of each request, in request order.
+  final List<List<String>> requests = [];
   int inFlight = 0;
   int maxInFlight = 0;
 
+  List<String> get queried => [for (final r in requests) ...r];
+
   @override
-  Future<List<WormholeTransfer>> queryTransfersPage({
-    required String toAddress,
-    required int afterBlock,
-    WormholeTransferCursor? after,
+  Future<List<List<WormholeTransfer>>> queryTransferPages(
+    List<TransferPageRequest> batch, {
     int limit = WormholeUtxoService.transferPageSize,
   }) async {
-    queried.add(toAddress);
+    requests.add([for (final r in batch) r.toAddress]);
     inFlight++;
     maxInFlight = inFlight > maxInFlight ? inFlight : maxInFlight;
     // Yield so other workers can start before this one answers.
     await Future<void>.delayed(const Duration(milliseconds: 5));
     inFlight--;
-    if (toAddress == failing) throw StateError('indexer down');
-    return (rows[toAddress] ?? const []).where((t) => t.blockHeight > afterBlock).take(limit).toList();
+    if (batch.any((r) => r.toAddress == failing)) throw StateError('indexer down');
+    return [
+      for (final r in batch)
+        (rows[r.toAddress] ?? const [])
+            .where((t) => t.blockHeight > r.afterBlock)
+            .where((t) => r.after == null || t.blockHeight > r.after!.blockHeight)
+            .take(limit)
+            .toList(),
+    ];
   }
 }
 
@@ -111,11 +120,13 @@ void main() {
     '${dir.path}/wormhole_cache_v${WormholeUtxoService.cacheVersion}_${_genesis}_${_hashOf(address).substring(0, 16)}.json',
   );
 
-  test('addresses are fetched concurrently, bounded, and each keeps its own transfers in order', () async {
+  test('addresses are paged a batch per request, requests overlap, and each keeps its own transfers', () async {
     const chainHeight = 10000;
-    final addresses = [for (var n = 1; n <= 15; n++) _address(n)];
+    const batch = WormholeUtxoService.transferFetchBatchSize;
+    final count = batch * 2 + 5;
+    final addresses = [for (var n = 1; n <= count; n++) _address(n)];
     final indexer = _Indexer(chainHeight: chainHeight);
-    for (var n = 1; n <= 15; n++) {
+    for (var n = 1; n <= count; n++) {
       indexer.rows[addresses[n - 1]] = [
         _transfer(addresses[n - 1], 100 * n, n),
         _transfer(addresses[n - 1], 9990, 100 + n),
@@ -128,17 +139,17 @@ void main() {
       onProgress: (phase, done, {total}) => progress.add(done),
     );
 
-    expect(indexer.maxInFlight, greaterThan(1));
-    expect(indexer.maxInFlight, lessThanOrEqualTo(WormholeUtxoService.transferFetchConcurrency));
-    expect(indexer.queried.toSet(), addresses.toSet());
+    expect(indexer.requests.map((r) => r.length), [batch, batch, 5]);
+    expect(indexer.maxInFlight, 3);
+    expect(indexer.queried, addresses);
     expect(result.safeCutoff, chainHeight - 180);
-    for (var n = 1; n <= 15; n++) {
+    for (var n = 1; n <= count; n++) {
       expect(result.byAddress[addresses[n - 1]]!.map((t) => t.id), [
         '${(100 * n).toString().padLeft(10, '0')}-$n',
         '0000009990-${100 + n}',
       ]);
     }
-    expect(progress.last, 30);
+    expect(progress.last, count * 2);
     // Only the reorg-safe transfer of each address is persisted.
     for (final address in addresses) {
       final cached = jsonDecode(await cacheFile(address).readAsString()) as Map<String, dynamic>;
@@ -147,13 +158,35 @@ void main() {
     }
   });
 
-  test('a failing address fails the scan and stops handing out new addresses', () async {
-    final addresses = [for (var n = 1; n <= 20; n++) _address(n)];
+  test('only the addresses whose page was full are asked for another', () async {
+    const pageSize = WormholeUtxoService.transferPageSize;
+    final addresses = [for (var n = 1; n <= 3; n++) _address(n)];
+    final indexer = _Indexer(chainHeight: 10000);
+    indexer.rows[addresses[0]] = [for (var i = 1; i <= pageSize + 2; i++) _transfer(addresses[0], i, i)];
+    indexer.rows[addresses[1]] = [_transfer(addresses[1], 5, 1)];
+    indexer.rows[addresses[2]] = [for (var i = 1; i <= pageSize; i++) _transfer(addresses[2], i, i)];
+
+    final result = await indexer.getTransfersToMany(addresses);
+
+    expect(indexer.requests, [
+      addresses,
+      [addresses[0], addresses[2]],
+    ]);
+    expect(result.byAddress[addresses[0]], hasLength(pageSize + 2));
+    expect(result.byAddress[addresses[1]], hasLength(1));
+    expect(result.byAddress[addresses[2]], hasLength(pageSize));
+  });
+
+  test('a failing request fails the scan and stops handing out new requests', () async {
+    const batch = WormholeUtxoService.transferFetchBatchSize;
+    final addresses = [
+      for (var n = 1; n <= batch * (WormholeUtxoService.transferFetchConcurrency + 2); n++) _address(n),
+    ];
     final indexer = _Indexer(chainHeight: 10000, failing: addresses[0]);
 
     await expectLater(indexer.getTransfersToMany(addresses), throwsA(isA<StateError>()));
     // The first wave was already in flight; nothing beyond it was started.
-    expect(indexer.queried.length, lessThanOrEqualTo(WormholeUtxoService.transferFetchConcurrency));
+    expect(indexer.requests.length, lessThanOrEqualTo(WormholeUtxoService.transferFetchConcurrency));
   });
 
   test('an idle address is not rewritten until its scan height falls a reorg depth behind', () async {
