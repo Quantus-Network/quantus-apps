@@ -150,13 +150,18 @@ class _FakeDiscovery extends AccountDiscoveryService {
   /// derives `gapLimit` indices per batch until the gap closes.
   int probeWidth = 20;
 
+  /// `knownLength` of each scan, external branch then change branch per load.
+  final knownLengths = <int>[];
+
   _FakeDiscovery(this.used) : super(_FakeHdWallet());
 
   @override
   Future<Set<int>> discoverUsedIndicesBatched({
     required Future<List<String>> Function(List<int> indices) addressesAt,
     int gapLimit = 20,
+    int knownLength = 0,
   }) async {
+    knownLengths.add(knownLength);
     final probed = await addressesAt([for (var i = 0; i < probeWidth; i++) i]);
     final known = {
       for (final i in used) addressAt(i, seed: seed),
@@ -342,6 +347,15 @@ void main() {
       final state = await service.load();
       expect(state.nextIndex, 5);
       expect(state.nextChangeIndex, 3);
+    });
+
+    test('discovery is told how far each branch is known to extend', () async {
+      await seedState(nextIndex: 5, nextChangeIndex: 3);
+      await service.load();
+      expect(discovery.knownLengths, [5, 3]);
+
+      await service.load();
+      expect(discovery.knownLengths, [5, 3, 5, 3]);
     });
 
     test('a legacy state file without nextChangeIndex loads with change index 0', () async {

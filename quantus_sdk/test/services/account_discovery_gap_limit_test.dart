@@ -68,6 +68,42 @@ void main() {
     ]);
   });
 
+  test('a known length is settled in one probe that also covers the trailing gap', () async {
+    final discovery = _discoveryAgainst({_address(0), _address(15), _address(34)});
+    final batches = <List<int>>[];
+
+    final used = await discovery.discoverUsedIndicesBatched(
+      knownLength: 35,
+      addressesAt: (indices) async {
+        batches.add(indices);
+        return indices.map(_address).toList();
+      },
+    );
+
+    expect(used, {0, 15, 34});
+    expect(batches, [
+      [for (var i = 0; i < 55; i++) i],
+    ]);
+  });
+
+  test('a sequence grown past its known length is walked on batch by batch', () async {
+    final discovery = _discoveryAgainst({_address(0), _address(15), _address(34), _address(50)});
+    final batches = <List<int>>[];
+
+    final used = await discovery.discoverUsedIndicesBatched(
+      knownLength: 35,
+      addressesAt: (indices) async {
+        batches.add(indices);
+        return indices.map(_address).toList();
+      },
+    );
+
+    expect(used, {0, 15, 34, 50});
+    // 0..54 (50 used, 4 misses after it), 55..74 (closes the gap).
+    expect(batches.map((b) => b.first), [0, 55]);
+    expect(batches.map((b) => b.length), [55, 20]);
+  });
+
   test('an unused sequence stops after a single probe', () async {
     final discovery = _discoveryAgainst(const {});
     var probes = 0;

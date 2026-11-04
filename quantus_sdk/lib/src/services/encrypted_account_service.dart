@@ -341,13 +341,17 @@ class EncryptedAccountService {
 
     // Gap-limit discovery of both branches — the only thing that finds
     // addresses this device has never seen (recovery from the mnemonic), so
-    // it always runs; the address book only makes each batch cheaper.
+    // it always runs; the persisted next indices size its first probe and
+    // the address book makes each batch cheaper.
+    final persisted = await _readStateLocked();
     final [usedIndices, usedChangeIndices] = await Future.wait([
       _discoveryService.discoverUsedIndicesBatched(
         addressesAt: (indices) => _addressesAt(mnemonic, indices, isChange: false),
+        knownLength: persisted.nextIndex,
       ),
       _discoveryService.discoverUsedIndicesBatched(
         addressesAt: (indices) => _addressesAt(mnemonic, indices, isChange: true),
+        knownLength: persisted.nextChangeIndex,
       ),
     ]);
     _log('Discovery: used indices $usedIndices, used change indices $usedChangeIndices');
@@ -356,7 +360,7 @@ class EncryptedAccountService {
     // not discovery has seen them yet: the change of a send just submitted
     // is found as soon as its transfer is indexed, instead of one indexer
     // pass later when the address shows up in the account table.
-    final allocatedChangeIndices = (await _readStateLocked()).nextChangeIndex;
+    final allocatedChangeIndices = persisted.nextChangeIndex;
     final scanIndices = {0, ...usedIndices}.toList()..sort();
     final changeScanIndices = {...usedChangeIndices, for (var i = 0; i < allocatedChangeIndices; i++) i}.toList()
       ..sort();

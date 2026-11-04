@@ -66,18 +66,26 @@ class AccountDiscoveryService {
       );
 
   /// [discoverUsedIndices] for sequences whose addresses are cheaper to derive
-  /// together: [addressesAt] receives each batch of [gapLimit] consecutive
-  /// indices at once and returns their addresses in the same order.
+  /// together: [addressesAt] receives each batch of consecutive indices at
+  /// once and returns their addresses in the same order.
+  ///
+  /// [knownLength] is how far the caller already knows the sequence extends
+  /// (its persisted next index). The first batch then spans those indices
+  /// plus a trailing gap, so a sequence that has not grown since is settled
+  /// in one indexer round trip; the scan still continues batch by batch past
+  /// it whenever the gap is not closed, exactly as from zero.
   Future<Set<int>> discoverUsedIndicesBatched({
     required Future<List<String>> Function(List<int> indices) addressesAt,
     int gapLimit = 20,
+    int knownLength = 0,
   }) async {
     final used = <int>{};
 
     var consecutiveMissing = 0;
     var index = 0;
+    var batchSize = knownLength > 0 ? knownLength + gapLimit : gapLimit;
     while (consecutiveMissing < gapLimit) {
-      final indices = [for (var i = index; i < index + gapLimit; i++) i];
+      final indices = [for (var i = index; i < index + batchSize; i++) i];
       final addresses = await addressesAt(indices);
       if (addresses.length != indices.length) {
         throw StateError('addressesAt returned ${addresses.length} addresses for ${indices.length} indices');
@@ -95,7 +103,8 @@ class AccountDiscoveryService {
         }
       }
 
-      index += gapLimit;
+      index += batchSize;
+      batchSize = gapLimit;
     }
 
     return used;
