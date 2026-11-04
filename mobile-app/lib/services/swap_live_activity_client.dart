@@ -1,7 +1,9 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:resonance_network_wallet/services/swap_live_activity.dart';
+import 'package:resonance_network_wallet/services/swap_live_activity_message.dart';
 import 'package:resonance_network_wallet/shared/utils/print.dart';
 import 'package:swap_live_activity_channel/swap_live_activity_channel.dart';
 
@@ -30,7 +32,9 @@ class SwapLiveToken extends SwapLiveActivityEvent {
   SwapLiveToken(this.token);
 }
 
-/// The native lock-screen card. [show] replaces whatever is up. [end] removes it.
+/// The native lock-screen card. [show] starts a swap, or moves the one already
+/// on screen forward. A write that would reopen a finished swap is ignored.
+/// [end] removes the card.
 abstract class SwapLiveActivityClient {
   Future<void> show(Map<String, Object?> payload);
 
@@ -76,7 +80,24 @@ class MethodChannelSwapLiveActivity implements SwapLiveActivityClient {
   Stream<SwapLiveActivityEvent> get events => _controller.stream;
 
   @override
-  Future<void> show(Map<String, Object?> payload) => _methods.invokeMethod<void>('show', payload);
+  Future<void> show(Map<String, Object?> payload) async {
+    if (defaultTargetPlatform == TargetPlatform.android && !await _pollingShowAllowed(payload)) return;
+    await _methods.invokeMethod<void>('show', payload);
+  }
+
+  /// Drops a same-swap write the stored card has already moved past. A failed
+  /// read still shows: the native write checks again under its lock, so a push
+  /// that lands between this read and the write cannot reopen the card.
+  Future<bool> _pollingShowAllowed(Map<String, Object?> payload) async {
+    try {
+      final raw = await _methods.invokeMethod<dynamic>('card');
+      return swapLiveLocalShowAllowed(payload, raw);
+    } on MissingPluginException {
+      return true;
+    } on PlatformException {
+      return true;
+    }
+  }
 
   @override
   Future<void> end() => _methods.invokeMethod<void>('end');

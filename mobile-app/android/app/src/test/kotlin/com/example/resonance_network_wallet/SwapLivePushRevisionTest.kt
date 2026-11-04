@@ -1,7 +1,9 @@
 package com.example.resonance_network_wallet
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class SwapLivePushRevisionTest {
@@ -49,6 +51,36 @@ class SwapLivePushRevisionTest {
     }
 
     @Test
+    fun aLocalShowCanStartTheFirstCard() {
+        assertTrue(localShow(shownKey, 1000, "settling", null, null, stored(1000, "swapped", null)))
+    }
+
+    @Test
+    fun aNewSwapReplacesAFinishedCard() {
+        assertTrue(localShow("other|2", 1000, "settling", null, shownKey, stored(5000, "swapped", null)))
+    }
+
+    @Test
+    fun aNewerSettlingShowDoesNotReopenTheSameSwap() {
+        assertFalse(localShow(shownKey, 4000, "settling", null, shownKey, stored(3000, "swapped", null)))
+    }
+
+    @Test
+    fun anUnfinishedCardStillRefreshes() {
+        assertTrue(localShow(shownKey, 4000, "settling", null, shownKey, stored(1000, "settling", null)))
+    }
+
+    @Test
+    fun theSameLocalRevisionStillRefreshes() {
+        assertTrue(localShow(shownKey, 2000, "settling", null, shownKey, stored(2000, "settling", null)))
+    }
+
+    @Test
+    fun anIncompleteDepositStillAcceptsALocalSettlingShow() {
+        assertTrue(localShow(shownKey, 2000, "settling", null, shownKey, stored(1000, "failed", "incomplete")))
+    }
+
+    @Test
     fun aPushWithoutARevisionIsDropped() {
         val data = settling(2000).toMutableMap()
         data.remove("updatedAt")
@@ -87,6 +119,17 @@ class SwapLivePushRevisionTest {
 
     private fun update(data: Map<String, Any?>, stored: SwapLiveCardRevision): Map<String, Any?>? {
         return swapLivePushFields(data, shownKey, null, stored)
+    }
+
+    private fun localShow(
+        incomingKey: String,
+        updatedAt: Long,
+        phase: String,
+        failure: String?,
+        storedKey: String?,
+        stored: SwapLiveCardRevision,
+    ): Boolean {
+        return swapLiveLocalWriteAllowed(incomingKey, updatedAt, phase, failure, storedKey, stored)
     }
 
     private fun stored(updatedAt: Long, phase: String, failure: String?): SwapLiveCardRevision {

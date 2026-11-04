@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -11,6 +12,7 @@ import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/providers/swap_live_activity_provider.dart';
 import 'package:resonance_network_wallet/services/swap_live_activity.dart';
 import 'package:resonance_network_wallet/services/swap_live_activity_client.dart';
+import 'package:resonance_network_wallet/services/swap_live_activity_message.dart';
 import 'package:resonance_network_wallet/services/swap_live_activity_push.dart';
 
 void main() {
@@ -53,11 +55,12 @@ void main() {
     bool sent = false,
     bool simulated = false,
     BigInt? amountOut,
+    DateTime? startedAt,
   }) => ActiveSwap(
     order: SwapOrder(quote: quote, status: status, amountOut: amountOut),
     accountId: 'qzaccount',
     accountName: 'Account 1',
-    startedAt: started,
+    startedAt: startedAt ?? started,
     depositByHand: byHand,
     depositSent: sent,
     simulated: simulated,
@@ -576,6 +579,136 @@ void main() {
         if (!gate.isCompleted) gate.complete();
         await fallback;
       }
+    });
+  });
+
+  group('a completion push and a later poll', () {
+    const channel = MethodChannel('app.quantus/swap_live_activity');
+    const events = EventChannel('app.quantus/swap_live_activity_events');
+
+    late MethodChannelSwapLiveActivity client;
+    late SwapLiveActivityController controller;
+    late _Registrar registrar;
+    late ActiveSwap? current;
+    late DateTime now;
+    late Map<String, Object?>? stored;
+    late List<String> writes;
+
+    setUp(() {
+      debugDefaultTargetPlatformOverride = TargetPlatform.android;
+      stored = null;
+      writes = [];
+      final binding = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+      binding.setMockMethodCallHandler(channel, (call) async {
+        if (call.method == 'card') {
+          final card = stored;
+          if (card == null) return {'key': '', 'dismissedKey': ''};
+          return {
+            'key': card['key'],
+            'dismissedKey': '',
+            'updatedAt': card['updatedAt'],
+            'phase': card['phase'],
+            'failure': card['failure'],
+          };
+        }
+        if (call.method == 'show' || call.method == 'replace') {
+          stored = Map<String, Object?>.from(call.arguments as Map);
+          writes.add('${call.method}:${stored!['phase']}');
+        }
+        return null;
+      });
+      binding.setMockStreamHandler(events, MockStreamHandler.inline(onListen: (_, _) {}));
+      client = MethodChannelSwapLiveActivity();
+      registrar = _Registrar();
+      current = swap(SwapStatus.processing);
+      now = started;
+      controller = SwapLiveActivityController(
+        client: client,
+        push: registrar,
+        isIOS: () => false,
+        snapshot: () =>
+            SwapLiveSnapshot(swap: current, l10n: l10n, formatAmount: format, now: now, progressVisible: true),
+      );
+    });
+
+    tearDown(() async {
+      await controller.dispose();
+      await client.dispose();
+      debugDefaultTargetPlatformOverride = null;
+      final binding = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+      binding.setMockMethodCallHandler(channel, null);
+      binding.setMockStreamHandler(events, null);
+    });
+
+    Map<String, String> swappedPush(String key) => {
+      'type': 'swap_live_activity',
+      'phase': 'swapped',
+      'headline': 'Swapped',
+      'key': key,
+      'updatedAt': '${started.add(const Duration(seconds: 20)).millisecondsSinceEpoch}',
+      'holdsProcess': 'false',
+      'showProgress': 'false',
+    };
+
+    test('a failed poll after the refresh interval does not reopen the completed card', () async {
+      await controller.sync();
+      final key = stored!['key'] as String;
+
+      await deliverSwapLiveActivityPush(swappedPush(key));
+      now = now.add(const Duration(seconds: 46));
+      current = current!.withPollError('HTTP 503');
+      await controller.sync();
+
+      expect(writes, ['show:settling', 'replace:swapped']);
+      expect(stored!['phase'], 'swapped');
+      expect(stored!['holdsProcess'], isFalse);
+    });
+
+    test('a delayed refresh after a completion push keeps the completed card', () async {
+      await controller.sync();
+      final key = stored!['key'] as String;
+
+      await deliverSwapLiveActivityPush(swappedPush(key));
+      now = now.add(const Duration(seconds: 46));
+      await controller.sync();
+
+      expect(writes, ['show:settling', 'replace:swapped']);
+      expect(stored!['phase'], 'swapped');
+      expect(stored!['holdsProcess'], isFalse);
+    });
+
+    test('an in-progress card still refreshes once the interval has passed', () async {
+      await controller.sync();
+      now = now.add(swapLiveRefreshAfter);
+      await controller.sync();
+
+      expect(writes, ['show:settling', 'show:settling']);
+      expect(stored!['phase'], 'settling');
+      expect(stored!['holdsProcess'], isTrue);
+    });
+
+    test('a later success still replaces settling', () async {
+      await controller.sync();
+      now = now.add(const Duration(minutes: 1));
+      current = swap(SwapStatus.success);
+      await controller.sync();
+
+      expect(writes, ['show:settling', 'show:swapped']);
+      expect(stored!['holdsProcess'], isFalse);
+    });
+
+    test('a new swap still replaces a completed card', () async {
+      await controller.sync();
+      final key = stored!['key'] as String;
+      await deliverSwapLiveActivityPush(swappedPush(key));
+
+      current = swap(SwapStatus.processing, startedAt: started.add(const Duration(hours: 2)));
+      now = started.add(const Duration(hours: 2));
+      await controller.sync();
+
+      expect(stored!['phase'], 'settling');
+      expect(stored!['holdsProcess'], isTrue);
+      expect(stored!['key'], isNot(key));
     });
   });
 }

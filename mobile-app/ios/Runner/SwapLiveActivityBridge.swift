@@ -115,7 +115,11 @@ final class SwapLiveActivityBridge: NSObject, FlutterStreamHandler {
     let state = try contentState(args)
     let content = ActivityContent(state: state, staleDate: state.staleAtDate)
     if let activity = Activity<SwapActivityAttributes>.activities.first {
-      await activity.update(content)
+      // A completion push updates this activity directly. A later poll must
+      // not move that same swap back to in progress.
+      if swapLiveLocalWriteAllowed(current: activity.content.state, incoming: state) {
+        await activity.update(content)
+      }
       watch(activity)
       return
     }
@@ -236,6 +240,27 @@ private func doubleValue(_ value: Any?) -> Double? {
   default:
     return nil
   }
+}
+
+/// Same rule as Android `swapLiveLocalWriteAllowed`. A different swap may
+/// replace the activity. The swap already on screen does not move backward.
+@available(iOS 16.2, *)
+private func swapLiveLocalWriteAllowed(
+  current: SwapActivityAttributes.ContentState,
+  incoming: SwapActivityAttributes.ContentState
+) -> Bool {
+  if current.key.isEmpty { return true }
+  if !incoming.key.isEmpty && incoming.key != current.key { return true }
+  if incoming.updatedAt < current.updatedAt { return false }
+  let finished = swapLiveTerminal(phase: current.phase, failure: current.failure)
+  if !finished { return true }
+  return swapLiveTerminal(phase: incoming.phase, failure: incoming.failure)
+}
+
+@available(iOS 16.2, *)
+private func swapLiveTerminal(phase: String, failure: String?) -> Bool {
+  if phase == "swapped" { return true }
+  return phase == "failed" && failure != "incomplete"
 }
 
 private enum SwapLiveActivityError: LocalizedError {

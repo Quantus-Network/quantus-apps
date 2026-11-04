@@ -158,23 +158,42 @@ object SwapLiveNotifications {
     }
 
     fun show(context: Context, json: JSONObject, stale: Boolean) {
-        ignoreDelete = false
-        val card = if (stale) json.put("stale", true) else json
-        ensureChannel(context, card.optString("channelName", "Swap progress"))
-        val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-        val editor = prefs.edit().putString(PREF_PAYLOAD, card.toString())
-        val dismissed = prefs.getString(PREF_DISMISSED, null)
-        val key = card.optString("key")
-        if (!dismissed.isNullOrEmpty() && dismissed != key) editor.remove(PREF_DISMISSED)
-        editor.apply()
-        val holds = card.optBoolean("holdsProcess") && !stale
-        if (stale) {
-            // The alarm can fire with the app suspended, which may not start a service.
-            context.getSystemService(NotificationManager::class.java).notify(NOTIFICATION_ID, build(context, card))
-        } else {
-            launch(context, card, holds)
+        synchronized(revisionLock) {
+            // A poll can arrive after a completion push. The same order that
+            // guards replace applies here, or the poll starts the foreground
+            // service again for a swap that has already finished.
+            if (!acceptsLocalWrite(context, json)) return
+            ignoreDelete = false
+            val card = if (stale) json.put("stale", true) else json
+            ensureChannel(context, card.optString("channelName", "Swap progress"))
+            val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            val editor = prefs.edit().putString(PREF_PAYLOAD, card.toString())
+            val dismissed = prefs.getString(PREF_DISMISSED, null)
+            val key = card.optString("key")
+            if (!dismissed.isNullOrEmpty() && dismissed != key) editor.remove(PREF_DISMISSED)
+            editor.apply()
+            val holds = card.optBoolean("holdsProcess") && !stale
+            if (stale) {
+                // The alarm can fire with the app suspended, which may not start a service.
+                context.getSystemService(NotificationManager::class.java).notify(NOTIFICATION_ID, build(context, card))
+            } else {
+                launch(context, card, holds)
+            }
+            if (!stale) scheduleStale(context, card)
         }
-        if (!stale) scheduleStale(context, card)
+    }
+
+    /// Same-swap polling writes use the push revision rules. A different key is a new swap.
+    private fun acceptsLocalWrite(context: Context, json: JSONObject): Boolean {
+        val stored = storedSwapCard(context.getSharedPreferences(PREFS, Context.MODE_PRIVATE))
+        return swapLiveLocalWriteAllowed(
+            incomingKey = json.optString("key"),
+            incomingUpdatedAt = if (json.isNull("updatedAt")) null else epochOf(json.opt("updatedAt")),
+            incomingPhase = json.optString("phase"),
+            incomingFailure = if (json.isNull("failure")) null else textOrNull(json.opt("failure")),
+            storedKey = stored.key,
+            stored = stored.revision,
+        )
     }
 
     fun showStale(context: Context) {
@@ -527,6 +546,21 @@ internal fun swapLiveRevisionAllows(
 internal fun swapLiveTerminal(phase: String?, failure: String?): Boolean {
     if (phase == "swapped") return true
     return phase == "failed" && failure != "incomplete"
+}
+
+/// A local write may start a card, or replace one with a different swap.
+/// The swap already on screen follows [swapLiveRevisionAllows].
+internal fun swapLiveLocalWriteAllowed(
+    incomingKey: String,
+    incomingUpdatedAt: Long?,
+    incomingPhase: String,
+    incomingFailure: String?,
+    storedKey: String?,
+    stored: SwapLiveCardRevision,
+): Boolean {
+    if (storedKey.isNullOrEmpty()) return true
+    if (incomingKey.isNotEmpty() && incomingKey != storedKey) return true
+    return swapLiveRevisionAllows(incomingUpdatedAt, incomingPhase, incomingFailure, stored)
 }
 
 private val pushStringFields = listOf(
