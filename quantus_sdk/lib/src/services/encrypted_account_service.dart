@@ -348,8 +348,14 @@ class EncryptedAccountService {
     ]);
     _log('Discovery: used indices $usedIndices, used change indices $usedChangeIndices');
 
+    // Change addresses this device allocated itself are scanned whether or
+    // not discovery has seen them yet: the change of a send just submitted
+    // is found as soon as its transfer is indexed, instead of one indexer
+    // pass later when the address shows up in the account table.
+    final allocatedChangeIndices = (await _readStateLocked()).nextChangeIndex;
     final scanIndices = {0, ...usedIndices}.toList()..sort();
-    final changeScanIndices = usedChangeIndices.toList()..sort();
+    final changeScanIndices = {...usedChangeIndices, for (var i = 0; i < allocatedChangeIndices; i++) i}.toList()
+      ..sort();
     // One seed stretch per branch for the used indices' secrets. Secrets live
     // only inside this list for the duration of the UTXO fetch (needed there
     // for nullifier computation); the returned UTXOs carry no secrets and this
@@ -381,12 +387,9 @@ class EncryptedAccountService {
     );
 
     final spends = utxoResult.spends;
-    // Change-branch entries are all discovered-used by construction; external
-    // entries include index 0 even when unused, so filter those.
-    final usedAddresses = {
-      for (final a in addresses)
-        if (a.isChange || usedIndices.contains(a.index)) a.address,
-    };
+    final receivedAddresses = {for (final u in utxoResult.received) u.owner.address};
+    bool changeArrivedFor(PendingSpend record) =>
+        record.changeAddress == null || receivedAddresses.contains(record.changeAddress);
 
     int nextAfter(Set<int> used) => used.isEmpty ? 0 : (used.reduce((a, b) => a > b ? a : b) + 1);
     final discoveredNext = nextAfter(usedIndices);
@@ -395,7 +398,7 @@ class EncryptedAccountService {
       final kept = <PendingSpend>[];
       for (final record in s.pendingSpends) {
         final allSpent = record.nullifiers.every(spends.containsKey);
-        final changeArrived = record.changeAddress == null || usedAddresses.contains(record.changeAddress);
+        final changeArrived = changeArrivedFor(record);
         final age = DateTime.now().difference(DateTime.fromMillisecondsSinceEpoch(record.createdAtMs));
         if (allSpent && changeArrived) {
           _log('Pending spend confirmed on-chain, pruning (${record.nullifiers.length} nullifiers)');
@@ -415,9 +418,13 @@ class EncryptedAccountService {
 
     final pendingNullifiers = state.pendingSpends.expand((r) => r.nullifiers).toSet();
     final spendable = utxoResult.utxos.where((u) => !pendingNullifiers.contains(u.nullifierHex)).toList();
-    final pendingChange = state.pendingSpends.fold(BigInt.zero, (sum, r) => sum + r.changeAmountToken);
-    // Change addresses allocated locally may have been paid before discovery
-    // saw them; a spend of ours landing mid-load must still classify as change.
+    // Change that has already arrived is in [spendable]; a record kept only
+    // because its inputs are not yet reported spent must not count it twice.
+    final pendingChange = state.pendingSpends
+        .where((r) => !changeArrivedFor(r))
+        .fold(BigInt.zero, (sum, r) => sum + r.changeAmountToken);
+    // A send landing mid-load allocates a change index past the ones scanned
+    // above; its spend must still classify as change.
     final ownAddresses = {
       for (final a in addresses) a.address,
       if (state.nextChangeIndex > 0) ...await _addressesUpTo(mnemonic, state.nextChangeIndex - 1, isChange: true),
