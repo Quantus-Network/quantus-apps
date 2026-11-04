@@ -955,6 +955,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sendInputAmountAvailableBalance => 'Available Balance:';
 
   @override
+  String get sendInputAmountPending => 'Pending:';
+
+  @override
   String get sendInputAmountNetworkFee => 'Transaction Fee:';
 
   @override
@@ -1998,6 +2001,11 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String encryptedSendAmountStep(String tokenSymbol) {
     return 'Use steps of 0.01 $tokenSymbol';
+  }
+
+  @override
+  String encryptedSendInsufficientWithPending(String amount, String tokenSymbol) {
+    return 'Insufficient Balance ($amount $tokenSymbol pending)';
   }
 
   @override

@@ -61,7 +61,11 @@ class EncryptedAccountState {
     return plan.batches.every((batch) => batch.every((a) => spendable.contains(a.utxo.nullifierHex)));
   }
 
-  BigInt get balance => utxos.fold(BigInt.zero, (sum, u) => sum + u.amount) + pendingChangeToken;
+  /// Funds a send can draw on right now: the spendable UTXOs, before the
+  /// volume fee.
+  BigInt get availableToken => utxos.fold(BigInt.zero, (sum, u) => sum + u.amount);
+
+  BigInt get balance => availableToken + pendingChangeToken;
 
   /// Max amount sendable right now (post volume fee, excluding pending change).
   BigInt get maxSendable => wormholeMaxSendable(utxos);

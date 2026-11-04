@@ -90,6 +90,17 @@ final encryptedSpendableProvider = Provider.family<AsyncValue<BigInt>, int>((ref
   return ref.watch(encryptedStateProvider(walletIndex)).whenData((s) => s.maxSendable);
 });
 
+/// Spendable UTXOs before the volume fee — the balance a send draws on.
+final encryptedAvailableProvider = Provider.family<AsyncValue<BigInt>, int>((ref, walletIndex) {
+  return ref.watch(encryptedStateProvider(walletIndex)).whenData((s) => s.availableToken);
+});
+
+/// Change of submitted sends the indexer has not returned yet: part of the
+/// balance, not yet spendable.
+final encryptedPendingProvider = Provider.family<AsyncValue<BigInt>, int>((ref, walletIndex) {
+  return ref.watch(encryptedStateProvider(walletIndex)).whenData((s) => s.pendingChangeToken);
+});
+
 /// Activity of a wallet's encrypted account, newest first. A poll reload keeps
 /// the last snapshot on screen instead of flashing the loading state.
 final encryptedHistoryProvider = Provider.family<AsyncValue<List<TransactionEvent>>, int>((ref, walletIndex) {
