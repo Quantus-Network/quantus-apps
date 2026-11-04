@@ -56,11 +56,26 @@ class _OfflineUtxoService extends WormholeUtxoService {
   final queried = <List<String>>[];
 
   @override
-  Future<({Map<String, List<WormholeTransfer>> byAddress, int safeCutoff})> getTransfersToMany(
+  Future<({Map<String, List<WormholeTransfer>> byAddress, Map<String, Map<String, String>> nullifiers, int safeCutoff})>
+  getTransfersToMany(
     List<String> addresses, {
+    String Function(String address, WormholeTransfer transfer)? nullifierFor,
     WormholeProgressCallback? onProgress,
     IsCancelledCallback? isCancelled,
-  }) async => (byAddress: {for (final a in addresses) a: transfersByAddress[a] ?? []}, safeCutoff: 1000);
+  }) async {
+    final byAddress = {for (final a in addresses) a: transfersByAddress[a] ?? <WormholeTransfer>[]};
+    return (
+      byAddress: byAddress,
+      nullifiers: {
+        for (final e in byAddress.entries)
+          e.key: {
+            for (final t in e.value)
+              if (nullifierFor != null) t.id: nullifierFor(e.key, t),
+          },
+      },
+      safeCutoff: 1000,
+    );
+  }
 
   @override
   Future<Map<String, WormholeSpend>> checkNullifiersSpent(

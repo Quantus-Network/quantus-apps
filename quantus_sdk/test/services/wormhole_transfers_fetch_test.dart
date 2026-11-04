@@ -189,6 +189,61 @@ void main() {
     expect(indexer.requests.length, lessThanOrEqualTo(WormholeUtxoService.transferFetchConcurrency));
   });
 
+  test('nullifiers are computed once and kept in the transfer cache for the next scan', () async {
+    final address = _address(1);
+    final hashed = <String>[];
+    String nullifierFor(String a, WormholeTransfer t) {
+      hashed.add(t.id);
+      return '0xn${t.id}';
+    }
+
+    final first = _Indexer(chainHeight: 10000);
+    first.rows[address] = [_transfer(address, 50, 1), _transfer(address, 9990, 2)];
+    final scanned = await first.getTransfersToMany([address], nullifierFor: nullifierFor);
+    expect(scanned.nullifiers[address], {'0000000050-1': '0xn0000000050-1', '0000009990-2': '0xn0000009990-2'});
+    expect(hashed, ['0000000050-1', '0000009990-2']);
+    final cached = jsonDecode(await cacheFile(address).readAsString()) as Map<String, dynamic>;
+    expect(cached['nullifiers'], {'0000000050-1': '0xn0000000050-1'}, reason: 'only the reorg-safe transfer is cached');
+
+    // Next scan: the cached transfer's nullifier is not hashed again; the
+    // one still above the cutoff is.
+    hashed.clear();
+    final second = _Indexer(chainHeight: 10000);
+    second.rows[address] = first.rows[address]!;
+    final rescanned = await second.getTransfersToMany([address], nullifierFor: nullifierFor);
+    expect(rescanned.nullifiers[address], scanned.nullifiers[address]);
+    expect(hashed, ['0000009990-2']);
+  });
+
+  test('a cache written before nullifiers were kept is read, filled in and rewritten once', () async {
+    final address = _address(1);
+    final warm = _Indexer(chainHeight: 10000);
+    warm.rows[address] = [_transfer(address, 50, 1)];
+    await warm.getTransfersToMany([address]);
+    final file = cacheFile(address);
+    final legacy = jsonDecode(await file.readAsString()) as Map<String, dynamic>..remove('nullifiers');
+    await file.writeAsString(jsonEncode(legacy));
+
+    var hashes = 0;
+    String nullifierFor(String a, WormholeTransfer t) {
+      hashes++;
+      return '0xn${t.id}';
+    }
+
+    final filling = _Indexer(chainHeight: 10000);
+    filling.rows[address] = warm.rows[address]!;
+    await filling.getTransfersToMany([address], nullifierFor: nullifierFor);
+    expect(hashes, 1);
+    expect((jsonDecode(await file.readAsString()) as Map)['nullifiers'], {'0000000050-1': '0xn0000000050-1'});
+
+    final written = await file.readAsString();
+    final settled = _Indexer(chainHeight: 10000);
+    settled.rows[address] = warm.rows[address]!;
+    await settled.getTransfersToMany([address], nullifierFor: nullifierFor);
+    expect(hashes, 1);
+    expect(await file.readAsString(), written, reason: 'nothing new: the file is left alone');
+  });
+
   test('an idle address is not rewritten until its scan height falls a reorg depth behind', () async {
     final address = _address(1);
     final warm = _Indexer(chainHeight: 10000);

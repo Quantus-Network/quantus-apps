@@ -798,8 +798,14 @@ query SpentNullifiers($hashes: [String!]!) {
   /// only advances to `safeCutoff = currentHeight - reorgDepth` so we never
   /// have to rewrite already-persisted entries on a reorg; transfers above
   /// `safeCutoff` simply aren't cached and are re-queried next time.
-  Future<({Map<String, List<WormholeTransfer>> byAddress, int safeCutoff})> getTransfersToMany(
+  ///
+  /// With [nullifierFor], each transfer's nullifier is returned too (keyed by
+  /// transfer id, per address): computed once and kept in the address's cache
+  /// beside the transfer, so a load only hashes transfers it has not seen.
+  Future<({Map<String, List<WormholeTransfer>> byAddress, Map<String, Map<String, String>> nullifiers, int safeCutoff})>
+  getTransfersToMany(
     List<String> addresses, {
+    String Function(String address, WormholeTransfer transfer)? nullifierFor,
     WormholeProgressCallback? onProgress,
     IsCancelledCallback? isCancelled,
   }) async {
@@ -842,27 +848,54 @@ query SpentNullifiers($hashes: [String!]!) {
     );
 
     final byAddress = <String, List<WormholeTransfer>>{};
+    final nullifiersByAddress = <String, Map<String, String>>{};
+    var computed = 0;
     for (final address in addresses) {
+      _throwIfCancelled(isCancelled);
       final cache = caches[address]!;
       final fetched = newByAddress[address] ?? const <WormholeTransfer>[];
-      byAddress[address] = [...cache.transfers, ...fetched];
+      final all = [...cache.transfers, ...fetched];
+      byAddress[address] = all;
+      final nullifiers = <String, String>{};
+      var uncachedNullifiers = 0;
+      if (nullifierFor != null) {
+        for (final t in all) {
+          final cached = cache.nullifiers[t.id];
+          if (cached != null) {
+            nullifiers[t.id] = cached;
+            continue;
+          }
+          nullifiers[t.id] = nullifierFor(address, t);
+          computed++;
+          if (t.blockHeight <= safeCutoff) uncachedNullifiers++;
+        }
+      }
+      nullifiersByAddress[address] = nullifiers;
       // Cache only the reorg-safe slice; the caller still sees recent
       // (above-cutoff) transfers so balances / claims include them. Rewrite
-      // the file only when it gains a transfer or its scan height would fall
-      // more than a reorg depth behind — the query window stays bounded while
-      // an idle address (one change output, long ago) is not re-encoded on
-      // every load.
+      // the file only when it gains a transfer or a nullifier, or its scan
+      // height would fall more than a reorg depth behind — the query window
+      // stays bounded while an idle address (one change output, long ago) is
+      // not re-encoded on every load.
       final newSafe = fetched.where((t) => t.blockHeight <= safeCutoff).toList();
-      if (newSafe.isEmpty && safeCutoff - cache.cachedUpToBlock < _reorgDepth) continue;
+      if (newSafe.isEmpty && uncachedNullifiers == 0 && safeCutoff - cache.cachedUpToBlock < _reorgDepth) continue;
+      final safeTransfers = [...cache.transfers, ...newSafe];
       await _saveTransferCache(
         hashes[address]!,
-        _TransferCache(cachedUpToBlock: safeCutoff, transfers: [...cache.transfers, ...newSafe]),
+        _TransferCache(
+          cachedUpToBlock: safeCutoff,
+          transfers: safeTransfers,
+          nullifiers: {for (final t in safeTransfers) t.id: ?nullifiers[t.id]},
+        ),
       );
     }
     onProgress?.call(1, cachedCount + fetchedCount());
 
-    _log('getTransfersToMany DONE: ${cachedCount + fetchedCount()} transfers (${sw.elapsedMilliseconds}ms)');
-    return (byAddress: byAddress, safeCutoff: safeCutoff);
+    _log(
+      'getTransfersToMany DONE: ${cachedCount + fetchedCount()} transfers, '
+      '$computed nullifiers computed (${sw.elapsedMilliseconds}ms)',
+    );
+    return (byAddress: byAddress, nullifiers: nullifiersByAddress, safeCutoff: safeCutoff);
   }
 
   /// Runs [action] over [items] with at most [limit] in flight. After a
@@ -910,8 +943,12 @@ query SpentNullifiers($hashes: [String!]!) {
     IsCancelledCallback? isCancelled,
   }) async {
     _log('getUnspentUtxos(${addresses.length} addresses)');
+    final hdWalletService = HdWalletService();
+    final secretByAddress = {for (final a in addresses) a.address: a.secretHex};
     final fetched = await getTransfersToMany(
       addresses.map((a) => a.address).toList(),
+      nullifierFor: (address, transfer) =>
+          hdWalletService.computeNullifier(secretHex: secretByAddress[address]!, transferCount: transfer.transferCount),
       onProgress: onProgress,
       isCancelled: isCancelled,
     );
@@ -922,7 +959,6 @@ query SpentNullifiers($hashes: [String!]!) {
       return const WormholeUtxoResult(received: [], spends: {});
     }
 
-    final hdWalletService = HdWalletService();
     final uncheckedPairs = <(String, String)>[];
     final received = <WormholeUtxo>[];
     final ownerHashByNullifier = <String, String>{};
@@ -937,13 +973,11 @@ query SpentNullifiers($hashes: [String!]!) {
       cachedSpentByOwner[ownerHash] = cachedSpent;
       spends.addAll(cachedSpent);
 
+      final nullifiers = fetched.nullifiers[owner.address]!;
       for (final transfer in fetched.byAddress[owner.address]!) {
         _throwIfCancelled(isCancelled);
-        final nullifierHex = hdWalletService.computeNullifier(
-          secretHex: owner.secretHex,
-          transferCount: transfer.transferCount,
-        );
-        // The secret is used only for the nullifier above — the returned UTXO
+        final nullifierHex = nullifiers[transfer.id]!;
+        // The secret is used only for the nullifier — the returned UTXO
         // carries a blanked owner so no secret is retained in app state (M11).
         final redactedOwner = WormholeAddressInfo(
           index: owner.index,
@@ -1037,7 +1071,11 @@ class _TransferCache {
   final int cachedUpToBlock;
   final List<WormholeTransfer> transfers;
 
-  _TransferCache({required this.cachedUpToBlock, required this.transfers});
+  /// Nullifier hex by transfer id, for the transfers whose nullifier a scan
+  /// has computed. Absent from files written before nullifiers were cached.
+  final Map<String, String> nullifiers;
+
+  _TransferCache({required this.cachedUpToBlock, required this.transfers, this.nullifiers = const {}});
 
   factory _TransferCache.empty() => _TransferCache(cachedUpToBlock: 0, transfers: []);
 
@@ -1045,11 +1083,16 @@ class _TransferCache {
     final transfers = (json['transfers'] as List<dynamic>)
         .map((t) => WormholeTransfer.fromJson(t as Map<String, dynamic>))
         .toList();
-    return _TransferCache(cachedUpToBlock: json['cachedUpToBlock'] as int, transfers: transfers);
+    return _TransferCache(
+      cachedUpToBlock: json['cachedUpToBlock'] as int,
+      transfers: transfers,
+      nullifiers: (json['nullifiers'] as Map<String, dynamic>?)?.cast<String, String>() ?? const {},
+    );
   }
 
   Map<String, dynamic> toJson() => {
     'cachedUpToBlock': cachedUpToBlock,
     'transfers': transfers.map((t) => t.toJson()).toList(),
+    'nullifiers': nullifiers,
   };
 }
