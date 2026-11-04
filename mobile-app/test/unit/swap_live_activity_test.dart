@@ -295,7 +295,7 @@ void main() {
 
     test('a dismissed card is not put back for the same swap', () async {
       await controller.sync();
-      card.emit(SwapLiveDismissed());
+      card.emit(const SwapLiveDismissed());
       await pumpEventQueue();
 
       expect(card.ended, greaterThan(0));
