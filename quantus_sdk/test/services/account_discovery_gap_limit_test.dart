@@ -9,12 +9,26 @@ import 'package:quantus_sdk/src/services/network/redundant_endpoint.dart';
 
 String _address(int index) => 'addr-$index';
 
-/// An indexer that knows exactly the accounts in [onChain].
-AccountDiscoveryService _discoveryAgainst(Set<String> onChain) => AccountDiscoveryService(
+/// An indexer that knows exactly the accounts in [onChain], after answering
+/// the first [timeouts] requests with a statement timeout.
+AccountDiscoveryService _discoveryAgainst(Set<String> onChain, {int timeouts = 0}) => AccountDiscoveryService(
   HdWalletService(),
   graphQl: GraphQlEndpointService.forUrls(
     ['https://indexer.test'],
     client: MockClient((request) async {
+      if (timeouts-- > 0) {
+        return http.Response(
+          jsonEncode({
+            'errors': [
+              {
+                'message': 'database query error',
+                'extensions': {'path': r'$', 'code': 'unexpected'},
+              },
+            ],
+          }),
+          200,
+        );
+      }
       final ids = (jsonDecode(request.body)['variables']['ids'] as List).cast<String>();
       return http.Response(
         jsonEncode({
@@ -65,6 +79,12 @@ void main() {
     );
     expect(used, isEmpty);
     expect(probes, 1);
+  });
+
+  test('a statement timeout on a probe is retried rather than failing the scan', () async {
+    final discovery = _discoveryAgainst({_address(3)}, timeouts: 1);
+    final used = await discovery.discoverUsedIndices(addressAt: _address);
+    expect(used, {3});
   });
 
   test('the per-index entry point is the batched scan over a sync deriver', () async {

@@ -140,7 +140,7 @@ void main() {
     });
   });
 
-  test('queryTransferPages sends one request and hands each alias back to its own request', () async {
+  test('queryTransferPages sends one request, retried once transient, and demultiplexes the aliases', () async {
     final bodies = <Map<String, dynamic>>[];
     Map<String, dynamic> row(String to, int height, String id) => {
       'id': id,
@@ -160,6 +160,20 @@ void main() {
         ['https://indexer.test'],
         client: MockClient((request) async {
           bodies.add(jsonDecode(request.body) as Map<String, dynamic>);
+          // The first attempt hits a statement timeout; the walk retries it.
+          if (bodies.length == 1) {
+            return http.Response(
+              jsonEncode({
+                'errors': [
+                  {
+                    'message': 'database query error',
+                    'extensions': {'path': r'$', 'code': 'unexpected'},
+                  },
+                ],
+              }),
+              200,
+            );
+          }
           return http.Response(
             jsonEncode({
               'data': {
@@ -184,8 +198,9 @@ void main() {
       const TransferPageRequest(toAddress: 'c', afterBlock: 3),
     ], limit: 50);
 
-    expect(bodies, hasLength(1));
-    expect(bodies.single['variables'], {
+    expect(bodies, hasLength(2));
+    expect(bodies.last, bodies.first);
+    expect(bodies.last['variables'], {
       'limit': 50,
       'to0': 'a',
       'afterBlock0': 0,

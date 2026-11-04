@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:quantus_sdk/quantus_sdk.dart';
 
 class AccountDiscoveryService {
@@ -107,26 +105,8 @@ class AccountDiscoveryService {
     if (accountIds.isEmpty) return {};
 
     final graphQlEndpoint = _graphQl ?? GraphQlEndpointService();
-    final Map<String, dynamic> requestBody = {
-      'query': _accountsQuery,
-      'variables': {'ids': accountIds},
-    };
-
-    final response = await graphQlEndpoint.post(
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode(requestBody),
-    );
-
-    if (response.statusCode != 200) {
-      throw Exception('GraphQL request failed with status: ${response.statusCode}. Body: ${response.body}');
-    }
-
-    final Map<String, dynamic> responseBody = jsonDecode(response.body);
-    if (responseBody['errors'] != null) {
-      throw Exception('GraphQL errors: ${responseBody['errors']}');
-    }
-
-    final List<dynamic>? foundAccountsData = responseBody['data']?['accounts'];
+    final data = await graphQlEndpoint.query(document: _accountsQuery, variables: {'ids': accountIds});
+    final List<dynamic>? foundAccountsData = data['accounts'];
     if (foundAccountsData == null) return {};
 
     return foundAccountsData.map((a) => a['id'] as String).toSet();

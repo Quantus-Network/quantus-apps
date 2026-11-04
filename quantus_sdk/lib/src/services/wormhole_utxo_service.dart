@@ -593,22 +593,18 @@ class WormholeUtxoService {
 
   // --- GraphQL queries ---
 
-  /// Posts [query] and returns its `data`; HTTP and GraphQL errors throw.
+  /// Posts [query] and returns its `data`; HTTP and GraphQL errors throw,
+  /// transient indexer failures are retried ([GraphQlEndpointService.query]).
   Future<Map<String, dynamic>> _graphQlData(String label, String query, Map<String, dynamic> variables) async {
     final sw = Stopwatch()..start();
-    final response = await _graphQlEndpoint.post(body: jsonEncode({'query': query, 'variables': variables}));
-    _log('$label query: status=${response.statusCode} elapsed=${sw.elapsedMilliseconds}ms');
-    if (response.statusCode != 200) {
-      _log('$label query FAILED: ${response.body}');
-      throw Exception('Subsquid $label request failed ${response.statusCode}: ${response.body}');
+    try {
+      final data = await _graphQlEndpoint.query(document: query, variables: variables);
+      _log('$label query: elapsed=${sw.elapsedMilliseconds}ms');
+      return data;
+    } catch (e) {
+      _log('$label query FAILED after ${sw.elapsedMilliseconds}ms: $e');
+      rethrow;
     }
-    final parsed = jsonDecode(response.body) as Map<String, dynamic>;
-    if (parsed['errors'] != null) {
-      final msgs = (parsed['errors'] as List).map((e) => (e as Map)['message']).join('; ');
-      _log('$label query GraphQL errors: $msgs');
-      throw Exception('GraphQL errors: $msgs');
-    }
-    return (parsed['data'] as Map<String, dynamic>?) ?? const {};
   }
 
   /// Posts [query] and returns the rows of its [field].
