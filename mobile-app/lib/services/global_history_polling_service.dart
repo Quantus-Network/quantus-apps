@@ -32,7 +32,10 @@ class GlobalHistoryPollingService {
   /// and how many polls have already run waiting for it.
   static Duration pollDelay({required BigInt pending, required int pollsWhilePending}) {
     if (pending <= BigInt.zero) return pollInterval;
-    final delay = pendingPollInterval * (1 << pollsWhilePending);
+    var delay = pendingPollInterval;
+    for (var i = 0; i < pollsWhilePending && delay < pollInterval; i++) {
+      delay *= 2;
+    }
     return delay < pollInterval ? delay : pollInterval;
   }
 

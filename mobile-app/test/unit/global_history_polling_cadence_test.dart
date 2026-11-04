@@ -66,6 +66,7 @@ void main() {
     test('pollDelay backs off from 15s and settles at a minute while change is pending', () {
       Duration delay(int polls) => GlobalHistoryPollingService.pollDelay(pending: BigInt.one, pollsWhilePending: polls);
       expect([for (var i = 0; i < 5; i++) delay(i)], [s15, s30, minute, minute, minute]);
+      expect([delay(40), delay(62), delay(1 << 40)], [minute, minute, minute]);
       expect(GlobalHistoryPollingService.pollDelay(pending: BigInt.zero, pollsWhilePending: 0), minute);
     });
 
@@ -95,6 +96,21 @@ void main() {
         expect(scheduled(async), minute);
         async.elapse(minute);
         expect(scheduled(async), minute);
+      });
+    });
+
+    test('change that never arrives keeps the minute cadence through a long offline session', () {
+      fakeAsync((async) {
+        final service = serviceOffline();
+        service.startPolling();
+        service.pendingChangeUpdated(BigInt.from(5));
+        async.elapse(s15);
+        async.elapse(s30);
+
+        for (var i = 0; i < 180; i++) {
+          expect(scheduled(async), minute, reason: 'poll ${i + 2}');
+          async.elapse(minute);
+        }
       });
     });
 
