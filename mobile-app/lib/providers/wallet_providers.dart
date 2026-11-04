@@ -101,6 +101,14 @@ final encryptedPendingProvider = Provider.family<AsyncValue<BigInt>, int>((ref, 
   return ref.watch(encryptedStateProvider(walletIndex)).whenData((s) => s.pendingChangeToken);
 });
 
+/// Pending change of the active account; zero unless it is an encrypted
+/// account whose last snapshot still has change on the way.
+final activeEncryptedPendingProvider = Provider<BigInt>((ref) {
+  final account = ref.watch(activeAccountProvider).value?.account;
+  if (!isEncryptedAccount(account)) return BigInt.zero;
+  return ref.watch(encryptedPendingProvider((account as Account).walletIndex)).value ?? BigInt.zero;
+});
+
 /// Activity of a wallet's encrypted account, newest first. A poll reload keeps
 /// the last snapshot on screen instead of flashing the loading state.
 final encryptedHistoryProvider = Provider.family<AsyncValue<List<TransactionEvent>>, int>((ref, walletIndex) {
