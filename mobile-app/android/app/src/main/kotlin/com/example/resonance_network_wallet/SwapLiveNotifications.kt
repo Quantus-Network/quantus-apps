@@ -42,6 +42,7 @@ object SwapLiveNotifications {
 
     private var events: EventChannel.EventSink? = null
     private var pendingDismiss = false
+    private var pendingDismissKey: String? = null
     private var ignoreDelete = false
 
     /// Serializes push read-compare-write. The Dart path and [SwapLivePushReceiver]
@@ -58,7 +59,9 @@ object SwapLiveNotifications {
                     events = sink
                     if (pendingDismiss) {
                         pendingDismiss = false
-                        sink.success(mapOf("type" to "dismissed"))
+                        val key = pendingDismissKey
+                        pendingDismissKey = null
+                        sink.success(swapLiveDismissEvent(key))
                     }
                 }
 
@@ -161,7 +164,8 @@ object SwapLiveNotifications {
         synchronized(revisionLock) {
             // A poll can arrive after a completion push. The same order that
             // guards replace applies here, or the poll starts the foreground
-            // service again for a swap that has already finished.
+            // service again for a swap that has already finished. A dismissal
+            // persisted while no listener was attached is refused here too.
             if (!acceptsLocalWrite(context, json)) return
             ignoreDelete = false
             val card = if (stale) json.put("stale", true) else json
@@ -193,6 +197,7 @@ object SwapLiveNotifications {
             incomingFailure = if (json.isNull("failure")) null else textOrNull(json.opt("failure")),
             storedKey = stored.key,
             stored = stored.revision,
+            dismissedKey = stored.dismissedKey,
         )
     }
 
@@ -223,8 +228,9 @@ object SwapLiveNotifications {
         val sink = events
         if (sink == null) {
             pendingDismiss = true
+            pendingDismissKey = key
         } else {
-            sink.success(mapOf("type" to "dismissed"))
+            sink.success(swapLiveDismissEvent(key))
         }
     }
 
@@ -549,7 +555,8 @@ internal fun swapLiveTerminal(phase: String?, failure: String?): Boolean {
 }
 
 /// A local write may start a card, or replace one with a different swap.
-/// The swap already on screen follows [swapLiveRevisionAllows].
+/// The swap already on screen follows [swapLiveRevisionAllows]. The swap the
+/// user dismissed stays dismissed until a different swap starts.
 internal fun swapLiveLocalWriteAllowed(
     incomingKey: String,
     incomingUpdatedAt: Long?,
@@ -557,10 +564,19 @@ internal fun swapLiveLocalWriteAllowed(
     incomingFailure: String?,
     storedKey: String?,
     stored: SwapLiveCardRevision,
+    dismissedKey: String? = null,
 ): Boolean {
+    if (incomingKey.isNotEmpty() && dismissedKey == incomingKey) return false
     if (storedKey.isNullOrEmpty()) return true
     if (incomingKey.isNotEmpty() && incomingKey != storedKey) return true
     return swapLiveRevisionAllows(incomingUpdatedAt, incomingPhase, incomingFailure, stored)
+}
+
+/// Dismissal signal for the Dart controller. [key] lets a new controller
+/// record the swap before it has shown a card of its own.
+internal fun swapLiveDismissEvent(key: String?): Map<String, String> {
+    if (key.isNullOrEmpty()) return mapOf("type" to "dismissed")
+    return mapOf("type" to "dismissed", "key" to key)
 }
 
 private val pushStringFields = listOf(

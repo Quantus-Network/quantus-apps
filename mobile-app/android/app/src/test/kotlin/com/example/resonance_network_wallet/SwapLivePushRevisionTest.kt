@@ -51,6 +51,32 @@ class SwapLivePushRevisionTest {
     }
 
     @Test
+    fun aDismissedSwapIsNotShownAgain() {
+        assertFalse(localShow(shownKey, 4000, "settling", null, shownKey, stored(1000, "settling", null), shownKey))
+    }
+
+    @Test
+    fun aDismissedSwapIsNotShownWhenThePayloadIsGone() {
+        assertFalse(localShow(shownKey, 4000, "settling", null, null, stored(1000, "settling", null), shownKey))
+    }
+
+    @Test
+    fun aDifferentSwapStillStartsAfterADismissal() {
+        assertTrue(localShow("other|2", 1000, "settling", null, shownKey, stored(1000, "settling", null), shownKey))
+    }
+
+    @Test
+    fun dismissEventCarriesTheSwapKey() {
+        assertEquals(mapOf("type" to "dismissed", "key" to shownKey), swapLiveDismissEvent(shownKey))
+    }
+
+    @Test
+    fun dismissEventWithoutAKeyStaysABareSignal() {
+        assertEquals(mapOf("type" to "dismissed"), swapLiveDismissEvent(null))
+        assertEquals(mapOf("type" to "dismissed"), swapLiveDismissEvent(""))
+    }
+
+    @Test
     fun aLocalShowCanStartTheFirstCard() {
         assertTrue(localShow(shownKey, 1000, "settling", null, null, stored(1000, "swapped", null)))
     }
@@ -128,8 +154,9 @@ class SwapLivePushRevisionTest {
         failure: String?,
         storedKey: String?,
         stored: SwapLiveCardRevision,
+        dismissedKey: String? = null,
     ): Boolean {
-        return swapLiveLocalWriteAllowed(incomingKey, updatedAt, phase, failure, storedKey, stored)
+        return swapLiveLocalWriteAllowed(incomingKey, updatedAt, phase, failure, storedKey, stored, dismissedKey)
     }
 
     private fun stored(updatedAt: Long, phase: String, failure: String?): SwapLiveCardRevision {

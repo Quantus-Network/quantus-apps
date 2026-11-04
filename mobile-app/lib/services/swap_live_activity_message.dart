@@ -82,12 +82,14 @@ bool _terminal(String? phase, String? failure) => phase == 'swapped' || (phase =
 
 /// A polling show may start a card, or replace one with a different swap.
 /// The swap already on screen follows the same order as a push: an older write
-/// is dropped, and a finished card does not return to in progress.
+/// is dropped, and a finished card does not return to in progress. A swap the
+/// user dismissed stays dismissed.
 bool swapLiveLocalShowAllowed(Map<String, Object?> payload, Object? rawCard) {
   final card = _snapshot(rawCard);
+  final incomingKey = payload['key'];
+  if (incomingKey is String && incomingKey.isNotEmpty && card?.dismissedKey == incomingKey) return false;
   final storedKey = card?.key;
   if (card == null || storedKey == null || storedKey.isEmpty) return true;
-  final incomingKey = payload['key'];
   if (incomingKey is String && incomingKey.isNotEmpty && incomingKey != storedKey) return true;
   return _revisionAllows(card, payload);
 }

@@ -222,7 +222,7 @@ class SwapLiveActivityController {
   bool _tracks(int epoch, String key) => epoch == _epoch && _shown && _shownKey == key;
 
   Set<String> _takeTokens() {
-    final tokens = <String>{..._attempted, if (_registeredToken != null) _registeredToken!};
+    final tokens = <String>{..._attempted, ?_registeredToken};
     _attempted.clear();
     _registeredToken = null;
     _epoch++;
@@ -316,10 +316,10 @@ class SwapLiveActivityController {
 
   void _onEvent(SwapLiveActivityEvent event) {
     switch (event) {
-      case SwapLiveDismissed():
+      case SwapLiveDismissed(:final key):
         if (_notification) return;
-        final key = _shownKey;
-        if (key != null) _dismissed.add(key);
+        final dismissed = key ?? _shownKey;
+        if (dismissed != null) _dismissed.add(dismissed);
         sync();
       case SwapLiveToken(:final token):
         if (_notification) return;

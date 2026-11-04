@@ -22,9 +22,16 @@ SwapLiveCapabilities parseSwapLiveCapabilities(Object? raw) {
 
 /// A signal from the native card: the user dismissed it, or iOS issued the
 /// push token Senoti needs in order to update the card after the app sleeps.
-sealed class SwapLiveActivityEvent {}
+sealed class SwapLiveActivityEvent {
+  const SwapLiveActivityEvent();
+}
 
-class SwapLiveDismissed extends SwapLiveActivityEvent {}
+class SwapLiveDismissed extends SwapLiveActivityEvent {
+  /// The swap the user dismissed. Absent when the native card did not say which one.
+  final String? key;
+
+  const SwapLiveDismissed([this.key]);
+}
 
 class SwapLiveToken extends SwapLiveActivityEvent {
   final String token;
@@ -33,8 +40,8 @@ class SwapLiveToken extends SwapLiveActivityEvent {
 }
 
 /// The native lock-screen card. [show] starts a swap, or moves the one already
-/// on screen forward. A write that would reopen a finished swap is ignored.
-/// [end] removes the card.
+/// on screen forward. A write that would reopen a finished swap, or a swap the
+/// user dismissed, is ignored. [end] removes the card.
 abstract class SwapLiveActivityClient {
   Future<void> show(Map<String, Object?> payload);
 
@@ -69,7 +76,8 @@ class MethodChannelSwapLiveActivity implements SwapLiveActivityClient {
     if (event is! Map) return;
     switch (event['type']) {
       case 'dismissed':
-        _controller.add(SwapLiveDismissed());
+        final key = event['key'];
+        _controller.add(SwapLiveDismissed(key is String && key.isNotEmpty ? key : null));
       case 'token':
         final token = event['token'];
         if (token is String && token.isNotEmpty) _controller.add(SwapLiveToken(token));
@@ -85,9 +93,10 @@ class MethodChannelSwapLiveActivity implements SwapLiveActivityClient {
     await _methods.invokeMethod<void>('show', payload);
   }
 
-  /// Drops a same-swap write the stored card has already moved past. A failed
-  /// read still shows: the native write checks again under its lock, so a push
-  /// that lands between this read and the write cannot reopen the card.
+  /// Drops a same-swap write the stored card has already moved past, and a write
+  /// for a swap the user dismissed. A failed read still shows: the native write
+  /// checks again under its lock, so a push that lands between this read and
+  /// the write cannot reopen the card.
   Future<bool> _pollingShowAllowed(Map<String, Object?> payload) async {
     try {
       final raw = await _methods.invokeMethod<dynamic>('card');

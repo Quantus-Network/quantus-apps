@@ -304,6 +304,23 @@ void main() {
       expect(card.shown, hasLength(shownAfterDismiss));
     });
 
+    test('a dismissal that names its swap is kept before the card is shown', () async {
+      final key = 'qzdeposit|${started.toUtc().millisecondsSinceEpoch}';
+      card.emit(SwapLiveDismissed(key));
+      await pumpEventQueue();
+
+      await controller.sync();
+      expect(card.shown, isEmpty);
+    });
+
+    test('a dismissal of another swap still shows the one being followed', () async {
+      card.emit(const SwapLiveDismissed('other|1'));
+      await pumpEventQueue();
+
+      await controller.sync();
+      expect(card.shown, hasLength(1));
+    });
+
     test('leaving the finished screen removes the card', () async {
       current = swap(SwapStatus.success);
       await controller.sync();
@@ -592,20 +609,22 @@ void main() {
     late ActiveSwap? current;
     late DateTime now;
     late Map<String, Object?>? stored;
+    late String dismissedStored;
     late List<String> writes;
 
     setUp(() {
       debugDefaultTargetPlatformOverride = TargetPlatform.android;
       stored = null;
+      dismissedStored = '';
       writes = [];
       final binding = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
       binding.setMockMethodCallHandler(channel, (call) async {
         if (call.method == 'card') {
           final card = stored;
-          if (card == null) return {'key': '', 'dismissedKey': ''};
+          if (card == null) return {'key': '', 'dismissedKey': dismissedStored};
           return {
             'key': card['key'],
-            'dismissedKey': '',
+            'dismissedKey': dismissedStored,
             'updatedAt': card['updatedAt'],
             'phase': card['phase'],
             'failure': card['failure'],
@@ -709,6 +728,75 @@ void main() {
       expect(stored!['phase'], 'settling');
       expect(stored!['holdsProcess'], isTrue);
       expect(stored!['key'], isNot(key));
+    });
+
+    test('a recreated controller does not restore a swap dismissed while no listener was attached', () async {
+      final key = 'qzdeposit|${started.toUtc().millisecondsSinceEpoch}';
+      await controller.dispose();
+      await client.dispose();
+
+      stored = {
+        'key': key,
+        'phase': 'settling',
+        'updatedAt': started.millisecondsSinceEpoch,
+        'failure': null,
+        'holdsProcess': true,
+      };
+      dismissedStored = key;
+      writes.clear();
+      final binding = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+      binding.setMockStreamHandler(
+        events,
+        MockStreamHandler.inline(
+          onListen: (_, sink) {
+            sink.success({'type': 'dismissed', 'key': key});
+          },
+        ),
+      );
+
+      client = MethodChannelSwapLiveActivity();
+      controller = SwapLiveActivityController(
+        client: client,
+        push: registrar,
+        isIOS: () => false,
+        snapshot: () =>
+            SwapLiveSnapshot(swap: current, l10n: l10n, formatAmount: format, now: now, progressVisible: true),
+      );
+
+      await controller.sync();
+      expect(writes, isEmpty);
+
+      current = swap(SwapStatus.processing, startedAt: started.add(const Duration(hours: 2)));
+      now = started.add(const Duration(hours: 2));
+      await controller.sync();
+
+      expect(writes, ['show:settling']);
+      expect(stored!['key'], isNot(key));
+    });
+  });
+
+  group('swapLiveLocalShowAllowed', () {
+    const payload = {'key': 'qz|1', 'phase': 'settling', 'updatedAt': 2};
+
+    test('a polling show leaves a dismissed swap dismissed', () {
+      expect(
+        swapLiveLocalShowAllowed(payload, {'key': 'qz|1', 'dismissedKey': 'qz|1', 'phase': 'settling', 'updatedAt': 1}),
+        isFalse,
+      );
+    });
+
+    test('a polling show stays dismissed after the payload is cleared', () {
+      expect(swapLiveLocalShowAllowed(payload, {'key': '', 'dismissedKey': 'qz|1'}), isFalse);
+    });
+
+    test('a polling show can start a different swap after a dismissal', () {
+      expect(
+        swapLiveLocalShowAllowed(
+          {'key': 'qz|2', 'phase': 'settling', 'updatedAt': 1},
+          {'key': 'qz|1', 'dismissedKey': 'qz|1', 'phase': 'swapped', 'updatedAt': 5},
+        ),
+        isTrue,
+      );
     });
   });
 }
