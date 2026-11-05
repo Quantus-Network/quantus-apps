@@ -224,6 +224,16 @@ final balanceProvider = Provider<AsyncValue<BigInt>>((ref) {
   );
 });
 
+/// Balance of the active account from the source that applies to it: the
+/// encrypted snapshot for an encrypted account, [balanceProvider] otherwise.
+final activeBalanceProvider = Provider<AsyncValue<BigInt>>((ref) {
+  final active = ref.watch(activeAccountProvider);
+  if (active.isLoading) return const AsyncValue.loading();
+  final account = active.value?.account;
+  if (isEncryptedAccount(account)) return ref.watch(encryptedBalanceProvider((account as Account).walletIndex));
+  return ref.watch(balanceProvider);
+});
+
 /// Calculates the total amount of pending outgoing transactions for a
 /// specific account
 BigInt _calculatePendingOutgoing(
