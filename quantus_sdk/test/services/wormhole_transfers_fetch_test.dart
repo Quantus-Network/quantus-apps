@@ -39,8 +39,9 @@ WormholeTransfer _transfer(String to, int height, int n) => WormholeTransfer(
 /// Serves canned rows per address, recording each request's addresses and
 /// how many requests overlap, and optionally failing one address.
 class _Indexer extends WormholeUtxoService {
-  _Indexer({required int chainHeight, this.failing})
-    : super(
+  _Indexer({required int chainHeight, int? indexedHeight, this.failing})
+    : indexedHeight = indexedHeight ?? chainHeight,
+      super(
         graphQl: GraphQlEndpointService.forUrls([
           'https://indexer.test',
         ], client: MockClient((_) async => throw StateError('transfers go through queryTransferPages'))),
@@ -60,6 +61,7 @@ class _Indexer extends WormholeUtxoService {
 
   final Map<String, List<WormholeTransfer>> rows = {};
   final String? failing;
+  final int indexedHeight;
 
   /// Addresses of each request, in request order.
   final List<List<String>> requests = [];
@@ -67,6 +69,9 @@ class _Indexer extends WormholeUtxoService {
   int maxInFlight = 0;
 
   List<String> get queried => [for (final r in requests) ...r];
+
+  @override
+  Future<int> queryIndexedHeight() async => indexedHeight;
 
   @override
   Future<List<List<WormholeTransfer>>> queryTransferPages(
@@ -275,5 +280,63 @@ void main() {
     await later.getTransfersToMany([address]);
     cached = jsonDecode(await file.readAsString()) as Map<String, dynamic>;
     expect(cached['cachedUpToBlock'], 10100);
+  });
+
+  test('the scan height never passes the indexer, so a receipt it has not indexed yet is still found', () async {
+    final address = _address(1);
+    // The chain is at 10000 but the indexer has only committed 9500; the
+    // receipt at 9500 is not in any response yet.
+    final behind = _Indexer(chainHeight: 10000, indexedHeight: 9500);
+    behind.rows[address] = [_transfer(address, 50, 1)];
+    final result = await behind.getTransfersToMany([address]);
+    expect(result.safeCutoff, 9500 - 180);
+    expect(result.byAddress[address], hasLength(1));
+    final file = cacheFile(address);
+    expect((jsonDecode(await file.readAsString()) as Map)['cachedUpToBlock'], 9500 - 180);
+
+    // Once the indexer catches up the receipt is above the cached height.
+    final caughtUp = _Indexer(chainHeight: 10050, indexedHeight: 10050);
+    caughtUp.rows[address] = [...behind.rows[address]!, _transfer(address, 9500, 2)];
+    final later = await caughtUp.getTransfersToMany([address]);
+    expect(later.byAddress[address]!.map((t) => t.leafIndex), [BigInt.one, BigInt.two]);
+    expect((jsonDecode(await file.readAsString()) as Map)['cachedUpToBlock'], 10050 - 180);
+  });
+
+  test('an indexer ahead of the node does not move the scan height past the chain', () async {
+    final address = _address(1);
+    final indexer = _Indexer(chainHeight: 10000, indexedHeight: 10400);
+    indexer.rows[address] = [_transfer(address, 50, 1)];
+    final result = await indexer.getTransfersToMany([address]);
+    expect(result.safeCutoff, 10000 - 180);
+  });
+
+  test('a transfer-only read keeps the nullifiers already cached', () async {
+    final address = _address(1);
+    var hashes = 0;
+    String nullifierFor(String a, WormholeTransfer t) {
+      hashes++;
+      return '0xn${t.id}';
+    }
+
+    final scan = _Indexer(chainHeight: 10000);
+    scan.rows[address] = [_transfer(address, 50, 1)];
+    await scan.getTransfersToMany([address], nullifierFor: nullifierFor);
+    expect(hashes, 1);
+
+    // A reorg depth later a transfer-only read rewrites the cache to advance
+    // its scan height; the nullifier must survive that write.
+    final transfersOnly = _Indexer(chainHeight: 10000 + 180);
+    transfersOnly.rows[address] = scan.rows[address]!;
+    final read = await transfersOnly.getTransfersTo(address);
+    expect(read.transfers, hasLength(1));
+    final cached = jsonDecode(await cacheFile(address).readAsString()) as Map<String, dynamic>;
+    expect(cached['cachedUpToBlock'], 10000);
+    expect(cached['nullifiers'], {'0000000050-1': '0xn0000000050-1'});
+
+    final rescan = _Indexer(chainHeight: 10000 + 180);
+    rescan.rows[address] = scan.rows[address]!;
+    final result = await rescan.getTransfersToMany([address], nullifierFor: nullifierFor);
+    expect(hashes, 1, reason: 'the cached nullifier is reused, not recomputed');
+    expect(result.nullifiers[address], {'0000000050-1': '0xn0000000050-1'});
   });
 }

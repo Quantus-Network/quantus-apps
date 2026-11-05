@@ -607,6 +607,20 @@ class WormholeUtxoService {
     }
   }
 
+  /// Height of the newest block the indexer has committed. Transfers in
+  /// blocks above it are not queryable yet, however far the chain is.
+  @protected
+  @visibleForTesting
+  Future<int> queryIndexedHeight() async {
+    final rows = await _graphQlRows(
+      'indexed height',
+      'query IndexedHeight { block(order_by: {height: desc}, limit: 1) { height } }',
+      const {},
+      'block',
+    );
+    return rows.isEmpty ? 0 : rows.single['height'] as int;
+  }
+
   /// Posts [query] and returns the rows of its [field].
   Future<List<Map<String, dynamic>>> _graphQlRows(
     String label,
@@ -795,13 +809,17 @@ query SpentNullifiers($hashes: [String!]!) {
   ///
   /// Each address keeps its own on-disk cache and is paged with its own
   /// aliased `_eq` field, many per request ([transfersDocument]). The cache
-  /// only advances to `safeCutoff = currentHeight - reorgDepth` so we never
-  /// have to rewrite already-persisted entries on a reorg; transfers above
-  /// `safeCutoff` simply aren't cached and are re-queried next time.
+  /// only advances to `safeCutoff = scannedHeight - reorgDepth`, where
+  /// `scannedHeight` is the chain head or the indexer's newest block,
+  /// whichever is lower: entries below the cutoff never need rewriting on a
+  /// reorg, and a block the indexer has not committed yet is never marked as
+  /// scanned. Transfers above `safeCutoff` simply aren't cached and are
+  /// re-queried next time.
   ///
   /// With [nullifierFor], each transfer's nullifier is returned too (keyed by
   /// transfer id, per address): computed once and kept in the address's cache
   /// beside the transfer, so a load only hashes transfers it has not seen.
+  /// Without it, nullifiers already cached are kept as they are.
   Future<({Map<String, List<WormholeTransfer>> byAddress, Map<String, Map<String, String>> nullifiers, int safeCutoff})>
   getTransfersToMany(
     List<String> addresses, {
@@ -812,9 +830,12 @@ query SpentNullifiers($hashes: [String!]!) {
     final sw = Stopwatch()..start();
     _log('getTransfersToMany START (${addresses.length} addresses)');
 
-    final chainHeight = await _getChainHeight();
-    final safeCutoff = (chainHeight - _reorgDepth).clamp(0, chainHeight);
-    _log('chainHeight=$chainHeight safeCutoff=$safeCutoff');
+    final heights = await Future.wait([_getChainHeight(), queryIndexedHeight()]);
+    final chainHeight = heights[0];
+    final indexedHeight = heights[1];
+    final scannedHeight = chainHeight < indexedHeight ? chainHeight : indexedHeight;
+    final safeCutoff = (scannedHeight - _reorgDepth).clamp(0, scannedHeight);
+    _log('chainHeight=$chainHeight indexedHeight=$indexedHeight safeCutoff=$safeCutoff');
 
     final hashes = {for (final a in addresses) a: _addressHashOf(a)};
     await deleteStaleCachesFor(hashes.values);
@@ -838,7 +859,7 @@ query SpentNullifiers($hashes: [String!]!) {
     final newByAddress = await fetchAllTransfersToMany(
       {
         for (final a in addresses)
-          if (caches[a]!.cachedUpToBlock < chainHeight) a: caches[a]!.cachedUpToBlock,
+          if (caches[a]!.cachedUpToBlock < scannedHeight) a: caches[a]!.cachedUpToBlock,
       },
       onFetched: (address, n) {
         fetchedSoFar[address] = n;
@@ -856,15 +877,11 @@ query SpentNullifiers($hashes: [String!]!) {
       final fetched = newByAddress[address] ?? const <WormholeTransfer>[];
       final all = [...cache.transfers, ...fetched];
       byAddress[address] = all;
-      final nullifiers = <String, String>{};
+      final nullifiers = <String, String>{...cache.nullifiers};
       var uncachedNullifiers = 0;
       if (nullifierFor != null) {
         for (final t in all) {
-          final cached = cache.nullifiers[t.id];
-          if (cached != null) {
-            nullifiers[t.id] = cached;
-            continue;
-          }
+          if (nullifiers.containsKey(t.id)) continue;
           nullifiers[t.id] = nullifierFor(address, t);
           computed++;
           if (t.blockHeight <= safeCutoff) uncachedNullifiers++;
