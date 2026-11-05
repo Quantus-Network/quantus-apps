@@ -39,7 +39,7 @@ WormholeTransfer _transfer(String to, int height, int n) => WormholeTransfer(
 /// Serves canned rows per address, recording each request's addresses and
 /// how many requests overlap, and optionally failing one address.
 class _Indexer extends WormholeUtxoService {
-  _Indexer({required int chainHeight, int? indexedHeight, this.failing})
+  _Indexer({required int chainHeight, int? indexedHeight, this.failing, this.replayAll = false})
     : indexedHeight = indexedHeight ?? chainHeight,
       super(
         graphQl: GraphQlEndpointService.forUrls([
@@ -62,6 +62,9 @@ class _Indexer extends WormholeUtxoService {
   final Map<String, List<WormholeTransfer>> rows = {};
   final String? failing;
   final int indexedHeight;
+
+  /// Answer every row regardless of the after-block filter.
+  final bool replayAll;
 
   /// Addresses of each request, in request order.
   final List<List<String>> requests = [];
@@ -88,7 +91,7 @@ class _Indexer extends WormholeUtxoService {
     return [
       for (final r in batch)
         (rows[r.toAddress] ?? const [])
-            .where((t) => t.blockHeight > r.afterBlock)
+            .where((t) => replayAll || t.blockHeight > r.afterBlock)
             .where((t) => r.after == null || t.blockHeight > r.after!.blockHeight)
             .take(limit)
             .toList(),
@@ -300,6 +303,72 @@ void main() {
     final later = await caughtUp.getTransfersToMany([address]);
     expect(later.byAddress[address]!.map((t) => t.leafIndex), [BigInt.one, BigInt.two]);
     expect((jsonDecode(await file.readAsString()) as Map)['cachedUpToBlock'], 10050 - 180);
+  });
+
+  test('a cutoff below the cached watermark fills nullifiers without lowering it or duplicating a receipt', () async {
+    final address = _address(1);
+    // Cached while the indexer was level with the chain: watermark 9820 with
+    // receipts at 50 and 9800, nullifiers not yet kept.
+    final warm = _Indexer(chainHeight: 10000);
+    warm.rows[address] = [_transfer(address, 50, 1), _transfer(address, 9800, 2)];
+    await warm.getTransfersToMany([address]);
+    final file = cacheFile(address);
+    final legacy = jsonDecode(await file.readAsString()) as Map<String, dynamic>..remove('nullifiers');
+    await file.writeAsString(jsonEncode(legacy));
+    expect(legacy['cachedUpToBlock'], 9820);
+
+    var hashes = 0;
+    String nullifierFor(String a, WormholeTransfer t) {
+      hashes++;
+      return '0xn${t.id}';
+    }
+
+    // The indexer now lags: the cutoff (9720) is below the watermark. The
+    // nullifiers are filled in and written, the watermark stays put.
+    final lagging = _Indexer(chainHeight: 10000, indexedHeight: 9900);
+    lagging.rows[address] = warm.rows[address]!;
+    final filled = await lagging.getTransfersToMany([address], nullifierFor: nullifierFor);
+    expect(filled.byAddress[address]!.map((t) => t.leafIndex), [BigInt.one, BigInt.two]);
+    expect(hashes, 2);
+    final cached = jsonDecode(await file.readAsString()) as Map<String, dynamic>;
+    expect(cached['cachedUpToBlock'], 9820);
+    expect((cached['transfers'] as List).length, 2);
+    expect(cached['nullifiers'], {'0000000050-1': '0xn0000000050-1', '0000009800-2': '0xn0000009800-2'});
+
+    final again = _Indexer(chainHeight: 10000, indexedHeight: 9900);
+    again.rows[address] = warm.rows[address]!;
+    final result = await again.getTransfersToMany([address], nullifierFor: nullifierFor);
+    expect(result.byAddress[address]!.map((t) => t.leafIndex), [BigInt.one, BigInt.two]);
+    expect(hashes, 2);
+  });
+
+  test('a receipt the indexer returns again is not counted twice', () async {
+    final address = _address(1);
+    final warm = _Indexer(chainHeight: 10000);
+    warm.rows[address] = [_transfer(address, 50, 1)];
+    await warm.getTransfersToMany([address]);
+
+    // An indexer that ignores the after-block filter and replays the cached
+    // receipt must not inflate the result.
+    final replaying = _Indexer(chainHeight: 10000, replayAll: true);
+    replaying.rows[address] = [...warm.rows[address]!, _transfer(address, 9990, 2)];
+    final result = await replaying.getTransfersToMany([address]);
+    expect(result.byAddress[address]!.map((t) => t.leafIndex), [BigInt.one, BigInt.two]);
+  });
+
+  test('a cache written before the indexer bound is discarded, so a receipt it skipped is found', () async {
+    final address = _address(1);
+    // A v7 file: empty, watermark 9820, written from chain height 10000 while
+    // the indexer was at 9500 and had not yet exposed the receipt at 9500.
+    final stale = File('${dir.path}/wormhole_cache_v7_${_genesis}_${_hashOf(address).substring(0, 16)}.json')
+      ..writeAsStringSync(jsonEncode({'cachedUpToBlock': 9820, 'transfers': <Object>[]}));
+
+    final caughtUp = _Indexer(chainHeight: 10050);
+    caughtUp.rows[address] = [_transfer(address, 9500, 1)];
+    final result = await caughtUp.getTransfersToMany([address]);
+    expect(result.byAddress[address]!.map((t) => t.blockHeight), [9500]);
+    expect(stale.existsSync(), isFalse);
+    expect((jsonDecode(await cacheFile(address).readAsString()) as Map)['cachedUpToBlock'], 10050 - 180);
   });
 
   test('an indexer ahead of the node does not move the scan height past the chain', () async {

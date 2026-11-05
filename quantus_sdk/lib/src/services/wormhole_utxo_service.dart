@@ -260,9 +260,11 @@ class WormholeUtxoService {
   /// files by network as well as address, so Planck-era files are dropped
   /// instead of being read against mainnet; v6 records each transfer's
   /// timestamp and extrinsic and each spent nullifier's spend; v7 flags the
-  /// transfers a wormhole proof paid.
+  /// transfers a wormhole proof paid; v8 bounds the scan watermark by the
+  /// indexer's height — earlier watermarks could have passed receipts the
+  /// indexer had not committed yet, so those files are rescanned.
   @visibleForTesting
-  static const int cacheVersion = 7;
+  static const int cacheVersion = 8;
   static const int _nullifierBatchSize = 300;
   static const int _reorgDepth = 180;
 
@@ -874,7 +876,10 @@ query SpentNullifiers($hashes: [String!]!) {
     for (final address in addresses) {
       _throwIfCancelled(isCancelled);
       final cache = caches[address]!;
-      final fetched = newByAddress[address] ?? const <WormholeTransfer>[];
+      final cachedIds = {for (final t in cache.transfers) t.id};
+      final fetched = (newByAddress[address] ?? const <WormholeTransfer>[])
+          .where((t) => !cachedIds.contains(t.id))
+          .toList();
       final all = [...cache.transfers, ...fetched];
       byAddress[address] = all;
       final nullifiers = <String, String>{...cache.nullifiers};
@@ -893,14 +898,16 @@ query SpentNullifiers($hashes: [String!]!) {
       // the file only when it gains a transfer or a nullifier, or its scan
       // height would fall more than a reorg depth behind — the query window
       // stays bounded while an idle address (one change output, long ago) is
-      // not re-encoded on every load.
+      // not re-encoded on every load. The watermark never moves down (the
+      // cutoff can, when the indexer falls behind): every cached transfer
+      // stays at or below it, so the next query never refetches one.
       final newSafe = fetched.where((t) => t.blockHeight <= safeCutoff).toList();
       if (newSafe.isEmpty && uncachedNullifiers == 0 && safeCutoff - cache.cachedUpToBlock < _reorgDepth) continue;
       final safeTransfers = [...cache.transfers, ...newSafe];
       await _saveTransferCache(
         hashes[address]!,
         _TransferCache(
-          cachedUpToBlock: safeCutoff,
+          cachedUpToBlock: safeCutoff > cache.cachedUpToBlock ? safeCutoff : cache.cachedUpToBlock,
           transfers: safeTransfers,
           nullifiers: {for (final t in safeTransfers) t.id: ?nullifiers[t.id]},
         ),
