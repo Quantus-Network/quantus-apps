@@ -29,8 +29,7 @@ class AppConstants {
 
   static const String quersiEndpoint = 'https://qrc-1.quantus.com/api';
 
-  // static const String senotiEndpoint = 'https://snt.quantus.com/api';
-  static const String senotiEndpoint = 'https://3d3a-159-26-115-183.ngrok-free.app/api';
+  static const String senotiEndpoint = 'https://snt.quantus.com/api';
 
   // Testnet mining rewards claim server (Quantus-Network/airdrop-claim).
   static const String miningRewardsClaimEndpoint = 'https://airdrop-claim.quantus.com';
