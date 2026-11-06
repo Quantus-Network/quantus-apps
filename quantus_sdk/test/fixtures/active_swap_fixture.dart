@@ -38,6 +38,9 @@ SwapQuote quoteOutOfQtc({required DateTime deadline}) => SwapQuote(
   signature: 'ed25519:sig',
   depositAddress: 'qzdeposit',
   depositMemo: '4183920',
+  withdrawFee: BigInt.from(300000),
+  refundFee: BigInt.from(2000000000),
+  feeBps: 40,
 );
 
 /// A swap out of QTC in [status] with every optional field set, so a round

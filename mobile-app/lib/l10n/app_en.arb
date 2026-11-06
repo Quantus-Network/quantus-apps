@@ -2331,6 +2331,25 @@
         }
       }
     },
+    "swapRateEstimateLabel": "1 {fromSymbol} ≈ {rate} {toSymbol}",
+    "@swapRateEstimateLabel": {
+      "description": "Exchange rate at listed prices, shown on the swap form until a quote arrives",
+      "placeholders": {
+        "fromSymbol": {
+          "type": "String"
+        },
+        "rate": {
+          "type": "String"
+        },
+        "toSymbol": {
+          "type": "String"
+        }
+      }
+    },
+    "swapEstimateNotice": "Estimate at the market price, before fees.",
+    "@swapEstimateNotice": {
+      "description": "Under the swap form's rate while its figures are not a quote yet"
+    },
     "swapSlippageLabel": "Slippage {percent}%",
     "@swapSlippageLabel": {
       "description": "Slippage tolerance under the swap form",
@@ -2527,7 +2546,7 @@
     },
     "swapReviewSlippageValue": "{amount} ({percent}%)",
     "@swapReviewSlippageValue": {
-      "description": "Slippage allowance value",
+      "description": "An amount with the percentage it is: the slippage allowance, the swap fee",
       "placeholders": {
         "amount": {
           "type": "String"
@@ -2540,6 +2559,18 @@
     "swapReviewGuaranteedMinimum": "Guaranteed minimum",
     "@swapReviewGuaranteedMinimum": {
       "description": "Review row: least the swap pays out"
+    },
+    "swapReviewSwapFee": "Swap fee",
+    "@swapReviewSwapFee": {
+      "description": "Swap form and review row: percentage fee taken from the payment"
+    },
+    "swapReviewWithdrawalFee": "Withdrawal fee",
+    "@swapReviewWithdrawalFee": {
+      "description": "Swap form and review row: fixed fee for paying the swap out on the recipient's chain"
+    },
+    "swapReviewRefundFee": "Fee if refunded",
+    "@swapReviewRefundFee": {
+      "description": "Review row: fixed fee taken from the payment when the swap fails and is refunded"
     },
     "swapReviewUnusedRefunded": "The payment includes the slippage allowance. Whatever the swap does not use is refunded.",
     "@swapReviewUnusedRefunded": {

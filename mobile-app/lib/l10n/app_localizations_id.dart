@@ -1609,6 +1609,14 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
+  String swapRateEstimateLabel(String fromSymbol, String rate, String toSymbol) {
+    return '1 $fromSymbol ≈ $rate $toSymbol';
+  }
+
+  @override
+  String get swapEstimateNotice => 'Perkiraan pada harga pasar, sebelum biaya.';
+
+  @override
   String swapSlippageLabel(String percent) {
     return 'Slippage $percent%';
   }
@@ -1743,6 +1751,15 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get swapReviewGuaranteedMinimum => 'Minimum terjamin';
+
+  @override
+  String get swapReviewSwapFee => 'Biaya swap';
+
+  @override
+  String get swapReviewWithdrawalFee => 'Biaya penarikan';
+
+  @override
+  String get swapReviewRefundFee => 'Biaya jika dikembalikan';
 
   @override
   String get swapReviewUnusedRefunded =>

@@ -3032,6 +3032,18 @@ abstract class AppLocalizations {
   /// **'1 {fromSymbol} = {rate} {toSymbol}'**
   String swapRateLabel(String fromSymbol, String rate, String toSymbol);
 
+  /// Exchange rate at listed prices, shown on the swap form until a quote arrives
+  ///
+  /// In en, this message translates to:
+  /// **'1 {fromSymbol} ≈ {rate} {toSymbol}'**
+  String swapRateEstimateLabel(String fromSymbol, String rate, String toSymbol);
+
+  /// Under the swap form's rate while its figures are not a quote yet
+  ///
+  /// In en, this message translates to:
+  /// **'Estimate at the market price, before fees.'**
+  String get swapEstimateNotice;
+
   /// Slippage tolerance under the swap form
   ///
   /// In en, this message translates to:
@@ -3254,7 +3266,7 @@ abstract class AppLocalizations {
   /// **'Slippage allowance'**
   String get swapReviewSlippage;
 
-  /// Slippage allowance value
+  /// An amount with the percentage it is: the slippage allowance, the swap fee
   ///
   /// In en, this message translates to:
   /// **'{amount} ({percent}%)'**
@@ -3265,6 +3277,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Guaranteed minimum'**
   String get swapReviewGuaranteedMinimum;
+
+  /// Swap form and review row: percentage fee taken from the payment
+  ///
+  /// In en, this message translates to:
+  /// **'Swap fee'**
+  String get swapReviewSwapFee;
+
+  /// Swap form and review row: fixed fee for paying the swap out on the recipient's chain
+  ///
+  /// In en, this message translates to:
+  /// **'Withdrawal fee'**
+  String get swapReviewWithdrawalFee;
+
+  /// Review row: fixed fee taken from the payment when the swap fails and is refunded
+  ///
+  /// In en, this message translates to:
+  /// **'Fee if refunded'**
+  String get swapReviewRefundFee;
 
   /// Review note on a swap for an exact amount out, whose payment holds a refundable buffer
   ///

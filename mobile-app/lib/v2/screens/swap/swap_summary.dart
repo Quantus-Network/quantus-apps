@@ -125,6 +125,40 @@ class SwapFeeFailedRow extends ConsumerWidget {
   }
 }
 
+/// The fees [quote]'s amounts already hold: what its fee recipients take of
+/// the payment, and 1Click's fixed fee for paying out. A fee the quote does
+/// not carry has no row.
+class SwapQuoteFeeRows extends ConsumerWidget {
+  final SwapQuote quote;
+
+  const SwapQuoteFeeRows({super.key, required this.quote});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = ref.watch(l10nProvider);
+    final fmt = ref.watch(numberFormattingServiceProvider);
+    return Column(
+      children: [
+        if (quote.feeBps > 0)
+          SwapDetailRow(
+            label: l10n.swapReviewSwapFee,
+            value: l10n.swapReviewSlippageValue(
+              formatSwapAmount(l10n, fmt, quote.feeAmount, quote.fromToken),
+              slippagePercentLabel(quote.feeBps),
+            ),
+            monoLabel: true,
+          ),
+        if (quote.withdrawFee > BigInt.zero)
+          SwapDetailRow(
+            label: l10n.swapReviewWithdrawalFee,
+            value: formatSwapAmount(l10n, fmt, quote.withdrawFee, quote.toToken),
+            monoLabel: true,
+          ),
+      ],
+    );
+  }
+}
+
 /// Label/value line of a swap summary; [monoLabel] gives the uppercase mono
 /// label of the review screen.
 class SwapDetailRow extends StatelessWidget {

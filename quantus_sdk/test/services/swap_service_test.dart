@@ -206,6 +206,41 @@ void main() {
       expect(quote.correlationId, 'corr-1');
       expect(quote.signature, startsWith('ed25519:'));
       expect(quote.depositAddress, isNull);
+      expect(quote.withdrawFee, BigInt.zero);
+      expect(quote.refundFee, BigInt.from(300000));
+      expect(quote.feeBps, 20);
+    });
+
+    test('adds up the fee of every recipient, and a quote that names no fee has none', () async {
+      Map<String, dynamic>? appFees;
+      final service = _service((r) async {
+        final response = _quoteResponse(request: _sentRequest(r));
+        final echoed = response['quoteRequest'] as Map<String, dynamic>;
+        if (appFees == null) {
+          echoed.remove('appFees');
+          (response['quote'] as Map<String, dynamic>)
+            ..remove('withdrawFee')
+            ..remove('refundFee');
+        } else {
+          echoed.addAll(appFees);
+        }
+        return http.Response(jsonEncode(response), 200);
+      });
+
+      final bare = await _quote(service);
+      expect(
+        (bare.withdrawFee, bare.refundFee, bare.feeBps, bare.feeAmount),
+        (BigInt.zero, BigInt.zero, 0, BigInt.zero),
+      );
+
+      appFees = {
+        'appFees': [
+          _oneClickFee,
+          {'fee': 20},
+        ],
+      };
+      final charged = await _quote(service);
+      expect((charged.feeBps, charged.feeAmount), (40, BigInt.from(40000)));
     });
 
     test('asks for a memo deposit on chains that need one', () async {
