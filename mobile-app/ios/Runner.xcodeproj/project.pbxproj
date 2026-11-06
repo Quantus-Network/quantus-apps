@@ -14,6 +14,7 @@
 		3B3967161E833CAA004F5970 /* AppFrameworkInfo.plist in Resources */ = {isa = PBXBuildFile; fileRef = 3B3967151E833CAA004F5970 /* AppFrameworkInfo.plist */; };
 		3EB5255C5F1F1513728E6747 /* Pods_Runner.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9580F7AEEA7699162A02D8FF /* Pods_Runner.framework */; };
 		A1B1C0042F00000100AA0004 /* SwapLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B1C0032F00000100AA0003 /* SwapLiveActivity.swift */; };
+		A1B1C01B2F00000100AA001B /* SwapCountdownClock.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B1C01A2F00000100AA001A /* SwapCountdownClock.swift */; };
 		A1B1C0062F00000100AA0006 /* SwapActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B1C0052F00000100AA0005 /* SwapActivityAttributes.swift */; };
 		A1B1C0072F00000100AA0007 /* SwapActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B1C0052F00000100AA0005 /* SwapActivityAttributes.swift */; };
 		A1B1C0092F00000100AA0009 /* SwapLiveActivityBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B1C0082F00000100AA0008 /* SwapLiveActivityBridge.swift */; };
@@ -95,6 +96,7 @@
 		97C146EE1CF9000F007C117D /* Runner.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Runner.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A1B1C0022F00000100AA0002 /* SwapLiveActivity.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = SwapLiveActivity.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		A1B1C0032F00000100AA0003 /* SwapLiveActivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwapLiveActivity.swift; sourceTree = "<group>"; };
+		A1B1C01A2F00000100AA001A /* SwapCountdownClock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwapCountdownClock.swift; sourceTree = "<group>"; };
 		A1B1C0052F00000100AA0005 /* SwapActivityAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwapActivityAttributes.swift; sourceTree = "<group>"; };
 		A1B1C0082F00000100AA0008 /* SwapLiveActivityBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwapLiveActivityBridge.swift; sourceTree = "<group>"; };
 		A1B1C00B2F00000100AA000B /* Geist-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = "Geist-Regular.ttf"; path = "../assets/fonts/Geist-Regular.ttf"; sourceTree = "<group>"; };
@@ -159,6 +161,7 @@
 			isa = PBXGroup;
 			children = (
 				A1B1C0032F00000100AA0003 /* SwapLiveActivity.swift */,
+				A1B1C01A2F00000100AA001A /* SwapCountdownClock.swift */,
 				A1B1C0132F00000100AA0013 /* Info.plist */,
 			);
 			path = SwapLiveActivity;
@@ -652,6 +655,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				A1B1C0042F00000100AA0004 /* SwapLiveActivity.swift in Sources */,
+				A1B1C01B2F00000100AA001B /* SwapCountdownClock.swift in Sources */,
 				A1B1C0062F00000100AA0006 /* SwapActivityAttributes.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
