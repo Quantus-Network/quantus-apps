@@ -29,6 +29,9 @@ const _stringFields = [
   'chainLabel',
   'openToCheck',
   'agoLabel',
+  'leftLabel',
+  'minuteLabel',
+  'hourLabel',
   'key',
   'channelName',
 ];

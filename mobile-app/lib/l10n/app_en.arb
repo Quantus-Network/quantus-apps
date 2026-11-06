@@ -2678,6 +2678,18 @@
     "@swapLiveAgo": {
       "description": "Lock screen suffix after how long the card has been stale"
     },
+    "swapLiveLeft": "left",
+    "@swapLiveLeft": {
+      "description": "Lock screen suffix after the remaining swap time, as in 5 min left"
+    },
+    "swapLiveMinute": "min",
+    "@swapLiveMinute": {
+      "description": "Lock screen unit for a remaining swap time under an hour"
+    },
+    "swapLiveHour": "hr",
+    "@swapLiveHour": {
+      "description": "Lock screen unit for a remaining swap time of an hour or more"
+    },
     "swapLiveChannel": "Swap progress",
     "@swapLiveChannel": {
       "description": "Android notification channel for the swap lock screen card"

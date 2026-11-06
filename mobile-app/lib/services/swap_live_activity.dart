@@ -69,10 +69,10 @@ abstract class SwapLiveNotificationPoster {
   Future<void> cancel();
 }
 
-/// How far along the lock-screen bar sits. The ticks divide it into quarters;
-/// each phase rests inside its own quarter, and a finished swap fills the bar.
-const swapLiveProgressSubmitted = 0.12;
-const swapLiveProgressConfirming = 0.40;
+/// Where the lock-screen knob sits. The bar is four equal stops: submitted,
+/// confirming, settling, and a finished swap at the end.
+const swapLiveProgressSubmitted = 0.25;
+const swapLiveProgressConfirming = 0.50;
 const swapLiveProgressSettling = 0.75;
 const swapLiveProgressSwapped = 1.0;
 
@@ -109,6 +109,9 @@ class SwapLiveActivityContent {
   final String chainLabel;
   final String openToCheck;
   final String agoLabel;
+  final String leftLabel;
+  final String minuteLabel;
+  final String hourLabel;
   final double progress;
   final bool showProgress;
   final DateTime? endsAt;
@@ -137,6 +140,9 @@ class SwapLiveActivityContent {
     required this.chainLabel,
     required this.openToCheck,
     required this.agoLabel,
+    required this.leftLabel,
+    required this.minuteLabel,
+    required this.hourLabel,
     required this.progress,
     required this.showProgress,
     required this.endsAt,
@@ -168,6 +174,9 @@ class SwapLiveActivityContent {
     'chainLabel': chainLabel,
     'openToCheck': openToCheck,
     'agoLabel': agoLabel,
+    'leftLabel': leftLabel,
+    'minuteLabel': minuteLabel,
+    'hourLabel': hourLabel,
     'progress': progress,
     'showProgress': showProgress,
     'endsAt': endsAt?.millisecondsSinceEpoch,
@@ -274,6 +283,9 @@ SwapLiveActivityContent _content(
     chainLabel: l10n.swapLiveChain,
     openToCheck: l10n.swapLiveOpenToCheck,
     agoLabel: l10n.swapLiveAgo,
+    leftLabel: l10n.swapLiveLeft,
+    minuteLabel: l10n.swapLiveMinute,
+    hourLabel: l10n.swapLiveHour,
     progress: _progress(phase),
     showProgress: failure == null,
     endsAt: underway ? started.add(quote.timeEstimate) : null,

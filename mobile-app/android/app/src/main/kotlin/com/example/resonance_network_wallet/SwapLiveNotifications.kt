@@ -14,6 +14,8 @@ import android.content.pm.ServiceInfo
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.os.SystemClock
 import android.util.Log
 import android.view.View
@@ -307,9 +309,13 @@ object SwapLiveNotifications {
         views.setTextViewText(R.id.swap_live_to_symbol, json.optString("toSymbol"))
         bindTiming(views, json, stale)
         val showProgress = json.optBoolean("showProgress") && !stale
-        views.setViewVisibility(R.id.swap_live_progress, if (showProgress) View.VISIBLE else View.GONE)
+        views.setViewVisibility(R.id.swap_live_progress_wrap, if (showProgress) View.VISIBLE else View.GONE)
         if (showProgress) {
-            views.setProgressBar(R.id.swap_live_progress, 1000, (json.optDouble("progress") * 1000).toInt(), false)
+            val progress = json.optDouble("progress")
+            views.setProgressBar(R.id.swap_live_progress, 1000, (progress * 1000).toInt(), false)
+            views.setViewVisibility(R.id.swap_live_tick_25, if (progress + 0.001 < 0.25) View.VISIBLE else View.GONE)
+            views.setViewVisibility(R.id.swap_live_tick_50, if (progress + 0.001 < 0.50) View.VISIBLE else View.GONE)
+            views.setViewVisibility(R.id.swap_live_tick_75, if (progress + 0.001 < 0.75) View.VISIBLE else View.GONE)
         }
         views.setTextViewText(R.id.swap_live_open, json.optString("openToCheck"))
         views.setViewVisibility(R.id.swap_live_open, if (stale) View.VISIBLE else View.GONE)
@@ -357,10 +363,29 @@ object SwapLiveNotifications {
         }
         val endsAt = json.optLong("endsAt")
         views.setViewVisibility(R.id.swap_live_eta, View.VISIBLE)
-        views.setChronometer(R.id.swap_live_eta, elapsed + (endsAt - now), "~%s", true)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            views.setChronometerCountDown(R.id.swap_live_eta, true)
-        }
+        views.setTextViewText(
+            R.id.swap_live_eta,
+            swapLiveTimeLeft(
+                nowMs = now,
+                endsAtMs = endsAt,
+                minute = json.optString("minuteLabel"),
+                hour = json.optString("hourLabel"),
+                left = json.optString("leftLabel"),
+            ),
+        )
+    }
+
+    /// The card to redraw while its countdown is still running. A dismissed or
+    /// stale card stays as the user left it.
+    internal fun tickingCard(context: Context): JSONObject? {
+        val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        val raw = prefs.getString(PREF_PAYLOAD, null) ?: return null
+        val json = JSONObject(raw)
+        val dismissed = prefs.getString(PREF_DISMISSED, null)
+        val key = json.optString("key")
+        if (!dismissed.isNullOrEmpty() && dismissed == key) return null
+        if (json.optBoolean("stale") || json.isNull("endsAt")) return null
+        return json
     }
 
     private fun ensureChannel(context: Context, name: String) {
@@ -453,10 +478,34 @@ object SwapLiveNotifications {
     }
 }
 
+/// "~5 min left", rounding the remainder up to the next minute. Keep in step
+/// with `swapTimeLeft` in the iOS Live Activity. A blank unit is the word used
+/// by a card started before those labels were sent.
+internal fun swapLiveTimeLeft(nowMs: Long, endsAtMs: Long, minute: String, hour: String, left: String): String {
+    val minuteWord = minute.ifBlank { "min" }
+    val hourWord = hour.ifBlank { "hr" }
+    val leftWord = left.ifBlank { "left" }
+    val seconds = (endsAtMs - nowMs) / 1000.0
+    val minutes = if (seconds <= 0.0) 0 else kotlin.math.ceil(seconds / 60.0).toInt()
+    if (minutes < 60) return "~$minutes $minuteWord $leftWord"
+    val hours = minutes / 60
+    val rest = minutes % 60
+    if (rest == 0) return "~$hours $hourWord $leftWord"
+    return "~$hours $hourWord $rest $minuteWord $leftWord"
+}
+
 /// Holds the process while a swap is still moving, so status polls keep running
 /// with the screen off. A finished card is a normal notification and the service stops.
 class SwapLiveActivityService : Service() {
+    private val handler = Handler(Looper.getMainLooper())
+    private val tick = Runnable { onTick() }
+
     override fun onBind(intent: Intent?) = null
+
+    override fun onDestroy() {
+        handler.removeCallbacks(tick)
+        super.onDestroy()
+    }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val raw = intent?.getStringExtra(SwapLiveNotifications.EXTRA_PAYLOAD)
@@ -467,6 +516,12 @@ class SwapLiveActivityService : Service() {
         val json = JSONObject(raw)
         val notification = SwapLiveNotifications.build(this, json)
         val holds = json.optBoolean("holdsProcess") && !json.optBoolean("stale")
+        if (holds && !json.isNull("endsAt")) {
+            handler.removeCallbacks(tick)
+            handler.postDelayed(tick, TICK_MS)
+        } else {
+            handler.removeCallbacks(tick)
+        }
         if (holds) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 startForeground(
@@ -489,6 +544,23 @@ class SwapLiveActivityService : Service() {
             stopSelf()
         }
         return START_NOT_STICKY
+    }
+
+    private fun onTick() {
+        val json = SwapLiveNotifications.tickingCard(this)
+        if (json == null) {
+            handler.removeCallbacks(tick)
+            return
+        }
+        val staleAt = if (json.isNull("staleAt")) 0L else json.optLong("staleAt")
+        if (staleAt > 0L && System.currentTimeMillis() >= staleAt) return
+        val manager = getSystemService(NotificationManager::class.java)
+        manager.notify(SwapLiveNotifications.NOTIFICATION_ID, SwapLiveNotifications.build(this, json))
+        handler.postDelayed(tick, TICK_MS)
+    }
+
+    private companion object {
+        const val TICK_MS = 20_000L
     }
 }
 
@@ -594,6 +666,9 @@ private val pushStringFields = listOf(
     "chainLabel",
     "openToCheck",
     "agoLabel",
+    "leftLabel",
+    "minuteLabel",
+    "hourLabel",
     "key",
     "channelName",
 )

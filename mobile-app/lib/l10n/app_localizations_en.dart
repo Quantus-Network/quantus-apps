@@ -1830,6 +1830,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get swapLiveAgo => 'ago';
 
   @override
+  String get swapLiveLeft => 'left';
+
+  @override
+  String get swapLiveMinute => 'min';
+
+  @override
+  String get swapLiveHour => 'hr';
+
+  @override
   String get swapLiveChannel => 'Swap progress';
 
   @override

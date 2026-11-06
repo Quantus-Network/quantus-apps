@@ -80,6 +80,17 @@ void main() {
     appInForeground: appInForeground,
   );
 
+  test('lock-screen stops are even quarters of the bar', () {
+    const stops = [
+      swapLiveProgressSubmitted,
+      swapLiveProgressConfirming,
+      swapLiveProgressSettling,
+      swapLiveProgressSwapped,
+    ];
+
+    expect(stops, [0.25, 0.50, 0.75, 1.0]);
+  });
+
   group('decideSwapLiveActivity', () {
     test('stays off the lock screen until the deposit is on its way', () {
       expect(decide(null).command, SwapLiveCommand.end);
@@ -99,6 +110,9 @@ void main() {
       expect(content.fromSymbol, 'USDC');
       expect(content.toSymbol, 'QTC');
       expect(content.endsAt, started.add(const Duration(minutes: 5)));
+      expect(content.leftLabel, 'left');
+      expect(content.minuteLabel, 'min');
+      expect(content.hourLabel, 'hr');
       expect(content.holdsProcess, isTrue);
     });
 

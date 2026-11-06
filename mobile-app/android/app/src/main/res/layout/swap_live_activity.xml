@@ -4,7 +4,7 @@
     android:layout_height="wrap_content"
     android:background="@drawable/swap_live_bg"
     android:orientation="vertical"
-    android:padding="16dp">
+    android:padding="18dp">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -25,20 +25,22 @@
             android:id="@+id/swap_live_brand"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
+            android:layout_marginStart="10dp"
             android:layout_weight="1"
+            android:ellipsize="end"
+            android:maxLines="1"
             android:textColor="#FFE8E6E0"
-            android:textSize="13sp" />
+            android:textSize="16sp" />
 
-        <Chronometer
+        <TextView
             android:id="@+id/swap_live_eta"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_height="26dp"
+            android:layout_marginStart="8dp"
             android:background="@drawable/swap_live_pill"
-            android:paddingStart="10dp"
-            android:paddingTop="4dp"
-            android:paddingEnd="10dp"
-            android:paddingBottom="4dp"
+            android:gravity="center"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
             android:textColor="#FFFF6B35"
             android:textSize="12sp" />
 
@@ -71,30 +73,83 @@
         android:id="@+id/swap_live_headline"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
+        android:layout_marginTop="16dp"
         android:textColor="#FFFFFFFF"
-        android:textSize="18sp" />
+        android:textSize="22sp" />
 
-    <ProgressBar
-        android:id="@+id/swap_live_progress"
-        style="?android:attr/progressBarStyleHorizontal"
+    <FrameLayout
+        android:id="@+id/swap_live_progress_wrap"
         android:layout_width="match_parent"
-        android:layout_height="4dp"
-        android:layout_marginTop="12dp"
-        android:max="1000"
-        android:progressTint="#FFFF6B35"
-        android:progressBackgroundTint="#29E8E6E0" />
+        android:layout_height="9dp"
+        android:layout_marginTop="8dp">
+
+        <ProgressBar
+            android:id="@+id/swap_live_progress"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="3dp"
+            android:layout_gravity="center_vertical"
+            android:max="1000"
+            android:progressBackgroundTint="#29E8E6E0"
+            android:progressTint="#FFFF6B35" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="8dp"
+            android:layout_gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <Space
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1" />
+
+            <View
+                android:id="@+id/swap_live_tick_25"
+                android:layout_width="1dp"
+                android:layout_height="match_parent"
+                android:background="#73FFFFFF" />
+
+            <Space
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1" />
+
+            <View
+                android:id="@+id/swap_live_tick_50"
+                android:layout_width="1dp"
+                android:layout_height="match_parent"
+                android:background="#73FFFFFF" />
+
+            <Space
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1" />
+
+            <View
+                android:id="@+id/swap_live_tick_75"
+                android:layout_width="1dp"
+                android:layout_height="match_parent"
+                android:background="#73FFFFFF" />
+
+            <Space
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1" />
+        </LinearLayout>
+    </FrameLayout>
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="6dp"
+        android:gravity="center_vertical"
         android:orientation="horizontal">
 
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
+            android:layout_weight="164"
             android:orientation="vertical">
 
             <TextView
@@ -107,6 +162,7 @@
             <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
                 android:orientation="horizontal">
 
                 <TextView
@@ -120,17 +176,24 @@
                     android:id="@+id/swap_live_from_symbol"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="2dp"
+                    android:layout_marginStart="4dp"
                     android:textColor="#FFE8E6E0"
                     android:textSize="11sp" />
             </LinearLayout>
         </LinearLayout>
 
+        <View
+            android:layout_width="1dp"
+            android:layout_height="36dp"
+            android:background="#29E8E6E0" />
+
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="vertical">
+            android:layout_weight="182"
+            android:orientation="vertical"
+            android:paddingStart="7dp"
+            android:paddingEnd="0dp">
 
             <TextView
                 android:id="@+id/swap_live_to_label"
@@ -142,6 +205,7 @@
             <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
                 android:orientation="horizontal">
 
                 <TextView
@@ -155,17 +219,24 @@
                     android:id="@+id/swap_live_to_symbol"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="2dp"
+                    android:layout_marginStart="4dp"
                     android:textColor="#FFE8E6E0"
                     android:textSize="11sp" />
             </LinearLayout>
         </LinearLayout>
 
+        <View
+            android:layout_width="1dp"
+            android:layout_height="36dp"
+            android:background="#29E8E6E0" />
+
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="vertical">
+            android:layout_weight="294"
+            android:orientation="vertical"
+            android:paddingStart="7dp"
+            android:paddingEnd="0dp">
 
             <TextView
                 android:id="@+id/swap_live_chain_label"
@@ -178,6 +249,7 @@
                 android:id="@+id/swap_live_chain_value"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
                 android:textColor="#FFFFFFFF"
                 android:textSize="15sp" />
         </LinearLayout>

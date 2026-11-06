@@ -3410,6 +3410,24 @@ abstract class AppLocalizations {
   /// **'ago'**
   String get swapLiveAgo;
 
+  /// Lock screen suffix after the remaining swap time, as in 5 min left
+  ///
+  /// In en, this message translates to:
+  /// **'left'**
+  String get swapLiveLeft;
+
+  /// Lock screen unit for a remaining swap time under an hour
+  ///
+  /// In en, this message translates to:
+  /// **'min'**
+  String get swapLiveMinute;
+
+  /// Lock screen unit for a remaining swap time of an hour or more
+  ///
+  /// In en, this message translates to:
+  /// **'hr'**
+  String get swapLiveHour;
+
   /// Android notification channel for the swap lock screen card
   ///
   /// In en, this message translates to:

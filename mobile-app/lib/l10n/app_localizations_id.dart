@@ -1833,6 +1833,15 @@ class AppLocalizationsId extends AppLocalizations {
   String get swapLiveAgo => 'lalu';
 
   @override
+  String get swapLiveLeft => 'lagi';
+
+  @override
+  String get swapLiveMinute => 'mnt';
+
+  @override
+  String get swapLiveHour => 'jam';
+
+  @override
   String get swapLiveChannel => 'Progres swap';
 
   @override
