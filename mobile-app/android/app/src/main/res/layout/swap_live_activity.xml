@@ -99,43 +99,53 @@
             android:layout_gravity="center_vertical"
             android:orientation="horizontal">
 
-            <Space
+            <LinearLayout
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
-                android:layout_weight="1" />
+                android:layout_weight="1"
+                android:orientation="horizontal" />
 
-            <View
+            <ImageView
                 android:id="@+id/swap_live_tick_25"
                 android:layout_width="1dp"
                 android:layout_height="match_parent"
-                android:background="#73FFFFFF" />
+                android:background="#73FFFFFF"
+                android:contentDescription="@null"
+                android:importantForAccessibility="no" />
 
-            <Space
+            <LinearLayout
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
-                android:layout_weight="1" />
+                android:layout_weight="1"
+                android:orientation="horizontal" />
 
-            <View
+            <ImageView
                 android:id="@+id/swap_live_tick_50"
                 android:layout_width="1dp"
                 android:layout_height="match_parent"
-                android:background="#73FFFFFF" />
+                android:background="#73FFFFFF"
+                android:contentDescription="@null"
+                android:importantForAccessibility="no" />
 
-            <Space
+            <LinearLayout
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
-                android:layout_weight="1" />
+                android:layout_weight="1"
+                android:orientation="horizontal" />
 
-            <View
+            <ImageView
                 android:id="@+id/swap_live_tick_75"
                 android:layout_width="1dp"
                 android:layout_height="match_parent"
-                android:background="#73FFFFFF" />
+                android:background="#73FFFFFF"
+                android:contentDescription="@null"
+                android:importantForAccessibility="no" />
 
-            <Space
+            <LinearLayout
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
-                android:layout_weight="1" />
+                android:layout_weight="1"
+                android:orientation="horizontal" />
         </LinearLayout>
     </FrameLayout>
 
@@ -182,10 +192,12 @@
             </LinearLayout>
         </LinearLayout>
 
-        <View
+        <ImageView
             android:layout_width="1dp"
             android:layout_height="36dp"
-            android:background="#29E8E6E0" />
+            android:background="#29E8E6E0"
+            android:contentDescription="@null"
+            android:importantForAccessibility="no" />
 
         <LinearLayout
             android:layout_width="0dp"
@@ -225,10 +237,12 @@
             </LinearLayout>
         </LinearLayout>
 
-        <View
+        <ImageView
             android:layout_width="1dp"
             android:layout_height="36dp"
-            android:background="#29E8E6E0" />
+            android:background="#29E8E6E0"
+            android:contentDescription="@null"
+            android:importantForAccessibility="no" />
 
         <LinearLayout
             android:layout_width="0dp"
