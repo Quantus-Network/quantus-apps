@@ -25,6 +25,7 @@ class ConnectivityService {
   final _resultsController = StreamController<List<ConnectivityResult>>.broadcast();
   late final StreamSubscription<List<ConnectivityResult>> _subscription;
   Timer? _retry;
+  int _generation = 0;
   List<ConnectivityResult> _results = const [];
   NetworkStatus _status = NetworkStatus.online;
 
@@ -36,15 +37,25 @@ class ConnectivityService {
   List<ConnectivityResult> get currentResults => _results;
 
   /// The current status, then every change.
-  Stream<NetworkStatus> get statusStream async* {
-    yield _status;
-    yield* _statusController.stream;
-  }
+  Stream<NetworkStatus> get statusStream => _replay(() => _status, _statusController.stream);
 
   /// The current results, then every change.
-  Stream<List<ConnectivityResult>> get resultsStream async* {
-    yield _results;
-    yield* _resultsController.stream;
+  Stream<List<ConnectivityResult>> get resultsStream => _replay(() => _results, _resultsController.stream);
+
+  /// Attaches to [changes] and reads the snapshot in one synchronous step, so
+  /// no change can land between replay and subscription. Changes that arrive
+  /// while the snapshot is being delivered wait in the buffer.
+  static Stream<T> _replay<T>(T Function() snapshot, Stream<T> changes) async* {
+    final buffer = StreamController<T>();
+    final subscription = changes.listen(buffer.add, onError: buffer.addError, onDone: buffer.close);
+    try {
+      yield snapshot();
+      yield* buffer.stream;
+    } finally {
+      // Not awaited: awaiting the cancel here deadlocks flutter_test's fake
+      // async when a listener awaits a single event without pumping.
+      unawaited(subscription.cancel());
+    }
   }
 
   ConnectivityService({Connectivity? connectivity, Duration retryInterval = defaultRetryInterval})
@@ -52,11 +63,33 @@ class ConnectivityService {
       _retryInterval = retryInterval {
     // Listening first keeps the platform monitor alive, so the check reads a
     // live path rather than one just created for it.
-    _subscription = _connectivity.onConnectivityChanged.listen(_apply, onError: _onError);
+    _subscription = _connectivity.onConnectivityChanged.listen(_onChange, onError: _onError);
     unawaited(_check());
   }
 
-  Future<void> _check() async => _apply(await _connectivity.checkConnectivity());
+  /// A stream event is newer than any check still in flight, so it moves the
+  /// generation forward and the stale reply is dropped in [_check].
+  void _onChange(List<ConnectivityResult> results) {
+    _generation++;
+    _apply(results);
+  }
+
+  Future<void> _check() async {
+    final generation = _generation;
+    final List<ConnectivityResult> results;
+    try {
+      results = await _connectivity.checkConnectivity();
+    } catch (error) {
+      quantusPrint('Connectivity check failed: $error');
+      // Keep re-reading: a failed read must not end the offline retry loop.
+      if (generation == _generation && _status == NetworkStatus.offline) {
+        _retry?.cancel();
+        _retry = Timer(_retryInterval, _check);
+      }
+      return;
+    }
+    if (generation == _generation) _apply(results);
+  }
 
   void _onError(Object error) => quantusPrint('Connectivity error: $error');
 
