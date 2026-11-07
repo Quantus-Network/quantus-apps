@@ -289,9 +289,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       children: [
         const SizedBox(height: 16),
         _buildTopBar(isBalanceHidden),
-        const SizedBox(height: 52),
+        const SizedBox(height: 40),
         _buildBalance(colors, text, l10n, isBalanceHidden),
-        const SizedBox(height: 52),
+        const SizedBox(height: 40),
         if (actions != null) ...[actions, const SizedBox(height: 40)],
         if (backupWalletIndex != null) ...[
           BackupReminderBanner(walletIndex: backupWalletIndex),
@@ -323,12 +323,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        const OpenAccountsManagementButton(),
+        const Flexible(child: OpenAccountsManagementButton()),
         Row(
           children: [
             QuantusIconButton.circular(
               style: IconButtonStyle.glass,
-              icon: isBalanceHidden ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+              quantusIcon: isBalanceHidden ? QuantusIcons.eyeSlash : QuantusIcons.eye,
               onTap: _toggleBalanceHidden,
               isActive: isBalanceHidden,
               size: IconButtonSize.large,
@@ -337,7 +337,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             QuantusIconButton.circular(
               key: const Key(E2EKeys.homeSettingsButton),
               style: IconButtonStyle.glass,
-              icon: Icons.settings_outlined,
+              quantusIcon: QuantusIcons.gear,
               onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreenV2())),
               size: IconButtonSize.large,
             ),
