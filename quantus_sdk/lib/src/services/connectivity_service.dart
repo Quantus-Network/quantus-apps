@@ -17,7 +17,19 @@ enum NetworkStatus { online, offline }
 class ConnectivityService {
   static const Duration defaultRetryInterval = Duration(seconds: 3);
 
-  static final ConnectivityService instance = ConnectivityService();
+  static Duration _instanceRetryInterval = defaultRetryInterval;
+  static ConnectivityService? _instance;
+
+  /// One service per process, shared by the app's providers and the endpoint
+  /// services. Created on first use with the configured retry interval.
+  static ConnectivityService get instance => _instance ??= ConnectivityService(retryInterval: _instanceRetryInterval);
+
+  /// How often [instance] re-reads the platform while offline. An app sets it
+  /// once at startup, before anything reads [instance].
+  static set instanceRetryInterval(Duration interval) {
+    if (_instance != null) throw StateError('ConnectivityService.instance already created');
+    _instanceRetryInterval = interval;
+  }
 
   final Connectivity _connectivity;
   final Duration _retryInterval;

@@ -48,10 +48,11 @@ void main() {
     bool listen = true,
     bool hold = false,
     bool settle = true,
+    Duration retryInterval = interval,
   }) async {
     platform = _FakeConnectivity(answer);
     if (hold) platform.held = Completer<List<ConnectivityResult>>();
-    service = ConnectivityService(connectivity: platform);
+    service = ConnectivityService(connectivity: platform, retryInterval: retryInterval);
     statuses = [];
     results = [];
     if (listen) {
@@ -119,6 +120,16 @@ void main() {
     await tester.pump(interval * 5);
     expect(platform.checks, 4);
     expect(statuses, [NetworkStatus.online, NetworkStatus.offline, NetworkStatus.online]);
+    service.dispose();
+  });
+
+  testWidgets('re-reads at the configured interval', (tester) async {
+    await start(tester, const [ConnectivityResult.none], retryInterval: interval * 3);
+
+    await tester.pump(interval * 2);
+    expect(platform.checks, 1);
+    await tester.pump(interval);
+    expect(platform.checks, 2);
     service.dispose();
   });
 
