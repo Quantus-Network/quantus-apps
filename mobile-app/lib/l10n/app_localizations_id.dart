@@ -812,6 +812,15 @@ class AppLocalizationsId extends AppLocalizations {
   String get accountMenuShowRecoveryPhrase => 'Tampilkan Recovery Phrase';
 
   @override
+  String get accountMenuShowAddress => 'Tampilkan alamat';
+
+  @override
+  String get accountMenuRename => 'Ganti nama';
+
+  @override
+  String get accountMenuDisconnectAccount => 'Putuskan akun';
+
+  @override
   String get accountMenuNotFound => 'Akun tidak ditemukan';
 
   @override
