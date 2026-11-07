@@ -98,7 +98,13 @@ class SwapDebugScreen extends ConsumerWidget {
               simulated: true,
             ),
           );
-      Navigator.push(context, MaterialPageRoute(builder: (_) => SwapProgressScreen(account: account)));
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          settings: const RouteSettings(name: SwapProgressScreen.routeName),
+          builder: (_) => SwapProgressScreen(account: account),
+        ),
+      );
     });
 
     final swapIn = [

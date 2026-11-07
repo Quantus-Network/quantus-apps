@@ -13,6 +13,14 @@
 		331C808B294A63AB00263BE5 /* RunnerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 331C807B294A618700263BE5 /* RunnerTests.swift */; };
 		3B3967161E833CAA004F5970 /* AppFrameworkInfo.plist in Resources */ = {isa = PBXBuildFile; fileRef = 3B3967151E833CAA004F5970 /* AppFrameworkInfo.plist */; };
 		3EB5255C5F1F1513728E6747 /* Pods_Runner.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9580F7AEEA7699162A02D8FF /* Pods_Runner.framework */; };
+		A1B1C0042F00000100AA0004 /* SwapLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B1C0032F00000100AA0003 /* SwapLiveActivity.swift */; };
+		A1B1C01B2F00000100AA001B /* SwapCountdownClock.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B1C01A2F00000100AA001A /* SwapCountdownClock.swift */; };
+		A1B1C0062F00000100AA0006 /* SwapActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B1C0052F00000100AA0005 /* SwapActivityAttributes.swift */; };
+		A1B1C0072F00000100AA0007 /* SwapActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B1C0052F00000100AA0005 /* SwapActivityAttributes.swift */; };
+		A1B1C0092F00000100AA0009 /* SwapLiveActivityBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B1C0082F00000100AA0008 /* SwapLiveActivityBridge.swift */; };
+		A1B1C00A2F00000100AA000A /* SwapLiveActivity.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = A1B1C0022F00000100AA0002 /* SwapLiveActivity.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		A1B1C00D2F00000100AA000D /* Geist-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = A1B1C00B2F00000100AA000B /* Geist-Regular.ttf */; };
+		A1B1C00E2F00000100AA000E /* Geist-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = A1B1C00C2F00000100AA000C /* Geist-Medium.ttf */; };
 		74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74858FAE1ED2DC5600515810 /* AppDelegate.swift */; };
 		78A318202AECB46A00862997 /* FlutterGeneratedPluginSwiftPackage in Frameworks */ = {isa = PBXBuildFile; productRef = 78A3181F2AECB46A00862997 /* FlutterGeneratedPluginSwiftPackage */; };
 		97C146FC1CF9000F007C117D /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FA1CF9000F007C117D /* Main.storyboard */; };
@@ -50,6 +58,17 @@
 			name = "Embed Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		A1B1C0122F00000100AA0012 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				A1B1C00A2F00000100AA000A /* SwapLiveActivity.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
@@ -75,6 +94,14 @@
 		9740EEB21CF90195004384FC /* Debug.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; name = Debug.xcconfig; path = Flutter/Debug.xcconfig; sourceTree = "<group>"; };
 		9740EEB31CF90195004384FC /* Generated.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; name = Generated.xcconfig; path = Flutter/Generated.xcconfig; sourceTree = "<group>"; };
 		97C146EE1CF9000F007C117D /* Runner.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Runner.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A1B1C0022F00000100AA0002 /* SwapLiveActivity.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = SwapLiveActivity.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		A1B1C0032F00000100AA0003 /* SwapLiveActivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwapLiveActivity.swift; sourceTree = "<group>"; };
+		A1B1C01A2F00000100AA001A /* SwapCountdownClock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwapCountdownClock.swift; sourceTree = "<group>"; };
+		A1B1C0052F00000100AA0005 /* SwapActivityAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwapActivityAttributes.swift; sourceTree = "<group>"; };
+		A1B1C0082F00000100AA0008 /* SwapLiveActivityBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwapLiveActivityBridge.swift; sourceTree = "<group>"; };
+		A1B1C00B2F00000100AA000B /* Geist-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = "Geist-Regular.ttf"; path = "../assets/fonts/Geist-Regular.ttf"; sourceTree = "<group>"; };
+		A1B1C00C2F00000100AA000C /* Geist-Medium.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = "Geist-Medium.ttf"; path = "../assets/fonts/Geist-Medium.ttf"; sourceTree = "<group>"; };
+		A1B1C0132F00000100AA0013 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		97C146FB1CF9000F007C117D /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		97C146FD1CF9000F007C117D /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		97C147001CF9000F007C117D /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
@@ -130,6 +157,24 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		A1B1C0142F00000100AA0014 /* SwapLiveActivity */ = {
+			isa = PBXGroup;
+			children = (
+				A1B1C0032F00000100AA0003 /* SwapLiveActivity.swift */,
+				A1B1C01A2F00000100AA001A /* SwapCountdownClock.swift */,
+				A1B1C0132F00000100AA0013 /* Info.plist */,
+			);
+			path = SwapLiveActivity;
+			sourceTree = "<group>";
+		};
+		A1B1C0152F00000100AA0015 /* Shared */ = {
+			isa = PBXGroup;
+			children = (
+				A1B1C0052F00000100AA0005 /* SwapActivityAttributes.swift */,
+			);
+			path = Shared;
+			sourceTree = "<group>";
+		};
 		331C8082294A63A400263BE5 /* RunnerTests */ = {
 			isa = PBXGroup;
 			children = (
@@ -171,6 +216,10 @@
 			children = (
 				9740EEB11CF90186004384FC /* Flutter */,
 				97C146F01CF9000F007C117D /* Runner */,
+				A1B1C0142F00000100AA0014 /* SwapLiveActivity */,
+				A1B1C0152F00000100AA0015 /* Shared */,
+				A1B1C00B2F00000100AA000B /* Geist-Regular.ttf */,
+				A1B1C00C2F00000100AA000C /* Geist-Medium.ttf */,
 				15F373642FF2774200DB2DB0 /* RunnerUITests */,
 				97C146EF1CF9000F007C117D /* Products */,
 				331C8082294A63A400263BE5 /* RunnerTests */,
@@ -184,6 +233,7 @@
 			isa = PBXGroup;
 			children = (
 				97C146EE1CF9000F007C117D /* Runner.app */,
+				A1B1C0022F00000100AA0002 /* SwapLiveActivity.appex */,
 				331C8081294A63A400263BE5 /* RunnerTests.xctest */,
 				15F373632FF2774200DB2DB0 /* RunnerUITests.xctest */,
 			);
@@ -201,6 +251,7 @@
 				1498D2321E8E86230040F4C2 /* GeneratedPluginRegistrant.h */,
 				1498D2331E8E89220040F4C2 /* GeneratedPluginRegistrant.m */,
 				74858FAE1ED2DC5600515810 /* AppDelegate.swift */,
+				A1B1C0082F00000100AA0008 /* SwapLiveActivityBridge.swift */,
 				74858FAD1ED2DC5600515810 /* Runner-Bridging-Header.h */,
 			);
 			path = Runner;
@@ -263,6 +314,23 @@
 			productReference = 331C8081294A63A400263BE5 /* RunnerTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
+		A1B1C0012F00000100AA0001 /* SwapLiveActivity */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A1B1C0192F00000100AA0019 /* Build configuration list for PBXNativeTarget "SwapLiveActivity" */;
+			buildPhases = (
+				A1B1C00F2F00000100AA000F /* Sources */,
+				A1B1C0102F00000100AA0010 /* Frameworks */,
+				A1B1C0112F00000100AA0011 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = SwapLiveActivity;
+			productName = SwapLiveActivity;
+			productReference = A1B1C0022F00000100AA0002 /* SwapLiveActivity.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 		97C146ED1CF9000F007C117D /* Runner */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 97C147051CF9000F007C117D /* Build configuration list for PBXNativeTarget "Runner" */;
@@ -273,6 +341,7 @@
 				97C146EB1CF9000F007C117D /* Frameworks */,
 				97C146EC1CF9000F007C117D /* Resources */,
 				9705A1C41CF9048500538489 /* Embed Frameworks */,
+				A1B1C0122F00000100AA0012 /* Embed Foundation Extensions */,
 				3B06AD1E1E4923F5004D2608 /* Thin Binary */,
 				52CEAAE956158F7EC6981CFF /* [CP] Embed Pods Frameworks */,
 				FE17E57BE0DE0A11C0DE0001 /* Embed Swift Testing Frameworks (device) */,
@@ -312,6 +381,9 @@
 						CreatedOnToolsVersion = 7.3.1;
 						LastSwiftMigration = 1100;
 					};
+					A1B1C0012F00000100AA0001 = {
+						CreatedOnToolsVersion = 16.1;
+					};
 				};
 			};
 			buildConfigurationList = 97C146E91CF9000F007C117D /* Build configuration list for PBXProject "Runner" */;
@@ -331,6 +403,7 @@
 			projectRoot = "";
 			targets = (
 				97C146ED1CF9000F007C117D /* Runner */,
+				A1B1C0012F00000100AA0001 /* SwapLiveActivity */,
 				331C8080294A63A400263BE5 /* RunnerTests */,
 				15F373622FF2774200DB2DB0 /* RunnerUITests */,
 			);
@@ -349,6 +422,15 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A1B1C0112F00000100AA0011 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A1B1C00D2F00000100AA000D /* Geist-Regular.ttf in Resources */,
+				A1B1C00E2F00000100AA000E /* Geist-Medium.ttf in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -568,11 +650,30 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		A1B1C00F2F00000100AA000F /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A1B1C0042F00000100AA0004 /* SwapLiveActivity.swift in Sources */,
+				A1B1C01B2F00000100AA001B /* SwapCountdownClock.swift in Sources */,
+				A1B1C0062F00000100AA0006 /* SwapActivityAttributes.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A1B1C0102F00000100AA0010 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		97C146EA1CF9000F007C117D /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 				74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */,
+				A1B1C0092F00000100AA0009 /* SwapLiveActivityBridge.swift in Sources */,
+				A1B1C0072F00000100AA0007 /* SwapActivityAttributes.swift in Sources */,
 				1498D2341E8E89220040F4C2 /* GeneratedPluginRegistrant.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -1063,6 +1164,81 @@
 			};
 			name = Release;
 		};
+		A1B1C0162F00000100AA0016 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 9740EEB31CF90195004384FC /* Generated.xcconfig */;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
+				DEVELOPMENT_TEAM = 8BRRAHLVW5;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = SwapLiveActivity/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.2;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = "$(FLUTTER_BUILD_NAME)";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.quantus.mobile-wallet.SwapLiveActivity";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		A1B1C0172F00000100AA0017 /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 9740EEB31CF90195004384FC /* Generated.xcconfig */;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
+				DEVELOPMENT_TEAM = 8BRRAHLVW5;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = SwapLiveActivity/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.2;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = "$(FLUTTER_BUILD_NAME)";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.quantus.mobile-wallet.SwapLiveActivity";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		A1B1C0182F00000100AA0018 /* Profile */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 9740EEB31CF90195004384FC /* Generated.xcconfig */;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
+				DEVELOPMENT_TEAM = 8BRRAHLVW5;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = SwapLiveActivity/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.2;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = "$(FLUTTER_BUILD_NAME)";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.quantus.mobile-wallet.SwapLiveActivity";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Profile;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -1092,6 +1268,16 @@
 				97C147031CF9000F007C117D /* Debug */,
 				97C147041CF9000F007C117D /* Release */,
 				249021D3217E4FDB00AE95B9 /* Profile */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A1B1C0192F00000100AA0019 /* Build configuration list for PBXNativeTarget "SwapLiveActivity" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A1B1C0162F00000100AA0016 /* Debug */,
+				A1B1C0172F00000100AA0017 /* Release */,
+				A1B1C0182F00000100AA0018 /* Profile */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

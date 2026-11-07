@@ -59,6 +59,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     ref.listenManual<PaymentIntent?>(paymentIntentProvider, _onPaymentIntent);
     ref.listenManual<String?>(sharedAccountIntentProvider, _onSharedIntent);
     ref.listenManual<ProposalIntent?>(proposalIntentProvider, _onProposalIntent);
+    ref.listenManual<bool>(swapProgressIntentProvider, _onSwapProgressIntent);
     ref.listenManual<AsyncValue<DisplayAccount?>>(activeAccountProvider, (_, async) {
       if (async.value == null) return;
       // Accounts may still be loading when an intent arrives on a cold start;
@@ -101,6 +102,36 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     _onPaymentIntent(null, ref.read(paymentIntentProvider));
     _onSharedIntent(null, ref.read(sharedAccountIntentProvider));
     _onProposalIntent(null, ref.read(proposalIntentProvider));
+    _onSwapProgressIntent(null, ref.read(swapProgressIntentProvider));
+  }
+
+  void _onSwapProgressIntent(bool? _, bool open) {
+    if (!open || !mounted || !_isUnlocked) return;
+    if (ref.read(sendFlowActiveProvider)) {
+      ref.read(swapProgressIntentProvider.notifier).state = false;
+      quantusPrint('swap progress intent ignored: send flow active');
+      return;
+    }
+    if (ref.read(activeSwapProvider) == null) {
+      ref.read(swapProgressIntentProvider.notifier).state = false;
+      return;
+    }
+    ref.read(swapProgressIntentProvider.notifier).state = false;
+    final navigator = Navigator.of(context);
+    var topIsSwap = false;
+    navigator.popUntil((route) {
+      topIsSwap = route.settings.name == SwapProgressScreen.routeName;
+      return true;
+    });
+    if (topIsSwap) return;
+    final active = ref.read(activeAccountProvider).value;
+    final starter = active is RegularAccount ? active.account : null;
+    navigator.push(
+      MaterialPageRoute(
+        settings: const RouteSettings(name: SwapProgressScreen.routeName),
+        builder: (_) => SwapProgressScreen(account: starter),
+      ),
+    );
   }
 
   void _onTransactionIntent(TransactionEvent? _, TransactionEvent? transaction) {
@@ -414,7 +445,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       iconAsset: 'assets/v2/action_swap.svg',
       label: l10n.homeSwap,
       isDisabled: isDisabled,
-      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => screen())),
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(
+          settings: RouteSettings(name: swap != null ? SwapProgressScreen.routeName : null),
+          builder: (_) => screen(),
+        ),
+      ),
     );
   }
 

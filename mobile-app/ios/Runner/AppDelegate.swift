@@ -87,5 +87,8 @@ import FirebaseMessaging
     if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "SecureClipboard") {
       setupSecureClipboardChannel(messenger: registrar.messenger())
     }
+    if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "SwapLiveActivity") {
+      SwapLiveActivityBridge.shared.register(messenger: registrar.messenger())
+    }
   }
 }

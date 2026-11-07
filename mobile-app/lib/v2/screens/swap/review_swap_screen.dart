@@ -78,7 +78,10 @@ class _ReviewSwapScreenState extends ConsumerState<ReviewSwapScreen> {
       if (!followed || !mounted) return;
       Navigator.pushAndRemoveUntil(
         context,
-        MaterialPageRoute(builder: (_) => SwapProgressScreen(account: widget.account)),
+        MaterialPageRoute(
+          settings: const RouteSettings(name: SwapProgressScreen.routeName),
+          builder: (_) => SwapProgressScreen(account: widget.account),
+        ),
         (route) => route.isFirst,
       );
     } finally {

@@ -47,6 +47,10 @@ class ProposalIntent {
 
 final proposalIntentProvider = StateProvider<ProposalIntent?>((_) => null);
 
+/// A tap on the swap lock-screen card. Drained by [HomeScreen] once the
+/// wallet is unlocked, and dropped when no swap is being followed.
+final swapProgressIntentProvider = StateProvider<bool>((_) => false);
+
 /// Inbound caps for anything arriving via deep link or QR code. A maximal
 /// legitimate /pay link is ~180 chars (host + path, ~50-char SS58 address,
 /// NNNNNNNN.NNNNNNNNNNNN amount, 64-char ref), so 256 for the whole URL

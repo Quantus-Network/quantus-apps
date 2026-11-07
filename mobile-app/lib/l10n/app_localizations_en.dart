@@ -1801,6 +1801,50 @@ class AppLocalizationsEn extends AppLocalizations {
       'Usually a few minutes. You can leave the app, the swap carries on. · via NEAR Intents';
 
   @override
+  String get swapLiveBrand => 'Swapping';
+
+  @override
+  String get swapLiveBrandIdle => 'Swap';
+
+  @override
+  String get swapLiveSubmitted => 'Swap submitted';
+
+  @override
+  String swapLiveSettling(String network) {
+    return 'Settling on $network';
+  }
+
+  @override
+  String get swapLiveSwapped => 'Swapped';
+
+  @override
+  String get swapLiveFrom => 'From';
+
+  @override
+  String get swapLiveTo => 'To';
+
+  @override
+  String get swapLiveChain => 'Chain';
+
+  @override
+  String get swapLiveOpenToCheck => 'Open Quantus to check';
+
+  @override
+  String get swapLiveAgo => 'ago';
+
+  @override
+  String get swapLiveLeft => 'left';
+
+  @override
+  String get swapLiveMinute => 'min';
+
+  @override
+  String get swapLiveHour => 'hr';
+
+  @override
+  String get swapLiveChannel => 'Swap progress';
+
+  @override
   String get swapDetailsTitle => 'Swap Details';
 
   @override

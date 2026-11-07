@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:clock/clock.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7,6 +9,7 @@ import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/providers/active_swap_provider.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
+import 'package:resonance_network_wallet/providers/swap_live_activity_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
 import 'package:resonance_network_wallet/v2/components/copy_icon_button.dart';
@@ -29,6 +32,8 @@ import 'package:resonance_network_wallet/v2/screens/swap/swap_summary.dart';
 /// a running swap left by going back is still followed. Its details sheet,
 /// or the notice once it is overdue, offers to stop tracking.
 class SwapProgressScreen extends ConsumerStatefulWidget {
+  static const routeName = 'swap-progress';
+
   /// The account a new swap would start from; none when the selected
   /// account cannot swap.
   final Account? account;
@@ -43,6 +48,34 @@ class _SwapProgressScreenState extends ConsumerState<SwapProgressScreen> {
   /// What was shown last: it stays on screen while the route leaves after
   /// the swap was put away.
   ActiveSwap? _shown;
+
+  late final SwapProgressVisible _progressVisible;
+
+  @override
+  void initState() {
+    super.initState();
+    _progressVisible = ref.read(swapProgressVisibleProvider.notifier);
+    _setProgressVisible(true);
+  }
+
+  @override
+  void dispose() {
+    _setProgressVisible(false);
+    super.dispose();
+  }
+
+  /// Applies [visible] once the current build or unmount has finished.
+  /// Riverpod rejects a provider write from initState or dispose, and [ref]
+  /// is already unsafe once dispose starts.
+  void _setProgressVisible(bool visible) {
+    final progressVisible = _progressVisible;
+    unawaited(
+      Future<void>.microtask(() {
+        if (visible && !mounted) return;
+        progressVisible.set(visible);
+      }),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {

@@ -48,6 +48,8 @@ dependencies:
   play_install_referrer: ^0.5.0
 
   # Notifications
+  swap_live_activity_channel:
+    path: plugins/swap_live_activity_channel
   flutter_local_notifications: ^21.0.0
   timezone: ^0.11.0
   flutter_timezone: ^5.0.1

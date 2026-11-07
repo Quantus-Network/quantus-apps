@@ -3356,6 +3356,90 @@ abstract class AppLocalizations {
   /// **'Usually a few minutes. You can leave the app, the swap carries on. · via NEAR Intents'**
   String get swapProgressFooter;
 
+  /// Lock screen header while a swap is underway or complete
+  ///
+  /// In en, this message translates to:
+  /// **'Swapping'**
+  String get swapLiveBrand;
+
+  /// Lock screen header when the swap card is stale or failed
+  ///
+  /// In en, this message translates to:
+  /// **'Swap'**
+  String get swapLiveBrandIdle;
+
+  /// Lock screen headline after the deposit is sent
+  ///
+  /// In en, this message translates to:
+  /// **'Swap submitted'**
+  String get swapLiveSubmitted;
+
+  /// Lock screen headline while the swap pays out on the destination chain
+  ///
+  /// In en, this message translates to:
+  /// **'Settling on {network}'**
+  String swapLiveSettling(String network);
+
+  /// Lock screen headline when the swap has paid out
+  ///
+  /// In en, this message translates to:
+  /// **'Swapped'**
+  String get swapLiveSwapped;
+
+  /// Lock screen label for the amount paid
+  ///
+  /// In en, this message translates to:
+  /// **'From'**
+  String get swapLiveFrom;
+
+  /// Lock screen label for the amount received
+  ///
+  /// In en, this message translates to:
+  /// **'To'**
+  String get swapLiveTo;
+
+  /// Lock screen label for the source chain
+  ///
+  /// In en, this message translates to:
+  /// **'Chain'**
+  String get swapLiveChain;
+
+  /// Lock screen footer when the swap card could not be updated
+  ///
+  /// In en, this message translates to:
+  /// **'Open Quantus to check'**
+  String get swapLiveOpenToCheck;
+
+  /// Lock screen suffix after how long the card has been stale
+  ///
+  /// In en, this message translates to:
+  /// **'ago'**
+  String get swapLiveAgo;
+
+  /// Lock screen suffix after the remaining swap time, as in 5 min left
+  ///
+  /// In en, this message translates to:
+  /// **'left'**
+  String get swapLiveLeft;
+
+  /// Lock screen unit for a remaining swap time under an hour
+  ///
+  /// In en, this message translates to:
+  /// **'min'**
+  String get swapLiveMinute;
+
+  /// Lock screen unit for a remaining swap time of an hour or more
+  ///
+  /// In en, this message translates to:
+  /// **'hr'**
+  String get swapLiveHour;
+
+  /// Android notification channel for the swap lock screen card
+  ///
+  /// In en, this message translates to:
+  /// **'Swap progress'**
+  String get swapLiveChannel;
+
   /// Title of the swap details sheet
   ///
   /// In en, this message translates to:

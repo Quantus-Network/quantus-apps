@@ -28,6 +28,19 @@
 		<false/>
 		<key>FirebaseMessagingAutoInitEnabled</key>
 		<false/>
+		<key>NSSupportsLiveActivities</key>
+		<true/>
+		<key>CFBundleURLTypes</key>
+		<array>
+			<dict>
+				<key>CFBundleURLName</key>
+				<string>com.quantus.mobile-wallet</string>
+				<key>CFBundleURLSchemes</key>
+				<array>
+					<string>quantus</string>
+				</array>
+			</dict>
+		</array>
 		<key>FlutterDeepLinkingEnabled</key>
 		<false/>
 		<key>ITSAppUsesNonExemptEncryption</key>

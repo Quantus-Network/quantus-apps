@@ -1804,6 +1804,50 @@ class AppLocalizationsId extends AppLocalizations {
       'Biasanya beberapa menit. Anda boleh meninggalkan aplikasi, swap tetap berjalan. · via NEAR Intents';
 
   @override
+  String get swapLiveBrand => 'Menukar';
+
+  @override
+  String get swapLiveBrandIdle => 'Tukar';
+
+  @override
+  String get swapLiveSubmitted => 'Swap diajukan';
+
+  @override
+  String swapLiveSettling(String network) {
+    return 'Menyelesaikan di $network';
+  }
+
+  @override
+  String get swapLiveSwapped => 'Tertukar';
+
+  @override
+  String get swapLiveFrom => 'Dari';
+
+  @override
+  String get swapLiveTo => 'Ke';
+
+  @override
+  String get swapLiveChain => 'Jaringan';
+
+  @override
+  String get swapLiveOpenToCheck => 'Buka Quantus untuk memeriksa';
+
+  @override
+  String get swapLiveAgo => 'lalu';
+
+  @override
+  String get swapLiveLeft => 'lagi';
+
+  @override
+  String get swapLiveMinute => 'mnt';
+
+  @override
+  String get swapLiveHour => 'jam';
+
+  @override
+  String get swapLiveChannel => 'Progres swap';
+
+  @override
   String get swapDetailsTitle => 'Detail Swap';
 
   @override
