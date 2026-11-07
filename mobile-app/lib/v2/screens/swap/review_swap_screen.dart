@@ -78,7 +78,10 @@ class _ReviewSwapScreenState extends ConsumerState<ReviewSwapScreen> {
       if (!followed || !mounted) return;
       Navigator.pushAndRemoveUntil(
         context,
-        MaterialPageRoute(builder: (_) => SwapProgressScreen(account: widget.account)),
+        MaterialPageRoute(
+          settings: const RouteSettings(name: SwapProgressScreen.routeName),
+          builder: (_) => SwapProgressScreen(account: widget.account),
+        ),
         (route) => route.isFirst,
       );
     } finally {
@@ -210,6 +213,7 @@ class _ReviewSwapScreenState extends ConsumerState<ReviewSwapScreen> {
                 foreign.symbol,
               ),
             ),
+            SwapQuoteFeeRows(quote: quote),
             if (_swapOut)
               row(l10n.swapReviewRecipient, AddressFormattingService.formatAddress(quote.recipient), mono: true)
             else
@@ -229,6 +233,7 @@ class _ReviewSwapScreenState extends ConsumerState<ReviewSwapScreen> {
               ),
             ),
             row(l10n.swapReviewGuaranteedMinimum, amount(quote.minAmountOut, to)),
+            if (quote.refundFee > BigInt.zero) row(l10n.swapReviewRefundFee, amount(quote.refundFee, from)),
             if (exactOutput) ...[
               const SizedBox(height: 16),
               Text(l10n.swapReviewUnusedRefunded, style: text.caption.copyWith(color: colors.textMuted)),

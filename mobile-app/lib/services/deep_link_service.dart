@@ -44,6 +44,10 @@ class DeepLinkService {
       return;
     }
     final parts = decodedLinkParts(uri);
+    if (uri.scheme == 'quantus' && uri.host == 'swap') {
+      _ref.read(swapProgressIntentProvider.notifier).state = true;
+      return;
+    }
     if (parts == null) return;
 
     if (parts.path.isNotEmpty && parts.path.first == 'account') {

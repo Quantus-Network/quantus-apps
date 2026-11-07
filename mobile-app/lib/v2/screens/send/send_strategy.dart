@@ -66,19 +66,6 @@ class ProposeFee extends SendFee {
 /// Why an encrypted send can't be built for the entered amount.
 enum EncryptedSendBlocker { notQuantized, insufficient }
 
-/// The recipient could not be checked against 1Click's deposit addresses.
-/// The send may go on: a plan of a single input is safe, and one of several
-/// is checked again at confirm. Every other failure of the recipient check
-/// keeps the send closed.
-class RecipientLookupUnavailable implements Exception {
-  final Object cause;
-
-  const RecipientLookupUnavailable(this.cause);
-
-  @override
-  String toString() => 'RecipientLookupUnavailable: $cause';
-}
-
 /// Why an address can't receive a send.
 enum RecipientBlock {
   /// The sending account itself, or one of its own addresses.
@@ -256,12 +243,13 @@ abstract class SendStrategy {
   /// it is excluded from the recents list.
   String? get sourceAccountId;
 
-  /// Why [address] can't be the recipient, or null when it can. Defaults to
-  /// the self-send guard against [sourceAccountId]; encrypted sends also treat
-  /// every derived wormhole address of the wallet as self and refuse 1Click
-  /// deposit addresses.
-  Future<RecipientBlock?> recipientBlock(WidgetRef ref, String address) async =>
-      address == sourceAccountId ? RecipientBlock.self : null;
+  /// Verdicts on [address] as they come: why it can't be the recipient, or
+  /// null while it can. Defaults to the one-off self-send guard against
+  /// [sourceAccountId]; encrypted sends also treat every derived wormhole
+  /// address of the wallet as self, and refuse a 1Click deposit address once
+  /// 1Click confirms it, without holding the send up for that answer.
+  Stream<RecipientBlock?> recipientBlock(WidgetRef ref, String address) =>
+      Stream.value(address == sourceAccountId ? RecipientBlock.self : null);
 
   SendStrings strings(AppLocalizations l10n);
 
@@ -270,9 +258,14 @@ abstract class SendStrategy {
 
   /// Balance shown as "Available Balance" on the amount screen. Defaults to
   /// [spendableBalanceProvider]; encrypted sends override this to show the
-  /// total wormhole balance (matching the home screen) while keeping
+  /// spendable UTXOs before the volume fee while keeping
   /// [spendableBalanceProvider] for validation and Max.
   ProviderListenable<AsyncValue<BigInt>> get displayBalanceProvider => spendableBalanceProvider;
+
+  /// Part of the account's balance that is not in [displayBalanceProvider]
+  /// yet — shown under it as "Pending" when non-zero. Null for flows whose
+  /// whole balance is spendable at once.
+  ProviderListenable<AsyncValue<BigInt>>? get pendingBalanceProvider => null;
 
   /// Whether a secondary balance used for gating has no value yet. Watched.
   bool extraBalancesLoading(WidgetRef ref);

@@ -90,6 +90,25 @@ final encryptedSpendableProvider = Provider.family<AsyncValue<BigInt>, int>((ref
   return ref.watch(encryptedStateProvider(walletIndex)).whenData((s) => s.maxSendable);
 });
 
+/// Spendable UTXOs before the volume fee — the balance a send draws on.
+final encryptedAvailableProvider = Provider.family<AsyncValue<BigInt>, int>((ref, walletIndex) {
+  return ref.watch(encryptedStateProvider(walletIndex)).whenData((s) => s.availableToken);
+});
+
+/// Change of submitted sends the indexer has not returned yet: part of the
+/// balance, not yet spendable.
+final encryptedPendingProvider = Provider.family<AsyncValue<BigInt>, int>((ref, walletIndex) {
+  return ref.watch(encryptedStateProvider(walletIndex)).whenData((s) => s.pendingChangeToken);
+});
+
+/// Pending change of the active account; zero unless it is an encrypted
+/// account whose last snapshot still has change on the way.
+final activeEncryptedPendingProvider = Provider<BigInt>((ref) {
+  final account = ref.watch(activeAccountProvider).value?.account;
+  if (!isEncryptedAccount(account)) return BigInt.zero;
+  return ref.watch(encryptedPendingProvider((account as Account).walletIndex)).value ?? BigInt.zero;
+});
+
 /// Activity of a wallet's encrypted account, newest first. A poll reload keeps
 /// the last snapshot on screen instead of flashing the loading state.
 final encryptedHistoryProvider = Provider.family<AsyncValue<List<TransactionEvent>>, int>((ref, walletIndex) {
@@ -203,6 +222,16 @@ final balanceProvider = Provider<AsyncValue<BigInt>>((ref) {
       return AsyncValue.data(_cachedBalance);
     },
   );
+});
+
+/// Balance of the active account from the source that applies to it: the
+/// encrypted snapshot for an encrypted account, [balanceProvider] otherwise.
+final activeBalanceProvider = Provider<AsyncValue<BigInt>>((ref) {
+  final active = ref.watch(activeAccountProvider);
+  if (active.isLoading) return const AsyncValue.loading();
+  final account = active.value?.account;
+  if (isEncryptedAccount(account)) return ref.watch(encryptedBalanceProvider((account as Account).walletIndex));
+  return ref.watch(balanceProvider);
 });
 
 /// Calculates the total amount of pending outgoing transactions for a

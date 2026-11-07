@@ -325,6 +325,10 @@ class AppLocalizationsId extends AppLocalizations {
   String get multisigCreateInvalidSigner => 'Masukkan alamat penandatangan yang valid.';
 
   @override
+  String get multisigCreateSignerIsMultisig =>
+      'Alamat ini adalah akun multisig. Multisig tidak dapat menandatangani, sehingga penandatangan ini tidak dapat menyetujui di dompet ini. Jika anggota lainnya tidak dapat memenuhi ambang batas, dana di multisig itu mungkin perlu dipulihkan melalui CLI.';
+
+  @override
   String get multisigCreateThresholdLabel => 'AMBANG BATAS';
 
   @override
@@ -812,6 +816,15 @@ class AppLocalizationsId extends AppLocalizations {
   String get accountMenuShowRecoveryPhrase => 'Tampilkan Recovery Phrase';
 
   @override
+  String get accountMenuShowAddress => 'Tampilkan alamat';
+
+  @override
+  String get accountMenuRename => 'Ganti nama';
+
+  @override
+  String get accountMenuDisconnectAccount => 'Putuskan akun';
+
+  @override
   String get accountMenuNotFound => 'Akun tidak ditemukan';
 
   @override
@@ -956,6 +969,9 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get sendInputAmountAvailableBalance => 'Saldo Tersedia:';
+
+  @override
+  String get sendInputAmountPending => 'Tertunda:';
 
   @override
   String get sendInputAmountNetworkFee => 'Biaya Transaksi:';
@@ -1609,6 +1625,14 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
+  String swapRateEstimateLabel(String fromSymbol, String rate, String toSymbol) {
+    return '1 $fromSymbol ≈ $rate $toSymbol';
+  }
+
+  @override
+  String get swapEstimateNotice => 'Perkiraan pada harga pasar, sebelum biaya.';
+
+  @override
   String swapSlippageLabel(String percent) {
     return 'Slippage $percent%';
   }
@@ -1745,6 +1769,15 @@ class AppLocalizationsId extends AppLocalizations {
   String get swapReviewGuaranteedMinimum => 'Minimum terjamin';
 
   @override
+  String get swapReviewSwapFee => 'Biaya swap';
+
+  @override
+  String get swapReviewWithdrawalFee => 'Biaya penarikan';
+
+  @override
+  String get swapReviewRefundFee => 'Biaya jika dikembalikan';
+
+  @override
   String get swapReviewUnusedRefunded =>
       'Pembayaran sudah termasuk toleransi slippage. Bagian yang tidak terpakai oleh swap akan dikembalikan.';
 
@@ -1799,6 +1832,50 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get swapProgressFooter =>
       'Biasanya beberapa menit. Anda boleh meninggalkan aplikasi, swap tetap berjalan. · via NEAR Intents';
+
+  @override
+  String get swapLiveBrand => 'Menukar';
+
+  @override
+  String get swapLiveBrandIdle => 'Tukar';
+
+  @override
+  String get swapLiveSubmitted => 'Swap diajukan';
+
+  @override
+  String swapLiveSettling(String network) {
+    return 'Menyelesaikan di $network';
+  }
+
+  @override
+  String get swapLiveSwapped => 'Tertukar';
+
+  @override
+  String get swapLiveFrom => 'Dari';
+
+  @override
+  String get swapLiveTo => 'Ke';
+
+  @override
+  String get swapLiveChain => 'Jaringan';
+
+  @override
+  String get swapLiveOpenToCheck => 'Buka Quantus untuk memeriksa';
+
+  @override
+  String get swapLiveAgo => 'lalu';
+
+  @override
+  String get swapLiveLeft => 'lagi';
+
+  @override
+  String get swapLiveMinute => 'mnt';
+
+  @override
+  String get swapLiveHour => 'jam';
+
+  @override
+  String get swapLiveChannel => 'Progres swap';
 
   @override
   String get swapDetailsTitle => 'Detail Swap';
@@ -2001,6 +2078,11 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String encryptedSendAmountStep(String tokenSymbol) {
     return 'Gunakan kelipatan 0,01 $tokenSymbol';
+  }
+
+  @override
+  String encryptedSendInsufficientWithPending(String amount, String tokenSymbol) {
+    return 'Saldo Tidak Cukup ($amount $tokenSymbol tertunda)';
   }
 
   @override

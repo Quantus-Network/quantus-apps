@@ -323,6 +323,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get multisigCreateInvalidSigner => 'Enter a valid signer address.';
 
   @override
+  String get multisigCreateSignerIsMultisig =>
+      'This address is a multisig account. A multisig cannot sign, so this signer cannot approve in this wallet. If the remaining members cannot meet the threshold, funds in that multisig may need recovery through the CLI.';
+
+  @override
   String get multisigCreateThresholdLabel => 'THRESHOLD';
 
   @override
@@ -809,6 +813,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get accountMenuShowRecoveryPhrase => 'Show Recovery Phrase';
 
   @override
+  String get accountMenuShowAddress => 'Show address';
+
+  @override
+  String get accountMenuRename => 'Rename';
+
+  @override
+  String get accountMenuDisconnectAccount => 'Disconnect account';
+
+  @override
   String get accountMenuNotFound => 'Account not found';
 
   @override
@@ -953,6 +966,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sendInputAmountAvailableBalance => 'Available Balance:';
+
+  @override
+  String get sendInputAmountPending => 'Pending:';
 
   @override
   String get sendInputAmountNetworkFee => 'Transaction Fee:';
@@ -1606,6 +1622,14 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String swapRateEstimateLabel(String fromSymbol, String rate, String toSymbol) {
+    return '1 $fromSymbol ≈ $rate $toSymbol';
+  }
+
+  @override
+  String get swapEstimateNotice => 'Estimate at the market price, before fees.';
+
+  @override
   String swapSlippageLabel(String percent) {
     return 'Slippage $percent%';
   }
@@ -1742,6 +1766,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get swapReviewGuaranteedMinimum => 'Guaranteed minimum';
 
   @override
+  String get swapReviewSwapFee => 'Swap fee';
+
+  @override
+  String get swapReviewWithdrawalFee => 'Withdrawal fee';
+
+  @override
+  String get swapReviewRefundFee => 'Fee if refunded';
+
+  @override
   String get swapReviewUnusedRefunded =>
       'The payment includes the slippage allowance. Whatever the swap does not use is refunded.';
 
@@ -1796,6 +1829,50 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get swapProgressFooter =>
       'Usually a few minutes. You can leave the app, the swap carries on. · via NEAR Intents';
+
+  @override
+  String get swapLiveBrand => 'Swapping';
+
+  @override
+  String get swapLiveBrandIdle => 'Swap';
+
+  @override
+  String get swapLiveSubmitted => 'Swap submitted';
+
+  @override
+  String swapLiveSettling(String network) {
+    return 'Settling on $network';
+  }
+
+  @override
+  String get swapLiveSwapped => 'Swapped';
+
+  @override
+  String get swapLiveFrom => 'From';
+
+  @override
+  String get swapLiveTo => 'To';
+
+  @override
+  String get swapLiveChain => 'Chain';
+
+  @override
+  String get swapLiveOpenToCheck => 'Open Quantus to check';
+
+  @override
+  String get swapLiveAgo => 'ago';
+
+  @override
+  String get swapLiveLeft => 'left';
+
+  @override
+  String get swapLiveMinute => 'min';
+
+  @override
+  String get swapLiveHour => 'hr';
+
+  @override
+  String get swapLiveChannel => 'Swap progress';
 
   @override
   String get swapDetailsTitle => 'Swap Details';
@@ -1998,6 +2075,11 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String encryptedSendAmountStep(String tokenSymbol) {
     return 'Use steps of 0.01 $tokenSymbol';
+  }
+
+  @override
+  String encryptedSendInsufficientWithPending(String amount, String tokenSymbol) {
+    return 'Insufficient Balance ($amount $tokenSymbol pending)';
   }
 
   @override

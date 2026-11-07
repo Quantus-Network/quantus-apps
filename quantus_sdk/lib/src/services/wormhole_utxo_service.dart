@@ -103,6 +103,26 @@ class WormholeTransferCursor {
   String toString() => 'WormholeTransferCursor(block: $blockHeight, id: $id)';
 }
 
+/// One page of transfers into [toAddress] above [afterBlock]; with [after]
+/// set, the page strictly after that cursor.
+class TransferPageRequest {
+  final String toAddress;
+  final int afterBlock;
+  final WormholeTransferCursor? after;
+
+  const TransferPageRequest({required this.toAddress, required this.afterBlock, this.after});
+
+  /// The page following a full one that ended with [last].
+  TransferPageRequest next(WormholeTransfer last) => TransferPageRequest(
+    toAddress: toAddress,
+    afterBlock: afterBlock,
+    after: WormholeTransferCursor.afterTransfer(last),
+  );
+
+  @override
+  String toString() => 'TransferPageRequest(to: $toAddress, afterBlock: $afterBlock, after: $after)';
+}
+
 /// One HD-derived wormhole address (index in the wormhole derivation sequence,
 /// with [isChange] selecting the change branch of the derivation path) together
 /// with the secret needed to compute nullifiers and spend proofs.
@@ -240,16 +260,23 @@ class WormholeUtxoService {
   /// files by network as well as address, so Planck-era files are dropped
   /// instead of being read against mainnet; v6 records each transfer's
   /// timestamp and extrinsic and each spent nullifier's spend; v7 flags the
-  /// transfers a wormhole proof paid.
+  /// transfers a wormhole proof paid; v8 bounds the scan watermark by the
+  /// indexer's height — earlier watermarks could have passed receipts the
+  /// indexer had not committed yet, so those files are rescanned.
   @visibleForTesting
-  static const int cacheVersion = 7;
+  static const int cacheVersion = 8;
   static const int _nullifierBatchSize = 300;
   static const int _reorgDepth = 180;
 
-  /// Addresses whose transfers are fetched at the same time. Each address is
-  /// its own `_eq` query (see [transfersToAddressQuery]); an account that has
-  /// sent many times owns one change address per send, so walking them one
-  /// after another made every load pay one indexer round trip per past send.
+  /// Addresses paged in one indexer request (see [transfersDocument]). An
+  /// account that has sent many times owns one change address per send, so
+  /// one request per address made every load pay one round trip per past
+  /// send; a request of this many aliases returns up to
+  /// `transferFetchBatchSize * transferPageSize` rows.
+  @visibleForTesting
+  static const int transferFetchBatchSize = 20;
+
+  /// Transfer requests in flight at the same time.
   @visibleForTesting
   static const int transferFetchConcurrency = 6;
 
@@ -266,52 +293,80 @@ class WormholeUtxoService {
     extrinsicId: extrinsic_id
     extrinsic { pallet }''';
 
-  /// First page of transfers into one address above [afterBlock].
-  ///
-  /// Filters and orders on scalar columns only so Postgres can walk the
-  /// `(to_id, block_height, id)` index in output order; a nested `to { id }`
-  /// or `block { height }` predicate would force a join and a sort.
-  ///
-  /// One address per query on purpose: Hasura renders `_in` as
-  /// `to_id = ANY(array)`, and with `ORDER BY block_height, id` the planner
-  /// then refuses the composite index (live Planck: parallel seq scan over
-  /// 2.4M rows + top-N sort, ~900ms, for a 1M-row inbox) whereas `_eq` is an
-  /// index-only range scan that stops at [transferPageSize] rows (~2ms).
-  @visibleForTesting
-  static const String transfersToAddressQuery =
-      '''
-query TransfersToAddress(\$to: String!, \$limit: Int!, \$afterBlock: Int!) {
-  transfers: transfer(
-    where: { to_id: {_eq: \$to}, block_height: {_gt: \$afterBlock} }
-    order_by: [{block_height: asc}, {id: asc}]
-    limit: \$limit
-  ) {
-$_transferSelection
-  }
-}''';
+  /// Alias under which the [i]th request's page comes back.
+  static String _pageAlias(int i) => 't$i';
 
-  /// Subsequent pages: rows strictly after the `(block_height, id)` cursor.
-  /// The cursor row is itself above `afterBlock`, so that bound is implied.
+  /// One document that pages several addresses at once, one aliased
+  /// `transfer` field per request, so a load pays one round trip per
+  /// [transferFetchBatchSize] addresses instead of one per address.
   ///
-  /// Written as `height >= h AND NOT (height = h AND id <= id)` rather than an
-  /// `_or` so the planner keeps a single ordered index range scan instead of a
-  /// BitmapOr followed by a sort.
+  /// Each field filters and orders on scalar columns only so Postgres can
+  /// walk the `(to_id, block_height, id)` index in output order; a nested
+  /// `to { id }` or `block { height }` predicate would force a join and a
+  /// sort.
+  ///
+  /// Still one address per field, never an `_in` over all of them: Hasura
+  /// renders `_in` as `to_id = ANY(array)`, and with `ORDER BY block_height,
+  /// id` the planner then refuses the composite index (live Planck: parallel
+  /// seq scan over 2.4M rows + top-N sort, ~900ms, for a 1M-row inbox)
+  /// whereas `_eq` is an index-only range scan that stops at
+  /// [transferPageSize] rows (~2ms).
+  ///
+  /// A first page takes rows above the request's `afterBlock`; a later page
+  /// takes rows strictly after its `(block_height, id)` cursor, written as
+  /// `height >= h AND NOT (height = h AND id <= id)` rather than an `_or` so
+  /// the planner keeps a single ordered index range scan instead of a
+  /// BitmapOr followed by a sort. The cursor row is itself above
+  /// `afterBlock`, so that bound is implied.
   @visibleForTesting
-  static const String transfersToAddressAfterQuery =
-      '''
-query TransfersToAddressAfter(\$to: String!, \$limit: Int!, \$cursorHeight: Int!, \$cursorId: String!) {
-  transfers: transfer(
-    where: {
-      to_id: {_eq: \$to}
-      block_height: {_gte: \$cursorHeight}
-      _not: {block_height: {_eq: \$cursorHeight}, id: {_lte: \$cursorId}}
+  static String transfersDocument(List<TransferPageRequest> requests) {
+    final declarations = <String>[r'$limit: Int!'];
+    final fields = <String>[];
+    for (var i = 0; i < requests.length; i++) {
+      final after = requests[i].after;
+      declarations.add('\$to$i: String!');
+      final String where;
+      if (after == null) {
+        declarations.add('\$afterBlock$i: Int!');
+        where = '{ to_id: {_eq: \$to$i}, block_height: {_gt: \$afterBlock$i} }';
+      } else {
+        declarations.add('\$cursorHeight$i: Int!');
+        declarations.add('\$cursorId$i: String!');
+        where =
+            '{\n'
+            '      to_id: {_eq: \$to$i}\n'
+            '      block_height: {_gte: \$cursorHeight$i}\n'
+            '      _not: {block_height: {_eq: \$cursorHeight$i}, id: {_lte: \$cursorId$i}}\n'
+            '    }';
+      }
+      fields.add(
+        '  ${_pageAlias(i)}: transfer(\n'
+        '    where: $where\n'
+        '    order_by: [{block_height: asc}, {id: asc}]\n'
+        '    limit: \$limit\n'
+        '  ) {\n'
+        '$_transferSelection\n'
+        '  }',
+      );
     }
-    order_by: [{block_height: asc}, {id: asc}]
-    limit: \$limit
-  ) {
-$_transferSelection
+    return 'query Transfers(${declarations.join(', ')}) {\n${fields.join('\n')}\n}';
   }
-}''';
+
+  static Map<String, dynamic> _transfersVariables(List<TransferPageRequest> requests, int limit) {
+    final variables = <String, dynamic>{'limit': limit};
+    for (var i = 0; i < requests.length; i++) {
+      final request = requests[i];
+      variables['to$i'] = request.toAddress;
+      final after = request.after;
+      if (after == null) {
+        variables['afterBlock$i'] = request.afterBlock;
+      } else {
+        variables['cursorHeight$i'] = after.blockHeight;
+        variables['cursorId$i'] = after.id;
+      }
+    }
+    return variables;
+  }
 
   final GraphQlEndpointService _graphQlEndpoint;
   final RpcEndpointService _rpcEndpoint;
@@ -540,90 +595,133 @@ $_transferSelection
 
   // --- GraphQL queries ---
 
-  /// Posts [query] and returns the rows of its [field]; HTTP and GraphQL
-  /// errors throw.
+  /// Posts [query] and returns its `data`; HTTP and GraphQL errors throw,
+  /// transient indexer failures are retried ([GraphQlEndpointService.query]).
+  Future<Map<String, dynamic>> _graphQlData(String label, String query, Map<String, dynamic> variables) async {
+    final sw = Stopwatch()..start();
+    try {
+      final data = await _graphQlEndpoint.query(document: query, variables: variables);
+      _log('$label query: elapsed=${sw.elapsedMilliseconds}ms');
+      return data;
+    } catch (e) {
+      _log('$label query FAILED after ${sw.elapsedMilliseconds}ms: $e');
+      rethrow;
+    }
+  }
+
+  /// Height of the newest block the indexer has committed. Transfers in
+  /// blocks above it are not queryable yet, however far the chain is.
+  @protected
+  @visibleForTesting
+  Future<int> queryIndexedHeight() async {
+    final rows = await _graphQlRows(
+      'indexed height',
+      'query IndexedHeight { block(order_by: {height: desc}, limit: 1) { height } }',
+      const {},
+      'block',
+    );
+    return rows.isEmpty ? 0 : rows.single['height'] as int;
+  }
+
+  /// Posts [query] and returns the rows of its [field].
   Future<List<Map<String, dynamic>>> _graphQlRows(
     String label,
     String query,
     Map<String, dynamic> variables,
     String field,
   ) async {
-    final sw = Stopwatch()..start();
-    final response = await _graphQlEndpoint.post(body: jsonEncode({'query': query, 'variables': variables}));
-    _log('$label query: status=${response.statusCode} elapsed=${sw.elapsedMilliseconds}ms');
-    if (response.statusCode != 200) {
-      _log('$label query FAILED: ${response.body}');
-      throw Exception('Subsquid $label request failed ${response.statusCode}: ${response.body}');
-    }
-    final parsed = jsonDecode(response.body) as Map<String, dynamic>;
-    if (parsed['errors'] != null) {
-      final msgs = (parsed['errors'] as List).map((e) => (e as Map)['message']).join('; ');
-      _log('$label query GraphQL errors: $msgs');
-      throw Exception('GraphQL errors: $msgs');
-    }
-    return ((parsed['data']?[field] as List<dynamic>?) ?? const []).cast<Map<String, dynamic>>();
+    final data = await _graphQlData(label, query, variables);
+    return ((data[field] as List<dynamic>?) ?? const []).cast<Map<String, dynamic>>();
   }
 
-  /// One page of transfers to [toAddress] above [afterBlock], in
-  /// `(block_height, id)` order. With [after] set, only rows strictly after
-  /// that cursor are returned.
+  /// One page per request, in request order, each in `(block_height, id)`
+  /// order — all from a single indexer round trip ([transfersDocument]).
   @protected
   @visibleForTesting
-  Future<List<WormholeTransfer>> queryTransfersPage({
-    required String toAddress,
-    required int afterBlock,
-    WormholeTransferCursor? after,
+  Future<List<List<WormholeTransfer>>> queryTransferPages(
+    List<TransferPageRequest> requests, {
     int limit = transferPageSize,
   }) async {
-    final String document;
-    final variables = <String, dynamic>{'to': toAddress, 'limit': limit};
-    if (after == null) {
-      document = transfersToAddressQuery;
-      variables['afterBlock'] = afterBlock;
-    } else {
-      document = transfersToAddressAfterQuery;
-      variables['cursorHeight'] = after.blockHeight;
-      variables['cursorId'] = after.id;
-    }
-
-    _log('transfers query: limit=$limit afterBlock=$afterBlock cursor=$after');
-    final rows = await _graphQlRows('transfers', document, variables, 'transfers');
-    _log('transfers query: received ${rows.length} transfers');
-    return rows.map(WormholeTransfer.fromJson).toList();
+    if (requests.isEmpty) return const [];
+    _log('transfers query: ${requests.length} addresses, limit=$limit');
+    final data = await _graphQlData('transfers', transfersDocument(requests), _transfersVariables(requests, limit));
+    final pages = [
+      for (var i = 0; i < requests.length; i++)
+        ((data[_pageAlias(i)] as List<dynamic>?) ?? const [])
+            .cast<Map<String, dynamic>>()
+            .map(WormholeTransfer.fromJson)
+            .toList(),
+    ];
+    _log('transfers query: received ${pages.fold<int>(0, (sum, p) => sum + p.length)} transfers');
+    return pages;
   }
 
-  /// Walks every transfer to [toAddress] above [afterBlock] by following the
-  /// `(block_height, id)` cursor of each full page.
+  /// Walks every transfer into each address of [afterBlockByAddress] above
+  /// its block, following the `(block_height, id)` cursor of each full page.
+  /// Pages are requested [transferFetchBatchSize] addresses at a time, up to
+  /// [transferFetchConcurrency] requests in flight; each round asks only for
+  /// the addresses whose last page was full.
+  @visibleForTesting
+  Future<Map<String, List<WormholeTransfer>>> fetchAllTransfersToMany(
+    Map<String, int> afterBlockByAddress, {
+    void Function(String address, int fetched)? onFetched,
+    IsCancelledCallback? isCancelled,
+  }) async {
+    final totalSw = Stopwatch()..start();
+    final all = <String, List<WormholeTransfer>>{for (final a in afterBlockByAddress.keys) a: []};
+    var pending = [
+      for (final e in afterBlockByAddress.entries) TransferPageRequest(toAddress: e.key, afterBlock: e.value),
+    ];
+    var round = 0;
+    while (pending.isNotEmpty) {
+      _throwIfCancelled(isCancelled);
+      round++;
+      final continuing = <TransferPageRequest>[];
+      final batches = [
+        for (var i = 0; i < pending.length; i += transferFetchBatchSize)
+          pending.sublist(i, (i + transferFetchBatchSize).clamp(0, pending.length)),
+      ];
+      await _forEachConcurrently(batches, transferFetchConcurrency, (batch) async {
+        _throwIfCancelled(isCancelled);
+        final pages = await queryTransferPages(batch, limit: transferPageSize);
+        if (pages.length != batch.length) {
+          throw StateError('Indexer returned ${pages.length} pages for ${batch.length} requests');
+        }
+        for (var i = 0; i < batch.length; i++) {
+          final request = batch[i];
+          final page = pages[i];
+          for (final t in page) {
+            if (t.toId != request.toAddress) {
+              throw StateError('Indexer returned transfer to unrequested address ${t.toId}');
+            }
+          }
+          final fetched = all[request.toAddress]!..addAll(page);
+          onFetched?.call(request.toAddress, fetched.length);
+          if (page.length >= transferPageSize) continuing.add(request.next(page.last));
+        }
+      });
+      _log(
+        'Round $round: ${pending.length} addresses paged, ${continuing.length} continue '
+        '(${totalSw.elapsedMilliseconds}ms elapsed)',
+      );
+      pending = continuing;
+    }
+    final total = all.values.fold<int>(0, (sum, l) => sum + l.length);
+    _log(
+      'Fetched $total total transfers for ${afterBlockByAddress.length} addresses in ${totalSw.elapsedMilliseconds}ms',
+    );
+    return all;
+  }
+
+  /// [fetchAllTransfersToMany] for one address.
   @visibleForTesting
   Future<List<WormholeTransfer>> fetchAllTransfers({
     required String toAddress,
     required int afterBlock,
-    void Function(int fetched)? onFetched,
     IsCancelledCallback? isCancelled,
   }) async {
-    final totalSw = Stopwatch()..start();
-    final all = <WormholeTransfer>[];
-    WormholeTransferCursor? cursor;
-    int pageNum = 0;
-    while (true) {
-      _throwIfCancelled(isCancelled);
-      pageNum++;
-      final page = await queryTransfersPage(
-        toAddress: toAddress,
-        afterBlock: afterBlock,
-        after: cursor,
-        limit: transferPageSize,
-      );
-      all.addAll(page);
-      onFetched?.call(all.length);
-      _log(
-        'Page $pageNum: got ${page.length} transfers, total so far: ${all.length} (${totalSw.elapsedMilliseconds}ms elapsed)',
-      );
-      if (page.length < transferPageSize) break;
-      cursor = WormholeTransferCursor.afterTransfer(page.last);
-    }
-    _log('Fetched ${all.length} total transfers in ${totalSw.elapsedMilliseconds}ms ($pageNum pages)');
-    return all;
+    final fetched = await fetchAllTransfersToMany({toAddress: afterBlock}, isCancelled: isCancelled);
+    return fetched[toAddress]!;
   }
 
   // --- Nullifiers ---
@@ -711,24 +809,35 @@ query SpentNullifiers($hashes: [String!]!) {
   /// returns them grouped by address, along with the reorg-safe block cutoff
   /// used for caching.
   ///
-  /// Each address keeps its own on-disk cache and is paged with its own `_eq`
-  /// query (see [transfersToAddressQuery] for why addresses are not batched
-  /// into one `_in`); up to [transferFetchConcurrency] addresses are paged at
-  /// once. The cache only advances to `safeCutoff = currentHeight - reorgDepth`
-  /// so we never have to rewrite already-persisted entries on a reorg;
-  /// transfers above `safeCutoff` simply aren't cached and are re-queried
-  /// next time.
-  Future<({Map<String, List<WormholeTransfer>> byAddress, int safeCutoff})> getTransfersToMany(
+  /// Each address keeps its own on-disk cache and is paged with its own
+  /// aliased `_eq` field, many per request ([transfersDocument]). The cache
+  /// only advances to `safeCutoff = scannedHeight - reorgDepth`, where
+  /// `scannedHeight` is the chain head or the indexer's newest block,
+  /// whichever is lower: entries below the cutoff never need rewriting on a
+  /// reorg, and a block the indexer has not committed yet is never marked as
+  /// scanned. Transfers above `safeCutoff` simply aren't cached and are
+  /// re-queried next time.
+  ///
+  /// With [nullifierFor], each transfer's nullifier is returned too (keyed by
+  /// transfer id, per address): computed once and kept in the address's cache
+  /// beside the transfer, so a load only hashes transfers it has not seen.
+  /// Without it, nullifiers already cached are kept as they are.
+  Future<({Map<String, List<WormholeTransfer>> byAddress, Map<String, Map<String, String>> nullifiers, int safeCutoff})>
+  getTransfersToMany(
     List<String> addresses, {
+    String Function(String address, WormholeTransfer transfer)? nullifierFor,
     WormholeProgressCallback? onProgress,
     IsCancelledCallback? isCancelled,
   }) async {
     final sw = Stopwatch()..start();
     _log('getTransfersToMany START (${addresses.length} addresses)');
 
-    final chainHeight = await _getChainHeight();
-    final safeCutoff = (chainHeight - _reorgDepth).clamp(0, chainHeight);
-    _log('chainHeight=$chainHeight safeCutoff=$safeCutoff');
+    final heights = await Future.wait([_getChainHeight(), queryIndexedHeight()]);
+    final chainHeight = heights[0];
+    final indexedHeight = heights[1];
+    final scannedHeight = chainHeight < indexedHeight ? chainHeight : indexedHeight;
+    final safeCutoff = (scannedHeight - _reorgDepth).clamp(0, scannedHeight);
+    _log('chainHeight=$chainHeight indexedHeight=$indexedHeight safeCutoff=$safeCutoff');
 
     final hashes = {for (final a in addresses) a: _addressHashOf(a)};
     await deleteStaleCachesFor(hashes.values);
@@ -747,57 +856,70 @@ query SpentNullifiers($hashes: [String!]!) {
     // Cache invariant: every entry has blockHeight <= cachedUpToBlock, so a
     // GraphQL filter of `height_gt: cachedUpToBlock` correctly fetches only
     // what we don't already have.
-    final newByAddress = <String, List<WormholeTransfer>>{for (final a in addresses) a: []};
     final fetchedSoFar = <String, int>{for (final a in addresses) a: 0};
     int fetchedCount() => fetchedSoFar.values.fold(0, (sum, n) => sum + n);
-    await _forEachConcurrently(
-      addresses.where((a) => caches[a]!.cachedUpToBlock < chainHeight),
-      transferFetchConcurrency,
-      (address) async {
-        final upTo = caches[address]!.cachedUpToBlock;
-        _throwIfCancelled(isCancelled);
-        _log('Querying address after block $upTo');
-        final fetched = await fetchAllTransfers(
-          toAddress: address,
-          afterBlock: upTo,
-          onFetched: (n) {
-            fetchedSoFar[address] = n;
-            onProgress?.call(1, cachedCount + fetchedCount());
-          },
-          isCancelled: isCancelled,
-        );
-        for (final t in fetched) {
-          if (t.toId != address) {
-            throw StateError('Indexer returned transfer to unrequested address ${t.toId}');
-          }
-        }
-        fetchedSoFar[address] = fetched.length;
-        newByAddress[address]!.addAll(fetched);
+    final newByAddress = await fetchAllTransfersToMany(
+      {
+        for (final a in addresses)
+          if (caches[a]!.cachedUpToBlock < scannedHeight) a: caches[a]!.cachedUpToBlock,
       },
+      onFetched: (address, n) {
+        fetchedSoFar[address] = n;
+        onProgress?.call(1, cachedCount + fetchedCount());
+      },
+      isCancelled: isCancelled,
     );
 
     final byAddress = <String, List<WormholeTransfer>>{};
+    final nullifiersByAddress = <String, Map<String, String>>{};
+    var computed = 0;
     for (final address in addresses) {
+      _throwIfCancelled(isCancelled);
       final cache = caches[address]!;
-      final fetched = newByAddress[address]!;
-      byAddress[address] = [...cache.transfers, ...fetched];
+      final cachedIds = {for (final t in cache.transfers) t.id};
+      final fetched = (newByAddress[address] ?? const <WormholeTransfer>[])
+          .where((t) => !cachedIds.contains(t.id))
+          .toList();
+      final all = [...cache.transfers, ...fetched];
+      byAddress[address] = all;
+      final nullifiers = <String, String>{...cache.nullifiers};
+      var uncachedNullifiers = 0;
+      if (nullifierFor != null) {
+        for (final t in all) {
+          if (nullifiers.containsKey(t.id)) continue;
+          nullifiers[t.id] = nullifierFor(address, t);
+          computed++;
+          if (t.blockHeight <= safeCutoff) uncachedNullifiers++;
+        }
+      }
+      nullifiersByAddress[address] = nullifiers;
       // Cache only the reorg-safe slice; the caller still sees recent
       // (above-cutoff) transfers so balances / claims include them. Rewrite
-      // the file only when it gains a transfer or its scan height would fall
-      // more than a reorg depth behind — the query window stays bounded while
-      // an idle address (one change output, long ago) is not re-encoded on
-      // every load.
+      // the file only when it gains a transfer or a nullifier, or its scan
+      // height would fall more than a reorg depth behind — the query window
+      // stays bounded while an idle address (one change output, long ago) is
+      // not re-encoded on every load. The watermark never moves down (the
+      // cutoff can, when the indexer falls behind): every cached transfer
+      // stays at or below it, so the next query never refetches one.
       final newSafe = fetched.where((t) => t.blockHeight <= safeCutoff).toList();
-      if (newSafe.isEmpty && safeCutoff - cache.cachedUpToBlock < _reorgDepth) continue;
+      if (newSafe.isEmpty && uncachedNullifiers == 0 && safeCutoff - cache.cachedUpToBlock < _reorgDepth) continue;
+      final safeTransfers = [...cache.transfers, ...newSafe];
       await _saveTransferCache(
         hashes[address]!,
-        _TransferCache(cachedUpToBlock: safeCutoff, transfers: [...cache.transfers, ...newSafe]),
+        _TransferCache(
+          cachedUpToBlock: safeCutoff > cache.cachedUpToBlock ? safeCutoff : cache.cachedUpToBlock,
+          transfers: safeTransfers,
+          nullifiers: {for (final t in safeTransfers) t.id: ?nullifiers[t.id]},
+        ),
       );
     }
     onProgress?.call(1, cachedCount + fetchedCount());
 
-    _log('getTransfersToMany DONE: ${cachedCount + fetchedCount()} transfers (${sw.elapsedMilliseconds}ms)');
-    return (byAddress: byAddress, safeCutoff: safeCutoff);
+    _log(
+      'getTransfersToMany DONE: ${cachedCount + fetchedCount()} transfers, '
+      '$computed nullifiers computed (${sw.elapsedMilliseconds}ms)',
+    );
+    return (byAddress: byAddress, nullifiers: nullifiersByAddress, safeCutoff: safeCutoff);
   }
 
   /// Runs [action] over [items] with at most [limit] in flight. After a
@@ -845,8 +967,12 @@ query SpentNullifiers($hashes: [String!]!) {
     IsCancelledCallback? isCancelled,
   }) async {
     _log('getUnspentUtxos(${addresses.length} addresses)');
+    final hdWalletService = HdWalletService();
+    final secretByAddress = {for (final a in addresses) a.address: a.secretHex};
     final fetched = await getTransfersToMany(
       addresses.map((a) => a.address).toList(),
+      nullifierFor: (address, transfer) =>
+          hdWalletService.computeNullifier(secretHex: secretByAddress[address]!, transferCount: transfer.transferCount),
       onProgress: onProgress,
       isCancelled: isCancelled,
     );
@@ -857,7 +983,6 @@ query SpentNullifiers($hashes: [String!]!) {
       return const WormholeUtxoResult(received: [], spends: {});
     }
 
-    final hdWalletService = HdWalletService();
     final uncheckedPairs = <(String, String)>[];
     final received = <WormholeUtxo>[];
     final ownerHashByNullifier = <String, String>{};
@@ -872,13 +997,11 @@ query SpentNullifiers($hashes: [String!]!) {
       cachedSpentByOwner[ownerHash] = cachedSpent;
       spends.addAll(cachedSpent);
 
+      final nullifiers = fetched.nullifiers[owner.address]!;
       for (final transfer in fetched.byAddress[owner.address]!) {
         _throwIfCancelled(isCancelled);
-        final nullifierHex = hdWalletService.computeNullifier(
-          secretHex: owner.secretHex,
-          transferCount: transfer.transferCount,
-        );
-        // The secret is used only for the nullifier above — the returned UTXO
+        final nullifierHex = nullifiers[transfer.id]!;
+        // The secret is used only for the nullifier — the returned UTXO
         // carries a blanked owner so no secret is retained in app state (M11).
         final redactedOwner = WormholeAddressInfo(
           index: owner.index,
@@ -972,7 +1095,11 @@ class _TransferCache {
   final int cachedUpToBlock;
   final List<WormholeTransfer> transfers;
 
-  _TransferCache({required this.cachedUpToBlock, required this.transfers});
+  /// Nullifier hex by transfer id, for the transfers whose nullifier a scan
+  /// has computed. Absent from files written before nullifiers were cached.
+  final Map<String, String> nullifiers;
+
+  _TransferCache({required this.cachedUpToBlock, required this.transfers, this.nullifiers = const {}});
 
   factory _TransferCache.empty() => _TransferCache(cachedUpToBlock: 0, transfers: []);
 
@@ -980,11 +1107,16 @@ class _TransferCache {
     final transfers = (json['transfers'] as List<dynamic>)
         .map((t) => WormholeTransfer.fromJson(t as Map<String, dynamic>))
         .toList();
-    return _TransferCache(cachedUpToBlock: json['cachedUpToBlock'] as int, transfers: transfers);
+    return _TransferCache(
+      cachedUpToBlock: json['cachedUpToBlock'] as int,
+      transfers: transfers,
+      nullifiers: (json['nullifiers'] as Map<String, dynamic>?)?.cast<String, String>() ?? const {},
+    );
   }
 
   Map<String, dynamic> toJson() => {
     'cachedUpToBlock': cachedUpToBlock,
     'transfers': transfers.map((t) => t.toJson()).toList(),
+    'nullifiers': nullifiers,
   };
 }

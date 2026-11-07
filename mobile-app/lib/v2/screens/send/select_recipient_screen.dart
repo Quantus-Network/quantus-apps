@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -43,6 +45,7 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
   bool _checking = false;
   bool _checkFailed = false;
   String _lastRecipientText = '';
+  StreamSubscription<RecipientBlock?>? _blockSubscription;
 
   @override
   void initState() {
@@ -53,6 +56,7 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
 
   @override
   void dispose() {
+    _blockSubscription?.cancel();
     _recipientController.removeListener(_onRecipientChanged);
     _recipientController.dispose();
     _amountController.dispose();
@@ -84,6 +88,7 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
     final text = _recipientController.text.trim();
     if (text == _lastRecipientText && !_checkFailed) return;
     _lastRecipientText = text;
+    _blockSubscription?.cancel();
     if (text.isEmpty) {
       _amountController.clear();
       setState(() {
@@ -111,34 +116,34 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
       _canContinue = false;
     });
     if (!isValid) return;
-    // Async: encrypted sends check the address against every derived wormhole
-    // address and against 1Click's deposit addresses. Continue stays disabled
-    // until resolved.
-    widget.strategy
+    // Verdicts come as the strategy has them: the self-send check first,
+    // for encrypted sends 1Click's word on the address whenever it lands.
+    // Continue follows the latest; the subscription is cancelled on any edit.
+    _blockSubscription = widget.strategy
         .recipientBlock(ref, address)
-        .then((block) {
-          if (!mounted || _recipientController.text.trim() != address) return;
-          setState(() {
-            _block = block;
-            _checking = false;
-            _canContinue = block == null;
-          });
-          if (block == RecipientBlock.self && !wasSelfSend) {
-            context.showWarningToaster(message: ref.read(l10nProvider).sendLogicCantSelfTransfer);
-          }
-        })
-        .catchError((Object e) {
-          // Only an unanswered 1Click lookup lets the send go on; a failed
-          // self-send check keeps it closed.
-          quantusPrint('SelectRecipientScreen recipient check: $e');
-          if (!mounted || _recipientController.text.trim() != address) return;
-          setState(() {
-            _checking = false;
-            _checkFailed = true;
-            _canContinue = e is RecipientLookupUnavailable;
-          });
-          context.showWarningToaster(message: ref.read(l10nProvider).sendRecipientCheckFailedMessage);
-        });
+        .listen(
+          (block) {
+            if (!mounted) return;
+            setState(() {
+              _block = block;
+              _checking = false;
+              _canContinue = block == null;
+            });
+            if (block == RecipientBlock.self && !wasSelfSend) {
+              context.showWarningToaster(message: ref.read(l10nProvider).sendLogicCantSelfTransfer);
+            }
+          },
+          onError: (Object e) {
+            if (!mounted) return;
+            // A failed self-send check keeps the send closed.
+            quantusPrint('SelectRecipientScreen recipient check: $e');
+            setState(() {
+              _checking = false;
+              _checkFailed = true;
+            });
+            context.showWarningToaster(message: ref.read(l10nProvider).sendRecipientCheckFailedMessage);
+          },
+        );
   }
 
   /// Single entry point for every way a recipient is supplied (scan, paste,

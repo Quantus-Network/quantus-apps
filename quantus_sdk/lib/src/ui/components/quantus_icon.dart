@@ -7,7 +7,12 @@ enum QuantusIcons {
   kebab('assets/icons/kebab.svg'),
   chevronRight('assets/icons/chevron_right.svg'),
   chevronLeft('assets/icons/chevron_left.svg'),
+  close('assets/icons/close.svg'),
   caretDown('assets/icons/caret_down.svg'),
+  caretUpDown('assets/icons/caret_up_down.svg'),
+  eye('assets/icons/eye.svg'),
+  eyeSlash('assets/icons/eye_slash.svg'),
+  gear('assets/icons/gear.svg'),
   plus('assets/icons/plus.svg'),
   swapVertical('assets/icons/swap_vertical.svg'),
   lock('assets/icons/lock.svg');

@@ -674,6 +674,12 @@ abstract class AppLocalizations {
   /// **'Enter a valid signer address.'**
   String get multisigCreateInvalidSigner;
 
+  /// Error when an added signer address is one of this wallet's multisig accounts
+  ///
+  /// In en, this message translates to:
+  /// **'This address is a multisig account. A multisig cannot sign, so this signer cannot approve in this wallet. If the remaining members cannot meet the threshold, funds in that multisig may need recovery through the CLI.'**
+  String get multisigCreateSignerIsMultisig;
+
   /// Threshold slider section label on create multisig
   ///
   /// In en, this message translates to:
@@ -1568,6 +1574,24 @@ abstract class AppLocalizations {
   /// **'Show Recovery Phrase'**
   String get accountMenuShowRecoveryPhrase;
 
+  /// Account row menu item opening the address details
+  ///
+  /// In en, this message translates to:
+  /// **'Show address'**
+  String get accountMenuShowAddress;
+
+  /// Account and wallet row menu item opening the name editor
+  ///
+  /// In en, this message translates to:
+  /// **'Rename'**
+  String get accountMenuRename;
+
+  /// Destructive account row menu item
+  ///
+  /// In en, this message translates to:
+  /// **'Disconnect account'**
+  String get accountMenuDisconnectAccount;
+
   /// When account is not found on menu screen
   ///
   /// In en, this message translates to:
@@ -1825,6 +1849,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Available Balance:'**
   String get sendInputAmountAvailableBalance;
+
+  /// Label for balance that is not yet spendable (encrypted change awaiting the indexer)
+  ///
+  /// In en, this message translates to:
+  /// **'Pending:'**
+  String get sendInputAmountPending;
 
   /// Network fee label
   ///
@@ -3032,6 +3062,18 @@ abstract class AppLocalizations {
   /// **'1 {fromSymbol} = {rate} {toSymbol}'**
   String swapRateLabel(String fromSymbol, String rate, String toSymbol);
 
+  /// Exchange rate at listed prices, shown on the swap form until a quote arrives
+  ///
+  /// In en, this message translates to:
+  /// **'1 {fromSymbol} ≈ {rate} {toSymbol}'**
+  String swapRateEstimateLabel(String fromSymbol, String rate, String toSymbol);
+
+  /// Under the swap form's rate while its figures are not a quote yet
+  ///
+  /// In en, this message translates to:
+  /// **'Estimate at the market price, before fees.'**
+  String get swapEstimateNotice;
+
   /// Slippage tolerance under the swap form
   ///
   /// In en, this message translates to:
@@ -3254,7 +3296,7 @@ abstract class AppLocalizations {
   /// **'Slippage allowance'**
   String get swapReviewSlippage;
 
-  /// Slippage allowance value
+  /// An amount with the percentage it is: the slippage allowance, the swap fee
   ///
   /// In en, this message translates to:
   /// **'{amount} ({percent}%)'**
@@ -3265,6 +3307,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Guaranteed minimum'**
   String get swapReviewGuaranteedMinimum;
+
+  /// Swap form and review row: percentage fee taken from the payment
+  ///
+  /// In en, this message translates to:
+  /// **'Swap fee'**
+  String get swapReviewSwapFee;
+
+  /// Swap form and review row: fixed fee for paying the swap out on the recipient's chain
+  ///
+  /// In en, this message translates to:
+  /// **'Withdrawal fee'**
+  String get swapReviewWithdrawalFee;
+
+  /// Review row: fixed fee taken from the payment when the swap fails and is refunded
+  ///
+  /// In en, this message translates to:
+  /// **'Fee if refunded'**
+  String get swapReviewRefundFee;
 
   /// Review note on a swap for an exact amount out, whose payment holds a refundable buffer
   ///
@@ -3349,6 +3409,90 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Usually a few minutes. You can leave the app, the swap carries on. · via NEAR Intents'**
   String get swapProgressFooter;
+
+  /// Lock screen header while a swap is underway or complete
+  ///
+  /// In en, this message translates to:
+  /// **'Swapping'**
+  String get swapLiveBrand;
+
+  /// Lock screen header when the swap card is stale or failed
+  ///
+  /// In en, this message translates to:
+  /// **'Swap'**
+  String get swapLiveBrandIdle;
+
+  /// Lock screen headline after the deposit is sent
+  ///
+  /// In en, this message translates to:
+  /// **'Swap submitted'**
+  String get swapLiveSubmitted;
+
+  /// Lock screen headline while the swap pays out on the destination chain
+  ///
+  /// In en, this message translates to:
+  /// **'Settling on {network}'**
+  String swapLiveSettling(String network);
+
+  /// Lock screen headline when the swap has paid out
+  ///
+  /// In en, this message translates to:
+  /// **'Swapped'**
+  String get swapLiveSwapped;
+
+  /// Lock screen label for the amount paid
+  ///
+  /// In en, this message translates to:
+  /// **'From'**
+  String get swapLiveFrom;
+
+  /// Lock screen label for the amount received
+  ///
+  /// In en, this message translates to:
+  /// **'To'**
+  String get swapLiveTo;
+
+  /// Lock screen label for the source chain
+  ///
+  /// In en, this message translates to:
+  /// **'Chain'**
+  String get swapLiveChain;
+
+  /// Lock screen footer when the swap card could not be updated
+  ///
+  /// In en, this message translates to:
+  /// **'Open Quantus to check'**
+  String get swapLiveOpenToCheck;
+
+  /// Lock screen suffix after how long the card has been stale
+  ///
+  /// In en, this message translates to:
+  /// **'ago'**
+  String get swapLiveAgo;
+
+  /// Lock screen suffix after the remaining swap time, as in 5 min left
+  ///
+  /// In en, this message translates to:
+  /// **'left'**
+  String get swapLiveLeft;
+
+  /// Lock screen unit for a remaining swap time under an hour
+  ///
+  /// In en, this message translates to:
+  /// **'min'**
+  String get swapLiveMinute;
+
+  /// Lock screen unit for a remaining swap time of an hour or more
+  ///
+  /// In en, this message translates to:
+  /// **'hr'**
+  String get swapLiveHour;
+
+  /// Android notification channel for the swap lock screen card
+  ///
+  /// In en, this message translates to:
+  /// **'Swap progress'**
+  String get swapLiveChannel;
 
   /// Title of the swap details sheet
   ///
@@ -3709,6 +3853,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Use steps of 0.01 {tokenSymbol}'**
   String encryptedSendAmountStep(String tokenSymbol);
+
+  /// Button label when an encrypted send exceeds the spendable balance while change from an earlier send is still pending
+  ///
+  /// In en, this message translates to:
+  /// **'Insufficient Balance ({amount} {tokenSymbol} pending)'**
+  String encryptedSendInsufficientWithPending(String amount, String tokenSymbol);
 
   /// Shown when an encrypted send falls below the chain's minimum exit amount
   ///

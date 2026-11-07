@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:resonance_network_wallet/providers/route_intent_providers.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/accounts_screen.dart';
@@ -8,7 +8,8 @@ const accountsScreenRouteName = 'accounts_screen';
 
 Future<T?> openAccountsScreen<T>(BuildContext context, {String? highlightAccountId}) {
   return Navigator.of(context).push<T>(
-    MaterialPageRoute(
+    CupertinoPageRoute(
+      fullscreenDialog: true,
       settings: const RouteSettings(name: accountsScreenRouteName),
       builder: (_) => AccountsScreen(highlightAccountId: highlightAccountId),
     ),

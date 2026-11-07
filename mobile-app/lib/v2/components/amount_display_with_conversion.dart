@@ -33,7 +33,7 @@ class AmountDisplayWithConversion extends StatelessWidget {
     final colors = context.colorsV3;
 
     final primaryAmountColor = amountColor ?? (colorizeAmount ? colors.semanticSage : colors.textContent);
-    const tokenLogoPrimarySize = 32.0;
+    const tokenLogoPrimarySize = 30.0;
 
     final primaryAmount = isHidden ? hiddenAmountText : amountDisplay.primaryAmount;
     final secondaryAmount = amountDisplay.secondaryAmount;
@@ -79,10 +79,12 @@ class AmountDisplayWithConversion extends StatelessWidget {
           ],
         ),
         if (secondaryAmount != null) ...[
-          const SizedBox(height: 8),
+          SizedBox(height: useTokenLogo ? 18 : 8),
           Text(
             '≈ ${isHidden ? hiddenAmountText : secondaryAmount}',
-            style: text.body.copyWith(color: colors.textMuted),
+            style: useTokenLogo
+                ? text.bodyLarge.copyWith(color: colors.textWhite.useOpacity(0.2))
+                : text.body.copyWith(color: colors.textMuted),
           ),
         ],
       ],

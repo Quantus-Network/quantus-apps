@@ -9,6 +9,7 @@ import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/notification_provider.dart';
 import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
 import 'package:resonance_network_wallet/services/history_polling_manager.dart';
+import 'package:resonance_network_wallet/services/swap_live_activity_message.dart';
 import 'package:resonance_network_wallet/services/telemetry_service.dart';
 import 'package:resonance_network_wallet/services/transaction_service.dart';
 import 'package:resonance_network_wallet/shared/utils/print.dart';
@@ -19,6 +20,20 @@ import 'package:resonance_network_wallet/shared/utils/provider_reader.dart';
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   quantusPrint('FCM background message: ${message.messageId}');
+  await deliverSwapLiveActivityPush(message.data);
+}
+
+/// Foreground FCM. Swap updates refresh the lock-screen card and are not shown
+/// as transaction notifications. Both paths use [deliverSwapLiveActivityPush].
+Future<void> handleForegroundFcmMessage(
+  RemoteMessage message, {
+  required Future<void> Function() refreshHistory,
+  required Future<void> Function(RemoteMessage message) showTransactionNotification,
+}) async {
+  quantusPrint('FCM foreground message: ${message.messageId}');
+  unawaited(refreshHistory());
+  if (await deliverSwapLiveActivityPush(message.data)) return;
+  await showTransactionNotification(message);
 }
 
 class FirebaseMessagingService {
@@ -161,10 +176,13 @@ class FirebaseMessagingService {
   /// data (balance, activity, proposals) for the foreground case.
   void _setupForegroundMessageListener() {
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-      quantusPrint('FCM foreground message: ${message.messageId}');
-
-      unawaited(_ref.read(historyPollingManagerProvider).triggerSilentRefresh());
-      unawaited(_showForegroundNotification(message));
+      unawaited(
+        handleForegroundFcmMessage(
+          message,
+          refreshHistory: () => _ref.read(historyPollingManagerProvider).triggerSilentRefresh(),
+          showTransactionNotification: _showForegroundNotification,
+        ),
+      );
     });
   }
 

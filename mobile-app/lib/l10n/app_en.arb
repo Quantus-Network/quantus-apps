@@ -442,6 +442,10 @@
     "@multisigCreateInvalidSigner": {
       "description": "Error when signer address is invalid"
     },
+    "multisigCreateSignerIsMultisig": "This address is a multisig account. A multisig cannot sign, so this signer cannot approve in this wallet. If the remaining members cannot meet the threshold, funds in that multisig may need recovery through the CLI.",
+    "@multisigCreateSignerIsMultisig": {
+      "description": "Error when an added signer address is one of this wallet's multisig accounts"
+    },
     "multisigCreateThresholdLabel": "THRESHOLD",
     "@multisigCreateThresholdLabel": {
       "description": "Threshold slider section label on create multisig"
@@ -1137,6 +1141,18 @@
     "@accountMenuShowRecoveryPhrase": {
       "description": "Show recovery phrase menu row label"
     },
+    "accountMenuShowAddress": "Show address",
+    "@accountMenuShowAddress": {
+      "description": "Account row menu item opening the address details"
+    },
+    "accountMenuRename": "Rename",
+    "@accountMenuRename": {
+      "description": "Account and wallet row menu item opening the name editor"
+    },
+    "accountMenuDisconnectAccount": "Disconnect account",
+    "@accountMenuDisconnectAccount": {
+      "description": "Destructive account row menu item"
+    },
     "accountMenuNotFound": "Account not found",
     "@accountMenuNotFound": {
       "description": "When account is not found on menu screen"
@@ -1358,6 +1374,10 @@
     "sendInputAmountAvailableBalance": "Available Balance:",
     "@sendInputAmountAvailableBalance": {
       "description": "Available balance label"
+    },
+    "sendInputAmountPending": "Pending:",
+    "@sendInputAmountPending": {
+      "description": "Label for balance that is not yet spendable (encrypted change awaiting the indexer)"
     },
     "sendInputAmountNetworkFee": "Transaction Fee:",
     "@sendInputAmountNetworkFee": {
@@ -2331,6 +2351,25 @@
         }
       }
     },
+    "swapRateEstimateLabel": "1 {fromSymbol} ≈ {rate} {toSymbol}",
+    "@swapRateEstimateLabel": {
+      "description": "Exchange rate at listed prices, shown on the swap form until a quote arrives",
+      "placeholders": {
+        "fromSymbol": {
+          "type": "String"
+        },
+        "rate": {
+          "type": "String"
+        },
+        "toSymbol": {
+          "type": "String"
+        }
+      }
+    },
+    "swapEstimateNotice": "Estimate at the market price, before fees.",
+    "@swapEstimateNotice": {
+      "description": "Under the swap form's rate while its figures are not a quote yet"
+    },
     "swapSlippageLabel": "Slippage {percent}%",
     "@swapSlippageLabel": {
       "description": "Slippage tolerance under the swap form",
@@ -2527,7 +2566,7 @@
     },
     "swapReviewSlippageValue": "{amount} ({percent}%)",
     "@swapReviewSlippageValue": {
-      "description": "Slippage allowance value",
+      "description": "An amount with the percentage it is: the slippage allowance, the swap fee",
       "placeholders": {
         "amount": {
           "type": "String"
@@ -2540,6 +2579,18 @@
     "swapReviewGuaranteedMinimum": "Guaranteed minimum",
     "@swapReviewGuaranteedMinimum": {
       "description": "Review row: least the swap pays out"
+    },
+    "swapReviewSwapFee": "Swap fee",
+    "@swapReviewSwapFee": {
+      "description": "Swap form and review row: percentage fee taken from the payment"
+    },
+    "swapReviewWithdrawalFee": "Withdrawal fee",
+    "@swapReviewWithdrawalFee": {
+      "description": "Swap form and review row: fixed fee for paying the swap out on the recipient's chain"
+    },
+    "swapReviewRefundFee": "Fee if refunded",
+    "@swapReviewRefundFee": {
+      "description": "Review row: fixed fee taken from the payment when the swap fails and is refunded"
     },
     "swapReviewUnusedRefunded": "The payment includes the slippage allowance. Whatever the swap does not use is refunded.",
     "@swapReviewUnusedRefunded": {
@@ -2632,6 +2683,67 @@
     "swapProgressFooter": "Usually a few minutes. You can leave the app, the swap carries on. · via NEAR Intents",
     "@swapProgressFooter": {
       "description": "Footer under the swap progress bar"
+    },
+    "swapLiveBrand": "Swapping",
+    "@swapLiveBrand": {
+      "description": "Lock screen header while a swap is underway or complete"
+    },
+    "swapLiveBrandIdle": "Swap",
+    "@swapLiveBrandIdle": {
+      "description": "Lock screen header when the swap card is stale or failed"
+    },
+    "swapLiveSubmitted": "Swap submitted",
+    "@swapLiveSubmitted": {
+      "description": "Lock screen headline after the deposit is sent"
+    },
+    "swapLiveSettling": "Settling on {network}",
+    "@swapLiveSettling": {
+      "description": "Lock screen headline while the swap pays out on the destination chain",
+      "placeholders": {
+        "network": {
+          "type": "String"
+        }
+      }
+    },
+    "swapLiveSwapped": "Swapped",
+    "@swapLiveSwapped": {
+      "description": "Lock screen headline when the swap has paid out"
+    },
+    "swapLiveFrom": "From",
+    "@swapLiveFrom": {
+      "description": "Lock screen label for the amount paid"
+    },
+    "swapLiveTo": "To",
+    "@swapLiveTo": {
+      "description": "Lock screen label for the amount received"
+    },
+    "swapLiveChain": "Chain",
+    "@swapLiveChain": {
+      "description": "Lock screen label for the source chain"
+    },
+    "swapLiveOpenToCheck": "Open Quantus to check",
+    "@swapLiveOpenToCheck": {
+      "description": "Lock screen footer when the swap card could not be updated"
+    },
+    "swapLiveAgo": "ago",
+    "@swapLiveAgo": {
+      "description": "Lock screen suffix after how long the card has been stale"
+    },
+    "swapLiveLeft": "left",
+    "@swapLiveLeft": {
+      "description": "Lock screen suffix after the remaining swap time, as in 5 min left"
+    },
+    "swapLiveMinute": "min",
+    "@swapLiveMinute": {
+      "description": "Lock screen unit for a remaining swap time under an hour"
+    },
+    "swapLiveHour": "hr",
+    "@swapLiveHour": {
+      "description": "Lock screen unit for a remaining swap time of an hour or more"
+    },
+    "swapLiveChannel": "Swap progress",
+    "@swapLiveChannel": {
+      "description": "Android notification channel for the swap lock screen card"
     },
     "swapDetailsTitle": "Swap Details",
     "@swapDetailsTitle": {
@@ -2933,6 +3045,18 @@
     "@encryptedSendAmountStep": {
       "description": "Shown when an encrypted send amount is not a multiple of 0.01 token",
       "placeholders": {
+        "tokenSymbol": {
+          "type": "String"
+        }
+      }
+    },
+    "encryptedSendInsufficientWithPending": "Insufficient Balance ({amount} {tokenSymbol} pending)",
+    "@encryptedSendInsufficientWithPending": {
+      "description": "Button label when an encrypted send exceeds the spendable balance while change from an earlier send is still pending",
+      "placeholders": {
+        "amount": {
+          "type": "String"
+        },
         "tokenSymbol": {
           "type": "String"
         }

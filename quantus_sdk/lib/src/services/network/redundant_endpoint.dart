@@ -55,35 +55,45 @@ class GraphQlEndpointService extends RedundantEndpointService {
   /// concurrent load the indexer answers a valid query with
   /// `{"code": "unexpected"}` — a Postgres statement timeout — and the same
   /// query succeeds moments later; cold start fires several queries at once and
-  /// a single 400ms retry is not enough to outlast it. Every other GraphQL
-  /// error is the caller's problem and throws on the first attempt.
+  /// a single 400ms retry is not enough to outlast it. A 5xx from every
+  /// endpoint ([EndpointServerError], once [post] has failed over) is retried
+  /// the same way. Every other GraphQL error is the caller's problem and
+  /// throws on the first attempt.
   Future<Map<String, dynamic>> query({required String document, Map<String, dynamic> variables = const {}}) async {
     final String body = jsonEncode({'query': document, 'variables': variables});
 
     for (int attempt = 0; ; attempt++) {
-      final http.Response response = await post(body: body);
+      Object failure;
+      try {
+        final http.Response response = await post(body: body);
 
-      if (response.statusCode != 200) {
-        throw Exception('GraphQL request failed with status: ${response.statusCode}. Body: ${response.body}');
-      }
-
-      final Map<String, dynamic> decoded = jsonDecode(response.body);
-      final Object? errors = decoded['errors'];
-
-      if (errors == null) {
-        final Map<String, dynamic>? data = decoded['data'];
-        if (data == null) {
-          throw Exception('GraphQL response has no data: ${response.body}');
+        if (response.statusCode != 200) {
+          throw Exception('GraphQL request failed with status: ${response.statusCode}. Body: ${response.body}');
         }
-        return data;
+
+        final Map<String, dynamic> decoded = jsonDecode(response.body);
+        final Object? errors = decoded['errors'];
+
+        if (errors == null) {
+          final Map<String, dynamic>? data = decoded['data'];
+          if (data == null) {
+            throw Exception('GraphQL response has no data: ${response.body}');
+          }
+          return data;
+        }
+
+        if (!isTransientGraphQlError(errors)) throw Exception('GraphQL errors: $errors');
+        failure = errors;
+      } on EndpointServerError catch (e) {
+        failure = e;
       }
 
-      if (attempt >= _transientRetries || !isTransientGraphQlError(errors)) {
-        throw Exception('GraphQL errors: $errors');
+      if (attempt >= _transientRetries) {
+        if (failure is EndpointServerError) throw failure;
+        throw Exception('GraphQL errors: $failure');
       }
-
       final backoff = _retryBackoff * (1 << attempt);
-      quantusPrint('Transient GraphQL failure, retrying in ${backoff.inMilliseconds}ms: $errors');
+      quantusPrint('Transient GraphQL failure, retrying in ${backoff.inMilliseconds}ms: $failure');
       await Future.delayed(backoff);
     }
   }

@@ -6,7 +6,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/models/fiat_currency.dart';
-import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/services/exchange_rate_service.dart';
 import 'package:resonance_network_wallet/shared/utils/print.dart';
@@ -243,10 +242,7 @@ class CurrencyDisplayState {
 /// which passes it into AmountDisplayWithConversion; it is deliberately absent
 /// here so unrelated screens never inherit it.
 final balanceDisplayProvider = Provider<AsyncValue<CurrencyDisplayState>>((ref) {
-  final active = ref.watch(activeAccountProvider).value;
-  final balanceAsync = active != null && isEncryptedAccount(active.account)
-      ? ref.watch(encryptedBalanceProvider((active.account as Account).walletIndex))
-      : ref.watch(balanceProvider);
+  final balanceAsync = ref.watch(activeBalanceProvider);
   final selectedFiat = ref.watch(selectedFiatCurrencyProvider);
   final xRate = ref.watch(exchangeRateServiceProvider);
   final fmt = ref.watch(numberFormattingServiceProvider);

@@ -13,6 +13,16 @@ const _backgroundPollFilters = [TransactionFilter.all];
 /// Returns the currently selected wallet account ID, if any.
 String? activeAccountId(Ref ref) => ref.read(activeAccountProvider).value?.account.accountId;
 
+/// The active account's ID when its history comes from the transparent
+/// pagination controllers. An encrypted account's history is part of its
+/// wormhole snapshot ([encryptedStateProvider]), so there is no transparent
+/// history to refresh for it.
+String? activePaginatedAccountId(Ref ref) {
+  final account = ref.read(activeAccountProvider).value?.account;
+  if (account == null || isEncryptedAccount(account)) return null;
+  return account.accountId;
+}
+
 /// Returns the active multisig account, if the selected account is multisig.
 MultisigAccount? multisigAccountFromActive(DisplayAccount? active) {
   if (active is MultisigDisplayAccount) return active.account;
@@ -140,7 +150,7 @@ Future<void> refreshActiveMultisigProposals(Ref ref) async {
 
 /// Silently refreshes pagination for the active account (background poll scope).
 Future<void> silentRefreshActiveAccount(Ref ref) async {
-  final accountId = activeAccountId(ref);
+  final accountId = activePaginatedAccountId(ref);
   if (accountId == null) return;
 
   await refreshAccountsPagination(ref, accountIds: [accountId], action: (notifier) => notifier.silentRefresh());
@@ -148,21 +158,23 @@ Future<void> silentRefreshActiveAccount(Ref ref) async {
 
 /// Refreshes the active account when the user switches accounts.
 Future<void> refreshActiveAccountOnSwitch(Ref ref) async {
-  final accountId = activeAccountId(ref);
-  if (accountId == null) return;
+  if (activeAccountId(ref) == null) return;
 
-  final params = FilteredTransactionsParams(
-    accountIds: AccountIdListCache.get([accountId]),
-    filter: TransactionFilter.all,
-  );
+  final accountId = activePaginatedAccountId(ref);
+  if (accountId != null) {
+    final params = FilteredTransactionsParams(
+      accountIds: AccountIdListCache.get([accountId]),
+      filter: TransactionFilter.all,
+    );
 
-  final paginationState = ref.read(filteredPaginationControllerProviderFamily(params));
-  final notifier = ref.read(filteredPaginationControllerProviderFamily(params).notifier);
+    final paginationState = ref.read(filteredPaginationControllerProviderFamily(params));
+    final notifier = ref.read(filteredPaginationControllerProviderFamily(params).notifier);
 
-  if (paginationState.hasLoadedChainData) {
-    await notifier.silentRefresh();
-  } else {
-    await notifier.loadingRefresh();
+    if (paginationState.hasLoadedChainData) {
+      await notifier.silentRefresh();
+    } else {
+      await notifier.loadingRefresh();
+    }
   }
 
   invalidateActiveAccountBalance(ref);

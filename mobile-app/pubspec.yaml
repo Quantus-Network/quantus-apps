@@ -2,7 +2,7 @@ name: resonance_network_wallet
 description: A Flutter wallet for the Quantus blockchain.
 publish_to: "none"
 
-version: 1.7.4+162
+version: 1.7.7+171
 
 environment:
   sdk: ">=3.8.0 <4.0.0"
@@ -48,6 +48,8 @@ dependencies:
   play_install_referrer: ^0.5.0
 
   # Notifications
+  swap_live_activity_channel:
+    path: plugins/swap_live_activity_channel
   flutter_local_notifications: ^21.0.0
   timezone: ^0.11.0
   flutter_timezone: ^5.0.1
@@ -59,6 +61,7 @@ dependencies:
 
 dev_dependencies:
   ed25519_edwards: ^0.3.1
+  fake_async: ^1.3.3
   flutter_test:
     sdk: flutter
   integration_test:
@@ -176,5 +179,5 @@ flutter_native_splash:
     image: assets/v2/android12_icon_empty_1152.png
     color: "#0E0E0E"
     icon_background_color: "#0E0E0E"
-    branding: assets/v2/uppercase_q.png
+    branding: assets/v2/android12_branding_800x320.png
     branding_bottom_padding: 88

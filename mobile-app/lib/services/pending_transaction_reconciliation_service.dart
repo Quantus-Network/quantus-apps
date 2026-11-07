@@ -46,7 +46,7 @@ class PendingTransactionReconciliationService {
         'PendingReconciliation: Checking ${pendingTxs.length} '
         'pending transactions',
       );
-      final activeId = activeAccountId(_ref);
+      final activeId = activePaginatedAccountId(_ref);
       final accountIds = reconciliationAccountIds(activeId: activeId, pendingTxs: pendingTxs);
 
       for (final accountId in accountIds) {

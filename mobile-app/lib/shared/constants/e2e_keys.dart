@@ -48,6 +48,7 @@ class E2EKeys {
 
   static const String sendInputAmountScreen = 'send_input_amount_screen';
   static const String sendAmountField = 'send_amount_field';
+  static const String sendInputAmountPending = 'send_input_amount_pending';
   static const String sendReviewButton = 'send_review_button';
 
   static const String sendReviewScreen = 'send_review_screen';

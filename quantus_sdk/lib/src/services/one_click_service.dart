@@ -20,7 +20,7 @@ class OneClickService {
   /// Longest any request may take before it fails.
   static const requestTimeout = Duration(seconds: 30);
 
-  /// Longest a recipient lookup may hold up the send flow.
+  /// Longest a recipient lookup stays in flight.
   static const depositLookupTimeout = Duration(seconds: 10);
 
   final http.Client _client;
@@ -52,6 +52,10 @@ class OneClickService {
     ).timeout(depositLookupTimeout);
     return _depositAddresses[address] = ((json as Map<String, dynamic>)['items'] as List<dynamic>).isNotEmpty;
   }
+
+  /// Whether 1Click has already confirmed [address] as a deposit address in
+  /// an [isDepositAddress] that got its answer; never asks.
+  bool isKnownDepositAddress(String address) => _depositAddresses[address] ?? false;
 
   Future<Object?> send(String method, String path, {Map<String, Object>? body, Map<String, String>? query}) async {
     final uri = _base.replace(path: path, queryParameters: query);

@@ -38,6 +38,9 @@ void main() {
     expect(quote.signature, 'ed25519:sig');
     expect(quote.depositAddress, 'qzdeposit');
     expect(quote.depositMemo, '4183920');
+    expect(quote.withdrawFee, BigInt.from(300000));
+    expect(quote.refundFee, BigInt.from(2000000000));
+    expect(quote.feeBps, 40);
     expect(kept.accountId, 'qzaccount');
     expect(kept.accountName, 'Account 1');
     expect(kept.startedAt.isAtSameMomentAs(now), isTrue);
