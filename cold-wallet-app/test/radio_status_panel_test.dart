@@ -77,6 +77,24 @@ void main() {
     variant: TargetPlatformVariant.only(TargetPlatform.iOS),
   );
 
+  testWidgets('names any path that is not one of the three radios in a fourth row', (tester) async {
+    await pumpPanel(tester, const [ConnectivityResult.vpn, ConnectivityResult.ethernet, ConnectivityResult.other]);
+
+    final other = valueOf(tester, 'OTHER');
+    expect(other.data, 'VPN, ETHERNET, UNKNOWN');
+    expect(other.style?.color, colors.semanticEmber);
+    expect(find.text('NOT CONNECTED'), findsNWidgets(3));
+    expect(tester.getTopLeft(find.text('BLUETOOTH')).dy, lessThan(tester.getTopLeft(find.text('OTHER')).dy));
+  });
+
+  testWidgets('has no fourth row while only radios or nothing is reported', (tester) async {
+    await pumpPanel(tester, const [ConnectivityResult.wifi, ConnectivityResult.bluetooth]);
+    expect(find.text('OTHER'), findsNothing);
+
+    await pumpPanel(tester, const [ConnectivityResult.none]);
+    expect(find.text('OTHER'), findsNothing);
+  });
+
   testWidgets('uses the surface panel and mono spec label tokens', (tester) async {
     await pumpPanel(tester, const [ConnectivityResult.none]);
 

@@ -39,6 +39,8 @@ Future<void> bootstrap() async {
   await dotenv.load();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.getOptionsForEnvironment());
 
+  // Unusable offline, so recover the online state fast.
+  ConnectivityService.instanceRetryInterval = const Duration(seconds: 3);
   await QuantusSdk.init();
 
   Telemetrydecksdk.start(
