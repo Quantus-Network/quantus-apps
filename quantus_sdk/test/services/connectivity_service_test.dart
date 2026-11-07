@@ -1,8 +1,6 @@
 import 'dart:async';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:flutter/services.dart';
-import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 
@@ -30,25 +28,16 @@ class _FakeConnectivity implements Connectivity {
 }
 
 void main() {
-  TestWidgetsFlutterBinding.ensureInitialized();
+  const interval = ConnectivityService.defaultRetryInterval;
 
   late _FakeConnectivity platform;
   late ConnectivityService service;
   late List<NetworkStatus> statuses;
   late List<List<ConnectivityResult>> results;
 
-  Future<void> setLifecycle(AppLifecycleState state) =>
-      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.handlePlatformMessage(
-        SystemChannels.lifecycle.name,
-        const StringCodec().encodeMessage(state.toString()),
-        (_) {},
-      );
-
   Future<void> start(WidgetTester tester, List<ConnectivityResult> answer, {bool listen = true}) async {
-    await setLifecycle(AppLifecycleState.resumed);
     platform = _FakeConnectivity(answer);
     service = ConnectivityService(connectivity: platform);
-    addTearDown(() => setLifecycle(AppLifecycleState.resumed));
     statuses = [];
     results = [];
     if (listen) {
@@ -91,53 +80,49 @@ void main() {
     service.dispose();
   });
 
-  testWidgets('a stale stream value is corrected by the timed re-read', (tester) async {
+  testWidgets('never re-reads while online', (tester) async {
+    await start(tester, const [ConnectivityResult.wifi]);
+
+    await tester.pump(interval * 5);
+    expect(platform.checks, 1);
+    expect(statuses, [NetworkStatus.online]);
+    service.dispose();
+  });
+
+  testWidgets('re-reads every interval while offline until the platform answers online', (tester) async {
     await start(tester, const [ConnectivityResult.none]);
+
+    await tester.pump(interval);
+    await tester.pump(interval);
+    expect(platform.checks, 3);
+    expect(service.currentStatus, NetworkStatus.offline);
+
+    platform.answer = const [ConnectivityResult.wifi];
+    await tester.pump(interval);
+    expect(platform.checks, 4);
+    expect(service.currentStatus, NetworkStatus.online);
+
+    await tester.pump(interval * 5);
+    expect(platform.checks, 4);
+    expect(statuses, [NetworkStatus.online, NetworkStatus.offline, NetworkStatus.online]);
+    service.dispose();
+  });
+
+  testWidgets('a stream loss starts re-reading and a stream recovery stops it', (tester) async {
+    await start(tester, const [ConnectivityResult.wifi]);
+
+    platform.changes.add(const [ConnectivityResult.none]);
+    await tester.pump(Duration.zero);
+    expect(service.currentStatus, NetworkStatus.offline);
+    platform.answer = const [ConnectivityResult.none];
+    await tester.pump(interval);
+    expect(platform.checks, 2);
 
     platform.changes.add(const [ConnectivityResult.mobile]);
     await tester.pump(Duration.zero);
     expect(service.currentStatus, NetworkStatus.online);
-
-    await tester.pump(ConnectivityService.defaultVerifyInterval);
-    expect(service.currentStatus, NetworkStatus.offline);
+    await tester.pump(interval * 5);
     expect(platform.checks, 2);
-    service.dispose();
-  });
-
-  testWidgets('re-reads only while a stream has a listener', (tester) async {
-    await start(tester, const [ConnectivityResult.wifi], listen: false);
-
-    await tester.pump(ConnectivityService.defaultVerifyInterval * 2);
-    expect(platform.checks, 1);
-
-    final subscription = service.statusStream.listen((_) {});
-    await tester.pump(ConnectivityService.defaultVerifyInterval);
-    expect(platform.checks, 2);
-
-    // Awaiting the cancel of an async* subscription never completes under the
-    // test binding's fake async; the timer is cancelled synchronously anyway.
-    unawaited(subscription.cancel());
-    await tester.pump(ConnectivityService.defaultVerifyInterval * 2);
-    expect(platform.checks, 2);
-    service.dispose();
-  });
-
-  testWidgets('stops re-reading in the background and re-reads at once on resume', (tester) async {
-    await start(tester, const [ConnectivityResult.wifi]);
-
-    await setLifecycle(AppLifecycleState.inactive);
-    await setLifecycle(AppLifecycleState.paused);
-    await tester.pump(ConnectivityService.defaultVerifyInterval * 3);
-    expect(platform.checks, 1);
-
-    platform.answer = const [ConnectivityResult.none];
-    await setLifecycle(AppLifecycleState.resumed);
-    await tester.pump(Duration.zero);
-    expect(platform.checks, 2);
-    expect(service.currentStatus, NetworkStatus.offline);
-
-    await tester.pump(ConnectivityService.defaultVerifyInterval);
-    expect(platform.checks, 3);
     service.dispose();
   });
 
