@@ -25,7 +25,11 @@ class AppLifecycleManager extends ConsumerStatefulWidget {
 
 class _AppLifecycleManagerState extends ConsumerState<AppLifecycleManager> with WidgetsBindingObserver {
   // Track if we have already performed background/pause actions to avoid duplicates
-  // as the OS can cycle through multiple states (inactive -> hidden -> paused)
+  // as the OS can cycle through multiple states (inactive -> hidden -> paused).
+  // Never seeded from the launch state: iOS reports `inactive` until the app is
+  // activated, and a cold start whose prompt was answered before that `resumed`
+  // arrived would otherwise be treated as a resume from background and prompt
+  // again.
   bool _isBackgrounded = false;
 
   // A real backgrounding during a system auth prompt is kept from the unlock
@@ -37,10 +41,6 @@ class _AppLifecycleManagerState extends ConsumerState<AppLifecycleManager> with 
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-
-    // Initialize background state
-    final currentState = WidgetsBinding.instance.lifecycleState ?? AppLifecycleState.resumed;
-    _isBackgrounded = currentState != AppLifecycleState.resumed;
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final localAuthNotifier = ref.read(localAuthProvider.notifier);
@@ -129,7 +129,7 @@ class _AppLifecycleManagerState extends ConsumerState<AppLifecycleManager> with 
         localAuthNotifier.recordBackgroundTime();
       } else {
         if (authInProgress && state != AppLifecycleState.inactive) _locationStale = true;
-        quantusPrint('$state - already backgrounded, skipping actions');
+        quantusPrint('$state - ${authInProgress ? "auth prompt" : "already backgrounded"}, skipping actions');
       }
     }
   }
