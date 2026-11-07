@@ -442,6 +442,10 @@
     "@multisigCreateInvalidSigner": {
       "description": "Error when signer address is invalid"
     },
+    "multisigCreateSignerIsMultisig": "This address is a multisig account. A multisig cannot sign, so this signer cannot approve in this wallet. If the remaining members cannot meet the threshold, funds in that multisig may need recovery through the CLI.",
+    "@multisigCreateSignerIsMultisig": {
+      "description": "Error when an added signer address is one of this wallet's multisig accounts"
+    },
     "multisigCreateThresholdLabel": "THRESHOLD",
     "@multisigCreateThresholdLabel": {
       "description": "Threshold slider section label on create multisig"

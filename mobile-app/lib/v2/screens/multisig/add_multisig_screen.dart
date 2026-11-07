@@ -106,6 +106,12 @@ class _AddMultisigScreenState extends ConsumerState<AddMultisigScreen> {
       setState(() => _signerFieldError = l10n.multisigCreateDuplicateSigner);
       return;
     }
+    // A multisig has no key and cannot sign, so a multisig listing it as a
+    // signer could never execute from this wallet.
+    if (_reservedAddresses().contains(address)) {
+      setState(() => _signerFieldError = l10n.multisigCreateSignerIsMultisig);
+      return;
+    }
 
     setState(() {
       _additionalSigners = [..._additionalSigners, address];

@@ -96,6 +96,7 @@
   "multisigCreateAddSignerButton": "Tambah Penandatangan",
   "multisigCreateDuplicateSigner": "Penandatangan ini sudah ada dalam daftar.",
   "multisigCreateInvalidSigner": "Masukkan alamat penandatangan yang valid.",
+  "multisigCreateSignerIsMultisig": "Alamat ini adalah akun multisig. Multisig tidak dapat menandatangani, sehingga penandatangan ini tidak dapat menyetujui di dompet ini. Jika anggota lainnya tidak dapat memenuhi ambang batas, dana di multisig itu mungkin perlu dipulihkan melalui CLI.",
   "multisigCreateThresholdLabel": "AMBANG BATAS",
   "multisigCreateThresholdValue": "{count} dari {total}",
   "multisigCreateKeystoneAction": "Buat multisig {count} dari {total}",

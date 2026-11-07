@@ -323,6 +323,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get multisigCreateInvalidSigner => 'Enter a valid signer address.';
 
   @override
+  String get multisigCreateSignerIsMultisig =>
+      'This address is a multisig account. A multisig cannot sign, so this signer cannot approve in this wallet. If the remaining members cannot meet the threshold, funds in that multisig may need recovery through the CLI.';
+
+  @override
   String get multisigCreateThresholdLabel => 'THRESHOLD';
 
   @override
