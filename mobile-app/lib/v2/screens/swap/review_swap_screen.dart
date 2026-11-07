@@ -213,6 +213,7 @@ class _ReviewSwapScreenState extends ConsumerState<ReviewSwapScreen> {
                 foreign.symbol,
               ),
             ),
+            SwapQuoteFeeRows(quote: quote),
             if (_swapOut)
               row(l10n.swapReviewRecipient, AddressFormattingService.formatAddress(quote.recipient), mono: true)
             else
@@ -232,6 +233,7 @@ class _ReviewSwapScreenState extends ConsumerState<ReviewSwapScreen> {
               ),
             ),
             row(l10n.swapReviewGuaranteedMinimum, amount(quote.minAmountOut, to)),
+            if (quote.refundFee > BigInt.zero) row(l10n.swapReviewRefundFee, amount(quote.refundFee, from)),
             if (exactOutput) ...[
               const SizedBox(height: 16),
               Text(l10n.swapReviewUnusedRefunded, style: text.caption.copyWith(color: colors.textMuted)),

@@ -92,12 +92,19 @@ class _SwapConfig extends RemoteConfigNotifier {
 /// 1Click stand-in: a dry quote pays [dryOut], a live one [liveOut] with a
 /// deposit address, both with 1% slippage. An exact-output quote pays out what
 /// it was asked for and costs [dryOut] or [liveOut] instead, 1% of it buffer. The token list has USDC on
-/// Ethereum plus [listed], and answers [tokensStatus].
+/// Ethereum plus [listed], and answers [tokensStatus]. A quote names the fixed
+/// fees given, and one fee recipient for each of [feesBps].
 class _OneClick {
   final BigInt dryOut;
   final BigInt liveOut;
   final List<Map<String, dynamic>> listed;
+  final BigInt? withdrawFee;
+  final BigInt? refundFee;
+  final List<int> feesBps;
   int tokensStatus;
+
+  /// What every quote is refused with.
+  String? quoteError;
 
   /// What the status endpoint answers, and with which HTTP status.
   String status = 'PENDING_DEPOSIT';
@@ -113,8 +120,15 @@ class _OneClick {
   /// Holds every live quote answer until completed.
   Completer<void>? holdLive;
 
-  _OneClick({required this.dryOut, BigInt? liveOut, this.listed = const [_listedQtc], this.tokensStatus = 200})
-    : liveOut = liveOut ?? dryOut;
+  _OneClick({
+    required this.dryOut,
+    BigInt? liveOut,
+    this.listed = const [_listedQtc],
+    this.tokensStatus = 200,
+    this.withdrawFee,
+    this.refundFee,
+    this.feesBps = const [20],
+  }) : liveOut = liveOut ?? dryOut;
 
   Iterable<http.Request> get liveQuotes =>
       requests.where((r) => r.url.path == '/v0/quote' && (jsonDecode(r.body) as Map)['dry'] == false);
@@ -156,6 +170,7 @@ class _OneClick {
     final body = jsonDecode(request.body) as Map<String, dynamic>;
     if (body['dry'] == false && holdLive != null) await holdLive!.future;
     if (body['dry'] == true && holdQuote != null) await holdQuote!.future;
+    if (quoteError != null) return http.Response(jsonEncode({'message': quoteError}), 400);
     return http.Response(jsonEncode(_quoteJson(body)), 200);
   }
 
@@ -175,6 +190,8 @@ class _OneClick {
         'amountOutUsd': '24.86',
         if (!dry) 'deadline': DateTime.now().toUtc().add(const Duration(minutes: 20)).toIso8601String(),
         'timeEstimate': 60,
+        'withdrawFee': ?withdrawFee?.toString(),
+        'refundFee': ?refundFee?.toString(),
       },
       'quoteRequest': {
         for (final k in const [
@@ -191,7 +208,8 @@ class _OneClick {
         ])
           k: request[k],
         'appFees': [
-          {'recipient': '2238fd089f1c92b206c218cd16b8676cb98964e0d50f8ab729c6396a81e07805', 'fee': 20},
+          for (final fee in feesBps)
+            {'recipient': '2238fd089f1c92b206c218cd16b8676cb98964e0d50f8ab729c6396a81e07805', 'fee': fee},
         ],
       },
       'correlationId': dry ? 'dry' : 'live',
@@ -234,6 +252,9 @@ SwapQuote _quote({
   String? depositAddress,
   String? depositMemo,
   DateTime? deadline,
+  BigInt? withdrawFee,
+  BigInt? refundFee,
+  int feeBps = 0,
 }) => SwapQuote(
   fromToken: from,
   toToken: to,
@@ -252,6 +273,9 @@ SwapQuote _quote({
   signature: 'ed25519:sig',
   depositAddress: depositAddress,
   depositMemo: depositMemo,
+  withdrawFee: withdrawFee,
+  refundFee: refundFee,
+  feeBps: feeBps,
 );
 
 void main() {
@@ -607,11 +631,12 @@ void main() {
     });
 
     testWidgets('an address sheet open across the asset id change cannot quote the old QTC', (tester) async {
+      const otherId = 'nep141:quantus.omft.near';
       final before = _OneClick(dryOut: BigInt.from(1000000));
       final after = _OneClick(
         dryOut: BigInt.from(1000000),
         listed: [
-          {..._listedQtc, 'assetId': 'nep141:quantus.omft.near'},
+          {..._listedQtc, 'assetId': otherId},
         ],
       );
       final services = StateProvider<SwapService>((_) => before.service());
@@ -634,7 +659,9 @@ void main() {
       await tester.tap(find.text(l10n.swapContinue));
       await settle(tester);
 
-      expect([...before.requests, ...after.requests].where((r) => r.url.path == '/v0/quote'), isEmpty);
+      expect(before.requests.where((r) => r.url.path == '/v0/quote'), isEmpty);
+      final formQuote = after.requests.singleWhere((r) => r.url.path == '/v0/quote');
+      expect((jsonDecode(formQuote.body) as Map)['originAsset'], otherId);
       expect(find.byType(ReviewSwapScreen), findsNothing);
       expect(find.text(l10n.swapContinue), findsNothing);
       await tester.pump(const Duration(seconds: 10));
@@ -740,6 +767,94 @@ void main() {
         },
       );
     }
+
+    /// Puts [_external] on a form without an amount, then types [amount].
+    Future<void> addressThenAmount(WidgetTester tester, String addAddress, String amount) async {
+      await tester.tap(find.text(addAddress));
+      await settle(tester);
+      await tester.enterText(find.byType(TextField).last, _external);
+      await tester.pump();
+      await tester.tap(find.text(l10n.swapContinue));
+      await settle(tester);
+      await tester.enterText(find.byType(TextField), amount);
+      await tester.pump();
+    }
+
+    testWidgets('the form shows an estimate until its quote arrives, then the quote and the fees inside it', (
+      tester,
+    ) async {
+      final oneClick = _OneClick(
+        dryOut: BigInt.from(6663915),
+        listed: [
+          {..._listedQtc, 'price': 70.45},
+        ],
+        withdrawFee: BigInt.from(300000),
+        refundFee: BigInt.from(2000000000),
+        feesBps: const [20, 20],
+      );
+      Iterable<http.Request> quotes() => oneClick.requests.where((r) => r.url.path == '/v0/quote');
+      final fees = [l10n.swapReviewSlippageValue('0.0004 QTC', '0.4'), '0.3 USDC'];
+      await tester.pumpApp(SwapScreen(account: account), overrides: overrides(oneClick.service()));
+      await settle(tester);
+      await swapOut(tester);
+      await addressThenAmount(tester, l10n.swapAddRecipientAddress, '0.1');
+
+      expect(find.text('7.045'), findsOneWidget);
+      expect(find.text(l10n.swapRateEstimateLabel('QTC', '70.45', 'USDC')), findsOneWidget);
+      expect(find.text(l10n.swapEstimateNotice), findsOneWidget);
+      expect(quotes(), isEmpty);
+
+      await settle(tester);
+      expect(find.text('6.6639'), findsOneWidget);
+      expect(find.text(l10n.swapRateLabel('QTC', '69.9188', 'USDC')), findsOneWidget);
+      expect(find.text(l10n.swapEstimateNotice), findsNothing);
+      for (final fee in fees) {
+        expect(find.text(fee), findsOneWidget);
+      }
+      expect(quotes(), hasLength(1));
+
+      await tester.pump(swapFormQuoteLifetime);
+      await settle(tester);
+      expect(quotes(), hasLength(2));
+
+      await tester.tap(find.text(l10n.swapReviewTitle));
+      await settle(tester);
+      await settle(tester);
+      expect(find.byType(ReviewSwapScreen), findsOneWidget);
+      expect(find.text(l10n.swapRateLabel('QTC', '69.9188', 'USDC')), findsOneWidget);
+      for (final fee in [...fees, '0.002 QTC']) {
+        expect(find.text(fee), findsOneWidget);
+      }
+      await tester.pump(swapFormQuoteLifetime * 2);
+      expect(quotes(), hasLength(2));
+    });
+
+    testWidgets('a quote 1Click refuses says why under the rate, and Review Swap asks again', (tester) async {
+      final oneClick = _OneClick(dryOut: _unit * BigInt.from(95))..quoteError = 'Amount is too low';
+      Iterable<http.Request> quotes() => oneClick.requests.where((r) => r.url.path == '/v0/quote');
+      await tester.pumpApp(SwapScreen(account: account), overrides: overrides(oneClick.service()));
+      await settle(tester);
+      await addressThenAmount(tester, l10n.swapAddRefundAddress, '10');
+      await settle(tester);
+
+      expect(find.text(l10n.swapQuoteError('Amount is too low')), findsOneWidget);
+      expect(find.text(l10n.swapEstimateNotice), findsNothing);
+      expect(find.text('100'), findsOneWidget);
+      expect(quotes(), hasLength(1));
+
+      oneClick.quoteError = null;
+      await tester.tap(find.text(l10n.swapReviewTitle));
+      await settle(tester);
+      expect(find.byType(ReviewSwapScreen), findsNothing);
+      expect(find.text('95'), findsOneWidget);
+      expect(quotes(), hasLength(2));
+
+      await tester.tap(find.text(l10n.swapReviewTitle));
+      await settle(tester);
+      expect(find.byType(ReviewSwapScreen), findsOneWidget);
+      expect(quotes(), hasLength(2));
+      await tester.pump(const Duration(seconds: 10));
+    });
   });
 
   group('address sheet', () {
@@ -1133,6 +1248,63 @@ void main() {
       await settle(tester);
 
       expect(find.text('1.00009 QTC'), findsOneWidget);
+    });
+
+    testWidgets('spells out the fees inside a quote and the rate before them, either way', (tester) async {
+      final oneClick = _OneClick(dryOut: outQuote.amountOut);
+      final feeLabels = [l10n.swapReviewSwapFee, l10n.swapReviewWithdrawalFee, l10n.swapReviewRefundFee];
+      Future<void> review(SwapQuote quote) async {
+        await tester.pumpApp(
+          ReviewSwapScreen(key: UniqueKey(), account: account, quote: quote),
+          overrides: overrides(oneClick.service()),
+        );
+        await settle(tester);
+      }
+
+      await review(outQuote);
+      expect(find.text(l10n.swapRateLabel('QTC', '0.0994', 'USDC')), findsOneWidget);
+      for (final label in feeLabels) {
+        expect(find.text(label.toUpperCase()), findsNothing);
+      }
+
+      await review(
+        _quote(
+          from: _qtc,
+          to: _usdc,
+          amountIn: _unit ~/ BigInt.from(10),
+          amountOut: BigInt.from(6663915),
+          refund: account.accountId,
+          recipient: _external,
+          withdrawFee: BigInt.from(300000),
+          refundFee: BigInt.from(2000000000),
+          feeBps: 40,
+        ),
+      );
+      expect(find.text(l10n.swapRateLabel('QTC', '69.9188', 'USDC')), findsOneWidget);
+      for (final label in feeLabels) {
+        expect(find.text(label.toUpperCase()), findsOneWidget);
+      }
+      expect(find.text(l10n.swapReviewSlippageValue('0.0004 QTC', '0.4')), findsOneWidget);
+      expect(find.text('0.3 USDC'), findsOneWidget);
+      expect(find.text('0.002 QTC'), findsOneWidget);
+
+      await review(
+        _quote(
+          from: _usdc,
+          to: _qtc,
+          amountIn: BigInt.from(10000000),
+          amountOut: BigInt.from(138883941091),
+          refund: _external,
+          recipient: account.accountId,
+          withdrawFee: BigInt.from(2000000000),
+          refundFee: BigInt.from(300000),
+          feeBps: 40,
+        ),
+      );
+      expect(find.text(l10n.swapRateLabel('QTC', '70.6964', 'USDC')), findsOneWidget);
+      expect(find.text(l10n.swapReviewSlippageValue('0.04 USDC', '0.4')), findsOneWidget);
+      expect(find.text('0.002 QTC'), findsOneWidget);
+      expect(find.text('0.3 USDC'), findsOneWidget);
     });
 
     testWidgets('blocks a swap out the balance cannot cover with its fee', (tester) async {

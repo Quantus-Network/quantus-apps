@@ -96,11 +96,63 @@ BigInt swapEstimateOut(BigInt amountIn, SwapToken from, SwapToken to) {
 }
 
 /// Base units of [quote]'s foreign token that one whole QTC buys or sells
-/// for, at the input the swap needs: an exact output's payment holds a buffer
-/// on top.
-BigInt swapQuoteRate(SwapQuote quote) => quote.fromToken.isQuantus
-    ? quote.amountOut * BigInt.from(10).pow(quote.fromToken.decimals) ~/ quote.minAmountIn
-    : quote.minAmountIn * BigInt.from(10).pow(quote.toToken.decimals) ~/ quote.amountOut;
+/// for before the fees: the swap trades the input it needs less the
+/// percentage fee, for the payout plus its withdrawal fee. An exact output's
+/// payment holds a buffer on top.
+BigInt swapQuoteRate(SwapQuote quote) {
+  final swapOut = quote.fromToken.isQuantus;
+  final unit = BigInt.from(10).pow((swapOut ? quote.fromToken : quote.toToken).decimals);
+  final traded = quote.minAmountIn - quote.feeAmount;
+  final bought = quote.amountOut + quote.withdrawFee;
+  return swapOut ? bought * unit ~/ traded : traded * unit ~/ bought;
+}
+
+/// A swap as the form describes it; equal requests share one quote.
+typedef SwapQuoteRequest = ({
+  SwapToken from,
+  SwapToken to,
+  BigInt amount,
+  SwapType swapType,
+  String refundAddress,
+  String recipient,
+  int slippageBps,
+});
+
+/// How long the form waits after its last change before it asks for a quote.
+const swapFormQuoteDebounce = Duration(milliseconds: 300);
+
+/// How long a quote stays on the form before a fresh one replaces it.
+const swapFormQuoteLifetime = Duration(seconds: 20);
+
+/// 1Click's dry quote for the swap the form describes, asked for once the
+/// form has rested for [swapFormQuoteDebounce] and again every
+/// [swapFormQuoteLifetime] for as long as the form shows it.
+final swapFormQuoteProvider = FutureProvider.autoDispose.family<SwapQuote, SwapQuoteRequest>((ref, request) async {
+  final service = ref.watch(swapServiceProvider);
+  final rested = Completer<void>();
+  final debounce = Timer(swapFormQuoteDebounce, rested.complete);
+  ref.onDispose(debounce.cancel);
+  await rested.future;
+  try {
+    return await service.getQuote(
+      from: request.from,
+      to: request.to,
+      amount: request.amount,
+      swapType: request.swapType,
+      refundAddress: request.refundAddress,
+      recipient: request.recipient,
+      slippageBps: request.slippageBps,
+    );
+  } catch (e) {
+    quantusPrint('Swap quote failed: $e');
+    rethrow;
+  } finally {
+    if (ref.mounted) {
+      final refresh = Timer(swapFormQuoteLifetime, ref.invalidateSelf);
+      ref.onDispose(refresh.cancel);
+    }
+  }
+}, retry: (_, _) => null);
 
 /// [value] base units of [token] with its symbol, e.g. "24.86 USDC". An
 /// [exact] amount keeps every digit: what is sent must read as what is shown.

@@ -68,7 +68,7 @@ class SwapService {
   static const statusPollInterval = Duration(seconds: 5);
   static const _savedAddressesKey = 'swap_saved_addresses';
   static const _maxSavedAddresses = 50;
-  static const _tokensCacheTtl = Duration(minutes: 10);
+  static const _tokensCacheTtl = Duration(minutes: 2);
 
   final OneClickService _api;
   final CoinGeckoService _coinGecko;

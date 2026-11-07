@@ -1618,6 +1618,14 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String swapRateEstimateLabel(String fromSymbol, String rate, String toSymbol) {
+    return '1 $fromSymbol ≈ $rate $toSymbol';
+  }
+
+  @override
+  String get swapEstimateNotice => 'Estimate at the market price, before fees.';
+
+  @override
   String swapSlippageLabel(String percent) {
     return 'Slippage $percent%';
   }
@@ -1752,6 +1760,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get swapReviewGuaranteedMinimum => 'Guaranteed minimum';
+
+  @override
+  String get swapReviewSwapFee => 'Swap fee';
+
+  @override
+  String get swapReviewWithdrawalFee => 'Withdrawal fee';
+
+  @override
+  String get swapReviewRefundFee => 'Fee if refunded';
 
   @override
   String get swapReviewUnusedRefunded =>
