@@ -150,13 +150,18 @@ class _FakeDiscovery extends AccountDiscoveryService {
   /// derives `gapLimit` indices per batch until the gap closes.
   int probeWidth = 20;
 
+  /// `knownLength` of each scan, external branch then change branch per load.
+  final knownLengths = <int>[];
+
   _FakeDiscovery(this.used) : super(_FakeHdWallet());
 
   @override
   Future<Set<int>> discoverUsedIndicesBatched({
     required Future<List<String>> Function(List<int> indices) addressesAt,
     int gapLimit = 20,
+    int knownLength = 0,
   }) async {
+    knownLengths.add(knownLength);
     final probed = await addressesAt([for (var i = 0; i < probeWidth; i++) i]);
     final known = {
       for (final i in used) addressAt(i, seed: seed),
@@ -189,6 +194,9 @@ class _FakeUtxoService extends WormholeUtxoService {
 
   int scans = 0;
 
+  /// Addresses handed to the latest scan.
+  List<WormholeAddressInfo> scanned = const [];
+
   @override
   Future<WormholeUtxoResult> getUnspentUtxos({
     required List<WormholeAddressInfo> addresses,
@@ -196,6 +204,7 @@ class _FakeUtxoService extends WormholeUtxoService {
     IsCancelledCallback? isCancelled,
   }) async {
     scans++;
+    scanned = addresses;
     if (!reached.isCompleted) reached.complete();
     final g = gate;
     if (g != null) await g.future;
@@ -340,6 +349,15 @@ void main() {
       expect(state.nextChangeIndex, 3);
     });
 
+    test('discovery is told how far each branch is known to extend', () async {
+      await seedState(nextIndex: 5, nextChangeIndex: 3);
+      await service.load();
+      expect(discovery.knownLengths, [5, 3]);
+
+      await service.load();
+      expect(discovery.knownLengths, [5, 3, 5, 3]);
+    });
+
     test('a legacy state file without nextChangeIndex loads with change index 0', () async {
       await seedState(nextIndex: 4);
       final state = await service.load();
@@ -354,6 +372,7 @@ void main() {
         received: [
           _utxo(100, nullifierHex: '0xa'),
           _utxo(500, nullifierHex: '0xc'),
+          _utxo(70, isChange: true, nullifierHex: '0xd'),
         ],
         spends: {'0xa': _spend()},
       );
@@ -362,11 +381,11 @@ void main() {
         nextChangeIndex: 1,
         pendingSpends: [
           PendingSpend(
-            // '0xa' is reported spent on-chain and the change address (change
-            // index 0) is discovered: fully confirmed.
+            // '0xa' is reported spent on-chain and the change transfer to
+            // change index 0 is indexed: fully confirmed.
             nullifiers: ['0xa'],
             changeAddress: changeAddressAt(0),
-            changeAmountToken: wormholeTokenFromScaled(100),
+            changeAmountToken: wormholeTokenFromScaled(70),
             createdAtMs: DateTime.now().millisecondsSinceEpoch,
           ),
         ],
@@ -374,8 +393,74 @@ void main() {
 
       final state = await service.load();
       expect(state.pendingChangeToken, BigInt.zero);
-      expect(state.utxos.map((u) => u.nullifierHex), ['0xc']);
+      expect(state.utxos.map((u) => u.nullifierHex), ['0xc', '0xd']);
       expect((await readStateFile())['pendingSpends'], isEmpty);
+    });
+
+    test('scans locally allocated change addresses before discovery knows them', () async {
+      discovery.used = {0};
+      final change = wormholeTokenFromScaled(70);
+      // The indexer already holds the change transfer and the spend, but the
+      // change address has not reached the account table yet.
+      utxoService.result = WormholeUtxoResult(
+        received: [
+          _utxo(300, nullifierHex: '0xb'),
+          _utxo(70, index: 2, isChange: true, nullifierHex: '0xd'),
+        ],
+        spends: {'0xb': _spend()},
+      );
+      await seedState(
+        nextIndex: 1,
+        nextChangeIndex: 3,
+        pendingSpends: [
+          PendingSpend(
+            nullifiers: ['0xb'],
+            changeAddress: changeAddressAt(2),
+            changeAmountToken: change,
+            createdAtMs: DateTime.now().millisecondsSinceEpoch,
+          ),
+        ],
+      );
+
+      final state = await service.load();
+      expect(utxoService.scanned.where((a) => a.isChange).map((a) => a.index), [0, 1, 2]);
+      expect(state.utxos.map((u) => u.nullifierHex), ['0xd']);
+      expect(state.pendingChangeToken, BigInt.zero);
+      expect(state.balance, change);
+      expect(state.maxSendable, wormholeMaxSendable(state.utxos));
+      expect(state.nextChangeIndex, 3);
+      expect((await readStateFile())['pendingSpends'], isEmpty);
+    });
+
+    test('arrived change is spendable and not counted again while its inputs are still reported unspent', () async {
+      discovery.used = {0};
+      final change = wormholeTokenFromScaled(70);
+      utxoService.result = WormholeUtxoResult(
+        received: [
+          _utxo(300, nullifierHex: '0xb'),
+          _utxo(70, isChange: true, nullifierHex: '0xd'),
+        ],
+        spends: const {},
+      );
+      await seedState(
+        nextIndex: 1,
+        nextChangeIndex: 1,
+        pendingSpends: [
+          PendingSpend(
+            nullifiers: ['0xb'],
+            changeAddress: changeAddressAt(0),
+            changeAmountToken: change,
+            createdAtMs: DateTime.now().millisecondsSinceEpoch,
+          ),
+        ],
+      );
+
+      final state = await service.load();
+      expect(state.utxos.map((u) => u.nullifierHex), ['0xd']);
+      expect(state.pendingChangeToken, BigInt.zero);
+      expect(state.balance, change);
+      // Still pending: the input must stay hidden until the spend is indexed.
+      expect(((await readStateFile())['pendingSpends'] as List).length, 1);
     });
 
     test('keeps an unconfirmed pending spend, hides its inputs and counts its change', () async {

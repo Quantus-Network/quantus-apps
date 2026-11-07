@@ -258,9 +258,14 @@ abstract class SendStrategy {
 
   /// Balance shown as "Available Balance" on the amount screen. Defaults to
   /// [spendableBalanceProvider]; encrypted sends override this to show the
-  /// total wormhole balance (matching the home screen) while keeping
+  /// spendable UTXOs before the volume fee while keeping
   /// [spendableBalanceProvider] for validation and Max.
   ProviderListenable<AsyncValue<BigInt>> get displayBalanceProvider => spendableBalanceProvider;
+
+  /// Part of the account's balance that is not in [displayBalanceProvider]
+  /// yet — shown under it as "Pending" when non-zero. Null for flows whose
+  /// whole balance is spendable at once.
+  ProviderListenable<AsyncValue<BigInt>>? get pendingBalanceProvider => null;
 
   /// Whether a secondary balance used for gating has no value yet. Watched.
   bool extraBalancesLoading(WidgetRef ref);

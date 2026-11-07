@@ -82,7 +82,10 @@ class EncryptedSendStrategy extends SendStrategy {
       encryptedSpendableProvider(account.walletIndex);
 
   @override
-  ProviderListenable<AsyncValue<BigInt>> get displayBalanceProvider => encryptedBalanceProvider(account.walletIndex);
+  ProviderListenable<AsyncValue<BigInt>> get displayBalanceProvider => encryptedAvailableProvider(account.walletIndex);
+
+  @override
+  ProviderListenable<AsyncValue<BigInt>> get pendingBalanceProvider => encryptedPendingProvider(account.walletIndex);
 
   @override
   bool extraBalancesLoading(WidgetRef ref) => false;
@@ -103,8 +106,15 @@ class EncryptedSendStrategy extends SendStrategy {
     return switch ((fee as EncryptedFee).blocker) {
       null => null,
       EncryptedSendBlocker.notQuantized => l10n.encryptedSendAmountStep(AppConstants.tokenSymbol),
-      EncryptedSendBlocker.insufficient => l10n.sendLogicInsufficientBalance,
+      EncryptedSendBlocker.insufficient => _insufficientLabel(ref, l10n),
     };
+  }
+
+  String _insufficientLabel(WidgetRef ref, AppLocalizations l10n) {
+    final pending = ref.watch(encryptedPendingProvider(account.walletIndex)).value ?? BigInt.zero;
+    if (pending <= BigInt.zero) return l10n.sendLogicInsufficientBalance;
+    final fmt = ref.read(numberFormattingServiceProvider);
+    return l10n.encryptedSendInsufficientWithPending(fmt.formatBalance(pending), AppConstants.tokenSymbol);
   }
 
   @override

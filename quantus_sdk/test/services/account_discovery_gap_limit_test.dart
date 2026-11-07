@@ -9,12 +9,26 @@ import 'package:quantus_sdk/src/services/network/redundant_endpoint.dart';
 
 String _address(int index) => 'addr-$index';
 
-/// An indexer that knows exactly the accounts in [onChain].
-AccountDiscoveryService _discoveryAgainst(Set<String> onChain) => AccountDiscoveryService(
+/// An indexer that knows exactly the accounts in [onChain], after answering
+/// the first [timeouts] requests with a statement timeout.
+AccountDiscoveryService _discoveryAgainst(Set<String> onChain, {int timeouts = 0}) => AccountDiscoveryService(
   HdWalletService(),
   graphQl: GraphQlEndpointService.forUrls(
     ['https://indexer.test'],
     client: MockClient((request) async {
+      if (timeouts-- > 0) {
+        return http.Response(
+          jsonEncode({
+            'errors': [
+              {
+                'message': 'database query error',
+                'extensions': {'path': r'$', 'code': 'unexpected'},
+              },
+            ],
+          }),
+          200,
+        );
+      }
       final ids = (jsonDecode(request.body)['variables']['ids'] as List).cast<String>();
       return http.Response(
         jsonEncode({
@@ -54,6 +68,42 @@ void main() {
     ]);
   });
 
+  test('a known length is settled in one probe that also covers the trailing gap', () async {
+    final discovery = _discoveryAgainst({_address(0), _address(15), _address(34)});
+    final batches = <List<int>>[];
+
+    final used = await discovery.discoverUsedIndicesBatched(
+      knownLength: 35,
+      addressesAt: (indices) async {
+        batches.add(indices);
+        return indices.map(_address).toList();
+      },
+    );
+
+    expect(used, {0, 15, 34});
+    expect(batches, [
+      [for (var i = 0; i < 55; i++) i],
+    ]);
+  });
+
+  test('a sequence grown past its known length is walked on batch by batch', () async {
+    final discovery = _discoveryAgainst({_address(0), _address(15), _address(34), _address(50)});
+    final batches = <List<int>>[];
+
+    final used = await discovery.discoverUsedIndicesBatched(
+      knownLength: 35,
+      addressesAt: (indices) async {
+        batches.add(indices);
+        return indices.map(_address).toList();
+      },
+    );
+
+    expect(used, {0, 15, 34, 50});
+    // 0..54 (50 used, 4 misses after it), 55..74 (closes the gap).
+    expect(batches.map((b) => b.first), [0, 55]);
+    expect(batches.map((b) => b.length), [55, 20]);
+  });
+
   test('an unused sequence stops after a single probe', () async {
     final discovery = _discoveryAgainst(const {});
     var probes = 0;
@@ -65,6 +115,12 @@ void main() {
     );
     expect(used, isEmpty);
     expect(probes, 1);
+  });
+
+  test('a statement timeout on a probe is retried rather than failing the scan', () async {
+    final discovery = _discoveryAgainst({_address(3)}, timeouts: 1);
+    final used = await discovery.discoverUsedIndices(addressAt: _address);
+    expect(used, {3});
   });
 
   test('the per-index entry point is the batched scan over a sync deriver', () async {

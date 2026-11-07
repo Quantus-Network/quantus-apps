@@ -958,6 +958,9 @@ class AppLocalizationsId extends AppLocalizations {
   String get sendInputAmountAvailableBalance => 'Saldo Tersedia:';
 
   @override
+  String get sendInputAmountPending => 'Tertunda:';
+
+  @override
   String get sendInputAmountNetworkFee => 'Biaya Transaksi:';
 
   @override
@@ -2001,6 +2004,11 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String encryptedSendAmountStep(String tokenSymbol) {
     return 'Gunakan kelipatan 0,01 $tokenSymbol';
+  }
+
+  @override
+  String encryptedSendInsufficientWithPending(String amount, String tokenSymbol) {
+    return 'Saldo Tidak Cukup ($amount $tokenSymbol tertunda)';
   }
 
   @override

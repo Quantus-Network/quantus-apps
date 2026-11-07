@@ -178,6 +178,9 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
       balance.value ?? BigInt.zero,
       widget.strategy.feeChargedToBalance(fee),
     );
+    // An unknown balance is not a shortfall: the button is disabled below
+    // without claiming the amount is unaffordable.
+    final shortfallUnknown = !balance.hasValue && amountStatus == AmountStatus.insufficientBalance;
     final affordabilityError = fee == null ? null : widget.strategy.affordabilityError(ref, fee, l10n);
     final btnDisabled =
         fee == null ||
@@ -192,7 +195,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
         );
     final btnText =
         affordabilityError ??
-        (amountStatus == AmountStatus.valid
+        (amountStatus == AmountStatus.valid || shortfallUnknown
             ? strings.reviewButtonLabel
             : SendScreenLogic.getButtonText(
                 l10n: l10n,
@@ -370,6 +373,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
     final formattingService = ref.read(numberFormattingServiceProvider);
     final feePayerProvider = widget.strategy.feePayerBalanceProvider;
     final feePayerLabel = widget.strategy.feePayerBalanceLabel(l10n);
+    final pendingProvider = widget.strategy.pendingBalanceProvider;
     final mutedBody = text.body.copyWith(color: colors.textMuted);
 
     return ScaffoldBaseBottomContent(
@@ -398,6 +402,8 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
                           loading: () => Text('...', style: mutedBody),
                           error: (_, _) => Text('—', style: mutedBody),
                         ),
+                        if (pendingProvider != null)
+                          _pendingBalance(l10n, pendingProvider, formattingService, mutedBody),
                       ],
                     ),
                   ),
@@ -433,6 +439,24 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
             onTap: _openReview,
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _pendingBalance(
+    AppLocalizations l10n,
+    ProviderListenable<AsyncValue<BigInt>> provider,
+    NumberFormattingService fmt,
+    TextStyle style,
+  ) {
+    final pending = ref.watch(provider).value ?? BigInt.zero;
+    if (pending <= BigInt.zero) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(top: 4),
+      child: Text(
+        '${l10n.sendInputAmountPending} ${l10n.commonAmountBalance(fmt.formatBalance(pending), AppConstants.tokenSymbol)}',
+        key: const Key(E2EKeys.sendInputAmountPending),
+        style: style,
       ),
     );
   }

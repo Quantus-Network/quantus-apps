@@ -1826,6 +1826,12 @@ abstract class AppLocalizations {
   /// **'Available Balance:'**
   String get sendInputAmountAvailableBalance;
 
+  /// Label for balance that is not yet spendable (encrypted change awaiting the indexer)
+  ///
+  /// In en, this message translates to:
+  /// **'Pending:'**
+  String get sendInputAmountPending;
+
   /// Network fee label
   ///
   /// In en, this message translates to:
@@ -3709,6 +3715,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Use steps of 0.01 {tokenSymbol}'**
   String encryptedSendAmountStep(String tokenSymbol);
+
+  /// Button label when an encrypted send exceeds the spendable balance while change from an earlier send is still pending
+  ///
+  /// In en, this message translates to:
+  /// **'Insufficient Balance ({amount} {tokenSymbol} pending)'**
+  String encryptedSendInsufficientWithPending(String amount, String tokenSymbol);
 
   /// Shown when an encrypted send falls below the chain's minimum exit amount
   ///

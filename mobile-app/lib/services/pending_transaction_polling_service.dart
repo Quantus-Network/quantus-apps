@@ -120,7 +120,10 @@ final pendingTransactionPollingServiceProvider = Provider<PendingTransactionPoll
 
 void triggerSilentHistoryRefresh(Ref ref, {required Set<String> affectedAccountIds, TransactionEvent? newTransaction}) {
   try {
-    final targets = accountRefreshTargets(affectedAccountIds: affectedAccountIds, activeId: activeAccountId(ref));
+    final targets = accountRefreshTargets(
+      affectedAccountIds: affectedAccountIds,
+      activeId: activePaginatedAccountId(ref),
+    );
 
     for (final targetIds in targets) {
       if (newTransaction != null) {
