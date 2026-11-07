@@ -129,6 +129,18 @@ class SettingsService {
     if (index != -1) {
       accounts[index] = account;
       await saveAccounts(accounts);
+      await _syncActiveDisplayAccount(RegularAccount(account));
+    }
+  }
+
+  /// Keeps the serialized active-account snapshot in step when the account it
+  /// holds is updated (e.g. renamed); readers would otherwise see stale data.
+  Future<void> _syncActiveDisplayAccount(DisplayAccount updated) async {
+    final jsonStr = _prefs.getString(_activeDisplayAccountKey);
+    if (jsonStr == null) return;
+    final active = DisplayAccount.fromJson(jsonDecode(jsonStr));
+    if (active.account.accountId == updated.account.accountId) {
+      await setActiveAccount(updated);
     }
   }
 
@@ -297,6 +309,7 @@ class SettingsService {
     if (index != -1) {
       accounts[index] = account;
       await _saveMultisigAccounts(accounts);
+      await _syncActiveDisplayAccount(MultisigDisplayAccount(account));
     }
   }
 

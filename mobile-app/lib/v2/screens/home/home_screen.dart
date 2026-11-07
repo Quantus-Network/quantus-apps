@@ -292,7 +292,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        const OpenAccountsManagementButton(),
+        const Flexible(child: OpenAccountsManagementButton()),
         Row(
           children: [
             QuantusIconButton.circular(

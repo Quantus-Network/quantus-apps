@@ -30,13 +30,15 @@ class OpenAccountsManagementButton extends ConsumerWidget {
             ),
             if (name != null) ...[
               const SizedBox(width: 8),
-              ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 160),
-                child: Text(
-                  name,
-                  style: context.themeTextV3.headingRow.copyWith(color: colors.textContent),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+              Flexible(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 160),
+                  child: Text(
+                    name,
+                    style: context.themeTextV3.headingRow.copyWith(color: colors.textContent),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
               ),
             ],

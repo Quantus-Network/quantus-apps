@@ -119,6 +119,45 @@ void main() {
       expect(accounts.first.name, 'Updated Name');
     });
 
+    test('updateAccount refreshes the active account snapshot after a rename', () async {
+      await settingsService.saveAccounts([account1, account2]);
+      await settingsService.setActiveAccount(RegularAccount(account1));
+
+      await settingsService.updateAccount(account1.copyWith(name: 'Renamed account'));
+
+      final active = (await settingsService.getActiveAccount())!;
+      expect(active.account.name, 'Renamed account');
+    });
+
+    test('updateAccount keeps the active snapshot when another account is renamed', () async {
+      await settingsService.saveAccounts([account1, account2]);
+      await settingsService.setActiveAccount(RegularAccount(account1));
+
+      await settingsService.updateAccount(account2.copyWith(name: 'Renamed account'));
+
+      final active = (await settingsService.getActiveAccount())!;
+      expect(active.account.name, account1.name);
+    });
+
+    test('updateMultisigAccount refreshes the active account snapshot after a rename', () async {
+      final msig = MultisigAccount(
+        name: 'Msig',
+        accountId: 'msig_1',
+        signers: [account1.accountId],
+        threshold: 1,
+        nonce: BigInt.zero,
+        myMemberAccountId: account1.accountId,
+      );
+      await settingsService.addMultisigAccount(msig);
+      await settingsService.setActiveAccount(MultisigDisplayAccount(msig));
+
+      await settingsService.updateMultisigAccount(msig.copyWith(name: 'Renamed account'));
+
+      final active = (await settingsService.getActiveAccount())!;
+      expect(active, isA<MultisigDisplayAccount>());
+      expect(active.account.name, 'Renamed account');
+    });
+
     test('setActiveAccount and getActiveAccount should work correctly', () async {
       // Arrange
       await settingsService.initialize();

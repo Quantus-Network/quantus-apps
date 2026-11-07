@@ -376,6 +376,25 @@ void main() {
       );
     });
 
+    for (final width in [375.0, 390.0]) {
+      testWidgets('a long account name shrinks the pill instead of overflowing at ${width.toInt()}px', (tester) async {
+        tester.view.physicalSize = Size(width * 2, 1334);
+        tester.view.devicePixelRatio = 2.0;
+        addTearDown(tester.view.reset);
+
+        final account = makeAccount(1).copyWith(name: 'My long savings account');
+        final settings = FakeSettingsService(activeAccount: RegularAccount(account));
+        await pumpHome(tester, settings: settings, auth: TestLocalAuthController(authenticated: true));
+
+        expect(tester.takeException(), isNull);
+        expect(find.text('My long savings account'), findsOneWidget);
+        final pill = tester.getRect(find.byType(OpenAccountsManagementButton));
+        final gear = tester.getRect(find.byWidgetPredicate((w) => w is QuantusIcon && w.icon == QuantusIcons.gear));
+        expect(pill.right, lessThanOrEqualTo(gear.left));
+        expect(gear.right, lessThanOrEqualTo(width - 24));
+      });
+    }
+
     testWidgets('the eye hides the balance and turns into a crossed eye', (tester) async {
       final settings = FakeSettingsService(activeAccount: RegularAccount(makeAccount(1)));
       await pumpHome(tester, settings: settings, auth: TestLocalAuthController(authenticated: true));
