@@ -61,11 +61,6 @@ class AppConstants {
   static const String swapPreflightAddress = String.fromEnvironment('SWAP_PREFLIGHT_ADDRESS');
   static const bool swapPreflight = swapPreflightAssetId != '';
 
-  // Internal test builds only (TestFlight, Play internal track): offers swap
-  // whatever the remote flags and the location say. Never ship one to a store.
-  //   mobile-app/upload_ios_build.sh --swap-test (or upload_android.sh)
-  static const bool swapAllowOverride = bool.fromEnvironment('SWAP_ALLOW_OVERRIDE');
-
   // internal group URL is this (note the /c)
   // https://t.me/c/quantusnetwork/2457
   // removing the c, we get a better preview page though so we use it without c...

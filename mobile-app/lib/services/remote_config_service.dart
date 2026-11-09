@@ -7,7 +7,7 @@ import 'package:resonance_network_wallet/shared/utils/print.dart';
 const String remoteConfigCacheKey = 'remote_config_cache_v1';
 
 class RemoteConfigService {
-  /// A request that hangs would keep swap hidden and block later refreshes.
+  /// A request that hangs would block later refreshes.
   static const _remoteTimeout = Duration(seconds: 15);
 
   final QuersiService _quersiService = QuersiService();
