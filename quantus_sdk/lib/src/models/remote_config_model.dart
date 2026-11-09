@@ -1,15 +1,10 @@
 import 'package:flutter/foundation.dart';
-import 'package:quantus_sdk/src/constants/app_constants.dart';
 
 class RemoteConfigModel {
   final bool enableTestButtons;
   final bool enableKeystoneHardwareWallet;
   final bool enableHighSecurity;
   final bool enableRemoteNotifications;
-  final bool enableSwap;
-
-  /// Android's own swap flag, so the two stores can be switched apart.
-  final bool enableSwapAndroid;
   final bool enableEncryptedAccount;
   final bool enableMultisig;
 
@@ -22,9 +17,8 @@ class RemoteConfigModel {
   final String? swapQuantusAssetId;
 
   /// Whether this device's location may use NEAR Intents. Quersi decides it
-  /// from the request's country and adds it to the config it serves. False
-  /// until this launch's server answer allows it: a cached verdict is never
-  /// trusted, the device may have moved, so the gate fails closed.
+  /// from the request's country and adds it to the config it serves; a config
+  /// without a verdict allows it.
   final bool geoNearAllowed;
 
   const RemoteConfigModel({
@@ -32,8 +26,6 @@ class RemoteConfigModel {
     required this.enableKeystoneHardwareWallet,
     required this.enableHighSecurity,
     required this.enableRemoteNotifications,
-    required this.enableSwap,
-    required this.enableSwapAndroid,
     required this.enableEncryptedAccount,
     required this.enableMultisig,
     required this.enableOneClickNearWarning,
@@ -41,25 +33,8 @@ class RemoteConfigModel {
     required this.geoNearAllowed,
   });
 
-  /// Swap is offered when the platform's flag is on and the location allows
-  /// NEAR Intents, or always in a [AppConstants.swapAllowOverride] build.
-  bool get swapAvailable =>
-      AppConstants.swapAllowOverride ||
-      ((defaultTargetPlatform == TargetPlatform.android ? enableSwapAndroid : enableSwap) && geoNearAllowed);
-
-  RemoteConfigModel copyWith({bool? geoNearAllowed}) => RemoteConfigModel(
-    enableTestButtons: enableTestButtons,
-    enableKeystoneHardwareWallet: enableKeystoneHardwareWallet,
-    enableHighSecurity: enableHighSecurity,
-    enableRemoteNotifications: enableRemoteNotifications,
-    enableSwap: enableSwap,
-    enableSwapAndroid: enableSwapAndroid,
-    enableEncryptedAccount: enableEncryptedAccount,
-    enableMultisig: enableMultisig,
-    enableOneClickNearWarning: enableOneClickNearWarning,
-    swapQuantusAssetId: swapQuantusAssetId,
-    geoNearAllowed: geoNearAllowed ?? this.geoNearAllowed,
-  );
+  /// Swap is offered where the location allows NEAR Intents.
+  bool get swapAvailable => geoNearAllowed;
 
   R match<R>({
     required R Function(
@@ -67,8 +42,6 @@ class RemoteConfigModel {
       bool enableKeystoneHardwareWallet,
       bool enableHighSecurity,
       bool enableRemoteNotifications,
-      bool enableSwap,
-      bool enableSwapAndroid,
       bool enableEncryptedAccount,
       bool enableMultisig,
       bool enableOneClickNearWarning,
@@ -82,8 +55,6 @@ class RemoteConfigModel {
       enableKeystoneHardwareWallet,
       enableHighSecurity,
       enableRemoteNotifications,
-      enableSwap,
-      enableSwapAndroid,
       enableEncryptedAccount,
       enableMultisig,
       enableOneClickNearWarning,
@@ -97,12 +68,10 @@ class RemoteConfigModel {
     enableKeystoneHardwareWallet: true,
     enableHighSecurity: false,
     enableRemoteNotifications: true,
-    enableSwap: false,
-    enableSwapAndroid: true,
     enableEncryptedAccount: true,
     enableMultisig: true,
     enableOneClickNearWarning: true,
-    geoNearAllowed: false,
+    geoNearAllowed: true,
   );
 
   Map<String, dynamic> toCacheJson() {
@@ -113,8 +82,6 @@ class RemoteConfigModel {
             keystone,
             security,
             notifications,
-            swap,
-            swapAndroid,
             encrypted,
             multisig,
             oneClickWarning,
@@ -125,8 +92,6 @@ class RemoteConfigModel {
             'enableKeystoneHardwareWallet': keystone,
             'enableHighSecurity': security,
             'enableRemoteNotifications': notifications,
-            'enableSwap': swap,
-            'enableSwapAndroid': swapAndroid,
             'enableEncryptedAccount': encrypted,
             'enableMultisig': multisig,
             'enableOneClickNearWarning': oneClickWarning,
@@ -144,8 +109,6 @@ class RemoteConfigModel {
       enableKeystoneHardwareWallet: json['enableKeystoneHardwareWallet'] ?? defaults.enableKeystoneHardwareWallet,
       enableHighSecurity: json['enableHighSecurity'] ?? defaults.enableHighSecurity,
       enableRemoteNotifications: json['enableRemoteNotifications'] ?? defaults.enableRemoteNotifications,
-      enableSwap: json['enableSwap'] ?? defaults.enableSwap,
-      enableSwapAndroid: json['enableSwapAndroid'] ?? defaults.enableSwapAndroid,
       enableEncryptedAccount: json['enableEncryptedAccount'] ?? defaults.enableEncryptedAccount,
       enableMultisig: json['enableMultisig'] ?? defaults.enableMultisig,
       enableOneClickNearWarning: json['enableOneClickNearWarning'] ?? defaults.enableOneClickNearWarning,

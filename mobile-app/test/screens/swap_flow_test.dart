@@ -77,17 +77,19 @@ class _SwapConfig extends RemoteConfigNotifier {
   _SwapConfig._(this.service) : super(service);
 
   factory _SwapConfig({bool allowed = true}) {
-    final model = RemoteConfigModel.fromJson({'enableSwap': true, 'geoNearAllowed': allowed});
+    final model = RemoteConfigModel.fromJson({'geoNearAllowed': allowed});
     return _SwapConfig._(FakeRemoteConfigService(model, remote: model));
   }
 
   final FakeRemoteConfigService service;
 
-  void revokeGeo() => state = state.copyWith(geoNearAllowed: false);
+  static final _denied = RemoteConfigModel.fromJson(const {'geoNearAllowed': false});
+
+  void revokeGeo() => state = _denied;
 
   /// The next refresh, such as the one after authentication, finds the
   /// location no longer allowed.
-  void denyNextRefresh() => service.remote = state.copyWith(geoNearAllowed: false);
+  void denyNextRefresh() => service.remote = _denied;
 }
 
 /// 1Click stand-in: a dry quote pays [dryOut], a live one [liveOut] with a

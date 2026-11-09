@@ -1,5 +1,4 @@
 import 'package:clock/clock.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -32,8 +31,6 @@ void main() {
     WidgetTester tester, {
     required FakeSettingsService settings,
     required TestLocalAuthController auth,
-    bool enableSwap = true,
-    bool enableSwapAndroid = true,
     bool geoNearAllowed = true,
   }) async {
     await tester.pumpApp(
@@ -56,17 +53,13 @@ void main() {
         balancesServiceProvider.overrideWithValue(FakeBalancesService()),
         substrateServiceProvider.overrideWithValue(FakeSubstrateService()),
         remoteConfigProvider.overrideWith((ref) {
-          final config = RemoteConfigModel.fromJson({
-            'enableSwap': enableSwap,
-            'enableSwapAndroid': enableSwapAndroid,
-            'geoNearAllowed': geoNearAllowed,
-          });
+          final config = RemoteConfigModel.fromJson({'geoNearAllowed': geoNearAllowed});
           return RemoteConfigNotifier(FakeRemoteConfigService(config, remote: config));
         }),
       ],
     );
     // Let the active account and multisig list finish their async load, then
-    // the remote config sync that grants the location verdict.
+    // the remote config sync.
     await tester.pump();
     await tester.pump();
     return ProviderScope.containerOf(tester.element(find.byType(HomeScreen)));
@@ -157,10 +150,15 @@ void main() {
     ('a swap whose deposit is still to be sent', SwapStatus.pendingDeposit, true, 'Send Your Deposit'),
     ('a settled swap', SwapStatus.refunded, false, 'Swap Failed'),
   ]) {
-    testWidgets('$what is not pinned; the swap button opens it, even where swaps are off', (tester) async {
+    testWidgets('$what is not pinned; the swap button opens it, even where swap is not offered', (tester) async {
       final account = makeAccount(1);
       final settings = settingsFollowing(account, swapOf(account, status, byHand: byHand));
-      await pumpHome(tester, settings: settings, auth: TestLocalAuthController(authenticated: true), enableSwap: false);
+      await pumpHome(
+        tester,
+        settings: settings,
+        auth: TestLocalAuthController(authenticated: true),
+        geoNearAllowed: false,
+      );
 
       expect(find.byType(SwapProgressDots), findsNothing);
       expect(find.text('3:07'), findsNothing);
@@ -230,30 +228,18 @@ void main() {
     });
   }
 
-  // Each platform follows its own flag; the other platform's flag is set to
-  // the opposite so it visibly has no say.
-  for (final (enabled, geoNearAllowed) in [(true, true), (false, true), (true, false)]) {
-    testWidgets(
-      'home actions show receive and send, and swap when the platform swap flag is $enabled and the location allows NEAR is $geoNearAllowed',
-      (tester) async {
-        final android = defaultTargetPlatform == TargetPlatform.android;
-        final settings = FakeSettingsService(activeAccount: RegularAccount(makeAccount(1)));
-        final auth = TestLocalAuthController(authenticated: true);
-        await pumpHome(
-          tester,
-          settings: settings,
-          auth: auth,
-          enableSwap: android ? !enabled : enabled,
-          enableSwapAndroid: android ? enabled : !enabled,
-          geoNearAllowed: geoNearAllowed,
-        );
+  for (final geoNearAllowed in [true, false]) {
+    testWidgets('home actions show receive and send, and swap when the location allows NEAR is $geoNearAllowed', (
+      tester,
+    ) async {
+      final settings = FakeSettingsService(activeAccount: RegularAccount(makeAccount(1)));
+      final auth = TestLocalAuthController(authenticated: true);
+      await pumpHome(tester, settings: settings, auth: auth, geoNearAllowed: geoNearAllowed);
 
-        expect(find.text('Receive'), findsOneWidget);
-        expect(find.text('Send'), findsOneWidget);
-        expect(find.text('Swap'), enabled && geoNearAllowed ? findsOneWidget : findsNothing);
-      },
-      variant: const TargetPlatformVariant({TargetPlatform.iOS, TargetPlatform.android}),
-    );
+      expect(find.text('Receive'), findsOneWidget);
+      expect(find.text('Send'), findsOneWidget);
+      expect(find.text('Swap'), geoNearAllowed ? findsOneWidget : findsNothing);
+    });
   }
 
   testWidgets('intent arriving while locked stays queued and drains on unlock', (tester) async {

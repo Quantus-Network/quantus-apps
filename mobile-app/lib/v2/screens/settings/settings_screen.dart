@@ -5,7 +5,6 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:quantus_sdk/quantus_sdk.dart' hide ScaffoldBase;
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/generated/version.g.dart';
-import 'package:resonance_network_wallet/shared/utils/build_label.dart';
 import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/shared/constants/e2e_keys.dart';
@@ -125,7 +124,7 @@ List<_SettingsHubItem> _settingsHubItems(BuildContext context, AppLocalizations 
         ),
       ),
       title: l10n.settingsAboutTitle,
-      subtitle: l10n.settingsAboutHubSubtitle(appVersion, shownBuildNumber),
+      subtitle: l10n.settingsAboutHubSubtitle(appVersion, appBuildNumber),
       page: const AboutQuantusScreenV2(),
     ),
     if (kDebugMode)

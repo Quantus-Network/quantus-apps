@@ -27,23 +27,18 @@ class RemoteConfigNotifier extends StateNotifier<RemoteConfigModel> {
   /// replaced.
   Future<void> get settled => _inFlight ?? Future.value();
 
-  /// The cached flags, except the location verdict: the device may have moved
-  /// since it was cached, so swap stays hidden until this launch's server
-  /// answer allows it.
-  RemoteConfigNotifier(this._service) : super(_service.readLocalConfig().copyWith(geoNearAllowed: false)) {
+  /// The cached flags, refreshed in the background.
+  RemoteConfigNotifier(this._service) : super(_service.readLocalConfig()) {
     syncConfig();
   }
 
   /// Refreshes the flags in the background and completes once the latest
-  /// answer is in. The location verdict is revoked before the request goes
-  /// out: the device may have moved since the last answer, so swap waits for
-  /// this one. The other flags keep their values. A refresh asked for while
-  /// one is in flight makes that one's answer obsolete and runs as soon as it
-  /// ends, so the latest location is always the one checked.
+  /// answer is in. A refresh asked for while one is in flight makes that
+  /// one's answer obsolete and runs as soon as it ends, so the latest
+  /// location verdict is always the one checked.
   Future<void> syncConfig() {
     _generation++;
     _refreshQueued = true;
-    if (state.geoNearAllowed) state = state.copyWith(geoNearAllowed: false);
     return _inFlight ??= _refreshWhileQueued().whenComplete(() => _inFlight = null);
   }
 
