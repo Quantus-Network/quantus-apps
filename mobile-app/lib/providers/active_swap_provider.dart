@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
+import 'package:resonance_network_wallet/services/telemetry_service.dart';
 import 'package:resonance_network_wallet/shared/utils/print.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/swap_providers.dart';
 
@@ -42,7 +43,23 @@ class ActiveSwapNotifier extends Notifier<ActiveSwap?> {
     _supersede();
     _set(swap);
     _schedule(swap);
+    if (!swap.simulated) TelemetryService().sendEvent('swap_started', parameters: _telemetryOf(swap.order.quote));
     return true;
+  }
+
+  /// What telemetry learns of a swap: the pair and the foreign token's rate
+  /// per QTC, never an address or an amount.
+  Map<String, String> _telemetryOf(SwapQuote quote) {
+    final foreign = quote.fromToken.isQuantus ? quote.toToken : quote.fromToken;
+    return {
+      'from': quote.fromToken.symbol,
+      'from_network': quote.fromToken.network,
+      'to': quote.toToken.symbol,
+      'to_network': quote.toToken.network,
+      'rate': ref
+          .read(numberFormattingServiceProvider)
+          .formatWireAmount(swapQuoteRate(quote), decimals: foreign.decimals),
+    };
   }
 
   /// Puts the swap away. Once it has settled it is done with; before that the

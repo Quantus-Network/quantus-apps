@@ -1,10 +1,10 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:typed_data';
 
 import 'package:clock/clock.dart';
 import 'package:ed25519_edwards/ed25519_edwards.dart' as ed25519;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:flutter_riverpod/misc.dart';
@@ -303,10 +303,16 @@ void main() {
     depositAddress: _deposit,
   );
 
+  late List<MethodCall> telemetry;
+
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
     await SettingsService().initialize();
+    telemetry = recordTelemetry();
   });
+
+  Iterable<Map<Object?, Object?>> signals(String type) =>
+      telemetry.map((c) => c.arguments as Map<Object?, Object?>).where((a) => a['signalType'] == type);
 
   /// [services] stands in for the remote config rebuilding the service.
   List<Override> overrides(
@@ -1063,6 +1069,13 @@ void main() {
       final kept = settings.activeSwap!;
       expect(kept.order.depositAddress, _deposit);
       expect(kept.depositFee, _unit ~/ BigInt.from(50));
+      expect(signals('swap_started').single['additionalPayload'], {
+        'from': 'QTC',
+        'from_network': 'QTC',
+        'to': 'USDC',
+        'to_network': 'ETH',
+        'rate': '0.099639',
+      });
     });
 
     /// The review pushed over a page, so it can be left while a deposit is
@@ -1129,6 +1142,7 @@ void main() {
           overrides(oneClick.service(), submission: submission, settings: settings),
         );
         await confirmAndLeave(tester);
+        telemetry.clear();
         await moveOn(container.read(activeSwapProvider.notifier));
 
         submission.holdTransfer!.complete();
@@ -1139,6 +1153,7 @@ void main() {
         expect(container.read(activeSwapProvider), asKept, reason: name);
         expect(settings.activeSwap, asKept, reason: name);
         expect(find.byType(SwapProgressScreen), findsNothing, reason: name);
+        expect(signals('swap_started'), hasLength(kept == null ? 0 : 1), reason: name);
       }
     });
 
