@@ -1075,6 +1075,7 @@ void main() {
         'to': 'USDC',
         'to_network': 'ETH',
         'rate': '0.099639',
+        'size_usd': '<100',
       });
     });
 
