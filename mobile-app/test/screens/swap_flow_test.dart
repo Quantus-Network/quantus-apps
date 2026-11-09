@@ -20,6 +20,7 @@ import 'package:resonance_network_wallet/providers/connectivity_provider.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
+import 'package:resonance_network_wallet/services/swap_harness_service.dart';
 import 'package:resonance_network_wallet/services/transaction_submission_service.dart';
 import 'package:resonance_network_wallet/v2/components/search_field.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/help_and_support_screen.dart';
@@ -1077,6 +1078,49 @@ void main() {
         'rate': '0.099639',
         'size_usd': '<100',
       });
+    });
+
+    testWidgets('a swap confirmed through the debug harness sends no telemetry', (tester) async {
+      final harness = SwapHarnessService();
+      final quote = SwapHarnessService.quoteFor(
+        from: SwapHarnessService.usdc,
+        to: SwapHarnessService.qtc,
+        amount: BigInt.from(25000000),
+        refundAddress: SwapHarnessService.externalAddress,
+        recipient: account.accountId,
+        deadline: clock.now().add(SwapService.depositWindow),
+      );
+      await tester.pumpApp(
+        ReviewSwapScreen(account: account, quote: quote),
+        overrides: [...overrides(harness), swapHarnessServiceProvider.overrideWith((ref) => harness)],
+      );
+      await settle(tester);
+
+      await tester.tap(find.text(l10n.swapContinue));
+      await settle(tester);
+
+      expect(find.byType(SwapProgressScreen), findsOneWidget);
+      expect(signals('swap_started'), isEmpty);
+    });
+
+    testWidgets('a simulated progress row sends no telemetry', (tester) async {
+      final container = ProviderContainer(
+        overrides: [
+          settingsServiceProvider.overrideWithValue(FakeSettingsService(activeAccount: RegularAccount(account))),
+        ],
+      );
+      addTearDown(container.dispose);
+      final swap = ActiveSwap(
+        order: SwapOrder(quote: liveQuote, status: SwapStatus.processing),
+        accountId: account.accountId,
+        accountName: account.name,
+        startedAt: clock.now(),
+        depositByHand: false,
+        simulated: true,
+      );
+
+      expect(container.read(activeSwapProvider.notifier).start(swap), isTrue);
+      expect(signals('swap_started'), isEmpty);
     });
 
     /// The review pushed over a page, so it can be left while a deposit is

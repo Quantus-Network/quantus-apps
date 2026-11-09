@@ -43,7 +43,8 @@ class ActiveSwapNotifier extends Notifier<ActiveSwap?> {
     _supersede();
     _set(swap);
     _schedule(swap);
-    if (!swap.simulated) TelemetryService().sendEvent('swap_started', parameters: _telemetryOf(swap.order.quote));
+    final fake = swap.simulated || ref.read(swapHarnessServiceProvider) != null;
+    if (!fake) TelemetryService().sendEvent('swap_started', parameters: _telemetryOf(swap.order.quote));
     return true;
   }
 
