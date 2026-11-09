@@ -1,4 +1,3 @@
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
@@ -6,6 +5,8 @@ import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/route_intent_providers.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/services/transaction_service.dart';
+
+import '../fakes.dart';
 
 class _FakeChainHistoryService extends ChainHistoryService {
   TransactionEvent? result;
@@ -43,13 +44,8 @@ void main() {
   }
 
   setUp(() {
-    // TelemetryService talks to a platform channel that does not exist in
-    // unit tests; swallow its calls so error paths can be exercised.
     TestWidgetsFlutterBinding.ensureInitialized();
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
-      const MethodChannel('telemetrydecksdk'),
-      (call) async => null,
-    );
+    recordTelemetry();
 
     fakeHistoryService = _FakeChainHistoryService();
     container = ProviderContainer(

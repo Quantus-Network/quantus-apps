@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
+import 'package:resonance_network_wallet/services/telemetry_service.dart';
 import 'package:resonance_network_wallet/shared/utils/print.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/swap_providers.dart';
 
@@ -42,7 +43,25 @@ class ActiveSwapNotifier extends Notifier<ActiveSwap?> {
     _supersede();
     _set(swap);
     _schedule(swap);
+    final fake = swap.simulated || ref.read(swapHarnessServiceProvider) != null;
+    if (!fake) TelemetryService().sendEvent('swap_started', parameters: _telemetryOf(swap.order.quote));
     return true;
+  }
+
+  /// What telemetry learns of a swap: the pair, the foreign token's rate per
+  /// QTC and a coarse size, never an address or an exact amount.
+  Map<String, String> _telemetryOf(SwapQuote quote) {
+    final foreign = quote.fromToken.isQuantus ? quote.toToken : quote.fromToken;
+    return {
+      'from': quote.fromToken.symbol,
+      'from_network': quote.fromToken.network,
+      'to': quote.toToken.symbol,
+      'to_network': quote.toToken.network,
+      'size_usd': _sizeBucket(quote.amountInUsd),
+      'rate': ref
+          .read(numberFormattingServiceProvider)
+          .formatWireAmount(swapQuoteRate(quote), decimals: foreign.decimals),
+    };
   }
 
   /// Puts the swap away. Once it has settled it is done with; before that the
@@ -118,6 +137,14 @@ class ActiveSwapNotifier extends Notifier<ActiveSwap?> {
     if (next != null) _schedule(next);
   }
 }
+
+/// The band a swap worth [usd] falls in.
+String _sizeBucket(double usd) => switch (usd) {
+  < 100 => '<100',
+  < 1000 => '<1000',
+  < 10000 => '<10000',
+  _ => '10000+',
+};
 
 /// How long the active swap has been running, once a second until it settles.
 final swapElapsedProvider = StreamProvider.autoDispose<Duration>((ref) {

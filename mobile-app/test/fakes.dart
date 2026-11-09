@@ -1,6 +1,6 @@
 import 'dart:async';
-import 'dart:typed_data';
 
+import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart';
@@ -272,4 +272,15 @@ class FakeRemoteConfigService extends RemoteConfigService {
 
   @override
   Future<void> cacheConfig(Object json) async {}
+}
+
+/// Stands in for TelemetryDeck's platform channel, which tests do not have,
+/// and collects every call made on it.
+List<MethodCall> recordTelemetry() {
+  final calls = <MethodCall>[];
+  TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
+    const MethodChannel('telemetrydecksdk'),
+    (call) async => calls.add(call),
+  );
+  return calls;
 }
