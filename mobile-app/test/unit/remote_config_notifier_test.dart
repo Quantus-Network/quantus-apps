@@ -25,14 +25,14 @@ void main() {
   test('remote config models compare by their flags', () {
     expect(RemoteConfigModel.fromJson(const {}), RemoteConfigModel.defaults);
     expect(RemoteConfigModel.fromJson(const {}).hashCode, RemoteConfigModel.defaults.hashCode);
-    expect(RemoteConfigModel.fromJson(const {'enableSwap': true}), isNot(RemoteConfigModel.defaults));
+    expect(RemoteConfigModel.fromJson(const {'enableSwap': false}), isNot(RemoteConfigModel.defaults));
   });
 
   test('swap is offered only where the server says NEAR Intents is allowed', () {
     debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
     addTearDown(() => debugDefaultTargetPlatformOverride = null);
     expect(RemoteConfigModel.defaults.geoNearAllowed, isFalse);
-    expect(RemoteConfigModel.defaults.enableSwap, isFalse);
+    expect(RemoteConfigModel.defaults.enableSwap, isTrue);
     expect(RemoteConfigModel.fromJson(const {'enableSwap': true}).swapAvailable, isFalse);
     expect(RemoteConfigModel.fromJson(const {'enableSwap': true, 'geoNearAllowed': true}).swapAvailable, isTrue);
     expect(RemoteConfigModel.fromJson(const {'enableSwap': false, 'geoNearAllowed': true}).swapAvailable, isFalse);
@@ -79,7 +79,12 @@ void main() {
   test('iOS keeps its own swap flag and ignores the Android one', () {
     debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
     addTearDown(() => debugDefaultTargetPlatformOverride = null);
-    expect(RemoteConfigModel.fromJson(const {'geoNearAllowed': true}).swapAvailable, isFalse);
+    expect(RemoteConfigModel.fromJson(const {'geoNearAllowed': true}).swapAvailable, isTrue);
+    expect(RemoteConfigModel.fromJson(const {'enableSwap': false, 'geoNearAllowed': true}).swapAvailable, isFalse);
+    expect(
+      RemoteConfigModel.fromJson(const {'enableSwapAndroid': false, 'geoNearAllowed': true}).swapAvailable,
+      isTrue,
+    );
     expect(
       RemoteConfigModel.fromJson(const {
         'enableSwap': true,
@@ -225,6 +230,6 @@ void main() {
   });
 
   test('syncing a changed remote config notifies listeners once', () async {
-    expect(await changesAfterSync(RemoteConfigModel.fromJson(const {'enableSwap': true})), 1);
+    expect(await changesAfterSync(RemoteConfigModel.fromJson(const {'enableSwap': false})), 1);
   });
 }
