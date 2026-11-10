@@ -28,7 +28,7 @@ class _FakeUtxoService extends WormholeUtxoService {
 class _StubProvingSendService extends WormholeSendService {
   _StubProvingSendService({super.utxoService});
 
-  List<List<WormholeLeafSpend>>? capturedBatches;
+  List<WormholeBatchSpend>? capturedBatches;
 
   /// Copies of each leaf's secret taken at proving time — the live buffers
   /// are zeroized by the claim flow once it finishes.
@@ -36,20 +36,24 @@ class _StubProvingSendService extends WormholeSendService {
   Object? proveError;
 
   @override
-  Future<int> ensureCircuits(WormholeOperation op, String circuitBinsDir, ClaimProgressCallback onProgress) async => 7;
+  Future<WormholeBatchShape> ensureCircuits(
+    WormholeOperation op,
+    String circuitBinsDir,
+    ClaimProgressCallback onProgress,
+  ) async => (numLeafProofs: 10, numExitSlots: 32);
 
   @override
   Future<ClaimResult> proveAndSubmitBatches({
     required WormholeOperation op,
-    required List<List<WormholeLeafSpend>> batches,
+    required List<WormholeBatchSpend> batches,
     required String circuitBinsDir,
     required ClaimProgressCallback onProgress,
     Future<void> Function(int batchIndex, List<String> nullifierHexes)? onBatchSubmitted,
   }) async {
     capturedBatches = batches;
     for (final batch in batches) {
-      for (final spend in batch) {
-        capturedSecretCopies.add(Uint8List.fromList(spend.secret));
+      for (final burn in batch.burns) {
+        capturedSecretCopies.add(Uint8List.fromList(burn.secret));
       }
     }
     final err = proveError;
@@ -167,19 +171,19 @@ void main() {
       // The prover received the real decoded secret…
       expect(service.capturedSecretCopies.single, hex.decode(secretHex.replaceFirst('0x', '')));
       // …and the live buffer was zeroized once the claim finished.
-      final liveSecret = service.capturedBatches![0][0].secret;
+      final liveSecret = service.capturedBatches![0].burns[0].secret;
       expect(liveSecret.every((b) => b == 0), isTrue);
     });
 
     test('zeroizes the secret buffer when proving fails', () async {
       final service = await runClaim(proveError: StateError('boom'));
-      final liveSecret = service.capturedBatches![0][0].secret;
+      final liveSecret = service.capturedBatches![0].burns[0].secret;
       expect(liveSecret.every((b) => b == 0), isTrue);
     });
 
-    test('deducts the volume fee once per private batch', () async {
+    test('pays each private batch its net in a single exit to the destination', () async {
       final rewards = [
-        for (var i = 0; i < 7; i++)
+        for (var i = 0; i < 12; i++)
           WormholeTransfer(
             id: 't$i',
             blockHeight: i,
@@ -196,10 +200,82 @@ void main() {
       ];
 
       final service = await runClaim(transfers: rewards);
-      final outputs = service.capturedBatches!.single.map((spend) => spend.outputAmount1).toList();
-      expect(outputs.where((amount) => amount == 50).length, 6);
-      expect(outputs.where((amount) => amount == 49).length, 1);
-      expect(outputs.fold(0, (sum, amount) => sum + amount), 349);
+      final batches = service.capturedBatches!;
+      expect(batches.map((b) => b.burns.length), [10, 2]);
+      for (final batch in batches) {
+        expect(batch.exits.single.account, Address.decode(destination).pubkey);
+        expect(batch.exits.single.returnsToSender, isFalse);
+      }
+      expect(batches.map((b) => b.exits.single.amountScaled), [499, 99]);
+    });
+  });
+
+  group('sendSpends validation', () {
+    final account = Uint8List.fromList(List.filled(32, 0x22));
+    WormholeBurn burn(int scaled) => WormholeBurn(
+      transfer: WormholeTransfer(
+        id: 't$scaled',
+        blockHeight: 1,
+        timestamp: DateTime(2026),
+        fromId: 'from',
+        toId: 'to',
+        amount: wormholeTokenFromScaled(scaled),
+        toHash: '0x00',
+        leafIndex: BigInt.from(scaled),
+        transferCount: BigInt.one,
+        extrinsicId: '',
+        viaWormhole: false,
+      ),
+      secret: Uint8List(32),
+    );
+    WormholeExit exit(int scaled) => WormholeExit(account: account, amountScaled: scaled);
+
+    Future<void> send(List<WormholeBatchSpend> batches) =>
+        _StubProvingSendService().sendSpends(batches: batches, circuitBinsDir: '/unused', onProgress: (_) {});
+
+    test('accepts exits within the batch net and the slot budget', () async {
+      await send([
+        WormholeBatchSpend(burns: [burn(1000), burn(500)], exits: [exit(1000), exit(499)]),
+      ]);
+    });
+
+    test('rejects exits above the batch net', () async {
+      await expectLater(
+        send([
+          WormholeBatchSpend(burns: [burn(1000)], exits: [exit(1000)]),
+        ]),
+        throwsA(isA<StateError>().having((e) => e.message, 'message', contains('exceed net input'))),
+      );
+    });
+
+    test('rejects more burns than leaf proofs or more exits than slots', () async {
+      await expectLater(
+        send([
+          WormholeBatchSpend(burns: List.generate(11, (i) => burn(100 + i)), exits: [exit(1)]),
+        ]),
+        throwsA(isA<StateError>().having((e) => e.message, 'message', contains('aggregation arity'))),
+      );
+      await expectLater(
+        send([
+          WormholeBatchSpend(burns: [burn(100000)], exits: List.generate(33, (_) => exit(1))),
+        ]),
+        throwsA(isA<StateError>().having((e) => e.message, 'message', contains('exit-slot count'))),
+      );
+    });
+
+    test('rejects a batch with no exits or no burns', () async {
+      await expectLater(
+        send([
+          WormholeBatchSpend(burns: [burn(1000)], exits: const []),
+        ]),
+        throwsA(isA<StateError>()),
+      );
+      await expectLater(
+        send([
+          WormholeBatchSpend(burns: const [], exits: [exit(1)]),
+        ]),
+        throwsA(isA<StateError>()),
+      );
     });
   });
 }
