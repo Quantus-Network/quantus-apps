@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:resonance_network_wallet/models/notification_models.dart';
+import 'package:wallet_core/models/notification_models.dart';
 import 'package:resonance_network_wallet/providers/route_intent_providers.dart';
 import 'package:resonance_network_wallet/services/swap_live_activity.dart';
 import 'package:resonance_network_wallet/services/telemetry_service.dart';
@@ -11,7 +11,7 @@ import 'package:resonance_network_wallet/services/transaction_service.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest_all.dart' as tz_data;
 import 'package:flutter_timezone/flutter_timezone.dart';
-import 'package:resonance_network_wallet/shared/utils/print.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
 
 class LocalNotificationsService {
   final Ref _ref;

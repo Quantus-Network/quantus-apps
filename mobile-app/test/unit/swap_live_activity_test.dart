@@ -8,7 +8,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/l10n/app_localizations.dart';
+import 'package:wallet_core/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/providers/swap_live_activity_provider.dart';
 import 'package:resonance_network_wallet/services/swap_live_activity.dart';
 import 'package:resonance_network_wallet/services/swap_live_activity_client.dart';

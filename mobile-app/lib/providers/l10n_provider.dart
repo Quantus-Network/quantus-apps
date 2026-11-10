@@ -39,8 +39,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/l10n/app_localizations.dart';
-import 'package:resonance_network_wallet/models/app_locale.dart';
+import 'package:wallet_core/l10n/app_localizations.dart';
+import 'package:wallet_core/models/app_locale.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 
 /// Persists and exposes the user's chosen app locale.

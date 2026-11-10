@@ -1,5 +1,5 @@
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/shared/utils/miner_stats_csv.dart';
+import 'package:wallet_core/utils/miner_stats_csv.dart';
 
 /// Testnets whose mining rewards can be claimed, oldest first.
 enum TestnetChain {

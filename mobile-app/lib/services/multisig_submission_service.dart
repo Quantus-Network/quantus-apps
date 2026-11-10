@@ -9,7 +9,6 @@ import 'package:resonance_network_wallet/providers/pending_multisig_creations_pr
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/services/multisig_creation_polling_service.dart';
 import 'package:resonance_network_wallet/services/telemetry_service.dart';
-import 'package:resonance_network_wallet/shared/utils/print.dart';
 
 /// Everything a creation needs once on-chain checks have passed: the draft
 /// account (with the resolved nonce) and the network fee it was checked with.

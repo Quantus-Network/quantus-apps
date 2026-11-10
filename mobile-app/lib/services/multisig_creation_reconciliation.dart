@@ -3,7 +3,6 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/multisig_providers.dart';
 import 'package:resonance_network_wallet/services/account_activity_reconciliation.dart';
 import 'package:resonance_network_wallet/shared/utils/polling_refresh_scope.dart';
-import 'package:resonance_network_wallet/shared/utils/print.dart';
 
 /// Appends a confirmed multisig creation to cached activity history.
 Future<void> reconcileConfirmedMultisigCreation(Ref ref, MultisigAccount draft, {required BigInt networkFee}) async {

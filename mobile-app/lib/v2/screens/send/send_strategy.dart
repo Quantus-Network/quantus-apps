@@ -2,9 +2,9 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/l10n/app_localizations.dart';
+import 'package:wallet_core/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/v2/screens/send/keystone_signing_session.dart';
-import 'package:resonance_network_wallet/shared/utils/provider_reader.dart';
+import 'package:wallet_core/utils/provider_reader.dart';
 
 /// Per-step labels that differ between the send flows (regular transfer vs
 /// multisig proposal). Built once from [AppLocalizations] by each strategy so

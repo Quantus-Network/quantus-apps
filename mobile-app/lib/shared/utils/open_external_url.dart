@@ -1,4 +1,4 @@
-import 'package:resonance_network_wallet/shared/utils/print.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 Future<void> openUrl(String urlString, {LaunchMode mode = LaunchMode.platformDefault}) async {

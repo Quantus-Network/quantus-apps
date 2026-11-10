@@ -2,7 +2,6 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/shared/utils/print.dart';
 
 const String remoteConfigCacheKey = 'remote_config_cache_v1';
 

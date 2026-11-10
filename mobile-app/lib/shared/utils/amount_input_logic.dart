@@ -1,5 +1,5 @@
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/models/fiat_currency.dart';
+import 'package:wallet_core/models/fiat_currency.dart';
 import 'package:resonance_network_wallet/services/exchange_rate_service.dart';
 
 class ToggledInputResult {

@@ -12,7 +12,6 @@ import 'package:resonance_network_wallet/services/firebase_messaging_service.dar
 import 'package:resonance_network_wallet/services/telemetry_service.dart';
 import 'package:resonance_network_wallet/services/wallet_creation_service.dart';
 import 'package:resonance_network_wallet/shared/constants/e2e_keys.dart';
-import 'package:resonance_network_wallet/shared/utils/print.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/wallet_name_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/home/home_screen.dart';
 

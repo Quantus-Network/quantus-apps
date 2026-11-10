@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:resonance_network_wallet/shared/utils/miner_stats_csv.dart';
+import 'package:wallet_core/utils/miner_stats_csv.dart';
 
 /// A Dirac-style export: quoted thousands, a "0.00" share, and a totals row.
 const _diracExport = '''

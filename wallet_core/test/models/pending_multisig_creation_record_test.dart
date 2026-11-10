@@ -1,5 +1,5 @@
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/models/pending_multisig_creation_record.dart';
+import 'package:wallet_core/models/pending_multisig_creation_record.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

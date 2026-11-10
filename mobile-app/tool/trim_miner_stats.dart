@@ -4,7 +4,7 @@
 //   dart run tool/trim_miner_stats.dart
 import 'dart:io';
 
-import 'package:resonance_network_wallet/shared/utils/miner_stats_csv.dart';
+import 'package:wallet_core/utils/miner_stats_csv.dart';
 
 void main() {
   final exports = Directory('assets/testnet_data').listSync().whereType<File>().where((f) => f.path.endsWith('.csv'));

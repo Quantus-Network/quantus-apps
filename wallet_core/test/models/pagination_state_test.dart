@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:resonance_network_wallet/models/pagination_state.dart';
+import 'package:wallet_core/models/pagination_state.dart';
 
 void main() {
   group('PaginationState.copyWith error semantics', () {

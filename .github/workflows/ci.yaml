@@ -36,6 +36,8 @@ jobs:
         run: melos exec --concurrency=1 -- "flutter analyze ."
       - name: Create mock .env file to not fail the tests
         run: touch mobile-app/.env
+      - name: Test Wallet Core
+        run: melos exec --concurrency=1 --scope="wallet_core" -- "flutter test"
       - name: Test Mobile App
         run: melos exec --concurrency=1 --scope="resonance_network_wallet" -- "flutter test"
       - name: Test Quantus SDK

@@ -2,8 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter_riverpod/legacy.dart';
-import 'package:resonance_network_wallet/models/pending_cancellation.dart';
-import 'package:resonance_network_wallet/shared/utils/print.dart';
+import 'package:wallet_core/models/pending_cancellation.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 final pendingCancellationsProvider = StateNotifierProvider<PendingCancellationsNotifier, Set<String>>((ref) {

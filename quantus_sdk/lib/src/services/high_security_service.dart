@@ -6,7 +6,6 @@ import 'package:quantus_sdk/generated/bell/types/qp_scheduler/block_number_or_ti
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:quantus_sdk/src/extensions/duration_extension.dart';
 import 'package:quantus_sdk/src/rust/api/crypto.dart' as crypto;
-import 'package:quantus_sdk/src/utils/print.dart';
 
 class HighSecurityService {
   static final HighSecurityService _instance = HighSecurityService._internal();

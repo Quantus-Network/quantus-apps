@@ -1,6 +1,10 @@
 # quantus-apps
 
-Flutter monorepo managed with [melos](https://melos.invertase.dev). Packages: `mobile-app`, `cold-wallet-app`, `miner-app`, `quantus_sdk`.
+Flutter monorepo managed with [melos](https://melos.invertase.dev). Packages: `mobile-app`, `cold-wallet-app`, `miner-app`, `quantus_sdk`, `wallet_core`.
+
+## Translations
+
+The ARB files and the generated `AppLocalizations` live in `wallet_core/lib/l10n/` and are shared by the apps. After editing an ARB file, run `flutter gen-l10n` in `wallet_core/` and commit the regenerated files.
 
 ## Formatting and analysis
 

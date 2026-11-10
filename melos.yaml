@@ -4,6 +4,7 @@ packages:
   - miner-app
   - cold-wallet-app
   - quantus_sdk
+  - wallet_core
 
 ide:
   intellij:
@@ -24,6 +25,8 @@ command:
 dependency_overrides:
   quantus_sdk:
     path: ./quantus_sdk
+  wallet_core:
+    path: ./wallet_core
 
 # Dependency placement convention:
 #
@@ -80,6 +83,7 @@ scripts:
     description: Run tests in all packages the way CI does
     run: |
       melos exec --concurrency=1 --scope="quantus_sdk" -- "flutter test --exclude-tags=native"
+      melos exec --concurrency=1 --scope="wallet_core" -- "flutter test"
       melos exec --concurrency=1 --scope="resonance_network_wallet" -- "flutter test"
       melos exec --concurrency=1 --scope="quantus_cold_wallet" -- "flutter test"
 

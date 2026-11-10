@@ -7,7 +7,7 @@ import 'package:resonance_network_wallet/services/firebase_messaging_service.dar
 import 'package:resonance_network_wallet/services/history_polling_manager.dart';
 import 'package:resonance_network_wallet/services/local_notifications_service.dart';
 import 'package:resonance_network_wallet/services/multisig_creation_polling_service.dart';
-import 'package:resonance_network_wallet/shared/utils/print.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
 
 /// Widget that initializes the polling services for the entire app.
 /// This should be placed high in the widget tree, typically in your main app

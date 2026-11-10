@@ -19,7 +19,6 @@ import 'package:resonance_network_wallet/services/multisig_execution_polling_ser
 import 'package:resonance_network_wallet/services/multisig_proposal_polling_service.dart';
 import 'package:resonance_network_wallet/services/pending_transaction_polling_service.dart';
 import 'package:resonance_network_wallet/services/telemetry_service.dart';
-import 'package:resonance_network_wallet/shared/utils/print.dart';
 
 class TransactionSubmissionService {
   final Ref _ref;

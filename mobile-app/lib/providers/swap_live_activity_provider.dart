@@ -7,7 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/l10n/app_localizations.dart';
+import 'package:wallet_core/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/providers/active_swap_provider.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
@@ -16,7 +16,6 @@ import 'package:resonance_network_wallet/services/local_notifications_service.da
 import 'package:resonance_network_wallet/services/swap_live_activity.dart';
 import 'package:resonance_network_wallet/services/swap_live_activity_client.dart';
 import 'package:resonance_network_wallet/services/swap_live_activity_push.dart';
-import 'package:resonance_network_wallet/shared/utils/print.dart';
 
 /// The inputs [decideSwapLiveActivity] needs, read at the moment of a sync.
 class SwapLiveSnapshot {

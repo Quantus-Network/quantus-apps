@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
-import 'package:resonance_network_wallet/shared/utils/print.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:swap_live_activity_channel/swap_live_activity_channel.dart';
 
 /// FCM data `type` for an Android swap card update.

@@ -8,7 +8,6 @@ import 'package:resonance_network_wallet/providers/connectivity_provider.dart';
 import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
 import 'package:resonance_network_wallet/providers/local_auth_provider.dart';
 import 'package:resonance_network_wallet/services/history_polling_manager.dart';
-import 'package:resonance_network_wallet/shared/utils/print.dart';
 
 /// Provider that holds the current app lifecycle state
 final appLifecycleStateProvider = StateProvider<AppLifecycleState>((ref) => AppLifecycleState.resumed);
