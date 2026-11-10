@@ -84,9 +84,12 @@ class _AnimatedQrScannerState extends State<AnimatedQrScanner> {
   }
 
   void _onDetect(BarcodeCapture capture) {
-    if (_done) return;
     final code = capture.barcodes.firstOrNull?.rawValue;
-    if (code == null || !isAcceptableUrPart(code)) return;
+    if (code != null) _accept(code);
+  }
+
+  void _accept(String code) {
+    if (_done || !isAcceptableUrPart(code)) return;
     // maxUrScanParts bounds the accumulation set: a hostile animation could
     // otherwise keep emitting distinct frames and grow memory without limit.
     // Reaching it means the set can never complete, so report it and start
@@ -140,11 +143,20 @@ class _AnimatedQrScannerState extends State<AnimatedQrScanner> {
     }
   }
 
+  /// Feeds the debug frames through the same path as the camera, paced so the
+  /// progress can be watched.
   Future<void> _simulateScan() async {
+    final List<String> parts;
     try {
-      await _complete(await widget.debugPartsBuilder!());
+      parts = await widget.debugPartsBuilder!();
     } catch (error) {
       await widget.onError(error);
+      return;
+    }
+    for (final part in parts) {
+      if (!mounted || _done) return;
+      _accept(part);
+      await Future<void>.delayed(const Duration(milliseconds: 40));
     }
   }
 

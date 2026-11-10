@@ -173,10 +173,25 @@ void main() {
     expect(find.text('Camera unavailable'), findsNothing);
   });
 
+  testWidgets('offers no retry when a camera that does not exist is started again', (tester) async {
+    await pumpScanner(tester);
+    failCamera(MobileScannerErrorCode.unsupported);
+    await tester.pump();
+
+    failCamera(MobileScannerErrorCode.controllerAlreadyInitialized);
+    await tester.pump();
+
+    expect(find.text('Camera unavailable'), findsOneWidget);
+    expect(find.text('Try again'), findsNothing);
+  });
+
   testWidgets('covers the screen with the busy label while the caller works', (tester) async {
     await pumpScanner(tester, busyLabel: 'Submitting transaction...');
+    failCamera(MobileScannerErrorCode.unsupported);
+    await tester.pump();
 
     expect(find.text('Submitting transaction...'), findsOneWidget);
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    expect(find.text('Camera unavailable'), findsNothing, reason: 'the notice would sit under the spinner');
   });
 }

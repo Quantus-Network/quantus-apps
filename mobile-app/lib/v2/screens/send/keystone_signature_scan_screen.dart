@@ -17,7 +17,15 @@ class KeystoneSignatureScanScreen extends ConsumerStatefulWidget {
   final KeystoneSigningSession session;
   final UnsignedTransactionData unsignedData;
 
-  const KeystoneSignatureScanScreen({super.key, required this.session, required this.unsignedData});
+  /// Debug only: UR frames to scan in place of a cold wallet's signature.
+  final Future<List<String>> Function()? debugSignatureParts;
+
+  const KeystoneSignatureScanScreen({
+    super.key,
+    required this.session,
+    required this.unsignedData,
+    this.debugSignatureParts,
+  });
 
   @override
   ConsumerState<KeystoneSignatureScanScreen> createState() => _KeystoneSignatureScanScreenState();
@@ -94,7 +102,7 @@ class _KeystoneSignatureScanScreenState extends ConsumerState<KeystoneSignatureS
       progressLabel: l10n.keystoneScanReceiving,
       busyLabel: l10n.keystoneScanSubmitting,
       errorText: _error,
-      debugPartsBuilder: AppConstants.debugHardwareWallet ? _simulateSignature : null,
+      debugPartsBuilder: widget.debugSignatureParts ?? (AppConstants.debugHardwareWallet ? _simulateSignature : null),
       debugActionLabel: 'DEBUG: Simulate signature',
     );
   }

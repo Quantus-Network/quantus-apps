@@ -78,6 +78,9 @@ class _QuantusScannerState extends State<QuantusScanner> {
   }
 
   void _trackCameraError() {
+    // A device without a camera stays without one: starting it again only
+    // reports that the session already exists.
+    if (_cameraError?.errorCode == MobileScannerErrorCode.unsupported) return;
     final camera = widget.controller.value;
     final error = camera.isRunning ? null : camera.error ?? _cameraError;
     if (identical(error, _cameraError)) return;
@@ -119,7 +122,7 @@ class _QuantusScannerState extends State<QuantusScanner> {
                         scrim: colors.bgVoid.useOpacity(0.8),
                         radius: context.radiusV3.lg,
                       ),
-                      child: cameraError == null ? null : _cameraNotice(context, cameraError),
+                      child: cameraError == null || busyLabel != null ? null : _cameraNotice(context, cameraError),
                     ),
                   ),
                   LayoutId(

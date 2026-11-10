@@ -13,6 +13,7 @@ import 'package:resonance_network_wallet/v2/screens/settings/add_account_menu_sc
 import 'package:resonance_network_wallet/v2/screens/mining_rewards/mining_rewards_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/help_and_support_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/preferences_settings_screen.dart';
+import 'package:resonance_network_wallet/v2/screens/settings/scanner_debug_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/settings_divider.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/settings_tappable_row.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/wallet_settings_screen.dart';
@@ -133,6 +134,13 @@ List<_SettingsHubItem> _settingsHubItems(BuildContext context, AppLocalizations 
         title: SwapDebugScreen.title,
         subtitle: SwapDebugScreen.subtitle,
         page: const SwapDebugScreen(),
+      ),
+    if (kDebugMode)
+      _SettingsHubItem(
+        leading: _settingsHubIcon(colors, icon: Icons.qr_code_scanner),
+        title: ScannerDebugScreen.title,
+        subtitle: ScannerDebugScreen.subtitle,
+        page: const ScannerDebugScreen(),
       ),
   ];
 }
