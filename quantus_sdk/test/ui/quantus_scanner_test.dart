@@ -29,10 +29,12 @@ void main() {
     Widget? footer,
     VoidCallback? onPickImage,
     String? busyLabel,
+    Size size = const Size(390, 844),
+    double topInset = 48,
   }) async {
-    tester.view.physicalSize = const Size(390, 844);
+    tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1;
-    tester.view.padding = const FakeViewPadding(top: 48);
+    tester.view.padding = FakeViewPadding(top: topInset);
     addTearDown(tester.view.reset);
 
     await tester.pumpWidget(
@@ -117,6 +119,42 @@ void main() {
       tester.getRect(find.byType(ScannerControl)).bottom,
       lessThanOrEqualTo(tester.getRect(find.byKey(const Key('footer'))).top - 24),
     );
+  });
+
+  testWidgets('gives up the minimum window and gap on a small phone rather than run into the footer', (tester) async {
+    await pumpScanner(
+      tester,
+      size: const Size(320, 568),
+      topInset: 20,
+      caption: const SizedBox(key: Key('caption'), height: 140),
+      footer: const SizedBox(key: Key('footer'), height: 120),
+    );
+
+    final frame = tester.getRect(window);
+    expect(frame.width, lessThan(160));
+    expect(frame.width, frame.height);
+    expect(frame.top, greaterThanOrEqualTo(tester.getRect(find.byKey(const Key('caption'))).bottom + 24));
+    expect(
+      tester.getRect(find.byType(ScannerControl)).bottom,
+      lessThanOrEqualTo(tester.getRect(find.byKey(const Key('footer'))).top - 24),
+    );
+  });
+
+  testWidgets('keeps the retry reachable when the notice outgrows a shrunken window', (tester) async {
+    await pumpScanner(
+      tester,
+      size: const Size(320, 568),
+      topInset: 20,
+      caption: const SizedBox(height: 60),
+      footer: const SizedBox(height: 80),
+    );
+    failCamera(MobileScannerErrorCode.permissionDenied);
+    await tester.pump();
+
+    await tester.ensureVisible(find.text('Try again'));
+    await tester.pump();
+
+    expect(find.text('Try again').hitTestable(), findsOneWidget);
   });
 
   testWidgets('inverts the torch control while the torch is lit', (tester) async {

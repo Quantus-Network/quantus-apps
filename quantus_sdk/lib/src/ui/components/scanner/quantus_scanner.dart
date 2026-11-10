@@ -214,38 +214,41 @@ class _QuantusScannerState extends State<QuantusScanner> {
   }
 
   /// What the window says when the camera failed. A device with no camera at
-  /// all gets the notice only: there is nothing to grant or retry.
+  /// all gets the notice only: there is nothing to grant or retry. Scrolls
+  /// when a shrunken window cannot fit it, keeping the retry reachable.
   Widget _cameraNotice(BuildContext context, MobileScannerException error) {
     final colors = context.colorsV3;
     final text = context.themeTextV3;
     final labels = widget.labels;
 
-    return Padding(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        spacing: 8,
-        children: [
-          Text(
-            labels.cameraUnavailable,
-            style: text.bodyEmphasis.copyWith(color: colors.textContent),
-            textAlign: TextAlign.center,
-          ),
-          if (error.errorCode == MobileScannerErrorCode.permissionDenied)
+    return Center(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          spacing: 8,
+          children: [
             Text(
-              labels.cameraPermissionDenied,
-              style: text.caption.copyWith(color: colors.textMuted),
+              labels.cameraUnavailable,
+              style: text.bodyEmphasis.copyWith(color: colors.textContent),
               textAlign: TextAlign.center,
             ),
-          if (error.errorCode != MobileScannerErrorCode.unsupported)
-            QuantusButton.simple(
-              label: labels.retry,
-              variant: ButtonVariant.underline,
-              width: null,
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              onTap: widget.controller.start,
-            ),
-        ],
+            if (error.errorCode == MobileScannerErrorCode.permissionDenied)
+              Text(
+                labels.cameraPermissionDenied,
+                style: text.caption.copyWith(color: colors.textMuted),
+                textAlign: TextAlign.center,
+              ),
+            if (error.errorCode != MobileScannerErrorCode.unsupported)
+              QuantusButton.simple(
+                label: labels.retry,
+                variant: ButtonVariant.underline,
+                width: null,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                onTap: widget.controller.start,
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -306,11 +309,15 @@ enum _Slot { window, top, controls, bottom }
 
 /// Centres the scan window on the screen as Figma does, then shrinks and lifts
 /// it until the brackets and the controls clear the top and bottom overlays.
+/// When even the minimum window would not fit, the controls gap compresses
+/// first and then the window keeps shrinking, so the controls never run into
+/// the footer.
 class _ScannerLayout extends MultiChildLayoutDelegate {
   static const double _maxWindow = 280;
   static const double _minWindow = 160;
   static const double _sideMargin = 55;
   static const double _controlsGap = 49;
+  static const double _minControlsGap = 16;
   static const double _clearance = 24;
 
   @override
@@ -321,18 +328,17 @@ class _ScannerLayout extends MultiChildLayoutDelegate {
     final controls = layoutChild(_Slot.controls, BoxConstraints.loose(size));
 
     final highest = top.height + _clearance;
-    final below = _controlsGap + controls.height + _clearance + bottom.height;
-    final side = math.max(
-      _minWindow,
-      math.min(_maxWindow, math.min(size.width - 2 * _sideMargin, size.height - highest - below)),
-    );
+    final available = size.height - highest - controls.height - _clearance - bottom.height;
+    final gap = (available - _minWindow).clamp(_minControlsGap, _controlsGap);
+    final side = math.max(0, math.min(_maxWindow, math.min(size.width - 2 * _sideMargin, available - gap))).toDouble();
+    final below = gap + controls.height + _clearance + bottom.height;
     final windowTop = math.max(highest, math.min((size.height - side) / 2, size.height - below - side));
 
     layoutChild(_Slot.window, BoxConstraints.tight(Size.square(side)));
     positionChild(_Slot.top, Offset.zero);
     positionChild(_Slot.bottom, Offset(0, size.height - bottom.height));
     positionChild(_Slot.window, Offset((size.width - side) / 2, windowTop));
-    positionChild(_Slot.controls, Offset((size.width - controls.width) / 2, windowTop + side + _controlsGap));
+    positionChild(_Slot.controls, Offset((size.width - controls.width) / 2, windowTop + side + gap));
   }
 
   @override
