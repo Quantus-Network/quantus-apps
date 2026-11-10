@@ -37,11 +37,13 @@ sha3 = "0.10"
 # ZK proof generation (aligned with quantus-cli / chain)
 anyhow = "1.0"
 blake3 = "1.8"
-# Airdrop ownership proofs (published on crates.io as of the v4.4.0 release).
-# The wormhole circuit sources are identical between 4.3.0 and 4.4.0, so the
-# family-wide bump keeps wormhole proofs chain-compatible.
-qp-ownership-circuit = { version = "4.4.0", default-features = false, features = ["std"] }
-qp-ownership-prover = { version = "4.4.0", default-features = false, features = ["std"] }
+# Circuits from the unreleased qp-zk-circuits main: proof-of-burn leaf, exits
+# and volume fee on the private batch, production shape N=10 / M=32 (PRs
+# #198-#202). The crates.io 4.4.0 family is the previous (two exits per leaf)
+# layout, which the chain this build targets no longer verifies. Switch every
+# entry below to the published version once that release is cut.
+qp-ownership-circuit = { git = "https://github.com/Quantus-Network/qp-zk-circuits.git", rev = "080bc897108e4aed3e315ccd9229bbbbcdb1c9f2", default-features = false, features = ["std"] }
+qp-ownership-prover = { git = "https://github.com/Quantus-Network/qp-zk-circuits.git", rev = "080bc897108e4aed3e315ccd9229bbbbcdb1c9f2", default-features = false, features = ["std"] }
 # Building blocks of qp-poseidon-core 0.9.5's hasher. The local v09 sponge in
 # api/airdrop.rs hashes secret preimages from borrowed slices because the
 # 0.9.5 crate's hash_no_pad consumes its Vec and frees it unscrubbed.
@@ -49,13 +51,13 @@ p3-field = { version = "0.3.0", default-features = false }
 p3-goldilocks = { version = "0.3.0", default-features = false }
 p3-symmetric = { version = "0.3.0", default-features = false }
 rand_chacha = { version = "0.9", default-features = false }
-qp-plonky2 = { version = "1.5.5", default-features = false, features = ["rand", "std"] }
-qp-wormhole-circuit = { version = "4.4.0", default-features = false, features = ["std"] }
-qp-wormhole-prover = { version = "4.4.0", default-features = false, features = ["std"] }
-qp-wormhole-aggregator = { version = "4.4.0", default-features = false, features = ["std"] }
-qp-wormhole-inputs = { version = "4.4.0", default-features = false, features = ["std"] }
-qp-zk-circuits-common = { version = "4.4.0", default-features = false, features = ["std"] }
-qp-wormhole-circuit-builder = { version = "4.4.0" }
+qp-plonky2 = { version = "=1.6.0", default-features = false, features = ["rand", "std"] }
+qp-wormhole-circuit = { git = "https://github.com/Quantus-Network/qp-zk-circuits.git", rev = "080bc897108e4aed3e315ccd9229bbbbcdb1c9f2", default-features = false, features = ["std"] }
+qp-wormhole-prover = { git = "https://github.com/Quantus-Network/qp-zk-circuits.git", rev = "080bc897108e4aed3e315ccd9229bbbbcdb1c9f2", default-features = false, features = ["std"] }
+qp-wormhole-aggregator = { git = "https://github.com/Quantus-Network/qp-zk-circuits.git", rev = "080bc897108e4aed3e315ccd9229bbbbcdb1c9f2", default-features = false, features = ["std"] }
+qp-wormhole-inputs = { git = "https://github.com/Quantus-Network/qp-zk-circuits.git", rev = "080bc897108e4aed3e315ccd9229bbbbcdb1c9f2", default-features = false, features = ["std"] }
+qp-zk-circuits-common = { git = "https://github.com/Quantus-Network/qp-zk-circuits.git", rev = "080bc897108e4aed3e315ccd9229bbbbcdb1c9f2", default-features = false, features = ["std"] }
+qp-wormhole-circuit-builder = { git = "https://github.com/Quantus-Network/qp-zk-circuits.git", rev = "080bc897108e4aed3e315ccd9229bbbbcdb1c9f2" }
 
 [dev-dependencies]
 tempfile = "3"

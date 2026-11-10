@@ -66,6 +66,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   DilithiumScheme dco_decode_dilithium_scheme(dynamic raw);
 
   @protected
+  ExitOutput dco_decode_exit_output(dynamic raw);
+
+  @protected
   int dco_decode_i_32(dynamic raw);
 
   @protected
@@ -79,6 +82,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   List<AirdropMatch> dco_decode_list_airdrop_match(dynamic raw);
+
+  @protected
+  List<ExitOutput> dco_decode_list_exit_output(dynamic raw);
 
   @protected
   List<Uint8List> dco_decode_list_list_prim_u_8_strict(dynamic raw);
@@ -199,6 +205,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   DilithiumScheme sse_decode_dilithium_scheme(SseDeserializer deserializer);
 
   @protected
+  ExitOutput sse_decode_exit_output(SseDeserializer deserializer);
+
+  @protected
   int sse_decode_i_32(SseDeserializer deserializer);
 
   @protected
@@ -212,6 +221,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   List<AirdropMatch> sse_decode_list_airdrop_match(SseDeserializer deserializer);
+
+  @protected
+  List<ExitOutput> sse_decode_list_exit_output(SseDeserializer deserializer);
 
   @protected
   List<Uint8List> sse_decode_list_list_prim_u_8_strict(SseDeserializer deserializer);
@@ -334,6 +346,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void sse_encode_dilithium_scheme(DilithiumScheme self, SseSerializer serializer);
 
   @protected
+  void sse_encode_exit_output(ExitOutput self, SseSerializer serializer);
+
+  @protected
   void sse_encode_i_32(int self, SseSerializer serializer);
 
   @protected
@@ -347,6 +362,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void sse_encode_list_airdrop_match(List<AirdropMatch> self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_list_exit_output(List<ExitOutput> self, SseSerializer serializer);
 
   @protected
   void sse_encode_list_list_prim_u_8_strict(List<Uint8List> self, SseSerializer serializer);
