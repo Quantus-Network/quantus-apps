@@ -125,11 +125,12 @@ class _KeystoneSignScreenState extends ConsumerState<KeystoneSignScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const KeystoneStepLabel(current: 1, total: 3),
-            const SizedBox(height: 12),
-            Text(l10n.keystoneSignTitle, style: text.headingRow.copyWith(color: colors.textContent)),
-            const SizedBox(height: 8),
-            Text(l10n.keystoneSignInstruction, style: text.caption.copyWith(color: colors.textMuted)),
+            KeystoneStepHeader(
+              current: 1,
+              total: 3,
+              title: l10n.keystoneSignTitle,
+              instruction: l10n.keystoneSignInstruction,
+            ),
             const SizedBox(height: 32),
             Center(child: _buildQr(colors, text)),
             if (session.primaryDetail != null || session.secondaryDetail != null) ...[

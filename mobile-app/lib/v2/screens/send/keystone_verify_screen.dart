@@ -51,11 +51,12 @@ class KeystoneVerifyScreen extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const KeystoneStepLabel(current: 2, total: 3),
-            const SizedBox(height: 12),
-            Text(l10n.keystoneVerifyTitle, style: text.headingRow.copyWith(color: colors.textContent)),
-            const SizedBox(height: 8),
-            Text(l10n.keystoneVerifyInstruction, style: text.caption.copyWith(color: colors.textMuted)),
+            KeystoneStepHeader(
+              current: 2,
+              total: 3,
+              title: l10n.keystoneVerifyTitle,
+              instruction: l10n.keystoneVerifyInstruction,
+            ),
             const SizedBox(height: 24),
             _summaryCard(context, l10n, colors, text),
             const SizedBox(height: 24),

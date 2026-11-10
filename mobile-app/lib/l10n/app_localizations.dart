@@ -2060,18 +2060,6 @@ abstract class AppLocalizations {
   /// **'RECEIVING SIGNATURE'**
   String get keystoneScanReceiving;
 
-  /// Progress indicator showing scanned vs total animated QR frames
-  ///
-  /// In en, this message translates to:
-  /// **'{scanned}/{total}'**
-  String keystoneScanProgress(int scanned, int total);
-
-  /// Progress text before the total frame count is known
-  ///
-  /// In en, this message translates to:
-  /// **'{count} frames scanned'**
-  String keystoneScanScanning(int count);
-
   /// Overlay text while the externally signed transaction is broadcast
   ///
   /// In en, this message translates to:
@@ -3716,11 +3704,35 @@ abstract class AppLocalizations {
   /// **'This swap has not finished in time. If it settles later, the funds still arrive, or the deposit is refunded to {refund}.'**
   String swapProgressOverdue(String refund);
 
-  /// Text for app bar or button label on QR scanner component
+  /// Label next to the back caret on the QR scanner
   ///
   /// In en, this message translates to:
-  /// **'Scan QR Code'**
-  String get componentQrScannerTitle;
+  /// **'Back'**
+  String get componentQrScannerBack;
+
+  /// Label under the torch control on the QR scanner
+  ///
+  /// In en, this message translates to:
+  /// **'Torch'**
+  String get componentQrScannerTorch;
+
+  /// Label under the control that picks a QR image from the gallery
+  ///
+  /// In en, this message translates to:
+  /// **'Gallery'**
+  String get componentQrScannerGallery;
+
+  /// Shown in the scan window when the camera could not be started
+  ///
+  /// In en, this message translates to:
+  /// **'Camera unavailable'**
+  String get componentQrScannerCameraUnavailable;
+
+  /// Shown in the scan window when camera permission was denied
+  ///
+  /// In en, this message translates to:
+  /// **'Allow camera access in Settings to scan.'**
+  String get componentQrScannerCameraDenied;
 
   /// Snackbar when gallery image has no QR code
   ///

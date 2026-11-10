@@ -31,23 +31,19 @@ void main() {
     await tester.pump();
   }
 
-  testWidgets('uses v3 void scaffold, content-colored frame, and V2AppBar', (tester) async {
+  testWidgets('scans on the shared scanner with localized Back, Torch and Gallery', (tester) async {
     await pumpScanner(tester);
 
-    expect(tester.widget<Scaffold>(find.byType(Scaffold)).backgroundColor, colors.bgVoid);
-    expect(find.text(l10n.componentQrScannerTitle), findsOneWidget);
-    expect(find.byType(V2AppBar), findsOneWidget);
+    expect(find.byType(QuantusScanner), findsOneWidget);
+    expect(find.text(l10n.componentQrScannerBack), findsOneWidget);
+    expect(find.text(l10n.componentQrScannerTorch), findsOneWidget);
+    expect(find.text(l10n.componentQrScannerGallery), findsOneWidget);
 
-    final corners = tester.widgetList<DecoratedBox>(find.byType(DecoratedBox)).where((box) {
-      final decoration = box.decoration;
-      if (decoration is! BoxDecoration) return false;
-      final border = decoration.border;
-      if (border is! Border) return false;
-      return border.top.color == colors.textContent ||
-          border.bottom.color == colors.textContent ||
-          border.left.color == colors.textContent ||
-          border.right.color == colors.textContent;
-    }).toList();
-    expect(corners, hasLength(4));
+    final painter =
+        tester
+                .widget<CustomPaint>(find.byWidgetPredicate((w) => w is CustomPaint && w.painter is ScanFramePainter))
+                .painter!
+            as ScanFramePainter;
+    expect(painter.accent, colors.accentFlare);
   });
 }
