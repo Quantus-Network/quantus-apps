@@ -1082,16 +1082,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get keystoneScanReceiving => 'RECEIVING SIGNATURE';
 
   @override
-  String keystoneScanProgress(int scanned, int total) {
-    return '$scanned/$total';
-  }
-
-  @override
-  String keystoneScanScanning(int count) {
-    return '$count frames scanned';
-  }
-
-  @override
   String get keystoneScanSubmitting => 'Submitting transaction...';
 
   @override
@@ -2003,7 +1993,19 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get componentQrScannerTitle => 'Scan QR Code';
+  String get componentQrScannerBack => 'Back';
+
+  @override
+  String get componentQrScannerTorch => 'Torch';
+
+  @override
+  String get componentQrScannerGallery => 'Gallery';
+
+  @override
+  String get componentQrScannerCameraUnavailable => 'Camera unavailable';
+
+  @override
+  String get componentQrScannerCameraDenied => 'Allow camera access in Settings to scan.';
 
   @override
   String get componentQrScannerNoCode => 'No QR code found in image';

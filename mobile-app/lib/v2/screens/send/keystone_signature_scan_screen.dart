@@ -1,17 +1,18 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
+import 'package:resonance_network_wallet/providers/scanner_labels_provider.dart';
 import 'package:resonance_network_wallet/services/telemetry_service.dart';
 import 'package:resonance_network_wallet/shared/utils/print.dart';
-import 'package:resonance_network_wallet/v2/components/animated_qr_scanner.dart';
 import 'package:resonance_network_wallet/v2/screens/send/keystone_sign_cache.dart';
 import 'package:resonance_network_wallet/v2/screens/send/keystone_signing_session.dart';
+import 'package:resonance_network_wallet/v2/screens/send/keystone_signing_widgets.dart';
 
-/// Keystone-specific adapter for the generic animated QR scanner.
-///
-/// Decodes the completed UR payload and delegates submission to [session].
-/// Pops with the submitted extrinsic hash.
+/// Step 3 of Keystone signing: scans the signature the cold wallet shows and
+/// delegates submission to [session]. Pops with the submitted extrinsic hash.
 class KeystoneSignatureScanScreen extends ConsumerStatefulWidget {
   final KeystoneSigningSession session;
   final UnsignedTransactionData unsignedData;
@@ -25,12 +26,6 @@ class KeystoneSignatureScanScreen extends ConsumerStatefulWidget {
 class _KeystoneSignatureScanScreenState extends ConsumerState<KeystoneSignatureScanScreen> {
   String? _error;
 
-  AnimatedQrSequence? _sequenceForPart(String part) {
-    final sequence = urSequenceFor(part);
-    if (sequence == null) return null;
-    return AnimatedQrSequence(index: sequence.index, total: sequence.total);
-  }
-
   /// Refuses submission when the mortal era window is (nearly) over — the
   /// chain would reject the extrinsic, or worse, accept it right at the edge.
   Future<void> _ensureEraNotExpired() async {
@@ -43,8 +38,7 @@ class _KeystoneSignatureScanScreenState extends ConsumerState<KeystoneSignatureS
     }
   }
 
-  Future<void> _submit(List<String> parts) async {
-    final bytes = decodeUr(urParts: parts);
+  Future<void> _submit(Uint8List bytes) async {
     // Validates the length and identifies the signature scheme; the SDK reads it back off the blob.
     DilithiumSchemeExtension.forSignatureWithPublicKeyLength(bytes.length);
 
@@ -88,20 +82,17 @@ class _KeystoneSignatureScanScreenState extends ConsumerState<KeystoneSignatureS
     final l10n = ref.watch(l10nProvider);
 
     return AnimatedQrScanner(
-      acceptsPart: isAcceptableUrPart,
-      maxParts: maxUrScanParts,
-      isComplete: (parts) => isCompleteUr(urParts: parts),
-      sequenceForPart: _sequenceForPart,
       onComplete: _submit,
       onError: _handleError,
-      appBarTitle: l10n.keystoneSignScreenTitle,
-      stepLabel: l10n.keystoneSignStep(3, 3),
-      title: l10n.keystoneScanTitle,
-      instruction: l10n.keystoneScanInstruction,
-      progressHeader: l10n.keystoneScanReceiving,
-      submittingLabel: l10n.keystoneScanSubmitting,
-      progressLabel: l10n.keystoneScanProgress,
-      scanningLabel: l10n.keystoneScanScanning,
+      labels: ref.watch(scannerLabelsProvider),
+      caption: KeystoneStepHeader(
+        current: 3,
+        total: 3,
+        title: l10n.keystoneScanTitle,
+        instruction: l10n.keystoneScanInstruction,
+      ),
+      progressLabel: l10n.keystoneScanReceiving,
+      busyLabel: l10n.keystoneScanSubmitting,
       errorText: _error,
       debugPartsBuilder: AppConstants.debugHardwareWallet ? _simulateSignature : null,
       debugActionLabel: 'DEBUG: Simulate signature',
