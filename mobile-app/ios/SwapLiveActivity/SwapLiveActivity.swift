@@ -232,61 +232,96 @@ private struct SwapProgress: View {
   private let stops: [CGFloat] = [0.25, 0.5, 0.75]
 
   var body: some View {
-    GeometryReader { geo in
-      let width = geo.size.width
-      let clamped = min(max(progress, 0), 1)
-      let knob: CGFloat = 9
-      let center = min(max(width * clamped, knob / 2), max(width - knob / 2, knob / 2))
-      ZStack(alignment: .leading) {
-        Capsule()
-          .fill(SwapPalette.rule)
-          .frame(width: width, height: 3)
-        Capsule()
-          .fill(SwapPalette.flare)
-          .frame(width: max(width * clamped, 0), height: 3)
-        ForEach(stops, id: \.self) { stop in
-          if stop > clamped + 0.001 {
-            Rectangle()
-              .fill(Color.white.opacity(0.45))
-              .frame(width: 1, height: 8)
-              .position(x: width * stop, y: geo.size.height / 2)
-          }
-        }
-        Circle()
-          .fill(Color.white)
-          .frame(width: knob, height: knob)
-          .position(x: center, y: geo.size.height / 2)
-      }
+    let clamped = CGFloat(min(max(progress, 0), 1))
+    ZStack {
+      SwapBar(end: 1).fill(SwapPalette.rule)
+      SwapBar(end: clamped).fill(SwapPalette.flare)
+      SwapStops(stops: stops.filter { $0 > clamped + 0.001 }).fill(Color.white.opacity(0.45))
+      SwapKnob(at: clamped).fill(Color.white)
     }
-    .frame(height: 9)
+    .frame(height: SwapKnob.diameter)
   }
 }
 
-/// Column shares measured on the Figma card (From 164, To 182, Chain 294).
-private enum SwapFactsLayout {
-  static let from: CGFloat = 164
-  static let to: CGFloat = 182
-  static let chain: CGFloat = 294
+/// WidgetKit lays the card out once with a NaN x origin before it has the real
+/// one. SwiftUI's stacks and shapes carry that through, but placing a subview
+/// there is a fatal error. A GeometryReader places one, so the bar and the
+/// columns under it took the whole extension down, and iOS removed the card as
+/// soon as it started. The bar is therefore drawn as shapes, which size their
+/// pieces from the rect they are given.
+private struct SwapBar: Shape {
+  let end: CGFloat
 
-  static func width(_ share: CGFloat, of inner: CGFloat) -> CGFloat {
-    inner * share / (from + to + chain)
+  func path(in rect: CGRect) -> Path {
+    Path(roundedRect: CGRect(x: rect.minX, y: rect.midY - 1.5, width: rect.width * end, height: 3), cornerRadius: 1.5)
+  }
+}
+
+private struct SwapStops: Shape {
+  let stops: [CGFloat]
+
+  func path(in rect: CGRect) -> Path {
+    var path = Path()
+    for stop in stops {
+      path.addRect(CGRect(x: rect.minX + rect.width * stop - 0.5, y: rect.midY - 4, width: 1, height: 8))
+    }
+    return path
+  }
+}
+
+private struct SwapKnob: Shape {
+  static let diameter: CGFloat = 9
+
+  let at: CGFloat
+
+  func path(in rect: CGRect) -> Path {
+    let radius = Self.diameter / 2
+    let center = min(max(rect.width * at, radius), max(rect.width - radius, radius))
+    return Path(ellipseIn: CGRect(x: rect.minX + center - radius, y: rect.midY - radius, width: Self.diameter, height: Self.diameter))
+  }
+}
+
+/// Columns side by side in fixed shares of the width, each centred vertically.
+private struct SwapColumns: Layout {
+  let shares: [CGFloat]
+
+  private func widths(in width: CGFloat) -> [CGFloat] {
+    let total = shares.reduce(0, +)
+    return shares.map { width * $0 / total }
+  }
+
+  func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+    let width = proposal.replacingUnspecifiedDimensions().width
+    let heights = zip(subviews, widths(in: width)).map {
+      $0.sizeThatFits(ProposedViewSize(width: $1, height: proposal.height)).height
+    }
+    return CGSize(width: width, height: heights.max() ?? 0)
+  }
+
+  func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+    // The NaN first pass described on `SwapBar`. A later pass has the origin.
+    var x = bounds.minX.isFinite ? bounds.minX : 0
+    for (subview, width) in zip(subviews, widths(in: bounds.width)) {
+      let column = ProposedViewSize(width: width, height: bounds.height)
+      let height = subview.sizeThatFits(column).height
+      subview.place(at: CGPoint(x: x, y: bounds.midY - height / 2), anchor: .topLeading, proposal: column)
+      x += width
+    }
   }
 }
 
 private struct SwapFacts: View {
   let state: SwapActivityAttributes.ContentState
 
+  /// Column shares measured on the Figma card (From 164, To 182, Chain 294).
+  private static let shares: [CGFloat] = [164, 182, 294]
+  private static let height: CGFloat = 36
+
   var body: some View {
-    GeometryReader { geo in
-      let inner = max(geo.size.width - 2, 0)
-      HStack(alignment: .center, spacing: 0) {
-        SwapFact(label: state.fromLabel, amount: state.fromAmount, symbol: state.fromSymbol)
-          .frame(width: SwapFactsLayout.width(SwapFactsLayout.from, of: inner), alignment: .leading)
-        factRule
-        SwapFact(label: state.toLabel, amount: state.toAmount, symbol: state.toSymbol)
-          .padding(.leading, 7)
-          .frame(width: SwapFactsLayout.width(SwapFactsLayout.to, of: inner), alignment: .leading)
-        factRule
+    SwapColumns(shares: Self.shares) {
+      SwapFact(label: state.fromLabel, amount: state.fromAmount, symbol: state.fromSymbol)
+      ruled(SwapFact(label: state.toLabel, amount: state.toAmount, symbol: state.toSymbol))
+      ruled(
         VStack(alignment: .leading, spacing: 4) {
           Text(state.chainLabel)
             .font(.geist(11, medium: true))
@@ -299,15 +334,17 @@ private struct SwapFacts: View {
             .minimumScaleFactor(0.7)
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .padding(.leading, 7)
-        .frame(width: SwapFactsLayout.width(SwapFactsLayout.chain, of: inner), alignment: .leading)
-      }
+      )
     }
-    .frame(height: 36)
+    .frame(height: Self.height)
   }
 
-  private var factRule: some View {
-    Rectangle().fill(SwapPalette.rule).frame(width: 1, height: 36)
+  /// A column behind a hairline on its leading edge.
+  private func ruled(_ column: some View) -> some View {
+    column
+      .padding(.leading, 8)
+      .frame(maxHeight: .infinity)
+      .overlay(alignment: .leading) { Rectangle().fill(SwapPalette.rule).frame(width: 1) }
   }
 }
 
