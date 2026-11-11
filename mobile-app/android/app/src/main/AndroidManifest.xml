@@ -8,8 +8,6 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <!-- Install-time. Required before Android will promote a Live Update. -->
     <uses-permission android:name="android.permission.POST_PROMOTED_NOTIFICATIONS"/>
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC"/>
     <!-- Biometric permission -->
     <uses-permission android:name="android.permission.USE_BIOMETRIC"/>
     <!-- Local notification permission -->
@@ -63,10 +61,6 @@
             </intent-filter>
         </activity>
 
-        <service
-            android:name=".SwapLiveActivityService"
-            android:exported="false"
-            android:foregroundServiceType="dataSync" />
         <receiver
             android:name=".SwapLiveActivityReceiver"
             android:exported="false" />

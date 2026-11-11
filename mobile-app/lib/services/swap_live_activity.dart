@@ -118,6 +118,10 @@ class SwapLiveActivityContent {
   final DateTime updatedAt;
   final String depositAddress;
   final String key;
+
+  /// Whether the swap is still moving, which keeps the Android card ongoing.
+  /// The name is the wire key Senoti and both native cards read. It dates
+  /// from an Android service that held the process.
   final bool holdsProcess;
   final bool simulated;
   final String locale;
@@ -204,7 +208,7 @@ class SwapLiveActivityContent {
 }
 
 /// Whether [swap] ended without paying out. Incomplete deposits keep being
-/// polled, so they still hold the Android process.
+/// polled, so their card stays ongoing.
 SwapLiveFailure? swapLiveFailure(ActiveSwap swap) => switch (swap.order.status) {
   SwapStatus.failed => SwapLiveFailure.failed,
   SwapStatus.refunded => SwapLiveFailure.refunded,

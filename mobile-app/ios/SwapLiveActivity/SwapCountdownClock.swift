@@ -1,7 +1,6 @@
 import SwiftUI
 
-/// "~5 min left", rounding the remainder up to the next minute. Keep in step
-/// with `swapLiveTimeLeft` on Android.
+/// "~5 min left", rounding the remainder up to the next minute.
 func swapTimeLeft(endsAt: Date, now: Date, minute: String, hour: String, left: String) -> String {
   let minutes = swapMinutesRemaining(until: endsAt, now: now)
   if minutes < 60 {

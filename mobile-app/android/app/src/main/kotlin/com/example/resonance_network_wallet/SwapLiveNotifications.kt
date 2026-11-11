@@ -6,18 +6,14 @@ import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
-import android.app.Service
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.content.pm.ServiceInfo
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.os.SystemClock
-import android.util.Log
+import android.text.format.DateFormat
 import android.view.View
 import android.widget.RemoteViews
 import io.flutter.plugin.common.BinaryMessenger
@@ -25,12 +21,15 @@ import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import org.json.JSONObject
+import java.util.Date
 
 /// The swap card on the lock screen, and the status-bar progress on Android 16.
+/// A plain notification: nothing keeps the process alive for it. The running
+/// app and pushes redraw it, and an alarm marks it stale once neither has for
+/// a while.
 object SwapLiveNotifications {
     const val NOTIFICATION_ID = 71041
     const val CHANNEL_ID = "swap_live_activity"
-    const val EXTRA_PAYLOAD = "payload"
     const val ACTION_STALE = "com.quantus.wallet.SWAP_LIVE_STALE"
     const val ACTION_DISMISSED = "com.quantus.wallet.SWAP_LIVE_DISMISSED"
     const val MESSAGE_TYPE = "swap_live_activity"
@@ -38,7 +37,6 @@ object SwapLiveNotifications {
     private const val PREFS = "swap_live_activity"
     private const val PREF_PAYLOAD = "payload"
     private const val PREF_DISMISSED = "dismissed_key"
-    private const val TAG = "SwapLive"
     private const val METHOD_CHANNEL = "app.quantus/swap_live_activity"
     private const val EVENT_CHANNEL = "app.quantus/swap_live_activity_events"
 
@@ -165,9 +163,9 @@ object SwapLiveNotifications {
     fun show(context: Context, json: JSONObject, stale: Boolean) {
         synchronized(revisionLock) {
             // A poll can arrive after a completion push. The same order that
-            // guards replace applies here, or the poll starts the foreground
-            // service again for a swap that has already finished. A dismissal
-            // persisted while no listener was attached is refused here too.
+            // guards replace applies here, or the poll puts a finished swap back
+            // in progress. A dismissal persisted while no listener was attached
+            // is refused here too.
             if (!acceptsLocalWrite(context, json)) return
             ignoreDelete = false
             val card = if (stale) json.put("stale", true) else json
@@ -178,13 +176,7 @@ object SwapLiveNotifications {
             val key = card.optString("key")
             if (!dismissed.isNullOrEmpty() && dismissed != key) editor.remove(PREF_DISMISSED)
             editor.apply()
-            val holds = card.optBoolean("holdsProcess") && !stale
-            if (stale) {
-                // The alarm can fire with the app suspended, which may not start a service.
-                context.getSystemService(NotificationManager::class.java).notify(NOTIFICATION_ID, build(context, card))
-            } else {
-                launch(context, card, holds)
-            }
+            context.getSystemService(NotificationManager::class.java).notify(NOTIFICATION_ID, build(context, card))
             if (!stale) scheduleStale(context, card)
         }
     }
@@ -213,9 +205,7 @@ object SwapLiveNotifications {
         if (prefs.contains(PREF_PAYLOAD)) ignoreDelete = true
         cancelStale(context)
         prefs.edit().remove(PREF_PAYLOAD).apply()
-        val manager = context.getSystemService(NotificationManager::class.java)
-        manager.cancel(NOTIFICATION_ID)
-        context.stopService(Intent(context, SwapLiveActivityService::class.java))
+        context.getSystemService(NotificationManager::class.java).cancel(NOTIFICATION_ID)
     }
 
     fun onDeleted(context: Context) {
@@ -307,7 +297,7 @@ object SwapLiveNotifications {
         views.setTextViewText(R.id.swap_live_from_symbol, json.optString("fromSymbol"))
         views.setTextViewText(R.id.swap_live_to_amount, json.optString("toAmount"))
         views.setTextViewText(R.id.swap_live_to_symbol, json.optString("toSymbol"))
-        bindTiming(views, json, stale)
+        bindTiming(context, views, json, stale)
         val showProgress = json.optBoolean("showProgress") && !stale
         views.setViewVisibility(R.id.swap_live_progress_wrap, if (showProgress) View.VISIBLE else View.GONE)
         if (showProgress) {
@@ -345,7 +335,7 @@ object SwapLiveNotifications {
         return builder.build()
     }
 
-    private fun bindTiming(views: RemoteViews, json: JSONObject, stale: Boolean) {
+    private fun bindTiming(context: Context, views: RemoteViews, json: JSONObject, stale: Boolean) {
         val now = System.currentTimeMillis()
         val elapsed = SystemClock.elapsedRealtime()
         if (stale) {
@@ -361,31 +351,12 @@ object SwapLiveNotifications {
             views.setViewVisibility(R.id.swap_live_eta, View.GONE)
             return
         }
-        val endsAt = json.optLong("endsAt")
+        // The time the swap should be done by, such as "~2:57 PM". Nothing
+        // redraws the card between updates, so a count of the minutes left
+        // would go wrong. A time of day does not.
+        val eta = DateFormat.getTimeFormat(context).format(Date(json.optLong("endsAt")))
         views.setViewVisibility(R.id.swap_live_eta, View.VISIBLE)
-        views.setTextViewText(
-            R.id.swap_live_eta,
-            swapLiveTimeLeft(
-                nowMs = now,
-                endsAtMs = endsAt,
-                minute = json.optString("minuteLabel"),
-                hour = json.optString("hourLabel"),
-                left = json.optString("leftLabel"),
-            ),
-        )
-    }
-
-    /// The card to redraw while its countdown is still running. A dismissed or
-    /// stale card stays as the user left it.
-    internal fun tickingCard(context: Context): JSONObject? {
-        val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-        val raw = prefs.getString(PREF_PAYLOAD, null) ?: return null
-        val json = JSONObject(raw)
-        val dismissed = prefs.getString(PREF_DISMISSED, null)
-        val key = json.optString("key")
-        if (!dismissed.isNullOrEmpty() && dismissed == key) return null
-        if (json.optBoolean("stale") || json.isNull("endsAt")) return null
-        return json
+        views.setTextViewText(R.id.swap_live_eta, "~$eta")
     }
 
     private fun ensureChannel(context: Context, name: String) {
@@ -405,21 +376,6 @@ object SwapLiveNotifications {
         }
         val alarm = context.getSystemService(AlarmManager::class.java)
         alarm.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, staleAt, broadcast(context, ACTION_STALE, 1))
-    }
-
-    private fun launch(context: Context, card: JSONObject, holds: Boolean) {
-        val launch = Intent(context, SwapLiveActivityService::class.java).putExtra(EXTRA_PAYLOAD, card.toString())
-        try {
-            if (holds && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                context.startForegroundService(launch)
-            } else {
-                context.startService(launch)
-            }
-        } catch (error: IllegalStateException) {
-            // A push can arrive while the process is backgrounded and not allowed to start a service.
-            Log.w(TAG, "Updating the swap card without a service", error)
-            context.getSystemService(NotificationManager::class.java).notify(NOTIFICATION_ID, build(context, card))
-        }
     }
 
     private class StoredSwapCard(
@@ -475,92 +431,6 @@ object SwapLiveNotifications {
             if (key is String) json.put(key, value ?: JSONObject.NULL)
         }
         return json
-    }
-}
-
-/// "~5 min left", rounding the remainder up to the next minute. Keep in step
-/// with `swapTimeLeft` in the iOS Live Activity. A blank unit is the word used
-/// by a card started before those labels were sent.
-internal fun swapLiveTimeLeft(nowMs: Long, endsAtMs: Long, minute: String, hour: String, left: String): String {
-    val minuteWord = minute.ifBlank { "min" }
-    val hourWord = hour.ifBlank { "hr" }
-    val leftWord = left.ifBlank { "left" }
-    val seconds = (endsAtMs - nowMs) / 1000.0
-    val minutes = if (seconds <= 0.0) 0 else kotlin.math.ceil(seconds / 60.0).toInt()
-    if (minutes < 60) return "~$minutes $minuteWord $leftWord"
-    val hours = minutes / 60
-    val rest = minutes % 60
-    if (rest == 0) return "~$hours $hourWord $leftWord"
-    return "~$hours $hourWord $rest $minuteWord $leftWord"
-}
-
-/// Holds the process while a swap is still moving, so status polls keep running
-/// with the screen off. A finished card is a normal notification and the service stops.
-class SwapLiveActivityService : Service() {
-    private val handler = Handler(Looper.getMainLooper())
-    private val tick = Runnable { onTick() }
-
-    override fun onBind(intent: Intent?) = null
-
-    override fun onDestroy() {
-        handler.removeCallbacks(tick)
-        super.onDestroy()
-    }
-
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        val raw = intent?.getStringExtra(SwapLiveNotifications.EXTRA_PAYLOAD)
-        if (raw == null) {
-            stopSelf()
-            return START_NOT_STICKY
-        }
-        val json = JSONObject(raw)
-        val notification = SwapLiveNotifications.build(this, json)
-        val holds = json.optBoolean("holdsProcess") && !json.optBoolean("stale")
-        if (holds && !json.isNull("endsAt")) {
-            handler.removeCallbacks(tick)
-            handler.postDelayed(tick, TICK_MS)
-        } else {
-            handler.removeCallbacks(tick)
-        }
-        if (holds) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                startForeground(
-                    SwapLiveNotifications.NOTIFICATION_ID,
-                    notification,
-                    ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC,
-                )
-            } else {
-                startForeground(SwapLiveNotifications.NOTIFICATION_ID, notification)
-            }
-        } else {
-            getSystemService(NotificationManager::class.java).notify(SwapLiveNotifications.NOTIFICATION_ID, notification)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                try {
-                    stopForeground(STOP_FOREGROUND_DETACH)
-                } catch (_: IllegalArgumentException) {
-                    // The card was never a foreground notification.
-                }
-            }
-            stopSelf()
-        }
-        return START_NOT_STICKY
-    }
-
-    private fun onTick() {
-        val json = SwapLiveNotifications.tickingCard(this)
-        if (json == null) {
-            handler.removeCallbacks(tick)
-            return
-        }
-        val staleAt = if (json.isNull("staleAt")) 0L else json.optLong("staleAt")
-        if (staleAt > 0L && System.currentTimeMillis() >= staleAt) return
-        val manager = getSystemService(NotificationManager::class.java)
-        manager.notify(SwapLiveNotifications.NOTIFICATION_ID, SwapLiveNotifications.build(this, json))
-        handler.postDelayed(tick, TICK_MS)
-    }
-
-    private companion object {
-        const val TICK_MS = 20_000L
     }
 }
 
