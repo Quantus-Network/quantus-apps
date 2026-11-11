@@ -4,10 +4,9 @@ import 'dart:convert';
 import 'package:async/async.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/models/notification_models.dart';
+import 'package:wallet_core/models/notification_models.dart';
 import 'package:resonance_network_wallet/providers/notification_config_provider.dart';
 import 'package:resonance_network_wallet/services/local_notifications_service.dart';
-import 'package:resonance_network_wallet/shared/utils/print.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Maximum number of notifications to keep (FIFO)

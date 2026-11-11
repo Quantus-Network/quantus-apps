@@ -1,7 +1,7 @@
 import 'package:flutter/services.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/models/mining_rewards.dart';
-import 'package:resonance_network_wallet/shared/utils/miner_stats_csv.dart';
+import 'package:wallet_core/models/mining_rewards.dart';
+import 'package:wallet_core/utils/miner_stats_csv.dart';
 
 typedef MatchFinder =
     Future<List<AirdropMatch>> Function({required List<String> snapshotAddresses, required String mnemonic});

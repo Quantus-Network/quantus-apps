@@ -1,5 +1,5 @@
 import 'package:decimal/decimal.dart';
-import 'package:resonance_network_wallet/models/fiat_currency.dart';
+import 'package:wallet_core/models/fiat_currency.dart';
 
 /// Provides token → fiat exchange rates.
 ///

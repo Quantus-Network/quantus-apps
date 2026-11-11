@@ -1,6 +1,5 @@
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/shared/utils/print.dart';
 
 final transactionIntentProvider = StateProvider<TransactionEvent?>((_) => null);
 final sharedAccountIntentProvider = StateProvider<String?>((_) => null);

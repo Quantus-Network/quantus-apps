@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/l10n/app_localizations.dart';
-import 'package:resonance_network_wallet/models/mining_rewards.dart';
+import 'package:wallet_core/l10n/app_localizations.dart';
+import 'package:wallet_core/models/mining_rewards.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/connectivity_provider.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/shared/constants/e2e_keys.dart';
-import 'package:resonance_network_wallet/shared/utils/miner_stats_csv.dart';
+import 'package:wallet_core/utils/miner_stats_csv.dart';
 import 'package:resonance_network_wallet/v2/components/account_list_row.dart';
 import 'package:resonance_network_wallet/v2/screens/mining_rewards/mining_rewards_pay_to_screen.dart';
 

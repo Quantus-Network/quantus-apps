@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/legacy.dart';
 import 'dart:async';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/services/remote_config_service.dart';
-import 'package:resonance_network_wallet/shared/utils/print.dart';
 
 final remoteConfigServiceProvider = Provider<RemoteConfigService>((ref) {
   return RemoteConfigService();

@@ -8,7 +8,7 @@ import 'package:resonance_network_wallet/services/local_notifications_service.da
 import 'package:resonance_network_wallet/services/notification_integration_service.dart';
 import 'package:resonance_network_wallet/services/telemetry_navigator_observer.dart';
 import 'package:resonance_network_wallet/services/deep_link_service.dart';
-import 'package:resonance_network_wallet/l10n/app_localizations.dart';
+import 'package:wallet_core/l10n/app_localizations.dart';
 
 class ResonanceWalletApp extends ConsumerStatefulWidget {
   const ResonanceWalletApp({super.key});

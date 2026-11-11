@@ -1,6 +1,5 @@
 import 'package:decimal/decimal.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:quantus_sdk/src/utils/print.dart';
 
 class NumberFormattingService {
   static const int decimals = AppConstants.decimals;

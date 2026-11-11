@@ -9,7 +9,6 @@ import 'package:resonance_network_wallet/providers/pending_multisig_creations_pr
 import 'package:resonance_network_wallet/providers/pending_multisig_executions_provider.dart';
 import 'package:resonance_network_wallet/providers/pending_multisig_proposals_provider.dart';
 import 'package:resonance_network_wallet/providers/pending_transactions_provider.dart';
-import 'package:resonance_network_wallet/shared/utils/print.dart';
 
 final settingsServiceProvider = Provider<SettingsService>((ref) {
   return SettingsService();

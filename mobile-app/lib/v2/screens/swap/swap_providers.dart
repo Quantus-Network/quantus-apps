@@ -4,10 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:quantus_sdk/generated/bell/pallets/balances.dart' as balances;
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/l10n/app_localizations.dart';
-import 'package:resonance_network_wallet/models/swap_preflight.dart';
+import 'package:wallet_core/l10n/app_localizations.dart';
+import 'package:wallet_core/models/swap_preflight.dart';
 import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
-import 'package:resonance_network_wallet/shared/utils/print.dart';
 import 'package:resonance_network_wallet/v2/screens/send/regular_send_strategy.dart';
 
 /// The stand-in for QTC this build was started with; null in every real build.

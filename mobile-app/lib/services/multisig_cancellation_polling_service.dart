@@ -8,7 +8,6 @@ import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/services/extrinsic_indexer_polling_service.dart';
 import 'package:resonance_network_wallet/services/multisig_cancellation_reconciliation.dart';
 import 'package:resonance_network_wallet/shared/utils/polling_refresh_scope.dart';
-import 'package:resonance_network_wallet/shared/utils/print.dart';
 
 typedef MultisigCancellationPollingService =
     ExtrinsicIndexerPollingService<PendingMultisigCancellationEvent, MultisigAccount>;

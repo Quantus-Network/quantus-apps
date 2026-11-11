@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:quantus_sdk/src/utils/print.dart';
 
 /// The one widget that looks up checkphrases. Drop-in for [Text]: give it the
 /// address and it resolves the phrase in the background, never changing height

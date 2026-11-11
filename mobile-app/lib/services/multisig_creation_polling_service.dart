@@ -2,14 +2,13 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/models/pending_multisig_creation_record.dart';
+import 'package:wallet_core/models/pending_multisig_creation_record.dart';
 import 'package:resonance_network_wallet/providers/global_toast_provider.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/multisig_providers.dart';
 import 'package:resonance_network_wallet/providers/pending_multisig_creations_provider.dart';
 import 'package:resonance_network_wallet/services/multisig_creation_reconciliation.dart';
 import 'package:resonance_network_wallet/services/telemetry_service.dart';
-import 'package:resonance_network_wallet/shared/utils/print.dart';
 
 class MultisigCreationPollingService {
   final Ref _ref;

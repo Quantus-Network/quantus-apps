@@ -7,8 +7,8 @@ import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
-import 'package:resonance_network_wallet/shared/utils/account_utils.dart';
-import 'package:resonance_network_wallet/l10n/app_localizations.dart';
+import 'package:wallet_core/utils/account_utils.dart';
+import 'package:wallet_core/l10n/app_localizations.dart';
 
 /// The wallet's custom name, or the numbered fallback wallet lists show.
 String walletDisplayName(WidgetRef ref, AppLocalizations l10n, int walletIndex) =>

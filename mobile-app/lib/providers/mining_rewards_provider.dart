@@ -2,11 +2,10 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/models/mining_rewards.dart';
+import 'package:wallet_core/models/mining_rewards.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/services/debug_mining_rewards_service.dart';
 import 'package:resonance_network_wallet/services/mining_rewards_service.dart';
-import 'package:resonance_network_wallet/shared/utils/print.dart';
 
 /// Debug builds offer an outcome picker on the Airdrop entry screen.
 final debugMiningRewardsProvider = Provider<bool>((_) => kDebugMode && AppConstants.debugMiningRewards);

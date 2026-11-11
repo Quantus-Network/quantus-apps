@@ -13,7 +13,6 @@ import 'package:resonance_network_wallet/v2/screens/welcome/welcome_screen.dart'
 import 'package:resonance_network_wallet/services/logout_service.dart';
 import 'package:resonance_network_wallet/services/telemetry_service.dart';
 import 'package:resonance_network_wallet/services/wallet_creation_service.dart';
-import 'package:resonance_network_wallet/shared/utils/print.dart';
 
 class WalletInitializer extends ConsumerStatefulWidget {
   const WalletInitializer({super.key});

@@ -4,7 +4,7 @@ import 'dart:io';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/models/notification_models.dart';
+import 'package:wallet_core/models/notification_models.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/notification_provider.dart';
 import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
@@ -12,8 +12,7 @@ import 'package:resonance_network_wallet/services/history_polling_manager.dart';
 import 'package:resonance_network_wallet/services/swap_live_activity_message.dart';
 import 'package:resonance_network_wallet/services/telemetry_service.dart';
 import 'package:resonance_network_wallet/services/transaction_service.dart';
-import 'package:resonance_network_wallet/shared/utils/print.dart';
-import 'package:resonance_network_wallet/shared/utils/provider_reader.dart';
+import 'package:wallet_core/utils/provider_reader.dart';
 
 /// Top-level handler for background/terminated FCM messages.
 /// Must be a top-level function (not a class method) for Firebase.

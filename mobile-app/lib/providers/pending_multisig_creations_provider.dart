@@ -4,8 +4,7 @@ import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/models/pending_multisig_creation_record.dart';
-import 'package:resonance_network_wallet/shared/utils/print.dart';
+import 'package:wallet_core/models/pending_multisig_creation_record.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class PendingMultisigCreationsNotifier extends StateNotifier<List<PendingMultisigCreationEvent>> {
