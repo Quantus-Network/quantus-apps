@@ -1085,16 +1085,6 @@ class AppLocalizationsId extends AppLocalizations {
   String get keystoneScanReceiving => 'RECEIVING SIGNATURE';
 
   @override
-  String keystoneScanProgress(int scanned, int total) {
-    return '$scanned/$total';
-  }
-
-  @override
-  String keystoneScanScanning(int count) {
-    return '$count bingkai dipindai';
-  }
-
-  @override
   String get keystoneScanSubmitting => 'Mengirim transaksi...';
 
   @override
@@ -2006,7 +1996,19 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
-  String get componentQrScannerTitle => 'Pindai Kode QR';
+  String get componentQrScannerBack => 'Kembali';
+
+  @override
+  String get componentQrScannerTorch => 'Senter';
+
+  @override
+  String get componentQrScannerGallery => 'Galeri';
+
+  @override
+  String get componentQrScannerCameraUnavailable => 'Kamera tidak tersedia';
+
+  @override
+  String get componentQrScannerCameraDenied => 'Izinkan akses kamera di Pengaturan untuk memindai.';
 
   @override
   String get componentQrScannerNoCode => 'Tidak ada kode QR pada gambar';

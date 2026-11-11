@@ -4,19 +4,37 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 
-/// Orange mono "STEP n/3" label shared by the Keystone signing screens.
-class KeystoneStepLabel extends ConsumerWidget {
+/// Orange mono "STEP n/3" label, title and instruction that head each Keystone
+/// signing screen.
+class KeystoneStepHeader extends ConsumerWidget {
   final int current;
   final int total;
+  final String title;
+  final String instruction;
 
-  const KeystoneStepLabel({super.key, required this.current, required this.total});
+  const KeystoneStepHeader({
+    super.key,
+    required this.current,
+    required this.total,
+    required this.title,
+    required this.instruction,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = ref.watch(l10nProvider);
-    return Text(
-      l10n.keystoneSignStep(current, total),
-      style: context.themeTextV3.labelData.copyWith(color: context.colorsV3.accentFlare),
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(l10n.keystoneSignStep(current, total), style: text.labelData.copyWith(color: colors.accentFlare)),
+        const SizedBox(height: 12),
+        Text(title, style: text.headingRow.copyWith(color: colors.textContent)),
+        const SizedBox(height: 8),
+        Text(instruction, style: text.caption.copyWith(color: colors.textMuted)),
+      ],
     );
   }
 }

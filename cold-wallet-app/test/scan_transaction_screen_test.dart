@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:quantus_cold_wallet/screens/scan_transaction_screen.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 
@@ -19,16 +18,19 @@ void main() {
     await tester.pump();
   }
 
-  testWidgets('shows the Sign chrome, the step header, the bracket frame and the receiving panel', (tester) async {
+  testWidgets('shows the shared scanner with the step header, the bracket frame and the receiving panel', (
+    tester,
+  ) async {
     await pumpScan(tester);
 
-    expect(find.text('Sign'), findsOneWidget);
+    expect(find.byType(QuantusScanner), findsOneWidget);
+    expect(find.text('Back'), findsOneWidget);
     expect(find.text('Torch'), findsOneWidget);
+    expect(find.text('Gallery'), findsNothing);
     expect(tester.widget<Text>(find.text('STEP 1/3')).style?.color, colors.accentFlare);
     expect(tester.widget<Text>(find.text('Scan the transaction')).style?.fontSize, text.titleScreen.fontSize);
     expect(find.text("Hold this device over your phone's screen to load the transaction."), findsOneWidget);
 
-    expect(find.byType(MobileScanner), findsOneWidget);
     final painter =
         tester
                 .widget<CustomPaint>(find.byWidgetPredicate((w) => w is CustomPaint && w.painter is ScanFramePainter))
@@ -47,6 +49,23 @@ void main() {
     expect(cancel.style?.decoration, TextDecoration.underline);
     expect(find.text('Debug calls'), findsOneWidget);
     expect(find.byType(Icon), findsNothing, reason: 'the cold wallet draws no Material icons');
+  });
+
+  testWidgets('keeps the torch clear of the receiving panel on a small phone', (tester) async {
+    tester.view.physicalSize = const Size(360, 640);
+    tester.view.devicePixelRatio = 1;
+    tester.view.padding = const FakeViewPadding(top: 20);
+    addTearDown(tester.view.reset);
+
+    await pumpScan(tester);
+
+    final frame = tester.getRect(find.byWidgetPredicate((w) => w is CustomPaint && w.painter is ScanFramePainter));
+    final subtitle = find.text("Hold this device over your phone's screen to load the transaction.");
+    expect(frame.top, greaterThanOrEqualTo(tester.getRect(subtitle).bottom));
+
+    final controls = tester.getRect(find.byType(ScannerControl));
+    expect(controls.top, greaterThanOrEqualTo(frame.bottom));
+    expect(controls.bottom, lessThanOrEqualTo(tester.getRect(find.byType(ScanProgress)).top));
   });
 
   testWidgets('shows no scanning tips before any frame has arrived', (tester) async {

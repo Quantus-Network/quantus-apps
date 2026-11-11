@@ -1542,27 +1542,6 @@
     "@keystoneScanReceiving": {
       "description": "Label next to the scan progress on the Keystone signature scanner screen"
     },
-    "keystoneScanProgress": "{scanned}/{total}",
-    "@keystoneScanProgress": {
-      "description": "Progress indicator showing scanned vs total animated QR frames",
-      "placeholders": {
-        "scanned": {
-          "type": "int"
-        },
-        "total": {
-          "type": "int"
-        }
-      }
-    },
-    "keystoneScanScanning": "{count} frames scanned",
-    "@keystoneScanScanning": {
-      "description": "Progress text before the total frame count is known",
-      "placeholders": {
-        "count": {
-          "type": "int"
-        }
-      }
-    },
     "keystoneScanSubmitting": "Submitting transaction...",
     "@keystoneScanSubmitting": {
       "description": "Overlay text while the externally signed transaction is broadcast"
@@ -2938,9 +2917,25 @@
       }
     },
 
-    "componentQrScannerTitle": "Scan QR Code",
-    "@componentQrScannerTitle": {
-      "description": "Text for app bar or button label on QR scanner component"
+    "componentQrScannerBack": "Back",
+    "@componentQrScannerBack": {
+      "description": "Label next to the back caret on the QR scanner"
+    },
+    "componentQrScannerTorch": "Torch",
+    "@componentQrScannerTorch": {
+      "description": "Label under the torch control on the QR scanner"
+    },
+    "componentQrScannerGallery": "Gallery",
+    "@componentQrScannerGallery": {
+      "description": "Label under the control that picks a QR image from the gallery"
+    },
+    "componentQrScannerCameraUnavailable": "Camera unavailable",
+    "@componentQrScannerCameraUnavailable": {
+      "description": "Shown in the scan window when the camera could not be started"
+    },
+    "componentQrScannerCameraDenied": "Allow camera access in Settings to scan.",
+    "@componentQrScannerCameraDenied": {
+      "description": "Shown in the scan window when camera permission was denied"
     },
     "componentQrScannerNoCode": "No QR code found in image",
     "@componentQrScannerNoCode": {
