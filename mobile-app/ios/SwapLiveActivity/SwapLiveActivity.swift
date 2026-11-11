@@ -62,6 +62,7 @@ private struct SwapLockScreen: View {
         SwapBrand(state: state, stale: stale)
         Spacer(minLength: 8)
         SwapTiming(state: state, stale: stale)
+          .layoutPriority(1)
       }
       SwapBody(state: state, stale: stale)
         .padding(.top, 16)
@@ -139,62 +140,65 @@ private struct SwapTiming: View {
   var body: some View {
     if stale {
       HStack(alignment: .lastTextBaseline, spacing: 4) {
-        Text(timerInterval: state.updatedAtDate...Date.distantFuture, countsDown: false)
-          .font(.geist(15))
-          .foregroundStyle(.white)
-          .monospacedDigit()
+        SwapTimerSlot(template: "0:00:00", alignment: .trailing) {
+          Text(timerInterval: state.updatedAtDate...Date.distantFuture, countsDown: false)
+            .multilineTextAlignment(.trailing)
+        }
+        .font(.geist(15))
+        .foregroundStyle(.white)
+        .monospacedDigit()
         Text(state.agoLabel)
           .font(.geist(11))
           .foregroundStyle(SwapPalette.content)
+          .lineLimit(1)
       }
-      .fixedSize(horizontal: true, vertical: false)
     } else if let endsAt = state.endsAtDate {
-      SwapCountdown(
-        endsAt: endsAt,
-        minute: swapCountdownWord(state.minuteLabel, fallback: "min"),
-        hour: swapCountdownWord(state.hourLabel, fallback: "hr"),
-        left: swapCountdownWord(state.leftLabel, fallback: "left")
-      )
+      SwapCountdown(endsAt: endsAt)
     }
   }
 }
 
-/// Words for a card started before the countdown labels were sent.
-private func swapCountdownWord(_ value: String?, fallback: String) -> String {
-  guard let value else { return fallback }
-  let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
-  return trimmed.isEmpty ? fallback : trimmed
-}
-
 private struct SwapCountdown: View {
   let endsAt: Date
-  let minute: String
-  let hour: String
-  let left: String
 
   var body: some View {
     label
       .font(.geist(12))
       .foregroundStyle(SwapPalette.flare)
       .lineLimit(1)
-      .fixedSize(horizontal: true, vertical: false)
       .padding(.horizontal, 12)
       .frame(height: 26)
       .background(Capsule().fill(SwapPalette.flare.opacity(0.08)))
       .overlay(Capsule().stroke(SwapPalette.flare.opacity(0.3), lineWidth: 1))
   }
 
-  @ViewBuilder
   private var label: some View {
-    if #available(iOS 18.0, *) {
-      swapCountdownLiveText(endsAt: endsAt, minute: minute, hour: hour, left: left)
-    } else {
+    SwapTimerSlot(template: swapCountdownTemplate(endsAt: endsAt), alignment: .center) {
       HStack(spacing: 0) {
         Text("~")
-        swapCountdownTimerText(endsAt: endsAt)
-          .monospacedDigit()
+        swapCountdownBadgeText(endsAt: endsAt)
       }
     }
+    .monospacedDigit()
+  }
+}
+
+/// A timer drawn over hidden [template] text, which sets its width.
+///
+/// On iOS 26 the lock screen card comes out empty, with no error, when a timer
+/// is asked for its ideal width, for example under `.fixedSize`. Keep
+/// `.fixedSize` off a timer and everything around it, and size it with this.
+/// The lock screen draws a timer across the whole slot and places its digits
+/// by `multilineTextAlignment`, not by [alignment], so set both.
+private struct SwapTimerSlot<Timer: View>: View {
+  let template: String
+  let alignment: Alignment
+  @ViewBuilder let timer: Timer
+
+  var body: some View {
+    Text(template)
+      .hidden()
+      .overlay(alignment: alignment) { timer }
   }
 }
 
