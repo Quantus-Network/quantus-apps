@@ -30,10 +30,14 @@ func swapLiveActiveCardAction(current: SwapLiveCardRevision, incoming: SwapLiveC
   return .update
 }
 
-/// A finished swap never opens a card. With none on screen it either already
-/// left, or the user removed it.
-func swapLiveOpensCard(_ incoming: SwapLiveCardRevision) -> Bool {
-  !swapLiveTerminal(phase: incoming.phase, failure: incoming.failure)
+/// Whether a write opens a new card when none is running. A finished swap never
+/// opens one: with none running it either already left, or the user removed it.
+/// [ended] are cards that ended but are still on screen until their dismissal
+/// date, such as one a completion push ended. Their swap keeps the write order,
+/// so a poll that missed the push cannot reopen that swap as in progress.
+func swapLiveOpensCard(_ incoming: SwapLiveCardRevision, ended: [SwapLiveCardRevision]) -> Bool {
+  if swapLiveTerminal(phase: incoming.phase, failure: incoming.failure) { return false }
+  return ended.allSatisfy { swapLiveLocalWriteAllowed(current: $0, incoming: incoming) }
 }
 
 /// When a finished card leaves, counted from the moment the swap finished.

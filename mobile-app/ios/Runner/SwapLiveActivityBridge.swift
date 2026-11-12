@@ -131,7 +131,7 @@ final class SwapLiveActivityBridge: NSObject, FlutterStreamHandler {
       watch(activity)
       return
     }
-    guard swapLiveOpensCard(revision(state)) else { return }
+    guard swapLiveOpensCard(revision(state), ended: activities.map { revision($0.content.state) }) else { return }
     // A finished card still waiting for its dismissal date makes way for the new swap.
     for ended in activities {
       suppressDismiss.insert(ended.id)

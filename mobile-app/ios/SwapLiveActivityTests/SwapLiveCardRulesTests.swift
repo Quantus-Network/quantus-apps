@@ -125,10 +125,31 @@ private struct SwapLiveCardRulesTest {
   }
 
   private static func openingCards() {
-    expect(!swapLiveOpensCard(card("swapped")), "a finished swap opened a card")
-    expect(!swapLiveOpensCard(card("failed", failure: "failed")), "a failed swap opened a card")
-    expect(!swapLiveOpensCard(card("failed", failure: "refunded")), "a refunded swap opened a card")
-    expect(swapLiveOpensCard(card("submitted", key: "swap-b")), "a new swap did not open a card")
-    expect(swapLiveOpensCard(card("failed", failure: "incomplete")), "an incomplete deposit did not open a card")
+    expect(!swapLiveOpensCard(card("swapped"), ended: []), "a finished swap opened a card")
+    expect(!swapLiveOpensCard(card("failed", failure: "failed"), ended: []), "a failed swap opened a card")
+    expect(!swapLiveOpensCard(card("failed", failure: "refunded"), ended: []), "a refunded swap opened a card")
+    expect(swapLiveOpensCard(card("submitted", key: "swap-b"), ended: []), "a new swap did not open a card")
+    expect(swapLiveOpensCard(card("failed", failure: "incomplete"), ended: []), "an incomplete deposit did not open a card")
+
+    // A completion push ended swap-a's card, which waits on screen for its
+    // dismissal date. The app missed the push and still holds settling, and its
+    // refresh carries a newer updatedAt than the push.
+    let completed = [card("swapped")]
+    let delayedPoll = card("settling", updatedAt: finishedAt + 45_000)
+    expect(!swapLiveOpensCard(delayedPoll, ended: completed), "a delayed poll reopened a completed swap")
+
+    let refunded = [card("failed", failure: "refunded")]
+    expect(!swapLiveOpensCard(delayedPoll, ended: refunded), "a delayed poll reopened a refunded swap")
+
+    let nextSwap = card("submitted", key: "swap-b", updatedAt: finishedAt + 45_000)
+    expect(swapLiveOpensCard(nextSwap, ended: completed), "a new swap did not open past an ended card")
+
+    // A card the app ended while the swap was still open does not block that swap.
+    let endedEarly = [card("submitted", updatedAt: finishedAt - 60_000)]
+    expect(swapLiveOpensCard(card("confirming"), ended: endedEarly), "an open swap stayed closed after an early end")
+    expect(
+      !swapLiveOpensCard(card("submitted", updatedAt: finishedAt - 120_000), ended: endedEarly),
+      "an older revision reopened an ended card"
+    )
   }
 }
