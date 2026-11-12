@@ -31,14 +31,25 @@ class SwapLiveTimeoutInstrumentedTest {
 
         val settling = SwapLiveNotifications.build(context, card("settling", null, now, holdsProcess = true))
         assertEquals(0L, settling.timeoutAfter)
+
+        // A refresh 14 minutes after the finish carries a fresh updatedAt. The deadline stays put.
+        val redraw = card("swapped", null, now, holdsProcess = false, finishedAt = now - 14 * 60_000L)
+        assertWithin(60_000L, SwapLiveNotifications.build(context, redraw).timeoutAfter)
     }
 
     private fun assertWithin(window: Long, timeout: Long) {
         // The card is built a moment after `now`, so a little of the window is already gone.
-        assertTrue("timeout $timeout for window $window", timeout in (window - 60_000L)..window)
+        assertTrue("timeout $timeout for window $window", timeout in (window - 5_000L)..window)
     }
 
-    private fun card(phase: String, failure: String?, updatedAt: Long, holdsProcess: Boolean): JSONObject =
+    /// [finishedAt] is what [SwapLiveNotifications.show] stores on a finished card before drawing it.
+    private fun card(
+        phase: String,
+        failure: String?,
+        updatedAt: Long,
+        holdsProcess: Boolean,
+        finishedAt: Long? = if (swapLiveTerminal(phase, failure)) updatedAt else null,
+    ): JSONObject =
         JSONObject()
             .put("key", "swap-a")
             .put("phase", phase)
@@ -52,4 +63,5 @@ class SwapLiveTimeoutInstrumentedTest {
             .put("updatedAt", updatedAt)
             .put("staleAt", updatedAt + 120_000L)
             .put("endsAt", JSONObject.NULL)
+            .put("finishedAt", finishedAt ?: JSONObject.NULL)
 }
