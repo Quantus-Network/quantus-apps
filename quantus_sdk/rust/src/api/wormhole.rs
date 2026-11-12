@@ -88,7 +88,7 @@ pub fn compute_address_hash_hex(raw_address: Vec<u8>) -> Result<String, String> 
 }
 
 pub const SCALE_DOWN_FACTOR: u128 = 10_000_000_000;
-/// Must match the chain's private-batch shape (N=10 burns, M=32 exit slots).
+/// Must match the private-batch shape the chain verifies.
 pub const BATCH_SHAPE: PrivateBatchShape = production::PRIVATE_BATCH_SHAPE;
 
 #[flutter_rust_bridge::frb(sync)]

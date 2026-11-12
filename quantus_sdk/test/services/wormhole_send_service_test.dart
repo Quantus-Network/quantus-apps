@@ -40,7 +40,7 @@ class _StubProvingSendService extends WormholeSendService {
     WormholeOperation op,
     String circuitBinsDir,
     ClaimProgressCallback onProgress,
-  ) async => (numLeafProofs: 10, numExitSlots: 32);
+  ) async => (numLeafProofs: 9, numExitSlots: 32);
 
   @override
   Future<ClaimResult> proveAndSubmitBatches({
@@ -201,12 +201,12 @@ void main() {
 
       final service = await runClaim(transfers: rewards);
       final batches = service.capturedBatches!;
-      expect(batches.map((b) => b.burns.length), [10, 2]);
+      expect(batches.map((b) => b.burns.length), [9, 3]);
       for (final batch in batches) {
         expect(batch.exits.single.account, Address.decode(destination).pubkey);
         expect(batch.exits.single.returnsToSender, isFalse);
       }
-      expect(batches.map((b) => b.exits.single.amountScaled), [499, 99]);
+      expect(batches.map((b) => b.exits.single.amountScaled), [449, 149]);
     });
   });
 

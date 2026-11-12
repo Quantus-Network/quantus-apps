@@ -31,7 +31,7 @@ BigInt wormholeTokenFromScaled(int scaled) => BigInt.from(scaled) * wormholeScal
 /// per private batch and exit slots per private batch. The circuit binaries'
 /// `config.json` is the source of truth at send time; these are the planning
 /// defaults and must match it.
-const int wormholeDefaultLeafProofs = 10;
+const int wormholeDefaultLeafProofs = 9;
 const int wormholeDefaultExitSlots = 32;
 
 /// Max total output the circuit allows for a private batch:

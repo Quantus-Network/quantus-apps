@@ -124,18 +124,18 @@ void main() {
       expect(batch.exitCount, 2);
     });
 
-    test('splits across batches beyond 10 inputs, change only in the last', () {
+    test('splits across batches beyond 9 inputs, change only in the last', () {
       final plan = selectWormholeInputs(
         utxos: List.generate(12, (i) => utxo(200, id: 'u$i')),
         amountToken: tokens('22'),
       );
 
-      // Ten inputs net 19.99; eleven net 21.98, so the twelfth is required.
+      // Nine inputs net 17.99; eleven net 21.98, so the twelfth is required.
       expect(plan.inputCount, 12);
       expect(plan.batches.length, 2);
-      expect(plan.batches.every((b) => b.inputs.length <= 10), isTrue);
+      expect(plan.batches.every((b) => b.inputs.length <= 9), isTrue);
       expect(plan.batches.first.changeScaled, 0);
-      expect(plan.batches.first.recipientScaled, wormholeBatchNetScaled(List.filled(10, 200)));
+      expect(plan.batches.first.recipientScaled, wormholeBatchNetScaled(List.filled(9, 200)));
       expect(plan.batches.last.recipientScaled, 2200 - plan.batches.first.recipientScaled);
       expect(plan.changeToken, tokens('1.98'));
       expect(plan.feeToken, tokens('0.02'));
@@ -172,18 +172,19 @@ void main() {
 
     test('wormholeMaxSendable deducts one fee per batch', () {
       expect(wormholeMaxSendable([utxo(110), utxo(580), utxo(400)]), tokens('10.89'));
-      expect(wormholeMaxSendable(List.generate(10, (i) => utxo(50, id: 'u$i'))), tokens('4.99'));
+      expect(wormholeMaxSendable(List.generate(9, (i) => utxo(50, id: 'u$i'))), tokens('4.49'));
+      expect(wormholeMaxSendable(List.generate(10, (i) => utxo(50, id: 'u$i'))), tokens('4.98'));
       expect(wormholeMaxSendable(List.generate(11, (i) => utxo(50, id: 'u$i'))), tokens('5.48'));
     });
 
-    test('exactly 10 inputs fit in a single batch', () {
+    test('exactly 9 inputs fit in a single batch', () {
       final plan = selectWormholeInputs(
-        utxos: List.generate(10, (i) => utxo(200, id: 'u$i')),
-        amountToken: tokens('19'),
+        utxos: List.generate(9, (i) => utxo(200, id: 'u$i')),
+        amountToken: tokens('17'),
       );
-      expect(plan.inputCount, 10);
+      expect(plan.inputCount, 9);
       expect(plan.batches.length, 1);
-      expect(plan.batches.single.recipientScaled, 1900);
+      expect(plan.batches.single.recipientScaled, 1700);
     });
 
     test('send max: all input nets consumed with zero change', () {
