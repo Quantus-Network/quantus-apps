@@ -22,9 +22,6 @@ struct SwapActivityAttributes: ActivityAttributes {
     var chainLabel: String
     var openToCheck: String
     var agoLabel: String
-    var leftLabel: String?
-    var minuteLabel: String?
-    var hourLabel: String?
     var progress: Double
     var showProgress: Bool
     var endsAt: Double?

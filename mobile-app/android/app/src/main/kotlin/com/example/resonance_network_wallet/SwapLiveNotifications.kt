@@ -478,9 +478,10 @@ object SwapLiveNotifications {
     }
 }
 
-/// "~5 min left", rounding the remainder up to the next minute. Keep in step
-/// with `swapTimeLeft` in the iOS Live Activity. A blank unit is the word used
-/// by a card started before those labels were sent.
+/// "~5 min left", rounding the remainder up to the next minute. The iOS Live
+/// Activity shows a system timer instead, because its card cannot run our own
+/// formatting. A blank unit is the word used by a card started before those
+/// labels were sent.
 internal fun swapLiveTimeLeft(nowMs: Long, endsAtMs: Long, minute: String, hour: String, left: String): String {
     val minuteWord = minute.ifBlank { "min" }
     val hourWord = hour.ifBlank { "hr" }

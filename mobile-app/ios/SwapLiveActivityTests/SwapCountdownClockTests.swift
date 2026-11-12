@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// One render of each countdown branch must keep moving after a minute passes.
-/// The test builds each `Text` once and reads it again. Nothing pushes a new
+/// One render of the countdown badge must keep moving after a minute passes.
+/// The test builds the `Text` once and reads it again. Nothing pushes a new
 /// activity update between the two reads.
 ///
 /// From `mobile-app/ios`:
@@ -51,43 +51,37 @@ private func rendered(_ text: Text) -> String {
 private struct SwapCountdownClockTest {
   static func main() {
     let ends = Date.now.addingTimeInterval(62)
-    let live = swapCountdownLiveText(endsAt: ends, minute: "min", hour: "hr", left: "left")
-    let timer = swapCountdownTimerText(endsAt: ends)
-    let liveIdentity = storageIdentity(live)
-    let timerIdentity = storageIdentity(timer)
-    let liveBefore = rendered(live)
-    let timerBefore = rendered(timer)
+    let badge = swapCountdownBadgeText(endsAt: ends)
+    let badgeIdentity = storageIdentity(badge)
+    let badgeBefore = rendered(badge)
 
-    let liveType = storageTypeName(live)
-    expect(liveType.contains("TimeDataFormattingStorage"), "iOS 18 text stored \(liveType), wanted a live time source")
-    expect(liveType.contains("SwapTimeLeft"), "iOS 18 text stored \(liveType), wanted the countdown formatter")
-    expect(!liveType.contains("FormatStyleStorage"), "iOS 18 text stored a fixed date in \(liveType)")
-
-    let timerType = storageTypeName(timer)
-    expect(timerType.contains("TimeDataFormattingStorage"), "earlier text stored \(timerType), wanted a system timer")
-    expect(timerType.contains("Timer"), "earlier text stored \(timerType), wanted a system timer")
-    expect(timerType != "String", "earlier text stored a finished string")
+    // The system process that draws the card can only rebuild SwiftUI and
+    // Foundation types. A format style of ours turns the whole card into grey
+    // placeholders, so the badge must store nothing but the system timer.
+    let badgeType = storageTypeName(badge)
+    expect(badgeType.contains("TimeDataFormattingStorage"), "badge stored \(badgeType), wanted a system timer")
+    expect(badgeType.contains("Timer"), "badge stored \(badgeType), wanted a system timer")
+    expect(!badgeType.contains("Swap"), "badge stored \(badgeType), which names a type of ours")
 
     Thread.sleep(forTimeInterval: 3.5)
 
-    expect(storageIdentity(live) == liveIdentity, "iOS 18 text was rebuilt instead of updating in place")
-    expect(storageIdentity(timer) == timerIdentity, "earlier text was rebuilt instead of updating in place")
-    expect(liveBefore == "~2 min left", "iOS 18 text started at \(liveBefore)")
-    expect(rendered(live) == "~1 min left", "iOS 18 text stayed \(rendered(live)) across the minute")
-    expect(timerBefore.hasPrefix("1:"), "system timer started at \(timerBefore)")
-    expect(rendered(timer).hasPrefix("0:"), "system timer stayed \(rendered(timer)) across the minute")
+    expect(storageIdentity(badge) == badgeIdentity, "badge was rebuilt instead of updating in place")
+    expect(badgeBefore.hasPrefix("1:"), "badge started at \(badgeBefore)")
+    expect(rendered(badge).hasPrefix("0:"), "badge stayed \(rendered(badge)) across the minute")
 
-    let scheduleEnds = Date(timeIntervalSince1970: 1_700_000_000)
-    let scheduleNow = scheduleEnds.addingTimeInterval(-300)
-    let schedule = SwapTimeLeft(endsAt: scheduleEnds, minuteLabel: "min", hourLabel: "hr", leftLabel: "left")
-    let scheduledNext = schedule.discreteInput(after: scheduleNow)
-    expect(schedule.format(scheduleNow) == "~5 min left", "formatter at 5 minutes was \(schedule.format(scheduleNow))")
-    expect(scheduledNext?.timeIntervalSince(scheduleNow) == 60, "next minute boundary was \(String(describing: scheduledNext))")
-    if let scheduledNext {
-      expect(
-        schedule.format(scheduledNext) == "~4 min left",
-        "formatter at the next minute was \(schedule.format(scheduledNext))"
-      )
+    // The badge's width comes from a hidden template, so it must fit the
+    // longest value the timer shows from now on.
+    let templateNow = Date(timeIntervalSince1970: 1_700_000_000)
+    let templates: [(TimeInterval, String)] = [
+      (-30, "~00:00"),
+      (0, "~00:00"),
+      (59 * 60 + 59, "~00:00"),
+      (3_600, "~0:00:00"),
+      (5 * 3_600, "~0:00:00"),
+    ]
+    for (remaining, wanted) in templates {
+      let template = swapCountdownTemplate(endsAt: templateNow.addingTimeInterval(remaining), now: templateNow)
+      expect(template == wanted, "template with \(remaining)s left was \(template), wanted \(wanted)")
     }
 
     if failures.isEmpty {
