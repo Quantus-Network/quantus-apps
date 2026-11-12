@@ -317,8 +317,8 @@ private struct SwapColumns: Layout {
 private struct SwapFacts: View {
   let state: SwapActivityAttributes.ContentState
 
-  /// Column shares measured on the Figma card (From 164, To 182, Chain 294).
-  private static let shares: [CGFloat] = [164, 182, 294]
+  /// Amounts get the room; the chain name is short. Matches the Android card's weights.
+  private static let shares: [CGFloat] = [1, 1, 0.8]
   private static let height: CGFloat = 36
 
   var body: some View {
@@ -369,11 +369,12 @@ private struct SwapFact: View {
           .foregroundStyle(.white)
           .lineLimit(1)
           .minimumScaleFactor(0.7)
-          .layoutPriority(1)
+        // The symbol keeps its full width; the amount is what shrinks.
         Text(symbol)
           .font(.geist(11))
           .foregroundStyle(SwapPalette.content)
           .lineLimit(1)
+          .fixedSize()
       }
       .frame(maxWidth: .infinity, alignment: .leading)
     }

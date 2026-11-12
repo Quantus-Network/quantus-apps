@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:background="@drawable/swap_live_bg"
@@ -159,7 +160,7 @@
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_weight="164"
+            android:layout_weight="1"
             android:orientation="vertical">
 
             <TextView
@@ -179,14 +180,22 @@
                     android:id="@+id/swap_live_from_amount"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:autoSizeMaxTextSize="15sp"
+                    android:autoSizeMinTextSize="11sp"
+                    android:autoSizeStepGranularity="1sp"
+                    android:autoSizeTextType="uniform"
+                    android:maxLines="1"
                     android:textColor="#FFFFFFFF"
-                    android:textSize="15sp" />
+                    android:textSize="15sp"
+                    tools:targetApi="26" />
 
                 <TextView
                     android:id="@+id/swap_live_from_symbol"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="4dp"
+                    android:maxLines="1"
                     android:textColor="#FFE8E6E0"
                     android:textSize="11sp" />
             </LinearLayout>
@@ -202,7 +211,7 @@
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_weight="182"
+            android:layout_weight="1"
             android:orientation="vertical"
             android:paddingStart="7dp"
             android:paddingEnd="0dp">
@@ -224,14 +233,22 @@
                     android:id="@+id/swap_live_to_amount"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:autoSizeMaxTextSize="15sp"
+                    android:autoSizeMinTextSize="11sp"
+                    android:autoSizeStepGranularity="1sp"
+                    android:autoSizeTextType="uniform"
+                    android:maxLines="1"
                     android:textColor="#FFFFFFFF"
-                    android:textSize="15sp" />
+                    android:textSize="15sp"
+                    tools:targetApi="26" />
 
                 <TextView
                     android:id="@+id/swap_live_to_symbol"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="4dp"
+                    android:maxLines="1"
                     android:textColor="#FFE8E6E0"
                     android:textSize="11sp" />
             </LinearLayout>
@@ -247,7 +264,7 @@
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_weight="294"
+            android:layout_weight="0.8"
             android:orientation="vertical"
             android:paddingStart="7dp"
             android:paddingEnd="0dp">
@@ -261,11 +278,18 @@
 
             <TextView
                 android:id="@+id/swap_live_chain_value"
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
+                android:autoSizeMaxTextSize="15sp"
+                android:autoSizeMinTextSize="11sp"
+                android:autoSizeStepGranularity="1sp"
+                android:autoSizeTextType="uniform"
+                android:ellipsize="end"
+                android:maxLines="1"
                 android:textColor="#FFFFFFFF"
-                android:textSize="15sp" />
+                android:textSize="15sp"
+                tools:targetApi="26" />
         </LinearLayout>
     </LinearLayout>
 

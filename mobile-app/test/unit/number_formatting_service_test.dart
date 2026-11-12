@@ -79,6 +79,80 @@ void main() {
       });
     });
 
+    group('formatCompactAmount', () {
+      BigInt units(String amount, {int decimals = NumberFormattingService.decimals}) =>
+          service.parseAmount(amount, decimals: decimals)!;
+      String compact(String amount) => service.formatCompactAmount(units(amount));
+
+      test('zero renders as 0', () {
+        expect(service.formatCompactAmount(BigInt.zero), '0');
+      });
+
+      test('sub-unit amounts keep 4 decimals', () {
+        expect(compact('0.024213'), '0.0242');
+        expect(compact('0.5'), '0.5');
+        expect(compact('0.0001'), '0.0001');
+        expect(compact('0.99999'), '0.9999');
+      });
+
+      test('amounts below 0.0001 show a floor instead of a long tail', () {
+        expect(compact('0.00001234'), '<0.0001');
+        expect(compact('0.00009999'), '<0.0001');
+        expect(compact('0.000000000001'), '<0.0001');
+      });
+
+      test('1 to 999 keep 4 significant digits, rounded down', () {
+        expect(compact('1'), '1');
+        expect(compact('1.23456'), '1.234');
+        expect(compact('12.3456'), '12.34');
+        expect(compact('999.99'), '999.9');
+      });
+
+      test('thousands use K with 4 significant digits', () {
+        expect(compact('1234.5678'), '1.234K');
+        expect(compact('12345'), '12.34K');
+        expect(compact('123456'), '123.4K');
+        expect(compact('1000'), '1K');
+      });
+
+      test('millions, billions and trillions use M, B and T', () {
+        expect(compact('1234567'), '1.234M');
+        expect(compact('2500000000'), '2.5B');
+        expect(compact('3000000000000'), '3T');
+      });
+
+      test('never rounds up across a suffix boundary', () {
+        expect(compact('999999'), '999.9K');
+        expect(compact('999.99999'), '999.9');
+      });
+
+      test('uses the token decimals', () {
+        expect(service.formatCompactAmount(units('1234.5678', decimals: 6), decimals: 6), '1.234K');
+        expect(service.formatCompactAmount(units('0.024213', decimals: 6), decimals: 6), '0.0242');
+        expect(service.formatCompactAmount(units('0.00001', decimals: 6), decimals: 6), '<0.0001');
+      });
+
+      test('uses the locale decimal separator', () {
+        final comma = NumberFormattingService(localeConfig: LocaleNumberConfig.commaDecimal);
+        expect(comma.formatCompactAmount(units('1234.5')), '1,234K');
+        expect(comma.formatCompactAmount(units('0.0242')), '0,0242');
+        expect(comma.formatCompactAmount(units('0.00001')), '<0,0001');
+      });
+
+      test('result is never longer than 7 characters', () {
+        for (var exponent = -8; exponent <= 15; exponent++) {
+          for (final mantissa in ['1', '1.5', '9.99999999']) {
+            final amount =
+                BigInt.parse(mantissa.replaceAll('.', '')) *
+                BigInt.from(10).pow(NumberFormattingService.decimals + exponent) ~/
+                BigInt.from(10).pow(mantissa.contains('.') ? mantissa.length - 2 : 0);
+            final shown = service.formatCompactAmount(amount);
+            expect(shown.length, lessThanOrEqualTo(7), reason: '${mantissa}e$exponent rendered as $shown');
+          }
+        }
+      });
+    });
+
     group('parseAmount', () {
       test('parses integer string', () {
         expect(service.parseAmount('1'), scaleFactor);
