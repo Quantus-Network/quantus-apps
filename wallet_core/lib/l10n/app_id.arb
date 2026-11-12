@@ -531,6 +531,7 @@
   "swapLiveLeft": "lagi",
   "swapLiveMinute": "mnt",
   "swapLiveHour": "jam",
+  "swapLiveOverdue": "Butuh waktu lebih lama",
   "swapLiveChannel": "Progres swap",
   "swapDetailsTitle": "Detail Swap",
   "swapDetailsRecipient": "Alamat penerima",

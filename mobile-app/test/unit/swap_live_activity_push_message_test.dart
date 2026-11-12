@@ -31,6 +31,7 @@ void main() {
     'chainLabel': 'Chain',
     'openToCheck': 'Open to check',
     'agoLabel': 'ago',
+    'overdueLabel': 'Taking longer',
     'progress': '1.0',
     'showProgress': 'false',
     'endsAt': '',
@@ -80,6 +81,7 @@ void main() {
     expect(args['holdsProcess'], isFalse);
     expect(args['endsAt'], isNull);
     expect(args['fromAmount'], '25');
+    expect(args['overdueLabel'], 'Taking longer');
     expect(args['updatedAt'], 1730000060000);
   }
 

@@ -84,6 +84,14 @@ private struct SwapCountdownClockTest {
       expect(template == wanted, "template with \(remaining)s left was \(template), wanted \(wanted)")
     }
 
+    // Past the estimate the badge reads "Taking longer" instead of a timer at 0:00.
+    let overdueNow = Date(timeIntervalSince1970: 1_700_000_000)
+    let overdueCases: [(TimeInterval, Bool)] = [(-1, false), (0, true), (1, true), (600, true)]
+    for (sinceEnd, wanted) in overdueCases {
+      let overdue = swapCountdownOverdue(endsAt: overdueNow.addingTimeInterval(-sinceEnd), now: overdueNow)
+      expect(overdue == wanted, "\(sinceEnd)s past the estimate was overdue \(overdue), wanted \(wanted)")
+    }
+
     if failures.isEmpty {
       print("ok")
     } else {

@@ -12,6 +12,12 @@ func swapCountdownBadgeText(endsAt: Date, now: Date = .now) -> Text {
   return Text(timerInterval: now...end, countsDown: true)
 }
 
+/// Whether the estimate has run out, so the badge shows its overdue label
+/// instead of a timer stuck at 0:00. The card checks this each time it is drawn.
+func swapCountdownOverdue(endsAt: Date, now: Date = .now) -> Bool {
+  now >= endsAt
+}
+
 /// The widest badge text the timer shows from [now] on. The badge takes its
 /// width from this, drawn hidden, instead of asking the timer for its own.
 func swapCountdownTemplate(endsAt: Date, now: Date = .now) -> String {

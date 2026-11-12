@@ -22,6 +22,7 @@ struct SwapActivityAttributes: ActivityAttributes {
     var chainLabel: String
     var openToCheck: String
     var agoLabel: String
+    var overdueLabel: String
     var progress: Double
     var showProgress: Bool
     var endsAt: Double?
