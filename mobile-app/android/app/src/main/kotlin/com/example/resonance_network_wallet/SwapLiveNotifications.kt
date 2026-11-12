@@ -38,6 +38,9 @@ object SwapLiveNotifications {
     private const val PREFS = "swap_live_activity"
     private const val PREF_PAYLOAD = "payload"
     private const val PREF_DISMISSED = "dismissed_key"
+
+    /// The first finished write's updatedAt for the stored swap. Set by [show], never by Dart or a push.
+    private const val FINISHED_AT = "finishedAt"
     private const val TAG = "SwapLive"
     private const val METHOD_CHANNEL = "app.quantus/swap_live_activity"
     private const val EVENT_CHANNEL = "app.quantus/swap_live_activity_events"
@@ -173,6 +176,16 @@ object SwapLiveNotifications {
             val card = if (stale) json.put("stale", true) else json
             ensureChannel(context, card.optString("channelName", "Swap progress"))
             val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            val stored = storedSwapCard(prefs)
+            val finishedAt = swapLiveFinishedAtMs(
+                key = card.optString("key"),
+                phase = card.optString("phase"),
+                failure = if (card.isNull("failure")) null else textOrNull(card.opt("failure")),
+                updatedAtMs = if (card.isNull("updatedAt")) null else epochOf(card.opt("updatedAt")),
+                storedKey = stored.key,
+                storedFinishedAtMs = stored.finishedAt,
+            )
+            if (finishedAt == null) card.remove(FINISHED_AT) else card.put(FINISHED_AT, finishedAt)
             val editor = prefs.edit().putString(PREF_PAYLOAD, card.toString())
             val dismissed = prefs.getString(PREF_DISMISSED, null)
             val key = card.optString("key")
@@ -339,6 +352,18 @@ object SwapLiveNotifications {
             .setOngoing(json.optBoolean("holdsProcess") && !stale)
             .setContentIntent(openApp(context))
             .setDeleteIntent(broadcast(context, ACTION_DISMISSED, 2))
+        // A finished card is never ongoing, so only this builder draws one. The
+        // system removes it on time even with the process gone, and the removal
+        // goes through the delete intent like a swipe.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val phase = json.optString("phase")
+            val failure = if (json.isNull("failure")) null else textOrNull(json.opt("failure"))
+            val finishedAt = if (json.isNull(FINISHED_AT)) null else epochOf(json.opt(FINISHED_AT))
+            if (swapLiveTerminal(phase, failure) && finishedAt == null) {
+                Log.w(TAG, "A finished swap card has no $FINISHED_AT, so it has no timeout")
+            }
+            swapLiveTimeoutMs(phase, failure, finishedAt, System.currentTimeMillis())?.let(builder::setTimeoutAfter)
+        }
         if (Build.VERSION.SDK_INT >= 36 && showProgress) {
             builder.setStyle(Notification.ProgressStyle().setProgress((json.optDouble("progress") * 100).toInt()))
         }
@@ -399,7 +424,8 @@ object SwapLiveNotifications {
 
     private fun scheduleStale(context: Context, json: JSONObject) {
         val staleAt = if (json.isNull("staleAt")) 0L else json.optLong("staleAt", 0L)
-        if (staleAt <= 0L) {
+        val failure = if (json.isNull("failure")) null else textOrNull(json.opt("failure"))
+        if (staleAt <= 0L || !swapLiveSchedulesStale(json.optString("phase"), failure)) {
             cancelStale(context)
             return
         }
@@ -428,6 +454,7 @@ object SwapLiveNotifications {
         val updatedAt: Long?,
         val phase: String?,
         val failure: String?,
+        val finishedAt: Long?,
     ) {
         val revision = SwapLiveCardRevision(updatedAt, phase, failure)
     }
@@ -436,15 +463,16 @@ object SwapLiveNotifications {
 
     private fun storedSwapCard(prefs: android.content.SharedPreferences): StoredSwapCard {
         val dismissed = prefs.getString(PREF_DISMISSED, null)
-        val raw = prefs.getString(PREF_PAYLOAD, null) ?: return StoredSwapCard(null, dismissed, null, null, null)
+        val raw = prefs.getString(PREF_PAYLOAD, null) ?: return StoredSwapCard(null, dismissed, null, null, null, null)
         val json = runCatching { JSONObject(raw) }.getOrNull()
-        if (json == null) return StoredSwapCard(null, dismissed, null, null, null)
+        if (json == null) return StoredSwapCard(null, dismissed, null, null, null, null)
         return StoredSwapCard(
             json.optString("key").takeIf { it.isNotEmpty() },
             dismissed,
             if (json.isNull("updatedAt")) null else epochOf(json.opt("updatedAt")),
             json.optString("phase").takeIf { it.isNotEmpty() },
             if (json.isNull("failure")) null else textOrNull(json.opt("failure")),
+            if (json.isNull(FINISHED_AT)) null else epochOf(json.opt(FINISHED_AT)),
         )
     }
 
@@ -625,6 +653,41 @@ internal fun swapLiveRevisionAllows(
 internal fun swapLiveTerminal(phase: String?, failure: String?): Boolean {
     if (phase == "swapped") return true
     return phase == "failed" && failure != "incomplete"
+}
+
+/// A finished card has nothing left to check, so it never switches to the
+/// stale layout before its timeout removes it. Same rule as iOS `swapLiveStaleDate`.
+internal fun swapLiveSchedulesStale(phase: String?, failure: String?): Boolean = !swapLiveTerminal(phase, failure)
+
+/// How long a finished card stays after the swap finished. Same windows as iOS
+/// `swapLiveDismissalDate` and the end push Senoti sends.
+internal const val SWAP_LIVE_SWAPPED_WINDOW_MS = 15 * 60_000L
+internal const val SWAP_LIVE_FAILED_WINDOW_MS = 30 * 60_000L
+
+/// Time left before a finished card leaves. Counted from [swapLiveFinishedAtMs],
+/// so redrawing the card does not push the removal back. Null while the swap
+/// is still open, including an incomplete deposit. A card past its window gets
+/// the shortest timeout, because zero means none.
+internal fun swapLiveTimeoutMs(phase: String?, failure: String?, finishedAtMs: Long?, nowMs: Long): Long? {
+    if (!swapLiveTerminal(phase, failure) || finishedAtMs == null) return null
+    val window = if (phase == "swapped") SWAP_LIVE_SWAPPED_WINDOW_MS else SWAP_LIVE_FAILED_WINDOW_MS
+    return (finishedAtMs + window - nowMs).coerceAtLeast(1L)
+}
+
+/// When the swap on a finished card finished. The first finished write for a
+/// swap fixes it. Every later refresh carries a newer updatedAt, which orders
+/// writes but must not move the deadline. Null while the swap is still open.
+internal fun swapLiveFinishedAtMs(
+    key: String,
+    phase: String?,
+    failure: String?,
+    updatedAtMs: Long?,
+    storedKey: String?,
+    storedFinishedAtMs: Long?,
+): Long? {
+    if (!swapLiveTerminal(phase, failure)) return null
+    if (key == storedKey && storedFinishedAtMs != null) return storedFinishedAtMs
+    return updatedAtMs
 }
 
 /// A local write may start a card, or replace one with a different swap.

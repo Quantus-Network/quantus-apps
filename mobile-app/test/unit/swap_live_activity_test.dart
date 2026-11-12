@@ -353,6 +353,15 @@ void main() {
       expect(registrar.calls, isEmpty);
     });
 
+    test("a simulated swap's activity token is not registered", () async {
+      current = swap(SwapStatus.pendingDeposit, simulated: true);
+      await controller.sync();
+      card.emit(SwapLiveToken('activity-token'));
+      await pumpEventQueue();
+
+      expect(registrar.calls, isEmpty);
+    });
+
     test('an activity token is registered for iOS push', () async {
       await controller.sync();
       card.emit(SwapLiveToken('activity-token'));

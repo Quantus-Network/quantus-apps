@@ -18,6 +18,7 @@
 		A1B1C0062F00000100AA0006 /* SwapActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B1C0052F00000100AA0005 /* SwapActivityAttributes.swift */; };
 		A1B1C0072F00000100AA0007 /* SwapActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B1C0052F00000100AA0005 /* SwapActivityAttributes.swift */; };
 		A1B1C0092F00000100AA0009 /* SwapLiveActivityBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B1C0082F00000100AA0008 /* SwapLiveActivityBridge.swift */; };
+		A1B1C01D2F00000100AA001D /* SwapLiveCardRules.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B1C01C2F00000100AA001C /* SwapLiveCardRules.swift */; };
 		A1B1C00A2F00000100AA000A /* SwapLiveActivity.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = A1B1C0022F00000100AA0002 /* SwapLiveActivity.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		A1B1C00D2F00000100AA000D /* Geist-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = A1B1C00B2F00000100AA000B /* Geist-Regular.ttf */; };
 		A1B1C00E2F00000100AA000E /* Geist-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = A1B1C00C2F00000100AA000C /* Geist-Medium.ttf */; };
@@ -99,6 +100,7 @@
 		A1B1C01A2F00000100AA001A /* SwapCountdownClock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwapCountdownClock.swift; sourceTree = "<group>"; };
 		A1B1C0052F00000100AA0005 /* SwapActivityAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwapActivityAttributes.swift; sourceTree = "<group>"; };
 		A1B1C0082F00000100AA0008 /* SwapLiveActivityBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwapLiveActivityBridge.swift; sourceTree = "<group>"; };
+		A1B1C01C2F00000100AA001C /* SwapLiveCardRules.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwapLiveCardRules.swift; sourceTree = "<group>"; };
 		A1B1C00B2F00000100AA000B /* Geist-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = "Geist-Regular.ttf"; path = "../assets/fonts/Geist-Regular.ttf"; sourceTree = "<group>"; };
 		A1B1C00C2F00000100AA000C /* Geist-Medium.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = "Geist-Medium.ttf"; path = "../assets/fonts/Geist-Medium.ttf"; sourceTree = "<group>"; };
 		A1B1C0132F00000100AA0013 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -252,6 +254,7 @@
 				1498D2331E8E89220040F4C2 /* GeneratedPluginRegistrant.m */,
 				74858FAE1ED2DC5600515810 /* AppDelegate.swift */,
 				A1B1C0082F00000100AA0008 /* SwapLiveActivityBridge.swift */,
+				A1B1C01C2F00000100AA001C /* SwapLiveCardRules.swift */,
 				74858FAD1ED2DC5600515810 /* Runner-Bridging-Header.h */,
 			);
 			path = Runner;
@@ -673,6 +676,7 @@
 			files = (
 				74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */,
 				A1B1C0092F00000100AA0009 /* SwapLiveActivityBridge.swift in Sources */,
+				A1B1C01D2F00000100AA001D /* SwapLiveCardRules.swift in Sources */,
 				A1B1C0072F00000100AA0007 /* SwapActivityAttributes.swift in Sources */,
 				1498D2341E8E89220040F4C2 /* GeneratedPluginRegistrant.m in Sources */,
 			);

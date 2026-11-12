@@ -274,6 +274,7 @@ class SwapLiveActivityController {
   }
 
   Future<void> _registerToken(String token, String platform, SwapLiveActivityContent content, int epoch) async {
+    if (content.simulated) return;
     if (!_tracks(epoch, content.key)) return;
     _attempted.add(token);
     try {

@@ -113,15 +113,29 @@ final class SwapLiveActivityBridge: NSObject, FlutterStreamHandler {
   @MainActor
   private func show(_ args: [String: Any]) async throws {
     let state = try contentState(args)
-    let content = ActivityContent(state: state, staleDate: state.staleAtDate)
-    if let activity = Activity<SwapActivityAttributes>.activities.first {
+    let content = ActivityContent(state: state, staleDate: swapLiveStaleDate(revision(state), staleAt: state.staleAt))
+    let activities = Activity<SwapActivityAttributes>.activities
+    // An ended card stays on screen until its dismissal date, and no longer
+    // takes updates. Only a card that is still running is written to.
+    if let activity = activities.first(where: { $0.activityState != .ended && $0.activityState != .dismissed }) {
       // A completion push updates this activity directly. A later poll must
       // not move that same swap back to in progress.
-      if swapLiveLocalWriteAllowed(current: activity.content.state, incoming: state) {
+      switch swapLiveActiveCardAction(current: revision(activity.content.state), incoming: revision(state)) {
+      case .update:
         await activity.update(content)
+      case .end(let dismissAt):
+        await activity.end(content, dismissalPolicy: .after(dismissAt))
+      case .ignore:
+        break
       }
       watch(activity)
       return
+    }
+    guard swapLiveOpensCard(revision(state), ended: activities.map { revision($0.content.state) }) else { return }
+    // A finished card still waiting for its dismissal date makes way for the new swap.
+    for ended in activities {
+      suppressDismiss.insert(ended.id)
+      await ended.end(nil, dismissalPolicy: .immediate)
     }
     let activity = try Activity.request(attributes: SwapActivityAttributes(), content: content, pushType: .token)
     watch(activity)
@@ -242,25 +256,9 @@ private func doubleValue(_ value: Any?) -> Double? {
   }
 }
 
-/// Same rule as Android `swapLiveLocalWriteAllowed`. A different swap may
-/// replace the activity. The swap already on screen does not move backward.
 @available(iOS 16.2, *)
-private func swapLiveLocalWriteAllowed(
-  current: SwapActivityAttributes.ContentState,
-  incoming: SwapActivityAttributes.ContentState
-) -> Bool {
-  if current.key.isEmpty { return true }
-  if !incoming.key.isEmpty && incoming.key != current.key { return true }
-  if incoming.updatedAt < current.updatedAt { return false }
-  let finished = swapLiveTerminal(phase: current.phase, failure: current.failure)
-  if !finished { return true }
-  return swapLiveTerminal(phase: incoming.phase, failure: incoming.failure)
-}
-
-@available(iOS 16.2, *)
-private func swapLiveTerminal(phase: String, failure: String?) -> Bool {
-  if phase == "swapped" { return true }
-  return phase == "failed" && failure != "incomplete"
+private func revision(_ state: SwapActivityAttributes.ContentState) -> SwapLiveCardRevision {
+  SwapLiveCardRevision(key: state.key, updatedAt: state.updatedAt, phase: state.phase, failure: state.failure)
 }
 
 private enum SwapLiveActivityError: LocalizedError {
