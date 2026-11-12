@@ -339,6 +339,18 @@ object SwapLiveNotifications {
             .setOngoing(json.optBoolean("holdsProcess") && !stale)
             .setContentIntent(openApp(context))
             .setDeleteIntent(broadcast(context, ACTION_DISMISSED, 2))
+        // A finished card is never ongoing, so only this builder draws one. The
+        // system removes it on time even with the process gone, and the removal
+        // goes through the delete intent like a swipe.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val phase = json.optString("phase")
+            val failure = if (json.isNull("failure")) null else textOrNull(json.opt("failure"))
+            val updatedAt = if (json.isNull("updatedAt")) null else epochOf(json.opt("updatedAt"))
+            if (swapLiveTerminal(phase, failure) && updatedAt == null) {
+                Log.w(TAG, "A finished swap card has no updatedAt, so it has no timeout")
+            }
+            swapLiveTimeoutMs(phase, failure, updatedAt, System.currentTimeMillis())?.let(builder::setTimeoutAfter)
+        }
         if (Build.VERSION.SDK_INT >= 36 && showProgress) {
             builder.setStyle(Notification.ProgressStyle().setProgress((json.optDouble("progress") * 100).toInt()))
         }
@@ -399,7 +411,8 @@ object SwapLiveNotifications {
 
     private fun scheduleStale(context: Context, json: JSONObject) {
         val staleAt = if (json.isNull("staleAt")) 0L else json.optLong("staleAt", 0L)
-        if (staleAt <= 0L) {
+        val failure = if (json.isNull("failure")) null else textOrNull(json.opt("failure"))
+        if (staleAt <= 0L || !swapLiveSchedulesStale(json.optString("phase"), failure)) {
             cancelStale(context)
             return
         }
@@ -625,6 +638,25 @@ internal fun swapLiveRevisionAllows(
 internal fun swapLiveTerminal(phase: String?, failure: String?): Boolean {
     if (phase == "swapped") return true
     return phase == "failed" && failure != "incomplete"
+}
+
+/// A finished card has nothing left to check, so it never switches to the
+/// stale layout before its timeout removes it. Same rule as iOS `swapLiveStaleDate`.
+internal fun swapLiveSchedulesStale(phase: String?, failure: String?): Boolean = !swapLiveTerminal(phase, failure)
+
+/// How long a finished card stays after the swap finished. Same windows as iOS
+/// `swapLiveDismissalDate` and the end push Senoti sends.
+internal const val SWAP_LIVE_SWAPPED_WINDOW_MS = 15 * 60_000L
+internal const val SWAP_LIVE_FAILED_WINDOW_MS = 30 * 60_000L
+
+/// Time left before a finished card leaves. Counted from when the swap finished,
+/// so redrawing the card, as stale for one, does not push the removal back.
+/// Null while the swap is still open, including an incomplete deposit. A card
+/// past its window gets the shortest timeout, because zero means none.
+internal fun swapLiveTimeoutMs(phase: String?, failure: String?, updatedAtMs: Long?, nowMs: Long): Long? {
+    if (!swapLiveTerminal(phase, failure) || updatedAtMs == null) return null
+    val window = if (phase == "swapped") SWAP_LIVE_SWAPPED_WINDOW_MS else SWAP_LIVE_FAILED_WINDOW_MS
+    return (updatedAtMs + window - nowMs).coerceAtLeast(1L)
 }
 
 /// A local write may start a card, or replace one with a different swap.
