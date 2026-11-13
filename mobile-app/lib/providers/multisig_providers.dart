@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/legacy.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
-import 'package:resonance_network_wallet/services/firebase_messaging_service.dart';
+import 'package:resonance_network_wallet/services/remote_notifications_registration.dart';
 
 final multisigServiceProvider = Provider<MultisigService>((ref) => MultisigService());
 

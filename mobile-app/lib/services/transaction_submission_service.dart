@@ -18,7 +18,7 @@ import 'package:resonance_network_wallet/services/multisig_cancellation_polling_
 import 'package:resonance_network_wallet/services/multisig_execution_polling_service.dart';
 import 'package:resonance_network_wallet/services/multisig_proposal_polling_service.dart';
 import 'package:resonance_network_wallet/services/pending_transaction_polling_service.dart';
-import 'package:resonance_network_wallet/services/telemetry_service.dart';
+import 'package:wallet_core/services/telemetry.dart';
 
 class TransactionSubmissionService {
   final Ref _ref;
@@ -46,7 +46,7 @@ class TransactionSubmissionService {
     );
     _ref.read(pendingTransactionsProvider.notifier).add(pendingTx);
 
-    TelemetryService().sendEvent('send_transfer');
+    _ref.read(telemetryProvider).sendEvent('send_transfer');
 
     return submitAndTrackTransaction(() => substrate.submitSignedExtrinsic(signed.payload), pendingTx);
   }
@@ -73,7 +73,7 @@ class TransactionSubmissionService {
 
     _ref.read(pendingTransactionsProvider.notifier).add(pendingTx);
 
-    TelemetryService().sendEvent('send_transfer_hardware');
+    _ref.read(telemetryProvider).sendEvent('send_transfer_hardware');
 
     return submitAndTrackTransaction(
       () => SubstrateService().submitExtrinsicWithExternalSignature(unsignedData, signatureWithPublicKey),
@@ -102,7 +102,7 @@ class TransactionSubmissionService {
     // Add to pending transactions so UI can show it immediately
     _ref.read(pendingTransactionsProvider.notifier).add(pending);
 
-    TelemetryService().sendEvent('send_reversible');
+    _ref.read(telemetryProvider).sendEvent('send_reversible');
 
     await submitAndTrackTransaction(
       () => ReversibleTransfersService().scheduleReversibleTransferWithDelaySeconds(
@@ -138,7 +138,7 @@ class TransactionSubmissionService {
     // B. Immediately add it to the state so the UI can update
     _ref.read(pendingTransactionsProvider.notifier).add(pendingTx);
 
-    TelemetryService().sendEvent('send_high_security_reversible');
+    _ref.read(telemetryProvider).sendEvent('send_high_security_reversible');
 
     await submitAndTrackTransaction(
       () => ReversibleTransfersService().scheduleReversibleTransfer(
@@ -223,7 +223,7 @@ class TransactionSubmissionService {
     );
 
     addPendingMultisigProposal(_ref, pending);
-    TelemetryService().sendEvent(telemetryEvent);
+    _ref.read(telemetryProvider).sendEvent(telemetryEvent);
 
     try {
       final hashBytes = await submit();
@@ -308,7 +308,7 @@ class TransactionSubmissionService {
     );
 
     addPendingMultisigApproval(_ref, pending);
-    TelemetryService().sendEvent(telemetryEvent);
+    _ref.read(telemetryProvider).sendEvent(telemetryEvent);
 
     try {
       final hashBytes = await submit();
@@ -347,7 +347,7 @@ class TransactionSubmissionService {
 
     addPendingMultisigExecution(_ref, pending);
 
-    TelemetryService().sendEvent('multisig_execute');
+    _ref.read(telemetryProvider).sendEvent('multisig_execute');
 
     await _submitExecute(msig: msig, signer: signer, proposalId: proposal.id, callBytes: callBytes, pending: pending);
   }
@@ -397,7 +397,7 @@ class TransactionSubmissionService {
     );
 
     addPendingMultisigExecution(_ref, pending);
-    TelemetryService().sendEvent('multisig_execute_hardware');
+    _ref.read(telemetryProvider).sendEvent('multisig_execute_hardware');
 
     try {
       final hashBytes = await SubstrateService().submitExtrinsicWithExternalSignature(
@@ -438,7 +438,7 @@ class TransactionSubmissionService {
 
     addPendingMultisigCancellation(_ref, pending);
 
-    TelemetryService().sendEvent('multisig_cancel');
+    _ref.read(telemetryProvider).sendEvent('multisig_cancel');
 
     await _submitCancel(msig: msig, proposer: proposer, proposalId: proposal.id, pending: pending);
   }
@@ -483,7 +483,7 @@ class TransactionSubmissionService {
     );
 
     addPendingMultisigCancellation(_ref, pending);
-    TelemetryService().sendEvent('multisig_cancel_hardware');
+    _ref.read(telemetryProvider).sendEvent('multisig_cancel_hardware');
 
     try {
       final hashBytes = await SubstrateService().submitExtrinsicWithExternalSignature(

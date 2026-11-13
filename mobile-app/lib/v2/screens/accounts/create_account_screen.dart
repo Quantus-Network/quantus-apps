@@ -7,7 +7,7 @@ import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
-import 'package:resonance_network_wallet/services/firebase_messaging_service.dart';
+import 'package:resonance_network_wallet/services/remote_notifications_registration.dart';
 import 'package:wallet_core/utils/account_utils.dart';
 import 'package:resonance_network_wallet/v2/components/name_field.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/accounts_navigation.dart';
