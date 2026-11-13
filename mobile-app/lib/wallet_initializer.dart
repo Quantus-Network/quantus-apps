@@ -10,7 +10,7 @@ import 'package:resonance_network_wallet/providers/mainnet_migration_provider.da
 import 'package:resonance_network_wallet/v2/screens/home/home_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/welcome/mainnet_migration_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/welcome/welcome_screen.dart';
-import 'package:resonance_network_wallet/services/logout_service.dart';
+import 'package:resonance_network_wallet/v2/screens/welcome/logout_flow.dart';
 import 'package:resonance_network_wallet/services/telemetry_service.dart';
 import 'package:resonance_network_wallet/services/wallet_creation_service.dart';
 
@@ -83,7 +83,7 @@ class WalletInitializerState extends ConsumerState<WalletInitializer> {
         ),
       ),
     );
-    if (mounted) ref.read(logoutServiceProvider).logout(context);
+    if (mounted) logoutAndReturnToWelcome(context, ref);
   }
 
   @override

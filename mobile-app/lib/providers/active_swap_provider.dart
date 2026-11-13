@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
-import 'package:resonance_network_wallet/services/telemetry_service.dart';
+import 'package:wallet_core/services/telemetry.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/swap_providers.dart';
 
 /// The swap being followed, kept on the device so it survives a restart and
@@ -43,7 +43,7 @@ class ActiveSwapNotifier extends Notifier<ActiveSwap?> {
     _set(swap);
     _schedule(swap);
     final fake = swap.simulated || ref.read(swapHarnessServiceProvider) != null;
-    if (!fake) TelemetryService().sendEvent('swap_started', parameters: _telemetryOf(swap.order.quote));
+    if (!fake) ref.read(telemetryProvider).sendEvent('swap_started', parameters: _telemetryOf(swap.order.quote));
     return true;
   }
 

@@ -13,6 +13,7 @@ import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/token_icon.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/review_swap_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/swap_address_sheet.dart';
+import 'package:resonance_network_wallet/v2/screens/swap/swap_deposit_fee_provider.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/swap_providers.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/swap_slippage_sheet.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/swap_summary.dart';

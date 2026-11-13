@@ -5,7 +5,7 @@ import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/connectivity_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/services/pending_transaction_reconciliation_service.dart';
-import 'package:resonance_network_wallet/services/telemetry_service.dart';
+import 'package:wallet_core/services/telemetry.dart';
 import 'package:resonance_network_wallet/shared/utils/polling_refresh_scope.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 
@@ -182,10 +182,9 @@ final globalHistoryPollingServiceProvider = Provider<GlobalHistoryPollingService
       loading: () {},
       error: (e, _) {
         quantusPrint('Error in account stats polling service: stopping polling');
-        TelemetryService().sendError(
-          'GlobalHistoryPollingService Error in accountsProvider: stopping polling',
-          error: e,
-        );
+        ref
+            .read(telemetryProvider)
+            .sendError('GlobalHistoryPollingService Error in accountsProvider: stopping polling', error: e);
         service.stopPolling();
       },
     );

@@ -1,6 +1,4 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/active_swap_provider.dart';
 import 'package:resonance_network_wallet/providers/currency_display_provider.dart';
@@ -15,7 +13,6 @@ import 'package:resonance_network_wallet/providers/pending_multisig_proposals_pr
 import 'package:resonance_network_wallet/providers/pending_transactions_provider.dart';
 import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
-import 'package:resonance_network_wallet/services/firebase_messaging_service.dart';
 import 'package:resonance_network_wallet/services/multisig_approval_polling_service.dart';
 import 'package:resonance_network_wallet/services/multisig_cancellation_polling_service.dart';
 import 'package:resonance_network_wallet/services/multisig_creation_polling_service.dart';
@@ -23,7 +20,7 @@ import 'package:resonance_network_wallet/services/multisig_execution_polling_ser
 import 'package:resonance_network_wallet/services/multisig_proposal_polling_service.dart';
 import 'package:resonance_network_wallet/services/pending_transaction_polling_service.dart';
 import 'package:resonance_network_wallet/v2/screens/send/keystone_sign_cache.dart';
-import 'package:resonance_network_wallet/v2/screens/welcome/welcome_screen.dart';
+import 'package:wallet_core/services/push_registration.dart';
 
 final logoutServiceProvider = Provider<LogoutService>((ref) => LogoutService(ref));
 
@@ -31,15 +28,17 @@ class LogoutService {
   final Ref _ref;
   LogoutService(this._ref);
 
-  Future<void> logout(BuildContext context) async {
+  /// Wipes the wallet and every piece of session state. Where to go next is
+  /// the caller's decision.
+  Future<void> logout() async {
     if (_ref.read(remoteConfigProvider).enableRemoteNotifications) {
-      _ref.read(firebaseMessagingServiceProvider).unregisterDevice();
+      _ref.read(pushRegistrationProvider).unregister();
     }
 
     // Before the wipe: a status answer still in flight must not write the
     // old wallet's swap back, and nothing of it may reach the next session.
     await _ref.read(activeSwapProvider.notifier).clear();
-    await SubstrateService().logout();
+    await _ref.read(substrateServiceProvider).logout();
     _stopPollers();
     _ref.read(pendingTransactionsProvider.notifier).clear();
     await _ref.read(pendingMultisigCreationsProvider.notifier).clear();
@@ -64,10 +63,6 @@ class LogoutService {
     _ref.read(keystoneSignCacheProvider.notifier).reset();
     await _ref.read(selectedAppLocaleProvider.notifier).reset();
     await _ref.read(selectedFiatCurrencyProvider.notifier).reset();
-
-    if (context.mounted) {
-      Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const WelcomeScreenV2()), (r) => false);
-    }
   }
 
   /// Stops indexer pollers so their timers cannot leak into the next session.

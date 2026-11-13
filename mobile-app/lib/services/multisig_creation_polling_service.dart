@@ -8,7 +8,7 @@ import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/multisig_providers.dart';
 import 'package:resonance_network_wallet/providers/pending_multisig_creations_provider.dart';
 import 'package:resonance_network_wallet/services/multisig_creation_reconciliation.dart';
-import 'package:resonance_network_wallet/services/telemetry_service.dart';
+import 'package:wallet_core/services/telemetry.dart';
 
 class MultisigCreationPollingService {
   final Ref _ref;
@@ -76,7 +76,7 @@ class MultisigCreationPollingService {
       }
     } catch (e) {
       quantusPrint('[MultisigCreationPoller] recovery error for $key: $e');
-      TelemetryService().sendError('multisig_creation_recovery_failed', error: e);
+      _ref.read(telemetryProvider).sendError('multisig_creation_recovery_failed', error: e);
     } finally {
       _inFlight.remove(key);
     }

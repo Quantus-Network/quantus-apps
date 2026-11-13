@@ -26,6 +26,7 @@ import 'package:resonance_network_wallet/v2/components/search_field.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/help_and_support_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/review_swap_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/swap_progress_screen.dart';
+import 'package:resonance_network_wallet/v2/screens/swap/swap_deposit_fee_provider.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/swap_providers.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/swap_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';

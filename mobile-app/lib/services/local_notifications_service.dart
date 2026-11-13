@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wallet_core/models/notification_models.dart';
+import 'package:wallet_core/services/local_notifications.dart';
 import 'package:resonance_network_wallet/providers/route_intent_providers.dart';
 import 'package:resonance_network_wallet/services/swap_live_activity.dart';
 import 'package:resonance_network_wallet/services/telemetry_service.dart';
@@ -13,7 +14,7 @@ import 'package:timezone/data/latest_all.dart' as tz_data;
 import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 
-class LocalNotificationsService {
+class LocalNotificationsService implements LocalNotifications {
   final Ref _ref;
 
   LocalNotificationsService(this._ref);
@@ -180,6 +181,7 @@ class LocalNotificationsService {
     );
   }
 
+  @override
   Future<void> showOrScheduleNotification(NotificationData notification) async {
     if (notification.hasValidScheduleTime) {
       _scheduleNotification(notification);
