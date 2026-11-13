@@ -166,6 +166,31 @@ void main() {
         final after = decide(current, now: ends).content!;
         expect(after.identity, isNot(equals(before.identity)));
       });
+
+      test('the payload says when the estimate has passed', () {
+        final ends = seen.add(quote.timeEstimate);
+        final current = swap(SwapStatus.processing, depositSeenAt: seen);
+        Object? overdueAt(DateTime now) => decide(current, now: now).content!.toPayload()['overdue'];
+        expect(overdueAt(ends.subtract(const Duration(seconds: 1))), isFalse);
+        expect(overdueAt(ends), isTrue);
+        expect(overdueAt(ends.add(const Duration(minutes: 1))), isTrue);
+      });
+
+      test('no countdown is never overdue', () {
+        final later = seen.add(const Duration(hours: 1));
+        expect(decide(swap(SwapStatus.pendingDeposit), now: later).content!.toPayload()['overdue'], isFalse);
+        expect(decide(swap(SwapStatus.knownDepositTx), now: later).content!.toPayload()['overdue'], isFalse);
+      });
+
+      test('a finished swap is not overdue', () {
+        final later = seen.add(const Duration(hours: 1));
+        final content = decide(
+          swap(SwapStatus.success, depositSeenAt: seen),
+          now: later,
+          progressVisible: true,
+        ).content!;
+        expect(content.toPayload()['overdue'], isFalse);
+      });
     });
 
     test('a paid-out amount replaces the quote once 1Click reports one', () {

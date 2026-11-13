@@ -92,6 +92,14 @@ private struct SwapCountdownClockTest {
       expect(overdue == wanted, "\(sinceEnd)s past the estimate was overdue \(overdue), wanted \(wanted)")
     }
 
+    // The card's `overdue` flag shows the label even when its push lands before
+    // this phone's clock reaches the estimate. Without the flag the clock decides.
+    let shownCases: [(Bool, TimeInterval, Bool)] = [(true, -30, true), (false, 0, true), (false, 1, true), (false, -30, false)]
+    for (flag, sinceEnd, wanted) in shownCases {
+      let shown = swapCountdownShowsOverdue(overdue: flag, endsAt: overdueNow.addingTimeInterval(-sinceEnd), now: overdueNow)
+      expect(shown == wanted, "flag \(flag), \(sinceEnd)s past the estimate showed the label \(shown), wanted \(wanted)")
+    }
+
     if failures.isEmpty {
       print("ok")
     } else {

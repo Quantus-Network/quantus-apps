@@ -153,13 +153,14 @@ private struct SwapTiming: View {
           .lineLimit(1)
       }
     } else if let endsAt = state.endsAtDate {
-      SwapCountdown(endsAt: endsAt, overdueLabel: state.overdueLabel)
+      SwapCountdown(endsAt: endsAt, overdue: state.overdue, overdueLabel: state.overdueLabel)
     }
   }
 }
 
 private struct SwapCountdown: View {
   let endsAt: Date
+  let overdue: Bool
   let overdueLabel: String
 
   var body: some View {
@@ -174,7 +175,7 @@ private struct SwapCountdown: View {
   }
 
   @ViewBuilder private var label: some View {
-    if swapCountdownOverdue(endsAt: endsAt) {
+    if swapCountdownShowsOverdue(overdue: overdue, endsAt: endsAt) {
       Text(overdueLabel)
     } else {
       timer

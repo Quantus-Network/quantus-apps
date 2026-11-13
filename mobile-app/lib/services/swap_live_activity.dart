@@ -185,6 +185,7 @@ class SwapLiveActivityContent {
     'progress': progress,
     'showProgress': showProgress,
     'endsAt': endsAt?.millisecondsSinceEpoch,
+    'overdue': _overdue,
     'updatedAt': updatedAt.millisecondsSinceEpoch,
     'staleAt': updatedAt.add(swapLiveStaleAfter).millisecondsSinceEpoch,
     'holdsProcess': holdsProcess,
