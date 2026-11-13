@@ -7,11 +7,11 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/models/notification_models.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/notification_provider.dart';
+import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
 import 'package:resonance_network_wallet/services/history_polling_manager.dart';
 import 'package:resonance_network_wallet/services/swap_live_activity_message.dart';
 import 'package:resonance_network_wallet/services/telemetry_service.dart';
 import 'package:resonance_network_wallet/services/transaction_service.dart';
-import 'package:wallet_core/services/push_registration.dart';
 import 'package:wallet_core/utils/provider_reader.dart';
 
 /// Top-level handler for background/terminated FCM messages.
@@ -35,7 +35,7 @@ Future<void> handleForegroundFcmMessage(
   await showTransactionNotification(message);
 }
 
-class FirebaseMessagingService implements PushRegistration {
+class FirebaseMessagingService {
   final Ref _ref;
   FirebaseMessaging get _messaging => FirebaseMessaging.instance;
   final SenotiService _senotiService = SenotiService();
@@ -79,7 +79,7 @@ class FirebaseMessagingService implements PushRegistration {
     }
 
     await getDeviceToken();
-    await registerDevice();
+    await registerDeviceIfPossible();
 
     _setupForegroundMessageListener();
     _setupTokenRefreshListener();
@@ -119,8 +119,7 @@ class FirebaseMessagingService implements PushRegistration {
 
   /// Register the device with the push notification backend.
   /// Call this after the user creates or imports a wallet for the first time.
-  @override
-  Future<void> registerDevice() async {
+  Future<void> registerDeviceIfPossible() async {
     final token = await getDeviceToken();
     if (token == null) {
       quantusPrint('No FCM token available — skipping device registration');
@@ -138,8 +137,7 @@ class FirebaseMessagingService implements PushRegistration {
   }
 
   /// Unregister this device from push notifications (e.g. on wallet reset/logout).
-  @override
-  Future<void> unregister() async {
+  Future<void> unregisterDevice() async {
     final token = await getDeviceToken();
     if (token == null) {
       quantusPrint('No FCM token available — skipping unregister');
@@ -154,16 +152,15 @@ class FirebaseMessagingService implements PushRegistration {
   }
 
   /// Register a newly created address for push notifications on this device.
-  @override
-  Future<void> registerAddress(String address) async {
+  Future<void> insertNewAddress(String newAddress) async {
     final token = await getDeviceToken();
     if (token == null) {
-      quantusPrint('No FCM token available — skipping registerAddress');
+      quantusPrint('No FCM token available — skipping insertNewAddress');
       return;
     }
 
     try {
-      await _senotiService.insertNewAddress(newAddress: address, deviceToken: token);
+      await _senotiService.insertNewAddress(newAddress: newAddress, deviceToken: token);
     } catch (e) {
       quantusPrint('Failed to insert new address: $e');
     }
@@ -276,5 +273,26 @@ Future<void> enableRemoteNotifications(ProviderReader read) async {
   } catch (e) {
     quantusPrint('Failed to enable remote notifications: $e');
     TelemetryService().sendError('fcm_enable_remote_notifications_failed', error: e);
+  }
+}
+
+/// Registers this device (or one new address) for push notifications, and
+/// never throws: registration must not fail the account flow that calls it.
+///
+/// When [insertAddress] is non-null, the address is registered for push
+/// notifications on the existing device; otherwise the device itself is
+/// registered for the first time.
+Future<void> registerForRemoteNotificationsBestEffort(ProviderReader read, {String? insertAddress}) async {
+  try {
+    if (!read(remoteConfigProvider).enableRemoteNotifications) return;
+    final service = read(firebaseMessagingServiceProvider);
+    if (insertAddress != null) {
+      await service.insertNewAddress(insertAddress);
+    } else {
+      await service.registerDeviceIfPossible();
+    }
+  } catch (e) {
+    quantusPrint('Failed to register for remote notifications: $e');
+    TelemetryService().sendError('registerForRemoteNotifications', error: e);
   }
 }

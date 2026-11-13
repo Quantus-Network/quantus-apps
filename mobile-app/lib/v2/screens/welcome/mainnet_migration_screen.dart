@@ -7,7 +7,7 @@ import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/mainnet_migration_provider.dart';
 import 'package:resonance_network_wallet/services/mainnet_migration_service.dart';
 import 'package:resonance_network_wallet/services/telemetry_service.dart';
-import 'package:resonance_network_wallet/v2/screens/welcome/create_software_wallet_flow.dart';
+import 'package:resonance_network_wallet/services/wallet_creation_service.dart';
 import 'package:resonance_network_wallet/shared/constants/e2e_keys.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/screens/receive/receive_screen.dart';

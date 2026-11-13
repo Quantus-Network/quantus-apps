@@ -1,11 +1,10 @@
 import 'package:telemetrydecksdk/telemetrydecksdk.dart';
-import 'package:wallet_core/services/telemetry.dart';
 
 /// Centralized Telemetry service to avoid scattering analytics code.
 ///
 /// All features should call into this service instead of using
 /// TelemetryDeck directly to keep the UI dumb and follow the DRY principle.
-class TelemetryService implements Telemetry {
+class TelemetryService {
   TelemetryService._internal();
 
   static final TelemetryService _instance = TelemetryService._internal();
@@ -13,7 +12,6 @@ class TelemetryService implements Telemetry {
   factory TelemetryService() => _instance;
 
   /// Sends a generic event signal.
-  @override
   void sendEvent(String eventName, {Map<String, String>? parameters}) {
     Telemetrydecksdk.send(eventName, additionalPayload: parameters);
   }
@@ -23,7 +21,6 @@ class TelemetryService implements Telemetry {
   ///
   /// Raw exception text and stack traces are deliberately never sent — they can
   /// embed addresses, amounts, call data, or future secret-bearing messages.
-  @override
   void sendError(String errorName, {required Object error}) {
     Telemetrydecksdk.send('Error', additionalPayload: {'errorName': errorName, 'error': error.runtimeType.toString()});
   }

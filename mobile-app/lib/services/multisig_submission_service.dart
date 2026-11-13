@@ -8,7 +8,7 @@ import 'package:resonance_network_wallet/providers/multisig_providers.dart';
 import 'package:resonance_network_wallet/providers/pending_multisig_creations_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/services/multisig_creation_polling_service.dart';
-import 'package:wallet_core/services/telemetry.dart';
+import 'package:resonance_network_wallet/services/telemetry_service.dart';
 
 /// Everything a creation needs once on-chain checks have passed: the draft
 /// account (with the resolved nonce) and the network fee it was checked with.
@@ -117,7 +117,7 @@ class MultisigSubmissionService {
     final draft = preflight.draft;
     final pending = _ref.read(pendingMultisigCreationsProvider.notifier);
 
-    _ref.read(telemetryProvider).sendEvent(telemetryEvent);
+    TelemetryService().sendEvent(telemetryEvent);
     await pending.add(PendingMultisigCreationEvent.fromDraft(draft, networkFee: preflight.networkFee), draft);
 
     try {
@@ -137,7 +137,7 @@ class MultisigSubmissionService {
       // nonce and can double-submit if a prior submit already landed.
       quantusPrint('[MultisigSubmission] submit failed: $e');
       quantusPrint('Stack trace: $stackTrace');
-      _ref.read(telemetryProvider).sendError('multisig_create_submit_failed', error: e);
+      TelemetryService().sendError('multisig_create_submit_failed', error: e);
       removePendingMultisigCreation(_ref, draft.accountId);
       rethrow;
     }

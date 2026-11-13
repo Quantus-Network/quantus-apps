@@ -5,7 +5,7 @@ import 'package:wallet_core/models/transaction_role.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/route_intent_providers.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
-import 'package:wallet_core/services/telemetry.dart';
+import 'package:resonance_network_wallet/services/telemetry_service.dart';
 
 final transactionServiceProvider = Provider<TransactionService>((ref) {
   return TransactionService(ref);
@@ -207,7 +207,7 @@ class TransactionService {
           .searchByExtrinsicHash(extrinsicHash: extrinsicHash, isReversible: isReversible);
     } catch (e) {
       quantusPrint('Failed resolving push payload transaction $extrinsicHash: $e');
-      _ref.read(telemetryProvider).sendError('Failed resolving push payload transaction', error: e);
+      TelemetryService().sendError('Failed resolving push payload transaction', error: e);
       return null;
     }
     if (event == null) return null;
@@ -215,7 +215,7 @@ class TransactionService {
     final localAccountIds = _localAccountIds();
     if (!localAccountIds.contains(event.from) && !localAccountIds.contains(event.to)) {
       quantusPrint('Push payload transaction $extrinsicHash involves no local account; ignoring');
-      _ref.read(telemetryProvider).sendEvent('push_payload_transaction_not_local');
+      TelemetryService().sendEvent('push_payload_transaction_not_local');
       return null;
     }
     return event;
@@ -257,7 +257,7 @@ class TransactionService {
       }
     } catch (e) {
       quantusPrint('Failed deserializing $txType event: $e');
-      _ref.read(telemetryProvider).sendError('Failed deserializing transaction event', error: e);
+      TelemetryService().sendError('Failed deserializing transaction event', error: e);
     }
 
     return event;

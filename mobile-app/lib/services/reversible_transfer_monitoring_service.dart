@@ -3,13 +3,13 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/app_lifecycle_manager.dart';
 import 'package:resonance_network_wallet/providers/active_account_transactions_provider.dart';
 import 'package:resonance_network_wallet/providers/pending_cancellations_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/providers/connectivity_provider.dart';
 import 'package:resonance_network_wallet/shared/utils/polling_refresh_scope.dart';
 import 'package:resonance_network_wallet/shared/utils/tx_filter_family_provider.dart';
-import 'package:wallet_core/providers/app_lifecycle_state_provider.dart';
 
 /// Service that monitors reversible transfers approaching execution time
 /// and polls the chain aggressively when timers hit zero to catch state

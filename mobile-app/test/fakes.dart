@@ -15,13 +15,7 @@ import 'package:resonance_network_wallet/providers/local_auth_provider.dart';
 import 'package:resonance_network_wallet/services/history_polling_manager.dart';
 import 'package:resonance_network_wallet/services/remote_config_service.dart';
 import 'package:resonance_network_wallet/services/local_auth_service.dart';
-import 'package:resonance_network_wallet/services/telemetry_service.dart';
 import 'package:resonance_network_wallet/services/transaction_submission_service.dart';
-import 'package:wallet_core/models/notification_models.dart';
-import 'package:wallet_core/providers/wallet_core_overrides.dart';
-import 'package:wallet_core/services/local_notifications.dart';
-import 'package:wallet_core/services/push_registration.dart';
-import 'package:wallet_core/services/telemetry.dart';
 
 class FakeSettingsService extends Fake implements SettingsService {
   DisplayAccount? activeAccount;
@@ -44,19 +38,10 @@ class FakeSettingsService extends Fake implements SettingsService {
   Future<List<MultisigAccount>> getMultisigAccounts() async => multisigs;
 
   @override
-  Future<void> addMultisigAccount(MultisigAccount account) async => multisigs = [...multisigs, account];
-
-  @override
   String? getSelectedAppLocale() => 'en';
 
   @override
   String? getSelectedFiatCurrency() => null;
-
-  @override
-  Future<void> clearSelectedAppLocale() async {}
-
-  @override
-  Future<void> clearSelectedFiatCurrency() async {}
 
   bool balanceHidden = false;
 
@@ -150,15 +135,11 @@ class FakeSubstrateService extends Fake implements SubstrateService {
 
   BigInt fee;
   int feeCalls = 0;
-  int logoutCalls = 0;
   Account? lastFeeAccount;
   RuntimeCall? lastFeeCall;
 
   @override
   bool isValidSS58Address(String address) => true;
-
-  @override
-  Future<void> logout() async => logoutCalls++;
 
   @override
   Future<ExtrinsicFeeData> getFeeForCall(Account account, RuntimeCall call) async {
@@ -234,18 +215,11 @@ UnsignedTransactionData makeUnsignedTransactionData() {
 
 /// Pumps a bare [ProviderScope] and returns a [WidgetRef] bound to it, for
 /// exercising code that takes a `WidgetRef` outside a real screen.
-///
-/// wallet_core's platform seams are bound with [testWalletCoreOverrides]
-/// unless [walletCore] replaces them.
-Future<WidgetRef> pumpRef(
-  WidgetTester tester, {
-  List<Override> overrides = const [],
-  List<Override>? walletCore,
-}) async {
+Future<WidgetRef> pumpRef(WidgetTester tester, {List<Override> overrides = const []}) async {
   late WidgetRef widgetRef;
   await tester.pumpWidget(
     ProviderScope(
-      overrides: [...walletCore ?? testWalletCoreOverrides(), ...overrides],
+      overrides: overrides,
       child: Consumer(
         builder: (context, ref, _) {
           widgetRef = ref;
@@ -310,61 +284,3 @@ List<MethodCall> recordTelemetry() {
   );
   return calls;
 }
-
-/// Records every push registration call instead of reaching the push backend.
-class FakePushRegistration implements PushRegistration {
-  final calls = <String>[];
-
-  /// When set, every call fails with it.
-  Object? failure;
-
-  @override
-  Future<void> registerDevice() async => _record('registerDevice');
-
-  @override
-  Future<void> registerAddress(String address) async => _record('registerAddress($address)');
-
-  @override
-  Future<void> unregister() async => _record('unregister');
-
-  void _record(String call) {
-    if (failure case final failure?) throw failure;
-    calls.add(call);
-  }
-}
-
-/// Collects the notifications handed over for display.
-class FakeLocalNotifications implements LocalNotifications {
-  final shown = <NotificationData>[];
-
-  @override
-  Future<void> showOrScheduleNotification(NotificationData notification) async => shown.add(notification);
-}
-
-/// Collects event and error names instead of sending them.
-class FakeTelemetry implements Telemetry {
-  final events = <String>[];
-  final errors = <String>[];
-
-  @override
-  void sendEvent(String eventName, {Map<String, String>? parameters}) => events.add(eventName);
-
-  @override
-  void sendError(String errorName, {required Object error}) => errors.add(errorName);
-}
-
-/// Binds wallet_core's platform seams for a test scope.
-///
-/// Telemetry defaults to the app's [TelemetryService], so tests that assert on
-/// its channel through [recordTelemetry] see what production would send. Push
-/// and local notifications default to fakes: their real implementations need
-/// Firebase and the notification plugin.
-List<Override> testWalletCoreOverrides({
-  Telemetry? telemetry,
-  PushRegistration? pushRegistration,
-  LocalNotifications? localNotifications,
-}) => walletCoreOverrides(
-  telemetry: (_) => telemetry ?? TelemetryService(),
-  pushRegistration: (_) => pushRegistration ?? FakePushRegistration(),
-  localNotifications: (_) => localNotifications ?? FakeLocalNotifications(),
-);

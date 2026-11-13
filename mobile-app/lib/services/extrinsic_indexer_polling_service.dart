@@ -1,8 +1,7 @@
 import 'dart:async';
 
-import 'package:clock/clock.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:wallet_core/services/telemetry.dart';
+import 'package:resonance_network_wallet/services/telemetry_service.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 
 /// Configuration for polling the indexer until a submitted extrinsic appears.
@@ -55,10 +54,10 @@ class ExtrinsicIndexerPollingService<TPending, TContext> {
     quantusPrint('${_config.logPrefix} startPolling $key hash=${_config.getExtrinsicHash(pending)}');
 
     stopPolling(key);
-    final startTime = clock.now();
+    final startTime = DateTime.now();
 
     final timer = Timer.periodic(_searchInterval, (_) {
-      if (clock.now().difference(startTime) > _timeout) {
+      if (DateTime.now().difference(startTime) > _timeout) {
         quantusPrint('${_config.logPrefix} timeout for $key');
         stopPolling(key);
         unawaited(_handleTimeout(context, pending));
@@ -122,7 +121,7 @@ class ExtrinsicIndexerPollingService<TPending, TContext> {
     if (!_config.isStillPending(_ref, key)) return;
 
     quantusPrint('${_config.logPrefix} giving up on $key');
-    _ref.read(telemetryProvider).sendEvent('extrinsic_indexer_polling_timeout');
+    TelemetryService().sendEvent('extrinsic_indexer_polling_timeout');
     _config.removePending(_ref, key);
     _config.showTimeoutToast(_ref);
   }

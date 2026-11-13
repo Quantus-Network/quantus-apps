@@ -5,8 +5,8 @@ import 'package:async/async.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/models/notification_models.dart';
-import 'package:wallet_core/services/local_notifications.dart';
 import 'package:resonance_network_wallet/providers/notification_config_provider.dart';
+import 'package:resonance_network_wallet/services/local_notifications_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Maximum number of notifications to keep (FIFO)
@@ -17,20 +17,20 @@ const String notificationsStorageKey = 'notifications';
 
 /// Notification provider that manages the notification state
 final notificationProvider = StateNotifierProvider<NotificationNotifier, List<NotificationData>>((ref) {
-  final localNotifications = ref.watch(localNotificationsProvider);
+  final localNotificationsService = ref.watch(localNotificationsServiceProvider);
   final notificationConfig = ref.watch(notificationConfigProvider);
 
-  return NotificationNotifier(localNotifications, notificationConfig);
+  return NotificationNotifier(localNotificationsService, notificationConfig);
 });
 
 /// Notifier that manages notification state with persistence and streams
 class NotificationNotifier extends StateNotifier<List<NotificationData>> {
-  final LocalNotifications _localNotifications;
+  final LocalNotificationsService _localNotificationsService;
   final NotificationConfig _config;
 
   final Map<String, Timer> _scheduledTimers = {};
 
-  NotificationNotifier(this._localNotifications, this._config) : super([]) {
+  NotificationNotifier(this._localNotificationsService, this._config) : super([]) {
     _initialize();
   }
 
@@ -178,7 +178,7 @@ class NotificationNotifier extends StateNotifier<List<NotificationData>> {
         break;
       case NotificationSource.push:
       case NotificationSource.remote:
-        _localNotifications.showOrScheduleNotification(notification);
+        _localNotificationsService.showOrScheduleNotification(notification);
         break;
     }
   }

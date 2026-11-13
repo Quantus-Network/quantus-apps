@@ -35,7 +35,6 @@ void main() {
   ProviderContainer containerWithAccounts(List<Account> accounts) {
     final accountsContainer = ProviderContainer(
       overrides: [
-        ...testWalletCoreOverrides(),
         chainHistoryServiceProvider.overrideWithValue(fakeHistoryService),
         accountsProvider.overrideWith((ref) => AccountsNotifier(AccountsService(), initialAccounts: accounts)),
       ],
@@ -51,7 +50,6 @@ void main() {
     fakeHistoryService = _FakeChainHistoryService();
     container = ProviderContainer(
       overrides: [
-        ...testWalletCoreOverrides(),
         chainHistoryServiceProvider.overrideWithValue(fakeHistoryService),
         accountsProvider.overrideWith(
           (ref) => AccountsNotifier(

@@ -4,8 +4,6 @@ import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 
-import 'fakes.dart';
-
 extension Device on WidgetTester {
   Size get devicePixel {
     final viewport = const Size(375, 667);
@@ -16,19 +14,10 @@ extension Device on WidgetTester {
 
   double get devicePixelRatio => 2.0;
 
-  /// Pumps [widget] inside the app's theme and a [ProviderScope].
-  ///
-  /// wallet_core's platform seams are bound with [testWalletCoreOverrides]
-  /// unless [walletCore] replaces them.
-  Future<void> pumpApp(
-    Widget widget, {
-    List<Override>? overrides,
-    List<Override>? walletCore,
-    NavigatorObserver? navigatorObserver,
-  }) async {
+  Future<void> pumpApp(Widget widget, {List<Override>? overrides, NavigatorObserver? navigatorObserver}) async {
     await pumpWidget(
       ProviderScope(
-        overrides: [...walletCore ?? testWalletCoreOverrides(), ...?overrides],
+        overrides: overrides ?? [],
         child: Builder(
           builder: (context) {
             return MaterialApp(

@@ -7,6 +7,7 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/l10n/app_localizations.dart';
 import 'package:wallet_core/models/swap_preflight.dart';
 import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
+import 'package:resonance_network_wallet/v2/screens/send/regular_send_strategy.dart';
 
 /// The stand-in for QTC this build was started with; null in every real build.
 final swapPreflightProvider = Provider<SwapPreflight?>((_) => SwapPreflight.fromEnvironment);
@@ -56,6 +57,21 @@ const swapSlippageMaxBps = 9900;
 
 /// Slippage tolerance the next quote asks for, in basis points.
 final swapSlippageBpsProvider = StateProvider<int>((_) => SwapService.defaultSlippageBps);
+
+/// Chain fee for sending [amount] QTC from the account into a deposit address.
+/// The recipient barely moves the fee, so the account's own address stands in
+/// until the live quote names the deposit address.
+final swapDepositFeeProvider = FutureProvider.autoDispose.family<BigInt, (Account, BigInt)>((ref, args) async {
+  final (account, amount) = args;
+  try {
+    return (await RegularSendStrategy(
+      account: account,
+    ).fetchFee(ref.read, recipient: account.accountId, amount: amount)).networkFee;
+  } catch (e) {
+    quantusPrint('Swap deposit fee failed: $e');
+    rethrow;
+  }
+}, retry: (_, _) => null);
 
 /// The most QTC a balance of [spendable] can put into a swap: the deposit's
 /// chain [fee] stays behind, and the existential deposit that keeps the
