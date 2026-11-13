@@ -1,6 +1,7 @@
 name: quantus_workspace
 packages:
   - mobile-app
+  - desktop-app
   - miner-app
   - cold-wallet-app
   - quantus_sdk
@@ -85,6 +86,7 @@ scripts:
       melos exec --concurrency=1 --scope="quantus_sdk" -- "flutter test --exclude-tags=native"
       melos exec --concurrency=1 --scope="wallet_core" -- "flutter test"
       melos exec --concurrency=1 --scope="resonance_network_wallet" -- "flutter test"
+      melos exec --concurrency=1 --scope="quantus_desktop_wallet" -- "flutter test"
       melos exec --concurrency=1 --scope="quantus_cold_wallet" -- "flutter test"
 
   # Get dependencies for all packages

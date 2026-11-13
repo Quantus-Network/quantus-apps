@@ -40,6 +40,8 @@ jobs:
         run: melos exec --concurrency=1 --scope="wallet_core" -- "flutter test"
       - name: Test Mobile App
         run: melos exec --concurrency=1 --scope="resonance_network_wallet" -- "flutter test"
+      - name: Test Desktop App
+        run: melos exec --concurrency=1 --scope="quantus_desktop_wallet" -- "flutter test"
       - name: Test Quantus SDK
         # Tests tagged 'native' need the Rust dylib built locally; skip them in CI.
         run: melos exec --concurrency=1 --scope="quantus_sdk" -- "flutter test --exclude-tags=native"

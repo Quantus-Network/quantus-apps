@@ -1,0 +1,31 @@
+name: quantus_desktop_wallet
+description: Quantus desktop wallet for macOS, Windows and Linux.
+version: 0.1.0
+publish_to: none
+
+environment:
+  sdk: ">=3.8.0 <4.0.0"
+
+# Convention: see dependency placement section in ../melos.yaml.
+# Shared dep versions must match the canonical list there.
+#
+# Every Flutter plugin this app pulls in, directly or through another package,
+# must support macOS, Windows and Linux; test/architecture_test.dart enforces
+# this.
+dependencies:
+  flutter:
+    sdk: flutter
+  quantus_sdk:
+  wallet_core:
+
+  # State management
+  flutter_riverpod: ^3.3.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  yaml: ^3.1.3
+
+flutter:
+  uses-material-design: true

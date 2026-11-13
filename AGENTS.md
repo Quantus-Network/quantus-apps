@@ -1,6 +1,6 @@
 # quantus-apps
 
-Flutter monorepo managed with [melos](https://melos.invertase.dev). Packages: `mobile-app`, `cold-wallet-app`, `miner-app`, `quantus_sdk`, `wallet_core`.
+Flutter monorepo managed with [melos](https://melos.invertase.dev). Packages: `mobile-app`, `desktop-app`, `cold-wallet-app`, `miner-app`, `quantus_sdk`, `wallet_core`.
 
 ## Translations
 
