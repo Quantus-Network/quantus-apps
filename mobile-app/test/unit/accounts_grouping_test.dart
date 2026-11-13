@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/shared/utils/accounts_grouping.dart';
+import 'package:wallet_core/utils/accounts_grouping.dart';
 
 Account _acc(int wallet, int index, {AccountType type = AccountType.local, String? id}) => Account(
   walletIndex: wallet,

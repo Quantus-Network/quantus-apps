@@ -6,7 +6,7 @@ import 'package:quantus_sdk/src/testing/call_corpus.dart';
 import 'package:resonance_network_wallet/v2/components/decoded_call_view.dart';
 
 import 'package:wallet_core/models/fiat_currency.dart';
-import 'package:resonance_network_wallet/providers/currency_display_provider.dart';
+import 'package:wallet_core/providers/currency_display_provider.dart';
 
 import '../extensions.dart';
 

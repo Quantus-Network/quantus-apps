@@ -3,8 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:resonance_network_wallet/providers/wallet_providers.dart';
-import 'package:resonance_network_wallet/services/logout_service.dart';
+import 'package:wallet_core/providers/wallet_providers.dart';
+import 'package:wallet_core/services/logout_service.dart';
 import 'package:resonance_network_wallet/v2/screens/welcome/logout_flow.dart';
 import 'package:resonance_network_wallet/v2/screens/welcome/welcome_screen.dart';
 

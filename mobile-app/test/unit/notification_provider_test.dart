@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:resonance_network_wallet/providers/notification_provider.dart';
+import 'package:wallet_core/providers/notification_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:wallet_core/models/notification_models.dart';
 

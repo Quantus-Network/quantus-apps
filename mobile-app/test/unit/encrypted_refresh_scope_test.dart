@@ -3,11 +3,11 @@ import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/models/filtered_transactions_params.dart';
-import 'package:resonance_network_wallet/providers/account_id_list_cache.dart';
-import 'package:resonance_network_wallet/providers/account_providers.dart';
-import 'package:resonance_network_wallet/providers/filtered_all_transactions_provider.dart';
-import 'package:resonance_network_wallet/providers/wallet_providers.dart';
-import 'package:resonance_network_wallet/shared/utils/polling_refresh_scope.dart';
+import 'package:wallet_core/providers/account_id_list_cache.dart';
+import 'package:wallet_core/providers/account_providers.dart';
+import 'package:wallet_core/providers/filtered_all_transactions_provider.dart';
+import 'package:wallet_core/providers/wallet_providers.dart';
+import 'package:wallet_core/utils/polling_refresh_scope.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../fakes.dart';

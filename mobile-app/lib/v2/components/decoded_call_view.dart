@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart' as sdk;
-import 'package:resonance_network_wallet/providers/currency_display_provider.dart';
+import 'package:wallet_core/providers/currency_display_provider.dart';
 
 /// Renders every parameter of a decoded multisig proposal, nested calls included.
 class DecodedCallView extends ConsumerWidget {

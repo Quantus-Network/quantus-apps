@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:resonance_network_wallet/services/logout_service.dart';
+import 'package:wallet_core/services/logout_service.dart';
 import 'package:resonance_network_wallet/v2/screens/welcome/welcome_screen.dart';
 
 /// Logs the wallet out and replaces every route with the welcome screen.
