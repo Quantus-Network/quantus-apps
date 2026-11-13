@@ -1,0 +1,113 @@
+name: Desktop App Build
+
+# Builds the desktop wallet on every platform it ships on. A plugin or native
+# change that breaks one platform builds fine on the others, so this is the
+# only check that covers Windows and Linux.
+on:
+  workflow_dispatch: # Manual trigger
+  pull_request:
+    paths:
+      - 'desktop-app/**'
+      - '.github/workflows/desktop_app_build.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  build-macos:
+    name: Build macOS
+    runs-on: macos-26
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          flutter-version-file: .fvmrc
+          cache: true
+
+      - name: Enable macOS desktop
+        run: flutter config --enable-macos-desktop
+
+      # The CocoaPods gem preinstalled on the macos-26 runner image is broken
+      # (built against a different Ruby), so Flutter skips `pod install` and the
+      # build aborts with "CocoaPods not installed or not in valid state".
+      # Homebrew's CocoaPods ships with its own Ruby and takes PATH precedence.
+      - name: Install working CocoaPods
+        run: |
+          brew install cocoapods || brew reinstall cocoapods
+          pod --version
+
+      - name: Get dependencies
+        run: flutter pub get
+        working-directory: ./desktop-app
+
+      - name: Build macOS debug
+        run: flutter build macos --debug
+        working-directory: ./desktop-app
+
+  build-linux:
+    name: Build Linux
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          flutter-version-file: .fvmrc
+          cache: true
+
+      - name: Install Linux dependencies
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y \
+            clang \
+            cmake \
+            ninja-build \
+            pkg-config \
+            libgtk-3-dev \
+            liblzma-dev \
+            libsecret-1-dev \
+            libjsoncpp-dev \
+            libstdc++-14-dev
+
+      - name: Enable Linux desktop
+        run: flutter config --enable-linux-desktop
+
+      - name: Get dependencies
+        run: flutter pub get
+        working-directory: ./desktop-app
+
+      - name: Build Linux debug
+        run: flutter build linux --debug
+        working-directory: ./desktop-app
+
+  build-windows:
+    name: Build Windows
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          flutter-version-file: .fvmrc
+          cache: true
+
+      - name: Enable Windows desktop
+        run: flutter config --enable-windows-desktop
+
+      - name: Get dependencies
+        run: flutter pub get
+        working-directory: ./desktop-app
+
+      - name: Build Windows debug
+        run: flutter build windows --debug
+        working-directory: ./desktop-app
