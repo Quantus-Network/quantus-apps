@@ -112,6 +112,9 @@ class SwapLiveActivityContent {
   final String leftLabel;
   final String minuteLabel;
   final String hourLabel;
+
+  /// Shown in place of the countdown once [endsAt] has passed.
+  final String overdueLabel;
   final double progress;
   final bool showProgress;
   final DateTime? endsAt;
@@ -143,6 +146,7 @@ class SwapLiveActivityContent {
     required this.leftLabel,
     required this.minuteLabel,
     required this.hourLabel,
+    required this.overdueLabel,
     required this.progress,
     required this.showProgress,
     required this.endsAt,
@@ -177,9 +181,11 @@ class SwapLiveActivityContent {
     'leftLabel': leftLabel,
     'minuteLabel': minuteLabel,
     'hourLabel': hourLabel,
+    'overdueLabel': overdueLabel,
     'progress': progress,
     'showProgress': showProgress,
     'endsAt': endsAt?.millisecondsSinceEpoch,
+    'overdue': _overdue,
     'updatedAt': updatedAt.millisecondsSinceEpoch,
     'staleAt': updatedAt.add(swapLiveStaleAfter).millisecondsSinceEpoch,
     'holdsProcess': holdsProcess,
@@ -198,9 +204,17 @@ class SwapLiveActivityContent {
     'progress': progress,
     'showProgress': showProgress,
     'endsAt': endsAt?.millisecondsSinceEpoch,
+    'overdue': _overdue,
     'key': key,
     'locale': locale,
   };
+
+  /// Whether the estimate has run out. iOS redraws the badge only on a new
+  /// write, so the card is sent again once this flips.
+  bool get _overdue {
+    final ends = endsAt;
+    return ends != null && !updatedAt.isBefore(ends);
+  }
 }
 
 /// Whether [swap] ended without paying out. Incomplete deposits keep being
@@ -266,7 +280,9 @@ SwapLiveActivityContent _content(
   final labels = _labels(l10n, source, destination);
   final underway =
       phase == SwapLivePhase.submitted || phase == SwapLivePhase.confirming || phase == SwapLivePhase.settling;
+  final counting = phase == SwapLivePhase.confirming || phase == SwapLivePhase.settling;
   final started = swap.startedAt.toUtc();
+  final seen = swap.depositSeenAt?.toUtc();
   return SwapLiveActivityContent(
     phase: phase,
     failure: failure,
@@ -286,9 +302,10 @@ SwapLiveActivityContent _content(
     leftLabel: l10n.swapLiveLeft,
     minuteLabel: l10n.swapLiveMinute,
     hourLabel: l10n.swapLiveHour,
+    overdueLabel: l10n.swapLiveOverdue,
     progress: _progress(phase),
     showProgress: failure == null,
-    endsAt: underway ? started.add(quote.timeEstimate) : null,
+    endsAt: counting && seen != null ? seen.add(quote.timeEstimate) : null,
     updatedAt: now.toUtc(),
     depositAddress: swap.order.depositAddress,
     key: '${swap.order.depositAddress}|${started.millisecondsSinceEpoch}',

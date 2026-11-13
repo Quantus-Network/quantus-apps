@@ -372,7 +372,7 @@ final swapLiveActivityControllerProvider = Provider<SwapLiveActivityController>(
       return SwapLiveSnapshot(
         swap: ref.read(activeSwapProvider),
         l10n: ref.read(l10nProvider),
-        formatAmount: (amount, token) => formatting.formatAmount(amount, decimals: token.decimals),
+        formatAmount: (amount, token) => formatting.formatCompactAmount(amount, decimals: token.decimals),
         now: clock.now(),
         progressVisible: ref.read(swapProgressVisibleProvider),
       );

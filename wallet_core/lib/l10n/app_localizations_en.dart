@@ -1862,6 +1862,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get swapLiveHour => 'hr';
 
   @override
+  String get swapLiveOverdue => 'Taking longer';
+
+  @override
   String get swapLiveChannel => 'Swap progress';
 
   @override

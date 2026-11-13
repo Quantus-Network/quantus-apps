@@ -3,6 +3,7 @@ package com.example.resonance_network_wallet
 import android.widget.RemoteViews
 import org.junit.Assert.assertEquals
 import org.junit.Test
+import org.w3c.dom.Document
 import org.w3c.dom.Element
 import java.io.File
 import javax.xml.XMLConstants
@@ -20,6 +21,19 @@ class SwapLiveActivityLayoutTest {
         assertEquals(emptyList<String>(), rejected)
     }
 
+    @Test
+    fun amountAndSymbolStayOnOneLine() {
+        val ids = listOf("swap_live_from_amount", "swap_live_from_symbol", "swap_live_to_amount", "swap_live_to_symbol")
+        val wrapping = ids.filterNot { id -> textView(id).getAttribute("android:maxLines") == "1" }
+        assertEquals(emptyList<String>(), wrapping)
+    }
+
+    private fun textView(id: String): Element {
+        val nodes = layout().getElementsByTagName("TextView")
+        return List(nodes.length) { index -> nodes.item(index) as Element }
+            .single { it.getAttribute("android:id") == "@+id/$id" }
+    }
+
     private fun remoteViewsAllows(tag: String): Boolean {
         return viewClass(tag).isAnnotationPresent(RemoteViews.RemoteView::class.java)
     }
@@ -32,12 +46,15 @@ class SwapLiveActivityLayoutTest {
     }
 
     private fun layoutTags(): List<String> {
+        val nodes = layout().getElementsByTagName("*")
+        return List(nodes.length) { index -> (nodes.item(index) as Element).tagName }
+    }
+
+    private fun layout(): Document {
         val factory = DocumentBuilderFactory.newInstance()
         factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true)
         factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true)
-        val document = factory.newDocumentBuilder().parse(layoutFile())
-        val nodes = document.getElementsByTagName("*")
-        return List(nodes.length) { index -> (nodes.item(index) as Element).tagName }
+        return factory.newDocumentBuilder().parse(layoutFile())
     }
 
     private fun layoutFile(): File {

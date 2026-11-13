@@ -3476,6 +3476,12 @@ abstract class AppLocalizations {
   /// **'hr'**
   String get swapLiveHour;
 
+  /// Lock screen badge once a swap has run past 1Click's time estimate
+  ///
+  /// In en, this message translates to:
+  /// **'Taking longer'**
+  String get swapLiveOverdue;
+
   /// Android notification channel for the swap lock screen card
   ///
   /// In en, this message translates to:

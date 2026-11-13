@@ -56,11 +56,13 @@ void main() {
     bool simulated = false,
     BigInt? amountOut,
     DateTime? startedAt,
+    DateTime? depositSeenAt,
   }) => ActiveSwap(
     order: SwapOrder(quote: quote, status: status, amountOut: amountOut),
     accountId: 'qzaccount',
     accountName: 'Account 1',
     startedAt: startedAt ?? started,
+    depositSeenAt: depositSeenAt,
     depositByHand: byHand,
     depositSent: sent,
     simulated: simulated,
@@ -97,7 +99,7 @@ void main() {
       expect(decide(swap(SwapStatus.pendingDeposit, byHand: true)).command, SwapLiveCommand.end);
     });
 
-    test('a sent deposit opens on Swap submitted with the quote countdown', () {
+    test('a sent deposit opens on Swap submitted without a countdown', () {
       final content = decide(swap(SwapStatus.pendingDeposit, byHand: true, sent: true)).content!;
 
       expect(content.phase, SwapLivePhase.submitted);
@@ -109,7 +111,7 @@ void main() {
       expect(content.fromAmount, quote.amountIn.toString());
       expect(content.fromSymbol, 'USDC');
       expect(content.toSymbol, 'QTC');
-      expect(content.endsAt, started.add(const Duration(minutes: 5)));
+      expect(content.endsAt, isNull);
       expect(content.leftLabel, 'left');
       expect(content.minuteLabel, 'min');
       expect(content.hourLabel, 'hr');
@@ -129,6 +131,66 @@ void main() {
       expect(settling.headline, 'Settling on Quantus');
       expect(settling.chain, 'Ethereum');
       expect(settling.progress, swapLiveProgressSettling);
+    });
+
+    group('countdown', () {
+      final seen = started.add(const Duration(minutes: 7));
+
+      test('pending deposit card has no countdown', () {
+        expect(decide(swap(SwapStatus.pendingDeposit)).content!.endsAt, isNull);
+        expect(decide(swap(SwapStatus.pendingDeposit, byHand: true, sent: true)).content!.endsAt, isNull);
+      });
+
+      test('countdown runs from when the deposit was seen', () {
+        final now = seen.add(const Duration(minutes: 1));
+        final confirming = decide(swap(SwapStatus.knownDepositTx, depositSeenAt: seen), now: now).content!;
+        final settling = decide(swap(SwapStatus.processing, depositSeenAt: seen), now: now).content!;
+        expect(confirming.endsAt, seen.add(quote.timeEstimate));
+        expect(settling.endsAt, seen.add(quote.timeEstimate));
+      });
+
+      test('no deposit-seen time, no countdown', () {
+        expect(decide(swap(SwapStatus.knownDepositTx)).content!.endsAt, isNull);
+      });
+
+      test('card carries the overdue label', () {
+        final content = decide(swap(SwapStatus.processing, depositSeenAt: seen)).content!;
+        expect(content.overdueLabel, 'Taking longer');
+        expect(content.toPayload()['overdueLabel'], 'Taking longer');
+      });
+
+      test('passing the estimate re-sends the card', () {
+        final ends = seen.add(quote.timeEstimate);
+        final current = swap(SwapStatus.processing, depositSeenAt: seen);
+        final before = decide(current, now: ends.subtract(const Duration(seconds: 1))).content!;
+        final after = decide(current, now: ends).content!;
+        expect(after.identity, isNot(equals(before.identity)));
+      });
+
+      test('the payload says when the estimate has passed', () {
+        final ends = seen.add(quote.timeEstimate);
+        final current = swap(SwapStatus.processing, depositSeenAt: seen);
+        Object? overdueAt(DateTime now) => decide(current, now: now).content!.toPayload()['overdue'];
+        expect(overdueAt(ends.subtract(const Duration(seconds: 1))), isFalse);
+        expect(overdueAt(ends), isTrue);
+        expect(overdueAt(ends.add(const Duration(minutes: 1))), isTrue);
+      });
+
+      test('no countdown is never overdue', () {
+        final later = seen.add(const Duration(hours: 1));
+        expect(decide(swap(SwapStatus.pendingDeposit), now: later).content!.toPayload()['overdue'], isFalse);
+        expect(decide(swap(SwapStatus.knownDepositTx), now: later).content!.toPayload()['overdue'], isFalse);
+      });
+
+      test('a finished swap is not overdue', () {
+        final later = seen.add(const Duration(hours: 1));
+        final content = decide(
+          swap(SwapStatus.success, depositSeenAt: seen),
+          now: later,
+          progressVisible: true,
+        ).content!;
+        expect(content.toPayload()['overdue'], isFalse);
+      });
     });
 
     test('a paid-out amount replaces the quote once 1Click reports one', () {

@@ -1865,6 +1865,9 @@ class AppLocalizationsId extends AppLocalizations {
   String get swapLiveHour => 'jam';
 
   @override
+  String get swapLiveOverdue => 'Butuh waktu lebih lama';
+
+  @override
   String get swapLiveChannel => 'Progres swap';
 
   @override

@@ -13,6 +13,10 @@ class ActiveSwap {
   /// When the order reached a final status; the timer stops there.
   final DateTime? settledAt;
 
+  /// When a poll first found the order past PENDING_DEPOSIT, by this
+  /// device's clock. 1Click's time estimate runs from here.
+  final DateTime? depositSeenAt;
+
   /// Whether the user makes the deposit from another wallet, rather than the
   /// app sending it from the account.
   final bool depositByHand;
@@ -39,6 +43,7 @@ class ActiveSwap {
     required this.depositByHand,
     this.depositSent = false,
     this.settledAt,
+    this.depositSeenAt,
     this.depositTxHash,
     this.depositFee,
     this.pollError,
@@ -70,8 +75,12 @@ class ActiveSwap {
       !isFinal &&
       now.isAfter(order.quote.deadline.add(order.status == SwapStatus.pendingDeposit ? Duration.zero : finishGrace));
 
-  ActiveSwap withOrder(SwapOrder order, {required DateTime now}) =>
-      _copy(order: order, settledAt: order.status.isFinal ? now : null, pollError: null);
+  ActiveSwap withOrder(SwapOrder order, {required DateTime now}) => _copy(
+    order: order,
+    settledAt: order.status.isFinal ? now : null,
+    pollError: null,
+    depositSeenAt: depositSeenAt ?? (order.status == SwapStatus.pendingDeposit ? null : now),
+  );
 
   ActiveSwap withPollError(String error) => _copy(order: order, settledAt: settledAt, pollError: error);
 
@@ -82,12 +91,14 @@ class ActiveSwap {
     required DateTime? settledAt,
     required String? pollError,
     bool? depositSent,
+    DateTime? depositSeenAt,
   }) => ActiveSwap(
     order: order,
     accountId: accountId,
     accountName: accountName,
     startedAt: startedAt,
     settledAt: settledAt,
+    depositSeenAt: depositSeenAt ?? this.depositSeenAt,
     depositByHand: depositByHand,
     depositSent: depositSent ?? this.depositSent,
     depositTxHash: depositTxHash,
@@ -101,6 +112,7 @@ class ActiveSwap {
     final to = SwapToken.fromJson(json['toToken'] as Map<String, dynamic>);
     final quote = SwapQuote.fromJson(json['quote'] as Map<String, dynamic>, fromToken: from, toToken: to);
     final settledAt = json['settledAt'] as String?;
+    final depositSeenAt = json['depositSeenAt'] as String?;
     final depositFee = json['depositFee'] as String?;
     return ActiveSwap(
       order: SwapOrder.fromStatusJson(json['status'] as Map<String, dynamic>, quote: quote),
@@ -108,6 +120,7 @@ class ActiveSwap {
       accountName: json['accountName'] as String,
       startedAt: DateTime.parse(json['startedAt'] as String),
       settledAt: settledAt == null ? null : DateTime.parse(settledAt),
+      depositSeenAt: depositSeenAt == null ? null : DateTime.parse(depositSeenAt),
       depositByHand: json['depositByHand'] as bool,
       depositSent: json['depositSent'] as bool? ?? false,
       depositTxHash: json['depositTxHash'] as String?,
@@ -124,6 +137,7 @@ class ActiveSwap {
     'accountName': accountName,
     'startedAt': startedAt.toUtc().toIso8601String(),
     'settledAt': ?settledAt?.toUtc().toIso8601String(),
+    'depositSeenAt': ?depositSeenAt?.toUtc().toIso8601String(),
     'depositByHand': depositByHand,
     'depositSent': depositSent,
     'depositTxHash': ?depositTxHash,

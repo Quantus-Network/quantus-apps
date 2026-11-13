@@ -32,6 +32,7 @@ const _stringFields = [
   'leftLabel',
   'minuteLabel',
   'hourLabel',
+  'overdueLabel',
   'key',
   'channelName',
 ];

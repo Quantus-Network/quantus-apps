@@ -91,6 +91,7 @@ class SwapDebugScreen extends ConsumerWidget {
               accountName: account.name,
               startedAt: now.subtract(age),
               settledAt: order.status.isFinal ? now : null,
+              depositSeenAt: order.status == SwapStatus.pendingDeposit ? null : now,
               depositByHand: !swapOut,
               depositTxHash: swapOut ? SwapHarnessService.txHash : null,
               depositFee: swapOut ? unit ~/ BigInt.from(50) : null,

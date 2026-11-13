@@ -22,9 +22,13 @@ struct SwapActivityAttributes: ActivityAttributes {
     var chainLabel: String
     var openToCheck: String
     var agoLabel: String
+    var overdueLabel: String
     var progress: Double
     var showProgress: Bool
     var endsAt: Double?
+    /// Set once the estimate has passed, by the app or by Senoti's push at the
+    /// deadline. The badge trusts it even when this phone's clock is behind.
+    var overdue: Bool
     var updatedAt: Double
     var staleAt: Double
     var holdsProcess: Bool

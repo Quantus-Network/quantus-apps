@@ -2720,6 +2720,10 @@
     "@swapLiveHour": {
       "description": "Lock screen unit for a remaining swap time of an hour or more"
     },
+    "swapLiveOverdue": "Taking longer",
+    "@swapLiveOverdue": {
+      "description": "Lock screen badge once a swap has run past 1Click's time estimate"
+    },
     "swapLiveChannel": "Swap progress",
     "@swapLiveChannel": {
       "description": "Android notification channel for the swap lock screen card"

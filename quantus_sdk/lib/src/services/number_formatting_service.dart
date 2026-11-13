@@ -31,6 +31,34 @@ class NumberFormattingService {
   String formatAmount(BigInt amount, {int decimals = AppConstants.decimals}) =>
       formatBalance(amount, decimals: decimals, smartDecimals: 4, maxDecimals: decimals);
 
+  /// A short, glanceable amount for tight surfaces such as the swap live card:
+  /// at most 4 significant digits with a K/M/B/T suffix from 1,000, 4 decimals
+  /// below 1, and "<0.0001" for anything smaller. Always rounds down, so it
+  /// never shows more than [amount].
+  ///
+  /// Example: 1234567800000000 -> "1.234K", 24213000000 -> "0.0242" (US locale)
+  String formatCompactAmount(BigInt amount, {int decimals = AppConstants.decimals}) {
+    if (amount == BigInt.zero) return '0';
+    final value = (Decimal.fromBigInt(amount) / _scale(decimals)).toDecimal(scaleOnInfinitePrecision: decimals);
+    if (value < _compactFloor) return '<${_localeConfig.localize('$_compactFloor', addGroupingSeparators: false)}';
+    if (value < Decimal.one) return formatBalance(amount, decimals: decimals, smartDecimals: 4, maxDecimals: 4);
+
+    final (divisor, suffix) = _compactTiers.firstWhere((tier) => value >= tier.$1, orElse: () => (Decimal.one, ''));
+    final scaled = (value / divisor).toDecimal();
+    final wholeDigits = scaled.truncate().toBigInt().toString().length;
+    final fractionDigits = wholeDigits >= 4 ? 0 : 4 - wholeDigits;
+    final shown = scaled.truncate(scale: fractionDigits);
+    return '${_localeConfig.localize(shown.toString(), addGroupingSeparators: false)}$suffix';
+  }
+
+  static final Decimal _compactFloor = Decimal.parse('0.0001');
+  static final List<(Decimal, String)> _compactTiers = [
+    (Decimal.fromInt(10).pow(12).toDecimal(), 'T'),
+    (Decimal.fromInt(10).pow(9).toDecimal(), 'B'),
+    (Decimal.fromInt(10).pow(6).toDecimal(), 'M'),
+    (Decimal.fromInt(1000), 'K'),
+  ];
+
   /// Every significant digit of [amount], for an amount someone must send exactly.
   String formatExactAmount(BigInt amount, {int decimals = AppConstants.decimals}) =>
       formatBalance(amount, decimals: decimals, smartDecimals: decimals, maxDecimals: decimals);

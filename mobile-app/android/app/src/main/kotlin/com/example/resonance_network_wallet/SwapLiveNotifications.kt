@@ -396,6 +396,7 @@ object SwapLiveNotifications {
                 minute = json.optString("minuteLabel"),
                 hour = json.optString("hourLabel"),
                 left = json.optString("leftLabel"),
+                overdue = json.optString("overdueLabel"),
             ),
         )
     }
@@ -510,12 +511,20 @@ object SwapLiveNotifications {
 /// Activity shows a system timer instead, because its card cannot run our own
 /// formatting. A blank unit is the word used by a card started before those
 /// labels were sent.
-internal fun swapLiveTimeLeft(nowMs: Long, endsAtMs: Long, minute: String, hour: String, left: String): String {
+internal fun swapLiveTimeLeft(
+    nowMs: Long,
+    endsAtMs: Long,
+    minute: String,
+    hour: String,
+    left: String,
+    overdue: String,
+): String {
+    if (nowMs >= endsAtMs) return overdue
     val minuteWord = minute.ifBlank { "min" }
     val hourWord = hour.ifBlank { "hr" }
     val leftWord = left.ifBlank { "left" }
     val seconds = (endsAtMs - nowMs) / 1000.0
-    val minutes = if (seconds <= 0.0) 0 else kotlin.math.ceil(seconds / 60.0).toInt()
+    val minutes = kotlin.math.ceil(seconds / 60.0).toInt()
     if (minutes < 60) return "~$minutes $minuteWord $leftWord"
     val hours = minutes / 60
     val rest = minutes % 60
@@ -733,6 +742,7 @@ private val pushStringFields = listOf(
     "leftLabel",
     "minuteLabel",
     "hourLabel",
+    "overdueLabel",
     "key",
     "channelName",
 )
