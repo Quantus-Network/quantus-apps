@@ -649,5 +649,15 @@
   "mainnetMigrationAllSetBody": "Mulai sekarang semuanya adalah uang sungguhan. Tambahkan {tokenSymbol} kapan pun Anda siap.",
   "mainnetMigrationGetTokens": "Dapatkan {tokenSymbol}",
   "mainnetMigrationGoToWallet": "Ke wallet",
-  "mainnetMigrationSaveFailed": "Pilihan Anda tidak dapat disimpan: {error}"
+  "mainnetMigrationSaveFailed": "Pilihan Anda tidak dapat disimpan: {error}",
+  "commonClose": "Tutup",
+  "desktopMenuSettings": "Pengaturan…",
+  "desktopMenuFile": "Berkas",
+  "desktopMenuCloseWindow": "Tutup Jendela",
+  "desktopMenuAccount": "Akun",
+  "desktopMenuAddAccount": "Tambah Akun…",
+  "desktopMenuView": "Tampilan",
+  "desktopMenuHideSidebar": "Sembunyikan Bar Samping",
+  "desktopMenuShowSidebar": "Tampilkan Bar Samping",
+  "desktopMenuWindow": "Jendela"
 }

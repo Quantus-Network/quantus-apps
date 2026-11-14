@@ -10,7 +10,6 @@ import 'package:resonance_network_wallet/shared/constants/e2e_keys.dart';
 import 'package:wallet_core/utils/accounts_grouping.dart';
 import 'package:resonance_network_wallet/v2/components/account_badge.dart';
 import 'package:resonance_network_wallet/v2/components/account_list_row.dart';
-import 'package:resonance_network_wallet/v2/components/private_activity_notice.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/screens/mining_rewards/mining_rewards_address_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/mining_rewards/mining_rewards_confirm_screen.dart';

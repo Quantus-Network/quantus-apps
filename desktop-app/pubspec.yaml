@@ -21,6 +21,9 @@ dependencies:
   # State management
   flutter_riverpod: ^3.3.1
 
+  # UI
+  cupertino_icons: ^1.0.9
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

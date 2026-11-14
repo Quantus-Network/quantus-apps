@@ -2052,6 +2052,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get commonDone => 'Done';
 
   @override
+  String get commonClose => 'Close';
+
+  @override
   String get commonSave => 'Save';
 
   @override
@@ -2444,4 +2447,31 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get miningRewardsSubmitClaims => 'Submit Claim';
+
+  @override
+  String get desktopMenuSettings => 'Settings…';
+
+  @override
+  String get desktopMenuFile => 'File';
+
+  @override
+  String get desktopMenuCloseWindow => 'Close Window';
+
+  @override
+  String get desktopMenuAccount => 'Account';
+
+  @override
+  String get desktopMenuAddAccount => 'Add Account…';
+
+  @override
+  String get desktopMenuView => 'View';
+
+  @override
+  String get desktopMenuHideSidebar => 'Hide Sidebar';
+
+  @override
+  String get desktopMenuShowSidebar => 'Show Sidebar';
+
+  @override
+  String get desktopMenuWindow => 'Window';
 }

@@ -11,7 +11,6 @@ import 'package:resonance_network_wallet/services/telemetry_service.dart';
 import 'package:resonance_network_wallet/shared/constants/e2e_keys.dart';
 import 'package:wallet_core/utils/account_utils.dart';
 import 'package:resonance_network_wallet/v2/components/amount_display_with_conversion.dart';
-import 'package:resonance_network_wallet/v2/components/private_activity_notice.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/open_accounts_management_button.dart';
 import 'package:resonance_network_wallet/v2/screens/activity/transaction_detail_sheet.dart';
 import 'package:resonance_network_wallet/v2/screens/receive/receive_screen.dart';
