@@ -72,6 +72,11 @@ class HdWalletService {
   Keypair keyPairAtIndex(String mnemonic, int index, DilithiumScheme scheme) =>
       keyPairAtPath(mnemonic, pathForIndex(index, scheme), scheme);
 
+  /// The address of [keypair]. On the service, beside [keyPairAtPath], so code
+  /// that derives a key and needs its address goes through one object, which
+  /// a test can replace where the Rust library is not loaded.
+  String addressOf(Keypair keypair) => keypair.ss58Address;
+
   static String _wormholePath({int account = 0, required bool isChange, required int index}) =>
       "m/44'/189189189'/$account'/${isChange ? 1 : 0}'/$index'";
 

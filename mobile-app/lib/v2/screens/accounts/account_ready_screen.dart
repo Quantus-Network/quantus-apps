@@ -5,8 +5,6 @@ import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:wallet_core/l10n/app_localizations.dart';
 import 'package:wallet_core/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/shared/constants/e2e_keys.dart';
-import 'package:resonance_network_wallet/v2/components/account_badge.dart';
-import 'package:resonance_network_wallet/v2/components/info_card.dart';
 import 'package:resonance_network_wallet/v2/screens/home/home_screen.dart';
 
 enum AccountReadyOverviewOrigin { accountCreated, walletCreated, walletImported }

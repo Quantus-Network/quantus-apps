@@ -216,6 +216,23 @@ void main() {
     expect(bannerTop, lessThan(tester.getTopLeft(find.text('Consequences.')).dy));
   });
 
+  testWidgets('without Cancel the action is the only button', (tester) async {
+    await pumpDialog(
+      tester,
+      QuantusDialog(
+        title: 'Dialog title?',
+        body: 'Consequences.',
+        actionLabel: 'OK',
+        showCancel: false,
+        onAction: () {},
+      ),
+    );
+
+    expect(find.byType(QuantusButton), findsOneWidget);
+    expect(find.text('OK'), findsOneWidget);
+    expect(find.text('Cancel'), findsNothing);
+  });
+
   testWidgets('showQuantusDialog returns true when the action is tapped', (tester) async {
     bool? result;
     await pumpShownDialog(tester, onResult: (confirmed) async => result = confirmed);

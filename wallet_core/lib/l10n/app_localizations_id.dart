@@ -2058,6 +2058,9 @@ class AppLocalizationsId extends AppLocalizations {
   String get commonClose => 'Tutup';
 
   @override
+  String get commonBack => 'Kembali';
+
+  @override
   String get commonSave => 'Simpan';
 
   @override

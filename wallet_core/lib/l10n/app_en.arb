@@ -3006,6 +3006,10 @@
     "@commonClose": {
       "description": "Button that closes a sheet or dialog"
     },
+    "commonBack": "Back",
+    "@commonBack": {
+      "description": "Button that returns to the previous page"
+    },
     "commonSave": "Save",
     "@commonSave": {
       "description": "Save button on sheets that apply a pick"

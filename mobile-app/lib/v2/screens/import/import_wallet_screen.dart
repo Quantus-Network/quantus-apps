@@ -1,15 +1,8 @@
-import 'dart:async';
-
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart' hide ScaffoldBase;
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
-import 'package:wallet_core/providers/account_providers.dart';
 import 'package:wallet_core/providers/l10n_provider.dart';
-import 'package:wallet_core/providers/wallet_providers.dart';
-import 'package:wallet_core/services/remote_notifications_registration.dart';
-import 'package:resonance_network_wallet/services/telemetry_service.dart';
 import 'package:wallet_core/services/wallet_creation_service.dart';
 import 'package:resonance_network_wallet/shared/constants/e2e_keys.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/wallet_name_screen.dart';
@@ -32,73 +25,30 @@ class ImportWalletScreenV2 extends ConsumerStatefulWidget {
 class _ImportWalletScreenV2State extends ConsumerState<ImportWalletScreenV2> {
   final _controller = ObscuringTextEditingController();
   final _buttonKey = GlobalKey();
-  final _settingsService = SettingsService();
-  final _accountsService = AccountsService();
-  late final _walletCreationService = WalletCreationService(
-    settingsService: _settingsService,
-    accountsService: _accountsService,
-  );
   bool _isLoading = false;
   String? _error;
 
   bool get _hasInput => _controller.text.trim().isNotEmpty;
 
   Future<void> _import() async {
-    final accounts = ref.read(accountsProvider).value ?? <Account>[];
-    final mnemonic = _controller.text.trim();
-
     setState(() {
       _isLoading = true;
       _error = null;
     });
 
     try {
-      // Dev seeds (//Crystal Alice etc.) skip word-count validation, but only
-      // in debug builds; in release they fail normal mnemonic validation (M8).
-      if (!(kDebugMode && mnemonic.startsWith('//'))) {
-        final words = mnemonic.split(' ').where((w) => w.isNotEmpty).toList();
-        if (words.length != 12 && words.length != 24) {
-          throw Exception(ref.read(l10nProvider).importWalletValidationError);
-        }
-      }
-
-      const scheme = DilithiumSchemeExtension.current;
-      final path = HdWalletService.pathForIndex(0, scheme);
-      final key = HdWalletService().keyPairAtPath(mnemonic, path, scheme);
-      await _walletCreationService.importWallet(
-        mnemonic: mnemonic,
-        root: Account.derived(
-          walletIndex: widget.walletIndex,
-          index: 0,
-          name: 'Account ${accounts.length + 1}',
-          keypair: key,
-          derivationPath: path,
-        ),
-      );
-
-      if (!HdWalletService.isDevAccount(mnemonic)) {
-        await _discoverAccounts(mnemonic, defaultAccountId: key.ss58Address);
-      }
-      invalidateAccountProviders(ref);
-      _settingsService.setReferralCheckCompleted();
-      _settingsService.setExistingUserSeenPromoVideo();
-      await _settingsService.setMainnetMigrationDone();
-      _settingsService.setWalletOrigin(widget.walletIndex, WalletOrigin.imported);
-      ref.invalidate(walletOriginProvider(widget.walletIndex));
-
-      unawaited(
-        registerForRemoteNotificationsBestEffort(
-          ref.read,
-          insertAddress: widget.walletIndex > 0 ? key.ss58Address : null,
-        ),
+      final root = await importSoftwareWallet(
+        ref,
+        mnemonic: _controller.text,
+        walletIndex: widget.walletIndex,
+        onScanFailed: _askRetryScan,
       );
 
       if (!mounted) return;
       if (widget.openAccountsOnComplete) {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
-            builder: (_) =>
-                WalletNameScreen(walletIndex: widget.walletIndex, returnHighlightAccountId: key.ss58Address),
+            builder: (_) => WalletNameScreen(walletIndex: widget.walletIndex, returnHighlightAccountId: root.accountId),
           ),
         );
       } else {
@@ -111,23 +61,7 @@ class _ImportWalletScreenV2State extends ConsumerState<ImportWalletScreenV2> {
     }
   }
 
-  /// Adds the on-chain accounts of both signature schemes. Multisigs are added
-  /// manually via Add Account → Discover Multisig. [defaultAccountId] is the
-  /// current-scheme account 0 added before the scan.
-  Future<void> _discoverAccounts(String mnemonic, {required String defaultAccountId}) async {
-    await _walletCreationService.discoverImportedAccounts(
-      mnemonic: mnemonic,
-      walletIndex: widget.walletIndex,
-      rootAccountId: defaultAccountId,
-      onScanFailed: _askRetryScan,
-    );
-    invalidateAccountProviders(ref);
-    unawaited(_discoverEncryptedAccount());
-  }
-
   Future<bool> _askRetryScan(Object error) async {
-    quantusPrint('error discovering accounts: $error');
-    TelemetryService().sendError('Error discovering accounts', error: error);
     if (!mounted) return false;
     final l10n = ref.read(l10nProvider);
     return showQuantusDialog(
@@ -138,23 +72,6 @@ class _ImportWalletScreenV2State extends ConsumerState<ImportWalletScreenV2> {
       cancelLabel: l10n.importWalletScanSkip,
       barrierDismissible: false,
     );
-  }
-
-  /// Restores the wallet's encrypted account and warms its wormhole address
-  /// discovery so UTXOs across receive/change addresses are already found when
-  /// the user first opens it. Runs fire-and-forget so import completion never
-  /// waits on it; if this screen is disposed first, the accounts sheet
-  /// backfills through its own [ensureEncryptedAccounts] pass.
-  Future<void> _discoverEncryptedAccount() async {
-    try {
-      final created = await ensureEncryptedAccounts(ref);
-      if (!created || !mounted) return;
-      ref.invalidate(accountsProvider);
-      await ref.read(encryptedStateProvider(widget.walletIndex).future);
-    } catch (e) {
-      quantusPrint('encrypted discovery after import failed: $e');
-      TelemetryService().sendError('Encrypted discovery after import failed', error: e);
-    }
   }
 
   @override

@@ -3824,6 +3824,12 @@ abstract class AppLocalizations {
   /// **'Close'**
   String get commonClose;
 
+  /// Button that returns to the previous page
+  ///
+  /// In en, this message translates to:
+  /// **'Back'**
+  String get commonBack;
+
   /// Save button on sheets that apply a pick
   ///
   /// In en, this message translates to:

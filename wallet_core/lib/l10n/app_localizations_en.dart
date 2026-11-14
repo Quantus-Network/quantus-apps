@@ -2055,6 +2055,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get commonClose => 'Close';
 
   @override
+  String get commonBack => 'Back';
+
+  @override
   String get commonSave => 'Save';
 
   @override

@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 
 /// Shared v3 centered dialog: title, optional banner, plain-consequence body,
-/// action, Cancel.
+/// action, Cancel. A notice with nothing to choose leaves Cancel out
+/// ([showCancel]).
 ///
 /// Presentational only. Callers pass already-resolved [title], [body],
 /// [actionLabel], and [cancelLabel] strings. Overlay presentation is
@@ -12,6 +13,9 @@ class QuantusDialog extends StatelessWidget {
   final String body;
   final String actionLabel;
   final String cancelLabel;
+
+  /// Whether Cancel is offered beside the action.
+  final bool showCancel;
   final bool isDestructive;
 
   /// Recommends Cancel: it takes the primary chrome and the action steps back
@@ -29,6 +33,7 @@ class QuantusDialog extends StatelessWidget {
     required this.body,
     required this.actionLabel,
     this.cancelLabel = 'Cancel',
+    this.showCancel = true,
     this.isDestructive = false,
     this.cancelIsPrimary = false,
     this.banner,
@@ -68,12 +73,14 @@ class QuantusDialog extends StatelessWidget {
             Text(body, style: text.body.copyWith(color: colors.textMuted, height: 1.55)),
             const SizedBox(height: 20),
             QuantusButton.simple(label: actionLabel, variant: actionVariant, onTap: onAction),
-            const SizedBox(height: 10),
-            QuantusButton.simple(
-              label: cancelLabel,
-              variant: cancelIsPrimary ? ButtonVariant.primary : ButtonVariant.staged,
-              onTap: onCancel,
-            ),
+            if (showCancel) ...[
+              const SizedBox(height: 10),
+              QuantusButton.simple(
+                label: cancelLabel,
+                variant: cancelIsPrimary ? ButtonVariant.primary : ButtonVariant.staged,
+                onTap: onCancel,
+              ),
+            ],
           ],
         ),
       ),
@@ -91,6 +98,7 @@ Future<bool> showQuantusDialog(
   required String body,
   required String actionLabel,
   String cancelLabel = 'Cancel',
+  bool showCancel = true,
   bool isDestructive = false,
   bool cancelIsPrimary = false,
   Widget? banner,
@@ -109,6 +117,7 @@ Future<bool> showQuantusDialog(
           body: body,
           actionLabel: actionLabel,
           cancelLabel: cancelLabel,
+          showCancel: showCancel,
           isDestructive: isDestructive,
           cancelIsPrimary: cancelIsPrimary,
           banner: banner,

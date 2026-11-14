@@ -1,6 +1,5 @@
 import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:quantus_desktop_wallet/services/window_chrome.dart';
 import 'package:quantus_desktop_wallet/ui/components/window_drag_area.dart';
 import 'package:quantus_desktop_wallet/ui/shell/account_pane.dart';
 import 'package:quantus_desktop_wallet/ui/shell/account_toolbar.dart';
@@ -23,17 +22,6 @@ const _emptyPaneHeader = Offset(700, 26);
 Finder _inSidebarHeader(Finder matching) => find.descendant(of: find.byType(SidebarHeader), matching: matching);
 
 Finder _inPaneHeader(Finder matching) => find.descendant(of: find.byType(PaneHeader), matching: matching);
-
-/// Collects what the app asks of its window, in place of the native side.
-List<String> _recordWindowRequests(WidgetTester tester) {
-  final requests = <String>[];
-  tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(WindowChrome.channel, (call) async {
-    requests.add(call.method);
-    return null;
-  });
-  addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(WindowChrome.channel, null));
-  return requests;
-}
 
 List<Override> _withActive(DisplayAccount active) => shellOverrides(
   accounts: const [mainAccount, encryptedAccount],
@@ -133,7 +121,7 @@ void main() {
 
     for (final (side, point) in [('sidebar', _emptySidebarHeader), ('pane', _emptyPaneHeader)]) {
       testOnMac('dragging empty header space over the $side asks the window to start a drag', (tester) async {
-        final requests = _recordWindowRequests(tester);
+        final requests = recordWindowRequests(tester);
         await pumpShell(tester, overrides: _withActive(const RegularAccount(mainAccount)));
 
         await tester.dragFrom(point, const Offset(80, 30));
@@ -143,7 +131,7 @@ void main() {
       });
 
       testOnMac('double-clicking empty header space over the $side sends the title bar double-click', (tester) async {
-        final requests = _recordWindowRequests(tester);
+        final requests = recordWindowRequests(tester);
         await pumpShell(tester, overrides: _withActive(const RegularAccount(mainAccount)));
 
         await tester.tapAt(point);
@@ -156,7 +144,7 @@ void main() {
     }
 
     testOnMac('pressing or dragging a header button does not move the window', (tester) async {
-      final requests = _recordWindowRequests(tester);
+      final requests = recordWindowRequests(tester);
       await pumpShell(tester, overrides: _withActive(const RegularAccount(mainAccount)));
 
       await tester.drag(_inPaneHeader(find.widgetWithText(QuantusButton, 'Receive')), const Offset(60, 0));
@@ -169,7 +157,7 @@ void main() {
     });
 
     testOnMac('dragging below the header does not move the window', (tester) async {
-      final requests = _recordWindowRequests(tester);
+      final requests = recordWindowRequests(tester);
       await pumpShell(tester, overrides: _withActive(const RegularAccount(mainAccount)));
 
       await tester.dragFrom(const Offset(700, 400), const Offset(80, 30));
@@ -181,7 +169,7 @@ void main() {
 
   group('on Windows and Linux', () {
     testOnWindowsAndLinux('the header has no app name, no gap for traffic lights and no drag area', (tester) async {
-      final requests = _recordWindowRequests(tester);
+      final requests = recordWindowRequests(tester);
       await pumpShell(tester, overrides: _withActive(const RegularAccount(mainAccount)));
 
       expect(_inSidebarHeader(find.text('Quantus Wallet')), findsNothing);

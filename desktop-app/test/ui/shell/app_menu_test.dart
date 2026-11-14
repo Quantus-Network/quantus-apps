@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_desktop_wallet/services/app_exit.dart';
+import 'package:quantus_desktop_wallet/ui/onboarding/welcome_page.dart';
 import 'package:quantus_desktop_wallet/ui/shell/account_toolbar.dart';
 import 'package:quantus_desktop_wallet/ui/shell/shell_sheet_view.dart';
 import 'package:quantus_desktop_wallet/ui/shell/sidebar.dart';
@@ -192,6 +193,25 @@ void main() {
       expect(_nativeItem(tester, 'View', 'Hide Sidebar'), isNotNull);
     });
 
+    testOnMac('while there is no wallet the items that act on one are disabled; Close Window still works', (
+      tester,
+    ) async {
+      var exitRequests = 0;
+      await pumpShell(
+        tester,
+        overrides: [...FakeWalletDevice().overrides, requestAppExitProvider.overrideWithValue(() => exitRequests++)],
+      );
+
+      expect(find.byType(WelcomePage), findsOneWidget);
+      expect(_nativeItem(tester, 'Quantus Wallet', 'Settings…').onSelected, isNull);
+      expect(_nativeItem(tester, 'Account', 'Add Account…').onSelected, isNull);
+      expect(_nativeItem(tester, 'View', 'Hide Sidebar').onSelected, isNull);
+
+      _nativeItem(tester, 'File', 'Close Window').onSelected!();
+
+      expect(exitRequests, 1);
+    });
+
     testOnMac('File → Close Window (⌘W) asks the app to exit', (tester) async {
       var exitRequests = 0;
       await pumpShell(
@@ -303,6 +323,28 @@ void main() {
       await pressCtrlB();
 
       expect(find.byType(Sidebar), findsOneWidget);
+    });
+
+    testOnWindowsAndLinux('while there is no wallet the menus are shown, and Ctrl+B and Ctrl+, do nothing', (
+      tester,
+    ) async {
+      await pumpShell(tester, overrides: FakeWalletDevice().overrides);
+
+      expect(find.byType(MenuBar), findsOneWidget);
+
+      for (final key in [LogicalKeyboardKey.keyB, LogicalKeyboardKey.comma]) {
+        await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+        await tester.sendKeyEvent(key);
+        await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+        await tester.pumpAndSettle();
+      }
+
+      expect(find.byType(WelcomePage), findsOneWidget);
+      expect(find.byType(ShellSheetView), findsNothing);
+
+      await openMenu(tester, 'View');
+
+      expect(tester.widget<MenuItemButton>(find.widgetWithText(MenuItemButton, 'Hide Sidebar')).onPressed, isNull);
     });
 
     testOnWindowsAndLinux('Ctrl+W asks the app to exit', (tester) async {
