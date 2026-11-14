@@ -7,7 +7,6 @@ import 'package:wallet_core/l10n/app_localizations.dart';
 import 'package:wallet_core/providers/account_providers.dart';
 import 'package:wallet_core/providers/l10n_provider.dart';
 import 'package:wallet_core/utils/accounts_grouping.dart';
-import 'package:resonance_network_wallet/v2/components/account_badge.dart';
 import 'package:resonance_network_wallet/v2/components/menu_row.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/account_details_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/accounts_navigation.dart';

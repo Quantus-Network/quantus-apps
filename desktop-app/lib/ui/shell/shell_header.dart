@@ -5,7 +5,7 @@ import 'package:quantus_desktop_wallet/constants.dart';
 import 'package:quantus_desktop_wallet/models/sidebar_selection.dart';
 import 'package:quantus_desktop_wallet/providers/shell_providers.dart';
 import 'package:quantus_desktop_wallet/services/window_chrome.dart';
-import 'package:quantus_desktop_wallet/ui/components/window_drag_area.dart';
+import 'package:quantus_desktop_wallet/ui/components/window_header_row.dart';
 import 'package:quantus_desktop_wallet/ui/shell/account_toolbar.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/providers/account_providers.dart';
@@ -19,7 +19,7 @@ class SidebarHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return _HeaderRow(
+    return WindowHeaderRow(
       leadsTheWindow: true,
       children: [
         if (drawsOverTitleBar)
@@ -54,7 +54,7 @@ class PaneHeader extends ConsumerWidget {
     final showsAccount = ref.watch(sidebarSelectionProvider) == SidebarSelection.account;
     final title = showsAccount ? active?.account.name ?? '' : ref.watch(l10nProvider).settingsMiningRewards;
 
-    return _HeaderRow(
+    return WindowHeaderRow(
       leadsTheWindow: !isSidebarVisible,
       children: [
         if (!isSidebarVisible) const _SidebarButton(),
@@ -72,42 +72,6 @@ class PaneHeader extends ConsumerWidget {
         ),
         if (showsAccount && active != null) const AccountToolbar(),
       ],
-    );
-  }
-}
-
-/// One side of the header: [children] in a row, over a drag area on macOS.
-///
-/// Children that are not controls must ignore the pointer, so a press on them
-/// falls through to the drag area behind.
-class _HeaderRow extends StatelessWidget {
-  const _HeaderRow({required this.leadsTheWindow, required this.children});
-
-  /// Whether this row starts at the window's left edge, where the traffic
-  /// lights are on macOS.
-  final bool leadsTheWindow;
-  final List<Widget> children;
-
-  static const double _edgePadding = 16;
-
-  @override
-  Widget build(BuildContext context) {
-    final start = leadsTheWindow && drawsOverTitleBar ? trafficLightsInset : _edgePadding;
-
-    return SizedBox(
-      height: shellHeaderHeight,
-      child: Stack(
-        children: [
-          if (drawsOverTitleBar) const Positioned.fill(child: WindowDragArea()),
-          // Filling the row's height is what centres the children in it.
-          Positioned.fill(
-            child: Padding(
-              padding: EdgeInsets.only(left: start, right: _edgePadding),
-              child: Row(spacing: 12, children: children),
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

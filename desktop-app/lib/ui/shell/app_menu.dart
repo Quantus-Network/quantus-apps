@@ -13,7 +13,8 @@ import 'package:wallet_core/utils/account_actions.dart';
 /// Elsewhere those items are left out and shortcuts use Ctrl.
 ///
 /// An item whose `onSelected` is null is disabled. The items that open a sheet
-/// are disabled while [canOpenSheet] is false.
+/// are disabled while [canOpenSheet] is false, and the sidebar item while
+/// [onToggleSidebar] is null.
 List<PlatformMenu> buildAppMenus({
   required AppLocalizations l10n,
   required bool useNativeMenuBar,
@@ -21,7 +22,7 @@ List<PlatformMenu> buildAppMenus({
   required bool isSidebarVisible,
   required bool canOpenSheet,
   required ValueChanged<ShellSheet> onOpenSheet,
-  required VoidCallback onToggleSidebar,
+  required VoidCallback? onToggleSidebar,
   required VoidCallback onCloseWindow,
 }) {
   SingleActivator command(LogicalKeyboardKey key) =>

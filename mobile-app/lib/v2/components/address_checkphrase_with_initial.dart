@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/v2/components/account_badge.dart';
 
 class AddressCheckphraseWithInitial extends StatelessWidget {
   final String address;

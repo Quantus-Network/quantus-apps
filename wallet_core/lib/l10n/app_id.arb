@@ -651,6 +651,7 @@
   "mainnetMigrationGoToWallet": "Ke wallet",
   "mainnetMigrationSaveFailed": "Pilihan Anda tidak dapat disimpan: {error}",
   "commonClose": "Tutup",
+  "commonBack": "Kembali",
   "desktopMenuSettings": "Pengaturan…",
   "desktopMenuFile": "Berkas",
   "desktopMenuCloseWindow": "Tutup Jendela",

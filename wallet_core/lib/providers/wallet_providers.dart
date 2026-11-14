@@ -57,6 +57,11 @@ final hdWalletServiceProvider = Provider<HdWalletService>((ref) {
   return HdWalletService();
 });
 
+/// The chain scan that finds a wallet's accounts on import.
+final accountDiscoveryServiceProvider = Provider<AccountDiscoveryService>((ref) {
+  return AccountDiscoveryService(ref.watch(hdWalletServiceProvider));
+});
+
 final wormholeUtxoServiceProvider = Provider<WormholeUtxoService>((ref) {
   return WormholeUtxoService();
 });
