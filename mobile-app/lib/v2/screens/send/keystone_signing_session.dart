@@ -2,7 +2,7 @@ import 'dart:typed_data';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/v2/screens/send/keystone_sign_cache.dart';
+import 'package:wallet_core/providers/keystone_sign_cache.dart';
 
 /// Callback that broadcasts an extrinsic after a hardware device has signed it.
 ///

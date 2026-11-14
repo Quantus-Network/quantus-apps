@@ -5,10 +5,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/app_lifecycle_manager.dart';
-import 'package:resonance_network_wallet/providers/connectivity_provider.dart';
+import 'package:wallet_core/providers/connectivity_provider.dart';
 import 'package:resonance_network_wallet/providers/local_auth_provider.dart';
-import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
-import 'package:resonance_network_wallet/services/history_polling_manager.dart';
+import 'package:wallet_core/providers/remote_config_provider.dart';
+import 'package:wallet_core/services/history_polling_manager.dart';
 import 'package:resonance_network_wallet/services/local_auth_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 

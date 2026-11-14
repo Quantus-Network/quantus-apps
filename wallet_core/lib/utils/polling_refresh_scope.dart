@@ -1,0 +1,182 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:wallet_core/models/filtered_transactions_params.dart';
+import 'package:wallet_core/providers/account_id_list_cache.dart';
+import 'package:wallet_core/providers/account_providers.dart';
+import 'package:wallet_core/providers/controllers/unified_pagination_controller.dart';
+import 'package:wallet_core/providers/filtered_all_transactions_provider.dart';
+import 'package:wallet_core/providers/multisig_providers.dart';
+import 'package:wallet_core/providers/wallet_providers.dart';
+
+const _backgroundPollFilters = [TransactionFilter.all];
+
+/// Returns the currently selected wallet account ID, if any.
+String? activeAccountId(Ref ref) => ref.read(activeAccountProvider).value?.account.accountId;
+
+/// The active account's ID when its history comes from the transparent
+/// pagination controllers. An encrypted account's history is part of its
+/// wormhole snapshot ([encryptedStateProvider]), so there is no transparent
+/// history to refresh for it.
+String? activePaginatedAccountId(Ref ref) {
+  final account = ref.read(activeAccountProvider).value?.account;
+  if (account == null || isEncryptedAccount(account)) return null;
+  return account.accountId;
+}
+
+/// Returns the active multisig account, if the selected account is multisig.
+MultisigAccount? multisigAccountFromActive(DisplayAccount? active) {
+  if (active is MultisigDisplayAccount) return active.account;
+  return null;
+}
+
+/// Builds deduplicated single-account refresh targets for event-driven updates.
+List<List<String>> accountRefreshTargets({required Set<String> affectedAccountIds, String? activeId}) {
+  final targets = <String>{...affectedAccountIds};
+  if (activeId != null) {
+    targets.add(activeId);
+  }
+
+  return targets.map((id) => [id]).toList();
+}
+
+/// Account IDs whose cached history should be consulted during pending-tx reconciliation.
+Set<String> reconciliationAccountIds({
+  required String? activeId,
+  required Iterable<PendingTransactionEvent> pendingTxs,
+}) {
+  final ids = <String>{};
+  if (activeId != null) {
+    ids.add(activeId);
+  }
+
+  for (final tx in pendingTxs) {
+    ids.add(tx.from);
+    ids.add(tx.to);
+  }
+
+  return ids;
+}
+
+/// Invalidates balance for the active account only.
+void invalidateActiveAccountBalance(Ref ref) {
+  final account = ref.read(activeAccountProvider).value?.account;
+  if (account == null) return;
+
+  if (isEncryptedAccount(account)) {
+    ref.invalidate(encryptedStateProvider((account as Account).walletIndex));
+    return;
+  }
+  ref.invalidate(balanceProviderFamily(account.accountId));
+}
+
+/// Invalidates the active account balance and waits for it to reload.
+///
+/// An encrypted account re-runs discovery and re-queries every address above
+/// its cached scan height; with [discardCaches] it first drops its on-disk
+/// transfer / nullifier caches and rescans from genesis. That is the cost of
+/// a cold start, so only an explicit pull-to-refresh asks for it — a resume,
+/// reconnect or push notification keeps the caches. Pending-spend records
+/// are preserved either way and reconciled by [EncryptedAccountService.load].
+Future<void> refreshActiveAccountBalance(Ref ref, {bool discardCaches = false}) async {
+  final account = ref.read(activeAccountProvider).value?.account;
+  if (account == null) return;
+
+  if (isEncryptedAccount(account)) {
+    final walletIndex = (account as Account).walletIndex;
+    if (discardCaches) {
+      await ref.read(encryptedAccountServiceProvider(walletIndex)).discardCachedState();
+    }
+    final provider = encryptedStateProvider(walletIndex);
+    ref.invalidate(provider);
+    await ref.read(provider.future);
+    return;
+  }
+  ref.invalidate(balanceProviderFamily(account.accountId));
+  await ref.read(balanceProviderFamily(account.accountId).future);
+}
+
+/// Invalidates balance for the given account IDs.
+void invalidateAccountBalances(Ref ref, Iterable<String> accountIds) {
+  for (final accountId in accountIds) {
+    ref.invalidate(balanceProviderFamily(accountId));
+  }
+}
+
+Future<void> refreshAccountsPagination(
+  Ref ref, {
+  required List<String> accountIds,
+  required Future<void> Function(UnifiedPaginationController notifier) action,
+  Iterable<TransactionFilter> filters = _backgroundPollFilters,
+  bool isAccountInactive = false,
+}) async {
+  if (accountIds.isEmpty) return;
+
+  final cachedIds = AccountIdListCache.get(accountIds);
+
+  for (final filter in filters) {
+    final params = FilteredTransactionsParams(accountIds: cachedIds, filter: filter);
+    if (isAccountInactive && !ref.exists(filteredPaginationControllerProviderFamily(params))) {
+      continue;
+    }
+
+    final notifier = ref.read(filteredPaginationControllerProviderFamily(params).notifier);
+    await action(notifier);
+  }
+}
+
+/// Invalidates open, past, and block providers for the active multisig account.
+///
+/// Returns the active multisig account, or null if the active account is not
+/// a multisig (in which case nothing is invalidated).
+MultisigAccount? invalidateActiveMultisigProposals(Ref ref) {
+  final msig = multisigAccountFromActive(ref.read(activeAccountProvider).value);
+  if (msig == null) return null;
+
+  invalidateMultisigProposals(ref, msig);
+  return msig;
+}
+
+/// Refreshes proposal providers for the active multisig account and waits for data.
+Future<void> refreshActiveMultisigProposals(Ref ref) async {
+  final msig = invalidateActiveMultisigProposals(ref);
+  if (msig == null) return;
+
+  await Future.wait([
+    ref.read(multisigOpenProposalsProvider(msig).future),
+    ref.read(multisigPastProposalsProvider(msig).future),
+    ref.read(multisigCurrentBlockProvider.future),
+  ]);
+}
+
+/// Silently refreshes pagination for the active account (background poll scope).
+Future<void> silentRefreshActiveAccount(Ref ref) async {
+  final accountId = activePaginatedAccountId(ref);
+  if (accountId == null) return;
+
+  await refreshAccountsPagination(ref, accountIds: [accountId], action: (notifier) => notifier.silentRefresh());
+}
+
+/// Refreshes the active account when the user switches accounts.
+Future<void> refreshActiveAccountOnSwitch(Ref ref) async {
+  if (activeAccountId(ref) == null) return;
+
+  final accountId = activePaginatedAccountId(ref);
+  if (accountId != null) {
+    final params = FilteredTransactionsParams(
+      accountIds: AccountIdListCache.get([accountId]),
+      filter: TransactionFilter.all,
+    );
+
+    final paginationState = ref.read(filteredPaginationControllerProviderFamily(params));
+    final notifier = ref.read(filteredPaginationControllerProviderFamily(params).notifier);
+
+    if (paginationState.hasLoadedChainData) {
+      await notifier.silentRefresh();
+    } else {
+      await notifier.loadingRefresh();
+    }
+  }
+
+  invalidateActiveAccountBalance(ref);
+  invalidateActiveMultisigProposals(ref);
+}

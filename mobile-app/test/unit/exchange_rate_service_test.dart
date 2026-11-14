@@ -1,7 +1,7 @@
 import 'package:decimal/decimal.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wallet_core/models/fiat_currency.dart';
-import 'package:resonance_network_wallet/services/exchange_rate_service.dart';
+import 'package:wallet_core/services/exchange_rate_service.dart';
 
 void main() {
   // 1 token = 1 USD; 1 USD = 3.97 MYR, 17334 IDR (zero-decimal currency).

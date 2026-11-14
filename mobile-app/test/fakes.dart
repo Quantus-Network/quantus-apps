@@ -12,11 +12,11 @@ import 'package:quantus_sdk/generated/bell/types/quantus_runtime/runtime_call.da
 import 'package:quantus_sdk/generated/bell/types/sp_runtime/multiaddress/multi_address.dart' as multi_address;
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/local_auth_provider.dart';
-import 'package:resonance_network_wallet/services/history_polling_manager.dart';
-import 'package:resonance_network_wallet/services/remote_config_service.dart';
+import 'package:wallet_core/services/history_polling_manager.dart';
+import 'package:wallet_core/services/remote_config_service.dart';
 import 'package:resonance_network_wallet/services/local_auth_service.dart';
 import 'package:resonance_network_wallet/services/telemetry_service.dart';
-import 'package:resonance_network_wallet/services/transaction_submission_service.dart';
+import 'package:wallet_core/services/transaction_submission_service.dart';
 import 'package:wallet_core/models/notification_models.dart';
 import 'package:wallet_core/providers/wallet_core_overrides.dart';
 import 'package:wallet_core/services/local_notifications.dart';

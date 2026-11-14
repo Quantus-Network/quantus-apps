@@ -2,8 +2,8 @@ import 'dart:async';
 import 'package:app_links/app_links.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:resonance_network_wallet/providers/route_intent_providers.dart';
-import 'package:resonance_network_wallet/providers/wallet_providers.dart';
+import 'package:wallet_core/providers/route_intent_providers.dart';
+import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 
 final deepLinkServiceProvider = Provider<DeepLinkService>((ref) {

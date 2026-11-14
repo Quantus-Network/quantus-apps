@@ -1,7 +1,7 @@
 import 'package:fake_async/fake_async.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:resonance_network_wallet/services/extrinsic_indexer_polling_service.dart';
+import 'package:wallet_core/services/extrinsic_indexer_polling_service.dart';
 
 import '../fakes.dart';
 

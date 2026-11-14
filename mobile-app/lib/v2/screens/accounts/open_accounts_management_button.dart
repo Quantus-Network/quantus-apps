@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/providers/account_providers.dart';
+import 'package:wallet_core/providers/account_providers.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/accounts_navigation.dart';
 
 /// Home pill naming the active account; opens the Accounts screen.
