@@ -2055,6 +2055,9 @@ class AppLocalizationsId extends AppLocalizations {
   String get commonDone => 'Selesai';
 
   @override
+  String get commonClose => 'Tutup';
+
+  @override
   String get commonSave => 'Simpan';
 
   @override
@@ -2447,4 +2450,31 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get miningRewardsSubmitClaims => 'Submit Claim';
+
+  @override
+  String get desktopMenuSettings => 'Pengaturan…';
+
+  @override
+  String get desktopMenuFile => 'Berkas';
+
+  @override
+  String get desktopMenuCloseWindow => 'Tutup Jendela';
+
+  @override
+  String get desktopMenuAccount => 'Akun';
+
+  @override
+  String get desktopMenuAddAccount => 'Tambah Akun…';
+
+  @override
+  String get desktopMenuView => 'Tampilan';
+
+  @override
+  String get desktopMenuHideSidebar => 'Sembunyikan Bar Samping';
+
+  @override
+  String get desktopMenuShowSidebar => 'Tampilkan Bar Samping';
+
+  @override
+  String get desktopMenuWindow => 'Jendela';
 }

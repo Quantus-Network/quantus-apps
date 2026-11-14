@@ -3002,6 +3002,10 @@
     "@commonDone": {
       "description": "Done button on various screens"
     },
+    "commonClose": "Close",
+    "@commonClose": {
+      "description": "Button that closes a sheet or dialog"
+    },
     "commonSave": "Save",
     "@commonSave": {
       "description": "Save button on sheets that apply a pick"
@@ -3547,5 +3551,41 @@
     "miningRewardsSubmitClaims": "Submit Claim",
     "@miningRewardsSubmitClaims": {
       "description": "Button that proves ownership and submits the claims"
+    },
+    "desktopMenuSettings": "Settings…",
+    "@desktopMenuSettings": {
+      "description": "Desktop app menu item that opens Settings; the ellipsis shows it opens a sheet"
+    },
+    "desktopMenuFile": "File",
+    "@desktopMenuFile": {
+      "description": "Desktop menu bar: File menu title"
+    },
+    "desktopMenuCloseWindow": "Close Window",
+    "@desktopMenuCloseWindow": {
+      "description": "Desktop File menu item that closes the app window"
+    },
+    "desktopMenuAccount": "Account",
+    "@desktopMenuAccount": {
+      "description": "Desktop menu bar: title of the menu holding the active account's actions"
+    },
+    "desktopMenuAddAccount": "Add Account…",
+    "@desktopMenuAddAccount": {
+      "description": "Desktop Account menu item that opens the add account sheet"
+    },
+    "desktopMenuView": "View",
+    "@desktopMenuView": {
+      "description": "Desktop menu bar: View menu title"
+    },
+    "desktopMenuHideSidebar": "Hide Sidebar",
+    "@desktopMenuHideSidebar": {
+      "description": "Desktop View menu item shown while the sidebar is visible"
+    },
+    "desktopMenuShowSidebar": "Show Sidebar",
+    "@desktopMenuShowSidebar": {
+      "description": "Desktop View menu item shown while the sidebar is hidden"
+    },
+    "desktopMenuWindow": "Window",
+    "@desktopMenuWindow": {
+      "description": "Desktop menu bar: Window menu title"
     }
 }

@@ -21,7 +21,8 @@ List<Override> desktopWalletCoreOverrides() => walletCoreOverrides(
   localNotifications: (_) => const DesktopLocalNotifications(),
 );
 
-/// The root widget tree shared by production and tests.
-Widget buildApp() {
-  return ProviderScope(overrides: desktopWalletCoreOverrides(), child: const QuantusDesktopApp());
+/// The root widget tree shared by production and tests. Tests pass
+/// [overrides] to stand in for the device and the chain.
+Widget buildApp({List<Override> overrides = const []}) {
+  return ProviderScope(overrides: [...desktopWalletCoreOverrides(), ...overrides], child: const QuantusDesktopApp());
 }

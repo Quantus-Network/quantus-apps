@@ -3818,6 +3818,12 @@ abstract class AppLocalizations {
   /// **'Done'**
   String get commonDone;
 
+  /// Button that closes a sheet or dialog
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get commonClose;
+
   /// Save button on sheets that apply a pick
   ///
   /// In en, this message translates to:
@@ -4477,6 +4483,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Submit Claim'**
   String get miningRewardsSubmitClaims;
+
+  /// Desktop app menu item that opens Settings; the ellipsis shows it opens a sheet
+  ///
+  /// In en, this message translates to:
+  /// **'Settings…'**
+  String get desktopMenuSettings;
+
+  /// Desktop menu bar: File menu title
+  ///
+  /// In en, this message translates to:
+  /// **'File'**
+  String get desktopMenuFile;
+
+  /// Desktop File menu item that closes the app window
+  ///
+  /// In en, this message translates to:
+  /// **'Close Window'**
+  String get desktopMenuCloseWindow;
+
+  /// Desktop menu bar: title of the menu holding the active account's actions
+  ///
+  /// In en, this message translates to:
+  /// **'Account'**
+  String get desktopMenuAccount;
+
+  /// Desktop Account menu item that opens the add account sheet
+  ///
+  /// In en, this message translates to:
+  /// **'Add Account…'**
+  String get desktopMenuAddAccount;
+
+  /// Desktop menu bar: View menu title
+  ///
+  /// In en, this message translates to:
+  /// **'View'**
+  String get desktopMenuView;
+
+  /// Desktop View menu item shown while the sidebar is visible
+  ///
+  /// In en, this message translates to:
+  /// **'Hide Sidebar'**
+  String get desktopMenuHideSidebar;
+
+  /// Desktop View menu item shown while the sidebar is hidden
+  ///
+  /// In en, this message translates to:
+  /// **'Show Sidebar'**
+  String get desktopMenuShowSidebar;
+
+  /// Desktop menu bar: Window menu title
+  ///
+  /// In en, this message translates to:
+  /// **'Window'**
+  String get desktopMenuWindow;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

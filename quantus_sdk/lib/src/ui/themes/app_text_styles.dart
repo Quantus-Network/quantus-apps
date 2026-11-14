@@ -157,6 +157,81 @@ class AppTextThemeV3 extends ThemeExtension<AppTextThemeV3> {
         ),
       );
 
+  /// The same styles at desktop sizes: 13pt body and nothing below 10pt, as
+  /// the macOS guidelines ask. Families, weights and number features match
+  /// [AppTextThemeV3.standard].
+  const AppTextThemeV3.desktop()
+    : this(
+        displayCharge: const TextStyle(
+          fontFamily: fontFamily,
+          fontSize: 64,
+          fontWeight: FontWeight.w400,
+          height: 1.0,
+          fontFeatures: [_tabularFigures],
+        ),
+        displayBalance: const TextStyle(
+          fontFamily: fontFamily,
+          fontSize: 32,
+          fontWeight: FontWeight.w400,
+          height: 1.0,
+          fontFeatures: [_tabularFigures],
+        ),
+        titleSuccess: const TextStyle(fontFamily: fontFamily, fontSize: 26, fontWeight: FontWeight.w400, height: 1.0),
+        titleHero: const TextStyle(fontFamily: fontFamily, fontSize: 22, fontWeight: FontWeight.w500, height: 1.0),
+        amountHero: const TextStyle(
+          fontFamily: fontFamily,
+          fontSize: 22,
+          fontWeight: FontWeight.w400,
+          height: 1.0,
+          fontFeatures: [_tabularFigures],
+        ),
+        titleScreen: const TextStyle(fontFamily: fontFamily, fontSize: 17, fontWeight: FontWeight.w500, height: 1.0),
+        amountInline: const TextStyle(
+          fontFamily: fontFamily,
+          fontSize: 17,
+          fontWeight: FontWeight.w400,
+          height: 1.0,
+          fontFeatures: [_tabularFigures],
+        ),
+        amountRow: const TextStyle(
+          fontFamily: fontFamily,
+          fontSize: 15,
+          fontWeight: FontWeight.w400,
+          height: 1.0,
+          fontFeatures: [_tabularFigures],
+        ),
+        headingRow: const TextStyle(fontFamily: fontFamily, fontSize: 15, fontWeight: FontWeight.w500, height: 1.0),
+        bodyLarge: const TextStyle(fontFamily: fontFamily, fontSize: 15, fontWeight: FontWeight.w400, height: 1.25),
+        bodyEmphasis: const TextStyle(fontFamily: fontFamily, fontSize: 13, fontWeight: FontWeight.w500, height: 1.25),
+        body: const TextStyle(fontFamily: fontFamily, fontSize: 13, fontWeight: FontWeight.w400, height: 1.25),
+        caption: const TextStyle(fontFamily: fontFamily, fontSize: 11, fontWeight: FontWeight.w400, height: 1.25),
+        labelChip: const TextStyle(fontFamily: fontFamily, fontSize: 11, fontWeight: FontWeight.w500, height: 1.0),
+        dataAddress: const TextStyle(
+          fontFamily: fontFamilySecondary,
+          fontSize: 11,
+          fontWeight: FontWeight.w400,
+          height: 1.25,
+        ),
+        dataAddressLarge: const TextStyle(
+          fontFamily: fontFamilySecondary,
+          fontSize: 13,
+          fontWeight: FontWeight.w400,
+          height: 1.25,
+        ),
+        labelData: const TextStyle(
+          fontFamily: fontFamilySecondary,
+          fontSize: 13,
+          fontWeight: FontWeight.w500,
+          height: 1.0,
+        ),
+        labelMonogram: const TextStyle(
+          fontFamily: fontFamilySecondary,
+          fontSize: 11,
+          fontWeight: FontWeight.w500,
+          height: 1.0,
+        ),
+      );
+
   static const _tabularFigures = FontFeature.tabularFigures();
 
   @override

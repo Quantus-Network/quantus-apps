@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/v2/components/icon_badge.dart';
 
 /// Circular lock badge used for encrypted / private UI (always Quantus orange).
 class EncryptedLockBadge extends StatelessWidget {
