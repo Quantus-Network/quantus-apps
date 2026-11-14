@@ -27,7 +27,9 @@ class CircuitManager {
     return path.join(circuitBaseDir, 'v$resolvedVersion');
   }
 
-  Future<({String circuitDir, String version, int numLeafProofs})> ensureAt(String circuitBaseDir) async {
+  Future<({String circuitDir, String version, int numLeafProofs, int numExitSlots})> ensureAt(
+    String circuitBaseDir,
+  ) async {
     final version = wormhole_ffi.zkCircuitsVersion();
     final circuitDir = getVersionedCircuitDirectory(circuitBaseDir, version: version);
     final generatedConfig = await wormhole_ffi.ensureCircuitBinaries(binsDir: circuitBaseDir);
@@ -38,26 +40,33 @@ class CircuitManager {
       }
     }
 
-    final generatedNumLeafProofs = parseNumLeafProofs(generatedConfig);
-    final persistedConfig = await File(path.join(circuitDir, 'config.json')).readAsString();
-    final persistedNumLeafProofs = parseNumLeafProofs(persistedConfig);
-    if (persistedNumLeafProofs != generatedNumLeafProofs) {
-      throw StateError(
-        'Circuit config changed during generation: expected $generatedNumLeafProofs leaf proofs, '
-        'found $persistedNumLeafProofs',
-      );
+    final generated = parseShape(generatedConfig);
+    final persisted = parseShape(await File(path.join(circuitDir, 'config.json')).readAsString());
+    if (persisted != generated) {
+      throw StateError('Circuit config changed during generation: expected $generated, found $persisted');
     }
-    return (circuitDir: circuitDir, version: version, numLeafProofs: persistedNumLeafProofs);
+    return (
+      circuitDir: circuitDir,
+      version: version,
+      numLeafProofs: persisted.numLeafProofs,
+      numExitSlots: persisted.numExitSlots,
+    );
   }
 
+  /// Leaf-proof and exit-slot counts of a circuit `config.json`.
   @visibleForTesting
-  static int parseNumLeafProofs(String configJson) {
+  static ({int numLeafProofs, int numExitSlots}) parseShape(String configJson) {
     final config = jsonDecode(configJson);
     if (config is! Map<String, dynamic>) throw const FormatException('Circuit config must be a JSON object');
-    final numLeafProofs = config['num_leaf_proofs'];
-    if (numLeafProofs is! int || numLeafProofs <= 0) {
-      throw FormatException('Invalid num_leaf_proofs: $numLeafProofs');
-    }
-    return numLeafProofs;
+    return (
+      numLeafProofs: _positiveInt(config, 'num_leaf_proofs'),
+      numExitSlots: _positiveInt(config, 'num_exit_slots'),
+    );
+  }
+
+  static int _positiveInt(Map<String, dynamic> config, String key) {
+    final value = config[key];
+    if (value is! int || value <= 0) throw FormatException('Invalid $key: $value');
+    return value;
   }
 }

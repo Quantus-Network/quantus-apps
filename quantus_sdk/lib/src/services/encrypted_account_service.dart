@@ -58,7 +58,7 @@ class EncryptedAccountState {
   /// Whether every planned input is still among the spendable UTXOs.
   bool canSpend(WormholeSpendPlan plan) {
     final spendable = utxos.map((u) => u.nullifierHex).toSet();
-    return plan.batches.every((batch) => batch.every((a) => spendable.contains(a.utxo.nullifierHex)));
+    return plan.batches.every((batch) => batch.inputs.every((u) => spendable.contains(u.nullifierHex)));
   }
 
   /// Funds a send can draw on right now: the spendable UTXOs, before the
@@ -77,8 +77,9 @@ class EncryptedAccountState {
 /// An encrypted account: two HD sequences of wormhole addresses treated as a
 /// single pool of funds — an external branch (`m/44'/189189189'/0'/0'/n'`)
 /// whose next unused index is shown for receiving, and a change branch
-/// (`m/44'/189189189'/0'/1'/n'`) whose next unused index is consumed as the
-/// fresh change address of each send. Both branches are gap-limit scanned
+/// (`m/44'/189189189'/0'/1'/n'`) whose next unused indices are consumed as
+/// the fresh change addresses of each send — one per bill or remainder the
+/// send returns ([WormholeBatchPlan]). Both branches are gap-limit scanned
 /// (same algorithm as transparent accounts) so all funds are rediscovered
 /// from the mnemonic alone, and keeping change off the external branch lets
 /// externally received funds be reported separately from returning change.
@@ -110,7 +111,7 @@ class EncryptedAccountService {
 
   /// Change indices claimed by in-flight sends, so two overlapping sends can
   /// never allocate the same change address. Released when the send finishes
-  /// (by then a change-bearing batch has bumped the persisted nextIndex).
+  /// (by then a change-bearing batch has bumped the persisted next index).
   final Set<int> _reservedChangeIndices = {};
 
   /// Every not-yet-disposed instance, so logout can quiesce all in-flight
@@ -397,7 +398,7 @@ class EncryptedAccountService {
     final spends = utxoResult.spends;
     final receivedAddresses = {for (final u in utxoResult.received) u.owner.address};
     bool changeArrivedFor(PendingSpend record) =>
-        record.changeAddress == null || receivedAddresses.contains(record.changeAddress);
+        record.changeOutputs.every((output) => receivedAddresses.contains(output.address));
 
     int nextAfter(Set<int> used) => used.isEmpty ? 0 : (used.reduce((a, b) => a > b ? a : b) + 1);
     final discoveredNext = nextAfter(usedIndices);
@@ -455,10 +456,11 @@ class EncryptedAccountService {
   }
 
   /// Proves and submits a [plan] (from [selectWormholeInputs]) paying
-  /// [recipientAddress], with change to a fresh address at the next unused
-  /// index. Per submitted batch, the spent nullifiers (and change, once its
-  /// batch lands) are persisted so balances stay exact even mid-flight or
-  /// after a partial failure.
+  /// [recipientAddress], with each bill and remainder of its change to its
+  /// own fresh address at the next unused change indices. Per submitted
+  /// batch, the spent nullifiers (and that batch's change outputs) are
+  /// persisted so balances stay exact even mid-flight or after a partial
+  /// failure.
   Future<ClaimResult> send({
     required WormholeSpendPlan plan,
     required String recipientAddress,
@@ -469,19 +471,19 @@ class EncryptedAccountService {
     _checkNotDisposed();
     final mnemonic = await _mnemonic();
     await _bindToSeed(mnemonic);
-    final changeIndex = await _reserveChangeIndex();
+    final changeIndices = await _reserveChangeIndices(plan.changeOutputCount);
     // Every secret byte buffer held by this send, zeroized in the `finally`
     // below once the proofs are done (success or failure). Dart Strings
     // (secretHex) cannot be overwritten, so secrets are re-derived straight
     // into these buffers and never cached (M11).
     final secretBuffers = <Uint8List>[];
     try {
-      final changeKeyPair = _deriveKeyPair(mnemonic, changeIndex, isChange: true);
+      final changeAddresses = [for (final i in changeIndices) _deriveKeyPair(mnemonic, i, isChange: true).address];
       final recipientBytes = Uint8List.fromList(getAccountId32(recipientAddress));
-      final changeBytes = Uint8List.fromList(getAccountId32(changeKeyPair.address));
       _log(
         'send: ${plan.inputCount} inputs in ${plan.batches.length} batches, '
-        'amount=${plan.amountToken}, change=${plan.changeToken} -> change index $changeIndex',
+        'amount=${plan.amountToken}, change=${plan.changeToken} in ${changeAddresses.length} outputs '
+        '-> change indices $changeIndices',
       );
 
       // UTXOs carry no secrets (see WormholeUtxoService.getUnspentUtxos), so
@@ -493,20 +495,42 @@ class EncryptedAccountService {
         return secret;
       }
 
-      final batches = [
-        for (final batch in plan.batches)
-          [
-            for (final a in batch)
-              WormholeLeafSpend(
-                transfer: a.utxo.transfer,
-                secret: secretAt(a.utxo.owner),
-                exitAccount1: recipientBytes,
-                outputAmount1: a.recipientScaled,
-                exitAccount2: a.changeScaled > 0 ? changeBytes : null,
-                outputAmount2: a.changeScaled,
-              ),
-          ],
-      ];
+      // Change outputs of consecutive batches take consecutive addresses.
+      var nextChange = 0;
+      final changeOutputsByBatch = <List<PendingChangeOutput>>[];
+      final batches = <WormholeBatchSpend>[];
+      for (final batch in plan.batches) {
+        final changeOutputs = [
+          for (final amount in batch.changeExitsScaled)
+            PendingChangeOutput(address: changeAddresses[nextChange++], amountToken: wormholeTokenFromScaled(amount)),
+        ];
+        changeOutputsByBatch.add(changeOutputs);
+        batches.add(
+          WormholeBatchSpend(
+            burns: [
+              for (final utxo in batch.inputs) WormholeBurn(transfer: utxo.transfer, secret: secretAt(utxo.owner)),
+            ],
+            exits: [
+              if (batch.recipientScaled > 0) WormholeExit(account: recipientBytes, amountScaled: batch.recipientScaled),
+              for (final output in changeOutputs)
+                WormholeExit(
+                  account: Uint8List.fromList(getAccountId32(output.address)),
+                  amountScaled: wormholeScaledFromToken(output.amountToken),
+                  returnsToSender: true,
+                ),
+            ],
+          ),
+        );
+      }
+
+      // The highest change index each batch uses; a submitted batch moves
+      // the persisted next index past it.
+      final lastChangeIndexByBatch = <int?>[];
+      var used = 0;
+      for (final outputs in changeOutputsByBatch) {
+        used += outputs.length;
+        lastChangeIndexByBatch.add(outputs.isEmpty ? null : changeIndices[used - 1]);
+      }
 
       return await _sendService.sendSpends(
         batches: batches,
@@ -514,25 +538,29 @@ class EncryptedAccountService {
         onProgress: onProgress,
         rpcUrl: rpcUrl,
         onBatchSubmitted: (batchIndex, nullifiers) async {
-          final changeScaled = plan.batches[batchIndex].fold<int>(0, (sum, a) => sum + a.changeScaled);
-          final hasChange = changeScaled > 0;
+          final changeOutputs = changeOutputsByBatch[batchIndex];
+          final lastChangeIndex = lastChangeIndexByBatch[batchIndex];
           await _mutateState(
             (s) => _FileState(
               owner: s.owner,
               nextIndex: s.nextIndex,
-              nextChangeIndex: hasChange && changeIndex >= s.nextChangeIndex ? changeIndex + 1 : s.nextChangeIndex,
+              nextChangeIndex: lastChangeIndex != null && lastChangeIndex >= s.nextChangeIndex
+                  ? lastChangeIndex + 1
+                  : s.nextChangeIndex,
               pendingSpends: [
                 ...s.pendingSpends,
                 PendingSpend(
                   nullifiers: nullifiers,
-                  changeAddress: hasChange ? changeKeyPair.address : null,
-                  changeAmountToken: wormholeTokenFromScaled(changeScaled),
+                  changeOutputs: changeOutputs,
                   createdAtMs: DateTime.now().millisecondsSinceEpoch,
                 ),
               ],
             ),
           );
-          _log('Batch $batchIndex recorded: ${nullifiers.length} nullifiers spent, change=$hasChange');
+          _log(
+            'Batch $batchIndex recorded: ${nullifiers.length} nullifiers spent, '
+            '${changeOutputs.length} change outputs',
+          );
         },
       );
     } finally {
@@ -540,9 +568,9 @@ class EncryptedAccountService {
         secret.fillRange(0, secret.length, 0);
       }
       // By now either a change-bearing batch bumped the persisted
-      // nextChangeIndex past the reservation, or the send failed and the
-      // index is free again.
-      _reservedChangeIndices.remove(changeIndex);
+      // nextChangeIndex past the reservations, or the send failed and the
+      // indices are free again.
+      _reservedChangeIndices.removeAll(changeIndices);
     }
   }
 
@@ -598,15 +626,20 @@ class EncryptedAccountService {
 
   Future<_FileState> _readStateLocked() => _withStateLock(_readState);
 
-  /// Claims the change-branch index for a new send: the persisted next unused
-  /// change index, skipping indices already reserved by other in-flight sends.
-  Future<int> _reserveChangeIndex() => _withStateLock(() async {
+  /// Claims [count] change-branch indices for a new send: the persisted next
+  /// unused change index onwards, skipping indices already reserved by other
+  /// in-flight sends.
+  Future<List<int>> _reserveChangeIndices(int count) => _withStateLock(() async {
+    final indices = <int>[];
     var index = (await _readState()).nextChangeIndex;
-    while (_reservedChangeIndices.contains(index)) {
+    while (indices.length < count) {
+      if (!_reservedChangeIndices.contains(index)) {
+        _reservedChangeIndices.add(index);
+        indices.add(index);
+      }
       index++;
     }
-    _reservedChangeIndices.add(index);
-    return index;
+    return indices;
   });
 
   Future<_FileState> _mutateState(_FileState Function(_FileState) fn) => _withStateLock(() async {
@@ -630,35 +663,56 @@ class EncryptedAccountService {
   }
 }
 
+/// One change exit of a submitted spend: a bill or remainder paid to one of
+/// the wallet's fresh change addresses.
+class PendingChangeOutput {
+  final String address;
+  final BigInt amountToken;
+
+  const PendingChangeOutput({required this.address, required this.amountToken});
+
+  factory PendingChangeOutput.fromJson(Map<String, dynamic> json) =>
+      PendingChangeOutput(address: json['address'] as String, amountToken: BigInt.parse(json['amountToken'] as String));
+
+  Map<String, dynamic> toJson() => {'address': address, 'amountToken': amountToken.toString()};
+}
+
 /// A submitted-but-not-yet-indexed spend: its input nullifiers are excluded
 /// from the spendable set and its change is counted as pending balance until
 /// the indexer confirms both.
 class PendingSpend {
   final List<String> nullifiers;
-  final String? changeAddress;
-  final BigInt changeAmountToken;
+  final List<PendingChangeOutput> changeOutputs;
   final int createdAtMs;
 
-  const PendingSpend({
-    required this.nullifiers,
-    required this.changeAddress,
-    required this.changeAmountToken,
-    required this.createdAtMs,
-  });
+  const PendingSpend({required this.nullifiers, required this.changeOutputs, required this.createdAtMs});
 
-  factory PendingSpend.fromJson(Map<String, dynamic> json) => PendingSpend(
-    nullifiers: (json['nullifiers'] as List<dynamic>).cast<String>(),
-    changeAddress: json['changeAddress'] as String?,
-    // 'changeAmountPlanck' is the key used by files written before the
-    // planck -> token rename; fall back so old pending spends still load.
-    changeAmountToken: BigInt.parse((json['changeAmountToken'] ?? json['changeAmountPlanck']) as String),
-    createdAtMs: json['createdAtMs'] as int,
-  );
+  BigInt get changeAmountToken => changeOutputs.fold(BigInt.zero, (sum, o) => sum + o.amountToken);
+
+  /// Reads the current shape or one written before change was denominated,
+  /// which recorded a single `changeAddress` / `changeAmountToken` (or
+  /// `changeAmountPlanck`, before the planck -> token rename).
+  factory PendingSpend.fromJson(Map<String, dynamic> json) {
+    final outputs = json['changeOutputs'] as List<dynamic>?;
+    final legacyAddress = json['changeAddress'] as String?;
+    return PendingSpend(
+      nullifiers: (json['nullifiers'] as List<dynamic>).cast<String>(),
+      changeOutputs: outputs != null
+          ? [for (final o in outputs) PendingChangeOutput.fromJson(o as Map<String, dynamic>)]
+          : [
+              if (legacyAddress != null)
+                PendingChangeOutput(
+                  address: legacyAddress,
+                  amountToken: BigInt.parse((json['changeAmountToken'] ?? json['changeAmountPlanck']) as String),
+                ),
+            ],
+      createdAtMs: json['createdAtMs'] as int,
+    );
+  }
 
   Map<String, dynamic> toJson() => {
     'nullifiers': nullifiers,
-    'changeAddress': changeAddress,
-    'changeAmountToken': changeAmountToken.toString(),
+    'changeOutputs': changeOutputs.map((o) => o.toJson()).toList(),
     'createdAtMs': createdAtMs,
   };
 }

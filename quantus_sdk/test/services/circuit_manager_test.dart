@@ -10,10 +10,15 @@ void main() {
     );
   });
 
-  test('circuit config requires a positive aggregation arity', () {
-    expect(CircuitManager.parseNumLeafProofs('{"num_leaf_proofs":7}'), 7);
-    expect(() => CircuitManager.parseNumLeafProofs('{}'), throwsFormatException);
-    expect(() => CircuitManager.parseNumLeafProofs('{"num_leaf_proofs":0}'), throwsFormatException);
-    expect(() => CircuitManager.parseNumLeafProofs('[]'), throwsFormatException);
+  test('circuit config requires a positive batch shape', () {
+    expect(CircuitManager.parseShape('{"num_leaf_proofs":10,"num_exit_slots":32}'), (
+      numLeafProofs: 10,
+      numExitSlots: 32,
+    ));
+    expect(() => CircuitManager.parseShape('{}'), throwsFormatException);
+    expect(() => CircuitManager.parseShape('{"num_leaf_proofs":7}'), throwsFormatException);
+    expect(() => CircuitManager.parseShape('{"num_leaf_proofs":0,"num_exit_slots":32}'), throwsFormatException);
+    expect(() => CircuitManager.parseShape('{"num_leaf_proofs":10,"num_exit_slots":0}'), throwsFormatException);
+    expect(() => CircuitManager.parseShape('[]'), throwsFormatException);
   });
 }
