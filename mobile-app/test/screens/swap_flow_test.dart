@@ -15,6 +15,7 @@ import 'package:http/testing.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/l10n/app_localizations.dart';
 import 'package:wallet_core/models/swap_preflight.dart';
+import 'package:wallet_core/providers/app_lifecycle_state_provider.dart';
 import 'package:wallet_core/providers/active_swap_provider.dart';
 import 'package:wallet_core/providers/connectivity_provider.dart';
 import 'package:wallet_core/providers/l10n_provider.dart';
@@ -1873,6 +1874,51 @@ void main() {
       await settle(tester);
       expect(banner(l10n.swapProgressStatusUnavailable('')), findsNothing);
     });
+
+    testWidgets(
+      'on iOS polls pause in the background and one goes out on the return to the foreground',
+      variant: TargetPlatformVariant.only(TargetPlatform.iOS),
+      (tester) async {
+        final oneClick = _OneClick(dryOut: BigInt.one)..status = 'PROCESSING';
+        await pumpSwap(
+          tester,
+          activeSwap(SwapOrder(quote: liveQuote, status: SwapStatus.processing)),
+          oneClick: oneClick,
+        );
+        Iterable<http.Request> polls() => oneClick.requests.where((r) => r.url.path == '/v0/status');
+        final lifecycle = containerOf(tester).read(appLifecycleStateProvider.notifier);
+
+        lifecycle.state = AppLifecycleState.hidden;
+        await tester.pump(SwapService.statusPollInterval * 3);
+        expect(polls(), isEmpty);
+
+        lifecycle.state = AppLifecycleState.resumed;
+        await settle(tester);
+        expect(polls(), hasLength(1));
+        await tester.pump(SwapService.statusPollInterval);
+        await settle(tester);
+        expect(polls(), hasLength(2));
+      },
+    );
+
+    testWidgets(
+      'on Android polls keep going in the background',
+      variant: TargetPlatformVariant.only(TargetPlatform.android),
+      (tester) async {
+        final oneClick = _OneClick(dryOut: BigInt.one)..status = 'PROCESSING';
+        await pumpSwap(
+          tester,
+          activeSwap(SwapOrder(quote: liveQuote, status: SwapStatus.processing)),
+          oneClick: oneClick,
+        );
+        Iterable<http.Request> polls() => oneClick.requests.where((r) => r.url.path == '/v0/status');
+
+        containerOf(tester).read(appLifecycleStateProvider.notifier).state = AppLifecycleState.paused;
+        await tester.pump(SwapService.statusPollInterval);
+        await settle(tester);
+        expect(polls(), hasLength(1));
+      },
+    );
 
     testWidgets('polls run one at a time, and an answer that arrives after the swap was put away is dropped', (
       tester,

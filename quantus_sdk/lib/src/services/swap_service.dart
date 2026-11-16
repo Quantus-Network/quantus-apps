@@ -65,7 +65,7 @@ class SwapService {
     'confidentiality',
   ];
   static const quoteWaitingTime = Duration(seconds: 3);
-  static const statusPollInterval = Duration(seconds: 5);
+  static const statusPollInterval = Duration(seconds: 10);
   static const _savedAddressesKey = 'swap_saved_addresses';
   static const _maxSavedAddresses = 50;
   static const _tokensCacheTtl = Duration(minutes: 2);
@@ -108,8 +108,7 @@ class SwapService {
 
   /// QTC as 1Click lists it, with its asset id, decimals and price; null until
   /// it is listed with a price, and swaps are unavailable until then.
-  Future<SwapToken?> getListedQuantusToken({bool forceRefresh = false}) async =>
-      (await _listing(forceRefresh: forceRefresh)).$2;
+  Future<SwapToken?> getListedQuantusToken() async => (await _listing(forceRefresh: false)).$2;
 
   Future<(List<SwapToken>, SwapToken?)> _listing({required bool forceRefresh}) async {
     final now = DateTime.now();

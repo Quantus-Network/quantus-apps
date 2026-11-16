@@ -1,8 +1,10 @@
 import 'dart:async';
 
 import 'package:clock/clock.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:wallet_core/providers/app_lifecycle_state_provider.dart';
 import 'package:wallet_core/providers/l10n_provider.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:wallet_core/services/telemetry.dart';
@@ -12,7 +14,10 @@ import 'package:wallet_core/providers/swap_providers.dart';
 /// polled through 1Click's status endpoint until it settles. A poll that
 /// fails is recorded on the swap and tried again at the next interval; the
 /// error leaves it once a poll succeeds. One poll runs at a time, so an
-/// older answer can never overwrite a newer one.
+/// older answer can never overwrite a newer one. Polls pause while the app is
+/// in the background, and one goes out as soon as it is back in front, except
+/// on Android, where the swap card's foreground service keeps the process
+/// alive so the polls keep the lock-screen card current.
 final activeSwapProvider = NotifierProvider<ActiveSwapNotifier, ActiveSwap?>(ActiveSwapNotifier.new);
 
 class ActiveSwapNotifier extends Notifier<ActiveSwap?> {
@@ -20,9 +25,19 @@ class ActiveSwapNotifier extends Notifier<ActiveSwap?> {
   Future<void>? _inFlight;
   int _generation = 0;
 
+  bool get _pollsInBackground => defaultTargetPlatform == TargetPlatform.android;
+
   @override
   ActiveSwap? build() {
     ref.onDispose(() => _poll?.cancel());
+    ref.listen(appInForegroundProvider, (_, foreground) {
+      if (_pollsInBackground) return;
+      if (foreground) {
+        unawaited(refresh());
+      } else {
+        _poll?.cancel();
+      }
+    });
     final swap = ref.watch(settingsServiceProvider).getActiveSwap();
     if (swap != null) _schedule(swap);
     return swap;
@@ -114,6 +129,7 @@ class ActiveSwapNotifier extends Notifier<ActiveSwap?> {
   void _schedule(ActiveSwap swap) {
     _poll?.cancel();
     if (swap.simulated || swap.isFinal) return;
+    if (!_pollsInBackground && !ref.read(appInForegroundProvider)) return;
     _poll = Timer(SwapService.statusPollInterval, refresh);
   }
 
