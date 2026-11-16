@@ -1,6 +1,6 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart' show SemanticsAction;
+import 'package:flutter/rendering.dart' show SemanticsAction, SemanticsActionEvent;
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_desktop_wallet/ui/components/toolbar_action.dart';
@@ -160,7 +160,9 @@ void main() {
     final node = tester.getSemantics(find.byType(ToolbarAction));
     expect(node.getSemanticsData().hasAction(SemanticsAction.tap), isTrue);
 
-    tester.binding.pipelineOwner.semanticsOwner!.performAction(node.id, SemanticsAction.tap);
+    tester.binding.performSemanticsAction(
+      SemanticsActionEvent(type: SemanticsAction.tap, viewId: tester.view.viewId, nodeId: node.id),
+    );
     await tester.pump();
 
     expect(presses, 1);
