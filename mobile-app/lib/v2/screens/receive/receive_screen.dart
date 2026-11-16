@@ -4,6 +4,7 @@ import 'package:quantus_sdk/quantus_sdk.dart' hide ScaffoldBase;
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:wallet_core/providers/l10n_provider.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
+import 'package:wallet_core/utils/receive_address.dart';
 import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
 import 'package:resonance_network_wallet/shared/utils/share_utils.dart';
 
@@ -28,14 +29,7 @@ class _ReceiveScreenState extends ConsumerState<ReceiveScreen> {
 
     try {
       final account = (await settingsService.getActiveAccount())!;
-      var accountId = account.account.accountId;
-      // Encrypted accounts rotate deposits to the next unused wormhole address
-      // (shared linearly with change addresses) so deposits aren't linkable.
-      final base = account.account;
-      if (isEncryptedAccount(base)) {
-        final service = ref.read(encryptedAccountServiceProvider((base as Account).walletIndex));
-        accountId = (await service.receiveKeyPair()).address;
-      }
+      final accountId = await receiveAddress(ref.read, account.account);
       if (!mounted) return;
       setState(() => _accountId = accountId);
     } catch (e) {

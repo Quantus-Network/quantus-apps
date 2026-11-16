@@ -10,6 +10,7 @@ import 'package:quantus_desktop_wallet/providers/boot_intro_provider.dart';
 import 'package:quantus_desktop_wallet/providers/shell_providers.dart';
 import 'package:quantus_desktop_wallet/providers/wallet_presence_provider.dart';
 import 'package:quantus_desktop_wallet/services/app_exit.dart';
+import 'package:quantus_desktop_wallet/services/window_chrome.dart';
 import 'package:quantus_desktop_wallet/ui/onboarding/boot_intro.dart';
 import 'package:quantus_desktop_wallet/ui/onboarding/onboarding_flow.dart';
 import 'package:quantus_desktop_wallet/ui/shell/account_pane.dart';
@@ -41,15 +42,25 @@ class DesktopShell extends ConsumerStatefulWidget {
 
 class _DesktopShellState extends ConsumerState<DesktopShell> {
   static const _introFade = Duration(milliseconds: 500);
+  static const _sheetSlide = Duration(milliseconds: 220);
 
   /// Whether the boot intro is covering Welcome.
   bool _isIntroPlaying = false;
 
   void _present(ShellSheet? sheet) {
     if (sheet == null) return;
-    showDialog<void>(
+    showGeneralDialog<void>(
       context: context,
-      builder: (_) => ShellSheetView(sheet: sheet),
+      barrierDismissible: true,
+      barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
+      barrierColor: context.colorsV3.bgVoid.useOpacity(0.6),
+      transitionDuration: MediaQuery.disableAnimationsOf(context) ? Duration.zero : _sheetSlide,
+      pageBuilder: (_, animation, _) => _SheetPlacement(
+        animation: animation,
+        child: ShellSheetView(sheet: sheet),
+      ),
+      // The sheet slides itself; the barrier fades on its own.
+      transitionBuilder: (_, _, _, child) => child,
     ).whenComplete(() {
       if (mounted) ref.read(shellSheetProvider.notifier).closed();
     });
@@ -179,6 +190,49 @@ class _DesktopShellState extends ConsumerState<DesktopShell> {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Where a sheet goes: hanging from the hairline under the header, centred
+/// on the pane beside the sidebar, sliding down from under the header as
+/// [animation] runs.
+class _SheetPlacement extends ConsumerWidget {
+  const _SheetPlacement({required this.animation, required this.child});
+
+  final Animation<double> animation;
+  final Widget child;
+
+  /// Space kept between a sheet and the pane's sides.
+  static const double _sideMargin = 20;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Padding(
+      padding: EdgeInsets.only(
+        left: ref.watch(sidebarVisibleProvider) ? Sidebar.width : 0,
+        // The header and its hairline.
+        top: shellHeaderHeight + 1,
+      ),
+      // Clipped at the hairline, so the sheet comes out from under the header.
+      child: ClipRect(
+        child: Align(
+          alignment: Alignment.topCenter,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: _sideMargin),
+            child: ConstrainedBox(
+              // As wide as a sheet grows, or as the pane allows.
+              constraints: const BoxConstraints.tightFor(width: ShellSheetView.maxWidth),
+              child: SlideTransition(
+                position: Tween(begin: const Offset(0, -1), end: Offset.zero).animate(
+                  CurvedAnimation(parent: animation, curve: Curves.easeOutCubic, reverseCurve: Curves.easeInCubic),
+                ),
+                child: child,
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

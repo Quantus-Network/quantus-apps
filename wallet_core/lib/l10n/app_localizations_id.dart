@@ -2573,4 +2573,14 @@ class AppLocalizationsId extends AppLocalizations {
   String desktopWalletReadyBody(String account, String encrypted) {
     return '$account bersifat transparan: cepat, dan terlihat di chain. $encrypted untuk transaksi privat, dan lebih lambat.';
   }
+
+  @override
+  String get desktopReceiveDepositAddressLabel => 'Alamat deposit';
+
+  @override
+  String get desktopReceiveEncryptedNotice =>
+      'Alamat baru setelah alamat ini dibayar, sehingga deposit Anda tidak dapat dikaitkan satu sama lain.';
+
+  @override
+  String get desktopCopied => 'Disalin';
 }

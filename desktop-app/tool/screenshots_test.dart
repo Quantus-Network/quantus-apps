@@ -8,8 +8,12 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:quantus_desktop_wallet/bootstrap/app_bootstrap.dart';
+import 'package:quantus_desktop_wallet/ui/components/toolbar_action.dart';
+import 'package:quantus_desktop_wallet/ui/shell/sidebar.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:wallet_core/providers/wallet_providers.dart';
 
 import '../test/fakes.dart';
 import 'support.dart';
@@ -17,14 +21,19 @@ import 'support.dart';
 const _windowSize = Size(1200, 800);
 const _pixelRatio = 2.0;
 
-Future<void> _open(WidgetTester tester, FakeWalletDevice device, {bool reduceMotion = false}) async {
+Future<void> _open(
+  WidgetTester tester,
+  FakeWalletDevice device, {
+  bool reduceMotion = false,
+  List<Override> overrides = const [],
+}) async {
   tester.view.physicalSize = _windowSize * _pixelRatio;
   tester.view.devicePixelRatio = _pixelRatio;
   addTearDown(tester.view.reset);
   tester.platformDispatcher.accessibilityFeaturesTestValue = FakeAccessibilityFeatures(disableAnimations: reduceMotion);
   addTearDown(tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
 
-  await tester.pumpWidget(buildApp(overrides: device.overrides));
+  await tester.pumpWidget(buildApp(overrides: [...device.overrides, ...overrides]));
   await tester.pump();
   await tester.pump();
 }
@@ -35,9 +44,15 @@ Future<void> _showImages(WidgetTester tester) async {
     for (final element in find.byType(Image).evaluate()) {
       await precacheImage((element.widget as Image).image, element);
     }
+    // The logo in the middle of a QR code, which the code waits for.
+    for (final element in find.byType(QuantusQr).evaluate()) {
+      await precacheImage(const AssetImage('assets/v2/uppercase_q_black_bg.png', package: 'quantus_sdk'), element);
+    }
     // Vector icons load on their own; give them the time.
     await Future<void>.delayed(const Duration(milliseconds: 300));
   });
+  // One frame to hear that the pictures are in, one to draw them.
+  await tester.pump();
   await tester.pump();
 }
 
@@ -60,7 +75,15 @@ void _scene(String name, Future<void> Function(WidgetTester tester) body) {
   }, variant: TargetPlatformVariant.only(TargetPlatform.macOS));
 }
 
-const _root = Account(walletIndex: 0, index: 0, name: 'Account 1', accountId: 'qzRoot');
+// Addresses of a real address's length, so the sheets that show one are
+// drawn as they will look.
+const _root = Account(
+  walletIndex: 0,
+  index: 0,
+  name: 'Account 1',
+  accountId: 'qzmN7RfQ2k8VtXc4hW9yLp3sD6aJ1bEuG5oZr8TnKw2xYv',
+);
+const _depositAddress = 'qzpK3wXs9DfL2mVb7NcQ8rTy4HgJ6aZe1UoBi5WnRk7tYe';
 const _second = Account(walletIndex: 0, index: 1, name: 'Savings', accountId: 'qzSavings');
 const _encrypted = Account(
   walletIndex: 0,
@@ -109,4 +132,35 @@ void main() {
     await _open(tester, FakeWalletDevice()..store([_root, _second, _encrypted]), reduceMotion: true);
     await tester.pumpAndSettle();
   });
+
+  _scene('receive', (tester) async {
+    await _openReceive(tester, 'Account 1');
+  });
+
+  _scene('receive_encrypted', (tester) async {
+    await _openReceive(tester, 'Encrypted Account');
+  });
+}
+
+/// Opens the wallet, selects the account named [name] and opens its Receive.
+Future<void> _openReceive(WidgetTester tester, String name) async {
+  useFakeCheckphrases(
+    (address) async =>
+        address == _depositAddress ? 'Lantern-Copper-Meadow-Quartz-Harbor' : 'Harbor-Velvet-Signal-Mirror-Canyon',
+  );
+  await _open(
+    tester,
+    FakeWalletDevice()..store([_root, _second, _encrypted]),
+    reduceMotion: true,
+    overrides: [
+      encryptedAccountServiceProvider.overrideWith(
+        (ref, walletIndex) => FakeEncryptedAccountService(() async => _depositAddress),
+      ),
+    ],
+  );
+  await tester.pumpAndSettle();
+  await tester.tap(find.descendant(of: find.byType(Sidebar), matching: find.text(name)));
+  await tester.pumpAndSettle();
+  await tester.tap(find.widgetWithText(ToolbarAction, 'Receive'));
+  await tester.pumpAndSettle();
 }

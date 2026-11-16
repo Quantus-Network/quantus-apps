@@ -3733,5 +3733,17 @@
           "type": "String"
         }
       }
+    },
+    "desktopReceiveDepositAddressLabel": "Deposit address",
+    "@desktopReceiveDepositAddressLabel": {
+      "description": "Desktop Receive sheet: label above the encrypted account's next unused deposit address, shown in capitals"
+    },
+    "desktopReceiveEncryptedNotice": "A new address once this one has been paid, so your deposits can’t be linked to each other.",
+    "@desktopReceiveEncryptedNotice": {
+      "description": "Desktop Receive sheet: notice on the encrypted account, why its deposit address changes"
+    },
+    "desktopCopied": "Copied",
+    "@desktopCopied": {
+      "description": "Desktop: what a Copy action says for a moment after it has copied"
     }
 }

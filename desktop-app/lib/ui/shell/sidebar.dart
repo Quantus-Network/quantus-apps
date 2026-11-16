@@ -4,6 +4,7 @@ import 'package:quantus_desktop_wallet/models/shell_sheet.dart';
 import 'package:quantus_desktop_wallet/models/sidebar_selection.dart';
 import 'package:quantus_desktop_wallet/providers/shell_providers.dart';
 import 'package:quantus_desktop_wallet/ui/components/account_balance_text.dart';
+import 'package:quantus_desktop_wallet/ui/components/desktop_account_badge.dart';
 import 'package:quantus_desktop_wallet/ui/components/sidebar_row.dart';
 import 'package:quantus_desktop_wallet/ui/shell/shell_header.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
@@ -180,9 +181,7 @@ class _AccountRow extends ConsumerWidget {
     return SidebarRow(
       title: account.name,
       isSelected: isSelected,
-      leading: isEncryptedAccount(account)
-          ? const EncryptedLockBadge(size: _badgeSize)
-          : AccountBadge(name: account.name, size: _badgeSize),
+      leading: DesktopAccountBadge(account: account, size: _badgeSize),
       subtitle: AccountBalanceText(
         account: account,
         style: context.themeTextV3.caption.copyWith(color: context.colorsV3.textMuted),

@@ -4699,6 +4699,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{account} is transparent: fast, and visible on chain. The {encrypted} is for private transactions, and slower.'**
   String desktopWalletReadyBody(String account, String encrypted);
+
+  /// Desktop Receive sheet: label above the encrypted account's next unused deposit address, shown in capitals
+  ///
+  /// In en, this message translates to:
+  /// **'Deposit address'**
+  String get desktopReceiveDepositAddressLabel;
+
+  /// Desktop Receive sheet: notice on the encrypted account, why its deposit address changes
+  ///
+  /// In en, this message translates to:
+  /// **'A new address once this one has been paid, so your deposits can’t be linked to each other.'**
+  String get desktopReceiveEncryptedNotice;
+
+  /// Desktop: what a Copy action says for a moment after it has copied
+  ///
+  /// In en, this message translates to:
+  /// **'Copied'**
+  String get desktopCopied;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
