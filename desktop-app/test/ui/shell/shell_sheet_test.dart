@@ -57,6 +57,32 @@ void main() {
     expect(_sheet(tester).center.dx, moreOrLessEquals(600));
   });
 
+  testOnWindowsAndLinux(
+    'a sheet hangs from the bottom of the header, below the in-window menu bar, centred on the pane',
+    (tester) async {
+      await _pumpWallet(tester);
+
+      await _openSend(tester);
+
+      final sidebar = tester.getRect(find.byType(Sidebar));
+      expect(_sheet(tester).top, _paneTop(tester));
+      expect(_sheet(tester).center.dx, moreOrLessEquals((sidebar.right + 1200) / 2));
+    },
+  );
+
+  testOnWindowsAndLinux('with the sidebar hidden, a sheet hangs from the header, centred on the whole window', (
+    tester,
+  ) async {
+    await _pumpWallet(tester);
+    ProviderScope.containerOf(tester.element(find.byType(DesktopShell))).read(sidebarVisibleProvider.notifier).toggle();
+    await tester.pumpAndSettle();
+
+    await _openSend(tester);
+
+    expect(_sheet(tester).top, _paneTop(tester));
+    expect(_sheet(tester).center.dx, moreOrLessEquals(600));
+  });
+
   testOnMac('a click outside a sheet closes it', (tester) async {
     await _pumpWallet(tester);
     await _openSend(tester);

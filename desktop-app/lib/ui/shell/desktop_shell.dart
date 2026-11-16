@@ -10,7 +10,6 @@ import 'package:quantus_desktop_wallet/providers/boot_intro_provider.dart';
 import 'package:quantus_desktop_wallet/providers/shell_providers.dart';
 import 'package:quantus_desktop_wallet/providers/wallet_presence_provider.dart';
 import 'package:quantus_desktop_wallet/services/app_exit.dart';
-import 'package:quantus_desktop_wallet/services/window_chrome.dart';
 import 'package:quantus_desktop_wallet/ui/onboarding/boot_intro.dart';
 import 'package:quantus_desktop_wallet/ui/onboarding/onboarding_flow.dart';
 import 'package:quantus_desktop_wallet/ui/shell/account_pane.dart';
@@ -47,8 +46,22 @@ class _DesktopShellState extends ConsumerState<DesktopShell> {
   /// Whether the boot intro is covering Welcome.
   bool _isIntroPlaying = false;
 
+  /// The hairline under the header, which sheets hang from.
+  final _headerLine = GlobalKey();
+
+  /// Where the hairline under the header ends, in the coordinates sheets are
+  /// drawn in. Measured rather than assumed: on Windows and Linux the menu
+  /// bar sits in the window above the header.
+  double _sheetTop() {
+    final line = _headerLine.currentContext?.findRenderObject() as RenderBox?;
+    if (line == null) throw StateError('A sheet was opened with no header to hang from.');
+    final overlay = Navigator.of(context, rootNavigator: true).overlay!.context.findRenderObject()! as RenderBox;
+    return line.localToGlobal(Offset(0, line.size.height), ancestor: overlay).dy;
+  }
+
   void _present(ShellSheet? sheet) {
     if (sheet == null) return;
+    final top = _sheetTop();
     showGeneralDialog<void>(
       context: context,
       barrierDismissible: true,
@@ -57,6 +70,7 @@ class _DesktopShellState extends ConsumerState<DesktopShell> {
       transitionDuration: MediaQuery.disableAnimationsOf(context) ? Duration.zero : _sheetSlide,
       pageBuilder: (_, animation, _) => _SheetPlacement(
         animation: animation,
+        top: top,
         child: ShellSheetView(sheet: sheet),
       ),
       // The sheet slides itself; the barrier fades on its own.
@@ -179,7 +193,10 @@ class _DesktopShellState extends ConsumerState<DesktopShell> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const PaneHeader(),
-              const MenuDivider(key: DesktopShell.headerLineKey),
+              KeyedSubtree(
+                key: _headerLine,
+                child: const MenuDivider(key: DesktopShell.headerLineKey),
+              ),
               Expanded(
                 child: switch (ref.watch(sidebarSelectionProvider)) {
                   SidebarSelection.account => const AccountPane(),
@@ -194,13 +211,14 @@ class _DesktopShellState extends ConsumerState<DesktopShell> {
   }
 }
 
-/// Where a sheet goes: hanging from the hairline under the header, centred
-/// on the pane beside the sidebar, sliding down from under the header as
-/// [animation] runs.
+/// Where a sheet goes: hanging from the hairline under the header, [top]
+/// down the window, centred on the pane beside the sidebar, sliding down
+/// from under the header as [animation] runs.
 class _SheetPlacement extends ConsumerWidget {
-  const _SheetPlacement({required this.animation, required this.child});
+  const _SheetPlacement({required this.animation, required this.top, required this.child});
 
   final Animation<double> animation;
+  final double top;
   final Widget child;
 
   /// Space kept between a sheet and the pane's sides.
@@ -209,11 +227,7 @@ class _SheetPlacement extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Padding(
-      padding: EdgeInsets.only(
-        left: ref.watch(sidebarVisibleProvider) ? Sidebar.width : 0,
-        // The header and its hairline.
-        top: shellHeaderHeight + 1,
-      ),
+      padding: EdgeInsets.only(left: ref.watch(sidebarVisibleProvider) ? Sidebar.width : 0, top: top),
       // Clipped at the hairline, so the sheet comes out from under the header.
       child: ClipRect(
         child: Align(
