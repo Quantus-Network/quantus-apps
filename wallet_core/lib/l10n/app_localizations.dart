@@ -4543,6 +4543,108 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Window'**
   String get desktopMenuWindow;
+
+  /// Desktop boot intro, a terminal-style line: the protocol's name and version
+  ///
+  /// In en, this message translates to:
+  /// **'> QUANTUS PROTOCOL v1.0.0-gm'**
+  String get desktopBootProtocol;
+
+  /// Desktop boot intro line; {status} is desktopBootStatusOk
+  ///
+  /// In en, this message translates to:
+  /// **'> NIST FIPS 204 MODULE LOADED {status}'**
+  String desktopBootNistModule(String status);
+
+  /// Desktop boot intro line; {scheme} is the signature scheme's name, not translated
+  ///
+  /// In en, this message translates to:
+  /// **'> INITIALIZING {scheme}...'**
+  String desktopBootInitializing(String scheme);
+
+  /// Desktop boot intro line; {status} is desktopBootStatusActive
+  ///
+  /// In en, this message translates to:
+  /// **'> POST-QUANTUM SIGNATURE SCHEME {status}'**
+  String desktopBootSignatureScheme(String status);
+
+  /// Desktop boot intro line; {status} is desktopBootStatusReady
+  ///
+  /// In en, this message translates to:
+  /// **'> RECURSIVE ZK PROOF ENGINE {status}'**
+  String desktopBootZkEngine(String status);
+
+  /// Desktop boot intro line; {status} is desktopBootStatusLoading
+  ///
+  /// In en, this message translates to:
+  /// **'> CHLADNI FIELD VISUALIZER {status}'**
+  String desktopBootChladni(String status);
+
+  /// Desktop boot intro: status shown in green at the end of a line
+  ///
+  /// In en, this message translates to:
+  /// **'[OK]'**
+  String get desktopBootStatusOk;
+
+  /// Desktop boot intro: status shown in green at the end of a line
+  ///
+  /// In en, this message translates to:
+  /// **'ACTIVE'**
+  String get desktopBootStatusActive;
+
+  /// Desktop boot intro: status shown in green at the end of a line
+  ///
+  /// In en, this message translates to:
+  /// **'READY'**
+  String get desktopBootStatusReady;
+
+  /// Desktop boot intro: status shown in orange at the end of a line
+  ///
+  /// In en, this message translates to:
+  /// **'LOADING'**
+  String get desktopBootStatusLoading;
+
+  /// Desktop Welcome: label above the wave mode of the animated background, e.g. 2,3
+  ///
+  /// In en, this message translates to:
+  /// **'WAVE MODE (m,n)'**
+  String get desktopWaveModeLabel;
+
+  /// Desktop Welcome: hint under the wave mode that moving the mouse changes the background's pattern
+  ///
+  /// In en, this message translates to:
+  /// **'MOVE CURSOR TO SHIFT FREQUENCY'**
+  String get desktopWaveModeHint;
+
+  /// Desktop Welcome: short line above the headline, shown in capitals
+  ///
+  /// In en, this message translates to:
+  /// **'Quantum-Secure Encrypted Money'**
+  String get desktopWelcomeEyebrow;
+
+  /// Desktop Welcome: first line of the headline, continued by desktopWelcomeTitleLine2
+  ///
+  /// In en, this message translates to:
+  /// **'Money quantum'**
+  String get desktopWelcomeTitleLine1;
+
+  /// Desktop Welcome: second line of the headline
+  ///
+  /// In en, this message translates to:
+  /// **'computers can’t break.'**
+  String get desktopWelcomeTitleLine2;
+
+  /// Desktop Welcome: sentence under the headline, above the two buttons
+  ///
+  /// In en, this message translates to:
+  /// **'Create a new wallet, or import one you already have.'**
+  String get desktopWelcomeBody;
+
+  /// Desktop account panel: label over the account's balance, shown in capitals
+  ///
+  /// In en, this message translates to:
+  /// **'Balance'**
+  String get desktopBalanceLabel;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

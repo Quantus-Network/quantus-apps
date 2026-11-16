@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_desktop_wallet/models/wallet_presence.dart';
+import 'package:quantus_desktop_wallet/providers/boot_intro_provider.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
+import 'package:wallet_core/services/logout_service.dart';
 
 /// Whether this device holds a wallet. Checked once at start, then kept in
 /// step by the flows that add or remove the wallet.
@@ -25,6 +27,12 @@ class WalletPresenceNotifier extends AsyncNotifier<WalletPresence> {
   /// Onboarding created or imported a wallet.
   void walletAdded() => state = const AsyncData(WalletPresence.present);
 
-  /// The wallet was wiped.
-  void walletRemoved() => state = const AsyncData(WalletPresence.none);
+  /// Wipes the wallet and everything stored with it.
+  Future<void> wipeWallet() async {
+    final introSeen = ref.read(bootIntroSeenProvider);
+    await ref.read(logoutServiceProvider).logout();
+    // The wipe cleared every setting, this one included.
+    if (introSeen) await ref.read(bootIntroSeenProvider.notifier).markSeen();
+    state = const AsyncData(WalletPresence.none);
+  }
 }

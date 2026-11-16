@@ -11,6 +11,7 @@ import 'package:quantus_desktop_wallet/ui/onboarding/welcome_page.dart';
 import 'package:quantus_desktop_wallet/ui/shell/shell_header.dart';
 import 'package:quantus_desktop_wallet/ui/shell/sidebar.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:wallet_core/l10n/app_localizations.dart';
 
 import '../../fakes.dart';
 
@@ -147,13 +148,83 @@ void main() {
   });
 
   group('Welcome', () {
-    testOnMac('shows the logo, the tagline, Create New Wallet and Import Wallet', (tester) async {
+    testOnMac('shows the small line, the headline and the sentence, in place of the old tagline', (tester) async {
       await pumpShell(tester, overrides: FakeWalletDevice().overrides);
 
-      expect(find.image(const AssetImage('assets/quantus_orange_logo.png')), findsOneWidget);
-      expect(find.text('Quantum Secure Encrypted Money'), findsOneWidget);
+      expect(find.text('QUANTUM-SECURE ENCRYPTED MONEY'), findsOneWidget);
+      expect(find.bySemanticsLabel('Quantum-Secure Encrypted Money'), findsOneWidget);
+      expect(find.text('Money quantum\ncomputers can\u2019t break.'), findsOneWidget);
+      expect(find.text('Create a new wallet, or import one you already have.'), findsOneWidget);
+      expect(find.text('Quantum Secure Encrypted Money'), findsNothing);
       expect(_isEnabled(tester, 'Create New Wallet'), isTrue);
       expect(_isEnabled(tester, 'Import Wallet'), isTrue);
+
+      // Top to bottom: the line, the headline, the sentence, the buttons.
+      final tops = [
+        find.text('QUANTUM-SECURE ENCRYPTED MONEY'),
+        find.text('Money quantum\ncomputers can\u2019t break.'),
+        find.text('Create a new wallet, or import one you already have.'),
+        _button('Create New Wallet'),
+      ].map((finder) => tester.getTopLeft(finder).dy).toList();
+      expect(tops, orderedEquals([...tops]..sort()));
+    });
+
+    testOnMac('the logo sits in the top strip, clear of the traffic lights', (tester) async {
+      await pumpShell(tester, overrides: FakeWalletDevice().overrides);
+
+      final logo = tester.getRect(find.image(const AssetImage('assets/quantus_orange_logo.png')));
+      expect(logo.left, greaterThanOrEqualTo(trafficLightsInset));
+      expect(logo.center.dy, moreOrLessEquals(shellHeaderHeight / 2));
+    });
+
+    testOnWindowsAndLinux('the logo starts at the window\'s edge, where there are no traffic lights', (tester) async {
+      await pumpShell(tester, overrides: FakeWalletDevice().overrides);
+
+      expect(
+        tester.getRect(find.image(const AssetImage('assets/quantus_orange_logo.png'))).left,
+        lessThan(trafficLightsInset),
+      );
+    });
+
+    testOnMac('the two buttons sit side by side, the same size, centred as a pair', (tester) async {
+      await pumpShell(tester, overrides: FakeWalletDevice().overrides);
+
+      final create = tester.getRect(_button('Create New Wallet'));
+      final import = tester.getRect(_button('Import Wallet'));
+      expect(create.size, import.size);
+      expect(create.top, import.top);
+      expect(create.right, lessThan(import.left));
+      expect((create.left + import.right) / 2, moreOrLessEquals(600));
+    });
+
+    testOnMac('the buttons keep their size while a wallet is being created', (tester) async {
+      final generated = Completer<String>();
+      final device = FakeWalletDevice()..generateMnemonic = () => generated.future;
+      await pumpShell(tester, overrides: device.overrides);
+      final before = [
+        tester.getRect(find.byType(QuantusButton).first),
+        tester.getRect(find.byType(QuantusButton).last),
+      ];
+
+      await tester.tap(_button('Create New Wallet'));
+      await tester.pump();
+
+      expect([
+        tester.getRect(find.byType(QuantusButton).first),
+        tester.getRect(find.byType(QuantusButton).last),
+      ], before);
+
+      generated.complete(_twelveWords);
+      await tester.pumpAndSettle();
+    });
+
+    test('the Welcome text is translated to Indonesian', () {
+      final l10n = lookupAppLocalizations(const Locale('id'));
+
+      expect(l10n.desktopWelcomeEyebrow, 'Uang Terenkripsi Aman Secara Kuantum');
+      expect(l10n.desktopWelcomeTitleLine1, 'Uang yang tidak bisa');
+      expect(l10n.desktopWelcomeTitleLine2, 'dipecahkan oleh komputer kuantum.');
+      expect(l10n.desktopWelcomeBody, 'Buat dompet baru, atau impor dompet yang sudah Anda miliki.');
     });
 
     testOnMac('while the wallet is created, Create New Wallet is busy and Import Wallet is disabled', (tester) async {

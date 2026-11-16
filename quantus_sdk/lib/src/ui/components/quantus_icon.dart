@@ -18,7 +18,10 @@ enum QuantusIcons {
   gear('assets/icons/gear.svg'),
   plus('assets/icons/plus.svg'),
   swapVertical('assets/icons/swap_vertical.svg'),
-  lock('assets/icons/lock.svg');
+  lock('assets/icons/lock.svg'),
+  actionReceive('assets/icons/action_receive.svg'),
+  actionSend('assets/icons/action_send.svg'),
+  actionSwap('assets/icons/action_swap.svg');
 
   const QuantusIcons(this.assetPath);
 

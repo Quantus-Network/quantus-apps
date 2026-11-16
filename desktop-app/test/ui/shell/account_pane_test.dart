@@ -1,8 +1,14 @@
+import 'dart:async';
+
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:quantus_desktop_wallet/ui/components/balance_card.dart';
+import 'package:quantus_desktop_wallet/ui/components/toolbar_action.dart';
 import 'package:quantus_desktop_wallet/ui/shell/account_pane.dart';
 import 'package:quantus_desktop_wallet/ui/shell/account_toolbar.dart';
+import 'package:quantus_desktop_wallet/ui/shell/desktop_shell.dart';
 import 'package:quantus_desktop_wallet/ui/shell/shell_header.dart';
 import 'package:quantus_desktop_wallet/ui/shell/shell_sheet_view.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
@@ -13,12 +19,14 @@ import '../../fakes.dart';
 Finder _inPane(Finder matching) => find.descendant(of: find.byType(AccountPane), matching: matching);
 
 Finder _toolbarButton(String label) =>
-    find.descendant(of: find.byType(AccountToolbar), matching: find.widgetWithText(QuantusButton, label));
+    find.descendant(of: find.byType(AccountToolbar), matching: find.widgetWithText(ToolbarAction, label));
 
 List<String> _toolbarLabels(WidgetTester tester) => [
   for (final label in ['Receive', 'Send', 'Propose', 'Swap'])
     if (_toolbarButton(label).evaluate().isNotEmpty) label,
 ];
+
+Finder _inBalanceCard(Finder matching) => find.descendant(of: find.byType(BalanceCard), matching: matching);
 
 Finder _sheetTitled(String title) => find.descendant(of: find.byType(ShellSheetView), matching: find.text(title));
 
@@ -51,13 +59,91 @@ void main() {
     final formatted = container.read(numberFormattingServiceProvider).formatBalance(balance);
     expect(find.descendant(of: find.byType(PaneHeader), matching: find.text('Main')), findsOneWidget);
     expect(_inPane(find.text('Main')), findsNothing);
-    expect(_inPane(find.text('$formatted ${AppConstants.tokenSymbol}')), findsOneWidget);
+    expect(_inBalanceCard(find.text(formatted)), findsOneWidget);
+  });
+
+  testOnMac('the balance sits in a card labelled BALANCE: the amount large, the token symbol small after it', (
+    tester,
+  ) async {
+    await _pumpWithActive(tester, const RegularAccount(mainAccount));
+
+    final container = ProviderScope.containerOf(tester.element(find.byType(AccountPane)));
+    final amount = _inBalanceCard(find.text(container.read(numberFormattingServiceProvider).formatBalance(oneToken)));
+    final symbol = _inBalanceCard(find.text(AppConstants.tokenSymbol));
+    expect(_inBalanceCard(find.text('BALANCE')), findsOneWidget);
+    expect(_inBalanceCard(find.bySemanticsLabel('Balance')), findsOneWidget);
+    expect(tester.getTopLeft(_inBalanceCard(find.text('BALANCE'))).dy, lessThan(tester.getTopLeft(amount).dy));
+    expect(tester.getTopLeft(symbol).dx, greaterThan(tester.getTopRight(amount).dx));
+    expect(tester.widget<Text>(amount).style!.fontSize, greaterThan(2 * tester.widget<Text>(symbol).style!.fontSize!));
+    // The card runs the width of the pane, inside its margins.
+    final card = tester.getRect(find.byType(BalanceCard));
+    final pane = tester.getRect(find.byType(AccountPane));
+    expect(card.left - pane.left, 20);
+    expect(pane.right - card.right, 20);
+  });
+
+  testOnMac('while the balance loads the card says so, and it says when the balance is unavailable', (tester) async {
+    final arrives = Completer<BigInt>();
+    await pumpShell(
+      tester,
+      overrides: shellOverrides(
+        accounts: const [mainAccount],
+        settings: FakeSettingsService(activeAccount: const RegularAccount(mainAccount)),
+        balanceOf: (_) => arrives.future,
+      ),
+      settle: false,
+    );
+    await tester.pump();
+
+    expect(_inBalanceCard(find.text('Loading...')), findsOneWidget);
+    expect(_inBalanceCard(find.text(AppConstants.tokenSymbol)), findsNothing);
+
+    arrives.completeError(StateError('offline'));
+    await tester.pumpAndSettle();
+
+    expect(_inBalanceCard(find.text('Balance unavailable')), findsOneWidget);
+    expect(_inBalanceCard(find.text(AppConstants.tokenSymbol)), findsNothing);
+  });
+
+  testOnMac('a hairline runs under the header, across the pane', (tester) async {
+    await _pumpWithActive(tester, const RegularAccount(mainAccount));
+
+    final header = tester.getRect(find.byType(PaneHeader));
+    final pane = tester.getRect(find.byType(AccountPane));
+    final line = tester.getRect(find.byKey(DesktopShell.headerLineKey));
+    expect(line.top, header.bottom);
+    expect(line.bottom, pane.top);
+    expect(line.height, 1);
+    expect(line.left, header.left);
+    expect(line.right, header.right);
   });
 
   testOnMac('a local account\'s toolbar offers Receive, Send and Swap', (tester) async {
     await _pumpWithActive(tester, const RegularAccount(mainAccount));
 
     expect(_toolbarLabels(tester), ['Receive', 'Send', 'Swap']);
+  });
+
+  testOnMac('each toolbar action carries the icon the mobile app gives it', (tester) async {
+    QuantusIcons iconOf(String label) =>
+        tester.widget<QuantusIcon>(find.descendant(of: _toolbarButton(label), matching: find.byType(QuantusIcon))).icon;
+
+    await _pumpWithActive(tester, const RegularAccount(mainAccount));
+
+    expect(iconOf('Receive'), QuantusIcons.actionReceive);
+    expect(iconOf('Send'), QuantusIcons.actionSend);
+    expect(iconOf('Swap'), QuantusIcons.actionSwap);
+  });
+
+  testOnMac('Propose carries the Send icon, as on the mobile app', (tester) async {
+    await _pumpWithActive(tester, MultisigDisplayAccount(teamMultisig));
+
+    expect(
+      tester
+          .widget<QuantusIcon>(find.descendant(of: _toolbarButton('Propose'), matching: find.byType(QuantusIcon)))
+          .icon,
+      QuantusIcons.actionSend,
+    );
   });
 
   testOnMac('where swaps are not offered the toolbar has no Swap', (tester) async {

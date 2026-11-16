@@ -7,18 +7,12 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 /// 20/8 padding. Rows use a 20 gap for two cards and 15 for three. The label
 /// never wraps; it only scales down if it still doesn't fit (large system font).
 class ActionCard extends StatelessWidget {
-  final String iconAsset;
+  final QuantusIcons icon;
   final String label;
   final VoidCallback onTap;
   final bool isDisabled;
 
-  const ActionCard({
-    super.key,
-    required this.iconAsset,
-    required this.label,
-    required this.onTap,
-    this.isDisabled = false,
-  });
+  const ActionCard({super.key, required this.icon, required this.label, required this.onTap, this.isDisabled = false});
 
   @override
   Widget build(BuildContext context) {
@@ -54,7 +48,8 @@ class ActionCard extends StatelessWidget {
         spacing: 8,
         children: [
           SvgPicture.asset(
-            iconAsset,
+            icon.assetPath,
+            package: 'quantus_sdk',
             width: 24,
             height: 24,
             colorFilter: ColorFilter.mode(colors.accentFlare, BlendMode.srcIn),

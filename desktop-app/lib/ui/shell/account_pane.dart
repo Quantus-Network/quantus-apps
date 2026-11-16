@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:quantus_desktop_wallet/ui/components/account_balance_text.dart';
+import 'package:quantus_desktop_wallet/ui/components/balance_card.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/providers/account_providers.dart';
 import 'package:wallet_core/providers/l10n_provider.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
 
-/// The active account's balance; its name and actions are in the header
-/// above. On the encrypted account a notice says so, so it is never mistaken
+/// The active account's balance in its card; its name and actions are in the
+/// header above. On the encrypted account a notice says so, so it is never mistaken
 /// for a transparent one.
 class AccountPane extends ConsumerWidget {
   const AccountPane({super.key});
@@ -37,14 +37,11 @@ class AccountPane extends ConsumerWidget {
     final account = active.account;
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+      padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          AccountBalanceText(
-            account: account,
-            style: context.themeTextV3.amountHero.copyWith(color: context.colorsV3.textContent),
-          ),
+          BalanceCard(account: account),
           if (isEncryptedAccount(account)) ...[
             const SizedBox(height: 24),
             PrivateActivityNotice(

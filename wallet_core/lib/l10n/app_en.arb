@@ -3591,5 +3591,98 @@
     "desktopMenuWindow": "Window",
     "@desktopMenuWindow": {
       "description": "Desktop menu bar: Window menu title"
+    },
+    "desktopBootProtocol": "> QUANTUS PROTOCOL v1.0.0-gm",
+    "@desktopBootProtocol": {
+      "description": "Desktop boot intro, a terminal-style line: the protocol's name and version"
+    },
+    "desktopBootNistModule": "> NIST FIPS 204 MODULE LOADED {status}",
+    "@desktopBootNistModule": {
+      "description": "Desktop boot intro line; {status} is desktopBootStatusOk",
+      "placeholders": {
+        "status": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopBootInitializing": "> INITIALIZING {scheme}...",
+    "@desktopBootInitializing": {
+      "description": "Desktop boot intro line; {scheme} is the signature scheme's name, not translated",
+      "placeholders": {
+        "scheme": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopBootSignatureScheme": "> POST-QUANTUM SIGNATURE SCHEME {status}",
+    "@desktopBootSignatureScheme": {
+      "description": "Desktop boot intro line; {status} is desktopBootStatusActive",
+      "placeholders": {
+        "status": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopBootZkEngine": "> RECURSIVE ZK PROOF ENGINE {status}",
+    "@desktopBootZkEngine": {
+      "description": "Desktop boot intro line; {status} is desktopBootStatusReady",
+      "placeholders": {
+        "status": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopBootChladni": "> CHLADNI FIELD VISUALIZER {status}",
+    "@desktopBootChladni": {
+      "description": "Desktop boot intro line; {status} is desktopBootStatusLoading",
+      "placeholders": {
+        "status": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopBootStatusOk": "[OK]",
+    "@desktopBootStatusOk": {
+      "description": "Desktop boot intro: status shown in green at the end of a line"
+    },
+    "desktopBootStatusActive": "ACTIVE",
+    "@desktopBootStatusActive": {
+      "description": "Desktop boot intro: status shown in green at the end of a line"
+    },
+    "desktopBootStatusReady": "READY",
+    "@desktopBootStatusReady": {
+      "description": "Desktop boot intro: status shown in green at the end of a line"
+    },
+    "desktopBootStatusLoading": "LOADING",
+    "@desktopBootStatusLoading": {
+      "description": "Desktop boot intro: status shown in orange at the end of a line"
+    },
+    "desktopWaveModeLabel": "WAVE MODE (m,n)",
+    "@desktopWaveModeLabel": {
+      "description": "Desktop Welcome: label above the wave mode of the animated background, e.g. 2,3"
+    },
+    "desktopWaveModeHint": "MOVE CURSOR TO SHIFT FREQUENCY",
+    "@desktopWaveModeHint": {
+      "description": "Desktop Welcome: hint under the wave mode that moving the mouse changes the background's pattern"
+    },
+    "desktopWelcomeEyebrow": "Quantum-Secure Encrypted Money",
+    "@desktopWelcomeEyebrow": {
+      "description": "Desktop Welcome: short line above the headline, shown in capitals"
+    },
+    "desktopWelcomeTitleLine1": "Money quantum",
+    "@desktopWelcomeTitleLine1": {
+      "description": "Desktop Welcome: first line of the headline, continued by desktopWelcomeTitleLine2"
+    },
+    "desktopWelcomeTitleLine2": "computers can’t break.",
+    "@desktopWelcomeTitleLine2": {
+      "description": "Desktop Welcome: second line of the headline"
+    },
+    "desktopWelcomeBody": "Create a new wallet, or import one you already have.",
+    "@desktopWelcomeBody": {
+      "description": "Desktop Welcome: sentence under the headline, above the two buttons"
+    },
+    "desktopBalanceLabel": "Balance",
+    "@desktopBalanceLabel": {
+      "description": "Desktop account panel: label over the account's balance, shown in capitals"
     }
 }

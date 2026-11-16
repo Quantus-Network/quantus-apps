@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_desktop_wallet/services/app_exit.dart';
 import 'package:quantus_desktop_wallet/ui/onboarding/welcome_page.dart';
+import 'package:quantus_desktop_wallet/ui/components/toolbar_action.dart';
 import 'package:quantus_desktop_wallet/ui/shell/account_toolbar.dart';
 import 'package:quantus_desktop_wallet/ui/shell/shell_sheet_view.dart';
 import 'package:quantus_desktop_wallet/ui/shell/sidebar.dart';
@@ -46,7 +47,7 @@ Matcher _isShortcut(LogicalKeyboardKey key, {bool meta = false, bool control = f
 Finder _sheetTitled(String title) => find.descendant(of: find.byType(ShellSheetView), matching: find.text(title));
 
 Finder _toolbarButton(String label) =>
-    find.descendant(of: find.byType(AccountToolbar), matching: find.widgetWithText(QuantusButton, label));
+    find.descendant(of: find.byType(AccountToolbar), matching: find.widgetWithText(ToolbarAction, label));
 
 List<Override> _withActive(DisplayAccount active) => shellOverrides(
   accounts: const [mainAccount, vaultAccount],
@@ -128,10 +129,10 @@ void main() {
 
         for (final (label, enabled) in expected.where((entry) => entry.$1 != 'Add Account…')) {
           expect(_toolbarButton(label), findsOneWidget, reason: label);
-          expect(tester.widget<QuantusButton>(_toolbarButton(label)).isDisabled, !enabled, reason: label);
+          expect(tester.widget<ToolbarAction>(_toolbarButton(label)).onPressed != null, enabled, reason: label);
         }
         expect(
-          find.descendant(of: find.byType(AccountToolbar), matching: find.byType(QuantusButton)),
+          find.descendant(of: find.byType(AccountToolbar), matching: find.byType(ToolbarAction)),
           findsNWidgets(expected.length - 1),
         );
       });
