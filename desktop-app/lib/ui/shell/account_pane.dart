@@ -12,6 +12,9 @@ import 'package:wallet_core/providers/wallet_providers.dart';
 class AccountPane extends ConsumerWidget {
   const AccountPane({super.key});
 
+  /// The margin around the pane's content, which the header above it keeps.
+  static const double padding = 20;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = ref.watch(l10nProvider);
@@ -37,7 +40,7 @@ class AccountPane extends ConsumerWidget {
     final account = active.account;
 
     return Padding(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(padding),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

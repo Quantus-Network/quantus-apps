@@ -4717,6 +4717,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Copied'**
   String get desktopCopied;
+
+  /// Desktop Settings: under Recovery Phrase and Reset Wallet on Linux, where the app cannot ask for approval yet
+  ///
+  /// In en, this message translates to:
+  /// **'Not available on Linux yet: it will ask for your login password.'**
+  String get desktopApprovalUnavailableLinux;
+
+  /// Desktop Settings: under Recovery Phrase and Reset Wallet on a Mac with no login password to approve with
+  ///
+  /// In en, this message translates to:
+  /// **'Set up a login password for this Mac to use this.'**
+  String get desktopApprovalNeedsMacPassword;
+
+  /// Desktop Settings: under Recovery Phrase and Reset Wallet on a Windows PC without Windows Hello
+  ///
+  /// In en, this message translates to:
+  /// **'Set up Windows Hello to use this.'**
+  String get desktopApprovalNeedsWindowsHello;
+
+  /// Desktop Settings: the system's approval prompt itself failed
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn’t ask for approval: {error}'**
+  String desktopApprovalFailed(String error);
+
+  /// Desktop Settings: small capitals over the caution shown before the recovery phrase
+  ///
+  /// In en, this message translates to:
+  /// **'Before you look'**
+  String get desktopRecoveryPhraseEyebrow;
+
+  /// Desktop Settings: small capitals over the caution shown before resetting the wallet
+  ///
+  /// In en, this message translates to:
+  /// **'Cannot be undone'**
+  String get desktopResetEyebrow;
+
+  /// Desktop Settings: masks the recovery phrase's words
+  ///
+  /// In en, this message translates to:
+  /// **'Hide'**
+  String get desktopRecoveryPhraseHide;
+
+  /// Desktop Settings: unmasks the recovery phrase's words
+  ///
+  /// In en, this message translates to:
+  /// **'Show'**
+  String get desktopRecoveryPhraseShow;
+
+  /// Desktop Settings: the stored recovery phrase is missing
+  ///
+  /// In en, this message translates to:
+  /// **'This wallet’s recovery phrase could not be read.'**
+  String get desktopRecoveryPhraseUnreadable;
+
+  /// Desktop Settings: copying the recovery phrase, kept out of clipboard history, failed
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn’t copy the recovery phrase.'**
+  String get desktopRecoveryPhraseCopyFailed;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

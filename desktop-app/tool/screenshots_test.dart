@@ -9,8 +9,15 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
+import 'package:flutter_riverpod/flutter_riverpod.dart' show ProviderScope;
 import 'package:quantus_desktop_wallet/bootstrap/app_bootstrap.dart';
+import 'package:quantus_desktop_wallet/models/shell_sheet.dart';
+import 'package:quantus_desktop_wallet/providers/shell_providers.dart';
+import 'package:quantus_desktop_wallet/services/sensitive_clipboard.dart';
+import 'package:quantus_desktop_wallet/services/user_approval.dart';
 import 'package:quantus_desktop_wallet/ui/components/toolbar_action.dart';
+import 'package:quantus_desktop_wallet/ui/settings/settings_sheet.dart';
+import 'package:quantus_desktop_wallet/ui/shell/desktop_shell.dart';
 import 'package:quantus_desktop_wallet/ui/shell/sidebar.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
@@ -140,6 +147,73 @@ void main() {
   _scene('receive_encrypted', (tester) async {
     await _openReceive(tester, 'Encrypted Account');
   });
+
+  _scene('settings', (tester) async {
+    await _openSettings(tester);
+  });
+
+  _scene('settings_linux', (tester) async {
+    await _openSettings(tester, availability: ApprovalAvailability.unsupported);
+  });
+
+  _scene('settings_language_open', (tester) async {
+    await _openSettings(tester);
+    await _tapAndSettle(tester, find.text('English'));
+  });
+
+  _scene('settings_phrase_caution', (tester) async {
+    await _openSettings(tester);
+    await _tapAndSettle(tester, find.byKey(SettingsSheet.recoveryPhraseRowKey));
+  });
+
+  _scene('settings_phrase_hidden', (tester) async {
+    await _openSettings(tester);
+    await _tapAndSettle(tester, find.byKey(SettingsSheet.recoveryPhraseRowKey));
+    await _tapAndSettle(tester, find.byKey(SettingsSheet.continueKey));
+  });
+
+  _scene('settings_phrase_words', (tester) async {
+    await _openSettings(tester);
+    await _tapAndSettle(tester, find.byKey(SettingsSheet.recoveryPhraseRowKey));
+    await _tapAndSettle(tester, find.byKey(SettingsSheet.continueKey));
+    await _tapAndSettle(tester, find.byKey(SettingsSheet.hideKey));
+  });
+
+  _scene('settings_reset', (tester) async {
+    await _openSettings(tester);
+    await _tapAndSettle(tester, find.byKey(SettingsSheet.resetRowKey));
+    await _tapAndSettle(tester, find.text("I've backed up my recovery phrase"));
+  });
+}
+
+const _phrase =
+    'lantern copper meadow quartz harbor velvet signal mirror canyon ember orchid falcon '
+    'granite willow summit beacon thistle marble cedar ripple anchor saffron tundra violet';
+
+Future<void> _tapAndSettle(WidgetTester tester, Finder finder) async {
+  await tester.tap(finder);
+  await tester.pumpAndSettle();
+}
+
+/// Opens the wallet, then Settings, which the app menu opens.
+Future<void> _openSettings(
+  WidgetTester tester, {
+  ApprovalAvailability availability = ApprovalAvailability.available,
+}) async {
+  await _open(
+    tester,
+    FakeWalletDevice()..store([_root, _second, _encrypted], mnemonic: _phrase),
+    reduceMotion: true,
+    overrides: [
+      userApprovalProvider.overrideWithValue(FakeUserApproval()..availabilityAnswer = availability),
+      sensitiveClipboardProvider.overrideWithValue(FakeSensitiveClipboard()),
+    ],
+  );
+  await tester.pumpAndSettle();
+  ProviderScope.containerOf(
+    tester.element(find.byType(DesktopShell)),
+  ).read(shellSheetProvider.notifier).open(ShellSheet.settings);
+  await tester.pumpAndSettle();
 }
 
 /// Opens the wallet, selects the account named [name] and opens its Receive.

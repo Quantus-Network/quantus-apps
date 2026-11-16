@@ -8,18 +8,27 @@ import 'package:quantus_desktop_wallet/ui/components/window_drag_area.dart';
 /// Children that are not controls must ignore the pointer, so a press on them
 /// falls through to the drag area behind.
 class WindowHeaderRow extends StatelessWidget {
-  const WindowHeaderRow({super.key, required this.leadsTheWindow, required this.children});
+  const WindowHeaderRow({
+    super.key,
+    required this.leadsTheWindow,
+    required this.children,
+    this.edgePadding = defaultEdgePadding,
+  });
 
   /// Whether this row starts at the window's left edge, where the traffic
   /// lights are on macOS.
   final bool leadsTheWindow;
   final List<Widget> children;
 
-  static const double _edgePadding = 16;
+  /// The space between the row's ends and its children. A row over a pane
+  /// passes the pane's own margin, so the two line up.
+  final double edgePadding;
+
+  static const double defaultEdgePadding = 16;
 
   @override
   Widget build(BuildContext context) {
-    final start = leadsTheWindow && drawsOverTitleBar ? trafficLightsInset : _edgePadding;
+    final start = leadsTheWindow && drawsOverTitleBar ? trafficLightsInset : edgePadding;
 
     return SizedBox(
       height: shellHeaderHeight,
@@ -29,7 +38,7 @@ class WindowHeaderRow extends StatelessWidget {
           // Filling the row's height is what centres the children in it.
           Positioned.fill(
             child: Padding(
-              padding: EdgeInsets.only(left: start, right: _edgePadding),
+              padding: EdgeInsets.only(left: start, right: edgePadding),
               child: Row(spacing: 12, children: children),
             ),
           ),

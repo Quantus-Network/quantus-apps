@@ -32,6 +32,9 @@ class ToolbarAction extends StatefulWidget {
 
   static const double height = 28;
 
+  /// The room on each side of the icon and label, which the backing fills.
+  static const double inset = 10;
+
   @override
   State<ToolbarAction> createState() => _ToolbarActionState();
 }
@@ -102,7 +105,7 @@ class _ToolbarActionState extends State<ToolbarAction> {
                 child: SizedBox(
                   height: ToolbarAction.height,
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    padding: const EdgeInsets.symmetric(horizontal: ToolbarAction.inset),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       spacing: 7,
@@ -127,6 +130,29 @@ class _ToolbarActionState extends State<ToolbarAction> {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// The edge a [ToolbarActionRow] keeps to.
+enum ToolbarActionEdge { leading, trailing }
+
+/// Toolbar actions in a row held against an [edge] of the content: the outer
+/// action's icon (leading) or label (trailing) lies on the edge, as text
+/// would. Its backing reaches past the edge into the margin; clicks there
+/// miss, since the content's bounds end at the edge.
+class ToolbarActionRow extends StatelessWidget {
+  const ToolbarActionRow({super.key, required this.edge, required this.children, this.spacing = 4});
+
+  final ToolbarActionEdge edge;
+  final List<Widget> children;
+  final double spacing;
+
+  @override
+  Widget build(BuildContext context) {
+    return Transform.translate(
+      offset: Offset(edge == ToolbarActionEdge.trailing ? ToolbarAction.inset : -ToolbarAction.inset, 0),
+      child: Row(mainAxisSize: MainAxisSize.min, spacing: spacing, children: children),
     );
   }
 }

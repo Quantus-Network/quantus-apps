@@ -60,6 +60,7 @@ dependency_overrides:
 #   collection           ^1.19.1
 #   telemetrydecksdk     ^4.0.0
 #   share_plus           ^13.1.0
+#   local_auth           ^3.0.1
 #   flutter_lints        ^6.0.0
 
 scripts:

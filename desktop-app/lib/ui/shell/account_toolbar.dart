@@ -25,9 +25,8 @@ class AccountToolbar extends ConsumerWidget {
     final l10n = ref.watch(l10nProvider);
     final actions = ref.watch(activeAccountActionsProvider);
 
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      spacing: 4,
+    return ToolbarActionRow(
+      edge: ToolbarActionEdge.trailing,
       children: [
         for (final action in actions)
           ToolbarAction(
