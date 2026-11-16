@@ -71,15 +71,16 @@ void main() {
     expect(ActiveSwap.fromJson(jsonDecode(jsonEncode(done.toJson()))).settledAt, done.settledAt);
   });
 
-  test('a swap is overdue once its deposit is unseen at the deadline, or unsettled an hour past it', () {
-    final past = deadline.add(const Duration(seconds: 1));
-    final late = deadline.add(ActiveSwap.finishGrace).add(const Duration(seconds: 1));
-    expect(swap(SwapStatus.pendingDeposit).overdue(past), isTrue);
-    expect(swap(SwapStatus.pendingDeposit).overdue(deadline.subtract(const Duration(seconds: 1))), isFalse);
-    expect(swap(SwapStatus.knownDepositTx).overdue(past), isFalse);
-    expect(swap(SwapStatus.processing).overdue(late), isTrue);
+  test('a swap is overdue once it is unsettled ten minutes past its deadline, whatever its status', () {
+    final graceEnds = deadline.add(ActiveSwap.finishGrace);
+    final late = graceEnds.add(const Duration(seconds: 1));
+    expect(ActiveSwap.finishGrace, const Duration(minutes: 10));
+    for (final status in [SwapStatus.pendingDeposit, SwapStatus.knownDepositTx, SwapStatus.processing]) {
+      expect(swap(status).overdue(graceEnds), isFalse, reason: '$status');
+      expect(swap(status).overdue(late), isTrue, reason: '$status');
+    }
     expect(swap(SwapStatus.success).overdue(late), isFalse);
-    expect(swap(SwapStatus.processing).inProgressAt(past), isTrue);
+    expect(swap(SwapStatus.processing).inProgressAt(graceEnds), isTrue);
     expect(swap(SwapStatus.processing).inProgressAt(late), isFalse);
   });
 
