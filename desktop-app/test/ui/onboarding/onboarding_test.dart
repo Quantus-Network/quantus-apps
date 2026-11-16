@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_desktop_wallet/services/window_chrome.dart';
+import 'package:quantus_desktop_wallet/ui/components/caps_text.dart';
+import 'package:quantus_desktop_wallet/ui/components/toolbar_action.dart';
 import 'package:quantus_desktop_wallet/ui/components/window_drag_area.dart';
 import 'package:quantus_desktop_wallet/ui/onboarding/import_wallet_page.dart';
 import 'package:quantus_desktop_wallet/ui/onboarding/wallet_created_page.dart';
@@ -54,6 +56,41 @@ Future<void> _openImport(WidgetTester tester) async {
 Future<void> _typePhrase(WidgetTester tester, String phrase) async {
   await tester.enterText(find.byType(EditableText), phrase);
   await tester.pump();
+}
+
+const _colors = AppColorsV3.dark();
+
+/// What the phrase field holds.
+String _phrase(WidgetTester tester) => tester.widget<EditableText>(find.byType(EditableText)).controller.text;
+
+/// The colour the word count is drawn in.
+Color? _countColor(WidgetTester tester) => tester
+    .widget<Text>(find.descendant(of: find.byKey(ImportWalletPage.wordCountKey), matching: find.byType(Text)))
+    .style
+    ?.color;
+
+/// Makes the system clipboard hold [text], or no text when it is null.
+void _clipboardHolds(WidgetTester tester, String? text) {
+  final messenger = tester.binding.defaultBinaryMessenger;
+  messenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
+    if (call.method == 'Clipboard.getData') return text == null ? null : {'text': text};
+    return null;
+  });
+  addTearDown(() => messenger.setMockMethodCallHandler(SystemChannels.platform, null));
+}
+
+/// How visible the Wallet Created page's terminal line [index] is.
+double _lineOpacity(WidgetTester tester, int index) =>
+    tester.widget<Opacity>(find.byKey(WalletCreatedPage.lineKey(index))).opacity;
+
+/// Creates a wallet from Welcome and pumps until Wallet Created is up,
+/// without waiting for anything to settle.
+Future<void> _createWallet(WidgetTester tester) async {
+  await tester.tap(_button('Create New Wallet'));
+  for (var i = 0; i < 10 && find.byType(WalletCreatedPage).evaluate().isEmpty; i++) {
+    await tester.pump();
+  }
+  expect(find.byType(WalletCreatedPage), findsOneWidget);
 }
 
 void main() {
@@ -253,10 +290,9 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(device.storage.mnemonics, {0: 'created wallet recovery phrase'});
-      expect(find.text('Wallet Created'), findsOneWidget);
-      expect(find.text('Two accounts were created for you.'), findsOneWidget);
-      expect(find.widgetWithText(InfoCard, 'Account 1'), findsOneWidget);
-      expect(find.widgetWithText(InfoCard, 'Encrypted Account'), findsOneWidget);
+      expect(find.bySemanticsLabel('Wallet Created [OK]'), findsOneWidget);
+      expect(find.bySemanticsLabel('Account 1 [OK]'), findsOneWidget);
+      expect(find.bySemanticsLabel('Encrypted Account [OK]'), findsOneWidget);
       expect(find.byType(Sidebar), findsNothing);
 
       await tester.tap(_button('Go to Wallet'));
@@ -290,6 +326,85 @@ void main() {
   });
 
   group('Import Wallet', () {
+    testOnMac('the words are on the left, drawn as the design has them, and the field on the right', (tester) async {
+      await pumpShell(tester, overrides: FakeWalletDevice().overrides);
+      await _openImport(tester);
+
+      expect(tester.widget<CapsText>(find.byType(CapsText).first).text, 'Import Wallet');
+      expect(find.text('IMPORT WALLET'), findsOneWidget);
+      expect(find.text('Restore your wallet.'), findsOneWidget);
+      expect(find.text('12 OR 24 WORDS'), findsOneWidget);
+      expect(find.text('SEPARATED BY SPACES'), findsOneWidget);
+      expect(find.text('PASTE THE WHOLE PHRASE AT ONCE'), findsOneWidget);
+      expect(find.text('RECOVERY PHRASE'), findsOneWidget);
+
+      final field = tester.getRect(find.byType(QuantusSeedPhraseField));
+      expect(tester.getRect(find.text('Restore your wallet.')).right, lessThan(field.left));
+      expect(tester.getRect(find.text('PASTE THE WHOLE PHRASE AT ONCE')).right, lessThan(field.left));
+      expect(tester.getRect(_button('Import Wallet')).right, moreOrLessEquals(field.right));
+    });
+
+    testOnMac('the word count follows what is typed', (tester) async {
+      await pumpShell(tester, overrides: FakeWalletDevice().overrides);
+      await _openImport(tester);
+
+      expect(find.text('0 WORDS'), findsOneWidget);
+
+      await _typePhrase(tester, 'abandon');
+      expect(find.text('1 WORD'), findsOneWidget);
+
+      await _typePhrase(tester, '  abandon   ability ');
+      expect(find.text('2 WORDS'), findsOneWidget);
+
+      await _typePhrase(tester, _twelveWords);
+      expect(find.text('12 WORDS'), findsOneWidget);
+    });
+
+    testOnMac('the count turns sage at 12 and at 24 words, and is muted otherwise', (tester) async {
+      await pumpShell(tester, overrides: FakeWalletDevice().overrides);
+      await _openImport(tester);
+      final eleven = _twelveWords.substring(0, _twelveWords.lastIndexOf(' '));
+
+      await _typePhrase(tester, eleven);
+      expect(_countColor(tester), _colors.textMuted2);
+
+      await _typePhrase(tester, _twelveWords);
+      expect(_countColor(tester), _colors.semanticSage);
+
+      await _typePhrase(tester, '$_twelveWords abandon');
+      expect(_countColor(tester), _colors.textMuted2);
+
+      await _typePhrase(tester, '$_twelveWords $_twelveWords');
+      expect(_countColor(tester), _colors.semanticSage);
+    });
+
+    testOnMac("Paste puts the clipboard's text in the field, in place of what was there", (tester) async {
+      await pumpShell(tester, overrides: FakeWalletDevice().overrides);
+      await _openImport(tester);
+      await _typePhrase(tester, 'abandon');
+      _clipboardHolds(tester, _twelveWords);
+
+      await tester.tap(find.widgetWithText(ToolbarAction, 'Paste'));
+      await tester.pump();
+
+      expect(_phrase(tester), _twelveWords);
+      expect(find.text('12 WORDS'), findsOneWidget);
+      expect(_isEnabled(tester, 'Import Wallet'), isTrue);
+    });
+
+    testOnMac('Paste with no text on the clipboard leaves the field as it is', (tester) async {
+      await pumpShell(tester, overrides: FakeWalletDevice().overrides);
+      await _openImport(tester);
+      await _typePhrase(tester, 'abandon');
+      _clipboardHolds(tester, null);
+
+      await tester.tap(find.widgetWithText(ToolbarAction, 'Paste'));
+      await tester.pump();
+
+      expect(_phrase(tester), 'abandon');
+      expect(find.text('1 WORD'), findsOneWidget);
+    });
+
     testOnMac('opens from Welcome, with Import disabled until a phrase is typed', (tester) async {
       await pumpShell(tester, overrides: FakeWalletDevice().overrides);
 
@@ -298,11 +413,11 @@ void main() {
       expect(find.byType(ImportWalletPage), findsOneWidget);
       expect(find.byType(WelcomePage), findsNothing);
       expect(find.text('Restore an existing wallet with your 12 or 24 words recovery phrase'), findsOneWidget);
-      expect(_isEnabled(tester, 'Import'), isFalse);
+      expect(_isEnabled(tester, 'Import Wallet'), isFalse);
 
       await _typePhrase(tester, 'abandon');
 
-      expect(_isEnabled(tester, 'Import'), isTrue);
+      expect(_isEnabled(tester, 'Import Wallet'), isTrue);
     });
 
     testOnMac('Back returns to Welcome', (tester) async {
@@ -332,7 +447,7 @@ void main() {
       await _openImport(tester);
 
       await _typePhrase(tester, 'abandon abandon about');
-      await tester.tap(_button('Import'));
+      await tester.tap(_button('Import Wallet'));
       await tester.pumpAndSettle();
 
       expect(find.text('Recovery phrase must be 12 or 24 words'), findsOneWidget);
@@ -347,11 +462,11 @@ void main() {
       await _openImport(tester);
 
       await _typePhrase(tester, _twelveWords);
-      await tester.tap(_button('Import'));
+      await tester.tap(_button('Import Wallet'));
       await tester.pump();
 
       expect(_busyButton, findsOneWidget);
-      expect(find.text('Import'), findsNothing);
+      expect(find.text('Import Wallet'), findsNothing);
       expect(find.byType(Sidebar), findsNothing);
 
       scanned.complete([]);
@@ -372,7 +487,7 @@ void main() {
       await _openImport(tester);
 
       await _typePhrase(tester, _twelveWords);
-      await tester.tap(_button('Import'));
+      await tester.tap(_button('Import Wallet'));
       await tester.pumpAndSettle();
 
       expect(_inSidebar('Account 1'), findsOneWidget);
@@ -392,7 +507,7 @@ void main() {
       await _openImport(tester);
 
       await _typePhrase(tester, _twelveWords);
-      await tester.tap(_button('Import'));
+      await tester.tap(_button('Import Wallet'));
       await _pumpWhileBusy(tester);
 
       expect(find.text('Account scan failed'), findsOneWidget);
@@ -415,7 +530,7 @@ void main() {
       await _openImport(tester);
 
       await _typePhrase(tester, _twelveWords);
-      await tester.tap(_button('Import'));
+      await tester.tap(_button('Import Wallet'));
       await _pumpWhileBusy(tester);
       await tester.tap(_button('Skip'));
       await tester.pumpAndSettle();
@@ -431,12 +546,87 @@ void main() {
       await _openImport(tester);
 
       await _typePhrase(tester, _twelveWords);
-      await tester.tap(_button('Import'));
+      await tester.tap(_button('Import Wallet'));
       await tester.pumpAndSettle();
 
       expect(find.text('Bad state: keychain is locked'), findsOneWidget);
       expect(find.byType(ImportWalletPage), findsOneWidget);
       expect(_busyButton, findsNothing);
+    });
+  });
+
+  group('Wallet Created', () {
+    testOnMac('names each account in a line, and says what each kind of account is for', (tester) async {
+      await pumpShell(tester, overrides: FakeWalletDevice().overrides);
+      await _createWallet(tester);
+
+      expect(find.textContaining('> WALLET CREATED'), findsOneWidget);
+      expect(find.textContaining('> ACCOUNT 1'), findsOneWidget);
+      expect(find.textContaining('> ENCRYPTED ACCOUNT'), findsOneWidget);
+      expect(find.text('[OK]'), findsNWidgets(3));
+      expect(find.text('Your wallet is ready.'), findsOneWidget);
+      expect(
+        find.text(
+          'Account 1 is transparent: fast, and visible on chain. '
+          'The Encrypted Account is for private transactions, and slower.',
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testOnMac('the logo sits in the top strip, clear of the traffic lights', (tester) async {
+      await pumpShell(tester, overrides: FakeWalletDevice().overrides);
+      await _createWallet(tester);
+
+      final logo = tester.getRect(find.image(const AssetImage('assets/quantus_orange_logo.png')));
+      expect(logo.left, greaterThanOrEqualTo(trafficLightsInset));
+      expect(logo.center.dy, moreOrLessEquals(shellHeaderHeight / 2));
+    });
+
+    testOnMac('the lines appear one by one, all of them within 400 ms', (tester) async {
+      await pumpShell(tester, overrides: FakeWalletDevice().overrides, settle: false, reduceMotion: false);
+      await _createWallet(tester);
+
+      expect([for (var i = 0; i < 3; i++) _lineOpacity(tester, i)], [1, 0, 0]);
+
+      await tester.pump(const Duration(milliseconds: 130));
+      expect([for (var i = 0; i < 3; i++) _lineOpacity(tester, i)], [1, 1, 0]);
+
+      await tester.pump(const Duration(milliseconds: 270));
+      expect([for (var i = 0; i < 3; i++) _lineOpacity(tester, i)], [1, 1, 1]);
+    });
+
+    testOnMac('Go to Wallet works before the lines have appeared', (tester) async {
+      await pumpShell(tester, overrides: FakeWalletDevice().overrides, settle: false, reduceMotion: false);
+      await _createWallet(tester);
+      expect(_lineOpacity(tester, 2), 0);
+
+      await tester.tap(_button('Go to Wallet'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(WalletCreatedPage), findsNothing);
+      expect(_inPaneHeader('Account 1'), findsOneWidget);
+    });
+
+    testOnMac('with reduced motion every line is there at once', (tester) async {
+      await pumpShell(tester, overrides: FakeWalletDevice().overrides);
+      await _createWallet(tester);
+
+      expect([for (var i = 0; i < 3; i++) _lineOpacity(tester, i)], [1, 1, 1]);
+    });
+
+    test('the Import Wallet and Wallet Created text is translated to Indonesian', () {
+      final l10n = lookupAppLocalizations(const Locale('id'));
+
+      expect(l10n.desktopImportHeadline, 'Pulihkan dompet Anda.');
+      expect(l10n.desktopImportPaste, 'Tempel');
+      expect(l10n.desktopImportWordCount(12), '12 kata');
+      expect(l10n.desktopWalletReadyHeadline, 'Dompet Anda siap.');
+      expect(
+        l10n.desktopWalletReadyBody('Akun 1', 'Akun Terenkripsi'),
+        'Akun 1 bersifat transparan: cepat, dan terlihat di chain. Akun Terenkripsi untuk transaksi privat, '
+        'dan lebih lambat.',
+      );
     });
   });
 

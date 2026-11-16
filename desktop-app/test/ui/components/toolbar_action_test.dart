@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' show SemanticsAction, SemanticsActionEvent;
@@ -8,14 +9,24 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 
 const _colors = AppColorsV3.dark();
 
-Future<void> _pump(WidgetTester tester, {required VoidCallback? onPressed}) async {
+/// The two kinds of action: one with an app icon, one with a system symbol.
+enum _Kind { icon, symbol }
+
+Future<void> _pump(WidgetTester tester, {required VoidCallback? onPressed, _Kind kind = _Kind.icon}) async {
   await tester.pumpWidget(
     Builder(
       builder: (context) => MaterialApp(
         theme: AppTheme.darkTheme(context, text: const AppTextThemeV3.desktop()),
         home: Scaffold(
           body: Center(
-            child: ToolbarAction(icon: QuantusIcons.actionSend, label: 'Send', onPressed: onPressed),
+            child: switch (kind) {
+              _Kind.icon => ToolbarAction(icon: QuantusIcons.actionSend, label: 'Send', onPressed: onPressed),
+              _Kind.symbol => ToolbarAction.symbol(
+                symbol: CupertinoIcons.doc_on_clipboard,
+                label: 'Send',
+                onPressed: onPressed,
+              ),
+            },
           ),
         ),
       ),
@@ -63,39 +74,58 @@ void main() {
     expect(_hasFocusRing(tester), isFalse);
   });
 
-  _testOnDesktop('a backing appears under the cursor, grows stronger while pressed, and goes when the cursor leaves', (
-    tester,
-  ) async {
-    var presses = 0;
-    await _pump(tester, onPressed: () => presses++);
-    final mouse = await _mouse(tester);
+  _testOnDesktop('a symbol action draws its symbol in the accent colour, at the icon size', (tester) async {
+    await _pump(tester, onPressed: () {}, kind: _Kind.symbol);
 
-    await mouse.moveTo(tester.getCenter(find.byType(ToolbarAction)));
-    await tester.pump();
-    final hovered = _backing(tester);
-
-    expect(hovered, greaterThan(0));
-
-    await mouse.down(tester.getCenter(find.byType(ToolbarAction)));
-    await tester.pump();
-
-    expect(_backing(tester), greaterThan(hovered));
-    expect(presses, 0);
-
-    await mouse.up();
-    await tester.pump();
-
-    expect(presses, 1);
-    expect(_backing(tester), hovered);
-
-    await mouse.moveTo(Offset.zero);
-    await tester.pump();
-
+    expect(find.text('Send'), findsOneWidget);
+    expect(find.byType(QuantusIcon), findsNothing);
+    final icon = tester.widget<Icon>(find.byIcon(CupertinoIcons.doc_on_clipboard));
+    expect(icon.color, _colors.accentFlare);
+    expect(icon.size, 16);
     expect(_backing(tester), 0);
   });
 
-  _testOnDesktop('the cursor stays an arrow over it, as over any macOS button', (tester) async {
-    await _pump(tester, onPressed: () {});
+  for (final kind in _Kind.values) {
+    _behaviour(kind);
+  }
+}
+
+/// How an action of [kind] answers the mouse and the keyboard.
+void _behaviour(_Kind kind) {
+  _testOnDesktop(
+    '${kind.name}: a backing appears under the cursor, grows stronger while pressed, and goes when the cursor leaves',
+    (tester) async {
+      var presses = 0;
+      await _pump(tester, onPressed: () => presses++, kind: kind);
+      final mouse = await _mouse(tester);
+
+      await mouse.moveTo(tester.getCenter(find.byType(ToolbarAction)));
+      await tester.pump();
+      final hovered = _backing(tester);
+
+      expect(hovered, greaterThan(0));
+
+      await mouse.down(tester.getCenter(find.byType(ToolbarAction)));
+      await tester.pump();
+
+      expect(_backing(tester), greaterThan(hovered));
+      expect(presses, 0);
+
+      await mouse.up();
+      await tester.pump();
+
+      expect(presses, 1);
+      expect(_backing(tester), hovered);
+
+      await mouse.moveTo(Offset.zero);
+      await tester.pump();
+
+      expect(_backing(tester), 0);
+    },
+  );
+
+  _testOnDesktop('${kind.name}: the cursor stays an arrow over it, as over any macOS button', (tester) async {
+    await _pump(tester, onPressed: () {}, kind: kind);
     final mouse = await _mouse(tester);
 
     await mouse.moveTo(tester.getCenter(find.byType(ToolbarAction)));
@@ -104,8 +134,10 @@ void main() {
     expect(tester.binding.mouseTracker.debugDeviceActiveCursor(1), SystemMouseCursors.basic);
   });
 
-  _testOnDesktop('an unavailable action is dimmed, shows no backing and does nothing when clicked', (tester) async {
-    await _pump(tester, onPressed: null);
+  _testOnDesktop('${kind.name}: an unavailable action is dimmed, shows no backing and does nothing when clicked', (
+    tester,
+  ) async {
+    await _pump(tester, onPressed: null, kind: kind);
     final mouse = await _mouse(tester);
 
     expect(
@@ -128,9 +160,9 @@ void main() {
     );
   });
 
-  _testOnDesktop('Tab reaches it and shows a focus ring, and Space presses it', (tester) async {
+  _testOnDesktop('${kind.name}: Tab reaches it and shows a focus ring, and Space presses it', (tester) async {
     var presses = 0;
-    await _pump(tester, onPressed: () => presses++);
+    await _pump(tester, onPressed: () => presses++, kind: kind);
 
     await tester.sendKeyEvent(LogicalKeyboardKey.tab);
     await tester.pump();
@@ -143,8 +175,8 @@ void main() {
     expect(presses, 1);
   });
 
-  _testOnDesktop('Tab passes over an unavailable action', (tester) async {
-    await _pump(tester, onPressed: null);
+  _testOnDesktop('${kind.name}: Tab passes over an unavailable action', (tester) async {
+    await _pump(tester, onPressed: null, kind: kind);
 
     await tester.sendKeyEvent(LogicalKeyboardKey.tab);
     await tester.pump();
@@ -152,10 +184,10 @@ void main() {
     expect(_hasFocusRing(tester), isFalse);
   });
 
-  _testOnDesktop('a screen reader can press an available action', (tester) async {
+  _testOnDesktop('${kind.name}: a screen reader can press an available action', (tester) async {
     final semantics = tester.ensureSemantics();
     var presses = 0;
-    await _pump(tester, onPressed: () => presses++);
+    await _pump(tester, onPressed: () => presses++, kind: kind);
 
     final node = tester.getSemantics(find.byType(ToolbarAction));
     expect(node.getSemanticsData().hasAction(SemanticsAction.tap), isTrue);
@@ -169,9 +201,9 @@ void main() {
     semantics.dispose();
   });
 
-  _testOnDesktop('a screen reader is offered no press on an unavailable action', (tester) async {
+  _testOnDesktop('${kind.name}: a screen reader is offered no press on an unavailable action', (tester) async {
     final semantics = tester.ensureSemantics();
-    await _pump(tester, onPressed: null);
+    await _pump(tester, onPressed: null, kind: kind);
 
     expect(tester.getSemantics(find.byType(ToolbarAction)).getSemanticsData().hasAction(SemanticsAction.tap), isFalse);
     semantics.dispose();

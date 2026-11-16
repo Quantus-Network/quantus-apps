@@ -3684,5 +3684,54 @@
     "desktopBalanceLabel": "Balance",
     "@desktopBalanceLabel": {
       "description": "Desktop account panel: label over the account's balance, shown in capitals"
+    },
+    "desktopImportHeadline": "Restore your wallet.",
+    "@desktopImportHeadline": {
+      "description": "Desktop Import Wallet: the headline"
+    },
+    "desktopImportTipWordCount": "12 or 24 words",
+    "@desktopImportTipWordCount": {
+      "description": "Desktop Import Wallet: first tip beside the field, shown in capitals"
+    },
+    "desktopImportTipSpaces": "Separated by spaces",
+    "@desktopImportTipSpaces": {
+      "description": "Desktop Import Wallet: second tip, shown in capitals"
+    },
+    "desktopImportTipPaste": "Paste the whole phrase at once",
+    "@desktopImportTipPaste": {
+      "description": "Desktop Import Wallet: third tip, shown in capitals"
+    },
+    "desktopImportPhraseLabel": "Recovery phrase",
+    "@desktopImportPhraseLabel": {
+      "description": "Desktop Import Wallet: label above the recovery phrase field, shown in capitals"
+    },
+    "desktopImportPaste": "Paste",
+    "@desktopImportPaste": {
+      "description": "Desktop Import Wallet: button in the field that pastes the clipboard's text into it"
+    },
+    "desktopImportWordCount": "{count, plural, =1{1 word} other{{count} words}}",
+    "@desktopImportWordCount": {
+      "description": "Desktop Import Wallet: how many words have been typed into the field, shown in capitals",
+      "placeholders": {
+        "count": {
+          "type": "int"
+        }
+      }
+    },
+    "desktopWalletReadyHeadline": "Your wallet is ready.",
+    "@desktopWalletReadyHeadline": {
+      "description": "Desktop Wallet Created: the headline"
+    },
+    "desktopWalletReadyBody": "{account} is transparent: fast, and visible on chain. The {encrypted} is for private transactions, and slower.",
+    "@desktopWalletReadyBody": {
+      "description": "Desktop Wallet Created: sentence under the headline; {account} is the new account's name, {encrypted} is createAccountEncryptedDefaultName",
+      "placeholders": {
+        "account": {
+          "type": "String"
+        },
+        "encrypted": {
+          "type": "String"
+        }
+      }
     }
 }

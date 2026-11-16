@@ -4645,6 +4645,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Balance'**
   String get desktopBalanceLabel;
+
+  /// Desktop Import Wallet: the headline
+  ///
+  /// In en, this message translates to:
+  /// **'Restore your wallet.'**
+  String get desktopImportHeadline;
+
+  /// Desktop Import Wallet: first tip beside the field, shown in capitals
+  ///
+  /// In en, this message translates to:
+  /// **'12 or 24 words'**
+  String get desktopImportTipWordCount;
+
+  /// Desktop Import Wallet: second tip, shown in capitals
+  ///
+  /// In en, this message translates to:
+  /// **'Separated by spaces'**
+  String get desktopImportTipSpaces;
+
+  /// Desktop Import Wallet: third tip, shown in capitals
+  ///
+  /// In en, this message translates to:
+  /// **'Paste the whole phrase at once'**
+  String get desktopImportTipPaste;
+
+  /// Desktop Import Wallet: label above the recovery phrase field, shown in capitals
+  ///
+  /// In en, this message translates to:
+  /// **'Recovery phrase'**
+  String get desktopImportPhraseLabel;
+
+  /// Desktop Import Wallet: button in the field that pastes the clipboard's text into it
+  ///
+  /// In en, this message translates to:
+  /// **'Paste'**
+  String get desktopImportPaste;
+
+  /// Desktop Import Wallet: how many words have been typed into the field, shown in capitals
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 word} other{{count} words}}'**
+  String desktopImportWordCount(int count);
+
+  /// Desktop Wallet Created: the headline
+  ///
+  /// In en, this message translates to:
+  /// **'Your wallet is ready.'**
+  String get desktopWalletReadyHeadline;
+
+  /// Desktop Wallet Created: sentence under the headline; {account} is the new account's name, {encrypted} is createAccountEncryptedDefaultName
+  ///
+  /// In en, this message translates to:
+  /// **'{account} is transparent: fast, and visible on chain. The {encrypted} is for private transactions, and slower.'**
+  String desktopWalletReadyBody(String account, String encrypted);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
