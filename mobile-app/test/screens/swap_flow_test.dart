@@ -1920,6 +1920,68 @@ void main() {
       },
     );
 
+    testWidgets('polls stop once the swap is overdue, and one goes out on each return to the foreground', (
+      tester,
+    ) async {
+      final oneClick = _OneClick(dryOut: BigInt.one)..status = 'PENDING_DEPOSIT';
+      final soon = _quote(
+        from: _qtc,
+        to: _usdc,
+        amountIn: _unit * BigInt.from(250),
+        amountOut: BigInt.from(24860000),
+        refund: account.accountId,
+        recipient: _external,
+        depositAddress: _deposit,
+        deadline: clock.now().add(SwapService.statusPollInterval * 1.5),
+      );
+      await pumpSwap(
+        tester,
+        activeSwap(SwapOrder(quote: soon, status: SwapStatus.pendingDeposit)),
+        oneClick: oneClick,
+      );
+      Iterable<http.Request> polls() => oneClick.requests.where((r) => r.url.path == '/v0/status');
+
+      await tester.pump(SwapService.statusPollInterval);
+      await settle(tester);
+      expect(polls(), hasLength(1));
+      await tester.pump(SwapService.statusPollInterval);
+      await settle(tester);
+      expect(polls(), hasLength(2));
+      expect(banner(l10n.swapProgressOverdue(account.name)), findsOneWidget);
+
+      await tester.pump(SwapService.statusPollInterval * 5);
+      expect(polls(), hasLength(2));
+
+      final lifecycle = containerOf(tester).read(appLifecycleStateProvider.notifier);
+      lifecycle.state = AppLifecycleState.hidden;
+      lifecycle.state = AppLifecycleState.resumed;
+      await settle(tester);
+      expect(polls(), hasLength(3));
+      await tester.pump(SwapService.statusPollInterval * 3);
+      expect(polls(), hasLength(3));
+    });
+
+    testWidgets('a swap that is overdue when the app opens is polled once and then left alone', (tester) async {
+      final oneClick = _OneClick(dryOut: BigInt.one)..status = 'PENDING_DEPOSIT';
+      final late = _quote(
+        from: _qtc,
+        to: _usdc,
+        amountIn: _unit * BigInt.from(250),
+        amountOut: BigInt.from(24860000),
+        refund: account.accountId,
+        recipient: _external,
+        depositAddress: _deposit,
+        deadline: clock.now().subtract(const Duration(minutes: 1)),
+      );
+      await pumpSwap(
+        tester,
+        activeSwap(SwapOrder(quote: late, status: SwapStatus.pendingDeposit)),
+        oneClick: oneClick,
+      );
+      await tester.pump(SwapService.statusPollInterval * 5);
+      expect(oneClick.requests.where((r) => r.url.path == '/v0/status'), hasLength(1));
+    });
+
     testWidgets('polls run one at a time, and an answer that arrives after the swap was put away is dropped', (
       tester,
     ) async {

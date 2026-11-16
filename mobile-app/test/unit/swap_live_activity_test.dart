@@ -122,6 +122,22 @@ void main() {
       expect(decide(swap(SwapStatus.pendingDeposit)).content!.phase, SwapLivePhase.submitted);
     });
 
+    test('an overdue swap leaves the lock screen', () {
+      final deadline = quote.deadline;
+      expect(decide(swap(SwapStatus.pendingDeposit), now: deadline).command, SwapLiveCommand.show);
+      expect(
+        decide(swap(SwapStatus.pendingDeposit), now: deadline.add(const Duration(seconds: 1))).command,
+        SwapLiveCommand.end,
+      );
+
+      final graceEnds = deadline.add(ActiveSwap.finishGrace);
+      expect(decide(swap(SwapStatus.processing), now: graceEnds).command, SwapLiveCommand.show);
+      expect(
+        decide(swap(SwapStatus.processing), now: graceEnds.add(const Duration(seconds: 1))).command,
+        SwapLiveCommand.end,
+      );
+    });
+
     test('known and processing deposits advance the headline and the bar', () {
       final confirming = decide(swap(SwapStatus.knownDepositTx)).content!;
       expect(confirming.headline, 'Confirming on Ethereum');
@@ -177,7 +193,7 @@ void main() {
       });
 
       test('no countdown is never overdue', () {
-        final later = seen.add(const Duration(hours: 1));
+        final later = seen.add(const Duration(minutes: 30));
         expect(decide(swap(SwapStatus.pendingDeposit), now: later).content!.toPayload()['overdue'], isFalse);
         expect(decide(swap(SwapStatus.knownDepositTx), now: later).content!.toPayload()['overdue'], isFalse);
       });
