@@ -1,5 +1,6 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show SemanticsAction;
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_desktop_wallet/ui/components/toolbar_action.dart';
@@ -149,5 +150,28 @@ void main() {
     await tester.pump();
 
     expect(_hasFocusRing(tester), isFalse);
+  });
+
+  _testOnDesktop('a screen reader can press an available action', (tester) async {
+    final semantics = tester.ensureSemantics();
+    var presses = 0;
+    await _pump(tester, onPressed: () => presses++);
+
+    final node = tester.getSemantics(find.byType(ToolbarAction));
+    expect(node.getSemanticsData().hasAction(SemanticsAction.tap), isTrue);
+
+    tester.binding.pipelineOwner.semanticsOwner!.performAction(node.id, SemanticsAction.tap);
+    await tester.pump();
+
+    expect(presses, 1);
+    semantics.dispose();
+  });
+
+  _testOnDesktop('a screen reader is offered no press on an unavailable action', (tester) async {
+    final semantics = tester.ensureSemantics();
+    await _pump(tester, onPressed: null);
+
+    expect(tester.getSemantics(find.byType(ToolbarAction)).getSemanticsData().hasAction(SemanticsAction.tap), isFalse);
+    semantics.dispose();
   });
 }

@@ -59,6 +59,9 @@ class _ToolbarActionState extends State<ToolbarAction> {
       button: true,
       enabled: _isAvailable,
       label: widget.label,
+      // The children's semantics are left out, their tap with them, so the
+      // press a screen reader makes is offered here.
+      onTap: _isAvailable ? _press : null,
       excludeSemantics: true,
       child: FocusableActionDetector(
         enabled: _isAvailable,
