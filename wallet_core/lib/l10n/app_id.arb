@@ -704,5 +704,14 @@
   "desktopRecoveryPhraseHide": "Sembunyikan",
   "desktopRecoveryPhraseShow": "Tampilkan",
   "desktopRecoveryPhraseUnreadable": "Frasa pemulihan dompet ini tidak dapat dibaca.",
-  "desktopRecoveryPhraseCopyFailed": "Tidak dapat menyalin frasa pemulihan."
+  "desktopRecoveryPhraseCopyFailed": "Tidak dapat menyalin frasa pemulihan.",
+  "desktopSendAddressHint": "Alamat Quantus",
+  "desktopSendAddressInvalid": "Ini bukan alamat Quantus.",
+  "desktopSendAddressSelf": "Anda tidak dapat mengirim ke akun yang Anda gunakan untuk mengirim.",
+  "desktopSendAvailable": "Tersedia",
+  "desktopSendAmountTooMuch": "Melebihi {amount} yang dapat Anda kirim.",
+  "desktopSendReview": "Tinjau",
+  "desktopSendYouPaid": "Anda membayar",
+  "desktopSendSubmitted": "Diajukan",
+  "desktopViewInExplorer": "Lihat di Explorer"
 }

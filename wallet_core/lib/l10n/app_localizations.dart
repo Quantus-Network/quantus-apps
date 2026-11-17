@@ -4807,6 +4807,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Couldn’t copy the recovery phrase.'**
   String get desktopRecoveryPhraseCopyFailed;
+
+  /// Desktop Send: placeholder of the recipient's address field
+  ///
+  /// In en, this message translates to:
+  /// **'Quantus address'**
+  String get desktopSendAddressHint;
+
+  /// Desktop Send: under the address field when what it holds is not a valid address
+  ///
+  /// In en, this message translates to:
+  /// **'This is not a Quantus address.'**
+  String get desktopSendAddressInvalid;
+
+  /// Desktop Send: under the address field when it holds the sending account's own address
+  ///
+  /// In en, this message translates to:
+  /// **'You can’t send to the account you’re sending from.'**
+  String get desktopSendAddressSelf;
+
+  /// Desktop Send: label before the balance that can be spent, under the amount field
+  ///
+  /// In en, this message translates to:
+  /// **'Available'**
+  String get desktopSendAvailable;
+
+  /// Desktop Send: under the amount field when the amount and its fee exceed the balance. amount is the most that can be sent, with the token symbol
+  ///
+  /// In en, this message translates to:
+  /// **'More than the {amount} you can send.'**
+  String desktopSendAmountTooMuch(String amount);
+
+  /// Desktop Send: the button that opens the review step, and that step's name in the sheet's path
+  ///
+  /// In en, this message translates to:
+  /// **'Review'**
+  String get desktopSendReview;
+
+  /// Desktop Send: label of the total, amount plus fee, on the receipt shown once a send is submitted
+  ///
+  /// In en, this message translates to:
+  /// **'You paid'**
+  String get desktopSendYouPaid;
+
+  /// Desktop Send: small capitals over the receipt, once the send was handed to the network
+  ///
+  /// In en, this message translates to:
+  /// **'Submitted'**
+  String get desktopSendSubmitted;
+
+  /// Desktop: opens a transaction in the block explorer, in the browser
+  ///
+  /// In en, this message translates to:
+  /// **'View in Explorer'**
+  String get desktopViewInExplorer;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

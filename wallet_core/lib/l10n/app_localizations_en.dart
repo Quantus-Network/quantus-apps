@@ -2629,4 +2629,33 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get desktopRecoveryPhraseCopyFailed => 'Couldn’t copy the recovery phrase.';
+
+  @override
+  String get desktopSendAddressHint => 'Quantus address';
+
+  @override
+  String get desktopSendAddressInvalid => 'This is not a Quantus address.';
+
+  @override
+  String get desktopSendAddressSelf => 'You can’t send to the account you’re sending from.';
+
+  @override
+  String get desktopSendAvailable => 'Available';
+
+  @override
+  String desktopSendAmountTooMuch(String amount) {
+    return 'More than the $amount you can send.';
+  }
+
+  @override
+  String get desktopSendReview => 'Review';
+
+  @override
+  String get desktopSendYouPaid => 'You paid';
+
+  @override
+  String get desktopSendSubmitted => 'Submitted';
+
+  @override
+  String get desktopViewInExplorer => 'View in Explorer';
 }

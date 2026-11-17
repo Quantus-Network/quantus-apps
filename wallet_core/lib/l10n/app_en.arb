@@ -3810,5 +3810,46 @@
     "desktopRecoveryPhraseCopyFailed": "Couldn’t copy the recovery phrase.",
     "@desktopRecoveryPhraseCopyFailed": {
       "description": "Desktop Settings: copying the recovery phrase, kept out of clipboard history, failed"
+    },
+    "desktopSendAddressHint": "Quantus address",
+    "@desktopSendAddressHint": {
+      "description": "Desktop Send: placeholder of the recipient's address field"
+    },
+    "desktopSendAddressInvalid": "This is not a Quantus address.",
+    "@desktopSendAddressInvalid": {
+      "description": "Desktop Send: under the address field when what it holds is not a valid address"
+    },
+    "desktopSendAddressSelf": "You can’t send to the account you’re sending from.",
+    "@desktopSendAddressSelf": {
+      "description": "Desktop Send: under the address field when it holds the sending account's own address"
+    },
+    "desktopSendAvailable": "Available",
+    "@desktopSendAvailable": {
+      "description": "Desktop Send: label before the balance that can be spent, under the amount field"
+    },
+    "desktopSendAmountTooMuch": "More than the {amount} you can send.",
+    "@desktopSendAmountTooMuch": {
+      "description": "Desktop Send: under the amount field when the amount and its fee exceed the balance. amount is the most that can be sent, with the token symbol",
+      "placeholders": {
+        "amount": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopSendReview": "Review",
+    "@desktopSendReview": {
+      "description": "Desktop Send: the button that opens the review step, and that step's name in the sheet's path"
+    },
+    "desktopSendYouPaid": "You paid",
+    "@desktopSendYouPaid": {
+      "description": "Desktop Send: label of the total, amount plus fee, on the receipt shown once a send is submitted"
+    },
+    "desktopSendSubmitted": "Submitted",
+    "@desktopSendSubmitted": {
+      "description": "Desktop Send: small capitals over the receipt, once the send was handed to the network"
+    },
+    "desktopViewInExplorer": "View in Explorer",
+    "@desktopViewInExplorer": {
+      "description": "Desktop: opens a transaction in the block explorer, in the browser"
     }
 }
