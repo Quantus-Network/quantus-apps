@@ -7,9 +7,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_desktop_wallet/models/shell_sheet.dart';
 import 'package:quantus_desktop_wallet/providers/shell_providers.dart';
+import 'package:quantus_desktop_wallet/services/pam/pam_session.dart';
 import 'package:quantus_desktop_wallet/services/sensitive_clipboard.dart';
 import 'package:quantus_desktop_wallet/services/user_approval.dart';
+import 'package:quantus_desktop_wallet/ui/approval/login_password_dialog.dart';
 import 'package:quantus_desktop_wallet/ui/components/recovery_phrase_grid.dart';
+import 'package:quantus_desktop_wallet/ui/components/sheet_button.dart';
 import 'package:quantus_desktop_wallet/ui/components/toolbar_action.dart';
 import 'package:quantus_desktop_wallet/ui/onboarding/boot_intro.dart';
 import 'package:quantus_desktop_wallet/ui/onboarding/welcome_page.dart';
@@ -26,10 +29,13 @@ final _words = [for (var i = 1; i <= 24; i++) 'w${i.toString().padLeft(2, '0')}'
 Finder _inSheet(Finder matching) => find.descendant(of: find.byType(ShellSheetView), matching: matching);
 
 /// Puts a wallet with [_words] (or [mnemonic]) on the device, then opens
-/// Settings.
+/// Settings. With a [loginPassword] the app's own approval is left in place,
+/// to ask for that password as it does on Linux; otherwise approval is
+/// [approval], or one that approves.
 Future<FakeWalletDevice> _openSettings(
   WidgetTester tester, {
   FakeUserApproval? approval,
+  FakeLoginPassword? loginPassword,
   FakeSensitiveClipboard? clipboard,
   String? mnemonic,
   bool storePhrase = true,
@@ -37,9 +43,10 @@ Future<FakeWalletDevice> _openSettings(
   final device = FakeWalletDevice()..store([mainAccount], mnemonic: mnemonic ?? _words.join(' '));
   await pumpShell(
     tester,
+    loginPassword: loginPassword,
     overrides: [
       ...device.overrides,
-      userApprovalProvider.overrideWithValue(approval ?? FakeUserApproval()),
+      if (loginPassword == null) userApprovalProvider.overrideWithValue(approval ?? FakeUserApproval()),
       sensitiveClipboardProvider.overrideWithValue(clipboard ?? FakeSensitiveClipboard()),
     ],
   );
@@ -77,6 +84,38 @@ Future<List<String>> _logged(Future<void> Function() body) async {
   await runZoned(body, zoneSpecification: ZoneSpecification(print: (_, _, _, line) => lines.add(line)));
   return lines;
 }
+
+/// Presses [finder] where what follows keeps a spinner turning, which never
+/// settles: an approval that is waiting for the login password.
+Future<void> _press(WidgetTester tester, Finder finder) async {
+  await tester.tap(finder);
+  await tester.pump();
+  await tester.pump(const Duration(milliseconds: 300));
+}
+
+/// Opens Settings as Linux does, with [loginPassword] as the system's check,
+/// and presses Continue on the Recovery Phrase caution, which asks for the
+/// login password.
+Future<FakeWalletDevice> _toPasswordPrompt(WidgetTester tester, FakeLoginPassword loginPassword) async {
+  final device = await _openSettings(tester, loginPassword: loginPassword);
+  await _tap(tester, find.byKey(SettingsSheet.recoveryPhraseRowKey));
+  await _press(tester, find.byKey(SettingsSheet.continueKey));
+  return device;
+}
+
+final _passwordField = find.descendant(
+  of: find.byKey(LoginPasswordDialog.fieldKey),
+  matching: find.byType(EditableText),
+);
+
+Future<void> _typePassword(WidgetTester tester, String password) async {
+  await tester.enterText(_passwordField, password);
+  await tester.pump();
+}
+
+/// Whether the dialog's Confirm can be pressed.
+bool _confirmEnabled(WidgetTester tester) =>
+    !tester.widget<SheetButton>(find.byKey(LoginPasswordDialog.confirmKey)).isDisabled;
 
 /// Presses Tab until the keyboard's focus is inside [target].
 Future<void> _tabTo(WidgetTester tester, Finder target) async {
@@ -202,10 +241,11 @@ void main() {
       },
     );
 
-    _testOnLinux('on Linux the wallet rows cannot be used yet and say why, while Language still works', (tester) async {
-      final approval = FakeUserApproval()..availabilityAnswer = ApprovalAvailability.unsupported;
-      final device = await _openSettings(tester, approval: approval);
-      const note = 'Not available on Linux yet: it will ask for your login password.';
+    _testOnLinux('on Linux without the app\'s PAM service the wallet rows cannot be used and say what to install, '
+        'while Language still works', (tester) async {
+      final loginPassword = FakeLoginPassword()..isSetUpAnswer = false;
+      final device = await _openSettings(tester, loginPassword: loginPassword);
+      const note = 'Install Quantus Wallet’s PAM service (/etc/pam.d/quantus-wallet) to use this.';
 
       expect(_inSheet(find.text(note)), findsNWidgets(2));
 
@@ -213,7 +253,8 @@ void main() {
       await _tap(tester, find.byKey(SettingsSheet.resetRowKey));
 
       expect(_inSheet(find.text('WALLET')), findsOneWidget);
-      expect(approval.reasons, isEmpty);
+      expect(find.byType(LoginPasswordDialog), findsNothing);
+      expect(loginPassword.checked, isEmpty);
 
       await _tap(tester, find.byKey(SettingsSheet.languageKey));
       await _tap(tester, find.text('Bahasa Indonesia').last);
@@ -263,9 +304,31 @@ void main() {
       semantics.dispose();
     });
 
+    _testOnLinux('on Linux with the PAM service installed the wallet rows can be used', (tester) async {
+      await _openSettings(tester, loginPassword: FakeLoginPassword());
+
+      expect(_inSheet(find.text('View your 24-word Backup Password')), findsOneWidget);
+
+      await _tap(tester, find.byKey(SettingsSheet.recoveryPhraseRowKey));
+
+      expect(_inSheet(find.text('Keep your Recovery Phrase Secret')), findsOneWidget);
+    });
+
+    _testOnLinux('on a Linux system that cannot check passwords at all, the wallet rows say what failed', (
+      tester,
+    ) async {
+      await _openSettings(
+        tester,
+        loginPassword: FakeLoginPassword()..isSetUpError = ArgumentError('Failed to load dynamic library libpam.so.0'),
+      );
+
+      expect(_inSheet(find.textContaining('Couldn’t ask for approval: ')), findsNWidgets(2));
+      expect(_inSheet(find.textContaining('libpam.so.0')), findsNWidgets(2));
+    });
+
     _testOnLinux('a screen reader finds an unavailable row disabled, with nothing to press', (tester) async {
       final semantics = tester.ensureSemantics();
-      await _openSettings(tester, approval: FakeUserApproval()..availabilityAnswer = ApprovalAvailability.unsupported);
+      await _openSettings(tester, loginPassword: FakeLoginPassword()..isSetUpAnswer = false);
 
       final data = tester.getSemantics(find.byKey(SettingsSheet.recoveryPhraseRowKey)).getSemanticsData();
       expect(data.hasAction(SemanticsAction.tap), isFalse);
@@ -529,6 +592,245 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(ShellSheetView), findsNothing);
+    });
+  });
+
+  group('the login password prompt, on Linux', () {
+    _testOnLinux('Continue asks for the login password in a dialog, saying why, with the field ready to type in', (
+      tester,
+    ) async {
+      final loginPassword = FakeLoginPassword();
+      await _toPasswordPrompt(tester, loginPassword);
+
+      final dialog = find.byType(LoginPasswordDialog);
+      expect(dialog, findsOneWidget);
+      expect(find.descendant(of: dialog, matching: find.text('Enter your login password')), findsOneWidget);
+      expect(find.descendant(of: dialog, matching: find.text('Authenticate to see recovery phrase')), findsOneWidget);
+      expect(tester.widget<EditableText>(_passwordField).focusNode.hasFocus, isTrue);
+      expect(tester.widget<EditableText>(_passwordField).obscureText, isTrue);
+      expect(loginPassword.checked, isEmpty);
+      // The sheet is still there underneath, on its caution.
+      expect(_inSheet(find.text('Keep your Recovery Phrase Secret')), findsOneWidget);
+    });
+
+    _testOnLinux('the right password closes the dialog and shows the words, masked', (tester) async {
+      final loginPassword = FakeLoginPassword();
+      await _toPasswordPrompt(tester, loginPassword);
+
+      await _typePassword(tester, 'correct horse');
+      await _tap(tester, find.byKey(LoginPasswordDialog.confirmKey));
+
+      expect(loginPassword.checked, ['correct horse']);
+      expect(find.byType(LoginPasswordDialog), findsNothing);
+      expect(find.byKey(SettingsSheet.phraseGridKey), findsOneWidget);
+      expect(_inSheet(find.text(RecoveryPhraseGrid.maskedWord)), findsNWidgets(24));
+    });
+
+    _testOnLinux('a wrong password keeps the dialog open, says so, and empties the field for another try', (
+      tester,
+    ) async {
+      final loginPassword = FakeLoginPassword();
+      await _toPasswordPrompt(tester, loginPassword);
+
+      await _typePassword(tester, 'wrong');
+      await _press(tester, find.byKey(LoginPasswordDialog.confirmKey));
+
+      final dialog = find.byType(LoginPasswordDialog);
+      expect(dialog, findsOneWidget);
+      expect(
+        find.descendant(of: dialog, matching: find.text('That password is not right. Try again.')),
+        findsOneWidget,
+      );
+      expect(tester.widget<EditableText>(_passwordField).controller.text, isEmpty);
+      expect(tester.widget<EditableText>(_passwordField).focusNode.hasFocus, isTrue);
+      expect(find.byKey(SettingsSheet.phraseGridKey), findsNothing);
+
+      await _typePassword(tester, 'correct horse');
+      expect(find.text('That password is not right. Try again.'), findsOneWidget, reason: 'stays while retyping');
+      await _tap(tester, find.byKey(LoginPasswordDialog.confirmKey));
+
+      expect(loginPassword.checked, ['wrong', 'correct horse']);
+      expect(find.byType(LoginPasswordDialog), findsNothing);
+      expect(find.byKey(SettingsSheet.phraseGridKey), findsOneWidget);
+    });
+
+    _testOnLinux('Cancel closes the dialog; the step says approval is needed, and the sheet stays', (tester) async {
+      final loginPassword = FakeLoginPassword();
+      await _toPasswordPrompt(tester, loginPassword);
+      await _typePassword(tester, 'correct horse');
+
+      await _tap(tester, find.byKey(LoginPasswordDialog.cancelKey));
+
+      expect(find.byType(LoginPasswordDialog), findsNothing);
+      expect(loginPassword.checked, isEmpty);
+      expect(_inSheet(find.text('Authentication required to see recovery phrase')), findsOneWidget);
+      expect(_inSheet(find.text('Keep your Recovery Phrase Secret')), findsOneWidget);
+      expect(find.byKey(SettingsSheet.phraseGridKey), findsNothing);
+    });
+
+    _testOnLinux('Escape closes the dialog only, not the sheet under it', (tester) async {
+      await _toPasswordPrompt(tester, FakeLoginPassword());
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(LoginPasswordDialog), findsNothing);
+      expect(_inSheet(find.text('Authentication required to see recovery phrase')), findsOneWidget);
+      expect(_inSheet(find.text('Keep your Recovery Phrase Secret')), findsOneWidget);
+    });
+
+    _testOnLinux('a click outside the dialog does not throw away what was typed', (tester) async {
+      await _toPasswordPrompt(tester, FakeLoginPassword());
+      await _typePassword(tester, 'correct');
+
+      await tester.tapAt(const Offset(600, 780));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(find.byType(LoginPasswordDialog), findsOneWidget);
+      expect(tester.widget<EditableText>(_passwordField).controller.text, 'correct');
+    });
+
+    _testOnLinux('while the system checks, nothing closes the dialog, and what the system says is shown', (
+      tester,
+    ) async {
+      final loginPassword = FakeLoginPassword()
+        ..held = Completer<void>()
+        ..messages = ['Place your finger on the fingerprint reader'];
+      await _toPasswordPrompt(tester, loginPassword);
+      await _typePassword(tester, 'correct horse');
+
+      await _press(tester, find.byKey(LoginPasswordDialog.confirmKey));
+
+      final dialog = find.byType(LoginPasswordDialog);
+      expect(
+        find.descendant(of: dialog, matching: find.text('Place your finger on the fingerprint reader')),
+        findsOneWidget,
+      );
+      expect(tester.widget<SheetButton>(find.byKey(LoginPasswordDialog.cancelKey)).isDisabled, isTrue);
+      expect(tester.widget<SheetButton>(find.byKey(LoginPasswordDialog.confirmKey)).isLoading, isTrue);
+      expect(tester.widget<EditableText>(_passwordField).readOnly, isTrue);
+
+      await _press(tester, find.byKey(LoginPasswordDialog.cancelKey));
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await _press(tester, find.byKey(LoginPasswordDialog.confirmKey));
+      await tester.tapAt(const Offset(600, 780));
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(dialog, findsOneWidget);
+      expect(loginPassword.checked, ['correct horse'], reason: 'one check, however often Confirm is pressed');
+
+      loginPassword.held!.complete();
+      await tester.pumpAndSettle();
+
+      expect(dialog, findsNothing);
+      expect(find.byKey(SettingsSheet.phraseGridKey), findsOneWidget);
+    });
+
+    _testOnLinux('a check that could not be made closes the dialog, and the step says what failed', (tester) async {
+      final loginPassword = FakeLoginPassword()
+        ..error = const PamException(9, 'Authentication service cannot retrieve authentication info');
+      await _toPasswordPrompt(tester, loginPassword);
+      await _typePassword(tester, 'correct horse');
+
+      await _tap(tester, find.byKey(LoginPasswordDialog.confirmKey));
+
+      expect(find.byType(LoginPasswordDialog), findsNothing);
+      expect(
+        _inSheet(
+          find.text(
+            'Couldn’t ask for approval: Authentication service cannot retrieve authentication info (PAM error 9)',
+          ),
+        ),
+        findsOneWidget,
+      );
+      expect(find.byKey(SettingsSheet.phraseGridKey), findsNothing);
+    });
+
+    _testOnLinux('a login that asks for more than a password is said in plain words', (tester) async {
+      final loginPassword = FakeLoginPassword()..error = const PamUnexpectedPromptException('One-time code: ');
+      await _toPasswordPrompt(tester, loginPassword);
+      await _typePassword(tester, 'correct horse');
+
+      await _tap(tester, find.byKey(LoginPasswordDialog.confirmKey));
+
+      expect(find.byType(LoginPasswordDialog), findsNothing);
+      expect(
+        _inSheet(
+          find.text('This computer’s login asks for more than a password, which Quantus Wallet can’t answer yet.'),
+        ),
+        findsOneWidget,
+      );
+    });
+
+    _testOnLinux('an empty password cannot be submitted, by the button or by Enter', (tester) async {
+      final loginPassword = FakeLoginPassword();
+      await _toPasswordPrompt(tester, loginPassword);
+
+      expect(_confirmEnabled(tester), isFalse);
+
+      await _press(tester, find.byKey(LoginPasswordDialog.confirmKey));
+      await tester.testTextInput.receiveAction(TextInputAction.done);
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(loginPassword.checked, isEmpty);
+      expect(find.byType(LoginPasswordDialog), findsOneWidget);
+
+      await _typePassword(tester, 'c');
+
+      expect(_confirmEnabled(tester), isTrue);
+    });
+
+    _testOnLinux('Enter submits the password', (tester) async {
+      final loginPassword = FakeLoginPassword();
+      await _toPasswordPrompt(tester, loginPassword);
+      await _typePassword(tester, 'correct horse');
+
+      await tester.testTextInput.receiveAction(TextInputAction.done);
+      await tester.pumpAndSettle();
+
+      expect(loginPassword.checked, ['correct horse']);
+      expect(find.byKey(SettingsSheet.phraseGridKey), findsOneWidget);
+    });
+
+    _testOnLinux('a screen reader finds the password field by name, as a hidden text field', (tester) async {
+      final semantics = tester.ensureSemantics();
+      await _toPasswordPrompt(tester, FakeLoginPassword());
+
+      final data = tester.getSemantics(_passwordField).getSemanticsData();
+      expect(data.flagsCollection.isTextField, isTrue);
+      expect(data.flagsCollection.isObscured, isTrue);
+      expect(data.label, 'Password');
+
+      await _typePassword(tester, 'correct horse');
+
+      final typed = tester.getSemantics(_passwordField).getSemanticsData();
+      expect(typed.label, 'Password', reason: 'still named once the placeholder is gone');
+      expect(typed.value, isNot(contains('correct horse')));
+      semantics.dispose();
+    });
+
+    _testOnLinux('Reset Wallet asks for the login password too, and the right one wipes the wallet', (tester) async {
+      final loginPassword = FakeLoginPassword();
+      final device = await _openSettings(tester, loginPassword: loginPassword);
+      await _tap(tester, find.byKey(SettingsSheet.resetRowKey));
+      await _tap(tester, find.text("I've backed up my recovery phrase"));
+
+      await _press(tester, find.byKey(SettingsSheet.resetButtonKey));
+
+      expect(
+        find.descendant(of: find.byType(LoginPasswordDialog), matching: find.text('Authenticate to reset wallet')),
+        findsOneWidget,
+      );
+      expect(device.logouts, 0);
+
+      await _typePassword(tester, 'correct horse');
+      await _tap(tester, find.byKey(LoginPasswordDialog.confirmKey));
+
+      expect(device.logouts, 1);
+      expect(find.byType(LoginPasswordDialog), findsNothing);
+      expect(find.byType(ShellSheetView), findsNothing);
+      expect(find.byType(WelcomePage), findsOneWidget);
     });
   });
 

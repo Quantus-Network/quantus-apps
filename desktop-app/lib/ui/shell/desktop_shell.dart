@@ -7,9 +7,11 @@ import 'package:quantus_desktop_wallet/models/shell_sheet.dart';
 import 'package:quantus_desktop_wallet/models/sidebar_selection.dart';
 import 'package:quantus_desktop_wallet/models/wallet_presence.dart';
 import 'package:quantus_desktop_wallet/providers/boot_intro_provider.dart';
+import 'package:quantus_desktop_wallet/providers/password_prompt_provider.dart';
 import 'package:quantus_desktop_wallet/providers/shell_providers.dart';
 import 'package:quantus_desktop_wallet/providers/wallet_presence_provider.dart';
 import 'package:quantus_desktop_wallet/services/app_exit.dart';
+import 'package:quantus_desktop_wallet/ui/approval/login_password_dialog.dart';
 import 'package:quantus_desktop_wallet/ui/onboarding/boot_intro.dart';
 import 'package:quantus_desktop_wallet/ui/onboarding/onboarding_flow.dart';
 import 'package:quantus_desktop_wallet/ui/shell/account_pane.dart';
@@ -80,6 +82,20 @@ class _DesktopShellState extends ConsumerState<DesktopShell> {
     });
   }
 
+  /// Asks for the login password in a dialog over the window, and over the
+  /// sheet that asked.
+  Future<void> _askForPassword(PasswordPromptRequest request) async {
+    final prompt = ref.read(passwordPromptProvider.notifier);
+    final bool approved;
+    try {
+      approved = await showLoginPasswordDialog(context, request);
+    } catch (error, stackTrace) {
+      prompt.fail(error, stackTrace);
+      return;
+    }
+    prompt.finish(approved: approved);
+  }
+
   void _onWalletPresence(AsyncValue<WalletPresence>? previous, AsyncValue<WalletPresence> next) {
     switch (next.value) {
       case WalletPresence.phraseMissing:
@@ -136,6 +152,9 @@ class _DesktopShellState extends ConsumerState<DesktopShell> {
   @override
   Widget build(BuildContext context) {
     ref.listen<ShellSheet?>(shellSheetProvider, (_, sheet) => _present(sheet));
+    ref.listen<PasswordPromptRequest?>(passwordPromptProvider, (_, request) {
+      if (request != null) unawaited(_askForPassword(request));
+    });
     ref.listen<AsyncValue<WalletPresence>>(walletPresenceProvider, _onWalletPresence);
 
     final useNativeMenuBar = defaultTargetPlatform == TargetPlatform.macOS;

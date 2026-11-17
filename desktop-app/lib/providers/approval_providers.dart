@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:quantus_desktop_wallet/services/pam/pam_session.dart';
 import 'package:quantus_desktop_wallet/services/user_approval.dart';
 import 'package:wallet_core/l10n/app_localizations.dart';
 
@@ -15,13 +16,14 @@ final approvalAvailabilityProvider = FutureProvider.autoDispose<ApprovalAvailabi
 String? approvalUnavailableNote(AppLocalizations l10n, ApprovalAvailability availability) => switch (availability) {
   ApprovalAvailability.available => null,
   ApprovalAvailability.notSetUp => approvalNotSetUpNote(l10n),
-  ApprovalAvailability.unsupported => l10n.desktopApprovalUnavailableLinux,
 };
 
 /// What to set up so that approval can be asked for.
-String approvalNotSetUpNote(AppLocalizations l10n) => defaultTargetPlatform == TargetPlatform.windows
-    ? l10n.desktopApprovalNeedsWindowsHello
-    : l10n.desktopApprovalNeedsMacPassword;
+String approvalNotSetUpNote(AppLocalizations l10n) => switch (defaultTargetPlatform) {
+  TargetPlatform.windows => l10n.desktopApprovalNeedsWindowsHello,
+  TargetPlatform.linux => l10n.desktopApprovalNeedsLinuxService,
+  _ => l10n.desktopApprovalNeedsMacPassword,
+};
 
 /// Asks for approval, telling the person [reason]. Null once approved;
 /// otherwise what to tell them: [declined] if they said no.
@@ -37,6 +39,8 @@ Future<String?> askForApproval(
       ApprovalResult.declined => declined,
       ApprovalResult.notSetUp => approvalNotSetUpNote(l10n),
     };
+  } on PamUnexpectedPromptException {
+    return l10n.desktopApprovalLoginAsksMore;
   } catch (e) {
     return l10n.desktopApprovalFailed('$e');
   }

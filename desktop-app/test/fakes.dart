@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_desktop_wallet/bootstrap/app_bootstrap.dart';
 import 'package:quantus_desktop_wallet/providers/boot_intro_provider.dart';
+import 'package:quantus_desktop_wallet/services/login_password.dart';
 import 'package:quantus_desktop_wallet/services/sensitive_clipboard.dart';
 import 'package:quantus_desktop_wallet/services/user_approval.dart';
 import 'package:quantus_desktop_wallet/services/window_chrome.dart';
@@ -347,6 +348,44 @@ class FakeUserApproval implements UserApproval {
   }
 }
 
+/// The system's check of the login password, answering as a test says.
+class FakeLoginPassword implements LoginPassword {
+  bool isSetUpAnswer = true;
+
+  /// When set, asking whether the check is set up fails with this.
+  Object? isSetUpError;
+
+  /// The login password.
+  String password = 'correct horse';
+
+  /// Every password that was checked.
+  final checked = <String>[];
+
+  /// What the system says during a check.
+  List<String> messages = [];
+
+  /// When set, a check fails with this.
+  Object? error;
+
+  /// When set, a check answers (or fails) only once this completes.
+  Completer<void>? held;
+
+  @override
+  Future<bool> isSetUp() async {
+    if (isSetUpError case final error?) throw error;
+    return isSetUpAnswer;
+  }
+
+  @override
+  Future<LoginPasswordResult> check(String password, {required void Function(String message) onMessage}) async {
+    checked.add(password);
+    messages.forEach(onMessage);
+    if (held case final held?) await held.future;
+    if (error case final error?) throw error;
+    return password == this.password ? LoginPasswordResult.accepted : LoginPasswordResult.refused;
+  }
+}
+
 /// The clipboard for secrets, without the native side.
 class FakeSensitiveClipboard extends Fake implements SensitiveClipboard {
   final copied = <String>[];
@@ -478,6 +517,7 @@ class FakeEncryptedAccountService extends Fake implements EncryptedAccountServic
 Future<void> pumpShell(
   WidgetTester tester, {
   required List<Override> overrides,
+  FakeLoginPassword? loginPassword,
   bool settle = true,
   bool reduceMotion = true,
 }) async {
@@ -488,7 +528,16 @@ Future<void> pumpShell(
   addTearDown(tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
   useFakeCheckphrases(fakeCheckphrase);
 
-  await tester.pumpWidget(buildApp(overrides: overrides));
+  await tester.pumpWidget(
+    buildApp(
+      overrides: [
+        ...overrides,
+        // Never the computer's own PAM, which a test run as Linux would
+        // otherwise reach.
+        loginPasswordProvider.overrideWithValue(loginPassword ?? FakeLoginPassword()),
+      ],
+    ),
+  );
   if (settle) {
     await tester.pumpAndSettle();
   } else {

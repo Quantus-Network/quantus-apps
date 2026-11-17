@@ -2582,13 +2582,30 @@ class AppLocalizationsEn extends AppLocalizations {
   String get desktopCopied => 'Copied';
 
   @override
-  String get desktopApprovalUnavailableLinux => 'Not available on Linux yet: it will ask for your login password.';
-
-  @override
   String get desktopApprovalNeedsMacPassword => 'Set up a login password for this Mac to use this.';
 
   @override
   String get desktopApprovalNeedsWindowsHello => 'Set up Windows Hello to use this.';
+
+  @override
+  String get desktopApprovalNeedsLinuxService =>
+      'Install Quantus Wallet’s PAM service (/etc/pam.d/quantus-wallet) to use this.';
+
+  @override
+  String get desktopApprovalLoginAsksMore =>
+      'This computer’s login asks for more than a password, which Quantus Wallet can’t answer yet.';
+
+  @override
+  String get desktopPasswordPromptTitle => 'Enter your login password';
+
+  @override
+  String get desktopPasswordPromptHint => 'Password';
+
+  @override
+  String get desktopPasswordPromptConfirm => 'Confirm';
+
+  @override
+  String get desktopPasswordPromptWrong => 'That password is not right. Try again.';
 
   @override
   String desktopApprovalFailed(String error) {

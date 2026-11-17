@@ -2,7 +2,12 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:local_auth/local_auth.dart';
+import 'package:quantus_desktop_wallet/providers/password_prompt_provider.dart';
+import 'package:quantus_desktop_wallet/services/login_password.dart';
+import 'package:quantus_desktop_wallet/services/pam/pam_session.dart';
 import 'package:quantus_desktop_wallet/services/user_approval.dart';
+
+import '../fakes.dart';
 
 /// The system's authentication, answering as a test says.
 class _FakeLocalAuthentication extends Fake implements LocalAuthentication {
@@ -92,12 +97,57 @@ void main() {
     });
   });
 
-  group('UnsupportedApproval', () {
-    test('reports itself unsupported, and refuses to be asked', () async {
-      const approval = UnsupportedApproval();
+  group('PasswordApproval', () {
+    late FakeLoginPassword loginPassword;
+    late List<({String reason, LoginPasswordCheck check})> prompts;
 
-      expect(await approval.availability(), ApprovalAvailability.unsupported);
-      await expectLater(approval.approve(reason: 'why'), throwsStateError);
+    /// What the prompt answers; it may throw.
+    late Future<bool> Function() promptAnswer;
+
+    late PasswordApproval approval;
+
+    setUp(() {
+      loginPassword = FakeLoginPassword();
+      prompts = [];
+      promptAnswer = () async => true;
+      approval = PasswordApproval(loginPassword, ({required reason, required check}) {
+        prompts.add((reason: reason, check: check));
+        return promptAnswer();
+      });
+    });
+
+    test('is available where the login password check is set up, and not set up where it is not', () async {
+      expect(await approval.availability(), ApprovalAvailability.available);
+
+      loginPassword.isSetUpAnswer = false;
+
+      expect(await approval.availability(), ApprovalAvailability.notSetUp);
+    });
+
+    test('a system that cannot check passwords at all is not hidden as "not set up"', () async {
+      loginPassword.isSetUpError = ArgumentError('Failed to load dynamic library libpam.so.0');
+
+      await expectLater(approval.availability(), throwsArgumentError);
+    });
+
+    test('prompts with the reason and the login password check, and is approved when the prompt is', () async {
+      expect(await approval.approve(reason: 'Authenticate to see recovery phrase'), ApprovalResult.approved);
+
+      expect(prompts.single.reason, 'Authenticate to see recovery phrase');
+      await prompts.single.check('correct horse', onMessage: (_) {});
+      expect(loginPassword.checked, ['correct horse']);
+    });
+
+    test('a cancelled prompt is declined', () async {
+      promptAnswer = () async => false;
+
+      expect(await approval.approve(reason: 'why'), ApprovalResult.declined);
+    });
+
+    test('a prompt that failed is not hidden', () async {
+      promptAnswer = () async => throw const PamException(9, 'Authentication service cannot retrieve information');
+
+      await expectLater(approval.approve(reason: 'why'), throwsA(isA<PamException>()));
     });
   });
 
@@ -114,12 +164,26 @@ void main() {
       });
     }
 
-    test('has no approval on Linux yet', () {
-      debugDefaultTargetPlatformOverride = TargetPlatform.linux;
-      final container = ProviderContainer();
-      addTearDown(container.dispose);
+    test(
+      'asks for the login password on Linux, checked by the system and asked for in the app\'s own prompt',
+      () async {
+        debugDefaultTargetPlatformOverride = TargetPlatform.linux;
+        final loginPassword = FakeLoginPassword();
+        final container = ProviderContainer(overrides: [loginPasswordProvider.overrideWithValue(loginPassword)]);
+        addTearDown(container.dispose);
 
-      expect(container.read(userApprovalProvider), isA<UnsupportedApproval>());
-    });
+        final approval = container.read(userApprovalProvider);
+        expect(approval, isA<PasswordApproval>());
+
+        final result = approval.approve(reason: 'Authenticate to see recovery phrase');
+        final request = container.read(passwordPromptProvider)!;
+        expect(request.reason, 'Authenticate to see recovery phrase');
+        await request.check('correct horse', onMessage: (_) {});
+        expect(loginPassword.checked, ['correct horse']);
+
+        container.read(passwordPromptProvider.notifier).finish(approved: true);
+        expect(await result, ApprovalResult.approved);
+      },
+    );
   });
 }
