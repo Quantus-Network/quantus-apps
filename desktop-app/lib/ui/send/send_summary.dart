@@ -13,7 +13,7 @@ import 'package:wallet_core/send/send_review_row.dart';
 ///
 /// The figures are the send's [rows]. The recipient and the amount among
 /// them are left out, since they are shown above; the fee and the total get
-/// this app's own labels, the total's being [totalLabel].
+/// this app's own labels, [feeLabel] and [totalLabel].
 class SendSummary extends StatelessWidget {
   const SendSummary({
     super.key,
@@ -21,6 +21,7 @@ class SendSummary extends StatelessWidget {
     required this.recipient,
     required this.from,
     required this.rows,
+    required this.feeLabel,
     required this.totalLabel,
   });
 
@@ -30,6 +31,7 @@ class SendSummary extends StatelessWidget {
   /// The name of the account the send leaves.
   final String from;
   final List<SendReviewRow> rows;
+  final String feeLabel;
   final String totalLabel;
 
   /// What stands beside a row's label.
@@ -58,7 +60,7 @@ class SendSummary extends StatelessWidget {
             SendReviewRowKind.recipient ||
             SendReviewRowKind.amount ||
             SendReviewRowKind.total => const SizedBox.shrink(),
-            SendReviewRowKind.fee => _FigureRow(label: l10n.swapReviewNetworkFee, value: _value(row)),
+            SendReviewRowKind.fee => _FigureRow(label: feeLabel, value: _value(row)),
             SendReviewRowKind.detail => _FigureRow(label: row.label, value: _value(row)),
           },
         if (totals.isNotEmpty) ...[
