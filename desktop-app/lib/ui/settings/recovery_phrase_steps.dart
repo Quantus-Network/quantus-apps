@@ -21,10 +21,11 @@ import 'package:wallet_core/utils/recovery_phrase.dart';
 const _walletIndex = 0;
 
 /// Records that the recovery phrase has been seen, as mobile does when it is
-/// revealed or copied.
-void _markPhraseSeen(WidgetRef ref) {
-  ref.read(settingsServiceProvider).setRecoveryPhraseViewed(_walletIndex);
-  ref.invalidate(recoveryPhraseViewedProvider(_walletIndex));
+/// revealed or copied. It takes the app's [container] rather than a widget's
+/// ref, so a copy that completes after the sheet has closed is still recorded.
+void _markPhraseSeen(ProviderContainer container) {
+  container.read(settingsServiceProvider).setRecoveryPhraseViewed(_walletIndex);
+  container.invalidate(recoveryPhraseViewedProvider(_walletIndex));
 }
 
 /// The caution before the recovery phrase. Continue asks for approval, then
@@ -137,12 +138,15 @@ class _RecoveryPhraseWordsState extends ConsumerState<RecoveryPhraseWords> {
 
   void _toggleRevealed() {
     setState(() => _isRevealed = !_isRevealed);
-    if (_isRevealed) _markPhraseSeen(ref);
+    if (_isRevealed) _markPhraseSeen(ProviderScope.containerOf(context, listen: false));
   }
 
   Future<void> _copy(String text) async {
-    await ref.read(sensitiveClipboardProvider).copy(text);
-    _markPhraseSeen(ref);
+    // Taken before the copy, which the sheet may not outlive: Done, Escape
+    // and Back still close it meanwhile.
+    final container = ProviderScope.containerOf(context, listen: false);
+    await container.read(sensitiveClipboardProvider).copy(text);
+    _markPhraseSeen(container);
     if (mounted) setState(() => _error = null);
   }
 
@@ -180,7 +184,8 @@ class _RecoveryPhraseWordsState extends ConsumerState<RecoveryPhraseWords> {
                   copy: _copy,
                   onFailed: (e) {
                     quantusPrint('Copying the recovery phrase failed: $e');
-                    setState(() => _error = l10n.desktopRecoveryPhraseCopyFailed);
+                    // The sheet may have closed while the copy was made.
+                    if (mounted) setState(() => _error = l10n.desktopRecoveryPhraseCopyFailed);
                   },
                 ),
               ],

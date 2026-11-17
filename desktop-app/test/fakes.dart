@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
@@ -343,8 +344,12 @@ class FakeSensitiveClipboard extends Fake implements SensitiveClipboard {
   /// When set, a copy fails with this.
   Object? error;
 
+  /// When set, a copy is made (or fails) only once this completes.
+  Completer<void>? held;
+
   @override
   Future<void> copy(String text) async {
+    if (held case final held?) await held.future;
     if (error case final error?) throw error;
     copied.add(text);
   }

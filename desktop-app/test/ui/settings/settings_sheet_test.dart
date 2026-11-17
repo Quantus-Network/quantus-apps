@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' show SemanticsAction, SemanticsActionEvent;
 import 'package:flutter/services.dart';
@@ -337,6 +339,47 @@ void main() {
       expect(_inSheet(find.text('Couldn’t copy the recovery phrase.')), findsOneWidget);
       expect(tester.widget<ToolbarAction>(find.byKey(SettingsSheet.copyKey)).label, 'Copy');
       expect(systemClipboard, isEmpty);
+    });
+
+    testOnMac('a copy that is made after the sheet has closed still records the phrase seen', (tester) async {
+      final clipboard = FakeSensitiveClipboard()..held = Completer<void>();
+      final device = await _openSettings(tester, clipboard: clipboard);
+      await _toPhraseWords(tester);
+
+      await tester.tap(find.byKey(SettingsSheet.copyKey));
+      await tester.pump();
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(ShellSheetView), findsNothing);
+      expect(device.storage.viewedPhrases, isEmpty);
+
+      clipboard.held!.complete();
+      await tester.pumpAndSettle();
+
+      expect(clipboard.copied, [_words.join(' ')]);
+      expect(device.storage.viewedPhrases, {0});
+    });
+
+    testOnMac('a copy that fails after the sheet has closed records nothing, and does not reach the closed sheet', (
+      tester,
+    ) async {
+      final clipboard = FakeSensitiveClipboard()
+        ..held = Completer<void>()
+        ..error = PlatformException(code: 'pasteboard');
+      final device = await _openSettings(tester, clipboard: clipboard);
+      await _toPhraseWords(tester);
+
+      await tester.tap(find.byKey(SettingsSheet.copyKey));
+      await tester.pump();
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await tester.pumpAndSettle();
+      clipboard.held!.complete();
+      await tester.pumpAndSettle();
+
+      expect(find.byType(ShellSheetView), findsNothing);
+      expect(clipboard.copied, isEmpty);
+      expect(device.storage.viewedPhrases, isEmpty);
     });
 
     testOnMac('Done closes the sheet', (tester) async {
