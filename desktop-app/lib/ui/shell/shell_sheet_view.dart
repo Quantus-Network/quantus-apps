@@ -300,13 +300,12 @@ class SheetBackShortcut extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final onBack = this.onBack;
     final activator = defaultTargetPlatform == TargetPlatform.macOS
         ? const SingleActivator(LogicalKeyboardKey.bracketLeft, meta: true)
         : const SingleActivator(LogicalKeyboardKey.arrowLeft, alt: true);
 
     return CallbackShortcuts(
-      bindings: {if (onBack != null) activator: onBack},
+      bindings: {activator: ?onBack},
       // Holds the focus when nothing in the sheet has it, so the keys reach
       // the bindings above.
       child: Focus(autofocus: true, skipTraversal: true, child: child),
