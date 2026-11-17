@@ -4718,12 +4718,6 @@ abstract class AppLocalizations {
   /// **'Copied'**
   String get desktopCopied;
 
-  /// Desktop Settings: under Recovery Phrase and Reset Wallet on Linux, where the app cannot ask for approval yet
-  ///
-  /// In en, this message translates to:
-  /// **'Not available on Linux yet: it will ask for your login password.'**
-  String get desktopApprovalUnavailableLinux;
-
   /// Desktop Settings: under Recovery Phrase and Reset Wallet on a Mac with no login password to approve with
   ///
   /// In en, this message translates to:
@@ -4735,6 +4729,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Set up Windows Hello to use this.'**
   String get desktopApprovalNeedsWindowsHello;
+
+  /// Desktop Settings: under Recovery Phrase and Reset Wallet on a Linux system where the file that lets the app check the login password is not installed
+  ///
+  /// In en, this message translates to:
+  /// **'Install Quantus Wallet’s PAM service (/etc/pam.d/quantus-wallet) to use this.'**
+  String get desktopApprovalNeedsLinuxService;
+
+  /// Desktop, Linux: the system's login asked for something besides the password, such as a one-time code, so approval could not be given
+  ///
+  /// In en, this message translates to:
+  /// **'This computer’s login asks for more than a password, which Quantus Wallet can’t answer yet.'**
+  String get desktopApprovalLoginAsksMore;
+
+  /// Desktop, Linux: title of the dialog that asks for the computer's login password to approve an action
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your login password'**
+  String get desktopPasswordPromptTitle;
+
+  /// Desktop, Linux: placeholder and screen reader name of the login password field
+  ///
+  /// In en, this message translates to:
+  /// **'Password'**
+  String get desktopPasswordPromptHint;
+
+  /// Desktop, Linux: the button that submits the login password
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm'**
+  String get desktopPasswordPromptConfirm;
+
+  /// Desktop, Linux: under the login password field after the system refused the password
+  ///
+  /// In en, this message translates to:
+  /// **'That password is not right. Try again.'**
+  String get desktopPasswordPromptWrong;
 
   /// Desktop Settings: the system's approval prompt itself failed
   ///

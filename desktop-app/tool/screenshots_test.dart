@@ -5,6 +5,8 @@
 //   flutter test tool/screenshots_test.dart --update-goldens
 //
 // The pictures land in build/screenshots/.
+import 'dart:async';
+
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -13,8 +15,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart' show ProviderScope;
 import 'package:quantus_desktop_wallet/bootstrap/app_bootstrap.dart';
 import 'package:quantus_desktop_wallet/models/shell_sheet.dart';
 import 'package:quantus_desktop_wallet/providers/shell_providers.dart';
+import 'package:quantus_desktop_wallet/services/login_password.dart';
 import 'package:quantus_desktop_wallet/services/sensitive_clipboard.dart';
 import 'package:quantus_desktop_wallet/services/user_approval.dart';
+import 'package:quantus_desktop_wallet/ui/approval/login_password_dialog.dart';
 import 'package:quantus_desktop_wallet/ui/components/toolbar_action.dart';
 import 'package:quantus_desktop_wallet/ui/settings/settings_sheet.dart';
 import 'package:quantus_desktop_wallet/ui/shell/desktop_shell.dart';
@@ -68,7 +72,11 @@ Future<void> _snap(WidgetTester tester, String name) async {
   await expectLater(find.byType(MaterialApp), matchesGoldenFile('../build/screenshots/$name.png'));
 }
 
-void _scene(String name, Future<void> Function(WidgetTester tester) body) {
+void _scene(
+  String name,
+  Future<void> Function(WidgetTester tester) body, {
+  TargetPlatform platform = TargetPlatform.macOS,
+}) {
   testWidgets(name, (tester) async {
     debugDisableShadows = false;
     WidgetsApp.debugAllowBannerOverride = false;
@@ -79,7 +87,7 @@ void _scene(String name, Future<void> Function(WidgetTester tester) body) {
       debugDisableShadows = true;
       WidgetsApp.debugAllowBannerOverride = true;
     }
-  }, variant: TargetPlatformVariant.only(TargetPlatform.macOS));
+  }, variant: TargetPlatformVariant.only(platform));
 }
 
 // Addresses of a real address's length, so the sheets that show one are
@@ -152,9 +160,33 @@ void main() {
     await _openSettings(tester);
   });
 
-  _scene('settings_linux', (tester) async {
-    await _openSettings(tester, availability: ApprovalAvailability.unsupported);
-  });
+  _scene('settings_linux_not_set_up', (tester) async {
+    await _openSettings(tester, loginPassword: FakeLoginPassword()..isSetUpAnswer = false);
+  }, platform: TargetPlatform.linux);
+
+  _scene('password_prompt', (tester) async {
+    await _openPasswordPrompt(tester, FakeLoginPassword());
+    await _typePassword(tester, 'a guess at');
+  }, platform: TargetPlatform.linux);
+
+  _scene('password_prompt_empty', (tester) async {
+    await _openPasswordPrompt(tester, FakeLoginPassword());
+  }, platform: TargetPlatform.linux);
+
+  _scene('password_prompt_wrong', (tester) async {
+    await _openPasswordPrompt(tester, FakeLoginPassword());
+    await _typePassword(tester, 'a guess at');
+    await _press(tester, find.byKey(LoginPasswordDialog.confirmKey));
+  }, platform: TargetPlatform.linux);
+
+  _scene('password_prompt_checking', (tester) async {
+    final loginPassword = FakeLoginPassword()
+      ..held = Completer<void>()
+      ..messages = ['Place your finger on the fingerprint reader'];
+    await _openPasswordPrompt(tester, loginPassword);
+    await _typePassword(tester, 'a guess at');
+    await _press(tester, find.byKey(LoginPasswordDialog.confirmKey));
+  }, platform: TargetPlatform.linux);
 
   _scene('settings_language_open', (tester) async {
     await _openSettings(tester);
@@ -195,17 +227,43 @@ Future<void> _tapAndSettle(WidgetTester tester, Finder finder) async {
   await tester.pumpAndSettle();
 }
 
-/// Opens the wallet, then Settings, which the app menu opens.
-Future<void> _openSettings(
-  WidgetTester tester, {
-  ApprovalAvailability availability = ApprovalAvailability.available,
-}) async {
+/// Presses [finder] where what follows keeps a spinner turning, which never
+/// settles.
+Future<void> _press(WidgetTester tester, Finder finder) async {
+  await tester.tap(finder);
+  await tester.pump();
+  await tester.pump(const Duration(milliseconds: 350));
+}
+
+/// Opens Settings as Linux does and presses Continue on the Recovery Phrase
+/// caution, which asks for the login password.
+Future<void> _openPasswordPrompt(WidgetTester tester, FakeLoginPassword loginPassword) async {
+  await _openSettings(tester, loginPassword: loginPassword);
+  await _tapAndSettle(tester, find.byKey(SettingsSheet.recoveryPhraseRowKey));
+  await _press(tester, find.byKey(SettingsSheet.continueKey));
+}
+
+Future<void> _typePassword(WidgetTester tester, String password) async {
+  await tester.enterText(
+    find.descendant(of: find.byKey(LoginPasswordDialog.fieldKey), matching: find.byType(EditableText)),
+    password,
+  );
+  await tester.pump();
+}
+
+/// Opens the wallet, then Settings, which the app menu opens. With a
+/// [loginPassword] the app's own approval asks for that password, as on
+/// Linux.
+Future<void> _openSettings(WidgetTester tester, {FakeLoginPassword? loginPassword}) async {
   await _open(
     tester,
     FakeWalletDevice()..store([_root, _second, _encrypted], mnemonic: _phrase),
     reduceMotion: true,
     overrides: [
-      userApprovalProvider.overrideWithValue(FakeUserApproval()..availabilityAnswer = availability),
+      if (loginPassword != null)
+        loginPasswordProvider.overrideWithValue(loginPassword)
+      else
+        userApprovalProvider.overrideWithValue(FakeUserApproval()),
       sensitiveClipboardProvider.overrideWithValue(FakeSensitiveClipboard()),
     ],
   );

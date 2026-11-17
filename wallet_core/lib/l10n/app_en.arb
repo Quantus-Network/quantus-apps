@@ -3746,10 +3746,6 @@
     "@desktopCopied": {
       "description": "Desktop: what a Copy action says for a moment after it has copied"
     },
-    "desktopApprovalUnavailableLinux": "Not available on Linux yet: it will ask for your login password.",
-    "@desktopApprovalUnavailableLinux": {
-      "description": "Desktop Settings: under Recovery Phrase and Reset Wallet on Linux, where the app cannot ask for approval yet"
-    },
     "desktopApprovalNeedsMacPassword": "Set up a login password for this Mac to use this.",
     "@desktopApprovalNeedsMacPassword": {
       "description": "Desktop Settings: under Recovery Phrase and Reset Wallet on a Mac with no login password to approve with"
@@ -3757,6 +3753,30 @@
     "desktopApprovalNeedsWindowsHello": "Set up Windows Hello to use this.",
     "@desktopApprovalNeedsWindowsHello": {
       "description": "Desktop Settings: under Recovery Phrase and Reset Wallet on a Windows PC without Windows Hello"
+    },
+    "desktopApprovalNeedsLinuxService": "Install Quantus Wallet’s PAM service (/etc/pam.d/quantus-wallet) to use this.",
+    "@desktopApprovalNeedsLinuxService": {
+      "description": "Desktop Settings: under Recovery Phrase and Reset Wallet on a Linux system where the file that lets the app check the login password is not installed"
+    },
+    "desktopApprovalLoginAsksMore": "This computer’s login asks for more than a password, which Quantus Wallet can’t answer yet.",
+    "@desktopApprovalLoginAsksMore": {
+      "description": "Desktop, Linux: the system's login asked for something besides the password, such as a one-time code, so approval could not be given"
+    },
+    "desktopPasswordPromptTitle": "Enter your login password",
+    "@desktopPasswordPromptTitle": {
+      "description": "Desktop, Linux: title of the dialog that asks for the computer's login password to approve an action"
+    },
+    "desktopPasswordPromptHint": "Password",
+    "@desktopPasswordPromptHint": {
+      "description": "Desktop, Linux: placeholder and screen reader name of the login password field"
+    },
+    "desktopPasswordPromptConfirm": "Confirm",
+    "@desktopPasswordPromptConfirm": {
+      "description": "Desktop, Linux: the button that submits the login password"
+    },
+    "desktopPasswordPromptWrong": "That password is not right. Try again.",
+    "@desktopPasswordPromptWrong": {
+      "description": "Desktop, Linux: under the login password field after the system refused the password"
     },
     "desktopApprovalFailed": "Couldn’t ask for approval: {error}",
     "@desktopApprovalFailed": {

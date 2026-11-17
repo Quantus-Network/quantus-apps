@@ -22,7 +22,7 @@ const _knownUnsupportedPlugins = {
       'must not open the camera scanner there until scanning sits behind an interface.',
   'local_auth':
       'Asks macOS and Windows for approval (UserApproval). It has no Linux implementation, so userApprovalProvider '
-      'binds UnsupportedApproval there and never calls it, until Linux checks the login password through PAM.',
+      'never calls it there: Linux checks the login password through PAM instead (PasswordApproval).',
 };
 
 final _directiveUri = RegExp(r'''^\s*(?:import|export)\s+['"]([^'"]+)['"]''', multiLine: true);

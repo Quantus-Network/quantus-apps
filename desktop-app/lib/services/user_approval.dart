@@ -1,17 +1,17 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:local_auth/local_auth.dart';
+import 'package:quantus_desktop_wallet/providers/password_prompt_provider.dart';
+import 'package:quantus_desktop_wallet/services/login_password.dart';
 
 /// Whether this computer can confirm that its owner is at it.
 enum ApprovalAvailability {
   available,
 
-  /// The system could, but its owner has set nothing up to prove it with: no
-  /// login password on a Mac, no Windows Hello on Windows.
+  /// The system could, but nothing is set up to prove it with: no login
+  /// password on a Mac, no Windows Hello on Windows, and on Linux no PAM
+  /// service for the app to check the login password through.
   notSetUp,
-
-  /// The app has no way to ask on this system yet (Linux).
-  unsupported,
 }
 
 /// How a request for approval ended.
@@ -20,8 +20,8 @@ enum ApprovalResult { approved, declined, notSetUp }
 /// Asks the person at the computer to prove they own it before the app does
 /// something that hands the wallet over, such as showing its recovery phrase.
 ///
-/// Nothing is let through unasked: a system with no way to ask says so, and
-/// the action stays unavailable.
+/// Nothing is let through unasked: a system that cannot ask says so, and the
+/// action stays unavailable.
 abstract interface class UserApproval {
   Future<ApprovalAvailability> availability();
 
@@ -65,23 +65,36 @@ class LocalAuthApproval implements UserApproval {
   }
 }
 
-/// The approval of a system the app cannot ask yet. Linux gets its own once
-/// the app can check the login password there.
-class UnsupportedApproval implements UserApproval {
-  const UnsupportedApproval();
+/// Shows the app's own prompt for the login password, telling the person
+/// [reason], and answers whether a password they typed passed [check]: false
+/// if they gave up.
+typedef PasswordPrompt = Future<bool> Function({required String reason, required LoginPasswordCheck check});
+
+/// Approval through the login password, asked for in the app's own prompt
+/// and checked by the system: Linux, which has no prompt of its own to ask
+/// with.
+class PasswordApproval implements UserApproval {
+  const PasswordApproval(this._loginPassword, this._prompt);
+
+  final LoginPassword _loginPassword;
+  final PasswordPrompt _prompt;
 
   @override
-  Future<ApprovalAvailability> availability() async => ApprovalAvailability.unsupported;
+  Future<ApprovalAvailability> availability() async =>
+      await _loginPassword.isSetUp() ? ApprovalAvailability.available : ApprovalAvailability.notSetUp;
 
   @override
   Future<ApprovalResult> approve({required String reason}) async =>
-      throw StateError('There is no way to ask for approval on this system.');
+      await _prompt(reason: reason, check: _loginPassword.check) ? ApprovalResult.approved : ApprovalResult.declined;
 }
 
 final userApprovalProvider = Provider<UserApproval>(
   (ref) => switch (defaultTargetPlatform) {
     TargetPlatform.macOS || TargetPlatform.windows => LocalAuthApproval(LocalAuthentication()),
-    TargetPlatform.linux => const UnsupportedApproval(),
+    TargetPlatform.linux => PasswordApproval(
+      ref.watch(loginPasswordProvider),
+      ref.watch(passwordPromptProvider.notifier).ask,
+    ),
     final platform => throw UnsupportedError('The desktop app does not run on ${platform.name}.'),
   },
 );

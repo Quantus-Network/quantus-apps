@@ -2585,13 +2585,30 @@ class AppLocalizationsId extends AppLocalizations {
   String get desktopCopied => 'Disalin';
 
   @override
-  String get desktopApprovalUnavailableLinux => 'Belum tersedia di Linux: nantinya akan meminta kata sandi login Anda.';
-
-  @override
   String get desktopApprovalNeedsMacPassword => 'Atur kata sandi login untuk Mac ini agar dapat menggunakan fitur ini.';
 
   @override
   String get desktopApprovalNeedsWindowsHello => 'Atur Windows Hello agar dapat menggunakan fitur ini.';
+
+  @override
+  String get desktopApprovalNeedsLinuxService =>
+      'Pasang layanan PAM Quantus Wallet (/etc/pam.d/quantus-wallet) agar dapat menggunakan fitur ini.';
+
+  @override
+  String get desktopApprovalLoginAsksMore =>
+      'Login komputer ini meminta lebih dari kata sandi, yang belum dapat dijawab oleh Quantus Wallet.';
+
+  @override
+  String get desktopPasswordPromptTitle => 'Masukkan kata sandi login Anda';
+
+  @override
+  String get desktopPasswordPromptHint => 'Kata sandi';
+
+  @override
+  String get desktopPasswordPromptConfirm => 'Konfirmasi';
+
+  @override
+  String get desktopPasswordPromptWrong => 'Kata sandi itu salah. Coba lagi.';
 
   @override
   String desktopApprovalFailed(String error) {
