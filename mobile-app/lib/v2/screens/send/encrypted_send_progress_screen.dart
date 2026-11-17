@@ -10,6 +10,7 @@ import 'package:wallet_core/providers/l10n_provider.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/v2/components/wormhole_progress_steps.dart';
 import 'package:wallet_core/send/send_strategy.dart';
+import 'package:wallet_core/send/wormhole_steps.dart';
 import 'package:resonance_network_wallet/v2/screens/send/send_terminal_screen.dart';
 
 /// Renders an encrypted send driven by [encryptedSendControllerProvider]: the
@@ -116,12 +117,7 @@ class _EncryptedSendProgressScreenState extends ConsumerState<EncryptedSendProgr
               _buildStatusHeader(colors, text, l10n),
               const SizedBox(height: 24),
               WormholeProgressSteps(
-                steps: [
-                  (1, l10n.encryptedSendStepPreparing),
-                  (4, l10n.encryptedSendStepGenerating),
-                  (5, l10n.encryptedSendStepProving),
-                  (6, l10n.encryptedSendStepSubmitting),
-                ],
+                steps: encryptedSendSteps(l10n),
                 stepProgress: send.stepProgress,
                 currentStep: send.currentStep,
                 done: false,
