@@ -4844,6 +4844,24 @@ abstract class AppLocalizations {
   /// **'Send the maximum amount'**
   String get desktopSendMaximum;
 
+  /// Desktop Send: label of what a private send from the Encrypted account costs, on the form, the review and the receipt
+  ///
+  /// In en, this message translates to:
+  /// **'Transaction fee'**
+  String get desktopSendTransactionFee;
+
+  /// Desktop Send: status at the end of a private send's progress line that a cancel interrupted, in the terminal's voice like [OK]
+  ///
+  /// In en, this message translates to:
+  /// **'[STOPPED]'**
+  String get desktopSendStatusStopped;
+
+  /// Desktop Send: status at the end of a private send's progress line at which the send failed, in the terminal's voice like [OK]
+  ///
+  /// In en, this message translates to:
+  /// **'[FAILED]'**
+  String get desktopSendStatusFailed;
+
   /// Desktop Send: the button that opens the review step, and that step's name in the sheet's path
   ///
   /// In en, this message translates to:

@@ -3840,6 +3840,18 @@
     "@desktopSendMaximum": {
       "description": "Desktop Send: checkbox under the amount field. While ticked the amount is everything the fee leaves of the balance"
     },
+    "desktopSendTransactionFee": "Transaction fee",
+    "@desktopSendTransactionFee": {
+      "description": "Desktop Send: label of what a private send from the Encrypted account costs, on the form, the review and the receipt"
+    },
+    "desktopSendStatusStopped": "[STOPPED]",
+    "@desktopSendStatusStopped": {
+      "description": "Desktop Send: status at the end of a private send's progress line that a cancel interrupted, in the terminal's voice like [OK]"
+    },
+    "desktopSendStatusFailed": "[FAILED]",
+    "@desktopSendStatusFailed": {
+      "description": "Desktop Send: status at the end of a private send's progress line at which the send failed, in the terminal's voice like [OK]"
+    },
     "desktopSendReview": "Review",
     "@desktopSendReview": {
       "description": "Desktop Send: the button that opens the review step, and that step's name in the sheet's path"

@@ -2654,6 +2654,15 @@ class AppLocalizationsId extends AppLocalizations {
   String get desktopSendMaximum => 'Kirim jumlah maksimum';
 
   @override
+  String get desktopSendTransactionFee => 'Biaya transaksi';
+
+  @override
+  String get desktopSendStatusStopped => '[BERHENTI]';
+
+  @override
+  String get desktopSendStatusFailed => '[GAGAL]';
+
+  @override
   String get desktopSendReview => 'Tinjau';
 
   @override
