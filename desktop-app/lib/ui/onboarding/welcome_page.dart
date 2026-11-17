@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:quantus_desktop_wallet/ui/onboarding/onboarding_button.dart';
 import 'package:quantus_desktop_wallet/ui/onboarding/onboarding_page.dart';
 import 'package:quantus_desktop_wallet/ui/onboarding/wave_field.dart';
 import 'package:quantus_desktop_wallet/utils/ascii_field.dart';
@@ -98,12 +99,12 @@ class _WelcomePageState extends ConsumerState<WelcomePage> {
                   mainAxisSize: MainAxisSize.min,
                   spacing: 12,
                   children: [
-                    _HeroButton(
+                    OnboardingButton(
                       label: l10n.welcomeCreateNewWallet,
                       onTap: widget.onCreateWallet,
                       isLoading: widget.isCreating,
                     ),
-                    _HeroButton(
+                    OnboardingButton(
                       label: l10n.welcomeImportWallet,
                       onTap: widget.onImportWallet,
                       isSecondary: true,
@@ -129,51 +130,6 @@ class _WelcomePageState extends ConsumerState<WelcomePage> {
               child: IgnorePointer(child: _WaveModeReadout(mode: _waveMode)),
             ),
         ],
-      ),
-    );
-  }
-}
-
-/// One of the two buttons under the headline. Both are the same size
-/// whatever their labels say and whether or not they are busy, so the pair
-/// stays balanced.
-class _HeroButton extends StatelessWidget {
-  const _HeroButton({
-    required this.label,
-    required this.onTap,
-    this.isSecondary = false,
-    this.isLoading = false,
-    this.isDisabled = false,
-  });
-
-  final String label;
-  final VoidCallback onTap;
-  final bool isSecondary;
-  final bool isLoading;
-  final bool isDisabled;
-
-  static const Size _size = Size(200, 40);
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = context.colorsV3;
-    final labelColor = isDisabled
-        ? colors.textMuted2
-        : isSecondary
-        ? colors.textContent
-        : colors.textVoid;
-
-    return SizedBox.fromSize(
-      size: _size,
-      child: QuantusButton.simple(
-        label: label,
-        onTap: onTap,
-        isLoading: isLoading,
-        isDisabled: isDisabled,
-        variant: isSecondary ? ButtonVariant.staged : ButtonVariant.primary,
-        width: _size.width,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        textStyle: context.themeTextV3.bodyEmphasis.copyWith(height: 1, color: labelColor),
       ),
     );
   }

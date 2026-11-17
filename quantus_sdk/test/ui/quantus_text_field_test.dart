@@ -206,4 +206,34 @@ void main() {
       throwsAssertionError,
     );
   });
+
+  testWidgets('draws a footer inside the bordered box, under the text', (tester) async {
+    final controller = TextEditingController(text: 'one two');
+    addTearDown(controller.dispose);
+
+    await pumpField(
+      tester,
+      QuantusTextField(
+        controller: controller,
+        maxLines: null,
+        expands: true,
+        height: 180,
+        footer: const Text('Footer'),
+      ),
+    );
+
+    final box = tester.getRect(find.byType(QuantusTextField));
+    final text = tester.getRect(find.byType(TextField));
+    final footer = tester.getRect(find.text('Footer'));
+    expect(box.height, 180);
+    expect(box.contains(footer.topLeft) && box.contains(footer.bottomRight), isTrue, reason: 'inside the box');
+    expect(footer.top, greaterThanOrEqualTo(text.bottom), reason: 'under the text');
+  });
+
+  testWidgets('a footer needs an expanding field', (tester) async {
+    final controller = TextEditingController();
+    addTearDown(controller.dispose);
+
+    expect(() => QuantusTextField(controller: controller, footer: const Text('Footer')), throwsAssertionError);
+  });
 }

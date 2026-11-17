@@ -2538,4 +2538,36 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get desktopBalanceLabel => 'Balance';
+
+  @override
+  String get desktopImportHeadline => 'Restore your wallet.';
+
+  @override
+  String get desktopImportTipWordCount => '12 or 24 words';
+
+  @override
+  String get desktopImportTipSpaces => 'Separated by spaces';
+
+  @override
+  String get desktopImportTipPaste => 'Paste the whole phrase at once';
+
+  @override
+  String get desktopImportPhraseLabel => 'Recovery phrase';
+
+  @override
+  String get desktopImportPaste => 'Paste';
+
+  @override
+  String desktopImportWordCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count words', one: '1 word');
+    return '$_temp0';
+  }
+
+  @override
+  String get desktopWalletReadyHeadline => 'Your wallet is ready.';
+
+  @override
+  String desktopWalletReadyBody(String account, String encrypted) {
+    return '$account is transparent: fast, and visible on chain. The $encrypted is for private transactions, and slower.';
+  }
 }

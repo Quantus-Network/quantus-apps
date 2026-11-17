@@ -40,6 +40,45 @@ void main() {
     expect(tester.getSize(find.byType(QuantusTextField)).height, 202);
   });
 
+  testWidgets('keeps the eye at the top right when there is no footer', (tester) async {
+    final controller = ObscuringTextEditingController();
+    addTearDown(controller.dispose);
+
+    await pumpField(tester, QuantusSeedPhraseField(controller: controller));
+
+    final field = tester.getRect(find.byType(QuantusTextField));
+    final eye = tester.getRect(find.byIcon(Icons.visibility_off_outlined));
+    expect(eye.center.dy, lessThan(field.center.dy));
+    expect(eye.center.dx, greaterThan(field.center.dx));
+  });
+
+  testWidgets('takes its height from height', (tester) async {
+    final controller = ObscuringTextEditingController();
+    addTearDown(controller.dispose);
+
+    await pumpField(tester, QuantusSeedPhraseField(controller: controller, height: 180));
+
+    expect(tester.getSize(find.byType(QuantusTextField)).height, 180);
+  });
+
+  testWidgets("with a footer, the eye sits at the footer's end and still toggles the phrase", (tester) async {
+    final controller = ObscuringTextEditingController(text: 'secret phrase');
+    addTearDown(controller.dispose);
+
+    await pumpField(tester, QuantusSeedPhraseField(controller: controller, footer: const Text('2 WORDS')));
+
+    final field = tester.getRect(find.byType(QuantusTextField));
+    final footer = tester.getRect(find.text('2 WORDS'));
+    final eye = tester.getRect(find.byIcon(Icons.visibility_off_outlined));
+    expect(footer.center.dy, greaterThan(field.center.dy), reason: 'the footer is at the bottom');
+    expect(eye.center.dy, moreOrLessEquals(footer.center.dy, epsilon: 1), reason: 'on the footer\'s line');
+    expect(eye.left, greaterThan(footer.right));
+
+    await tester.tap(find.byIcon(Icons.visibility_off_outlined));
+    await tester.pump();
+    expect(controller.obscured, isFalse);
+  });
+
   testWidgets('visibility toggle reveals and hides the phrase', (tester) async {
     final controller = ObscuringTextEditingController(text: 'secret phrase');
     addTearDown(controller.dispose);

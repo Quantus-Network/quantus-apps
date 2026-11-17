@@ -10,9 +10,17 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 /// it, a ring shows it has the keyboard's focus, and Space presses it. With
 /// no [onPressed] it is dimmed and does none of this.
 class ToolbarAction extends StatefulWidget {
-  const ToolbarAction({super.key, required this.icon, required this.label, required this.onPressed});
+  const ToolbarAction({super.key, required QuantusIcons this.icon, required this.label, required this.onPressed})
+    : symbol = null;
 
-  final QuantusIcons icon;
+  /// An action drawn with a system [symbol] where the app has no icon of its
+  /// own; it looks and behaves as any other.
+  const ToolbarAction.symbol({super.key, required IconData this.symbol, required this.label, required this.onPressed})
+    : icon = null;
+
+  /// The app's icon, or else [symbol]: exactly one of them is set.
+  final QuantusIcons? icon;
+  final IconData? symbol;
   final String label;
 
   /// What a press does. Null makes the action unavailable.
@@ -32,6 +40,8 @@ class _ToolbarActionState extends State<ToolbarAction> {
   bool _isHovered = false;
   bool _isFocused = false;
   bool _isPressed = false;
+
+  static const double _iconSize = 16;
 
   bool get _isAvailable => widget.onPressed != null;
 
@@ -97,7 +107,10 @@ class _ToolbarActionState extends State<ToolbarAction> {
                       mainAxisSize: MainAxisSize.min,
                       spacing: 7,
                       children: [
-                        QuantusIcon(widget.icon, size: 16, color: colors.accentFlare),
+                        if (widget.icon case final icon?)
+                          QuantusIcon(icon, size: _iconSize, color: colors.accentFlare)
+                        else
+                          Icon(widget.symbol, size: _iconSize, color: colors.accentFlare),
                         Text(
                           widget.label,
                           style: context.themeTextV3.bodyEmphasis.copyWith(

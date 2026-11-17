@@ -33,6 +33,13 @@ class QuantusSeedPhraseField extends StatefulWidget {
 
   final GlobalKey? scrollToOnFocus;
 
+  /// How tall the field is.
+  final double height;
+
+  /// A row drawn inside the field under the phrase. With one, the visibility
+  /// toggle sits at the end of that row instead of at the top right.
+  final Widget? footer;
+
   const QuantusSeedPhraseField({
     super.key,
     required this.controller,
@@ -40,6 +47,8 @@ class QuantusSeedPhraseField extends StatefulWidget {
     this.error,
     this.onChanged,
     this.scrollToOnFocus,
+    this.height = 202,
+    this.footer,
   });
 
   @override
@@ -75,12 +84,20 @@ class _QuantusSeedPhraseFieldState extends State<QuantusSeedPhraseField> {
 
   @override
   Widget build(BuildContext context) {
+    final footer = widget.footer;
+    final toggle = QuantusIconButton.ghost(
+      icon: widget.controller.obscured ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+      size: footer == null ? IconButtonSize.medium : IconButtonSize.small,
+      onTap: () => setState(() => widget.controller.obscured = !widget.controller.obscured),
+      canRequestFocus: false,
+    );
+
     return QuantusTextField(
       controller: widget.controller,
       focusNode: _focusNode,
       hint: widget.hint,
       error: widget.error,
-      height: 202,
+      height: widget.height,
       maxLines: null,
       expands: true,
       keyboardType: TextInputType.multiline,
@@ -88,11 +105,16 @@ class _QuantusSeedPhraseFieldState extends State<QuantusSeedPhraseField> {
       autocorrect: false,
       enableSuggestions: false,
       onChanged: widget.onChanged,
-      trailing: QuantusIconButton.ghost(
-        icon: widget.controller.obscured ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-        onTap: () => setState(() => widget.controller.obscured = !widget.controller.obscured),
-        canRequestFocus: false,
-      ),
+      trailing: footer == null ? toggle : null,
+      footer: footer == null
+          ? null
+          : Row(
+              children: [
+                Expanded(child: footer),
+                const SizedBox(width: 8),
+                toggle,
+              ],
+            ),
     );
   }
 }

@@ -2541,4 +2541,36 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get desktopBalanceLabel => 'Saldo';
+
+  @override
+  String get desktopImportHeadline => 'Pulihkan dompet Anda.';
+
+  @override
+  String get desktopImportTipWordCount => '12 atau 24 kata';
+
+  @override
+  String get desktopImportTipSpaces => 'Dipisahkan dengan spasi';
+
+  @override
+  String get desktopImportTipPaste => 'Tempel seluruh frasa sekaligus';
+
+  @override
+  String get desktopImportPhraseLabel => 'Recovery phrase';
+
+  @override
+  String get desktopImportPaste => 'Tempel';
+
+  @override
+  String desktopImportWordCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count kata');
+    return '$_temp0';
+  }
+
+  @override
+  String get desktopWalletReadyHeadline => 'Dompet Anda siap.';
+
+  @override
+  String desktopWalletReadyBody(String account, String encrypted) {
+    return '$account bersifat transparan: cepat, dan terlihat di chain. $encrypted untuk transaksi privat, dan lebih lambat.';
+  }
 }

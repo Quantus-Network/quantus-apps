@@ -27,6 +27,10 @@ class QuantusTextField extends StatefulWidget {
   final bool expands;
   final double? height;
 
+  /// A row drawn inside the field's border, under the text. Only for a field
+  /// that [expands], whose height leaves room for it.
+  final Widget? footer;
+
   const QuantusTextField({
     super.key,
     required this.controller,
@@ -49,8 +53,10 @@ class QuantusTextField extends StatefulWidget {
     this.maxLines = 1,
     this.expands = false,
     this.height,
+    this.footer,
   }) : assert(!showClearButton || trailing == null, 'showClearButton and trailing are mutually exclusive'),
-       assert(!expands || (maxLines == null && height != null), 'expands needs maxLines: null and an explicit height');
+       assert(!expands || (maxLines == null && height != null), 'expands needs maxLines: null and an explicit height'),
+       assert(footer == null || expands, 'a footer needs a field that expands');
 
   @override
   State<QuantusTextField> createState() => _QuantusTextFieldState();
@@ -120,6 +126,26 @@ class _QuantusTextFieldState extends State<QuantusTextField> {
     final hintStyle = context.themeTextV3.dataAddressLarge.copyWith(color: colors.textMuted);
     final showClear = widget.showClearButton && widget.controller.text.isNotEmpty;
     final extra = showClear ? _QuantusTextFieldClearButton(onTap: widget.controller.clear) : widget.trailing;
+    final footer = widget.footer;
+    final textField = TextField(
+      controller: widget.controller,
+      focusNode: _focusNode,
+      enabled: widget.enabled,
+      obscureText: widget.obscureText,
+      enableSuggestions: widget.enableSuggestions,
+      keyboardType: widget.keyboardType,
+      inputFormatters: widget.inputFormatters,
+      textInputAction: widget.textInputAction,
+      textCapitalization: widget.textCapitalization,
+      autocorrect: widget.autocorrect,
+      maxLines: widget.maxLines,
+      expands: widget.expands,
+      onChanged: widget.onChanged,
+      onSubmitted: widget.onSubmitted,
+      cursorColor: colors.accentFlare,
+      style: textStyle,
+      decoration: InputDecoration.collapsed(hintText: widget.hint, hintStyle: hintStyle),
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -135,32 +161,23 @@ class _QuantusTextFieldState extends State<QuantusTextField> {
                 left: 14,
                 right: extra == null ? 14 : _trailingReserve(extra),
                 top: 14,
-                bottom: 14,
+                bottom: footer == null ? 14 : 10,
               ),
               decoration: BoxDecoration(
                 color: colors.bgSurface,
                 borderRadius: context.radiusV3.mdBorder,
                 border: Border.all(color: _borderColor(colors), width: 1),
               ),
-              child: TextField(
-                controller: widget.controller,
-                focusNode: _focusNode,
-                enabled: widget.enabled,
-                obscureText: widget.obscureText,
-                enableSuggestions: widget.enableSuggestions,
-                keyboardType: widget.keyboardType,
-                inputFormatters: widget.inputFormatters,
-                textInputAction: widget.textInputAction,
-                textCapitalization: widget.textCapitalization,
-                autocorrect: widget.autocorrect,
-                maxLines: widget.maxLines,
-                expands: widget.expands,
-                onChanged: widget.onChanged,
-                onSubmitted: widget.onSubmitted,
-                cursorColor: colors.accentFlare,
-                style: textStyle,
-                decoration: InputDecoration.collapsed(hintText: widget.hint, hintStyle: hintStyle),
-              ),
+              child: footer == null
+                  ? textField
+                  : Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Expanded(child: textField),
+                        const SizedBox(height: 10),
+                        footer,
+                      ],
+                    ),
             ),
             if (extra != null)
               _isMultiline

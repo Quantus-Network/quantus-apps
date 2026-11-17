@@ -9,6 +9,7 @@ import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:wallet_core/services/remote_notifications_registration.dart';
 import 'package:wallet_core/services/telemetry.dart';
 import 'package:wallet_core/utils/account_utils.dart';
+import 'package:wallet_core/utils/recovery_phrase.dart';
 
 final walletCreationServiceProvider = Provider<WalletCreationService>((ref) {
   return WalletCreationService(
@@ -264,7 +265,7 @@ Future<Account> importSoftwareWallet(
   // Dev seeds (//Crystal Alice etc.) skip word-count validation, but only
   // in debug builds; in release they fail normal mnemonic validation (M8).
   if (!(kDebugMode && phrase.startsWith('//'))) {
-    final words = phrase.split(' ').where((w) => w.isNotEmpty).toList();
+    final words = recoveryPhraseWords(phrase);
     if (words.length != 12 && words.length != 24) {
       throw InvalidRecoveryPhraseException(ref.read(l10nProvider).importWalletValidationError);
     }

@@ -677,5 +677,14 @@
   "desktopWelcomeTitleLine1": "Uang yang tidak bisa",
   "desktopWelcomeTitleLine2": "dipecahkan oleh komputer kuantum.",
   "desktopWelcomeBody": "Buat dompet baru, atau impor dompet yang sudah Anda miliki.",
-  "desktopBalanceLabel": "Saldo"
+  "desktopBalanceLabel": "Saldo",
+  "desktopImportHeadline": "Pulihkan dompet Anda.",
+  "desktopImportTipWordCount": "12 atau 24 kata",
+  "desktopImportTipSpaces": "Dipisahkan dengan spasi",
+  "desktopImportTipPaste": "Tempel seluruh frasa sekaligus",
+  "desktopImportPhraseLabel": "Recovery phrase",
+  "desktopImportPaste": "Tempel",
+  "desktopImportWordCount": "{count, plural, other{{count} kata}}",
+  "desktopWalletReadyHeadline": "Dompet Anda siap.",
+  "desktopWalletReadyBody": "{account} bersifat transparan: cepat, dan terlihat di chain. {encrypted} untuk transaksi privat, dan lebih lambat."
 }
