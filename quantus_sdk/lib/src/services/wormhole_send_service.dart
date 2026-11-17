@@ -77,36 +77,53 @@ class WormholeOperation {
   }
 }
 
-/// One leaf proof to generate: consumes [transfer] (owned by [secret]) and
-/// exits [outputAmount1] to [exitAccount1] plus optionally [outputAmount2] to
-/// [exitAccount2] (change). Amounts are in scaled-down units.
-class WormholeLeafSpend {
+/// One leaf proof to generate: a proof of burn of [transfer], owned by
+/// [secret]. Where the value goes is decided per batch ([WormholeExit]).
+class WormholeBurn {
   final WormholeTransfer transfer;
   final Uint8List secret;
-  final Uint8List exitAccount1;
-  final int outputAmount1;
-  final Uint8List? exitAccount2;
-  final int outputAmount2;
 
-  const WormholeLeafSpend({
-    required this.transfer,
-    required this.secret,
-    required this.exitAccount1,
-    required this.outputAmount1,
-    this.exitAccount2,
-    this.outputAmount2 = 0,
-  });
+  const WormholeBurn({required this.transfer, required this.secret});
 }
 
-/// Spends wormhole transfers by generating one ZK leaf proof per transfer,
-/// aggregating them into 7-proof batches (the chain's aggregation arity; short
+/// One exit slot of a private batch: [amountScaled] (scaled-down units) paid
+/// to [account]. [returnsToSender] marks change (bills and remainder) so
+/// results can report what actually left the wallet.
+class WormholeExit {
+  final Uint8List account;
+  final int amountScaled;
+  final bool returnsToSender;
+
+  const WormholeExit({required this.account, required this.amountScaled, this.returnsToSender = false});
+}
+
+/// One private batch: [burns] are proved individually, then aggregated into a
+/// single proof that pays [exits]. The circuit binds them with
+/// `Σexits * 10000 <= Σburns * (10000 - feeBps)`.
+class WormholeBatchSpend {
+  final List<WormholeBurn> burns;
+  final List<WormholeExit> exits;
+
+  const WormholeBatchSpend({required this.burns, required this.exits});
+
+  int get exitScaled => exits.fold(0, (sum, exit) => sum + exit.amountScaled);
+
+  int get paidOutScaled => exits.where((exit) => !exit.returnsToSender).fold(0, (sum, exit) => sum + exit.amountScaled);
+}
+
+/// Leaf-proof and exit-slot counts of the circuit binaries in use.
+typedef WormholeBatchShape = ({int numLeafProofs, int numExitSlots});
+
+/// Spends wormhole transfers by generating one ZK leaf proof (proof of burn)
+/// per transfer, aggregating them into private batches of up to
+/// `numLeafProofs` burns and `numExitSlots` exits (the chain's shape; short
 /// batches are padded with `dummy_proof.bin` inside the aggregator) and
 /// submitting each aggregate as an unsigned extrinsic.
 ///
 /// [claimRewards] is the mining-rewards flow: it discovers unspent transfers
-/// for one address and pays everything to a single destination. [sendSpends]
-/// takes explicit per-leaf output assignments (recipient + change) prepared by
-/// coin selection, for encrypted-account sends.
+/// for one address and pays each batch's net to a single destination.
+/// [sendSpends] takes explicit per-batch exits (recipient, bills, remainder)
+/// prepared by coin selection, for encrypted-account sends.
 ///
 /// Shared between the miner app (talks to a local node via [rpcUrl]) and the
 /// mobile wallet (omits [rpcUrl] and uses the redundant remote endpoints).
@@ -165,24 +182,22 @@ class WormholeSendService {
   }
 
   /// Proves and submits pre-assigned spends. [batches] must respect the
-  /// circuits' aggregation arity (checked against the circuit config).
+  /// circuits' shape (checked against the circuit config).
   /// [onBatchSubmitted] is awaited after each batch's extrinsic is accepted,
   /// with the spent nullifier hexes — callers persist these to keep local
   /// pending-spend state exact even if a later batch fails.
   Future<ClaimResult> sendSpends({
-    required List<List<WormholeLeafSpend>> batches,
+    required List<WormholeBatchSpend> batches,
     required String circuitBinsDir,
     required ClaimProgressCallback onProgress,
     Future<void> Function(int batchIndex, List<String> nullifierHexes)? onBatchSubmitted,
     String? rpcUrl,
   }) {
     return _runOperation(rpcUrl, (op) async {
-      final maxProofsPerBatch = await ensureCircuits(op, circuitBinsDir, onProgress);
+      final shape = await ensureCircuits(op, circuitBinsDir, onProgress);
       for (final batch in batches) {
-        if (batch.isEmpty || batch.length > maxProofsPerBatch) {
-          throw StateError('Batch of ${batch.length} spends violates aggregation arity $maxProofsPerBatch');
-        }
-        _validateBatchOutputs(batch, batch.map((spend) => wormholeScaledFromToken(spend.transfer.amount)));
+        _validateBatchShape(batch, shape);
+        _validateBatchOutputs(batch, batch.burns.map((burn) => wormholeScaledFromToken(burn.transfer.amount)));
       }
       return proveAndSubmitBatches(
         op: op,
@@ -222,21 +237,24 @@ class WormholeSendService {
     onProgress(ClaimProgressItem(step: step, title: _stepTitles[step]!, completed: completed, total: total));
   }
 
-  /// Step 1: ensures circuit binaries exist and returns the aggregation arity.
+  /// Step 1: ensures circuit binaries exist and returns their batch shape.
   @visibleForTesting
-  Future<int> ensureCircuits(WormholeOperation op, String circuitBinsDir, ClaimProgressCallback onProgress) async {
+  Future<WormholeBatchShape> ensureCircuits(
+    WormholeOperation op,
+    String circuitBinsDir,
+    ClaimProgressCallback onProgress,
+  ) async {
     op.checkCancelled();
     _reportProgress(onProgress, 1, 0);
     _log('Ensuring circuit binaries at: $circuitBinsDir');
     final artifacts = await CircuitManager().ensureAt(circuitBinsDir);
-    final maxProofsPerBatch = artifacts.numLeafProofs;
     _log(
       'Circuit binaries ${artifacts.version} ready at ${artifacts.circuitDir} '
-      '(num_leaf_proofs=$maxProofsPerBatch)',
+      '(num_leaf_proofs=${artifacts.numLeafProofs}, num_exit_slots=${artifacts.numExitSlots})',
     );
     _reportProgress(onProgress, 1, 1);
     op.checkCancelled();
-    return maxProofsPerBatch;
+    return (numLeafProofs: artifacts.numLeafProofs, numExitSlots: artifacts.numExitSlots);
   }
 
   Future<ClaimResult> _runClaimFlow({
@@ -247,7 +265,8 @@ class WormholeSendService {
     required String circuitBinsDir,
     required ClaimProgressCallback onProgress,
   }) async {
-    final maxProofsPerBatch = await ensureCircuits(op, circuitBinsDir, onProgress);
+    final shape = await ensureCircuits(op, circuitBinsDir, onProgress);
+    final maxProofsPerBatch = shape.numLeafProofs;
 
     _reportProgress(onProgress, 2, 0);
     final unspent = await _utxoService.getUnspentTransfers(
@@ -267,27 +286,22 @@ class WormholeSendService {
     _log('Found ${unspent.length} unspent transfers');
     op.checkCancelled();
 
-    // A claim pays each private batch's full net amount to the destination.
-    // The secret lives only in this buffer and is zeroized as soon as the
-    // proofs are done (M11).
+    // A claim pays each private batch's full net amount to the destination in
+    // a single exit. The secret lives only in this buffer and is zeroized as
+    // soon as the proofs are done (M11).
     final secretBytes = Uint8List.fromList(hex.decode(secretHex.replaceFirst('0x', '')));
     try {
       final destinationBytes = Uint8List.fromList(getAccountId32(destinationAddress));
-      final batches = <List<WormholeLeafSpend>>[];
+      final batches = <WormholeBatchSpend>[];
       for (var i = 0; i < unspent.length; i += maxProofsPerBatch) {
         final transfers = unspent.sublist(i, (i + maxProofsPerBatch).clamp(0, unspent.length));
-        final outputAmounts = wormholeBatchOutputs(
-          transfers.map((transfer) => wormholeScaledFromToken(transfer.amount)).toList(),
+        final net = wormholeBatchNetScaled(transfers.map((transfer) => wormholeScaledFromToken(transfer.amount)));
+        batches.add(
+          WormholeBatchSpend(
+            burns: [for (final transfer in transfers) WormholeBurn(transfer: transfer, secret: secretBytes)],
+            exits: [WormholeExit(account: destinationBytes, amountScaled: net)],
+          ),
         );
-        batches.add([
-          for (var j = 0; j < transfers.length; j++)
-            WormholeLeafSpend(
-              transfer: transfers[j],
-              secret: secretBytes,
-              exitAccount1: destinationBytes,
-              outputAmount1: outputAmounts[j],
-            ),
-        ]);
       }
 
       return await proveAndSubmitBatches(
@@ -304,19 +318,21 @@ class WormholeSendService {
   @visibleForTesting
   Future<ClaimResult> proveAndSubmitBatches({
     required WormholeOperation op,
-    required List<List<WormholeLeafSpend>> batches,
+    required List<WormholeBatchSpend> batches,
     required String circuitBinsDir,
     required ClaimProgressCallback onProgress,
     Future<void> Function(int batchIndex, List<String> nullifierHexes)? onBatchSubmitted,
   }) async {
-    final numTransfers = batches.fold<int>(0, (sum, b) => sum + b.length);
+    final numTransfers = batches.fold<int>(0, (sum, b) => sum + b.burns.length);
     final totalBatches = batches.length;
     _reportProgress(onProgress, 4, 0, total: numTransfers);
 
     final txHashes = <String>[];
-    BigInt recipientTotal = BigInt.zero;
     int proofsCompleted = 0;
     final genSw = Stopwatch()..start();
+
+    BigInt paidOut(Iterable<WormholeBatchSpend> submitted) =>
+        submitted.fold(BigInt.zero, (sum, b) => sum + wormholeTokenFromScaled(b.paidOutScaled));
 
     try {
       for (int batchIndex = 0; batchIndex < totalBatches; batchIndex++) {
@@ -334,15 +350,15 @@ class WormholeSendService {
         final blockHashBytes = Uint8List.fromList(_hexBytes(blockHash));
         _log('Batch $batchNum/$totalBatches proof block: #$blockNumber ($blockHash)');
 
-        final proofBytesList = List<Uint8List?>.filled(batch.length, null);
-        final nullifierHexes = List<String?>.filled(batch.length, null);
-        final futures = <Future<({int inputScaled, BigInt recipientToken})>>[];
-        for (int i = 0; i < batch.length; i++) {
-          final spend = batch[i];
+        final proofBytesList = List<Uint8List?>.filled(batch.burns.length, null);
+        final nullifierHexes = List<String?>.filled(batch.burns.length, null);
+        final futures = <Future<int>>[];
+        for (int i = 0; i < batch.burns.length; i++) {
+          final burn = batch.burns[i];
           futures.add(
             _generateLeafProof(
               op: op,
-              spend: spend,
+              burn: burn,
               blockHash: blockHash,
               blockNumber: blockNumber,
               parentHash: parentHash,
@@ -350,7 +366,6 @@ class WormholeSendService {
               extrinsicsRoot: extrinsicsRoot,
               digest: digest,
               blockHashBytes: blockHashBytes,
-              circuitBinsDir: circuitBinsDir,
               proofBuffer: proofBytesList,
               nullifierBuffer: nullifierHexes,
               outputIndex: i,
@@ -358,7 +373,7 @@ class WormholeSendService {
                 proofsCompleted++;
                 quantusPrint(
                   '[WormholeSend] Proof $proofsCompleted/$numTransfers '
-                  'leaf=${spend.transfer.leafIndex} (${genSw.elapsedMilliseconds}ms elapsed)',
+                  'leaf=${burn.transfer.leafIndex} (${genSw.elapsedMilliseconds}ms elapsed)',
                 );
                 _reportProgress(onProgress, 4, proofsCompleted, total: numTransfers);
               },
@@ -366,17 +381,19 @@ class WormholeSendService {
           );
         }
 
-        final outputs = await Future.wait(futures, eagerError: true);
-        _validateBatchOutputs(batch, outputs.map((output) => output.inputScaled));
-        for (final output in outputs) {
-          recipientTotal += output.recipientToken;
-        }
+        final inputAmounts = await Future.wait(futures, eagerError: true);
+        _validateBatchOutputs(batch, inputAmounts);
         op.checkCancelled();
 
         _reportProgress(onProgress, 5, batchNum - 1, total: totalBatches);
-        _log('Aggregating batch $batchNum/$totalBatches');
+        _log('Aggregating batch $batchNum/$totalBatches (${batch.exits.length} exits)');
         final aggregated = await wormhole_ffi.aggregateProofs(
           proofBytesList: proofBytesList.cast<Uint8List>(),
+          exits: [
+            for (final exit in batch.exits)
+              wormhole_ffi.ExitOutput(exitAccount: exit.account, amount: exit.amountScaled),
+          ],
+          volumeFeeBps: wormholeVolumeFeeBps,
           binsDir: circuitBinsDir,
         );
         _log('Batch $batchNum aggregated (${aggregated.length} bytes)');
@@ -402,11 +419,8 @@ class WormholeSendService {
       final submitted = batches.take(txHashes.length);
       _log('Cancelled after ${txHashes.length}/$totalBatches batches were submitted');
       return ClaimResult(
-        totalWithdrawn: submitted.fold(
-          BigInt.zero,
-          (sum, b) => sum + b.fold(BigInt.zero, (s, spend) => s + wormholeTokenFromScaled(spend.outputAmount1)),
-        ),
-        transfersProcessed: submitted.fold(0, (sum, b) => sum + b.length),
+        totalWithdrawn: paidOut(submitted),
+        transfersProcessed: submitted.fold(0, (sum, b) => sum + b.burns.length),
         batchesSubmitted: txHashes.length,
         txHashes: txHashes,
         cancelled: true,
@@ -423,20 +437,20 @@ class WormholeSendService {
     }
 
     return ClaimResult(
-      totalWithdrawn: recipientTotal,
+      totalWithdrawn: paidOut(batches),
       transfersProcessed: numTransfers,
       batchesSubmitted: txHashes.length,
       txHashes: txHashes,
     );
   }
 
-  /// Generates a single leaf proof and writes it (and its nullifier hex) to
-  /// the output buffers. Returns its decoded input and exit-slot-1 amount.
-  /// [onComplete] fires once the proof is written so callers can update
-  /// progress per-leaf.
-  Future<({int inputScaled, BigInt recipientToken})> _generateLeafProof({
+  /// Generates a single leaf proof (proof of burn) and writes it (and its
+  /// nullifier hex) to the output buffers. Returns the leaf's decoded input
+  /// amount in scaled units. [onComplete] fires once the proof is written so
+  /// callers can update progress per-leaf.
+  Future<int> _generateLeafProof({
     required WormholeOperation op,
-    required WormholeLeafSpend spend,
+    required WormholeBurn burn,
     required String blockHash,
     required int blockNumber,
     required List<int> parentHash,
@@ -444,14 +458,13 @@ class WormholeSendService {
     required List<int> extrinsicsRoot,
     required List<int> digest,
     required Uint8List blockHashBytes,
-    required String circuitBinsDir,
     required List<Uint8List?> proofBuffer,
     required List<String?> nullifierBuffer,
     required int outputIndex,
     void Function()? onComplete,
   }) async {
     op.checkCancelled();
-    final transfer = spend.transfer;
+    final transfer = burn.transfer;
     final zkProof = await _getZkMerkleProof(op, transfer.leafIndex, blockHash);
 
     final leafData = _toBytes(zkProof['leaf_data']);
@@ -475,7 +488,7 @@ class WormholeSendService {
     op.checkCancelled();
     final proof = await wormhole_ffi.generateProof(
       input: wormhole_ffi.ProofInput(
-        secret: spend.secret,
+        secret: burn.secret,
         transferCount: transfer.transferCount,
         wormholeAddress: wormholeAddressBytes,
         inputAmount: inputAmount,
@@ -488,34 +501,33 @@ class WormholeSendService {
         zkTreeRoot: zkRoot,
         sortedSiblingsFlat: merkle.sortedSiblingsFlat,
         positions: merkle.positions,
-        exitAccount1: spend.exitAccount1,
-        outputAmount1: spend.outputAmount1,
-        exitAccount2: spend.exitAccount2 ?? Uint8List(32),
-        outputAmount2: spend.outputAmount2,
-        volumeFeeBps: wormholeVolumeFeeBps,
         assetId: 0,
       ),
-      proverBinPath: '$circuitBinsDir/prover.bin',
-      commonBinPath: '$circuitBinsDir/common.bin',
     );
     proofBuffer[outputIndex] = proof.proofBytes;
     nullifierBuffer[outputIndex] = '0x${hex.encode(proof.nullifier)}';
     onComplete?.call();
-    // On-chain dispatch transfers `outputAmount * scaleFactor` token units to
-    // each exit account; slot 1 is the recipient's exact contribution.
-    return (inputScaled: inputAmount, recipientToken: wormholeTokenFromScaled(spend.outputAmount1));
+    return inputAmount;
   }
 
-  void _validateBatchOutputs(List<WormholeLeafSpend> batch, Iterable<int> inputAmounts) {
+  void _validateBatchShape(WormholeBatchSpend batch, WormholeBatchShape shape) {
+    if (batch.burns.isEmpty || batch.burns.length > shape.numLeafProofs) {
+      throw StateError('Batch of ${batch.burns.length} burns violates aggregation arity ${shape.numLeafProofs}');
+    }
+    if (batch.exits.isEmpty || batch.exits.length > shape.numExitSlots) {
+      throw StateError('Batch of ${batch.exits.length} exits violates exit-slot count ${shape.numExitSlots}');
+    }
+  }
+
+  void _validateBatchOutputs(WormholeBatchSpend batch, Iterable<int> inputAmounts) {
     final inputs = inputAmounts.toList();
-    if (inputs.length != batch.length) throw StateError('Wormhole batch input count changed during proving');
-    if (batch.any((spend) => spend.outputAmount1 < 0 || spend.outputAmount2 < 0)) {
+    if (inputs.length != batch.burns.length) throw StateError('Wormhole batch input count changed during proving');
+    if (batch.exits.any((exit) => exit.amountScaled < 0)) {
       throw StateError('Wormhole batch outputs must be non-negative');
     }
-    final outputTotal = batch.fold<int>(0, (sum, spend) => sum + spend.outputAmount1 + spend.outputAmount2);
     final maxOutput = wormholeBatchNetScaled(inputs);
-    if (outputTotal > maxOutput) {
-      throw StateError('Batch outputs $outputTotal exceed net input $maxOutput');
+    if (batch.exitScaled > maxOutput) {
+      throw StateError('Batch outputs ${batch.exitScaled} exceed net input $maxOutput');
     }
   }
 

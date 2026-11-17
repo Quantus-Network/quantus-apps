@@ -19,9 +19,6 @@ Uint8List computeNullifier({required List<int> secret, required BigInt transferC
 Uint8List computeWormholeAddress({required List<int> secret}) =>
     RustLib.instance.api.crateApiWormholeComputeWormholeAddress(secret: secret);
 
-int wormholeComputeOutputAmount({required int inputAmount, required int feeBps}) =>
-    RustLib.instance.api.crateApiWormholeWormholeComputeOutputAmount(inputAmount: inputAmount, feeBps: feeBps);
-
 int decodeLeafAmount({required List<int> leafData}) =>
     RustLib.instance.api.crateApiWormholeDecodeLeafAmount(leafData: leafData);
 
@@ -44,18 +41,44 @@ MerkleProcessed computeMerklePositions({
 Future<String> ensureCircuitBinaries({required String binsDir}) =>
     RustLib.instance.api.crateApiWormholeEnsureCircuitBinaries(binsDir: binsDir);
 
-Future<ProofOutput> generateProof({
-  required ProofInput input,
-  required String proverBinPath,
-  required String commonBinPath,
-}) => RustLib.instance.api.crateApiWormholeGenerateProof(
-  input: input,
-  proverBinPath: proverBinPath,
-  commonBinPath: commonBinPath,
+Future<ProofOutput> generateProof({required ProofInput input}) =>
+    RustLib.instance.api.crateApiWormholeGenerateProof(input: input);
+
+/// Aggregates leaf (proof-of-burn) proofs into one private-batch proof that
+/// pays `exits`. The circuit enforces
+/// `Σexits * 10000 <= Σburns * (10000 - volume_fee_bps)`; unused exit slots
+/// are padded with zero outputs.
+Future<Uint8List> aggregateProofs({
+  required List<Uint8List> proofBytesList,
+  required List<ExitOutput> exits,
+  required int volumeFeeBps,
+  required String binsDir,
+}) => RustLib.instance.api.crateApiWormholeAggregateProofs(
+  proofBytesList: proofBytesList,
+  exits: exits,
+  volumeFeeBps: volumeFeeBps,
+  binsDir: binsDir,
 );
 
-Future<Uint8List> aggregateProofs({required List<Uint8List> proofBytesList, required String binsDir}) =>
-    RustLib.instance.api.crateApiWormholeAggregateProofs(proofBytesList: proofBytesList, binsDir: binsDir);
+/// One exit slot of a private batch: `amount` scaled-down units paid to
+/// `exit_account`.
+class ExitOutput {
+  final Uint8List exitAccount;
+  final int amount;
+
+  const ExitOutput({required this.exitAccount, required this.amount});
+
+  @override
+  int get hashCode => exitAccount.hashCode ^ amount.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ExitOutput &&
+          runtimeType == other.runtimeType &&
+          exitAccount == other.exitAccount &&
+          amount == other.amount;
+}
 
 class MerkleProcessed {
   final Uint8List sortedSiblingsFlat;
@@ -89,11 +112,6 @@ class ProofInput {
   final Uint8List zkTreeRoot;
   final Uint8List sortedSiblingsFlat;
   final Uint8List positions;
-  final Uint8List exitAccount1;
-  final int outputAmount1;
-  final Uint8List exitAccount2;
-  final int outputAmount2;
-  final int volumeFeeBps;
   final int assetId;
 
   const ProofInput({
@@ -110,11 +128,6 @@ class ProofInput {
     required this.zkTreeRoot,
     required this.sortedSiblingsFlat,
     required this.positions,
-    required this.exitAccount1,
-    required this.outputAmount1,
-    required this.exitAccount2,
-    required this.outputAmount2,
-    required this.volumeFeeBps,
     required this.assetId,
   });
 
@@ -133,11 +146,6 @@ class ProofInput {
       zkTreeRoot.hashCode ^
       sortedSiblingsFlat.hashCode ^
       positions.hashCode ^
-      exitAccount1.hashCode ^
-      outputAmount1.hashCode ^
-      exitAccount2.hashCode ^
-      outputAmount2.hashCode ^
-      volumeFeeBps.hashCode ^
       assetId.hashCode;
 
   @override
@@ -158,11 +166,6 @@ class ProofInput {
           zkTreeRoot == other.zkTreeRoot &&
           sortedSiblingsFlat == other.sortedSiblingsFlat &&
           positions == other.positions &&
-          exitAccount1 == other.exitAccount1 &&
-          outputAmount1 == other.outputAmount1 &&
-          exitAccount2 == other.exitAccount2 &&
-          outputAmount2 == other.outputAmount2 &&
-          volumeFeeBps == other.volumeFeeBps &&
           assetId == other.assetId;
 }
 

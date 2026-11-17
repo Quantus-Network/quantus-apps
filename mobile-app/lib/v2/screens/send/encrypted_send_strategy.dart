@@ -166,13 +166,13 @@ class EncryptedSendStrategy extends SendStrategy {
     if (plan.amountToken != amount) {
       throw StateError('Encrypted send plan amount ${plan.amountToken} does not match confirmed amount $amount');
     }
-    // Every input leaf pays the recipient through its own exit, so a plan of
-    // several inputs makes several deposits, which a single-use 1Click
+    // Each private batch pays the recipient through its own exit, so a plan
+    // of several batches makes several deposits, which a single-use 1Click
     // deposit address cannot take. Only an answer 1Click has given by now
     // counts; it is never waited for, and read again once the user has
     // authenticated, since it may land while the prompt is open.
     final recipient = recipientAddress.trim();
-    bool refused() => plan.inputCount > 1 && isKnownOneClickDepositAddress(ref, recipient);
+    bool refused() => plan.batches.length > 1 && isKnownOneClickDepositAddress(ref, recipient);
     if (refused()) return SendFailed(l10n.encryptedSendNearIntentsDescription);
 
     final authed = await ref.read(localAuthServiceProvider).authenticate(localizedReason: l10n.sendReviewAuthReason);

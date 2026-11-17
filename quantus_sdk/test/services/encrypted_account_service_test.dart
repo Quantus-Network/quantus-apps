@@ -217,7 +217,7 @@ class _FakeUtxoService extends WormholeUtxoService {
 /// a slow send() against logout or another send. When [error] is set,
 /// submission throws it — lets tests exercise the failure path of send().
 class _FakeSendService extends WormholeSendService {
-  final capturedBatchesList = <List<List<WormholeLeafSpend>>>[];
+  final capturedBatchesList = <List<WormholeBatchSpend>>[];
 
   /// Copies of each leaf's secret taken at submission time — the live buffers
   /// are zeroized by EncryptedAccountService.send once the send finishes.
@@ -228,11 +228,11 @@ class _FakeSendService extends WormholeSendService {
   /// Completes once a send has reached [gate].
   final reached = Completer<void>();
 
-  List<List<WormholeLeafSpend>>? get capturedBatches => capturedBatchesList.isEmpty ? null : capturedBatchesList.last;
+  List<WormholeBatchSpend>? get capturedBatches => capturedBatchesList.isEmpty ? null : capturedBatchesList.last;
 
   @override
   Future<ClaimResult> sendSpends({
-    required List<List<WormholeLeafSpend>> batches,
+    required List<WormholeBatchSpend> batches,
     required String circuitBinsDir,
     required ClaimProgressCallback onProgress,
     Future<void> Function(int batchIndex, List<String> nullifierHexes)? onBatchSubmitted,
@@ -240,8 +240,8 @@ class _FakeSendService extends WormholeSendService {
   }) async {
     capturedBatchesList.add(batches);
     for (final batch in batches) {
-      for (final spend in batch) {
-        capturedSecretCopies.add(Uint8List.fromList(spend.secret));
+      for (final burn in batch.burns) {
+        capturedSecretCopies.add(Uint8List.fromList(burn.secret));
       }
     }
     if (!reached.isCompleted) reached.complete();
@@ -250,11 +250,13 @@ class _FakeSendService extends WormholeSendService {
     final err = error;
     if (err != null) throw err;
     for (var i = 0; i < batches.length; i++) {
-      await onBatchSubmitted?.call(i, [for (final s in batches[i]) '0xsubmitted_${i}_${s.outputAmount1}']);
+      await onBatchSubmitted?.call(i, [
+        for (final burn in batches[i].burns) '0xsubmitted_${i}_${wormholeScaledFromToken(burn.transfer.amount)}',
+      ]);
     }
     return ClaimResult(
       totalWithdrawn: BigInt.zero,
-      transfersProcessed: batches.fold(0, (s, b) => s + b.length),
+      transfersProcessed: batches.fold(0, (s, b) => s + b.burns.length),
       batchesSubmitted: batches.length,
       txHashes: const ['0xhash'],
     );
@@ -384,8 +386,7 @@ void main() {
             // '0xa' is reported spent on-chain and the change transfer to
             // change index 0 is indexed: fully confirmed.
             nullifiers: ['0xa'],
-            changeAddress: changeAddressAt(0),
-            changeAmountToken: wormholeTokenFromScaled(70),
+            changeOutputs: [PendingChangeOutput(address: changeAddressAt(0), amountToken: wormholeTokenFromScaled(70))],
             createdAtMs: DateTime.now().millisecondsSinceEpoch,
           ),
         ],
@@ -415,8 +416,7 @@ void main() {
         pendingSpends: [
           PendingSpend(
             nullifiers: ['0xb'],
-            changeAddress: changeAddressAt(2),
-            changeAmountToken: change,
+            changeOutputs: [PendingChangeOutput(address: changeAddressAt(2), amountToken: change)],
             createdAtMs: DateTime.now().millisecondsSinceEpoch,
           ),
         ],
@@ -448,8 +448,7 @@ void main() {
         pendingSpends: [
           PendingSpend(
             nullifiers: ['0xb'],
-            changeAddress: changeAddressAt(0),
-            changeAmountToken: change,
+            changeOutputs: [PendingChangeOutput(address: changeAddressAt(0), amountToken: change)],
             createdAtMs: DateTime.now().millisecondsSinceEpoch,
           ),
         ],
@@ -480,8 +479,7 @@ void main() {
         pendingSpends: [
           PendingSpend(
             nullifiers: ['0xb'],
-            changeAddress: changeAddressAt(0),
-            changeAmountToken: pendingChange,
+            changeOutputs: [PendingChangeOutput(address: changeAddressAt(0), amountToken: pendingChange)],
             createdAtMs: DateTime.now().millisecondsSinceEpoch,
           ),
         ],
@@ -505,8 +503,7 @@ void main() {
         pendingSpends: [
           PendingSpend(
             nullifiers: ['0xb'],
-            changeAddress: changeAddressAt(0),
-            changeAmountToken: wormholeTokenFromScaled(10),
+            changeOutputs: [PendingChangeOutput(address: changeAddressAt(0), amountToken: wormholeTokenFromScaled(10))],
             createdAtMs: DateTime.now().subtract(const Duration(hours: 2)).millisecondsSinceEpoch,
           ),
         ],
@@ -523,29 +520,61 @@ void main() {
   group('send bookkeeping', () {
     final recipient = Address(prefix: 189, pubkey: Uint8List.fromList(List.filled(32, 0x22))).encode();
 
-    test('records nullifiers and change, and bumps nextChangeIndex, per submitted batch', () async {
+    test('records nullifiers and every change output, and bumps nextChangeIndex, per submitted batch', () async {
       await seedState(nextIndex: 1);
       final plan = selectWormholeInputs(utxos: [_utxo(1000)], amountToken: wormholeTokenFromScaled(400));
-      expect(plan.changeToken, greaterThan(BigInt.zero));
+      // Net 999 - 400 = 599: a 5-token bill and a 0.99 remainder.
+      expect(plan.batches.single.changeExitsScaled, [500, 99]);
 
       await service.send(plan: plan, recipientAddress: recipient, circuitBinsDir: '/unused', onProgress: (_) {});
 
       final json = await readStateFile();
-      // The receive sequence is untouched; change consumed change index 0.
+      // The receive sequence is untouched; change consumed change indices 0 and 1.
       expect(json['nextIndex'], 1);
-      expect(json['nextChangeIndex'], 1);
+      expect(json['nextChangeIndex'], 2);
       final pending = (json['pendingSpends'] as List).cast<Map<String, dynamic>>();
       expect(pending.length, 1);
-      expect(pending[0]['nullifiers'], ['0xsubmitted_0_400']);
-      expect(pending[0]['changeAddress'], changeAddressAt(0));
-      expect(BigInt.parse(pending[0]['changeAmountToken'] as String), plan.changeToken);
+      expect(pending[0]['nullifiers'], ['0xsubmitted_0_1000']);
+      expect(pending[0]['changeOutputs'], [
+        {'address': changeAddressAt(0), 'amountToken': wormholeTokenFromScaled(500).toString()},
+        {'address': changeAddressAt(1), 'amountToken': wormholeTokenFromScaled(99).toString()},
+      ]);
+      expect(PendingSpend.fromJson(pending[0]).changeAmountToken, plan.changeToken);
 
-      // Leaf spend wiring: full net split between recipient and change address.
-      final spend = sendService.capturedBatches![0][0];
-      expect(spend.exitAccount1, Address.decode(recipient).pubkey);
-      expect(spend.outputAmount1, 400);
-      expect(spend.exitAccount2, Address.decode(changeAddressAt(0)).pubkey);
-      expect(spend.outputAmount2, wormholeScaledFromToken(plan.changeToken));
+      // Batch wiring: the recipient exit, then one exit per change output.
+      final batch = sendService.capturedBatches!.single;
+      expect(batch.burns.single.transfer.id, 't1000');
+      expect(batch.exits.map((e) => e.amountScaled), [400, 500, 99]);
+      expect(batch.exits.map((e) => e.returnsToSender), [false, true, true]);
+      expect(batch.exits[0].account, Address.decode(recipient).pubkey);
+      expect(batch.exits[1].account, Address.decode(changeAddressAt(0)).pubkey);
+      expect(batch.exits[2].account, Address.decode(changeAddressAt(1)).pubkey);
+    });
+
+    test('change of a multi-batch send takes consecutive addresses and is recorded with its batch', () async {
+      await seedState(nextIndex: 1, nextChangeIndex: 3);
+      final utxos = List.generate(12, (i) => _utxo(200000 + i, index: i));
+      final plan = selectWormholeInputs(utxos: utxos, amountToken: wormholeTokenFromScaled(2_100_000));
+      expect(plan.batches.length, 2);
+      expect(plan.batches.first.changeExitsScaled, isEmpty);
+      final changeExits = plan.batches.last.changeExitsScaled;
+      expect(changeExits.length, greaterThan(1));
+
+      await service.send(plan: plan, recipientAddress: recipient, circuitBinsDir: '/unused', onProgress: (_) {});
+
+      final batches = sendService.capturedBatches!;
+      expect(batches.first.exits.length, 1);
+      expect(batches.last.exits.skip(1).map((e) => e.amountScaled), changeExits);
+      for (var i = 0; i < changeExits.length; i++) {
+        expect(batches.last.exits[i + 1].account, Address.decode(changeAddressAt(3 + i)).pubkey);
+      }
+
+      final json = await readStateFile();
+      expect(json['nextChangeIndex'], 3 + changeExits.length);
+      final pending = (json['pendingSpends'] as List).cast<Map<String, dynamic>>();
+      expect(pending.length, 2);
+      expect(pending[0]['changeOutputs'], isEmpty);
+      expect((pending[1]['changeOutputs'] as List).length, changeExits.length);
     });
 
     test('does not allocate a change address for an exact-max send', () async {
@@ -561,9 +590,8 @@ void main() {
       expect(json['nextChangeIndex'], 0);
       final pending = (json['pendingSpends'] as List).cast<Map<String, dynamic>>();
       expect(pending.length, 1);
-      expect(pending[0]['changeAddress'], isNull);
-      expect(BigInt.parse(pending[0]['changeAmountToken'] as String), BigInt.zero);
-      expect(sendService.capturedBatches![0][0].exitAccount2, isNull);
+      expect(pending[0]['changeOutputs'], isEmpty);
+      expect(sendService.capturedBatches!.single.exits.length, 1);
     });
   });
 
@@ -661,8 +689,9 @@ void main() {
         pendingSpends: [
           PendingSpend(
             nullifiers: const ['0xn_old'],
-            changeAddress: changeAddressAt(49),
-            changeAmountToken: wormholeTokenFromScaled(500),
+            changeOutputs: [
+              PendingChangeOutput(address: changeAddressAt(49), amountToken: wormholeTokenFromScaled(500)),
+            ],
             createdAtMs: DateTime.now().millisecondsSinceEpoch,
           ),
         ],
@@ -727,9 +756,9 @@ void main() {
       final plan = selectWormholeInputs(utxos: [_utxo(1000)], amountToken: wormholeTokenFromScaled(400));
       await service.send(plan: plan, recipientAddress: recipient, circuitBinsDir: '/unused', onProgress: (_) {});
 
-      final exit2 = sendService.capturedBatches!.single.single.exitAccount2!;
-      expect(Address(prefix: 189, pubkey: exit2).encode(), changeAddressAt(0, seed: 7));
-      expect((await readStateFile())['nextChangeIndex'], 1);
+      final firstChange = sendService.capturedBatches!.single.exits[1].account;
+      expect(Address(prefix: 189, pubkey: firstChange).encode(), changeAddressAt(0, seed: 7));
+      expect((await readStateFile())['nextChangeIndex'], plan.changeOutputCount);
     });
 
     test('a state file from before owners were recorded is adopted by the current seed', () async {
@@ -812,7 +841,7 @@ void main() {
       // The prover received the correct secret for the UTXO's owner index…
       expect(sendService.capturedSecretCopies.single, hex.decode(secretAt(0).replaceFirst('0x', '')));
       // …and the live buffer was zeroized once the send completed.
-      final liveSecret = sendService.capturedBatches![0][0].secret;
+      final liveSecret = sendService.capturedBatches![0].burns[0].secret;
       expect(liveSecret.every((b) => b == 0), isTrue);
     });
 
@@ -837,7 +866,7 @@ void main() {
         service.send(plan: plan, recipientAddress: recipient, circuitBinsDir: '/unused', onProgress: (_) {}),
         throwsA(isA<StateError>()),
       );
-      final liveSecret = sendService.capturedBatches![0][0].secret;
+      final liveSecret = sendService.capturedBatches![0].burns[0].secret;
       expect(liveSecret.every((b) => b == 0), isTrue);
     });
   });
@@ -907,10 +936,11 @@ void main() {
       await Future.wait([f1, f2]);
 
       expect(sendService.capturedBatchesList.length, 2);
-      final change1 = sendService.capturedBatchesList[0][0][0].exitAccount2;
-      final change2 = sendService.capturedBatchesList[1][0][0].exitAccount2;
-      expect(change1, Address.decode(changeAddressAt(0)).pubkey);
-      expect(change2, Address.decode(changeAddressAt(1)).pubkey);
+      final change1 = sendService.capturedBatchesList[0].single.exits.skip(1).map((e) => e.account);
+      final change2 = sendService.capturedBatchesList[1].single.exits.skip(1).map((e) => e.account);
+      expect(plan1.changeOutputCount, 2);
+      expect(change1, [Address.decode(changeAddressAt(0)).pubkey, Address.decode(changeAddressAt(1)).pubkey]);
+      expect(change2, [Address.decode(changeAddressAt(2)).pubkey, Address.decode(changeAddressAt(3)).pubkey]);
     });
   });
 
@@ -933,31 +963,40 @@ void main() {
     test('round-trips through JSON', () {
       final original = PendingSpend(
         nullifiers: ['0xabc', '0xdef'],
-        changeAddress: 'addr_3',
-        changeAmountToken: BigInt.from(123456),
+        changeOutputs: [
+          PendingChangeOutput(address: 'addr_3', amountToken: BigInt.from(100000)),
+          PendingChangeOutput(address: 'addr_4', amountToken: BigInt.from(23456)),
+        ],
         createdAtMs: 1700000000000,
       );
       final json = original.toJson();
       final restored = PendingSpend.fromJson(json);
 
       expect(restored.nullifiers, original.nullifiers);
-      expect(restored.changeAddress, original.changeAddress);
-      expect(restored.changeAmountToken, original.changeAmountToken);
+      expect(restored.changeOutputs.map((o) => o.address), ['addr_3', 'addr_4']);
+      expect(restored.changeOutputs.map((o) => o.amountToken), [BigInt.from(100000), BigInt.from(23456)]);
+      expect(restored.changeAmountToken, BigInt.from(123456));
       expect(restored.createdAtMs, original.createdAtMs);
     });
 
-    test('round-trips with null changeAddress', () {
-      final original = PendingSpend(
-        nullifiers: ['0x01'],
-        changeAddress: null,
-        changeAmountToken: BigInt.zero,
-        createdAtMs: 1700000000000,
-      );
-      final json = original.toJson();
-      final restored = PendingSpend.fromJson(json);
+    test('round-trips without change', () {
+      const original = PendingSpend(nullifiers: ['0x01'], changeOutputs: [], createdAtMs: 1700000000000);
+      final restored = PendingSpend.fromJson(original.toJson());
 
-      expect(restored.changeAddress, isNull);
+      expect(restored.changeOutputs, isEmpty);
       expect(restored.changeAmountToken, BigInt.zero);
+    });
+
+    test('loads a file written with a single changeAddress', () {
+      final restored = PendingSpend.fromJson({
+        'nullifiers': ['0x01'],
+        'changeAddress': 'addr_1',
+        'changeAmountToken': '123456',
+        'createdAtMs': 1700000000000,
+      });
+
+      expect(restored.changeOutputs.single.address, 'addr_1');
+      expect(restored.changeAmountToken, BigInt.from(123456));
     });
 
     test('loads a legacy file written with the changeAmountPlanck key', () {
@@ -969,6 +1008,17 @@ void main() {
       });
 
       expect(restored.changeAmountToken, BigInt.from(123456));
+    });
+
+    test('loads a legacy file without change', () {
+      final restored = PendingSpend.fromJson({
+        'nullifiers': ['0x01'],
+        'changeAddress': null,
+        'changeAmountToken': '0',
+        'createdAtMs': 1700000000000,
+      });
+
+      expect(restored.changeOutputs, isEmpty);
     });
   });
 

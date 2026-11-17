@@ -132,12 +132,11 @@ void main() {
       ],
     );
 
-    WormholeSpendPlan plan(int inputs) => WormholeSpendPlan(
+    /// [batches] private batches, each one deposit to the recipient.
+    WormholeSpendPlan plan(int batches) => WormholeSpendPlan(
       batches: [
-        [
-          for (var i = 1; i <= inputs; i++)
-            WormholeLeafAssignment(utxo: _utxo(500 * i), recipientScaled: 1000 ~/ inputs, changeScaled: 0),
-        ],
+        for (var b = 0; b < batches; b++)
+          WormholeBatchPlan(inputs: [_utxo(500 * (b + 1)), _utxo(600 * (b + 1))], recipientScaled: 1000 ~/ batches),
       ],
       amountToken: tenTokens,
       changeToken: BigInt.zero,
@@ -152,13 +151,13 @@ void main() {
       isPayMode: false,
     );
 
-    testWidgets('a single input goes on without a lookup', (tester) async {
+    testWidgets('a single batch goes on without a lookup', (tester) async {
       final outcome = await submit(await pumpStrategyRef(tester), plan(1));
       expect(outcome, isA<SendNeedsProving>());
       expect(lookedUp, isEmpty);
     });
 
-    testWidgets('several inputs to a confirmed deposit address are refused', (tester) async {
+    testWidgets('several batches to a confirmed deposit address are refused', (tester) async {
       final ref = await pumpStrategyRef(tester);
       expect(await isOneClickDepositAddress(ref, _depositAddress), isTrue);
       final outcome = await submit(ref, plan(2));
@@ -166,13 +165,13 @@ void main() {
       expect(lookedUp, [_depositAddress]);
     });
 
-    testWidgets('several inputs go on without waiting when 1Click has not answered', (tester) async {
+    testWidgets('several batches go on without waiting when 1Click has not answered', (tester) async {
       final outcome = await submit(await pumpStrategyRef(tester), plan(2));
       expect(outcome, isA<SendNeedsProving>());
       expect(lookedUp, isEmpty);
     });
 
-    testWidgets('several inputs go on when 1Click was unreachable', (tester) async {
+    testWidgets('several batches go on when 1Click was unreachable', (tester) async {
       oneClickDown = true;
       final ref = await pumpStrategyRef(tester);
       expect(await isOneClickDepositAddress(ref, _depositAddress), isFalse);
@@ -180,7 +179,7 @@ void main() {
       expect(lookedUp, [_depositAddress]);
     });
 
-    testWidgets('a yes landing while the device prompt is open still refuses several inputs', (tester) async {
+    testWidgets('a yes landing while the device prompt is open still refuses several batches', (tester) async {
       holdLookup = Completer<void>();
       final prompt = Completer<bool>();
       final device = FakeLocalAuthentication()..hold = prompt.future;

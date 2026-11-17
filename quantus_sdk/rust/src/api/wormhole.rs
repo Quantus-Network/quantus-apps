@@ -3,14 +3,18 @@ use qp_wormhole_circuit::{
     nullifier::Nullifier,
     sensitive::Secret,
 };
-use qp_wormhole_inputs::{BytesDigest, PublicCircuitInputs};
+use qp_wormhole_inputs::{production, BytesDigest, PrivateBatchShape, PublicCircuitInputs};
 use qp_zk_circuits_common::{
     utils::digest_to_bytes,
     zk_merkle::{hash_node_presorted, SIBLINGS_PER_LEVEL},
 };
 use std::path::{Path, PathBuf};
 
-pub const ZK_CIRCUITS_VERSION: &str = "4.3.0";
+// Local artifact directory name. The proof-of-burn leaf and batch-level exits
+// (qp-zk-circuits main, unreleased) are a different circuit from the 4.x
+// family, so a new directory forces regeneration; align with the published
+// version once it is cut.
+pub const ZK_CIRCUITS_VERSION: &str = "5.0.0";
 
 fn versioned_bins_dir(base: &Path) -> PathBuf {
     base.join(format!("v{}", ZK_CIRCUITS_VERSION))
@@ -84,8 +88,8 @@ pub fn compute_address_hash_hex(raw_address: Vec<u8>) -> Result<String, String> 
 }
 
 pub const SCALE_DOWN_FACTOR: u128 = 10_000_000_000;
-// Must match the chain's aggregation batch size (num_n=7 since v0.7.1-q-day-2).
-pub const DEFAULT_NUM_LEAF_PROOFS: usize = 7;
+/// Must match the private-batch shape the chain verifies.
+pub const BATCH_SHAPE: PrivateBatchShape = production::PRIVATE_BATCH_SHAPE;
 
 #[flutter_rust_bridge::frb(sync)]
 pub struct ProofInput {
@@ -102,12 +106,15 @@ pub struct ProofInput {
     pub zk_tree_root: Vec<u8>,
     pub sorted_siblings_flat: Vec<u8>,
     pub positions: Vec<u8>,
-    pub exit_account_1: Vec<u8>,
-    pub output_amount_1: u32,
-    pub exit_account_2: Vec<u8>,
-    pub output_amount_2: u32,
-    pub volume_fee_bps: u32,
     pub asset_id: u32,
+}
+
+/// One exit slot of a private batch: `amount` scaled-down units paid to
+/// `exit_account`.
+#[flutter_rust_bridge::frb(sync)]
+pub struct ExitOutput {
+    pub exit_account: Vec<u8>,
+    pub amount: u32,
 }
 
 #[flutter_rust_bridge::frb(sync)]
@@ -146,18 +153,6 @@ pub fn compute_wormhole_address(secret: Vec<u8>) -> Result<Vec<u8>, String> {
     let unspendable =
         qp_wormhole_circuit::unspendable_account::UnspendableAccount::from_secret(secret_digest);
     Ok(digest_to_bytes(unspendable.account_id).to_vec())
-}
-
-#[flutter_rust_bridge::frb(sync)]
-pub fn wormhole_compute_output_amount(input_amount: u32, fee_bps: u32) -> Result<u32, String> {
-    let factor = 10_000u64
-        .checked_sub(fee_bps as u64)
-        .ok_or_else(|| format!("fee_bps must be <= 10000, got {}", fee_bps))?;
-    let output = (input_amount as u64)
-        .checked_mul(factor)
-        .ok_or_else(|| "Output amount overflow".to_string())?
-        / 10_000;
-    u32::try_from(output).map_err(|_| "Output amount exceeds u32 range".to_string())
 }
 
 #[flutter_rust_bridge::frb(sync)]
@@ -293,7 +288,10 @@ pub fn ensure_circuit_binaries(bins_dir: String) -> Result<String, String> {
     let config_path = dir.join("config.json");
     if all_required_files_exist(&dir) {
         match qp_wormhole_circuit_builder::CircuitBinsConfig::load(&dir) {
-            Ok(config) if config.num_leaf_proofs == DEFAULT_NUM_LEAF_PROOFS => {
+            Ok(config)
+                if config.num_leaf_proofs == BATCH_SHAPE.num_leaf_proofs
+                    && config.num_exit_slots == BATCH_SHAPE.num_exit_slots =>
+            {
                 return std::fs::read_to_string(&config_path)
                     .map_err(|e| format!("Failed to read config.json: {}", e));
             }
@@ -301,13 +299,8 @@ pub fn ensure_circuit_binaries(bins_dir: String) -> Result<String, String> {
         }
     }
 
-    qp_wormhole_circuit_builder::generate_all_circuit_binaries(
-        &dir,
-        true,
-        DEFAULT_NUM_LEAF_PROOFS,
-        None,
-    )
-    .map_err(|e| format!("Circuit binary generation failed: {}", e))?;
+    qp_wormhole_circuit_builder::generate_all_circuit_binaries(&dir, true, BATCH_SHAPE, None)
+        .map_err(|e| format!("Circuit binary generation failed: {}", e))?;
 
     let config_str = std::fs::read_to_string(&config_path)
         .map_err(|e| format!("Failed to read config.json after generation: {}", e))?;
@@ -333,11 +326,7 @@ fn all_required_files_exist(dir: &Path) -> bool {
     REQUIRED.iter().all(|f| dir.join(f).exists())
 }
 
-pub fn generate_proof(
-    input: ProofInput,
-    _prover_bin_path: String,
-    _common_bin_path: String,
-) -> Result<ProofOutput, String> {
+pub fn generate_proof(input: ProofInput) -> Result<ProofOutput, String> {
     let secret_digest = vec_to_digest(&input.secret, "secret")?;
     let wormhole_address = vec_to_32(&input.wormhole_address, "wormhole_address")?;
 
@@ -397,12 +386,7 @@ pub fn generate_proof(
 
     let public = PublicCircuitInputs {
         asset_id: input.asset_id,
-        output_amount_1: input.output_amount_1,
-        output_amount_2: input.output_amount_2,
-        volume_fee_bps: input.volume_fee_bps,
         nullifier: nullifier_bytes,
-        exit_account_1: vec_to_digest(&input.exit_account_1, "exit_account_1")?,
-        exit_account_2: vec_to_digest(&input.exit_account_2, "exit_account_2")?,
         block_hash: vec_to_digest(&input.block_hash, "block_hash")?,
         block_number: input.block_number,
         input_amount: input.input_amount,
@@ -426,12 +410,19 @@ pub fn generate_proof(
     })
 }
 
+/// Aggregates leaf (proof-of-burn) proofs into one private-batch proof that
+/// pays `exits`. The circuit enforces
+/// `Σexits * 10000 <= Σburns * (10000 - volume_fee_bps)`; unused exit slots
+/// are padded with zero outputs.
 pub fn aggregate_proofs(
     proof_bytes_list: Vec<Vec<u8>>,
+    exits: Vec<ExitOutput>,
+    volume_fee_bps: u32,
     bins_dir: String,
 ) -> Result<Vec<u8>, String> {
     use plonky2::plonk::proof::ProofWithPublicInputs;
-    use qp_wormhole_aggregator::private_batch::prover::PrivateBatchProver;
+    use qp_wormhole_aggregator::private_batch::prover::{PrivateBatchInputs, PrivateBatchProver};
+    use qp_wormhole_aggregator::WithdrawalOutput;
     use qp_zk_circuits_common::circuit::{C, D, F};
 
     let bins_path = versioned_bins_dir(Path::new(&bins_dir));
@@ -448,11 +439,26 @@ pub fn aggregate_proofs(
         })
         .collect::<Result<_, _>>()?;
 
+    let outputs = exits
+        .iter()
+        .enumerate()
+        .map(|(i, exit)| {
+            Ok(WithdrawalOutput {
+                exit_account: vec_to_digest(&exit.exit_account, &format!("exit_account[{}]", i))?,
+                amount: exit.amount,
+            })
+        })
+        .collect::<Result<Vec<_>, String>>()?;
+
     let prover = PrivateBatchProver::new_from_binaries_dir(&bins_path)
         .map_err(|e| format!("Failed to create private-batch prover: {}", e))?;
 
     let aggregated = prover
-        .aggregate(leaf_proofs)
+        .aggregate(PrivateBatchInputs {
+            leaf_proofs,
+            outputs,
+            volume_fee_bps,
+        })
         .map_err(|e| format!("Aggregation failed: {}", e))?;
 
     Ok(aggregated.to_bytes())
@@ -621,29 +627,6 @@ mod tests {
     fn compute_address_hash_hex_rejects_wrong_length() {
         assert!(compute_address_hash_hex(vec![0u8; 31]).is_err());
         assert!(compute_address_hash_hex(vec![0u8; 33]).is_err());
-    }
-
-    #[test]
-    fn output_amount_with_10bps_fee() {
-        let out = wormhole_compute_output_amount(10_000, 10).unwrap();
-        assert_eq!(out, 9990);
-    }
-
-    #[test]
-    fn output_amount_zero_fee() {
-        let out = wormhole_compute_output_amount(10_000, 0).unwrap();
-        assert_eq!(out, 10_000);
-    }
-
-    #[test]
-    fn output_amount_full_fee() {
-        let out = wormhole_compute_output_amount(10_000, 10_000).unwrap();
-        assert_eq!(out, 0);
-    }
-
-    #[test]
-    fn output_amount_rejects_excessive_fee() {
-        assert!(wormhole_compute_output_amount(1, 10_001).is_err());
     }
 
     #[test]
