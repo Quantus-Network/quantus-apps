@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:quantus_desktop_wallet/ui/components/terminal_line.dart';
 import 'package:quantus_desktop_wallet/ui/onboarding/onboarding_button.dart';
 import 'package:quantus_desktop_wallet/ui/onboarding/onboarding_page.dart';
 import 'package:quantus_desktop_wallet/ui/onboarding/onboarding_text.dart';
@@ -63,11 +64,10 @@ class _WalletCreatedPageState extends ConsumerState<WalletCreatedPage> with Sing
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   for (final (index, name) in lines.indexed)
-                    _TerminalLine(
-                      opacityKey: WalletCreatedPage.lineKey(index),
-                      name: name,
-                      status: l10n.desktopBootStatusOk,
-                      isShown: isInstant || elapsedMs >= index * _lineEveryMs,
+                    Opacity(
+                      key: WalletCreatedPage.lineKey(index),
+                      opacity: isInstant || elapsedMs >= index * _lineEveryMs ? 1 : 0,
+                      child: TerminalLine(name: name, status: l10n.desktopBootStatusOk),
                     ),
                 ],
               );
@@ -80,54 +80,6 @@ class _WalletCreatedPageState extends ConsumerState<WalletCreatedPage> with Sing
           const SizedBox(height: 32),
           OnboardingButton(label: l10n.accountReadyGoToWallet, onTap: widget.onGoToWallet),
         ],
-      ),
-    );
-  }
-}
-
-/// One line of the terminal: `> NAME ....... [OK]`. Drawn in capitals, which
-/// is a look: a screen reader gets the name as it is written.
-class _TerminalLine extends StatelessWidget {
-  const _TerminalLine({required this.opacityKey, required this.name, required this.status, required this.isShown});
-
-  /// Marks the part that fades in, so the line's progress can be found.
-  final Key opacityKey;
-  final String name;
-  final String status;
-  final bool isShown;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = context.colorsV3;
-    final style = context.themeTextV3.dataAddressLarge.copyWith(height: 1, letterSpacing: 0.6, color: colors.textMuted);
-
-    return Semantics(
-      label: '$name $status',
-      excludeSemantics: true,
-      child: Opacity(
-        key: opacityKey,
-        opacity: isShown ? 1 : 0,
-        child: Padding(
-          padding: const EdgeInsets.only(bottom: 14),
-          child: Row(
-            children: [
-              Text('> ${name.toUpperCase()}', style: style),
-              const SizedBox(width: 8),
-              // Dot leaders up to the status, as many as fit.
-              Expanded(
-                child: Text(
-                  '.' * 200,
-                  maxLines: 1,
-                  softWrap: false,
-                  overflow: TextOverflow.clip,
-                  style: style.copyWith(color: colors.textMuted2.useOpacity(0.5)),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Text(status, style: style.copyWith(color: colors.semanticSage)),
-            ],
-          ),
-        ),
       ),
     );
   }

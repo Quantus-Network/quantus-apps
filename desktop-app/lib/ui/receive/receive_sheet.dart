@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_desktop_wallet/services/share_service.dart';
 import 'package:quantus_desktop_wallet/ui/components/caps_text.dart';
 import 'package:quantus_desktop_wallet/ui/components/copy_action.dart';
+import 'package:quantus_desktop_wallet/ui/components/notice_box.dart';
 import 'package:quantus_desktop_wallet/ui/components/toolbar_action.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/l10n/app_localizations.dart';
@@ -149,7 +150,12 @@ class _DetailsState extends ConsumerState<_Details> {
               Text(l10n.receiveCheckphraseFootnote, style: text.body.copyWith(color: colors.textMuted)),
               if (isEncrypted) ...[
                 const SizedBox(height: 16),
-                _EncryptedNotice(text: l10n.desktopReceiveEncryptedNotice),
+                NoticeBox(
+                  key: ReceiveSheet.encryptedNoticeKey,
+                  tone: colors.accentFlare,
+                  symbol: CupertinoIcons.lock_fill,
+                  child: Text(l10n.desktopReceiveEncryptedNotice, style: text.body.copyWith(color: colors.textContent)),
+                ),
               ],
             ],
           ),
@@ -181,41 +187,6 @@ class _Value extends StatelessWidget {
         const SizedBox(height: 8),
         value,
       ],
-    );
-  }
-}
-
-/// Why the encrypted account's deposit address changes.
-class _EncryptedNotice extends StatelessWidget {
-  const _EncryptedNotice({required this.text});
-
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = context.colorsV3;
-
-    return Container(
-      key: ReceiveSheet.encryptedNoticeKey,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        color: colors.accentFlare.useOpacity(0.08),
-        borderRadius: context.radiusV3.smBorder,
-        border: Border.all(color: colors.accentFlare.useOpacity(0.25)),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(top: 2),
-            child: Icon(CupertinoIcons.lock_fill, size: 13, color: colors.accentFlare),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(text, style: context.themeTextV3.body.copyWith(color: colors.textContent)),
-          ),
-        ],
-      ),
     );
   }
 }
