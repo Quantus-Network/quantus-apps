@@ -164,6 +164,12 @@ void main() {
     await _openSend(tester);
   });
 
+  _scene('send_form_smallest_window', (tester) async {
+    await _openSend(tester);
+    tester.view.physicalSize = const Size(960, 640) * _pixelRatio;
+    await tester.pumpAndSettle();
+  });
+
   _scene('send_form_filled', (tester) async {
     await _openSend(tester);
     await _fillSend(tester);
@@ -331,6 +337,7 @@ const _recentPhrases = {
   _depositAddress: 'Lantern-Copper-Meadow-Quartz-Harbor',
   'qzT8vNc2LpQ7xWd4KsHj9RbY3mFa6ZeUo1GiBn5tVk4mQa': 'Orbit-Thistle-Granite-Whisper-Ember',
   'qzB4hGy7UwE2nXk9VcMp3QsLd6TfRa8ZoJi1Wb5eNt9cPu': 'Tundra-Violet-Anchor-Pepper-Glacier',
+  'qzW6mKe1RtZ8pLc3YhNv5DxQa9SgFb2UoJi7Vn4kTw3sHd': 'Mosaic-Falcon-Quiver-Saddle-Ripple',
 };
 
 /// Opens the wallet, holding 1,250 tokens, and its Send. The system approves

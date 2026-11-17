@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -61,6 +62,7 @@ Future<FakeSendChain> _openSend(
   FakeUserApproval? approval,
   num balance = 1250,
   Future<BigInt> Function(String accountId)? balanceOf,
+  Size? window,
 }) async {
   _opened.clear();
   chain ??= FakeSendChain();
@@ -79,10 +81,26 @@ Future<FakeSendChain> _openSend(
       openExternalUrlProvider.overrideWithValue((url) async => _opened.add(url)),
     ],
   );
+  if (window != null) {
+    tester.view.physicalSize = window;
+    await tester.pumpAndSettle();
+  }
   await tester.tap(_toolbarSend());
   await tester.pumpAndSettle();
   return chain;
 }
+
+/// Four addresses of a real one's length, as the form lists them.
+final _fourRecents = [
+  for (final letter in ['A', 'B', 'C', 'D']) 'qz${letter * 44}',
+];
+
+/// The smallest window the app's runners allow.
+const _smallestWindow = Size(960, 640);
+
+ScrollableState _recentsScroll(WidgetTester tester) => tester.state<ScrollableState>(
+  find.descendant(of: find.byKey(SendSheet.recentsKey), matching: find.byType(Scrollable)),
+);
 
 Future<void> _type(WidgetTester tester, Key field, String text) async {
   await tester.enterText(_editable(field), text);
@@ -221,6 +239,49 @@ void main() {
       }
       expect(find.byKey(SendSheet.recentKey('qzMain')), findsNothing);
       expect(find.byKey(SendSheet.recentKey('qzEve')), findsNothing);
+    });
+
+    testOnMac('in the smallest window, four addresses paid before leave the form whole and its buttons in reach', (
+      tester,
+    ) async {
+      await _openSend(tester, chain: FakeSendChain()..recents = _fourRecents, window: _smallestWindow);
+
+      final sheet = tester.getRect(find.byType(ShellSheetView));
+      expect(sheet.bottom, lessThanOrEqualTo(_smallestWindow.height));
+      expect(tester.getRect(find.byKey(SendSheet.reviewKey)).bottom, lessThan(sheet.bottom));
+      expect(tester.getRect(find.byKey(SendSheet.maxKey)).bottom, lessThan(sheet.bottom));
+
+      await _tap(tester, SendSheet.cancelKey);
+
+      expect(find.byType(ShellSheetView), findsNothing);
+    });
+
+    testOnMac('in the smallest window, the list of addresses paid before scrolls to the last, which can be picked', (
+      tester,
+    ) async {
+      await _openSend(tester, chain: FakeSendChain()..recents = _fourRecents, window: _smallestWindow);
+      expect(_recentsScroll(tester).position.maxScrollExtent, greaterThan(0));
+
+      expect(find.byKey(SendSheet.recentKey(_fourRecents.last)).hitTestable(), findsNothing);
+
+      // The mouse's wheel, turned over the list as far as it goes.
+      final wheel = TestPointer(1, PointerDeviceKind.mouse)..hover(tester.getCenter(find.byKey(SendSheet.recentsKey)));
+      await tester.sendEventToBinding(wheel.scroll(Offset(0, _recentsScroll(tester).position.maxScrollExtent)));
+      await tester.pumpAndSettle();
+      await _tap(tester, SendSheet.recentKey(_fourRecents.last));
+
+      expect(_typed(tester, SendSheet.addressFieldKey), _fourRecents.last);
+    });
+
+    testOnMac('in a window with room, all four addresses paid before show and the list does not scroll', (
+      tester,
+    ) async {
+      await _openSend(tester, chain: FakeSendChain()..recents = _fourRecents);
+
+      expect(_recentsScroll(tester).position.maxScrollExtent, 0);
+      for (final address in _fourRecents) {
+        expect(find.byKey(SendSheet.recentKey(address)).hitTestable(), findsOneWidget);
+      }
     });
 
     testOnMac('a click on an address paid before fills the field, and the list makes way', (tester) async {

@@ -51,6 +51,9 @@ class SendSheet extends ConsumerStatefulWidget {
   static const explorerKey = Key('send-explorer');
   static const doneKey = Key('send-done');
 
+  /// The list of the addresses paid before.
+  static const recentsKey = Key('send-recents');
+
   /// The row of [address] among the addresses paid before.
   static Key recentKey(String address) => ValueKey('send-recent-$address');
 
@@ -495,8 +498,23 @@ class _SendSheetState extends ConsumerState<SendSheet> {
           padding: const EdgeInsets.only(bottom: 6),
           child: CapsText(l10n.sendSelectRecipientRecents, style: context.sendCaps()),
         ),
-        for (final address in _recents)
-          SendRecentRow(key: SendSheet.recentKey(address), address: address, onPressed: () => _address.text = address),
+        // The list takes the height the window leaves and scrolls within it,
+        // so the fields and the buttons under it stay in the sheet.
+        Flexible(
+          child: ListView(
+            key: SendSheet.recentsKey,
+            shrinkWrap: true,
+            padding: EdgeInsets.zero,
+            children: [
+              for (final address in _recents)
+                SendRecentRow(
+                  key: SendSheet.recentKey(address),
+                  address: address,
+                  onPressed: () => _address.text = address,
+                ),
+            ],
+          ),
+        ),
       ] else if (_isChecking) ...[
         const SizedBox(height: 10),
         Text(l10n.sendRecipientChecking, style: context.sendBody()),
