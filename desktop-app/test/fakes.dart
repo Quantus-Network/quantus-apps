@@ -66,8 +66,18 @@ class FakeSettingsService extends Fake implements SettingsService {
   @override
   String? getSelectedAppLocale() => locale;
 
+  /// When set, saving the language fails with this.
+  Object? localeError;
+
+  /// When set, the language is saved (or fails) only once this completes.
+  Completer<void>? localeHeld;
+
   @override
-  Future<void> setSelectedAppLocale(String languageCode) async => locale = languageCode;
+  Future<void> setSelectedAppLocale(String languageCode) async {
+    if (localeHeld case final held?) await held.future;
+    if (localeError case final error?) throw error;
+    locale = languageCode;
+  }
 
   @override
   String? getWalletName(int walletIndex) => walletNames[walletIndex];

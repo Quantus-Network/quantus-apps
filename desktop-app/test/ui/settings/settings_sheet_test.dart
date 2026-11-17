@@ -71,6 +71,13 @@ Future<void> _toPhraseWords(WidgetTester tester) async {
   await _tap(tester, find.byKey(SettingsSheet.continueKey));
 }
 
+/// What is written to the log by [body] and by what it starts.
+Future<List<String>> _logged(Future<void> Function() body) async {
+  final lines = <String>[];
+  await runZoned(body, zoneSpecification: ZoneSpecification(print: (_, _, _, line) => lines.add(line)));
+  return lines;
+}
+
 /// Presses Tab until the keyboard's focus is inside [target].
 Future<void> _tabTo(WidgetTester tester, Finder target) async {
   for (var i = 0; i < 12; i++) {
@@ -127,6 +134,73 @@ void main() {
         findsOneWidget,
       );
     });
+
+    testOnMac('a language that cannot be saved says so and is logged, and the language stays', (tester) async {
+      final device = await _openSettings(tester);
+      device.storage.localeError = PlatformException(code: 'storage-unavailable');
+
+      final log = await _logged(() async {
+        await _tap(tester, find.byKey(SettingsSheet.languageKey));
+        await _tap(tester, find.text('Bahasa Indonesia').last);
+      });
+
+      expect(_inSheet(find.textContaining('Error selecting language:')), findsOneWidget);
+      expect(_inSheet(find.textContaining('storage-unavailable')), findsOneWidget);
+      expect(log, contains(contains('Saving the chosen language failed')));
+      expect(device.storage.locale, 'en');
+      expect(
+        find.descendant(of: find.byKey(SettingsSheet.languageKey), matching: find.text('English')),
+        findsOneWidget,
+      );
+    });
+
+    testOnMac('a language save that fails after Settings has closed is logged, and does not reach the closed sheet', (
+      tester,
+    ) async {
+      final device = await _openSettings(tester);
+      device.storage
+        ..localeHeld = Completer<void>()
+        ..localeError = PlatformException(code: 'storage-unavailable');
+
+      final log = await _logged(() async {
+        await _tap(tester, find.byKey(SettingsSheet.languageKey));
+        await _tap(tester, find.text('Bahasa Indonesia').last);
+        await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+        await tester.pumpAndSettle();
+        expect(find.byType(ShellSheetView), findsNothing);
+
+        device.storage.localeHeld!.complete();
+        await tester.pumpAndSettle();
+      });
+
+      expect(find.byType(ShellSheetView), findsNothing);
+      expect(log, contains(contains('Saving the chosen language failed')));
+      expect(device.storage.locale, 'en');
+    });
+
+    testOnMac(
+      'a language save that fails after Recovery Phrase was opened is logged, and does not reach the list that was left',
+      (tester) async {
+        final device = await _openSettings(tester);
+        device.storage
+          ..localeHeld = Completer<void>()
+          ..localeError = PlatformException(code: 'storage-unavailable');
+
+        final log = await _logged(() async {
+          await _tap(tester, find.byKey(SettingsSheet.languageKey));
+          await _tap(tester, find.text('Bahasa Indonesia').last);
+          await _tap(tester, find.byKey(SettingsSheet.recoveryPhraseRowKey));
+          expect(find.byKey(SettingsSheet.continueKey), findsOneWidget);
+
+          device.storage.localeHeld!.complete();
+          await tester.pumpAndSettle();
+        });
+
+        expect(find.byKey(SettingsSheet.continueKey), findsOneWidget);
+        expect(log, contains(contains('Saving the chosen language failed')));
+        expect(device.storage.locale, 'en');
+      },
+    );
 
     _testOnLinux('on Linux the wallet rows cannot be used yet and say why, while Language still works', (tester) async {
       final approval = FakeUserApproval()..availabilityAnswer = ApprovalAvailability.unsupported;

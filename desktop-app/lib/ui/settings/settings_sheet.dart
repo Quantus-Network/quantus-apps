@@ -149,7 +149,11 @@ class _SettingsListState extends ConsumerState<_SettingsList> {
               subtitle: l10n.settingsPreferencesLanguageSubtitle,
               trailing: LanguagePopUp(
                 key: SettingsSheet.languageKey,
-                onFailed: (e) => setState(() => _languageError = l10n.settingsLanguageError('$e')),
+                onFailed: (e) {
+                  quantusPrint('Saving the chosen language failed: $e');
+                  // The list may be gone by now: the sheet closed, or a step opened.
+                  if (mounted) setState(() => _languageError = l10n.settingsLanguageError('$e'));
+                },
               ),
             ),
           ],
