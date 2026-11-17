@@ -140,6 +140,10 @@ bool SensitiveClipboard::Copy(const std::string& utf8_text, std::string* error) 
   }
   CloseClipboard();
   if (copied) {
+    // Read after closing, because closing adds the text formats Windows
+    // derives from CF_UNICODETEXT, and that changes the number again. A copy
+    // another program makes in between is told apart by its owner (see
+    // ClearIfUnchanged).
     copied_sequence_ = GetClipboardSequenceNumber();
   }
   return copied;
@@ -156,8 +160,10 @@ bool SensitiveClipboard::ClearIfUnchanged(std::string* error) {
     return false;
   }
   // Checked while the clipboard is open, so nothing can be copied between
-  // the check and the clear.
-  if (GetClipboardSequenceNumber() != *copied_sequence_) {
+  // the check and the clear. Whoever copies over the secret empties the
+  // clipboard first, which makes them its owner, so a copy made just after
+  // Copy() closed the clipboard is caught even though its number was taken.
+  if (GetClipboardSequenceNumber() != *copied_sequence_ || GetClipboardOwner() != owner_) {
     // Something else has been copied over it since, and is left alone.
     copied_sequence_.reset();
     CloseClipboard();
