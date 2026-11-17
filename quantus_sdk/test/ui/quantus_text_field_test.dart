@@ -20,6 +20,80 @@ void main() {
     await tester.pump();
   }
 
+  /// The bordered box the field draws its text in.
+  Container box(WidgetTester tester) => tester.widget<Container>(
+    find.descendant(of: find.byType(QuantusTextField), matching: find.byType(Container)).first,
+  );
+
+  testWidgets('by default the box is at least 48 high, with the theme\'s large data text', (tester) async {
+    final controller = TextEditingController(text: 'Value');
+    addTearDown(controller.dispose);
+
+    await pumpField(tester, QuantusTextField(controller: controller, hint: 'Hint'));
+
+    final context = tester.element(find.byType(QuantusTextField));
+    final decoration = box(tester).decoration! as BoxDecoration;
+    expect(tester.getSize(find.byWidget(box(tester))).height, 48);
+    expect(tester.getTopLeft(find.byType(EditableText)).dx, 15);
+    expect(
+      tester.widget<EditableText>(find.byType(EditableText)).style.fontSize,
+      context.themeTextV3.dataAddressLarge.fontSize,
+    );
+    expect(decoration.color, context.colorsV3.bgSurface);
+    expect(decoration.borderRadius, context.radiusV3.mdBorder);
+  });
+
+  testWidgets('a compact field: its padding, text style, fill and corners can be set, and the hint follows the text', (
+    tester,
+  ) async {
+    final controller = TextEditingController();
+    addTearDown(controller.dispose);
+    const style = TextStyle(fontFamily: 'Geist', fontSize: 13);
+
+    await pumpField(
+      tester,
+      QuantusTextField(
+        controller: controller,
+        hint: 'Password',
+        height: 36,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        textStyle: style,
+        fillColor: const Color(0xFF010203),
+        borderRadius: BorderRadius.circular(6),
+      ),
+    );
+
+    final context = tester.element(find.byType(QuantusTextField));
+    final decoration = box(tester).decoration! as BoxDecoration;
+    expect(tester.getSize(find.byWidget(box(tester))).height, 36);
+    // The padding, inside the border.
+    expect(tester.getTopLeft(find.byType(EditableText)).dx, 13);
+    expect(decoration.color, const Color(0xFF010203));
+    expect(decoration.borderRadius, BorderRadius.circular(6));
+
+    final text = tester.widget<EditableText>(find.byType(EditableText)).style;
+    expect((text.fontFamily, text.fontSize, text.color), ('Geist', 13, context.colorsV3.textContent));
+    final hint = tester.widget<Text>(find.text('Password')).style!;
+    expect((hint.fontFamily, hint.fontSize, hint.color), ('Geist', 13, context.colorsV3.textMuted));
+  });
+
+  testWidgets('a single-line field of a set height centres its text in the box', (tester) async {
+    final controller = TextEditingController(text: 'Value');
+    addTearDown(controller.dispose);
+
+    await pumpField(
+      tester,
+      QuantusTextField(controller: controller, height: 36, padding: const EdgeInsets.symmetric(horizontal: 12)),
+    );
+
+    expect(
+      tester.getCenter(find.byType(EditableText)).dy,
+      moreOrLessEquals(tester.getCenter(find.byWidget(box(tester))).dy, epsilon: 0.01),
+    );
+    // As wide as the box leaves it.
+    expect(tester.getSize(find.byType(EditableText)).width, tester.getSize(find.byWidget(box(tester))).width - 2 * 13);
+  });
+
   testWidgets('hides error copy and clear button by default', (tester) async {
     final controller = TextEditingController(text: 'Value');
     addTearDown(controller.dispose);
