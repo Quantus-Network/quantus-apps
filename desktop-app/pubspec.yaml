@@ -25,6 +25,7 @@ dependencies:
   cupertino_icons: ^1.0.9
 
   # Platform
+  ffi: ^2.2.0
   local_auth: ^3.0.1
   share_plus: ^13.1.0
 

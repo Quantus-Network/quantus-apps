@@ -83,6 +83,18 @@ jobs:
         run: flutter pub get
         working-directory: ./desktop-app
 
+      # The only run of the login password check against a real libpam. The
+      # app's PAM service is installed as its package will install it, and the
+      # runner's throwaway user is given a password to check.
+      - name: Check a login password through PAM
+        working-directory: ./desktop-app
+        run: |
+          sudo install -m 644 linux/packaging/pam.d/quantus-wallet /etc/pam.d/quantus-wallet
+          password="$(openssl rand -hex 16)"
+          echo "::add-mask::$password"
+          echo "$(id -un):$password" | sudo chpasswd
+          QUANTUS_PAM_TEST_PASSWORD="$password" flutter test tool/pam_login_password_test.dart
+
       - name: Build Linux debug
         run: flutter build linux --debug
         working-directory: ./desktop-app
