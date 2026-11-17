@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
@@ -7,6 +8,8 @@ import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_desktop_wallet/bootstrap/app_bootstrap.dart';
 import 'package:quantus_desktop_wallet/providers/boot_intro_provider.dart';
+import 'package:quantus_desktop_wallet/services/sensitive_clipboard.dart';
+import 'package:quantus_desktop_wallet/services/user_approval.dart';
 import 'package:quantus_desktop_wallet/services/window_chrome.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/providers/remote_config_provider.dart';
@@ -57,8 +60,24 @@ class FakeSettingsService extends Fake implements SettingsService {
   @override
   Future<List<MultisigAccount>> getMultisigAccounts() async => multisigs;
 
+  /// The language chosen in Settings.
+  String? locale = 'en';
+
   @override
-  String? getSelectedAppLocale() => 'en';
+  String? getSelectedAppLocale() => locale;
+
+  /// When set, saving the language fails with this.
+  Object? localeError;
+
+  /// When set, the language is saved (or fails) only once this completes.
+  Completer<void>? localeHeld;
+
+  @override
+  Future<void> setSelectedAppLocale(String languageCode) async {
+    if (localeHeld case final held?) await held.future;
+    if (localeError case final error?) throw error;
+    locale = languageCode;
+  }
 
   @override
   String? getWalletName(int walletIndex) => walletNames[walletIndex];
@@ -158,8 +177,14 @@ class FakeWalletStorage extends FakeSettingsService {
   @override
   void setExistingUserSeenPromoVideo() {}
 
+  /// The wallets whose recovery phrase has been shown or copied.
+  final Set<int> viewedPhrases = {};
+
   @override
-  bool recoveryPhraseViewed(int walletIndex) => false;
+  bool recoveryPhraseViewed(int walletIndex) => viewedPhrases.contains(walletIndex);
+
+  @override
+  void setRecoveryPhraseViewed(int walletIndex) => viewedPhrases.add(walletIndex);
 }
 
 class _StoredAccountsService extends Fake implements AccountsService {
@@ -238,6 +263,7 @@ class _WipingLogoutService extends Fake implements LogoutService {
 
   @override
   Future<void> logout() async {
+    if (device.logoutError case final error?) throw error;
     device.logouts++;
     device.storage
       ..accounts.clear()
@@ -262,6 +288,9 @@ class FakeWalletDevice {
   /// How many chain scans ran, and how many times the wallet was wiped.
   int scans = 0;
   int logouts = 0;
+
+  /// When set, wiping the wallet fails with this.
+  Object? logoutError;
 
   /// Puts a software wallet with [accounts] on the device.
   void store(List<Account> accounts, {String? mnemonic = 'a stored recovery phrase'}) {
@@ -295,6 +324,48 @@ class FakeWalletDevice {
       ),
     ),
   ];
+}
+
+/// The system's approval, answering as a test says. It approves unless told
+/// otherwise.
+class FakeUserApproval implements UserApproval {
+  ApprovalAvailability availabilityAnswer = ApprovalAvailability.available;
+
+  /// What a request answers; it may throw.
+  Future<ApprovalResult> Function() answer = () async => ApprovalResult.approved;
+
+  /// The reason given with each request.
+  final reasons = <String>[];
+
+  @override
+  Future<ApprovalAvailability> availability() async => availabilityAnswer;
+
+  @override
+  Future<ApprovalResult> approve({required String reason}) {
+    reasons.add(reason);
+    return answer();
+  }
+}
+
+/// The clipboard for secrets, without the native side.
+class FakeSensitiveClipboard extends Fake implements SensitiveClipboard {
+  final copied = <String>[];
+
+  /// When set, a copy fails with this.
+  Object? error;
+
+  /// When set, a copy is made (or fails) only once this completes.
+  Completer<void>? held;
+
+  @override
+  Future<void> copy(String text) async {
+    if (held case final held?) await held.future;
+    if (error case final error?) throw error;
+    copied.add(text);
+  }
+
+  @override
+  void dispose() {}
 }
 
 /// Collects what the app asks of its window, in place of the native side.

@@ -175,7 +175,7 @@ class _Value extends StatelessWidget {
         Row(
           children: [
             Expanded(child: label),
-            ...actions,
+            ToolbarActionRow(edge: ToolbarActionEdge.trailing, spacing: 0, children: actions),
           ],
         ),
         const SizedBox(height: 8),

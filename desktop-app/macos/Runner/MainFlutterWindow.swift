@@ -59,6 +59,8 @@ class MainFlutterWindow: NSWindow {
     }
     windowChannel = channel
 
+    SensitiveClipboard.shared.register(with: flutterViewController.engine.binaryMessenger)
+
     RegisterGeneratedPlugins(registry: flutterViewController)
 
     // The system lays the title bar out again on these events and puts the

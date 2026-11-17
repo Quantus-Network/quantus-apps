@@ -210,4 +210,15 @@ void main() {
     await tester.pump(const Duration(seconds: 2));
     semantics.dispose();
   });
+
+  testOnMac('each Copy ends on the content\'s right edge, under the close cross', (tester) async {
+    await _openReceive(tester, const RegularAccount(mainAccount));
+    final sheet = tester.getRect(find.byType(ShellSheetView));
+    final contentRight = sheet.right - ShellSheetView.padding;
+
+    for (final key in [ReceiveSheet.copyAddressKey, ReceiveSheet.copyCheckphraseKey]) {
+      final label = find.descendant(of: find.byKey(key), matching: find.text('Copy'));
+      expect(tester.getRect(label).right, moreOrLessEquals(contentRight, epsilon: 0.5), reason: '$key');
+    }
+  });
 }

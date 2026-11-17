@@ -3745,5 +3745,50 @@
     "desktopCopied": "Copied",
     "@desktopCopied": {
       "description": "Desktop: what a Copy action says for a moment after it has copied"
+    },
+    "desktopApprovalUnavailableLinux": "Not available on Linux yet: it will ask for your login password.",
+    "@desktopApprovalUnavailableLinux": {
+      "description": "Desktop Settings: under Recovery Phrase and Reset Wallet on Linux, where the app cannot ask for approval yet"
+    },
+    "desktopApprovalNeedsMacPassword": "Set up a login password for this Mac to use this.",
+    "@desktopApprovalNeedsMacPassword": {
+      "description": "Desktop Settings: under Recovery Phrase and Reset Wallet on a Mac with no login password to approve with"
+    },
+    "desktopApprovalNeedsWindowsHello": "Set up Windows Hello to use this.",
+    "@desktopApprovalNeedsWindowsHello": {
+      "description": "Desktop Settings: under Recovery Phrase and Reset Wallet on a Windows PC without Windows Hello"
+    },
+    "desktopApprovalFailed": "Couldn’t ask for approval: {error}",
+    "@desktopApprovalFailed": {
+      "description": "Desktop Settings: the system's approval prompt itself failed",
+      "placeholders": {
+        "error": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopRecoveryPhraseEyebrow": "Before you look",
+    "@desktopRecoveryPhraseEyebrow": {
+      "description": "Desktop Settings: small capitals over the caution shown before the recovery phrase"
+    },
+    "desktopResetEyebrow": "Cannot be undone",
+    "@desktopResetEyebrow": {
+      "description": "Desktop Settings: small capitals over the caution shown before resetting the wallet"
+    },
+    "desktopRecoveryPhraseHide": "Hide",
+    "@desktopRecoveryPhraseHide": {
+      "description": "Desktop Settings: masks the recovery phrase's words"
+    },
+    "desktopRecoveryPhraseShow": "Show",
+    "@desktopRecoveryPhraseShow": {
+      "description": "Desktop Settings: unmasks the recovery phrase's words"
+    },
+    "desktopRecoveryPhraseUnreadable": "This wallet’s recovery phrase could not be read.",
+    "@desktopRecoveryPhraseUnreadable": {
+      "description": "Desktop Settings: the stored recovery phrase is missing"
+    },
+    "desktopRecoveryPhraseCopyFailed": "Couldn’t copy the recovery phrase.",
+    "@desktopRecoveryPhraseCopyFailed": {
+      "description": "Desktop Settings: copying the recovery phrase, kept out of clipboard history, failed"
     }
 }

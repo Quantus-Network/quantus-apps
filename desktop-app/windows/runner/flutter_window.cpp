@@ -1,6 +1,8 @@
 #include "flutter_window.h"
 
+#include <iostream>
 #include <optional>
+#include <string>
 
 #include "flutter/generated_plugin_registrant.h"
 
@@ -25,6 +27,8 @@ bool FlutterWindow::OnCreate() {
     return false;
   }
   RegisterPlugins(flutter_controller_->engine());
+  sensitive_clipboard_ =
+      std::make_unique<SensitiveClipboard>(flutter_controller_->engine()->messenger(), GetHandle());
   SetChildContent(flutter_controller_->view()->GetNativeWindow());
 
   flutter_controller_->engine()->SetNextFrameCallback([&]() {
@@ -40,6 +44,16 @@ bool FlutterWindow::OnCreate() {
 }
 
 void FlutterWindow::OnDestroy() {
+  // A secret the app copied leaves with the app, unless something else has
+  // been copied over it since. Done while the window, which opens the
+  // clipboard, is still there.
+  if (sensitive_clipboard_) {
+    std::string error;
+    if (!sensitive_clipboard_->ClearIfUnchanged(&error)) {
+      std::cerr << "Clearing the copied secret from the clipboard failed: " << error << std::endl;
+    }
+    sensitive_clipboard_ = nullptr;
+  }
   if (flutter_controller_) {
     flutter_controller_ = nullptr;
   }

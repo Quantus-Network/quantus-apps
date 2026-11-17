@@ -2583,4 +2583,36 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get desktopCopied => 'Disalin';
+
+  @override
+  String get desktopApprovalUnavailableLinux => 'Belum tersedia di Linux: nantinya akan meminta kata sandi login Anda.';
+
+  @override
+  String get desktopApprovalNeedsMacPassword => 'Atur kata sandi login untuk Mac ini agar dapat menggunakan fitur ini.';
+
+  @override
+  String get desktopApprovalNeedsWindowsHello => 'Atur Windows Hello agar dapat menggunakan fitur ini.';
+
+  @override
+  String desktopApprovalFailed(String error) {
+    return 'Tidak dapat meminta persetujuan: $error';
+  }
+
+  @override
+  String get desktopRecoveryPhraseEyebrow => 'Sebelum Anda melihat';
+
+  @override
+  String get desktopResetEyebrow => 'Tidak dapat dibatalkan';
+
+  @override
+  String get desktopRecoveryPhraseHide => 'Sembunyikan';
+
+  @override
+  String get desktopRecoveryPhraseShow => 'Tampilkan';
+
+  @override
+  String get desktopRecoveryPhraseUnreadable => 'Frasa pemulihan dompet ini tidak dapat dibaca.';
+
+  @override
+  String get desktopRecoveryPhraseCopyFailed => 'Tidak dapat menyalin frasa pemulihan.';
 }

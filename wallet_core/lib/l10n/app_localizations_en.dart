@@ -2580,4 +2580,36 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get desktopCopied => 'Copied';
+
+  @override
+  String get desktopApprovalUnavailableLinux => 'Not available on Linux yet: it will ask for your login password.';
+
+  @override
+  String get desktopApprovalNeedsMacPassword => 'Set up a login password for this Mac to use this.';
+
+  @override
+  String get desktopApprovalNeedsWindowsHello => 'Set up Windows Hello to use this.';
+
+  @override
+  String desktopApprovalFailed(String error) {
+    return 'Couldn’t ask for approval: $error';
+  }
+
+  @override
+  String get desktopRecoveryPhraseEyebrow => 'Before you look';
+
+  @override
+  String get desktopResetEyebrow => 'Cannot be undone';
+
+  @override
+  String get desktopRecoveryPhraseHide => 'Hide';
+
+  @override
+  String get desktopRecoveryPhraseShow => 'Show';
+
+  @override
+  String get desktopRecoveryPhraseUnreadable => 'This wallet’s recovery phrase could not be read.';
+
+  @override
+  String get desktopRecoveryPhraseCopyFailed => 'Couldn’t copy the recovery phrase.';
 }

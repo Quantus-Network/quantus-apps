@@ -689,5 +689,15 @@
   "desktopWalletReadyBody": "{account} bersifat transparan: cepat, dan terlihat di chain. {encrypted} untuk transaksi privat, dan lebih lambat.",
   "desktopReceiveDepositAddressLabel": "Alamat deposit",
   "desktopReceiveEncryptedNotice": "Alamat baru setelah alamat ini dibayar, sehingga deposit Anda tidak dapat dikaitkan satu sama lain.",
-  "desktopCopied": "Disalin"
+  "desktopCopied": "Disalin",
+  "desktopApprovalUnavailableLinux": "Belum tersedia di Linux: nantinya akan meminta kata sandi login Anda.",
+  "desktopApprovalNeedsMacPassword": "Atur kata sandi login untuk Mac ini agar dapat menggunakan fitur ini.",
+  "desktopApprovalNeedsWindowsHello": "Atur Windows Hello agar dapat menggunakan fitur ini.",
+  "desktopApprovalFailed": "Tidak dapat meminta persetujuan: {error}",
+  "desktopRecoveryPhraseEyebrow": "Sebelum Anda melihat",
+  "desktopResetEyebrow": "Tidak dapat dibatalkan",
+  "desktopRecoveryPhraseHide": "Sembunyikan",
+  "desktopRecoveryPhraseShow": "Tampilkan",
+  "desktopRecoveryPhraseUnreadable": "Frasa pemulihan dompet ini tidak dapat dibaca.",
+  "desktopRecoveryPhraseCopyFailed": "Tidak dapat menyalin frasa pemulihan."
 }

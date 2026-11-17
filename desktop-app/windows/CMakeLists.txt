@@ -57,6 +57,19 @@ add_subdirectory("runner")
 # them to the application.
 include(flutter/generated_plugins.cmake)
 
+# local_auth_windows (2.0.2 and earlier) builds with /await, which pulls in
+# <experimental/coroutine>. MSVC 14.51 (Visual Studio 2026) rejects that header
+# with STL1011 unless this macro is defined. Dropping /await instead does not
+# compile: the plugin's coroutine ends in `return`, not `co_return` (C3773).
+# Remove this once local_auth_windows moves to C++20 coroutines
+# (https://github.com/flutter/flutter/issues/185597).
+if(NOT TARGET local_auth_windows_plugin)
+  message(FATAL_ERROR "local_auth_windows_plugin is no longer built; "
+    "delete the STL1011 workaround in windows/CMakeLists.txt.")
+endif()
+target_compile_definitions(local_auth_windows_plugin PRIVATE
+  _SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS)
+
 
 # === Installation ===
 # Support files are copied into place next to the executable, so that it can

@@ -208,4 +208,85 @@ void _behaviour(_Kind kind) {
     expect(tester.getSemantics(find.byType(ToolbarAction)).getSemanticsData().hasAction(SemanticsAction.tap), isFalse);
     semantics.dispose();
   });
+
+  group('ToolbarActionRow', () {
+    /// A row of two actions held against [edge] of a 400pt box, inside a
+    /// 40pt margin, as a sheet's content sits inside its padding.
+    Future<List<int>> pumpRow(WidgetTester tester, ToolbarActionEdge edge) async {
+      final pressed = <int>[];
+      await tester.pumpWidget(
+        Builder(
+          builder: (context) => MaterialApp(
+            theme: AppTheme.darkTheme(context, text: const AppTextThemeV3.desktop()),
+            home: Scaffold(
+              body: Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(40),
+                  child: SizedBox(
+                    key: const Key('content'),
+                    width: 400,
+                    child: Align(
+                      alignment: edge == ToolbarActionEdge.trailing ? Alignment.centerRight : Alignment.centerLeft,
+                      child: ToolbarActionRow(
+                        edge: edge,
+                        children: [
+                          ToolbarAction.symbol(
+                            symbol: CupertinoIcons.eye,
+                            label: 'First',
+                            onPressed: () => pressed.add(0),
+                          ),
+                          ToolbarAction.symbol(
+                            symbol: CupertinoIcons.doc_on_doc,
+                            label: 'Last',
+                            onPressed: () => pressed.add(1),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      return pressed;
+    }
+
+    Rect backingOf(WidgetTester tester, String label) => tester.getRect(
+      find.descendant(of: find.widgetWithText(ToolbarAction, label), matching: find.byKey(ToolbarAction.backingKey)),
+    );
+
+    _testOnDesktop('trailing, the last label ends on the edge; its backing reaches past it, its click stops there', (
+      tester,
+    ) async {
+      final pressed = await pumpRow(tester, ToolbarActionEdge.trailing);
+      final content = tester.getRect(find.byKey(const Key('content')));
+
+      expect(tester.getRect(find.text('Last')).right, moreOrLessEquals(content.right, epsilon: 0.5));
+      expect(backingOf(tester, 'Last').right, moreOrLessEquals(content.right + ToolbarAction.inset, epsilon: 0.5));
+
+      final y = tester.getCenter(find.text('Last')).dy;
+      await tester.tapAt(Offset(content.right + 2, y), kind: PointerDeviceKind.mouse);
+      expect(pressed, isEmpty, reason: 'past the edge, where only the backing is');
+      await tester.tapAt(Offset(content.right - 1, y), kind: PointerDeviceKind.mouse);
+      expect(pressed, [1]);
+    });
+
+    _testOnDesktop('leading, the first icon starts on the edge; its backing reaches past it, its click stops there', (
+      tester,
+    ) async {
+      final pressed = await pumpRow(tester, ToolbarActionEdge.leading);
+      final content = tester.getRect(find.byKey(const Key('content')));
+
+      expect(tester.getRect(find.byIcon(CupertinoIcons.eye)).left, moreOrLessEquals(content.left, epsilon: 0.5));
+      expect(backingOf(tester, 'First').left, moreOrLessEquals(content.left - ToolbarAction.inset, epsilon: 0.5));
+
+      final y = tester.getCenter(find.text('First')).dy;
+      await tester.tapAt(Offset(content.left - 2, y), kind: PointerDeviceKind.mouse);
+      expect(pressed, isEmpty, reason: 'past the edge, where only the backing is');
+      await tester.tapAt(Offset(content.left + 1, y), kind: PointerDeviceKind.mouse);
+      expect(pressed, [0]);
+    });
+  });
 }

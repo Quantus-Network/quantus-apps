@@ -8,6 +8,7 @@ import 'package:quantus_desktop_wallet/ui/shell/shell_header.dart';
 import 'package:quantus_desktop_wallet/ui/shell/shell_sheet_view.dart';
 import 'package:quantus_desktop_wallet/ui/shell/sidebar.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:quantus_desktop_wallet/ui/components/balance_card.dart';
 
 import '../../fakes.dart';
 
@@ -190,5 +191,14 @@ void main() {
       expect(find.byType(Sidebar), findsNothing);
       expect(tester.getTopLeft(_inPaneHeader(find.byTooltip('Show Sidebar'))).dx, lessThan(_trafficLightsRightEdge));
     });
+  });
+
+  testOnMac('the header\'s title starts, and its last action ends, on the pane content\'s edges', (tester) async {
+    await pumpShell(tester, overrides: _withActive(const RegularAccount(mainAccount)));
+    final content = tester.getRect(find.byType(BalanceCard));
+
+    expect(tester.getRect(_inPaneHeader(find.text('Main'))).left, moreOrLessEquals(content.left, epsilon: 0.5));
+    final swap = find.descendant(of: find.widgetWithText(ToolbarAction, 'Swap'), matching: find.text('Swap'));
+    expect(tester.getRect(swap).right, moreOrLessEquals(content.right, epsilon: 0.5));
   });
 }
