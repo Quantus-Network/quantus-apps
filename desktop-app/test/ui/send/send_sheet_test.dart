@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_desktop_wallet/providers/shell_providers.dart';
 import 'package:quantus_desktop_wallet/services/external_links.dart';
+import 'package:quantus_desktop_wallet/ui/components/desktop_checkbox.dart';
 import 'package:quantus_desktop_wallet/ui/components/sheet_button.dart';
 import 'package:quantus_desktop_wallet/ui/components/toolbar_action.dart';
 import 'package:quantus_desktop_wallet/ui/send/send_sheet.dart';
@@ -112,6 +113,11 @@ Future<void> _toReview(WidgetTester tester, {String recipient = 'qzPayee', Strin
   await _fill(tester, recipient: recipient, amount: amount);
   await _tap(tester, SendSheet.reviewKey);
 }
+
+/// The box of the checkbox that sends the maximum.
+Finder _maxBox() => find.descendant(of: find.byKey(SendSheet.maxKey), matching: find.byType(Checkbox));
+
+bool _maxTicked(WidgetTester tester) => tester.widget<DesktopCheckbox>(find.byKey(SendSheet.maxKey)).value;
 
 /// Answers the app's reads of the clipboard with [text].
 void _putOnClipboard(WidgetTester tester, String text) {
@@ -325,15 +331,33 @@ void main() {
       expect(_canPress(tester, SendSheet.reviewKey), isFalse);
     });
 
-    testOnMac('Max fills in the balance less the fee of sending everything, and follows that fee', (tester) async {
+    testOnMac('the maximum is a checkbox under the amount, unticked, and the label\'s line holds no Max', (
+      tester,
+    ) async {
+      await _openSend(tester);
+
+      final checkbox = tester.widget<DesktopCheckbox>(find.byKey(SendSheet.maxKey));
+      expect(checkbox.label, 'Send the maximum amount');
+      expect(checkbox.value, isFalse);
+      final field = tester.getRect(find.byKey(SendSheet.amountFieldKey));
+      final box = Rect.fromCenter(center: tester.getCenter(_maxBox()), width: Checkbox.width, height: Checkbox.width);
+      expect(box.top, greaterThan(field.bottom));
+      expect(box.left, field.left);
+      expect(_inSheet(find.widgetWithText(ToolbarAction, 'Max')), findsNothing);
+    });
+
+    testOnMac('ticked, it fills in the balance less the fee of sending everything, and follows that fee', (
+      tester,
+    ) async {
       final chain = await _openSend(tester);
       await _type(tester, SendSheet.addressFieldKey, 'qzPayee');
       final sendingAll = Completer<BigInt>();
       chain.fee = () => sendingAll.future;
 
-      await tester.tap(find.byKey(SendSheet.maxKey));
+      await tester.tap(_maxBox());
       await tester.pump();
 
+      expect(_maxTicked(tester), isTrue);
       expect(_typed(tester, SendSheet.amountFieldKey), '1249.9988');
       expect(chain.quotes.last, (recipient: 'qzPayee', amount: null));
 
@@ -344,6 +368,41 @@ void main() {
       expect(_typed(tester, SendSheet.amountFieldKey), '1249.998');
       expect(_inSheet(find.text('0.002 QTC')), findsOneWidget);
       expect(_canPress(tester, SendSheet.reviewKey), isTrue);
+    });
+
+    testOnMac('typing an amount unticks it, and the amount typed is what is priced and sent', (tester) async {
+      final chain = await _openSend(tester);
+      await _type(tester, SendSheet.addressFieldKey, 'qzPayee');
+      await tester.tap(_maxBox());
+      await tester.pumpAndSettle();
+
+      await _type(tester, SendSheet.amountFieldKey, '5');
+      await _pastFeePause(tester);
+
+      expect(_maxTicked(tester), isFalse);
+      expect(chain.quotes.last, (recipient: 'qzPayee', amount: _qtc(5)));
+
+      await _tap(tester, SendSheet.reviewKey);
+      await _tap(tester, SendSheet.sendKey);
+
+      expect(chain.transfers.single.call, (recipient: 'qzPayee', amount: _qtc(5)));
+    });
+
+    testOnMac('unticked, the amount stays, is priced as itself and no longer follows the fee', (tester) async {
+      final chain = await _openSend(tester);
+      await _type(tester, SendSheet.addressFieldKey, 'qzPayee');
+      await tester.tap(_maxBox());
+      await tester.pumpAndSettle();
+
+      // Ticked, a fee this much dearer would lower the amount.
+      chain.fee = () async => _qtc(0.002);
+      await tester.tap(_maxBox());
+      await tester.pumpAndSettle();
+
+      expect(_maxTicked(tester), isFalse);
+      expect(chain.quotes.last, (recipient: 'qzPayee', amount: _qtc(1249.9988)));
+      expect(_inSheet(find.text('0.002 QTC')), findsOneWidget);
+      expect(_typed(tester, SendSheet.amountFieldKey), '1249.9988');
     });
 
     testOnMac('a fee that cannot be had is said with Retry, which asks again', (tester) async {
@@ -369,7 +428,7 @@ void main() {
 
       expect(_canPress(tester, SendSheet.reviewKey), isFalse);
       expect(_inSheet(find.textContaining('More than')), findsNothing);
-      expect(tester.widget<ToolbarAction>(find.byKey(SendSheet.maxKey)).onPressed, isNull);
+      expect(tester.widget<DesktopCheckbox>(find.byKey(SendSheet.maxKey)).onChanged, isNull);
     });
 
     testOnMac('where nothing can approve a send, the form says what to set up and Review is unavailable', (
@@ -613,7 +672,8 @@ void main() {
     testOnMac('a max send hands over a transfer of everything', (tester) async {
       final chain = await _openSend(tester);
       await _type(tester, SendSheet.addressFieldKey, 'qzPayee');
-      await _tap(tester, SendSheet.maxKey);
+      await tester.tap(_maxBox());
+      await tester.pumpAndSettle();
       await _tap(tester, SendSheet.reviewKey);
 
       expect(_inSheet(find.text('1,249.9988')), findsOneWidget);

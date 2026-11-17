@@ -3836,6 +3836,10 @@
         }
       }
     },
+    "desktopSendMaximum": "Send the maximum amount",
+    "@desktopSendMaximum": {
+      "description": "Desktop Send: checkbox under the amount field. While ticked the amount is everything the fee leaves of the balance"
+    },
     "desktopSendReview": "Review",
     "@desktopSendReview": {
       "description": "Desktop Send: the button that opens the review step, and that step's name in the sheet's path"

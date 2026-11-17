@@ -4838,6 +4838,12 @@ abstract class AppLocalizations {
   /// **'More than the {amount} you can send.'**
   String desktopSendAmountTooMuch(String amount);
 
+  /// Desktop Send: checkbox under the amount field. While ticked the amount is everything the fee leaves of the balance
+  ///
+  /// In en, this message translates to:
+  /// **'Send the maximum amount'**
+  String get desktopSendMaximum;
+
   /// Desktop Send: the button that opens the review step, and that step's name in the sheet's path
   ///
   /// In en, this message translates to:

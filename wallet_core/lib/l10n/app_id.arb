@@ -710,6 +710,7 @@
   "desktopSendAddressSelf": "Anda tidak dapat mengirim ke akun yang Anda gunakan untuk mengirim.",
   "desktopSendAvailable": "Tersedia",
   "desktopSendAmountTooMuch": "Melebihi {amount} yang dapat Anda kirim.",
+  "desktopSendMaximum": "Kirim jumlah maksimum",
   "desktopSendReview": "Tinjau",
   "desktopSendYouPaid": "Anda membayar",
   "desktopSendSubmitted": "Diajukan",

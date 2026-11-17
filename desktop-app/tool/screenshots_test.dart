@@ -169,6 +169,12 @@ void main() {
     await _fillSend(tester);
   });
 
+  _scene('send_form_max', (tester) async {
+    await _openSend(tester);
+    await _fillSend(tester);
+    await _tapAndSettle(tester, find.descendant(of: find.byKey(SendSheet.maxKey), matching: find.byType(Checkbox)));
+  });
+
   _scene('send_form_wrong', (tester) async {
     await _openSend(tester);
     await _fillSend(tester, address: _depositAddress.substring(0, 27), amount: '2000');

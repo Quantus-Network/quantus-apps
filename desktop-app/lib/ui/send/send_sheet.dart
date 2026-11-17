@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/misc.dart';
 import 'package:quantus_desktop_wallet/providers/approval_providers.dart';
 import 'package:quantus_desktop_wallet/services/external_links.dart';
 import 'package:quantus_desktop_wallet/ui/components/caps_text.dart';
+import 'package:quantus_desktop_wallet/ui/components/desktop_checkbox.dart';
 import 'package:quantus_desktop_wallet/ui/components/sheet_button.dart';
 import 'package:quantus_desktop_wallet/ui/components/toolbar_action.dart';
 import 'package:quantus_desktop_wallet/ui/send/send_form_parts.dart';
@@ -100,8 +101,9 @@ class _SendSheetState extends ConsumerState<SendSheet> {
   BigInt _amount = BigInt.zero;
   bool _amountUnreadable = false;
 
-  /// The amount is whatever the fee leaves of the balance.
-  bool _sendAll = false;
+  /// The box that sends the maximum is ticked: the amount is whatever the
+  /// fee leaves of the balance, and follows it.
+  bool _isMax = false;
 
   /// The fee the review opened with.
   SendFee? _openedWith;
@@ -228,6 +230,9 @@ class _SendSheetState extends ConsumerState<SendSheet> {
 
   // --------------------------------------------------------------- how much
 
+  /// The send moves the whole balance in one call.
+  bool get _sendAll => _isMax && _strategy.supportsSendAll;
+
   ProviderListenable<SendFeeState> get _feeProvider =>
       _strategy.feeProvider(recipient: _recipientAccepted ? _recipient : '', amount: _amount);
 
@@ -255,7 +260,8 @@ class _SendSheetState extends ConsumerState<SendSheet> {
             .read(numberFormattingServiceProvider)
             .formatBalance(amount, smartDecimals: AppConstants.decimals, addThousandsSeparators: false);
 
-  /// Puts [amount] in the field, as Max and a fee that moves a max send do.
+  /// Puts [amount] in the field, as a tick of the maximum and a fee that
+  /// moves a maximum send do.
   void _setAmount(BigInt amount) {
     if (amount == _amount) return;
     _amountText.text = _amountAsTyped(amount);
@@ -270,19 +276,19 @@ class _SendSheetState extends ConsumerState<SendSheet> {
     setState(() {
       _amount = amount ?? BigInt.zero;
       _amountUnreadable = amount == null;
-      _sendAll = false;
+      _isMax = false;
     });
     if (_amount > BigInt.zero) _requestFee(_amount);
   }
 
-  /// Max sends everything that can be spent. A send that can move the whole
-  /// balance in one call prices that call at once, and the amount follows
-  /// its fee as it lands.
-  void _setMax() {
-    final max = _maxSendable(ref.read(_feeProvider).fee);
-    setState(() => _sendAll = _strategy.supportsSendAll);
-    _setAmount(max);
-    if (max > BigInt.zero) _requestFee(max, immediate: _sendAll);
+  /// Ticked, the send is of everything that can be spent. A send that can
+  /// move the whole balance in one call prices that call at once, and the
+  /// amount follows its fee as it lands. Unticked, the amount stays as it
+  /// is, an amount like any other from then on.
+  void _setMax(bool isMax) {
+    setState(() => _isMax = isMax);
+    if (isMax) _setAmount(_maxSendable(ref.read(_feeProvider).fee));
+    if (_amount > BigInt.zero) _requestFee(_amount, immediate: true);
   }
 
   /// What is wrong with an amount of [status], if anything worth saying. An
@@ -385,9 +391,9 @@ class _SendSheetState extends ConsumerState<SendSheet> {
   @override
   Widget build(BuildContext context) {
     final l10n = ref.watch(l10nProvider);
-    // A max send follows its fee, on whichever step the sheet is.
+    // A maximum send follows its fee, on whichever step the sheet is.
     ref.listen(_feeProvider, (_, next) {
-      if (_sendAll && _step != _Step.receipt && next.fee != null) _setAmount(_maxSendable(next.fee));
+      if (_isMax && _step != _Step.receipt && next.fee != null) _setAmount(_maxSendable(next.fee));
     });
     final title = _strategy.strings(l10n).flowTitle;
     final isReview = _step == _Step.review;
@@ -510,17 +516,7 @@ class _SendSheetState extends ConsumerState<SendSheet> {
         ),
       ],
       const SizedBox(height: 18),
-      SendFieldLabel(
-        label: l10n.sendReviewAmount,
-        actions: [
-          ToolbarAction.symbol(
-            key: SendSheet.maxKey,
-            symbol: CupertinoIcons.arrow_up_to_line,
-            label: l10n.sendInputAmountMax,
-            onPressed: balance.hasValue ? _setMax : null,
-          ),
-        ],
-      ),
+      SendFieldLabel(label: l10n.sendReviewAmount),
       const SizedBox(height: 6),
       SendField(
         key: SendSheet.amountFieldKey,
@@ -551,7 +547,18 @@ class _SendSheetState extends ConsumerState<SendSheet> {
           ..._feeLine(l10n, fmt, feeState),
         ],
       ),
-      const SizedBox(height: 26),
+      const SizedBox(height: 12 - DesktopCheckbox.boxInset),
+      // The box on the content's edge, under the start of the line above.
+      Transform.translate(
+        offset: const Offset(-DesktopCheckbox.boxInset, 0),
+        child: DesktopCheckbox(
+          key: SendSheet.maxKey,
+          value: _isMax,
+          label: l10n.desktopSendMaximum,
+          onChanged: balance.hasValue ? _setMax : null,
+        ),
+      ),
+      const SizedBox(height: 26 - DesktopCheckbox.boxInset),
       Row(
         children: [
           Expanded(

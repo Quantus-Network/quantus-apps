@@ -2648,6 +2648,9 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get desktopSendMaximum => 'Send the maximum amount';
+
+  @override
   String get desktopSendReview => 'Review';
 
   @override

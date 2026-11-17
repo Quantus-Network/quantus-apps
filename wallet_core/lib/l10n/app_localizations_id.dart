@@ -2651,6 +2651,9 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
+  String get desktopSendMaximum => 'Kirim jumlah maksimum';
+
+  @override
   String get desktopSendReview => 'Tinjau';
 
   @override
