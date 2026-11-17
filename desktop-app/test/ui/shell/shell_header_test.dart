@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:quantus_desktop_wallet/ui/components/toolbar_action.dart';
 import 'package:quantus_desktop_wallet/ui/components/window_drag_area.dart';
 import 'package:quantus_desktop_wallet/ui/shell/account_pane.dart';
 import 'package:quantus_desktop_wallet/ui/shell/account_toolbar.dart';
@@ -51,7 +52,7 @@ void main() {
         _inSidebarHeader(find.byTooltip('Hide Sidebar')),
         _inPaneHeader(find.text('Encrypted Account')),
         _inPaneHeader(find.byType(EncryptedLockBadge)),
-        _inPaneHeader(find.widgetWithText(QuantusButton, 'Receive')),
+        _inPaneHeader(find.widgetWithText(ToolbarAction, 'Receive')),
       ]) {
         expect(tester.getCenter(finder).dy, moreOrLessEquals(26, epsilon: 0.5), reason: '$finder');
       }
@@ -147,9 +148,9 @@ void main() {
       final requests = recordWindowRequests(tester);
       await pumpShell(tester, overrides: _withActive(const RegularAccount(mainAccount)));
 
-      await tester.drag(_inPaneHeader(find.widgetWithText(QuantusButton, 'Receive')), const Offset(60, 0));
+      await tester.drag(_inPaneHeader(find.widgetWithText(ToolbarAction, 'Receive')), const Offset(60, 0));
       await tester.pumpAndSettle();
-      await tester.tap(_inPaneHeader(find.widgetWithText(QuantusButton, 'Send')));
+      await tester.tap(_inPaneHeader(find.widgetWithText(ToolbarAction, 'Send')));
       await tester.pumpAndSettle();
 
       expect(find.descendant(of: find.byType(ShellSheetView), matching: find.text('Send')), findsOneWidget);

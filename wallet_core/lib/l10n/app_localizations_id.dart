@@ -2480,4 +2480,65 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get desktopMenuWindow => 'Jendela';
+
+  @override
+  String get desktopBootProtocol => '> PROTOKOL QUANTUS v1.0.0-gm';
+
+  @override
+  String desktopBootNistModule(String status) {
+    return '> MODUL NIST FIPS 204 DIMUAT $status';
+  }
+
+  @override
+  String desktopBootInitializing(String scheme) {
+    return '> MENGINISIALISASI $scheme...';
+  }
+
+  @override
+  String desktopBootSignatureScheme(String status) {
+    return '> SKEMA TANDA TANGAN PASCA-KUANTUM $status';
+  }
+
+  @override
+  String desktopBootZkEngine(String status) {
+    return '> MESIN BUKTI ZK REKURSIF $status';
+  }
+
+  @override
+  String desktopBootChladni(String status) {
+    return '> VISUALISASI MEDAN CHLADNI $status';
+  }
+
+  @override
+  String get desktopBootStatusOk => '[OK]';
+
+  @override
+  String get desktopBootStatusActive => 'AKTIF';
+
+  @override
+  String get desktopBootStatusReady => 'SIAP';
+
+  @override
+  String get desktopBootStatusLoading => 'MEMUAT';
+
+  @override
+  String get desktopWaveModeLabel => 'MODE GELOMBANG (m,n)';
+
+  @override
+  String get desktopWaveModeHint => 'GERAKKAN KURSOR UNTUK MENGGESER FREKUENSI';
+
+  @override
+  String get desktopWelcomeEyebrow => 'Uang Terenkripsi Aman Secara Kuantum';
+
+  @override
+  String get desktopWelcomeTitleLine1 => 'Uang yang tidak bisa';
+
+  @override
+  String get desktopWelcomeTitleLine2 => 'dipecahkan oleh komputer kuantum.';
+
+  @override
+  String get desktopWelcomeBody => 'Buat dompet baru, atau impor dompet yang sudah Anda miliki.';
+
+  @override
+  String get desktopBalanceLabel => 'Saldo';
 }

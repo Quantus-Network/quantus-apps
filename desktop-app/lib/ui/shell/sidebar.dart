@@ -24,6 +24,9 @@ class Sidebar extends ConsumerWidget {
 
   static const double width = 260;
 
+  /// The size of the icon before a row that is not an account.
+  static const double _iconSize = 15;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = ref.watch(l10nProvider);
@@ -42,14 +45,16 @@ class Sidebar extends ConsumerWidget {
           const SidebarHeader(),
           Expanded(
             child: ListView(
-              padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+              padding: const EdgeInsets.fromLTRB(10, 0, 10, 12),
               children: [
                 ..._accounts(context, ref, l10n, selection),
-                const SizedBox(height: 12),
+                const SizedBox(height: 10),
                 const MenuDivider(),
-                const SizedBox(height: 12),
+                const SizedBox(height: 6),
                 SidebarRow(
                   title: l10n.settingsMiningRewards,
+                  isSecondary: true,
+                  leading: Icon(Icons.hardware_outlined, size: _iconSize, color: colors.textMuted),
                   isSelected: selection == SidebarSelection.miningRewards,
                   onTap: () => ref.read(sidebarSelectionProvider.notifier).select(SidebarSelection.miningRewards),
                 ),
@@ -58,10 +63,11 @@ class Sidebar extends ConsumerWidget {
           ),
           const MenuDivider(),
           Padding(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             child: SidebarRow(
               title: l10n.accountsSheetAddAccount,
-              leading: const QuantusIcon(QuantusIcons.plus, size: 16),
+              isSecondary: true,
+              leading: const QuantusIcon(QuantusIcons.plus, size: _iconSize),
               onTap: () => ref.read(shellSheetProvider.notifier).open(ShellSheet.addAccount),
             ),
           ),
@@ -96,8 +102,7 @@ class Sidebar extends ConsumerWidget {
         _AccountRow(display: display, isSelected: display.account.accountId == selectedAccountId);
 
     return [
-      for (final (position, wallet) in grouping.wallets.indexed) ...[
-        if (position > 0) const SizedBox(height: 12),
+      for (final wallet in grouping.wallets) ...[
         _WalletHeader(wallet: wallet),
         for (final account in wallet.accounts) row(RegularAccount(account)),
         if (wallet.encryptedAccount case final encrypted?) row(RegularAccount(encrypted)),
@@ -138,13 +143,23 @@ class _WalletHeader extends ConsumerWidget {
             WalletKind.keystone => l10n.accountsSheetKeystoneWallet(wallet.number),
           };
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(8, 4, 8, 6),
-      child: Text(
-        name,
-        style: context.themeTextV3.caption.copyWith(color: context.colorsV3.textMuted),
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
+    // Drawn in capitals, which is a look and not the name: a screen reader
+    // gets the name as it is written.
+    return Semantics(
+      label: name,
+      excludeSemantics: true,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(10, 14, 10, 6),
+        child: Text(
+          name.toUpperCase(),
+          style: context.themeTextV3.caption.copyWith(
+            color: context.colorsV3.textMuted2,
+            fontWeight: FontWeight.w500,
+            letterSpacing: 0.8,
+          ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
       ),
     );
   }
@@ -156,6 +171,8 @@ class _AccountRow extends ConsumerWidget {
   final DisplayAccount display;
   final bool isSelected;
 
+  static const double _badgeSize = 28;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final account = display.account;
@@ -163,7 +180,9 @@ class _AccountRow extends ConsumerWidget {
     return SidebarRow(
       title: account.name,
       isSelected: isSelected,
-      leading: isEncryptedAccount(account) ? const EncryptedLockBadge(size: 24) : null,
+      leading: isEncryptedAccount(account)
+          ? const EncryptedLockBadge(size: _badgeSize)
+          : AccountBadge(name: account.name, size: _badgeSize),
       subtitle: AccountBalanceText(
         account: account,
         style: context.themeTextV3.caption.copyWith(color: context.colorsV3.textMuted),

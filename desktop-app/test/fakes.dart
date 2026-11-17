@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_desktop_wallet/bootstrap/app_bootstrap.dart';
+import 'package:quantus_desktop_wallet/providers/boot_intro_provider.dart';
 import 'package:quantus_desktop_wallet/services/window_chrome.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/providers/remote_config_provider.dart';
@@ -27,6 +28,16 @@ class FakeSettingsService extends Fake implements SettingsService {
   final List<MultisigAccount> multisigs;
   final Map<int, String> walletNames;
   final Map<int, String> mnemonics;
+
+  /// The flags kept under plain keys. The boot intro counts as seen already,
+  /// so it plays only in the tests that are about it.
+  final Map<String, bool> bools = {BootIntroSeenNotifier.settingsKey: true};
+
+  @override
+  bool? getBool(String key) => bools[key];
+
+  @override
+  Future<void> setBool(String key, bool value) async => bools[key] = value;
 
   @override
   Future<bool> getHasWallet() async => true;
@@ -232,6 +243,7 @@ class _WipingLogoutService extends Fake implements LogoutService {
       ..accounts.clear()
       ..mnemonics.clear()
       ..pendingScans.clear()
+      ..bools.clear()
       ..activeAccount = null;
   }
 }
@@ -361,10 +373,21 @@ List<Override> shellOverrides({
 
 /// Pumps the whole app in a window of the size the runners open, and waits for
 /// it to settle unless [settle] is false (a loader never settles).
-Future<void> pumpShell(WidgetTester tester, {required List<Override> overrides, bool settle = true}) async {
+///
+/// The system asks for reduced motion unless [reduceMotion] is false: the
+/// Welcome page's moving background never settles either, so only the tests
+/// about that motion turn it on.
+Future<void> pumpShell(
+  WidgetTester tester, {
+  required List<Override> overrides,
+  bool settle = true,
+  bool reduceMotion = true,
+}) async {
   tester.view.physicalSize = const Size(1200, 800);
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.reset);
+  tester.platformDispatcher.accessibilityFeaturesTestValue = FakeAccessibilityFeatures(disableAnimations: reduceMotion);
+  addTearDown(tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
 
   await tester.pumpWidget(buildApp(overrides: overrides));
   if (settle) {

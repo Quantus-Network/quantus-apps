@@ -37,13 +37,13 @@ void main() {
     );
 
     final order = [
-      'Wallet 1',
+      'WALLET 1',
       'Main',
       'Savings',
       'Encrypted Account',
-      'Wallet 2',
+      'WALLET 2',
       'Trading',
-      'Cold Wallet',
+      'COLD WALLET',
       'Vault',
     ].map((text) => _top(tester, text)).toList();
     expect(order, orderedEquals([...order]..sort()));
@@ -60,9 +60,9 @@ void main() {
       ),
     );
 
-    expect(_inSidebar(find.text('Personal')), findsOneWidget);
-    expect(_inSidebar(find.text('Wallet 1')), findsNothing);
-    expect(_inSidebar(find.text('Wallet 2')), findsOneWidget);
+    expect(_inSidebar(find.text('PERSONAL')), findsOneWidget);
+    expect(_inSidebar(find.text('WALLET 1')), findsNothing);
+    expect(_inSidebar(find.text('WALLET 2')), findsOneWidget);
   });
 
   testOnMac('making an account in another wallet active does not reorder the list', (tester) async {
@@ -79,7 +79,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(_isSelected(tester, 'Trading'), isTrue);
-    expect(_top(tester, 'Wallet 1'), lessThan(_top(tester, 'Wallet 2')));
+    expect(_top(tester, 'WALLET 1'), lessThan(_top(tester, 'WALLET 2')));
     expect(_top(tester, 'Main'), lessThan(_top(tester, 'Trading')));
   });
 
@@ -130,7 +130,7 @@ void main() {
     expect(find.descendant(of: _row('Team'), matching: find.text('MULTISIG')), findsOneWidget);
     expect(find.descendant(of: _row('Orphan'), matching: find.text('MULTISIG')), findsOneWidget);
     expect(_top(tester, 'Main'), lessThan(_top(tester, 'Team')));
-    expect(_top(tester, 'Team'), lessThan(_top(tester, 'Cold Wallet')));
+    expect(_top(tester, 'Team'), lessThan(_top(tester, 'COLD WALLET')));
     expect(_top(tester, 'Vault'), lessThan(_top(tester, 'Orphan')));
   });
 
@@ -173,6 +173,43 @@ void main() {
     expect(settings.activeAccount, isA<MultisigDisplayAccount>());
     expect(settings.activeAccount?.account.accountId, 'qzTeam');
     expect(_isSelected(tester, 'Team'), isTrue);
+  });
+
+  testOnMac('every account row has a badge: initials for an account, the lock for the encrypted one', (tester) async {
+    await pumpShell(
+      tester,
+      overrides: shellOverrides(
+        accounts: const [mainAccount, encryptedAccount, vaultAccount],
+        settings: FakeSettingsService(multisigs: [teamMultisig]),
+        balances: oneTokenEach,
+        encryptedBalances: {0: oneToken},
+      ),
+    );
+
+    for (final name in ['Main', 'Vault', 'Team']) {
+      final badge = find.descendant(of: _row(name), matching: find.byType(AccountBadge));
+      expect(tester.widget<AccountBadge>(badge).name, name);
+      expect(find.descendant(of: _row(name), matching: find.byType(EncryptedLockBadge)), findsNothing);
+    }
+    expect(find.descendant(of: _row('Encrypted Account'), matching: find.byType(AccountBadge)), findsNothing);
+    expect(find.descendant(of: _row('Encrypted Account'), matching: find.byType(EncryptedLockBadge)), findsOneWidget);
+
+    // The names line up whichever badge a row has.
+    final nameLefts = {
+      for (final name in ['Main', 'Vault', 'Team', 'Encrypted Account'])
+        tester.getTopLeft(find.descendant(of: _row(name), matching: find.text(name))).dx,
+    };
+    expect(nameLefts, hasLength(1));
+  });
+
+  testOnMac('a wallet\'s label is drawn in capitals but read out as it is written', (tester) async {
+    await pumpShell(
+      tester,
+      overrides: shellOverrides(accounts: const [mainAccount], balances: oneTokenEach),
+    );
+
+    expect(_inSidebar(find.text('WALLET 1')), findsOneWidget);
+    expect(_inSidebar(find.bySemanticsLabel('Wallet 1')), findsOneWidget);
   });
 
   testOnMac('the encrypted account\'s row shows the lock badge and the encrypted balance', (tester) async {

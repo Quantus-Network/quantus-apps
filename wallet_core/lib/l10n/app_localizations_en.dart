@@ -2477,4 +2477,65 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get desktopMenuWindow => 'Window';
+
+  @override
+  String get desktopBootProtocol => '> QUANTUS PROTOCOL v1.0.0-gm';
+
+  @override
+  String desktopBootNistModule(String status) {
+    return '> NIST FIPS 204 MODULE LOADED $status';
+  }
+
+  @override
+  String desktopBootInitializing(String scheme) {
+    return '> INITIALIZING $scheme...';
+  }
+
+  @override
+  String desktopBootSignatureScheme(String status) {
+    return '> POST-QUANTUM SIGNATURE SCHEME $status';
+  }
+
+  @override
+  String desktopBootZkEngine(String status) {
+    return '> RECURSIVE ZK PROOF ENGINE $status';
+  }
+
+  @override
+  String desktopBootChladni(String status) {
+    return '> CHLADNI FIELD VISUALIZER $status';
+  }
+
+  @override
+  String get desktopBootStatusOk => '[OK]';
+
+  @override
+  String get desktopBootStatusActive => 'ACTIVE';
+
+  @override
+  String get desktopBootStatusReady => 'READY';
+
+  @override
+  String get desktopBootStatusLoading => 'LOADING';
+
+  @override
+  String get desktopWaveModeLabel => 'WAVE MODE (m,n)';
+
+  @override
+  String get desktopWaveModeHint => 'MOVE CURSOR TO SHIFT FREQUENCY';
+
+  @override
+  String get desktopWelcomeEyebrow => 'Quantum-Secure Encrypted Money';
+
+  @override
+  String get desktopWelcomeTitleLine1 => 'Money quantum';
+
+  @override
+  String get desktopWelcomeTitleLine2 => 'computers can’t break.';
+
+  @override
+  String get desktopWelcomeBody => 'Create a new wallet, or import one you already have.';
+
+  @override
+  String get desktopBalanceLabel => 'Balance';
 }

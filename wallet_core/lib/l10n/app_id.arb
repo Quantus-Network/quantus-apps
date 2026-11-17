@@ -660,5 +660,22 @@
   "desktopMenuView": "Tampilan",
   "desktopMenuHideSidebar": "Sembunyikan Bar Samping",
   "desktopMenuShowSidebar": "Tampilkan Bar Samping",
-  "desktopMenuWindow": "Jendela"
+  "desktopMenuWindow": "Jendela",
+  "desktopBootProtocol": "> PROTOKOL QUANTUS v1.0.0-gm",
+  "desktopBootNistModule": "> MODUL NIST FIPS 204 DIMUAT {status}",
+  "desktopBootInitializing": "> MENGINISIALISASI {scheme}...",
+  "desktopBootSignatureScheme": "> SKEMA TANDA TANGAN PASCA-KUANTUM {status}",
+  "desktopBootZkEngine": "> MESIN BUKTI ZK REKURSIF {status}",
+  "desktopBootChladni": "> VISUALISASI MEDAN CHLADNI {status}",
+  "desktopBootStatusOk": "[OK]",
+  "desktopBootStatusActive": "AKTIF",
+  "desktopBootStatusReady": "SIAP",
+  "desktopBootStatusLoading": "MEMUAT",
+  "desktopWaveModeLabel": "MODE GELOMBANG (m,n)",
+  "desktopWaveModeHint": "GERAKKAN KURSOR UNTUK MENGGESER FREKUENSI",
+  "desktopWelcomeEyebrow": "Uang Terenkripsi Aman Secara Kuantum",
+  "desktopWelcomeTitleLine1": "Uang yang tidak bisa",
+  "desktopWelcomeTitleLine2": "dipecahkan oleh komputer kuantum.",
+  "desktopWelcomeBody": "Buat dompet baru, atau impor dompet yang sudah Anda miliki.",
+  "desktopBalanceLabel": "Saldo"
 }

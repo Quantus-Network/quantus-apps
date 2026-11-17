@@ -15,10 +15,20 @@ class MainFlutterWindow: NSWindow {
   private static let trafficLightsLeading: CGFloat = 20
   private static let trafficLightsSpacing: CGFloat = 20
 
+  /// How far in from the window's top, left and right edges a press still
+  /// belongs to the system, which resizes the window from there.
+  private static let resizeMargin: CGFloat = 6
+
   private var windowChannel: FlutterMethodChannel?
+  private var flutterViewController: FlutterViewController?
+
+  /// Whether a press that began in the header is being handed to Flutter
+  /// until its mouse-up.
+  private var isHeaderPressInFlutter = false
 
   override func awakeFromNib() {
     let flutterViewController = FlutterViewController()
+    self.flutterViewController = flutterViewController
     self.contentViewController = flutterViewController
 
     // The app's content runs to the top edge and its header takes the title
@@ -68,10 +78,89 @@ class MainFlutterWindow: NSWindow {
     layoutTrafficLights()
   }
 
+  /// Hands presses in the header straight to Flutter.
+  ///
+  /// The header lies under the system's title bar, which is see-through but
+  /// still there. Left to itself the title bar acts on a press as well: it
+  /// starts moving or zooming the window, and the press never ends for the
+  /// button under the cursor. The app decides what a press on its header
+  /// does, so the title bar is not asked. The traffic lights and the edges
+  /// the window is resized from stay with the system.
+  override func sendEvent(_ event: NSEvent) {
+    switch event.type {
+    case .leftMouseDown where isHeaderPressForFlutter(event):
+      isHeaderPressInFlutter = true
+      flutterViewController?.mouseDown(with: event)
+    case .leftMouseDragged where isHeaderPressInFlutter:
+      flutterViewController?.mouseDragged(with: event)
+    case .leftMouseUp where isHeaderPressInFlutter:
+      isHeaderPressInFlutter = false
+      flutterViewController?.mouseUp(with: event)
+    default:
+      super.sendEvent(event)
+    }
+  }
+
+  private func isHeaderPressForFlutter(_ event: NSEvent) -> Bool {
+    // A press on a window that is not in front only brings it to the front,
+    // which is the system's to do. In full screen there is no title bar over
+    // the header.
+    guard self.isKeyWindow, !self.styleMask.contains(.fullScreen), flutterViewController != nil else {
+      return false
+    }
+
+    let location = event.locationInWindow
+    let size = self.frame.size
+    let header = NSRect(
+      x: MainFlutterWindow.resizeMargin,
+      y: size.height - MainFlutterWindow.headerHeight,
+      width: size.width - 2 * MainFlutterWindow.resizeMargin,
+      height: MainFlutterWindow.headerHeight - MainFlutterWindow.resizeMargin)
+    guard header.contains(location) else { return false }
+
+    let trafficLights: [NSWindow.ButtonType] = [.closeButton, .miniaturizeButton, .zoomButton]
+    return !trafficLights.contains { type in
+      guard let button = self.standardWindowButton(type) else { return false }
+      return button.convert(button.bounds, to: nil).insetBy(dx: -4, dy: -4).contains(location)
+    }
+  }
+
   /// Moves the window with the mouse press the app's header just received.
   private func startDrag() {
-    guard let event = self.currentEvent else { return }
+    // By the time the app's request arrives the button may be up again, and
+    // then there is no press left to drag with.
+    guard let event = self.currentEvent,
+      event.type == .leftMouseDown || event.type == .leftMouseDragged
+    else { return }
     self.performDrag(with: event)
+    releaseMouseInFlutter(at: event.locationInWindow)
+  }
+
+  /// Tells Flutter the mouse button is up.
+  ///
+  /// The system takes the mouse over for a window drag and may never deliver
+  /// its mouse-up (see `performDrag(with:)`). Flutter keeps its own record of
+  /// the button and has no other way to learn it was released: it would stop
+  /// reporting hover and ignore the next click. A mouse-up that does arrive
+  /// later finds the button already up and is read as a plain move.
+  private func releaseMouseInFlutter(at location: NSPoint) {
+    guard
+      let mouseUp = NSEvent.mouseEvent(
+        with: .leftMouseUp,
+        location: location,
+        modifierFlags: [],
+        timestamp: ProcessInfo.processInfo.systemUptime,
+        windowNumber: self.windowNumber,
+        context: nil,
+        eventNumber: 0,
+        clickCount: 1,
+        pressure: 0)
+    else {
+      NSLog("MainFlutterWindow: could not make the mouse-up that ends a window drag for Flutter")
+      return
+    }
+    isHeaderPressInFlutter = false
+    flutterViewController?.mouseUp(with: mouseUp)
   }
 
   /// Does what the system is set to do for a double-click on a title bar.

@@ -387,7 +387,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _receiveCard(AppLocalizations l10n) => _actionCard(
-    iconAsset: 'assets/v2/action_receive.svg',
+    icon: QuantusIcons.actionReceive,
     label: l10n.homeReceive,
     onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ReceiveScreen())),
   );
@@ -398,7 +398,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         : RegularSendStrategy(account: account);
     return _actionCard(
       key: const Key(E2EKeys.homeSendButton),
-      iconAsset: 'assets/v2/action_send.svg',
+      icon: QuantusIcons.actionSend,
       label: l10n.homeSend,
       onTap: () => startSendFlow(
         context,
@@ -409,7 +409,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _proposeCard(AppLocalizations l10n, MultisigAccount msig) => _actionCard(
-    iconAsset: 'assets/v2/action_send.svg',
+    icon: QuantusIcons.actionSend,
     label: l10n.multisigProposeTitle,
     onTap: () {
       final strategy = MultisigProposeStrategy(msig: msig);
@@ -440,7 +440,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       return null;
     }
     return _actionCard(
-      iconAsset: 'assets/v2/action_swap.svg',
+      icon: QuantusIcons.actionSwap,
       label: l10n.homeSwap,
       isDisabled: isDisabled,
       onTap: () => Navigator.push(
@@ -455,13 +455,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   Widget _actionCard({
     Key? key,
-    required String iconAsset,
+    required QuantusIcons icon,
     required String label,
     required VoidCallback onTap,
     bool isDisabled = false,
   }) {
     return Expanded(
-      child: ActionCard(key: key, iconAsset: iconAsset, label: label, onTap: onTap, isDisabled: isDisabled),
+      child: ActionCard(key: key, icon: icon, label: label, onTap: onTap, isDisabled: isDisabled),
     );
   }
 }

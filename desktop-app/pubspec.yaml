@@ -34,3 +34,20 @@ flutter:
   uses-material-design: true
   assets:
     - assets/quantus_orange_logo.png
+
+  # The families the theme (AppTextThemeV3) names, in the weights it uses. A
+  # family missing here is drawn in the system font; test/fonts_test.dart
+  # checks this list against the theme.
+  fonts:
+    - family: Geist
+      fonts:
+        - asset: assets/fonts/Geist-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/Geist-Medium.ttf
+          weight: 500
+    - family: Geist Mono
+      fonts:
+        - asset: assets/fonts/GeistMono-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/GeistMono-Medium.ttf
+          weight: 500

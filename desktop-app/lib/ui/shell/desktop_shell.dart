@@ -6,9 +6,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_desktop_wallet/models/shell_sheet.dart';
 import 'package:quantus_desktop_wallet/models/sidebar_selection.dart';
 import 'package:quantus_desktop_wallet/models/wallet_presence.dart';
+import 'package:quantus_desktop_wallet/providers/boot_intro_provider.dart';
 import 'package:quantus_desktop_wallet/providers/shell_providers.dart';
 import 'package:quantus_desktop_wallet/providers/wallet_presence_provider.dart';
 import 'package:quantus_desktop_wallet/services/app_exit.dart';
+import 'package:quantus_desktop_wallet/ui/onboarding/boot_intro.dart';
 import 'package:quantus_desktop_wallet/ui/onboarding/onboarding_flow.dart';
 import 'package:quantus_desktop_wallet/ui/shell/account_pane.dart';
 import 'package:quantus_desktop_wallet/ui/shell/app_menu.dart';
@@ -21,7 +23,6 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/providers/account_providers.dart';
 import 'package:wallet_core/providers/l10n_provider.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
-import 'package:wallet_core/services/logout_service.dart';
 import 'package:wallet_core/services/telemetry.dart';
 import 'package:wallet_core/services/wallet_creation_service.dart';
 
@@ -31,11 +32,19 @@ import 'package:wallet_core/services/wallet_creation_service.dart';
 class DesktopShell extends ConsumerStatefulWidget {
   const DesktopShell({super.key});
 
+  /// The hairline between the header and the pane under it.
+  static const headerLineKey = Key('shell-header-line');
+
   @override
   ConsumerState<DesktopShell> createState() => _DesktopShellState();
 }
 
 class _DesktopShellState extends ConsumerState<DesktopShell> {
+  static const _introFade = Duration(milliseconds: 500);
+
+  /// Whether the boot intro is covering Welcome.
+  bool _isIntroPlaying = false;
+
   void _present(ShellSheet? sheet) {
     if (sheet == null) return;
     showDialog<void>(
@@ -54,8 +63,21 @@ class _DesktopShellState extends ConsumerState<DesktopShell> {
       // complete already.
       case WalletPresence.present when previous?.value == null:
         unawaited(_finishWalletSetup());
+      // Likewise found at start: the intro comes before the first Welcome
+      // only, not before one reached by wiping a wallet.
+      case WalletPresence.none when previous?.value == null:
+        _playIntroOnce();
       default:
     }
+  }
+
+  /// Plays the boot intro if this device has never shown it. With the
+  /// system's reduced motion on it is left for a later start.
+  void _playIntroOnce() {
+    if (ref.read(bootIntroSeenProvider) || MediaQuery.disableAnimationsOf(context)) return;
+    setState(() => _isIntroPlaying = true);
+    // Recorded as it starts, so quitting half way does not bring it back.
+    unawaited(ref.read(bootIntroSeenProvider.notifier).markSeen());
   }
 
   /// Says the wallet cannot be used, then wipes it so it can be set up again.
@@ -69,9 +91,7 @@ class _DesktopShellState extends ConsumerState<DesktopShell> {
       showCancel: false,
       barrierDismissible: false,
     );
-    if (!mounted) return;
-    await ref.read(logoutServiceProvider).logout();
-    if (mounted) ref.read(walletPresenceProvider.notifier).walletRemoved();
+    if (mounted) await ref.read(walletPresenceProvider.notifier).wipeWallet();
   }
 
   /// Finishes what an earlier run left undone: an import's account scan that
@@ -115,15 +135,21 @@ class _DesktopShellState extends ConsumerState<DesktopShell> {
         child: switch (presence) {
           AsyncError(:final error) => _StartFailure(error: error),
           AsyncValue(value: WalletPresence.present) => _wallet(isSidebarVisible),
-          AsyncValue(value: WalletPresence.none) => OnboardingFlow(
-            // Both run on the shell's ref, not the flow's: an import restores
-            // the wallet's encrypted account after the flow has left the window.
-            createWallet: () => createSoftwareWallet(ref),
-            // Onboarding runs only on a device with no wallet, so the wallet
-            // it imports is the first.
-            importWallet: (mnemonic, {required onScanFailed}) =>
-                importSoftwareWallet(ref, mnemonic: mnemonic, walletIndex: 0, onScanFailed: onScanFailed),
-            onFinished: () => ref.read(walletPresenceProvider.notifier).walletAdded(),
+          AsyncValue(value: WalletPresence.none) => AnimatedSwitcher(
+            duration: _introFade,
+            child: _isIntroPlaying
+                ? BootIntro(onFinished: () => setState(() => _isIntroPlaying = false))
+                : OnboardingFlow(
+                    // Both run on the shell's ref, not the flow's: an import
+                    // restores the wallet's encrypted account after the flow
+                    // has left the window.
+                    createWallet: () => createSoftwareWallet(ref),
+                    // Onboarding runs only on a device with no wallet, so the
+                    // wallet it imports is the first.
+                    importWallet: (mnemonic, {required onScanFailed}) =>
+                        importSoftwareWallet(ref, mnemonic: mnemonic, walletIndex: 0, onScanFailed: onScanFailed),
+                    onFinished: () => ref.read(walletPresenceProvider.notifier).walletAdded(),
+                  ),
           ),
           // Still checking, or about to wipe a wallet whose phrase is gone.
           _ => const Center(child: Loader()),
@@ -142,6 +168,7 @@ class _DesktopShellState extends ConsumerState<DesktopShell> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const PaneHeader(),
+              const MenuDivider(key: DesktopShell.headerLineKey),
               Expanded(
                 child: switch (ref.watch(sidebarSelectionProvider)) {
                   SidebarSelection.account => const AccountPane(),
