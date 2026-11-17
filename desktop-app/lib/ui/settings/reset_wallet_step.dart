@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_desktop_wallet/providers/approval_providers.dart';
 import 'package:quantus_desktop_wallet/providers/wallet_presence_provider.dart';
-import 'package:quantus_desktop_wallet/services/user_approval.dart';
 import 'package:quantus_desktop_wallet/ui/components/desktop_checkbox.dart';
 import 'package:quantus_desktop_wallet/ui/components/sheet_button.dart';
 import 'package:quantus_desktop_wallet/ui/settings/settings_caution.dart';
 import 'package:quantus_desktop_wallet/ui/settings/settings_sheet.dart';
 import 'package:wallet_core/providers/l10n_provider.dart';
+import 'package:wallet_core/services/user_approval.dart';
 
 /// Resetting the wallet: the caution, a box to tick once the phrase is
 /// backed up, and Reset Wallet, which asks for approval, wipes the wallet

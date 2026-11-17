@@ -21,7 +21,7 @@ const _knownUnsupportedPlugins = {
       'Comes with quantus_sdk (QuantusScanner). It has no Windows or Linux implementation, so the desktop app '
       'must not open the camera scanner there until scanning sits behind an interface.',
   'local_auth':
-      'Asks macOS and Windows for approval (UserApproval). It has no Linux implementation, so userApprovalProvider '
+      'Asks macOS and Windows for approval (UserApproval). It has no Linux implementation, so systemApprovalProvider '
       'never calls it there: Linux checks the login password through PAM instead (PasswordApproval).',
 };
 

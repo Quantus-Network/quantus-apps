@@ -5,6 +5,7 @@ import 'package:quantus_desktop_wallet/app.dart';
 import 'package:quantus_desktop_wallet/services/desktop_local_notifications.dart';
 import 'package:quantus_desktop_wallet/services/desktop_push_registration.dart';
 import 'package:quantus_desktop_wallet/services/desktop_telemetry.dart';
+import 'package:quantus_desktop_wallet/services/user_approval.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/providers/wallet_core_overrides.dart';
 
@@ -19,6 +20,7 @@ List<Override> desktopWalletCoreOverrides() => walletCoreOverrides(
   telemetry: (_) => const DesktopTelemetry(),
   pushRegistration: (_) => const DesktopPushRegistration(),
   localNotifications: (_) => const DesktopLocalNotifications(),
+  userApproval: (ref) => ref.watch(systemApprovalProvider),
 );
 
 /// The root widget tree shared by production and tests. Tests pass

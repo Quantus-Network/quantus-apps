@@ -10,7 +10,9 @@ import 'package:resonance_network_wallet/app.dart';
 import 'package:resonance_network_wallet/app_initializer.dart';
 import 'package:resonance_network_wallet/app_lifecycle_manager.dart';
 import 'package:resonance_network_wallet/firebase_options.dart';
+import 'package:resonance_network_wallet/providers/local_auth_provider.dart';
 import 'package:resonance_network_wallet/services/firebase_messaging_service.dart';
+import 'package:resonance_network_wallet/services/local_auth_user_approval.dart';
 import 'package:resonance_network_wallet/services/local_notifications_service.dart';
 import 'package:resonance_network_wallet/services/telemetry_service.dart';
 import 'package:telemetrydecksdk/telemetrydecksdk.dart';
@@ -60,6 +62,7 @@ List<Override> mobileWalletCoreOverrides() => walletCoreOverrides(
   telemetry: (_) => TelemetryService(),
   pushRegistration: (ref) => ref.watch(firebaseMessagingServiceProvider),
   localNotifications: (ref) => ref.watch(localNotificationsServiceProvider),
+  userApproval: (ref) => LocalAuthUserApproval(ref.watch(localAuthServiceProvider)),
 );
 
 /// The root widget tree shared by production and tests.

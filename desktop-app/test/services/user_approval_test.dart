@@ -6,6 +6,7 @@ import 'package:quantus_desktop_wallet/providers/password_prompt_provider.dart';
 import 'package:quantus_desktop_wallet/services/login_password.dart';
 import 'package:quantus_desktop_wallet/services/pam/pam_session.dart';
 import 'package:quantus_desktop_wallet/services/user_approval.dart';
+import 'package:wallet_core/services/user_approval.dart';
 
 import '../fakes.dart';
 
@@ -151,7 +152,7 @@ void main() {
     });
   });
 
-  group('userApprovalProvider', () {
+  group('systemApprovalProvider', () {
     tearDown(() => debugDefaultTargetPlatformOverride = null);
 
     for (final platform in [TargetPlatform.macOS, TargetPlatform.windows]) {
@@ -160,7 +161,7 @@ void main() {
         final container = ProviderContainer();
         addTearDown(container.dispose);
 
-        expect(container.read(userApprovalProvider), isA<LocalAuthApproval>());
+        expect(container.read(systemApprovalProvider), isA<LocalAuthApproval>());
       });
     }
 
@@ -172,7 +173,7 @@ void main() {
         final container = ProviderContainer(overrides: [loginPasswordProvider.overrideWithValue(loginPassword)]);
         addTearDown(container.dispose);
 
-        final approval = container.read(userApprovalProvider);
+        final approval = container.read(systemApprovalProvider);
         expect(approval, isA<PasswordApproval>());
 
         final result = approval.approve(reason: 'Authenticate to see recovery phrase');

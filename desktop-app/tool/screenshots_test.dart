@@ -263,7 +263,7 @@ Future<void> _openSettings(WidgetTester tester, {FakeLoginPassword? loginPasswor
       if (loginPassword != null)
         loginPasswordProvider.overrideWithValue(loginPassword)
       else
-        userApprovalProvider.overrideWithValue(FakeUserApproval()),
+        systemApprovalProvider.overrideWithValue(FakeUserApproval()),
       sensitiveClipboardProvider.overrideWithValue(FakeSensitiveClipboard()),
     ],
   );

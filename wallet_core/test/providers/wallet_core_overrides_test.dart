@@ -5,6 +5,7 @@ import 'package:wallet_core/providers/wallet_core_overrides.dart';
 import 'package:wallet_core/services/local_notifications.dart';
 import 'package:wallet_core/services/push_registration.dart';
 import 'package:wallet_core/services/telemetry.dart';
+import 'package:wallet_core/services/user_approval.dart';
 
 class _Telemetry implements Telemetry {
   @override
@@ -30,6 +31,14 @@ class _LocalNotifications implements LocalNotifications {
   Future<void> showOrScheduleNotification(NotificationData notification) async {}
 }
 
+class _UserApproval implements UserApproval {
+  @override
+  Future<ApprovalAvailability> availability() async => ApprovalAvailability.available;
+
+  @override
+  Future<ApprovalResult> approve({required String reason}) async => ApprovalResult.approved;
+}
+
 /// The message of whatever a failed provider read throws; Riverpod may wrap
 /// the provider's own error.
 String _readFailure(void Function() read) {
@@ -46,11 +55,13 @@ void main() {
     final telemetry = _Telemetry();
     final pushRegistration = _PushRegistration();
     final localNotifications = _LocalNotifications();
+    final userApproval = _UserApproval();
     final container = ProviderContainer(
       overrides: walletCoreOverrides(
         telemetry: (_) => telemetry,
         pushRegistration: (_) => pushRegistration,
         localNotifications: (_) => localNotifications,
+        userApproval: (_) => userApproval,
       ),
     );
     addTearDown(container.dispose);
@@ -58,6 +69,7 @@ void main() {
     expect(container.read(telemetryProvider), same(telemetry));
     expect(container.read(pushRegistrationProvider), same(pushRegistration));
     expect(container.read(localNotificationsProvider), same(localNotifications));
+    expect(container.read(userApprovalProvider), same(userApproval));
   });
 
   test('a seam provider read without walletCoreOverrides throws and names walletCoreOverrides', () {
@@ -68,6 +80,7 @@ void main() {
       'telemetryProvider': _readFailure(() => container.read(telemetryProvider)),
       'pushRegistrationProvider': _readFailure(() => container.read(pushRegistrationProvider)),
       'localNotificationsProvider': _readFailure(() => container.read(localNotificationsProvider)),
+      'userApprovalProvider': _readFailure(() => container.read(userApprovalProvider)),
     };
 
     for (final MapEntry(key: provider, value: message) in failures.entries) {

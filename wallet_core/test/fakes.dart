@@ -13,6 +13,7 @@ import 'package:wallet_core/services/local_notifications.dart';
 import 'package:wallet_core/services/push_registration.dart';
 import 'package:wallet_core/services/remote_config_service.dart';
 import 'package:wallet_core/services/telemetry.dart';
+import 'package:wallet_core/services/user_approval.dart';
 import 'package:wallet_core/models/notification_models.dart';
 
 /// What a device stores about its wallets, kept in memory.
@@ -200,6 +201,27 @@ class FakePushRegistration implements PushRegistration {
   Future<void> unregister() async {}
 }
 
+/// The device's approval, answering as a test says. It approves unless told
+/// otherwise.
+class FakeUserApproval implements UserApproval {
+  ApprovalAvailability availabilityAnswer = ApprovalAvailability.available;
+
+  /// What a request answers; it may throw.
+  Future<ApprovalResult> Function() answer = () async => ApprovalResult.approved;
+
+  /// The reason given with each request.
+  final reasons = <String>[];
+
+  @override
+  Future<ApprovalAvailability> availability() async => availabilityAnswer;
+
+  @override
+  Future<ApprovalResult> approve({required String reason}) {
+    reasons.add(reason);
+    return answer();
+  }
+}
+
 class _NoLocalNotifications implements LocalNotifications {
   @override
   Future<void> showOrScheduleNotification(NotificationData notification) async {}
@@ -231,6 +253,7 @@ class WalletTestBed {
   final hdWallet = FakeHdWalletService();
   final telemetry = FakeTelemetry();
   final pushRegistration = FakePushRegistration();
+  final userApproval = FakeUserApproval();
   final FakeSubstrateService substrate;
   final FakeAccountDiscoveryService discovery;
 
@@ -242,6 +265,7 @@ class WalletTestBed {
       telemetry: (_) => telemetry,
       pushRegistration: (_) => pushRegistration,
       localNotifications: (_) => _NoLocalNotifications(),
+      userApproval: (_) => userApproval,
     ),
     settingsServiceProvider.overrideWithValue(settings),
     accountsServiceProvider.overrideWithValue(accounts),

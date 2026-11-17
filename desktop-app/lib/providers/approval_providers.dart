@@ -1,8 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_desktop_wallet/services/pam/pam_session.dart';
-import 'package:quantus_desktop_wallet/services/user_approval.dart';
 import 'package:wallet_core/l10n/app_localizations.dart';
+import 'package:wallet_core/services/user_approval.dart';
 
 /// Whether this computer can approve the actions that hand the wallet over.
 /// Asked again each time something shows it, so a password or Windows Hello
