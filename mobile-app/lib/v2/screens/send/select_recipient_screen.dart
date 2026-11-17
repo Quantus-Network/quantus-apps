@@ -16,7 +16,7 @@ import 'package:resonance_network_wallet/v2/components/address_checkphrase_with_
 import 'package:resonance_network_wallet/v2/components/address_input_field.dart';
 import 'package:resonance_network_wallet/v2/components/qr_scanner_page.dart';
 import 'package:resonance_network_wallet/v2/screens/send/input_amount_screen.dart';
-import 'package:resonance_network_wallet/v2/screens/send/send_strategy.dart';
+import 'package:wallet_core/send/send_strategy.dart';
 
 class SelectRecipientScreen extends ConsumerStatefulWidget {
   final SendStrategy strategy;

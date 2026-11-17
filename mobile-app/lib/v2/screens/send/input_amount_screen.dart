@@ -11,8 +11,8 @@ import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/shared/constants/e2e_keys.dart';
 import 'package:resonance_network_wallet/v2/components/link_button.dart';
 import 'package:resonance_network_wallet/v2/screens/send/review_send_screen.dart';
-import 'package:resonance_network_wallet/v2/screens/send/send_screen_logic.dart';
-import 'package:resonance_network_wallet/v2/screens/send/send_strategy.dart';
+import 'package:wallet_core/send/send_screen_logic.dart';
+import 'package:wallet_core/send/send_strategy.dart';
 import 'package:wallet_core/utils/amount_input_logic.dart';
 
 class InputAmountScreen extends ConsumerStatefulWidget {

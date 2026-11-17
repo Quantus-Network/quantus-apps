@@ -1,9 +1,9 @@
-import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/l10n/app_localizations.dart';
-import 'package:resonance_network_wallet/v2/screens/send/keystone_signing_session.dart';
+import 'package:wallet_core/send/keystone_signing_session.dart';
+import 'package:wallet_core/send/send_review_row.dart';
 import 'package:wallet_core/utils/provider_reader.dart';
 
 /// Per-step labels that differ between the send flows (regular transfer vs
@@ -195,7 +195,7 @@ class SendNeedsProving extends SendOutcome {
   const SendNeedsProving({required this.account, required this.plan, required this.amount, required this.terminal});
 }
 
-/// Submission failed or was not authenticated; show [message] inline.
+/// Submission failed or was not approved; show [message] inline.
 class SendFailed extends SendOutcome {
   final String message;
 
@@ -311,11 +311,11 @@ abstract class SendStrategy {
   /// still loading. Watched in `build`.
   String? affordabilityError(WidgetRef ref, SendFee fee, AppLocalizations l10n);
 
-  /// Review-screen summary rows (already spaced). Built in `build`. Figures
-  /// that depend on an unsettled [fee] are marked when [feeIsEstimate]; for a
-  /// max send ([sendAll]) that is the amount, otherwise the total.
-  List<Widget> reviewRows(
-    BuildContext context,
+  /// What the review's summary rows hold, top to bottom, for each app to
+  /// draw. Called in `build`: it watches. Figures that depend on an unsettled
+  /// [fee] are marked when [feeIsEstimate]; for a max send ([sendAll]) that
+  /// is the amount, otherwise the total.
+  List<SendReviewRow> reviewRows(
     WidgetRef ref, {
     required String recipientAddress,
     required BigInt amount,
@@ -336,8 +336,9 @@ abstract class SendStrategy {
     bool sendAll = false,
   }) async {}
 
-  /// Authenticates and submits. Uses `ref.read`. Never navigates. The call is
-  /// built from [sendAll], never from what [fee] happened to price.
+  /// Asks for the device's approval and submits. Uses `ref.read`. Never
+  /// navigates. The call is built from [sendAll], never from what [fee]
+  /// happened to price.
   Future<SendOutcome> submit(
     WidgetRef ref, {
     required String recipientAddress,

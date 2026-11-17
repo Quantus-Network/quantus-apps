@@ -16,7 +16,7 @@ import 'package:resonance_network_wallet/v2/screens/accounts/open_accounts_manag
 import 'package:resonance_network_wallet/v2/screens/home/home_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/send/input_amount_screen.dart';
 import 'package:wallet_core/providers/keystone_sign_cache.dart';
-import 'package:resonance_network_wallet/v2/screens/send/regular_send_strategy.dart';
+import 'package:wallet_core/send/regular_send_strategy.dart';
 import 'package:resonance_network_wallet/v2/screens/send/send_providers.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/swap_activity_row.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/swap_progress.dart';

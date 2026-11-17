@@ -1,20 +1,20 @@
 import 'dart:async';
 
-import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/l10n/app_localizations.dart';
 import 'package:wallet_core/providers/l10n_provider.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
-import 'package:resonance_network_wallet/services/local_auth_service.dart';
 import 'package:wallet_core/services/transaction_submission_service.dart';
+import 'package:wallet_core/services/user_approval.dart';
 import 'package:wallet_core/utils/account_utils.dart';
-import 'package:resonance_network_wallet/v2/components/explorer_link.dart';
+import 'package:wallet_core/utils/explorer_url.dart';
 import 'package:wallet_core/providers/keystone_sign_cache.dart';
-import 'package:resonance_network_wallet/v2/screens/send/keystone_signing_session.dart';
-import 'package:resonance_network_wallet/v2/screens/send/send_fee_notifier.dart';
-import 'package:resonance_network_wallet/v2/screens/send/send_strategy.dart';
+import 'package:wallet_core/send/keystone_signing_session.dart';
+import 'package:wallet_core/send/send_fee_notifier.dart';
+import 'package:wallet_core/send/send_review_row.dart';
+import 'package:wallet_core/send/send_strategy.dart';
 import 'package:wallet_core/utils/provider_reader.dart';
 
 /// Standard single-signer transfer from the active account. Signs locally, or
@@ -141,8 +141,7 @@ class RegularSendStrategy extends SendStrategy {
   }
 
   @override
-  List<Widget> reviewRows(
-    BuildContext context,
+  List<SendReviewRow> reviewRows(
     WidgetRef ref, {
     required String recipientAddress,
     required BigInt amount,
@@ -164,24 +163,10 @@ class RegularSendStrategy extends SendStrategy {
     // amount and fee moves until the fee settles; otherwise the amount is fixed
     // and the total moves with the fee.
     return [
-      const SizedBox(height: 7),
-      DetailSummaryRow.review(label: l10n.sendReviewTo, value: addr),
-      const SizedBox(height: 7),
-      DetailSummaryRow.review(
-        label: l10n.sendReviewAmount,
-        value: amt(amount, estimate: feeIsEstimate && sendAll),
-      ),
-      const SizedBox(height: 7),
-      DetailSummaryRow.review(
-        label: l10n.sendReviewNetworkFee,
-        value: amt(networkFee, estimate: feeIsEstimate),
-      ),
-      const SizedBox(height: 7),
-      DetailSummaryRow.review(
-        label: l10n.sendReviewYouPay,
-        value: amt(amount + networkFee, estimate: feeIsEstimate && !sendAll),
-      ),
-      const SizedBox(height: 7),
+      SendReviewText(l10n.sendReviewTo, addr),
+      SendReviewText(l10n.sendReviewAmount, amt(amount, estimate: feeIsEstimate && sendAll)),
+      SendReviewText(l10n.sendReviewNetworkFee, amt(networkFee, estimate: feeIsEstimate)),
+      SendReviewText(l10n.sendReviewYouPay, amt(amount + networkFee, estimate: feeIsEstimate && !sendAll)),
     ];
   }
 
@@ -266,10 +251,10 @@ class RegularSendStrategy extends SendStrategy {
     }
   }
 
-  /// Authenticates the user and submits a transfer signed with the local key.
-  /// Returns the extrinsic hash, or null when authentication was declined or
-  /// [proceed], asked once the user has authenticated, no longer wants the
-  /// transfer: the prompt can be up for a while and terms can change under it.
+  /// Asks for the device's approval and submits a transfer signed with the
+  /// local key. Returns the extrinsic hash, or null when approval was not
+  /// given or [proceed], asked once it was, no longer wants the transfer:
+  /// the prompt can be up for a while and terms can change under it.
   Future<String?> submitLocal(
     WidgetRef ref, {
     required String recipient,
@@ -279,10 +264,10 @@ class RegularSendStrategy extends SendStrategy {
     FutureOr<bool> Function()? proceed,
   }) async {
     if (account.signsWithHardware) throw StateError('Account ${account.accountId} signs with hardware');
-    final authed = await LocalAuthService().authenticate(localizedReason: ref.read(l10nProvider).sendReviewAuthReason);
-    if (!authed) return null;
-    final stillWantedAfterAuth = proceed == null || await proceed();
-    if (!stillWantedAfterAuth) return null;
+    final approval = await ref.read(userApprovalProvider).approve(reason: ref.read(l10nProvider).sendReviewAuthReason);
+    if (approval != ApprovalResult.approved) return null;
+    final stillWantedAfterApproval = proceed == null || await proceed();
+    if (!stillWantedAfterApproval) return null;
     return ref
         .read(transactionSubmissionServiceProvider)
         .balanceTransfer(

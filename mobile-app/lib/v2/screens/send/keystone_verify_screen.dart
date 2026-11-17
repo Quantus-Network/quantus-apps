@@ -7,7 +7,7 @@ import 'package:wallet_core/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/v2/components/address_checkphrase_with_initial.dart';
 import 'package:resonance_network_wallet/v2/screens/send/keystone_reject_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/send/keystone_signature_scan_screen.dart';
-import 'package:resonance_network_wallet/v2/screens/send/keystone_signing_session.dart';
+import 'package:wallet_core/send/keystone_signing_session.dart';
 import 'package:resonance_network_wallet/v2/screens/send/keystone_signing_widgets.dart';
 
 /// Step 2/3 of Keystone signing: shows what the device screen should display,

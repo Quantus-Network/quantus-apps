@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/providers/keystone_sign_cache.dart';
-import 'package:resonance_network_wallet/v2/screens/send/send_fee_notifier.dart';
-import 'package:resonance_network_wallet/v2/screens/send/send_strategy.dart';
+import 'package:wallet_core/send/send_fee_notifier.dart';
+import 'package:wallet_core/send/send_strategy.dart';
 
 /// True while a send flow is on the navigation stack. Only one send flow can
 /// be active at a time; incoming intents that would start or interrupt a send

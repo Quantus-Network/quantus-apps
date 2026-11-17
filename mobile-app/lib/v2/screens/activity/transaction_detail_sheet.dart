@@ -7,6 +7,7 @@ import 'package:wallet_core/providers/account_providers.dart';
 import 'package:wallet_core/providers/currency_display_provider.dart';
 import 'package:wallet_core/providers/l10n_provider.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
+import 'package:wallet_core/utils/explorer_url.dart';
 import 'package:resonance_network_wallet/routes.dart';
 import 'package:resonance_network_wallet/shared/extensions/current_route_extensions.dart';
 import 'package:wallet_core/utils/transaction_event_extension.dart';

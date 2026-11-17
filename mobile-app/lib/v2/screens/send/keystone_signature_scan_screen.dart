@@ -7,7 +7,7 @@ import 'package:wallet_core/providers/l10n_provider.dart';
 import 'package:wallet_core/providers/scanner_labels_provider.dart';
 import 'package:resonance_network_wallet/services/telemetry_service.dart';
 import 'package:wallet_core/providers/keystone_sign_cache.dart';
-import 'package:resonance_network_wallet/v2/screens/send/keystone_signing_session.dart';
+import 'package:wallet_core/send/keystone_signing_session.dart';
 import 'package:resonance_network_wallet/v2/screens/send/keystone_signing_widgets.dart';
 
 /// Step 3 of Keystone signing: scans the signature the cold wallet shows and
