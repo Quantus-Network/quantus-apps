@@ -17,7 +17,8 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 ///
 /// [lifetime] after the last copy the native side clears the clipboard, and
 /// it does so again when the app quits, but only if the clipboard still
-/// holds that copy, so a later copy of the user's own is left alone.
+/// holds that copy, so a later copy of the user's own is left alone. A clear
+/// that fails is tried again every [retryDelay] until it succeeds.
 ///
 /// A copy that cannot be marked is not made at all; it fails instead.
 class SensitiveClipboard {
@@ -25,7 +26,15 @@ class SensitiveClipboard {
 
   static const lifetime = Duration(minutes: 3);
 
+  /// How soon a clear that failed is tried again. On Windows another program
+  /// may have the clipboard open for a moment; the native side then keeps the
+  /// copy tracked, so the retry still leaves a newer copy alone.
+  static const retryDelay = Duration(seconds: 5);
+
+  /// The clear to come: [lifetime] after the last copy, or [retryDelay] after
+  /// a clear that failed.
   Timer? _clear;
+  bool _isDisposed = false;
 
   Future<void> copy(String text) async {
     if (defaultTargetPlatform == TargetPlatform.linux) {
@@ -41,12 +50,18 @@ class SensitiveClipboard {
     try {
       await channel.invokeMethod<void>('clear');
     } catch (e) {
-      // Nobody is waiting on the timer to hear this; quitting clears it too.
-      quantusPrint('Clearing the copied secret from the clipboard failed: $e');
+      quantusPrint('Clearing the copied secret from the clipboard failed, trying again: $e');
+      // A copy made meanwhile has a clear of its own coming.
+      if (_clear == null && !_isDisposed) {
+        _clear = Timer(retryDelay, () => unawaited(_clearCopy()));
+      }
     }
   }
 
-  void dispose() => _clear?.cancel();
+  void dispose() {
+    _isDisposed = true;
+    _clear?.cancel();
+  }
 }
 
 final sensitiveClipboardProvider = Provider<SensitiveClipboard>((ref) {
