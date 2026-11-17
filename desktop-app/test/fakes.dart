@@ -347,8 +347,13 @@ List<Override> shellOverrides({
   Future<BigInt> Function(String accountId)? balanceOf,
   Map<int, BigInt> encryptedBalances = const {},
   bool swapAvailable = true,
+  Future<String> Function(int walletIndex)? depositAddress,
 }) {
   return [
+    if (depositAddress != null)
+      encryptedAccountServiceProvider.overrideWith(
+        (ref, walletIndex) => FakeEncryptedAccountService(() => depositAddress(walletIndex)),
+      ),
     settingsServiceProvider.overrideWithValue(settings ?? FakeSettingsService()),
     accountsServiceProvider.overrideWithValue(FakeAccountsService(loadAccounts ?? () async => accounts)),
     remoteConfigProvider.overrideWith(
@@ -371,6 +376,28 @@ List<Override> shellOverrides({
   ];
 }
 
+/// Looks checkphrases up with [lookup] for the rest of the test, in place
+/// of the real lookup, which needs the Rust library.
+void useFakeCheckphrases(Future<String?> Function(String address) lookup) {
+  CheckphraseText.resolveOverride = lookup;
+  addTearDown(() => CheckphraseText.resolveOverride = null);
+}
+
+/// The checkphrase the tests' lookup gives [address].
+Future<String?> fakeCheckphrase(String address) async => 'Phrase-$address';
+
+/// An encrypted account whose next unused deposit address comes from
+/// [nextAddress].
+class FakeEncryptedAccountService extends Fake implements EncryptedAccountService {
+  FakeEncryptedAccountService(this.nextAddress);
+
+  final Future<String> Function() nextAddress;
+
+  @override
+  Future<WormholeKeyPair> receiveKeyPair() async =>
+      WormholeKeyPair(address: await nextAddress(), addressHex: '', rewardsPreimageHex: '', secretHex: '');
+}
+
 /// Pumps the whole app in a window of the size the runners open, and waits for
 /// it to settle unless [settle] is false (a loader never settles).
 ///
@@ -388,6 +415,7 @@ Future<void> pumpShell(
   addTearDown(tester.view.reset);
   tester.platformDispatcher.accessibilityFeaturesTestValue = FakeAccessibilityFeatures(disableAnimations: reduceMotion);
   addTearDown(tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
+  useFakeCheckphrases(fakeCheckphrase);
 
   await tester.pumpWidget(buildApp(overrides: overrides));
   if (settle) {

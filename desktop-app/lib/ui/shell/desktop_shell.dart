@@ -41,15 +41,40 @@ class DesktopShell extends ConsumerStatefulWidget {
 
 class _DesktopShellState extends ConsumerState<DesktopShell> {
   static const _introFade = Duration(milliseconds: 500);
+  static const _sheetSlide = Duration(milliseconds: 220);
 
   /// Whether the boot intro is covering Welcome.
   bool _isIntroPlaying = false;
 
+  /// The hairline under the header, which sheets hang from.
+  final _headerLine = GlobalKey();
+
+  /// Where the hairline under the header ends, in the coordinates sheets are
+  /// drawn in. Measured rather than assumed: on Windows and Linux the menu
+  /// bar sits in the window above the header.
+  double _sheetTop() {
+    final line = _headerLine.currentContext?.findRenderObject() as RenderBox?;
+    if (line == null) throw StateError('A sheet was opened with no header to hang from.');
+    final overlay = Navigator.of(context, rootNavigator: true).overlay!.context.findRenderObject()! as RenderBox;
+    return line.localToGlobal(Offset(0, line.size.height), ancestor: overlay).dy;
+  }
+
   void _present(ShellSheet? sheet) {
     if (sheet == null) return;
-    showDialog<void>(
+    final top = _sheetTop();
+    showGeneralDialog<void>(
       context: context,
-      builder: (_) => ShellSheetView(sheet: sheet),
+      barrierDismissible: true,
+      barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
+      barrierColor: context.colorsV3.bgVoid.useOpacity(0.6),
+      transitionDuration: MediaQuery.disableAnimationsOf(context) ? Duration.zero : _sheetSlide,
+      pageBuilder: (_, animation, _) => _SheetPlacement(
+        animation: animation,
+        top: top,
+        child: ShellSheetView(sheet: sheet),
+      ),
+      // The sheet slides itself; the barrier fades on its own.
+      transitionBuilder: (_, _, _, child) => child,
     ).whenComplete(() {
       if (mounted) ref.read(shellSheetProvider.notifier).closed();
     });
@@ -168,7 +193,10 @@ class _DesktopShellState extends ConsumerState<DesktopShell> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const PaneHeader(),
-              const MenuDivider(key: DesktopShell.headerLineKey),
+              KeyedSubtree(
+                key: _headerLine,
+                child: const MenuDivider(key: DesktopShell.headerLineKey),
+              ),
               Expanded(
                 child: switch (ref.watch(sidebarSelectionProvider)) {
                   SidebarSelection.account => const AccountPane(),
@@ -179,6 +207,46 @@ class _DesktopShellState extends ConsumerState<DesktopShell> {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Where a sheet goes: hanging from the hairline under the header, [top]
+/// down the window, centred on the pane beside the sidebar, sliding down
+/// from under the header as [animation] runs.
+class _SheetPlacement extends ConsumerWidget {
+  const _SheetPlacement({required this.animation, required this.top, required this.child});
+
+  final Animation<double> animation;
+  final double top;
+  final Widget child;
+
+  /// Space kept between a sheet and the pane's sides.
+  static const double _sideMargin = 20;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Padding(
+      padding: EdgeInsets.only(left: ref.watch(sidebarVisibleProvider) ? Sidebar.width : 0, top: top),
+      // Clipped at the hairline, so the sheet comes out from under the header.
+      child: ClipRect(
+        child: Align(
+          alignment: Alignment.topCenter,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: _sideMargin),
+            child: ConstrainedBox(
+              // As wide as a sheet grows, or as the pane allows.
+              constraints: const BoxConstraints.tightFor(width: ShellSheetView.maxWidth),
+              child: SlideTransition(
+                position: Tween(begin: const Offset(0, -1), end: Offset.zero).animate(
+                  CurvedAnimation(parent: animation, curve: Curves.easeOutCubic, reverseCurve: Curves.easeInCubic),
+                ),
+                child: child,
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

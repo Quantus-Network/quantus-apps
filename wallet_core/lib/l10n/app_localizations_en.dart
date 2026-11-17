@@ -2570,4 +2570,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String desktopWalletReadyBody(String account, String encrypted) {
     return '$account is transparent: fast, and visible on chain. The $encrypted is for private transactions, and slower.';
   }
+
+  @override
+  String get desktopReceiveDepositAddressLabel => 'Deposit address';
+
+  @override
+  String get desktopReceiveEncryptedNotice =>
+      'A new address once this one has been paid, so your deposits can’t be linked to each other.';
+
+  @override
+  String get desktopCopied => 'Copied';
 }

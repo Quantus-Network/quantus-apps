@@ -195,7 +195,7 @@ void main() {
 
     await tester.tap(_toolbarButton('Send'));
     await tester.pumpAndSettle();
-    await tester.tap(find.descendant(of: find.byType(ShellSheetView), matching: find.text('Close')));
+    await tester.tap(find.descendant(of: find.byType(ShellSheetView), matching: find.byTooltip('Close')));
     await tester.pumpAndSettle();
 
     expect(find.byType(ShellSheetView), findsNothing);
