@@ -38,6 +38,17 @@ bool _canPress(WidgetTester tester, Key key) {
   return !button.isDisabled && !button.isLoading;
 }
 
+/// That [address] stands in the sheet with its checkphrase right under it.
+void _expectAddressOverCheckphrase(WidgetTester tester, String address, {Finder? within}) {
+  Finder inside(Finder matching) =>
+      within == null ? _inSheet(matching) : find.descendant(of: within, matching: matching);
+  final addressRect = tester.getRect(inside(find.text(address)));
+  final phraseRect = tester.getRect(inside(find.text('Phrase-$address')));
+  expect(phraseRect.top, greaterThanOrEqualTo(addressRect.bottom));
+  expect(phraseRect.top - addressRect.bottom, lessThan(8));
+  expect(phraseRect.left, addressRect.left);
+}
+
 /// The URLs handed to the browser.
 final _opened = <Uri>[];
 
@@ -175,17 +186,15 @@ void main() {
       expect(_inSheet(find.text('RECENTS')), findsNothing);
     });
 
-    testOnMac('lists the four addresses paid last, never its own, each by its checkphrase', (tester) async {
-      final chain = FakeSendChain()..recents = ['qzAda', 'qzMain', 'qzBo', 'qzCy', 'qzDee', 'qzEve'];
+    testOnMac('lists the four addresses paid last, never its own, each whole over its checkphrase', (tester) async {
+      const long = 'qzpK3wXs9DfL2mVb7NcQ8rTy4HgJ6aZe1UoBi5WnRk7tYe';
+      final chain = FakeSendChain()..recents = [long, 'qzMain', 'qzBo', 'qzCy', 'qzDee', 'qzEve'];
 
       await _openSend(tester, chain: chain);
 
       expect(_inSheet(find.text('RECENTS')), findsOneWidget);
-      for (final address in ['qzAda', 'qzBo', 'qzCy', 'qzDee']) {
-        expect(
-          find.descendant(of: find.byKey(SendSheet.recentKey(address)), matching: find.text('Phrase-$address')),
-          findsOneWidget,
-        );
+      for (final address in [long, 'qzBo', 'qzCy', 'qzDee']) {
+        _expectAddressOverCheckphrase(tester, address, within: find.byKey(SendSheet.recentKey(address)));
       }
       expect(find.byKey(SendSheet.recentKey('qzMain')), findsNothing);
       expect(find.byKey(SendSheet.recentKey('qzEve')), findsNothing);
@@ -404,8 +413,7 @@ void main() {
       expect(_inSheet(find.text('Review')), findsOneWidget);
       expect(_inSheet(find.text('SENDING')), findsOneWidget);
       expect(_inSheet(find.text('250')), findsOneWidget);
-      expect(_inSheet(find.text('Phrase-qzPayee')), findsOneWidget);
-      expect(_inSheet(find.text('qzPayee')), findsOneWidget);
+      _expectAddressOverCheckphrase(tester, 'qzPayee');
       expect(_inSheet(find.text('From')), findsOneWidget);
       expect(_inSheet(find.text('Main')), findsNWidgets(2));
       expect(_inSheet(find.text('Network fee')), findsOneWidget);
@@ -632,8 +640,7 @@ void main() {
       expect(_inSheet(find.text('SUBMITTED')), findsOneWidget);
       expect(_inSheet(find.text('250 QTC sent')), findsOneWidget);
       expect(_inSheet(find.text('On its way')), findsOneWidget);
-      expect(_inSheet(find.text('Phrase-qzPayee')), findsOneWidget);
-      expect(_inSheet(find.text('qzPayee')), findsOneWidget);
+      _expectAddressOverCheckphrase(tester, 'qzPayee');
       expect(_inSheet(find.text('From')), findsOneWidget);
       expect(_inSheet(find.text('Network fee')), findsOneWidget);
       expect(_inSheet(find.text('0.0012 QTC')), findsOneWidget);

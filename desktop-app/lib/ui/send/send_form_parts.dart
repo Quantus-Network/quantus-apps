@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:quantus_desktop_wallet/ui/components/caps_text.dart';
+import 'package:quantus_desktop_wallet/ui/components/desktop_address_checkphrase.dart';
 import 'package:quantus_desktop_wallet/ui/components/toolbar_action.dart';
 import 'package:quantus_desktop_wallet/ui/send/send_styles.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
@@ -97,16 +98,14 @@ class SendField extends StatelessWidget {
   }
 }
 
-/// One address paid before: its checkphrase, then the address shortened. A
-/// press picks it. It has a soft backing under the cursor, stronger while
+/// One address paid before: the whole address over its checkphrase. A press
+/// picks it. It has a soft backing under the cursor, stronger while
 /// pressed, and a ring when it has the keyboard's focus.
 class SendRecentRow extends StatefulWidget {
   const SendRecentRow({super.key, required this.address, required this.onPressed});
 
   final String address;
   final VoidCallback onPressed;
-
-  static const double height = 32;
 
   @override
   State<SendRecentRow> createState() => _SendRecentRowState();
@@ -150,26 +149,10 @@ class _SendRecentRowState extends State<SendRecentRow> {
               border: _isFocused ? Border.all(color: colors.accentFlare.useOpacity(0.7), width: 2) : null,
             ),
             child: Container(
-              height: SendRecentRow.height,
-              padding: const EdgeInsets.symmetric(horizontal: 12),
+              alignment: Alignment.centerLeft,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(color: colors.textContent.useOpacity(backing), borderRadius: radius),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: CheckphraseText(
-                      widget.address,
-                      style: context.sendMono(colors.semanticLilac),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Text(
-                    AddressFormattingService.formatAddress(widget.address),
-                    style: context.themeTextV3.dataAddress.copyWith(color: colors.textMuted),
-                  ),
-                ],
-              ),
+              child: DesktopAddressCheckphrase(address: widget.address),
             ),
           ),
         ),

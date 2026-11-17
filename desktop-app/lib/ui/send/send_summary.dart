@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:quantus_desktop_wallet/ui/components/caps_text.dart';
+import 'package:quantus_desktop_wallet/ui/components/desktop_address_checkphrase.dart';
 import 'package:quantus_desktop_wallet/ui/send/send_styles.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/l10n/app_localizations.dart';
 import 'package:wallet_core/send/send_review_row.dart';
 
 /// Who a send pays and what it costs, as the review shows it before the send
-/// and the receipt after: the recipient's checkphrase over the whole address,
+/// and the receipt after: the recipient's whole address over its checkphrase,
 /// then the account it leaves, the send's own figures, and under a line of
 /// its own what leaves the account in all.
 ///
@@ -40,7 +41,6 @@ class SendSummary extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.colorsV3;
     final totals = rows.where((row) => row.kind == SendReviewRowKind.total);
 
     return Column(
@@ -48,9 +48,7 @@ class SendSummary extends StatelessWidget {
       children: [
         CapsText(l10n.sendTxSubmittedToLabel, style: context.sendCaps()),
         const SizedBox(height: 10),
-        CheckphraseText(recipient, style: context.sendMono(colors.semanticLilac)),
-        const SizedBox(height: 4),
-        Text(recipient, style: context.sendMono(colors.textWhite)),
+        DesktopAddressCheckphrase(address: recipient),
         const SizedBox(height: 20),
         const MenuDivider(),
         const SizedBox(height: 4),
