@@ -1,6 +1,8 @@
 #include "flutter_window.h"
 
+#include <iostream>
 #include <optional>
+#include <string>
 
 #include "flutter/generated_plugin_registrant.h"
 
@@ -46,7 +48,10 @@ void FlutterWindow::OnDestroy() {
   // been copied over it since. Done while the window, which opens the
   // clipboard, is still there.
   if (sensitive_clipboard_) {
-    sensitive_clipboard_->ClearIfUnchanged();
+    std::string error;
+    if (!sensitive_clipboard_->ClearIfUnchanged(&error)) {
+      std::cerr << "Clearing the copied secret from the clipboard failed: " << error << std::endl;
+    }
     sensitive_clipboard_ = nullptr;
   }
   if (flutter_controller_) {

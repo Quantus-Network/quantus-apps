@@ -29,8 +29,10 @@ class SensitiveClipboard {
   SensitiveClipboard(const SensitiveClipboard&) = delete;
   SensitiveClipboard& operator=(const SensitiveClipboard&) = delete;
 
-  // Empties the clipboard if it still holds the last copy.
-  void ClearIfUnchanged();
+  // Empties the clipboard if it still holds the last copy. Returns false, and
+  // says in |error| why, when the clipboard could not be emptied; the copy
+  // then stays tracked, so a later call tries again.
+  bool ClearIfUnchanged(std::string* error);
 
  private:
   // Copies |utf8_text|, or says in |error| why it could not.
@@ -39,8 +41,9 @@ class SensitiveClipboard {
   HWND owner_;
   std::unique_ptr<flutter::MethodChannel<flutter::EncodableValue>> channel_;
 
-  // The clipboard's sequence number just after the last copy, while that copy
-  // has not been cleared.
+  // The clipboard's sequence number just after the last copy, until that copy
+  // is cleared or something else replaces it. A copy or clear that fails
+  // before it empties the clipboard leaves this as it was.
   std::optional<DWORD> copied_sequence_;
 };
 

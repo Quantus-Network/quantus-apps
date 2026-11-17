@@ -99,8 +99,12 @@ SensitiveClipboard::SensitiveClipboard(flutter::BinaryMessenger* messenger, HWND
             result->Error("clipboard", error);
           }
         } else if (call.method_name() == "clear") {
-          ClearIfUnchanged();
-          result->Success();
+          std::string error;
+          if (ClearIfUnchanged(&error)) {
+            result->Success();
+          } else {
+            result->Error("clipboard", error);
+          }
         } else {
           result->NotImplemented();
         }
@@ -108,7 +112,8 @@ SensitiveClipboard::SensitiveClipboard(flutter::BinaryMessenger* messenger, HWND
 }
 
 bool SensitiveClipboard::Copy(const std::string& utf8_text, std::string* error) {
-  copied_sequence_.reset();
+  // Until the clipboard is emptied below, it may still hold the last copy,
+  // which stays tracked so that it is still cleared.
   const std::optional<std::wstring> text = Utf16FromUtf8(utf8_text);
   if (!text) {
     *error = "The text is not valid UTF-8";
@@ -123,6 +128,7 @@ bool SensitiveClipboard::Copy(const std::string& utf8_text, std::string* error) 
     CloseClipboard();
     return false;
   }
+  copied_sequence_.reset();
   // The markers go first, so no monitor sees the text without them.
   const bool copied =
       PutMarker(kExcludeFromMonitors, 0, error) && PutMarker(kCanIncludeInHistory, 0, error) &&
@@ -139,17 +145,30 @@ bool SensitiveClipboard::Copy(const std::string& utf8_text, std::string* error) 
   return copied;
 }
 
-void SensitiveClipboard::ClearIfUnchanged() {
+bool SensitiveClipboard::ClearIfUnchanged(std::string* error) {
   if (!copied_sequence_) {
-    return;
+    return true;
   }
-  const DWORD copied = *copied_sequence_;
-  copied_sequence_.reset();
-  if (GetClipboardSequenceNumber() != copied) {
-    return;
+  // Another window may have the clipboard open. The copy then stays tracked,
+  // so the next clear, or quitting, tries again.
+  if (!OpenClipboard(owner_)) {
+    *error = LastErrorText("OpenClipboard");
+    return false;
   }
-  if (OpenClipboard(owner_)) {
-    EmptyClipboard();
+  // Checked while the clipboard is open, so nothing can be copied between
+  // the check and the clear.
+  if (GetClipboardSequenceNumber() != *copied_sequence_) {
+    // Something else has been copied over it since, and is left alone.
+    copied_sequence_.reset();
     CloseClipboard();
+    return true;
   }
+  if (!EmptyClipboard()) {
+    *error = LastErrorText("EmptyClipboard");
+    CloseClipboard();
+    return false;
+  }
+  CloseClipboard();
+  copied_sequence_.reset();
+  return true;
 }
