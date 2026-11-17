@@ -9,6 +9,7 @@ import 'dart:async';
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_riverpod/flutter_riverpod.dart' show ProviderScope;
@@ -20,11 +21,14 @@ import 'package:quantus_desktop_wallet/services/sensitive_clipboard.dart';
 import 'package:quantus_desktop_wallet/services/user_approval.dart';
 import 'package:quantus_desktop_wallet/ui/approval/login_password_dialog.dart';
 import 'package:quantus_desktop_wallet/ui/components/toolbar_action.dart';
+import 'package:quantus_desktop_wallet/ui/send/send_sheet.dart';
 import 'package:quantus_desktop_wallet/ui/settings/settings_sheet.dart';
 import 'package:quantus_desktop_wallet/ui/shell/desktop_shell.dart';
 import 'package:quantus_desktop_wallet/ui/shell/sidebar.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
+import 'package:wallet_core/send/send_fee_notifier.dart';
+import 'package:wallet_core/services/user_approval.dart';
 
 import '../test/fakes.dart';
 import 'support.dart';
@@ -156,6 +160,48 @@ void main() {
     await _openReceive(tester, 'Encrypted Account');
   });
 
+  _scene('send_form_empty', (tester) async {
+    await _openSend(tester);
+  });
+
+  _scene('send_form_filled', (tester) async {
+    await _openSend(tester);
+    await _fillSend(tester);
+  });
+
+  _scene('send_form_wrong', (tester) async {
+    await _openSend(tester);
+    await _fillSend(tester, address: _depositAddress.substring(0, 27), amount: '2000');
+  });
+
+  _scene('send_review', (tester) async {
+    await _openSend(tester);
+    await _fillSend(tester);
+    await _tapAndSettle(tester, find.byKey(SendSheet.reviewKey));
+  });
+
+  _scene('send_sending', (tester) async {
+    await _openSend(tester, approval: FakeUserApproval()..answer = () => Completer<ApprovalResult>().future);
+    await _fillSend(tester);
+    await _tapAndSettle(tester, find.byKey(SendSheet.reviewKey));
+    await _press(tester, find.byKey(SendSheet.sendKey));
+  });
+
+  _scene('send_failed', (tester) async {
+    final device = await _openSend(tester);
+    device.chain.submit = () async => throw StateError('offline');
+    await _fillSend(tester);
+    await _tapAndSettle(tester, find.byKey(SendSheet.reviewKey));
+    await _tapAndSettle(tester, find.byKey(SendSheet.sendKey));
+  });
+
+  _scene('send_receipt', (tester) async {
+    await _openSend(tester);
+    await _fillSend(tester);
+    await _tapAndSettle(tester, find.byKey(SendSheet.reviewKey));
+    await _tapAndSettle(tester, find.byKey(SendSheet.sendKey));
+  });
+
   _scene('settings', (tester) async {
     await _openSettings(tester);
   });
@@ -271,6 +317,57 @@ Future<void> _openSettings(WidgetTester tester, {FakeLoginPassword? loginPasswor
   ProviderScope.containerOf(
     tester.element(find.byType(DesktopShell)),
   ).read(shellSheetProvider.notifier).open(ShellSheet.settings);
+  await tester.pumpAndSettle();
+}
+
+/// The addresses paid before, with the checkphrases the pictures give them.
+const _recentPhrases = {
+  _depositAddress: 'Lantern-Copper-Meadow-Quartz-Harbor',
+  'qzT8vNc2LpQ7xWd4KsHj9RbY3mFa6ZeUo1GiBn5tVk4mQa': 'Orbit-Thistle-Granite-Whisper-Ember',
+  'qzB4hGy7UwE2nXk9VcMp3QsLd6TfRa8ZoJi1Wb5eNt9cPu': 'Tundra-Violet-Anchor-Pepper-Glacier',
+};
+
+/// Opens the wallet, holding 1,250 tokens, and its Send. The system approves
+/// unless [approval] says otherwise.
+Future<FakeWalletDevice> _openSend(WidgetTester tester, {FakeUserApproval? approval}) async {
+  _useEmptyPreferences(tester);
+  useFakeCheckphrases((address) async => _recentPhrases[address] ?? 'Harbor-Velvet-Signal-Mirror-Canyon');
+  final device = FakeWalletDevice()
+    ..store([_root, _second, _encrypted])
+    ..balance = oneToken * BigInt.from(1250);
+  device.chain
+    ..recents = _recentPhrases.keys.toList()
+    ..isValidAddress = (address) => address.startsWith('qz') && address.length == _depositAddress.length;
+  await _open(
+    tester,
+    device,
+    reduceMotion: true,
+    overrides: [systemApprovalProvider.overrideWithValue(approval ?? FakeUserApproval())],
+  );
+  await tester.pumpAndSettle();
+  await _tapAndSettle(tester, find.widgetWithText(ToolbarAction, 'Send'));
+  return device;
+}
+
+/// Answers reads of the stored preferences with nothing, and takes writes,
+/// in place of the plugin. A picture is drawn in real time, where a plugin
+/// that is not there is an error; Send's balance reads what is pending there.
+void _useEmptyPreferences(WidgetTester tester) {
+  const channel = MethodChannel('plugins.flutter.io/shared_preferences');
+  final messenger = tester.binding.defaultBinaryMessenger;
+  messenger.setMockMethodCallHandler(
+    channel,
+    (call) async => call.method == 'getAll' ? const <String, Object>{} : true,
+  );
+  addTearDown(() => messenger.setMockMethodCallHandler(channel, null));
+}
+
+/// Types who is paid and how much, and waits for the amount's fee.
+Future<void> _fillSend(WidgetTester tester, {String address = _depositAddress, String amount = '250'}) async {
+  Finder editable(Key field) => find.descendant(of: find.byKey(field), matching: find.byType(EditableText));
+  await tester.enterText(editable(SendSheet.addressFieldKey), address);
+  await tester.enterText(editable(SendSheet.amountFieldKey), amount);
+  await tester.pump(SendFeeNotifier.debounce);
   await tester.pumpAndSettle();
 }
 

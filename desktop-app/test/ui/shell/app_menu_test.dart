@@ -111,9 +111,10 @@ void main() {
         [('Receive', true), ('Send', true), ('Swap', true), ('Add Account…', true)],
       ),
       (
+        // Its key signs on the hardware wallet, which this app cannot ask yet.
         'a Keystone account',
         const RegularAccount(vaultAccount),
-        [('Receive', true), ('Send', true), ('Swap', false), ('Add Account…', true)],
+        [('Receive', true), ('Send', false), ('Swap', false), ('Add Account…', true)],
       ),
       (
         'a multisig',
@@ -279,7 +280,7 @@ void main() {
       expect(_sheetTitled('Settings'), findsOneWidget);
     });
 
-    testOnWindowsAndLinux('the Account menu lists the toolbar\'s actions, a disabled one included', (tester) async {
+    testOnWindowsAndLinux('the Account menu lists the toolbar\'s actions, the disabled ones included', (tester) async {
       await pumpShell(tester, overrides: _withActive(const RegularAccount(vaultAccount)));
 
       await openMenu(tester, 'Account');
@@ -287,7 +288,7 @@ void main() {
       final items = tester.widgetList<MenuItemButton>(find.byType(MenuItemButton)).toList();
       expect(
         [for (final item in items) ((item.child! as Text).data, item.onPressed != null)],
-        [('Receive', true), ('Send', true), ('Swap', false), ('Add Account…', true)],
+        [('Receive', true), ('Send', false), ('Swap', false), ('Add Account…', true)],
       );
     });
 
