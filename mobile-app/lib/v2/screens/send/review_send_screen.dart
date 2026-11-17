@@ -17,6 +17,7 @@ import 'package:resonance_network_wallet/v2/components/multisig_expiry_value.dar
 import 'package:resonance_network_wallet/v2/components/split_card.dart';
 import 'package:resonance_network_wallet/v2/screens/send/encrypted_send_progress_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/send/keystone_sign_screen.dart';
+import 'package:wallet_core/send/send_review.dart';
 import 'package:wallet_core/send/send_review_row.dart';
 import 'package:wallet_core/send/send_screen_logic.dart';
 import 'package:wallet_core/send/send_strategy.dart';
@@ -59,43 +60,17 @@ class _ReviewSendScreenState extends ConsumerState<ReviewSendScreen> {
 
   SendFeeState get _feeState => ref.read(_feeProvider);
 
-  /// Latest fee the flow has, falling back to the one this screen opened with.
-  SendFee get _fee => _feeState.fee ?? widget.fee;
-
   BigInt? get _spendable => ref.read(widget.strategy.spendableBalanceProvider).value;
 
-  BigInt get _amount {
-    final spendable = _spendable;
-    if (!widget.sendAll || spendable == null) return widget.amount;
-    return SendScreenLogic.calculateMaxSendableAmount(
-      balance: spendable,
-      networkFee: widget.strategy.feeChargedToBalance(_fee),
-    );
-  }
-
-  BigInt get _feeCharged => widget.strategy.feeChargedToBalance(_fee);
-
-  /// The settled fee priced exactly this send.
-  bool get _feeApplies =>
-      _feeState.settled && widget.strategy.feeApplies(_fee, amount: _amount, sendAll: widget.sendAll);
-
-  /// A max send is sized by its fee. An ordinary send only needs its exact fee
-  /// when the amount leaves less than one more fee of headroom: a quote for a
-  /// nearby amount differs from the exact fee by a few bytes' worth, far less
-  /// than a whole fee, so anything with that headroom cannot fail on the fee.
-  bool get _needsExactFee {
-    if (widget.sendAll) return true;
-    final spendable = _spendable;
-    return spendable != null && _amount + _feeCharged * BigInt.two > spendable;
-  }
-
-  bool get _waitingForFee => _needsExactFee && !_feeApplies;
-
-  /// Re-checked here because a max amount is recomputed from the settled fee
-  /// and can fall below the minimum, and the balance can move.
-  AmountStatus get _amountStatus => SendScreenLogic.getAmountStatus(_amount, _spendable ?? BigInt.zero, _feeCharged);
-
-  bool get _confirmBlocked => _waitingForFee || _amountStatus != AmountStatus.valid;
+  /// The send as the fee and the balance leave it now.
+  SendReview get _review => SendReview.of(
+    widget.strategy,
+    feeState: _feeState,
+    openedWith: widget.fee,
+    spendable: _spendable,
+    enteredAmount: widget.amount,
+    sendAll: widget.sendAll,
+  );
 
   @override
   void initState() {
@@ -114,15 +89,23 @@ class _ReviewSendScreenState extends ConsumerState<ReviewSendScreen> {
   }
 
   void _prefetchSignPayload() {
+    final review = _review;
     unawaited(
       widget.strategy
-          .prefetchSignPayload(ref, recipientAddress: _recipient, amount: _amount, fee: _fee, sendAll: widget.sendAll)
+          .prefetchSignPayload(
+            ref,
+            recipientAddress: _recipient,
+            amount: review.amount,
+            fee: review.fee,
+            sendAll: widget.sendAll,
+          )
           .catchError((Object e) => quantusPrint('Keystone payload prefetch failed: $e')),
     );
   }
 
   Future<void> _confirmSend() async {
-    if (_confirmBlocked) {
+    final review = _review;
+    if (review.confirmBlocked) {
       quantusPrint('Confirm ignored: the fee no longer allows this send');
       return;
     }
@@ -136,8 +119,8 @@ class _ReviewSendScreenState extends ConsumerState<ReviewSendScreen> {
       outcome = await widget.strategy.submit(
         ref,
         recipientAddress: _recipient,
-        amount: _amount,
-        fee: _fee,
+        amount: review.amount,
+        fee: review.fee,
         isPayMode: widget.isPayMode,
         sendAll: widget.sendAll,
       );
@@ -194,13 +177,12 @@ class _ReviewSendScreenState extends ConsumerState<ReviewSendScreen> {
     // Watched for rebuilds; the getters above read the same providers.
     ref.watch(_feeProvider);
     ref.watch(widget.strategy.spendableBalanceProvider);
-    final feeState = _feeState;
-    final fee = _fee;
-    final amount = _amount;
-    final feeApplies = _feeApplies;
-    final waitingForFee = _waitingForFee;
-    final amountStatus = _amountStatus;
-    final feeFailed = waitingForFee && feeState.failed;
+    final review = _review;
+    final fee = review.fee;
+    final amount = review.amount;
+    final feeApplies = review.feeApplies;
+    final amountStatus = review.amountStatus;
+    final feeFailed = review.feeFailed;
     final message = amountStatus != AmountStatus.valid
         ? SendScreenLogic.getButtonText(
             l10n: l10n,
@@ -269,7 +251,7 @@ class _ReviewSendScreenState extends ConsumerState<ReviewSendScreen> {
           label: strings.reviewConfirmLabel,
           variant: ButtonVariant.primary,
           isLoading: _submitting,
-          isDisabled: _submitting || _confirmBlocked,
+          isDisabled: _submitting || review.confirmBlocked,
           onTap: _confirmSend,
         ),
       ),
