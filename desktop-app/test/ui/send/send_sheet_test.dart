@@ -112,6 +112,19 @@ void _putOnClipboard(WidgetTester tester, String text) {
   addTearDown(() => messenger.setMockMethodCallHandler(SystemChannels.platform, null));
 }
 
+/// Holds the app's reads of the clipboard until the returned completer is
+/// given the text they answer with.
+Completer<String> _holdClipboard(WidgetTester tester) {
+  final held = Completer<String>();
+  final messenger = tester.binding.defaultBinaryMessenger;
+  messenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
+    if (call.method == 'Clipboard.getData') return {'text': await held.future};
+    return null;
+  });
+  addTearDown(() => messenger.setMockMethodCallHandler(SystemChannels.platform, null));
+  return held;
+}
+
 void main() {
   group('availability', () {
     Future<void> pumpOn(WidgetTester tester, Account active) => pumpShell(
@@ -195,6 +208,27 @@ void main() {
       await _tap(tester, SendSheet.pasteKey);
 
       expect(_typed(tester, SendSheet.addressFieldKey), 'qzPasted');
+    });
+
+    testOnMac('Review does not open on an address the form has not accepted, even before it is drawn again', (
+      tester,
+    ) async {
+      final clipboard = _holdClipboard(tester);
+      await _openSend(tester);
+      await _fill(tester);
+      await tester.tap(find.byKey(SendSheet.pasteKey));
+      await tester.pump();
+
+      // The account's own address lands, and Review is pressed before a
+      // frame has shown it refused.
+      clipboard.complete('qzMain');
+      await tester.idle();
+      await tester.tap(find.byKey(SendSheet.reviewKey));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(SendSheet.sendKey), findsNothing);
+      expect(_typed(tester, SendSheet.addressFieldKey), 'qzMain');
+      expect(_canPress(tester, SendSheet.reviewKey), isFalse);
     });
 
     testOnMac('a valid address shows its checkphrase under the field', (tester) async {
@@ -406,6 +440,61 @@ void main() {
         expect(_canPress(tester, SendSheet.reviewKey), isTrue);
       });
     }
+
+    testOnMac('a paste answered after the review opened does not change who is paid', (tester) async {
+      final clipboard = _holdClipboard(tester);
+      final chain = await _openSend(tester);
+      await _fill(tester);
+      await tester.tap(find.byKey(SendSheet.pasteKey));
+      await tester.pump();
+      await _tap(tester, SendSheet.reviewKey);
+
+      // Send is pressed before a frame could show the late answer.
+      clipboard.complete('qzOther');
+      await tester.idle();
+      await tester.tap(find.byKey(SendSheet.sendKey));
+      await tester.pumpAndSettle();
+
+      expect(chain.transfers.single.call, (recipient: 'qzPayee', amount: _qtc(250)));
+      expect(_inSheet(find.text('SUBMITTED')), findsOneWidget);
+      expect(_inSheet(find.text('qzPayee')), findsOneWidget);
+      expect(_inSheet(find.text('qzOther')), findsNothing);
+    });
+
+    testOnMac('a paste answered after the review opened cannot get the account\'s own address paid', (tester) async {
+      final clipboard = _holdClipboard(tester);
+      final chain = await _openSend(tester);
+      await _fill(tester);
+      await tester.tap(find.byKey(SendSheet.pasteKey));
+      await tester.pump();
+      await _tap(tester, SendSheet.reviewKey);
+
+      clipboard.complete('qzMain');
+      await tester.pumpAndSettle();
+
+      expect(_inSheet(find.text('qzPayee')), findsOneWidget);
+      expect(_canPress(tester, SendSheet.sendKey), isTrue);
+
+      await _tap(tester, SendSheet.sendKey);
+
+      expect(chain.transfers.single.call, (recipient: 'qzPayee', amount: _qtc(250)));
+    });
+
+    testOnMac('a paste answered after the form was left is dropped, even once the form is back', (tester) async {
+      final clipboard = _holdClipboard(tester);
+      await _openSend(tester);
+      await _fill(tester);
+      await tester.tap(find.byKey(SendSheet.pasteKey));
+      await tester.pump();
+      await _tap(tester, SendSheet.reviewKey);
+      await _tap(tester, SendSheet.backKey);
+
+      clipboard.complete('qzOther');
+      await tester.pumpAndSettle();
+
+      expect(_typed(tester, SendSheet.addressFieldKey), 'qzPayee');
+      expect(_canPress(tester, SendSheet.reviewKey), isTrue);
+    });
 
     testOnMac('a send within one more fee of the balance waits for the fee of exactly its amount', (tester) async {
       final chain = await _openSend(tester);

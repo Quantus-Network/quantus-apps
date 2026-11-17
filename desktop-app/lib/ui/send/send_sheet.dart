@@ -88,6 +88,13 @@ class _SendSheetState extends ConsumerState<SendSheet> {
   String _lastAddress = '';
   StreamSubscription<RecipientBlock?>? _blockSubscription;
 
+  /// The read of the clipboard that Paste is waiting on, if any.
+  Object? _pendingPaste;
+
+  /// Who the review opened on. From then on this is who is paid, whatever
+  /// becomes of the field.
+  String? _reviewedRecipient;
+
   /// The amount in the field, zero while it holds none or one that cannot
   /// be read.
   BigInt _amount = BigInt.zero;
@@ -138,10 +145,16 @@ class _SendSheetState extends ConsumerState<SendSheet> {
 
   // ------------------------------------------------------------ who is paid
 
-  String get _recipient => _address.text.trim();
+  String get _typedAddress => _address.text.trim();
 
-  /// The address in the field can be paid.
-  bool get _recipientAccepted => _isAddress && _block == null && !_isChecking && !_checkFailed;
+  /// Who is paid: the address in the field while the form is open, then the
+  /// one the review opened on.
+  String get _recipient => _reviewedRecipient ?? _typedAddress;
+
+  /// The recipient can be paid: the address in the field passed its checks,
+  /// as the one under review did before the review opened.
+  bool get _recipientAccepted =>
+      _reviewedRecipient != null || (_isAddress && _block == null && !_isChecking && !_checkFailed);
 
   Future<void> _loadRecents() async {
     final all = await ref.read(recentAddressesServiceProvider).getAddresses();
@@ -154,7 +167,7 @@ class _SendSheetState extends ConsumerState<SendSheet> {
   /// The controller also tells of selection changes, so an unchanged address
   /// is only looked up again when its last check failed.
   void _onAddressChanged() {
-    final address = _recipient;
+    final address = _typedAddress;
     if (address == _lastAddress && !_checkFailed) return;
     _lastAddress = address;
     _blockSubscription?.cancel();
@@ -191,8 +204,13 @@ class _SendSheetState extends ConsumerState<SendSheet> {
   }
 
   Future<void> _paste() async {
+    final paste = _pendingPaste = Object();
     final text = (await Clipboard.getData(Clipboard.kTextPlain))?.text?.trim() ?? '';
-    if (text.isEmpty || !mounted) return;
+    // An answer that comes once the form was left, or after a later press of
+    // Paste, is no longer the one that was asked for.
+    if (!mounted || paste != _pendingPaste) return;
+    _pendingPaste = null;
+    if (text.isEmpty) return;
     _address.text = text;
   }
 
@@ -287,13 +305,18 @@ class _SendSheetState extends ConsumerState<SendSheet> {
   // ------------------------------------------------------------- the steps
 
   void _openReview() {
+    // Review is offered by the form as it was last drawn; the address may
+    // have changed since.
+    if (!_recipientAccepted) return;
     final feeState = ref.read(_feeProvider);
     final fee = feeState.fee;
     if (fee == null) throw StateError('The review was opened before the send had a fee.');
     // The review prices the exact send; a quote may still be waiting its turn.
     if (!_feeApplies(feeState)) _requestFee(_amount, immediate: true);
     _stepFocus.requestFocus();
+    _pendingPaste = null;
     setState(() {
+      _reviewedRecipient = _typedAddress;
       _openedWith = fee;
       _error = null;
       _step = _Step.review;
@@ -305,6 +328,7 @@ class _SendSheetState extends ConsumerState<SendSheet> {
     // Back where the typing left off, once the field is there again.
     _amountFocus.requestFocus();
     setState(() {
+      _reviewedRecipient = null;
       _error = null;
       _step = _Step.form;
     });
