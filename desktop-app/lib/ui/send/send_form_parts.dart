@@ -29,7 +29,9 @@ class SendFieldLabel extends StatelessWidget {
 }
 
 /// A field of the Send form at desktop size: 36 high, dark inside. What is
-/// wrong with what it holds, if anything, is said under it as [error].
+/// wrong with what it holds, if anything, is said under it as [error]. One
+/// that is not [enabled] shows what it holds at half strength, and neither
+/// the mouse nor the keyboard can reach it.
 class SendField extends StatelessWidget {
   const SendField({
     super.key,
@@ -37,6 +39,7 @@ class SendField extends StatelessWidget {
     required this.focusNode,
     required this.hint,
     required this.style,
+    this.enabled = true,
     this.error,
     this.suffix,
     this.keyboardType,
@@ -49,6 +52,7 @@ class SendField extends StatelessWidget {
   final FocusNode focusNode;
   final String hint;
   final TextStyle style;
+  final bool enabled;
   final String? error;
 
   /// A unit shown at the field's end.
@@ -66,34 +70,38 @@ class SendField extends StatelessWidget {
     final colors = context.colorsV3;
     final suffix = this.suffix;
 
-    return QuantusTextField(
-      controller: controller,
-      focusNode: focusNode,
-      hint: hint,
-      error: error,
-      enableSuggestions: false,
-      autocorrect: false,
-      keyboardType: keyboardType,
-      inputFormatters: inputFormatters,
-      textInputAction: TextInputAction.done,
-      onChanged: onChanged,
-      onSubmitted: onSubmitted,
-      height: height,
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      textStyle: style,
-      fillColor: colors.bgVoid,
-      borderRadius: context.radiusV3.smBorder,
-      trailingWidth: suffix == null ? null : _suffixWidth,
-      trailing: suffix == null
-          ? null
-          // The field keeps 4 clear beyond it; with this the unit ends where
-          // the text begins on the other side, 12 in.
-          : Container(
-              width: _suffixWidth,
-              alignment: Alignment.centerRight,
-              padding: const EdgeInsets.only(right: 8),
-              child: Text(suffix, style: context.sendMono(colors.textMuted)),
-            ),
+    return Opacity(
+      opacity: enabled ? 1 : 0.5,
+      child: QuantusTextField(
+        controller: controller,
+        focusNode: focusNode,
+        enabled: enabled,
+        hint: hint,
+        error: error,
+        enableSuggestions: false,
+        autocorrect: false,
+        keyboardType: keyboardType,
+        inputFormatters: inputFormatters,
+        textInputAction: TextInputAction.done,
+        onChanged: onChanged,
+        onSubmitted: onSubmitted,
+        height: height,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        textStyle: style,
+        fillColor: colors.bgVoid,
+        borderRadius: context.radiusV3.smBorder,
+        trailingWidth: suffix == null ? null : _suffixWidth,
+        trailing: suffix == null
+            ? null
+            // The field keeps 4 clear beyond it; with this the unit ends where
+            // the text begins on the other side, 12 in.
+            : Container(
+                width: _suffixWidth,
+                alignment: Alignment.centerRight,
+                padding: const EdgeInsets.only(right: 8),
+                child: Text(suffix, style: context.sendMono(colors.textMuted)),
+              ),
+      ),
     );
   }
 }

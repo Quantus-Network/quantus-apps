@@ -119,6 +119,23 @@ Finder _maxBox() => find.descendant(of: find.byKey(SendSheet.maxKey), matching: 
 
 bool _maxTicked(WidgetTester tester) => tester.widget<DesktopCheckbox>(find.byKey(SendSheet.maxKey)).value;
 
+/// Whether the amount field can be typed in: locked, it is drawn at half
+/// strength, takes no typing and is out of the keyboard's reach.
+bool _amountLocked(WidgetTester tester) {
+  final field = tester.widget<TextField>(
+    find.descendant(of: find.byKey(SendSheet.amountFieldKey), matching: find.byType(TextField)),
+  );
+  final editable = tester.widget<EditableText>(_editable(SendSheet.amountFieldKey));
+  final strength = tester
+      .widget<Opacity>(find.descendant(of: find.byKey(SendSheet.amountFieldKey), matching: find.byType(Opacity)).first)
+      .opacity;
+  final locked = field.enabled == false;
+  expect(editable.readOnly, locked);
+  expect(editable.focusNode.canRequestFocus, !locked);
+  expect(strength, locked ? 0.5 : 1);
+  return locked;
+}
+
 /// Answers the app's reads of the clipboard with [text].
 void _putOnClipboard(WidgetTester tester, String text) {
   final messenger = tester.binding.defaultBinaryMessenger;
@@ -365,16 +382,53 @@ void main() {
       await tester.pump();
       await tester.pump();
 
+      expect(_amountLocked(tester), isTrue);
       expect(_typed(tester, SendSheet.amountFieldKey), '1249.998');
       expect(_inSheet(find.text('0.002 QTC')), findsOneWidget);
       expect(_canPress(tester, SendSheet.reviewKey), isTrue);
     });
 
-    testOnMac('typing an amount unticks it, and the amount typed is what is priced and sent', (tester) async {
+    testOnMac('ticked, the amount is locked: a click does not give it the keyboard, and the tick stays', (
+      tester,
+    ) async {
+      await _openSend(tester);
+      await _type(tester, SendSheet.addressFieldKey, 'qzPayee');
+      expect(_amountLocked(tester), isFalse);
+
+      await tester.tap(_maxBox());
+      await tester.pumpAndSettle();
+      expect(_amountLocked(tester), isTrue);
+
+      await tester.tap(find.byKey(SendSheet.amountFieldKey), warnIfMissed: false);
+      await tester.pumpAndSettle();
+
+      expect(tester.widget<EditableText>(_editable(SendSheet.amountFieldKey)).focusNode.hasFocus, isFalse);
+      expect(_typed(tester, SendSheet.amountFieldKey), '1249.9988');
+      expect(_maxTicked(tester), isTrue);
+    });
+
+    testOnMac('Escape still closes the sheet while the amount is locked', (tester) async {
+      await _openSend(tester);
+      await _type(tester, SendSheet.addressFieldKey, 'qzPayee');
+      await tester.tap(_maxBox());
+      await tester.pumpAndSettle();
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(ShellSheetView), findsNothing);
+    });
+
+    testOnMac('unticked, the amount can be typed again, and what is typed is priced and sent', (tester) async {
       final chain = await _openSend(tester);
       await _type(tester, SendSheet.addressFieldKey, 'qzPayee');
       await tester.tap(_maxBox());
       await tester.pumpAndSettle();
+      await tester.tap(_maxBox());
+      await tester.pumpAndSettle();
+
+      expect(_amountLocked(tester), isFalse);
+      expect(_typed(tester, SendSheet.amountFieldKey), '1249.9988');
 
       await _type(tester, SendSheet.amountFieldKey, '5');
       await _pastFeePause(tester);
@@ -507,6 +561,25 @@ void main() {
         expect(_canPress(tester, SendSheet.reviewKey), isTrue);
       });
     }
+
+    testOnMac('back from the review, the keyboard is on the amount, or on the address when the amount is locked', (
+      tester,
+    ) async {
+      bool focused(Key field) => tester.widget<EditableText>(_editable(field)).focusNode.hasFocus;
+      await _openSend(tester);
+      await _toReview(tester);
+
+      await _tap(tester, SendSheet.backKey);
+      expect(focused(SendSheet.amountFieldKey), isTrue);
+
+      await tester.tap(_maxBox());
+      await tester.pumpAndSettle();
+      await _tap(tester, SendSheet.reviewKey);
+      await _tap(tester, SendSheet.backKey);
+
+      expect(focused(SendSheet.amountFieldKey), isFalse);
+      expect(focused(SendSheet.addressFieldKey), isTrue);
+    });
 
     testOnMac('a paste answered after the review opened does not change who is paid', (tester) async {
       final clipboard = _holdClipboard(tester);

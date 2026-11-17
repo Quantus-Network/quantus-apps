@@ -102,7 +102,8 @@ class _SendSheetState extends ConsumerState<SendSheet> {
   bool _amountUnreadable = false;
 
   /// The box that sends the maximum is ticked: the amount is whatever the
-  /// fee leaves of the balance, and follows it.
+  /// fee leaves of the balance, and follows it. The field is locked until
+  /// the box is unticked.
   bool _isMax = false;
 
   /// The fee the review opened with.
@@ -276,15 +277,15 @@ class _SendSheetState extends ConsumerState<SendSheet> {
     setState(() {
       _amount = amount ?? BigInt.zero;
       _amountUnreadable = amount == null;
-      _isMax = false;
     });
     if (_amount > BigInt.zero) _requestFee(_amount);
   }
 
-  /// Ticked, the send is of everything that can be spent. A send that can
-  /// move the whole balance in one call prices that call at once, and the
-  /// amount follows its fee as it lands. Unticked, the amount stays as it
-  /// is, an amount like any other from then on.
+  /// Ticked, the send is of everything that can be spent, and the amount
+  /// cannot be typed over. A send that can move the whole balance in one
+  /// call prices that call at once, and the amount follows its fee as it
+  /// lands. Unticked, the amount stays as it is, an amount like any other
+  /// from then on.
   void _setMax(bool isMax) {
     setState(() => _isMax = isMax);
     if (isMax) _setAmount(_maxSendable(ref.read(_feeProvider).fee));
@@ -331,8 +332,9 @@ class _SendSheetState extends ConsumerState<SendSheet> {
 
   void _backToForm() {
     if (_isSending) return;
-    // Back where the typing left off, once the field is there again.
-    _amountFocus.requestFocus();
+    // Back where the typing left off, once the field is there again; a
+    // locked amount cannot take the keyboard.
+    (_isMax ? _addressFocus : _amountFocus).requestFocus();
     setState(() {
       _reviewedRecipient = null;
       _error = null;
@@ -524,6 +526,7 @@ class _SendSheetState extends ConsumerState<SendSheet> {
         focusNode: _amountFocus,
         hint: '0',
         style: context.themeTextV3.amountRow,
+        enabled: !_isMax,
         error: amountProblem,
         suffix: AppConstants.tokenSymbol,
         keyboardType: const TextInputType.numberWithOptions(decimal: true),
