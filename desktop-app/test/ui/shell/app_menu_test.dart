@@ -727,6 +727,42 @@ void main() {
         },
       );
 
+      /// Presses [keys] one after another with Ctrl held, before any frame
+      /// is drawn: the menus still show what they did before the first key.
+      Future<void> pressWithinOneFrame(WidgetTester tester, List<LogicalKeyboardKey> keys) async {
+        await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+        for (final key in keys) {
+          await tester.sendKeyEvent(key);
+        }
+        await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+        await tester.pumpAndSettle();
+      }
+
+      testOnWindowsAndLinux('from an account that cannot send, Ctrl+1 then Ctrl+S before the next frame opens Send '
+          'on the account switched to', (tester) async {
+        final settings = SlowSettingsService(activeAccount: const RegularAccount(vaultAccount));
+        await pumpShell(tester, overrides: withVault(settings));
+
+        await pressWithinOneFrame(tester, [LogicalKeyboardKey.digit1, LogicalKeyboardKey.keyS]);
+        await settings.finishWrites(tester);
+
+        expect(_selected(tester), 'Main');
+        expect(find.byType(SendSheet), findsOneWidget);
+        expect(_inSheet(find.text('Main')), findsOneWidget);
+      });
+
+      testOnWindowsAndLinux('Ctrl+2 to an account that cannot send, then Ctrl+S before the next frame, opens '
+          'nothing', (tester) async {
+        final settings = SlowSettingsService(activeAccount: const RegularAccount(mainAccount));
+        await pumpShell(tester, overrides: withVault(settings));
+
+        await pressWithinOneFrame(tester, [LogicalKeyboardKey.digit2, LogicalKeyboardKey.keyS]);
+        await settings.finishWrites(tester);
+
+        expect(_selected(tester), 'Vault');
+        expect(find.byType(ShellSheetView), findsNothing);
+      });
+
       testOnWindowsAndLinux('Ctrl+2 to an account that cannot send, then Ctrl+S, opens nothing', (tester) async {
         final settings = SlowSettingsService(activeAccount: const RegularAccount(mainAccount));
         await pumpShell(tester, overrides: withVault(settings));

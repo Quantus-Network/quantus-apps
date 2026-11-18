@@ -27,6 +27,7 @@ import 'package:wallet_core/providers/l10n_provider.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:wallet_core/services/telemetry.dart';
 import 'package:wallet_core/services/wallet_creation_service.dart';
+import 'package:wallet_core/utils/provider_reader.dart';
 
 /// The window's frame: the menus, and under them onboarding until the device
 /// has a wallet, then the sidebar, the pane for what the sidebar has selected
@@ -176,29 +177,12 @@ class _DesktopShellState extends ConsumerState<DesktopShell> {
     final useNativeMenuBar = defaultTargetPlatform == TargetPlatform.macOS;
     final isSidebarVisible = ref.watch(sidebarVisibleProvider);
     final presence = ref.watch(walletPresenceProvider);
-    // The Account and View menus act on the wallet, so they wait for one.
-    final hasWallet = presence.value == WalletPresence.present;
-    final hasSheet = ref.watch(shellSheetProvider) != null;
-    // A sheet is for the account it opened on, so nothing moves under it.
-    final canNavigate = hasWallet && !hasSheet;
-    final sidebar = ref.read(sidebarSelectionProvider.notifier);
 
     return Scaffold(
       body: AppMenuBar(
         useNativeMenuBar: useNativeMenuBar,
-        menus: buildAppMenus(
-          l10n: ref.watch(l10nProvider),
-          useNativeMenuBar: useNativeMenuBar,
-          accountActions: ref.watch(menuAccountActionsProvider),
-          accounts: hasWallet ? ref.watch(sidebarAccountsProvider) : const [],
-          isSidebarVisible: isSidebarVisible,
-          canOpenSheet: canNavigate,
-          onOpenSheet: (sheet) => ref.read(shellSheetProvider.notifier).open(sheet),
-          onShowAccount: canNavigate ? (account) => unawaited(sidebar.showAccount(account)) : null,
-          onMoveInSidebar: canNavigate ? (rows) => unawaited(sidebar.move(rows)) : null,
-          onToggleSidebar: hasWallet ? () => ref.read(sidebarVisibleProvider.notifier).toggle() : null,
-          onCloseWindow: () => ref.read(requestAppExitProvider)(),
-        ),
+        menus: _menus(ref.watch, useNativeMenuBar: useNativeMenuBar),
+        resolveMenus: () => _menus(ref.read, useNativeMenuBar: useNativeMenuBar),
         child: switch (presence) {
           AsyncError(:final error) => _StartFailure(error: error),
           AsyncValue(value: WalletPresence.present) => _wallet(isSidebarVisible),
@@ -222,6 +206,31 @@ class _DesktopShellState extends ConsumerState<DesktopShell> {
           _ => const Center(child: Loader()),
         },
       ),
+    );
+  }
+
+  /// The app's menus for what [read] finds: watched, as they are drawn; read
+  /// at a key press, as they are at that moment.
+  List<PlatformMenu> _menus(ProviderReader read, {required bool useNativeMenuBar}) {
+    // The Account and View menus act on the wallet, so they wait for one.
+    final hasWallet = read(walletPresenceProvider).value == WalletPresence.present;
+    final hasSheet = read(shellSheetProvider) != null;
+    // A sheet is for the account it opened on, so nothing moves under it.
+    final canNavigate = hasWallet && !hasSheet;
+    final sidebar = ref.read(sidebarSelectionProvider.notifier);
+
+    return buildAppMenus(
+      l10n: read(l10nProvider),
+      useNativeMenuBar: useNativeMenuBar,
+      accountActions: read(menuAccountActionsProvider),
+      accounts: hasWallet ? read(sidebarAccountsProvider) : const [],
+      isSidebarVisible: read(sidebarVisibleProvider),
+      canOpenSheet: canNavigate,
+      onOpenSheet: (sheet) => ref.read(shellSheetProvider.notifier).open(sheet),
+      onShowAccount: canNavigate ? (account) => unawaited(sidebar.showAccount(account)) : null,
+      onMoveInSidebar: canNavigate ? (rows) => unawaited(sidebar.move(rows)) : null,
+      onToggleSidebar: hasWallet ? () => ref.read(sidebarVisibleProvider.notifier).toggle() : null,
+      onCloseWindow: () => ref.read(requestAppExitProvider)(),
     );
   }
 
