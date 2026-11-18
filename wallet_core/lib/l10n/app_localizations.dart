@@ -4915,6 +4915,174 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{account} could not be made the active account: {error}'**
   String desktopAccountSwitchFailedMessage(String account, String error);
+
+  /// Desktop Settings: the row that opens the keyboard shortcuts, and that step's name in the sheet's path
+  ///
+  /// In en, this message translates to:
+  /// **'Keyboard Shortcuts'**
+  String get settingsKeyboardShortcuts;
+
+  /// Desktop Settings: the line under Keyboard Shortcuts
+  ///
+  /// In en, this message translates to:
+  /// **'Change the keys that open and move around the wallet'**
+  String get settingsKeyboardShortcutsSubtitle;
+
+  /// Desktop Keyboard Shortcuts: the command that shows or hides the sidebar
+  ///
+  /// In en, this message translates to:
+  /// **'Show or Hide Sidebar'**
+  String get desktopShortcutsToggleSidebar;
+
+  /// Desktop Keyboard Shortcuts: the row whose keys, held with a digit, make the account of that number in the sidebar active
+  ///
+  /// In en, this message translates to:
+  /// **'Go to account 1 to 9'**
+  String get desktopShortcutsAccounts;
+
+  /// Desktop Keyboard Shortcuts: shown in place of the keys of a command that has no shortcut
+  ///
+  /// In en, this message translates to:
+  /// **'None'**
+  String get desktopShortcutsNone;
+
+  /// Desktop Keyboard Shortcuts: shown in a shortcut's place while it waits for new keys
+  ///
+  /// In en, this message translates to:
+  /// **'Type shortcut…'**
+  String get desktopShortcutsRecording;
+
+  /// Desktop Keyboard Shortcuts: the line under a shortcut that waits for new keys
+  ///
+  /// In en, this message translates to:
+  /// **'Press the new keys. Esc cancels; Delete removes the shortcut.'**
+  String get desktopShortcutsRecordingHint;
+
+  /// Desktop Keyboard Shortcuts, macOS: why keys pressed without a modifier were not taken; the key names are as printed on the keyboard
+  ///
+  /// In en, this message translates to:
+  /// **'Hold Command, Option or Control with the key.'**
+  String get desktopShortcutsNeedsModifierMac;
+
+  /// Desktop Keyboard Shortcuts, Windows and Linux: why keys pressed without a modifier were not taken; the key names are as printed on the keyboard
+  ///
+  /// In en, this message translates to:
+  /// **'Hold Ctrl or Alt with the key.'**
+  String get desktopShortcutsNeedsModifierPc;
+
+  /// Desktop Keyboard Shortcuts, Windows and Linux: why keys held with the Windows (Super) key were not taken
+  ///
+  /// In en, this message translates to:
+  /// **'Shortcuts with the Windows or Super key belong to the system.'**
+  String get desktopShortcutsSystemKey;
+
+  /// Desktop Keyboard Shortcuts: the note at the foot of the list, about the commands whose keys cannot be changed
+  ///
+  /// In en, this message translates to:
+  /// **'Settings, Close Window and Quit keep the system\'s keys.'**
+  String get desktopShortcutsFixedNote;
+
+  /// Desktop Keyboard Shortcuts: the button that puts every shortcut back as the app shipped it
+  ///
+  /// In en, this message translates to:
+  /// **'Restore Defaults'**
+  String get desktopShortcutsRestoreDefaults;
+
+  /// Desktop Keyboard Shortcuts: shown when the stored shortcuts were unreadable at start
+  ///
+  /// In en, this message translates to:
+  /// **'Your saved shortcuts could not be read, so the defaults are in use.'**
+  String get desktopShortcutsUnreadable;
+
+  /// Desktop: the system command that quits the app, named when its keys are refused as a shortcut
+  ///
+  /// In en, this message translates to:
+  /// **'Quit'**
+  String get desktopSystemQuit;
+
+  /// Desktop, macOS: the system command that hides the app, named when its keys are refused as a shortcut
+  ///
+  /// In en, this message translates to:
+  /// **'Hide'**
+  String get desktopSystemHide;
+
+  /// Desktop, macOS: the system command that hides the other apps, named when its keys are refused as a shortcut
+  ///
+  /// In en, this message translates to:
+  /// **'Hide Others'**
+  String get desktopSystemHideOthers;
+
+  /// Desktop, macOS: the system command that minimizes the window, named when its keys are refused as a shortcut
+  ///
+  /// In en, this message translates to:
+  /// **'Minimize'**
+  String get desktopSystemMinimize;
+
+  /// Desktop, macOS: the system command that makes the window full screen, named when its keys are refused as a shortcut
+  ///
+  /// In en, this message translates to:
+  /// **'Full Screen'**
+  String get desktopSystemFullScreen;
+
+  /// Desktop: the editing command, named when its keys are refused as a shortcut
+  ///
+  /// In en, this message translates to:
+  /// **'Cut'**
+  String get desktopSystemCut;
+
+  /// Desktop: the editing command, named when its keys are refused as a shortcut
+  ///
+  /// In en, this message translates to:
+  /// **'Copy'**
+  String get desktopSystemCopy;
+
+  /// Desktop: the editing command, named when its keys are refused as a shortcut
+  ///
+  /// In en, this message translates to:
+  /// **'Paste'**
+  String get desktopSystemPaste;
+
+  /// Desktop: the editing command, named when its keys are refused as a shortcut
+  ///
+  /// In en, this message translates to:
+  /// **'Select All'**
+  String get desktopSystemSelectAll;
+
+  /// Desktop: the editing command, named when its keys are refused as a shortcut
+  ///
+  /// In en, this message translates to:
+  /// **'Undo'**
+  String get desktopSystemUndo;
+
+  /// Desktop: the editing command, named when its keys are refused as a shortcut
+  ///
+  /// In en, this message translates to:
+  /// **'Redo'**
+  String get desktopSystemRedo;
+
+  /// Desktop Keyboard Shortcuts: why recorded keys were not taken; {command} is the name of the command that has them
+  ///
+  /// In en, this message translates to:
+  /// **'That shortcut is already used by {command}. Press other keys.'**
+  String desktopShortcutsUsedBy(String command);
+
+  /// Desktop Keyboard Shortcuts: why recorded keys were not taken; {command} is the system command they belong to
+  ///
+  /// In en, this message translates to:
+  /// **'That shortcut is kept for {command}. Press other keys.'**
+  String desktopShortcutsKeptFor(String command);
+
+  /// Desktop Keyboard Shortcuts: why a choice of keys for the account shortcuts was not taken; {command} is the command that uses one of the resulting shortcuts
+  ///
+  /// In en, this message translates to:
+  /// **'Those keys would clash with {command}.'**
+  String desktopShortcutsModifierUsedBy(String command);
+
+  /// Desktop Keyboard Shortcuts: shown when a change could not be stored; {error} is the reason
+  ///
+  /// In en, this message translates to:
+  /// **'The shortcut could not be saved: {error}'**
+  String desktopShortcutsSaveFailed(String error);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

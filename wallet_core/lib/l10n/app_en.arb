@@ -3903,5 +3903,137 @@
           "type": "String"
         }
       }
+    },
+    "settingsKeyboardShortcuts": "Keyboard Shortcuts",
+    "@settingsKeyboardShortcuts": {
+      "description": "Desktop Settings: the row that opens the keyboard shortcuts, and that step's name in the sheet's path"
+    },
+    "settingsKeyboardShortcutsSubtitle": "Change the keys that open and move around the wallet",
+    "@settingsKeyboardShortcutsSubtitle": {
+      "description": "Desktop Settings: the line under Keyboard Shortcuts"
+    },
+    "desktopShortcutsToggleSidebar": "Show or Hide Sidebar",
+    "@desktopShortcutsToggleSidebar": {
+      "description": "Desktop Keyboard Shortcuts: the command that shows or hides the sidebar"
+    },
+    "desktopShortcutsAccounts": "Go to account 1 to 9",
+    "@desktopShortcutsAccounts": {
+      "description": "Desktop Keyboard Shortcuts: the row whose keys, held with a digit, make the account of that number in the sidebar active"
+    },
+    "desktopShortcutsNone": "None",
+    "@desktopShortcutsNone": {
+      "description": "Desktop Keyboard Shortcuts: shown in place of the keys of a command that has no shortcut"
+    },
+    "desktopShortcutsRecording": "Type shortcut…",
+    "@desktopShortcutsRecording": {
+      "description": "Desktop Keyboard Shortcuts: shown in a shortcut's place while it waits for new keys"
+    },
+    "desktopShortcutsRecordingHint": "Press the new keys. Esc cancels; Delete removes the shortcut.",
+    "@desktopShortcutsRecordingHint": {
+      "description": "Desktop Keyboard Shortcuts: the line under a shortcut that waits for new keys"
+    },
+    "desktopShortcutsNeedsModifierMac": "Hold Command, Option or Control with the key.",
+    "@desktopShortcutsNeedsModifierMac": {
+      "description": "Desktop Keyboard Shortcuts, macOS: why keys pressed without a modifier were not taken; the key names are as printed on the keyboard"
+    },
+    "desktopShortcutsNeedsModifierPc": "Hold Ctrl or Alt with the key.",
+    "@desktopShortcutsNeedsModifierPc": {
+      "description": "Desktop Keyboard Shortcuts, Windows and Linux: why keys pressed without a modifier were not taken; the key names are as printed on the keyboard"
+    },
+    "desktopShortcutsSystemKey": "Shortcuts with the Windows or Super key belong to the system.",
+    "@desktopShortcutsSystemKey": {
+      "description": "Desktop Keyboard Shortcuts, Windows and Linux: why keys held with the Windows (Super) key were not taken"
+    },
+    "desktopShortcutsFixedNote": "Settings, Close Window and Quit keep the system's keys.",
+    "@desktopShortcutsFixedNote": {
+      "description": "Desktop Keyboard Shortcuts: the note at the foot of the list, about the commands whose keys cannot be changed"
+    },
+    "desktopShortcutsRestoreDefaults": "Restore Defaults",
+    "@desktopShortcutsRestoreDefaults": {
+      "description": "Desktop Keyboard Shortcuts: the button that puts every shortcut back as the app shipped it"
+    },
+    "desktopShortcutsUnreadable": "Your saved shortcuts could not be read, so the defaults are in use.",
+    "@desktopShortcutsUnreadable": {
+      "description": "Desktop Keyboard Shortcuts: shown when the stored shortcuts were unreadable at start"
+    },
+    "desktopSystemQuit": "Quit",
+    "@desktopSystemQuit": {
+      "description": "Desktop: the system command that quits the app, named when its keys are refused as a shortcut"
+    },
+    "desktopSystemHide": "Hide",
+    "@desktopSystemHide": {
+      "description": "Desktop, macOS: the system command that hides the app, named when its keys are refused as a shortcut"
+    },
+    "desktopSystemHideOthers": "Hide Others",
+    "@desktopSystemHideOthers": {
+      "description": "Desktop, macOS: the system command that hides the other apps, named when its keys are refused as a shortcut"
+    },
+    "desktopSystemMinimize": "Minimize",
+    "@desktopSystemMinimize": {
+      "description": "Desktop, macOS: the system command that minimizes the window, named when its keys are refused as a shortcut"
+    },
+    "desktopSystemFullScreen": "Full Screen",
+    "@desktopSystemFullScreen": {
+      "description": "Desktop, macOS: the system command that makes the window full screen, named when its keys are refused as a shortcut"
+    },
+    "desktopSystemCut": "Cut",
+    "@desktopSystemCut": {
+      "description": "Desktop: the editing command, named when its keys are refused as a shortcut"
+    },
+    "desktopSystemCopy": "Copy",
+    "@desktopSystemCopy": {
+      "description": "Desktop: the editing command, named when its keys are refused as a shortcut"
+    },
+    "desktopSystemPaste": "Paste",
+    "@desktopSystemPaste": {
+      "description": "Desktop: the editing command, named when its keys are refused as a shortcut"
+    },
+    "desktopSystemSelectAll": "Select All",
+    "@desktopSystemSelectAll": {
+      "description": "Desktop: the editing command, named when its keys are refused as a shortcut"
+    },
+    "desktopSystemUndo": "Undo",
+    "@desktopSystemUndo": {
+      "description": "Desktop: the editing command, named when its keys are refused as a shortcut"
+    },
+    "desktopSystemRedo": "Redo",
+    "@desktopSystemRedo": {
+      "description": "Desktop: the editing command, named when its keys are refused as a shortcut"
+    },
+    "desktopShortcutsUsedBy": "That shortcut is already used by {command}. Press other keys.",
+    "@desktopShortcutsUsedBy": {
+      "description": "Desktop Keyboard Shortcuts: why recorded keys were not taken; {command} is the name of the command that has them",
+      "placeholders": {
+        "command": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopShortcutsKeptFor": "That shortcut is kept for {command}. Press other keys.",
+    "@desktopShortcutsKeptFor": {
+      "description": "Desktop Keyboard Shortcuts: why recorded keys were not taken; {command} is the system command they belong to",
+      "placeholders": {
+        "command": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopShortcutsModifierUsedBy": "Those keys would clash with {command}.",
+    "@desktopShortcutsModifierUsedBy": {
+      "description": "Desktop Keyboard Shortcuts: why a choice of keys for the account shortcuts was not taken; {command} is the command that uses one of the resulting shortcuts",
+      "placeholders": {
+        "command": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopShortcutsSaveFailed": "The shortcut could not be saved: {error}",
+    "@desktopShortcutsSaveFailed": {
+      "description": "Desktop Keyboard Shortcuts: shown when a change could not be stored; {error} is the reason",
+      "placeholders": {
+        "error": {
+          "type": "String"
+        }
+      }
     }
 }

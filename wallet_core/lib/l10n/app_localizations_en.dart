@@ -2689,4 +2689,96 @@ class AppLocalizationsEn extends AppLocalizations {
   String desktopAccountSwitchFailedMessage(String account, String error) {
     return '$account could not be made the active account: $error';
   }
+
+  @override
+  String get settingsKeyboardShortcuts => 'Keyboard Shortcuts';
+
+  @override
+  String get settingsKeyboardShortcutsSubtitle => 'Change the keys that open and move around the wallet';
+
+  @override
+  String get desktopShortcutsToggleSidebar => 'Show or Hide Sidebar';
+
+  @override
+  String get desktopShortcutsAccounts => 'Go to account 1 to 9';
+
+  @override
+  String get desktopShortcutsNone => 'None';
+
+  @override
+  String get desktopShortcutsRecording => 'Type shortcut…';
+
+  @override
+  String get desktopShortcutsRecordingHint => 'Press the new keys. Esc cancels; Delete removes the shortcut.';
+
+  @override
+  String get desktopShortcutsNeedsModifierMac => 'Hold Command, Option or Control with the key.';
+
+  @override
+  String get desktopShortcutsNeedsModifierPc => 'Hold Ctrl or Alt with the key.';
+
+  @override
+  String get desktopShortcutsSystemKey => 'Shortcuts with the Windows or Super key belong to the system.';
+
+  @override
+  String get desktopShortcutsFixedNote => 'Settings, Close Window and Quit keep the system\'s keys.';
+
+  @override
+  String get desktopShortcutsRestoreDefaults => 'Restore Defaults';
+
+  @override
+  String get desktopShortcutsUnreadable => 'Your saved shortcuts could not be read, so the defaults are in use.';
+
+  @override
+  String get desktopSystemQuit => 'Quit';
+
+  @override
+  String get desktopSystemHide => 'Hide';
+
+  @override
+  String get desktopSystemHideOthers => 'Hide Others';
+
+  @override
+  String get desktopSystemMinimize => 'Minimize';
+
+  @override
+  String get desktopSystemFullScreen => 'Full Screen';
+
+  @override
+  String get desktopSystemCut => 'Cut';
+
+  @override
+  String get desktopSystemCopy => 'Copy';
+
+  @override
+  String get desktopSystemPaste => 'Paste';
+
+  @override
+  String get desktopSystemSelectAll => 'Select All';
+
+  @override
+  String get desktopSystemUndo => 'Undo';
+
+  @override
+  String get desktopSystemRedo => 'Redo';
+
+  @override
+  String desktopShortcutsUsedBy(String command) {
+    return 'That shortcut is already used by $command. Press other keys.';
+  }
+
+  @override
+  String desktopShortcutsKeptFor(String command) {
+    return 'That shortcut is kept for $command. Press other keys.';
+  }
+
+  @override
+  String desktopShortcutsModifierUsedBy(String command) {
+    return 'Those keys would clash with $command.';
+  }
+
+  @override
+  String desktopShortcutsSaveFailed(String error) {
+    return 'The shortcut could not be saved: $error';
+  }
 }
