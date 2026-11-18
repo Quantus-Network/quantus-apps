@@ -658,6 +658,45 @@ void main() {
         expect(find.byType(MiningRewardsPane), findsOneWidget);
       });
 
+      for (final (key, name, sheet) in [
+        (LogicalKeyboardKey.keyS, 'Ctrl+S', 'Send'),
+        (LogicalKeyboardKey.keyR, 'Ctrl+R', 'Receive'),
+      ]) {
+        testOnWindowsAndLinux('when the switch fails, $name pressed while it waited opens nothing, and says why', (
+          tester,
+        ) async {
+          final settings = SlowSettingsService(activeAccount: const RegularAccount(mainAccount));
+          await pumpShell(tester, overrides: _withSlowSettings(settings));
+
+          await press(tester, LogicalKeyboardKey.digit2);
+          await press(tester, key);
+          await settings.failWrites(tester, StateError('disk full'));
+
+          expect(find.byType(ShellSheetView), findsNothing, reason: '$sheet must not open on Main');
+          expect(_selected(tester), 'Main');
+          expect(find.text('Could not switch account'), findsOneWidget);
+          expect(find.text('Savings could not be made the active account: Bad state: disk full'), findsOneWidget);
+
+          await tester.tap(find.text('Close'));
+          await tester.pumpAndSettle();
+          expect(find.text('Could not switch account'), findsNothing);
+        });
+      }
+
+      testOnWindowsAndLinux('after a failed switch, the shortcuts pressed later work again', (tester) async {
+        final settings = SlowSettingsService(activeAccount: const RegularAccount(mainAccount));
+        await pumpShell(tester, overrides: _withSlowSettings(settings));
+        await press(tester, LogicalKeyboardKey.digit2);
+        await settings.failWrites(tester, StateError('disk full'));
+        await tester.tap(find.text('Close'));
+        await tester.pumpAndSettle();
+
+        await press(tester, LogicalKeyboardKey.keyR);
+
+        expect(_sheetTitled('Receive'), findsOneWidget);
+        expect(_inSheet(find.text('qzMain')), findsOneWidget);
+      });
+
       testOnWindowsAndLinux('a switch pressed after a sheet\'s shortcut does nothing once that sheet is open', (
         tester,
       ) async {

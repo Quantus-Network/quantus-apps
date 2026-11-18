@@ -124,6 +124,16 @@ class SlowSettingsService extends FakeSettingsService {
     activeAccount = account;
   }
 
+  /// Makes every waiting write fail with [error].
+  Future<void> failWrites(WidgetTester tester, Object error) async {
+    final writes = [..._writes];
+    _writes.clear();
+    for (final write in writes) {
+      write.completeError(error);
+    }
+    await tester.pumpAndSettle();
+  }
+
   /// Lets every waiting write finish, then the ones those started, until
   /// none is left.
   Future<void> finishWrites(WidgetTester tester) async {

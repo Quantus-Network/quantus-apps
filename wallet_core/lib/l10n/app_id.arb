@@ -720,5 +720,7 @@
   "desktopSendYouPaid": "Anda membayar",
   "desktopSendSubmitted": "Diajukan",
   "desktopViewInExplorer": "Lihat di Explorer",
-  "desktopSendTransactionOf": "Transaksi {index} dari {count}"
+  "desktopSendTransactionOf": "Transaksi {index} dari {count}",
+  "desktopAccountSwitchFailedTitle": "Tidak dapat berpindah akun",
+  "desktopAccountSwitchFailedMessage": "{account} tidak dapat dijadikan akun aktif: {error}"
 }

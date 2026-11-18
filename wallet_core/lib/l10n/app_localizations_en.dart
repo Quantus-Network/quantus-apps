@@ -2681,4 +2681,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String desktopSendTransactionOf(int index, int count) {
     return 'Transaction $index of $count';
   }
+
+  @override
+  String get desktopAccountSwitchFailedTitle => 'Could not switch account';
+
+  @override
+  String desktopAccountSwitchFailedMessage(String account, String error) {
+    return '$account could not be made the active account: $error';
+  }
 }

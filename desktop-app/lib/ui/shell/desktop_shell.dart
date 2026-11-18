@@ -135,6 +135,19 @@ class _DesktopShellState extends ConsumerState<DesktopShell> {
     if (mounted) await ref.read(walletPresenceProvider.notifier).wipeWallet();
   }
 
+  /// Says an account could not be made the active account, and why.
+  Future<void> _reportSwitchFailure(AccountSwitchFailure failure) async {
+    final l10n = ref.read(l10nProvider);
+    await showQuantusDialog(
+      context,
+      title: l10n.desktopAccountSwitchFailedTitle,
+      body: l10n.desktopAccountSwitchFailedMessage(failure.account.account.name, '${failure.error}'),
+      actionLabel: l10n.commonClose,
+      showCancel: false,
+    );
+    if (mounted) ref.read(accountSwitchFailureProvider.notifier).clear();
+  }
+
   /// Finishes what an earlier run left undone: an import's account scan that
   /// was skipped or interrupted, and a software wallet's encrypted account.
   Future<void> _finishWalletSetup() async {
@@ -156,6 +169,9 @@ class _DesktopShellState extends ConsumerState<DesktopShell> {
       if (request != null) unawaited(_askForPassword(request));
     });
     ref.listen<AsyncValue<WalletPresence>>(walletPresenceProvider, _onWalletPresence);
+    ref.listen<AccountSwitchFailure?>(accountSwitchFailureProvider, (_, failure) {
+      if (failure != null) unawaited(_reportSwitchFailure(failure));
+    });
 
     final useNativeMenuBar = defaultTargetPlatform == TargetPlatform.macOS;
     final isSidebarVisible = ref.watch(sidebarVisibleProvider);

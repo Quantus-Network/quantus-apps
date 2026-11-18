@@ -77,13 +77,21 @@ class ActiveAccountNotifier extends StateNotifier<AsyncValue<DisplayAccount?>> {
     }
   }
 
+  /// Makes [account] the active account. A failure to store it is logged
+  /// and the active account stays; use [switchActiveAccount] to learn of it.
   Future<void> setActiveAccount(DisplayAccount account) async {
     try {
-      await _settingsService.setActiveAccount(account);
-      state = AsyncValue.data(account);
+      await switchActiveAccount(account);
     } catch (e, st) {
       quantusPrint('setActiveAccount error $e $st');
     }
+  }
+
+  /// Stores [account] and makes it the active account. Throws what storing
+  /// it threw, and the active account then stays as it was.
+  Future<void> switchActiveAccount(DisplayAccount account) async {
+    await _settingsService.setActiveAccount(account);
+    state = AsyncValue.data(account);
   }
 
   void reset() {

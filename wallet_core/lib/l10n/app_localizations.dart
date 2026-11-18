@@ -4903,6 +4903,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Transaction {index} of {count}'**
   String desktopSendTransactionOf(int index, int count);
+
+  /// Desktop: title of the dialog shown when an account chosen in the sidebar, the menu or by a shortcut could not be made the active account
+  ///
+  /// In en, this message translates to:
+  /// **'Could not switch account'**
+  String get desktopAccountSwitchFailedTitle;
+
+  /// Desktop: the dialog's message when switching account failed; {account} is the account's name, {error} the reason. What was asked for after the switch is not done.
+  ///
+  /// In en, this message translates to:
+  /// **'{account} could not be made the active account: {error}'**
+  String desktopAccountSwitchFailedMessage(String account, String error);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

@@ -2684,4 +2684,12 @@ class AppLocalizationsId extends AppLocalizations {
   String desktopSendTransactionOf(int index, int count) {
     return 'Transaksi $index dari $count';
   }
+
+  @override
+  String get desktopAccountSwitchFailedTitle => 'Tidak dapat berpindah akun';
+
+  @override
+  String desktopAccountSwitchFailedMessage(String account, String error) {
+    return '$account tidak dapat dijadikan akun aktif: $error';
+  }
 }

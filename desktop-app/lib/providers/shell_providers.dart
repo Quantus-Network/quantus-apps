@@ -27,7 +27,48 @@ class SidebarVisibilityNotifier extends Notifier<bool> {
 /// openings run in the order they were asked for, each once the ones before
 /// it have finished. An account switch waits on the settings it is saved to,
 /// so a shortcut pressed meanwhile acts on the account chosen before it.
-final shellNavigationProvider = Provider<SerialQueue>((ref) => SerialQueue());
+final shellNavigationProvider = Provider<ShellNavigation>((ref) => ShellNavigation());
+
+/// Runs the window's navigation one step at a time ([SerialQueue]), and can
+/// drop the steps asked for so far: what was pressed while an account switch
+/// waited was meant for that account, so when the switch fails it is not
+/// done on another.
+class ShellNavigation {
+  final _queue = SerialQueue();
+
+  /// Counts the cancellations; a step asked for before the last one is
+  /// dropped when its turn comes.
+  int _generation = 0;
+
+  /// Runs [step] once the steps asked for before it have finished, unless
+  /// [cancelPending] is called before it starts.
+  Future<void> run(Future<void> Function() step) {
+    final generation = _generation;
+    return _queue.run(() async {
+      if (generation == _generation) await step();
+    });
+  }
+
+  /// Drops every step asked for so far that has not started.
+  void cancelPending() => _generation++;
+}
+
+/// An account that could not be made the active account, and why. The shell
+/// says so, then clears it.
+final accountSwitchFailureProvider = NotifierProvider<AccountSwitchFailureNotifier, AccountSwitchFailure?>(
+  AccountSwitchFailureNotifier.new,
+);
+
+typedef AccountSwitchFailure = ({DisplayAccount account, Object error});
+
+class AccountSwitchFailureNotifier extends Notifier<AccountSwitchFailure?> {
+  @override
+  AccountSwitchFailure? build() => null;
+
+  void report(DisplayAccount account, Object error) => state = (account: account, error: error);
+
+  void clear() => state = null;
+}
 
 final sidebarSelectionProvider = NotifierProvider<SidebarSelectionNotifier, SidebarSelection>(
   SidebarSelectionNotifier.new,
@@ -59,7 +100,16 @@ class SidebarSelectionNotifier extends Notifier<SidebarSelection> {
 
   Future<void> _show(DisplayAccount account) async {
     if (!ref.mounted || _isUnderSheet) return;
-    await ref.read(activeAccountProvider.notifier).setActiveAccount(account);
+    try {
+      await ref.read(activeAccountProvider.notifier).switchActiveAccount(account);
+    } catch (e) {
+      quantusPrint('Switching to ${account.account.name} failed: $e');
+      if (!ref.mounted) return;
+      // What was pressed while the switch waited was meant for [account].
+      ref.read(shellNavigationProvider).cancelPending();
+      ref.read(accountSwitchFailureProvider.notifier).report(account, e);
+      return;
+    }
     if (!ref.mounted) return;
     state = SidebarSelection.account;
   }
