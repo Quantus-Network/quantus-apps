@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_desktop_wallet/models/shell_sheet.dart';
-import 'package:quantus_desktop_wallet/ui/components/desktop_account_badge.dart';
+import 'package:quantus_desktop_wallet/ui/components/account_label.dart';
 import 'package:quantus_desktop_wallet/ui/receive/receive_sheet.dart';
 import 'package:quantus_desktop_wallet/ui/send/send_sheet.dart';
 import 'package:quantus_desktop_wallet/ui/settings/settings_sheet.dart';
@@ -174,12 +174,10 @@ class ShellSheetHeader extends ConsumerWidget {
               ),
               if (account != null) ...[
                 const SizedBox(width: 14),
-                DesktopAccountBadge(account: account, size: 22),
-                const SizedBox(width: 8),
                 Flexible(
-                  child: Text(
-                    account.name,
-                    overflow: TextOverflow.ellipsis,
+                  child: AccountLabel(
+                    account: account,
+                    size: 22,
                     style: text.body.copyWith(color: colors.textMuted),
                   ),
                 ),

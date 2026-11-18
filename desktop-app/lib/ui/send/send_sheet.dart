@@ -800,7 +800,7 @@ class _SendSheetState extends ConsumerState<SendSheet> {
       SendSummary(
         l10n: l10n,
         recipient: _recipient,
-        from: _account.name,
+        from: _account,
         rows: rows,
         feeLabel: sendFeeLabel(_strategy, l10n),
         totalLabel: l10n.swapYouPay,
@@ -1062,7 +1062,7 @@ class _SendSheetState extends ConsumerState<SendSheet> {
       SendSummary(
         l10n: l10n,
         recipient: submitted.recipientAddress,
-        from: _account.name,
+        from: _account,
         rows: _submittedRows,
         feeLabel: sendFeeLabel(_strategy, l10n),
         totalLabel: l10n.desktopSendYouPaid,

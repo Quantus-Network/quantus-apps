@@ -8,10 +8,12 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_desktop_wallet/providers/shell_providers.dart';
 import 'package:quantus_desktop_wallet/services/external_links.dart';
 import 'package:quantus_desktop_wallet/services/share_service.dart';
+import 'package:quantus_desktop_wallet/ui/components/account_label.dart';
 import 'package:quantus_desktop_wallet/ui/components/desktop_checkbox.dart';
 import 'package:quantus_desktop_wallet/ui/components/sheet_button.dart';
 import 'package:quantus_desktop_wallet/ui/components/toolbar_action.dart';
 import 'package:quantus_desktop_wallet/ui/send/send_sheet.dart';
+import 'package:quantus_desktop_wallet/ui/send/send_summary.dart';
 import 'package:quantus_desktop_wallet/ui/shell/account_toolbar.dart';
 import 'package:quantus_desktop_wallet/ui/shell/desktop_shell.dart';
 import 'package:quantus_desktop_wallet/ui/shell/shell_sheet_view.dart';
@@ -21,6 +23,17 @@ import 'package:wallet_core/services/user_approval.dart';
 import 'package:wallet_core/utils/account_actions.dart';
 
 import '../../fakes.dart';
+
+/// The account a send's summary names after "From": its label, on the same
+/// line as that word and ending on the edge the figures end on.
+Finder _expectFromAccount(WidgetTester tester, String name, {required String figure}) {
+  final label = find.descendant(of: find.byType(SendSummary), matching: find.byType(AccountLabel));
+  expect(label, findsOneWidget);
+  expect(find.descendant(of: label, matching: find.text(name)), findsOneWidget);
+  expect(tester.getCenter(label).dy, moreOrLessEquals(tester.getCenter(_inSheet(find.text('From'))).dy, epsilon: 1));
+  expect(tester.getRect(label).right, tester.getRect(_inSheet(find.text(figure))).right);
+  return label;
+}
 
 /// [tokens] in the chain's smallest unit; ten-thousandths of a token are exact.
 BigInt _qtc(num tokens) => BigInt.from((tokens * 10000).round()) * oneToken ~/ BigInt.from(10000);
@@ -588,6 +601,15 @@ void main() {
   });
 
   group('the review', () {
+    testOnMac('names the account the send leaves by its badge and its name', (tester) async {
+      await _openSend(tester);
+
+      await _toReview(tester);
+
+      final from = _expectFromAccount(tester, 'Main', figure: '0.0012 QTC');
+      expect(find.descendant(of: from, matching: find.byType(AccountBadge)), findsOneWidget);
+    });
+
     testOnMac('shows the way back, the amount, who is paid in full, and what it costs', (tester) async {
       await _openSend(tester);
 
@@ -837,6 +859,13 @@ void main() {
       await _tap(tester, SendSheet.sendKey);
       return chain;
     }
+
+    testOnMac('names the account the send left by its badge and its name', (tester) async {
+      await send(tester);
+
+      final from = _expectFromAccount(tester, 'Main', figure: '0.0012 QTC');
+      expect(find.descendant(of: from, matching: find.byType(AccountBadge)), findsOneWidget);
+    });
 
     testOnMac('says the send was submitted, who was paid and what left the account, with no way back', (tester) async {
       await send(tester);

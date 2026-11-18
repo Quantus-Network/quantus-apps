@@ -3,11 +3,13 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_desktop_wallet/services/external_links.dart';
 import 'package:quantus_desktop_wallet/services/share_service.dart';
+import 'package:quantus_desktop_wallet/ui/components/account_label.dart';
 import 'package:quantus_desktop_wallet/ui/components/desktop_checkbox.dart';
 import 'package:quantus_desktop_wallet/ui/components/sheet_button.dart';
 import 'package:quantus_desktop_wallet/ui/components/terminal_line.dart';
 import 'package:quantus_desktop_wallet/ui/components/toolbar_action.dart';
 import 'package:quantus_desktop_wallet/ui/send/send_sheet.dart';
+import 'package:quantus_desktop_wallet/ui/send/send_summary.dart';
 import 'package:quantus_desktop_wallet/ui/shell/account_toolbar.dart';
 import 'package:quantus_desktop_wallet/ui/shell/shell_sheet_view.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
@@ -268,6 +270,19 @@ void main() {
   });
 
   group('the review', () {
+    testOnMac('names the Encrypted account by its lock and its name', (tester) async {
+      await _openSend(tester);
+      await _fill(tester);
+
+      await _tap(tester, SendSheet.reviewKey);
+
+      final from = find.descendant(of: find.byType(SendSummary), matching: find.byType(AccountLabel));
+      expect(from, findsOneWidget);
+      expect(find.descendant(of: from, matching: find.text('Encrypted Account')), findsOneWidget);
+      expect(find.descendant(of: from, matching: find.byType(EncryptedLockBadge)), findsOneWidget);
+      expect(find.descendant(of: from, matching: find.byType(AccountBadge)), findsNothing);
+    });
+
     testOnMac('shows the amount, who is paid, the transaction fee and what leaves the account', (tester) async {
       await _openSend(tester);
       await _fill(tester);

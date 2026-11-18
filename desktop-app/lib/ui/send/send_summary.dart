@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:quantus_desktop_wallet/ui/components/account_label.dart';
 import 'package:quantus_desktop_wallet/ui/components/caps_text.dart';
 import 'package:quantus_desktop_wallet/ui/components/desktop_address_checkphrase.dart';
 import 'package:quantus_desktop_wallet/ui/send/send_styles.dart';
@@ -28,8 +29,8 @@ class SendSummary extends StatelessWidget {
   final AppLocalizations l10n;
   final String recipient;
 
-  /// The name of the account the send leaves.
-  final String from;
+  /// The account the send leaves.
+  final BaseAccount from;
   final List<SendReviewRow> rows;
   final String feeLabel;
   final String totalLabel;
@@ -54,7 +55,10 @@ class SendSummary extends StatelessWidget {
         const SizedBox(height: 20),
         const MenuDivider(),
         const SizedBox(height: 4),
-        _FigureRow(label: l10n.activityTxFrom, value: from),
+        _SummaryRow(
+          label: l10n.activityTxFrom,
+          value: AccountLabel(account: from),
+        ),
         for (final row in rows)
           switch (row.kind) {
             SendReviewRowKind.recipient ||
@@ -73,6 +77,31 @@ class SendSummary extends StatelessWidget {
   }
 }
 
+/// A label and what stands for it, at the two ends of a line.
+class _SummaryRow extends StatelessWidget {
+  const _SummaryRow({required this.label, required this.value, this.isStrong = false});
+
+  final String label;
+  final Widget value;
+  final bool isStrong;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 9),
+      child: Row(
+        children: [
+          Text(label, style: context.sendBody(color: isStrong ? context.colorsV3.textContent : null)),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Align(alignment: AlignmentDirectional.centerEnd, child: value),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 /// A label and its figure at the two ends of a line.
 class _FigureRow extends StatelessWidget {
   const _FigureRow({required this.label, required this.value, this.isStrong = false});
@@ -83,27 +112,19 @@ class _FigureRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.colorsV3;
     final text = context.themeTextV3;
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 9),
-      child: Row(
-        children: [
-          Text(label, style: context.sendBody(color: isStrong ? colors.textContent : null)),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Text(
-              value,
-              textAlign: TextAlign.end,
-              overflow: TextOverflow.ellipsis,
-              style: (isStrong ? text.bodyEmphasis : text.body).copyWith(
-                color: colors.textContent,
-                fontFeatures: const [FontFeature.tabularFigures()],
-              ),
-            ),
-          ),
-        ],
+    return _SummaryRow(
+      label: label,
+      isStrong: isStrong,
+      value: Text(
+        value,
+        textAlign: TextAlign.end,
+        overflow: TextOverflow.ellipsis,
+        style: (isStrong ? text.bodyEmphasis : text.body).copyWith(
+          color: context.colorsV3.textContent,
+          fontFeatures: const [FontFeature.tabularFigures()],
+        ),
       ),
     );
   }
