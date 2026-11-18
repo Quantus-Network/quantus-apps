@@ -2,8 +2,50 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:shared_preferences_platform_interface/shared_preferences_platform_interface.dart';
 
 import '../fixtures/active_swap_fixture.dart';
+
+/// Preferences that refuse to store chosen keys, the way the Linux and
+/// Windows backends answer a write the disk rejects: `false`, no error. As
+/// they do, it keeps a refused value in memory, and the next write that is
+/// stored puts everything in memory on the disk.
+class _RejectingStore extends InMemorySharedPreferencesStore {
+  _RejectingStore() : super.empty();
+
+  /// The keys whose writes are refused, as the app names them.
+  final rejected = <String>{};
+
+  /// What is in memory and not yet on the disk: a value with its type, or
+  /// null for a key that was removed.
+  final _unstored = <String, (String, Object)?>{};
+
+  bool _isRejected(String key) => rejected.contains(key.replaceFirst('flutter.', ''));
+
+  Future<bool> _store() async {
+    for (final MapEntry(:key, :value) in _unstored.entries) {
+      if (value == null) {
+        await super.remove(key);
+      } else {
+        await super.setValue(value.$1, key, value.$2);
+      }
+    }
+    _unstored.clear();
+    return true;
+  }
+
+  @override
+  Future<bool> setValue(String valueType, String key, Object value) async {
+    _unstored[key] = (valueType, value);
+    return _isRejected(key) ? false : _store();
+  }
+
+  @override
+  Future<bool> remove(String key) async {
+    _unstored[key] = null;
+    return _isRejected(key) ? false : _store();
+  }
+}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -340,6 +382,70 @@ void main() {
       expect(kept.startedAt.isAtSameMomentAs(now), isTrue);
       await settingsService.clearActiveSwap();
       expect(settingsService.getActiveSwap(), isNull);
+    });
+  });
+
+  group('setActiveAccount, when the account cannot be stored', () {
+    const main = Account(walletIndex: 0, index: 0, name: 'Main', accountId: 'id_main');
+    const savings = Account(walletIndex: 0, index: 1, name: 'Savings', accountId: 'id_savings');
+    const unknown = Account(walletIndex: 0, index: 2, name: 'Unknown', accountId: 'id_unknown');
+
+    late _RejectingStore store;
+    late SettingsService settings;
+
+    /// The settings as an app started now would read them from [store].
+    Future<SettingsService> reopened() async {
+      SharedPreferences.resetStatic();
+      final reopened = SettingsService();
+      await reopened.initialize();
+      return reopened;
+    }
+
+    setUp(() async {
+      SharedPreferences.setMockInitialValues({});
+      store = _RejectingStore();
+      SharedPreferencesStorePlatform.instance = store;
+      settings = SettingsService();
+      await settings.initialize();
+      await settings.saveAccounts([main, savings]);
+      await settings.setActiveAccount(const RegularAccount(main));
+    });
+
+    for (final key in ['active_display_account', 'active_account_id']) {
+      test('throws when the system rejects the write of $key, and Main stays the active account', () async {
+        store.rejected.add(key);
+
+        await expectLater(
+          settings.setActiveAccount(const RegularAccount(savings)),
+          throwsA(isA<Exception>().having((e) => '$e', 'message', contains('Could not save $key'))),
+        );
+
+        expect((await settings.getActiveAccount())!.account.accountId, main.accountId);
+        expect((await settings.getActiveRegularAccount())!.accountId, main.accountId);
+
+        store.rejected.clear();
+        // What a later write puts on the disk is still Main.
+        await settings.saveAccounts([main, savings]);
+        expect((await (await reopened()).getActiveAccount())!.account.accountId, main.accountId);
+      });
+    }
+
+    test('an account that does not exist leaves Main the active account', () async {
+      await expectLater(settings.setActiveAccount(const RegularAccount(unknown)), throwsException);
+
+      expect((await settings.getActiveAccount())!.account.accountId, main.accountId);
+      expect((await (await reopened()).getActiveAccount())!.account.accountId, main.accountId);
+    });
+
+    test('once the system stores again, the account is switched and kept', () async {
+      store.rejected.add('active_display_account');
+      await expectLater(settings.setActiveAccount(const RegularAccount(savings)), throwsException);
+      store.rejected.clear();
+
+      await settings.setActiveAccount(const RegularAccount(savings));
+
+      expect((await settings.getActiveAccount())!.account.accountId, savings.accountId);
+      expect((await (await reopened()).getActiveAccount())!.account.accountId, savings.accountId);
     });
   });
 }

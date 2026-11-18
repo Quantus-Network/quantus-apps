@@ -191,15 +191,39 @@ class SettingsService {
     await _prefs.remove(_airdropClaimKey(walletIndex));
   }
 
+  /// Stores [account] as the active account. Throws when it cannot be
+  /// stored, and the stored active account is then what it was before.
   Future<void> setActiveAccount(DisplayAccount account) async {
-    await _prefs.setString(_activeDisplayAccountKey, jsonEncode(account.toJson()));
-    if (account is RegularAccount) {
-      final exists = (await getAccounts()).any((a) => a.accountId == account.account.accountId);
-      if (exists) {
-        await _setActiveAccountId(account.account.accountId);
-      } else {
-        throw Exception('Account index does not exist');
+    final previousAccount = _prefs.getString(_activeDisplayAccountKey);
+    final previousId = _prefs.getString(_activeAccountIdKey);
+    try {
+      if (!await _prefs.setString(_activeDisplayAccountKey, jsonEncode(account.toJson()))) {
+        throw Exception('Could not save $_activeDisplayAccountKey');
       }
+      if (account is RegularAccount) {
+        final exists = (await getAccounts()).any((a) => a.accountId == account.account.accountId);
+        if (!exists) throw Exception('Account index does not exist');
+        if (!await _setActiveAccountId(account.account.accountId)) {
+          throw Exception('Could not save $_activeAccountIdKey');
+        }
+      }
+    } catch (_) {
+      await _putBack(_activeDisplayAccountKey, previousAccount);
+      await _putBack(_activeAccountIdKey, previousId);
+      rethrow;
+    }
+  }
+
+  /// Makes [key] hold [value] again, or nothing when it held nothing.
+  /// SharedPreferences answers from memory, and its memory keeps a value
+  /// the system refused to store. Whether this write is stored is not
+  /// checked: memory holds [value] after it either way, and what the system
+  /// refused before was never stored.
+  Future<void> _putBack(String key, String? value) async {
+    if (value == null) {
+      await _prefs.remove(key);
+    } else {
+      await _prefs.setString(key, value);
     }
   }
 
@@ -242,11 +266,10 @@ class SettingsService {
     return _prefs.getInt(_activeAccountIndexKey) ?? 0;
   }
 
-  Future<void> _setActiveAccountId(String accountId) async {
-    final oldId = _prefs.getString(_activeAccountIdKey);
-    if (oldId != accountId) {
-      await _prefs.setString(_activeAccountIdKey, accountId);
-    }
+  /// Whether [accountId] is stored as the active account's after this.
+  Future<bool> _setActiveAccountId(String accountId) async {
+    if (_prefs.getString(_activeAccountIdKey) == accountId) return true;
+    return _prefs.setString(_activeAccountIdKey, accountId);
   }
 
   /// The wallet's first transparent account.
