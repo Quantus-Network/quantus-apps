@@ -189,7 +189,7 @@ class _DesktopShellState extends ConsumerState<DesktopShell> {
         menus: buildAppMenus(
           l10n: ref.watch(l10nProvider),
           useNativeMenuBar: useNativeMenuBar,
-          accountActions: ref.watch(activeAccountActionsProvider),
+          accountActions: ref.watch(menuAccountActionsProvider),
           accounts: hasWallet ? ref.watch(sidebarAccountsProvider) : const [],
           isSidebarVisible: isSidebarVisible,
           canOpenSheet: canNavigate,

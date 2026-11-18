@@ -40,4 +40,16 @@ void main() {
     await expectLater(failing, throwsStateError);
     expect(await next, 'ran');
   });
+
+  test('the error of a step nobody waits for is not lost: it reaches the zone as unhandled', () async {
+    final errors = <Object>[];
+
+    await runZonedGuarded(() async {
+      final queue = SerialQueue();
+      unawaited(queue.run<void>(() async => throw StateError('broken')));
+      await pumpEventQueue();
+    }, (error, _) => errors.add(error));
+
+    expect(errors, [isStateError]);
+  });
 }

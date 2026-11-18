@@ -27,25 +27,38 @@ class SidebarVisibilityNotifier extends Notifier<bool> {
 /// openings run in the order they were asked for, each once the ones before
 /// it have finished. An account switch waits on the settings it is saved to,
 /// so a shortcut pressed meanwhile acts on the account chosen before it.
-final shellNavigationProvider = Provider<ShellNavigation>((ref) => ShellNavigation());
+final shellNavigationProvider = NotifierProvider<ShellNavigation, bool>(ShellNavigation.new);
 
 /// Runs the window's navigation one step at a time ([SerialQueue]), and can
 /// drop the steps asked for so far: what was pressed while an account switch
 /// waited was meant for that account, so when the switch fails it is not
-/// done on another.
-class ShellNavigation {
+/// done on another. Its state says whether any step is still to finish.
+class ShellNavigation extends Notifier<bool> {
   final _queue = SerialQueue();
 
   /// Counts the cancellations; a step asked for before the last one is
   /// dropped when its turn comes.
   int _generation = 0;
 
+  /// The steps asked for that have not finished.
+  int _unfinished = 0;
+
+  @override
+  bool build() => false;
+
   /// Runs [step] once the steps asked for before it have finished, unless
   /// [cancelPending] is called before it starts.
   Future<void> run(Future<void> Function() step) {
     final generation = _generation;
+    _unfinished++;
+    state = true;
     return _queue.run(() async {
-      if (generation == _generation) await step();
+      try {
+        if (generation == _generation) await step();
+      } finally {
+        _unfinished--;
+        if (_unfinished == 0 && ref.mounted) state = false;
+      }
     });
   }
 
@@ -80,19 +93,20 @@ class SidebarSelectionNotifier extends Notifier<SidebarSelection> {
 
   /// Selects [selection], after the navigation asked for before
   /// ([shellNavigationProvider]).
-  Future<void> select(SidebarSelection selection) => ref.read(shellNavigationProvider).run(() async {
+  Future<void> select(SidebarSelection selection) => ref.read(shellNavigationProvider.notifier).run(() async {
     if (!ref.mounted || _isUnderSheet) return;
     state = selection;
   });
 
   /// Makes [account] the active account and selects it, after the
   /// navigation asked for before ([shellNavigationProvider]).
-  Future<void> showAccount(DisplayAccount account) => ref.read(shellNavigationProvider).run(() => _show(account));
+  Future<void> showAccount(DisplayAccount account) =>
+      ref.read(shellNavigationProvider.notifier).run(() => _show(account));
 
   /// Selects the row [rows] down from the one selected when the navigation
   /// asked for before has finished ([shellNavigationProvider]), going round
   /// at the ends. The rows are the accounts, then Mining Rewards.
-  Future<void> move(int rows) => ref.read(shellNavigationProvider).run(() => _move(rows));
+  Future<void> move(int rows) => ref.read(shellNavigationProvider.notifier).run(() => _move(rows));
 
   /// Whether a sheet opened since this switch was asked for: a sheet is for
   /// the account it opened on, so nothing moves under it.
@@ -106,7 +120,7 @@ class SidebarSelectionNotifier extends Notifier<SidebarSelection> {
       quantusPrint('Switching to ${account.account.name} failed: $e');
       if (!ref.mounted) return;
       // What was pressed while the switch waited was meant for [account].
-      ref.read(shellNavigationProvider).cancelPending();
+      ref.read(shellNavigationProvider.notifier).cancelPending();
       ref.read(accountSwitchFailureProvider.notifier).report(account, e);
       return;
     }
@@ -151,12 +165,32 @@ class ShellSheetNotifier extends Notifier<ShellSheet?> {
   /// Presents [sheet] on the account chosen by the navigation asked for
   /// before ([shellNavigationProvider]). A sheet is modal to the window, so a
   /// request made while one is open does nothing.
-  Future<void> open(ShellSheet sheet) => ref.read(shellNavigationProvider).run(() async => _open(sheet));
+  Future<void> open(ShellSheet sheet) => ref.read(shellNavigationProvider.notifier).run(() async => _open(sheet));
 
   void _open(ShellSheet sheet) {
     if (!ref.mounted || state != null) return;
+    // Asked for while an account switch waited, it is checked against the
+    // account the switch ended on.
+    if (!_isOffered(sheet)) {
+      quantusPrint('${sheet.name} is not offered on the active account; nothing is opened.');
+      return;
+    }
     if (sheet == ShellSheet.send) _beginSend();
     state = sheet;
+  }
+
+  /// Whether the active account offers [sheet]; a sheet that does not act
+  /// on an account always is.
+  bool _isOffered(ShellSheet sheet) {
+    final kind = switch (sheet) {
+      ShellSheet.receive => AccountActionKind.receive,
+      ShellSheet.send => AccountActionKind.send,
+      ShellSheet.propose => AccountActionKind.propose,
+      ShellSheet.swap => AccountActionKind.swap,
+      ShellSheet.addAccount || ShellSheet.settings => null,
+    };
+    if (kind == null) return true;
+    return ref.read(activeAccountActionsProvider).any((action) => action.kind == kind && action.isEnabled);
   }
 
   /// Send's flow starts with the press that opens it, a first fee quote with
@@ -187,5 +221,22 @@ final activeAccountActionsProvider = Provider<List<AccountAction>>((ref) {
         const AccountAction(AccountActionKind.send, isEnabled: false)
       else
         action,
+  ];
+});
+
+/// The account actions as the menus and their shortcuts offer them. While
+/// navigation asked for earlier is still to finish, the account it ends on
+/// is not known yet, so Receive and Send are offered whatever the active
+/// account allows, and checked against the account they open on
+/// ([ShellSheetNotifier.open]). The toolbar shows what the active account
+/// offers ([activeAccountActionsProvider]).
+final menuAccountActionsProvider = Provider<List<AccountAction>>((ref) {
+  final actions = ref.watch(activeAccountActionsProvider);
+  if (!ref.watch(shellNavigationProvider)) return actions;
+  return [
+    const AccountAction(AccountActionKind.receive),
+    const AccountAction(AccountActionKind.send),
+    for (final action in actions)
+      if (action.kind != AccountActionKind.receive && action.kind != AccountActionKind.send) action,
   ];
 });

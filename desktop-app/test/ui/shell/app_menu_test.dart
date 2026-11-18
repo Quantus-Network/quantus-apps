@@ -266,6 +266,32 @@ void main() {
       expect(_nativeItem(tester, 'Account', 'Send').onSelected, isNull);
     });
 
+    testOnMac('while a switch is still being saved, Send is offered, to be checked against the account switched to', (
+      tester,
+    ) async {
+      final settings = SlowSettingsService(activeAccount: const RegularAccount(vaultAccount));
+      await pumpShell(
+        tester,
+        overrides: shellOverrides(
+          accounts: const [mainAccount, vaultAccount],
+          settings: settings,
+          balances: oneTokenEach,
+        ),
+      );
+      expect(_nativeItem(tester, 'Account', 'Send').onSelected, isNull);
+
+      _accountMenuAccounts(tester).singleWhere((item) => item.label == 'Main').onSelected!();
+      await tester.pumpAndSettle();
+      final send = _nativeItem(tester, 'Account', 'Send');
+      expect(send.onSelected, isNotNull);
+      send.onSelected!();
+      await tester.pumpAndSettle();
+      await settings.finishWrites(tester);
+
+      expect(find.byType(SendSheet), findsOneWidget);
+      expect(_inSheet(find.text('Main')), findsOneWidget);
+    });
+
     testOnMac('⌘2 then ⌘R while the switch is still being saved opens Receive on the second account', (tester) async {
       final settings = SlowSettingsService(activeAccount: const RegularAccount(mainAccount));
       await pumpShell(tester, overrides: _withSlowSettings(settings));
@@ -682,6 +708,49 @@ void main() {
           expect(find.text('Could not switch account'), findsNothing);
         });
       }
+
+      List<Override> withVault(SlowSettingsService settings) =>
+          shellOverrides(accounts: const [mainAccount, vaultAccount], settings: settings, balances: oneTokenEach);
+
+      testOnWindowsAndLinux(
+        'from an account that cannot send, Ctrl+1 then Ctrl+S opens Send on the account switched to',
+        (tester) async {
+          final settings = SlowSettingsService(activeAccount: const RegularAccount(vaultAccount));
+          await pumpShell(tester, overrides: withVault(settings));
+
+          await press(tester, LogicalKeyboardKey.digit1);
+          await press(tester, LogicalKeyboardKey.keyS);
+          await settings.finishWrites(tester);
+
+          expect(find.byType(SendSheet), findsOneWidget);
+          expect(_inSheet(find.text('Main')), findsOneWidget);
+        },
+      );
+
+      testOnWindowsAndLinux('Ctrl+2 to an account that cannot send, then Ctrl+S, opens nothing', (tester) async {
+        final settings = SlowSettingsService(activeAccount: const RegularAccount(mainAccount));
+        await pumpShell(tester, overrides: withVault(settings));
+
+        await press(tester, LogicalKeyboardKey.digit2);
+        await press(tester, LogicalKeyboardKey.keyS);
+        await settings.finishWrites(tester);
+
+        expect(_selected(tester), 'Vault');
+        expect(find.byType(ShellSheetView), findsNothing);
+      });
+
+      testOnWindowsAndLinux('the toolbar keeps showing what the active account offers while a switch waits', (
+        tester,
+      ) async {
+        final settings = SlowSettingsService(activeAccount: const RegularAccount(vaultAccount));
+        await pumpShell(tester, overrides: withVault(settings));
+
+        await press(tester, LogicalKeyboardKey.digit1);
+
+        expect(tester.widget<ToolbarAction>(_toolbarButton('Send')).onPressed, isNull);
+        await settings.finishWrites(tester);
+        expect(tester.widget<ToolbarAction>(_toolbarButton('Send')).onPressed, isNotNull);
+      });
 
       testOnWindowsAndLinux('after a failed switch, the shortcuts pressed later work again', (tester) async {
         final settings = SlowSettingsService(activeAccount: const RegularAccount(mainAccount));
