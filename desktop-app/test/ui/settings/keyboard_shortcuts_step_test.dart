@@ -77,6 +77,10 @@ Future<void> _record(WidgetTester tester, AppCommand command) async {
 }
 
 void main() {
+  test('a key Flutter has no name for is called by its letter on its keycap', () {
+    expect(KeyCaps.keyName(const LogicalKeyboardKey(0x00f6)), 'Ö');
+  });
+
   testOnMac('the Keyboard Shortcuts row opens the step, and Back returns to the list', (tester) async {
     await _openShortcuts(tester);
 

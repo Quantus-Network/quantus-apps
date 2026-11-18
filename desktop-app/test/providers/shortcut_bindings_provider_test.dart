@@ -91,6 +91,19 @@ void main() {
     expect(bindings.accountModifiers, const KeyModifiers(meta: true, alt: true));
   });
 
+  test('a shortcut on a key Flutter has no name for is there again at the next start, with the others', () async {
+    const cmdOUmlaut = KeyCombo(LogicalKeyboardKey(0x00f6), KeyModifiers(meta: true));
+    final notifier = start().read(shortcutBindingsProvider.notifier);
+    await notifier.setShortcut(AppCommand.receive, _cmdJ);
+    await notifier.setShortcut(AppCommand.send, cmdOUmlaut);
+
+    final state = start().read(shortcutBindingsProvider);
+
+    expect(state.savedWereUnreadable, isFalse);
+    expect(state.bindings[AppCommand.send], cmdOUmlaut);
+    expect(state.bindings[AppCommand.receive], _cmdJ);
+  });
+
   test('a change that is refused throws and leaves the shortcuts and the saved ones as they were', () async {
     final container = start();
 

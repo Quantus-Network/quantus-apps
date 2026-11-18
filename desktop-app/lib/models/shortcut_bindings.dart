@@ -63,8 +63,13 @@ class KeyCombo {
     if (json is! Map) throw FormatException('A shortcut is not a map: $json');
     final keyId = json['key'];
     if (keyId is! int) throw FormatException('A shortcut\'s key is not a number: $keyId');
-    final key = LogicalKeyboardKey.findKeyByKeyId(keyId);
-    if (key == null) throw FormatException('No key has the id $keyId.');
+    // An id is a plane and a value in it, forty bits in all.
+    if (keyId < 0 || keyId > (LogicalKeyboardKey.planeMask | LogicalKeyboardKey.valueMask)) {
+      throw FormatException('No key has the id $keyId.');
+    }
+    // As the framework reads a key event: a key it has no constant for, a
+    // keyboard's own letter say, is a key of that id all the same.
+    final key = LogicalKeyboardKey.findKeyByKeyId(keyId) ?? LogicalKeyboardKey(keyId);
     return KeyCombo(key, KeyModifiers.fromJson(json));
   }
 

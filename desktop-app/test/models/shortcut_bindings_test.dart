@@ -354,6 +354,35 @@ void main() {
       }
     });
 
+    test('a key Flutter has no name for, a keyboard\'s own letter, reads back the same', () {
+      // As the framework makes one of a key it does not know: Ö.
+      const oUmlaut = LogicalKeyboardKey(0x00f6);
+      expect(LogicalKeyboardKey.findKeyByKeyId(oUmlaut.keyId), isNull);
+
+      for (final (bindings, command) in [(mac, _cmd), (pc, _ctrl)]) {
+        final changed = bindings.withShortcut(AppCommand.send, _combo(oUmlaut, command));
+
+        final read = ShortcutBindings.fromJson(_stored(changed), isMac: bindings.isMac);
+
+        expect(read, changed);
+        expect(read[AppCommand.send], _combo(oUmlaut, command));
+        // The others are untouched by it.
+        expect(read[AppCommand.receive], bindings[AppCommand.receive]);
+      }
+    });
+
+    test('a key id no keyboard gives still fails to read', () {
+      Map<String, Object?> savedWithKey(int id) => {
+        'commands': {
+          'send': {'key': id, 'meta': true, 'control': false, 'alt': false, 'shift': false},
+        },
+      };
+
+      for (final id in [-1, 0x10000000000, 0x7fffffffffffffff]) {
+        expect(() => ShortcutBindings.fromJson(savedWithKey(id), isMac: true), throwsFormatException, reason: '$id');
+      }
+    });
+
     test('with a default written out read back as the defaults', () {
       final json = {
         'commands': {'send': _combo(LogicalKeyboardKey.keyS, _cmd).toJson()},
