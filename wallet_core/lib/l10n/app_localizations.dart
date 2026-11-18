@@ -4538,6 +4538,18 @@ abstract class AppLocalizations {
   /// **'Show Sidebar'**
   String get desktopMenuShowSidebar;
 
+  /// Desktop View menu item that selects the row under the selected one in the sidebar, the first after the last
+  ///
+  /// In en, this message translates to:
+  /// **'Next Sidebar Item'**
+  String get desktopMenuNextSidebarItem;
+
+  /// Desktop View menu item that selects the row above the selected one in the sidebar, the last before the first
+  ///
+  /// In en, this message translates to:
+  /// **'Previous Sidebar Item'**
+  String get desktopMenuPreviousSidebarItem;
+
   /// Desktop menu bar: Window menu title
   ///
   /// In en, this message translates to:
@@ -4885,6 +4897,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'View in Explorer'**
   String get desktopViewInExplorer;
+
+  /// Desktop Send: on the receipt of a private send that took several transactions, the name of one of them, before the action that opens it in the explorer
+  ///
+  /// In en, this message translates to:
+  /// **'Transaction {index} of {count}'**
+  String desktopSendTransactionOf(int index, int count);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

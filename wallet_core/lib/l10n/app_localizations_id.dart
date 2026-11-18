@@ -2479,6 +2479,12 @@ class AppLocalizationsId extends AppLocalizations {
   String get desktopMenuShowSidebar => 'Tampilkan Bar Samping';
 
   @override
+  String get desktopMenuNextSidebarItem => 'Item Bar Samping Berikutnya';
+
+  @override
+  String get desktopMenuPreviousSidebarItem => 'Item Bar Samping Sebelumnya';
+
+  @override
   String get desktopMenuWindow => 'Jendela';
 
   @override
@@ -2673,4 +2679,9 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get desktopViewInExplorer => 'Lihat di Explorer';
+
+  @override
+  String desktopSendTransactionOf(int index, int count) {
+    return 'Transaksi $index dari $count';
+  }
 }

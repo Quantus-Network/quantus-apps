@@ -660,6 +660,8 @@
   "desktopMenuView": "Tampilan",
   "desktopMenuHideSidebar": "Sembunyikan Bar Samping",
   "desktopMenuShowSidebar": "Tampilkan Bar Samping",
+  "desktopMenuNextSidebarItem": "Item Bar Samping Berikutnya",
+  "desktopMenuPreviousSidebarItem": "Item Bar Samping Sebelumnya",
   "desktopMenuWindow": "Jendela",
   "desktopBootProtocol": "> PROTOKOL QUANTUS v1.0.0-gm",
   "desktopBootNistModule": "> MODUL NIST FIPS 204 DIMUAT {status}",
@@ -717,5 +719,6 @@
   "desktopSendReview": "Tinjau",
   "desktopSendYouPaid": "Anda membayar",
   "desktopSendSubmitted": "Diajukan",
-  "desktopViewInExplorer": "Lihat di Explorer"
+  "desktopViewInExplorer": "Lihat di Explorer",
+  "desktopSendTransactionOf": "Transaksi {index} dari {count}"
 }
