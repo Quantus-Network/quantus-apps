@@ -1,12 +1,14 @@
 import 'dart:async';
 
 import 'package:flutter/cupertino.dart' show CupertinoIcons;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart';
 import 'package:quantus_desktop_wallet/providers/approval_providers.dart';
 import 'package:quantus_desktop_wallet/services/external_links.dart';
+import 'package:quantus_desktop_wallet/services/share_service.dart';
 import 'package:quantus_desktop_wallet/ui/components/caps_text.dart';
 import 'package:quantus_desktop_wallet/ui/components/desktop_address_checkphrase.dart';
 import 'package:quantus_desktop_wallet/ui/components/desktop_checkbox.dart';
@@ -31,6 +33,7 @@ import 'package:wallet_core/send/send_screen_logic.dart';
 import 'package:wallet_core/send/send_strategy.dart';
 import 'package:wallet_core/send/wormhole_steps.dart';
 import 'package:wallet_core/services/user_approval.dart';
+import 'package:wallet_core/utils/explorer_url.dart';
 
 /// The steps of the Send sheet. Only a private send has the proving.
 enum _Step { form, review, proving, receipt }
@@ -56,6 +59,7 @@ class SendSheet extends ConsumerStatefulWidget {
   static const backKey = Key('send-back');
   static const sendKey = Key('send-send');
   static const explorerKey = Key('send-explorer');
+  static const shareKey = Key('send-share');
   static const doneKey = Key('send-done');
   static const privateNoticeKey = Key('send-private-notice');
   static const stopKey = Key('send-stop');
@@ -64,6 +68,10 @@ class SendSheet extends ConsumerStatefulWidget {
   /// The line of a private send's step, by the number the proving reports
   /// the step under.
   static Key stepKey(int step) => ValueKey('send-step-$step');
+
+  /// The row, on the receipt, of the [index]th transaction of a private send
+  /// that took several.
+  static Key transactionKey(int index) => ValueKey('send-transaction-$index');
 
   /// The list of the addresses paid before.
   static const recentsKey = Key('send-recents');
@@ -970,39 +978,64 @@ class _SendSheetState extends ConsumerState<SendSheet> {
     ];
   }
 
-  /// One step of the proving as a line of the terminal: done, how far it is
-  /// while it runs, where the send stopped or failed, or still to come.
+  /// One step of the proving as a line of the terminal: done, at work with how
+  /// far it is, where the send stopped or failed, or still to come.
+  ///
+  /// The first step is at work from the press of Send, before the proving has
+  /// said anything: the wallet is already checking its balance for it.
   Widget _stepLine(AppLocalizations l10n, EncryptedSendState send, WormholeStepStates steps, int step, String name) {
     final colors = context.colorsV3;
     final progress = send.stepProgress[step];
     final total = progress?.total;
-    final (String? status, Color? color) = switch (steps.of(step)) {
-      StepRowState.done => (l10n.desktopBootStatusOk, colors.semanticSage),
-      StepRowState.active => (
-        progress != null && total != null ? '${progress.completed}/$total' : '...',
-        colors.accentFlare,
-      ),
-      StepRowState.ended => (l10n.desktopSendStatusFailed, colors.semanticEmber),
-      StepRowState.pending =>
-        steps.stoppedAt(step) ? (l10n.desktopSendStatusStopped, colors.semanticSand) : (null, null),
-    };
+    final hasNotReported = send.currentStep == 0 && send.stepProgress.isEmpty;
+    final isBusy =
+        steps.of(step) == StepRowState.active ||
+        (_isUnderWay(send) && hasNotReported && step == encryptedSendSteps(l10n).first.$1);
+    final (String? status, Color? color) = isBusy
+        ? (progress != null && total != null ? '${progress.completed}/$total' : null, colors.accentFlare)
+        : switch (steps.of(step)) {
+            StepRowState.done => (l10n.desktopBootStatusOk, colors.semanticSage),
+            StepRowState.ended => (l10n.desktopSendStatusFailed, colors.semanticEmber),
+            StepRowState.active || StepRowState.pending =>
+              steps.stoppedAt(step) ? (l10n.desktopSendStatusStopped, colors.semanticSand) : (null, null),
+          };
 
     return TerminalLine(
       key: SendSheet.stepKey(step),
       name: name,
       status: status,
       statusColor: color,
-      isDim: status == null,
+      isBusy: isBusy,
+      isDim: status == null && !isBusy,
     );
   }
 
   // ------------------------------------------------------------ the receipt
 
+  /// The explorer's page of each transaction the send was. A transparent send
+  /// is one; a private send is one for each batch of its inputs.
+  List<String> _explorerPages(SendTerminalContent submitted) {
+    // A send that was proved: the proving knows what it handed to the chain.
+    if (_provingAmount != null) {
+      return [for (final hash in ref.watch(encryptedSendControllerProvider).txHashes) wormholeExplorerUrl(hash)];
+    }
+    return [?submitted.explorerUrl];
+  }
+
+  ToolbarAction _viewInExplorer(AppLocalizations l10n, String page, {Key? key}) => ToolbarAction.symbol(
+    key: key,
+    symbol: CupertinoIcons.arrow_up_right_square,
+    label: l10n.desktopViewInExplorer,
+    onPressed: () => ref.read(openExternalUrlProvider)(Uri.parse(page)),
+  );
+
   List<Widget> _receipt(AppLocalizations l10n) {
     final colors = context.colorsV3;
     final submitted = _submitted;
     if (submitted == null) throw StateError('The receipt step has no submitted send.');
-    final explorerUrl = submitted.explorerUrl;
+    final pages = _explorerPages(submitted);
+    // Only macOS has a share picker to hand the pages to.
+    final canShare = pages.isNotEmpty && defaultTargetPlatform == TargetPlatform.macOS;
 
     return [
       const SizedBox(height: 26),
@@ -1034,21 +1067,47 @@ class _SendSheetState extends ConsumerState<SendSheet> {
         feeLabel: sendFeeLabel(_strategy, l10n),
         totalLabel: l10n.desktopSendYouPaid,
       ),
+      // A send that took several transactions names each, with its own page.
+      // However many, they leave the buttons under them in the sheet.
+      if (pages.length > 1) ...[
+        const MenuDivider(),
+        Flexible(
+          child: ListView(
+            shrinkWrap: true,
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            children: [
+              for (final (index, page) in pages.indexed)
+                Row(
+                  key: SendSheet.transactionKey(index),
+                  children: [
+                    Expanded(
+                      child: Text(l10n.desktopSendTransactionOf(index + 1, pages.length), style: context.sendBody()),
+                    ),
+                    ToolbarActionRow(edge: ToolbarActionEdge.trailing, children: [_viewInExplorer(l10n, page)]),
+                  ],
+                ),
+            ],
+          ),
+        ),
+      ],
       const SizedBox(height: 22),
       Row(
         children: [
-          if (explorerUrl != null)
-            ToolbarActionRow(
-              edge: ToolbarActionEdge.leading,
-              children: [
-                ToolbarAction.symbol(
-                  key: SendSheet.explorerKey,
-                  symbol: CupertinoIcons.arrow_up_right_square,
-                  label: l10n.desktopViewInExplorer,
-                  onPressed: () => ref.read(openExternalUrlProvider)(Uri.parse(explorerUrl)),
+          ToolbarActionRow(
+            edge: ToolbarActionEdge.leading,
+            children: [
+              if (pages.length == 1) _viewInExplorer(l10n, pages.single, key: SendSheet.explorerKey),
+              if (canShare)
+                Builder(
+                  builder: (button) => ToolbarAction.symbol(
+                    key: SendSheet.shareKey,
+                    symbol: CupertinoIcons.square_arrow_up,
+                    label: l10n.componentShare,
+                    onPressed: () => ref.read(shareTextProvider)(pages.join('\n'), origin: button.sharePositionRect()),
+                  ),
                 ),
-              ],
-            ),
+            ],
+          ),
           const Spacer(),
           SheetButton(key: SendSheet.doneKey, label: submitted.doneLabel, onTap: () => Navigator.of(context).pop()),
         ],

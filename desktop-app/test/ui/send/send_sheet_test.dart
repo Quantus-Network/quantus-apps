@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_desktop_wallet/providers/shell_providers.dart';
 import 'package:quantus_desktop_wallet/services/external_links.dart';
+import 'package:quantus_desktop_wallet/services/share_service.dart';
 import 'package:quantus_desktop_wallet/ui/components/desktop_checkbox.dart';
 import 'package:quantus_desktop_wallet/ui/components/sheet_button.dart';
 import 'package:quantus_desktop_wallet/ui/components/toolbar_action.dart';
@@ -54,6 +55,9 @@ void _expectAddressOverCheckphrase(WidgetTester tester, String address, {Finder?
 /// The URLs handed to the browser.
 final _opened = <Uri>[];
 
+/// What was handed to the system's share picker, and from where.
+final _shared = <(String, Rect?)>[];
+
 /// Opens the wallet on [active], holding [balance] tokens, and presses Send
 /// in the toolbar.
 Future<FakeSendChain> _openSend(
@@ -65,6 +69,7 @@ Future<FakeSendChain> _openSend(
   Size? window,
 }) async {
   _opened.clear();
+  _shared.clear();
   chain ??= FakeSendChain();
   await pumpShell(
     tester,
@@ -79,6 +84,7 @@ Future<FakeSendChain> _openSend(
         chain: chain,
       ),
       openExternalUrlProvider.overrideWithValue((url) async => _opened.add(url)),
+      shareTextProvider.overrideWithValue((text, {origin}) async => _shared.add((text, origin))),
     ],
   );
   if (window != null) {
@@ -862,6 +868,29 @@ void main() {
       await _tap(tester, SendSheet.explorerKey);
 
       expect(_opened, [Uri.parse('${AppConstants.explorerEndpoint}/transactions/0xhash')]);
+    });
+
+    testOnMac('Share stands after View in Explorer and hands the transaction\'s link to the share picker', (
+      tester,
+    ) async {
+      await send(tester);
+
+      final share = tester.getRect(find.byKey(SendSheet.shareKey));
+      final explorer = tester.getRect(find.byKey(SendSheet.explorerKey));
+      expect(share.left, greaterThan(explorer.right));
+      expect(share.center.dy, explorer.center.dy);
+
+      await _tap(tester, SendSheet.shareKey);
+
+      expect(_shared, [('${AppConstants.explorerEndpoint}/transactions/0xhash', share)]);
+      expect(_opened, isEmpty);
+    });
+
+    testOnWindowsAndLinux('there is no Share where the system has no share picker', (tester) async {
+      await send(tester);
+
+      expect(find.byKey(SendSheet.explorerKey), findsOneWidget);
+      expect(find.byKey(SendSheet.shareKey), findsNothing);
     });
 
     testOnMac('Done closes the sheet, and Send opens empty again with a fresh fee', (tester) async {

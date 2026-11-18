@@ -21,6 +21,7 @@ import 'package:quantus_desktop_wallet/services/sensitive_clipboard.dart';
 import 'package:quantus_desktop_wallet/services/user_approval.dart';
 import 'package:quantus_desktop_wallet/ui/approval/login_password_dialog.dart';
 import 'package:quantus_desktop_wallet/ui/components/toolbar_action.dart';
+import 'package:quantus_desktop_wallet/ui/components/terminal_line.dart';
 import 'package:quantus_desktop_wallet/ui/send/send_sheet.dart';
 import 'package:quantus_desktop_wallet/ui/settings/settings_sheet.dart';
 import 'package:quantus_desktop_wallet/ui/shell/desktop_shell.dart';
@@ -239,11 +240,17 @@ void main() {
     await _tapAndSettle(tester, find.byKey(SendSheet.reviewKey));
   });
 
-  for (final (name, phase, error) in [
-    ('send_private_progress', EncryptedSendPhase.running, null),
-    ('send_private_cancelled', EncryptedSendPhase.cancelled, null),
-    ('send_private_failed', EncryptedSendPhase.failed, 'The network refused the transaction: Transaction is outdated'),
-    ('send_private_receipt', EncryptedSendPhase.succeeded, null),
+  for (final (name, phase, error, hashes) in [
+    ('send_private_progress', EncryptedSendPhase.running, null, const <String>[]),
+    ('send_private_cancelled', EncryptedSendPhase.cancelled, null, const <String>[]),
+    (
+      'send_private_failed',
+      EncryptedSendPhase.failed,
+      'The network refused the transaction: Transaction is outdated',
+      const <String>[],
+    ),
+    ('send_private_receipt', EncryptedSendPhase.succeeded, null, const ['0xproof']),
+    ('send_private_receipt_several', EncryptedSendPhase.succeeded, null, const ['0xfirst', '0xsecond', '0xthird']),
   ]) {
     _scene(name, (tester) async {
       final proving = await _openPrivateSend(tester);
@@ -259,9 +266,40 @@ void main() {
             5: ClaimProgressItem(step: 5, title: '', completed: 3, total: 8),
           },
           errorMessage: error,
+          txHashes: hashes,
         ),
       );
       await tester.pumpAndSettle();
+    });
+  }
+
+  // The progress with its spinner turning, which the scenes above hold still:
+  // just after Send, before the proving has said anything, then part way.
+  for (final (name, isPartWay) in [
+    ('send_private_progress_starting', false),
+    ('send_private_progress_turning', true),
+  ]) {
+    _scene(name, (tester) async {
+      final proving = await _openPrivateSend(tester);
+      await _fillSend(tester);
+      await _tapAndSettle(tester, find.byKey(SendSheet.reviewKey));
+      await _tapAndSettle(tester, find.byKey(SendSheet.sendKey));
+      if (isPartWay) {
+        proving.report(
+          EncryptedSendState(
+            phase: EncryptedSendPhase.running,
+            currentStep: 5,
+            stepProgress: const {
+              4: ClaimProgressItem(step: 4, title: '', completed: 8, total: 8),
+              5: ClaimProgressItem(step: 5, title: '', completed: 3, total: 8),
+            },
+          ),
+        );
+      }
+      tester.platformDispatcher.accessibilityFeaturesTestValue = const FakeAccessibilityFeatures();
+      await tester.pump();
+      // Into the spinner's second face.
+      await tester.pump(TerminalLine.busyTurn * 1.5);
     });
   }
 
