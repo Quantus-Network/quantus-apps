@@ -40,6 +40,11 @@ flutter:
   uses-material-design: true
   assets:
     - assets/quantus_orange_logo.png
+    # The words of the checkphrases, read from this app's bundle by
+    # quantus_sdk's HumanReadableChecksumService. Without it every address
+    # shows "Checkphrase unavailable"; test/checkphrase_word_list_test.dart
+    # checks it is here.
+    - assets/text/human_checkphrase_final_wordlist.txt
 
   # The families the theme (AppTextThemeV3) names, in the weights it uses. A
   # family missing here is drawn in the system font; test/fonts_test.dart
