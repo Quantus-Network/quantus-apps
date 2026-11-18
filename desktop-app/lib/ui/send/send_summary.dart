@@ -39,7 +39,9 @@ class SendSummary extends StatelessWidget {
   static String _value(SendReviewRow row) => switch (row) {
     SendReviewText(:final value) => value,
     // Rows of a multisig proposal, which this app does not make yet.
-    SendReviewAddress() || SendReviewExpiry() => throw UnsupportedError('The desktop app does not draw $row yet.'),
+    SendReviewAddress() ||
+    SendReviewExpiry() ||
+    SendReviewThreshold() => throw UnsupportedError('The desktop app does not draw $row yet.'),
   };
 
   @override
@@ -65,6 +67,9 @@ class SendSummary extends StatelessWidget {
             SendReviewRowKind.amount ||
             SendReviewRowKind.total => const SizedBox.shrink(),
             SendReviewRowKind.fee => _FigureRow(label: feeLabel, value: _value(row)),
+            SendReviewRowKind.signer ||
+            SendReviewRowKind.deposit ||
+            SendReviewRowKind.charge ||
             SendReviewRowKind.detail => _FigureRow(label: row.label, value: _value(row)),
           },
         if (totals.isNotEmpty) ...[

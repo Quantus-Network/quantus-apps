@@ -76,6 +76,17 @@ void main() {
       expect(submission.proposals, [(recipient.accountId, BigInt.from(5) * oneToken, 1000)]);
     });
 
+    testWidgets('a submitted proposal has the explorer\'s page of the transaction that created it', (tester) async {
+      final ref = await pumpRef(tester, overrides: overrides());
+
+      final outcome = await submit(ref);
+
+      expect(
+        (outcome as SendSubmitted).terminal.explorerUrl,
+        '${AppConstants.explorerEndpoint}/multisig-proposal-created/0xproposal',
+      );
+    });
+
     for (final refusal in [ApprovalResult.declined, ApprovalResult.notSetUp]) {
       testWidgets('an approval that is ${refusal.name} proposes nothing and says authentication is required', (
         tester,
@@ -91,9 +102,18 @@ void main() {
     }
   });
 
-  testWidgets('reviewRows name the proposer by address, and give the expiry a time once the block is known', (
-    tester,
-  ) async {
+  test('a threshold is written as the phone shows it, and two are equal when their parts are', () {
+    const threshold = SendReviewThreshold('THRESHOLD', threshold: 2, signers: 3);
+
+    expect(threshold.text, '2/3');
+    expect(threshold, const SendReviewThreshold('THRESHOLD', threshold: 2, signers: 3));
+    expect(threshold, isNot(const SendReviewThreshold('THRESHOLD', threshold: 3, signers: 3)));
+    expect(threshold, isNot(const SendReviewThreshold('THRESHOLD', threshold: 2, signers: 4)));
+    expect(threshold.kind, SendReviewRowKind.detail);
+  });
+
+  testWidgets('reviewRows say what each line is, name the proposer by address, give the threshold in numbers, and '
+      'give the expiry a time once the block is known', (tester) async {
     final read = await pumpWatched(
       tester,
       overrides: overrides(),
@@ -105,14 +125,14 @@ void main() {
     final l10n = lookupAppLocalizations(const Locale('en'));
     const symbol = AppConstants.tokenSymbol;
     List<SendReviewRow> rowsWith(MultisigExpiryParts expiry) => [
-      SendReviewAddress(l10n.multisigProposeProposerLabel, member.accountId),
-      SendReviewText(l10n.sendReviewAmount, '5 $symbol'),
-      SendReviewText(l10n.multisigProposeThresholdLabel, '2/2'),
+      SendReviewAddress(l10n.multisigProposeProposerLabel, member.accountId, kind: SendReviewRowKind.signer),
+      SendReviewText(l10n.sendReviewAmount, '5 $symbol', kind: SendReviewRowKind.amount),
+      SendReviewThreshold(l10n.multisigProposeThresholdLabel, threshold: 2, signers: 2),
       SendReviewExpiry(l10n.multisigProposeExpiresLabel, expiry),
-      SendReviewText(l10n.sendReviewNetworkFee, '1 $symbol'),
-      SendReviewText(l10n.multisigProposalDepositLabel, '2 $symbol'),
-      SendReviewText(l10n.multisigProposeFeeRowLabel, '1 $symbol'),
-      SendReviewText(l10n.multisigProposeMemberTotalLabel, '4 $symbol'),
+      SendReviewText(l10n.sendReviewNetworkFee, '1 $symbol', kind: SendReviewRowKind.fee),
+      SendReviewText(l10n.multisigProposalDepositLabel, '2 $symbol', kind: SendReviewRowKind.deposit),
+      SendReviewText(l10n.multisigProposeFeeRowLabel, '1 $symbol', kind: SendReviewRowKind.charge),
+      SendReviewText(l10n.multisigProposeMemberTotalLabel, '4 $symbol', kind: SendReviewRowKind.total),
     ];
     final block = l10n.multisigExpiresBlockOnly(1000);
 

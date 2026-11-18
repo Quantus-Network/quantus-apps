@@ -268,6 +268,7 @@ class _ReviewSendScreenState extends ConsumerState<ReviewSendScreen> {
       for (final row in rows) ...[
         switch (row) {
           SendReviewText(:final label, :final value) => DetailSummaryRow.review(label: label, value: value),
+          SendReviewThreshold(:final label, :final text) => DetailSummaryRow.review(label: label, value: text),
           SendReviewAddress(:final label, :final address) => DetailSummaryRow.review(
             label: label,
             value: address,

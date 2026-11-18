@@ -15,6 +15,7 @@ import 'package:wallet_core/send/keystone_signing_session.dart';
 import 'package:wallet_core/send/send_review_row.dart';
 import 'package:wallet_core/send/send_strategy.dart';
 import 'package:wallet_core/services/user_approval.dart';
+import 'package:wallet_core/utils/explorer_url.dart';
 import 'package:wallet_core/utils/multisig_expiry.dart';
 
 /// Proposal cost for a recipient. The network fee is still a chain estimate,
@@ -129,9 +130,9 @@ class MultisigProposeStrategy extends SendStrategy {
         l10n.commonAmountBalance(fmt.formatBalance(v, smartDecimals: AppConstants.decimals), AppConstants.tokenSymbol);
 
     return [
-      SendReviewAddress(l10n.multisigProposeProposerLabel, msig.myMemberAccountId),
-      SendReviewText(l10n.sendReviewAmount, amt(amount)),
-      SendReviewText(l10n.multisigProposeThresholdLabel, '${msig.threshold}/${msig.signers.length}'),
+      SendReviewAddress(l10n.multisigProposeProposerLabel, msig.myMemberAccountId, kind: SendReviewRowKind.signer),
+      SendReviewText(l10n.sendReviewAmount, amt(amount), kind: SendReviewRowKind.amount),
+      SendReviewThreshold(l10n.multisigProposeThresholdLabel, threshold: msig.threshold, signers: msig.signers.length),
       SendReviewExpiry(
         l10n.multisigProposeExpiresLabel,
         resolveMultisigExpiryParts(
@@ -141,10 +142,10 @@ class MultisigProposeStrategy extends SendStrategy {
           currentBlock: currentBlock,
         ),
       ),
-      SendReviewText(l10n.sendReviewNetworkFee, amt(breakdown.networkFee)),
-      SendReviewText(l10n.multisigProposalDepositLabel, amt(breakdown.deposit)),
-      SendReviewText(l10n.multisigProposeFeeRowLabel, amt(breakdown.creationFee)),
-      SendReviewText(l10n.multisigProposeMemberTotalLabel, amt(breakdown.memberCost)),
+      SendReviewText(l10n.sendReviewNetworkFee, amt(breakdown.networkFee), kind: SendReviewRowKind.fee),
+      SendReviewText(l10n.multisigProposalDepositLabel, amt(breakdown.deposit), kind: SendReviewRowKind.deposit),
+      SendReviewText(l10n.multisigProposeFeeRowLabel, amt(breakdown.creationFee), kind: SendReviewRowKind.charge),
+      SendReviewText(l10n.multisigProposeMemberTotalLabel, amt(breakdown.memberCost), kind: SendReviewRowKind.total),
     ];
   }
 
@@ -262,7 +263,7 @@ class MultisigProposeStrategy extends SendStrategy {
     if (approval != ApprovalResult.approved) return SendFailed(l10n.multisigProposeAuthRequired);
 
     try {
-      await ref
+      final hash = await ref
           .read(transactionSubmissionServiceProvider)
           .proposeTransfer(
             msig: msig,
@@ -273,7 +274,7 @@ class MultisigProposeStrategy extends SendStrategy {
             feeBreakdown: breakdown,
           );
       _afterProposed(ref, recipient);
-      return SendSubmitted(terminal);
+      return SendSubmitted(terminal.copyWith(explorerUrl: multisigProposalExplorerUrl(hash)));
     } catch (e, st) {
       quantusPrint('Propose submit error: $e $st');
       return SendFailed(l10n.multisigProposeSubmitFailed);
