@@ -99,7 +99,13 @@ final exchangeRatesProvider = FutureProvider<Map<String, Decimal>>((ref) async {
   try {
     final result = await QuersiService().getExchangeRates();
     final rates = result.rates.map((k, v) => MapEntry(k, Decimal.parse(v.toString())));
-    await _writeRatesCache(settings, rates, result.timeNextUpdateUnix);
+    try {
+      await _writeRatesCache(settings, rates, result.timeNextUpdateUnix);
+    } catch (e) {
+      // The rates are good without their cache; they are fetched again next
+      // time.
+      quantusPrint('Failed saving exchange rates: $e');
+    }
 
     return rates;
   } catch (e) {

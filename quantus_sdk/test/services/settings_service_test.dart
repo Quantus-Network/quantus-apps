@@ -591,4 +591,65 @@ void main() {
       expect((await (await reopened()).getActiveAccount())!.account.accountId, savings.accountId);
     });
   });
+
+  group('setString, when the system rejects the write', () {
+    late _RejectingStore store;
+    late SettingsService settings;
+
+    /// The settings as an app started now would read them from [store].
+    Future<SettingsService> reopened() async {
+      SharedPreferences.resetStatic();
+      final reopened = SettingsService();
+      await reopened.initialize();
+      return reopened;
+    }
+
+    setUp(() async {
+      SharedPreferences.setMockInitialValues({});
+      store = _RejectingStore();
+      SharedPreferencesStorePlatform.instance = store;
+      settings = SettingsService();
+      await settings.initialize();
+    });
+
+    test('throws, naming the key, and the key holds what it held', () async {
+      await settings.setString('shortcuts', 'old');
+      store.rejected.add('shortcuts');
+
+      await expectLater(
+        settings.setString('shortcuts', 'new'),
+        throwsA(isA<Exception>().having((e) => '$e', 'message', contains('Could not save shortcuts'))),
+      );
+
+      expect(settings.getString('shortcuts'), 'old');
+    });
+
+    test('a key that held nothing holds nothing after', () async {
+      store.rejected.add('shortcuts');
+
+      await expectLater(settings.setString('shortcuts', 'new'), throwsException);
+
+      expect(settings.getString('shortcuts'), isNull);
+    });
+
+    test('what a later write puts on the disk is not the text that was refused', () async {
+      await settings.setString('shortcuts', 'old');
+      store.rejected.add('shortcuts');
+      await expectLater(settings.setString('shortcuts', 'new'), throwsException);
+      store.rejected.clear();
+
+      await settings.setString('other', 'stored');
+
+      final read = await reopened();
+      expect(read.getString('shortcuts'), 'old');
+      expect(read.getString('other'), 'stored');
+    });
+
+    test('a write the system stores is read back, now and at the next start', () async {
+      await settings.setString('shortcuts', 'new');
+
+      expect(settings.getString('shortcuts'), 'new');
+      expect((await reopened()).getString('shortcuts'), 'new');
+    });
+  });
 }

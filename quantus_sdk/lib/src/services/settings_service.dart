@@ -515,9 +515,13 @@ class SettingsService {
     return _prefs.getString(key);
   }
 
-  /// Set a string value from SharedPreferences
+  /// Stores [value] under [key]. Throws when the system refuses to store
+  /// it, and [key] then holds what it held before.
   Future<void> setString(String key, String value) async {
-    await _prefs.setString(key, value);
+    final previous = _prefs.getString(key);
+    if (await _prefs.setString(key, value)) return;
+    await _putBack(key, previous);
+    throw Exception('Could not save $key');
   }
 
   // Test-only helper to reset initialization between tests
