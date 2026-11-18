@@ -9,6 +9,7 @@ import 'package:quantus_desktop_wallet/providers/shell_providers.dart';
 import 'package:quantus_desktop_wallet/providers/shortcut_bindings_provider.dart';
 import 'package:quantus_desktop_wallet/providers/wallet_presence_provider.dart';
 import 'package:quantus_desktop_wallet/ui/components/key_caps.dart';
+import 'package:quantus_desktop_wallet/ui/components/shortcut_recorder.dart';
 import 'package:quantus_desktop_wallet/ui/settings/keyboard_shortcuts_step.dart';
 import 'package:quantus_desktop_wallet/ui/settings/settings_sheet.dart';
 import 'package:quantus_desktop_wallet/ui/shell/desktop_shell.dart';
@@ -173,6 +174,40 @@ void main() {
 
     expect(_capsOf(tester, AppCommand.send), ['command', 'S']);
     expect(find.byType(KeyboardShortcutsStep), findsOneWidget);
+  });
+
+  /// Whether [command]'s shortcut waits for new keys.
+  bool recording(WidgetTester tester, AppCommand command) => tester.widget<ShortcutRecorder>(_row(command)).isRecording;
+
+  for (final (test, key) in [(testOnMac, 'command'), (testOnWindowsAndLinux, 'Ctrl')]) {
+    test('a click on another shortcut, while one waits for keys, makes that one wait instead', (tester) async {
+      await _openShortcuts(tester);
+      await _record(tester, AppCommand.receive);
+
+      await _record(tester, AppCommand.send);
+
+      expect(recording(tester, AppCommand.send), isTrue);
+      expect(recording(tester, AppCommand.receive), isFalse);
+
+      // The keys go to the one clicked last, and the first keeps its own.
+      await _press(tester, LogicalKeyboardKey.keyJ, meta: key == 'command', control: key == 'Ctrl');
+
+      expect(_capsOf(tester, AppCommand.send), [key, 'J']);
+      expect(_capsOf(tester, AppCommand.receive), [key, 'R']);
+      expect(recording(tester, AppCommand.send), isFalse);
+    });
+  }
+
+  testOnMac('a shortcut that waits for keys stops waiting when the keyboard\'s focus leaves it', (tester) async {
+    await _openShortcuts(tester);
+    await _record(tester, AppCommand.send);
+    expect(recording(tester, AppCommand.send), isTrue);
+
+    FocusManager.instance.primaryFocus!.unfocus();
+    await tester.pumpAndSettle();
+
+    expect(recording(tester, AppCommand.send), isFalse);
+    expect(_capsOf(tester, AppCommand.send), ['command', 'S']);
   });
 
   testOnMac('Delete while waiting for keys removes the shortcut', (tester) async {

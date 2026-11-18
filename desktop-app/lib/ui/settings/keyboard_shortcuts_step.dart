@@ -77,6 +77,13 @@ class _KeyboardShortcutsStepState extends ConsumerState<KeyboardShortcutsStep> {
     _recordingNotifier.stop();
   }
 
+  /// [command]'s shortcut gave up waiting: Escape, or the keyboard's focus
+  /// left it. When the focus left for another shortcut, that one waits by
+  /// now and is left to.
+  void _cancel(AppCommand command) {
+    if (_recording == command) _stop();
+  }
+
   void _onKeys(AppCommand command, KeyCombo combo) {
     final l10n = ref.read(l10nProvider);
     final refusal = ref.read(shortcutBindingsProvider).bindings.refusal(command, combo);
@@ -150,7 +157,7 @@ class _KeyboardShortcutsStepState extends ConsumerState<KeyboardShortcutsStep> {
           semanticLabel: name,
           onStart: () => _start(command),
           onKeys: (combo) => _onKeys(command, combo),
-          onCancel: _stop,
+          onCancel: () => _cancel(command),
           onRemove: () => _remove(command),
         ),
       );
