@@ -10,12 +10,16 @@ import 'package:quantus_desktop_wallet/bootstrap/app_bootstrap.dart';
 import 'package:quantus_desktop_wallet/providers/boot_intro_provider.dart';
 import 'package:quantus_desktop_wallet/services/login_password.dart';
 import 'package:quantus_desktop_wallet/services/sensitive_clipboard.dart';
+import 'package:quantus_desktop_wallet/services/user_approval.dart';
 import 'package:quantus_desktop_wallet/services/window_chrome.dart';
+import 'package:quantus_sdk/generated/bell/pallets/balances.dart' as balances_pallet;
+import 'package:quantus_sdk/generated/bell/types/sp_runtime/multiaddress/multi_address.dart' as multi_address;
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/providers/remote_config_provider.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:wallet_core/services/logout_service.dart';
 import 'package:wallet_core/services/remote_config_service.dart';
+import 'package:wallet_core/services/transaction_submission_service.dart';
 import 'package:wallet_core/services/user_approval.dart';
 
 /// The stored settings the shell reads, without the device's storage. A
@@ -237,12 +241,125 @@ class _FakeHdWalletService extends Fake implements HdWalletService {
 }
 
 class _FakeSubstrateService extends Fake implements SubstrateService {
-  _FakeSubstrateService(this.device);
+  _FakeSubstrateService(this.chain, {this.device});
 
-  final FakeWalletDevice device;
+  final FakeSendChain chain;
+
+  /// The device that generates recovery phrases, where a test has one.
+  final FakeWalletDevice? device;
 
   @override
-  Future<String> generateMnemonic() => device.generateMnemonic();
+  Future<String> generateMnemonic() => device!.generateMnemonic();
+
+  @override
+  bool isValidSS58Address(String address) => chain.isValidAddress(address);
+
+  @override
+  Future<ExtrinsicFeeData> getFeeForCall(Account account, RuntimeCall call) async {
+    chain.quotes.add(chain.describe(call));
+    return ExtrinsicFeeData(fee: await chain.fee(), blockHash: '0x', blockNumber: 1);
+  }
+}
+
+/// A transfer as Send builds it: who is paid and how much. An [amount] of
+/// null is a transfer of everything the account has.
+typedef SendCall = ({String recipient, BigInt? amount});
+
+/// The chain as Send reaches it: which addresses are valid, what a transfer
+/// costs, the transfers handed over, and the addresses paid before.
+class FakeSendChain {
+  /// The fee the mocks were drawn with: 0.0012 of a token.
+  static final BigInt usualFee = oneToken * BigInt.from(12) ~/ BigInt.from(10000);
+
+  /// Whether [address] is a valid address: here, one that starts with `qz`.
+  bool Function(String address) isValidAddress = (address) => address.startsWith('qz') && !address.contains(' ');
+
+  /// What a fee quote answers; it may throw.
+  Future<BigInt> Function() fee = () async => usualFee;
+
+  /// Every transfer a fee was asked for, in order.
+  final quotes = <SendCall>[];
+
+  /// What handing a transfer over answers, the transaction's hash; it may
+  /// throw.
+  Future<String> Function() submit = () async => '0xhash';
+
+  /// Every transfer handed over: the account it left, the transfer, and the
+  /// amount and fee it was recorded with.
+  final transfers = <({String from, SendCall call, BigInt amount, BigInt fee})>[];
+
+  /// The addresses paid before, the latest first.
+  List<String> recents = [];
+
+  final _calls = Expando<SendCall>();
+
+  SendCall describe(RuntimeCall call) => _calls[call] ?? (throw StateError('A call this chain did not build: $call'));
+
+  /// With [substrate] left out by a test that overrides it itself.
+  List<Override> overrides({bool substrate = true}) => [
+    if (substrate) substrateServiceProvider.overrideWithValue(_FakeSubstrateService(this)),
+    balancesServiceProvider.overrideWithValue(_FakeBalancesService(this)),
+    transactionSubmissionServiceProvider.overrideWithValue(_FakeTransactionSubmissionService(this)),
+    recentAddressesServiceProvider.overrideWithValue(_FakeRecentAddressesService(this)),
+  ];
+}
+
+/// Builds the transfer calls without the chain's address decoding, and tells
+/// the [chain] what each one is.
+class _FakeBalancesService extends Fake implements BalancesService {
+  _FakeBalancesService(this.chain);
+
+  final FakeSendChain chain;
+
+  static final _anyDest = const multi_address.$MultiAddress().id(List<int>.filled(32, 0));
+
+  @override
+  Balances getBalanceTransferCall(String targetAddress, BigInt amount) {
+    if (!chain.isValidAddress(targetAddress)) throw ArgumentError.value(targetAddress, 'targetAddress');
+    final call = const balances_pallet.Txs().transferAllowDeath(dest: _anyDest, value: amount);
+    chain._calls[call] = (recipient: targetAddress, amount: amount);
+    return call;
+  }
+
+  @override
+  Balances getTransferAllCall(String targetAddress) {
+    if (!chain.isValidAddress(targetAddress)) throw ArgumentError.value(targetAddress, 'targetAddress');
+    final call = const balances_pallet.Txs().transferAll(dest: _anyDest, keepAlive: false);
+    chain._calls[call] = (recipient: targetAddress, amount: null);
+    return call;
+  }
+}
+
+class _FakeTransactionSubmissionService extends Fake implements TransactionSubmissionService {
+  _FakeTransactionSubmissionService(this.chain);
+
+  final FakeSendChain chain;
+
+  @override
+  Future<String> balanceTransfer(
+    Account account, {
+    required RuntimeCall call,
+    required String targetAddress,
+    required BigInt amount,
+    required BigInt fee,
+  }) async {
+    final hash = await chain.submit();
+    chain.transfers.add((from: account.accountId, call: chain.describe(call), amount: amount, fee: fee));
+    return hash;
+  }
+}
+
+class _FakeRecentAddressesService extends Fake implements RecentAddressesService {
+  _FakeRecentAddressesService(this.chain);
+
+  final FakeSendChain chain;
+
+  @override
+  Future<List<String>> getAddresses() async => List.of(chain.recents);
+
+  @override
+  Future<void> addAddress(String address) async =>
+      chain.recents = [address, ...chain.recents.where((a) => a != address)];
 }
 
 class _FakeAccountDiscoveryService extends Fake implements AccountDiscoveryService {
@@ -276,9 +393,15 @@ class _WipingLogoutService extends Fake implements LogoutService {
 }
 
 /// A device and a chain for the flows that create, import or wipe a wallet.
-/// It starts with no wallet. Every balance is one token.
+/// It starts with no wallet. Every balance is [balance].
 class FakeWalletDevice {
   final storage = FakeWalletStorage();
+
+  /// The chain as Send reaches it.
+  final chain = FakeSendChain();
+
+  /// What every transparent account holds.
+  BigInt balance = oneToken;
 
   /// What generating a recovery phrase answers.
   Future<String> Function() generateMnemonic = () async => 'created wallet recovery phrase';
@@ -304,13 +427,14 @@ class FakeWalletDevice {
     settingsServiceProvider.overrideWithValue(storage),
     accountsServiceProvider.overrideWithValue(_StoredAccountsService(storage)),
     hdWalletServiceProvider.overrideWithValue(_FakeHdWalletService()),
-    substrateServiceProvider.overrideWithValue(_FakeSubstrateService(this)),
+    substrateServiceProvider.overrideWithValue(_FakeSubstrateService(chain, device: this)),
+    ...chain.overrides(substrate: false),
     accountDiscoveryServiceProvider.overrideWithValue(_FakeAccountDiscoveryService(this)),
     logoutServiceProvider.overrideWithValue(_WipingLogoutService(this)),
     remoteConfigProvider.overrideWith(
       (ref) => RemoteConfigNotifier(FakeRemoteConfigService(RemoteConfigModel.defaults)),
     ),
-    balanceProviderFamily.overrideWith((ref, accountId) => oneToken),
+    balanceProviderFamily.overrideWith((ref, accountId) => balance),
     encryptedBalanceProvider.overrideWith((ref, walletIndex) => AsyncValue.data(oneToken)),
     encryptedStateProvider.overrideWith(
       (ref, walletIndex) => EncryptedAccountState(
@@ -448,7 +572,8 @@ const _swapsNotOffered = RemoteConfigModel(
 ///
 /// A balance missing from [balances] or [encryptedBalances] fails to load.
 /// [loadAccounts] and [balanceOf] replace the plain lists for tests that need
-/// a load to hang or fail.
+/// a load to hang or fail. The system's approval is [approval], or one that
+/// approves; Send reaches the chain through [chain].
 List<Override> shellOverrides({
   List<Account> accounts = const [],
   Future<List<Account>> Function()? loadAccounts,
@@ -458,8 +583,12 @@ List<Override> shellOverrides({
   Map<int, BigInt> encryptedBalances = const {},
   bool swapAvailable = true,
   Future<String> Function(int walletIndex)? depositAddress,
+  FakeUserApproval? approval,
+  FakeSendChain? chain,
 }) {
   return [
+    systemApprovalProvider.overrideWithValue(approval ?? FakeUserApproval()),
+    ...(chain ?? FakeSendChain()).overrides(),
     if (depositAddress != null)
       encryptedAccountServiceProvider.overrideWith(
         (ref, walletIndex) => FakeEncryptedAccountService(() => depositAddress(walletIndex)),

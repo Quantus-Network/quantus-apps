@@ -163,10 +163,18 @@ class RegularSendStrategy extends SendStrategy {
     // amount and fee moves until the fee settles; otherwise the amount is fixed
     // and the total moves with the fee.
     return [
-      SendReviewText(l10n.sendReviewTo, addr),
-      SendReviewText(l10n.sendReviewAmount, amt(amount, estimate: feeIsEstimate && sendAll)),
-      SendReviewText(l10n.sendReviewNetworkFee, amt(networkFee, estimate: feeIsEstimate)),
-      SendReviewText(l10n.sendReviewYouPay, amt(amount + networkFee, estimate: feeIsEstimate && !sendAll)),
+      SendReviewText(l10n.sendReviewTo, addr, kind: SendReviewRowKind.recipient),
+      SendReviewText(
+        l10n.sendReviewAmount,
+        amt(amount, estimate: feeIsEstimate && sendAll),
+        kind: SendReviewRowKind.amount,
+      ),
+      SendReviewText(l10n.sendReviewNetworkFee, amt(networkFee, estimate: feeIsEstimate), kind: SendReviewRowKind.fee),
+      SendReviewText(
+        l10n.sendReviewYouPay,
+        amt(amount + networkFee, estimate: feeIsEstimate && !sendAll),
+        kind: SendReviewRowKind.total,
+      ),
     ];
   }
 

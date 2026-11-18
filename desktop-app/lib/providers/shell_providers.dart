@@ -1,9 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_desktop_wallet/models/shell_sheet.dart';
 import 'package:quantus_desktop_wallet/models/sidebar_selection.dart';
+import 'package:quantus_desktop_wallet/utils/send_strategies.dart';
 import 'package:wallet_core/providers/account_providers.dart';
 import 'package:wallet_core/providers/active_swap_provider.dart';
 import 'package:wallet_core/providers/remote_config_provider.dart';
+import 'package:wallet_core/send/send_flow.dart';
 import 'package:wallet_core/utils/account_actions.dart';
 
 /// Whether the sidebar is shown. The View menu hides and shows it.
@@ -38,7 +40,16 @@ class ShellSheetNotifier extends Notifier<ShellSheet?> {
   /// while one is open does nothing.
   void open(ShellSheet sheet) {
     if (state != null) return;
+    if (sheet == ShellSheet.send) _beginSend();
     state = sheet;
+  }
+
+  /// Send's flow starts with the press that opens it, a first fee quote with
+  /// it: the sheet must not write a provider while it is being built.
+  void _beginSend() {
+    final strategy = sendStrategyFor(ref.read(activeAccountProvider).value);
+    if (strategy == null) throw StateError('Send was opened on an account this app cannot send from.');
+    beginSendFlow(ref.read, strategy);
   }
 
   /// Called by the shell once the sheet has left the screen.
@@ -46,12 +57,20 @@ class ShellSheetNotifier extends Notifier<ShellSheet?> {
 }
 
 /// What the active account offers, for the toolbar and the Account menu alike.
+/// Send is unavailable where this app cannot send yet ([sendStrategyFor]).
 final activeAccountActionsProvider = Provider<List<AccountAction>>((ref) {
   final active = ref.watch(activeAccountProvider).value;
   if (active == null) return const [];
-  return accountActions(
-    active,
-    swapAvailable: ref.watch(remoteConfigProvider).swapAvailable,
-    hasActiveSwap: ref.watch(activeSwapProvider) != null,
-  );
+  final canSend = sendStrategyFor(active) != null;
+  return [
+    for (final action in accountActions(
+      active,
+      swapAvailable: ref.watch(remoteConfigProvider).swapAvailable,
+      hasActiveSwap: ref.watch(activeSwapProvider) != null,
+    ))
+      if (action.kind == AccountActionKind.send && !canSend)
+        const AccountAction(AccountActionKind.send, isEnabled: false)
+      else
+        action,
+  ];
 });

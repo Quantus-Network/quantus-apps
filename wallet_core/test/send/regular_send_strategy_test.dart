@@ -98,30 +98,30 @@ void main() {
     final l10n = lookupAppLocalizations(const Locale('en'));
     const symbol = AppConstants.tokenSymbol;
 
-    testWidgets('are the recipient, the amount, the network fee and their sum', (tester) async {
+    testWidgets('are the recipient, the amount, the network fee and their sum, each named as such', (tester) async {
       expect(await rows(tester), [
-        SendReviewText(l10n.sendReviewTo, recipient.accountId),
-        SendReviewText(l10n.sendReviewAmount, '5 $symbol'),
-        SendReviewText(l10n.sendReviewNetworkFee, '1 $symbol'),
-        SendReviewText(l10n.sendReviewYouPay, '6 $symbol'),
+        SendReviewText(l10n.sendReviewTo, recipient.accountId, kind: SendReviewRowKind.recipient),
+        SendReviewText(l10n.sendReviewAmount, '5 $symbol', kind: SendReviewRowKind.amount),
+        SendReviewText(l10n.sendReviewNetworkFee, '1 $symbol', kind: SendReviewRowKind.fee),
+        SendReviewText(l10n.sendReviewYouPay, '6 $symbol', kind: SendReviewRowKind.total),
       ]);
     });
 
     testWidgets('mark the fee and the sum as estimates until the fee is exact', (tester) async {
       expect(await rows(tester, feeIsEstimate: true), [
-        SendReviewText(l10n.sendReviewTo, recipient.accountId),
-        SendReviewText(l10n.sendReviewAmount, '5 $symbol'),
-        SendReviewText(l10n.sendReviewNetworkFee, '~1 $symbol'),
-        SendReviewText(l10n.sendReviewYouPay, '~6 $symbol'),
+        SendReviewText(l10n.sendReviewTo, recipient.accountId, kind: SendReviewRowKind.recipient),
+        SendReviewText(l10n.sendReviewAmount, '5 $symbol', kind: SendReviewRowKind.amount),
+        SendReviewText(l10n.sendReviewNetworkFee, '~1 $symbol', kind: SendReviewRowKind.fee),
+        SendReviewText(l10n.sendReviewYouPay, '~6 $symbol', kind: SendReviewRowKind.total),
       ]);
     });
 
     testWidgets('of a max send mark the fee and the amount instead: the sum is the whole balance', (tester) async {
       expect(await rows(tester, feeIsEstimate: true, sendAll: true), [
-        SendReviewText(l10n.sendReviewTo, recipient.accountId),
-        SendReviewText(l10n.sendReviewAmount, '~5 $symbol'),
-        SendReviewText(l10n.sendReviewNetworkFee, '~1 $symbol'),
-        SendReviewText(l10n.sendReviewYouPay, '6 $symbol'),
+        SendReviewText(l10n.sendReviewTo, recipient.accountId, kind: SendReviewRowKind.recipient),
+        SendReviewText(l10n.sendReviewAmount, '~5 $symbol', kind: SendReviewRowKind.amount),
+        SendReviewText(l10n.sendReviewNetworkFee, '~1 $symbol', kind: SendReviewRowKind.fee),
+        SendReviewText(l10n.sendReviewYouPay, '6 $symbol', kind: SendReviewRowKind.total),
       ]);
     });
   });

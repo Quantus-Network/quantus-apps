@@ -2632,4 +2632,36 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get desktopRecoveryPhraseCopyFailed => 'Tidak dapat menyalin frasa pemulihan.';
+
+  @override
+  String get desktopSendAddressHint => 'Alamat Quantus';
+
+  @override
+  String get desktopSendAddressInvalid => 'Ini bukan alamat Quantus.';
+
+  @override
+  String get desktopSendAddressSelf => 'Anda tidak dapat mengirim ke akun yang Anda gunakan untuk mengirim.';
+
+  @override
+  String get desktopSendAvailable => 'Tersedia';
+
+  @override
+  String desktopSendAmountTooMuch(String amount) {
+    return 'Melebihi $amount yang dapat Anda kirim.';
+  }
+
+  @override
+  String get desktopSendMaximum => 'Kirim jumlah maksimum';
+
+  @override
+  String get desktopSendReview => 'Tinjau';
+
+  @override
+  String get desktopSendYouPaid => 'Anda membayar';
+
+  @override
+  String get desktopSendSubmitted => 'Diajukan';
+
+  @override
+  String get desktopViewInExplorer => 'Lihat di Explorer';
 }
