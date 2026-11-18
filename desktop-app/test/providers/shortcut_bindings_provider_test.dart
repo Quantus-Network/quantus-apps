@@ -8,7 +8,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_desktop_wallet/models/app_command.dart';
 import 'package:quantus_desktop_wallet/models/shortcut_bindings.dart';
 import 'package:quantus_desktop_wallet/providers/shortcut_bindings_provider.dart';
+import 'package:quantus_desktop_wallet/providers/wallet_presence_provider.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
+import 'package:wallet_core/services/logout_service.dart';
 import 'package:wallet_core/services/telemetry.dart';
 
 import '../fakes.dart';
@@ -26,6 +28,28 @@ class _RecordingTelemetry implements Telemetry {
 const _cmdJ = KeyCombo(LogicalKeyboardKey.keyJ, KeyModifiers(meta: true));
 const _cmdK = KeyCombo(LogicalKeyboardKey.keyK, KeyModifiers(meta: true));
 const _cmdR = KeyCombo(LogicalKeyboardKey.keyR, KeyModifiers(meta: true));
+
+/// A wipe of the wallet that clears [settings], as the real one does, and
+/// notes what it found there to clear.
+class _WipingLogout extends Fake implements LogoutService {
+  _WipingLogout(this.settings);
+
+  final FakeSettingsService settings;
+
+  /// The saved texts as each wipe found them.
+  final found = <Map<String, String>>[];
+
+  /// Why the wipe fails, when set.
+  Object? error;
+
+  @override
+  Future<void> logout() async {
+    if (error case final error?) throw error;
+    found.add(Map.of(settings.strings));
+    settings.strings.clear();
+    settings.bools.clear();
+  }
+}
 
 /// Settings whose writes of plain text wait until they are let through.
 class _HeldSettings extends FakeSettingsService {
@@ -269,6 +293,96 @@ void main() {
 
       final bindings = container.read(shortcutBindingsProvider).bindings;
       expect(bindings[AppCommand.receive], const ShortcutBindings.defaults(isMac: true)[AppCommand.receive]);
+      expect(bindings[AppCommand.send], _cmdK);
+    });
+  });
+
+  group('a wipe of the wallet', () {
+    late _HeldSettings held;
+    late _WipingLogout logout;
+
+    setUp(() {
+      settings = held = _HeldSettings();
+      logout = _WipingLogout(held);
+    });
+
+    ProviderContainer startWithWipe() {
+      final container = ProviderContainer(
+        overrides: [
+          settingsServiceProvider.overrideWithValue(settings),
+          telemetryProvider.overrideWithValue(telemetry),
+          logoutServiceProvider.overrideWithValue(logout),
+        ],
+      );
+      addTearDown(container.dispose);
+      return container;
+    }
+
+    test('waits for the change being saved, drops the one behind it, and neither is there afterwards', () async {
+      final container = startWithWipe();
+      final notifier = container.read(shortcutBindingsProvider.notifier);
+      final saving = notifier.setShortcut(AppCommand.receive, _cmdJ);
+      final waiting = notifier.setShortcut(AppCommand.send, _cmdK);
+      final dropped = expectLater(waiting, throwsStateError);
+      // The first is handed to the settings; the second waits behind it.
+      await pumpEventQueue();
+
+      final wipe = container.read(walletPresenceProvider.notifier).wipeWallet();
+      await pumpEventQueue();
+      expect(logout.found, isEmpty, reason: 'the wipe waits for the save under way');
+      await held.finishWrites();
+      await Future.wait([saving, wipe]);
+      await dropped;
+
+      // The one save that was under way landed before the wipe, which cleared it.
+      expect(logout.found.single.keys, [ShortcutBindingsNotifier.settingsKey]);
+      expect(held.strings, isEmpty);
+      expect(container.read(shortcutBindingsProvider).bindings, const ShortcutBindings.defaults(isMac: true));
+      expect(start().read(shortcutBindingsProvider).bindings, const ShortcutBindings.defaults(isMac: true));
+    });
+
+    test('a change asked for while it runs is refused, and nothing of it is saved', () async {
+      final container = startWithWipe();
+      final notifier = container.read(shortcutBindingsProvider.notifier);
+      final saving = notifier.setShortcut(AppCommand.receive, _cmdJ);
+      await pumpEventQueue();
+
+      final wipe = container.read(walletPresenceProvider.notifier).wipeWallet();
+      await pumpEventQueue();
+      await expectLater(notifier.setShortcut(AppCommand.send, _cmdK), throwsStateError);
+      await held.finishWrites();
+      await Future.wait([saving, wipe]);
+
+      expect(held.strings, isEmpty);
+    });
+
+    test('once it is over, changes are saved again', () async {
+      final container = startWithWipe();
+      await container.read(walletPresenceProvider.notifier).wipeWallet();
+
+      final change = container.read(shortcutBindingsProvider.notifier).setShortcut(AppCommand.send, _cmdK);
+      await held.finishWrites();
+      await change;
+
+      expect(container.read(shortcutBindingsProvider).bindings[AppCommand.send], _cmdK);
+      expect(start().read(shortcutBindingsProvider).bindings[AppCommand.send], _cmdK);
+    });
+
+    test('when it fails, the shortcuts are as they were and can be changed again', () async {
+      final container = startWithWipe();
+      final notifier = container.read(shortcutBindingsProvider.notifier);
+      final first = notifier.setShortcut(AppCommand.receive, _cmdJ);
+      await held.finishWrites();
+      await first;
+      logout.error = StateError('keychain locked');
+
+      await expectLater(container.read(walletPresenceProvider.notifier).wipeWallet(), throwsStateError);
+      final change = notifier.setShortcut(AppCommand.send, _cmdK);
+      await held.finishWrites();
+      await change;
+
+      final bindings = container.read(shortcutBindingsProvider).bindings;
+      expect(bindings[AppCommand.receive], _cmdJ);
       expect(bindings[AppCommand.send], _cmdK);
     });
   });

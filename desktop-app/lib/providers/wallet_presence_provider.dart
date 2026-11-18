@@ -31,9 +31,16 @@ class WalletPresenceNotifier extends AsyncNotifier<WalletPresence> {
   /// Wipes the wallet and everything stored with it.
   Future<void> wipeWallet() async {
     final introSeen = ref.read(bootIntroSeenProvider);
-    await ref.read(logoutServiceProvider).logout();
-    // The wipe cleared every setting, this one included.
-    if (introSeen) await ref.read(bootIntroSeenProvider.notifier).markSeen();
+    // A shortcut still being saved would be written back over the wipe.
+    final shortcuts = ref.read(shortcutBindingsProvider.notifier);
+    await shortcuts.suspend();
+    try {
+      await ref.read(logoutServiceProvider).logout();
+      // The wipe cleared every setting, this one included.
+      if (introSeen) await ref.read(bootIntroSeenProvider.notifier).markSeen();
+    } finally {
+      shortcuts.resume();
+    }
     // The changed keyboard shortcuts went with the settings.
     ref.invalidate(shortcutBindingsProvider);
     state = const AsyncData(WalletPresence.none);
