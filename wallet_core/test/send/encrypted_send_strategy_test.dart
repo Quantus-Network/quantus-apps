@@ -97,10 +97,10 @@ void main() {
     final l10n = lookupAppLocalizations(const Locale('en'));
     const symbol = AppConstants.tokenSymbol;
     expect(read(), [
-      SendReviewText(l10n.sendReviewTo, recipient.accountId),
-      SendReviewText(l10n.sendReviewAmount, '10 $symbol'),
-      SendReviewText(l10n.encryptedSendFeeLabel, '0.01 $symbol'),
-      SendReviewText(l10n.sendReviewYouPay, '10.01 $symbol'),
+      SendReviewText(l10n.sendReviewTo, recipient.accountId, kind: SendReviewRowKind.recipient),
+      SendReviewText(l10n.sendReviewAmount, '10 $symbol', kind: SendReviewRowKind.amount),
+      SendReviewText(l10n.encryptedSendFeeLabel, '0.01 $symbol', kind: SendReviewRowKind.fee),
+      SendReviewText(l10n.sendReviewYouPay, '10.01 $symbol', kind: SendReviewRowKind.total),
     ]);
   });
 }

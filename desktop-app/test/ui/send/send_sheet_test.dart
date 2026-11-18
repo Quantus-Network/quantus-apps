@@ -200,11 +200,11 @@ void main() {
       expect(tester.widget<ToolbarAction>(_toolbarSend()).onPressed, isNotNull);
     });
 
-    testOnMac('Send is dimmed on the Encrypted account, in the toolbar and the Account menu alike', (tester) async {
+    testOnMac('Send can be used on the Encrypted account, in the toolbar and the Account menu alike', (tester) async {
       await pumpOn(tester, encryptedAccount);
 
-      expect(sendAction(tester).isEnabled, isFalse);
-      expect(tester.widget<ToolbarAction>(_toolbarSend()).onPressed, isNull);
+      expect(sendAction(tester).isEnabled, isTrue);
+      expect(tester.widget<ToolbarAction>(_toolbarSend()).onPressed, isNotNull);
     });
 
     testOnMac('Send is dimmed on an account that signs on a hardware wallet', (tester) async {
@@ -225,6 +225,10 @@ void main() {
       expect(tester.widget<EditableText>(_editable(SendSheet.addressFieldKey)).focusNode.hasFocus, isTrue);
       expect(_canPress(tester, SendSheet.reviewKey), isFalse);
       expect(_inSheet(find.text('RECENTS')), findsNothing);
+      // What only a private send has.
+      expect(find.byKey(SendSheet.privateNoticeKey), findsNothing);
+      expect(_inSheet(find.text('Pending')), findsNothing);
+      expect(_inSheet(find.text('Network fee')), findsOneWidget);
     });
 
     testOnMac('lists the four addresses paid last, never its own, each whole over its checkphrase', (tester) async {

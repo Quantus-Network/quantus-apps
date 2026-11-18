@@ -2651,6 +2651,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get desktopSendMaximum => 'Send the maximum amount';
 
   @override
+  String get desktopSendTransactionFee => 'Transaction fee';
+
+  @override
+  String get desktopSendStatusStopped => '[STOPPED]';
+
+  @override
+  String get desktopSendStatusFailed => '[FAILED]';
+
+  @override
   String get desktopSendReview => 'Review';
 
   @override

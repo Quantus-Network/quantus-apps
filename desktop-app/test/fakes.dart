@@ -15,6 +15,8 @@ import 'package:quantus_desktop_wallet/services/window_chrome.dart';
 import 'package:quantus_sdk/generated/bell/pallets/balances.dart' as balances_pallet;
 import 'package:quantus_sdk/generated/bell/types/sp_runtime/multiaddress/multi_address.dart' as multi_address;
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:wallet_core/providers/encrypted_send_provider.dart';
+import 'package:wallet_core/providers/one_click_provider.dart';
 import 'package:wallet_core/providers/remote_config_provider.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:wallet_core/services/logout_service.dart';
@@ -403,6 +405,12 @@ class FakeWalletDevice {
   /// What every transparent account holds.
   BigInt balance = oneToken;
 
+  /// The deposits, in tokens, an Encrypted account can spend, and the tokens
+  /// of change still on their way back to it. With no deposits it holds one
+  /// token and nothing to spend.
+  List<int> encryptedDeposits = const [];
+  int encryptedPending = 0;
+
   /// What generating a recovery phrase answers.
   Future<String> Function() generateMnemonic = () async => 'created wallet recovery phrase';
 
@@ -435,20 +443,23 @@ class FakeWalletDevice {
       (ref) => RemoteConfigNotifier(FakeRemoteConfigService(RemoteConfigModel.defaults)),
     ),
     balanceProviderFamily.overrideWith((ref, accountId) => balance),
-    encryptedBalanceProvider.overrideWith((ref, walletIndex) => AsyncValue.data(oneToken)),
-    encryptedStateProvider.overrideWith(
-      (ref, walletIndex) => EncryptedAccountState(
-        accountId: 'qzEncrypted$walletIndex',
-        ownAddresses: const {},
-        received: const [],
-        spends: const {},
-        utxos: const [],
-        pendingChangeToken: BigInt.zero,
-        nextIndex: 0,
-        nextChangeIndex: 0,
-      ),
+    encryptedBalanceProvider.overrideWith(
+      (ref, walletIndex) =>
+          AsyncValue.data(encryptedDeposits.isEmpty ? oneToken : _encryptedState(walletIndex).balance),
     ),
+    encryptedStateProvider.overrideWith((ref, walletIndex) => _encryptedState(walletIndex)),
   ];
+
+  EncryptedAccountState _encryptedState(int walletIndex) => EncryptedAccountState(
+    accountId: 'qzEncrypted$walletIndex',
+    ownAddresses: const {},
+    received: const [],
+    spends: const {},
+    utxos: [for (final tokens in encryptedDeposits) encryptedUtxo(tokens)],
+    pendingChangeToken: oneToken * BigInt.from(encryptedPending),
+    nextIndex: 0,
+    nextChangeIndex: 0,
+  );
 }
 
 /// The system's approval, answering as a test says. It approves unless told
@@ -585,14 +596,31 @@ List<Override> shellOverrides({
   Future<String> Function(int walletIndex)? depositAddress,
   FakeUserApproval? approval,
   FakeSendChain? chain,
+  Map<int, EncryptedAccountState> encryptedStates = const {},
+  Set<String> ownEncryptedAddresses = const {},
+  FakeOneClickService? oneClick,
+  FakeEncryptedSendController? proving,
 }) {
   return [
     systemApprovalProvider.overrideWithValue(approval ?? FakeUserApproval()),
     ...(chain ?? FakeSendChain()).overrides(),
-    if (depositAddress != null)
+    if (depositAddress != null || encryptedStates.isNotEmpty)
       encryptedAccountServiceProvider.overrideWith(
-        (ref, walletIndex) => FakeEncryptedAccountService(() => depositAddress(walletIndex)),
+        (ref, walletIndex) => FakeEncryptedAccountService(
+          depositAddress == null
+              ? () async => throw StateError('no deposit address set for wallet $walletIndex')
+              : () => depositAddress(walletIndex),
+          ownAddresses: ownEncryptedAddresses,
+        ),
       ),
+    oneClickServiceProvider.overrideWithValue(oneClick ?? FakeOneClickService()),
+    if (proving != null) encryptedSendControllerProvider.overrideWith(() => proving),
+    if (encryptedStates.isNotEmpty)
+      encryptedStateProvider.overrideWith((ref, walletIndex) {
+        final state = encryptedStates[walletIndex];
+        if (state == null) throw StateError('no encrypted state set for wallet $walletIndex');
+        return state;
+      }),
     settingsServiceProvider.overrideWithValue(settings ?? FakeSettingsService()),
     accountsServiceProvider.overrideWithValue(FakeAccountsService(loadAccounts ?? () async => accounts)),
     remoteConfigProvider.overrideWith(
@@ -606,7 +634,7 @@ List<Override> shellOverrides({
       return balance;
     }),
     encryptedBalanceProvider.overrideWith((ref, walletIndex) {
-      final balance = encryptedBalances[walletIndex];
+      final balance = encryptedBalances[walletIndex] ?? encryptedStates[walletIndex]?.balance;
       if (balance == null) {
         return AsyncValue.error(StateError('no encrypted balance set for wallet $walletIndex'), StackTrace.current);
       }
@@ -626,15 +654,112 @@ void useFakeCheckphrases(Future<String?> Function(String address) lookup) {
 Future<String?> fakeCheckphrase(String address) async => 'Phrase-$address';
 
 /// An encrypted account whose next unused deposit address comes from
-/// [nextAddress].
+/// [nextAddress], and whose own addresses are [ownAddresses].
 class FakeEncryptedAccountService extends Fake implements EncryptedAccountService {
-  FakeEncryptedAccountService(this.nextAddress);
+  FakeEncryptedAccountService(this.nextAddress, {this.ownAddresses = const {}});
 
   final Future<String> Function() nextAddress;
+  final Set<String> ownAddresses;
+
+  @override
+  Future<bool> ownsAddress(String address) async => ownAddresses.contains(address);
 
   @override
   Future<WormholeKeyPair> receiveKeyPair() async =>
       WormholeKeyPair(address: await nextAddress(), addressHex: '', rewardsPreimageHex: '', secretHex: '');
+}
+
+/// 1Click's word on which addresses are its single-use deposit addresses:
+/// those in [deposits]. An answer may be held back with [gate].
+class FakeOneClickService extends Fake implements OneClickService {
+  FakeOneClickService({this.deposits = const {}});
+
+  final Set<String> deposits;
+
+  /// When set, every lookup waits for this first.
+  Future<void>? gate;
+  final _answered = <String>{};
+
+  @override
+  Future<bool> isDepositAddress(String address) async {
+    await gate;
+    _answered.add(address);
+    return deposits.contains(address);
+  }
+
+  @override
+  bool isKnownDepositAddress(String address) => _answered.contains(address) && deposits.contains(address);
+}
+
+/// A deposit of [tokens] that an Encrypted account can spend.
+WormholeUtxo encryptedUtxo(int tokens) {
+  final scaled = wormholeScaledFromToken(oneToken * BigInt.from(tokens));
+  return WormholeUtxo(
+    transfer: WormholeTransfer(
+      id: 't$tokens',
+      blockHeight: 1,
+      timestamp: DateTime(2026),
+      fromId: 'from',
+      toId: 'to',
+      amount: wormholeTokenFromScaled(scaled),
+      toHash: '0x00',
+      leafIndex: BigInt.from(tokens),
+      transferCount: BigInt.one,
+      extrinsicId: '',
+      viaWormhole: false,
+    ),
+    owner: const WormholeAddressInfo(index: 0, address: 'addr', secretHex: '0x00'),
+    nullifierHex: '0xn$tokens',
+  );
+}
+
+/// What an Encrypted account holds: a deposit of each of [deposits] tokens
+/// to spend, and [pending] tokens of change still on their way back.
+EncryptedAccountState encryptedHolding(List<int> deposits, {int pending = 0}) => EncryptedAccountState(
+  accountId: encryptedAccount.accountId,
+  ownAddresses: const {},
+  received: const [],
+  spends: const {},
+  utxos: [for (final tokens in deposits) encryptedUtxo(tokens)],
+  pendingChangeToken: oneToken * BigInt.from(pending),
+  nextIndex: 0,
+  nextChangeIndex: 0,
+);
+
+/// The proving of a private send, driven by the test: it records what it was
+/// started with and how often it was asked to stop, and is in whatever state
+/// [report] last gave it.
+class FakeEncryptedSendController extends EncryptedSendController {
+  final starts = <({Account account, WormholeSpendPlan plan, BigInt amount, String recipient})>[];
+  int cancels = 0;
+
+  /// Nothing listened to the proving any more, which stops it.
+  bool wasDisposed = false;
+
+  @override
+  EncryptedSendState build() {
+    ref.onDispose(() => wasDisposed = true);
+    return EncryptedSendState(phase: EncryptedSendPhase.idle);
+  }
+
+  @override
+  Future<void> start({
+    required Account account,
+    required WormholeSpendPlan plan,
+    required BigInt amount,
+    required String recipientAddress,
+  }) async {
+    starts.add((account: account, plan: plan, amount: amount, recipient: recipientAddress));
+    state = state.copyWith(phase: EncryptedSendPhase.running);
+  }
+
+  @override
+  Future<void> cancel() async {
+    cancels++;
+    state = state.copyWith(phase: EncryptedSendPhase.canceling);
+  }
+
+  void report(EncryptedSendState next) => state = next;
 }
 
 /// Pumps the whole app in a window of the size the runners open, and waits for

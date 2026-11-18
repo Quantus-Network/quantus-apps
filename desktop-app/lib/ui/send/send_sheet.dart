@@ -8,8 +8,11 @@ import 'package:flutter_riverpod/misc.dart';
 import 'package:quantus_desktop_wallet/providers/approval_providers.dart';
 import 'package:quantus_desktop_wallet/services/external_links.dart';
 import 'package:quantus_desktop_wallet/ui/components/caps_text.dart';
+import 'package:quantus_desktop_wallet/ui/components/desktop_address_checkphrase.dart';
 import 'package:quantus_desktop_wallet/ui/components/desktop_checkbox.dart';
+import 'package:quantus_desktop_wallet/ui/components/notice_box.dart';
 import 'package:quantus_desktop_wallet/ui/components/sheet_button.dart';
+import 'package:quantus_desktop_wallet/ui/components/terminal_line.dart';
 import 'package:quantus_desktop_wallet/ui/components/toolbar_action.dart';
 import 'package:quantus_desktop_wallet/ui/send/send_form_parts.dart';
 import 'package:quantus_desktop_wallet/ui/send/send_styles.dart';
@@ -19,20 +22,24 @@ import 'package:quantus_desktop_wallet/utils/send_strategies.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/l10n/app_localizations.dart';
 import 'package:wallet_core/providers/account_providers.dart';
+import 'package:wallet_core/providers/encrypted_send_provider.dart';
 import 'package:wallet_core/providers/l10n_provider.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:wallet_core/send/send_review.dart';
 import 'package:wallet_core/send/send_review_row.dart';
 import 'package:wallet_core/send/send_screen_logic.dart';
 import 'package:wallet_core/send/send_strategy.dart';
+import 'package:wallet_core/send/wormhole_steps.dart';
 import 'package:wallet_core/services/user_approval.dart';
 
-/// The steps of the Send sheet.
-enum _Step { form, review, receipt }
+/// The steps of the Send sheet. Only a private send has the proving.
+enum _Step { form, review, proving, receipt }
 
 /// The Send sheet: a form for who is paid and how much, a review of the send
 /// before the system is asked to approve it, and a receipt once it has been
-/// handed to the network.
+/// handed to the network. A private send from the Encrypted account builds
+/// its proofs first, which takes a while: the sheet shows how far that is,
+/// and it can be stopped.
 ///
 /// The send leaves the account the sheet opened on. Its flow, a first fee
 /// quote with it, was started by the press that opened the sheet.
@@ -50,6 +57,13 @@ class SendSheet extends ConsumerStatefulWidget {
   static const sendKey = Key('send-send');
   static const explorerKey = Key('send-explorer');
   static const doneKey = Key('send-done');
+  static const privateNoticeKey = Key('send-private-notice');
+  static const stopKey = Key('send-stop');
+  static const closeKey = Key('send-close');
+
+  /// The line of a private send's step, by the number the proving reports
+  /// the step under.
+  static Key stepKey(int step) => ValueKey('send-step-$step');
 
   /// The list of the addresses paid before.
   static const recentsKey = Key('send-recents');
@@ -118,6 +132,9 @@ class _SendSheetState extends ConsumerState<SendSheet> {
 
   /// Why the last press of Send sent nothing.
   String? _error;
+
+  /// The amount a private send is proving.
+  BigInt? _provingAmount;
 
   /// The submitted send, and its figures as the review showed them last.
   SendTerminalContent? _submitted;
@@ -227,7 +244,7 @@ class _SendSheetState extends ConsumerState<SendSheet> {
     if (_checkFailed) return l10n.sendRecipientCheckFailedMessage;
     return switch (_block) {
       RecipientBlock.self => l10n.desktopSendAddressSelf,
-      RecipientBlock.oneClickDeposit => l10n.encryptedSendNearIntentsTitle,
+      RecipientBlock.oneClickDeposit => l10n.encryptedSendNearIntentsDescription,
       null => null,
     };
   }
@@ -382,13 +399,32 @@ class _SendSheetState extends ConsumerState<SendSheet> {
           _isSending = false;
           _error = message;
         });
-      case SendNeedsHardwareSignature() || SendNeedsProving():
+      case SendNeedsProving(:final account, :final plan, :final amount, :final terminal):
+        // The proving lives as long as something listens to it: from here
+        // on the sheet does, and moves on once every proof is handed over.
+        ref.listenManual(encryptedSendControllerProvider, (_, next) {
+          if (next.phase == EncryptedSendPhase.succeeded && _step == _Step.proving) {
+            setState(() => _step = _Step.receipt);
+          }
+        });
+        setState(() {
+          _isSending = false;
+          _provingAmount = amount;
+          _submitted = terminal;
+          _submittedRows = rows;
+          _step = _Step.proving;
+        });
+        unawaited(
+          ref
+              .read(encryptedSendControllerProvider.notifier)
+              .start(account: account, plan: plan, amount: amount, recipientAddress: _recipient),
+        );
+      case SendNeedsHardwareSignature():
         setState(() {
           _isSending = false;
           _error = failed;
         });
-        // Send is offered only on accounts whose key signs in the app, in
-        // the open.
+        // Send is offered only on accounts whose key signs in the app.
         throw StateError('The desktop app cannot finish this send: $outcome');
     }
   }
@@ -402,9 +438,11 @@ class _SendSheetState extends ConsumerState<SendSheet> {
     });
     final title = _strategy.strings(l10n).flowTitle;
     final isReview = _step == _Step.review;
+    // A send being proved cannot be left, only stopped.
+    final isProving = _step == _Step.proving && _isUnderWay(ref.watch(encryptedSendControllerProvider));
 
     return PopScope(
-      canPop: !_isSending,
+      canPop: !_isSending && !isProving,
       child: SheetBackShortcut(
         onBack: isReview && !_isSending ? _backToForm : null,
         child: Focus(
@@ -422,6 +460,7 @@ class _SendSheetState extends ConsumerState<SendSheet> {
               ...switch (_step) {
                 _Step.form => _form(l10n),
                 _Step.review => _review(l10n),
+                _Step.proving => _proving(l10n),
                 _Step.receipt => _receipt(l10n),
               },
             ],
@@ -440,6 +479,10 @@ class _SendSheetState extends ConsumerState<SendSheet> {
     final feeState = ref.watch(_feeProvider);
     final fee = feeState.fee;
     final availability = ref.watch(approvalAvailabilityProvider);
+    // What is still on its way back to the account, where a send can leave
+    // some.
+    final pendingProvider = _strategy.pendingBalanceProvider;
+    final pending = pendingProvider == null ? null : ref.watch(pendingProvider).value;
     // Said beside the buttons where a send could not be approved.
     final approvalNote = switch (availability) {
       AsyncData(:final value) => approvalUnavailableNote(l10n, value),
@@ -555,17 +598,35 @@ class _SendSheetState extends ConsumerState<SendSheet> {
         },
       ),
       const SizedBox(height: 8),
-      Row(
+      // What can be spent at the line's start and what the send costs at its
+      // end; where they do not fit side by side, the cost goes under.
+      Wrap(
+        alignment: WrapAlignment.spaceBetween,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        spacing: 16,
+        runSpacing: 4,
         children: [
-          Text(l10n.desktopSendAvailable, style: context.sendBody()),
-          const SizedBox(width: 8),
-          Text(switch (ref.watch(_strategy.displayBalanceProvider)) {
-            AsyncValue(:final value?) => l10n.commonAmountBalance(fmt.formatBalance(value), AppConstants.tokenSymbol),
-            AsyncError() => '—',
-            _ => '…',
-          }, style: context.sendBody()),
-          const Spacer(),
-          ..._feeLine(l10n, fmt, feeState),
+          Wrap(
+            spacing: 16,
+            runSpacing: 4,
+            children: [
+              _figure(l10n.desktopSendAvailable, switch (ref.watch(_strategy.displayBalanceProvider)) {
+                AsyncValue(:final value?) => l10n.commonAmountBalance(
+                  fmt.formatBalance(value),
+                  AppConstants.tokenSymbol,
+                ),
+                AsyncError() => '—',
+                _ => '…',
+              }),
+              if (pending != null && pending > BigInt.zero)
+                _figure(
+                  l10n.activityTxPending,
+                  l10n.commonAmountBalance(fmt.formatBalance(pending), AppConstants.tokenSymbol),
+                  color: colors.textMuted2,
+                ),
+            ],
+          ),
+          Row(mainAxisSize: MainAxisSize.min, children: _feeLine(l10n, fmt, feeState)),
         ],
       ),
       const SizedBox(height: 12 - DesktopCheckbox.boxInset),
@@ -579,7 +640,26 @@ class _SendSheetState extends ConsumerState<SendSheet> {
           onChanged: balance.hasValue ? _setMax : null,
         ),
       ),
-      const SizedBox(height: 26 - DesktopCheckbox.boxInset),
+      if (_strategy.showPrivateSendNotice) ...[
+        const SizedBox(height: 16 - DesktopCheckbox.boxInset),
+        NoticeBox(
+          key: SendSheet.privateNoticeKey,
+          tone: colors.accentFlare,
+          symbol: CupertinoIcons.lock_fill,
+          child: Text.rich(
+            TextSpan(
+              children: [
+                TextSpan(text: l10n.privateSendTitle, style: context.themeTextV3.bodyEmphasis),
+                const TextSpan(text: '   '),
+                TextSpan(text: l10n.privateSendSubtitle),
+              ],
+            ),
+            style: context.themeTextV3.body.copyWith(color: colors.textContent),
+          ),
+        ),
+        const SizedBox(height: 20),
+      ] else
+        const SizedBox(height: 26 - DesktopCheckbox.boxInset),
       Row(
         children: [
           Expanded(
@@ -608,6 +688,16 @@ class _SendSheetState extends ConsumerState<SendSheet> {
     ];
   }
 
+  /// A figure of the line under the amount, after what it is.
+  Widget _figure(String label, String value, {Color? color}) => Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      Text(label, style: context.sendBody(color: color)),
+      const SizedBox(width: 8),
+      Text(value, style: context.sendBody(color: color)),
+    ],
+  );
+
   /// What the network takes, at the end of the line under the amount: an
   /// estimate until the fee priced exactly this send, and a way to ask again
   /// when it could not be had.
@@ -627,7 +717,7 @@ class _SendSheetState extends ConsumerState<SendSheet> {
           style: context.sendBody(color: context.colorsV3.semanticEmber),
         )
       else ...[
-        Text(l10n.swapReviewNetworkFee, style: context.sendBody()),
+        Text(sendFeeLabel(_strategy, l10n), style: context.sendBody()),
         const SizedBox(width: 8),
         if (fee == null)
           const Loader(size: 12)
@@ -699,7 +789,14 @@ class _SendSheetState extends ConsumerState<SendSheet> {
         ],
       ),
       const SizedBox(height: 24),
-      SendSummary(l10n: l10n, recipient: _recipient, from: _account.name, rows: rows, totalLabel: l10n.swapYouPay),
+      SendSummary(
+        l10n: l10n,
+        recipient: _recipient,
+        from: _account.name,
+        rows: rows,
+        feeLabel: sendFeeLabel(_strategy, l10n),
+        totalLabel: l10n.swapYouPay,
+      ),
       const SizedBox(height: 22),
       Row(
         children: [
@@ -740,6 +837,165 @@ class _SendSheetState extends ConsumerState<SendSheet> {
     ];
   }
 
+  // ------------------------------------------------------------ the proving
+
+  /// The send is being proved or handed over, or is about to be.
+  static bool _isUnderWay(EncryptedSendState send) => send.isRunning || send.phase == EncryptedSendPhase.idle;
+
+  List<Widget> _proving(AppLocalizations l10n) {
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
+    final fmt = ref.watch(numberFormattingServiceProvider);
+    final send = ref.watch(encryptedSendControllerProvider);
+    final amount = _provingAmount;
+    if (amount == null) throw StateError('The proving step has no send to prove.');
+
+    final isUnderWay = _isUnderWay(send);
+    final isCanceling = send.phase == EncryptedSendPhase.canceling;
+    final isCancelled = send.phase == EncryptedSendPhase.cancelled;
+    final hasFailed = send.phase == EncryptedSendPhase.failed || send.phase == EncryptedSendPhase.planStale;
+    final failure = send.phase == EncryptedSendPhase.planStale ? l10n.encryptedSendPlanStale : send.errorMessage;
+    final steps = WormholeStepStates(
+      stepProgress: send.stepProgress,
+      currentStep: send.currentStep,
+      done: false,
+      cancelled: isCancelled,
+      hasError: hasFailed,
+    );
+    String amountLabel(BigInt value) => l10n.commonAmountBalance(fmt.formatBalance(value), AppConstants.tokenSymbol);
+
+    return [
+      const SizedBox(height: 26),
+      CapsText(
+        hasFailed
+            ? l10n.encryptedSendFailedTitle
+            : isCancelled
+            ? l10n.encryptedSendCancelledTitle
+            : l10n.encryptedSendingLabel,
+        style: context.sendCaps(
+          color: hasFailed
+              ? colors.semanticEmber
+              : isCancelled
+              ? colors.semanticSand
+              : null,
+        ),
+      ),
+      const SizedBox(height: 12),
+      Row(
+        crossAxisAlignment: CrossAxisAlignment.baseline,
+        textBaseline: TextBaseline.alphabetic,
+        children: [
+          Flexible(
+            child: Text(
+              fmt.formatBalance(amount, smartDecimals: AppConstants.decimals),
+              overflow: TextOverflow.ellipsis,
+              style: text.displayBalance.copyWith(color: colors.textContent),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(AppConstants.tokenSymbol, style: text.dataAddressLarge.copyWith(color: colors.textMuted)),
+        ],
+      ),
+      const SizedBox(height: 22),
+      CapsText(l10n.sendTxSubmittedToLabel, style: context.sendCaps()),
+      const SizedBox(height: 10),
+      DesktopAddressCheckphrase(address: _recipient),
+      const SizedBox(height: 26),
+      for (final (step, name) in encryptedSendSteps(l10n)) _stepLine(l10n, send, steps, step, name),
+      // What ended the send early. However long, it leaves the button under
+      // it in the sheet.
+      if (isCancelled || failure != null) ...[
+        const SizedBox(height: 4),
+        Flexible(
+          child: SingleChildScrollView(
+            child: isCancelled
+                ? send.submittedRecipientToken > BigInt.zero
+                      ? NoticeBox(
+                          tone: colors.semanticSand,
+                          child: Text(
+                            l10n.encryptedSendCancelledPartial(amountLabel(send.submittedRecipientToken)),
+                            style: text.body.copyWith(color: colors.textContent),
+                          ),
+                        )
+                      : NoticeBox(
+                          tone: colors.semanticSage,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                l10n.encryptedSendFundsSafeLabel,
+                                style: text.bodyEmphasis.copyWith(color: colors.textContent),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                l10n.encryptedSendFundsSafeCaption(_account.name),
+                                style: text.body.copyWith(color: colors.textContent),
+                              ),
+                            ],
+                          ),
+                        )
+                : NoticeBox(
+                    tone: colors.semanticEmber,
+                    child: Text(failure!, style: text.body.copyWith(color: colors.textContent)),
+                  ),
+          ),
+        ),
+      ],
+      const SizedBox(height: 22),
+      Row(
+        children: [
+          Expanded(
+            child: isUnderWay
+                ? Padding(
+                    padding: const EdgeInsets.only(right: 16),
+                    child: Text(
+                      isCanceling ? l10n.commonCanceling : l10n.encryptedSendProgressFooter,
+                      style: context.sendBody(),
+                    ),
+                  )
+                : const SizedBox.shrink(),
+          ),
+          if (isUnderWay)
+            SheetButton(
+              key: SendSheet.stopKey,
+              label: l10n.commonCancel,
+              kind: SheetButtonKind.secondary,
+              isDisabled: isCanceling,
+              onTap: () => unawaited(ref.read(encryptedSendControllerProvider.notifier).cancel()),
+            )
+          else
+            SheetButton(key: SendSheet.closeKey, label: l10n.commonClose, onTap: () => Navigator.of(context).pop()),
+        ],
+      ),
+    ];
+  }
+
+  /// One step of the proving as a line of the terminal: done, how far it is
+  /// while it runs, where the send stopped or failed, or still to come.
+  Widget _stepLine(AppLocalizations l10n, EncryptedSendState send, WormholeStepStates steps, int step, String name) {
+    final colors = context.colorsV3;
+    final progress = send.stepProgress[step];
+    final total = progress?.total;
+    final (String? status, Color? color) = switch (steps.of(step)) {
+      StepRowState.done => (l10n.desktopBootStatusOk, colors.semanticSage),
+      StepRowState.active => (
+        progress != null && total != null ? '${progress.completed}/$total' : '...',
+        colors.accentFlare,
+      ),
+      StepRowState.ended => (l10n.desktopSendStatusFailed, colors.semanticEmber),
+      StepRowState.pending =>
+        steps.stoppedAt(step) ? (l10n.desktopSendStatusStopped, colors.semanticSand) : (null, null),
+    };
+
+    return TerminalLine(
+      key: SendSheet.stepKey(step),
+      name: name,
+      status: status,
+      statusColor: color,
+      isDim: status == null,
+    );
+  }
+
   // ------------------------------------------------------------ the receipt
 
   List<Widget> _receipt(AppLocalizations l10n) {
@@ -775,6 +1031,7 @@ class _SendSheetState extends ConsumerState<SendSheet> {
         recipient: submitted.recipientAddress,
         from: _account.name,
         rows: _submittedRows,
+        feeLabel: sendFeeLabel(_strategy, l10n),
         totalLabel: l10n.desktopSendYouPaid,
       ),
       const SizedBox(height: 22),

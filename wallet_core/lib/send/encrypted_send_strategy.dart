@@ -134,10 +134,10 @@ class EncryptedSendStrategy extends SendStrategy {
         l10n.commonAmountBalance(fmt.formatBalance(v, smartDecimals: AppConstants.decimals), AppConstants.tokenSymbol);
 
     return [
-      SendReviewText(l10n.sendReviewTo, recipientAddress.trim()),
-      SendReviewText(l10n.sendReviewAmount, amt(amount)),
-      SendReviewText(l10n.encryptedSendFeeLabel, amt(feeAmount)),
-      SendReviewText(l10n.sendReviewYouPay, amt(amount + feeAmount)),
+      SendReviewText(l10n.sendReviewTo, recipientAddress.trim(), kind: SendReviewRowKind.recipient),
+      SendReviewText(l10n.sendReviewAmount, amt(amount), kind: SendReviewRowKind.amount),
+      SendReviewText(l10n.encryptedSendFeeLabel, amt(feeAmount), kind: SendReviewRowKind.fee),
+      SendReviewText(l10n.sendReviewYouPay, amt(amount + feeAmount), kind: SendReviewRowKind.total),
     ];
   }
 

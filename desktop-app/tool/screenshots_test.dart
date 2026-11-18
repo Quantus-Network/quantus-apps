@@ -26,6 +26,8 @@ import 'package:quantus_desktop_wallet/ui/settings/settings_sheet.dart';
 import 'package:quantus_desktop_wallet/ui/shell/desktop_shell.dart';
 import 'package:quantus_desktop_wallet/ui/shell/sidebar.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:wallet_core/providers/encrypted_send_provider.dart';
+import 'package:wallet_core/providers/one_click_provider.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:wallet_core/send/send_fee_notifier.dart';
 import 'package:wallet_core/services/user_approval.dart';
@@ -214,6 +216,55 @@ void main() {
     await _tapAndSettle(tester, find.byKey(SendSheet.sendKey));
   });
 
+  _scene('send_private_form', (tester) async {
+    await _openPrivateSend(tester);
+    await _fillSend(tester);
+  });
+
+  _scene('send_private_form_smallest_window', (tester) async {
+    await _openPrivateSend(tester);
+    await _fillSend(tester);
+    tester.view.physicalSize = const Size(960, 640) * _pixelRatio;
+    await tester.pumpAndSettle();
+  });
+
+  _scene('send_private_form_near_intents', (tester) async {
+    await _openPrivateSend(tester);
+    await _fillSend(tester, address: _nearIntentsAddress);
+  });
+
+  _scene('send_private_review', (tester) async {
+    await _openPrivateSend(tester);
+    await _fillSend(tester);
+    await _tapAndSettle(tester, find.byKey(SendSheet.reviewKey));
+  });
+
+  for (final (name, phase, error) in [
+    ('send_private_progress', EncryptedSendPhase.running, null),
+    ('send_private_cancelled', EncryptedSendPhase.cancelled, null),
+    ('send_private_failed', EncryptedSendPhase.failed, 'The network refused the transaction: Transaction is outdated'),
+    ('send_private_receipt', EncryptedSendPhase.succeeded, null),
+  ]) {
+    _scene(name, (tester) async {
+      final proving = await _openPrivateSend(tester);
+      await _fillSend(tester);
+      await _tapAndSettle(tester, find.byKey(SendSheet.reviewKey));
+      await _tapAndSettle(tester, find.byKey(SendSheet.sendKey));
+      proving.report(
+        EncryptedSendState(
+          phase: phase,
+          currentStep: 5,
+          stepProgress: const {
+            4: ClaimProgressItem(step: 4, title: '', completed: 8, total: 8),
+            5: ClaimProgressItem(step: 5, title: '', completed: 3, total: 8),
+          },
+          errorMessage: error,
+        ),
+      );
+      await tester.pumpAndSettle();
+    });
+  }
+
   _scene('settings', (tester) async {
     await _openSettings(tester);
   });
@@ -360,6 +411,41 @@ Future<FakeWalletDevice> _openSend(WidgetTester tester, {FakeUserApproval? appro
   await tester.pumpAndSettle();
   await _tapAndSettle(tester, find.widgetWithText(ToolbarAction, 'Send'));
   return device;
+}
+
+const _nearIntentsAddress = 'qzN3arDp7KsHj9RbY3mFa6ZeUo1GiBn5tVk4mQaT8vNc2L';
+
+/// Opens the wallet on its Encrypted account, holding a deposit of 1,250
+/// tokens with 12 more on their way back, and its Send. The proving is the
+/// scene's to drive.
+Future<FakeEncryptedSendController> _openPrivateSend(WidgetTester tester) async {
+  _useEmptyPreferences(tester);
+  useFakeCheckphrases((address) async => _recentPhrases[address] ?? 'Harbor-Velvet-Signal-Mirror-Canyon');
+  final proving = FakeEncryptedSendController();
+  final device = FakeWalletDevice()
+    ..store([_root, _second, _encrypted])
+    ..balance = oneToken * BigInt.from(1250)
+    ..encryptedDeposits = [1250]
+    ..encryptedPending = 12;
+  device.chain.isValidAddress = (address) => address.startsWith('qz') && address.length == _depositAddress.length;
+  await _open(
+    tester,
+    device,
+    reduceMotion: true,
+    overrides: [
+      systemApprovalProvider.overrideWithValue(FakeUserApproval()),
+      encryptedAccountServiceProvider.overrideWith(
+        (ref, walletIndex) => FakeEncryptedAccountService(() async => _depositAddress),
+      ),
+      oneClickServiceProvider.overrideWithValue(FakeOneClickService(deposits: {_nearIntentsAddress})),
+      encryptedSendControllerProvider.overrideWith(() => proving),
+    ],
+  );
+  await tester.pumpAndSettle();
+  await tester.tap(find.descendant(of: find.byType(Sidebar), matching: find.text('Encrypted Account')));
+  await tester.pumpAndSettle();
+  await _tapAndSettle(tester, find.widgetWithText(ToolbarAction, 'Send'));
+  return proving;
 }
 
 /// Answers reads of the stored preferences with nothing, and takes writes,

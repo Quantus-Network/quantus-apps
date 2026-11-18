@@ -272,8 +272,14 @@ void main() {
   late EncryptedAccountService service;
   late String mnemonic;
 
+  /// How often the service asked for the seed, and what holds its answer back.
+  late int mnemonicReads;
+  Completer<void>? mnemonicGate;
+
   setUp(() async {
     mnemonic = defaultMnemonic;
+    mnemonicReads = 0;
+    mnemonicGate = null;
     tempDir = await Directory.systemTemp.createTemp('enc_acct_test');
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
       const MethodChannel('plugins.flutter.io/path_provider'),
@@ -285,7 +291,11 @@ void main() {
     sendService = _FakeSendService();
     service = EncryptedAccountService(
       walletIndex: 0,
-      getMnemonic: () async => mnemonic,
+      getMnemonic: () async {
+        mnemonicReads++;
+        await mnemonicGate?.future;
+        return mnemonic;
+      },
       hdWalletService: hdWallet,
       utxoService: utxoService,
       discoveryService: discovery,
@@ -564,6 +574,74 @@ void main() {
       expect(pending[0]['changeAddress'], isNull);
       expect(BigInt.parse(pending[0]['changeAmountToken'] as String), BigInt.zero);
       expect(sendService.capturedBatches![0][0].exitAccount2, isNull);
+    });
+  });
+
+  group('send cancelled before its operation starts', () {
+    final recipient = Address(prefix: 189, pubkey: Uint8List.fromList(List.filled(32, 0x22))).encode();
+
+    test('a send cancelled before it begins reads no seed and starts no operation', () async {
+      await seedState(nextIndex: 1);
+      final plan = selectWormholeInputs(utxos: [_utxo(1000)], amountToken: wormholeTokenFromScaled(400));
+
+      await expectLater(
+        service.send(
+          plan: plan,
+          recipientAddress: recipient,
+          circuitBinsDir: '/unused',
+          onProgress: (_) {},
+          isCancelled: () => true,
+        ),
+        throwsA(isA<ClaimCancelled>()),
+      );
+
+      expect(mnemonicReads, 0);
+      expect(sendService.capturedBatchesList, isEmpty);
+    });
+
+    test('a send cancelled while the seed is read starts no operation and frees its change index', () async {
+      await seedState(nextIndex: 1);
+      final plan = selectWormholeInputs(utxos: [_utxo(1000)], amountToken: wormholeTokenFromScaled(400));
+      expect(plan.changeToken, greaterThan(BigInt.zero));
+      var cancelled = false;
+
+      final gate = mnemonicGate = Completer<void>();
+      final send = service.send(
+        plan: plan,
+        recipientAddress: recipient,
+        circuitBinsDir: '/unused',
+        onProgress: (_) {},
+        isCancelled: () => cancelled,
+      );
+      await pumpEventQueue();
+      expect(mnemonicReads, 1, reason: 'the send is waiting for the seed');
+      cancelled = true;
+      gate.complete();
+
+      await expectLater(send, throwsA(isA<ClaimCancelled>()));
+      expect(sendService.capturedBatchesList, isEmpty);
+
+      // The change index the cancelled send had reserved goes to the next one.
+      mnemonicGate = null;
+      await service.send(plan: plan, recipientAddress: recipient, circuitBinsDir: '/unused', onProgress: (_) {});
+      expect(sendService.capturedBatches![0][0].exitAccount2, Address.decode(changeAddressAt(0)).pubkey);
+    });
+
+    test('a send that is not cancelled goes through as before', () async {
+      await seedState(nextIndex: 1);
+      final plan = selectWormholeInputs(utxos: [_utxo(1000)], amountToken: wormholeTokenFromScaled(400));
+
+      final result = await service.send(
+        plan: plan,
+        recipientAddress: recipient,
+        circuitBinsDir: '/unused',
+        onProgress: (_) {},
+        isCancelled: () => false,
+      );
+
+      expect(result.batchesSubmitted, 1);
+      expect(sendService.capturedBatches![0][0].outputAmount1, 400);
+      expect((await readStateFile())['nextChangeIndex'], 1);
     });
   });
 
