@@ -751,5 +751,21 @@
   "desktopShortcutsUsedBy": "Pintasan itu sudah dipakai oleh {command}. Tekan tombol lain.",
   "desktopShortcutsKeptFor": "Pintasan itu disediakan untuk {command}. Tekan tombol lain.",
   "desktopShortcutsModifierUsedBy": "Tombol itu akan bentrok dengan {command}.",
-  "desktopShortcutsSaveFailed": "Pintasan tidak dapat disimpan: {error}"
+  "desktopShortcutsSaveFailed": "Pintasan tidak dapat disimpan: {error}",
+  "desktopProposeCost": "Biaya pengajuan",
+  "desktopProposeCostPaidBy": "{cost}, dibayar oleh",
+  "desktopProposeCostNotCovered": "{account} tidak memiliki cukup saldo untuk membayar biaya pengajuan.",
+  "desktopProposeMaximum": "Ajukan jumlah maksimum",
+  "desktopProposeProposing": "Mengajukan",
+  "desktopProposeProposedBy": "Diajukan oleh",
+  "desktopProposeApprovalsNeeded": "Persetujuan yang diperlukan",
+  "desktopProposeApprovals": "Persetujuan",
+  "desktopProposeCountOf": "{count} dari {total}",
+  "desktopProposeExpires": "Kedaluwarsa",
+  "desktopProposeDeposit": "Deposit",
+  "desktopProposeFee": "Biaya proposal",
+  "desktopProposePays": "membayar",
+  "desktopProposePaid": "telah membayar",
+  "desktopProposeSubmit": "Kirim Proposal",
+  "desktopProposeProposed": "{amount} diajukan"
 }

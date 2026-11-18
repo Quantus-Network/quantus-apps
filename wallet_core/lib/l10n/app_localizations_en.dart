@@ -2784,4 +2784,60 @@ class AppLocalizationsEn extends AppLocalizations {
   String desktopShortcutsSaveFailed(String error) {
     return 'The shortcut could not be saved: $error';
   }
+
+  @override
+  String get desktopProposeCost => 'Proposal cost';
+
+  @override
+  String desktopProposeCostPaidBy(String cost) {
+    return '$cost, paid by';
+  }
+
+  @override
+  String desktopProposeCostNotCovered(String account) {
+    return '$account does not hold enough to pay the proposal cost.';
+  }
+
+  @override
+  String get desktopProposeMaximum => 'Propose the maximum amount';
+
+  @override
+  String get desktopProposeProposing => 'Proposing';
+
+  @override
+  String get desktopProposeProposedBy => 'Proposed by';
+
+  @override
+  String get desktopProposeApprovalsNeeded => 'Approvals needed';
+
+  @override
+  String get desktopProposeApprovals => 'Approvals';
+
+  @override
+  String desktopProposeCountOf(int count, int total) {
+    return '$count of $total';
+  }
+
+  @override
+  String get desktopProposeExpires => 'Expires';
+
+  @override
+  String get desktopProposeDeposit => 'Deposit';
+
+  @override
+  String get desktopProposeFee => 'Proposal fee';
+
+  @override
+  String get desktopProposePays => 'pays';
+
+  @override
+  String get desktopProposePaid => 'paid';
+
+  @override
+  String get desktopProposeSubmit => 'Submit Proposal';
+
+  @override
+  String desktopProposeProposed(String amount) {
+    return '$amount proposed';
+  }
 }

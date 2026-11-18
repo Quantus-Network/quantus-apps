@@ -4039,5 +4039,92 @@
           "type": "String"
         }
       }
+    },
+    "desktopProposeCost": "Proposal cost",
+    "@desktopProposeCost": {
+      "description": "Desktop Propose: the label, under the amount, of what proposing costs the member in all (network fee, deposit and proposal fee)"
+    },
+    "desktopProposeCostPaidBy": "{cost}, paid by",
+    "@desktopProposeCostPaidBy": {
+      "description": "Desktop Propose: what proposing costs, followed by the badge and name of the member's account that pays it",
+      "placeholders": {
+        "cost": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopProposeCostNotCovered": "{account} does not hold enough to pay the proposal cost.",
+    "@desktopProposeCostNotCovered": {
+      "description": "Desktop Propose: under the amount, when the member's own account cannot pay what proposing costs",
+      "placeholders": {
+        "account": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopProposeMaximum": "Propose the maximum amount",
+    "@desktopProposeMaximum": {
+      "description": "Desktop Propose: the checkbox under the amount that proposes the multisig's whole balance"
+    },
+    "desktopProposeProposing": "Proposing",
+    "@desktopProposeProposing": {
+      "description": "Desktop Propose review: the small label over the amount; drawn in capitals"
+    },
+    "desktopProposeProposedBy": "Proposed by",
+    "@desktopProposeProposedBy": {
+      "description": "Desktop Propose review: the row naming the member's account that proposes"
+    },
+    "desktopProposeApprovalsNeeded": "Approvals needed",
+    "@desktopProposeApprovalsNeeded": {
+      "description": "Desktop Propose review: the row saying how many of the multisig's signers must approve"
+    },
+    "desktopProposeApprovals": "Approvals",
+    "@desktopProposeApprovals": {
+      "description": "Desktop Propose receipt: the row saying how many approvals the proposal has of those it needs"
+    },
+    "desktopProposeCountOf": "{count} of {total}",
+    "@desktopProposeCountOf": {
+      "description": "Desktop Propose: a count out of a total, as in \"2 of 3\" signers or \"1 of 2\" approvals",
+      "placeholders": {
+        "count": {
+          "type": "int"
+        },
+        "total": {
+          "type": "int"
+        }
+      }
+    },
+    "desktopProposeExpires": "Expires",
+    "@desktopProposeExpires": {
+      "description": "Desktop Propose: the row saying when the proposal expires"
+    },
+    "desktopProposeDeposit": "Deposit",
+    "@desktopProposeDeposit": {
+      "description": "Desktop Propose review: the row of the deposit held while the proposal is open"
+    },
+    "desktopProposeFee": "Proposal fee",
+    "@desktopProposeFee": {
+      "description": "Desktop Propose review: the row of the fee the chain charges for creating a proposal"
+    },
+    "desktopProposePays": "pays",
+    "@desktopProposePays": {
+      "description": "Desktop Propose review: follows the badge and name of the member's account on the total's row, as in \"Account 1 pays\""
+    },
+    "desktopProposePaid": "paid",
+    "@desktopProposePaid": {
+      "description": "Desktop Propose receipt: follows the badge and name of the member's account on the total's row, as in \"Account 1 paid\""
+    },
+    "desktopProposeSubmit": "Submit Proposal",
+    "@desktopProposeSubmit": {
+      "description": "Desktop Propose review: the button that submits the proposal"
+    },
+    "desktopProposeProposed": "{amount} proposed",
+    "@desktopProposeProposed": {
+      "description": "Desktop Propose receipt: the headline; the amount comes with its token symbol, as in \"250 QTC proposed\"",
+      "placeholders": {
+        "amount": {
+          "type": "String"
+        }
+      }
     }
 }

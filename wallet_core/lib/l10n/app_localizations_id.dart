@@ -2787,4 +2787,60 @@ class AppLocalizationsId extends AppLocalizations {
   String desktopShortcutsSaveFailed(String error) {
     return 'Pintasan tidak dapat disimpan: $error';
   }
+
+  @override
+  String get desktopProposeCost => 'Biaya pengajuan';
+
+  @override
+  String desktopProposeCostPaidBy(String cost) {
+    return '$cost, dibayar oleh';
+  }
+
+  @override
+  String desktopProposeCostNotCovered(String account) {
+    return '$account tidak memiliki cukup saldo untuk membayar biaya pengajuan.';
+  }
+
+  @override
+  String get desktopProposeMaximum => 'Ajukan jumlah maksimum';
+
+  @override
+  String get desktopProposeProposing => 'Mengajukan';
+
+  @override
+  String get desktopProposeProposedBy => 'Diajukan oleh';
+
+  @override
+  String get desktopProposeApprovalsNeeded => 'Persetujuan yang diperlukan';
+
+  @override
+  String get desktopProposeApprovals => 'Persetujuan';
+
+  @override
+  String desktopProposeCountOf(int count, int total) {
+    return '$count dari $total';
+  }
+
+  @override
+  String get desktopProposeExpires => 'Kedaluwarsa';
+
+  @override
+  String get desktopProposeDeposit => 'Deposit';
+
+  @override
+  String get desktopProposeFee => 'Biaya proposal';
+
+  @override
+  String get desktopProposePays => 'membayar';
+
+  @override
+  String get desktopProposePaid => 'telah membayar';
+
+  @override
+  String get desktopProposeSubmit => 'Kirim Proposal';
+
+  @override
+  String desktopProposeProposed(String amount) {
+    return '$amount diajukan';
+  }
 }
