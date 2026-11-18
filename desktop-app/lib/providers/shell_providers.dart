@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_desktop_wallet/models/shell_sheet.dart';
 import 'package:quantus_desktop_wallet/models/sidebar_selection.dart';
 import 'package:quantus_desktop_wallet/utils/send_strategies.dart';
+import 'package:quantus_desktop_wallet/utils/serial_queue.dart';
 import 'package:quantus_desktop_wallet/utils/sidebar_order.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/providers/account_providers.dart';
@@ -22,6 +23,12 @@ class SidebarVisibilityNotifier extends Notifier<bool> {
   void toggle() => state = !state;
 }
 
+/// The window's navigation, one step at a time: account switches and sheet
+/// openings run in the order they were asked for, each once the ones before
+/// it have finished. An account switch waits on the settings it is saved to,
+/// so a shortcut pressed meanwhile acts on the account chosen before it.
+final shellNavigationProvider = Provider<SerialQueue>((ref) => SerialQueue());
+
 final sidebarSelectionProvider = NotifierProvider<SidebarSelectionNotifier, SidebarSelection>(
   SidebarSelectionNotifier.new,
 );
@@ -30,18 +37,35 @@ class SidebarSelectionNotifier extends Notifier<SidebarSelection> {
   @override
   SidebarSelection build() => SidebarSelection.account;
 
-  void select(SidebarSelection selection) => state = selection;
+  /// Selects [selection], after the navigation asked for before
+  /// ([shellNavigationProvider]).
+  Future<void> select(SidebarSelection selection) => ref.read(shellNavigationProvider).run(() async {
+    if (!ref.mounted || _isUnderSheet) return;
+    state = selection;
+  });
 
-  /// Makes [account] the active account and selects it.
-  Future<void> showAccount(DisplayAccount account) async {
+  /// Makes [account] the active account and selects it, after the
+  /// navigation asked for before ([shellNavigationProvider]).
+  Future<void> showAccount(DisplayAccount account) => ref.read(shellNavigationProvider).run(() => _show(account));
+
+  /// Selects the row [rows] down from the one selected when the navigation
+  /// asked for before has finished ([shellNavigationProvider]), going round
+  /// at the ends. The rows are the accounts, then Mining Rewards.
+  Future<void> move(int rows) => ref.read(shellNavigationProvider).run(() => _move(rows));
+
+  /// Whether a sheet opened since this switch was asked for: a sheet is for
+  /// the account it opened on, so nothing moves under it.
+  bool get _isUnderSheet => ref.read(shellSheetProvider) != null;
+
+  Future<void> _show(DisplayAccount account) async {
+    if (!ref.mounted || _isUnderSheet) return;
     await ref.read(activeAccountProvider.notifier).setActiveAccount(account);
     if (!ref.mounted) return;
     state = SidebarSelection.account;
   }
 
-  /// Selects the row [rows] down from the selected one (up when negative),
-  /// going round at the ends. The rows are the accounts, then Mining Rewards.
-  Future<void> move(int rows) async {
+  Future<void> _move(int rows) async {
+    if (!ref.mounted || _isUnderSheet) return;
     final accounts = ref.read(sidebarAccountsProvider);
     final activeId = ref.read(activeAccountProvider).value?.account.accountId;
     final selected = state == SidebarSelection.miningRewards
@@ -53,7 +77,7 @@ class SidebarSelectionNotifier extends Notifier<SidebarSelection> {
     if (to == accounts.length) {
       state = SidebarSelection.miningRewards;
     } else {
-      await showAccount(accounts[to]);
+      await _show(accounts[to]);
     }
   }
 }
@@ -74,10 +98,13 @@ class ShellSheetNotifier extends Notifier<ShellSheet?> {
   @override
   ShellSheet? build() => null;
 
-  /// Presents [sheet]. A sheet is modal to the window, so a request made
-  /// while one is open does nothing.
-  void open(ShellSheet sheet) {
-    if (state != null) return;
+  /// Presents [sheet] on the account chosen by the navigation asked for
+  /// before ([shellNavigationProvider]). A sheet is modal to the window, so a
+  /// request made while one is open does nothing.
+  Future<void> open(ShellSheet sheet) => ref.read(shellNavigationProvider).run(() async => _open(sheet));
+
+  void _open(ShellSheet sheet) {
+    if (!ref.mounted || state != null) return;
     if (sheet == ShellSheet.send) _beginSend();
     state = sheet;
   }

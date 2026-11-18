@@ -9,6 +9,7 @@ import 'package:quantus_desktop_wallet/ui/shell/desktop_shell.dart';
 import 'package:quantus_desktop_wallet/ui/shell/shell_sheet_view.dart';
 import 'package:quantus_desktop_wallet/ui/shell/sidebar.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:wallet_core/providers/account_providers.dart';
 
 import '../../fakes.dart';
 
@@ -36,6 +37,28 @@ Future<void> _openSend(WidgetTester tester) async {
 }
 
 void main() {
+  testOnMac('an open Receive sheet stays on the account it opened on, its header too', (tester) async {
+    await pumpShell(
+      tester,
+      overrides: shellOverrides(
+        accounts: const [mainAccount, savingsAccount],
+        settings: FakeSettingsService(activeAccount: const RegularAccount(mainAccount)),
+        balances: oneTokenEach,
+      ),
+    );
+    await tester.tap(_toolbarButton('Receive'));
+    await tester.pumpAndSettle();
+
+    final container = ProviderScope.containerOf(tester.element(find.byType(DesktopShell)));
+    await container.read(activeAccountProvider.notifier).setActiveAccount(const RegularAccount(savingsAccount));
+    await tester.pumpAndSettle();
+
+    Finder inSheet(Finder finder) => find.descendant(of: find.byType(ShellSheetView), matching: finder);
+    expect(inSheet(find.text('Main')), findsOneWidget);
+    expect(inSheet(find.text('Savings')), findsNothing);
+    expect(inSheet(find.text('qzMain')), findsOneWidget);
+  });
+
   testOnMac('a sheet hangs from the bottom of the header, centred on the pane beside the sidebar', (tester) async {
     await _pumpWallet(tester);
 

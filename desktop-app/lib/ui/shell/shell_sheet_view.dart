@@ -61,22 +61,44 @@ class ShellSheetView extends ConsumerWidget {
           child: switch (sheet) {
             ShellSheet.settings => const SettingsSheet(),
             ShellSheet.send => const SendSheet(),
-            _ => _titledContent(ref),
+            _ => _TitledSheet(
+              title: sheetTitle(ref.watch(l10nProvider), sheet),
+              actsOnAccount: _actsOnAccount,
+              content: _content,
+            ),
           },
         ),
       ),
     );
   }
+}
 
-  Widget _titledContent(WidgetRef ref) {
-    final account = _actsOnAccount ? ref.watch(activeAccountProvider).value?.account : null;
-    final content = _content;
+/// A sheet with the shared title row over its [content]. One that
+/// [actsOnAccount] names the account it opened on, as its content acts on.
+class _TitledSheet extends ConsumerStatefulWidget {
+  const _TitledSheet({required this.title, required this.actsOnAccount, required this.content});
+
+  final String title;
+  final bool actsOnAccount;
+  final Widget? content;
+
+  @override
+  ConsumerState<_TitledSheet> createState() => _TitledSheetState();
+}
+
+class _TitledSheetState extends ConsumerState<_TitledSheet> {
+  /// Read once: the sheet stays on the account it opened on.
+  late final BaseAccount? _account = widget.actsOnAccount ? ref.read(activeAccountProvider).value?.account : null;
+
+  @override
+  Widget build(BuildContext context) {
+    final content = widget.content;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        ShellSheetHeader(title: sheetTitle(ref.watch(l10nProvider), sheet), account: account),
+        ShellSheetHeader(title: widget.title, account: _account),
         if (content != null) ...[const SizedBox(height: 18), content],
       ],
     );

@@ -106,6 +106,38 @@ class FakeAccountsService extends Fake implements AccountsService {
   Future<bool> ensureEncryptedAccountsForSoftwareWallets({required String name}) async => false;
 }
 
+/// Stored settings on a slow disk: each write of the active account waits
+/// until the test lets it finish with [finishWrites].
+class SlowSettingsService extends FakeSettingsService {
+  SlowSettingsService({super.activeAccount, super.multisigs});
+
+  final List<Completer<void>> _writes = [];
+
+  /// How many writes of the active account are waiting.
+  int get pendingWrites => _writes.length;
+
+  @override
+  Future<void> setActiveAccount(DisplayAccount account) async {
+    final write = Completer<void>();
+    _writes.add(write);
+    await write.future;
+    activeAccount = account;
+  }
+
+  /// Lets every waiting write finish, then the ones those started, until
+  /// none is left.
+  Future<void> finishWrites(WidgetTester tester) async {
+    while (_writes.isNotEmpty) {
+      final writes = [..._writes];
+      _writes.clear();
+      for (final write in writes) {
+        write.complete();
+      }
+      await tester.pumpAndSettle();
+    }
+  }
+}
+
 /// A device's wallet storage, kept in memory: what [FakeWalletDevice] reads
 /// and writes when a wallet is created, imported or wiped.
 class FakeWalletStorage extends FakeSettingsService {

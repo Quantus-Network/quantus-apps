@@ -6,6 +6,7 @@ import 'package:quantus_desktop_wallet/services/app_exit.dart';
 import 'package:quantus_desktop_wallet/ui/onboarding/welcome_page.dart';
 import 'package:quantus_desktop_wallet/ui/components/sidebar_row.dart';
 import 'package:quantus_desktop_wallet/ui/components/toolbar_action.dart';
+import 'package:quantus_desktop_wallet/ui/send/send_sheet.dart';
 import 'package:quantus_desktop_wallet/ui/shell/account_pane.dart';
 import 'package:quantus_desktop_wallet/ui/shell/account_toolbar.dart';
 import 'package:quantus_desktop_wallet/ui/shell/mining_rewards_pane.dart';
@@ -99,6 +100,12 @@ List<Override> _withActive(DisplayAccount active) => shellOverrides(
   settings: FakeSettingsService(activeAccount: active, multisigs: [teamMultisig]),
   balances: oneTokenEach,
 );
+
+/// Two accounts, Main and Savings, both of which send, stored on [settings].
+List<Override> _withSlowSettings(SlowSettingsService settings) =>
+    shellOverrides(accounts: const [mainAccount, savingsAccount], settings: settings, balances: oneTokenEach);
+
+Finder _inSheet(Finder finder) => find.descendant(of: find.byType(ShellSheetView), matching: finder);
 
 void main() {
   group('on macOS', () {
@@ -257,6 +264,21 @@ void main() {
       expect(find.byType(AccountPane), findsOneWidget);
       // Vault's key signs on its hardware wallet, so Send is offered dimmed.
       expect(_nativeItem(tester, 'Account', 'Send').onSelected, isNull);
+    });
+
+    testOnMac('⌘2 then ⌘R while the switch is still being saved opens Receive on the second account', (tester) async {
+      final settings = SlowSettingsService(activeAccount: const RegularAccount(mainAccount));
+      await pumpShell(tester, overrides: _withSlowSettings(settings));
+
+      _accountMenuAccounts(tester).singleWhere((item) => item.label == 'Savings').onSelected!();
+      await tester.pumpAndSettle();
+      _nativeItem(tester, 'Account', 'Receive').onSelected!();
+      await tester.pumpAndSettle();
+      await settings.finishWrites(tester);
+
+      expect(_sheetTitled('Receive'), findsOneWidget);
+      expect(_inSheet(find.text('Savings')), findsOneWidget);
+      expect(_inSheet(find.text('qzSavings')), findsOneWidget);
     });
 
     testOnMac('View → Next and Previous Sidebar Item (⌃Tab, ⌃⇧Tab) walk the sidebar, Mining Rewards included, and '
@@ -579,6 +601,78 @@ void main() {
       expect(_selected(tester), 'Main');
       expect(_sheetTitled('Receive'), findsOneWidget);
       expect(find.byType(ShellSheetView), findsOneWidget);
+    });
+
+    group('while an account switch is still being saved', () {
+      testOnWindowsAndLinux('Ctrl+2 then Ctrl+R opens Receive on the second account, its header and address alike', (
+        tester,
+      ) async {
+        final settings = SlowSettingsService(activeAccount: const RegularAccount(mainAccount));
+        await pumpShell(tester, overrides: _withSlowSettings(settings));
+
+        await press(tester, LogicalKeyboardKey.digit2);
+        await press(tester, LogicalKeyboardKey.keyR);
+        await settings.finishWrites(tester);
+
+        expect(_sheetTitled('Receive'), findsOneWidget);
+        expect(_inSheet(find.text('Savings')), findsOneWidget);
+        expect(_inSheet(find.text('Main')), findsNothing);
+        expect(_inSheet(find.text('qzSavings')), findsOneWidget);
+        expect(tester.widget<QuantusQr>(_inSheet(find.byType(QuantusQr))).accountId, 'qzSavings');
+      });
+
+      testOnWindowsAndLinux('Ctrl+2 then Ctrl+S opens Send on the second account', (tester) async {
+        final settings = SlowSettingsService(activeAccount: const RegularAccount(mainAccount));
+        await pumpShell(tester, overrides: _withSlowSettings(settings));
+
+        await press(tester, LogicalKeyboardKey.digit2);
+        await press(tester, LogicalKeyboardKey.keyS);
+        await settings.finishWrites(tester);
+
+        expect(find.byType(SendSheet), findsOneWidget);
+        expect(_inSheet(find.text('Savings')), findsOneWidget);
+        expect(_inSheet(find.text('Main')), findsNothing);
+      });
+
+      testOnWindowsAndLinux('two presses of Ctrl+Tab move two rows', (tester) async {
+        final settings = SlowSettingsService(activeAccount: const RegularAccount(mainAccount));
+        await pumpShell(tester, overrides: _withSlowSettings(settings));
+
+        await press(tester, LogicalKeyboardKey.tab);
+        await press(tester, LogicalKeyboardKey.tab);
+        await settings.finishWrites(tester);
+
+        expect(_selected(tester), 'Mining Rewards');
+      });
+
+      testOnWindowsAndLinux('Ctrl+2 then a click on Mining Rewards ends on Mining Rewards', (tester) async {
+        final settings = SlowSettingsService(activeAccount: const RegularAccount(mainAccount));
+        await pumpShell(tester, overrides: _withSlowSettings(settings));
+
+        await press(tester, LogicalKeyboardKey.digit2);
+        await tester.tap(find.descendant(of: find.byType(Sidebar), matching: find.text('Mining Rewards')));
+        await tester.pumpAndSettle();
+        await settings.finishWrites(tester);
+
+        expect(_selected(tester), 'Mining Rewards');
+        expect(find.byType(MiningRewardsPane), findsOneWidget);
+      });
+
+      testOnWindowsAndLinux('a switch pressed after a sheet\'s shortcut does nothing once that sheet is open', (
+        tester,
+      ) async {
+        final settings = SlowSettingsService(activeAccount: const RegularAccount(mainAccount));
+        await pumpShell(tester, overrides: _withSlowSettings(settings));
+
+        await press(tester, LogicalKeyboardKey.digit2);
+        await press(tester, LogicalKeyboardKey.keyR);
+        await press(tester, LogicalKeyboardKey.digit1);
+        await settings.finishWrites(tester);
+
+        expect(_selected(tester), 'Savings');
+        expect(_inSheet(find.text('Savings')), findsOneWidget);
+        expect(_inSheet(find.text('qzSavings')), findsOneWidget);
+      });
     });
 
     testOnWindowsAndLinux('Ctrl+W asks the app to exit', (tester) async {
