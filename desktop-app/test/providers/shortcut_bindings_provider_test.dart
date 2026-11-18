@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
@@ -23,6 +24,31 @@ class _RecordingTelemetry implements Telemetry {
 }
 
 const _cmdJ = KeyCombo(LogicalKeyboardKey.keyJ, KeyModifiers(meta: true));
+const _cmdK = KeyCombo(LogicalKeyboardKey.keyK, KeyModifiers(meta: true));
+const _cmdR = KeyCombo(LogicalKeyboardKey.keyR, KeyModifiers(meta: true));
+
+/// Settings whose writes of plain text wait until they are let through.
+class _HeldSettings extends FakeSettingsService {
+  final _held = <Completer<void>>[];
+
+  @override
+  Future<void> setString(String key, String value) async {
+    final gate = Completer<void>();
+    _held.add(gate);
+    await gate.future;
+    return super.setString(key, value);
+  }
+
+  /// Lets the waiting writes through, the one asked for last first, until
+  /// none waits: the order in which overlapping saves hurt each other most.
+  Future<void> finishWrites() async {
+    await pumpEventQueue();
+    while (_held.isNotEmpty) {
+      _held.removeLast().complete();
+      await pumpEventQueue();
+    }
+  }
+}
 
 void main() {
   late FakeSettingsService settings;
@@ -130,5 +156,107 @@ void main() {
     debugDefaultTargetPlatformOverride = TargetPlatform.linux;
 
     expect(start().read(shortcutBindingsProvider).bindings, const ShortcutBindings.defaults(isMac: false));
+  });
+
+  group('changes whose saves overlap', () {
+    late _HeldSettings held;
+
+    setUp(() => settings = held = _HeldSettings());
+
+    test('are both kept, in use and saved', () async {
+      final container = start();
+      final notifier = container.read(shortcutBindingsProvider.notifier);
+
+      final first = notifier.setShortcut(AppCommand.receive, _cmdJ);
+      final second = notifier.setShortcut(AppCommand.send, _cmdK);
+      await held.finishWrites();
+      await Future.wait([first, second]);
+
+      for (final bindings in [
+        container.read(shortcutBindingsProvider).bindings,
+        start().read(shortcutBindingsProvider).bindings,
+      ]) {
+        expect(bindings[AppCommand.receive], _cmdJ);
+        expect(bindings[AppCommand.send], _cmdK);
+      }
+    });
+
+    test('the second may take the keys the first gave up', () async {
+      final container = start();
+      final notifier = container.read(shortcutBindingsProvider.notifier);
+
+      final first = notifier.setShortcut(AppCommand.receive, _cmdJ);
+      final second = notifier.setShortcut(AppCommand.send, _cmdR);
+      await held.finishWrites();
+      await Future.wait([first, second]);
+
+      final bindings = start().read(shortcutBindingsProvider).bindings;
+      expect(bindings[AppCommand.receive], _cmdJ);
+      expect(bindings[AppCommand.send], _cmdR);
+    });
+
+    test('the second is refused when the first took its keys, and the first is kept', () async {
+      final container = start();
+      final notifier = container.read(shortcutBindingsProvider.notifier);
+
+      final first = notifier.setShortcut(AppCommand.receive, _cmdJ);
+      final second = notifier.setShortcut(AppCommand.send, _cmdJ);
+      final refused = expectLater(second, throwsArgumentError);
+      await held.finishWrites();
+      await first;
+      await refused;
+
+      for (final bindings in [
+        container.read(shortcutBindingsProvider).bindings,
+        start().read(shortcutBindingsProvider).bindings,
+      ]) {
+        expect(bindings[AppCommand.receive], _cmdJ);
+        expect(bindings[AppCommand.send], const ShortcutBindings.defaults(isMac: true)[AppCommand.send]);
+      }
+    });
+
+    test('Restore Defaults asked for after a change ends on the defaults', () async {
+      final container = start();
+      final notifier = container.read(shortcutBindingsProvider.notifier);
+
+      final change = notifier.setShortcut(AppCommand.receive, _cmdJ);
+      final restore = notifier.restoreDefaults();
+      await held.finishWrites();
+      await Future.wait([change, restore]);
+
+      expect(container.read(shortcutBindingsProvider).bindings, const ShortcutBindings.defaults(isMac: true));
+      expect(start().read(shortcutBindingsProvider).bindings, const ShortcutBindings.defaults(isMac: true));
+    });
+
+    test('the account keys and a shortcut changed together are both kept', () async {
+      final container = start();
+      final notifier = container.read(shortcutBindingsProvider.notifier);
+
+      final keys = notifier.setAccountModifiers(const KeyModifiers(control: true));
+      final shortcut = notifier.setShortcut(AppCommand.send, _cmdK);
+      await held.finishWrites();
+      await Future.wait([keys, shortcut]);
+
+      final bindings = start().read(shortcutBindingsProvider).bindings;
+      expect(bindings.accountModifiers, const KeyModifiers(control: true));
+      expect(bindings[AppCommand.send], _cmdK);
+    });
+
+    test('a change whose save fails does not stop the one after it', () async {
+      final container = start();
+      final notifier = container.read(shortcutBindingsProvider.notifier);
+      held.failNextStringWrite = StateError('disk full');
+
+      final first = notifier.setShortcut(AppCommand.receive, _cmdJ);
+      final second = notifier.setShortcut(AppCommand.send, _cmdK);
+      final failed = expectLater(first, throwsStateError);
+      await held.finishWrites();
+      await failed;
+      await second;
+
+      final bindings = container.read(shortcutBindingsProvider).bindings;
+      expect(bindings[AppCommand.receive], const ShortcutBindings.defaults(isMac: true)[AppCommand.receive]);
+      expect(bindings[AppCommand.send], _cmdK);
+    });
   });
 }

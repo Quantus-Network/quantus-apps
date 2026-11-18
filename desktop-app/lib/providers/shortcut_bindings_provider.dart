@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_desktop_wallet/models/app_command.dart';
 import 'package:quantus_desktop_wallet/models/shortcut_bindings.dart';
+import 'package:quantus_desktop_wallet/utils/serial_queue.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:wallet_core/services/telemetry.dart';
@@ -29,6 +30,9 @@ final shortcutBindingsProvider = NotifierProvider<ShortcutBindingsNotifier, Shor
 class ShortcutBindingsNotifier extends Notifier<ShortcutSettings> {
   static const settingsKey = 'desktop_keyboard_shortcuts';
 
+  /// The changes asked for, saved one at a time.
+  final _changes = SerialQueue();
+
   @override
   ShortcutSettings build() {
     // The Mac's shortcuts use ⌘, as its menus are the system's.
@@ -51,21 +55,26 @@ class ShortcutBindingsNotifier extends Notifier<ShortcutSettings> {
   /// Gives [command] the shortcut [combo], or none when it is null. Throws an
   /// [ArgumentError] when [combo] is refused ([ShortcutBindings.refusal]), and
   /// whatever saving it threw; the shortcuts are then unchanged.
-  Future<void> setShortcut(AppCommand command, KeyCombo? combo) async =>
-      _save(state.bindings.withShortcut(command, combo));
+  Future<void> setShortcut(AppCommand command, KeyCombo? combo) =>
+      _change((bindings) => bindings.withShortcut(command, combo));
 
   /// Makes [modifiers] the account keys. Throws as [setShortcut] does.
-  Future<void> setAccountModifiers(KeyModifiers modifiers) async =>
-      _save(state.bindings.withAccountModifiers(modifiers));
+  Future<void> setAccountModifiers(KeyModifiers modifiers) =>
+      _change((bindings) => bindings.withAccountModifiers(modifiers));
 
   /// Puts back every shortcut the app ships with.
-  Future<void> restoreDefaults() => _save(ShortcutBindings.defaults(isMac: state.bindings.isMac));
+  Future<void> restoreDefaults() => _change((bindings) => ShortcutBindings.defaults(isMac: bindings.isMac));
 
-  Future<void> _save(ShortcutBindings bindings) async {
+  /// Makes [change] to the shortcuts and saves them, once the changes asked
+  /// for before it have been saved: each is made to what the one before it
+  /// left, so a change still being saved is not lost to the next.
+  Future<void> _change(ShortcutBindings Function(ShortcutBindings bindings) change) => _changes.run(() async {
+    if (!ref.mounted) return;
+    final bindings = change(state.bindings);
     await ref.read(settingsServiceProvider).setString(settingsKey, jsonEncode(bindings.toJson()));
     if (!ref.mounted) return;
     state = ShortcutSettings(bindings);
-  }
+  });
 }
 
 /// Whether a shortcut in Settings is waiting for new keys. Meanwhile the
