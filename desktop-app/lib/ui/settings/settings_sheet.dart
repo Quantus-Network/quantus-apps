@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_desktop_wallet/providers/approval_providers.dart';
 import 'package:quantus_desktop_wallet/ui/components/settings_group.dart';
+import 'package:quantus_desktop_wallet/ui/settings/keyboard_shortcuts_step.dart';
 import 'package:quantus_desktop_wallet/ui/settings/language_pop_up.dart';
 import 'package:quantus_desktop_wallet/ui/settings/recovery_phrase_steps.dart';
 import 'package:quantus_desktop_wallet/ui/settings/reset_wallet_step.dart';
@@ -11,10 +12,11 @@ import 'package:wallet_core/providers/l10n_provider.dart';
 import 'package:wallet_core/services/user_approval.dart';
 
 /// The steps of the Settings sheet. Each but the list has a way back to it.
-enum _Step { list, phraseCaution, phraseWords, reset }
+enum _Step { list, phraseCaution, phraseWords, reset, shortcuts }
 
-/// The Settings sheet: the list of settings, and the steps its wallet rows
-/// open in the same sheet (the recovery phrase, and resetting the wallet).
+/// The Settings sheet: the list of settings, and the steps its rows open in
+/// the same sheet (the recovery phrase, resetting the wallet, and the
+/// keyboard shortcuts).
 ///
 /// Both wallet rows hand the wallet over, so they need the system's approval
 /// ([UserApproval]); where it cannot be asked for, they are unavailable and
@@ -25,6 +27,7 @@ class SettingsSheet extends ConsumerStatefulWidget {
   static const recoveryPhraseRowKey = Key('settings-recovery-phrase');
   static const resetRowKey = Key('settings-reset-wallet');
   static const languageKey = Key('settings-language');
+  static const keyboardShortcutsRowKey = Key('settings-keyboard-shortcuts');
   static const continueKey = Key('settings-continue');
   static const cancelKey = Key('settings-cancel');
   static const hideKey = Key('settings-phrase-hide');
@@ -72,6 +75,7 @@ class _SettingsSheetState extends ConsumerState<SettingsSheet> {
       ),
       _Step.phraseWords => throw StateError('The recovery phrase step has no words.'),
       _Step.reset => (l10n.settingsResetTitle, ResetWalletStep(onCancel: () => _go(_Step.list))),
+      _Step.shortcuts => (l10n.settingsKeyboardShortcuts, const KeyboardShortcutsStep()),
     };
 
     final onBack = _step == _Step.list ? null : () => _go(_Step.list);
@@ -84,7 +88,8 @@ class _SettingsSheetState extends ConsumerState<SettingsSheet> {
         children: [
           ShellSheetHeader(title: title, parent: onBack == null ? null : (title: l10n.settingsTitle, onBack: onBack)),
           const SizedBox(height: 18),
-          body,
+          // A step longer than the window scrolls within the sheet.
+          Flexible(child: body),
         ],
       ),
     );
@@ -155,6 +160,12 @@ class _SettingsListState extends ConsumerState<_SettingsList> {
                   if (mounted) setState(() => _languageError = l10n.settingsLanguageError('$e'));
                 },
               ),
+            ),
+            SettingsRow.action(
+              key: SettingsSheet.keyboardShortcutsRowKey,
+              title: l10n.settingsKeyboardShortcuts,
+              subtitle: l10n.settingsKeyboardShortcutsSubtitle,
+              onPressed: () => widget.onOpen(_Step.shortcuts),
             ),
           ],
         ),

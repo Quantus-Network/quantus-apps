@@ -9,6 +9,7 @@ import 'package:quantus_desktop_wallet/models/wallet_presence.dart';
 import 'package:quantus_desktop_wallet/providers/boot_intro_provider.dart';
 import 'package:quantus_desktop_wallet/providers/password_prompt_provider.dart';
 import 'package:quantus_desktop_wallet/providers/shell_providers.dart';
+import 'package:quantus_desktop_wallet/providers/shortcut_bindings_provider.dart';
 import 'package:quantus_desktop_wallet/providers/wallet_presence_provider.dart';
 import 'package:quantus_desktop_wallet/services/app_exit.dart';
 import 'package:quantus_desktop_wallet/ui/approval/login_password_dialog.dart';
@@ -224,6 +225,7 @@ class _DesktopShellState extends ConsumerState<DesktopShell> {
       useNativeMenuBar: useNativeMenuBar,
       accountActions: read(menuAccountActionsProvider),
       accounts: hasWallet ? read(sidebarAccountsProvider) : const [],
+      shortcuts: read(isRecordingShortcutProvider) ? null : read(shortcutBindingsProvider).bindings,
       isSidebarVisible: read(sidebarVisibleProvider),
       canOpenSheet: canNavigate,
       onOpenSheet: (sheet) => ref.read(shellSheetProvider.notifier).open(sheet),

@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart' show ProviderScope;
 import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:quantus_desktop_wallet/models/app_command.dart';
+import 'package:quantus_desktop_wallet/models/shortcut_bindings.dart';
+import 'package:quantus_desktop_wallet/providers/shortcut_bindings_provider.dart';
 import 'package:quantus_desktop_wallet/services/app_exit.dart';
 import 'package:quantus_desktop_wallet/ui/onboarding/welcome_page.dart';
 import 'package:quantus_desktop_wallet/ui/components/sidebar_row.dart';
@@ -9,6 +13,7 @@ import 'package:quantus_desktop_wallet/ui/components/toolbar_action.dart';
 import 'package:quantus_desktop_wallet/ui/send/send_sheet.dart';
 import 'package:quantus_desktop_wallet/ui/shell/account_pane.dart';
 import 'package:quantus_desktop_wallet/ui/shell/account_toolbar.dart';
+import 'package:quantus_desktop_wallet/ui/shell/desktop_shell.dart';
 import 'package:quantus_desktop_wallet/ui/shell/mining_rewards_pane.dart';
 import 'package:quantus_desktop_wallet/ui/shell/shell_sheet_view.dart';
 import 'package:quantus_desktop_wallet/ui/shell/sidebar.dart';
@@ -39,13 +44,19 @@ List<PlatformProvidedMenuItemType> _providedTypes(PlatformMenu menu) => [
 
 /// Matches a shortcut of [key] with exactly these modifiers held.
 /// [SingleActivator] has no value equality, so its parts are compared.
-Matcher _isShortcut(LogicalKeyboardKey key, {bool meta = false, bool control = false, bool shift = false}) {
+Matcher _isShortcut(
+  LogicalKeyboardKey key, {
+  bool meta = false,
+  bool control = false,
+  bool alt = false,
+  bool shift = false,
+}) {
   return isA<SingleActivator>()
       .having((shortcut) => shortcut.trigger, 'trigger', key)
       .having((shortcut) => shortcut.meta, 'meta', meta)
       .having((shortcut) => shortcut.control, 'control', control)
       .having((shortcut) => shortcut.shift, 'shift', shift)
-      .having((shortcut) => shortcut.alt, 'alt', false);
+      .having((shortcut) => shortcut.alt, 'alt', alt);
 }
 
 /// The Account menu's groups in order: the active account's actions (absent
@@ -372,17 +383,17 @@ void main() {
       expect(_inSheet(find.text('qzSavings')), findsOneWidget);
     });
 
-    testOnMac('View → Next and Previous Sidebar Item (⌃Tab, ⌃⇧Tab) walk the sidebar, Mining Rewards included, and '
+    testOnMac('View → Next and Previous Sidebar Item (⌥⌘↓, ⌥⌘↑) walk the sidebar, Mining Rewards included, and '
         'go round at its ends', (tester) async {
       await pumpShell(tester, overrides: _withActive(const RegularAccount(mainAccount)));
 
       expect(
         _nativeItem(tester, 'View', 'Next Sidebar Item').shortcut,
-        _isShortcut(LogicalKeyboardKey.tab, control: true),
+        _isShortcut(LogicalKeyboardKey.arrowDown, meta: true, alt: true),
       );
       expect(
         _nativeItem(tester, 'View', 'Previous Sidebar Item').shortcut,
-        _isShortcut(LogicalKeyboardKey.tab, control: true, shift: true),
+        _isShortcut(LogicalKeyboardKey.arrowUp, meta: true, alt: true),
       );
 
       Future<String> choose(String label) async {
@@ -611,14 +622,17 @@ void main() {
       expect(tester.widget<MenuItemButton>(find.widgetWithText(MenuItemButton, 'Hide Sidebar')).onPressed, isNull);
     });
 
-    Future<void> press(WidgetTester tester, LogicalKeyboardKey key, {bool shift = false}) async {
+    Future<void> press(WidgetTester tester, LogicalKeyboardKey key, {bool alt = false}) async {
       await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
-      if (shift) await tester.sendKeyDownEvent(LogicalKeyboardKey.shiftLeft);
+      if (alt) await tester.sendKeyDownEvent(LogicalKeyboardKey.altLeft);
       await tester.sendKeyEvent(key);
-      if (shift) await tester.sendKeyUpEvent(LogicalKeyboardKey.shiftLeft);
+      if (alt) await tester.sendKeyUpEvent(LogicalKeyboardKey.altLeft);
       await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
       await tester.pumpAndSettle();
     }
+
+    Future<void> next(WidgetTester tester) => press(tester, LogicalKeyboardKey.arrowDown, alt: true);
+    Future<void> previous(WidgetTester tester) => press(tester, LogicalKeyboardKey.arrowUp, alt: true);
 
     testOnWindowsAndLinux('Ctrl+1 to Ctrl+9 make the account of that number in the sidebar active; a number past '
         'the last does nothing', (tester) async {
@@ -642,17 +656,58 @@ void main() {
       expect(find.byType(AccountPane), findsOneWidget);
     });
 
-    testOnWindowsAndLinux('Ctrl+Tab and Ctrl+Shift+Tab walk the sidebar and go round at its ends', (tester) async {
+    testOnWindowsAndLinux('Ctrl+Alt+Down and Ctrl+Alt+Up walk the sidebar and go round at its ends', (tester) async {
       await pumpShell(tester, overrides: _withActive(const RegularAccount(mainAccount)));
 
-      await press(tester, LogicalKeyboardKey.tab, shift: true);
+      await previous(tester);
       expect(_selected(tester), 'Mining Rewards');
 
-      await press(tester, LogicalKeyboardKey.tab);
+      await next(tester);
       expect(_selected(tester), 'Main');
 
-      await press(tester, LogicalKeyboardKey.tab);
+      await next(tester);
       expect(_selected(tester), 'Team');
+    });
+
+    testOnWindowsAndLinux('Ctrl+Tab no longer walks the sidebar', (tester) async {
+      await pumpShell(tester, overrides: _withActive(const RegularAccount(mainAccount)));
+
+      await press(tester, LogicalKeyboardKey.tab);
+
+      expect(_selected(tester), 'Main');
+    });
+
+    testOnWindowsAndLinux('a shortcut changed in Settings works from the keyboard, and its old keys no longer do', (
+      tester,
+    ) async {
+      await pumpShell(tester, overrides: _withActive(const RegularAccount(mainAccount)));
+      final container = ProviderScope.containerOf(tester.element(find.byType(DesktopShell)));
+      await container
+          .read(shortcutBindingsProvider.notifier)
+          .setShortcut(AppCommand.receive, const KeyCombo(LogicalKeyboardKey.keyJ, KeyModifiers(control: true)));
+      await tester.pumpAndSettle();
+
+      await press(tester, LogicalKeyboardKey.keyR);
+      expect(find.byType(ShellSheetView), findsNothing);
+
+      await press(tester, LogicalKeyboardKey.keyJ);
+      expect(_sheetTitled('Receive'), findsOneWidget);
+    });
+
+    testOnWindowsAndLinux('changed account keys reach the accounts', (tester) async {
+      await pumpShell(tester, overrides: _withActive(const RegularAccount(mainAccount)));
+      final container = ProviderScope.containerOf(tester.element(find.byType(DesktopShell)));
+      await container.read(shortcutBindingsProvider.notifier).setAccountModifiers(const KeyModifiers(alt: true));
+      await tester.pumpAndSettle();
+
+      await press(tester, LogicalKeyboardKey.digit3);
+      expect(_selected(tester), 'Main');
+
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.altLeft);
+      await tester.sendKeyEvent(LogicalKeyboardKey.digit3);
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.altLeft);
+      await tester.pumpAndSettle();
+      expect(_selected(tester), 'Vault');
     });
 
     for (final (key, name, title) in [
@@ -685,7 +740,7 @@ void main() {
       expect(_sheetTitled('Receive'), findsOneWidget);
 
       await press(tester, LogicalKeyboardKey.digit3);
-      await press(tester, LogicalKeyboardKey.tab);
+      await next(tester);
       await press(tester, LogicalKeyboardKey.keyS);
       await press(tester, LogicalKeyboardKey.keyN);
 
@@ -725,12 +780,12 @@ void main() {
         expect(_inSheet(find.text('Main')), findsNothing);
       });
 
-      testOnWindowsAndLinux('two presses of Ctrl+Tab move two rows', (tester) async {
+      testOnWindowsAndLinux('two presses of Ctrl+Alt+Down move two rows', (tester) async {
         final settings = SlowSettingsService(activeAccount: const RegularAccount(mainAccount));
         await pumpShell(tester, overrides: _withSlowSettings(settings));
 
-        await press(tester, LogicalKeyboardKey.tab);
-        await press(tester, LogicalKeyboardKey.tab);
+        await next(tester);
+        await next(tester);
         await settings.finishWrites(tester);
 
         expect(_selected(tester), 'Mining Rewards');

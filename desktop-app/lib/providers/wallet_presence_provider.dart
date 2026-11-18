@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_desktop_wallet/models/wallet_presence.dart';
 import 'package:quantus_desktop_wallet/providers/boot_intro_provider.dart';
+import 'package:quantus_desktop_wallet/providers/shortcut_bindings_provider.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:wallet_core/services/logout_service.dart';
 
@@ -33,6 +34,8 @@ class WalletPresenceNotifier extends AsyncNotifier<WalletPresence> {
     await ref.read(logoutServiceProvider).logout();
     // The wipe cleared every setting, this one included.
     if (introSeen) await ref.read(bootIntroSeenProvider.notifier).markSeen();
+    // The changed keyboard shortcuts went with the settings.
+    ref.invalidate(shortcutBindingsProvider);
     state = const AsyncData(WalletPresence.none);
   }
 }

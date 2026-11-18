@@ -14,6 +14,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_riverpod/flutter_riverpod.dart' show ProviderScope;
 import 'package:quantus_desktop_wallet/bootstrap/app_bootstrap.dart';
+import 'package:quantus_desktop_wallet/models/app_command.dart';
 import 'package:quantus_desktop_wallet/models/shell_sheet.dart';
 import 'package:quantus_desktop_wallet/providers/shell_providers.dart';
 import 'package:quantus_desktop_wallet/services/login_password.dart';
@@ -23,6 +24,7 @@ import 'package:quantus_desktop_wallet/ui/approval/login_password_dialog.dart';
 import 'package:quantus_desktop_wallet/ui/components/toolbar_action.dart';
 import 'package:quantus_desktop_wallet/ui/components/terminal_line.dart';
 import 'package:quantus_desktop_wallet/ui/send/send_sheet.dart';
+import 'package:quantus_desktop_wallet/ui/settings/keyboard_shortcuts_step.dart';
 import 'package:quantus_desktop_wallet/ui/settings/settings_sheet.dart';
 import 'package:quantus_desktop_wallet/ui/shell/desktop_shell.dart';
 import 'package:quantus_desktop_wallet/ui/shell/sidebar.dart';
@@ -363,6 +365,37 @@ void main() {
     await _tapAndSettle(tester, find.byKey(SettingsSheet.resetRowKey));
     await _tapAndSettle(tester, find.text("I've backed up my recovery phrase"));
   });
+
+  for (final platform in [TargetPlatform.macOS, TargetPlatform.windows]) {
+    final suffix = platform == TargetPlatform.macOS ? '' : '_windows';
+    _scene('settings_shortcuts$suffix', (tester) async {
+      await _openShortcuts(tester);
+    }, platform: platform);
+    _scene('settings_shortcuts_recording$suffix', (tester) async {
+      await _openShortcuts(tester);
+      await _tapAndSettle(tester, find.byKey(KeyboardShortcutsStep.shortcutKey(AppCommand.nextSidebarItem)));
+    }, platform: platform);
+    _scene('settings_shortcuts_refused$suffix', (tester) async {
+      await _openShortcuts(tester);
+      await _tapAndSettle(tester, find.byKey(KeyboardShortcutsStep.shortcutKey(AppCommand.nextSidebarItem)));
+      final command = platform == TargetPlatform.macOS ? LogicalKeyboardKey.metaLeft : LogicalKeyboardKey.controlLeft;
+      await tester.sendKeyDownEvent(command);
+      await tester.sendKeyEvent(LogicalKeyboardKey.keyR);
+      await tester.sendKeyUpEvent(command);
+      await tester.pumpAndSettle();
+    }, platform: platform);
+  }
+  _scene('settings_shortcuts_smallest_window', (tester) async {
+    await _openShortcuts(tester);
+    tester.view.physicalSize = const Size(960, 640) * _pixelRatio;
+    await tester.pumpAndSettle();
+  }, platform: TargetPlatform.windows);
+}
+
+/// Opens Settings › Keyboard Shortcuts.
+Future<void> _openShortcuts(WidgetTester tester) async {
+  await _openSettings(tester);
+  await _tapAndSettle(tester, find.byKey(SettingsSheet.keyboardShortcutsRowKey));
 }
 
 const _phrase =
