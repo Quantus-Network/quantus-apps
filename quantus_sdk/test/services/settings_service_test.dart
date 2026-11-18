@@ -645,6 +645,35 @@ void main() {
       expect(read.getString('other'), 'stored');
     });
 
+    test('a value of another type than text can be read as it is, and replaced by text', () async {
+      await (await SharedPreferences.getInstance()).setInt('shortcuts', 7);
+
+      expect(settings.getValue('shortcuts'), 7);
+      // Read as text it is still an error, as it always was.
+      expect(() => settings.getString('shortcuts'), throwsA(isA<TypeError>()));
+
+      await settings.setString('shortcuts', 'new');
+
+      expect(settings.getValue('shortcuts'), 'new');
+      expect((await reopened()).getString('shortcuts'), 'new');
+    });
+
+    test('a value of another type is put back when the text meant to replace it is refused', () async {
+      await (await SharedPreferences.getInstance()).setInt('shortcuts', 7);
+      store.rejected.add('shortcuts');
+
+      await expectLater(settings.setString('shortcuts', 'new'), throwsException);
+      expect(settings.getValue('shortcuts'), 7);
+
+      store.rejected.clear();
+      await settings.setString('other', 'stored');
+      expect((await reopened()).getValue('shortcuts'), 7);
+    });
+
+    test('getValue answers nothing for a key that holds nothing', () {
+      expect(settings.getValue('shortcuts'), isNull);
+    });
+
     test('a write the system stores is read back, now and at the next start', () async {
       await settings.setString('shortcuts', 'new');
 

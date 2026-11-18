@@ -34,9 +34,10 @@ PlatformMenuItem _nativeItem(WidgetTester tester, String menu, String label) {
 }
 
 /// Opens Settings › Keyboard Shortcuts on a device with a wallet.
-Future<FakeWalletDevice> _openShortcuts(WidgetTester tester, {String? saved}) async {
+Future<FakeWalletDevice> _openShortcuts(WidgetTester tester, {String? saved, Object? stray}) async {
   final device = FakeWalletDevice()..store([mainAccount, savingsAccount]);
   if (saved != null) device.storage.strings[ShortcutBindingsNotifier.settingsKey] = saved;
+  if (stray != null) device.storage.strays[ShortcutBindingsNotifier.settingsKey] = stray;
   await pumpShell(tester, overrides: device.overrides);
   ProviderScope.containerOf(
     tester.element(find.byType(DesktopShell)),
@@ -342,6 +343,26 @@ void main() {
     expect(_inSheet(find.text('Your saved shortcuts could not be read, so the defaults are in use.')), findsOneWidget);
     expect(_capsOf(tester, AppCommand.send), ['command', 'S']);
   });
+
+  for (final test in [testOnMac, testOnWindowsAndLinux]) {
+    test('with a number saved where the shortcuts should be, the app opens, says they were lost, and Restore '
+        'Defaults clears it', (tester) async {
+      final device = await _openShortcuts(tester, stray: 7);
+
+      expect(tester.takeException(), isNull);
+      expect(find.byType(DesktopShell), findsOneWidget);
+      final notice = _inSheet(find.textContaining('could not be read'));
+      expect(notice, findsOneWidget);
+
+      await tester.ensureVisible(find.byKey(KeyboardShortcutsStep.restoreKey));
+      await tester.tap(find.byKey(KeyboardShortcutsStep.restoreKey));
+      await tester.pumpAndSettle();
+
+      expect(notice, findsNothing);
+      expect(device.storage.strays, isEmpty);
+      expect(device.storage.strings[ShortcutBindingsNotifier.settingsKey], isNotNull);
+    });
+  }
 
   testOnWindowsAndLinux('in the smallest window nothing overflows, and Restore Defaults can be scrolled to', (
     tester,

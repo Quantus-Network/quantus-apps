@@ -55,8 +55,15 @@ class FakeSettingsService extends Fake implements SettingsService {
   /// Why the next [setString] fails, once.
   Object? failNextStringWrite;
 
+  /// What is kept under plain keys that is not the text their readers
+  /// expect: a number, say, in a preferences file that was damaged.
+  final Map<String, Object> strays = {};
+
   @override
-  String? getString(String key) => strings[key];
+  Object? getValue(String key) => strays[key] ?? strings[key] ?? bools[key];
+
+  @override
+  String? getString(String key) => (strays[key] ?? strings[key]) as String?;
 
   @override
   Future<void> setString(String key, String value) async {
@@ -64,6 +71,7 @@ class FakeSettingsService extends Fake implements SettingsService {
       failNextStringWrite = null;
       throw error;
     }
+    strays.remove(key);
     strings[key] = value;
   }
 

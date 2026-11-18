@@ -219,11 +219,22 @@ class SettingsService {
   /// the system refused to store. Whether this write is stored is not
   /// checked: memory holds [value] after it either way, and what the system
   /// refused before was never stored.
-  Future<void> _putBack(String key, String? value) async {
-    if (value == null) {
-      await _prefs.remove(key);
-    } else {
-      await _prefs.setString(key, value);
+  Future<void> _putBack(String key, Object? value) async {
+    switch (value) {
+      case null:
+        await _prefs.remove(key);
+      case final String text:
+        await _prefs.setString(key, text);
+      case final bool flag:
+        await _prefs.setBool(key, flag);
+      case final int number:
+        await _prefs.setInt(key, number);
+      case final double number:
+        await _prefs.setDouble(key, number);
+      case final List<Object?> list:
+        await _prefs.setStringList(key, list.cast<String>());
+      default:
+        throw StateError('$key held a ${value.runtimeType}, which the preferences cannot hold.');
     }
   }
 
@@ -515,10 +526,16 @@ class SettingsService {
     return _prefs.getString(key);
   }
 
+  /// What [key] holds, of whatever type: [getString] and its like throw on
+  /// a value that is not of theirs, which a damaged preferences file can
+  /// hold.
+  Object? getValue(String key) => _prefs.get(key);
+
   /// Stores [value] under [key]. Throws when the system refuses to store
   /// it, and [key] then holds what it held before.
   Future<void> setString(String key, String value) async {
-    final previous = _prefs.getString(key);
+    // Whatever is there, text or not: a value of another type is replaced.
+    final previous = _prefs.get(key);
     if (await _prefs.setString(key, value)) return;
     await _putBack(key, previous);
     throw Exception('Could not save $key');

@@ -44,9 +44,12 @@ class ShortcutBindingsNotifier extends Notifier<ShortcutSettings> {
   ShortcutSettings build() {
     // The Mac's shortcuts use ⌘, as its menus are the system's.
     final defaults = ShortcutBindings.defaults(isMac: defaultTargetPlatform == TargetPlatform.macOS);
-    final saved = ref.watch(settingsServiceProvider).getString(settingsKey);
+    // Read as whatever is there: a damaged preferences file can hold
+    // something else than the text this app saved.
+    final saved = ref.watch(settingsServiceProvider).getValue(settingsKey);
     if (saved == null) return ShortcutSettings(defaults);
     try {
+      if (saved is! String) throw FormatException('The saved shortcuts are not text: ${saved.runtimeType}');
       final json = jsonDecode(saved);
       if (json is! Map<String, Object?>) throw FormatException('The saved shortcuts are not a map: $saved');
       return ShortcutSettings(ShortcutBindings.fromJson(json, isMac: defaults.isMac));

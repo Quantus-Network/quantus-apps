@@ -181,6 +181,25 @@ void main() {
     expect(container.read(shortcutBindingsProvider).savedWereUnreadable, isFalse);
   });
 
+  test('something saved in their place that is not text gives the defaults, says so and reports it', () async {
+    settings.strays[ShortcutBindingsNotifier.settingsKey] = 7;
+    final container = start();
+
+    final state = container.read(shortcutBindingsProvider);
+
+    expect(state.bindings, const ShortcutBindings.defaults(isMac: true));
+    expect(state.savedWereUnreadable, isTrue);
+    expect(telemetry.errors, ['Reading the saved keyboard shortcuts failed']);
+
+    // A change is saved over it, and read at the next start.
+    await container.read(shortcutBindingsProvider.notifier).setShortcut(AppCommand.send, _cmdJ);
+
+    expect(container.read(shortcutBindingsProvider).savedWereUnreadable, isFalse);
+    final next = start().read(shortcutBindingsProvider);
+    expect(next.savedWereUnreadable, isFalse);
+    expect(next.bindings[AppCommand.send], _cmdJ);
+  });
+
   test('saved shortcuts that clash are unreadable too', () {
     settings.strings[ShortcutBindingsNotifier.settingsKey] = jsonEncode({
       'commands': {'send': const KeyCombo(LogicalKeyboardKey.keyR, KeyModifiers(meta: true)).toJson()},
