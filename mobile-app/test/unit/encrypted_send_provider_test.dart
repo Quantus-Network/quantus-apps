@@ -62,6 +62,7 @@ class _FakeEncryptedAccountService extends EncryptedAccountService {
     required String circuitBinsDir,
     required ClaimProgressCallback onProgress,
     String? rpcUrl,
+    IsCancelledCallback? isCancelled,
   }) async {
     sentPlans.add(plan);
     return ClaimResult(

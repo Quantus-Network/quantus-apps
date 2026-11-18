@@ -459,14 +459,21 @@ class EncryptedAccountService {
   /// index. Per submitted batch, the spent nullifiers (and change, once its
   /// batch lands) are persisted so balances stay exact even mid-flight or
   /// after a partial failure.
+  ///
+  /// [cancel] can only stop an operation that exists, and this method reads
+  /// the seed and reserves a change index before it starts one. A caller that
+  /// may cancel earlier passes [isCancelled]: when it answers true before the
+  /// operation starts, the send throws [ClaimCancelled] and starts nothing.
   Future<ClaimResult> send({
     required WormholeSpendPlan plan,
     required String recipientAddress,
     required String circuitBinsDir,
     required ClaimProgressCallback onProgress,
     String? rpcUrl,
+    IsCancelledCallback? isCancelled,
   }) async {
     _checkNotDisposed();
+    if (isCancelled?.call() ?? false) throw const ClaimCancelled();
     final mnemonic = await _mnemonic();
     await _bindToSeed(mnemonic);
     final changeIndex = await _reserveChangeIndex();
@@ -476,6 +483,9 @@ class EncryptedAccountService {
     // into these buffers and never cached (M11).
     final secretBuffers = <Uint8List>[];
     try {
+      // The last look: nothing below waits until sendSpends has started the
+      // operation, and from then on [cancel] finds it.
+      if (isCancelled?.call() ?? false) throw const ClaimCancelled();
       final changeKeyPair = _deriveKeyPair(mnemonic, changeIndex, isChange: true);
       final recipientBytes = Uint8List.fromList(getAccountId32(recipientAddress));
       final changeBytes = Uint8List.fromList(getAccountId32(changeKeyPair.address));

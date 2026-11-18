@@ -81,9 +81,15 @@ class EncryptedSendController extends Notifier<EncryptedSendState> {
 
   EncryptedAccountService? _service;
 
+  /// Set by [cancel] and by disposal. The service can only stop an operation
+  /// that exists, so a stop asked for before then is remembered here and
+  /// keeps [start] from beginning one.
+  bool _stopRequested = false;
+
   @override
   EncryptedSendState build() {
     ref.onDispose(() {
+      _stopRequested = true;
       // Fire-and-forget: WormholeSendService.cancel() is a no-op when the
       // operation already finished, and EncryptedAccountService gates all
       // persistence behind its own lifecycle, so a late stop is safe.
@@ -119,6 +125,7 @@ class EncryptedSendController extends Notifier<EncryptedSendState> {
       // is still unspent against a recent snapshot so a stale plan fails fast
       // here instead of after minutes of proving.
       final fresh = await _recentState(walletIndex);
+      if (_stopRequested) throw const ClaimCancelled();
       if (!fresh.canSpend(plan)) {
         if (!ref.mounted) return;
         state = state.copyWith(phase: EncryptedSendPhase.planStale);
@@ -130,6 +137,7 @@ class EncryptedSendController extends Notifier<EncryptedSendState> {
         plan: plan,
         recipientAddress: recipientAddress,
         circuitBinsDir: circuitDir,
+        isCancelled: () => _stopRequested,
         onProgress: (progress) {
           if (!ref.mounted) return;
           state = state.copyWith(
@@ -182,11 +190,14 @@ class EncryptedSendController extends Notifier<EncryptedSendState> {
     return ref.refresh(provider.future);
   }
 
-  /// Requests cancellation and waits for the operation to actually stop. The
-  /// terminal phase (clean cancel, partial, or even success when the cancel
-  /// arrived too late) is set by [start] from the operation's true outcome.
+  /// Requests cancellation and, when the operation has started, waits for it
+  /// to actually stop; a cancel before then keeps [start] from beginning it.
+  /// The terminal phase (clean cancel, partial, or even success when the
+  /// cancel arrived too late) is set by [start] from the operation's true
+  /// outcome.
   Future<void> cancel() async {
     if (state.phase != EncryptedSendPhase.running) return;
+    _stopRequested = true;
     state = state.copyWith(phase: EncryptedSendPhase.canceling);
     await _service?.cancel();
   }
