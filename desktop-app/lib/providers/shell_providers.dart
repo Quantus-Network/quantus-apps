@@ -2,11 +2,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_desktop_wallet/models/shell_sheet.dart';
 import 'package:quantus_desktop_wallet/models/sidebar_selection.dart';
 import 'package:quantus_desktop_wallet/utils/send_strategies.dart';
+import 'package:quantus_desktop_wallet/utils/sidebar_order.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/providers/account_providers.dart';
 import 'package:wallet_core/providers/active_swap_provider.dart';
+import 'package:wallet_core/providers/multisig_providers.dart';
 import 'package:wallet_core/providers/remote_config_provider.dart';
 import 'package:wallet_core/send/send_flow.dart';
 import 'package:wallet_core/utils/account_actions.dart';
+import 'package:wallet_core/utils/accounts_grouping.dart';
 
 /// Whether the sidebar is shown. The View menu hides and shows it.
 final sidebarVisibleProvider = NotifierProvider<SidebarVisibilityNotifier, bool>(SidebarVisibilityNotifier.new);
@@ -27,7 +31,41 @@ class SidebarSelectionNotifier extends Notifier<SidebarSelection> {
   SidebarSelection build() => SidebarSelection.account;
 
   void select(SidebarSelection selection) => state = selection;
+
+  /// Makes [account] the active account and selects it.
+  Future<void> showAccount(DisplayAccount account) async {
+    await ref.read(activeAccountProvider.notifier).setActiveAccount(account);
+    if (!ref.mounted) return;
+    state = SidebarSelection.account;
+  }
+
+  /// Selects the row [rows] down from the selected one (up when negative),
+  /// going round at the ends. The rows are the accounts, then Mining Rewards.
+  Future<void> move(int rows) async {
+    final accounts = ref.read(sidebarAccountsProvider);
+    final activeId = ref.read(activeAccountProvider).value?.account.accountId;
+    final selected = state == SidebarSelection.miningRewards
+        ? accounts.length
+        : accounts.indexWhere((account) => account.account.accountId == activeId);
+    // With no account active yet, the walk starts from outside the list.
+    final from = selected >= 0 ? selected : (rows > 0 ? -1 : 0);
+    final to = (from + rows) % (accounts.length + 1);
+    if (to == accounts.length) {
+      state = SidebarSelection.miningRewards;
+    } else {
+      await showAccount(accounts[to]);
+    }
+  }
 }
+
+/// The accounts in the order the sidebar lists them; none until they have
+/// loaded.
+final sidebarAccountsProvider = Provider<List<DisplayAccount>>((ref) {
+  final accounts = ref.watch(accountsProvider).value;
+  final multisigs = ref.watch(multisigAccountsProvider).value;
+  if (accounts == null || multisigs == null) return const [];
+  return accountsInSidebarOrder(groupWallets(accounts: accounts, multisigs: multisigs));
+});
 
 /// The sheet over the window, or null when there is none.
 final shellSheetProvider = NotifierProvider<ShellSheetNotifier, ShellSheet?>(ShellSheetNotifier.new);

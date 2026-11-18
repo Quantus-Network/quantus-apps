@@ -162,6 +162,10 @@ class _DesktopShellState extends ConsumerState<DesktopShell> {
     final presence = ref.watch(walletPresenceProvider);
     // The Account and View menus act on the wallet, so they wait for one.
     final hasWallet = presence.value == WalletPresence.present;
+    final hasSheet = ref.watch(shellSheetProvider) != null;
+    // A sheet is for the account it opened on, so nothing moves under it.
+    final canNavigate = hasWallet && !hasSheet;
+    final sidebar = ref.read(sidebarSelectionProvider.notifier);
 
     return Scaffold(
       body: AppMenuBar(
@@ -170,9 +174,12 @@ class _DesktopShellState extends ConsumerState<DesktopShell> {
           l10n: ref.watch(l10nProvider),
           useNativeMenuBar: useNativeMenuBar,
           accountActions: ref.watch(activeAccountActionsProvider),
+          accounts: hasWallet ? ref.watch(sidebarAccountsProvider) : const [],
           isSidebarVisible: isSidebarVisible,
-          canOpenSheet: hasWallet && ref.watch(shellSheetProvider) == null,
+          canOpenSheet: canNavigate,
           onOpenSheet: (sheet) => ref.read(shellSheetProvider.notifier).open(sheet),
+          onShowAccount: canNavigate ? (account) => unawaited(sidebar.showAccount(account)) : null,
+          onMoveInSidebar: canNavigate ? (rows) => unawaited(sidebar.move(rows)) : null,
           onToggleSidebar: hasWallet ? () => ref.read(sidebarVisibleProvider.notifier).toggle() : null,
           onCloseWindow: () => ref.read(requestAppExitProvider)(),
         ),
