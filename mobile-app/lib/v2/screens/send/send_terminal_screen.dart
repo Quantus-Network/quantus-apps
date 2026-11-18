@@ -6,7 +6,7 @@ import 'package:wallet_core/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/shared/constants/e2e_keys.dart';
 import 'package:resonance_network_wallet/v2/components/explorer_link.dart';
 import 'package:resonance_network_wallet/v2/screens/home/home_screen.dart';
-import 'package:resonance_network_wallet/v2/screens/send/send_strategy.dart';
+import 'package:wallet_core/send/send_strategy.dart';
 
 /// Shared success screen for both regular sends and multisig proposals,
 /// configured entirely by [SendTerminalContent].

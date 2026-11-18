@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
@@ -9,13 +8,14 @@ import 'package:wallet_core/providers/account_providers.dart';
 import 'package:wallet_core/providers/l10n_provider.dart';
 import 'package:wallet_core/providers/multisig_providers.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
-import 'package:resonance_network_wallet/services/local_auth_service.dart';
 import 'package:wallet_core/services/transaction_submission_service.dart';
 import 'package:wallet_core/utils/account_utils.dart';
-import 'package:resonance_network_wallet/v2/components/multisig_expiry_value.dart';
 import 'package:wallet_core/providers/keystone_sign_cache.dart';
-import 'package:resonance_network_wallet/v2/screens/send/keystone_signing_session.dart';
-import 'package:resonance_network_wallet/v2/screens/send/send_strategy.dart';
+import 'package:wallet_core/send/keystone_signing_session.dart';
+import 'package:wallet_core/send/send_review_row.dart';
+import 'package:wallet_core/send/send_strategy.dart';
+import 'package:wallet_core/services/user_approval.dart';
+import 'package:wallet_core/utils/multisig_expiry.dart';
 
 /// Proposal cost for a recipient. The network fee is still a chain estimate,
 /// so it is keyed by recipient only and sized with a representative amount —
@@ -111,8 +111,7 @@ class MultisigProposeStrategy extends SendStrategy {
   }
 
   @override
-  List<Widget> reviewRows(
-    BuildContext context,
+  List<SendReviewRow> reviewRows(
     WidgetRef ref, {
     required String recipientAddress,
     required BigInt amount,
@@ -130,42 +129,22 @@ class MultisigProposeStrategy extends SendStrategy {
         l10n.commonAmountBalance(fmt.formatBalance(v, smartDecimals: AppConstants.decimals), AppConstants.tokenSymbol);
 
     return [
-      const SizedBox(height: 4),
-      DetailSummaryRow.review(
-        label: l10n.multisigProposeProposerLabel,
-        value: msig.myMemberAccountId,
-        checkphraseAddress: msig.myMemberAccountId,
-        valueFlex: 4,
-      ),
-      const SizedBox(height: 4),
-      DetailSummaryRow.review(label: l10n.sendReviewAmount, value: amt(amount)),
-      const SizedBox(height: 4),
-      DetailSummaryRow.review(
-        label: l10n.multisigProposeThresholdLabel,
-        value: '${msig.threshold}/${msig.signers.length}',
-      ),
-      const SizedBox(height: 4),
-      DetailSummaryRow.review(
-        label: l10n.multisigProposeExpiresLabel,
-        valueWidget: MultisigExpiryValue(
-          parts: resolveMultisigExpiryParts(
-            l10n: l10n,
-            expiryBlock: breakdown.expiryBlock,
-            multisigService: multisigService,
-            currentBlock: currentBlock,
-          ),
+      SendReviewAddress(l10n.multisigProposeProposerLabel, msig.myMemberAccountId),
+      SendReviewText(l10n.sendReviewAmount, amt(amount)),
+      SendReviewText(l10n.multisigProposeThresholdLabel, '${msig.threshold}/${msig.signers.length}'),
+      SendReviewExpiry(
+        l10n.multisigProposeExpiresLabel,
+        resolveMultisigExpiryParts(
+          l10n: l10n,
+          expiryBlock: breakdown.expiryBlock,
+          multisigService: multisigService,
+          currentBlock: currentBlock,
         ),
-        valueFlex: 4,
       ),
-      const SizedBox(height: 4),
-      DetailSummaryRow.review(label: l10n.sendReviewNetworkFee, value: amt(breakdown.networkFee)),
-      const SizedBox(height: 4),
-      DetailSummaryRow.review(label: l10n.multisigProposalDepositLabel, value: amt(breakdown.deposit)),
-      const SizedBox(height: 4),
-      DetailSummaryRow.review(label: l10n.multisigProposeFeeRowLabel, value: amt(breakdown.creationFee)),
-      const SizedBox(height: 4),
-      DetailSummaryRow.review(label: l10n.multisigProposeMemberTotalLabel, value: amt(breakdown.memberCost)),
-      const SizedBox(height: 4),
+      SendReviewText(l10n.sendReviewNetworkFee, amt(breakdown.networkFee)),
+      SendReviewText(l10n.multisigProposalDepositLabel, amt(breakdown.deposit)),
+      SendReviewText(l10n.multisigProposeFeeRowLabel, amt(breakdown.creationFee)),
+      SendReviewText(l10n.multisigProposeMemberTotalLabel, amt(breakdown.memberCost)),
     ];
   }
 
@@ -279,8 +258,8 @@ class MultisigProposeStrategy extends SendStrategy {
       );
     }
 
-    final authed = await LocalAuthService().authenticate(localizedReason: l10n.multisigProposeAuthReason);
-    if (!authed) return SendFailed(l10n.multisigProposeAuthRequired);
+    final approval = await ref.read(userApprovalProvider).approve(reason: l10n.multisigProposeAuthReason);
+    if (approval != ApprovalResult.approved) return SendFailed(l10n.multisigProposeAuthRequired);
 
     try {
       await ref

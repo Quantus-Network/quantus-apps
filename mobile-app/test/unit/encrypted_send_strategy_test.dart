@@ -11,8 +11,8 @@ import 'package:wallet_core/providers/one_click_provider.dart';
 import 'package:wallet_core/providers/remote_config_provider.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/services/local_auth_service.dart';
-import 'package:resonance_network_wallet/v2/screens/send/encrypted_send_strategy.dart';
-import 'package:resonance_network_wallet/v2/screens/send/send_strategy.dart';
+import 'package:wallet_core/send/encrypted_send_strategy.dart';
+import 'package:wallet_core/send/send_strategy.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../fakes.dart';

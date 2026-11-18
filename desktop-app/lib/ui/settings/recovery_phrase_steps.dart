@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_desktop_wallet/providers/approval_providers.dart';
 import 'package:quantus_desktop_wallet/services/sensitive_clipboard.dart';
-import 'package:quantus_desktop_wallet/services/user_approval.dart';
 import 'package:quantus_desktop_wallet/ui/components/copy_action.dart';
 import 'package:quantus_desktop_wallet/ui/components/recovery_phrase_grid.dart';
 import 'package:quantus_desktop_wallet/ui/components/sheet_button.dart';
@@ -13,6 +12,7 @@ import 'package:quantus_desktop_wallet/ui/settings/settings_sheet.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/providers/l10n_provider.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
+import 'package:wallet_core/services/user_approval.dart';
 import 'package:wallet_core/utils/recovery_phrase.dart';
 
 /// The wallet whose recovery phrase Settings shows. A desktop holds one

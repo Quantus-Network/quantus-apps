@@ -22,7 +22,7 @@ Future<void> _openSheet(WidgetTester tester, ShellSheet sheet) async {
     tester,
     overrides: [
       ...device.overrides,
-      userApprovalProvider.overrideWithValue(FakeUserApproval()),
+      systemApprovalProvider.overrideWithValue(FakeUserApproval()),
       sensitiveClipboardProvider.overrideWithValue(FakeSensitiveClipboard()),
     ],
   );

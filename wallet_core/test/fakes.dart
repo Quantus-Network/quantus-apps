@@ -5,6 +5,8 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:quantus_sdk/generated/bell/pallets/balances.dart' as balances_pallet;
+import 'package:quantus_sdk/generated/bell/types/sp_runtime/multiaddress/multi_address.dart' as multi_address;
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/providers/remote_config_provider.dart';
 import 'package:wallet_core/providers/wallet_core_overrides.dart';
@@ -13,6 +15,8 @@ import 'package:wallet_core/services/local_notifications.dart';
 import 'package:wallet_core/services/push_registration.dart';
 import 'package:wallet_core/services/remote_config_service.dart';
 import 'package:wallet_core/services/telemetry.dart';
+import 'package:wallet_core/services/transaction_submission_service.dart';
+import 'package:wallet_core/services/user_approval.dart';
 import 'package:wallet_core/models/notification_models.dart';
 
 /// What a device stores about its wallets, kept in memory.
@@ -200,6 +204,27 @@ class FakePushRegistration implements PushRegistration {
   Future<void> unregister() async {}
 }
 
+/// The device's approval, answering as a test says. It approves unless told
+/// otherwise.
+class FakeUserApproval implements UserApproval {
+  ApprovalAvailability availabilityAnswer = ApprovalAvailability.available;
+
+  /// What a request answers; it may throw.
+  Future<ApprovalResult> Function() answer = () async => ApprovalResult.approved;
+
+  /// The reason given with each request.
+  final reasons = <String>[];
+
+  @override
+  Future<ApprovalAvailability> availability() async => availabilityAnswer;
+
+  @override
+  Future<ApprovalResult> approve({required String reason}) {
+    reasons.add(reason);
+    return answer();
+  }
+}
+
 class _NoLocalNotifications implements LocalNotifications {
   @override
   Future<void> showOrScheduleNotification(NotificationData notification) async {}
@@ -231,6 +256,7 @@ class WalletTestBed {
   final hdWallet = FakeHdWalletService();
   final telemetry = FakeTelemetry();
   final pushRegistration = FakePushRegistration();
+  final userApproval = FakeUserApproval();
   final FakeSubstrateService substrate;
   final FakeAccountDiscoveryService discovery;
 
@@ -242,6 +268,7 @@ class WalletTestBed {
       telemetry: (_) => telemetry,
       pushRegistration: (_) => pushRegistration,
       localNotifications: (_) => _NoLocalNotifications(),
+      userApproval: (_) => userApproval,
     ),
     settingsServiceProvider.overrideWithValue(settings),
     accountsServiceProvider.overrideWithValue(accounts),
@@ -283,4 +310,83 @@ Future<WidgetRef> pumpRef(WidgetTester tester, {required List<Override> override
     ),
   );
   return ref;
+}
+
+/// Builds [build] in a widget over [overrides], for functions that watch
+/// providers, and hands back a way to read what the latest build returned.
+Future<T Function()> pumpWatched<T>(
+  WidgetTester tester, {
+  required List<Override> overrides,
+  required T Function(WidgetRef ref) build,
+}) async {
+  late T latest;
+  await tester.pumpWidget(
+    ProviderScope(
+      overrides: overrides,
+      child: Consumer(
+        builder: (context, ref, _) {
+          latest = build(ref);
+          return const SizedBox.shrink();
+        },
+      ),
+    ),
+  );
+  return () => latest;
+}
+
+/// An account of the first wallet, signing in this app unless [accountType]
+/// says otherwise.
+Account makeAccount(int index, {AccountType accountType = AccountType.local}) => Account(
+  walletIndex: 0,
+  index: index,
+  name: 'Account $index',
+  accountId: 'qzaccount$index${'x' * 40}',
+  accountType: accountType,
+);
+
+/// Builds the transfer calls without the chain's address decoding.
+class FakeBalancesService extends Fake implements BalancesService {
+  static final _anyDest = const multi_address.$MultiAddress().id(List<int>.filled(32, 0));
+
+  @override
+  Balances getBalanceTransferCall(String targetAddress, BigInt amount) =>
+      const balances_pallet.Txs().transferAllowDeath(dest: _anyDest, value: amount);
+
+  @override
+  Balances getTransferAllCall(String targetAddress) =>
+      const balances_pallet.Txs().transferAll(dest: _anyDest, keepAlive: false);
+}
+
+/// Records what would be signed and submitted instead of doing it.
+class FakeTransactionSubmissionService extends Fake implements TransactionSubmissionService {
+  /// Each transfer's recipient, amount and fee.
+  final transfers = <(String, BigInt, BigInt)>[];
+
+  /// Each multisig proposal's recipient, amount and expiry block.
+  final proposals = <(String, BigInt, int)>[];
+
+  @override
+  Future<String> balanceTransfer(
+    Account account, {
+    required RuntimeCall call,
+    required String targetAddress,
+    required BigInt amount,
+    required BigInt fee,
+  }) async {
+    transfers.add((targetAddress, amount, fee));
+    return '0xtxhash';
+  }
+
+  @override
+  Future<String> proposeTransfer({
+    required MultisigAccount msig,
+    required Account signer,
+    required String recipient,
+    required BigInt amount,
+    required int expiryBlock,
+    required ProposeFeeBreakdown feeBreakdown,
+  }) async {
+    proposals.add((recipient, amount, expiryBlock));
+    return '0xproposal';
+  }
 }

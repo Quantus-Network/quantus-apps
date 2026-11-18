@@ -9,7 +9,7 @@ import 'package:wallet_core/providers/encrypted_send_provider.dart';
 import 'package:wallet_core/providers/l10n_provider.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/v2/components/wormhole_progress_steps.dart';
-import 'package:resonance_network_wallet/v2/screens/send/send_strategy.dart';
+import 'package:wallet_core/send/send_strategy.dart';
 import 'package:resonance_network_wallet/v2/screens/send/send_terminal_screen.dart';
 
 /// Renders an encrypted send driven by [encryptedSendControllerProvider]: the

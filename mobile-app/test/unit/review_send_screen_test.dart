@@ -9,11 +9,11 @@ import 'package:wallet_core/providers/l10n_provider.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:wallet_core/services/exchange_rate_service.dart';
 import 'package:resonance_network_wallet/shared/constants/e2e_keys.dart';
-import 'package:resonance_network_wallet/v2/screens/send/regular_send_strategy.dart';
+import 'package:wallet_core/send/regular_send_strategy.dart';
 import 'package:resonance_network_wallet/v2/screens/send/review_send_screen.dart';
-import 'package:resonance_network_wallet/v2/screens/send/send_fee_notifier.dart';
-import 'package:resonance_network_wallet/v2/screens/send/send_screen_logic.dart';
-import 'package:resonance_network_wallet/v2/screens/send/send_strategy.dart';
+import 'package:wallet_core/send/send_fee_notifier.dart';
+import 'package:wallet_core/send/send_screen_logic.dart';
+import 'package:wallet_core/send/send_strategy.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../extensions.dart';

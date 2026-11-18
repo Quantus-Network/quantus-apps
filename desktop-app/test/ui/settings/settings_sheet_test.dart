@@ -20,6 +20,7 @@ import 'package:quantus_desktop_wallet/ui/settings/settings_sheet.dart';
 import 'package:quantus_desktop_wallet/ui/shell/desktop_shell.dart';
 import 'package:quantus_desktop_wallet/ui/shell/shell_sheet_view.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:wallet_core/services/user_approval.dart';
 
 import '../../fakes.dart';
 
@@ -46,7 +47,7 @@ Future<FakeWalletDevice> _openSettings(
     loginPassword: loginPassword,
     overrides: [
       ...device.overrides,
-      if (loginPassword == null) userApprovalProvider.overrideWithValue(approval ?? FakeUserApproval()),
+      if (loginPassword == null) systemApprovalProvider.overrideWithValue(approval ?? FakeUserApproval()),
       sensitiveClipboardProvider.overrideWithValue(clipboard ?? FakeSensitiveClipboard()),
     ],
   );

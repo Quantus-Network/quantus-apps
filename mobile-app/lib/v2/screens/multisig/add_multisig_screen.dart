@@ -17,7 +17,7 @@ import 'package:wallet_core/services/multisig_submission_service.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/accounts_navigation.dart';
 import 'package:wallet_core/providers/keystone_sign_cache.dart';
 import 'package:resonance_network_wallet/v2/screens/send/keystone_sign_screen.dart';
-import 'package:resonance_network_wallet/v2/screens/send/keystone_signing_session.dart';
+import 'package:wallet_core/send/keystone_signing_session.dart';
 
 class AddMultisigScreen extends ConsumerStatefulWidget {
   const AddMultisigScreen({super.key});

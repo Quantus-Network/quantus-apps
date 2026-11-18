@@ -14,7 +14,7 @@ import 'package:wallet_core/utils/account_utils.dart';
 import 'package:resonance_network_wallet/v2/components/decoded_call_view.dart';
 import 'package:wallet_core/providers/keystone_sign_cache.dart';
 import 'package:resonance_network_wallet/v2/screens/send/keystone_sign_screen.dart';
-import 'package:resonance_network_wallet/v2/screens/send/keystone_signing_session.dart';
+import 'package:wallet_core/send/keystone_signing_session.dart';
 
 /// Estimates the network fee for the action being confirmed.
 ///

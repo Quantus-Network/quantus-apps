@@ -1,13 +1,13 @@
-import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/l10n/app_localizations.dart';
 import 'package:wallet_core/providers/l10n_provider.dart';
-import 'package:resonance_network_wallet/providers/local_auth_provider.dart';
 import 'package:wallet_core/providers/one_click_provider.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
-import 'package:resonance_network_wallet/v2/screens/send/send_strategy.dart';
+import 'package:wallet_core/send/send_review_row.dart';
+import 'package:wallet_core/send/send_strategy.dart';
+import 'package:wallet_core/services/user_approval.dart';
 
 /// Spend plan — and so the fee — for an amount from the wallet's current
 /// UTXO set. Derived from whatever [encryptedStateProvider] holds, including
@@ -118,8 +118,7 @@ class EncryptedSendStrategy extends SendStrategy {
   }
 
   @override
-  List<Widget> reviewRows(
-    BuildContext context,
+  List<SendReviewRow> reviewRows(
     WidgetRef ref, {
     required String recipientAddress,
     required BigInt amount,
@@ -135,15 +134,10 @@ class EncryptedSendStrategy extends SendStrategy {
         l10n.commonAmountBalance(fmt.formatBalance(v, smartDecimals: AppConstants.decimals), AppConstants.tokenSymbol);
 
     return [
-      const SizedBox(height: 7),
-      DetailSummaryRow.review(label: l10n.sendReviewTo, value: recipientAddress.trim()),
-      const SizedBox(height: 7),
-      DetailSummaryRow.review(label: l10n.sendReviewAmount, value: amt(amount)),
-      const SizedBox(height: 7),
-      DetailSummaryRow.review(label: l10n.encryptedSendFeeLabel, value: amt(feeAmount)),
-      const SizedBox(height: 7),
-      DetailSummaryRow.review(label: l10n.sendReviewYouPay, value: amt(amount + feeAmount)),
-      const SizedBox(height: 7),
+      SendReviewText(l10n.sendReviewTo, recipientAddress.trim()),
+      SendReviewText(l10n.sendReviewAmount, amt(amount)),
+      SendReviewText(l10n.encryptedSendFeeLabel, amt(feeAmount)),
+      SendReviewText(l10n.sendReviewYouPay, amt(amount + feeAmount)),
     ];
   }
 
@@ -170,13 +164,13 @@ class EncryptedSendStrategy extends SendStrategy {
     // several inputs makes several deposits, which a single-use 1Click
     // deposit address cannot take. Only an answer 1Click has given by now
     // counts; it is never waited for, and read again once the user has
-    // authenticated, since it may land while the prompt is open.
+    // approved, since it may land while the prompt is open.
     final recipient = recipientAddress.trim();
     bool refused() => plan.inputCount > 1 && isKnownOneClickDepositAddress(ref, recipient);
     if (refused()) return SendFailed(l10n.encryptedSendNearIntentsDescription);
 
-    final authed = await ref.read(localAuthServiceProvider).authenticate(localizedReason: l10n.sendReviewAuthReason);
-    if (!authed) return SendFailed(l10n.sendReviewAuthRequired);
+    final approval = await ref.read(userApprovalProvider).approve(reason: l10n.sendReviewAuthReason);
+    if (approval != ApprovalResult.approved) return SendFailed(l10n.sendReviewAuthRequired);
     if (refused()) return SendFailed(l10n.encryptedSendNearIntentsDescription);
 
     return SendNeedsProving(

@@ -13,11 +13,13 @@ import 'package:resonance_network_wallet/shared/constants/e2e_keys.dart';
 import 'package:resonance_network_wallet/v2/components/address_checkphrase_with_initial.dart';
 import 'package:resonance_network_wallet/v2/components/amount_display_with_conversion.dart';
 import 'package:resonance_network_wallet/v2/components/link_button.dart';
+import 'package:resonance_network_wallet/v2/components/multisig_expiry_value.dart';
 import 'package:resonance_network_wallet/v2/components/split_card.dart';
 import 'package:resonance_network_wallet/v2/screens/send/encrypted_send_progress_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/send/keystone_sign_screen.dart';
-import 'package:resonance_network_wallet/v2/screens/send/send_screen_logic.dart';
-import 'package:resonance_network_wallet/v2/screens/send/send_strategy.dart';
+import 'package:wallet_core/send/send_review_row.dart';
+import 'package:wallet_core/send/send_screen_logic.dart';
+import 'package:wallet_core/send/send_strategy.dart';
 import 'package:resonance_network_wallet/v2/screens/send/send_terminal_screen.dart';
 
 class ReviewSendScreen extends ConsumerStatefulWidget {
@@ -235,14 +237,15 @@ class _ReviewSendScreenState extends ConsumerState<ReviewSendScreen> {
             child: SingleChildScrollView(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: widget.strategy.reviewRows(
-                  context,
-                  ref,
-                  recipientAddress: widget.recipientAddress,
-                  amount: amount,
-                  fee: fee,
-                  feeIsEstimate: !feeApplies,
-                  sendAll: widget.sendAll,
+                children: _summaryRows(
+                  widget.strategy.reviewRows(
+                    ref,
+                    recipientAddress: widget.recipientAddress,
+                    amount: amount,
+                    fee: fee,
+                    feeIsEstimate: !feeApplies,
+                    sendAll: widget.sendAll,
+                  ),
                 ),
               ),
             ),
@@ -271,6 +274,33 @@ class _ReviewSendScreenState extends ConsumerState<ReviewSendScreen> {
         ),
       ),
     );
+  }
+
+  /// The strategy's summary rows as this screen draws them, with a gap above,
+  /// between and below: seven high, or four once there are more than four
+  /// rows, as a multisig proposal has.
+  List<Widget> _summaryRows(List<SendReviewRow> rows) {
+    final gap = SizedBox(height: rows.length > 4 ? 4.0 : 7.0);
+    return [
+      gap,
+      for (final row in rows) ...[
+        switch (row) {
+          SendReviewText(:final label, :final value) => DetailSummaryRow.review(label: label, value: value),
+          SendReviewAddress(:final label, :final address) => DetailSummaryRow.review(
+            label: label,
+            value: address,
+            checkphraseAddress: address,
+            valueFlex: 4,
+          ),
+          SendReviewExpiry(:final label, :final expiry) => DetailSummaryRow.review(
+            label: label,
+            valueWidget: MultisigExpiryValue(parts: expiry),
+            valueFlex: 4,
+          ),
+        },
+        gap,
+      ],
+    ];
   }
 
   Widget _heroCard(AppLocalizations l10n, SendStrings strings, CurrencyDisplayState approxDisplay) {

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_desktop_wallet/providers/approval_providers.dart';
-import 'package:quantus_desktop_wallet/services/user_approval.dart';
 import 'package:quantus_desktop_wallet/ui/components/settings_group.dart';
 import 'package:quantus_desktop_wallet/ui/settings/language_pop_up.dart';
 import 'package:quantus_desktop_wallet/ui/settings/recovery_phrase_steps.dart';
@@ -9,6 +8,7 @@ import 'package:quantus_desktop_wallet/ui/settings/reset_wallet_step.dart';
 import 'package:quantus_desktop_wallet/ui/shell/shell_sheet_view.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/providers/l10n_provider.dart';
+import 'package:wallet_core/services/user_approval.dart';
 
 /// The steps of the Settings sheet. Each but the list has a way back to it.
 enum _Step { list, phraseCaution, phraseWords, reset }

@@ -15,6 +15,7 @@ import 'package:resonance_network_wallet/providers/local_auth_provider.dart';
 import 'package:wallet_core/services/history_polling_manager.dart';
 import 'package:wallet_core/services/remote_config_service.dart';
 import 'package:resonance_network_wallet/services/local_auth_service.dart';
+import 'package:resonance_network_wallet/services/local_auth_user_approval.dart';
 import 'package:resonance_network_wallet/services/telemetry_service.dart';
 import 'package:wallet_core/services/transaction_submission_service.dart';
 import 'package:wallet_core/models/notification_models.dart';
@@ -22,6 +23,7 @@ import 'package:wallet_core/providers/wallet_core_overrides.dart';
 import 'package:wallet_core/services/local_notifications.dart';
 import 'package:wallet_core/services/push_registration.dart';
 import 'package:wallet_core/services/telemetry.dart';
+import 'package:wallet_core/services/user_approval.dart';
 
 class FakeSettingsService extends Fake implements SettingsService {
   DisplayAccount? activeAccount;
@@ -358,13 +360,17 @@ class FakeTelemetry implements Telemetry {
 /// Telemetry defaults to the app's [TelemetryService], so tests that assert on
 /// its channel through [recordTelemetry] see what production would send. Push
 /// and local notifications default to fakes: their real implementations need
-/// Firebase and the notification plugin.
+/// Firebase and the notification plugin. Approval defaults to the app's own
+/// binding over [localAuthServiceProvider], so a test sets up authentication
+/// the way it would for the app.
 List<Override> testWalletCoreOverrides({
   Telemetry? telemetry,
   PushRegistration? pushRegistration,
   LocalNotifications? localNotifications,
+  UserApproval? userApproval,
 }) => walletCoreOverrides(
   telemetry: (_) => telemetry ?? TelemetryService(),
   pushRegistration: (_) => pushRegistration ?? FakePushRegistration(),
   localNotifications: (_) => localNotifications ?? FakeLocalNotifications(),
+  userApproval: (ref) => userApproval ?? LocalAuthUserApproval(ref.watch(localAuthServiceProvider)),
 );
