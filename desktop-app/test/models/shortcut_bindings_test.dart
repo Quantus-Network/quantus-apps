@@ -109,6 +109,9 @@ void main() {
         _combo(LogicalKeyboardKey.keyA, _ctrl): SystemCommand.selectAll,
         _combo(LogicalKeyboardKey.keyZ, _ctrl): SystemCommand.undo,
         _combo(LogicalKeyboardKey.keyY, _ctrl): SystemCommand.redo,
+        // The second keys Flutter's text fields give Redo and Copy there.
+        _combo(LogicalKeyboardKey.keyZ, const KeyModifiers(control: true, shift: true)): SystemCommand.redo,
+        _combo(LogicalKeyboardKey.insert, _ctrl): SystemCommand.copy,
       };
 
       for (final MapEntry(key: combo, value: system) in macKept.entries) {

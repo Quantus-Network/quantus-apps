@@ -230,6 +230,9 @@ class ShortcutBindings {
           KeyCombo(LogicalKeyboardKey.keyA, _command): SystemCommand.selectAll,
           KeyCombo(LogicalKeyboardKey.keyZ, _command): SystemCommand.undo,
           KeyCombo(LogicalKeyboardKey.keyY, _command): SystemCommand.redo,
+          // What Flutter's text fields also give Redo and Copy there.
+          const KeyCombo(LogicalKeyboardKey.keyZ, KeyModifiers(control: true, shift: true)): SystemCommand.redo,
+          KeyCombo(LogicalKeyboardKey.insert, _command): SystemCommand.copy,
         };
 
   /// The keys that print nothing which a menu item of the Mac's menu bar can
