@@ -43,12 +43,19 @@ class EncryptedSendState {
   /// cancellation (zero for a clean cancel).
   final BigInt submittedRecipientToken;
 
+  /// The hash of each transaction the send handed to the chain, in the order
+  /// they went: all of them once it succeeded, those before the stop when it
+  /// was cancelled part way. A send draws on its inputs in batches, one
+  /// transaction each.
+  final List<String> txHashes;
+
   EncryptedSendState({
     required this.phase,
     this.currentStep = 0,
     this.stepProgress = const {},
     this.errorMessage,
     BigInt? submittedRecipientToken,
+    this.txHashes = const [],
   }) : submittedRecipientToken = submittedRecipientToken ?? BigInt.zero;
 
   bool get isRunning => phase == EncryptedSendPhase.running || phase == EncryptedSendPhase.canceling;
@@ -59,12 +66,14 @@ class EncryptedSendState {
     Map<int, ClaimProgressItem>? stepProgress,
     String? errorMessage,
     BigInt? submittedRecipientToken,
+    List<String>? txHashes,
   }) => EncryptedSendState(
     phase: phase ?? this.phase,
     currentStep: currentStep ?? this.currentStep,
     stepProgress: stepProgress ?? this.stepProgress,
     errorMessage: errorMessage ?? this.errorMessage,
     submittedRecipientToken: submittedRecipientToken ?? this.submittedRecipientToken,
+    txHashes: txHashes ?? this.txHashes,
   );
 }
 
@@ -152,7 +161,11 @@ class EncryptedSendController extends Notifier<EncryptedSendState> {
       if (result.cancelled) {
         // Cancelled after some batches had already paid out: report the
         // partial outcome, never a clean "cancelled".
-        state = state.copyWith(phase: EncryptedSendPhase.cancelled, submittedRecipientToken: result.totalWithdrawn);
+        state = state.copyWith(
+          phase: EncryptedSendPhase.cancelled,
+          submittedRecipientToken: result.totalWithdrawn,
+          txHashes: result.txHashes,
+        );
         return;
       }
 
@@ -161,7 +174,7 @@ class EncryptedSendController extends Notifier<EncryptedSendState> {
             .addAddress(recipientAddress)
             .catchError((Object e) => quantusPrint('Failed to save recent address: $e')),
       );
-      state = state.copyWith(phase: EncryptedSendPhase.succeeded);
+      state = state.copyWith(phase: EncryptedSendPhase.succeeded, txHashes: result.txHashes);
     } on ClaimCancelled {
       // Nothing was submitted.
       if (!ref.mounted) return;
