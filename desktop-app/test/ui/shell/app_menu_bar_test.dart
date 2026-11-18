@@ -89,4 +89,83 @@ void main() {
       expect(unhandled, isNot(contains(LogicalKeyboardKey.keyS)));
     });
   });
+
+  group('the native menu bar', () {
+    testWidgets('a key acts on the menus as they are when it is pressed, not as the system last heard of them', (
+      tester,
+    ) async {
+      var sends = 0;
+      // Handed to the system while Send was unavailable; it has become
+      // available since.
+      VoidCallback? onSend;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: AppMenuBar(
+            useNativeMenuBar: true,
+            menus: _menusWith(onSend: null),
+            resolveMenus: () => _menusWith(onSend: onSend),
+            child: const SizedBox(),
+          ),
+        ),
+      );
+      onSend = () => sends++;
+
+      await _pressCtrlS(tester);
+
+      expect(sends, 1);
+    });
+
+    testWidgets('the key of an item that is unavailable is left unhandled, for the system\'s menu to have', (
+      tester,
+    ) async {
+      final unhandled = <LogicalKeyboardKey>[];
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Focus(
+            canRequestFocus: false,
+            onKeyEvent: (_, event) {
+              if (event is KeyDownEvent) unhandled.add(event.logicalKey);
+              return KeyEventResult.ignored;
+            },
+            child: AppMenuBar(
+              useNativeMenuBar: true,
+              menus: _menusWith(onSend: null),
+              resolveMenus: () => _menusWith(onSend: null),
+              child: const SizedBox(),
+            ),
+          ),
+        ),
+      );
+
+      await _pressCtrlS(tester);
+
+      expect(unhandled, contains(LogicalKeyboardKey.keyS));
+    });
+
+    testWidgets('the key of an available item is taken, so the system\'s menu does not run the item again', (
+      tester,
+    ) async {
+      var sends = 0;
+      final unhandled = <LogicalKeyboardKey>[];
+      List<PlatformMenu> menus() => _menusWith(onSend: () => sends++);
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Focus(
+            canRequestFocus: false,
+            onKeyEvent: (_, event) {
+              if (event is KeyDownEvent) unhandled.add(event.logicalKey);
+              return KeyEventResult.ignored;
+            },
+            child: AppMenuBar(useNativeMenuBar: true, menus: menus(), resolveMenus: menus, child: const SizedBox()),
+          ),
+        ),
+      );
+
+      await _pressCtrlS(tester);
+
+      expect(sends, 1);
+      expect(unhandled, isNot(contains(LogicalKeyboardKey.keyS)));
+      expect(find.byType(PlatformMenuBar), findsOneWidget);
+    });
+  });
 }

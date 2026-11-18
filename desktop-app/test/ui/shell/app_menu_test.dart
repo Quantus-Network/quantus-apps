@@ -292,6 +292,71 @@ void main() {
       expect(_inSheet(find.text('Main')), findsOneWidget);
     });
 
+    /// Presses [keys] one after another with ⌘ held, before any frame is
+    /// drawn: the system's menus still hold what they did before the first.
+    Future<void> pressWithCommand(WidgetTester tester, List<LogicalKeyboardKey> keys) async {
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.metaLeft);
+      for (final key in keys) {
+        await tester.sendKeyEvent(key);
+      }
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.metaLeft);
+      await tester.pumpAndSettle();
+    }
+
+    testOnMac('⌘R, pressed, opens Receive: the app answers its shortcuts itself', (tester) async {
+      await pumpShell(tester, overrides: _withActive(const RegularAccount(mainAccount)));
+
+      await pressWithCommand(tester, [LogicalKeyboardKey.keyR]);
+
+      expect(_sheetTitled('Receive'), findsOneWidget);
+    });
+
+    testOnMac('⌘S, pressed on an account this app cannot send from, opens nothing', (tester) async {
+      await pumpShell(tester, overrides: _withActive(const RegularAccount(vaultAccount)));
+
+      await pressWithCommand(tester, [LogicalKeyboardKey.keyS]);
+
+      expect(find.byType(ShellSheetView), findsNothing);
+    });
+
+    testOnMac('from an account that cannot send, ⌘1 then ⌘S before the next frame opens Send on the account '
+        'switched to', (tester) async {
+      final settings = SlowSettingsService(activeAccount: const RegularAccount(vaultAccount));
+      await pumpShell(
+        tester,
+        overrides: shellOverrides(
+          accounts: const [mainAccount, vaultAccount],
+          settings: settings,
+          balances: oneTokenEach,
+        ),
+      );
+
+      await pressWithCommand(tester, [LogicalKeyboardKey.digit1, LogicalKeyboardKey.keyS]);
+      await settings.finishWrites(tester);
+
+      expect(_selected(tester), 'Main');
+      expect(find.byType(SendSheet), findsOneWidget);
+      expect(_inSheet(find.text('Main')), findsOneWidget);
+    });
+
+    testOnMac('⌘2 to an account that cannot send, then ⌘S before the next frame, opens nothing', (tester) async {
+      final settings = SlowSettingsService(activeAccount: const RegularAccount(mainAccount));
+      await pumpShell(
+        tester,
+        overrides: shellOverrides(
+          accounts: const [mainAccount, vaultAccount],
+          settings: settings,
+          balances: oneTokenEach,
+        ),
+      );
+
+      await pressWithCommand(tester, [LogicalKeyboardKey.digit2, LogicalKeyboardKey.keyS]);
+      await settings.finishWrites(tester);
+
+      expect(_selected(tester), 'Vault');
+      expect(find.byType(ShellSheetView), findsNothing);
+    });
+
     testOnMac('⌘2 then ⌘R while the switch is still being saved opens Receive on the second account', (tester) async {
       final settings = SlowSettingsService(activeAccount: const RegularAccount(mainAccount));
       await pumpShell(tester, overrides: _withSlowSettings(settings));

@@ -4,7 +4,13 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 
 /// Shows [menus] the way the platform expects: in the system's menu bar on
 /// macOS ([useNativeMenuBar]), and in a bar across the top of the window
-/// elsewhere, where this widget also listens for the menus' shortcuts.
+/// elsewhere.
+///
+/// On every platform this widget answers the menus' shortcuts itself, from
+/// the menus as they are at the key press ([resolveMenus]). On macOS a key
+/// reaches the app before the system's menu bar, which is told of a change
+/// to the menus only after the next frame: its bar shows the shortcuts and
+/// answers the mouse, and has a key only when the app left it unhandled.
 class AppMenuBar extends StatelessWidget {
   const AppMenuBar({
     super.key,
@@ -18,8 +24,8 @@ class AppMenuBar extends StatelessWidget {
   final List<PlatformMenu> menus;
 
   /// The menus as they are when it is called. A key can arrive before the
-  /// frame that redraws [menus], so the bar in the window answers a key from
-  /// these: an item that the key before it made available is not missed.
+  /// frame that redraws [menus], so a key is answered from these: an item
+  /// that the key before it made available is not missed.
   final List<PlatformMenu> Function() resolveMenus;
 
   final bool useNativeMenuBar;
@@ -27,32 +33,33 @@ class AppMenuBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (useNativeMenuBar) return PlatformMenuBar(menus: menus, child: child);
-
-    return Focus(
-      canRequestFocus: false,
-      skipTraversal: true,
+    // A scope of its own, which has the keyboard's focus while nothing in
+    // it does: the keys then come here all the same, and whatever in it asks
+    // for the focus on appearing still gets it.
+    return FocusScope(
+      autofocus: true,
+      includeSemantics: false,
       onKeyEvent: (_, event) => _onKey(event),
-      child: Focus(
-        autofocus: true,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
+      child: useNativeMenuBar
+          ? PlatformMenuBar(menus: menus, child: child)
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Expanded(
-                  child: MenuBar(
-                    children: [
-                      for (final menu in menus) SubmenuButton(menuChildren: _buttonsOf(menu), child: Text(menu.label)),
-                    ],
-                  ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: MenuBar(
+                        children: [
+                          for (final menu in menus)
+                            SubmenuButton(menuChildren: _buttonsOf(menu), child: Text(menu.label)),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
+                Expanded(child: child),
               ],
             ),
-            Expanded(child: child),
-          ],
-        ),
-      ),
     );
   }
 
