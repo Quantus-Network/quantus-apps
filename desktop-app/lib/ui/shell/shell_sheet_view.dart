@@ -60,7 +60,7 @@ class ShellSheetView extends ConsumerWidget {
           padding: const EdgeInsets.all(padding),
           child: switch (sheet) {
             ShellSheet.settings => const SettingsSheet(),
-            ShellSheet.send => const SendSheet(),
+            ShellSheet.send || ShellSheet.propose => const SendSheet(),
             _ => _TitledSheet(
               title: sheetTitle(ref.watch(l10nProvider), sheet),
               actsOnAccount: _actsOnAccount,

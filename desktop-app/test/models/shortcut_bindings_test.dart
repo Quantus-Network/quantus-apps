@@ -25,6 +25,7 @@ void main() {
     test('on the Mac use ⌘, and walk the sidebar with ⌥⌘↓ and ⌥⌘↑', () {
       expect(mac[AppCommand.receive], _combo(LogicalKeyboardKey.keyR, _cmd));
       expect(mac[AppCommand.send], _combo(LogicalKeyboardKey.keyS, _cmd));
+      expect(mac[AppCommand.propose], _combo(LogicalKeyboardKey.keyP, _cmd));
       expect(mac[AppCommand.addAccount], _combo(LogicalKeyboardKey.keyN, _cmd));
       expect(mac[AppCommand.toggleSidebar], _combo(LogicalKeyboardKey.keyB, _cmd));
       expect(mac[AppCommand.nextSidebarItem], _combo(LogicalKeyboardKey.arrowDown, _optCmd));
@@ -38,6 +39,7 @@ void main() {
     test('on Windows and Linux use Ctrl, and walk the sidebar with Ctrl+Alt+Down and Up', () {
       expect(pc[AppCommand.receive], _combo(LogicalKeyboardKey.keyR, _ctrl));
       expect(pc[AppCommand.send], _combo(LogicalKeyboardKey.keyS, _ctrl));
+      expect(pc[AppCommand.propose], _combo(LogicalKeyboardKey.keyP, _ctrl));
       expect(pc[AppCommand.addAccount], _combo(LogicalKeyboardKey.keyN, _ctrl));
       expect(pc[AppCommand.toggleSidebar], _combo(LogicalKeyboardKey.keyB, _ctrl));
       expect(pc[AppCommand.nextSidebarItem], _combo(LogicalKeyboardKey.arrowDown, _ctrlAlt));

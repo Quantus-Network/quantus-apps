@@ -17,6 +17,7 @@ import 'package:quantus_sdk/generated/bell/types/sp_runtime/multiaddress/multi_a
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/providers/encrypted_send_provider.dart';
 import 'package:wallet_core/providers/one_click_provider.dart';
+import 'package:wallet_core/providers/multisig_providers.dart';
 import 'package:wallet_core/providers/remote_config_provider.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:wallet_core/services/logout_service.dart';
@@ -358,6 +359,29 @@ class FakeSendChain {
   /// amount and fee it was recorded with.
   final transfers = <({String from, SendCall call, BigInt amount, BigInt fee})>[];
 
+  /// What proposing a transfer costs the member who proposes, as the mocks
+  /// drew it: the usual fee, half a token of deposit and a tenth for the
+  /// proposal, expiring at block 1284220.
+  static final usualProposalCost = ProposeFeeBreakdown(
+    networkFee: usualFee,
+    deposit: oneToken ~/ BigInt.two,
+    creationFee: oneToken ~/ BigInt.from(10),
+    expiryBlock: 1284220,
+  );
+
+  /// What asking for a proposal's cost answers; it may throw.
+  Future<ProposeFeeBreakdown> Function() proposalCost = () async => usualProposalCost;
+
+  /// Every recipient a proposal's cost was asked for, in order.
+  final proposalQuotes = <String>[];
+
+  /// Every proposal handed over: the multisig it is for, the member who
+  /// signed it, and what it proposes.
+  final proposals = <({String multisig, String signer, String recipient, BigInt amount, int expiryBlock})>[];
+
+  /// When the chain is said to reach any block.
+  DateTime blockTime = DateTime(2026, 11, 20, 22, 14);
+
   /// The addresses paid before, the latest first.
   List<String> recents = [];
 
@@ -371,7 +395,32 @@ class FakeSendChain {
     balancesServiceProvider.overrideWithValue(_FakeBalancesService(this)),
     transactionSubmissionServiceProvider.overrideWithValue(_FakeTransactionSubmissionService(this)),
     recentAddressesServiceProvider.overrideWithValue(_FakeRecentAddressesService(this)),
+    multisigServiceProvider.overrideWithValue(_FakeMultisigService(this)),
   ];
+}
+
+/// Prices a multisig's proposals as the [chain] says, at block 1250000.
+class _FakeMultisigService extends Fake implements MultisigService {
+  _FakeMultisigService(this.chain);
+
+  final FakeSendChain chain;
+
+  @override
+  Future<ProposeFeeBreakdown> estimateProposeFeeBreakdown({
+    required MultisigAccount msig,
+    required Account signer,
+    required String recipient,
+    required BigInt amount,
+  }) {
+    chain.proposalQuotes.add(recipient);
+    return chain.proposalCost();
+  }
+
+  @override
+  Future<int> currentBlockNumber() async => 1250000;
+
+  @override
+  DateTime blockToTime(int targetBlock, int currentBlock) => chain.blockTime;
 }
 
 /// Builds the transfer calls without the chain's address decoding, and tells
@@ -415,6 +464,26 @@ class _FakeTransactionSubmissionService extends Fake implements TransactionSubmi
   }) async {
     final hash = await chain.submit();
     chain.transfers.add((from: account.accountId, call: chain.describe(call), amount: amount, fee: fee));
+    return hash;
+  }
+
+  @override
+  Future<String> proposeTransfer({
+    required MultisigAccount msig,
+    required Account signer,
+    required String recipient,
+    required BigInt amount,
+    required int expiryBlock,
+    required ProposeFeeBreakdown feeBreakdown,
+  }) async {
+    final hash = await chain.submit();
+    chain.proposals.add((
+      multisig: msig.accountId,
+      signer: signer.accountId,
+      recipient: recipient,
+      amount: amount,
+      expiryBlock: expiryBlock,
+    ));
     return hash;
   }
 }

@@ -46,14 +46,17 @@ Future<void> _open(
   FakeWalletDevice device, {
   bool reduceMotion = false,
   List<Override> overrides = const [],
-}) async {
+}) => _openWith(tester, [...device.overrides, ...overrides], reduceMotion: reduceMotion);
+
+/// Opens the app's window on what [overrides] make of the device.
+Future<void> _openWith(WidgetTester tester, List<Override> overrides, {bool reduceMotion = false}) async {
   tester.view.physicalSize = _windowSize * _pixelRatio;
   tester.view.devicePixelRatio = _pixelRatio;
   addTearDown(tester.view.reset);
   tester.platformDispatcher.accessibilityFeaturesTestValue = FakeAccessibilityFeatures(disableAnimations: reduceMotion);
   addTearDown(tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
 
-  await tester.pumpWidget(buildApp(overrides: [...device.overrides, ...overrides]));
+  await tester.pumpWidget(buildApp(overrides: overrides));
   await tester.pump();
   await tester.pump();
 }
@@ -214,6 +217,49 @@ void main() {
 
   _scene('send_receipt', (tester) async {
     await _openSend(tester);
+    await _fillSend(tester);
+    await _tapAndSettle(tester, find.byKey(SendSheet.reviewKey));
+    await _tapAndSettle(tester, find.byKey(SendSheet.sendKey));
+  });
+
+  _scene('propose_form_empty', (tester) async {
+    await _openPropose(tester);
+  });
+
+  _scene('propose_form_filled', (tester) async {
+    await _openPropose(tester);
+    await _fillSend(tester);
+  });
+
+  _scene('propose_form_cost_not_covered', (tester) async {
+    await _openPropose(tester, memberHolds: 0.2);
+    await _fillSend(tester);
+  });
+
+  _scene('propose_review', (tester) async {
+    await _openPropose(tester);
+    await _fillSend(tester);
+    await _tapAndSettle(tester, find.byKey(SendSheet.reviewKey));
+  });
+
+  _scene('propose_review_smallest_window', (tester) async {
+    await _openPropose(tester);
+    await _fillSend(tester);
+    await _tapAndSettle(tester, find.byKey(SendSheet.reviewKey));
+    tester.view.physicalSize = const Size(960, 640) * _pixelRatio;
+    await tester.pumpAndSettle();
+  });
+
+  _scene('propose_failed', (tester) async {
+    final chain = await _openPropose(tester);
+    chain.submit = () async => throw StateError('offline');
+    await _fillSend(tester);
+    await _tapAndSettle(tester, find.byKey(SendSheet.reviewKey));
+    await _tapAndSettle(tester, find.byKey(SendSheet.sendKey));
+  });
+
+  _scene('propose_receipt', (tester) async {
+    await _openPropose(tester);
     await _fillSend(tester);
     await _tapAndSettle(tester, find.byKey(SendSheet.reviewKey));
     await _tapAndSettle(tester, find.byKey(SendSheet.sendKey));
@@ -485,6 +531,44 @@ Future<FakeWalletDevice> _openSend(WidgetTester tester, {FakeUserApproval? appro
 }
 
 const _nearIntentsAddress = 'qzN3arDp7KsHj9RbY3mFa6ZeUo1GiBn5tVk4mQaT8vNc2L';
+
+/// A multisig of three signers that needs two, of which the wallet's first
+/// account is one.
+final _team = MultisigAccount(
+  name: 'Team',
+  accountId: 'qzT3amVa8uLt9XkQ2mNc7RfWs4HdJy6PbEo1ZiGn5UwKx2',
+  signers: [_root.accountId, 'qzSigner2', 'qzSigner3'],
+  threshold: 2,
+  nonce: BigInt.zero,
+  myMemberAccountId: _root.accountId,
+);
+
+/// Opens the wallet on the multisig, which holds 4,800 tokens, and its
+/// Propose. The member's own account holds [memberHolds].
+Future<FakeSendChain> _openPropose(WidgetTester tester, {num memberHolds = 1250}) async {
+  _useEmptyPreferences(tester);
+  useFakeCheckphrases((address) async => 'Lantern-Copper-Meadow-Quartz-Harbor');
+  final chain = FakeSendChain()
+    ..isValidAddress = (address) => address.startsWith('qz') && address.length == _depositAddress.length;
+  BigInt tokens(num amount) => BigInt.from((amount * 10000).round()) * oneToken ~/ BigInt.from(10000);
+  await _openWith(
+    tester,
+    shellOverrides(
+      accounts: const [_root, _second],
+      settings: FakeSettingsService(activeAccount: MultisigDisplayAccount(_team), multisigs: [_team]),
+      balanceOf: (id) async => id == _team.accountId
+          ? tokens(4800)
+          : id == _root.accountId
+          ? tokens(memberHolds)
+          : tokens(1250),
+      chain: chain,
+    ),
+    reduceMotion: true,
+  );
+  await tester.pumpAndSettle();
+  await _tapAndSettle(tester, find.widgetWithText(ToolbarAction, 'Propose'));
+  return chain;
+}
 
 /// Opens the wallet on its Encrypted account, holding a deposit of 1,250
 /// tokens with 12 more on their way back, and its Send. The proving is the

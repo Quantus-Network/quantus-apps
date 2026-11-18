@@ -202,6 +202,7 @@ class ShortcutBindings {
   KeyCombo _defaultOf(AppCommand command) => switch (command) {
     AppCommand.receive => KeyCombo(LogicalKeyboardKey.keyR, _command),
     AppCommand.send => KeyCombo(LogicalKeyboardKey.keyS, _command),
+    AppCommand.propose => KeyCombo(LogicalKeyboardKey.keyP, _command),
     AppCommand.addAccount => KeyCombo(LogicalKeyboardKey.keyN, _command),
     AppCommand.toggleSidebar => KeyCombo(LogicalKeyboardKey.keyB, _command),
     AppCommand.nextSidebarItem => KeyCombo(LogicalKeyboardKey.arrowDown, _commandAlt),
