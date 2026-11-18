@@ -301,22 +301,36 @@ class ShortcutBindings {
   /// Reads what [toJson] stored. Throws a [FormatException] for anything it
   /// would not have written, changes that clash among them included.
   static ShortcutBindings fromJson(Map<String, Object?> json, {required bool isMac}) {
-    var bindings = ShortcutBindings.defaults(isMac: isMac);
-    try {
-      final accountModifiers = json['accountModifiers'];
-      if (accountModifiers != null) bindings = bindings.withAccountModifiers(KeyModifiers.fromJson(accountModifiers));
-      final commands = json['commands'];
-      if (commands is! Map) throw FormatException('The saved commands are not a map: $commands');
-      final names = {for (final command in AppCommand.values) command.name: command};
-      // Removals first, so a change may take keys a removal freed.
-      final entries = commands.entries.toList()..sort((a, b) => (a.value == null ? 0 : 1) - (b.value == null ? 0 : 1));
-      for (final MapEntry(:key, :value) in entries) {
-        final command = names[key];
-        if (command == null) throw FormatException('No command is called "$key".');
-        bindings = bindings.withShortcut(command, value == null ? null : KeyCombo.fromJson(value));
-      }
-    } on ArgumentError catch (e) {
-      throw FormatException('The saved shortcuts clash: ${e.message}');
+    final defaults = ShortcutBindings.defaults(isMac: isMac);
+
+    final savedModifiers = json['accountModifiers'];
+    final accountModifiers = savedModifiers == null ? null : KeyModifiers.fromJson(savedModifiers);
+    if (accountModifiers != null && !defaults.accountModifierChoices.contains(accountModifiers)) {
+      throw FormatException('The saved account keys are not among those offered: $accountModifiers');
+    }
+
+    final commands = json['commands'];
+    if (commands is! Map) throw FormatException('The saved commands are not a map: $commands');
+    final names = {for (final command in AppCommand.values) command.name: command};
+    final changed = <AppCommand, KeyCombo?>{};
+    for (final MapEntry(:key, :value) in commands.entries) {
+      final command = names[key];
+      if (command == null) throw FormatException('No command is called "$key".');
+      final combo = value == null ? null : KeyCombo.fromJson(value);
+      if (combo != defaults._defaultOf(command)) changed[command] = combo;
+    }
+
+    final bindings = ShortcutBindings._(
+      isMac,
+      Map.unmodifiable(changed),
+      accountModifiers == defaults._command ? null : accountModifiers,
+    );
+    // Checked once all of them are in place, not one by one over the
+    // defaults: a command may hold the keys another one gave up.
+    for (final MapEntry(key: command, value: combo) in changed.entries) {
+      if (combo == null) continue;
+      final refused = bindings.refusal(command, combo);
+      if (refused != null) throw FormatException('The saved shortcuts clash: $combo refused for $command: $refused');
     }
     return bindings;
   }

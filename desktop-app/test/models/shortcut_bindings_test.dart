@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:math';
+
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_desktop_wallet/models/app_command.dart';
@@ -9,6 +12,10 @@ const _optCmd = KeyModifiers(meta: true, alt: true);
 const _ctrlAlt = KeyModifiers(control: true, alt: true);
 
 KeyCombo _combo(LogicalKeyboardKey key, KeyModifiers modifiers) => KeyCombo(key, modifiers);
+
+/// [bindings] as they are after being written to the settings and read.
+Map<String, Object?> _stored(ShortcutBindings bindings) =>
+    jsonDecode(jsonEncode(bindings.toJson())) as Map<String, Object?>;
 
 void main() {
   const mac = ShortcutBindings.defaults(isMac: true);
@@ -209,6 +216,97 @@ void main() {
       };
 
       expect(() => ShortcutBindings.fromJson(json, isMac: true), throwsFormatException);
+    });
+
+    test('two commands that took each other\'s keys read back the same', () {
+      for (final (bindings, command) in [(mac, _cmd), (pc, _ctrl)]) {
+        final swapped = bindings
+            .withShortcut(AppCommand.receive, _combo(LogicalKeyboardKey.keyJ, command))
+            .withShortcut(AppCommand.send, _combo(LogicalKeyboardKey.keyR, command))
+            .withShortcut(AppCommand.receive, _combo(LogicalKeyboardKey.keyS, command));
+
+        final read = ShortcutBindings.fromJson(_stored(swapped), isMac: bindings.isMac);
+
+        expect(read, swapped);
+        expect(read[AppCommand.receive], _combo(LogicalKeyboardKey.keyS, command));
+        expect(read[AppCommand.send], _combo(LogicalKeyboardKey.keyR, command));
+      }
+    });
+
+    test('whatever a run of allowed changes ends on reads back the same', () {
+      const keys = [
+        LogicalKeyboardKey.keyR,
+        LogicalKeyboardKey.keyS,
+        LogicalKeyboardKey.keyN,
+        LogicalKeyboardKey.keyB,
+        LogicalKeyboardKey.keyJ,
+        LogicalKeyboardKey.digit1,
+        LogicalKeyboardKey.digit9,
+        LogicalKeyboardKey.arrowDown,
+        LogicalKeyboardKey.arrowUp,
+      ];
+      for (final start in [mac, pc]) {
+        final random = Random(7);
+        final modifiers = [...start.accountModifierChoices, const KeyModifiers(control: true, shift: true)];
+        var bindings = start;
+        var changes = 0;
+        for (var step = 0; step < 2000; step++) {
+          final command = AppCommand.values[random.nextInt(AppCommand.values.length)];
+          switch (random.nextInt(8)) {
+            case 0:
+              bindings = bindings.withShortcut(command, null);
+            case 1:
+              final choice = start.accountModifierChoices[random.nextInt(start.accountModifierChoices.length)];
+              if (bindings.accountModifiersRefusal(choice) != null) continue;
+              bindings = bindings.withAccountModifiers(choice);
+            default:
+              final combo = _combo(keys[random.nextInt(keys.length)], modifiers[random.nextInt(modifiers.length)]);
+              if (bindings.refusal(command, combo) != null) continue;
+              bindings = bindings.withShortcut(command, combo);
+          }
+          changes++;
+
+          expect(
+            ShortcutBindings.fromJson(_stored(bindings), isMac: start.isMac),
+            bindings,
+            reason: 'after change $changes: ${bindings.toJson()}',
+          );
+        }
+        expect(changes, greaterThan(500));
+      }
+    });
+
+    test('that this app would have refused fail to read', () {
+      Map<String, Object?> saved(Map<String, KeyCombo> commands, {KeyModifiers? accountModifiers}) => {
+        'commands': {for (final MapEntry(:key, :value) in commands.entries) key: value.toJson()},
+        'accountModifiers': ?accountModifiers?.toJson(),
+      };
+
+      for (final (why, json) in [
+        (
+          'two commands with the same keys',
+          saved({'receive': _combo(LogicalKeyboardKey.keyJ, _cmd), 'send': _combo(LogicalKeyboardKey.keyJ, _cmd)}),
+        ),
+        ('a command with keys the system keeps', saved({'send': _combo(LogicalKeyboardKey.keyQ, _cmd)})),
+        ('a command with the account keys and a digit', saved({'send': _combo(LogicalKeyboardKey.digit1, _cmd)})),
+        (
+          'a command with the changed account keys and a digit',
+          saved({'send': _combo(LogicalKeyboardKey.digit1, _ctrl)}, accountModifiers: _ctrl),
+        ),
+        ('a command with no modifier', saved({'send': _combo(LogicalKeyboardKey.keyJ, const KeyModifiers())})),
+        ('account keys that are not offered', saved({}, accountModifiers: const KeyModifiers(shift: true))),
+      ]) {
+        expect(() => ShortcutBindings.fromJson(json, isMac: true), throwsFormatException, reason: why);
+      }
+    });
+
+    test('with a default written out read back as the defaults', () {
+      final json = {
+        'commands': {'send': _combo(LogicalKeyboardKey.keyS, _cmd).toJson()},
+        'accountModifiers': _cmd.toJson(),
+      };
+
+      expect(ShortcutBindings.fromJson(json, isMac: true), mac);
     });
   });
 }
