@@ -2721,6 +2721,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get desktopShortcutsSystemKey => 'Shortcuts with the Windows or Super key belong to the system.';
 
   @override
+  String get desktopShortcutsKeyNotForMenuBar => 'The menu bar cannot use that key. Press other keys.';
+
+  @override
   String get desktopShortcutsFixedNote => 'Settings, Close Window and Quit keep the system\'s keys.';
 
   @override

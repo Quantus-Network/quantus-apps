@@ -142,6 +142,56 @@ void main() {
       );
     });
 
+    test('on the Mac is refused with a key the menu bar cannot give a menu item', () {
+      for (final key in [
+        LogicalKeyboardKey.numpadAdd,
+        LogicalKeyboardKey.numpad1,
+        LogicalKeyboardKey.numpadEnter,
+        LogicalKeyboardKey.insert,
+        LogicalKeyboardKey.f21,
+        LogicalKeyboardKey.audioVolumeUp,
+      ]) {
+        expect(mac.refusal(AppCommand.send, _combo(key, _cmd)), const KeyNotForMenuBar(), reason: '${key.debugName}');
+        // Whatever is held with it, modifier or not.
+        expect(
+          mac.refusal(AppCommand.send, _combo(key, const KeyModifiers())),
+          const KeyNotForMenuBar(),
+          reason: '${key.debugName} alone',
+        );
+      }
+    });
+
+    test('on the Mac is taken with every kind of key the menu bar can give a menu item', () {
+      const held = KeyModifiers(control: true, alt: true);
+      for (final key in [
+        LogicalKeyboardKey.keyJ,
+        LogicalKeyboardKey.digit5,
+        LogicalKeyboardKey.bracketLeft,
+        LogicalKeyboardKey.space,
+        LogicalKeyboardKey.enter,
+        LogicalKeyboardKey.tab,
+        LogicalKeyboardKey.arrowLeft,
+        LogicalKeyboardKey.arrowRight,
+        LogicalKeyboardKey.arrowUp,
+        LogicalKeyboardKey.arrowDown,
+        LogicalKeyboardKey.home,
+        LogicalKeyboardKey.end,
+        LogicalKeyboardKey.pageUp,
+        LogicalKeyboardKey.pageDown,
+        LogicalKeyboardKey.f1,
+        LogicalKeyboardKey.f12,
+        LogicalKeyboardKey.f20,
+      ]) {
+        expect(mac.refusal(AppCommand.send, _combo(key, held)), isNull, reason: '${key.debugName}');
+      }
+    });
+
+    test('on Windows and Linux is taken with any key, the number pad\'s too', () {
+      for (final key in [LogicalKeyboardKey.numpadAdd, LogicalKeyboardKey.numpad1, LogicalKeyboardKey.insert]) {
+        expect(pc.refusal(AppCommand.send, _combo(key, _ctrlAlt)), isNull, reason: '${key.debugName}');
+      }
+    });
+
     test('can be no shortcut at all', () {
       final removed = mac.withShortcut(AppCommand.send, null);
 
@@ -294,6 +344,7 @@ void main() {
           saved({'send': _combo(LogicalKeyboardKey.digit1, _ctrl)}, accountModifiers: _ctrl),
         ),
         ('a command with no modifier', saved({'send': _combo(LogicalKeyboardKey.keyJ, const KeyModifiers())})),
+        ('a command with a key the menu bar cannot have', saved({'send': _combo(LogicalKeyboardKey.numpadAdd, _cmd)})),
         ('account keys that are not offered', saved({}, accountModifiers: const KeyModifiers(shift: true))),
       ]) {
         expect(() => ShortcutBindings.fromJson(json, isMac: true), throwsFormatException, reason: why);

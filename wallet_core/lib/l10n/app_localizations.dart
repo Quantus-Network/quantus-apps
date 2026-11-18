@@ -4976,6 +4976,12 @@ abstract class AppLocalizations {
   /// **'Shortcuts with the Windows or Super key belong to the system.'**
   String get desktopShortcutsSystemKey;
 
+  /// Desktop Keyboard Shortcuts, macOS: why keys were not taken when the key pressed (one of the number pad, for instance) cannot be a menu item's shortcut in the system's menu bar
+  ///
+  /// In en, this message translates to:
+  /// **'The menu bar cannot use that key. Press other keys.'**
+  String get desktopShortcutsKeyNotForMenuBar;
+
   /// Desktop Keyboard Shortcuts: the note at the foot of the list, about the commands whose keys cannot be changed
   ///
   /// In en, this message translates to:

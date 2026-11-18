@@ -3944,6 +3944,10 @@
     "@desktopShortcutsSystemKey": {
       "description": "Desktop Keyboard Shortcuts, Windows and Linux: why keys held with the Windows (Super) key were not taken"
     },
+    "desktopShortcutsKeyNotForMenuBar": "The menu bar cannot use that key. Press other keys.",
+    "@desktopShortcutsKeyNotForMenuBar": {
+      "description": "Desktop Keyboard Shortcuts, macOS: why keys were not taken when the key pressed (one of the number pad, for instance) cannot be a menu item's shortcut in the system's menu bar"
+    },
     "desktopShortcutsFixedNote": "Settings, Close Window and Quit keep the system's keys.",
     "@desktopShortcutsFixedNote": {
       "description": "Desktop Keyboard Shortcuts: the note at the foot of the list, about the commands whose keys cannot be changed"

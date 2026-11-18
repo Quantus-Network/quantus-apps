@@ -2724,6 +2724,9 @@ class AppLocalizationsId extends AppLocalizations {
   String get desktopShortcutsSystemKey => 'Pintasan dengan tombol Windows atau Super milik sistem.';
 
   @override
+  String get desktopShortcutsKeyNotForMenuBar => 'Bilah menu tidak dapat memakai tombol itu. Tekan tombol lain.';
+
+  @override
   String get desktopShortcutsFixedNote => 'Pengaturan, Tutup Jendela, dan Keluar tetap memakai tombol sistem.';
 
   @override

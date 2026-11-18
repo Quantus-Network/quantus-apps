@@ -733,6 +733,7 @@
   "desktopShortcutsNeedsModifierMac": "Tahan Command, Option, atau Control bersama tombolnya.",
   "desktopShortcutsNeedsModifierPc": "Tahan Ctrl atau Alt bersama tombolnya.",
   "desktopShortcutsSystemKey": "Pintasan dengan tombol Windows atau Super milik sistem.",
+  "desktopShortcutsKeyNotForMenuBar": "Bilah menu tidak dapat memakai tombol itu. Tekan tombol lain.",
   "desktopShortcutsFixedNote": "Pengaturan, Tutup Jendela, dan Keluar tetap memakai tombol sistem.",
   "desktopShortcutsRestoreDefaults": "Pulihkan Bawaan",
   "desktopShortcutsUnreadable": "Pintasan yang tersimpan tidak dapat dibaca, jadi pintasan bawaan dipakai.",

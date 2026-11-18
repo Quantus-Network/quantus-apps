@@ -227,6 +227,27 @@ void main() {
     expect(_inSheet(find.text('Hold Command, Option or Control with the key.')), findsOneWidget);
   });
 
+  testOnMac('a key the menu bar cannot give a menu item is refused, and the shortcut stays as it was', (tester) async {
+    await _openShortcuts(tester);
+
+    await _record(tester, AppCommand.receive);
+    await _press(tester, LogicalKeyboardKey.numpadAdd, meta: true);
+
+    expect(_inSheet(find.text('The menu bar cannot use that key. Press other keys.')), findsOneWidget);
+    await _press(tester, LogicalKeyboardKey.escape);
+    expect(_capsOf(tester, AppCommand.receive), ['command', 'R']);
+  });
+
+  testOnWindowsAndLinux('a key of the number pad is taken', (tester) async {
+    await _openShortcuts(tester);
+
+    await _record(tester, AppCommand.receive);
+    await _press(tester, LogicalKeyboardKey.numpadAdd, control: true);
+
+    expect(_inSheet(find.text('The menu bar cannot use that key. Press other keys.')), findsNothing);
+    expect(_capsOf(tester, AppCommand.receive), isNot(['Ctrl', 'R']));
+  });
+
   testOnWindowsAndLinux('keys held with the Windows key are refused', (tester) async {
     await _openShortcuts(tester);
 

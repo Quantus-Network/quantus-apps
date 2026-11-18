@@ -143,6 +143,18 @@ class UsesSystemKey extends ShortcutRefusal {
   int get hashCode => 2;
 }
 
+/// The key cannot be a menu item's in the Mac's menu bar, which is where
+/// the Mac's shortcuts live.
+class KeyNotForMenuBar extends ShortcutRefusal {
+  const KeyNotForMenuBar();
+
+  @override
+  bool operator ==(Object other) => other is KeyNotForMenuBar;
+
+  @override
+  int get hashCode => 3;
+}
+
 /// The keyboard shortcuts of the app's commands on one platform: the
 /// defaults, with what the person changed over them.
 ///
@@ -220,6 +232,57 @@ class ShortcutBindings {
           KeyCombo(LogicalKeyboardKey.keyY, _command): SystemCommand.redo,
         };
 
+  /// The keys that print nothing which a menu item of the Mac's menu bar can
+  /// have: the ones the Flutter engine knows a key equivalent for
+  /// (`GetMacOsSpecialKeys` in its FlutterMenuPlugin.mm).
+  static final _macMenuBarKeys = {
+    LogicalKeyboardKey.backspace,
+    LogicalKeyboardKey.tab,
+    LogicalKeyboardKey.enter,
+    LogicalKeyboardKey.delete,
+    LogicalKeyboardKey.escape,
+    LogicalKeyboardKey.arrowLeft,
+    LogicalKeyboardKey.arrowRight,
+    LogicalKeyboardKey.arrowUp,
+    LogicalKeyboardKey.arrowDown,
+    LogicalKeyboardKey.home,
+    LogicalKeyboardKey.end,
+    LogicalKeyboardKey.pageUp,
+    LogicalKeyboardKey.pageDown,
+    LogicalKeyboardKey.f1,
+    LogicalKeyboardKey.f2,
+    LogicalKeyboardKey.f3,
+    LogicalKeyboardKey.f4,
+    LogicalKeyboardKey.f5,
+    LogicalKeyboardKey.f6,
+    LogicalKeyboardKey.f7,
+    LogicalKeyboardKey.f8,
+    LogicalKeyboardKey.f9,
+    LogicalKeyboardKey.f10,
+    LogicalKeyboardKey.f11,
+    LogicalKeyboardKey.f12,
+    LogicalKeyboardKey.f13,
+    LogicalKeyboardKey.f14,
+    LogicalKeyboardKey.f15,
+    LogicalKeyboardKey.f16,
+    LogicalKeyboardKey.f17,
+    LogicalKeyboardKey.f18,
+    LogicalKeyboardKey.f19,
+    LogicalKeyboardKey.f20,
+  };
+
+  /// Whether a menu item can have [key] as its shortcut's key. On the Mac
+  /// the shortcuts are the menu bar's, and the engine gives a menu item a
+  /// key only for a character of one UTF-16 unit or one of
+  /// [_macMenuBarKeys]; with any other key, a number pad's for one, the item
+  /// is left with no shortcut. Elsewhere the app listens for the keys itself.
+  bool _menuTakes(LogicalKeyboardKey key) {
+    if (!isMac) return true;
+    final isCharacter = (key.keyId & LogicalKeyboardKey.planeMask) == LogicalKeyboardKey.unicodePlane;
+    if (isCharacter) return (key.keyId & LogicalKeyboardKey.valueMask) <= 0xffff;
+    return _macMenuBarKeys.contains(key);
+  }
+
   /// Settings, whose keys are fixed.
   KeyCombo get settings => KeyCombo(LogicalKeyboardKey.comma, _command);
 
@@ -248,6 +311,7 @@ class ShortcutBindings {
   ShortcutRefusal? refusal(AppCommand command, KeyCombo combo) {
     final modifiers = combo.modifiers;
     if (!isMac && modifiers.meta) return const UsesSystemKey();
+    if (!_menuTakes(combo.key)) return const KeyNotForMenuBar();
     final makesShortcut = modifiers.control || modifiers.alt || (isMac && modifiers.meta);
     if (!makesShortcut) return const NeedsModifier();
     final system = _reserved[combo];

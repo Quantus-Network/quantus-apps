@@ -329,6 +329,7 @@ String _refusalText(AppLocalizations l10n, ShortcutRefusal refusal, {required bo
   KeptForSystem(:final command) => l10n.desktopShortcutsKeptFor(_systemName(l10n, command)),
   NeedsModifier() => isMac ? l10n.desktopShortcutsNeedsModifierMac : l10n.desktopShortcutsNeedsModifierPc,
   UsesSystemKey() => l10n.desktopShortcutsSystemKey,
+  KeyNotForMenuBar() => l10n.desktopShortcutsKeyNotForMenuBar,
 };
 
 /// Why account keys were not taken.
