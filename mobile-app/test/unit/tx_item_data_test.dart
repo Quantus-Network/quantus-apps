@@ -3,6 +3,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/v2/screens/activity/tx_item.dart';
 import 'package:wallet_core/l10n/app_localizations.dart';
+import 'package:wallet_core/models/fiat_currency.dart';
+import 'package:wallet_core/providers/currency_display_provider.dart';
 
 import '../fakes.dart';
 
@@ -190,7 +192,7 @@ void main() {
       expect(rowOf(transfer(from: other, to: me), isPrivate: true).label, l10n.activityTxPrivateReceived);
     });
 
-    test('a mining reward is received from the reward source', () {
+    test('a mining reward is received from "Mining reward", in words', () {
       final reward = MinerRewardEvent(
         id: 'reward',
         miner: me,
@@ -208,7 +210,7 @@ void main() {
         isSend: false,
         amount: BigInt.from(9),
         hideAmount: false,
-        counterparty: short(reward.from),
+        counterparty: l10n.activitySenderMiningReward,
         prefix: null,
       ));
     });
@@ -572,6 +574,62 @@ void main() {
         counterparty: short(msig.accountId),
         prefix: l10n.activityTxMultisigLabel,
       ));
+    });
+  });
+
+  group("a multisig's past proposals", () {
+    MultisigProposalEvent past(MultisigProposalStatus status) => MultisigProposalEvent(
+      proposal: MultisigProposal(
+        entityId: 'proposal-entity',
+        id: 4,
+        multisigAddress: msig.accountId,
+        proposer: me,
+        createdAt: twoDaysAgo,
+        updatedAt: twoDaysAgo,
+        pallet: 'Balances',
+        call: 'transfer_allow_death',
+        recipient: recipient,
+        amount: BigInt.from(500),
+        expiryBlock: 1000,
+        approvals: [me],
+        deposit: BigInt.from(2),
+        status: status,
+        threshold: 2,
+        signerCount: 3,
+      ),
+    );
+
+    /// Signs an amount as the app's formatter does, unless told not to.
+    CurrencyDisplayState format(
+      BigInt amount, {
+      required bool isSend,
+      int tokenDecimals = 12,
+      bool withTokenSymbol = true,
+      bool withSignPrefix = true,
+    }) => CurrencyDisplayState(
+      primaryAmount: '${withSignPrefix ? (isSend ? '-' : '+') : ''}$amount',
+      secondaryAmount: '',
+      selectedFiat: FiatCurrency.usd,
+    );
+
+    test('read how they ended; one that ended unexecuted moved nothing, so its amount is muted and unsigned', () {
+      final shown = {
+        for (final status in [
+          MultisigProposalStatus.executed,
+          MultisigProposalStatus.cancelled,
+          MultisigProposalStatus.removed,
+        ])
+          status: () {
+            final data = TxItemData.from(past(status), msig.accountId, colors, l10n);
+            return (data.label, data.amountColor, txItemAmountText(data, format));
+          }(),
+      };
+
+      expect(shown, {
+        MultisigProposalStatus.executed: (l10n.activityTxProposalExecuted, colors.textContent, '-500'),
+        MultisigProposalStatus.cancelled: (l10n.activityTxProposalCancelled, colors.textMuted, '500'),
+        MultisigProposalStatus.removed: (l10n.activityTxProposalRemoved, colors.textMuted, '500'),
+      });
     });
   });
 }

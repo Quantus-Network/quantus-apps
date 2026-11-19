@@ -87,6 +87,26 @@ final class ActivityEncryptedSender extends ActivityUnnamedCounterparty {
   String toString() => 'ActivityEncryptedSender()';
 }
 
+/// What pays a mining reward: the chain, which has no address to show.
+final class ActivityMiningReward extends ActivityUnnamedCounterparty {
+  const ActivityMiningReward();
+
+  @override
+  String prefix(AppLocalizations l10n) => l10n.activityTxFrom;
+
+  @override
+  String name(AppLocalizations l10n) => l10n.activitySenderMiningReward;
+
+  @override
+  bool operator ==(Object other) => other is ActivityMiningReward;
+
+  @override
+  int get hashCode => (ActivityMiningReward).hashCode;
+
+  @override
+  String toString() => 'ActivityMiningReward()';
+}
+
 /// The recipients of a private send whose proof settled with other
 /// transfers, so that none is known on its own. Named with nothing before it.
 final class ActivityAggregatedBatch extends ActivityUnnamedCounterparty {
@@ -120,6 +140,7 @@ class ActivityRow {
     required this.amount,
     required this.hidesAmount,
     required this.counterparty,
+    this.movedNothing = false,
   });
 
   /// What happened: "Sent", "Receiving", "Proposal approved"…
@@ -142,9 +163,14 @@ class ActivityRow {
 
   final ActivityCounterparty counterparty;
 
+  /// Whether, in the end, [amount] did not move: a proposal cancelled or
+  /// removed before it ran. Each app shows its amount as not spent.
+  final bool movedNothing;
+
   @override
   bool operator ==(Object other) =>
       other is ActivityRow &&
+      other.movedNothing == movedNothing &&
       other.label == label &&
       other.timeLabel == timeLabel &&
       other.highlight == highlight &&
@@ -155,12 +181,13 @@ class ActivityRow {
       other.counterparty == counterparty;
 
   @override
-  int get hashCode => Object.hash(label, timeLabel, highlight, icon, isSend, amount, hidesAmount, counterparty);
+  int get hashCode =>
+      Object.hash(label, timeLabel, highlight, icon, isSend, amount, hidesAmount, counterparty, movedNothing);
 
   @override
   String toString() =>
       'ActivityRow($label, $timeLabel, $highlight, $icon, isSend: $isSend, $amount, hidesAmount: $hidesAmount, '
-      '$counterparty)';
+      '$counterparty, movedNothing: $movedNothing)';
 }
 
 /// The row [tx] makes in the activity of the account [accountId]; with
@@ -181,6 +208,7 @@ ActivityRow activityRowOf(
     required String recipient,
     required BigInt amount,
     bool mayHideAmount = true,
+    bool movedNothing = false,
   }) => ActivityRow(
     label: label,
     timeLabel: isUnderWay ? l10n.activityTxTimeNow : _timeAgo(tx.timestamp, at, l10n),
@@ -190,6 +218,7 @@ ActivityRow activityRowOf(
     amount: amount,
     hidesAmount: mayHideAmount && amount == BigInt.zero,
     counterparty: ActivityAccount(recipient, isRecipient: true),
+    movedNothing: movedNothing,
   );
 
   ActivityRow creationRow(String label, {required bool isUnderWay, required MultisigCreationEvent event}) =>
@@ -246,13 +275,25 @@ ActivityRow activityRowOf(
         recipient: tx.recipient,
         amount: tx.networkFee,
       );
+    // A multisig's own past proposal, named by how it ended.
     case MultisigProposalEvent():
       return proposalRow(
-        l10n.activityTxProposal,
+        switch (tx.status) {
+          MultisigProposalStatus.executed => l10n.activityTxProposalExecuted,
+          MultisigProposalStatus.cancelled => l10n.activityTxProposalCancelled,
+          MultisigProposalStatus.removed => l10n.activityTxProposalRemoved,
+          MultisigProposalStatus.active ||
+          MultisigProposalStatus.approved ||
+          MultisigProposalStatus.unknown => l10n.activityTxProposal,
+        },
         isUnderWay: false,
         recipient: tx.to,
         amount: tx.amount,
         mayHideAmount: false,
+        movedNothing: switch (tx.status) {
+          MultisigProposalStatus.cancelled || MultisigProposalStatus.removed => true,
+          _ => false,
+        },
       );
     case PendingMultisigCreationEvent():
       return creationRow(l10n.activityTxMultisigCreating, isUnderWay: true, event: tx);
@@ -302,9 +343,12 @@ ActivityRow activityRowOf(
     isSend: isSend,
     amount: tx.amount,
     hidesAmount: false,
-    // A private send whose proof settled with other transfers has no known
-    // recipient, and a private receipt no known sender.
-    counterparty: counterparty.isEmpty
+    // A mining reward has no sender, a private send whose proof settled with
+    // other transfers no known recipient, and a private receipt no known
+    // sender.
+    counterparty: tx is MinerRewardEvent
+        ? const ActivityMiningReward()
+        : counterparty.isEmpty
         ? const ActivityAggregatedBatch()
         : !isSend && tx.isWormhole
         ? const ActivityEncryptedSender()

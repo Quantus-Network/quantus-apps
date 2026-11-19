@@ -481,4 +481,89 @@ void main() {
       expect(const ActivityAggregatedBatch().name(l10n), l10n.activityTxAggregatedBatch);
     });
   });
+
+  group('a mining reward', () {
+    test('is received from "Mining reward": there is no sender to name', () {
+      final row = rowOf(
+        MinerRewardEvent(
+          id: 'reward',
+          miner: me,
+          reward: BigInt.from(9),
+          timestamp: fiveMinutesAgo,
+          blockNumber: 1,
+          blockHash: '0xblock',
+        ),
+      );
+
+      expect(
+        (row.label, row.highlight, row.isSend, row.amount),
+        (l10n.activityTxReceived, ActivityHighlight.none, false, BigInt.from(9)),
+      );
+      expect(
+        row.counterparty,
+        isA<ActivityUnnamedCounterparty>()
+            .having((who) => who.prefix(l10n), 'prefix', l10n.activityTxFrom)
+            .having((who) => who.name(l10n), 'name', l10n.activitySenderMiningReward),
+      );
+    });
+  });
+
+  group("a multisig's past proposal", () {
+    ActivityRow pastRow(MultisigProposalStatus status) => activityRowOf(
+      MultisigProposalEvent(
+        proposal: MultisigProposal(
+          entityId: 'proposal-entity',
+          id: 4,
+          multisigAddress: msig.accountId,
+          proposer: me,
+          createdAt: fiveMinutesAgo,
+          updatedAt: fiveMinutesAgo,
+          pallet: 'Balances',
+          call: 'transfer_allow_death',
+          recipient: recipient,
+          amount: BigInt.from(500),
+          expiryBlock: 1000,
+          approvals: [me],
+          deposit: BigInt.from(2),
+          status: status,
+          threshold: 2,
+          signerCount: 2,
+        ),
+      ),
+      accountId: msig.accountId,
+      l10n: l10n,
+      now: now,
+    );
+
+    test('is named by how it ended', () {
+      expect(
+        {for (final status in MultisigProposalStatus.values) status: pastRow(status).label},
+        {
+          MultisigProposalStatus.active: l10n.activityTxProposal,
+          MultisigProposalStatus.approved: l10n.activityTxProposal,
+          MultisigProposalStatus.executed: l10n.activityTxProposalExecuted,
+          MultisigProposalStatus.cancelled: l10n.activityTxProposalCancelled,
+          MultisigProposalStatus.removed: l10n.activityTxProposalRemoved,
+          MultisigProposalStatus.unknown: l10n.activityTxProposal,
+        },
+      );
+    });
+
+    test('moved its amount only if it was executed; cancelled or removed, it moved nothing', () {
+      expect(
+        {
+          for (final status in MultisigProposalStatus.values)
+            status: (pastRow(status).movedNothing, pastRow(status).amount),
+        },
+        {
+          MultisigProposalStatus.active: (false, BigInt.from(500)),
+          MultisigProposalStatus.approved: (false, BigInt.from(500)),
+          MultisigProposalStatus.executed: (false, BigInt.from(500)),
+          MultisigProposalStatus.cancelled: (true, BigInt.from(500)),
+          MultisigProposalStatus.removed: (true, BigInt.from(500)),
+          MultisigProposalStatus.unknown: (false, BigInt.from(500)),
+        },
+      );
+    });
+  });
 }

@@ -17,6 +17,9 @@ class TxItemData {
   final BigInt amount;
   final String counterpartyAddr;
   final bool hideAmount;
+
+  /// Whether [amount] did not move after all: shown muted, with no sign.
+  final bool movedNothing;
   final IconData? customIcon;
 
   /// Prefix of the counterparty line: null for To/From by direction, empty
@@ -35,6 +38,7 @@ class TxItemData {
     required this.amount,
     required this.counterpartyAddr,
     this.hideAmount = false,
+    this.movedNothing = false,
     this.customIcon,
     this.counterpartyDirectionLabel,
   });
@@ -63,12 +67,18 @@ class TxItemData {
       iconBg: fill,
       iconColor: accent,
       labelColor: accent,
-      // What arrives is always in sage, settled or not.
-      amountColor: row.isSend ? accent : colors.semanticSage,
+      // What arrives is always in sage, settled or not; what never moved is
+      // muted.
+      amountColor: row.movedNothing
+          ? colors.textMuted
+          : row.isSend
+          ? accent
+          : colors.semanticSage,
       borderColor: stroke,
       isSend: row.isSend,
       amount: row.amount,
       hideAmount: row.hidesAmount,
+      movedNothing: row.movedNothing,
       customIcon: switch (row.icon) {
         ActivityIcon.direction => null,
         ActivityIcon.proposal => Icons.how_to_vote_outlined,
@@ -82,7 +92,7 @@ class TxItemData {
       // To or From follow the direction ([buildTxItem]); the others say
       // their own, or nothing.
       counterpartyDirectionLabel: switch (counterparty) {
-        ActivityAccount() || ActivityEncryptedSender() => null,
+        ActivityAccount() || ActivityEncryptedSender() || ActivityMiningReward() => null,
         ActivityMultisig() || ActivityAggregatedBatch() => counterparty.prefix(l10n),
       },
     );
@@ -97,7 +107,8 @@ String txItemAmountText(TxItemData data, TxAmountFormatter format, {bool isHidde
   if (isHidden) return hiddenAmountText;
   if (data.hideAmount) return '—';
 
-  return format(data.amount, isSend: data.isSend).primaryAmount;
+  // An amount that never moved neither came in nor went out.
+  return format(data.amount, isSend: data.isSend, withSignPrefix: !data.movedNothing).primaryAmount;
 }
 
 Widget buildTxItem(
