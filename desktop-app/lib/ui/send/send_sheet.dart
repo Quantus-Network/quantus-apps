@@ -799,10 +799,17 @@ class _SendSheetState extends ConsumerState<SendSheet> {
       sendAll: _sendAll,
     );
     final strings = _strategy.strings(l10n);
+    // What the account that pays holds can move while the review stands: a
+    // proposal's cost is its member's to pay, and is said of that account.
+    final signer = _signer;
+    final costProblem = _strategy.affordabilityError(ref, review.fee, l10n) == null || signer == null
+        ? null
+        : l10n.desktopProposeCostNotCovered(signer.name);
     // Beside the buttons: what stops the send, or why the last press sent
     // nothing.
     final problem =
         _amountProblem(l10n, review.amountStatus, fee: review.fee) ??
+        costProblem ??
         (review.feeFailed ? strings.feeFetchFailedMessage : _error);
 
     return [
@@ -852,7 +859,11 @@ class _SendSheetState extends ConsumerState<SendSheet> {
                 ? const SizedBox.shrink()
                 : Padding(
                     padding: const EdgeInsets.only(right: 16),
-                    child: Text(problem, style: context.sendBody(color: colors.semanticEmber)),
+                    child: Text(
+                      problem,
+                      key: identical(problem, costProblem) ? SendSheet.costProblemKey : null,
+                      style: context.sendBody(color: colors.semanticEmber),
+                    ),
                   ),
           ),
           if (review.feeFailed) ...[
@@ -876,7 +887,7 @@ class _SendSheetState extends ConsumerState<SendSheet> {
             key: SendSheet.sendKey,
             label: _signer == null ? strings.flowTitle : l10n.desktopProposeSubmit,
             isLoading: _isSending,
-            isDisabled: review.confirmBlocked,
+            isDisabled: review.confirmBlocked || costProblem != null,
             onTap: () => _send(review, rows),
           ),
         ],

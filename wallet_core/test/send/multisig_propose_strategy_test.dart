@@ -9,6 +9,7 @@ import 'package:wallet_core/l10n/app_localizations.dart';
 import 'package:wallet_core/providers/account_providers.dart';
 import 'package:wallet_core/providers/l10n_provider.dart';
 import 'package:wallet_core/providers/multisig_providers.dart';
+import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:wallet_core/send/multisig_propose_strategy.dart';
 import 'package:wallet_core/send/send_review_row.dart';
 import 'package:wallet_core/send/send_strategy.dart';
@@ -85,6 +86,56 @@ void main() {
         (outcome as SendSubmitted).terminal.explorerUrl,
         '${AppConstants.explorerEndpoint}/multisig-proposal-created/0xproposal',
       );
+    });
+
+    group('what the member holds', () {
+      // What proposing costs the member: the fee's three parts.
+      final cost = BigInt.from(4) * oneToken;
+      late BigInt memberHolds;
+
+      List<Override> withBalance() => [
+        ...overrides(),
+        balanceProviderFamily.overrideWith((ref, accountId) => memberHolds),
+      ];
+
+      testWidgets('exactly the cost is enough to propose', (tester) async {
+        memberHolds = cost;
+        final ref = await pumpRef(tester, overrides: withBalance());
+
+        expect(await submit(ref), isA<SendSubmitted>());
+        expect(submission.proposals, hasLength(1));
+      });
+
+      testWidgets('less than the cost proposes nothing, says the member cannot pay, and asks for no approval', (
+        tester,
+      ) async {
+        memberHolds = cost - BigInt.one;
+        final ref = await pumpRef(tester, overrides: withBalance());
+
+        final outcome = await submit(ref);
+
+        expect((outcome as SendFailed).message, ref.read(l10nProvider).multisigProposeFeePayerInsufficient);
+        expect(bed.userApproval.reasons, isEmpty);
+        expect(submission.proposals, isEmpty);
+      });
+
+      testWidgets('falling below the cost while approval is asked proposes nothing, and says the member cannot pay', (
+        tester,
+      ) async {
+        memberHolds = cost;
+        final ref = await pumpRef(tester, overrides: withBalance());
+        bed.userApproval.answer = () async {
+          memberHolds = cost - BigInt.one;
+          ref.invalidate(balanceProviderFamily(member.accountId));
+          return ApprovalResult.approved;
+        };
+
+        final outcome = await submit(ref);
+
+        expect((outcome as SendFailed).message, ref.read(l10nProvider).multisigProposeFeePayerInsufficient);
+        expect(bed.userApproval.reasons, hasLength(1));
+        expect(submission.proposals, isEmpty);
+      });
     });
 
     for (final refusal in [ApprovalResult.declined, ApprovalResult.notSetUp]) {

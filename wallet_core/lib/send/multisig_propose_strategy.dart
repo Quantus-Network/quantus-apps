@@ -105,11 +105,20 @@ class MultisigProposeStrategy extends SendStrategy {
       ref.invalidate(multisigProposeFeeProvider((msig, recipient.trim())));
 
   @override
-  String? affordabilityError(WidgetRef ref, SendFee fee, AppLocalizations l10n) {
-    final memberBalance = ref.watch(effectiveBalanceProviderFamily(msig.myMemberAccountId)).value;
-    if (memberBalance == null) return null;
-    return memberBalance < fee.displayFee ? l10n.multisigProposeFeePayerInsufficient : null;
-  }
+  String? affordabilityError(WidgetRef ref, SendFee fee, AppLocalizations l10n) =>
+      _coversCost(ref.watch(effectiveBalanceProviderFamily(msig.myMemberAccountId)).value, fee)
+      ? null
+      : l10n.multisigProposeFeePayerInsufficient;
+
+  /// The member's account holding [memberBalance] can pay [fee]. A balance
+  /// that is not known is no objection: the flows open no review without it.
+  static bool _coversCost(BigInt? memberBalance, SendFee fee) =>
+      memberBalance == null || memberBalance >= fee.displayFee;
+
+  /// As [_coversCost], of what the member's account holds now, from where
+  /// nothing is watched.
+  bool _memberCoversCost(WidgetRef ref, SendFee fee) =>
+      _coversCost(ref.read(effectiveBalanceProviderFamily(msig.myMemberAccountId)).value, fee);
 
   @override
   List<SendReviewRow> reviewRows(
@@ -259,8 +268,13 @@ class MultisigProposeStrategy extends SendStrategy {
       );
     }
 
+    // What the member holds can have moved since the review was drawn, and
+    // again while the approval was asked for. A proposal its member cannot
+    // pay for is included all the same, and fails at the cost of its fee.
+    if (!_memberCoversCost(ref, fee)) return SendFailed(l10n.multisigProposeFeePayerInsufficient);
     final approval = await ref.read(userApprovalProvider).approve(reason: l10n.multisigProposeAuthReason);
     if (approval != ApprovalResult.approved) return SendFailed(l10n.multisigProposeAuthRequired);
+    if (!_memberCoversCost(ref, fee)) return SendFailed(l10n.multisigProposeFeePayerInsufficient);
 
     try {
       final hash = await ref

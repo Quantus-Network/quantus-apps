@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_desktop_wallet/services/external_links.dart';
@@ -15,6 +16,7 @@ import 'package:quantus_desktop_wallet/ui/shell/account_toolbar.dart';
 import 'package:quantus_desktop_wallet/ui/shell/shell_sheet_view.dart';
 import 'package:quantus_desktop_wallet/ui/shell/sidebar.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:wallet_core/services/user_approval.dart';
 
 import '../../fakes.dart';
@@ -66,23 +68,38 @@ final _shared = <String>[];
 
 const _smallestWindow = Size(960, 640);
 
+/// What Main, the member's account, holds on the chain as the test stands.
+late BigInt _mainHolds;
+
 List<Override> _overrides({
   required MultisigAccount multisig,
   FakeSendChain? chain,
   FakeUserApproval? approval,
   num teamHolds = 4800,
   num mainHolds = 1250,
-}) => [
-  ...shellOverrides(
-    accounts: const [mainAccount, savingsAccount, vaultAccount],
-    settings: FakeSettingsService(activeAccount: MultisigDisplayAccount(multisig), multisigs: [multisig]),
-    balances: {'qzTeam': _qtc(teamHolds), 'qzMain': _qtc(mainHolds), 'qzSavings': oneToken, 'qzVault': oneToken},
-    approval: approval,
-    chain: chain,
-  ),
-  openExternalUrlProvider.overrideWithValue((url) async => _opened.add(url)),
-  shareTextProvider.overrideWithValue((text, {origin}) async => _shared.add(text)),
-];
+}) {
+  _mainHolds = _qtc(mainHolds);
+  final others = {'qzTeam': _qtc(teamHolds), 'qzSavings': oneToken, 'qzVault': oneToken};
+  return [
+    ...shellOverrides(
+      accounts: const [mainAccount, savingsAccount, vaultAccount],
+      settings: FakeSettingsService(activeAccount: MultisigDisplayAccount(multisig), multisigs: [multisig]),
+      balanceOf: (accountId) async =>
+          accountId == 'qzMain' ? _mainHolds : others[accountId] ?? (throw StateError('no balance set for $accountId')),
+      approval: approval,
+      chain: chain,
+    ),
+    openExternalUrlProvider.overrideWithValue((url) async => _opened.add(url)),
+    shareTextProvider.overrideWithValue((text, {origin}) async => _shared.add(text)),
+  ];
+}
+
+/// Main comes to hold [tokens] on the chain, and the wallet reads it again.
+Future<void> _setMainHolds(WidgetTester tester, num tokens) async {
+  _mainHolds = _qtc(tokens);
+  ProviderScope.containerOf(tester.element(find.byType(ShellSheetView))).invalidate(balanceProviderFamily('qzMain'));
+  await tester.pumpAndSettle();
+}
 
 /// Opens the wallet on the multisig and presses Propose in the toolbar.
 Future<FakeSendChain> _openPropose(
@@ -397,6 +414,55 @@ void main() {
       expect(_inSheet(find.text('Failed to create proposal')), findsOneWidget);
       expect(_inSheet(find.text('PROPOSING')), findsOneWidget);
       expect(_canPress(tester, SendSheet.sendKey), isTrue);
+    });
+
+    testOnMac('when the member\'s account stops covering the cost, it says so by name and Submit Proposal is '
+        'unavailable, until it covers the cost again', (tester) async {
+      final chain = await _openPropose(tester, mainHolds: 1);
+      await _toReview(tester);
+      expect(_canPress(tester, SendSheet.sendKey), isTrue);
+
+      await _setMainHolds(tester, 0.2);
+
+      expect(
+        tester.widget<Text>(find.byKey(SendSheet.costProblemKey)).data,
+        'Main does not hold enough to pay the proposal cost.',
+      );
+      expect(_canPress(tester, SendSheet.sendKey), isFalse);
+      await _tap(tester, SendSheet.sendKey);
+      expect(chain.proposals, isEmpty);
+
+      await _setMainHolds(tester, 1);
+
+      expect(find.byKey(SendSheet.costProblemKey), findsNothing);
+      expect(_canPress(tester, SendSheet.sendKey), isTrue);
+    });
+
+    testOnMac('a cost the member\'s account stops covering while approval is asked submits nothing, and the review '
+        'says why', (tester) async {
+      final approval = FakeUserApproval();
+      final chain = await _openPropose(tester, approval: approval, mainHolds: 1);
+      await _toReview(tester);
+      approval.answer = () async {
+        // The wallet has read the new balance by the time the approval is
+        // given.
+        _mainHolds = _qtc(0.2);
+        final container = ProviderScope.containerOf(tester.element(find.byType(ShellSheetView)));
+        container.invalidate(balanceProviderFamily('qzMain'));
+        await container.read(balanceProviderFamily('qzMain').future);
+        return ApprovalResult.approved;
+      };
+
+      await _tap(tester, SendSheet.sendKey);
+
+      expect(approval.reasons, hasLength(1));
+      expect(chain.proposals, isEmpty);
+      expect(_inSheet(find.text('PROPOSING')), findsOneWidget);
+      expect(
+        tester.widget<Text>(find.byKey(SendSheet.costProblemKey)).data,
+        'Main does not hold enough to pay the proposal cost.',
+      );
+      expect(_canPress(tester, SendSheet.sendKey), isFalse);
     });
 
     testOnMac('in the smallest window the rows scroll and the buttons stay in reach', (tester) async {
