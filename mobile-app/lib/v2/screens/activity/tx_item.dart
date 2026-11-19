@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:wallet_core/activity/activity_row.dart';
 import 'package:wallet_core/l10n/app_localizations.dart';
 import 'package:wallet_core/providers/currency_display_provider.dart';
-import 'package:wallet_core/utils/transaction_event_extension.dart';
 import 'package:resonance_network_wallet/v2/components/amount_display_with_conversion.dart';
 
 class TxItemData {
@@ -39,6 +39,9 @@ class TxItemData {
     this.counterpartyDirectionLabel,
   });
 
+  /// The row [tx] makes in the activity of [accountId], as wallet_core
+  /// decides it ([activityRowOf]), in the phone's colours and pictures, with
+  /// addresses shortened.
   factory TxItemData.from(
     TransactionEvent tx,
     String accountId,
@@ -46,294 +49,42 @@ class TxItemData {
     AppLocalizations l10n, {
     bool isPrivate = false,
   }) {
-    if (tx is PendingMultisigProposalEvent) {
-      final recipient = AddressFormattingService.formatAddress(tx.recipient, prefix: 5, postFix: 3);
-      return TxItemData(
-        label: l10n.activityTxProposing,
-        timeLabel: l10n.activityTxTimeNow,
-        iconBg: glacierFill(colors),
-        iconColor: colors.semanticGlacier,
-        labelColor: colors.semanticGlacier,
-        amountColor: colors.semanticGlacier,
-        borderColor: glacierStroke(colors),
-        isSend: true,
-        amount: tx.amount,
-        counterpartyAddr: recipient,
-        customIcon: Icons.how_to_vote_outlined,
-      );
-    }
+    final row = activityRowOf(tx, accountId: accountId, l10n: l10n, isPrivate: isPrivate);
+    final (accent, fill, stroke) = switch (row.highlight) {
+      ActivityHighlight.arriving => (colors.semanticSage, _sageFill(colors), _sageStroke(colors)),
+      ActivityHighlight.leaving => (colors.semanticGlacier, glacierFill(colors), glacierStroke(colors)),
+      ActivityHighlight.none => (colors.textContent, Colors.transparent, colors.borderHairline),
+    };
+    final counterparty = row.counterparty;
 
-    if (tx is MultisigProposalCreatedEvent) {
-      final recipient = AddressFormattingService.formatAddress(tx.recipient, prefix: 5, postFix: 3);
-      return TxItemData(
-        label: l10n.activityTxProposalCreated,
-        timeLabel: _timeAgo(tx.timestamp, l10n),
-        iconBg: Colors.transparent,
-        iconColor: colors.textContent,
-        labelColor: colors.textContent,
-        amountColor: colors.textContent,
-        borderColor: colors.borderHairline,
-        isSend: true,
-        amount: tx.amount,
-        counterpartyAddr: recipient,
-        customIcon: Icons.how_to_vote_outlined,
-      );
-    }
-
-    if (tx is MultisigProposalApprovedEvent) {
-      final recipient = AddressFormattingService.formatAddress(tx.recipient, prefix: 5, postFix: 3);
-      final fee = tx.networkFee;
-      return TxItemData(
-        label: l10n.activityTxProposalApproved,
-        timeLabel: _timeAgo(tx.timestamp, l10n),
-        iconBg: Colors.transparent,
-        iconColor: colors.textContent,
-        labelColor: colors.textContent,
-        amountColor: colors.textContent,
-        borderColor: colors.borderHairline,
-        isSend: true,
-        amount: fee,
-        hideAmount: fee == BigInt.zero,
-        counterpartyAddr: recipient,
-        customIcon: Icons.how_to_vote_outlined,
-      );
-    }
-
-    if (tx is PendingMultisigExecutionEvent) {
-      final recipient = AddressFormattingService.formatAddress(tx.recipient, prefix: 5, postFix: 3);
-      final fee = tx.memberCost;
-      return TxItemData(
-        label: l10n.activityTxExecuting,
-        timeLabel: l10n.activityTxTimeNow,
-        iconBg: glacierFill(colors),
-        iconColor: colors.semanticGlacier,
-        labelColor: colors.semanticGlacier,
-        amountColor: colors.semanticGlacier,
-        borderColor: glacierStroke(colors),
-        isSend: true,
-        amount: fee,
-        hideAmount: fee == BigInt.zero,
-        counterpartyAddr: recipient,
-        customIcon: Icons.how_to_vote_outlined,
-      );
-    }
-
-    if (tx is MultisigProposalExecutedEvent) {
-      final recipient = AddressFormattingService.formatAddress(tx.recipient, prefix: 5, postFix: 3);
-      final fee = tx.networkFee;
-      return TxItemData(
-        label: l10n.activityTxProposalExecuted,
-        timeLabel: _timeAgo(tx.timestamp, l10n),
-        iconBg: Colors.transparent,
-        iconColor: colors.textContent,
-        labelColor: colors.textContent,
-        amountColor: colors.textContent,
-        borderColor: colors.borderHairline,
-        isSend: true,
-        amount: fee,
-        hideAmount: fee == BigInt.zero,
-        counterpartyAddr: recipient,
-        customIcon: Icons.how_to_vote_outlined,
-      );
-    }
-
-    if (tx is PendingMultisigCancellationEvent) {
-      final recipient = AddressFormattingService.formatAddress(tx.recipient, prefix: 5, postFix: 3);
-      final fee = tx.memberCost;
-      return TxItemData(
-        label: l10n.activityTxCancelling,
-        timeLabel: l10n.activityTxTimeNow,
-        iconBg: glacierFill(colors),
-        iconColor: colors.semanticGlacier,
-        labelColor: colors.semanticGlacier,
-        amountColor: colors.semanticGlacier,
-        borderColor: glacierStroke(colors),
-        isSend: true,
-        amount: fee,
-        hideAmount: fee == BigInt.zero,
-        counterpartyAddr: recipient,
-        customIcon: Icons.how_to_vote_outlined,
-      );
-    }
-
-    if (tx is MultisigProposalCancelledEvent) {
-      final recipient = AddressFormattingService.formatAddress(tx.recipient, prefix: 5, postFix: 3);
-      final fee = tx.networkFee;
-      return TxItemData(
-        label: l10n.activityTxProposalCancelled,
-        timeLabel: _timeAgo(tx.timestamp, l10n),
-        iconBg: Colors.transparent,
-        iconColor: colors.textContent,
-        labelColor: colors.textContent,
-        amountColor: colors.textContent,
-        borderColor: colors.borderHairline,
-        isSend: true,
-        amount: fee,
-        hideAmount: fee == BigInt.zero,
-        counterpartyAddr: recipient,
-        customIcon: Icons.how_to_vote_outlined,
-      );
-    }
-
-    if (tx is MultisigProposalEvent) {
-      return TxItemData(
-        label: l10n.activityTxProposal,
-        timeLabel: _timeAgo(tx.timestamp, l10n),
-        iconBg: Colors.transparent,
-        iconColor: colors.textContent,
-        labelColor: colors.textContent,
-        amountColor: colors.textContent,
-        borderColor: colors.borderHairline,
-        isSend: true,
-        amount: tx.amount,
-        counterpartyAddr: AddressFormattingService.formatAddress(tx.to, prefix: 5, postFix: 3),
-        customIcon: Icons.how_to_vote_outlined,
-      );
-    }
-
-    if (tx is PendingMultisigCreationEvent) {
-      final address = AddressFormattingService.formatAddress(tx.multisigAddress, prefix: 5, postFix: 3);
-      return TxItemData(
-        label: l10n.activityTxMultisigCreating,
-        timeLabel: l10n.activityTxTimeNow,
-        iconBg: glacierFill(colors),
-        iconColor: colors.semanticGlacier,
-        labelColor: colors.semanticGlacier,
-        amountColor: colors.semanticGlacier,
-        borderColor: glacierStroke(colors),
-        isSend: true,
-        amount: tx.totalCost,
-        counterpartyAddr: address,
-        customIcon: Icons.groups_outlined,
-        counterpartyDirectionLabel: l10n.activityTxMultisigLabel,
-      );
-    }
-
-    if (tx is MultisigCreatedEvent) {
-      final address = AddressFormattingService.formatAddress(tx.multisigAddress, prefix: 5, postFix: 3);
-      return TxItemData(
-        label: l10n.activityTxMultisigCreated,
-        timeLabel: _timeAgo(tx.timestamp, l10n),
-        iconBg: Colors.transparent,
-        iconColor: colors.textContent,
-        labelColor: colors.textContent,
-        amountColor: colors.textContent,
-        borderColor: colors.borderHairline,
-        isSend: true,
-        amount: tx.totalCost,
-        counterpartyAddr: address,
-        customIcon: Icons.groups_outlined,
-        counterpartyDirectionLabel: l10n.activityTxMultisigLabel,
-      );
-    }
-
-    final isSend = tx.from == accountId;
-    final isPending = tx is PendingTransactionEvent;
-    final isScheduled = tx.isReversibleScheduled;
-    final isHighlighted = isPending || isScheduled;
-
-    String getLabel() {
-      if (isPending && isSend) {
-        return isPrivate ? l10n.activityTxPrivatelySending : l10n.activityTxSending;
-      }
-      if (isPending && !isSend) {
-        return isPrivate ? l10n.activityTxPrivatelyReceiving : l10n.activityTxReceiving;
-      }
-      if (isScheduled && isSend) {
-        return l10n.activityTxPending;
-      }
-      if (isScheduled && !isSend) {
-        return isPrivate ? l10n.activityTxPrivatelyReceiving : l10n.activityTxReceiving;
-      }
-      if (isSend && !isScheduled) {
-        return isPrivate ? l10n.activityTxPrivateSent : l10n.activityTxSent;
-      }
-
-      return isPrivate ? l10n.activityTxPrivateReceived : l10n.activityTxReceived;
-    }
-
-    String getTimeLabel() {
-      if (isPending) {
-        return l10n.activityTxTimeNow;
-      }
-      if (isScheduled) {
-        return _formatDuration(tx.timeRemaining, l10n);
-      }
-      return _timeAgo(tx.timestamp, l10n);
-    }
-
-    Color getIconBg() {
-      if (isHighlighted && !isSend) {
-        return _sageFill(colors);
-      }
-      if (isHighlighted && isSend) {
-        return glacierFill(colors);
-      }
-      return Colors.transparent;
-    }
-
-    Color getIconColor() {
-      if (isHighlighted && !isSend) {
-        return colors.semanticSage;
-      }
-      if (isHighlighted && isSend) {
-        return colors.semanticGlacier;
-      }
-      return colors.textContent;
-    }
-
-    Color getLabelColor() {
-      if (isHighlighted && !isSend) {
-        return colors.semanticSage;
-      }
-      if (isHighlighted && isSend) {
-        return colors.semanticGlacier;
-      }
-
-      return colors.textContent;
-    }
-
-    Color getAmountColor() {
-      if (!isSend) {
-        return colors.semanticSage;
-      }
-
-      if (isHighlighted && isSend) {
-        return colors.semanticGlacier;
-      }
-
-      return colors.textContent;
-    }
-
-    Color getBorderColor() {
-      if (isHighlighted && !isSend) {
-        return _sageStroke(colors);
-      }
-      if (isHighlighted && isSend) {
-        return glacierStroke(colors);
-      }
-      return colors.borderHairline;
-    }
-
-    final counterparty = isSend ? tx.to : tx.from;
     return TxItemData(
-      label: getLabel(),
-      timeLabel: getTimeLabel(),
-      iconBg: getIconBg(),
-      iconColor: getIconColor(),
-      labelColor: getLabelColor(),
-      amountColor: getAmountColor(),
-      borderColor: getBorderColor(),
-      isSend: isSend,
-      amount: tx.amount,
-      // A private send whose proof settled with other transfers has no known
-      // recipient: name the batch instead, with no "To:" prefix.
-      counterpartyAddr: counterparty.isEmpty
-          ? l10n.activityTxAggregatedBatch
-          : !isSend && tx.isWormhole
-          ? l10n.activitySenderEncrypted
-          : AddressFormattingService.formatAddress(counterparty, prefix: 5, postFix: 3),
-      counterpartyDirectionLabel: counterparty.isEmpty ? '' : null,
+      label: row.label,
+      timeLabel: row.timeLabel,
+      iconBg: fill,
+      iconColor: accent,
+      labelColor: accent,
+      // What arrives is always in sage, settled or not.
+      amountColor: row.isSend ? accent : colors.semanticSage,
+      borderColor: stroke,
+      isSend: row.isSend,
+      amount: row.amount,
+      hideAmount: row.hidesAmount,
+      customIcon: switch (row.icon) {
+        ActivityIcon.direction => null,
+        ActivityIcon.proposal => Icons.how_to_vote_outlined,
+        ActivityIcon.multisig => Icons.groups_outlined,
+      },
+      counterpartyAddr: switch (counterparty) {
+        ActivityAccount(:final address) ||
+        ActivityMultisig(:final address) => AddressFormattingService.formatAddress(address, prefix: 5, postFix: 3),
+        ActivityUnnamedCounterparty() => counterparty.name(l10n),
+      },
+      // To or From follow the direction ([buildTxItem]); the others say
+      // their own, or nothing.
+      counterpartyDirectionLabel: switch (counterparty) {
+        ActivityAccount() || ActivityEncryptedSender() => null,
+        ActivityMultisig() || ActivityAggregatedBatch() => counterparty.prefix(l10n),
+      },
     );
   }
 }
@@ -427,31 +178,3 @@ Color _sageStroke(AppColorsV3 colors) => colors.semanticSage.useOpacity(0.15);
 Color glacierFill(AppColorsV3 colors) => colors.semanticGlacier.useOpacity(0.08);
 
 Color glacierStroke(AppColorsV3 colors) => colors.semanticGlacier.useOpacity(0.15);
-
-String _formatDuration(Duration d, AppLocalizations l10n) {
-  final days = d.inDays.toString().padLeft(2, '0');
-  final hours = (d.inHours % 24).toString().padLeft(2, '0');
-  final mins = (d.inMinutes % 60).toString().padLeft(2, '0');
-  return l10n.activityTxTimeRemaining(days, hours, mins);
-}
-
-String _timeAgo(DateTime timestamp, AppLocalizations l10n) {
-  final diff = DateTime.now().difference(timestamp);
-  if (diff.inMinutes < 1) return l10n.activityTxTimeNow;
-  if (diff.inMinutes < 60) return l10n.activityTxTimeMinutesAgo(diff.inMinutes);
-  if (diff.inHours < 24) return l10n.activityTxTimeHoursAgo(diff.inHours);
-  return l10n.activityTxTimeDaysAgo(diff.inDays);
-}
-
-/// Calendar days from [from] to [to], comparing date components only. Normalizing
-/// through UTC keeps daylight-saving days, which elapse in 23 or 25 hours, one day apart.
-int calendarDaysBetween(DateTime from, DateTime to) =>
-    DateTime.utc(to.year, to.month, to.day).difference(DateTime.utc(from.year, from.month, from.day)).inDays;
-
-String dateGroupLabel(DateTime date, AppLocalizations l10n, String localeName, {DateTime? now}) {
-  // Indexer timestamps are UTC; group by the day the user saw, not the UTC day.
-  final diff = calendarDaysBetween(date.toLocal(), (now ?? DateTime.now()).toLocal());
-  if (diff == 0) return l10n.activityDateToday;
-  if (diff == 1) return l10n.activityDateYesterday;
-  return DatetimeFormattingService.formatDateGroupLabel(date, localeName);
-}
