@@ -140,6 +140,7 @@ class ActivityRow {
     required this.amount,
     required this.hidesAmount,
     required this.counterparty,
+    this.movedNothing = false,
   });
 
   /// What happened: "Sent", "Receiving", "Proposal approved"…
@@ -162,9 +163,14 @@ class ActivityRow {
 
   final ActivityCounterparty counterparty;
 
+  /// Whether, in the end, [amount] did not move: a proposal cancelled or
+  /// removed before it ran. Each app shows its amount as not spent.
+  final bool movedNothing;
+
   @override
   bool operator ==(Object other) =>
       other is ActivityRow &&
+      other.movedNothing == movedNothing &&
       other.label == label &&
       other.timeLabel == timeLabel &&
       other.highlight == highlight &&
@@ -175,12 +181,13 @@ class ActivityRow {
       other.counterparty == counterparty;
 
   @override
-  int get hashCode => Object.hash(label, timeLabel, highlight, icon, isSend, amount, hidesAmount, counterparty);
+  int get hashCode =>
+      Object.hash(label, timeLabel, highlight, icon, isSend, amount, hidesAmount, counterparty, movedNothing);
 
   @override
   String toString() =>
       'ActivityRow($label, $timeLabel, $highlight, $icon, isSend: $isSend, $amount, hidesAmount: $hidesAmount, '
-      '$counterparty)';
+      '$counterparty, movedNothing: $movedNothing)';
 }
 
 /// The row [tx] makes in the activity of the account [accountId]; with
@@ -201,6 +208,7 @@ ActivityRow activityRowOf(
     required String recipient,
     required BigInt amount,
     bool mayHideAmount = true,
+    bool movedNothing = false,
   }) => ActivityRow(
     label: label,
     timeLabel: isUnderWay ? l10n.activityTxTimeNow : _timeAgo(tx.timestamp, at, l10n),
@@ -210,6 +218,7 @@ ActivityRow activityRowOf(
     amount: amount,
     hidesAmount: mayHideAmount && amount == BigInt.zero,
     counterparty: ActivityAccount(recipient, isRecipient: true),
+    movedNothing: movedNothing,
   );
 
   ActivityRow creationRow(String label, {required bool isUnderWay, required MultisigCreationEvent event}) =>
@@ -266,13 +275,25 @@ ActivityRow activityRowOf(
         recipient: tx.recipient,
         amount: tx.networkFee,
       );
+    // A multisig's own past proposal, named by how it ended.
     case MultisigProposalEvent():
       return proposalRow(
-        l10n.activityTxProposal,
+        switch (tx.status) {
+          MultisigProposalStatus.executed => l10n.activityTxProposalExecuted,
+          MultisigProposalStatus.cancelled => l10n.activityTxProposalCancelled,
+          MultisigProposalStatus.removed => l10n.activityTxProposalRemoved,
+          MultisigProposalStatus.active ||
+          MultisigProposalStatus.approved ||
+          MultisigProposalStatus.unknown => l10n.activityTxProposal,
+        },
         isUnderWay: false,
         recipient: tx.to,
         amount: tx.amount,
         mayHideAmount: false,
+        movedNothing: switch (tx.status) {
+          MultisigProposalStatus.cancelled || MultisigProposalStatus.removed => true,
+          _ => false,
+        },
       );
     case PendingMultisigCreationEvent():
       return creationRow(l10n.activityTxMultisigCreating, isUnderWay: true, event: tx);
