@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
@@ -16,11 +18,32 @@ class _RejectingStore extends InMemorySharedPreferencesStore {
   /// The keys whose writes are refused, as the app names them.
   final rejected = <String>{};
 
+  /// The keys whose writes throw instead of answering, as the app names them.
+  final throwing = <String>{};
+
+  /// How many more writes are stored before the disk refuses every write;
+  /// null when it has no such outage.
+  int? storesBeforeOutage;
+
   /// What is in memory and not yet on the disk: a value with its type, or
   /// null for a key that was removed.
   final _unstored = <String, (String, Object)?>{};
 
-  bool _isRejected(String key) => rejected.contains(key.replaceFirst('flutter.', ''));
+  /// The app quits and the next one starts with a disk that stores again:
+  /// what was only in memory is gone.
+  void restart() {
+    _unstored.clear();
+    rejected.clear();
+    storesBeforeOutage = null;
+  }
+
+  bool _isRejected(String key) {
+    if (storesBeforeOutage case final left?) {
+      if (left == 0) return true;
+      storesBeforeOutage = left - 1;
+    }
+    return rejected.contains(key.replaceFirst('flutter.', ''));
+  }
 
   Future<bool> _store() async {
     for (final MapEntry(:key, :value) in _unstored.entries) {
@@ -36,6 +59,7 @@ class _RejectingStore extends InMemorySharedPreferencesStore {
 
   @override
   Future<bool> setValue(String valueType, String key, Object value) async {
+    if (throwing.contains(key.replaceFirst('flutter.', ''))) throw StateError('disk unavailable');
     _unstored[key] = (valueType, value);
     return _isRejected(key) ? false : _store();
   }
@@ -266,6 +290,65 @@ void main() {
       expect(activeAccount.account.accountId, account1.accountId);
     });
 
+    group('preferences where active_account_id names another account than the active snapshot', () {
+      setUp(() async {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('active_display_account', jsonEncode(RegularAccount(account2).toJson()));
+        await prefs.setString('active_account_id', account1.accountId);
+      });
+
+      test('removeAccount replaces the account the snapshot holds', () async {
+        await settingsService.saveAccounts([account1, account2]);
+
+        await settingsService.removeAccount(account2);
+
+        expect((await settingsService.getActiveAccount())!.account.accountId, account1.accountId);
+      });
+
+      test('removeWallet replaces the account the snapshot holds', () async {
+        FlutterSecureStorage.setMockInitialValues({});
+        final inWallet1 = account2.copyWith(walletIndex: 1);
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('active_display_account', jsonEncode(RegularAccount(inWallet1).toJson()));
+        await settingsService.saveAccounts([account1, inWallet1]);
+
+        await settingsService.removeWallet(1);
+
+        expect((await settingsService.getActiveAccount())!.account.accountId, account1.accountId);
+      });
+    });
+
+    test('preferences with only active_account_id still select that account, and removing it picks another', () async {
+      await settingsService.saveAccounts([account1, account2]);
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('active_account_id', account2.accountId);
+
+      expect((await settingsService.getActiveAccount())!.account.accountId, account2.accountId);
+
+      await settingsService.removeAccount(account2);
+
+      expect((await settingsService.getActiveAccount())!.account.accountId, account1.accountId);
+    });
+
+    test('removing a regular account while a multisig is active keeps the multisig active', () async {
+      await settingsService.saveAccounts([account1, account2]);
+      await settingsService.setActiveAccount(RegularAccount(account2));
+      final msig = MultisigAccount(
+        name: 'Msig',
+        accountId: 'msig_1',
+        signers: [account1.accountId],
+        threshold: 1,
+        nonce: BigInt.zero,
+        myMemberAccountId: account1.accountId,
+      );
+      await settingsService.addMultisigAccount(msig);
+      await settingsService.setActiveAccount(MultisigDisplayAccount(msig));
+
+      await settingsService.removeAccount(account2);
+
+      expect((await settingsService.getActiveAccount())!.account.accountId, msig.accountId);
+    });
+
     test('getNextFreeAccountIndex returns 0 for an empty wallet', () async {
       await settingsService.initialize();
       expect(await settingsService.getNextFreeAccountIndex(0), 0);
@@ -411,13 +494,31 @@ void main() {
       await settings.setActiveAccount(const RegularAccount(main));
     });
 
-    for (final key in ['active_display_account', 'active_account_id']) {
-      test('throws when the system rejects the write of $key, and Main stays the active account', () async {
-        store.rejected.add(key);
+    /// The settings as the next app reads them, started before anything this
+    /// one held only in memory reached the disk.
+    Future<SettingsService> restarted() {
+      store.restart();
+      return reopened();
+    }
+
+    /// Switches to [account], and says whether the switch was reported done.
+    Future<bool> switchTo(Account account) async {
+      try {
+        await settings.setActiveAccount(RegularAccount(account));
+        return true;
+      } on Exception {
+        return false;
+      }
+    }
+
+    test(
+      'throws when the system rejects the write of active_display_account, and Main stays the active account',
+      () async {
+        store.rejected.add('active_display_account');
 
         await expectLater(
           settings.setActiveAccount(const RegularAccount(savings)),
-          throwsA(isA<Exception>().having((e) => '$e', 'message', contains('Could not save $key'))),
+          throwsA(isA<Exception>().having((e) => '$e', 'message', contains('Could not save active_display_account'))),
         );
 
         expect((await settings.getActiveAccount())!.account.accountId, main.accountId);
@@ -427,6 +528,38 @@ void main() {
         // What a later write puts on the disk is still Main.
         await settings.saveAccounts([main, savings]);
         expect((await (await reopened()).getActiveAccount())!.account.accountId, main.accountId);
+      },
+    );
+
+    test('a switch does not depend on active_account_id: the selection is one write', () async {
+      store.rejected.add('active_account_id');
+
+      await settings.setActiveAccount(const RegularAccount(savings));
+
+      expect((await settings.getActiveAccount())!.account.accountId, savings.accountId);
+      expect((await (await restarted()).getActiveAccount())!.account.accountId, savings.accountId);
+    });
+
+    for (final stored in [0, 1, 2]) {
+      group('when the disk stops storing after $stored writes of a switch and stays down through its rollback', () {
+        setUp(() => store.storesBeforeOutage = stored);
+
+        test('the app started next has the account the switch reported', () async {
+          final reported = await switchTo(savings) ? savings : main;
+
+          expect((await settings.getActiveAccount())!.account.accountId, reported.accountId);
+          expect((await (await restarted()).getActiveAccount())!.account.accountId, reported.accountId);
+        });
+
+        test('removing Savings in the app started next leaves Main active', () async {
+          await switchTo(savings);
+          final next = await restarted();
+
+          await next.removeAccount(savings);
+
+          expect((await next.getActiveAccount())!.account.accountId, main.accountId);
+          expect((await (await restarted()).getActiveAccount())!.account.accountId, main.accountId);
+        });
       });
     }
 
@@ -435,6 +568,16 @@ void main() {
 
       expect((await settings.getActiveAccount())!.account.accountId, main.accountId);
       expect((await (await reopened()).getActiveAccount())!.account.accountId, main.accountId);
+    });
+
+    test('a write of the selection that throws leaves Main the active account', () async {
+      store.throwing.add('active_display_account');
+
+      await expectLater(settings.setActiveAccount(const RegularAccount(savings)), throwsStateError);
+
+      expect((await settings.getActiveAccount())!.account.accountId, main.accountId);
+      store.throwing.clear();
+      expect((await (await restarted()).getActiveAccount())!.account.accountId, main.accountId);
     });
 
     test('once the system stores again, the account is switched and kept', () async {

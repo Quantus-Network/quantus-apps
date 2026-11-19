@@ -193,23 +193,23 @@ class SettingsService {
 
   /// Stores [account] as the active account. Throws when it cannot be
   /// stored, and the stored active account is then what it was before.
+  ///
+  /// The selection is the one write of [_activeDisplayAccountKey], so it is
+  /// stored whole or not at all. [_activeAccountIdKey] and
+  /// [_activeAccountIndexKey] are only read for preferences written before
+  /// that key existed.
   Future<void> setActiveAccount(DisplayAccount account) async {
-    final previousAccount = _prefs.getString(_activeDisplayAccountKey);
-    final previousId = _prefs.getString(_activeAccountIdKey);
+    if (account is RegularAccount) {
+      final exists = (await getAccounts()).any((a) => a.accountId == account.account.accountId);
+      if (!exists) throw Exception('Account index does not exist');
+    }
+    final previous = _prefs.getString(_activeDisplayAccountKey);
     try {
       if (!await _prefs.setString(_activeDisplayAccountKey, jsonEncode(account.toJson()))) {
         throw Exception('Could not save $_activeDisplayAccountKey');
       }
-      if (account is RegularAccount) {
-        final exists = (await getAccounts()).any((a) => a.accountId == account.account.accountId);
-        if (!exists) throw Exception('Account index does not exist');
-        if (!await _setActiveAccountId(account.account.accountId)) {
-          throw Exception('Could not save $_activeAccountIdKey');
-        }
-      }
     } catch (_) {
-      await _putBack(_activeDisplayAccountKey, previousAccount);
-      await _putBack(_activeAccountIdKey, previousId);
+      await _putBack(_activeDisplayAccountKey, previous);
       rethrow;
     }
   }
@@ -246,7 +246,11 @@ class SettingsService {
     return null;
   }
 
+  /// The id of the active account, as [getActiveAccount] reads it.
   Future<String?> _getActiveAccountId() async {
+    final jsonStr = _prefs.getString(_activeDisplayAccountKey);
+    if (jsonStr != null) return DisplayAccount.fromJson(jsonDecode(jsonStr)).account.accountId;
+
     final id = _prefs.getString(_activeAccountIdKey);
     if (id != null && id.isNotEmpty) return id;
 
