@@ -29,7 +29,7 @@ class SidebarVisibilityNotifier extends Notifier<bool> {
 /// for the next start.
 final sidebarWidthProvider = NotifierProvider<SidebarWidthNotifier, double>(SidebarWidthNotifier.new);
 
-class SidebarWidthNotifier extends Notifier<double> {
+class SidebarWidthNotifier extends SavedWidthNotifier {
   static const double initial = 240;
   static const double minimum = 200;
   static const double maximum = 360;
@@ -38,31 +38,62 @@ class SidebarWidthNotifier extends Notifier<double> {
   static const settingsKey = 'desktop_sidebar_width';
 
   @override
+  double get startWidth => initial;
+
+  @override
+  double get minWidth => minimum;
+
+  @override
+  double get maxWidth => maximum;
+
+  @override
+  String get key => settingsKey;
+
+  @override
+  String get panelName => 'sidebar';
+}
+
+/// How wide a resizable panel is, in points: what the person dragged it to,
+/// within [minWidth] and [maxWidth], kept for the next start under [key].
+abstract class SavedWidthNotifier extends Notifier<double> {
+  /// Its width on a first run.
+  double get startWidth;
+
+  double get minWidth;
+  double get maxWidth;
+
+  /// Where the width is kept between runs.
+  String get key;
+
+  /// What the panel is called in what is reported of it.
+  String get panelName;
+
+  @override
   double build() {
-    final saved = ref.watch(settingsServiceProvider).getValue(settingsKey);
-    if (saved == null) return initial;
+    final saved = ref.watch(settingsServiceProvider).getValue(key);
+    if (saved == null) return startWidth;
     final width = saved is String ? double.tryParse(saved) : null;
     if (width == null || !width.isFinite) {
       // A preference of the window's, not the wallet's: it opens as it
       // would on a first run, and the stray value is reported.
-      ref.read(telemetryProvider).sendError('The saved sidebar width is unreadable', error: saved);
-      return initial;
+      ref.read(telemetryProvider).sendError('The saved $panelName width is unreadable', error: saved);
+      return startWidth;
     }
-    return width.clamp(minimum, maximum);
+    return width.clamp(minWidth, maxWidth);
   }
 
-  /// Makes the sidebar [width] wide, within [minimum] and [maximum].
-  void resizeTo(double width) => state = width.clamp(minimum, maximum);
+  /// Makes the panel [width] wide, within [minWidth] and [maxWidth].
+  void resizeTo(double width) => state = width.clamp(minWidth, maxWidth);
 
   /// Keeps the width it has now for the next start. A failure is reported:
-  /// the sidebar keeps its width until the app quits.
+  /// the panel keeps its width until the app quits.
   Future<void> save() async {
     final telemetry = ref.read(telemetryProvider);
     try {
-      await ref.read(settingsServiceProvider).setString(settingsKey, '$state');
+      await ref.read(settingsServiceProvider).setString(key, '$state');
     } catch (e) {
-      quantusPrint('Saving the sidebar width failed: $e');
-      telemetry.sendError('Saving the sidebar width failed', error: e);
+      quantusPrint('Saving the $panelName width failed: $e');
+      telemetry.sendError('Saving the $panelName width failed', error: e);
     }
   }
 }
