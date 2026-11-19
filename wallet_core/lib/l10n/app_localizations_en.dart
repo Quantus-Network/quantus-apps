@@ -2906,4 +2906,33 @@ class AppLocalizationsEn extends AppLocalizations {
   String desktopFooterVersion(String version) {
     return 'Quantus Wallet $version';
   }
+
+  @override
+  String get desktopActivityInProgress => 'In progress';
+
+  @override
+  String get desktopActivityLoadFailed => 'Couldn\'t load the activity';
+
+  @override
+  String desktopActivityRunsIn(String time) {
+    return 'in $time';
+  }
+
+  @override
+  String get desktopActivityTransaction => 'Transaction';
+
+  @override
+  String get desktopActivityAmount => 'Amount';
+
+  @override
+  String get desktopActivityThreshold => 'Threshold';
+
+  @override
+  String get desktopActivitySigners => 'Signers';
+
+  @override
+  String get desktopActivityCreatedBy => 'Created by';
+
+  @override
+  String get desktopActivityCreationFee => 'Multisig fee';
 }

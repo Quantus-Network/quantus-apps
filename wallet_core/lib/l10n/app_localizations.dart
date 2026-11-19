@@ -5293,6 +5293,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Quantus Wallet {version}'**
   String desktopFooterVersion(String version);
+
+  /// Desktop: title of the panel listing the open account's transfers still under way, above Activity
+  ///
+  /// In en, this message translates to:
+  /// **'In progress'**
+  String get desktopActivityInProgress;
+
+  /// Desktop: shown in the Activity panel when the account's history could not be loaded, above the error
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load the activity'**
+  String get desktopActivityLoadFailed;
+
+  /// Desktop: beside the Scheduled status of a reversible transfer, how long until it runs; time is like 00d:23h:41m
+  ///
+  /// In en, this message translates to:
+  /// **'in {time}'**
+  String desktopActivityRunsIn(String time);
+
+  /// Desktop: title of the panel showing one transaction, and the label over its hash
+  ///
+  /// In en, this message translates to:
+  /// **'Transaction'**
+  String get desktopActivityTransaction;
+
+  /// Desktop transaction panel: the amount a multisig proposal moves
+  ///
+  /// In en, this message translates to:
+  /// **'Amount'**
+  String get desktopActivityAmount;
+
+  /// Desktop transaction panel: how many of a new multisig's signers must approve, of how many
+  ///
+  /// In en, this message translates to:
+  /// **'Threshold'**
+  String get desktopActivityThreshold;
+
+  /// Desktop transaction panel: how many signers a new multisig has
+  ///
+  /// In en, this message translates to:
+  /// **'Signers'**
+  String get desktopActivitySigners;
+
+  /// Desktop transaction panel: the account that made a multisig
+  ///
+  /// In en, this message translates to:
+  /// **'Created by'**
+  String get desktopActivityCreatedBy;
+
+  /// Desktop transaction panel: the fee the chain charges for making a multisig
+  ///
+  /// In en, this message translates to:
+  /// **'Multisig fee'**
+  String get desktopActivityCreationFee;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
