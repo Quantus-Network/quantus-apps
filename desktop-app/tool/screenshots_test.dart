@@ -164,6 +164,22 @@ void main() {
     await tester.pumpAndSettle();
   });
 
+  _scene('shell_sidebar_hidden', (tester) async {
+    await _open(tester, FakeWalletDevice()..store([_root, _second, _encrypted]), reduceMotion: true);
+    await tester.pumpAndSettle();
+    ProviderScope.containerOf(tester.element(find.byType(DesktopShell))).read(sidebarVisibleProvider.notifier).toggle();
+    await tester.pumpAndSettle();
+  });
+
+  _scene('shell_sidebar_resized', (tester) async {
+    await _open(tester, FakeWalletDevice()..store([_root, _second, _encrypted]), reduceMotion: true);
+    await tester.pumpAndSettle();
+    ProviderScope.containerOf(
+      tester.element(find.byType(DesktopShell)),
+    ).read(sidebarWidthProvider.notifier).resizeTo(SidebarWidthNotifier.maximum);
+    await tester.pumpAndSettle();
+  });
+
   _scene('receive', (tester) async {
     await _openReceive(tester, 'Account 1');
   });

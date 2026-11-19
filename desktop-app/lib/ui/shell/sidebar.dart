@@ -6,8 +6,8 @@ import 'package:quantus_desktop_wallet/models/sidebar_selection.dart';
 import 'package:quantus_desktop_wallet/providers/shell_providers.dart';
 import 'package:quantus_desktop_wallet/ui/components/account_balance_text.dart';
 import 'package:quantus_desktop_wallet/ui/components/desktop_account_badge.dart';
+import 'package:quantus_desktop_wallet/ui/components/panel.dart';
 import 'package:quantus_desktop_wallet/ui/components/sidebar_row.dart';
-import 'package:quantus_desktop_wallet/ui/shell/shell_header.dart';
 import 'package:quantus_desktop_wallet/utils/sidebar_order.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/l10n/app_localizations.dart';
@@ -17,16 +17,15 @@ import 'package:wallet_core/providers/multisig_providers.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:wallet_core/utils/accounts_grouping.dart';
 
-/// Its header, then the accounts grouped by wallet, with Mining Rewards beneath
-/// them, and Settings and Add Account at the foot. Choosing an account makes it
-/// the active account.
+/// The Accounts panel: the accounts grouped by wallet, with Mining Rewards
+/// beneath them, and Settings and Add Account at the foot. Choosing an account
+/// makes it the active account. The shell sets its width
+/// ([sidebarWidthProvider]).
 ///
 /// Wallets keep one order (software wallets by index, then Keystone) whichever
 /// account is active, so a row never moves when it is clicked.
 class Sidebar extends ConsumerWidget {
   const Sidebar({super.key});
-
-  static const double width = 260;
 
   /// The size of the icon before a row that is not an account.
   static const double _iconSize = 15;
@@ -37,16 +36,11 @@ class Sidebar extends ConsumerWidget {
     final colors = context.colorsV3;
     final selection = ref.watch(sidebarSelectionProvider);
 
-    return Container(
-      width: width,
-      decoration: BoxDecoration(
-        color: colors.bgSurface,
-        border: Border(right: BorderSide(color: colors.borderHairline)),
-      ),
+    return Panel(
+      title: l10n.accountsSheetTitle,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const SidebarHeader(),
           Expanded(
             child: ListView(
               padding: const EdgeInsets.fromLTRB(10, 0, 10, 12),

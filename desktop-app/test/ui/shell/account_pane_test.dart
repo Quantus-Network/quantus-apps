@@ -5,10 +5,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_desktop_wallet/ui/components/balance_card.dart';
+import 'package:quantus_desktop_wallet/ui/components/panel.dart';
 import 'package:quantus_desktop_wallet/ui/components/toolbar_action.dart';
 import 'package:quantus_desktop_wallet/ui/shell/account_pane.dart';
 import 'package:quantus_desktop_wallet/ui/shell/account_toolbar.dart';
-import 'package:quantus_desktop_wallet/ui/shell/desktop_shell.dart';
 import 'package:quantus_desktop_wallet/ui/shell/shell_header.dart';
 import 'package:quantus_desktop_wallet/ui/shell/shell_sheet_view.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
@@ -44,7 +44,7 @@ Future<void> _pumpWithActive(WidgetTester tester, DisplayAccount active, {bool s
 }
 
 void main() {
-  testOnMac('the header shows the active account\'s name and the pane its balance', (tester) async {
+  testOnMac('the balance\'s panel shows the active account\'s balance, and no name above it', (tester) async {
     final balance = oneToken * BigInt.from(5);
     await pumpShell(
       tester,
@@ -57,7 +57,7 @@ void main() {
 
     final container = ProviderScope.containerOf(tester.element(find.byType(AccountPane)));
     final formatted = container.read(numberFormattingServiceProvider).formatBalance(balance);
-    expect(find.descendant(of: find.byType(PaneHeader), matching: find.text('Main')), findsOneWidget);
+    expect(find.descendant(of: find.byType(ShellTopBar), matching: find.text('Main')), findsNothing);
     expect(_inPane(find.text('Main')), findsNothing);
     expect(_inBalanceCard(find.text(formatted)), findsOneWidget);
   });
@@ -75,11 +75,11 @@ void main() {
     expect(tester.getTopLeft(_inBalanceCard(find.text('BALANCE'))).dy, lessThan(tester.getTopLeft(amount).dy));
     expect(tester.getTopLeft(symbol).dx, greaterThan(tester.getTopRight(amount).dx));
     expect(tester.widget<Text>(amount).style!.fontSize, greaterThan(2 * tester.widget<Text>(symbol).style!.fontSize!));
-    // The card runs the width of the pane, inside its margins.
+    // The card runs the width of the pane; the shell keeps the gaps around it.
     final card = tester.getRect(find.byType(BalanceCard));
     final pane = tester.getRect(find.byType(AccountPane));
-    expect(card.left - pane.left, 20);
-    expect(pane.right - card.right, 20);
+    expect(card.left, pane.left);
+    expect(card.right, pane.right);
   });
 
   testOnMac('while the balance loads the card says so, and it says when the balance is unavailable', (tester) async {
@@ -105,17 +105,13 @@ void main() {
     expect(_inBalanceCard(find.text(AppConstants.tokenSymbol)), findsNothing);
   });
 
-  testOnMac('a hairline runs under the header, across the pane', (tester) async {
+  testOnMac('the balance is a panel right under the top bar', (tester) async {
     await _pumpWithActive(tester, const RegularAccount(mainAccount));
 
-    final header = tester.getRect(find.byType(PaneHeader));
-    final pane = tester.getRect(find.byType(AccountPane));
-    final line = tester.getRect(find.byKey(DesktopShell.headerLineKey));
-    expect(line.top, header.bottom);
-    expect(line.bottom, pane.top);
-    expect(line.height, 1);
-    expect(line.left, header.left);
-    expect(line.right, header.right);
+    final bar = tester.getRect(find.byType(ShellTopBar));
+    final balance = tester.getRect(find.byType(BalanceCard));
+    expect(balance.top, bar.bottom);
+    expect(find.descendant(of: find.byType(BalanceCard), matching: find.byType(Panel)), findsOneWidget);
   });
 
   testOnMac('a local account\'s toolbar offers Receive, Send and Swap', (tester) async {

@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_desktop_wallet/services/window_chrome.dart';
 import 'package:quantus_desktop_wallet/ui/components/caps_text.dart';
+import 'package:quantus_desktop_wallet/ui/components/sidebar_row.dart';
 import 'package:quantus_desktop_wallet/ui/components/toolbar_action.dart';
 import 'package:quantus_desktop_wallet/ui/components/window_drag_area.dart';
 import 'package:quantus_desktop_wallet/ui/onboarding/import_wallet_page.dart';
@@ -46,7 +47,10 @@ Future<void> _pumpWhileBusy(WidgetTester tester) async {
 
 Finder _inSidebar(String text) => find.descendant(of: find.byType(Sidebar), matching: find.text(text));
 
-Finder _inPaneHeader(String text) => find.descendant(of: find.byType(PaneHeader), matching: find.text(text));
+/// The sidebar's selected row, when it is [name]'s: the account the wallet
+/// opened on.
+Finder _selectedRow(String name) =>
+    find.byWidgetPredicate((widget) => widget is SidebarRow && widget.isSelected && widget.title == name);
 
 Future<void> _openImport(WidgetTester tester) async {
   await tester.tap(_button('Import Wallet'));
@@ -100,7 +104,7 @@ void main() {
 
       expect(find.byType(WelcomePage), findsOneWidget);
       expect(find.byType(Sidebar), findsNothing);
-      expect(find.byType(PaneHeader), findsNothing);
+      expect(find.byType(ShellTopBar), findsNothing);
     });
 
     testOnMac('with a wallet the window shows the shell, not Welcome', (tester) async {
@@ -108,7 +112,7 @@ void main() {
       await pumpShell(tester, overrides: device.overrides);
 
       expect(find.byType(Sidebar), findsOneWidget);
-      expect(_inPaneHeader('Account 1'), findsOneWidget);
+      expect(_selectedRow('Account 1'), findsOneWidget);
       expect(find.byType(WelcomePage), findsNothing);
     });
 
@@ -299,7 +303,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(WalletCreatedPage), findsNothing);
-      expect(_inPaneHeader('Account 1'), findsOneWidget);
+      expect(_selectedRow('Account 1'), findsOneWidget);
       expect(_inSidebar('Account 1'), findsOneWidget);
       expect(_inSidebar('Encrypted Account'), findsOneWidget);
     });
@@ -484,7 +488,7 @@ void main() {
 
       expect(device.storage.mnemonics, {0: _twelveWords});
       expect(find.byType(ImportWalletPage), findsNothing);
-      expect(_inPaneHeader('Account 1'), findsOneWidget);
+      expect(_selectedRow('Account 1'), findsOneWidget);
       expect(_inSidebar('Account 1'), findsOneWidget);
     });
 
@@ -529,7 +533,7 @@ void main() {
       expect(device.scans, 2);
       expect(find.text('Account scan failed'), findsNothing);
       expect(device.storage.pendingScans, isEmpty);
-      expect(_inPaneHeader('Account 1'), findsOneWidget);
+      expect(_selectedRow('Account 1'), findsOneWidget);
     });
 
     testOnMac('Skip after a failed account scan opens the wallet and leaves the scan for the next start', (
@@ -547,7 +551,7 @@ void main() {
 
       expect(device.scans, 1);
       expect(device.storage.pendingScans, {0: 'qz(abandon)'});
-      expect(_inPaneHeader('Account 1'), findsOneWidget);
+      expect(_selectedRow('Account 1'), findsOneWidget);
     });
 
     testOnMac('any other failure is shown where the phrase was typed', (tester) async {
@@ -615,7 +619,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(WalletCreatedPage), findsNothing);
-      expect(_inPaneHeader('Account 1'), findsOneWidget);
+      expect(_selectedRow('Account 1'), findsOneWidget);
     });
 
     testOnMac('with reduced motion every line is there at once', (tester) async {

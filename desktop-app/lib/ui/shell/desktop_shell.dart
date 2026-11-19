@@ -13,6 +13,8 @@ import 'package:quantus_desktop_wallet/providers/shortcut_bindings_provider.dart
 import 'package:quantus_desktop_wallet/providers/wallet_presence_provider.dart';
 import 'package:quantus_desktop_wallet/services/app_exit.dart';
 import 'package:quantus_desktop_wallet/ui/approval/login_password_dialog.dart';
+import 'package:quantus_desktop_wallet/ui/components/panel.dart';
+import 'package:quantus_desktop_wallet/ui/components/panel_resize_handle.dart';
 import 'package:quantus_desktop_wallet/ui/onboarding/boot_intro.dart';
 import 'package:quantus_desktop_wallet/ui/onboarding/onboarding_flow.dart';
 import 'package:quantus_desktop_wallet/ui/shell/account_pane.dart';
@@ -32,13 +34,14 @@ import 'package:wallet_core/services/wallet_creation_service.dart';
 import 'package:wallet_core/utils/provider_reader.dart';
 
 /// The window's frame: the menus, and under them onboarding until the device
-/// has a wallet, then the sidebar, the pane for what the sidebar has selected
-/// under its header, and the sheet over them when one is open.
+/// has a wallet, then the top bar over the panels (the sidebar, and beside it
+/// the panes for what the sidebar has selected), and the sheet over them when
+/// one is open.
 class DesktopShell extends ConsumerStatefulWidget {
   const DesktopShell({super.key});
 
-  /// The hairline between the header and the pane under it.
-  static const headerLineKey = Key('shell-header-line');
+  /// The bar across the top of the window, which sheets hang from.
+  static const topBarKey = Key('shell-top-bar');
 
   @override
   ConsumerState<DesktopShell> createState() => _DesktopShellState();
@@ -51,17 +54,17 @@ class _DesktopShellState extends ConsumerState<DesktopShell> {
   /// Whether the boot intro is covering Welcome.
   bool _isIntroPlaying = false;
 
-  /// The hairline under the header, which sheets hang from.
-  final _headerLine = GlobalKey();
+  /// The top bar, which sheets hang from.
+  final _topBar = GlobalKey();
 
-  /// Where the hairline under the header ends, in the coordinates sheets are
-  /// drawn in. Measured rather than assumed: on Windows and Linux the menu
-  /// bar sits in the window above the header.
+  /// Where the top bar ends, in the coordinates sheets are drawn in.
+  /// Measured rather than assumed: on Windows and Linux the menu bar sits in
+  /// the window above it.
   double _sheetTop() {
-    final line = _headerLine.currentContext?.findRenderObject() as RenderBox?;
-    if (line == null) throw StateError('A sheet was opened with no header to hang from.');
+    final bar = _topBar.currentContext?.findRenderObject() as RenderBox?;
+    if (bar == null) throw StateError('A sheet was opened with no top bar to hang from.');
     final overlay = Navigator.of(context, rootNavigator: true).overlay!.context.findRenderObject()! as RenderBox;
-    return line.localToGlobal(Offset(0, line.size.height), ancestor: overlay).dy;
+    return bar.localToGlobal(Offset(0, bar.size.height), ancestor: overlay).dy;
   }
 
   void _present(ShellSheet? sheet) {
@@ -239,26 +242,38 @@ class _DesktopShellState extends ConsumerState<DesktopShell> {
   }
 
   Widget _wallet(bool isSidebarVisible) {
-    return Row(
+    final sidebarWidth = ref.watch(sidebarWidthProvider);
+    final sidebar = ref.read(sidebarWidthProvider.notifier);
+
+    return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (isSidebarVisible) const Sidebar(),
+        KeyedSubtree(
+          key: _topBar,
+          child: const ShellTopBar(key: DesktopShell.topBarKey),
+        ),
         Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const PaneHeader(),
-              KeyedSubtree(
-                key: _headerLine,
-                child: const MenuDivider(key: DesktopShell.headerLineKey),
-              ),
-              Expanded(
-                child: switch (ref.watch(sidebarSelectionProvider)) {
-                  SidebarSelection.account => const AccountPane(),
-                  SidebarSelection.miningRewards => const MiningRewardsPane(),
-                },
-              ),
-            ],
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(Panel.gap, 0, Panel.gap, Panel.gap),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (isSidebarVisible) ...[
+                  SizedBox(width: sidebarWidth, child: const Sidebar()),
+                  PanelResizeHandle(
+                    width: sidebarWidth,
+                    onResize: sidebar.resizeTo,
+                    onResizeEnd: () => unawaited(sidebar.save()),
+                  ),
+                ],
+                Expanded(
+                  child: switch (ref.watch(sidebarSelectionProvider)) {
+                    SidebarSelection.account => const AccountPane(),
+                    SidebarSelection.miningRewards => const MiningRewardsPane(),
+                  },
+                ),
+              ],
+            ),
           ),
         ),
       ],
@@ -266,9 +281,9 @@ class _DesktopShellState extends ConsumerState<DesktopShell> {
   }
 }
 
-/// Where a sheet goes: hanging from the hairline under the header, [top]
-/// down the window, centred on the pane beside the sidebar, sliding down
-/// from under the header as [animation] runs.
+/// Where a sheet goes: hanging from the bottom of the top bar, [top] down
+/// the window, centred on the panels beside the sidebar, sliding down from
+/// under the bar as [animation] runs.
 class _SheetPlacement extends ConsumerWidget {
   const _SheetPlacement({required this.animation, required this.top, required this.child});
 
@@ -276,14 +291,18 @@ class _SheetPlacement extends ConsumerWidget {
   final double top;
   final Widget child;
 
-  /// Space kept between a sheet and the pane's sides.
+  /// Space kept between a sheet and the panels' sides.
   static const double _sideMargin = 20;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final panelsLeft = ref.watch(sidebarVisibleProvider)
+        ? Panel.gap + ref.watch(sidebarWidthProvider) + Panel.gap
+        : Panel.gap;
+
     return Padding(
-      padding: EdgeInsets.only(left: ref.watch(sidebarVisibleProvider) ? Sidebar.width : 0, top: top),
-      // Clipped at the hairline, so the sheet comes out from under the header.
+      padding: EdgeInsets.only(left: panelsLeft, right: Panel.gap, top: top),
+      // Clipped at the bar, so the sheet comes out from under it.
       child: ClipRect(
         child: Align(
           alignment: Alignment.topCenter,
