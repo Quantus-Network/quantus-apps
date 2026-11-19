@@ -773,7 +773,8 @@ class _SendSheetState extends ConsumerState<SendSheet> {
           const Loader(size: 12)
         else ...[
           Text(signer == null ? cost(fee) : l10n.desktopProposeCostPaidBy(cost(fee)), style: context.sendBody()),
-          if (signer != null) ...[const SizedBox(width: 8), AccountLabel(account: signer)],
+          // The name takes what the cost leaves it, and is cut short there.
+          if (signer != null) ...[const SizedBox(width: 8), Flexible(child: AccountLabel(account: signer))],
         ],
       ],
       if (feeState.failed) ...[const SizedBox(width: 4), retry],

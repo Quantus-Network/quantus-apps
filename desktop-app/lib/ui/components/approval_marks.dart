@@ -1,39 +1,79 @@
+import 'dart:math' as math;
+
 import 'package:flutter/widgets.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 
-/// One mark for each approval a multisig's proposal needs, the first
-/// [approved] of them filled. What they count is said in words beside them,
-/// so a screen reader passes them over.
+/// The approvals a multisig's proposal needs, and how many of them it has.
+/// Up to [mostCircles] it is one circle for each, the first [approved] of
+/// them filled. A multisig can need a hundred, more than a line holds: past
+/// that it is one bar, filled by the share approved.
+///
+/// What they count is said in words beside them, so a screen reader passes
+/// them over.
 class ApprovalMarks extends StatelessWidget {
   const ApprovalMarks({super.key, required this.approved, required this.needed});
 
   final int approved;
   final int needed;
 
+  /// The most approvals drawn as a circle each.
+  static const mostCircles = 10;
+
+  static const barKey = Key('approval-marks-bar');
+  static const barFillKey = Key('approval-marks-bar-fill');
+
   static const double _size = 10;
   static const double _gap = 5;
+
+  static const double _barWidth = 96;
+  static const double _barHeight = 4;
 
   @override
   Widget build(BuildContext context) {
     final colors = context.colorsV3;
 
     return ExcludeSemantics(
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          for (var i = 0; i < needed; i++)
-            Container(
-              width: _size,
-              height: _size,
-              margin: EdgeInsets.only(left: i == 0 ? 0 : _gap),
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: i < approved ? colors.semanticSage : null,
-                border: Border.all(color: i < approved ? colors.semanticSage : colors.borderEmphasis, width: 1.5),
-              ),
+      child: needed > mostCircles
+          ? _bar(context)
+          : Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                for (var i = 0; i < needed; i++)
+                  Container(
+                    width: _size,
+                    height: _size,
+                    margin: EdgeInsets.only(left: i == 0 ? 0 : _gap),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: i < approved ? colors.semanticSage : null,
+                      border: Border.all(color: i < approved ? colors.semanticSage : colors.borderEmphasis, width: 1.5),
+                    ),
+                  ),
+              ],
             ),
-        ],
-      ),
+    );
+  }
+
+  Widget _bar(BuildContext context) {
+    final colors = context.colorsV3;
+    final radius = BorderRadius.circular(context.radiusV3.pill);
+    // One approval of a hundred would be a sliver: it is at least a dot.
+    final filled = approved <= 0 ? 0.0 : math.max(_barHeight, _barWidth * math.min(approved, needed) / needed);
+
+    return Container(
+      key: barKey,
+      width: _barWidth,
+      height: _barHeight,
+      alignment: AlignmentDirectional.centerStart,
+      decoration: BoxDecoration(color: colors.borderEmphasis, borderRadius: radius),
+      child: filled == 0
+          ? null
+          : Container(
+              key: barFillKey,
+              width: filled,
+              height: _barHeight,
+              decoration: BoxDecoration(color: colors.semanticSage, borderRadius: radius),
+            ),
     );
   }
 }

@@ -287,6 +287,35 @@ void main() {
     });
   }
 
+  // A multisig of a hundred signers that needs fifty: more approvals than a
+  // line holds as circles.
+  for (final (name, isReceipt) in [
+    ('propose_review_many_approvals', false),
+    ('propose_receipt_many_approvals', true),
+  ]) {
+    _scene(name, (tester) async {
+      await _openPropose(
+        tester,
+        multisig: MultisigAccount(
+          name: _team.name,
+          accountId: _team.accountId,
+          signers: [_root.accountId, for (var i = 1; i < 100; i++) 'qzSigner$i'],
+          threshold: 50,
+          nonce: BigInt.zero,
+          myMemberAccountId: _root.accountId,
+        ),
+      );
+      await _fillSend(tester);
+      await _tapAndSettle(tester, find.byKey(SendSheet.reviewKey));
+      if (!isReceipt) return;
+      await _tapAndSettle(tester, find.byKey(SendSheet.sendKey));
+      ProviderScope.containerOf(
+        tester.element(find.byType(ShellSheetView)),
+      ).read(multisigProposalConfirmationsProvider.notifier).settle('0xhash', SendConfirmation.confirmed);
+      await tester.pumpAndSettle();
+    });
+  }
+
   _scene('send_private_form', (tester) async {
     await _openPrivateSend(tester);
     await _fillSend(tester);
@@ -567,7 +596,8 @@ final _team = MultisigAccount(
 
 /// Opens the wallet on the multisig, which holds 4,800 tokens, and its
 /// Propose. The member's own account holds [memberHolds].
-Future<FakeSendChain> _openPropose(WidgetTester tester, {num memberHolds = 1250}) async {
+Future<FakeSendChain> _openPropose(WidgetTester tester, {num memberHolds = 1250, MultisigAccount? multisig}) async {
+  final team = multisig ?? _team;
   _useEmptyPreferences(tester);
   useFakeCheckphrases((address) async => 'Lantern-Copper-Meadow-Quartz-Harbor');
   final chain = FakeSendChain()
@@ -577,8 +607,8 @@ Future<FakeSendChain> _openPropose(WidgetTester tester, {num memberHolds = 1250}
     tester,
     shellOverrides(
       accounts: const [_root, _second],
-      settings: FakeSettingsService(activeAccount: MultisigDisplayAccount(_team), multisigs: [_team]),
-      balanceOf: (id) async => id == _team.accountId
+      settings: FakeSettingsService(activeAccount: MultisigDisplayAccount(team), multisigs: [team]),
+      balanceOf: (id) async => id == team.accountId
           ? tokens(4800)
           : id == _root.accountId
           ? tokens(memberHolds)

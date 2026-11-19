@@ -202,22 +202,33 @@ class SendTotal extends StatelessWidget {
           if (signer == null)
             _FigureRow(label: label, value: SendSummary._figure(row), isStrong: true)
           else
-            _SummaryRow(
-              label: Row(
-                mainAxisSize: MainAxisSize.min,
+            // The figure is whole whatever the account is called: the name
+            // takes what is left of the line, and is cut short there.
+            Padding(
+              padding: _SummaryRow.padding,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Flexible(
-                    child: AccountLabel(
-                      account: signer,
-                      style: text.bodyEmphasis.copyWith(color: colors.textContent),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Flexible(
+                          child: AccountLabel(
+                            account: signer,
+                            style: text.bodyEmphasis.copyWith(color: colors.textContent),
+                          ),
+                        ),
+                        // A word's space after the name.
+                        const SizedBox(width: 4),
+                        Text(label, style: text.bodyEmphasis.copyWith(color: colors.textContent)),
+                      ],
                     ),
                   ),
-                  // A word's space after the name.
-                  const SizedBox(width: 4),
-                  Text(label, style: text.bodyEmphasis.copyWith(color: colors.textContent)),
+                  const SizedBox(width: _SummaryRow.gap),
+                  _FigureText(SendSummary._figure(row), isStrong: true),
                 ],
               ),
-              value: _FigureText(SendSummary._figure(row), isStrong: true),
             ),
       ],
     );
@@ -231,14 +242,19 @@ class _SummaryRow extends StatelessWidget {
   final Widget label;
   final Widget value;
 
+  static const padding = EdgeInsets.symmetric(vertical: 9);
+
+  /// The least space between the label and what stands for it.
+  static const double gap = 16;
+
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 9),
+      padding: padding,
       child: Row(
         children: [
           label,
-          const SizedBox(width: 16),
+          const SizedBox(width: gap),
           Expanded(
             child: Align(alignment: AlignmentDirectional.centerEnd, child: value),
           ),

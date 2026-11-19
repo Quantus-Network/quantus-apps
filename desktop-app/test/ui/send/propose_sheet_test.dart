@@ -80,12 +80,13 @@ List<Override> _overrides({
   FakeUserApproval? approval,
   num teamHolds = 4800,
   num mainHolds = 1250,
+  Account member = mainAccount,
 }) {
   _mainHolds = _qtc(mainHolds);
   final others = {'qzTeam': _qtc(teamHolds), 'qzSavings': oneToken, 'qzVault': oneToken};
   return [
     ...shellOverrides(
-      accounts: const [mainAccount, savingsAccount, vaultAccount],
+      accounts: [member, savingsAccount, vaultAccount],
       settings: FakeSettingsService(activeAccount: MultisigDisplayAccount(multisig), multisigs: [multisig]),
       balanceOf: (accountId) async =>
           accountId == 'qzMain' ? _mainHolds : others[accountId] ?? (throw StateError('no balance set for $accountId')),
@@ -105,6 +106,7 @@ Future<void> _setMainHolds(WidgetTester tester, num tokens) async {
 }
 
 /// Opens the wallet on the multisig and presses Propose in the toolbar.
+/// [member] stands for Main as the multisig's member in this wallet.
 Future<FakeSendChain> _openPropose(
   WidgetTester tester, {
   FakeSendChain? chain,
@@ -112,6 +114,8 @@ Future<FakeSendChain> _openPropose(
   num teamHolds = 4800,
   num mainHolds = 1250,
   Size? window,
+  MultisigAccount? multisig,
+  Account member = mainAccount,
 }) async {
   _opened.clear();
   _shared.clear();
@@ -119,11 +123,12 @@ Future<FakeSendChain> _openPropose(
   await pumpShell(
     tester,
     overrides: _overrides(
-      multisig: _team,
+      multisig: multisig ?? _team,
       chain: chain,
       approval: approval,
       teamHolds: teamHolds,
       mainHolds: mainHolds,
+      member: member,
     ),
   );
   if (window != null) {
@@ -395,6 +400,16 @@ void main() {
       expect(_inSheet(find.text('0.1 QTC')), findsOneWidget);
       expect(_accountBeside(tester, 'pays', 'Main'), findsOneWidget);
       expect(_inSheet(find.text('0.6012 QTC')), findsOneWidget);
+      // What is paid in all ends where the lines over it end, and its
+      // account starts where they start.
+      expect(
+        tester.getRect(_inSheet(find.text('0.6012 QTC'))).right,
+        tester.getRect(_inSheet(find.text('0.1 QTC'))).right,
+      );
+      expect(
+        tester.getRect(_accountBeside(tester, 'pays', 'Main')).left,
+        tester.getRect(_inSheet(find.text('Proposal fee'))).left,
+      );
       // The phone's labels are not the desktop's.
       expect(_inSheet(find.text('You pay')), findsNothing);
       expect(_inSheet(find.text('THRESHOLD')), findsNothing);
@@ -698,6 +713,80 @@ void main() {
       expect(_typed(tester, SendSheet.addressFieldKey), isEmpty);
       expect(_typed(tester, SendSheet.amountFieldKey), isEmpty);
       expect(_inSheet(find.byType(SendSummary)), findsNothing);
+    });
+  });
+
+  group('what does not fit', () {
+    /// The chain lets a multisig have a hundred signers.
+    final crowd = MultisigAccount(
+      name: 'Team',
+      accountId: 'qzTeam',
+      signers: ['qzMain', for (var i = 1; i < 100; i++) 'qzSigner$i'],
+      threshold: 50,
+      nonce: BigInt.zero,
+      myMemberAccountId: 'qzMain',
+    );
+
+    /// Whether all of [finder] is inside the sheet.
+    void expectInSheet(WidgetTester tester, Finder finder, String what) {
+      final sheet = tester.getRect(find.byType(ShellSheetView));
+      final rect = tester.getRect(finder);
+      expect(rect.left, greaterThanOrEqualTo(sheet.left), reason: what);
+      expect(rect.right, lessThanOrEqualTo(sheet.right), reason: what);
+    }
+
+    testOnMac('a multisig that needs fifty approvals draws them as a bar, its count whole, on the review and the '
+        'receipt in the smallest window', (tester) async {
+      await _openPropose(tester, window: _smallestWindow, multisig: crowd);
+
+      await _toReview(tester);
+
+      expect(tester.takeException(), isNull);
+      expect(find.byKey(ApprovalMarks.barKey), findsOneWidget);
+      expect(find.byKey(ApprovalMarks.barFillKey), findsNothing);
+      expectInSheet(tester, _inSheet(find.text('50 of 100')), 'the count on the review');
+      expect(
+        tester.getRect(find.byKey(ApprovalMarks.barKey)).right,
+        lessThan(tester.getRect(_inSheet(find.text('50 of 100'))).left),
+      );
+
+      await _tap(tester, SendSheet.sendKey);
+      _settle(tester, SendConfirmation.confirmed);
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      expect(find.byKey(ApprovalMarks.barFillKey), findsOneWidget);
+      expectInSheet(tester, _inSheet(find.text('1 of 50')), 'the count on the receipt');
+    });
+
+    testOnMac('a member\'s account with a very long name is cut short wherever it is named, and what it pays stays '
+        'whole, in the smallest window', (tester) async {
+      final name = 'Treasury' * 11;
+      await _openPropose(
+        tester,
+        window: _smallestWindow,
+        member: Account(walletIndex: 0, index: 0, name: name, accountId: 'qzMain'),
+      );
+
+      await _fill(tester);
+
+      expect(tester.takeException(), isNull, reason: 'the form');
+      expectInSheet(tester, _inSheet(find.text('0.6012 QTC, paid by')), 'the cost on the form');
+      expectInSheet(tester, _inSheet(find.text(name)), 'the name on the form');
+
+      await _tap(tester, SendSheet.reviewKey);
+
+      expect(tester.takeException(), isNull, reason: 'the review');
+      expectInSheet(tester, _inSheet(find.text('0.6012 QTC')), 'the total on the review');
+      expectInSheet(tester, _inSheet(find.text('pays')), 'who pays on the review');
+
+      await _tap(tester, SendSheet.sendKey);
+      _settle(tester, SendConfirmation.confirmed);
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull, reason: 'the receipt');
+      expectInSheet(tester, _inSheet(find.text('0.6012 QTC')), 'the total on the receipt');
+      expectInSheet(tester, _inSheet(find.text('paid')), 'who paid on the receipt');
     });
   });
 
