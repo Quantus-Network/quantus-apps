@@ -601,6 +601,16 @@ void main() {
   });
 
   group('the review', () {
+    testOnMac('the row with the account\'s badge is as tall as the rows without', (tester) async {
+      await _openSend(tester);
+
+      await _toReview(tester);
+
+      final from = tester.getCenter(_inSheet(find.text('From'))).dy;
+      final fee = tester.getCenter(_inSheet(find.text('Network fee'))).dy;
+      expect(fee - from, moreOrLessEquals(34, epsilon: 0.5));
+    });
+
     testOnMac('names the account the send leaves by its badge and its name', (tester) async {
       await _openSend(tester);
 
