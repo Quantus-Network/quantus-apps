@@ -114,6 +114,7 @@ class GlobalHistoryPollingService {
       quantusPrint('Performing global history poll for active account...');
 
       invalidateActiveAccountBalance(_ref);
+      invalidateShownAccountBalances(_ref);
       await silentRefreshActiveAccount(_ref);
       invalidateActiveMultisigProposals(_ref);
 
@@ -141,6 +142,8 @@ class GlobalHistoryPollingService {
       quantusPrint('Skipping manual refresh - offline');
       return;
     }
+
+    invalidateShownAccountBalances(_ref);
 
     if (activeAccountId(_ref) != null) {
       // Use the shared helper so encrypted accounts reload wormhole UTXO state
