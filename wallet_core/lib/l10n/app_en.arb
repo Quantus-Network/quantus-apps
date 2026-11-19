@@ -4151,5 +4151,74 @@
     "desktopProposeWaiting": "Waiting for the network to create the proposal.",
     "@desktopProposeWaiting": {
       "description": "Desktop Propose receipt: the line under the headline while the proposal's transaction was broadcast and the network has not yet created the proposal"
+    },
+    "desktopFooterMainnet": "Mainnet",
+    "@desktopFooterMainnet": {
+      "description": "Desktop footer: the network the wallet is on, beside a dot that is green while online"
+    },
+    "desktopFooterTestnet": "Testnet",
+    "@desktopFooterTestnet": {
+      "description": "Desktop footer: the network the wallet is on when built for the test network"
+    },
+    "desktopFooterOffline": "Offline",
+    "@desktopFooterOffline": {
+      "description": "Desktop footer: in place of the network's name while the computer has no network"
+    },
+    "desktopFooterSyncing": "Syncing",
+    "@desktopFooterSyncing": {
+      "description": "Desktop footer: the wallet is reading its balance and activity from the network now"
+    },
+    "desktopFooterSyncedJustNow": "Synced just now",
+    "@desktopFooterSyncedJustNow": {
+      "description": "Desktop footer: the wallet's balance was read from the network less than a minute ago"
+    },
+    "desktopFooterSyncedMinutesAgo": "Synced {minutes}m ago",
+    "@desktopFooterSyncedMinutesAgo": {
+      "description": "Desktop footer: how long ago the wallet's balance was last read from the network, in minutes",
+      "placeholders": {
+        "minutes": {
+          "type": "int"
+        }
+      }
+    },
+    "desktopFooterSyncedHoursAgo": "Synced {hours}h ago",
+    "@desktopFooterSyncedHoursAgo": {
+      "description": "Desktop footer: how long ago the wallet's balance was last read from the network, in hours",
+      "placeholders": {
+        "hours": {
+          "type": "int"
+        }
+      }
+    },
+    "desktopFooterSyncedDaysAgo": "Synced {days}d ago",
+    "@desktopFooterSyncedDaysAgo": {
+      "description": "Desktop footer: how long ago the wallet's balance was last read from the network, in days",
+      "placeholders": {
+        "days": {
+          "type": "int"
+        }
+      }
+    },
+    "desktopFooterSyncFailed": "Couldn't sync",
+    "@desktopFooterSyncFailed": {
+      "description": "Desktop footer: the latest read of the wallet's balance from the network failed"
+    },
+    "desktopFooterBlock": "Block {number}",
+    "@desktopFooterBlock": {
+      "description": "Desktop footer: the chain's latest block, its number already formatted with digit grouping",
+      "placeholders": {
+        "number": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopFooterVersion": "Quantus Wallet {version}",
+    "@desktopFooterVersion": {
+      "description": "Desktop footer: the app's name and version, at the footer's right end",
+      "placeholders": {
+        "version": {
+          "type": "String"
+        }
+      }
     }
 }
