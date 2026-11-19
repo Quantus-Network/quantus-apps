@@ -2482,6 +2482,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get desktopMenuPreviousSidebarItem => 'Previous Sidebar Item';
 
   @override
+  String get desktopMenuRefresh => 'Refresh';
+
+  @override
   String get desktopMenuWindow => 'Window';
 
   @override
