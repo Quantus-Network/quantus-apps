@@ -61,7 +61,7 @@ ActivityDetail activityDetailOf(
   required AppLocalizations l10n,
   bool isPrivate = false,
 }) {
-  final isSend = _isSend(tx, accountId);
+  final isSend = isActivitySend(tx, accountId: accountId);
   return ActivityDetail(
     title: _title(tx, isSend: isSend, isPrivate: isPrivate, l10n: l10n),
     status: _isInProcess(tx)
@@ -74,9 +74,10 @@ ActivityDetail activityDetailOf(
   );
 }
 
-/// A multisig's proposals are told as sends: what they move leaves it. A
-/// multisig's creation is a send only for its creator, who paid for it.
-bool _isSend(TransactionEvent tx, String accountId) =>
+/// Whether [tx] took money out of the account [accountId]. A multisig's
+/// proposals are told as sends: what they move leaves it. A multisig's
+/// creation is a send only for its creator, who paid for it.
+bool isActivitySend(TransactionEvent tx, {required String accountId}) =>
     switch (tx) {
       PendingMultisigProposalEvent() ||
       PendingMultisigExecutionEvent() ||
