@@ -8,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:wallet_core/l10n/app_localizations.dart';
 import 'package:wallet_core/providers/account_providers.dart';
 import 'package:wallet_core/providers/l10n_provider.dart';
+import 'package:wallet_core/providers/multisig_proposal_confirmations_provider.dart';
 import 'package:wallet_core/providers/multisig_providers.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:wallet_core/send/multisig_propose_strategy.dart';
@@ -86,6 +87,22 @@ void main() {
         (outcome as SendSubmitted).terminal.explorerUrl,
         '${AppConstants.explorerEndpoint}/multisig-proposal-created/0xproposal',
       );
+    });
+
+    testWidgets('a submitted proposal is confirmed only once the wallet has seen its transaction create it', (
+      tester,
+    ) async {
+      final ref = await pumpRef(tester, overrides: overrides());
+
+      final confirmation = ((await submit(ref)) as SendSubmitted).confirmation!;
+
+      expect(ref.read(confirmation), SendConfirmation.pending);
+
+      ref.read(multisigProposalConfirmationsProvider.notifier).settle('0xother', SendConfirmation.confirmed);
+      expect(ref.read(confirmation), SendConfirmation.pending);
+
+      ref.read(multisigProposalConfirmationsProvider.notifier).settle('0xproposal', SendConfirmation.confirmed);
+      expect(ref.read(confirmation), SendConfirmation.confirmed);
     });
 
     group('what the member holds', () {

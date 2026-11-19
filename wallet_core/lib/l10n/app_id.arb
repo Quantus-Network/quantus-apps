@@ -767,5 +767,9 @@
   "desktopProposePays": "membayar",
   "desktopProposePaid": "telah membayar",
   "desktopProposeSubmit": "Kirim Proposal",
-  "desktopProposeProposed": "{amount} diajukan"
+  "desktopProposeProposed": "{amount} diajukan",
+  "desktopProposeConfirming": "Mengonfirmasi",
+  "desktopProposeNotConfirmed": "Belum terkonfirmasi",
+  "desktopProposeProposingAmount": "Mengajukan {amount}",
+  "desktopProposeWaiting": "Menunggu jaringan membuat proposal."
 }

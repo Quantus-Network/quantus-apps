@@ -4120,11 +4120,32 @@
     },
     "desktopProposeProposed": "{amount} proposed",
     "@desktopProposeProposed": {
-      "description": "Desktop Propose receipt: the headline; the amount comes with its token symbol, as in \"250 QTC proposed\"",
+      "description": "Desktop Propose receipt: the headline once the network has created the proposal; the amount comes with its token symbol, as in \"250 QTC proposed\"",
       "placeholders": {
         "amount": {
           "type": "String"
         }
       }
+    },
+    "desktopProposeConfirming": "Confirming",
+    "@desktopProposeConfirming": {
+      "description": "Desktop Propose receipt: small capitals over the receipt while the network has not yet created the proposal"
+    },
+    "desktopProposeNotConfirmed": "Not confirmed",
+    "@desktopProposeNotConfirmed": {
+      "description": "Desktop Propose receipt: small capitals over the receipt when the wallet stopped waiting for the network to create the proposal"
+    },
+    "desktopProposeProposingAmount": "Proposing {amount}",
+    "@desktopProposeProposingAmount": {
+      "description": "Desktop Propose receipt: the headline until the network has created the proposal; the amount comes with its token symbol, as in \"Proposing 250 QTC\"",
+      "placeholders": {
+        "amount": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopProposeWaiting": "Waiting for the network to create the proposal.",
+    "@desktopProposeWaiting": {
+      "description": "Desktop Propose receipt: the line under the headline while the proposal's transaction was broadcast and the network has not yet created the proposal"
     }
 }

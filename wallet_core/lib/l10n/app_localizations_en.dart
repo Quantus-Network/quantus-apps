@@ -2840,4 +2840,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String desktopProposeProposed(String amount) {
     return '$amount proposed';
   }
+
+  @override
+  String get desktopProposeConfirming => 'Confirming';
+
+  @override
+  String get desktopProposeNotConfirmed => 'Not confirmed';
+
+  @override
+  String desktopProposeProposingAmount(String amount) {
+    return 'Proposing $amount';
+  }
+
+  @override
+  String get desktopProposeWaiting => 'Waiting for the network to create the proposal.';
 }

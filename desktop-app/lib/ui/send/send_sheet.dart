@@ -158,6 +158,11 @@ class _SendSheetState extends ConsumerState<SendSheet> {
   SendTerminalContent? _submitted;
   List<SendReviewRow> _submittedRows = const [];
 
+  /// What becomes of the submitted send's transaction, where its receipt
+  /// waits to know: a proposal's, which is no proposal until the chain has
+  /// created it.
+  ProviderListenable<SendConfirmation>? _confirmation;
+
   @override
   void initState() {
     super.initState();
@@ -411,11 +416,12 @@ class _SendSheetState extends ConsumerState<SendSheet> {
     if (!mounted) return;
 
     switch (outcome) {
-      case SendSubmitted(:final terminal):
+      case SendSubmitted(:final terminal, :final confirmation):
         setState(() {
           _isSending = false;
           _submitted = terminal;
           _submittedRows = rows;
+          _confirmation = confirmation;
           _step = _Step.receipt;
         });
       case SendFailed(:final message):
@@ -1079,10 +1085,45 @@ class _SendSheetState extends ConsumerState<SendSheet> {
     onPressed: () => ref.read(openExternalUrlProvider)(Uri.parse(page)),
   );
 
+  /// The line over the receipt: what became of the send, as far as known.
+  Widget _receiptStatus(AppLocalizations l10n, SendConfirmation confirmation) {
+    final colors = context.colorsV3;
+    final (color, label) = switch (confirmation) {
+      SendConfirmation.confirmed => (colors.semanticSage, l10n.desktopSendSubmitted),
+      SendConfirmation.pending => (colors.textMuted, l10n.desktopProposeConfirming),
+      SendConfirmation.unconfirmed => (colors.semanticEmber, l10n.desktopProposeNotConfirmed),
+    };
+    final style = context.sendCaps(color: color, spacing: 2.4);
+    const markSize = 13.0;
+    final mark = switch (confirmation) {
+      SendConfirmation.confirmed => Icon(CupertinoIcons.checkmark_alt, size: markSize, color: color),
+      // Waiting has a part that moves, unless the system asks for none.
+      SendConfirmation.pending =>
+        MediaQuery.disableAnimationsOf(context) ? null : TerminalSpinner(style: style.copyWith(letterSpacing: 0)),
+      SendConfirmation.unconfirmed => Icon(CupertinoIcons.exclamationmark_circle, size: markSize, color: color),
+    };
+
+    // As high with one mark as with another, or with none: what is under it
+    // stays where it is when the send's fate is learned.
+    return SizedBox(
+      height: markSize,
+      child: Row(
+        children: [
+          if (mark != null) ...[mark, const SizedBox(width: 8)],
+          CapsText(label, style: style),
+        ],
+      ),
+    );
+  }
+
   List<Widget> _receipt(AppLocalizations l10n) {
     final colors = context.colorsV3;
     final submitted = _submitted;
     if (submitted == null) throw StateError('The receipt step has no submitted send.');
+    // A receipt that waits for nothing says what holds from the broadcast on.
+    final waitsFor = _confirmation;
+    final confirmation = waitsFor == null ? SendConfirmation.confirmed : ref.watch(waitsFor);
+    final isConfirmed = confirmation == SendConfirmation.confirmed;
     final pages = _explorerPages(submitted);
     // Only macOS has a share picker to hand the pages to.
     final canShare = pages.isNotEmpty && defaultTargetPlatform == TargetPlatform.macOS;
@@ -1094,16 +1135,14 @@ class _SendSheetState extends ConsumerState<SendSheet> {
 
     return [
       const SizedBox(height: 26),
-      Row(
-        children: [
-          Icon(CupertinoIcons.checkmark_alt, size: 13, color: colors.semanticSage),
-          const SizedBox(width: 8),
-          CapsText(l10n.desktopSendSubmitted, style: context.sendCaps(color: colors.semanticSage, spacing: 2.4)),
-        ],
-      ),
+      _receiptStatus(l10n, confirmation),
       const SizedBox(height: 14),
       Text(
-        proposed == null ? submitted.headline : l10n.desktopProposeProposed(proposed),
+        proposed == null
+            ? submitted.headline
+            : isConfirmed
+            ? l10n.desktopProposeProposed(proposed)
+            : l10n.desktopProposeProposingAmount(proposed),
         style: context.themeTextV3.titleHero.copyWith(
           fontSize: 26,
           height: 1.05,
@@ -1112,7 +1151,17 @@ class _SendSheetState extends ConsumerState<SendSheet> {
         ),
       ),
       const SizedBox(height: 10),
-      Text(submitted.subline, style: context.sendBody()),
+      // Until its transaction has created it, a proposal is only on its way
+      // to being one: the wait is said in place of what follows a proposal,
+      // and so is the wallet having stopped waiting.
+      switch (confirmation) {
+        SendConfirmation.confirmed => Text(submitted.subline, style: context.sendBody()),
+        SendConfirmation.pending => Text(l10n.desktopProposeWaiting, style: context.sendBody()),
+        SendConfirmation.unconfirmed => Text(
+          l10n.multisigProposeTimeoutToast,
+          style: context.sendBody(color: colors.semanticEmber),
+        ),
+      },
       const SizedBox(height: 24),
       Flexible(
         child: SingleChildScrollView(
@@ -1123,14 +1172,23 @@ class _SendSheetState extends ConsumerState<SendSheet> {
             rows: _submittedRows,
             feeLabel: sendFeeLabel(_strategy, l10n),
             signer: _signer,
-            // Proposing is the proposer's own approval, the first.
-            approvals: _signer == null ? null : 1,
+            // Proposing is the proposer's own approval, the first, once
+            // there is a proposal to have approved.
+            approvals: _signer == null
+                ? null
+                : isConfirmed
+                ? 1
+                : 0,
           ),
         ),
       ),
       SendTotal(
         rows: _submittedRows,
-        label: _signer == null ? l10n.desktopSendYouPaid : l10n.desktopProposePaid,
+        label: _signer == null
+            ? l10n.desktopSendYouPaid
+            : isConfirmed
+            ? l10n.desktopProposePaid
+            : l10n.desktopProposePays,
         signer: _signer,
       ),
       // A send that took several transactions names each, with its own page.

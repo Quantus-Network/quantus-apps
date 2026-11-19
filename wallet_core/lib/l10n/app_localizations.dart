@@ -5180,11 +5180,35 @@ abstract class AppLocalizations {
   /// **'Submit Proposal'**
   String get desktopProposeSubmit;
 
-  /// Desktop Propose receipt: the headline; the amount comes with its token symbol, as in "250 QTC proposed"
+  /// Desktop Propose receipt: the headline once the network has created the proposal; the amount comes with its token symbol, as in "250 QTC proposed"
   ///
   /// In en, this message translates to:
   /// **'{amount} proposed'**
   String desktopProposeProposed(String amount);
+
+  /// Desktop Propose receipt: small capitals over the receipt while the network has not yet created the proposal
+  ///
+  /// In en, this message translates to:
+  /// **'Confirming'**
+  String get desktopProposeConfirming;
+
+  /// Desktop Propose receipt: small capitals over the receipt when the wallet stopped waiting for the network to create the proposal
+  ///
+  /// In en, this message translates to:
+  /// **'Not confirmed'**
+  String get desktopProposeNotConfirmed;
+
+  /// Desktop Propose receipt: the headline until the network has created the proposal; the amount comes with its token symbol, as in "Proposing 250 QTC"
+  ///
+  /// In en, this message translates to:
+  /// **'Proposing {amount}'**
+  String desktopProposeProposingAmount(String amount);
+
+  /// Desktop Propose receipt: the line under the headline while the proposal's transaction was broadcast and the network has not yet created the proposal
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for the network to create the proposal.'**
+  String get desktopProposeWaiting;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

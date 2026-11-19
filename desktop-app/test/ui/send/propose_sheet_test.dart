@@ -9,6 +9,7 @@ import 'package:quantus_desktop_wallet/ui/components/account_label.dart';
 import 'package:quantus_desktop_wallet/ui/components/approval_marks.dart';
 import 'package:quantus_desktop_wallet/ui/components/desktop_checkbox.dart';
 import 'package:quantus_desktop_wallet/ui/components/sheet_button.dart';
+import 'package:quantus_desktop_wallet/ui/components/terminal_line.dart';
 import 'package:quantus_desktop_wallet/ui/components/toolbar_action.dart';
 import 'package:quantus_desktop_wallet/ui/send/send_sheet.dart';
 import 'package:quantus_desktop_wallet/ui/send/send_summary.dart';
@@ -16,7 +17,9 @@ import 'package:quantus_desktop_wallet/ui/shell/account_toolbar.dart';
 import 'package:quantus_desktop_wallet/ui/shell/shell_sheet_view.dart';
 import 'package:quantus_desktop_wallet/ui/shell/sidebar.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:wallet_core/providers/multisig_proposal_confirmations_provider.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
+import 'package:wallet_core/send/send_strategy.dart';
 import 'package:wallet_core/services/user_approval.dart';
 
 import '../../fakes.dart';
@@ -152,9 +155,31 @@ Future<void> _toReview(WidgetTester tester) async {
   await _tap(tester, SendSheet.reviewKey);
 }
 
+/// To the receipt of a proposal just broadcast, which the network has not
+/// yet been seen to create.
 Future<void> _toReceipt(WidgetTester tester) async {
   await _toReview(tester);
   await _tap(tester, SendSheet.sendKey);
+}
+
+/// The wallet learns what became of the proposal broadcast, whose
+/// transaction is the fake chain's `0xhash`.
+void _settle(WidgetTester tester, SendConfirmation outcome) => ProviderScope.containerOf(
+  tester.element(find.byType(ShellSheetView)),
+).read(multisigProposalConfirmationsProvider.notifier).settle('0xhash', outcome);
+
+/// To the receipt of a proposal the network has created.
+Future<void> _toCreatedReceipt(WidgetTester tester) async {
+  await _toReceipt(tester);
+  _settle(tester, SendConfirmation.confirmed);
+  await tester.pumpAndSettle();
+}
+
+/// The face the receipt's spinner shows, if it turns.
+String? _spinnerFace(WidgetTester tester) {
+  final spinner = _inSheet(find.byType(TerminalSpinner));
+  if (spinner.evaluate().isEmpty) return null;
+  return tester.widget<Text>(find.descendant(of: spinner, matching: find.byType(Text))).data;
 }
 
 void main() {
@@ -494,25 +519,109 @@ void main() {
   });
 
   group('the receipt', () {
-    testOnMac('says what was proposed and that the other signers must approve', (tester) async {
+    testOnMac('until the network has created the proposal it says it is waiting, counts no approval and says '
+        'nothing was paid', (tester) async {
       await _openPropose(tester);
 
       await _toReceipt(tester);
 
+      expect(_inSheet(find.text('CONFIRMING')), findsOneWidget);
+      expect(_inSheet(find.text('Proposing 250 QTC')), findsOneWidget);
+      expect(_inSheet(find.text('Waiting for the network to create the proposal.')), findsOneWidget);
+      expect(_inSheet(find.text('qzPayee')), findsOneWidget);
+      expect(_inSheet(find.text('Approvals')), findsOneWidget);
+      expect(_inSheet(find.text('0 of 2')), findsOneWidget);
+      final marks = tester.widget<ApprovalMarks>(_inSheet(find.byType(ApprovalMarks)));
+      expect((marks.approved, marks.needed), (0, 2));
+      expect(_accountBeside(tester, 'pays', 'Main'), findsOneWidget);
+      expect(_inSheet(find.text('0.6012 QTC')), findsOneWidget);
+      for (final claim in ['SUBMITTED', '250 QTC proposed', '1 of 2', 'paid']) {
+        expect(_inSheet(find.text(claim)), findsNothing, reason: claim);
+      }
+      // It can be left while it waits, and its transaction looked up.
+      expect(_canPress(tester, SendSheet.doneKey), isTrue);
+      expect(find.byKey(SendSheet.explorerKey), findsOneWidget);
+    });
+
+    testOnMac('a spinner turns while it waits, and nothing turns where the system asks for less motion', (
+      tester,
+    ) async {
+      await _openPropose(tester);
+      await _toReceipt(tester);
+      expect(_spinnerFace(tester), isNull);
+
+      tester.platformDispatcher.accessibilityFeaturesTestValue = const FakeAccessibilityFeatures();
+      await tester.pump();
+      await tester.pump(TerminalLine.busyTurn ~/ 2);
+      final first = _spinnerFace(tester);
+      await tester.pump(TerminalLine.busyTurn);
+
+      expect(TerminalLine.busyFaces, contains(first));
+      expect(_spinnerFace(tester), isNot(first));
+
+      _settle(tester, SendConfirmation.confirmed);
+      await tester.pump();
+      expect(_spinnerFace(tester), isNull);
+    });
+
+    testOnMac('a proposal the network was not seen to create says so, and still counts no approval', (tester) async {
+      await _openPropose(tester);
+      await _toReceipt(tester);
+
+      _settle(tester, SendConfirmation.unconfirmed);
+      await tester.pumpAndSettle();
+
+      expect(_inSheet(find.text('NOT CONFIRMED')), findsOneWidget);
+      expect(_inSheet(find.text('Proposing 250 QTC')), findsOneWidget);
+      final why = _inSheet(
+        find.text('Proposal confirmation is taking longer than expected. Check the chain or try again.'),
+      );
+      expect(tester.widget<Text>(why).style?.color, const AppColorsV3.dark().semanticEmber);
+      expect(_inSheet(find.text('0 of 2')), findsOneWidget);
+      expect(_accountBeside(tester, 'pays', 'Main'), findsOneWidget);
+      for (final claim in ['SUBMITTED', 'CONFIRMING', '250 QTC proposed', '1 of 2', 'paid']) {
+        expect(_inSheet(find.text(claim)), findsNothing, reason: claim);
+      }
+      expect(_spinnerFace(tester), isNull);
+      expect(find.byKey(SendSheet.explorerKey), findsOneWidget);
+      expect(_canPress(tester, SendSheet.doneKey), isTrue);
+    });
+
+    testOnMac('the status line is as high whatever it says: the headline under it stays where it is', (tester) async {
+      await _openPropose(tester);
+      await _toReceipt(tester);
+      final waiting = tester.getRect(_inSheet(find.text('Proposing 250 QTC'))).top;
+
+      _settle(tester, SendConfirmation.unconfirmed);
+      await tester.pumpAndSettle();
+      expect(tester.getRect(_inSheet(find.text('Proposing 250 QTC'))).top, waiting);
+
+      _settle(tester, SendConfirmation.confirmed);
+      await tester.pumpAndSettle();
+      expect(tester.getRect(_inSheet(find.text('250 QTC proposed'))).top, waiting);
+    });
+
+    testOnMac('once the network has created it, says what was proposed and that the other signers must approve', (
+      tester,
+    ) async {
+      await _openPropose(tester);
+
+      await _toCreatedReceipt(tester);
+
       expect(_inSheet(find.text('SUBMITTED')), findsOneWidget);
       expect(_inSheet(find.text('250 QTC proposed')), findsOneWidget);
       expect(_inSheet(find.text('Co-signers must approve before the transfer can execute.')), findsOneWidget);
+      expect(_inSheet(find.text('CONFIRMING')), findsNothing);
       expect(_inSheet(find.text('qzPayee')), findsOneWidget);
       expect(_inSheet(find.text('Phrase-qzPayee')), findsOneWidget);
       expect(find.byKey(ShellSheetHeader.backKey), findsNothing);
     });
 
-    testOnMac('shows the proposer\'s approval as the first of those needed, the expiry, and what was paid', (
-      tester,
-    ) async {
+    testOnMac('once created, shows the proposer\'s approval as the first of those needed, the expiry, and what was '
+        'paid', (tester) async {
       await _openPropose(tester);
 
-      await _toReceipt(tester);
+      await _toCreatedReceipt(tester);
 
       expect(_accountBeside(tester, 'From', 'Team'), findsOneWidget);
       expect(_inSheet(find.text('Approvals')), findsOneWidget);
@@ -555,15 +664,25 @@ void main() {
       expect(find.byKey(SendSheet.shareKey), findsNothing);
     });
 
-    testOnMac('in the smallest window nothing overflows and Done stays in the sheet', (tester) async {
+    testOnMac('in the smallest window nothing overflows and Done stays in the sheet, whatever became of the '
+        'proposal', (tester) async {
       await _openPropose(tester, window: _smallestWindow);
 
       await _toReceipt(tester);
 
-      final sheet = tester.getRect(find.byType(ShellSheetView));
-      expect(tester.takeException(), isNull);
-      expect(sheet.bottom, lessThanOrEqualTo(_smallestWindow.height));
-      expect(tester.getRect(find.byKey(SendSheet.doneKey)).bottom, lessThan(sheet.bottom));
+      void expectWhole(String when) {
+        final sheet = tester.getRect(find.byType(ShellSheetView));
+        expect(tester.takeException(), isNull, reason: when);
+        expect(sheet.bottom, lessThanOrEqualTo(_smallestWindow.height), reason: when);
+        expect(tester.getRect(find.byKey(SendSheet.doneKey)).bottom, lessThan(sheet.bottom), reason: when);
+      }
+
+      expectWhole('waiting');
+      for (final outcome in [SendConfirmation.unconfirmed, SendConfirmation.confirmed]) {
+        _settle(tester, outcome);
+        await tester.pumpAndSettle();
+        expectWhole(outcome.name);
+      }
     });
 
     testOnMac('Done closes the sheet, and Propose opens empty again', (tester) async {

@@ -27,12 +27,15 @@ import 'package:quantus_desktop_wallet/ui/send/send_sheet.dart';
 import 'package:quantus_desktop_wallet/ui/settings/keyboard_shortcuts_step.dart';
 import 'package:quantus_desktop_wallet/ui/settings/settings_sheet.dart';
 import 'package:quantus_desktop_wallet/ui/shell/desktop_shell.dart';
+import 'package:quantus_desktop_wallet/ui/shell/shell_sheet_view.dart';
 import 'package:quantus_desktop_wallet/ui/shell/sidebar.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/providers/encrypted_send_provider.dart';
+import 'package:wallet_core/providers/multisig_proposal_confirmations_provider.dart';
 import 'package:wallet_core/providers/one_click_provider.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:wallet_core/send/send_fee_notifier.dart';
+import 'package:wallet_core/send/send_strategy.dart';
 import 'package:wallet_core/services/user_approval.dart';
 
 import '../test/fakes.dart';
@@ -258,12 +261,31 @@ void main() {
     await _tapAndSettle(tester, find.byKey(SendSheet.sendKey));
   });
 
-  _scene('propose_receipt', (tester) async {
-    await _openPropose(tester);
-    await _fillSend(tester);
-    await _tapAndSettle(tester, find.byKey(SendSheet.reviewKey));
-    await _tapAndSettle(tester, find.byKey(SendSheet.sendKey));
-  });
+  // A proposal's receipt as it is broadcast, then as the wallet learns what
+  // became of it: created, or not seen to be.
+  for (final (name, outcome) in [
+    ('propose_receipt_waiting', null),
+    ('propose_receipt', SendConfirmation.confirmed),
+    ('propose_receipt_not_confirmed', SendConfirmation.unconfirmed),
+  ]) {
+    _scene(name, (tester) async {
+      await _openPropose(tester);
+      await _fillSend(tester);
+      await _tapAndSettle(tester, find.byKey(SendSheet.reviewKey));
+      await _tapAndSettle(tester, find.byKey(SendSheet.sendKey));
+      if (outcome == null) {
+        // Waiting is drawn with its spinner, which never settles.
+        tester.platformDispatcher.accessibilityFeaturesTestValue = const FakeAccessibilityFeatures();
+        await tester.pump();
+        await tester.pump(TerminalLine.busyTurn);
+        return;
+      }
+      ProviderScope.containerOf(
+        tester.element(find.byType(ShellSheetView)),
+      ).read(multisigProposalConfirmationsProvider.notifier).settle('0xhash', outcome);
+      await tester.pumpAndSettle();
+    });
+  }
 
   _scene('send_private_form', (tester) async {
     await _openPrivateSend(tester);

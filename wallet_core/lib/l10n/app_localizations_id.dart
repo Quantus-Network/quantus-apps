@@ -2843,4 +2843,18 @@ class AppLocalizationsId extends AppLocalizations {
   String desktopProposeProposed(String amount) {
     return '$amount diajukan';
   }
+
+  @override
+  String get desktopProposeConfirming => 'Mengonfirmasi';
+
+  @override
+  String get desktopProposeNotConfirmed => 'Belum terkonfirmasi';
+
+  @override
+  String desktopProposeProposingAmount(String amount) {
+    return 'Mengajukan $amount';
+  }
+
+  @override
+  String get desktopProposeWaiting => 'Menunggu jaringan membuat proposal.';
 }

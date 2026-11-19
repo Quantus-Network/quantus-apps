@@ -2,8 +2,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/providers/global_toast_provider.dart';
 import 'package:wallet_core/providers/l10n_provider.dart';
+import 'package:wallet_core/providers/multisig_proposal_confirmations_provider.dart';
 import 'package:wallet_core/providers/pending_multisig_proposals_provider.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
+import 'package:wallet_core/send/send_strategy.dart';
 import 'package:wallet_core/services/extrinsic_indexer_polling_service.dart';
 import 'package:wallet_core/services/multisig_proposal_reconciliation.dart';
 import 'package:wallet_core/utils/polling_refresh_scope.dart';
@@ -19,9 +21,20 @@ Future<bool> _confirmIndexedProposal(Ref ref, MultisigAccount msig, PendingMulti
   if (indexed == null) return false;
 
   removePendingMultisigProposal(ref, pending.id);
+  ref.read(multisigProposalConfirmationsProvider.notifier).settle(hash, SendConfirmation.confirmed);
   await reconcileIndexedProposalCreation(ref, msig, indexed);
   invalidateAccountBalances(ref, {pending.proposerId});
   return true;
+}
+
+/// Stops watching for a proposal the indexer never showed: it may have been
+/// dropped or have failed, or only be late.
+void _giveUpOnProposal(Ref ref, String id) {
+  final hash = findPendingMultisigProposal(ref, id)?.extrinsicHash;
+  if (hash != null) {
+    ref.read(multisigProposalConfirmationsProvider.notifier).settle(hash, SendConfirmation.unconfirmed);
+  }
+  removePendingMultisigProposal(ref, id);
 }
 
 final multisigProposalPollingServiceProvider = Provider<MultisigProposalPollingService>((ref) {
@@ -32,7 +45,7 @@ final multisigProposalPollingServiceProvider = Provider<MultisigProposalPollingS
       getId: (pending) => pending.id,
       getExtrinsicHash: (pending) => pending.extrinsicHash,
       isStillPending: (ref, id) => findPendingMultisigProposal(ref, id) != null,
-      removePending: removePendingMultisigProposal,
+      removePending: _giveUpOnProposal,
       showTimeoutToast: (ref) {
         ref.read(globalToastProvider.notifier).showError(ref.read(l10nProvider).multisigProposeTimeoutToast);
       },

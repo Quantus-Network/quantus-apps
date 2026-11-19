@@ -6,6 +6,7 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/l10n/app_localizations.dart';
 import 'package:wallet_core/providers/account_providers.dart';
 import 'package:wallet_core/providers/l10n_provider.dart';
+import 'package:wallet_core/providers/multisig_proposal_confirmations_provider.dart';
 import 'package:wallet_core/providers/multisig_providers.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:wallet_core/services/transaction_submission_service.dart';
@@ -288,7 +289,12 @@ class MultisigProposeStrategy extends SendStrategy {
             feeBreakdown: breakdown,
           );
       _afterProposed(ref, recipient);
-      return SendSubmitted(terminal.copyWith(explorerUrl: multisigProposalExplorerUrl(hash)));
+      // Broadcast is not created: what the terminal says of the proposal
+      // holds once the wallet has seen the transaction create it.
+      return SendSubmitted(
+        terminal.copyWith(explorerUrl: multisigProposalExplorerUrl(hash)),
+        confirmation: multisigProposalConfirmationProvider(hash),
+      );
     } catch (e, st) {
       quantusPrint('Propose submit error: $e $st');
       return SendFailed(l10n.multisigProposeSubmitFailed);
