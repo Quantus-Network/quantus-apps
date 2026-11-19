@@ -2860,4 +2860,47 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get desktopProposeWaiting => 'Menunggu jaringan membuat proposal.';
+
+  @override
+  String get desktopFooterMainnet => 'Mainnet';
+
+  @override
+  String get desktopFooterTestnet => 'Testnet';
+
+  @override
+  String get desktopFooterOffline => 'Offline';
+
+  @override
+  String get desktopFooterSyncing => 'Menyinkronkan';
+
+  @override
+  String get desktopFooterSyncedJustNow => 'Baru saja disinkronkan';
+
+  @override
+  String desktopFooterSyncedMinutesAgo(int minutes) {
+    return 'Disinkronkan $minutes mnt lalu';
+  }
+
+  @override
+  String desktopFooterSyncedHoursAgo(int hours) {
+    return 'Disinkronkan $hours jam lalu';
+  }
+
+  @override
+  String desktopFooterSyncedDaysAgo(int days) {
+    return 'Disinkronkan $days hari lalu';
+  }
+
+  @override
+  String get desktopFooterSyncFailed => 'Gagal menyinkronkan';
+
+  @override
+  String desktopFooterBlock(String number) {
+    return 'Blok $number';
+  }
+
+  @override
+  String desktopFooterVersion(String version) {
+    return 'Quantus Wallet $version';
+  }
 }

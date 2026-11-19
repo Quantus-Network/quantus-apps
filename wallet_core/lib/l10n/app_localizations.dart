@@ -5215,6 +5215,72 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Waiting for the network to create the proposal.'**
   String get desktopProposeWaiting;
+
+  /// Desktop footer: the network the wallet is on, beside a dot that is green while online
+  ///
+  /// In en, this message translates to:
+  /// **'Mainnet'**
+  String get desktopFooterMainnet;
+
+  /// Desktop footer: the network the wallet is on when built for the test network
+  ///
+  /// In en, this message translates to:
+  /// **'Testnet'**
+  String get desktopFooterTestnet;
+
+  /// Desktop footer: in place of the network's name while the computer has no network
+  ///
+  /// In en, this message translates to:
+  /// **'Offline'**
+  String get desktopFooterOffline;
+
+  /// Desktop footer: the wallet is reading its balance and activity from the network now
+  ///
+  /// In en, this message translates to:
+  /// **'Syncing'**
+  String get desktopFooterSyncing;
+
+  /// Desktop footer: the wallet's balance was read from the network less than a minute ago
+  ///
+  /// In en, this message translates to:
+  /// **'Synced just now'**
+  String get desktopFooterSyncedJustNow;
+
+  /// Desktop footer: how long ago the wallet's balance was last read from the network, in minutes
+  ///
+  /// In en, this message translates to:
+  /// **'Synced {minutes}m ago'**
+  String desktopFooterSyncedMinutesAgo(int minutes);
+
+  /// Desktop footer: how long ago the wallet's balance was last read from the network, in hours
+  ///
+  /// In en, this message translates to:
+  /// **'Synced {hours}h ago'**
+  String desktopFooterSyncedHoursAgo(int hours);
+
+  /// Desktop footer: how long ago the wallet's balance was last read from the network, in days
+  ///
+  /// In en, this message translates to:
+  /// **'Synced {days}d ago'**
+  String desktopFooterSyncedDaysAgo(int days);
+
+  /// Desktop footer: the latest read of the wallet's balance from the network failed
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t sync'**
+  String get desktopFooterSyncFailed;
+
+  /// Desktop footer: the chain's latest block, its number already formatted with digit grouping
+  ///
+  /// In en, this message translates to:
+  /// **'Block {number}'**
+  String desktopFooterBlock(String number);
+
+  /// Desktop footer: the app's name and version, at the footer's right end
+  ///
+  /// In en, this message translates to:
+  /// **'Quantus Wallet {version}'**
+  String desktopFooterVersion(String version);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

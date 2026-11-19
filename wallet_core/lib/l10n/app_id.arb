@@ -772,5 +772,16 @@
   "desktopProposeConfirming": "Mengonfirmasi",
   "desktopProposeNotConfirmed": "Belum terkonfirmasi",
   "desktopProposeProposingAmount": "Mengajukan {amount}",
-  "desktopProposeWaiting": "Menunggu jaringan membuat proposal."
+  "desktopProposeWaiting": "Menunggu jaringan membuat proposal.",
+  "desktopFooterMainnet": "Mainnet",
+  "desktopFooterTestnet": "Testnet",
+  "desktopFooterOffline": "Offline",
+  "desktopFooterSyncing": "Menyinkronkan",
+  "desktopFooterSyncedJustNow": "Baru saja disinkronkan",
+  "desktopFooterSyncedMinutesAgo": "Disinkronkan {minutes} mnt lalu",
+  "desktopFooterSyncedHoursAgo": "Disinkronkan {hours} jam lalu",
+  "desktopFooterSyncedDaysAgo": "Disinkronkan {days} hari lalu",
+  "desktopFooterSyncFailed": "Gagal menyinkronkan",
+  "desktopFooterBlock": "Blok {number}",
+  "desktopFooterVersion": "Quantus Wallet {version}"
 }
