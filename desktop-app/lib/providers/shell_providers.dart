@@ -175,7 +175,7 @@ class ShellSheetNotifier extends Notifier<ShellSheet?> {
       quantusPrint('${sheet.name} is not offered on the active account; nothing is opened.');
       return;
     }
-    if (sheet == ShellSheet.send) _beginSend();
+    if (sheet == ShellSheet.send || sheet == ShellSheet.propose) _beginSend();
     state = sheet;
   }
 
@@ -193,11 +193,15 @@ class ShellSheetNotifier extends Notifier<ShellSheet?> {
     return ref.read(activeAccountActionsProvider).any((action) => action.kind == kind && action.isEnabled);
   }
 
-  /// Send's flow starts with the press that opens it, a first fee quote with
-  /// it: the sheet must not write a provider while it is being built.
+  /// A send's flow, a proposal's too, starts with the press that opens its
+  /// sheet, a first fee quote with it: the sheet must not write a provider
+  /// while it is being built.
   void _beginSend() {
-    final strategy = sendStrategyFor(ref.read(activeAccountProvider).value);
-    if (strategy == null) throw StateError('Send was opened on an account this app cannot send from.');
+    final strategy = sendStrategyFor(
+      ref.read(activeAccountProvider).value,
+      accounts: ref.read(accountsProvider).value ?? const [],
+    );
+    if (strategy == null) throw StateError('A send was opened on an account this app cannot send from.');
     beginSendFlow(ref.read, strategy);
   }
 
@@ -206,37 +210,36 @@ class ShellSheetNotifier extends Notifier<ShellSheet?> {
 }
 
 /// What the active account offers, for the toolbar and the Account menu alike.
-/// Send is unavailable where this app cannot send yet ([sendStrategyFor]).
+/// Send, and Propose on a multisig, are unavailable where this app cannot
+/// make the send ([sendStrategyFor]).
 final activeAccountActionsProvider = Provider<List<AccountAction>>((ref) {
   final active = ref.watch(activeAccountProvider).value;
   if (active == null) return const [];
-  final canSend = sendStrategyFor(active) != null;
+  final canSend = sendStrategyFor(active, accounts: ref.watch(accountsProvider).value ?? const []) != null;
+  bool sends(AccountActionKind kind) => kind == AccountActionKind.send || kind == AccountActionKind.propose;
   return [
     for (final action in accountActions(
       active,
       swapAvailable: ref.watch(remoteConfigProvider).swapAvailable,
       hasActiveSwap: ref.watch(activeSwapProvider) != null,
     ))
-      if (action.kind == AccountActionKind.send && !canSend)
-        const AccountAction(AccountActionKind.send, isEnabled: false)
-      else
-        action,
+      if (sends(action.kind) && !canSend) AccountAction(action.kind, isEnabled: false) else action,
   ];
 });
 
 /// The account actions as the menus and their shortcuts offer them. While
 /// navigation asked for earlier is still to finish, the account it ends on
-/// is not known yet, so Receive and Send are offered whatever the active
-/// account allows, and checked against the account they open on
+/// is not known yet, so Receive, Send and Propose are offered whatever the
+/// active account allows, and checked against the account they open on
 /// ([ShellSheetNotifier.open]). The toolbar shows what the active account
 /// offers ([activeAccountActionsProvider]).
 final menuAccountActionsProvider = Provider<List<AccountAction>>((ref) {
   final actions = ref.watch(activeAccountActionsProvider);
   if (!ref.watch(shellNavigationProvider)) return actions;
+  const whatever = [AccountActionKind.receive, AccountActionKind.send, AccountActionKind.propose];
   return [
-    const AccountAction(AccountActionKind.receive),
-    const AccountAction(AccountActionKind.send),
+    for (final kind in whatever) AccountAction(kind),
     for (final action in actions)
-      if (action.kind != AccountActionKind.receive && action.kind != AccountActionKind.send) action,
+      if (!whatever.contains(action.kind)) action,
   ];
 });

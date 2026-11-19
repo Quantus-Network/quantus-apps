@@ -165,11 +165,30 @@ sealed class SendOutcome {
   const SendOutcome();
 }
 
+/// What became of a submitted send's transaction, for a send whose receipt
+/// says more than the chain had agreed to when it was broadcast.
+enum SendConfirmation {
+  /// Broadcast, and not yet seen to have done what it was sent to do.
+  pending,
+
+  /// Seen on the chain, done.
+  confirmed,
+
+  /// Not seen within the time the wallet watches for it. It may have been
+  /// dropped or have failed, or only be late.
+  unconfirmed,
+}
+
 /// Submission accepted; show [terminal].
 class SendSubmitted extends SendOutcome {
   final SendTerminalContent terminal;
 
-  const SendSubmitted(this.terminal);
+  /// What becomes of the transaction, where what [terminal] says of the send
+  /// holds only once the chain has carried it out; null where it holds from
+  /// the broadcast on.
+  final ProviderListenable<SendConfirmation>? confirmation;
+
+  const SendSubmitted(this.terminal, {this.confirmation});
 }
 
 /// The source account signs off-device (Keystone): hand off to the hardware QR

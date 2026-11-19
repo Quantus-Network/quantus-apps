@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_desktop_wallet/models/shell_sheet.dart';
 import 'package:quantus_desktop_wallet/providers/shell_providers.dart';
+import 'package:quantus_desktop_wallet/ui/components/account_label.dart';
 import 'package:quantus_desktop_wallet/ui/components/toolbar_action.dart';
 import 'package:quantus_desktop_wallet/ui/shell/account_toolbar.dart';
 import 'package:quantus_desktop_wallet/ui/shell/desktop_shell.dart';
@@ -57,6 +58,31 @@ void main() {
     expect(inSheet(find.text('Main')), findsOneWidget);
     expect(inSheet(find.text('Savings')), findsNothing);
     expect(inSheet(find.text('qzMain')), findsOneWidget);
+  });
+
+  testOnMac('a sheet\'s header names its account after the title: the badge 14 on, the name 8 after it', (
+    tester,
+  ) async {
+    await pumpShell(
+      tester,
+      overrides: shellOverrides(
+        accounts: const [mainAccount, savingsAccount],
+        settings: FakeSettingsService(activeAccount: const RegularAccount(mainAccount)),
+        balances: oneTokenEach,
+      ),
+    );
+    await tester.tap(_toolbarButton('Receive'));
+    await tester.pumpAndSettle();
+
+    Finder inHeader(Finder finder) => find.descendant(of: find.byType(ShellSheetHeader), matching: finder);
+    final title = tester.getRect(inHeader(find.text('Receive')));
+    final badge = tester.getRect(inHeader(find.byType(AccountBadge)));
+    final name = tester.getRect(inHeader(find.text('Main')));
+    expect(badge.size, const Size.square(22));
+    expect(badge.left, title.right + 14);
+    expect(name.left, badge.right + 8);
+    expect(name.center.dy, moreOrLessEquals(badge.center.dy, epsilon: 1));
+    expect(inHeader(find.byType(AccountLabel)), findsOneWidget);
   });
 
   testOnMac('a sheet hangs from the bottom of the header, centred on the pane beside the sidebar', (tester) async {

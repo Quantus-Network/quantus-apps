@@ -8,7 +8,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:wallet_core/l10n/app_localizations.dart';
 import 'package:wallet_core/providers/account_providers.dart';
 import 'package:wallet_core/providers/l10n_provider.dart';
+import 'package:wallet_core/providers/multisig_proposal_confirmations_provider.dart';
 import 'package:wallet_core/providers/multisig_providers.dart';
+import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:wallet_core/send/multisig_propose_strategy.dart';
 import 'package:wallet_core/send/send_review_row.dart';
 import 'package:wallet_core/send/send_strategy.dart';
@@ -76,6 +78,83 @@ void main() {
       expect(submission.proposals, [(recipient.accountId, BigInt.from(5) * oneToken, 1000)]);
     });
 
+    testWidgets('a submitted proposal has the explorer\'s page of the transaction that created it', (tester) async {
+      final ref = await pumpRef(tester, overrides: overrides());
+
+      final outcome = await submit(ref);
+
+      expect(
+        (outcome as SendSubmitted).terminal.explorerUrl,
+        '${AppConstants.explorerEndpoint}/multisig-proposal-created/0xproposal',
+      );
+    });
+
+    testWidgets('a submitted proposal is confirmed only once the wallet has seen its transaction create it', (
+      tester,
+    ) async {
+      final ref = await pumpRef(tester, overrides: overrides());
+
+      final confirmation = ((await submit(ref)) as SendSubmitted).confirmation!;
+
+      expect(ref.read(confirmation), SendConfirmation.pending);
+
+      ref.read(multisigProposalConfirmationsProvider.notifier).settle('0xother', SendConfirmation.confirmed);
+      expect(ref.read(confirmation), SendConfirmation.pending);
+
+      ref.read(multisigProposalConfirmationsProvider.notifier).settle('0xproposal', SendConfirmation.confirmed);
+      expect(ref.read(confirmation), SendConfirmation.confirmed);
+    });
+
+    group('what the member holds', () {
+      // What proposing costs the member: the fee's three parts.
+      final cost = BigInt.from(4) * oneToken;
+      late BigInt memberHolds;
+
+      List<Override> withBalance() => [
+        ...overrides(),
+        balanceProviderFamily.overrideWith((ref, accountId) => memberHolds),
+      ];
+
+      testWidgets('exactly the cost is enough to propose', (tester) async {
+        memberHolds = cost;
+        final ref = await pumpRef(tester, overrides: withBalance());
+
+        expect(await submit(ref), isA<SendSubmitted>());
+        expect(submission.proposals, hasLength(1));
+      });
+
+      testWidgets('less than the cost proposes nothing, says the member cannot pay, and asks for no approval', (
+        tester,
+      ) async {
+        memberHolds = cost - BigInt.one;
+        final ref = await pumpRef(tester, overrides: withBalance());
+
+        final outcome = await submit(ref);
+
+        expect((outcome as SendFailed).message, ref.read(l10nProvider).multisigProposeFeePayerInsufficient);
+        expect(bed.userApproval.reasons, isEmpty);
+        expect(submission.proposals, isEmpty);
+      });
+
+      testWidgets('falling below the cost while approval is asked proposes nothing, and says the member cannot pay', (
+        tester,
+      ) async {
+        memberHolds = cost;
+        final ref = await pumpRef(tester, overrides: withBalance());
+        bed.userApproval.answer = () async {
+          memberHolds = cost - BigInt.one;
+          ref.invalidate(balanceProviderFamily(member.accountId));
+          return ApprovalResult.approved;
+        };
+
+        final outcome = await submit(ref);
+
+        expect((outcome as SendFailed).message, ref.read(l10nProvider).multisigProposeFeePayerInsufficient);
+        expect(bed.userApproval.reasons, hasLength(1));
+        expect(submission.proposals, isEmpty);
+      });
+    });
+
     for (final refusal in [ApprovalResult.declined, ApprovalResult.notSetUp]) {
       testWidgets('an approval that is ${refusal.name} proposes nothing and says authentication is required', (
         tester,
@@ -91,9 +170,18 @@ void main() {
     }
   });
 
-  testWidgets('reviewRows name the proposer by address, and give the expiry a time once the block is known', (
-    tester,
-  ) async {
+  test('a threshold is written as the phone shows it, and two are equal when their parts are', () {
+    const threshold = SendReviewThreshold('THRESHOLD', threshold: 2, signers: 3);
+
+    expect(threshold.text, '2/3');
+    expect(threshold, const SendReviewThreshold('THRESHOLD', threshold: 2, signers: 3));
+    expect(threshold, isNot(const SendReviewThreshold('THRESHOLD', threshold: 3, signers: 3)));
+    expect(threshold, isNot(const SendReviewThreshold('THRESHOLD', threshold: 2, signers: 4)));
+    expect(threshold.kind, SendReviewRowKind.detail);
+  });
+
+  testWidgets('reviewRows say what each line is, name the proposer by address, give the threshold in numbers, and '
+      'give the expiry a time once the block is known', (tester) async {
     final read = await pumpWatched(
       tester,
       overrides: overrides(),
@@ -105,14 +193,14 @@ void main() {
     final l10n = lookupAppLocalizations(const Locale('en'));
     const symbol = AppConstants.tokenSymbol;
     List<SendReviewRow> rowsWith(MultisigExpiryParts expiry) => [
-      SendReviewAddress(l10n.multisigProposeProposerLabel, member.accountId),
-      SendReviewText(l10n.sendReviewAmount, '5 $symbol'),
-      SendReviewText(l10n.multisigProposeThresholdLabel, '2/2'),
+      SendReviewAddress(l10n.multisigProposeProposerLabel, member.accountId, kind: SendReviewRowKind.signer),
+      SendReviewText(l10n.sendReviewAmount, '5 $symbol', kind: SendReviewRowKind.amount),
+      SendReviewThreshold(l10n.multisigProposeThresholdLabel, threshold: 2, signers: 2),
       SendReviewExpiry(l10n.multisigProposeExpiresLabel, expiry),
-      SendReviewText(l10n.sendReviewNetworkFee, '1 $symbol'),
-      SendReviewText(l10n.multisigProposalDepositLabel, '2 $symbol'),
-      SendReviewText(l10n.multisigProposeFeeRowLabel, '1 $symbol'),
-      SendReviewText(l10n.multisigProposeMemberTotalLabel, '4 $symbol'),
+      SendReviewText(l10n.sendReviewNetworkFee, '1 $symbol', kind: SendReviewRowKind.fee),
+      SendReviewText(l10n.multisigProposalDepositLabel, '2 $symbol', kind: SendReviewRowKind.deposit),
+      SendReviewText(l10n.multisigProposeFeeRowLabel, '1 $symbol', kind: SendReviewRowKind.charge),
+      SendReviewText(l10n.multisigProposeMemberTotalLabel, '4 $symbol', kind: SendReviewRowKind.total),
     ];
     final block = l10n.multisigExpiresBlockOnly(1000);
 

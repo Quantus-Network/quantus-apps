@@ -184,6 +184,7 @@ class _KeyboardShortcutsStepState extends ConsumerState<KeyboardShortcutsStep> {
                   rows: [
                     row(AppCommand.receive),
                     row(AppCommand.send),
+                    row(AppCommand.propose),
                     row(AppCommand.addAccount),
                     _Row(
                       title: l10n.desktopShortcutsAccounts,
@@ -307,6 +308,7 @@ class _Row extends StatelessWidget {
 String commandName(AppLocalizations l10n, AppCommand command) => switch (command) {
   AppCommand.receive => sheetTitle(l10n, ShellSheet.receive),
   AppCommand.send => sheetTitle(l10n, ShellSheet.send),
+  AppCommand.propose => sheetTitle(l10n, ShellSheet.propose),
   AppCommand.addAccount => l10n.desktopMenuAddAccount,
   AppCommand.toggleSidebar => l10n.desktopShortcutsToggleSidebar,
   AppCommand.nextSidebarItem => l10n.desktopMenuNextSidebarItem,

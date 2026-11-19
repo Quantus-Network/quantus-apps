@@ -25,6 +25,7 @@ void main() {
     test('on the Mac use ⌘, and walk the sidebar with ⌥⌘↓ and ⌥⌘↑', () {
       expect(mac[AppCommand.receive], _combo(LogicalKeyboardKey.keyR, _cmd));
       expect(mac[AppCommand.send], _combo(LogicalKeyboardKey.keyS, _cmd));
+      expect(mac[AppCommand.propose], _combo(LogicalKeyboardKey.keyP, _cmd));
       expect(mac[AppCommand.addAccount], _combo(LogicalKeyboardKey.keyN, _cmd));
       expect(mac[AppCommand.toggleSidebar], _combo(LogicalKeyboardKey.keyB, _cmd));
       expect(mac[AppCommand.nextSidebarItem], _combo(LogicalKeyboardKey.arrowDown, _optCmd));
@@ -38,6 +39,7 @@ void main() {
     test('on Windows and Linux use Ctrl, and walk the sidebar with Ctrl+Alt+Down and Up', () {
       expect(pc[AppCommand.receive], _combo(LogicalKeyboardKey.keyR, _ctrl));
       expect(pc[AppCommand.send], _combo(LogicalKeyboardKey.keyS, _ctrl));
+      expect(pc[AppCommand.propose], _combo(LogicalKeyboardKey.keyP, _ctrl));
       expect(pc[AppCommand.addAccount], _combo(LogicalKeyboardKey.keyN, _ctrl));
       expect(pc[AppCommand.toggleSidebar], _combo(LogicalKeyboardKey.keyB, _ctrl));
       expect(pc[AppCommand.nextSidebarItem], _combo(LogicalKeyboardKey.arrowDown, _ctrlAlt));
@@ -263,12 +265,57 @@ void main() {
       );
     });
 
-    test('that clash with each other fail to read', () {
+    test('that give a command the keys another ships with keep them, and leave that other without a shortcut', () {
+      // Receive ships with ⌘R; nothing was saved for it.
       final json = {
         'commands': {'send': const KeyCombo(LogicalKeyboardKey.keyR, _cmd).toJson()},
       };
 
-      expect(() => ShortcutBindings.fromJson(json, isMac: true), throwsFormatException);
+      final read = ShortcutBindings.fromJson(json, isMac: true);
+
+      expect(read[AppCommand.send], _combo(LogicalKeyboardKey.keyR, _cmd));
+      expect(read[AppCommand.receive], isNull);
+      for (final command in AppCommand.values) {
+        if (command == AppCommand.send || command == AppCommand.receive) continue;
+        expect(read[command], mac[command], reason: '$command');
+      }
+      // As if Receive's had been removed, then Send given its keys.
+      expect(read, mac.withShortcut(AppCommand.receive, null).withShortcut(AppCommand.send, read[AppCommand.send]));
+      expect(ShortcutBindings.fromJson(_stored(read), isMac: true), read);
+    });
+
+    test('from before Propose had its keys keep a command on them, and Propose has none', () {
+      for (final (bindings, command) in [(mac, _cmd), (pc, _ctrl)]) {
+        // Saved when no command shipped with P: Send moved there, and the
+        // sidebar's shortcut removed.
+        final json = {
+          'commands': {'send': _combo(LogicalKeyboardKey.keyP, command).toJson(), 'toggleSidebar': null},
+        };
+
+        final read = ShortcutBindings.fromJson(json, isMac: bindings.isMac);
+
+        expect(read[AppCommand.send], _combo(LogicalKeyboardKey.keyP, command));
+        expect(read[AppCommand.propose], isNull);
+        expect(read[AppCommand.toggleSidebar], isNull);
+        expect(read[AppCommand.receive], bindings[AppCommand.receive]);
+        expect(read[AppCommand.addAccount], bindings[AppCommand.addAccount]);
+        // Propose can be given other keys, and gets its own back once they
+        // are free.
+        expect(read.refusal(AppCommand.propose, _combo(LogicalKeyboardKey.keyJ, command)), isNull);
+        final freed = read.withShortcut(AppCommand.send, bindings[AppCommand.send]);
+        expect(freed.refusal(AppCommand.propose, _combo(LogicalKeyboardKey.keyP, command)), isNull);
+      }
+    });
+
+    test('a command saved without a shortcut does not hold the keys it ships with', () {
+      // Receive was given none; Send has ⌘R, and no one else lost theirs.
+      final json = {
+        'commands': {'receive': null, 'send': _combo(LogicalKeyboardKey.keyR, _cmd).toJson()},
+      };
+
+      final read = ShortcutBindings.fromJson(json, isMac: true);
+
+      expect(read, mac.withShortcut(AppCommand.receive, null).withShortcut(AppCommand.send, read[AppCommand.send]));
     });
 
     test('two commands that took each other\'s keys read back the same', () {

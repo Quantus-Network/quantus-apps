@@ -9,6 +9,7 @@ import 'package:flutter_riverpod/misc.dart';
 import 'package:quantus_desktop_wallet/providers/approval_providers.dart';
 import 'package:quantus_desktop_wallet/services/external_links.dart';
 import 'package:quantus_desktop_wallet/services/share_service.dart';
+import 'package:quantus_desktop_wallet/ui/components/account_label.dart';
 import 'package:quantus_desktop_wallet/ui/components/caps_text.dart';
 import 'package:quantus_desktop_wallet/ui/components/desktop_address_checkphrase.dart';
 import 'package:quantus_desktop_wallet/ui/components/desktop_checkbox.dart';
@@ -44,6 +45,10 @@ enum _Step { form, review, proving, receipt }
 /// its proofs first, which takes a while: the sheet shows how far that is,
 /// and it can be stopped.
 ///
+/// On a multisig the sheet is Propose: the same steps for a transfer the
+/// multisig's other signers must approve, which a member's account of this
+/// wallet signs and pays for.
+///
 /// The send leaves the account the sheet opened on. Its flow, a first fee
 /// quote with it, was started by the press that opened the sheet.
 class SendSheet extends ConsumerStatefulWidget {
@@ -54,6 +59,7 @@ class SendSheet extends ConsumerStatefulWidget {
   static const pasteKey = Key('send-paste');
   static const maxKey = Key('send-max');
   static const retryFeeKey = Key('send-retry-fee');
+  static const costProblemKey = Key('send-cost-problem');
   static const cancelKey = Key('send-cancel');
   static const reviewKey = Key('send-review');
   static const backKey = Key('send-back');
@@ -90,6 +96,10 @@ class _SendSheetState extends ConsumerState<SendSheet> {
   /// The sheet opens on the active account and stays on it while it is open.
   late final BaseAccount _account;
   late final SendStrategy _strategy;
+
+  /// The account that signs a proposal and pays what it costs; null for a
+  /// send, which the account it leaves pays.
+  late final Account? _signer;
 
   final _address = TextEditingController();
   final _amountText = TextEditingController();
@@ -148,16 +158,23 @@ class _SendSheetState extends ConsumerState<SendSheet> {
   SendTerminalContent? _submitted;
   List<SendReviewRow> _submittedRows = const [];
 
+  /// What becomes of the submitted send's transaction, where its receipt
+  /// waits to know: a proposal's, which is no proposal until the chain has
+  /// created it.
+  ProviderListenable<SendConfirmation>? _confirmation;
+
   @override
   void initState() {
     super.initState();
     final active = ref.read(activeAccountProvider).value;
-    final strategy = sendStrategyFor(active);
+    final accounts = ref.read(accountsProvider).value ?? const <Account>[];
+    final strategy = sendStrategyFor(active, accounts: accounts);
     if (active == null || strategy == null) {
-      throw StateError('Send was opened on an account this app cannot send from.');
+      throw StateError('A send was opened on an account this app cannot send from.');
     }
     _account = active.account;
     _strategy = strategy;
+    _signer = sendSigner(strategy, accounts);
     _address.addListener(_onAddressChanged);
     _addressFocus.requestFocus();
     unawaited(_loadRecents());
@@ -262,8 +279,12 @@ class _SendSheetState extends ConsumerState<SendSheet> {
   /// The send moves the whole balance in one call.
   bool get _sendAll => _isMax && _strategy.supportsSendAll;
 
+  /// Who the send's fee is priced to. Until there is someone to pay, that
+  /// is the account itself: a transfer costs the same whoever it pays.
+  String get _pricedRecipient => _recipientAccepted ? _recipient : (_strategy.sourceAccountId ?? '');
+
   ProviderListenable<SendFeeState> get _feeProvider =>
-      _strategy.feeProvider(recipient: _recipientAccepted ? _recipient : '', amount: _amount);
+      _strategy.feeProvider(recipient: _pricedRecipient, amount: _amount);
 
   /// Prices a send of [amount]. Until there is someone to pay it is priced
   /// to the account itself: a transfer costs the same whoever it pays.
@@ -395,11 +416,12 @@ class _SendSheetState extends ConsumerState<SendSheet> {
     if (!mounted) return;
 
     switch (outcome) {
-      case SendSubmitted(:final terminal):
+      case SendSubmitted(:final terminal, :final confirmation):
         setState(() {
           _isSending = false;
           _submitted = terminal;
           _submittedRows = rows;
+          _confirmation = confirmation;
           _step = _Step.receipt;
         });
       case SendFailed(:final message):
@@ -503,14 +525,20 @@ class _SendSheetState extends ConsumerState<SendSheet> {
       balance.value ?? BigInt.zero,
       _strategy.feeChargedToBalance(fee),
     );
+    final signer = _signer;
     final affordabilityError = fee == null ? null : _strategy.affordabilityError(ref, fee, l10n);
+    // A proposal's cost is its member's to pay, not the amount's fault: it
+    // is said of that account, under the cost.
+    final costProblem = affordabilityError == null || signer == null
+        ? null
+        : l10n.desktopProposeCostNotCovered(signer.name);
     // A balance that is not known is not a shortfall: Review is unavailable
     // without the amount being called too much.
     final amountProblem = _amountUnreadable
         ? l10n.sendInputAmountInvalidAmount
         : amountStatus == AmountStatus.insufficientBalance && !balance.hasValue
         ? null
-        : _amountProblem(l10n, amountStatus, fee: fee) ?? affordabilityError;
+        : _amountProblem(l10n, amountStatus, fee: fee) ?? (costProblem == null ? affordabilityError : null);
     final canReview =
         _recipientAccepted &&
         fee != null &&
@@ -637,6 +665,15 @@ class _SendSheetState extends ConsumerState<SendSheet> {
           Row(mainAxisSize: MainAxisSize.min, children: _feeLine(l10n, fmt, feeState)),
         ],
       ),
+      if (costProblem != null) ...[
+        const SizedBox(height: 4),
+        Text(
+          costProblem,
+          key: SendSheet.costProblemKey,
+          textAlign: TextAlign.end,
+          style: context.themeTextV3.caption.copyWith(color: colors.semanticEmber),
+        ),
+      ],
       const SizedBox(height: 12 - DesktopCheckbox.boxInset),
       // The box on the content's edge, under the start of the line above.
       Transform.translate(
@@ -644,7 +681,7 @@ class _SendSheetState extends ConsumerState<SendSheet> {
         child: DesktopCheckbox(
           key: SendSheet.maxKey,
           value: _isMax,
-          label: l10n.desktopSendMaximum,
+          label: signer == null ? l10n.desktopSendMaximum : l10n.desktopProposeMaximum,
           onChanged: balance.hasValue ? _setMax : null,
         ),
       ),
@@ -711,11 +748,16 @@ class _SendSheetState extends ConsumerState<SendSheet> {
   /// when it could not be had.
   List<Widget> _feeLine(AppLocalizations l10n, NumberFormattingService fmt, SendFeeState feeState) {
     final fee = feeState.fee;
+    final signer = _signer;
+    String cost(SendFee fee) => estimateLabel(
+      l10n.commonAmountBalance(fmt.formatBalance(fee.displayFee, smartDecimals: 5), AppConstants.tokenSymbol),
+      estimate: !_feeApplies(feeState),
+    );
     final retry = ToolbarAction.symbol(
       key: SendSheet.retryFeeKey,
       symbol: CupertinoIcons.arrow_clockwise,
       label: l10n.homeActivityRetry,
-      onPressed: () => _strategy.retryFee(ref, recipient: _recipient, amount: _amount),
+      onPressed: () => _strategy.retryFee(ref, recipient: _pricedRecipient, amount: _amount),
     );
 
     return [
@@ -725,18 +767,15 @@ class _SendSheetState extends ConsumerState<SendSheet> {
           style: context.sendBody(color: context.colorsV3.semanticEmber),
         )
       else ...[
-        Text(sendFeeLabel(_strategy, l10n), style: context.sendBody()),
+        Text(signer == null ? sendFeeLabel(_strategy, l10n) : l10n.desktopProposeCost, style: context.sendBody()),
         const SizedBox(width: 8),
         if (fee == null)
           const Loader(size: 12)
-        else
-          Text(
-            estimateLabel(
-              l10n.commonAmountBalance(fmt.formatBalance(fee.displayFee, smartDecimals: 5), AppConstants.tokenSymbol),
-              estimate: !_feeApplies(feeState),
-            ),
-            style: context.sendBody(),
-          ),
+        else ...[
+          Text(signer == null ? cost(fee) : l10n.desktopProposeCostPaidBy(cost(fee)), style: context.sendBody()),
+          // The name takes what the cost leaves it, and is cut short there.
+          if (signer != null) ...[const SizedBox(width: 8), Flexible(child: AccountLabel(account: signer))],
+        ],
       ],
       if (feeState.failed) ...[const SizedBox(width: 4), retry],
     ];
@@ -767,15 +806,22 @@ class _SendSheetState extends ConsumerState<SendSheet> {
       sendAll: _sendAll,
     );
     final strings = _strategy.strings(l10n);
+    // What the account that pays holds can move while the review stands: a
+    // proposal's cost is its member's to pay, and is said of that account.
+    final signer = _signer;
+    final costProblem = _strategy.affordabilityError(ref, review.fee, l10n) == null || signer == null
+        ? null
+        : l10n.desktopProposeCostNotCovered(signer.name);
     // Beside the buttons: what stops the send, or why the last press sent
     // nothing.
     final problem =
         _amountProblem(l10n, review.amountStatus, fee: review.fee) ??
+        costProblem ??
         (review.feeFailed ? strings.feeFetchFailedMessage : _error);
 
     return [
       const SizedBox(height: 26),
-      CapsText(strings.reviewHeroLabel, style: context.sendCaps()),
+      CapsText(_signer == null ? strings.reviewHeroLabel : l10n.desktopProposeProposing, style: context.sendCaps()),
       const SizedBox(height: 12),
       Row(
         crossAxisAlignment: CrossAxisAlignment.baseline,
@@ -797,14 +843,21 @@ class _SendSheetState extends ConsumerState<SendSheet> {
         ],
       ),
       const SizedBox(height: 24),
-      SendSummary(
-        l10n: l10n,
-        recipient: _recipient,
-        from: _account.name,
-        rows: rows,
-        feeLabel: sendFeeLabel(_strategy, l10n),
-        totalLabel: l10n.swapYouPay,
+      // The lines scroll where the window is too low for them all; what is
+      // paid in all and the buttons stay under them in the sheet.
+      Flexible(
+        child: SingleChildScrollView(
+          child: SendSummary(
+            l10n: l10n,
+            recipient: _recipient,
+            from: _account,
+            rows: rows,
+            feeLabel: sendFeeLabel(_strategy, l10n),
+            signer: _signer,
+          ),
+        ),
       ),
+      SendTotal(rows: rows, label: _signer == null ? l10n.swapYouPay : l10n.desktopProposePays, signer: _signer),
       const SizedBox(height: 22),
       Row(
         children: [
@@ -813,7 +866,11 @@ class _SendSheetState extends ConsumerState<SendSheet> {
                 ? const SizedBox.shrink()
                 : Padding(
                     padding: const EdgeInsets.only(right: 16),
-                    child: Text(problem, style: context.sendBody(color: colors.semanticEmber)),
+                    child: Text(
+                      problem,
+                      key: identical(problem, costProblem) ? SendSheet.costProblemKey : null,
+                      style: context.sendBody(color: colors.semanticEmber),
+                    ),
                   ),
           ),
           if (review.feeFailed) ...[
@@ -835,9 +892,9 @@ class _SendSheetState extends ConsumerState<SendSheet> {
           const SizedBox(width: 10),
           SheetButton(
             key: SendSheet.sendKey,
-            label: strings.flowTitle,
+            label: _signer == null ? strings.flowTitle : l10n.desktopProposeSubmit,
             isLoading: _isSending,
-            isDisabled: review.confirmBlocked,
+            isDisabled: review.confirmBlocked || costProblem != null,
             onTap: () => _send(review, rows),
           ),
         ],
@@ -1029,26 +1086,64 @@ class _SendSheetState extends ConsumerState<SendSheet> {
     onPressed: () => ref.read(openExternalUrlProvider)(Uri.parse(page)),
   );
 
+  /// The line over the receipt: what became of the send, as far as known.
+  Widget _receiptStatus(AppLocalizations l10n, SendConfirmation confirmation) {
+    final colors = context.colorsV3;
+    final (color, label) = switch (confirmation) {
+      SendConfirmation.confirmed => (colors.semanticSage, l10n.desktopSendSubmitted),
+      SendConfirmation.pending => (colors.textMuted, l10n.desktopProposeConfirming),
+      SendConfirmation.unconfirmed => (colors.semanticEmber, l10n.desktopProposeNotConfirmed),
+    };
+    final style = context.sendCaps(color: color, spacing: 2.4);
+    const markSize = 13.0;
+    final mark = switch (confirmation) {
+      SendConfirmation.confirmed => Icon(CupertinoIcons.checkmark_alt, size: markSize, color: color),
+      // Waiting has a part that moves, unless the system asks for none.
+      SendConfirmation.pending =>
+        MediaQuery.disableAnimationsOf(context) ? null : TerminalSpinner(style: style.copyWith(letterSpacing: 0)),
+      SendConfirmation.unconfirmed => Icon(CupertinoIcons.exclamationmark_circle, size: markSize, color: color),
+    };
+
+    // As high with one mark as with another, or with none: what is under it
+    // stays where it is when the send's fate is learned.
+    return SizedBox(
+      height: markSize,
+      child: Row(
+        children: [
+          if (mark != null) ...[mark, const SizedBox(width: 8)],
+          CapsText(label, style: style),
+        ],
+      ),
+    );
+  }
+
   List<Widget> _receipt(AppLocalizations l10n) {
     final colors = context.colorsV3;
     final submitted = _submitted;
     if (submitted == null) throw StateError('The receipt step has no submitted send.');
+    // A receipt that waits for nothing says what holds from the broadcast on.
+    final waitsFor = _confirmation;
+    final confirmation = waitsFor == null ? SendConfirmation.confirmed : ref.watch(waitsFor);
+    final isConfirmed = confirmation == SendConfirmation.confirmed;
     final pages = _explorerPages(submitted);
     // Only macOS has a share picker to hand the pages to.
     final canShare = pages.isNotEmpty && defaultTargetPlatform == TargetPlatform.macOS;
+    // A proposal's receipt says what was proposed: the amount, as its
+    // terminal content words it.
+    final proposed = _signer == null
+        ? null
+        : submitted.amountText ?? (throw StateError('A submitted proposal has no amount to name.'));
 
     return [
       const SizedBox(height: 26),
-      Row(
-        children: [
-          Icon(CupertinoIcons.checkmark_alt, size: 13, color: colors.semanticSage),
-          const SizedBox(width: 8),
-          CapsText(l10n.desktopSendSubmitted, style: context.sendCaps(color: colors.semanticSage, spacing: 2.4)),
-        ],
-      ),
+      _receiptStatus(l10n, confirmation),
       const SizedBox(height: 14),
       Text(
-        submitted.headline,
+        proposed == null
+            ? submitted.headline
+            : isConfirmed
+            ? l10n.desktopProposeProposed(proposed)
+            : l10n.desktopProposeProposingAmount(proposed),
         style: context.themeTextV3.titleHero.copyWith(
           fontSize: 26,
           height: 1.05,
@@ -1057,15 +1152,45 @@ class _SendSheetState extends ConsumerState<SendSheet> {
         ),
       ),
       const SizedBox(height: 10),
-      Text(submitted.subline, style: context.sendBody()),
+      // Until its transaction has created it, a proposal is only on its way
+      // to being one: the wait is said in place of what follows a proposal,
+      // and so is the wallet having stopped waiting.
+      switch (confirmation) {
+        SendConfirmation.confirmed => Text(submitted.subline, style: context.sendBody()),
+        SendConfirmation.pending => Text(l10n.desktopProposeWaiting, style: context.sendBody()),
+        SendConfirmation.unconfirmed => Text(
+          l10n.multisigProposeTimeoutToast,
+          style: context.sendBody(color: colors.semanticEmber),
+        ),
+      },
       const SizedBox(height: 24),
-      SendSummary(
-        l10n: l10n,
-        recipient: submitted.recipientAddress,
-        from: _account.name,
+      Flexible(
+        child: SingleChildScrollView(
+          child: SendSummary(
+            l10n: l10n,
+            recipient: submitted.recipientAddress,
+            from: _account,
+            rows: _submittedRows,
+            feeLabel: sendFeeLabel(_strategy, l10n),
+            signer: _signer,
+            // Proposing is the proposer's own approval, the first, once
+            // there is a proposal to have approved.
+            approvals: _signer == null
+                ? null
+                : isConfirmed
+                ? 1
+                : 0,
+          ),
+        ),
+      ),
+      SendTotal(
         rows: _submittedRows,
-        feeLabel: sendFeeLabel(_strategy, l10n),
-        totalLabel: l10n.desktopSendYouPaid,
+        label: _signer == null
+            ? l10n.desktopSendYouPaid
+            : isConfirmed
+            ? l10n.desktopProposePaid
+            : l10n.desktopProposePays,
+        signer: _signer,
       ),
       // A send that took several transactions names each, with its own page.
       // However many, they leave the buttons under them in the sheet.

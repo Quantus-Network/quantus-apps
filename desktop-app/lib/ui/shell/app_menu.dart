@@ -44,8 +44,9 @@ List<PlatformMenu> buildAppMenus({
   SingleActivator? shortcutOf(AccountActionKind action) => switch (action) {
     AccountActionKind.receive => keysOf(AppCommand.receive),
     AccountActionKind.send => keysOf(AppCommand.send),
-    // Their sheets are not built yet.
-    AccountActionKind.swap || AccountActionKind.propose => null,
+    AccountActionKind.propose => keysOf(AppCommand.propose),
+    // Its sheet is not built yet.
+    AccountActionKind.swap => null,
   };
 
   PlatformMenuItemGroup provided(List<PlatformProvidedMenuItemType> types) =>

@@ -6,6 +6,7 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/l10n/app_localizations.dart';
 import 'package:wallet_core/providers/account_providers.dart';
 import 'package:wallet_core/providers/l10n_provider.dart';
+import 'package:wallet_core/providers/multisig_proposal_confirmations_provider.dart';
 import 'package:wallet_core/providers/multisig_providers.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:wallet_core/services/transaction_submission_service.dart';
@@ -15,6 +16,7 @@ import 'package:wallet_core/send/keystone_signing_session.dart';
 import 'package:wallet_core/send/send_review_row.dart';
 import 'package:wallet_core/send/send_strategy.dart';
 import 'package:wallet_core/services/user_approval.dart';
+import 'package:wallet_core/utils/explorer_url.dart';
 import 'package:wallet_core/utils/multisig_expiry.dart';
 
 /// Proposal cost for a recipient. The network fee is still a chain estimate,
@@ -104,11 +106,20 @@ class MultisigProposeStrategy extends SendStrategy {
       ref.invalidate(multisigProposeFeeProvider((msig, recipient.trim())));
 
   @override
-  String? affordabilityError(WidgetRef ref, SendFee fee, AppLocalizations l10n) {
-    final memberBalance = ref.watch(effectiveBalanceProviderFamily(msig.myMemberAccountId)).value;
-    if (memberBalance == null) return null;
-    return memberBalance < fee.displayFee ? l10n.multisigProposeFeePayerInsufficient : null;
-  }
+  String? affordabilityError(WidgetRef ref, SendFee fee, AppLocalizations l10n) =>
+      _coversCost(ref.watch(effectiveBalanceProviderFamily(msig.myMemberAccountId)).value, fee)
+      ? null
+      : l10n.multisigProposeFeePayerInsufficient;
+
+  /// The member's account holding [memberBalance] can pay [fee]. A balance
+  /// that is not known is no objection: the flows open no review without it.
+  static bool _coversCost(BigInt? memberBalance, SendFee fee) =>
+      memberBalance == null || memberBalance >= fee.displayFee;
+
+  /// As [_coversCost], of what the member's account holds now, from where
+  /// nothing is watched.
+  bool _memberCoversCost(WidgetRef ref, SendFee fee) =>
+      _coversCost(ref.read(effectiveBalanceProviderFamily(msig.myMemberAccountId)).value, fee);
 
   @override
   List<SendReviewRow> reviewRows(
@@ -129,9 +140,9 @@ class MultisigProposeStrategy extends SendStrategy {
         l10n.commonAmountBalance(fmt.formatBalance(v, smartDecimals: AppConstants.decimals), AppConstants.tokenSymbol);
 
     return [
-      SendReviewAddress(l10n.multisigProposeProposerLabel, msig.myMemberAccountId),
-      SendReviewText(l10n.sendReviewAmount, amt(amount)),
-      SendReviewText(l10n.multisigProposeThresholdLabel, '${msig.threshold}/${msig.signers.length}'),
+      SendReviewAddress(l10n.multisigProposeProposerLabel, msig.myMemberAccountId, kind: SendReviewRowKind.signer),
+      SendReviewText(l10n.sendReviewAmount, amt(amount), kind: SendReviewRowKind.amount),
+      SendReviewThreshold(l10n.multisigProposeThresholdLabel, threshold: msig.threshold, signers: msig.signers.length),
       SendReviewExpiry(
         l10n.multisigProposeExpiresLabel,
         resolveMultisigExpiryParts(
@@ -141,10 +152,10 @@ class MultisigProposeStrategy extends SendStrategy {
           currentBlock: currentBlock,
         ),
       ),
-      SendReviewText(l10n.sendReviewNetworkFee, amt(breakdown.networkFee)),
-      SendReviewText(l10n.multisigProposalDepositLabel, amt(breakdown.deposit)),
-      SendReviewText(l10n.multisigProposeFeeRowLabel, amt(breakdown.creationFee)),
-      SendReviewText(l10n.multisigProposeMemberTotalLabel, amt(breakdown.memberCost)),
+      SendReviewText(l10n.sendReviewNetworkFee, amt(breakdown.networkFee), kind: SendReviewRowKind.fee),
+      SendReviewText(l10n.multisigProposalDepositLabel, amt(breakdown.deposit), kind: SendReviewRowKind.deposit),
+      SendReviewText(l10n.multisigProposeFeeRowLabel, amt(breakdown.creationFee), kind: SendReviewRowKind.charge),
+      SendReviewText(l10n.multisigProposeMemberTotalLabel, amt(breakdown.memberCost), kind: SendReviewRowKind.total),
     ];
   }
 
@@ -258,11 +269,16 @@ class MultisigProposeStrategy extends SendStrategy {
       );
     }
 
+    // What the member holds can have moved since the review was drawn, and
+    // again while the approval was asked for. A proposal its member cannot
+    // pay for is included all the same, and fails at the cost of its fee.
+    if (!_memberCoversCost(ref, fee)) return SendFailed(l10n.multisigProposeFeePayerInsufficient);
     final approval = await ref.read(userApprovalProvider).approve(reason: l10n.multisigProposeAuthReason);
     if (approval != ApprovalResult.approved) return SendFailed(l10n.multisigProposeAuthRequired);
+    if (!_memberCoversCost(ref, fee)) return SendFailed(l10n.multisigProposeFeePayerInsufficient);
 
     try {
-      await ref
+      final hash = await ref
           .read(transactionSubmissionServiceProvider)
           .proposeTransfer(
             msig: msig,
@@ -273,7 +289,12 @@ class MultisigProposeStrategy extends SendStrategy {
             feeBreakdown: breakdown,
           );
       _afterProposed(ref, recipient);
-      return SendSubmitted(terminal);
+      // Broadcast is not created: what the terminal says of the proposal
+      // holds once the wallet has seen the transaction create it.
+      return SendSubmitted(
+        terminal.copyWith(explorerUrl: multisigProposalExplorerUrl(hash)),
+        confirmation: multisigProposalConfirmationProvider(hash),
+      );
     } catch (e, st) {
       quantusPrint('Propose submit error: $e $st');
       return SendFailed(l10n.multisigProposeSubmitFailed);

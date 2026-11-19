@@ -5089,6 +5089,126 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The shortcut could not be saved: {error}'**
   String desktopShortcutsSaveFailed(String error);
+
+  /// Desktop Propose: the label, under the amount, of what proposing costs the member in all (network fee, deposit and proposal fee)
+  ///
+  /// In en, this message translates to:
+  /// **'Proposal cost'**
+  String get desktopProposeCost;
+
+  /// Desktop Propose: what proposing costs, followed by the badge and name of the member's account that pays it
+  ///
+  /// In en, this message translates to:
+  /// **'{cost}, paid by'**
+  String desktopProposeCostPaidBy(String cost);
+
+  /// Desktop Propose: under the amount, when the member's own account cannot pay what proposing costs
+  ///
+  /// In en, this message translates to:
+  /// **'{account} does not hold enough to pay the proposal cost.'**
+  String desktopProposeCostNotCovered(String account);
+
+  /// Desktop Propose: the checkbox under the amount that proposes the multisig's whole balance
+  ///
+  /// In en, this message translates to:
+  /// **'Propose the maximum amount'**
+  String get desktopProposeMaximum;
+
+  /// Desktop Propose review: the small label over the amount; drawn in capitals
+  ///
+  /// In en, this message translates to:
+  /// **'Proposing'**
+  String get desktopProposeProposing;
+
+  /// Desktop Propose review: the row naming the member's account that proposes
+  ///
+  /// In en, this message translates to:
+  /// **'Proposed by'**
+  String get desktopProposeProposedBy;
+
+  /// Desktop Propose review: the row saying how many of the multisig's signers must approve
+  ///
+  /// In en, this message translates to:
+  /// **'Approvals needed'**
+  String get desktopProposeApprovalsNeeded;
+
+  /// Desktop Propose receipt: the row saying how many approvals the proposal has of those it needs
+  ///
+  /// In en, this message translates to:
+  /// **'Approvals'**
+  String get desktopProposeApprovals;
+
+  /// Desktop Propose: a count out of a total, as in "2 of 3" signers or "1 of 2" approvals
+  ///
+  /// In en, this message translates to:
+  /// **'{count} of {total}'**
+  String desktopProposeCountOf(int count, int total);
+
+  /// Desktop Propose: the row saying when the proposal expires
+  ///
+  /// In en, this message translates to:
+  /// **'Expires'**
+  String get desktopProposeExpires;
+
+  /// Desktop Propose review: the row of the deposit held while the proposal is open
+  ///
+  /// In en, this message translates to:
+  /// **'Deposit'**
+  String get desktopProposeDeposit;
+
+  /// Desktop Propose review: the row of the fee the chain charges for creating a proposal
+  ///
+  /// In en, this message translates to:
+  /// **'Proposal fee'**
+  String get desktopProposeFee;
+
+  /// Desktop Propose review: follows the badge and name of the member's account on the total's row, as in "Account 1 pays"
+  ///
+  /// In en, this message translates to:
+  /// **'pays'**
+  String get desktopProposePays;
+
+  /// Desktop Propose receipt: follows the badge and name of the member's account on the total's row, as in "Account 1 paid"
+  ///
+  /// In en, this message translates to:
+  /// **'paid'**
+  String get desktopProposePaid;
+
+  /// Desktop Propose review: the button that submits the proposal
+  ///
+  /// In en, this message translates to:
+  /// **'Submit Proposal'**
+  String get desktopProposeSubmit;
+
+  /// Desktop Propose receipt: the headline once the network has created the proposal; the amount comes with its token symbol, as in "250 QTC proposed"
+  ///
+  /// In en, this message translates to:
+  /// **'{amount} proposed'**
+  String desktopProposeProposed(String amount);
+
+  /// Desktop Propose receipt: small capitals over the receipt while the network has not yet created the proposal
+  ///
+  /// In en, this message translates to:
+  /// **'Confirming'**
+  String get desktopProposeConfirming;
+
+  /// Desktop Propose receipt: small capitals over the receipt when the wallet stopped waiting for the network to create the proposal
+  ///
+  /// In en, this message translates to:
+  /// **'Not confirmed'**
+  String get desktopProposeNotConfirmed;
+
+  /// Desktop Propose receipt: the headline until the network has created the proposal; the amount comes with its token symbol, as in "Proposing 250 QTC"
+  ///
+  /// In en, this message translates to:
+  /// **'Proposing {amount}'**
+  String desktopProposeProposingAmount(String amount);
+
+  /// Desktop Propose receipt: the line under the headline while the proposal's transaction was broadcast and the network has not yet created the proposal
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for the network to create the proposal.'**
+  String get desktopProposeWaiting;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

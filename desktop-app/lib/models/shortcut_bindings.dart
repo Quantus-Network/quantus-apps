@@ -202,6 +202,7 @@ class ShortcutBindings {
   KeyCombo _defaultOf(AppCommand command) => switch (command) {
     AppCommand.receive => KeyCombo(LogicalKeyboardKey.keyR, _command),
     AppCommand.send => KeyCombo(LogicalKeyboardKey.keyS, _command),
+    AppCommand.propose => KeyCombo(LogicalKeyboardKey.keyP, _command),
     AppCommand.addAccount => KeyCombo(LogicalKeyboardKey.keyN, _command),
     AppCommand.toggleSidebar => KeyCombo(LogicalKeyboardKey.keyB, _command),
     AppCommand.nextSidebarItem => KeyCombo(LogicalKeyboardKey.arrowDown, _commandAlt),
@@ -372,6 +373,11 @@ class ShortcutBindings {
 
   /// Reads what [toJson] stored. Throws a [FormatException] for anything it
   /// would not have written, changes that clash among them included.
+  ///
+  /// One thing it reads that this version would not have written: a command
+  /// on the keys another ships with, that other having nothing stored. A
+  /// version from before the other command had those keys wrote it. What was
+  /// chosen is kept, and the other command is left without a shortcut.
   static ShortcutBindings fromJson(Map<String, Object?> json, {required bool isMac}) {
     final defaults = ShortcutBindings.defaults(isMac: isMac);
 
@@ -390,6 +396,12 @@ class ShortcutBindings {
       if (command == null) throw FormatException('No command is called "$key".');
       final combo = value == null ? null : KeyCombo.fromJson(value);
       if (combo != defaults._defaultOf(command)) changed[command] = combo;
+    }
+    // The keys a command was given are its own: a command that only ships
+    // with them gives them up.
+    final chosen = {...changed.values.nonNulls};
+    for (final command in AppCommand.values) {
+      if (!changed.containsKey(command) && chosen.contains(defaults._defaultOf(command))) changed[command] = null;
     }
 
     final bindings = ShortcutBindings._(

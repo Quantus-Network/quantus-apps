@@ -72,7 +72,7 @@ class TerminalLine extends StatelessWidget {
                     ),
             ),
             if (status != null) ...[const SizedBox(width: 8), Text(status, style: statusStyle)],
-            if (isTurning) ...[const SizedBox(width: 8), _Spinner(style: statusStyle)],
+            if (isTurning) ...[const SizedBox(width: 8), TerminalSpinner(style: statusStyle)],
           ],
         ),
       ),
@@ -80,19 +80,23 @@ class TerminalLine extends StatelessWidget {
   }
 }
 
-/// The spinner of a busy line: [TerminalLine.busyFaces] in turn, for as long
-/// as it is on screen. Every face is as wide as the others, so nothing beside
-/// it moves.
-class _Spinner extends StatefulWidget {
-  const _Spinner({required this.style});
+/// The spinner of a busy line, and of anything else that waits in the
+/// terminal's voice: [TerminalLine.busyFaces] in turn, for as long as it is
+/// on screen. Every face is as wide as the others in a monospaced [style],
+/// so nothing beside it moves.
+///
+/// It turns whatever the system asks: where less motion is asked for, leave
+/// it out.
+class TerminalSpinner extends StatefulWidget {
+  const TerminalSpinner({super.key, required this.style});
 
   final TextStyle style;
 
   @override
-  State<_Spinner> createState() => _SpinnerState();
+  State<TerminalSpinner> createState() => _TerminalSpinnerState();
 }
 
-class _SpinnerState extends State<_Spinner> with SingleTickerProviderStateMixin {
+class _TerminalSpinnerState extends State<TerminalSpinner> with SingleTickerProviderStateMixin {
   late final AnimationController _clock = AnimationController(
     vsync: this,
     duration: TerminalLine.busyTurn * TerminalLine.busyFaces.length,

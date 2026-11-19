@@ -103,6 +103,8 @@ void main() {
 
     expect(_capsOf(tester, AppCommand.receive), ['command', 'R']);
     expect(_capsOf(tester, AppCommand.send), ['command', 'S']);
+    expect(_capsOf(tester, AppCommand.propose), ['command', 'P']);
+    expect(_inSheet(find.text('Propose')), findsOneWidget);
     expect(_capsOf(tester, AppCommand.addAccount), ['command', 'N']);
     expect(_capsOf(tester, AppCommand.toggleSidebar), ['command', 'B']);
     expect(_capsOf(tester, AppCommand.nextSidebarItem), ['option', 'command', '↓']);

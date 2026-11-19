@@ -6,3 +6,7 @@ String explorerUrl(String path) => '${AppConstants.explorerEndpoint}/$path';
 /// The explorer's page of one transaction of a private send, by the hash of
 /// its extrinsic. A private send is one such transaction per batch of inputs.
 String wormholeExplorerUrl(String extrinsicHash) => explorerUrl('transactions/wormhole/$extrinsicHash');
+
+/// The explorer's page of the transaction that created a multisig proposal,
+/// by the hash of its extrinsic.
+String multisigProposalExplorerUrl(String extrinsicHash) => explorerUrl('multisig-proposal-created/$extrinsicHash');
