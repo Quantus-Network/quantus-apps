@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/v2/components/dotted_border.dart';
+import 'package:wallet_core/activity/activity_detail.dart';
 import 'package:wallet_core/l10n/app_localizations.dart';
 import 'package:wallet_core/providers/account_providers.dart';
 import 'package:wallet_core/providers/currency_display_provider.dart';
 import 'package:wallet_core/providers/l10n_provider.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
-import 'package:wallet_core/utils/explorer_url.dart';
 import 'package:resonance_network_wallet/routes.dart';
 import 'package:resonance_network_wallet/shared/extensions/current_route_extensions.dart';
 import 'package:wallet_core/utils/transaction_event_extension.dart';
@@ -33,122 +33,18 @@ class _TransactionDetailSheet extends ConsumerWidget {
 
   const _TransactionDetailSheet({required this.tx, required this.activeAccountId});
 
-  bool get _isSend {
-    if (_isPendingMultisigProposal ||
-        _isPendingMultisigExecution ||
-        _isPendingMultisigCancellation ||
-        _isMultisigProposalCreated ||
-        tx.isMultisigProposalApproved ||
-        tx.isMultisigProposalExecuted ||
-        tx.isMultisigProposalCancelled ||
-        tx is MultisigProposalEvent) {
-      return true;
-    }
-    return tx.from == activeAccountId;
-  }
-
-  bool get _isPending => tx is PendingTransactionEvent;
-  bool get _isMultisigCreated => tx.isMultisigCreated;
-  bool get _isPendingMultisigCreation => tx.isPendingMultisigCreation;
-  bool get _isMultisigProposalCreated => tx.isMultisigProposalCreated;
-  bool get _isMultisigProposalApproved => tx.isMultisigProposalApproved;
-  bool get _isMultisigProposalExecuted => tx.isMultisigProposalExecuted;
-  bool get _isMultisigProposalCancelled => tx.isMultisigProposalCancelled;
-  bool get _isPendingMultisigProposal => tx.isPendingMultisigProposal;
-  bool get _isPendingMultisigExecution => tx.isPendingMultisigExecution;
-  bool get _isPendingMultisigCancellation => tx.isPendingMultisigCancellation;
-  bool get _isInProcess =>
-      _isPending ||
-      _isPendingMultisigCreation ||
-      _isPendingMultisigProposal ||
-      _isPendingMultisigExecution ||
-      _isPendingMultisigCancellation;
-
-  String _title(AppLocalizations l10n, {required bool isPrivate}) {
-    if (_isPendingMultisigProposal) return l10n.activityDetailTitleProposing;
-    if (_isPendingMultisigExecution) return l10n.activityDetailTitleExecuting;
-    if (_isPendingMultisigCancellation) return l10n.activityDetailTitleCancelling;
-    if (_isMultisigProposalCreated) return l10n.activityDetailTitleProposalCreated;
-    if (_isMultisigProposalApproved) return l10n.activityDetailTitleProposalApproved;
-    if (_isMultisigProposalExecuted) return l10n.activityDetailTitleProposalExecuted;
-    if (_isMultisigProposalCancelled) return l10n.activityDetailTitleProposalCancelled;
-    if (_isPendingMultisigCreation) return l10n.activityDetailTitleMultisigCreating;
-    if (_isMultisigCreated) return l10n.activityDetailTitleMultisigCreated;
-    if (_isPending) {
-      return isPrivate ? l10n.activityDetailTitlePrivatelySending : l10n.activityDetailTitleSending;
-    }
-    if (tx.isReversibleScheduled) {
-      if (_isSend) return l10n.activityDetailTitleScheduled;
-      return isPrivate ? l10n.activityDetailTitlePrivatelyReceiving : l10n.activityDetailTitleReceiving;
-    }
-    if (_isSend) return isPrivate ? l10n.activityDetailTitlePrivateSent : l10n.activityDetailTitleSent;
-    return isPrivate ? l10n.activityDetailTitlePrivateReceived : l10n.activityDetailTitleReceived;
-  }
-
-  String _statusLabel(AppLocalizations l10n) {
-    if (_isInProcess) return l10n.activityDetailStatusInProcess;
-    if (tx.isReversibleScheduled) return l10n.activityDetailStatusScheduled;
-    return l10n.activityDetailStatusCompleted;
-  }
-
-  Color _statusColor(AppColorsV3 colors) =>
-      _isInProcess || tx.isReversibleScheduled ? colors.semanticGlacier : colors.semanticSage;
-
-  String? _explorerUrl() {
-    final isMinerReward = tx.isMinerReward;
-    final isMultisigCreated = tx.isMultisigCreated;
-    final isProposalCreated = tx.isProposalCreation;
-    final isProposalApproved = tx.isMultisigProposalApproved;
-    final isProposalExecuted = tx.isMultisigProposalExecuted;
-    final isProposalCancelled = tx.isMultisigProposalCancelled;
-
-    String transactionType;
-    if (isProposalExecuted) {
-      transactionType = 'multisig-proposal-executed';
-    } else if (isProposalCancelled) {
-      transactionType = 'multisig-proposal-cancelled';
-    } else if (isProposalApproved) {
-      transactionType = 'multisig-signer-approved';
-    } else if (isProposalCreated) {
-      transactionType = 'multisig-proposal-created';
-    } else if (isMultisigCreated) {
-      transactionType = 'multisig-created';
-    } else if (isMinerReward) {
-      transactionType = 'miner-rewards';
-    } else if (tx.isWormhole) {
-      transactionType = 'transactions/wormhole';
-    } else if (tx.isReversibleScheduled) {
-      transactionType = 'transactions/scheduled-reversible';
-    } else if (tx.isReversibleExecuted) {
-      transactionType = 'transactions/executed-reversible';
-    } else if (tx.isReversibleCancelled) {
-      transactionType = 'transactions/cancelled-reversible';
-    } else {
-      transactionType = 'transactions';
-    }
-
-    String? path;
-    if (tx is ReversibleTransferEvent) {
-      path = '$transactionType/${(tx as ReversibleTransferEvent).txId}';
-    } else if (tx.extrinsicHash != null) {
-      path = '$transactionType/${tx.extrinsicHash}';
-    } else if (isMinerReward && tx.blockHash != null) {
-      path = '$transactionType/${tx.blockHash}';
-    }
-
-    return path == null ? null : explorerUrl(path);
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = ref.watch(l10nProvider);
     final colors = context.colorsV3;
     final isPrivate = isEncryptedAccount(ref.watch(activeAccountProvider).value?.account);
-    final explorerUrl = _explorerUrl();
-    final canShareExplorer = explorerUrl != null && !_isInProcess;
+    final detail = activityDetailOf(tx, accountId: activeAccountId, l10n: l10n, isPrivate: isPrivate);
+    final isInProcess = detail.status == ActivityStatus.inProcess;
+    final explorerUrl = detail.explorerUrl;
+    final canShareExplorer = explorerUrl != null && !isInProcess;
 
     return BottomSheetContainer(
-      title: _title(l10n, isPrivate: isPrivate),
+      title: detail.title,
       trailing: Builder(
         builder: (buttonContext) => IconButton(
           onPressed: canShareExplorer ? () => shareText(buttonContext, explorerUrl) : null,
@@ -159,9 +55,13 @@ class _TransactionDetailSheet extends ConsumerWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _AmountSection(tx: tx, isSend: _isSend, activeAccountId: activeAccountId),
+          _AmountSection(tx: tx, isSend: detail.isSend, activeAccountId: activeAccountId),
           const SizedBox(height: 20),
-          _StatusRow(label: l10n.activityDetailStatus, value: _statusLabel(l10n), color: _statusColor(colors)),
+          _StatusRow(
+            label: l10n.activityDetailStatus,
+            value: detail.status.label(l10n),
+            color: detail.status == ActivityStatus.completed ? colors.semanticSage : colors.semanticGlacier,
+          ),
           const SizedBox(height: 8),
           DottedBorder(
             dashLength: 3,
@@ -170,10 +70,10 @@ class _TransactionDetailSheet extends ConsumerWidget {
             child: const SizedBox(width: double.infinity, height: 1),
           ),
           const SizedBox(height: 8),
-          _DetailsSection(tx: tx, isSend: _isSend, activeAccountId: activeAccountId),
+          _DetailsSection(tx: tx, isSend: detail.isSend, activeAccountId: activeAccountId),
           const SizedBox(height: 24),
           Center(
-            child: ExplorerLink(url: explorerUrl, enabled: !_isInProcess),
+            child: ExplorerLink(url: explorerUrl, enabled: !isInProcess),
           ),
           const SizedBox(height: 8),
         ],
