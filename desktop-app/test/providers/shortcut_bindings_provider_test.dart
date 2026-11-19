@@ -202,10 +202,25 @@ void main() {
 
   test('saved shortcuts that clash are unreadable too', () {
     settings.strings[ShortcutBindingsNotifier.settingsKey] = jsonEncode({
-      'commands': {'send': const KeyCombo(LogicalKeyboardKey.keyR, KeyModifiers(meta: true)).toJson()},
+      'commands': {'receive': _cmdJ.toJson(), 'send': _cmdJ.toJson()},
     });
 
     expect(start().read(shortcutBindingsProvider).savedWereUnreadable, isTrue);
+  });
+
+  test('shortcuts saved before a command shipped with the same keys are kept, and that command has none', () {
+    const cmdP = KeyCombo(LogicalKeyboardKey.keyP, KeyModifiers(meta: true));
+    settings.strings[ShortcutBindingsNotifier.settingsKey] = jsonEncode({
+      'commands': {'send': cmdP.toJson(), 'toggleSidebar': null},
+    });
+
+    final state = start().read(shortcutBindingsProvider);
+
+    expect(state.savedWereUnreadable, isFalse);
+    expect(telemetry.errors, isEmpty);
+    expect(state.bindings[AppCommand.send], cmdP);
+    expect(state.bindings[AppCommand.propose], isNull);
+    expect(state.bindings[AppCommand.toggleSidebar], isNull);
   });
 
   test('on Windows and Linux the shortcuts are theirs', () {
