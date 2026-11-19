@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:quantus_desktop_wallet/providers/wallet_presence_provider.dart';
 import 'package:quantus_desktop_wallet/ui/onboarding/welcome_page.dart';
 import 'package:quantus_desktop_wallet/ui/shell/desktop_shell.dart';
 import 'package:quantus_desktop_wallet/ui/shell/sidebar.dart';
@@ -195,6 +196,22 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(polling.calls, ['pause', 'resume', 'silentRefresh']);
+  });
+
+  testOnMac('a wallet wiped while its polling is paused leaves the polling unpaused for the next one', (tester) async {
+    final polling = FakeHistoryPollingManager();
+    final network = FakeNetwork();
+    final device = FakeWalletDevice()..store(const [mainAccount]);
+    await pumpShell(tester, polling: polling, network: network, overrides: device.overrides);
+
+    network.goOffline();
+    await tester.pumpAndSettle();
+    await _container(tester).read(walletPresenceProvider.notifier).wipeWallet();
+    await tester.pumpAndSettle();
+
+    expect(find.byType(WelcomePage), findsOneWidget);
+    // Unpaused only: there is no wallet left to catch up on.
+    expect(polling.calls, ['pause', 'resume']);
   });
 
   testOnMac('a catch-up that fails leaves the app running, the polling resumed', (tester) async {

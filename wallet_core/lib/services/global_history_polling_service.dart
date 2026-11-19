@@ -23,6 +23,11 @@ class GlobalHistoryPollingService {
   final Ref _ref;
   Timer? _pollingTimer;
   bool _isPolling = false;
+
+  /// Paused by [pausePolling] and not yet resumed: nothing sets the next
+  /// poll going meanwhile, neither a start nor a poll that ends.
+  bool _isPaused = false;
+
   int _pollsWhilePending = 0;
   BigInt _lastPending = BigInt.zero;
 
@@ -64,6 +69,7 @@ class GlobalHistoryPollingService {
 
   /// Stops the global history polling.
   /// This should be called when the app is disposed or user logs out.
+  /// A pause outlasts it: polling started again stays paused until resumed.
   void stopPolling() {
     if (!_isPolling && _pollingTimer == null) {
       return;
@@ -74,15 +80,18 @@ class GlobalHistoryPollingService {
     quantusPrint('Global history polling stopped');
   }
 
-  /// Pauses polling temporarily (e.g., when app goes to background)
+  /// Pauses polling temporarily (e.g., when app goes to background), until
+  /// [resumePolling].
   void pausePolling() {
+    _isPaused = true;
     _pollingTimer?.cancel();
     _pollingTimer = null;
     quantusPrint('Global history polling paused');
   }
 
-  /// Resumes polling if it was previously started
+  /// Ends a pause, polling again if it was previously started
   void resumePolling() {
+    _isPaused = false;
     if (_isPolling && _pollingTimer == null) {
       _scheduleNextPoll();
       quantusPrint('Global history polling resumed');
@@ -91,6 +100,9 @@ class GlobalHistoryPollingService {
 
   void _scheduleNextPoll() {
     _pollingTimer?.cancel();
+    _pollingTimer = null;
+    // Paused, the next poll is set when the polling is resumed.
+    if (_isPaused) return;
 
     final delay = pollDelay(pending: _lastPending, pollsWhilePending: _pollsWhilePending);
     _pollingTimer = Timer(delay, () {

@@ -59,6 +59,9 @@ class _LiveDataScopeState extends ConsumerState<LiveDataScope> {
   @override
   void dispose() {
     _window.dispose();
+    // The polling outlives this wallet, and a pause would outlast it too: the
+    // next wallet's scope starts from polling that is not paused.
+    if (_isPaused) _polling.resumePolling();
     super.dispose();
   }
 

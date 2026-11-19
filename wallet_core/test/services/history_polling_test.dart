@@ -32,6 +32,24 @@ class _FakeEncryptedAccountService extends Fake implements EncryptedAccountServi
   Future<void> dispose() async {}
 }
 
+/// An indexer with no history for any account, which answers once [gate]
+/// lets it.
+class _GatedHistory extends Fake implements ChainHistoryService {
+  Future<void>? gate;
+
+  @override
+  Future<SortedTransactionsList> fetchAllTransactionTypes({
+    required List<String> accountIds,
+    int limit = 20,
+    AccountEventCursor? otherAfter,
+    AccountEventCursor? scheduledAfter,
+    required TransactionFilter filter,
+  }) async {
+    await gate;
+    return SortedTransactionsList.empty;
+  }
+}
+
 void main() {
   final encrypted = Account(
     walletIndex: 0,
@@ -88,6 +106,15 @@ void main() {
   Future<void> activeAccountLoaded(ProviderContainer container, [WidgetTester? tester]) async {
     while (container.read(activeAccountProvider).value == null) {
       await (tester == null ? Future<void>.delayed(Duration.zero) : tester.pump());
+    }
+  }
+
+  /// Waits for the wallet's accounts to be read from the device, as [tester]
+  /// moves time on.
+  Future<void> accountsLoaded(ProviderContainer container, WidgetTester tester) async {
+    container.listen(accountsProvider, (_, _) {});
+    while (container.read(accountsProvider).value == null) {
+      await tester.pump();
     }
   }
 
@@ -201,10 +228,7 @@ void main() {
     tester,
   ) async {
     final container = wallet(active: encrypted, shown: {main});
-    container.listen(accountsProvider, (_, _) {});
-    while (container.read(accountsProvider).value == null) {
-      await tester.pump();
-    }
+    await accountsLoaded(container, tester);
     await show(container, main);
     final poller = container.read(globalHistoryPollingServiceProvider);
     await settledOn(tester);
@@ -215,6 +239,67 @@ void main() {
     expect(queriesOf(main), 2);
 
     poller.stopPolling();
+  });
+
+  group('paused polling polls nothing until it is resumed, though', () {
+    testWidgets('a poll was still under way when it was paused', (tester) async {
+      final history = _GatedHistory();
+      final container = wallet(
+        active: main,
+        shown: {savings},
+        overrides: [chainHistoryServiceProvider.overrideWithValue(history)],
+      );
+      await accountsLoaded(container, tester);
+      await activeAccountLoaded(container, tester);
+      await show(container, savings);
+      final poller = container.read(globalHistoryPollingServiceProvider);
+      final answer = Completer<void>();
+      history.gate = answer.future;
+
+      await tester.pump(GlobalHistoryPollingService.pollInterval);
+      await settledOn(tester);
+
+      // The poll has begun, and waits for the history.
+      expect(queriesOf(savings), 2);
+
+      poller.pausePolling();
+      answer.complete();
+      await settledOn(tester);
+      await tester.pump(GlobalHistoryPollingService.pollInterval * 2);
+      await settledOn(tester);
+
+      expect(queriesOf(savings), 2);
+
+      poller.resumePolling();
+      await tester.pump(GlobalHistoryPollingService.pollInterval);
+      await settledOn(tester);
+
+      expect(queriesOf(savings), 3);
+
+      poller.stopPolling();
+    });
+
+    testWidgets('the accounts it starts on were read only after the pause', (tester) async {
+      final container = wallet(active: encrypted, shown: {main});
+      final poller = container.read(globalHistoryPollingServiceProvider);
+      poller.pausePolling();
+      await accountsLoaded(container, tester);
+      await show(container, main);
+      await settledOn(tester);
+
+      await tester.pump(GlobalHistoryPollingService.pollInterval * 2);
+      await settledOn(tester);
+
+      expect(queriesOf(main), 1);
+
+      poller.resumePolling();
+      await tester.pump(GlobalHistoryPollingService.pollInterval);
+      await settledOn(tester);
+
+      expect(queriesOf(main), 2);
+
+      poller.stopPolling();
+    });
   });
 
   testWidgets('a refresh asked for while one is under way joins it: nothing is refreshed twice', (tester) async {
