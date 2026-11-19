@@ -5,12 +5,15 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 class EncryptedLockBadge extends StatelessWidget {
   final double size;
 
-  const EncryptedLockBadge({super.key, this.size = 40});
+  /// The lock's size; 40% of [size] when not given.
+  final double? iconSize;
+
+  const EncryptedLockBadge({super.key, this.size = 40, this.iconSize});
 
   @override
   Widget build(BuildContext context) => IconBadge(
     size: size,
-    child: QuantusIcon(QuantusIcons.lock, size: size * 0.4, color: context.colorsV3.accentFlare),
+    child: QuantusIcon(QuantusIcons.lock, size: iconSize ?? size * 0.4, color: context.colorsV3.accentFlare),
   );
 }
 

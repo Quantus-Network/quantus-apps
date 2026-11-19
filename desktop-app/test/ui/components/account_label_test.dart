@@ -31,7 +31,7 @@ void main() {
 
     final badge = tester.getRect(find.byType(AccountBadge));
     final name = tester.getRect(find.text('Main'));
-    expect(badge.size, const Size.square(AccountLabel.badgeSize));
+    expect(badge.size, const Size.square(24));
     expect(name.left, badge.right + AccountLabel.gap);
     expect(name.center.dy, moreOrLessEquals(badge.center.dy, epsilon: 1));
   });

@@ -16,7 +16,7 @@ class AccountLabel extends StatelessWidget {
   final TextStyle? style;
 
   /// The badge's size beside a line of text.
-  static const double badgeSize = 18;
+  static const double badgeSize = 24;
 
   /// The space between the badge and the name.
   static const double gap = 8;

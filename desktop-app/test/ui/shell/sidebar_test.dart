@@ -1,7 +1,9 @@
 import 'dart:async';
 
+import 'package:flutter/widgets.dart' show Size;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:quantus_desktop_wallet/ui/components/desktop_account_badge.dart';
 import 'package:quantus_desktop_wallet/ui/components/sidebar_row.dart';
 import 'package:quantus_desktop_wallet/ui/shell/account_pane.dart';
 import 'package:quantus_desktop_wallet/ui/shell/mining_rewards_pane.dart';
@@ -193,6 +195,11 @@ void main() {
     }
     expect(find.descendant(of: _row('Encrypted Account'), matching: find.byType(AccountBadge)), findsNothing);
     expect(find.descendant(of: _row('Encrypted Account'), matching: find.byType(EncryptedLockBadge)), findsOneWidget);
+
+    for (final name in ['Main', 'Vault', 'Team', 'Encrypted Account']) {
+      final badge = find.descendant(of: _row(name), matching: find.byType(DesktopAccountBadge));
+      expect(tester.getSize(badge), const Size.square(32), reason: name);
+    }
 
     // The names line up whichever badge a row has.
     final nameLefts = {

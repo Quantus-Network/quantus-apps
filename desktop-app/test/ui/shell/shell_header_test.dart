@@ -1,3 +1,4 @@
+import 'package:flutter/widgets.dart' show Size;
 import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_desktop_wallet/ui/components/toolbar_action.dart';
@@ -76,6 +77,12 @@ void main() {
 
       expect(_inPaneHeader(find.text('Encrypted Account')), findsOneWidget);
       expect(_inPaneHeader(find.byType(EncryptedLockBadge)), findsOneWidget);
+      expect(tester.getSize(_inPaneHeader(find.byType(EncryptedLockBadge))), const Size.square(24));
+      final lock = find.descendant(
+        of: _inPaneHeader(find.byType(EncryptedLockBadge)),
+        matching: find.byType(QuantusIcon),
+      );
+      expect(tester.widget<QuantusIcon>(lock).size, 12);
     });
 
     testOnMac('the account actions are in the header, not in the pane body', (tester) async {

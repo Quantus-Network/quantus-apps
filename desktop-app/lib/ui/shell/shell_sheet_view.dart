@@ -177,7 +177,6 @@ class ShellSheetHeader extends ConsumerWidget {
                 Flexible(
                   child: AccountLabel(
                     account: account,
-                    size: 22,
                     style: text.body.copyWith(color: colors.textMuted),
                   ),
                 ),

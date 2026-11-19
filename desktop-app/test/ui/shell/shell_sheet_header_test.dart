@@ -158,6 +158,7 @@ void main() {
     final title = tester.getRect(_inHeader(find.text('Receive')));
     final badge = tester.getRect(_inHeader(find.byType(DesktopAccountBadge)));
     final name = tester.getRect(_inHeader(find.text('Main')));
+    expect(badge.size, const Size.square(24));
     expect(title.left, moreOrLessEquals(edges.left, epsilon: 1));
     // Right after the title, not pushed along the row.
     expect(badge.left - title.right, moreOrLessEquals(14, epsilon: 0.5));

@@ -185,7 +185,7 @@ class _AccountRow extends ConsumerWidget {
   final DisplayAccount display;
   final bool isSelected;
 
-  static const double _badgeSize = 28;
+  static const double _badgeSize = 32;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
