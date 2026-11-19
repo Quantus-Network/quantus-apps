@@ -224,10 +224,18 @@ class _ActivityRowViewState extends State<ActivityRowView> {
                     height: 28,
                     child: Row(
                       children: [
-                        Flexible(child: _label(colors)),
-                        const SizedBox(width: 8),
-                        Text(_row.timeLabel, style: _timeStyle(colors)),
-                        const Spacer(),
+                        // What and when take the line's room, the amount
+                        // closes it.
+                        Expanded(
+                          child: Row(
+                            children: [
+                              Flexible(child: _label(colors)),
+                              const SizedBox(width: 8),
+                              Text(_row.timeLabel, style: _timeStyle(colors)),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 12),
                         _amount(colors),
                       ],
                     ),

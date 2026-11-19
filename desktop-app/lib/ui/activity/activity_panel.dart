@@ -148,6 +148,9 @@ class _ActivityPanelState extends ConsumerState<ActivityPanel> {
       ),
       child: AnimatedSwitcher(
         duration: MediaQuery.disableAnimationsOf(context) ? Duration.zero : ActivityPanel.fadeIn,
+        // From the top, where the rows go: the skeleton is no taller than it
+        // needs.
+        layoutBuilder: (current, previous) => Stack(alignment: Alignment.topCenter, children: [...previous, ?current]),
         child: body,
       ),
     );

@@ -120,6 +120,28 @@ Widget _account(BaseAccount? own, String address) =>
 Widget _label(BuildContext context, String text) =>
     Text(text, style: context.themeTextV3.body.copyWith(color: context.colorsV3.textMuted));
 
+/// An account under its [label]: one of the wallet's own by its badge and
+/// name at the line's end; any other by its whole address, too long to share
+/// the line, under the label.
+Widget _accountRow(BuildContext context, String label, BaseAccount? own, String address) {
+  if (own != null)
+    return SummaryRow(
+      label: _label(context, label),
+      value: AccountLabel(account: own),
+    );
+  return Padding(
+    padding: SummaryRow.padding,
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _label(context, label),
+        const SizedBox(height: 6),
+        DesktopAddressCheckphrase(address: address, isCompact: true),
+      ],
+    ),
+  );
+}
+
 /// View in Explorer, and, where the system has a share picker, Share: both
 /// for [page], unavailable while there is none.
 class _PageActions extends ConsumerWidget {
@@ -324,10 +346,7 @@ class _TransactionDetail extends ConsumerWidget {
     };
     if (label == null) return null;
     return switch (fact) {
-      ActivityAddressFact(:final address) => SummaryRow(
-        label: _label(context, label),
-        value: _account(own[address], address),
-      ),
+      ActivityAddressFact(:final address) => _accountRow(context, label, own[address], address),
       ActivityAmountFact(:final amount) => FigureRow(label: label, value: money(amount)),
       ActivityTextFact(:final text) => FigureRow(label: label, value: text),
       ActivityPartyFact() || ActivityTimeFact() || ActivityHashFact() => null,
@@ -435,10 +454,7 @@ class _ProposalDetail extends ConsumerWidget {
             ),
           ),
         FigureRow(label: l10n.desktopProposeDeposit, value: money(proposal.deposit)),
-        SummaryRow(
-          label: _label(context, l10n.desktopProposeProposedBy),
-          value: _account(own[proposal.proposer], proposal.proposer),
-        ),
+        _accountRow(context, l10n.desktopProposeProposedBy, own[proposal.proposer], proposal.proposer),
         const SizedBox(height: 20),
         _PageActions(page: explorerUrl('multisig-proposals/${proposal.explorerProposalId}')),
       ],

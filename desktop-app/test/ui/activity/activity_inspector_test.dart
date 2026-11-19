@@ -351,9 +351,28 @@ void main() {
     testOnMac('open, it shows read only: where it stands, what it moves, to whom, how far, until when, its deposit, '
         'who proposed it, and its page', (tester) async {
       final open = proposal(status: MultisigProposalStatus.active);
-      final outside = await openTeam(tester, FakeSendChain()..openProposals = [open]);
+      // Proposed by another signer, and changed before the first.
+      final byAnother = MultisigProposal(
+        entityId: 'by-another',
+        id: 2,
+        multisigAddress: teamMultisig.accountId,
+        proposer: _bob,
+        createdAt: _now.subtract(const Duration(hours: 10)),
+        updatedAt: _now.subtract(const Duration(hours: 10)),
+        pallet: '',
+        call: '',
+        recipient: 'qzMain',
+        amount: oneToken,
+        expiryBlock: 1284220,
+        approvals: const [],
+        deposit: oneToken,
+        status: MultisigProposalStatus.active,
+        threshold: 2,
+        signerCount: 2,
+      );
+      final outside = await openTeam(tester, FakeSendChain()..openProposals = [open, byAnother]);
 
-      await tester.tap(find.byType(OpenProposalRowView));
+      await tester.tap(find.byType(OpenProposalRowView).first);
       await tester.pumpAndSettle();
 
       expect(_inPanel(find.text(_l10n.multisigProposalTitle)), findsWidgets);

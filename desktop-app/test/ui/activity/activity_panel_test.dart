@@ -223,6 +223,11 @@ void main() {
       await _open(tester, chain: chain, settle: false);
       await tester.pump(const Duration(milliseconds: 450));
       expect(find.byType(ActivitySkeleton), findsOne);
+      // The rows' shapes start where the rows will, under the header.
+      expect(
+        tester.getRect(find.byType(ActivitySkeleton)).top,
+        moreOrLessEquals(tester.getRect(find.byType(ActivityPanel)).top + Panel.headerHeight + 1, epsilon: 1),
+      );
 
       chain.holdHistory!.complete();
       await tester.pump();

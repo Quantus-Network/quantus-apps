@@ -115,6 +115,9 @@ void main() {
     expect((tester.getRect(find.text('1d ago')).center.dy - label.center.dy).abs(), lessThan(4));
     expect((tester.getRect(find.text('-1 QTC')).center.dy - label.center.dy).abs(), lessThan(4));
     expect(tester.getRect(find.text(_bob)).top, greaterThan(label.bottom));
+    // The amount keeps to the row's right end, the time close after the label.
+    expect(tester.getRect(find.text('-1 QTC')).right, moreOrLessEquals(520 - 8, epsilon: 0.5));
+    expect(tester.getRect(find.text('1d ago')).left, moreOrLessEquals(label.right + 8, epsilon: 0.5));
   });
 
   testWidgets('brief: no who', (tester) async {

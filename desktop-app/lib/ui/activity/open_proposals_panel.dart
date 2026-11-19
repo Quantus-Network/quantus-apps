@@ -292,9 +292,17 @@ class _OpenProposalRowViewState extends State<OpenProposalRowView> {
                         height: 28,
                         child: Row(
                           children: [
-                            _mark(colors),
-                            if (approvals != null) ...[const SizedBox(width: 10), Flexible(child: approvals)],
-                            const Spacer(),
+                            // Where it stands takes the line's room, the
+                            // amount closes it.
+                            Expanded(
+                              child: Row(
+                                children: [
+                                  _mark(colors),
+                                  if (approvals != null) ...[const SizedBox(width: 10), Flexible(child: approvals)],
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 12),
                             amount,
                           ],
                         ),
