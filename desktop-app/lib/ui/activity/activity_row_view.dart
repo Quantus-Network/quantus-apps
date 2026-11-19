@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:quantus_desktop_wallet/ui/components/account_label.dart';
 import 'package:quantus_desktop_wallet/ui/components/desktop_address_checkphrase.dart';
@@ -81,6 +83,12 @@ class ActivityRowView extends StatefulWidget {
 
 class _ActivityRowViewState extends State<ActivityRowView> {
   bool _isHovered = false;
+
+  @override
+  void didUpdateWidget(ActivityRowView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isSelected && !oldWidget.isSelected) showWhenOpened(context);
+  }
 
   ActivityRow get _row => widget.row;
 
@@ -270,4 +278,14 @@ class _ActivityRowViewState extends State<ActivityRowView> {
       child: GestureDetector(behavior: HitTestBehavior.opaque, onTap: widget.onTap, child: row),
     );
   }
+}
+
+/// Scrolls the row at [context], newly opened, into its list's view, as
+/// little as it takes: ↑ and ↓ never walk off the visible rows.
+void showWhenOpened(BuildContext context) {
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    if (!context.mounted) return;
+    unawaited(Scrollable.ensureVisible(context, alignmentPolicy: ScrollPositionAlignmentPolicy.keepVisibleAtEnd));
+    unawaited(Scrollable.ensureVisible(context, alignmentPolicy: ScrollPositionAlignmentPolicy.keepVisibleAtStart));
+  });
 }

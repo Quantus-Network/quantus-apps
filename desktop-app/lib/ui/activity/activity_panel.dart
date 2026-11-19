@@ -26,7 +26,13 @@ import 'package:wallet_core/providers/l10n_provider.dart';
 /// end meanwhile. ↻ refreshes it; while that runs a light runs along the
 /// header, and the list stays.
 class ActivityPanel extends ConsumerStatefulWidget {
-  const ActivityPanel({super.key});
+  const ActivityPanel({super.key, this.isFocused = false, this.rowsHaveKeys = true});
+
+  /// Whether the keys are in this panel: its border is lighter.
+  final bool isFocused;
+
+  /// Whether the keys are in the lists, so an open row's backing is strong.
+  final bool rowsHaveKeys;
 
   static const refreshKey = Key('activity-refresh');
   static const loadingMoreKey = Key('activity-loading-more');
@@ -118,7 +124,13 @@ class _ActivityPanelState extends ConsumerState<ActivityPanel> {
           key: const ValueKey('empty'),
           child: Text(l10n.activityEmpty, style: context.themeTextV3.body.copyWith(color: context.colorsV3.textMuted)),
         ),
-        AsyncValue(:final value?) => _List(key: const ValueKey('list'), view: value, scroll: _scroll, l10n: l10n),
+        AsyncValue(:final value?) => _List(
+          key: const ValueKey('list'),
+          view: value,
+          scroll: _scroll,
+          l10n: l10n,
+          rowsHaveKeys: widget.rowsHaveKeys,
+        ),
         _ => const SizedBox.shrink(key: ValueKey('waiting')),
       };
     }
@@ -126,6 +138,7 @@ class _ActivityPanelState extends ConsumerState<ActivityPanel> {
     return Panel(
       title: l10n.activityTitle,
       isBusy: isRefreshing && view.hasValue,
+      isFocused: widget.isFocused,
       trailing: ToolbarAction.symbol(
         key: ActivityPanel.refreshKey,
         symbol: CupertinoIcons.arrow_clockwise,
@@ -144,11 +157,12 @@ class _ActivityPanelState extends ConsumerState<ActivityPanel> {
 /// The settled activity under its days, with the next page's shapes at the
 /// end while it loads.
 class _List extends StatelessWidget {
-  const _List({super.key, required this.view, required this.scroll, required this.l10n});
+  const _List({super.key, required this.view, required this.scroll, required this.l10n, required this.rowsHaveKeys});
 
   final ActivityView view;
   final ScrollController scroll;
   final AppLocalizations l10n;
+  final bool rowsHaveKeys;
 
   @override
   Widget build(BuildContext context) {
@@ -173,7 +187,8 @@ class _List extends StatelessWidget {
                   ),
                 ),
               ),
-              for (final tx in day.transactions) ActivityEntry(key: ValueKey(tx.id), tx: tx, form: form),
+              for (final tx in day.transactions)
+                ActivityEntry(key: ValueKey(tx.id), tx: tx, form: form, hasFocus: rowsHaveKeys),
             ],
             if (view.isLoadingMore)
               const ActivitySkeleton(key: ActivityPanel.loadingMoreKey, rows: 2, fades: false, hasHeading: false),

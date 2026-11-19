@@ -20,10 +20,20 @@ import 'package:wallet_core/providers/wallet_providers.dart';
 /// panel as tall as its rows, up to [maxHeight], then scrolling; with none
 /// open it says so.
 class OpenProposalsPanel extends ConsumerWidget {
-  const OpenProposalsPanel({super.key, required this.multisig, required this.maxHeight});
+  const OpenProposalsPanel({
+    super.key,
+    required this.multisig,
+    required this.maxHeight,
+    this.isFocused = false,
+    this.rowsHaveKeys = true,
+  });
 
   final MultisigAccount multisig;
   final double maxHeight;
+
+  /// Whether the keys are in this panel, and whether they are in the lists.
+  final bool isFocused;
+  final bool rowsHaveKeys;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -84,6 +94,7 @@ class OpenProposalsPanel extends ConsumerWidget {
                   form: form,
                   l10n: l10n,
                   isSelected: opened?.id == proposal.entityId,
+                  hasFocus: rowsHaveKeys,
                   onTap: () => ref.read(openedActivityProvider.notifier).open(OpenedProposal(proposal)),
                 ),
             ],
@@ -97,6 +108,7 @@ class OpenProposalsPanel extends ConsumerWidget {
     return Panel(
       title: l10n.multisigOpenProposals,
       fillsHeight: false,
+      isFocused: isFocused,
       child: ConstrainedBox(
         constraints: BoxConstraints(maxHeight: maxHeight - Panel.headerHeight - 1),
         child: Padding(padding: const EdgeInsets.all(8), child: body),
@@ -121,6 +133,7 @@ class OpenProposalRowView extends StatefulWidget {
     required this.form,
     required this.l10n,
     this.isSelected = false,
+    this.hasFocus = true,
     this.onTap,
   });
 
@@ -135,6 +148,9 @@ class OpenProposalRowView extends StatefulWidget {
   final ActivityRowForm form;
   final AppLocalizations l10n;
   final bool isSelected;
+
+  /// Whether the keys are in the lists; an open row's backing is quieter when not.
+  final bool hasFocus;
   final VoidCallback? onTap;
 
   @override
@@ -143,6 +159,12 @@ class OpenProposalRowView extends StatefulWidget {
 
 class _OpenProposalRowViewState extends State<OpenProposalRowView> {
   bool _isHovered = false;
+
+  @override
+  void didUpdateWidget(OpenProposalRowView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isSelected && !oldWidget.isSelected) showWhenOpened(context);
+  }
 
   bool get _isUnderWay => switch (widget.wait) {
     null || ProposalWait.approving || ProposalWait.executing || ProposalWait.cancelling => true,
@@ -221,7 +243,7 @@ class _OpenProposalRowViewState extends State<OpenProposalRowView> {
           ],
         );
         final backing = widget.isSelected
-            ? colors.textContent.useOpacity(0.1)
+            ? colors.textContent.useOpacity(widget.hasFocus ? 0.1 : 0.05)
             : _isHovered
             ? colors.textContent.useOpacity(0.05)
             : null;

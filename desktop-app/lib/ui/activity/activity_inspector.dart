@@ -33,7 +33,10 @@ import 'package:wallet_core/utils/multisig_expiry.dart';
 /// as Send's receipt shows one, or a multisig's proposal, read only. ✕
 /// closes it.
 class ActivityInspector extends ConsumerWidget {
-  const ActivityInspector({super.key});
+  const ActivityInspector({super.key, this.isFocused = false});
+
+  /// Whether the keys are in this panel: its border is lighter.
+  final bool isFocused;
 
   static const closeKey = Key('activity-inspector-close');
 
@@ -45,6 +48,7 @@ class ActivityInspector extends ConsumerWidget {
 
     return Panel(
       title: opened is OpenedProposal ? l10n.multisigProposalTitle : l10n.desktopActivityTransaction,
+      isFocused: isFocused,
       trailing: ToolbarAction.symbol(
         key: closeKey,
         symbol: CupertinoIcons.xmark,

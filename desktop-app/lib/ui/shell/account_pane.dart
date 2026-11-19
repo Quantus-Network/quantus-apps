@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_desktop_wallet/providers/activity_providers.dart';
 import 'package:quantus_desktop_wallet/ui/activity/activity_inspector.dart';
@@ -18,11 +19,39 @@ import 'package:wallet_core/providers/l10n_provider.dart';
 /// and, for a multisig, its open proposals, each only as tall as it needs;
 /// then its activity; and, at the right, what is open of it, resizable from
 /// the gap beside it. Its actions are in the top bar.
-class AccountPane extends ConsumerWidget {
+///
+/// A click in the lists puts the keys there: ↑ and ↓ walk every row that
+/// opens, the lists as one, Tab moves the keys into the panel at the right,
+/// and Esc closes it. The panel the keys are in has the lighter border.
+class AccountPane extends ConsumerStatefulWidget {
   const AccountPane({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<AccountPane> createState() => _AccountPaneState();
+}
+
+class _AccountPaneState extends ConsumerState<AccountPane> {
+  final _lists = FocusNode(debugLabel: 'activity lists');
+  final _inspector = FocusNode(debugLabel: 'activity inspector');
+
+  @override
+  void initState() {
+    super.initState();
+    _lists.addListener(_onFocusChange);
+    _inspector.addListener(_onFocusChange);
+  }
+
+  @override
+  void dispose() {
+    _lists.dispose();
+    _inspector.dispose();
+    super.dispose();
+  }
+
+  void _onFocusChange() => setState(() {});
+
+  @override
+  Widget build(BuildContext context) {
     final l10n = ref.watch(l10nProvider);
 
     return ref
@@ -30,8 +59,7 @@ class AccountPane extends ConsumerWidget {
         .when(
           loading: () => const Center(child: Loader()),
           error: (_, _) => _message(context, l10n.accountsSheetFailedLoadActiveAccount),
-          data: (active) =>
-              active == null ? _message(context, l10n.homeNoActiveAccount) : _content(context, ref, active),
+          data: (active) => active == null ? _message(context, l10n.homeNoActiveAccount) : _content(active),
         );
   }
 
@@ -41,62 +69,165 @@ class AccountPane extends ConsumerWidget {
     );
   }
 
-  Widget _content(BuildContext context, WidgetRef ref, DisplayAccount active) {
+  /// Every row that opens, in the order the lists show them.
+  List<OpenedActivity> _openable() {
+    final view = ref.read(activityViewProvider).value;
+    if (view == null) return const [];
+    OpenedActivity of(TransactionEvent tx) => switch (tx) {
+      MultisigProposalEvent(:final proposal) => OpenedProposal(proposal),
+      _ => OpenedTransaction(tx),
+    };
+    final open = ref.read(openProposalsViewProvider)?.value?.open ?? const <MultisigProposal>[];
+    return [
+      for (final tx in view.inProgress) of(tx),
+      for (final proposal in open) OpenedProposal(proposal),
+      for (final tx in view.settled) of(tx),
+    ];
+  }
+
+  /// Opens the row [by] rows from the open one, or the first when none is.
+  void _step(int by) {
+    final rows = _openable();
+    if (rows.isEmpty) return;
+    final current = ref.read(openedActivityViewProvider)?.id;
+    final at = rows.indexWhere((row) => row.id == current);
+    final next = at < 0 ? 0 : (at + by).clamp(0, rows.length - 1);
+    ref.read(openedActivityProvider.notifier).open(rows[next]);
+  }
+
+  bool get _isOpen => ref.read(openedActivityViewProvider) != null;
+
+  KeyEventResult _onListsKey(FocusNode node, KeyEvent event) {
+    if (event is! KeyDownEvent && event is! KeyRepeatEvent) return KeyEventResult.ignored;
+    switch (event.logicalKey) {
+      case LogicalKeyboardKey.arrowDown:
+        _step(1);
+        return KeyEventResult.handled;
+      case LogicalKeyboardKey.arrowUp:
+        _step(-1);
+        return KeyEventResult.handled;
+      case LogicalKeyboardKey.escape when _isOpen && event is KeyDownEvent:
+        ref.read(openedActivityProvider.notifier).close();
+        return KeyEventResult.handled;
+      case LogicalKeyboardKey.tab when _isOpen && !HardwareKeyboard.instance.isShiftPressed:
+        _inspector.requestFocus();
+        return KeyEventResult.handled;
+      default:
+        return KeyEventResult.ignored;
+    }
+  }
+
+  KeyEventResult _onInspectorKey(FocusNode node, KeyEvent event) {
+    if (event is! KeyDownEvent || event.logicalKey != LogicalKeyboardKey.escape) return KeyEventResult.ignored;
+    ref.read(openedActivityProvider.notifier).close();
+    _lists.requestFocus();
+    return KeyEventResult.handled;
+  }
+
+  Widget _content(DisplayAccount active) {
     // What was open and is no longer in the lists stays closed.
     ref.listen(openedActivityViewProvider, (_, opened) {
       if (opened != null) return;
       // After the frame: the providers that found it gone are still being
       // rebuilt in this one.
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!context.mounted) return;
+        if (!mounted) return;
         if (ref.read(openedActivityViewProvider) == null) ref.read(openedActivityProvider.notifier).close();
       });
     });
     final account = active.account;
-    final inProgress = ref.watch(activityViewProvider).value?.inProgress ?? const <TransactionEvent>[];
+    final view = ref.watch(activityViewProvider).value;
+    final inProgress = view?.inProgress ?? const <TransactionEvent>[];
     final multisig = account is MultisigAccount ? account : null;
-    final isOpen = ref.watch(openedActivityViewProvider) != null;
+    final opened = ref.watch(openedActivityViewProvider);
     final inspectorWidth = ref.watch(inspectorWidthProvider);
     final inspector = ref.read(inspectorWidthProvider.notifier);
 
-    final lists = LayoutBuilder(
-      builder: (context, constraints) {
-        // What sits over Activity takes half the column at most, or a third
-        // each when both do.
-        final shares = (inProgress.isEmpty ? 0 : 1) + (multisig == null ? 0 : 1);
-        final limit = shares == 0 ? 0.0 : constraints.maxHeight / (shares == 1 ? 2 : 3);
+    // The keys are in the lists, in the panel that holds the open row (in
+    // Activity while none is open), or in the panel at the right.
+    final listsHaveKeys = _lists.hasFocus;
+    final openId = opened?.id;
+    final openProposals = ref.watch(openProposalsViewProvider)?.value?.open ?? const <MultisigProposal>[];
+    final holder = openId == null
+        ? ActivityPanel
+        : inProgress.any((tx) => tx.id == openId)
+        ? InProgressPanel
+        : openProposals.any((proposal) => proposal.entityId == openId)
+        ? OpenProposalsPanel
+        : ActivityPanel;
+    bool holds(Type panel) => listsHaveKeys && holder == panel;
 
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            BalanceCard(account: account),
-            if (inProgress.isNotEmpty) ...[
-              const SizedBox(height: Panel.gap),
-              InProgressPanel(transactions: inProgress, maxHeight: limit),
-            ],
-            if (multisig != null) ...[
-              const SizedBox(height: Panel.gap),
-              OpenProposalsPanel(multisig: multisig, maxHeight: limit),
-            ],
-            const SizedBox(height: Panel.gap),
-            const Expanded(child: ActivityPanel()),
-          ],
-        );
-      },
+    // The regions take the keys without a node of their own for a screen
+    // reader, which would merge what they hold.
+    final lists = Focus(
+      focusNode: _lists,
+      includeSemantics: false,
+      onKeyEvent: _onListsKey,
+      child: Listener(
+        onPointerDown: (_) => _lists.requestFocus(),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            // What sits over Activity takes half the column at most, or a
+            // third each when both do.
+            final shares = (inProgress.isEmpty ? 0 : 1) + (multisig == null ? 0 : 1);
+            final limit = shares == 0 ? 0.0 : constraints.maxHeight / (shares == 1 ? 2 : 3);
+
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                BalanceCard(account: account),
+                if (inProgress.isNotEmpty) ...[
+                  const SizedBox(height: Panel.gap),
+                  InProgressPanel(
+                    transactions: inProgress,
+                    maxHeight: limit,
+                    isFocused: holds(InProgressPanel),
+                    rowsHaveKeys: listsHaveKeys,
+                  ),
+                ],
+                if (multisig != null) ...[
+                  const SizedBox(height: Panel.gap),
+                  OpenProposalsPanel(
+                    multisig: multisig,
+                    maxHeight: limit,
+                    isFocused: holds(OpenProposalsPanel),
+                    rowsHaveKeys: listsHaveKeys,
+                  ),
+                ],
+                const SizedBox(height: Panel.gap),
+                Expanded(
+                  child: ActivityPanel(isFocused: holds(ActivityPanel), rowsHaveKeys: listsHaveKeys),
+                ),
+              ],
+            );
+          },
+        ),
+      ),
     );
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Expanded(child: lists),
-        if (isOpen) ...[
+        if (opened != null) ...[
           PanelResizeHandle(
             width: inspectorWidth,
             resizes: ResizedPanel.right,
             onResize: inspector.resizeTo,
             onResizeEnd: () => unawaited(inspector.save()),
           ),
-          SizedBox(width: inspectorWidth, child: const ActivityInspector()),
+          SizedBox(
+            width: inspectorWidth,
+            child: Focus(
+              focusNode: _inspector,
+              includeSemantics: false,
+              onKeyEvent: _onInspectorKey,
+              child: Listener(
+                onPointerDown: (_) => _inspector.requestFocus(),
+                child: ActivityInspector(isFocused: _inspector.hasFocus),
+              ),
+            ),
+          ),
         ],
       ],
     );
