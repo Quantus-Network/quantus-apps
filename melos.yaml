@@ -69,6 +69,11 @@ scripts:
     description: Analyze all packages in the workspace (matches CI)
     run: melos exec --concurrency=1 -- "flutter analyze . --fatal-infos"
 
+  # Analyze, then the mobile suite, printing only failures and a verdict
+  check:
+    description: Analyze all packages and run the mobile suite; prints only what failed
+    run: bash scripts/check.sh
+
   # Format all packages
   format:
     description: Format all packages in the workspace

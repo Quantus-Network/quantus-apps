@@ -244,13 +244,17 @@ class _SummaryRow extends StatelessWidget {
 
   static const padding = EdgeInsets.symmetric(vertical: 9);
 
+  /// How tall a row is, whether it holds a line of text or an account's
+  /// badge, so the rows step down evenly. One that needs more grows.
+  static const double height = 34;
+
   /// The least space between the label and what stands for it.
   static const double gap = 16;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: padding,
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: height),
       child: Row(
         children: [
           label,

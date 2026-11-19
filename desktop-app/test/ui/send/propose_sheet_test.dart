@@ -354,6 +354,23 @@ void main() {
       expect(_accountBeside(tester, 'Proposed by', 'Main'), findsOneWidget);
     });
 
+    testOnMac('its rows step down evenly, those with a badge as those without', (tester) async {
+      await _openPropose(tester);
+
+      await _toReview(tester);
+
+      double centre(String label) => tester.getCenter(_inSheet(find.text(label))).dy;
+      for (final (upper, lower) in [
+        ('From', 'Proposed by'),
+        ('Proposed by', 'Approvals needed'),
+        ('Approvals needed', 'Expires'),
+        ('Network fee', 'Deposit'),
+        ('Deposit', 'Proposal fee'),
+      ]) {
+        expect(centre(lower) - centre(upper), moreOrLessEquals(34, epsilon: 0.5), reason: '$upper to $lower');
+      }
+    });
+
     testOnMac('draws the approvals needed as marks, none given yet, with how many of the signers', (tester) async {
       await _openPropose(tester);
 

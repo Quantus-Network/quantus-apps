@@ -78,7 +78,7 @@ void main() {
     final title = tester.getRect(inHeader(find.text('Receive')));
     final badge = tester.getRect(inHeader(find.byType(AccountBadge)));
     final name = tester.getRect(inHeader(find.text('Main')));
-    expect(badge.size, const Size.square(22));
+    expect(badge.size, const Size.square(24));
     expect(badge.left, title.right + 14);
     expect(name.left, badge.right + 8);
     expect(name.center.dy, moreOrLessEquals(badge.center.dy, epsilon: 1));

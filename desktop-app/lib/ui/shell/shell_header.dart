@@ -5,6 +5,8 @@ import 'package:quantus_desktop_wallet/constants.dart';
 import 'package:quantus_desktop_wallet/models/sidebar_selection.dart';
 import 'package:quantus_desktop_wallet/providers/shell_providers.dart';
 import 'package:quantus_desktop_wallet/services/window_chrome.dart';
+import 'package:quantus_desktop_wallet/ui/components/account_label.dart';
+import 'package:quantus_desktop_wallet/ui/components/desktop_account_badge.dart';
 import 'package:quantus_desktop_wallet/ui/components/window_header_row.dart';
 import 'package:quantus_desktop_wallet/ui/shell/account_pane.dart';
 import 'package:quantus_desktop_wallet/ui/shell/account_toolbar.dart';
@@ -60,8 +62,10 @@ class PaneHeader extends ConsumerWidget {
       edgePadding: AccountPane.padding,
       children: [
         if (!isSidebarVisible) const _SidebarButton(),
-        if (showsAccount && isEncryptedAccount(active?.account))
-          const IgnorePointer(child: EncryptedLockBadge(size: 24)),
+        if (showsAccount && active != null && isEncryptedAccount(active.account))
+          IgnorePointer(
+            child: DesktopAccountBadge(account: active.account, size: AccountLabel.badgeSize),
+          ),
         Expanded(
           child: IgnorePointer(
             child: Text(
