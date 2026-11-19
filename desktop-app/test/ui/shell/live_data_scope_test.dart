@@ -1,0 +1,183 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:quantus_desktop_wallet/ui/onboarding/welcome_page.dart';
+import 'package:quantus_desktop_wallet/ui/shell/desktop_shell.dart';
+import 'package:quantus_desktop_wallet/ui/shell/sidebar.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:wallet_core/providers/app_lifecycle_state_provider.dart';
+import 'package:wallet_core/providers/shown_balances_provider.dart';
+
+import '../../fakes.dart';
+
+/// Opens the window on a wallet whose active account is Main.
+Future<void> _openWallet(WidgetTester tester, {required FakeHistoryPollingManager polling, FakeNetwork? network}) {
+  return pumpShell(
+    tester,
+    polling: polling,
+    network: network,
+    overrides: shellOverrides(
+      accounts: const [mainAccount, savingsAccount, encryptedAccount, vaultAccount],
+      settings: FakeSettingsService(activeAccount: const RegularAccount(mainAccount), multisigs: [teamMultisig]),
+      balances: {...oneTokenEach, teamMultisig.accountId: oneToken},
+      encryptedBalances: {0: oneToken},
+    ),
+  );
+}
+
+/// Tells the app its window is [state], as the system would.
+Future<void> _window(WidgetTester tester, AppLifecycleState state) async {
+  addTearDown(() => tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed));
+  tester.binding.handleAppLifecycleStateChanged(state);
+  await tester.pumpAndSettle();
+}
+
+ProviderContainer _container(WidgetTester tester) =>
+    ProviderScope.containerOf(tester.element(find.byType(DesktopShell)));
+
+void main() {
+  testOnMac('opening the wallet sets the polling going, and asks nothing more of it', (tester) async {
+    final polling = FakeHistoryPollingManager();
+
+    await _openWallet(tester, polling: polling);
+
+    expect(find.byType(Sidebar), findsOneWidget);
+    expect(polling.starts, 1);
+    expect(polling.calls, isEmpty);
+  });
+
+  testOnMac('before there is a wallet nothing is polled', (tester) async {
+    final polling = FakeHistoryPollingManager();
+
+    await pumpShell(tester, polling: polling, overrides: FakeWalletDevice().overrides);
+
+    expect(find.byType(WelcomePage), findsOneWidget);
+    expect(polling.starts, 0);
+  });
+
+  testOnMac('a window that is minimized or hidden pauses the polling; shown again, it resumes and catches up at once', (
+    tester,
+  ) async {
+    final polling = FakeHistoryPollingManager();
+    await _openWallet(tester, polling: polling);
+
+    await _window(tester, AppLifecycleState.hidden);
+
+    expect(polling.calls, ['pause']);
+
+    await _window(tester, AppLifecycleState.inactive);
+
+    expect(polling.calls, ['pause', 'resume', 'silentRefresh']);
+
+    // Taking the focus as well changes nothing more.
+    await _window(tester, AppLifecycleState.resumed);
+
+    expect(polling.calls, ['pause', 'resume', 'silentRefresh']);
+  });
+
+  testOnMac('a window that only loses the focus keeps polling', (tester) async {
+    final polling = FakeHistoryPollingManager();
+    await _openWallet(tester, polling: polling);
+
+    await _window(tester, AppLifecycleState.inactive);
+    await _window(tester, AppLifecycleState.resumed);
+
+    expect(polling.calls, isEmpty);
+  });
+
+  testOnMac('what pauses with the app in the background runs while the window is on screen, focused or not', (
+    tester,
+  ) async {
+    await _openWallet(tester, polling: FakeHistoryPollingManager());
+    AppLifecycleState shared() => _container(tester).read(appLifecycleStateProvider);
+
+    await _window(tester, AppLifecycleState.inactive);
+
+    expect(shared(), AppLifecycleState.resumed);
+
+    await _window(tester, AppLifecycleState.hidden);
+
+    expect(shared(), AppLifecycleState.hidden);
+
+    await _window(tester, AppLifecycleState.inactive);
+
+    expect(shared(), AppLifecycleState.resumed);
+  });
+
+  testOnMac('losing the network pauses the polling; back online, it resumes and catches up at once', (tester) async {
+    final polling = FakeHistoryPollingManager();
+    final network = FakeNetwork();
+    await _openWallet(tester, polling: polling, network: network);
+
+    network.goOffline();
+    await tester.pumpAndSettle();
+
+    expect(polling.calls, ['pause']);
+
+    network.goOnline();
+    await tester.pumpAndSettle();
+
+    expect(polling.calls, ['pause', 'resume', 'silentRefresh']);
+  });
+
+  testOnMac('the network coming back while the window is hidden resumes nothing until it is shown', (tester) async {
+    final polling = FakeHistoryPollingManager();
+    final network = FakeNetwork();
+    await _openWallet(tester, polling: polling, network: network);
+
+    network.goOffline();
+    await tester.pumpAndSettle();
+    await _window(tester, AppLifecycleState.hidden);
+    network.goOnline();
+    await tester.pumpAndSettle();
+
+    // Paused once, however many reasons there are to be.
+    expect(polling.calls, ['pause']);
+
+    await _window(tester, AppLifecycleState.inactive);
+
+    expect(polling.calls, ['pause', 'resume', 'silentRefresh']);
+  });
+
+  testOnMac('a window shown again while the network is down stays paused until it is back', (tester) async {
+    final polling = FakeHistoryPollingManager();
+    final network = FakeNetwork();
+    await _openWallet(tester, polling: polling, network: network);
+
+    await _window(tester, AppLifecycleState.hidden);
+    network.goOffline();
+    await tester.pumpAndSettle();
+    await _window(tester, AppLifecycleState.inactive);
+
+    expect(polling.calls, ['pause']);
+
+    network.goOnline();
+    await tester.pumpAndSettle();
+
+    expect(polling.calls, ['pause', 'resume', 'silentRefresh']);
+  });
+
+  testOnMac('a catch-up that fails leaves the app running, the polling resumed', (tester) async {
+    final polling = FakeHistoryPollingManager()..refreshError = StateError('the node did not answer');
+    await _openWallet(tester, polling: polling);
+
+    await _window(tester, AppLifecycleState.hidden);
+    await _window(tester, AppLifecycleState.inactive);
+
+    expect(tester.takeException(), isNull);
+    expect(polling.calls, ['pause', 'resume', 'silentRefresh']);
+    expect(find.byType(Sidebar), findsOneWidget);
+  });
+
+  testOnMac('the balances refreshed with the active account\'s are the sidebar\'s other accounts\', all but the '
+      'encrypted one\'s, which comes from its own scan', (tester) async {
+    await _openWallet(tester, polling: FakeHistoryPollingManager());
+
+    expect(_container(tester).read(shownBalanceAccountIdsProvider), {
+      mainAccount.accountId,
+      savingsAccount.accountId,
+      vaultAccount.accountId,
+      teamMultisig.accountId,
+    });
+  });
+}

@@ -59,7 +59,8 @@ Future<void> _openWith(WidgetTester tester, List<Override> overrides, {bool redu
   tester.platformDispatcher.accessibilityFeaturesTestValue = FakeAccessibilityFeatures(disableAnimations: reduceMotion);
   addTearDown(tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
 
-  await tester.pumpWidget(buildApp(overrides: overrides));
+  // Nothing polls the chain or asks the computer about its network.
+  await tester.pumpWidget(buildApp(overrides: [...overrides, ...liveDataOverrides()]));
   await tester.pump();
   await tester.pump();
 }

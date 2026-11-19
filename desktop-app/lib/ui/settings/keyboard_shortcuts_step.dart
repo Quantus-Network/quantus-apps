@@ -217,6 +217,7 @@ class _KeyboardShortcutsStepState extends ConsumerState<KeyboardShortcutsStep> {
                     row(AppCommand.toggleSidebar),
                     row(AppCommand.nextSidebarItem),
                     row(AppCommand.previousSidebarItem),
+                    row(AppCommand.refresh),
                   ],
                 ),
                 const SizedBox(height: 18),
@@ -313,6 +314,7 @@ String commandName(AppLocalizations l10n, AppCommand command) => switch (command
   AppCommand.toggleSidebar => l10n.desktopShortcutsToggleSidebar,
   AppCommand.nextSidebarItem => l10n.desktopMenuNextSidebarItem,
   AppCommand.previousSidebarItem => l10n.desktopMenuPreviousSidebarItem,
+  AppCommand.refresh => l10n.desktopMenuRefresh,
 };
 
 String _systemName(AppLocalizations l10n, SystemCommand command) => switch (command) {

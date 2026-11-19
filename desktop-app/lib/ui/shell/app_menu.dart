@@ -17,8 +17,9 @@ import 'package:wallet_core/utils/account_actions.dart';
 ///
 /// An item whose `onSelected` is null is disabled. The items that open a sheet
 /// are disabled while [canOpenSheet] is false, the sidebar item while
-/// [onToggleSidebar] is null, and those that change what the sidebar has
-/// selected while [onShowAccount] and [onMoveInSidebar] are.
+/// [onToggleSidebar] is null, those that change what the sidebar has selected
+/// while [onShowAccount] and [onMoveInSidebar] are, and Refresh while
+/// [onRefresh] is.
 ///
 /// The Account menu ends with [accounts], which are in the sidebar's order:
 /// the first nine have a number to be reached by ([ShortcutBindings.account]).
@@ -34,6 +35,7 @@ List<PlatformMenu> buildAppMenus({
   required ValueChanged<DisplayAccount>? onShowAccount,
   required ValueChanged<int>? onMoveInSidebar,
   required VoidCallback? onToggleSidebar,
+  required VoidCallback? onRefresh,
   required VoidCallback onCloseWindow,
 }) {
   SingleActivator? keysOf(AppCommand command) => shortcuts?[command]?.activator;
@@ -146,6 +148,15 @@ List<PlatformMenu> buildAppMenus({
               label: l10n.desktopMenuPreviousSidebarItem,
               shortcut: keysOf(AppCommand.previousSidebarItem),
               onSelected: onMoveInSidebar == null ? null : () => onMoveInSidebar(-1),
+            ),
+          ],
+        ),
+        PlatformMenuItemGroup(
+          members: [
+            PlatformMenuItem(
+              label: l10n.desktopMenuRefresh,
+              shortcut: keysOf(AppCommand.refresh),
+              onSelected: onRefresh,
             ),
           ],
         ),

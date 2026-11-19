@@ -109,6 +109,7 @@ void main() {
     expect(_capsOf(tester, AppCommand.toggleSidebar), ['command', 'B']);
     expect(_capsOf(tester, AppCommand.nextSidebarItem), ['option', 'command', '↓']);
     expect(_capsOf(tester, AppCommand.previousSidebarItem), ['option', 'command', '↑']);
+    expect(_capsOf(tester, AppCommand.refresh), ['shift', 'command', 'R']);
     expect(
       find.descendant(of: _row(AppCommand.receive), matching: find.byIcon(CupertinoIcons.command)),
       findsOneWidget,
@@ -134,6 +135,7 @@ void main() {
 
     expect(_capsOf(tester, AppCommand.receive), ['Ctrl', 'R']);
     expect(_capsOf(tester, AppCommand.nextSidebarItem), ['Ctrl', 'Alt', '↓']);
+    expect(_capsOf(tester, AppCommand.refresh), ['Ctrl', 'Shift', 'R']);
     expect(_inSheet(find.text('Ctrl')), findsWidgets);
     for (final icon in [CupertinoIcons.command, CupertinoIcons.option, CupertinoIcons.control, CupertinoIcons.shift]) {
       expect(_inSheet(find.byIcon(icon)), findsNothing);
@@ -154,6 +156,28 @@ void main() {
     final shortcut = _nativeItem(tester, 'View', 'Next Sidebar Item').shortcut! as SingleActivator;
     expect((shortcut.trigger, shortcut.meta, shortcut.alt), (LogicalKeyboardKey.keyJ, true, false));
     expect(device.storage.strings[ShortcutBindingsNotifier.settingsKey], isNotNull);
+  });
+
+  testOnMac('Refresh is listed under View, after the sidebar\'s items, and takes new keys as the others do', (
+    tester,
+  ) async {
+    await _openShortcuts(tester);
+
+    expect(_inSheet(find.text('Refresh')), findsOneWidget);
+    final previous = tester.getRect(_row(AppCommand.previousSidebarItem));
+    final refresh = tester.getRect(_row(AppCommand.refresh));
+    expect(refresh.top, greaterThanOrEqualTo(previous.bottom));
+
+    await tester.ensureVisible(_row(AppCommand.refresh));
+    await _record(tester, AppCommand.refresh);
+    await _press(tester, LogicalKeyboardKey.keyR, meta: true, alt: true);
+
+    expect(_capsOf(tester, AppCommand.refresh), ['option', 'command', 'R']);
+    final shortcut = _nativeItem(tester, 'View', 'Refresh').shortcut! as SingleActivator;
+    expect(
+      (shortcut.trigger, shortcut.meta, shortcut.alt, shortcut.shift),
+      (LogicalKeyboardKey.keyR, true, true, false),
+    );
   });
 
   testOnMac('while a shortcut waits for keys the menus have none, so the keys reach it', (tester) async {
