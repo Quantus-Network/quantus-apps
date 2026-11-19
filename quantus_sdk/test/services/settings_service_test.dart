@@ -18,8 +18,10 @@ class _RejectingStore extends InMemorySharedPreferencesStore {
   /// The keys whose writes are refused, as the app names them.
   final rejected = <String>{};
 
-  /// The keys whose writes throw instead of answering, as the app names them.
-  final throwing = <String>{};
+  /// The keys whose writes fail outright, as a backend that throws does.
+  final failing = <String>{};
+
+  bool _isFailing(String key) => failing.contains(key.replaceFirst('flutter.', ''));
 
   /// How many more writes are stored before the disk refuses every write;
   /// null when it has no such outage.
@@ -34,6 +36,7 @@ class _RejectingStore extends InMemorySharedPreferencesStore {
   void restart() {
     _unstored.clear();
     rejected.clear();
+    failing.clear();
     storesBeforeOutage = null;
   }
 
@@ -59,13 +62,14 @@ class _RejectingStore extends InMemorySharedPreferencesStore {
 
   @override
   Future<bool> setValue(String valueType, String key, Object value) async {
-    if (throwing.contains(key.replaceFirst('flutter.', ''))) throw StateError('disk unavailable');
+    if (_isFailing(key)) throw StateError('the disk is gone');
     _unstored[key] = (valueType, value);
     return _isRejected(key) ? false : _store();
   }
 
   @override
   Future<bool> remove(String key) async {
+    if (_isFailing(key)) throw StateError('the disk is gone');
     _unstored[key] = null;
     return _isRejected(key) ? false : _store();
   }
@@ -563,21 +567,25 @@ void main() {
       });
     }
 
+    test('throws the write\'s own error when the write of active_display_account fails outright, and Main stays '
+        'the active account', () async {
+      store.failing.add('active_display_account');
+
+      await expectLater(
+        settings.setActiveAccount(const RegularAccount(savings)),
+        throwsA(isA<StateError>().having((e) => e.message, 'message', 'the disk is gone')),
+      );
+
+      expect((await settings.getActiveAccount())!.account.accountId, main.accountId);
+      expect((await settings.getActiveRegularAccount())!.accountId, main.accountId);
+      expect((await (await restarted()).getActiveAccount())!.account.accountId, main.accountId);
+    });
+
     test('an account that does not exist leaves Main the active account', () async {
       await expectLater(settings.setActiveAccount(const RegularAccount(unknown)), throwsException);
 
       expect((await settings.getActiveAccount())!.account.accountId, main.accountId);
       expect((await (await reopened()).getActiveAccount())!.account.accountId, main.accountId);
-    });
-
-    test('a write of the selection that throws leaves Main the active account', () async {
-      store.throwing.add('active_display_account');
-
-      await expectLater(settings.setActiveAccount(const RegularAccount(savings)), throwsStateError);
-
-      expect((await settings.getActiveAccount())!.account.accountId, main.accountId);
-      store.throwing.clear();
-      expect((await (await restarted()).getActiveAccount())!.account.accountId, main.accountId);
     });
 
     test('once the system stores again, the account is switched and kept', () async {
@@ -589,6 +597,122 @@ void main() {
 
       expect((await settings.getActiveAccount())!.account.accountId, savings.accountId);
       expect((await (await reopened()).getActiveAccount())!.account.accountId, savings.accountId);
+    });
+  });
+
+  group('setString, when the system rejects the write', () {
+    late _RejectingStore store;
+    late SettingsService settings;
+
+    /// The settings as an app started now would read them from [store].
+    Future<SettingsService> reopened() async {
+      SharedPreferences.resetStatic();
+      final reopened = SettingsService();
+      await reopened.initialize();
+      return reopened;
+    }
+
+    setUp(() async {
+      SharedPreferences.setMockInitialValues({});
+      store = _RejectingStore();
+      SharedPreferencesStorePlatform.instance = store;
+      settings = SettingsService();
+      await settings.initialize();
+    });
+
+    test('throws, naming the key, and the key holds what it held', () async {
+      await settings.setString('shortcuts', 'old');
+      store.rejected.add('shortcuts');
+
+      await expectLater(
+        settings.setString('shortcuts', 'new'),
+        throwsA(isA<Exception>().having((e) => '$e', 'message', contains('Could not save shortcuts'))),
+      );
+
+      expect(settings.getString('shortcuts'), 'old');
+    });
+
+    test('a key that held nothing holds nothing after', () async {
+      store.rejected.add('shortcuts');
+
+      await expectLater(settings.setString('shortcuts', 'new'), throwsException);
+
+      expect(settings.getString('shortcuts'), isNull);
+    });
+
+    test('what a later write puts on the disk is not the text that was refused', () async {
+      await settings.setString('shortcuts', 'old');
+      store.rejected.add('shortcuts');
+      await expectLater(settings.setString('shortcuts', 'new'), throwsException);
+      store.rejected.clear();
+
+      await settings.setString('other', 'stored');
+
+      final read = await reopened();
+      expect(read.getString('shortcuts'), 'old');
+      expect(read.getString('other'), 'stored');
+    });
+
+    test('when the write fails outright, the error is its own and the key holds what it held', () async {
+      await settings.setString('shortcuts', 'old');
+      store.failing.add('shortcuts');
+
+      // Putting the old text back is a write that fails too; the error
+      // reported is still the first one.
+      await expectLater(
+        settings.setString('shortcuts', 'new'),
+        throwsA(isA<StateError>().having((e) => e.message, 'message', 'the disk is gone')),
+      );
+
+      expect(settings.getString('shortcuts'), 'old');
+      store.failing.clear();
+      await settings.setString('other', 'stored');
+      expect((await reopened()).getString('shortcuts'), 'old');
+    });
+
+    test('when the write fails outright on a key that held nothing, it holds nothing after', () async {
+      store.failing.add('shortcuts');
+
+      await expectLater(settings.setString('shortcuts', 'new'), throwsStateError);
+
+      expect(settings.getString('shortcuts'), isNull);
+      expect(settings.getValue('shortcuts'), isNull);
+    });
+
+    test('a value of another type than text can be read as it is, and replaced by text', () async {
+      await (await SharedPreferences.getInstance()).setInt('shortcuts', 7);
+
+      expect(settings.getValue('shortcuts'), 7);
+      // Read as text it is still an error, as it always was.
+      expect(() => settings.getString('shortcuts'), throwsA(isA<TypeError>()));
+
+      await settings.setString('shortcuts', 'new');
+
+      expect(settings.getValue('shortcuts'), 'new');
+      expect((await reopened()).getString('shortcuts'), 'new');
+    });
+
+    test('a value of another type is put back when the text meant to replace it is refused', () async {
+      await (await SharedPreferences.getInstance()).setInt('shortcuts', 7);
+      store.rejected.add('shortcuts');
+
+      await expectLater(settings.setString('shortcuts', 'new'), throwsException);
+      expect(settings.getValue('shortcuts'), 7);
+
+      store.rejected.clear();
+      await settings.setString('other', 'stored');
+      expect((await reopened()).getValue('shortcuts'), 7);
+    });
+
+    test('getValue answers nothing for a key that holds nothing', () {
+      expect(settings.getValue('shortcuts'), isNull);
+    });
+
+    test('a write the system stores is read back, now and at the next start', () async {
+      await settings.setString('shortcuts', 'new');
+
+      expect(settings.getString('shortcuts'), 'new');
+      expect((await reopened()).getString('shortcuts'), 'new');
     });
   });
 }

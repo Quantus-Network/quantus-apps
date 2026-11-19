@@ -1,7 +1,8 @@
 import 'package:flutter/widgets.dart';
 import 'package:quantus_desktop_wallet/constants.dart';
 import 'package:quantus_desktop_wallet/models/shell_sheet.dart';
-import 'package:quantus_desktop_wallet/ui/shell/app_shortcuts.dart';
+import 'package:quantus_desktop_wallet/models/app_command.dart';
+import 'package:quantus_desktop_wallet/models/shortcut_bindings.dart';
 import 'package:quantus_desktop_wallet/ui/shell/shell_sheet_titles.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/l10n/app_localizations.dart';
@@ -10,8 +11,9 @@ import 'package:wallet_core/utils/account_actions.dart';
 /// The app's menus, defined once for every platform.
 ///
 /// With [useNativeMenuBar] (macOS) they include the items the system supplies
-/// (About, Hide, Quit, full screen, the Window menu) and shortcuts use ⌘.
-/// Elsewhere those items are left out and shortcuts use Ctrl.
+/// (About, Hide, Quit, full screen, the Window menu). Elsewhere those items
+/// are left out. The items' keys are [shortcuts]; with none, as while a new
+/// shortcut is being recorded, no item has keys.
 ///
 /// An item whose `onSelected` is null is disabled. The items that open a sheet
 /// are disabled while [canOpenSheet] is false, the sidebar item while
@@ -19,12 +21,13 @@ import 'package:wallet_core/utils/account_actions.dart';
 /// selected while [onShowAccount] and [onMoveInSidebar] are.
 ///
 /// The Account menu ends with [accounts], which are in the sidebar's order:
-/// the first nine have a number to be reached by ([AppShortcuts.account]).
+/// the first nine have a number to be reached by ([ShortcutBindings.account]).
 List<PlatformMenu> buildAppMenus({
   required AppLocalizations l10n,
   required bool useNativeMenuBar,
   required List<AccountAction> accountActions,
   required List<DisplayAccount> accounts,
+  required ShortcutBindings? shortcuts,
   required bool isSidebarVisible,
   required bool canOpenSheet,
   required ValueChanged<ShellSheet> onOpenSheet,
@@ -33,14 +36,14 @@ List<PlatformMenu> buildAppMenus({
   required VoidCallback? onToggleSidebar,
   required VoidCallback onCloseWindow,
 }) {
-  final shortcuts = AppShortcuts(useCommandKey: useNativeMenuBar);
+  SingleActivator? keysOf(AppCommand command) => shortcuts?[command]?.activator;
 
   VoidCallback? opens(ShellSheet sheet, {bool isEnabled = true}) =>
       canOpenSheet && isEnabled ? () => onOpenSheet(sheet) : null;
 
   SingleActivator? shortcutOf(AccountActionKind action) => switch (action) {
-    AccountActionKind.receive => shortcuts.receive,
-    AccountActionKind.send => shortcuts.send,
+    AccountActionKind.receive => keysOf(AppCommand.receive),
+    AccountActionKind.send => keysOf(AppCommand.send),
     // Their sheets are not built yet.
     AccountActionKind.swap || AccountActionKind.propose => null,
   };
@@ -57,7 +60,7 @@ List<PlatformMenu> buildAppMenus({
           members: [
             PlatformMenuItem(
               label: l10n.desktopMenuSettings,
-              shortcut: shortcuts.settings,
+              shortcut: shortcuts?.settings.activator,
               onSelected: opens(ShellSheet.settings),
             ),
           ],
@@ -78,7 +81,7 @@ List<PlatformMenu> buildAppMenus({
       menus: [
         PlatformMenuItem(
           label: l10n.desktopMenuCloseWindow,
-          shortcut: shortcuts.closeWindow,
+          shortcut: shortcuts?.closeWindow.activator,
           onSelected: onCloseWindow,
         ),
       ],
@@ -101,7 +104,7 @@ List<PlatformMenu> buildAppMenus({
           members: [
             PlatformMenuItem(
               label: l10n.desktopMenuAddAccount,
-              shortcut: shortcuts.addAccount,
+              shortcut: keysOf(AppCommand.addAccount),
               onSelected: opens(ShellSheet.addAccount),
             ),
           ],
@@ -112,7 +115,7 @@ List<PlatformMenu> buildAppMenus({
               for (final (index, account) in accounts.indexed)
                 PlatformMenuItem(
                   label: account.account.name,
-                  shortcut: shortcuts.account(index),
+                  shortcut: shortcuts?.account(index)?.activator,
                   onSelected: onShowAccount == null ? null : () => onShowAccount(account),
                 ),
             ],
@@ -126,7 +129,7 @@ List<PlatformMenu> buildAppMenus({
           members: [
             PlatformMenuItem(
               label: isSidebarVisible ? l10n.desktopMenuHideSidebar : l10n.desktopMenuShowSidebar,
-              shortcut: shortcuts.toggleSidebar,
+              shortcut: keysOf(AppCommand.toggleSidebar),
               onSelected: onToggleSidebar,
             ),
           ],
@@ -135,12 +138,12 @@ List<PlatformMenu> buildAppMenus({
           members: [
             PlatformMenuItem(
               label: l10n.desktopMenuNextSidebarItem,
-              shortcut: shortcuts.nextSidebarItem,
+              shortcut: keysOf(AppCommand.nextSidebarItem),
               onSelected: onMoveInSidebar == null ? null : () => onMoveInSidebar(1),
             ),
             PlatformMenuItem(
               label: l10n.desktopMenuPreviousSidebarItem,
-              shortcut: shortcuts.previousSidebarItem,
+              shortcut: keysOf(AppCommand.previousSidebarItem),
               onSelected: onMoveInSidebar == null ? null : () => onMoveInSidebar(-1),
             ),
           ],

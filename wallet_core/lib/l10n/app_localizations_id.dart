@@ -2692,4 +2692,99 @@ class AppLocalizationsId extends AppLocalizations {
   String desktopAccountSwitchFailedMessage(String account, String error) {
     return '$account tidak dapat dijadikan akun aktif: $error';
   }
+
+  @override
+  String get settingsKeyboardShortcuts => 'Pintasan Keyboard';
+
+  @override
+  String get settingsKeyboardShortcutsSubtitle => 'Ubah tombol untuk membuka dan berpindah di dompet';
+
+  @override
+  String get desktopShortcutsToggleSidebar => 'Tampilkan atau Sembunyikan Bar Samping';
+
+  @override
+  String get desktopShortcutsAccounts => 'Buka akun 1 sampai 9';
+
+  @override
+  String get desktopShortcutsNone => 'Tidak ada';
+
+  @override
+  String get desktopShortcutsRecording => 'Ketik pintasan…';
+
+  @override
+  String get desktopShortcutsRecordingHint => 'Tekan tombol baru. Esc membatalkan; Delete menghapus pintasan.';
+
+  @override
+  String get desktopShortcutsNeedsModifierMac => 'Tahan Command, Option, atau Control bersama tombolnya.';
+
+  @override
+  String get desktopShortcutsNeedsModifierPc => 'Tahan Ctrl atau Alt bersama tombolnya.';
+
+  @override
+  String get desktopShortcutsSystemKey => 'Pintasan dengan tombol Windows atau Super milik sistem.';
+
+  @override
+  String get desktopShortcutsKeyNotForMenuBar => 'Bilah menu tidak dapat memakai tombol itu. Tekan tombol lain.';
+
+  @override
+  String get desktopShortcutsFixedNote => 'Pengaturan, Tutup Jendela, dan Keluar tetap memakai tombol sistem.';
+
+  @override
+  String get desktopShortcutsRestoreDefaults => 'Pulihkan Bawaan';
+
+  @override
+  String get desktopShortcutsUnreadable => 'Pintasan yang tersimpan tidak dapat dibaca, jadi pintasan bawaan dipakai.';
+
+  @override
+  String get desktopSystemQuit => 'Keluar';
+
+  @override
+  String get desktopSystemHide => 'Sembunyikan';
+
+  @override
+  String get desktopSystemHideOthers => 'Sembunyikan Lainnya';
+
+  @override
+  String get desktopSystemMinimize => 'Perkecil';
+
+  @override
+  String get desktopSystemFullScreen => 'Layar Penuh';
+
+  @override
+  String get desktopSystemCut => 'Potong';
+
+  @override
+  String get desktopSystemCopy => 'Salin';
+
+  @override
+  String get desktopSystemPaste => 'Tempel';
+
+  @override
+  String get desktopSystemSelectAll => 'Pilih Semua';
+
+  @override
+  String get desktopSystemUndo => 'Urungkan';
+
+  @override
+  String get desktopSystemRedo => 'Ulangi';
+
+  @override
+  String desktopShortcutsUsedBy(String command) {
+    return 'Pintasan itu sudah dipakai oleh $command. Tekan tombol lain.';
+  }
+
+  @override
+  String desktopShortcutsKeptFor(String command) {
+    return 'Pintasan itu disediakan untuk $command. Tekan tombol lain.';
+  }
+
+  @override
+  String desktopShortcutsModifierUsedBy(String command) {
+    return 'Tombol itu akan bentrok dengan $command.';
+  }
+
+  @override
+  String desktopShortcutsSaveFailed(String error) {
+    return 'Pintasan tidak dapat disimpan: $error';
+  }
 }

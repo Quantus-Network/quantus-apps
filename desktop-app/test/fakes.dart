@@ -49,6 +49,32 @@ class FakeSettingsService extends Fake implements SettingsService {
   @override
   Future<void> setBool(String key, bool value) async => bools[key] = value;
 
+  /// The text kept under plain keys.
+  final Map<String, String> strings = {};
+
+  /// Why the next [setString] fails, once.
+  Object? failNextStringWrite;
+
+  /// What is kept under plain keys that is not the text their readers
+  /// expect: a number, say, in a preferences file that was damaged.
+  final Map<String, Object> strays = {};
+
+  @override
+  Object? getValue(String key) => strays[key] ?? strings[key] ?? bools[key];
+
+  @override
+  String? getString(String key) => (strays[key] ?? strings[key]) as String?;
+
+  @override
+  Future<void> setString(String key, String value) async {
+    if (failNextStringWrite case final error?) {
+      failNextStringWrite = null;
+      throw error;
+    }
+    strays.remove(key);
+    strings[key] = value;
+  }
+
   @override
   Future<bool> getHasWallet() async => true;
 
@@ -432,6 +458,7 @@ class _WipingLogoutService extends Fake implements LogoutService {
       ..mnemonics.clear()
       ..pendingScans.clear()
       ..bools.clear()
+      ..strings.clear()
       ..activeAccount = null;
   }
 }
