@@ -7,6 +7,8 @@ import 'package:quantus_desktop_wallet/ui/shell/sidebar.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/providers/app_lifecycle_state_provider.dart';
 import 'package:wallet_core/providers/shown_balances_provider.dart';
+import 'package:wallet_core/providers/wallet_providers.dart';
+import 'package:wallet_core/services/global_history_polling_service.dart';
 
 import '../../fakes.dart';
 
@@ -35,6 +37,18 @@ Future<void> _window(WidgetTester tester, AppLifecycleState state) async {
 ProviderContainer _container(WidgetTester tester) =>
     ProviderScope.containerOf(tester.element(find.byType(DesktopShell)));
 
+/// An indexer with no history for any account.
+class _NoHistory extends Fake implements ChainHistoryService {
+  @override
+  Future<SortedTransactionsList> fetchAllTransactionTypes({
+    required List<String> accountIds,
+    int limit = 20,
+    AccountEventCursor? otherAfter,
+    AccountEventCursor? scheduledAfter,
+    required TransactionFilter filter,
+  }) async => SortedTransactionsList.empty;
+}
+
 void main() {
   testOnMac('opening the wallet sets the polling going, and asks nothing more of it', (tester) async {
     final polling = FakeHistoryPollingManager();
@@ -44,6 +58,32 @@ void main() {
     expect(find.byType(Sidebar), findsOneWidget);
     expect(polling.starts, 1);
     expect(polling.calls, isEmpty);
+  });
+
+  testOnMac('an opened wallet is polled each minute by the app\'s own polling', (tester) async {
+    var mainQueries = 0;
+    await pumpShell(
+      tester,
+      realPolling: true,
+      overrides: [
+        ...shellOverrides(
+          accounts: const [mainAccount, savingsAccount],
+          settings: FakeSettingsService(activeAccount: const RegularAccount(mainAccount)),
+          balanceOf: (accountId) async {
+            if (accountId == mainAccount.accountId) mainQueries++;
+            return oneToken;
+          },
+        ),
+        chainHistoryServiceProvider.overrideWithValue(_NoHistory()),
+      ],
+    );
+
+    expect(mainQueries, 1);
+
+    await tester.pump(GlobalHistoryPollingService.pollInterval);
+    await tester.pumpAndSettle();
+
+    expect(mainQueries, 2);
   });
 
   testOnMac('before there is a wallet nothing is polled', (tester) async {

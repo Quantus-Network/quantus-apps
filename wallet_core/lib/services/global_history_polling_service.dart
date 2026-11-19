@@ -172,7 +172,8 @@ class GlobalHistoryPollingService {
 final globalHistoryPollingServiceProvider = Provider<GlobalHistoryPollingService>((ref) {
   final service = GlobalHistoryPollingService(ref);
 
-  // Automatically start polling when accounts become available
+  // Automatically start polling when accounts become available, or at once
+  // when they were read before this service was made.
   ref.listen(accountsProvider, (previous, next) {
     next.when(
       data: (accounts) {
@@ -191,7 +192,7 @@ final globalHistoryPollingServiceProvider = Provider<GlobalHistoryPollingService
         service.stopPolling();
       },
     );
-  });
+  }, fireImmediately: true);
 
   ref.listen(activeAccountProvider, (previous, next) {
     final previousId = previous?.value?.account.accountId;

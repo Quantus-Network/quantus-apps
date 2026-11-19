@@ -656,14 +656,17 @@ class FakeNetwork {
 }
 
 /// Stands in for what keeps an open wallet current, so no test polls the
-/// chain or asks the computer about its network.
-List<Override> liveDataOverrides({FakeHistoryPollingManager? polling, FakeNetwork? network}) {
+/// chain or asks the computer about its network. With [realPolling] the
+/// app's own polling runs instead, reading whatever else the test fakes.
+List<Override> liveDataOverrides({FakeHistoryPollingManager? polling, FakeNetwork? network, bool realPolling = false}) {
+  assert(!realPolling || polling == null, 'real polling cannot be a fake one as well');
   final manager = polling ?? FakeHistoryPollingManager();
   return [
-    historyPollingManagerProvider.overrideWith((ref) {
-      manager.starts++;
-      return manager;
-    }),
+    if (!realPolling)
+      historyPollingManagerProvider.overrideWith((ref) {
+        manager.starts++;
+        return manager;
+      }),
     networkStatusProvider.overrideWith((ref) => (network ?? FakeNetwork()).statusStream),
   ];
 }
@@ -974,11 +977,15 @@ class FakeEncryptedSendController extends EncryptedSendController {
 /// The system asks for reduced motion unless [reduceMotion] is false: the
 /// Welcome page's moving background never settles either, so only the tests
 /// about that motion turn it on.
+///
+/// The open wallet's polling is a fake one ([polling]) unless [realPolling]
+/// asks for the app's own.
 Future<void> pumpShell(
   WidgetTester tester, {
   required List<Override> overrides,
   FakeLoginPassword? loginPassword,
   FakeHistoryPollingManager? polling,
+  bool realPolling = false,
   FakeNetwork? network,
   bool settle = true,
   bool reduceMotion = true,
@@ -997,7 +1004,7 @@ Future<void> pumpShell(
         // Never the computer's own PAM, which a test run as Linux would
         // otherwise reach.
         loginPasswordProvider.overrideWithValue(loginPassword ?? FakeLoginPassword()),
-        ...liveDataOverrides(polling: polling, network: network),
+        ...liveDataOverrides(polling: polling, network: network, realPolling: realPolling),
       ],
     ),
   );

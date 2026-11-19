@@ -197,6 +197,26 @@ void main() {
     });
   });
 
+  testWidgets('a wallet whose accounts were read before the polling was set going is polled all the same', (
+    tester,
+  ) async {
+    final container = wallet(active: encrypted, shown: {main});
+    container.listen(accountsProvider, (_, _) {});
+    while (container.read(accountsProvider).value == null) {
+      await tester.pump();
+    }
+    await show(container, main);
+    final poller = container.read(globalHistoryPollingServiceProvider);
+    await settledOn(tester);
+
+    await tester.pump(GlobalHistoryPollingService.pollInterval);
+    await settledOn(tester);
+
+    expect(queriesOf(main), 2);
+
+    poller.stopPolling();
+  });
+
   testWidgets('a refresh asked for while one is under way joins it: nothing is refreshed twice', (tester) async {
     final container = wallet(active: encrypted, shown: {main});
     await activeAccountLoaded(container, tester);
