@@ -8,6 +8,7 @@ import 'package:quantus_sdk/src/models/display_account.dart';
 import 'package:quantus_sdk/src/models/multisig_account.dart';
 import 'package:quantus_sdk/src/rust/api/crypto.dart';
 import 'package:quantus_sdk/src/services/hd_wallet_service.dart';
+import 'package:quantus_sdk/src/utils/print.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SettingsService {
@@ -214,27 +215,26 @@ class SettingsService {
     }
   }
 
-  /// Makes [key] hold [value] again, or nothing when it held nothing.
-  /// SharedPreferences answers from memory, and its memory keeps a value
-  /// the system refused to store. Whether this write is stored is not
-  /// checked: memory holds [value] after it either way, and what the system
-  /// refused before was never stored.
+  /// Makes [key] hold [value] again, or nothing when it held nothing, after
+  /// a write to it failed. SharedPreferences answers from memory, and its
+  /// memory keeps a value the system did not store. Whether this write is
+  /// stored is not checked, nor whether it fails as the first one did:
+  /// memory holds [value] after it either way, what failed before was never
+  /// stored, and the failure to report is the first one's.
   Future<void> _putBack(String key, Object? value) async {
-    switch (value) {
-      case null:
-        await _prefs.remove(key);
-      case final String text:
-        await _prefs.setString(key, text);
-      case final bool flag:
-        await _prefs.setBool(key, flag);
-      case final int number:
-        await _prefs.setInt(key, number);
-      case final double number:
-        await _prefs.setDouble(key, number);
-      case final List<Object?> list:
-        await _prefs.setStringList(key, list.cast<String>());
-      default:
-        throw StateError('$key held a ${value.runtimeType}, which the preferences cannot hold.');
+    final Future<bool> Function() write = switch (value) {
+      null => () => _prefs.remove(key),
+      final String text => () => _prefs.setString(key, text),
+      final bool flag => () => _prefs.setBool(key, flag),
+      final int number => () => _prefs.setInt(key, number),
+      final double number => () => _prefs.setDouble(key, number),
+      final List<Object?> list => () => _prefs.setStringList(key, list.cast<String>()),
+      _ => throw StateError('$key held a ${value.runtimeType}, which the preferences cannot hold.'),
+    };
+    try {
+      await write();
+    } catch (e) {
+      quantusPrint('Putting back $key after a failed write failed too: $e');
     }
   }
 
@@ -532,13 +532,16 @@ class SettingsService {
   Object? getValue(String key) => _prefs.get(key);
 
   /// Stores [value] under [key]. Throws when the system refuses to store
-  /// it, and [key] then holds what it held before.
+  /// it, or fails to, and [key] then holds what it held before.
   Future<void> setString(String key, String value) async {
     // Whatever is there, text or not: a value of another type is replaced.
     final previous = _prefs.get(key);
-    if (await _prefs.setString(key, value)) return;
-    await _putBack(key, previous);
-    throw Exception('Could not save $key');
+    try {
+      if (!await _prefs.setString(key, value)) throw Exception('Could not save $key');
+    } catch (_) {
+      await _putBack(key, previous);
+      rethrow;
+    }
   }
 
   // Test-only helper to reset initialization between tests
