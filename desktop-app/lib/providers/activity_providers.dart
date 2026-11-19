@@ -1,5 +1,14 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_desktop_wallet/providers/shell_providers.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:wallet_core/activity/activity_progress.dart';
+import 'package:wallet_core/activity/multisig_activity.dart';
+import 'package:wallet_core/providers/account_providers.dart';
+import 'package:wallet_core/providers/active_account_transactions_provider.dart';
+import 'package:wallet_core/providers/multisig_providers.dart';
+import 'package:wallet_core/providers/pending_multisig_proposals_provider.dart';
+import 'package:wallet_core/services/transaction_service.dart';
 
 /// How wide the panel at the right that shows one transaction or proposal
 /// is, in points: what the person dragged it to, kept for the next start.
@@ -28,3 +37,170 @@ class InspectorWidthNotifier extends SavedWidthNotifier {
   @override
   String get panelName => 'transaction panel';
 }
+
+/// Whether a refresh the person asked for (↻, or View › Refresh) is running.
+/// Refreshes the polling starts on its own are not counted.
+final walletRefreshingProvider = NotifierProvider<WalletRefreshingNotifier, bool>(WalletRefreshingNotifier.new);
+
+class WalletRefreshingNotifier extends Notifier<bool> {
+  int _running = 0;
+
+  @override
+  bool build() => false;
+
+  /// Notes that [refresh] runs, until it ends, however it ends.
+  Future<void> track(Future<void> refresh) async {
+    _running++;
+    state = true;
+    try {
+      await refresh;
+    } finally {
+      _running--;
+      state = _running > 0;
+    }
+  }
+}
+
+/// What the panel at the window's right shows: a transaction or a proposal.
+sealed class OpenedActivity {
+  const OpenedActivity();
+
+  /// What the lists know it by.
+  String get id;
+}
+
+final class OpenedTransaction extends OpenedActivity {
+  const OpenedTransaction(this.tx);
+
+  final TransactionEvent tx;
+
+  @override
+  String get id => tx.id;
+
+  @override
+  bool operator ==(Object other) => other is OpenedTransaction && other.tx.id == tx.id;
+
+  @override
+  int get hashCode => tx.id.hashCode;
+}
+
+final class OpenedProposal extends OpenedActivity {
+  const OpenedProposal(this.proposal);
+
+  final MultisigProposal proposal;
+
+  @override
+  String get id => proposal.entityId;
+
+  @override
+  bool operator ==(Object other) => other is OpenedProposal && other.proposal.entityId == proposal.entityId;
+
+  @override
+  int get hashCode => proposal.entityId.hashCode;
+}
+
+/// What is open in the panel at the window's right, if anything. It closes
+/// when another account is shown.
+final openedActivityProvider = NotifierProvider<OpenedActivityNotifier, OpenedActivity?>(OpenedActivityNotifier.new);
+
+class OpenedActivityNotifier extends Notifier<OpenedActivity?> {
+  @override
+  OpenedActivity? build() {
+    ref.listen(activeAccountProvider.select((active) => active.value?.account.accountId), (previous, next) {
+      if (previous != next) state = null;
+    });
+    return null;
+  }
+
+  void open(OpenedActivity activity) => state = activity;
+
+  void close() => state = null;
+}
+
+/// The open account's activity, as its panels list it: what is still in
+/// progress, in the phone's order, and what is settled, newest first.
+@immutable
+class ActivityView {
+  const ActivityView({
+    required this.inProgress,
+    required this.settled,
+    this.hasMore = false,
+    this.isLoadingMore = false,
+  });
+
+  final List<TransactionEvent> inProgress;
+  final List<TransactionEvent> settled;
+
+  /// Whether older activity is still to be fetched, and whether it is being
+  /// fetched now.
+  final bool hasMore;
+  final bool isLoadingMore;
+}
+
+/// The open account's activity. A multisig's is its past proposals and what
+/// it received; its open proposals are [openProposalsViewProvider]'s.
+final activityViewProvider = Provider<AsyncValue<ActivityView>>((ref) {
+  final active = ref.watch(activeAccountProvider);
+  final account = active.value?.account;
+  if (account == null) {
+    return active.isLoading
+        ? const AsyncValue.loading()
+        : const AsyncValue.data(ActivityView(inProgress: [], settled: []));
+  }
+  final transactions = ref.watch(activeAccountTransactionsProvider(TransactionFilter.all));
+  final pages = ref.watch(activeAccountPaginationProvider(TransactionFilter.all));
+  final service = ref.read(transactionServiceProvider);
+
+  return transactions.whenData((data) {
+    final activity = switch (account) {
+      final MultisigAccount msig => multisigActivityOf(
+        service,
+        data,
+        ref.watch(multisigPastProposalsProvider(msig)).value ?? const [],
+        msig,
+      ),
+      _ => service.combineAndDeduplicateTransactions(
+        pendingCancellationIds: data.pendingCancellationIds,
+        pendingTransactions: data.pendingTransactions,
+        pendingMultisigCreations: data.pendingMultisigCreations,
+        pendingMultisigProposals: data.pendingMultisigProposals,
+        pendingMultisigExecutions: data.pendingMultisigExecutions,
+        pendingMultisigCancellations: data.pendingMultisigCancellations,
+        scheduledReversibleTransfers: data.scheduledReversibleTransfers,
+        otherTransfers: data.otherTransfers,
+      ),
+    };
+    final parts = partActivityByProgress(activity);
+    return ActivityView(
+      inProgress: parts.inProgress,
+      settled: parts.settled,
+      hasMore: pages?.hasMore ?? false,
+      // A page after the first sets the pages loading while they hold some.
+      isLoadingMore: pages != null && pages.isLoading && pages.hasLoadedChainData,
+    );
+  });
+});
+
+/// A multisig's open proposals, in order: the ones this device is still
+/// proposing, then the open ones, last changed first. Null for any other
+/// account.
+final openProposalsViewProvider =
+    Provider<AsyncValue<({List<PendingMultisigProposalEvent> proposing, List<MultisigProposal> open})>?>((ref) {
+      final account = ref.watch(activeAccountProvider).value?.account;
+      if (account is! MultisigAccount) return null;
+      final proposing = ref.watch(pendingMultisigProposalsProvider);
+      return ref
+          .watch(multisigOpenProposalsProvider(account))
+          .whenData((open) => openProposalsOf(account, proposing: proposing, open: open));
+    });
+
+/// The wallet's own accounts and multisigs, by address: a counterparty
+/// that is one of them is shown by its badge and name.
+final ownAccountsByAddressProvider = Provider<Map<String, BaseAccount>>((ref) {
+  final accounts = ref.watch(accountsProvider).value ?? const <Account>[];
+  final multisigs = ref.watch(multisigAccountsProvider).value ?? const <MultisigAccount>[];
+  return {
+    for (final account in accounts) account.accountId: account,
+    for (final multisig in multisigs) multisig.accountId: multisig,
+  };
+});

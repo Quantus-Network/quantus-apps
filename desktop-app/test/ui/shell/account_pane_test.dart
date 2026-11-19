@@ -202,12 +202,13 @@ void main() {
     expect(_sheetTitled('Receive'), findsOneWidget);
   });
 
-  testOnMac('on the encrypted account the pane shows the lock badge and the private-account notice', (tester) async {
+  // The sidebar's row and its lock already say it is the Encrypted account
+  // (the user's call, round 31): the phone's notice is not needed here.
+  testOnMac('on the encrypted account the pane shows no private-account notice', (tester) async {
     await _pumpWithActive(tester, const RegularAccount(encryptedAccount));
 
-    expect(_inPane(find.byType(PrivateActivityNotice)), findsOneWidget);
-    expect(_inPane(find.text('Hides the link between your account and the recipient')), findsOneWidget);
-    expect(_inPane(find.byType(EncryptedLockBadge)), findsWidgets);
+    expect(_inPane(find.byType(PrivateActivityNotice)), findsNothing);
+    expect(_inPane(find.text('Hides the link between your account and the recipient')), findsNothing);
   });
 
   testOnMac('on a transparent account the pane shows no private-account notice', (tester) async {

@@ -10,13 +10,23 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 /// it, a ring shows it has the keyboard's focus, and Space presses it. With
 /// no [onPressed] it is dimmed and does none of this.
 class ToolbarAction extends StatefulWidget {
-  const ToolbarAction({super.key, required QuantusIcons this.icon, required this.label, required this.onPressed})
-    : symbol = null;
+  const ToolbarAction({
+    super.key,
+    required QuantusIcons this.icon,
+    required this.label,
+    required this.onPressed,
+    this.iconOnly = false,
+  }) : symbol = null;
 
   /// An action drawn with a system [symbol] where the app has no icon of its
   /// own; it looks and behaves as any other.
-  const ToolbarAction.symbol({super.key, required IconData this.symbol, required this.label, required this.onPressed})
-    : icon = null;
+  const ToolbarAction.symbol({
+    super.key,
+    required IconData this.symbol,
+    required this.label,
+    required this.onPressed,
+    this.iconOnly = false,
+  }) : icon = null;
 
   /// The app's icon, or else [symbol]: exactly one of them is set.
   final QuantusIcons? icon;
@@ -25,6 +35,10 @@ class ToolbarAction extends StatefulWidget {
 
   /// What a press does. Null makes the action unavailable.
   final VoidCallback? onPressed;
+
+  /// Draws the icon alone, muted, as a panel's header holds its actions;
+  /// [label] is still what a screen reader says.
+  final bool iconOnly;
 
   /// The box that draws the backing, and the one that draws the focus ring.
   static const backingKey = Key('toolbar-action-backing');
@@ -60,6 +74,7 @@ class _ToolbarActionState extends State<ToolbarAction> {
   Widget build(BuildContext context) {
     final colors = context.colorsV3;
     final radius = context.radiusV3.smBorder;
+    final iconColor = widget.iconOnly ? colors.textMuted : colors.accentFlare;
     final backing = !_isAvailable
         ? 0.0
         : _isPressed
@@ -105,22 +120,23 @@ class _ToolbarActionState extends State<ToolbarAction> {
                 child: SizedBox(
                   height: ToolbarAction.height,
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: ToolbarAction.inset),
+                    padding: EdgeInsets.symmetric(horizontal: widget.iconOnly ? 6 : ToolbarAction.inset),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       spacing: 7,
                       children: [
                         if (widget.icon case final icon?)
-                          QuantusIcon(icon, size: _iconSize, color: colors.accentFlare)
+                          QuantusIcon(icon, size: _iconSize, color: iconColor)
                         else
-                          Icon(widget.symbol, size: _iconSize, color: colors.accentFlare),
-                        Text(
-                          widget.label,
-                          style: context.themeTextV3.bodyEmphasis.copyWith(
-                            height: 1,
-                            color: colors.textWhite.useOpacity(0.8),
+                          Icon(widget.symbol, size: _iconSize, color: iconColor),
+                        if (!widget.iconOnly)
+                          Text(
+                            widget.label,
+                            style: context.themeTextV3.bodyEmphasis.copyWith(
+                              height: 1,
+                              color: colors.textWhite.useOpacity(0.8),
+                            ),
                           ),
-                        ),
                       ],
                     ),
                   ),
