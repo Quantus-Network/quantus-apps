@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_desktop_wallet/models/shell_sheet.dart';
@@ -7,6 +8,7 @@ import 'package:quantus_desktop_wallet/ui/components/account_balance_text.dart';
 import 'package:quantus_desktop_wallet/ui/components/desktop_account_badge.dart';
 import 'package:quantus_desktop_wallet/ui/components/sidebar_row.dart';
 import 'package:quantus_desktop_wallet/ui/shell/shell_header.dart';
+import 'package:quantus_desktop_wallet/utils/sidebar_order.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/l10n/app_localizations.dart';
 import 'package:wallet_core/providers/account_providers.dart';
@@ -16,7 +18,8 @@ import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:wallet_core/utils/accounts_grouping.dart';
 
 /// Its header, then the accounts grouped by wallet, with Mining Rewards beneath
-/// them and Add Account at the foot. Choosing an account makes it the active account.
+/// them, and Settings and Add Account at the foot. Choosing an account makes it
+/// the active account.
 ///
 /// Wallets keep one order (software wallets by index, then Keystone) whichever
 /// account is active, so a row never moves when it is clicked.
@@ -65,11 +68,23 @@ class Sidebar extends ConsumerWidget {
           const MenuDivider(),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            child: SidebarRow(
-              title: l10n.accountsSheetAddAccount,
-              isSecondary: true,
-              leading: const QuantusIcon(QuantusIcons.plus, size: _iconSize),
-              onTap: () => ref.read(shellSheetProvider.notifier).open(ShellSheet.addAccount),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              spacing: 2,
+              children: [
+                SidebarRow(
+                  title: l10n.settingsTitle,
+                  isSecondary: true,
+                  leading: Icon(CupertinoIcons.gear, size: _iconSize, color: colors.textMuted),
+                  onTap: () => ref.read(shellSheetProvider.notifier).open(ShellSheet.settings),
+                ),
+                SidebarRow(
+                  title: l10n.accountsSheetAddAccount,
+                  isSecondary: true,
+                  leading: const QuantusIcon(QuantusIcons.plus, size: _iconSize),
+                  onTap: () => ref.read(shellSheetProvider.notifier).open(ShellSheet.addAccount),
+                ),
+              ],
             ),
           ),
         ],
@@ -105,9 +120,7 @@ class Sidebar extends ConsumerWidget {
     return [
       for (final wallet in grouping.wallets) ...[
         _WalletHeader(wallet: wallet),
-        for (final account in wallet.accounts) row(RegularAccount(account)),
-        if (wallet.encryptedAccount case final encrypted?) row(RegularAccount(encrypted)),
-        for (final multisig in wallet.multisigs) row(MultisigDisplayAccount(multisig)),
+        for (final account in walletAccountsInOrder(wallet)) row(account),
       ],
       if (grouping.standaloneMultisigs.isNotEmpty) ...[
         if (grouping.wallets.isNotEmpty) ...[
@@ -187,11 +200,7 @@ class _AccountRow extends ConsumerWidget {
         style: context.themeTextV3.caption.copyWith(color: context.colorsV3.textMuted),
       ),
       trailing: display is MultisigDisplayAccount ? QuantusBadge(label: ref.watch(l10nProvider).multisigTag) : null,
-      onTap: () async {
-        await ref.read(activeAccountProvider.notifier).setActiveAccount(display);
-        if (!context.mounted) return;
-        ref.read(sidebarSelectionProvider.notifier).select(SidebarSelection.account);
-      },
+      onTap: () => ref.read(sidebarSelectionProvider.notifier).showAccount(display),
     );
   }
 }

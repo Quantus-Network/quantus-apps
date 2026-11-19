@@ -67,6 +67,11 @@ class _FakeEncryptedAccountService extends EncryptedAccountService {
   /// Completes when an operation has started.
   final started = Completer<void>();
 
+  /// What the operation reports once it ends: the hash of each transaction it
+  /// handed to the chain, and whether a cancel stopped it after some of them.
+  List<String> txHashes = const [];
+  bool endsCancelled = false;
+
   @override
   Future<ClaimResult> send({
     required WormholeSpendPlan plan,
@@ -90,7 +95,8 @@ class _FakeEncryptedAccountService extends EncryptedAccountService {
       totalWithdrawn: plan.amountToken,
       transfersProcessed: 1,
       batchesSubmitted: 1,
-      txHashes: const [],
+      txHashes: txHashes,
+      cancelled: endsCancelled,
     );
   }
 
@@ -223,6 +229,31 @@ void main() {
     await finished;
 
     expect(service.sentPlans, isEmpty);
+  });
+
+  test('a finished send keeps the hash of every transaction it submitted', () async {
+    final container = await containerWith([Future.value(_state(utxos))]);
+    final send = container.listen(encryptedSendControllerProvider, (_, _) {});
+    service.txHashes = const ['0xfirst', '0xsecond'];
+
+    expect(send.read().txHashes, isEmpty);
+    await start(container);
+
+    expect(send.read().phase, EncryptedSendPhase.succeeded);
+    expect(send.read().txHashes, ['0xfirst', '0xsecond']);
+  });
+
+  test('a send cancelled after some transactions keeps the hashes of those', () async {
+    final container = await containerWith([Future.value(_state(utxos))]);
+    final send = container.listen(encryptedSendControllerProvider, (_, _) {});
+    service
+      ..txHashes = const ['0xfirst']
+      ..endsCancelled = true;
+
+    await start(container);
+
+    expect(send.read().phase, EncryptedSendPhase.cancelled);
+    expect(send.read().txHashes, ['0xfirst']);
   });
 
   test('a cancel once the operation exists goes to the service, and the phase follows the operation', () async {

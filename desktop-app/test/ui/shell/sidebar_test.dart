@@ -275,6 +275,32 @@ void main() {
     expect(find.descendant(of: find.byType(ShellSheetView), matching: find.text('Add Account')), findsOneWidget);
   });
 
+  testOnMac('Settings sits in the foot right above Add Account, on its edge, and opens the Settings sheet', (
+    tester,
+  ) async {
+    await pumpShell(
+      tester,
+      overrides: shellOverrides(accounts: const [mainAccount], balances: oneTokenEach),
+    );
+
+    final settings = tester.getRect(_row('Settings'));
+    final addAccount = tester.getRect(_row('Add Account'));
+    expect(_top(tester, 'Mining Rewards'), lessThan(settings.top));
+    expect(settings.bottom, lessThanOrEqualTo(addAccount.top));
+    expect(addAccount.top - settings.bottom, lessThan(6));
+    expect(settings.left, addAccount.left);
+    expect(settings.height, addAccount.height);
+    expect(
+      tester.getRect(_inSidebar(find.text('Settings'))).left,
+      tester.getRect(_inSidebar(find.text('Add Account'))).left,
+    );
+
+    await tester.tap(_inSidebar(find.text('Settings')));
+    await tester.pumpAndSettle();
+
+    expect(find.descendant(of: find.byType(ShellSheetView), matching: find.text('Settings')), findsOneWidget);
+  });
+
   testOnMac('a loader shows while the accounts load', (tester) async {
     final never = Completer<List<Account>>();
     await pumpShell(tester, overrides: shellOverrides(loadAccounts: () => never.future), settle: false);

@@ -441,6 +441,16 @@ void main() {
       expect(find.byType(WelcomePage), findsOneWidget);
     });
 
+    testOnWindowsAndLinux('Esc returns to Welcome under the menu bar in the window too', (tester) async {
+      await pumpShell(tester, overrides: FakeWalletDevice().overrides);
+      await _openImport(tester);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(WelcomePage), findsOneWidget);
+    });
+
     testOnMac('a phrase of the wrong length is refused where it was typed', (tester) async {
       final device = FakeWalletDevice();
       await pumpShell(tester, overrides: device.overrides);

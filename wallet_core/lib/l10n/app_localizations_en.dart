@@ -2476,6 +2476,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get desktopMenuShowSidebar => 'Show Sidebar';
 
   @override
+  String get desktopMenuNextSidebarItem => 'Next Sidebar Item';
+
+  @override
+  String get desktopMenuPreviousSidebarItem => 'Previous Sidebar Item';
+
+  @override
   String get desktopMenuWindow => 'Window';
 
   @override
@@ -2670,4 +2676,17 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get desktopViewInExplorer => 'View in Explorer';
+
+  @override
+  String desktopSendTransactionOf(int index, int count) {
+    return 'Transaction $index of $count';
+  }
+
+  @override
+  String get desktopAccountSwitchFailedTitle => 'Could not switch account';
+
+  @override
+  String desktopAccountSwitchFailedMessage(String account, String error) {
+    return '$account could not be made the active account: $error';
+  }
 }

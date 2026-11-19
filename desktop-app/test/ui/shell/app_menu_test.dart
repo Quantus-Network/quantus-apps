@@ -4,8 +4,12 @@ import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_desktop_wallet/services/app_exit.dart';
 import 'package:quantus_desktop_wallet/ui/onboarding/welcome_page.dart';
+import 'package:quantus_desktop_wallet/ui/components/sidebar_row.dart';
 import 'package:quantus_desktop_wallet/ui/components/toolbar_action.dart';
+import 'package:quantus_desktop_wallet/ui/send/send_sheet.dart';
+import 'package:quantus_desktop_wallet/ui/shell/account_pane.dart';
 import 'package:quantus_desktop_wallet/ui/shell/account_toolbar.dart';
+import 'package:quantus_desktop_wallet/ui/shell/mining_rewards_pane.dart';
 import 'package:quantus_desktop_wallet/ui/shell/shell_sheet_view.dart';
 import 'package:quantus_desktop_wallet/ui/shell/sidebar.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
@@ -35,14 +39,56 @@ List<PlatformProvidedMenuItemType> _providedTypes(PlatformMenu menu) => [
 
 /// Matches a shortcut of [key] with exactly these modifiers held.
 /// [SingleActivator] has no value equality, so its parts are compared.
-Matcher _isShortcut(LogicalKeyboardKey key, {bool meta = false, bool control = false}) {
+Matcher _isShortcut(LogicalKeyboardKey key, {bool meta = false, bool control = false, bool shift = false}) {
   return isA<SingleActivator>()
       .having((shortcut) => shortcut.trigger, 'trigger', key)
       .having((shortcut) => shortcut.meta, 'meta', meta)
       .having((shortcut) => shortcut.control, 'control', control)
-      .having((shortcut) => shortcut.shift, 'shift', false)
+      .having((shortcut) => shortcut.shift, 'shift', shift)
       .having((shortcut) => shortcut.alt, 'alt', false);
 }
+
+/// The Account menu's groups in order: the active account's actions (absent
+/// when there is no active account), Add Account…, then the accounts.
+List<List<PlatformMenuItem>> _accountMenuGroups(WidgetTester tester) => [
+  for (final entry in _nativeMenu(tester, 'Account').menus) (entry as PlatformMenuItemGroup).members,
+];
+
+/// The Account menu's items that act on the active account or add one: all
+/// of it but the list of accounts at its end.
+List<PlatformMenuItem> _accountMenuActions(WidgetTester tester) {
+  final groups = _accountMenuGroups(tester);
+  return groups.take(groups.length - 1).expand((group) => group).toList();
+}
+
+/// The accounts the Account menu lists, at its end.
+List<PlatformMenuItem> _accountMenuAccounts(WidgetTester tester) => _accountMenuGroups(tester).last;
+
+const _digits = [
+  LogicalKeyboardKey.digit1,
+  LogicalKeyboardKey.digit2,
+  LogicalKeyboardKey.digit3,
+  LogicalKeyboardKey.digit4,
+  LogicalKeyboardKey.digit5,
+  LogicalKeyboardKey.digit6,
+  LogicalKeyboardKey.digit7,
+  LogicalKeyboardKey.digit8,
+  LogicalKeyboardKey.digit9,
+];
+
+/// The names of the sidebar's account rows, top to bottom.
+List<String> _sidebarAccounts(WidgetTester tester) => [
+  for (final row in tester.widgetList<SidebarRow>(
+    find.descendant(of: find.byType(Sidebar), matching: find.byType(SidebarRow)),
+  ))
+    if (!row.isSecondary) row.title,
+];
+
+/// The title of the sidebar row that is selected.
+String _selected(WidgetTester tester) => tester
+    .widgetList<SidebarRow>(find.descendant(of: find.byType(Sidebar), matching: find.byType(SidebarRow)))
+    .singleWhere((row) => row.isSelected)
+    .title;
 
 Finder _sheetTitled(String title) => find.descendant(of: find.byType(ShellSheetView), matching: find.text(title));
 
@@ -54,6 +100,12 @@ List<Override> _withActive(DisplayAccount active) => shellOverrides(
   settings: FakeSettingsService(activeAccount: active, multisigs: [teamMultisig]),
   balances: oneTokenEach,
 );
+
+/// Two accounts, Main and Savings, both of which send, stored on [settings].
+List<Override> _withSlowSettings(SlowSettingsService settings) =>
+    shellOverrides(accounts: const [mainAccount, savingsAccount], settings: settings, balances: oneTokenEach);
+
+Finder _inSheet(Finder finder) => find.descendant(of: find.byType(ShellSheetView), matching: finder);
 
 void main() {
   group('on macOS', () {
@@ -125,7 +177,7 @@ void main() {
       testOnMac('the Account menu offers what the toolbar offers for $description', (tester) async {
         await pumpShell(tester, overrides: _withActive(account));
 
-        final items = _itemsOf(_nativeMenu(tester, 'Account'));
+        final items = _accountMenuActions(tester);
         expect([for (final item in items) (item.label, item.onSelected != null)], expected);
 
         for (final (label, enabled) in expected.where((entry) => entry.$1 != 'Add Account…')) {
@@ -148,13 +200,206 @@ void main() {
       expect(_sheetTitled('Send'), findsOneWidget);
     });
 
-    testOnMac('with no active account the Account menu offers only Add Account…', (tester) async {
+    testOnMac('with no active account the Account menu offers no actions: Add Account… and the accounts', (
+      tester,
+    ) async {
       await pumpShell(
         tester,
         overrides: shellOverrides(accounts: const [mainAccount], balances: oneTokenEach),
       );
 
-      expect(_itemsOf(_nativeMenu(tester, 'Account')).map((item) => item.label), ['Add Account…']);
+      expect(_itemsOf(_nativeMenu(tester, 'Account')).map((item) => item.label), ['Add Account…', 'Main']);
+    });
+
+    testOnMac('Receive, Send and Add Account… answer to ⌘R, ⌘S and ⌘N; Swap has no shortcut yet', (tester) async {
+      await pumpShell(tester, overrides: _withActive(const RegularAccount(mainAccount)));
+
+      expect(_nativeItem(tester, 'Account', 'Receive').shortcut, _isShortcut(LogicalKeyboardKey.keyR, meta: true));
+      expect(_nativeItem(tester, 'Account', 'Send').shortcut, _isShortcut(LogicalKeyboardKey.keyS, meta: true));
+      expect(_nativeItem(tester, 'Account', 'Add Account…').shortcut, _isShortcut(LogicalKeyboardKey.keyN, meta: true));
+      expect(_nativeItem(tester, 'Account', 'Swap').shortcut, isNull);
+    });
+
+    testOnMac('the Account menu lists the accounts in the sidebar\'s order, numbered from ⌘1', (tester) async {
+      await pumpShell(tester, overrides: _withActive(const RegularAccount(mainAccount)));
+
+      final accounts = _accountMenuAccounts(tester);
+      expect(accounts.map((item) => item.label), _sidebarAccounts(tester));
+      expect(accounts.map((item) => item.label), ['Main', 'Team', 'Vault']);
+      for (final (index, item) in accounts.indexed) {
+        expect(item.shortcut, _isShortcut(_digits[index], meta: true), reason: item.label);
+      }
+    });
+
+    testOnMac('accounts past the ninth are listed without a number', (tester) async {
+      await pumpShell(
+        tester,
+        overrides: shellOverrides(
+          accounts: [
+            for (var index = 0; index < 11; index++)
+              Account(walletIndex: 0, index: index, name: 'Account ${index + 1}', accountId: 'qzAccount$index'),
+          ],
+          balances: oneTokenEach,
+        ),
+      );
+
+      final accounts = _accountMenuAccounts(tester);
+      expect(accounts.map((item) => item.label), _sidebarAccounts(tester));
+      expect(accounts, hasLength(11));
+      expect(accounts[8].shortcut, _isShortcut(LogicalKeyboardKey.digit9, meta: true));
+      expect(accounts[9].shortcut, isNull);
+      expect(accounts[10].shortcut, isNull);
+    });
+
+    testOnMac('choosing an account in the Account menu makes it the active account and shows it', (tester) async {
+      await pumpShell(tester, overrides: _withActive(const RegularAccount(mainAccount)));
+      await tester.tap(find.descendant(of: find.byType(Sidebar), matching: find.text('Mining Rewards')));
+      await tester.pumpAndSettle();
+      expect(find.byType(MiningRewardsPane), findsOneWidget);
+
+      _accountMenuAccounts(tester).singleWhere((item) => item.label == 'Vault').onSelected!();
+      await tester.pumpAndSettle();
+
+      expect(_selected(tester), 'Vault');
+      expect(find.byType(AccountPane), findsOneWidget);
+      // Vault's key signs on its hardware wallet, so Send is offered dimmed.
+      expect(_nativeItem(tester, 'Account', 'Send').onSelected, isNull);
+    });
+
+    testOnMac('while a switch is still being saved, Send is offered, to be checked against the account switched to', (
+      tester,
+    ) async {
+      final settings = SlowSettingsService(activeAccount: const RegularAccount(vaultAccount));
+      await pumpShell(
+        tester,
+        overrides: shellOverrides(
+          accounts: const [mainAccount, vaultAccount],
+          settings: settings,
+          balances: oneTokenEach,
+        ),
+      );
+      expect(_nativeItem(tester, 'Account', 'Send').onSelected, isNull);
+
+      _accountMenuAccounts(tester).singleWhere((item) => item.label == 'Main').onSelected!();
+      await tester.pumpAndSettle();
+      final send = _nativeItem(tester, 'Account', 'Send');
+      expect(send.onSelected, isNotNull);
+      send.onSelected!();
+      await tester.pumpAndSettle();
+      await settings.finishWrites(tester);
+
+      expect(find.byType(SendSheet), findsOneWidget);
+      expect(_inSheet(find.text('Main')), findsOneWidget);
+    });
+
+    /// Presses [keys] one after another with ⌘ held, before any frame is
+    /// drawn: the system's menus still hold what they did before the first.
+    Future<void> pressWithCommand(WidgetTester tester, List<LogicalKeyboardKey> keys) async {
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.metaLeft);
+      for (final key in keys) {
+        await tester.sendKeyEvent(key);
+      }
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.metaLeft);
+      await tester.pumpAndSettle();
+    }
+
+    testOnMac('⌘R, pressed, opens Receive: the app answers its shortcuts itself', (tester) async {
+      await pumpShell(tester, overrides: _withActive(const RegularAccount(mainAccount)));
+
+      await pressWithCommand(tester, [LogicalKeyboardKey.keyR]);
+
+      expect(_sheetTitled('Receive'), findsOneWidget);
+    });
+
+    testOnMac('⌘S, pressed on an account this app cannot send from, opens nothing', (tester) async {
+      await pumpShell(tester, overrides: _withActive(const RegularAccount(vaultAccount)));
+
+      await pressWithCommand(tester, [LogicalKeyboardKey.keyS]);
+
+      expect(find.byType(ShellSheetView), findsNothing);
+    });
+
+    testOnMac('from an account that cannot send, ⌘1 then ⌘S before the next frame opens Send on the account '
+        'switched to', (tester) async {
+      final settings = SlowSettingsService(activeAccount: const RegularAccount(vaultAccount));
+      await pumpShell(
+        tester,
+        overrides: shellOverrides(
+          accounts: const [mainAccount, vaultAccount],
+          settings: settings,
+          balances: oneTokenEach,
+        ),
+      );
+
+      await pressWithCommand(tester, [LogicalKeyboardKey.digit1, LogicalKeyboardKey.keyS]);
+      await settings.finishWrites(tester);
+
+      expect(_selected(tester), 'Main');
+      expect(find.byType(SendSheet), findsOneWidget);
+      expect(_inSheet(find.text('Main')), findsOneWidget);
+    });
+
+    testOnMac('⌘2 to an account that cannot send, then ⌘S before the next frame, opens nothing', (tester) async {
+      final settings = SlowSettingsService(activeAccount: const RegularAccount(mainAccount));
+      await pumpShell(
+        tester,
+        overrides: shellOverrides(
+          accounts: const [mainAccount, vaultAccount],
+          settings: settings,
+          balances: oneTokenEach,
+        ),
+      );
+
+      await pressWithCommand(tester, [LogicalKeyboardKey.digit2, LogicalKeyboardKey.keyS]);
+      await settings.finishWrites(tester);
+
+      expect(_selected(tester), 'Vault');
+      expect(find.byType(ShellSheetView), findsNothing);
+    });
+
+    testOnMac('⌘2 then ⌘R while the switch is still being saved opens Receive on the second account', (tester) async {
+      final settings = SlowSettingsService(activeAccount: const RegularAccount(mainAccount));
+      await pumpShell(tester, overrides: _withSlowSettings(settings));
+
+      _accountMenuAccounts(tester).singleWhere((item) => item.label == 'Savings').onSelected!();
+      await tester.pumpAndSettle();
+      _nativeItem(tester, 'Account', 'Receive').onSelected!();
+      await tester.pumpAndSettle();
+      await settings.finishWrites(tester);
+
+      expect(_sheetTitled('Receive'), findsOneWidget);
+      expect(_inSheet(find.text('Savings')), findsOneWidget);
+      expect(_inSheet(find.text('qzSavings')), findsOneWidget);
+    });
+
+    testOnMac('View → Next and Previous Sidebar Item (⌃Tab, ⌃⇧Tab) walk the sidebar, Mining Rewards included, and '
+        'go round at its ends', (tester) async {
+      await pumpShell(tester, overrides: _withActive(const RegularAccount(mainAccount)));
+
+      expect(
+        _nativeItem(tester, 'View', 'Next Sidebar Item').shortcut,
+        _isShortcut(LogicalKeyboardKey.tab, control: true),
+      );
+      expect(
+        _nativeItem(tester, 'View', 'Previous Sidebar Item').shortcut,
+        _isShortcut(LogicalKeyboardKey.tab, control: true, shift: true),
+      );
+
+      Future<String> choose(String label) async {
+        _nativeItem(tester, 'View', label).onSelected!();
+        await tester.pumpAndSettle();
+        return _selected(tester);
+      }
+
+      expect(_selected(tester), 'Main');
+      expect(await choose('Next Sidebar Item'), 'Team');
+      expect(await choose('Next Sidebar Item'), 'Vault');
+      expect(await choose('Next Sidebar Item'), 'Mining Rewards');
+      expect(find.byType(MiningRewardsPane), findsOneWidget);
+      expect(await choose('Next Sidebar Item'), 'Main');
+      expect(find.byType(AccountPane), findsOneWidget);
+      expect(await choose('Previous Sidebar Item'), 'Mining Rewards');
+      expect(await choose('Previous Sidebar Item'), 'Vault');
     });
 
     testOnMac('while a sheet is open, the items that open sheets are disabled', (tester) async {
@@ -165,9 +410,13 @@ void main() {
 
       expect(_sheetTitled('Add Account'), findsOneWidget);
       expect(_nativeItem(tester, 'Quantus Wallet', 'Settings…').onSelected, isNull);
+      // The accounts it lists among them: a sheet is for the account it opened on.
+      expect(_itemsOf(_nativeMenu(tester, 'Account')).map((item) => item.label), contains('Vault'));
       for (final item in _itemsOf(_nativeMenu(tester, 'Account'))) {
         expect(item.onSelected, isNull, reason: item.label);
       }
+      expect(_nativeItem(tester, 'View', 'Next Sidebar Item').onSelected, isNull);
+      expect(_nativeItem(tester, 'View', 'Previous Sidebar Item').onSelected, isNull);
 
       await tester.sendKeyEvent(LogicalKeyboardKey.escape);
       await tester.pumpAndSettle();
@@ -208,6 +457,7 @@ void main() {
       expect(_nativeItem(tester, 'Quantus Wallet', 'Settings…').onSelected, isNull);
       expect(_nativeItem(tester, 'Account', 'Add Account…').onSelected, isNull);
       expect(_nativeItem(tester, 'View', 'Hide Sidebar').onSelected, isNull);
+      expect(_nativeItem(tester, 'View', 'Next Sidebar Item').onSelected, isNull);
 
       _nativeItem(tester, 'File', 'Close Window').onSelected!();
 
@@ -288,7 +538,19 @@ void main() {
       final items = tester.widgetList<MenuItemButton>(find.byType(MenuItemButton)).toList();
       expect(
         [for (final item in items) ((item.child! as Text).data, item.onPressed != null)],
-        [('Receive', true), ('Send', false), ('Swap', false), ('Add Account…', true)],
+        [
+          ('Receive', true),
+          ('Send', false),
+          ('Swap', false),
+          ('Add Account…', true),
+          ('Main', true),
+          ('Team', true),
+          ('Vault', true),
+        ],
+      );
+      expect(
+        tester.widget<MenuItemButton>(find.widgetWithText(MenuItemButton, 'Team')).shortcut,
+        _isShortcut(LogicalKeyboardKey.digit2, control: true),
       );
     });
 
@@ -347,6 +609,279 @@ void main() {
       await openMenu(tester, 'View');
 
       expect(tester.widget<MenuItemButton>(find.widgetWithText(MenuItemButton, 'Hide Sidebar')).onPressed, isNull);
+    });
+
+    Future<void> press(WidgetTester tester, LogicalKeyboardKey key, {bool shift = false}) async {
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+      if (shift) await tester.sendKeyDownEvent(LogicalKeyboardKey.shiftLeft);
+      await tester.sendKeyEvent(key);
+      if (shift) await tester.sendKeyUpEvent(LogicalKeyboardKey.shiftLeft);
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+      await tester.pumpAndSettle();
+    }
+
+    testOnWindowsAndLinux('Ctrl+1 to Ctrl+9 make the account of that number in the sidebar active; a number past '
+        'the last does nothing', (tester) async {
+      await pumpShell(tester, overrides: _withActive(const RegularAccount(mainAccount)));
+
+      await press(tester, LogicalKeyboardKey.digit3);
+      expect(_selected(tester), 'Vault');
+
+      await press(tester, LogicalKeyboardKey.digit2);
+      expect(_selected(tester), 'Team');
+
+      await press(tester, LogicalKeyboardKey.digit4);
+      await press(tester, LogicalKeyboardKey.digit9);
+      expect(_selected(tester), 'Team');
+
+      await tester.tap(find.descendant(of: find.byType(Sidebar), matching: find.text('Mining Rewards')));
+      await tester.pumpAndSettle();
+      await press(tester, LogicalKeyboardKey.digit1);
+
+      expect(_selected(tester), 'Main');
+      expect(find.byType(AccountPane), findsOneWidget);
+    });
+
+    testOnWindowsAndLinux('Ctrl+Tab and Ctrl+Shift+Tab walk the sidebar and go round at its ends', (tester) async {
+      await pumpShell(tester, overrides: _withActive(const RegularAccount(mainAccount)));
+
+      await press(tester, LogicalKeyboardKey.tab, shift: true);
+      expect(_selected(tester), 'Mining Rewards');
+
+      await press(tester, LogicalKeyboardKey.tab);
+      expect(_selected(tester), 'Main');
+
+      await press(tester, LogicalKeyboardKey.tab);
+      expect(_selected(tester), 'Team');
+    });
+
+    for (final (key, name, title) in [
+      (LogicalKeyboardKey.keyR, 'Ctrl+R', 'Receive'),
+      (LogicalKeyboardKey.keyS, 'Ctrl+S', 'Send'),
+      (LogicalKeyboardKey.keyN, 'Ctrl+N', 'Add Account'),
+    ]) {
+      testOnWindowsAndLinux('$name opens $title', (tester) async {
+        await pumpShell(tester, overrides: _withActive(const RegularAccount(mainAccount)));
+
+        await press(tester, key);
+
+        expect(_sheetTitled(title), findsOneWidget);
+      });
+    }
+
+    testOnWindowsAndLinux('Ctrl+S does nothing on an account this app cannot send from', (tester) async {
+      await pumpShell(tester, overrides: _withActive(const RegularAccount(vaultAccount)));
+
+      await press(tester, LogicalKeyboardKey.keyS);
+
+      expect(find.byType(ShellSheetView), findsNothing);
+    });
+
+    testOnWindowsAndLinux('while a sheet is open, the shortcuts that switch account or open a sheet do nothing', (
+      tester,
+    ) async {
+      await pumpShell(tester, overrides: _withActive(const RegularAccount(mainAccount)));
+      await press(tester, LogicalKeyboardKey.keyR);
+      expect(_sheetTitled('Receive'), findsOneWidget);
+
+      await press(tester, LogicalKeyboardKey.digit3);
+      await press(tester, LogicalKeyboardKey.tab);
+      await press(tester, LogicalKeyboardKey.keyS);
+      await press(tester, LogicalKeyboardKey.keyN);
+
+      expect(_selected(tester), 'Main');
+      expect(_sheetTitled('Receive'), findsOneWidget);
+      expect(find.byType(ShellSheetView), findsOneWidget);
+    });
+
+    group('while an account switch is still being saved', () {
+      testOnWindowsAndLinux('Ctrl+2 then Ctrl+R opens Receive on the second account, its header and address alike', (
+        tester,
+      ) async {
+        final settings = SlowSettingsService(activeAccount: const RegularAccount(mainAccount));
+        await pumpShell(tester, overrides: _withSlowSettings(settings));
+
+        await press(tester, LogicalKeyboardKey.digit2);
+        await press(tester, LogicalKeyboardKey.keyR);
+        await settings.finishWrites(tester);
+
+        expect(_sheetTitled('Receive'), findsOneWidget);
+        expect(_inSheet(find.text('Savings')), findsOneWidget);
+        expect(_inSheet(find.text('Main')), findsNothing);
+        expect(_inSheet(find.text('qzSavings')), findsOneWidget);
+        expect(tester.widget<QuantusQr>(_inSheet(find.byType(QuantusQr))).accountId, 'qzSavings');
+      });
+
+      testOnWindowsAndLinux('Ctrl+2 then Ctrl+S opens Send on the second account', (tester) async {
+        final settings = SlowSettingsService(activeAccount: const RegularAccount(mainAccount));
+        await pumpShell(tester, overrides: _withSlowSettings(settings));
+
+        await press(tester, LogicalKeyboardKey.digit2);
+        await press(tester, LogicalKeyboardKey.keyS);
+        await settings.finishWrites(tester);
+
+        expect(find.byType(SendSheet), findsOneWidget);
+        expect(_inSheet(find.text('Savings')), findsOneWidget);
+        expect(_inSheet(find.text('Main')), findsNothing);
+      });
+
+      testOnWindowsAndLinux('two presses of Ctrl+Tab move two rows', (tester) async {
+        final settings = SlowSettingsService(activeAccount: const RegularAccount(mainAccount));
+        await pumpShell(tester, overrides: _withSlowSettings(settings));
+
+        await press(tester, LogicalKeyboardKey.tab);
+        await press(tester, LogicalKeyboardKey.tab);
+        await settings.finishWrites(tester);
+
+        expect(_selected(tester), 'Mining Rewards');
+      });
+
+      testOnWindowsAndLinux('Ctrl+2 then a click on Mining Rewards ends on Mining Rewards', (tester) async {
+        final settings = SlowSettingsService(activeAccount: const RegularAccount(mainAccount));
+        await pumpShell(tester, overrides: _withSlowSettings(settings));
+
+        await press(tester, LogicalKeyboardKey.digit2);
+        await tester.tap(find.descendant(of: find.byType(Sidebar), matching: find.text('Mining Rewards')));
+        await tester.pumpAndSettle();
+        await settings.finishWrites(tester);
+
+        expect(_selected(tester), 'Mining Rewards');
+        expect(find.byType(MiningRewardsPane), findsOneWidget);
+      });
+
+      for (final (key, name, sheet) in [
+        (LogicalKeyboardKey.keyS, 'Ctrl+S', 'Send'),
+        (LogicalKeyboardKey.keyR, 'Ctrl+R', 'Receive'),
+      ]) {
+        testOnWindowsAndLinux('when the switch fails, $name pressed while it waited opens nothing, and says why', (
+          tester,
+        ) async {
+          final settings = SlowSettingsService(activeAccount: const RegularAccount(mainAccount));
+          await pumpShell(tester, overrides: _withSlowSettings(settings));
+
+          await press(tester, LogicalKeyboardKey.digit2);
+          await press(tester, key);
+          await settings.failWrites(tester, StateError('disk full'));
+
+          expect(find.byType(ShellSheetView), findsNothing, reason: '$sheet must not open on Main');
+          expect(_selected(tester), 'Main');
+          expect(find.text('Could not switch account'), findsOneWidget);
+          expect(find.text('Savings could not be made the active account: Bad state: disk full'), findsOneWidget);
+
+          await tester.tap(find.text('Close'));
+          await tester.pumpAndSettle();
+          expect(find.text('Could not switch account'), findsNothing);
+        });
+      }
+
+      List<Override> withVault(SlowSettingsService settings) =>
+          shellOverrides(accounts: const [mainAccount, vaultAccount], settings: settings, balances: oneTokenEach);
+
+      testOnWindowsAndLinux(
+        'from an account that cannot send, Ctrl+1 then Ctrl+S opens Send on the account switched to',
+        (tester) async {
+          final settings = SlowSettingsService(activeAccount: const RegularAccount(vaultAccount));
+          await pumpShell(tester, overrides: withVault(settings));
+
+          await press(tester, LogicalKeyboardKey.digit1);
+          await press(tester, LogicalKeyboardKey.keyS);
+          await settings.finishWrites(tester);
+
+          expect(find.byType(SendSheet), findsOneWidget);
+          expect(_inSheet(find.text('Main')), findsOneWidget);
+        },
+      );
+
+      /// Presses [keys] one after another with Ctrl held, before any frame
+      /// is drawn: the menus still show what they did before the first key.
+      Future<void> pressWithinOneFrame(WidgetTester tester, List<LogicalKeyboardKey> keys) async {
+        await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+        for (final key in keys) {
+          await tester.sendKeyEvent(key);
+        }
+        await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+        await tester.pumpAndSettle();
+      }
+
+      testOnWindowsAndLinux('from an account that cannot send, Ctrl+1 then Ctrl+S before the next frame opens Send '
+          'on the account switched to', (tester) async {
+        final settings = SlowSettingsService(activeAccount: const RegularAccount(vaultAccount));
+        await pumpShell(tester, overrides: withVault(settings));
+
+        await pressWithinOneFrame(tester, [LogicalKeyboardKey.digit1, LogicalKeyboardKey.keyS]);
+        await settings.finishWrites(tester);
+
+        expect(_selected(tester), 'Main');
+        expect(find.byType(SendSheet), findsOneWidget);
+        expect(_inSheet(find.text('Main')), findsOneWidget);
+      });
+
+      testOnWindowsAndLinux('Ctrl+2 to an account that cannot send, then Ctrl+S before the next frame, opens '
+          'nothing', (tester) async {
+        final settings = SlowSettingsService(activeAccount: const RegularAccount(mainAccount));
+        await pumpShell(tester, overrides: withVault(settings));
+
+        await pressWithinOneFrame(tester, [LogicalKeyboardKey.digit2, LogicalKeyboardKey.keyS]);
+        await settings.finishWrites(tester);
+
+        expect(_selected(tester), 'Vault');
+        expect(find.byType(ShellSheetView), findsNothing);
+      });
+
+      testOnWindowsAndLinux('Ctrl+2 to an account that cannot send, then Ctrl+S, opens nothing', (tester) async {
+        final settings = SlowSettingsService(activeAccount: const RegularAccount(mainAccount));
+        await pumpShell(tester, overrides: withVault(settings));
+
+        await press(tester, LogicalKeyboardKey.digit2);
+        await press(tester, LogicalKeyboardKey.keyS);
+        await settings.finishWrites(tester);
+
+        expect(_selected(tester), 'Vault');
+        expect(find.byType(ShellSheetView), findsNothing);
+      });
+
+      testOnWindowsAndLinux('the toolbar keeps showing what the active account offers while a switch waits', (
+        tester,
+      ) async {
+        final settings = SlowSettingsService(activeAccount: const RegularAccount(vaultAccount));
+        await pumpShell(tester, overrides: withVault(settings));
+
+        await press(tester, LogicalKeyboardKey.digit1);
+
+        expect(tester.widget<ToolbarAction>(_toolbarButton('Send')).onPressed, isNull);
+        await settings.finishWrites(tester);
+        expect(tester.widget<ToolbarAction>(_toolbarButton('Send')).onPressed, isNotNull);
+      });
+
+      testOnWindowsAndLinux('after a failed switch, the shortcuts pressed later work again', (tester) async {
+        final settings = SlowSettingsService(activeAccount: const RegularAccount(mainAccount));
+        await pumpShell(tester, overrides: _withSlowSettings(settings));
+        await press(tester, LogicalKeyboardKey.digit2);
+        await settings.failWrites(tester, StateError('disk full'));
+        await tester.tap(find.text('Close'));
+        await tester.pumpAndSettle();
+
+        await press(tester, LogicalKeyboardKey.keyR);
+
+        expect(_sheetTitled('Receive'), findsOneWidget);
+        expect(_inSheet(find.text('qzMain')), findsOneWidget);
+      });
+
+      testOnWindowsAndLinux('a switch pressed after a sheet\'s shortcut does nothing once that sheet is open', (
+        tester,
+      ) async {
+        final settings = SlowSettingsService(activeAccount: const RegularAccount(mainAccount));
+        await pumpShell(tester, overrides: _withSlowSettings(settings));
+
+        await press(tester, LogicalKeyboardKey.digit2);
+        await press(tester, LogicalKeyboardKey.keyR);
+        await press(tester, LogicalKeyboardKey.digit1);
+        await settings.finishWrites(tester);
+
+        expect(_selected(tester), 'Savings');
+        expect(_inSheet(find.text('Savings')), findsOneWidget);
+        expect(_inSheet(find.text('qzSavings')), findsOneWidget);
+      });
     });
 
     testOnWindowsAndLinux('Ctrl+W asks the app to exit', (tester) async {

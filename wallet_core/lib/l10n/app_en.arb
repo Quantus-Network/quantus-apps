@@ -3588,6 +3588,14 @@
     "@desktopMenuShowSidebar": {
       "description": "Desktop View menu item shown while the sidebar is hidden"
     },
+    "desktopMenuNextSidebarItem": "Next Sidebar Item",
+    "@desktopMenuNextSidebarItem": {
+      "description": "Desktop View menu item that selects the row under the selected one in the sidebar, the first after the last"
+    },
+    "desktopMenuPreviousSidebarItem": "Previous Sidebar Item",
+    "@desktopMenuPreviousSidebarItem": {
+      "description": "Desktop View menu item that selects the row above the selected one in the sidebar, the last before the first"
+    },
     "desktopMenuWindow": "Window",
     "@desktopMenuWindow": {
       "description": "Desktop menu bar: Window menu title"
@@ -3867,5 +3875,33 @@
     "desktopViewInExplorer": "View in Explorer",
     "@desktopViewInExplorer": {
       "description": "Desktop: opens a transaction in the block explorer, in the browser"
+    },
+    "desktopSendTransactionOf": "Transaction {index} of {count}",
+    "@desktopSendTransactionOf": {
+      "description": "Desktop Send: on the receipt of a private send that took several transactions, the name of one of them, before the action that opens it in the explorer",
+      "placeholders": {
+        "index": {
+          "type": "int"
+        },
+        "count": {
+          "type": "int"
+        }
+      }
+    },
+    "desktopAccountSwitchFailedTitle": "Could not switch account",
+    "@desktopAccountSwitchFailedTitle": {
+      "description": "Desktop: title of the dialog shown when an account chosen in the sidebar, the menu or by a shortcut could not be made the active account"
+    },
+    "desktopAccountSwitchFailedMessage": "{account} could not be made the active account: {error}",
+    "@desktopAccountSwitchFailedMessage": {
+      "description": "Desktop: the dialog's message when switching account failed; {account} is the account's name, {error} the reason. What was asked for after the switch is not done.",
+      "placeholders": {
+        "account": {
+          "type": "String"
+        },
+        "error": {
+          "type": "String"
+        }
+      }
     }
 }

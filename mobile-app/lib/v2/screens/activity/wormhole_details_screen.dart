@@ -62,7 +62,7 @@ class WormholeDetailsScreen extends ConsumerWidget {
                   value: amount(input.amount),
                 ),
               const SizedBox(height: 8),
-              Center(child: ExplorerLink(url: explorerUrl('transactions/wormhole/${batch.extrinsicId}'))),
+              Center(child: ExplorerLink(url: wormholeExplorerUrl(batch.extrinsicId))),
             ],
           );
         },

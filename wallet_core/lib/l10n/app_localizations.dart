@@ -4538,6 +4538,18 @@ abstract class AppLocalizations {
   /// **'Show Sidebar'**
   String get desktopMenuShowSidebar;
 
+  /// Desktop View menu item that selects the row under the selected one in the sidebar, the first after the last
+  ///
+  /// In en, this message translates to:
+  /// **'Next Sidebar Item'**
+  String get desktopMenuNextSidebarItem;
+
+  /// Desktop View menu item that selects the row above the selected one in the sidebar, the last before the first
+  ///
+  /// In en, this message translates to:
+  /// **'Previous Sidebar Item'**
+  String get desktopMenuPreviousSidebarItem;
+
   /// Desktop menu bar: Window menu title
   ///
   /// In en, this message translates to:
@@ -4885,6 +4897,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'View in Explorer'**
   String get desktopViewInExplorer;
+
+  /// Desktop Send: on the receipt of a private send that took several transactions, the name of one of them, before the action that opens it in the explorer
+  ///
+  /// In en, this message translates to:
+  /// **'Transaction {index} of {count}'**
+  String desktopSendTransactionOf(int index, int count);
+
+  /// Desktop: title of the dialog shown when an account chosen in the sidebar, the menu or by a shortcut could not be made the active account
+  ///
+  /// In en, this message translates to:
+  /// **'Could not switch account'**
+  String get desktopAccountSwitchFailedTitle;
+
+  /// Desktop: the dialog's message when switching account failed; {account} is the account's name, {error} the reason. What was asked for after the switch is not done.
+  ///
+  /// In en, this message translates to:
+  /// **'{account} could not be made the active account: {error}'**
+  String desktopAccountSwitchFailedMessage(String account, String error);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
