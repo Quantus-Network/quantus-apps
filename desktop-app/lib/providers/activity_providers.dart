@@ -204,3 +204,33 @@ final ownAccountsByAddressProvider = Provider<Map<String, BaseAccount>>((ref) {
     for (final multisig in multisigs) multisig.accountId: multisig,
   };
 });
+
+/// What is open, as the lists hold it now: a transaction by its id, or, once
+/// it settled under the indexer's own id, by its hash; a proposal among the
+/// open ones or the past ones. Null when it is no longer there. While the
+/// lists load, what was opened stands.
+final openedActivityViewProvider = Provider<OpenedActivity?>((ref) {
+  final opened = ref.watch(openedActivityProvider);
+  if (opened == null) return null;
+  final view = ref.watch(activityViewProvider).value;
+  if (view == null) return opened;
+  final activity = [...view.inProgress, ...view.settled];
+
+  switch (opened) {
+    case OpenedTransaction(:final tx):
+      final byId = activity.where((other) => other.id == tx.id).firstOrNull;
+      if (byId != null) return OpenedTransaction(byId);
+      final hash = tx.extrinsicHash;
+      if (hash == null) return null;
+      final byHash = activity.where((other) => other.extrinsicHash == hash).firstOrNull;
+      return byHash == null ? null : OpenedTransaction(byHash);
+    case OpenedProposal(:final proposal):
+      final open = ref.watch(openProposalsViewProvider)?.value?.open ?? const <MultisigProposal>[];
+      final past = [
+        for (final tx in activity)
+          if (tx is MultisigProposalEvent) tx.proposal,
+      ];
+      final found = [...open, ...past].where((other) => other.entityId == proposal.entityId).firstOrNull;
+      return found == null ? null : OpenedProposal(found);
+  }
+});

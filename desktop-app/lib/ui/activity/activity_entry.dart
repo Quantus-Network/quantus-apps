@@ -11,7 +11,7 @@ import 'package:wallet_core/providers/wallet_providers.dart';
 /// The row [tx] makes in the open account's lists: wallet_core's words for
 /// it, its amount formatted, the wallet's own account on the other side by
 /// its badge and name, open when it is the one the panel at the right shows.
-/// A click opens it there.
+/// A click opens it there; a multisig's past proposal opens as a proposal.
 class ActivityEntry extends ConsumerWidget {
   const ActivityEntry({super.key, required this.tx, required this.form, this.hasFocus = true});
 
@@ -29,7 +29,7 @@ class ActivityEntry extends ConsumerWidget {
     if (account == null) throw StateError('An activity row was drawn with no open account.');
     final row = activityRowOf(tx, accountId: account.accountId, l10n: l10n, isPrivate: isEncryptedAccount(account));
     final own = ref.watch(ownAccountsByAddressProvider);
-    final opened = ref.watch(openedActivityProvider);
+    final opened = ref.watch(openedActivityViewProvider);
 
     return ActivityRowView(
       id: tx.id,
@@ -43,7 +43,11 @@ class ActivityEntry extends ConsumerWidget {
       },
       isSelected: opened?.id == tx.id,
       hasFocus: hasFocus,
-      onTap: () => ref.read(openedActivityProvider.notifier).open(OpenedTransaction(tx)),
+      // A multisig's past proposal opens as the proposal it was.
+      onTap: () => ref.read(openedActivityProvider.notifier).open(switch (tx) {
+        MultisigProposalEvent(:final proposal) => OpenedProposal(proposal),
+        _ => OpenedTransaction(tx),
+      }),
     );
   }
 }

@@ -158,17 +158,23 @@ enum ToolbarActionEdge { leading, trailing }
 /// would. Its backing reaches past the edge into the margin; clicks there
 /// miss, since the content's bounds end at the edge.
 class ToolbarActionRow extends StatelessWidget {
-  const ToolbarActionRow({super.key, required this.edge, required this.children, this.spacing = 4});
+  const ToolbarActionRow({super.key, required this.edge, required this.children, this.spacing = 4, this.wraps = false});
 
   final ToolbarActionEdge edge;
   final List<Widget> children;
   final double spacing;
 
+  /// Whether actions that do not fit on one line go on to the next, as in a
+  /// narrow panel, rather than all staying on one.
+  final bool wraps;
+
   @override
   Widget build(BuildContext context) {
     return Transform.translate(
       offset: Offset(edge == ToolbarActionEdge.trailing ? ToolbarAction.inset : -ToolbarAction.inset, 0),
-      child: Row(mainAxisSize: MainAxisSize.min, spacing: spacing, children: children),
+      child: wraps
+          ? Wrap(spacing: spacing, runSpacing: spacing, children: children)
+          : Row(mainAxisSize: MainAxisSize.min, spacing: spacing, children: children),
     );
   }
 }

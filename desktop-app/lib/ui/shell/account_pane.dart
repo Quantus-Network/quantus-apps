@@ -1,18 +1,23 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_desktop_wallet/providers/activity_providers.dart';
+import 'package:quantus_desktop_wallet/ui/activity/activity_inspector.dart';
 import 'package:quantus_desktop_wallet/ui/activity/activity_panel.dart';
 import 'package:quantus_desktop_wallet/ui/activity/in_progress_panel.dart';
 import 'package:quantus_desktop_wallet/ui/activity/open_proposals_panel.dart';
 import 'package:quantus_desktop_wallet/ui/components/balance_card.dart';
 import 'package:quantus_desktop_wallet/ui/components/panel.dart';
+import 'package:quantus_desktop_wallet/ui/components/panel_resize_handle.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/providers/account_providers.dart';
 import 'package:wallet_core/providers/l10n_provider.dart';
 
 /// The active account's panels: its balance; what of it is still under way
 /// and, for a multisig, its open proposals, each only as tall as it needs;
-/// then its activity. Its actions are in the top bar.
+/// then its activity; and, at the right, what is open of it, resizable from
+/// the gap beside it. Its actions are in the top bar.
 class AccountPane extends ConsumerWidget {
   const AccountPane({super.key});
 
@@ -25,7 +30,8 @@ class AccountPane extends ConsumerWidget {
         .when(
           loading: () => const Center(child: Loader()),
           error: (_, _) => _message(context, l10n.accountsSheetFailedLoadActiveAccount),
-          data: (active) => active == null ? _message(context, l10n.homeNoActiveAccount) : _content(ref, active),
+          data: (active) =>
+              active == null ? _message(context, l10n.homeNoActiveAccount) : _content(context, ref, active),
         );
   }
 
@@ -35,12 +41,25 @@ class AccountPane extends ConsumerWidget {
     );
   }
 
-  Widget _content(WidgetRef ref, DisplayAccount active) {
+  Widget _content(BuildContext context, WidgetRef ref, DisplayAccount active) {
+    // What was open and is no longer in the lists stays closed.
+    ref.listen(openedActivityViewProvider, (_, opened) {
+      if (opened != null) return;
+      // After the frame: the providers that found it gone are still being
+      // rebuilt in this one.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!context.mounted) return;
+        if (ref.read(openedActivityViewProvider) == null) ref.read(openedActivityProvider.notifier).close();
+      });
+    });
     final account = active.account;
     final inProgress = ref.watch(activityViewProvider).value?.inProgress ?? const <TransactionEvent>[];
     final multisig = account is MultisigAccount ? account : null;
+    final isOpen = ref.watch(openedActivityViewProvider) != null;
+    final inspectorWidth = ref.watch(inspectorWidthProvider);
+    final inspector = ref.read(inspectorWidthProvider.notifier);
 
-    return LayoutBuilder(
+    final lists = LayoutBuilder(
       builder: (context, constraints) {
         // What sits over Activity takes half the column at most, or a third
         // each when both do.
@@ -64,6 +83,22 @@ class AccountPane extends ConsumerWidget {
           ],
         );
       },
+    );
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Expanded(child: lists),
+        if (isOpen) ...[
+          PanelResizeHandle(
+            width: inspectorWidth,
+            resizes: ResizedPanel.right,
+            onResize: inspector.resizeTo,
+            onResizeEnd: () => unawaited(inspector.save()),
+          ),
+          SizedBox(width: inspectorWidth, child: const ActivityInspector()),
+        ],
+      ],
     );
   }
 }

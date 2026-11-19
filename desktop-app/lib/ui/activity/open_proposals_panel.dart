@@ -36,7 +36,7 @@ class OpenProposalsPanel extends ConsumerWidget {
     final approvals = ref.watch(pendingMultisigApprovalsProvider);
     final executions = ref.watch(pendingMultisigExecutionsProvider);
     final cancellations = ref.watch(pendingMultisigCancellationsProvider);
-    final opened = ref.watch(openedActivityProvider);
+    final opened = ref.watch(openedActivityViewProvider);
 
     Widget line(String words, Color color) => Padding(
       padding: const EdgeInsets.fromLTRB(8, 6, 8, 6),
