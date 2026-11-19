@@ -22,6 +22,7 @@ import 'package:quantus_desktop_wallet/ui/shell/app_menu.dart';
 import 'package:quantus_desktop_wallet/ui/shell/app_menu_bar.dart';
 import 'package:quantus_desktop_wallet/ui/shell/live_data_scope.dart';
 import 'package:quantus_desktop_wallet/ui/shell/mining_rewards_pane.dart';
+import 'package:quantus_desktop_wallet/ui/shell/shell_footer.dart';
 import 'package:quantus_desktop_wallet/ui/shell/shell_header.dart';
 import 'package:quantus_desktop_wallet/ui/shell/shell_sheet_view.dart';
 import 'package:quantus_desktop_wallet/ui/shell/sidebar.dart';
@@ -35,8 +36,8 @@ import 'package:wallet_core/utils/provider_reader.dart';
 
 /// The window's frame: the menus, and under them onboarding until the device
 /// has a wallet, then the top bar over the panels (the sidebar, and beside it
-/// the panes for what the sidebar has selected), and the sheet over them when
-/// one is open.
+/// the panes for what the sidebar has selected) over the footer, and the sheet
+/// over them when one is open.
 class DesktopShell extends ConsumerStatefulWidget {
   const DesktopShell({super.key});
 
@@ -254,7 +255,7 @@ class _DesktopShellState extends ConsumerState<DesktopShell> {
         ),
         Expanded(
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(Panel.gap, 0, Panel.gap, Panel.gap),
+            padding: const EdgeInsets.symmetric(horizontal: Panel.gap),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -276,6 +277,7 @@ class _DesktopShellState extends ConsumerState<DesktopShell> {
             ),
           ),
         ),
+        const ShellFooter(),
       ],
     );
   }

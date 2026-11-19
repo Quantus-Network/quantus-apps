@@ -8,6 +8,7 @@ import 'package:quantus_desktop_wallet/ui/components/panel.dart';
 import 'package:quantus_desktop_wallet/ui/components/panel_resize_handle.dart';
 import 'package:quantus_desktop_wallet/ui/shell/desktop_shell.dart';
 import 'package:quantus_desktop_wallet/ui/shell/mining_rewards_pane.dart';
+import 'package:quantus_desktop_wallet/ui/shell/shell_footer.dart';
 import 'package:quantus_desktop_wallet/ui/shell/sidebar.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 
@@ -41,11 +42,11 @@ Future<void> _dragHandle(WidgetTester tester, double by) async {
 }
 
 void main() {
-  testOnMac('the sidebar is the Accounts panel, 240pt wide, 8pt from the window\'s edge, under the top bar, and 8pt '
-      'from the balance\'s panel', (tester) async {
+  testOnMac('the sidebar is the Accounts panel, 240pt wide, 8pt from the window\'s edge, between the top bar and the '
+      'footer, and 8pt from the balance\'s panel', (tester) async {
     await _open(tester);
 
-    expect(_sidebar(tester), const Rect.fromLTWH(Panel.gap, 52, 240, 800 - 52 - Panel.gap));
+    expect(_sidebar(tester), const Rect.fromLTWH(Panel.gap, 52, 240, 800 - 52 - ShellFooter.height));
     expect(find.descendant(of: find.byType(Sidebar), matching: find.text('Accounts')), findsOneWidget);
     expect(_balance(tester).left, _sidebar(tester).right + Panel.gap);
     expect(_balance(tester).top, 52);

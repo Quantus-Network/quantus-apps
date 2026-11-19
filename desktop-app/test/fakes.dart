@@ -384,6 +384,12 @@ class FakeSendChain {
   /// When the chain is said to reach any block.
   DateTime blockTime = DateTime(2026, 11, 20, 22, 14);
 
+  /// What reading the chain's latest block answers; it may throw.
+  Future<int> Function() currentBlock = () async => 1250000;
+
+  /// How many times the latest block was read.
+  int currentBlockReads = 0;
+
   /// The addresses paid before, the latest first.
   List<String> recents = [];
 
@@ -401,7 +407,8 @@ class FakeSendChain {
   ];
 }
 
-/// Prices a multisig's proposals as the [chain] says, at block 1250000.
+/// Prices a multisig's proposals as the [chain] says, at the block it says
+/// (1250000 unless told otherwise).
 class _FakeMultisigService extends Fake implements MultisigService {
   _FakeMultisigService(this.chain);
 
@@ -419,7 +426,10 @@ class _FakeMultisigService extends Fake implements MultisigService {
   }
 
   @override
-  Future<int> currentBlockNumber() async => 1250000;
+  Future<int> currentBlockNumber() {
+    chain.currentBlockReads++;
+    return chain.currentBlock();
+  }
 
   @override
   DateTime blockToTime(int targetBlock, int currentBlock) => chain.blockTime;

@@ -17,6 +17,7 @@ import 'package:quantus_desktop_wallet/bootstrap/app_bootstrap.dart';
 import 'package:quantus_desktop_wallet/models/app_command.dart';
 import 'package:quantus_desktop_wallet/models/shell_sheet.dart';
 import 'package:quantus_desktop_wallet/providers/shell_providers.dart';
+import 'package:quantus_desktop_wallet/providers/sync_status_provider.dart';
 import 'package:quantus_desktop_wallet/services/login_password.dart';
 import 'package:quantus_desktop_wallet/services/sensitive_clipboard.dart';
 import 'package:quantus_desktop_wallet/services/user_approval.dart';
@@ -49,10 +50,17 @@ Future<void> _open(
   FakeWalletDevice device, {
   bool reduceMotion = false,
   List<Override> overrides = const [],
-}) => _openWith(tester, [...device.overrides, ...overrides], reduceMotion: reduceMotion);
+  FakeNetwork? network,
+}) => _openWith(tester, [...device.overrides, ...overrides], reduceMotion: reduceMotion, network: network);
 
-/// Opens the app's window on what [overrides] make of the device.
-Future<void> _openWith(WidgetTester tester, List<Override> overrides, {bool reduceMotion = false}) async {
+/// Opens the app's window on what [overrides] make of the device, online
+/// unless [network] says otherwise.
+Future<void> _openWith(
+  WidgetTester tester,
+  List<Override> overrides, {
+  bool reduceMotion = false,
+  FakeNetwork? network,
+}) async {
   tester.view.physicalSize = _windowSize * _pixelRatio;
   tester.view.devicePixelRatio = _pixelRatio;
   addTearDown(tester.view.reset);
@@ -60,7 +68,14 @@ Future<void> _openWith(WidgetTester tester, List<Override> overrides, {bool redu
   addTearDown(tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
 
   // Nothing polls the chain or asks the computer about its network.
-  await tester.pumpWidget(buildApp(overrides: [...overrides, ...liveDataOverrides()]));
+  await tester.pumpWidget(
+    buildApp(
+      overrides: [
+        ...overrides,
+        ...liveDataOverrides(network: network),
+      ],
+    ),
+  );
   await tester.pump();
   await tester.pump();
 }
@@ -178,6 +193,38 @@ void main() {
       tester.element(find.byType(DesktopShell)),
     ).read(sidebarWidthProvider.notifier).resizeTo(SidebarWidthNotifier.maximum);
     await tester.pumpAndSettle();
+  });
+
+  _scene('shell_footer_offline', (tester) async {
+    var now = DateTime(2026, 11, 19, 14, 2);
+    final network = FakeNetwork();
+    await _open(
+      tester,
+      FakeWalletDevice()..store([_root, _second, _encrypted]),
+      reduceMotion: true,
+      network: network,
+      overrides: [currentTimeProvider.overrideWithValue(() => now)],
+    );
+    await tester.pumpAndSettle();
+    now = now.add(const Duration(minutes: 5));
+    network.goOffline();
+    await tester.pumpAndSettle();
+  });
+
+  _scene('shell_footer_syncing', (tester) async {
+    // Balances that never arrive: the wallet is still reading them.
+    await _openWith(
+      tester,
+      shellOverrides(
+        accounts: [_root, _second, _encrypted],
+        settings: FakeSettingsService(activeAccount: const RegularAccount(_root)),
+        balanceOf: (_) => Completer<BigInt>().future,
+        encryptedBalances: {0: oneToken},
+      ),
+    );
+    for (var i = 0; i < 6; i++) {
+      await tester.pump(const Duration(milliseconds: 50));
+    }
   });
 
   _scene('receive', (tester) async {
