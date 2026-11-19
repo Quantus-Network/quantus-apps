@@ -330,9 +330,12 @@ List<ActivityFact> _factsOf(TransactionEvent tx, String accountId, AppLocalizati
   return [
     ActivityPartyFact(
       isSend ? ActivityFactKind.to : ActivityFactKind.from,
-      // A private send whose proof settled with other transfers has no known
-      // recipient, and a private receipt no known sender.
-      counterparty.isEmpty
+      // A mining reward has no sender, a private send whose proof settled
+      // with other transfers no known recipient, and a private receipt no
+      // known sender.
+      tx is MinerRewardEvent
+          ? const ActivityMiningReward()
+          : counterparty.isEmpty
           ? const ActivityAggregatedBatch()
           : !isSend && tx.isWormhole
           ? const ActivityEncryptedSender()

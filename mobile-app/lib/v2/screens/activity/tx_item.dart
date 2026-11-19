@@ -82,7 +82,7 @@ class TxItemData {
       // To or From follow the direction ([buildTxItem]); the others say
       // their own, or nothing.
       counterpartyDirectionLabel: switch (counterparty) {
-        ActivityAccount() || ActivityEncryptedSender() => null,
+        ActivityAccount() || ActivityEncryptedSender() || ActivityMiningReward() => null,
         ActivityMultisig() || ActivityAggregatedBatch() => counterparty.prefix(l10n),
       },
     );

@@ -190,7 +190,7 @@ void main() {
       expect(rowOf(transfer(from: other, to: me), isPrivate: true).label, l10n.activityTxPrivateReceived);
     });
 
-    test('a mining reward is received from the reward source', () {
+    test('a mining reward is received from "Mining reward", in words', () {
       final reward = MinerRewardEvent(
         id: 'reward',
         miner: me,
@@ -208,7 +208,7 @@ void main() {
         isSend: false,
         amount: BigInt.from(9),
         hideAmount: false,
-        counterparty: short(reward.from),
+        counterparty: l10n.activitySenderMiningReward,
         prefix: null,
       ));
     });

@@ -481,4 +481,30 @@ void main() {
       expect(const ActivityAggregatedBatch().name(l10n), l10n.activityTxAggregatedBatch);
     });
   });
+
+  group('a mining reward', () {
+    test('is received from "Mining reward": there is no sender to name', () {
+      final row = rowOf(
+        MinerRewardEvent(
+          id: 'reward',
+          miner: me,
+          reward: BigInt.from(9),
+          timestamp: fiveMinutesAgo,
+          blockNumber: 1,
+          blockHash: '0xblock',
+        ),
+      );
+
+      expect(
+        (row.label, row.highlight, row.isSend, row.amount),
+        (l10n.activityTxReceived, ActivityHighlight.none, false, BigInt.from(9)),
+      );
+      expect(
+        row.counterparty,
+        isA<ActivityUnnamedCounterparty>()
+            .having((who) => who.prefix(l10n), 'prefix', l10n.activityTxFrom)
+            .having((who) => who.name(l10n), 'name', l10n.activitySenderMiningReward),
+      );
+    });
+  });
 }

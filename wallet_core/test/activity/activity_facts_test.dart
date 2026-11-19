@@ -459,4 +459,31 @@ void main() {
       );
     });
   });
+
+  test('a mining reward: what was received, from "Mining reward", when', () {
+    final facts = factsOf(
+      MinerRewardEvent(
+        id: 'reward',
+        miner: me,
+        reward: BigInt.from(9),
+        timestamp: at,
+        blockNumber: 1,
+        blockHash: '0xrewardblock',
+      ),
+    );
+
+    expect((facts.amount, facts.highlight), (BigInt.from(9), ActivityHighlight.arriving));
+    expect(facts.facts, hasLength(2));
+    expect(
+      facts.facts.first,
+      isA<ActivityPartyFact>()
+          .having((fact) => fact.kind, 'kind', ActivityFactKind.from)
+          .having(
+            (fact) => fact.who,
+            'who',
+            isA<ActivityUnnamedCounterparty>().having((who) => who.name(l10n), 'name', l10n.activitySenderMiningReward),
+          ),
+    );
+    expect(facts.facts.last, ActivityTimeFact(at));
+  });
 }

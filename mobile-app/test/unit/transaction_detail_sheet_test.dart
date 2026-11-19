@@ -696,7 +696,7 @@ void main() {
             ),
             'a mining reward': (
               ('+9', colors.semanticSage),
-              (tx, money) => [address(l10n.activityDetailFrom, MinerRewardEvent.miningRewardSource), dateOf(tx)],
+              (tx, money) => [plain(l10n.activityDetailFrom, l10n.activitySenderMiningReward), dateOf(tx)],
             ),
             'a proposal being made': (
               ('-500', colors.textContent),

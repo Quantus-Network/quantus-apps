@@ -1166,6 +1166,12 @@ abstract class AppLocalizations {
   /// **'Proposal cancelled'**
   String get activityTxProposalCancelled;
 
+  /// Activity row label for a multisig proposal that expired and was removed
+  ///
+  /// In en, this message translates to:
+  /// **'Proposal removed'**
+  String get activityTxProposalRemoved;
+
   /// Approve button on proposal detail
   ///
   /// In en, this message translates to:
@@ -2497,6 +2503,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Encrypted'**
   String get activitySenderEncrypted;
+
+  /// Shown in place of the sender of a mining reward, in the activity list and detail sheet
+  ///
+  /// In en, this message translates to:
+  /// **'Mining reward'**
+  String get activitySenderMiningReward;
 
   /// Date row label on detail sheet
   ///

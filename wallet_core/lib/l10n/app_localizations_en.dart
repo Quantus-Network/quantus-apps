@@ -597,6 +597,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get activityTxProposalCancelled => 'Proposal cancelled';
 
   @override
+  String get activityTxProposalRemoved => 'Proposal removed';
+
+  @override
   String get multisigApproveButton => 'Approve';
 
   @override
@@ -1312,6 +1315,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get activitySenderEncrypted => 'Encrypted';
+
+  @override
+  String get activitySenderMiningReward => 'Mining reward';
 
   @override
   String get activityDetailDate => 'DATE';

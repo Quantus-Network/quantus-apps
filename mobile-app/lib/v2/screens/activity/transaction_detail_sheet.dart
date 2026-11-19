@@ -154,7 +154,8 @@ class _DetailsSection extends ConsumerWidget {
           value: l10n.activityDetailAggregatedBatch,
           valueKind: DetailValueKind.mono,
         ),
-        ActivityEncryptedSender() => DetailRow(label: label, value: who.name(l10n)),
+        // Encrypted, or a mining reward's: named in words.
+        ActivityUnnamedCounterparty() => DetailRow(label: label, value: who.name(l10n)),
       },
       // The multisig being made is shown whole.
       ActivityAddressFact(kind: ActivityFactKind.newMultisig, :final address) => DetailRow(

@@ -87,6 +87,26 @@ final class ActivityEncryptedSender extends ActivityUnnamedCounterparty {
   String toString() => 'ActivityEncryptedSender()';
 }
 
+/// What pays a mining reward: the chain, which has no address to show.
+final class ActivityMiningReward extends ActivityUnnamedCounterparty {
+  const ActivityMiningReward();
+
+  @override
+  String prefix(AppLocalizations l10n) => l10n.activityTxFrom;
+
+  @override
+  String name(AppLocalizations l10n) => l10n.activitySenderMiningReward;
+
+  @override
+  bool operator ==(Object other) => other is ActivityMiningReward;
+
+  @override
+  int get hashCode => (ActivityMiningReward).hashCode;
+
+  @override
+  String toString() => 'ActivityMiningReward()';
+}
+
 /// The recipients of a private send whose proof settled with other
 /// transfers, so that none is known on its own. Named with nothing before it.
 final class ActivityAggregatedBatch extends ActivityUnnamedCounterparty {
@@ -302,9 +322,12 @@ ActivityRow activityRowOf(
     isSend: isSend,
     amount: tx.amount,
     hidesAmount: false,
-    // A private send whose proof settled with other transfers has no known
-    // recipient, and a private receipt no known sender.
-    counterparty: counterparty.isEmpty
+    // A mining reward has no sender, a private send whose proof settled with
+    // other transfers no known recipient, and a private receipt no known
+    // sender.
+    counterparty: tx is MinerRewardEvent
+        ? const ActivityMiningReward()
+        : counterparty.isEmpty
         ? const ActivityAggregatedBatch()
         : !isSend && tx.isWormhole
         ? const ActivityEncryptedSender()
