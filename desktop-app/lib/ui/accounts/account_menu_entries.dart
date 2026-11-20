@@ -10,9 +10,19 @@ import 'package:wallet_core/utils/accounts_grouping.dart';
 /// Account menu both offer it.
 @immutable
 class AccountMenuEntry {
-  const AccountMenuEntry(this.label, {required this.onSelected, this.command, this.isDestructive = false});
+  const AccountMenuEntry(
+    this.label, {
+    required this.action,
+    required this.onSelected,
+    this.command,
+    this.isDestructive = false,
+  });
 
   final String label;
+
+  /// What the item does, by name: the menu bar does it on the account active
+  /// when its turn comes ([AccountManager.runOnActive]).
+  final AccountAction action;
   final VoidCallback onSelected;
 
   /// The command whose shortcut the item answers to, if any.
@@ -40,6 +50,7 @@ List<AccountMenuEntry?> accountMenuEntries(
   };
   final getInfo = AccountMenuEntry(
     l10n.desktopAccountGetInfo,
+    action: AccountAction.getInfo,
     command: AppCommand.getInfo,
     onSelected: () => manager.openInfo(account),
   );
@@ -49,6 +60,7 @@ List<AccountMenuEntry?> accountMenuEntries(
       getInfo,
       AccountMenuEntry(
         l10n.desktopAccountCopyAddress,
+        action: AccountAction.copyAddress,
         command: AppCommand.copyAddress,
         onSelected: () => manager.copy(account, CopiedValue.address),
       ),
@@ -57,6 +69,7 @@ List<AccountMenuEntry?> accountMenuEntries(
       getInfo,
       AccountMenuEntry(
         l10n.desktopAccountCopyInnerHash,
+        action: AccountAction.copyInnerHash,
         onSelected: () => manager.copy(account, CopiedValue.innerHash),
       ),
     ],
@@ -65,15 +78,21 @@ List<AccountMenuEntry?> accountMenuEntries(
     if (items.contains(AccountMenuItem.rename))
       AccountMenuEntry(
         l10n.desktopAccountRename,
+        action: AccountAction.rename,
         onSelected: () => manager.openInfo(account, start: AccountInfoStart.rename),
       ),
     if (items.contains(AccountMenuItem.recoveryPhrase))
       AccountMenuEntry(
         l10n.desktopAccountShowRecoveryPhrase,
+        action: AccountAction.showRecoveryPhrase,
         onSelected: () => manager.openInfo(account, start: AccountInfoStart.recoveryPhrase),
       ),
     if (items.contains(AccountMenuItem.multisigDetails))
-      AccountMenuEntry(l10n.desktopAccountShowSigners, onSelected: () => manager.openInfo(account)),
+      AccountMenuEntry(
+        l10n.desktopAccountShowSigners,
+        action: AccountAction.showSigners,
+        onSelected: () => manager.openInfo(account),
+      ),
   ];
   final last = [
     if (items.contains(AccountMenuItem.disconnect))
@@ -83,6 +102,7 @@ List<AccountMenuEntry?> accountMenuEntries(
           Account(accountType: AccountType.keystone) => l10n.desktopAccountDisconnectHardware,
           _ => l10n.desktopAccountDisconnectAccount,
         },
+        action: AccountAction.disconnect,
         isDestructive: true,
         onSelected: () => manager.openInfo(account, start: AccountInfoStart.disconnect),
       ),
@@ -102,6 +122,7 @@ List<AccountMenuEntry> walletMenuEntries(AppLocalizations l10n, WalletGroup wall
   if (wallet.kind == WalletKind.software)
     AccountMenuEntry(
       l10n.desktopAccountShowRecoveryPhrase,
+      action: AccountAction.showRecoveryPhrase,
       onSelected: () => manager.openRecoveryPhrase(wallet.walletIndex),
     ),
 ];

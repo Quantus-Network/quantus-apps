@@ -16,6 +16,10 @@ import 'package:wallet_core/utils/accounts_grouping.dart';
 /// What can be copied from an account's menu.
 enum CopiedValue { address, innerHash }
 
+/// One thing an account's menu does, as the menu bar's Account menu asks
+/// for it on the active account ([AccountManager.runOnActive]).
+enum AccountAction { getInfo, copyAddress, copyInnerHash, rename, showRecoveryPhrase, showSigners, disconnect }
+
 /// A short note about an account, shown on its own row, as the HIG has
 /// status shown by what it is about: "Address copied", or why a copy failed.
 class AccountNote {
@@ -143,6 +147,63 @@ class AccountManager {
   Future<void> openInfo(BaseAccount account, {AccountInfoStart start = AccountInfoStart.info}) {
     _ref.read(accountInfoTargetProvider.notifier).set(AccountInfoTarget(account.accountId, start: start));
     return _ref.read(shellSheetProvider.notifier).open(ShellSheet.accountInfo);
+  }
+
+  /// Does [action] on the account active once the navigation asked for
+  /// before has finished, as Receive and Send open on it: a shortcut pressed
+  /// while an account switch is being saved is meant for the account switched
+  /// to. Nothing is done when that account's menu does not offer [action], or
+  /// when the switch failed ([ShellNavigation.cancelPending]); a sheet does
+  /// not open over another.
+  Future<void> runOnActive(AccountAction action) => _ref.read(shellNavigationProvider.notifier).run(() async {
+    if (!_ref.mounted) return;
+    final account = _ref.read(activeAccountProvider).value?.account;
+    final accounts = _ref.read(accountsProvider).value;
+    if (account == null || accounts == null || !_offers(account, accounts, action)) {
+      quantusPrint('${action.name} is not offered on the active account; nothing is done.');
+      return;
+    }
+    void showInfo(AccountInfoStart start) {
+      _ref.read(accountInfoTargetProvider.notifier).set(AccountInfoTarget(account.accountId, start: start));
+      _ref.read(shellSheetProvider.notifier).openInStep(ShellSheet.accountInfo);
+    }
+
+    switch (action) {
+      case AccountAction.getInfo || AccountAction.showSigners:
+        showInfo(AccountInfoStart.info);
+      case AccountAction.copyAddress:
+        await copy(account, CopiedValue.address);
+      case AccountAction.copyInnerHash:
+        await copy(account, CopiedValue.innerHash);
+      case AccountAction.rename:
+        showInfo(AccountInfoStart.rename);
+      case AccountAction.showRecoveryPhrase:
+        showInfo(AccountInfoStart.recoveryPhrase);
+      case AccountAction.disconnect:
+        showInfo(AccountInfoStart.disconnect);
+    }
+  });
+
+  /// Whether [account]'s menu offers [action], by wallet_core's rules. An
+  /// account no longer among [accounts], as just after a change, offers none.
+  static bool _offers(BaseAccount account, List<Account> accounts, AccountAction action) {
+    final items = switch (account) {
+      final Account account when accounts.any((a) => a.accountId == account.accountId) => accountMenuOf(
+        account,
+        accounts,
+      ),
+      MultisigAccount() => multisigMenu,
+      _ => const <AccountMenuItem>[],
+    };
+    return switch (action) {
+      AccountAction.getInfo => items.contains(AccountMenuItem.showAddress) || items.contains(AccountMenuItem.innerHash),
+      AccountAction.copyAddress => items.contains(AccountMenuItem.showAddress),
+      AccountAction.copyInnerHash => items.contains(AccountMenuItem.innerHash),
+      AccountAction.rename => items.contains(AccountMenuItem.rename),
+      AccountAction.showRecoveryPhrase => items.contains(AccountMenuItem.recoveryPhrase),
+      AccountAction.showSigners => items.contains(AccountMenuItem.multisigDetails),
+      AccountAction.disconnect => items.contains(AccountMenuItem.disconnect),
+    };
   }
 
   /// Opens Settings on the recovery phrase of the wallet at [walletIndex].
