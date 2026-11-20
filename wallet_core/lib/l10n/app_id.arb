@@ -788,6 +788,7 @@
   "desktopFooterVersion": "Quantus Wallet {version}",
   "desktopActivityInProgress": "Sedang berlangsung",
   "desktopActivityLoadFailed": "Tidak dapat memuat aktivitas",
+  "desktopActivityRefreshFailed": "Tidak dapat memperbarui aktivitas",
   "desktopActivityRunsIn": "dalam {time}",
   "desktopActivityTransaction": "Transaksi",
   "desktopActivityAmount": "Jumlah",

@@ -2914,6 +2914,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get desktopActivityLoadFailed => 'Couldn\'t load the activity';
 
   @override
+  String get desktopActivityRefreshFailed => 'Couldn\'t refresh the activity';
+
+  @override
   String desktopActivityRunsIn(String time) {
     return 'in $time';
   }

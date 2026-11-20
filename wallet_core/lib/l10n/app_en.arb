@@ -4237,6 +4237,10 @@
     "@desktopActivityLoadFailed": {
       "description": "Desktop: shown in the Activity panel when the account's history could not be loaded, above the error"
     },
+    "desktopActivityRefreshFailed": "Couldn't refresh the activity",
+    "@desktopActivityRefreshFailed": {
+      "description": "Desktop: a note at the top of the Activity panel when a refresh failed; the rows already shown stay under it, with Try Again beside it"
+    },
     "desktopActivityRunsIn": "in {time}",
     "@desktopActivityRunsIn": {
       "description": "Desktop: beside the Scheduled status of a reversible transfer, how long until it runs; time is like 00d:23h:41m",

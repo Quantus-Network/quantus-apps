@@ -5306,6 +5306,12 @@ abstract class AppLocalizations {
   /// **'Couldn\'t load the activity'**
   String get desktopActivityLoadFailed;
 
+  /// Desktop: a note at the top of the Activity panel when a refresh failed; the rows already shown stay under it, with Try Again beside it
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t refresh the activity'**
+  String get desktopActivityRefreshFailed;
+
   /// Desktop: beside the Scheduled status of a reversible transfer, how long until it runs; time is like 00d:23h:41m
   ///
   /// In en, this message translates to:

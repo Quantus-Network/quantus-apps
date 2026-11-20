@@ -2917,6 +2917,9 @@ class AppLocalizationsId extends AppLocalizations {
   String get desktopActivityLoadFailed => 'Tidak dapat memuat aktivitas';
 
   @override
+  String get desktopActivityRefreshFailed => 'Tidak dapat memperbarui aktivitas';
+
+  @override
   String desktopActivityRunsIn(String time) {
     return 'dalam $time';
   }
