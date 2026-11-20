@@ -4295,5 +4295,9 @@
     "desktopActivityCreationFee": "Multisig fee",
     "@desktopActivityCreationFee": {
       "description": "Desktop transaction panel: the fee the chain charges for making a multisig"
+    },
+    "desktopNotificationOpenAction": "Open",
+    "@desktopNotificationOpenAction": {
+      "description": "Desktop notification on Linux: the action that opens the wallet when the notification is clicked"
     }
 }

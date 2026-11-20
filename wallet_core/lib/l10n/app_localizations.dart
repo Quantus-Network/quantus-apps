@@ -5371,6 +5371,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Multisig fee'**
   String get desktopActivityCreationFee;
+
+  /// Desktop notification on Linux: the action that opens the wallet when the notification is clicked
+  ///
+  /// In en, this message translates to:
+  /// **'Open'**
+  String get desktopNotificationOpenAction;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

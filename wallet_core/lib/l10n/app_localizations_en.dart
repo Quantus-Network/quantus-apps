@@ -2951,4 +2951,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get desktopActivityCreationFee => 'Multisig fee';
+
+  @override
+  String get desktopNotificationOpenAction => 'Open';
 }

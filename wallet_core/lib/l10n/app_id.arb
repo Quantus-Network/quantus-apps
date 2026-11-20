@@ -798,5 +798,6 @@
   "desktopActivityThreshold": "Ambang batas",
   "desktopActivitySigners": "Penanda tangan",
   "desktopActivityCreatedBy": "Dibuat oleh",
-  "desktopActivityCreationFee": "Biaya multisig"
+  "desktopActivityCreationFee": "Biaya multisig",
+  "desktopNotificationOpenAction": "Buka"
 }

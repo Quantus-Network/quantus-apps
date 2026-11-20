@@ -2954,4 +2954,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get desktopActivityCreationFee => 'Biaya multisig';
+
+  @override
+  String get desktopNotificationOpenAction => 'Buka';
 }
