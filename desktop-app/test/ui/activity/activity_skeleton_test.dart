@@ -11,6 +11,7 @@ import 'package:wallet_core/l10n/app_localizations.dart';
 import '../../fakes.dart';
 
 final _l10n = lookupAppLocalizations(const Locale('en'));
+
 /// Short: the test's font draws every letter as wide as it is tall, so a
 /// whole address would wrap here, where in the app's monospaced face it
 /// takes one line, as the skeleton draws it.
