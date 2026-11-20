@@ -242,6 +242,11 @@ class ShellSheetNotifier extends Notifier<ShellSheet?> {
   /// request made while one is open does nothing.
   Future<void> open(ShellSheet sheet) => ref.read(shellNavigationProvider.notifier).run(() async => _open(sheet));
 
+  /// Presents [sheet] now, from a navigation step already running
+  /// ([shellNavigationProvider]): [open] would wait behind the steps asked
+  /// for after it, an account switch among them.
+  void openInStep(ShellSheet sheet) => _open(sheet);
+
   void _open(ShellSheet sheet) {
     if (!ref.mounted || state != null) return;
     // Asked for while an account switch waited, it is checked against the

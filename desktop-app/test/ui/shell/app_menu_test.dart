@@ -5,6 +5,9 @@ import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_desktop_wallet/models/app_command.dart';
 import 'package:quantus_desktop_wallet/models/shortcut_bindings.dart';
+import 'package:quantus_desktop_wallet/providers/account_management_providers.dart';
+import 'package:quantus_desktop_wallet/ui/accounts/account_info_sheet.dart';
+import 'package:quantus_desktop_wallet/ui/shell/shell_header.dart';
 import 'package:quantus_desktop_wallet/providers/shortcut_bindings_provider.dart';
 import 'package:quantus_desktop_wallet/services/app_exit.dart';
 import 'package:quantus_desktop_wallet/ui/onboarding/welcome_page.dart';
@@ -387,6 +390,89 @@ void main() {
       expect(_sheetTitled('Receive'), findsOneWidget);
       expect(_inSheet(find.text('Savings')), findsOneWidget);
       expect(_inSheet(find.text('qzSavings')), findsOneWidget);
+    });
+
+    group('the account\'s own items, pressed while a switch is still being saved', () {
+      String? copied;
+
+      void recordClipboard(WidgetTester tester) {
+        copied = null;
+        final messenger = tester.binding.defaultBinaryMessenger;
+        messenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
+          if (call.method == 'Clipboard.setData') copied = (call.arguments as Map)['text'] as String?;
+          return null;
+        });
+        addTearDown(() => messenger.setMockMethodCallHandler(SystemChannels.platform, null));
+      }
+
+      Future<SlowSettingsService> switchToSavings(WidgetTester tester) async {
+        final settings = SlowSettingsService(activeAccount: const RegularAccount(mainAccount));
+        await pumpShell(tester, overrides: _withSlowSettings(settings));
+        _accountMenuAccounts(tester).singleWhere((item) => item.label == 'Savings').onSelected!();
+        await tester.pumpAndSettle();
+        expect(settings.pendingWrites, 1);
+        return settings;
+      }
+
+      testOnMac('⌘2 then ⌘I opens Get Info on the second account', (tester) async {
+        final settings = await switchToSavings(tester);
+
+        _nativeItem(tester, 'Account', 'Get Info').onSelected!();
+        await tester.pumpAndSettle();
+        await settings.finishWrites(tester);
+
+        expect(find.byType(AccountInfoSheet), findsOneWidget);
+        expect(find.descendant(of: find.byType(ShellSheetHeader), matching: find.text('Savings')), findsOneWidget);
+      });
+
+      testOnMac('⌘2 then ⇧⌘C copies the second account\'s address', (tester) async {
+        recordClipboard(tester);
+        final settings = await switchToSavings(tester);
+
+        _nativeItem(tester, 'Account', 'Copy Address').onSelected!();
+        await tester.pumpAndSettle();
+        expect(copied, isNull);
+        await settings.finishWrites(tester);
+
+        expect(copied, 'qzSavings');
+        await tester.pump(AccountNoteNotifier.failureShownFor);
+      });
+
+      testOnMac('when the switch fails, the Get Info and Copy Address pressed while it waited are dropped', (
+        tester,
+      ) async {
+        recordClipboard(tester);
+        final settings = await switchToSavings(tester);
+
+        _nativeItem(tester, 'Account', 'Get Info').onSelected!();
+        _nativeItem(tester, 'Account', 'Copy Address').onSelected!();
+        await tester.pumpAndSettle();
+        await settings.failWrites(tester, StateError('disk full'));
+
+        expect(find.byType(AccountInfoSheet), findsNothing);
+        expect(copied, isNull);
+      });
+
+      testOnMac('an item the account switched to does not offer is not done on it', (tester) async {
+        final settings = SlowSettingsService(activeAccount: const RegularAccount(mainAccount));
+        await pumpShell(
+          tester,
+          overrides: shellOverrides(
+            accounts: const [mainAccount, vaultAccount],
+            settings: settings,
+            balances: oneTokenEach,
+          ),
+        );
+        _accountMenuAccounts(tester).singleWhere((item) => item.label == 'Vault').onSelected!();
+        await tester.pumpAndSettle();
+
+        _nativeItem(tester, 'Account', 'Show Recovery Phrase…').onSelected!();
+        await tester.pumpAndSettle();
+        await settings.finishWrites(tester);
+
+        expect(_selected(tester), 'Vault');
+        expect(find.byType(ShellSheetView), findsNothing);
+      });
     });
 
     testOnMac('View → Next and Previous Sidebar Item (⌥⌘↓, ⌥⌘↑) walk the sidebar, Mining Rewards included, and '

@@ -247,12 +247,28 @@ class _DesktopShellState extends ConsumerState<DesktopShell> {
   }
 
   /// The active account's own items for the Account menu, once the
-  /// accounts are known; an entrusted account has none.
+  /// accounts are known; an entrusted account has none. Each acts on the
+  /// account active when its turn comes, as Receive and Send do: one pressed
+  /// while an account switch is being saved is meant for the account switched
+  /// to ([AccountManager.runOnActive]).
   List<AccountMenuEntry?> _accountItems(ProviderReader read) {
     final active = read(activeAccountProvider).value?.account;
     final accounts = read(accountsProvider).value;
     if (active == null || accounts == null || (active is! Account && active is! MultisigAccount)) return const [];
-    return accountMenuEntries(read(l10nProvider), active, accounts, ref.read(accountManagerProvider));
+    final manager = ref.read(accountManagerProvider);
+    return [
+      for (final entry in accountMenuEntries(read(l10nProvider), active, accounts, manager))
+        if (entry == null)
+          null
+        else
+          AccountMenuEntry(
+            entry.label,
+            action: entry.action,
+            command: entry.command,
+            isDestructive: entry.isDestructive,
+            onSelected: () => unawaited(manager.runOnActive(entry.action)),
+          ),
+    ];
   }
 
   Widget _wallet(bool isSidebarVisible) {
