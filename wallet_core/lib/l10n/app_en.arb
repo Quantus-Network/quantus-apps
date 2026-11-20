@@ -839,6 +839,10 @@
     "@activityTxProposalCancelled": {
       "description": "Activity row label for a confirmed multisig proposal cancellation on the proposer account"
     },
+    "activityTxProposalRemoved": "Proposal removed",
+    "@activityTxProposalRemoved": {
+      "description": "Activity row label for a multisig proposal that expired and was removed"
+    },
     "multisigApproveButton": "Approve",
     "@multisigApproveButton": {
       "description": "Approve button on proposal detail"
@@ -1876,6 +1880,10 @@
     "activitySenderEncrypted": "Encrypted",
     "@activitySenderEncrypted": {
       "description": "Shown in place of the sender of a wormhole receipt, in the activity list and detail sheet"
+    },
+    "activitySenderMiningReward": "Mining reward",
+    "@activitySenderMiningReward": {
+      "description": "Shown in place of the sender of a mining reward, in the activity list and detail sheet"
     },
     "activityDetailDate": "DATE",
     "@activityDetailDate": {

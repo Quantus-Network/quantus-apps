@@ -2,17 +2,15 @@ import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:wallet_core/activity/multisig_activity.dart';
 import 'package:wallet_core/l10n/app_localizations.dart';
 import 'package:wallet_core/models/combined_transactions_list.dart';
 import 'package:wallet_core/providers/account_providers.dart';
 import 'package:wallet_core/providers/currency_display_provider.dart';
 import 'package:wallet_core/providers/l10n_provider.dart';
 import 'package:wallet_core/providers/multisig_providers.dart';
-import 'package:wallet_core/providers/pending_multisig_cancellations_provider.dart';
-import 'package:wallet_core/providers/pending_multisig_executions_provider.dart';
 import 'package:wallet_core/providers/pending_multisig_proposals_provider.dart';
 import 'package:wallet_core/services/transaction_service.dart';
-import 'package:wallet_core/utils/multisig_local_signers.dart';
 import 'package:resonance_network_wallet/v2/components/proposal_list_tile.dart';
 import 'package:resonance_network_wallet/v2/screens/activity/transaction_detail_sheet.dart';
 import 'package:resonance_network_wallet/v2/screens/activity/tx_item.dart';
@@ -48,11 +46,12 @@ class MultisigActivitySection extends ConsumerWidget {
 
     final openProposalsAsync = ref.watch(multisigOpenProposalsProvider(msig));
     final pastProposalsAsync = ref.watch(multisigPastProposalsProvider(msig));
-    final pending = pendingProposalsForMultisig(ref.watch(pendingMultisigProposalsProvider), msig.accountId);
-    final accounts = ref.watch(accountsProvider).value ?? const <Account>[];
-    final localSignerIds = localSignersForMultisig(msig, accounts).map((a) => a.accountId).toList();
-    // Fall back to the stored member id when accounts have not loaded yet.
-    final effectiveLocalSignerIds = localSignerIds.isEmpty ? [msig.myMemberAccountId] : localSignerIds;
+    final open = openProposalsOf(
+      msig,
+      proposing: ref.watch(pendingMultisigProposalsProvider),
+      open: openProposalsAsync.value ?? const [],
+    );
+    final localSignerIds = localSignerIdsOf(msig, ref.watch(accountsProvider).value ?? const <Account>[]);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -60,7 +59,7 @@ class MultisigActivitySection extends ConsumerWidget {
         const SizedBox(height: 24),
         Text(l10n.multisigOpenProposals, style: text.headingRow.copyWith(color: colors.textContent)),
         const SizedBox(height: 16),
-        _openProposals(context, l10n, openProposalsAsync, pending, effectiveLocalSignerIds),
+        _openProposals(context, l10n, openProposalsAsync, open, localSignerIds),
         const SizedBox(height: 8),
         _activity(context, ref, l10n, pastProposalsAsync),
       ],
@@ -71,9 +70,10 @@ class MultisigActivitySection extends ConsumerWidget {
     BuildContext context,
     AppLocalizations l10n,
     AsyncValue<List<MultisigProposal>> openProposalsAsync,
-    List<PendingMultisigProposalEvent> pending,
+    ({List<PendingMultisigProposalEvent> proposing, List<MultisigProposal> open}) open,
     List<String> localSignerIds,
   ) {
+    final pending = open.proposing;
     final colors = context.colorsV3;
     final text = context.themeTextV3;
     if (openProposalsAsync.isLoading && !openProposalsAsync.hasValue) {
@@ -88,8 +88,7 @@ class MultisigActivitySection extends ConsumerWidget {
       );
     }
 
-    final openProposals = [...(openProposalsAsync.value ?? const <MultisigProposal>[])]
-      ..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+    final openProposals = open.open;
     if (pending.isEmpty && openProposals.isEmpty) {
       return Text(l10n.multisigNoOpenProposals, style: text.body.copyWith(color: colors.textMuted));
     }
@@ -149,7 +148,12 @@ class MultisigActivitySection extends ConsumerWidget {
         ),
       ),
       data: (data) {
-        final merged = _mergedActivity(ref, data, pastProposalsAsync.value ?? const []);
+        final merged = multisigActivityOf(
+          ref.read(transactionServiceProvider),
+          data,
+          pastProposalsAsync.value ?? const [],
+          msig,
+        );
         final recent = merged.take(5).toList();
 
         return Column(
@@ -187,38 +191,6 @@ class MultisigActivitySection extends ConsumerWidget {
         );
       },
     );
-  }
-
-  /// Merges past proposals with transfers, newest first. Outgoing multisig
-  /// transfers are omitted because executed proposals already represent them.
-  List<TransactionEvent> _mergedActivity(
-    WidgetRef ref,
-    CombinedTransactionsList data,
-    List<MultisigProposal> pastProposals,
-  ) {
-    final txService = ref.read(transactionServiceProvider);
-    final transfers = txService.combineAndDeduplicateTransactions(
-      pendingCancellationIds: data.pendingCancellationIds,
-      pendingTransactions: data.pendingTransactions,
-      pendingMultisigCreations: data.pendingMultisigCreations,
-      pendingMultisigProposals: pendingProposalsExcludingMultisig(data.pendingMultisigProposals, msig.accountId),
-      pendingMultisigExecutions: pendingExecutionsExcludingMultisig(data.pendingMultisigExecutions, msig.accountId),
-      pendingMultisigCancellations: pendingCancellationsExcludingMultisig(
-        data.pendingMultisigCancellations,
-        msig.accountId,
-      ),
-      scheduledReversibleTransfers: data.scheduledReversibleTransfers,
-      otherTransfers: data.otherTransfers,
-    );
-
-    final terminalProposals = pastProposals.map((p) => MultisigProposalEvent(proposal: p)).toList();
-    final filteredTransfers = transfers.where((t) {
-      return t is! TransferEvent || t.from != msig.accountId;
-    });
-
-    final merged = <TransactionEvent>[...terminalProposals, ...filteredTransfers]
-      ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
-    return merged;
   }
 
   void _onTap(BuildContext context, TransactionEvent tx) {
