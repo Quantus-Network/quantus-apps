@@ -96,7 +96,10 @@ class _ContextMenuRegionState extends State<ContextMenuRegion> {
       onPointerDown: _onPointerDown,
       onPointerUp: (_) => _onPointerEnd(),
       onPointerCancel: (_) => _onPointerEnd(),
+      // The child keeps the size it is given: a wallet heading is right-clicked
+      // across its width, and ringed so, not only over its name.
       child: Stack(
+        fit: StackFit.passthrough,
         children: [
           widget.child,
           if (_isOpen)
