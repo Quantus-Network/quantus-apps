@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:quantus_desktop_wallet/ui/components/menu_panel.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 
 /// One choice of a [PopUpButton]: the [value] it stands for and its [label].
@@ -35,10 +36,10 @@ class PopUpButton<T> extends StatefulWidget {
   final ValueChanged<T> onSelected;
 
   static const menuKey = Key('pop-up-menu');
-  static const checkmarkKey = Key('pop-up-checkmark');
+  static const checkmarkKey = MenuPanelRow.checkmarkKey;
 
   /// The height of a menu row.
-  static const double rowHeight = 22;
+  static const double rowHeight = MenuPanelRow.height;
 
   @override
   State<PopUpButton<T>> createState() => _PopUpButtonState<T>();
@@ -48,15 +49,11 @@ class PopUpButton<T> extends StatefulWidget {
 const double _buttonHeight = 26;
 const double _buttonLabelInset = 10;
 
-// The menu's insets: around its rows, of a row's highlight from the menu's
-// edge, and of a row's content within the highlight.
-const double _menuPadding = 5;
-const double _rowInset = 5;
-const double _rowPadding = 6;
-const double _checkmarkWidth = 18;
+// The menu's insets, which are the shared menu panel's.
+const double _menuPadding = MenuPanel.padding;
 
 /// How far a row's label sits from the menu's left edge.
-const double _menuLabelInset = _rowInset + _rowPadding + _checkmarkWidth;
+const double _menuLabelInset = MenuPanelRow.labelInset;
 
 /// The closest the menu comes to the window's edges.
 const double _windowMargin = 6;
@@ -269,95 +266,31 @@ class _PopUpMenuState<T> extends State<_PopUpMenu<T>> {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.colorsV3;
-    final text = context.themeTextV3;
-    final radius = context.radiusV3.smBorder;
     // Wide enough to cover the button from the menu's edge.
     final minWidth = widget.minWidth + _menuLabelInset - _buttonLabelInset;
 
     return Focus(
       autofocus: true,
       onKeyEvent: _onKey,
-      child: ConstrainedBox(
+      child: MenuPanel(
         key: PopUpButton.menuKey,
-        constraints: BoxConstraints(minWidth: minWidth),
-        child: IntrinsicWidth(
-          child: DecoratedBox(
-            position: DecorationPosition.foreground,
-            decoration: BoxDecoration(
-              borderRadius: radius,
-              border: Border.all(color: colors.borderEmphasis),
-            ),
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                color: colors.bgSurface2,
-                borderRadius: radius,
-                boxShadow: [
-                  BoxShadow(color: colors.bgVoid.useOpacity(0.5), blurRadius: 16, offset: const Offset(0, 6)),
-                ],
-              ),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: _menuPadding),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    for (final (index, item) in widget.items.indexed)
-                      MouseRegion(
-                        onEnter: (_) => setState(() => _highlighted = index),
-                        onExit: (_) => setState(() => _highlighted = _highlighted == index ? null : _highlighted),
-                        child: GestureDetector(
-                          behavior: HitTestBehavior.opaque,
-                          onTap: () => _choose(index),
-                          child: _row(context, item, index, colors, text),
-                        ),
-                      ),
-                  ],
+        minWidth: minWidth,
+        children: [
+          for (final (index, item) in widget.items.indexed)
+            MouseRegion(
+              onEnter: (_) => setState(() => _highlighted = index),
+              onExit: (_) => setState(() => _highlighted = _highlighted == index ? null : _highlighted),
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () => _choose(index),
+                child: MenuPanelRow(
+                  label: item.label,
+                  isHighlighted: index == _highlighted,
+                  isChecked: index == widget.currentIndex,
                 ),
               ),
             ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _row(BuildContext context, PopUpItem<T> item, int index, AppColorsV3 colors, AppTextThemeV3 text) {
-    final isHighlighted = index == _highlighted;
-    final color = isHighlighted ? colors.textVoid : colors.textContent;
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: _rowInset),
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: isHighlighted ? colors.accentFlare : null,
-          borderRadius: BorderRadius.circular(4),
-        ),
-        child: SizedBox(
-          height: PopUpButton.rowHeight,
-          child: Padding(
-            padding: const EdgeInsets.only(left: _rowPadding, right: 14),
-            child: Row(
-              children: [
-                SizedBox(
-                  width: _checkmarkWidth,
-                  child: index == widget.currentIndex
-                      ? Align(
-                          alignment: Alignment.centerLeft,
-                          child: Icon(
-                            CupertinoIcons.checkmark_alt,
-                            key: PopUpButton.checkmarkKey,
-                            size: 13,
-                            color: color,
-                          ),
-                        )
-                      : null,
-                ),
-                Text(item.label, style: text.body.copyWith(height: 1, color: color)),
-              ],
-            ),
-          ),
-        ),
+        ],
       ),
     );
   }
