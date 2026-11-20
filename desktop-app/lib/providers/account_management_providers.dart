@@ -190,6 +190,11 @@ class AccountManager {
 
   final Ref _ref;
 
+  /// Whether the providers it works on are still there: false once the app
+  /// that held them has gone, as when the window closes while a name is
+  /// being typed.
+  bool get isMounted => _ref.mounted;
+
   /// Opens the Info sheet on [account], at [start]. Like any sheet, it does
   /// not open over another.
   Future<void> openInfo(BaseAccount account, {AccountInfoStart start = AccountInfoStart.info}) {

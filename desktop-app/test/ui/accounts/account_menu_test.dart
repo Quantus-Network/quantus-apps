@@ -301,6 +301,54 @@ void main() {
       expect(_storedName(device, 'qzSavings'), 'Rainy day');
     });
 
+    testOnMac('starting another rename from the menu bar keeps what was typed in the first', (tester) async {
+      final device = await _pump(tester);
+      await _renameFromMenu(tester, _sidebarRow('Savings'));
+      await tester.enterText(_sidebarField, 'Rainy day');
+
+      _accountMenuItems(tester).singleWhere((item) => item.label == 'Rename…').onSelected!();
+      await tester.pumpAndSettle();
+
+      expect(_storedName(device, 'qzSavings'), 'Rainy day');
+      expect(tester.widget<EditableText>(_sidebarField).controller.text, 'Main');
+    });
+
+    testOnMac('hiding the sidebar keeps what was typed', (tester) async {
+      final device = await _pump(tester);
+      await _renameFromMenu(tester, _sidebarRow('Savings'));
+      await tester.enterText(_sidebarField, 'Rainy day');
+
+      _container(tester).read(sidebarVisibleProvider.notifier).toggle();
+      await tester.pumpAndSettle();
+
+      expect(_storedName(device, 'qzSavings'), 'Rainy day');
+    });
+
+    testOnMac('a wallet name typed is kept when another rename starts', (tester) async {
+      final device = await _pump(tester);
+      await _renameFromMenu(tester, _inSidebar('WALLET 2'));
+      await tester.enterText(_sidebarField, 'Trading desk');
+
+      _accountMenuItems(tester).singleWhere((item) => item.label == 'Rename…').onSelected!();
+      await tester.pumpAndSettle();
+
+      expect(device.storage.names[2], 'Trading desk');
+    });
+
+    testOnMac('Escape, then hiding the sidebar, still writes nothing', (tester) async {
+      final device = await _pump(tester);
+      device.storage.writeError = StateError('nothing should be written');
+      await _renameFromMenu(tester, _sidebarRow('Savings'));
+      await tester.enterText(_sidebarField, 'Rainy day');
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await tester.pumpAndSettle();
+
+      _container(tester).read(sidebarVisibleProvider.notifier).toggle();
+      await tester.pumpAndSettle();
+
+      expect(_storedName(device, 'qzSavings'), 'Savings');
+    });
+
     testOnMac('Escape puts the name back and writes nothing', (tester) async {
       final device = await _pump(tester);
       device.storage.writeError = StateError('nothing should be written');

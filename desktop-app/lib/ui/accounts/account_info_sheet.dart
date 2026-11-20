@@ -598,14 +598,24 @@ class _NameRowState extends ConsumerState<_NameRow> {
   /// Why the typed name was not kept, if it was not.
   String? _error;
 
+  // Held for [_keep], which can run once the sheet has closed.
+  late final AccountManager _manager;
+
+  @override
+  void initState() {
+    super.initState();
+    _manager = ref.read(accountManagerProvider);
+  }
+
   /// Keeps [entered] as the account's name, and answers what the field
   /// shows after: the name kept, or the old one when a blank or unchanged
   /// one was not written. A write that fails leaves what was typed.
   Future<String?> _keep(String entered) async {
     final l10n = widget.l10n;
     final account = widget.account;
+    if (!_manager.isMounted) return null;
     try {
-      final edit = await ref.read(accountManagerProvider).rename(account, entered);
+      final edit = await _manager.rename(account, entered);
       if (!mounted) return null;
       setState(() => _error = edit is NameBlank ? l10n.editAccountNameEmpty : null);
       return switch (edit) {
