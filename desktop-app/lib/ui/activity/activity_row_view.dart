@@ -242,7 +242,11 @@ class _ActivityRowViewState extends State<ActivityRowView> {
                   ),
                   const SizedBox(height: 2),
                   Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    // On an own account's name, centred on its badge; on an
+                    // address, at its first line.
+                    crossAxisAlignment: widget.ownCounterparty == null
+                        ? CrossAxisAlignment.start
+                        : CrossAxisAlignment.center,
                     children: [
                       _prefix(text.caption.copyWith(color: colors.textMuted), ActivityRowView._tightPrefixWidth),
                       Flexible(child: _who(colors)),

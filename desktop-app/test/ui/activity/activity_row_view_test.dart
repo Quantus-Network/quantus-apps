@@ -136,6 +136,34 @@ void main() {
     expect(find.byType(DesktopAddressCheckphrase), findsNothing);
   });
 
+  group('one of the wallet\'s own accounts lines up with its "To" or "From"', () {
+    double centreOf(WidgetTester tester, String text) => tester.getRect(find.text(text)).center.dy;
+
+    testWidgets('tight: "To" on the account\'s name', (tester) async {
+      await _pump(tester, _row(), form: ActivityRowForm.tight, width: 500, ownCounterparty: savingsAccount);
+
+      expect(centreOf(tester, _l10n.activityTxTo), moreOrLessEquals(centreOf(tester, 'Savings'), epsilon: 0.5));
+    });
+
+    testWidgets('tight: "From" on the account\'s name', (tester) async {
+      await _pump(
+        tester,
+        _row(label: 'Received', isSend: false, counterparty: const ActivityAccount(_bob, isRecipient: false)),
+        form: ActivityRowForm.tight,
+        width: 500,
+        ownCounterparty: savingsAccount,
+      );
+
+      expect(centreOf(tester, _l10n.activityTxFrom), moreOrLessEquals(centreOf(tester, 'Savings'), epsilon: 0.5));
+    });
+
+    testWidgets('wide: "To" on the account\'s name', (tester) async {
+      await _pump(tester, _row(), ownCounterparty: savingsAccount);
+
+      expect(centreOf(tester, _l10n.activityTxTo), moreOrLessEquals(centreOf(tester, 'Savings'), epsilon: 0.5));
+    });
+  });
+
   testWidgets('a sender with no address is named in words after From', (tester) async {
     await _pump(tester, _row(label: 'Received', isSend: false, counterparty: const ActivityMiningReward()));
 
