@@ -14,7 +14,12 @@ import 'package:quantus_desktop_wallet/ui/components/panel.dart';
 import 'package:quantus_desktop_wallet/ui/shell/desktop_shell.dart';
 import 'package:quantus_desktop_wallet/ui/shell/sidebar.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:wallet_core/services/global_history_polling_service.dart';
 import 'package:wallet_core/l10n/app_localizations.dart';
+import 'package:wallet_core/models/filtered_transactions_params.dart';
+import 'package:wallet_core/providers/account_providers.dart';
+import 'package:wallet_core/providers/active_account_transactions_provider.dart';
+import 'package:wallet_core/providers/filtered_all_transactions_provider.dart';
 import 'package:wallet_core/providers/pending_multisig_proposals_provider.dart';
 import 'package:wallet_core/providers/pending_transactions_provider.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
@@ -51,10 +56,12 @@ Future<void> _open(
   DisplayAccount active = const RegularAccount(mainAccount),
   List<Override> extra = const [],
   bool settle = true,
+  bool realPolling = false,
 }) => pumpShell(
   tester,
   polling: polling,
   settle: settle,
+  realPolling: realPolling,
   overrides: [
     ...shellOverrides(
       accounts: const [mainAccount, savingsAccount, encryptedAccount],
@@ -323,6 +330,197 @@ void main() {
 
       expect(_container(tester).read(walletRefreshingProvider), isFalse);
       expect(find.byKey(Panel.busyLineKey), findsNothing);
+    });
+  });
+
+  // The refreshes here run through the real polling, as the app's do: a
+  // refresh asked for reloads an account's history from nothing.
+  group('reloading', () {
+    Finder busyLine() => find.descendant(of: find.byType(ActivityPanel), matching: find.byKey(Panel.busyLineKey));
+
+    Future<void> refresh(WidgetTester tester) async {
+      await tester.tap(find.byKey(ActivityPanel.refreshKey));
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 1));
+    }
+
+    testOnMac('a refresh keeps the rows on screen with the line under the header, then shows the new ones', (
+      tester,
+    ) async {
+      final chain = FakeSendChain()
+        ..historyPages = [
+          [_sent('old', const Duration(hours: 2))],
+        ];
+      await _open(tester, chain: chain, realPolling: true);
+      chain
+        ..holdHistory = Completer<void>()
+        ..historyPages = [
+          [_received('new', const Duration(minutes: 5)), _sent('old', const Duration(hours: 2))],
+        ];
+
+      await refresh(tester);
+
+      expect(find.byType(ActivitySkeleton), findsNothing);
+      expect(_rowsIn(tester, ActivityPanel), ['old']);
+      expect(busyLine(), findsOne);
+
+      chain.holdHistory!.complete();
+      await tester.pumpAndSettle();
+      expect(_rowsIn(tester, ActivityPanel), ['new', 'old']);
+      expect(busyLine(), findsNothing);
+    });
+
+    testOnMac('a refresh leaves In progress where it is: nothing under it moves', (tester) async {
+      final scheduled = ReversibleTransferEvent(
+        id: 'scheduled',
+        from: 'qzMain',
+        to: 'qzBob',
+        amount: oneToken,
+        timestamp: _now,
+        txId: '0xtxid',
+        status: ReversibleTransferStatus.SCHEDULED,
+        scheduledAt: _now.add(const Duration(hours: 23)),
+        blockNumber: 1,
+        blockHash: '0xblock',
+      );
+      final chain = FakeSendChain()
+        ..scheduledTransfers = [scheduled]
+        ..historyPages = [
+          [_received('settled', const Duration(hours: 2))],
+        ];
+      await _open(tester, chain: chain, realPolling: true);
+      final activityTop = tester.getRect(find.byType(ActivityPanel)).top;
+      chain.holdHistory = Completer<void>();
+
+      await refresh(tester);
+
+      expect(_rowsIn(tester, InProgressPanel), ['scheduled']);
+      expect(tester.getRect(find.byType(ActivityPanel)).top, activityTop);
+
+      chain.holdHistory!.complete();
+      await tester.pumpAndSettle();
+    });
+
+    testOnMac('an account shows the skeleton on its first load only', (tester) async {
+      final chain = FakeSendChain()
+        ..historyPages = [
+          [_sent('settled', const Duration(hours: 2))],
+        ];
+      await _open(tester, chain: chain, realPolling: true);
+      Future<void> show(String account) =>
+          tester.tap(find.descendant(of: find.byType(Sidebar), matching: find.text(account)));
+
+      chain.holdHistory = Completer<void>();
+      await show('Savings');
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 450));
+      expect(find.byType(ActivitySkeleton), findsOne, reason: "Savings' first load");
+      chain.holdHistory!.complete();
+      await tester.pumpAndSettle();
+
+      await show('Main');
+      await tester.pumpAndSettle();
+      chain.holdHistory = Completer<void>();
+      await show('Savings');
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 1));
+      expect(find.byType(ActivitySkeleton), findsNothing);
+      expect(_rowsIn(tester, ActivityPanel), ['settled']);
+
+      chain.holdHistory!.complete();
+      await tester.pumpAndSettle();
+    });
+
+    testOnMac('a reload not asked for, as after an account is added, keeps the rows too, with the line', (
+      tester,
+    ) async {
+      final chain = FakeSendChain()
+        ..historyPages = [
+          [_sent('settled', const Duration(hours: 2))],
+        ];
+      await _open(tester, chain: chain, realPolling: true);
+      final container = _container(tester);
+      final params = activeAccountFilteredParams(container.read(activeAccountProvider).value, TransactionFilter.all)!;
+      chain.holdHistory = Completer<void>();
+
+      // What the history does when the accounts change.
+      unawaited(container.read(filteredPaginationControllerProviderFamily(params).notifier).loadingRefresh());
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 1));
+
+      expect(find.byType(ActivitySkeleton), findsNothing);
+      expect(_rowsIn(tester, ActivityPanel), ['settled']);
+      expect(busyLine(), findsOne);
+
+      chain.holdHistory!.complete();
+      await tester.pumpAndSettle();
+      expect(busyLine(), findsNothing);
+    });
+
+    testOnMac('the once-a-minute poll runs no line', (tester) async {
+      final chain = FakeSendChain()
+        ..historyPages = [
+          [_sent('settled', const Duration(hours: 2))],
+        ];
+      await _open(tester, chain: chain, realPolling: true);
+      final reads = chain.historyReads.length;
+      chain.holdHistory = Completer<void>();
+
+      await tester.pump(GlobalHistoryPollingService.pollInterval);
+      await tester.pump();
+      expect(chain.historyReads.length, greaterThan(reads), reason: 'the poll is reading');
+
+      expect(busyLine(), findsNothing);
+      expect(_rowsIn(tester, ActivityPanel), ['settled']);
+
+      chain.holdHistory!.complete();
+      await tester.pumpAndSettle();
+    });
+
+    testOnMac('a refresh that fails keeps the rows, with a note and Try Again; once one succeeds the note goes', (
+      tester,
+    ) async {
+      final chain = FakeSendChain()
+        ..historyPages = [
+          [_sent('settled', const Duration(hours: 2))],
+        ];
+      await _open(tester, chain: chain, realPolling: true);
+      chain.historyError = StateError('indexer down');
+
+      await tester.tap(find.byKey(ActivityPanel.refreshKey));
+      await tester.pumpAndSettle();
+
+      expect(_rowsIn(tester, ActivityPanel), ['settled']);
+      expect(find.text(_l10n.desktopActivityRefreshFailed), findsOne);
+      expect(find.text(_l10n.desktopActivityLoadFailed), findsNothing);
+
+      chain.historyError = null;
+      await tester.tap(find.descendant(of: find.byType(ActivityPanel), matching: find.text(_l10n.commonTryAgain)));
+      await tester.pumpAndSettle();
+
+      expect(find.text(_l10n.desktopActivityRefreshFailed), findsNothing);
+      expect(_rowsIn(tester, ActivityPanel), ['settled']);
+    });
+
+    testOnMac('while kept rows show over a reload, no older page is asked for at the list\'s end', (tester) async {
+      final chain = FakeSendChain()
+        ..historyPages = [
+          [for (var i = 0; i < 20; i++) _received('first-$i', Duration(hours: i + 1))],
+          [_received('second', const Duration(days: 30))],
+        ];
+      await _open(tester, chain: chain, realPolling: true);
+      expect(chain.historyReads, [0]);
+      chain.holdHistory = Completer<void>();
+
+      await refresh(tester);
+      await tester.drag(find.byType(ActivityPanel), const Offset(0, -3000));
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 1));
+
+      expect(chain.historyReads, [0, 0], reason: 'the refresh reads the first page again, and nothing more');
+
+      chain.holdHistory!.complete();
+      await tester.pumpAndSettle();
     });
   });
 

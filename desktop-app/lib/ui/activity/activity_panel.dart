@@ -23,8 +23,9 @@ import 'package:wallet_core/providers/l10n_provider.dart';
 /// [revealAfter], so a quick load just appears; after that the rows' shapes
 /// breathe ([ActivitySkeleton]) for at least [shownAtLeast], then the rows
 /// fade in. Near the list's end the next page is fetched, its shapes at the
-/// end meanwhile. ↻ refreshes it; while that runs a light runs along the
-/// header, and the list stays.
+/// end meanwhile. ↻ refreshes it; while that, or any reload of rows already
+/// shown, runs, a light runs along the header and the rows stay. A reload
+/// that fails leaves a note over them, with Try Again.
 class ActivityPanel extends ConsumerStatefulWidget {
   const ActivityPanel({super.key, this.isFocused = false, this.rowsHaveKeys = true});
 
@@ -137,7 +138,7 @@ class _ActivityPanelState extends ConsumerState<ActivityPanel> {
 
     return Panel(
       title: l10n.activityTitle,
-      isBusy: isRefreshing && view.hasValue,
+      isBusy: (isRefreshing || (view.value?.isReloading ?? false)) && view.hasValue,
       isFocused: widget.isFocused,
       trailing: ToolbarAction.symbol(
         key: ActivityPanel.refreshKey,
@@ -178,6 +179,7 @@ class _List extends StatelessWidget {
           controller: scroll,
           padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
           children: [
+            if (view.reloadFailure != null) _RefreshFailed(l10n: l10n),
             for (final (index, day) in days.indexed) ...[
               Padding(
                 padding: EdgeInsets.fromLTRB(8, index == 0 ? 14 : 20, 8, 6),
@@ -198,6 +200,35 @@ class _List extends StatelessWidget {
           ],
         );
       },
+    );
+  }
+}
+
+/// Over rows kept on screen: their refresh failed, and a way to try again.
+class _RefreshFailed extends ConsumerWidget {
+  const _RefreshFailed({required this.l10n});
+
+  final AppLocalizations l10n;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(8, 10, 8, 0),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              l10n.desktopActivityRefreshFailed,
+              style: context.themeTextV3.body.copyWith(color: context.colorsV3.semanticEmber),
+            ),
+          ),
+          ToolbarAction.symbol(
+            symbol: CupertinoIcons.arrow_clockwise,
+            label: l10n.commonTryAgain,
+            onPressed: () => unawaited(refreshWallet(ref)),
+          ),
+        ],
+      ),
     );
   }
 }

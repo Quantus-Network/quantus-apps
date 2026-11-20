@@ -1,6 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_desktop_wallet/providers/activity_providers.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:wallet_core/providers/account_providers.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:wallet_core/services/telemetry.dart';
 
@@ -60,5 +64,53 @@ void main() {
       expect(container.read(inspectorWidthProvider), 380);
       expect(telemetry.errors, ['The saved transaction panel width is unreadable']);
     });
+  });
+
+  testWidgets('rows are kept over a reload only for their own account: one still loading shows as loading', (
+    tester,
+  ) async {
+    final chain = FakeSendChain()
+      ..historyPages = [
+        [
+          TransferEvent(
+            id: 'main-tx',
+            from: 'qzMain',
+            to: 'qzBob',
+            amount: oneToken,
+            timestamp: DateTime.now(),
+            fee: FakeSendChain.usualFee,
+            extrinsicHash: '0xmain-tx',
+            blockNumber: 1,
+            blockHash: '0xblock',
+          ),
+        ],
+      ];
+    final container = ProviderContainer(
+      overrides: shellOverrides(
+        accounts: const [mainAccount, savingsAccount],
+        settings: FakeSettingsService(activeAccount: const RegularAccount(mainAccount)),
+        balances: oneTokenEach,
+        chain: chain,
+      ),
+    );
+    container.listen(activityViewProvider, (_, _) {});
+    for (var i = 0; i < 100 && container.read(activityViewProvider).value == null; i++) {
+      await tester.pump();
+    }
+    expect(container.read(activityViewProvider).value?.settled.map((tx) => tx.id), ['main-tx']);
+
+    chain.holdHistory = Completer<void>();
+    await container.read(activeAccountProvider.notifier).setActiveAccount(const RegularAccount(savingsAccount));
+    await tester.pump();
+
+    final view = container.read(activityViewProvider);
+    expect(view.isLoading, isTrue);
+    expect(view.hasValue, isFalse, reason: "Main's rows are not Savings'");
+
+    chain.holdHistory!.complete();
+    await tester.pump();
+    // Inside the test, so nothing it started is still waiting when it ends.
+    container.dispose();
+    await tester.pump(const Duration(minutes: 1));
   });
 }

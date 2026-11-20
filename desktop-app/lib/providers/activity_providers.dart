@@ -126,6 +126,8 @@ class ActivityView {
     required this.settled,
     this.hasMore = false,
     this.isLoadingMore = false,
+    this.isReloading = false,
+    this.reloadFailure,
   });
 
   final List<TransactionEvent> inProgress;
@@ -135,51 +137,88 @@ class ActivityView {
   /// fetched now.
   final bool hasMore;
   final bool isLoadingMore;
+
+  /// Whether these are the rows last shown, kept on screen while the
+  /// account's history loads again from nothing.
+  final bool isReloading;
+
+  /// Why that reload failed, while the rows last shown stay on screen.
+  final Object? reloadFailure;
+
+  /// These rows, kept while the history reloads, or after the reload failed
+  /// with [failure]. No older page is asked for meanwhile: the history is
+  /// starting over.
+  ActivityView _kept({Object? failure}) =>
+      ActivityView(inProgress: inProgress, settled: settled, isReloading: failure == null, reloadFailure: failure);
 }
 
 /// The open account's activity. A multisig's is its past proposals and what
 /// it received; its open proposals are [openProposalsViewProvider]'s.
-final activityViewProvider = Provider<AsyncValue<ActivityView>>((ref) {
-  final active = ref.watch(activeAccountProvider);
-  final account = active.value?.account;
-  if (account == null) {
-    return active.isLoading
-        ? const AsyncValue.loading()
-        : const AsyncValue.data(ActivityView(inProgress: [], settled: []));
-  }
-  final transactions = ref.watch(activeAccountTransactionsProvider(TransactionFilter.all));
-  final pages = ref.watch(activeAccountPaginationProvider(TransactionFilter.all));
-  final service = ref.read(transactionServiceProvider);
+///
+/// Once an account's rows have been shown, a reload of its history from
+/// nothing (a refresh asked for, or the accounts changing) keeps them on
+/// screen until the new ones arrive, and a reload that fails keeps them with
+/// why. Another account's rows are never kept for it.
+final activityViewProvider = NotifierProvider<ActivityViewNotifier, AsyncValue<ActivityView>>(ActivityViewNotifier.new);
 
-  return transactions.whenData((data) {
-    final activity = switch (account) {
-      final MultisigAccount msig => multisigActivityOf(
-        service,
-        data,
-        ref.watch(multisigPastProposalsProvider(msig)).value ?? const [],
-        msig,
-      ),
-      _ => service.combineAndDeduplicateTransactions(
-        pendingCancellationIds: data.pendingCancellationIds,
-        pendingTransactions: data.pendingTransactions,
-        pendingMultisigCreations: data.pendingMultisigCreations,
-        pendingMultisigProposals: data.pendingMultisigProposals,
-        pendingMultisigExecutions: data.pendingMultisigExecutions,
-        pendingMultisigCancellations: data.pendingMultisigCancellations,
-        scheduledReversibleTransfers: data.scheduledReversibleTransfers,
-        otherTransfers: data.otherTransfers,
-      ),
-    };
-    final parts = partActivityByProgress(activity);
-    return ActivityView(
-      inProgress: parts.inProgress,
-      settled: parts.settled,
-      hasMore: pages?.hasMore ?? false,
-      // A page after the first sets the pages loading while they hold some.
-      isLoadingMore: pages != null && pages.isLoading && pages.hasLoadedChainData,
-    );
-  });
-});
+class ActivityViewNotifier extends Notifier<AsyncValue<ActivityView>> {
+  /// The rows last shown, and whose they are.
+  ({String accountId, ActivityView view})? _shown;
+
+  @override
+  AsyncValue<ActivityView> build() {
+    final active = ref.watch(activeAccountProvider);
+    final account = active.value?.account;
+    if (account == null) {
+      return active.isLoading
+          ? const AsyncValue.loading()
+          : const AsyncValue.data(ActivityView(inProgress: [], settled: []));
+    }
+    final next = _activityOf(account);
+    if (next case AsyncData(:final value)) {
+      _shown = (accountId: account.accountId, view: value);
+      return next;
+    }
+    final shown = _shown;
+    if (shown == null || shown.accountId != account.accountId) return next;
+    return AsyncData(next.hasError ? shown.view._kept(failure: next.error) : shown.view._kept());
+  }
+
+  AsyncValue<ActivityView> _activityOf(BaseAccount account) {
+    final transactions = ref.watch(activeAccountTransactionsProvider(TransactionFilter.all));
+    final pages = ref.watch(activeAccountPaginationProvider(TransactionFilter.all));
+    final service = ref.read(transactionServiceProvider);
+
+    return transactions.whenData((data) {
+      final activity = switch (account) {
+        final MultisigAccount msig => multisigActivityOf(
+          service,
+          data,
+          ref.watch(multisigPastProposalsProvider(msig)).value ?? const [],
+          msig,
+        ),
+        _ => service.combineAndDeduplicateTransactions(
+          pendingCancellationIds: data.pendingCancellationIds,
+          pendingTransactions: data.pendingTransactions,
+          pendingMultisigCreations: data.pendingMultisigCreations,
+          pendingMultisigProposals: data.pendingMultisigProposals,
+          pendingMultisigExecutions: data.pendingMultisigExecutions,
+          pendingMultisigCancellations: data.pendingMultisigCancellations,
+          scheduledReversibleTransfers: data.scheduledReversibleTransfers,
+          otherTransfers: data.otherTransfers,
+        ),
+      };
+      final parts = partActivityByProgress(activity);
+      return ActivityView(
+        inProgress: parts.inProgress,
+        settled: parts.settled,
+        hasMore: pages?.hasMore ?? false,
+        // A page after the first sets the pages loading while they hold some.
+        isLoadingMore: pages != null && pages.isLoading && pages.hasLoadedChainData,
+      );
+    });
+  }
+}
 
 /// A multisig's open proposals, in order: the ones this device is still
 /// proposing, then the open ones, last changed first. Null for any other
