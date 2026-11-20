@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_desktop_wallet/providers/account_balance.dart';
+import 'package:quantus_desktop_wallet/ui/components/panel.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/providers/l10n_provider.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
 
-/// [account]'s balance as the headline of its pane: a small label, then the
+/// [account]'s balance in a panel of its own: a small label, then the
 /// amount large with the token's symbol small after it. While the balance
 /// loads, or when it could not be read, it says so in place of the amount.
 class BalanceCard extends ConsumerWidget {
@@ -21,50 +22,50 @@ class BalanceCard extends ConsumerWidget {
     final formatting = ref.watch(numberFormattingServiceProvider);
     final amountStyle = text.displayBalance.copyWith(color: colors.textContent);
 
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: colors.bgSurface,
-        borderRadius: context.radiusV3.mdBorder,
-        border: Border.all(color: colors.borderHairline),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        spacing: 12,
-        children: [
-          // Drawn in capitals, which is a look: a screen reader gets the word.
-          Semantics(
-            label: l10n.desktopBalanceLabel,
-            excludeSemantics: true,
-            child: Text(
-              l10n.desktopBalanceLabel.toUpperCase(),
-              style: text.dataAddress.copyWith(color: colors.textMuted2, letterSpacing: 1.4, height: 1),
+    return Panel(
+      fillsHeight: false,
+      child: Padding(
+        padding: const EdgeInsets.all(_padding),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          spacing: 12,
+          children: [
+            // Drawn in capitals, which is a look: a screen reader gets the word.
+            Semantics(
+              label: l10n.desktopBalanceLabel,
+              excludeSemantics: true,
+              child: Text(
+                l10n.desktopBalanceLabel.toUpperCase(),
+                style: text.dataAddress.copyWith(color: colors.textMuted2, letterSpacing: 1.4, height: 1),
+              ),
             ),
-          ),
-          watchAccountBalance(ref, account).when(
-            loading: () => Text(l10n.commonLoading, style: amountStyle.copyWith(color: colors.textMuted)),
-            error: (_, _) =>
-                Text(l10n.accountsSheetBalanceUnavailable, style: amountStyle.copyWith(color: colors.textMuted)),
-            data: (balance) => Row(
-              crossAxisAlignment: CrossAxisAlignment.baseline,
-              textBaseline: TextBaseline.alphabetic,
-              spacing: 8,
-              children: [
-                Flexible(
-                  child: Text(
-                    formatting.formatBalance(balance),
-                    style: amountStyle,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+            watchAccountBalance(ref, account).when(
+              loading: () => Text(l10n.commonLoading, style: amountStyle.copyWith(color: colors.textMuted)),
+              error: (_, _) =>
+                  Text(l10n.accountsSheetBalanceUnavailable, style: amountStyle.copyWith(color: colors.textMuted)),
+              data: (balance) => Row(
+                crossAxisAlignment: CrossAxisAlignment.baseline,
+                textBaseline: TextBaseline.alphabetic,
+                spacing: 8,
+                children: [
+                  Flexible(
+                    child: Text(
+                      formatting.formatBalance(balance),
+                      style: amountStyle,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
-                ),
-                Text(AppConstants.tokenSymbol, style: text.dataAddressLarge.copyWith(color: colors.textMuted)),
-              ],
+                  Text(AppConstants.tokenSymbol, style: text.dataAddressLarge.copyWith(color: colors.textMuted)),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
+
+  /// The space around the balance, inside its panel.
+  static const double _padding = 20;
 }

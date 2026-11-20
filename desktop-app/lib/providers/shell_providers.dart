@@ -9,7 +9,9 @@ import 'package:wallet_core/providers/account_providers.dart';
 import 'package:wallet_core/providers/active_swap_provider.dart';
 import 'package:wallet_core/providers/multisig_providers.dart';
 import 'package:wallet_core/providers/remote_config_provider.dart';
+import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:wallet_core/send/send_flow.dart';
+import 'package:wallet_core/services/telemetry.dart';
 import 'package:wallet_core/utils/account_actions.dart';
 import 'package:wallet_core/utils/accounts_grouping.dart';
 
@@ -21,6 +23,48 @@ class SidebarVisibilityNotifier extends Notifier<bool> {
   bool build() => true;
 
   void toggle() => state = !state;
+}
+
+/// How wide the sidebar is, in points: what the person dragged it to, kept
+/// for the next start.
+final sidebarWidthProvider = NotifierProvider<SidebarWidthNotifier, double>(SidebarWidthNotifier.new);
+
+class SidebarWidthNotifier extends Notifier<double> {
+  static const double initial = 240;
+  static const double minimum = 200;
+  static const double maximum = 360;
+
+  /// Where the width is kept between runs.
+  static const settingsKey = 'desktop_sidebar_width';
+
+  @override
+  double build() {
+    final saved = ref.watch(settingsServiceProvider).getValue(settingsKey);
+    if (saved == null) return initial;
+    final width = saved is String ? double.tryParse(saved) : null;
+    if (width == null || !width.isFinite) {
+      // A preference of the window's, not the wallet's: it opens as it
+      // would on a first run, and the stray value is reported.
+      ref.read(telemetryProvider).sendError('The saved sidebar width is unreadable', error: saved);
+      return initial;
+    }
+    return width.clamp(minimum, maximum);
+  }
+
+  /// Makes the sidebar [width] wide, within [minimum] and [maximum].
+  void resizeTo(double width) => state = width.clamp(minimum, maximum);
+
+  /// Keeps the width it has now for the next start. A failure is reported:
+  /// the sidebar keeps its width until the app quits.
+  Future<void> save() async {
+    final telemetry = ref.read(telemetryProvider);
+    try {
+      await ref.read(settingsServiceProvider).setString(settingsKey, '$state');
+    } catch (e) {
+      quantusPrint('Saving the sidebar width failed: $e');
+      telemetry.sendError('Saving the sidebar width failed', error: e);
+    }
+  }
 }
 
 /// The window's navigation, one step at a time: account switches and sheet

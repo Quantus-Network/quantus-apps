@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_desktop_wallet/models/shell_sheet.dart';
 import 'package:quantus_desktop_wallet/providers/shell_providers.dart';
 import 'package:quantus_desktop_wallet/ui/components/account_label.dart';
+import 'package:quantus_desktop_wallet/ui/components/panel.dart';
 import 'package:quantus_desktop_wallet/ui/components/toolbar_action.dart';
 import 'package:quantus_desktop_wallet/ui/shell/account_toolbar.dart';
 import 'package:quantus_desktop_wallet/ui/shell/desktop_shell.dart';
@@ -27,8 +28,16 @@ Future<void> _pumpWallet(WidgetTester tester, {bool reduceMotion = true}) => pum
   ),
 );
 
-/// Where the hairline under the header ends: the top of the pane.
-double _paneTop(WidgetTester tester) => tester.getRect(find.byKey(DesktopShell.headerLineKey)).bottom;
+/// Where the top bar ends, which sheets hang from.
+double _paneTop(WidgetTester tester) => tester.getRect(find.byKey(DesktopShell.topBarKey)).bottom;
+
+/// The middle of the panels beside the sidebar, or of all the panels with it
+/// hidden: what a sheet is centred on.
+double _panelsCentre(WidgetTester tester) {
+  final sidebar = find.byType(Sidebar);
+  final left = sidebar.evaluate().isEmpty ? Panel.gap : tester.getRect(sidebar).right + Panel.gap;
+  return (left + 1200 - Panel.gap) / 2;
+}
 
 Rect _sheet(WidgetTester tester) => tester.getRect(find.byType(ShellSheetView));
 
@@ -85,17 +94,16 @@ void main() {
     expect(inHeader(find.byType(AccountLabel)), findsOneWidget);
   });
 
-  testOnMac('a sheet hangs from the bottom of the header, centred on the pane beside the sidebar', (tester) async {
+  testOnMac('a sheet hangs from the bottom of the top bar, centred on the panels beside the sidebar', (tester) async {
     await _pumpWallet(tester);
 
     await _openSend(tester);
 
-    final sidebar = tester.getRect(find.byType(Sidebar));
     expect(_sheet(tester).top, _paneTop(tester));
-    expect(_sheet(tester).center.dx, moreOrLessEquals((sidebar.right + 1200) / 2));
+    expect(_sheet(tester).center.dx, moreOrLessEquals(_panelsCentre(tester)));
   });
 
-  testOnMac('with the sidebar hidden, a sheet is centred on the whole window', (tester) async {
+  testOnMac('with the sidebar hidden, a sheet is centred on all the panels', (tester) async {
     await _pumpWallet(tester);
     ProviderScope.containerOf(tester.element(find.byType(DesktopShell))).read(sidebarVisibleProvider.notifier).toggle();
     await tester.pumpAndSettle();
@@ -106,20 +114,32 @@ void main() {
     expect(_sheet(tester).center.dx, moreOrLessEquals(600));
   });
 
+  testOnMac('a sheet follows the sidebar\'s width', (tester) async {
+    await _pumpWallet(tester);
+    ProviderScope.containerOf(
+      tester.element(find.byType(DesktopShell)),
+    ).read(sidebarWidthProvider.notifier).resizeTo(320);
+    await tester.pumpAndSettle();
+
+    await _openSend(tester);
+
+    expect(tester.getRect(find.byType(Sidebar)).width, 320);
+    expect(_sheet(tester).center.dx, moreOrLessEquals(_panelsCentre(tester)));
+  });
+
   testOnWindowsAndLinux(
-    'a sheet hangs from the bottom of the header, below the in-window menu bar, centred on the pane',
+    'a sheet hangs from the bottom of the top bar, below the in-window menu bar, centred on the panels',
     (tester) async {
       await _pumpWallet(tester);
 
       await _openSend(tester);
 
-      final sidebar = tester.getRect(find.byType(Sidebar));
       expect(_sheet(tester).top, _paneTop(tester));
-      expect(_sheet(tester).center.dx, moreOrLessEquals((sidebar.right + 1200) / 2));
+      expect(_sheet(tester).center.dx, moreOrLessEquals(_panelsCentre(tester)));
     },
   );
 
-  testOnWindowsAndLinux('with the sidebar hidden, a sheet hangs from the header, centred on the whole window', (
+  testOnWindowsAndLinux('with the sidebar hidden, a sheet hangs from the top bar, centred on all the panels', (
     tester,
   ) async {
     await _pumpWallet(tester);

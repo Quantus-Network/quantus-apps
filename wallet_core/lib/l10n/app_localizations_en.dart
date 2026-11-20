@@ -2857,4 +2857,47 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get desktopProposeWaiting => 'Waiting for the network to create the proposal.';
+
+  @override
+  String get desktopFooterMainnet => 'Mainnet';
+
+  @override
+  String get desktopFooterTestnet => 'Testnet';
+
+  @override
+  String get desktopFooterOffline => 'Offline';
+
+  @override
+  String get desktopFooterSyncing => 'Syncing';
+
+  @override
+  String get desktopFooterSyncedJustNow => 'Synced just now';
+
+  @override
+  String desktopFooterSyncedMinutesAgo(int minutes) {
+    return 'Synced ${minutes}m ago';
+  }
+
+  @override
+  String desktopFooterSyncedHoursAgo(int hours) {
+    return 'Synced ${hours}h ago';
+  }
+
+  @override
+  String desktopFooterSyncedDaysAgo(int days) {
+    return 'Synced ${days}d ago';
+  }
+
+  @override
+  String get desktopFooterSyncFailed => 'Couldn\'t sync';
+
+  @override
+  String desktopFooterBlock(String number) {
+    return 'Block $number';
+  }
+
+  @override
+  String desktopFooterVersion(String version) {
+    return 'Quantus Wallet $version';
+  }
 }
