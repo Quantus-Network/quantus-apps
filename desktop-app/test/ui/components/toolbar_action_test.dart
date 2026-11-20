@@ -314,7 +314,7 @@ void _behaviour(_Kind kind) {
 
     expect(find.text('Refresh'), findsNothing);
     expect(tester.widget<Icon>(find.byIcon(CupertinoIcons.arrow_clockwise)).color, _colors.textMuted);
-    expect(tester.getSemantics(find.byType(ToolbarAction)), containsSemantics(label: 'Refresh', isButton: true));
+    expect(tester.getSemantics(find.byType(ToolbarAction)), isSemantics(label: 'Refresh', isButton: true));
     semantics.dispose();
   });
 }

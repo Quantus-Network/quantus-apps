@@ -151,6 +151,8 @@ void main() {
     // What reads the device's preferences itself (pending cancellations)
     // reads an empty store: the pictures run in real time, where the
     // plugin's channel has no one to answer.
+    // This is a test (flutter test runs it), only outside test/.
+    // ignore: invalid_use_of_visible_for_testing_member
     SharedPreferences.setMockInitialValues({});
   });
 

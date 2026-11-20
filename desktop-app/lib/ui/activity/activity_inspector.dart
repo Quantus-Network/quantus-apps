@@ -124,11 +124,12 @@ Widget _label(BuildContext context, String text) =>
 /// name at the line's end; any other by its whole address, too long to share
 /// the line, under the label.
 Widget _accountRow(BuildContext context, String label, BaseAccount? own, String address) {
-  if (own != null)
+  if (own != null) {
     return SummaryRow(
       label: _label(context, label),
       value: AccountLabel(account: own),
     );
+  }
   return Padding(
     padding: SummaryRow.padding,
     child: Column(
@@ -267,8 +268,7 @@ class _TransactionDetail extends ConsumerWidget {
           value: AccountLabel(account: account),
         )
       else
-        for (final fact in facts.facts)
-          if (_factRow(context, l10n, fact, own: own, money: money, feeLabel: feeLabel) case final row?) row,
+        for (final fact in facts.facts) ?_factRow(context, l10n, fact, own: own, money: money, feeLabel: feeLabel),
     ];
 
     final amount = facts.amount;
