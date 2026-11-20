@@ -2917,6 +2917,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get desktopActivityRefreshFailed => 'Couldn\'t refresh the activity';
 
   @override
+  String get desktopMarksAddress => 'Address';
+
+  @override
+  String desktopMarksInProgress(int count) {
+    return '$count in progress';
+  }
+
+  @override
+  String desktopMarksWaitingForSignature(int count) {
+    return '$count waiting for your signature';
+  }
+
+  @override
   String desktopActivityRunsIn(String time) {
     return 'in $time';
   }

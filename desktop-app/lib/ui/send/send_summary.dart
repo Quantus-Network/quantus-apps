@@ -121,7 +121,7 @@ class SendSummary extends StatelessWidget {
         if (_isProposalReceipt) return null;
         return SummaryRow(
           label: Text(l10n.desktopProposeProposedBy, style: context.sendBody()),
-          value: AccountLabel(account: _signer),
+          value: AccountLabel(account: _signer, revealsAddress: true),
         );
       case SendReviewRowKind.fee:
         if (_isProposalReceipt) return null;
@@ -164,7 +164,7 @@ class SendSummary extends StatelessWidget {
         const SizedBox(height: 4),
         SummaryRow(
           label: Text(l10n.activityTxFrom, style: context.sendBody()),
-          value: AccountLabel(account: from),
+          value: AccountLabel(account: from, revealsAddress: true),
         ),
         for (final row in rows)
           if (_line(context, row) case final line?) ...[
@@ -218,6 +218,7 @@ class SendTotal extends StatelessWidget {
                           child: AccountLabel(
                             account: signer,
                             style: text.bodyEmphasis.copyWith(color: colors.textContent),
+                            revealsAddress: true,
                           ),
                         ),
                         // A word's space after the name.

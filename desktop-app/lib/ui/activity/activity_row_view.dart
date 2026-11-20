@@ -145,7 +145,7 @@ class _ActivityRowViewState extends State<ActivityRowView> {
   /// badge and name, one without an address in words, anyone else by the
   /// whole address over its checkphrase.
   Widget _who(AppColorsV3 colors) {
-    if (widget.ownCounterparty case final own?) return AccountLabel(account: own);
+    if (widget.ownCounterparty case final own?) return AccountLabel(account: own, revealsAddress: true);
     return switch (_row.counterparty) {
       ActivityAccount(:final address) ||
       ActivityMultisig(:final address) => DesktopAddressCheckphrase(address: address, isCompact: true),

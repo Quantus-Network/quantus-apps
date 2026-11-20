@@ -120,6 +120,24 @@ void main() {
     expect(tester.widget<ActivityRowView>(find.byType(ActivityRowView)).isSelected, isTrue);
   });
 
+  testOnMac('each of the wallet\'s own accounts it names, as payer or payee, shows its address on hover', (
+    tester,
+  ) async {
+    await _open(
+      tester,
+      FakeSendChain()
+        ..historyPages = [
+          [_transfer('to-savings', from: 'qzMain', to: 'qzSavings')],
+        ],
+    );
+
+    await _openRow(tester, 'to-savings');
+
+    final labels = tester.widgetList<AccountLabel>(_inPanel(find.byType(AccountLabel)));
+    expect(labels.map((label) => label.account.name), containsAll(['Main', 'Savings']));
+    expect(labels.map((label) => label.revealsAddress), everyElement(isTrue));
+  });
+
   testOnMac('a completed send: its status, amount, kind and date, whom it paid, from where, the fee, what was paid, '
       'its hash to copy, its page and Share', (tester) async {
     final sent = _transfer('sent', from: 'qzMain', to: _bob);
@@ -346,6 +364,19 @@ void main() {
 
     Future<_Outside> openTeam(WidgetTester tester, FakeSendChain chain) =>
         _open(tester, chain, active: MultisigDisplayAccount(teamMultisig), multisigs: [teamMultisig]);
+
+    testOnMac('the multisig and who proposed it, accounts of the wallet, show their addresses on hover', (
+      tester,
+    ) async {
+      await openTeam(tester, FakeSendChain()..openProposals = [proposal(status: MultisigProposalStatus.active)]);
+
+      await tester.tap(find.byType(OpenProposalRowView));
+      await tester.pumpAndSettle();
+
+      final labels = tester.widgetList<AccountLabel>(_inPanel(find.byType(AccountLabel)));
+      expect(labels.map((label) => label.account.name), containsAll([teamMultisig.name, 'Main']));
+      expect(labels.map((label) => label.revealsAddress), everyElement(isTrue));
+    });
 
     testOnMac('open, it shows read only: where it stands, what it moves, to whom, how far, until when, its deposit, '
         'who proposed it, and its page', (tester) async {
