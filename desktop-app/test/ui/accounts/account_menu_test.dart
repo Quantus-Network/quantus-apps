@@ -182,6 +182,23 @@ void main() {
       expect(find.byKey(SettingsSheet.continueKey), findsOneWidget);
     });
 
+    testOnMac('a right-click anywhere along a wallet heading opens its menu, not only on its name', (tester) async {
+      await _pump(tester);
+      final sidebar = tester.getRect(find.byType(Sidebar));
+      final gesture = await tester.startGesture(
+        Offset(
+          sidebar.right - 40,
+          tester.getCenter(find.descendant(of: find.byType(Sidebar), matching: find.text('WALLET 2'))).dy,
+        ),
+        kind: PointerDeviceKind.mouse,
+        buttons: kSecondaryButton,
+      );
+      await gesture.up();
+      await tester.pumpAndSettle();
+
+      expect(_menuLabels(tester), ['Show Recovery Phrase…']);
+    });
+
     testOnMac('a Keystone wallet\'s heading has no menu', (tester) async {
       await _pump(tester);
       await _rightClick(tester, find.descendant(of: find.byType(Sidebar), matching: find.text('COLD WALLET')));
