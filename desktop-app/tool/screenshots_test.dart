@@ -5,8 +5,6 @@
 //   flutter test tool/screenshots_test.dart --update-goldens
 //
 // The pictures land in build/screenshots/.
-import 'package:quantus_desktop_wallet/ui/components/hover_popover.dart';
-import 'package:quantus_desktop_wallet/ui/components/account_label.dart';
 import 'dart:async';
 
 import 'package:flutter/gestures.dart';
@@ -27,6 +25,8 @@ import 'package:quantus_desktop_wallet/services/login_password.dart';
 import 'package:quantus_desktop_wallet/services/sensitive_clipboard.dart';
 import 'package:quantus_desktop_wallet/services/user_approval.dart';
 import 'package:quantus_desktop_wallet/ui/approval/login_password_dialog.dart';
+import 'package:quantus_desktop_wallet/ui/components/account_label.dart';
+import 'package:quantus_desktop_wallet/ui/components/hover_popover.dart';
 import 'package:quantus_desktop_wallet/ui/components/toolbar_action.dart';
 import 'package:quantus_desktop_wallet/ui/components/terminal_line.dart';
 import 'package:quantus_desktop_wallet/ui/send/send_sheet.dart';
