@@ -15,11 +15,13 @@ import 'package:quantus_desktop_wallet/services/window_chrome.dart';
 import 'package:quantus_sdk/generated/bell/pallets/balances.dart' as balances_pallet;
 import 'package:quantus_sdk/generated/bell/types/sp_runtime/multiaddress/multi_address.dart' as multi_address;
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:wallet_core/providers/connectivity_provider.dart';
 import 'package:wallet_core/providers/encrypted_send_provider.dart';
 import 'package:wallet_core/providers/one_click_provider.dart';
 import 'package:wallet_core/providers/multisig_providers.dart';
 import 'package:wallet_core/providers/remote_config_provider.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
+import 'package:wallet_core/services/history_polling_manager.dart';
 import 'package:wallet_core/services/logout_service.dart';
 import 'package:wallet_core/services/remote_config_service.dart';
 import 'package:wallet_core/services/transaction_submission_service.dart';
@@ -600,6 +602,75 @@ class FakeWalletDevice {
   );
 }
 
+/// The polling that keeps an open wallet current, which only notes what the
+/// app asks of it.
+class FakeHistoryPollingManager extends Fake implements HistoryPollingManager {
+  /// How many times the app set it going.
+  int starts = 0;
+
+  /// What the app asked of it since, in order: `pause`, `resume`,
+  /// `silentRefresh` or `manualRefresh`.
+  final calls = <String>[];
+
+  /// When set, a refresh fails with this.
+  Object? refreshError;
+
+  @override
+  void pausePolling() => calls.add('pause');
+
+  @override
+  void resumePolling() => calls.add('resume');
+
+  @override
+  Future<void> triggerSilentRefresh() => _refresh('silentRefresh');
+
+  @override
+  Future<void> triggerManualRefresh() => _refresh('manualRefresh');
+
+  Future<void> _refresh(String call) async {
+    calls.add(call);
+    if (refreshError case final error?) throw error;
+  }
+}
+
+/// Whether the computer has a network, as a test says. It has one unless
+/// told otherwise.
+class FakeNetwork {
+  final _changes = StreamController<NetworkStatus>.broadcast();
+  NetworkStatus _status = NetworkStatus.online;
+
+  /// The status now, then each change.
+  Stream<NetworkStatus> get statusStream async* {
+    yield _status;
+    yield* _changes.stream;
+  }
+
+  void goOffline() => _set(NetworkStatus.offline);
+
+  void goOnline() => _set(NetworkStatus.online);
+
+  void _set(NetworkStatus status) {
+    _status = status;
+    _changes.add(status);
+  }
+}
+
+/// Stands in for what keeps an open wallet current, so no test polls the
+/// chain or asks the computer about its network. With [realPolling] the
+/// app's own polling runs instead, reading whatever else the test fakes.
+List<Override> liveDataOverrides({FakeHistoryPollingManager? polling, FakeNetwork? network, bool realPolling = false}) {
+  assert(!realPolling || polling == null, 'real polling cannot be a fake one as well');
+  final manager = polling ?? FakeHistoryPollingManager();
+  return [
+    if (!realPolling)
+      historyPollingManagerProvider.overrideWith((ref) {
+        manager.starts++;
+        return manager;
+      }),
+    networkStatusProvider.overrideWith((ref) => (network ?? FakeNetwork()).statusStream),
+  ];
+}
+
 /// The system's approval, answering as a test says. It approves unless told
 /// otherwise.
 class FakeUserApproval implements UserApproval {
@@ -906,10 +977,16 @@ class FakeEncryptedSendController extends EncryptedSendController {
 /// The system asks for reduced motion unless [reduceMotion] is false: the
 /// Welcome page's moving background never settles either, so only the tests
 /// about that motion turn it on.
+///
+/// The open wallet's polling is a fake one ([polling]) unless [realPolling]
+/// asks for the app's own.
 Future<void> pumpShell(
   WidgetTester tester, {
   required List<Override> overrides,
   FakeLoginPassword? loginPassword,
+  FakeHistoryPollingManager? polling,
+  bool realPolling = false,
+  FakeNetwork? network,
   bool settle = true,
   bool reduceMotion = true,
 }) async {
@@ -927,6 +1004,7 @@ Future<void> pumpShell(
         // Never the computer's own PAM, which a test run as Linux would
         // otherwise reach.
         loginPasswordProvider.overrideWithValue(loginPassword ?? FakeLoginPassword()),
+        ...liveDataOverrides(polling: polling, network: network, realPolling: realPolling),
       ],
     ),
   );

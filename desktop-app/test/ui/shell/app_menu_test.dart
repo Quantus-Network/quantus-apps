@@ -413,6 +413,46 @@ void main() {
       expect(await choose('Previous Sidebar Item'), 'Vault');
     });
 
+    testOnMac('View → Refresh (⇧⌘R) reads the wallet again from the network, once', (tester) async {
+      final polling = FakeHistoryPollingManager();
+      await pumpShell(tester, polling: polling, overrides: _withActive(const RegularAccount(mainAccount)));
+
+      final refresh = _nativeItem(tester, 'View', 'Refresh');
+      expect(refresh.shortcut, _isShortcut(LogicalKeyboardKey.keyR, meta: true, shift: true));
+
+      refresh.onSelected!();
+      await tester.pumpAndSettle();
+
+      expect(polling.calls, ['manualRefresh']);
+    });
+
+    testOnMac('Refresh stays available while a sheet is open: it changes nothing the sheet was opened on', (
+      tester,
+    ) async {
+      final polling = FakeHistoryPollingManager();
+      await pumpShell(tester, polling: polling, overrides: _withActive(const RegularAccount(mainAccount)));
+      _nativeItem(tester, 'Account', 'Add Account…').onSelected!();
+      await tester.pumpAndSettle();
+
+      _nativeItem(tester, 'View', 'Refresh').onSelected!();
+      await tester.pumpAndSettle();
+
+      expect(_sheetTitled('Add Account'), findsOneWidget);
+      expect(polling.calls, ['manualRefresh']);
+    });
+
+    testOnMac('a Refresh that fails leaves the app running', (tester) async {
+      final polling = FakeHistoryPollingManager()..refreshError = StateError('the node did not answer');
+      await pumpShell(tester, polling: polling, overrides: _withActive(const RegularAccount(mainAccount)));
+
+      _nativeItem(tester, 'View', 'Refresh').onSelected!();
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      expect(polling.calls, ['manualRefresh']);
+      expect(find.byType(Sidebar), findsOneWidget);
+    });
+
     testOnMac('while a sheet is open, the items that open sheets are disabled', (tester) async {
       await pumpShell(tester, overrides: _withActive(const RegularAccount(mainAccount)));
 
@@ -469,6 +509,7 @@ void main() {
       expect(_nativeItem(tester, 'Account', 'Add Account…').onSelected, isNull);
       expect(_nativeItem(tester, 'View', 'Hide Sidebar').onSelected, isNull);
       expect(_nativeItem(tester, 'View', 'Next Sidebar Item').onSelected, isNull);
+      expect(_nativeItem(tester, 'View', 'Refresh').onSelected, isNull);
 
       _nativeItem(tester, 'File', 'Close Window').onSelected!();
 
@@ -579,6 +620,33 @@ void main() {
       await openMenu(tester, 'View');
 
       expect(find.widgetWithText(MenuItemButton, 'Show Sidebar'), findsOneWidget);
+    });
+
+    testOnWindowsAndLinux('View → Refresh, with Ctrl+Shift+R, reads the wallet again from the network', (tester) async {
+      final polling = FakeHistoryPollingManager();
+      await pumpShell(tester, polling: polling, overrides: _withActive(const RegularAccount(mainAccount)));
+
+      await openMenu(tester, 'View');
+      final refresh = find.widgetWithText(MenuItemButton, 'Refresh');
+      expect(
+        tester.widget<MenuItemButton>(refresh).shortcut,
+        _isShortcut(LogicalKeyboardKey.keyR, control: true, shift: true),
+      );
+      await tester.tap(refresh);
+      await tester.pumpAndSettle();
+
+      expect(polling.calls, ['manualRefresh']);
+
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.shiftLeft);
+      await tester.sendKeyEvent(LogicalKeyboardKey.keyR);
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.shiftLeft);
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+      await tester.pumpAndSettle();
+
+      expect(polling.calls, ['manualRefresh', 'manualRefresh']);
+      // Ctrl+Shift+R is not Ctrl+R: Receive stays shut.
+      expect(find.byType(ShellSheetView), findsNothing);
     });
 
     testOnWindowsAndLinux('Ctrl+B hides the sidebar and pressing it again brings it back', (tester) async {

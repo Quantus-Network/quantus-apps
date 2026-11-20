@@ -4550,6 +4550,12 @@ abstract class AppLocalizations {
   /// **'Previous Sidebar Item'**
   String get desktopMenuPreviousSidebarItem;
 
+  /// Desktop View menu item, and its name in Settings › Keyboard Shortcuts, that reads the balances, activity and proposals again from the network
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh'**
+  String get desktopMenuRefresh;
+
   /// Desktop menu bar: Window menu title
   ///
   /// In en, this message translates to:

@@ -199,6 +199,10 @@ class ShortcutBindings {
   KeyModifiers get _commandAlt =>
       isMac ? const KeyModifiers(meta: true, alt: true) : const KeyModifiers(control: true, alt: true);
 
+  /// The command key with ⇧ on the Mac, Ctrl+Shift elsewhere.
+  KeyModifiers get _commandShift =>
+      isMac ? const KeyModifiers(meta: true, shift: true) : const KeyModifiers(control: true, shift: true);
+
   KeyCombo _defaultOf(AppCommand command) => switch (command) {
     AppCommand.receive => KeyCombo(LogicalKeyboardKey.keyR, _command),
     AppCommand.send => KeyCombo(LogicalKeyboardKey.keyS, _command),
@@ -207,6 +211,8 @@ class ShortcutBindings {
     AppCommand.toggleSidebar => KeyCombo(LogicalKeyboardKey.keyB, _command),
     AppCommand.nextSidebarItem => KeyCombo(LogicalKeyboardKey.arrowDown, _commandAlt),
     AppCommand.previousSidebarItem => KeyCombo(LogicalKeyboardKey.arrowUp, _commandAlt),
+    // ⌘R, which reloads elsewhere on the Mac, is Receive's.
+    AppCommand.refresh => KeyCombo(LogicalKeyboardKey.keyR, _commandShift),
   };
 
   /// The keys the system keeps, and what for.

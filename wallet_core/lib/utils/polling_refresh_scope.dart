@@ -6,6 +6,7 @@ import 'package:wallet_core/providers/account_providers.dart';
 import 'package:wallet_core/providers/controllers/unified_pagination_controller.dart';
 import 'package:wallet_core/providers/filtered_all_transactions_provider.dart';
 import 'package:wallet_core/providers/multisig_providers.dart';
+import 'package:wallet_core/providers/shown_balances_provider.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
 
 const _backgroundPollFilters = [TransactionFilter.all];
@@ -100,6 +101,15 @@ void invalidateAccountBalances(Ref ref, Iterable<String> accountIds) {
   for (final accountId in accountIds) {
     ref.invalidate(balanceProviderFamily(accountId));
   }
+}
+
+/// Invalidates the balances of the other accounts the app has on screen
+/// ([shownBalanceAccountIdsProvider]). The active account's is left to its
+/// own refresh, and a balance nothing is watching is not read again until
+/// something is.
+void invalidateShownAccountBalances(Ref ref) {
+  final activeId = activeAccountId(ref);
+  invalidateAccountBalances(ref, ref.read(shownBalanceAccountIdsProvider).where((id) => id != activeId));
 }
 
 Future<void> refreshAccountsPagination(
