@@ -120,6 +120,34 @@ void main() {
     expect(status(container).lastSyncedAt, firstRead);
   });
 
+  test('switching away from an account whose balance is being read is no read of the next one', () async {
+    final container = await wallet();
+    await answer(0);
+    container.listen(balanceProviderFamily(savingsAccount.accountId), (_, _) {});
+    await pumpEventQueue();
+    await answer(1);
+    // Main's balance is being read again when the user switches to Savings.
+    container.invalidate(balanceProviderFamily(mainAccount.accountId));
+    await pumpEventQueue();
+    expect(status(container), SyncStatus(isSyncing: true, lastSyncedAt: firstRead));
+
+    now = laterRead;
+    await container.read(activeAccountProvider.notifier).setActiveAccount(const RegularAccount(savingsAccount));
+    await pumpEventQueue();
+
+    expect(status(container), SyncStatus(lastSyncedAt: firstRead));
+
+    // Main's read ending is no read of Savings either.
+    await answer(2);
+    expect(status(container), SyncStatus(lastSyncedAt: firstRead));
+
+    // Savings' own read is.
+    container.invalidate(balanceProviderFamily(savingsAccount.accountId));
+    await pumpEventQueue();
+    await answer(3);
+    expect(status(container), SyncStatus(lastSyncedAt: laterRead));
+  });
+
   test('on the encrypted account it follows the account\'s own balance', () async {
     final container = await wallet(active: encryptedAccount, encryptedBalances: {0: oneToken});
 
