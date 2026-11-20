@@ -15,24 +15,22 @@ import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:wallet_core/services/user_approval.dart';
 import 'package:wallet_core/utils/recovery_phrase.dart';
 
-/// The wallet whose recovery phrase Settings shows. A desktop holds one
-/// software wallet for now, the first on the device; choosing between
-/// wallets comes with adding them.
-const _walletIndex = 0;
-
-/// Records that the recovery phrase has been seen, as mobile does when it is
-/// revealed or copied. It takes the app's [container] rather than a widget's
-/// ref, so a copy that completes after the sheet has closed is still recorded.
-void _markPhraseSeen(ProviderContainer container) {
-  container.read(settingsServiceProvider).setRecoveryPhraseViewed(_walletIndex);
-  container.invalidate(recoveryPhraseViewedProvider(_walletIndex));
+/// Records that the recovery phrase of the wallet at [walletIndex] has been
+/// seen, as mobile does when it is revealed or copied. It takes the app's
+/// [container] rather than a widget's ref, so a copy that completes after the
+/// sheet has closed is still recorded.
+void _markPhraseSeen(ProviderContainer container, int walletIndex) {
+  container.read(settingsServiceProvider).setRecoveryPhraseViewed(walletIndex);
+  container.invalidate(recoveryPhraseViewedProvider(walletIndex));
 }
 
-/// The caution before the recovery phrase. Continue asks for approval, then
-/// reads the phrase and hands its words to [onApproved].
+/// The caution before the recovery phrase of the wallet at [walletIndex].
+/// Continue asks for approval, then reads the phrase and hands its words to
+/// [onApproved].
 class RecoveryPhraseCaution extends ConsumerStatefulWidget {
-  const RecoveryPhraseCaution({super.key, required this.onCancel, required this.onApproved});
+  const RecoveryPhraseCaution({super.key, required this.walletIndex, required this.onCancel, required this.onApproved});
 
+  final int walletIndex;
   final VoidCallback onCancel;
   final ValueChanged<List<String>> onApproved;
 
@@ -68,7 +66,7 @@ class _RecoveryPhraseCautionState extends ConsumerState<RecoveryPhraseCaution> {
 
     String? phrase;
     try {
-      phrase = await ref.read(settingsServiceProvider).getMnemonic(_walletIndex);
+      phrase = await ref.read(settingsServiceProvider).getMnemonic(widget.walletIndex);
     } catch (e) {
       quantusPrint('Reading the recovery phrase failed: $e');
     }
@@ -123,8 +121,10 @@ class _RecoveryPhraseCautionState extends ConsumerState<RecoveryPhraseCaution> {
 /// Hide masks them again. Copy puts them on the clipboard for a short time,
 /// kept out of clipboard history.
 class RecoveryPhraseWords extends ConsumerStatefulWidget {
-  const RecoveryPhraseWords({super.key, required this.words, required this.onDone});
+  const RecoveryPhraseWords({super.key, required this.walletIndex, required this.words, required this.onDone});
 
+  /// The wallet whose words these are, recorded as seen once they are.
+  final int walletIndex;
   final List<String> words;
   final VoidCallback onDone;
 
@@ -138,7 +138,7 @@ class _RecoveryPhraseWordsState extends ConsumerState<RecoveryPhraseWords> {
 
   void _toggleRevealed() {
     setState(() => _isRevealed = !_isRevealed);
-    if (_isRevealed) _markPhraseSeen(ProviderScope.containerOf(context, listen: false));
+    if (_isRevealed) _markPhraseSeen(ProviderScope.containerOf(context, listen: false), widget.walletIndex);
   }
 
   Future<void> _copy(String text) async {
@@ -146,7 +146,7 @@ class _RecoveryPhraseWordsState extends ConsumerState<RecoveryPhraseWords> {
     // and Back still close it meanwhile.
     final container = ProviderScope.containerOf(context, listen: false);
     await container.read(sensitiveClipboardProvider).copy(text);
-    _markPhraseSeen(container);
+    _markPhraseSeen(container, widget.walletIndex);
     if (mounted) setState(() => _error = null);
   }
 

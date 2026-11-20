@@ -914,4 +914,99 @@ void main() {
       expect(_inSheet(find.text('This will erase your wallet')), findsOneWidget);
     });
   });
+
+  group('Recovery Phrase with several wallets', () {
+    /// The words of wallet 3 (the second software wallet), `t01` … `t24`.
+    final tradingWords = [for (var i = 1; i <= 24; i++) 't${i.toString().padLeft(2, '0')}'];
+
+    /// Main in wallet 0, a Keystone account in wallet 1, Trading alone in wallet 3.
+    Future<FakeWalletDevice> openWithWallets(WidgetTester tester, {List<Account> more = const []}) async {
+      final device = FakeWalletDevice()..store([mainAccount], mnemonic: _words.join(' '));
+      device.storage.accounts.addAll([
+        vaultAccount,
+        const Account(walletIndex: 3, index: 0, name: 'Trading', accountId: 'qzTrading3'),
+        ...more,
+      ]);
+      device.storage.mnemonics[3] = tradingWords.join(' ');
+      await pumpShell(
+        tester,
+        overrides: [
+          ...device.overrides,
+          systemApprovalProvider.overrideWithValue(FakeUserApproval()),
+          sensitiveClipboardProvider.overrideWithValue(FakeSensitiveClipboard()),
+        ],
+      );
+      ProviderScope.containerOf(
+        tester.element(find.byType(DesktopShell)),
+      ).read(shellSheetProvider.notifier).open(ShellSheet.settings);
+      await tester.pumpAndSettle();
+      return device;
+    }
+
+    testOnMac('the row says how many wallets there are, and opens a list of them, Keystone wallets left out', (
+      tester,
+    ) async {
+      await openWithWallets(tester);
+
+      expect(_inSheet(find.text('View the 24 words of each of your 2 wallets')), findsOneWidget);
+      await _tap(tester, find.byKey(SettingsSheet.recoveryPhraseRowKey));
+
+      expect(_inSheet(find.text('CHOOSE A WALLET')), findsOneWidget);
+      expect(find.byKey(SettingsSheet.phraseWalletKey(0)), findsOneWidget);
+      expect(find.byKey(SettingsSheet.phraseWalletKey(3)), findsOneWidget);
+      expect(find.byKey(SettingsSheet.phraseWalletKey(1)), findsNothing);
+      expect(
+        find.descendant(of: find.byKey(SettingsSheet.phraseWalletKey(3)), matching: find.text('Wallet 2')),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(of: find.byKey(SettingsSheet.phraseWalletKey(3)), matching: find.text('Trading, Encrypted Account')),
+        findsOneWidget,
+      );
+    });
+
+    testOnMac('a wallet\'s row opens its caution, then its own words, and only it is recorded seen', (tester) async {
+      final device = await openWithWallets(tester);
+      await _tap(tester, find.byKey(SettingsSheet.recoveryPhraseRowKey));
+      await _tap(tester, find.byKey(SettingsSheet.phraseWalletKey(3)));
+      await _tap(tester, find.byKey(SettingsSheet.continueKey));
+      await _tap(tester, find.byKey(SettingsSheet.hideKey));
+
+      expect(_inSheet(find.text('t01')), findsOneWidget);
+      expect(_inSheet(find.text('w01')), findsNothing);
+      expect(device.storage.viewedPhrases, {3});
+    });
+
+    testOnMac('from a wallet\'s caution, back goes to the list of wallets', (tester) async {
+      await openWithWallets(tester);
+      await _tap(tester, find.byKey(SettingsSheet.recoveryPhraseRowKey));
+      await _tap(tester, find.byKey(SettingsSheet.phraseWalletKey(3)));
+      await _tap(tester, find.byKey(SettingsSheet.cancelKey));
+
+      expect(find.byKey(SettingsSheet.phraseWalletKey(3)), findsOneWidget);
+    });
+
+    testOnMac('many wallets in the smallest window scroll inside the sheet, under a header that stays', (tester) async {
+      await openWithWallets(
+        tester,
+        more: [
+          for (var i = 4; i < 12; i++) Account(walletIndex: i, index: 0, name: 'Spare $i', accountId: 'qzSpare$i'),
+        ],
+      );
+      tester.view.physicalSize = const Size(960, 640);
+      await tester.pumpAndSettle();
+      await _tap(tester, find.byKey(SettingsSheet.recoveryPhraseRowKey));
+      final header = tester.getTopLeft(find.byType(ShellSheetHeader));
+
+      await tester.scrollUntilVisible(
+        find.byKey(SettingsSheet.phraseWalletKey(11)),
+        100,
+        scrollable: find.descendant(of: find.byType(SettingsSheet), matching: find.byType(Scrollable)),
+      );
+      await tester.pumpAndSettle();
+
+      expect(tester.getRect(find.byKey(SettingsSheet.phraseWalletKey(11))).bottom, lessThanOrEqualTo(640));
+      expect(tester.getTopLeft(find.byType(ShellSheetHeader)), header);
+    });
+  });
 }

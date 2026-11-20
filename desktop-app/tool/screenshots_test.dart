@@ -510,6 +510,18 @@ void main() {
     await tester.pumpAndSettle();
   });
 
+  _scene('settings_phrase_wallets', (tester) async {
+    await _openInfo(tester, _savings);
+    await _openPhraseWallets(tester);
+  });
+
+  _scene('settings_phrase_wallets_smallest_window', (tester) async {
+    await _openInfo(tester, _savings, moreWallets: 8);
+    await _openPhraseWallets(tester);
+    tester.view.physicalSize = const Size(960, 640) * _pixelRatio;
+    await tester.pumpAndSettle();
+  });
+
   _scene('settings', (tester) async {
     await _openSettings(tester);
   });
@@ -669,9 +681,14 @@ final _infoTeam = MultisigAccount(
 
 /// Opens the Info sheet on [account] over the window of a wallet with every
 /// kind of account.
-Future<void> _openInfo(WidgetTester tester, BaseAccount account) async {
+Future<void> _openInfo(WidgetTester tester, BaseAccount account, {int moreWallets = 0}) async {
   final device = FakeWalletDevice()..store([_root, _savings, _encrypted], mnemonic: _phrase);
-  device.storage.accounts.addAll([_cold, _trading]);
+  device.storage.accounts.addAll([
+    _cold,
+    _trading,
+    for (var i = 0; i < moreWallets; i++)
+      Account(walletIndex: 3 + i, index: 0, name: 'Spare ${i + 1}', accountId: 'qzSpare$i'),
+  ]);
   device.storage.mnemonics[2] = _phrase;
   device.storage.multisigStore.add(_infoTeam);
   await _open(
@@ -679,6 +696,7 @@ Future<void> _openInfo(WidgetTester tester, BaseAccount account) async {
     device,
     reduceMotion: true,
     overrides: [
+      systemApprovalProvider.overrideWithValue(FakeUserApproval()),
       encryptedAccountServiceProvider.overrideWith(
         (ref, walletIndex) => FakeEncryptedAccountService(
           () async => _depositAddress,
@@ -692,6 +710,18 @@ Future<void> _openInfo(WidgetTester tester, BaseAccount account) async {
   await ProviderScope.containerOf(
     tester.element(find.byType(DesktopShell)),
   ).read(accountManagerProvider).openInfo(account);
+  await tester.pumpAndSettle();
+}
+
+/// Closes whatever sheet is open, then opens Settings on its list of
+/// wallets' recovery phrases.
+Future<void> _openPhraseWallets(WidgetTester tester) async {
+  final container = ProviderScope.containerOf(tester.element(find.byType(DesktopShell)));
+  Navigator.of(tester.element(find.byType(ShellSheetView))).pop();
+  await tester.pumpAndSettle();
+  container.read(shellSheetProvider.notifier).open(ShellSheet.settings);
+  await tester.pumpAndSettle();
+  await tester.tap(find.byKey(SettingsSheet.recoveryPhraseRowKey));
   await tester.pumpAndSettle();
 }
 

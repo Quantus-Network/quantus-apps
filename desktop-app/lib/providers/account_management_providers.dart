@@ -75,6 +75,43 @@ class AccountInfoTargetNotifier extends Notifier<AccountInfoTarget?> {
   void set(AccountInfoTarget target) => state = target;
 }
 
+/// The wallet whose recovery phrase Settings opens on, when it is opened for
+/// one: Settings takes it on opening, and clears it.
+final recoveryPhraseTargetProvider = NotifierProvider<RecoveryPhraseTargetNotifier, int?>(
+  RecoveryPhraseTargetNotifier.new,
+);
+
+class RecoveryPhraseTargetNotifier extends Notifier<int?> {
+  @override
+  int? build() => null;
+
+  void set(int walletIndex) => state = walletIndex;
+
+  void clear() => state = null;
+}
+
+/// The software wallets, whose recovery phrases this app holds, in the
+/// sidebar's order: what each is called, and its accounts' names.
+final softwareWalletsProvider = Provider<List<({int walletIndex, String name, List<String> accounts})>>((ref) {
+  final l10n = ref.watch(l10nProvider);
+  final grouping = groupWallets(
+    accounts: ref.watch(accountsProvider).value ?? const [],
+    multisigs: ref.watch(multisigAccountsProvider).value ?? const [],
+  );
+  return [
+    for (final wallet in grouping.wallets)
+      if (wallet.kind == WalletKind.software)
+        (
+          walletIndex: wallet.walletIndex,
+          name: walletDisplayName(l10n, wallet, ref.watch(walletNameProvider(wallet.walletIndex))),
+          accounts: [
+            for (final account in wallet.accounts) account.name,
+            if (wallet.encryptedAccount case final encrypted?) encrypted.name,
+          ],
+        ),
+  ];
+});
+
 /// What the wallet at [walletIndex] is called where it is named: its own
 /// name, or "Wallet 2" / "Cold Wallet" by its number, as the sidebar's
 /// headings say. Null while the accounts are being read, as after a change,
@@ -106,6 +143,12 @@ class AccountManager {
   Future<void> openInfo(BaseAccount account, {AccountInfoStart start = AccountInfoStart.info}) {
     _ref.read(accountInfoTargetProvider.notifier).set(AccountInfoTarget(account.accountId, start: start));
     return _ref.read(shellSheetProvider.notifier).open(ShellSheet.accountInfo);
+  }
+
+  /// Opens Settings on the recovery phrase of the wallet at [walletIndex].
+  Future<void> openRecoveryPhrase(int walletIndex) {
+    _ref.read(recoveryPhraseTargetProvider.notifier).set(walletIndex);
+    return _ref.read(shellSheetProvider.notifier).open(ShellSheet.settings);
   }
 
   /// Copies [value] of [account] and notes it on the account's row. A copy

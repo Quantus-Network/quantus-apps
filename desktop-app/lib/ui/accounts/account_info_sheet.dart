@@ -9,6 +9,7 @@ import 'package:quantus_desktop_wallet/ui/components/desktop_address_checkphrase
 import 'package:quantus_desktop_wallet/ui/components/desktop_checkbox.dart';
 import 'package:quantus_desktop_wallet/ui/components/settings_group.dart';
 import 'package:quantus_desktop_wallet/ui/components/sheet_button.dart';
+import 'package:quantus_desktop_wallet/ui/settings/recovery_phrase_steps.dart';
 import 'package:quantus_desktop_wallet/ui/settings/settings_caution.dart';
 import 'package:quantus_desktop_wallet/ui/shell/shell_sheet_view.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
@@ -45,7 +46,7 @@ class AccountInfoSheet extends ConsumerStatefulWidget {
 }
 
 /// The steps of the Info sheet. Each but the info has a way back to it.
-enum _Step { info, disconnect }
+enum _Step { info, disconnect, phraseCaution, phraseWords }
 
 class _AccountInfoSheetState extends ConsumerState<AccountInfoSheet> {
   /// Read once: the sheet stays on the account it opened for.
@@ -54,12 +55,19 @@ class _AccountInfoSheetState extends ConsumerState<AccountInfoSheet> {
 
   late _Step _step = switch (_target.start) {
     AccountInfoStart.disconnect => _Step.disconnect,
-    AccountInfoStart.info || AccountInfoStart.rename || AccountInfoStart.recoveryPhrase => _Step.info,
+    AccountInfoStart.recoveryPhrase => _Step.phraseCaution,
+    AccountInfoStart.info || AccountInfoStart.rename => _Step.info,
   };
+
+  /// The recovery phrase's words, held only while they are on screen.
+  List<String>? _words;
 
   bool _isClosing = false;
 
-  void _go(_Step step) => setState(() => _step = step);
+  void _go(_Step step) => setState(() {
+    _step = step;
+    if (step != _Step.phraseWords) _words = null;
+  });
 
   /// The account was disconnected here: the sheet closes on it.
   void _disconnected() {
@@ -105,7 +113,9 @@ class _AccountInfoSheetState extends ConsumerState<AccountInfoSheet> {
 
     final infoTitle = account is MultisigAccount ? l10n.desktopMultisigInfoTitle : l10n.desktopAccountInfoTitle;
     void toDisconnect() => _go(_Step.disconnect);
+    void toPhrase() => _go(_Step.phraseCaution);
     void back() => _go(_Step.info);
+    final words = _words;
 
     final (String title, Widget body) = switch (_step) {
       _Step.info => (
@@ -122,12 +132,33 @@ class _AccountInfoSheetState extends ConsumerState<AccountInfoSheet> {
             account: account,
             accounts: _accounts,
             wallet: _wallet!,
+            onRecoveryPhrase: toPhrase,
             onDisconnect: toDisconnect,
             l10n: l10n,
           ),
           _ => throw StateError('${account.accountId} has no Info sheet'),
         },
       ),
+      _Step.phraseCaution => (
+        l10n.settingsRecoveryPhraseTitle,
+        RecoveryPhraseCaution(
+          walletIndex: (account as Account).walletIndex,
+          onCancel: back,
+          onApproved: (words) => setState(() {
+            _words = words;
+            _step = _Step.phraseWords;
+          }),
+        ),
+      ),
+      _Step.phraseWords when words != null => (
+        l10n.settingsRecoveryPhraseTitle,
+        RecoveryPhraseWords(
+          walletIndex: (account as Account).walletIndex,
+          words: words,
+          onDone: () => Navigator.of(context).pop(),
+        ),
+      ),
+      _Step.phraseWords => throw StateError('The recovery phrase step has no words.'),
       _Step.disconnect => (
         l10n.desktopDisconnectTitle,
         _DisconnectStep(
@@ -330,6 +361,7 @@ class _AccountInfo extends StatelessWidget {
     required this.account,
     required this.accounts,
     required this.wallet,
+    required this.onRecoveryPhrase,
     required this.onDisconnect,
     required this.l10n,
   });
@@ -341,6 +373,7 @@ class _AccountInfo extends StatelessWidget {
 
   /// What [account]'s wallet is called.
   final String wallet;
+  final VoidCallback onRecoveryPhrase;
   final VoidCallback onDisconnect;
   final AppLocalizations l10n;
 
@@ -355,7 +388,7 @@ class _AccountInfo extends StatelessWidget {
           key: AccountInfoSheet.recoveryPhraseRowKey,
           title: l10n.settingsWalletRecoveryPhrase,
           subtitle: l10n.desktopAccountInfoPhraseSubtitle(wallet),
-          onPressed: null,
+          onPressed: onRecoveryPhrase,
         ),
       if (plan != null)
         SettingsRow.action(

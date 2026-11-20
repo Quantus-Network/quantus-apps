@@ -9,6 +9,8 @@ import 'package:quantus_desktop_wallet/services/user_approval.dart';
 import 'package:quantus_desktop_wallet/ui/accounts/account_info_sheet.dart';
 import 'package:quantus_desktop_wallet/ui/components/account_label.dart';
 import 'package:quantus_desktop_wallet/ui/components/sheet_button.dart';
+import 'package:quantus_desktop_wallet/services/sensitive_clipboard.dart';
+import 'package:quantus_desktop_wallet/ui/settings/settings_sheet.dart';
 import 'package:quantus_desktop_wallet/ui/components/settings_group.dart';
 import 'package:quantus_desktop_wallet/ui/shell/desktop_shell.dart';
 import 'package:quantus_desktop_wallet/ui/shell/shell_sheet_view.dart';
@@ -58,6 +60,7 @@ Future<FakeWalletDevice> _pump(
     overrides: [
       ...device.overrides,
       systemApprovalProvider.overrideWithValue(approval ?? FakeUserApproval()),
+      sensitiveClipboardProvider.overrideWithValue(FakeSensitiveClipboard()),
       encryptedAccountServiceProvider.overrideWith(
         (ref, walletIndex) =>
             FakeEncryptedAccountService(() async => 'qzDeposit', innerHash: innerHash ?? () async => '0xinner'),
@@ -441,6 +444,39 @@ void main() {
       await tester.sendKeyUpEvent(LogicalKeyboardKey.metaLeft);
       await tester.pumpAndSettle();
       expect(find.byKey(AccountInfoSheet.nameFieldKey), findsOneWidget);
+    });
+  });
+
+  group('recovery phrase', () {
+    testOnMac('Get Info\'s Recovery Phrase opens the account\'s wallet\'s phrase in the sheet', (tester) async {
+      final device = await _pump(tester);
+      device.storage.mnemonics[2] = [for (var i = 1; i <= 24; i++) 't${i.toString().padLeft(2, '0')}'].join(' ');
+      await _openInfo(tester, _trading);
+      await tester.tap(_inSheet(find.byKey(AccountInfoSheet.recoveryPhraseRowKey)));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(ShellSheetHeader.backKey), findsOneWidget);
+      await tester.tap(find.byKey(SettingsSheet.continueKey));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(SettingsSheet.hideKey));
+      await tester.pumpAndSettle();
+
+      expect(_inSheet(find.text('t01')), findsOneWidget);
+      expect(device.storage.viewedPhrases, {2});
+    });
+
+    testOnMac('a wallet\'s Show Recovery Phrase opens Settings on that wallet\'s caution', (tester) async {
+      final device = await _pump(tester);
+      device.storage.mnemonics[2] = [for (var i = 1; i <= 24; i++) 't${i.toString().padLeft(2, '0')}'].join(' ');
+      await _container(tester).read(accountManagerProvider).openRecoveryPhrase(2);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(SettingsSheet), findsOneWidget);
+      await tester.tap(find.byKey(SettingsSheet.continueKey));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(SettingsSheet.hideKey));
+      await tester.pumpAndSettle();
+      expect(_inSheet(find.text('t01')), findsOneWidget);
     });
   });
 }
