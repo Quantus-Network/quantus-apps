@@ -2909,4 +2909,203 @@ class AppLocalizationsId extends AppLocalizations {
   String desktopFooterVersion(String version) {
     return 'Quantus Wallet $version';
   }
+
+  @override
+  String get desktopAccountGetInfo => 'Lihat Info';
+
+  @override
+  String get desktopAccountCopyAddress => 'Salin Alamat';
+
+  @override
+  String get desktopAccountCopyInnerHash => 'Salin Inner Hash';
+
+  @override
+  String get desktopAccountRename => 'Ganti Nama…';
+
+  @override
+  String get desktopAccountShowRecoveryPhrase => 'Tampilkan Frasa Pemulihan…';
+
+  @override
+  String get desktopAccountShowSigners => 'Tampilkan Penanda Tangan…';
+
+  @override
+  String get desktopAccountDisconnectAccount => 'Putuskan Akun…';
+
+  @override
+  String get desktopAccountDisconnectHardware => 'Putuskan Akun Perangkat Keras…';
+
+  @override
+  String get desktopAccountDisconnectMultisig => 'Putuskan Multisig…';
+
+  @override
+  String get desktopAccountAddressCopied => 'Alamat disalin';
+
+  @override
+  String get desktopAccountInnerHashCopied => 'Inner hash disalin';
+
+  @override
+  String desktopAccountCopyFailed(String error) {
+    return 'Tidak dapat menyalin: $error';
+  }
+
+  @override
+  String get desktopAccountInfoTitle => 'Info Akun';
+
+  @override
+  String get desktopMultisigInfoTitle => 'Info Multisig';
+
+  @override
+  String get desktopAccountInfoAccount => 'Akun';
+
+  @override
+  String get desktopAccountInfoMultisig => 'Multisig';
+
+  @override
+  String get desktopAccountInfoSigners => 'Penanda tangan';
+
+  @override
+  String get desktopAccountInfoThisDevice => 'Perangkat ini';
+
+  @override
+  String get desktopAccountInfoMiningRewards => 'Hadiah penambangan';
+
+  @override
+  String get desktopAccountInfoName => 'Nama';
+
+  @override
+  String get desktopAccountInfoNameSubtitle => 'Hanya ditampilkan di aplikasi ini';
+
+  @override
+  String get desktopAccountInfoThreshold => 'Ambang batas';
+
+  @override
+  String get desktopAccountInfoThresholdSubtitle => 'Tanda tangan yang dibutuhkan proposal sebelum dapat dijalankan';
+
+  @override
+  String desktopAccountInfoPhraseSubtitle(String wallet) {
+    return '24 kata dari $wallet, tempat akun ini berada';
+  }
+
+  @override
+  String get desktopAccountInfoInnerHash => 'Inner Hash';
+
+  @override
+  String get desktopAccountInfoInnerHashCaption =>
+      'Berikan ke penambang Anda sebagai --rewards-inner-hash, maka hadiah blok masuk ke akun ini.';
+
+  @override
+  String get desktopAccountInfoCreator => 'Pembuat';
+
+  @override
+  String get desktopAccountInfoYou => 'Anda';
+
+  @override
+  String get desktopAccountInfoDisconnectAccount => 'Putuskan Akun';
+
+  @override
+  String desktopAccountInfoDisconnectAccountSubtitle(String name, String wallet) {
+    return 'Berhenti menampilkan $name di aplikasi ini; $wallet tetap menyimpan frasa pemulihannya';
+  }
+
+  @override
+  String desktopAccountInfoDisconnectWalletSubtitle(String name, String wallet) {
+    return '$name adalah akun terakhir di $wallet, jadi dompet itu ikut dihapus';
+  }
+
+  @override
+  String get desktopAccountInfoDisconnectHardware => 'Putuskan Akun Perangkat Keras';
+
+  @override
+  String desktopAccountInfoDisconnectHardwareSubtitle(String name) {
+    return 'Berhenti menampilkan $name di aplikasi ini; perangkat Anda tetap menyimpan kuncinya';
+  }
+
+  @override
+  String get desktopAccountInfoDisconnectMultisig => 'Putuskan Multisig';
+
+  @override
+  String desktopAccountInfoDisconnectMultisigSubtitle(String name) {
+    return 'Berhenti menampilkan $name di aplikasi ini; multisig tetap ada di chain';
+  }
+
+  @override
+  String get desktopDisconnectTitle => 'Putuskan';
+
+  @override
+  String desktopDisconnectHeadline(String name) {
+    return 'Berhenti menampilkan $name?';
+  }
+
+  @override
+  String get desktopDisconnectAccountEyebrow => 'Putuskan akun';
+
+  @override
+  String desktopDisconnectAccountLine1(String name) {
+    return '$name keluar dari aplikasi ini; dananya tetap di blockchain';
+  }
+
+  @override
+  String desktopDisconnectAccountLine2(String name, String wallet) {
+    return '$wallet tetap menyimpan frasa pemulihannya, jadi Anda dapat menambahkan $name lagi nanti';
+  }
+
+  @override
+  String get desktopDisconnectHardwareEyebrow => 'Putuskan akun perangkat keras';
+
+  @override
+  String get desktopDisconnectHardwareLine2 =>
+      'Dompet perangkat keras Anda tetap menyimpan kuncinya, jadi Anda dapat menghubungkannya lagi nanti';
+
+  @override
+  String get desktopDisconnectMultisigEyebrow => 'Putuskan multisig';
+
+  @override
+  String desktopDisconnectMultisigLine1(String name) {
+    return '$name keluar dari aplikasi ini; multisig tetap ada di chain bersama penanda tangannya';
+  }
+
+  @override
+  String get desktopDisconnectMultisigLine2 => 'Anda dapat menambahkannya lagi nanti';
+
+  @override
+  String desktopDisconnectWalletHeadline(String wallet) {
+    return 'Ini menghapus $wallet';
+  }
+
+  @override
+  String desktopDisconnectWalletLine1(String name, String wallet) {
+    return '$name adalah akun terakhir di $wallet, jadi seluruh dompet ikut dihapus';
+  }
+
+  @override
+  String desktopDisconnectWalletLine2(String wallet) {
+    return 'Frasa pemulihan $wallet akan dihapus dari perangkat ini';
+  }
+
+  @override
+  String get desktopDisconnectWalletLine3 =>
+      'Dananya tetap di blockchain, tetapi hanya frasa itu yang dapat memulihkannya';
+
+  @override
+  String desktopDisconnectWalletBackedUp(String wallet) {
+    return 'Saya sudah mencadangkan frasa pemulihan $wallet';
+  }
+
+  @override
+  String desktopDisconnectWalletReason(String wallet) {
+    return 'Hapus $wallet dan frasa pemulihannya';
+  }
+
+  @override
+  String desktopDisconnectWalletDeclined(String wallet) {
+    return 'Menghapus $wallet memerlukan persetujuan Anda';
+  }
+
+  @override
+  String desktopRecoveryPhraseWalletsSubtitle(int count) {
+    return 'Lihat 24 kata dari setiap $count dompet Anda';
+  }
+
+  @override
+  String get desktopRecoveryPhraseChooseWallet => 'Pilih dompet';
 }
