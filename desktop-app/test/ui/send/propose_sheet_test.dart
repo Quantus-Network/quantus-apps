@@ -240,6 +240,21 @@ void main() {
       expect(chain.proposalQuotes, ['qzTeam']);
     });
 
+    testOnMac('the account that pays the cost shows its address on hover; the header names the multisig plainly', (
+      tester,
+    ) async {
+      await _openPropose(tester);
+
+      final payer = find.descendant(
+        of: find.byWidgetPredicate((w) => w is AccountLabel && w.account.name == 'Main'),
+        matching: find.byType(AccountLabel),
+        matchRoot: true,
+      );
+      expect(tester.widget<AccountLabel>(payer).revealsAddress, isTrue);
+      final header = find.descendant(of: find.byType(ShellSheetHeader), matching: find.byType(AccountLabel));
+      expect(tester.widgetList<AccountLabel>(header).map((label) => label.revealsAddress), [false]);
+    });
+
     testOnMac('prices the proposal to the recipient once there is one', (tester) async {
       final chain = await _openPropose(tester);
 
@@ -328,6 +343,20 @@ void main() {
   });
 
   group('the review', () {
+    testOnMac('the multisig, who proposes and who pays show their addresses on hover', (tester) async {
+      await _openPropose(tester);
+      await _toReview(tester);
+
+      final labels = [
+        for (final within in [SendSummary, SendTotal])
+          ...tester.widgetList<AccountLabel>(
+            find.descendant(of: find.byType(within), matching: find.byType(AccountLabel)),
+          ),
+      ];
+      expect(labels.map((label) => label.account.name), containsAll([teamMultisig.name, 'Main']));
+      expect(labels.map((label) => label.revealsAddress), everyElement(isTrue));
+    });
+
     testOnMac('shows the way back, the amount and who is paid in full', (tester) async {
       await _openPropose(tester);
 

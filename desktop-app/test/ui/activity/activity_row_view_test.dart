@@ -134,6 +134,7 @@ void main() {
     expect(find.byType(AccountLabel), findsOne);
     expect(find.text('Savings'), findsOne);
     expect(find.byType(DesktopAddressCheckphrase), findsNothing);
+    expect(tester.widget<AccountLabel>(find.byType(AccountLabel)).revealsAddress, isTrue, reason: 'on hover');
   });
 
   group('one of the wallet\'s own accounts lines up with its "To" or "From"', () {

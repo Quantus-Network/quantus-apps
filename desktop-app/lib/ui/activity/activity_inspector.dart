@@ -113,8 +113,9 @@ Widget _statusLine(BuildContext context, {Widget? mark, required String label, r
 
 /// Who: one of the wallet's own accounts by its badge and name, else the
 /// whole address over its checkphrase.
-Widget _account(BaseAccount? own, String address) =>
-    own == null ? DesktopAddressCheckphrase(address: address, isCompact: true) : AccountLabel(account: own);
+Widget _account(BaseAccount? own, String address) => own == null
+    ? DesktopAddressCheckphrase(address: address, isCompact: true)
+    : AccountLabel(account: own, revealsAddress: true);
 
 /// A row's label, quiet.
 Widget _label(BuildContext context, String text) =>
@@ -127,7 +128,7 @@ Widget _accountRow(BuildContext context, String label, BaseAccount? own, String 
   if (own != null) {
     return SummaryRow(
       label: _label(context, label),
-      value: AccountLabel(account: own),
+      value: AccountLabel(account: own, revealsAddress: true),
     );
   }
   return Padding(
@@ -254,7 +255,7 @@ class _TransactionDetail extends ConsumerWidget {
       if (isTransfer && detail.isSend) ...[
         SummaryRow(
           label: _label(context, l10n.activityTxFrom),
-          value: AccountLabel(account: account),
+          value: AccountLabel(account: account, revealsAddress: true),
         ),
         if (fee != null) ...[
           FigureRow(label: feeLabel, value: money(fee)),
@@ -265,7 +266,7 @@ class _TransactionDetail extends ConsumerWidget {
       ] else if (isTransfer)
         SummaryRow(
           label: _label(context, l10n.activityTxTo),
-          value: AccountLabel(account: account),
+          value: AccountLabel(account: account, revealsAddress: true),
         )
       else
         for (final fact in facts.facts) ?_factRow(context, l10n, fact, own: own, money: money, feeLabel: feeLabel),
@@ -421,7 +422,7 @@ class _ProposalDetail extends ConsumerWidget {
         const SizedBox(height: 4),
         SummaryRow(
           label: _label(context, l10n.activityTxMultisigLabel),
-          value: AccountLabel(account: account),
+          value: AccountLabel(account: account, revealsAddress: true),
         ),
         SummaryRow(
           label: _label(context, l10n.desktopProposeApprovals),

@@ -5,6 +5,8 @@
 //   flutter test tool/screenshots_test.dart --update-goldens
 //
 // The pictures land in build/screenshots/.
+import 'package:quantus_desktop_wallet/ui/components/hover_popover.dart';
+import 'package:quantus_desktop_wallet/ui/components/account_label.dart';
 import 'dart:async';
 
 import 'package:flutter/gestures.dart';
@@ -893,6 +895,22 @@ Future<void> _openActivityRow(WidgetTester tester, String id) async {
 void _activityScenes() {
   _scene('activity_list', (tester) async {
     await _openActivity(tester);
+  });
+
+  // The pointer resting on Savings, one of the wallet's own accounts, in its
+  // row: its address shows.
+  _scene('activity_own_account_address', (tester) async {
+    await _openActivity(tester);
+    final label = find.descendant(
+      of: find.byWidgetPredicate((widget) => widget is ActivityRowView && widget.id == 'savings'),
+      matching: find.byType(AccountLabel),
+    );
+    final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
+    await mouse.addPointer(location: Offset.zero);
+    addTearDown(mouse.removePointer);
+    await mouse.moveTo(tester.getCenter(label));
+    await tester.pump(HoverPopover.openAfter);
+    await tester.pumpAndSettle();
   });
 
   _scene('activity_open_send', (tester) async {
