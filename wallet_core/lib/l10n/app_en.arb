@@ -4241,6 +4241,28 @@
     "@desktopActivityRefreshFailed": {
       "description": "Desktop: a note at the top of the Activity panel when a refresh failed; the rows already shown stay under it, with Try Again beside it"
     },
+    "desktopMarksAddress": "Address",
+    "@desktopMarksAddress": {
+      "description": "Desktop: heading of the popover shown on hovering one of the wallet's own accounts named as a sender or receiver; the account's whole address and its checkphrase are under it, with Copy beside it"
+    },
+    "desktopMarksInProgress": "{count} in progress",
+    "@desktopMarksInProgress": {
+      "description": "Desktop, read by screen readers: how many of an account's transfers are still in progress, as the count on its badge in the sidebar says",
+      "placeholders": {
+        "count": {
+          "type": "int"
+        }
+      }
+    },
+    "desktopMarksWaitingForSignature": "{count} waiting for your signature",
+    "@desktopMarksWaitingForSignature": {
+      "description": "Desktop, read by screen readers: how many of a multisig's open proposals wait for a signature from this wallet, as the count on its badge in the sidebar says",
+      "placeholders": {
+        "count": {
+          "type": "int"
+        }
+      }
+    },
     "desktopActivityRunsIn": "in {time}",
     "@desktopActivityRunsIn": {
       "description": "Desktop: beside the Scheduled status of a reversible transfer, how long until it runs; time is like 00d:23h:41m",

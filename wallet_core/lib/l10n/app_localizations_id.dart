@@ -2920,6 +2920,19 @@ class AppLocalizationsId extends AppLocalizations {
   String get desktopActivityRefreshFailed => 'Tidak dapat memperbarui aktivitas';
 
   @override
+  String get desktopMarksAddress => 'Alamat';
+
+  @override
+  String desktopMarksInProgress(int count) {
+    return '$count sedang berlangsung';
+  }
+
+  @override
+  String desktopMarksWaitingForSignature(int count) {
+    return '$count menunggu tanda tangan Anda';
+  }
+
+  @override
   String desktopActivityRunsIn(String time) {
     return 'dalam $time';
   }

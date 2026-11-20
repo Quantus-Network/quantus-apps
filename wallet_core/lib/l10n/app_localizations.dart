@@ -5312,6 +5312,24 @@ abstract class AppLocalizations {
   /// **'Couldn\'t refresh the activity'**
   String get desktopActivityRefreshFailed;
 
+  /// Desktop: heading of the popover shown on hovering one of the wallet's own accounts named as a sender or receiver; the account's whole address and its checkphrase are under it, with Copy beside it
+  ///
+  /// In en, this message translates to:
+  /// **'Address'**
+  String get desktopMarksAddress;
+
+  /// Desktop, read by screen readers: how many of an account's transfers are still in progress, as the count on its badge in the sidebar says
+  ///
+  /// In en, this message translates to:
+  /// **'{count} in progress'**
+  String desktopMarksInProgress(int count);
+
+  /// Desktop, read by screen readers: how many of a multisig's open proposals wait for a signature from this wallet, as the count on its badge in the sidebar says
+  ///
+  /// In en, this message translates to:
+  /// **'{count} waiting for your signature'**
+  String desktopMarksWaitingForSignature(int count);
+
   /// Desktop: beside the Scheduled status of a reversible transfer, how long until it runs; time is like 00d:23h:41m
   ///
   /// In en, this message translates to:
