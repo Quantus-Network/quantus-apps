@@ -19,6 +19,7 @@ import 'package:wallet_core/l10n/app_localizations.dart';
 import 'package:wallet_core/providers/account_providers.dart';
 import 'package:wallet_core/providers/active_account_transactions_provider.dart';
 import 'package:wallet_core/providers/filtered_all_transactions_provider.dart';
+import 'package:wallet_core/providers/multisig_providers.dart';
 import 'package:wallet_core/providers/pending_multisig_proposals_provider.dart';
 import 'package:wallet_core/providers/pending_transactions_provider.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
@@ -53,6 +54,7 @@ Future<void> _open(
   FakeSendChain? chain,
   FakeHistoryPollingManager? polling,
   DisplayAccount active = const RegularAccount(mainAccount),
+  List<MultisigAccount> multisigs = const [],
   List<Override> extra = const [],
   bool settle = true,
   bool realPolling = false,
@@ -64,7 +66,7 @@ Future<void> _open(
   overrides: [
     ...shellOverrides(
       accounts: const [mainAccount, savingsAccount, encryptedAccount],
-      settings: FakeSettingsService(activeAccount: active),
+      settings: FakeSettingsService(activeAccount: active, multisigs: multisigs),
       balances: oneTokenEach,
       encryptedBalances: {0: oneToken},
       chain: chain,
@@ -315,6 +317,139 @@ void main() {
     expect(_rowsIn(tester, ActivityPanel).last, 'second');
     expect(find.byKey(ActivityPanel.loadingMoreKey), findsNothing);
     expect(chain.historyReads, [0, 1]);
+  });
+
+  group('loading more of what is in progress', () {
+    List<ReversibleTransferEvent> scheduled(String prefix, int count) => [
+      for (var i = 0; i < count; i++)
+        ReversibleTransferEvent(
+          id: '$prefix-$i',
+          from: 'qzBob',
+          to: 'qzMain',
+          amount: oneToken,
+          timestamp: _now,
+          txId: '0x$prefix$i',
+          status: ReversibleTransferStatus.SCHEDULED,
+          scheduledAt: _now.add(Duration(hours: i + 1)),
+          blockNumber: 1,
+          blockHash: '0xblock',
+        ),
+    ];
+
+    int inProgress(WidgetTester tester) => _container(tester).read(activityViewProvider).value!.inProgress.length;
+
+    testOnMac('with nothing settled to scroll, the next page of scheduled transfers is fetched on its own', (
+      tester,
+    ) async {
+      final chain = FakeSendChain()..scheduledPages = [scheduled('first', 20), scheduled('second', 1)];
+
+      await _open(tester, chain: chain);
+
+      expect(chain.historyReads, [0, 1]);
+      expect(inProgress(tester), 21);
+    });
+
+    testOnMac('scrolling In progress near its end fetches the next page', (tester) async {
+      final chain = FakeSendChain()
+        ..scheduledPages = [scheduled('first', 20), scheduled('second', 1)]
+        ..historyPages = [
+          [for (var i = 0; i < 20; i++) _received('settled-$i', Duration(hours: i + 1))],
+          [_received('older', const Duration(days: 30))],
+        ];
+      await _open(tester, chain: chain);
+      expect(chain.historyReads, [0], reason: 'Activity is full: nothing is fetched until asked');
+
+      await tester.drag(find.byType(InProgressPanel), const Offset(0, -3000));
+      await tester.pumpAndSettle();
+
+      expect(chain.historyReads, [0, 1]);
+      expect(inProgress(tester), 21);
+    });
+
+    testOnMac('a page that fails is not asked for again on its own', (tester) async {
+      final chain = FakeSendChain()
+        ..scheduledPages = [scheduled('first', 20), scheduled('second', 1)]
+        ..failingHistoryPages = {1};
+
+      await _open(tester, chain: chain);
+      for (var i = 0; i < 5; i++) {
+        await tester.pump(const Duration(seconds: 1));
+      }
+
+      expect(chain.historyReads, [0, 1]);
+      expect(inProgress(tester), 20);
+    });
+  });
+
+  group("a multisig's past proposals, half of its activity", () {
+    final executed = MultisigProposal(
+      entityId: 'executed',
+      id: 7,
+      multisigAddress: teamMultisig.accountId,
+      proposer: 'qzMain',
+      createdAt: _now.subtract(const Duration(days: 2)),
+      updatedAt: _now.subtract(const Duration(days: 1)),
+      pallet: '',
+      call: '',
+      recipient: 'qzBob',
+      amount: oneToken,
+      expiryBlock: 1284220,
+      approvals: const ['qzMain', 'qzOther'],
+      deposit: oneToken,
+      status: MultisigProposalStatus.executed,
+      threshold: teamMultisig.threshold,
+      signerCount: teamMultisig.signers.length,
+    );
+
+    Future<void> openTeam(WidgetTester tester, FakeSendChain chain, {bool settle = true}) => _open(
+      tester,
+      chain: chain,
+      active: MultisigDisplayAccount(teamMultisig),
+      multisigs: [teamMultisig],
+      settle: settle,
+    );
+
+    testOnMac('until they are read, the activity is loading, not empty', (tester) async {
+      final chain = FakeSendChain()
+        ..pastProposals = [executed]
+        ..holdPastProposals = Completer<void>();
+      await openTeam(tester, chain, settle: false);
+      for (var i = 0; i < 5; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+
+      expect(_container(tester).read(activityViewProvider).isLoading, isTrue);
+      expect(find.text(_l10n.activityEmpty), findsNothing);
+
+      chain.holdPastProposals!.complete();
+      // The waiting shapes, once shown, stay their least time.
+      await tester.pump(ActivityPanel.shownAtLeast);
+      await tester.pumpAndSettle();
+      expect(_rowsIn(tester, ActivityPanel), ['executed']);
+    });
+
+    testOnMac('when they cannot be read, the activity says it could not be loaded, with Try Again', (tester) async {
+      await openTeam(tester, FakeSendChain()..pastProposalsError = StateError('indexer down'));
+
+      expect(find.text(_l10n.desktopActivityLoadFailed), findsOne);
+      expect(find.text(_l10n.commonTryAgain), findsOne);
+      expect(find.text(_l10n.activityEmpty), findsNothing);
+    });
+
+    testOnMac('when they can no longer be read, the rows shown stay, with the note that the refresh failed', (
+      tester,
+    ) async {
+      final chain = FakeSendChain()..pastProposals = [executed];
+      await openTeam(tester, chain);
+      expect(_rowsIn(tester, ActivityPanel), ['executed']);
+
+      chain.pastProposalsError = StateError('indexer down');
+      _container(tester).invalidate(multisigPastProposalsProvider(teamMultisig));
+      await tester.pumpAndSettle();
+
+      expect(_rowsIn(tester, ActivityPanel), ['executed']);
+      expect(find.text(_l10n.desktopActivityRefreshFailed), findsOne);
+    });
   });
 
   group('refreshing', () {

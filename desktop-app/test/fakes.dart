@@ -401,6 +401,15 @@ class FakeSendChain {
   /// The reversible transfers waiting to run.
   List<ReversibleTransferEvent> scheduledTransfers = const [];
 
+  /// When set, the reversible transfers waiting to run a page at a time, in
+  /// place of [scheduledTransfers]; there is more while either list has a
+  /// page after the one read.
+  List<List<ReversibleTransferEvent>>? scheduledPages;
+
+  /// The pages of history whose read fails, with [historyError] or a
+  /// [StateError].
+  Set<int> failingHistoryPages = const {};
+
   /// When set, every read of history waits for it.
   Completer<void>? holdHistory;
 
@@ -422,6 +431,11 @@ class FakeSendChain {
   /// indexer gives it, and the accounts asked about each time.
   List<ReversibleTransferEvent> stillScheduled = const [];
   final stillScheduledReads = <List<String>>[];
+
+  /// When set, a read of past proposals waits for it; and fails with
+  /// [pastProposalsError], when that is set.
+  Completer<void>? holdPastProposals;
+  Object? pastProposalsError;
 
   final _calls = Expando<SendCall>();
 
@@ -472,7 +486,11 @@ class _FakeMultisigService extends Fake implements MultisigService {
   }
 
   @override
-  Future<List<MultisigProposal>> getPastProposals(MultisigAccount msig) async => chain.pastProposals;
+  Future<List<MultisigProposal>> getPastProposals(MultisigAccount msig) async {
+    await chain.holdPastProposals?.future;
+    if (chain.pastProposalsError case final error?) throw error;
+    return chain.pastProposals;
+  }
 }
 
 /// The indexer's history, as the [chain] holds it: each page's cursor is the
@@ -494,10 +512,14 @@ class _FakeChainHistoryService extends Fake implements ChainHistoryService {
     chain.historyReads.add(page);
     await chain.holdHistory?.future;
     if (chain.historyError case final error?) throw error;
+    if (chain.failingHistoryPages.contains(page)) throw StateError('page $page could not be read');
     final pages = chain.historyPages;
-    final hasMore = page < pages.length - 1;
+    final scheduledPages = chain.scheduledPages;
+    final hasMore = page < pages.length - 1 || (scheduledPages != null && page < scheduledPages.length - 1);
     return SortedTransactionsList(
-      scheduledReversibleTransfers: page == 0 ? chain.scheduledTransfers : const [],
+      scheduledReversibleTransfers: scheduledPages != null
+          ? (page < scheduledPages.length ? scheduledPages[page] : const [])
+          : (page == 0 ? chain.scheduledTransfers : const []),
       otherTransfers: page < pages.length ? pages[page] : const [],
       nextOtherCursor: hasMore ? AccountEventCursor(timestamp: '', id: '${page + 1}') : null,
       hasMore: hasMore,
