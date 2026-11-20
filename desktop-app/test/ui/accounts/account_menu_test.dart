@@ -423,6 +423,26 @@ void main() {
       expect(_inSidebar("Couldn't rename the wallet"), findsNothing);
     });
 
+    testOnMac('retrying a wallet rename while its failure still shows keeps the field, and what is typed, when the '
+        'message goes', (tester) async {
+      final device = await _pump(tester);
+      device.storage.writeError = StateError('disk full');
+      await _renameFromMenu(tester, _inSidebar('WALLET 2'));
+      await _typeAndReturn(tester, 'Trading desk');
+      expect(_inSidebar("Couldn't rename the wallet"), findsOneWidget);
+
+      await _renameFromMenu(tester, _inSidebar('WALLET 2'));
+      await tester.enterText(_sidebarField, 'Recovered name');
+      await tester.pump(AccountNoteNotifier.failureShownFor);
+      await tester.pumpAndSettle();
+
+      expect(_inSidebar("Couldn't rename the wallet"), findsNothing);
+      final field = tester.widget<EditableText>(_sidebarField);
+      expect(field.controller.text, 'Recovered name');
+      expect(field.focusNode.hasFocus, isTrue);
+      expect(device.storage.names.containsKey(2), isFalse);
+    });
+
     testOnMac('a click on the row while its name is being typed does not switch account', (tester) async {
       await _pump(tester);
       await _renameFromMenu(tester, _sidebarRow('Savings'));

@@ -238,21 +238,22 @@ class _WalletHeaderState extends ConsumerState<_WalletHeader> {
               ),
             ),
           );
-    final heading = error == null
-        ? title
-        : Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              title,
-              Padding(
-                padding: const EdgeInsets.fromLTRB(10, 0, 10, 6),
-                child: Semantics(
-                  liveRegion: true,
-                  child: Text(error, style: text.caption.copyWith(color: colors.semanticEmber)),
-                ),
-              ),
-            ],
-          );
+    // One column whether or not an error shows under the title, so the title,
+    // and a name being typed in it, stays as it is when the error comes or goes.
+    final heading = Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        title,
+        if (error != null)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(10, 0, 10, 6),
+            child: Semantics(
+              liveRegion: true,
+              child: Text(error, style: text.caption.copyWith(color: colors.semanticEmber)),
+            ),
+          ),
+      ],
+    );
     return WalletContextMenu(wallet: widget.wallet, child: heading);
   }
 }
