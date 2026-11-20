@@ -82,7 +82,7 @@ final accountMarksProvider = Provider<Map<String, AccountMark>>((ref) {
     final CombinedTransactionsList data;
     if (account is Account && isEncryptedAccount(account)) {
       final history = ref.watch(encryptedHistoryProvider(account.walletIndex)).value ?? const <TransactionEvent>[];
-      data = CombinedTransactionsList.empty.copyWith(otherTransfers: history);
+      data = CombinedTransactionsList.empty.copyWith(otherTransfers: [...history]);
     } else {
       final id = account.accountId;
       data = combinedTransactionsOf(
@@ -93,9 +93,11 @@ final accountMarksProvider = Provider<Map<String, AccountMark>>((ref) {
           for (final transfer in scheduled)
             if (transfer.from == id || transfer.to == id) transfer,
         ],
-        otherTransfers: const [],
+        otherTransfers: [],
       );
     }
+    // The lists the transfers go in are the combiner's own to add to and
+    // sort: it moves a send that failed among the settled ones.
     return partActivityByProgress(activityOf(service, account, data, const [])).inProgress.length;
   }
 

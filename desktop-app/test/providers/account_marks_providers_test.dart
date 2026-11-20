@@ -96,6 +96,31 @@ void main() {
     await close(tester, container);
   });
 
+  testWidgets('a send that failed counts no more, and every account\'s marks can still be read', (tester) async {
+    final container = await wallet(tester, FakeSendChain());
+    final pending = container.read(pendingTransactionsProvider.notifier)
+      ..add(
+        PendingTransactionEvent(
+          tempId: 'sending',
+          from: savingsAccount.accountId,
+          to: 'qzPayee',
+          amount: oneToken,
+          timestamp: now,
+          fee: FakeSendChain.usualFee,
+        ),
+      );
+    await settle(tester);
+    expect(markOf(container, savingsAccount.accountId), const AccountMark(inProgress: 1));
+
+    // As reconciliation leaves it for a few seconds before taking it away.
+    pending.updateState('sending', TransactionState.failed);
+    await settle(tester);
+
+    expect(markOf(container, savingsAccount.accountId), const AccountMark());
+    expect(markOf(container, mainAccount.accountId), const AccountMark());
+    await close(tester, container);
+  });
+
   testWidgets("a transfer still scheduled counts for an account never opened, all accounts' read at once", (
     tester,
   ) async {
